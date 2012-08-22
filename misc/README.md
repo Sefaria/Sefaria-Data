@@ -12,7 +12,5 @@ For Sefaria source code see [Sefaria-Project](https://github.com/blockspeiser/Se
 * `dump/` - a MongoDB database dump. To restore this data simply `cd Sefaria-Data; mongorestore`
 * `json/` - simple json output (coming soon)
 *  `xml/` - simple xml output (coming soon)
-*  `misc/` - misc small data files about texts
-*  
 *  `sources/` - original digital files that were manipulated to producde our data, along with scripts used in parsing.
 
