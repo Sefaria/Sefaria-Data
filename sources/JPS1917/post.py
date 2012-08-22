@@ -10,7 +10,7 @@ def post_text(filename):
 	ref = filename[:-4].title().replace(" Of ", " of ").replace(" ", "_")
 	print "Posting %s" % ref
 	url = 'http://www.sefaria.org/api/texts/%s' % ref
-	values = {'json': textJSON, 'apikey': 'r1uTw5WPgyTXG6N1iQmiGjOFXHGmttZkYH4fa7AJOW4'}
+	values = {'json': textJSON, 'apikey': 'yourapikey'}
 	data = urllib.urlencode(values)
 	req = urllib2.Request(url, data)
 	try:
