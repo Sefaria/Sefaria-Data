@@ -1,5 +1,6 @@
 import urllib
 import urllib2
+from urllib2 import URLError, HTTPError
 import json
 import os
 from BeautifulSoup import BeautifulSoup
@@ -9,28 +10,41 @@ def parseChapter(name):
 	f = open("./pages/%s" % (name), "r")
 	page = f.read()
 	f.close()
-	
+
 	soup = BeautifulSoup(page)
-	
+
 	pz = soup.findAll(style="font-size:60%;")
-	
-	f = open("./parsed/%s" % (name), "w")
-	
+
 	parsed = {
 		"language": "he",
 		"versionTitle": "Wikisource Tanach",
 		"versionUrl": "http://he.wikisource.org/wiki/%D7%9E%D7%A7%D7%A8%D7%90",
 		"text": []
 	}
-	
+
 	for i in range(len(pz)): 
-		line = pz[i].nextSibling.encode("utf-8").strip()
-		parsed["text"].append(line)
+		line = ""
+		next = pz[i].nextSibling
+		while next:
+			if hasattr(next, "name"): # Not a text node, either a span or a small
+				if next.name == "span": # This is the next verse marker
+					break
+				else: # This is a small
+					if next.name != "small":
+						print "Unexpected tag: %s (%s)" % (next.name, name)
+					line += next.text.encode("utf-8") 
+			else: # This is text
+				line += next.encode("utf-8")
+			next = next.nextSibling
+		parsed["text"].append(line.strip())
+
+	f = open("./parsed/%s" % (name), "w")
 	
 	json.dump(parsed, f, ensure_ascii=False)
 	f.close()
 	
 	return parsed
+
 
 def parseLinks(seedfile):
 	print "Getting links from %s" % (seedfile)
@@ -57,6 +71,7 @@ def parseLinks(seedfile):
 		
 	return links
 
+
 def wikiGet(url, name):
 
 	ls = os.listdir("./pages")
@@ -73,37 +88,53 @@ def wikiGet(url, name):
 	f.write(page.read())
 	f.close()
 
-def postText(filename):
-	f = open("./parsed/%s" % (filename), "r")
-	textJSON = f.read()
-	f.close()
-	
-	url = 'http://www.sefaria.org/texts/%s' % (filename)
-	values = {'json': textJSON}
-	data = urllib.urlencode(values)
-	req = urllib2.Request(url, data)
-	response = urllib2.urlopen(req)
-	print "Posted %s" % (filename)
-	
 
 def getAll():
 	for seed in seeds:
 		links = parseLinks("%s.1" % (seed))
 		for i in range(2, len(links)):
 			wikiGet(links[i], "%s.%d" % (seed, i))
+
 		
 def parseAll():
 	files = os.listdir("./pages")
 	
 	for f in files:
+		print "parsing %s" % f
 		parsed = parseChapter(f)
+		f = open("./parsed/%s" %(f), "w")
+		f.write(json.dumps(parsed, indent=4))
+		f.close()
 
-def postAll(prefix=None):
+
+def postText(filename):
+	f = open("./parsed/%s" % (filename), "r")
+	textJSON = f.read()
+	f.close()
+	ref = filename.replace("-", "_").replace("_1", "_I").replace("_2", "_II")
+
+	url = 'http://www.sefaria.org/api/texts/%s' % (ref)
+	values = {'json': textJSON, 'apikey': 'your-apikey'}
+	data = urllib.urlencode(values)
+	req = urllib2.Request(url, data)
+	try:
+		response = urllib2.urlopen(req)
+		print "Posted %s" % (ref)
+	except HTTPError, e:
+		print 'Error code: ', e.code
+		print e.read()
+	
+
+def postAll(prefix=None, after=None):
 	files = os.listdir("./parsed")
 	
 	for f in files:
-		if not prefix or f.startswith(prefix):
-			parsed = postText(f)
+		if prefix and f.startswith(prefix):
+			continue
+		if after and f < after:
+			continue
+
+		parsed = postText(f)
 
 
 seeds = {
