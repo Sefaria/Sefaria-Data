@@ -3,7 +3,7 @@ Sefaria-Data
 
 Structured Jewish texts with free public licenses.
 
-This repo contains texts, bibliographical information and lists of intertextual connections created by the [Sefaria Project](http//www.sefaria.org]). 
+This repo contains texts, bibliographical information and lists of intertextual connections created by the [Sefaria Project](http://www.sefaria.org). 
 
 For Sefaria source code see [Sefaria-Project](https://github.com/blockspeiser/Sefaria-Project).
 
