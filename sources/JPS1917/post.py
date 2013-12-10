@@ -1,7 +1,8 @@
 import urllib
 import urllib2
 from urllib2 import URLError, HTTPError
-import os	
+import os
+from pprint import pprint
 
 def post_text(filename):
 	f = open("./json/%s" % filename, "r")
@@ -9,12 +10,13 @@ def post_text(filename):
 	f.close()
 	ref = filename[:-4].title().replace(" Of ", " of ").replace(" ", "_")
 	print "Posting %s" % ref
-	url = 'http://www.sefaria.org/api/texts/%s' % ref
+	url = 'http://dev.sefaria.org/api/texts/%s' % ref
 	values = {'json': textJSON, 'apikey': 'yourapikey'}
 	data = urllib.urlencode(values)
 	req = urllib2.Request(url, data)
 	try:
 		response = urllib2.urlopen(req)
+		pprint(response.read())
 	except HTTPError, e:
 		print 'Error code: ', e.code
 		print e.read()
