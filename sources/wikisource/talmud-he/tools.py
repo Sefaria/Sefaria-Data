@@ -6,8 +6,10 @@ import json
 import os
 import re
 import sys
-from hebnum import *
 from BeautifulSoup import BeautifulSoup
+
+from hebnum import *
+from local_settings import APIKEY
 
 
 def soup(filename):
@@ -48,11 +50,13 @@ def parseIndex():
 										
 	return links
 	
+
 def getIndexPages():
 	links = parseIndex()
 	
 	for book in links:
 		wikiGet(links[book], book.replace(" ", "_"))
+
 
 def getDafLinks(name):
 	s = soup("./pages/%s" % (name))
@@ -84,16 +88,25 @@ def parseDaf(filename):
 	mishna = 0
 	text = []
 	g = s.find("div", "gmara_text")
-	if not g:
-		print "Parsing failed for %s (couldn't find gmara_text)" % (filename)	
-		return
-	p = g.findAll("p")
-	if not p:
-		print "Parsing failed for %s (couldn't find paragraphs in gmara_text)" % (filename)	
-		return
-	
-	for i in range(len(p)):
-		text.append(deepText(p[i]).encode("utf-8").strip())		
+	if g:
+		p = g.findAll("p")
+		if not p:
+			print "Parsing failed for %s (couldn't find paragraphs in gmara_text)" % (filename)	
+			return
+		for i in range(len(p)):
+			text.append(deepText(p[i]).encode("utf-8").strip())	
+	else:
+		container = s.find(id="mw-content-text") or s.find(id="bodyContent")
+		for c in container.contents:
+			if c.__class__.__name__ == "NavigableString" or c.__class__.__name__ == "Comment" : continue
+			if c.get("name", None) == "h2": break			
+
+		next = c.nextSibling
+		while next:
+			if next.__class__.__name__ == "NavigableString" or next.__class__.__name__ == "Comment" : continue
+			if next.get("name", None) == "h2": break
+			text.append(deepText(next).encode("utf-8").strip())
+			next = next.nextSibling
 
 	parsed = {
 		"language": "he",
@@ -101,14 +114,17 @@ def parseDaf(filename):
 		"versionUrl": "http://he.wikisource.org/wiki/%D7%AA%D7%9C%D7%9E%D7%95%D7%93_%D7%91%D7%91%D7%9C%D7%99",
 	}
 	
-	parsed["text"] = text
+	parsed["text"] = [t for t in text if t]
 	
 	return parsed
 	
-def parseAll():
+
+def parseAll(prefix=None):
 	ls = os.listdir("./pages")
 	for filename in ls:
 		if not "." in filename or filename == ".DS_Store": continue
+		if prefix and not filename.startswith(prefix): continue
+
 		print filename
 		parsed = parseDaf("pages/%s" % (filename))
 		
@@ -117,6 +133,8 @@ def parseAll():
 			json.dump(parsed, f, ensure_ascii=False, indent=4)
 			f.close()
 			print "ok: found %d sections" % len(parsed["text"])
+		else:
+			print "nothing parsed"
 			
 			
 def deepText(element):
@@ -156,7 +174,6 @@ def wikiGet(url, name):
 	f.close()
 
 
-
 def getOrders():
 	s = soup("index")
 	table = s.find("table", {"align": "center"})
@@ -176,6 +193,7 @@ def getOrders():
 				mishnas["Mishna %s" % (a[0].string)] = {"seder": seders[k], "order": i-1}
 	
 	return mishnas
+
 
 def sederSort(a,b):
 
@@ -198,6 +216,7 @@ def renameUp(name, start, end):
 		os.rename("pages/%s.%da" % (name, i), "pages/%s.%da" % (name, i + 1))
 		os.rename("pages/%s.%db" % (name, i), "pages/%s.%db" % (name, i + 1))
 
+
 def checkDafs():
 	f = open("talmud.json")
 	talmud = json.load(f)
@@ -207,6 +226,7 @@ def checkDafs():
 	
 	for t in talmud:
 		correctNames(t["title"], t["length"])
+
 
 def correctNames(name, length):
 	for k in range(length, 1, -1):
@@ -230,7 +250,8 @@ def correctNames(name, length):
 					os.rename("pages/%s.%d%s" % (name.replace(" ", "_"), k, am), "pages/%s.%d%s" % (name.replace(" ", "_"), daf, amud))
 			except KeyError:
 				print "*** Numeral conversion failed for %s.%d%s" % (name, k, am)
-						
+					
+
 def findMismatch(name, length):
 	for k in range(2, length):
 		for am in ("a", "b"):
@@ -248,6 +269,7 @@ def findMismatch(name, length):
 			if not hebnum == selflink:
 				print "*** Mismatch at %s.%d%s" % (name, k, am)
 				return			
+
 
 def checkTexts():
 	files = os.listdir("./parsed")
@@ -272,8 +294,8 @@ def postText(filename):
 	textJSON = f.read()
 	f.close()
 	
-	url = 'http://www.sefaria.org/texts/%s' % (filename)
-	values = {'json': textJSON}
+	url = 'http://www.sefaria.org/api/texts/%s' % (filename)
+	values = {'json': textJSON, 'apikey': APIKEY}
 	data = urllib.urlencode(values)
 	req = urllib2.Request(url, data)
 	response = urllib2.urlopen(req)
@@ -289,3 +311,4 @@ def postAll(prefix=None):
 				parsed = postText(f)
 
 
+parseAll(prefix="Nedarim")
