@@ -1,6 +1,12 @@
 import re
 import os
 import json
+import urllib
+import urllib2
+from urllib2 import HTTPError
+
+POSTHOST = "http://dev.sefaria.org"
+
 
 def getChapters(filename):
     """
@@ -37,12 +43,12 @@ def makePage(name, text):
         print "Already have %s" % (name)
         return
     print "Building %s" % (name)
-    
-    f = open("./pages/%s" %(name), "w")
+    f = open("./pages/%s" % (name), "w")
     f.write(text)
     f.close()
 
     print 'OK'
+
 
 def buildPages(mesechet_list):
     """
@@ -60,34 +66,37 @@ def buildPages(mesechet_list):
             text = ""
             count = 1
             for line in mesechet.splitlines():
-                match_perek = re.search(r'Perek\s.+', line) # regex for chapters
-                match_mesechet = re.search(r'Mesechet\s.+', line) # regex for headers
-                if match_mesechet: # if the line is a header skip it
+                # regex for chapters
+                match_perek = re.search(r'Perek\s.+', line)
+                # regex for headers
+                match_mesechet = re.search(r'Mesechet\s.+', line)
+                if match_mesechet:  # if the line is a header skip it
                     continue
-                if match_perek: # if a line is a chapter
+                if match_perek:  # if a line is a chapter
                     if not text:
-                        pass # if its the first chapter, dont do anything
+                        pass  # if its the first chapter, dont do anything
                     else:
-                        match = re.search(r'\.(\d)+', name) # regex for the name
+                        match = re.search(r'\.(\d)+', name)  # regex for the name
                         if match:
                             result = match.group()
-                            if len(result) == 2: # 1 digit after dot
-                                name = name[:-2] # cut off digit + dot
-                            else: # 2 digits after dot
-                                name = name[:-3] # cut off digits + dot
-                        name = "%s.%d" % (name, count) # change name to new name
+                            if len(result) == 2:  # 1 digit after dot
+                                name = name[:-2]  # cut off digit + dot
+                            else:  # 2 digits after dot
+                                name = name[:-3]  # cut off digits + dot
+                        name = "%s.%d" % (name, count)  # change name to new name
                         count += 1
-                        makePage(name, text) # actually make the page
-                        text = "" # reset text
+                        makePage(name, text)  # actually make the page
+                        text = ""  # reset text
                 else:
-                    text += line + "\n" # build text, adding in new lines
+                    text += line + "\n"  # build text, adding in new lines
+
 
 def parseChapter(filename):
     f = open("./pages/%s" % (filename))
     chapter = f.read()
     f.close()
     text = []
-    count = 1
+    # count = 1
 
     for line in chapter.splitlines():
         line = re.sub(r'\w+:\s', "", line)
@@ -106,7 +115,8 @@ def parseChapter(filename):
 def parseAll():
     ls = os.listdir("./pages")
     for filename in ls:
-        if not "." in filename or filename == ".DS_Store": continue
+        if not "." in filename or filename == ".DS_Store":
+            continue
         print filename
         parsed = parseChapter("%s" % (filename))
 
@@ -117,7 +127,31 @@ def parseAll():
             print "ok: found %d mishnas" % len(parsed["text"])
 
 
-# def test():
-#     chapters = getChapters("MishnayotNotes.txt")
-#     buildPages(chapters)
+def postText(filename):
+    f = open("./parsed/%s" % (filename), "r")
+    textJSON = f.read()
+    f.close()
+    ref = filename.replace("-", "_").replace("_1", "_I").replace("_2", "_II")
 
+    url = '%s/api/texts/%s' % (POSTHOST, ref)
+    values = {'json': textJSON,
+              'apikey': 'VCmaCDRYFADsixeW3njZUnDhEMqkBm7N9EhCmreuyyI'}
+    data = urllib.urlencode(values)
+    req = urllib2.Request(url, data)
+    try:
+        response = urllib2.urlopen(req)
+        print "Posted %s" % (ref)
+    except HTTPError, e:
+        print 'Error code: ', e.code
+        print e.read()
+
+
+def postAll(prefix=None, after=None):
+    files = os.listdir("./parsed")
+
+    for f in files:
+        if prefix and f.startswith(prefix):
+            continue
+        if after and f < after:
+            continue
+        parsed = postText(f)
