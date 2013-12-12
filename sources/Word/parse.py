@@ -76,14 +76,16 @@ def buildPages(mesechet_list):
                     if not text:
                         pass  # if its the first chapter, dont do anything
                     else:
-                        match = re.search(r'\.(\d)+', name)  # regex for the name
+                        # regex for the name
+                        match = re.search(r'\.(\d)+', name)
                         if match:
                             result = match.group()
                             if len(result) == 2:  # 1 digit after dot
                                 name = name[:-2]  # cut off digit + dot
                             else:  # 2 digits after dot
                                 name = name[:-3]  # cut off digits + dot
-                        name = "%s.%d" % (name, count)  # change name to new name
+                        # change name to new name
+                        name = "%s.%d" % (name, count)
                         count += 1
                         makePage(name, text)  # actually make the page
                         text = ""  # reset text
@@ -104,8 +106,8 @@ def parseChapter(filename):
 
     parsed = {
         "language": "en",
-        "versionTitle": "TBD",
-        "versionUrl": "TBD"
+        "versionTitle": "Natan Stein Mishnah",
+        "versionSource": "www.sefaria.org/contributed-text"
     }
 
     parsed["text"] = text
@@ -133,13 +135,14 @@ def postText(filename):
     f.close()
     ref = filename.replace("-", "_").replace("_1", "_I").replace("_2", "_II")
 
-    url = '%s/api/texts/%s' % (POSTHOST, ref)
+    url = '%s/api/texts/Mishna_%s' % (POSTHOST, ref)
     values = {'json': textJSON,
               'apikey': 'VCmaCDRYFADsixeW3njZUnDhEMqkBm7N9EhCmreuyyI'}
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)
     try:
         response = urllib2.urlopen(req)
+        print response.read()
         print "Posted %s" % (ref)
     except HTTPError, e:
         print 'Error code: ', e.code
