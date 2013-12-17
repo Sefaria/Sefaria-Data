@@ -142,7 +142,7 @@ def postText(filename):
     f = open("./parsed/%s" % (filename), "r")
     textJSON = f.read()
     f.close()
-    ref = filename.replace("-", "_").replace("_1", "_I").replace("_2", "_II")
+    ref = filename.replace("-", "_").replace("_1", "_I").replace("_2", "_II").replace(" ", "_")
 
     url = '%s/api/texts/Mishna_%s' % (POSTHOST, ref)
     values = {'json': textJSON,
