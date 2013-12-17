@@ -43,8 +43,10 @@ def makePage(name, text):
     if name in ls:
         print "Already have %s" % (name)
         return
+    # pdb.set_trace()
     print "Building %s" % (name)
     f = open("./pages/%s" % (name), "w")
+    text = text.rstrip()
     f.write(text)
     f.close()
 
@@ -58,42 +60,46 @@ def buildPages(mesechet_list):
     the file it creates are Berakhot.1, Berakhot.2, etc...
     """
     for key, value in mesechet_list.iteritems():
-        name = ''
-        for segment in key.split():
-            # Don't add Mesechet part of dictionary to name
-            if segment == key.split()[0]:
-                pass
-            else:
-                name += segment + " "
-        print name.strip()
-        # text = ""
-        # count = 1
+        mesechetName = buildName(key)
+        # Count for end of name
+        rePerek = re.compile(r'Perek\s.+')
+        perekList = {}
+        currentPerek = 0
+        count = 1
         for line in value.splitlines():
-            # regex for chapters
-            match_perek = re.search(r'Perek\s.+', line)
-            if line == '':
-                pass
-            if match_perek:  # if a line is a chapter
-                print line
-                pass
-            #     if not text:
-            # pass  # if its the first chapter, dont do anything
-            #     else:
-            # regex for the name
-            #         match = re.search(r'\.(\d)+', name)
-            #         if match:
-            #             result = match.group()
-            # if len(result) == 2:  # 1 digit after dot
-            # name = name[:-2]  # cut off digit + dot
-            # else:  # 2 digits after dot
-            # name = name[:-3]  # cut off digits + dot
-            # change name to new name
-            #         name = "%s.%d" % (name, count)
-            #         count += 1
-            # makePage(name, text)  # actually make the page
-            # text = ""  # reset text
-            # else:
-            # text += line + "\n"  # build text, adding in new lines
+            if line == "":
+                continue
+            elif rePerek.search(line):
+                perekList[count] = ""
+                currentPerek = count
+                count += 1
+            else:
+                perekList[currentPerek] += line + "\n"
+        for perekKey, perekValue in perekList.iteritems():
+            makePage(mesechetName + ".%d" % perekKey, perekValue)
+    cleanPagesDirectory()
+
+
+def cleanPagesDirectory():
+    ls = os.listdir("./pages")
+    for f in ls:
+        if f == ".":
+            pass
+        elif f == "..":
+            pass
+        elif len(f) < 4:
+            os.remove("./pages/%s" % f)
+
+
+def buildName(key):
+    name = ''
+    for segment in key.split():
+        # Don't add Mesechet part of dictionary to name
+        if segment == key.split()[0]:
+            pass
+        else:
+            name += segment + " "
+    return name.strip()
 
 
 def parseChapter(filename):
