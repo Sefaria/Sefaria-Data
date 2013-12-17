@@ -13,23 +13,24 @@ def getChapters(filename):
     Builds Mesechet List from MishnayotNotes.txt
     """
     f = open(filename)
-    mesechet = ""
-    mesechet_list = []
+    currentMesechet = ""
+    mesechet_list = {}
+    reSeder = re.compile(r'Seder\s\S+\n')
+    reMishnayot = re.compile(r'Mishnayot Notes')
+    reMesechet = re.compile(r'Mesechet\s(\S+)\n?\s?(\S+)?\n')
     for line in f:
-        if line.strip() == '':
+        sederMatchCheck = reSeder.search(line)
+        mishnayotMatchCheck = reMishnayot.search(line)
+        mesechetMatchCheck = reMesechet.search(line)
+        if mishnayotMatchCheck or sederMatchCheck:
             pass
-        elif re.search(r'Seder\s\S+\n', line):
-            pass
-        elif re.search(r'Mishnayot Notes', line):
-            pass
-        elif re.search(r'Mesechet\s(\S+)\n', line):
-            if not mesechet:
-                mesechet = line
-            else:
-                mesechet_list.append(mesechet)
-                mesechet = line
+        elif mesechetMatchCheck:
+            line = line.strip()
+            mesechet_list[line] = ""
+            currentMesechet = line
         else:
-            mesechet += line
+            if currentMesechet:
+                mesechet_list[currentMesechet] += line
     return mesechet_list
 
 
@@ -53,44 +54,46 @@ def makePage(name, text):
 def buildPages(mesechet_list):
     """
     Take a list of Mesechet and then build a directory ./pages/:ref:
-    that splits every Mesechet into each chapter. If the Mesechet is Brachot
-    the file it creates are Brachot.1, Brachot.2, etc...
+    that splits every Mesechet into each chapter. If the Mesechet is Berakhot
+    the file it creates are Berakhot.1, Berakhot.2, etc...
     """
-    for mesechet in mesechet_list:
-        name = ""
-        match = re.search('Mesechet\s(\S+)\n', mesechet)
-        if not match:
-            print "Problem in buildPages"
-        else:
-            name = match.group(1)
-            text = ""
-            count = 1
-            for line in mesechet.splitlines():
-                # regex for chapters
-                match_perek = re.search(r'Perek\s.+', line)
-                # regex for headers
-                match_mesechet = re.search(r'Mesechet\s.+', line)
-                if match_mesechet:  # if the line is a header skip it
-                    continue
-                if match_perek:  # if a line is a chapter
-                    if not text:
-                        pass  # if its the first chapter, dont do anything
-                    else:
-                        # regex for the name
-                        match = re.search(r'\.(\d)+', name)
-                        if match:
-                            result = match.group()
-                            if len(result) == 2:  # 1 digit after dot
-                                name = name[:-2]  # cut off digit + dot
-                            else:  # 2 digits after dot
-                                name = name[:-3]  # cut off digits + dot
-                        # change name to new name
-                        name = "%s.%d" % (name, count)
-                        count += 1
-                        makePage(name, text)  # actually make the page
-                        text = ""  # reset text
-                else:
-                    text += line + "\n"  # build text, adding in new lines
+    for key, value in mesechet_list.iteritems():
+        name = ''
+        for segment in key.split():
+            # Don't add Mesechet part of dictionary to name
+            if segment == key.split()[0]:
+                pass
+            else:
+                name += segment + " "
+        print name.strip()
+        # text = ""
+        # count = 1
+        for line in value.splitlines():
+            # regex for chapters
+            match_perek = re.search(r'Perek\s.+', line)
+            if line == '':
+                pass
+            if match_perek:  # if a line is a chapter
+                print line
+                pass
+            #     if not text:
+            # pass  # if its the first chapter, dont do anything
+            #     else:
+            # regex for the name
+            #         match = re.search(r'\.(\d)+', name)
+            #         if match:
+            #             result = match.group()
+            # if len(result) == 2:  # 1 digit after dot
+            # name = name[:-2]  # cut off digit + dot
+            # else:  # 2 digits after dot
+            # name = name[:-3]  # cut off digits + dot
+            # change name to new name
+            #         name = "%s.%d" % (name, count)
+            #         count += 1
+            # makePage(name, text)  # actually make the page
+            # text = ""  # reset text
+            # else:
+            # text += line + "\n"  # build text, adding in new lines
 
 
 def parseChapter(filename):
@@ -157,4 +160,4 @@ def postAll(prefix=None, after=None):
             continue
         if after and f < after:
             continue
-        parsed = postText(f)
+        postText(f)
