@@ -110,7 +110,7 @@ def parseChapter(filename):
     # count = 1
 
     for line in chapter.splitlines():
-        line = re.sub(r'\w+:\s', "", line)
+        line = re.sub(r'(\w+)?\s?\w+:\s', "", line)
         text.append(line)
 
     parsed = {
