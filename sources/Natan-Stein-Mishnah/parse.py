@@ -1,29 +1,36 @@
 import re
 import os
 import json
+import urllib
+import urllib2
+from urllib2 import HTTPError
+
+POSTHOST = "http://dev.sefaria.org"
+
 
 def getChapters(filename):
     """
     Builds Mesechet List from MishnayotNotes.txt
     """
     f = open(filename)
-    mesechet = ""
-    mesechet_list = []
+    currentMesechet = ""
+    mesechet_list = {}
+    reSeder = re.compile(r'Seder\s\S+\n')
+    reMishnayot = re.compile(r'Mishnayot Notes')
+    reMesechet = re.compile(r'Mesechet\s(\S+)\n?\s?(\S+)?\n')
     for line in f:
-        if line.strip() == '':
+        sederMatchCheck = reSeder.search(line)
+        mishnayotMatchCheck = reMishnayot.search(line)
+        mesechetMatchCheck = reMesechet.search(line)
+        if mishnayotMatchCheck or sederMatchCheck:
             pass
-        elif re.search(r'Seder\s\S+\n', line):
-            pass
-        elif re.search(r'Mishnayot Notes', line):
-            pass
-        elif re.search(r'Mesechet\s(\S+)\n', line):
-            if not mesechet:
-                mesechet = line
-            else:
-                mesechet_list.append(mesechet)
-                mesechet = line
+        elif mesechetMatchCheck:
+            line = line.strip()
+            mesechet_list[line] = ""
+            currentMesechet = line
         else:
-            mesechet += line
+            if currentMesechet:
+                mesechet_list[currentMesechet] += line
     return mesechet_list
 
 
@@ -36,67 +43,80 @@ def makePage(name, text):
     if name in ls:
         print "Already have %s" % (name)
         return
+    # pdb.set_trace()
     print "Building %s" % (name)
-    
-    f = open("./pages/%s" %(name), "w")
+    f = open("./pages/%s" % (name), "w")
+    text = text.rstrip()
     f.write(text)
     f.close()
 
     print 'OK'
 
+
 def buildPages(mesechet_list):
     """
     Take a list of Mesechet and then build a directory ./pages/:ref:
-    that splits every Mesechet into each chapter. If the Mesechet is Brachot
-    the file it creates are Brachot.1, Brachot.2, etc...
+    that splits every Mesechet into each chapter. If the Mesechet is Berakhot
+    the file it creates are Berakhot.1, Berakhot.2, etc...
     """
-    for mesechet in mesechet_list:
-        name = ""
-        match = re.search('Mesechet\s(\S+)\n', mesechet)
-        if not match:
-            print "Problem in buildPages"
+    for key, value in mesechet_list.iteritems():
+        mesechetName = buildName(key)
+        # Count for end of name
+        rePerek = re.compile(r'Perek\s.+')
+        perekList = {}
+        currentPerek = 0
+        count = 1
+        for line in value.splitlines():
+            if line == "":
+                continue
+            elif rePerek.search(line):
+                perekList[count] = ""
+                currentPerek = count
+                count += 1
+            else:
+                perekList[currentPerek] += line + "\n"
+        for perekKey, perekValue in perekList.iteritems():
+            makePage(mesechetName + ".%d" % perekKey, perekValue)
+    cleanPagesDirectory()
+
+
+def cleanPagesDirectory():
+    ls = os.listdir("./pages")
+    for f in ls:
+        if f == ".":
+            pass
+        elif f == "..":
+            pass
+        elif len(f) < 4:
+            os.remove("./pages/%s" % f)
+
+
+def buildName(key):
+    name = ''
+    for segment in key.split():
+        # Don't add Mesechet part of dictionary to name
+        if segment == key.split()[0]:
+            pass
         else:
-            name = match.group(1)
-            text = ""
-            count = 1
-            for line in mesechet.splitlines():
-                match_perek = re.search(r'Perek\s.+', line) # regex for chapters
-                match_mesechet = re.search(r'Mesechet\s.+', line) # regex for headers
-                if match_mesechet: # if the line is a header skip it
-                    continue
-                if match_perek: # if a line is a chapter
-                    if not text:
-                        pass # if its the first chapter, dont do anything
-                    else:
-                        match = re.search(r'\.(\d)+', name) # regex for the name
-                        if match:
-                            result = match.group()
-                            if len(result) == 2: # 1 digit after dot
-                                name = name[:-2] # cut off digit + dot
-                            else: # 2 digits after dot
-                                name = name[:-3] # cut off digits + dot
-                        name = "%s.%d" % (name, count) # change name to new name
-                        count += 1
-                        makePage(name, text) # actually make the page
-                        text = "" # reset text
-                else:
-                    text += line + "\n" # build text, adding in new lines
+            name += segment + " "
+    return name.strip()
+
 
 def parseChapter(filename):
     f = open("./pages/%s" % (filename))
     chapter = f.read()
     f.close()
     text = []
-    count = 1
+    # count = 1
 
     for line in chapter.splitlines():
-        line = re.sub(r'\w+:\s', "", line)
+        line = re.sub(r'(\w+)?\s?\w+:\s', "", line)
         text.append(line)
 
     parsed = {
         "language": "en",
-        "versionTitle": "TBD",
-        "versionUrl": "TBD"
+        "versionTitle": "Natan Stein Mishnah",
+        "versionSource": "www.sefaria.org/contributed-text"
     }
 
     parsed["text"] = text
@@ -106,7 +126,8 @@ def parseChapter(filename):
 def parseAll():
     ls = os.listdir("./pages")
     for filename in ls:
-        if not "." in filename or filename == ".DS_Store": continue
+        if not "." in filename or filename == ".DS_Store":
+            continue
         print filename
         parsed = parseChapter("%s" % (filename))
 
@@ -117,7 +138,32 @@ def parseAll():
             print "ok: found %d mishnas" % len(parsed["text"])
 
 
-# def test():
-#     chapters = getChapters("MishnayotNotes.txt")
-#     buildPages(chapters)
+def postText(filename):
+    f = open("./parsed/%s" % (filename), "r")
+    textJSON = f.read()
+    f.close()
+    ref = filename.replace("-", "_").replace("_1", "_I").replace("_2", "_II").replace(" ", "_")
 
+    url = '%s/api/texts/Mishna_%s' % (POSTHOST, ref)
+    values = {'json': textJSON,
+              'apikey': 'VCmaCDRYFADsixeW3njZUnDhEMqkBm7N9EhCmreuyyI'}
+    data = urllib.urlencode(values)
+    req = urllib2.Request(url, data)
+    try:
+        response = urllib2.urlopen(req)
+        print response.read()
+        print "Posted %s" % (ref)
+    except HTTPError, e:
+        print 'Error code: ', e.code
+        print e.read()
+
+
+def postAll(prefix=None, after=None):
+    files = os.listdir("./parsed")
+
+    for f in files:
+        if prefix and f.startswith(prefix):
+            continue
+        if after and f < after:
+            continue
+        postText(f)
