@@ -1,2 +1,2 @@
-cat mmm | grep 'ערוך השולחן אורח חיים' | sed 's/^.*href\=\"//g' | sed 's/\"\ title\=.*//g' | sed 's/^.*wiki\///g' | sort | uniq > nnn
+cat index.html | grep 'ערוך השולחן אורח חיים' | sed 's/^.*href\=\"//g' | sed 's/\"\ title\=.*//g' | sed 's/^.*wiki\///g' | sort | uniq > nnn
 
