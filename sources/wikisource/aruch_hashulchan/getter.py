@@ -1,40 +1,24 @@
 # -*- coding: utf-8 -*-
+import tools
 
-import urllib
-import urllib2
-import json
-import os
-import time
-
-def wikiGet(url, name):
-	"""
-	Takes a url and saves it to ./page/name
-	"""
-
-	ls = os.listdir("./pages")
-	if name in ls:
-		print "Already have %s" % (name)
-		return
-	print "Getting %s" % (name)
-	
-	request = urllib2.Request(url)
-	request.add_header("User-Agent", "Ari Hebrew book grabber 1.0 ari@elias-bachrach.com") #wikimedia said to do this
-	request.add_header("Host", "he.wikisource.org")
-	request.add_header("Accept", "text/html,text/json")
-	resp = urllib2.urlopen(request)
-
-
-	#print resp.getCode()
-	f = open("./pages/%s" %(name), "w")
-	f.write(resp.read())
-	f.close()
-
+'''
+This method that works by grabbing list of files from a file which was obtained by parsing the index.html file
 index = open("nnn", "r")
 for line in index:
 	line = line.rstrip()
 	title = urllib.unquote(line).decode('utf8')
 	wikiGet("http://he.wikisource.org/w/api.php?format=json&action=query&prop=revisions&rvprop=content&titles=%s" %(line), title)
-	
 index.close()
+'''
+
+#this method just iterates through the files based on name	
+#it's less "correct" but it works where there's no English name to get
+
+for siman in range(1, 698): #697 simanim in O.C.
+	title = "Aruch_HaShulchan.1." + str(siman)
+	name = "ערוך_השולחן_אורח_חיים_" + tools.numToHeb(siman)
+	tools.wikiGet("http://he.wikisource.org/w/api.php?action=query&prop=extracts&format=xml&exlimit=1&exsectionformat=plain&titles=%s" %(name), title)
+
+
 
 
