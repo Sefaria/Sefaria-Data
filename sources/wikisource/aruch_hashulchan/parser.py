@@ -2,14 +2,15 @@
 
 import tools
 
-tools.parseAll()
-#tools.postText("Aruch_HaShulchan.1.200") #currently in testing mode
-#tools.parse("pages/test2")
+#tools.parseAll()
+tools.postAll()
+
+#tools.postText('Aruch_HaShulchan.1.551')
 
 #todo
 
-#post one to test
 #post all
+#add progress counter to parseAll()
 #clean up temp files
 #git commit
 

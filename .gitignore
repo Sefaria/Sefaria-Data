@@ -9,7 +9,8 @@
 *.exe
 *.o
 *.so
-#.pyc
+*.pyc
+*.py~
 
 # Packages #
 ############
@@ -40,3 +41,8 @@
 Icon?
 ehthumbs.db
 Thumbs.db
+
+#other
+local_settings.py
+parser.py
+ERROR_LOG

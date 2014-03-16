@@ -54,21 +54,28 @@ def wikiGet(url, name):
 	f.close()
 
 def postText(filename):
+	print 'now doing %s' % (filename)
 	f = open("./parsed/%s" % (filename), "r")
-	#f = open("./parsed/test2", "r")
 	textJSON = f.read()
 	f.close()
-	
-	url = 'http://dev.sefaria.org/api/texts/%s' % (filename)
+	errorLog = open("ERROR_LOG", "w")	
+	url = 'http://dev.sefaria.org/api/texts/%s?count_after=0&index_after=0' % (filename)
 	values = {'json': textJSON, 'apikey': local_settings.apikey}
 	data = urllib.urlencode(values)
 	req = urllib2.Request(url, data)
 	try:
 		response = urllib2.urlopen(req)
-		print response.read()
+		#print response.read()
+		if ("error" in response.read()):
+			print "error occured - check log"
+			errorLog.write(filename)
+			errorLog.write(response.read())
 	except urllib2.HTTPError, e:
-		print 'Error code: ', e.code
-		print e.read()
+		print "error occured - check log"
+		errorLog.write(filename)
+		errorLog.write('Error code: '+str(e.code))
+		errorLog.write(e.read())
+	errorLog.close()
 
 def parse(filename):
 	print filename
@@ -85,8 +92,20 @@ def parse(filename):
 	#remove all line breaks
 	rawtext = re.sub('\n', '', rawtext)
 	#remove useless html
-	rawtext = re.sub('</?p>', '', rawtext)#testing only
-	rawtext = re.sub('</?dd>', '', rawtext)#testing only
+	'''
+	Someone will I'm sure be wondering why on earth I've decided to remove HTML in
+	this piecemeal fashion instead of using the single line here. The reason is
+ 	that I've found that many people like to add "fancy" things to wikisource
+	like indexes, links to related documents, etc. While they're very nice, the only
+	thing we want here in sefaria is the text. Lots of HTML is usually an indicator
+	of someone having added one of these "fancy" things. Because I want to remove
+	these things (when they occur), I only strip out the basic html that indicates
+	minor formatting. Once I'm done parsing I manually grep through all the files for
+	more HTML so I can find (and remove) other things people have added to the text 
+	that we don't want.
+	'''
+	rawtext = re.sub('</?p>', '', rawtext)
+	rawtext = re.sub('</?dd>', '', rawtext)
 	rawtext = re.sub('</?dl>', '', rawtext)
 	rawtext = re.sub('</?li?>', '', rawtext)
 	rawtext = re.sub('</?[uo]l>', '', rawtext)
@@ -96,21 +115,12 @@ def parse(filename):
 	rawtext = re.sub('</?big>', '', rawtext)
 	rawtext = re.sub('</?strong(\  class=\"selflink\")?>', '', rawtext)
 	rawtext = re.sub('</?br?>', '', rawtext) #<b> and <br>
-	#rawtext = re.sub('<.*?>', rawtext) # more forceful #will probably use after testing
+	#rawtext = re.sub('<.*?>', rawtext) # more forceful 
 	#split into seifim
 	p = re.compile('<h3>.*?</h3>', re.U)
 	finaltext = p.split(rawtext)
 	#print "found this many seifim: "+str(len(finaltext))
-	#strip out <p> tags and other html tags
 
-	#QA only
-	rawtext = re.sub('</?h3>', '', rawtext)
-	matches = re.findall('<.*?>', rawtext)#are there other html tags?	
-	print (matches)
-	atches = re.findall('\&', rawtext)#anything else still escaped?
-	print (atches) #empty is good ;-)
-	
-	#rawtext = rawtext.encode("utf-8").strip()
 	parsed = {
 		"versionTitle": "Wikisource Aruch HaShulchan",
 		"versionSource": "http://he.wikisource.org/wiki/%D7%A2%D7%A8%D7%95%D7%9A_%D7%94%D7%A9%D7%95%D7%9C%D7%97%D7%9F_%D7%90%D7%95%D7%A8%D7%97_%D7%97%D7%99%D7%99%D7%9D",
@@ -139,10 +149,13 @@ def parseAll():
 
 def postAll(prefix=None):
 	files = os.listdir("./parsed")
-	
+	total = len(files)
+	filenum = 1 # progress counter
 	for f in files:
 		if "." in f:
 			if not prefix or f.startswith(prefix):
+				print "now starting file %d " % (filenum)
 				parsed = postText(f)
+				filenum += 1
 		
 
