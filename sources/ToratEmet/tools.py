@@ -32,7 +32,7 @@ def preprocess(filekey):
 	with open("preprocess/" + filekey + ".html", 'wt') as out:
 		out.writelines(linesout)
 
-def parseText(filekey,ref):
+def parseText(filekey, ref, display=False):
 	text = []
 	chapter = []
 	current_chapter = '' 
@@ -45,7 +45,8 @@ def parseText(filekey,ref):
 			chapter_num = match.group(3)
 			verse = match.group(4)		
 		pasuk = a.next_sibling.next_sibling.strip().strip(':')
-
+		if(display):
+			print book, chapter_num, verse, pasuk
 		if not current_chapter:
 			current_chapter = chapter_num
 			
