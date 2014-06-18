@@ -103,3 +103,20 @@ def postText(ref, text):
 	except HTTPError, e:
 		print 'Error code: ', e.code
 		print e.read()
+
+#api/links/
+def postLink(link_obj, link_id = None):
+	url = 'http://' + server + '/api/links/?'
+	indexJSON = json.dumps(link_obj)
+	values = {
+		'json': indexJSON,
+		'apikey': apikey
+	}
+	data = urllib.urlencode(values)
+	print url, data
+	req = urllib2.Request(url, data)
+	try:
+		response = urllib2.urlopen(req)
+		print response.read()
+	except HTTPError, e:
+		print 'Error code: ', e.code
