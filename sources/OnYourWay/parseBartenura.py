@@ -21,7 +21,7 @@ xml_main_node_name = u'משנה'
 #this regex will match things like {א} and {טו} for the comment indices
 regex = re.compile(ur'\{([\u0590-\u05ea]{1,2})\}',re.UNICODE)
 
-#noth of these mishanh commentaries have similar structure in OnYourWay so we can use the same logic
+#both of these mishanh commentaries have similar structure in OnYourWay so we can use the same logic
 available_commentators = {
 	'bartenura' : {'xml_id' : '14', 'record' :{
 		"title": 'Bartenura',
@@ -41,7 +41,7 @@ available_commentators = {
 }
 
 
-
+""" Will create an index record """
 def create_book_records(commentator_name):
 	if commentator_name == 'mixed':
 		for commentator_name in available_commentators:
@@ -54,7 +54,7 @@ def create_book_record(commentator):
 	index = commentator['record']
 	Helper.createBookRecord(index)
 
-
+""" Main function, runs the appropriate functions according to params from CLI """
 def run_text_tool(commentator, handler):
 	print commentator
 	#first, get a mapping of hebrew book names to english ones so we can correctly store the OnYourWay xml data that is listed by hebrew title
@@ -71,21 +71,23 @@ def run_text_tool(commentator, handler):
 	for child in root:
 		for gchild in child:
 			print gchild.get('name').encode('utf-8'), ' in file: ', gchild.get('nid')
+			#either parsing or posting
 			handler(commentator, book_titles[gchild.get('name')], gchild.get('nid'))
 
-
+""" This functiona handles posting the parsed data to the database via the API """
 def run_post_to_api_calls(commentator, book_name, file_id):
 	create_book_records(commentator)
 	if commentator != 'mixed':
 		post_parsed_text(commentator, book_name)
 	else:
-		#we want both texts and to parse the links between them.
+		#we want both texts and the links between them.
 		for commentator_name in available_commentators:
 			post_parsed_text(commentator_name, book_name)
 		post_links(book_name)
 
-
+"""This function runs the various parsing methods toextract the commentary texts """
 def run_parser(commentator, book_name, file_id):
+	#the specific mishnah
 	file_name = 'source/' + file_id + '.xml'
 	book_tree = ET.parse(file_name)
 	tree_root = book_tree.getroot()
@@ -100,13 +102,16 @@ def run_parser(commentator, book_name, file_id):
 		bartenura_text = parse_masechet_commentary('bartenura', tree_root, parse_bartenura_text)
 		tosafot_text = parse_masechet_commentary('tosafot', tree_root, parse_tosafotyt_text)
 		links = parse_commentary_links(book_name, tree_root, bartenura_text)
+		#get rid of curly brackets, now links are saved
 		bartenura_text = strip_notation(bartenura_text)
 
 		save_parsed_text('bartenura', book_name, bartenura_text)
 		save_parsed_text('tosafot', book_name, tosafot_text)
 		save_links('bartenura', book_name, links)
 
+""" posts a text to the API """
 def post_parsed_text(commentator, book_name):
+	#assemble the title ref
 	commentator_title = unicode(available_commentators[commentator]['record']['title'],'utf-8')
 	ref = commentator_title + ' on ' + book_name
 	dir_name = 'preprocess_json/' + commentator
@@ -114,10 +119,13 @@ def post_parsed_text(commentator, book_name):
 		file_text = filep.read()
 	Helper.postText(ref, file_text, False)
 
+""" Saves a text to JSON """
 def save_parsed_text(commentator, book_name, text):
+	#assemble the title ref
 	commentator_title = unicode(available_commentators[commentator]['record']['title'],'utf-8')
 	ref = commentator_title + ' on ' + book_name
 	#print ref
+	#JSON obj matching the API requirements
 	text_whole = {
 		"title": ref,
 		"versionTitle": "On Your Way",
@@ -125,12 +133,15 @@ def save_parsed_text(commentator, book_name, text):
 		"language": "he",
 		"text": text,
 	}
+	#save
 	mkdir_p("preprocess_json/" + commentator + "/")
 	with open("preprocess_json/" + commentator + "/" + ref + ".json", 'w') as out:
 		json.dump(text_whole, out)
 
+""" posts links in a given book to the API """
 def post_links(book_name):
 	dir_name = 'preprocess_json/links'
+	#we saved an array of links, still need to build them each into the correct obj
 	with open(dir_name + "/" + book_name + ".json", 'r') as filep:
 		links_arr = json.load(filep)
 	for link in links_arr:
@@ -141,12 +152,13 @@ def post_links(book_name):
 		}
 		Helper.postLink(link_obj)
 
+"""Saves links in commentaries in a given mishnah"""
 def save_links(commentator, book_name, links_arr):
 	mkdir_p("preprocess_json/links/")
 	with open("preprocess_json/links/" + book_name + ".json", 'w') as out:
 		json.dump(links_arr, out)
 
-
+"""  util to make safe creating a dir """
 def mkdir_p(path):
     try:
         os.makedirs(path)
@@ -156,11 +168,12 @@ def mkdir_p(path):
         else: raise
 
 
-
+""" Handles parsing of a text """
 def parse_masechet_commentary(commentator, root, parsing_func):
-	#this will hold all the mishna's commentary in a 3 level deep array
+	#this will hold all the mishnah's commentary in a 3 level deep array
 	all_chapters = []
-	#xml has chapters under the root with the mishna text, and two commentaries under it.
+	#xml has chapters under the root with the mishnah text, and two commentaries under it.
+	#iterate over each mishnah and handle it according to parameters
 	for chap_num, chapter_node in enumerate(root.findall('chap'),1):
 		print "chapter ", chap_num, ": ", chapter_node.get('n').encode('utf-8')
 		mishnayot = []
@@ -171,7 +184,7 @@ def parse_masechet_commentary(commentator, root, parsing_func):
 			mishnayot.append(comments)
 	return all_chapters
 
-
+""" Handles parsing of the Bartenura """
 def parse_bartenura_text(mishnah_node):
 	comments = []
 	commentator_key = available_commentators['bartenura']['xml_id']
@@ -203,7 +216,7 @@ def parse_bartenura_text(mishnah_node):
 		comments.append(comment_verse)
 	return comments
 
-
+""" Handles parsing of the Tosafot Yom Tov"""
 def parse_tosafotyt_text(mishnah_node):
 	comments = []
 	commentator_key = available_commentators['tosafot']['xml_id']
@@ -237,6 +250,7 @@ def parse_tosafotyt_text(mishnah_node):
 	#if there is no commentary, this string should appear (somewhere inside the mishnah element)
 	return comments
 
+""" Pares links between bartenura and Tosafot YT """
 def parse_commentary_links(book_name, root, text_to_search):
 	#we will create a one dimensional array, once we have the correct ref for the link, we don't care about order
 	links = []
@@ -263,7 +277,7 @@ def parse_commentary_links(book_name, root, text_to_search):
 							links.append(arr)
 	return links
 
-
+""" Remove curly brackets from verses """
 def strip_notation(text):
 	for c,chapter in enumerate(text):
 		for m,mishnah in enumerate(chapter):
