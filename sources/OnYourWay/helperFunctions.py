@@ -11,6 +11,10 @@ import pprint
 apikey = 'any-string-for-your-key' #Add your API key
 server = 'localhost:8000'
 
+#for dev testing, normally comment out.
+#apikey = 'FU7OecLG98iDxedtYX3Obo8tCnnWDKhqvhRDlQ3fSig' #Add your API key
+#server = 'dev.sefaria.org'
+
 
 def getKnownTexts():
 	url = 'http://www.sefaria.org/api/index'
@@ -86,8 +90,11 @@ def createBookRecord(book_obj, oldTitle=''):
 
 
 
-def postText(ref, text):
-	textJSON = json.dumps(text)
+def postText(ref, text, serializeText = True):
+	if serializeText:
+		textJSON = json.dumps(text)
+	else:
+		textJSON = text
 	ref = ref.replace(" ", "_")
 	url = 'http://' + server + '/api/texts/%s?count_after=0&index_after=0' % ref
 	print url
@@ -105,11 +112,14 @@ def postText(ref, text):
 		print e.read()
 
 #api/links/
-def postLink(link_obj, link_id = None):
+def postLink(link_obj, serializeText = True):
 	url = 'http://' + server + '/api/links/?'
-	indexJSON = json.dumps(link_obj)
+	if serializeText:
+		textJSON = json.dumps(link_obj)
+	else:
+		textJSON = link_obj
 	values = {
-		'json': indexJSON,
+		'json': textJSON,
 		'apikey': apikey
 	}
 	data = urllib.urlencode(values)

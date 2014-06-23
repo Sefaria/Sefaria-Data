@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
+
+import argparse
 import sys
 import helperFunctions as Helper
 import json
 import re
+import os, errno
+import os.path
+
 
 try:
 	import xml.etree.cElementTree as ET
@@ -50,9 +55,8 @@ def create_book_record(commentator):
 	Helper.createBookRecord(index)
 
 
-def run_parser(commentator = "mixed"):
+def run_text_tool(commentator, handler):
 	print commentator
-	create_book_records(commentator)
 	#first, get a mapping of hebrew book names to english ones so we can correctly store the OnYourWay xml data that is listed by hebrew title
 	book_titles = Helper.build_title_map('Mishnah', 'heTitle', 'title')
 	#now get the OnYourWay table of contents in order to list the books we want
@@ -67,10 +71,21 @@ def run_parser(commentator = "mixed"):
 	for child in root:
 		for gchild in child:
 			print gchild.get('name').encode('utf-8'), ' in file: ', gchild.get('nid')
-			create_commentary_entries(commentator, book_titles[gchild.get('name')], gchild.get('nid'))
+			handler(commentator, book_titles[gchild.get('name')], gchild.get('nid'))
 
 
-def create_commentary_entries(commentator, book_name, file_id):
+def run_post_to_api_calls(commentator, book_name, file_id):
+	create_book_records(commentator)
+	if commentator != 'mixed':
+		post_parsed_text(commentator, book_name)
+	else:
+		#we want both texts and to parse the links between them.
+		for commentator_name in available_commentators:
+			post_parsed_text(commentator_name, book_name)
+		post_links(book_name)
+
+
+def run_parser(commentator, book_name, file_id):
 	file_name = 'source/' + file_id + '.xml'
 	book_tree = ET.parse(file_name)
 	tree_root = book_tree.getroot()
@@ -79,20 +94,27 @@ def create_commentary_entries(commentator, book_name, file_id):
 		parsing_func = parse_bartenura_text if commentator == 'bartenura' else parse_tosafotyt_text
 		comment_text = parse_masechet_commentary(commentator, tree_root, parsing_func)
 		print "==============================================================================================="
-		post_parsed_text(commentator, book_name, comment_text)
+		save_parsed_text(commentator, book_name, comment_text)
 	else:
 		#we want both texts and to parse the links between them.
 		bartenura_text = parse_masechet_commentary('bartenura', tree_root, parse_bartenura_text)
 		tosafot_text = parse_masechet_commentary('tosafot', tree_root, parse_tosafotyt_text)
 		links = parse_commentary_links(book_name, tree_root, bartenura_text)
-		print links
 		bartenura_text = strip_notation(bartenura_text)
 
-		post_parsed_text('bartenura', book_name, bartenura_text)
-		post_parsed_text('tosafot', book_name, tosafot_text)
-		post_links(links)
+		save_parsed_text('bartenura', book_name, bartenura_text)
+		save_parsed_text('tosafot', book_name, tosafot_text)
+		save_links('bartenura', book_name, links)
 
-def post_parsed_text(commentator, book_name, text):
+def post_parsed_text(commentator, book_name):
+	commentator_title = unicode(available_commentators[commentator]['record']['title'],'utf-8')
+	ref = commentator_title + ' on ' + book_name
+	dir_name = 'preprocess_json/' + commentator
+	with open(dir_name + "/" + ref + ".json", 'r') as filep:
+		file_text = filep.read()
+	Helper.postText(ref, file_text, False)
+
+def save_parsed_text(commentator, book_name, text):
 	commentator_title = unicode(available_commentators[commentator]['record']['title'],'utf-8')
 	ref = commentator_title + ' on ' + book_name
 	#print ref
@@ -103,9 +125,14 @@ def post_parsed_text(commentator, book_name, text):
 		"language": "he",
 		"text": text,
 	}
-	Helper.postText(ref, text_whole)
+	mkdir_p("preprocess_json/" + commentator + "/")
+	with open("preprocess_json/" + commentator + "/" + ref + ".json", 'w') as out:
+		json.dump(text_whole, out)
 
-def post_links(links_arr):
+def post_links(book_name):
+	dir_name = 'preprocess_json/links'
+	with open(dir_name + "/" + book_name + ".json", 'r') as filep:
+		links_arr = json.load(filep)
 	for link in links_arr:
 		link_obj = {
 			"type": "commentary",
@@ -114,6 +141,19 @@ def post_links(links_arr):
 		}
 		Helper.postLink(link_obj)
 
+def save_links(commentator, book_name, links_arr):
+	mkdir_p("preprocess_json/links/")
+	with open("preprocess_json/links/" + book_name + ".json", 'w') as out:
+		json.dump(links_arr, out)
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc: # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else: raise
 
 
 
@@ -122,11 +162,11 @@ def parse_masechet_commentary(commentator, root, parsing_func):
 	all_chapters = []
 	#xml has chapters under the root with the mishna text, and two commentaries under it.
 	for chap_num, chapter_node in enumerate(root.findall('chap'),1):
-		#print "chapter ", chap_num, ": ", chapter_node.get('n').encode('utf-8')
+		print "chapter ", chap_num, ": ", chapter_node.get('n').encode('utf-8')
 		mishnayot = []
 		all_chapters.append(mishnayot)
 		for m_num,mishnah_node in enumerate(chapter_node.findall('p'),1):
-			#print "mishnah ", m_num, ": ", mishnah_node.get('n').encode('utf-8')
+			print "mishnah ", m_num, ": ", mishnah_node.get('n').encode('utf-8')
 			comments = parsing_func(mishnah_node)
 			mishnayot.append(comments)
 	return all_chapters
@@ -150,11 +190,13 @@ def parse_bartenura_text(mishnah_node):
 		#print mishnah_commentary_node.text.encode('utf-8')
 		comments.append(mishnah_commentary_node.text)
 	for i,child in enumerate(mishnah_commentary_node,1):
+		#print "verse: ", i
 		#the "Dibur HaMatchil" is (normally) in the <b> tags (that we need to re-insert since they get dropped in the parsing. The rest of the comment is at the tail of that element with a superfluous period
 		if (child.text is not None and child.text.find(u"פירוש למשנה זו") != -1) or (child.tail is not None and child.tail.find(u"פירוש למשנה זו") != -1):
 			#print "no commentary"
 			break
-		elif child.text is None:
+		elif child.text is None or child.text.strip() == '':
+			#print "no text in verse"
 			continue
 		comment_verse = '<b>' + child.text + '</b>' + child.tail.replace(".", "", 1)
 		#print i, ") ", comment_verse.encode('utf-8')
@@ -236,8 +278,18 @@ def strip_notation(text):
 
 
 if __name__ == '__main__':
+	parser = argparse.ArgumentParser()
+	parser.add_argument('commentator', choices= list(available_commentators.copy().keys()) +['mixed'], help="choose what commentator to parse")
+	parser.add_argument("-p", "--preprocess", help="Perform the preprocess and parse the files but do not post them to the db", action="store_true")
+	parser.add_argument("-a", "--postapi", help="post data to API",
+                    action="store_true")
+	args = parser.parse_args()
 	#Map command line arguments to function arguments.
-	if len(sys.argv) <= 1:
-		print "please state what commentator to parse: ", list(available_commentators.keys())," or 'mixed' to parse both and parse the links between them"
-	else:
-		run_parser(*sys.argv[1:])
+	if args.preprocess:
+		print "preprocess on", args.commentator
+		run_text_tool(args.commentator, run_parser)
+	if args.postapi:
+		print args.commentator
+		print "posting to api"
+		run_text_tool(args.commentator, run_post_to_api_calls)
+		#
