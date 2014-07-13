@@ -113,7 +113,7 @@ def postText(ref, text, serializeText = True):
 
 #api/links/
 def postLink(link_obj, serializeText = True):
-	url = 'http://' + server + '/api/links/?'
+	url = 'http://' + server + '/api/links/'
 	if serializeText:
 		textJSON = json.dumps(link_obj)
 	else:
@@ -129,4 +129,13 @@ def postLink(link_obj, serializeText = True):
 		response = urllib2.urlopen(req)
 		print response.read()
 	except HTTPError, e:
-		print 'Error code: ', e.code
+		print e
+		print 'Error code: ', e.code, e.reason
+
+def run_once(func):
+    def wrapper(*args, **kwargs):
+        if not wrapper.has_run:
+            wrapper.has_run = True
+            return func(*args, **kwargs)
+    wrapper.has_run = False
+    return wrapper

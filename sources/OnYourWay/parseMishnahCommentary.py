@@ -3,6 +3,7 @@
 import argparse
 import sys
 import helperFunctions as Helper
+from helperFunctions import run_once
 import json
 import re
 import os, errno
@@ -42,6 +43,7 @@ available_commentators = {
 
 
 """ Will create an index record """
+@run_once
 def create_book_records(commentator_name):
 	if commentator_name == 'mixed':
 		for commentator_name in available_commentators:
@@ -114,7 +116,7 @@ def post_parsed_text(commentator, book_name):
 	#assemble the title ref
 	commentator_title = unicode(available_commentators[commentator]['record']['title'],'utf-8')
 	ref = commentator_title + ' on ' + book_name
-	dir_name = 'preprocess_json/' + commentator
+	dir_name = 'preprocess_json/mishnahCommentary/' + commentator
 	with open(dir_name + "/" + ref + ".json", 'r') as filep:
 		file_text = filep.read()
 	Helper.postText(ref, file_text, False)
@@ -134,13 +136,14 @@ def save_parsed_text(commentator, book_name, text):
 		"text": text,
 	}
 	#save
-	mkdir_p("preprocess_json/" + commentator + "/")
-	with open("preprocess_json/" + commentator + "/" + ref + ".json", 'w') as out:
+	mkdir_p("preprocess_json/mishnahCommentary/" + commentator + "/")
+	with open("preprocess_json/mishnahCommentary/" + commentator + "/" + ref + ".json", 'w') as out:
 		json.dump(text_whole, out)
 
 """ posts links in a given book to the API """
 def post_links(book_name):
-	dir_name = 'preprocess_json/links'
+	dir_name = 'preprocess_json/mishnahCommentary/links'
+	links=[]
 	#we saved an array of links, still need to build them each into the correct obj
 	with open(dir_name + "/" + book_name + ".json", 'r') as filep:
 		links_arr = json.load(filep)
@@ -150,12 +153,13 @@ def post_links(book_name):
 			"refs": link,
 			"anchorText": "",
 		}
-		Helper.postLink(link_obj)
+		links.append(link_obj)
+	Helper.postLink(links)
 
 """Saves links in commentaries in a given mishnah"""
 def save_links(commentator, book_name, links_arr):
-	mkdir_p("preprocess_json/links/")
-	with open("preprocess_json/links/" + book_name + ".json", 'w') as out:
+	mkdir_p("preprocess_json/mishnahCommentary/links/")
+	with open("preprocess_json/mishnahCommentary/links/" + book_name + ".json", 'w') as out:
 		json.dump(links_arr, out)
 
 """  util to make safe creating a dir """
