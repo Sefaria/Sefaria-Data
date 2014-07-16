@@ -21,5 +21,5 @@ For Sefaria source code see [Sefaria-Project](https://github.com/blockspeiser/Se
 * `txt/` - simple plain text output
 *  `xml/` - simple xml output (coming soon)
 *  `misc/` - misc small data files about texts
-*  `sources/` - original digital files that were manipulated to producde our data, along with scripts used in parsing.
+*  `sources/` - original digital files that were manipulated to produce our data, along with scripts used in parsing.
 
