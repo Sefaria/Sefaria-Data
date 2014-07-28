@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import os, errno
 import urllib
 import urllib2
 from urllib2 import URLError, HTTPError
@@ -13,7 +14,7 @@ server = 'localhost:8000'
 
 #for dev testing, normally comment out.
 #apikey = 'FU7OecLG98iDxedtYX3Obo8tCnnWDKhqvhRDlQ3fSig' #Add your API key
-#server = 'dev.sefaria.org'
+#server = 'eph.sefaria.org'
 
 
 def getKnownTexts():
@@ -133,9 +134,19 @@ def postLink(link_obj, serializeText = True):
 		print 'Error code: ', e.code, e.reason
 
 def run_once(func):
-    def wrapper(*args, **kwargs):
-        if not wrapper.has_run:
-            wrapper.has_run = True
-            return func(*args, **kwargs)
-    wrapper.has_run = False
-    return wrapper
+	def wrapper(*args, **kwargs):
+		if not wrapper.has_run:
+			wrapper.has_run = True
+			return func(*args, **kwargs)
+	wrapper.has_run = False
+	return wrapper
+
+
+"""  util to make safe creating a dir """
+def mkdir_p(path):
+	try:
+		os.makedirs(path)
+	except OSError as exc: # Python >2.5
+		if exc.errno == errno.EEXIST and os.path.isdir(path):
+			pass
+		else: raise

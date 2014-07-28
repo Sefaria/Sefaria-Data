@@ -136,7 +136,7 @@ def save_parsed_text(commentator, book_name, text):
 		"text": text,
 	}
 	#save
-	mkdir_p("preprocess_json/mishnahCommentary/" + commentator + "/")
+	Helper.mkdir_p("preprocess_json/mishnahCommentary/" + commentator + "/")
 	with open("preprocess_json/mishnahCommentary/" + commentator + "/" + ref + ".json", 'w') as out:
 		json.dump(text_whole, out)
 
@@ -158,18 +158,9 @@ def post_links(book_name):
 
 """Saves links in commentaries in a given mishnah"""
 def save_links(commentator, book_name, links_arr):
-	mkdir_p("preprocess_json/mishnahCommentary/links/")
+	Helper.mkdir_p("preprocess_json/mishnahCommentary/links/")
 	with open("preprocess_json/mishnahCommentary/links/" + book_name + ".json", 'w') as out:
 		json.dump(links_arr, out)
-
-"""  util to make safe creating a dir """
-def mkdir_p(path):
-    try:
-        os.makedirs(path)
-    except OSError as exc: # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else: raise
 
 
 """ Handles parsing of a text """
