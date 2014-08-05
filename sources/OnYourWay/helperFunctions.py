@@ -50,12 +50,13 @@ def flatten_by_keyvalue(target_dict, origin_dict, child_name, iterate_over_child
 		#print "type of encoded ", type(trim_key.encode('utf-8'))
 		target_dict[trim_key] = origin_dict[value_str]
 	#if the child struct is in an array
-	elif iterate_over_child:
-		for sub_dict in origin_dict[child_name]:
-			flatten_by_keyvalue(target_dict, sub_dict, child_name, iterate_over_child, key_str, value_str)
-	#not really used yet
-	else:
-		flatten_by_keyvalue(target_dict, origin_dict[child_name], child_name, iterate_over_child, key_str, value_str)
+	elif child_name in origin_dict:
+		if iterate_over_child:
+			for sub_dict in origin_dict[child_name]:
+				flatten_by_keyvalue(target_dict, sub_dict, child_name, iterate_over_child, key_str, value_str)
+		#not really used yet
+		else:
+			flatten_by_keyvalue(target_dict, origin_dict[child_name], child_name, iterate_over_child, key_str, value_str)
 
 
 
