@@ -9,13 +9,13 @@ import json
 import xml.etree.ElementTree as ET
 import pprint
 
-apikey = 'any-string-for-your-key' #Add your API key
-server = 'localhost:8000'
+#apikey = 'any-string-for-your-key' #Add your API key
+
 
 #for dev testing, normally comment out.
-#apikey = 'FU7OecLG98iDxedtYX3Obo8tCnnWDKhqvhRDlQ3fSig' #Add your API key
-#server = 'eph.sefaria.org'
-
+apikey =  #Add your API key
+#server = 'www.sefaria.org'
+server = 'localhost:8000'
 
 def getKnownTexts():
 	url = 'http://www.sefaria.org/api/index'
