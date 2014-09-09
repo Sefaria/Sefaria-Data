@@ -9,11 +9,13 @@ import re
 import array
 from bs4 import BeautifulSoup
 
+
 def soup(filename):
-        f = open(filename, "r")
-        page = f.read()
-        f.close()
-        return BeautifulSoup(page)
+	f = open(filename, "r")
+	page = f.read()
+	f.close()
+	return BeautifulSoup(page)
+
 
 def preprocess(filekey):
 	linesout = []
@@ -21,18 +23,19 @@ def preprocess(filekey):
 		for line in lines:
 			linesout.append(line)
 			if '<body lang=EN-US' in line:
-				 break;
+				break
 		for line in lines:
 			if "BODY_START" in line:
 				linesout.append(line)
-				break;
+				break
 		for line in lines:
 			linesout.append(line)
 	
 	with open("preprocess/" + filekey + ".html", 'wt') as out:
 		out.writelines(linesout)
 
-def parseText(filekey,ref):
+
+def parseText(filekey, ref, display=False):
 	text = []
 	chapter = []
 	current_chapter = '' 
@@ -45,7 +48,8 @@ def parseText(filekey,ref):
 			chapter_num = match.group(3)
 			verse = match.group(4)		
 		pasuk = a.next_sibling.next_sibling.strip().strip(':')
-
+		if(display):
+			print book, chapter_num, verse, pasuk
 		if not current_chapter:
 			current_chapter = chapter_num
 			
@@ -68,6 +72,7 @@ def parseText(filekey,ref):
 	json.dump(text_whole, f)
 	return text_whole
 
+
 def createBookRecord(server, apikey, ref, variant, category, oldTitle=''):
 	index = {
 		"title": ref,
@@ -76,13 +81,13 @@ def createBookRecord(server, apikey, ref, variant, category, oldTitle=''):
 		"categories": [category],
 	}
 
-	if(oldTitle):
+	if oldTitle:
 		index['oldTitle'] = oldTitle
 
 	url = 'http://' + server + '/api/index/' + index["title"].replace(" ", "_")
 	indexJSON = json.dumps(index)
 	values = {
-		'json': indexJSON, 
+		'json': indexJSON,
 		'apikey': apikey
 	}
 	data = urllib.urlencode(values)
@@ -93,7 +98,6 @@ def createBookRecord(server, apikey, ref, variant, category, oldTitle=''):
 		print response.read()
 	except HTTPError, e:
 		print 'Error code: ', e.code
-
 
 
 def postText(server, apikey, ref, text):
@@ -113,4 +117,3 @@ def postText(server, apikey, ref, text):
 	except HTTPError, e:
 		print 'Error code: ', e.code
 		print e.read()
-		
