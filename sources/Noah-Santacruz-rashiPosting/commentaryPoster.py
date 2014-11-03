@@ -11,6 +11,8 @@ from fuzzywuzzy import process
 import os
 import json
 import re
+import local_settings 
+
 #NOTE: DHm = dibur hamaschil = single commentary of rashi or tosafos
 
 #this file takes parsed rashi and tosafos commentary on gemara and posts it to the corresponding lines of gemara on sefaria.org
@@ -129,7 +131,7 @@ def post_dhm(mesechta,daf,dhmObj,engComm):
         indexJson = json.dumps(index)
         values = {
                 'json': indexJson,
-                'apikey': 'BFFjEtnWHZbbHEut6jMw9gKlXWzRlJeyMSzDUyxuw60'
+                'apikey': local_settings.apikey
                 
         }
 
