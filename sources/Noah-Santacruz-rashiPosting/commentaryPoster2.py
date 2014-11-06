@@ -2,9 +2,9 @@
 
 #By Noah Santacruz 2014
 #github username: nsantacruz
-#modified by Ari to run in Python 2.7
+#modified by Ari to run in Python 2.7 on Linux as well as some logging changes and other minor enhancements
 
-#need to make it do dapim in order to make logs readable
+#Stats are broken
 
 import urllib2
 import urllib
@@ -48,7 +48,7 @@ import local_settings
 
 debug = False
 parsed_root = "./" # file location of parsed rashi/tosafos files. Read through these and check where each dhm appears on daf
-sefaria_root = "http://dev.sefaria.org" #root of where text is located. also could be dev.sefaria.org
+sefaria_root = "http://www.sefaria.org" #root of where text is located. also could be dev.sefaria.org
 
 #here are some variables to help determine which rashi matches which line of gemara
 stringCutoff = 79 
@@ -132,12 +132,15 @@ def post_amud(mesechta,daf,engComm):
         text = [[] for x in range(len(dafLines))]
         for dhmObj in dafDHms:
                 numPosted += 1
-                if len(dhmObj['postable_lines']) > 1 or len(dhmObj['postable_lines']) == 0:
+                if len(dhmObj['postable_lines']) > 1:
                         print('(%d/%d) dhm ambiguous ' % (numPosted,len(dafDHms)))
                         continue
-                print('(%d/%d) dhm posted ' % (numPosted,len(dafDHms)))
-                currLine = dhmObj['postable_lines'][0]
-                text[currLine-1].append(dhmObj['text'])
+                if len(dhmObj['postable_lines']) == 0:
+			print('(%d/%d) dhm not found ' % (numPosted,len(dafDHms)))
+			continue
+                currLine = dhmObj['postable_lines'][0] #removed -1  - assuming win vs linux issue
+                text[currLine].append(dhmObj['text'])
+		print("("+str(numPosted)+"/"+str(len(dafDHms))+") dhm posted to line "+str(int(currLine)))
         #I know this url looks really crypt...Isn't it cool and dynamic!
         url = '%s/api/texts/%s_on_%s.%s' % (sefaria_root,engComm,mesechta,daf)
         temp.write(str(text))
@@ -192,8 +195,7 @@ def get_daf(mesechta,daf,withCommentary=False):
 #        if '[]' in string:
 #                return False
 #        else:
-                return True
-
+#                return True
 
 def get_line_with_text(mesechta,daf,textIndex,startIndex=1,lastDHm=False):
         originalStartIndex = startIndex #keep track because we reset it later on
@@ -250,6 +252,7 @@ def get_line_with_text(mesechta,daf,textIndex,startIndex=1,lastDHm=False):
                 if prevText is not None:
                         if strict_find(prevText,prevTextIndex,response,i) or fuzzy_find(prevText,prevTextIndex,response,i,True):
                                 prevIndexes.append(i)
+				#print "XX text is "+text+" and text index is "+str(textIndex)+" and i is "+str(i+1)
                 try:
                         #see if this this dhm has already been found on this line
                         dafDHms[textIndex]['lines'].index(i)
@@ -262,6 +265,7 @@ def get_line_with_text(mesechta,daf,textIndex,startIndex=1,lastDHm=False):
                         if dhmJustFound:
                                 dhmJustFound = False
                         if strict_find(text,textIndex,response,i) or fuzzy_find(text,textIndex,response,i):
+				#print "   text is "+text+" and text index is "+str(textIndex)+" and line is "+str(i+1)
                                 #f.write("\n response long" + response + " text " + text)
                                 #f.write("\n\tindex: " + str(i))
                                 #just found new DHm, means that old DHm can be anywhere in range(prevIndex,startIndex)
@@ -386,8 +390,6 @@ def replaceAbbrevs(text):
 
         return unabbrevText
 
-                      
-
 
 def filterLines(scoreDict):
         _max = 0
@@ -417,6 +419,7 @@ def push_commentary(mesechta,daf,amud,commentary):
         engMesechta = mesechta_translator(mesechta.replace('_',' '))
         engDaf = daf_translator(daf,amud)
         print(engMesechta,engDaf,engComm)
+	print(engComm + '/' + mesechta + '_' + daf + '_' + amud + '.txt')
         commFile = open(engComm + '/' + mesechta + '_' + daf + '_' + amud + '.txt','r')
         commText = commFile.read()
         commFile.close()
@@ -483,9 +486,10 @@ def push_mesechta(mesechta,commentary,startDaf=None):
         i = 0
         hebMes = mesechta_translator(mesechta,False)
         hebCommentary = commentary_translator(commentary)
-        for filename in os.listdir(parsed_root + commentary):
+        for filename in sorted(os.listdir(parsed_root + commentary)):
                 #loop through all amudim, but only amudim in the mesechta you want to post
                 if filename.find(hebMes) != -1:
+			#print filename  # masechet, daf, amud
                         nameList = filename.split('_')
                         
                         if len(nameList) == 3:
@@ -534,7 +538,7 @@ def printDafDHms():
         if numAmudDHms >= 1:
                 f.write("\nAMUD STATS: not found percentage = " + str(round(numAmudNotFound/numAmudDHms * 10000)/100) + "%")
         else:
-                f.write("\n AMUD STATS: not found percentage = 0% (b/c there were no rashis)")
+                f.write("\n AMUD STATS: not found percentage = 0% (b/c there were none)")
         f.write("\n-----------------------------------------------")
         
 
@@ -676,12 +680,12 @@ def daf2num(dafString):
         return 2*int(daf)
 
 
-selectedMesechta = 'Berakhot'
-selectedCommentary = 'Rashi'
-startDaf = ''
-#selectedMesechta = raw_input('please type (in english exactly like sefaria\'s naming scheme) the name of the mesechta whose commentary you would like to post\n')
-#selectedCommentary = raw_input('Thanks! now type (in english upper-case) the commentary you\'d like to post\n')
-#startDaf = raw_input('Cool. If you want to start from a daf other than 2a, input that. Else, press enter\n')
+#selectedMesechta = 'Berakhot'
+#selectedCommentary = 'Tosafot'
+#startDaf = ''
+selectedMesechta = raw_input('please type (in english exactly like sefaria\'s naming scheme) the name of the mesechta whose commentary you would like to post\n')
+selectedCommentary = raw_input('Thanks! now type (in english upper-case) the commentary you\'d like to post\n')
+startDaf = raw_input('Cool. If you want to start from a daf other than 2a, input that. Else, press enter\n')
 if selectedMesechta.split(' ')[len(selectedMesechta.split(' '))-1] == '-d':
                 print("NOTE: Debug mode has been activated. You have been warned")
                 sefaria_root = sefaria_root.replace('www','dev')
@@ -689,12 +693,14 @@ if selectedMesechta.split(' ')[len(selectedMesechta.split(' '))-1] == '-d':
                 debug = True
 logdir = ""+parsed_root+"logs/"+selectedMesechta.lower()+"/"
 
-f = open(logdir+'logFileAll.txt','a')
-eFile = open(logdir+'logFileNotFound.txt','a')
-aFile = open(logdir+'logFileAmbiguous.txt','a')
-fd = open(logdir+'dlogFileAll.txt','a')
-edFile = open(logdir+'dlogFileNotFound.txt','a')
-adFile = open(logdir+'dlogFileAmbiguous.txt','a')
+f = open(logdir+selectedCommentary+'logFileAll.txt','a')
+eFile = open(logdir+selectedCommentary+'logFileNotFound.txt','a')
+aFile = open(logdir+selectedCommentary+'logFileAmbiguous.txt','a')
+if debug:
+	fd = open(logdir+selectedCommentary+'dlogFileAll.txt','a')
+	edFile = open(logdir+selectedCommentary+'dlogFileNotFound.txt','a')
+	adFile = open(logdir+selectedCommentary+'dlogFileAmbiguous.txt','a')
+
 temp = open('yo.txt','w')
 
 #print daf_translator('אבגדהוזחטיכלמנסעפצק', 'א')
