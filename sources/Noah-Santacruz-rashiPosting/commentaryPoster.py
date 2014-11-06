@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 #By Noah Santacruz 2014
 #github username: nsantacruz
 
@@ -43,8 +45,8 @@ import local_settings
 
 debug = False
 gemara_root = "c:\\My Web Sites\\WikiGemara2\\web\\" # where wikisource-downloaded gemara files are located
-parsed_root = "C:\\Users\\nss\\Documents\\code\\sefRashPost" # file location of parsed rashi/tosafos files. Read through these and check where each dhm appears on daf
-sefaria_root = "http://www.sefaria.org" #root of where text is located. also could be dev.sefaria.org
+parsed_root = "./" # file location of parsed rashi/tosafos files. Read through these and check where each dhm appears on daf
+sefaria_root = "http://dev.sefaria.org" #root of where text is located. also could be dev.sefaria.org
 
 #here are some variables to help determine which rashi matches which line of gemara
 stringCutoff = 79 
@@ -58,36 +60,10 @@ listOfPrefixes = ['ב','ה','ד','מ','ו','ל']
 #these words are not considered part of the DHm
 unwantedWords = ["כו'","'כו","כו","וכו'",'ה"ג','גרסינן',"גמ'","וגו'"]
 #convert all abbreviations to full form
-abbreviations = {'אא"כ':'אלא אם כן',
-                 'אע"ג':'אף על גב',
-                 'אע"פ':'אף על פי',
-                 'א"ר':'אמר רב',
-                 'ב"ה':'בית הלל',
-                 'ב"ש':'בית שמאי',
-                 "ג'":"שלש",
-                 "ד'":"ארבע",
-                 'ה"מ':'הני מילי',
-                 'ה"נ':'הכי נמי',
-                 'הנ"מ':'הני מילי',
-                 'ה"ק':'הכי קאמר',
-                 "י'":'עשר',
-                 'י"א':'יש אומרים',
-                 'יו"ט':'יום טוב',
-                 'למ"ד':'למאן דאמר',
-                 'מ"מ':'מכל מקום',
-                 'מנה"מ':'מנא הני מילי',
-                 'קמ"ל':'קא משמע לן',
-				 'קס"ד':'קא סלקא דעתך',
-                 'ק"ש':'קרית שמע',
-                 "ר'":'רב',
-                 'ת"ש':'תא שמע',
-                 'ת"ר':'תנו רבנן',
-                 
-                 
-                 
-                 
-                 
-                 }
+
+abbreviations = {'אא"כ':'אלא אם כן', 'אע"ג':'אף על גב', 'אע"פ':'אף על פי', 'א"ר':'אמר רב', 'ב"ה':'בית הלל',  'ב"ש':'בית שמאי',  "ג'":"שלש","ד'":"ארבע", 'ה"מ':'הני מילי',  'ה"נ':'הכי נמי', 'הנ"מ':'הני מילי', 'ה"ק':'הכי קאמר',  "י'":'עשר', 'י"א':'יש אומרים', 'יו"ט':'יום טוב', 'למ"ד':'למאן דאמר', 'מ"מ':'מכל מקום', 'מנה"מ':'מנא הני מילי', 'קמ"ל':'קא משמע לן', 'קס"ד':'קא סלקא דעתך',  'ק"ש':'קרית שמע', "ר'":'רב', 'ת"ש':'תא שמע',  'ת"ר':'תנו רבנן',
+                }
+
 dafLines = {}
 dafDHms = []
 #some stats
@@ -810,12 +786,10 @@ aFile = open('logFileAmbiguous.txt','a',encoding='utf-8')
 fd = open('dlogFileAll.txt','a',encoding='utf-8')
 edFile = open('dlogFileNotFound.txt','a',encoding='utf-8')
 adFile = open('dlogFileAmbiguous.txt','a',encoding='utf-8')
-temp = open('yo.txt','w',encoding='utf-8')
+#temp = open('yo.txt','w',encoding='utf-8')
 #push_commentary('סוכה','מא','א','רש"י')
 #push_all_commentary()
 #f.write(replaceAbbrevs('אע"פ ששגכךשףגחכש שגכךלח גכש שגכךלח גכש ר\''))
-#print(str(filterLines({28:1,27:0.75})))
-#post_dhm('Sukkah','4b',{'dhm':'test','text':'קוורטי','postable_lines':[1],'numOnLine':1})
 selectedMesechta = input('please type (in english exactly like sefaria\'s naming scheme) the name of the mesechta whose commentary you would like to post\n')
 if selectedMesechta.split(' ')[len(selectedMesechta.split(' '))-1] == '-d':
                 print("NOTE: Debug mode has been activated. You have been warned")
