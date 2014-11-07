@@ -48,7 +48,7 @@ import local_settings
 
 debug = False
 parsed_root = "./" # file location of parsed rashi/tosafos files. Read through these and check where each dhm appears on daf
-sefaria_root = "http://dev.sefaria.org" #root of where text is located. also could be dev.sefaria.org
+sefaria_root = "http://www.sefaria.org" #root of where text is located. also could be dev.sefaria.org
 
 #here are some variables to help determine which rashi matches which line of gemara
 stringCutoff = 79 
