@@ -703,8 +703,6 @@ if debug:
 
 temp = open('yo.txt','w')
 
-#print daf_translator('אבגדהוזחטיכלמנסעפצק', 'א')
-
 if (startDaf):
     push_mesechta(selectedMesechta,selectedCommentary,startDaf);
 else:
