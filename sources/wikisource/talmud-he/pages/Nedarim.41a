@@ -1,294 +1,0 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<!--  ****************************************************************hotspotlogin_header1.inc.html**************************************************************** --><html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
-<head>
-<title>LOGIN TO HOTSPOT >>></title>
-
-
-
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<link type="text/css" rel="stylesheet" href="/customer/templates/custom/HousingWorksUBC/style.css">
-
-<!--[if lt IE 7]>
-<script type="text/javascript" src="/modules/transparent.js"></script> 
-<![endif]-->
-
-<script type="text/javascript" src="/customer/templates/default/jquery-1.5.1.js"></script>
-
-  <script type="text/javascript"> $(document).ready(function() { // hides the slickbox as soon as the DOM is ready  $('#slickbox').hide(); // shows the slickbox on clicking the noted link  $('#slick-show').click(function() { $('#slickbox').slideDown('fast'); 	 return false;  }); // hides the slickbox on clicking the noted link  $('#slick-hide').click(function() { $('#slickbox').hide('fast'); return false;  }); // toggles the slickbox on clicking the noted link  $('#slick-toggle').click(  	function()   	{ 		$('#slickbox').slideDown(150).delay(0); 	$('#slick-toggle').hide();	 		return false;  	}  );      	 $('#slick-toggle2').click(function(){		 	  	$('#slick-toggle').show();	      $('#slickbox').slideUp(150).delay(0);	 	});			 	}); </script>
- 
- 
- <script type="text/javascript"> 
-
-function toggle_acc()
-{
-	if (document.getElementById('slickbox').style.display=='none')
-	{
-	
-	document.getElementById('slickbox').style.display='block';
-	
-	
-	document.getElementById('rarrow').src='images_main/arrow_up_black.png';
-	
-	document.getElementById('int').style.color='#567c19';
-	
-	
-	return;
-	
-	}
-	
-	if (document.getElementById('slickbox').style.display=='block')
-	{
-	
-	document.getElementById('slickbox').style.display='none';
-
-		document.getElementById('rarrow').src='images_main/arrow_down.png';
-		
-		
-			document.getElementById('int').style.color='#fff';
-	
-	return;
-	
-	}
-	
-}
-
-</script>
- 
- <style>
-
-</style>
-
-</head><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
-<!--  ****************************************************************hotspotlogin_header2.inc.html**************************************************************** --><html> 
-<head> 
-<title>{OPERATOR}</title> 
-<link type="text/css" rel="stylesheet" href="{BASEPATH}/style.css">
-</head> 
-<body> 
-<div id="container"> 
-	<div id="header"> 
-<h1>Housing Works Bookstore Cafe</h1>
-
-<!-- {OPERATOR}-->
-	</div> 
-	<div id="mission"> 
-<!-- customer_images/customer-logo.png -->
-<h3>
-Housing Works is a healing community of people living with and affected by HIV/AIDS. Our mission is to end the dual crises of homelessness and AIDS through relentless advocacy, the provision of lifesaving services, and entrepreneurial businesses that sustain our efforts.</h3>
-	
-	</div> 
-	<div id="action"> 
-		<ul> 
-			<li id="nav-shop"><a href="http://www.shophousingworks.com">Shop</a></li> 
-			<li id="nav-donate"><a href="http://www.housingworks.org/donate">Donate</a></li> 
-			<li id="nav-volunteer"><a href="http://www.housingworks.org/volunteer">Volunteer</a></li> 
-			<li id="nav-advocate"><a href="http://www.housingworks.org/activism">Advocate</a></li> 
-		</ul> 
-	</div> 
-
-
-<!---<body style="margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px;" onLoad="">
-
---->
-
-
-<!-- header table-->
-<!---<center>
-
-
- 
-
-
-<table id="Table_02" width="100%" height=30 border="0" cellpadding="0" cellspacing="0">
-
-         	<tr valign="top">
-		<td height="90" width=100%   background="customer_images/shadow_big_green.jpg" style="background-position:bottom; background-repeat:no-repeat;background-color:#f0f0f0;" valign="top">   
-        
-         <center>  --->
-         
-         <!-- language bar begin -->
-       <!-- <table  width="400" height="29" border="0" cellpadding="0" cellspacing="0" style="vertical-align:top;"><tr valign="top">
-		<td valign="top"><img src="customer_images/lang_01.png"  alt=""></td>
-        
-		<td width="400"  valign="top" style="background-image:url(customer_images/lang_02.png);background-repeat:repeat-x; background-position:top;">
-        <center>
-            
-      <table width="550" style="margin-top:1px;" cellpadding="0" cellspacing="0" border=0><tr valign="middle">
-        
-    <td align=center valign="middle" width=20 >
-        	<a href="/customer/prelogin.php?lang=en&operator=HousingWorksUBC&location_id=1" style="text-decoration:none;"><img src="customer_images/flag_en.gif" style="margin-left:4px;margin-right:2px;margin-top:6px;margin-bottom:-1px;display:inline;" ></a><a href="/customer/prelogin.php?lang=en&operator=HousingWorksUBC&location_id=1" style="">Eng</a></td>
-      
-       <td align=center  width=25 >
-        	<a href="/customer/prelogin.php?lang=de&operator=HousingWorksUBC&location_id=1" style="text-decoration:none"><img src="customer_images/flag_de.gif" style="margin-left:4px;margin-right:2px;margin-top:6px;margin-bottom:-1px;display:inline;"></a><a href="/customer/prelogin.php?lang=de&operator=HousingWorksUBC&location_id=1" style="">Deu</a></td>
-      
-        <td align=center  width=20>
-        	<a href="/customer/prelogin.php?lang=es&operator=HousingWorksUBC&location_id=1" style="text-decoration:none"><img src="customer_images/flag_es.gif" style="margin-left:4px;margin-right:2px;margin-top:6px;margin-bottom:-1px;display:inline;" ></a><a href="/customer/prelogin.php?lang=es&operator=HousingWorksUBC&location_id=1" style="">Esp</a>
-      </td>
-      
-       <td align=center  width=20>
-        	<a href="/customer/prelogin.php?lang=pt&operator=HousingWorksUBC&location_id=1" style="text-decoration:none"><img src="customer_images/flag_pt.gif" style="margin-left:4px;margin-right:2px;margin-top:6px;margin-bottom:-1px;display:inline;" ></a><a href="/customer/prelogin.php?lang=pt&operator=HousingWorksUBC&location_id=1" style="">Por</a>
-      </td>
-      
-       <td align=center  width=20><a href="/customer/prelogin.php?lang=it&operator=HousingWorksUBC&location_id=1" style="text-decoration:none"><img src="customer_images/flag_it.gif" style="margin-left:4px;margin-right:2px;margin-top:6px;margin-bottom:-1px;display:inline;" ></a><a href="/customer/prelogin.php?lang=it&operator=HousingWorksUBC&location_id=1" style="">Ita</a>
-      </td>
-      
-       <td align=center  width=20>
-        	<a href="/customer/prelogin.php?lang=fr&operator=HousingWorksUBC&location_id=1" style="text-decoration:none"><img src="customer_images/flag_fr.gif" style="margin-left:4px;margin-right:2px;margin-top:6px;margin-bottom:-1px;display:inline;" ></a><a href="/customer/prelogin.php?lang=fr&operator=HousingWorksUBC&location_id=1" style="">Fra</a>
-      </td>
-
-	<td align=center  width=25>
-        	<a href="/customer/prelogin.php?lang=nl&operator=HousingWorksUBC&location_id=1" style="text-decoration:none"><img src="customer_images/flag_nl.gif" style="margin-left:4px;margin-right:2px;margin-top:6px;margin-bottom:-1px;display:inline;" ></a><a href="/customer/prelogin.php?lang=nl&operator=HousingWorksUBC&location_id=1" style="">Ned</a>
-      </td>
-
-	<td align=center  width=20>
-    <a href="/customer/prelogin.php?lang=no&operator=HousingWorksUBC&location_id=1" style="text-decoration:none"><img src="customer_images/flag_no.gif" style="margin-left:4px;margin-right:2px;margin-top:6px;margin-bottom:-1px;display:inline;" ></a><a href="/customer/prelogin.php?lang=no&operator=HousingWorksUBC&location_id=1" style="">Nor</a>
-	</td>
-
-	<td align=center  width=20><a href="/customer/prelogin.php?lang=da&operator=HousingWorksUBC&location_id=1" style="text-decoration:none"><img src="customer_images/flag_da.gif" style="margin-left:4px;margin-right:2px;margin-top:6px;margin-bottom:-1px;display:inline;" ></a><a href="/customer/prelogin.php?lang=da&operator=HousingWorksUBC&location_id=1" style="">Dan</a>
-      </td>
-      
-       <td align=center  width=20>
-        	<a href="/customer/prelogin.php?lang=hu&operator=HousingWorksUBC&location_id=1" style="text-decoration:none"><img src="customer_images/flag_hu.gif" style="margin-left:4px;margin-right:2px;margin-top:6px;margin-bottom:-1px;display:inline;" ></a><a href="/customer/prelogin.php?lang=hu&operator=HousingWorksUBC&location_id=1" style="">Magy</a>
-      </td>
-
-	<td align=center  width=20><a href="/customer/prelogin.php?lang=et&operator=HousingWorksUBC&location_id=1" style="text-decoration:none"><img src="customer_images/flag_ee.gif" style="margin-left:2px;margin-right:2px;margin-top:6px;margin-bottom:-1px;display:inline;" ></a><a href="/customer/prelogin.php?lang=et&operator=HousingWorksUBC&location_id=1" style="">Est</a> </td>
-        
-        </tr></table>      
-        
-        </td>
-		<td valign="top"><img src="customer_images/lang_03.png"  alt=""></td></tr></table>-->
-          <!-- language bar end -->
-          
-
-         
-   <!--  <img src=customer_images/customer-logo.png style="margin-bottom:15px;" /><BR />-->
-           
-
-
-
-
-
-
-
-	
-
-   <!--       </td></tr>
-
-        
-        	<tr valign="top">
-		<td height="20" width="100%" bgcolor="#eeeeee" background="customer_images/shadow_big_a.jpg" style="background-repeat:no-repeat; background-position:top;" valign="top">
-        
-       </td></tr></table>
-       
-       -->
-       
-        <!-- header table end -->
-<!--
-<br />
--->
-	
- <!-- middle box -->
-<!--
-        <div id="container" style="width:740px;" >
-        
-        <div class="szt2" id="textbase" align="center" style="width:700px;">  --><B><font color='red'>This skin hasn't been approved yet. Without approval, no payments can be accepted.</font></b><!--  ****************************************************************main_combined_autologin.inc.html**************************************************************** --><script type="text/javascript">
-function checkCheckBox(f) {
-  if (f.agree.checked == false) {
-    alert('You have to accept the User Agreement!');
-    return false;
-  } else
-    return true;
-}
-</script>
-<div id="disclaimer">
-		<h5>Disclaimer</h5>
-		<p>Housing Works is not liable for failures in system operation, content of sites viewed, or safety of material accessed. Patrons may wish to activate any security protocols available on their computers to provide additional safeguards. This system is offered only for casual, occasional use as free service.</p>
-		<p>Only legal activities are allowed. No pornography, spam source, large file download, or any form of misuse or harassment is allowed via this service.</p>
-
-<p>
-	      
-	  <FORM METHOD='get' action="/customer/hotspotlogin.php" onsubmit="return checkCheckBox(this);">
-   <INPUT TYPE=HIDDEN NAME=chal VALUE="e82025c124b0d2d606e490b11d151d0d">
-   <INPUT TYPE=HIDDEN NAME=uamip VALUE="192.168.182.1">
-   <INPUT TYPE=HIDDEN NAME=uamport VALUE="3990">
-   <INPUT TYPE=HIDDEN NAME=nasid VALUE="HousingWorksUBC_1">
-   <INPUT TYPE=HIDDEN NAME=mac VALUE="F8-1E-DF-DF-F4-4A">
-   <INPUT TYPE=HIDDEN NAME=userurl VALUE="http://he.wikisource.org/wiki/%D7%A0%D7%93%D7%A8%D7%99%D7%9D_%D7%9E%D7%90_%D7%90">
-   <INPUT TYPE=HIDDEN NAME=login VALUE="login">
-   <input name="skin_id" type="hidden" id="skin_id" value="" />
-<input name="uid" type="hidden" value="F8-1E-DF-DF-F4-4A" />
-   <input name="pwd" type="hidden" value="password" />
-   <center>
-  <span class="big"><br><br />
-        <input name="agree" type="checkbox" id="agree" value="1">
-        I understand, agree and ACCEPT the terms of the <a href='/customer/info.php?page=useragreement&operator=HousingWorksUBC&location=1&lang=en' target='_blank'>User Agreement</a>.<br /><br /></span>
-<input type=submit name=submit value="LOG IN TO HOTSPOT" class="formbutton"> </p>
-    </p>
-    <p class="big"></p>
-      <span id="signtext4" >NOTE: You have to enable popup windows to see your account and logout information.</span>
-   <p>Powered By HotSpotSystem.com</p>
-
-
-            <br /></form>
-	</div>
-<!--
-
-            <table cellpadding="0" cellspacing="0" border="0"  >
-
-
-<tr>
-            <td colspan="5" align="center">  
-
-
-
-
-<span class=big>
-<b>Welcome to our HotSpot !</b><br />-->
-
-<!-- <b> HOUSING WORKS BOOKSTORE CAFE</b> --> 
-<!--
-
-<br />  Housing Works Bookstore Cafe<BR>128 Crosby St, New York 10012<BR>
-</span>
-<br />
-
-
-  
-
-
-
-
- </td>
-            </tr>
-            
-            </table>
- -->
-
- 
-            
-<!--  ****************************************************************main_footer.inc.html**************************************************************** --><!--<a href="/customer/info.php?operator=HousingWorksUBC&location=1&lang=en&page=guide&worldpay=&paypal=&prepaid=" target="_blank"><img src="customer_images/m_info.png" hspace="0" border="0" align="absmiddle" style="margin-bottom:3px;" />
-Guide to using our system</a></span><BR />
-
-
-
---><!--  ****************************************************************footer.inc.html**************************************************************** --><div id="tastingtable"> 
-		<h4>Tasting Table</h4> 
-
-		<div id="signup"> 
-			<h5>Support Our Wifi Sponsor</h5> 
-			<p>Tasting Table New York is the free daily email about the city's best eating and drinking discoveries, from restaurants and cocktails to wine bars and ingredients.</p> 
-			<p><a href="http://tastingtable.com/index.htm?referrer=HW" target="_blank">Click here</a> to learn more, or receive a special invitation to join</p> 
-			<form action=""> 
-				<input type="text" name="emailaddress" value="E-Mail Address" class="email" /><input type="submit" value="" class="button" /> 
-			</form> 
-			<p class="small">Tasting Table will never sell or share your email address. Click here for our complete member terms and conditions and privacy policy!</p> 
-		</div> 
-	</div> 
-	<div class="clear"></div> 
-</div> 
-</body> 
-</html> 
-
-prelogin.php?operator=HousingWorksUBC&location=1&lang=en
-/customer/info.php?operator=HousingWorksUBC&page=csupport&amp;lang=en/customer/info.php?operator=HousingWorksUBC&page=privacy&amp;lang=en/customer/info.php?operator=HousingWorksUBC&page=disclaimer&amp;lang=en<!----><!----><img src='hit.php?operator=HousingWorksUBC&location_id=1'>

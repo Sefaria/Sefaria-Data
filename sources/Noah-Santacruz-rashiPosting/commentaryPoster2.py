@@ -185,18 +185,6 @@ def get_daf(mesechta,daf,withCommentary=False):
         except URLError, e:
                 print(";( URL Error: ",e.reason , url)
                 
-#def get_num_lines(mesechta,daf):
-#        for i in range(1,1000):
-#                response = get_index(mesechta,daf,str(i))
-#                if not test_if_valid_line(response):
-#                        break
-#        return i-1
-#def test_if_valid_line(string):
-#        if '[]' in string:
-#                return False
-#        else:
-#                return True
-
 def get_line_with_text(mesechta,daf,textIndex,startIndex=1,lastDHm=False):
         originalStartIndex = startIndex #keep track because we reset it later on
         restarted = False
@@ -595,7 +583,7 @@ def postRashiProcessing():
 def mesechta_translator(inp,hebToEng=True):
         try:
                 
-                transDict = {'ברכות':'Berakhot','שבת':'Shabbat','עירובין':'Eruvin','פסחים':'Pesachim','יומא':'Yoma','ראש השנה':'Rosh Hashanah','תענית':'Taanit','ביצה':'Beitzah','מועד קטן':'Moed Katan','סוכה':'Sukkah','מגילה':'Megillah','חגיגה':'Chagigah','יבמות':'Yevamot','כתובות':'Ketubot','נדרים':'Nedarim','נזיר':'Nazir','סוטה':'Sotah','גיטין':'Gittin','קידושין':'Kiddushin','בבא קמה':'Bava Kamma','בבא מציעא':'Bava Metzia','בבא בתרא':'Bava Batra','סנהדרין':'Sanhedrin','מכות':'Makkot','שבועות':'Shevuot','עבודה זרה':'Avodah Zarah','הוריות':'Horayot','זבחים':'Zevachim','מנחות':'Menachot','חולין':'Chullin','בכורות':'Bekhorot','ערכין':'Arakhin','תמורה':'Temurah','כריתות':'Keritot','מעילה':'Meilah','תמיד':'Tamid','נידה':'Niddah'}
+                transDict = {'ברכות':'Berakhot','שבת':'Shabbat','עירובין':'Eruvin','פסחים':'Pesachim','יומא':'Yoma','ראש השנה':'Rosh Hashanah','תענית':'Taanit','ביצה':'Beitzah','מועד קטן':'Moed Katan','סוכה':'Sukkah','מגילה':'Megillah','חגיגה':'Chagigah','יבמות':'Yevamot','כתובות':'Ketubot','נדרים':'Nedarim','נזיר':'Nazir','סוטה':'Sotah','גיטין':'Gittin','קידושין':'Kiddushin','בבא קמא':'Bava Kamma','בבא מציעא':'Bava Metzia','בבא בתרא':'Bava Batra','סנהדרין':'Sanhedrin','מכות':'Makkot','שבועות':'Shevuot','עבודה זרה':'Avodah Zarah','הוריות':'Horayot','זבחים':'Zevachim','מנחות':'Menachot','חולין':'Chullin','בכורות':'Bekhorot','ערכין':'Arakhin','תמורה':'Temurah','כריתות':'Keritot','מעילה':'Meilah','תמיד':'Tamid','נידה':'Niddah'}
                 if hebToEng:
                         return transDict[inp]
                 else: #we want to translate from english to hebrew
@@ -640,12 +628,10 @@ def commentary_translator(commentary):
                 engComm = 'Rashi'
         elif commentary == 'תוספות':
                 engComm = 'Tosafot'
-
         elif commentary == 'שיטה מקובצת':
                 engComm = 'Shita Mekubetzet'
         elif commentary == 'רא"ש':
                 engComm = 'Rosh'
-
         elif commentary == 'ר"ן':
                 engComm = 'Ran'
         elif commentary == 'רשב"ם':
@@ -655,13 +641,10 @@ def commentary_translator(commentary):
                 engComm = 'רש"י'
         elif commentary == 'Tosafot':
                 engComm = 'תוספות'
-
         elif commentary == 'Shita Mekubetzet':
                 engComm = 'שיטה מקובצת'
         elif commentary == 'Rosh':
                 engComm = 'רא"ש'
-
-
         elif commentary == 'Ran':
                 engComm = 'ר"ן'
         elif commentary == 'Rashbam':
@@ -680,7 +663,7 @@ def daf2num(dafString):
         return 2*int(daf)
 
 
-#selectedMesechta = 'Berakhot'
+#selectedMesechta = 'Bava Kamma'
 #selectedCommentary = 'Tosafot'
 #startDaf = ''
 selectedMesechta = raw_input('please type (in english exactly like sefaria\'s naming scheme) the name of the mesechta whose commentary you would like to post\n')
@@ -691,11 +674,11 @@ if selectedMesechta.split(' ')[len(selectedMesechta.split(' '))-1] == '-d':
                 sefaria_root = sefaria_root.replace('www','dev')
                 selectedMesechta = ' '.join(selectedMesechta.split(' ')[0:len(selectedMesechta.split(' '))-1])
                 debug = True
-logdir = ""+parsed_root+"logs/"+selectedMesechta.lower()+"/"
 
-f = open(logdir+selectedCommentary+'logFileAll.txt','a')
-eFile = open(logdir+selectedCommentary+'logFileNotFound.txt','a')
-aFile = open(logdir+selectedCommentary+'logFileAmbiguous.txt','a')
+logdir = ""+parsed_root+"logs/"+selectedMesechta.lower().replace(" ", "_")+"/"
+f = open(logdir+selectedCommentary+'logFileAll.txt','a+')
+eFile = open(logdir+selectedCommentary+'logFileNotFound.txt','a+')
+aFile = open(logdir+selectedCommentary+'logFileAmbiguous.txt','a+')
 if debug:
 	fd = open(logdir+selectedCommentary+'dlogFileAll.txt','a')
 	edFile = open(logdir+selectedCommentary+'dlogFileNotFound.txt','a')
@@ -703,11 +686,8 @@ if debug:
 
 temp = open('yo.txt','w')
 
-#print daf_translator('אבגדהוזחטיכלמנסעפצק', 'א')
-
 if (startDaf):
     push_mesechta(selectedMesechta,selectedCommentary,startDaf);
 else:
     push_mesechta(selectedMesechta,selectedCommentary)
-
 
