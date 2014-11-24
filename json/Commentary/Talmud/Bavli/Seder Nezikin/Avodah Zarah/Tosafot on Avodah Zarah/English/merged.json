@@ -1,5 +1,5 @@
 {
-    "sections": [], 
+    "commentator": "Tosafot", 
     "commentaryCategories": [
         "Talmud", 
         "Bavli", 
@@ -86,14 +86,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Tosafot_on_Avodah_Zarah", 
-    "heTitle": "תוספות על עבודה זרה", 
-    "versions": [
-        [
-            "Sefaria Community Translation", 
-            "http://www.sefaria.org"
-        ]
+    "heTitleVariants": [
+        "תוספות"
     ], 
+    "versionSource": "http://www.sefaria.org/Tosafot_on_Avodah_Zarah", 
+    "heCommentator": "תוספות", 
+    "heTitle": "תוספות על עבודה זרה", 
     "titleVariants": [
         "Tosafot on Avodah Zarah"
     ], 
@@ -109,11 +107,16 @@
     "versionTitle": "merged", 
     "ref": "Tosafot on Avodah Zarah", 
     "language": "en", 
-    "maps": [], 
-    "type": "Commentary", 
     "title": "Tosafot on Avodah Zarah", 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Sefaria Community Translation", 
+            "http://www.sefaria.org"
+        ]
+    ], 
     "heBook": "תוספות", 
-    "heCommentator": "תוספות", 
+    "maps": [], 
     "length": 76, 
     "book": "Tosafot on Avodah Zarah", 
     "textDepth": 3, 
@@ -122,5 +125,9 @@
         "Line", 
         "Comment"
     ], 
-    "commentator": "Tosafot"
+    "sections": [], 
+    "order": [
+        3, 
+        2
+    ]
 }

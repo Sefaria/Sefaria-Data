@@ -1,19 +1,20 @@
 {
     "toSections": [], 
     "versionTitle": "merged", 
-    "prev": null, 
-    "language": "en", 
     "ref": "Midrash Tanchuma", 
+    "language": "en", 
     "title": "Midrash Tanchuma", 
-    "sections": [], 
+    "type": "Midrash", 
     "versions": [
         [
             "Sefaria Community Translation", 
             "http://www.sefaria.org"
         ]
     ], 
+    "heTitleVariants": [
+        "מדרש תנחומא"
+    ], 
     "versionSource": "http://www.sefaria.org/Midrash_Tanchuma", 
-    "next": "Midrash Tanchuma 2", 
     "maps": [], 
     "heTitle": "מדרש תנחומא", 
     "book": "Midrash Tanchuma", 
@@ -113,7 +114,6 @@
         ]
     ], 
     "titleVariants": [
-        "Midrash Tanchuma", 
         "Midrash Tanchuma"
     ], 
     "textDepth": 3, 
@@ -122,7 +122,10 @@
         "Parshah", 
         "Siman"
     ], 
-    "type": "Midrash", 
+    "sections": [], 
+    "order": [
+        10.0
+    ], 
     "categories": [
         "Midrash"
     ]

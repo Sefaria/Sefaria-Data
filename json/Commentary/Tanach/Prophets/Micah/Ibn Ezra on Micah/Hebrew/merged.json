@@ -423,15 +423,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Ibn_Ezra_on_Micah", 
-    "heTitle": "אבן עזרא על מיכה", 
-    "versions": [
-        [
-            "Ibn Ezra on Micah -- Daat", 
-            "http://www.daat.ac.il/daat/olam_hatanah/mefaresh.asp?book=20&perek=1&mefaresh=ezra"
-        ]
+    "heTitleVariants": [
+        "אבן עזרא"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Ibn_Ezra_on_Micah", 
+    "heCommentator": "אבן עזרא", 
+    "heTitle": "אבן עזרא על מיכה", 
     "titleVariants": [
         "Ibn Ezra on Micah"
     ], 
@@ -444,21 +441,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "אבן עזרא", 
     "ref": "Ibn Ezra on Micah", 
+    "language": "he", 
     "title": "Ibn Ezra on Micah", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Ibn Ezra on Micah -- Daat", 
+            "http://www.daat.ac.il/daat/olam_hatanah/mefaresh.asp?book=20&perek=1&mefaresh=ezra"
+        ]
+    ], 
     "heBook": "אבן עזרא", 
     "maps": [], 
     "length": 7, 
     "book": "Ibn Ezra on Micah", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        6, 
+        5
+    ]
 }

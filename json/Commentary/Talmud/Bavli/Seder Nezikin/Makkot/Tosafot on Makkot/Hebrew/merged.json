@@ -2471,15 +2471,12 @@
             []
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Tosafot_on_Makkot", 
-    "heTitle": "תוספות על מכות", 
-    "versions": [
-        [
-            "Wikisource Rashi", 
-            "1.0"
-        ]
+    "heTitleVariants": [
+        "תוספות"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Tosafot_on_Makkot", 
+    "heCommentator": "תוספות", 
+    "heTitle": "תוספות על מכות", 
     "titleVariants": [
         "Tosafot on Makkot"
     ], 
@@ -2493,10 +2490,16 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "language": "he", 
-    "heCommentator": "תוספות", 
     "ref": "Tosafot on Makkot", 
+    "language": "he", 
     "title": "Tosafot on Makkot", 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Wikisource Rashi", 
+            "1.0"
+        ]
+    ], 
     "heBook": "תוספות", 
     "maps": [], 
     "length": 24, 
@@ -2507,5 +2510,9 @@
         "Line", 
         "Comment"
     ], 
-    "sections": []
+    "sections": [], 
+    "order": [
+        3, 
+        2
+    ]
 }

@@ -504,19 +504,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Rashi_on_Lamentations", 
-    "heTitle": "רש\"י על איכה", 
-    "versions": [
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ], 
-        [
-            "Rashi", 
-            "בלום ווייס"
-        ]
+    "heTitleVariants": [
+        "רש\"י"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Rashi_on_Lamentations", 
+    "heCommentator": "רש\"י", 
+    "heTitle": "רש\"י על איכה", 
     "titleVariants": [
         "Rashi on Lamentations"
     ], 
@@ -529,21 +522,33 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "רש\"י", 
     "ref": "Rashi on Lamentations", 
+    "language": "he", 
     "title": "Rashi on Lamentations", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ], 
+        [
+            "Rashi", 
+            "בלום ווייס"
+        ]
+    ], 
     "heBook": "רש\"י", 
     "maps": [], 
     "length": 5, 
     "book": "Rashi on Lamentations", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        2, 
+        1
+    ]
 }

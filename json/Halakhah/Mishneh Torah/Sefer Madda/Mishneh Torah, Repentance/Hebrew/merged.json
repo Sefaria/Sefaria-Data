@@ -1,14 +1,13 @@
 {
     "toSections": [], 
     "versionTitle": "merged", 
-    "prev": null, 
-    "language": "he", 
     "ref": "Mishneh Torah, Repentance", 
+    "language": "he", 
     "title": "Mishneh Torah, Repentance", 
     "lengths": [
         10
     ], 
-    "sections": [], 
+    "type": "Halakhah", 
     "versions": [
         [
             "Sefer HaMadda Hilchot Teshuva Chapter 2", 
@@ -23,9 +22,12 @@
             "http://www.mechon-mamre.org/i/15n.htm"
         ]
     ], 
+    "heTitleVariants": [
+        "רמב\"ם, הלכות תשובה", 
+        "משנה תורה, הלכות תשובה"
+    ], 
     "heTitle": "משנה תורה, הלכות תשובה", 
     "versionSource": "http://www.sefaria.org/Mishneh_Torah,_Repentance", 
-    "next": "Mishneh Torah, Repentance 2", 
     "length": 10, 
     "book": "Mishneh Torah, Repentance", 
     "text": [
@@ -133,15 +135,13 @@
         ]
     ], 
     "titleVariants": [
-        "Mishneh Torah, Repentance", 
-        "Mishneh Torah, Teshuvah", 
-        "Rambam, Repentance", 
-        "Rambam, Teshuvah", 
-        "משנה תורה, הלכות תשובה", 
-        "רמב\"ם, הלכות תשובה", 
         "Mishneh Torah, Laws of Repentance", 
+        "Mishneh Torah, Teshuvah", 
         "Rambam, Laws of Repentance", 
+        "Rambam, Repentance", 
         "Mishneh Torah, Hilchot Teshuvah", 
+        "Mishneh Torah, Repentance", 
+        "Rambam, Teshuvah", 
         "Rambam, Hilchot Teshuvah"
     ], 
     "textDepth": 2, 
@@ -149,7 +149,11 @@
         "Chapter", 
         "Halacha"
     ], 
-    "type": "Halakhah", 
+    "sections": [], 
+    "order": [
+        9, 
+        5
+    ], 
     "categories": [
         "Halakhah", 
         "Mishneh Torah", 

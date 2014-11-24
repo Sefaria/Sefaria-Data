@@ -1,13 +1,8 @@
 {
-    "heBook": "רש\"י", 
-    "versionTitle": "On Your Way", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
+    "commentaryCategories": [
+        "Tanach", 
+        "Writings"
     ], 
-    "language": "he", 
-    "title": "Rashi on Ezra", 
     "text": [
         [
             [
@@ -917,26 +912,38 @@
             ]
         ]
     ], 
-    "maps": [], 
-    "commentaryCategories": [
-        "Tanach", 
-        "Writings"
+    "heTitleVariants": [
+        "רש\"י"
     ], 
-    "heTitle": "רש\"י על עזרא", 
     "versionSource": "http://mobile.tora.ws/", 
-    "priority": 1.0, 
     "heCommentator": "רש\"י", 
-    "length": 10, 
+    "heTitle": "רש\"י על עזרא", 
     "titleVariants": [
         "Rashi on Ezra"
     ], 
-    "textDepth": 3, 
     "commentaryBook": "Ezra", 
-    "commentator": "Rashi", 
     "categories": [
         "Commentary", 
         "Tanach", 
         "Writings", 
         "Ezra"
+    ], 
+    "heBook": "רש\"י", 
+    "versionTitle": "On Your Way", 
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "language": "he", 
+    "title": "Rashi on Ezra", 
+    "priority": 1.0, 
+    "maps": [], 
+    "length": 10, 
+    "textDepth": 3, 
+    "commentator": "Rashi", 
+    "order": [
+        2, 
+        1
     ]
 }

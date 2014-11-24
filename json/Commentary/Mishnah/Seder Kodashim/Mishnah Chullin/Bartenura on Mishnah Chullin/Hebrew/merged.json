@@ -693,15 +693,14 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Bartenura_on_Mishnah_Chullin", 
-    "heTitle": "ברטנורא על משנה חולין", 
-    "versions": [
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ]
+    "heTitleVariants": [
+        "ברטנורא", 
+        "עובדיה מברטנורא", 
+        "ר' עובדיה מברטנורא"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Bartenura_on_Mishnah_Chullin", 
+    "heCommentator": "ברטנורא", 
+    "heTitle": "ברטנורא על משנה חולין", 
     "titleVariants": [
         "Bartenura on Mishnah Chullin"
     ], 
@@ -714,21 +713,25 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Mishna", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "ברטנורא", 
     "ref": "Bartenura on Mishnah Chullin", 
+    "language": "he", 
     "title": "Bartenura on Mishnah Chullin", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ]
+    ], 
     "heBook": "ברטנורא", 
     "maps": [], 
     "length": 12, 
     "book": "Bartenura on Mishnah Chullin", 
     "textDepth": 3, 
-    "prev": null, 
+    "sectionNames": [
+        "Chapter", 
+        "Mishna", 
+        "Comment"
+    ], 
     "sections": []
 }

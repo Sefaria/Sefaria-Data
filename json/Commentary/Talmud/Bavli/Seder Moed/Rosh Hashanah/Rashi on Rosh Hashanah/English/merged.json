@@ -1,5 +1,5 @@
 {
-    "sections": [], 
+    "commentator": "Rashi", 
     "commentaryCategories": [
         "Talmud", 
         "Bavli", 
@@ -17,14 +17,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Rashi_on_Rosh_Hashanah", 
-    "heTitle": "רש\"י על ראש השנה", 
-    "versions": [
-        [
-            "Sefaria Community Translation", 
-            "http://www.sefaria.org"
-        ]
+    "heTitleVariants": [
+        "רש\"י"
     ], 
+    "versionSource": "http://www.sefaria.org/Rashi_on_Rosh_Hashanah", 
+    "heCommentator": "רש\"י", 
+    "heTitle": "רש\"י על ראש השנה", 
     "titleVariants": [
         "Rashi on Rosh Hashanah"
     ], 
@@ -40,11 +38,16 @@
     "versionTitle": "merged", 
     "ref": "Rashi on Rosh Hashanah", 
     "language": "en", 
-    "maps": [], 
-    "type": "Commentary", 
     "title": "Rashi on Rosh Hashanah", 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Sefaria Community Translation", 
+            "http://www.sefaria.org"
+        ]
+    ], 
     "heBook": "רש\"י", 
-    "heCommentator": "רש\"י", 
+    "maps": [], 
     "length": 35, 
     "book": "Rashi on Rosh Hashanah", 
     "textDepth": 3, 
@@ -53,5 +56,9 @@
         "Line", 
         "Comment"
     ], 
-    "commentator": "Rashi"
+    "sections": [], 
+    "order": [
+        2, 
+        1
+    ]
 }

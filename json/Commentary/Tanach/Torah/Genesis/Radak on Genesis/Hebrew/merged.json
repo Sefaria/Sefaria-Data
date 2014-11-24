@@ -72,19 +72,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Radak_on_Genesis", 
-    "heTitle": "רדק על בראשית", 
-    "versions": [
-        [
-            "radak al hatorah", 
-            "http://books.google.co.il/books?id=yCxhLgRQ_JcC"
-        ], 
-        [
-            "מקראות גדולות הכתר", 
-            "http://Book"
-        ]
+    "heTitleVariants": [
+        "רדק"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Radak_on_Genesis", 
+    "heCommentator": "רדק", 
+    "heTitle": "רדק על בראשית", 
     "titleVariants": [
         "Radak on Genesis"
     ], 
@@ -97,21 +90,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "רדק", 
     "ref": "Radak on Genesis", 
+    "language": "he", 
     "title": "Radak on Genesis", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "radak al hatorah", 
+            "http://books.google.co.il/books?id=yCxhLgRQ_JcC"
+        ], 
+        [
+            "מקראות גדולות הכתר", 
+            "http://Book"
+        ]
+    ], 
     "heBook": "רדק", 
     "maps": [], 
     "length": 50, 
     "book": "Radak on Genesis", 
     "textDepth": 3, 
-    "prev": null, 
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
     "sections": []
 }

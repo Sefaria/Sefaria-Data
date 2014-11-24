@@ -1,13 +1,8 @@
 {
-    "heBook": "רש\"י", 
-    "versionTitle": "On Your Way", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
+    "commentaryCategories": [
+        "Tanach", 
+        "Prophets"
     ], 
-    "language": "he", 
-    "title": "Rashi on Joshua", 
     "text": [
         [
             [
@@ -602,8 +597,7 @@
                 "<b>בעל גד .</b> מישר גד :\n"
             ], 
             [
-                "<b>ימים רבים עשה יהושע .</b> בגנותו ספר הכתוב , שהיה מתכוון לדחות את כבוש הארץ כדי להאריך ימיו , לפי שנאמר ( לעיל א י ) : ", 
-                "<b>ואתה תנחילנה אותם .</b> במדרש תנחומא :\n\n"
+                "<b>ימים רבים עשה יהושע .</b> בגנותו ספר הכתוב, שהיה מתכוון לדחות את כבוש הארץ כדי להאריך ימיו, לפי שנאמר ( לעיל א י ): ואתה תנחילנה אותם. במדרש תנחומא:  "
             ], 
             [], 
             [], 
@@ -1315,26 +1309,38 @@
             ]
         ]
     ], 
-    "maps": [], 
-    "commentaryCategories": [
-        "Tanach", 
-        "Prophets"
+    "heTitleVariants": [
+        "רש\"י"
     ], 
-    "heTitle": "רש\"י על יהושע", 
     "versionSource": "http://mobile.tora.ws/", 
-    "priority": 1.0, 
     "heCommentator": "רש\"י", 
-    "length": 24, 
+    "heTitle": "רש\"י על יהושע", 
     "titleVariants": [
         "Rashi on Joshua"
     ], 
-    "textDepth": 3, 
     "commentaryBook": "Joshua", 
-    "commentator": "Rashi", 
     "categories": [
         "Commentary", 
         "Tanach", 
         "Prophets", 
         "Joshua"
+    ], 
+    "heBook": "רש\"י", 
+    "versionTitle": "On Your Way", 
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "language": "he", 
+    "title": "Rashi on Joshua", 
+    "priority": 1.0, 
+    "maps": [], 
+    "length": 24, 
+    "textDepth": 3, 
+    "commentator": "Rashi", 
+    "order": [
+        2, 
+        1
     ]
 }

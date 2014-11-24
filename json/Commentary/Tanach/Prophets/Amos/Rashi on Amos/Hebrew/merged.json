@@ -540,15 +540,12 @@
             []
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Rashi_on_Amos", 
-    "heTitle": "רש\"י על עמוס", 
-    "versions": [
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ]
+    "heTitleVariants": [
+        "רש\"י"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Rashi_on_Amos", 
+    "heCommentator": "רש\"י", 
+    "heTitle": "רש\"י על עמוס", 
     "titleVariants": [
         "Rashi on Amos"
     ], 
@@ -561,21 +558,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "רש\"י", 
     "ref": "Rashi on Amos", 
+    "language": "he", 
     "title": "Rashi on Amos", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ]
+    ], 
     "heBook": "רש\"י", 
     "maps": [], 
     "length": 9, 
     "book": "Rashi on Amos", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        2, 
+        1
+    ]
 }

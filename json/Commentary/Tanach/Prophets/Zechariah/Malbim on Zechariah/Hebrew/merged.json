@@ -24,15 +24,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Malbim_on_Zechariah", 
-    "heTitle": "מלבי\"ם על זכריה", 
-    "versions": [
-        [
-            "1", 
-            "http://www.daat.ac.il/daat/olam_hatanah/mefaresh.asp?book=25&perek=5&mefaresh=malbim"
-        ]
+    "heTitleVariants": [
+        "מלבי\"ם"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Malbim_on_Zechariah", 
+    "heCommentator": "מלבי\"ם", 
+    "heTitle": "מלבי\"ם על זכריה", 
     "titleVariants": [
         "Malbim on Zechariah"
     ], 
@@ -45,21 +42,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "מלבי\"ם", 
     "ref": "Malbim on Zechariah", 
+    "language": "he", 
     "title": "Malbim on Zechariah", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "1", 
+            "http://www.daat.ac.il/daat/olam_hatanah/mefaresh.asp?book=25&perek=5&mefaresh=malbim"
+        ]
+    ], 
     "heBook": "מלבי\"ם", 
     "maps": [], 
     "length": 14, 
     "book": "Malbim on Zechariah", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        22, 
+        3
+    ]
 }

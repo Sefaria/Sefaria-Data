@@ -19,15 +19,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Rambam_on_Mishnah_Zevachim", 
-    "heTitle": "רמב\"ם על משנה זבחים", 
-    "versions": [
-        [
-            "Qafih", 
-            "Mishnah with Commentary of Maimonides, Mosad HaRav Kook"
-        ]
+    "heTitleVariants": [
+        "רמב\"ם"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Rambam_on_Mishnah_Zevachim", 
+    "heCommentator": "רמב\"ם", 
+    "heTitle": "רמב\"ם על משנה זבחים", 
     "titleVariants": [
         "Rambam on Mishnah Zevachim"
     ], 
@@ -40,21 +37,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Mishna", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "רמב\"ם", 
     "ref": "Rambam on Mishnah Zevachim", 
+    "language": "he", 
     "title": "Rambam on Mishnah Zevachim", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Qafih", 
+            "Mishnah with Commentary of Maimonides, Mosad HaRav Kook"
+        ]
+    ], 
     "heBook": "רמב\"ם", 
     "maps": [], 
     "length": 14, 
     "book": "Rambam on Mishnah Zevachim", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Mishna", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        8, 
+        7
+    ]
 }

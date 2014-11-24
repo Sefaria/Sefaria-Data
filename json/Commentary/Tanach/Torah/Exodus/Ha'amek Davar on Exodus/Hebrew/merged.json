@@ -39,15 +39,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Ha'amek_Davar_on_Exodus", 
-    "heTitle": "העמק דבר על שמות", 
-    "versions": [
-        [
-            "HaEmek Davar", 
-            "http://DBS"
-        ]
+    "heTitleVariants": [
+        "העמק דבר"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Ha'amek_Davar_on_Exodus", 
+    "heCommentator": "העמק דבר", 
+    "heTitle": "העמק דבר על שמות", 
     "titleVariants": [
         "Ha'amek Davar on Exodus"
     ], 
@@ -60,21 +57,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "העמק דבר", 
     "ref": "Ha'amek Davar on Exodus", 
+    "language": "he", 
     "title": "Ha'amek Davar on Exodus", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "HaEmek Davar", 
+            "http://DBS"
+        ]
+    ], 
     "heBook": "העמק דבר", 
     "maps": [], 
     "length": 40, 
     "book": "Ha'amek Davar on Exodus", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        21, 
+        2
+    ]
 }

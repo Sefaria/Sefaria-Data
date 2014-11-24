@@ -627,15 +627,14 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Bartenura_on_Mishnah_Sheviit", 
-    "heTitle": "ברטנורא על משנה שביעית", 
-    "versions": [
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ]
+    "heTitleVariants": [
+        "ברטנורא", 
+        "עובדיה מברטנורא", 
+        "ר' עובדיה מברטנורא"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Bartenura_on_Mishnah_Sheviit", 
+    "heCommentator": "ברטנורא", 
+    "heTitle": "ברטנורא על משנה שביעית", 
     "titleVariants": [
         "Bartenura on Mishnah Sheviit"
     ], 
@@ -648,21 +647,25 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Mishna", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "ברטנורא", 
     "ref": "Bartenura on Mishnah Sheviit", 
+    "language": "he", 
     "title": "Bartenura on Mishnah Sheviit", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ]
+    ], 
     "heBook": "ברטנורא", 
     "maps": [], 
     "length": 10, 
     "book": "Bartenura on Mishnah Sheviit", 
     "textDepth": 3, 
-    "prev": null, 
+    "sectionNames": [
+        "Chapter", 
+        "Mishna", 
+        "Comment"
+    ], 
     "sections": []
 }

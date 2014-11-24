@@ -110,15 +110,14 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Bartenura_on_Mishnah_Kinnim", 
-    "heTitle": "ברטנורא על משנה קינים", 
-    "versions": [
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ]
+    "heTitleVariants": [
+        "ברטנורא", 
+        "עובדיה מברטנורא", 
+        "ר' עובדיה מברטנורא"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Bartenura_on_Mishnah_Kinnim", 
+    "heCommentator": "ברטנורא", 
+    "heTitle": "ברטנורא על משנה קינים", 
     "titleVariants": [
         "Bartenura on Mishnah Kinnim"
     ], 
@@ -131,21 +130,25 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Mishna", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "ברטנורא", 
     "ref": "Bartenura on Mishnah Kinnim", 
+    "language": "he", 
     "title": "Bartenura on Mishnah Kinnim", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ]
+    ], 
     "heBook": "ברטנורא", 
     "maps": [], 
     "length": 3, 
     "book": "Bartenura on Mishnah Kinnim", 
     "textDepth": 3, 
-    "prev": null, 
+    "sectionNames": [
+        "Chapter", 
+        "Mishna", 
+        "Comment"
+    ], 
     "sections": []
 }

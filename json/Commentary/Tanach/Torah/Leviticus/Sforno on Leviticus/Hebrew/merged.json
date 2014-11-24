@@ -1453,15 +1453,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Sforno_on_Leviticus", 
-    "heTitle": "ספורנו על ויקרא", 
-    "versions": [
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ]
+    "heTitleVariants": [
+        "ספורנו"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Sforno_on_Leviticus", 
+    "heCommentator": "ספורנו", 
+    "heTitle": "ספורנו על ויקרא", 
     "titleVariants": [
         "Sforno on Leviticus"
     ], 
@@ -1474,21 +1471,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "ספורנו", 
     "ref": "Sforno on Leviticus", 
+    "language": "he", 
     "title": "Sforno on Leviticus", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ]
+    ], 
     "heBook": "ספורנו", 
     "maps": [], 
     "length": 27, 
     "book": "Sforno on Leviticus", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        19, 
+        18
+    ]
 }

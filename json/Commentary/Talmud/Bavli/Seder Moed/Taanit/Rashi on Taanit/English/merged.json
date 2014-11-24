@@ -1,5 +1,5 @@
 {
-    "sections": [], 
+    "commentator": "Rashi", 
     "commentaryCategories": [
         "Talmud", 
         "Bavli", 
@@ -82,14 +82,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Rashi_on_Taanit", 
-    "heTitle": "רש\"י על תענית", 
-    "versions": [
-        [
-            "Sefaria Community Translation", 
-            "http://www.sefaria.org"
-        ]
+    "heTitleVariants": [
+        "רש\"י"
     ], 
+    "versionSource": "http://www.sefaria.org/Rashi_on_Taanit", 
+    "heCommentator": "רש\"י", 
+    "heTitle": "רש\"י על תענית", 
     "titleVariants": [
         "Rashi on Taanit"
     ], 
@@ -105,11 +103,16 @@
     "versionTitle": "merged", 
     "ref": "Rashi on Taanit", 
     "language": "en", 
-    "maps": [], 
-    "type": "Commentary", 
     "title": "Rashi on Taanit", 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Sefaria Community Translation", 
+            "http://www.sefaria.org"
+        ]
+    ], 
     "heBook": "רש\"י", 
-    "heCommentator": "רש\"י", 
+    "maps": [], 
     "length": 31, 
     "book": "Rashi on Taanit", 
     "textDepth": 3, 
@@ -118,5 +121,9 @@
         "Line", 
         "Comment"
     ], 
-    "commentator": "Rashi"
+    "sections": [], 
+    "order": [
+        2, 
+        1
+    ]
 }

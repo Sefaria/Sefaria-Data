@@ -822,15 +822,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Rashi_on_Hosea", 
-    "heTitle": "רש\"י על הושע", 
-    "versions": [
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ]
+    "heTitleVariants": [
+        "רש\"י"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Rashi_on_Hosea", 
+    "heCommentator": "רש\"י", 
+    "heTitle": "רש\"י על הושע", 
     "titleVariants": [
         "Rashi on Hosea"
     ], 
@@ -843,21 +840,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "רש\"י", 
     "ref": "Rashi on Hosea", 
+    "language": "he", 
     "title": "Rashi on Hosea", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ]
+    ], 
     "heBook": "רש\"י", 
     "maps": [], 
     "length": 14, 
     "book": "Rashi on Hosea", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        2, 
+        1
+    ]
 }

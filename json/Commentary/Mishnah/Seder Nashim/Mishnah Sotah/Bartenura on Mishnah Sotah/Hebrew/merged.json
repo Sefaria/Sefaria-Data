@@ -479,15 +479,14 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Bartenura_on_Mishnah_Sotah", 
-    "heTitle": "ברטנורא על משנה סוטה", 
-    "versions": [
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ]
+    "heTitleVariants": [
+        "ברטנורא", 
+        "עובדיה מברטנורא", 
+        "ר' עובדיה מברטנורא"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Bartenura_on_Mishnah_Sotah", 
+    "heCommentator": "ברטנורא", 
+    "heTitle": "ברטנורא על משנה סוטה", 
     "titleVariants": [
         "Bartenura on Mishnah Sotah"
     ], 
@@ -500,21 +499,25 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Mishna", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "ברטנורא", 
     "ref": "Bartenura on Mishnah Sotah", 
+    "language": "he", 
     "title": "Bartenura on Mishnah Sotah", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ]
+    ], 
     "heBook": "ברטנורא", 
     "maps": [], 
     "length": 9, 
     "book": "Bartenura on Mishnah Sotah", 
     "textDepth": 3, 
-    "prev": null, 
+    "sectionNames": [
+        "Chapter", 
+        "Mishna", 
+        "Comment"
+    ], 
     "sections": []
 }

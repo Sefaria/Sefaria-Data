@@ -8383,19 +8383,12 @@
             []
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Tosafot_on_Eruvin", 
-    "heTitle": "תוספות על עירובין", 
-    "versions": [
-        [
-            "Wikisource Rashi", 
-            "1.0"
-        ], 
-        [
-            "Wikisource Tosafot", 
-            "http://he.wikisource.org"
-        ]
+    "heTitleVariants": [
+        "תוספות"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Tosafot_on_Eruvin", 
+    "heCommentator": "תוספות", 
+    "heTitle": "תוספות על עירובין", 
     "titleVariants": [
         "Tosafot on Eruvin"
     ], 
@@ -8409,10 +8402,20 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "language": "he", 
-    "heCommentator": "תוספות", 
     "ref": "Tosafot on Eruvin", 
+    "language": "he", 
     "title": "Tosafot on Eruvin", 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Wikisource Rashi", 
+            "1.0"
+        ], 
+        [
+            "Wikisource Tosafot", 
+            "http://he.wikisource.org"
+        ]
+    ], 
     "heBook": "תוספות", 
     "maps": [], 
     "length": 105, 
@@ -8423,5 +8426,9 @@
         "Line", 
         "Comment"
     ], 
-    "sections": []
+    "sections": [], 
+    "order": [
+        3, 
+        2
+    ]
 }

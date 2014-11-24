@@ -2510,15 +2510,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Rashbam_on_Exodus", 
-    "heTitle": "רשב\"ם על שמות", 
-    "versions": [
-        [
-            "Rashbam on Torah -- Daat", 
-            "http://www.daat.ac.il/daat/tanach/parshanut/rashbam.htm"
-        ]
+    "heTitleVariants": [
+        "רשב\"ם"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Rashbam_on_Exodus", 
+    "heCommentator": "רשב\"ם", 
+    "heTitle": "רשב\"ם על שמות", 
     "titleVariants": [
         "Rashbam on Exodus"
     ], 
@@ -2531,21 +2528,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "רשב\"ם", 
     "ref": "Rashbam on Exodus", 
+    "language": "he", 
     "title": "Rashbam on Exodus", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Rashbam on Torah -- Daat", 
+            "http://www.daat.ac.il/daat/tanach/parshanut/rashbam.htm"
+        ]
+    ], 
     "heBook": "רשב\"ם", 
     "maps": [], 
     "length": 40, 
     "book": "Rashbam on Exodus", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        5, 
+        4
+    ]
 }

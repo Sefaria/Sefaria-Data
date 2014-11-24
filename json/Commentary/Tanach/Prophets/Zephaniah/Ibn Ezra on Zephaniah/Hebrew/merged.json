@@ -214,15 +214,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Ibn_Ezra_on_Zephaniah", 
-    "heTitle": "אבן עזרא על צפניה", 
-    "versions": [
-        [
-            "Ibn Ezra on Zephaniah -- Daat", 
-            "http://www.daat.ac.il/he-il/tanach/parshanut_hamikra/full-text/eben-ezra/zfanya"
-        ]
+    "heTitleVariants": [
+        "אבן עזרא"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Ibn_Ezra_on_Zephaniah", 
+    "heCommentator": "אבן עזרא", 
+    "heTitle": "אבן עזרא על צפניה", 
     "titleVariants": [
         "Ibn Ezra on Zephaniah"
     ], 
@@ -235,21 +232,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "אבן עזרא", 
     "ref": "Ibn Ezra on Zephaniah", 
+    "language": "he", 
     "title": "Ibn Ezra on Zephaniah", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Ibn Ezra on Zephaniah -- Daat", 
+            "http://www.daat.ac.il/he-il/tanach/parshanut_hamikra/full-text/eben-ezra/zfanya"
+        ]
+    ], 
     "heBook": "אבן עזרא", 
     "maps": [], 
     "length": 3, 
     "book": "Ibn Ezra on Zephaniah", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        6, 
+        5
+    ]
 }

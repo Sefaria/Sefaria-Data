@@ -1,23 +1,25 @@
 {
     "toSections": [], 
     "versionTitle": "merged", 
-    "prev": null, 
-    "language": "he", 
     "ref": "Mishneh Torah, Inheritances", 
+    "language": "he", 
     "title": "Mishneh Torah, Inheritances", 
     "lengths": [
         11
     ], 
-    "sections": [], 
+    "type": "Halakhah", 
     "versions": [
         [
             "Wikisource Mishneh Torah", 
             "http://he.wikisource.org/wiki/%D7%9E%D7%A9%D7%A0%D7%94_%D7%AA%D7%95%D7%A8%D7%94_%D7%9C%D7%A8%D7%9E%D7%91%22%D7%9D"
         ]
     ], 
+    "heTitleVariants": [
+        "משנה תורה, הלכות נחלות", 
+        "רמב\"ם, הלכות נחלות"
+    ], 
     "heTitle": "משנה תורה, הלכות נחלות", 
     "versionSource": "http://www.sefaria.org/Mishneh_Torah,_Inheritances", 
-    "next": "Mishneh Torah, Inheritances 2", 
     "length": 11, 
     "book": "Mishneh Torah, Inheritances", 
     "text": [
@@ -162,15 +164,13 @@
         ]
     ], 
     "titleVariants": [
-        "Mishneh Torah, Inheritances", 
-        "Mishneh Torah, Malveh veLoveh", 
-        "Rambam, Inheritances", 
         "Rambam, Malveh veLoveh", 
-        "משנה תורה, הלכות נחלות", 
-        "רמב\"ם, הלכות נחלות", 
-        "Mishneh Torah, Laws of Inheritances", 
-        "Rambam, Laws of Inheritances", 
+        "Rambam, Inheritances", 
+        "Mishneh Torah, Inheritances", 
         "Mishneh Torah, Hilchot Malveh veLoveh", 
+        "Mishneh Torah, Laws of Inheritances", 
+        "Mishneh Torah, Malveh veLoveh", 
+        "Rambam, Laws of Inheritances", 
         "Rambam, Hilchot Malveh veLoveh"
     ], 
     "textDepth": 2, 
@@ -178,7 +178,11 @@
         "Chapter", 
         "Halacha"
     ], 
-    "type": "Halakhah", 
+    "sections": [], 
+    "order": [
+        83, 
+        5
+    ], 
     "categories": [
         "Halakhah", 
         "Mishneh Torah", 

@@ -6778,19 +6778,12 @@
             0
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Rashi_on_Psalms", 
-    "heTitle": "רש\"י על תהילים", 
-    "versions": [
-        [
-            "מקראות גדולות המאור", 
-            "מקראות גדולות"
-        ], 
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ]
+    "heTitleVariants": [
+        "רש\"י"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Rashi_on_Psalms", 
+    "heCommentator": "רש\"י", 
+    "heTitle": "רש\"י על תהילים", 
     "titleVariants": [
         "Rashi on Psalms"
     ], 
@@ -6803,21 +6796,33 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "רש\"י", 
     "ref": "Rashi on Psalms", 
+    "language": "he", 
     "title": "Rashi on Psalms", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "מקראות גדולות המאור", 
+            "מקראות גדולות"
+        ], 
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ]
+    ], 
     "heBook": "רש\"י", 
     "maps": [], 
     "length": 150, 
     "book": "Rashi on Psalms", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        2, 
+        1
+    ]
 }

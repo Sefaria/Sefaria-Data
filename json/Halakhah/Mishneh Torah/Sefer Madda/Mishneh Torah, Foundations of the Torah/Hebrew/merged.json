@@ -1,14 +1,13 @@
 {
     "toSections": [], 
     "versionTitle": "merged", 
-    "prev": null, 
-    "language": "he", 
     "ref": "Mishneh Torah, Foundations of the Torah", 
+    "language": "he", 
     "title": "Mishneh Torah, Foundations of the Torah", 
     "lengths": [
         10
     ], 
-    "sections": [], 
+    "type": "Halakhah", 
     "versions": [
         [
             " מִשְׁנֶה תּוֹרָה", 
@@ -27,9 +26,12 @@
             "http://he.wikisource.org/wiki/%D7%9E%D7%A9%D7%A0%D7%94_%D7%AA%D7%95%D7%A8%D7%94_%D7%9C%D7%A8%D7%9E%D7%91%22%D7%9D"
         ]
     ], 
+    "heTitleVariants": [
+        "משנה תורה, הלכות יסודי התורה", 
+        "רמב\"ם, הלכות יסודי התורה"
+    ], 
     "heTitle": "משנה תורה, הלכות יסודי התורה", 
     "versionSource": "http://www.sefaria.org/Mishneh_Torah,_Foundations_of_the_Torah", 
-    "next": "Mishneh Torah, Foundations of the Torah 2", 
     "length": 10, 
     "book": "Mishneh Torah, Foundations of the Torah", 
     "text": [
@@ -143,23 +145,25 @@
         ]
     ], 
     "titleVariants": [
-        "Mishneh Torah, Foundations of the Torah", 
-        "Mishneh Torah, Yesodey haTorah", 
-        "Rambam, Foundations of the Torah", 
-        "Rambam, Yesodey haTorah", 
-        "משנה תורה, הלכות יסודי התורה", 
-        "רמב\"ם, הלכות יסודי התורה", 
-        "Mishneh Torah, Laws of Foundations of the Torah", 
+        "Rambam, Hilchot Yesodey haTorah", 
         "Rambam, Laws of Foundations of the Torah", 
+        "Mishneh Torah, Foundations of the Torah", 
+        "Rambam, Foundations of the Torah", 
+        "Mishneh Torah, Laws of Foundations of the Torah", 
+        "Rambam, Yesodey haTorah", 
         "Mishneh Torah, Hilchot Yesodey haTorah", 
-        "Rambam, Hilchot Yesodey haTorah"
+        "Mishneh Torah, Yesodey haTorah"
     ], 
     "textDepth": 2, 
     "sectionNames": [
         "Chapter", 
         "Halacha"
     ], 
-    "type": "Halakhah", 
+    "sections": [], 
+    "order": [
+        5, 
+        1
+    ], 
     "categories": [
         "Halakhah", 
         "Mishneh Torah", 

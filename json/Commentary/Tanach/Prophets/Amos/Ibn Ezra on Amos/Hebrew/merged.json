@@ -529,15 +529,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Ibn_Ezra_on_Amos", 
-    "heTitle": "אבן עזרא על עמוס", 
-    "versions": [
-        [
-            "Ibn Ezra on Amos -- Daat", 
-            "http://www.daat.ac.il/he-il/tanach/parshanut_hamikra/full-text/eben-ezra/amos"
-        ]
+    "heTitleVariants": [
+        "אבן עזרא"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Ibn_Ezra_on_Amos", 
+    "heCommentator": "אבן עזרא", 
+    "heTitle": "אבן עזרא על עמוס", 
     "titleVariants": [
         "Ibn Ezra on Amos"
     ], 
@@ -550,21 +547,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "אבן עזרא", 
     "ref": "Ibn Ezra on Amos", 
+    "language": "he", 
     "title": "Ibn Ezra on Amos", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Ibn Ezra on Amos -- Daat", 
+            "http://www.daat.ac.il/he-il/tanach/parshanut_hamikra/full-text/eben-ezra/amos"
+        ]
+    ], 
     "heBook": "אבן עזרא", 
     "maps": [], 
     "length": 9, 
     "book": "Ibn Ezra on Amos", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        6, 
+        5
+    ]
 }

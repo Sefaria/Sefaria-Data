@@ -839,15 +839,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Ralbag_on_Nehemiah", 
-    "heTitle": "רלב\"ג על נחמיה", 
-    "versions": [
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ]
+    "heTitleVariants": [
+        "רלב\"ג"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Ralbag_on_Nehemiah", 
+    "heCommentator": "רלב\"ג", 
+    "heTitle": "רלב\"ג על נחמיה", 
     "titleVariants": [
         "Ralbag on Nehemiah"
     ], 
@@ -860,21 +857,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "רלב\"ג", 
     "ref": "Ralbag on Nehemiah", 
+    "language": "he", 
     "title": "Ralbag on Nehemiah", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ]
+    ], 
     "heBook": "רלב\"ג", 
     "maps": [], 
     "length": 13, 
     "book": "Ralbag on Nehemiah", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        11, 
+        10
+    ]
 }

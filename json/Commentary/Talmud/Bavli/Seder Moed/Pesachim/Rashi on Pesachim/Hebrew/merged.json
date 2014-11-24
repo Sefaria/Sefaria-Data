@@ -19122,15 +19122,12 @@
             []
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Rashi_on_Pesachim", 
-    "heTitle": "רש\"י על פסחים", 
-    "versions": [
-        [
-            "Wikisource Rashi", 
-            "1.0"
-        ]
+    "heTitleVariants": [
+        "רש\"י"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Rashi_on_Pesachim", 
+    "heCommentator": "רש\"י", 
+    "heTitle": "רש\"י על פסחים", 
     "titleVariants": [
         "Rashi on Pesachim"
     ], 
@@ -19144,10 +19141,16 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "language": "he", 
-    "heCommentator": "רש\"י", 
     "ref": "Rashi on Pesachim", 
+    "language": "he", 
     "title": "Rashi on Pesachim", 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Wikisource Rashi", 
+            "1.0"
+        ]
+    ], 
     "heBook": "רש\"י", 
     "maps": [], 
     "length": 121, 
@@ -19158,5 +19161,9 @@
         "Line", 
         "Comment"
     ], 
-    "sections": []
+    "sections": [], 
+    "order": [
+        2, 
+        1
+    ]
 }

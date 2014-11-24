@@ -1,5 +1,5 @@
 {
-    "sections": [], 
+    "commentator": "Rashi", 
     "commentaryCategories": [
         "Talmud", 
         "Bavli", 
@@ -59,14 +59,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Rashi_on_Shabbat", 
-    "heTitle": "רש\"י על שבת", 
-    "versions": [
-        [
-            "Sefaria Community Translation", 
-            "http://www.sefaria.org"
-        ]
+    "heTitleVariants": [
+        "רש\"י"
     ], 
+    "versionSource": "http://www.sefaria.org/Rashi_on_Shabbat", 
+    "heCommentator": "רש\"י", 
+    "heTitle": "רש\"י על שבת", 
     "titleVariants": [
         "Rashi on Shabbat"
     ], 
@@ -82,11 +80,16 @@
     "versionTitle": "merged", 
     "ref": "Rashi on Shabbat", 
     "language": "en", 
-    "maps": [], 
-    "type": "Commentary", 
     "title": "Rashi on Shabbat", 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Sefaria Community Translation", 
+            "http://www.sefaria.org"
+        ]
+    ], 
     "heBook": "רש\"י", 
-    "heCommentator": "רש\"י", 
+    "maps": [], 
     "length": 157, 
     "book": "Rashi on Shabbat", 
     "textDepth": 3, 
@@ -95,5 +98,9 @@
         "Line", 
         "Comment"
     ], 
-    "commentator": "Rashi"
+    "sections": [], 
+    "order": [
+        2, 
+        1
+    ]
 }

@@ -2289,15 +2289,12 @@
             []
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Or_HaChaim_on_Exodus", 
-    "heTitle": "אור החיים על שמות", 
-    "versions": [
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ]
+    "heTitleVariants": [
+        "אור החיים"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Or_HaChaim_on_Exodus", 
+    "heCommentator": "אור החיים", 
+    "heTitle": "אור החיים על שמות", 
     "titleVariants": [
         "Or HaChaim on Exodus"
     ], 
@@ -2310,21 +2307,25 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "אור החיים", 
     "ref": "Or HaChaim on Exodus", 
+    "language": "he", 
     "title": "Or HaChaim on Exodus", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ]
+    ], 
     "heBook": "אור החיים", 
     "maps": [], 
     "length": 40, 
     "book": "Or HaChaim on Exodus", 
     "textDepth": 3, 
-    "prev": null, 
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
     "sections": []
 }

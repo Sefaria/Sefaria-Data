@@ -1,23 +1,25 @@
 {
     "toSections": [], 
     "versionTitle": "merged", 
-    "prev": null, 
-    "language": "he", 
     "ref": "Mishneh Torah, Admission into the Sanctuary", 
+    "language": "he", 
     "title": "Mishneh Torah, Admission into the Sanctuary", 
     "lengths": [
         9
     ], 
-    "sections": [], 
+    "type": "Halakhah", 
     "versions": [
         [
             "Wikisource Mishneh Torah", 
             "http://he.wikisource.org/wiki/%D7%9E%D7%A9%D7%A0%D7%94_%D7%AA%D7%95%D7%A8%D7%94_%D7%9C%D7%A8%D7%9E%D7%91%22%D7%9D"
         ]
     ], 
+    "heTitleVariants": [
+        "משנה תורה, הלכות ביאת מקדש", 
+        "רמב\"ם, הלכות ביאת מקדש"
+    ], 
     "heTitle": "משנה תורה, הלכות ביאת מקדש", 
     "versionSource": "http://www.sefaria.org/Mishneh_Torah,_Admission_into_the_Sanctuary", 
-    "next": "Mishneh Torah, Admission into the Sanctuary 2", 
     "length": 9, 
     "book": "Mishneh Torah, Admission into the Sanctuary", 
     "text": [
@@ -188,15 +190,13 @@
         ]
     ], 
     "titleVariants": [
-        "Mishneh Torah, Admission into the Sanctuary", 
         "Mishneh Torah, Biat Hamikdash", 
-        "Rambam, Admission into the Sanctuary", 
         "Rambam, Biat Hamikdash", 
-        "משנה תורה, הלכות ביאת מקדש", 
-        "רמב\"ם, הלכות ביאת מקדש", 
-        "Mishneh Torah, Laws of Admission into the Sanctuary", 
         "Rambam, Laws of Admission into the Sanctuary", 
         "Mishneh Torah, Hilchot Biat Hamikdash", 
+        "Mishneh Torah, Admission into the Sanctuary", 
+        "Mishneh Torah, Laws of Admission into the Sanctuary", 
+        "Rambam, Admission into the Sanctuary", 
         "Rambam, Hilchot Biat Hamikdash"
     ], 
     "textDepth": 2, 
@@ -204,7 +204,11 @@
         "Chapter", 
         "Halacha"
     ], 
-    "type": "Halakhah", 
+    "sections": [], 
+    "order": [
+        48, 
+        3
+    ], 
     "categories": [
         "Halakhah", 
         "Mishneh Torah", 

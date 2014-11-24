@@ -9082,19 +9082,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Ibn_Ezra_on_Psalms", 
-    "heTitle": "אבן עזרא על תהילים", 
-    "versions": [
-        [
-            "Wikisource Mikraot Gedolot", 
-            "http://en.wikisource.org/wiki/Mikraot_Gedolot/"
-        ], 
-        [
-            "Ibn Ezra on Psalms -- Daat", 
-            "http://www.daat.ac.il/he-il/tanach/parshanut_hamikra/full-text/eben-ezra/tehilim"
-        ]
+    "heTitleVariants": [
+        "אבן עזרא"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Ibn_Ezra_on_Psalms", 
+    "heCommentator": "אבן עזרא", 
+    "heTitle": "אבן עזרא על תהילים", 
     "titleVariants": [
         "Ibn Ezra on Psalms"
     ], 
@@ -9107,21 +9100,33 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "אבן עזרא", 
     "ref": "Ibn Ezra on Psalms", 
+    "language": "he", 
     "title": "Ibn Ezra on Psalms", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Wikisource Mikraot Gedolot", 
+            "http://en.wikisource.org/wiki/Mikraot_Gedolot/"
+        ], 
+        [
+            "Ibn Ezra on Psalms -- Daat", 
+            "http://www.daat.ac.il/he-il/tanach/parshanut_hamikra/full-text/eben-ezra/tehilim"
+        ]
+    ], 
     "heBook": "אבן עזרא", 
     "maps": [], 
     "length": 150, 
     "book": "Ibn Ezra on Psalms", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        6, 
+        5
+    ]
 }

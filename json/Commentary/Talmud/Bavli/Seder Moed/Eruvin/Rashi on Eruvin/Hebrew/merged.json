@@ -12716,15 +12716,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Rashi_on_Eruvin", 
-    "heTitle": "רש\"י על עירובין", 
-    "versions": [
-        [
-            "Wikisource Rashi", 
-            "1.0"
-        ]
+    "heTitleVariants": [
+        "רש\"י"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Rashi_on_Eruvin", 
+    "heCommentator": "רש\"י", 
+    "heTitle": "רש\"י על עירובין", 
     "titleVariants": [
         "Rashi on Eruvin"
     ], 
@@ -12738,10 +12735,16 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "language": "he", 
-    "heCommentator": "רש\"י", 
     "ref": "Rashi on Eruvin", 
+    "language": "he", 
     "title": "Rashi on Eruvin", 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Wikisource Rashi", 
+            "1.0"
+        ]
+    ], 
     "heBook": "רש\"י", 
     "maps": [], 
     "length": 105, 
@@ -12752,5 +12755,9 @@
         "Line", 
         "Comment"
     ], 
-    "sections": []
+    "sections": [], 
+    "order": [
+        2, 
+        1
+    ]
 }

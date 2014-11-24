@@ -1748,15 +1748,12 @@
             []
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Ralbag_on_I_Kings", 
-    "heTitle": "רלב\"ג על מלכים א", 
-    "versions": [
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ]
+    "heTitleVariants": [
+        "רלב\"ג"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Ralbag_on_I_Kings", 
+    "heCommentator": "רלב\"ג", 
+    "heTitle": "רלב\"ג על מלכים א", 
     "titleVariants": [
         "Ralbag on I Kings"
     ], 
@@ -1769,21 +1766,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "רלב\"ג", 
     "ref": "Ralbag on I Kings", 
+    "language": "he", 
     "title": "Ralbag on I Kings", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ]
+    ], 
     "heBook": "רלב\"ג", 
     "maps": [], 
     "length": 22, 
     "book": "Ralbag on I Kings", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        11, 
+        10
+    ]
 }

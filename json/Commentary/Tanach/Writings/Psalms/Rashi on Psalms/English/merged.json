@@ -1,5 +1,5 @@
 {
-    "sections": [], 
+    "commentator": "Rashi", 
     "commentaryCategories": [
         "Tanach", 
         "Writings"
@@ -12,14 +12,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Rashi_on_Psalms", 
-    "heTitle": "רש\"י על תהילים", 
-    "versions": [
-        [
-            "Wikisource Mikraot Gedolot", 
-            "http://en.wikisource.org/wiki/Mikraot_Gedolot/"
-        ]
+    "heTitleVariants": [
+        "רש\"י"
     ], 
+    "versionSource": "http://www.sefaria.org/Rashi_on_Psalms", 
+    "heCommentator": "רש\"י", 
+    "heTitle": "רש\"י על תהילים", 
     "titleVariants": [
         "Rashi on Psalms"
     ], 
@@ -34,20 +32,27 @@
     "versionTitle": "merged", 
     "ref": "Rashi on Psalms", 
     "language": "en", 
-    "maps": [], 
-    "type": "Commentary", 
     "title": "Rashi on Psalms", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Wikisource Mikraot Gedolot", 
+            "http://en.wikisource.org/wiki/Mikraot_Gedolot/"
+        ]
+    ], 
     "heBook": "רש\"י", 
-    "heCommentator": "רש\"י", 
+    "maps": [], 
     "length": 150, 
     "book": "Rashi on Psalms", 
-    "prev": null, 
     "textDepth": 3, 
     "sectionNames": [
         "Chapter", 
         "Verse", 
         "Comment"
     ], 
-    "commentator": "Rashi"
+    "sections": [], 
+    "order": [
+        2, 
+        1
+    ]
 }

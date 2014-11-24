@@ -1,13 +1,8 @@
 {
-    "heBook": "רש\"י", 
-    "versionTitle": "On Your Way", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
+    "commentaryCategories": [
+        "Tanach", 
+        "Prophets"
     ], 
-    "language": "he", 
-    "title": "Rashi on Judges", 
     "text": [
         [
             [
@@ -246,8 +241,7 @@
             [
                 "<b>תחת תומר .</b> תמרים היו לה ביריחו : ", 
                 "<b>בין הרמה ובין בית אל בהר אפרים .</b> לפי תרגומו של יונתן יש ללמוד שאין מקרא זה כמשמעו , ואין אלו סימני מקום ישיבתה , אלא למדנו שאשה עשירה היתה ומן המקומות האלו היתה פרנסתה , והיא יושבת בעירה , עטרות שמה : ", 
-                "<b>תחת תומר .</b> תמרים היו לה ביריחו , וכרמים ברמה , וזיתים בבקעת בית אל , שהוא מקום שמן , ועפר חיוור בהר אפרים , ( תרגום : ", 
-                "<b>) 'בטור מלכא' , אומר אני שמוכרין אותה ליוצרי חרש .</b> ויש פותרין : 'עפר חיוור' , שדה זרע , כמו ( שביעית ב א ) : שדה הלבן :\n"
+                "<b>תחת תומר .</b> תמרים היו לה ביריחו , וכרמים ברמה , וזיתים בבקעת בית אל , שהוא מקום שמן , ועפר חיוור בהר אפרים , ( תרגום :) 'בטור מלכא' , אומר אני שמוכרין אותה ליוצרי חרש . ויש פותרין : 'עפר חיוור' , שדה זרע , כמו ( שביעית ב א ) : שדה הלבן : "
             ], 
             [
                 "<b>הלא צוה .</b> ביד משה ( דברים כ יז ) : כי החרם תחרימם , כך שנויה במכילתא ( בא יב ) :\n"
@@ -1435,26 +1429,38 @@
             []
         ]
     ], 
-    "maps": [], 
-    "commentaryCategories": [
-        "Tanach", 
-        "Prophets"
+    "heTitleVariants": [
+        "רש\"י"
     ], 
-    "heTitle": "רש\"י על שופטים", 
     "versionSource": "http://mobile.tora.ws/", 
-    "priority": 1.0, 
     "heCommentator": "רש\"י", 
-    "length": 21, 
+    "heTitle": "רש\"י על שופטים", 
     "titleVariants": [
         "Rashi on Judges"
     ], 
-    "textDepth": 3, 
     "commentaryBook": "Judges", 
-    "commentator": "Rashi", 
     "categories": [
         "Commentary", 
         "Tanach", 
         "Prophets", 
         "Judges"
+    ], 
+    "heBook": "רש\"י", 
+    "versionTitle": "On Your Way", 
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "language": "he", 
+    "title": "Rashi on Judges", 
+    "priority": 1.0, 
+    "maps": [], 
+    "length": 21, 
+    "textDepth": 3, 
+    "commentator": "Rashi", 
+    "order": [
+        2, 
+        1
     ]
 }

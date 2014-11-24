@@ -1,23 +1,25 @@
 {
     "toSections": [], 
     "versionTitle": "merged", 
-    "prev": null, 
-    "language": "en", 
     "ref": "Mishneh Torah, Foreign Worship and Customs of the Nations", 
+    "language": "en", 
     "title": "Mishneh Torah, Foreign Worship and Customs of the Nations", 
     "lengths": [
         12
     ], 
-    "sections": [], 
+    "type": "Halakhah", 
     "versions": [
         [
             "Sefaria Community Translation", 
             "http://www.sefaria.org"
         ]
     ], 
+    "heTitleVariants": [
+        "משנה תורה, הלכות עבודה זרה וחוקות הגויים", 
+        "רמב\"ם, הלכות עבודה זרה וחוקות הגויים"
+    ], 
     "heTitle": "משנה תורה, הלכות עבודה זרה וחוקות הגויים", 
     "versionSource": "http://www.sefaria.org/Mishneh_Torah,_Foreign_Worship_and_Customs_of_the_Nations", 
-    "next": "Mishneh Torah, Foreign Worship and Customs of the Nations 2", 
     "length": 12, 
     "book": "Mishneh Torah, Foreign Worship and Customs of the Nations", 
     "text": [
@@ -34,15 +36,13 @@
         ]
     ], 
     "titleVariants": [
-        "Mishneh Torah, Foreign Worship and Customs of the Nations", 
-        "Mishneh Torah, Avodah Kochavim", 
-        "Rambam, Foreign Worship and Customs of the Nations", 
         "Rambam, Avodah Kochavim", 
-        "משנה תורה, הלכות עבודה זרה וחוקות הגויים", 
-        "רמב\"ם, הלכות עבודה זרה וחוקות הגויים", 
-        "Mishneh Torah, Laws of Foreign Worship and Customs of the Nations", 
+        "Rambam, Foreign Worship and Customs of the Nations", 
         "Rambam, Laws of Foreign Worship and Customs of the Nations", 
+        "Mishneh Torah, Avodah Kochavim", 
+        "Mishneh Torah, Foreign Worship and Customs of the Nations", 
         "Mishneh Torah, Hilchot Avodah Kochavim", 
+        "Mishneh Torah, Laws of Foreign Worship and Customs of the Nations", 
         "Rambam, Hilchot Avodah Kochavim"
     ], 
     "textDepth": 2, 
@@ -50,7 +50,11 @@
         "Chapter", 
         "Halacha"
     ], 
-    "type": "Halakhah", 
+    "sections": [], 
+    "order": [
+        8, 
+        4
+    ], 
     "categories": [
         "Halakhah", 
         "Mishneh Torah", 

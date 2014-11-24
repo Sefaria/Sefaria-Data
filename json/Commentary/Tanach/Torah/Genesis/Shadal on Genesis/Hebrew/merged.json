@@ -456,19 +456,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Shadal_on_Genesis", 
-    "heTitle": "שד\"ל על בראשית", 
-    "versions": [
-        [
-            "Shadal on Torah", 
-            "http://Shadal"
-        ], 
-        [
-            "Shadal 1st Edition", 
-            "http://www.archive.org/details/HamishahHumsheTorahIlPentateucoVolgarizzatoECommentatovolumeI"
-        ]
+    "heTitleVariants": [
+        "שד\"ל"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Shadal_on_Genesis", 
+    "heCommentator": "שד\"ל", 
+    "heTitle": "שד\"ל על בראשית", 
     "titleVariants": [
         "Shadal on Genesis"
     ], 
@@ -481,21 +474,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "שד\"ל", 
     "ref": "Shadal on Genesis", 
+    "language": "he", 
     "title": "Shadal on Genesis", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Shadal on Torah", 
+            "http://Shadal"
+        ], 
+        [
+            "Shadal 1st Edition", 
+            "http://www.archive.org/details/HamishahHumsheTorahIlPentateucoVolgarizzatoECommentatovolumeI"
+        ]
+    ], 
     "heBook": "שד\"ל", 
     "maps": [], 
     "length": 50, 
     "book": "Shadal on Genesis", 
     "textDepth": 3, 
-    "prev": null, 
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
     "sections": []
 }

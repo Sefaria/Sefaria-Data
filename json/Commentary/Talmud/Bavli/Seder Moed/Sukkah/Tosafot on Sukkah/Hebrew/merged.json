@@ -4585,19 +4585,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Tosafot_on_Sukkah", 
-    "heTitle": "תוספות על סוכה", 
-    "versions": [
-        [
-            "Vilna Shas", 
-            "Vilna Shas"
-        ], 
-        [
-            "Wikisource Talmud Bavli", 
-            "http://he.wikisource.org/wiki/סוכה_ב_א#.D7.A8.D7.A9.22.D7.99"
-        ]
+    "heTitleVariants": [
+        "תוספות"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Tosafot_on_Sukkah", 
+    "heCommentator": "תוספות", 
+    "heTitle": "תוספות על סוכה", 
     "titleVariants": [
         "Tosafot on Sukkah"
     ], 
@@ -4611,10 +4604,20 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "language": "he", 
-    "heCommentator": "תוספות", 
     "ref": "Tosafot on Sukkah", 
+    "language": "he", 
     "title": "Tosafot on Sukkah", 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Vilna Shas", 
+            "Vilna Shas"
+        ], 
+        [
+            "Wikisource Talmud Bavli", 
+            "http://he.wikisource.org/wiki/סוכה_ב_א#.D7.A8.D7.A9.22.D7.99"
+        ]
+    ], 
     "heBook": "תוספות", 
     "maps": [], 
     "length": 56, 
@@ -4625,5 +4628,9 @@
         "Line", 
         "Comment"
     ], 
-    "sections": []
+    "sections": [], 
+    "order": [
+        3, 
+        2
+    ]
 }

@@ -1,12 +1,8 @@
 {
-    "versionTitle": "Wikisource Mikraot Gedolot", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
+    "commentaryCategories": [
+        "Tanach", 
+        "Torah"
     ], 
-    "language": "he", 
-    "title": "Rashi on Genesis", 
     "text": [
         [
             "", 
@@ -23,27 +19,38 @@
             ]
         ]
     ], 
-    "maps": [], 
-    "commentaryCategories": [
-        "Tanach", 
-        "Torah"
+    "heTitleVariants": [
+        "רש\"י"
     ], 
-    "heTitle": "רש\"י על בראשית", 
     "versionSource": "http://he.wikisource.org/wiki/%D7%9E%22%D7%92_%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA_%D7%90_%D7%91", 
-    "heBook": "רש\"י", 
     "heCommentator": "רש\"י", 
-    "length": 50, 
+    "heTitle": "רש\"י על בראשית", 
     "titleVariants": [
         "Rashi on Genesis"
     ], 
-    "textDepth": 3, 
     "commentaryBook": "Genesis", 
-    "commentator": "Rashi", 
-    "method": "copypaste", 
     "categories": [
         "Commentary", 
         "Tanach", 
         "Torah", 
         "Genesis"
-    ]
+    ], 
+    "versionTitle": "Wikisource Mikraot Gedolot", 
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "language": "he", 
+    "title": "Rashi on Genesis", 
+    "order": [
+        2, 
+        1
+    ], 
+    "heBook": "רש\"י", 
+    "maps": [], 
+    "length": 50, 
+    "textDepth": 3, 
+    "commentator": "Rashi", 
+    "method": "copypaste"
 }

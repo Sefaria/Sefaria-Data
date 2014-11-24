@@ -11698,15 +11698,12 @@
             []
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Malbim_on_Psalms", 
-    "heTitle": "מלבי\"ם על תהילים", 
-    "versions": [
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ]
+    "heTitleVariants": [
+        "מלבי\"ם"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Malbim_on_Psalms", 
+    "heCommentator": "מלבי\"ם", 
+    "heTitle": "מלבי\"ם על תהילים", 
     "titleVariants": [
         "Malbim on Psalms"
     ], 
@@ -11719,21 +11716,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "מלבי\"ם", 
     "ref": "Malbim on Psalms", 
+    "language": "he", 
     "title": "Malbim on Psalms", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ]
+    ], 
     "heBook": "מלבי\"ם", 
     "maps": [], 
     "length": 150, 
     "book": "Malbim on Psalms", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        22, 
+        3
+    ]
 }

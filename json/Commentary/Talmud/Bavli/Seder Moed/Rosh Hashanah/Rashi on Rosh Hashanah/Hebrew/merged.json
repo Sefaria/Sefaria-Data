@@ -5130,19 +5130,12 @@
             0
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Rashi_on_Rosh_Hashanah", 
-    "heTitle": "רש\"י על ראש השנה", 
-    "versions": [
-        [
-            "Wikisource Rashi", 
-            "1.0"
-        ], 
-        [
-            "1", 
-            "http://he.wikisource.org/wiki/%D7%A8%D7%90%D7%A9_%D7%94%D7%A9%D7%A0%D7%94_%D7%91_%D7%90"
-        ]
+    "heTitleVariants": [
+        "רש\"י"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Rashi_on_Rosh_Hashanah", 
+    "heCommentator": "רש\"י", 
+    "heTitle": "רש\"י על ראש השנה", 
     "titleVariants": [
         "Rashi on Rosh Hashanah"
     ], 
@@ -5156,10 +5149,20 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "language": "he", 
-    "heCommentator": "רש\"י", 
     "ref": "Rashi on Rosh Hashanah", 
+    "language": "he", 
     "title": "Rashi on Rosh Hashanah", 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Wikisource Rashi", 
+            "1.0"
+        ], 
+        [
+            "1", 
+            "http://he.wikisource.org/wiki/%D7%A8%D7%90%D7%A9_%D7%94%D7%A9%D7%A0%D7%94_%D7%91_%D7%90"
+        ]
+    ], 
     "heBook": "רש\"י", 
     "maps": [], 
     "length": 35, 
@@ -5170,5 +5173,9 @@
         "Line", 
         "Comment"
     ], 
-    "sections": []
+    "sections": [], 
+    "order": [
+        2, 
+        1
+    ]
 }

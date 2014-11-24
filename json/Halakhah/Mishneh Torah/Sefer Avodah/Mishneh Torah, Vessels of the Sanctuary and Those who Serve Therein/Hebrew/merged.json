@@ -1,23 +1,25 @@
 {
     "toSections": [], 
     "versionTitle": "merged", 
-    "prev": null, 
-    "language": "he", 
     "ref": "Mishneh Torah, Vessels of the Sanctuary and Those who Serve Therein", 
+    "language": "he", 
     "title": "Mishneh Torah, Vessels of the Sanctuary and Those who Serve Therein", 
     "lengths": [
         10
     ], 
-    "sections": [], 
+    "type": "Halakhah", 
     "versions": [
         [
             "Wikisource Mishneh Torah", 
             "http://he.wikisource.org/wiki/%D7%9E%D7%A9%D7%A0%D7%94_%D7%AA%D7%95%D7%A8%D7%94_%D7%9C%D7%A8%D7%9E%D7%91%22%D7%9D"
         ]
     ], 
+    "heTitleVariants": [
+        "רמב\"ם, הלכות כלי המקדש והעובדין בו", 
+        "משנה תורה, הלכות כלי המקדש והעובדין בו"
+    ], 
     "heTitle": "משנה תורה, הלכות כלי המקדש והעובדין בו", 
     "versionSource": "http://www.sefaria.org/Mishneh_Torah,_Vessels_of_the_Sanctuary_and_Those_who_Serve_Therein", 
-    "next": "Mishneh Torah, Vessels of the Sanctuary and Those who Serve Therein 2", 
     "length": 10, 
     "book": "Mishneh Torah, Vessels of the Sanctuary and Those who Serve Therein", 
     "text": [
@@ -199,15 +201,13 @@
         ]
     ], 
     "titleVariants": [
-        "Mishneh Torah, Vessels of the Sanctuary and Those who Serve Therein", 
-        "Mishneh Torah, Kli Hamikdash", 
-        "Rambam, Vessels of the Sanctuary and Those who Serve Therein", 
-        "Rambam, Kli Hamikdash", 
-        "משנה תורה, הלכות כלי המקדש והעובדין בו", 
-        "רמב\"ם, הלכות כלי המקדש והעובדין בו", 
-        "Mishneh Torah, Laws of Vessels of the Sanctuary and Those who Serve Therein", 
-        "Rambam, Laws of Vessels of the Sanctuary and Those who Serve Therein", 
         "Mishneh Torah, Hilchot Kli Hamikdash", 
+        "Rambam, Kli Hamikdash", 
+        "Rambam, Laws of Vessels of the Sanctuary and Those who Serve Therein", 
+        "Mishneh Torah, Laws of Vessels of the Sanctuary and Those who Serve Therein", 
+        "Mishneh Torah, Vessels of the Sanctuary and Those who Serve Therein", 
+        "Rambam, Vessels of the Sanctuary and Those who Serve Therein", 
+        "Mishneh Torah, Kli Hamikdash", 
         "Rambam, Hilchot Kli Hamikdash"
     ], 
     "textDepth": 2, 
@@ -215,7 +215,11 @@
         "Chapter", 
         "Halacha"
     ], 
-    "type": "Halakhah", 
+    "sections": [], 
+    "order": [
+        47, 
+        2
+    ], 
     "categories": [
         "Halakhah", 
         "Mishneh Torah", 

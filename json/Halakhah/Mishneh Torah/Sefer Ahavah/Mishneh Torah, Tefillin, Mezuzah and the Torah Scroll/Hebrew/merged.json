@@ -1,23 +1,25 @@
 {
     "toSections": [], 
     "versionTitle": "merged", 
-    "prev": null, 
-    "language": "he", 
     "ref": "Mishneh Torah, Tefillin, Mezuzah and the Torah Scroll", 
+    "language": "he", 
     "title": "Mishneh Torah, Tefillin, Mezuzah and the Torah Scroll", 
     "lengths": [
         10
     ], 
-    "sections": [], 
+    "type": "Halakhah", 
     "versions": [
         [
             "Wikisource Mishneh Torah", 
             "http://he.wikisource.org/wiki/%D7%9E%D7%A9%D7%A0%D7%94_%D7%AA%D7%95%D7%A8%D7%94_%D7%9C%D7%A8%D7%9E%D7%91%22%D7%9D"
         ]
     ], 
+    "heTitleVariants": [
+        "רמב\"ם, הלכות תפילין ומזוזה וספר תורה", 
+        "משנה תורה, הלכות תפילין ומזוזה וספר תורה"
+    ], 
     "heTitle": "משנה תורה, הלכות תפילין ומזוזה וספר תורה", 
     "versionSource": "http://www.sefaria.org/Mishneh_Torah,_Tefillin,_Mezuzah_and_the_Torah_Scroll", 
-    "next": "Mishneh Torah, Tefillin, Mezuzah and the Torah Scroll 2", 
     "length": 10, 
     "book": "Mishneh Torah, Tefillin, Mezuzah and the Torah Scroll", 
     "text": [
@@ -189,14 +191,12 @@
         ]
     ], 
     "titleVariants": [
-        "Mishneh Torah, Tefillin, Mezuzah and the Torah Scroll", 
-        "Mishneh Torah, Tefillin, Mezuzah, v'Sefer Torah", 
         "Rambam, Tefillin, Mezuzah and the Torah Scroll", 
-        "Rambam, Tefillin, Mezuzah, v'Sefer Torah", 
-        "משנה תורה, הלכות תפילין ומזוזה וספר תורה", 
-        "רמב\"ם, הלכות תפילין ומזוזה וספר תורה", 
         "Mishneh Torah, Laws of Tefillin, Mezuzah and the Torah Scroll", 
         "Rambam, Laws of Tefillin, Mezuzah and the Torah Scroll", 
+        "Rambam, Tefillin, Mezuzah, v'Sefer Torah", 
+        "Mishneh Torah, Tefillin, Mezuzah, v'Sefer Torah", 
+        "Mishneh Torah, Tefillin, Mezuzah and the Torah Scroll", 
         "Mishneh Torah, Hilchot Tefillin, Mezuzah, v'Sefer Torah", 
         "Rambam, Hilchot Tefillin, Mezuzah, v'Sefer Torah"
     ], 
@@ -205,7 +205,11 @@
         "Chapter", 
         "Halacha"
     ], 
-    "type": "Halakhah", 
+    "sections": [], 
+    "order": [
+        12, 
+        3
+    ], 
     "categories": [
         "Halakhah", 
         "Mishneh Torah", 

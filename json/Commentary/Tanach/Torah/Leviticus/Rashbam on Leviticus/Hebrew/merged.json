@@ -261,7 +261,7 @@
             "", 
             "", 
             [
-                "וחרבה - מנחת חוטא ומנחת סוטה. "
+                "וחרבה - מנחת חוטא ומנחת סוטה."
             ], 
             "", 
             [
@@ -1276,15 +1276,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Rashbam_on_Leviticus", 
-    "heTitle": "רשב\"ם על ויקרא", 
-    "versions": [
-        [
-            "Rashbam on Leviticus - Daat", 
-            "http://www.daat.ac.il/daat/tanach/parshanut/rashbam.htm"
-        ]
+    "heTitleVariants": [
+        "רשב\"ם"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Rashbam_on_Leviticus", 
+    "heCommentator": "רשב\"ם", 
+    "heTitle": "רשב\"ם על ויקרא", 
     "titleVariants": [
         "Rashbam on Leviticus"
     ], 
@@ -1297,21 +1294,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "רשב\"ם", 
     "ref": "Rashbam on Leviticus", 
+    "language": "he", 
     "title": "Rashbam on Leviticus", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Rashbam on Leviticus - Daat", 
+            "http://www.daat.ac.il/daat/tanach/parshanut/rashbam.htm"
+        ]
+    ], 
     "heBook": "רשב\"ם", 
     "maps": [], 
     "length": 27, 
     "book": "Rashbam on Leviticus", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        5, 
+        4
+    ]
 }

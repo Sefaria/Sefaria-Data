@@ -2554,15 +2554,12 @@
             []
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Malbim_on_II_Samuel", 
-    "heTitle": "מלבי\"ם על שמואל ב", 
-    "versions": [
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ]
+    "heTitleVariants": [
+        "מלבי\"ם"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Malbim_on_II_Samuel", 
+    "heCommentator": "מלבי\"ם", 
+    "heTitle": "מלבי\"ם על שמואל ב", 
     "titleVariants": [
         "Malbim on II Samuel"
     ], 
@@ -2575,21 +2572,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "מלבי\"ם", 
     "ref": "Malbim on II Samuel", 
+    "language": "he", 
     "title": "Malbim on II Samuel", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ]
+    ], 
     "heBook": "מלבי\"ם", 
     "maps": [], 
     "length": 24, 
     "book": "Malbim on II Samuel", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        22, 
+        3
+    ]
 }

@@ -1,5 +1,5 @@
 {
-    "sections": [], 
+    "commentator": "Rashi", 
     "commentaryCategories": [
         "Talmud", 
         "Bavli", 
@@ -176,18 +176,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Rashi_on_Sukkah", 
-    "heTitle": "רש\"י על סוכה", 
-    "versions": [
-        [
-            "Sefaria Community Translation", 
-            "http://www.sefaria.org"
-        ], 
-        [
-            "Wikisource Talmud Bavli", 
-            "http://he.wikisource.org/wiki/%D7%A1%D7%95%D7%9B%D7%94_%D7%91_%D7%91"
-        ]
+    "heTitleVariants": [
+        "רש\"י"
     ], 
+    "versionSource": "http://www.sefaria.org/Rashi_on_Sukkah", 
+    "heCommentator": "רש\"י", 
+    "heTitle": "רש\"י על סוכה", 
     "titleVariants": [
         "Rashi on Sukkah"
     ], 
@@ -203,11 +197,20 @@
     "versionTitle": "merged", 
     "ref": "Rashi on Sukkah", 
     "language": "en", 
-    "maps": [], 
-    "type": "Commentary", 
     "title": "Rashi on Sukkah", 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Sefaria Community Translation", 
+            "http://www.sefaria.org"
+        ], 
+        [
+            "Wikisource Talmud Bavli", 
+            "http://he.wikisource.org/wiki/%D7%A1%D7%95%D7%9B%D7%94_%D7%91_%D7%91"
+        ]
+    ], 
     "heBook": "רש\"י", 
-    "heCommentator": "רש\"י", 
+    "maps": [], 
     "length": 56, 
     "book": "Rashi on Sukkah", 
     "textDepth": 3, 
@@ -216,5 +219,9 @@
         "Line", 
         "Comment"
     ], 
-    "commentator": "Rashi"
+    "sections": [], 
+    "order": [
+        2, 
+        1
+    ]
 }

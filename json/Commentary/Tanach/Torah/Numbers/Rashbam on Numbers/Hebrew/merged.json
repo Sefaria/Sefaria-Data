@@ -1516,15 +1516,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Rashbam_on_Numbers", 
-    "heTitle": "רשב\"ם על במדבר", 
-    "versions": [
-        [
-            "Rashbam on Numbers -- Daat", 
-            "http://www.daat.ac.il/daat/tanach/parshanut/rashbam.htm"
-        ]
+    "heTitleVariants": [
+        "רשב\"ם"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Rashbam_on_Numbers", 
+    "heCommentator": "רשב\"ם", 
+    "heTitle": "רשב\"ם על במדבר", 
     "titleVariants": [
         "Rashbam on Numbers"
     ], 
@@ -1537,21 +1534,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "רשב\"ם", 
     "ref": "Rashbam on Numbers", 
+    "language": "he", 
     "title": "Rashbam on Numbers", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Rashbam on Numbers -- Daat", 
+            "http://www.daat.ac.il/daat/tanach/parshanut/rashbam.htm"
+        ]
+    ], 
     "heBook": "רשב\"ם", 
     "maps": [], 
     "length": 36, 
     "book": "Rashbam on Numbers", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        5, 
+        4
+    ]
 }

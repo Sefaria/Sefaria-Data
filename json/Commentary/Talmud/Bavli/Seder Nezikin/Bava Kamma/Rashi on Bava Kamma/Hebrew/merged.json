@@ -17450,15 +17450,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Rashi_on_Bava_Kamma", 
-    "heTitle": "רש\"י על בבא קמא", 
-    "versions": [
-        [
-            "Wikisource Rashi", 
-            "1.0"
-        ]
+    "heTitleVariants": [
+        "רש\"י"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Rashi_on_Bava_Kamma", 
+    "heCommentator": "רש\"י", 
+    "heTitle": "רש\"י על בבא קמא", 
     "titleVariants": [
         "Rashi on Bava Kamma"
     ], 
@@ -17472,10 +17469,16 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "language": "he", 
-    "heCommentator": "רש\"י", 
     "ref": "Rashi on Bava Kamma", 
+    "language": "he", 
     "title": "Rashi on Bava Kamma", 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Wikisource Rashi", 
+            "1.0"
+        ]
+    ], 
     "heBook": "רש\"י", 
     "maps": [], 
     "length": 119, 
@@ -17486,5 +17489,9 @@
         "Line", 
         "Comment"
     ], 
-    "sections": []
+    "sections": [], 
+    "order": [
+        2, 
+        1
+    ]
 }

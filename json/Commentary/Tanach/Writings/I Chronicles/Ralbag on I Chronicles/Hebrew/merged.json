@@ -1649,15 +1649,12 @@
             []
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Ralbag_on_I_Chronicles", 
-    "heTitle": "רלב\"ג על דברי הימים א", 
-    "versions": [
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ]
+    "heTitleVariants": [
+        "רלב\"ג"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Ralbag_on_I_Chronicles", 
+    "heCommentator": "רלב\"ג", 
+    "heTitle": "רלב\"ג על דברי הימים א", 
     "titleVariants": [
         "Ralbag on I Chronicles"
     ], 
@@ -1670,21 +1667,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "רלב\"ג", 
     "ref": "Ralbag on I Chronicles", 
+    "language": "he", 
     "title": "Ralbag on I Chronicles", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ]
+    ], 
     "heBook": "רלב\"ג", 
     "maps": [], 
     "length": 29, 
     "book": "Ralbag on I Chronicles", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        11, 
+        10
+    ]
 }

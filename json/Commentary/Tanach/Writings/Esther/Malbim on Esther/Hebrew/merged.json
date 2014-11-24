@@ -896,15 +896,12 @@
             []
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Malbim_on_Esther", 
-    "heTitle": "מלבי\"ם על אסתר", 
-    "versions": [
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ]
+    "heTitleVariants": [
+        "מלבי\"ם"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Malbim_on_Esther", 
+    "heCommentator": "מלבי\"ם", 
+    "heTitle": "מלבי\"ם על אסתר", 
     "titleVariants": [
         "Malbim on Esther"
     ], 
@@ -917,21 +914,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "מלבי\"ם", 
     "ref": "Malbim on Esther", 
+    "language": "he", 
     "title": "Malbim on Esther", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ]
+    ], 
     "heBook": "מלבי\"ם", 
     "maps": [], 
     "length": 10, 
     "book": "Malbim on Esther", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        22, 
+        3
+    ]
 }

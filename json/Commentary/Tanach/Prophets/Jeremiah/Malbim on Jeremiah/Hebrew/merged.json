@@ -6432,15 +6432,12 @@
             []
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Malbim_on_Jeremiah", 
-    "heTitle": "מלבי\"ם על ירמיהו", 
-    "versions": [
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ]
+    "heTitleVariants": [
+        "מלבי\"ם"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Malbim_on_Jeremiah", 
+    "heCommentator": "מלבי\"ם", 
+    "heTitle": "מלבי\"ם על ירמיהו", 
     "titleVariants": [
         "Malbim on Jeremiah"
     ], 
@@ -6453,21 +6450,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "מלבי\"ם", 
     "ref": "Malbim on Jeremiah", 
+    "language": "he", 
     "title": "Malbim on Jeremiah", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ]
+    ], 
     "heBook": "מלבי\"ם", 
     "maps": [], 
     "length": 52, 
     "book": "Malbim on Jeremiah", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        22, 
+        3
+    ]
 }

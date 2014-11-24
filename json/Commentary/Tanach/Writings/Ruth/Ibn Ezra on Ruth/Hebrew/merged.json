@@ -237,15 +237,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Ibn_Ezra_on_Ruth", 
-    "heTitle": "אבן עזרא על רות", 
-    "versions": [
-        [
-            "Ibn Ezra on Ruth -- Daat", 
-            "http://www.daat.ac.il/he-il/tanach/parshanut_hamikra/full-text/eben-ezra/ruth"
-        ]
+    "heTitleVariants": [
+        "אבן עזרא"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Ibn_Ezra_on_Ruth", 
+    "heCommentator": "אבן עזרא", 
+    "heTitle": "אבן עזרא על רות", 
     "titleVariants": [
         "Ibn Ezra on Ruth"
     ], 
@@ -258,21 +255,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "אבן עזרא", 
     "ref": "Ibn Ezra on Ruth", 
+    "language": "he", 
     "title": "Ibn Ezra on Ruth", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Ibn Ezra on Ruth -- Daat", 
+            "http://www.daat.ac.il/he-il/tanach/parshanut_hamikra/full-text/eben-ezra/ruth"
+        ]
+    ], 
     "heBook": "אבן עזרא", 
     "maps": [], 
     "length": 4, 
     "book": "Ibn Ezra on Ruth", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        6, 
+        5
+    ]
 }

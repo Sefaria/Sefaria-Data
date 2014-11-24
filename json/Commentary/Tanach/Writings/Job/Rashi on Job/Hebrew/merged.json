@@ -3557,19 +3557,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Rashi_on_Job", 
-    "heTitle": "רש\"י על איוב", 
-    "versions": [
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ], 
-        [
-            "מ\"ג איוב א א", 
-            "http://he.wikisource.org/wiki/%D7%9E%22%D7%92_%D7%90%D7%99%D7%95%D7%91_%D7%90_%D7%90"
-        ]
+    "heTitleVariants": [
+        "רש\"י"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Rashi_on_Job", 
+    "heCommentator": "רש\"י", 
+    "heTitle": "רש\"י על איוב", 
     "titleVariants": [
         "Rashi on Job"
     ], 
@@ -3582,21 +3575,33 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "רש\"י", 
     "ref": "Rashi on Job", 
+    "language": "he", 
     "title": "Rashi on Job", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ], 
+        [
+            "מ\"ג איוב א א", 
+            "http://he.wikisource.org/wiki/%D7%9E%22%D7%92_%D7%90%D7%99%D7%95%D7%91_%D7%90_%D7%90"
+        ]
+    ], 
     "heBook": "רש\"י", 
     "maps": [], 
     "length": 42, 
     "book": "Rashi on Job", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        2, 
+        1
+    ]
 }

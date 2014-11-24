@@ -1434,15 +1434,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Rashbam_on_Deuteronomy", 
-    "heTitle": "רשב\"ם על דברים", 
-    "versions": [
-        [
-            "Rashbam on Deuteronomy -- Daat", 
-            "http://www.daat.ac.il/daat/tanach/parshanut/rashbam.htm"
-        ]
+    "heTitleVariants": [
+        "רשב\"ם"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Rashbam_on_Deuteronomy", 
+    "heCommentator": "רשב\"ם", 
+    "heTitle": "רשב\"ם על דברים", 
     "titleVariants": [
         "Rashbam on Deuteronomy"
     ], 
@@ -1455,21 +1452,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "רשב\"ם", 
     "ref": "Rashbam on Deuteronomy", 
+    "language": "he", 
     "title": "Rashbam on Deuteronomy", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Rashbam on Deuteronomy -- Daat", 
+            "http://www.daat.ac.il/daat/tanach/parshanut/rashbam.htm"
+        ]
+    ], 
     "heBook": "רשב\"ם", 
     "maps": [], 
     "length": 34, 
     "book": "Rashbam on Deuteronomy", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        5, 
+        4
+    ]
 }

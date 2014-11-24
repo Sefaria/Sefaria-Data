@@ -1,12 +1,8 @@
 {
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Halacha"
-    ], 
-    "language": "en", 
     "ref": "Mishneh Torah, Overview of Mishneh Torah Contents", 
+    "language": "en", 
     "title": "Mishneh Torah, Overview of Mishneh Torah Contents", 
     "type": "Halakhah", 
     "versions": [
@@ -15,8 +11,11 @@
             "http://www.sefaria.org"
         ]
     ], 
+    "heTitleVariants": [
+        "משנה תורה, תוכן החיבור", 
+        "רמב\"ם, תוכן החיבור"
+    ], 
     "versionSource": "http://www.sefaria.org/Mishneh_Torah,_Overview_of_Mishneh_Torah_Contents", 
-    "next": "Mishneh Torah, Overview of Mishneh Torah Contents 2", 
     "heTitle": "משנה תורה, תוכן החיבור", 
     "book": "Mishneh Torah, Overview of Mishneh Torah Contents", 
     "text": [
@@ -166,16 +165,21 @@
         ]
     ], 
     "titleVariants": [
-        "Mishneh Torah, Overview of Mishneh Torah Contents", 
-        "Mishneh Torah, Tachon haChibor", 
-        "Rambam, Overview of Mishneh Torah Contents", 
         "Rambam, Tachon haChibor", 
-        "משנה תורה, תוכן החיבור", 
-        "רמב\"ם, תוכן החיבור"
+        "Rambam, Overview of Mishneh Torah Contents", 
+        "Mishneh Torah, Tachon haChibor", 
+        "Mishneh Torah, Overview of Mishneh Torah Contents"
     ], 
     "textDepth": 2, 
-    "prev": null, 
+    "sectionNames": [
+        "Chapter", 
+        "Halacha"
+    ], 
     "sections": [], 
+    "order": [
+        4, 
+        4
+    ], 
     "categories": [
         "Halakhah", 
         "Mishneh Torah", 

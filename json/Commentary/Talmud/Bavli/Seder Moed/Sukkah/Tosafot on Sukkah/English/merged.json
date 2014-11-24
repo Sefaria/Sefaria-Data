@@ -1,5 +1,5 @@
 {
-    "sections": [], 
+    "commentator": "Tosafot", 
     "commentaryCategories": [
         "Talmud", 
         "Bavli", 
@@ -87,14 +87,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Tosafot_on_Sukkah", 
-    "heTitle": "תוספות על סוכה", 
-    "versions": [
-        [
-            "Sefaria Community Translation", 
-            "http://www.sefaria.org"
-        ]
+    "heTitleVariants": [
+        "תוספות"
     ], 
+    "versionSource": "http://www.sefaria.org/Tosafot_on_Sukkah", 
+    "heCommentator": "תוספות", 
+    "heTitle": "תוספות על סוכה", 
     "titleVariants": [
         "Tosafot on Sukkah"
     ], 
@@ -110,11 +108,16 @@
     "versionTitle": "merged", 
     "ref": "Tosafot on Sukkah", 
     "language": "en", 
-    "maps": [], 
-    "type": "Commentary", 
     "title": "Tosafot on Sukkah", 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Sefaria Community Translation", 
+            "http://www.sefaria.org"
+        ]
+    ], 
     "heBook": "תוספות", 
-    "heCommentator": "תוספות", 
+    "maps": [], 
     "length": 56, 
     "book": "Tosafot on Sukkah", 
     "textDepth": 3, 
@@ -123,5 +126,9 @@
         "Line", 
         "Comment"
     ], 
-    "commentator": "Tosafot"
+    "sections": [], 
+    "order": [
+        3, 
+        2
+    ]
 }

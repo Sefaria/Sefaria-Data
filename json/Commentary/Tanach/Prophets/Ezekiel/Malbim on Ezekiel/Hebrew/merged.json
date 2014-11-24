@@ -6618,15 +6618,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Malbim_on_Ezekiel", 
-    "heTitle": "מלבי\"ם על יחזקאל", 
-    "versions": [
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ]
+    "heTitleVariants": [
+        "מלבי\"ם"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Malbim_on_Ezekiel", 
+    "heCommentator": "מלבי\"ם", 
+    "heTitle": "מלבי\"ם על יחזקאל", 
     "titleVariants": [
         "Malbim on Ezekiel"
     ], 
@@ -6639,21 +6636,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "מלבי\"ם", 
     "ref": "Malbim on Ezekiel", 
+    "language": "he", 
     "title": "Malbim on Ezekiel", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ]
+    ], 
     "heBook": "מלבי\"ם", 
     "maps": [], 
     "length": 48, 
     "book": "Malbim on Ezekiel", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        22, 
+        3
+    ]
 }

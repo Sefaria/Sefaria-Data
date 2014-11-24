@@ -1,12 +1,8 @@
 {
-    "versionTitle": "Sefaria Community Translation", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
+    "commentaryCategories": [
+        "Tanach", 
+        "Torah"
     ], 
-    "language": "en", 
-    "title": "Rashbam on Genesis", 
     "text": [
         [
             [
@@ -179,7 +175,12 @@
         [], 
         [], 
         [], 
-        [], 
+        [
+            [
+                "1 He was advanced in years.  This is to say, the time had come to marry off his son during his lifetime.", 
+                "2. And God blessed Abraham [with everything] - this is to inform/explain to us about what is said in [the text in] front of us, that Abraham did not send his servant to take a wife [for Isaac] on account of lack of women in the Land of Canaan or because no one wanted to mate with him, because Abraham had been blessed with everything and the entire world desired to mate with Isaac, but because he only wanted a spouse for Isaac from his family.  This is why Abraham's servant said: \"And Adonai blessed my master very much and he has become wealthy.\"  And it is for this reason that the text needed to explain first that God had blessed Abraham \"with everything,\" as in a similar instance: \"And Ham was the father of Canaan\" (Genesis 9:18).  "
+            ]
+        ], 
         [
             "", 
             "", 
@@ -233,27 +234,38 @@
             ]
         ]
     ], 
-    "maps": [], 
-    "commentaryCategories": [
-        "Tanach", 
-        "Torah"
+    "heTitleVariants": [
+        "רשב\"ם"
     ], 
-    "heTitle": "רשב\"ם על בראשית", 
     "versionSource": "http://www.sefaria.org", 
-    "heBook": "רשב\"ם", 
     "heCommentator": "רשב\"ם", 
-    "length": 50, 
+    "heTitle": "רשב\"ם על בראשית", 
     "titleVariants": [
         "Rashbam on Genesis"
     ], 
-    "textDepth": 3, 
     "commentaryBook": "Genesis", 
-    "commentator": "Rashbam", 
-    "method": "original", 
     "categories": [
         "Commentary", 
         "Tanach", 
         "Torah", 
         "Genesis"
-    ]
+    ], 
+    "versionTitle": "Sefaria Community Translation", 
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "language": "en", 
+    "title": "Rashbam on Genesis", 
+    "order": [
+        5, 
+        4
+    ], 
+    "heBook": "רשב\"ם", 
+    "maps": [], 
+    "length": 50, 
+    "textDepth": 3, 
+    "commentator": "Rashbam", 
+    "method": "original"
 }

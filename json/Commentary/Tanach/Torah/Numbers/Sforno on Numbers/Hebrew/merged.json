@@ -2236,19 +2236,12 @@
             0
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Sforno_on_Numbers", 
-    "heTitle": "ספורנו על במדבר", 
-    "versions": [
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ], 
-        [
-            "Daat", 
-            "http://www.daat.ac.il/daat/olam_hatanah/mefaresh.asp?book=4&perek=22&mefaresh=sforno"
-        ]
+    "heTitleVariants": [
+        "ספורנו"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Sforno_on_Numbers", 
+    "heCommentator": "ספורנו", 
+    "heTitle": "ספורנו על במדבר", 
     "titleVariants": [
         "Sforno on Numbers"
     ], 
@@ -2261,21 +2254,33 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "ספורנו", 
     "ref": "Sforno on Numbers", 
+    "language": "he", 
     "title": "Sforno on Numbers", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ], 
+        [
+            "Daat", 
+            "http://www.daat.ac.il/daat/olam_hatanah/mefaresh.asp?book=4&perek=22&mefaresh=sforno"
+        ]
+    ], 
     "heBook": "ספורנו", 
     "maps": [], 
     "length": 36, 
     "book": "Sforno on Numbers", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        19, 
+        18
+    ]
 }

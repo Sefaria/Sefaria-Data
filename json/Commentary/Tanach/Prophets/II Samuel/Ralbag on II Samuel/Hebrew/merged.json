@@ -1258,15 +1258,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Ralbag_on_II_Samuel", 
-    "heTitle": "רלב\"ג על שמואל ב", 
-    "versions": [
-        [
-            "On Your Way", 
-            "http://mobile.tora.ws/"
-        ]
+    "heTitleVariants": [
+        "רלב\"ג"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Ralbag_on_II_Samuel", 
+    "heCommentator": "רלב\"ג", 
+    "heTitle": "רלב\"ג על שמואל ב", 
     "titleVariants": [
         "Ralbag on II Samuel"
     ], 
@@ -1279,21 +1276,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "רלב\"ג", 
     "ref": "Ralbag on II Samuel", 
+    "language": "he", 
     "title": "Ralbag on II Samuel", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "On Your Way", 
+            "http://mobile.tora.ws/"
+        ]
+    ], 
     "heBook": "רלב\"ג", 
     "maps": [], 
     "length": 24, 
     "book": "Ralbag on II Samuel", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        11, 
+        10
+    ]
 }

@@ -84,15 +84,12 @@
             ]
         ]
     ], 
-    "versionSource": "http://www.sefaria.org/Ibn_Ezra_on_Obadiah", 
-    "heTitle": "אבן עזרא על עובדיה", 
-    "versions": [
-        [
-            "Ibn Ezra on Obadiah -- Daat", 
-            "http://www.daat.ac.il/daat/olam_hatanah/mefaresh.asp?book=18&perek=1&mefaresh=ezra"
-        ]
+    "heTitleVariants": [
+        "אבן עזרא"
     ], 
-    "type": "Commentary", 
+    "versionSource": "http://www.sefaria.org/Ibn_Ezra_on_Obadiah", 
+    "heCommentator": "אבן עזרא", 
+    "heTitle": "אבן עזרא על עובדיה", 
     "titleVariants": [
         "Ibn Ezra on Obadiah"
     ], 
@@ -105,21 +102,29 @@
     ], 
     "toSections": [], 
     "versionTitle": "merged", 
-    "sectionNames": [
-        "Chapter", 
-        "Verse", 
-        "Comment"
-    ], 
-    "language": "he", 
-    "heCommentator": "אבן עזרא", 
     "ref": "Ibn Ezra on Obadiah", 
+    "language": "he", 
     "title": "Ibn Ezra on Obadiah", 
-    "next": null, 
+    "type": "Commentary", 
+    "versions": [
+        [
+            "Ibn Ezra on Obadiah -- Daat", 
+            "http://www.daat.ac.il/daat/olam_hatanah/mefaresh.asp?book=18&perek=1&mefaresh=ezra"
+        ]
+    ], 
     "heBook": "אבן עזרא", 
     "maps": [], 
     "length": 1, 
     "book": "Ibn Ezra on Obadiah", 
     "textDepth": 3, 
-    "prev": null, 
-    "sections": []
+    "sectionNames": [
+        "Chapter", 
+        "Verse", 
+        "Comment"
+    ], 
+    "sections": [], 
+    "order": [
+        6, 
+        5
+    ]
 }
