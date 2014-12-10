@@ -102,8 +102,7 @@ def post_dhm(mesechta,daf,dhmObj,engComm):
         index = {
                 'text': text,
                 'versionTitle':'Wikisource Rashi',
-                'versionSource':'1.0',
-                'versionUrl':"http://he.wikisource.org/wiki/%D7%AA%D7%9C%D7%9E%D7%95%D7%93_%D7%91%D7%91%D7%9C%D7%99",
+                'versionSource':"http://he.wikisource.org/wiki/%D7%AA%D7%9C%D7%9E%D7%95%D7%93_%D7%91%D7%91%D7%9C%D7%99",
                 'language':"he"
         }
         indexJson = json.dumps(index)
