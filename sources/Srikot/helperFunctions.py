@@ -13,8 +13,8 @@ import pprint
 
 #for dev testing, normally comment out.
 apikey =  '' #Add your API key
-#server = 'www.sefaria.org'
-server = 'localhost:8000'
+server = 'www.sefaria.org'
+#server = 'localhost:8000'
 
 
 def chunks(input_list, n):
