@@ -39,7 +39,7 @@ def run_parser():
         json_text = process_book_file(filename)
         text_whole = {
             "title": json_text['title'],
-            "versionTitle": "Westminster Leningrad Codex",
+            "versionTitle": "Tanach with Ta'amei Hamikra",
             "versionSource": "http://www.tanach.us/Tanach.xml",
             "language": "he",
             "text": json_text['text'],
@@ -76,11 +76,11 @@ def verse_parsing_func(verse_xml):
 
 def xml_node_convert(word_xml):
     if word_xml.tag == 'w': #normal word node
-        return strip_wlc_morph_notation(word_xml.text)
+        return strip_wlc_morph_notation(join_irregular_letters(word_xml))
     elif word_xml.tag == 'k': #ketib
-        return strip_wlc_morph_notation(word_xml.text)
+        return strip_wlc_morph_notation(join_irregular_letters(word_xml))
     elif word_xml.tag == 'q': #qere
-        return "[" + strip_wlc_morph_notation(word_xml.text) + "]"
+        return "[" + strip_wlc_morph_notation(join_irregular_letters(word_xml)) + "]"
     elif word_xml.tag == 'reversednun':
         return "(" + u'\u05C6' + ")"
     elif word_xml.tag == 'samekh':
@@ -93,6 +93,12 @@ def xml_node_convert(word_xml):
 def strip_wlc_morph_notation(word):
     #strip the slash that denotes a morphological separator
     return re.sub(ur"\u002f", "", word)
+
+def join_irregular_letters(word_xml):
+    word_str = word_xml.text if word_xml.text else ''
+    word_str += ''.join(s.text for s in word_xml.findall('s'))
+    word_str += word_xml.tail if word_xml.tail else ''
+    return word_str
 
 def save_parsed_text(text, sub_directory=None):
     directory = "preprocess_json/%s" % sub_directory if sub_directory else "preprocess_json"
@@ -113,7 +119,7 @@ def parse_derived_text_versions():
         vowel_text = make_vowel_text(book_text)
         vowel_whole = {
             "title": canonical_name,
-            "versionTitle": "Westminster Leningrad Codex - Vowels",
+            "versionTitle": "Tanach with Nikkud",
             "versionSource": "http://www.tanach.us/Tanach.xml",
             "language": "he",
             "text": vowel_text,
@@ -123,7 +129,7 @@ def parse_derived_text_versions():
         consonant_text =  make_consonantal_text(book_text)
         consonant_whole = {
             "title": canonical_name,
-            "versionTitle": "Westminster Leningrad Codex - Consonants",
+            "versionTitle": "Tanach with Text Only",
             "versionSource": "http://www.tanach.us/Tanach.xml",
             "language": "he",
             "text": consonant_text,
