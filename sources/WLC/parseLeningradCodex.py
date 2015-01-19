@@ -97,7 +97,7 @@ def strip_wlc_morph_notation(word):
 def join_irregular_letters(word_xml):
     word_str = word_xml.text if word_xml.text else ''
     word_str += ''.join(s.text for s in word_xml.findall('s'))
-    word_str += word_xml.tail if word_xml.tail else ''
+    word_str += word_xml[-1].tail if len(list(word_xml)) and word_xml[-1].tail else ''
     return word_str
 
 def save_parsed_text(text, sub_directory=None):
