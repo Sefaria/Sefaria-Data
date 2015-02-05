@@ -127,6 +127,9 @@ class MishnahVolume(AbstractVolume):
         return len(self.get_current_chapter_text()) - self.current_mishnah
 
 
+#matni_re = re.compile(ur"""\u05de\u05ea\u05e0\u05d9(?:'|\u05f3|\s|\u05ea\u05d9\u05df)""")
+raw_re = u"מתנ" + u"י" + u"?" + u"(?:'|\s|" + u"׳" + u"|" + u"תין" + u")"
+matni_re = re.compile(raw_re)
 
 mesechtot = [u'Mishnah Berakhot',u'Mishnah Peah',u'Mishnah Demai',u'Mishnah Kilayim',u'Mishnah Sheviit',u'Mishnah Terumot',u'Mishnah Maasrot',u'Mishnah Maaser Sheni',u'Mishnah Challah',u'Mishnah Orlah',u'Mishnah Bikkurim',u'Mishnah Shabbat',u'Mishnah Eruvin',u'Mishnah Pesachim',u'Mishnah Shekalim',u'Mishnah Yoma',u'Mishnah Sukkah',u'Mishnah Beitzah',u'Mishnah Rosh Hashanah',u'Mishnah Taanit',u'Mishnah Megillah',u'Mishnah Moed Katan',u'Mishnah Chagigah',u'Mishnah Yevamot',u'Mishnah Ketubot',u'Mishnah Nedarim',u'Mishnah Nazir',u'Mishnah Sotah',u'Mishnah Gittin',u'Mishnah Kiddushin',u'Mishnah Bava Kamma',u'Mishnah Bava Metzia',u'Mishnah Bava Batra',u'Mishnah Sanhedrin',u'Mishnah Makkot',u'Mishnah Shevuot',u'Mishnah Eduyot',u'Mishnah Avodah Zarah',u'Pirkei Avot',u'Mishnah Horayot',u'Mishnah Zevachim',u'Mishnah Menachot',u'Mishnah Chullin',u'Mishnah Bekhorot',u'Mishnah Arakhin',u'Mishnah Temurah',u'Mishnah Keritot',u'Mishnah Meilah',u'Mishnah Tamid',u'Mishnah Middot',u'Mishnah Kinnim',u'Mishnah Kelim',u'Mishnah Oholot',u'Mishnah Negaim',u'Mishnah Parah',u'Mishnah Tahorot',u'Mishnah Mikvaot',u'Mishnah Niddah',u'Mishnah Makhshirin',u'Mishnah Zavim',u'Mishnah Tevul Yom',u'Mishnah Yadayim',u'Mishnah Oktzin']
 
@@ -138,12 +141,13 @@ def process_book(bavli, mishnah, csv_writer):
 
         line = bavli.get_next_line()
 
-        if u"\u05de\u05ea\u05e0\u05d9 " in line or perek_start:  # Match mishnah keyword
+        if matni_re.search(line) or perek_start:  # Match mishnah keyword
             starting_line = bavli.current_line - 1
             starting_daf = bavli.current_daf()
 
             line = bavli.get_next_line()
-            if line in current_mishnah:
+            if fuzz.partial_ratio(line, current_mishnah) > 90:
+            #if line in current_mishnah:
                 starting_mishnah = mishnah.current_mishnah
                 ending_daf = bavli.current_daf()
                 ending_line = bavli.current_line - 1
