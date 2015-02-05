@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import urllib2
 import re
 import json
@@ -116,15 +117,20 @@ def find(title, talmud_length, mishna_length):
                 perek_text = map(lambda t: re.sub(r'[,\.]', "", t), perek_text)
                 mishnah_text[current_mishnah_chapter] = perek_text
 
-            if u"\u05de\u05ea\u05e0\u05d9' " in bavli[line]:  # Match mishnah keyword
+            if u"\u05de\u05ea\u05e0\u05d9' " in bavli[line]: # Match mishnah keyword
+                if line==len(bavli)-1:
+                    print str(daf)
                 if bavli[line + 1] in perek_text[current_mishnah]:  # Check for correct text
+                    print str(daf)+ amud + str(line)
                     bavlis_mishnah = []
                     starting_line = line
                     ending_line = a = line + 1
-                    while u"גמ׳" not in bavli[a]:
+                    while ":" not in bavli[a]:
                         bavlis_mishnah += [bavli[a]]
                         ending_line = a
                         a += 1
+                        if a == len(bavli):
+                            print str(daf)
                     line = a  # reset line counter to line w/ GM
 
                     last_mishnah_line_in_bavli = bavlis_mishnah[-1]
@@ -139,13 +145,13 @@ def find(title, talmud_length, mishna_length):
         #todo: Mishnah carries over to next daf
 
 for mesechet in mesechtot:
-    try:
-        bavli = get_talmud_index(mesechet)
-        mishnah = get_mishnah_index(mesechet)
-        find(bavli["title"],bavli["length"],mishnah["length"])
-        #need to take the length from the index of the mishna and the talmud
-    except:
-        print 'no bavli for '+ mesechet
+   # try:
+    bavli = get_talmud_index(mesechet)
+    mishnah = get_mishnah_index(mesechet)
+    find(bavli["title"],bavli["length"],mishnah["length"])
+    #need to take the length from the index of the mishna and the talmud
+ #   except Exception as e:
+ #       print 'no bavli for {}. {}'.format(mesechet, e)
     break
 
 
