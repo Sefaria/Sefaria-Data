@@ -2,162 +2,202 @@
 import urllib2
 import re
 import json
+import csv
 
-#def is_there_bavli():
-# Get list of mesechtot
-mesechtot = [u'Mishnah Berakhot',
-                u'Mishnah Peah',
-                u'Mishnah Demai',
-                u'Mishnah Kilayim',
-                u'Mishnah Sheviit',
-                u'Mishnah Terumot',
-                u'Mishnah Maasrot',
-                u'Mishnah Maaser Sheni',
-                u'Mishnah Challah',
-                u'Mishnah Orlah',
-                u'Mishnah Bikkurim',
-                u'Mishnah Shabbat',
-                u'Mishnah Eruvin',
-                u'Mishnah Pesachim',
-                u'Mishnah Shekalim',
-                u'Mishnah Yoma',
-                u'Mishnah Sukkah',
-                u'Mishnah Beitzah',
-                u'Mishnah Rosh Hashanah',
-                u'Mishnah Taanit',
-                u'Mishnah Megillah',
-                u'Mishnah Moed Katan',
-                u'Mishnah Chagigah',
-                u'Mishnah Yevamot',
-                u'Mishnah Ketubot',
-                u'Mishnah Nedarim',
-                u'Mishnah Nazir',
-                u'Mishnah Sotah',
-                u'Mishnah Gittin',
-                u'Mishnah Kiddushin',
-                u'Mishnah Bava Kamma',
-                u'Mishnah Bava Metzia',
-                u'Mishnah Bava Batra',
-                u'Mishnah Sanhedrin',
-                u'Mishnah Makkot',
-                u'Mishnah Shevuot',
-                u'Mishnah Eduyot',
-                u'Mishnah Avodah Zarah',
-                u'Pirkei Avot',
-                u'Mishnah Horayot',
-                u'Mishnah Zevachim',
-                u'Mishnah Menachot',
-                u'Mishnah Chullin',
-                u'Mishnah Bekhorot',
-                u'Mishnah Arakhin',
-                u'Mishnah Temurah',
-                u'Mishnah Keritot',
-                u'Mishnah Meilah',
-                u'Mishnah Tamid',
-                u'Mishnah Middot',
-                u'Mishnah Kinnim',
-                u'Mishnah Kelim',
-                u'Mishnah Oholot',
-                u'Mishnah Negaim',
-                u'Mishnah Parah',
-                u'Mishnah Tahorot',
-                u'Mishnah Mikvaot',
-                u'Mishnah Niddah',
-                u'Mishnah Makhshirin',
-                u'Mishnah Zavim',
-                u'Mishnah Tevul Yom',
-                u'Mishnah Yadayim',
-                u'Mishnah Oktzin'
-]
-# For each Mesechet of Mishnah check wether there is a talmud
+from fm import fuzz
 
 
-def get_index(title):
-    url = 'http://www.sefaria.org/api/index/'+ str(title)
-    response = urllib2.urlopen(url)
-    resp = response.read()
-    return json.loads(resp)
+class PointerException(Exception):
+    pass
 
 
-def get_text(ref):
-    url = 'http://www.sefaria.org/api/texts/' + ref
-    response = urllib2.urlopen(url)
-    resp = response.read()
-    return json.loads(resp)
+class AbstractVolume(object):
+    def __init__(self, title):
+        url = 'http://www.sefaria.org/api/index/'+ str(title)
+        response = urllib2.urlopen(url)
+        resp = response.read()
+        self.title = title
+        self.index = json.loads(resp)
+        if "error" in self.index:
+            raise Exception(u"Failed to get index {}: {}".format(title, self.index["error"]))
+
+    def get_text(self, ref):
+        url = 'http://www.sefaria.org/api/texts/' + str(ref)
+        response = urllib2.urlopen(url)
+        resp = response.read()
+        return json.loads(resp)["he"]
 
 
-def get_mishnah_index(mesechet):
-    mesechet=re.sub(" ", "_", mesechet)
-    return get_index(mesechet)
+class TalmudVolume(AbstractVolume):
+    def __init__(self, title):
+        super(TalmudVolume, self).__init__(title)
+        self.text = {}
+        self.current_daf_index = 2
+        self.current_line = 1
+
+    def get_amud_text(self, daf_amud): # daf_amud = "2a"
+        if not self.text.get(daf_amud):
+            raw = self.get_text(self.title + "." + str(daf_amud))
+            self.text[daf_amud] = map(lambda t: re.sub(r'[,\. ]+', " ", t).strip(), raw)
+        return self.text.get(daf_amud)
+
+    def get_next_line(self):
+        amud = self.get_current_amud()
+        if self.current_line > len(amud):
+            self.advance_page()
+            amud = self.get_current_amud()
+        l = amud[self.current_line - 1]
+        self.current_line += 1
+        return l
+
+    def index_to_daf(self, index):
+        amud = "a" if index % 2 == 0 else "b"
+        daf = (index / 2) + 1
+        return str(daf) + amud
+
+    def current_daf(self):
+        return self.index_to_daf(self.current_daf_index)
+
+    def get_current_amud(self):
+        return self.get_amud_text(self.current_daf())
+
+    def advance_page(self):
+        if not self.has_more_pages():
+            raise PointerException("Reached end of Talmud {}")
+        self.current_daf_index += 1
+        self.current_line = 1
+
+    def has_more(self):
+        amud = self.get_current_amud()
+        if self.current_line <= len(amud):
+            return True
+        if self.current_daf_index >= self.index["length"] + 2:
+            return False
+        return True
+
+    def has_more_lines(self):
+        amud = self.get_current_amud()
+        if self.current_line > len(amud):
+            return False
+        return True
+
+    def has_more_pages(self):
+        if self.current_daf_index >= self.index["length"] + 2:
+            return False
+        return True
 
 
-def get_talmud_index(mesechet):
-    ref = mesechet[8:]
-    ref = re.sub(" ", "_", ref)
-    return get_index(ref)
+class MishnahVolume(AbstractVolume):
+    def __init__(self, title):
+        super(MishnahVolume, self).__init__(title)
+        self.text = {}
+        self.current_chapter = 1
+        self.current_mishnah = 1
+        self.current_offset = 0
+
+    def get_chapter_text(self, num):
+        if not self.text.get(num):
+            raw = self.get_text(self.title + "." + str(num))
+            self.text[num] = map(lambda t: re.sub(r'[,\. ]+', " ", t).strip(), raw)
+        return self.text.get(num)
+
+    def get_current_chapter_text(self):
+        return self.get_chapter_text(self.current_chapter)
+
+    def advance_pointer(self, chapter, mishnah=1, offset=0):
+        self.current_chapter = chapter
+        self.current_mishnah = mishnah
+        self.current_offset = offset
+
+    def advance_chapter(self):
+        self.advance_pointer(self.current_chapter + 1)
+
+    def get_current_mishnah(self):
+        chapter = self.get_current_chapter_text()
+        return chapter[self.current_mishnah - 1][self.current_offset:]
+
+    def get_next_mishnah(self, num=1):
+        chapter = self.get_current_chapter_text()
+        requested_mishnah = self.current_mishnah + num
+        if requested_mishnah > len(chapter):
+            raise PointerException("Reached end of Mishnah Chapter")
+        return chapter[requested_mishnah - 1]
+
+    def number_left_in_chapter(self):
+        return len(self.get_current_chapter_text()) - self.current_mishnah
 
 
-def find(title, talmud_length, mishna_length):
-    current_mishnah_chapter = 1
-    current_mishnah = 1
-    cuurent_mishnah_offset = 0
 
-    mishnah_text = {}
+mesechtot = [u'Mishnah Berakhot',u'Mishnah Peah',u'Mishnah Demai',u'Mishnah Kilayim',u'Mishnah Sheviit',u'Mishnah Terumot',u'Mishnah Maasrot',u'Mishnah Maaser Sheni',u'Mishnah Challah',u'Mishnah Orlah',u'Mishnah Bikkurim',u'Mishnah Shabbat',u'Mishnah Eruvin',u'Mishnah Pesachim',u'Mishnah Shekalim',u'Mishnah Yoma',u'Mishnah Sukkah',u'Mishnah Beitzah',u'Mishnah Rosh Hashanah',u'Mishnah Taanit',u'Mishnah Megillah',u'Mishnah Moed Katan',u'Mishnah Chagigah',u'Mishnah Yevamot',u'Mishnah Ketubot',u'Mishnah Nedarim',u'Mishnah Nazir',u'Mishnah Sotah',u'Mishnah Gittin',u'Mishnah Kiddushin',u'Mishnah Bava Kamma',u'Mishnah Bava Metzia',u'Mishnah Bava Batra',u'Mishnah Sanhedrin',u'Mishnah Makkot',u'Mishnah Shevuot',u'Mishnah Eduyot',u'Mishnah Avodah Zarah',u'Pirkei Avot',u'Mishnah Horayot',u'Mishnah Zevachim',u'Mishnah Menachot',u'Mishnah Chullin',u'Mishnah Bekhorot',u'Mishnah Arakhin',u'Mishnah Temurah',u'Mishnah Keritot',u'Mishnah Meilah',u'Mishnah Tamid',u'Mishnah Middot',u'Mishnah Kinnim',u'Mishnah Kelim',u'Mishnah Oholot',u'Mishnah Negaim',u'Mishnah Parah',u'Mishnah Tahorot',u'Mishnah Mikvaot',u'Mishnah Niddah',u'Mishnah Makhshirin',u'Mishnah Zavim',u'Mishnah Tevul Yom',u'Mishnah Yadayim',u'Mishnah Oktzin']
 
-    for daf_index in range(2, talmud_length):
-        amud = "a" if daf_index % 2 == 0 else "b"
-        daf = (daf_index / 2) + 1
-        bavli = get_text(title + "." + str(daf) + amud)["he"]
+def process_book(bavli, mishnah, csv_writer):
+    perek_start = True
 
-        # for mishnah_in_chapter in range(0, len(perek_text)):
-        for line in range(len(bavli)):
-            perek_text = mishnah_text.get(current_mishnah_chapter)
-            if not perek_text:
-                perek_text = get_text("Mishna_" + title + '.' + str(current_mishnah_chapter))["he"]
-                perek_text = map(lambda t: re.sub(r'[,\.]', "", t), perek_text)
-                mishnah_text[current_mishnah_chapter] = perek_text
+    while bavli.has_more():
+        current_mishnah = mishnah.get_current_mishnah()
 
-            if u"\u05de\u05ea\u05e0\u05d9' " in bavli[line]: # Match mishnah keyword
-                if line==len(bavli)-1:
-                    print str(daf)
-                if bavli[line + 1] in perek_text[current_mishnah]:  # Check for correct text
-                    print str(daf)+ amud + str(line)
-                    bavlis_mishnah = []
-                    starting_line = line
-                    ending_line = a = line + 1
-                    while ":" not in bavli[a]:
-                        bavlis_mishnah += [bavli[a]]
-                        ending_line = a
-                        a += 1
-                        if a == len(bavli):
-                            print str(daf)
-                    line = a  # reset line counter to line w/ GM
+        line = bavli.get_next_line()
 
-                    last_mishnah_line_in_bavli = bavlis_mishnah[-1]
-                    
-                    print "Matched Mishnah: {} {}{} {}-{}".format(title, daf, amud, starting_line, ending_line)
-            if u'\u05d4\u05d3\u05e8\u05df \u05e2\u05dc\u05da' in bavli[line]:
-                print "End of perek: {} {} on {}{} {}".format(title, current_mishnah_chapter, daf, amud, line)
-                current_mishnah_chapter += 1
-                current_mishnah = 1
-                cuurent_mishnah_offset = 0
+        if u"\u05de\u05ea\u05e0\u05d9 " in line or perek_start:  # Match mishnah keyword
+            starting_line = bavli.current_line - 1
+            starting_daf = bavli.current_daf()
 
-        #todo: Mishnah carries over to next daf
+            line = bavli.get_next_line()
+            if line in current_mishnah:
+                starting_mishnah = mishnah.current_mishnah
+                ending_daf = bavli.current_daf()
+                ending_line = bavli.current_line - 1
+                while ":" not in line:
+                    line = bavli.get_next_line()
+                    ending_daf = bavli.current_daf()
+                    ending_line = bavli.current_line - 1
 
-for mesechet in mesechtot:
-   # try:
-    bavli = get_talmud_index(mesechet)
-    mishnah = get_mishnah_index(mesechet)
-    find(bavli["title"],bavli["length"],mishnah["length"])
-    #need to take the length from the index of the mishna and the talmud
- #   except Exception as e:
- #       print 'no bavli for {}. {}'.format(mesechet, e)
-    break
+                last_bavli_segment = line[-20:-1]
+                ending_mishnah = None
+                for i in range(mishnah.number_left_in_chapter() + 1):
+                    m = mishnah.get_next_mishnah(i)
+                    assert len(last_bavli_segment) < len(m)
+                    (ratio, offset_start, offset_ending) = fuzz.partial_with_place(m, last_bavli_segment)
+                    if ratio < 70:
+                        continue
+                    ending_mishnah = mishnah.current_mishnah + i
+                    if offset_ending < len(m):  # Match ended in middle of a mishnah
+                        mishnah.advance_pointer(mishnah.current_chapter, ending_mishnah, offset_ending + 1)
+                    else:  # match ended at end of a mishnah
+                        if i == mishnah.number_left_in_chapter():  # if this is the last mishnah
+                            pass # leave it, advance it later.
+                        else:
+                            mishnah.advance_pointer(mishnah.current_chapter, ending_mishnah + 1)
+                    break
+                match = [bavli.title, mishnah.current_chapter, starting_mishnah, ending_mishnah, starting_daf, starting_line, ending_daf, ending_line]
+
+                if ending_mishnah is None:
+                    print "Failed to Match: {}".format(", ".join([str(m) for m in match]))
+                else:
+                    #csv_writer.writerow(match)
+                    print "Match! {}".format(", ".join([str(m) for m in match]))
+
+        if perek_start == True:
+            perek_start = False
+
+        if u'\u05d4\u05d3\u05e8\u05df \u05e2\u05dc\u05da' in line:
+            print "End of perek: {} {} on {} {}".format(bavli.title, mishnah.current_chapter, bavli.current_daf(), bavli.current_line)
+            try:
+                mishnah.advance_pointer(mishnah.current_chapter + 1)
+                perek_start = True
+            except PointerException:
+                print "End of book: {} {} on {} {}".format(bavli.title, mishnah.current_chapter, bavli.current_daf(), bavli.current_line)
 
 
-import urllib2
-import re
-import json
-title="Niddah"
-length=143
-mishna_length=10
+
+with open('mishnah_mappings.csv', 'wb') as csvfile:
+    csv_writer = csv.writer(csvfile)
+    csv_writer.writerow(["Book", "Mishnah Chapter", "Start Mishnah", "End Mishnah", "Start Daf", "Start Line", "End Daf", "End Line"])
+
+    for mesechet in mesechtot:
+#        try:
+        bavli = TalmudVolume(re.sub(" ", "_", mesechet[8:]))
+        mishnah = MishnahVolume(re.sub(" ", "_", mesechet))
+        process_book(bavli, mishnah, csv_writer)
+#        except Exception as e:
+#            print "Failed to get objects for {}: {}".format(mesechet, e)
