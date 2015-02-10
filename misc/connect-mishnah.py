@@ -43,6 +43,10 @@ class TalmudVolume(AbstractVolume):
             self.text[daf_amud] = map(lambda t: re.sub(r'שנא\'','שנאמר', t).strip(), raw2)
         return self.text.get(daf_amud)
 
+    def get_previous_line_text(self):
+    
+    def get_previous_line_daf(self):
+        
     def get_next_line(self):
         amud = self.get_current_amud()
         if self.current_line > len(amud):
@@ -133,10 +137,10 @@ class MishnahVolume(AbstractVolume):
 
 
 #matni_re = re.compile(ur"""\u05de\u05ea\u05e0\u05d9(?:'|\u05f3|\s|\u05ea\u05d9\u05df)""")
-#raw_re = u"מתנ" + u"י" + u"?" + u"(?:'|\s|" + u"׳" + u"|" + u"תין" + u")"
-raw_re = u"מתני" + u"(" + u"׳" + u"|" + u"'"+ u"|"+ u"תין" + u")"
+#raw_re = 
+raw_re = ur"(^|\s+)" + u"מתנ" + u"י" + u"?" + ur"(?:'|" + u"׳" + u"|" + u"תין" + u")" + ur"(?:$|\s+)"
 matni_re = re.compile(raw_re)
-raw_gem = u"גמ" + u"(" + u"\'" + u"|" + u"רא)"
+raw_gem = ur"(^|\s+)" + u"גמ" + ur"(" + ur"\'" + u"|" + u"רא)" + ur"(?:$|\s+)"
 gemarah_re = re.compile(raw_gem)
 
 mesechtot = [u'Mishnah Berakhot',u'Mishnah Peah',u'Mishnah Demai',u'Mishnah Kilayim',u'Mishnah Sheviit',u'Mishnah Terumot',u'Mishnah Maasrot',u'Mishnah Maaser Sheni',u'Mishnah Challah',u'Mishnah Orlah',u'Mishnah Bikkurim',u'Mishnah Shabbat',u'Mishnah Eruvin',u'Mishnah Pesachim',u'Mishnah Shekalim',u'Mishnah Yoma',u'Mishnah Sukkah',u'Mishnah Beitzah',u'Mishnah Rosh Hashanah',u'Mishnah Taanit',u'Mishnah Megillah',u'Mishnah Moed Katan',u'Mishnah Chagigah',u'Mishnah Yevamot',u'Mishnah Ketubot',u'Mishnah Nedarim',u'Mishnah Nazir',u'Mishnah Sotah',u'Mishnah Gittin',u'Mishnah Kiddushin',u'Mishnah Bava Kamma',u'Mishnah Bava Metzia',u'Mishnah Bava Batra',u'Mishnah Sanhedrin',u'Mishnah Makkot',u'Mishnah Shevuot',u'Mishnah Eduyot',u'Mishnah Avodah Zarah',u'Pirkei Avot',u'Mishnah Horayot',u'Mishnah Zevachim',u'Mishnah Menachot',u'Mishnah Chullin',u'Mishnah Bekhorot',u'Mishnah Arakhin',u'Mishnah Temurah',u'Mishnah Keritot',u'Mishnah Meilah',u'Mishnah Tamid',u'Mishnah Middot',u'Mishnah Kinnim',u'Mishnah Kelim',u'Mishnah Oholot',u'Mishnah Negaim',u'Mishnah Parah',u'Mishnah Tahorot',u'Mishnah Mikvaot',u'Mishnah Niddah',u'Mishnah Makhshirin',u'Mishnah Zavim',u'Mishnah Tevul Yom',u'Mishnah Yadayim',u'Mishnah Oktzin']
@@ -150,6 +154,8 @@ def process_book(bavli, mishnah, csv_writer):
         line = bavli.get_next_line()
 
         if matni_re.search(line) or perek_start:  # Match mishnah keyword
+            if mishnayot_end:
+                print "Found too many mishnayot!" 
             starting_line = bavli.current_line - 1
             starting_daf = bavli.current_daf()
             line = bavli.get_next_line()
@@ -179,12 +185,9 @@ def process_book(bavli, mishnah, csv_writer):
                     else:  # match ended at end of a mishnah
                         if i == mishnah.number_left_in_chapter():  # if this is the last mishnah
                             print "number of mishnayot in chapter " + str(mishnah.current_chapter) +" is "+ str(len(mishnah.get_current_chapter_text()))
-                            if not mishnayot_end:
-                                mishnayot_end = True
-                            pass # leave it, advance it later.
+                            mishnayot_end = True
                         else:
                             mishnah.advance_pointer(mishnah.current_chapter, ending_mishnah + 1)
-                            mishnayot_end = False
                     break
                 match = [bavli.title, mishnah.current_chapter, starting_mishnah, ending_mishnah, starting_daf, starting_line, ending_daf, ending_line]
 
@@ -199,11 +202,12 @@ def process_book(bavli, mishnah, csv_writer):
 
         if u'\u05d4\u05d3\u05e8\u05df \u05e2\u05dc\u05da' in line:
             if mishnayot_end == False:
-                print "mishna did not reach the end"
+                print "Mishna did not reach the end of chapter"
             print "End of perek: {} {} on {} {}".format(bavli.title, mishnah.current_chapter, bavli.current_daf(), bavli.current_line)
             try:
                 mishnah.advance_pointer(mishnah.current_chapter + 1)
                 perek_start = True
+                mishnayot_end = False
             except PointerException:
                 print "End of book: {} {} on {} {}".format(bavli.title, mishnah.current_chapter, bavli.current_daf(), bavli.current_line)
 
