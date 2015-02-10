@@ -3,6 +3,7 @@ import urllib2
 import re
 import json
 import csv
+import codecs
 
 from fm import fuzz
 
@@ -12,8 +13,10 @@ class PointerException(Exception):
 
 
 class AbstractVolume(object):
+    server = 'http://localhost:8000'
+
     def __init__(self, title):
-        url = 'http://www.sefaria.org/api/index/'+ str(title)
+        url = self.server + '/api/index/'+ str(title)
         response = urllib2.urlopen(url)
         resp = response.read()
         self.title = title
@@ -22,18 +25,21 @@ class AbstractVolume(object):
             raise Exception(u"Failed to get index {}: {}".format(title, self.index["error"]))
 
     def get_text(self, ref):
-        url = 'http://www.sefaria.org/api/texts/' + str(ref)
+        url = self.server + '/api/texts/' + str(ref)
         response = urllib2.urlopen(url)
         resp = response.read()
         return json.loads(resp)["he"]
 
 
 class TalmudVolume(AbstractVolume):
+    history_depth = 3
+
     def __init__(self, title):
         super(TalmudVolume, self).__init__(title)
         self.text = {}
-        self.current_daf_index = 2
-        self.current_line = 1
+        self._current_daf_index = 2
+        self._next_line_pointer = 1
+        self._history = []
 
     def get_amud_text(self, daf_amud): # daf_amud = "2a"
         if not self.text.get(daf_amud):
@@ -43,21 +49,32 @@ class TalmudVolume(AbstractVolume):
             self.text[daf_amud] = map(lambda t: re.sub(r'שנא\'','שנאמר', t).strip(), raw2)
         return self.text.get(daf_amud)
 
-    def get_previous_line_text(self):
-    
-    def get_previous_line_daf(self):
-        
+    def _add_to_history(self, obj):
+        if len(self._history) == self.history_depth:
+            self._history = self._history[1:]
+        self._history.append(obj)
+
+    def _get_from_history(self, back=0):
+        indx = len(self._history) - 1 - back
+        return self._history[indx]
+
     def get_next_line(self):
         amud = self.get_current_amud()
-        if self.current_line > len(amud):
+        if self._next_line_pointer > len(amud):
             self.advance_page()
             amud = self.get_current_amud()
-        l = amud[self.current_line - 1]
-        self.current_line += 1
-        return l
+        l = amud[self._next_line_pointer - 1]
+        self._add_to_history((self.current_daf(), self._next_line_pointer, l))
+        self._next_line_pointer += 1
+        return self.get_current_line()
 
+    # Note: the signatures and behavior or get_next_line and get_current_line are different.
 
+    def get_current_line(self):
+        return self._get_from_history()
 
+    def get_previous_line(self, back=1):
+        return self._get_from_history(back)
 
     def index_to_daf(self, index):
         amud = "a" if index % 2 == 0 else "b"
@@ -65,7 +82,7 @@ class TalmudVolume(AbstractVolume):
         return str(daf) + amud
 
     def current_daf(self):
-        return self.index_to_daf(self.current_daf_index)
+        return self.index_to_daf(self._current_daf_index)
 
     def get_current_amud(self):
         return self.get_amud_text(self.current_daf())
@@ -73,25 +90,25 @@ class TalmudVolume(AbstractVolume):
     def advance_page(self):
         if not self.has_more_pages():
             raise PointerException("Reached end of Talmud {}")
-        self.current_daf_index += 1
-        self.current_line = 1
+        self._current_daf_index += 1
+        self._next_line_pointer = 1
 
     def has_more(self):
         amud = self.get_current_amud()
-        if self.current_line <= len(amud):
+        if self._next_line_pointer <= len(amud):
             return True
-        if self.current_daf_index >= self.index["length"] + 2:
+        if self._current_daf_index >= self.index["length"] + 2:
             return False
         return True
 
     def has_more_lines(self):
         amud = self.get_current_amud()
-        if self.current_line > len(amud):
+        if self._next_line_pointer > len(amud):
             return False
         return True
 
     def has_more_pages(self):
-        if self.current_daf_index >= self.index["length"] + 2:
+        if self._current_daf_index >= self.index["length"] + 2:
             return False
         return True
 
@@ -135,6 +152,7 @@ class MishnahVolume(AbstractVolume):
     def number_left_in_chapter(self):
         return len(self.get_current_chapter_text()) - self.current_mishnah
 
+log = codecs.open('mishnah.log', 'w', encoding='utf-8')
 
 #matni_re = re.compile(ur"""\u05de\u05ea\u05e0\u05d9(?:'|\u05f3|\s|\u05ea\u05d9\u05df)""")
 #raw_re = 
@@ -149,67 +167,76 @@ def process_book(bavli, mishnah, csv_writer):
     perek_start = True
     mishnayot_end = False
     while bavli.has_more():
-        current_mishnah = mishnah.get_current_mishnah()
+        current_mishnah = mishnah.get_current_mishnah() if not mishnayot_end else ""
 
-        line = bavli.get_next_line()
+        (starting_daf, starting_line, line) = bavli.get_next_line()
 
         if matni_re.search(line) or perek_start:  # Match mishnah keyword
+            log.write(u"Found Mishnah start at {}:{}\n{}\n".format(starting_daf, starting_line, line))
             if mishnayot_end:
-                print "Found too many mishnayot!" 
-            starting_line = bavli.current_line - 1
-            starting_daf = bavli.current_daf()
-            line = bavli.get_next_line()
+                msg = u"Error: Found too many mishnayot in {} {}!\n".format(bavli.title, mishnah.current_chapter)
+                print msg
+                log.write(msg)
+            (ending_daf, ending_line, line) = bavli.get_next_line()
             if fuzz.partial_ratio(line, current_mishnah) > 30:
-            #if line in current_mishnah:
-                print starting_daf
+                log.write(u"Matched a starting line in the Mishnah: {}\n{}\n".format(line, current_mishnah))
                 starting_mishnah = mishnah.current_mishnah
-                ending_daf = bavli.current_daf()
-                ending_line = bavli.current_line - 1
                 while not gemarah_re.search(line):
-                    line = bavli.get_next_line()
-                    ending_daf = bavli.current_daf()
-                    ending_line = bavli.current_line -2
-                bavli.current_line = ending_line-1
-                line= bavli.get_next_line()
-                last_bavli_segment = line[-30:-1]
+                    (foo, bar, line) = bavli.get_next_line()
+
+                (ending_daf, ending_line, previous_line) = bavli.get_previous_line()
+                (foo, bar, previous_previous_line) = bavli.get_previous_line(2)
+                last_bavli_segment = previous_previous_line.strip() + u" " + previous_line.strip()
+                last_bavli_segment = last_bavli_segment[-30:-1]
                 ending_mishnah = None
                 for i in range(mishnah.number_left_in_chapter() + 1):
                     m = mishnah.get_next_mishnah(i)
                     assert len(last_bavli_segment) < len(m)
                     (ratio, offset_start, offset_ending) = fuzz.partial_with_place(m, last_bavli_segment)
-                    if ratio < 30:
+                    if ratio < 60:
+                        log.write(u"Failed to match last Talmud line to Mishnah: {}\n{}\n".format(last_bavli_segment, m))
                         continue
+                    log.write(u"Succeeded to match last Talmud line to Mishanh: {}\n{}\n".format(last_bavli_segment, m))
                     ending_mishnah = mishnah.current_mishnah + i
-                    if offset_ending < len(m):  # Match ended in middle of a mishnah
+                    if offset_ending < len(m) - 10:  # Match ended in middle of a mishnah.  Number at end is close-enough-to-end fudge factor.
                         mishnah.advance_pointer(mishnah.current_chapter, ending_mishnah, offset_ending + 1)
+                        log.write(u"Advanced Mishnah offset: {}, {}, {}\n".format(mishnah.current_chapter, ending_mishnah, offset_ending + 1))
                     else:  # match ended at end of a mishnah
                         if i == mishnah.number_left_in_chapter():  # if this is the last mishnah
-                            print "number of mishnayot in chapter " + str(mishnah.current_chapter) +" is "+ str(len(mishnah.get_current_chapter_text()))
+                            log.write(u"Reached end of mishnayot in chapter {} is {}\n".format(str(mishnah.current_chapter), str(len(mishnah.get_current_chapter_text()))))
                             mishnayot_end = True
                         else:
                             mishnah.advance_pointer(mishnah.current_chapter, ending_mishnah + 1)
+                            log.write(u"Advanced to next Mishnah: {}, {}\n".format(mishnah.current_chapter, ending_mishnah + 1))
                     break
                 match = [bavli.title, mishnah.current_chapter, starting_mishnah, ending_mishnah, starting_daf, starting_line, ending_daf, ending_line]
 
                 if ending_mishnah is None:
-                    print "Failed to Match: {}".format(", ".join([str(m) for m in match]))
+                    msg = u"Error: Failed to Match: {}\n".format(", ".join([str(m) for m in match]))
+                    print msg
+                    log.write(msg)
                 else:
+                    print
                     csv_writer.writerow(match)
-                    print "Match! {}".format(", ".join([str(m) for m in match]))
+                    msg = u"Match! {}\n".format(", ".join([str(m) for m in match]))
+                    print msg
+                    log.write(msg)
 
         if perek_start == True:
             perek_start = False
 
         if u'\u05d4\u05d3\u05e8\u05df \u05e2\u05dc\u05da' in line:
             if mishnayot_end == False:
-                print "Mishna did not reach the end of chapter"
-            print "End of perek: {} {} on {} {}".format(bavli.title, mishnah.current_chapter, bavli.current_daf(), bavli.current_line)
+                msg = u"Error: Mishna did not reach the end of chapter!\n"
+                print msg
+                log.write(msg)
+            log.write(u"End of perek: {} {} on {} {}\n".format(bavli.title, mishnah.current_chapter, bavli.get_current_line()[0], bavli.get_current_line()[1]))
             try:
                 mishnah.advance_pointer(mishnah.current_chapter + 1)
                 perek_start = True
                 mishnayot_end = False
             except PointerException:
-                print "End of book: {} {} on {} {}".format(bavli.title, mishnah.current_chapter, bavli.current_daf(), bavli.current_line)
+                log.write(u"End of book: {} {} on {} {}\n".format(bavli.title, mishnah.current_chapter, bavli.get_current_line()[0], bavli.get_current_line()[1]))
 
 
 
