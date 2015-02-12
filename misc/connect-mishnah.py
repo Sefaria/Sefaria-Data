@@ -13,7 +13,7 @@ class PointerException(Exception):
 
 
 class AbstractVolume(object):
-    server = 'http://localhost:8000'
+    server = 'http://www.sefaria.org'
 
     def __init__(self, title):
         url = self.server + '/api/index/'+ str(title)
@@ -28,7 +28,13 @@ class AbstractVolume(object):
         url = self.server + '/api/texts/' + str(ref)
         response = urllib2.urlopen(url)
         resp = response.read()
-        return json.loads(resp)["he"]
+        while True:
+            try:
+                return json.loads(resp)["he"]
+                break
+            except KeyError:
+                return  ""
+                #return json.loads(resp)["he"]
 
 
 class TalmudVolume(AbstractVolume):
@@ -178,7 +184,7 @@ def process_book(bavli, mishnah, csv_writer):
                 print msg
                 log.write(msg)
             (ending_daf, ending_line, line) = bavli.get_next_line()
-            if fuzz.partial_ratio(line, current_mishnah) > 30:
+            if fuzz.partial_ratio(line, current_mishnah) > 60:
                 log.write(u"Matched a starting line in the Mishnah: {}\n{}\n".format(line, current_mishnah))
                 starting_mishnah = mishnah.current_mishnah
                 while not gemarah_re.search(line):
@@ -249,6 +255,5 @@ with open('mishnah_mappings.csv', 'wb') as csvfile:
         bavli = TalmudVolume(re.sub(" ", "_", mesechet[8:]))
         mishnah = MishnahVolume(re.sub(" ", "_", mesechet))
         process_book(bavli, mishnah, csv_writer)
-        break
 #        except Exception as e:
 #            print "Failed to get objects for {}: {}".format(mesechet, e)
