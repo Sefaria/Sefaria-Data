@@ -14,6 +14,7 @@ class PointerException(Exception):
 
 class AbstractVolume(object):
     server = 'http://www.sefaria.org'
+    #server = 'http://localhost:8000'
 
     def __init__(self, title):
         url = self.server + '/api/index/'+ str(title)
@@ -137,8 +138,14 @@ class MishnahVolume(AbstractVolume):
         return self.get_chapter_text(self.current_chapter)
 
     def advance_pointer(self, chapter, mishnah=1, offset=0):
+        if chapter > self.index["length"]:
+            raise PointerException(u"Reached enf of book {}".format(self.title))
         self.current_chapter = chapter
+
+        if mishnah > 1 and mishnah > len(self.get_current_chapter_text()):
+            raise PointerException("Reached end of Mishnah Chapter")
         self.current_mishnah = mishnah
+
         self.current_offset = offset
 
     def advance_chapter(self):
@@ -243,7 +250,7 @@ def process_book(bavli, mishnah, csv_writer):
                 mishnayot_end = False
             except PointerException:
                 log.write(u"End of book: {} {} on {} {}\n".format(bavli.title, mishnah.current_chapter, bavli.get_current_line()[0], bavli.get_current_line()[1]))
-
+                break
 
 
 with open('mishnah_mappings.csv', 'wb') as csvfile:
@@ -251,9 +258,9 @@ with open('mishnah_mappings.csv', 'wb') as csvfile:
     csv_writer.writerow(["Book", "Mishnah Chapter", "Start Mishnah", "End Mishnah", "Start Daf", "Start Line", "End Daf", "End Line"])
 
     for mesechet in mesechtot:
-#        try:
-        bavli = TalmudVolume(re.sub(" ", "_", mesechet[8:]))
-        mishnah = MishnahVolume(re.sub(" ", "_", mesechet))
-        process_book(bavli, mishnah, csv_writer)
-#        except Exception as e:
-#            print "Failed to get objects for {}: {}".format(mesechet, e)
+        try:
+            bavli = TalmudVolume(re.sub(" ", "_", mesechet[8:]))
+            mishnah = MishnahVolume(re.sub(" ", "_", mesechet))
+            process_book(bavli, mishnah, csv_writer)
+        except Exception as e:
+            print "Failed to get objects for {}: {}".format(mesechet, e)
