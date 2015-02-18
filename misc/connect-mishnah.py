@@ -166,10 +166,11 @@ class MishnahVolume(AbstractVolume):
         return len(self.get_current_chapter_text()) - self.current_mishnah
 
 log = codecs.open('mishnah.log', 'w', encoding='utf-8')
+error_log = codecs.open('connect_error.log', 'w', encoding='utf-8')
 
 #matni_re = re.compile(ur"""\u05de\u05ea\u05e0\u05d9(?:'|\u05f3|\s|\u05ea\u05d9\u05df)""")
 #raw_re = 
-raw_re = ur"(^|\s+)" + u"מתנ" + u"י" + u"?" + ur"(?:'|" + u"׳" + u"|" + u"תין" + u")" + ur"(?:$|\s+)"
+raw_re = ur"(^|\s+)" + u"מתנ" + u"י" + u"?" + ur"(?:'|" + u"׳" + u"|" + u"תין" + u")" + ur"(?:$|\s+)(.*)"
 matni_re = re.compile(raw_re)
 raw_gem = ur"(^|\s+)" + u"גמ" + ur"(" + ur"\'" + u"|" + u"רא)" + ur"(?:$|\s+)"
 gemarah_re = re.compile(raw_gem)
@@ -183,17 +184,24 @@ def process_book(bavli, mishnah, csv_writer):
         current_mishnah = mishnah.get_current_mishnah() if not mishnayot_end else ""
 
         (starting_daf, starting_line, line) = bavli.get_next_line()
-
-        if matni_re.search(line) or perek_start:  # Match mishnah keyword
+        m = matni_re.match(line)
+        if m or perek_start:  # Match mishnah keyword
             log.write(u"Found Mishnah start at {}:{}\n{}\n".format(starting_daf, starting_line, line))
-            if mishnayot_end:
-                msg = u"Error: Found too many mishnayot in {} {}!\n".format(bavli.title, mishnah.current_chapter)
-                print msg
-                log.write(msg)
-            (ending_daf, ending_line, line) = bavli.get_next_line()
+            if perek_start or len(m.group(2)) > 6:
+                ending_daf = starting_daf
+                ending_line = starting_line
+                if m:
+                    line = m.group(2)
+            else:
+                (ending_daf, ending_line, line) = bavli.get_next_line()
             if fuzz.partial_ratio(line, current_mishnah) > 60:
                 log.write(u"Matched a starting line in the Mishnah: {}\n{}\n".format(line, current_mishnah))
                 starting_mishnah = mishnah.current_mishnah
+                if mishnayot_end:
+                    msg = u"Error: Found too many mishnayot in {} {}!\n".format(bavli.title, mishnah.current_chapter)
+                    print msg
+                    log.write(msg)
+                    error_log.write(msg)
                 while not gemarah_re.search(line):
                     (foo, bar, line) = bavli.get_next_line()
 
@@ -208,6 +216,7 @@ def process_book(bavli, mishnah, csv_writer):
                     (ratio, offset_start, offset_ending) = fuzz.partial_with_place(m, last_bavli_segment)
                     if ratio < 60:
                         log.write(u"Failed to match last Talmud line to Mishnah: {}\n{}\n".format(last_bavli_segment, m))
+                        error_log.write(u"Failed to match last Talmud line to Mishnah: {}\n{}\n".format(last_bavli_segment, m))
                         continue
                     log.write(u"Succeeded to match last Talmud line to Mishanh: {}\n{}\n".format(last_bavli_segment, m))
                     ending_mishnah = mishnah.current_mishnah + i
@@ -225,9 +234,10 @@ def process_book(bavli, mishnah, csv_writer):
                 match = [bavli.title, mishnah.current_chapter, starting_mishnah, ending_mishnah, starting_daf, starting_line, ending_daf, ending_line]
 
                 if ending_mishnah is None:
-                    msg = u"Error: Failed to Match: {}\n".format(", ".join([str(m) for m in match]))
+                    msg = u"saw unmatched Mishna in Talmud: {}\n".format(", ".join([str(m) for m in match]))
                     print msg
                     log.write(msg)
+                    error_log.write(msg)
                 else:
                     print
                     csv_writer.writerow(match)
@@ -240,7 +250,7 @@ def process_book(bavli, mishnah, csv_writer):
 
         if u'\u05d4\u05d3\u05e8\u05df \u05e2\u05dc\u05da' in line:
             if mishnayot_end == False:
-                msg = u"Error: Mishna did not reach the end of chapter!\n"
+                msg = u"Error: Mishna did not reach the end of chapter! {} {}\n".format(mishnah.title,mishnah.current_chapter)
                 print msg
                 log.write(msg)
             log.write(u"End of perek: {} {} on {} {}\n".format(bavli.title, mishnah.current_chapter, bavli.get_current_line()[0], bavli.get_current_line()[1]))
