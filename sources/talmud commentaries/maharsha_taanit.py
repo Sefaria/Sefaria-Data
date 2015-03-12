@@ -4,6 +4,7 @@ import re
 import json
 import urllib2
 import sys
+from fuzzywuzzy import fuzz
 sys.path.insert(1,'../genuzot')
 import helperFunctions as Helper
 import hebrew
@@ -38,6 +39,7 @@ Abbreviations = {
 }
 log = open('maharsha.log', 'w')
 abbs = open('abbs.txt', 'wb')
+fuzzy = open('fuzzywuzzy.txt','wb')
 def replaceAbbrevs(text):
         unabbrevText = text
         words = text.split(" ")
@@ -116,19 +118,20 @@ def get_lines_number(daf_amud):
     length = len(json.loads(resp)["he"])
     return length
 
-def search_gemara(text, daf_amud, diburs = 2):
-    #n = 0
+def search_gemara(text, daf_amud, diburs = 4):
     num_of_matches = 0
     lines = get_lines_number(daf_amud)
     text = re.sub("'", "", text)
     text = replaceAbbrevs(text)
     dibur = re.split(ur'\s', text)
-    if diburs == 2:
+    if diburs == 4:
+        maharsha = dibur[2] + dibur[3] + " " + dibur[4] + " " + dibur[5]
+    elif diburs == 3:
+        maharsha = dibur[3] + " " + dibur[4] + " " + dibur[5]
+    elif diburs == 2:
         maharsha = dibur[3] + " " + dibur[4]
     elif diburs == 1:
         maharsha = dibur[3]
-    elif diburs == 3:
-        maharsha = dibur[3] + " " + dibur[4] + " " + dibur[5]
     elif diburs == 0:
         maharsha = dibur[4]
     url = 'http://' + Helper.server + '/api/texts/' + 'Taanit.' + daf_amud + '.' +str(1) + '-' + str(lines)
@@ -136,46 +139,39 @@ def search_gemara(text, daf_amud, diburs = 2):
     resp = response.read()
     gemara = json.loads(resp)["he"]
     for line in range(0, lines):
-        if maharsha in gemara[line]:
+        if fuzz.partial_ratio(maharsha, gemara[line]) > 70:
             num_of_matches += 1
             msg = "found a gemara  match {}  for the maharsha {} in {} , line {} \n".format(gemara[line].encode('utf-8'), maharsha.encode('utf-8'), daf_amud, line)
-            #log.write(msg)
-            #print msg
+            print msg
         if line == lines - 1:
-            if num_of_matches > 1:
-                if diburs == 3 or diburs ==0:
-                    error = "found {} matches to the maharsha dibur hamatchil {} in gemara {}\n".format(num_of_matches, maharsha.encode('utf-8'), daf_amud)
-                    log.write(error)
-                    print error
+            if diburs > 0:
+                if num_of_matches == 1:
+                    true_find = "matched!! a maharsha DH {} in the gemara daf {} , line {} \n".format(maharsha.encode('utf-8'), daf_amud, line)
+                    print true_find
+                    log.write(true_find)
+                    break
                 else:
-                    search_gemara(text,daf_amud, 3)
-            if num_of_matches == 0:
-                if diburs == 1 or diburs == 3:
-                    search_rashi(text, daf_amud, 0)
-                elif diburs == 0:
-                    error = "did not find any matches for maharsha dibur hamatchil {} in gemara {}\n".format(maharsha.encode('utf-8'), daf_amud)
-                    log.write(error)
-                    print error
-                elif diburs == 2:
-                    search_gemara(text, daf_amud, 1)
-            if num_of_matches == 1:
-                #Helper.postLink(link("Maharsha on Taanit " + daf_amud , "Taanit " + daf_amud + ":" + str(line)))
-                true_find = "matched!! a maharsha DH {} in the gemara daf {} , line {} \n".format(maharsha.encode('utf-8'), daf_amud, line)
-                print true_find
-                log.write(true_find)
-
+                    diburs -= 1
+                    search_gemara(text, daf_amud, diburs)
+                    break
+            if diburs == 0:
+                error = "did not find any matches for maharsha dibur hamatchil {} in gemara {}\n".format(maharsha.encode('utf-8'), daf_amud)
+                log.write(error)
+                print error
 #looks for the marsha's reference in rashi
 
-def search_rashi(text, daf_amud, diburs = 2):
+def search_rashi(text, daf_amud, diburs = 4):
     num_of_matches = 0
     lines = get_lines_number(daf_amud)
     text = re.sub("'", "", text)
     text = replaceAbbrevs(text)
     dibur = re.split(ur'\s', text)
-    if diburs == 2:
-        maharsha = dibur[3] + " " + dibur[4]
+    if diburs == 4:
+        maharsha = dibur [2] + dibur[3] + " " + dibur[4] + " " + dibur[5]
     elif diburs == 3:
         maharsha = dibur[3] + " " + dibur[4] + " " + dibur[5]
+    elif diburs == 2:
+        maharsha = dibur[3] + " " + dibur[4]
     elif diburs == 1:
         maharsha = dibur[3]
     elif diburs == 0:
@@ -189,32 +185,30 @@ def search_rashi(text, daf_amud, diburs = 2):
         for dh in rashi[line]:
             dibur_hamatchil = re.split('-', dh)[0]
             dibur_hamatchil = replaceAbbrevs(dibur_hamatchil)
-            if maharsha in dibur_hamatchil:
+            fu = "fuzzy matching" + "," + str(fuzz.ratio(maharsha, dibur_hamatchil)) + "," + maharsha.encode('utf-8') + "," + dibur_hamatchil.encode('utf-8') + "\n"
+            partial_fuzz = "partial ratio" + "," +  str(fuzz.partial_ratio(maharsha, dibur_hamatchil)) + "," + maharsha.encode('utf-8') + "," + dibur_hamatchil.encode('utf-8') + "\n"
+            fuzzy.write(fu)
+            fuzzy.write(partial_fuzz)
+            #if maharsha in dibur_hamatchil:
+            if fuzz.partial_ratio(maharsha, dibur_hamatchil) > 70:
                 num_of_matches += 1
                 msg = "found a rashi  match {}  for the maharsha {} in {} , line {} \n".format(dibur_hamatchil.encode('utf-8'), maharsha.encode('utf-8'), daf_amud, line)
-                #log.write(msg)
                 print msg
         if line == lines - 1:
-            if num_of_matches > 1:
-                if diburs == 3 or diburs ==0:
-                    error = "found {} matches to the maharsha dibur hamatchil {} in Rashi {}, line{}\n".format(num_of_matches, maharsha.encode('utf-8'), daf_amud, line)
-                    log.write(error)
-                    print error
+            if diburs > 0:
+                if num_of_matches == 1:
+                    true_find = "matched!! a maharsha DH {} in the rashi daf {}, line {} \n".format(maharsha.encode('utf-8'), daf_amud, line)
+                    print true_find
+                    log.write(true_find)
+                    break
                 else:
-                    search_rashi(text, daf_amud, 3)
-            if num_of_matches == 0:
-                if diburs == 1 or diburs ==3 :
-                    search_rashi(text,daf_amud, 0)
-                elif diburs == 0:
-                    error = "did not find any matches for maharsha dibur hamatchil {} in rashi {}\n".format( maharsha.encode('utf-8'), daf_amud)
-                    log.write(error)
-                    print error
-                elif diburs == 2:
-                    search_rashi(text, daf_amud, 1)
-            if num_of_matches == 1:
-                true_find = "matched!! a maharsha DH {} in the rashi daf {}, line {} \n".format(maharsha.encode('utf-8'), daf_amud, line)
-                print true_find
-                log.write(true_find)
+                    diburs -= 1
+                    search_rashi(text, daf_amud, diburs)
+                    break
+            if diburs == 0:
+                error = "did not find any matches for maharsha dibur hamatchil {} in rashi {}\n".format( maharsha.encode('utf-8'), daf_amud)
+                log.write(error)
+                print error
 
 #looks for the maharsha's reference in tosafot
 def search_tosafot(text, daf_amud, diburs = 2):
@@ -289,15 +283,15 @@ def parse_dapim(text):
                 number = hebrew.heb_string_to_int(daf_num[3:])
                 if ur'רש"י' in verse[0:10]:
                     search_rashi(verse, str(number) + amud_num)
-                    rashi +=1
+                    rashi += 1
                     pass
                 elif ur'תוס' in verse[0:10]:
-                    #search_tosafot(verse, str(number) + amud_num)
-                    tosafos +=1
+                    search_tosafot(verse, str(number) + amud_num)
+                    tosafos += 1
                     pass
                 else:
-                    #search_gemara(verse, str(number) + amud_num)
-                    shas +=1
+                    search_gemara(verse, str(number) + amud_num)
+                    shas += 1
                     pass
             chidushei_halachot.append(halachot)
     print "shas", shas, "rashi", rashi, "tosafot", tosafos
