@@ -68,7 +68,7 @@ def open_file():
 #creates a book record
 def book_record():
       return {
-    "title" : "Chidushei Halachot",
+    "title" : "Chidushei Halachot on Taanit",
     "categories" : [
         "Other",
         "Maharsha"
@@ -77,7 +77,7 @@ def book_record():
         "titles" : [
             {
                 "lang" : "en",
-                "text" : "Chidushei Halachot",
+                "text" : "Chidushei Halachot on Taanit",
                 "primary" : True
             },
             {
@@ -96,7 +96,7 @@ def book_record():
            "Talmud",
             "Integer"
         ],
-        "key" : "Chidushei Halachot"
+        "key" : "Chidushei Halachot on Taanit"
     }
 	}
 
@@ -156,7 +156,7 @@ def search_gemara(text, daf_amud, Peirush, diburs = 5):
             if diburs > 0:
                 if num_of_matches == 1:
                     #print link("Chidusheiv Halachot" + "." + daf_amud + ":" + str(Peirush), "Taanit" + "." + daf_amud + ":" + str(rline))
-                    links.append(link("Chidushei Halachot" + "." + daf_amud + ":" + str(Peirush), "Taanit" + "." + daf_amud + ":" + str(rline)))
+                    links.append(link("Chidushei Halachot on Taanit" + "." + daf_amud + ":" + str(Peirush), "Taanit" + "." + daf_amud + ":" + str(rline)))
                     #Helper.postLink(link("Maharsha on Taanit" + "." + daf_amud + ":" + str(Peirush), "Taanit" + "." + daf_amud + ":" + str(line)))
                     true_find = "matched!! a maharsha DH {} in the gemara daf {} , line {} \n".format(maharsha.encode('utf-8'), daf_amud, line)
                     print true_find
@@ -168,7 +168,7 @@ def search_gemara(text, daf_amud, Peirush, diburs = 5):
                     break
             if diburs == 0:
                 if num_of_matches == 1:
-                    links.append(link("Chidushei Halachot" + "." + daf_amud + ":" + str(Peirush), "Taanit" + "." + daf_amud + ":" + str(rline)))
+                    links.append(link("Chidushei Halachot on Taanit" + "." + daf_amud + ":" + str(Peirush), "Taanit" + "." + daf_amud + ":" + str(rline)))
                     #Helper.postLink(link("Maharsha on Taanit" + "." + daf_amud + ":" + str(Peirush), "Taanit" + "." + daf_amud + ":" + str(line)))
                     true_find = "matched!! a maharsha DH {} in the gemara daf {} , line {} \n".format(maharsha.encode('utf-8'), daf_amud, line)
                     print true_find
@@ -223,7 +223,8 @@ def search_rashi(text, daf_amud, Peirush, diburs = 5):
         if line == lines - 1:
             if diburs > 0:
                 if num_of_matches == 1:
-                    links.append(link("Chidushei Halachot" + "." + daf_amud + ":" + str(Peirush), "Rashi on Taanit" + "." + daf_amud + ":" + str(rline)))
+                    #links.append(link("Chidushei Halachot on Taanit" + "." + daf_amud + ":" + str(Peirush), "Rashi on Taanit" + "." + daf_amud + ":" + str(rline)))
+                    links.append(link("Chidushei Halachot on Taanit" + "." + daf_amud + ":" + str(Peirush), "Taanit" + "." + daf_amud + ":" + str(rline)))
                     #Helper.postLink(link("Maharsha on Taanit" + "." + daf_amud + ":" + str(Peirush), "Rashi on Taanit" + "." + daf_amud + ":" + str(line)))
                     true_find = "matched!! a maharsha DH {} in the rashi daf {}, line {} \n".format(maharsha.encode('utf-8'), daf_amud, line)
                     print true_find
@@ -235,7 +236,8 @@ def search_rashi(text, daf_amud, Peirush, diburs = 5):
                     break
             if diburs == 0:
                 if num_of_matches == 1:
-                    links.append(link("Chidushei Halachot" + "." + daf_amud + ":" + str(Peirush), "Rashi on Taanit" + "." + daf_amud + ":" + str(rline)))
+                    #links.append(link("Chidushei Halachot on Taanit" + "." + daf_amud + ":" + str(Peirush), "Rashi on Taanit" + "." + daf_amud + ":" + str(rline)))
+                    links.append(link("Chidushei Halachot on Taanit" + "." + daf_amud + ":" + str(Peirush), "Taanit" + "." + daf_amud + ":" + str(rline)))
                     #Helper.postLink(link("Maharsha on Taanit" + "." + daf_amud + ":" + str(Peirush), "Rashi on Taanit" + "." + daf_amud + ":" + str(line)))
                     true_find = "matched!! a maharsha DH {} in the rashi daf {}, line {} \n".format(maharsha.encode('utf-8'), daf_amud, line)
                     print true_find
@@ -278,6 +280,10 @@ def search_tosafot(text, daf_amud, Peirush, diburs = 4):
         for dh in tosafot[line]:
             tos = re.split('\.', dh)[0]
             tos = replaceAbbrevs(tos)
+            fu = "Tosafot, fuzzy matching" + "," + str(fuzz.ratio(maharsha, tos)) + "," + maharsha.encode('utf-8') + "," + tos.encode('utf-8') + "\n"
+            partial_fuzz = "Rashi, partial ratio" + "," +  str(fuzz.partial_ratio(maharsha, tos)) + "," + maharsha.encode('utf-8') + "," + tos.encode('utf-8') + "\n"
+            fuzzy.write(fu)
+            fuzzy.write(partial_fuzz)
             if fuzz.partial_ratio(maharsha, tos) > 70:
                 rline = line + 1
                 num_of_matches += 1
@@ -286,7 +292,8 @@ def search_tosafot(text, daf_amud, Peirush, diburs = 4):
         if line == lines - 1:
             if diburs > 0:
                 if num_of_matches == 1:
-                    links.append(link("Chidushei Halachot" + "." + daf_amud + ":" + str(Peirush), "Tosafot on Taanit" + "." + daf_amud + ":" + str(rline)))
+                    #links.append(link("Chidushei Halachot on Taanit" + "." + daf_amud + ":" + str(Peirush), "Tosafot on Taanit" + "." + daf_amud + ":" + str(rline)))
+                    links.append(link("Chidushei Halachot on Taanit" + "." + daf_amud + ":" + str(Peirush), "Taanit" + "." + daf_amud + ":" + str(rline)))
                     #Helper.postLink(link("Maharsha on Taanit" + "." + daf_amud + ":" + str(Peirush), "Tosafot on Taanit" + "." + daf_amud + ":" + str(line)))
                     true_find = "matched!! a maharsha DH {} in the Tosafot daf {}, line {} \n".format(maharsha.encode('utf-8'), daf_amud, line)
                     print true_find
@@ -298,7 +305,8 @@ def search_tosafot(text, daf_amud, Peirush, diburs = 4):
                     break
             if diburs == 0:
                 if num_of_matches == 1:
-                    links.append(link("Chidushei Halachot" + "." + daf_amud + ":" + str(Peirush), "Tosafot on Taanit" + "." + daf_amud + ":" + str(rline)))
+                    #links.append(link("Chidushei Halachot on Taanit" + "." + daf_amud + ":" + str(Peirush), "Tosafot on Taanit" + "." + daf_amud + ":" + str(rline)))
+                    links.append(link("Chidushei Halachot on Taanit" + "." + daf_amud + ":" + str(Peirush), "Taanit" + "." + daf_amud + ":" + str(rline)))
                     #Helper.postLink(link("Maharsha on Taanit" + "." + daf_amud + ":" + str(Peirush), "Tosafot on Taanit" + "." + daf_amud + ":" + str(line)))
                     true_find = "matched!! a maharsha DH {} in the Tosafot daf {}, line {} \n".format(maharsha.encode('utf-8'), daf_amud, line)
                     print true_find
@@ -366,14 +374,14 @@ def run_post_to_api():
     Helper.createBookRecord(book_record())
     with open("preprocess_json/Maharsha_on_Taanit.json", 'r') as filep:
         file_text = filep.read()
-    Helper.postText("Chidushei Halachot", file_text, False)
+    Helper.postText("Chidushei Halachot on Taanit", file_text, False)
 
 if __name__ == '__main__':
     text = open_file()
     parsed_text = parse_dapim(text)
-    Helper.createBookRecord(book_record())
-    save_parsed_text(parsed_text)
-    run_post_to_api()
-    Helper.postLink(links)
+    #Helper.createBookRecord(book_record())
+    #save_parsed_text(parsed_text)
+    #run_post_to_api()
+    #Helper.postLink(links)
 
 

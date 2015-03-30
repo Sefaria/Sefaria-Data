@@ -13,8 +13,8 @@ class PointerException(Exception):
 
 
 class AbstractVolume(object):
-    server = 'http://www.sefaria.org'
-    #server = 'http://localhost:8000'
+    #server = 'http://www.sefaria.org'
+    server = 'http://localhost:8000'
 
     def __init__(self, title):
         url = self.server + '/api/index/'+ str(title)
@@ -142,6 +142,7 @@ class MishnahVolume(AbstractVolume):
             raise PointerException(u"Reached enf of book {}".format(self.title))
         self.current_chapter = chapter
 
+
         if mishnah > 1 and mishnah > len(self.get_current_chapter_text()):
             raise PointerException("Reached end of Mishnah Chapter")
         self.current_mishnah = mishnah
@@ -164,6 +165,9 @@ class MishnahVolume(AbstractVolume):
 
     def number_left_in_chapter(self):
         return len(self.get_current_chapter_text()) - self.current_mishnah
+
+    def number_of_mishnayot(self):
+        return self.index["lengths"][1]
 
 log = codecs.open('mishnah.log', 'w', encoding='utf-8')
 error_log = codecs.open('connect_error.log', 'w', encoding='utf-8')
