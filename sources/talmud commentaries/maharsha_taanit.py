@@ -370,6 +370,7 @@ def save_parsed_text(text):
     with open("preprocess_json/Maharsha_on_Taanit.json", 'w') as out:
         json.dump(text_whole, out)
 
+
 def run_post_to_api():
     Helper.createBookRecord(book_record())
     with open("preprocess_json/Maharsha_on_Taanit.json", 'r') as filep:

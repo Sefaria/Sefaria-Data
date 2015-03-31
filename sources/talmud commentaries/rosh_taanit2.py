@@ -1,3 +1,4 @@
+__author__ = 'eliav'
 # -*- coding: utf-8 -*-
 __author__ = 'eliav'
 import re
@@ -5,13 +6,11 @@ import sys
 import json
 import urllib2
 from fuzzywuzzy import fuzz
-import korban_netanel as nosekelim
 sys.path.insert(1, '../genuzot')
 import helperFunctions as Helper
 import hebrew
 links = []
 log = open('rosh.txt', 'w')
-
 
 def get_shas():
     url = 'http://' + Helper.server + '/api/texts/Taanit.2a-31a'
@@ -21,18 +20,18 @@ def get_shas():
     return shas
 
 
-def matching(tagged, shas, i, j, index, daf, amud, strings=15, ratio = False):
+def matching(tagged, shas, i, j, index, daf, amud, start_string=0, strings=15, ratio = False):
     short = 0
     fuzzed =0
     if len(tagged) >= 15:
-                    string = " ".join(tagged[0:strings])
+                    string = " ".join(tagged[start_string:strings])
     else:
         short += 1
         string = " ".join(tagged[0:len(tagged)-1])
     string = re.sub(ur'[\[\]\*#@[0-9]', "", string)
     found = 0
     for counter, line in enumerate(shas[index], start = 1):
-        if fuzz.partial_ratio(string, line) > 80:
+        if fuzz.partial_ratio(string, line) > 85:
             bingo = counter
             if ratio is True:
                 if fuzz.ratio(string, line) > 60:
@@ -41,29 +40,31 @@ def matching(tagged, shas, i, j, index, daf, amud, strings=15, ratio = False):
                     #print "ratio", string, daf, strings, fuzz.ratio(string, line)
             else:
                 found +=1
-    #if fuzzed > 0:
-        #print "fuzzed", fuzzed
-    if found < 1 and strings != 0:
-        strings -= 1
-        matching(tagged, shas, i, j, index, daf, amud, strings)
-    elif found > 1:
-        if ratio is True:
-            error = "found too much, " + str(found) + "," + "on," + str(daf)+ "," + amud + "," + " ".join(tagged[0:15]).encode('utf-8') +"\n"
-            log.write(error)
-        else:
-            matching(tagged, shas, i, j, index, daf,amud,strings, True)
-
-    elif found == 1:
+    if found == 1:
         roash = "Rosh on Taanit." + str(i+1) + "." + str(j+1)
         talmud = "Taanit." + str(daf) + amud + "." + str(bingo)
         links.append(link(talmud, roash))
         succes=  "found" + ", " + string.encode('utf-8') + str(daf)+ " ," + amud + "," + str(strings) +"\n"
         print succes
         #log.write(succes)
-    elif strings == 0:
-        error = "did not find on daf,"+ str(daf) +"," + amud + "," + " ".join(tagged[0:15]).encode('utf-8') +"\n"
-        log.write(error)
-        print error
+    elif found < 1:
+        if start_string == 0 and strings != 0:
+            strings -= 1
+            matching(tagged, shas, i, j, index, daf, amud, strings)
+        elif (start_string != 0 or strings ==0) and start_string!=14:
+            start_string +=1
+            matching(tagged, shas, i, j, index, daf, amud, start_string)
+        elif start_string == 14:
+            error = "did not find on daf,"+ str(daf) +"," + amud + "," + " ".join(tagged[0:15]).encode('utf-8') +"\n"
+            log.write(error)
+            print error
+    elif found > 1:
+        if ratio is True:
+            error = "found too much, " + str(found) + "," + "on," + str(daf)+ "," + amud + "," + " ".join(tagged[0:15]).encode('utf-8') +"\n"
+            log.write(error)
+            print error
+        else:
+            matching(tagged, shas, i, j, index, daf,amud,start_string, strings, True)
 
 
 def search(text, shas):
@@ -149,42 +150,30 @@ def book_record():
 
 
 def parse(text):
-    nose_kelim = nosekelim.open_file()
-    fixed = nosekelim.parse(nose_kelim)
     links_netanel = []
     netanel = 0
     rosh = []
     a = re.split(ur'@22([^@]*)', text)
     for seif, cont in zip(a[1::2], a[2::2]):
         si = []
-        korban =[]
         if ur'[*]' in seif:
-            korban.append(fixed[netanel])
-            print len(links_netanel)
-            roash = "Rosh on Taanit." + str(len(links_netanel)+1) + ".1"
-            netanelink = "Korban Netanel on Taanit." + str(len(links_netanel)+1)+ ".1"
-            links.append(link(netanelink, roash))
-            netanel += 1
+                print seif
+                netanel += 1
+        #si.append(seif)
         content = re.split('@66', cont)
         seif = re.sub(ur'[\s\[\*\]]',"", seif)
         seif = hebrew.heb_string_to_int(seif.strip())
         for num, co in enumerate(content):
             a = re.findall('\[\*\](.{6})', co)
-            for b in a:
-                korban.append(fixed[netanel])
-                roash = "Rosh on Taanit." + str(len(links_netanel)+1) + "." + str(num+1)
-                netanelink = "Korban Netanel on Taanit." + str(len(links_netanel)+1)+ "."+ str(len(korban))
-                print netanelink, len(a)
-                links.append(link(netanelink, roash))
-                netanel +=1
+            #for b in a:
+                #print b
+            netanel +=len(a)
+            #print seif, num, netanel - len(a), netanel
+            #print len(a)
             si.append(co)
-        links_netanel.append(korban)
         rosh.append(si)
-    print netanel
     search(rosh,get_shas(),)
-    #print links_netanel[0][0]
-    nosekelim.save_parsed_text(links_netanel)
-    nosekelim.run_post_to_api()
+    print netanel
     return rosh
 
 
@@ -205,7 +194,7 @@ def save_parsed_text(text):
     text_whole = {
         "title": 'Rosh on Taanit',
         "versionTitle": "Vilna, 1842",
-        "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957",
+        "versionSource": "???",
         "language": "he",
         "text": text,
     }
@@ -222,7 +211,6 @@ def run_post_to_api():
     Helper.postText("Rosh on Taanit", file_text, False)
 
 if __name__ == '__main__':
-    Helper.createBookRecord(nosekelim.book_record())
     text = open_file()
     parsed_text = parse(text)
     upload_text = clean(parsed_text)
