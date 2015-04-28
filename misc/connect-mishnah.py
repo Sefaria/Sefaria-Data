@@ -6,6 +6,7 @@ import csv
 import codecs
 
 from fm import fuzz
+from sefaria.model import *
 
 
 class PointerException(Exception):
@@ -13,29 +14,13 @@ class PointerException(Exception):
 
 
 class AbstractVolume(object):
-    server = 'http://www.sefaria.org'
-    #server = 'http://localhost:8000'
 
     def __init__(self, title):
-        url = self.server + '/api/index/'+ str(title)
-        response = urllib2.urlopen(url)
-        resp = response.read()
         self.title = title
-        self.index = json.loads(resp)
-        if "error" in self.index:
-            raise Exception(u"Failed to get index {}: {}".format(title, self.index["error"]))
+        self.index = get_index(title)
 
     def get_text(self, ref):
-        url = self.server + '/api/texts/' + str(ref)
-        response = urllib2.urlopen(url)
-        resp = response.read()
-        while True:
-            try:
-                return json.loads(resp)["he"]
-                break
-            except KeyError:
-                return  ""
-                #return json.loads(resp)["he"]
+        return TextChunk(Ref(ref), "he").text
 
 
 class TalmudVolume(AbstractVolume):
@@ -104,7 +89,7 @@ class TalmudVolume(AbstractVolume):
         amud = self.get_current_amud()
         if self._next_line_pointer <= len(amud):
             return True
-        if self._current_daf_index >= self.index["length"] + 2:
+        if self._current_daf_index >= self.index.nodes.lengths[0] + 2:
             return False
         return True
 
@@ -115,7 +100,7 @@ class TalmudVolume(AbstractVolume):
         return True
 
     def has_more_pages(self):
-        if self._current_daf_index >= self.index["length"] + 2:
+        if self._current_daf_index >= self.index.nodes.lengths[0] + 2:
             return False
         return True
 
@@ -138,7 +123,7 @@ class MishnahVolume(AbstractVolume):
         return self.get_chapter_text(self.current_chapter)
 
     def advance_pointer(self, chapter, mishnah=1, offset=0):
-        if chapter > self.index["length"]:
+        if chapter > self.index.nodes.lengths[0]:
             raise PointerException(u"Reached enf of book {}".format(self.title))
         self.current_chapter = chapter
 
