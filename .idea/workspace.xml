@@ -2,12 +2,28 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ec442ac6-1d63-4da1-81cf-d67efa341a72" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/sources/talmud commentaries/rosh_taanit2.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sources/talmud commentaries/preprocess_json/Rosh_on_Taanit.json" afterPath="$PROJECT_DIR$/sources/talmud commentaries/preprocess_json/Rosh_on_Taanit.json" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sources/talmud commentaries/maharsha_taanit.py" afterPath="$PROJECT_DIR$/sources/talmud commentaries/maharsha_taanit.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sources/talmud commentaries/rosh.txt" afterPath="$PROJECT_DIR$/sources/talmud commentaries/rosh.txt" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sources/talmud commentaries/rosh_taanit.py" afterPath="$PROJECT_DIR$/sources/talmud commentaries/rosh_taanit.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/sources/talmud commentaries/source/rosh_taanit.txt" afterPath="$PROJECT_DIR$/sources/talmud commentaries/source/rosh_taanit.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/sources/talmud-commentaries/rif.py" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\abbs.txt" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\fuzzywuzzy.txt" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\korban_netanel.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\maharam_beitza.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\maharsha.log" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\maharsha_taanit.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\preprocess_json\Maharsha_on_Taanit.json" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\preprocess_json\Rosh_on_Taanit.json" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\preprocess_json\korban_netanel_on_Taanit.json" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\preprocess_json\rif_on_taanit.json" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\rif_taanit.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\rif_taanit2.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\rosh.csv" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\rosh.txt" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\rosh_taanit.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\rosh_taanit2.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\source\korban_netanel_taanit.txt" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\source\maharam_beitza.txt" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\source\maharsha_taanit.txt" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\source\rif_taanit.txt" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\eliav\Documents\GitHub\Sefaria-Data\sources\talmud commentaries\source\rosh_taanit.txt" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="Sefaria-Data.iws" />
@@ -23,11 +39,13 @@
   <component name="ChangesViewManager" flattened_view="true" show_ignored="false" />
   <component name="CoverageDataManager">
     <SUITE FILE_PATH="coverage/Sefaria-Data$korban_netanel.coverage" NAME="korban_netanel Coverage Results" MODIFIED="1427792757898" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/sources/talmud commentaries" />
-    <SUITE FILE_PATH="coverage/Sefaria-Data$rosh_taanit.coverage" NAME="rosh_taanit Coverage Results" MODIFIED="1427795487004" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/sources/talmud commentaries" />
-    <SUITE FILE_PATH="coverage/Sefaria-Data$rif.coverage" NAME="rif Coverage Results" MODIFIED="1426749942603" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/sources/talmud commentaries" />
+    <SUITE FILE_PATH="coverage/Sefaria-Data$rosh_taanit.coverage" NAME="rosh_taanit Coverage Results" MODIFIED="1430047992365" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/sources/talmud-commentaries" />
+    <SUITE FILE_PATH="coverage/Sefaria-Data$hebrew_reading.coverage" NAME="hebrew_reading Coverage Results" MODIFIED="1430075399612" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/sources/talmud-commentaries" />
+    <SUITE FILE_PATH="coverage/Sefaria-Data$rif.coverage" NAME="rif Coverage Results" MODIFIED="1430224831137" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/sources/talmud-commentaries" />
     <SUITE FILE_PATH="coverage/Sefaria-Data$haamekdavar_leviticus.coverage" NAME="haamekdavar leviticus Coverage Results" MODIFIED="1426404459232" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/sources/genuzot" />
     <SUITE FILE_PATH="coverage/Sefaria-Data$rif2.coverage" NAME="rif2 Coverage Results" MODIFIED="1427032607557" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/sources/talmud commentaries" />
     <SUITE FILE_PATH="coverage/Sefaria-Data$mishna_links.coverage" NAME="mishna links Coverage Results" MODIFIED="1425212621928" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/misc" />
+    <SUITE FILE_PATH="coverage/Sefaria-Data$cli.coverage" NAME="cli Coverage Results" MODIFIED="1429605986865" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../Sefaria-Project" />
     <SUITE FILE_PATH="coverage/Sefaria-Data$maharsha_taanit.coverage" NAME="maharsha taanit Coverage Results" MODIFIED="1426762192725" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/sources/talmud commentaries" />
     <SUITE FILE_PATH="coverage/Sefaria-Data$connect_mishna.coverage" NAME="connect mishna Coverage Results" MODIFIED="1427113309511" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/misc" />
   </component>
@@ -46,9 +64,12 @@
       <file leaf-file-name="connect-mishnah.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/misc/connect-mishnah.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="1203" max-vertical-offset="4760">
-              <caret line="87" column="29" selection-start-line="87" selection-start-column="28" selection-end-line="87" selection-end-column="29" />
-              <folding />
+            <state vertical-scroll-proportion="0.0" vertical-offset="26" max-vertical-offset="4692">
+              <caret line="10" column="16" selection-start-line="10" selection-start-column="13" selection-end-line="10" selection-end-column="16" />
+              <folding>
+                <element signature="e#24#38#0" expanded="true" />
+                <element signature="e#649#972#0" expanded="false" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -56,78 +77,121 @@
       <file leaf-file-name="helperFunctions.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/sources/genuzot/helperFunctions.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1666">
+            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1530">
               <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
               <folding>
                 <element signature="e#441#577#0" expanded="false" />
                 <element signature="e#644#814#0" expanded="false" />
                 <element signature="e#840#1024#0" expanded="false" />
                 <element signature="e#1058#1346#0" expanded="false" />
-                <element signature="e#3735#4216#0" expanded="false" />
-                <element signature="e#4271#4782#0" expanded="false" />
+                <element signature="e#1383#1643#0" expanded="false" />
+                <element signature="e#1701#2135#0" expanded="false" />
+                <element signature="e#2270#2611#0" expanded="false" />
+                <element signature="e#2780#3681#0" expanded="false" />
                 <element signature="e#4862#5334#0" expanded="false" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="maharsha_taanit.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/sources/talmud commentaries/maharsha_taanit.py">
+      <file leaf-file-name="rif_taanit.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/sources/talmud-commentaries/rif_taanit.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="1156" max-vertical-offset="3332">
-              <caret line="89" column="20" selection-start-line="89" selection-start-column="20" selection-end-line="89" selection-end-column="20" />
+            <state vertical-scroll-proportion="-2.9310346" vertical-offset="0" max-vertical-offset="1275">
+              <caret line="9" column="10" selection-start-line="9" selection-start-column="7" selection-end-line="9" selection-end-column="10" />
               <folding>
-                <element signature="e#45#54#0" expanded="true" />
-                <element signature="e#844#1395#0" expanded="false" />
-                <element signature="e#2453#2692#0" expanded="false" />
-                <element signature="e#2767#2954#0" expanded="false" />
-                <element signature="e#6738#10838#0" expanded="false" />
-                <element signature="e#10946#14534#0" expanded="false" />
-                <element signature="e#14665#16003#0" expanded="false" />
-                <element signature="e#16495#16708#0" expanded="false" />
+                <element signature="e#226#905#0" expanded="false" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="rosh_taanit.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/sources/talmud commentaries/rosh_taanit.py">
+      <file leaf-file-name="rif.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/sources/talmud-commentaries/rif.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="1.5341246" vertical-offset="2441" max-vertical-offset="3094">
-              <caret line="230" column="4" selection-start-line="230" selection-start-column="4" selection-end-line="230" selection-end-column="4" />
+            <state vertical-scroll-proportion="3.5379539" vertical-offset="305" max-vertical-offset="1496">
+              <caret line="207" column="4" selection-start-line="207" selection-start-column="4" selection-end-line="207" selection-end-column="4" />
               <folding>
-                <element signature="e#45#54#0" expanded="true" />
-                <element signature="e#297#470#0" expanded="false" />
-                <element signature="e#2248#3407#0" expanded="false" />
-                <element signature="e#6057#6365#0" expanded="false" />
-                <element signature="e#6400#6818#0" expanded="false" />
-                <element signature="e#6848#7043#0" expanded="false" />
+                <element signature="e#45#59#0" expanded="true" />
+                <element signature="e#409#611#0" expanded="false" />
+                <element signature="e#634#1154#0" expanded="false" />
+                <element signature="e#1216#2472#0" expanded="false" />
+                <element signature="e#2500#3218#0" expanded="false" />
+                <element signature="e#3449#4082#0" expanded="false" />
+                <element signature="e#4106#4697#0" expanded="false" />
+                <element signature="e#5708#5915#0" expanded="false" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="hebrew.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/sources/genuzot/hebrew.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="-9.275862" vertical-offset="54" max-vertical-offset="6001">
+              <caret line="21" column="0" selection-start-line="21" selection-start-column="0" selection-end-line="21" selection-end-column="0" />
+              <folding />
             </state>
           </provider>
         </entry>
       </file>
       <file leaf-file-name="korban_netanel.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/sources/talmud commentaries/korban_netanel.py">
+        <entry file="file://$PROJECT_DIR$/sources/talmud-commentaries/korban_netanel.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="884" max-vertical-offset="1496">
-              <caret line="64" column="24" selection-start-line="64" selection-start-column="24" selection-end-line="64" selection-end-column="24" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="238" max-vertical-offset="1003">
+              <caret line="14" column="5" selection-start-line="14" selection-start-column="5" selection-end-line="14" selection-end-column="5" />
               <folding>
                 <element signature="e#45#54#0" expanded="true" />
-                <element signature="e#1596#2034#0" expanded="false" />
-                <element signature="e#2064#2279#0" expanded="false" />
+                <element signature="e#402#1161#0" expanded="false" />
+                <element signature="e#1185#1367#0" expanded="false" />
+                <element signature="e#1868#2452#0" expanded="false" />
+                <element signature="e#2482#2711#0" expanded="false" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="rosh_taanit2.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/sources/talmud commentaries/rosh_taanit2.py">
+      <file leaf-file-name="text.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/../Sefaria-Project/sefaria/model/text.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="3438" max-vertical-offset="3842">
-              <caret line="216" column="4" selection-start-line="216" selection-start-column="4" selection-end-line="216" selection-end-column="4" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="1173" max-vertical-offset="46427">
+              <caret line="69" column="6" selection-start-line="69" selection-start-column="6" selection-end-line="69" selection-end-column="6" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="hebrew_file_reading.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/sources/talmud-commentaries/hebrew_file_reading.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0" vertical-offset="662" max-vertical-offset="1156">
+              <caret line="58" column="178" selection-start-line="58" selection-start-column="178" selection-end-line="58" selection-end-column="178" />
               <folding>
-                <element signature="e#66#75#0" expanded="true" />
+                <element signature="e#45#59#0" expanded="true" />
+                <element signature="e#1430#1911#0" expanded="false" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="rosh_taanit.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/sources/talmud-commentaries/rosh_taanit.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="-2.8275862" vertical-offset="683" max-vertical-offset="2057">
+              <caret line="163" column="4" selection-start-line="163" selection-start-column="4" selection-end-line="163" selection-end-column="39" />
+              <folding>
+                <element signature="e#44#62#0" expanded="true" />
+                <element signature="e#594#759#0" expanded="false" />
+                <element signature="e#783#1303#0" expanded="false" />
+                <element signature="e#1389#3091#0" expanded="false" />
+                <element signature="e#3122#4975#0" expanded="false" />
+                <element signature="e#5007#5213#0" expanded="false" />
+                <element signature="e#5237#5485#0" expanded="false" />
+                <element signature="e#6267#8877#0" expanded="false" />
+                <element signature="e#8902#11528#0" expanded="false" />
+                <element signature="e#11552#11860#0" expanded="false" />
+                <element signature="e#11895#12458#0" expanded="false" />
+                <element signature="e#12488#12697#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -142,7 +206,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/misc/connect-mishnah.py" />
         <option value="$PROJECT_DIR$/misc/Mishna_links.py" />
         <option value="$PROJECT_DIR$/sources/genuzot/parseHaamekDavar.py" />
         <option value="$PROJECT_DIR$/sources/genuzot/parseHaamekDavarexodus.py" />
@@ -153,9 +216,16 @@
         <option value="$PROJECT_DIR$/sources/talmud commentaries/rosh_taanit2.py" />
         <option value="$PROJECT_DIR$/sources/genuzot/korban_netanel.py" />
         <option value="$PROJECT_DIR$/sources/talmud commentaries/maharsha_taanit.py" />
-        <option value="$PROJECT_DIR$/sources/genuzot/helperFunctions.py" />
         <option value="$PROJECT_DIR$/sources/talmud commentaries/korban_netanel.py" />
         <option value="$PROJECT_DIR$/sources/talmud commentaries/rosh_taanit.py" />
+        <option value="$PROJECT_DIR$/misc/connect-mishnah.py" />
+        <option value="$PROJECT_DIR$/../../scratch/hebrew_file_reading.py" />
+        <option value="$PROJECT_DIR$/../../scratch/output.txt" />
+        <option value="$PROJECT_DIR$/sources/genuzot/helperFunctions.py" />
+        <option value="$PROJECT_DIR$/sources/talmud-commentaries/hebrew_file_reading.py" />
+        <option value="$PROJECT_DIR$/sources/talmud-commentaries/korban_netanel.py" />
+        <option value="$PROJECT_DIR$/sources/talmud-commentaries/rosh_taanit.py" />
+        <option value="$PROJECT_DIR$/sources/talmud-commentaries/rif.py" />
       </list>
     </option>
   </component>
@@ -179,7 +249,7 @@
     <ConfirmationsSetting value="0" id="Remove" />
   </component>
   <component name="ProjectView">
-    <navigator proportions="" version="1">
+    <navigator currentView="ProjectPane" proportions="" version="1">
       <flattenPackages />
       <showMembers />
       <showModules />
@@ -190,10 +260,64 @@
       <autoscrollFromSource />
       <sortByType />
     </navigator>
-    <panes />
+    <panes>
+      <pane id="Scope" />
+      <pane id="ProjectPane">
+        <subPane>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Sefaria-Data" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Sefaria-Data" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Sefaria-Data" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Sefaria-Data" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Sefaria-Data" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="sources" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Sefaria-Data" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Sefaria-Data" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="sources" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="talmud-commentaries" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+        </subPane>
+      </pane>
+    </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/sources/talmud commentaries/korban_netanel.py" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/sources/talmud-commentaries/rif.py" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="options.lastSelected" value="vcs.Git" />
     <property name="options.splitter.main.proportions" value="0.3" />
@@ -207,7 +331,7 @@
       <console-settings />
     </option>
   </component>
-  <component name="RunManager" selected="Python.rosh_taanit">
+  <component name="RunManager" selected="Python.rif">
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -456,26 +580,6 @@
       <ConfigurationWrapper RunnerId="PythonRunner" />
       <method />
     </configuration>
-    <configuration default="false" name="rif" type="PythonConfigurationType" factoryName="Python">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="C:\Python27\python.exe" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/sources/talmud commentaries" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="Sefaria-Data" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/sources/talmud commentaries/rif_taanit.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <RunnerSettings RunnerId="PythonRunner" />
-      <ConfigurationWrapper RunnerId="PythonRunner" />
-      <method />
-    </configuration>
     <configuration default="false" name="rif2" type="PythonConfigurationType" factoryName="Python">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -496,25 +600,88 @@
       <ConfigurationWrapper RunnerId="PythonRunner" />
       <method />
     </configuration>
-    <configuration default="false" name="rosh_taanit" type="PythonConfigurationType" factoryName="Python">
+    <configuration default="false" name="rosh_taanit" type="PythonConfigurationType" factoryName="Python" singleton="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="C:\Python27\python.exe" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/sources/talmud commentaries" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/sources/talmud-commentaries" />
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="Sefaria-Data" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/sources/talmud commentaries/rosh_taanit.py" />
-      <option name="PARAMETERS" value="" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/sources/talmud-commentaries/rosh_taanit.py" />
+      <option name="PARAMETERS" value="Taanit" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <RunnerSettings RunnerId="PyDebugRunner" />
+      <RunnerSettings RunnerId="PythonCover" />
       <RunnerSettings RunnerId="PythonRunner" />
       <ConfigurationWrapper RunnerId="PyDebugRunner" />
+      <ConfigurationWrapper RunnerId="PythonCover" />
+      <ConfigurationWrapper RunnerId="PythonRunner" />
+      <method />
+    </configuration>
+    <configuration default="false" name="hebrew_reading" type="PythonConfigurationType" factoryName="Python">
+      <output_file path="$PROJECT_DIR$/../../scratch/output.txt" is_save="true" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="C:\Python27\python.exe" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/sources/talmud-commentaries" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="Sefaria-Data" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/sources/talmud-commentaries/hebrew_file_reading.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <RunnerSettings RunnerId="PythonRunner" />
+      <ConfigurationWrapper RunnerId="PythonRunner" />
+      <method />
+    </configuration>
+    <configuration default="false" name="rif" type="PythonConfigurationType" factoryName="Python">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="C:\Python27\python.exe" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/sources/talmud-commentaries" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="Sefaria-Data" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/sources/talmud-commentaries/rif.py" />
+      <option name="PARAMETERS" value="Taanit" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <RunnerSettings RunnerId="PythonRunner" />
+      <ConfigurationWrapper RunnerId="PythonRunner" />
+      <method />
+    </configuration>
+    <configuration default="false" name="cli" type="PythonConfigurationType" factoryName="Python">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="C:\Python27\python.exe" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/../Sefaria-Project" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="Sefaria-Data" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/../Sefaria-Project/cli.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <RunnerSettings RunnerId="PythonRunner" />
       <ConfigurationWrapper RunnerId="PythonRunner" />
       <method />
     </configuration>
@@ -558,15 +725,17 @@
       <ConfigurationWrapper RunnerId="PythonRunner" />
       <method />
     </configuration>
-    <list size="8">
+    <list size="10">
       <item index="0" class="java.lang.String" itemvalue="Python.mishna links" />
       <item index="1" class="java.lang.String" itemvalue="Python.connect mishna" />
       <item index="2" class="java.lang.String" itemvalue="Python.maharsha taanit" />
-      <item index="3" class="java.lang.String" itemvalue="Python.rif" />
-      <item index="4" class="java.lang.String" itemvalue="Python.rif2" />
-      <item index="5" class="java.lang.String" itemvalue="Python.rosh_taanit" />
-      <item index="6" class="java.lang.String" itemvalue="Python.korban_netanel" />
-      <item index="7" class="java.lang.String" itemvalue="Python.haamekdavar leviticus" />
+      <item index="3" class="java.lang.String" itemvalue="Python.rif2" />
+      <item index="4" class="java.lang.String" itemvalue="Python.rosh_taanit" />
+      <item index="5" class="java.lang.String" itemvalue="Python.hebrew_reading" />
+      <item index="6" class="java.lang.String" itemvalue="Python.rif" />
+      <item index="7" class="java.lang.String" itemvalue="Python.cli" />
+      <item index="8" class="java.lang.String" itemvalue="Python.korban_netanel" />
+      <item index="9" class="java.lang.String" itemvalue="Python.haamekdavar leviticus" />
     </list>
   </component>
   <component name="ShelveChangesManager" show_recycled="false" />
@@ -603,20 +772,20 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1382" height="744" extended-state="0" />
+    <frame x="-8" y="-8" width="1382" height="744" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32843137" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32843137" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4045677" sideWeight="0.5" order="12" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4117647" sideWeight="0.5" order="12" side_tool="true" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32189542" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32843137" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.4045677" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32843137" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2624811" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.31045753" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32843137" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.4117647" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32352942" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.26626325" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24962178" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24961714" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39869282" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
@@ -628,23 +797,23 @@
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
     </layout>
     <layout-to-restore>
-      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32843137" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32843137" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4045677" sideWeight="0.5" order="12" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4117647" sideWeight="0.5" order="12" side_tool="true" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32189542" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32843137" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.4045677" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32843137" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2624811" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.31045753" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32843137" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.4117647" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32352942" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.26626325" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24962178" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24961714" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39869282" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -668,15 +837,109 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="22" />
+      <default-breakpoints>
+        <breakpoint type="python-exception">
+          <properties notifyOnTerminate="true" exception="BaseException">
+            <option name="notifyOnTerminate" value="true" />
+          </properties>
+        </breakpoint>
+      </default-breakpoints>
+      <option name="time" value="57" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/sources/genuzot/parseHaamekDavar.py">
+    <entry file="file://$PROJECT_DIR$/sources/genuzot/hebrew.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="1198" max-vertical-offset="1819">
-          <caret line="91" column="0" selection-start-line="85" selection-start-column="0" selection-end-line="91" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="1648" max-vertical-offset="6001">
+          <caret line="105" column="47" selection-start-line="105" selection-start-column="46" selection-end-line="105" selection-end-column="47" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/sources/talmud-commentaries/korban_netanel.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="241" max-vertical-offset="1666">
+          <caret line="30" column="13" selection-start-line="30" selection-start-column="13" selection-end-line="30" selection-end-column="13" />
+          <folding>
+            <element signature="e#45#54#0" expanded="true" />
+            <element signature="e#402#1161#0" expanded="false" />
+            <element signature="e#1185#1367#0" expanded="false" />
+            <element signature="e#1868#2452#0" expanded="false" />
+            <element signature="e#2482#2711#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/sources/talmud-commentaries/hebrew_file_reading.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="1139" max-vertical-offset="1326">
+          <caret line="67" column="14" selection-start-line="67" selection-start-column="14" selection-end-line="67" selection-end-column="14" />
+          <folding>
+            <element signature="e#45#59#0" expanded="true" />
+            <element signature="e#1430#1911#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/misc/connect-mishnah.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="26" max-vertical-offset="4692">
+          <caret line="10" column="16" selection-start-line="10" selection-start-column="13" selection-end-line="10" selection-end-column="16" />
+          <folding>
+            <element signature="e#24#38#0" expanded="true" />
+            <element signature="e#649#972#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/sources/genuzot/helperFunctions.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="1075" max-vertical-offset="1666">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="e#441#577#0" expanded="false" />
+            <element signature="e#644#814#0" expanded="false" />
+            <element signature="e#840#1024#0" expanded="false" />
+            <element signature="e#1058#1346#0" expanded="false" />
+            <element signature="e#1383#1643#0" expanded="false" />
+            <element signature="e#1701#2135#0" expanded="false" />
+            <element signature="e#2270#2611#0" expanded="false" />
+            <element signature="e#2780#3681#0" expanded="false" />
+            <element signature="e#4862#5334#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/sources/talmud-commentaries/rosh_taanit.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="3790" max-vertical-offset="4114">
+          <caret line="1" column="20" selection-start-line="0" selection-start-column="0" selection-end-line="1" selection-end-column="20" />
+          <folding>
+            <element signature="e#44#62#0" expanded="true" />
+            <element signature="e#594#759#0" expanded="false" />
+            <element signature="e#783#1303#0" expanded="false" />
+            <element signature="e#1389#3091#0" expanded="false" />
+            <element signature="e#3122#4975#0" expanded="false" />
+            <element signature="e#5007#5213#0" expanded="false" />
+            <element signature="e#5237#5485#0" expanded="false" />
+            <element signature="e#6267#8877#0" expanded="false" />
+            <element signature="e#8902#11528#0" expanded="false" />
+            <element signature="e#11552#11860#0" expanded="false" />
+            <element signature="e#11895#12458#0" expanded="false" />
+            <element signature="e#12488#12697#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/sources/talmud-commentaries/hebrew_file_reading.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1156">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="e#45#59#0" expanded="true" />
+            <element signature="e#1430#1911#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -689,26 +952,11 @@
             <element signature="e#644#814#0" expanded="false" />
             <element signature="e#840#1024#0" expanded="false" />
             <element signature="e#1058#1346#0" expanded="false" />
-            <element signature="e#3735#4216#0" expanded="false" />
-            <element signature="e#4271#4782#0" expanded="false" />
+            <element signature="e#1383#1643#0" expanded="false" />
+            <element signature="e#1701#2135#0" expanded="false" />
+            <element signature="e#2270#2611#0" expanded="false" />
+            <element signature="e#2780#3681#0" expanded="false" />
             <element signature="e#4862#5334#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/sources/talmud commentaries/maharsha_taanit.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2669">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#45#54#0" expanded="true" />
-            <element signature="e#844#1395#0" expanded="false" />
-            <element signature="e#2453#2692#0" expanded="false" />
-            <element signature="e#2767#2954#0" expanded="false" />
-            <element signature="e#6738#10838#0" expanded="false" />
-            <element signature="e#10946#14534#0" expanded="false" />
-            <element signature="e#14665#16003#0" expanded="false" />
-            <element signature="e#16495#16708#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -731,7 +979,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="156" max-vertical-offset="4862">
           <caret line="13" column="0" selection-start-line="13" selection-start-column="0" selection-end-line="13" selection-end-column="0" />
-          <folding />
+          <folding>
+            <element signature="e#24#38#0" expanded="true" />
+            <element signature="e#649#972#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -751,26 +1002,11 @@
             <element signature="e#644#814#0" expanded="false" />
             <element signature="e#840#1024#0" expanded="false" />
             <element signature="e#1058#1346#0" expanded="false" />
-            <element signature="e#3735#4216#0" expanded="false" />
-            <element signature="e#4271#4782#0" expanded="false" />
+            <element signature="e#1383#1643#0" expanded="false" />
+            <element signature="e#1701#2135#0" expanded="false" />
+            <element signature="e#2270#2611#0" expanded="false" />
+            <element signature="e#2780#3681#0" expanded="false" />
             <element signature="e#4862#5334#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/sources/talmud commentaries/maharsha_taanit.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1564">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#45#54#0" expanded="true" />
-            <element signature="e#844#1395#0" expanded="false" />
-            <element signature="e#2453#2692#0" expanded="false" />
-            <element signature="e#2767#2954#0" expanded="false" />
-            <element signature="e#6738#10838#0" expanded="false" />
-            <element signature="e#10946#14534#0" expanded="false" />
-            <element signature="e#14665#16003#0" expanded="false" />
-            <element signature="e#16495#16708#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -793,7 +1029,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="156" max-vertical-offset="4862">
           <caret line="13" column="0" selection-start-line="13" selection-start-column="0" selection-end-line="13" selection-end-column="0" />
-          <folding />
+          <folding>
+            <element signature="e#24#38#0" expanded="true" />
+            <element signature="e#649#972#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -813,26 +1052,11 @@
             <element signature="e#644#814#0" expanded="false" />
             <element signature="e#840#1024#0" expanded="false" />
             <element signature="e#1058#1346#0" expanded="false" />
-            <element signature="e#3735#4216#0" expanded="false" />
-            <element signature="e#4271#4782#0" expanded="false" />
+            <element signature="e#1383#1643#0" expanded="false" />
+            <element signature="e#1701#2135#0" expanded="false" />
+            <element signature="e#2270#2611#0" expanded="false" />
+            <element signature="e#2780#3681#0" expanded="false" />
             <element signature="e#4862#5334#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/sources/talmud commentaries/maharsha_taanit.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1564">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#45#54#0" expanded="true" />
-            <element signature="e#844#1395#0" expanded="false" />
-            <element signature="e#2453#2692#0" expanded="false" />
-            <element signature="e#2767#2954#0" expanded="false" />
-            <element signature="e#6738#10838#0" expanded="false" />
-            <element signature="e#10946#14534#0" expanded="false" />
-            <element signature="e#14665#16003#0" expanded="false" />
-            <element signature="e#16495#16708#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -844,23 +1068,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/sources/talmud commentaries/maharsha_taanit.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="527">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#45#54#0" expanded="true" />
-            <element signature="e#844#1395#0" expanded="false" />
-            <element signature="e#2453#2692#0" expanded="false" />
-            <element signature="e#2767#2954#0" expanded="false" />
-            <element signature="e#6738#10838#0" expanded="false" />
-            <element signature="e#10946#14534#0" expanded="false" />
-            <element signature="e#14665#16003#0" expanded="false" />
-            <element signature="e#16495#16708#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/misc/Mishna_links.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="640" max-vertical-offset="1224">
@@ -872,7 +1079,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="3" max-vertical-offset="4862">
           <caret line="147" column="25" selection-start-line="147" selection-start-column="25" selection-end-line="147" selection-end-column="25" />
-          <folding />
+          <folding>
+            <element signature="e#24#38#0" expanded="true" />
+            <element signature="e#649#972#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -890,23 +1100,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/sources/talmud commentaries/maharsha_taanit.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="527">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#45#54#0" expanded="true" />
-            <element signature="e#844#1395#0" expanded="false" />
-            <element signature="e#2453#2692#0" expanded="false" />
-            <element signature="e#2767#2954#0" expanded="false" />
-            <element signature="e#6738#10838#0" expanded="false" />
-            <element signature="e#10946#14534#0" expanded="false" />
-            <element signature="e#14665#16003#0" expanded="false" />
-            <element signature="e#16495#16708#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/misc/Mishna_links.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="640" max-vertical-offset="1224">
@@ -918,7 +1111,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="3" max-vertical-offset="4862">
           <caret line="147" column="25" selection-start-line="147" selection-start-column="25" selection-end-line="147" selection-end-column="25" />
-          <folding />
+          <folding>
+            <element signature="e#24#38#0" expanded="true" />
+            <element signature="e#649#972#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -936,44 +1132,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/sources/talmud commentaries/maharsha_taanit.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="476">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#45#54#0" expanded="true" />
-            <element signature="e#844#1395#0" expanded="false" />
-            <element signature="e#2453#2692#0" expanded="false" />
-            <element signature="e#2767#2954#0" expanded="false" />
-            <element signature="e#6738#10838#0" expanded="false" />
-            <element signature="e#10946#14534#0" expanded="false" />
-            <element signature="e#14665#16003#0" expanded="false" />
-            <element signature="e#16495#16708#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/sources/Srikot/parseRadakGenesis.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="409" max-vertical-offset="2210">
           <caret line="41" column="30" selection-start-line="41" selection-start-column="30" selection-end-line="41" selection-end-column="37" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/sources/talmud commentaries/maharsha_taanit.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="476">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#45#54#0" expanded="true" />
-            <element signature="e#844#1395#0" expanded="false" />
-            <element signature="e#2453#2692#0" expanded="false" />
-            <element signature="e#2767#2954#0" expanded="false" />
-            <element signature="e#6738#10838#0" expanded="false" />
-            <element signature="e#10946#14534#0" expanded="false" />
-            <element signature="e#14665#16003#0" expanded="false" />
-            <element signature="e#16495#16708#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1019,13 +1181,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/sources/genuzot/hebrew.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.5965812" vertical-offset="977" max-vertical-offset="6001">
-          <caret line="80" column="18" selection-start-line="80" selection-start-column="18" selection-end-line="80" selection-end-column="18" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/sources/genuzot/parseHaamekDavarexodus.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1615">
@@ -1061,27 +1216,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/sources/talmud commentaries/maharam_beitza.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="510">
-          <caret line="15" column="25" selection-start-line="15" selection-start-column="25" selection-end-line="15" selection-end-column="32" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/sources/talmud commentaries/rif_taanit2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="888" max-vertical-offset="1768">
-          <caret line="73" column="18" selection-start-line="73" selection-start-column="18" selection-end-line="73" selection-end-column="18" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/sources/talmud commentaries/rif_taanit.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="820" max-vertical-offset="1836">
-          <caret line="62" column="51" selection-start-line="62" selection-start-column="51" selection-end-line="62" selection-end-column="51" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/sources/genuzot/parseHaamekDavar.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="1313" max-vertical-offset="1768">
@@ -1089,80 +1223,137 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/../../scratch/hebrew_file_reading.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="1.117647" vertical-offset="262" max-vertical-offset="833">
+          <caret line="43" column="4" selection-start-line="43" selection-start-column="4" selection-end-line="43" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/misc/connect-mishnah.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="1203" max-vertical-offset="4760">
-          <caret line="87" column="29" selection-start-line="87" selection-start-column="28" selection-end-line="87" selection-end-column="29" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="26" max-vertical-offset="4692">
+          <caret line="10" column="16" selection-start-line="10" selection-start-column="13" selection-end-line="10" selection-end-column="16" />
+          <folding>
+            <element signature="e#24#38#0" expanded="true" />
+            <element signature="e#649#972#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../scratch/output.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1241">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+      <provider editor-type-id="com.intellij.database.editor.CsvTableFileEditorProvider">
+        <state />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../Sefaria-Project/sefaria/model/text.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="1070" max-vertical-offset="46053">
+          <caret line="69" column="6" selection-start-line="69" selection-start-column="6" selection-end-line="69" selection-end-column="6" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/sources/talmud commentaries/rosh_taanit2.py">
+    <entry file="file://$PROJECT_DIR$/sources/talmud-commentaries/korban_netanel.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="3438" max-vertical-offset="3842">
-          <caret line="216" column="4" selection-start-line="216" selection-start-column="4" selection-end-line="216" selection-end-column="4" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1003">
+          <caret line="14" column="5" selection-start-line="14" selection-start-column="5" selection-end-line="14" selection-end-column="5" />
           <folding>
-            <element signature="e#66#75#0" expanded="true" />
+            <element signature="e#45#54#0" expanded="true" />
+            <element signature="e#402#1161#0" expanded="false" />
+            <element signature="e#1185#1367#0" expanded="false" />
+            <element signature="e#1868#2452#0" expanded="false" />
+            <element signature="e#2482#2711#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/sources/talmud commentaries/maharsha_taanit.py">
+    <entry file="file://$PROJECT_DIR$/sources/talmud-commentaries/hebrew_file_reading.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="1156" max-vertical-offset="3332">
-          <caret line="89" column="20" selection-start-line="89" selection-start-column="20" selection-end-line="89" selection-end-column="20" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="662" max-vertical-offset="1156">
+          <caret line="58" column="178" selection-start-line="58" selection-start-column="178" selection-end-line="58" selection-end-column="178" />
           <folding>
-            <element signature="e#45#54#0" expanded="true" />
-            <element signature="e#844#1395#0" expanded="false" />
-            <element signature="e#2453#2692#0" expanded="false" />
-            <element signature="e#2767#2954#0" expanded="false" />
-            <element signature="e#6738#10838#0" expanded="false" />
-            <element signature="e#10946#14534#0" expanded="false" />
-            <element signature="e#14665#16003#0" expanded="false" />
-            <element signature="e#16495#16708#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/sources/talmud commentaries/korban_netanel.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="884" max-vertical-offset="1496">
-          <caret line="64" column="24" selection-start-line="64" selection-start-column="24" selection-end-line="64" selection-end-column="24" />
-          <folding>
-            <element signature="e#45#54#0" expanded="true" />
-            <element signature="e#1596#2034#0" expanded="false" />
-            <element signature="e#2064#2279#0" expanded="false" />
+            <element signature="e#45#59#0" expanded="true" />
+            <element signature="e#1430#1911#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/sources/genuzot/helperFunctions.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1666">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1530">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#441#577#0" expanded="false" />
             <element signature="e#644#814#0" expanded="false" />
             <element signature="e#840#1024#0" expanded="false" />
             <element signature="e#1058#1346#0" expanded="false" />
-            <element signature="e#3735#4216#0" expanded="false" />
-            <element signature="e#4271#4782#0" expanded="false" />
+            <element signature="e#1383#1643#0" expanded="false" />
+            <element signature="e#1701#2135#0" expanded="false" />
+            <element signature="e#2270#2611#0" expanded="false" />
+            <element signature="e#2780#3681#0" expanded="false" />
             <element signature="e#4862#5334#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/sources/talmud commentaries/rosh_taanit.py">
+    <entry file="file://$PROJECT_DIR$/sources/genuzot/hebrew.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="1.5341246" vertical-offset="2441" max-vertical-offset="3094">
-          <caret line="230" column="4" selection-start-line="230" selection-start-column="4" selection-end-line="230" selection-end-column="4" />
+        <state vertical-scroll-proportion="-9.275862" vertical-offset="54" max-vertical-offset="6001">
+          <caret line="21" column="0" selection-start-line="21" selection-start-column="0" selection-end-line="21" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/sources/talmud-commentaries/rif_taanit.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-2.9310346" vertical-offset="0" max-vertical-offset="1275">
+          <caret line="9" column="10" selection-start-line="9" selection-start-column="7" selection-end-line="9" selection-end-column="10" />
           <folding>
-            <element signature="e#45#54#0" expanded="true" />
-            <element signature="e#297#470#0" expanded="false" />
-            <element signature="e#2248#3407#0" expanded="false" />
-            <element signature="e#6057#6365#0" expanded="false" />
-            <element signature="e#6400#6818#0" expanded="false" />
-            <element signature="e#6848#7043#0" expanded="false" />
+            <element signature="e#226#905#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/sources/talmud-commentaries/rosh_taanit.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-2.8275862" vertical-offset="683" max-vertical-offset="2057">
+          <caret line="163" column="4" selection-start-line="163" selection-start-column="4" selection-end-line="163" selection-end-column="39" />
+          <folding>
+            <element signature="e#44#62#0" expanded="true" />
+            <element signature="e#594#759#0" expanded="false" />
+            <element signature="e#783#1303#0" expanded="false" />
+            <element signature="e#1389#3091#0" expanded="false" />
+            <element signature="e#3122#4975#0" expanded="false" />
+            <element signature="e#5007#5213#0" expanded="false" />
+            <element signature="e#5237#5485#0" expanded="false" />
+            <element signature="e#6267#8877#0" expanded="false" />
+            <element signature="e#8902#11528#0" expanded="false" />
+            <element signature="e#11552#11860#0" expanded="false" />
+            <element signature="e#11895#12458#0" expanded="false" />
+            <element signature="e#12488#12697#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/sources/talmud-commentaries/rif.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="3.5379539" vertical-offset="305" max-vertical-offset="1496">
+          <caret line="207" column="4" selection-start-line="207" selection-start-column="4" selection-end-line="207" selection-end-column="4" />
+          <folding>
+            <element signature="e#45#59#0" expanded="true" />
+            <element signature="e#409#611#0" expanded="false" />
+            <element signature="e#634#1154#0" expanded="false" />
+            <element signature="e#1216#2472#0" expanded="false" />
+            <element signature="e#2500#3218#0" expanded="false" />
+            <element signature="e#3449#4082#0" expanded="false" />
+            <element signature="e#4106#4697#0" expanded="false" />
+            <element signature="e#5708#5915#0" expanded="false" />
           </folding>
         </state>
       </provider>
