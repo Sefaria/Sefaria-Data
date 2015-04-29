@@ -81,7 +81,7 @@ def matching(quote, daf, amud,i,j,shas, words, ratio):
 
 
 def book_record():
-      a = u" הר\"יף על " + masechet_he
+      a = u" הרי\"ף על " + masechet_he
       return {
     "title" : "Rif on %s" % masechet ,
     "categories" : [
@@ -108,7 +108,7 @@ def book_record():
             "Peirush"
         ],
         "addressTypes" : [
-           "Integer",
+           "Talmud",
             "Integer"
         ],
         "key" : "Rif on Taanit"
@@ -199,11 +199,11 @@ def run_post_to_api():
 
 if __name__ == '__main__':
     shas = get_shas()
-    #Helper.createBookRecord(book_record())
+    Helper.createBookRecord(book_record())
     text = open_file()
     parsed_text = parse(text)
-    #links(parsed_text, shas)
+    links(parsed_text, shas)
     clean_text = clean(parsed_text)
     save_parsed_text(clean_text)
     run_post_to_api()
-    #Helper.postLink(tzitutim)
+    Helper.postLink(tzitutim)
