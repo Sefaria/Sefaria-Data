@@ -48,23 +48,23 @@ def do_job(bavl, files_list,vr):
     for name in files_list:
         for bavel in bavl.keys():
             if bavel in name:
-
+                print "worked", name
                 vr[bavl[bavel]] = vr.pop(name)
     for parameter in vr.keys():
         if len(parameter.split())==2:
             if is_ascii(parameter):
-               # file = open("source/Rosh_on_{}.txt".format(parameter.split()[0] + "_" + parameter.split()[1]), 'w')
-               #print vr[parameter]
-               # file.write(vr[parameter].encode('utf8'))
+                file = open("source/Rosh_on_{}.txt".format(parameter.split()[0] + "_" + parameter.split()[1]), 'w')
+                #print vr[parameter]
+                file.write(vr[parameter].encode('utf8'))
                # os.system("C:/Users/eliav/Documents/GitHub/Sefaria-Data/sources/talmud-commentaries/rosh_taanit.py {}".format(parameter.split()[0] + "_" + parameter.split()[1]))
-                print parameter.strip()
+                #print parameter.strip()
                 os.system("C:/Users/eliav/Documents/GitHub/Sefaria-Data/sources/talmud-commentaries/rosh_taanit.py {}".format(parameter.split()[0] + "_" + parameter.split()[1]))
         elif len(parameter.split())==1:
             if is_ascii(parameter):
-                #file = open("source/Rosh_on_{}.txt".format(parameter.strip()), 'w')
-                #file.write(vr[parameter].encode('utf8'))
+                file = open("source/Rosh_on_{}.txt".format(parameter.strip()), 'w')
+                file.write(vr[parameter].encode('utf8'))
                 #os.system("C:/Users/eliav/Documents/GitHub/Sefaria-Data/sources/talmud-commentaries/rosh_taanit.py {}".format(parameter.strip()))
-                print parameter.strip()
+                #print parameter.strip()
                 os.system("C:/Users/eliav/Documents/GitHub/Sefaria-Data/sources/talmud-commentaries/rosh_taanit.py {}".format(parameter.strip()))
     return vr
 if __name__ == '__main__':			

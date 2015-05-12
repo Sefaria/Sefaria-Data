@@ -4,8 +4,10 @@ import re
 import json
 import csv
 import codecs
+import sys
 
 from fm import fuzz
+from sefaria.model import *
 
 
 class PointerException(Exception):
@@ -13,29 +15,13 @@ class PointerException(Exception):
 
 
 class AbstractVolume(object):
-    #server = 'http://www.sefaria.org'
-    server = 'http://localhost:8000'
 
     def __init__(self, title):
-        url = self.server + '/api/index/'+ str(title)
-        response = urllib2.urlopen(url)
-        resp = response.read()
         self.title = title
-        self.index = json.loads(resp)
-        if "error" in self.index:
-            raise Exception(u"Failed to get index {}: {}".format(title, self.index["error"]))
+        self.index = get_index(title)
 
     def get_text(self, ref):
-        url = self.server + '/api/texts/' + str(ref)
-        response = urllib2.urlopen(url)
-        resp = response.read()
-        while True:
-            try:
-                return json.loads(resp)["he"]
-                break
-            except KeyError:
-                return  ""
-                #return json.loads(resp)["he"]
+        return TextChunk(Ref(ref), "he").text
 
 
 class TalmudVolume(AbstractVolume):
@@ -104,7 +90,7 @@ class TalmudVolume(AbstractVolume):
         amud = self.get_current_amud()
         if self._next_line_pointer <= len(amud):
             return True
-        if self._current_daf_index >= self.index["length"] + 2:
+        if self._current_daf_index >= self.index.nodes.lengths[0] + 2:
             return False
         return True
 
@@ -115,7 +101,7 @@ class TalmudVolume(AbstractVolume):
         return True
 
     def has_more_pages(self):
-        if self._current_daf_index >= self.index["length"] + 2:
+        if self._current_daf_index >= self.index.nodes.lengths[0] + 2:
             return False
         return True
 
@@ -138,10 +124,9 @@ class MishnahVolume(AbstractVolume):
         return self.get_chapter_text(self.current_chapter)
 
     def advance_pointer(self, chapter, mishnah=1, offset=0):
-        if chapter > self.index["length"]:
+        if chapter > self.index.nodes.lengths[0]:
             raise PointerException(u"Reached enf of book {}".format(self.title))
         self.current_chapter = chapter
-
 
         if mishnah > 1 and mishnah > len(self.get_current_chapter_text()):
             raise PointerException("Reached end of Mishnah Chapter")
@@ -166,11 +151,9 @@ class MishnahVolume(AbstractVolume):
     def number_left_in_chapter(self):
         return len(self.get_current_chapter_text()) - self.current_mishnah
 
-    def number_of_mishnayot(self):
-        return self.index["lengths"][1]
-
 log = codecs.open('mishnah.log', 'w', encoding='utf-8')
 error_log = codecs.open('connect_error.log', 'w', encoding='utf-8')
+test = open('testing.csv', 'a')
 
 #matni_re = re.compile(ur"""\u05de\u05ea\u05e0\u05d9(?:'|\u05f3|\s|\u05ea\u05d9\u05df)""")
 #raw_re = 
@@ -179,102 +162,131 @@ matni_re = re.compile(raw_re)
 raw_gem = ur"(^|\s+)" + u"גמ" + ur"(" + ur"\'" + u"|" + u"רא)" + ur"(?:$|\s+)"
 gemarah_re = re.compile(raw_gem)
 
+
 mesechtot = [u'Mishnah Berakhot',u'Mishnah Peah',u'Mishnah Demai',u'Mishnah Kilayim',u'Mishnah Sheviit',u'Mishnah Terumot',u'Mishnah Maasrot',u'Mishnah Maaser Sheni',u'Mishnah Challah',u'Mishnah Orlah',u'Mishnah Bikkurim',u'Mishnah Shabbat',u'Mishnah Eruvin',u'Mishnah Pesachim',u'Mishnah Shekalim',u'Mishnah Yoma',u'Mishnah Sukkah',u'Mishnah Beitzah',u'Mishnah Rosh Hashanah',u'Mishnah Taanit',u'Mishnah Megillah',u'Mishnah Moed Katan',u'Mishnah Chagigah',u'Mishnah Yevamot',u'Mishnah Ketubot',u'Mishnah Nedarim',u'Mishnah Nazir',u'Mishnah Sotah',u'Mishnah Gittin',u'Mishnah Kiddushin',u'Mishnah Bava Kamma',u'Mishnah Bava Metzia',u'Mishnah Bava Batra',u'Mishnah Sanhedrin',u'Mishnah Makkot',u'Mishnah Shevuot',u'Mishnah Eduyot',u'Mishnah Avodah Zarah',u'Pirkei Avot',u'Mishnah Horayot',u'Mishnah Zevachim',u'Mishnah Menachot',u'Mishnah Chullin',u'Mishnah Bekhorot',u'Mishnah Arakhin',u'Mishnah Temurah',u'Mishnah Keritot',u'Mishnah Meilah',u'Mishnah Tamid',u'Mishnah Middot',u'Mishnah Kinnim',u'Mishnah Kelim',u'Mishnah Oholot',u'Mishnah Negaim',u'Mishnah Parah',u'Mishnah Tahorot',u'Mishnah Mikvaot',u'Mishnah Niddah',u'Mishnah Makhshirin',u'Mishnah Zavim',u'Mishnah Tevul Yom',u'Mishnah Yadayim',u'Mishnah Oktzin']
+test_fuzz_partial = int(sys.argv[1])
+test_ratio = int(sys.argv[2])
+segment = int(sys.argv[3])
+print type(test_fuzz_partial)
+print type(test_ratio)
+print segment
+
 
 def process_book(bavli, mishnah, csv_writer):
     perek_start = True
     mishnayot_end = False
-    while bavli.has_more():
-        current_mishnah = mishnah.get_current_mishnah() if not mishnayot_end else ""
+    good = 0
+    fail = 0
+    try:
+        while bavli.has_more():
+            current_mishnah = mishnah.get_current_mishnah() if not mishnayot_end else ""
 
-        (starting_daf, starting_line, line) = bavli.get_next_line()
-        m = matni_re.match(line)
-        if m or perek_start:  # Match mishnah keyword
-            log.write(u"Found Mishnah start at {}:{}\n{}\n".format(starting_daf, starting_line, line))
-            if perek_start or len(m.group(2)) > 6:
-                ending_daf = starting_daf
-                ending_line = starting_line
-                if m:
-                    line = m.group(2)
-            else:
-                (ending_daf, ending_line, line) = bavli.get_next_line()
-            if fuzz.partial_ratio(line, current_mishnah) > 60:
-                log.write(u"Matched a starting line in the Mishnah: {}\n{}\n".format(line, current_mishnah))
-                starting_mishnah = mishnah.current_mishnah
-                if mishnayot_end:
-                    msg = u"Error: Found too many mishnayot in {} {}!\n".format(bavli.title, mishnah.current_chapter)
-                    print msg
-                    log.write(msg)
-                    error_log.write(msg)
-                while not gemarah_re.search(line):
-                    (foo, bar, line) = bavli.get_next_line()
-
-                (ending_daf, ending_line, previous_line) = bavli.get_previous_line()
-                (foo, bar, previous_previous_line) = bavli.get_previous_line(2)
-                last_bavli_segment = previous_previous_line.strip() + u" " + previous_line.strip()
-                last_bavli_segment = last_bavli_segment[-30:-1]
-                ending_mishnah = None
-                for i in range(mishnah.number_left_in_chapter() + 1):
-                    m = mishnah.get_next_mishnah(i)
-                    assert len(last_bavli_segment) < len(m)
-                    (ratio, offset_start, offset_ending) = fuzz.partial_with_place(m, last_bavli_segment)
-                    if ratio < 60:
-                        log.write(u"Failed to match last Talmud line to Mishnah: {}\n{}\n".format(last_bavli_segment, m))
-                        error_log.write(u"Failed to match last Talmud line to Mishnah: {}\n{}\n".format(last_bavli_segment, m))
-                        continue
-                    log.write(u"Succeeded to match last Talmud line to Mishanh: {}\n{}\n".format(last_bavli_segment, m))
-                    ending_mishnah = mishnah.current_mishnah + i
-                    if offset_ending < len(m) - 10:  # Match ended in middle of a mishnah.  Number at end is close-enough-to-end fudge factor.
-                        mishnah.advance_pointer(mishnah.current_chapter, ending_mishnah, offset_ending + 1)
-                        log.write(u"Advanced Mishnah offset: {}, {}, {}\n".format(mishnah.current_chapter, ending_mishnah, offset_ending + 1))
-                    else:  # match ended at end of a mishnah
-                        if i == mishnah.number_left_in_chapter():  # if this is the last mishnah
-                            log.write(u"Reached end of mishnayot in chapter {} is {}\n".format(str(mishnah.current_chapter), str(len(mishnah.get_current_chapter_text()))))
-                            mishnayot_end = True
-                        else:
-                            mishnah.advance_pointer(mishnah.current_chapter, ending_mishnah + 1)
-                            log.write(u"Advanced to next Mishnah: {}, {}\n".format(mishnah.current_chapter, ending_mishnah + 1))
-                    break
-                match = [bavli.title, mishnah.current_chapter, starting_mishnah, ending_mishnah, starting_daf, starting_line, ending_daf, ending_line]
-
-                if ending_mishnah is None:
-                    msg = u"saw unmatched Mishna in Talmud: {}\n".format(", ".join([str(m) for m in match]))
-                    print msg
-                    log.write(msg)
-                    error_log.write(msg)
+            (starting_daf, starting_line, line) = bavli.get_next_line()
+            m = matni_re.match(line)
+            if m or perek_start:  # Match mishnah keyword
+                log.write(u"Found Mishnah start at {}:{}\n{}\n".format(starting_daf, starting_line, line))
+                if perek_start or len(m.group(2)) > 6:
+                    ending_daf = starting_daf
+                    ending_line = starting_line
+                    if m:
+                        line = m.group(2)
                 else:
-                    print
-                    csv_writer.writerow(match)
-                    msg = u"Match! {}\n".format(", ".join([str(m) for m in match]))
+                    (ending_daf, ending_line, line) = bavli.get_next_line()
+                if fuzz.partial_ratio(line, current_mishnah) > test_fuzz_partial:
+                    log.write(u"Matched a starting line in the Mishnah: {}\n{}\n".format(line, current_mishnah))
+                    starting_mishnah = mishnah.current_mishnah
+                    if mishnayot_end:
+                        msg = u"Error: Found too many mishnayot in {} {}!\n".format(bavli.title, mishnah.current_chapter)
+                        print msg
+                        log.write(msg)
+                        error_log.write(msg)
+                    while not gemarah_re.search(line):
+                        (foo, bar, line) = bavli.get_next_line()
+
+                    (ending_daf, ending_line, previous_line) = bavli.get_previous_line()
+                    (foo, bar, previous_previous_line) = bavli.get_previous_line(2)
+                    last_bavli_segment = previous_previous_line.strip() + u" " + previous_line.strip()
+                    # length of bavli segment
+                    last_bavli_segment = last_bavli_segment[-segment:-1]
+                    ending_mishnah = None
+                    for i in range(mishnah.number_left_in_chapter() + 1):
+                        m = mishnah.get_next_mishnah(i)
+                        assert len(last_bavli_segment) < len(m)
+                        (ratio, offset_start, offset_ending) = fuzz.partial_with_place(m, last_bavli_segment)
+                        if ratio < test_ratio:
+                            log.write(u"Failed to match last Talmud line to Mishnah: {}\n{}\n".format(last_bavli_segment, m))
+                            error_log.write(u"Failed to match last Talmud line to Mishnah: {}\n{}\n".format(last_bavli_segment, m))
+                           # test.write('0, {},{} \n'.format(ending_daf,starting_line))
+                            continue
+                        log.write(u"Succeeded to match last Talmud line to Mishanh: {}\n{}\n".format(last_bavli_segment, m))
+                        ending_mishnah = mishnah.current_mishnah + i
+                        if offset_ending < len(m) - 10:  # Match ended in middle of a mishnah.  Number at end is close-enough-to-end fudge factor.
+                            mishnah.advance_pointer(mishnah.current_chapter, ending_mishnah, offset_ending + 1)
+                            log.write(u"Advanced Mishnah offset: {}, {}, {}\n".format(mishnah.current_chapter, ending_mishnah, offset_ending + 1))
+                        else:  # match ended at end of a mishnah
+                            if i == mishnah.number_left_in_chapter():  # if this is the last mishnah
+                                log.write(u"Reached end of mishnayot in chapter {} is {}\n".format(str(mishnah.current_chapter), str(len(mishnah.get_current_chapter_text()))))
+                                mishnayot_end = True
+                            else:
+                                mishnah.advance_pointer(mishnah.current_chapter, ending_mishnah + 1)
+                                log.write(u"Advanced to next Mishnah: {}, {}\n".format(mishnah.current_chapter, ending_mishnah + 1))
+                        break
+                    match = [bavli.title, mishnah.current_chapter, starting_mishnah, ending_mishnah, starting_daf, starting_line, ending_daf, ending_line]
+
+                    if ending_mishnah is None:
+                        msg = u"saw unmatched Mishna in Talmud: {}\n".format(", ".join([str(m) for m in match]))
+                      #  test.write("{},0,{}, {}\n".format(mesechet,ending_daf, starting_line))
+                        fail = fail +1
+                        print msg
+                        log.write(msg)
+                        error_log.write(msg)
+                    else:
+                        print
+                        csv_writer.writerow(match)
+                        msg = u"Match! {}\n".format(", ".join([str(m) for m in match]))
+                       # test.write("{},1,{},{} \n".format(mesechet, ending_daf,ending_line))
+                        good = good +1
+                        print msg
+                        log.write(msg)
+
+            if perek_start == True:
+                perek_start = False
+
+            if u'\u05d4\u05d3\u05e8\u05df \u05e2\u05dc\u05da' in line:
+                if mishnayot_end == False:
+                    msg = u"Error: Mishna did not reach the end of chapter! {} {}\n".format(mishnah.title,mishnah.current_chapter)
                     print msg
                     log.write(msg)
-
-        if perek_start == True:
-            perek_start = False
-
-        if u'\u05d4\u05d3\u05e8\u05df \u05e2\u05dc\u05da' in line:
-            if mishnayot_end == False:
-                msg = u"Error: Mishna did not reach the end of chapter! {} {}\n".format(mishnah.title,mishnah.current_chapter)
-                print msg
-                log.write(msg)
-            log.write(u"End of perek: {} {} on {} {}\n".format(bavli.title, mishnah.current_chapter, bavli.get_current_line()[0], bavli.get_current_line()[1]))
-            try:
-                mishnah.advance_pointer(mishnah.current_chapter + 1)
-                perek_start = True
-                mishnayot_end = False
-            except PointerException:
-                log.write(u"End of book: {} {} on {} {}\n".format(bavli.title, mishnah.current_chapter, bavli.get_current_line()[0], bavli.get_current_line()[1]))
-                break
+                   # test.write("{},0, {},{}\n".format(mesechet ,ending_daf,ending_line))
+                    fail = fail + 1
+                log.write(u"End of perek: {} {} on {} {}\n".format(bavli.title, mishnah.current_chapter, bavli.get_current_line()[0], bavli.get_current_line()[1]))
+                try:
+                    mishnah.advance_pointer(mishnah.current_chapter + 1)
+                    perek_start = True
+                    mishnayot_end = False
+                except PointerException:
+                    log.write(u"End of book: {} {} on {} {}\n".format(bavli.title, mishnah.current_chapter, bavli.get_current_line()[0], bavli.get_current_line()[1]))
+                    break
+    except Exception as exp:
+        print u"Caught exception in main loop: {}".format(exp)
+    finally:
+        percentage = float(good) /float(good+fail)
+        return percentage
 
 
 with open('mishnah_mappings.csv', 'wb') as csvfile:
     csv_writer = csv.writer(csvfile)
     csv_writer.writerow(["Book", "Mishnah Chapter", "Start Mishnah", "End Mishnah", "Start Daf", "Start Line", "End Daf", "End Line"])
-
+    a = ""
+    b=""
     for mesechet in mesechtot:
         try:
             bavli = TalmudVolume(re.sub(" ", "_", mesechet[8:]))
             mishnah = MishnahVolume(re.sub(" ", "_", mesechet))
-            process_book(bavli, mishnah, csv_writer)
+            a = a + str(process_book(bavli, mishnah, csv_writer)) + ","
+            b = b + mesechet + ","
         except Exception as e:
             print "Failed to get objects for {}: {}".format(mesechet, e)
+
+    #test.write(b)
+    test.write("\n" + a)
