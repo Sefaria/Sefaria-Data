@@ -122,7 +122,7 @@ def matching1(tagged, shas, i, j, k, index, daf, amud, strings=15, ratio = False
         return
     elif found > 1:
         if ratio is True:
-            error = "found too much, " + str(found) + "," + "on," + str(daf) + amud + "," + " ".join(tagged[0:15]).encode('utf-8') +"\n"
+            error = "found too much, " + str(found) + "," + "on," + str(daf) + amud + "," + " ".join(tagged[0:15]).encode('utf-8') +"for roash" + str(k+1)+"."+ str(i+1) + "." + str(j+1) + "\n"
             log.write(error)
             longlog.write(error)
         else:
@@ -130,7 +130,7 @@ def matching1(tagged, shas, i, j, k, index, daf, amud, strings=15, ratio = False
             return
 
     elif found == 1:
-        roash = "Rosh on %s." % masechet + str(k)+"."+ str(i+1) + "." + str(j+1)
+        roash = "Rosh on %s." % masechet + str(k+1)+"."+ str(i+1) + "." + str(j+1)
         talmud = "%s." % masechet + str(daf) + amud + "." + str(bingo)
         links.append(link(talmud, roash))
         print roash, talmud
@@ -210,7 +210,10 @@ def search1(text, shas):
                     lookfor = match.group(2)
                     tagged = re.split(" ", lookfor.strip())
                     daf_amud = re.split(ur' ', match.group(1).strip())
-                    daf = re.sub(ur'[^א-ת]',"",daf_amud[1])
+                    if len(daf_amud)>=1:
+                        daf = re.sub(ur'[^א-ת]',"",daf_amud[1])
+                    else:
+                        print "no  daf ", 
              #       print daf
                     daf =  hebrew.heb_string_to_int(daf)
                     if daf > len(shas) or len(daf_amud) <= 2:
@@ -557,9 +560,9 @@ if __name__ == '__main__':
         print "false"
         parsed_text = parse1(text)
         upload_text = clean1(parsed_text)
-        Helper.createBookRecord(book_record1())
+     #   Helper.createBookRecord(book_record1())
     print "cleaning"
-    save_parsed_text(upload_text)
-    run_post_to_api()
+    #save_parsed_text(upload_text)
+    #run_post_to_api()
     #link_tiferet_shmuel(parsed_text)
-    Helper.postLink(links)
+    #Helper.postLink(links)
