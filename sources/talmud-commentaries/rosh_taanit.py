@@ -10,7 +10,7 @@ from fuzzywuzzy import fuzz
 import korban_netanel as nosekelim
 from sefaria.model import *
 import tiferet_shmuel
-sys.path.insert(1, '../genuzot')
+sys.path.insert(1, '../g')
 import helperFunctions as Helper
 import hebrew
 masechet = str(sys.argv[1])
@@ -138,9 +138,10 @@ def matching1(tagged, shas, i, j, k, index, daf, amud, strings=15, ratio = False
      #   print succes
         longlog.write(succes)
     elif strings == 0:
-        error = "did not find on daf,"+ str(daf) + amud + "," + " ".join(tagged[0:15]).encode('utf-8') +"\n"
-        log.write(error)
-        longlog.write(error)
+        if isinstance(amud, str):
+            error = "did not find on daf,"+ str(daf) + amud + "," + " ".join(tagged[0:15]).encode('utf-8') +"\n"
+            log.write(error)
+            longlog.write(error)
       #  print error
 
 
@@ -184,7 +185,7 @@ def search(text, shas):
                 #print "daf", daf, amud
                 if index >= len(shas):
           #          print "short", daf, amud, lookfor
-                    return
+                    pass
                     #break
                 else:
            #         print "else"
@@ -210,33 +211,41 @@ def search1(text, shas):
                     lookfor = match.group(2)
                     tagged = re.split(" ", lookfor.strip())
                     daf_amud = re.split(ur' ', match.group(1).strip())
-                    if len(daf_amud)>=1:
+                    print daf_amud[0]
+                    if len(daf_amud)  >=2:
                         daf = re.sub(ur'[^א-ת]',"",daf_amud[1])
                     else:
-                        print "no  daf ", 
+                        print "no  daf "
+                        break
              #       print daf
                     daf =  hebrew.heb_string_to_int(daf)
-                    if daf > len(shas) or len(daf_amud) <= 2:
-              #          print "daf", daf, "is longer than needs to"
+                    if daf > len(shas) or len(daf_amud) < 3:
                         break
                     else:
+                        print len(daf_amud)
+                        print  daf_amud
                         amud = daf_amud[2]
                     index = ((daf-2)*2)+1
                     #if index > len(shas):
                     #    break
-                    if amud[2].strip() == ur'א':
-                        amud = 'a'
-                        index = index - 1
+                    if len(amud) < 3:
+                        print "short amud"
+                        break
                     else:
-                        amud = 'b'
-                    #print daf, amud
-                    if index >= len(shas):
-                        print "short", daf, amud, lookfor
-                        #return
-                    else:
-                        print "else"
-                        print "line number: 230", daf, amud
-                        matching1(tagged, shas, i, j, k, index, daf, amud)
+                        print amud
+                        if amud[2].strip() == ur'א':
+                            amud = 'a'
+                            index = index - 1
+                        else:
+                            amud = 'b'
+                        #print daf, amud
+                        if index >= len(shas):
+                            print "short", daf, amud, lookfor
+                            #return
+                        else:
+                            print "else"
+                            print "line number: 230", daf, amud
+                            matching1(tagged, shas, i, j, k, index, daf, amud)
 
 
 def link(talmud, roash):
@@ -425,8 +434,7 @@ def parse1(text):
                 print seif
                 if ur'[*]' in seif:
                     print "hello1"
-                if ur'[*]' in seif and (os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet))) and netanel <= len(fixed):
-
+                if ur'[*]' in seif and (os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet))) and netanel < len(fixed):
                     print "hello", seif, netanel, len(fixed)
                     if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)):
                         commentator = "Korban Netanel"
@@ -451,7 +459,7 @@ def parse1(text):
                             if os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
                                 commentator = "Pilpula Charifta "
                             korban.append(fixed[netanel])
-                            roash = "Rosh on %s." % masechet + str(len(rosh)) + "." + str(len(perek)+1) + "." + str(num+1)
+                            roash = "Rosh on %s." % masechet + str(len(rosh)+1) + "." + str(len(perek)+1) + "." + str(num+1)
                             netanelink = commentator + "on " + masechet + "." + str(len(links_netanel)+1)+ "."+ str(len(korban))
                             print roash, netanelink
                             links.append(link(netanelink, roash))
@@ -460,7 +468,9 @@ def parse1(text):
                 if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
                     links_netanel.append(korban)
                 perek.append(si)
-            rosh.append(perek)
+            if len(perek) is not 0:
+                rosh.append(perek)
+            print len(rosh)
     search1(rosh,get_shas(),)
     if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
         nosekelim.save_parsed_text(links_netanel, commentator)
@@ -480,7 +490,7 @@ def clean1(text):
                 si = []
                 for j, siman in enumerate(seif):
                     siman = re.sub('@44.*?@(?:55|11)',"",siman)
-                    siman = re.sub('([\[\*\]]|@..|#|!)',"",siman)
+                    siman = re.sub('([\[\*\]]|@..|#|!|%|[\(\)]|0)',"",siman)
                     #print siman
                     si.append(siman)
                 prakim.append(si)
@@ -521,8 +531,7 @@ def link_tiferet_shmuel(parsed_text):
     parsed = tiferet_shmuel.parse(file)
     Helper.createBookRecord(tiferet_shmuel.book_record())
     tiferet_shmuel.save_parsed_text(parsed)
-
-    #tiferet_shmuel.run_post_to_api()
+    tiferet_shmuel.run_post_to_api()
     for k, perek in enumerate(parsed_text):
         for i, seif in enumerate(perek):
             for j, siman in enumerate(seif):
@@ -533,7 +542,7 @@ def link_tiferet_shmuel(parsed_text):
                     for b in a:
                         print siman
                         count +=1
-                        roash = "Rosh on %s." % masechet + str(k) + "." + str(i+1) + "." + str(j+1)
+                        roash = "Rosh on %s." % masechet + str(k+1) + "." + str(i+1) + "." + str(j+1)
                         shmuel = "Tiferet Shmuel on " + masechet + "." + str(count)
                         shmuellinks.append(link(roash, shmuel))
                         print count
@@ -541,10 +550,157 @@ def link_tiferet_shmuel(parsed_text):
     Helper.postLink(shmuellinks)
 
 
+def maadaney_yom_tov(parsed_text):
+    yomtovlinks = []
+    count = 0
+    file = tiferet_shmuel.open_file1()
+    parsed = tiferet_shmuel.parse(file)
+    Helper.createBookRecord(tiferet_shmuel.book_record(record = "yomtov"))
+    tiferet_shmuel.save_parsed_text(parsed, record = "yomtov")
+    tiferet_shmuel.run_post_to_api(record = "yomtov")
+    for k, perek in enumerate(parsed_text):
+        for i, seif in enumerate(perek):
+            for j, siman in enumerate(seif):
+                print siman
+                #if re.match('\(.\)', siman):
+                if ur'[*]' in siman:
+                    print ur"הגעתי לכאן!"
+                    a = re.findall('\[\*\]', siman)
+                    for b in a:
+                        print siman
+                        count +=1
+                        roash = "Rosh on %s." % masechet + str(k+1) + "." + str(i+1) + "." + str(j+1)
+                        shmuel = "Maadaney Yom Tov on " + masechet + "." + str(count)
+                        yomtovlinks.append(link(roash, shmuel))
+                        print count
+                        print roash, shmuel
+    #Helper.postLink(yomtovlinks)
+
+
+def divrey_chamuot(parsed_text):
+    chamudotlinks = []
+    count = 0
+    file = tiferet_shmuel.open_file(record = "chamudot")
+    parsed = tiferet_shmuel.parse(file)
+    Helper.createBookRecord(tiferet_shmuel.book_record(record = "chamudot"))
+    tiferet_shmuel.save_parsed_text(parsed, record = "chamudot")
+    tiferet_shmuel.run_post_to_api(record = "chamudot")
+    for k, perek in enumerate(parsed_text):
+        for i, seif in enumerate(perek):
+            for j, siman in enumerate(seif):
+                #if re.match('\(.\)', siman):
+                 if ur'(*)' in siman:
+                    print ur"הגעתי לכאן!"
+                    a = re.findall('\(\*\)', siman)
+                    for b in a:
+                        print siman
+                        count +=1
+                        roash = "Rosh on %s." % masechet + str(k+1) + "." + str(i+1) + "." + str(j+1)
+                        shmuel = "Divrey Chamudot on " + masechet + "." + str(count)
+                        chamudotlinks.append(link(roash, shmuel))
+                        print count
+                        print roash, shmuel
+    Helper.postLink(chamudotlinks)
+
+
+def divrey_chamuot2(text):
+    chamudotlinks = []
+    count = 0
+    file = tiferet_shmuel.open_file(record = "chamudot")
+    parsed = tiferet_shmuel.parse(file)
+    Helper.createBookRecord(tiferet_shmuel.book_record(record = "chamudot"))
+    tiferet_shmuel.save_parsed_text(parsed, record = "chamudot")
+    tiferet_shmuel.run_post_to_api(record = "chamudot")
+    commentator = "Divrey Chamudot"
+    rosh = []
+    chapters = re.split(ur'(?:@00|@99)', text)
+    for chapter_num, chapter in enumerate(chapters):
+        if len(chapter)<=1:
+            pass
+        else:
+            perek = []
+            a = re.split(ur'@22([^@]*)', chapter)
+            for seif, cont in zip(a[1::2], a[2::2]):
+                si = []
+                print seif
+                if ur'(*)' in seif:
+                    print "hello1"
+                if ur'(*)' in seif:
+
+                    count+=1
+                    roash = "Rosh on %s." % masechet  +str(len(rosh)+1) + "." + str(len(perek)+1) + ".1"
+                    shmuel = commentator + " on " +  masechet +"."+ str(count)
+                    chamudotlinks.append(link(roash, shmuel))
+                    print roash, shmuel
+                content = re.split('@66', cont)
+                seif = re.sub(ur'[^א-ת]',"", seif)
+                seif = hebrew.heb_string_to_int(seif.strip())
+                for num, co in enumerate(content):
+                    a = re.findall('\(\*\)', co)
+                    for b in a:
+                        count+=1
+                        roash = "Rosh on %s." % masechet + str(len(rosh)+1) + "." + str(len(perek)+1) + "." + str(num+1)
+                        shmuel = commentator + " on " + masechet + "." + str(count)
+                        print roash, shmuel
+                        chamudotlinks.append(link(shmuel, roash))
+                    #print parsed[count]
+                    si.append(co)
+                perek.append(si)
+            rosh.append(perek)
+
+    Helper.postLink(chamudotlinks)
+
+
+def yomtov2(text):
+    chamudotlinks = []
+    count = 0
+    file = tiferet_shmuel.open_file(record = "yomtov")
+    parsed = tiferet_shmuel.parse(file)
+    Helper.createBookRecord(tiferet_shmuel.book_record(record = "yomtov"))
+    tiferet_shmuel.save_parsed_text(parsed, record = "yomtov")
+    tiferet_shmuel.run_post_to_api(record = "yomtov")
+    commentator = "Maadaney Yom Tov"
+    rosh = []
+    chapters = re.split(ur'(?:@00|@99)', text)
+    for chapter_num, chapter in enumerate(chapters):
+        if len(chapter)<=1:
+            pass
+        else:
+            perek = []
+            a = re.split(ur'@22([^@]*)', chapter)
+            for seif, cont in zip(a[1::2], a[2::2]):
+                si = []
+                print seif
+                if ur'[*]' in seif:
+                    print "hello1"
+                if ur'[*]' in seif:
+
+                    count+=1
+                    roash = "Rosh on %s." % masechet  +str(len(rosh)+1) + "." + str(len(perek)+1) + ".1"
+                    shmuel = commentator + " on " +  masechet +"."+ str(count)
+                    chamudotlinks.append(link(roash, shmuel))
+                    print roash, shmuel
+                content = re.split('@66', cont)
+                seif = re.sub(ur'[^א-ת]',"", seif)
+                seif = hebrew.heb_string_to_int(seif.strip())
+                for num, co in enumerate(content):
+                    a = re.findall('\[\*\]', co)
+                    for b in a:
+                        count+=1
+                        roash = "Rosh on %s." % masechet + str(len(rosh)+1) + "." + str(len(perek)+1) + "." + str(num+1)
+                        shmuel = commentator + " on " + masechet + "." + str(count)
+                        print roash, shmuel
+                        chamudotlinks.append(link(shmuel, roash))
+                    #print parsed[count]
+                    si.append(co)
+                perek.append(si)
+            rosh.append(perek)
+
+    Helper.postLink(chamudotlinks)
 
 if __name__ == '__main__':
     if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)):
-       #print "has Korban 1"
+       print "has Korban 1"
        Helper.createBookRecord(nosekelim.book_record(commentator="Korban Netanel"))
     if os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
        print "has Pilpula 1" + masechet
@@ -560,9 +716,12 @@ if __name__ == '__main__':
         print "false"
         parsed_text = parse1(text)
         upload_text = clean1(parsed_text)
-     #   Helper.createBookRecord(book_record1())
+        Helper.createBookRecord(book_record1())
     print "cleaning"
-    #save_parsed_text(upload_text)
-    #run_post_to_api()
+    save_parsed_text(upload_text)
+    run_post_to_api()
     #link_tiferet_shmuel(parsed_text)
-    #Helper.postLink(links)
+    #yomtov2(text)
+    #divrey_chamuot(parsed_text)
+    #divrey_chamuot2(text)
+    Helper.postLink(links)

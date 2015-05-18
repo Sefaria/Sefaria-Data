@@ -79,8 +79,8 @@ def parse(text):
             netanel.append("<b> " + re.sub('@[0-9][0-9]',"",cut[0]) + " </b> " + cut[1])
         else:
             netanel.append(cut[0])
-        if '@00' in netanel[i]:
-            netanel[i] = re.findall('(.*\s)@00.*\s',netanel[i])[0]
+ #       if '@00' in netanel[i]:
+  #          netanel[i] = re.findall('(.*\s)@00.*\s',netanel[i])[0]
         #print netanel[i]
     return  netanel
 
