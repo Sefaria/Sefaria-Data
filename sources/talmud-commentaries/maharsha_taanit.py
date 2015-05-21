@@ -123,20 +123,11 @@ def link(maharsha, gemara):
             "refs": [
                gemara,
                 maharsha ],
-            "type": "Maharsha in Talmud",
+            "type": "Commentary",
             "auto": True,
             "generated_by": "maharsha_%s" % masechet,
             }
             #return link_obj
-
-
-#gets the number of lines in an amud
-def get_lines_number(daf_amud):
-    url = 'http://' + Helper.server + '/api/texts/%s.' % masechet + daf_amud
-    response = urllib2.urlopen(url)
-    resp = response.read()
-    length = len(json.loads(resp)["he"])
-    return length
 
 
 def search_gemara(text, daf,amud, Peirush, diburs = 5):
@@ -350,6 +341,7 @@ def search_tosafot(text, daf, amud, Peirush, diburs = 4):
 
 # main function, parses the text file lools for reference to rashi or tosafot and calls there functions
 def parse_dapim(text):
+    old_num = 1
     shas = 0
     count = 1
     ncount = 1
@@ -357,17 +349,18 @@ def parse_dapim(text):
     rashi = 0
     no_b=False
     amud_num = 'b'
-    daf = re.split(ur'@11ד([^@]*)', text)
-    print len(daf)
+    daf = re.split(ur'@[0-9][0-9](דף[^@]*)', text)
+    print "length daf", len(daf)
+    #print len(daf)
     chidushei_halachot = [[],[]]
     for daf_num, content in zip(daf[1::2], daf[2::2]):
         #print daf_num
         count+=1
         cut_books = re.split(ur'@66([^@]*)', content)
         if len(re.findall(ur'@44ע"ב',cut_books[0] ))==0:
-            print "is zero", daf_num
+            #print "is zero", daf_num
             no_b= True
-        amudim = re.split(ur'@44ע"ב', cut_books[0])
+        amudim = re.split(ur'(?:@44|@11)ע"ב', cut_books[0])
         for amud in amudim:
             if len(amudim)<2:
                 print len(amudim), daf_num
@@ -380,12 +373,16 @@ def parse_dapim(text):
                 amud_num='b'
             halachot = re.split(ur'@44',amud)
             for i, verse in enumerate(halachot):
-                print "here", daf_num, i
                 pverse = re.sub(ur'@..', "", verse)
                 if len(pverse)<3:
                     pverse= " "
                 DH.append(pverse)
+                if len(daf_num[3:])>3:
+                    print "longer than 3", daf_num[3:], number
                 number = hebrew.heb_string_to_int(re.sub("'","",daf_num[3:].strip()))
+                if (number - old_num) <0 or (number - old_num) >1:
+                    print "diff", number - old_num, daf_num
+                old_num = number
                 #print number
                 if ur'רש"י' in verse[0:10]:
                     search_rashi(verse, number , amud_num, i+1)
@@ -401,11 +398,11 @@ def parse_dapim(text):
                    pass
             ncount+=1
             if no_b == True:
-                 chidushei_halachot.append(DH)
-                 chidushei_halachot.append([])
-                 no_b= False
-            else:
                 chidushei_halachot.append(DH)
+                chidushei_halachot.append([])
+                no_b= False
+                break
+            chidushei_halachot.append(DH)
 
     #print links[0]
     print "shas", shas, "rashi", rashi, "tosafot", tosafos
@@ -440,5 +437,3 @@ if __name__ == '__main__':
     save_parsed_text(parsed_text)
     run_post_to_api()
     Helper.postLink(links)
-
-
