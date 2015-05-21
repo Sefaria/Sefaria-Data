@@ -129,7 +129,7 @@ def post_amud(mesechta,daf,engComm):
         #temp.write(str(text))
         index = {
                 'text': text,
-                'versionTitle':'Torat Emet %s' %(engComm),
+                'versionTitle':'Wikisource %s' %(engComm),
 		#'versionSource':'http://www.toratemetfreeware.com/online/a_root.html',
                 'versionSource':'https://he.wikisource.org/wiki/%D7%AA%D7%9C%D7%9E%D7%95%D7%93_%D7%91%D7%91%D7%9C%D7%99',
                 'language':'he'
@@ -579,7 +579,7 @@ def postRashiProcessing():
 def mesechta_translator(inp,hebToEng=True):
         try:
                 
-                transDict = {'ברכות':'Berakhot','שבת':'Shabbat','עירובין':'Eruvin','פסחים':'Pesachim','יומא':'Yoma','ראש השנה':'Rosh Hashanah','תענית':'Taanit','ביצה':'Beitzah','מועד קטן':'Moed Katan','סוכה':'Sukkah','מגילה':'Megillah','חגיגה':'Chagigah','יבמות':'Yevamot','כתובות':'Ketubot','נדרים':'Nedarim','נזיר':'Nazir','סוטה':'Sotah','גיטין':'Gittin','קידושין':'Kiddushin','בבא קמא':'Bava Kamma','בבא מציעא':'Bava Metzia','בבא בתרא':'Bava Batra','סנהדרין':'Sanhedrin','מכות':'Makkot','שבועות':'Shevuot','עבודה זרה':'Avodah Zarah','הוריות':'Horayot','זבחים':'Zevachim','מנחות':'Menachot','חולין':'Chullin','בכורות':'Bekhorot','ערכין':'Arakhin','תמורה':'Temurah','כריתות':'Keritot','מעילה':'Meilah','תמיד':'Tamid','נידה':'Niddah'}
+                transDict = {'ברכות':'Berakhot','שבת':'Shabbat','ערובין':'Eruvin','פסחים':'Pesachim','יומא':'Yoma','ראש השנה':'Rosh Hashanah','תענית':'Taanit','ביצה':'Beitzah','מועד קטן':'Moed Katan','סוכה':'Sukkah','מגילה':'Megillah','חגיגה':'Chagigah','יבמות':'Yevamot','כתובות':'Ketubot','נדרים':'Nedarim','נזיר':'Nazir','סוטה':'Sotah','גיטין':'Gittin','קידושין':'Kiddushin','בבא קמא':'Bava Kamma','בבא מציעא':'Bava Metzia','בבא בתרא':'Bava Batra','סנהדרין':'Sanhedrin','מכות':'Makkot','שבועות':'Shevuot','עבודה זרה':'Avodah Zarah','הוריות':'Horayot','זבחים':'Zevachim','מנחות':'Menachot','חולין':'Chullin','בכורות':'Bekhorot','ערכין':'Arakhin','תמורה':'Temurah','כריתות':'Keritot','מעילה':'Meilah','תמיד':'Tamid','נידה':'Niddah'}
                 if hebToEng:
 			#print transDict[inp]
                         return transDict[inp]
@@ -669,9 +669,9 @@ def main(whichone = ''):
 	stat_not=0
 	stat_amb=0
 	stat_good=0
-	selectedCommentary = 'Meforash'
-	selectedMesechta = 'Tamid'
-	startDaf = '25b'
+	selectedCommentary = 'Tosafot'
+	selectedMesechta = 'Shabbat'
+	startDaf = ''
 	#selectedMesechta = raw_input('please type (in english exactly like sefaria\'s naming scheme) the name of the mesechta whose commentary you would like to post\n')
 	#selectedCommentary = raw_input('Thanks! now type (in english upper-case) the commentary you\'d like to post\n')
 	#startDaf = raw_input('Cool. If you want to start from a daf other than 2a, input that. Else, press enter\n')
