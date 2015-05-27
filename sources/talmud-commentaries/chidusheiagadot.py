@@ -77,10 +77,12 @@ def parse(text):
     dappim = re.split(ur'@[0-9][0-9]ח"א([^@]*)', text)
     for daf, content in zip(dappim[1::2],dappim[2::2]):
         same = False
+        ab = False
         seifim =[]
         if len(daf.split(" ")) > 4:
-            if len(daf.split(" "))>5:
+            if len(daf.split(" "))>=5:
                 string= daf.split(" ")[4]
+                #print string
             daf_n = daf.split(" ")[2]
             amud = daf.split(" ")[3].strip()
             if amud[2].strip()== ur"א":
@@ -92,8 +94,6 @@ def parse(text):
         else:
             continue
         number =  hebrew.heb_string_to_int(daf_n)
-        print daf_n
-        print number
         if number - old_number==0:
             same =True
         if number - old_number>1:
@@ -109,21 +109,35 @@ def parse(text):
             siman = re.split("@77([^@]*)",siman)
             for simans in siman:
                 if simans != "":
-                    simanim = re.split('@[0-9][0-9]',simans)
-                    if len(simanim[1])>1:
-                        simanim_string = "<b>" +string+ " " + '</b>'+ simanim[1]
-                        print simanim_string
+                    simanim = re.split('(?:@[0-9][0-9]|[0-9])',simans)
+                    if len(simanim[0])>1:
+                        simanim_string = "<b>" +string + " " + '</b>'+ simanim[0]
                         seifim.append(simanim_string)
-                    if len(simanim) > 2:
-                       for i in range(2,len(simanim)-2,2):
+                        if ur'<b>ע"ב' in simanim_string:
+                            amuds="b"
+                            print simanim_string
+                            agadot.append(seifim)
+                            seifim=[]
+                            seifim.append(simanim_string)
+                            ab = True
+                    if len(simanim) > 1:
+                       for i in range(1,len(simanim)-1,2):
                             simanim_string = ur'<b>' + simanim[i] + " " + ur'</b>' + simanim[i+1]
-                            if len(simanim_string) > 1:
+                            if u'<b>ע"ב' in simanim_string:
+                                print daf_n
+                                amuds="b"
+                                print simanim_string
+                                agadot.append(seifim)
+                                seifim=[]
+                                ab = True
+                            elif len(simanim_string) > 1:
                                 seifim.append(simanim_string)
         if amuds =='b':
             if same is True:
                 agadot[len(agadot)-1]=seifim
             else:
-                agadot.append([])
+                if ab == False:
+                    agadot.append([])
                 agadot.append(seifim)
         elif amuds == 'a':
             agadot.append(seifim)
@@ -161,12 +175,13 @@ def search(text):
                 amud="a"
             else:
                 amud ="b"
-            gemara_daf = shas[daf_n]
+            if daf_n<len(shas):
+                gemara_daf = shas[daf_n]
             string = re.sub(ur'</?b>',"",string)
             match(gemara_daf, string,(daf_n/2)+1, amud, DH_n+1)
 
 
-def match(gemara_daf, string, daf, amud, DH_n, ratio = 90):
+def match(gemara_daf, string, daf, amud, DH_n, ratio = 100):
     found = 0
     for line_n,line in enumerate(gemara_daf):
         if string in line or line in string:
@@ -202,8 +217,8 @@ def match(gemara_daf, string, daf, amud, DH_n, ratio = 90):
 if __name__ == '__main__':
     text = open_file()
     parsed_text = parse(text)
-    #Helper.createBookRecord(book_record())
-    #save_parsed_text(parsed_text)
-    #run_post_to_api()
-    #search(parsed_text)
-    #Helper.postLink(links)
+    Helper.createBookRecord(book_record())
+    save_parsed_text(parsed_text)
+    run_post_to_api()
+    search(parsed_text)
+    Helper.postLink(links)
