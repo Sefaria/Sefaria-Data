@@ -84,6 +84,7 @@ def parse(text):
                 string= daf.split(" ")[4]
                 #print string
             daf_n = daf.split(" ")[2]
+            print daf_n
             amud = daf.split(" ")[3].strip()
             if amud[2].strip()== ur"א":
                 amuds = 'a'
@@ -101,12 +102,13 @@ def parse(text):
                 agadot.append([])
                 agadot.append([])
         old_number = number
-        simanim = re.finditer(ur'@[0-9][0-9](.*)',content)
+        simanim = re.finditer(ur'(?:@[0-9][0-9]|[0-9])(.*)',content)
         for match in simanim:
-            if ur'דף' in match.group(0):
+            if re.search(ur'[0-9]דף', match.group(0)) is not None:
+                print match.group(0)
                 break
             siman = match.group(0)
-            siman = re.split("@77([^@]*)",siman)
+            siman = re.split("@77([^(?:@|[0-9]]*)",siman)
             for simans in siman:
                 if simans != "":
                     simanim = re.split('(?:@[0-9][0-9]|[0-9])',simans)
@@ -130,7 +132,7 @@ def parse(text):
                                 agadot.append(seifim)
                                 seifim=[]
                                 ab = True
-                            elif len(simanim_string) > 1:
+                            if len(simanim_string) > 1:
                                 seifim.append(simanim_string)
         if amuds =='b':
             if same is True:
@@ -201,8 +203,8 @@ def match(gemara_daf, string, daf, amud, DH_n, ratio = 100):
         log.write(message)
         links.append(link(gemara, maharsha))
         pass
-    elif found ==0 and ratio > 45:
-        match(gemara_daf, string,daf, amud, DH_n, ratio-2)
+    elif found ==0 and ratio > 55:
+        match(gemara_daf, string,daf, amud, DH_n, ratio-1)
     else:
         if found ==0:
             message = "Did not find match for maharsha " + str(daf) + str(amud)+ " " + str(DH_n) + "\n"
@@ -217,8 +219,8 @@ def match(gemara_daf, string, daf, amud, DH_n, ratio = 100):
 if __name__ == '__main__':
     text = open_file()
     parsed_text = parse(text)
-    Helper.createBookRecord(book_record())
-    save_parsed_text(parsed_text)
-    run_post_to_api()
+    #Helper.createBookRecord(book_record())
+    #save_parsed_text(parsed_text)
+    #run_post_to_api()
     search(parsed_text)
     Helper.postLink(links)

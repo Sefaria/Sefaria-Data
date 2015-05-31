@@ -182,7 +182,7 @@ def search_gemara(text, daf,amud, Peirush, diburs = 5):
                     break
             if diburs == 0:
                 if num_of_matches == 1:
-                    links.append(link("Chidushei Halachot on %s" % masechet + "." + str(daf) + amud + ":" + str(Peirush), "%s" % masechet + "." + str(daf) + amud + ":" + str(rline)))
+                    links.append(link("Chidushei Halachot on %s" % masechet + "." + str(daf) + amud + "." + str(Peirush), "%s" % masechet + "." + str(daf) + amud + "." + str(rline)))
                     #Helper.postLink(link("Maharsha on %s" 5 masechet  + "." + daf_amud + ":" + str(Peirush), "%s" % masechet + "." + daf_amud + ":" + str(line)))
                     true_find = "matched!! a maharsha DH {} in the gemara daf {} , line {} \n".format(maharsha.encode('utf-8'), str(daf) +amud, linen)
                     print true_find
@@ -256,8 +256,8 @@ def search_rashi(text, daf, amud, Peirush, diburs = 5):
             if diburs == 0:
                 if num_of_matches == 1:
                     #links.append(link("Chidushei Halachot on %s" % masechet + "." + daf_amud + ":" + str(Peirush), "Rashi on %s" % masechet + "." + daf_amud + ":" + str(rline)))
-                    links.append(link("Chidushei Halachot on %s" % masechet + "." + str(daf)+amud + ":" + str(Peirush), "%s" % masechet  + "." + str(daf) +amud + ":" + str(rline)))
-                    print "Chidushei Halachot on %s" % masechet + "." + str(daf)+amud + ":" + str(Peirush), "%s" % masechet  + "." + str(daf) +amud + ":" + str(rline)
+                    links.append(link("Chidushei Halachot on %s" % masechet + "." + str(daf)+amud + "." + str(Peirush), "%s" % masechet  + "." + str(daf) +amud + "." + str(rline)))
+                    print "Chidushei Halachot on %s" % masechet + "." + str(daf)+amud + "." + str(Peirush), "%s" % masechet  + "." + str(daf) +amud + "." + str(rline)
                     #Helper.postLink(link("Maharsha on %s" % masechet + "." + daf_amud + ":" + str(Peirush), "Rashi on %s" % masechet + "." + daf_amud + ":" + str(line)))
                     true_find = "matched!! a maharsha DH {} in the rashi daf {}, line {} \n".format(maharsha.encode('utf-8'), str(daf) + amud, line)
                     print true_find
@@ -314,7 +314,7 @@ def search_tosafot(text, daf, amud, Peirush, diburs = 4):
             if diburs > 0:
                 if num_of_matches == 1:
                     #links.append(link("Chidushei Halachot on %s" % masechet + "." + daf_amud + ":" + str(Peirush), "Tosafot on %s" % masechet + "." + daf_amud + ":" + str(rline)))
-                    links.append(link("Chidushei Halachot on %s" % masechet + "." + str(daf) + amud + ":" + str(Peirush), "Tosafot on %s" % masechet + "." + str(daf)+amud + ":" + str(rline)))
+                    links.append(link("Chidushei Halachot on %s" % masechet + "." + str(daf) + amud + "." + str(Peirush), "Tosafot on %s" % masechet + "." + str(daf)+amud + "." + str(rline)))
                     #Helper.postLink(link("Maharsha on %s" % masechet + "." + daf_amud + ":" + str(Peirush), "Tosafot on %s" % masechet + "." + daf_amud + ":" + str(line)))
                     true_find = "matched!! a maharsha DH {} in the Tosafot daf {}, line {} \n".format(maharsha.encode('utf-8'), str(daf)+amud, line)
                     print true_find
@@ -357,7 +357,7 @@ def parse_dapim(text):
         #print daf_num
         count+=1
         cut_books = re.split(ur'@66([^@]*)', content)
-        if len(re.findall(ur'@44ע"ב',cut_books[0] ))==0:
+        if len(re.findall(ur'[0-9][0-9]ע"ב',cut_books[0] ))==0:
             #print "is zero", daf_num
             no_b= True
         amudim = re.split(ur'(?:@44|@11)ע"ב', cut_books[0])
@@ -409,6 +409,7 @@ def parse_dapim(text):
     print "count", count, "ncount", ncount
     return chidushei_halachot
 
+
 def save_parsed_text(text):
     text_whole = {
         "title": 'Maharsha on %s' %masechet,
@@ -424,7 +425,7 @@ def save_parsed_text(text):
 
 
 def run_post_to_api():
-    Helper.createBookRecord(book_record())
+   # Helper.createBookRecord(book_record())
     with open("preprocess_json/Maharsha_on_%s.json" % masechet, 'r') as filep:
         file_text = filep.read()
     Helper.postText("Chidushei Halachot on %s" % masechet, file_text, False)

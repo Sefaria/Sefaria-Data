@@ -427,7 +427,6 @@ def parse1(text):
     rosh = []
     chapters = re.split(ur'(?:@00|@99)', text)
     for chapter_num, chapter in enumerate(chapters):
-        #print chapter_num, chapter[0:100]
         if len(chapter)<=1:
             pass
         else:
