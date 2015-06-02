@@ -22,7 +22,7 @@ masechet_he = Index().load({"title":mas}).get_title("he")
 links = []
 log = open('logs/rosh_log_%s.txt' % masechet, 'w')
 longlog = open('logs/rosh_longlog_%s.txt' % masechet, 'w')
-
+misparim = {'ראשון':1, 'שני':2, 'שלישי':3, 'רביעי':4, 'חמישי':5, 'שישי':6,'ששי':6, 'שביעי':7,'שמיני':8, 'תשיעי':9,'עשירי':10, 'אחד עשר':11}
 
 def test_depth(text):
     a= re.findall(ur'@22(.{1,2})',text)
@@ -419,64 +419,74 @@ def clean(text):
 
 
 def parse1(text):
+    old_numeri = 0
     if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
         nose_kelim = nosekelim.open_file()
         fixed = nosekelim.parse(nose_kelim)
         links_netanel = []
         netanel = 0
     rosh = []
-    chapters = re.split(ur'(?:@00|@99)', text)
-    for chapter_num, chapter in enumerate(chapters):
-        if len(chapter)<=1:
-            pass
-        else:
-            perek = []
-            a = re.split(ur'@22([^@]*)', chapter)
-            for seif, cont in zip(a[1::2], a[2::2]):
-                si = []
-                korban =[]
-                #print seif
-                if ur'[*]' in seif and (os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet))) and netanel < len(fixed):
-                   # print "hello", seif, netanel, len(fixed)
-                    if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)):
-                        commentator = "Korban Netanel"
-                    if os.path.isfile('source/PilPula_Charifta_on_{}.txt'.format(masechet)):
-                        commentator = "Pilpula Charifta"
-                    korban.append(fixed[netanel])
-                    roash = "Rosh on %s." % masechet  +str(len(rosh)+1) + "." + str(len(perek)+1) + ".1"
-                    netanelink = commentator + " on " +  masechet +"."+ str(len(links_netanel)+1) + ".1"
-                    #print roash, netanelink
-                    #links.append(link(netanelink, roash))
-                    netanel += 1
-                content = re.split('@66', cont)
-                seif = re.sub(ur'[^א-ת]',"", seif)
-                seif = hebrew.heb_string_to_int(seif.strip())
-                for num, co in enumerate(content):
-                    a = re.findall('\[\*\]', co)
-                    for b in a:
-                     #   print b, seif
-                        if (os.path.isfile('source/Korban_netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet))) and netanel < len(fixed):
-                            if os.path.isfile('source/Korban_netanel_on_{}.txt'.format(masechet)):
-                                commentator = "Korban Netanel "
-                            if os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
-                                commentator = "Pilpula Charifta "
-                            korban.append(fixed[netanel])
-                            roash = "Rosh on %s." % masechet + str(len(rosh)+1) + "." + str(len(perek)+1) + "." + str(num+1)
-                            netanelink = commentator + "on " + masechet + "." + str(len(links_netanel)+1)+ "."+ str(len(korban))
-                            #print roash, netanelink
-                            #links.append(link(netanelink, roash))
-                            netanel +=1
-                    si.append(co)
-                if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
-                    links_netanel.append(korban)
-                perek.append(si)
-            if len(perek) is not 0:
-                rosh.append(perek)
+    chapters = re.split(ur'(?:@00|@99)([^@]*)', text)
+    for chapter_num, chapter in zip(chapters[1::2], chapters[2::2]):
+        mispar = chapter_num.strip().split(" ")[1]
+        if mispar.encode('utf-8') in misparim.keys():
+            mispar_numeri = misparim[mispar.encode('utf-8')]
+            if mispar_numeri - old_numeri > 1:
+               for i in range(1,mispar_numeri-old_numeri):
+                    rosh.append([])
+                    print "length of rosh", len(rosh)
+            old_numeri = mispar_numeri
+        print mispar
+        #if len(chapter)<=1:
+         #   pass
+        #else:
+        perek = []
+        a = re.split(ur'@22([^@]*)', chapter)
+        for seif, cont in zip(a[1::2], a[2::2]):
+            si = []
+            korban =[]
+            #print seif
+            if ur'[*]' in seif and (os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet))) and netanel < len(fixed):
+               # print "hello", seif, netanel, len(fixed)
+                if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)):
+                    commentator = "Korban Netanel"
+                if os.path.isfile('source/PilPula_Charifta_on_{}.txt'.format(masechet)):
+                    commentator = "Pilpula Charifta"
+                korban.append(fixed[netanel])
+                roash = "Rosh on %s." % masechet  +str(len(rosh)+1) + "." + str(len(perek)+1) + ".1"
+                netanelink = commentator + " on " +  masechet +"."+ str(len(links_netanel)+1) + ".1"
+                #print roash, netanelink
+                #links.append(link(netanelink, roash))
+                netanel += 1
+            content = re.split('@66', cont)
+            seif = re.sub(ur'[^א-ת]',"", seif)
+            seif = hebrew.heb_string_to_int(seif.strip())
+            for num, co in enumerate(content):
+                a = re.findall('\[\*\]', co)
+                for b in a:
+                 #   print b, seif
+                    if (os.path.isfile('source/Korban_netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet))) and netanel < len(fixed):
+                        if os.path.isfile('source/Korban_netanel_on_{}.txt'.format(masechet)):
+                            commentator = "Korban Netanel "
+                        if os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
+                            commentator = "Pilpula Charifta "
+                        korban.append(fixed[netanel])
+                        roash = "Rosh on %s." % masechet + str(len(rosh)+1) + "." + str(len(perek)+1) + "." + str(num+1)
+                        netanelink = commentator + "on " + masechet + "." + str(len(links_netanel)+1)+ "."+ str(len(korban))
+                        print roash, netanelink
+                        links.append(link(netanelink, roash))
+                        netanel +=1
+                si.append(co)
+            if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
+                links_netanel.append(korban)
+            perek.append(si)
+        if len(perek) is not 0:
+            rosh.append(perek)
            # print len(rosh)
     search1(rosh,get_shas(),)
     if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
         nosekelim.save_parsed_text(links_netanel, commentator)
-        #nosekelim.run_post_to_api(commentator)
+        nosekelim.run_post_to_api(commentator)
         pass
     #print rosh[1][0][0]
     return rosh
@@ -485,19 +495,19 @@ def parse1(text):
 def clean1(text):
     rosh = []
     for k, perek in enumerate(text, start = 0):
-        if len(perek)<=1:
-            pass
-        else:
-            prakim =[]
-            for i, seif in enumerate(perek):
-                si = []
-                for j, siman in enumerate(seif):
-                    siman = re.sub('@44.*?@(?:55|11)',"",siman)
-                    siman = re.sub('([\[\*\]]|@..|#|!|%|[\(\)]|0)',"",siman)
-                    #print siman
-                    si.append(siman)
-                prakim.append(si)
-            rosh.append(prakim)
+        #if len(perek)<=1:
+         #   pass
+        #else:
+        prakim =[]
+        for i, seif in enumerate(perek):
+            si = []
+            for j, siman in enumerate(seif):
+                siman = re.sub('@44.*?@(?:55|11)',"",siman)
+                siman = re.sub('([\[\*\]]|@..|#|!|%|[\(\)]|0)',"",siman)
+                #print siman
+                si.append(siman)
+            prakim.append(si)
+        rosh.append(prakim)
    # print rosh[0][0][0]
     return rosh
 
@@ -617,7 +627,8 @@ def divrey_chamuot2(text):
     commentator = "Divrey Chamudot"
     rosh = []
     chapters = re.split(ur'(?:@00|@99)', text)
-    for chapter_num, chapter in enumerate(chapters):
+    for chapter_num, chapter in zip(chapters[1::2], chapters[2::2]):
+        print chapter_num
         if len(chapter)<=1:
             pass
         else:
@@ -704,10 +715,10 @@ def yomtov2(text):
 if __name__ == '__main__':
     if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)):
        print "has Korban 1"
-       #Helper.createBookRecord(nosekelim.book_record(commentator="Korban Netanel"))
+       Helper.createBookRecord(nosekelim.book_record(commentator="Korban Netanel"))
     if os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
        print "has Pilpula 1" + masechet
-       #Helper.createBookRecord(nosekelim.book_record(commentator="Pilpula Charifta"))
+       Helper.createBookRecord(nosekelim.book_record(commentator="Pilpula Charifta"))
     text = open_file()
     print masechet
     if test_depth(text) == True:
@@ -718,13 +729,13 @@ if __name__ == '__main__':
     else:
         print "false"
         parsed_text = parse1(text)
-      #  upload_text = clean1(parsed_text)
-     #   Helper.createBookRecord(book_record1())
+        upload_text = clean1(parsed_text)
+        Helper.createBookRecord(book_record1())
     print "cleaning"
-   # save_parsed_text(upload_text)
-    #run_post_to_api()
+    save_parsed_text(upload_text)
+    run_post_to_api()
     #link_tiferet_shmuel(parsed_text)
-    #yomtov2(text)
+    yomtov2(text)
     #divrey_chamuot(parsed_text)
-    #divrey_chamuot2(text)
-    #Helper.postLink(links)
+    divrey_chamuot2(text)
+    Helper.postLink(links)
