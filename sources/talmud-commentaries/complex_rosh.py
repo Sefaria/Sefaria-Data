@@ -1,9 +1,11 @@
+# -*- coding: utf8 -*-
 __author__ = 'eliav'
 from sefaria.model import *
 import re
 
+
 masechet = "Yoma"
-masechet_he = "יומא"
+masechet_he = ur"יומא"
 
 
 def open_file():
@@ -14,6 +16,7 @@ def open_file():
         print masechet_he
         return ucd_text
 
+
 def book_record1():
     b = u"Rosh on %s" % masechet
     a = u" פסקי הראש על " + masechet_he
@@ -21,13 +24,21 @@ def book_record1():
     root.add_title(b, "en", primary=True)
     root.add_title(a, "he", primary=True)
     root.key = b
-    seder_avoda = SchemaNode()
+    seder_avoda = JaggedArrayNode()
     seder_avoda.add_title(u"הלכות סדר עבודת יום הכפורים", "he", primary=True)
     seder_avoda.add_title("Hilchot Seder Avodat Yom haKippurim", "en", primary=True)
     seder_avoda.key = "Hilchot Seder Avodat Yom haKippurim"
+    seder_avoda.depth = 1
+    seder_avoda.sectionNames = ["siman"]
+    seder_avoda.addressTypes = ["Integer"]
+    kitzur_seder = JaggedArrayNode()
+    kitzur_seder.add_title("Seder haavodah bekitzur", "en", primary=True)
+    kitzur_seder.add_title(ur"סדר העבודה בקצור מלשון הרא\"ש זצ\"ל", "he", primary = True)
+    kitzur_seder.key = "Seder haavodah bekitzur"
+    kitzur_seder.depth = 1
+    kitzur_seder.sectionNames = ["Siman"]
+    kitzur_seder.addressTypes = ["Integer"]
     perek_shmini = JaggedArrayNode()
-    #perek_shmini.add_title(u"פרק שמיני", "he", primary=True)
-    #perek_shmini.add_title("Perek Shmini", "en", primary=True)
     perek_shmini.default = True
     perek_shmini.depth = 2
     perek_shmini.sectionNames = [ "Halacha","Siman"]
@@ -50,14 +61,23 @@ def parse_seder_haavoda(text):
     seder_haavoda = cut[0]
     seifim = re.split('@22', seder_haavoda)
     for seif in seifim:
-        content = re.split('@66', seif)
-        for cont in content:
-            siman = []
-            if len(re.split('@33', cont))>1:
-                cont = "<b>" + cont[0] + "</b>" + cont[1]
-            else:
-                cont = content
-            siman.append(cont)
-        hilchot_seder_haavoda.append(content)
+        if ur'סדר עבודה בקצור' in seif:
+            print seif
 
-    print len(hilchot_seder_haavoda)
+            break
+        content = re.split('@66', seif)
+        siman = []
+        for cont in content:
+            #print cont
+            if len(re.split('(?:@33|@77)', cont)) > 1:
+                cont = "<b>" + re.split('(?:@33|@77)', cont)[0] + "</b>" + re.split('(?:@33|@77)', cont)[1]
+            else:
+                cont = cont[0]
+            siman.append(cont)
+        hilchot_seder_haavoda.append(siman)
+
+
+if __name__ == '__main__':
+    text = open_file()
+    book_record1()
+    parsed = parse_seder_haavoda(text)
