@@ -17,6 +17,8 @@ masechet_he = Index().load({"title":mas}).get_title("he")
 shas = TextChunk(Ref("%s" % masechet), "he").text
 links=[]
 log = open('logs/maharsha_log_%s.txt' % masechet, 'w')
+
+
 def open_file():
     with open("source/maharsha_%s.txt" % masechet, 'r') as filep:
         file_text = filep.read()
