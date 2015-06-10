@@ -104,6 +104,55 @@ dafDHms = []
 totalDHms = 0
 notFound = 0
 numAmudDHms = 0
+numAmudNotFound = 0
+numAmudAmbig = 0
+
+
+def post_dhm(mesechta,daf,dhmObj,engComm):
+        global dafLines
+        dhm = ''
+        line = 0
+        text = ''
+        numOnLine = 0
+        mesechta = mesechta.replace(" ",'_') # for two word mesechta titles (e.g. Bava Batra)
+        for prop in dhmObj:
+                if prop == 'dhm':
+                        dhm = dhmObj[prop]
+                elif prop == 'text':
+                        text = dhmObj[prop]
+                elif prop == 'postable_lines':
+                        if len(dhmObj[prop]) > 1 or len(dhmObj[prop]) == 0:
+                                # if dhm is ambiguous, don't post it
+                                return
+                        line = dhmObj[prop][0]
+                elif prop == 'numOnLine':
+                        numOnLine = dhmObj[prop]
+
+        #I know this url looks really crypt...Isn't it cool and dynamic!
+        url = '%s/api/texts/%s_on_%s.%s.%s.%s' % (sefaria_root,engComm,mesechta,daf,line,numOnLine)
+        
+        index = {
+                'text': text,
+                'versionTitle':'Wikisource Rashi',
+                'versionSource':"http://he.wikisource.org/wiki/%D7%AA%D7%9C%D7%9E%D7%95%D7%93_%D7%91%D7%91%D7%9C%D7%99",
+                'language':"he"
+        }
+        indexJson = json.dumps(index)
+        values = {
+                'json': indexJson,
+                'apikey': local_settings.apikey
+                
+        }
+
+        data = urllib.urlencode(values)
+        data = data.encode('utf-8')
+        
+        try:
+                response = urllib2.Request.urlopen(url, data)
+                if response.getcode() is not 200:
+                    print('Not successful. Response code = ',response.getcode())
+        except HTTPError as e:
+                print('Error code: ', e.code)
 
 
 def post_amud(mesechta,daf,engComm):
