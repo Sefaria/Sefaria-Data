@@ -52,29 +52,29 @@ def open_file():
 
 def book_record1():
     b = u"Rosh on %s" % masechet
-    a = u" פסקי הראש על " + masechet_he
+    a = u"פסקי הראש על" + u" " + masechet_he
     root = SchemaNode()
     root.add_title(b, "en", primary=True)
     root.add_title(a, "he", primary=True)
     root.key = b
     seder_avoda = JaggedArrayNode()
     seder_avoda.add_title(u"הלכות סדר עבודת יום הכפורים", "he", primary=True)
-    seder_avoda.add_title("Hilchot Seder Avodat Yom haKippurim", "en", primary=True)
-    seder_avoda.key = "Hilchot Seder Avodat Yom haKippurim"
+    seder_avoda.add_title("Hilchot Seder Avodat Yom HaKippurim", "en", primary=True)
+    seder_avoda.key = "Hilchot Seder Avodat Yom HaKippurim"
     seder_avoda.depth = 1
     seder_avoda.sectionNames = ["siman"]
     seder_avoda.addressTypes = ["Integer"]
     kitzur_seder = JaggedArrayNode()
-    kitzur_seder.add_title("Seder haavodah bekitzur", "en", primary=True)
-    kitzur_seder.add_title(ur"סדר העבודה בקצור מלשון הרא\"ש זצ\"ל", "he", primary = True)
-    kitzur_seder.key = "Seder haavodah bekitzur"
+    kitzur_seder.add_title("Seder HaAvodah BeKitzur", "en", primary=True)
+    kitzur_seder.add_title(ur'סדר העבודה בקצור מלשון הרא"ש זצ"ל', "he", primary = True)
+    kitzur_seder.key = "Seder HaAvodah BeKitzur"
     kitzur_seder.depth = 1
     kitzur_seder.sectionNames = ["Siman"]
     kitzur_seder.addressTypes = ["Integer"]
     perek_shmini = JaggedArrayNode()
     perek_shmini.default = True
     perek_shmini.depth = 2
-    perek_shmini.sectionNames = [ "Halacha","Siman"]
+    perek_shmini.sectionNames = ["Perek", "Halacha"]
     perek_shmini.addressTypes = ["Integer", "Integer"]
     perek_shmini.key = "default"
     root.append(seder_avoda)
@@ -203,10 +203,10 @@ def run_post_to_api(perek):
 
 if __name__ == '__main__':
     text = open_file()
-#    book_record1()
+    book_record1()
     seder_haavoda, kitzur_seder = parse_seder_haavoda(text)
     #search()
     clean_text = clean(seder_haavoda)
     save_text(clean_text)
-    run_post_to_api("Hilchot Seder Avodat Yom haKippurim")
+    run_post_to_api("Hilchot Seder Avodat Yom HaKippurim")
 
