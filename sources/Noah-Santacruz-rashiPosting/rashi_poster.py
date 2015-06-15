@@ -2,13 +2,8 @@
 __author__ = 'eliav'
 import re
 import sys
-import json
-import urllib2
 from fuzzywuzzy import fuzz
 from sefaria.model import *
-sys.path.insert(1, '../g')
-#import helperFunctions as Helper
-#import hebrew
 
 masechet = str(sys.argv[1])
 if "_" in masechet:
@@ -34,14 +29,6 @@ def convert_inf_to_daf(index):
         amud = "b"
     daf = (index/2) + 1
     return str(daf) + amud
-
-
-def real_refs():
-    refs = []
-    p = LinkSet(Ref("Rashi on %s" %masechet) ).filter("%s" %masechet)
-    for link in p:
-        refs.append(link.contents()['refs'][1])
-    return refs
 
 
 def index_to_daf():
@@ -111,39 +98,6 @@ def match(dh,shas,index, ratio=100):
             found_list.append(found_dict)
 
 
-def double(list):
-    for index, dh in list.iteritems():
-        print "this is dh", dh
-        i =0
-        for rasilines in rashi[index]:
-            for dibur in rasilines:
-                while i< len(shas[index]):
-                    if dibur in shas[index][i] or shas[index][i] in dibur:
-                        if dh in dibur:
-                            dafamud = convert_inf_to_daf(index)
-                            print "this is the same dibur hamatchil", dafamud,'.', i
-                            the_link = "Rashi on %s" % masechet + " " + dafamud + ":" + str(i+1)
-                            links_list.append(the_link)
-                            print the_link
-                            #add to links_list
-                        print "found" + str(index) + dibur
-                        i+=1
-                        break
-                    elif fuzz.partial_ratio(dibur,shas[index][i]) >= 60 and fuzz.partial_ratio(dibur,shas[index][i]) >= 60:
-                        if dh in dibur:
-                            dafamud = convert_inf_to_daf(index)
-                            print "this is the same dibur hamatchil", dafamud,'.', i
-                            the_link = u"Rashi on %s" % masechet + " ", dafamud + ":" + str(i+1)
-                            links_list.append(the_link)
-                            print the_link
-                            #add to links_list
-                        print "found: " + str(index) + dibur + " in line: " + str(i)
-                        i+=1
-                        break
-                    "did not find" + str(index) + dibur
-                    i+=1
-
-
 def get_comments():
     comments =[]
     rf = Ref('Rashi on %s' % masechet)
@@ -152,12 +106,8 @@ def get_comments():
         for j,line in enumerate(chap):
             for k, com in enumerate(line):
                 if isinstance(com, basestring) and len(com.strip()) > 0:
-                    if i%2==0:
-                        amud ="a"
-                    else:
-                        amud="b"
-                    daf = (i/2) + 1
-                    placement= u"Rashi on %s " % masechet+  str(daf)+amud+ ":"+ str(j+1) #+ ":" + str(k+1)
+                    dafamud=convert_inf_to_daf(i)
+                    placement= u"Rashi on %s " % masechet + dafamud + ":" + str(j+1)
                     comments.append(placement)
     return comments
 
@@ -168,45 +118,44 @@ def double_dict(found_list):
         print found_list[i]
         if found_list[i]["more_than_one"]=="TRUE":
             if found_list[i]["index"]== found_list[i-1]["index"]:
-                for line in diction['lines']:
-                    for pre_line in found_list[i-1]['lines']:
-                            if line - pre_line > 0:
-                                if len(found_list[i-1]['lines'])==1:
-                                    file.write(str(found_list[i]["index"]) +" "+ found_list[i]['dh'].encode('utf-8') + " " + "the difference between current dh and previus is: " + str(line) + '\n')
-                                    the_line= min(found_list[i]["lines"], key=lambda x:abs(x-found_list[i-1]["lines"][0]))
-                                    link =  "Rashi on %s" % masechet +" " +convert_inf_to_daf(found_list[i]["index"]) +":"+ str(the_line+1)
-                                    print link
-                                    links_list.append(link)
-                                    break
-                                else:
-                                    if found_list[i]["index"]== found_list[i+1]["index"]:
-                                        print "line after ", found_list[i+1]["lines"], "line: ",found_list[i]["lines"]
+                #for line in diction['lines']:
+                    pre_line = found_list[i-1]['lines']
+                    print "pre_lines", pre_line
+                    if len(found_list[i-1]['lines'])==1:
+                        lines = [j for j in found_list[i]['lines'] if j >= pre_line[0]]
+                        if len(lines)!=0:
+                            print "lines", lines
+                            file.write(str(found_list[i]["index"]) +" "+ found_list[i]['dh'].encode('utf-8') + " " + "the difference between current dh and previus is: " + str(lines) + '\n')
+                            the_line= min(lines, key=lambda x:x-pre_line[0])
+                            found_list[i]['lines'] =[the_line]
+                            link =  "Rashi on %s" % masechet +" " +convert_inf_to_daf(found_list[i]["index"]) +":"+ str(the_line+1)
+                            print link
+                            found_list[i]["more_than_one"]="FALSE"
+                            links_list.append(link)
+                        else:
+                            print "no answer " +  str(found_list[i]["index"])+   found_list[i]['dh'].encode('utf-8')
+                    else:
+                        if found_list[i]["index"]== found_list[i+1]["index"]:
+                            print "line after ", found_list[i+1]["lines"], "line: ",found_list[i]["lines"]
             else:
                 print str(found_list[i]["index"])+ " " +str(min(found_list[i]["lines"]))
                 link = "Rashi on %s" % masechet +" " +convert_inf_to_daf(found_list[i]["index"]) +":"+ str(min(found_list[i]["lines"])+1)
                 print "new link:", link
+                found_list[i]["more_than_one"]="FALSE"
                 links_list.append(link)
-                break
 
 if __name__ == '__main__':
-    #refs = real_refs()
     index_to_daf()
-    double(list_of_many_finds)
     print "length of links_list is:", len(links_list)
     double_dict(found_list)
-    print "length of links_list is:", len(links_list)
-    print "non match = ", non_match, "matched = ", matched, "too much = ", too_match, "count = " ,count
-    comments= get_comments()
-    print "comments", len(comments)
-    diff= list(set(comments).difference(links_list))
-    file =open('file.txt', 'w')
-    file2 =open('file2.txt', 'w')
-    for k in diff:
-       file.write(k+"\n")
-    print float(len(links_list))/float(len(comments))
+    print "placed", len(links_list), "of the rashi's"
+    comments= get_comments() #get real rashi's
+    print "full number of rashi's is:", len(comments)
+    print "found too much:", len([i for i in found_list if i['more_than_one']=='TRUE']), "did not match at all:", non_match
     diff1 = list(set(links_list).difference(comments))
+    file =open('file.txt', 'w')
+    for k in diff1:
+       file.write(k+"\n")
+    print "placed: " + str(round(float(len(links_list))/float(len(comments)),2))
     acuracy = 1 -  float(len(diff1) /float(len(links_list)))
-    print acuracy
-    #for j in diff1:
-       # file2.write( j+"\n")
-    #compare.write("lowest ratio:" + str(i) +"    " + "matched:" +str(float(matched)/float(len(comments)))+ "  "+ "acuracy " +  str(acuracy))
+    print "acuracy: "+ str(round(acuracy,2))
