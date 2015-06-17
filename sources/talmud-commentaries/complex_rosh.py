@@ -13,8 +13,31 @@ import hebrew
 
 masechet = "Yoma"
 masechet_he = ur"יומא"
-deploy =False
+deploy =True
 shas = TextChunk(Ref("%s" % masechet), "he").text
+
+def postdText(ref1, text, serializeText = True):
+    if serializeText:
+        textJSON = json.dumps(text)
+    else:
+        textJSON = text
+    ref1 = ref1.replace(" ", "_")
+    url = 'http://' + Helper.server + '/api/texts/{}?index_after=0'.format(ref1)
+    print url
+    values = {
+        'json': textJSON,
+        'apikey': Helper.apikey
+    }
+    print values
+    data = urllib.urlencode(values)
+    req = urllib2.Request(url, data)
+    try:
+        response = urllib2.urlopen(req)
+        print response.read()
+    except urllib2.HTTPError, e:
+        print 'Error code: ', e.code
+        print e.read()
+
 
 
 def postText(ref1, ref2, text, serializeText = True):
@@ -52,30 +75,30 @@ def open_file():
 
 def book_record1():
     b = u"Rosh on %s" % masechet
-    a = u" פסקי הראש על " + masechet_he
+    a = u"פסקי הראש על" + u" " + masechet_he
     root = SchemaNode()
     root.add_title(b, "en", primary=True)
     root.add_title(a, "he", primary=True)
     root.key = b
     seder_avoda = JaggedArrayNode()
     seder_avoda.add_title(u"הלכות סדר עבודת יום הכפורים", "he", primary=True)
-    seder_avoda.add_title("Hilchot Seder Avodat Yom haKippurim", "en", primary=True)
-    seder_avoda.key = "Hilchot Seder Avodat Yom haKippurim"
-    seder_avoda.depth = 1
-    seder_avoda.sectionNames = ["siman"]
-    seder_avoda.addressTypes = ["Integer"]
+    seder_avoda.add_title("Hilchot Seder Avodat Yom HaKippurim", "en", primary=True)
+    seder_avoda.key = "Hilchot Seder Avodat Yom HaKippurim"
+    seder_avoda.depth = 2
+    seder_avoda.sectionNames = ["Seif", "siman"]
+    seder_avoda.addressTypes = ["Integer","Integer"]
     kitzur_seder = JaggedArrayNode()
-    kitzur_seder.add_title("Seder haavodah bekitzur", "en", primary=True)
-    kitzur_seder.add_title(ur"סדר העבודה בקצור מלשון הרא\"ש זצ\"ל", "he", primary = True)
-    kitzur_seder.key = "Seder haavodah bekitzur"
+    kitzur_seder.add_title("Seder HaAvodah BeKitzur", "en", primary=True)
+    kitzur_seder.add_title(ur'סדר העבודה בקצור מלשון הרא"ש זצ"ל', "he", primary = True)
+    kitzur_seder.key = "Seder HaAvodah BeKitzur"
     kitzur_seder.depth = 1
     kitzur_seder.sectionNames = ["Siman"]
     kitzur_seder.addressTypes = ["Integer"]
     perek_shmini = JaggedArrayNode()
     perek_shmini.default = True
-    perek_shmini.depth = 2
-    perek_shmini.sectionNames = [ "Halacha","Siman"]
-    perek_shmini.addressTypes = ["Integer", "Integer"]
+    perek_shmini.depth = 3
+    perek_shmini.sectionNames = ["Perek", "Halacha", "siman"]
+    perek_shmini.addressTypes = ["Integer", "Integer", "Integer"]
     perek_shmini.key = "default"
     root.append(seder_avoda)
     root.append(kitzur_seder)
@@ -86,15 +109,15 @@ def book_record1():
     "categories": ["Other","Rosh"],
     "schema": root.serialize()
     }
-    Index(indx).save()
+    #Index(indx).save()
     if deploy == True:
-        url = 'http://www.sefaria.org//api/v2/index/' + indx["title"].replace(" ", "_")
+        url = 'http://lev.sefaria.org//api/v2/index/' + indx["title"].replace(" ", "_")
         indexJSON = json.dumps(indx)
         values = {
             'json': indexJSON,
             'apikey': Helper.apikey
         }
-        data = urllib2.urlencode(values)
+        data = urllib.urlencode(values)
         print url, data
         req = urllib2.Request(url, data)
         try:
@@ -127,7 +150,27 @@ def parse_seder_haavoda(text):
                 cont = cont[0]
             siman.append(cont)
         hilchot_seder_haavoda.append(siman)
-    return hilchot_seder_haavoda, kitzur
+    default = cut[1]
+    body = []
+    chapters = re.split(ur'(?:@00|@99)([^@]*)', default)
+    perek= chapters[1]
+    heb_num= perek.strip().split(" ")[1]
+    numbers = {u"ראשון":1,u"שני":2,u"שלישי":3,u"רביעי":4,u"חמישי":5,u"שישי":6,u"שביעי":7,u"שמיני":8}
+    chapter =  numbers[heb_num]
+    while chapter - len(body) > 1:
+        body.append([])
+    a = re.split(ur'@22([^@]*)', chapters[2])
+    prk=[]
+    for seif, cont in zip(a[1::2], a[2::2]):
+        print seif
+        content = re.split('@66', cont)
+        sif =[]
+        for siman in content:
+            sif.append(siman)
+        prk.append(sif)
+    body.append(prk)
+    print len(body)
+    return hilchot_seder_haavoda, kitzur, body
 
 
 def search(parsed):
@@ -173,12 +216,13 @@ def clean(parsed):
          for j in i:
             clean_text = re.sub("(?:@|[0-9]|<|>|b|\[|\*|\]|\/|\(\*\))","", j)
             seif.append(clean_text)
-            print clean_text
+            #print clean_text
          rosh.append(seif)
      return rosh
 
 
-def save_text(text):
+def save_text(text,perek):
+    perek = re.sub(" ", "_",perek.strip())
     text_whole = {
     "title": 'Rosh on %s' % masechet,
     "versionTitle": "Vilna Edition",
@@ -191,22 +235,52 @@ def save_text(text):
     "status": "locked",
     }
     Helper.mkdir_p("preprocess_json/")
-    with open("preprocess_json/Rosh_on_%s.json" % masechet, 'w') as out:
+    with open("preprocess_json/Rosh_on_{}_{}.json".format(masechet,perek), 'w') as out:
         json.dump(text_whole, out)
 
+
 def run_post_to_api(perek):
-   # Helper.createBookRecord(book_record())
-    with open("preprocess_json/Rosh_on_%s.json" % masechet, 'r') as filep:
+    perek1 = re.sub(" ", "_",perek.strip())
+    with open("preprocess_json/Rosh_on_{}_{}.json".format(masechet,perek1), 'r') as filep:
         file_text = filep.read()
     postText("Rosh on %s," % masechet , perek , file_text, False)
 
 
+def save_default_text(text):
+    text_whole = {
+    "title": 'Rosh on %s' % masechet,
+    "versionTitle": "Vilna Edition",
+    "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957",
+    "language": "he",
+    "text": text,
+    "digitizedBySefaria": True,
+    "license": "Public Domain",
+    "licenseVetted": True,
+    "status": "locked",
+    }
+    Helper.mkdir_p("preprocess_json/")
+    with open("preprocess_json/Rosh_on_{}.json".format(masechet), 'w') as out:
+            json.dump(text_whole, out)
+
+
+def run_default_post_to_api():
+    with open("preprocess_json/Rosh_on_{}.json".format(masechet), 'r') as filep:
+        file_text = filep.read()
+    postdText("Rosh on %s" % masechet ,  file_text, False)
+
 if __name__ == '__main__':
     text = open_file()
-#    book_record1()
-    seder_haavoda, kitzur_seder = parse_seder_haavoda(text)
+    book_record1()
+    seder_haavoda, kitzur_seder, body = parse_seder_haavoda(text)
+    print len(body)
+    print body[7][0][0]
+    # parse perek shmini
     #search()
     clean_text = clean(seder_haavoda)
-    save_text(clean_text)
-    run_post_to_api("Hilchot Seder Avodat Yom haKippurim")
-
+    save_text(clean_text,"Hilchot Seder Avodat Yom HaKippurim")
+    run_post_to_api("Hilchot Seder Avodat Yom HaKippurim")
+    #clean kitzur
+    save_text(kitzur_seder,"Seder HaAvodah BeKitzur")
+    run_post_to_api("Seder HaAvodah BeKitzur")
+    save_default_text(body)
+    run_default_post_to_api()
