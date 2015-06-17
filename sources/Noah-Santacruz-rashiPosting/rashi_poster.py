@@ -77,11 +77,11 @@ def match(dh,shas,index, ratio=100):
         found_dict['lines']=list_of_found_links
         found_dict["more_than_one"]="FALSE"
         dafamud = convert_inf_to_daf(index)
-        if len(links_list)>0:
-            previos = re.split(":",links_list[len(links_list)-1])[1]
-            if int(previos) > the_line+1:
-                print "previos", previos, "this",  the_line+1
-        link = "Rashi on %s" % masechet +" " + dafamud +":"+ str(the_line+1)
+       # if len(links_list)>0:
+           # previos = re.split(":",links_list[len(links_list)-1])[1]
+            #if int(previos) > the_line+1:
+             #   print "previos", previos, "this",  the_line+1
+        link = "Rashi on %s" % masechet +" " + dafamud +":"+ str(the_line+1) + " " + dh
         links_list.append(link)
         print "found!!",dafamud,":", the_line," ", dh
         matched+=1
@@ -107,7 +107,8 @@ def get_comments():
             for k, com in enumerate(line):
                 if isinstance(com, basestring) and len(com.strip()) > 0:
                     dafamud=convert_inf_to_daf(i)
-                    placement= u"Rashi on %s " % masechet + dafamud + ":" + str(j+1)
+                    dh = re.split(ur"(?:-|–)",com)[0]
+                    placement= u"Rashi on %s " % masechet + dafamud + ":" + str(j+1) + " " + dh
                     comments.append(placement)
     return comments
 
@@ -128,7 +129,7 @@ def double_dict(found_list):
                             file.write(str(found_list[i]["index"]) +" "+ found_list[i]['dh'].encode('utf-8') + " " + "the difference between current dh and previus is: " + str(lines) + '\n')
                             the_line= min(lines, key=lambda x:x-pre_line[0])
                             found_list[i]['lines'] =[the_line]
-                            link =  "Rashi on %s" % masechet +" " +convert_inf_to_daf(found_list[i]["index"]) +":"+ str(the_line+1)
+                            link =  "Rashi on %s" % masechet +" " +convert_inf_to_daf(found_list[i]["index"]) +":"+ str(the_line+1) + " " + found_list[i]["dh"]
                             print link
                             found_list[i]["more_than_one"]="FALSE"
                             links_list.append(link)
@@ -155,7 +156,8 @@ if __name__ == '__main__':
     diff1 = list(set(links_list).difference(comments))
     file =open('file.txt', 'w')
     for k in diff1:
-       file.write(k+"\n")
-    print "placed: " + str(round(float(len(links_list))/float(len(comments)),2))
+       file.write(k.encode('utf-8')+"\n")
+    print "placed: " + str(round(float(len(links_list))/float(len(comments)),2)*100) +"%"
     acuracy = 1 -  float(len(diff1) /float(len(links_list)))
-    print "acuracy: "+ str(round(acuracy,2))
+    print "acuracy: "+ str(round(acuracy,2)*100) + "%"
+    print links_list[0], comments[0]
