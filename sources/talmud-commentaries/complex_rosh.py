@@ -111,7 +111,7 @@ def book_record1():
     }
     #Index(indx).save()
     if deploy == True:
-        url = 'http://lev.sefaria.org//api/v2/index/' + indx["title"].replace(" ", "_")
+        url = 'http://lev.sefaria.org/api/v2/index/' + indx["title"].replace(" ", "_")
         indexJSON = json.dumps(indx)
         values = {
             'json': indexJSON,

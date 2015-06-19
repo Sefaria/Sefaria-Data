@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString
 import urllib
 import re
 
-female_numbers = u"אחת|שתיים|שלוש|ארבע|חמש|שש|שבע|שמונה|תשע|עשר|אחת עשרה|שתים עשרה|שלוש עשרה|ארבע עשרה|חמש עשרה|שש עשרה|שבע עשרה|שמונה עשרה|תשע עשרה|עשרים"
+female_numbers = u"אחת|שתיים|שתי|שתים|שלוש|ארבע|חמש|שש|שבע|שמונה|תשע|עשר|אחת עשרה|שתים עשרה|שלוש עשרה|ארבע עשרה|חמש עשרה|שש עשרה|שבע עשרה|שמונה עשרה|תשע עשרה|עשרים"
 male_numbers = u"אחד|שניים|שלושה|ארבעה|חמישה|שישה|שבעה|שמונה|תשעה|עשרה|אחד עשר|שנים עשר|שלושה עשר|ארבעה עשר|חמישה עשר|שישה עשר|שבעה עשר|שמונה עשר|תשעה עשר"
 mixed_numbers = u"אחת עשר|שתים עשר|שלוש עשר|ארבע עשר|חמש עשר|שש עשר|שבע עשר|שמונה עשר|תשע עשר"
 he_numbers = male_numbers + u"|" + female_numbers + u"|" + mixed_numbers
 num_map = {
     u"אחת": 1,
     u"שתיים": 2,
+    u"שתים": 2,
+    u"שתי": 2,
     u"שלוש": 3,
     u"ארבע": 4,
     u"חמש": 5,
@@ -95,50 +97,70 @@ mesechet_source = u'''
 '''
 
 base_url = u'http://he.wikipedia.org'
-entry_re = ur'(?P<perek>.*)\((?P<count>' + he_numbers + ur')\sמשניות'
+entry_re = ur'(?P<perek>.+)\((?P<count>' + he_numbers + ur')\sמשניות'
 ere = re.compile(entry_re)
 
 success = fail = 0
 soup = BeautifulSoup(mesechet_source)
-for link in soup.find_all('a'):
-    link_text = link.get('href')
-    print urllib.unquote(link_text).decode('utf8')
+with open("prakim.csv", 'w') as outf:
+    outf.write(u"book; chapter; name; mishna count; description\n".encode('utf8'))
+    for link in soup.find_all('a'):
+        link_text = link.get('href')
+        dname = urllib.unquote(link_text).decode('utf8')
+        print dname
+        bookname = dname.replace(u"/wiki/","").replace(u"מסכת_","")
+        #original fetch code
+        #full_link = base_url + link_text
+        #page = urllib.urlopen(full_link)
+        #with open(link_text[1:], 'w') as f:
+        #    f.write(page.read())
 
-    #original fetch code
-    #full_link = base_url + link_text
-    #page = urllib.urlopen(full_link)
-    #with open(link_text[1:], 'w') as f:
-    #    f.write(page.read())
+        with open(link_text[1:], 'r') as f:
+            book_soup = BeautifulSoup(f.read())
+            #[s.extract() for s in book_soup.findAll('sup')]  #sledgehammer - remove all superscripts
 
-    with open(link_text[1:], 'r') as f:
-        book_soup = BeautifulSoup(f.read())
-
-    variants = [u'.D7.A4.D7.A8.D7.A7.D7.99_.D7.94.D7.9E.D7.A1.D7.9B.D7.AA',
-        u".D7.A9.D7.9E.D7.95.D7.AA_.D7.A4.D7.A8.D7.A7.D7.99_.D7.94.D7.9E.D7.A1.D7.9B.D7.AA",
-        u".D7.A9.D7.9E.D7.95.D7.AA_.D7.A4.D7.A8.D7.A7.D7.99_.D7.94.D7.9E.D7.A1.D7.9B.D7.AA_.D7.95.D7.AA.D7.95.D7.9B.D7.9F_.D7.9E.D7.A9.D7.A0.D7.99.D7.95.D7.AA.D7.99.D7.94.D7.9D",
-        u".D7.A4.D7.A8.D7.A7.D7.99_.D7.94.D7.9E.D7.A1.D7.9B.D7.AA_.D7.91.D7.9E.D7.A9.D7.A0.D7.94"
-         ]
-    for v in variants:
-        psec = book_soup.find(id=v)
-        if psec:
-            break
-    ol = psec.parent.next_sibling.next_sibling
-
-    for child in ol.find_all('li'):
-        for i in range(len(child.contents)):
-            entry = unicode(child.contents[i].string)
-            m = ere.match(entry)
-            if m:
-                addition = ";".join([unicode(t.string) for t in child.contents[i+1:]])
+        #Variants of the 'perek' section h2 id.  All but 3 use the first variant.
+        variants = [u'.D7.A4.D7.A8.D7.A7.D7.99_.D7.94.D7.9E.D7.A1.D7.9B.D7.AA',
+            u".D7.A9.D7.9E.D7.95.D7.AA_.D7.A4.D7.A8.D7.A7.D7.99_.D7.94.D7.9E.D7.A1.D7.9B.D7.AA",
+            u".D7.A9.D7.9E.D7.95.D7.AA_.D7.A4.D7.A8.D7.A7.D7.99_.D7.94.D7.9E.D7.A1.D7.9B.D7.AA_.D7.95.D7.AA.D7.95.D7.9B.D7.9F_.D7.9E.D7.A9.D7.A0.D7.99.D7.95.D7.AA.D7.99.D7.94.D7.9D",
+            u".D7.A4.D7.A8.D7.A7.D7.99_.D7.94.D7.9E.D7.A1.D7.9B.D7.AA_.D7.91.D7.9E.D7.A9.D7.A0.D7.94"
+             ]
+        for v in variants:
+            psec = book_soup.find(id=v)
+            if psec:
                 break
+        ol = psec.parent.next_sibling.next_sibling
 
-        if not m:
-            print u"FAILED ON:"
-            print child.encode_contents()
-            fail += 1
-        else:
-            success += 1
-            print m.group('perek') + u" : {} : ".format(num_map[m.group('count')]) + addition
+        for j, child in enumerate(ol.find_all('li')):  #todo: assert that # children == num prakim
+            [s.extract() for s in child.findAll('sup')]
+            for i in range(len(child.contents)):
+                entry = unicode(child.contents[i].string)
+                m = ere.match(entry)
+                if m:
+                    addition = " ".join([unicode(t.string) for t in child.contents[i+1:] if isinstance(t, NavigableString)])
+                    break
+                if not m:
+                    m = ere.match(u" ".join([unicode(c.string) for c in child.contents[i:] if c]))
+                    if m:
+                        addition = " ".join([unicode(t.string) for t in child.contents[i+1:] if isinstance(t, NavigableString)])
+                        break
+                if not m and getattr(child.contents[i], "contents", None):
+                    m = ere.match(unicode(child.contents[i].contents[0].string))
+                    if m:
+                        addition = " ".join([unicode(t.string) for t in child.contents[i].contents[1:] if isinstance(t, NavigableString)])
+                        break
+
+            if not m:
+                outf.write(u"{};{};{}\n".format(bookname, j+1, u"FAILED TO PARSE").encode('utf8'))
+                fail += 1
+            else:
+                success += 1
+                if re.match(ur"\s*[()]\s*", addition):
+                    addition = ""
+                pname = m.group('perek').strip()
+                count = num_map[m.group('count')]
+                addition = addition.replace(u"-","").replace(u"-","").replace(u"'","").replace('"',"").strip().replace(u";",u",")
+                outf.write(u"{};{};{};{};{}\n".format(bookname, j+1, pname, count, addition).encode('utf8'))
 
 print
 print
