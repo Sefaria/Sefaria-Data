@@ -10,7 +10,7 @@ from fuzzywuzzy import fuzz
 import korban_netanel as nosekelim
 from sefaria.model import *
 import tiferet_shmuel
-sys.path.insert(1, '../g')
+sys.path.insert(1, '../genuzot')
 import helperFunctions as Helper
 import hebrew
 masechet = str(sys.argv[1])
@@ -314,8 +314,11 @@ def book_record1():
     return {
     "title" : "Rosh on %s" % mas,
     "categories" : [
-        "Other",
-        "Rosh"
+         "Commentary2",
+        "Talmud",
+        "Bavli",
+        Index().load({"title":masechet}).categories[2],
+         "%s" % masechet
     ],
     "schema" : {
         "titles" : [
@@ -437,52 +440,52 @@ def parse1(text):
                     print "length of rosh", len(rosh)
             old_numeri = mispar_numeri
         print mispar
-        #if len(chapter)<=1:
-         #   pass
-        #else:
-        perek = []
-        a = re.split(ur'@22([^@]*)', chapter)
-        for seif, cont in zip(a[1::2], a[2::2]):
-            si = []
-            korban =[]
-            #print seif
-            if ur'[*]' in seif and (os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet))) and netanel < len(fixed):
-               # print "hello", seif, netanel, len(fixed)
-                if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)):
-                    commentator = "Korban Netanel"
-                if os.path.isfile('source/PilPula_Charifta_on_{}.txt'.format(masechet)):
-                    commentator = "Pilpula Charifta"
-                korban.append(fixed[netanel])
-                roash = "Rosh on %s." % masechet  +str(len(rosh)+1) + "." + str(len(perek)+1) + ".1"
-                netanelink = commentator + " on " +  masechet +"."+ str(len(links_netanel)+1) + ".1"
-                #print roash, netanelink
-                #links.append(link(netanelink, roash))
-                netanel += 1
-            content = re.split('@66', cont)
-            seif = re.sub(ur'[^א-ת]',"", seif)
-            seif = hebrew.heb_string_to_int(seif.strip())
-            for num, co in enumerate(content):
-                a = re.findall('\[\*\]', co)
-                for b in a:
-                 #   print b, seif
-                    if (os.path.isfile('source/Korban_netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet))) and netanel < len(fixed):
-                        if os.path.isfile('source/Korban_netanel_on_{}.txt'.format(masechet)):
-                            commentator = "Korban Netanel "
-                        if os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
-                            commentator = "Pilpula Charifta "
-                        korban.append(fixed[netanel])
-                        roash = "Rosh on %s." % masechet + str(len(rosh)+1) + "." + str(len(perek)+1) + "." + str(num+1)
-                        netanelink = commentator + "on " + masechet + "." + str(len(links_netanel)+1)+ "."+ str(len(korban))
-                        print roash, netanelink
-                        links.append(link(netanelink, roash))
-                        netanel +=1
-                si.append(co)
-            if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
-                links_netanel.append(korban)
-            perek.append(si)
-        if len(perek) is not 0:
-            rosh.append(perek)
-           # print len(rosh)
+        if len(chapter)<=1:
+            pass
+        else:
+            perek = []
+            a = re.split(ur'@22([^@]*)', chapter)
+            for seif, cont in zip(a[1::2], a[2::2]):
+                si = []
+                korban =[]
+                #print seif
+                if ur'[*]' in seif and (os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet))) and netanel < len(fixed):
+                   # print "hello", seif, netanel, len(fixed)
+                    if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)):
+                        commentator = "Korban Netanel"
+                    if os.path.isfile('source/PilPula_Charifta_on_{}.txt'.format(masechet)):
+                        commentator = "Pilpula Charifta"
+                    korban.append(fixed[netanel])
+                    roash = "Rosh on %s." % masechet  +str(len(rosh)+1) + "." + str(len(perek)+1) + ".1"
+                    netanelink = commentator + " on " +  masechet +"."+ str(len(links_netanel)+1) + ".1"
+                    #print roash, netanelink
+                    #links.append(link(netanelink, roash))
+                    netanel += 1
+                content = re.split('@66', cont)
+                seif = re.sub(ur'[^א-ת]',"", seif)
+                seif = hebrew.heb_string_to_int(seif.strip())
+                for num, co in enumerate(content):
+                    a = re.findall('\[\*\]', co)
+                    for b in a:
+                     #   print b, seif
+                        if (os.path.isfile('source/Korban_netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet))) and netanel < len(fixed):
+                            if os.path.isfile('source/Korban_netanel_on_{}.txt'.format(masechet)):
+                                commentator = "Korban Netanel "
+                            if os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
+                                commentator = "Pilpula Charifta "
+                            korban.append(fixed[netanel])
+                            roash = "Rosh on %s." % masechet + str(len(rosh)+1) + "." + str(len(perek)+1) + "." + str(num+1)
+                            netanelink = commentator + "on " + masechet + "." + str(len(links_netanel)+1)+ "."+ str(len(korban))
+                            print roash, netanelink
+                            links.append(link(netanelink, roash))
+                            netanel +=1
+                    si.append(co)
+                if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
+                    links_netanel.append(korban)
+                perek.append(si)
+            if len(perek) is not 0:
+                rosh.append(perek)
+               # print len(rosh)
     search1(rosh,get_shas(),)
     if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
         nosekelim.save_parsed_text(links_netanel, commentator)
@@ -734,8 +737,8 @@ if __name__ == '__main__':
     print "cleaning"
     save_parsed_text(upload_text)
     run_post_to_api()
-    #link_tiferet_shmuel(parsed_text)
-    yomtov2(text)
+    link_tiferet_shmuel(parsed_text)
+    #yomtov2(text)
     #divrey_chamuot(parsed_text)
-    divrey_chamuot2(text)
+    #divrey_chamuot2(text)
     Helper.postLink(links)

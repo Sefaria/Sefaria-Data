@@ -30,8 +30,11 @@ def book_record(record = "shmuel"):
     return {
     "title" : b,
     "categories" : [
-        "Other",
-        "Rosh"
+         "Commentary2",
+        "Talmud",
+        "Bavli",
+        Index().load({"title":masechet}).categories[2],
+         "%s" % masechet
     ],
     "schema" : {
         "titles" : [

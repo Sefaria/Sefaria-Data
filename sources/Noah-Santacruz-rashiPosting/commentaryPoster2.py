@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding: utf8 -*-
 
 #By Noah Santacruz 2014
 #github username: nsantacruz
@@ -16,7 +16,8 @@ from fuzzywuzzy import process
 import os
 import json
 import re
-import local_settings 
+apikey ='T3n0rVYhcJXYjNHfnwknGJtnHIOgirP46Rchzh3Ue5k'
+#import local_settings
 
 #NOTE: DHm = dibur hamaschil = single commentary of rashi or tosafos
 
@@ -48,7 +49,8 @@ import local_settings
 
 debug = False
 parsed_root = "./" # file location of parsed rashi/tosafos files. Read through these and check where each dhm appears on daf
-sefaria_root = "http://www.sefaria.org" #root of where text is located. also could be dev.sefaria.org
+sefaria_root = "http://dev.sefaria.org" #root of where text is located. also could be dev.sefaria.org
+#sefaria_root = "localhost:8000"
 
 #here are some variables to help determine which rashi matches which line of gemara
 stringCutoff = 79 
@@ -153,7 +155,7 @@ def post_amud(mesechta,daf,engComm):
         indexJson = json.dumps(index)
         values = {
                 'json': indexJson,
-                'apikey': local_settings.apikey
+                'apikey': apikey
         }
         data = urllib.urlencode(values)
         data = data.encode('utf-8')
@@ -165,6 +167,7 @@ def post_amud(mesechta,daf,engComm):
         except HTTPError as e:
                 print('Error code: ', e.code)
 
+
 def get_daf(mesechta,daf,withCommentary=False):
         global sefaria_root
         
@@ -173,8 +176,9 @@ def get_daf(mesechta,daf,withCommentary=False):
         else:
                 url = sefaria_root + '/api/texts/' + mesechta + '.' + daf + '?context=0&commentary=0'
         try :
+                print url
                 respObj = urllib2.urlopen(urllib2.Request(url))
-                decoded = respObj.read().decode("utf-8")
+                decoded = respObj.read()
                 jsoned = json.loads(decoded)
                 
                 splice = jsoned['he']
@@ -183,7 +187,8 @@ def get_daf(mesechta,daf,withCommentary=False):
                 print(":( HTTP Error: ",e.code , url)
         except URLError, e:
                 print(";( URL Error: ",e.reason , url)
-                
+
+
 def get_line_with_text(mesechta,daf,textIndex,startIndex=1,lastDHm=False):
         originalStartIndex = startIndex #keep track because we reset it later on
         restarted = False
@@ -273,6 +278,7 @@ def get_line_with_text(mesechta,daf,textIndex,startIndex=1,lastDHm=False):
                 i += 1
         return tempList
 
+
 def appendIndexes(indexList,DHmIndex,backfound=False):
 
         for ind in indexList:
@@ -285,6 +291,7 @@ def appendIndexes(indexList,DHmIndex,backfound=False):
         dafDHms[DHmIndex]['postable_lines'] = list(filterLines(dafDHms[DHmIndex]['scores']).keys())
         dafDHms[DHmIndex]['lines'] = list(dafDHms[DHmIndex]['scores'].keys())
         dafDHms[DHmIndex]['lines'].sort()
+
 
 #returns the number of matching words
 def fuzzy_find(text,textIndex,response,line,backSearch=False):
@@ -347,6 +354,7 @@ def fuzzy_find(text,textIndex,response,line,backSearch=False):
         else:
                 return False
 
+
 def strict_find(text,textIndex,response,line):
         if response.find(unicode(" " + text, "utf-8")) > -1:
                 #exact match should always win
@@ -355,8 +363,10 @@ def strict_find(text,textIndex,response,line):
         else:
                 return False
 
+
 def setScore(wordPerc,DHmIndex,line):
         dafDHms[DHmIndex]['scores'][line] = wordPerc
+
 
 def replaceAbbrevs(text):
         unabbrevText = text
@@ -399,6 +409,7 @@ def filterLines(scoreDict):
         '''if len(scoreDict) != len(goodList):
                 print("NOT EQUAL------------------------------")'''
         return goodList
+
 
 def push_commentary(mesechta,daf,amud,commentary):
         global dafDHms
@@ -454,6 +465,7 @@ def push_commentary(mesechta,daf,amud,commentary):
                 i+=1
         if not debug:   
 		lb = "\n"+ engMesechta + " AMUD " + daf + " " + amud + " " + engComm + " -------------------------------------"
+                lb = lb.encode('utf-8')
                 f.write(lb)
                 eFile.write(lb)
                 aFile.write(lb)
@@ -465,20 +477,23 @@ def push_commentary(mesechta,daf,amud,commentary):
         printDafDHms()
         post_amud(engMesechta,engDaf,engComm)
         if numAmudDHms >= 1:
-                print("AMUD STATS: not found percentage = " + str(round(numAmudNotFound/numAmudDHms * 10000)/100) + "%")
-                print("AMUD STATS: ambiguous percentage = " + str(round(numAmudAmbig/numAmudDHms * 10000)/100) + "%")
+                print("AMUD STATS: not found percentage = " + str(round(float(numAmudNotFound)/float(numAmudDHms) * 10000)/100) + "%")
+                print("AMUD STATS: ambiguous percentage = " + str(round(float(numAmudAmbig)/float(numAmudDHms) * 10000)/100) + "%")
+
 
 def push_mesechta(mesechta,commentary,startDaf=None):
         global dafLines, notFound, totalDHms
         i = 0
         hebMes = mesechta_translator(mesechta,False)
+
         hebCommentary = commentary_translator(commentary)
-        for filename in sorted(os.listdir(parsed_root + commentary)):
+        #for filename in sorted(os.listdir(parsed_root + commentary)):
+        for filename in sorted(os.listdir(u'C:/Users/eliav/Documents/GitHub/Sefaria-Data/sources/Noah-Santacruz-rashiPosting/Rashi')):
+
                 #loop through all amudim, but only amudim in the mesechta you want to post
-                if filename.find(hebMes) != -1:
+                if filename.encode('utf-8').find(hebMes) != -1:
 			#print filename  # masechet, daf, amud
                         nameList = filename.split('_')
-                        
                         if len(nameList) == 3:
                                 fMesechta = nameList[0]
                                 fDaf = nameList[1]
@@ -490,11 +505,13 @@ def push_mesechta(mesechta,commentary,startDaf=None):
                         if (startDaf and daf2num(startDaf) > daf2num(daf_translator(fDaf,fAmud))):
                                 continue
                         dafLines = get_daf(mesechta.replace(" ","_"),daf_translator(fDaf,fAmud))
+                        print dafLines
                         push_commentary(fMesechta,fDaf,fAmud,hebCommentary)
         if totalDHms >= 1:
-            print("STATS: not found percentage = " + str(round(notFound/totalDHms * 10000)/100) + "%")
+            print("STATS: not found percentage = " + str(round(float(notFound)/float(totalDHms) * 10000)/100) + "%")
         else:
             print("STATS: not found percentage = 0% (b/c there were no dhms processed. check for input error)")
+
 
 def printDafDHms():
         global notFound, totalDHms,numAmudDHms, numAmudNotFound, numAmudAmbig
@@ -523,7 +540,7 @@ def printDafDHms():
                 totalDHms+=1
                 numAmudDHms+=1
         if numAmudDHms >= 1:
-                f.write("\nAMUD STATS: not found percentage = " + str(round(numAmudNotFound/numAmudDHms * 10000)/100) + "%")
+                f.write("\nAMUD STATS: not found percentage = " + str(round(float(numAmudNotFound)/float(numAmudDHms) * 10000)/100) + "%")
         else:
                 f.write("\n AMUD STATS: not found percentage = 0% (b/c there were none)")
         f.write("\n-----------------------------------------------")
@@ -560,6 +577,7 @@ def parseCommentary(commText,engCommentary):
 
         #print(str(commDict).encode('utf-8'))
 
+
 #for now, this gets the number of rashis on any given line and then sets the 'numOnLine' property for each one accordingly, so that they have unique numbers
 def postRashiProcessing():
         global dafDHms
@@ -584,7 +602,7 @@ def mesechta_translator(inp,hebToEng=True):
                 
                 transDict = {'ברכות':'Berakhot','שבת':'Shabbat','עירובין':'Eruvin','פסחים':'Pesachim','יומא':'Yoma','ראש השנה':'Rosh Hashanah','תענית':'Taanit','ביצה':'Beitzah','מועד קטן':'Moed Katan','סוכה':'Sukkah','מגילה':'Megillah','חגיגה':'Chagigah','יבמות':'Yevamot','כתובות':'Ketubot','נדרים':'Nedarim','נזיר':'Nazir','סוטה':'Sotah','גיטין':'Gittin','קידושין':'Kiddushin','בבא קמא':'Bava Kamma','בבא מציעא':'Bava Metzia','בבא בתרא':'Bava Batra','סנהדרין':'Sanhedrin','מכות':'Makkot','שבועות':'Shevuot','עבודה זרה':'Avodah Zarah','הוריות':'Horayot','זבחים':'Zevachim','מנחות':'Menachot','חולין':'Chullin','בכורות':'Bekhorot','ערכין':'Arakhin','תמורה':'Temurah','כריתות':'Keritot','מעילה':'Meilah','תמיד':'Tamid','נידה':'Niddah'}
                 if hebToEng:
-                        return transDict[inp]
+                        return transDict[inp.encode('utf-8')]
                 else: #we want to translate from english to hebrew
                         for hebMes in transDict:
                                 if transDict[hebMes] == inp:
@@ -592,9 +610,11 @@ def mesechta_translator(inp,hebToEng=True):
                         print('INPUT ERROR: Please check your spelling for the mesechta and try again...')
         except KeyError as e:
                 print('KEY ERROR ' + inp.encode('utf-8'))
+
+
 def daf_translator(daf,amud):
         gematria = 0
-        for letter in daf.decode('utf-8'):
+        for letter in daf:
 		valone = ord(letter)
 		valtwo = ord('א'.decode('utf-8')) 
 		relativeVal = valone - valtwo + 1
@@ -615,11 +635,15 @@ def daf_translator(daf,amud):
                         relativeVal = (int(str(relativeVal)[1]) + 2) * 100
                 gematria += relativeVal
 		#print "letter val 1 is "+str(valone) + " val 2 is "+str(valtwo) + " relative val is "+str(relativeVal)
-        if amud == 'א':
+        print amud
+        if amud.encode('utf-8') == 'א':
                 amud = 'a'
-        elif amud == 'ב':
+                print amud
+        elif amud.encode('utf-8') == 'ב':
                 amud = 'b'
+                print amud
         return str(gematria) + '' + amud
+
 
 def commentary_translator(commentary):
         engComm = ''
@@ -649,10 +673,12 @@ def commentary_translator(commentary):
         elif commentary == 'Rashbam':
                 engComm = 'רשב"ם'
         return engComm
-		
+
+
 def strip_nikkud(rawString):
 	return re.sub(r"[\u0591-\u05C7]", "",rawString);
-	
+
+
 def daf2num(dafString):
     daf = dafString[0:-1]
     amud = dafString[-1]
@@ -669,7 +695,6 @@ selectedMesechta = raw_input('please type (in english exactly like sefaria\'s na
 selectedCommentary = raw_input('Thanks! now type (in english upper-case) the commentary you\'d like to post\n')
 startDaf = raw_input('Cool. If you want to start from a daf other than 2a, input that. Else, press enter\n')
 if selectedMesechta.split(' ')[len(selectedMesechta.split(' '))-1] == '-d':
-                print("NOTE: Debug mode has been activated. You have been warned")
                 sefaria_root = sefaria_root.replace('www','dev')
                 selectedMesechta = ' '.join(selectedMesechta.split(' ')[0:len(selectedMesechta.split(' '))-1])
                 debug = True
