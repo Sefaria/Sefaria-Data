@@ -12,13 +12,14 @@ import json
 masechet = str(sys.argv[1])
 min_ratio = int(sys.argv[2])
 step = int(sys.argv[3])
+commentator = str(sys.args[4])
 if "_" in masechet:
     masechet = re.sub("_", " ", masechet)
 else:
     masechet
 masechet_he = Index().load({"title":masechet}).get_title("he")
 masechet_he= re.sub(" ","_",masechet_he.strip())
-rashi = TextChunk(Ref("Rashi on %s" % masechet), "he").text
+rashi = TextChunk(Ref("{} on {}".format(commentator, masechet)), "he").text
 shas = TextChunk(Ref("%s" % masechet), "he").text
 count = 0
 too_match = 0
@@ -69,9 +70,9 @@ def index_to_daf():
 
 
 def read_rashi():
-    for f in os.listdir(u'Rashi'):
+    for f in os.listdir(u'%s' % commentator):
         if masechet_he in f:
-            pf = os.path.join(u'Rashi', f)
+            pf = os.path.join(u'%s' % commentator, f)
             print pf
             split = re.split("_",f.strip())
             if "_" in masechet_he:
@@ -159,7 +160,7 @@ def match(dh,shas,index,dibur, ratio=100):
 
 def get_comments():
     comments =[]
-    rf = Ref('Rashi on %s' % masechet)
+    rf = Ref('{} on {}'.format(commentator, masechet))
     tc = rf.text(lang='he').text
     for i,chap in enumerate(tc):
         for j,line in enumerate(chap):
@@ -167,7 +168,7 @@ def get_comments():
                 if isinstance(com, basestring) and len(com.strip()) > 0:
                     dafamud=convert_inf_to_daf(i)
                     dh = re.split(ur"(?:-|–)",com)[0]
-                    placement= u"Rashi on %s " % masechet + dafamud + ":" + str(j+1) + " " + dh
+                    placement= u"{} on {} ".format(commentator, masechet) + dafamud + ":" + str(j+1) + " " + dh
                     comments.append(placement)
     return comments
 
@@ -198,7 +199,7 @@ def double_dict(found_list):
                             #if len(lines) ==1:
                             the_line= min(lines, key=lambda x:x-pre_line[0])
                             found_list[i]['lines'] =[the_line]
-                            link =  "Rashi on %s" % masechet +" " +convert_inf_to_daf(found_list[i]["index"]) +":"+ str(the_line+1) + " " + found_list[i]["dh"]
+                            link =  "{} on {}".format(commentator, masechet) +" " +convert_inf_to_daf(found_list[i]["index"]) +":"+ str(the_line+1) + " " + found_list[i]["dh"]
                             add_rashi(found_list[i]["index"],found_list[i]["dibbur"],the_line)
                             print link
                             found_list[i]["more_than_one"]="FALSE"
@@ -211,7 +212,7 @@ def double_dict(found_list):
             else:
                 if len(found_list[i]["lines"])>0:
                     print str(found_list[i]["index"])+ " " +str(min(found_list[i]["lines"]))
-                    link = "Rashi on %s" % masechet +" " +convert_inf_to_daf(found_list[i]["index"]) +":"+ str(min(found_list[i]["lines"])+1)
+                    link = "{} on {}".format(commentator, masechet) +" " +convert_inf_to_daf(found_list[i]["index"]) +":"+ str(min(found_list[i]["lines"])+1)
                     print "new link:", link
                     found_list[i]["more_than_one"]="FALSE"
                     links_list.append(link)
@@ -219,10 +220,10 @@ def double_dict(found_list):
 
 def book_record():
     return {
-        "title": 'Rashi',
-        "titleVariants": ["rashi"],
-        "heTitle": 'רש"י',
-        "heTitleVariants" :['רש"י'],
+        "title": '%s' % commentator,
+        "titleVariants": ["%s" % commentator],
+        "heTitle": '%s' % Index().load({"title":commentator}).get_title("he"),
+        "heTitleVariants" :['%s' % Index().load({"title":commentator}).get_title("he")],
         "sectionNames": ["", ""],
         "categories": ['Commentary'],
     }
@@ -232,7 +233,7 @@ def save_parsed_text(text):
     #print ref
     #JSON obj matching the API requirements
     text_whole = {
-        "title": 'Rashi',
+        "title": '%s' % commentator ,
         "versionTitle": "Vilna Edition",
         "versionSource":  "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957",
         "language": "he",
@@ -240,16 +241,16 @@ def save_parsed_text(text):
     }
     #save
     Helper.mkdir_p("preprocess_json/")
-    with open("preprocess_json/Rashi_on_%s.json" % masechet, 'w') as out:
+    with open("preprocess_json/{}_on_{}.json".format(commentator,masechet), 'w') as out:
         json.dump(text_whole, out)
 
 
 def run_post_to_api():
     Helper.createBookRecord(book_record())
-    with open("preprocess_json/Rashi_on_%s.json" % masechet, 'r') as filep:
+    with open("preprocess_json/{}_on_{}.json".format(commentator, masechet), 'r') as filep:
         file_text = filep.read()
     mas = re.sub("_"," ", masechet.strip())
-    Helper.postText("Rashi on %s" %mas , file_text, False)
+    Helper.postText("{} on {}".format(commentator, masechet) , file_text, False)
 
 def post_logs():
     log =open("log/log_%s.txt" % masechet,"w")
@@ -263,9 +264,9 @@ if __name__ == '__main__':
    # index_to_daf()
     print "length of links_list is:", len(links_list)
     double_dict(found_list)
-    print "placed", len(links_list), "of the rashi's"
+    print "placed", len(links_list), "of the %s's" % commentator
     comments= get_comments() #get real rashi's
-    print "full number of rashi's is:", len(comments)
+    print "full number of %s's is:" % commentator, len(comments)
     print "found too much:", len([i for i in found_list if i['more_than_one']=='TRUE']), "did not match at all:", non_match
     diff1 = list(set(links_list).difference(comments))
     file =open('file.txt', 'w')

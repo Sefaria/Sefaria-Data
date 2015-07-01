@@ -7,7 +7,7 @@ sys.path.insert(1, '../genuzot')
 import helperFunctions as Helper
 
 def open_file():
-    with open("source/shraga.txt" , 'r') as filep:
+    with open("source/shraga_shemmot.txt" , 'r') as filep:
         file_text = filep.read()
     ucd_text = unicode(file_text, 'utf-8', errors='ignore').strip()
     return ucd_text
@@ -34,11 +34,12 @@ def parse(text):
             break
         if pasuk > past_pasuk:
             print perek, "passuk" , pasuk
-            psk.append([content])
+            psk.append(content)
             #print pasuk, past_pasuk
             past_pasuk = pasuk
     beresith.append(psk)
-    return  beresith[1:len(beresith)+1]
+
+    return  beresith[1:len(beresith)]
 
 
 def book_record():
@@ -56,23 +57,23 @@ def save_parsed_text(text):
     #print ref
     #JSON obj matching the API requirements
     text_whole = {
-        "title": 'Shraga Silverstein translation',
-        "versionTitle": " ",
-        "versionSource":  " ",
-        "language": "he",
+        "title": 'Exodus',
+        "versionTitle": "The Rashi chumash by Rabbi Shraga Silverstein",
+        "versionSource":  "sefaria.org/shraga-silverstein",
+        "language": "en",
         "text": text,
     }
     #save
     Helper.mkdir_p("preprocess_json/")
-    with open("preprocess_json/Shraga_Silverstein_translation_on_Genesis.json", 'w') as out:
+    with open("preprocess_json/Shraga_Silverstein_translation_on_Exodus.json", 'w') as out:
         json.dump(text_whole, out)
 
 
 def run_post_to_api():
-    Helper.createBookRecord(book_record())
-    with open("preprocess_json/Shraga_Silverstein_translation_on_Genesis.json", 'r') as filep:
+    #Helper.createBookRecord(book_record())
+    with open("preprocess_json/Shraga_Silverstein_translation_on_Exodus.json", 'r') as filep:
         file_text = filep.read()
-    Helper.postText("Shraga Silverstein translation on Genesis"  , file_text, False)
+    Helper.postText("Exodus"  , file_text, False)
 
 
 
