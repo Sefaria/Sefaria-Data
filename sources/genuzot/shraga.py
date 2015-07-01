@@ -7,7 +7,7 @@ sys.path.insert(1, '../genuzot')
 import helperFunctions as Helper
 
 def open_file():
-    with open("source/shraga_shemmot.txt" , 'r') as filep:
+    with open("source/shraga.txt" , 'r') as filep:
         file_text = filep.read()
     ucd_text = unicode(file_text, 'utf-8', errors='ignore').strip()
     return ucd_text
@@ -57,23 +57,23 @@ def save_parsed_text(text):
     #print ref
     #JSON obj matching the API requirements
     text_whole = {
-        "title": 'Exodus',
+        "title": 'Genesis',
         "versionTitle": "The Rashi chumash by Rabbi Shraga Silverstein",
-        "versionSource":  "sefaria.org/shraga-silverstein",
+        "versionSource":  "http://www.sefaria.org/shraga-silverstein",
         "language": "en",
         "text": text,
     }
     #save
     Helper.mkdir_p("preprocess_json/")
-    with open("preprocess_json/Shraga_Silverstein_translation_on_Exodus.json", 'w') as out:
+    with open("preprocess_json/Shraga_Silverstein_translation_on_Genesis.json", 'w') as out:
         json.dump(text_whole, out)
 
 
 def run_post_to_api():
     #Helper.createBookRecord(book_record())
-    with open("preprocess_json/Shraga_Silverstein_translation_on_Exodus.json", 'r') as filep:
+    with open("preprocess_json/Shraga_Silverstein_translation_on_Genesis.json", 'r') as filep:
         file_text = filep.read()
-    Helper.postText("Exodus"  , file_text, False)
+    Helper.postText("Genesis"  , file_text, False)
 
 
 
