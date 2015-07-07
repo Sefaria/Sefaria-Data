@@ -11,8 +11,8 @@ import os
 def post_text(ref, text):
     textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
-    url = 'http://localhost:8000/api/texts/'+ref
-    values = {'json': textJSON, 'apikey': 'YourApiKey'}
+    url = SEFARIA_SERVER+'api/texts/'+ref
+    values = {'json': textJSON, 'apikey': API_KEY}
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)
     try:
