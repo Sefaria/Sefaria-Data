@@ -1,17 +1,25 @@
 # -*- coding: utf-8 -*-
-
+import os
+import sys
 import pdb
+import json
 import urllib
 import urllib2
 from urllib2 import URLError, HTTPError
-import json
+
+p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, p)
+os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
+
+from local_settings import *
+sys.path.insert(0, SEFARIA_PROJECT_PATH)
+
 from sefaria.model.schema import AddressTalmud	
-import os
 
 def post_text(ref, text):
     textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
-    url = SEFARIA_SERVER+'api/texts/'+ref
+    url = SEFARIA_SERVER + '/api/texts/'+ref
     values = {'json': textJSON, 'apikey': API_KEY}
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)

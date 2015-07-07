@@ -3,7 +3,6 @@
 import sys
 import os
 import pdb
-# for a script located two directories below this file
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
@@ -19,7 +18,7 @@ from urllib2 import URLError, HTTPError
 import json
 
 def post_index(index):
-	url = SEFARIA_SERVER+'api/index/' + index["title"].replace(" ", "_")
+	url = SEFARIA_SERVER + '/api/index/' + index["title"].replace(" ", "_")
 	indexJSON = json.dumps(index)
 	print indexJSON
 	values = {
@@ -63,7 +62,7 @@ index = {
 
 
 post_index(index)
-Index(index).save()
+#Index(index).save()
 
 
 
