@@ -4,7 +4,6 @@
 #github username: nsantacruz
 #modified by Ari to run in Python 2.7 on Linux as well as some logging changes and other minor enhancements
 
-#Stats are broken
 
 import urllib2
 import urllib
@@ -45,26 +44,59 @@ import local_settings
 
 
 
-
 debug = False
 parsed_root = "./" # file location of parsed rashi/tosafos files. Read through these and check where each dhm appears on daf
 sefaria_root = "http://www.sefaria.org" #root of where text is located. also could be dev.sefaria.org
+testname = ''
 
 #here are some variables to help determine which rashi matches which line of gemara
-stringCutoff = 79 
-backSearchStringCutoff = 90 #
-textCutoff = 0.65
-scoreCutoff = 0.1 # if a score is more than 10% less than the top score for that dhm, it is not considered as a possible match for that line.
-notFoundCutoff = 4 #cutoff for how many dhms are not found until we say that something else must be wrong
+stringCutoff = 79 #fuzzing cut off to see if word matches
+backSearchStringCutoff = 90
+textCutoff = 0.75 #pct of string that must match
+scoreCutoff = 0.02 #if a score is more than 10% less than the top score for that dhm, it is not considered as a possible match for that line.
+#notFoundCutoff = 20 #cutoff for how many dhms are not found until we say that something else must be wrong
 
 #a list of prefixes that either rashi or the gemara uses. If you need to remove these to get a match, deduct from the line score accordingly
 listOfPrefixes = ['ב','ה','ד','מ','ו','ל']
 #these words are not considered part of the DHm
 unwantedWords = ["כו'","'כו","כו","וכו'",'ה"ג','גרסינן',"גמ'","וגו'"]
-#convert all abbreviations to full form
+#convert all abbreviations to full form	
 
-abbreviations = {'אא"כ':'אלא אם כן', 'אע"ג':'אף על גב', 'אע"פ':'אף על פי', 'א"ר':'אמר רב', 'ב"ה':'בית הלל',  'ב"ש':'בית שמאי',  "ג'":"שלש","ד'":"ארבע", 'ה"מ':'הני מילי',  'ה"נ':'הכי נמי', 'הנ"מ':'הני מילי', 'ה"ק':'הכי קאמר',  "י'":'עשר', 'י"א':'יש אומרים', 'יו"ט':'יום טוב', 'למ"ד':'למאן דאמר', 'מ"מ':'מכל מקום', 'מנה"מ':'מנא הני מילי', 'קמ"ל':'קא משמע לן', 'קס"ד':'קא סלקא דעתך',  'ק"ש':'קרית שמע', "ר'":'רב', 'ת"ש':'תא שמע',  'ת"ר':'תנו רבנן',
-                }
+abbreviations = {u'ת"ר':u'תנו רבנן'}
+abbreviations[u'מ"מ'] = u'מכל מקום'
+abbreviations[u"ר'"] = u'רב'
+abbreviations[u'ק"ש'] = u'קרית שמע'
+abbreviations[u'"כ'] = u'אלא אם כן'
+abbreviations[u'ר"ה'] = u'ראש השנה'
+abbreviations[u'ת"ש'] = u'תא שמע'
+abbreviations[u'קמ"ל'] = u'קא משמע לן'
+abbreviations[u'מנה"מ'] = u'מנא הני מילי'
+abbreviations[u'קס"ד'] = u'קא סלקא דעתך'
+abbreviations[u'יו"ט'] = u'יום טוב'
+abbreviations[u'י"א'] = u'יש אומרים'
+abbreviations[u'ה"ק'] = u'הכי קאמר'
+abbreviations[u'ה"נ'] = u'הכי נמי'
+abbreviations[u'הנ"מ'] = u'הני מילי'
+abbreviations[u'ה"מ'] = u'הני מילי'
+abbreviations[u"ב'"] = u"שתי"
+abbreviations[u"ג'"] = u"שלש"
+abbreviations[u"ד'"] = u"ארבע"
+abbreviations[u"ט'"] = u"תשע"
+abbreviations[u"י'"] = u"עשר"
+abbreviations[u'ב"ש'] = u'בית שמאי'
+abbreviations[u'ב"ה'] = u'בית הלל'
+abbreviations[u'א"ר'] = u'אמר רב'
+abbreviations[u'אע"פ'] = u'אף על פי'
+abbreviations[u'אע"ג'] = u'אף על גב'
+abbreviations[u'למ"ד'] = u'למאן דאמר'
+abbreviations[u'ר"ש'] = u'רב שמעון'
+abbreviations[u'י"א'] = u'יש אומרים'
+abbreviations[u'מ"ט'] = u'מאי טעמא'
+abbreviations[u'יוה"כ'] = u'יום הכיפורים'
+abbreviations[u"אפי'"] = u"אפילו"
+abbreviations[u'ע"ז'] = u'עבודה זרה'
+abbreviations[u'ת"ק'] = u'תנה קמה'
+#abbreviations[u''] = u''
 
 dafLines = {}
 dafDHms = []
@@ -124,31 +156,32 @@ def post_dhm(mesechta,daf,dhmObj,engComm):
 
 
 def post_amud(mesechta,daf,engComm):
-        global dafDHms
+        global dafDHms, stat_amb, stat_not, stat_good, testname
         mesechta = mesechta.replace(" ",'_') # for two word mesechta titles (e.g. Bava Batra)
-        print(mesechta + " " + daf)
+        #print(mesechta + " " + daf)
         numPosted = 0
         text = [[] for x in range(len(dafLines))]
         for dhmObj in dafDHms:
                 numPosted += 1
                 if len(dhmObj['postable_lines']) > 1:
-                        print('(%d/%d) dhm ambiguous ' % (numPosted,len(dafDHms)))
+			stat_amb += 1
                         continue
                 if len(dhmObj['postable_lines']) == 0:
-			print('(%d/%d) dhm not found ' % (numPosted,len(dafDHms)))
+			stat_not = stat_not + 1
 			continue
                 currLine = dhmObj['postable_lines'][0] #removed -1  - assuming win vs linux issue
                 text[currLine].append(dhmObj['text'])
-		print("("+str(numPosted)+"/"+str(len(dafDHms))+") dhm posted to line "+str(int(currLine)))
+		stat_good += 1
+		#print("("+str(numPosted)+"/"+str(len(dafDHms))+") dhm posted to line "+str(int(currLine)))
         #I know this url looks really crypt...Isn't it cool and dynamic!
-        url = '%s/api/texts/%s_on_%s.%s' % (sefaria_root,engComm,mesechta,daf)
-        temp.write(str(text))
+        url = '%s/api/texts/%s%s_on_%s.%s' % (sefaria_root,engComm,testname,mesechta,daf) #XXX take out for test
+        #temp.write(str(text))
         index = {
                 'text': text,
-                'versionTitle':'Wikisource Rashi',
-                'versionSource':'1.0',
-                'versionUrl':"http://he.wikisource.org/wiki/%D7%AA%D7%9C%D7%9E%D7%95%D7%93_%D7%91%D7%91%D7%9C%D7%99",
-                'language':"he"
+                'versionTitle':'Wikisource %s' %(engComm),
+		#'versionSource':'http://www.toratemetfreeware.com/online/a_root.html',
+                'versionSource':'https://he.wikisource.org/wiki/%D7%AA%D7%9C%D7%9E%D7%95%D7%93_%D7%91%D7%91%D7%9C%D7%99',
+                'language':'he'
         }
         indexJson = json.dumps(index)
         values = {
@@ -167,15 +200,19 @@ def post_amud(mesechta,daf,engComm):
 
 def get_daf(mesechta,daf,withCommentary=False):
         global sefaria_root
+	#print mesechta+"  daf"
         
         if withCommentary:
                 url = sefaria_root + '/api/texts/' + mesechta + '.' + daf + '?context=0'
         else:
                 url = sefaria_root + '/api/texts/' + mesechta + '.' + daf + '?context=0&commentary=0'
         try :
+		#print url
                 respObj = urllib2.urlopen(urllib2.Request(url))
                 decoded = respObj.read().decode("utf-8")
                 jsoned = json.loads(decoded)
+		#print decoded
+		#print "XXX"+str(jsoned)
                 
                 splice = jsoned['he']
                 return splice
@@ -215,7 +252,8 @@ def get_line_with_text(mesechta,daf,textIndex,startIndex=1,lastDHm=False):
         i = startIndex
         for i in range(len(dafLines)):             #arbitrary number way higher than you should ever go
                 # try:
-                response = dafLines[i]
+                response = replaceAbbrevs(dafLines[i])#testing
+		#response = (response)##testing
                 # except KeyError as e:
                         # response = get_index(mesechta,daf,str(i))
                         # response = replaceAbbrevs(response)
@@ -244,7 +282,6 @@ def get_line_with_text(mesechta,daf,textIndex,startIndex=1,lastDHm=False):
                         #see if this this dhm has already been found on this line
                         dafDHms[textIndex]['lines'].index(i)
                 except ValueError as e:
-                        
                         #try to combine every two lines. this will hopefully deal with dhms that span two lines yet won't give false positives
                         if i >= 2 and not dhmJustFound:
                                 prevLine = dafLines[i - 1]
@@ -286,12 +323,25 @@ def appendIndexes(indexList,DHmIndex,backfound=False):
         dafDHms[DHmIndex]['lines'] = list(dafDHms[DHmIndex]['scores'].keys())
         dafDHms[DHmIndex]['lines'].sort()
 
+def fuzzy_find(text,textIndex,response,line,backSearch=False):
+	#text = unicode(text, "utf-8").replace('ין','ים')
+	text = text.replace('ין','ים')
+	response = response.encode("utf-8").replace('ין','ים')
+
+	#set percMatching based on fuzz of big strings
+	percMatching = (fuzz.partial_ratio(text,response))/100.0
+        if percMatching >= textCutoff:
+                setScore(percMatching,textIndex,line)
+                return True
+	else:
+                return False
+'''
 #returns the number of matching words
 def fuzzy_find(text,textIndex,response,line,backSearch=False):
 	#text = unicode(text, "utf-8").replace('ין','ים')
 	text = text.replace('ין','ים')
 	response = response.encode("utf-8").replace('ין','ים')
-        if not backSearch:
+	if not backSearch:
                 cutoff = stringCutoff
         else:
                 cutoff = backSearchStringCutoff
@@ -301,21 +351,14 @@ def fuzzy_find(text,textIndex,response,line,backSearch=False):
         lowestIndex = 100 #to tell if rashi starts at (approximately) the beginning of the line of the gemara
         i = 0
         scorePenalties = 0 #give a penalty for not as exact a match
-        for word in words:
+	for word in words:
                 try:
                         unwantedWords.index(word)
-                        #print("FOUND UNWANTED WORD")
                         lenWords -= 1
                         continue
                 except ValueError as e:
                         True
                 word = word.strip()
-                '''try:
-                        listOfPrefixes.index(word[0])
-                        print("STRIPPED")
-                        word = word[1:]
-                except ValueError as e:
-                        True'''
                 if fuzz.partial_ratio(word,response) >= cutoff:
                         if i < lowestIndex:
                                 lowestIndex = i
@@ -324,7 +367,7 @@ def fuzzy_find(text,textIndex,response,line,backSearch=False):
                         if i < lowestIndex:
                                 lowestIndex = i
                         numMatching +=1
-                        scorePenalties += (1-textCutoff)/2 #you can only substitute abbrevs twice before it's not considered a match
+                        scorePenalties += (1-textCutoff)/4 #you can only substitute abbrevs twice before it's not considered a match
                         
                 i += 1
         if lenWords <= len(response.split(" ")):
@@ -339,18 +382,18 @@ def fuzzy_find(text,textIndex,response,line,backSearch=False):
                 percMatching = numMatching/wordLen - scorePenalties
         except ZeroDivisionError as e:
                 return False
-        
-        #print("RATIO: " + str(percMatching))
+
         if percMatching >= textCutoff:
                 setScore(percMatching,textIndex,line)
                 return True
         else:
                 return False
+'''
 
 def strict_find(text,textIndex,response,line):
         if response.find(unicode(" " + text, "utf-8")) > -1:
                 #exact match should always win
-                setScore(1,textIndex,line)
+                setScore(2,textIndex,line)
                 return True
         else:
                 return False
@@ -359,21 +402,36 @@ def setScore(wordPerc,DHmIndex,line):
         dafDHms[DHmIndex]['scores'][line] = wordPerc
 
 def replaceAbbrevs(text):
-        unabbrevText = text
-        words = text.split(" ")
+        #unabbrevText = text
+	unabbrevText = text.replace("(","")
+	unabbrevText = unabbrevText.replace(")","") #Ari added - ignore citations
+        words = unabbrevText.split(" ")
         for word in words:
                 try:
                         #real abbreviations tend not to start with these letters. If they do, they are probably prefixes and are interchangeable
                         #but if SECOND letter is " than we know the letter in question is not a prefix and actually part of the abbreviation
-                        if (word[0] == 'ו' or word[0] == 'ב') and word[1] != '"':
-                                unabbrev = word[0] + abbreviations[word[1:]]
+			#print "word is "+word
+			#wu = word.decode('utf-8')
+			w = word[0]
+			x = word[1]
+			v = u'ו'
+			#print type(w)
+			#print type(v)
+                        #if (w == u'ו' or w == u'ב') and x != u'"':
+			if (w == v):
+				#print "starts with vav"
+				if (word[1:] in abbreviations):
+	                                unabbrev = word[0] + abbreviations[word[1:]]
+					unabbrevText = unabbrevText.replace(word,unabbrev)
                         else:
-                                unabbrev = abbreviations[word]
-                        unabbrevText = unabbrevText.replace(word,unabbrev)
-                except KeyError as e:
-                        True
-                except IndexError as yo:
-                        True
+				if (word in abbreviations):
+		                	unabbrev = abbreviations[word]
+					unabbrevText = unabbrevText.replace(word,unabbrev)
+				else:
+					unabbrev = word #no subst made
+			 
+		except IndexError as yo:
+                	True
 
         return unabbrevText
 
@@ -385,15 +443,17 @@ def filterLines(scoreDict):
                 if scoreDict[i] > _max:
                         deltaMax = abs(scoreDict[i] - _max)
                         if deltaMax >= scoreCutoff:
+				#greater than cutoff over prev high, so drop all prev
                                 goodList = {}
                         else:
+				#not high enough to wipe out all old ones
                                 tempDict = {}
                                 for j in goodList:
                                         if abs(goodList[j] - scoreDict[i]) < scoreCutoff:
                                                 tempDict[j] = goodList[j]
                                 goodList = tempDict
                         _max = scoreDict[i]
-                        goodList[i] = scoreDict[i]
+                        goodList[i] = scoreDict[i] #add to list
                 elif abs(scoreDict[i] - _max) < scoreCutoff:
                         goodList[i] = scoreDict[i]
         '''if len(scoreDict) != len(goodList):
@@ -406,7 +466,7 @@ def push_commentary(mesechta,daf,amud,commentary):
         engMesechta = mesechta_translator(mesechta.replace('_',' '))
         engDaf = daf_translator(daf,amud)
         print(engMesechta,engDaf,engComm)
-	print(engComm + '/' + mesechta + '_' + daf + '_' + amud + '.txt')
+	#print(engComm + '/' + mesechta + '_' + daf + '_' + amud + '.txt')
         commFile = open(engComm + '/' + mesechta + '_' + daf + '_' + amud + '.txt','r')
         commText = commFile.read()
         commFile.close()
@@ -464,9 +524,6 @@ def push_commentary(mesechta,daf,amud,commentary):
         postRashiProcessing()
         printDafDHms()
         post_amud(engMesechta,engDaf,engComm)
-        if numAmudDHms >= 1:
-                print("AMUD STATS: not found percentage = " + str(round(numAmudNotFound/numAmudDHms * 10000)/100) + "%")
-                print("AMUD STATS: ambiguous percentage = " + str(round(numAmudAmbig/numAmudDHms * 10000)/100) + "%")
 
 def push_mesechta(mesechta,commentary,startDaf=None):
         global dafLines, notFound, totalDHms
@@ -476,7 +533,7 @@ def push_mesechta(mesechta,commentary,startDaf=None):
         for filename in sorted(os.listdir(parsed_root + commentary)):
                 #loop through all amudim, but only amudim in the mesechta you want to post
                 if filename.find(hebMes) != -1:
-			#print filename  # masechet, daf, amud
+			#print parsed_root + "  " +filename  # masechet, daf, amud
                         nameList = filename.split('_')
                         
                         if len(nameList) == 3:
@@ -489,43 +546,32 @@ def push_mesechta(mesechta,commentary,startDaf=None):
                                 fAmud = nameList[3].replace('.txt','')
                         if (startDaf and daf2num(startDaf) > daf2num(daf_translator(fDaf,fAmud))):
                                 continue
+			#print "mes: "+mesechta+" fdaf: "+fDaf + " fAmud: "+fAmud
                         dafLines = get_daf(mesechta.replace(" ","_"),daf_translator(fDaf,fAmud))
                         push_commentary(fMesechta,fDaf,fAmud,hebCommentary)
-        if totalDHms >= 1:
-            print("STATS: not found percentage = " + str(round(notFound/totalDHms * 10000)/100) + "%")
-        else:
-            print("STATS: not found percentage = 0% (b/c there were no dhms processed. check for input error)")
 
 def printDafDHms():
-        global notFound, totalDHms,numAmudDHms, numAmudNotFound, numAmudAmbig
+        global notFound, totalDHms,numAmudDHms
         numAmudDHms = 0
-        numAmudNotFound = 0
-        numAmudAmbig = 0
         for i in range(len(dafDHms)):
-                f.write('\n' + dafDHms[i]['dhm'])
+                f.write('\nDHM: ' + dafDHms[i]['dhm'])
                 for stuff in dafDHms[i]:
                         if stuff != 'dhm':
                                 f.write('\n\t' + stuff + ": " + str(dafDHms[i][stuff]))
                                 if stuff == 'lines' and len(dafDHms[i]['lines']) == 0:
                                         if not debug:
-                                                eFile.write('\n' + dafDHms[i]['dhm'])
+                                                eFile.write('\nDHM: ' + dafDHms[i]['dhm'])
                                                 eFile.write('\n\ttext: ' + str(dafDHms[i]['text']))
                                         else:
-                                                edFile.write('\n' + dafDHms[i]['dhm'])
+                                                edFile.write('\nDHM: ' + dafDHms[i]['dhm'])
                                                 edFile.write('\n\ttext: ' + str(dafDHms[i]['text']))
-                                        numAmudNotFound += 1
                                         notFound+=1
                                 if stuff == 'postable_lines' and len(dafDHms[i]['postable_lines']) > 1:
-                                        aFile.write('\n' + dafDHms[i]['dhm'])
+                                        aFile.write('\nDHM: ' + dafDHms[i]['dhm'])
                                         aFile.write('\n\t' + stuff + ": " + str(dafDHms[i][stuff]))
                                         aFile.write('\n\ttext: ' + str(dafDHms[i]['text']))
-                                        numAmudAmbig += 1
                 totalDHms+=1
                 numAmudDHms+=1
-        if numAmudDHms >= 1:
-                f.write("\nAMUD STATS: not found percentage = " + str(round(numAmudNotFound/numAmudDHms * 10000)/100) + "%")
-        else:
-                f.write("\n AMUD STATS: not found percentage = 0% (b/c there were none)")
         f.write("\n-----------------------------------------------")
         
 
@@ -582,12 +628,14 @@ def postRashiProcessing():
 def mesechta_translator(inp,hebToEng=True):
         try:
                 
-                transDict = {'ברכות':'Berakhot','שבת':'Shabbat','עירובין':'Eruvin','פסחים':'Pesachim','יומא':'Yoma','ראש השנה':'Rosh Hashanah','תענית':'Taanit','ביצה':'Beitzah','מועד קטן':'Moed Katan','סוכה':'Sukkah','מגילה':'Megillah','חגיגה':'Chagigah','יבמות':'Yevamot','כתובות':'Ketubot','נדרים':'Nedarim','נזיר':'Nazir','סוטה':'Sotah','גיטין':'Gittin','קידושין':'Kiddushin','בבא קמא':'Bava Kamma','בבא מציעא':'Bava Metzia','בבא בתרא':'Bava Batra','סנהדרין':'Sanhedrin','מכות':'Makkot','שבועות':'Shevuot','עבודה זרה':'Avodah Zarah','הוריות':'Horayot','זבחים':'Zevachim','מנחות':'Menachot','חולין':'Chullin','בכורות':'Bekhorot','ערכין':'Arakhin','תמורה':'Temurah','כריתות':'Keritot','מעילה':'Meilah','תמיד':'Tamid','נידה':'Niddah'}
+                transDict = {'ברכות':'Berakhot','שבת':'Shabbat','ערובין':'Eruvin','פסחים':'Pesachim','יומא':'Yoma','ראש השנה':'Rosh Hashanah','תענית':'Taanit','ביצה':'Beitzah','מועד קטן':'Moed Katan','סוכה':'Sukkah','מגילה':'Megillah','חגיגה':'Chagigah','יבמות':'Yevamot','כתובות':'Ketubot','נדרים':'Nedarim','נזיר':'Nazir','סוטה':'Sotah','גיטין':'Gittin','קידושין':'Kiddushin','בבא קמא':'Bava Kamma','בבא מציעא':'Bava Metzia','בבא בתרא':'Bava Batra','סנהדרין':'Sanhedrin','מכות':'Makkot','שבועות':'Shevuot','עבודה זרה':'Avodah Zarah','הוריות':'Horayot','זבחים':'Zevachim','מנחות':'Menachot','חולין':'Chullin','בכורות':'Bekhorot','ערכין':'Arakhin','תמורה':'Temurah','כריתות':'Keritot','מעילה':'Meilah','תמיד':'Tamid','נידה':'Niddah'}
                 if hebToEng:
+			#print transDict[inp]
                         return transDict[inp]
                 else: #we want to translate from english to hebrew
                         for hebMes in transDict:
                                 if transDict[hebMes] == inp:
+					#print hebMes.replace(" ","_")
                                         return hebMes.replace(" ","_")
                         print('INPUT ERROR: Please check your spelling for the mesechta and try again...')
         except KeyError as e:
@@ -635,6 +683,8 @@ def commentary_translator(commentary):
                 engComm = 'Ran'
         elif commentary == 'רשב"ם':
                 engComm = 'Rashbam'
+	elif commentary == 'מפורש':
+		engComm = 'Meforash'
 
         elif commentary == 'Rashi':
                 engComm = 'רש"י'
@@ -648,6 +698,8 @@ def commentary_translator(commentary):
                 engComm = 'ר"ן'
         elif commentary == 'Rashbam':
                 engComm = 'רשב"ם'
+	elif commentary == 'Meforash':
+		engComm = 'מפורש'
         return engComm
 		
 def strip_nikkud(rawString):
@@ -661,32 +713,121 @@ def daf2num(dafString):
     else:
         return 2*int(daf)
 
+def main(whichone = ''):
+	global debug, f, eFile, aFile, stat_not, stat_amb, stat_good, startDaf, selectedCommentary, selectedMesechta, logdir
+	stat_not=0
+	stat_amb=0
+	stat_good=0
+	selectedCommentary = 'Tosafot'
+	selectedMesechta = 'Shabbat'
+	startDaf = ''
+	#selectedMesechta = raw_input('please type (in english exactly like sefaria\'s naming scheme) the name of the mesechta whose commentary you would like to post\n')
+	#selectedCommentary = raw_input('Thanks! now type (in english upper-case) the commentary you\'d like to post\n')
+	#startDaf = raw_input('Cool. If you want to start from a daf other than 2a, input that. Else, press enter\n')
+	if selectedMesechta.split(' ')[len(selectedMesechta.split(' '))-1] == '-d':
+	                print("NOTE: Debug mode has been activated. You have been warned")
+	                sefaria_root = sefaria_root.replace('www','dev')
+	                selectedMesechta = ' '.join(selectedMesechta.split(' ')[0:len(selectedMesechta.split(' '))-1])
+	                debug = True
+	
+	logdir = ""+parsed_root+"logs/"+selectedMesechta.lower().replace(" ", "_")+"/"
+	f = open(logdir+selectedCommentary+'logFileAll.txt','a+')
+	eFile = open(logdir+selectedCommentary+'logFileNotFound.txt','a+')
+	aFile = open(logdir+selectedCommentary+'logFileAmbiguous.txt','a+')
+	if debug:
+		fd = open(logdir+selectedCommentary+'dlogFileAll.txt','a')
+		edFile = open(logdir+selectedCommentary+'dlogFileNotFound.txt','a')
+		adFile = open(logdir+selectedCommentary+'dlogFileAmbiguous.txt','a')
+	
+	if (startDaf):
+	    push_mesechta(selectedMesechta,selectedCommentary,startDaf);
+	else:
+	    push_mesechta(selectedMesechta,selectedCommentary)
+	print "not found: "+str(stat_not)+ " ambiguous: " +str(stat_amb) + " good: " +str(stat_good)
+	s = str(round((stat_good/float(stat_good+stat_not+stat_amb))*100))
+	print "Placed "+s[:s.find('.')] + "%"
+	f.write("\ndoing "+whichone+": not found: "+str(stat_not)+ " ambiguous: " +str(stat_amb) + " good: " +str(stat_good))
+	f.write("\nPlaced "+s[:s.find('.')] + "%\n")	
+	final = open('results.txt','a+')
+	final.write("\nresults for "+whichone+": Placed "+s[:s.find('.')] + "%\n")
+	final.write("  not found: "+str(stat_not)+ " ambiguous: " +str(stat_amb) + " good: " +str(stat_good))
 
-#selectedMesechta = 'Bava Kamma'
-#selectedCommentary = 'Tosafot'
-#startDaf = ''
-selectedMesechta = raw_input('please type (in english exactly like sefaria\'s naming scheme) the name of the mesechta whose commentary you would like to post\n')
-selectedCommentary = raw_input('Thanks! now type (in english upper-case) the commentary you\'d like to post\n')
-startDaf = raw_input('Cool. If you want to start from a daf other than 2a, input that. Else, press enter\n')
-if selectedMesechta.split(' ')[len(selectedMesechta.split(' '))-1] == '-d':
-                print("NOTE: Debug mode has been activated. You have been warned")
-                sefaria_root = sefaria_root.replace('www','dev')
-                selectedMesechta = ' '.join(selectedMesechta.split(' ')[0:len(selectedMesechta.split(' '))-1])
-                debug = True
 
-logdir = ""+parsed_root+"logs/"+selectedMesechta.lower().replace(" ", "_")+"/"
-f = open(logdir+selectedCommentary+'logFileAll.txt','a+')
-eFile = open(logdir+selectedCommentary+'logFileNotFound.txt','a+')
-aFile = open(logdir+selectedCommentary+'logFileAmbiguous.txt','a+')
-if debug:
-	fd = open(logdir+selectedCommentary+'dlogFileAll.txt','a')
-	edFile = open(logdir+selectedCommentary+'dlogFileNotFound.txt','a')
-	adFile = open(logdir+selectedCommentary+'dlogFileAmbiguous.txt','a')
-
-temp = open('yo.txt','w')
-
-if (startDaf):
-    push_mesechta(selectedMesechta,selectedCommentary,startDaf);
-else:
-    push_mesechta(selectedMesechta,selectedCommentary)
+'''
+#for whichone in ['One', 'Two', 'tThree', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven']:
+for whichone in ['Eighteen']:
+	global stringCutoff, scoreCutoff, testname
+	testname = whichone
+	if (whichone == 'TestTwo'):
+		textCutoff = .75
+		scoreCutoff = .10
+	elif (whichone == 'TestOne'):
+		textCutoff = .80
+		scoreCutoff = .10
+	elif (whichone == 'One'):
+		textCutoff = .70
+		scoreCutoff = .10
+	elif(whichone == 'Two'):
+		textCutoff = .85
+		scoreCutoff = .10
+	elif(whichone == 'tThree'):
+		textCutoff = .70
+		scoreCutoff = .20
+	elif(whichone == 'Four'):
+		textCutoff = .75
+		scoreCutoff = .20
+	elif(whichone == 'Five'):
+		textCutoff = .80
+		scoreCutoff = .20
+	elif(whichone == 'Six'):
+		textCutoff = .85
+		scoreCutoff = .20
+	elif(whichone == 'Seven'):
+		textCutoff = .60
+		scoreCutoff = .05
+	elif(whichone == 'Eight'):
+		textCutoff = .70
+		scoreCutoff = .05
+	elif(whichone == 'Nine'):
+		textCutoff = .75
+		scoreCutoff = .05
+	elif(whichone == 'Ten'):
+		textCutoff = .80
+		scoreCutoff = .05
+	elif(whichone == 'Eleven'):
+		textCutoff = .85
+		scoreCutoff = .05
+	elif (whichone == 'Twelve'):
+		textCutoff = .60
+		scoreCutoff = .02
+	elif (whichone == 'Thirteen'):
+		textCutoff = .70
+		scoreCutoff = .02
+	elif (whichone == 'Fourteen'):
+		textCutoff = .75
+		scoreCutoff = .02
+	elif (whichone == 'Fifteen'):
+		textCutoff = .80
+		scoreCutoff = .02
+	elif (whichone == 'Sixteen'):
+		textCutoff = .85
+		scoreCutoff = .02
+	elif (whichone == 'Seventeen'):
+		textCutoff = .55
+		scoreCutoff = .02
+	elif (whichone == 'Eighteen'):
+		textCutoff = .60
+		scoreCutoff = .20
+	elif (whichone == 'Nineteen'):
+		textCutoff = .55
+		scoreCutoff = .01
+	else:
+		print "we have a problem"
+		continue
+	#so far, this is best
+	textCutoff = .75
+	scoreCutoff = .02
+	main(whichone)
+'''
+main()
 

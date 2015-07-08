@@ -28,8 +28,11 @@ def doMas(mas):
 	good=all-bad
 	if (all > 1):
 		print '%s: Good: %s  Bad %s' %(mas, good, bad)
+	return bad
 	#if all <=0, then we know the logs aren't complete so skip
 
+badtot=0
 for file in os.listdir("./"):
 	if os.path.isdir(file):
-		doMas(file)
+		badtot += doMas(file)
+print "total number of comments that need to be fixed is %s" %(badtot)
