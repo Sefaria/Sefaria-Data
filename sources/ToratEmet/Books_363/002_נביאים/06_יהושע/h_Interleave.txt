@@ -1,0 +1,48 @@
+&MixedDisplay=2&TextSource=ר' פנחס ראובן שליט''א, J. Alan Groves Center&ForcedBookName=תצוגה משולבת&LastLevelIndex=2&CosmeticsType=#bp=<BR><HR>#nik=1#eoi=0#is2=18#ip5=<BR>#irfb5=1#rus2=-#sil=5#bs1=12#bs2=34#pr2=<br>#su2=<br>#cp1=<small><p>#cp2=<!-- -->#cs1=</small><br><br>#ec2=0#rep=FONT5=FONT5^^FONT3=FONT3#rep2=( =(^^ )=)^^ ,=,^^ .=.#rep3={{{=<u><b>^^}}}=.</b></u>&UniqueId=1429&GroupId=b6&PutNewLinesAsIs=0&SearchInTitles=0&Comments=
+$ יהושע
+[General]
+FilesNumber=5						// nubmer of files and columns
+CommonPrefix="<BR><BR>"
+CommonSuffix="<BR>"
+CommonMiddle=""
+
+[File1]
+Title="מקרא"
+FileName="a06_Joshua.txt"		// in current folder
+Prefix=""
+Suffix=""
+Zoom=0
+SmallFactor=0		// number of small command to add before
+
+
+[File2]
+Title="פירוש רש''י"
+FileName="eNA_YEHOSUA_L1.txt"		// in current folder
+Prefix="<span style=''font-size:0%; font-family:FONT5;''>"
+Suffix="<small> (רש''י)</small><BR><BR></span>"
+SmallFactor=0		// number of small command to add before
+
+
+[File3]
+Title="פירוש מצודת דוד"
+FileName="fNA_YEHOSUA_L1.txt"		// in current folder
+Prefix="<span style=''color=COLOR3; font-size:0%; font-family:FONT3;''>"
+Suffix="<small> (מצודת דוד)</small><BR><BR></span>"
+SmallFactor=0		// number of small command to add before
+
+
+[File4]
+Title="פירוש מצודת ציון"
+FileName="gNA_YEHOSUA_L1.txt"		// in current folder
+Prefix="<span style=''color=COLOR4; font-size:0%; font-family:FONT3;''>"
+Suffix="<small> (מצודת ציון)</small><BR><BR></span>"
+SmallFactor=0		// number of small command to add before
+
+[File5]
+Title="פירוש רלב''ג"
+FileName="gNA_YEHOSUA_L1_2.txt"		// in current folder
+Prefix="<span style=''color=COLOR5; font-size:0%; font-family:FONT3;''>"
+Suffix="<small> (רלב''ג)</small><BR><BR></span>"
+SmallFactor=0		// number of small command to add before
+
+
