@@ -1,0 +1,35 @@
+&MixedDisplay=2&TextSource=ר' פנחס ראובן שליט''א&ForcedBookName=שנים מקרא ואחד תרגום&LastLevelIndex=2&GroupId=&CosmeticsType==1628&SearchInTitles=0 #rep=FONT2= FONT2&PutNewLinesAsIs=1&UniqueId=1629&Comments=
+
+$ שמות - מקרא ותרגום
+
+[General]
+FilesNumber=3						// nubmer of files and columns
+CommonPrefix=""
+CommonSuffix="<br><br>"
+CommonMiddle=""
+
+[File1]
+Title="מקרא"
+FileName="a02_Exodus.txt"		// in current folder
+Prefix=""
+Suffix=""
+Zoom=200			// 0 -user control
+SmallFactor=0		// number of small command to add before
+
+[File2]
+Title="מ"
+FileName="a02_Exodus.txt"		// in current folder
+Prefix="<span style=''color=#3377cc; font-size:80%; font-family:FONT4''>"
+Suffix="<small></small></span>"
+SmallFactor=0		// number of small command to add before
+Protected=0
+Reshape=1
+
+[File3]
+Title="ת"
+FileName="i_onqelus.txt"		// in current folder
+Prefix="<span style=''color=#3377cc; font-size:80%; font-family:FONT4''>"
+Suffix="<small></small></span>"
+SmallFactor=0		// number of small command to add before
+Protected=0
+

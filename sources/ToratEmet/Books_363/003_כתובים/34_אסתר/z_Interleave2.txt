@@ -1,0 +1,31 @@
+&MixedDisplay=2&TextSource=ר' פנחס ראובן שליט''א, J. Alan Groves Center&ForcedBookName=תצוגה משולבת עם טעמים&LastLevelIndex=2&CosmeticsType==1738&PutNewLinesAsIs=0&SearchInTitles=0&UniqueId=1766&GroupId=b34&Comments=
+$ אסתר (ט)
+
+[General]
+FilesNumber=3						// nubmer of files and columns
+CommonPrefix="<BR><BR>"
+CommonSuffix="<BR>"
+CommonMiddle=""
+
+[File1]
+Title="מקרא"
+FileName="a34__Esther.txt"		// in current folder
+Prefix=""
+Suffix=""
+Zoom=0
+SmallFactor=0		// number of small command to add before
+
+
+[File2]
+Title="פירוש רש''י"
+FileName="eNA_ESTER_L1.txt"		// in current folder
+Prefix="<span style=''color=#3377cc; font-size:0%; font-family:FONT5;''>"
+Suffix="<small>(רש''י)</small><BR><BR></span>"
+SmallFactor=0		// number of small command to add before
+
+[File3]
+Title="פירוש מלבי''ם"
+FileName="f_MALBIM_ESTER.txt"		// in current folder
+Prefix="<span style=''color=#7733cc; font-size:0%; font-family:FONT3;''>"
+Suffix="<small>(מלבי''ם)</small><BR><BR></span>"
+SmallFactor=0		// number of small command to add before

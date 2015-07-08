@@ -1,0 +1,46 @@
+&MixedDisplay=2&CosmeticsType==1997&LastLevelIndex=2&TextSource=ר' פנחס ראובן ול ר.מ שליט''א&HiddenFromIndex=0&UniqueId=1999&ForcedBookName=ספר אהבה
+
+
+$ משנה תורה - ספר אהבה
+
+[General]
+FilesNumber=5						// nubmer of files and columns
+CommonPrefix=""
+CommonSuffix=""
+CommonMiddle="<p>"
+
+
+[File1]
+Title="הרמב''ם"
+FileName="90003_אהבה.txt"		// in current folder
+Prefix=""
+Suffix=""
+Zoom=120		// 0 -user control
+SmallFactor=0		// number of small command to add before
+
+[File2]
+Title="ההראב''ד"
+FileName="90003_אהבה ראבד.txt"		// in current folder
+Prefix="<p><span style='font-size:80%; line-height:140%'>"
+Suffix="</span><br>"
+SmallFactor=0		// number of small command to add before
+Protected=0
+Reshape=1		// 0 - null  1 - Remove Ole Text
+
+[File4]
+Title="כסף משנה"
+FileName="90003_אהבה_כסף.txt"		// in current folder
+Prefix="<p><span style='font-size:80%; line-height:140%'>"
+Suffix="</span><br>"
+SmallFactor=0		// number of small command to add before
+Protected=0
+Reshape=1		// 0 - null  1 - Remove Ole Text
+
+[File5]
+Title="לחם משנה"
+FileName="90003_אהבה_לחם.txt"		// in current folder
+Prefix="<p><span style='font-size:80%; line-height:140%'>"
+Suffix="</span><br>"
+SmallFactor=0		// number of small command to add before
+Protected=0
+Reshape=1		// 0 - null  1 - Remove Ole Text
