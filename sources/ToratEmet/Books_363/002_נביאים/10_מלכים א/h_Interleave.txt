@@ -1,0 +1,51 @@
+&MixedDisplay=2&TextSource=ר' פנחס ראובן שליט''א, J. Alan Groves Center&ForcedBookName=תצוגה משולבת&LastLevelIndex=2&CosmeticsType==1429&UniqueId=1434&GroupId=b10&PutNewLinesAsIs=0&SearchInTitles=0&Comments=
+$ מלכים א
+[General]
+FilesNumber=6						// nubmer of files and columns
+CommonPrefix="<BR><BR>"
+CommonSuffix="<BR>"
+CommonMiddle=""
+
+[File1]
+Title="מקרא"
+FileName="a10_Kings_1.txt"		// in current folder
+Prefix=""
+Suffix=""
+Zoom=0
+SmallFactor=0		// number of small command to add before
+
+[File2]
+Title="פירוש רש''י"
+FileName="eNA_MELACHIM_A_L1.txt"		// in current folder
+Prefix="<span style=''color=#3377cc; font-size:0%; font-family:FONT5;''>"
+Suffix="<small>(רש''י)</small><BR><BR></span>"
+SmallFactor=0		// number of small command to add before
+
+[File3]
+Title="פירוש מצודת דוד"
+FileName="fNA_MELACHIM_A_L1.txt"		// in current folder
+Prefix="<span style=''color=#7733cc; font-size:0%; font-family:FONT3;''>"
+Suffix="<small>(מצודת דוד)</small><BR><BR></span>"
+SmallFactor=0		// number of small command to add before
+
+
+[File4]
+Title="פירוש מצודת ציון"
+FileName="gNA_MELACHIM_A_L1.txt"		// in current folder
+Prefix="<span style=''color=rgb(0,145,130); font-size:0%; font-family:FONT3;''>"
+Suffix="<small>(מצודת ציון)</small><BR><BR></span>"
+SmallFactor=0		// number of small command to add before
+
+[File5]
+Title="פירוש רלב''ג"
+FileName="gNA_MELACHIM_A_L1_2.txt"		// in current folder
+Prefix="<span style=''color=rgb(180,100,180); font-size:0%; font-family:FONT3;''>"
+Suffix="<small>(רלב''ג)</small><BR><BR></span>"
+SmallFactor=0		// number of small command to add before
+
+[File6]
+Title="פירוש מלבי''ם"
+FileName="gNA_MELACHIM_A_L1_MALBIM.txt"		// in current folder
+Prefix="<span style=''color=#7733cc; font-size:0%; font-family:FONT3;''>"
+Suffix="<small>(מלבי''ם)</small><BR><BR></span>"
+SmallFactor=0		// number of small command to add before
