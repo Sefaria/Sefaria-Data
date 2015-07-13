@@ -58,6 +58,7 @@ index = {
 	"sectionNames": ["Volume", "Daf", "Paragraph"],
 	"categories": ["Kabbalah"],
 	"addressTypes": ["Integer", "Talmud", "Integer"],
+	"default_struct": "Parasha",
 	"schema": root.serialize()
 }
 
