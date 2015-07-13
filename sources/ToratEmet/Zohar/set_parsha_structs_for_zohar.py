@@ -1,12 +1,21 @@
 # -*- coding: utf-8 -*-
-
-from sefaria.model import *
 import json
+import os
+import sys
 import pprint
 import pdb
 import urllib
 import urllib2
 from urllib2 import URLError, HTTPError
+p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, p)
+os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
+from local_settings import *
+
+sys.path.insert(0, SEFARIA_PROJECT_PATH)
+
+from sefaria.model import *
+
 
 def processDaf(daf):
 	daf_array = daf.split(':')
@@ -19,7 +28,7 @@ def processDaf(daf):
 	return daf_array[0]+":"+str(num)+daf_array[2]
 
 def post_index(index):
-	url = SEFARIA_SERVER+'/api/v2/raw/index/Zohar'
+	url = SEFARIA_SERVER + '/api/v2/raw/index/Zohar'
 	indexJSON = json.dumps(index)
 	values = {
 		'json': indexJSON, 
@@ -62,7 +71,7 @@ structs["nodes"].append({
 				"primary": True
 				}],
 	"nodeType": "ArrayMapNode",
-	"refs": [],
+	"includeSections": True,
 	"depth": 0,
 	"addressTypes": [],
 	"sectionNames": [],
@@ -81,7 +90,7 @@ for parsha in english_parshiot:
 	structs["nodes"].append({
 		"sharedTitle": parsha,
 		"nodeType": "ArrayMapNode",
-		"refs": [],
+		"includeSections": True,
 		"depth": 0,
 		"addressTypes": [],
 		"sectionNames": [],
@@ -109,7 +118,7 @@ structs["nodes"].append({
 				"primary": True
 				}],
 	"nodeType": "ArrayMapNode",
-	"refs": [],
+	"includeSections": True,
 	"depth": 0,
 	"addressTypes": [],
 	"sectionNames": [],
@@ -130,7 +139,7 @@ for parsha in english_parshiot:
 	structs["nodes"].append({
 		"sharedTitle": parsha,
 		"nodeType": "ArrayMapNode",
-		"refs": [],
+		"includeSections": True,
 		"depth": 0,
 		"addressTypes": [],
 		"sectionNames": [],
@@ -159,7 +168,7 @@ structs["nodes"].append({
 				"primary": True
 				}],
 	"nodeType": "ArrayMapNode",
-	"refs": [],
+	"includeSections": True,
 	"depth": 0,
 	"addressTypes": [],
 	"sectionNames": [],
@@ -196,4 +205,4 @@ index = {
 
 
 post_index(index)
-Index(index).save()
+#Index(index).save()

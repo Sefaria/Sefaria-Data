@@ -1,0 +1,79 @@
+&MixedDisplay=3&TextSource=ר' פנחס ראובן שליט''א&ForcedBookName=תצוגה משולבת&LastLevelIndex=2&UniqueId=1309&GroupId=mishna_sanhedrin&CosmeticsType==1074&PutNewLinesAsIs=0&SearchInTitles=0
+$ משנה מסכת סנהדרין
+
+[General]
+FilesNumber=3						// nubmer of files and columns
+HtmlTableTemplate="MishnaMixed1.html"		// in main folder, html template file, the template values replaced 
+PerekTemplateId="@1"				// template location for perek (perek is line started with ^)
+PerekFromFileNumber=2				// the source file for perek
+PageTemplateId="@2"					// template location for page (page is line started with ~)^
+PageFromFileNumber=2				// the source file for page
+BookTemplateId="@3"					
+UserCommentTemplateId="@0"					
+
+
+// general for new mix
+CommonPrefix="<P>"
+CommonSuffix=""
+CommonMiddle="<P>"
+
+
+// the following values are fixed replacements to the template values
+[FixedValues]
+Size=3;
+TemplValue1="@0"
+FixedValue1=""
+TemplValue2="@3"
+FixedValue2=""
+TemplValue3="@1"
+FixedValue3=""
+
+
+// the ColN section describes a column location on the html template file
+// the number of columns should match with the number of files
+[Col1]
+TitleTemplateId="@4"
+BodyTemplateId="@7"
+WidthTemplateId="1%"
+
+[Col2]
+TitleTemplateId="@5"
+BodyTemplateId="@8"
+WidthTemplateId="2%"
+
+[Col3]
+TitleTemplateId="@6"
+BodyTemplateId="@9"
+WidthTemplateId="3%"
+
+
+
+[File3]
+Title="עיקר תוי''ט"
+EvenColNumber=1					// on which column this file located on event pages
+OddColNumber=1					// on which column this file located on odd pages
+FileName="MNE_SANHEDRIN_L3.txt"		// in current folder
+
+Prefix="<span style=''line-height:140%; color=#3377cc; font-size:60%; font-family:FONT2''>"	// new mix
+Suffix="(עיקר תוי''ט).</span>"				// new mix
+
+
+[File1]
+Title="משנה"
+EvenColNumber=2					// on which column this file located on event pages
+OddColNumber=2					// on which column this file located on odd pages
+Zoom=160%
+FileName="MNE_SANHEDRIN_L1.txt"		// in current folder
+
+[File2]
+Title="ר''ע מברטנורה"
+EvenColNumber=3					// on which column this file located on event pages
+OddColNumber=3					// on which column this file located on odd pages
+FileName="MNE_SANHEDRIN_L2.txt"			// in current folder
+
+Prefix="<span style=''line-height:140%; color=#0077aa; font-size:65%; font-family:FONT3''>"	// new mix
+Suffix="(ר''ע מברטנורה).</span>"				// new mix
+
+
+
+

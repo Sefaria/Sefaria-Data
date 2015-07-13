@@ -1,0 +1,24 @@
+&MixedDisplay=2&TextSource=ר' פנחס ראובן שליט''א, J. Alan Groves Center&ForcedBookName=תצוגה משולבת עם טעמים&LastLevelIndex=2&CosmeticsType==1738&PutNewLinesAsIs=0&SearchInTitles=0&UniqueId=1763&GroupId=b31&Comments=
+$ רות (ט)
+
+[General]
+FilesNumber=2						// nubmer of files and columns
+CommonPrefix="<BR><BR>"
+CommonSuffix="<BR>"
+CommonMiddle=""
+
+[File1]
+Title="מקרא"
+FileName="a31__Ruth.txt"		// in current folder
+Prefix=""
+Suffix=""
+Zoom=0
+SmallFactor=0		// number of small command to add before
+
+[File2]
+Title="פירוש רש''י"
+FileName="eNA_RUTH_L1.txt"		// in current folder
+Prefix="<span style=''color=#3377cc; font-size:0%; font-family:FONT5;''>"
+Suffix="<small>(רש''י)</small><BR><BR></span>"
+SmallFactor=0		// number of small command to add before
+

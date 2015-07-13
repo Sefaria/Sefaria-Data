@@ -49,7 +49,7 @@ Abbreviations = {
 'ת"ר':'תנו רבנן'
 }
 links = []
-log = open('maharsha.log', 'w')
+log = open('logs/{}/maharsha_chidushei_halachot_{}.log'.format(masechet,masechet), 'w')
 abbs = open('abbs.txt', 'wb')
 fuzzy = open('fuzzywuzzy.txt','wb')
 
@@ -86,8 +86,11 @@ def book_record():
     return {
     "title" : "Chidushei Halachot on %s" % masechet,
     "categories" : [
-        "Other",
-        "Maharsha"
+        "Commentary2",
+        "Talmud",
+        "Bavli",
+        Index().load({"title":masechet}).categories[2],
+         "%s" % masechet
     ],
     "schema" : {
         "titles" : [
@@ -298,6 +301,7 @@ def search_tosafot(text, daf, amud, Peirush, diburs = 4):
         index = (daf * 2) - 1
     lines = len(tosafot[index])
     for line in range(0,lines):
+        print tosafot[index]
         for dh in tosafot[index][line]:
             tos = re.split('\.', dh)[0]
             tos = replaceAbbrevs(tos)
@@ -389,7 +393,7 @@ def parse_dapim(text):
                     rashi += 1
                     pass
                 elif ur'תוס' in verse[0:10]:
-                    search_tosafot(verse, number , amud_num, i+1)
+                   # search_tosafot(verse, number , amud_num, i+1)
                     tosafos += 1
                     pass
                 else:
