@@ -1,0 +1,57 @@
+&MixedDisplay=2&CosmeticsType=#bp=<span style='line-height:125%'>#nik=1#rnft=2#is2=13#ip2=<nobr>#ip4=_nbsp;_nbsp;<b>#ix2=</nobr>#ix4=</b>#rus2=-_#sil=4#bs1=22#bs2=22#bs4=26#pr1=<p>#pr2=<p><br>#pr3=<BR><HR><BR>#pr4=<BR><HR><BR>#su3=<br>#su4=<br>#cp1=<small><small>#cp2=<br><br><small>#cs1=</small></small>#cs2=</small>#rlp=(#rls=)#rnp=(#rns=)#MIX1=0,1,100#MIX2=32,32,2#MIX3=2,2,2#MIX4=0,2,30#rep= o=^^o =^^{{{=<span style='font-size:130%;'><b>^^}}}=</b></span>^^{{=<small><small>(^^}}=)</small></small>#rep2=((=<span style='font-size:130%;'><b>(^^))=)</b></span>^^{=<span style='color:MIX1; '>'^^}='</span>#rep3=[[[=<!--^^]]]=-->#rep4=[[=<b>^^]]=</b>^^* <b>=<b>#rep5=[=<small><small>[^^]=]</small></small>#rep6=*=<span style='font-size:100%; color:MIX3; background-color:MIX4;  border-style:solid; border-width:1;'>*</span>#rep7=X)=<small><small>*)</small></small>#rep8=(-)=<span style='color:gray;'>(-)</span>#rep9=???=<!-- -->#rep10=(-)=<!-- -->#rep12=[[[=<b><small><small style='color:MIX3;'>(^^]]]=)</small></small></b>&LastLevelIndex=2&TextSource=ר' פנחס ראובן ול ר.מ שליט''א&HiddenFromIndex=0&UniqueId=1997&ForcedBookName=ספר המדע
+
+
+$ משנה תורה - ספר מדע
+
+[General]
+FilesNumber=5						// nubmer of files and columns
+CommonPrefix=""
+CommonSuffix=""
+CommonMiddle="<p>"
+
+
+[File1]
+Title="הרמב''ם"
+FileName="90002_מדע.txt"		// in current folder
+Prefix=""
+Suffix=""
+Zoom=120		// 0 -user control
+SmallFactor=0		// number of small command to add before
+
+[File2]
+Title="ההראב''ד"
+FileName="90002_מדע ראבד.txt"		// in current folder
+Prefix="<p><span style='font-size:80%; line-height:140%'>"
+Suffix="</span><br>"
+SmallFactor=0		// number of small command to add before
+Protected=0
+Reshape=1		// 0 - null  1 - Remove Ole Text
+
+[File3]
+Title="פירוש"
+FileName="90002_מדע_פירוש.txt"		// in current folder
+Prefix="<p><span style='font-size:80%; line-height:140%'>"
+Suffix="</span><br>"
+SmallFactor=0		// number of small command to add before
+Protected=0
+Reshape=1		// 0 - null  1 - Remove Ole Text
+
+[File4]
+Title="כסף משנה"
+FileName="90002_מדע_כסף.txt"		// in current folder
+Prefix="<p><span style='font-size:80%; line-height:140%'>"
+Suffix="</span><br>"
+SmallFactor=0		// number of small command to add before
+Protected=0
+Reshape=1		// 0 - null  1 - Remove Ole Text
+
+[File5]
+Title="לחם משנה"
+FileName="90002_מדע_לחם.txt"		// in current folder
+Prefix="<p><span style='font-size:80%; line-height:140%'>"
+Suffix="</span><br>"
+SmallFactor=0		// number of small command to add before
+Protected=0
+Reshape=1		// 0 - null  1 - Remove Ole Text
+
+

@@ -1,0 +1,35 @@
+&MixedDisplay=2&TextSource=ר' פנחס ראובן שליט''א&ForcedBookName=שנים מקרא ואחד תרגום - טעמים&LastLevelIndex=2&GroupId=&CosmeticsType=#nik=2#sem=^#dii=^#ip5=<BR>#irfb5=1#rus2=_#sil=5#bs2=16#bs5=20#pr2=<br>#pr5=<hr><br><center>#su2=<p>#su5=</center><br><hr><br>#cp1=<small><small><p>#cs1=</small></small><p>#ec2=0#rep=FONT2=FONT2^^FONT3=FONT3^^FONT4=FONT4^^FONT5=FONT5^^FONT6=FONT6^^FONT7=FONT7^^FONT8=FONT8#rep2=[[=<b>^^]]=</b>#rep3=<TF>=<TF>^^</TF>=</TF>#rep4=(פ)=^^(ס)=^^(פפפ)=^^(ססס)=^^(חזק)=^^(פ)=^^(ס)=^^(פפפ)=^^(ססס)=^^(חזק)=^^[ס=(ס^^ס]=ס)^^[פ=(פ^^פ]=פ)^^[חזק]=(חזק)&SearchInTitles=0 #rep=FONT2= FONT2&PutNewLinesAsIs=1&UniqueId=1722&Comments=
+$ בראשית - מקרא ותרגום (ט)
+
+[General]
+FilesNumber=3						// nubmer of files and columns
+CommonPrefix=""
+CommonSuffix="<br><br>"
+CommonMiddle=""
+
+[File1]
+Title=""
+FileName="a01__Genesis.txt"		// in current folder
+Prefix=""
+Suffix=""
+Zoom=200			// 0 -user control
+SmallFactor=0		// number of small command to add before
+
+[File2]
+Title="<TF>מ</TF>"
+FileName="a01__Genesis.txt"		// in current folder
+Prefix="<span style=''color=#3377cc; font-size:80%; font-family:FONT4''>"
+Suffix="<small></small></span>"
+SmallFactor=0		// number of small command to add before
+Protected=0
+Reshape=1		// 0 - null  1 - Remove Ole Text
+
+[File3]
+Title="ת"
+FileName="i_onqelus.txt"		// in current folder
+Prefix="<span style=''color=#3377cc; font-size:80%; font-family:FONT4''>"
+Suffix="<small></small></span>"
+SmallFactor=0		// number of small command to add before
+Protected=0
+
+
