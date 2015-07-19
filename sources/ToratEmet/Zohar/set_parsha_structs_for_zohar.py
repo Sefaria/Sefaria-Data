@@ -28,7 +28,7 @@ def processDaf(daf):
 	return daf_array[0]+":"+str(num)+daf_array[2]
 
 def post_index(index):
-	url = SEFARIA_SERVER + '/api/v2/raw/index/Zohar'
+	url = 'http://dev.sefaria.org/api/v2/raw/index/Zohar'
 	indexJSON = json.dumps(index)
 	values = {
 		'json': indexJSON, 
