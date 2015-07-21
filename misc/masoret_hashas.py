@@ -22,10 +22,10 @@ folder = "n_grams"
 
 # List of words to look out for when scoring hits
 ravs = [u"רב", u"רבי", u"רבה", u"רבא", u"ר'", u"רבן", u"שמואל", u"אביי", u'א"ר', u"רבין", u"מר", u"ריש לקיש"]
-ravs +=[u"ל" + x for x in ravs]
-ravs +=[u"ד" + x for x in ravs]
-ravs +=[u"מ" + x for x in ravs]
-ravs +=[u"ו" + x for x in ravs]
+ravs += [u"ל" + x for x in ravs]
+ravs += [u"ד" + x for x in ravs]
+ravs += [u"מ" + x for x in ravs]
+ravs += [u"ו" + x for x in ravs]
 chain = [u"בן", u"בר", u"בריה", u"משמיה", u"בשם", u"משום"]
 said = [u'א"ר', u"אמר", u"אומר", u"תני", u"תנן", u"תנא", u'א"ל']
 phrases = [u"אלא אמר", u"לא שנו אלא", u"עד כאן לא קאמר", u"חייא בר אבא אמר רבי יוחנן", u"ראיה לדבר זכר לדבר",
@@ -36,6 +36,19 @@ phrases = [u"אלא אמר", u"לא שנו אלא", u"עד כאן לא קאמר"
 most_hits = 0
 total_hits = 0
 total_hits_combined = 0
+
+
+def get_masoret_hashas_links():
+    masoret_hashas_links = []
+    tractates = get_tractates()
+    for tractate in tractates:
+        links = get_book_category_linkset(tractate, "Bavli")
+        for link in links:
+            link_dict = link.__dict__
+            if link_dict["type"] == u"mesorat hashas":
+                masoret_hashas_links.append(link_dict["refs"])
+    return masoret_hashas_links
+
 
 def score_hit(hit, count_avg):
     """ Using given heuristics, give each result a value representing its likely importance as a link
@@ -56,13 +69,13 @@ def score_hit(hit, count_avg):
             rav_count += 1
         if word in chain:
             chain_count += 1
-    score -= (2*(amar_count-1))
-    score -= (2*(rav_count-1))
-    score -= (2*(chain_count-1))
+    score -= (2 * (amar_count - 1))
+    score -= (2 * (rav_count - 1))
+    score -= (2 * (chain_count - 1))
     hit_string = " ".join(hit)
     for phrase in phrases:
         if phrase in hit_string:
-            score-=5
+            score -= 5
     return score
 
 
@@ -78,6 +91,7 @@ def format_search_term(search_term):
         search_term = search_term.replace(char, '\\' + char)
     search_term = '"' + search_term + '"'
     return search_term.encode('utf-8')
+
 
 def api_get_text(ref, lang=None, version=None):
     """ Get text through Sefaria API
@@ -164,7 +178,7 @@ def search_bavli(search_term):
                 {"pre_tags": ["<b>"], "post_tags": ["</b>"], "fields":
                     {"content": {"fragment_size": 200}}
                  },
-            "size" : 500,
+            "size": 500,
             "query":
                 {"filtered":
                      {"query":
@@ -223,19 +237,20 @@ def aggregate_and_score_hits(hit_ref, hits):
         score = score_hit(result_terms, count_avg)
         source_range = result_sources[0]
         if result_sources[0] != result_sources[-1]:
-                source_range += (" - " + result_sources[-1])
+            source_range += (" - " + result_sources[-1])
         result = " ".join(result_terms)
         results.append([source_range, hit_ref, result, score])
     return results
 
-#Todo make a dictionary from tractate to hits, for the purpose of checking existing hits, then merge afterwards.
+
+# Todo make a dictionary from tractate to hits, for the purpose of checking existing hits, then merge afterwards.
 def search_n_grams():
     global total_hits
     global most_hits
     global total_hits_combined
     results = []
     files = os.listdir(folder)
-    for filename in ["Sanhedrin.json", "Sotah.json"]:
+    for filename in files:
         tractate_hits = {}
         with open(folder + os.sep + filename, 'r') as gram_file:
             grams = gram_file.read()
@@ -243,7 +258,7 @@ def search_n_grams():
         for ref in tractate_grams:
             print ref
             for search_term in tractate_grams[ref]:
-                ref_hits =[]
+                ref_hits = []
                 hit_count = 0
                 formatted_term = format_search_term(search_term)
                 response = search_bavli(formatted_term)
@@ -267,24 +282,25 @@ def search_n_grams():
             for result in tractate_results:
                 if all(result[0] != x[0] and result[1] != x[1] and result[2] != x[2] for x in results):
                     results.append(result)
-        print "Finished tractate " + filename.replace(".json","")
+        print "Finished tractate " + filename.replace(".json", "")
     total_hits_combined = len(results)
     return results
 
 
 def output_profile(results, runtime):
     output = ["Runtime is " + str(runtime) + " seconds \n", "Most number of hits for one search is " + str(most_hits),
-                  "\n Total number of hits for 6_grams is " + str(total_hits) + " and for 6+grams is " + str(
-                      total_hits_combined), "\n" + "Top ten best hits are:"]
+              "\n Total number of hits for 6_grams is " + str(total_hits) + " and for 6+grams is " + str(
+                  total_hits_combined), "\n" + "Top ten best hits are:"]
     for hit in results[:10]:
         output.append("\n Hit from " + hit[0].encode('utf-8') + " to " + hit[1].encode('utf-8') + " with text " + \
-             hit[2].encode('utf-8') + " with score " + str(hit[3]))
+                      hit[2].encode('utf-8') + " with score " + str(hit[3]))
     output.append("\n" + "Worst hits are:")
     for hit in results[-10:]:
         output.append("\n Hit from " + hit[0].encode('utf-8') + " to " + hit[1].encode('utf-8') + " with text " + \
-            hit[2].encode('utf-8') + " with score " + str(hit[3]))
+                      hit[2].encode('utf-8') + " with score " + str(hit[3]))
     with open("profile.txt", 'w') as profile:
         profile.writelines(output)
+
 
 def generate_masoret_hashas():
     start = timeit.default_timer()
@@ -295,14 +311,15 @@ def generate_masoret_hashas():
     with open("all_results.txt", 'w') as all_results:
         for hit in score_sorted_results:
             all_results.write("Hit from " + hit[0].encode('utf-8') + " to " + hit[1].encode('utf-8') + " with text " + \
-                hit[2].encode('utf-8') + " with score " + str(hit[3]) + "\n")
-
+                              hit[2].encode('utf-8') + " with score " + str(hit[3]) + "\n")
 
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         arg = sys.argv[1]
-        if "_grams" in arg:
+        if arg == "compare":
+            get_masoret_hashas_links()
+        elif "_grams" in arg:
             n_grams = arg.split("_")
             try:
                 n = int(n_grams[0])
