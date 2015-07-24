@@ -53,8 +53,8 @@ title_comm = "Rashi on Berakhot"
 def post_text(ref, text):
     textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
-    url = 'http://dev.sefaria.org/api/texts/'+ref
-    values = {'json': textJSON, 'apikey': 'F4J2j3RF6fHWHLtmAtOTeZHE3MOIcsgvcgtYSwMzHtM'}
+    url = SEFARIA_SERVER+'api/texts/'+ref
+    values = {'json': textJSON, 'apikey': API_KEY}
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)
     try:
