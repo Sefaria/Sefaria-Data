@@ -6,15 +6,25 @@ import urllib2
 from urllib2 import URLError, HTTPError
 import json 
 import pdb
+import os
+import sys
+p = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, p)
+os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
+from local_settings import *
+
+sys.path.insert(0, SEFARIA_PROJECT_PATH)
+
+from sefaria.model import *
 
 
 def post_index(index):
-	url = 'http://dev.sefaria.org/api/index/' + index["title"].replace(" ", "_")
+	url = SEFARIA_SERVER+'/api/index/' + index["title"].replace(" ", "_")
 	indexJSON = json.dumps(index)
 	print indexJSON
 	values = {
 		'json': indexJSON, 
-		'apikey': 'F4J2j3RF6fHWHLtmAtOTeZHE3MOIcsgvcgtYSwMzHtM'
+		'apikey': API_KEY
 	}
 	data = urllib.urlencode(values)
 	req = urllib2.Request(url, data)
