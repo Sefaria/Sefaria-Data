@@ -80,5 +80,5 @@ def main(masechet, comentator, baseline):
 	final = open('results.txt','a+')
 	final.write("results for "+comentator+" accy: "+str(accy)+"\n")
 
-main("Berakhot", 'Rashi', 'Rashi')
+main("Berakhot", 'SMK', 'Rashi')
 
