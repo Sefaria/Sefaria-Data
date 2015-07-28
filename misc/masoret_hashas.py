@@ -39,6 +39,10 @@ total_hits_combined = 0
 
 
 def get_masoret_hashas_links():
+    """ Gets all Mesorat Hashas type links in the Talmud from the database
+
+    :return: List of links represented as tuples of reference strings
+    """
     masoret_hashas_links = []
     tractates = get_tractates()
     for tractate in tractates:
@@ -118,6 +122,10 @@ def api_get_text(ref, lang=None, version=None):
 
 
 def get_tractates():
+    """ Get a list of the names of the tractates of the Talmud from the database
+
+    :return: List of strings, which are the names of the tractates of the Talmud in order
+    """
     tractates = []
     url = "http://{}/api/index".format(server)
     try:
@@ -137,34 +145,47 @@ def get_tractates():
 
 
 def generate_n_grams(n):
+    """ Break every line of the Talmud into n-grams, and maps them to spanning refs.
+
+    :param n: Size of the grams to be generated
+    :return: No return value. Writes the data to a series of json files.
+    """
     if not os.path.exists(folder):
         os.mkdir(folder)
     tractates = get_tractates()
     for tractate in tractates:
         grams = {}
-        prev_gram = []
+        text_chunk = []
+        ref_range = []
         ref = tractate
         while ref is not None:
             print ref
             text_obj = api_get_text(ref)
-            gram_key = text_obj["sectionRef"]
-            grams[gram_key] = []
-            text = " ".join(text_obj.get("he"))
-            text = re.sub(r"[,.:;]", "", text)
-            # text = re.sub(r"\((?=[^\)\s,]+\s){1,3}[^\)]*,\s[^\)\s]{1,3}\)", "", text)
-            text_list = text.split()
-            count = 1
-            while len(prev_gram) > 1:
-                prev_gram.pop(0)
-                new_gram = prev_gram + text_list[:count]
-                formatted_gram = " ".join(new_gram)
-                grams[gram_key].append(formatted_gram)
-                count += 1
-            gram_list = [text_list[i:i + n] for i in xrange(len(text_list) - n + 1)]
-            for gram in gram_list:
-                formatted_gram = " ".join(gram)
-                grams[gram_key].append(formatted_gram)
-            prev_gram = gram
+            text = text_obj.get("he")
+            for line in range(len(text)):
+                text_line = text[line]
+                text_line = re.sub(r"[,.:;]", "", text_line)
+                # text_line = re.sub(r"\((?=[^\)\s,]+\s){1,3}[^\)]*,\s[^\)\s]{1,3}\)", "", text_line)
+                word_list = text_line.split(" ")
+                text_chunk += word_list
+                current_ref = text_obj["title"] + ":" + str(line+1)
+                ref_range += [current_ref] * len(word_list)
+                if len(text_chunk) >= n:
+                    gram_list = [text_chunk[i:i + n] for i in xrange(len(text_chunk) - n + 1)]
+                    ref_list = [ref_range[i:i + n] for i in xrange(len(ref_range) - n + 1)]
+                    if len(gram_list) != len(ref_list):
+                        print "There are {} grams and {} refs, oh no!".format(len(gram_list),len(ref_list))
+                        return
+                    for i in range(len(gram_list)):
+                        gram = gram_list[i]
+                        refs = ref_list[i]
+                        gram_key = refs[0]
+                        if refs[0] != refs[-1]:
+                            gram_key += "-" + refs[-1].split(" ")[-1]
+                        formatted_gram = " ".join(gram)
+                        grams.setdefault(gram_key, []).append(formatted_gram)
+                    text_chunk = gram[1:]
+                    ref_range = ref_range[-5:]
             ref = text_obj.get("next")
         with open(folder + os.sep + tractate + ".json", 'w') as gram_file:
             json.dump(grams, gram_file)
@@ -250,12 +271,14 @@ def search_n_grams():
     global total_hits_combined
     results = []
     files = os.listdir(folder)
-    for filename in files:
+    for filename in ["Berakhot.json"]:
         tractate_hits = {}
         with open(folder + os.sep + filename, 'r') as gram_file:
             grams = gram_file.read()
             tractate_grams = json.loads(grams)
-        for ref in tractate_grams:
+        sorted_grams = sorted(tractate_grams, key=lambda x:Ref(x).order_id())
+        
+        for ref in sorted_grams:
             print ref
             for search_term in tractate_grams[ref]:
                 ref_hits = []
