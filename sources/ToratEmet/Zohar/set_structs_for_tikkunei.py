@@ -70,50 +70,35 @@ f = open("ranges", 'r')
 intro_start = Ref("Tikkunei Zohar "+f.readline())
 intro_end = Ref("Tikkunei Zohar "+f.readline())
 whole_ref = intro_start.to(intro_end).normal()
-structs["nodes"].append({
-		"titles": [{
-			"lang": "he",
-			"text": "הקדמת תקוני הזהר",
-			"primary": True
-			},
-			{
-			"lang": "en",
-			"text": "Introduction to Tikkunei HaZohar",
-			"primary": True
-			}],
-			"key": "intro",
-			"nodeType": "ArrayMapNode",
-			"includeSections": True,
-			"depth": 0,
-			"addressTypes": [],
-			"sectionNames": [],
-			"wholeRef": whole_ref,
-			"refs": []
-		})
+intro_node = ArrayMapNode()
+intro_node.add_title(u"הקדמת תקוני הזהר", "he", primary=True)
+intro_node.add_title("Introduction to Tikkunei HaZohar", "en", primary=True)
+intro_node.key = "intro"
+intro_node.includeSections = True
+intro_node.depth = 0
+intro_node.addressTypes = []
+intro_node.sectionNames = []
+intro_node.wholeRef = whole_ref
+intro_node.refs = []
+intro_node.validate()
+structs["nodes"].append(intro_node.serialize())
 		
 intro2_start = Ref("Tikkunei Zohar "+f.readline())
 intro2_end = Ref("Tikkunei Zohar "+f.readline())
 whole_ref = intro2_start.to(intro2_end).normal()
-structs["nodes"].append({
-		"titles": [{
-			"lang": "he",
-			"text": "הקדמה אחרת לתקוני הזהר",
-			"primary": True
-			},
-			{
-			"lang": "en",
-			"text": "Second Introduction to Tikkunei HaZohar",
-			"primary": True
-			}],
-			"key": "intro2",
-			"nodeType": "ArrayMapNode",
-			"includeSections": True,
-			"depth": 0,
-			"addressTypes": [],
-			"sectionNames": [],
-			"wholeRef": whole_ref,
-			"refs": []
-		})
+intro2_node = ArrayMapNode()
+intro2_node.add_title(u"הקדמה אחרת לתקוני הזהר", "he", primary=True)
+intro2_node.add_title("Second Introduction to Tikkunei HaZohar", "en", primary=True)
+intro2_node.key = "intro"
+intro2_node.includeSections = True
+intro2_node.depth = 0
+intro2_node.addressTypes = []
+intro2_node.sectionNames = []
+intro2_node.wholeRef = whole_ref
+intro2_node.refs = []
+intro2_node.validate()
+structs["nodes"].append(intro2_node.serialize())
+
 
 start_tikkun = {}
 end_tikkun = {}
@@ -125,27 +110,19 @@ for count, word in enumerate(tikkunim_heb):
 	end_tikkun[count] = Ref("Tikkunei Zohar " + f.readline())
 	refs.append(start_tikkun[count].to(end_tikkun[count]).normal())
 whole_ref = start_tikkun[0].to(end_tikkun[max]).normal()
-structs["nodes"].append({
-	"titles": [{
-		"lang": "he", 
-		"text": u"תיקונים",
-		"primary": True
-		},
-		{
-		"lang": "en",
-		"text": "Tikkunim",
-		"primary": True
-		}],
-		"key": "tikkunim",
-		"nodeType": "ArrayMapNode",
-		"includeSections": True,
-		"depth": 0,
-		"addressTypes": [],
-		"sectionNames": [],
-		"wholeRef": whole_ref,
-		"refs": refs
-		})
-		
+tikkunim_node = ArrayMapNode()
+tikkunim_node.add_title(u"תיקונים", "he", primary=True)
+tikkunim_node.add_title("Tikkunim", "en", primary=True)
+tikkunim_node.key = "tikkunim"
+tikkunim_node.includeSections = True
+tikkunim_node.addressTypes = ["Integer"]
+tikkunim_node.sectionNames = ["Tikkun"]
+tikkunim_node.depth = 1
+tikkunim_node.wholeRef = whole_ref
+tikkunim_node.refs = refs
+tikkunim_node.validate()
+structs["nodes"].append(tikkunim_node.serialize())
+
 		
 start_tikkun_add = {}
 end_tikkun_add = {}
@@ -157,26 +134,20 @@ for count, word in enumerate(add_tikkunim_heb):
 	end_tikkun_add[count] = Ref("Tikkunei Zohar " + f.readline())
 	refs.append(start_tikkun_add[count].to(end_tikkun_add[count]).normal())
 whole_ref = start_tikkun_add[0].to(end_tikkun_add[max]).normal()
-structs["nodes"].append({
-	"titles": [{
-		"lang": "he", 
-		"text": u"תיקונים נוספים",
-		"primary": True
-		},
-		{
-		"lang": "en",
-		"text": "Additional Tikkuni",
-		"primary": True
-		}],
-		"key": "additional",
-		"nodeType": "ArrayMapNode",
-		"includeSections": True,
-		"depth": 0,
-		"addressTypes": [],
-		"sectionNames": [],
-		"wholeRef": whole_ref,
-		"refs": refs
-		})
+
+tikkunim2_node = ArrayMapNode()
+tikkunim2_node.add_title(u"תיקונים נוספים", "he", primary=True)
+tikkunim2_node.add_title("Additional Tikkunim", "en", primary=True)
+tikkunim2_node.key = "tikkunim"
+tikkunim2_node.includeSections = True
+tikkunim2_node.addressTypes = ["Integer"]
+tikkunim2_node.sectionNames = ["Additional Tikkun"]
+tikkunim2_node.depth = 1
+tikkunim2_node.wholeRef = whole_ref
+tikkunim2_node.refs = refs
+tikkunim2_node.validate()
+structs["nodes"].append(tikkunim2_node.serialize())
+
 
 f.close()
 
@@ -203,4 +174,3 @@ index = {
 
 
 post_index(index)
-Index(index).save()
