@@ -14,8 +14,8 @@ import timeit
 sys.path.append("C:\\Users\\Izzy\\git\\Sefaria-Project")
 from sefaria.model import *
 
-server = "sefaria.org"
-# server = "localhost:8000"
+# server = "sefaria.org"
+server = "localhost:8000"
 # search_server = "http://search.sefaria.org:788"
 search_server = "http://localhost:9200"
 folder = "n_grams"
@@ -56,7 +56,7 @@ def get_masoret_hashas_links():
                 masoret_hashas_links.append(link_dict["refs"])
     return masoret_hashas_links
 
-
+# TODO: Lower score if contains Biblical citation
 def score_hit(hit, count_avg):
     """ Using given heuristics, give each result a value representing its likely importance as a link
 
@@ -224,8 +224,7 @@ def search_bavli(search_term):
 
 
 def score_and_add_result(hit_ref, result):
-    if hit_ref == "Bava Kamma 62b" and any("57b:38" in x for x in result["refs"]):
-        pass
+    global all_results
     global total_hits_combined
     count_avg = int(mean(result["counts"]))
     text = result["term"]
@@ -251,20 +250,19 @@ def score_and_add_result(hit_ref, result):
     else:
         flag = False
         for existing_result in all_results[hit_ref]:
-            if Ref(existing_result["location"]).contains(Ref(source_range.split("-")[0])) and existing_result["text"] in text:
+            if Ref(existing_result["location"]).contains(Ref(source_range.split("-")[0])) and existing_result["text"] == text:
                 existing_result["location"] = source_range
                 flag = True
-                break
     if not flag:
         all_results.setdefault(daf, []).append(scored_result)
         total_hits_combined += 1
 
-
+#TODO Count repeats, pick largest text chunk
 def search_n_grams():
     global total_hits
     global most_hits
     files = os.listdir(folder)
-    for filename in files:
+    for filename in ["Tamid.json", "Horayot.json"]:
         tractate_hits = {}
         last_hits = set()
         with open(folder + os.sep + filename, 'r') as gram_file:
@@ -284,53 +282,59 @@ def search_n_grams():
                         if not Ref(hit_ref).contains(Ref(ref)):
                             hit_count += 1
                             if hit_ref in tractate_hits:
-                                tractate_hits[hit_ref]["refs"].append(ref)
-                                tractate_hits[hit_ref]["term"] += (u' ' + search_term.split(" ")[-1])
-                                tractate_hits[hit_ref]["counts"].append(len(response["hits"]["hits"]))
+                                if not tractate_hits[hit_ref]["duplicates"]:
+                                    tractate_hits[hit_ref]["refs"].append(ref)
+                                    tractate_hits[hit_ref]["term"] += (u' ' + search_term.split(" ")[-1])
+                                    tractate_hits[hit_ref]["counts"].append(len(response["hits"]["hits"]))
+                                    tractate_hits[hit_ref]["duplicates"] = True
                             else:
                                 tractate_hits[hit_ref] = {"refs": [ref], "term": search_term,
-                                                          "counts": [len(response["hits"]["hits"])]}
+                                                          "counts": [len(response["hits"]["hits"])],
+                                                          "duplicates": True}
                             current_hits.add(hit_ref)
                 total_hits += hit_count
                 most_hits = max(most_hits, hit_count)
                 for result in (last_hits - current_hits):
                     score_and_add_result(result, tractate_hits[result])
                     del (tractate_hits[result])
+                for result in current_hits:
+                    tractate_hits[result]["duplicates"] = False
                 last_hits = current_hits
         for result in last_hits:
             score_and_add_result(result, tractate_hits[result])
         print "Finished tractate " + filename.replace(".json", "")
 
 
-def output_profile(results, runtime):
+def output_profile(runtime):
+    global all_results
+    all_results_list = []
+    for daf in all_results:
+        for result in all_results[daf]:
+            all_results_list.append(result)
+    results = sorted(all_results_list, key=lambda x: -x["score"])
     output = ["Runtime is " + str(runtime) + " seconds \n", "Most number of hits for one search is " + str(most_hits),
               "\nTotal number of hits for 6_grams is " + str(total_hits) + " and for 6+grams is " + str(
                   total_hits_combined), "\n\n" + "Top ten best hits are: \n"]
-    for result in results[:50]:
+    for result in results:
         output.append("Hit from {} to {} with text {} and score {} \n".format(result["source"], result["location"],
                                                                               result["text"].encode('utf-8'),
                                                                               result["score"]))
-    output.append("\n" + "Worst hits are: \n")
+    """ output.append("\n" + "Worst hits are: \n")
     for result in results[-50:]:
         output.append("Hit from {} to {} with text {} and score {} \n".format(result["source"], result["location"],
                                                                               result["text"].encode('utf-8'),
                                                                               result["score"]))
+    """
     with open("profile.txt", 'w') as profile:
         profile.writelines(output)
 
 
 def generate_masoret_hashas():
-    global all_results
-    all_results_list = []
     start = timeit.default_timer()
     search_n_grams()
-    for daf in all_results:
-        for result in all_results[daf]:
-            all_results_list.append(result)
-    score_sorted_results = sorted(all_results_list, key=lambda hit: -hit["score"])
     stop = timeit.default_timer()
-    output_profile(score_sorted_results, stop - start)
-    with open("all_results.json", 'w') as results_file:
+    output_profile(stop - start)
+    with open("some_results.json", 'w') as results_file:
         json.dump(all_results, results_file)
 
 
@@ -343,15 +347,15 @@ def compare_masoret_hashas():
     link_results = []
     for link in links:
         score = None
+        if ":" in link[0]:
+            daf0 = link[0].split(":")[0]
+        else:
+            daf0 = link[0]
+        if ":" in link[1]:
+            daf1 = link[1].split(":")[0]
+        else:
+            daf1 = link[1]
         try:
-            if ":" in link[0]:
-                daf0 = link[0].split(":")[0]
-            else:
-                daf0 = link[0]
-            if ":" in link[1]:
-                daf1 = link[1].split(":")[0]
-            else:
-                daf1 = link[1]
             Ref(link[0])
             Ref(link[1])
         except Exception as e:
@@ -359,11 +363,19 @@ def compare_masoret_hashas():
         else:
             if daf0 in all_results:
                 for result in all_results[link[0].split(":")[0]]:
-                    if Ref(result["source"]).contains(Ref(link[0])) and Ref(result["location"]).contains(Ref(link[1])):
+                    same_source = Ref(link[0]).contains(Ref(result["source"])) or Ref(result["source"]).contains(Ref(link[0]))
+                    same_location = Ref(link[1]).contains(Ref(result["location"])) or Ref(result["location"]).contains(Ref(link[1]))
+                    if same_source ^ same_location:
+                        print "No link from {}, {} to {}, {}, I guess".format(link[0], link[1], result["source"], result["location"])
+                    if same_source and same_location:
                         score = max(result["score"], score)
             if daf1 in all_results:
                 for result in all_results[link[1].split(":")[0]]:
-                    if Ref(result["source"]).contains(Ref(link[1])) and Ref(result["location"]).contains(Ref(link[0])):
+                    same_source = Ref(link[1]).contains(Ref(result["source"])) or Ref(result["source"]).contains(Ref(link[1]))
+                    same_location = Ref(link[0]).contains(Ref(result["location"])) or Ref(result["location"]).contains(Ref(link[0]))
+                    if same_source ^ same_location:
+                        print "No link from {}, {} to {}, {}, I guess".format(link[0], link[1], result["source"], result["location"])
+                    if same_source and same_location:
                         score = max(result["score"], score)
         link_results.append((link,score))
     link_results = sorted(link_results, key=lambda x:x[1])
@@ -372,18 +384,10 @@ def compare_masoret_hashas():
         for link_result in link_results:
             if link_result[1] is None:
                 filename.write("Link from {} to {} not found \n".format(link_result[0][0], link_result[0][1]))
-                nones+=1
+                nones += 1
             else:
                 filename.write("Score is {} for link from {} to {} \n".format(link_result[1], link_result[0][0], link_result[0][1]))
         filename.write("There are {} links not found out of {} total links".format(nones, len(link_results)))
-    """
-    for daf in all_results:
-        # print daf
-        for result in all_results[daf]:
-            all_results_list.append(result)
-    sorted_results = sorted(all_results_list, key=lambda x: -x["score"])
-    output_profile(sorted_results, 0)
-    """
 
 
 if __name__ == '__main__':
