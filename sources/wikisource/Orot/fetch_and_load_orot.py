@@ -49,9 +49,9 @@ def get_single(url, offset):
     return res
 
 
-server = u"lev.sefaria.org"
+server = u"staging.sefaria.org"
 base = u"http://he.wikisource.org/wiki/"
-apikey = ""
+apikey = "uK9JdRhOiLfWtaf558CtM9f89M9pclF9VuyMZtFW0as"
 
 j = {
     "versionTitle": "Wikisource",
