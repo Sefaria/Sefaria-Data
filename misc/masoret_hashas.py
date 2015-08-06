@@ -56,7 +56,7 @@ def get_masoret_hashas_links():
                 masoret_hashas_links.append(link_dict["refs"])
     return masoret_hashas_links
 
-# TODO: Lower score if contains Biblical citation
+
 def score_hit(hit, count_avg):
     """ Using given heuristics, give each result a value representing its likely importance as a link
 
@@ -83,6 +83,9 @@ def score_hit(hit, count_avg):
     for phrase in phrases:
         if phrase in hit:
             score -= 5
+    # cite_count = len(re.findall(r"\((?=[^\)\s,]+\s){1,3}[^\)]*,\s[^\)\s]{1,3}\)", hit))
+    cite_count = len(library.get_refs_in_string(hit, "he"))
+    score -= (20*cite_count)
     return score
 
 
@@ -168,7 +171,6 @@ def generate_n_grams(n):
             for line in range(len(text)):
                 text_line = text[line]
                 text_line = re.sub(r"[,.:;]", "", text_line)
-                # text_line = re.sub(r"\((?=[^\)\s,]+\s){1,3}[^\)]*,\s[^\)\s]{1,3}\)", "", text_line)
                 word_list = text_line.split()
                 text_chunk += word_list
                 current_ref = text_obj["title"] + ":" + str(line + 1)
@@ -250,19 +252,21 @@ def score_and_add_result(hit_ref, result):
     else:
         flag = False
         for existing_result in all_results[hit_ref]:
-            if Ref(existing_result["location"]).contains(Ref(source_range.split("-")[0])) and existing_result["text"] == text:
-                existing_result["location"] = source_range
-                flag = True
+            if ":" not in existing_result["location"] and Ref(existing_result["location"]).contains(Ref(source_range.split("-")[0])):
+                if existing_result["text"] == text:
+                    existing_result["location"] = source_range
+                    flag = True
+                    break
     if not flag:
         all_results.setdefault(daf, []).append(scored_result)
         total_hits_combined += 1
 
-#TODO Count repeats, pick largest text chunk
+
 def search_n_grams():
     global total_hits
     global most_hits
     files = os.listdir(folder)
-    for filename in ["Tamid.json", "Horayot.json"]:
+    for filename in files:
         tractate_hits = {}
         last_hits = set()
         with open(folder + os.sep + filename, 'r') as gram_file:
@@ -282,23 +286,28 @@ def search_n_grams():
                         if not Ref(hit_ref).contains(Ref(ref)):
                             hit_count += 1
                             if hit_ref in tractate_hits:
-                                if not tractate_hits[hit_ref]["duplicates"]:
-                                    tractate_hits[hit_ref]["refs"].append(ref)
-                                    tractate_hits[hit_ref]["term"] += (u' ' + search_term.split(" ")[-1])
-                                    tractate_hits[hit_ref]["counts"].append(len(response["hits"]["hits"]))
-                                    tractate_hits[hit_ref]["duplicates"] = True
+                                tractate_hit = tractate_hits[hit_ref]
+                                hit_num = tractate_hit["hit_number"]
+                                if tractate_hit["hit_number"] < len(tractate_hit["dupes"]):
+                                    tractate_hit["dupes"][hit_num]["refs"].append(ref)
+                                    tractate_hit["dupes"][hit_num]["term"] += (u' ' + search_term.split(" ")[-1])
+                                    tractate_hit["dupes"][hit_num]["counts"].append(len(response["hits"]["hits"]))
+                                else:
+                                    tractate_hit["dupes"].append({"refs": [ref], "term": search_term,
+                                                          "counts": [len(response["hits"]["hits"])]})
+                                tractate_hit["hit_number"] += 1
                             else:
-                                tractate_hits[hit_ref] = {"refs": [ref], "term": search_term,
-                                                          "counts": [len(response["hits"]["hits"])],
-                                                          "duplicates": True}
+                                tractate_hits[hit_ref] = {"hit_number": 1, "dupes": [{"refs": [ref], "term": search_term,
+                                                          "counts": [len(response["hits"]["hits"])]}]}
                             current_hits.add(hit_ref)
                 total_hits += hit_count
                 most_hits = max(most_hits, hit_count)
                 for result in (last_hits - current_hits):
-                    score_and_add_result(result, tractate_hits[result])
+                    for dupe in tractate_hits[result]["dupes"]:
+                        score_and_add_result(result, dupe)
                     del (tractate_hits[result])
                 for result in current_hits:
-                    tractate_hits[result]["duplicates"] = False
+                    tractate_hits[result]["hit_number"] = 0
                 last_hits = current_hits
         for result in last_hits:
             score_and_add_result(result, tractate_hits[result])
@@ -315,16 +324,16 @@ def output_profile(runtime):
     output = ["Runtime is " + str(runtime) + " seconds \n", "Most number of hits for one search is " + str(most_hits),
               "\nTotal number of hits for 6_grams is " + str(total_hits) + " and for 6+grams is " + str(
                   total_hits_combined), "\n\n" + "Top ten best hits are: \n"]
-    for result in results:
+    for result in results[:50]:
         output.append("Hit from {} to {} with text {} and score {} \n".format(result["source"], result["location"],
                                                                               result["text"].encode('utf-8'),
                                                                               result["score"]))
-    """ output.append("\n" + "Worst hits are: \n")
+    output.append("\n" + "Worst hits are: \n")
     for result in results[-50:]:
         output.append("Hit from {} to {} with text {} and score {} \n".format(result["source"], result["location"],
                                                                               result["text"].encode('utf-8'),
                                                                               result["score"]))
-    """
+
     with open("profile.txt", 'w') as profile:
         profile.writelines(output)
 
@@ -337,7 +346,7 @@ def generate_masoret_hashas():
     with open("some_results.json", 'w') as results_file:
         json.dump(all_results, results_file)
 
-
+# TODO Check 2 lines ahead and 2 behind!
 def compare_masoret_hashas():
     global all_results
     all_results_list = []
