@@ -51,8 +51,8 @@ prt.save()
 prt = PersonRelationshipType({"key": "opposed"})
 prt.set_forward_name(u"Opposed", "en")
 prt.set_forward_name(u"התנגד ל", "he")
-prt.set_reverse_name(u"Opposed", "en")
-prt.set_reverse_name(u"התנגד ל", "he")
+prt.set_reverse_name(u"Was Opposed by", "en")
+prt.set_reverse_name(u"התנגד ל", "he") #todo: better transx
 prt.save()
 
 prt = PersonRelationshipType({"key": "cousin"})

@@ -33,6 +33,13 @@ eras = {
     "Achronim": "AH"
 }
 
+
+Gaonim
+Rishonim
+Achronim
+Modern
+
+
 def _(p, attr, field):
     if field:
         setattr(p, attr, field)
