@@ -14,8 +14,8 @@ import timeit
 sys.path.append("C:\\Users\\Izzy\\git\\Sefaria-Project")
 from sefaria.model import *
 
-# server = "sefaria.org"
-server = "localhost:8000"
+server = "sefaria.org"
+# server = "localhost:8000"
 # search_server = "http://search.sefaria.org:788"
 search_server = "http://localhost:9200"
 folder = "n_grams"
@@ -346,10 +346,9 @@ def generate_masoret_hashas():
     with open("some_results.json", 'w') as results_file:
         json.dump(all_results, results_file)
 
-# TODO Check 2 lines ahead and 2 behind!
+
 def compare_masoret_hashas():
     global all_results
-    all_results_list = []
     links = get_masoret_hashas_links()
     with open("all_results.json", "r") as filename:
         all_results = json.load(filename)
@@ -365,25 +364,21 @@ def compare_masoret_hashas():
         else:
             daf1 = link[1]
         try:
-            Ref(link[0])
-            Ref(link[1])
+            ref0 = Ref(link[0]).surrounding_ref(2)
+            ref1 = Ref(link[1]).surrounding_ref(2)
         except Exception as e:
             print e
         else:
             if daf0 in all_results:
-                for result in all_results[link[0].split(":")[0]]:
-                    same_source = Ref(link[0]).contains(Ref(result["source"])) or Ref(result["source"]).contains(Ref(link[0]))
-                    same_location = Ref(link[1]).contains(Ref(result["location"])) or Ref(result["location"]).contains(Ref(link[1]))
-                    if same_source ^ same_location:
-                        print "No link from {}, {} to {}, {}, I guess".format(link[0], link[1], result["source"], result["location"])
+                for result in all_results[daf0]:
+                    same_source = ref0.contains(Ref(result["source"])) or any(Ref(result["source"]).contains(x) for x in ref0.split_spanning_ref())
+                    same_location = ref1.contains(Ref(result["location"])) or any(Ref(result["location"]).contains(x) for x in ref1.split_spanning_ref())
                     if same_source and same_location:
                         score = max(result["score"], score)
             if daf1 in all_results:
-                for result in all_results[link[1].split(":")[0]]:
-                    same_source = Ref(link[1]).contains(Ref(result["source"])) or Ref(result["source"]).contains(Ref(link[1]))
-                    same_location = Ref(link[0]).contains(Ref(result["location"])) or Ref(result["location"]).contains(Ref(link[0]))
-                    if same_source ^ same_location:
-                        print "No link from {}, {} to {}, {}, I guess".format(link[0], link[1], result["source"], result["location"])
+                for result in all_results[daf1]:
+                    same_source = ref1.contains(Ref(result["source"])) or any(Ref(result["source"]).contains(x) for x in ref1.split_spanning_ref())
+                    same_location = ref0.contains(Ref(result["location"])) or any(Ref(result["location"]).contains(x) for x in ref0.split_spanning_ref())
                     if same_source and same_location:
                         score = max(result["score"], score)
         link_results.append((link,score))
