@@ -5,20 +5,20 @@ __author__ = 'Izzy'
 import os
 import sys
 import json
-import urllib2
+import urllib, urllib2
 from urllib2 import HTTPError
 import re
 from numpy import mean
 import timeit
 
-sys.path.append("C:\\Users\\Izzy\\git\\Sefaria-Project")
 from sefaria.model import *
 
-server = "sefaria.org"
-# server = "localhost:8000"
+# server = "sefaria.org"
+server = "dev.sefaria.org"
 # search_server = "http://search.sefaria.org:788"
 search_server = "http://localhost:9200"
 folder = "n_grams"
+apikey = ''
 
 # List of words to look out for when scoring hits
 ravs = [u"רב", u"רבי", u"רבה", u"רבא", u"ר'", u"רבן", u"שמואל", u"אביי", u'א"ר', u"רבין", u"מר", u"ריש לקיש"]
@@ -32,12 +32,12 @@ phrases = [u"אלא אמר", u"לא שנו אלא", u"עד כאן לא קאמר"
            u"עד כאן לא קאמר", u"מאי שנא רישא ומאי שנא סיפא", u"אי איתמר הכי איתמר", u"שנא רישא ומאי שנא סיפא",
            u"הוא מותיב לה והוא מפרק לה", u"חייא בר אבא אמר ר' יוחנן"]
 
-# Counts to keep track of when printing interesting info about data_set
+# Counts to keep track of when printing interesting info about data set
 most_hits = 0
 total_hits = 0
 total_hits_combined = 0
 
-# Results for n-gram search
+# Dictionary of daf to of results for n-grams from that daf
 all_results = {}
 
 
@@ -57,20 +57,20 @@ def get_masoret_hashas_links():
     return masoret_hashas_links
 
 
-def score_hit(hit, count_avg):
+def score_result(result, count_avg):
     """ Using given heuristics, give each result a value representing its likely importance as a link
 
     :param hit: String representing shared text between two sources
     :param count_avg: Average of number of times a given n_gram is found in the Talmud for all n_grams in the hit
     :returns: Score as integer
     """
-    hit_list = hit.split(" ")
-    score = (len(hit_list) - 6) * 10
+    word_list = result.split(" ")
+    score = (len(word_list) - 6) * 10
     score -= count_avg
     amar_count = 0
     rav_count = 0
     chain_count = 0
-    for word in hit_list:
+    for word in word_list:
         if any(root in word for root in said):
             amar_count += 1
         if word in ravs:
@@ -81,10 +81,9 @@ def score_hit(hit, count_avg):
     score -= (2 * (rav_count - 1))
     score -= (2 * (chain_count - 1))
     for phrase in phrases:
-        if phrase in hit:
+        if phrase in result:
             score -= 5
-    # cite_count = len(re.findall(r"\((?=[^\)\s,]+\s){1,3}[^\)]*,\s[^\)\s]{1,3}\)", hit))
-    cite_count = len(library.get_refs_in_string(hit, "he"))
+    cite_count = len(library.get_refs_in_string(result, "he"))
     score -= (20*cite_count)
     return score
 
@@ -151,10 +150,10 @@ def get_tractates():
 
 
 def generate_n_grams(n):
-    """ Break every line of the Talmud into n-grams, and maps them to spanning refs.
+    """ Break every line of the Talmud into n-grams, and maps them to the ref that they came from.
 
     :param n: Size of the grams to be generated
-    :return: No return value. Writes the data to a series of json files.
+    :return: No return value. Writes the data to a json file for each tractate.
     """
     if not os.path.exists(folder):
         os.mkdir(folder)
@@ -174,8 +173,8 @@ def generate_n_grams(n):
                 word_list = text_line.split()
                 text_chunk += word_list
                 current_ref = text_obj["title"] + ":" + str(line + 1)
-                ref_range += [current_ref] * len(word_list)
-                if len(text_chunk) >= n:
+                ref_range += [current_ref] * len(word_list)     # ref_range keeps track of the source of every word in the current text_chunk, so a range can be constructed for every n-gram
+                if len(text_chunk) >= n:   # Text is appended to the text_chunk until it is large enough to be broken into n-grams
                     gram_list = [text_chunk[i:i + n] for i in xrange(len(text_chunk) - n + 1)]
                     ref_list = [ref_range[i:i + n] for i in xrange(len(ref_range) - n + 1)]
                     for i in range(len(gram_list)):
@@ -195,6 +194,12 @@ def generate_n_grams(n):
 
 
 def search_bavli(search_term):
+    """ Generates ElasticSearch query for the given search term
+
+    :param search_term: N-gram to be searched for in the Bavli.
+    :return: A dictionary which is the response generated from the query.
+    """
+    formatted_term = format_search_term(search_term)
     url = '{}/sefaria/_search'.format(search_server)
     data = {"sort": [{"order": {}}],
             "highlight":
@@ -206,7 +211,7 @@ def search_bavli(search_term):
                 {"filtered":
                      {"query":
                           {"query_string":
-                               {"query": "{}".format(search_term), "default_operator": "AND", "fields": ["content"]}
+                               {"query": "{}".format(formatted_term), "default_operator": "AND", "fields": ["content"]}
                            },
                       "filter":
                           {"or":
@@ -226,11 +231,17 @@ def search_bavli(search_term):
 
 
 def score_and_add_result(hit_ref, result):
+    """
+
+    :param hit_ref: The daf which the result was found on
+    :param result: A chunk of text of size greater than n
+    :return: None. Adds result to global all_results, or fills in the line numbers for an existing result
+    """
     global all_results
     global total_hits_combined
     count_avg = int(mean(result["counts"]))
     text = result["term"]
-    score = score_hit(text, count_avg)
+    score = score_result(text, count_avg)
     sources = result["refs"]
     daf = sources[0].split(":")[0]
     if sources[-1] == sources[0]:
@@ -249,7 +260,7 @@ def score_and_add_result(hit_ref, result):
     if hit_ref not in all_results:
         all_results.setdefault(daf, []).append(scored_result)
         total_hits_combined += 1
-    else:
+    else:   # If the result has already been generated from the other direction, find that result and add in a more precise location.
         flag = False
         for existing_result in all_results[hit_ref]:
             if ":" not in existing_result["location"] and Ref(existing_result["location"]).contains(Ref(source_range.split("-")[0])):
@@ -263,12 +274,16 @@ def score_and_add_result(hit_ref, result):
 
 
 def search_n_grams():
+    """ Loads in the n-grams and searches every one in the Talmud.
+
+    :return: None. Loads the results into the global variable all_results
+    """
     global total_hits
     global most_hits
     files = os.listdir(folder)
     for filename in files:
         tractate_hits = {}
-        last_hits = set()
+        last_hits = set()    # Set of dafs where there were hits for the last search term.
         with open(folder + os.sep + filename, 'r') as gram_file:
             grams = gram_file.read()
             tractate_grams = json.loads(grams)
@@ -278,20 +293,23 @@ def search_n_grams():
             for search_term in tractate_grams[ref]:
                 current_hits = set()
                 hit_count = 0
-                formatted_term = format_search_term(search_term)
-                response = search_bavli(formatted_term)
+                response = search_bavli(search_term)
                 if response is not None:
                     for hit in response["hits"]["hits"]:
                         hit_ref = hit["_source"]["ref"]
-                        if not Ref(hit_ref).contains(Ref(ref)):
+                        if not Ref(hit_ref).contains(Ref(ref)):  # Skip hits to the daf where the search term is from
                             hit_count += 1
                             if hit_ref in tractate_hits:
                                 tractate_hit = tractate_hits[hit_ref]
                                 hit_num = tractate_hit["hit_number"]
-                                if tractate_hit["hit_number"] < len(tractate_hit["dupes"]):
+
+                                # For each repeated hit on the same daf, append the last word of that term to each duplicate .
+                                if hit_num < len(tractate_hit["dupes"]):
                                     tractate_hit["dupes"][hit_num]["refs"].append(ref)
                                     tractate_hit["dupes"][hit_num]["term"] += (u' ' + search_term.split(" ")[-1])
                                     tractate_hit["dupes"][hit_num]["counts"].append(len(response["hits"]["hits"]))
+
+                                # If there has already been a hit to this daf from the same search_term, add a duplicate result.
                                 else:
                                     tractate_hit["dupes"].append({"refs": [ref], "term": search_term,
                                                           "counts": [len(response["hits"]["hits"])]})
@@ -302,6 +320,8 @@ def search_n_grams():
                             current_hits.add(hit_ref)
                 total_hits += hit_count
                 most_hits = max(most_hits, hit_count)
+
+                # If a daf was not found on this iteration, there are no more contiguous n-grams, so you can add the results for that daf.
                 for result in (last_hits - current_hits):
                     for dupe in tractate_hits[result]["dupes"]:
                         score_and_add_result(result, dupe)
@@ -315,6 +335,11 @@ def search_n_grams():
 
 
 def output_profile(runtime):
+    """ Print some statistics, as well as the 50 best and 50 worst results
+
+    :param runtime: Runtime for the algorithm in seconds
+    :return: None. Write output to profile.txt
+    """
     global all_results
     all_results_list = []
     for daf in all_results:
@@ -339,15 +364,23 @@ def output_profile(runtime):
 
 
 def generate_masoret_hashas():
+    """ Fill all_results and then output to a json file.
+
+    :return: None. Creates all_results.json with dictionary of daf to list of results for that daf.
+    """
     start = timeit.default_timer()
     search_n_grams()
     stop = timeit.default_timer()
     output_profile(stop - start)
-    with open("some_results.json", 'w') as results_file:
+    with open("all_results.json", 'w') as results_file:
         json.dump(all_results, results_file)
 
 
 def compare_masoret_hashas():
+    """ Get existing masoret hashas links and look for them in all_results, scoring the ones that are found.
+
+    :return: None. Outputs info to link_results.txt
+    """
     global all_results
     links = get_masoret_hashas_links()
     with open("all_results.json", "r") as filename:
@@ -394,6 +427,45 @@ def compare_masoret_hashas():
         filename.write("There are {} links not found out of {} total links".format(nones, len(link_results)))
 
 
+def post_links():
+    """ Post contents of all_results as links to the database.
+
+    :return:
+    """
+    count = 0
+    global all_results
+    with open("all_results.json", "r") as filename:
+        all_results = json.load(filename)
+    all_results_list = []
+    for daf in all_results:
+        for result in all_results[daf]:
+            all_results_list.append(result)
+    results = sorted(all_results_list, key=lambda x: -x["score"])
+    url = 'http://' + server + '/api/links/'
+    for result in results:
+        if result["score"] < 100:
+            print count
+            return
+        else:
+            link = {"refs": [result["source"], result["location"]],
+            "type": "mesorat hashas",
+            "auto": True,
+            "generated_by": "Masoret HaShas Script",
+            }
+            textJSON = json.dumps(link)
+            values = {
+                'json': textJSON,
+                'apikey': apikey
+            }
+            data = urllib.urlencode(values)
+            req = urllib2.Request(url, data)
+            try:
+                response = urllib2.urlopen(req)
+                count += 1
+            except HTTPError, e:
+                print e
+
+
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         arg = sys.argv[1]
@@ -410,6 +482,8 @@ if __name__ == '__main__':
                     generate_n_grams(n)
                 else:
                     print "Please provide valid value for n (n > 0)"
+        elif "post" in arg:
+            post_links()
         else:
             print "Unknown command"
     else:
