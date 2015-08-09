@@ -17,6 +17,10 @@ shas = TextChunk(Ref("%s" % masechet), "he").text
 tzitutim = []
 
 
+def splitkeepsep(s, sep):
+    return reduce(lambda acc, elem: acc[:-1] + [acc[-1] + elem] if elem == sep else acc + [elem], re.split("(%s)" % re.escape(sep), s), [])
+
+
 def make_link(talmud, rif):
     return {
             "refs": [
@@ -156,53 +160,79 @@ def parse(text):
     rif =[]
     dapim = re.split(ur'@20', text)
     for daf in dapim:
+        cut = re.split(ur"(.*?[.:])[^@13(.*?)@77]", daf)
+        cut = filter(None, cut)
         dap =[]
         if daf.count('@44')>=1:
-            seif = re.split('(.*?)@44(.*?)@55',daf)
-            seif = filter(None, seif)
-            if len(seif[0])>15:
-                dap.append(seif[0])
-            for  bold, not_bold in zip(seif[1::2], seif[2::2]):
-                cont = "<b>" + bold + "</b> " + not_bold
-                dap.append(cont)
-            links = re.findall(ur'@13(.*?)@77',cont)
-            for link in links:
-                link_to =link_to_link(link)
-                if (len(rif)+1)%2==0:
-                    amud = "b"
-                    daf = ((len(rif))/2)+1
+            for pars in cut:
+                #print pars
+                if '@44' in pars:
+                    #print pars
+                    seif = re.split('@44(.*?)@55(.*?)',pars)
+                    seif = filter(None, seif)
+                    print len(seif)
+                    #if len(seif[0].strip())>10:
+                    #dap.append(seif[0])
+                    if len(seif)==2:
+                        #print seif[1]
+                        cont = "<b>" + seif[0] + "</b> " + seif[1]
+                        dap.append(cont)
+                    else:
+                        for bold, not_bold in zip(seif[1::2], seif[2::2]):
+                            cont = "<b>" + bold + "</b> " + not_bold
+                            #print cont
+                            dap.append(cont)
+
                 else:
-                    amud = "a"
-                    daf = ((len(rif))/2)+1
-                if type(link_to) is  str:
-                    #print daf, amud, link_to, len(rif)
-                    to_link = make_link(link_to, "rif_{}".format(masechet)+"."+ str(daf) + amud + "." + str(len(dap)))
-                    if to_link not in tzitutim:
-                        print to_link
-                        tzitutim.append(make_link(link_to, "rif_{}".format(masechet)+"."+ str(daf) + amud + "." +str(len(dap))))
+                    cont = pars
+                    if ur'פרק' in cont and len(cont)<15:
+                        print len(cont), cont
+                    else:
+                        dap.append(cont)
+                links = re.findall(ur'@13(.*?)@77',cont)
+                for link in links:
+                    link_to =link_to_link(link)
+                    if (len(rif)+1)%2==0:
+                        amud = "b"
+                        daf = ((len(rif))/2)+1
+                    else:
+                        amud = "a"
+                        daf = ((len(rif))/2)+1
+                    if type(link_to) is  str:
+                        #print daf, amud, link_to, len(rif)
+                        to_link = make_link(link_to, "rif_{}".format(masechet)+"."+ str(daf) + amud + "." + str(len(dap)))
+                        if to_link not in tzitutim:
+                            #print to_link
+                            tzitutim.append(make_link(link_to, "rif_{}".format(masechet)+"."+ str(daf) + amud + "." +str(len(dap))))
 
 
         else:
             cont = daf
-            links = re.findall(ur'@13(.*?)@77',cont)
-            for link in links:
-                link_to = link_to_link(link)
-                if len(links)!=0:
-                    if (len(rif)+1)%2==0:
-                        amud = "b"
-                        daf = ((len(rif)+1)/2)-1
-                    else:
-                        amud = "a"
-                        daf = ((len(rif)+1)/2)
-                    if type(link_to) is str:
-                        #print daf, amud, link_to
-                        to_link = make_link(link_to, "rif_{}".format(masechet)+"."+ str(daf+1) + amud + "." + str(len(dap)+1))
-                        if to_link not in tzitutim:
-                            print to_link
-                            tzitutim.append(make_link(link_to, "rif_{}".format(masechet)+"."+ str(daf+1) + amud + "." + str(len(dap) + 1)))
-                    #link(link_to)
-                #print link_to
-            dap.append(cont)
+            cut = re.split(ur"(.*?[.:])[^@13(.*?)@77]",cont)
+            cut = filter(None, cut)
+            #cut = splitkeepsep(cont, ur"[:.]")
+            d = ":"
+            #cut =[e+d for e in cont.split(d) if e!="" ]
+            for pars in cut:
+                links = re.findall(ur'@13(.*?)@77',pars)
+                for link in links:
+                    link_to = link_to_link(link)
+                    if len(links)!=0:
+                        if (len(rif)+1)%2==0:
+                            amud = "b"
+                            daf = ((len(rif)+1)/2)-1
+                        else:
+                            amud = "a"
+                            daf = ((len(rif)+1)/2)
+                        if type(link_to) is str:
+                            #print daf, amud, link_to
+                            to_link = make_link(link_to, "rif_{}".format(masechet)+"."+ str(daf+1) + amud + "." + str(len(dap)+1))
+                            if to_link not in tzitutim:
+                                #print to_link
+                                tzitutim.append(make_link(link_to, "rif_{}".format(masechet)+"."+ str(daf+1) + amud + "." + str(len(dap) + 1)))
+                        #link(link_to)
+                    #print link_to
+                dap.append(pars)
         i+=1
         rif.append(dap)
     #print i
@@ -214,7 +244,14 @@ def clean(parsed_text):
     for i, page in enumerate (parsed_text):
         clean_chapters = []
         for j, chapter in enumerate(page):
-            clean_chapter = re.sub(ur'(?:@[0-9][0-9][^\s\u05d3]?|[\*\(\)\[\]\xb0]|[0-9]|#[^\s])',"",chapter )
+            clean = re.sub(ur'@14(.*?)@77', '(' + r'\1' + ')' , chapter)
+            #print type(clean)
+            #print clean
+            clean_chapter0 = re.sub(ur'@13(.*?)@77', " ", clean)
+            clean_chapter1 = re.sub(ur'\(.{1,3}?\)', " ", clean_chapter0)
+            clean_chapter2 = re.sub(ur'@[0-9][0-9].\s', " ", clean_chapter1)
+            clean_chapter = re.sub(ur'(@[0-9][0-9]|\[.*?\])|[\[\}\*\?]'," ", clean_chapter2)
+            #clean_chapter = re.sub(ur'(?:@[0-9][0-9][^\s\u05d3]?|[\*\(\)\[\]\xb0]|[0-9]|#[^\s])',"",clean_chapter2 )
             clean_chapters.append(clean_chapter)
         clean_pages.append(clean_chapters)
     return clean_pages
