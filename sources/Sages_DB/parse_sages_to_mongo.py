@@ -30,6 +30,7 @@ cur.execute("""
 rows = cur.fetchall()
 
 for row in rows:
+    row = [e.strip() if isinstance(e, basestring) else e for e in row]
     sages[row[0]] = {
         "id": row[0],
         "sage_name_heb": row[1],
@@ -48,13 +49,13 @@ for id, s in sages.iteritems():
     cur.execute("select alt_title_en, alt_name_en from alt_name_en where ane_sage_id={} ".format(id))
     rows = cur.fetchall()
     for row in rows:
-        en_alts.append(row)
+        en_alts.append([e.strip() for e in row])
 
     he_alts = []
     cur.execute("select alt_title_heb, alt_name_heb from alt_name_heb where anh_sage_id={};".format(id))
     rows = cur.fetchall()
     for row in rows:
-        he_alts.append(row)
+        he_alts.append([e.strip() for e in row])
 
     s.update({
         "en_alts" : en_alts,
@@ -64,9 +65,9 @@ for id, s in sages.iteritems():
 
 for id, s in sages.iteritems():
     p = Person({})
-    p.key = s["sage_title_en"] + u" " + s["sage_name_en"]
-    p.name_group.add_title(s["sage_title_en"] + u" " + s["sage_name_en"], "en", primary=True)
-    p.name_group.add_title(s["sage_title_heb"] + u" " + s["sage_name_heb"], "he", primary=True)
+    p.key = s["sage_title_en"] + (u" " if len(s["sage_title_en"]) > 0 else "") + s["sage_name_en"]
+    p.name_group.add_title(s["sage_title_en"] + (u" " if len(s["sage_title_en"]) > 0 else "") + s["sage_name_en"], "en", primary=True)
+    p.name_group.add_title(s["sage_title_heb"] + (u" " if len(s["sage_title_heb"]) > 0 else "") + s["sage_name_heb"], "he", primary=True)
     for x in s["en_alts"]:
         p.name_group.add_title(x, "en")
     for x in s["he_alts"]:
@@ -88,6 +89,6 @@ rows = cur.fetchall()
 for row in rows:
     PersonRelationship({
         "type": "student",
-        "from_key": sages[row[0]]["sage_title_en"] + u" " + sages[row[0]]["sage_name_en"],
-        "to_key":  sages[row[1]]["sage_title_en"] + u" " + sages[row[1]]["sage_name_en"]
+        "from_key": sages[row[0]]["sage_title_en"] + (u" " if len(sages[row[0]]["sage_title_en"]) > 0 else "") + sages[row[0]]["sage_name_en"],
+        "to_key":  sages[row[1]]["sage_title_en"] + (u" " if len(sages[row[1]]["sage_title_en"]) > 0 else "") + sages[row[1]]["sage_name_en"]
     }).save()
