@@ -43,7 +43,7 @@ with open("Torah Commentators - Bios - People.tsv") as tsv:
     next(tsv)
     next(tsv)
     for l in csv.reader(tsv, dialect="excel-tab"):
-        key = l[0].encode('ascii', 'xmlcharrefreplace')
+        key = l[0].encode('ascii', errors='ignore')
         p = Person().load({"key": key}) or Person()
         p.key = key
         p.name_group.add_title(l[0], "en", primary=True, replace_primary=True)
@@ -98,12 +98,12 @@ with open("Torah Commentators - Bios - People.tsv") as tsv:
     next(tsv)
     next(tsv)
     for l in csv.reader(tsv, dialect="excel-tab"):
-        key = l[0].encode('ascii', 'xmlcharrefreplace')
+        key = l[0].encode('ascii', errors='ignore')
         p = Person().load({"key": key})
         for i, type in rowmap.items():
             if l[i]:
                 for pkey in l[i].split(","):
-                    pkey = pkey.strip().encode('ascii', 'xmlcharrefreplace')
+                    pkey = pkey.strip().encode('ascii', errors='ignore')
                     if Person().load({"key": pkey}):
                         pr = PersonRelationship({
                             "type": type,
