@@ -5,14 +5,6 @@ from sefaria.model import *
 
 PersonSet().delete()
 PersonRelationshipSet().delete()
-PersonRelationshipTypeSet().delete()
-
-prt = PersonRelationshipType({"key": "student"})
-prt.set_forward_name(u"Learned From", "en")
-prt.set_forward_name(u"רבותיו", "he")
-prt.set_reverse_name(u"Taught", "en")
-prt.set_reverse_name(u"תלמידיו", "he")
-prt.save()
 
 db = MySQLdb.connect(user="root", db="sages", charset='utf8')
 cur = db.cursor()
