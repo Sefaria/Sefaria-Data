@@ -2,16 +2,14 @@
 
 from sefaria.model import *
 
-"""
-This one gets added in ../Sages_DB/parse_sages_to_mongo.py
+PersonRelationshipTypeSet().delete()
 
 prt = PersonRelationshipType({"key": "student"})
 prt.set_forward_name(u"Learned From", "en")
-prt.set_forward_name(u"למד אצל", "he")
+prt.set_forward_name(u"רבותיו", "he")
 prt.set_reverse_name(u"Taught", "en")
-prt.set_reverse_name(u"מתלמידיו", "he")
+prt.set_reverse_name(u"תלמידיו", "he")
 prt.save()
-"""
 
 prt = PersonRelationshipType({"key": "child"})
 prt.set_forward_name(u"Child of", "en")

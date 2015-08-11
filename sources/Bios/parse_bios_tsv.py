@@ -34,12 +34,6 @@ eras = {
 }
 
 
-Gaonim
-Rishonim
-Achronim
-Modern
-
-
 def _(p, attr, field):
     if field:
         setattr(p, attr, field)
@@ -49,8 +43,9 @@ with open("Torah Commentators - Bios - People.tsv") as tsv:
     next(tsv)
     next(tsv)
     for l in csv.reader(tsv, dialect="excel-tab"):
-        p = Person().load({"key": l[0]}) or Person()
-        p.key = l[0]
+        key = l[0].encode('ascii', errors='ignore')
+        p = Person().load({"key": key}) or Person()
+        p.key = key
         p.name_group.add_title(l[0], "en", primary=True, replace_primary=True)
         p.name_group.add_title(l[2], "he", primary=True, replace_primary=True)
         for x in l[1].split(","):
@@ -83,7 +78,6 @@ with open("Torah Commentators - Bios - People.tsv") as tsv:
         _(p, "enWikiLink", l[13])
         _(p, "heWikiLink", l[14])
         _(p, "jeLink", l[15])
-        _(p, "brillLink", l[16])
         _(p, "sex", l[25])
         p.save()
 
@@ -104,15 +98,16 @@ with open("Torah Commentators - Bios - People.tsv") as tsv:
     next(tsv)
     next(tsv)
     for l in csv.reader(tsv, dialect="excel-tab"):
-        p = Person().load({"key": l[0]})
+        key = l[0].encode('ascii', errors='ignore')
+        p = Person().load({"key": key})
         for i, type in rowmap.items():
             if l[i]:
                 for pkey in l[i].split(","):
-                    pkey = pkey.strip()
+                    pkey = pkey.strip().encode('ascii', errors='ignore')
                     if Person().load({"key": pkey}):
                         pr = PersonRelationship({
                             "type": type,
-                            "from_key": l[0],
+                            "from_key": key,
                             "to_key": pkey
                         })
                         pr.save()
