@@ -2,8 +2,10 @@
 '''
 To use the matching library, first instantiate a Match object.  
 As an example:
-match_obj=Match(in_order=True, min_ratio=70, guess=False)
-The Match constructor has four parameters it can be passed, all of which have default values.
+match_obj = Match(in_order=True, min_ratio=70, guess=False)
+--or--
+match_obj = Match()
+The Match constructor has four optional parameters it can be passed, all of which have default values.
 1. in_order (default is False) - if true, the dibbur hamatchils must be matched in order to the text such that
 when a dibbur hamatchil matches multiple lines of text, the lines matching the dibbur hamatchil before and after 
 the current one are checked, and matches that are not in order are thrown out.
@@ -18,7 +20,6 @@ the acronyms_file is in the following format:
 
 יר"מ
 יהי רצון מלפניך
-
 
 In other words, one line is the acronym, the next is the actual word or phrase, and then a blank line.
 3. min_ratio (default is 70) -  The Match class uses the python library fuzzywuzzy to calculate 
