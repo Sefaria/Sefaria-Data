@@ -1,5 +1,51 @@
 # -*- coding: utf8 -*-
+'''
+To use the matching library, first instantiate a Match object.  
+As an example:
+match_obj=Match(in_order=True, min_ratio=70, guess=False)
+The Match constructor has four parameters it can be passed, all of which have default values.
+1. in_order (default is False) - if true, the dibbur hamatchils must be matched in order to the text such that
+when a dibbur hamatchil matches multiple lines of text, the lines matching the dibbur hamatchil before and after 
+the current one are checked, and matches that are not in order are thrown out.
+2. acronyms_file (default is no file) - if set, this file's list of acronyms can be used to match acronyms to 
+the words or phrases that they are an acronym of.
+the acronyms_file is in the following format:
+א'
+אחת
 
+בה"מ
+בית המקדש
+
+יר"מ
+יהי רצון מלפניך
+
+
+In other words, one line is the acronym, the next is the actual word or phrase, and then a blank line.
+3. min_ratio (default is 70) -  The Match class uses the python library fuzzywuzzy to calculate 
+the similarity between two strings.  Specifically, fuzz.partial_ratio(string_1, string_2) returns a number 
+between 0 and 100 indicating how similar two strings are.  The Match class' match function starts out looking
+for matches of at least 85 (see below in the match function where you can change the number 85 to whatever you want),
+and then, when there is no match it recursively lowers the ratio it is looking for by self.step, which is set
+in the constructor to 5.
+
+4. guess (default is False) - If False, returns a list of all possible guesses for the specific 
+dibbur hamatchil (except those that have been thrown out as out-of-order if 'in_order' is set to True.  
+The match with the highest partial_ratio is the first item in the list.  If guess is True,
+returns only the guess with the highest partial_ratio.  In a tie, the first one is chosen.
+
+After instantiating a Match object as match_obj, then all that needs to be done is to call 
+the match_list function as below:
+
+result = match_obj.match_list(dh_list[j+1], perek[j+1])
+
+In this example, the first argument is the list of the dibbur hamatchils, the second argument is a list of the text
+that is to be matched.
+This function then goes through the list of dibbur hamatchils and calls the match function on each one and
+the list of text.  Then, it calls the mutlipleMatches function to deal with dibbur hamatchils that have multiple 
+matches.  The behvaior of multipleMatches, as can be seen below, depends significantly on whether 
+the in_order parameter was set to True or left as the default as False.  If True, then multipleInOrder is called
+and removes out-of-order matches.
+'''
 import pdb
 import re
 import sys
@@ -104,9 +150,8 @@ class Match:
 			new_list.append(orig_dh)
 		return new_list	
 
-	def match_list(self, dh_orig_list, page, page_num=-1):
+	def match_list(self, dh_orig_list, page):
 		self.found_dict = {}
-		self.page_num = page_num
 		self.dh_orig_list = self.forceUTF(dh_orig_list)
 		dh_pos = 0
 		for dh in self.dh_orig_list:
@@ -204,7 +249,7 @@ class Match:
 		else:
 			new_list_lines = [best_line+1]
 			for line_n, pr in list_lines:
-				if pr == max and line_n != best_line:
+				if line_n != best_line:
 					new_list_lines.append(line_n+1)
 			return new_list_lines
 	
