@@ -54,29 +54,24 @@ part1.sectionNames = ["Chapter", "Paragraph"]
 part1.lengths = [53]
 part1.addressTypes = ["Integer", "Integer"]
 
-part2 = SchemaNode()
-part2.add_title("Part Two, The Gateway of Unity and Belief", "en", primary=True)
-part2.add_title(u"חלק שני, שער היחוד והאמונה", "he", primary=True)
-part2.key = "part2"
 
 part2a = JaggedArrayNode()
-part2a.add_title(u"חינוך קטן", "he", primary=True)
-part2a.add_title("The Education of the Child", "en", primary=True)
+part2a.add_title(u"חלק שני, שער היחוד והאמונה, חינוך קטן", "he", primary=True)
+part2a.add_title("Part Two, The Gateway of Unity and Belief, The Education of the Child", "en", primary=True)
 part2a.depth = 1
 part2a.key = "part2a"
 part2a.sectionNames = ["Paragraph"]
 part2a.addressTypes = ["Integer"]
 
 part2b = JaggedArrayNode()
-part2b.default = True
-part2b.key="default"
+part2b.add_title("Part Two, The Gateway of Unity and Belief", "en", primary=True)
+part2b.add_title(u"חלק שני, שער היחוד והאמונה", "he", primary=True)
+part2b.key="part2b"
 part2b.depth = 2
 part2b.lengths = [12]
 part2b.sectionNames = ["Chapter", "Paragraph"]
 part2b.addressTypes = ["Integer", "Integer"]
 
-part2.append(part2a)
-part2.append(part2b)
 
 letter1 = JaggedArrayNode()
 letter1.add_title(u"אגרת התשובה", "he", primary=True)
@@ -107,7 +102,8 @@ last.addressTypes = ["Integer", "Integer"]
 
 root.append(intro)
 root.append(part1)
-root.append(part2)
+root.append(part2a)
+root.append(part2b)
 root.append(letter1)
 root.append(letter2)
 root.append(last)
