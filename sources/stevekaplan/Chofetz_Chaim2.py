@@ -266,7 +266,7 @@ part1_prin6_content.heSectionNames = [u"סעיף"]
 part1_prin6_content.addressTypes = ["Integer"]
 
 part1_prin6.append(part1_prin6_intro)
-part1_prin6.append(part1_prin6_intro)
+part1_prin6.append(part1_prin6_content)
 
 
 part1_prin7 = SchemaNode()
