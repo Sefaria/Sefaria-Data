@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from sefaria.model import *
-from sefaria.tracker import add
 import urllib
 import urllib2
 from urllib2 import URLError, HTTPError
@@ -19,7 +17,7 @@ from sefaria.model import *
 
 
 def post_index(index):
-	url = SEFARIA_SERVER+'/api/index/' + index["title"].replace(" ", "_")
+	url = SEFARIA_SERVER+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
 	indexJSON = json.dumps(index)
 	print indexJSON
 	values = {
@@ -632,7 +630,7 @@ part2_prin9.append(part2_prin9_intro)
 part2_prin9.append(part2_prin9_content)
 
 part2.append(part2_prin1)
-#part2.append(part2_prin2)
+part2.append(part2_prin2)
 part2.append(part2_prin3)
 part2.append(part2_prin4)
 part2.append(part2_prin5)
