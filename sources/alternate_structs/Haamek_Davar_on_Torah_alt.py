@@ -13,6 +13,32 @@ structs = {}
 structs = { "nodes" : [] }
 
 
+def intro_basic_record():
+    return  {
+    "title": "Haamek Davar on Tora",
+    #"titleVariants": [""],
+    "sectionNames": ["content"],
+    "categories": ["Musar"],
+     "schema" : {
+        "titles" : [
+            {
+                "lang" : "en",
+                "text" : "Haamek Davar on Tora",
+                "primary" : True
+            },
+            {
+                "lang" : "he",
+                "text" : "העמק דבר על התורה",
+                "primary" : True
+            }
+        ],
+         "nodeType" : "JaggedArrayNode",
+        "depth" : 1,
+        "addressTypes": ["Integer"],
+        "sectionNames" :["content"],
+        "key" : "Haamek Davar on Tora"
+    }
+        }
 def createBookRecord(book_obj):
     url = 'http://' + server + '/api/index/' + book_obj["title"].replace(" ", "_")
     indexJSON = json.dumps(book_obj)
@@ -39,7 +65,7 @@ def open_file():
 
 def save_file(intro):
     text_whole = {
-            "title": 'Haamek Davar on Tora',
+            "title": "Haamek Davar on Torah",
             "versionTitle": "",
             "versionSource": "",
             "language": "he",
@@ -50,6 +76,7 @@ def save_file(intro):
         json.dump(text_whole, out)
     with open("preprocess_json/Haamek_Davar_intro.json", 'r') as filep:
         file_text = filep.read()
+    createBookRecord(intro_basic_record())
     Helper.postText("Haamek Davar on Tora", file_text, False)
 
 
@@ -62,7 +89,7 @@ def index():
                     },
                     {
                     "lang": "he",
-                    "text": ur'',
+                    "text": ur'העמק דבר על התורה',
                     "primary": True
                     }],
         "nodeType": "ArrayMapNode",
@@ -91,7 +118,7 @@ def index():
     root.validate()
 
     index = {
-        "title": "Haamek Davar on tora",
+        "title": "Haamek Davar on Tora",
         "titleVariants": ["Haamek Davar on Torah"],
         "sectionNames": ["Volume", "Daf", "Paragraph"],
         "categories": ["Commentary"],
