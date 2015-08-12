@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 import urllib
 import urllib2
@@ -49,7 +50,7 @@ def save_file(intro):
         json.dump(text_whole, out)
     with open("preprocess_json/Haamek_Davar_intro.json", 'r') as filep:
         file_text = filep.read()
-    Helper.postText("Haame Davar on Tora", file_text, False)
+    Helper.postText("Haamek Davar on Tora", file_text, False)
 
 
 def index():
@@ -90,7 +91,7 @@ def index():
     root.validate()
 
     index = {
-        "title": "Haamek Davar",
+        "title": "Haamek Davar on tora",
         "titleVariants": ["Haamek Davar on Torah"],
         "sectionNames": ["Volume", "Daf", "Paragraph"],
         "categories": ["Commentary"],
