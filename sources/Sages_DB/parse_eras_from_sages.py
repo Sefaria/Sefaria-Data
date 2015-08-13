@@ -28,6 +28,41 @@ dates= {
     "AH" : (1560, 2500)
 }
 
+era_lookup = {
+ "Acharonim" : u"אחרונים",
+ "Amoraim" : u"אמוראים",
+ "Avot" : u"אבות",
+ "Former Prophets" : u"נביאים ראשונים",
+ "Geonim" : u"גאונים",
+ "Great Assembly" : u"כנסת הגדולה",
+ "Latter Prophets" : u"נביאים אחרונים",
+ "Moshe Rabbeinu" : u"משה רבנו",
+ "pre-Tannaic" : u"טרום התנאיתי",
+ "Rishonim" : u"ראשונים",
+ "Savoraim" : u"סבוראים",
+ "Tannaim" : u"תנאים",
+ "Tannaim/Amoraim" : u"תנאים / אמוראים",
+ "Zugot" : u"זוגות",
+}
+
+generation_lookup = {
+    "eighth generation": u"דור שמיני",
+    "fifth and sixth generations": u"דורות חמישי ושישי",
+    "fifth generation": u"דור חמישי",
+    "first and second generations": u"דורות ראשון ושני",
+    "first generation": u"דור ראשון",
+    "fourth and fifth generations": u"דורות רביעי וחמישי",
+    "fourth generation": u"דור רביעי",
+    "second and third generations": u"דורות שני ושלישי",
+    "second generation": u"דור שני",
+    "seventh generation": u"דור שביעי",
+    "sixth and seventh generations": u"דורות שישית ושביעי",
+    "sixth generation": u"דור שישי",
+    "third and fourth generations": u"דור שלישי ורביעי",
+    "third generation": u"דור שלישי",
+    "unknown generation": u"דור לא ידוע",
+    "transition": u"דור מעבר"
+}
 rows = cur.fetchall()
 TimePeriodSet().delete()
 
@@ -37,16 +72,20 @@ for row in rows:
     gen = row[3]
     ptype = ''
     primary_name = ''
+    hebrew_name = u''
 
     if len(period) > 2:
         ptype = "Two Generations"
         primary_name = era + " - " + gen.title()
+        hebrew_name = era_lookup[era] + u" - " + generation_lookup[gen]
     elif (period[0] == 'T' or period[0] == 'Z' or period[0] == 'A') and len(period) > 1 and period[1] != "H" and period[1] != 'V':
         ptype = "Generation"
         primary_name = era + " - " + gen.title()
+        hebrew_name = era_lookup[era] + u" - " + generation_lookup[gen]
     else:
         ptype = "Era"
         primary_name = era
+        hebrew_name = era_lookup[era]
 
     range_string = row[4].replace(u"–",u"-")
     tp = TimePeriod({
@@ -56,6 +95,7 @@ for row in rows:
         "type": ptype
     })
     tp.add_name(primary_name, "en", primary=True)
+    tp.add_name(hebrew_name, "he", primary=True)
 
     m = re.match(ur"\s*(\d+)\s*-\s*(\d+)\s*CE", range_string)
     if m:

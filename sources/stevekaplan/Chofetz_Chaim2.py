@@ -256,7 +256,7 @@ part1_prin6_intro.sectionNames = ["Paragraph"]
 part1_prin6_intro.addressTypes = ["Integer"]
 
 
-part1_prin6_content = SchemaNode()
+part1_prin6_content = JaggedArrayNode()
 part1_prin6_content.key = "default"
 part1_prin6_content.default = True
 part1_prin6_content.depth = 1

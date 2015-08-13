@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 import urllib
 import urllib2
@@ -12,8 +13,36 @@ structs = {}
 structs = { "nodes" : [] }
 
 
+def intro_basic_record():
+    return  {
+    "title": "Haamek Davar on Tora intro",
+    #"titleVariants": [""],
+    "sectionNames": ["content"],
+    "categories": ["Musar"],
+     "schema" : {
+        "titles" : [
+            {
+                "lang" : "en",
+                "text" : "Haamek Davar on Tora intro",
+                "primary" : True
+            },
+            {
+                "lang" : "he",
+                "text" : "הקדמת העמק דבר על התורה",
+                "primary" : True
+            }
+        ],
+         "nodeType" : "JaggedArrayNode",
+        "depth" : 1,
+        "addressTypes": ["Integer"],
+        "sectionNames" :["content"],
+        "key" : "Haamek Davar on Tora intro"
+    }
+        }
+
+
 def createBookRecord(book_obj):
-    url = 'http://' + server + '/api/index/' + book_obj["title"].replace(" ", "_")
+    url = 'http://' + server + '/api/v2/raw/index/' + book_obj["title"].replace(" ", "_")
     indexJSON = json.dumps(book_obj)
     values = {
         'json': indexJSON,
@@ -38,7 +67,7 @@ def open_file():
 
 def save_file(intro):
     text_whole = {
-            "title": 'Haamek Davar on Tora',
+            "title": "Haamek Davar on Torah intro",
             "versionTitle": "",
             "versionSource": "",
             "language": "he",
@@ -49,7 +78,8 @@ def save_file(intro):
         json.dump(text_whole, out)
     with open("preprocess_json/Haamek_Davar_intro.json", 'r') as filep:
         file_text = filep.read()
-    Helper.postText("Haame Davar on Tora", file_text, False)
+    createBookRecord(intro_basic_record())
+    Helper.postText("Haamek Davar on Tora intro", file_text, False)
 
 
 def index():
@@ -61,7 +91,7 @@ def index():
                     },
                     {
                     "lang": "he",
-                    "text": ur'',
+                    "text": ur'העמק דבר על התורה',
                     "primary": True
                     }],
         "nodeType": "ArrayMapNode",
@@ -90,17 +120,17 @@ def index():
     root.validate()
 
     index = {
-        "title": "Haamek Davar",
+        "title": "Haamek Davar on Tora",
         "titleVariants": ["Haamek Davar on Torah"],
-        "sectionNames": ["Volume", "Daf", "Paragraph"],
         "categories": ["Commentary"],
-        "addressTypes": ["Integer", "Talmud", "Integer"],
         "default_struct": "content",
         "alt_structs": {"content": structs},
         "schema": root.serialize()
     }
 
     createBookRecord(index)
+
+
 if __name__ == '__main__':
     open_file() #opens file and posts it
     index()
