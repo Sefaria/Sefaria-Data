@@ -30,7 +30,8 @@ import re
 eras = {
     "Gaonim": "GN",
     "Rishonim": "RI",
-    "Achronim": "AH"
+    "Achronim": "AH",
+    "Contemporary": "CO"
 }
 
 

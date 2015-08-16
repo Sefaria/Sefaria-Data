@@ -25,7 +25,7 @@ dates= {
     "T" : (20, 220),
     "GN" : (540, 1040),
     "RI" : (1040, 1560),
-    "AH" : (1560, 2500)
+    "AH" : (1560, 1938)
 }
 
 era_lookup = {
@@ -119,4 +119,18 @@ t = TimePeriod({
     "type": "Era"
 })
 t.add_name("Amoraim", "en", primary=True)
+t.add_name(u"אמוראים", "he", primary=True)
+t.save()
+
+
+t = TimePeriod({
+    "symbol": "CO",
+    "order": 31,
+    "range_string": "1939 CE - ",
+    "start": 1939,
+    "end": 2015,
+    "type": "Era"
+})
+t.add_name("Contemporary", "en", primary=True)
+t.add_name(u"בני דורנו", "he", primary=True)
 t.save()
