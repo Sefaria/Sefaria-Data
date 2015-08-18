@@ -98,13 +98,13 @@ for row in rows:
     tp.add_name(hebrew_name, "he", primary=True)
 
     m = re.match(ur"\s*(\d+)\s*-\s*(\d+)\s*CE", range_string)
-    if m:
-        tp.start = m.group(1)
-        tp.end = m.group(2)
-    elif dates.get(tp.symbol):
+    if dates.get(tp.symbol):
         d = dates.get(tp.symbol)
-        tp.start = d[0]
-        tp.end = d[1]
+        tp.start = int(d[0])
+        tp.end = int(d[1])
+    elif m:
+        tp.start = int(m.group(1))
+        tp.end = int(m.group(2))
     else:
         print "?? " + row[4]
 
