@@ -15,7 +15,7 @@ structs = { "nodes" : [] }
 
 def intro_basic_record():
     return  {
-    "title": "Haamek Davar on Tora intro",
+    "title": "Haamek Davar Intro",
     #"titleVariants": [""],
     "sectionNames": ["content"],
     "categories": ["Musar"],
@@ -23,12 +23,12 @@ def intro_basic_record():
         "titles" : [
             {
                 "lang" : "en",
-                "text" : "Haamek Davar on Tora intro",
+                "text" : "Haamek Davar Intro",
                 "primary" : True
             },
             {
                 "lang" : "he",
-                "text" : "הקדמת העמק דבר על התורה",
+                "text" : u"הקדמת העמק דבר על התורה",
                 "primary" : True
             }
         ],
@@ -36,7 +36,7 @@ def intro_basic_record():
         "depth" : 1,
         "addressTypes": ["Integer"],
         "sectionNames" :["content"],
-        "key" : "Haamek Davar on Tora intro"
+        "key" : "Haamek Davar Intro"
     }
         }
 
@@ -67,7 +67,7 @@ def open_file():
 
 def save_file(intro):
     text_whole = {
-            "title": "Haamek Davar on Torah intro",
+            "title": "Haamek Davar Intro",
             "versionTitle": "",
             "versionSource": "",
             "language": "he",
@@ -79,40 +79,47 @@ def save_file(intro):
     with open("preprocess_json/Haamek_Davar_intro.json", 'r') as filep:
         file_text = filep.read()
     createBookRecord(intro_basic_record())
-    Helper.postText("Haamek Davar on Tora intro", file_text, False)
+    Helper.postText("Haamek Davar Intro", file_text, False)
 
 
 def index():
     structs["nodes"].append({
-        "titles":  [{
+        "titles": [{
                     "lang": "en",
-                    "text": "Haamek Davar on Torah",
+                    "text": "Haamek Davar Intro",
                     "primary": True
                     },
                     {
                     "lang": "he",
-                    "text": ur'העמק דבר על התורה',
+                    "text": u"הקדמת העמק דבר על התורה",
                     "primary": True
                     }],
         "nodeType": "ArrayMapNode",
         "includeSections": True,
         "depth": 0,
-        "wholeRef": "Haamek Davar on Tora"
+        "wholeRef": "Haamek Davar Intro"
     })
-    for chumash in ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy' ]:
+
+    pmap = {
+        'Genesis': "Bereshit",
+        'Exodus': "Shemot",
+        'Leviticus': "Vayikra",
+        'Numbers': "Bamidbar",
+        'Deuteronomy': "Devarim"
+    }
+
+    for chumash in ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']:
         structs["nodes"].append({
-            "sharedTitle": chumash,
+            "sharedTitle": pmap[chumash],
             "nodeType": "ArrayMapNode",
             "includeSections": True,
-            "depth": 3,
-            "addressTypes": ["Integer"],
-            "sectionNames": ["Chumash" ],
+            "depth": 0,
             "wholeRef": "Haamek Davar on " + chumash
         })
     root = JaggedArrayNode()
-    root.add_title("Haamek Davar on Torah", "en", primary=True)
+    root.add_title("Haamek Davar Torah", "en", primary=True)
     root.add_title(u"העמק דבר על התורה", "he", primary=True)
-    root.key = "Haamek Davar on Torah"
+    root.key = "Haamek Davar Torah"
     root.depth = 1
     root.sectionNames = ["Chumash"]
     root.addressTypes = ["Integer"]
@@ -120,9 +127,8 @@ def index():
     root.validate()
 
     index = {
-        "title": "Haamek Davar on Tora",
-        "titleVariants": ["Haamek Davar on Torah"],
-        "categories": ["Commentary"],
+        "title": "Haamek Davar Torah",
+        "categories": ["Musar"],
         "default_struct": "content",
         "alt_structs": {"content": structs},
         "schema": root.serialize()
