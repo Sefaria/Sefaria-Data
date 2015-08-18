@@ -17,9 +17,8 @@ from sefaria.model import *
 
 
 def post_index(index):
-	url = SEFARIA_SERVER+'api/index/'+index["title"].replace(" ", "_")
+	url = SEFARIA_SERVER+'api/v2/raw/index/'+index["title"].replace(" ", "_")
 	indexJSON = json.dumps(index)
-	print indexJSON
 	values = {
 		'json': indexJSON, 
 		'apikey': API_KEY
@@ -32,11 +31,14 @@ def post_index(index):
 	except HTTPError, e:
 		print 'Error code: ', e.code
 
-root = SchemaNode()
-root.key = "yalkut"
+root = JaggedArrayNode()
+root.key = "yalkut_on_torah"
 root.add_title("Yalkut Shimoni on Torah", "en", primary=True)
-root.add_title(u"ילקוט שמעוני על התורה", "he", primary=True)
-
+root.add_title(u"ילקות שמעוני על התורה", "he", primary=True)
+root.depth = 2
+root.sectionNames = ["Remez", "Paragraph"]
+root.heSectionNames = [u"רמז", u"פסקה"]
+root.addressTypes = ["Integer", "Integer"]
 
 def createNodes(root_node, heb_sections, eng_sections):
 	for count, word in enumerate(heb_sections):
@@ -65,7 +67,6 @@ eng_sections = ["Bereishit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "To
 "Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo", "Nitzavim", "Vayeilech", "Ha'Azinu",
 "V'Zot HaBerachah"]
 
-createNodes(root, heb_sections, eng_sections)
 
 
 root.validate()

@@ -37,7 +37,7 @@ returns only the guess with the highest partial_ratio.  In a tie, the first one 
 After instantiating a Match object as match_obj, then all that needs to be done is to call 
 the match_list function as below:
 
-result = match_obj.match_list(dh_list[j+1], perek[j+1])
+result = match_obj.match_list(dh_list[j], perek[j])
 
 In this example, the first argument is the list of the dibbur hamatchils, the second argument is a list of the text
 that is to be matched.
@@ -46,7 +46,35 @@ the list of text.  Then, it calls the mutlipleMatches function to deal with dibb
 matches.  The behvaior of multipleMatches, as can be seen below, depends significantly on whether 
 the in_order parameter was set to True or left as the default as False.  If True, then multipleInOrder is called
 and removes out-of-order matches.
+
+After running match_list above, a dictionary will be returned and set to 'result'.
+Here is an example of how it looks:
+{1: [2], 2: [2], 3: [3], 4: [3], 5: [4], 6: [5], 7: [6,7], 8: [0], 9: [8], 10: [9]}
+Each key corresponds exactly to the order of the dibbur hamatchils.
+In other words, the first dibbur hamatchil is matched to line 2 of the text 'perek[j]'.
+Notice that the 7th dibbur hamatchil is matched to both lines 6 and 7.  This means that it was matched
+to multiple lines and neither of them could be removed as impossible.  In this case, 'guess' is set to False,
+so that the entire list is returned.  If 'guess' was set to True, only line 6 would have been returned since it is
+the first one.
+Finally, notice that dibbur hamatchil 8 is matched to line 0.  There is no line 0, and therefore, '0' indicates
+that no match could be found. 
 '''
+nfirmed_dict = {}
+		for dh_pos in self.found_dict:
+			dh = self.dh_orig_list[dh_pos]
+			dh_found_list = self.found_dict[dh_pos][dh] 
+			self.confirmed_dict[dh_pos+1] = []
+			if len(dh_found_list) == 0:
+				self.confirmed_dict[dh_pos+1] = [0]
+			elif len(dh_found_list) == 1:
+				self.confirmed_dict[dh_pos+1] = [dh_found_list[0][0]+1]
+			elif len(dh_found_list) > 1:
+				if self.in_order == False:
+					self.confirmed_dict[dh_pos+1] = self.bestGuessFirst(dh_found_list)
+				else:
+					self.multipleInOrder(dh_pos, dh_found_list, dh)
+		return self.confirmed_dict
+
 import pdb
 import re
 import sys
