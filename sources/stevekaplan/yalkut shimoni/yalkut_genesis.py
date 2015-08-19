@@ -92,12 +92,17 @@ text=[]
 para_n = 0
 prev_parsha = ""
 last_log = ""
-if os.path.exists("alt_yalkut_genesis.txt") == True:
-	os.remove("alt_yalkut_genesis.txt")	
-info_file = open('alt_yalkut_genesis.txt', 'w')
-info_file.write("Bereishit,"+str(current_perek)+","+str(current_remez)+","+str(para_n+1)+"\n")
+if os.path.exists("perek_Bereishit.txt") == True:
+	os.remove("perek_Bereishit.txt")	
+perek_file = open('perek_Bereishit.txt', 'w')
+if os.path.exists("parsha_Bereishit.txt") == True:
+	os.remove("parsha_Bereishit.txt")
+parsha_file = open("parsha_Bereishit.txt", 'w')
+
+perek_file.write(str(current_perek)+","+str(current_remez)+","+str(para_n+1)+"\n")
 last_file = len(parshiot)-1
 for parsha_count, parsha in enumerate(parshiot):
+	first_line = True
 	f = open(parsha+".txt", "r")
 	for line in f:
 		line = line.replace("\n", "")
@@ -121,19 +126,22 @@ for parsha_count, parsha in enumerate(parshiot):
 				current_perek = gematriaFromSiman(perek)
 				new_perek = False
 				if prev_perek != current_perek:
-					if para_n == 0:	
-						info_file.write(last_log)
-					else:
-						info_file.write(parsha+","+str(prev_perek)+","+str(prev_remez) + ","+str(para_n)+"\n") 
+					perek_file.write(str(prev_perek)+","+str(prev_remez) + ","+str(para_n)+"\n") 
 					new_perek = True
 				prev_perek = current_perek
 				if continuation >= 0:
+					if first_line == True:
+						parsha_file.write(parsha+","+str(current_remez)+","+str(para_n+1)+"\n")
+						first_line=False
 					if new_perek:
-						info_file.write(parsha+","+str(current_perek)+","+str(current_remez)+","+str(para_n+1)+"\n")
+						perek_file.write(str(current_perek)+","+str(current_remez)+","+str(para_n+1)+"\n")
 					continuation = -1
 					continue
+				if first_line == True:
+					parsha_file.write(parsha+","+str(current_remez)+",1\n")
+					first_line=False
 				if new_perek:
-					info_file.write(parsha+","+str(current_perek)+","+str(current_remez)+",1\n")
+					perek_file.write(str(current_perek)+","+str(current_remez)+",1\n")
 				if len(text)>0:
 					send_text = {
 					"versionTitle": whichYalkut,
@@ -141,28 +149,33 @@ for parsha_count, parsha in enumerate(parshiot):
 					"language": "he",
 					"text": text,
 					}
-				#	post_text(whichYalkut+",_"+parsha+"."+str(prev_remez), send_text)	
+					post_text(whichYalkut+"."+str(prev_remez), send_text)	
 					text = []	
 					para_n = 0
 				prev_remez = current_remez
 				prev_parsha = parsha
 				new_perek = False
 			else:
+				if first_line == True:
+					parsha_file.write(parsha+","+str(current_remez)+","+str(para_n+1)+"\n")
+					first_line = False
 				if line.find("<P>")>=0 and line.find("</P>")>=0:
 					pdb.set_trace()
 				text.append(line)
 				para_n += 1
+				
 
-	final_text = {
-		"versionTitle": whichYalkut,
-		"versionSource": "http://www.tsel.org/torah/yalkutsh/",
-		"language": "he",
-		"text": text,
-		}
-	text=[]
-#	post_text(whichYalkut+",_"+parsha+"."+str(current_remez), final_text)
-	last_log = parsha+","+str(current_perek)+","+str(current_remez)+","+str(para_n)+"\n"
+
+	last_log = str(current_perek)+","+str(current_remez)+","+str(para_n)+"\n"
 	if last_file==parsha_count:
-		info_file.write(last_log)
-	para_n = 0	
-info_file.close()
+		send_text = {
+					"versionTitle": whichYalkut,
+					"versionSource": "http://www.tsel.org/torah/yalkutsh/",
+					"language": "he",
+					"text": text,
+					}
+		post_text(whichYalkut+"."+str(prev_remez), send_text)
+		perek_file.write(last_log)
+	parsha_file.write(parsha+","+str(current_remez)+","+str(para_n)+"\n")
+perek_file.close()
+parsha_file.close()

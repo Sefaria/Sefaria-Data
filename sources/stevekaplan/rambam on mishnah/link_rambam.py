@@ -169,11 +169,10 @@ guess = 0
 matched = 0
 log = []
 										#so need to split on '@33'
-title_book = "Mishnah Sotah"
+title_book = "Mishnah Pesachim"
 title_comm = "Rambam on "+title_book
 
-
-f=open('sotah.txt', 'r')
+f=open('pesachim.txt', 'r')
 f.readline() #just says rambam on shabbos
 perek_num = 0
 dh_dict = {}
@@ -189,7 +188,7 @@ for line in f:
 	elif line.find("@11") >= 0:
 		curr_dh_count += 1
 		line = line.replace("@11", "")
-		daf = re.compile('@22.*')
+		daf = re.compile('@22\(.*?\)')
 		match = re.search(daf, line)
 		if match:
 			line = line.replace(match.group(0), "")
@@ -209,7 +208,6 @@ for line in f:
 				comm[perek_num].append(line)
 		curr_dh_count = 0
 f.close()
-
 
 #at end of this, for each comm[perek is a list of rambam's comments and for each perek is a list of the dhs
 #for each perek, figure out how many mishnayot are in that perek, grab them all and send them to match with list of dhs for that perek
@@ -239,6 +237,7 @@ for j in range(perek_num):
 			if mishnah_n > 0:
 				curr_comm = comm[j+1][key-1]
 				curr_dh = """<b>"""+dh_dict[j+1][key-1]+"""</b>"""
+				curr_dh = curr_dh.replace(" :", ":")
 				if (mishnah_n, curr_comm) in comm_dict:
 					comm_dict[(mishnah_n, curr_comm)] += curr_dh
 				else:

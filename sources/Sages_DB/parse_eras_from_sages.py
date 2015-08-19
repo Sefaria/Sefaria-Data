@@ -25,7 +25,7 @@ dates= {
     "T" : (20, 220),
     "GN" : (540, 1040),
     "RI" : (1040, 1560),
-    "AH" : (1560, 2500)
+    "AH" : (1560, 1938)
 }
 
 era_lookup = {
@@ -98,13 +98,13 @@ for row in rows:
     tp.add_name(hebrew_name, "he", primary=True)
 
     m = re.match(ur"\s*(\d+)\s*-\s*(\d+)\s*CE", range_string)
-    if m:
-        tp.start = m.group(1)
-        tp.end = m.group(2)
-    elif dates.get(tp.symbol):
+    if dates.get(tp.symbol):
         d = dates.get(tp.symbol)
-        tp.start = d[0]
-        tp.end = d[1]
+        tp.start = int(d[0])
+        tp.end = int(d[1])
+    elif m:
+        tp.start = int(m.group(1))
+        tp.end = int(m.group(2))
     else:
         print "?? " + row[4]
 
@@ -119,4 +119,18 @@ t = TimePeriod({
     "type": "Era"
 })
 t.add_name("Amoraim", "en", primary=True)
+t.add_name(u"אמוראים", "he", primary=True)
+t.save()
+
+
+t = TimePeriod({
+    "symbol": "CO",
+    "order": 31,
+    "range_string": "1939 CE - ",
+    "start": 1939,
+    "end": 2015,
+    "type": "Era"
+})
+t.add_name("Contemporary", "en", primary=True)
+t.add_name(u"בני דורנו", "he", primary=True)
 t.save()
