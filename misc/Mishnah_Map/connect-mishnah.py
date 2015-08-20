@@ -172,34 +172,62 @@ def process_book(bavli, mishnah, csv_writer):
         m = matni_re.match(line)
         if m or perek_start:  # Match mishnah keyword
             log.write(u"Found Mishnah start at {}:{}\n{}\n".format(starting_daf, starting_line, line))
-            if perek_start or len(m.group(2)) > 6:
-                ending_daf = starting_daf
-                ending_line = starting_line
-                if m:
-                    line = m.group(2)
+            ending_daf = starting_daf
+            ending_line = starting_line
+
+            if perek_start and not m: # Perek starts with no "Mishna" - contents of `line` are fine
+                pass
             else:
-                (ending_daf, ending_line, line) = bavli.get_next_line()
+                if len(m.group(2)) == 0:  # bareword "Mishna" - get next line
+                    (ending_daf, ending_line, line) = bavli.get_next_line()
+                elif len(m.group(2)) > 0: # "Mishna" followed by content, twim off "Mishna"
+                    line = m.group(2)
+
             if fuzz.partial_ratio(line, current_mishnah) > 60:
                 log.write(u"Matched a starting line in the Mishnah: {}\n{}\n".format(line, current_mishnah))
+
+                # Adjust thresholds for certain unusual chapters
+                adjustments = {
+                    ("Yevamot", 3): (40, 70),
+                    ("Bava_Batra", 1): (80, 80),
+                    ("Bava_Batra", 10): (90, 70)
+                }
+                mishnah_line_match_length, mishnah_line_match_threshold = adjustments.get((bavli.title, mishnah.current_chapter)) or (30, 60)
+
                 starting_mishnah = mishnah.current_mishnah
                 if mishnayot_end:
                     msg = u"Error: Found too many mishnayot in {} {}!\n".format(bavli.title, mishnah.current_chapter)
                     print msg
                     log.write(msg)
                     error_log.write(msg)
-                while not gemarah_re.search(line):
+                while not gemarah_re.search(line) and u'\u05d4\u05d3\u05e8\u05df \u05e2\u05dc\u05da' not in line:
                     (foo, bar, line) = bavli.get_next_line()
 
                 (ending_daf, ending_line, previous_line) = bavli.get_previous_line()
-                (foo, bar, previous_previous_line) = bavli.get_previous_line(2)
-                last_bavli_segment = previous_previous_line.strip() + u" " + previous_line.strip()
-                last_bavli_segment = last_bavli_segment[-30:-1]
+                if starting_line != ending_line:
+                    (foo, bar, previous_previous_line) = bavli.get_previous_line(2)
+                    last_bavli_segment = previous_previous_line.strip() + u" " + previous_line.strip()
+                    last_bavli_segment = last_bavli_segment[-mishnah_line_match_length:-1]
+                else:
+                    last_bavli_segment = previous_line.strip()[-mishnah_line_match_length:-1]
+
+                # Open up Roshei Teivot
+                last_bavli_segment = last_bavli_segment\
+                    .replace(u" " + u'וחכ״א', u" " + u'וחכמים אומרים')\
+                    .replace(u" " + u'חכ״א', u" " + u'חכמים אומרים')\
+                    .replace(u" " + u'וחכ"א', u" " + u'וחכמים אומרים')\
+                    .replace(u" " + u'חכ"א', u" " + u'חכמים אומרים')\
+                    .replace(u" " + u'ור״ש', u" " + u'ורבי שמעון')\
+                    .replace(u" " + u'ור״ש', u" " + u'ורבי שמעון')\
+                    .replace(u" " + u'ר"ש', u" " + u'רבי שמעון')\
+                    .replace(u" " + u'ר"ש', u" " + u'רבי שמעון')
+
                 ending_mishnah = None
                 for i in range(mishnah.number_left_in_chapter() + 1):
                     m = mishnah.get_next_mishnah(i)
                     assert len(last_bavli_segment) < len(m)
                     (ratio, offset_start, offset_ending) = fuzz.partial_with_place(m, last_bavli_segment)
-                    if ratio < 60:
+                    if ratio < mishnah_line_match_threshold:
                         log.write(u"Failed to match last Talmud line to Mishnah: {}\n{}\n".format(last_bavli_segment, m))
                         error_log.write(u"Failed to match last Talmud line to Mishnah: {}\n{}\n".format(last_bavli_segment, m))
                         continue
@@ -240,18 +268,37 @@ def process_book(bavli, mishnah, csv_writer):
                 log.write(msg)
             log.write(u"End of perek: {} {} on {} {}\n".format(bavli.title, mishnah.current_chapter, bavli.get_current_line()[0], bavli.get_current_line()[1]))
             try:
-                mishnah.advance_pointer(mishnah.current_chapter + 1)
+                next_chapter = mishnah.current_chapter + 1
+                out_of_order = chapters_out_of_order.get((bavli.title, next_chapter))
+                mishnah.advance_pointer(out_of_order or next_chapter)
                 perek_start = True
                 mishnayot_end = False
             except PointerException:
                 log.write(u"End of book: {} {} on {} {}\n".format(bavli.title, mishnah.current_chapter, bavli.get_current_line()[0], bavli.get_current_line()[1]))
                 break
 
+chapters_out_of_order = {
+    # Look up the mesechet and the chapter being requested (the one following the last), substitute a new position.
+    # Gets confusing.  See notes.
+
+    ("Megillah", 3): 4,  # When we get to 3, skip to 4.
+    ("Megillah", 5): 3,  # After parsing 4, it asks for 5, which is beyond the end of the book, so needs to jump back to 3.
+    ("Megillah", 4): 5,  # After parsing 3, jump to non-existent 5 - the end.
+
+    ("Sanhedrin", 10): 11,
+    ("Sanhedrin", 12): 10,
+    ("Sanhedrin", 11): 12,
+
+    ("Menachot", 6): 10,  # Asking for 6, jump to 10
+    ("Menachot", 11): 6,  # Then at 11, go back to 6
+    ("Menachot", 10): 11  # Once we get to 10, jump forward to 11.
+}
 
 with open('mishnah_mappings.csv', 'wb') as csvfile:
     csv_writer = csv.writer(csvfile)
     csv_writer.writerow(["Book", "Mishnah Chapter", "Start Mishnah", "End Mishnah", "Start Daf", "Start Line", "End Daf", "End Line"])
 
+    #mesechet = u'Mishnah Bava Batra'
     for mesechet in mesechtot:
         try:
             bavli = TalmudVolume(re.sub(" ", "_", mesechet[8:]))
