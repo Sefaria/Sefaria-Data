@@ -4,6 +4,7 @@ __author__ = 'Izzy'
 
 import os
 import sys
+import argparse
 import json
 import urllib
 import urllib2
@@ -13,7 +14,6 @@ from numpy import mean
 import timeit
 import unicodedata
 
-sys.path.append("C:\\Users\\Izzy\\git\\Sefaria-Project")
 from sefaria.model import *
 from sefaria.system import exceptions
 
@@ -22,7 +22,7 @@ server = "localhost:8000"
 # search_server = "http://search.sefaria.org:788"
 search_server = "http://localhost:9200"
 folder = "n_grams"
-apikey = 'iRa0Y51Rq5X81VqxXYD46ovvfayvW6CK9hQgyyKa3GY'
+apikey = ''
 
 # List of words to look out for when scoring hits
 ravs = [u"רב", u"רבי", u"רבה", u"רבא", u"ר'", u"רבן", u"שמואל", u"אביי", u'א"ר', u"רבין", u"מר", u"ריש לקיש"]
@@ -42,6 +42,9 @@ total_hits = 0
 linked_hits = 0
 unlinked_hits = 0
 
+# Table of punctuation in unicode
+table = dict.fromkeys(i for i in xrange(sys.maxunicode) if unicodedata.category(unichr(i)).startswith('P'))
+
 
 def remove_punctuation(terms):
     """ Remove punctuation from a series of n-grams.
@@ -50,8 +53,6 @@ def remove_punctuation(terms):
     :return: list of strings with punctuation removed
     """
     new_terms = []
-    table = dict.fromkeys(i for i in xrange(sys.maxunicode)
-                          if unicodedata.category(unichr(i)).startswith('P'))
     for term in terms:
         new_terms.append(term.translate(table))
     return new_terms
@@ -343,14 +344,14 @@ def find_reverse_hit(this_hit, those_hits):
     hit_to_delete = None
     this_term = remove_punctuation(this_hit["terms"])
     for that_hit in those_hits:
-        that_term = remove_punctuation(["terms"])
+        that_term = remove_punctuation(that_hit["terms"])
         if any(this_term == that_term[i:i + len(this_term)] for i in xrange(len(that_term))):
             terms = this_hit["terms"]
             sources = this_hit["refs"]
             counts = this_hit["counts"]
             locations = []
             for x in xrange(len(this_hit["terms"])):
-                i = that_hit["terms"].index(this_hit["terms"][x])
+                i = that_term.index(this_term[x])
                 this_hit["duplicates"][x] -= 1
                 that_hit["duplicates"][i] -= 1
                 locations.append(that_hit["refs"][i])
@@ -363,7 +364,7 @@ def find_reverse_hit(this_hit, those_hits):
             counts = that_hit["counts"]
             locations = []
             for x in xrange(len(that_hit["terms"])):
-                i = this_hit["terms"].index(that_hit["terms"][x])
+                i = this_term.index(that_term[x])
                 that_hit["duplicates"][x] -= 1
                 this_hit["duplicates"][i] -= 1
                 locations.append(this_hit["refs"][i])
@@ -426,7 +427,11 @@ def search_n_grams():
     global total_hits
     global most_hits
     hits = {}
-    files = os.listdir(folder)
+    try:
+        files = os.listdir(folder)
+    except OSError:
+        sys.stderr.write("No n-gram files found")
+        sys.exit(1)
     for filename in files:
         tractate_hits = {}
         last_hits = set()  # Set of dafs where there were hits for the last search term.
@@ -491,7 +496,8 @@ def search_n_grams():
 
 
 def output_profile(runtime, all_results):
-    """ Print some statistics, as well as the 50 best results and 50 worst unqiue results to profile.txt
+    """ Print some statistics, as well as the 50 best results and 50 worst unqiue results to profile.txt,
+    and all of the results to all_links.txt
 
     :param runtime: Runtime for the algorithm in seconds
     :return: None.
@@ -502,6 +508,11 @@ def output_profile(runtime, all_results):
             for result in all_results[daf][location_daf]:
                 all_results_list.append(result)
     results = sorted(all_results_list, key=lambda x: -x["score"])
+    positive_count = 0
+    i=0
+    while results[i]["score"] >= 0:
+        positive_count+=1
+        i+=1
     worst_results = []
     phrases_seen = set()
     for result in results[::-1]:
@@ -510,25 +521,36 @@ def output_profile(runtime, all_results):
             worst_results.append(result)
         if len(worst_results) >= 50:
             break
+    """
     output = ["Runtime is " + str(runtime) + " seconds \n", "Most number of hits for one search is " + str(most_hits),
               "\nTotal number of hits for 6_grams is " + str(total_hits) + " and for 6+grams is " + str(
                   len(all_results_list)),
               "\nNumber of linked hits is " + str(linked_hits) + " and unlinked hits is " + str(unlinked_hits),
               "\n\n" + "Top ten best hits are: \n"]
-    for result in results:
+    """
+    output = [ "\nTotal number of results is " + str(len(all_results_list)) + " and the number of positive results is " + str(
+                  positive_count),
+              "\nNumber of linked hits is " + str(linked_hits) + " and unlinked hits is " + str(unlinked_hits),
+              "\n\n" + "Top ten best hits are: \n"]
+    for result in results[:50]:
         output.append("Hit from {} to {} with text {} and score {} \n".format(result["source"], result["location"],
                                                                               result["text"].encode('utf-8'),
                                                                               result["score"]))
-    """
+
     output.append("\n" + "Worst hits are: \n")
     for result in worst_results:
         output.append("Hit from {} to {} with text {} and score {} \n".format(result["source"], result["location"],
                                                                               result["text"].encode('utf-8'),
                                                                               result["score"]))
 
-    """
     with open("profile.txt", 'w') as profile:
         profile.writelines(output)
+
+    with open("all_links.txt", 'w') as all_links:
+        for result in results:
+            all_links.write("Hit from {} to {} with text {} and score {} \n".format(result["source"], result["location"],
+                                                                              result["text"].encode('utf-8'),
+                                                                              result["score"]))
 
 
 def generate_masoret_hashas():
@@ -555,6 +577,9 @@ def compare_masoret_hashas():
     :return: None.
     """
     links = get_masoret_hashas_links()
+    if not os.path.isfile("all_results.json"):
+        sys.stderr.write("No Mesorat Hashas results found")
+        sys.exit(1)
     with open("all_results.json", "r") as filename:
         all_results = json.load(filename)
     link_results = []
@@ -640,6 +665,9 @@ def post_links():
     :return: None
     """
     count = 0
+    if not os.path.isfile("all_results.json"):
+        sys.stderr.write("No Mesorat Hashas results found")
+        sys.exit(1)
     with open("all_results.json", "r") as filename:
         all_results = json.load(filename)
     all_results_list = []
@@ -673,24 +701,18 @@ def post_links():
 
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        arg = sys.argv[1]
-        if arg == "compare":
-            compare_masoret_hashas()
-        elif "_grams" in arg:
-            n_grams = arg.split("_")
-            try:
-                n = int(n_grams[0])
-            except ValueError as e:
-                print e
-            else:
-                if n > 0:
-                    generate_n_grams(n)
-                else:
-                    print "Please provide valid value for n (n > 0)"
-        elif "post" in arg:
-            post_links()
-        else:
-            print "Unknown command"
-    else:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-n", "--ngrams", help="Generate n-grams", nargs=1, action="store", metavar='n', type=int)
+    parser.add_argument("-g", "--generate", help="Generate Mesorat HaShas results", action="store_true")
+    parser.add_argument("-c", "--compare", help="Compare Mesorat HaShas results to existing links", action="store_true")
+    parser.add_argument("-p", "--post", help="Post links to database", action="store_true")
+    args = parser.parse_args()
+    if args.ngrams:
+        generate_n_grams(args.ngrams[0])
+    if args.generate:
         generate_masoret_hashas()
+    if args.compare:
+        compare_masoret_hashas()
+    if args.post:
+        post_links()
+
