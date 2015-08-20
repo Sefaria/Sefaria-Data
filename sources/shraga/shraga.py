@@ -10,7 +10,7 @@ import helperFunctions as Helper
 
 
 def g_d():
-    shraga = TextChunk(Ref("Deuteronomy"),"en","The Rashi chumash by Rabbi Shraga Silverstein").text
+    shraga = TextChunk(Ref("II Chronicles"),"en","The Rashi chumash by Rabbi Shraga Silverstein").text
     shraga_text = []
     for shrag in shraga:
         shrag_text=[]
@@ -23,14 +23,14 @@ def g_d():
     return shraga_text
 
 def open_file():
-    with open("source/shraga_dvarim.txt" , 'r') as filep:
+    with open("source/shraga_II_Chronicles.txt" , 'r') as filep:
         file_text = filep.read()
     ucd_text = unicode(file_text, 'utf-8', errors='ignore').strip()
     return ucd_text
 
 
 def parse(text):
-    cut = re.finditer(ur"([0-9][0-9]?:[0-9][0-9]?)(.*)",text)
+    cut = re.finditer(ur"([0-9][0-9]?[0-9]?:[0-9][0-9]?[0-9]?)(.*)",text)
     past_perek = 0
     past_pasuk = 0
     beresith =[]
@@ -73,7 +73,7 @@ def save_parsed_text(text):
     #print ref
     #JSON obj matching the API requirements
     text_whole = {
-        "title": 'Deuteronomy',
+        "title": 'II Chronicles',
         "versionTitle": "The Rashi chumash by Rabbi Shraga Silverstein",
         "versionSource":  "http://www.sefaria.org/shraga-silverstein",
         "language": "en",
@@ -81,15 +81,15 @@ def save_parsed_text(text):
     }
     #save
     Helper.mkdir_p("preprocess_json/")
-    with open("preprocess_json/Shraga_Silverstein_translation_on_Deuteronomy.json", 'w') as out:
+    with open("preprocess_json/Shraga_Silverstein_translation_on_II_Chronicles.json", 'w') as out:
         json.dump(text_whole, out)
 
 
 def run_post_to_api():
     #Helper.createBookRecord(book_record())
-    with open("preprocess_json/Shraga_Silverstein_translation_on_Deuteronomy.json", 'r') as filep:
+    with open("preprocess_json/Shraga_Silverstein_translation_on_I_Chronicles.json", 'r') as filep:
         file_text = filep.read()
-    Helper.postText("Deuteronomy"  , file_text, False)
+    Helper.postText("II Chronicles"  , file_text, False)
 
 
 

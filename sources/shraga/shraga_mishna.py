@@ -41,7 +41,7 @@ def parse(text):
             #print pasuk, past_pasuk
             past_pasuk = pasuk
     beresith.append(psk)
-
+    print len(beresith[1:len(beresith)])
     return  beresith[1:len(beresith)]
 
 
@@ -85,9 +85,8 @@ def run_post_to_api():
 if __name__ == '__main__':
     text = open_file()
     parsed = parse(text)
-    print len(parsed)
-
     print len(parsed[0])
+
     print len(parsed[1])
     save_parsed_text(parsed)
     run_post_to_api()
