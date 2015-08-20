@@ -4,7 +4,7 @@ import csv
 # Load map from Noah's names to Sefaria's names
 
 noahs_names = {}
-with open('perek_name_map.csv', 'rb') as csvfile:
+with open('noam_prakim/perek_name_map.csv', 'rb') as csvfile:
     cread = csv.reader(csvfile)
     for row in cread:
         if row[0]:
@@ -19,7 +19,7 @@ for f, title in noahs_names.iteritems():
     books[title] = {
         "mishnayot": [],
     }
-    fname = "data/" + f + ".txt"
+    fname = "noam_prakim/data/" + f + ".txt"
     with open(fname, 'rb') as csvfile:
         cread = csv.reader(csvfile)
         for row in cread:
