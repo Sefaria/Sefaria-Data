@@ -90,4 +90,7 @@ w = set(parse_wikipedia())
 
 t = n | m | w
 
+print
 print "{} ({} to go)".format(len(w), len(w-m))
+for x in sorted(w-m):
+    print x
