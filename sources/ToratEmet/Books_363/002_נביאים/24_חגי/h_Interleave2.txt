@@ -1,0 +1,38 @@
+&MixedDisplay=2&TextSource=ר' פנחס ראובן שליט''א, J. Alan Groves Center&ForcedBookName=תצוגה משולבת עם טעמים&LastLevelIndex=2&CosmeticsType==1738&PutNewLinesAsIs=0&SearchInTitles=0&UniqueId=1756&GroupId=b24&Comments=
+$ חגי (ט)
+
+[General]
+FilesNumber=4						// nubmer of files and columns
+CommonPrefix="<BR><BR>"
+CommonSuffix="<BR>"
+CommonMiddle=""
+
+[File1]
+Title="מקרא"
+FileName="a24__Haggai.txt"		// in current folder
+Prefix=""
+Suffix=""
+Zoom=0
+SmallFactor=0		// number of small command to add before
+
+[File2]
+Title="פירוש רש''י"
+FileName="eNA_HAGAY_L1.txt"		// in current folder
+Prefix="<span style=''color=#3377cc; font-size:0%; font-family:FONT5;''>"
+Suffix="<small>(רש''י)</small><BR><BR></span>"
+SmallFactor=0		// number of small command to add before
+
+[File3]
+Title="פירוש מצודת דוד"
+FileName="fNA_HAGAY_L1.txt"		// in current folder
+Prefix="<span style=''color=#7733cc; font-size:0%; font-family:FONT3;''>"
+Suffix="<small>(מצודת דוד)</small><BR><BR></span>"
+SmallFactor=0		// number of small command to add before
+
+
+[File4]
+Title="פירוש מצודת ציון"
+FileName="gNA_HAGAY_L1.txt"		// in current folder
+Prefix="<span style=''color=rgb(0,145,130); font-size:0%; font-family:FONT3;''>"
+Suffix="<small>(מצודת ציון)</small><BR><BR></span>"
+SmallFactor=0		// number of small command to add before

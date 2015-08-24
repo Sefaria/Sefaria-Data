@@ -1,0 +1,75 @@
+&MixedDisplay=3&TextSource=ר' פנחס ראובן שליט''א&ForcedBookName=תצוגה משולבת&LastLevelIndex=2&UniqueId=1042&GroupId=bav_menahot&CosmeticsType==878&SearchInTitles=0
+$ מסכת מנחות
+
+[General]
+FilesNumber=3						// nubmer of files and columns
+HtmlTableTemplate="mixed1.html"		// in main folder, html template file, the template values replaced 
+PerekTemplateId="@2"				// template location for perek (perek is line started with ^)
+PerekFromFileNumber=2				// the source file for perek
+PageTemplateId="@1"					// template location for page (page is line started with ~)^
+PageFromFileNumber=2				// the source file for page
+BookTemplateId="@3"					
+UserCommentTemplateId="@0"					
+
+
+// general for new mix
+CommonPrefix="<P>"
+CommonSuffix=""
+CommonMiddle="<P>"
+
+
+// the following values are fixed replacements to the template values
+[FixedValues]
+Size=2;
+TemplValue1="@0"
+FixedValue1=""
+TemplValue2="@3"
+FixedValue2=""
+
+
+// the ColN section describes a column location on the html template file
+// the number of columns should match with the number of files
+[Col1]
+TitleTemplateId="@4"
+BodyTemplateId="@7"
+WidthTemplateId="1%"
+
+[Col2]
+TitleTemplateId="@5"
+BodyTemplateId="@8"
+WidthTemplateId="2%"
+
+[Col3]
+TitleTemplateId="@6"
+BodyTemplateId="@9"
+WidthTemplateId="3%"
+
+
+
+[File3]
+Title="תוספות"
+EvenColNumber=1					// on which column this file located on event pages
+OddColNumber=1					// on which column this file located on odd pages
+FileName="Bav MENAHOT_L3.txt"		// in current folder
+
+Prefix="<span style=''color=#7733cc; font-size:90%; font-family:FONT3''>"	// new mix
+Suffix="<small>(תוספות)</small></span>"				// new mix
+
+[File1]
+Title="גמרא"
+EvenColNumber=2					// on which column this file located on event pages
+OddColNumber=2					// on which column this file located on odd pages
+Zoom=100%
+FileName="Bav MENAHOT_L1.txt"		// in current folder
+
+[File2]
+Title="רש''י"
+EvenColNumber=3					// on which column this file located on event pages
+OddColNumber=3					// on which column this file located on odd pages
+FileName="Bav MENAHOT_L2.txt"	// in current folder
+
+
+
+
+Prefix="<span style=''color=#3377cc; font-size:90%; font-family:FONT2''>"	// new mix
+Suffix="<small>(רש''י)</small></span>"				// new mix
