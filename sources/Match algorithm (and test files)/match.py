@@ -59,22 +59,6 @@ the first one.
 Finally, notice that dibbur hamatchil 8 is matched to line 0.  There is no line 0, and therefore, '0' indicates
 that no match could be found. 
 '''
-nfirmed_dict = {}
-		for dh_pos in self.found_dict:
-			dh = self.dh_orig_list[dh_pos]
-			dh_found_list = self.found_dict[dh_pos][dh] 
-			self.confirmed_dict[dh_pos+1] = []
-			if len(dh_found_list) == 0:
-				self.confirmed_dict[dh_pos+1] = [0]
-			elif len(dh_found_list) == 1:
-				self.confirmed_dict[dh_pos+1] = [dh_found_list[0][0]+1]
-			elif len(dh_found_list) > 1:
-				if self.in_order == False:
-					self.confirmed_dict[dh_pos+1] = self.bestGuessFirst(dh_found_list)
-				else:
-					self.multipleInOrder(dh_pos, dh_found_list, dh)
-		return self.confirmed_dict
-
 import pdb
 import re
 import sys
@@ -257,13 +241,24 @@ class Match:
 				  pdb.set_trace()
 			temp -= 1
 		temp = dh_pos+1
-		max = len(self.dh_orig_list)-1
-		while temp <= max:
+		highest = len(self.dh_orig_list)-1
+		max = -1
+		while temp <= highest:
 			temp_list = self.found_dict[temp][self.dh_orig_list[temp]]
 			if len(temp_list) == 1:
 				max = temp_list[0][0]
 				break
 			temp+=1
+		if max==-1 and dh_pos != highest:
+			next_list = self.found_dict[dh_pos+1][self.dh_orig_list[dh_pos+1]]
+			for line_n, pr in next_list:
+				if line_n > max:
+					max = line_n
+		elif max==-1:
+			my_list = self.found_dict[dh_pos][self.dh_orig_list[dh_pos]]
+			for line_n, pr in my_list:
+				if line_n > max:
+					max = line_n
 		return (min, max)
 
 	def bestGuessFirst(self, list_lines):
@@ -300,6 +295,7 @@ class Match:
 		return self.confirmed_dict
 
 	def multipleInOrder(self, dh_pos, dh_found_list, dh):
+		
 		min, max = self.getMinMax(dh_pos)
 		list_actual_lines = []
 		for line_n, pr in dh_found_list:

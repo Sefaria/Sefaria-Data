@@ -81,7 +81,7 @@ parshiot = [parsha]
 #each time we find a new perek, we record the current remez and current paragraph
 
 current_perek = 1
-current_remez = 596
+current_remez = 224
 prev_perek = 1
 prev_remez = current_remez
 text=[]

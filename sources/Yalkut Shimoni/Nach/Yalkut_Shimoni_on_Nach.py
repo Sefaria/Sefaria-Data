@@ -6,7 +6,7 @@ import json
 import pdb
 import os
 import sys
-p = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 from local_settings import *
