@@ -44,11 +44,11 @@ seder.key = "seder"
 
 contents = JaggedArrayNode()
 contents.lengths = [15]
-contents.depth = 1
+contents.depth = 2
 contents.default = True
 contents.key = "default"
-contents.sectionNames = ["Chapter"]
-contents.addressTypes = ["Integer"]
+contents.sectionNames = ["Chapter", "Paragraph"]
+contents.addressTypes = ["Integer", "Integer"]
 contents.validate()
 
 seder.append(contents)

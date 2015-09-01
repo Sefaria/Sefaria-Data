@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 import json
 import os
@@ -8,6 +7,7 @@ import pdb
 import urllib
 import urllib2
 from urllib2 import URLError, HTTPError
+from match import Match
 import re
 p = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, p)
@@ -17,7 +17,7 @@ from local_settings import *
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 
 from sefaria.model import *
-from match import Match
+from sefaria.model.schema import AddressTalmud	
 
 found_dict = {}
 confirmed_dict = {}
@@ -45,8 +45,8 @@ gematria['ר'] = 200
 gematria['ש'] = 300
 gematria['ת'] = 400
 
-title_book = "Mishnah Berakhot"
-title_comm = "Rambam on Mishnah Berakhot" 
+title_book = "Gittin"
+title_comm = "Tosafot on Gittin" 
 
 def post_text(ref, text):
     textJSON = json.dumps(text)
@@ -62,6 +62,37 @@ def post_text(ref, text):
         print 'Error code: ', e.code
         print e.read()
 
+def post_link(info):
+	url = SEFARIA_SERVER+'/api/links/'
+	infoJSON = json.dumps(info)
+	values = {
+		'json': infoJSON, 
+		'apikey': API_KEY
+	}
+	data = urllib.urlencode(values)
+	req = urllib2.Request(url, data)
+	try:
+		response = urllib2.urlopen(req)
+		print response.read()
+	except HTTPError, e:
+		print 'Error code: ', e.code
+
+def createLinks(result, siman_num):
+	for key in result:
+		if str(key).isdigit() == True:
+			line_in_MA = key
+			line_in_SA = result[key][0]
+			if line_in_SA > 0:
+				post_link({
+					"refs": [
+							title_book+"."+str(siman_num)+"."+str(line_in_SA), 
+							title_comm+"."+str(siman_num)+"."+str(line_in_MA)
+						],
+					"type": "commentary",
+					"auto": True,
+					"generated_by": title_comm+title_book+"linker",
+				 })
+        
 
 def gematriaFromSiman(line):
 	txt = line.split(" ")[1]
@@ -73,17 +104,7 @@ def gematriaFromSiman(line):
 		index+=1
 	return sum
 
-def get_index(ref):
- 	ref = ref.replace(" ", "_")
- 	url = 'http://www.sefaria.org/api/texts/'+ref
- 	req = urllib2.Request(url)
- 	try:
- 		response = urllib2.urlopen(req)
- 		data = json.load(response)
- 		return data
- 	except: 
- 		print 'Error'
-        
+
 def get_text(ref):
     ref = ref.replace(" ", "_")
     url = 'http://www.sefaria.org/api/texts/'+ref
@@ -141,21 +162,28 @@ def getNotMatched(result):
 			count+=1
 	return count
 
-def getLog(hyperlink, siman, result):
+def getLog(siman, result, dh_dict, comm):
 	log = []
-	count = 1
 	for key in result:
-		list = result[key]
-		if list[0] == 0:
-			log.append(hyperlink+"."+str(siman)+"."+str(count)+"\nNot Matched\n\n")
-		elif len(list) > 1:
-			guess_str = hyperlink+"."+str(siman)+"."+str(count)+"\nGuessed line "+str(list[0])+", but other options include line(s) "
-			for guess in list:
-				if guess != list[0]:
-					guess_str += str(guess)+","
+		line_n = result[key]
+		if line_n[0] == 0:
+			append_str = "did not find dh:\n"+str(dh_dict[siman][key-1])+"\n in "+title_book+", Daf "+AddressTalmud.toStr("en", siman)+":"
+			append_str += "\nwww.sefaria.org/"+title_book.replace(" ", "_")+"."+AddressTalmud.toStr("en", siman)
+			append_str += "\ntext:<b>"+str(dh_dict[siman][key-1])+".</b> "+str(comm[siman][key-1])+"\n\n"
+			log.append(append_str)
+		elif len(line_n) > 1:
+			bestGuess = line_n[0]
+			guess_str = "looked for dh:\n"+str(dh_dict[siman][key-1])+"\n in "+title_book+", Daf "+AddressTalmud.toStr("en", siman)
+			guess_str += " and guessed the dh matches to line "+str(bestGuess)+":"
+			title_c = title_comm.replace(" ", "_")
+			guess_str += "\nwww.sefaria.org/"+title_c+"."+AddressTalmud.toStr("en", siman)+"."+str(bestGuess)
+			guess_str += "\nbut other options include:\n"
+			for guess in line_n:
+				if guess != line_n[0]:
+					title = title_book.replace(" ", "_")
+					guess_str += "line " +str(guess)+": www.sefaria.org/"+title+"."+AddressTalmud.toStr("en", siman)+"."+str(guess)+" ,\n"
 			guess_str = guess_str[0:-1]
 			log.append(guess_str+"\n\n")
-		count+=1
 	return log
 
 comm = {}
@@ -165,90 +193,67 @@ non_match = 0
 guess = 0
 matched = 0
 log = []
-
-f=open('berakhot.txt', 'r')
-f.readline()
-perek_num = 0
 dh_dict = {}
-curr_dh_count = 0 
-curr_dh = ""
-comm = {}
-
-for line in f:
-	line = line.replace('\n', '')
-	if line.find("@00") >= 0: #NEW PEREK
-	elif line.find("@22") >= 0: #NEW MISHNAH
-	elif line.find("@11") >= 0:	#DH 
-		comm = line.split("@33")[1]
-		dh = line.split("@11")[0].replace("@11", "")
-
-
-for line in f:
-	line = line.replace("\n", "")
-	if line.find("@00") >= 0:
-		perek_num+=1
-	elif line.find("@22") >= 0:
-		curr_dh_count += 1
-		line = line.replace("@22", "")
-		daf = re.compile('@44\(.*?\)')
-		match = re.search(daf, line)
-		if match:
-			line = line.replace(match.group(0), "")
-		if perek_num in dh_dict:
-			dh_dict[perek_num].append(line)
-		else:
-			dh_dict[perek_num] = []
-			dh_dict[perek_num].append(line)
-		curr_dh = line	
-	elif line.find("@11") >= 0:
-		line = line.replace("@11", "")
-		for i in range(curr_dh_count):
-			if perek_num in comm:
-				comm[perek_num].append(line)
+tosafot_comments = {}
+prev_line = 0
+for i in range(176): 
+	count = 0
+	tosafot_comments[i+3] = []
+	dh_dict[i+3] = []
+	he_daf = u"גיטין_"
+	he_daf += AddressTalmud.toStr("he", i+3)
+	he_daf = he_daf.replace(u"\u05f4", u"")
+	he_daf = he_daf.replace(u"׳", u"")
+	he_daf = he_daf.replace(" ", "_")
+	he_daf = he_daf + ".txt"
+	f = open("../Noah-Santacruz-rashiPosting/Tosafot/"+he_daf, 'r')
+	for line in f:
+		line = line.replace("\n", "")
+		something = line.replace(" ", "")
+		if len(something) > 0:
+			if count % 2 == 0:
+				dh_dict[i+3].append(line)
 			else:
-				comm[perek_num] = []
-				comm[perek_num].append(line)
-		curr_dh_count = 0
-f.close()
+				tosafot_comments[i+3].append(line)
+			count+=1
+	f.close()		
 
-#at end of this, for each comm[perek is a list of rambam's comments and for each perek is a list of the dhs
-#for each perek, figure out how many mishnayot are in that perek, grab them all and send them to match with list of dhs for that perek
-for j in range(perek_num):
-	perek = {}
-	perek[j+1] = get_text(title_book+"."+str(j+1))
-	if len(dh_dict[j+1]) > 0: 
+for i in range(176):
+	book[i+3] = get_text(title_book+"."+AddressTalmud.toStr("en", i+3))
+	lines = len(book[i+3])
+	if len(dh_dict[i+3]) > 0: 
 		match_obj=Match(in_order=True, min_ratio=70, guess=False)
-		result = match_obj.match_list(dh_dict[j+1], perek[j+1], j+1)
+		result=match_obj.match_list(dh_dict[i+3], book[i+3])
 		matched += getMatched(result)
 		total += getTotal(result)
 		guess += getGuesses(result)
 		non_match += getNotMatched(result)
-		log_info = getLog("http://dev.sefaria.org/"+title_comm, j+1, result)
+		log_info = getLog(i+3, result, dh_dict, tosafot_comments)
 		if log_info != []:
 			log.append(log_info)
 		result_dict = {}
 		for key in result:
-			dh = "<b>"+dh_dict[j+1][key-1]+"</b>. "
-			mishnah_n = result[key][0]
-			if mishnah_n in result_dict:
-				result_dict[mishnah_n] += 1
+			line_n = result[key][0]
+			if line_n in result_dict:
+				result_dict[line_n] += 1
 			else:
-				result_dict[mishnah_n] = 1
-			if mishnah_n > 0:
+				result_dict[line_n] = 1
+			if line_n > 0:
 				text = {
-				"versionTitle": "Vilna edition",
-				"versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957",
+				"versionTitle": title_comm,
+				"versionSource": "nothing",
 				"language": "he",
-				"text": dh+comm[j+1][key-1],
+				"text": tosafot_comments[i+3][key-1],
 				}
-				post_text(title_comm+"."+str(j+1)+"."+str(mishnah_n)+"."+str(result_dict[mishnah_n]), text)		
+				post_text(title_comm+"."+AddressTalmud.toStr("en", i+3)+"."+str(line_n)+"."+str(result_dict[line_n]), text)
+				#createLinks(result, i+3)
+		
 
-title_comm = title_comm.replace(" ", "_")
 if os.path.exists("log_"+title_comm+".txt") == True:
 	os.remove("log_"+title_comm+".txt")	
 log_file = open("log_"+title_comm+".txt", "w")
-for arr in log:
-	for line in arr:
+for lines in log:
+	for line in lines:
 		log_file.write(str(line))
 	
 log_file.close()
@@ -257,8 +262,4 @@ print str(total) + " = Total"
 print str(non_match) + " = Non-matches"
 print str(matched) + " = Matches"
 print str(guess) + " = Guesses"
-'''
-completely different: daf not inside parentheses 
-										#and @22 is start of DH, @33 or @44 is end of DH ('@44.*?')
-										#and @11 is start of comment
-	'''
+

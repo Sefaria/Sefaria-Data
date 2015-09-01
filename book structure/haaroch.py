@@ -37,9 +37,9 @@ root.key = 'torathabayit'
 root.add_title("Torat HaBayit HaAroch", "en", primary=True)
 root.add_title(u"תורת הבית הארוך", "he", primary=True)
 
-heb_houses = [u"הבית הראשון", u"הבית השני", u"הבית השלישי", u"הבית הרביעי", u"הבית החמישי", u"הבית השישי", u"הבית השביעי"]
+heb_houses = [u"הבית הראשון", u"הבית השני", u"הבית השלישי", u"הבית הרביעי", u"הבית החמישי", u"הבית השישי", u"הבית השביעי: בית הנשים"]
 eng_houses = ["The First House", "The Second House", "The Third House", "The Fourth House", "The Fifth House",
-"The Sixth House", "The Seventh House"]
+"The Sixth House", "The Seventh House, The Women's House"]
 heb_gates = [u"השער הראשון", u"השער השני", u"השער השלישי", u"השער הרביעי", u"השער החמישי", u"השער השישי", 
 u"השער השביעי"]
 eng_gates = ["The First Gate", "The Second Gate", "The Third Gate", "The Fourth Gate",
@@ -64,6 +64,15 @@ for count, house in enumerate(heb_houses):
 	for gate_count, gate in enumerate(heb_gates):
 		if gate_count == how_many_gates[count]:
 			break
+		if gate_count == 0 and count == 6:
+			intro_node = JaggedArrayNode()
+			intro_node.depth = 1
+			intro_node.sectionNames = ["Paragraph"]
+			intro_node.addressTypes = ["Integer"]
+			intro_node.key = "intro_gate"
+			intro_node.add_title("Introduction", "en", primary=True)
+			intro_node.add_title(u"הקדמה", "he", primary=True)
+			node.append(intro_node)
 		gate_node = JaggedArrayNode()
 		gate_node.depth = 1
 		gate_node.add_title(gate, "he", primary=True)

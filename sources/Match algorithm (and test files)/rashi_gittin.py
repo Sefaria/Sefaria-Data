@@ -1,5 +1,3 @@
-# -*- coding: utf8 -*-
-
 # -*- coding: utf-8 -*-
 import json
 import os
@@ -11,7 +9,7 @@ import urllib2
 from urllib2 import URLError, HTTPError
 from match import Match
 import re
-p = os.path.dirname(os.path.abspath(__file__))
+p = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, p)
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 from local_settings import *
@@ -47,8 +45,8 @@ gematria['ר'] = 200
 gematria['ש'] = 300
 gematria['ת'] = 400
 
-title_book = "Berakhot"
-title_comm = "Rashi on Berakhot" 
+title_book = "Gittin"
+title_comm = "Rashi on Gittin" 
 
 def post_text(ref, text):
     textJSON = json.dumps(text)
@@ -65,11 +63,11 @@ def post_text(ref, text):
         print e.read()
 
 def post_link(info):
-	url = 'http://dev.sefaria.org/api/links/'
+	url = SEFARIA_SERVER+'/api/links/'
 	infoJSON = json.dumps(info)
 	values = {
 		'json': infoJSON, 
-		'apikey': 'F4J2j3RF6fHWHLtmAtOTeZHE3MOIcsgvcgtYSwMzHtM'
+		'apikey': API_KEY
 	}
 	data = urllib.urlencode(values)
 	req = urllib2.Request(url, data)
@@ -164,21 +162,28 @@ def getNotMatched(result):
 			count+=1
 	return count
 
-def getLog(hyperlink, siman, result):
+def getLog(siman, result, dh_dict, comm):
 	log = []
-	count = 1
 	for key in result:
-		list = result[key]
-		if len(list) == 1 and list[0] == 0:
-			log.append(hyperlink+"."+str(siman)+"."+str(count)+"\nNot Matched\n\n")
-		elif len(list) > 1:
-			guess_str = hyperlink+"."+str(siman)+"."+str(count)+"\nGuessed line "+str(list[0])+", but other options include line(s) "
-			for guess in list:
-				if guess != list[0]:
-					guess_str += str(guess)+","
+		line_n = result[key]
+		if line_n[0] == 0:
+			append_str = "did not find dh:\n"+str(dh_dict[siman][key-1])+"\n in "+title_book+", Daf "+AddressTalmud.toStr("en", siman)+":"
+			append_str += "\nwww.sefaria.org/"+title_book.replace(" ", "_")+"."+AddressTalmud.toStr("en", siman)
+			append_str += "\ntext:<b>"+str(dh_dict[siman][key-1])+".</b> "+str(comm[siman][key-1])+"\n\n"
+			log.append(append_str)
+		elif len(line_n) > 1:
+			bestGuess = line_n[0]
+			guess_str = "looked for dh:\n"+str(dh_dict[siman][key-1])+"\n in "+title_book+", Daf "+AddressTalmud.toStr("en", siman)
+			guess_str += " and guessed the dh matches to line "+str(bestGuess)+":"
+			title_c = title_comm.replace(" ", "_")
+			guess_str += "\nwww.sefaria.org/"+title_c+"."+AddressTalmud.toStr("en", siman)+"."+str(bestGuess)
+			guess_str += "\nbut other options include:\n"
+			for guess in line_n:
+				if guess != line_n[0]:
+					title = title_book.replace(" ", "_")
+					guess_str += "line " +str(guess)+": www.sefaria.org/"+title+"."+AddressTalmud.toStr("en", siman)+"."+str(guess)+" ,\n"
 			guess_str = guess_str[0:-1]
-			log.append(guess_str)
-		count+=1
+			log.append(guess_str+"\n\n")
 	return log
 
 comm = {}
@@ -188,43 +193,43 @@ non_match = 0
 guess = 0
 matched = 0
 log = []
-dh_list = []
-rashi_comments = []
+dh_dict = {}
+rashi_comments = {}
 prev_line = 0
-for j in range(24): #actually 124
-	i = j+100
+for i in range(176): 
 	count = 0
-	dh_list=[]
-	rashi_comments = []
-	he_daf = u"ברכות_"
+	rashi_comments[i+3] = []
+	dh_dict[i+3] = []
+	he_daf = u"גיטין_"
 	he_daf += AddressTalmud.toStr("he", i+3)
 	he_daf = he_daf.replace(u"\u05f4", u"")
 	he_daf = he_daf.replace(u"׳", u"")
 	he_daf = he_daf.replace(" ", "_")
 	he_daf = he_daf + ".txt"
-	f = open("Rashi/"+he_daf, 'r')
+	f = open("../Noah-Santacruz-rashiPosting/Rashi/"+he_daf, 'r')
 	for line in f:
 		line = line.replace("\n", "")
 		something = line.replace(" ", "")
 		if len(something) > 0:
 			if count % 2 == 0:
-				dh_list.append(line)
+				dh_dict[i+3].append(line)
 			else:
-				rashi_comments.append(line)
+				rashi_comments[i+3].append(line)
 			count+=1
 	f.close()		
+for i in range(176):
 	book[str(i+3)] = get_text(title_book+"."+AddressTalmud.toStr("en", i+3))
 	lines = len(book[str(i+3)])
-	if len(dh_list) > 0: 
-		match_obj=Match(in_order=True, min_ratio=70, guess=True)
-		result=match_obj.match_list(dh_list, book[str(i+3)], (i+3))
+	if len(dh_dict[i+3]) > 0: 
+		match_obj=Match(in_order=True, min_ratio=70, guess=False)
+		result=match_obj.match_list(dh_dict[i+3], book[str(i+3)])
 		matched += getMatched(result)
 		total += getTotal(result)
 		guess += getGuesses(result)
 		non_match += getNotMatched(result)
-		#log_info = getLog("http://dev.sefaria.org/Beit_Shmuel", i+3, result)
-		#if log_info != []:
-	#		log.append(log_info)
+		log_info = getLog(i+3, result, dh_dict, rashi_comments)
+		if log_info != []:
+			log.append(log_info)
 		result_dict = {}
 		for key in result:
 			line_n = result[key][0]
@@ -234,65 +239,24 @@ for j in range(24): #actually 124
 				result_dict[line_n] = 1
 			if line_n > 0:
 				text = {
-				"versionTitle": "SMK on Berakhot",
+				"versionTitle": title_comm,
 				"versionSource": "nothing",
 				"language": "he",
-				"text": rashi_comments[key-1],
+				"text": rashi_comments[i+3][key-1],
 				}
-				post_text("SMK on Berakhot."+AddressTalmud.toStr("en", i+3)+"."+str(line_n)+"."+str(result_dict[line_n]), text)
+				post_text(title_comm+"."+AddressTalmud.toStr("en", i+3)+"."+str(line_n)+"."+str(result_dict[line_n]), text)
 				#createLinks(result, i+3)
 		
-
 if os.path.exists("log_"+title_comm+".txt") == True:
 	os.remove("log_"+title_comm+".txt")	
-#log_file = open("log_"+title_comm+".txt", "w")
-#for line in log:
-#	log_file.write(str(line))
+log_file = open("log_"+title_comm+".txt", "w")
+for lines in log:
+	for line in lines:
+		log_file.write(str(line))
 	
-#log_file.close()
+log_file.close()
 
 print str(total) + " = Total"
 print str(non_match) + " = Non-matches"
 print str(matched) + " = Matches"
 print str(guess) + " = Guesses"
-#match first goes through each line comparing it with dh
-#adding each match by line number to list_of_found_links 
-#for each line that matches dh, increment 'found' counter
-#add condition to match ifs:
-#check if this is an acronym with a ", 
-#if it is, for loop through acronyms checking if acronym is inside 'dh', 
-#new_dh = dh.replace(acronym, expansion)
-#if it is, check if new_dh in line, and check if fuzz.partial_ratio(line, new_dh)
-#after loop, check if found > 1, ==1, ==0
-#if found > 1: set more_than_one to true and all lines to dict
-#if found == 1: set more_than_one to false, consider it a match
-#if found == 0:
-#try again with lower ratio
-#error_log=open('error_log', 'w')
-	
-'''double dict function:
-dh_dict is dictionary where keys are siman numbers and value is an in order list of dh's in that siman
-therefore:
-match should create data structure, found_dict, where each siman number maps to dictionary where
-keys are tuples of dh_position (position in dh_dict[siman_num] array)
-and matched (found>=1) dh's and where the value is a list of line numbers
-
-confirmed_dict  = {}
-for each tuple of (dh_pos, dh) in found_dict whose list's length == 1
-	simply set confirmed_dict[siman_num][(dh_pos, dh)] = line_num
-for each tuple of (dh_pos, dh) in found_dict whose list's length is > 1 where siman_num is current siman number:
-	find maximum and minimum line numbers for this dh 
-		do this by setting i to dh_pos
-		starting at i-1, counting down to 1, we look for the first dh = dh_dict[siman_num][i]
-		such that confirmed_dict[siman_num][(i, dh)]'s length is 1 or we just use line 1
-		we then set confirmed_dict[siman_num][(i, dh)] to line_n
-		 (???? what if previous dh is 0?  ignore it)
-		starting at i+1, counting until highest line, we look for the first dh_dict[siman_num][i]
-		such that it's found == 1, or we just use highest line
-	
-	once we find max and min, we go through each dh, only adding them to our final_list
-	if the line they occur on is <=max and >=min
-	
-	if there are still multiples left over, pick the first or middle one
-		
-'''
