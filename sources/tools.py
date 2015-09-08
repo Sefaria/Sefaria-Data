@@ -3,6 +3,8 @@ import urllib2
 from urllib2 import URLError, HTTPError
 import json
 
+ak = 'uK9JdRhOiLfWtaf558CtM9f89M9pclF9VuyMZtFW0as'
+
 index = {
 	"title": "Sefer Ploni",
 	"titleVariants": ["Sefer Ploni", "The Book of Someone"],
@@ -15,7 +17,7 @@ def post_index(index):
 	indexJSON = json.dumps(index)
 	values = {
 		'json': indexJSON, 
-		'apikey': 'yourapikey'
+		'apikey': ak
 	}
 	data = urllib.urlencode(values)
 	req = urllib2.Request(url, data)
@@ -25,12 +27,7 @@ def post_index(index):
 	except HTTPError, e:
 		print 'Error code: ', e.code
 
-# post_index(index)
-
-
-import urllib
-import urllib2
-from urllib2 import URLError, HTTPError
+post_index(index)
 
 text = {
 	"versionTitle": "Example Sefer Ploni",
@@ -47,7 +44,7 @@ def post_text(ref, text):
 	textJSON = json.dumps(text)
 	ref = ref.replace(" ", "_")
 	url = 'http://localhost:8000/api/texts/%s' % ref
-	values = {'json': textJSON, 'apikey': 'yourapikey'}
+	values = {'json': textJSON, 'apikey': ak}
 	data = urllib.urlencode(values)
 	req = urllib2.Request(url, data)
 	try:
@@ -57,4 +54,4 @@ def post_text(ref, text):
 		print 'Error code: ', e.code
 		print e.read()
 
-# post_text("Sefer Ploni 5", text)
+post_text("Sefer Ploni 5", text)
