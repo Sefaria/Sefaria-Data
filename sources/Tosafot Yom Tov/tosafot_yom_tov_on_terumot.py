@@ -34,7 +34,7 @@ def post_index(index):
 root = SchemaNode()
 root.add_title("Tosafot Yom Tov on Mishnah Terumot", "en", primary=True)
 root.add_title(u"תוספות יום טוב על משנה תרומות", "he", primary=True)
-root.key = "tosafot_yom_tov_avot"
+root.key = "tosafot_yom_tov_terumot"
 
 sections = [("Terumot", u"תרומות", 1)]
 

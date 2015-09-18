@@ -46,8 +46,8 @@ gematria['ר'] = 200
 gematria['ש'] = 300
 gematria['ת'] = 400
 
-title_book = "Bava Metzia"
-title_comm = "Rashi on Bava Metzia" 
+title_book = "Bava Batra"
+title_comm = "Rashi on Bava Batra" 
 
 def post_text(ref, text):
     textJSON = json.dumps(text)
@@ -197,12 +197,11 @@ log = []
 dh_dict = {}
 rashi_comments = {}
 prev_line = 0
-for j in range(50): #350
-	i=j
+for i in range(350): #350
 	count = 0
 	rashi_comments[i+3] = []
 	dh_dict[i+3] = []
-	he_daf = u"בבא מציעא_"
+	he_daf = u"בבא בתרא_"
 	he_daf += AddressTalmud.toStr("he", i+3)
 	he_daf = he_daf.replace(u"\u05f4", u"")
 	he_daf = he_daf.replace(u"׳", u"")
@@ -219,8 +218,7 @@ for j in range(50): #350
 				rashi_comments[i+3].append(line)
 			count+=1
 	f.close()		
-for j in range(50):
-	i = j
+for i in range(350):
 	book[str(i+3)] = get_text(title_book+"."+AddressTalmud.toStr("en", i+3))
 	lines = len(book[str(i+3)])
 	if len(dh_dict[i+3]) > 0: 
@@ -247,7 +245,7 @@ for j in range(50):
 				"language": "he",
 				"text": rashi_comments[i+3][key-1],
 				}
-				post_text(title_comm+"."+AddressTalmud.toStr("en", i+3)+"."+str(line_n)+"."+str(result_dict[line_n]), text)
+				#post_text(title_comm+"."+AddressTalmud.toStr("en", i+3)+"."+str(line_n)+"."+str(result_dict[line_n]), text)
 				#createLinks(result, i+3)
 		
 if os.path.exists("log_"+title_comm+".txt") == True:

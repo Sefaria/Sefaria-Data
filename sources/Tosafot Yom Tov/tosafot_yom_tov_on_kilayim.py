@@ -38,7 +38,6 @@ root.key = "tosafot_yom_tov_kilayim"
 
 sections = [("Kilayim", u"כלאים", 1)]
 
-
 for sec in sections:
 	if sec[2] == 1:
 		intro_node = JaggedArrayNode()
@@ -49,6 +48,22 @@ for sec in sections:
 		intro_node.depth = 1
 		intro_node.addressTypes = ["Integer"]
 		root.append(intro_node)
+	intro_node = JaggedArrayNode()
+	intro_node.add_title(sec[0]+", Perek Three, Introduction", "en", primary=True)
+	intro_node.add_title(u"כלאים, פרק ג, הקדמה", "he", primary=True)
+	intro_node.key = 'intro_part3'
+	intro_node.sectionNames = ["Paragraph"]
+	intro_node.depth = 1
+	intro_node.addressTypes = ["Integer"]
+	root.append(intro_node)
+	intro_node = JaggedArrayNode()
+	intro_node.add_title(sec[0]+", Perek One, Introduction", "en", primary=True)
+	intro_node.add_title(u"כלאים, פרק א, הקדמה", "he", primary=True)
+	intro_node.key = 'intro_part1'
+	intro_node.sectionNames = ["Paragraph"]
+	intro_node.depth = 1
+	intro_node.addressTypes = ["Integer"]
+	root.append(intro_node)
 	main_node = JaggedArrayNode()
 	main_node.default = True
 	main_node.key = "default"

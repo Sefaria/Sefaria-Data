@@ -82,6 +82,17 @@ parshiot = ["Shemot", "Vaera", "Bo", "Beshalach", "Yitro",
 
 #each time we find a new perek, we record the current remez and current paragraph
 
+def get_index(ref):
+ 	ref = ref.replace(" ", "_")
+ 	url = 'http://www.sefaria.org/api/texts/'+ref
+ 	req = urllib2.Request(url)
+ 	try:
+ 		response = urllib2.urlopen(req)
+ 		data = json.load(response)
+ 		return data
+ 	except: 
+ 		return 'Error'
+ 		
 current_perek = 1
 current_remez = 162
 prev_perek = 1
@@ -96,6 +107,10 @@ perek_file = open('perek_Shemot.txt', 'w')
 if os.path.exists("parsha_Shemot.txt") == True:
 	os.remove("parsha_Shemot.txt")
 parsha_file = open("parsha_Shemot.txt", 'w')
+
+text = get_index("Yalkut Shimoni on Torah."+current_remez)['he']
+how_many = len(prev_text)
+para_n = how_many
 
 perek_file.write(str(current_perek)+","+str(current_remez)+","+str(para_n+1)+"\n")
 last_file = len(parshiot)-1
@@ -136,10 +151,10 @@ for parsha_count, parsha in enumerate(parshiot):
 					continuation = -1
 					continue
 				if first_line == True:
-					parsha_file.write(parsha+","+str(current_remez)+",1\n")
+					parsha_file.write(parsha+","+str(current_remez)+","+str(para_n+1)+"\n")
 					first_line=False
 				if new_perek:
-					perek_file.write(str(current_perek)+","+str(current_remez)+",1\n")
+					perek_file.write(str(current_perek)+","+str(current_remez)+","+str(para_n+1)+"\n")
 				if len(text)>0:
 					send_text = {
 					"versionTitle": whichYalkut,

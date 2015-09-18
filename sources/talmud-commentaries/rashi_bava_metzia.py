@@ -197,7 +197,7 @@ log = []
 dh_dict = {}
 rashi_comments = {}
 prev_line = 0
-for i in range(234):  
+for i in range(20):  
 	count = 0
 	rashi_comments[i+3] = []
 	dh_dict[i+3] = []
@@ -218,7 +218,7 @@ for i in range(234):
 				rashi_comments[i+3].append(line)
 			count+=1
 	f.close()		
-for i in range(234):
+for i in range(20):
 	book[str(i+3)] = get_text(title_book+"."+AddressTalmud.toStr("en", i+3))
 	lines = len(book[str(i+3)])
 	if len(dh_dict[i+3]) > 0: 
