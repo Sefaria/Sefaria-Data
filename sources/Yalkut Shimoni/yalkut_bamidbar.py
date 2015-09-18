@@ -42,6 +42,17 @@ gematria['ש'] = 300
 gematria['ת'] = 400
 
 
+def get_index(ref):
+ 	ref = ref.replace(" ", "_")
+ 	url = 'http://www.sefaria.org/api/texts/'+ref
+ 	req = urllib2.Request(url)
+ 	try:
+ 		response = urllib2.urlopen(req)
+ 		data = json.load(response)
+ 		return data
+ 	except: 
+ 		return 'Error'
+ 		
 def post_text(ref, text):
     textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
@@ -94,7 +105,9 @@ perek_file = open('perek_Bamidbar.txt', 'w')
 if os.path.exists("parsha_Bamidbar.txt") == True:
 	os.remove("parsha_Bamidbar.txt")
 parsha_file = open("parsha_Bamidbar.txt", 'w')
-
+text = get_index("Yalkut Shimoni on Torah."+current_remez)['he']
+how_many = len(prev_text)
+para_n = how_many
 perek_file.write(str(current_perek)+","+str(current_remez)+","+str(para_n+1)+"\n")
 last_file = len(parshiot)-1
 for parsha_count, parsha in enumerate(parshiot):
@@ -134,10 +147,10 @@ for parsha_count, parsha in enumerate(parshiot):
 					continuation = -1
 					continue
 				if first_line == True:
-					parsha_file.write(parsha+","+str(current_remez)+",1\n")
+					parsha_file.write(parsha+","+str(current_remez)+","+str(para_n+1)+"\n")
 					first_line=False
 				if new_perek:
-					perek_file.write(str(current_perek)+","+str(current_remez)+",1\n")
+					perek_file.write(str(current_perek)+","+str(current_remez)+","+str(para_n+1)+"\n")
 				if len(text)>0:
 					send_text = {
 					"versionTitle": whichYalkut,

@@ -56,7 +56,9 @@ def post_text(ref, text):
     req = urllib2.Request(url, data)
     try:
         response = urllib2.urlopen(req)
-        print response.read()
+        x = response.read()
+        if x.find("0")>=0:
+        	pdb.set_trace()
     except HTTPError, e:
         print 'Error code: ', e.code
         print e.read()
@@ -77,6 +79,11 @@ def post_link(info):
 		print 'Error code: ', e.code
 
 def createLinks(perek, mishnah, comment):
+	#first check that this mishnah exists
+	len_perek = len(get_index(title_book+"."+str(perek))['text'])
+	if mishnah > len_perek:
+		print "mishnah doesn't exist"
+		pdb.set_trace()
 	post_link({
 		"refs": [
 				title_book+"."+str(perek)+"."+str(mishnah), 
@@ -86,6 +93,7 @@ def createLinks(perek, mishnah, comment):
 		"auto": True,
 		"generated_by": title_comm+title_book+"linker",
 	 })
+	
 
 def gematriaFromSiman(txt):
 	index=0
@@ -105,7 +113,7 @@ def get_index(ref):
  		data = json.load(response)
  		return data
  	except: 
- 		print 'Error'
+ 		return 'Error'
         
 def get_text(ref):
     ref = ref.replace(" ", "_")
@@ -198,6 +206,8 @@ def separateDH_Comm(line):
 	line = line.replace("@88", "")
 	line = line.replace("@66", "")
 	line = line.replace("@77", "")
+	line = line.replace("4", "")
+	line = line.replace("5", "")
 	line = line.replace("&", "")
 	line = line.replace("*", "")
 	line = line.replace("#", "")
@@ -220,35 +230,48 @@ guess = 0
 matched = 0
 log = []
 title = ""
-if len(sys.argv) == 3:
-	pure_commentary = sys.argv[2]
+if len(sys.argv) == 2:
 	title = sys.argv[1]
-	title_comm = "Tosafot Yom Tov on "+title.capitalize()
+	title_comm = "Tosafot Yom Tov on Mishnah "+title.capitalize()
 	title_book = "Mishnah "+title.capitalize()
-elif len(sys.argv) == 4:
-	pure_commentary = sys.argv[3]
+elif len(sys.argv) == 3:
 	title = sys.argv[1]+"_"+sys.argv[2]
-	title_comm = "Tosafot Yom Tov on "+sys.argv[1].capitalize()+" "+sys.argv[2].capitalize()
+	title_comm = "Tosafot Yom Tov on Mishnah "+sys.argv[1].capitalize()+" "+sys.argv[2].capitalize()
 	title_book = "Mishnah "+sys.argv[1].capitalize()+" "+sys.argv[2].capitalize()
 f=open(title+".txt", 'r')
 perek_num = 0
 mishnah_num = 0
 dh_comm_dict = {}
 comm_dict = {}
+prev_line = ""
+prev_perek = -1
+prev_mishnah = -1
 for line in f:
 	line = line.replace('\n', '')
 	if line.find("@00") >= 0: #NEW PEREK
 		perek = line.replace(" ", "")
 		perek = perek.replace("@00פרק", "")
 		perek = perek.replace('@00פ"', "")
+		perek = perek.replace('@00פ', "")
 		perek = perek.replace("\n", "")
 		perek_num = gematriaFromSiman(perek)
+		if prev_perek == 4 and perek_num == 8:
+			pdb.set_trace()
+		if prev_perek == 7 and perek_num == 5:
+			pdb.set_trace()
 		dh_comm_dict[perek_num] = {}
 	elif line.find("@22") >= 0: #NEW MISHNAH
 		mishnah = line.split(" ")[0]
 		mishnah = mishnah.replace("@22", "")
 		mishnah = mishnah.replace("[*", "")
+		mishnah = mishnah.replace(" ", "")
 		mishnah_num = gematriaFromSiman(mishnah)
+		if prev_mishnah == 4 and mishnah_num == 8:
+			pdb.set_trace()
+		if prev_mishnah == 7 and mishnah_num == 5:
+			pdb.set_trace()
+		if mishnah_num == 0:
+			pdb.set_trace()
 		if len(line.split(" "))>2:
 			new_line = ""
 			for count, word in enumerate(line.split(" ")):
@@ -263,12 +286,19 @@ for line in f:
 		if not mishnah_num in dh_comm_dict[perek_num]:
 			dh_comm_dict[perek_num][mishnah_num] = []
 		dh_comm_dict[perek_num][mishnah_num].append("<b>"+dh+"</b>"+comm)
+	prev_line = line
+	prev_perek = perek_num
+	prev_mishnah = mishnah_num
 f.close()
 perek = {}
 #for each perek, for each mishnah, post dh_dict[p][m] + comm[p][m] to Tosefot Yom Tov, Mishnah ***.p.m
 #then create link between Tosefot Yom Tov.p.m.comment and Mishnah ***.p.m.comment
 for each_perek in dh_comm_dict:
-	for each_mishnah in dh_comm_dict[each_perek]:
+	len_perek = len(get_index(title_book+"."+str(each_perek))['text'])
+	last_mishnah_has_comment = False
+	for each_mishnah in dh_comm_dict[each_perek]:			
+		if each_mishnah == len_perek:
+			last_mishnah_has_comment = True
 		text = {
 		"versionTitle": "Mishnah with 73 commentaries",
 		"versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002036659",
@@ -276,6 +306,8 @@ for each_perek in dh_comm_dict:
 		"text": dh_comm_dict[each_perek][each_mishnah],
 		}
 		post_text(title_comm+"."+str(each_perek)+"."+str(each_mishnah), text)
-		if pure_commentary == "False":
-		  for each_comment in range(len(dh_comm_dict[each_perek][each_mishnah])):
+		for each_comment in range(len(dh_comm_dict[each_perek][each_mishnah])):
 			createLinks(each_perek, each_mishnah, each_comment+1)
+	if last_mishnah_has_comment == False:
+		print "last mishnah with no comment"
+		#pdb.set_trace()
