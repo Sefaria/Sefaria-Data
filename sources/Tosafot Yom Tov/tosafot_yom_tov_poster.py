@@ -56,7 +56,9 @@ def post_text(ref, text):
     req = urllib2.Request(url, data)
     try:
         response = urllib2.urlopen(req)
-        print response.read()
+        x = response.read()
+        if x.find("0")>=0:
+        	pdb.set_trace()
     except HTTPError, e:
         print 'Error code: ', e.code
         print e.read()
@@ -77,6 +79,11 @@ def post_link(info):
 		print 'Error code: ', e.code
 
 def createLinks(perek, mishnah, comment):
+	#first check that this mishnah exists
+	len_perek = len(get_index(title_book+"."+str(perek))['text'])
+	if mishnah > len_perek:
+		print "mishnah doesn't exist"
+		pdb.set_trace()
 	post_link({
 		"refs": [
 				title_book+"."+str(perek)+"."+str(mishnah), 
@@ -86,6 +93,7 @@ def createLinks(perek, mishnah, comment):
 		"auto": True,
 		"generated_by": title_comm+title_book+"linker",
 	 })
+	
 
 def gematriaFromSiman(txt):
 	index=0
@@ -105,7 +113,7 @@ def get_index(ref):
  		data = json.load(response)
  		return data
  	except: 
- 		print 'Error'
+ 		return 'Error'
         
 def get_text(ref):
     ref = ref.replace(" ", "_")
@@ -220,15 +228,13 @@ guess = 0
 matched = 0
 log = []
 title = ""
-if len(sys.argv) == 3:
-	pure_commentary = sys.argv[2]
+if len(sys.argv) == 2:
 	title = sys.argv[1]
-	title_comm = "Tosafot Yom Tov on "+title.capitalize()
+	title_comm = "Tosafot Yom Tov on Mishnah "+title.capitalize()
 	title_book = "Mishnah "+title.capitalize()
-elif len(sys.argv) == 4:
-	pure_commentary = sys.argv[3]
+elif len(sys.argv) == 3:
 	title = sys.argv[1]+"_"+sys.argv[2]
-	title_comm = "Tosafot Yom Tov on "+sys.argv[1].capitalize()+" "+sys.argv[2].capitalize()
+	title_comm = "Tosafot Yom Tov on Mishnah "+sys.argv[1].capitalize()+" "+sys.argv[2].capitalize()
 	title_book = "Mishnah "+sys.argv[1].capitalize()+" "+sys.argv[2].capitalize()
 f=open(title+".txt", 'r')
 perek_num = 0
@@ -241,6 +247,7 @@ for line in f:
 		perek = line.replace(" ", "")
 		perek = perek.replace("@00פרק", "")
 		perek = perek.replace('@00פ"', "")
+		perek = perek.replace('@00פ', "")
 		perek = perek.replace("\n", "")
 		perek_num = gematriaFromSiman(perek)
 		dh_comm_dict[perek_num] = {}
@@ -248,6 +255,7 @@ for line in f:
 		mishnah = line.split(" ")[0]
 		mishnah = mishnah.replace("@22", "")
 		mishnah = mishnah.replace("[*", "")
+		mishnah = mishnah.replace(" ", "")
 		mishnah_num = gematriaFromSiman(mishnah)
 		if len(line.split(" "))>2:
 			new_line = ""
@@ -276,6 +284,5 @@ for each_perek in dh_comm_dict:
 		"text": dh_comm_dict[each_perek][each_mishnah],
 		}
 		post_text(title_comm+"."+str(each_perek)+"."+str(each_mishnah), text)
-		if pure_commentary == "False":
-		  for each_comment in range(len(dh_comm_dict[each_perek][each_mishnah])):
+		for each_comment in range(len(dh_comm_dict[each_perek][each_mishnah])):
 			createLinks(each_perek, each_mishnah, each_comment+1)

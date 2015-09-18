@@ -32,8 +32,8 @@ def post_index(index):
 		print 'Error code: ', e.code
 		
 root = SchemaNode()
-root.add_title("Tosafot Yom Tov on Meilah", "en", primary=True)
-root.add_title(u"תוספות יום טוב על מעילה", "he", primary=True)
+root.add_title("Tosafot Yom Tov on Mishnah Meilah", "en", primary=True)
+root.add_title(u"תוספות יום טוב על משנה מעילה", "he", primary=True)
 root.key = "tosafot_yom_tov_meilah"
 
 sections = [("Meilah", u"מעילה", 1)]
@@ -59,8 +59,8 @@ for sec in sections:
 root.validate()
 
 index = {
-    "title": "Tosafot Yom Tov on Meilah",
-    "categories": ["Mishnah", "Commentary"],
+    "title": "Tosafot Yom Tov on Mishnah Meilah",
+    "categories": ["Commentary2", "Mishnah", "Tosafot Yom Tov"],
     "schema": root.serialize()
 }
 
