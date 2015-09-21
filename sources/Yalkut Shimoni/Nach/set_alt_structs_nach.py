@@ -37,7 +37,7 @@ def convertIntoRef(line):
 	perek = arr[0]
 	remez = arr[1]
 	para = arr[2]
-	return (perek, Ref("Yalkut Shimoni on Torah."+remez+"."+para))
+	return (perek, Ref("Yalkut Shimoni on Nach."+remez+"."+para))
 
 perakim = {}
 perakim = { "nodes" : [] }
@@ -60,12 +60,7 @@ def getHebrewParsha(parsha):
 			return title_heb[count]
 
 for count, title in enumerate(title_eng):
-	if title == 'Song of Songs': #Song of Songs, Lamentations, Esther
-		continue
-	if title=='Lamentations' or title=='Esther' or title=='Daniel':
-		continue
-	if title=='Ruth':  
-		break
+
 	f=open("parsha_"+title+".txt", 'r')
 	while True:
 		line = f.readline()
@@ -87,8 +82,7 @@ for count, title in enumerate(title_eng):
 		parshiot["nodes"].append(parsha.serialize())
 
 for count, title in enumerate(title_eng):
-	if title=='Isaiah':
-		break
+
 	f=open("perek_"+title+".txt", 'r')
 	line = "nothing"
 	first_one = ""
@@ -146,7 +140,7 @@ root.addressTypes = ["Integer", "Integer"]
 index = {
 	"title": "Yalkut Shimoni on Nach",
 	"categories": ["Midrash"],
-	"alt_structs": {"Parsha": parshiot},
+	"alt_structs": {"Parsha": parshiot, "Chapters": perakim},
 	"default_struct": "Remez",
 	"schema": root.serialize()
 }

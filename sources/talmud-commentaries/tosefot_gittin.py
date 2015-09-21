@@ -198,7 +198,8 @@ log = []
 dh_dict = {}
 tosafot_comments = {}
 prev_line = 0
-for i in range(178):
+for j in range(78):
+	i=j+100
 	count = 0
 	tosafot_comments[i+3] = []
 	dh_dict[i+3] = []
@@ -220,7 +221,8 @@ for i in range(178):
 			count+=1
 	f.close()		
 
-for i in range(178):
+for j in range(78):
+	i=j+100
 	book[i+3] = get_text(title_book+"."+AddressTalmud.toStr("en", i+3))
 	lines = len(book[i+3])
 	if len(dh_dict[i+3]) > 0: 
