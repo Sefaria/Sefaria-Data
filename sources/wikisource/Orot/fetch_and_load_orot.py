@@ -51,7 +51,7 @@ def get_single(url, offset):
 
 server = u"staging.sefaria.org"
 base = u"http://he.wikisource.org/wiki/"
-apikey = "uK9JdRhOiLfWtaf558CtM9f89M9pclF9VuyMZtFW0as"
+apikey = ""
 
 j = {
     "versionTitle": "Wikisource",

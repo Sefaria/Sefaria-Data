@@ -66,7 +66,16 @@ def gematriaFromSiman(line):
 			sum += gematria[txt[index:index+2]]
 		index+=1
 	return sum
-
+def get_index(ref):
+ 	ref = ref.replace(" ", "_")
+ 	url = 'http://www.sefaria.org/api/texts/'+ref
+ 	req = urllib2.Request(url)
+ 	try:
+ 		response = urllib2.urlopen(req)
+ 		data = json.load(response)
+ 		return data
+ 	except: 
+ 		return 'Error'
 
 whichYalkut = "Yalkut Shimoni on Nach" #as opposed to "Yalkut Shimoni on Nach"
 
@@ -74,14 +83,21 @@ whichYalkut = "Yalkut Shimoni on Nach" #as opposed to "Yalkut Shimoni on Nach"
 parsha = ""
 
 parsha = str(sys.argv[1])
-if len(sys.argv) > 2:
+if len(sys.argv) == 4:
 	parsha += " "+sys.argv[2]
+	current_remez = int(sys.argv[3])
+elif len(sys.argv) == 5:
+	parsha += " "+sys.argv[2]
+	parsha += " "+sys.argv[3]
+	current_remez = int(sys.argv[4])
+elif len(sys.argv) == 3:
+	current_remez = int(sys.argv[2])
+	
 parshiot = [parsha]
 
 #each time we find a new perek, we record the current remez and current paragraph
 
 current_perek = 1
-current_remez = 224
 prev_perek = 1
 prev_remez = current_remez
 text=[]
@@ -95,7 +111,15 @@ if os.path.exists("parsha_"+parsha+".txt") == True:
 	os.remove("parsha_"+parsha+".txt")
 parsha_file = open("parsha_"+parsha+".txt", 'w')
 prev_line = ""
-perek_file.write(str(current_perek)+","+str(current_remez)+","+str(para_n+1)+"\n")
+text = get_index("Yalkut Shimoni on Nach."+str(current_remez))['he']
+how_many = len(text)
+para_n = how_many
+dont_post = False
+if para_n > 0:
+	dont_post = True
+	perek_file.write(str(current_perek)+","+str(current_remez)+","+str(para_n)+"\n")
+else:
+	perek_file.write(str(current_perek)+","+str(current_remez)+",1\n")
 last_file = len(parshiot)-1
 for parsha_count, parsha in enumerate(parshiot):
 	first_line = True
@@ -134,18 +158,25 @@ for parsha_count, parsha in enumerate(parshiot):
 				prev_perek = current_perek
 				if continuation >= 0:
 					if first_line == True:
-						parsha_file.write(parsha+","+str(current_remez)+","+str(para_n+1)+"\n")
+						if para_n > 0:
+							parsha_file.write(parsha+","+str(current_remez)+","+str(para_n)+"\n")
+						else:
+							parsha_file.write(parsha+","+str(current_remez)+",1\n")
 						first_line=False
 					if new_perek:
 						perek_file.write(str(current_perek)+","+str(current_remez)+","+str(para_n+1)+"\n")
 					continuation = -1
+					dont_post = False
 					continue
 				if first_line == True:
-					parsha_file.write(parsha+","+str(current_remez)+",1\n")
+					if para_n > 0:
+						parsha_file.write(parsha+","+str(current_remez)+","+str(para_n)+"\n")
+					else:
+						parsha_file.write(parsha+","+str(current_remez)+",1\n")
 					first_line=False
 				if new_perek:
-					perek_file.write(str(current_perek)+","+str(current_remez)+",1\n")
-				if len(text)>0:
+					perek_file.write(str(current_perek)+","+str(current_remez)+","+str(para_n+1)+"\n")
+				if len(text)>0 and dont_post==False:
 					send_text = {
 					"versionTitle": whichYalkut,
 					"versionSource": "http://www.tsel.org/torah/yalkutsh/",
@@ -159,13 +190,16 @@ for parsha_count, parsha in enumerate(parshiot):
 				prev_parsha = parsha
 				new_perek = False
 				prev_line = line
+				dont_post=False
 			else:
 				if first_line == True:
-					parsha_file.write(parsha+","+str(current_remez)+","+str(para_n+1)+"\n")
+					parsha_file.write(parsha+","+str(current_remez)+","+str(para_n)+"\n")
 					first_line = False
-				if line.find("<P>")>=0 and line.find("</P>")>=0:
+				if line.find("<P>")>=0 or line.find("</P>")>=0 or line.find("<p>")>=0 or line.find("</p>")>=0:
 					line = line.replace("<P>", "")
 					line = line.replace("</P>", "")
+					line = line.replace("<p>", "")
+					line = line.replace("</p>", "")
 				text.append(line)
 				para_n += 1
 				prev_line = line

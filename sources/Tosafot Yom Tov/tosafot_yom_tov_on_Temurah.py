@@ -32,8 +32,8 @@ def post_index(index):
 		print 'Error code: ', e.code
 		
 root = SchemaNode()
-root.add_title("Tosafot Yom Tov on Temurah", "en", primary=True)
-root.add_title(u"תוספות יום טוב על תמורה", "he", primary=True)
+root.add_title("Tosafot Yom Tov on Mishnah Temurah", "en", primary=True)
+root.add_title(u"תוספות יום טוב על משנה תמורה", "he", primary=True)
 root.key = "tosafot_yom_tov_temurah"
 
 sections = [("Temurah", u"תמורה", 1)]
@@ -51,7 +51,6 @@ for sec in sections:
 	main_node = JaggedArrayNode()
 	main_node.default = True
 	main_node.key = "default"
-	main_node.key = sec[0]
 	main_node.sectionNames = ["Perek", "Mishnah", "Comment"]
 	main_node.depth = 3
 	main_node.addressTypes = ["Integer", "Integer", "Integer"]
@@ -60,8 +59,8 @@ for sec in sections:
 root.validate()
 
 index = {
-    "title": "Tosafot Yom Tov on Temurah",
-    "categories": ["Mishnah", "Commentary"],
+    "title": "Tosafot Yom Tov on Mishnah Temurah",
+    "categories": ["Commentary2", "Mishnah", "Tosafot Yom Tov"],
     "schema": root.serialize()
 }
 

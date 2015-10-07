@@ -138,10 +138,10 @@ for parsha_count, parsha in enumerate(parshiot):
 					continuation = -1
 					continue
 				if first_line == True:
-					parsha_file.write(parsha+","+str(current_remez)+",1\n")
+					parsha_file.write(parsha+","+str(current_remez)+","+str(para_n+1)+"\n")
 					first_line=False
 				if new_perek:
-					perek_file.write(str(current_perek)+","+str(current_remez)+",1\n")
+					perek_file.write(str(current_perek)+","+str(current_remez)+","+str(para_n+1)+"\n")
 				if len(text)>0:
 					send_text = {
 					"versionTitle": whichYalkut,

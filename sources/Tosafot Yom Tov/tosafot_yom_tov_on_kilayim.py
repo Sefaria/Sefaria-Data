@@ -32,12 +32,11 @@ def post_index(index):
 		print 'Error code: ', e.code
 		
 root = SchemaNode()
-root.add_title("Tosafot Yom Tov on Kilayim", "en", primary=True)
-root.add_title(u"תוספות יום טוב על כלאים", "he", primary=True)
+root.add_title("Tosafot Yom Tov on Mishnah Kilayim", "en", primary=True)
+root.add_title(u"תוספות יום טוב על משנה כלאים", "he", primary=True)
 root.key = "tosafot_yom_tov_kilayim"
 
 sections = [("Kilayim", u"כלאים", 1)]
-
 
 for sec in sections:
 	if sec[2] == 1:
@@ -49,6 +48,22 @@ for sec in sections:
 		intro_node.depth = 1
 		intro_node.addressTypes = ["Integer"]
 		root.append(intro_node)
+	intro_node = JaggedArrayNode()
+	intro_node.add_title(sec[0]+", Perek Three, Introduction", "en", primary=True)
+	intro_node.add_title(u"כלאים, פרק ג, הקדמה", "he", primary=True)
+	intro_node.key = 'intro_part3'
+	intro_node.sectionNames = ["Paragraph"]
+	intro_node.depth = 1
+	intro_node.addressTypes = ["Integer"]
+	root.append(intro_node)
+	intro_node = JaggedArrayNode()
+	intro_node.add_title(sec[0]+", Perek One, Introduction", "en", primary=True)
+	intro_node.add_title(u"כלאים, פרק א, הקדמה", "he", primary=True)
+	intro_node.key = 'intro_part1'
+	intro_node.sectionNames = ["Paragraph"]
+	intro_node.depth = 1
+	intro_node.addressTypes = ["Integer"]
+	root.append(intro_node)
 	main_node = JaggedArrayNode()
 	main_node.default = True
 	main_node.key = "default"
@@ -60,8 +75,8 @@ for sec in sections:
 root.validate()
 
 index = {
-    "title": "Tosafot Yom Tov on Kilayim",
-    "categories": ["Mishnah", "Commentary"],
+    "title": "Tosafot Yom Tov on Mishnah Kilayim",
+    "categories": ["Commentary2", "Mishnah", "Tosafot Yom Tov"],
     "schema": root.serialize()
 }
 
