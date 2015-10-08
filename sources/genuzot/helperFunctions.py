@@ -12,7 +12,7 @@ import pprint
 
 
 #for dev testing, normally comment out.
-apikey =  'uK9JdRhOiLfWtaf558CtM9f89M9pclF9VuyMZtFW0as' #Add your API key
+apikey =  '' #Add your API key
 #server = 'www.sefaria.org'
 server = 'localhost:8000'
 #server='eph.sefaria.org'

@@ -12,7 +12,7 @@ import json
 masechet = str(sys.argv[1])
 min_ratio = int(sys.argv[2])
 step = int(sys.argv[3])
-commentator = str(sys.args[4])
+commentator = str(sys.argv[4])
 if "_" in masechet:
     masechet = re.sub("_", " ", masechet)
 else:
@@ -98,8 +98,12 @@ def read_rashi():
                 for liner in list:
                     if "-" in liner or "–" in liner:
                         #print line
+                        pass
+                    if commentator in "Rashi":
                         dh = re.split("(?:-|–)",liner)[0]
-                        match(dh.decode('utf-8'),shas[index],index,liner.decode('utf-8'))
+                    elif "Tosafot" in commentator :
+                        dh = re.split(ur"\.",liner)[0]
+                    match(dh.decode('utf-8'),shas[index],index,liner.decode('utf-8'))
 
 
 def match(dh,shas,index,dibur, ratio=100):
@@ -234,7 +238,7 @@ def save_parsed_text(text):
     #JSON obj matching the API requirements
     text_whole = {
         "title": '%s' % commentator ,
-        "versionTitle": "Vilna Edition",
+        "versionTitle": "Wikisource " +commentator,
         "versionSource":  "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957",
         "language": "he",
         "text": text,
@@ -252,8 +256,9 @@ def run_post_to_api():
     mas = re.sub("_"," ", masechet.strip())
     Helper.postText("{} on {}".format(commentator, masechet) , file_text, False)
 
+
 def post_logs():
-    log =open("log/log_%s.txt" % masechet,"w")
+    log =open("../../Match Logs/Talmud/{}/log_{}_{}.txt".format(masechet,masechet,commentator),"w")
     for i, diction in enumerate(found_list):
          if len(found_list[i]["lines"])==0:
             log.write("did not find daf: "+ convert_inf_to_daf(found_list[i]["index"]) + " dh: " + found_list[i]["dh"].encode('utf-8') + "\n" + "text: \n" + found_list[i]["dibbur"].encode('utf-8') + "\n" )

@@ -3,7 +3,7 @@ import urllib2
 from urllib2 import URLError, HTTPError
 import json
 
-ak = 'uK9JdRhOiLfWtaf558CtM9f89M9pclF9VuyMZtFW0as'
+ak = ''
 
 index = {
 	"title": "Sefer Ploni",
