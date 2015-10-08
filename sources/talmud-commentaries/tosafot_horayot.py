@@ -246,7 +246,7 @@ for i in range(13):
 				"language": "he",
 				"text": rashi_comments[i+3][key-1],
 				}
-				post_text(title_comm+"."+AddressTalmud.toStr("en", i+3)+"."+str(line_n)+"."+str(result_dict[line_n]), text)
+				#post_text(title_comm+"."+AddressTalmud.toStr("en", i+3)+"."+str(line_n)+"."+str(result_dict[line_n]), text)
 				#createLinks(result, i+3)
 		
 if os.path.exists("log_"+title_comm+".txt") == True:

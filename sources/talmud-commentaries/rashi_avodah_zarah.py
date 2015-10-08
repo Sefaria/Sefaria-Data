@@ -198,8 +198,8 @@ prev_line = 0
 title_book = "Avodah Zarah"
 title_comm = "Rashi on Avodah Zarah" 
 
-for j in range(1): 
-	i=j+149
+for j in range(2): 
+	i=j+78
 	count = 0
 	rashi_comments[i+3] = []
 	dh_dict[i+3] = []
@@ -220,8 +220,8 @@ for j in range(1):
 				rashi_comments[i+3].append(line)
 			count+=1
 	f.close()		
-for j in range(1):
-	i=j+149
+for j in range(2):
+	i=j+78
 	book[str(i+3)] = get_text(title_book+"."+AddressTalmud.toStr("en", i+3))
 	lines = len(book[str(i+3)])
 	if len(dh_dict[i+3]) > 0: 

@@ -197,8 +197,7 @@ log = []
 dh_dict = {}
 rashi_comments = {}
 prev_line = 0
-for j in range(50): #244
-	i=j+50
+for i in range(241): #244
 	count = 0
 	rashi_comments[i+3] = []
 	dh_dict[i+3] = []
@@ -219,8 +218,7 @@ for j in range(50): #244
 				rashi_comments[i+3].append(line)
 			count+=1
 	f.close()		
-for j in range(50):
-	i=50+j
+for i in range(241):
 	book[str(i+3)] = get_text(title_book+"."+AddressTalmud.toStr("en", i+3))
 	lines = len(book[str(i+3)])
 	if len(dh_dict[i+3]) > 0: 
@@ -247,7 +245,7 @@ for j in range(50):
 				"language": "he",
 				"text": rashi_comments[i+3][key-1],
 				}
-				post_text(title_comm+"."+AddressTalmud.toStr("en", i+3)+"."+str(line_n)+"."+str(result_dict[line_n]), text)
+				#post_text(title_comm+"."+AddressTalmud.toStr("en", i+3)+"."+str(line_n)+"."+str(result_dict[line_n]), text)
 				#createLinks(result, i+3)
 		
 if os.path.exists("log_"+title_comm+".txt") == True:
