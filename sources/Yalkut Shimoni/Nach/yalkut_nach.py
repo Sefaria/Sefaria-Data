@@ -68,7 +68,7 @@ def gematriaFromSiman(line):
 	return sum
 def get_index(ref):
  	ref = ref.replace(" ", "_")
- 	url = 'http://www.sefaria.org/api/texts/'+ref
+ 	url = SEFARIA_SERVER+'/api/texts/'+ref
  	req = urllib2.Request(url)
  	try:
  		response = urllib2.urlopen(req)
@@ -117,7 +117,7 @@ para_n = how_many
 dont_post = False
 if para_n > 0:
 	dont_post = True
-	perek_file.write(str(current_perek)+","+str(current_remez)+","+str(para_n)+"\n")
+	perek_file.write(str(current_perek)+","+str(current_remez)+","+str(para_n+1)+"\n")
 else:
 	perek_file.write(str(current_perek)+","+str(current_remez)+",1\n")
 last_file = len(parshiot)-1
@@ -152,31 +152,31 @@ for parsha_count, parsha in enumerate(parshiot):
 				current_remez = gematriaFromSiman(remez)
 				current_perek = gematriaFromSiman(perek)
 				new_perek = False
+				new_remez = False
+				#if current_perek == 140:
+				#	pdb.set_trace()
 				if prev_perek != current_perek:
 					perek_file.write(str(prev_perek)+","+str(prev_remez) + ","+str(para_n)+"\n") 
 					new_perek = True
 				prev_perek = current_perek
+				if first_line==False and prev_remez != current_remez:
+					new_remez = True
+					para_n = 0
+				if first_line == True:
+					if para_n > 0:
+						parsha_file.write(parsha+","+str(current_remez)+","+str(para_n+1)+"\n")
+					else:
+						parsha_file.write(parsha+","+str(current_remez)+",1\n")
+					first_line=False
 				if continuation >= 0:
-					if first_line == True:
-						if para_n > 0:
-							parsha_file.write(parsha+","+str(current_remez)+","+str(para_n)+"\n")
-						else:
-							parsha_file.write(parsha+","+str(current_remez)+",1\n")
-						first_line=False
 					if new_perek:
 						perek_file.write(str(current_perek)+","+str(current_remez)+","+str(para_n+1)+"\n")
 					continuation = -1
 					dont_post = False
 					continue
-				if first_line == True:
-					if para_n > 0:
-						parsha_file.write(parsha+","+str(current_remez)+","+str(para_n)+"\n")
-					else:
-						parsha_file.write(parsha+","+str(current_remez)+",1\n")
-					first_line=False
 				if new_perek:
 					perek_file.write(str(current_perek)+","+str(current_remez)+","+str(para_n+1)+"\n")
-				if len(text)>0 and dont_post==False:
+				if len(text)>0 and new_remez==True and dont_post==False:
 					send_text = {
 					"versionTitle": whichYalkut,
 					"versionSource": "http://www.tsel.org/torah/yalkutsh/",

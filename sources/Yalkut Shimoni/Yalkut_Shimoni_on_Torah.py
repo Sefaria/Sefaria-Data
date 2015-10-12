@@ -74,7 +74,7 @@ root.validate()
 
 index = {
     "title": "Yalkut Shimoni on Torah",
-    "categories": ["Midrash"],
+    "categories": ["Midrash", "Aggadic Midrash"],
     "schema": root.serialize()
 }
 

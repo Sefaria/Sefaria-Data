@@ -198,7 +198,8 @@ log = []
 dh_dict = {}
 tosafot_comments = {}
 prev_line = 0
-for i in range(50): #234
+for j in range(24): #234
+	i = j+210
 	count = 0
 	tosafot_comments[i+3] = []
 	dh_dict[i+3] = []
@@ -220,7 +221,8 @@ for i in range(50): #234
 			count+=1
 	f.close()		
 
-for i in range(50):
+for j in range(24):
+	i=j+210
 	book[i+3] = get_text(title_book+"."+AddressTalmud.toStr("en", i+3))
 	lines = len(book[i+3])
 	if len(dh_dict[i+3]) > 0: 
@@ -242,7 +244,7 @@ for i in range(50):
 				result_dict[line_n] = 1
 			if line_n > 0:
 				text = {
-				"versionTitle": "WikiSource",
+				"versionTitle": "WikiSource_new",
 				"versionSource": "https://he.wikisource.org/wiki/תלמוד_בבלי",
 				"language": "he",
 				"text": tosafot_comments[i+3][key-1],
