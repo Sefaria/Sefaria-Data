@@ -170,6 +170,7 @@ class Match:
 		for dh in self.dh_orig_list:
 			self.match(dh, page, dh_pos)
 			dh_pos+=1
+	#	pdb.set_trace()
 		self.non_match_file.close()
 		return self.multipleMatches()
 			

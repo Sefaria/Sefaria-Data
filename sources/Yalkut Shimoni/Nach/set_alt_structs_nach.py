@@ -140,7 +140,7 @@ root.addressTypes = ["Integer", "Integer"]
 index = {
 	"title": "Yalkut Shimoni on Nach",
 	"categories": ["Midrash"],
-	"alt_structs": {"Parsha": parshiot, "Chapters": perakim},
+	"alt_structs": {"Chapters": perakim},
 	"default_struct": "Remez",
 	"schema": root.serialize()
 }
