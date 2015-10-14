@@ -8,10 +8,10 @@ import bet_yosef
 sys.path.insert(1, '../genuzot')
 import helperFunctions as Helper
 import hebrew
-
+links =[]
 
 def addlink( simanspot, sifspot,diburspot, part = "Orach Chaim",commentator = "new Bet Yosef"):
-    tur = u"new Tur, " + part+ "." +str(simanspot) + "." + str(str(sifspot))
+    tur = u"New Tur, " + part+ "." +str(simanspot) + "." + str(str(sifspot))
     commentry = commentator + "." +str(simanspot) +"."+ str(diburspot)
 
     return {
@@ -120,13 +120,13 @@ def parse(text):
              #taking care of links
              localbet_yosef += len(re.findall("@66",simans.group(1)))
              if "@66" in simans.group(1):
-                 Helper.postLink(addlink(len(tur)+1,1, localbet_yosef ))
+                 links.append(addlink(len(tur)+1,1, localbet_yosef ))
              localbet_yosef += len(re.findall("@66",simans.group(2)))
              if "@66" in simans.group(2):
-                 Helper.postLink(addlink(len(tur)+1,1, localbet_yosef ))
+                 links.append(addlink(len(tur)+1,1, localbet_yosef ))
              for sif_num,sifs in enumerate(text1, start =1):
                  for a in range(1,len(re.findall("@66", sifs))):
-                     Helper.postLink(addlink(len(tur)+1,sif_num , a+localbet_yosef ))
+                     links.append(addlink(len(tur)+1,sif_num , a+localbet_yosef ))
              if localbet_yosef - len(karo[len(tur)+1]) != -1:
                 #print simans.group(2),roman_siman,  localbet_yosef, len(karo[len(tur)+1])
                 pass
@@ -172,8 +172,13 @@ def run_post_to_api():
 if __name__ == '__main__':
     betyosef = bet_yosef.open_file()
     karo = bet_yosef.parse(betyosef)
+    #bet_yosef.save_parsed_text(karo)
+    #bet_yosef.book_record()
+    #bet_yosef.run_post_to_api()
     text = open_file()
     parsed =parse(text)
     #compare(text,karo)
- #   save_parsed_text(parsed)
-#    run_post_to_api()
+    save_parsed_text(parsed)
+    run_post_to_api()
+    for link in links:
+        Helper.postLink(link)

@@ -97,13 +97,11 @@ def read_rashi():
                 list = re.split("\n",file_text)
                 for liner in list:
                     if "-" in liner or "–" in liner:
-                        #print line
-                        pass
-                    if commentator in "Rashi":
-                        dh = re.split("(?:-|–)",liner)[0]
-                    elif "Tosafot" in commentator :
-                        dh = re.split(ur"\.",liner)[0]
-                    match(dh.decode('utf-8'),shas[index],index,liner.decode('utf-8'))
+                        if commentator in "Rashi":
+                            dh = re.split("(?:-|–)",liner)[0]
+                        elif "Tosafot" in commentator :
+                            dh = re.split(ur"\.",liner)[0]
+                        match(dh.decode('utf-8'),shas[index],index,liner.decode('utf-8'))
 
 
 def match(dh,shas,index,dibur, ratio=100):
