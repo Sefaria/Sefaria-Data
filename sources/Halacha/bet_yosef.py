@@ -9,9 +9,61 @@ import helperFunctions as Helper
 import hebrew
 
 
+def build_index():
+    root = SchemaNode()
+    root.key = 'New Bet Yosef'
+    root.add_title("New Bet Yosef", "en", primary=True)
+    root.add_title(u"בית יוסף חדש", "he", primary=True)
+    part1 = JaggedArrayNode()
+    part1.key = 'Orach Chaim'
+    part1.add_title(u"אורח חיים", "he", primary=True)
+    part1.add_title("Orach Chaim", "en", primary=True)
+    part1.depth = 2
+    part1.sectionNames = ["siman", "seif"]
+    part1.addressTypes = ["Integer", "Integer"]
+
+    part2 = JaggedArrayNode()
+    part2.key = 'Yoreh De\'ah'
+    part2.add_title(u"יורה דעה", "he", primary=True)
+    part2.add_title("Yoreh De\'ah", "en", primary=True)
+    part2.depth = 2
+    part2.sectionNames = ["siman", "seif"]
+    part2.addressTypes = ["Integer", "Integer"]
+
+    part3 = JaggedArrayNode()
+    part3.key = 'Even HaEzer'
+    part3.add_title(u"אבן העזר", "he", primary=True)
+    part3.add_title("Even HaEzer", "en", primary=True)
+    part3.depth = 2
+    part3.sectionNames = ["siman", "seif"]
+    part3.addressTypes = ["Integer", "Integer"]
+
+    part4 = JaggedArrayNode()
+    part4.key = 'Choshen Mishpat'
+    part4.add_title(u"חושן משפט", "he", primary=True)
+    part4.add_title("Choshen Mishpat", "en", primary=True)
+    part4.depth = 2
+    part4.sectionNames = ["siman", "seif"]
+    part4.addressTypes = ["Integer", "Integer"]
+
+    root.append(part1)
+    root.append(part2)
+    root.append(part3)
+    root.append(part4)
+
+    root.validate()
+
+
+    index = {
+        "title": "New Bet Yosef",
+        "categories": ["Commentary2", "Halakhah", "New Tur"],
+        "schema": root.serialize()
+    }
+    return index
+
 def book_record():
       return {
-    "title" : "new Bet Yosef" ,
+    "title" : "New Bet Yosef" ,
     "categories" : [
        "Commentary2",
        "Halkhah"
@@ -20,7 +72,7 @@ def book_record():
         "titles" : [
             {
                 "lang" : "en",
-                "text" : "new Bet Yosef",
+                "text" : "New Bet Yosef",
                 "primary" : True
             },
             {
@@ -39,7 +91,7 @@ def book_record():
            "Integer",
             "Integer"
         ],
-        "key" : "new Bet Yosef"
+        "key" : "New Bet Yosef"
     }
 	}
 
@@ -77,7 +129,7 @@ def parse(text):
 
 def save_parsed_text(parsed):
     text_whole = {
-    "title": 'new Bet Yosef',
+    "title": 'New Bet Yosef',
     "versionTitle": "Vilna Edition",
     "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957",
     "language": "he",
@@ -93,10 +145,10 @@ def save_parsed_text(parsed):
 
 
 def run_post_to_api():
-    Helper.createBookRecord(book_record())
+    Helper.createBookRecord(build_index())
     with open("preprocess_json/Bet_Yosef.json", 'r') as filep:
         file_text = filep.read()
-    Helper.postText("new Bet Yosef", file_text, False)
+    Helper.postText("New Bet Yosef, Orach Chaim", file_text, False)
 
 
 if __name__ == '__main__':
