@@ -120,18 +120,29 @@ def parse(text):
      bet_yosef=[]
      simanim = re.split("@22", text)
      for siman in simanim:
+         seif =[]
          dh = re.split("@66", siman)
-         bet_yosef.append(dh)
-     print len(bet_yosef)
-     print bet_yosef[len(bet_yosef)-1][0]
-     return bet_yosef
+         i = 1
+         for text in dh:
+             bolded_dh = re.finditer(ur'@11(.*)@33(.*)',text)
+             for bold in bolded_dh:
+                new_dh = "[" + str(i) +"]" + "<b>"  + bold.group(1) + '</b>' + bold.group(2)
+                seif.append(new_dh)
+                i += 1
+         bet_yosef.append(seif)
+     print "length bet yosef", len(bet_yosef)
+     #print bet_yosef[len(bet_yosef)-1][0]
+     if len(bet_yosef[0])<2:
+         return bet_yosef[1:len(bet_yosef)-1]
+     else:
+        return bet_yosef
 
 
 def save_parsed_text(parsed):
     text_whole = {
     "title": 'New Bet Yosef',
-    "versionTitle": "Vilna Edition",
-    "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957",
+    "versionTitle": "Vilna 1924",
+    "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001935970",
     "language": "he",
     "text": parsed,
     "digitizedBySefaria": True,
@@ -154,7 +165,8 @@ def run_post_to_api():
 if __name__ == '__main__':
     text = open_file()
     parsed =parse(text)
-    save_parsed_text(parsed[1:len(parsed)-1])
+
+    save_parsed_text(parsed)
     run_post_to_api()
 
 

@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 __author__ = 'eliav'
 import sys
+from httplib import BadStatusLine
 import json
 import re
+from itertools import count
 from sefaria.model import *
 import bet_yosef
 sys.path.insert(1, '../genuzot')
@@ -10,9 +12,10 @@ import helperFunctions as Helper
 import hebrew
 links =[]
 
-def addlink( simanspot, sifspot,diburspot, part = "Orach Chaim",commentator = "new Bet Yosef"):
-    tur = u"New Tur, " + part+ "." +str(simanspot) + "." + str(str(sifspot))
-    commentry = commentator + "." +str(simanspot) +"."+ str(diburspot)
+
+def addlink( simanspot, sifspot,diburspot, part = "Orach Chaim",commentator = "New Bet Yosef"):
+    tur = u"New Tur, " + part+ "." + str(simanspot) + "." + str(str(sifspot))
+    commentry = commentator + ", " + part + "." +str(simanspot) +"."+ str(diburspot)
 
     return {
             "refs": [
@@ -101,41 +104,50 @@ def parse(text):
             halacha_name = halacha.splitlines()[0]
             #print halacha_name #get the name of the part
         simanim = re.finditer(ur'(@?[0-9]?[0-9]?@?[0-9]?[0-9]?)@22(.*)@11(.*)',halacha) #cut the text to simanim, get kletter of siman and tags to commentary
+        i = 1
         for simans in simanim:
              localbet_yosef = 0
              siman = simans.group(2)
              siman = re.sub(ur'[\(\[].*?[\)\]]',"", siman)
              siman = re.sub(ur'[^\u05d0-\u05ea]',"", siman)
              if len(siman)> 4:
-                 print simans.group(2)
-                 print simans.group(3)
+                # print simans.group(2)
+                 #print simans.group(3)
+                pass
              roman_siman = hebrew.heb_string_to_int(siman.strip())
              bold = re.split(ur'@33',simans.group(3))
              if len(bold) ==2:
-                 text = "<b>" + bold[0] + "</b>" + bold[1]
+                 text = simans.group(1) +"<b>" + bold[0] + "</b>" + bold[1]
              else:
-                 text = simans.group(3)
-             text1 = re.split(u"(.*?[.:])", text)
-             text1 = filter(None, text1)
+                 text =simans.group(1) + simans.group(3)
+             #text1 = re.split(u"(.*?[.:])", text)
+             #text1 = filter(None, text1)
              #taking care of links
-             localbet_yosef += len(re.findall("@66",simans.group(1)))
-             if "@66" in simans.group(1):
-                 links.append(addlink(len(tur)+1,1, localbet_yosef ))
-             localbet_yosef += len(re.findall("@66",simans.group(2)))
-             if "@66" in simans.group(2):
-                 links.append(addlink(len(tur)+1,1, localbet_yosef ))
-             for sif_num,sifs in enumerate(text1, start =1):
-                 for a in range(1,len(re.findall("@66", sifs))):
-                     links.append(addlink(len(tur)+1,sif_num , a+localbet_yosef ))
-             if localbet_yosef - len(karo[len(tur)+1]) != -1:
-                #print simans.group(2),roman_siman,  localbet_yosef, len(karo[len(tur)+1])
-                pass
-             if roman_siman - older_siman > 1:
-                 print siman
-                 print roman_siman
-             older_siman = roman_siman
+             try:
+                 for k in range(0,len(karo[len(tur)])):
+                     #print len(tur)+1,k
+                 #for k in range(1,len(re.findall("@66",simans.group(0)))):
+                 #print simans.group(0)
+                     if "@66" in simans.group(1):
+                         links.append(addlink(len(tur)+1,1, k+1 ))
+                     localbet_yosef += len(re.findall("@66",simans.group(2)))
+                     if "@66" in simans.group(2):
+                         links.append(addlink(len(tur)+1,1, k+1 ))
+                     for sif_num,sifs in enumerate(text, start =1):
+                         for a in range(1,len(re.findall("@66", sifs))):
+                             links.append(addlink(len(tur)+1,sif_num , a+k+1 ))
+                 #if localbet_yosef - len(karo[len(tur)+1]) != -1:
+                    #print simans.group(2),roman_siman,  localbet_yosef, len(karo[len(tur)+1])
+                  #  pass
+                 if roman_siman - older_siman != 1:
+                     print siman
+                     print roman_siman
+                 older_siman = roman_siman
+                 text = re.sub(ur'@66', lambda m, c=count(1): '[{}]'.format(next(c)), text)
+                 tur.append([text])
+             except IndexError:
+                 print "out of index"
 
-             tur.append(text1)
     arbaturim.append(tur)
     depth = lambda L: isinstance(L, list) and max(map(depth, L))+1
     print depth(tur)
@@ -145,8 +157,8 @@ def parse(text):
 def save_parsed_text(parsed_text):
     text_whole = {
         "title": 'New Tur',
-        "versionTitle": "Vilna Edition",
-        "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957",
+        "versionTitle": "Vilna 1924",
+        "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001935970",
         "language": "he",
         "text": parsed_text,
         "digitizedBySefaria": True,
@@ -172,13 +184,20 @@ def run_post_to_api():
 if __name__ == '__main__':
     betyosef = bet_yosef.open_file()
     karo = bet_yosef.parse(betyosef)
-    #bet_yosef.save_parsed_text(karo)
-    #bet_yosef.book_record()
-    #bet_yosef.run_post_to_api()
+    bet_yosef.save_parsed_text(karo)
+    bet_yosef.book_record()
+    try:
+        bet_yosef.run_post_to_api()
+    except BadStatusLine:
+        print "got bad status"
     text = open_file()
     parsed =parse(text)
     #compare(text,karo)
     save_parsed_text(parsed)
-    run_post_to_api()
+    try:
+       run_post_to_api()
+    except BadStatusLine:
+        print "got bad status"
     for link in links:
-        Helper.postLink(link)
+       Helper.postLink(link)
+       pass
