@@ -24,12 +24,12 @@ the acronyms_file is in the following format:
 In other words, one line is the acronym, the next is the actual word or phrase, and then a blank line.
 
 3. min_ratio (default is 70) -  The Match class uses the python library fuzzywuzzy to calculate 
-the similarity between two strings.  Specifically, fuzz.partial_ratio(string_1, string_2) returns a number 
-between 0 and 100 indicating how similar two strings are.  The Match class' match function starts out looking
+the similarity between two strings, returning a number between 0 and 100 indicating how similar two strings are.  
+The Match class' match function starts out looking
 for matches of at least 85 (see below in the match function where you can change the number 85 to whatever you want),
 and then, when there is no match it recursively lowers the ratio it is looking for by self.step, which is set
 in the constructor to 5.  (Also, since it is often the case that the line to match to the dibbur hamatchil is much longer than
-the dibbur hamatchil, and in this case, match partial_ratios are much lower than they should be,
+the dibbur hamatchil, and in this case, partial_ratios are much lower than they should be,
 the match function divides up the line into smaller units so that those units can match better).
 
 4. guess (default is False) - If False, returns a list of all possible guesses for the specific 
@@ -75,8 +75,7 @@ import sys
 import os
 from fuzzywuzzy import fuzz
 class Match:
-	def __init__(self, in_order=False, acronyms_file="", min_ratio=70, guess=False, range=False, maxLine=100):
-		self.maxLine = maxLine
+	def __init__(self, in_order=False, acronyms_file="", min_ratio=70, guess=False, range=False):
 		self.range = range
 		self.ranged_dict = {}
 		self.min_ratio = min_ratio
@@ -177,6 +176,7 @@ class Match:
 		return new_list	
 
 	def match_list(self, dh_orig_list, page):
+		self.maxLine = len(page)-1
 		self.found_dict = {}
 		self.dh_orig_list = self.forceUTF(dh_orig_list)
 		dh_pos = 0
@@ -246,24 +246,21 @@ class Match:
 				self.non_match_file.write("\n")
 
 	def getMinMax(self, dh_pos):
-		temp = dh_pos-1
-		min = -1
-		while temp >= 0:
-			temp_list = self.found_dict[temp][self.dh_orig_list[temp]]
-			if len(temp_list) == 1:
-				min = temp_list[0][0]
-				break
-			temp-=1
-		if min == -1 and dh_pos == 0:
-			my_list = self.found_dict[dh_pos][self.dh_orig_list[dh_pos]]
-			min = self.found_dict[dh_pos][self.dh_orig_list[dh_pos]][0]
-			for line_n, pr in my_list:
-				if line_n < min:
-					min = line_n
-		elif min == -1:
-			prev_list = self.found_dict[dh_pos-1][self.dh_orig_list[dh_pos-1]]
-			min = self.found_dict[dh_pos][self.dh_orig_list[dh_pos]][0]
-			for line_n, pr in prev_list:
+		min = 0
+		if dh_pos > 0:
+			temp = dh_pos-1
+			min = 0
+			while temp >= 0:
+				if len(self.found_dict[temp][self.dh_orig_list[temp]]) >= 1 and self.confirmed_dict[temp+1][0] > 0:
+					try:
+					  min = self.confirmed_dict[temp+1][0]-1
+					  break
+					except:
+					  pdb.set_trace()
+				temp -= 1
+		else:
+			min = 100000
+			for line_n, pr in self.found_dict[0][self.dh_orig_list[0]]:
 				if line_n < min:
 					min = line_n
 		temp = dh_pos+1
@@ -285,6 +282,11 @@ class Match:
 			for line_n, pr in my_list:
 				if line_n > max:
 					max = line_n
+		if max==-1:
+			max=self.maxLine
+		if min > max:
+			min = 0
+			max = self.maxLine
 		return (min, max)
 	
 	def getRanges(self):
@@ -292,20 +294,13 @@ class Match:
 			dh = self.dh_orig_list[dh_pos]
 			if self.confirmed_dict[dh_pos+1][0] == 0:
 				min, max = self.getMinMax(dh_pos)
-				if min == -1:
-					min = 0
-				if max==-1:
-					max=self.maxLine
-				if min > max:
-					min = 0
-					max = self.maxLine
 				self.ranged_dict[dh_pos+1] = "0:"+str(min+1)+"-"+str(max+1)
 			elif len(self.confirmed_dict[dh_pos+1]) > 1:
 				looking_for_values = True
 				while looking_for_values==True:
 					min = 100000
 					max = -1
-					for line_n, pr in self.confirmed_dict[dh_pos+1]:
+					for line_n in self.confirmed_dict[dh_pos+1]:
 						if line_n < min:
 							min = line_n
 						if line_n > max:
@@ -364,6 +359,7 @@ class Match:
 			self.confirmed_dict[dh_pos+1] = [list_actual_lines[0][0]+1]
 		elif len(list_actual_lines) > 1: 
 			if self.range == True:
-				self.confirmed_dict[dh_pos+1] = list_actual_lines
+				for line_n, pr in list_actual_lines:
+					self.confirmed_dict[dh_pos+1].append(line_n+1)
 			else:
 				self.confirmed_dict[dh_pos+1] = self.bestGuessFirst(list_actual_lines)
