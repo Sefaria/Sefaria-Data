@@ -22,22 +22,17 @@ the acronyms_file is in the following format:
 יהי רצון מלפניך
 
 In other words, one line is the acronym, the next is the actual word or phrase, and then a blank line.
-
 3. min_ratio (default is 70) -  The Match class uses the python library fuzzywuzzy to calculate 
-the similarity between two strings, returning a number between 0 and 100 indicating how similar two strings are.  
-The Match class' match function starts out looking
+the similarity between two strings.  Specifically, fuzz.partial_ratio(string_1, string_2) returns a number 
+between 0 and 100 indicating how similar two strings are.  The Match class' match function starts out looking
 for matches of at least 85 (see below in the match function where you can change the number 85 to whatever you want),
 and then, when there is no match it recursively lowers the ratio it is looking for by self.step, which is set
-in the constructor to 5.  (Also, since it is often the case that the line to match to the dibbur hamatchil is much longer than
-the dibbur hamatchil, and in this case, partial_ratios are much lower than they should be,
-the match function divides up the line into smaller units so that those units can match better).
+in the constructor to 5.
 
 4. guess (default is False) - If False, returns a list of all possible guesses for the specific 
 dibbur hamatchil (except those that have been thrown out as out-of-order if 'in_order' is set to True.  
 The match with the highest partial_ratio is the first item in the list.  If guess is True,
 returns only the guess with the highest partial_ratio.  In a tie, the first one is chosen.
-
-5. range (default is False) - This parameter determines what the output will look like.  I'll explain this more below.
 
 After instantiating a Match object as match_obj, then all that needs to be done is to call 
 the match_list function as below:
@@ -46,28 +41,23 @@ result = match_obj.match_list(dh_list[j], perek[j])
 
 In this example, the first argument is the list of the dibbur hamatchils, the second argument is a list of the text
 that is to be matched.
-The match_list function then goes through the list of dibbur hamatchils and calls the match function on each one and
-the list of text.   Then, it calls the mutlipleMatches function to deal with dibbur hamatchils that have multiple 
-matches.  The behvaior of multipleMatches, as can be seen below, depends on whether 
-the in_order parameter was set to True or left as the default as False.  If True, then the function getInOrder is called
+This function then goes through the list of dibbur hamatchils and calls the match function on each one and
+the list of text.  Then, it calls the mutlipleMatches function to deal with dibbur hamatchils that have multiple 
+matches.  The behvaior of multipleMatches, as can be seen below, depends significantly on whether 
+the in_order parameter was set to True or left as the default as False.  If True, then multipleInOrder is called
 and removes out-of-order matches.
 
-After running match_list above, a dictionary will be returned.
-It will look completely different depending on whether 'range' is set to True or left as the default of False.
-(The cases are so different because I designed them months apart.  Sorry about that.)
-If range is False, here is an example of how the result might look:
-	{1: [2], 2: [2], 3: [3], 4: [3], 5: [4], 6: [5], 7: [6,7], 8: [0], 9: [8], 10: [9]}
-	Each key corresponds exactly to the order of the dibbur hamatchils.
-	In other words, the first dibbur hamatchil is matched to line 2 of the text 'perek[j]'.
-	Notice that the 7th dibbur hamatchil is matched to both lines 6 and 7.  This means that it was matched
-	to multiple lines and neither of them could be removed as impossible.  In this case, 'guess' must have been set to False,
-	so that the entire list is returned, because if 'guess' was set to True, only line 6 would have been returned since it is
-	the first one.
-	Finally, notice that dibbur hamatchil 8 is matched to line 0.  There is no line 0, and therefore, '0' indicates
-	that no match could be found. 
-If range is True, the same result might look like:
-	{1: '2', 2: '2', 3: '3', 4: '3', 5: '4', 6: '5', 7: '6-7', 8: '5-8', 9: '8', 10: '9'}
-
+After running match_list above, a dictionary will be returned and set to 'result'.
+Here is an example of how it looks:
+{1: [2], 2: [2], 3: [3], 4: [3], 5: [4], 6: [5], 7: [6,7], 8: [0], 9: [8], 10: [9]}
+Each key corresponds exactly to the order of the dibbur hamatchils.
+In other words, the first dibbur hamatchil is matched to line 2 of the text 'perek[j]'.
+Notice that the 7th dibbur hamatchil is matched to both lines 6 and 7.  This means that it was matched
+to multiple lines and neither of them could be removed as impossible.  In this case, 'guess' is set to False,
+so that the entire list is returned.  If 'guess' was set to True, only line 6 would have been returned since it is
+the first one.
+Finally, notice that dibbur hamatchil 8 is matched to line 0.  There is no line 0, and therefore, '0' indicates
+that no match could be found. 
 '''
 import pdb
 import re
@@ -75,7 +65,8 @@ import sys
 import os
 from fuzzywuzzy import fuzz
 class Match:
-	def __init__(self, in_order=False, acronyms_file="", min_ratio=70, guess=False, range=False):
+	def __init__(self, in_order=False, acronyms_file="", min_ratio=70, guess=False, range=False, maxLine=100):
+		self.maxLine = maxLine
 		self.range = range
 		self.ranged_dict = {}
 		self.min_ratio = min_ratio
@@ -176,7 +167,6 @@ class Match:
 		return new_list	
 
 	def match_list(self, dh_orig_list, page):
-		self.maxLine = len(page)-1
 		self.found_dict = {}
 		self.dh_orig_list = self.forceUTF(dh_orig_list)
 		dh_pos = 0
@@ -246,23 +236,39 @@ class Match:
 				self.non_match_file.write("\n")
 
 	def getMinMax(self, dh_pos):
-		min = 0
-		if dh_pos > 0:
-			temp = dh_pos-1
-			min = 0
-			while temp >= 0:
-				if len(self.found_dict[temp][self.dh_orig_list[temp]]) >= 1 and self.confirmed_dict[temp+1][0] > 0:
-					try:
-					  min = self.confirmed_dict[temp+1][0]-1
-					  break
-					except:
-					  pdb.set_trace()
-				temp -= 1
-		else:
-			min = 100000
-			for line_n, pr in self.found_dict[0][self.dh_orig_list[0]]:
+		temp = dh_pos-1
+		min = -1
+		while temp >= 0:
+			temp_list = self.found_dict[temp][self.dh_orig_list[temp]]
+			if len(temp_list) == 1:
+				min = temp_list[0][0]
+				break
+			temp-=1
+		if min == -1 and dh_pos == 0:
+			my_list = self.found_dict[dh_pos][self.dh_orig_list[dh_pos]]
+			min = self.found_dict[dh_pos][self.dh_orig_list[dh_pos]][0]
+			for line_n, pr in my_list:
 				if line_n < min:
 					min = line_n
+		elif min == -1:
+			prev_list = self.found_dict[dh_pos-1][self.dh_orig_list[dh_pos-1]]
+			min = self.found_dict[dh_pos][self.dh_orig_list[dh_pos]][0]
+			for line_n, pr in my_list:
+				if line_n < min:
+					min = line_n
+		
+		
+			if len(self.found_dict[temp][self.dh_orig_list[temp]]) >= 1 and self.confirmed_dict[temp+1][0] > 0:
+				try:
+				  min = self.confirmed_dict[temp+1][0]-1
+				  break
+				except:
+				  min = self.confirmed_dict[temp+1][0][0]
+				  for line_n, pr in self.confirmed_dict[temp+1]:
+				  	if min > line_n:
+				  		min = line_n
+				  break
+			temp -= 1
 		temp = dh_pos+1
 		highest = len(self.dh_orig_list)-1
 		max = -1
@@ -282,11 +288,6 @@ class Match:
 			for line_n, pr in my_list:
 				if line_n > max:
 					max = line_n
-		if max==-1:
-			max=self.maxLine
-		if min > max:
-			min = 0
-			max = self.maxLine
 		return (min, max)
 	
 	def getRanges(self):
@@ -294,13 +295,20 @@ class Match:
 			dh = self.dh_orig_list[dh_pos]
 			if self.confirmed_dict[dh_pos+1][0] == 0:
 				min, max = self.getMinMax(dh_pos)
+				if min == -1:
+					min = 0
+				if max==-1:
+					max=self.maxLine
+				if min > max:
+					min = 0
+					max = self.maxLine
 				self.ranged_dict[dh_pos+1] = "0:"+str(min+1)+"-"+str(max+1)
 			elif len(self.confirmed_dict[dh_pos+1]) > 1:
 				looking_for_values = True
 				while looking_for_values==True:
 					min = 100000
 					max = -1
-					for line_n in self.confirmed_dict[dh_pos+1]:
+					for line_n, pr in self.confirmed_dict[dh_pos+1]:
 						if line_n < min:
 							min = line_n
 						if line_n > max:
@@ -344,10 +352,10 @@ class Match:
 				if self.in_order == False:
 					self.confirmed_dict[dh_pos+1] = self.bestGuessFirst(dh_found_list)
 				else:
-					self.getInOrder(dh_pos, dh_found_list, dh)
+					self.multipleInOrder(dh_pos, dh_found_list, dh)
 		return self.confirmed_dict
 
-	def getInOrder(self, dh_pos, dh_found_list, dh):
+	def multipleInOrder(self, dh_pos, dh_found_list, dh):
 		min, max = self.getMinMax(dh_pos)
 		list_actual_lines = []
 		for line_n, pr in dh_found_list:
@@ -359,7 +367,6 @@ class Match:
 			self.confirmed_dict[dh_pos+1] = [list_actual_lines[0][0]+1]
 		elif len(list_actual_lines) > 1: 
 			if self.range == True:
-				for line_n, pr in list_actual_lines:
-					self.confirmed_dict[dh_pos+1].append(line_n+1)
+				self.confirmed_dict[dh_pos+1] = list_actual_lines
 			else:
 				self.confirmed_dict[dh_pos+1] = self.bestGuessFirst(list_actual_lines)
