@@ -96,11 +96,66 @@ def convertHebrewToNumber(daf):
 	elif amud_num == 2:
 		daf = daf_num*2
 	return daf
+	
+
+def post_text(ref, text):
+    textJSON = json.dumps(text)
+    ref = ref.replace(" ", "_")
+    url = SEFARIA_SERVER+'/api/texts/'+ref
+    values = {'json': textJSON, 'apikey': API_KEY}
+    data = urllib.urlencode(values)
+    req = urllib2.Request(url, data)
+    try:
+        response = urllib2.urlopen(req)
+        #print response.read()
+    except HTTPError, e:
+        print 'Error code: ', e.code
+        print e.read()
+
+def post_link(info):
+	url = SEFARIA_SERVER+'/api/links/'
+	infoJSON = json.dumps(info)
+	values = {
+		'json': infoJSON, 
+		'apikey': API_KEY
+	}
+	data = urllib.urlencode(values)
+	req = urllib2.Request(url, data)
+	try:
+		response = urllib2.urlopen(req)
+		#print response.read()
+		
+	except HTTPError, e:
+		print 'Error code: ', e.code
+
+
+def hasTags(comment):
+	tag = re.compile('.*\d+.*')
+	match = tag.match(comment)
+	if match:
+		return True
+
+def removeSecond40(line):
+	arr = line.split(" ")
+	found_40 = False
+	new_line = ""
+	for i in range(len(arr)):
+		if found_40 == False or arr[i].find("@40")==-1:
+			new_line += arr[i] + " "
+		elif arr[i].find("@10")>=0 or arr[i].find("@60")>=0:
+			new_line += arr[i].replace("@30","").replace("@40","") + " "		
+		if arr[i].find("@40") >= 0:
+			found_40 = True
+	return new_line
+	
+
+
 
 title="R-C-Y-"
 title_option = 1
 dh_dict = {}
 comm_dict = {}
+before_dh_dict = {}
 prev_daf = 3
 for count_file in range(14):
 	if title_option+count_file < 10:
@@ -108,9 +163,14 @@ for count_file in range(14):
 	else:
 		f = open(title+str(title_option+count_file)+".txt")
 	for line in f:
-		line=line.replace("\n","")
-		if len(line)<4:
-			continue
+		line = line.replace("\n", "")
+		if line.find("@") > 4:
+			line = "@28 "+line
+		if line.find("@40") != -1 and line.rfind("@40") != -1 and line.find("@40") != line.rfind("@40"):
+			line = removeSecond40(line)
+		line = line.replace("@30@40", "")
+		line = line.replace("@40@20", "@20")
+		line = line.replace("@89@40", "")
 		if line.find("@20") >= 0:
 			start = line.find("@20")
 			end = max(line.find("@30"), line.find("@70"))
@@ -120,36 +180,40 @@ for count_file in range(14):
 			actual_start = line.find("[")
 			actual_end = line.find("]")
 			if actual_start > start and actual_end < end:
+				before_dh = line[start+3:end].replace(line[actual_start:actual_end+1],"")
+				before_dh = before_dh.replace("@30", "")
 				daf = line[actual_start:actual_end].replace("[","").replace("]","").replace(" ","")
-			if daf.find("""מקו"א""")>=0:
-				daf = prev_daf
-			else:						
-				daf = convertHebrewToNumber(daf)
-			prev_daf = daf
-		if line.find("@30") >= 0 or line.find("@70") >= 0:
+			daf = convertHebrewToNumber(daf)
+			if len(before_dh)>1:
+			 if daf in comm_dict:
+				before_dh_dict[(daf, len(comm_dict[daf]))] = before_dh
+			 else:
+				before_dh_dict[(daf, 0)] = before_dh
+		if line.find("@28") >= 0:
+			start = line.find("@28")
+			end = max(line.find("@70"), line.find("@30"))
+			before_dh = line[start+3:end]
+			if len(before_dh)>1:
+			 if daf in comm_dict:
+				before_dh_dict[(daf, len(comm_dict[daf]))] = before_dh
+			 else:
+				before_dh_dict[(daf, 0)] = before_dh
+		if (line.find("@30") >= 0 or line.find("@70") >= 0) and line.rfind("@40")>=0:
 			start = max(line.find("@30"), line.find("@70"))
-			end = line.find("@40")
-			if end == -1:
-				print "@30/70 but not @40"
-				end_10_60 = max(line.find("@10"), line.find("@60"), line.find("@50"))
-				if end_10_60 == -1:
-					pdb.set_trace()
-				comm = line[start+3:end_10_60]
-				if daf in comm_dict:
-					comm_dict[daf].append(comm)
-				else:
-					comm_dict[daf] = []
-					comm_dict[daf].append(comm)
-				continue
+			end = line.rfind("@40")
+			if end == -1 and line.find("@30")>=0:
+				print "@30 but not @40"
+				pdb.set_trace()
 			dh = line[start+3:end]
 			if daf in dh_dict:
 				dh_dict[daf].append(dh)
 			else:
 				dh_dict[daf] = []
 				dh_dict[daf].append(dh)
-		if line.find("@40") >= 0 and (line.find("@60") == -1 or line.find("@60") > 2):
+			just_added_dh = True
+		if line.find("@40") >= 0 and (line.find("@60") == -1 or line.rfind("@60") > 2):
 			start = line.find("@40")
-			end = max(line.find("@10"), line.find("@60"), line.find("@50"))
+			end = max(line.find("@10"), line.rfind("@60"), line.find("@50"))
 			if end == -1:
 				print "@40 but no end tag"
 				pdb.set_trace()
@@ -159,33 +223,119 @@ for count_file in range(14):
 			else:
 				comm_dict[daf] = []
 				comm_dict[daf].append(comm)
+			if just_added_dh == False:
+				dh_dict[daf].append("")
+			if hasTags(comm) or hasTags(dh) or hasTags(before_dh):
+				pdb.set_trace()
+			just_added_dh = False
+			continue
+		if line.find("@70") >= 0:
+			start = line.find("@70")
+			end = max(line.find("@10"), line.find("@60"), line.find("@50"))
+			if end == -1:
+				print "@70 but no end tag"
+				pdb.set_trace()
+			comm = line[start+3:end]
+			if daf not in comm_dict:
+				comm_dict[daf] = []
+			comm_dict[daf].append(comm)
+			if daf not in dh_dict:
+				dh_dict[daf] = []
+			if just_added_dh == False:
+				dh_dict[daf].append("")
+			just_added_dh = False
+			if hasTags(comm) or hasTags(dh) or hasTags(before_dh):
+				pdb.set_trace()
+			continue
 		if line.find("@60") >= 0 and line.find("@60") < 2:
 			start = line.find("@60")
-			end = max(line.find("@60"), line.find("@10"), line.find("@50"))
+			end = max(line.rfind("@60"), line.find("@10"), line.find("@50"))
 			if end == -1:
 				print "@60 but no end tag"
 				pdb.set_trace()
 			comm = line[start+3:end]
+			comm = comm.replace("@40","")
 			if daf not in dh_dict:
 				dh_dict[daf] = []
 			if daf not in comm_dict:
 				comm_dict[daf] = []
 			comm_dict[daf].append(comm)
+			if just_added_dh == False:
+				dh_dict[daf].append("")
+			if hasTags(comm) or hasTags(dh) or hasTags(before_dh):
+				pdb.set_trace()
+		just_added_dh = False
+		prev_line = line
 result = {}
+guess=0
+no_guess=0
+for daf in dh_dict.keys():
+	if len(dh_dict[daf]) != len(comm_dict[daf]):
+		pdb.set_trace()
 for daf in dh_dict.keys():
 	text = get_text("Yevamot."+AddressTalmud.toStr("en", daf))
-	match_obj=Match(in_order=True, min_ratio=70, guess=False)
-	result[daf] = match_obj.match_list(dh_dict[daf], text)
-	print result[daf]
+	try:
+		match_obj=Match(in_order=True, min_ratio=70, guess=False, range=True)
+	except:
+		pdb.set_trace()
+	dh_arr = []
+	for i in range(len(dh_dict[daf])):
+		if len(dh_dict[daf][i]) > 0:
+			dh_arr.append(dh_dict[daf][i])
+	result[daf] = match_obj.match_list(dh_arr, text)
+	dh_count = 1
+	for i in range(len(comm_dict[daf])):
+		 if (daf, i) in before_dh_dict:
+		 	comm_dict[daf][i] = before_dh_dict[(daf, i)]+"<b>"+dh_dict[daf][i]+"</b>"+comm_dict[daf][i]
+		 else:
+		 	comm_dict[daf][i] = "<b>"+dh_dict[daf][i]+"</b>"+comm_dict[daf][i]
+	found = 0
+	for i in range(len(dh_dict[daf])):
+		if len(dh_dict[daf][i]) > 0:
+			old_found = found
+			found = i
+			if found - old_found > 1:
+				temp=""
+		 		for j in range(found-old_found-1): 
+		 			temp+="<br>"+comm_dict[daf][j+old_found+1]
+		 		comm_dict[daf][old_found] += temp
+	comments = []
+	for i in range(len(comm_dict[daf])):
+		if len(dh_dict[daf][i])>0:
+			comments.append(comm_dict[daf][i])
+	send_text = {
+				"versionTitle": "Rashba on Yevamot",
+				"versionSource": "http://www.sefaria.org",
+				"language": "he",
+				"text": comments,
+				}
+	
+	post_text("Rashba on Yevamot."+AddressTalmud.toStr("en", daf), send_text)
+	
+	for i in range(len(dh_arr)):
+		 if len(dh_dict[daf][i]) > 0:
+		 	try:
+		 		line_n  = result[daf][i+1]
+		 	except:
+		 		pdb.set_trace()
+		 	dh_count+=1 
+		 	if line_n.find("0:")>=0:
+		 		no_guess += 1
+		 	if line_n.find("-")>=0:
+		 		print str(daf)+" : "+str(dh_count)+" : "+line_n
+		 	line_n = line_n.replace("0:", "")
+		 	guess+=1
+			post_link({
+					"refs": [
+							"Yevamot"+"."+AddressTalmud.toStr("en", daf)+"."+str(line_n), 
+							"Rashba on Yevamot."+AddressTalmud.toStr("en", daf)+"."+str(i+1)
+						],
+					"type": "commentary",
+					"auto": True,
+					"generated_by": "Rashba on Yevamot linker",
+				 })
+	
 
-guess = 0
-no_guess = 0
-for key in result:
-	for each_one in result[key]:
-		if result[key][each_one][0] == 0:
-			no_guess += 1
-		else:
-			guess += 1
+
 print float(guess)/float(guess+no_guess)
 print no_guess
-pdb.set_trace()
