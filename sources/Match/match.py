@@ -69,10 +69,21 @@ If range is True, the same result might look like:
 	{1: '2', 2: '2', 3: '3', 4: '3', 5: '4', 6: '5', 7: '6-7', 8: '5-8', 9: '8', 10: '9'}
 
 '''
+# -*- coding: utf-8 -*-
+import json 
 import pdb
-import re
-import sys
 import os
+import sys
+import re
+p = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, p)
+os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
+from local_settings import *
+
+sys.path.insert(0, SEFARIA_PROJECT_PATH)
+from sefaria.model import *
+from sefaria.model.schema import AddressTalmud	
+
 from fuzzywuzzy import fuzz
 class Match:
 	def __init__(self, in_order=False, acronyms_file="", min_ratio=70, guess=False, range=False):
@@ -166,19 +177,12 @@ class Match:
 				phrases.append(phrase)
 		return phrases
 	
-	def forceUTF(self, list_dh):
-		new_list = []
-		for orig_dh in list_dh:
-			#pdb.set_trace()
-			#if orig_dh != orig_dh.encode('utf-8'):
-			#	orig_dh = orig_dh.encode('utf-8')
-			new_list.append(orig_dh)
-		return new_list	
 
-	def match_list(self, dh_orig_list, page):
+	def match_list(self, dh_orig_list, page, ref_title):
 		self.maxLine = len(page)-1
+		self.ref_title = ref_title
 		self.found_dict = {}
-		self.dh_orig_list = self.forceUTF(dh_orig_list)
+		self.dh_orig_list = dh_orig_list
 		dh_pos = 0
 		for dh in self.dh_orig_list:
 			self.match(dh, page, dh_pos)
@@ -189,61 +193,109 @@ class Match:
 			self.getRanges()
 		return self.confirmed_dict 
 			
-	def match(self, orig_dh, page, dh_position, ratio=85):
+	def match(self, orig_dh, page, dh_position, ratio=90):
 		partial_ratios = []	
 		self.found_dict[dh_position] = {}
 		self.found_dict[dh_position][orig_dh] = []
 		dh = self.removeEtcFromDH(orig_dh)
 		found = 0
-		dh_acronym_list = []
-		if dh.find('"') >= 0 or dh.find("'")>=0:
-			dh_acronym_list = self.replaceAcronyms(dh)
 		for line_n, para in enumerate(page):
-			  found_this_line = False
-			  para = self.removeHTMLtags(para)
-			  para = para.encode('utf-8')
-			  if dh in para:
-				found += 1
-				self.found_dict[dh_position][orig_dh].append((line_n, 100))
+		  skip_this_line = False
+		  len_already_here = len(self.found_dict[dh_position][orig_dh])
+		  if len_already_here > 0:
+		  	 for i in range(len_already_here):
+		  	 	if line_n == self.found_dict[dh_position][orig_dh][i][0]:
+		  	 		skip_this_line = True
+		  	 		break
+		  if skip_this_line == True:
+		  	continue
+		  found_this_line = False
+		  para = self.removeHTMLtags(para)
+		  para = para.encode('utf-8')
+		  para_pr = fuzz.partial_ratio(dh, para)
+		  if para_pr < 40: #not worth checking
+		  	  continue  	
+		  elif len(dh)*2 < len(para):
+			  result_pr = self.matchSplitPara(para, dh, dh_position, orig_dh, line_n, ratio)
+			  if result_pr == 100:
+			    found+=1
+			    break
+			  elif result_pr > 0:
+				found+=1
 				continue
-			  para_pr = fuzz.partial_ratio(dh, para)
-			  if para_pr < 40: #not worth checking
+		  elif len(para)*2 < len(dh) and self.range == True:
+			  result_pr = self.matchExpandPara(para, dh, dh_position, orig_dh, line_n+1, ratio)
+			  if result_pr == 100:
+			    found+=1
+			    break
+			  if result_pr > 0:
+				found+=1
 				continue
-			  elif para_pr >= ratio:
-				found += 1
-				self.found_dict[dh_position][orig_dh].append((line_n, para_pr))
-				continue	  	
-			  phrases = self.splitPara(para, len(dh)) 
-			  for phrase in phrases:
-				phrase_pr = fuzz.partial_ratio(dh, phrase)
-				if found_this_line == True:
-					break
-				if dh in phrase: 
-					found += 1
-					self.found_dict[dh_position][orig_dh].append((line_n, 100))
-					break
-				elif phrase_pr >= ratio:
-					found += 1
-					self.found_dict[dh_position][orig_dh].append((line_n, phrase_pr))
-					break
-				for expanded_acronym in dh_acronym_list:  #only happens if there is an acronym, found_dh refers to expanded acronym
-					acronym_pr = fuzz.partial_ratio(expanded_acronym, phrase)
-					if expanded_acronym in phrase: 
-						found += 1
-						self.found_dict[dh_position][orig_dh].append((line_n, 100))
-						found_this_line = True
-						break
-					elif acronym_pr >=ratio:
-						found += 1
-						self.found_dict[dh_position][orig_dh].append((line_n, acronym_pr))
-						found_this_line = True
-						break
+		  elif para_pr >= 90:
+		  	  found+=1
+		  	  self.found_dict[dh_position][orig_dh].append((line_n, para_pr))
+		  	  if para_pr == 100:
+		  	  	break
 		if found == 0:
 			if ratio > self.min_ratio:
 				self.match(orig_dh, page, dh_position, ratio-self.step)
 			else:
 				self.non_match_file.write(orig_dh)
 				self.non_match_file.write("\n")
+
+	def matchExpandPara(self, para, dh, dh_position, orig_dh, line_n, ratio):
+		start_line = line_n-1
+		end_line = start_line
+	  	current_ref = Ref(self.ref_title+" "+str(line_n))
+	  	while len(para)*2 < len(dh):
+	  		end_line+=1
+	  		try:
+				next_line_ref = current_ref.next_segment_ref()
+			except:
+				break
+			current_ref = current_ref.to(next_line_ref)
+			para = current_ref.text("he").ja().flatten_to_string()
+			para = para.encode('utf-8')
+		if dh in para:
+			for i in range(end_line-start_line+1):
+				self.found_dict[dh_position][orig_dh].append((i+start_line, 100))
+			return 100			
+		para_pr = fuzz.partial_ratio(dh, para)
+		if para_pr >= ratio:
+			for i in range(end_line-start_line+1):
+				self.found_dict[dh_position][orig_dh].append((i+start_line, para_pr))
+			return para_pr
+		return self.matchAcronyms(dh, para)
+
+	def matchSplitPara(self, para, dh, dh_position, orig_dh, line_n, ratio):
+		dh_acronym_list = []
+		phrases = self.splitPara(para, len(dh)) 
+		for phrase in phrases:
+			phrase_pr = fuzz.partial_ratio(dh, phrase)
+			if dh in phrase: 
+				self.found_dict[dh_position][orig_dh].append((line_n, 100))
+				return 100
+			elif phrase_pr >= ratio:
+				self.found_dict[dh_position][orig_dh].append((line_n, phrase_pr))
+				return phrase_pr
+		return self.matchAcronyms(dh, phrase)
+			
+	
+	def matchAcronyms(self, dh, text):
+		dh_acronym_list = []
+		if dh.find('"') >= 0 or dh.find("'")>=0:
+			dh_acronym_list = self.replaceAcronyms(dh)
+		for expanded_acronym in dh_acronym_list:  #only happens if there is an acronym, found_dh refers to expanded acronym
+			acronym_pr = fuzz.partial_ratio(expanded_acronym, text)
+			if expanded_acronym in text: 
+				self.found_dict[dh_position][orig_dh].append((line_n, 100))
+				found_this_line = True
+				return 100
+			elif acronym_pr >=ratio:
+				self.found_dict[dh_position][orig_dh].append((line_n, acronym_pr))
+				found_this_line = True
+				return acronym_pr
+		return 0
 
 	def getMinMax(self, dh_pos):
 		min = 0
@@ -284,9 +336,6 @@ class Match:
 					max = line_n
 		if max==-1:
 			max=self.maxLine
-		if min > max:
-			min = 0
-			max = self.maxLine
 		return (min, max)
 	
 	def getRanges(self):
@@ -294,20 +343,19 @@ class Match:
 			dh = self.dh_orig_list[dh_pos]
 			if self.confirmed_dict[dh_pos+1][0] == 0:
 				min, max = self.getMinMax(dh_pos)
+				if min > max:
+					min = 1
+					max = self.maxLine
 				self.ranged_dict[dh_pos+1] = "0:"+str(min+1)+"-"+str(max+1)
 			elif len(self.confirmed_dict[dh_pos+1]) > 1:
 				looking_for_values = True
-				while looking_for_values==True:
-					min = 100000
-					max = -1
-					for line_n in self.confirmed_dict[dh_pos+1]:
-						if line_n < min:
-							min = line_n
-						if line_n > max:
-							max = line_n
-					looking_for_values = False
-					min+=1
-					max+=1
+				min = 100000
+				max = -1
+				for line_n in self.confirmed_dict[dh_pos+1]:
+					if line_n < min:
+						min = line_n
+					if line_n > max:
+						max = line_n
 				self.ranged_dict[dh_pos+1] = str(min)+"-"+str(max)
 		for dh_pos in self.confirmed_dict:
 			self.confirmed_dict[dh_pos] = str(self.confirmed_dict[dh_pos][0])
@@ -350,7 +398,8 @@ class Match:
 	def getInOrder(self, dh_pos, dh_found_list, dh):
 		min, max = self.getMinMax(dh_pos)
 		list_actual_lines = []
-		for line_n, pr in dh_found_list:
+		if min <= max:
+		  for line_n, pr in dh_found_list:
 			if line_n >= min and line_n <= max:
 				list_actual_lines.append((line_n, pr))
 		if len(list_actual_lines) == 0:
@@ -358,8 +407,4 @@ class Match:
 		elif len(list_actual_lines) == 1:
 			self.confirmed_dict[dh_pos+1] = [list_actual_lines[0][0]+1]
 		elif len(list_actual_lines) > 1: 
-			if self.range == True:
-				for line_n, pr in list_actual_lines:
-					self.confirmed_dict[dh_pos+1].append(line_n+1)
-			else:
-				self.confirmed_dict[dh_pos+1] = self.bestGuessFirst(list_actual_lines)
+			self.confirmed_dict[dh_pos+1] = self.bestGuessFirst(list_actual_lines)
