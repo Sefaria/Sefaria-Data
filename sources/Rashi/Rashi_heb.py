@@ -31,14 +31,20 @@ def parse(text):
         psukim = re.split(ur"(\([^\u05E4-\u05E9][^\"\”]?\))", perek.group(2))
         prk = []
         old_pasuk = 0
+        #try:
+            #print pasuk_num, perek_num
+        #except Exception:
+         #   print "no dibbur"
         for pasuk in psukim:
             r = re.compile(ur"(\([^\u05E4-\u05E9][^\"\”]?\))")
             if r.match(pasuk):
                 psk =[]
                 pasuk_num = pasuk
                 pasuk_roman = hebrew.heb_string_to_int(re.sub(u'[\(\)]',"",pasuk_num.strip()).strip())
+
                 if pasuk_roman - old_pasuk !=1:
                     for a in range(1, pasuk_roman - old_pasuk):
+                        print pasuk_num, perek_num
                         prk.append([])
                 old_pasuk = pasuk_roman
             else:
@@ -46,7 +52,6 @@ def parse(text):
                 for cut in b:
                     if not sefaria.utils.hebrew.has_cantillation(cut, True):
                         try:
-
                             psk.append(dibbur)
                         except NameError as e:
                             print "name error"
@@ -61,8 +66,8 @@ def parse(text):
                     print "name error"
             else:
                 pars = 1
+        del psk
         rashi.append(prk)
-        del dibbur
         #print rashi[len(rashi)-1]
     return rashi
 
@@ -108,4 +113,4 @@ if __name__ == '__main__':
     except BadStatusLine as e:
         print "bad status line"
     print len(parsed)
-    print parsed[0][1][1]
+    print parsed[1][1][0]
