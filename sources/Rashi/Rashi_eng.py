@@ -51,7 +51,6 @@ def parse(text):
             print perek_num
         old_perek = perek_num
         psukim = re.split(ur"(\([0-9][^\"\”]?\))", perek.group(2))
-        print psukim[2]
         prk = []
         old_pasuk = 0
         for pasuk in psukim:
@@ -64,17 +63,22 @@ def parse(text):
                         prk.append([])
                 old_pasuk = pasuk_num
             else:
-                b = re.split(ur"[-—\.]", pasuk)
+                b = re.split(ur"(?:^|\.)([^a-z0-9\(\)]*?)[-—]", pasuk)
                 for cut in b:
-                    if len(re.findall(ur'[a-zX1-10\(\)]', cut))==0:
+                    if len(re.findall(ur'[a-z]', cut))==0 and len(cut) > 0:
+                       print cut
                        try:
                             psk.append(dibbur)
                        except NameError as e:
                             print "name error"
-                       dibbur = "<b>" + cut + '</b>'
-                       #print dibbur
-                    else:
+                       dibbur = "<b>" + cut + "-" + '</b>'
+                       print dibbur
+                    elif cut !=" ":
                         dibbur+=cut
+                try:
+                    psk.append(dibbur)
+                except Exception:
+                    print "a"
             if pars == 1:
                 pars =2
                 try:
@@ -83,6 +87,8 @@ def parse(text):
                     print "name error"
             else:
                 pars = 1
+        #psk.append(dibbur)
+        #prk.append(psk)
         del psk
         rashi.append(prk)
     return rashi
@@ -90,5 +96,11 @@ def parse(text):
 if __name__ == '__main__':
     text = open_file()
     parsed = parse(text)
+    print len(parsed)
+    save_parsed_text(parsed)
+    try:
+        run_post_to_api()
+    except BadStatusLine as e:
+        print "bad status line"
     print len(parsed)
     print parsed[0][0][1]
