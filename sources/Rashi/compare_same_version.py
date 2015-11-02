@@ -3,9 +3,15 @@ import  sys
 import re
 title = str(sys.argv[1])
 vers = str(sys.argv[2])
+try:
+    vers2 = str(sys.argv[3])
+except Exception as e:
+    print "out of range"
+if 'vers2' not in locals():
+    vers2 = vers
 
 v_english = Version().load({"title": title, "versionTitle": vers , "language": "en"}).get_content()
-v_hebrew = Version().load({"title": title, "versionTitle": vers , "language": "he"}).get_content()
+v_hebrew = Version().load({"title": title, "versionTitle": vers2 , "language": "he"}).get_content()
 eng= []
 for j, perek in enumerate(v_english):
     for i, pasuk in enumerate(perek):
