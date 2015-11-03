@@ -63,19 +63,19 @@ def parse(text):
                         prk.append([])
                 old_pasuk = pasuk_num
             else:
-                b = re.split(ur"(?:^|\.)([^a-z0-9\(\)]*?)[-—]", pasuk)
+                b = re.split(ur"(?:^|\.)([^0-9\(\)]*?)[-—]", pasuk)
                 for cut in b:
                     if len(re.findall(ur'[a-z]', cut))==0 and len(cut) > 0:
-                       print cut
                        try:
+                            dibbur = dibbur + ":"
                             psk.append(dibbur)
                        except NameError as e:
                             print "name error"
                        dibbur = "<b>" + cut + "-" + '</b>'
-                       print dibbur
                     elif cut !=" ":
                         dibbur+=cut
                 try:
+                    dibbur = dibbur + ":"
                     psk.append(dibbur)
                 except Exception:
                     print "a"

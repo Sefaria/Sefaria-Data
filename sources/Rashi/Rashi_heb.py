@@ -52,7 +52,9 @@ def parse(text):
                 for cut in b:
                     if not sefaria.utils.hebrew.has_cantillation(cut, True):
                         try:
-                            psk.append(dibbur)
+                            if len(dibbur) > 1:
+                                dibbur = dibbur + ":"
+                                psk.append(dibbur)
                         except NameError as e:
                             print "name error"
                         dibbur = "<b>" + cut + '</b>'
