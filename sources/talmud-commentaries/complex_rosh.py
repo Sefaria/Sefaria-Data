@@ -106,7 +106,9 @@ def book_record1():
     root.validate()
     indx = {
     "title": b,
-    "categories": ["Other","Rosh"],
+    "categories": [ "Commentary2",
+        "Talmud","Rosh"
+    ],
     "schema": root.serialize()
     }
     #Index(indx).save()
