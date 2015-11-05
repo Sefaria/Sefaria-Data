@@ -86,7 +86,7 @@ from sefaria.model.schema import AddressTalmud
 
 from fuzzywuzzy import fuzz
 class Match:
-	def __init__(self, in_order=False, acronyms_file="", min_ratio=70, guess=False, range=False):
+	def __init__(self, in_order=False, acronyms_file="", min_ratio=77, guess=False, range=False):
 		self.range = range
 		self.ranged_dict = {}
 		self.min_ratio = min_ratio
@@ -157,26 +157,6 @@ class Match:
 			dh = dh.replace(etc, "")
 		return dh
 
-	def splitPara(self, para, len_phrase):
-		len_phrase *= 2
-		phrases = []
-		words = para.split(" ")
-		len_para = len(words)
-		for i in range(len_para):
-			phrase = ""
-			if i+len_phrase >= len_para:
-				j = i
-				while j < len_para:
-					phrase += words[j] + " "
-					j+=1
-				phrases.append(phrase)
-				break
-			else:
-				for j in range(len_phrase):
-					phrase += words[i+j] + " "
-				phrases.append(phrase)
-		return phrases
-	
 
 	def match_list(self, dh_orig_list, page, ref_title):
 		self.maxLine = len(page)-1
@@ -193,7 +173,7 @@ class Match:
 			self.getRanges()
 		return self.confirmed_dict 
 			
-	def match(self, orig_dh, page, dh_position, ratio=90):
+	def match(self, orig_dh, page, dh_position, ratio=87):
 		partial_ratios = []	
 		self.found_dict[dh_position] = {}
 		self.found_dict[dh_position][orig_dh] = []
@@ -215,27 +195,19 @@ class Match:
 		  para_pr = fuzz.partial_ratio(dh, para)
 		  if para_pr < 40: #not worth checking
 		  	  continue  	
-		  elif len(dh)*2 < len(para):
+		  elif len(dh)*3 < len(para):
 			  result_pr = self.matchSplitPara(para, dh, dh_position, orig_dh, line_n, ratio)
-			  if result_pr == 100:
-			    found+=1
-			    break
-			  elif result_pr > 0:
-				found+=1
-				continue
-		  elif len(para)*2 < len(dh) and self.range == True:
-			  result_pr = self.matchExpandPara(para, dh, dh_position, orig_dh, line_n+1, ratio)
-			  if result_pr == 100:
-			    found+=1
-			    break
 			  if result_pr > 0:
 				found+=1
 				continue
-		  elif para_pr >= 90:
+		  elif len(para)*3 < len(dh) and self.range == True:
+			  result_pr = self.matchExpandPara(para, dh, dh_position, orig_dh, line_n+1, ratio)
+			  if result_pr > 0:
+				found+=1
+				continue
+		  elif para_pr >= ratio:
 		  	  found+=1
 		  	  self.found_dict[dh_position][orig_dh].append((line_n, para_pr))
-		  	  if para_pr == 100:
-		  	  	break
 		if found == 0:
 			if ratio > self.min_ratio:
 				self.match(orig_dh, page, dh_position, ratio-self.step)
@@ -247,7 +219,7 @@ class Match:
 		start_line = line_n-1
 		end_line = start_line
 	  	current_ref = Ref(self.ref_title+" "+str(line_n))
-	  	while len(para)*2 < len(dh):
+	  	while len(para)*3 < len(dh):
 	  		end_line+=1
 	  		try:
 				next_line_ref = current_ref.next_segment_ref()
@@ -256,7 +228,7 @@ class Match:
 			current_ref = current_ref.to(next_line_ref)
 			para = current_ref.text("he").ja().flatten_to_string()
 			para = para.encode('utf-8')
-		if dh in para:
+		if dh == para:
 			for i in range(end_line-start_line+1):
 				self.found_dict[dh_position][orig_dh].append((i+start_line, 100))
 			return 100			
@@ -272,7 +244,7 @@ class Match:
 		phrases = self.splitPara(para, len(dh)) 
 		for phrase in phrases:
 			phrase_pr = fuzz.partial_ratio(dh, phrase)
-			if dh in phrase: 
+			if dh == phrase: 
 				self.found_dict[dh_position][orig_dh].append((line_n, 100))
 				return 100
 			elif phrase_pr >= ratio:
@@ -280,7 +252,26 @@ class Match:
 				return phrase_pr
 		return self.matchAcronyms(dh, phrase)
 			
-	
+	def splitPara(self, para, len_phrase):
+		len_phrase *= 3
+		phrases = []
+		words = para.split(" ")
+		len_para = len(words)
+		for i in range(len_para):
+			phrase = ""
+			if i+len_phrase >= len_para:
+				j = i
+				while j < len_para:
+					phrase += words[j] + " "
+					j+=1
+				phrases.append(phrase)
+				break
+			else:
+				for j in range(len_phrase):
+					phrase += words[i+j] + " "
+				phrases.append(phrase)
+		return phrases
+		
 	def matchAcronyms(self, dh, text):
 		dh_acronym_list = []
 		if dh.find('"') >= 0 or dh.find("'")>=0:
@@ -297,7 +288,7 @@ class Match:
 				return acronym_pr
 		return 0
 
-	def getMinMax(self, dh_pos):
+	def getMin(self, dh_pos):
 		min = 0
 		if dh_pos > 0:
 			temp = dh_pos-1
@@ -311,40 +302,37 @@ class Match:
 					  pdb.set_trace()
 				temp -= 1
 		else:
-			min = 100000
+			best_pr = 0
 			for line_n, pr in self.found_dict[0][self.dh_orig_list[0]]:
-				if line_n < min:
+				if pr > best_pr:
 					min = line_n
-		temp = dh_pos+1
-		highest = len(self.dh_orig_list)-1
+					best_pr = pr
+		return min
+		
+	def getMax(self, dh_pos):
 		max = -1
-		while temp <= highest:
-			temp_list = self.found_dict[temp][self.dh_orig_list[temp]]
-			if len(temp_list) == 1:
-				max = temp_list[0][0]
-				break
-			temp+=1
-		if max==-1 and dh_pos != highest:
-			next_list = self.found_dict[dh_pos+1][self.dh_orig_list[dh_pos+1]]
+		highest = len(self.dh_orig_list)-1
+		if dh_pos == highest:
+			return self.maxLine
+		else:
+			temp = dh_pos+1
+		while max == -1 and temp <= highest:
+			next_list = self.found_dict[temp][self.dh_orig_list[temp]]
 			for line_n, pr in next_list:
 				if line_n > max:
 					max = line_n
-		elif max==-1:
-			my_list = self.found_dict[dh_pos][self.dh_orig_list[dh_pos]]
-			for line_n, pr in my_list:
-				if line_n > max:
-					max = line_n
-		if max==-1:
-			max=self.maxLine
-		return (min, max)
+			temp+=1
+		if max == -1:
+			return self.maxLine
+		return max
 	
 	def getRanges(self):
 		for dh_pos in self.found_dict:
 			dh = self.dh_orig_list[dh_pos]
 			if self.confirmed_dict[dh_pos+1][0] == 0:
-				min, max = self.getMinMax(dh_pos)
+				min = self.getMin(dh_pos)
+				max = self.getMax(dh_pos)
 				if min > max:
-					min = 1
 					max = self.maxLine
 				self.ranged_dict[dh_pos+1] = "0:"+str(min+1)+"-"+str(max+1)
 			elif len(self.confirmed_dict[dh_pos+1]) > 1:
@@ -396,7 +384,8 @@ class Match:
 		return self.confirmed_dict
 
 	def getInOrder(self, dh_pos, dh_found_list, dh):
-		min, max = self.getMinMax(dh_pos)
+		min = self.getMin(dh_pos)
+		max = self.getMax(dh_pos)
 		list_actual_lines = []
 		if min <= max:
 		  for line_n, pr in dh_found_list:
