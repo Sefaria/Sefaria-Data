@@ -241,7 +241,7 @@ class Match:
 
 	def matchSplitPara(self, para, dh, dh_position, orig_dh, line_n, ratio):
 		dh_acronym_list = []
-		phrases = self.splitPara(para, len(dh)) 
+		phrases = self.splitPara(para, len(dh.split(" "))) 
 		for phrase in phrases:
 			phrase_pr = fuzz.partial_ratio(dh, phrase)
 			if dh == phrase: 
@@ -253,7 +253,6 @@ class Match:
 		return self.matchAcronyms(dh, phrase)
 			
 	def splitPara(self, para, len_phrase):
-		len_phrase *= 3
 		phrases = []
 		words = para.split(" ")
 		len_para = len(words)
