@@ -2,9 +2,10 @@
 
 import MySQLdb
 from sefaria.model import *
+from sefaria.system.database import db
 
-PersonSet().delete()
-PersonRelationshipSet().delete()
+db.drop_collection("person_rel")
+db.drop_collection("person")
 
 db = MySQLdb.connect(user="root", db="sages", charset='utf8')
 cur = db.cursor()
