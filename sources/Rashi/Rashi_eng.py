@@ -63,9 +63,17 @@ def parse(text):
                         prk.append([])
                 old_pasuk = pasuk_num
             else:
-                b = re.split(ur"(?:^|\.)([^0-9\(\)]*?)[-—]", pasuk)
+                b = re.split(ur"(?:^|\.)(?![^(]*\))([^0-9]*?)[-—]", pasuk)
+
+                #b = re.split(ur"(?:^|\.)([^0-9]*?)[-—]", pasuk)
+
                 for cut in b:
-                    if len(re.findall(ur'[a-z]', cut))==0 and len(cut) > 0:
+                    #if len(re.findall(ur'[a-z]', cut))<=35  and len(cut) > 4:
+                    if len(re.findall("\(", cut)) == len(re.findall("\)", cut)) and len(re.findall(ur'[a-z]', cut))<=40  and len(cut) > 4:
+                    #if not ((ur"\(" in cut and not ur"\)" in cut) or (ur"\)" in cut and not ur"\(" in cut )) and len(re.findall(ur'[a-z]', cut))<=35  and len(cut) > 6:
+                    #if len(re.findall(ur'[a-z]', cut))<=35 and len(re.findall(ur'\S', cut))>= 5 and len(cut) > 0:
+                    #if not ((ur"\(" in cut and not ur"\)" in cut) or (ur"\)" in cut and not ur"(")) and len(cut)>5:
+
                        try:
                             dibbur = dibbur + ":"
                             psk.append(dibbur)
@@ -73,7 +81,10 @@ def parse(text):
                             print "name error"
                        dibbur = "<b>" + cut + "-" + '</b>'
                     elif cut !=" ":
-                        dibbur+=cut
+                        try:
+                            dibbur+=cut
+                        except Exception:
+                            pass
                 try:
                     dibbur = dibbur + ":"
                     psk.append(dibbur)
@@ -101,6 +112,6 @@ if __name__ == '__main__':
     try:
         run_post_to_api()
     except BadStatusLine as e:
-        print "bad status line"
+        print "bad status line " + e
     print len(parsed)
     print parsed[0][0][1]

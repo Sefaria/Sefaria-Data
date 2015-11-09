@@ -34,5 +34,8 @@ comparison =  sorted(set(heb).difference(set(eng)))
 print len(comparison)
 for item in comparison:
     it = re.sub("\,\s\'\,\'","",str(item))
-    file.write(it + '\n')
-
+    it =re.sub(ur"[\(\)]", "", it)
+    perek = re.split("\,", it)[0]
+    pasuk = re.split("\,", it)[1]
+    dibur = re.split("\,", it)[2]
+    file.write("www.sefaria.org/" + title + "." + str(perek).strip() + "." + str(pasuk).strip() + "." + str(dibur).strip() + "\n")
