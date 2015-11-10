@@ -11,7 +11,7 @@ import hebrew
 
 
 def open_file():
-    with open("source/Rashi_Nikud_eng.txt", 'r') as filep:
+    with open("file.txt", 'r') as filep:
         file_text = filep.read()
         ucd_text = unicode(file_text, 'utf-8').strip()
     return ucd_text
@@ -41,8 +41,18 @@ def run_post_to_api():
 
 
 def parse(text):
+    new_file=""
+    f = open('file.txt', 'w')
+    for line in re.split("(?:\n)", text):
+        if len(line)<40:
+            print line
+        else:
+	        new_file= new_file + "\n"+ line
+    #text =line for line in new_file.split('\n') if line.strip() != ''
+    #text = filter(lambda x: not re.match(r'^\s*$', x), new_file)
+    f.write(new_file.encode('utf8'))
     old_perek = 0
-    prakim = re.finditer("@(\S\S?\S?)(.*)", text)
+    prakim = re.finditer("@(\S\S?)(.*)", text)
     rashi =[]
     for perek in prakim:
         pars =1
@@ -50,7 +60,7 @@ def parse(text):
         if perek_num - old_perek !=1:
             print perek_num
         old_perek = perek_num
-        psukim = re.split(ur"(\([0-9][^\"\”]?\))", perek.group(2))
+        psukim = re.split(ur"(\([0-9][^\"\”a-z]?\))", perek.group(2))
         prk = []
         old_pasuk = 0
         for pasuk in psukim:
@@ -63,13 +73,18 @@ def parse(text):
                         prk.append([])
                 old_pasuk = pasuk_num
             else:
-                b = re.split(ur"(?:^|\.)(?![^(]*\))([^0-9]*?)[-—]", pasuk)
-
+                b = re.split(ur"(?:^|\.)([א-ת\[\]A-Z\sa-z\(\),\.\?:;\"\'\‘\’\!]{5,100}[-—])", pasuk)
+                #b = re.split(ur"(?:^|\.)([א-ת]+?.*?[-—])", pasuk)
                 #b = re.split(ur"(?:^|\.)([^0-9]*?)[-—]", pasuk)
 
                 for cut in b:
+                    if len(re.findall(ur'[-—]$', cut)) > 0 and len(cut) > 2:
+                       # print cut
+                    #if cut.isupper() and (ur'-' in cut or ur'—' in cut) and len(re.findall(ur"[א-ת]",cut))>0:
+                    #    print cut
+                    #if ur'-' in cut or ur'—' in cut and len(re.findall(ur"[א-ת]",cut))>0 and len(re.findall(ur'[a-z]', cut))<=40 and len(cut)>0:
                     #if len(re.findall(ur'[a-z]', cut))<=35  and len(cut) > 4:
-                    if len(re.findall("\(", cut)) == len(re.findall("\)", cut)) and len(re.findall(ur'[a-z]', cut))<=40  and len(cut) > 4:
+                    #if len(re.findall(ur"[א-ת]",cut))>0 and len(re.findall(ur'[a-z]', cut))<=15  and len(cut) > 4:
                     #if not ((ur"\(" in cut and not ur"\)" in cut) or (ur"\)" in cut and not ur"\(" in cut )) and len(re.findall(ur'[a-z]', cut))<=35  and len(cut) > 6:
                     #if len(re.findall(ur'[a-z]', cut))<=35 and len(re.findall(ur'\S', cut))>= 5 and len(cut) > 0:
                     #if not ((ur"\(" in cut and not ur"\)" in cut) or (ur"\)" in cut and not ur"(")) and len(cut)>5:
@@ -88,8 +103,8 @@ def parse(text):
                 try:
                     dibbur = dibbur + ":"
                     psk.append(dibbur)
-                except Exception:
-                    print "a"
+                except Exception as e:
+                    print e
             if pars == 1:
                 pars =2
                 try:
@@ -114,4 +129,4 @@ if __name__ == '__main__':
     except BadStatusLine as e:
         print "bad status line " + e
     print len(parsed)
-    print parsed[0][0][1]
+    #print parsed[0][0][1]
