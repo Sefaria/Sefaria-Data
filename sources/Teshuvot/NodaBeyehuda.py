@@ -44,7 +44,9 @@ def parse(text):
         # @77 ... @66 ... \n
         # @88 ... \n
 
-        first = re.finditer(ur"(@00.*)?(@88.*)?(@77.*@66.*)?\n?@22(.*)\n([.\n]*?)(?=@[0782])", part)
+        stuff = re.split(ur"((?:@[087]+.*)\n)*@22([א-ת ]+)\n", part)
+        pass
+        first = re.finditer(ur"(@00.*?)?(@88.*?)?(@77.*?@66.*?)?\n?@22([א-ת ]+)\n(.*?)(?=@[082])", part, flags=re.DOTALL)
         #first = re.finditer(ur"(@00.*\n)?(@88.*\n)?(@77.*@66.*)?\n?@22([א-ת][א-ת]?[א-ת]?)(^@[28])*?",part)
         #second = re.finditer(ur"(@00.*\n)?(@88.*\n)?(@77.*@66.*)?\n?@22([א-ת][א-ת]?[א-ת]?)([^a-z]*)",part)
         for fir in  first:
@@ -72,7 +74,6 @@ def parse(text):
         #print fir.group(5)
         #print name
     return noda
-
 
 def save_parsed_text(text):
     #print ref
