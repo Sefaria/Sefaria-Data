@@ -162,6 +162,7 @@ class Match:
 		self.maxLine = len(page)-1
 		self.ref_title = ref_title
 		self.found_dict = {}
+		self.ranged_dict = {}
 		self.dh_orig_list = dh_orig_list
 		dh_pos = 0
 		for dh in self.dh_orig_list:
@@ -173,7 +174,7 @@ class Match:
 			self.getRanges()
 		return self.confirmed_dict 
 			
-	def match(self, orig_dh, page, dh_position, ratio=87):
+	def match(self, orig_dh, page, dh_position, ratio=93):
 		partial_ratios = []	
 		self.found_dict[dh_position] = {}
 		self.found_dict[dh_position][orig_dh] = []
@@ -205,15 +206,16 @@ class Match:
 			  if result_pr > 0:
 				found+=1
 				continue
+		  elif len(dh)<24 and len(para)<24:
+		  	  if para_pr >= 93:
+		  	  	found+=1
+		  	  	self.found_dict[dh_position][orig_dh].append((line_n, para_pr))
 		  elif para_pr >= ratio:
 		  	  found+=1
 		  	  self.found_dict[dh_position][orig_dh].append((line_n, para_pr))
 		if found == 0:
 			if ratio > self.min_ratio:
 				self.match(orig_dh, page, dh_position, ratio-self.step)
-			else:
-				self.non_match_file.write(orig_dh)
-				self.non_match_file.write("\n")
 
 	def matchExpandPara(self, para, dh, dh_position, orig_dh, line_n, ratio):
 		start_line = line_n-1
@@ -241,7 +243,7 @@ class Match:
 
 	def matchSplitPara(self, para, dh, dh_position, orig_dh, line_n, ratio):
 		dh_acronym_list = []
-		phrases = self.splitPara(para, len(dh)) 
+		phrases = self.splitPara(para, len(dh.split(" "))) 
 		for phrase in phrases:
 			phrase_pr = fuzz.partial_ratio(dh, phrase)
 			if dh == phrase: 
@@ -253,7 +255,6 @@ class Match:
 		return self.matchAcronyms(dh, phrase)
 			
 	def splitPara(self, para, len_phrase):
-		len_phrase *= 3
 		phrases = []
 		words = para.split(" ")
 		len_para = len(words)
