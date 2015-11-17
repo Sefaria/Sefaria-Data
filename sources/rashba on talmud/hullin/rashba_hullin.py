@@ -43,6 +43,47 @@ gematria['ר'] = 200
 gematria['ש'] = 300
 gematria['ת'] = 400
 
+
+
+def post_text(ref, text):
+    textJSON = json.dumps(text)
+    ref = ref.replace(" ", "_")
+    url = SEFARIA_SERVER+'/api/texts/'+ref
+    values = {'json': textJSON, 'apikey': API_KEY}
+    data = urllib.urlencode(values)
+    req = urllib2.Request(url, data)
+    try:
+        response = urllib2.urlopen(req)
+        print response.read()
+    except HTTPError, e:
+        print 'Error code: ', e.code
+        print e.read()
+
+def post_link(info):
+	url = SEFARIA_SERVER+'/api/links/'
+	infoJSON = json.dumps(info)
+	values = {
+		'json': infoJSON, 
+		'apikey': API_KEY
+	}
+	data = urllib.urlencode(values)
+	req = urllib2.Request(url, data)
+	try:
+		response = urllib2.urlopen(req)
+		print response.read()
+		
+	except HTTPError, e:
+		print 'Error code: ', e.code
+
+
+def hasTags(comment):
+	tag = re.compile('.*\d+.*')
+	match = tag.match(comment)
+	if match:
+		return True
+
+
+
 def get_text(ref):
     ref = ref.replace(" ", "_")
     url = 'http://www.sefaria.org/api/texts/'+ref
@@ -101,6 +142,7 @@ title="R-7-"
 title_option = 1
 dh_dict = {}
 comm_dict = {}
+before_dh_dict = {}
 temp_text = ""
 daf=3
 for count_file in range(16):
@@ -111,11 +153,16 @@ for count_file in range(16):
 	for line in f:
 		line=line.replace("\n","")
 		len_line = len(line)
+		if line == "@10" or line == "@60":
+			continue
 		temp_text += line+" "
-		if line.find("@10") != len_line-3 and line.find("@60") != len_line-3 and line.find("@50") != len_line-3:
+		continue_or_not = (line.find("@10") == len_line-3 or line.rfind("@60") == len_line-3 or line.find("@50") == len_line-3)
+		continue_or_not = continue_or_not or (line.find("@10") == len_line-4 or line.rfind("@60") == len_line-4 or line.find("@50") == len_line-4)
+		continue_or_not = continue_or_not or (line.find("@10") == len_line-5 or line.rfind("@60") == len_line-5 or line.find("@50") == len_line-5)
+		if continue_or_not == False:
 			continue
 		if temp_text.find("@") > 4:
-			temp_text = "@60 "+temp_text
+			temp_text = "@28 "+temp_text
 		if temp_text.find("@20") >= 0:
 			start = temp_text.find("@20")
 			end = max(temp_text.find("@30"), temp_text.find("@70"))
@@ -125,8 +172,23 @@ for count_file in range(16):
 			actual_start = temp_text.find("[")
 			actual_end = temp_text.find("]")
 			if actual_start > start and actual_end < end:
+				before_dh = temp_text[start+3:end].replace(temp_text[actual_start:actual_end+1],"")
 				daf = temp_text[actual_start:actual_end].replace("[","").replace("]","").replace(" ","")
 			daf = convertHebrewToNumber(daf)
+			if len(before_dh)>1:
+			 if daf in comm_dict:
+				before_dh_dict[(daf, len(comm_dict[daf]))] = before_dh
+			 else:
+				before_dh_dict[(daf, 0)] = before_dh
+		if line.find("@28") >= 0:
+			start = temp_text.find("@28")
+			end = max(temp_text.find("@70"), temp_text.find("@30"))
+			before_dh = temp_text[start+3:end]
+			if len(before_dh)>1:
+			 if daf in comm_dict:
+				before_dh_dict[(daf, len(comm_dict[daf]))] = before_dh
+			 else:
+				before_dh_dict[(daf, 0)] = before_dh
 		if temp_text.find("@30") >= 0 or temp_text.find("@70") >= 0:
 			start = max(temp_text.find("@30"), temp_text.find("@70"))
 			end = temp_text.rfind("@40")
@@ -139,6 +201,7 @@ for count_file in range(16):
 			else:
 				dh_dict[daf] = []
 				dh_dict[daf].append(dh)
+			just_added_dh = True
 		if temp_text.rfind("@40") >= 0 and (line.find("@60") == -1 or line.find("@60") > 2):
 			start = temp_text.rfind("@40")
 			end = max(temp_text.find("@10"), temp_text.find("@60"), temp_text.find("@50"))
@@ -151,7 +214,13 @@ for count_file in range(16):
 			else:
 				comm_dict[daf] = []
 				comm_dict[daf].append(comm)
+			if hasTags(comm) or hasTags(dh) or hasTags(before_dh):
+				pdb.set_trace()
 			temp_text=""
+			if just_added_dh == False:
+				dh_dict[daf].append("")
+			before_dh = ""
+			just_added_dh = False
 			continue
 		if temp_text.find("@70") >= 0:
 			start = temp_text.find("@70")
@@ -165,7 +234,13 @@ for count_file in range(16):
 			else:
 				comm_dict[daf] = []
 				comm_dict[daf].append(comm)
+			if hasTags(comm) or hasTags(dh) or hasTags(before_dh):
+				pdb.set_trace()
 			temp_text=""
+			if just_added_dh == False:
+				dh_dict[daf].append("")
+			before_dh = ""
+			just_added_dh = False
 			continue
 		if temp_text.find("@60") >= 0 and temp_text.find("@60") < 2:
 			start = temp_text.find("@60")
@@ -179,24 +254,86 @@ for count_file in range(16):
 			if daf not in comm_dict:
 				comm_dict[daf] = []
 			comm_dict[daf].append(comm)
+			if just_added_dh == False:
+				dh_dict[daf].append("")
+			if hasTags(comm) or hasTags(dh) or hasTags(before_dh):
+				pdb.set_trace()
+			just_added_dh = False
+			before_dh = ""
 		temp_text = ""
 result = {}
-for daf in dh_dict.keys():
-	text = get_text("Chullin."+AddressTalmud.toStr("en", daf))
-	match_obj=Match(in_order=True, min_ratio=70, guess=False)
-	if text==None:
-		print daf
-	if text!=None:
-		result[daf] = match_obj.match_list(dh_dict[daf], text)
-
 guess = 0
 no_guess = 0
-for key in result:
-	for each_one in result[key]:
-		if result[key][each_one][0] == 0:
-			no_guess += 1
-		else:
-			guess += 1
+result = {}
+guess=0
+no_guess=0
+for daf in dh_dict.keys():
+	if len(dh_dict[daf]) != len(comm_dict[daf]):
+		pdb.set_trace()
+for daf in dh_dict.keys():
+	text = get_text("Chullin."+AddressTalmud.toStr("en", daf))
+	try:
+		match_obj=Match(in_order=True, min_ratio=70, guess=False, range=True, maxLine=len(text)-1)
+	except:
+		pdb.set_trace()
+	dh_arr = []
+	for i in range(len(dh_dict[daf])):
+		if len(dh_dict[daf][i]) > 0:
+			dh_arr.append(dh_dict[daf][i])
+	result[daf] = match_obj.match_list(dh_arr, text)
+	dh_count = 1
+	'''
+	if len(dh_dict[daf][i]) == 0, then comm_dict[daf][i] gets added to comm_dict[daf][i-1]+"<br>"
+	'''
+	for i in range(len(comm_dict[daf])):
+		 if (daf, i) in before_dh_dict:
+		 	comm_dict[daf][i] = before_dh_dict[(daf, i)]+"<b>"+dh_dict[daf][i]+"</b>"+comm_dict[daf][i]
+		 else:
+		 	comm_dict[daf][i] = "<b>"+dh_dict[daf][i]+"</b>"+comm_dict[daf][i]
+	found = 0
+	if len(dh_dict[daf][0]) == 0:
+		pdb.set_trace()
+	for i in range(len(dh_dict[daf])):
+		if len(dh_dict[daf][i]) > 0:
+			old_found = found
+			found = i
+			if found - old_found > 1:
+				temp=""
+		 		for j in range(found-old_found-1): 
+		 			temp+="<br>"+comm_dict[daf][j+old_found+1]
+		 		comm_dict[daf][old_found] += temp
+	comments = []
+	for i in range(len(comm_dict[daf])):
+		if len(dh_dict[daf][i])>0:
+			comments.append(comm_dict[daf][i])
+	#NOW create new array skipping blank ones
+	for i in range(len(comm_dict[daf])):
+		 if len(dh_dict[daf][i]) > 0:
+		 	line_n  = result[daf][dh_count]
+		 	dh_count+=1 
+		 	if line_n.find("0:")>=0:
+		 		no_guess += 1
+		 	line_n = line_n.replace("0:", "")
+		 	guess+=1
+			post_link({
+					"refs": [
+							"Chullin"+"."+AddressTalmud.toStr("en", daf)+"."+str(line_n), 
+							"Rashba on Chullin."+AddressTalmud.toStr("en", daf)+"."+str(i+1)
+						],
+					"type": "commentary",
+					"auto": True,
+					"generated_by": "Rashba on Chullin linker",
+				 })
+	send_text = {
+				"versionTitle": "Rashba on Chullin",
+				"versionSource": "http://www.sefaria.org",
+				"language": "he",
+				"text": comments,
+				}
+	
+	post_text("Rashba on Chullin."+AddressTalmud.toStr("en", daf), send_text)
+	pdb.set_trace()
+
+
 print float(guess)/float(guess+no_guess)
 print no_guess
-pdb.set_trace()

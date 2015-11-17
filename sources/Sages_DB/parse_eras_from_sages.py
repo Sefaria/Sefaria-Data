@@ -92,7 +92,9 @@ for row in rows:
         "symbol": period,
         "order": float(row[1]),
         "range_string": range_string,
-        "type": ptype
+        "type": ptype,
+        "startIsApprox": True,
+        "endIsApprox": True
     })
     tp.add_name(primary_name, "en", primary=True)
     tp.add_name(hebrew_name, "he", primary=True)
@@ -116,7 +118,9 @@ t = TimePeriod({
     "range_string": "220 - 500 CE",
     "start": 220,
     "end": 500,
-    "type": "Era"
+    "type": "Era",
+    "startIsApprox": True,
+    "endIsApprox": True
 })
 t.add_name("Amoraim", "en", primary=True)
 t.add_name(u"אמוראים", "he", primary=True)
@@ -129,7 +133,9 @@ t = TimePeriod({
     "range_string": "1939 CE - ",
     "start": 1939,
     "end": 2015,
-    "type": "Era"
+    "type": "Era",
+    "startIsApprox": True,
+    "endIsApprox": True
 })
 t.add_name("Contemporary", "en", primary=True)
 t.add_name(u"בני דורנו", "he", primary=True)

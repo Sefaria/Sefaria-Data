@@ -31,8 +31,9 @@ def book_record():
     return {
     "title" : "Chidushei Agadot on %s" % masechet,
     "categories" : [
-        "Other",
-        "Maharsha"
+        "Commentary2",
+        "Talmud",
+        "Chidushei Agadot"
     ],
     "schema" : {
         "titles" : [
