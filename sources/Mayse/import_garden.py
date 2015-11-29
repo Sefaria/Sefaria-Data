@@ -18,7 +18,7 @@ def _(p, attr, field):
 garden_key = u"sefaria.custom.maggid"
 grdn = Garden().load({"key": garden_key})
 if not grdn:
-    grdn = Garden({"key": garden_key, "title": u"Ariel's Temp Title", "heTitle": u"זמני"})
+    grdn = Garden({"key": garden_key, "title": u"Tracing the Maggid", "heTitle": u"חצי צורות של המגיד"})
 
 
 with open("Bibliographic Data - Sefaria Maggid Project - Places.tsv") as tsv:
@@ -148,7 +148,7 @@ with open("Bibliographic Data - Sefaria Maggid Project - Versions.csv") as csvfi
             author = {}
 
         placekey = book["compPlace"] or book["pubPlace"] or getattr(author, "deathPlace", "") or getattr(author, "birthPlace", "")
-        if not placekey or not  place.Place().load({"key": placekey}):
+        if not placekey or not place.Place().load({"key": placekey}):
             placekey = ""
 
         stopdata = {
@@ -157,8 +157,8 @@ with open("Bibliographic Data - Sefaria Maggid Project - Versions.csv") as csvfi
             'title': book["title"],
             'heTitle': book["heTitle"],
             'heText': l[4],
-            'enVersionTitle': u"{} / {}".format(l[1], l[3]) if l[1] else l[3],
-            'heVersionTitle': u"{} / {}".format(l[1], l[3]) if l[1] else l[3],
+            'enSubtitle': u"{} / {}".format(l[1], l[3]) if l[1] else l[3],
+            'heSubtitle': u"{} / {}".format(l[1], l[3]) if l[1] else l[3],
             'tags': {
                 "default": [],
                 "Attribution": [l[5]],
@@ -168,12 +168,35 @@ with open("Bibliographic Data - Sefaria Maggid Project - Versions.csv") as csvfi
         if author:
             stopdata["authorsEn"] = author.primary_name("en")
             stopdata["authorsHe"] = author.primary_name("he")
-            if author.mostAccurateTimePeriod():
-                tp = author.mostAccurateTimePeriod()
-                stopdata["start"] = tp.start
-                stopdata["end"] = tp.end
-                stopdata["startIsApprox"] = tp.startIsApprox
-                stopdata["endIsApprox"] = tp.endIsApprox
+
+        if book.get("compDate"):
+            comp = int(book.get("compDate"))   # doesn't handle the 'c' here
+            err = int(book.get("errorMargin", 0))
+            stopdata["start"] = comp - err
+            stopdata["end"] = comp + err
+            stopdata["startIsApprox"] = err != 0
+            stopdata["endIsApprox"] = err != 0
+        elif author and getattr(author, "birthYear", None) and getattr(author, "deathYear", None):
+            stopdata["start"] = int(author.birthYear)
+            stopdata["end"] = int(author.deathYear)
+            stopdata["startIsApprox"] = author.birthYearIsApprox
+            stopdata["endIsApprox"] = author.deathYearIsApprox
+        elif author and getattr(author, "deathYear", None):
+            stopdata["start"] = int(author.deathYear)
+            stopdata["end"] = int(author.deathYear) - 40
+            stopdata["startIsApprox"] = True
+            stopdata["endIsApprox"] = author.deathYearIsApprox
+        elif book.get("pubDate"):
+            stopdata["start"] = int(book.get("pubDate"))
+            stopdata["end"] = int(book.get("pubDate"))
+            stopdata["startIsApprox"] = True
+            stopdata["endIsApprox"] = True
+        elif author and author.mostAccurateTimePeriod():
+            tp = author.mostAccurateTimePeriod()
+            stopdata["start"] = tp.start
+            stopdata["end"] = tp.end
+            stopdata["startIsApprox"] = tp.startIsApprox
+            stopdata["endIsApprox"] = tp.endIsApprox
 
         """
             'enText',
