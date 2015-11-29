@@ -11,7 +11,7 @@ eras = {
     "Contemporary": "CO"
 }
 
-def _(p, attr, field):
+def setif(p, attr, field):
     if field:
         setattr(p, attr, field)
 
@@ -87,15 +87,15 @@ with open("Bibliographic Data - Sefaria Maggid Project - People.tsv") as tsv:
             m = re.search(r"\d+", l[6])
             if m:
                 p.deathYear = m.group(0)
-        _(p, "birthPlace", l[5])
-        _(p, "deathPlace", l[7])
-        _(p, "era", eras.get(l[8]))
-        _(p, "enBio", l[9])
-        _(p, "heBio", l[10])
-        _(p, "enWikiLink", l[11])
-        _(p, "heWikiLink", l[12])
-        _(p, "jeLink", l[13])
-        _(p, "sex", l[23])
+        setif(p, "birthPlace", l[5])
+        setif(p, "deathPlace", l[7])
+        setif(p, "era", eras.get(l[8]))
+        setif(p, "enBio", l[9])
+        setif(p, "heBio", l[10])
+        setif(p, "enWikiLink", l[11])
+        setif(p, "heWikiLink", l[12])
+        setif(p, "jeLink", l[13])
+        setif(p, "sex", l[23])
         people[p.key] = p
 
 books = {}
