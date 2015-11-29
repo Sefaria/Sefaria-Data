@@ -27,14 +27,30 @@ def open_file():
 
 
 def parse(text):
-    parts = re.split(ur"@99(.*)?(?:\n|:)",text)
+    parts = re.split(ur"@99(.*)(?:\n|:)",text)
     noda = []
     for name,part in zip(parts[1::2],parts[0::2]):
         new_numeral = 0
-        first = re.finditer(ur"(@00.*\n)?(@88.*\n)?(@77.*@66.*)?\n?@22([א-ת][א-ת]?[א-ת]?)(^@[28])*?",part)
+        # Questions begin with:
+        # @22 <hebrew number> \n
+        # The lines afterward are the body of the question
+
+        # Regular lines often (always?) look like:
+        # @11 ... @33 ... \n
+
+        # Questions may have header material in front of them.
+        # The header material might include
+        # @00 ... \n
+        # @77 ... @66 ... \n
+        # @88 ... \n
+
+        stuff = re.split(ur"((?:@[087]+.*)\n)*@22([א-ת ]+)\n", part)
+        pass
+        first = re.finditer(ur"(@00.*?)?(@88.*?)?(@77.*?@66.*?)?\n?@22([א-ת ]+)\n(.*?)(?=@[082])", part, flags=re.DOTALL)
+        #first = re.finditer(ur"(@00.*\n)?(@88.*\n)?(@77.*@66.*)?\n?@22([א-ת][א-ת]?[א-ת]?)(^@[28])*?",part)
         #second = re.finditer(ur"(@00.*\n)?(@88.*\n)?(@77.*@66.*)?\n?@22([א-ת][א-ת]?[א-ת]?)([^a-z]*)",part)
         for fir in  first:
-            teshuva =[]
+            teshuva = []
             answer=""
             if fir.group(1) is not None:
                 ans =re.sub(ur"@00","", fir.group(1))
@@ -48,17 +64,16 @@ def parse(text):
                 answer2 = "<b>" + ans2.group(1) + '</b>' + ans2.group(2)
                 answer = answer + answer2
             teshuva.append(answer)
-            shela = fir.group(4)
+            shela = fir.group(4).strip()
             print shela
             numeral = sefaria.utils.hebrew.heb_string_to_int(shela)
             if numeral - new_numeral != 1:
                 print shela, numeral
             new_numeral = numeral
-        noda.append(teshuva)
+            noda.append(teshuva)
         #print fir.group(5)
         #print name
     return noda
-
 
 def save_parsed_text(text):
     #print ref
@@ -86,7 +101,9 @@ def run_post_to_api():
 
 if __name__ == '__main__':
     text = open_file()
-    parsed =parse(text)
+    parsed = parse(text)
+    pass
+
     #Helper.createBookRecord(book_record())
     #save_parsed_text(parsed)
     #run_post_to_api()
