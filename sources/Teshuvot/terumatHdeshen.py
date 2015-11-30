@@ -2,6 +2,7 @@
 import re
 import sys
 import json
+import csv
 from sefaria.model import *
 import sefaria.utils.hebrew
 sys.path.insert(1, '../genuzot')
@@ -23,6 +24,33 @@ def addlink(key, part,  i):
 
 
 def build_index():
+    structs = {"nodes": [] }
+    with open('source/terumathadeshen.csv', 'rb') as csvfile:
+        reader = csv.reader(csvfile, delimiter='\t' )
+        for row in reader:
+            eng_title = row[4]
+            heb_title = row[0]
+            frm = row[2]
+            to = row[3]
+            wholeref = "Terumat HaDeshen, Part I" + "." + str(frm) + "-" + str(to)
+            structs["nodes"].append({
+                "titles":  [{
+                            "lang": "en",
+                            "text": eng_title,
+                            "primary": True
+                            },
+                            {
+                            "lang": "he",
+                            "text": heb_title,
+                            "primary": True
+                            }],
+                "nodeType": "ArrayMapNode",
+                "depth": 0,
+                "addressTypes": [],
+                "sectionNames": [],
+                "wholeRef": wholeref
+            })
+    print structs["nodes"]
     root = SchemaNode()
     root.key = 'Terumat HaDeshen'
     root.add_title("Terumat HaDeshen", "en", primary=True)
@@ -68,7 +96,9 @@ def build_index():
     index = {
         "title": "Terumat HaDeshen",
         "categories": ["Responsa"],
+        "alt_structs": {"subject": structs},
         "schema": root.serialize()
+
     }
     return index
 
@@ -140,8 +170,8 @@ def parse(text):
         old_num=roman
         siman_key = "<b>" + siman.group(1) + '</b>' + siman.group(2)
         tdkeyone.append(siman_key)
-    #save_parsed_text(tdkeyone, "Key part I")
-    #run_post_to_api("Key part I")
+    save_parsed_text(tdkeyone, "Key part I")
+    run_post_to_api("Key part I")
     tdone=[]
     seifim = re.split(ur"@11(שאלה\s?[u'\u05d0-\u05ea'][u'\u05d0-\u05ea']?[u'\u05d0-\u05ea']?\s?)@33", partI )
     for num, seif in zip(seifim[1::2],seifim[2::2]):
@@ -165,10 +195,10 @@ def parse(text):
         sh.append(tshuva)
         tdone.append(sh)
     #print len(tdone)
-    #save_parsed_text(tdone, "Part I")
-    #run_post_to_api("Part I")
+    save_parsed_text(tdone, "Part I")
+    run_post_to_api("Part I")
     for i,k in enumerate(tdkeyone):
-        #Helper.postLink(addlink("Key part I", "Part I",i))
+        Helper.postLink(addlink("Key part I", "Part I",i))
         pass
     simanimI = re.finditer(ur"@11([u'\u05d0-\u05ea'][u'\u05d0-\u05ea']?[u'\u05d0-\u05ea']?\s?)@33(.*)?",keyII)
     old_num = 0
@@ -183,8 +213,8 @@ def parse(text):
         old_num=romanI
         simanI_key = "<b>" + simanI.group(1) + '</b>' + simanI.group(2)
         tdkeytwo.append(simanI_key)
-    #save_parsed_text(tdkeytwo, "Key part II")
-    #run_post_to_api("Key part II")
+    save_parsed_text(tdkeytwo, "Key part II")
+    run_post_to_api("Key part II")
     tdtwo=[]
     seifimI = re.split(ur"@11(סימן\s?[u'\u05d0-\u05ea'][u'\u05d0-\u05ea']?[u'\u05d0-\u05ea']?\s?)@33", partII )
     for ansI, seifI in zip(seifimI[1::2], seifimI[2::2]):
@@ -195,7 +225,7 @@ def parse(text):
     save_parsed_text(tdtwo, "Part II")
     run_post_to_api("Part II")
     for i,k in enumerate(tdkeytwo):
-        #Helper.postLink(addlink("Key part II", "Part II",i))
+        Helper.postLink(addlink("Key part II", "Part II",i))
         pass
 
 
@@ -203,7 +233,7 @@ def parse(text):
 
 if __name__ == '__main__':
     text = open_file()
-    #Helper.createBookRecord(build_index())
+    Helper.createBookRecord(build_index())
     parsed = parse(text)
 
    # print len(parsed)
