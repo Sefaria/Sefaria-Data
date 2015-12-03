@@ -5,6 +5,7 @@ import json
 import csv
 from sefaria.model import *
 import sefaria.utils.hebrew
+from sefaria.local_settings import *
 sys.path.insert(1, '../genuzot')
 import helperFunctions as Helper
 from httplib import BadStatusLine
@@ -94,10 +95,17 @@ def build_index():
 
     root.validate()
     index = {
-        "title": "Terumat HaDeshen",
-        "categories": ["Responsa"],
-        "alt_structs": {"subject": structs},
-        "schema": root.serialize()
+    "title": "Terumat HaDeshen",
+    "authors": ["Israel Isserlin"],
+    "pubDate": 1519,
+    "compDate" : 1450,
+    "compPlace": "Neustadt",
+    "pubPlace": "Venice",
+    "errorMargin": 10,
+    "era"	: "Rishonim",
+    "categories": ["Responsa"],
+    "alt_structs": {"Topic": structs},
+    "schema": root.serialize()
 
     }
     return index
@@ -108,8 +116,8 @@ def save_parsed_text(text, chelek):
     #JSON obj matching the API requirements
     text_whole = {
         "title": 'Terumat HaDeshen, ' + chelek,
-        "versionTitle": "1",
-        "versionSource": " ",
+        "versionTitle": "Warsaw 1882",
+        "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001175907",
         "language": "he",
         "text": text,
         "status":"locked",
