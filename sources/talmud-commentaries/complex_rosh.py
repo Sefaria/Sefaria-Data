@@ -9,12 +9,15 @@ import sys
 sys.path.insert(1, '../genuzot')
 import helperFunctions as Helper
 import hebrew
+sys.path.insert(0, '../Match/')
+from match import Match
 
 
 masechet = "Yoma"
 masechet_he = ur"יומא"
 deploy =True
 shas = TextChunk(Ref("%s" % masechet), "he").text
+
 
 def postdText(ref1, text, serializeText = True):
     if serializeText:
@@ -37,7 +40,6 @@ def postdText(ref1, text, serializeText = True):
     except urllib2.HTTPError, e:
         print 'Error code: ', e.code
         print e.read()
-
 
 
 def postText(ref1, ref2, text, serializeText = True):
@@ -69,7 +71,7 @@ def open_file():
         file_text = filep.read()
       #  print file_text.decode('utf-8','ignore')
         ucd_text = unicode(file_text, 'utf-8', errors='ignore').strip()
-        print masechet_he
+        #print masechet_he
         return ucd_text
 
 
@@ -113,7 +115,7 @@ def book_record1():
     }
     #Index(indx).save()
     if deploy == True:
-        url = 'http://lev.sefaria.org/api/v2/index/' + indx["title"].replace(" ", "_")
+        url = 'http://' + Helper.server + '/api/v2/index/' + indx["title"].replace(" ", "_")
         indexJSON = json.dumps(indx)
         values = {
             'json': indexJSON,
@@ -141,11 +143,16 @@ def parse_seder_haavoda(text):
             i = 1
             continue
         if i > 0:
-            kitzur.append(seif)
+            if "@11" in seif:
+                new_seif =re.split(ur"@33",seif)
+
+                kitz =  "<b>" +  re.sub(ur"@11","",new_seif[0]) + '</b>' + new_seif[1]
+            kitzur.append(kitz)
             break
         content = re.split('@66', seif)
         siman = []
         for cont in content:
+           # print re.findall(ur"(\(דף [\u05d0-\u05ea][\u05d0-\u05ea][\.:]\))", cont)
             if len(re.split('(?:@33|@77)', cont)) > 1:
                 cont = "<b>" + re.split('(?:@33|@77)', cont)[0] + "</b>" + re.split('(?:@33|@77)', cont)[1]
             else:
@@ -164,14 +171,15 @@ def parse_seder_haavoda(text):
     a = re.split(ur'@22([^@]*)', chapters[2])
     prk=[]
     for seif, cont in zip(a[1::2], a[2::2]):
-        print seif
+        #print seif
         content = re.split('@66', cont)
         sif =[]
         for siman in content:
+            #print siman
             sif.append(siman)
         prk.append(sif)
     body.append(prk)
-    print len(body)
+    #print len(body)
     return hilchot_seder_haavoda, kitzur, body
 
 
@@ -198,6 +206,30 @@ def search(parsed):
                     pass
 
 
+def search1(parsed):
+    for i in parsed:
+       for k in i:
+           for j in k:
+               found =  re.finditer(ur'@44\[דף(.*?)\](.*?)\(', j)
+               for find in found:
+                   daf = find.group(1)
+
+                   text =  find.group(2)
+
+                   if daf.strip().split(" ")[1] == u'ע"א':
+                       amud = 'a'
+                   elif daf.strip().split(" ")[1] == u'ע"ב':
+                       amud = 'b'
+
+                   new_daf = daf.strip().split(" ")[0]
+                   try:
+                       daf_num = hebrew.heb_string_to_int(new_daf)
+                       #print str(daf_num) + amud
+                       match(daf_num, amud, text)
+                   except KeyError:
+                       pass
+
+
 def match(daf_num, amud, text):
     index = (daf_num-2)*2
     if amud=="b":
@@ -209,6 +241,11 @@ def match(daf_num, amud, text):
     for  line in shas[index]:
         if string in line or line in string:
             print "found", string, line,  daf_num
+
+
+def matchobj():
+    match_obj = Match()
+    match_obj.match_list()
 
 
 def clean(parsed):
@@ -274,14 +311,15 @@ if __name__ == '__main__':
     text = open_file()
     book_record1()
     seder_haavoda, kitzur_seder, body = parse_seder_haavoda(text)
-    print len(body)
-    print body[7][0][0]
+    #print len(body)
+    #print body[7][0][0]
     # parse perek shmini
-    #search()
+    search(seder_haavoda)
+    search1(body)
     clean_text = clean(seder_haavoda)
     save_text(clean_text,"Hilchot Seder Avodat Yom HaKippurim")
     run_post_to_api("Hilchot Seder Avodat Yom HaKippurim")
-    #clean kitzur
+    #clean kitz ur
     save_text(kitzur_seder,"Seder HaAvodah BeKitzur")
     run_post_to_api("Seder HaAvodah BeKitzur")
     save_default_text(body)
