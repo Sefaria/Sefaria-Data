@@ -19,6 +19,12 @@ garden_key = u"sefaria.custom.maggid"
 grdn = Garden().load({"key": garden_key})
 if not grdn:
     grdn = Garden({"key": garden_key, "title": u"Tracing the Maggid", "heTitle": u"חצי צורות של המגיד"})
+    grdn.updateConfig({
+        "timeline_scale": "linear"
+    })
+    grdn.removeFilter("default")
+    grdn.updateFilter("Attribution", {"en": "Attribution", "he": u"שיוך"})
+    grdn.updateFilter("Dynasty", {"en": "Dynasty", "he": u"חצר"})
 
 
 with open("Bibliographic Data - Sefaria Maggid Project - Places.tsv") as tsv:
@@ -155,7 +161,7 @@ with open("Bibliographic Data - Sefaria Maggid Project - Versions.csv") as csvfi
             "type": "outside_source",
             "placeKey": placekey,
             'title': book["title"],
-            'heTitle': book["heTitle"],
+            'heTitle': book["heTitle"] or book["title"],
             'heText': l[4],
             'enSubtitle': u"{} / {}".format(l[1], l[3]) if l[1] else l[3],
             'heSubtitle': u"{} / {}".format(l[1], l[3]) if l[1] else l[3],
