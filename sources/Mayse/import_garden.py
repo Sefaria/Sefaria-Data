@@ -183,13 +183,13 @@ with open("Bibliographic Data - Sefaria Maggid Project - Versions.csv") as csvfi
             stopdata["startIsApprox"] = err != 0
             stopdata["endIsApprox"] = err != 0
         elif author and getattr(author, "birthYear", None) and getattr(author, "deathYear", None):
-            stopdata["start"] = int(author.birthYear)
+            stopdata["start"] = int(author.birthYear) + 30
             stopdata["end"] = int(author.deathYear)
-            stopdata["startIsApprox"] = author.birthYearIsApprox
+            stopdata["startIsApprox"] = True
             stopdata["endIsApprox"] = author.deathYearIsApprox
         elif author and getattr(author, "deathYear", None):
-            stopdata["start"] = int(author.deathYear)
-            stopdata["end"] = int(author.deathYear) - 40
+            stopdata["start"] = int(author.deathYear) - 15
+            stopdata["end"] = int(author.deathYear)
             stopdata["startIsApprox"] = True
             stopdata["endIsApprox"] = author.deathYearIsApprox
         elif book.get("pubDate"):
