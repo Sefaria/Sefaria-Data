@@ -6,17 +6,66 @@ import json
 import urllib2
 import urllib
 import sys
+from HTMLParser import HTMLParser
+from fuzzywuzzy import fuzz
 sys.path.insert(1, '../genuzot')
 import helperFunctions as Helper
 import hebrew
 sys.path.insert(0, '../Match/')
 from match import Match
 
+class MLStripper(HTMLParser):
+    def __init__(self):
+        self.reset()
+        self.fed = []
+    def handle_data(self, d):
+        self.fed.append(d)
+    def get_data(self):
+        return ''.join(self.fed)
 
+links = []
 masechet = "Yoma"
 masechet_he = ur"יומא"
 deploy =True
 shas = TextChunk(Ref("%s" % masechet), "he").text
+log =open("../../Match Logs/Talmud/{}/log_rosh_on_{}.txt".format(masechet,masechet),"w")
+
+
+def search2(parsed):
+    for i,perek in enumerate(parsed):
+       for j, pasuk in enumerate(perek):
+           for k, seif in enumerate(pasuk):
+               found =  re.finditer(ur'@44\[דף(.*?)\](.*?)\.', seif)
+               for find in found:
+                   daf = find.group(1)
+                   text =  find.group(2)
+                   if daf.strip().split(" ")[1] == u'ע"א':
+                       amud = 'a'
+                   elif daf.strip().split(" ")[1] == u'ע"ב':
+                       amud = 'b'
+
+                   new_daf = daf.strip().split(" ")[0]
+                   try:
+                       daf_num = hebrew.heb_string_to_int(new_daf)
+                       #print str(daf_num) + amud
+                       found = matchobj(daf_num, amud, text)
+                       #print "Rosh on {}".format(masechet), daf_num, amud, found[1][0], str(i+1), ",", str(j+1) + ",", str(k+1)
+                       talmud = "{}".format(masechet) +  "." + str(daf_num) + amud
+                       roash = "Rosh on {}".format(masechet) +"." + str(i+1) + "." + str(j+1) + "." + str(k+1)
+                       links.append(link(talmud,roash))
+                   except KeyError:
+                       pass
+
+
+def link(talmud, roash):
+    return {
+            "refs": [
+               talmud,
+                roash ],
+            "type": "Rosh in Talmud",
+            "auto": True,
+            "generated_by": "Rosh_%s" % masechet,
+            }
 
 
 def postdText(ref1, text, serializeText = True):
@@ -184,12 +233,12 @@ def parse_seder_haavoda(text):
 
 
 def search(parsed):
-    for i in parsed:
-        for j in i:
-            found =  re.finditer(ur'\(דף(.*?)\)(.*?)\(', j)
+    for i,perek in enumerate(parsed):
+        for j,pasuk in enumerate(perek):
+            found =  re.finditer(ur'\(דף(.*?)\)', pasuk)
             for find in found:
                 daf = find.group(1)
-                text =  find.group(2)
+                #text =  find.group(2)
                 if daf[len(daf)-1] == '.':
                     #print daf
                     amud = 'a'
@@ -200,8 +249,10 @@ def search(parsed):
                 #print new_daf
                 try:
                     daf_num = hebrew.heb_string_to_int(new_daf)
-                    #print str(daf_num) + amud
-                    match(daf_num, amud, text)
+                    #print str(daf_num) + amud +  " " + str(i) + " " + str(j+1)
+                    links.append(link("{}".format(masechet) + "." + str(daf_num) + amud, "Rosh on {}, Hilchot Seder Avodat Yom HaKippurim".format(masechet) + "." + str(i) + "." + str(j+1)))
+                    #links.append(link(
+                    #match(daf_num, amud, text)
                 except KeyError:
                     pass
 
@@ -231,21 +282,38 @@ def search1(parsed):
 
 
 def match(daf_num, amud, text):
+    dhlist = []
+    makorlist =[]
     index = (daf_num-2)*2
     if amud=="b":
         index= index + 1
     list =text.split(" ")
     string= " ".join(list[0:5])
     string = re.sub('(?:@|[0-9]|<|>|b|\[|\*|\])',"",string)
-    print "string is" , string, daf_num
+    dhlist.append(string)
+    makorlist.append(shas[index])
     for  line in shas[index]:
         if string in line or line in string:
             print "found", string, line,  daf_num
+    #matchobj(dhlist,makorlist)
 
 
-def matchobj():
-    match_obj = Match()
-    match_obj.match_list()
+def matchobj(daf_num, amud, text):
+    new_shas =[]
+    index = (daf_num-2)*2
+    if amud=="b":
+        index= index + 1
+    list =text.split(" ")
+    string= " ".join(list[0:7])
+    string = re.sub(ur'(?:@|[0-9]|<|>|b|\[|\*|\])',"",string)
+    match_obj = Match(min_ratio=55, guess =True)
+    for line in shas[index]:
+        new_line = re.sub(ur'<[^<]+?>',"",line)
+        new_shas.append(new_line)
+
+    print string, daf_num, amud
+    results = match_obj.match_list([string], new_shas)
+    return(results)
 
 
 def clean(parsed):
@@ -253,12 +321,32 @@ def clean(parsed):
      for i in parsed:
          seif= []
          for j in i:
+            j =  re.sub(ur"\(\S?דף.*?\)","", j)
             clean_text = re.sub("(?:@|[0-9]|<|>|b|\[|\*|\]|\/|\(\*\))","", j)
             seif.append(clean_text)
             #print clean_text
-         rosh.append(seif)
+         if len(seif[0])>1:
+            rosh.append(seif)
      return rosh
 
+
+def clean1(parsed):
+    rosh=[]
+    for i,perek in enumerate(parsed):
+
+        pr=[]
+        for k, seif in enumerate(perek):
+            s =[]
+            for l in seif:
+                #print re.findall(ur"@[0-9[0-9]\S?\[.*?\]\S?@[0-9][0-9]",l )
+                #l1 = re.sub(ur"@[0-9[0-9]\S?\[.{1,10}\]\S?@[0-9][0-9]","",l )
+                l1 = re.sub(ur"@[0-9[0-9]\S?\[.{1,10}","",l )
+                clean_text = re.sub("(?:@|[0-9]|<|>|b|\[|\*|\]|\/|\(\*\)|#)","", l1)
+                s.append(clean_text)
+            pr.append(s)
+
+        rosh.append(pr)
+    return rosh
 
 def save_text(text,perek):
     perek = re.sub(" ", "_",perek.strip())
@@ -315,12 +403,15 @@ if __name__ == '__main__':
     #print body[7][0][0]
     # parse perek shmini
     search(seder_haavoda)
-    search1(body)
+    search2(body)
     clean_text = clean(seder_haavoda)
     save_text(clean_text,"Hilchot Seder Avodat Yom HaKippurim")
     run_post_to_api("Hilchot Seder Avodat Yom HaKippurim")
     #clean kitz ur
     save_text(kitzur_seder,"Seder HaAvodah BeKitzur")
     run_post_to_api("Seder HaAvodah BeKitzur")
-    save_default_text(body)
+    body1 = clean1(body)
+    save_default_text(body1)
     run_default_post_to_api()
+    for lin in links:
+        Helper.postLink(lin)
