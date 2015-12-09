@@ -137,8 +137,8 @@ class Match:
         return dh_list
 
     def removeEtcFromDH(self, dh):
-        etc = " כו'"
-        etc_plus_and = " וכו'"
+        etc = u" כו'"
+        etc_plus_and = u" וכו'"
         dh_arr = dh.split(" ")
         last_word = dh_arr[len(dh_arr)-1]
         if dh.find(etc_plus_and) >= 0:
@@ -202,7 +202,7 @@ class Match:
         for line_n, para in enumerate(page):
             found_this_line = False
             para = self.removeHTMLtags(para)
-            para = para.encode('utf-8')
+            para = para
             if dh in para:
                 found += 1
                 self.found_dict[dh_position][orig_dh].append((line_n, 100))
@@ -243,8 +243,8 @@ class Match:
             if ratio > self.min_ratio:
                 self.match(orig_dh, page, dh_position, ratio-self.step)
             else:
-                self.non_match_file.write(orig_dh)
-                self.non_match_file.write("\n")
+                self.non_match_file.write(orig_dh.encode("utf-8"))
+                self.non_match_file.write(u"\n")
 
     def getMinMax(self, dh_pos):
         min = 0
