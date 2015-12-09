@@ -3,6 +3,7 @@ __author__ = 'eliav'
 import collections
 import os
 import re
+import csv
 import sys
 import json
 import urllib2
@@ -20,9 +21,10 @@ else:
     mas = masechet
 masechet_he = Index().load({"title":mas}).get_title("he")
 links = []
-log = open('logs/rosh_log_%s.txt' % masechet, 'w')
-longlog = open('logs/rosh_longlog_%s.txt' % masechet, 'w')
+log = open('../../Match Logs/Talmud/{}/rosh_log_{}.txt'.format(masechet,masechet), 'w')
+longlog = open('../../Match Logs/Talmud/{}/rosh_longlog_{}.txt'.format(masechet,masechet), 'w')
 misparim = {'ראשון':1, 'שני':2, 'שלישי':3, 'רביעי':4, 'חמישי':5, 'שישי':6,'ששי':6, 'שביעי':7,'שמיני':8, 'תשיעי':9,'עשירי':10, 'אחד עשר':11}
+
 
 def test_depth(text):
     a= re.findall(ur'@22(.{1,2})',text)
@@ -136,7 +138,7 @@ def matching1(tagged, shas, i, j, k, index, daf, amud, strings=15, ratio = False
         links.append(link(talmud, roash))
         print roash, talmud
         succes=  "found" + ", " + string.encode('utf-8') + str(daf) + amud + "," + str(strings) + "for roash" + str(k+1)+"."+ str(i+1) + "." + str(j+1) + "\n"
-     #   print succes
+        #print succes
         longlog.write(succes)
     elif strings == 0:
         if isinstance(amud, str):
@@ -274,12 +276,37 @@ def open_file():
 
 
 def book_record():
+    structs = {"nodes": [] }
+    with open('source/rosh_taanit_names .csv', 'rb') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',' )
+        for row in reader:
+            eng_title = row[0]
+            heb_title = row[3]
+            frm = row[1]
+            to = row[2]
+            wholeref = "Rosh on Taanit" + "." + str(frm) + "-" + str(to)
+            structs["nodes"].append({
+                "titles":  [{
+                            "lang": "en",
+                            "text": eng_title,
+                            "primary": True
+                            },
+                            {
+                            "lang": "he",
+                            "text": heb_title,
+                            "primary": True
+                            }],
+                "nodeType": "ArrayMapNode",
+                "depth": 0,
+                "addressTypes": [],
+                "sectionNames": [],
+                "wholeRef": wholeref
+            })
     a = u" פסקי הראש על " + masechet_he
     return {
     "title" : "Rosh on %s" % masechet,
-    "categories" : [
-        "Other",
-        "Rosh"
+     "categories": [ "Commentary2",
+        "Talmud","Rosh"
     ],
     "schema" : {
         "titles" : [
@@ -305,7 +332,8 @@ def book_record():
             "Integer"
         ],
         "key" : "Rosh on %s" % masechet
-    }
+    },
+         "alt_structs": {"Chapter": structs},
 	}
 
 
@@ -313,9 +341,8 @@ def book_record1():
     a = u" פסקי הראש על " + masechet_he
     return {
     "title" : "Rosh on %s" % mas,
-    "categories" : [
-        "Other",
-        "Rosh"
+    "categories": [ "Commentary2",
+        "Talmud","Rosh"
     ],
     "schema" : {
         "titles" : [
@@ -431,10 +458,11 @@ def parse1(text):
         mispar = chapter_num.strip().split(" ")[1]
         if mispar.encode('utf-8') in misparim.keys():
             mispar_numeri = misparim[mispar.encode('utf-8')]
+            print mispar_numeri
             if mispar_numeri - old_numeri > 1:
                for i in range(1,mispar_numeri-old_numeri):
                     rosh.append([])
-                    print "length of rosh", len(rosh)
+                    #print "length of rosh", len(rosh)
             old_numeri = mispar_numeri
         print mispar
         #if len(chapter)<=1:
@@ -456,7 +484,7 @@ def parse1(text):
                 roash = "Rosh on %s." % masechet  +str(len(rosh)+1) + "." + str(len(perek)+1) + ".1"
                 netanelink = commentator + " on " +  masechet +"."+ str(len(links_netanel)+1) + ".1"
                 #print roash, netanelink
-                #links.append(link(netanelink, roash))
+                links.append(link(netanelink, roash))
                 netanel += 1
             content = re.split('@66', cont)
             seif = re.sub(ur'[^א-ת]',"", seif)
@@ -473,7 +501,7 @@ def parse1(text):
                         korban.append(fixed[netanel])
                         roash = "Rosh on %s." % masechet + str(len(rosh)+1) + "." + str(len(perek)+1) + "." + str(num+1)
                         netanelink = commentator + "on " + masechet + "." + str(len(links_netanel)+1)+ "."+ str(len(korban))
-                        print roash, netanelink
+                        #print roash, netanelink
                         links.append(link(netanelink, roash))
                         netanel +=1
                 si.append(co)
@@ -735,7 +763,7 @@ if __name__ == '__main__':
     save_parsed_text(upload_text)
     run_post_to_api()
     #link_tiferet_shmuel(parsed_text)
-    yomtov2(text)
-    #divrey_chamuot(parsed_text)
-    divrey_chamuot2(text)
+    #yomtov2(text)
+#    divrey_chamuot(parsed_text)
+#    divrey_chamuot2(text)
     Helper.postLink(links)
