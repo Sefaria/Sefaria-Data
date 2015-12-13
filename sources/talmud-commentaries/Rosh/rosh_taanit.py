@@ -10,8 +10,8 @@ import urllib2
 from fuzzywuzzy import fuzz
 import korban_netanel as nosekelim
 from sefaria.model import *
-import tiferet_shmuel
-sys.path.insert(1, '../g')
+#import tiferet_shmuel
+sys.path.insert(1, '../../genuzot')
 import helperFunctions as Helper
 import hebrew
 masechet = str(sys.argv[1])
@@ -21,8 +21,8 @@ else:
     mas = masechet
 masechet_he = Index().load({"title":mas}).get_title("he")
 links = []
-log = open('../../Match Logs/Talmud/{}/rosh_log_{}.txt'.format(masechet,masechet), 'w')
-longlog = open('../../Match Logs/Talmud/{}/rosh_longlog_{}.txt'.format(masechet,masechet), 'w')
+log = open('../../../Match Logs/Talmud/{}/rosh_log_{}.txt'.format(masechet,masechet), 'w')
+longlog = open('../../../Match Logs/Talmud/{}/rosh_longlog_{}.txt'.format(masechet,masechet), 'w')
 misparim = {'ראשון':1, 'שני':2, 'שלישי':3, 'רביעי':4, 'חמישי':5, 'שישי':6,'ששי':6, 'שביעי':7,'שמיני':8, 'תשיעי':9,'עשירי':10, 'אחד עשר':11}
 
 
@@ -260,14 +260,14 @@ def link(talmud, roash):
             "refs": [
                talmud,
                 roash ],
-            "type": "Rosh in Talmud",
+            "type": "commentary",
             "auto": True,
             "generated_by": "Rosh_%s" % masechet,
             }
 
 
 def open_file():
-    with open("source/Rosh_on_%s.txt" % masechet, 'r') as filep:
+    with open("../source/Rosh_on_%s.txt" % masechet, 'r') as filep:
         file_text = filep.read()
       #  print file_text.decode('utf-8','ignore')
         ucd_text = unicode(file_text, 'utf-8', errors='ignore').strip()
@@ -277,7 +277,7 @@ def open_file():
 
 def book_record():
     structs = {"nodes": [] }
-    with open('source/rosh_taanit_names .csv', 'rb') as csvfile:
+    with open('../source/rosh_taanit_names .csv', 'rb') as csvfile:
         reader = csv.reader(csvfile, delimiter=',' )
         for row in reader:
             eng_title = row[0]
@@ -290,6 +290,7 @@ def book_record():
                             "lang": "en",
                             "text": eng_title,
                             "primary": True
+
                             },
                             {
                             "lang": "he",
@@ -300,7 +301,8 @@ def book_record():
                 "depth": 0,
                 "addressTypes": [],
                 "sectionNames": [],
-                "wholeRef": wholeref
+                "wholeRef": wholeref,
+                "includeSections": "true"
             })
     a = u" פסקי הראש על " + masechet_he
     return {
@@ -334,6 +336,7 @@ def book_record():
         "key" : "Rosh on %s" % masechet
     },
          "alt_structs": {"Chapter": structs},
+        "default_struct": "Chapter"
 	}
 
 
@@ -375,7 +378,7 @@ def book_record1():
 
 
 def parse(text):
-    if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
+    if os.path.isfile('../source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('../source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
        # print "has korban netanel 2"
         nose_kelim = nosekelim.open_file()
         fixed = nosekelim.parse(nose_kelim)
@@ -386,10 +389,10 @@ def parse(text):
     for seif, cont in zip(a[1::2], a[2::2]):
         si = []
         korban =[]
-        if ur'[*]' in seif and (os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet) or os.path.isfile('source/PilPula_Charifta_on_{}.txt'.format(masechet))) and netanel <= len(fixed)):
-            if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)):
+        if ur'[*]' in seif and (os.path.isfile('../source/Korban_Netanel_on_{}.txt'.format(masechet) or os.path.isfile('../source/PilPula_Charifta_on_{}.txt'.format(masechet))) and netanel <= len(fixed)):
+            if os.path.isfile('../source/Korban_Netanel_on_{}.txt'.format(masechet)):
                 commentator = "Korban Netanel on "
-            if os.path.isfile('source/PilPula_Charifta_on_{}.txt'.format(masechet)):
+            if os.path.isfile('../source/PilPula_Charifta_on_{}.txt'.format(masechet)):
                 commentator = "Pilpula Charifta on "
             korban.append(fixed[netanel])
             #print len(links_netanel)
@@ -407,10 +410,10 @@ def parse(text):
                 #print co
                 a = re.findall('\[\*\](.{6})', co)
                 for b in a:
-                    if (os.path.isfile('source/Korban_netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet))) and netanel < len(fixed):
-                        if os.path.isfile('source/Korban_netanel_on_{}.txt'.format(masechet)):
+                    if (os.path.isfile('../source/Korban_netanel_on_{}.txt'.format(masechet)) or os.path.isfile('../source/Pilpula_Charifta_on_{}.txt'.format(masechet))) and netanel < len(fixed):
+                        if os.path.isfile('../source/Korban_netanel_on_{}.txt'.format(masechet)):
                             commentator = "Korban Netanel "
-                        if os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
+                        if os.path.isfile('../source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
                             commentator = "Pilpula Charifta "
                         korban.append(fixed[netanel])
                         roash = "Rosh on %s." % masechet + str(len(links_netanel)+1) + "." + str(num+1)
@@ -418,7 +421,7 @@ def parse(text):
                         links.append(link(netanelink, roash))
                         netanel +=1
             si.append(co)
-        if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
+        if os.path.isfile('../source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('../source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
             links_netanel.append(korban)
 #            if len(links_netanel[len(links_netanel)-1]) > 0:
 #                print links_netanel[len(links_netanel)-1][len(links_netanel[len(links_netanel)-1])-1]
@@ -426,7 +429,7 @@ def parse(text):
 
     #print "searching"
     search(rosh,get_shas(),)
-    if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
+    if os.path.isfile('../source/Korban_Netanel_on_{}.txt'.format(masechet)) or os.path.isfile('../source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
         nosekelim.save_parsed_text(links_netanel, commentator)
         nosekelim.run_post_to_api(commentator)
     return rosh
@@ -553,14 +556,14 @@ def save_parsed_text(text):
         "status": "locked",
     }
     #save
-    Helper.mkdir_p("preprocess_json/")
-    with open("preprocess_json/Rosh_on_%s.json" % masechet, 'w') as out:
+    Helper.mkdir_p("../preprocess_json/")
+    with open("../preprocess_json/Rosh_on_%s.json" % masechet, 'w') as out:
         json.dump(text_whole, out)
 
 
 def run_post_to_api():
    # Helper.createBookRecord(book_record())
-    with open("preprocess_json/Rosh_on_%s.json" % masechet, 'r') as filep:
+    with open("../preprocess_json/Rosh_on_%s.json" % masechet, 'r') as filep:
         file_text = filep.read()
     Helper.postText("Rosh on %s" % masechet, file_text, False)
 
@@ -741,10 +744,10 @@ def yomtov2(text):
     Helper.postLink(chamudotlinks)
 
 if __name__ == '__main__':
-    if os.path.isfile('source/Korban_Netanel_on_{}.txt'.format(masechet)):
+    if os.path.isfile('../source/Korban_Netanel_on_{}.txt'.format(masechet)):
        print "has Korban 1"
        Helper.createBookRecord(nosekelim.book_record(commentator="Korban Netanel"))
-    if os.path.isfile('source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
+    if os.path.isfile('../source/Pilpula_Charifta_on_{}.txt'.format(masechet)):
        print "has Pilpula 1" + masechet
        Helper.createBookRecord(nosekelim.book_record(commentator="Pilpula Charifta"))
     text = open_file()
