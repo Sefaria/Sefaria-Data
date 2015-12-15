@@ -86,13 +86,14 @@ from sefaria.model.schema import AddressTalmud
 
 from fuzzywuzzy import fuzz
 class Match:
-	def __init__(self, in_order=False, acronyms_file="", min_ratio=77, guess=False, range=False):
+	def __init__(self, in_order=False, acronyms_file="", min_ratio=80, guess=False, range=False, can_expand=True):
 		self.range = range
 		self.ranged_dict = {}
 		self.min_ratio = min_ratio
 		self.acronyms_file = acronyms_file
 		self.in_order = in_order
 		self.acronyms = {}
+		self.can_expand = can_expand
 		self.step = 5
 		self.found_dict = {}
 		self.confirmed_dict = {}
@@ -147,14 +148,20 @@ class Match:
 		return dh_list
 							
 	def removeEtcFromDH(self, dh):
+		if isinstance(dh, unicode):
+			dh = dh.encode('utf-8')
 		etc = " כו'"
 		etc_plus_and = " וכו'"
 		dh_arr = dh.split(" ")
 		last_word = dh_arr[len(dh_arr)-1]
-		if dh.find(etc_plus_and) >= 0:
+		
+		try:
+		  if dh.find(etc_plus_and) >= 0:
 			dh = dh.replace(etc_plus_and, "")
-		elif dh.find(etc) >= 0:
+		  elif dh.find(etc) >= 0:
 			dh = dh.replace(etc, "")
+		except:
+		  pdb.set_trace()
 		return dh
 
 
@@ -174,7 +181,7 @@ class Match:
 			self.getRanges()
 		return self.confirmed_dict 
 			
-	def match(self, orig_dh, page, dh_position, ratio=93):
+	def match(self, orig_dh, page, dh_position, ratio=90):
 		partial_ratios = []	
 		self.found_dict[dh_position] = {}
 		self.found_dict[dh_position][orig_dh] = []
@@ -192,22 +199,23 @@ class Match:
 		  	continue
 		  found_this_line = False
 		  para = self.removeHTMLtags(para)
-		  para = para.encode('utf-8')
+		  if isinstance(para, unicode):
+		  	para = para.encode('utf-8')
 		  para_pr = fuzz.partial_ratio(dh, para)
 		  if para_pr < 40: #not worth checking
 		  	  continue  	
-		  elif len(dh)*3 < len(para):
+		  elif len(dh)*4 < len(para):
 			  result_pr = self.matchSplitPara(para, dh, dh_position, orig_dh, line_n, ratio)
 			  if result_pr > 0:
 				found+=1
 				continue
-		  elif len(para)*3 < len(dh) and self.range == True:
+		  elif len(para)*4 < len(dh) and self.can_expand == True:
 			  result_pr = self.matchExpandPara(para, dh, dh_position, orig_dh, line_n+1, ratio)
 			  if result_pr > 0:
 				found+=1
 				continue
-		  elif len(dh)<24 and len(para)<24:
-		  	  if para_pr >= 93:
+		  elif len(dh)<25 and len(para)<25:
+		  	  if para_pr >= 90:
 		  	  	found+=1
 		  	  	self.found_dict[dh_position][orig_dh].append((line_n, para_pr))
 		  elif para_pr >= ratio:
@@ -229,7 +237,8 @@ class Match:
 				break
 			current_ref = current_ref.to(next_line_ref)
 			para = current_ref.text("he").ja().flatten_to_string()
-			para = para.encode('utf-8')
+			if isinstance(para, unicode):
+				para = para.encode('utf-8')
 		if dh == para:
 			for i in range(end_line-start_line+1):
 				self.found_dict[dh_position][orig_dh].append((i+start_line, 100))
@@ -303,11 +312,13 @@ class Match:
 					  pdb.set_trace()
 				temp -= 1
 		else:
-			best_pr = 0
-			for line_n, pr in self.found_dict[0][self.dh_orig_list[0]]:
-				if pr > best_pr:
-					min = line_n
-					best_pr = pr
+			if len(self.found_dict[0][self.dh_orig_list[0]])>0:
+				min = self.found_dict[0][self.dh_orig_list[0]][0][0]
+				for line_n, pr in self.found_dict[0][self.dh_orig_list[0]]:
+					if line_n < min:
+						min = line_n
+			else:
+				min = 0
 		return min
 		
 	def getMax(self, dh_pos):
