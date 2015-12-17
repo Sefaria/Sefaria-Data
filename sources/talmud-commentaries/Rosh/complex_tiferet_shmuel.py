@@ -22,7 +22,10 @@ masechet_he = Index().load({"title":mas}).get_title("he")
 def clean(text):
      tif=[]
      for i in text:
-        clean_text = re.sub("(?:@|[0-9]|<|>|b|\[|\*|\]|\/|\(\*\))","", i)
+        print i
+        print type(i)
+        clean_text = re.sub("(?:@|[0-9][0-9]|\[|\*|\]|\(\*\)|[!#])","", i)
+        print clean_text
         tif.append(clean_text)
         #print clean_text
      return tif

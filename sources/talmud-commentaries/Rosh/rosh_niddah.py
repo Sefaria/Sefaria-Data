@@ -55,12 +55,12 @@ def link_tiferet_shmuel1(parsed_text, part):
 def link_tiferet_shmuel(parsed_text):
     shmuellinks = []
     count = 0
-    file = tiferet_shmuel.open_file(record = "chamudot")
-    parsed = tiferet_shmuel.parse(file)
-    clean = complex_tiferet_shmuel.clean(parsed)
+    file = complex_tiferet_shmuel.open_file(record = "chamudot")
+    parsed = complex_tiferet_shmuel.parse(file)
+    cleantext = complex_tiferet_shmuel.clean(parsed)
     complex_tiferet_shmuel.book_record(record = "chamudot")
-    tiferet_shmuel.save_parsed_text(clean)
-    tiferet_shmuel.run_post_to_api(record = "chamudot")
+    complex_tiferet_shmuel.save_parsed_text(cleantext, record = "chamudot")
+    complex_tiferet_shmuel.run_post_to_api(record = "chamudot")
     for k, perek in enumerate(parsed_text):
         for i, seif in enumerate(perek):
             for j, siman in enumerate(seif):
@@ -474,7 +474,7 @@ def run_default_post_to_api():
 
 if __name__ == '__main__':
     text = open_file()
-    book_record1()
+#    book_record1()
     body, kilei, mikvaot = parse(text)
     link_tiferet_shmuel(body)
     link_tiferet_shmuel1(kilei,"Hilchot_Kilay_Begadim")
@@ -487,14 +487,14 @@ if __name__ == '__main__':
     cleankilei = clean(kilei)
     cleanmikva = clean(mikvaot)
     save_text(cleankilei,"Hilchot Kilay Begadim")
-    run_post_to_api("Hilchot Kilay Begadim")
-    save_text(cleanmikva,"Hilchot Mikvaot")
-    run_post_to_api("Hilchot Mikvaot")
+#    run_post_to_api("Hilchot Kilay Begadim")
+#    save_text(cleanmikva,"Hilchot Mikvaot")
+#    run_post_to_api("Hilchot Mikvaot")
     #clean kitz ur
   # save_text(kitzur_seder,"Seder HaAvodah BeKitzur")
   # run_post_to_api("Seder HaAvodah BeKitzur")
   # body1 = clean1(body)
   # search(seder_haavoda)
   # search2(body)
-    for lin in links:
-        Helper.postLink(lin)
+#    for lin in links:
+#        Helper.postLink(lin)
