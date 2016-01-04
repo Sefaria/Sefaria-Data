@@ -48,16 +48,18 @@ with open("ImageMap.csv") as csvfile:
     """
     next(csvfile)
     for l in csv.reader(csvfile, dialect="excel"):
-        ms_code = image_map[l[1]]["ms_code"]
+        img = image_map[l[1]]
+        ms_code = img["ms_code"]
         ms = manuscript_map[ms_code]
+
         ManuscriptReference({
             "fr_code": l[2], # Collection
             "tr_code": l[3], # Tractate
             "pe_code": l[4], # Chapter or Daf - 3 digit pad
             "mi_code": l[5], # Mishnah, Halacha, or Amud - 2 digit pad
-            "img_pid": image_map[l[1]]["img_pid"], # Img ID for image server
+            "img_pid": img["img_pid"], # Img ID for image server
             "ms_code": ms_code, # Manuscript Code
             "ms_name_en": ms["ms_name_en"],
-            "ms_name_he": ms["ms_name_he"],
+            "ms_name_he": ms["ms_name_he"] + u": " + img["img_desc_he"],
             "ms_desc_he": ms["ms_desc_he"]
         }).save()

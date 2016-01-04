@@ -19,10 +19,11 @@ for title in indxs:
             Note({
                 "owner": 28,
                 "public": True,
-                "text": '<a href="' + manu["app_url"] + '"><img src="' + manu["img_url"] + '"></a>',
-                "type": "note",
+                "text": manu["desc_he"] + '<br/><a href="' + manu["app_url"] + '"><img src="' + manu["img_url"] + '"></a>',
+                "type": "image",
                 "ref": section_ref.subref(manu["mi_code"]).normal(),
-                "title": manu["name_en"]
+                "title": manu["name_he"],
+                "generated_by": "NLI_manuscript_linker"
             }).save()
 
 indxs = library.get_indexes_in_category("Bavli")
@@ -38,9 +39,9 @@ for title in indxs:
             Note({
                 "owner": 28,
                 "public": True,
-                "text": '<a href="' + manu["app_url"] + '"><img src="' + manu["img_url"] + '"></a>',
-                "type": "note",
+                "text": manu["desc_he"] + '<br/><a href="' + manu["app_url"] + '"><img src="' + manu["img_url"] + '"></a>',
+                "type": "image",
                 "ref": section_ref.subref(1).normal(),
-                "title": manu["name_en"],
+                "title": manu["name_he"],
                 "generated_by": "NLI_manuscript_linker"
             }).save()

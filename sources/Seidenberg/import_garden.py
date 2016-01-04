@@ -29,7 +29,7 @@ with open("Kabbalah & Ecology Sources - ecology.tsv") as tsvfile:
                 placed_ref_list.append(Ref(l[0]))
             else:
                 reflist.append(Ref(l[0]))
-        elif l[6]: # note and not placed, assuming not a good source
+        elif l[6]:  # note and not placed, assuming not a good source
             continue
         elif l[1] == "yes":
             reflist.append(Ref(l[0]))
