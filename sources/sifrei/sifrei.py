@@ -49,7 +49,7 @@ def altStructPerek(perakim, para, piska, para_count, prev_ref):
 					pdb.set_trace()
 			if not isinstance(perek, int):
 				pdb.set_trace()
-			ref = "New Sifrei "+file+"."+str(piska)+"."+str(para_count)
+			ref = "Sifrei "+file+"."+str(piska)+"."+str(para_count)
 			if perek not in perakim:
 				if prev_ref != "" and prev_perek in perakim:
 					perakim[prev_perek] = (perakim[prev_perek], prev_ref)
@@ -58,14 +58,14 @@ def altStructPerek(perakim, para, piska, para_count, prev_ref):
 
 root = JaggedArrayNode()
 root.key = 'Sifrei_bamidbar'
-root.add_title("New Sifrei Bamidbar", "en", primary=True)
-root.add_title(u"ספרי במדבר חדש", "he", primary=True)
+root.add_title("Sifrei Bamidbar", "en", primary=True)
+root.add_title(u"ספרי במדבר", "he", primary=True)
 root.depth = 2
 root.sectionNames = ["Piska", "Paragraph"]
 root.addressTypes = ["Integer", "Integer"]
 root.validate()
 index = {
-    "title": "New Sifrei Bamidbar",
+    "title": "Sifrei Bamidbar",
     "categories": ["Midrash", "Halachic Midrash"],
     "schema": root.serialize()
 }
@@ -73,19 +73,18 @@ post_index(index)
 
 root = JaggedArrayNode()
 root.key = 'sifrei_devarim'
-root.add_title("New Sifrei Devarim", "en", primary=True)
-root.add_title(u"ספרי דברים חדש", "he", primary=True)
+root.add_title("Sifrei Devarim", "en", primary=True)
+root.add_title(u"ספרי דברים", "he", primary=True)
 root.depth = 2
 root.sectionNames = ["Piska", "Paragraph"]
 root.addressTypes = ["Integer", "Integer"]
 root.validate()
 index = {
-    "title": "New Sifrei Devarim",
+    "title": "Sifrei Devarim",
     "categories": ["Midrash", "Halachic Midrash"],
     "schema": root.serialize()
 }
 post_index(index)
-
 print 'indexes'
 prev_ref=""
 for count, file in enumerate(files):
@@ -119,32 +118,32 @@ for count, file in enumerate(files):
 			current_parsha = line
 			last_one = len(parshiot)
  			if last_one >= 1:
-				parshiot[last_one-1] = (parshiot[last_one-1][0], parshiot[last_one-1][1], "New Sifrei "+file+"."+str(piska)+"."+str(para_count))
+				parshiot[last_one-1] = (parshiot[last_one-1][0], parshiot[last_one-1][1], "Sifrei "+file+"."+str(piska)+"."+str(para_count))
 			if is_digit.match(lines[line_n+1]):
 				next_piska = int(is_digit.match(lines[line_n+1]).group(0))
 				if next_piska in text:
 					print 'next piska found'
 					pdb.set_trace()
 				
-				parshiot.append((current_parsha, "New Sifrei "+file+"."+str(next_piska)+".1"))
+				parshiot.append((current_parsha, "Sifrei "+file+"."+str(next_piska)+".1"))
 			else:
-				parshiot.append((current_parsha, "New Sifrei "+file+"."+str(piska)+"."+str(para_count+1)))
+				parshiot.append((current_parsha, "Sifrei "+file+"."+str(piska)+"."+str(para_count+1)))
 		else: #paragraph
 			para_count+=1
 			altStructPerek(perakim, line, piska, para_count, prev_ref)
 			text[piska].append(line)
-			prev_ref = "New Sifrei "+file+"."+str(piska)+"."+str(para_count)
+			prev_ref = "Sifrei "+file+"."+str(piska)+"."+str(para_count)
 			
 	last_one = len(parshiot)
-	parshiot[last_one-1] = (parshiot[last_one-1][0], parshiot[last_one-1][1], "New Sifrei "+file+"."+str(piska)+"."+str(para_count))
+	parshiot[last_one-1] = (parshiot[last_one-1][0], parshiot[last_one-1][1], "Sifrei "+file+"."+str(piska)+"."+str(para_count))
 	text_array = convertDictToArray(text)
 	send_text = {
-			"versionTitle": "New Sifrei "+file,
+			"versionTitle": "Sifrei "+file,
 			"versionSource": "http://www.sefaria.org/",
 			"language": "en",
 			"text": text_array,
 			}
-	post_text("New Sifrei "+file, send_text, "on")
+	#post_text("Sifrei "+file, send_text, "on")
 	for parsha_tuple in parshiot:
 		parsha_name = parsha_tuple[0]
 		parsha = ArrayMapNode()
@@ -191,14 +190,14 @@ for count, file in enumerate(files):
 	
 root = JaggedArrayNode()
 root.key = 'Sifrei_bamidbar'
-root.add_title("New Sifrei Bamidbar", "en", primary=True)
-root.add_title(u"ספרי במדבר חדש", "he", primary=True)
+root.add_title("Sifrei Bamidbar", "en", primary=True)
+root.add_title(u"ספרי במדבר", "he", primary=True)
 root.depth = 2
 root.sectionNames = ["Piska", "Paragraph"]
 root.addressTypes = ["Integer", "Integer"]
 root.validate()
 index = {
-    "title": "New Sifrei Bamidbar",
+    "title": "Sifrei Bamidbar",
     "categories": ["Midrash", "Halachic Midrash"],
     "alt_structs": {"Parasha": alt_parshiot['Bamidbar'], "Chapters": alt_perakim['Bamidbar']},
     "default_struct": "Chapters",
@@ -208,14 +207,14 @@ post_index(index)
 
 root = JaggedArrayNode()
 root.key = 'sifrei_devarim'
-root.add_title("New Sifrei Devarim", "en", primary=True)
-root.add_title(u"ספרי דברים חדש", "he", primary=True)
+root.add_title("Sifrei Devarim", "en", primary=True)
+root.add_title(u"ספרי דברים", "he", primary=True)
 root.depth = 2
 root.sectionNames = ["Piska", "Paragraph"]
 root.addressTypes = ["Integer", "Integer"]
 root.validate()
 index = {
-    "title": "New Sifrei Devarim",
+    "title": "Sifrei Devarim",
     "categories": ["Midrash", "Halachic Midrash"],
     "alt_structs": {"Parasha": alt_parshiot['Devarim'], "Chapters": alt_perakim['Devarim']},
     "default_struct": "Chapters",

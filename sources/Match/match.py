@@ -204,12 +204,12 @@ class Match:
 		  para_pr = fuzz.partial_ratio(dh, para)
 		  if para_pr < 40: #not worth checking
 		  	  continue  	
-		  elif len(dh)*4 < len(para):
+		  elif len(dh)*6 < len(para):
 			  result_pr = self.matchSplitPara(para, dh, dh_position, orig_dh, line_n, ratio)
 			  if result_pr > 0:
 				found+=1
 				continue
-		  elif len(para)*4 < len(dh) and self.can_expand == True:
+		  elif len(para)*6 < len(dh) and self.can_expand == True:
 			  result_pr = self.matchExpandPara(para, dh, dh_position, orig_dh, line_n+1, ratio)
 			  if result_pr > 0:
 				found+=1
@@ -229,7 +229,7 @@ class Match:
 		start_line = line_n-1
 		end_line = start_line
 	  	current_ref = Ref(self.ref_title+" "+str(line_n))
-	  	while len(para)*3 < len(dh):
+	  	while len(para)*4 < len(dh):
 	  		end_line+=1
 	  		try:
 				next_line_ref = current_ref.next_segment_ref()
@@ -253,7 +253,7 @@ class Match:
 	def matchSplitPara(self, para, dh, dh_position, orig_dh, line_n, ratio):
 		dh_acronym_list = []
 		phrases = self.splitPara(para, len(dh.split(" "))) 
-		for phrase in phrases:
+		for count, phrase in enumerate(phrases):
 			phrase_pr = fuzz.partial_ratio(dh, phrase)
 			if dh == phrase: 
 				self.found_dict[dh_position][orig_dh].append((line_n, 100))
@@ -346,7 +346,10 @@ class Match:
 				max = self.getMax(dh_pos)
 				if min > max:
 					max = self.maxLine
-				self.ranged_dict[dh_pos+1] = "0:"+str(min+1)+"-"+str(max+1)
+				if max > -1:
+					self.ranged_dict[dh_pos+1] = "0:"+str(min+1)+"-"+str(max+1)
+				else:
+					self.ranged_dict[dh_pos+1] = "0:1" #this case only happens where there were no comments to begin with, match lib shouldn't have been used
 			elif len(self.confirmed_dict[dh_pos+1]) > 1:
 				looking_for_values = True
 				min = 100000

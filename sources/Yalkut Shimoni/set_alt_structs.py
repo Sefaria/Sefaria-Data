@@ -79,6 +79,7 @@ for count, title in enumerate(title_eng):
 		wholeRef = start_ref.to(end_ref).normal()
 		parsha = ArrayMapNode()
 		parsha.add_title(parsha_name, "en", primary=True)
+		print getHebrewParsha(parsha_name)
 		parsha.add_title(getHebrewParsha(parsha_name), "he", primary=True)
 		parsha.key = parsha_name
 		parsha.depth = 0

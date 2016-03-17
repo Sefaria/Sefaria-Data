@@ -1,0 +1,190 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1404\cocoasubrtf130
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fnil\fcharset0 LucidaGrande;}
+{\colortbl;\red255\green255\blue255;}
+\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 insert the category by putting it into the DHs originally, then passing the array to a function to strip the first word before we try to match, then we post the actual copy\
+\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 Cases:\
+1. DH (etc) period comment\
+2. DH etc DH etc period comment\
+3. DH etc comment\
+4. DH etc DH etc comment\
+\
+First two are clear.  What if there is more than one etc in a period-less comment?\
+Best bet is to just take the second one since it\'92s at least part of it for sure\
+\
+How to build the dictionary?  \
+\
+Each time there is a category that has a DH, append a new string to the array and fill it with the dh bolded and any comment that follows.  Then, when category is paragraph, add \'93<br>\'94 to the previously added comment.  \
+What about storing DHs?  In comment dict, just bold the whole thing.  \
+1. david clarified 
+\f1 \uc0\u1493 \u1499 \u1493 
+\f0   issue, one is DH one is comment\
+3. acronyms: 
+\f1\fs22 \expnd0\expndtw0\kerning0
+\uc0\u1489 \u1488 
+\f0 "
+\f1 \uc0\u1491  and \u1489 \u1491 
+\f0 "
+\f1 \uc0\u1492 
+\f0  \
+
+\fs24 \kerning1\expnd0\expndtw0 2. amud bet - sometimes there will be a space, sometimes a tag then space than word with or without tag, sometimes third word has tag, before the first word in a paragraph of amud bet:\
+\
+BAVA BATRA:\
+first line of paragraph twice: @11
+\f1 \uc0\u1506 
+\f0 "
+\f1 \uc0\u1489 
+\f0 \
+ @44
+\f1 \uc0\u1506 
+\f0 "
+\f1 \uc0\u1489 
+\f0 @55 
+\f1 \uc0\u1490 \u1502 \u1512 \u1488 
+\f0 \
+\
+BAVA METZIA:\
+@44
+\f1 \uc0\u1506 
+\f0 "
+\f1 \uc0\u1489 
+\f0 @55 
+\f1 \uc0\u1490 \u1502 \u1512 \u1488 
+\f0 \
+@44
+\f1 \uc0\u1506 
+\f0 "
+\f1 \uc0\u1489 
+\f0 @55 
+\f1 \uc0\u1490 \u1502 \u1512 \u1488 
+\f0 \
+or 
+\f1 \uc0\u1490 \u1502 
+\f0 '\
+44
+\f1 \uc0\u1506 
+\f0 "
+\f1 \uc0\u1489 
+\f0 @55 
+\f1 \uc0\u1489 \u1512 \u1513 
+\f0 "
+\f1 \uc0\u1497 
+\f0  \
+\
+BEITZAH:\
+@44
+\f1 \uc0\u1506 
+\f0 "
+\f1 \uc0\u1489 
+\f0  
+\f1 \uc0\u1490 \u1502 
+\f0 '@55\
+@44
+\f1 \uc0\u1506 
+\f0 "
+\f1 \uc0\u1489 
+\f0  
+\f1 \uc0\u1490 \u1502 
+\f0 '@55\
+@44
+\f1 \uc0\u1506 
+\f0 "
+\f1 \uc0\u1489 
+\f0  
+\f1 \uc0\u1490 \u1502 
+\f0 '@55\
+@44
+\f1 \uc0\u1506 
+\f0 "
+\f1 \uc0\u1489 
+\f0  
+\f1 \uc0\u1490 \u1502 
+\f0 '@55\
+ @44
+\f1 \uc0\u1506 
+\f0 "
+\f1 \uc0\u1489 
+\f0  
+\f1 \uc0\u1489 \u1514 \u1493 \u1505 
+\f0 '@55\
+\
+GITTIN:\
+@22
+\f1 \uc0\u1506 
+\f0 "
+\f1 \uc0\u1489 
+\f0 @55 
+\f1 \uc0\u1490 \u1502 
+\f0 '\
+@22
+\f1 \uc0\u1506 
+\f0 "
+\f1 \uc0\u1489 
+\f0 @55 @44
+\f1 \uc0\u1490 \u1502 
+\f0 '@55\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1 \cf0 \uc0\u1490 \u1489 \u1497 
+\f0 ' means gemara \
+\
+KETUBOT:\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\partightenfactor0
+
+\fs22 \cf0 \expnd0\expndtw0\kerning0
+@11
+\f1 \uc0\u1506 
+\f0 "
+\f1 \uc0\u1489 
+\f0  @44
+\f1 \uc0\u1489 \u1514 \u1491 
+\f0 "
+\f1 \uc0\u1492 
+\f0  @55
+\f1 \uc0\u1499 \u1500 
+\f0  \
+
+\fs24 \kerning1\expnd0\expndtw0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \
+SANHEDRIN:\
+@11
+\f1 \uc0\u1506 
+\f0 "
+\f1 \uc0\u1489 
+\f0  @55
+\f1 \uc0\u1490 \u1502 \u1512 \u1488 
+\f0 \
+@11
+\f1 \uc0\u1506 
+\f0 "
+\f1 \uc0\u1489 
+\f0  @44
+\f1 \uc0\u1490 \u1502 
+\f0 ' @55
+\f1 \uc0\u1502 \u1508 \u1504 \u1497 
+\f0 \
+@11
+\f1 \uc0\u1506 
+\f0 "
+\f1 \uc0\u1489 
+\f0  @44
+\f1 \uc0\u1490 \u1502 
+\f0 ' @55
+\f1 \uc0\u1488 \u1497 \u1489 \u1506 \u1497 \u1514 \
+@11\uc0\u1506 "\u1489  @44\u1490 \u1502 ' @55\u1493 \u1488 \u1508 \u1488 \u1492 \
+@11\uc0\u1491 \u1507  \u1508 \u1491  \u1506 "\u1489  @44\u1489 \u1514 \u1493 \u1505 ' @55\u1489 \u1491 "\u1492 \
+\
+SHABBAT:\
+first line of paragraph: @11\uc0\u1506 "\u1489  \u1490 \u1502 ' @55\u1491 \u1488 \u1502 \u1512 \
+again first line: @11\uc0\u1506 "\u1489  \u1490 \u1502 ' @55\u1504 \u1508 \u1511 \u1488 \
+@11\uc0\u1506 "\u1489  @44\u1490 \u1502 ' @55\u1513 \u1499 \u1503 again first line\uc0\u8234 :\uc0\u8236  \
+\
+\
+}

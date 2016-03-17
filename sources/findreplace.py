@@ -1,191 +1,55 @@
 # -*- coding: utf-8 -*-
+import urllib
+import urllib2
+from urllib2 import URLError, HTTPError
+import json 
+import pdb
+import os
+import sys
+import re
+p = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, p)
+os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
+from local_settings import *
+from functions import *
 
+sys.path.insert(0, SEFARIA_PROJECT_PATH)
+from sefaria.model import *
 from sefaria.helper.text import *
-vtitle = "Pentateuch with Rashi's commentary by M. Rosenbaum and A.M. Silbermann"
-lang = "he"
-uid = 15399
-find_all = """אהל'
-ב' ר'
-ב"ב
-ב"מ
-ב"ק
-ב"ר
-בכור'
-במ'
-במד'
-בר'
-ברא'
-ברכ'
-ד"ה א'
-ד"ה ב'
-דב'
-דבי"ה א'
-דבר'
-דה"ב
-דהי"ב
-דנ'
-הור'
-ויק'
-ויק"ר
-זב'
-זבח'
-זכ'
-חגי'
-חול'
-יב'
-יה'
-יהוש'
-יח'
-יחז'
-יחזק'
-ילק'
-יר'
-ירוש'
-ירוש' שקל'
-ירמ'
-יש'
-ישע'
-ישעי'
-כרית'
-כת'
-כתו'
-מ"א
-מ"ב
-מ"ק
-מגי'
-מכ'
-מכי'
-מנ'
-מנח'
-מש'
-נג'
-נד'
-סנה'
-סנה"ן
-ע"ז
-עובדי'
-עיר'
-עירו'
-ערו'
-ערכ'
-פדר"א
-פס'
-פרד"א
-קהל'
-קיד'
-ר"ה
-ש"א
-ש"ב
-ש"ר
-שבו'
-שה"ש
-שהש"ר
-שופ'
-שופט'
-שיר ה'
-שמ'
-שמו"ר
-שקל'
-תה'
-תוס'
-תנח'
-תענ'
-תוספות
-"""
-replace_all = """אהלות
-בראשית רבה
-בבא בתרא
-בבא מציעא
-בבא קמא
-בראשית רבה
-בכורות
-במדבר
-במדבר
-בראשית
-בראשית
-ברבות
-דברי הימים א
-דברי הימים ב
-דברים
-דברי הימים א
-דברים
-דברי הימים ב'
-דברי הימים ב'
-דניאל
-הוריות
-ויקרא
-ויקרא רבה
-זבחים
-זבחים
-זכריה
-חגיגה
-חולין
-יבמות
-יהושע
-יהושע
-יחזקאל
-יחזקאל
-יחזקאל
-ילקוט שמעוני
-ירמיהו
-תלמוד ירושלמי
-לתמוד ירושלמי, שקלים
-ירמיהו
-ישעיהו
-ישעיהו
-ישעיהו
-כריתות
-כתובות
-כתובות
-מלכים א
-מלכים ב
-מועד קטן
-מגילה
-מכות
-מכילתא
-מנחות
-מנחות
-משלי
-נגידים
-נדרים 
-סנהדרין
-סנהדרין
-עבודה זרה
-עובדיה
-עירובין
-עירובין
-עירובין
-ערכין
-פרקי דרבי אליעזר
-פסחים
-פרקי דרבי אליעזר
-קהלת
-קידושין
-ראש השנה
-שמואל א
-שמואל ב
-שמות רבה
-שבועות
-שיר השירים
-שיר השירים רבה
-שופטים
-שופטים
-שיר השירים
-שמות
-שמות רבה
-שקלים
-תהילים
-תוספות
-תנחומא
-תענית
-תוספתא
-"""
-find_arr = find_all.split("\n")
-replace_arr = replace_all.split("\n")
+import csv
+import argparse
+import pdb
 
+if __name__ == "__main__":
+	parser = argparse.ArgumentParser()
+	parser.add_argument("-t", "--title", help="title of book", default="")
+	parser.add_argument("-v", "--version", help="version title to be copied", default="")
+	parser.add_argument("-u", "--uid", help="UID: user id", default="15399")
+	parser.add_argument("-l", "--language", help="language: he or en", default='')
 
+	args = parser.parse_args()
+	if not args.version or not args.language or not args.title:
+		print "Need to specify title of book, its language, and its version title."
+		print "Title of book specified: '"+args.title+"'"
+		print "Language specified: '"+args.language+"'"
+		print "Version title specified: '"+args.version+"'"
+	elif args.language != 'en' and args.language != 'he':
+		print "Language must be either English ('en') or Hebrew ('he').  The language you specified: "+args.language+" is not 'he' or 'en'."
+	else:
+		vtitle = args.version
+		uid = args.uid
+		lang = args.language
+		title = args.title
+		csvfile = open('./data/temp/find_replace_'+lang+'.csv')
+		reader = csv.reader(csvfile)
+		find_strings = []
+		replace_strings = []
+		for row in reader:
+			find_strings.append(row[0].decode('utf-8'))
+			replace_strings.append(row[1].decode('utf-8'))
 
-titles = ["Exodus", "Genesis"]
-for title in titles:
-  for count, find_string in enumerate(find_arr):
-  	find_and_replace_in_text("Rashi on "+title, vtitle, lang, find_string.decode('utf-8'), replace_arr[count].decode('utf-8'), uid)
+	
+		for count in range(len(find_strings)):
+			find_and_replace_in_text(title, vtitle, lang, find_strings[count], replace_strings[count], uid)
+	
+  	
