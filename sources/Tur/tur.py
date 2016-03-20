@@ -40,6 +40,7 @@ def replaceWithOrder(line, at):
 def replaceWithHTMLTags(line, helek, siman_num):
 	commentaries = ["Drisha", "Prisha", "Darchei Moshe", "Hagahot", "Bi", "Bach", "Mystery"]
 	line = line.decode('utf-8')
+	line = line.replace('%(', '(%')
 	matches_array = [re.findall(u"\[[\u05D0-\u05EA]{1,4}\]", line), re.findall(u"\([\u05D0-\u05EA]{1,4}\)", line), 
 						re.findall(u"\(%[\u05D0-\u05EA]{1,4}\)", line), re.findall(u"\s#[\u05D0-\u05EA]{1,4}", line), 
 						re.findall(u"\{[\u05D0-\u05EA]{1,4}\}",line), re.findall(u"\|[\u05D0-\u05EA]{1,4}\|", line),
@@ -54,8 +55,8 @@ def replaceWithHTMLTags(line, helek, siman_num):
 				continue
 			HTML_tag =  '<i data-commentator="'+commentaries[commentary_count]+'" data-order="'+str(order_count+1-how_many_shams)+'"></i>'
 			line = line.replace(match, HTML_tag)
-			if helek == "Orach Chaim" and commentator == "Drisha" and siman_num == 3:
-				pdb.set_trace()
+		#if helek == "Orach Chaim" and siman_num == 144 and commentaries[commentary_count]=="Prisha":
+		#	pdb.set_trace()
 		csvwriter.writerow([helek, commentaries[commentary_count], siman_num, len(matches)-how_many_shams])
 	return line			
 

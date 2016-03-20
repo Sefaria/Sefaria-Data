@@ -8,15 +8,19 @@ from urllib2 import URLError, HTTPError
 import json
 import xml.etree.ElementTree as ET
 import pprint
+from sefaria.local_settings import *
 
 
 
 #for dev testing, normally comment out.
-apikey =  '' #Add your API key
+
+apikey = APIKEY
 #server = 'www.sefaria.org'
-server = 'localhost:8000'
+#server = 'localhost:8000'
 #server='eph.sefaria.org'
 #server = 'dev.sefaria.org'
+server = 'eli.sefaria.org'
+#server = 'draft.sefaria.org'
 
 
 def chunks(input_list, n):
@@ -116,7 +120,7 @@ def createBookRecord(book_obj, oldTitle=''):
     if(oldTitle):
         book_obj['oldTitle'] = oldTitle
 
-    url = 'http://' + server + '/api/index/' + book_obj["title"].replace(" ", "_")
+    url = 'http://' + server + '/api/v2/raw/index/' + book_obj["title"].replace(" ", "_")
     indexJSON = json.dumps(book_obj)
     values = {
         'json': indexJSON,

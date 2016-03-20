@@ -53,16 +53,15 @@ def create_indexes(eng_helekim, heb_helekim, eng_title, heb_title):
 	
 def checkCSV(helek, commentator, siman, num_comments, prev_line):
 	csvf = open('comments_per_siman.csv', 'r')
-	csvreader = csv.reader(csvf, delimiter=';')
-	csvreader = csv.reader(csvf, delimiter=';')
-	first_words = prev_line.split(" ")[0:4]
+	csvreader = csv.reader(csvf, delimiter=',')
+	first_words = " ".join(prev_line.split(" ")[0:4])
 	for row in csvreader:
 		if helek == row[0] and commentator == row[1] and str(siman) == row[2]:
-			print 'got here'
+			#if helek == "Orach Chaim" and commentator == "Prisha" and siman==135:
+			#	pdb.set_trace()
 			if commentator == "Drisha" and helek == "Choshen Mishpat":
 				continue
 			if abs(num_comments-int(row[3])) > 0 and abs(num_comments-int(row[3])) <= 5:
-				pdb.set_trace()
 				num_comments_mismatch_small.write(helek.replace(" ","_")+";"+commentator+";Siman:"+str(siman)+";"+commentator+"_Count;"+str(num_comments)+";Tur_Count:"+row[3]+';First_Words_Prev_Line:'+first_words+'\n')
 			elif abs(num_comments-int(row[3])) > 5:
 				num_comments_mismatch_big.write(helek.replace(" ","_")+";"+commentator+";Siman:"+str(siman)+";"+commentator+"_Count;"+str(num_comments)+";Tur_Count:"+row[3]+';First_Words_Prev_Line:'+first_words+'\n')
