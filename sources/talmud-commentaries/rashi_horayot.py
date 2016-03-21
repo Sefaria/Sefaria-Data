@@ -195,14 +195,14 @@ dh_dict = {}
 rashi_comments = {}
 prev_line = 0
 
-title_book = "Horayot"
-title_comm = "Rashi on Horayot" 
+title_book = "Temurah"
+title_comm = "Rashi on Temurah" 
 
-for i in range(25): 
+for i in range(67): 
 	count = 0
 	rashi_comments[i+3] = []
 	dh_dict[i+3] = []
-	he_daf = u"הוריות_"
+	he_daf = u"תמורה_"
 	he_daf += AddressTalmud.toStr("he", i+3)
 	he_daf = he_daf.replace(u"\u05f4", u"")
 	he_daf = he_daf.replace(u"׳", u"")
@@ -218,13 +218,14 @@ for i in range(25):
 			else:
 				rashi_comments[i+3].append(line)
 			count+=1
-	f.close()		
-for i in range(25):
+	f.close()	
+comments = 0
+for i in range(67):
 	book[str(i+3)] = get_text(title_book+"."+AddressTalmud.toStr("en", i+3))
 	lines = len(book[str(i+3)])
 	if len(dh_dict[i+3]) > 0: 
 		match_obj=Match(in_order=True, min_ratio=70, guess=False)
-		result=match_obj.match_list(dh_dict[i+3], book[str(i+3)])
+		result=match_obj.match_list(dh_dict[i+3], book[str(i+3)], "Temurah "+AddressTalmud.toStr("en", i+3))
 		matched += getMatched(result)
 		total += getTotal(result)
 		guess += getGuesses(result)
@@ -246,6 +247,7 @@ for i in range(25):
 				"language": "he",
 				"text": rashi_comments[i+3][key-1],
 				}
+				comments +=1
 				post_text(title_comm+"."+AddressTalmud.toStr("en", i+3)+"."+str(line_n)+"."+str(result_dict[line_n]), text)
 				#createLinks(result, i+3)
 		
@@ -257,7 +259,7 @@ for lines in log:
 		log_file.write(str(line))
 	
 log_file.close()
-
+print comments
 print str(total) + " = Total"
 print str(non_match) + " = Non-matches"
 print str(matched) + " = Matches"

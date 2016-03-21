@@ -1,0 +1,19 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1404\cocoasubrtf340
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fswiss\fcharset0 ArialMT;}
+{\colortbl;\red255\green255\blue255;\red67\green68\blue57;\red247\green247\blue247;}
+\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 Lev admin urls:\
+\pard\pardeftab720\partightenfactor0
+
+\f1\fs30 \cf2 \cb3 \expnd0\expndtw0\kerning0
+/admin/reset/<title or ref> -> Resets everything for title or ref - cache, counts, toc, varnish, template fragments Text TOC (quick)\cb1 \
+\cb3 /admin/reset/cache -> Resets the core library cache (takes about 2 seconds)\cb1 \
+\cb3 /admin/reset/toc -> Resets the TOC (takes about 2 seconds)\cb1 \
+\cb3 /admin/reset/cache/<title> -> Resets the cache for this text and flushes varnish cache for the index and all of its refs. (quick)\cb1 \
+\cb3 /admin/reset/counts/all -> Resets of all counts & TOC (takes a long time)\cb1 \
+\cb3 /admin/reset/counts/<title> -> Resets the counts for just the specified title (quick)\cb1 \
+\cb3 /admin/reset/varnish/<title or ref> -> Resets title or ref in varnish cache (quick)\
+\
+}

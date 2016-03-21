@@ -1,0 +1,54 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1404\cocoasubrtf340
+{\fonttbl\f0\fnil\fcharset0 LucidaGrande;\f1\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 Deal with case where siman is same as before and seif is same as before
+\f1 \
+\
+\
+\
+Redo commentary so that there are two scripts:\
+\
+One for ones that have seif katan markers\
+One for ones that do not\
+\
+\
+If there is a seif katan marker:\
+	-Process Simanim\
+	-Process Seif Katan so that it goes text[helek][siman][seif_katan][0] = line, making sure it goes in order except in certain exceptions like Siman 24\
+	-Any comment in neither case gets appended to text[helek][siman][seif_katan][0] += \'93<br>\'94+line\
+\
+If there are no seif katan markers:\
+	-Process Simanim, set seif katan to 0\
+	-Every other comment, increase seif katan by 1, set text[helek][siman][seif_katan][0] = line\
+\
+Be aware of:\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \'97@00 lines\
+\'97Cases where siman is included in text line and cases where Seif Katan marker is excluded as the line above the text\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0 \cf0 in yoreh deah: it says @22\uc0\u1505 \u1497  \u1505 \u1489  @11[\u1488 ] on one line
+\f1 \
+\
+\
+Ignoring @00\
+\
+\
+Bach Yoreh Deah, Orach Chaim, and Even HaEzer seems to have no Seif Katan markers (should be @88).\
+\
+Bi Even HaEzer doesn\'92t have Seif Katan markers (should be @88).  In Orach Chaim, it\'92s missing markers for the first three Simanim.  Bi Choshen Mishpat has seif \
+\
+DRISHA is sometimes @88 @11, and @66  (and sometimes there are paragraph breaks such that there is the seif katan marker in a paragraph and then a new paragraph without a marker, also letter marking seif katan is  brackets and parenthesis \
+\
+Best Yosef in Orach Chaim: Can\'92t find Seif Markers.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\b \cf0 When going through commentaries make sure that the number of comments is the same as we have in the Tur.\
+How?\
+create a CSV file: <helek>, <commentator>, <siman_num>,<num_of_comments>\
+then when processing the commentator for a given helek, look up row until you find one with the right helek, commentator, and siman_num, then just check if number of comments are equal.  This means combining separate paragraphs and having depth end at Seif Katan not Paragraph. }
