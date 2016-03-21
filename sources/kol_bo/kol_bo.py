@@ -1,6 +1,5 @@
 # coding=utf-8
-# from sefaria.model import *
-import regex as re
+from sefaria.helper.text import replace_using_regex as repreg
 import codecs
 
 
@@ -32,13 +31,22 @@ def count_instances(queries, input_file):
     return zip(queries, counts)
 
 
-kol_bo = codecs.open('kol_bo.txt', 'r', encoding='utf-8')
-out = codecs.open('output.txt', 'w', encoding='utf-8')
-reg = re.compile(ur'@02.*[.]')
-for line in kol_bo:
-    result = re.search(reg, line)
-    if result:
-        out.write(result.group()[3:] + '\n')
+def tag_chapters():
+    """
+    This function will create a new copy of the kol bo, this time with the chapters
+    clearly marked.
+    """
 
-kol_bo.close()
-out.close()
+    # open kol_bo
+    kol_bo = codecs.open('kol_bo.txt', 'r', encoding='utf-8')
+    kol_bo_chapters = codecs.open('kol_bo_chapters.txt', 'w', encoding='utf-8')
+    for line in kol_bo:
+        # parse out tags. As the repreg function only replaces when a regex is found,
+        # only one of the following two lines will actually edit the text.
+        line = repreg('@01@02.*[.]', line, u'@01@02', u'<chapter>')
+        line = repreg('@02.*[.]', line, u'@02', u'<chapter>')
+        kol_bo_chapters.write(line)
+
+    kol_bo.close()
+    kol_bo_chapters.close()
+
