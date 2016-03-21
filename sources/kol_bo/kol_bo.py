@@ -50,3 +50,34 @@ def tag_chapters():
     kol_bo.close()
     kol_bo_chapters.close()
 
+
+def add_bold_tags():
+    """
+    replaces @03 with <b>, @04 with </b>. Lines marked by @02 get @02 replaced by <b> and </b>
+    is appended to the end. Removes @01.
+    """
+
+    # open files
+    original = codecs.open('kol_bo_chapters.txt', 'r', 'utf-8')
+    new = codecs.open('kol_bo_bold.txt', 'w', 'utf-8')
+
+    # loop through file
+    for line in original:
+
+        # check if line starts with @02
+        if line.find(u'@02') == 0:
+            line = line.replace(u'@02', u'<b>')
+            line = line.replace(u'\n', u'</b>\n')
+
+        # replace @03 with <b> and @04 with </b>
+        line = line.replace(u'@03', u'<b>')
+        line = line.replace(u'@04', u'</b>')
+
+        # remove @01 tags
+        line = line.replace(u'@01', u'')
+
+        # write line to file
+        new.write(line)
+
+    original.close()
+    new.close()
