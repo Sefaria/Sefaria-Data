@@ -34,8 +34,8 @@ def post_index(index):
 		print 'Error code: ', e.code
 		
 root=JaggedArrayNode()
-root.add_title(u"Rashba on Yevamot", "en", primary=True)
-root.add_title(u"""רשב״א על יבמות""", "he", primary=True)
+root.add_title(u"Rashba on Gittin", "en", primary=True)
+root.add_title(u"""רשב״א על גיטין""", "he", primary=True)
 root.key = 'rashba'
 root.sectionNames = ["Daf", "Comment"]
 root.depth = 2
@@ -53,11 +53,10 @@ root.validate()
   "%s" % masechet
   '''
 index = {
-    "title": "Rashba on Yevamot",
+    "title": "Rashba on Gittin",
     "categories": ["Commentary2", "Talmud", "Bavli", "Seder Moed"],
     "schema": root.serialize()
 }
 
-Index(index).save()
 post_index(index)
 

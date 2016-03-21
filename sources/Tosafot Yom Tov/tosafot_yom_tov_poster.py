@@ -50,13 +50,14 @@ gematria['ת'] = 400
 def post_text(ref, text):
     textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
-    url = SEFARIA_SERVER+'api/texts/'+ref
+    url = SEFARIA_SERVER+'api/texts/'+ref+'?count_after=1'
     values = {'json': textJSON, 'apikey': API_KEY}
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)
     try:
         response = urllib2.urlopen(req)
         x = response.read()
+        print x
         if x.find("0")>=0:
         	pdb.set_trace()
     except HTTPError, e:
@@ -195,7 +196,6 @@ def getLog(siman, result, dh_dict, comm):
 			guess_str = guess_str[0:-1]
 			log.append(guess_str+"\n\n")
 	return log
-
 
 def separateDH_Comm(line):
 	line = line.replace("@11", "")

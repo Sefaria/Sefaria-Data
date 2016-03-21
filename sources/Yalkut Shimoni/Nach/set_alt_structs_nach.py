@@ -60,7 +60,8 @@ def getHebrewParsha(parsha):
 			return title_heb[count]
 
 for count, title in enumerate(title_eng):
-
+	#if title=="Ruth": #up to Song of Songs
+	#	break
 	f=open("parsha_"+title+".txt", 'r')
 	while True:
 		line = f.readline()
@@ -125,11 +126,10 @@ for count, title in enumerate(title_eng):
 	perakim["nodes"].append(chumash.serialize())
 	f.close()
 
-
 root = JaggedArrayNode()
 root.key = "yalkut_on_nach"
 root.add_title("Yalkut Shimoni on Nach", "en", primary=True)
-root.add_title(u"""ילקות שמעוני על נ״ח""", "he", primary=True)
+root.add_title(u"""ילקוט שמעוני על נ"ך""", "he", primary=True)
 root.depth = 2
 root.sectionNames = ["Remez", "Paragraph"]
 root.heSectionNames = [u"רמז", u"פסקה"]
@@ -140,7 +140,7 @@ root.addressTypes = ["Integer", "Integer"]
 index = {
 	"title": "Yalkut Shimoni on Nach",
 	"categories": ["Midrash"],
-	"alt_structs": {"Chapters": perakim},
+	"alt_structs": {"Parasha": parshiot, "Chapters": perakim},
 	"default_struct": "Remez",
 	"schema": root.serialize()
 }

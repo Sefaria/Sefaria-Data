@@ -69,20 +69,32 @@ If range is True, the same result might look like:
     {1: '2', 2: '2', 3: '3', 4: '3', 5: '4', 6: '5', 7: '6-7', 8: '5-8', 9: '8', 10: '9'}
 
 '''
+# -*- coding: utf-8 -*-
+import json 
 import pdb
-import re
-import sys
 import os
+import sys
+import re
+p = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, p)
+os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
+from local_settings import *
+
+sys.path.insert(0, SEFARIA_PROJECT_PATH)
+from sefaria.model import *
+from sefaria.model.schema import AddressTalmud	
+
 from fuzzywuzzy import fuzz
 
 class Match:
-    def __init__(self, in_order=False, acronyms_file="", min_ratio=70, guess=False, range=False):
+    def __init__(self, in_order=False, acronyms_file="", min_ratio=80, guess=False, range=False, can_expand=True):
         self.range = range
         self.ranged_dict = {}
         self.min_ratio = min_ratio
         self.acronyms_file = acronyms_file
         self.in_order = in_order
         self.acronyms = {}
+        self.can_expand = can_expand
         self.step = 5
         self.found_dict = {}
         self.confirmed_dict = {}
@@ -246,7 +258,176 @@ class Match:
                 self.non_match_file.write(orig_dh.encode("utf-8"))
                 self.non_match_file.write(u"\n")
 
-    def getMinMax(self, dh_pos):
+    def replaceAcronyms(self, dh):
+        if self.acronyms_file == "":
+            return []
+        dh_list = []
+        duplicates = False
+        for acronym in self.acronyms:
+            if acronym in dh:
+                for expansion in self.acronyms[acronym]:
+                    new_dh = dh.replace(acronym, expansion)
+                    if new_dh.find('"')>=0 or new_dh.find("'")>=0:
+                        temp_dh_list = self.replaceAcronyms(new_dh)
+                        for i in range(len(temp_dh_list)):
+                            dh_list.append(temp_dh_list[i])
+                        return dh_list
+                    else:
+                        dh_list.append(new_dh)
+        return dh_list
+
+    def removeEtcFromDH(self, dh):
+        if isinstance(dh, unicode):
+            dh = dh.encode('utf-8')
+        etc = " כו'"
+        etc_plus_and = " וכו'"
+        dh_arr = dh.split(" ")
+        last_word = dh_arr[len(dh_arr)-1]
+
+        try:
+          if dh.find(etc_plus_and) >= 0:
+            dh = dh.replace(etc_plus_and, "")
+          elif dh.find(etc) >= 0:
+            dh = dh.replace(etc, "")
+        except:
+          pdb.set_trace()
+        return dh
+
+
+    def match_list(self, dh_orig_list, page, ref_title):
+        self.maxLine = len(page)-1
+        self.ref_title = ref_title
+        self.found_dict = {}
+        self.ranged_dict = {}
+        self.dh_orig_list = dh_orig_list
+        dh_pos = 0
+        for dh in self.dh_orig_list:
+            self.match(dh, page, dh_pos)
+            dh_pos+=1
+        self.non_match_file.close()
+        self.multipleMatches()
+        if self.range==True:
+            self.getRanges()
+        return self.confirmed_dict
+
+    def match(self, orig_dh, page, dh_position, ratio=90):
+        partial_ratios = []
+        self.found_dict[dh_position] = {}
+        self.found_dict[dh_position][orig_dh] = []
+        dh = self.removeEtcFromDH(orig_dh)
+        found = 0
+        for line_n, para in enumerate(page):
+          skip_this_line = False
+          len_already_here = len(self.found_dict[dh_position][orig_dh])
+          if len_already_here > 0:
+             for i in range(len_already_here):
+                if line_n == self.found_dict[dh_position][orig_dh][i][0]:
+                    skip_this_line = True
+                    break
+          if skip_this_line == True:
+            continue
+          found_this_line = False
+          para = self.removeHTMLtags(para)
+          if isinstance(para, unicode):
+            para = para.encode('utf-8')
+          para_pr = fuzz.partial_ratio(dh, para)
+          if para_pr < 40: #not worth checking
+              continue
+          elif len(dh)*6 < len(para):
+              result_pr = self.matchSplitPara(para, dh, dh_position, orig_dh, line_n, ratio)
+              if result_pr > 0:
+                found+=1
+                continue
+          elif len(para)*6 < len(dh) and self.can_expand == True:
+              result_pr = self.matchExpandPara(para, dh, dh_position, orig_dh, line_n+1, ratio)
+              if result_pr > 0:
+                found+=1
+                continue
+          elif len(dh)<25 and len(para)<25:
+              if para_pr >= 90:
+                found+=1
+                self.found_dict[dh_position][orig_dh].append((line_n, para_pr))
+          elif para_pr >= ratio:
+              found+=1
+              self.found_dict[dh_position][orig_dh].append((line_n, para_pr))
+        if found == 0:
+            if ratio > self.min_ratio:
+                self.match(orig_dh, page, dh_position, ratio-self.step)
+
+    def matchExpandPara(self, para, dh, dh_position, orig_dh, line_n, ratio):
+        start_line = line_n-1
+        end_line = start_line
+        current_ref = Ref(self.ref_title+" "+str(line_n))
+        while len(para)*4 < len(dh):
+            end_line+=1
+            try:
+                next_line_ref = current_ref.next_segment_ref()
+            except:
+                break
+            current_ref = current_ref.to(next_line_ref)
+            para = current_ref.text("he").ja().flatten_to_string()
+            if isinstance(para, unicode):
+                para = para.encode('utf-8')
+        if dh == para:
+            for i in range(end_line-start_line+1):
+                self.found_dict[dh_position][orig_dh].append((i+start_line, 100))
+            return 100
+        para_pr = fuzz.partial_ratio(dh, para)
+        if para_pr >= ratio:
+            for i in range(end_line-start_line+1):
+                self.found_dict[dh_position][orig_dh].append((i+start_line, para_pr))
+            return para_pr
+        return self.matchAcronyms(dh, para)
+
+    def matchSplitPara(self, para, dh, dh_position, orig_dh, line_n, ratio):
+        dh_acronym_list = []
+        phrases = self.splitPara(para, len(dh.split(" ")))
+        for count, phrase in enumerate(phrases):
+            phrase_pr = fuzz.partial_ratio(dh, phrase)
+            if dh == phrase:
+                self.found_dict[dh_position][orig_dh].append((line_n, 100))
+                return 100
+            elif phrase_pr >= ratio:
+                self.found_dict[dh_position][orig_dh].append((line_n, phrase_pr))
+                return phrase_pr
+        return self.matchAcronyms(dh, phrase)
+
+    def splitPara(self, para, len_phrase):
+        phrases = []
+        words = para.split(" ")
+        len_para = len(words)
+        for i in range(len_para):
+            phrase = ""
+            if i+len_phrase >= len_para:
+                j = i
+                while j < len_para:
+                    phrase += words[j] + " "
+                    j+=1
+                phrases.append(phrase)
+                break
+            else:
+                for j in range(len_phrase):
+                    phrase += words[i+j] + " "
+                phrases.append(phrase)
+        return phrases
+
+    def matchAcronyms(self, dh, text):
+        dh_acronym_list = []
+        if dh.find('"') >= 0 or dh.find("'")>=0:
+            dh_acronym_list = self.replaceAcronyms(dh)
+        for expanded_acronym in dh_acronym_list:  #only happens if there is an acronym, found_dh refers to expanded acronym
+            acronym_pr = fuzz.partial_ratio(expanded_acronym, text)
+            if expanded_acronym in text:
+                self.found_dict[dh_position][orig_dh].append((line_n, 100))
+                found_this_line = True
+                return 100
+            elif acronym_pr >=ratio:
+                self.found_dict[dh_position][orig_dh].append((line_n, acronym_pr))
+                found_this_line = True
+                return acronym_pr
+        return 0
+
+    def getMin(self, dh_pos):
         min = 0
         if dh_pos > 0:
             temp = dh_pos-1
@@ -260,55 +441,53 @@ class Match:
                       pdb.set_trace()
                 temp -= 1
         else:
-            min = 100000
-            for line_n, pr in self.found_dict[0][self.dh_orig_list[0]]:
-                if line_n < min:
-                    min = line_n
-        temp = dh_pos+1
-        highest = len(self.dh_orig_list)-1
+            if len(self.found_dict[0][self.dh_orig_list[0]])>0:
+                min = self.found_dict[0][self.dh_orig_list[0]][0][0]
+                for line_n, pr in self.found_dict[0][self.dh_orig_list[0]]:
+                    if line_n < min:
+                        min = line_n
+            else:
+                min = 0
+        return min
+
+    def getMax(self, dh_pos):
         max = -1
-        while temp <= highest:
-            temp_list = self.found_dict[temp][self.dh_orig_list[temp]]
-            if len(temp_list) == 1:
-                max = temp_list[0][0]
-                break
-            temp+=1
-        if max==-1 and dh_pos != highest:
-            next_list = self.found_dict[dh_pos+1][self.dh_orig_list[dh_pos+1]]
+        highest = len(self.dh_orig_list)-1
+        if dh_pos == highest:
+            return self.maxLine
+        else:
+            temp = dh_pos+1
+        while max == -1 and temp <= highest:
+            next_list = self.found_dict[temp][self.dh_orig_list[temp]]
             for line_n, pr in next_list:
                 if line_n > max:
                     max = line_n
-        elif max==-1:
-            my_list = self.found_dict[dh_pos][self.dh_orig_list[dh_pos]]
-            for line_n, pr in my_list:
-                if line_n > max:
-                    max = line_n
-        if max==-1:
-            max=self.maxLine
-        if min > max:
-            min = 0
-            max = self.maxLine
-        return (min, max)
+            temp+=1
+        if max == -1:
+            return self.maxLine
+        return max
 
     def getRanges(self):
         for dh_pos in self.found_dict:
             dh = self.dh_orig_list[dh_pos]
             if self.confirmed_dict[dh_pos+1][0] == 0:
-                min, max = self.getMinMax(dh_pos)
-                self.ranged_dict[dh_pos+1] = "0:"+str(min+1)+"-"+str(max+1)
+                min = self.getMin(dh_pos)
+                max = self.getMax(dh_pos)
+                if min > max:
+                    max = self.maxLine
+                if max > -1:
+                    self.ranged_dict[dh_pos+1] = "0:"+str(min+1)+"-"+str(max+1)
+                else:
+                    self.ranged_dict[dh_pos+1] = "0:1" #this case only happens where there were no comments to begin with, match lib shouldn't have been used
             elif len(self.confirmed_dict[dh_pos+1]) > 1:
                 looking_for_values = True
-                while looking_for_values==True:
-                    min = 100000
-                    max = -1
-                    for line_n in self.confirmed_dict[dh_pos+1]:
-                        if line_n < min:
-                            min = line_n
-                        if line_n > max:
-                            max = line_n
-                    looking_for_values = False
-                    min+=1
-                    max+=1
+                min = 100000
+                max = -1
+                for line_n in self.confirmed_dict[dh_pos+1]:
+                    if line_n < min:
+                        min = line_n
+                    if line_n > max:
+                        max = line_n
                 self.ranged_dict[dh_pos+1] = str(min)+"-"+str(max)
         for dh_pos in self.confirmed_dict:
             self.confirmed_dict[dh_pos] = str(self.confirmed_dict[dh_pos][0])
@@ -349,9 +528,11 @@ class Match:
         return self.confirmed_dict
 
     def getInOrder(self, dh_pos, dh_found_list, dh):
-        min, max = self.getMinMax(dh_pos)
+        min = self.getMin(dh_pos)
+        max = self.getMax(dh_pos)
         list_actual_lines = []
-        for line_n, pr in dh_found_list:
+        if min <= max:
+          for line_n, pr in dh_found_list:
             if line_n >= min and line_n <= max:
                 list_actual_lines.append((line_n, pr))
         if len(list_actual_lines) == 0:
@@ -359,8 +540,4 @@ class Match:
         elif len(list_actual_lines) == 1:
             self.confirmed_dict[dh_pos+1] = [list_actual_lines[0][0]+1]
         elif len(list_actual_lines) > 1:
-            if self.range == True:
-                for line_n, pr in list_actual_lines:
-                    self.confirmed_dict[dh_pos+1].append(line_n+1)
-            else:
-                self.confirmed_dict[dh_pos+1] = self.bestGuessFirst(list_actual_lines)
+            self.confirmed_dict[dh_pos+1] = self.bestGuessFirst(list_actual_lines)

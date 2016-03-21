@@ -46,10 +46,13 @@ gematria['ר'] = 200
 gematria['ש'] = 300
 gematria['ת'] = 400
 
-def post_text(ref, text):
+def post_text(ref, text, index_count="off"):
     textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
-    url = SEFARIA_SERVER+'api/texts/'+ref
+    if index_count == "off":
+    	url = SEFARIA_SERVER+'api/texts/'+ref+'?count_after=0'
+    else:
+    	url = SEFARIA_SERVER+'api/texts/'+ref
     values = {'json': textJSON, 'apikey': API_KEY}
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)
@@ -198,7 +201,8 @@ prev_line = 0
 title_book = "Bava Batra"
 title_comm = "Tosafot on Bava Batra" 
 
-for i in range(350): #350
+for i in range(1): #350
+	i += 278
 	count = 0
 	rashi_comments[i+3] = []
 	dh_dict[i+3] = []
@@ -219,12 +223,16 @@ for i in range(350): #350
 				rashi_comments[i+3].append(line)
 			count+=1
 	f.close()		
-for i in range(350):
+param = "on"
+for i in range(1):
+	i+=278
+	if i==289:
+		param = "on"
 	book[str(i+3)] = get_text(title_book+"."+AddressTalmud.toStr("en", i+3))
 	lines = len(book[str(i+3)])
 	if len(dh_dict[i+3]) > 0: 
 		match_obj=Match(in_order=True, min_ratio=70, guess=False)
-		result=match_obj.match_list(dh_dict[i+3], book[str(i+3)])
+		result=match_obj.match_list(dh_dict[i+3], book[str(i+3)], title_book+"."+AddressTalmud.toStr("en", i+3))
 		matched += getMatched(result)
 		total += getTotal(result)
 		guess += getGuesses(result)
@@ -246,7 +254,9 @@ for i in range(350):
 				"language": "he",
 				"text": rashi_comments[i+3][key-1],
 				}
-				post_text(title_comm+"."+AddressTalmud.toStr("en", i+3)+"."+str(line_n)+"."+str(result_dict[line_n]), text)
+				print title_comm+"."+AddressTalmud.toStr("en", i+3)+"."+str(line_n)
+				print param			
+				post_text(title_comm+"."+AddressTalmud.toStr("en", i+3)+"."+str(line_n)+"."+str(result_dict[line_n]), text, "on")
 				#createLinks(result, i+3)
 		
 if os.path.exists("log_"+title_comm+".txt") == True:
