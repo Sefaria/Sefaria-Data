@@ -1,6 +1,10 @@
 # coding=utf-8
 from sefaria.helper.text import replace_using_regex as repreg
 import codecs
+import urllib
+import urllib2
+from urllib2 import URLError, HTTPError
+import json
 
 
 def count_instances(queries, input_file):
@@ -81,3 +85,113 @@ def add_bold_tags():
 
     original.close()
     new.close()
+
+
+def post_index(index):
+    """
+    Posts an index to the api (draft). Copied straight from the github wiki with minor changes,
+    (posts to draft and gets api key from python command line).
+    :param index: index to be posted
+    :return:
+    """
+    url = 'http://draft.sefaria.org/api/index/' + index["title"].replace(" ", "_")
+    indexJSON = json.dumps(index)
+    print "Enter api key: "
+    values = {
+        'json': indexJSON,
+        'apikey': raw_input()
+    }
+    data = urllib.urlencode(values)
+    req = urllib2.Request(url, data)
+    try:
+        response = urllib2.urlopen(req)
+        print response.read()
+    except HTTPError, e:
+        print 'Error code: ', e.code
+
+
+def post_kolbo_index():
+    """
+    Posts the index for the kol bo.
+    """
+    index = {
+        "title": "Kol Bo",
+        "titleVariants": ["KolBo", u'כל בו'],
+        "sectionNames": ["Siman", "Paragraph"],
+        "categories": ["Halakhah"]
+    }
+    post_index(index)
+
+
+def post_text(ref, text):
+    """
+    Posts a text that has been indexed. Copied from wiki, amended as post_index
+    :param ref: Name of ref.
+    :param text: Text to be posted.
+    """
+    textJSON = json.dumps(text)
+    ref = ref.replace(" ", "_")
+    url = 'http://draft.sefaria.org/api/texts/%s' % ref
+    print "Enter api key: "
+    values = {'json': textJSON, 'apikey': raw_input()}
+    data = urllib.urlencode(values)
+    req = urllib2.Request(url, data)
+    try:
+        response = urllib2.urlopen(req)
+        print response.read()
+    except HTTPError, e:
+        print 'Error code: ', e.code
+        print e.read()
+
+
+def parse_kol_bo(upload = True):
+    """
+    Parses the kol bo and uploads it. MUST  be run after index has been uploaded.
+    :param upload: if True will upload to site. Otherwise it will just save the parsed text
+    to a file.
+    """
+    kolbo = codecs.open('kol_bo_bold.txt', 'r', 'utf-8')
+
+    # set storage arrays for strings. Add first line in file to current.
+    text = []
+    line = kolbo.readline()
+    current = [line.replace(u'<chapter>', u'')]
+    # loop through file
+    for line in kolbo:
+
+        # if beginning of new chapter, add previous chapter to text and clear current
+        if line.find(u'<chapter>') == 0:
+            text.append(current)
+            line = line.replace(u'<chapter>', u'<b>')
+            line = line.replace(u'\n', u'</b>\n')
+            current = [line]
+
+        else:
+            # add line to current
+            current.append(line)
+
+    # add final chapter to text    )
+    text.append(current)
+    kolbo.close()
+
+    # upload text
+    if upload:
+        kolbo = {
+            "versionTitle": "Kol Bo 1547 Venice Unknown Publisher",
+            "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001227196",
+            "language": "he",
+            "text": text,
+        }
+        post_text('Kol Bo', kolbo)
+
+    else:
+        # save parsed text to file
+        output = codecs.open('output.txt', 'w', 'utf-8')
+        for chapter in text:
+            for line in chapter:
+                output.write(line)
+        output.close()
+
+
+post_kolbo_index()
+parse_kol_bo()
