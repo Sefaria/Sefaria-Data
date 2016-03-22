@@ -209,6 +209,7 @@ for i in range(67):
 	he_daf = he_daf.replace(" ", "_")
 	he_daf = he_daf + ".txt"
 	f = open("../Noah-Santacruz-rashiPosting/Rashi/"+he_daf, 'r')
+	pdb.set_trace()
 	for line in f:
 		line = line.replace("\n", "")
 		something = line.replace(" ", "")

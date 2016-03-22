@@ -46,6 +46,9 @@ gematria['ר'] = 200
 gematria['ש'] = 300
 gematria['ת'] = 400
 
+title_book = "Avodah Zarah"
+title_comm = "Rashi on Avodah Zarah" 
+
 def post_text(ref, text):
     textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
@@ -55,7 +58,10 @@ def post_text(ref, text):
     req = urllib2.Request(url, data)
     try:
         response = urllib2.urlopen(req)
-        print response.read()
+        x= response.read()
+        print x
+        if x.find("Rashi on Avodah Zarah Line must be greater than 0")>=0:
+        	pdb.set_trace()
     except HTTPError, e:
         print 'Error code: ', e.code
         print e.read()
@@ -71,7 +77,10 @@ def post_link(info):
 	req = urllib2.Request(url, data)
 	try:
 		response = urllib2.urlopen(req)
-		print response.read()
+		x= response.read()
+		print x
+		if x.find("Rashi on Avodah Zarah Line must be greater than 0")>=0:
+			pdb.set_trace()
 	except HTTPError, e:
 		print 'Error code: ', e.code
 
@@ -194,16 +203,11 @@ log = []
 dh_dict = {}
 rashi_comments = {}
 prev_line = 0
-
-title_book = "Avodah Zarah"
-title_comm = "Rashi on Avodah Zarah" 
-
-for j in range(2): 
-	i=j+78
+for i in range(150): #152 
 	count = 0
 	rashi_comments[i+3] = []
 	dh_dict[i+3] = []
-	he_daf = u"עבודה_זרה_"
+	he_daf = u"עבודה זרה_"
 	he_daf += AddressTalmud.toStr("he", i+3)
 	he_daf = he_daf.replace(u"\u05f4", u"")
 	he_daf = he_daf.replace(u"׳", u"")
@@ -220,8 +224,7 @@ for j in range(2):
 				rashi_comments[i+3].append(line)
 			count+=1
 	f.close()		
-for j in range(2):
-	i=j+78
+for i in range(150):
 	book[str(i+3)] = get_text(title_book+"."+AddressTalmud.toStr("en", i+3))
 	lines = len(book[str(i+3)])
 	if len(dh_dict[i+3]) > 0: 
@@ -243,14 +246,13 @@ for j in range(2):
 				result_dict[line_n] = 1
 			if line_n > 0:
 				text = {
-				"versionTitle": "WikiSource_new",
+				"versionTitle": "WikiSource Rashi",
 				"versionSource": "https://he.wikisource.org/wiki/תלמוד_בבלי",
 				"language": "he",
 				"text": rashi_comments[i+3][key-1],
 				}
 				post_text(title_comm+"."+AddressTalmud.toStr("en", i+3)+"."+str(line_n)+"."+str(result_dict[line_n]), text)
-				#createLinks(result, i+3)
-pdb.set_trace()
+		
 if os.path.exists("log_"+title_comm+".txt") == True:
 	os.remove("log_"+title_comm+".txt")	
 log_file = open("log_"+title_comm+".txt", "w")

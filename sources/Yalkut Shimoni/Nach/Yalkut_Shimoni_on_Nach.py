@@ -34,7 +34,7 @@ def post_index(index):
 root = JaggedArrayNode()
 root.key = "yalkut_on_nach"
 root.add_title("Yalkut Shimoni on Nach", "en", primary=True)
-root.add_title(u"""ילקות שמעוני על נ״ח""", "he", primary=True)
+root.add_title(u"""ילקוט שמעוני על נ"ך""", "he", primary=True)
 root.depth = 2
 root.sectionNames = ["Remez", "Paragraph"]
 root.heSectionNames = [u"רמז", u"פסקה"]

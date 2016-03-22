@@ -147,11 +147,19 @@ for count_file in range(20):
 	f = open(title+str(title_option+count_file)+".txt")
 	for line in f:
 		line=line.replace("\n","")
+		text = line
+		while text.find("@10 @60")>=0:
+			loc = text.find("@10 @60")
+			lines.append(text[0:loc+3])
+			text = text[loc+4:]
+		lines.append(text)
+	for line in lines:
+		line=line.replace("\n","")
 		len_line = len(line)
 		if line == "@10" or line=="@60":
 			continue
 		temp_text += line+" "
-		if line.find("@10") != len_line-3 and line.find("@60") != len_line-3:
+		if line.find("@10") != len_line-3 and line.rfind("@60") != len_line-3:
 			continue
 		if temp_text.find("@") > 4:
 			temp_text = "@28 "+temp_text
@@ -172,7 +180,7 @@ for count_file in range(20):
 				before_dh_dict[(daf, len(comm_dict[daf]))] = before_dh
 			 else:
 				before_dh_dict[(daf, 0)] = before_dh
-		if line.find("@28") >= 0:
+		if temp_text.find("@28") >= 0:
 			start = temp_text.find("@28")
 			end = max(temp_text.find("@70"), temp_text.find("@30"))
 			before_dh = temp_text[start+3:end]
@@ -194,7 +202,7 @@ for count_file in range(20):
 				dh_dict[daf] = []
 				dh_dict[daf].append(dh)
 			just_added_dh = True
-		if temp_text.rfind("@40") >= 0 and (line.find("@60") == -1 or line.find("@60") > 2):
+		if temp_text.rfind("@40") >= 0 and (temp_text.find("@60") == -1 or temp_text.find("@60") > 2):
 			start = temp_text.rfind("@40")
 			end = max(temp_text.find("@10"), temp_text.find("@60"))
 			if end == -1:
@@ -262,14 +270,14 @@ for daf in dh_dict.keys():
 for daf in dh_dict.keys():
 	text = get_text("Gittin."+AddressTalmud.toStr("en", daf))
 	try:
-		match_obj=Match(in_order=True, min_ratio=70, guess=False, range=True, maxLine=len(text)-1)
+		match_obj=Match(in_order=True, min_ratio=70, guess=False, range=True)
 	except:
 		pdb.set_trace()
 	dh_arr = []
 	for i in range(len(dh_dict[daf])):
 		if len(dh_dict[daf][i]) > 0:
 			dh_arr.append(dh_dict[daf][i])
-	result[daf] = match_obj.match_list(dh_arr, text)
+	result[daf] = match_obj.match_list(dh_arr, text, "Gittin "+AddressTalmud.toStr("en", daf))
 	dh_count = 1
 	'''
 	if len(dh_dict[daf][i]) == 0, then comm_dict[daf][i] gets added to comm_dict[daf][i-1]+"<br>"
@@ -295,7 +303,6 @@ for daf in dh_dict.keys():
 	for i in range(len(comm_dict[daf])):
 		if len(dh_dict[daf][i])>0:
 			comments.append(comm_dict[daf][i])
-	#NOW create new array skipping blank ones
 	for i in range(len(comm_dict[daf])):
 		 if len(dh_dict[daf][i]) > 0:
 		 	line_n  = result[daf][dh_count]
@@ -304,7 +311,7 @@ for daf in dh_dict.keys():
 		 		no_guess += 1
 		 	line_n = line_n.replace("0:", "")
 		 	guess+=1
-			post_link({
+			'''post_link({
 					"refs": [
 							"Gittin"+"."+AddressTalmud.toStr("en", daf)+"."+str(line_n), 
 							"Rashba on Gittin."+AddressTalmud.toStr("en", daf)+"."+str(i+1)
@@ -312,7 +319,8 @@ for daf in dh_dict.keys():
 					"type": "commentary",
 					"auto": True,
 					"generated_by": "Rashba on Gittin linker",
-				 })
+				 }
+				 '''
 	send_text = {
 				"versionTitle": "Rashba on Gittin",
 				"versionSource": "http://www.sefaria.org",
@@ -320,8 +328,7 @@ for daf in dh_dict.keys():
 				"text": comments,
 				}
 	
-	post_text("Rashba on Gittin."+AddressTalmud.toStr("en", daf), send_text)
-	pdb.set_trace()
+	#post_text("Rashba on Gittin."+AddressTalmud.toStr("en", daf), send_text)
 
 
 print float(guess)/float(guess+no_guess)
