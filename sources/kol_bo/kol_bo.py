@@ -9,8 +9,8 @@ import json
 
 def count_instances(queries, input_file):
     """
-    Counts the number of times a certain two intances appear in the
-    :param queries: All strings to be counted
+    Counts the number of times indicated strings appear in a given text file.
+    :param queries: A list of strings to be counted (a single string will be converted to a list)
     :param input_file: The file to be examined
     :return: A list of tuples containing (query, count)
     """
