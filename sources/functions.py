@@ -408,3 +408,83 @@ def multiple_replace(old_string, replacement_dictionary):
         old_string = old_string.replace(keys, value)
 
     return old_string
+
+
+def find_discrepancies(book_list, version_title, file_buffer, language, middle=False):
+    """
+    Prints all cases in which the number of verses in a text version doesn't match the
+    number in the canonical version.
+
+    *** Only works for Tanach, can be modified to work for any level 2 text***
+
+    :param book_list: list of books
+    :param version_title: Version title to be examined
+    :param file_buffer: Buffer for file to print results
+    :param language: 'en' or 'he' accordingly
+    :param middle: set to True to manually start scanning a book from the middle.
+    If middle is set to True, user will be prompted for the beginning chapter.
+    """
+
+    # loop through each book
+    for book in book_list:
+
+        # print book to give user update on progress
+        print book
+        book = book.replace(' ', '_')
+        book = book.replace('\n', '')
+
+        if middle:
+
+            print "Start {0} at chapter: ".format(book)
+            start_chapter = input()
+            url = SEFARIA_SERVER + 'api/texts/' + book + '.' + \
+                str(start_chapter) + '/' + language + '/' + version_title
+
+        else:
+            url = SEFARIA_SERVER + 'api/texts/' + book + '.1/' + language + '/' + version_title
+
+        try:
+            # get first chapter in book
+            response = urllib2.urlopen(url)
+            version_text = json.load(response)
+
+            # loop through chapters
+            chapters = Ref(book).all_subrefs()
+
+            # check for correct number of chapters
+            if len(chapters) != version_text['lengths'][0]:
+                file_buffer.write('Chapter Problem in'+book+'\n')
+
+            for index, chapter in enumerate(chapters):
+
+                # if starting in the middle skip to appropriate chapter
+                if middle:
+                    if index+1 != start_chapter:
+                        continue
+
+                    else:
+                        # set middle back to false
+                        middle = False
+
+                print index+1,
+
+                # get canonical number of verses
+                canon = len(TextChunk(chapter, vtitle=u'Tanach with Text Only', lang='he').text)
+
+                # get number of verses in version
+                verses = len(version_text['text'])
+                if verses != canon:
+                    file_buffer.write(chapter.normal() + '\n')
+
+                # get next chapter
+                next_chapter = reg_replace(' \d', version_text['next'], ' ', '.')
+                next_chapter = next_chapter.replace(' ', '_')
+                url = SEFARIA_SERVER+'api/texts/'+next_chapter+'/'+language+'/'+version_title
+                response = urllib2.urlopen(url)
+                version_text = json.load(response)
+
+        except (URLError, HTTPError, KeyboardInterrupt, KeyError, ValueError) as e:
+            print e
+            print url
+            file_buffer.close()
+            sys.exit(1)

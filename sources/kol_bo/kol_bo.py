@@ -1,10 +1,11 @@
 # coding=utf-8
-from sefaria.helper.text import replace_using_regex as repreg
+from sefaria.utils.util import replace_using_regex as repreg
 import codecs
 import urllib
 import urllib2
 from urllib2 import URLError, HTTPError
 import json
+from sources.local_setting import *
 
 
 def count_instances(queries, input_file):
@@ -89,20 +90,19 @@ def add_bold_tags():
 
 def post_index(index):
     """
-    Posts an index to the api (draft). Copied straight from the github wiki with minor changes,
-    (posts to draft and gets api key from python command line).
+    Posts an index to the api. Copied straight from the github wiki with minor changes,
     :param index: index to be posted
     :return:
     """
-    url = 'http://draft.sefaria.org/api/index/' + index["title"].replace(" ", "_")
+    url = 'http://www.sefaria.org/api/index/' + index["title"].replace(" ", "_")
     indexJSON = json.dumps(index)
-    print "Enter api key: "
     values = {
         'json': indexJSON,
-        'apikey': raw_input()
+        'apikey': API_KEY
     }
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)
+    print 'posting'
     try:
         response = urllib2.urlopen(req)
         print response.read()
@@ -118,7 +118,16 @@ def post_kolbo_index():
         "title": "Kol Bo",
         "titleVariants": ["KolBo", u'כל בו'],
         "sectionNames": ["Siman", "Paragraph"],
-        "categories": ["Halakhah"]
+        "categories": ["Halakhah"],
+        "pubDate": "1490",
+        "compDate": "1490",
+        "pubPlace": "Middle-Age Italy",
+        "compPlace": "Narbonne",
+        "enDesc": "Kol Bo (all is in it) is a collection of Jewish ritual and civil laws, probably by Aaron ben Jacob ha-Kohen. It is mostly likely an abridgement of a longer work called Orḥot Ḥayyim, though this claim is disputed with some opinions saying the Kol Bo was a shorter earlier attempt to write a Halakhic work. Others claim the two works were authored by independent writers from Provence with both Gedaliah ibn Yaḥya Shemariah b. Simḥah or Joseph ben Tobiah of Provence suggested as authors. The Kol Bo does not pretend to any order; the laws that were later arranged in Oraḥ Ḥayyim are found together with those that were later arranged in Yoreh De'ah and Eben ha-'Ezer. Likewise, many laws are entirely missing in the Kol Bo. It is peculiar also in that some of the laws are briefly stated, while others are stated at great length, without division into paragraphs. After the regular code, terminating with the laws of mourning (No. 115), there comes a miscellaneous collection, containing the \"taḳḳanot\" of R. Gershom and of Jacob Tam, the Ma'aseh Torah of Judah ha-Nasi I, the legend of Solomon's throne, the legend of Joshua b. Levi, a cabalistic dissertation on circumcision, a dissertation on gemaṭria and noṭariḳon, sixty-one decisions of Eliezer b. Nathan; forty-four decisions of Samson Zadok, decisions of Isaac of Corbeil, and responsa of Perez ha-Kohen, decisions of Isaac Orbil, of the geonim Naṭronai, Hai Gaon, Amram Gaon, Nahshon Gaon, laws of the \"miḳweh\" taken from Perez's Sefer ha-Miẓwot, responsa, and finally the law of excommunication of Naḥmanides. For this reason it is quoted under the title of \"Sefer ha-Liḳḳuṭim\" in Avḳat Rokel, No. 13.",
+        "era": "RI",
+        "authors": [
+            "Aharon ben Jacob Ha-Kohen of Lunil"
+        ],
     }
     post_index(index)
 
@@ -131,9 +140,8 @@ def post_text(ref, text):
     """
     textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
-    url = 'http://draft.sefaria.org/api/texts/%s' % ref
-    print "Enter api key: "
-    values = {'json': textJSON, 'apikey': raw_input()}
+    url = 'http://www.sefaria.org/api/texts/%s' % ref
+    values = {'json': textJSON, 'apikey': API_KEY}
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)
     try:
@@ -144,7 +152,7 @@ def post_text(ref, text):
         print e.read()
 
 
-def parse_kol_bo(upload = True):
+def parse_kol_bo(upload=True):
     """
     Parses the kol bo and uploads it. MUST  be run after index has been uploaded.
     :param upload: if True will upload to site. Otherwise it will just save the parsed text
@@ -181,6 +189,7 @@ def parse_kol_bo(upload = True):
             "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001227196",
             "language": "he",
             "text": text,
+
         }
         post_text('Kol Bo', kolbo)
 
