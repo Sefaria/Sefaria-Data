@@ -14,6 +14,7 @@ from sources.local_setting import *
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
+from sefaria.utils.util import replace_using_regex as reg_replace
 
 
 gematria = {}
@@ -212,6 +213,31 @@ def post_text(ref, text, index_count="off"):
         x= response.read()
         print x
         if x.find("error")>=0 and x.find("Daf")>=0 and x.find("0")>=0:
+            return "error"
+    except HTTPError, e:
+        errors.write(e.read())
+
+
+def post_flags(version, flags):
+    """
+    Update flags of a specific version.
+
+    :param version: Dictionary with fields: ref, lang(en or he), vtitle(version title)
+    :param flags: Dictionary with flags set as key: value pairs.
+    """
+    textJSON = json.dumps(flags)
+    version['ref'] = version['ref'].replace(' ', '_')
+    url = SEFARIA_SERVER+'api/version/flags/{}/{}/{}'.format(
+        urllib.quote(version['ref']), urllib.quote(version['lang']), urllib.quote(version['vtitle'])
+    )
+    values = {'json': textJSON, 'apikey': API_KEY}
+    data = urllib.urlencode(values)
+    req = urllib2.Request(url, data)
+    try:
+        response = urllib2.urlopen(req)
+        x = response.read()
+        print x
+        if x.find("error") >= 0 and x.find("Daf") >= 0 and x.find("0") >= 0:
             return "error"
     except HTTPError, e:
         errors.write(e.read())
