@@ -408,17 +408,43 @@ def align_footnotes(books):
     input_file.close()
     return jps_footnotes
 
-test = codecs.open('test.txt', 'w', 'utf-8')
-jps = parse()
-footnotes = align_footnotes(jps)
-books = library.get_indexes_in_category('Tanach')
-for book in books:
-    test.write(u'{}:\n'.format(book))
-    for index, chapter in enumerate(footnotes[book]):
-        if chapter != []:
-            test.write(u'  chapter {}:\n'.format(index+1))
-            for note in chapter:
-                test.write(u'    {}\n'.format(note['footnote']))
-                test.write(u'    links:{}\n'.format(note['links']))
 
-test.close()
+def print_notes():
+    test = codecs.open('test.txt', 'w', 'utf-8')
+    jps = parse()
+    footnotes = align_footnotes(jps)
+    books = library.get_indexes_in_category('Tanach')
+    for book in books:
+        test.write(u'{}:\n'.format(book))
+        for index, chapter in enumerate(footnotes[book]):
+            if chapter != []:
+                test.write(u'  chapter {}:\n'.format(index+1))
+                for note in chapter:
+                    test.write(u'    {}\n'.format(note['footnote']))
+                    test.write(u'    links:{}\n'.format(note['links']))
+
+    test.close()
+    
+
+def find_in_footnotes(search_key):
+    output = codecs.open('inverted_clauses.csv', 'w', 'utf-8')
+    output.write(u'Book*Chapter*Verse Number*Verse Text*JPS Footnote\n')
+    jps = parse()
+    footnotes = align_footnotes(jps)
+    books = library.get_indexes_in_category('Tanach')
+    for book in books:
+        for chap_num, chapter in enumerate(footnotes[book]):
+            if chapter != []:
+                for note in chapter:
+                    if note['footnote'].find(search_key) != -1:
+                        for verse in note['links']:
+                            try:
+                                text = jps[book][chap_num][verse-1]
+                            except IndexError:
+                                print 'error'
+                                print '{},{},{}'.format(book, chap_num, verse)
+                                sys.exit(1)
+                            output.write(u'{}*{}*{}*{}*{}\n'.format(
+                                book, chap_num+1, verse, text, note['footnote']))
+
+    output.close()
