@@ -158,6 +158,28 @@ def upload_all(things_to_upload, upload=True):
         functions.post_text(ref, book)
 
 
+def set_flags(books, upload=True):
+
+    if not upload:
+        return
+
+    for book in books.keys():
+
+        # make JSON object for version
+        version = {
+            "ref": book,
+            "lang": "en",
+            "vtitle": "JPS 1985 English Translation"
+        }
+
+        # set flags
+        flags = {
+            "priority": 2
+        }
+        print book
+        functions.post_flags(version, flags)
+
+
 # declare variables
 Books, Chapters, Verses = {}, [], []
 previous_line = u''
@@ -177,6 +199,7 @@ replacements = {
         u'h%': u'\u1e25',
         u'\n': u'',
         u'\r': u'',
+        u'-': u'',
 }
 
 # loop through file
@@ -248,4 +271,6 @@ for error in errors:
     out.write('Book: {0} Chapter: {1}\n'.format(*error))
 out.close()
 print len(errors)
-upload_all(Books)
+upload_all(Books, False)
+set_flags(Books)
+
