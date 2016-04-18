@@ -52,7 +52,8 @@ with open("Responsa translated - Sheet1.csv") as csv_file:
             "type": "inside_source",
             "ref": ref,
             "enVersionTitle": 'Sefaria Responsa Anthology',
-            "tags": tags
+            "tags": tags,
+            "title": l[6].capitalize()
         }
 
         grdn.add_stop(stop)
