@@ -17,11 +17,12 @@ def setif(p, attr, field):
 
 garden_key = u"sefaria.custom.responsa"
 grdn = Garden().load({"key": garden_key})
-if not grdn:
-    grdn = Garden({"key": garden_key, "title": u"Responsa Anthology", "heTitle": u"עולם השו״ת"})
-    grdn.updateConfig({
-        "timeline_scale": "linear"
-    })
+if grdn:
+    grdn.delete()
+grdn = Garden({"key": garden_key, "title": u"Responsa Anthology", "heTitle": u"עולם השו״ת"})
+grdn.updateConfig({
+    "timeline_scale": "linear"
+})
 
 """
 0 Responsum
