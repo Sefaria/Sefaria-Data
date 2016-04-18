@@ -6,11 +6,10 @@ import json
 import pdb
 import os
 import sys
-from bs4 import BeautifulSoup
 import re
 p = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, p)
-from sources.local_setting import *
+from local_settings import *
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
@@ -202,9 +201,9 @@ def post_text(ref, text, index_count="off"):
     textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
     if index_count == "off":
-        url = SEFARIA_SERVER+'api/texts/'+ref
+        url = SEFARIA_SERVER+'/api/texts/'+ref
     else:
-        url = SEFARIA_SERVER+'api/texts/'+ref+'?count_after=1'
+        url = SEFARIA_SERVER+'/api/texts/'+ref+'?count_after=1'
     values = {'json': textJSON, 'apikey': API_KEY}
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)
@@ -227,7 +226,7 @@ def post_flags(version, flags):
     """
     textJSON = json.dumps(flags)
     version['ref'] = version['ref'].replace(' ', '_')
-    url = SEFARIA_SERVER+'api/version/flags/{}/{}/{}'.format(
+    url = SEFARIA_SERVER+'/api/version/flags/{}/{}/{}'.format(
         urllib.quote(version['ref']), urllib.quote(version['lang']), urllib.quote(version['vtitle'])
     )
     values = {'json': textJSON, 'apikey': API_KEY}
