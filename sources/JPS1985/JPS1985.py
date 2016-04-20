@@ -31,6 +31,7 @@ import regex as re
 import codecs
 from sefaria.model import *
 import sys
+from sefaria.utils.hebrew import hebrew_term
 
 
 def process_verses(chap_string, expression):
@@ -139,7 +140,7 @@ def check_verses(verse_list, data, error_list):
     return True
 
 
-def upload_all(things_to_upload, upload=True):
+def upload_main_text(things_to_upload, upload=True):
     """
 
     :param things_to_upload: A dictionary where the keys are the refs, values are the texts
@@ -601,3 +602,66 @@ def print_text_and_footnotes():
     main_text.close()
     note_text.close()
     link_text.close()
+
+
+def upload_footnote_index():
+    """
+    Footnotes are uploaded as a commentary2 - Schema with each book a depth 2 jaggedArray
+    """
+
+    books = library.get_indexes_in_category('Tanach')
+
+    # create index record
+    record = SchemaNode()
+    record.add_title('JPS_1985_footnotes', 'en', primary=True, )
+    record.add_title(u'הערות שוליים תרגום 1985 של JPS', 'he', primary=True, )
+    record.key = 'JPS_1985_footnotes'
+
+    # add nodes
+    for book in books:
+        node = JaggedArrayNode()
+        node.add_title(book, 'en', primary=True)
+        node.add_title(hebrew_term(book), 'he', primary=True)
+        node.key = book
+        node.depth = 2
+        node.addressTypes = ['Integer', 'Integer']
+        node.sectionNames = ['Chapter', 'Footnote']
+        record.append(node)
+    record.validate()
+
+    index = {
+        "title": "JPS_1985_Footnotes",
+        "categories": ["Commentary2", "Tanach", "JPS"],
+        "schema": record.serialize()
+    }
+    functions.post_index(index)
+
+
+def upload_footnotes(full_text, upload=False):
+    """
+    :param full_text: Data structure from parse_text()
+    :param upload: set to True, otherwise function will do nothing
+    """
+
+    if not upload:
+        return
+
+    # make JSON object of book
+    for ref in full_text.keys():
+        book = {
+            "versionTitle": "JPS_1985_Footnotes",
+            "versionSource": "JPS",
+            "language": "en",
+            "text": full_text[ref]
+        }
+        print ref
+        functions.post_text('JPS_1985_Footnotes,_{}'.format(ref), book)
+
+
+jps_main = parse()
+jps_footnotes = align_footnotes(jps_main)
+links = footnote_linker(jps_main, jps_footnotes)
+#upload_main_text(jps_main, True)
+#upload_footnote_index()
+upload_footnotes(jps_footnotes, True)
+functions.post_link(links)
