@@ -216,6 +216,30 @@ def post_text(ref, text, index_count="off"):
     except HTTPError, e:
         errors.write(e.read())
 
+def post_text_burp(ref, text, index_count="off"):
+    """
+    Use to debug with burp suite
+    """
+    proxy = urllib2.ProxyHandler({'http': '127.0.0.1:8080'})
+    opener = urllib2.build_opener(proxy)
+
+    textJSON = json.dumps(text)
+    ref = ref.replace(" ", "_")
+    if index_count == "off":
+        url = SEFARIA_SERVER + '/api/texts/' + ref
+    else:
+        url = SEFARIA_SERVER + '/api/texts/' + ref + '?count_after=1'
+    values = {'json': textJSON, 'apikey': API_KEY}
+    data = urllib.urlencode(values)
+    req = urllib2.Request(url, data)
+    try:
+        response = opener.open(req)
+        x = response.read()
+        print x
+        if x.find("error") >= 0 and x.find("Daf") >= 0 and x.find("0") >= 0:
+            return "error"
+    except HTTPError, e:
+        errors.write(e.read())
 
 def post_flags(version, flags):
     """
@@ -513,3 +537,36 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
             print url
             file_buffer.close()
             sys.exit(1)
+
+
+def get_daf(num):
+    """
+    Get the daf given the page number (i.e. num = 1, return ב_א)
+    :param num: page number
+    :return: string <daf>_<ammud>
+    """
+
+    if num % 2 == 1:
+        num = num / 2 + 2
+        return u'{}_א'.format(numToHeb(num))
+
+    else:
+        num = num / 2 + 1
+        return u'{}_ב'.format(numToHeb(num))
+
+
+def get_page(daf, amud):
+    """
+    Inverse of get_daf, enter a daf, gets page number
+    :param daf: Daf number
+    :param amud: a or b
+    :return: Page number (i.e. get_page(2, a) = 1)
+    """
+
+    if amud == 'a':
+        return 2*daf - 3
+    elif amud == 'b':
+        return 2*daf - 2
+    else:
+        print 'invalid daf number'
+        return 0
