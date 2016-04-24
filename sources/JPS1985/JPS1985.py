@@ -179,10 +179,32 @@ def set_flags(books, upload=True):
         # set flags
         flags = {
             "priority": 2,
-            "status": 'locked'
+            "status": 'locked',
+            "version title": "Tanakh: The Holy Scriptures, published by JPS",
+            "version source": "https://jps.org/",
+            "license": "Copyright: JPS, 1985",
+            "licenseVetted": "true",
         }
         print book
         functions.post_flags(version, flags)
+
+    # flags for footnotes
+    version = {
+        "ref": "JPS 1985 Footnotes",
+        "lang": "en",
+        "vtitle": "JPS Footnotes"
+    }
+
+    # set flags
+    flags = {
+        "priority": 2,
+        "status": 'locked',
+        "version title": "Tanakh: The Holy Scriptures, published by JPS",
+        "version source": "https://jps.org/",
+        "license": "Copyright: JPS, 1985",
+        "licenseVetted": "true",
+    }
+    functions.post_flags(version, flags)
 
 
 def parse():
@@ -496,7 +518,7 @@ def footnote_linker(jps, jps_footnotes):
                     data_order = 27
                 else:
                     data_order = ord(tag) - 96
-                itag = u'<i data-commentator="JPS_1985_translation_footnotes" data-order="{}" />'.format(data_order)
+                itag = u'<i data-commentator="JPS 1985 Footnotes" data-order="{}"></i>'.format(data_order)
 
                 # iterate over the links
                 for link in note['links']:
@@ -575,10 +597,10 @@ def footnote_linker(jps, jps_footnotes):
                     # create link object
                     links.append({
                         'refs': [u'{}.{}.{}'.format(book, chap_num+1, link),
-                                 u'JPS_1985_footnotes.{}.{}'.format(book, chap_num+1)],
+                                 u'JPS 1985 Footnotes, {}.{}.{}'.format(book, chap_num+1, index+1)],
                         'type': 'commentary',
                         'auto': True,
-                        'generated_by': 'JPS_parse_script',
+                        'generated_by': 'JPS parse script',
                         'anchorText': anchor,
                                   })
 
@@ -613,9 +635,9 @@ def upload_footnote_index():
 
     # create index record
     record = SchemaNode()
-    record.add_title('JPS_1985_footnotes', 'en', primary=True, )
+    record.add_title('JPS 1985 Footnotes', 'en', primary=True, )
     record.add_title(u'הערות שוליים תרגום 1985 של JPS', 'he', primary=True, )
-    record.key = 'JPS_1985_footnotes'
+    record.key = 'JPS 1985 Footnotes'
 
     # add nodes
     for book in books:
@@ -630,7 +652,7 @@ def upload_footnote_index():
     record.validate()
 
     index = {
-        "title": "JPS_1985_Footnotes",
+        "title": "JPS 1985 Footnotes",
         "categories": ["Commentary2", "Tanach", "JPS"],
         "schema": record.serialize()
     }
@@ -649,19 +671,42 @@ def upload_footnotes(full_text, upload=False):
     # make JSON object of book
     for ref in full_text.keys():
         book = {
-            "versionTitle": "JPS_1985_Footnotes",
+            "versionTitle": "JPS Footnotes",
             "versionSource": "JPS",
             "language": "en",
             "text": full_text[ref]
         }
         print ref
-        functions.post_text('JPS_1985_Footnotes,_{}'.format(ref), book)
+        functions.post_text('JPS 1985 Footnotes, {}'.format(ref), book)
+
+
+def extract_notes(footnote_struct):
+    """
+    Extract notes from data structure to jaggedArray form (footnote data structure contains links).
+
+    :param footnote_struct: Data structure created from align_footnotes() function. Recommended to run footnote
+    linker, as this functions performs important editing on the footnotes.
+    :return: Depth 2 jaggedArray for convenient upload via API.
+    """
+
+    books = library.get_indexes_in_category('Tanach')
+
+    notes = {}
+    for book in books:
+        notes[book] = []
+        for index, chapter in enumerate(footnote_struct[book]):
+            chap_notes = []
+            for note in chapter:
+                chap_notes.append(note['footnote'])
+            notes[book].append(chap_notes)
+    return notes
 
 
 jps_main = parse()
 jps_footnotes = align_footnotes(jps_main)
 links = footnote_linker(jps_main, jps_footnotes)
-#upload_main_text(jps_main, True)
-#upload_footnote_index()
-upload_footnotes(jps_footnotes, True)
+upload_main_text(jps_main, True)
+upload_footnote_index()
+upload_footnotes(extract_notes(jps_footnotes), True)
 functions.post_link(links)
+set_flags(jps_main, True)
