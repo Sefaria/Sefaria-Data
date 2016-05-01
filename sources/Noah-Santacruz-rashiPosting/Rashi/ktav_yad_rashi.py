@@ -6,7 +6,14 @@ combined into 1 source in our text files. First I will split these into separate
 these pages.
 """
 
+import os
+import sys
+sys.path.append('/home/jonathan/sefaria/Sefaria-Data')
+sys.path.append('/home/jonathan/sefaria/Sefaria-Project')
+os.environ['DJANGO_SETTINGS_MODULE'] = 'sefaria.settings'
 from sources import functions
+from sefaria.model import *
+import re
 import codecs
 
 
@@ -69,3 +76,139 @@ def split_files(search_key):
         original.close()
         rashi.close()
         ktav_yad_rashi.close()
+
+
+def get_deepest_ref(ref):
+    """
+    :return: deepest level ref possible
+    """
+
+    if ref.is_segment_level():
+        return ref
+    else:
+        return get_deepest_ref(ref.subref(1))
+
+
+def find_TextChunk_in_file(ref, text_file):
+    """
+    Try to find where Ref originated from by looking for it in a file
+
+    :param ref: Ref to examine
+    :param text_file: file in which to search
+    :return: True if found, False otherwise
+    """
+
+    # file may be used repeatedly, start from beginning
+    text_file.seek(0)
+
+    # get text from ref
+    text = ref.text(lang='he').as_string()
+
+    # make sure there actually is text
+    if text == u'':
+        print "{}: No text found".format(ref.uid())
+        return False
+
+    # loop through file
+    for line in text_file:
+        if line.replace(u'\n', u'') == text:
+            return True
+
+    return False
+
+
+def separate_ktav_yad_rashi():
+    """
+
+    :return: An dict named 'results' which contains lists of refs as described below.
+    """
+
+    # set up a range of refs
+    ref_range = Ref("Rashi on Menachot.72b-94a")
+
+    ref = get_deepest_ref(Ref("Rashi on Menachot.72b"))
+
+    results = {
+        'rashi': [],
+        'ktav yad rashi': [],
+        'found in both': [],
+        'found in none': [],
+    }
+
+    while ref_range.contains(ref):
+        # open the files
+        file_name = u'מנחות_{}.txt'.format(functions.get_daf(ref.sections[0]-2))
+        rashi = codecs.open(u'rashi_fixed/{}'.format(file_name), 'r', 'utf-8')
+        ktav_yad_rashi = codecs.open(u'ktav_yad_rashi/{}'.format(file_name), 'r', 'utf-8')
+
+        # look for ref in files
+        in_rashi = find_TextChunk_in_file(ref, rashi)
+        in_ktav_yad = find_TextChunk_in_file(ref, ktav_yad_rashi)
+
+        if in_rashi and in_ktav_yad:
+            results['found in both'].append(ref)
+
+        elif not in_rashi and not in_ktav_yad:
+            results['found in none'].append(ref)
+
+        elif in_rashi and not in_ktav_yad:
+            results['rashi'].append(ref)
+
+        elif not in_rashi and in_ktav_yad:
+            results['ktav yad rashi'].append(ref)
+
+        # get next ref
+        ref = ref.next_segment_ref()
+
+        rashi.close()
+        ktav_yad_rashi.close()
+
+    return results
+
+
+def structure_refs(ref_list):
+    """
+    I need to verify that no regular rashis appear after a ktav yad rashi. To help do this, this function will
+    structure a ref list so that the daf and line number appear as keys in a dictionary.
+    :param ref_list: a list of refs
+    :return: A dictionary where the keys are lines (section ref) and the values are an ordered list
+    """
+
+    structured = {}
+
+    # add keys to structured
+    for ref in ref_list:
+        key = ref.section_ref().normal()
+        if not structured.has_key(key):
+            structured[key] = []
+
+        # add ref number to list
+        structured[key].append(ref.sections[-1])
+
+    # sort all arrays
+    for key in structured.keys():
+        structured[key].sort()
+
+    return structured
+
+
+def check_trailing(ref_struct):
+    """
+    Check to ensure no rashi refs follow a ktav rashi ref
+    :param ref_struct: object returned from separate_ktav_yad_rashi()
+    :return: locations where rashi trails a ktav yad rashi
+    """
+    rashi = structure_refs(ref_struct['rashi'])
+    ktav = structure_refs(ref_struct['ktav yad rashi'])
+
+    bad = []
+
+    for ref in ktav.keys():
+        if not rashi.has_key(ref):
+            continue
+        else:
+            if rashi[ref][-1] >= ktav[ref][0]:
+                bad.append(ref)
+    print 'number of issues: {}'.format(len(bad))
+    return bad
+
