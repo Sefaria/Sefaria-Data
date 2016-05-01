@@ -159,7 +159,7 @@ def upload_main_text(things_to_upload, upload=True):
             "text": things_to_upload[ref]
         }
         print ref
-        functions.post_text(ref, book)
+        functions.post_text_weak_connection(ref, book)
 
 
 def set_flags(books, upload=True):
@@ -677,7 +677,7 @@ def upload_footnotes(full_text, upload=False):
             "text": full_text[ref]
         }
         print ref
-        functions.post_text('JPS 1985 Footnotes, {}'.format(ref), book)
+        functions.post_text_weak_connection('JPS 1985 Footnotes, {}'.format(ref), book)
 
 
 def extract_notes(footnote_struct):
@@ -708,5 +708,5 @@ links = footnote_linker(jps_main, jps_footnotes)
 upload_main_text(jps_main, True)
 upload_footnote_index()
 upload_footnotes(extract_notes(jps_footnotes), True)
-functions.post_link(links)
+functions.post_link_weak_connection(links)
 set_flags(jps_main, True)

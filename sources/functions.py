@@ -197,6 +197,34 @@ def post_link(info):
     except HTTPError, e:
         print 'Error code: ', e.code
 
+
+def post_link_weak_connection(info, repeat=10):
+    url = SEFARIA_SERVER + '/api/links/'
+    infoJSON = json.dumps(info)
+    values = {
+        'json': infoJSON,
+        'apikey': API_KEY
+    }
+    data = urllib.urlencode(values)
+    req = urllib2.Request(url, data)
+    for i in range(repeat):
+        try:
+            response = urllib2.urlopen(req, timeout=20)
+            x = response.getcode()
+            print x
+
+            if x == 200:
+                break
+        except HTTPError, e:
+            errors.write(e.read())
+            continue
+        except Exception, e:
+            print 'Exception {}'.format(i + 1)
+            continue
+    else:
+        print 'too many errors'
+        sys.exit(1)
+
 def post_text(ref, text, index_count="off"):
     textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
@@ -208,13 +236,46 @@ def post_text(ref, text, index_count="off"):
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)
     try:
-        response = urllib2.urlopen(req)
-        x= response.read()
+        response = urllib2.urlopen(req,)
+        x = response.read()
         print x
         if x.find("error")>=0 and x.find("Daf")>=0 and x.find("0")>=0:
             return "error"
     except HTTPError, e:
         errors.write(e.read())
+
+
+def post_text_weak_connection(ref, text, index_count="off", repeat=10):
+    """
+    use for weak connection. will make multiple (default:10) attempts to make an API call.
+    """
+    textJSON = json.dumps(text)
+    ref = ref.replace(" ", "_")
+    if index_count == "off":
+        url = SEFARIA_SERVER + '/api/texts/' + ref
+    else:
+        url = SEFARIA_SERVER + '/api/texts/' + ref + '?count_after=1'
+    values = {'json': textJSON, 'apikey': API_KEY}
+    data = urllib.urlencode(values)
+    req = urllib2.Request(url, data)
+    for i in range(repeat):
+        try:
+            response = urllib2.urlopen(req, timeout=15)
+            code = response.getcode()
+            print code
+
+            if code == 200:
+                break
+        except HTTPError, e:
+            errors.write(e.read())
+            continue
+        except Exception, e:
+            print 'Exception {}'.format(i+1)
+            continue
+    else:
+        print 'too many errors'
+        sys.exit(1)
+
 
 def post_text_burp(ref, text, index_count="off"):
     """
