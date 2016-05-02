@@ -31,6 +31,7 @@ import regex as re
 import codecs
 from sefaria.model import *
 import sys
+from sefaria.utils.hebrew import hebrew_term
 
 
 def process_verses(chap_string, expression):
@@ -104,7 +105,8 @@ def chapter_correct(chapter):
 
 
 def write_to_file(books, output_file):
-    for book in books:
+    book_names = library.get_indexes_in_category('Tanach')
+    for book in book_names:
         output_file.write(book+u'\n')
         for number, chapter in enumerate(books[book]):
             output_file.write(u'\tchapter {0}:'.format(number+1)+u'\n')
@@ -138,7 +140,7 @@ def check_verses(verse_list, data, error_list):
     return True
 
 
-def upload_all(things_to_upload, upload=True):
+def upload_main_text(things_to_upload, upload=True):
     """
 
     :param things_to_upload: A dictionary where the keys are the refs, values are the texts
@@ -157,7 +159,7 @@ def upload_all(things_to_upload, upload=True):
             "text": things_to_upload[ref]
         }
         print ref
-        functions.post_text(ref, book)
+        functions.post_text_weak_connection(ref, book)
 
 
 def set_flags(books, upload=True):
@@ -177,10 +179,32 @@ def set_flags(books, upload=True):
         # set flags
         flags = {
             "priority": 2,
-            "status": 'locked'
+            "status": 'locked',
+            "version title": "Tanakh: The Holy Scriptures, published by JPS",
+            "version source": "https://jps.org/",
+            "license": "Copyright: JPS, 1985",
+            "licenseVetted": "true",
         }
         print book
         functions.post_flags(version, flags)
+
+    # flags for footnotes
+    version = {
+        "ref": "JPS 1985 Footnotes",
+        "lang": "en",
+        "vtitle": "JPS Footnotes"
+    }
+
+    # set flags
+    flags = {
+        "priority": 2,
+        "status": 'locked',
+        "version title": "Tanakh: The Holy Scriptures, published by JPS",
+        "version source": "https://jps.org/",
+        "license": "Copyright: JPS, 1985",
+        "licenseVetted": "true",
+    }
+    functions.post_flags(version, flags)
 
 
 def parse():
@@ -409,22 +433,17 @@ def align_footnotes(books):
     return jps_footnotes
 
 
-def print_notes():
-    test = codecs.open('test.txt', 'w', 'utf-8')
-    jps = parse()
-    footnotes = align_footnotes(jps)
+def print_notes(footnotes, outfile):
     books = library.get_indexes_in_category('Tanach')
     for book in books:
-        test.write(u'{}:\n'.format(book))
+        outfile.write(u'{}:\n'.format(book))
         for index, chapter in enumerate(footnotes[book]):
             if chapter != []:
-                test.write(u'  chapter {}:\n'.format(index+1))
+                outfile.write(u'  chapter {}:\n'.format(index+1))
                 for note in chapter:
-                    test.write(u'    {}\n'.format(note['footnote']))
-                    test.write(u'    links:{}\n'.format(note['links']))
+                    outfile.write(u'    {}\n'.format(note['footnote']))
+                    outfile.write(u'    links:{}\n'.format(note['links']))
 
-    test.close()
-    
 
 def find_in_footnotes(search_key):
     output = codecs.open('inverted_clauses.csv', 'w', 'utf-8')
@@ -448,3 +467,246 @@ def find_in_footnotes(search_key):
                                 book, chap_num+1, verse, text, note['footnote']))
 
     output.close()
+
+
+def footnote_linker(jps, jps_footnotes):
+    """
+    Create a list of link objects with the anchorText field set to the corresponding words in the verse.
+    Once the corresponding text has been found, edit the jps text so as to replace the footnote mark with
+    an <i> tag. Trailing footnote markers at the end of an enclosed text fragment will be scrubbed.
+
+    :param jps: jps Tanach data structure - jps[<book_name>][chapter_index][verse_index]
+    :param jps_footnotes: jps footnotes data struct -
+    footnotes[<book_name>][chap_index][footnote]. Note that this returns a dictionary with the
+    keys [footnote], which gives the footnote text, and [links], which give the verses to which the
+    footnote needs to link to.
+    :return: A list of link objects. This function will edit jps to replace inline footnote markers
+    with <i> tags, as well as remove the beginning footnote characters used to match the note to printed
+    text.
+    """
+
+    # get books of Tanach
+    books = library.get_indexes_in_category('Tanach')
+
+    # open error file
+    errors = codecs.open('footnote_errors.txt', 'w', 'utf-8')
+
+    # declare link array
+    links = []
+
+    # iterate through jps_footnotes
+    for book in books:
+        for chap_num, chapter in enumerate(jps_footnotes[book]):
+            for index, note in enumerate(chapter):
+
+                # get tag to identify footnote in main text. Account for case where tag is 'aa'.
+                if note['footnote'][0] == u'a' and note['footnote'][1] == u'a':
+                    tag = u'aa'
+                else:
+                    tag = u'{}'.format(note['footnote'][0])
+
+                # first word of footnote is the tag. That data has been saved - now strip from the footnote
+                note['footnote'] = u' '.join(note['footnote'].split()[1:])
+
+                # compile regexes to account for enclosed text
+                open_tag_reg = re.compile(u'\[{}\]-'.format(tag))
+                close_tag_reg = re.compile(u'-\[{}\]'.format(tag))
+                enclosed_reg = re.compile(u'\[{0}\]-.*?-\[{0}\]'.format(tag))
+
+                # <i> tag to replace footnote marker in text
+                if tag == u'aa':
+                    data_order = 27
+                else:
+                    data_order = ord(tag) - 96
+                itag = u'<i data-commentator="JPS 1985 Footnotes" data-order="{}"></i>'.format(data_order)
+
+                # iterate over the links
+                for link in note['links']:
+
+                    # set flag for default footnote behaviour
+                    default = True
+
+                    # get verse in main text
+                    try:
+                        verse = jps[book][chap_num][link-1]
+                    except IndexError:
+                        print u'{},{},{}'.format(book, chap_num+1, link)
+                        continue
+
+                    # search using regexes
+                    open_tag = open_tag_reg.search(verse)
+                    close_tag = close_tag_reg.search(verse)
+                    enclosed = enclosed_reg.search(verse)
+
+                    # declare anchor for text
+                    anchor = u''
+
+                    # check for enclosed comment
+                    if enclosed:
+                        # catch enclosed text
+                        anchor = enclosed.group()[len(tag)+3:-(len(tag)+3)]
+
+                        # replace leading footnote tags with <i> tag, strip out trailing tag
+                        replace = {u'[{}]-'.format(tag): itag, u'-[{}]'.format(tag): u''}
+                        jps[book][chap_num][link-1] = functions.multiple_replace(verse, replace)
+
+                        # sanity check - scrub out any remaining footnote tags
+                        jps[book][chap_num][link-1] = jps[book][chap_num][link-1].replace(u'[{}]'.format(tag), u'')
+
+                        default = False
+
+                    # if not enclosed comment, make sanity check
+                    elif open_tag:
+
+                        # check if anomaly can be resolved by looking at the next verse
+                        next_verse = jps[book][chap_num][link]
+                        combined = u' '.join([verse, next_verse])
+                        enclosed = enclosed_reg.search(combined)
+
+                        if enclosed:
+                            anchor = enclosed.group()[len(tag) + 3:-(len(tag) + 3)]
+                            jps[book][chap_num][link-1] = verse.replace(u'[{}]-'.format(tag), itag)
+                            jps[book][chap_num][link] = next_verse.replace(u'-[{}]'.format(tag), u'')
+                            jps[book][chap_num][link-1] = jps[book][chap_num][link-1].replace(u'[{}]'.format(tag), u'')
+
+                            default = False
+
+                    if default:
+
+                        # sanity check, make sure tag is in verse
+                        if verse.find(u'[{}]'.format(tag)) == -1:
+                            errors.write(u'tag not found\n')
+                            errors.write(u'{}, {}, {}, {}\n'.format(book, chap_num+1, link, note['footnote']))
+                            continue
+
+                        else:
+                            # remove footnote tag from main text
+                            try:
+                                jps[book][chap_num][link-1] = verse.replace(u'[{}]'.format(tag), itag)
+                            except IndexError:
+                                print u'{},{},{}'.format(book, chap_num+1, link)
+
+                            # get preceding word
+                            words = verse[:verse.find(u'[{}]'.format(tag))].split()
+
+                            if len(words) > 0:
+                                anchor = words[len(words)-1]
+                            else:
+                                anchor = u''
+
+                    # create link object
+                    links.append({
+                        'refs': [u'{}.{}.{}'.format(book, chap_num+1, link),
+                                 u'JPS 1985 Footnotes, {}.{}.{}'.format(book, chap_num+1, index+1)],
+                        'type': 'commentary',
+                        'auto': True,
+                        'generated_by': 'JPS parse script',
+                        'anchorText': anchor,
+                                  })
+
+    errors.close()
+    return links
+
+
+def print_text_and_footnotes():
+
+    main_text = codecs.open('main_text.txt', 'w', 'utf-8')
+    note_text = codecs.open('notes.txt', 'w', 'utf-8')
+    link_text = codecs.open('links.txt', 'w', 'utf-8')
+    jps = parse()
+    jps_footnotes = align_footnotes(jps)
+    footnote_links = footnote_linker(jps, jps_footnotes)
+    write_to_file(jps, main_text)
+    print_notes(jps_footnotes, note_text)
+    for link in footnote_links:
+        link_text.write(u'{}\n'.format(link))
+
+    main_text.close()
+    note_text.close()
+    link_text.close()
+
+
+def upload_footnote_index():
+    """
+    Footnotes are uploaded as a commentary2 - Schema with each book a depth 2 jaggedArray
+    """
+
+    books = library.get_indexes_in_category('Tanach')
+
+    # create index record
+    record = SchemaNode()
+    record.add_title('JPS 1985 Footnotes', 'en', primary=True, )
+    record.add_title(u'הערות שוליים תרגום 1985 של JPS', 'he', primary=True, )
+    record.key = 'JPS 1985 Footnotes'
+
+    # add nodes
+    for book in books:
+        node = JaggedArrayNode()
+        node.add_title(book, 'en', primary=True)
+        node.add_title(hebrew_term(book), 'he', primary=True)
+        node.key = book
+        node.depth = 2
+        node.addressTypes = ['Integer', 'Integer']
+        node.sectionNames = ['Chapter', 'Footnote']
+        record.append(node)
+    record.validate()
+
+    index = {
+        "title": "JPS 1985 Footnotes",
+        "categories": ["Commentary2", "Tanach", "JPS"],
+        "schema": record.serialize()
+    }
+    functions.post_index(index)
+
+
+def upload_footnotes(full_text, upload=False):
+    """
+    :param full_text: Data structure from parse_text()
+    :param upload: set to True, otherwise function will do nothing
+    """
+
+    if not upload:
+        return
+
+    # make JSON object of book
+    for ref in full_text.keys():
+        book = {
+            "versionTitle": "JPS Footnotes",
+            "versionSource": "JPS",
+            "language": "en",
+            "text": full_text[ref]
+        }
+        print ref
+        functions.post_text_weak_connection('JPS 1985 Footnotes, {}'.format(ref), book)
+
+
+def extract_notes(footnote_struct):
+    """
+    Extract notes from data structure to jaggedArray form (footnote data structure contains links).
+
+    :param footnote_struct: Data structure created from align_footnotes() function. Recommended to run footnote
+    linker, as this functions performs important editing on the footnotes.
+    :return: Depth 2 jaggedArray for convenient upload via API.
+    """
+
+    books = library.get_indexes_in_category('Tanach')
+
+    notes = {}
+    for book in books:
+        notes[book] = []
+        for index, chapter in enumerate(footnote_struct[book]):
+            chap_notes = []
+            for note in chapter:
+                chap_notes.append(note['footnote'])
+            notes[book].append(chap_notes)
+    return notes
+
+
+jps_main = parse()
+jps_footnotes = align_footnotes(jps_main)
+links = footnote_linker(jps_main, jps_footnotes)
+upload_main_text(jps_main, True)
+upload_footnote_index()
+upload_footnotes(extract_notes(jps_footnotes), True)
+functions.post_link_weak_connection(links)
+set_flags(jps_main, True)
