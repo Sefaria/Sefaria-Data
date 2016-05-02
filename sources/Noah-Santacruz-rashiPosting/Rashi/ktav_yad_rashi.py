@@ -11,8 +11,9 @@ import sys
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 print p
 sys.path.insert(0, p)
-from local_settings import *
+SEFARIA_PROJECT_PATH = input()
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
+os.environ['DJANGO_SETTINGS_MODULE'] = 'sefaria.settings'
 import functions
 from sefaria.model import *
 from sefaria import tracker as tracker
@@ -259,10 +260,10 @@ def fix_rashi():
 
         # create a ref for the ktav yad
         ktav_ref = Ref(ref.uid().replace('Rashi', 'Ktav Yad Rashi'))
-        tracker.modify_text(USERID, ktav_ref, u'Wikisource Ktav Yad Rashi', 'he', ktav_text)
+        tracker.modify_text(23432, ktav_ref, u'Wikisource Ktav Yad Rashi', 'he', ktav_text)
 
         # Save rashi text
-        tracker.modify_text(USERID, ref, u'Wikisource Rashi', 'he', rashi_text)
+        tracker.modify_text(23432, ref, u'Wikisource Rashi', 'he', rashi_text)
 
         ref = ref.next_section_ref()
 
