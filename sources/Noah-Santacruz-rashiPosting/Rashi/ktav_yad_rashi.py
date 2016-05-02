@@ -8,12 +8,14 @@ these pages.
 
 import os
 import sys
-sys.path.append('/home/jonathan/sefaria/Sefaria-Data')
-sys.path.append('/home/jonathan/sefaria/Sefaria-Project')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'sefaria.settings'
-from sources import functions
+p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+print p
+sys.path.insert(0, p)
+from local_settings import *
+sys.path.insert(0, SEFARIA_PROJECT_PATH)
+import functions
 from sefaria.model import *
-import re
+from sefaria import tracker as tracker
 import codecs
 
 
@@ -212,3 +214,61 @@ def check_trailing(ref_struct):
     print 'number of issues: {}'.format(len(bad))
     return bad
 
+
+def fix_rashi():
+
+    # create version record for ktav yad
+    verison = {
+        'chapter': [],
+        'versionTitle': 'Wikisource Ktav Yad Rashi',
+        'versionSource': 'Wikisource',
+        'language': 'he',
+        'title': 'Ktav Yad Rashi on Menachot'
+    }
+    Version(verison).save()
+
+    data = separate_ktav_yad_rashi()
+    rashi = structure_refs(data['rashi'])
+    ktav_yad = structure_refs(data['ktav yad rashi'])
+
+    all_refs = Ref('Rashi on Menachot 72b-94a')
+    ref = Ref('Rashi on Menachot 72b').first_available_section_ref()
+
+    while all_refs.contains(ref):
+
+        # keep track of status
+        print ref.uid()
+
+        all_text = TextChunk(ref, 'he', u'Wikisource Rashi')
+
+        # if there is no ktav yad on ref - do nothing
+        if not (ref.uid() in ktav_yad.keys()):
+            ref = ref.next_section_ref()
+            continue
+
+        # add ktav texts to an array
+        ktav_text = []
+        for chunk in ktav_yad[ref.uid()]:
+            ktav_text.append(all_text.text[chunk-1])
+
+        # add rashi texts to an array
+        rashi_text = []
+        if ref.uid() in rashi.keys():
+            for chunk in rashi[ref.uid()]:
+                rashi_text.append(all_text.text[chunk-1])
+
+        # create a ref for the ktav yad
+        ktav_ref = Ref(ref.uid().replace('Rashi', 'Ktav Yad Rashi'))
+        tracker.modify_text(USERID, ktav_ref, u'Wikisource Ktav Yad Rashi', 'he', ktav_text)
+
+        # Save rashi text
+        tracker.modify_text(USERID, ref, u'Wikisource Rashi', 'he', rashi_text)
+
+        ref = ref.next_section_ref()
+
+    vs = VersionState("Rashi on Menachot")
+    vs.refresh()
+    vs = VersionState("Ktav Yad Rashi on Menachot")
+    vs.refresh()
+
+fix_rashi()
