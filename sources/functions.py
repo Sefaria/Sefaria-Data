@@ -2,7 +2,7 @@
 import urllib
 import urllib2
 from urllib2 import URLError, HTTPError
-import json 
+import json
 import pdb
 import os
 import sys
@@ -17,28 +17,28 @@ from sefaria.utils.util import replace_using_regex as reg_replace
 
 
 gematria = {}
-gematria['א'] = 1
-gematria['ב'] = 2
-gematria['ג'] = 3
-gematria['ד'] = 4
-gematria['ה'] = 5
-gematria['ו'] = 6
-gematria['ז'] = 7
-gematria['ח'] = 8
-gematria['ט'] = 9
-gematria['י'] = 10
-gematria['כ'] = 20
-gematria['ל'] = 30
-gematria['מ'] = 40
-gematria['נ'] = 50
-gematria['ס'] = 60
-gematria['ע'] = 70
-gematria['פ'] = 80
-gematria['צ'] = 90
-gematria['ק'] = 100
-gematria['ר'] = 200
-gematria['ש'] = 300
-gematria['ת'] = 400
+gematria[u'א'] = 1
+gematria[u'ב'] = 2
+gematria[u'ג'] = 3
+gematria[u'ד'] = 4
+gematria[u'ה'] = 5
+gematria[u'ו'] = 6
+gematria[u'ז'] = 7
+gematria[u'ח'] = 8
+gematria[u'ט'] = 9
+gematria[u'י'] = 10
+gematria[u'כ'] = 20
+gematria[u'ל'] = 30
+gematria[u'מ'] = 40
+gematria[u'נ'] = 50
+gematria[u'ס'] = 60
+gematria[u'ע'] = 70
+gematria[u'פ'] = 80
+gematria[u'צ'] = 90
+gematria[u'ק'] = 100
+gematria[u'ר'] = 200
+gematria[u'ש'] = 300
+gematria[u'ת'] = 400
 
 
 inv_gematria = {}
@@ -48,7 +48,7 @@ for key in gematria.keys():
 heb_parshiot = [u"בראשית",u"נח", u"לך לך", u"וירא", u"חיי שרה", u"תולדות", u"ויצא", u"וישלח", u"וישב", u"מקץ",
 u"ויגש", u"ויחי", u"שמות", u"וארא", u"בא", u"בשלח", u"יתרו", u"משפטים", u"תרומה", u"תצוה", u"כי תשא",
 u"ויקהל", u"פקודי", u"ויקרא", u"צו", u"שמיני", u"תזריע", u"מצרע", u"אחרי מות", u"קדשים", u"אמר", u"בהר",
-u"בחקתי", u"במדבר", u"נשא", u"בהעלתך", u"שלח לך", u"קרח", u"חקת", u"בלק", u"פינחס", u"מטות", 
+u"בחקתי", u"במדבר", u"נשא", u"בהעלתך", u"שלח לך", u"קרח", u"חקת", u"בלק", u"פינחס", u"מטות",
 u"מסעי", u"דברים", u"ואתחנן", u"עקב", u"ראה", u"שפטים", u"כי תצא", u"כי תבוא", u"נצבים",
 u"וילך", u"האזינו", u"וזאת הברכה"]
 
@@ -60,6 +60,61 @@ eng_parshiot = ["Bereishit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "To
 "Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo", "Nitzavim", "Vayeilech", "Ha'Azinu",
 "V'Zot HaBerachah"]
 
+
+def in_order(file, tag, reset_tag, output_file='in_order.csv', multiple_segments=False, dont_count=[]):
+     open_file = open(file, 'r')
+     poss_num = 0
+     curr_num = 0
+     perfect = True
+     for line in open_file:
+         actual_line = line
+         print file
+         print actual_line
+         if len(line.replace("\n","")) < 5:
+             continue
+         for word in dont_count:
+            line = line.replace(word, "")
+         if len(reset_tag) > 0 and line.find(reset_tag)>=0:
+             curr_num = 0
+         elif line.find(tag)>=0:
+             line = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9"], line)
+             line = line.split(" ")[0]
+             if len(line) > 0 and line[0] == ' ':
+                 line = line[1:]
+             if len(line) > 0 and line[len(line)-1] == ' ':
+                 line = line[:-1]
+             if multiple_segments == True and len(line.split(" "))>1:
+                 all = line.split(" ")
+                 num_list = []
+                 for i in range(len(all)):
+                     num_list.append(getGematria(all[i]))
+                 num_list = sorted(num_list)
+                 for poss_num in num_list:
+                     if poss_num < curr_num:
+                         perfect = False
+                         output_file.write("Previous_section:_"+str(curr_num)+",_Current_section:_"+str(poss_num)+",_Current_line:_"+actual_line+"\n")
+                     else:
+                         curr_num = poss_num
+             else:
+                 poss_num = getGematria(line)
+                 print poss_num
+                 if poss_num == 8 and curr_num == 4:
+                     curr_num = 5
+                     continue
+                 if poss_num == 5 and curr_num == 7:
+                     curr_num = 8
+                     continue
+                 if poss_num < curr_num:
+                     perfect = False
+                     pdb.set_trace()
+                     output_file.write("Previous_section:_"+str(curr_num)+",_Current_section:_"+str(poss_num)+",_Current_line:_"+actual_line+"\n")
+                 curr_num = poss_num
+                 prev_line = actual_line
+
+     if perfect == True:
+         print "100% in order!"
+     else:
+         print "Not in order.  See file: in_order"+str(file)+".csv"
 
 def wordHasNekudot(word):
     data = word.decode('utf-8')
@@ -92,6 +147,12 @@ def getHebrewParsha(eng_parsha):
             return heb_parshiot[count]
         count+=1
 
+def getHebrewTitle(sefer):
+   sefer_url = SEFARIA_SERVER+'api/index/'+sefer.replace(" ","_")
+   req = urllib2.Request(sefer_url)
+   res = urllib2.urlopen(req)
+   data = json.load(res)
+   return data['heTitle']
 
 def removeAllStrings(array, orig_string):	
     for unwanted_string in array:
@@ -154,6 +215,7 @@ def checkLengthsDicts(x_dict, y_dict):
 
 errors = open('errors.html', 'w')
 def post_index(index):
+
     url = SEFARIA_SERVER+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
     indexJSON = json.dumps(index)
     values = {
@@ -236,8 +298,8 @@ def post_text(ref, text, index_count="off"):
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)
     try:
-        response = urllib2.urlopen(req,)
-        x = response.read()
+        response = urllib2.urlopen(req)
+        x= response.read()
         print x
         if x.find("error")>=0 and x.find("Daf")>=0 and x.find("0")>=0:
             return "error"
@@ -363,7 +425,8 @@ def get_text_plus(ref):
     try:
         response = urllib2.urlopen(req)
         data = json.load(response)
-        for i, temp_text in enumerate(data['he']):      
+        for i, temp_text in enumerate(data['he']):
+
             data['he'][i] = data['he'][i].replace(u"\u05B0", "")
             data['he'][i] = data['he'][i].replace(u"\u05B1", "")
             data['he'][i] = data['he'][i].replace(u"\u05B2", "")
@@ -477,11 +540,14 @@ def isGematria(txt):
     return True
 
 def getGematria(txt):
+    if not isinstance(txt, unicode):
+        txt = txt.decode('utf-8')
     index=0
     sum=0
     while index <= len(txt)-1:
-        if txt[index:index+2] in gematria:
-            sum += gematria[txt[index:index+2]]
+        if txt[index:index+1] in gematria:
+            sum += gematria[txt[index:index+1]]
+
         index+=1
     return sum
 
@@ -547,11 +613,12 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
 
             print "Start {0} at chapter: ".format(book)
             start_chapter = input()
-            url = SEFARIA_SERVER + 'api/texts/' + book + '.' + \
+            url = SEFARIA_SERVER + '/api/texts/' + book + '.' + \
                 str(start_chapter) + '/' + language + '/' + version_title
 
         else:
-            url = SEFARIA_SERVER + 'api/texts/' + book + '.1/' + language + '/' + version_title
+            url = SEFARIA_SERVER + '/api/texts/' + book + '.1/' + language + '/' + version_title
+
 
         try:
             # get first chapter in book
@@ -589,7 +656,8 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
                 # get next chapter
                 next_chapter = reg_replace(' \d', version_text['next'], ' ', '.')
                 next_chapter = next_chapter.replace(' ', '_')
-                url = SEFARIA_SERVER+'api/texts/'+next_chapter+'/'+language+'/'+version_title
+                url = SEFARIA_SERVER+'/api/texts/'+next_chapter+'/'+language+'/'+version_title
+
                 response = urllib2.urlopen(url)
                 version_text = json.load(response)
 
@@ -598,6 +666,7 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
             print url
             file_buffer.close()
             sys.exit(1)
+
 
 
 def get_daf(num):
