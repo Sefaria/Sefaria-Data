@@ -30,7 +30,7 @@ from sefaria.model.schema import AddressTalmud
 count=0
 for file in glob.glob(u"*.txt"):
     file = file.replace(u"\u200f", u"")
-    if file.split(" ")[0] == u"בועז":
+    if file.split(" ")[0] == u"משניות":
         count += 1
         print file
-        in_order(file, tag="@00", dont_count=['פ"', 'פרק ', 'בבא','פ', 'מעשר', 'פתח'])
+        in_order(file, tag="@22", reset_tag="@00", increment_by=1)
