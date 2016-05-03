@@ -6,7 +6,6 @@ import json
 import pdb
 import os
 import sys
-from bs4 import BeautifulSoup
 import re
 p = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, p)
@@ -14,6 +13,7 @@ from local_settings import *
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
+from sefaria.utils.util import replace_using_regex as reg_replace
 
 
 gematria = {}
@@ -154,8 +154,7 @@ def getHebrewTitle(sefer):
    data = json.load(res)
    return data['heTitle']
 
-
-def removeAllStrings(array, orig_string):
+def removeAllStrings(array, orig_string):	
     for unwanted_string in array:
         orig_string = orig_string.replace(unwanted_string, "")
     return orig_string
@@ -216,7 +215,7 @@ def checkLengthsDicts(x_dict, y_dict):
 
 errors = open('errors.html', 'w')
 def post_index(index):
-    print SEFARIA_SERVER
+
     url = SEFARIA_SERVER+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
     indexJSON = json.dumps(index)
     values = {
@@ -260,6 +259,34 @@ def post_link(info):
     except HTTPError, e:
         print 'Error code: ', e.code
 
+
+def post_link_weak_connection(info, repeat=10):
+    url = SEFARIA_SERVER + '/api/links/'
+    infoJSON = json.dumps(info)
+    values = {
+        'json': infoJSON,
+        'apikey': API_KEY
+    }
+    data = urllib.urlencode(values)
+    req = urllib2.Request(url, data)
+    for i in range(repeat):
+        try:
+            response = urllib2.urlopen(req, timeout=20)
+            x = response.getcode()
+            print x
+
+            if x == 200:
+                break
+        except HTTPError, e:
+            errors.write(e.read())
+            continue
+        except Exception, e:
+            print 'Exception {}'.format(i + 1)
+            continue
+    else:
+        print 'too many errors'
+        sys.exit(1)
+
 def post_text(ref, text, index_count="off"):
     textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
@@ -279,6 +306,88 @@ def post_text(ref, text, index_count="off"):
     except HTTPError, e:
         errors.write(e.read())
 
+
+def post_text_weak_connection(ref, text, index_count="off", repeat=10):
+    """
+    use for weak connection. will make multiple (default:10) attempts to make an API call.
+    """
+    textJSON = json.dumps(text)
+    ref = ref.replace(" ", "_")
+    if index_count == "off":
+        url = SEFARIA_SERVER + '/api/texts/' + ref
+    else:
+        url = SEFARIA_SERVER + '/api/texts/' + ref + '?count_after=1'
+    values = {'json': textJSON, 'apikey': API_KEY}
+    data = urllib.urlencode(values)
+    req = urllib2.Request(url, data)
+    for i in range(repeat):
+        try:
+            response = urllib2.urlopen(req, timeout=15)
+            code = response.getcode()
+            print code
+
+            if code == 200:
+                break
+        except HTTPError, e:
+            errors.write(e.read())
+            continue
+        except Exception, e:
+            print 'Exception {}'.format(i+1)
+            continue
+    else:
+        print 'too many errors'
+        sys.exit(1)
+
+
+def post_text_burp(ref, text, index_count="off"):
+    """
+    Use to debug with burp suite
+    """
+    proxy = urllib2.ProxyHandler({'http': '127.0.0.1:8080'})
+    opener = urllib2.build_opener(proxy)
+
+    textJSON = json.dumps(text)
+    ref = ref.replace(" ", "_")
+    if index_count == "off":
+        url = SEFARIA_SERVER + '/api/texts/' + ref
+    else:
+        url = SEFARIA_SERVER + '/api/texts/' + ref + '?count_after=1'
+    values = {'json': textJSON, 'apikey': API_KEY}
+    data = urllib.urlencode(values)
+    req = urllib2.Request(url, data)
+    try:
+        response = opener.open(req)
+        x = response.read()
+        print x
+        if x.find("error") >= 0 and x.find("Daf") >= 0 and x.find("0") >= 0:
+            return "error"
+    except HTTPError, e:
+        errors.write(e.read())
+
+def post_flags(version, flags):
+    """
+    Update flags of a specific version.
+
+    :param version: Dictionary with fields: ref, lang(en or he), vtitle(version title)
+    :param flags: Dictionary with flags set as key: value pairs.
+    """
+    textJSON = json.dumps(flags)
+    version['ref'] = version['ref'].replace(' ', '_')
+    url = SEFARIA_SERVER+'/api/version/flags/{}/{}/{}'.format(
+        urllib.quote(version['ref']), urllib.quote(version['lang']), urllib.quote(version['vtitle'])
+    )
+    values = {'json': textJSON, 'apikey': API_KEY}
+    data = urllib.urlencode(values)
+    req = urllib2.Request(url, data)
+    try:
+        response = urllib2.urlopen(req)
+        x = response.read()
+        print x
+        if x.find("error") >= 0 and x.find("Daf") >= 0 and x.find("0") >= 0:
+            return "error"
+    except HTTPError, e:
+        errors.write(e.read())
+
 def get_text(ref):
     ref = ref.replace(" ", "_")
     url = 'http://www.sefaria.org/api/texts/'+ref
@@ -286,7 +395,7 @@ def get_text(ref):
     try:
         response = urllib2.urlopen(req)
         data = json.load(response)
-        for i, temp_text in enumerate(data['he']):
+        for i, temp_text in enumerate(data['he']):      
             data['he'][i] = data['he'][i].replace(u"\u05B0", "")
             data['he'][i] = data['he'][i].replace(u"\u05B1", "")
             data['he'][i] = data['he'][i].replace(u"\u05B2", "")
@@ -317,6 +426,7 @@ def get_text_plus(ref):
         response = urllib2.urlopen(req)
         data = json.load(response)
         for i, temp_text in enumerate(data['he']):
+
             data['he'][i] = data['he'][i].replace(u"\u05B0", "")
             data['he'][i] = data['he'][i].replace(u"\u05B1", "")
             data['he'][i] = data['he'][i].replace(u"\u05B2", "")
@@ -437,6 +547,7 @@ def getGematria(txt):
     while index <= len(txt)-1:
         if txt[index:index+1] in gematria:
             sum += gematria[txt[index:index+1]]
+
         index+=1
     return sum
 
@@ -462,6 +573,7 @@ def numToHeb(engnum=""):
 def multiple_replace(old_string, replacement_dictionary):
     """
     Use a dictionary to make multiple replacements to a single string
+
     :param old_string: String to which replacements will be made
     :param replacement_dictionary: a dictionary with keys being the substrings
     to be replaced, values what they should be replaced with.
@@ -478,7 +590,9 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
     """
     Prints all cases in which the number of verses in a text version doesn't match the
     number in the canonical version.
+
     *** Only works for Tanach, can be modified to work for any level 2 text***
+
     :param book_list: list of books
     :param version_title: Version title to be examined
     :param file_buffer: Buffer for file to print results
@@ -504,6 +618,7 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
 
         else:
             url = SEFARIA_SERVER + '/api/texts/' + book + '.1/' + language + '/' + version_title
+
 
         try:
             # get first chapter in book
@@ -542,6 +657,7 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
                 next_chapter = reg_replace(' \d', version_text['next'], ' ', '.')
                 next_chapter = next_chapter.replace(' ', '_')
                 url = SEFARIA_SERVER+'/api/texts/'+next_chapter+'/'+language+'/'+version_title
+
                 response = urllib2.urlopen(url)
                 version_text = json.load(response)
 
@@ -550,3 +666,37 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
             print url
             file_buffer.close()
             sys.exit(1)
+
+
+
+def get_daf(num):
+    """
+    Get the daf given the page number (i.e. num = 1, return ב_א)
+    :param num: page number
+    :return: string <daf>_<ammud>
+    """
+
+    if num % 2 == 1:
+        num = num / 2 + 2
+        return u'{}_א'.format(numToHeb(num))
+
+    else:
+        num = num / 2 + 1
+        return u'{}_ב'.format(numToHeb(num))
+
+
+def get_page(daf, amud):
+    """
+    Inverse of get_daf, enter a daf, gets page number
+    :param daf: Daf number
+    :param amud: a or b
+    :return: Page number (i.e. get_page(2, a) = 1)
+    """
+
+    if amud == 'a':
+        return 2*daf - 3
+    elif amud == 'b':
+        return 2*daf - 2
+    else:
+        print 'invalid daf number'
+        return 0
