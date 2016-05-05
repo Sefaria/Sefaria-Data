@@ -47,13 +47,28 @@ class Tag:
     data necessary to analyze tags - i.e. an associated regular expression and file.
     """
 
-    def __init__(self, tag, tag_file, reg=None):
+    def __init__(self, tag, tag_file, reg=None, name=u''):
+
+        # this is the exact string of the tag
         self.tag = tag
+
+        # this is a file associated with the tag
         self.file = tag_file
+
+        # number of time tag appears in associated file
         self.appearances = self.count_all_tags()
+
+        # a regular expression associated with the tag
         self.reg = reg
 
+        # name of the text tag is associated with. If possible, make this a string that can be recognized by a
+        # Ref object
+        self.name = name
+
         if self.reg:
+
+            # a dictionary where the keys are the strings that match self.reg and values are the number of
+            # times they each appear.
             self.types = count_by_regex(self.file, self.reg)
 
     def count_all_tags(self):
