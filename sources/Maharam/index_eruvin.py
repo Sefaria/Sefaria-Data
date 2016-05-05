@@ -20,7 +20,7 @@ from sefaria.model.schema import AddressTalmud
 
 root=JaggedArrayNode()
 root.add_title(u"Maharam on Eruvin", "en", primary=True)
-root.add_title(u'מהר”ם על עירובין', "he", primary=True)
+root.add_title(u'מהר"ם על עירובין', "he", primary=True)
 root.key = 'maharam'
 root.sectionNames = ["Daf", "Comment"]
 root.depth = 2

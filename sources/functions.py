@@ -6,6 +6,7 @@ import json
 import pdb
 import os
 import sys
+import codecs
 import re
 p = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, p)
@@ -61,60 +62,60 @@ eng_parshiot = ["Bereishit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "To
 "V'Zot HaBerachah"]
 
 
-def in_order(file, tag, reset_tag, output_file='in_order.csv', multiple_segments=False, dont_count=[]):
-     open_file = open(file, 'r')
+def in_order_multiple_segments(line, curr_num, increment_by):
+     if len(line) > 0 and line[0] == ' ':
+         line = line[1:]
+     if len(line) > 0 and line[len(line)-1] == ' ':
+         line = line[:-1]
+     if len(line.split(" "))>1:
+         all = line.split(" ")
+         num_list = []
+         for i in range(len(all)):
+             num_list.append(getGematria(all[i]))
+         num_list = sorted(num_list)
+         for poss_num in num_list:
+             poss_num = fixChetHay(poss_num, curr_num)
+             if poss_num < curr_num:
+                 return -1
+             else:
+                 curr_num = poss_num
+     return curr_num
+
+def fixChetHay(poss_num, curr_num):
+    if poss_num == 8 and curr_num == 4:
+        return 5
+    elif poss_num == 5 and curr_num == 7:
+        return 8
+    else:
+        return poss_num
+
+def in_order(list, tag, reset_tag, output_file='in_order.txt', multiple_segments=False, dont_count=[], increment_by=1):
      poss_num = 0
      curr_num = 0
      perfect = True
-     for line in open_file:
-         actual_line = line
-         print file
-         print actual_line
-         if len(line.replace("\n","")) < 5:
-             continue
+     for line in list:
          for word in dont_count:
             line = line.replace(word, "")
-         if len(reset_tag) > 0 and line.find(reset_tag)>=0:
-             curr_num = 0
-         elif line.find(tag)>=0:
-             line = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9"], line)
-             line = line.split(" ")[0]
-             if len(line) > 0 and line[0] == ' ':
-                 line = line[1:]
-             if len(line) > 0 and line[len(line)-1] == ' ':
-                 line = line[:-1]
-             if multiple_segments == True and len(line.split(" "))>1:
-                 all = line.split(" ")
-                 num_list = []
-                 for i in range(len(all)):
-                     num_list.append(getGematria(all[i]))
-                 num_list = sorted(num_list)
-                 for poss_num in num_list:
-                     if poss_num < curr_num:
-                         perfect = False
-                         output_file.write("Previous_section:_"+str(curr_num)+",_Current_section:_"+str(poss_num)+",_Current_line:_"+actual_line+"\n")
-                     else:
-                         curr_num = poss_num
+         if line.find(tag)>=0:
+             if multiple_segments == True:
+                 curr_num = in_order_multiple_segments(line, curr_num, increment_by)
              else:
                  poss_num = getGematria(line)
-                 print poss_num
-                 if poss_num == 8 and curr_num == 4:
-                     curr_num = 5
-                     continue
-                 if poss_num == 5 and curr_num == 7:
-                     curr_num = 8
-                     continue
+                 poss_num = fixChetHay(poss_num, curr_num)
+                 if increment_by > 0:
+                     if poss_num - curr_num != increment_by:
+                         perfect = False
                  if poss_num < curr_num:
                      perfect = False
-                     pdb.set_trace()
-                     output_file.write("Previous_section:_"+str(curr_num)+",_Current_section:_"+str(poss_num)+",_Current_line:_"+actual_line+"\n")
                  curr_num = poss_num
-                 prev_line = actual_line
+                 if perfect == False:
+                     pdb.set_trace()
+                 prev_line = line
 
      if perfect == True:
          print "100% in order!"
      else:
-         print "Not in order.  See file: in_order"+str(file)+".csv"
+         print "Not in order.  See file: "+output_file
 
 def wordHasNekudot(word):
     data = word.decode('utf-8')
@@ -448,7 +449,124 @@ def get_text_plus(ref):
         return data
     except:
         print 'Error'
+def isGematria(txt):
+    txt = txt.replace('.','')
+    if txt.find("ך")>=0:
+        txt = txt.replace("ך", "כ")
+    if txt.find("ם")>=0:
+        txt = txt.replace("ם", "מ")
+    if txt.find("ף")>=0:
+        txt = txt.replace("ף", "פ")
+    if txt.find("ץ")>=0:
+        txt = txt.replace("ץ", "צ")
+    if txt.find("טו")>=0:
+        txt = txt.replace("טו", "יה")
+    if txt.find("טז")>=0:
+        txt = txt.replace("טז", "יו")
+    if len(txt) == 2:
+        letter_count = 0
+        for i in range(9):
+            if inv_gematria[i+1]==txt[letter_count:2+letter_count]:
+                return True
+            if inv_gematria[(i+1)*10]==txt[letter_count:2+letter_count]:
+                return True
+        for i in range(4):
+            if inv_gematria[(i+1)*100]==txt[letter_count:2+letter_count]:
+                return True
+    elif len(txt) == 4:
+      first_letter_is = ""
+      for letter_count in range(2):
+        letter_count *= 2
+        for i in range(9):
+            if inv_gematria[i+1]==txt[letter_count:2+letter_count]:
+                if letter_count == 0:
+                    #print "single false"
+                    return False
+                else:
+                    first_letter_is = "singles"
+            if inv_gematria[(i+1)*10]==txt[letter_count:2+letter_count]:
+                if letter_count == 0:
+                    first_letter_is = "tens"
+                elif letter_count == 2:
+                    if first_letter_is != "hundred":
+                        #print "tens false"
+                        return False
+        for i in range(4):
+            if inv_gematria[(i+1)*100]==txt[letter_count:2+letter_count]:
+                if letter_count == 0:
+                    first_letter_is = "hundred"
+                elif letter_count == 2:
+                    if txt[0:2] != 'ת':
+                        #print "hundreds false, no taf"
+                        return False
+    elif len(txt) == 6:
+        #rules: first and second letter can't be singles
+        #first letter must be hundreds
+        #second letter can be hundreds or tens
+        #third letter must be singles
+        for letter_count in range(3):
+            letter_count *= 2
+            for i in range(9):
+                if inv_gematria[i+1]==txt[letter_count:2+letter_count]:
+                    if letter_count != 4:
+                    #	print "3 length singles false"
+                        return False
+                    if letter_count == 0:
+                        first_letter_is = "singles"
+                if inv_gematria[(i+1)*10]==txt[letter_count:2+letter_count]:
+                    if letter_count == 0:
+                        #print "3 length tens false, can't be first"
+                        return False
+                    elif letter_count == 2:
+                        if first_letter_is != "hundred":
+                        #	print "3 length tens false because first letter not 100s"
+                            return False
+                    elif letter_count == 4:
+                        #print "3 length tens false, can't be last"
+                        return False
+            for i in range(4):
+                if inv_gematria[(i+1)*100]==txt[letter_count:2+letter_count]:
+                    if letter_count == 0:
+                        first_letter_is = "hundred"
+                    elif letter_count == 2:
+                        if txt[0:2] != 'ת':
+                            #print "3 length hundreds false, no taf"
+                            return False
+    else:
+        print "length of gematria is off"
+        print txt
+        return False
+    return True
 
+def getGematria(txt):
+    if not isinstance(txt, unicode):
+        txt = txt.decode('utf-8')
+    index=0
+    sum=0
+    while index <= len(txt)-1:
+        if txt[index:index+1] in gematria:
+            sum += gematria[txt[index:index+1]]
+
+        index+=1
+    return sum
+
+def numToHeb(engnum=""):
+    engnum = str(engnum)
+    numdig = len(engnum)
+    hebnum = ""
+    letters = [["" for i in range(3)] for j in range(10)]
+    letters[0]=["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט"]
+    letters[1]=["", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ"]
+    letters[2]=["", "ק", "ר", "ש", "ת", "תק", "תר", "תש", "תת", "תתק"]
+    if (numdig > 3):
+        print "We currently can't handle numbers larger than 999"
+        exit()
+    for count in range(numdig):
+        hebnum += letters[numdig-count-1][int(engnum[count])]
+    hebnum = re.sub('יה', 'טו', hebnum)
+    hebnum = re.sub('יו', 'טז', hebnum)
+    hebnum = hebnum.decode('utf-8')
+    return hebnum
 
 def isGematria(txt):
     txt = txt.replace('.','')
