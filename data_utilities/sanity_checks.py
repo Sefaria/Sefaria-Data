@@ -35,6 +35,9 @@ def count_by_regex(some_file, regex):
                 result[item] = 1
             else:
                 result[item] += 1
+
+    # reset file for reuse
+    some_file.seek(0)
     return result
 
 
@@ -44,11 +47,14 @@ class Tag:
     data necessary to analyze tags - i.e. an associated regular expression and file.
     """
 
-    def __init__(self, tag, tag_file, reg=''):
+    def __init__(self, tag, tag_file, reg=None):
         self.tag = tag
         self.file = tag_file
-        self.reg = reg
         self.appearances = self.count_all_tags()
+        self.reg = reg
+
+        if self.reg:
+            self.types = count_by_regex(self.file, self.reg)
 
     def count_all_tags(self):
         """
@@ -65,3 +71,30 @@ class Tag:
         self.file.seek(0)
 
         return count
+
+    def count_tags_by_segment(self, segment_tag):
+        """
+        Counts the number of times a tag appears in each segment of a text. Assumes segment_tag is on it's own line.
+        :param segment_tag: A tag indicating the beginning of a new segment
+        :return: An array where the nth value is the number of times the tag appears in the nth segment.
+        """
+        self.file.seek(0)
+
+        found_first_segment = False
+        count, all_counts = 0, []
+
+        for line in self.file:
+
+            if line.find(segment_tag) >= 0:
+                if found_first_segment:
+                    all_counts.append(count)
+                else:
+                    found_first_segment = True
+                count = 0
+            else:
+                count += line.count(self.tag)
+
+        # add last segment
+        all_counts.append(count)
+        self.file.seek(0)
+        return all_counts
