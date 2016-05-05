@@ -4,21 +4,22 @@ import os
 import sys
 import re
 import codecs
-p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+p = os.path.abspath(__file__)
 sys.path.insert(0, p)
+import sources
 sys.path.insert(0, '../Match/')
-from match import Match
+from sources.Match import match
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
-from local_settings import *
-from functions import *
+from sources.local_settings import *
+from sources.functions import *
 import glob
-
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
+from data_utilities.sanity_checks import Tag
 from sefaria.model import *
-from sefaria.model.schema import AddressTalmud
 
 
-def check_mishna_oreder:
+
+def check_mishna_order():
     #checked Mishnayot for Pereks being in order and within each perek each comment is in order
     #checked Boaz for Pereks being in order but DID NOT check that each comment within each perek is in order
 
@@ -54,3 +55,33 @@ def files_exist():
                 missing.write(u'{}\n'.format(file_name))
 
     missing.close()
+
+
+def compare_tags_to_comments(main_tag, commentary_tag, output):
+    """
+    Check that their the number of comments in a commentary match the number of tags in the main text.
+    Outputs errors to a file. main_tag and commentary_tag should have members added called segment_tag
+    which indicate the beginning of a new section (chapter, verse, etc.).
+
+    :param main_tag: A Tag object associated with the main text
+    :param commentary_tag: Tag associated with the commentary.
+    :param output: output file for results.
+    """
+
+    text_tags = main_tag.count_tags_by_segment(main_tag.segment_tag)
+    comment_tags = commentary_tag.count_tags_by_segment(commentary_tag.segment_tag)
+
+    perfect = True
+
+    if len(text_tags) != len(comment_tags):
+        output.write(u'Major alignment mismatch between {} and {}\n'.format(main_tag.name, commentary_tag.name))
+        return
+
+    for index, appearances in enumerate(text_tags):
+        if appearances != comment_tags[index]:
+            output.write(u'Tag mismatch {} and {} segment {}\n'.format(main_tag.name, commentary_tag.name, index+1))
+            perfect = False
+
+    if perfect:
+        output.write(u'Perfect alignment {} and {}\n'.format(main_tag.name, commentary_tag.name))
+
