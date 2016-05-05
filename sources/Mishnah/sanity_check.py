@@ -108,5 +108,3 @@ def compare_mishna_to_yachin(tractate_list):
         m_file.close()
         y_file.close()
         output.close()
-
-compare_mishna_to_yachin(['Mishnah Berakhot'])
