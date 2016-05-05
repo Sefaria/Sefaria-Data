@@ -43,9 +43,10 @@ def replaceWithHTMLTags(line, helek, siman_num):
     line = line.replace('(#', '(%')
     line = line.replace('(*', '(%')
     if helek == "Choshen Mishpat":
-       commentaries = ["Darchei Moshe", "Hagahot", "Beit_Yosef", "Bach"]  #need to check if Bi and Bach...
+       commentaries = ["Darchei Moshe", "Hagahot", "Beit_Yosef", "Bach", "Replace"]
        matches_array = [re.findall(u"\(%[\u05D0-\u05EA]{1,4}\)", line), re.findall(u"\s#[\u05D0-\u05EA]{1,4}", line),
-						re.findall(u"\{[\u05D0-\u05EA]{1,4}\}",line), re.findall(u"\|[\u05D0-\u05EA]{1,4}\|", line)]
+                        re.findall(u"\{[\u05D0-\u05EA]{1,4}\}",line), re.findall(u"\|[\u05D0-\u05EA]{1,4}\|", line),
+                        re.findall(u"\([\u05D0-\u05EA]{1,4}\)", line)]
     else:
        commentaries = ["Drisha", "Prisha", "Darchei Moshe", "Hagahot", "Beit_Yosef", "Bach", "Mystery"]
        matches_array = [re.findall(u"\[[\u05D0-\u05EA]{1,4}\]", line), re.findall(u"\([\u05D0-\u05EA]{1,4}\)", line),
@@ -55,11 +56,14 @@ def replaceWithHTMLTags(line, helek, siman_num):
     for commentary_count, matches in enumerate(matches_array):
         how_many_shams = 0
         for order_count, match in enumerate(matches):
-            if match == u"(שם)" or match == u"[שם]":
-                how_many_shams += 1
-                continue
-            HTML_tag =  '<i data-commentator="'+commentaries[commentary_count]+'" data-order="'+str(order_count+1-how_many_shams)+'"></i>'
-            line = line.replace(match, HTML_tag)
+            if helek == "Choshen Mishpat" and commentaries[commentary_count] == "Replace":
+                line = line.replace(match, "#$!^")
+            else:
+                if match == u"(שם)" or match == u"[שם]":
+                    how_many_shams += 1
+                    continue
+                HTML_tag =  '<i data-commentator="'+commentaries[commentary_count]+'" data-order="'+str(order_count+1-how_many_shams)+'"></i>'
+                line = line.replace(match, HTML_tag)
     return line
 
 
@@ -68,7 +72,6 @@ def create_indexes(eng_helekim, heb_helekim):
   tur.add_title("Tur", 'en', primary=True)
   tur.add_title(u"טור", 'he', primary=True)
   tur.key = 'tur'
-  if
   for count, helek in enumerate(eng_helekim):
       if helek == "Choshen Mishpat":
           choshen = JaggedArrayNode()
@@ -78,6 +81,7 @@ def create_indexes(eng_helekim, heb_helekim):
           choshen.depth = 3
           choshen.addressTypes = ["Integer", "Integer", "Integer"]
           choshen.sectionNames = ["Siman", "Seif", "Paragraph"]
+          tur.append(choshen)
       else:
           helek_node = JaggedArrayNode()
           helek_node.add_title(helek, 'en', primary=True)
@@ -97,17 +101,22 @@ def create_indexes(eng_helekim, heb_helekim):
 
 def parse_text(at_66, at_77, at_88, helekim, files_helekim):
   for count, helek in enumerate(helekim):
+    if helek != "Choshen Mishpat":
+       continue
     f = open(files_helekim[count])
     current_siman = 0
     append_to_next_line= False
     prev_hilchot_topic = ""
+    just_saw_00 = False
+    will_see_00 = False
     text[helek] = {}
+    header = ""
     for line in f:
         actual_line = line
         line = line.replace('\n','')
         if len(line)==0:
             continue
-        if (len(line)<=12 and line.find("@22")>=0) or (line.find(' ')==line.rfind(' ')):
+        if (len(line)<=12 and line.find("@22")>=0):
             append_to_next_line = True
             appending = line
             continue
@@ -119,8 +128,21 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
         first_word_77 = -1
         first_word_88 = -1
         siman_header = False
+        if line.find("@00") >= 0 and len(line.split(" ")) == 2:
+            start = line.find("@00")
+            end = len(line)
+            header = line[start:end]
+            line = line.replace(header, "")
+            header = header.replace("@00","")
+            if len(line) > 1:
+                will_see_00 = True
+            else:
+                just_saw_00 = True
+
         if line.find("@22")>=0 or (line.find("@00")>=0 and len(line)>200):
             siman_header = True
+            if line[0] == ' ':
+                line = line[1:]
             first_space = line.find(' ')
             first_word = line[0:first_space]
             first_word_66 = first_word.find("@66")
@@ -128,8 +150,9 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
             first_word_88 = first_word.find("@88")
             first_word = first_word.replace("@22","").replace("@77","").replace("@66","").replace("@11","").replace("@88","").replace("@00","")
             this_siman = getGematria(first_word)
-            if this_siman != current_siman + 1 and this_siman != current_siman+2:
+            if this_siman != current_siman + 1 and this_siman != current_siman+2 and this_siman != 37:
                 print 'siman off'
+                pdb.set_trace()
                 print this_siman
                 print current_siman
                 print helek
@@ -152,13 +175,21 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
         line = replaceWithOrder(line, at_77)
         line = replaceWithOrder(line, at_88)
         line = line.replace("@33","").replace("@11","").replace("@22","").replace("@00","").replace("@44","").replace("@55","").replace("@99","").replace("@98","").replace("@89","")
-        if line.find("@")>=0:
-            pdb.set_trace()
+        line = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], line)
+        if just_saw_00 == True:
+            just_saw_00 = False
+            line = header+"<br>"+line
+        if will_see_00 == True:
+            just_saw_00 = True
+            will_see_00 = False
         if current_siman not in text[helek]:
-            text[helek][current_siman] = [line]
             line = replaceWithHTMLTags(line, helek, current_siman)
+            text[helek][current_siman] = [line]
         else:
-            text[helek][current_siman][0] = text[helek][current_siman][0]+"<br>"+line
+            try:
+              text[helek][current_siman][0] = text[helek][current_siman][0]+"<br>"+line
+            except:
+              pdb.set_trace()
         if second_gematria - this_siman == 1:
             text[helek][second_gematria] = ["ראו סימן "+str(current_siman)]
             current_siman = second_gematria
@@ -181,7 +212,10 @@ if __name__ == "__main__":
     files_helekim = ["Orach_Chaim/tur orach chaim.txt", "Yoreh Deah/tur yoreh deah.txt", "Even HaEzer/tur even haezer.txt", "Choshen Mishpat/tur choshen mishpat.txt"]
     #create_indexes(eng_helekim, heb_helekim)
     parse_text(at_66, at_77, at_88, eng_helekim, files_helekim)
-	pdb.set_trace()
+    for siman_num in text["Choshen Mishpat"]:
+        current = text["Choshen Mishpat"][siman_num]
+        new = current[0].split("#$!^")
+        pdb.set_trace()
     for helek in eng_helekim:
         send_text = {
             "text": convertDictToArray(text[helek]),
