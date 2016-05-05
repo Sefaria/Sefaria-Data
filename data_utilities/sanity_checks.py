@@ -1,9 +1,8 @@
+# -*- coding: utf-8 -*-
 """
 This module gives a series of tools designed for analyzing texts received from OCR.
 """
 import re
-
-
 def count_by_regex(some_file, regex):
     """
     After OCR, text files are returned with many tags, the meaning of which may not be clear or ambiguous.
@@ -90,7 +89,7 @@ class Tag:
     def count_tags_by_segment(self, segment_tag):
         """
         Counts the number of times a tag appears in each segment of a text. Assumes segment_tag is on it's own line.
-        :param segment_tag: A tag indicating the beginning of a new segment
+        :param segment_tag: A tag indicating the beginning of a new segment. Can be a regular expression
         :return: An array where the nth value is the number of times the tag appears in the nth segment.
         """
         self.file.seek(0)
@@ -100,7 +99,7 @@ class Tag:
 
         for line in self.file:
 
-            if line.find(segment_tag) >= 0:
+            if re.search(segment_tag, line):
                 if found_first_segment:
                     all_counts.append(count)
                 else:

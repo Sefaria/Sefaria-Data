@@ -4,9 +4,9 @@ import os
 import sys
 import re
 import codecs
-p = os.path.abspath(__file__)
+p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+print 'path: {}'.format(p)
 sys.path.insert(0, p)
-import sources
 sys.path.insert(0, '../Match/')
 from sources.Match import match
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
@@ -61,7 +61,7 @@ def compare_tags_to_comments(main_tag, commentary_tag, output):
     """
     Check that their the number of comments in a commentary match the number of tags in the main text.
     Outputs errors to a file. main_tag and commentary_tag should have members added called segment_tag
-    which indicate the beginning of a new section (chapter, verse, etc.).
+    which indicate the beginning of a new segment (chapter, verse, etc.).
 
     :param main_tag: A Tag object associated with the main text
     :param commentary_tag: Tag associated with the commentary.
@@ -81,7 +81,32 @@ def compare_tags_to_comments(main_tag, commentary_tag, output):
         if appearances != comment_tags[index]:
             output.write(u'Tag mismatch {} and {} segment {}\n'.format(main_tag.name, commentary_tag.name, index+1))
             perfect = False
-
     if perfect:
         output.write(u'Perfect alignment {} and {}\n'.format(main_tag.name, commentary_tag.name))
 
+
+def compare_mishna_to_yachin(tractate_list):
+
+    for tractate in tractate_list:
+        r = Ref(tractate)
+        name = r.he_book()
+        m_name = name.replace(u'משנה', u'משניות')
+        y_name = name.replace(u'משנה', u'יכין')
+        m_file = codecs.open(u'{}.txt'.format(m_name), 'r', 'utf-8')
+        y_file = codecs.open(u'{}.txt'.format(y_name), 'r', 'utf-8')
+        output = codecs.open('results.txt', 'w', 'utf-8')
+
+        m_tag = Tag(u'@44', m_file, name=m_name)
+        y_tag = Tag(u'@11', y_file, name=y_name)
+
+        seg_tag = u'@00(פרק|פ")'
+        m_tag.segment_tag = seg_tag
+        y_tag.segment_tag = seg_tag
+
+        compare_tags_to_comments(m_tag, y_tag, output)
+
+        m_file.close()
+        y_file.close()
+        output.close()
+
+compare_mishna_to_yachin(['Mishnah Berakhot'])
