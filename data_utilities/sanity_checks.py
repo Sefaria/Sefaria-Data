@@ -3,6 +3,8 @@
 This module gives a series of tools designed for analyzing texts received from OCR.
 """
 import re
+
+
 def count_by_regex(some_file, regex):
     """
     After OCR, text files are returned with many tags, the meaning of which may not be clear or ambiguous.
@@ -112,3 +114,26 @@ class Tag:
         all_counts.append(count)
         self.file.seek(0)
         return all_counts
+
+    def grab_by_section(self, segment_tag=None, capture_group=0):
+        """
+        Grab all matches of the regular expression and add to an array. This will analyze the file until it hits
+        a match for the segment tag. Running this function in a loop till the end of a file will return a 2-D
+        array, with each sub-array containing the captures within the matching segment.
+        :param segment_tag:  String that indicates end of segment. If not set, function will run to the
+        end of the file
+        :param capture_group: Capture group to be returned.
+        :return: An array of strings which match the regular expression.
+        """
+
+        captures = []
+        for line in self.file:
+
+            # check for the end of the segment
+            if segment_tag:
+                if re.search(segment_tag, line):
+                    return captures
+
+            matches = re.finditer(self.reg, line)
+            for match in matches:
+                captures.append(match.group(capture_group))

@@ -105,3 +105,33 @@ def compare_mishna_to_yachin(tractate_list):
         m_file.close()
         y_file.close()
         output.close()
+
+
+def get_perakim(type, tag, tag_reg):
+    """
+    :param type: identifies if this is Mishnah, yachin or boaz
+    :param tag: the tag to identify the start of a new perek
+    :param tag_reg: regular expression for the tag
+    :return: a dictionary, keys are the tractate, values are a list of perakim
+    """
+
+    # get a list of all tractates
+    tractates = library.get_indexes_in_category('Mishnah')
+    results = {}
+
+    for tractate in tractates:
+        ref = Ref(tractate)
+        name = ref.he_book()
+        name = name.replace(u'משנה', type)
+        file_name = u'{}.txt'.format(name)
+
+        # if file doesn't exist, skip
+        if not os.path.isfile(file_name):
+            continue
+
+        text_file = codecs.open(file_name, 'r', 'utf-8')
+
+        data_tag = Tag(tag, text_file, tag_reg, name)
+        results[name] = data_tag.grab_by_section()
+
+        text_file.close()
