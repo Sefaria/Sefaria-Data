@@ -62,6 +62,36 @@ eng_parshiot = ["Bereishit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "To
 "V'Zot HaBerachah"]
 
 
+
+def in_order_caller(file, reg_exp_tag, reg_exp_reset="", dont_count=[]):
+    ##open file, create an array based on reg_exp,
+    ##when hit reset_tag, call in_order
+    in_order_array = []
+    time = 0
+    for line in open(file):
+        line = line.replace("\n","")
+        if line.find("00") >= 0:
+            time+=1
+            print line
+        line = line.decode('utf-8')
+        line = line.replace(u"\u202a", "").replace(u"\u202c","")
+        if len(line) == 0:
+            continue
+        if len(reg_exp_reset) > 0:
+            reset = re.findall(reg_exp_reset, line)
+            if len(reset) > 0:
+                in_order(in_order_array)
+                in_order_array = []
+        find_all = re.findall(reg_exp_tag, line)
+        if len(find_all) > 0:
+          print find_all
+          for each_one in find_all:
+            in_order_array.append(each_one)
+        prev_line = line
+    if len(in_order_array) > 0:
+        in_order(in_order_array)
+
+
 def in_order_multiple_segments(line, curr_num, increment_by):
      if len(line) > 0 and line[0] == ' ':
          line = line[1:]
@@ -89,28 +119,28 @@ def fixChetHay(poss_num, curr_num):
     else:
         return poss_num
 
-def in_order(list, tag, reset_tag, output_file='in_order.txt', multiple_segments=False, dont_count=[], increment_by=1):
+def in_order(list_tags, multiple_segments=False, dont_count=[], increment_by=1):
      poss_num = 0
      curr_num = 0
      perfect = True
-     for line in list:
+     for line in list_tags:
+         actual_line = line
          for word in dont_count:
             line = line.replace(word, "")
-         if line.find(tag)>=0:
-             if multiple_segments == True:
-                 curr_num = in_order_multiple_segments(line, curr_num, increment_by)
-             else:
-                 poss_num = getGematria(line)
-                 poss_num = fixChetHay(poss_num, curr_num)
-                 if increment_by > 0:
-                     if poss_num - curr_num != increment_by:
-                         perfect = False
-                 if poss_num < curr_num:
+         if multiple_segments == True:
+             curr_num = in_order_multiple_segments(line, curr_num, increment_by)
+         else:
+             poss_num = getGematria(line)
+             poss_num = fixChetHay(poss_num, curr_num)
+             if increment_by > 0:
+                 if poss_num - curr_num != increment_by:
                      perfect = False
-                 curr_num = poss_num
-                 if perfect == False:
-                     pdb.set_trace()
-                 prev_line = line
+             if poss_num < curr_num:
+                 perfect = False
+             curr_num = poss_num
+             if perfect == False:
+                 pdb.set_trace()
+             prev_line = line
 
      if perfect == True:
          print "100% in order!"
@@ -216,7 +246,6 @@ def checkLengthsDicts(x_dict, y_dict):
 
 errors = open('errors.html', 'w')
 def post_index(index):
-
     url = SEFARIA_SERVER+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
     indexJSON = json.dumps(index)
     values = {

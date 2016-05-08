@@ -44,6 +44,7 @@ class Util:
             find_all = re.findall(reg_exp_tag, line)
             for each_one in find_all:
                 in_order_array.append(each_one)
+        in_order(in_order_array)
 
 
 

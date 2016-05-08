@@ -43,10 +43,10 @@ def replaceWithHTMLTags(line, helek, siman_num):
     line = line.replace('(#', '(%')
     line = line.replace('(*', '(%')
     if helek == "Choshen Mishpat":
-       commentaries = ["Darchei Moshe", "Hagahot", "Beit_Yosef", "Bach", "Replace"]
+       commentaries = ["Darchei Moshe", "Hagahot", "Beit_Yosef", "Bach", "Replace", "Mystery"]
        matches_array = [re.findall(u"\(%[\u05D0-\u05EA]{1,4}\)", line), re.findall(u"\s#[\u05D0-\u05EA]{1,4}", line),
                         re.findall(u"\{[\u05D0-\u05EA]{1,4}\}",line), re.findall(u"\|[\u05D0-\u05EA]{1,4}\|", line),
-                        re.findall(u"\([\u05D0-\u05EA]{1,4}\)", line)]
+                        re.findall(u"\([\u05D0-\u05EA]{1,4}\)", line), re.findall(u"<[\u05D0-\u05EA]{1,4}>",line)]
     else:
        commentaries = ["Drisha", "Prisha", "Darchei Moshe", "Hagahot", "Beit_Yosef", "Bach", "Mystery"]
        matches_array = [re.findall(u"\[[\u05D0-\u05EA]{1,4}\]", line), re.findall(u"\([\u05D0-\u05EA]{1,4}\)", line),
@@ -101,8 +101,6 @@ def create_indexes(eng_helekim, heb_helekim):
 
 def parse_text(at_66, at_77, at_88, helekim, files_helekim):
   for count, helek in enumerate(helekim):
-    if helek != "Choshen Mishpat":
-       continue
     f = open(files_helekim[count])
     current_siman = 0
     append_to_next_line= False
@@ -159,15 +157,31 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
                 print line
             line_wout_first_word = line[first_space+1:]
             second_word = line_wout_first_word[0:line_wout_first_word.find(' ')]
+            second_word_66 = second_word.find("@66") * first_word_66
+            second_word_77 = second_word.find("@77") * first_word_77
+            second_word_88 = second_word.find("@88") * first_word_88
+            second_word = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], second_word)
             second_gematria = getGematria(second_word)
             current_siman = this_siman
             line = line[first_space+1:]
-        if first_word_66 >= 0:
-            line = "@66"+line
-        if first_word_77 >= 0:
-            line = "@77"+line
-        if first_word_88 >= 0:
-            line = "@88"+line
+        if helek == "Choshen Mishpat":
+            tags_to_move = ""
+            if second_word_66 != 1:
+                tags_to_move += "@66"
+            if second_word_77 != 1:
+                tags_to_move += "@77"
+            if second_word_88 != 1:
+                tags_to_move += "@88"
+            end_second_word = line.find(' ')
+            line = line[end_second_word:]
+            line = second_word + tags_to_move + line
+        else:
+            if first_word_66 >= 0:
+                line = "@66"+line
+            if first_word_77 >= 0:
+                line = "@77"+line
+            if first_word_88 >= 0:
+                line = "@88"+line
         line = line.replace("@66", at_66)
         line = line.replace("@77", at_77)
         line = line.replace("@88", at_88)
@@ -186,12 +200,10 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
             line = replaceWithHTMLTags(line, helek, current_siman)
             text[helek][current_siman] = [line]
         else:
-            try:
-              text[helek][current_siman][0] = text[helek][current_siman][0]+"<br>"+line
-            except:
-              pdb.set_trace()
+            line = line.decode('utf-8')
+            text[helek][current_siman][0] = text[helek][current_siman][0]+"<br>"+line
         if second_gematria - this_siman == 1:
-            text[helek][second_gematria] = ["ראו סימן "+str(current_siman)]
+            text[helek][second_gematria] = [u"ראו סימן "+str(current_siman)]
             current_siman = second_gematria
         prev_line = actual_line
 
@@ -214,9 +226,15 @@ if __name__ == "__main__":
     parse_text(at_66, at_77, at_88, eng_helekim, files_helekim)
     for siman_num in text["Choshen Mishpat"]:
         current = text["Choshen Mishpat"][siman_num]
-        new = current[0].split("#$!^")
-        pdb.set_trace()
+        new_arr = current[0].split("#$!^")
+        if new_arr[0].replace(" ","") == '':
+            new_arr.pop(0)
+        text["Choshen Mishpat"][siman_num] = []
+        for each_one in new_arr:
+           text["Choshen Mishpat"][siman_num].append([each_one])
     for helek in eng_helekim:
+        if helek != "Choshen Mishpat":
+            continue
         send_text = {
             "text": convertDictToArray(text[helek]),
             "language": "he",

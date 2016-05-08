@@ -5,13 +5,12 @@ import sys
 import re
 import codecs
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-print 'path: {}'.format(p)
 sys.path.insert(0, p)
 sys.path.insert(0, '../Match/')
-from sources.Match import match
+from match import Match
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
-from sources.local_settings import *
-from sources.functions import *
+from local_settings import *
+from functions import *
 import glob
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from data_utilities.sanity_checks import Tag
@@ -23,15 +22,13 @@ def check_mishna_order():
     #checked Mishnayot for Pereks being in order and within each perek each comment is in order
     #checked Boaz for Pereks being in order but DID NOT check that each comment within each perek is in order
 
-    # dont_count=['פ"', 'פרק ', 'בבא','פ', 'מעשר', 'פתח']
-
     count=0
     for file in glob.glob(u"*.txt"):
-        file = file.replace(u"\u200f", u"")
-        if file.split(" ")[0] == u"משניות":
-            count += 1
-            print file
-            in_order(file, tag="@22", reset_tag="@00", increment_by=1)
+     file = file.replace(u"\u200f", u"")
+     if file.split(" ")[0] == u"יכין":
+        count += 1
+        in_order_caller(file, reg_exp_tag=u'@00\u05E4(?:"|\u05E8\u05E7 )?([\u05D0-\u05EA]{1}"?[\u05D0-\u05EA]?)')
+
 
 
 def files_exist():

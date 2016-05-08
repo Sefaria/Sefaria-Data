@@ -32,70 +32,75 @@ def create_indexes(eng_helekim, heb_helekim, eng_title, heb_title):
   commentary = SchemaNode()
   commentary.add_title(eng_title, 'en', primary=True)
   commentary.add_title(heb_title, 'he', primary=True)
-  commentary.key = eng_title
-	
+  commentary.key = eng_title.replace(" ","")
+
   for count, helek in enumerate(eng_helekim):
-	  helek_node = JaggedArrayNode()
-  	  helek_node.add_title(helek, 'en', primary=True)
-  	  helek_node.add_title(heb_helekim[count], 'he', primary=True)
-  	  helek_node.key = helek
-  	  helek_node.depth = 3
-  	  helek_node.addressTypes = ["Integer", "Integer", "Integer"]
-  	  helek_node.sectionNames = ["Siman", "Seif Katan", "Paragraph"]
-  	  commentary.append(helek_node)
+      helek_node = JaggedArrayNode()
+      helek_node.add_title(helek, 'en', primary=True)
+      helek_node.add_title(heb_helekim[count], 'he', primary=True)
+      helek_node.key = helek.replace(" ","")
+      helek_node.depth = 3
+      helek_node.addressTypes = ["Integer", "Integer", "Integer"]
+      if helek == "Choshen Mishpat":
+          helek_node.sectionNames = ["Siman", "Seif", "Seif Katan"]
+      else:
+          helek_node.sectionNames = ["Siman", "Seif Katan", "Paragraph"]
+      commentary.append(helek_node)
   commentary.validate()
   index = {
-	"title": eng_title,
-	"categories": ["Halakhah", "Tur"],
-	"schema": commentary.serialize()
-	}
+    "title": eng_title,
+    "categories": ["Halakhah", "Tur"],
+    "schema": commentary.serialize()
+    }
   post_index(index)
-	
+
 def checkCSV(helek, commentator, siman, num_comments, prev_line):
-	csvf = open('comments_per_siman.csv', 'r')
-	csvreader = csv.reader(csvf, delimiter=',')
-	first_words = " ".join(prev_line.split(" ")[0:4])
-	for row in csvreader:
-		if helek == row[0] and commentator == row[1] and str(siman) == row[2]:
-			#if helek == "Orach Chaim" and commentator == "Prisha" and siman==135:
-			#	pdb.set_trace()
-			if commentator == "Drisha" and helek == "Choshen Mishpat":
-				continue
-			if abs(num_comments-int(row[3])) > 0 and abs(num_comments-int(row[3])) <= 5:
-				num_comments_mismatch_small.write(helek.replace(" ","_")+";"+commentator+";Siman:"+str(siman)+";"+commentator+"_Count;"+str(num_comments)+";Tur_Count:"+row[3]+';First_Words_Prev_Line:'+first_words+'\n')
-			elif abs(num_comments-int(row[3])) > 5:
-				num_comments_mismatch_big.write(helek.replace(" ","_")+";"+commentator+";Siman:"+str(siman)+";"+commentator+"_Count;"+str(num_comments)+";Tur_Count:"+row[3]+';First_Words_Prev_Line:'+first_words+'\n')
-	csvf.close()
-	
+    csvf = open('comments_per_siman.csv', 'r')
+    csvreader = csv.reader(csvf, delimiter=',')
+    first_words = " ".join(prev_line.split(" ")[0:4])
+    for row in csvreader:
+        if helek == row[0] and commentator == row[1] and str(siman) == row[2]:
+            #if helek == "Orach Chaim" and commentator == "Prisha" and siman==135:
+            #	pdb.set_trace()
+            if commentator == "Drisha" and helek == "Choshen Mishpat":
+                continue
+            if abs(num_comments-int(row[3])) > 0 and abs(num_comments-int(row[3])) <= 5:
+                num_comments_mismatch_small.write(helek.replace(" ","_")+";"+commentator+";Siman:"+str(siman)+";"+commentator+"_Count;"+str(num_comments)+";Tur_Count:"+row[3]+';First_Words_Prev_Line:'+first_words+'\n')
+            elif abs(num_comments-int(row[3])) > 5:
+                num_comments_mismatch_big.write(helek.replace(" ","_")+";"+commentator+";Siman:"+str(siman)+";"+commentator+"_Count;"+str(num_comments)+";Tur_Count:"+row[3]+';First_Words_Prev_Line:'+first_words+'\n')
+    csvf.close()
+
 def dealWithTwoSimanim(text):
-	if text[0] == ' ':
-		text = text[1:]
-	if text[len(text)-1] == ' ':
-		text = text[:-1]
-	if len(text.split(" "))>1:
-		if len(text.split(" ")[0]) > 0 and len(text.split(" ")[1]) > 0:
-			text = text.split(" ")[0]
-	return text
+    if text[0] == ' ':
+        text = text[1:]
+    if text[len(text)-1] == ' ':
+        text = text[:-1]
+    if len(text.split(" "))>1:
+        if len(text.split(" ")[0]) > 0 and len(text.split(" ")[1]) > 0:
+            text = text.split(" ")[0]
+    return text
 
 
 def divideUpLines(text, commentator):
-	tag = " "
-	text_array = []
-	if commentator == "Bach":
-		tag = "@77"
-	elif commentator == "Bi" or commentator == "Beit Yosef":
-		tag = "@66"
-	if text.find(tag)==0:
-		text = text.replace(tag,"", 1)
-	text_array = text.split(tag)
-	for i in range(len(text_array)):
-		text_array[i] = [removeAllStrings(["@11", "@22","@33", "@44", "@55", "@66", "@77", "@87","@88","@89", "@98"], text_array[i])]
-	return text_array
-	
+    tag = " "
+    text_array = []
+    if commentator == "Bach":
+        tag = "@77"
+    elif commentator == "Bi" or commentator == "Beit Yosef":
+        tag = "@66"
+    if text.find(tag)==0:
+        text = text.replace(tag,"", 1)
+    text_array = text.split(tag)
+    for i in range(len(text_array)):
+        text_array[i] = [removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9"], text_array[i])]
+    return text_array
+
 def parse_text(helekim, files, commentator):
   store_this_line = ""
   bach_bi_lines = ""
   for count, helek in enumerate(helekim):
+    if helek == "Choshen Mishpat":
+        continue
     curr_siman = 0
     curr_seif_katan = 0
     f = open(files[count])
@@ -192,7 +197,7 @@ def parse_text(helekim, files, commentator):
             seif_list.append(poss_seif_katan)
 
         bach_bi_lines += line
-        line = removeAllStrings(["@11", "@22","@33", "@44", "@55", "@66", "@77", "@87","@88","@89", "@98"], line)
+        line = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9"], line)
 
         curr_seif_katan = poss_seif_katan
         actual_seif_katan += 1
@@ -248,20 +253,24 @@ def parse_text(helekim, files, commentator):
 
 def post_commentary(commentator):
     commentator = commentator.replace("Bi", "Beit Yosef")
-    pdb.set_trace()
     links = []
     for helek in text:
+        if helek == "Choshen Mishpat":
+            continue
         text_array = convertDictToArray(text[helek])
         send_text = {
-			"text": text_array,
-			"language": "he",
-			"versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001935970",
-			"versionTitle": helek+", Vilna, 1923"
-		}
+            "text": text_array,
+            "language": "he",
+            "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001935970",
+            "versionTitle": helek+", Vilna, 1923"
+        }
         post_text(commentator+",_"+helek, send_text)
-		for siman_num, siman in enumerate(text_array):
-			for seif_katan_num, seif_katan in enumerate(text_array[siman_num]):
-
+        for siman_num, siman in enumerate(text_array):
+            for seif_katan_num, seif_katan in enumerate(text_array[siman_num]):
+                tur_end = "Tur,_"+str(helek)+"."+str(siman_num+1)+".1"
+                commentator_end = commentator+",_"+helek+"."+str(siman_num+1)+"."+str(seif_katan_num+1)+".1"
+                links.append({'refs': [tur_end, commentator_end], 'type': 'commentary', 'auto': 'True', 'generated_by': commentator+"choshenmishpat"})
+    post_link(links)
 
 
 if __name__ == "__main__":
@@ -272,29 +281,30 @@ if __name__ == "__main__":
   seif_file = open('seif_probs.csv', 'a')
   num_comments_mismatch_small = open('num_comments_mismatch_small_diff.csv', 'a')
   num_comments_mismatch_big = open('num_comments_mismatch_big_diff.csv', 'a')
-  eng_helekim = ["Orach Chaim", "Yoreh Deah", "Even HaEzer"]
-  heb_helekim = [u"אורח חיים", u"יורה דעה", u"אבן העזר"]
+  eng_helekim = ["Orach Chaim", "Yoreh Deah", "Even HaEzer", "Choshen Mishpat"]
+  heb_helekim = [u"אורח חיים", u"יורה דעה", u"אבן העזר", u"חושן משפט"]
   if sys.argv[1] == 'Drisha':
     files_helekim = ["Orach_Chaim/drisha orach chaim helek a.txt", "yoreh deah/drisha yoreh deah.txt",
    "Even HaEzer/drisha even haezer.txt"]
-    #create_indexes(eng_helekim, heb_helekim, "Drisha", u"דרישה")
+    create_indexes(eng_helekim, heb_helekim, "Drisha", u"דרישה")
     parse_text(eng_helekim, files_helekim, "Drisha")
     print 'here****'
     post_commentary("Drisha")
   elif sys.argv[1] == 'Prisha':
     files_helekim = ["Orach_Chaim/prisha orach chaim.txt", "yoreh deah/prisha yoreh deah.txt",
    "Even HaEzer/prisha even haezer.txt"]
-    #create_indexes(eng_helekim, heb_helekim, "Prisha", u"פרישה")
+    create_indexes(eng_helekim, heb_helekim, "Prisha", u"פרישה")
     parse_text(eng_helekim, files_helekim, "Prisha")
     post_commentary("Prisha")
-  elif sys.argv[1] == 'Bi':
+  elif sys.argv[1] == 'BeitYosef':
+    print SEFARIA_SERVER
     files_helekim = ["Orach_Chaim/beit yosef orach chaim helek a.txt", "yoreh deah/beit yosef yoreh deah.txt", "Even HaEzer/Bi Even HaEzer.txt"]
-    #create_indexes(eng_helekim, heb_helekim, "Bi", u'ב"י')
-    parse_text(eng_helekim, files_helekim, "Bi")
+    create_indexes(eng_helekim, heb_helekim, "Beit Yosef", u'בית יוסף')
+    parse_text(eng_helekim, files_helekim, "Beit Yosef")
     post_commentary("Bi")
   elif sys.argv[1].find("Bach")>=0:
     files_helekim = ["Orach_Chaim/bach orach chaim helek a.txt", "yoreh deah/bach yoreh deah.txt", "Even HaEzer/bach even haezer.txt"]
-    #create_indexes(eng_helekim, heb_helekim, "Bach", u'ב"ח')
+    create_indexes(eng_helekim, heb_helekim, "Bach", u'ב"ח')
     parse_text(eng_helekim, files_helekim, "Bach")
     post_commentary("Bach")
   num_comments_mismatch_small.close()

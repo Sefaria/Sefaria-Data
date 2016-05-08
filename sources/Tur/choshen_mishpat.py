@@ -6,7 +6,6 @@ import json
 import pdb
 import os
 import sys
-from bs4 import BeautifulSoup
 import re
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
@@ -40,12 +39,24 @@ def parse_text(commentators, files):
     curr_seif = 0
     choshen_mishpat[commentator] = {}
     num_seifim = 0
+    append_to_next_line = ""
     for line in file:
         print commentator
         actual_line = line
         line = line.replace("\n", "")
+        if line == """@22סי' """:
+            continue
+        if len(line) == 0:
+            continue
         line = line.decode('utf-8')
+        if line.find('@22') == -1 and len(line) < 15:
+            append_to_next_line = line
+            continue
+        if len(append_to_next_line) > 0:
+            line = append_to_next_line + line
+            append_to_next_line = ""
         if line.find("@22") >= 0 and len(line) > 13:
+            line = line.replace(u"@22סי' ", "").replace(u"@22ס' ", "").replace(u"@22סי ", "")
             if line[0] == ' ':
                 line = line[1:]
             first_space = line.find(' ')
@@ -61,7 +72,7 @@ def parse_text(commentators, files):
                 poss_siman = getGematria(first_word)
             else:
                 poss_siman += 1
-            if poss_siman == curr_siman - 2 and first_word.find('ה') >= 0:
+            if poss_siman == curr_siman - 2 and first_word.find(u'ה') >= 0:
                 poss_siman += 3
             elif poss_siman <= curr_siman:
                 print 'siman issue'
@@ -71,14 +82,16 @@ def parse_text(commentators, files):
 
             prev_siman = curr_siman
             curr_siman = poss_siman
-            num_seifim = tur[curr_siman]
             curr_seif = 0
             actual_seif = 0
             seif_list = []
             choshen_mishpat[commentator][curr_siman] = {}
 
 
-            seif = re.findall(u"\([\u05D0-\u05EA]+\)", line)[0]
+            try:
+                seif = re.findall(u"\([\u05D0-\u05EA]+\)", line)[0]
+            except:
+                pdb.set_trace()
             temp_arr = re.split('\d\d', seif)
             seif = temp_arr[len(temp_arr) - 1]
             poss_seif = getGematria(removeAllStrings(["[", "]", "(", ")"], seif))
@@ -99,6 +112,8 @@ def parse_text(commentators, files):
 
             if poss_seif - curr_seif > 1:
                 amt = poss_seif - curr_seif - 1
+                if curr_siman == 386:
+                    pdb.set_trace()
                 for i in range(amt):
                     print 'skipping in '+str(curr_siman)+' curr_seif = '+str(curr_seif)+' poss_seif = '+str(poss_seif)
                     choshen_mishpat[commentator][curr_siman][i+1+curr_seif] = [""]
@@ -127,7 +142,7 @@ def parse_text(commentators, files):
                 pdb.set_trace()
             prev_seif = curr_seif
 
-        elif len(re.findall(u"\([\u05D0-\u05EA]+\)", line)) > 0:
+        elif len(re.findall(u"\([\u05D0-\u05EA]+\)", line)) > 0 and line.find(re.findall(u"\([\u05D0-\u05EA]+\)", line)[0]) < 10:
             seif = re.findall(u"\([\u05D0-\u05EA]+\)", line)[0]
             temp_arr = re.split('\d\d', seif)
             seif = temp_arr[len(temp_arr) - 1]
@@ -137,9 +152,12 @@ def parse_text(commentators, files):
             elif poss_seif < curr_seif:
                 print 'seif prob'
                 poss_seif = curr_seif + 1
-            if howBig(choshen_mishpat[commentator][curr_siman]) > tur[curr_siman]:
+            try:
+              if howBig(choshen_mishpat[commentator][curr_siman]) > tur[curr_siman]:
                 print 'too many seifim'
                 pdb.set_trace()
+            except:
+              pdb.set_trace()
 
 
             if poss_seif - curr_seif > 1:
@@ -168,9 +186,8 @@ def parse_text(commentators, files):
 
             curr_seif = poss_seif
             curr_seif_line = actual_line
-            if line.find("@") >= 0:
-                print '@'
-                pdb.set_trace()
+
+            line = line.replace('@','')
             prev_seif = curr_seif
 
 
@@ -259,31 +276,34 @@ def splitSeifKatan(array):
     return new_array
 
 def post_text_and_link(choshen_mishpat, commentators):
+    links = []
     for commentator in commentators:
-        for siman_num in choshen_mishpat[commentator]:
-            print commentator
-            print siman_num
-            dict_siman = choshen_mishpat[commentator][siman_num]
-            array_siman = convertDictToArray(dict_siman)
-            array_siman = splitSeifKatan(array_siman)
-            send_text = \
-                {
-                    "text": array_siman,
-                    "versionTitle": commentator + ": Vilna, 1923",
-                    "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001935970",
-                    "language": "he"
-                }
-            post_text(commentator+",_Choshen_Mishpat."+str(siman_num), send_text)
-            for seif_num in choshen_mishpat[commentator][siman_num]:
-                if choshen_mishpat[commentator][siman_num][seif_num] != [""]:
-                    post_link({
-					"refs": [
-								 "Tur,_Choshen_Mishpat."+str(siman_num)+"."+str(seif_num),
-								commentator+",_Choshen_Mishpat."+str(siman_num)+"."+str(seif_num)
-							],
-					"type": "commentary",
-					"auto": True,
-					"generated_by": commentator+" Choshen Mishpat"})
+        print commentator
+        choshen_mishpat[commentator] = convertDictToArray(choshen_mishpat[commentator])
+        for siman_num, siman in enumerate(choshen_mishpat[commentator]):
+            if len(choshen_mishpat[commentator][siman_num]) == 0:
+                continue
+            choshen_mishpat[commentator][siman_num] = convertDictToArray(choshen_mishpat[commentator][siman_num])
+            choshen_mishpat[commentator][siman_num] = splitSeifKatan(choshen_mishpat[commentator][siman_num])
+
+            for seif_num, seif in enumerate(choshen_mishpat[commentator][siman_num]):
+                for seif_katan_num, seif_katan in enumerate(choshen_mishpat[commentator][siman_num][seif_num]):
+                    if choshen_mishpat[commentator][siman_num][seif_num][seif_katan_num] != "":
+                        tur_end = "Tur,_Choshen_Mishpat."+str(siman_num+1)+"."+str(seif_num+1)+".1"
+                        commentator_end = commentator+",_Choshen_Mishpat."+str(siman_num+1)+"."+str(seif_num+1)+"."+str(seif_katan_num+1)
+
+                        links.append({'refs': [tur_end, commentator_end], 'type': 'commentary', 'auto': 'True', 'generated_by': commentator+"choshenmishpat"})
+        send_text = \
+        {
+                "text": choshen_mishpat[commentator],
+                "versionTitle": "Choshen Mishpat: Vilna, 1923",
+                "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001935970",
+                "language": "he"
+        }
+        post_text(commentator+",_Choshen_Mishpat", send_text)
+        post_link(links)
+
+
 
 
 
@@ -307,9 +327,10 @@ def loadFiles(commentators):
         files[commentator] = array
     return files
 
+
 if __name__ == "__main__":
     global helek, tur, pattern
-    commentators = ["Prisha", "Drisha"]
+    commentators = ["Prisha"]
     #tur = getAllSimanim("Tur,_Choshen_Mishpat", 1)
     tur = getTurFile('tur_siman_info.csv')
     files = loadFiles(commentators)
