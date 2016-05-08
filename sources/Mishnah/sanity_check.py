@@ -77,6 +77,8 @@ def compare_tags_to_comments(main_tag, commentary_tag, output):
     for index, appearances in enumerate(text_tags):
         if appearances != comment_tags[index]:
             output.write(u'Tag mismatch {} and {} segment {}\n'.format(main_tag.name, commentary_tag.name, index+1))
+            output.write(u'{} tags in {}; {} tags in {}\n'.format(appearances, main_tag.name,
+                                                                  comment_tags[index], commentary_tag.name))
             perfect = False
     if perfect:
         output.write(u'Perfect alignment {} and {}\n'.format(main_tag.name, commentary_tag.name))
@@ -89,9 +91,13 @@ def compare_mishna_to_yachin(tractate_list):
         name = r.he_book()
         m_name = name.replace(u'משנה', u'משניות')
         y_name = name.replace(u'משנה', u'יכין')
-        m_file = codecs.open(u'{}.txt'.format(m_name), 'r', 'utf-8')
-        y_file = codecs.open(u'{}.txt'.format(y_name), 'r', 'utf-8')
-        output = codecs.open('results.txt', 'w', 'utf-8')
+        output = codecs.open('results.txt', 'a', 'utf-8')
+        try:
+            m_file = codecs.open(u'{}.txt'.format(m_name), 'r', 'utf-8')
+            y_file = codecs.open(u'{}.txt'.format(y_name), 'r', 'utf-8')
+        except IOError:
+            output.write(u'missing file {}\n'.format(name))
+            continue
 
         m_tag = Tag(u'@44', m_file, name=m_name)
         y_tag = Tag(u'@11', y_file, name=y_name)
