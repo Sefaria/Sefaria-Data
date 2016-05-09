@@ -78,7 +78,7 @@ class Util:
         data = json.load(res)
         return data['heTitle']
 
-   def convertDictToArray(dict, empty=[]):
+    def convertDictToArray(dict, empty=[]):
         array = []
         count = 1
         text_array = []
@@ -122,7 +122,7 @@ class Util:
         return data != word.decode('utf-8')
 
 
-    def isGematria(txt):
+def isGematria(txt):
         txt = txt.replace('.','')
         if txt.find("ך")>=0:
             txt = txt.replace("ך", "כ")
@@ -211,7 +211,7 @@ class Util:
             return False
         return True
 
-    def getGematria(txt):
+def getGematria(txt):
         if not isinstance(txt, unicode):
             txt = txt.decode('utf-8')
         index=0
@@ -225,7 +225,7 @@ class Util:
 
 
 
-    def numToHeb(engnum=""):
+def numToHeb(engnum=""):
         engnum = str(engnum)
         numdig = len(engnum)
         hebnum = ""
@@ -244,7 +244,7 @@ class Util:
         return hebnum
 
 
-    def multiple_replace(old_string, replacement_dictionary):
+def multiple_replace(old_string, replacement_dictionary):
         """
         Use a dictionary to make multiple replacements to a single string
 
@@ -260,7 +260,7 @@ class Util:
         return old_string
 
 
-    def find_discrepancies(book_list, version_title, file_buffer, language, middle=False):
+def find_discrepancies(book_list, version_title, file_buffer, language, middle=False):
         """
         Prints all cases in which the number of verses in a text version doesn't match the
         number in the canonical version.
