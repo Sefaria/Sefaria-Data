@@ -7,7 +7,7 @@ import codecs
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
 sys.path.insert(0, '../Match/')
-from match import Match
+from data_utilities.util import *
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 from local_settings import *
 from functions import *
@@ -28,7 +28,6 @@ def check_mishna_order():
      if file.split(" ")[0] == u"יכין":
         count += 1
         in_order_caller(file, reg_exp_tag=u'@00\u05E4(?:"|\u05E8\u05E7 )?([\u05D0-\u05EA]{1}"?[\u05D0-\u05EA]?)')
-
 
 
 def files_exist():
@@ -141,3 +140,55 @@ def get_perakim(type, tag, tag_reg):
         results[name] = data_tag.grab_by_section()
 
         text_file.close()
+
+
+def get_tags_by_perek(srika_tag, segment_regex, capture_group=0):
+    """
+    Create an array of arrays, with outer arrays corresponding to chapters and inner arrays containing the
+    captures of srika_tag in order.
+    :param srika_tag: A Tag object
+    :param segment_regex: used to find the beginning of each segment
+    :return: 2D array
+    """
+
+    # set tag file to the beginning of the first segment
+    srika_tag.file.seek(0)
+    srika_tag.eof = False
+    srika_tag.skip_to_next_segment(segment_regex)
+    captures_by_segment = []
+
+    while True:
+        captures_by_segment.append(srika_tag.grab_by_section(segment_regex, capture_group))
+
+        if srika_tag.eof:
+            break
+
+    return captures_by_segment
+
+
+def he_tags_in_order(captures, seg_name, output_file):
+    """
+    Checks if tags properly increment by 1
+    :param captures: An array of captures to be analyzed by function
+    :param seg_name: Name of segment. Will be displayed in the output_file/
+    :param output_file: File to output results
+    :return: True if tags in order, False otherwise.
+    """
+
+    previous = getGematria(captures[0])
+    in_order = True
+
+    for index, current in enumerate(captures):
+
+        # do nothing for first index
+        if index == 0:
+            previous = getGematria(current)
+            continue
+
+        else:
+            if getGematria(current) - previous != 1:
+                output_file.write(u'{} goes from {} to {}\n'.format(seg_name, previous, current))
+                in_order = False
+    return in_order
+
+
