@@ -66,6 +66,9 @@ class Tag:
         # Ref object
         self.name = name
 
+        # Flag to determine if file has reached the end
+        self.eof = False
+
         if self.reg:
 
             # a dictionary where the keys are the strings that match self.reg and values are the number of
@@ -137,3 +140,20 @@ class Tag:
             matches = re.finditer(self.reg, line)
             for match in matches:
                 captures.append(match.group(capture_group))
+        else:
+            self.eof = True
+            return captures
+
+    def skip_to_next_segment(self, segment_tag):
+        """
+        Sets self.file to one line after segment_tag is found
+        :param segment_tag: string or regular expression used to find segment
+        """
+
+        for line in self.file:
+            if re.search(segment_tag, line):
+                return
+        else:
+            print 'Reached end of file without finding segment tag'
+            self.file.close()
+            raise EOFError
