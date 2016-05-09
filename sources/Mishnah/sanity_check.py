@@ -9,8 +9,8 @@ sys.path.insert(0, p)
 sys.path.insert(0, '../Match/')
 from data_utilities.util import *
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
-from local_settings import *
-from functions import *
+from sources.local_settings import *
+from sources.functions import *
 import glob
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from data_utilities.sanity_checks import Tag
@@ -75,9 +75,10 @@ def compare_tags_to_comments(main_tag, commentary_tag, output):
 
     for index, appearances in enumerate(text_tags):
         if appearances != comment_tags[index]:
-            output.write(u'Tag mismatch {} and {} segment {}\n'.format(main_tag.name, commentary_tag.name, index+1))
-            output.write(u'{} tags in {}; {} tags in {}\n'.format(appearances, main_tag.name,
-                                                                  comment_tags[index], commentary_tag.name))
+            output.write(u'Tag mismatch {} and {} segment {}\n'.format(main_tag.name,
+                                                                       commentary_tag.name, index+1))
+            output.write(u'Found {} tags in Mishna; {} tags in Yachin\n'.format(appearances,
+                                                                                comment_tags[index]))
             perfect = False
     if perfect:
         output.write(u'Perfect alignment {} and {}\n'.format(main_tag.name, commentary_tag.name))
@@ -90,7 +91,7 @@ def compare_mishna_to_yachin(tractate_list):
         name = r.he_book()
         m_name = name.replace(u'משנה', u'משניות')
         y_name = name.replace(u'משנה', u'יכין')
-        output = codecs.open('results.txt', 'a', 'utf-8')
+        output = codecs.open('tag_match_up.txt', 'a', 'utf-8')
         try:
             m_file = codecs.open(u'{}.txt'.format(m_name), 'r', 'utf-8')
             y_file = codecs.open(u'{}.txt'.format(y_name), 'r', 'utf-8')
@@ -101,7 +102,7 @@ def compare_mishna_to_yachin(tractate_list):
         m_tag = Tag(u'@44', m_file, name=m_name)
         y_tag = Tag(u'@11', y_file, name=y_name)
 
-        seg_tag = u'@00(פרק|פ")'
+        seg_tag = u'@00(?:פרק |פ)([א-ת,"]{1,3})'
         m_tag.segment_tag = seg_tag
         y_tag.segment_tag = seg_tag
 
@@ -175,20 +176,67 @@ def he_tags_in_order(captures, seg_name, output_file):
     :return: True if tags in order, False otherwise.
     """
 
-    previous = getGematria(captures[0])
-    in_order = True
+    if len(captures) == 0:
+        output_file.write(u'{} has no tags\n'.format(seg_name))
+        return True
+
+    previous = getGematria(captures[0].replace(u'"', u''))
+    correct = True
 
     for index, current in enumerate(captures):
 
         # do nothing for first index
         if index == 0:
-            previous = getGematria(current)
+            previous = getGematria(current.replace(u'"', u''))
             continue
 
         else:
-            if getGematria(current) - previous != 1:
-                output_file.write(u'{} goes from {} to {}\n'.format(seg_name, previous, current))
-                in_order = False
-    return in_order
+            current = getGematria(current.replace(u'"', u''))
+            if current - previous != 1:
+                output_file.write(u'{} jumps from {} to {}\n'.format(seg_name, previous, current))
+                correct = False
+            previous = current
+    return correct
 
+
+def check_tags_on_category(category, tag, tag_regex):
+    """
+    Check that all the tags in category run in order
+    :param category: משניות, יכין or whatever is needed to identify the files
+    """
+
+    output = codecs.open(u'{}_tags.txt'.format(category), 'w', 'utf-8')
+    tractates = library.get_indexes_in_category('Mishnah')
+    seg_reg = u'@00(?:פרק |פ)([א-ת,"]{1,3})'
+
+    for tractate in tractates:
+        ref = Ref(tractate)
+        name = ref.he_book()
+        name = name.replace(u'משנה', category)
+        try:
+            in_file = codecs.open(u'{}.txt'.format(name), 'r', 'utf-8')
+        except IOError:
+            output.write(u'{}.txt does not exist\n'.format(name))
+            continue
+
+        # create Tag object for each file
+        tag_object = Tag(tag, in_file, tag_regex, name)
+
+        # get tags in array
+        whole_book = get_tags_by_perek(tag_object, seg_reg, 1)
+        perfect = True
+
+        for index, perek in enumerate(whole_book):
+            message = u'{} chapter {}'.format(tractate, index+1)
+            if not he_tags_in_order(perek, message, output):
+                perfect = False
+
+        if perfect:
+            output.write(u'{} is perfect\n'.format(name))
+    output.close()
+
+
+check_tags_on_category(u'משניות', u'@44', u'@44([א-ת,"]{1,3})')
+check_tags_on_category(u'יכין', u'@11', u'@11([א-ת,"]{1,3})')
+compare_mishna_to_yachin(library.get_indexes_in_category('Mishnah'))
 
