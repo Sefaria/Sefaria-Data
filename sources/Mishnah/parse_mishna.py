@@ -9,7 +9,7 @@ sys.path.insert(0, p)
 from data_utilities import util
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 from sources.local_settings import *
-from sources.functions import *
+from sources import functions
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from sefaria.model import *
 
@@ -59,7 +59,6 @@ def jaggedarray_from_file(input_file, perek_tag, mishna_tag):
             else:
                 current.append(util.multiple_replace(line, {u'\n': u'', }))
             # add next line
-
 
     else:
         mishnayot.append(u' '.join(current).lstrip())
