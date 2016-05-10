@@ -169,7 +169,7 @@ def get_tags_by_perek(srika_tag, segment_regex, capture_group=0):
 
 def he_tags_in_order(captures, seg_name, output_file):
     """
-    Checks if tags properly increment by 1
+    Checks if tags properly increment by 1.
     :param captures: An array of captures to be analyzed by function
     :param seg_name: Name of segment. Will be displayed in the output_file/
     :param output_file: File to output results
@@ -199,7 +199,7 @@ def he_tags_in_order(captures, seg_name, output_file):
     return correct
 
 
-def check_tags_on_category(category, tag, tag_regex):
+def check_tags_on_category(category, tag, tag_regex, check_function):
     """
     Check that all the tags in category run in order
     :param category: משניות, יכין or whatever is needed to identify the files
@@ -228,7 +228,7 @@ def check_tags_on_category(category, tag, tag_regex):
 
         for index, perek in enumerate(whole_book):
             message = u'{} chapter {}'.format(tractate, index+1)
-            if not he_tags_in_order(perek, message, output):
+            if not check_function(perek, message, output):
                 perfect = False
 
         if perfect:
@@ -236,7 +236,7 @@ def check_tags_on_category(category, tag, tag_regex):
     output.close()
 
 
-check_tags_on_category(u'משניות', u'@44', u'@44([א-ת,"]{1,3})')
-check_tags_on_category(u'יכין', u'@11', u'@11([א-ת,"]{1,3})')
+check_tags_on_category(u'משניות', u'@44', u'@44([א-ת,"]{1,3})', he_tags_in_order)
+check_tags_on_category(u'יכין', u'@11', u'@11([א-ת,"]{1,3})', he_tags_in_order)
 compare_mishna_to_yachin(library.get_indexes_in_category('Mishnah'))
 
