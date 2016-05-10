@@ -193,7 +193,7 @@ def he_tags_in_order(captures, seg_name, output_file):
         else:
             current = getGematria(current.replace(u'"', u''))
             if current - previous != 1:
-                output_file.write(u'{} jumps from {} to {}\n'.format(seg_name, previous, current))
+                output_file.write(u'{} קופץ מ-{} ל-{}\n'.format(seg_name, previous, current))
                 correct = False
             previous = current
     return correct
@@ -218,7 +218,7 @@ def reasonable_increment(captures, seg_name, output_file):
     for value in tag_values:
         if value > max_tag:
             if value - max_tag != 1:
-                output_file.write(u'{} jumps from {} to {}\n'.format(seg_name, max_tag, value))
+                output_file.write(u'{} קופץ מ-{} ל-{}\n'.format(seg_name, max_tag, value))
                 correct = False
             max_tag = value
 
@@ -253,12 +253,12 @@ def check_tags_on_category(category, tag, tag_regex, check_function):
         perfect = True
 
         for index, perek in enumerate(whole_book):
-            message = u'{} chapter {}'.format(tractate, index+1)
+            message = u'{} פרק {}'.format(name, index+1)
             if not check_function(perek, message, output):
                 perfect = False
 
         if perfect:
-            output.write(u'{} is perfect\n'.format(name))
+            output.write(u'{}-אין בעיות\n'.format(name))
     output.close()
 
 
