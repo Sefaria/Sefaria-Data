@@ -199,6 +199,32 @@ def he_tags_in_order(captures, seg_name, output_file):
     return correct
 
 
+def reasonable_increment(captures, seg_name, output_file):
+    """
+    Checks that tags increment correctly, but allows for reuse of previous tags
+    :param captures: An array of captures to be analyzed by function
+    :param seg_name: Name of segment. Will be displayed in the output_file/
+    :param output_file: File to output results
+    :return: True if tags in order, False otherwise.
+    """
+
+    if len(captures) == 0:
+        output_file.write(u'{} has no tags\n'.format(seg_name))
+        return True
+
+    tag_values = he_array_to_int(captures)
+    max_tag, correct = 0, True
+
+    for value in tag_values:
+        if value > max_tag:
+            if value - max_tag != 1:
+                output_file.write(u'{} jumps from {} to {}\n'.format(seg_name, max_tag, value))
+                correct = False
+            max_tag = value
+
+    return correct
+
+
 def check_tags_on_category(category, tag, tag_regex, check_function):
     """
     Check that all the tags in category run in order
@@ -236,7 +262,7 @@ def check_tags_on_category(category, tag, tag_regex, check_function):
     output.close()
 
 
-check_tags_on_category(u'משניות', u'@44', u'@44([א-ת,"]{1,3})', he_tags_in_order)
+check_tags_on_category(u'משניות', u'@44', u'@44([א-ת,"]{1,3})', reasonable_increment)
 check_tags_on_category(u'יכין', u'@11', u'@11([א-ת,"]{1,3})', he_tags_in_order)
 compare_mishna_to_yachin(library.get_indexes_in_category('Mishnah'))
 
