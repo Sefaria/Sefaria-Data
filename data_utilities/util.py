@@ -342,3 +342,26 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
                 file_buffer.close()
                 sys.exit(1)
 
+
+def jagged_array_to_file(output_file, jagged_array, section_names):
+    """
+    Prints contents of a jagged array to a file. Recursive.
+    :param output_file: File to write data.
+    :param jagged_array: Multi dimensional array. Lowest level array should be strings.
+    :param section_names: Names of segments to be printed in files (chapters, verse, siman, mishna etc.)
+    Length must equal dimensions of jagged array.
+    """
+
+    for index, object in enumerate(jagged_array):
+        output_file.write(u'{} {}:\n'.format(section_names[0], index+1))
+
+        if type(object) is str:
+            output_file.write(u'{}\n'.format(object))
+
+        elif type(object) is list:
+            jagged_array_to_file(output_file, object, section_names[1:])
+
+        else:
+            print 'jagged array contains unknown type'
+            output_file.close()
+            raise TypeError
