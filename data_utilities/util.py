@@ -365,3 +365,16 @@ def jagged_array_to_file(output_file, jagged_array, section_names):
             print 'jagged array contains unknown type'
             output_file.close()
             raise TypeError
+
+
+def he_array_to_int(he_array):
+    """
+    Takes an array of hebrew numbers (א,ב, י"א...) and returns array of integers.
+    :param he_array: Array of hebrew letters which represents numbers
+    :return: Array of numbers
+    """
+
+    numbers = []
+    for he in he_array:
+        numbers.append(getGematria(he.replace(u'"', u'')))
+    return numbers
