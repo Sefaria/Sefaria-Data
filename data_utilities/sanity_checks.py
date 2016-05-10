@@ -69,11 +69,19 @@ class Tag:
         # Flag to determine if file has reached the end
         self.eof = False
 
-        if self.reg:
+        # True if tag always starts a new line.
+        self.starts_line = self.does_start_line()
 
-            # a dictionary where the keys are the strings that match self.reg and values are the number of
-            # times they each appear.
-            self.types = count_by_regex(self.file, self.reg)
+        if not self.reg:
+            self.reg = self.tag
+        else:
+            self.reg = reg
+
+        # a dictionary where the keys are the strings that match self.reg and values are the number of
+        # times they each appear.
+        self.types = count_by_regex(self.file, self.reg)
+
+        self.file.seek(0)
 
     def count_all_tags(self):
         """
@@ -90,6 +98,20 @@ class Tag:
         self.file.seek(0)
 
         return count
+
+    def does_start_line(self):
+        """
+        True if tag always appears at the beginning of a line.
+        :return: True or False
+        """
+        self.file.seek(0)
+        for line in self.file:
+            if line.find(self.tag) != -1 and line.find(self.tag) != 0:
+                self.file.seek(0)
+                return False
+        else:
+            self.file.seek(0)
+            return True
 
     def count_tags_by_segment(self, segment_tag):
         """
