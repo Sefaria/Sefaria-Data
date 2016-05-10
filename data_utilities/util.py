@@ -1,6 +1,30 @@
 # -*- coding: utf-8 -*-
 __author__ = 'stevenkaplan'
 
+gematria = {}
+gematria[u'א'] = 1
+gematria[u'ב'] = 2
+gematria[u'ג'] = 3
+gematria[u'ד'] = 4
+gematria[u'ה'] = 5
+gematria[u'ו'] = 6
+gematria[u'ז'] = 7
+gematria[u'ח'] = 8
+gematria[u'ט'] = 9
+gematria[u'י'] = 10
+gematria[u'כ'] = 20
+gematria[u'ל'] = 30
+gematria[u'מ'] = 40
+gematria[u'נ'] = 50
+gematria[u'ס'] = 60
+gematria[u'ע'] = 70
+gematria[u'פ'] = 80
+gematria[u'צ'] = 90
+gematria[u'ק'] = 100
+gematria[u'ר'] = 200
+gematria[u'ש'] = 300
+gematria[u'ת'] = 400
+
 class Util:
     def __init__(self, output_file, fail):
         self.output_file = output_file
@@ -211,6 +235,7 @@ def isGematria(txt):
             print txt
             return False
         return True
+
 
 def getGematria(txt):
         if not isinstance(txt, unicode):
