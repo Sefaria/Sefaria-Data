@@ -50,14 +50,24 @@ def jaggedarray_from_file(input_file, perek_tag, mishna_tag):
                 found_first_chapter = True
             continue
 
-        if new_mishna:
-            if current != []:
-                mishnayot.append(u' '.join(current))
-                current = []
+        if found_first_chapter:
+            if new_mishna:
+                if current != []:
+                    mishnayot.append(u' '.join(current).lstrip())
+                    current = [util.multiple_replace(line, {u'\n': u'', new_mishna.group(): u''})]
 
-        # add next line
-        current.append(util.multiple_replace(line, {u'\n': u'', new_mishna.group(): u''}))
+            else:
+                current.append(util.multiple_replace(line, {u'\n': u'', }))
+            # add next line
+
 
     else:
-        mishnayot.append(u' '.join(current))
+        mishnayot.append(u' '.join(current).lstrip())
         chapters.append(mishnayot)
+
+    return chapters
+
+input_file = codecs.open(u'משניות זבים.txt', 'r', 'utf-8')
+output_file = codecs.open(u'test.txt', 'w', 'utf-8')
+jagged_array = jaggedarray_from_file(input_file, u'@00', u'@22[א-ת]{1,2}')
+util.jagged_array_to_file(output_file, jagged_array, [u'פרק ', u'משנה '])

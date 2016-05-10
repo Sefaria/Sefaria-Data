@@ -355,7 +355,7 @@ def jagged_array_to_file(output_file, jagged_array, section_names):
     for index, object in enumerate(jagged_array):
         output_file.write(u'{} {}:\n'.format(section_names[0], index+1))
 
-        if type(object) is str:
+        if type(object) is str or type(object) is unicode:
             output_file.write(u'{}\n'.format(object))
 
         elif type(object) is list:
