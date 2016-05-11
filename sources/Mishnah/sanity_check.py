@@ -16,6 +16,7 @@ sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from data_utilities.sanity_checks import Tag
 from sefaria.model import *
 
+tractates = library.get_indexes_in_category('Mishnah')
 
 
 def check_mishna_order():
@@ -264,7 +265,7 @@ def skipped_comments(captures, seg_name, output_file):
         expected += 1
     else:
         return True
-    
+
 
 def check_tags_on_category(category, tag, tag_regex, check_function):
     """
@@ -273,7 +274,6 @@ def check_tags_on_category(category, tag, tag_regex, check_function):
     """
 
     output = codecs.open(u'{}_tags.txt'.format(category), 'w', 'utf-8')
-    tractates = library.get_indexes_in_category('Mishnah')
     seg_reg = u'@00(?:פרק |פ)([א-ת,"]{1,3})'
 
     for tractate in tractates:
@@ -298,12 +298,35 @@ def check_tags_on_category(category, tag, tag_regex, check_function):
             if not check_function(perek, message, output):
                 perfect = False
 
-        if perfect:
-            output.write(u'{}-אין בעיות\n'.format(name))
+    #    if perfect:
+            #output.write(u'{}-אין בעיות\n'.format(name))
+
     output.close()
 
 
-check_tags_on_category(u'משניות', u'@44', u'@44([א-ת,"]{1,3})', reasonable_increment)
-check_tags_on_category(u'יכין', u'@11', u'@11([א-ת,"]{1,3})', skipped_comments)
-compare_mishna_to_yachin(library.get_indexes_in_category('Mishnah'))
+def check_chapters(category, chap_reg):
 
+    output = codecs.open('chapters.txt', 'w', 'utf-8')
+
+    for tractate in tractates:
+        ref = Ref(tractate)
+        name = ref.he_book()
+        name = name.replace(u'משנה', category)
+        try:
+            in_file = codecs.open(u'{}.txt'.format(name), 'r', 'utf-8')
+        except IOError:
+            output.write(u'{}.txt does not exist\n'.format(name))
+            continue
+
+        chap_tag = Tag(u'@00', in_file, chap_reg, name)
+        chapters = get_tags_by_perek(chap_tag, chap_tag.reg, capture_group=1)
+
+        if len(chapters) != len(ref.all_subrefs()):
+            output.write(u'Chapter mismatch {}\n'.format(tractate))
+
+    output.close()
+
+check_tags_on_category(u'משניות', u'@22', u'@22([א-ת,"]{1,3})', he_tags_in_order)
+check_tags_on_category(u'יכין', u'@11', u'@11([א-ת,"]{1,3})', he_tags_in_order)
+compare_mishna_to_yachin(library.get_indexes_in_category('Mishnah'))
+check_chapters(u'משניות', u'@00(?:פרק |פ)([א-ת,"]{1,3})')
