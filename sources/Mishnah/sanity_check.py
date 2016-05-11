@@ -225,6 +225,47 @@ def reasonable_increment(captures, seg_name, output_file):
     return correct
 
 
+def skipped_comments(captures, seg_name, output_file):
+    """
+    Looks for tags that were skipped, yet allows for a single misnumbered tag. Two misnumbered tags in a row
+    will fail. For example 1,2,3,4,8,6 will pass, but 1,2,3,4,6,7 will fail (as 6 is still expected in the final
+    position).
+
+    :param captures: An array of captures to be analyzed by function
+    :param seg_name: Name of segment. Will be displayed in the output_file/
+    :param output_file: File to output results
+    :return: True no skips were found, False otherwise.
+    """
+
+    if len(captures) == 0:
+        output_file.write(u'{} has no tags\n'.format(seg_name))
+        return True
+
+    tag_values = he_array_to_int(captures)
+
+    expected, correct = 1, True
+
+    for index, value in enumerate(tag_values):
+        if correct:
+            if value != expected:
+                correct = False
+            else:
+                correct = True
+        else:
+            if value == expected:
+                correct = True
+            else:
+                if index > 1:
+                    output_file.write(u'{} קופץ מ-{} ל-{}\n'.format(
+                        seg_name, tag_values[index-2], tag_values[index-1]))
+                else:
+                    output_file.write(u'{} מתחיל מ-{}\n'.format(seg_name, tag_values[0]))
+                return False
+        expected += 1
+    else:
+        return True
+    
+
 def check_tags_on_category(category, tag, tag_regex, check_function):
     """
     Check that all the tags in category run in order
@@ -263,6 +304,6 @@ def check_tags_on_category(category, tag, tag_regex, check_function):
 
 
 check_tags_on_category(u'משניות', u'@44', u'@44([א-ת,"]{1,3})', reasonable_increment)
-check_tags_on_category(u'יכין', u'@11', u'@11([א-ת,"]{1,3})', he_tags_in_order)
+check_tags_on_category(u'יכין', u'@11', u'@11([א-ת,"]{1,3})', skipped_comments)
 compare_mishna_to_yachin(library.get_indexes_in_category('Mishnah'))
 
