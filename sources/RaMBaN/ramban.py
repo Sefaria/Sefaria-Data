@@ -21,6 +21,32 @@ sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
 
+
+
+tractate = ""
+if len(sys.argv) == 3:
+    tractate = sys.argv[1] + "_"+sys.argv[2]
+else:
+    tractate = sys.argv[1]
+
+root=JaggedArrayNode()
+heb_masechet = get_text_plus(tractate)['heBook']
+root.add_title(u"Ramban on Bava Batra", "en", primary=True)
+root.add_title(u'רמב"ן על '+heb_masechet, "he", primary=True)
+root.key = 'ramban'
+root.sectionNames = ["Daf", "Comment"]
+root.depth = 2
+root.addressTypes = ["Talmud","Integer"]
+
+root.validate()
+
+index = {
+    "title": "Ramban on Bava Batra",
+    "categories": ["Commentary2", "Talmud", "Ramban"],
+    "schema": root.serialize()
+}
+
+post_index(index)
 '''
 perek = 5@.*?2@
 daf = 2@.*?\d@
@@ -29,11 +55,13 @@ before_dh = 7@.*?4@ or 1@.*?4@
 
 '''
 prev_daf = 1
-tractates = ["beitzah", "chagigah", "moed_katan", "eruvin", "pesachim", "rosh_hashanah", "sukkah", "taanit", "yoma"]
 
 problems = open('problems.txt','w')
-for tractate in tractates:
-  for line in open(tractate+"_complete.txt"):
+text = {}
+daf = 3
+prev_daf = 3
+dh_dict = {}
+for line in open(tractate+"_complete.txt"):
     line = line.replace("\n", "")
     if len(line.replace(' ',''))==0:
         continue
@@ -49,10 +77,10 @@ for tractate in tractates:
             daf_info = ""
         print daf_info
         dh_info = re.findall('4@.*?1@', line)[0]
+
         print dh_info
         if line.find('7@')>0:
           before_dh_info = re.findall('7@.*?4@', line)[0]
-
         else:
           poss = re.findall('1@.*?4@', line)
           if len(poss)>0:
@@ -62,19 +90,47 @@ for tractate in tractates:
         print before_dh_info
     except:
         problems.write(tractate+"\n"+line+"\n\n")
+        pdb.set_trace()
         continue
     if len(daf_info)>0:
         daf = daf_info.replace("2@", "").replace("1@","").replace("7@","")
         if daf.find('דף')==-1 and daf.find('ע"')==-1:
             print 'no daf'
-            #pdb.set_trace()
+            pdb.set_trace()
         if daf.find('ע"ב')>0:
-            amud = 1
-        else:
             amud = 0
-        daf = amud+getGematria(daf.replace('ע"ב', '').replace('ע"א','').replace('דף',''))
-    else:
-        daf = ""
+        else:
+            amud = -1
+        daf = amud + (2*getGematria(daf.replace('ע"ב', '').replace('ע"א','').replace('דף','')))
+
     dh = dh_info.replace("4@","").replace("1@","")
     before_dh = before_dh_info.replace("7@","").replace("1@","").replace("4@","")
+    comment_start = line.rfind("1@")
+    comment = line[comment_start:].replace("3@","<br>")
+
+    if type(daf) is int and daf not in text:
+        if daf < prev_daf:
+            print 'daf error'
+            pdb.set_trace()
+        text[daf] = []
+        dh_dict[daf] = []
+        prev_daf = daf
+    text[daf].append("<b>"+before_dh + dh+"</b>"+comment)
+    dh_dict[daf].append(dh)
+
+
+text_array = convertDictToArray(text)
+send_text = {
+    "text": text_array,
+    "versionTitle": "Ramban on Talmud",
+    "versionSource": "http://www.sefaria.org",
+    "language": "he"
+}
+post_text("Ramban on "+tractate.replace("_"," "), send_text)
+match = Match(in_order=True, min_ratio=80, guess=False, range=True, can_expand=False)
+for daf in dh_dict:
+    dh_list = dh_dict[daf]
+    daf_array = get_text(tractate+"."+AddressTalmud.toStr("en", daf))
+    match.match_list(dh_list, daf_array, tractate+" "+AddressTalmud.toStr("en", daf))
+    pdb.set_trace()
 problems.close()
