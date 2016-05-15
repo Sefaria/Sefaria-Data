@@ -61,12 +61,17 @@ def jaggedarray_from_file(input_file, perek_tag, mishna_tag):
             # add next line
 
     else:
-        mishnayot.append(u' '.join(current).lstrip())
+        mishnayot.append(u''.join(current).lstrip())
         chapters.append(mishnayot)
 
     return chapters
 
-input_file = codecs.open(u'משניות זבים.txt', 'r', 'utf-8')
+
+input_file = codecs.open(u'משניות ברכות.txt', 'r', 'utf-8')
 output_file = codecs.open(u'test.txt', 'w', 'utf-8')
-jagged_array = jaggedarray_from_file(input_file, u'@00', u'@22[א-ת]{1,2}')
+jagged_array = jaggedarray_from_file(input_file, u'@00(?:פרק |פ)([א-ת,"]{1,3})', u'@22[א-ת]{1,2}')
+jagged_array = util.clean_jagged_array(jagged_array, [u'@11', u'@33', u'( )?@44[א-ת,"]{1,3}\)', u'@66', u'@77',
+                                                      u'@88', u'@99'])
 util.jagged_array_to_file(output_file, jagged_array, [u'פרק ', u'משנה '])
+input_file.close()
+output_file.close()
