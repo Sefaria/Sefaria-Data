@@ -16,9 +16,8 @@ record.key = 'Megillat Taanit'
 
 for index, month in enumerate(months):
     node = JaggedArrayNode()
-    node.add_title(month, 'en', primary=True)
-    node.add_title(he_months[index], 'he', primary=True)
     node.key = month
+    node.add_shared_term(month)
     node.depth = 1
     node.addressTypes = ['Integer']
     node.sectionNames = ['Verse']
