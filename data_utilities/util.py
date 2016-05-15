@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 __author__ = 'stevenkaplan'
+import re
 
 gematria = {}
 gematria[u'א'] = 1
@@ -377,14 +378,14 @@ def jagged_array_to_file(output_file, jagged_array, section_names):
     Length must equal dimensions of jagged array.
     """
 
-    for index, object in enumerate(jagged_array):
+    for index, item in enumerate(jagged_array):
         output_file.write(u'{} {}:\n'.format(section_names[0], index+1))
 
-        if type(object) is str or type(object) is unicode:
-            output_file.write(u'{}\n'.format(object))
+        if type(item) is str or type(item) is unicode:
+            output_file.write(u'{}\n'.format(item))
 
-        elif type(object) is list:
-            jagged_array_to_file(output_file, object, section_names[1:])
+        elif type(item) is list:
+            jagged_array_to_file(output_file, item, section_names[1:])
 
         else:
             print 'jagged array contains unknown type'
@@ -403,3 +404,57 @@ def he_array_to_int(he_array):
     for he in he_array:
         numbers.append(getGematria(he.replace(u'"', u'')))
     return numbers
+
+
+def replace_using_regex(regex, query, new):
+    """
+    This is an enhancement of str.replace(). It will only call str.replace if the regex has
+    been found, thus allowing replacement of tags that may serve multiple or ambiguous functions.
+    Should there be a need, an endline parameter can be added which will be appended to the end of
+    the string
+    :param regex: A regular expression. Will be compiled locally.
+    :param query: The input string to be examined.
+    :param new: The text that will be inserted instead of 'old'.
+    :return: A new string with 'old' replaced by 'new'.
+    """
+
+    # compile regex and search
+    reg = re.compile(regex)
+    result = re.search(reg, query)
+    if result:
+
+        # get all instances of match
+        matches = re.finditer(reg, query)
+        for match in matches:
+            temp = match.group()
+            query = query.replace(temp, new)
+    return query
+
+
+def clean_jagged_array(messy_array, strip_list):
+    """
+    Given a jagged array and a list of regexes, return a new jagged array with all cases in regex list
+    striped out.
+    :param messy_array: Jagged array to be cleaned
+    :param strip_list: list of strings or regular expressions to be stripped from jagged array
+    :return: New jagged array with all cases in strip_list removed.
+    """
+
+    clean_array = []
+
+    for item in messy_array:
+
+        if type(item) is list:
+            clean_array.append(clean_jagged_array(item, strip_list))
+
+        elif type(item) is str or type(item) is unicode:
+
+            for case in strip_list:
+                item = replace_using_regex(case, item, u'')
+            clean_array.append(re.sub(u' +', u' ', item))
+
+        else:
+            print 'Jagged array contains unknown type'
+            raise TypeError
+
+    return clean_array
