@@ -42,6 +42,35 @@ def count_by_regex(some_file, regex):
     return result
 
 
+def count_by_regex_jarray(jagged_array, regex, result={}):
+    """
+    Similar to count_by_regex, runs the same test on a jagged_array that may still need cleaning
+    :param jagged_array: Multilevel array, lowest level must be text (str or unicode).
+    :param regex: Regular expression to match
+    :param result: Dictionary to hold captured strings.
+    :return: Dictionary where keys are strings that matched the regex and keys are the number of times
+    they appeared.
+    """
+
+    for item in jagged_array:
+        if type(item) is list:
+            result = count_by_regex_jarray(item, regex, result)
+
+        elif type(item) is str or type(item) is unicode:
+            captures = re.finditer(regex, item)
+            for capture in captures:
+                if capture not in result.keys():
+                    result[capture] = 1
+                else:
+                    result[capture] += 1
+
+        else:
+            print 'Jagged array contains unknown type'
+            raise TypeError
+
+    return result
+
+
 class Tag:
     """
     This represents a tag such as those that appear in texts sent by srikot. This class can hold all relevant
