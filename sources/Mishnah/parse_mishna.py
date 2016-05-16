@@ -1,9 +1,26 @@
 # -*- coding: utf-8 -*-
+"""
+Some regular expressions for the Mishnah. Tip: Use https://www.branah.com/unicode-converter to convert hebrew
+words to unicode for easier regex writing.
+
+
+u'@00(?:\u05e4\u05e8\u05e7 |\u05e4)([\u05d0-\u05ea,"]{1,3})'
+- Grabs a new chapter. Capture group 1 gives the chapter number as a hebrew character.
+
+
+u'@22[\u50d0-\u05ea]{1,2}'
+- Grabs a new Mishna
+
+
+u'( )?@44[\u05d0-\u05ea,"]{1,3}\)'
+- Finds the Yachin tags with an optional leading space
+"""
 
 import os
 import sys
 import re
 import codecs
+import json
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
 from data_utilities import util
@@ -67,11 +84,25 @@ def jaggedarray_from_file(input_file, perek_tag, mishna_tag):
     return chapters
 
 
-input_file = codecs.open(u'משניות ברכות.txt', 'r', 'utf-8')
-output_file = codecs.open(u'test.txt', 'w', 'utf-8')
-jagged_array = jaggedarray_from_file(input_file, u'@00(?:פרק |פ)([א-ת,"]{1,3})', u'@22[א-ת]{1,2}')
-jagged_array = util.clean_jagged_array(jagged_array, [u'@11', u'@33', u'( )?@44[א-ת,"]{1,3}\)', u'@66', u'@77',
-                                                      u'@88', u'@99'])
-util.jagged_array_to_file(output_file, jagged_array, [u'פרק ', u'משנה '])
-input_file.close()
-output_file.close()
+def get_cards_from_trello(list_name, board_json):
+    """
+    Trello can export a board as a JSON object. Use this function to grab the names of all the cards that
+    belong to a certain list on the board.
+    :param list_name: Name of the list that holds the cards of interest
+    :param board_json: The exported JSON file from trello that relates to the board of interest
+    :return: A list of all the cards on the specified Trello list.
+    """
+
+    board = json.loads(board_json.read())
+
+    list_id = u''
+    for column in board['lists']:
+        if column['name'] == list_name:
+            list_id = column['id']
+
+    cards = []
+    for card in board['cards']:
+        if card['idList'] == list_id:
+            cards.append(card['name'])
+
+    return cards
