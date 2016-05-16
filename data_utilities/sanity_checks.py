@@ -57,12 +57,13 @@ def count_by_regex_jarray(jagged_array, regex, result={}):
             result = count_by_regex_jarray(item, regex, result)
 
         elif type(item) is str or type(item) is unicode:
-            captures = re.finditer(regex, item)
+            captures = regex.finditer(item)
             for capture in captures:
-                if capture not in result.keys():
-                    result[capture] = 1
+                text = capture.group()
+                if text not in result.keys():
+                    result[text] = 1
                 else:
-                    result[capture] += 1
+                    result[text] += 1
 
         else:
             print 'Jagged array contains unknown type'
