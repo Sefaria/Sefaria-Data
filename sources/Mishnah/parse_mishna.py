@@ -23,7 +23,7 @@ import codecs
 import json
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
-from data_utilities import util
+from data_utilities import util, sanity_checks
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 from sources.local_settings import *
 from sources import functions
@@ -61,6 +61,9 @@ def jaggedarray_from_file(input_file, perek_tag, mishna_tag):
         # found chapter tag.
         if new_chapter:
             if found_first_chapter:
+                if current != []:
+                    mishnayot.append(u' '.join(current).lstrip())
+                    current = []
                 chapters.append(mishnayot)
                 mishnayot = []
             else:
@@ -71,7 +74,7 @@ def jaggedarray_from_file(input_file, perek_tag, mishna_tag):
             if new_mishna:
                 if current != []:
                     mishnayot.append(u' '.join(current).lstrip())
-                    current = [util.multiple_replace(line, {u'\n': u'', new_mishna.group(): u''})]
+                current = [util.multiple_replace(line, {u'\n': u'', u'\r': u'', new_mishna.group(): u''})]
 
             else:
                 current.append(util.multiple_replace(line, {u'\n': u'', }))
@@ -106,3 +109,48 @@ def get_cards_from_trello(list_name, board_json):
             cards.append(card['name'])
 
     return cards
+
+
+def clean_list():
+    """
+    List of regular expressions to remove unnecessary tags
+    """
+    return [u'@11', u'@33', u'( )?@44([!?*])?[\u05d0-\u05ea"]{1,3}(\))?', u'@44\(שם\)',
+            u'@44(\(|\))', u'@44 קנח', u'@44 ד\)', u'@55', u'@66', u'@77', u'@88', u'@99', u'@']
+
+
+def upload(text, text_name):
+    """
+    Upload Mishnah tractate.
+    :param text:  Jagged array like object of the tractate.
+    :param text_name: name of the text - to be used for url derivation for upload
+    """
+
+    tractate = {
+        "versionTitle": "Vilna Mishna",
+        "versionSource": "http://www.daat.ac.il/encyclopedia/value.asp?id1=836",
+        "language": "he",
+        "text": text,
+    }
+    print 'uploading {}'.format(text_name)
+    functions.post_text(text_name, tractate)
+
+
+trello = open('trello_board.json')
+tracs = get_cards_from_trello('Parse Mishnah', trello)
+trello.close()
+for trac in tracs:
+    name = re.search(u'[\u05d0-\u05ea].+', trac)
+    name = name.group().replace(u'משנה', u'משניות')
+    infile = codecs.open(u'{}.txt'.format(name), 'r', 'utf-8')
+    jagged = jaggedarray_from_file(infile, u'@00(?:\u05e4\u05e8\u05e7 |\u05e4)([\u05d0-\u05ea"]{1,3})',
+                                   u'@22[\u05d0-\u05ea]{1,2}')
+    parsed = util.clean_jagged_array(jagged, clean_list())
+    infile.close()
+
+    en_name = re.search(u'[a-zA-Z ]+', trac).group().rstrip()
+    if en_name not in tractates:
+        print '{} not a valid ref'.format(en_name)
+        sys.exit(1)
+    upload(parsed, en_name)
+
