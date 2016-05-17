@@ -27,6 +27,30 @@ curr_siman = 0
 curr_seif_katan = 0
 text = {}
  
+
+def replaceWithHTMLTags(line, helek, siman_num):
+    line = line.decode('utf-8')
+    line = line.replace('%(', '(%')
+    line = line.replace('(#', '(%')
+    line = line.replace("*(", "(*")
+    line = line.replace('(*', '(%')
+    commentaries = ["Drisha", "Prisha", "Darchei Moshe", "Hagahot", "Beit_Yosef", "Bach", "Mystery"]
+    matches_array = [re.findall(u"\[[\u05D0-\u05EA]{1,4}\]", line), re.findall(u"\([\u05D0-\u05EA]{1,4}\)", line),
+                        re.findall(u"\(%[\u05D0-\u05EA]{1,4}\)", line), re.findall(u"\s#[\u05D0-\u05EA]{1,4}", line),
+                        re.findall(u"\{[\u05D0-\u05EA]{1,4}\}",line), re.findall(u"\|[\u05D0-\u05EA]{1,4}\|", line),
+                        re.findall(u"<[\u05D0-\u05EA]{1,4}>",line)]
+    for commentary_count, matches in enumerate(matches_array):
+        how_many_shams = 0
+        for order_count, match in enumerate(matches):
+            if match == u"(שם)" or match == u"[שם]":
+                how_many_shams += 1
+                continue
+            HTML_tag =  '<i data-commentator="'+commentaries[commentary_count]+'" data-order="'+str(order_count+1-how_many_shams)+'"></i>'
+            line = line.replace(match, HTML_tag)
+    return line
+
+
+
 def create_indexes(eng_helekim, heb_helekim, eng_title, heb_title):
   #helek, siman, seif_katan
   commentary = SchemaNode()
@@ -185,7 +209,6 @@ def parse_text(helekim, files, commentator):
             poss_seif_katan += 3
         elif poss_seif_katan < curr_seif_katan:
             seif_file.write(helek+","+commentator+","+str(curr_siman)+","+str(poss_seif_katan)+","+str(curr_seif_katan)+","+actual_line+"\n")
-        pdb.set_trace()
         if poss_seif_katan in seif_list:
             seif_katan = pattern.match(line).group(0)
             marked_seif_katan = seif_katan[0:len(seif_katan)-1]+'*'+seif_katan[len(seif_katan)-1]
@@ -254,7 +277,7 @@ def post_commentary(commentator):
     commentator = commentator.replace("Bi", "Beit Yosef")
     links = []
     for helek in text:
-    	if helek != "Orach Chaim":
+    	if helek == "Orach Chaim":
     		continue
         text_array = convertDictToArray(text[helek])
         send_text = {
@@ -285,7 +308,7 @@ if __name__ == "__main__":
   if sys.argv[1] == 'Drisha':
     files_helekim = ["Orach_Chaim/drisha orach chaim helek a.txt", "yoreh deah/drisha yoreh deah.txt",
    "Even HaEzer/drisha even haezer.txt"]
-    create_indexes(eng_helekim, heb_helekim, "Drisha", u"דרישה")
+    #create_indexes(eng_helekim, heb_helekim, "Drisha", u"דרישה")
     parse_text(eng_helekim, files_helekim, "Drisha")
     post_commentary("Drisha")
   elif sys.argv[1] == 'Prisha':

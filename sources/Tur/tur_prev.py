@@ -21,26 +21,16 @@ from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
 
 
-def flipTags(line, first_word_66, first_word_77, first_word_88):
-    line = line.decode('utf-8')
-    if line[0] == ' ':
-        line = line[1:]
-    orig_arr = re.findall(u"(?:@\d\d)*\([\u05D0-\u05EA]{1,4}\)", line)
-    for count, each_one in enumerate(orig_arr):
+def flipTags(line):
+    pdb.set_trace()
+    orig_arr = re.findall(u"[@\d\d]+\([\u05D0-\u05EA]{1,4}\)", line) 
+    for each_one in orig_arr:
         copy = each_one
         start = copy.find('(')
         tags = copy[0:start]
         copy = copy.replace(tags, "")
         copy = copy + tags
-        if count == 0:
-            if first_word_66 >= 0:
-                copy = copy+"@66"
-            if first_word_77 >= 0:
-                copy = copy + "@77"
-            if first_word_88 >= 0:
-                copy = copy+ "@88"
         line = line.replace(each_one, copy)
-    return line.encode('utf-8')
 
 
 def replaceWithOrder(line, at):
@@ -180,30 +170,44 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
                 print line
             line_wout_first_word = line[first_space+1:]
             second_word = line_wout_first_word[0:line_wout_first_word.find(' ')]
+            second_word_66 = second_word.find("@66") * first_word_66
+            second_word_77 = second_word.find("@77") * first_word_77
+            second_word_88 = second_word.find("@88") * first_word_88
             second_word = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], second_word)
             second_gematria = getGematria(second_word)
             current_siman = this_siman
             line = line[first_space+1:]
-            line = removeExtraSpaces(line)
-            if line[0] == ' ':
-                line = line[1:]
-            if helek == "Choshen Mishpat":
-                line = flipTags(line, first_word_66, first_word_77, first_word_88)
-            else:
-                if first_word_66 >= 0:
-                    line = "@66"+line
-                if first_word_77 >= 0:
-                    line = "@77"+line
-                if first_word_88 >= 0:
-                    line = "@88"+line
-            line = line.replace("@66", at_66)
-            line = line.replace("@77", at_77)
-            line = line.replace("@88", at_88)
-            line = replaceWithOrder(line, at_66)
-            line = replaceWithOrder(line, at_77)
-            line = replaceWithOrder(line, at_88)
-            line = line.replace("@33","").replace("@11","").replace("@22","").replace("@00","").replace("@44","").replace("@55","").replace("@99","").replace("@98","").replace("@89","")
-            line = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], line)
+        if current_siman == 422 and helek == "Choshen Mishpat":
+            pdb.set_trace()
+        line = removeExtraSpaces(line)
+        if line[0] == ' ':
+            line = line[1:]
+        if helek == "Choshen Mishpat":
+            tags_to_move = ""
+            if second_word_66 != 1:
+                tags_to_move += "@66"
+            if second_word_77 != 1:
+                tags_to_move += "@77"
+            if second_word_88 != 1:
+                tags_to_move += "@88"
+            end_second_word = line.find(' ')
+            line = line[end_second_word:]
+            line = second_word + tags_to_move + line
+        else:
+            if first_word_66 >= 0:
+                line = "@66"+line
+            if first_word_77 >= 0:
+                line = "@77"+line
+            if first_word_88 >= 0:
+                line = "@88"+line
+        line = line.replace("@66", at_66)
+        line = line.replace("@77", at_77)
+        line = line.replace("@88", at_88)
+        line = replaceWithOrder(line, at_66)
+        line = replaceWithOrder(line, at_77)
+        line = replaceWithOrder(line, at_88)
+        line = line.replace("@33","").replace("@11","").replace("@22","").replace("@00","").replace("@44","").replace("@55","").replace("@99","").replace("@98","").replace("@89","")
+        line = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], line)
         if just_saw_00 == True:
             just_saw_00 = False
             line = header+"<br>"+line
@@ -236,9 +240,11 @@ if __name__ == "__main__":
     at_77 = " || "
     at_88 = " <> "
     files_helekim = ["Orach_Chaim/tur orach chaim.txt", "Yoreh Deah/tur yoreh deah.txt", "Even HaEzer/tur even haezer.txt", "Choshen Mishpat/tur choshen mishpat.txt"]
-    #create_indexes(eng_helekim, heb_helekim)
+    create_indexes(eng_helekim, heb_helekim)
     parse_text(at_66, at_77, at_88, eng_helekim, files_helekim)
     for siman_num in text["Choshen Mishpat"]:
+        if siman_num == 422:
+            pdb.set_trace()
         current = text["Choshen Mishpat"][siman_num]
         new_arr = current[0].split("#$!^")
         if new_arr[0].replace(" ","") == '':
@@ -255,5 +261,6 @@ if __name__ == "__main__":
             "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001935970",
             "versionTitle": "Vilna, 1923"
         }
+        print "YOREAH DEAH"
         post_text("Tur,_"+helek, send_text)
 
