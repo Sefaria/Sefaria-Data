@@ -9,7 +9,6 @@ sys.path.insert(0, p)
 sys.path.insert(0, '../Match/')
 from data_utilities.util import *
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
-from sources.local_settings import *
 from sources.functions import *
 import glob
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
@@ -298,8 +297,8 @@ def check_tags_on_category(category, tag, tag_regex, check_function):
             if not check_function(perek, message, output):
                 perfect = False
 
-        if perfect:
-            output.write(u'{}-אין בעיות\n'.format(name))
+        #if perfect:
+         #   output.write(u'{}-אין בעיות\n'.format(name))
 
     output.close()
 
