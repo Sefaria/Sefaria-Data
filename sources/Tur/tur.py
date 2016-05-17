@@ -21,6 +21,18 @@ from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
 
 
+def flipTags(line):
+    pdb.set_trace()
+    orig_arr = re.findall(u"[@\d\d]+\([\u05D0-\u05EA]{1,4}\)", line) 
+    for each_one in orig_arr:
+        copy = each_one
+        start = copy.find('(')
+        tags = copy[0:start]
+        copy = copy.replace(tags, "")
+        copy = copy + tags
+        line = line.replace(each_one, copy)
+
+
 def replaceWithOrder(line, at):
     count = 1
     before_marker = at[0:2]
@@ -94,7 +106,7 @@ def create_indexes(eng_helekim, heb_helekim):
   tur.validate()
   index = {
     "title": "Tur",
-    "categories": ["Halakhah"],
+    "categories": ["Halakhah", "Tur and Commentaries"],
     "schema": tur.serialize()
     }
   post_index(index)
@@ -114,7 +126,7 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
         line = line.replace('\n','')
         if len(line)==0:
             continue
-        if (len(line)<=12 and line.find("@22")>=0):
+        if (len(line)<=20 and line.find("@22")>=0):
             append_to_next_line = True
             appending = line
             continue
@@ -126,16 +138,17 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
         first_word_77 = -1
         first_word_88 = -1
         siman_header = False
-        if line.find("@00") >= 0 and len(line.split(" ")) == 2:
+        if line.find("@00") >= 0 and len(line.split(" ")) >= 2:
             start = line.find("@00")
             end = len(line)
             header = line[start:end]
             line = line.replace(header, "")
-            header = header.replace("@00","")
+            header = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], header)
             if len(line) > 1:
                 will_see_00 = True
             else:
                 just_saw_00 = True
+                continue
 
         if line.find("@22")>=0 or (line.find("@00")>=0 and len(line)>200):
             siman_header = True
@@ -164,6 +177,11 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
             second_gematria = getGematria(second_word)
             current_siman = this_siman
             line = line[first_space+1:]
+        if current_siman == 422 and helek == "Choshen Mishpat":
+            pdb.set_trace()
+        line = removeExtraSpaces(line)
+        if line[0] == ' ':
+            line = line[1:]
         if helek == "Choshen Mishpat":
             tags_to_move = ""
             if second_word_66 != 1:
@@ -222,9 +240,11 @@ if __name__ == "__main__":
     at_77 = " || "
     at_88 = " <> "
     files_helekim = ["Orach_Chaim/tur orach chaim.txt", "Yoreh Deah/tur yoreh deah.txt", "Even HaEzer/tur even haezer.txt", "Choshen Mishpat/tur choshen mishpat.txt"]
-    #create_indexes(eng_helekim, heb_helekim)
+    create_indexes(eng_helekim, heb_helekim)
     parse_text(at_66, at_77, at_88, eng_helekim, files_helekim)
     for siman_num in text["Choshen Mishpat"]:
+        if siman_num == 422:
+            pdb.set_trace()
         current = text["Choshen Mishpat"][siman_num]
         new_arr = current[0].split("#$!^")
         if new_arr[0].replace(" ","") == '':
@@ -232,14 +252,14 @@ if __name__ == "__main__":
         text["Choshen Mishpat"][siman_num] = []
         for each_one in new_arr:
            text["Choshen Mishpat"][siman_num].append([each_one])
+    pdb.set_trace()
     for helek in eng_helekim:
-        if helek != "Choshen Mishpat":
-            continue
         send_text = {
             "text": convertDictToArray(text[helek]),
             "language": "he",
             "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001935970",
             "versionTitle": "Vilna, 1923"
         }
+        print "YOREAH DEAH"
         post_text("Tur,_"+helek, send_text)
 

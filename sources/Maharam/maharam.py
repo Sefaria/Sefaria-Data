@@ -26,7 +26,7 @@ if len(sys.argv) == 3:
 else:
 	masechet = sys.argv[1]
 
-heb_numbers = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "ששי", "שביעי", "שמיני", "תשיעי", "עשירי", "אחד עשר", "שנים עשר", "שלשה עשר"] 
+heb_numbers = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "ששי", "שביעי", "שמיני", "תשיעי", "עשירי", "אחד עשר", "שנים עשר", "שלשה עשר", "ארבעה עשר"]
 
 
 def convertRefCommentaryTalmud(ref, replace_text):
@@ -80,8 +80,6 @@ def addDHComment(dh1, dh2, comment, category, heb_category):
 			dh1_dict[current_daf].append((category, ""))
 			dh2_dict[current_daf].append((category, ""))
 		else:
-			if comment.find("""בד"ה ומר סבר כו' ומאן""")>=0:
-				pdb.set_trace()
 			comm_dict[current_daf][last_comment] += "<br>"+comment		
 	if category == 'gemara':
 		gemara1_dict[current_daf].append(dh1)
@@ -119,12 +117,10 @@ mishnah1_dict = {}
 mishnah2_dict = {}
 rashi ='רש"י'
 tosafot = "תוס"
-dibbur_hamatchil = 'בד"ה'
-dibbur_hamatchil_2 = 'ד"ה'
+dibbur_hamatchil = ['בד"ה', 'ד"ה', 'בא"ד', """ד'"ה"""]
 gemara = "גמ"
 amud_bet = 'ע"ב'
-mishnah = 'במשנה'
-other_tosafot = 'בא"ד'
+mishnah = ['במשנה', 'מתני']
 current_daf = 3
 current_perek = 1
 categories = ['rashi', 'tosafot', 'gemara', 'mishnah', 'paragraph']
@@ -132,8 +128,9 @@ f = open(masechet+"2.txt", 'r')
 this_line = False
 for line in f:
 	line = line.replace("\n", "")
-	line = line.replace("@33", "@44")
+	line = line.replace("@33", "")
 	line = line.replace("@55", "")
+	line = line.replace("@44","")
 	line = line.replace("@77","").replace("@99","")
 	if len(line)==0:
 		continue
@@ -170,27 +167,31 @@ for line in f:
 		if not current_daf in comm_dict:
 			comm_dict[current_daf] = []
 		
-		comments = actual_text.split("@44")
+		comments = actual_text.split(":")
 		for count, comment in enumerate(comments):
+			if len(comment) < 2:
+				continue
+			comment = comment + ':'
 			if count == 0 and len(comment) == 0:
 				continue
 			heb_category = comment.split(" ")[0]
 			if heb_category.find(rashi)>=0:
 				category = 'rashi'
-			elif heb_category.find(other_tosafot)>=0:
-				category = 'tosafot'
 			elif heb_category.find(tosafot)>=0:
 				category = 'tosafot'
 			elif heb_category.find(gemara)>=0:
 				category = 'gemara'
-			elif heb_category.find(mishnah)>=0:
+			elif heb_category in mishnah:
 				category = 'mishnah'
-			elif heb_category.find(dibbur_hamatchil)>=0 or heb_category.find(dibbur_hamatchil_2)>=0:
-				print 'found one'
+			elif heb_category in dibbur_hamatchil:
+				if count == 0:
+					category = 'gemara'
 			else:
 				if count == 0:
 					category = 'gemara'
 				else:
+					if comment.split(".",1)[0].find('וכו') > 0:
+						category = 'gemara'
 					category = 'paragraph'
 			if not current_daf in dh1_dict:
 				dh1_dict[current_daf] = []
@@ -258,7 +259,7 @@ send_text = {
 				"language": "he",
 				"text": text_to_post,
 			}
-#post_text("Maharam on "+masechet, send_text, "on")
+post_text("Maharam on "+masechet, send_text, "on")
 print "HERE"
 
 '''
@@ -280,8 +281,6 @@ for perek in mishnah1_dict:
 
 links_to_post = []
 for daf in dh1_dict:
-	if daf < 46:
-		continue
 	print daf
   	maharam_line = 0
   	rashi_line=0
@@ -347,7 +346,7 @@ for daf in dh1_dict:
 				except:
 					masechet_daf_line = masechet_daf_line_start
 				if len(masechet_daf_line)>0:
-					post_link({
+					links_to_post.append({
 					"refs": [
 								 masechet_daf_line,
 								"Maharam on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(maharam_line)
@@ -357,7 +356,7 @@ for daf in dh1_dict:
 					"generated_by": "Maharam on "+masechet+" linker"})
 				if len(masechet_daf_line)>0:
 					talmud_ref = convertRefCommentaryTalmud(masechet_daf_line, replace_text)
-					post_link({
+					links_to_post.append({
 						"refs": [
 								 talmud_ref,
 								"Maharam on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(maharam_line)
@@ -380,7 +379,7 @@ for daf in dh1_dict:
 				masechet_daf_line = Ref(masechet_daf_line_start).to(Ref(masechet_daf_line_end)).normal()
 			except:
 				masechet_daf_line = masechet_daf_line_start
-			post_link({
+			links_to_post.append({
 				"refs": [
 						 masechet_daf_line,
 						"Maharam on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(maharam_line)
@@ -411,7 +410,7 @@ for daf in dh1_dict:
 							masechet_daf_line = Ref(masechet_daf_line_start).to(Ref(masechet_daf_line_end)).normal()
 						except:
 							masechet_daf_line = masechet_daf_line_start
-						post_link({
+						links_to_post.append({
 							"refs": [
 									 masechet_daf_line,
 									"Maharam "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(maharam_line)
@@ -423,3 +422,4 @@ for daf in dh1_dict:
 			
 		elif category == 'paragraph' and maharam_line == 0:
 			maharam_line+=1
+post_link(links_to_post)

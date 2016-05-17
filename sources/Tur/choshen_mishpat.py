@@ -296,7 +296,7 @@ def post_text_and_link(choshen_mishpat, commentators):
         send_text = \
         {
                 "text": choshen_mishpat[commentator],
-                "versionTitle": "Choshen Mishpat: Vilna, 1923",
+                "versionTitle": "Tur Choshen Mishpat: Vilna, 1923",
                 "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001935970",
                 "language": "he"
         }
