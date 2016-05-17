@@ -42,6 +42,36 @@ def count_by_regex(some_file, regex):
     return result
 
 
+def count_by_regex_jarray(jagged_array, regex, result={}):
+    """
+    Similar to count_by_regex, runs the same test on a jagged_array that may still need cleaning
+    :param jagged_array: Multilevel array, lowest level must be text (str or unicode).
+    :param regex: Regular expression to match
+    :param result: Dictionary to hold captured strings.
+    :return: Dictionary where keys are strings that matched the regex and keys are the number of times
+    they appeared.
+    """
+
+    for item in jagged_array:
+        if type(item) is list:
+            result = count_by_regex_jarray(item, regex, result)
+
+        elif type(item) is str or type(item) is unicode:
+            captures = regex.finditer(item)
+            for capture in captures:
+                text = capture.group()
+                if text not in result.keys():
+                    result[text] = 1
+                else:
+                    result[text] += 1
+
+        else:
+            print 'Jagged array contains unknown type'
+            raise TypeError
+
+    return result
+
+
 class Tag:
     """
     This represents a tag such as those that appear in texts sent by srikot. This class can hold all relevant
@@ -66,11 +96,22 @@ class Tag:
         # Ref object
         self.name = name
 
-        if self.reg:
+        # Flag to determine if file has reached the end
+        self.eof = False
 
-            # a dictionary where the keys are the strings that match self.reg and values are the number of
-            # times they each appear.
-            self.types = count_by_regex(self.file, self.reg)
+        # True if tag always starts a new line.
+        self.starts_line = self.does_start_line()
+
+        if not self.reg:
+            self.reg = self.tag
+        else:
+            self.reg = reg
+
+        # a dictionary where the keys are the strings that match self.reg and values are the number of
+        # times they each appear.
+        self.types = count_by_regex(self.file, self.reg)
+
+        self.file.seek(0)
 
     def count_all_tags(self):
         """
@@ -87,6 +128,20 @@ class Tag:
         self.file.seek(0)
 
         return count
+
+    def does_start_line(self):
+        """
+        True if tag always appears at the beginning of a line.
+        :return: True or False
+        """
+        self.file.seek(0)
+        for line in self.file:
+            if line.find(self.tag) != -1 and line.find(self.tag) != 0:
+                self.file.seek(0)
+                return False
+        else:
+            self.file.seek(0)
+            return True
 
     def count_tags_by_segment(self, segment_tag):
         """
@@ -137,3 +192,20 @@ class Tag:
             matches = re.finditer(self.reg, line)
             for match in matches:
                 captures.append(match.group(capture_group))
+        else:
+            self.eof = True
+            return captures
+
+    def skip_to_next_segment(self, segment_tag):
+        """
+        Sets self.file to one line after segment_tag is found
+        :param segment_tag: string or regular expression used to find segment
+        """
+
+        for line in self.file:
+            if re.search(segment_tag, line):
+                return
+        else:
+            print 'Reached end of file without finding segment tag'
+            self.file.close()
+            raise EOFError
