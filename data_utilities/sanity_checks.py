@@ -3,6 +3,9 @@
 This module gives a series of tools designed for analyzing texts received from OCR.
 """
 import re
+import pdb
+import util
+
 
 
 def count_by_regex(some_file, regex):
@@ -72,24 +75,24 @@ def count_by_regex_jarray(jagged_array, regex, result={}):
     return result
 
 
-class Tag:
+class TagTester:
     """
     This represents a tag such as those that appear in texts sent by srikot. This class can hold all relevant
     data necessary to analyze tags - i.e. an associated regular expression and file.
     """
 
-    def __init__(self, tag, tag_file, reg=None, name=u''):
+    def __init__(self, tag, tag_file, reg=None, name=u'', fail_func=pdb.set_trace):
 
         # this is the exact string of the tag
         self.tag = tag
 
-        # this is a file associated with the tag
+        # this is a file object associated with the tag
         self.file = tag_file
 
         # number of time tag appears in associated file
         self.appearances = self.count_all_tags()
 
-        # a regular expression associated with the tag
+        # a string defining a regular expression associated with the tag
         self.reg = reg
 
         # name of the text tag is associated with. If possible, make this a string that can be recognized by a
@@ -110,6 +113,8 @@ class Tag:
         # a dictionary where the keys are the strings that match self.reg and values are the number of
         # times they each appear.
         self.types = count_by_regex(self.file, self.reg)
+
+        self.fail_func = fail_func
 
         self.file.seek(0)
 
@@ -170,11 +175,39 @@ class Tag:
         self.file.seek(0)
         return all_counts
 
-    def grab_by_section(self, segment_tag=None, capture_group=0):
+    def in_order_one_section(self, capture_group=0):  #
+        array_headers = self.grab_each_header(None, capture_group)
+        prev_val = -1
+        for header in array_headers:
+            curr_val = util.getGematria(header)
+            if prev_val >= curr_val:
+                print header
+            prev_val = curr_val
+    
+
+    def in_order_many_sections(self, end_tag, capture_group=0):
+        if end_tag == None:
+            print 'End tag must have value to distinguish between each section.'
+            self.fail_func()
+        headers_2d_array = self.grab_each_header(end_tag, capture_group)
+        for headers_1d_array in headers_2d_array:
+            prev_val = -1
+            for header in headers_1d_array:
+                curr_val = util.getGematria(header)
+                if prev_val >= curr_val:
+                    print header
+                prev_val = curr_val
+
+
+
+
+    def grab_each_header(self, end_tag=None, capture_group=0):
         """
         Grab all matches of the regular expression and add to an array. This will analyze the file until it hits
-        a match for the segment tag. Running this function in a loop till the end of a file will return a 2-D
+        a match for the end tag or the end of the file. 
+        If there is an end_tag specified Running this function in a loop till the end of a file will return a 2-D
         array, with each sub-array containing the captures within the matching segment.
+        If there is no end_tag and it simply hits the end of the file, it will return a 1-D array.
         :param segment_tag:  String that indicates end of segment. If not set, function will run to the
         end of the file
         :param capture_group: Capture group to be returned.
@@ -183,10 +216,15 @@ class Tag:
 
         captures = []
         for line in self.file:
+            if not isinstance(self.reg, unicode):
+                self.reg = self.reg.decode('utf-8')
+
+            if not isinstance(line, unicode):
+                line = line.decode('utf-8')
 
             # check for the end of the segment
-            if segment_tag:
-                if re.search(segment_tag, line):
+            if end_tag:
+                if re.search(end_tag, line):
                     return captures
 
             matches = re.finditer(self.reg, line)

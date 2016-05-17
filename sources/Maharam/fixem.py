@@ -29,7 +29,7 @@ input.close()
 pdb.set_trace()
 '''
 #avodah zarah not working
-files = ["chullin"]
+files = ["bava batra"]
 p = re.compile('@\d\dע"\ב')
 for file in files:
 	new_file = open(file+"2.txt", 'w')

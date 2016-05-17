@@ -61,18 +61,22 @@ eng_parshiot = ["Bereishit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "To
 "Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo", "Nitzavim", "Vayeilech", "Ha'Azinu",
 "V'Zot HaBerachah"]
 
+def removeExtraSpaces(txt):
+    while txt.find("  ") >= 0:
+        txt = txt.replace("  ", " ")
+    return txt
 
 
-def in_order_caller(file, reg_exp_tag, reg_exp_reset="", dont_count=[]):
+def in_order_caller(file, reg_exp_tag, reg_exp_reset="", dont_count=[], output_file="in_order_output.txt"):
     ##open file, create an array based on reg_exp,
     ##when hit reset_tag, call in_order
     in_order_array = []
     time = 0
+    output_file = open(output_file, 'a')
     for line in open(file):
         line = line.replace("\n","")
         if line.find("00") >= 0:
             time+=1
-            print line
         line = line.decode('utf-8')
         line = line.replace(u"\u202a", "").replace(u"\u202c","")
         if len(line) == 0:
@@ -80,16 +84,23 @@ def in_order_caller(file, reg_exp_tag, reg_exp_reset="", dont_count=[]):
         if len(reg_exp_reset) > 0:
             reset = re.findall(reg_exp_reset, line)
             if len(reset) > 0:
-                in_order(in_order_array)
+                result = in_order(in_order_array)
                 in_order_array = []
         find_all = re.findall(reg_exp_tag, line)
         if len(find_all) > 0:
-          print find_all
           for each_one in find_all:
             in_order_array.append(each_one)
         prev_line = line
     if len(in_order_array) > 0:
-        in_order(in_order_array)
+        result = in_order(in_order_array)
+
+    if result != "":
+        print file
+        print result
+        print "\n"
+        output_file.write(file.encode('utf-8')+"\n")
+        output_file.write("חסר פרק "+result.encode('utf-8')+"\n\n\n")
+    output_file.close()
 
 
 def in_order_multiple_segments(line, curr_num, increment_by):
@@ -139,13 +150,10 @@ def in_order(list_tags, multiple_segments=False, dont_count=[], increment_by=1):
                  perfect = False
              curr_num = poss_num
              if perfect == False:
-                 pdb.set_trace()
+                 return actual_line
              prev_line = line
 
-     if perfect == True:
-         print "100% in order!"
-     else:
-         print "Not in order.  See file: "+output_file
+     return ""
 
 def wordHasNekudot(word):
     data = word.decode('utf-8')

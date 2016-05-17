@@ -21,6 +21,28 @@ from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
 
 
+def flipTags(line, first_word_66, first_word_77, first_word_88):
+    line = line.decode('utf-8')
+    if line[0] == ' ':
+        line = line[1:]
+    orig_arr = re.findall(u"(?:@\d\d)*\([\u05D0-\u05EA]{1,4}\)", line)
+    for count, each_one in enumerate(orig_arr):
+        copy = each_one
+        start = copy.find('(')
+        tags = copy[0:start]
+        copy = copy.replace(tags, "")
+        copy = copy + tags
+        if count == 0:
+            if first_word_66 >= 0:
+                copy = copy+"@66"
+            if first_word_77 >= 0:
+                copy = copy + "@77"
+            if first_word_88 >= 0:
+                copy = copy+ "@88"
+        line = line.replace(each_one, copy)
+    return line.encode('utf-8')
+
+
 def replaceWithOrder(line, at):
     count = 1
     before_marker = at[0:2]
@@ -94,7 +116,7 @@ def create_indexes(eng_helekim, heb_helekim):
   tur.validate()
   index = {
     "title": "Tur",
-    "categories": ["Halakhah"],
+    "categories": ["Halakhah", "Tur and Commentaries"],
     "schema": tur.serialize()
     }
   post_index(index)
@@ -114,7 +136,7 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
         line = line.replace('\n','')
         if len(line)==0:
             continue
-        if (len(line)<=12 and line.find("@22")>=0):
+        if (len(line)<=20 and line.find("@22")>=0):
             append_to_next_line = True
             appending = line
             continue
@@ -126,16 +148,17 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
         first_word_77 = -1
         first_word_88 = -1
         siman_header = False
-        if line.find("@00") >= 0 and len(line.split(" ")) == 2:
+        if line.find("@00") >= 0 and len(line.split(" ")) >= 2:
             start = line.find("@00")
             end = len(line)
             header = line[start:end]
             line = line.replace(header, "")
-            header = header.replace("@00","")
+            header = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], header)
             if len(line) > 1:
                 will_see_00 = True
             else:
                 just_saw_00 = True
+                continue
 
         if line.find("@22")>=0 or (line.find("@00")>=0 and len(line)>200):
             siman_header = True
@@ -157,42 +180,38 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
                 print line
             line_wout_first_word = line[first_space+1:]
             second_word = line_wout_first_word[0:line_wout_first_word.find(' ')]
-            second_word_66 = second_word.find("@66") * first_word_66
-            second_word_77 = second_word.find("@77") * first_word_77
-            second_word_88 = second_word.find("@88") * first_word_88
             second_word = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], second_word)
             second_gematria = getGematria(second_word)
             current_siman = this_siman
             line = line[first_space+1:]
-        if helek == "Choshen Mishpat":
-            tags_to_move = ""
-            if second_word_66 != 1:
-                tags_to_move += "@66"
-            if second_word_77 != 1:
-                tags_to_move += "@77"
-            if second_word_88 != 1:
-                tags_to_move += "@88"
-            end_second_word = line.find(' ')
-            line = line[end_second_word:]
-            line = second_word + tags_to_move + line
-        else:
-            if first_word_66 >= 0:
-                line = "@66"+line
-            if first_word_77 >= 0:
-                line = "@77"+line
-            if first_word_88 >= 0:
-                line = "@88"+line
-        line = line.replace("@66", at_66)
-        line = line.replace("@77", at_77)
-        line = line.replace("@88", at_88)
-        line = replaceWithOrder(line, at_66)
-        line = replaceWithOrder(line, at_77)
-        line = replaceWithOrder(line, at_88)
-        line = line.replace("@33","").replace("@11","").replace("@22","").replace("@00","").replace("@44","").replace("@55","").replace("@99","").replace("@98","").replace("@89","")
-        line = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], line)
+            line = removeExtraSpaces(line)
+            if line[0] == ' ':
+                line = line[1:]
+            if helek == "Choshen Mishpat":
+                line = flipTags(line, first_word_66, first_word_77, first_word_88)
+            else:
+                if first_word_66 >= 0:
+                    line = "@66"+line
+                if first_word_77 >= 0:
+                    line = "@77"+line
+                if first_word_88 >= 0:
+                    line = "@88"+line
+            line = line.replace("@66", at_66)
+            line = line.replace("@77", at_77)
+            line = line.replace("@88", at_88)
+            line = replaceWithOrder(line, at_66)
+            line = replaceWithOrder(line, at_77)
+            line = replaceWithOrder(line, at_88)
+            line = line.replace("@33","").replace("@11","").replace("@22","").replace("@00","").replace("@44","").replace("@55","").replace("@99","").replace("@98","").replace("@89","")
+            line = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], line)
         if just_saw_00 == True:
             just_saw_00 = False
-            line = header+"<br>"+line
+            if helek == "Choshen Mishpat":
+                if current_siman in headers:
+                    pdb.set_trace()
+                headers[current_siman] = header
+            else:
+                line = "<b>"+header+"</b><br>"+line
         if will_see_00 == True:
             just_saw_00 = True
             will_see_00 = False
@@ -213,6 +232,8 @@ if __name__ == "__main__":
     global csvwriter
     csvwriter = csv.writer(csvf, delimiter=',')
     global text
+    global headers
+    headers = {}
     text = {}
     global hilchot_topic
     hilchot_topic = {}
@@ -225,16 +246,19 @@ if __name__ == "__main__":
     #create_indexes(eng_helekim, heb_helekim)
     parse_text(at_66, at_77, at_88, eng_helekim, files_helekim)
     for siman_num in text["Choshen Mishpat"]:
+        if siman_num in headers:
+            header = "<b>"+headers[siman_num]+"</b><br>"
+        else:
+            header = ""
         current = text["Choshen Mishpat"][siman_num]
         new_arr = current[0].split("#$!^")
         if new_arr[0].replace(" ","") == '':
             new_arr.pop(0)
+        new_arr[0] = header.decode('utf-8') + new_arr[0]
         text["Choshen Mishpat"][siman_num] = []
         for each_one in new_arr:
            text["Choshen Mishpat"][siman_num].append([each_one])
     for helek in eng_helekim:
-        if helek != "Choshen Mishpat":
-            continue
         send_text = {
             "text": convertDictToArray(text[helek]),
             "language": "he",
