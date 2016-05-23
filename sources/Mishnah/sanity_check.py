@@ -325,6 +325,33 @@ def check_chapters(category, chap_reg):
 
     output.close()
 
+
+def tag_starts_line(tag, category):
+    """
+    Make sure a tag always begins a new line
+    :param tag: regular expression with which to find tag
+    :param category: Identifier for the files (i.e משניות, יכין etc.)
+    """
+
+    for tractate in tractates:
+        ref = Ref(tractate)
+        name = ref.he_book()
+        name = name.replace(u'משנה', category)
+        try:
+            in_file = codecs.open(u'{}.txt'.format(name), 'r', 'utf-8')
+        except IOError:
+            print u'cannot find {}'.format(name)
+            continue
+
+        # instantiate TagTester
+        tester = TagTester(tag, in_file)
+        if tester.does_start_line():
+            print u'{} is okay!'.format(name)
+        else:
+            print u'problem with {}'.format(name)
+
+
+tag_starts_line(u'@99', u'משניות')
 check_tags_on_category(u'משניות', u'@22', u'@22([א-ת,"]{1,3})', he_tags_in_order)
 check_tags_on_category(u'יכין', u'@11', u'@11([א-ת,"]{1,3})', he_tags_in_order)
 compare_mishna_to_yachin(library.get_indexes_in_category('Mishnah'))
