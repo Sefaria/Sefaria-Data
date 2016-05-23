@@ -351,7 +351,6 @@ def tag_starts_line(tag, category):
             print u'problem with {}'.format(name)
 
 
-tag_starts_line(u'@99', u'משניות')
 check_tags_on_category(u'משניות', u'@22', u'@22([א-ת,"]{1,3})', he_tags_in_order)
 check_tags_on_category(u'יכין', u'@11', u'@11([א-ת,"]{1,3})', he_tags_in_order)
 compare_mishna_to_yachin(library.get_indexes_in_category('Mishnah'))
