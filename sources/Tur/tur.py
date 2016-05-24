@@ -100,9 +100,9 @@ def create_indexes(eng_helekim, heb_helekim):
           choshen.add_title("Choshen Mishpat", "en", primary=True)
           choshen.add_title(heb_helekim[count], "he", primary=True)
           choshen.key = helek
-          choshen.depth = 3
-          choshen.addressTypes = ["Integer", "Integer", "Integer"]
-          choshen.sectionNames = ["Siman", "Seif", "Paragraph"]
+          choshen.depth = 2
+          choshen.addressTypes = ["Integer", "Integer"]
+          choshen.sectionNames = ["Siman", "Seif"]
           tur.append(choshen)
       else:
           helek_node = JaggedArrayNode()
@@ -111,7 +111,7 @@ def create_indexes(eng_helekim, heb_helekim):
           helek_node.key = helek
           helek_node.depth = 2
           helek_node.addressTypes = ["Integer", "Integer"]
-          helek_node.sectionNames = ["Siman", "Paragraph"]
+          helek_node.sectionNames = ["Siman", "Seif"]
           tur.append(helek_node)
   tur.validate()
   index = {
@@ -132,6 +132,7 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
     text[helek] = {}
     header = ""
     for line in f:
+        print 'another line'
         actual_line = line
         line = line.replace('\n','')
         if len(line)==0:
@@ -220,7 +221,7 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
             text[helek][current_siman] = [line]
         else:
             line = line.decode('utf-8')
-            text[helek][current_siman][0] = text[helek][current_siman][0]+"<br>"+line
+            text[helek][current_siman][0] += text[helek][current_siman][0]+"<br>"+line
         if second_gematria - this_siman == 1:
             text[helek][second_gematria] = [u"ראו סימן "+str(current_siman)]
             current_siman = second_gematria
@@ -244,20 +245,22 @@ if __name__ == "__main__":
     at_88 = " <> "
     files_helekim = ["Orach_Chaim/tur orach chaim.txt", "Yoreh Deah/tur yoreh deah.txt", "Even HaEzer/tur even haezer.txt", "Choshen Mishpat/tur choshen mishpat.txt"]
     #create_indexes(eng_helekim, heb_helekim)
+    pdb.set_trace()
     parse_text(at_66, at_77, at_88, eng_helekim, files_helekim)
+    print 'done parsing'
     for siman_num in text["Choshen Mishpat"]:
         if siman_num in headers:
             header = "<b>"+headers[siman_num]+"</b><br>"
         else:
             header = ""
-        current = text["Choshen Mishpat"][siman_num]
-        new_arr = current[0].split("#$!^")
+        current = text["Choshen Mishpat"][siman_num][0]
+        new_arr = current.split("#$!^")
         if new_arr[0].replace(" ","") == '':
             new_arr.pop(0)
         new_arr[0] = header.decode('utf-8') + new_arr[0]
         text["Choshen Mishpat"][siman_num] = []
         for each_one in new_arr:
-           text["Choshen Mishpat"][siman_num].append([each_one])
+           text["Choshen Mishpat"][siman_num].append(each_one)
     for helek in eng_helekim:
         send_text = {
             "text": convertDictToArray(text[helek]),

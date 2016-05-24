@@ -30,6 +30,55 @@ def extractFilled(dict):
         new_dict[slot] = dict[slot]
   return new_dict
 
+def addHeader(line, header, just_saw_00, will_see_00):
+  if just_saw_00 == True:
+      just_saw_00 = False
+      line = "<b>"+header+"</b><br>"+line
+  if will_see_00 == True:
+      just_saw_00 = True
+      will_see_00 = False
+  return line, just_saw_00, will_see_00
+
+
+def replaceWithHTMLTags(line):
+    line = line.decode('utf-8')
+    line = line.replace('%(', '(%')
+    line = line.replace('(#', '(%')
+    line = line.replace("*(", "(%")
+    line = line.replace('(*', '(%')
+    commentaries = ["Drisha", "Darchei Moshe", "Hagahot", "Beit_Yosef", "Bach", "Mystery"]
+    matches_array = [re.findall(u"\[[\u05D0-\u05EA]{1,4}\]", line),
+                        re.findall(u"\(%[\u05D0-\u05EA]{1,4}\)", line), re.findall(u"\s#[\u05D0-\u05EA]{1,4}", line),
+                        re.findall(u"\{[\u05D0-\u05EA]{1,4}\}",line), re.findall(u"\|[\u05D0-\u05EA]{1,4}\|", line),
+                        re.findall(u"<[\u05D0-\u05EA]{1,4}>",line)]
+    for commentary_count, matches in enumerate(matches_array):
+        how_many_shams = 0
+        for order_count, match in enumerate(matches):
+            if match == u"(שם)" or match == u"[שם]":
+                how_many_shams += 1
+                continue
+            HTML_tag =  '<i data-commentator="'+commentaries[commentary_count]+'" data-order="'+str(order_count+1-how_many_shams)+'"></i>'
+            line = line.replace(match, HTML_tag)
+    return line
+
+def lookForHeader(line, curr_header, just_saw_00, will_see_00):
+  if line.find("@00") >= 0 and len(line.split(" ")) >= 2:
+      skip = True
+      start = line.find("@00")
+      end = len(line)
+      header = line[start:end]
+      line = line.replace(header, "")
+      header = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], header)
+      if len(line) > 1:
+          will_see_00 = True
+      else:
+          just_saw_00 = True
+  else:
+      skip = False
+      header = curr_header
+  return line, header, just_saw_00, will_see_00, skip
+
+
 def parse_text(commentators, files):
   choshen_mishpat = {}
   for commentator in commentators:
@@ -40,21 +89,23 @@ def parse_text(commentators, files):
     choshen_mishpat[commentator] = {}
     num_seifim = 0
     append_to_next_line = ""
+    just_saw_00 = False
+    will_see_00 = False
+    header = ""
     for line in file:
-        print commentator
         actual_line = line
+        line = replaceWithHTMLTags(line)
         line = line.replace("\n", "")
-        if line == """@22סי' """:
+        if line == u"""@22סי' """:
             continue
         if len(line) == 0:
             continue
-        line = line.decode('utf-8')
-        if line.find('@22') == -1 and len(line) < 15:
-            append_to_next_line = line
-            continue
-        if len(append_to_next_line) > 0:
-            line = append_to_next_line + line
-            append_to_next_line = ""
+
+        line, header, just_saw_00, will_see_00, skip = lookForHeader(line, header, just_saw_00, will_see_00)
+        if skip == True:
+          skip = False
+          continue
+
         if line.find("@22") >= 0 and len(line) > 13:
             line = line.replace(u"@22סי' ", "").replace(u"@22ס' ", "").replace(u"@22סי ", "")
             if line[0] == ' ':
@@ -106,14 +157,12 @@ def parse_text(commentators, files):
 
             if howBig(choshen_mishpat[commentator][curr_siman]) > tur[curr_siman]:
                 print 'too many seifim'
-                pdb.set_trace()
+                #pdb.set_trace()
 
 
 
             if poss_seif - curr_seif > 1:
                 amt = poss_seif - curr_seif - 1
-                if curr_siman == 386:
-                    pdb.set_trace()
                 for i in range(amt):
                     print 'skipping in '+str(curr_siman)+' curr_seif = '+str(curr_seif)+' poss_seif = '+str(poss_seif)
                     choshen_mishpat[commentator][curr_siman][i+1+curr_seif] = [""]
@@ -131,7 +180,7 @@ def parse_text(commentators, files):
             line = removeAllStrings(["@11", "@22", "@33", "@44", "@55", "@66", "@77", "@87", "@88", "@89", "@98"],
                                     line)
 
-
+            line, just_saw_00, will_see_00 = addHeader(line, header, just_saw_00, will_see_00)
             choshen_mishpat[commentator][curr_siman][poss_seif] = [line]
 
 
@@ -155,7 +204,7 @@ def parse_text(commentators, files):
             try:
               if howBig(choshen_mishpat[commentator][curr_siman]) > tur[curr_siman]:
                 print 'too many seifim'
-                pdb.set_trace()
+                #pdb.set_trace()
             except:
               pdb.set_trace()
 
@@ -182,6 +231,7 @@ def parse_text(commentators, files):
             line = removeAllStrings(["@11", "@22", "@33", "@44", "@55", "@66", "@77", "@87", "@88", "@89", "@98"],
                                     line)
 
+            line, just_saw_00, will_see_00 = addHeader(line, header, just_saw_00, will_see_00)
             choshen_mishpat[commentator][curr_siman][poss_seif] = [line]
 
             curr_seif = poss_seif
@@ -267,7 +317,7 @@ def splitSeifKatan(array):
         if array[i][0] == "":
             new_array.append([""])
         else:
-            array_to_append = array[i][0].split(':')
+            array_to_append = array[i][0].split(': ')
             array_to_append.pop(len(array_to_append)-1)
             for j in range(len(array_to_append)):
                 array_to_append[j] = array_to_append[j] + ':'
@@ -289,7 +339,7 @@ def post_text_and_link(choshen_mishpat, commentators):
             for seif_num, seif in enumerate(choshen_mishpat[commentator][siman_num]):
                 for seif_katan_num, seif_katan in enumerate(choshen_mishpat[commentator][siman_num][seif_num]):
                     if choshen_mishpat[commentator][siman_num][seif_num][seif_katan_num] != "":
-                        tur_end = "Tur,_Choshen_Mishpat."+str(siman_num+1)+"."+str(seif_num+1)+".1"
+                        tur_end = "Tur,_Choshen_Mishpat."+str(siman_num+1)+"."+str(seif_num+1)
                         commentator_end = commentator+",_Choshen_Mishpat."+str(siman_num+1)+"."+str(seif_num+1)+"."+str(seif_katan_num+1)
 
                         links.append({'refs': [tur_end, commentator_end], 'type': 'commentary', 'auto': 'True', 'generated_by': commentator+"choshenmishpat"})
@@ -330,7 +380,7 @@ def loadFiles(commentators):
 
 if __name__ == "__main__":
     global helek, tur, pattern
-    commentators = ["Prisha"]
+    commentators = ["Beit Yosef"]
     #tur = getAllSimanim("Tur,_Choshen_Mishpat", 1)
     tur = getTurFile('tur_siman_info.csv')
     files = loadFiles(commentators)
