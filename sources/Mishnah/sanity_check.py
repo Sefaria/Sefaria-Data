@@ -297,8 +297,8 @@ def check_tags_on_category(category, tag, tag_regex, check_function):
             if not check_function(perek, message, output):
                 perfect = False
 
-        #if perfect:
-         #   output.write(u'{}-אין בעיות\n'.format(name))
+        if perfect:
+            output.write(u'{}-אין בעיות\n'.format(name))
 
     output.close()
 
