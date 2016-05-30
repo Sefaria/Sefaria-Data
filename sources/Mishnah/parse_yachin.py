@@ -105,3 +105,32 @@ def simple_to_complex(segment_names, jagged_text_array):
         complex_text[name] = jagged_text_array[index]
 
     return complex_text
+
+
+def grab_intro(infile, stop_tag, cleaner=None):
+    """
+    An introduction lies outside the regular chapter verse structure of the text. Use this function to grab the
+    intro
+    :param infile: input file to read from.
+    :param stop_tag: When this pattern is recognized, the function will return
+    :param cleaner: A function that takes a list of strings and returns a list of strings
+    :return: List of string(s).
+    """
+
+    stop_tag = re.compile(stop_tag)
+
+    result = []
+
+    for line in infile:
+
+        if stop_tag.search(line):
+            if cleaner:
+                return cleaner(result)
+            else:
+                return result
+        else:
+            result.append(line)
+
+    else:
+        infile.close()
+        raise EOFError('Hit the end of the file')
