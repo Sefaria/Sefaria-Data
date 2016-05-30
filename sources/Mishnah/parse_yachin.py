@@ -134,3 +134,25 @@ def grab_intro(infile, stop_tag, cleaner=None):
     else:
         infile.close()
         raise EOFError('Hit the end of the file')
+
+
+def grab_section_names(section_expression, input_file, group_number=0):
+    """
+    Grab the names of the sections that need to be converted into a complex text
+    :param section_expression: An expression that can be compiled into a regex that will find
+     the corresponding sections
+    :param input_file: File from which to grab the results
+    :param group_number: If needed, supply the capture group that will return the correct name.
+    :return: List of strings.
+    """
+
+    section_reg = re.compile(section_expression)
+    names = []
+
+    for line in input_file:
+
+        found_match = section_reg.search(line)
+        if found_match:
+            names.append(found_match.group(group_number))
+
+    return names
