@@ -87,9 +87,21 @@ def align_comments(text_array):
     return result
 
 
-infile = codecs.open('יכין עדיות.txt', 'r', 'utf-8')
-j = file_to_ja([[]], infile, [u'@00פרק'], align_comments)
-infile.close()
-outfile = codecs.open('yachin_test.txt', 'w', 'utf-8')
-j_to_file(outfile, j.array(), ['perek', 'comment'])
-outfile.close()
+def simple_to_complex(segment_names, jagged_text_array):
+    """
+    Given a simple text and the names of each section, convert a simple text into a complex one.
+    :param segment_names: A list of names for each section
+    :param jagged_text_array: A parsed jagged array to be converted from a simple to a complex text
+    :return: Dictionary representing the complex text structure
+    """
+
+    # Ensure there are the correct number of segment names
+    if len(segment_names) != len(jagged_text_array):
+        raise IndexError('Length of segment_names does not match length of jaggedArray')
+
+    complex_text = {}
+
+    for index, name in enumerate(segment_names):
+        complex_text[name] = jagged_text_array[index]
+
+    return complex_text
