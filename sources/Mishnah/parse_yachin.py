@@ -2,7 +2,8 @@
 import codecs
 from sefaria.datatype import jagged_array
 import re
-from data_utilities.util import jagged_array_to_file as j_to_file
+from data_utilities.util import jagged_array_to_file as j_to_file, getGematria
+from data_utilities.sanity_checks import *
 
 
 def file_to_ja(structure, infile, expressions, cleaner):
@@ -69,21 +70,25 @@ def align_comments(text_array):
         if remove.search(line):
             del text_array[index]
 
-    result, tmp = [], []
+    section_name, result, tmp = '', {}, []
     t = u''.join(text_array)
     t = t.replace(u'\n', u'')
     t = t.replace(u'\r', u'')
     t = t.split(u' ')
     for word in t:
-        if re.search(u'@11[\u05d0-\u05ea"]{1,4}\)', word):
-            if tmp:
-                result.append(re.sub(u'@[0-9]{2}', u'', u' '.join(tmp)))
-            tmp = []
-        else:
-            tmp.append(word)
+        search = re.search(u'@11([\u05d0-\u05ea"]){1,4}\*?\)', word)
+        if search:
+            section_name = getGematria(search.group(1).replace(u'"', u''))
+            if section_name in result.keys():
+                result[section_name].append(u'\n')
+        if section_name not in result.keys():
+            result[section_name] = []
 
-    else:
-        result.append(re.sub(u'@[0-9]{2}', u'', u' '.join(tmp)))
+        result[section_name].append(re.sub(u'@[0-9]{2}', u'', word))
+
+    #
+
+
     return result
 
 
@@ -156,3 +161,7 @@ def grab_section_names(section_expression, input_file, group_number=0):
             names.append(found_match.group(group_number))
 
     return names
+
+
+
+
