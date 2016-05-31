@@ -360,8 +360,6 @@ def tag_matches_regex(exact_tag, expression, input_file):
     :param input_file: file to examine
     """
 
-
-
     tester = TagTester(exact_tag, input_file, expression)
 
     count = 0
@@ -371,14 +369,39 @@ def tag_matches_regex(exact_tag, expression, input_file):
     return tester.appearances - count
 
 
+def find_weird_stuff(searchlist):
+    """
+    Go through uploaded mishna and look for things that need to be removed
+    :param searchlist: regular expressions with which to examine texts
+    """
+
+    results = codecs.open('strange_characters.txt', 'w', 'utf-8')
+    compiled_search = re.compile(searchlist)
+    count = 0
+
+    # move through tractates
+    for tractate in library.get_indexes_in_category('Mishnah'):
+
+        # get text as nested list
+        core_data = TextChunk(Ref(tractate), 'he', 'Vilna Mishna').ja().array()
+
+        for text in traverse_ja(core_data):
+
+            if compiled_search.search(text['data']):
+
+                count += 1
+                location = [x+1 for x in text['indices']]
+                results.write(u'{}: {}\n'.format(tractate, str(location)))
+                results.write(u'{}\n'.format(text['data']))
+
+    results.write(u'found {} issues'.format(count))
+    print 'found {} issues'.format(count)
+
+    results.close()
+
 check_tags_on_category(u'משניות', u'@22', u'@22([\u05d0-\u05ea"]{1,3})', he_tags_in_order)
 check_tags_on_category(u'יכין', u'@22', u'@22(\([\u05d0-\u05ea"]{1,3}\))', he_tags_in_order)
 compare_mishna_to_yachin(library.get_indexes_in_category('Mishnah'))
 check_chapters(u'משניות', u'@00(?:פרק |פ)([א-ת,"]{1,3})')
 
-
-b = codecs.open(u'בועז ביצה.txt', 'r', 'utf-8')
-print tag_matches_regex(u'@00', u'@00(?:\u05e4\u05e8\u05e7 |\u05e4)([\u05d0-\u05ea,"]{1,3})', b)
-b.seek(0)
-print tag_matches_regex(u'@22', u'@(11|22)\([\u05d0-\u05ea]{1,2}\)', b)
-b.close()
+find_weird_stuff(u'([#\*\?]|\([\u05d0-\u05ea]\)|\[[\u05d0-\u05ea]\])')
