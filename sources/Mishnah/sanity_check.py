@@ -351,22 +351,37 @@ def tag_starts_line(tag, category):
             print u'problem with {}'.format(name)
 
 
-def tag_matches_regex(exact_tag, expression, input_file):
+def tag_matches_regex(exact_tag, expression, output_file_name):
     """
     Boaz tags are all over the place. Given a tag, make sure all appearances of a tag can be
     grabbed by regular expression.
     :param exact_tag: Exact string defining a tag (e.g. @00)
     :param expression: Regular expression with which to grab the tag
-    :param input_file: file to examine
+    :param output_file_name: file to write results
     """
 
-    tester = TagTester(exact_tag, input_file, expression)
+    results = codecs.open(output_file_name, 'w', 'utf-8')
 
-    count = 0
-    for match in tester.types.keys():
-        count += tester.types[match]
+    books = library.get_indexes_in_category('Mishnah')
 
-    return tester.appearances - count
+    for book in books:
+        name = Ref(book).he_book().replace(u'משנה', u'בועז')
+
+        if not os.path.isfile(u'{}.txt'.format(name)):
+            results.write(u'missing boaz {}\n'.format(book))
+            continue
+
+        input_file = codecs.open(u'{}.txt'.format(name), 'r', 'utf-8')
+        tester = TagTester(exact_tag, input_file, expression)
+
+        count = 0
+        for match in tester.types.keys():
+            count += tester.types[match]
+
+        results.write(u'{} found {} issues\n'.format(name, tester.appearances-count))
+        input_file.close()
+
+    results.close()
 
 
 def find_weird_stuff(searchlist):
@@ -399,9 +414,13 @@ def find_weird_stuff(searchlist):
 
     results.close()
 
+'''
 check_tags_on_category(u'משניות', u'@22', u'@22([\u05d0-\u05ea"]{1,3})', he_tags_in_order)
 check_tags_on_category(u'יכין', u'@22', u'@22(\([\u05d0-\u05ea"]{1,3}\))', he_tags_in_order)
 compare_mishna_to_yachin(library.get_indexes_in_category('Mishnah'))
 check_chapters(u'משניות', u'@00(?:פרק |פ)([א-ת,"]{1,3})')
+'''
+# find_weird_stuff(u'([!#\*\?]|\([\u05d0-\u05ea]\)|\[[\u05d0-\u05ea]\])')
 
-find_weird_stuff(u'([#\*\?]|\([\u05d0-\u05ea]\)|\[[\u05d0-\u05ea]\])')
+tag_matches_regex(u'@22', u'@22\([\u05d0-\u05ea]{1,2}\)', 'boaz_@22_tag.txt')
+tag_matches_regex(u'@11', u'@11\([\u05d0-\u05ea]{1,2}\)', 'boaz_@11_tag.txt')
