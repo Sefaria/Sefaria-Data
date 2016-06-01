@@ -353,5 +353,77 @@ def tag_starts_line(tag, category):
 
 check_tags_on_category(u'משניות', u'@22', u'@22([א-ת,"]{1,3})', he_tags_in_order)
 check_tags_on_category(u'יכין', u'@11', u'@11([א-ת,"]{1,3})', he_tags_in_order)
+def tag_matches_regex(exact_tag, expression, output_file_name):
+    """
+    Boaz tags are all over the place. Given a tag, make sure all appearances of a tag can be
+    grabbed by regular expression.
+    :param exact_tag: Exact string defining a tag (e.g. @00)
+    :param expression: Regular expression with which to grab the tag
+    :param output_file_name: file to write results
+    """
+
+    results = codecs.open(output_file_name, 'w', 'utf-8')
+
+    books = library.get_indexes_in_category('Mishnah')
+
+    for book in books:
+        name = Ref(book).he_book().replace(u'משנה', u'בועז')
+
+        if not os.path.isfile(u'{}.txt'.format(name)):
+            results.write(u'missing boaz {}\n'.format(book))
+            continue
+
+        input_file = codecs.open(u'{}.txt'.format(name), 'r', 'utf-8')
+        tester = TagTester(exact_tag, input_file, expression)
+
+        count = 0
+        for match in tester.types.keys():
+            count += tester.types[match]
+
+        results.write(u'{} found {} issues\n'.format(name, tester.appearances-count))
+        input_file.close()
+
+    results.close()
+
+
+def find_weird_stuff(searchlist):
+    """
+    Go through uploaded mishna and look for things that need to be removed
+    :param searchlist: regular expressions with which to examine texts
+    """
+
+    results = codecs.open('strange_characters.txt', 'w', 'utf-8')
+    compiled_search = re.compile(searchlist)
+    count = 0
+
+    # move through tractates
+    for tractate in library.get_indexes_in_category('Mishnah'):
+
+        # get text as nested list
+        core_data = TextChunk(Ref(tractate), 'he', 'Vilna Mishna').ja().array()
+
+        for text in traverse_ja(core_data):
+
+            if compiled_search.search(text['data']):
+
+                count += 1
+                location = [x+1 for x in text['indices']]
+                results.write(u'{}: {}\n'.format(tractate, str(location)))
+                results.write(u'{}\n'.format(text['data']))
+
+    results.write(u'found {} issues'.format(count))
+    print 'found {} issues'.format(count)
+
+    results.close()
+
+'''
+check_tags_on_category(u'משניות', u'@22', u'@22([\u05d0-\u05ea"]{1,3})', he_tags_in_order)
+check_tags_on_category(u'יכין', u'@22', u'@22(\([\u05d0-\u05ea"]{1,3}\))', he_tags_in_order)
+>>>>>>> 7873375ce2c32ced0e9436460aa63b3e8a8f8f65
 compare_mishna_to_yachin(library.get_indexes_in_category('Mishnah'))
 check_chapters(u'משניות', u'@00(?:פרק |פ)([א-ת,"]{1,3})')
+'''
+find_weird_stuff(u'([#\*\?]|\([\u05d0-\u05ea]\)|\[[\u05d0-\u05ea]\])')
+
+#tag_matches_regex(u'@22', u'@22\([\u05d0-\u05ea]{1,2}\)', 'boaz_@22_tag.txt')
+#tag_matches_regex(u'@11', u'@11\([\u05d0-\u05ea]{1,2}\)', 'boaz_@11_tag.txt')

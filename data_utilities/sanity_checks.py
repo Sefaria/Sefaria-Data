@@ -202,9 +202,6 @@ class TagTester:
 
                 prev_val = curr_val
 
-
-
-
     def grab_each_header(self, end_tag=None, capture_group=0):
         """
         Grab all matches of the regular expression and add to an array. This will analyze the file until it hits

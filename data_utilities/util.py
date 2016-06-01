@@ -458,3 +458,29 @@ def clean_jagged_array(messy_array, strip_list):
             raise TypeError
 
     return clean_array
+
+
+def traverse_ja(ja, indices=[], bottom=unicode):
+    """
+    A generator to move through a JaggedArray like structure, retrieving the indices  of each element of
+    the JA as you go.
+    :param ja: JaggedArray like object to traverse
+    :param indices: List of indices needed to locate the first element of the array. Leave empty if
+    starting from the root.
+    :param bottom: Data type at the bottom of the array. Used as a terminating condition.
+    :yield: Dictionary with the keys indices and data, corresponding to the retrieved data and its
+    corresponding address.
+    """
+
+    if type(ja) is bottom:
+        yield {'data': ja, 'indices': indices}
+
+    else:
+        for index, data in enumerate(ja):
+            if index == 0:
+                indices.append(index)
+            else:
+                indices[-1] = index
+            for thing in traverse_ja(data, indices, bottom):
+                yield thing
+        indices.pop()
