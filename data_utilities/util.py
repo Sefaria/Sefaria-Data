@@ -481,6 +481,7 @@ def traverse_ja(ja, indices=[], bottom=unicode):
                 indices.append(index)
             else:
                 indices[-1] = index
-            for thing in traverse_ja(data, indices, bottom):
-                yield thing
+            if data:
+                for thing in traverse_ja(data, indices, bottom):
+                    yield thing
         indices.pop()
