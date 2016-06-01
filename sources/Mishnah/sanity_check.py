@@ -420,7 +420,7 @@ check_tags_on_category(u'יכין', u'@22', u'@22(\([\u05d0-\u05ea"]{1,3}\))', h
 compare_mishna_to_yachin(library.get_indexes_in_category('Mishnah'))
 check_chapters(u'משניות', u'@00(?:פרק |פ)([א-ת,"]{1,3})')
 '''
-# find_weird_stuff(u'([!#\*\?]|\([\u05d0-\u05ea]\)|\[[\u05d0-\u05ea]\])')
+find_weird_stuff(u'([#\*\?]|\([\u05d0-\u05ea]\)|\[[\u05d0-\u05ea]\])')
 
-tag_matches_regex(u'@22', u'@22\([\u05d0-\u05ea]{1,2}\)', 'boaz_@22_tag.txt')
-tag_matches_regex(u'@11', u'@11\([\u05d0-\u05ea]{1,2}\)', 'boaz_@11_tag.txt')
+#tag_matches_regex(u'@22', u'@22\([\u05d0-\u05ea]{1,2}\)', 'boaz_@22_tag.txt')
+#tag_matches_regex(u'@11', u'@11\([\u05d0-\u05ea]{1,2}\)', 'boaz_@11_tag.txt')
