@@ -30,14 +30,19 @@ def extractFilled(dict):
         new_dict[slot] = dict[slot]
   return new_dict
 
-def addHeader(line, header, just_saw_00, will_see_00):
+def addHeader(line, old_header, header, just_saw_00, will_see_00):
   if just_saw_00 == True:
       just_saw_00 = False
-      line = "<b>"+header+"</b><br>"+line
+      if len(old_header) > 0:
+          line = "<b>"+old_header+"</b><br>"+line
+          old_header = ""
+      else:
+          line = "<b>"+header+"</b><br>"+line
+          header = ""
   if will_see_00 == True:
       just_saw_00 = True
       will_see_00 = False
-  return line, just_saw_00, will_see_00
+  return line, old_header, header, just_saw_00, will_see_00
 
 
 def replaceWithHTMLTags(line):
@@ -69,7 +74,8 @@ def lookForHeader(line, curr_header, just_saw_00, will_see_00):
       header = line[start:end]
       line = line.replace(header, "")
       header = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], header)
-      if len(line) > 1:
+      line_wout_tags = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], line)
+      if len(line_wout_tags) > 1:
           will_see_00 = True
       else:
           just_saw_00 = True
@@ -101,10 +107,26 @@ def parse_text(commentators, files):
         if len(line) == 0:
             continue
 
-        line, header, just_saw_00, will_see_00, skip = lookForHeader(line, header, just_saw_00, will_see_00)
-        if skip == True:
-          skip = False
-          continue
+        if line.find("@00") >= 0:
+          header_pos = line.find("@00")
+          len_line = len(line)
+          if header_pos > 10 and header_pos < len_line-100:
+            pdb.set_trace()
+
+        if line.find("@00") >= 0 and len(line.split(" ")) >= 2:
+            start = line.find("@00")
+            end = len(line)
+            if len(header) > 0:
+                old_header = header
+            header = line[start:end]
+            line = line.replace(header, "")
+            header = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], header)
+            line_wout_tags = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], line)
+            if len(line_wout_tags) > 1:
+                will_see_00 = True
+            else:
+                just_saw_00 = True
+                continue
 
         if line.find("@22") >= 0 and len(line) > 13:
             line = line.replace(u"@22סי' ", "").replace(u"@22ס' ", "").replace(u"@22סי ", "")
@@ -180,7 +202,7 @@ def parse_text(commentators, files):
             line = removeAllStrings(["@11", "@22", "@33", "@44", "@55", "@66", "@77", "@87", "@88", "@89", "@98"],
                                     line)
 
-            line, just_saw_00, will_see_00 = addHeader(line, header, just_saw_00, will_see_00)
+            line, old_header, header, just_saw_00, will_see_00 = addHeader(line, old_header, header, just_saw_00, will_see_00)
             choshen_mishpat[commentator][curr_siman][poss_seif] = [line]
 
 
@@ -231,7 +253,7 @@ def parse_text(commentators, files):
             line = removeAllStrings(["@11", "@22", "@33", "@44", "@55", "@66", "@77", "@87", "@88", "@89", "@98"],
                                     line)
 
-            line, just_saw_00, will_see_00 = addHeader(line, header, just_saw_00, will_see_00)
+            line, old_header, header, just_saw_00, will_see_00 = addHeader(line, old_header, header, just_saw_00, will_see_00)
             choshen_mishpat[commentator][curr_siman][poss_seif] = [line]
 
             curr_seif = poss_seif
@@ -311,19 +333,6 @@ def dealWithTwoSimanim(text):
             text = text.split(" ")[0]
     return text
 
-def splitSeifKatan(array):
-    new_array = []
-    for i in range(len(array)):
-        if array[i][0] == "":
-            new_array.append([""])
-        else:
-            array_to_append = array[i][0].split(': ')
-            array_to_append.pop(len(array_to_append)-1)
-            for j in range(len(array_to_append)):
-                array_to_append[j] = array_to_append[j] + ':'
-            new_array.append(array_to_append)
-
-    return new_array
 
 def post_text_and_link(choshen_mishpat, commentators):
     links = []
@@ -334,13 +343,11 @@ def post_text_and_link(choshen_mishpat, commentators):
             if len(choshen_mishpat[commentator][siman_num]) == 0:
                 continue
             choshen_mishpat[commentator][siman_num] = convertDictToArray(choshen_mishpat[commentator][siman_num])
-            choshen_mishpat[commentator][siman_num] = splitSeifKatan(choshen_mishpat[commentator][siman_num])
 
             for seif_num, seif in enumerate(choshen_mishpat[commentator][siman_num]):
-                for seif_katan_num, seif_katan in enumerate(choshen_mishpat[commentator][siman_num][seif_num]):
-                    if choshen_mishpat[commentator][siman_num][seif_num][seif_katan_num] != "":
-                        tur_end = "Tur,_Choshen_Mishpat."+str(siman_num+1)+"."+str(seif_num+1)
-                        commentator_end = commentator+",_Choshen_Mishpat."+str(siman_num+1)+"."+str(seif_num+1)+"."+str(seif_katan_num+1)
+                if choshen_mishpat[commentator][siman_num][seif_num] != "":
+                    tur_end = "Tur,_Choshen_Mishpat."+str(siman_num+1)+"."+str(seif_num+1)
+                    commentator_end = commentator+",_Choshen_Mishpat."+str(siman_num+1)+"."+str(seif_num+1)
 
                         links.append({'refs': [tur_end, commentator_end], 'type': 'commentary', 'auto': 'True', 'generated_by': commentator+"choshenmishpat"})
         send_text = \

@@ -9,11 +9,10 @@ sys.path.insert(0, p)
 sys.path.insert(0, '../Match/')
 from data_utilities.util import *
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
-from sources.local_settings import *
 from sources.functions import *
 import glob
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
-from data_utilities.sanity_checks import Tag
+from data_utilities.sanity_checks import TagTester
 from sefaria.model import *
 
 tractates = library.get_indexes_in_category('Mishnah')
@@ -60,8 +59,8 @@ def compare_tags_to_comments(main_tag, commentary_tag, output):
     Outputs errors to a file. main_tag and commentary_tag should have members added called segment_tag
     which indicate the beginning of a new segment (chapter, verse, etc.).
 
-    :param main_tag: A Tag object associated with the main text
-    :param commentary_tag: Tag associated with the commentary.
+    :param main_tag: A TagTester object associated with the main text
+    :param commentary_tag: TagTester associated with the commentary.
     :param output: output file for results.
     """
 
@@ -100,8 +99,8 @@ def compare_mishna_to_yachin(tractate_list):
             output.write(u'missing file {}\n'.format(name))
             continue
 
-        m_tag = Tag(u'@44', m_file, name=m_name)
-        y_tag = Tag(u'@11', y_file, name=y_name)
+        m_tag = TagTester(u'@44', m_file, name=m_name)
+        y_tag = TagTester(u'@11', y_file, name=y_name)
 
         seg_tag = u'@00(?:פרק |פ)([א-ת,"]{1,3})'
         m_tag.segment_tag = seg_tag
@@ -138,7 +137,7 @@ def get_perakim(type, tag, tag_reg):
 
         text_file = codecs.open(file_name, 'r', 'utf-8')
 
-        data_tag = Tag(tag, text_file, tag_reg, name)
+        data_tag = TagTester(tag, text_file, tag_reg, name)
         results[name] = data_tag.grab_by_section()
 
         text_file.close()
@@ -148,7 +147,7 @@ def get_tags_by_perek(srika_tag, segment_regex, capture_group=0):
     """
     Create an array of arrays, with outer arrays corresponding to chapters and inner arrays containing the
     captures of srika_tag in order.
-    :param srika_tag: A Tag object
+    :param srika_tag: A TagTester object
     :param segment_regex: used to find the beginning of each segment
     :return: 2D array
     """
@@ -160,7 +159,7 @@ def get_tags_by_perek(srika_tag, segment_regex, capture_group=0):
     captures_by_segment = []
 
     while True:
-        captures_by_segment.append(srika_tag.grab_by_section(segment_regex, capture_group))
+        captures_by_segment.append(srika_tag.grab_each_header(segment_regex, capture_group))
 
         if srika_tag.eof:
             break
@@ -286,8 +285,8 @@ def check_tags_on_category(category, tag, tag_regex, check_function):
             output.write(u'{}.txt does not exist\n'.format(name))
             continue
 
-        # create Tag object for each file
-        tag_object = Tag(tag, in_file, tag_regex, name)
+        # create TagTester object for each file
+        tag_object = TagTester(tag, in_file, tag_regex, name)
 
         # get tags in array
         whole_book = get_tags_by_perek(tag_object, seg_reg, 1)
@@ -298,8 +297,8 @@ def check_tags_on_category(category, tag, tag_regex, check_function):
             if not check_function(perek, message, output):
                 perfect = False
 
-        if perfect:
-            output.write(u'{}-אין בעיות\n'.format(name))
+        #if perfect:
+         #   output.write(u'{}-אין בעיות\n'.format(name))
 
     output.close()
 
@@ -318,13 +317,39 @@ def check_chapters(category, chap_reg):
             output.write(u'{}.txt does not exist\n'.format(name))
             continue
 
-        chap_tag = Tag(u'@00', in_file, chap_reg, name)
+        chap_tag = TagTester(u'@00', in_file, chap_reg, name)
         chapters = get_tags_by_perek(chap_tag, chap_tag.reg, capture_group=1)
 
         if len(chapters) != len(ref.all_subrefs()):
             output.write(u'Chapter mismatch {}\n'.format(tractate))
 
     output.close()
+
+
+def tag_starts_line(tag, category):
+    """
+    Make sure a tag always begins a new line
+    :param tag: regular expression with which to find tag
+    :param category: Identifier for the files (i.e משניות, יכין etc.)
+    """
+
+    for tractate in tractates:
+        ref = Ref(tractate)
+        name = ref.he_book()
+        name = name.replace(u'משנה', category)
+        try:
+            in_file = codecs.open(u'{}.txt'.format(name), 'r', 'utf-8')
+        except IOError:
+            print u'cannot find {}'.format(name)
+            continue
+
+        # instantiate TagTester
+        tester = TagTester(tag, in_file)
+        if tester.does_start_line():
+            print u'{} is okay!'.format(name)
+        else:
+            print u'problem with {}'.format(name)
+
 
 check_tags_on_category(u'משניות', u'@22', u'@22([א-ת,"]{1,3})', he_tags_in_order)
 check_tags_on_category(u'יכין', u'@11', u'@11([א-ת,"]{1,3})', he_tags_in_order)

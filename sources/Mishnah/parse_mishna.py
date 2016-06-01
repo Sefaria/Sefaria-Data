@@ -35,7 +35,7 @@ from sefaria.model import *
 tractates = library.get_indexes_in_category('Mishnah')
 
 
-def jaggedarray_from_file(input_file, perek_tag, mishna_tag):
+def jaggedarray_from_file(input_file, perek_tag, mishna_tag, skip_tag):
     """
     :param input_file: File to parse
     :param perek_tag: Used to identify the start of a new perek.
@@ -47,6 +47,10 @@ def jaggedarray_from_file(input_file, perek_tag, mishna_tag):
     found_first_chapter = False
 
     for line in input_file:
+
+        # look for skip_tag
+        if re.search(skip_tag, line):
+            continue
 
         # look for tags
         new_chapter, new_mishna = re.search(perek_tag, line), re.search(mishna_tag, line)
@@ -144,7 +148,7 @@ for trac in tracs:
     name = name.group().replace(u'משנה', u'משניות')
     infile = codecs.open(u'{}.txt'.format(name), 'r', 'utf-8')
     jagged = jaggedarray_from_file(infile, u'@00(?:\u05e4\u05e8\u05e7 |\u05e4)([\u05d0-\u05ea"]{1,3})',
-                                   u'@22[\u05d0-\u05ea]{1,2}')
+                                   u'@22[\u05d0-\u05ea]{1,2}', u'@99')
     parsed = util.clean_jagged_array(jagged, clean_list())
     infile.close()
 

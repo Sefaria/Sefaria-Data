@@ -222,6 +222,41 @@ def separateDH_Comm(line):
 			comm += word
 	return (comm, dh)
 
+
+def dealWithMishnah(line, prev_mishnah):
+	mishnah = line.split(" ")[0]
+	mishnah = mishnah.replace("@22", "")
+	mishnah = mishnah.replace("[*", "")
+	mishnah = mishnah.replace(" ", "")
+	mishnah_num = gematriaFromSiman(mishnah)
+	if prev_mishnah == 4 and mishnah_num == 8:
+		pdb.set_trace()
+	if prev_mishnah == 7 and mishnah_num == 5:
+		pdb.set_trace()
+	if mishnah_num == 0:
+		pdb.set_trace()
+	return mishnah_num
+
+def dealWithPerek(line, prev_perek):
+	perek = line.replace(" ", "")
+	perek = perek.replace("@00פרק", "")
+	perek = perek.replace('@00פ"', "")
+	perek = perek.replace('@00פ', "")
+	perek = perek.replace("\n", "")
+	perek_num = gematriaFromSiman(perek)
+	if prev_perek == 4 and perek_num == 8:
+		pdb.set_trace()
+	if prev_perek == 7 and perek_num == 5:
+		pdb.set_trace()
+	return perek_num
+
+def appendLine(dh_comm_dict, new_line, perek_num, mishnah_num):		
+	comm, dh = separateDH_Comm(new_line)
+	if not mishnah_num in dh_comm_dict[perek_num]:
+		dh_comm_dict[perek_num][mishnah_num] = []
+	dh_comm_dict[perek_num][mishnah_num].append("<b>"+dh+"</b>"+comm)
+	return dh_comm_dict
+
 comm = {}
 book = {}
 total = 0
@@ -249,43 +284,17 @@ prev_mishnah = -1
 for line in f:
 	line = line.replace('\n', '')
 	if line.find("@00") >= 0: #NEW PEREK
-		perek = line.replace(" ", "")
-		perek = perek.replace("@00פרק", "")
-		perek = perek.replace('@00פ"', "")
-		perek = perek.replace('@00פ', "")
-		perek = perek.replace("\n", "")
-		perek_num = gematriaFromSiman(perek)
-		if prev_perek == 4 and perek_num == 8:
-			pdb.set_trace()
-		if prev_perek == 7 and perek_num == 5:
-			pdb.set_trace()
+		perek_num = dealWithPerek(line, prev_perek)
 		dh_comm_dict[perek_num] = {}
 	elif line.find("@22") >= 0: #NEW MISHNAH
-		mishnah = line.split(" ")[0]
-		mishnah = mishnah.replace("@22", "")
-		mishnah = mishnah.replace("[*", "")
-		mishnah = mishnah.replace(" ", "")
-		mishnah_num = gematriaFromSiman(mishnah)
-		if prev_mishnah == 4 and mishnah_num == 8:
-			pdb.set_trace()
-		if prev_mishnah == 7 and mishnah_num == 5:
-			pdb.set_trace()
-		if mishnah_num == 0:
-			pdb.set_trace()
-		if len(line.split(" "))>2:
-			new_line = ""
-			for count, word in enumerate(line.split(" ")):
-				if count > 0:
-					new_line += word + " "
-			comm, dh = separateDH_Comm(new_line)
-			if not mishnah_num in dh_comm_dict[perek_num]:
-				dh_comm_dict[perek_num][mishnah_num] = []
-			dh_comm_dict[perek_num][mishnah_num].append("<b>"+dh+"</b>"+comm)
+		mishnah_num = dealWithMishnah(line, prev_mishnah)
+		if line[0] == ' ':
+			line = line[1:]
+		first_space = line.find(" ")
+		new_line = line[first_space+1:]
+		dh_comm_dict = appendLine(dh_comm_dict, new_line, perek_num, mishnah_num)		
 	elif line.find("@11") >= 0:	#DH and commentary
-		comm, dh = separateDH_Comm(line)
-		if not mishnah_num in dh_comm_dict[perek_num]:
-			dh_comm_dict[perek_num][mishnah_num] = []
-		dh_comm_dict[perek_num][mishnah_num].append("<b>"+dh+"</b>"+comm)
+		dh_comm_dict = appendLine(dh_comm_dict, new_line, perek_num, mishnah_num)
 	prev_line = line
 	prev_perek = perek_num
 	prev_mishnah = mishnah_num
