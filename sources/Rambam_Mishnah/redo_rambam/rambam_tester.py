@@ -24,6 +24,14 @@ def standardize_files(identifyer):
             print 'fixing {}'.format(en_file)
             os.rename(he_file, en_file)
 
-for i in [u'רמבם', u'רמ']:
-    standardize_files(i)
 
+def file_exists():
+    """
+    go through rambam files and check what's there and what isn't.
+    """
+
+    for book in tractates:
+
+        rambam = book.replace('Mishnah', 'Rambam')
+        if not os.path.isfile('{}.txt'.format(rambam)):
+            print 'missing {}'.format(rambam)
