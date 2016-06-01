@@ -297,8 +297,8 @@ def check_tags_on_category(category, tag, tag_regex, check_function):
             if not check_function(perek, message, output):
                 perfect = False
 
-        if perfect:
-            output.write(u'{}-אין בעיות\n'.format(name))
+        #if perfect:
+         #   output.write(u'{}-אין בעיות\n'.format(name))
 
     output.close()
 
@@ -351,6 +351,8 @@ def tag_starts_line(tag, category):
             print u'problem with {}'.format(name)
 
 
+check_tags_on_category(u'משניות', u'@22', u'@22([א-ת,"]{1,3})', he_tags_in_order)
+check_tags_on_category(u'יכין', u'@11', u'@11([א-ת,"]{1,3})', he_tags_in_order)
 def tag_matches_regex(exact_tag, expression, output_file_name):
     """
     Boaz tags are all over the place. Given a tag, make sure all appearances of a tag can be
@@ -417,6 +419,7 @@ def find_weird_stuff(searchlist):
 '''
 check_tags_on_category(u'משניות', u'@22', u'@22([\u05d0-\u05ea"]{1,3})', he_tags_in_order)
 check_tags_on_category(u'יכין', u'@22', u'@22(\([\u05d0-\u05ea"]{1,3}\))', he_tags_in_order)
+>>>>>>> 7873375ce2c32ced0e9436460aa63b3e8a8f8f65
 compare_mishna_to_yachin(library.get_indexes_in_category('Mishnah'))
 check_chapters(u'משניות', u'@00(?:פרק |פ)([א-ת,"]{1,3})')
 '''

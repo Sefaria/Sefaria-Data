@@ -81,10 +81,12 @@ class TagTester:
     data necessary to analyze tags - i.e. an associated regular expression and file.
     """
 
-    def __init__(self, tag, tag_file, reg=None, name=u'', fail_func=pdb.set_trace):
+    def __init__(self, tag, tag_file, callback_tester, reg=None, name=u'', fail_func=pdb.set_trace):
 
         # this is the exact string of the tag
         self.tag = tag
+
+        self.callback_tester = callback_tester 
 
         # this is a file object associated with the tag
         self.file = tag_file
@@ -175,12 +177,13 @@ class TagTester:
         self.file.seek(0)
         return all_counts
 
-    def in_order_one_section(self, capture_group=0):  #
+
+    def in_order_one_section(self, capture_group=0):  
         array_headers = self.grab_each_header(None, capture_group)
-        prev_val = -1
+        prev_val = 0
         for header in array_headers:
             curr_val = util.getGematria(header)
-            if prev_val >= curr_val:
+            if self.callback_tester(curr_val, prev_val) == False:
                 print header
             prev_val = curr_val
     
@@ -190,12 +193,13 @@ class TagTester:
             print 'End tag must have value to distinguish between each section.'
             self.fail_func()
         headers_2d_array = self.grab_each_header(end_tag, capture_group)
-        for headers_1d_array in headers_2d_array:
-            prev_val = -1
+        for count, headers_1d_array in enumerate(headers_2d_array):
+            prev_val = 0
             for header in headers_1d_array:
                 curr_val = util.getGematria(header)
-                if prev_val >= curr_val:
-                    print header
+                if self.callback_tester(curr_val, prev_val) == False:
+                    print str(curr_val) + ":" + str(prev_val) + ":" + header
+
                 prev_val = curr_val
 
     def grab_each_header(self, end_tag=None, capture_group=0):
@@ -212,6 +216,7 @@ class TagTester:
         """
 
         captures = []
+        twod_array = []
         for line in self.file:
             if not isinstance(self.reg, unicode):
                 self.reg = self.reg.decode('utf-8')
@@ -222,14 +227,18 @@ class TagTester:
             # check for the end of the segment
             if end_tag:
                 if re.search(end_tag, line):
-                    return captures
+                    twod_array.append(captures)
+                    captures = []
 
             matches = re.finditer(self.reg, line)
             for match in matches:
                 captures.append(match.group(capture_group))
         else:
             self.eof = True
-            return captures
+            if end_tag:
+               return twod_array
+            if not end_tag:
+               return captures
 
     def skip_to_next_segment(self, segment_tag):
         """
