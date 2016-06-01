@@ -50,6 +50,7 @@ with open("Jerusalem Anthology - Sheet1.tsv") as tsv:
                 "options": {"numbered": 0, "divineNames": "noSub"},
                 "generatedBy": "Sefaria Jerusalem Anthology",
                 "promptedToPublish": datetime.now().isoformat(),
+                "tags": ["Jerusalem"]
             }
         try:
             ref = Ref(l[14])
@@ -88,6 +89,7 @@ index_sheet = {
     "options": {"numbered": 0, "divineNames": "noSub"},
     "generatedBy": "Sefaria Jerusalem Anthology",
     "promptedToPublish": datetime.now().isoformat(),
+    "tags": ["Jerusalem"]
 }
 if live:
     save_sheet(index_sheet, uid)
