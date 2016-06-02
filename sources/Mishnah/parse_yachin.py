@@ -34,7 +34,7 @@ def file_to_ja(structure, infile, expressions, cleaner):
                              'received {}'.format(depth-1, len(expressions)))
 
     # compile regexes, instantiate index list
-    regexes, indices = [re.compile(ex) for ex in expressions], [-1 for ex in expressions]
+    regexes, indices = [re.compile(ex) for ex in expressions], [-1]*len(expressions)
     temp = []
 
     # loop through file
