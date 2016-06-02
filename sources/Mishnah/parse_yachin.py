@@ -86,9 +86,6 @@ def align_comments(text_array):
 
         result[section_name].append(re.sub(u'@[0-9]{2}', u'', word))
 
-    #
-
-
     return result
 
 
