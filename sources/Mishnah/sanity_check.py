@@ -416,7 +416,8 @@ def find_weird_stuff(searchlist):
 
 
 check_tags_on_category(u'משניות', u'@22', u'@22([\u05d0-\u05ea"]{1,3})', he_tags_in_order)
-check_tags_on_category(u'יכין', u'@11', u'@11([\u05d0-\u05ea"]{1,3}\))', he_tags_in_order)
+check_tags_on_category(u'יכין', u'@11', u'@11([\u05d0-\u05ea"]{1,3})\)', he_tags_in_order)
+check_tags_on_category(u'בועז', u'@22', u'@22(\([\u05d0-\u05ea"]{1,3})\)', he_tags_in_order)
 compare_mishna_to_yachin(library.get_indexes_in_category('Mishnah'))
 check_chapters(u'משניות', u'@00(?:פרק |פ)([א-ת,"]{1,3})')
 
