@@ -30,6 +30,17 @@ def extractFilled(dict):
         new_dict[slot] = dict[slot]
   return new_dict
 
+
+
+def smallFont(line):
+  start_with = ["@66", "@89"]
+  end_with = ["@77", "@98"]
+  for i in range(2):
+    if line.find(start_with[i]) >= 0 and line.find(end_with[i]) >= 0 and line.find(end_with[i]) > line.find(start_with[i]):
+      line = line.replace(start_with[i], "<small>")
+      line = line.replace(end_with[i], "</small>")
+  return line
+
 def addHeader(line, old_header, header, just_saw_00, will_see_00):
   if just_saw_00 == True:
       just_saw_00 = False
@@ -96,10 +107,12 @@ def parse_text(commentators, files):
     num_seifim = 0
     append_to_next_line = ""
     just_saw_00 = False
+    old_header = ""
     will_see_00 = False
     header = ""
     for line in file:
         actual_line = line
+        line = smallFont(line)
         line = replaceWithHTMLTags(line)
         line = line.replace("\n", "")
         if line == u"""@22סי' """:
@@ -189,16 +202,15 @@ def parse_text(commentators, files):
                     print 'skipping in '+str(curr_siman)+' curr_seif = '+str(curr_seif)+' poss_seif = '+str(poss_seif)
                     choshen_mishpat[commentator][curr_siman][i+1+curr_seif] = [""]
 
-            seif = re.findall(u"\([\u05D0-\u05EA]+\)", line)[0]
-            add_after = ""
-            if seif.find("@77") >= 0:
-                add_after += "@77"
-            if seif.find("@66") >= 0:
-                add_after += "@66"
-            if seif.find("@88") >= 0:
-                add_after += "@88"
+            temp_arr.pop(len(temp_arr) - 1)
+            if len(temp_arr) > 0:
+                for each_one in temp_arr:
+                    this_one_gematria = getGematria(each_one)
+                    if this_one_gematria > curr_seif:
+                        pdb.set_trace()
+                        choshen_mishpat[commentator][curr_siman][this_one_gematria] = [u"ראו סעיף "+str(poss_seif)]
+
             line = line.replace(seif, "")
-            line = add_after + line
             line = removeAllStrings(["@11", "@22", "@33", "@44", "@55", "@66", "@77", "@87", "@88", "@89", "@98"],
                                     line)
 
@@ -238,18 +250,15 @@ def parse_text(commentators, files):
                     choshen_mishpat[commentator][curr_siman][i+1+curr_seif] = [""]
 
 
+            temp_arr.pop(len(temp_arr) - 1)
+            if len(temp_arr) > 0:
+                for each_one in temp_arr:
+                    this_one_gematria = getGematria(each_one)
+                    if this_one_gematria > curr_seif:
+                        pdb.set_trace()
+                        choshen_mishpat[commentator][curr_siman][this_one_gematria] = [u"ראו סעיף "+str(poss_seif)]
 
-
-            seif = re.findall(u"\([\u05D0-\u05EA]+\)", line)[0]
-            add_after = ""
-            if seif.find("@77") >= 0:
-                add_after += "@77"
-            if seif.find("@66") >= 0:
-                add_after += "@66"
-            if seif.find("@88") >= 0:
-                add_after += "@88"
             line = line.replace(seif, "")
-            line = add_after + line
             line = removeAllStrings(["@11", "@22", "@33", "@44", "@55", "@66", "@77", "@87", "@88", "@89", "@98"],
                                     line)
 
@@ -348,8 +357,7 @@ def post_text_and_link(choshen_mishpat, commentators):
                 if choshen_mishpat[commentator][siman_num][seif_num] != "":
                     tur_end = "Tur,_Choshen_Mishpat."+str(siman_num+1)+"."+str(seif_num+1)
                     commentator_end = commentator+",_Choshen_Mishpat."+str(siman_num+1)+"."+str(seif_num+1)
-
-                        links.append({'refs': [tur_end, commentator_end], 'type': 'commentary', 'auto': 'True', 'generated_by': commentator+"choshenmishpat"})
+                    links.append({'refs': [tur_end, commentator_end], 'type': 'commentary', 'auto': 'True', 'generated_by': commentator+"choshenmishpat"})
         send_text = \
         {
                 "text": choshen_mishpat[commentator],
@@ -387,7 +395,7 @@ def loadFiles(commentators):
 
 if __name__ == "__main__":
     global helek, tur, pattern
-    commentators = ["Beit Yosef"]
+    commentators = ["Prisha"]
     #tur = getAllSimanim("Tur,_Choshen_Mishpat", 1)
     tur = getTurFile('tur_siman_info.csv')
     files = loadFiles(commentators)
