@@ -63,6 +63,10 @@ def file_to_ja(structure, infile, expressions, cleaner):
     return ja
 
 
+def do_nothing(text_array):
+    return text_array
+
+
 def align_comments(text_array):
     # strip out unnecessary lines
     remove = re.compile(u'@99')
@@ -159,6 +163,18 @@ def grab_section_names(section_expression, input_file, group_number=0):
 
     return names
 
+
+def find_boaz_in_yachin(yachin_struct, boaz_struct, comment_tag):
+    """
+    Check that yachin has all the links to boaz. First take a parsed boaz, check how many comments are in a given
+    chapter, then see if the corresponding yachin structure has tags that can be linked to said boaz.
+    :param yachin_struct: A roughly parsed ja-like structure of Yachin - depth 2
+    :param boaz_struct: Same as above, but for boaz.
+    :param comment_tag: syntax for regular expression with which to find tags in Yachin
+    :return: Dictionary 'chapter': diff (int representing the difference in comments between commentaries)
+    """
+
+    comment_reg = re.compile(comment_tag)
 
 
 
