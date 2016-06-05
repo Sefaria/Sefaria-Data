@@ -5,6 +5,7 @@ import re
 from data_utilities.util import jagged_array_to_file as j_to_file, getGematria
 from data_utilities.sanity_checks import *
 from sources import functions
+from sefaria.model import *
 
 
 def file_to_ja(structure, infile, expressions, cleaner):
@@ -224,3 +225,34 @@ def parse_boaz(input_file):
     full_parse = functions.convertDictToArray(comp_parse)
 
     return full_parse
+
+
+def yachin_boaz_diffs():
+    """
+    Simple parse of Yachin and Boaz, run find_boaz_in_yachin, then print diffs if necessary
+    """
+
+    tractates = library.get_indexes_in_category('Mishnah')
+
+    for book in tractates:
+
+        he_name = Ref(book).he_book()
+
+        try:
+            yachin_file = codecs.open(u'{}.txt'.format(he_name.replace(u'משנה', u'יכין')), 'r', 'utf-8')
+            boaz_file = codecs.open(u'{}.txt'.format(he_name.replace(u'משנה', u'בועז')), 'r', 'utf-8')
+        except IOError:
+            continue
+
+        y_jarray = file_to_ja([[]], yachin_file, [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4)([\u05d0-\u05ea"]{1,3})'],
+                              simple_align)
+        b_array = parse_boaz(boaz_file)
+
+        diffs = find_boaz_in_yachin(y_jarray.array(), b_array, u'@22\([\u05d0-\u05da]{1,2}\)')
+
+        yachin_file.close()
+        boaz_file.close()
+
+        for index, value in enumerate(diffs):
+            if value != 0:
+                print u'diff of size {} found in {} chapter {}'.format(value, book, index+1)
