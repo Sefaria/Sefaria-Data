@@ -175,6 +175,20 @@ def find_boaz_in_yachin(yachin_struct, boaz_struct, comment_tag):
     """
 
     comment_reg = re.compile(comment_tag)
+    diffs = []
 
+    # loop through boaz
+    for index, section in enumerate(boaz_struct):
 
+        # count number of comments in chapter of boaz
+        num_comments = len(section)
 
+        # grab Yachin chapter
+        y_chapter = u' '.join(yachin_struct[index])
+
+        # number of boaz references in Yachin chapter
+        b_comments_in_y = len(comment_reg.findall(y_chapter))
+
+        diffs.append(b_comments_in_y - num_comments)
+
+    return diffs
