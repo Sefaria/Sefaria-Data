@@ -4,6 +4,7 @@ from sefaria.datatype import jagged_array
 import re
 from data_utilities.util import jagged_array_to_file as j_to_file, getGematria
 from data_utilities.sanity_checks import *
+from sources import functions
 
 
 def file_to_ja(structure, infile, expressions, cleaner):
@@ -66,6 +67,19 @@ def file_to_ja(structure, infile, expressions, cleaner):
 def do_nothing(text_array):
     return text_array
 
+
+def simple_align(text):
+
+    clean = []
+
+    for line in text:
+        line = line.replace(u'\n', u'')
+        line = line.replace(u'\r', u'')
+
+        if line != u'':
+            clean.append(line)
+
+    return clean
 
 def align_comments(text_array):
     # strip out unnecessary lines
@@ -192,3 +206,21 @@ def find_boaz_in_yachin(yachin_struct, boaz_struct, comment_tag):
         diffs.append(b_comments_in_y - num_comments)
 
     return diffs
+
+
+def parse_boaz(input_file):
+
+    expression = u'@00(?:\u05e4\u05e8\u05e7 |\u05e4)([\u05d0-\u05ea"]{1,3})'
+
+    simple_parse = file_to_ja([[]], input_file, [expression], simple_align)
+
+    # reset file
+    input_file.seek(0)
+
+    headers = [functions.getGematria(x) for x in grab_section_names(expression, input_file, 1)]
+
+    comp_parse = simple_to_complex(headers, simple_parse.array())
+
+    full_parse = functions.convertDictToArray(comp_parse)
+
+    return full_parse
