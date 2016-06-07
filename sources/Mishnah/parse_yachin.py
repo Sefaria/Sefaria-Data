@@ -8,7 +8,7 @@ from sources import functions
 from sefaria.model import *
 
 
-def file_to_ja(structure, infile, expressions, cleaner):
+def file_to_ja(structure, infile, expressions, cleaner, grab_all=False):
     """
     Designed to be the first stage of a reusable parsing tool. Adds lines of text to the Jagged
     Array in the desired structure (Chapter, verse, etc.)
@@ -19,6 +19,7 @@ def file_to_ja(structure, infile, expressions, cleaner):
     not include an expression with which to break up the actual text.
     :param cleaner: A function that takes a list of strings and returns an array with the text broken up
     correctly. Should also break up and remove unnecessary tagging data.
+    :param grab_all: If set to true, will grab the lines indicating new sections.
     :return: A jagged_array with the text properly structured.
     """
 
@@ -50,6 +51,9 @@ def file_to_ja(structure, infile, expressions, cleaner):
                 if indices.count(-1) == 0:
                     ja.set_element(indices, cleaner(temp))
                     temp = []
+
+                    if grab_all:
+                        temp.append(line)
 
                 # increment index that's been hit, reset all subsequent indices
                 indices[i] += 1
@@ -234,7 +238,7 @@ def find_boaz_in_yachin(yachin_struct, boaz_struct, comment_tag):
 
 def parse_boaz(input_file):
 
-    expression = u'@00(?:\u05e4\u05e8\u05e7 |\u05e4)([\u05d0-\u05ea"]{1,3})'
+    expression = u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})'
 
     simple_parse = file_to_ja([[]], input_file, [expression], boaz_align)
 
@@ -250,16 +254,18 @@ def parse_boaz(input_file):
     return full_parse
 
 
-def yachin_boaz_diffs():
+def yachin_boaz_diffs(output_file):
     """
     Simple parse of Yachin and Boaz, run find_boaz_in_yachin, then print diffs if necessary
     """
 
     tractates = library.get_indexes_in_category('Mishnah')
+    count = 0
 
     for book in tractates:
 
         he_name = Ref(book).he_book()
+
 
         try:
             yachin_file = codecs.open(u'{}.txt'.format(he_name.replace(u'משנה', u'יכין')), 'r', 'utf-8')
@@ -268,7 +274,7 @@ def yachin_boaz_diffs():
             continue
 
         y_jarray = file_to_ja([[]], yachin_file, [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4)([\u05d0-\u05ea"]{1,3})'],
-                              simple_align)
+                              simple_align, True)
         b_array = parse_boaz(boaz_file)
 
         diffs = find_boaz_in_yachin(y_jarray.array(), b_array, u'@22')
@@ -277,10 +283,22 @@ def yachin_boaz_diffs():
         boaz_file.close()
 
         for index, value in enumerate(diffs):
-            if value != 0 and value != -999:
-                print u'diff of size {} found in {} chapter {}'.format(value, book, index+1)
+
+            if value > 0:
+                count += 1
+                output_file.write(u'{}: {} extra comment(s) found in {} chapter {}\n'
+                                  .format(count, abs(value), book.replace(u'Mishnah', u'Yachin'), index + 1))
+
+            elif value < 0 and value != -999:
+                count += 1
+                output_file.write(u'{}: {} extra comment(s) found in {} chapter {}\n'
+                                  .format(count, abs(value), book.replace(u'Mishnah', u'Boaz'), index + 1))
 
             elif value == -999:
-                print u'strange issue at {} chapter {}'.format(book, index+1)
+                count += 1
+                output_file.write(u'{} strange issue at {} chapter {}\n'.format(count, book, index+1))
 
-yachin_boaz_diffs()
+
+outfile = codecs.open('yachin_boaz_diffs.txt', 'w', 'utf-8')
+yachin_boaz_diffs(outfile)
+outfile.close()
