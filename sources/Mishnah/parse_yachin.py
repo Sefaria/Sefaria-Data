@@ -82,6 +82,24 @@ def simple_align(text):
 
     return clean
 
+
+def boaz_align(text):
+
+    clean = []
+    reg = re.compile(u'@22')
+
+    for line in text:
+        line = line.replace(u'\n', u'')
+        line = line.replace(u'\r', u'')
+
+        if reg.match(line):
+            clean.append(line)
+        else:
+            clean[-1] += line
+
+    return clean
+
+
 def align_comments(text_array):
     # strip out unnecessary lines
     remove = re.compile(u'@99')
@@ -195,16 +213,21 @@ def find_boaz_in_yachin(yachin_struct, boaz_struct, comment_tag):
     # loop through boaz
     for index, section in enumerate(boaz_struct):
 
-        # count number of comments in chapter of boaz
-        num_comments = len(section)
+        try:
+            # count number of comments in chapter of boaz
+            num_comments = len(section)
 
-        # grab Yachin chapter
-        y_chapter = u' '.join(yachin_struct[index])
+            # grab Yachin chapter
+            y_chapter = u' '.join(yachin_struct[index])
 
-        # number of boaz references in Yachin chapter
-        b_comments_in_y = len(comment_reg.findall(y_chapter))
+            # number of boaz references in Yachin chapter
+            b_comments_in_y = len(comment_reg.findall(y_chapter))
 
-        diffs.append(b_comments_in_y - num_comments)
+            diffs.append(b_comments_in_y - num_comments)
+
+        except IndexError:
+
+            diffs.append(-999)
 
     return diffs
 
@@ -213,7 +236,7 @@ def parse_boaz(input_file):
 
     expression = u'@00(?:\u05e4\u05e8\u05e7 |\u05e4)([\u05d0-\u05ea"]{1,3})'
 
-    simple_parse = file_to_ja([[]], input_file, [expression], simple_align)
+    simple_parse = file_to_ja([[]], input_file, [expression], boaz_align)
 
     # reset file
     input_file.seek(0)
@@ -248,11 +271,16 @@ def yachin_boaz_diffs():
                               simple_align)
         b_array = parse_boaz(boaz_file)
 
-        diffs = find_boaz_in_yachin(y_jarray.array(), b_array, u'@22\([\u05d0-\u05da]{1,2}\)')
+        diffs = find_boaz_in_yachin(y_jarray.array(), b_array, u'@22')
 
         yachin_file.close()
         boaz_file.close()
 
         for index, value in enumerate(diffs):
-            if value != 0:
+            if value != 0 and value != -999:
                 print u'diff of size {} found in {} chapter {}'.format(value, book, index+1)
+
+            elif value == -999:
+                print u'strange issue at {} chapter {}'.format(book, index+1)
+
+yachin_boaz_diffs()
