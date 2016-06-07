@@ -244,3 +244,25 @@ class TagTester:
             print 'Reached end of file without finding segment tag'
             self.file.close()
             raise EOFError
+
+
+def find_double_tags(tag_a, tag_b, infile):
+    """
+    Find locations where a file has a line that matches two regular expressions
+    :param tag_a: First regex to match
+    :param tag_b: Second regex to match
+    :param infile: File to examine
+    :return: A list of numbers which indicate line numbers at which a double tag was found
+    """
+
+    reg_a = re.compile(tag_a)
+    reg_b = re.compile(tag_b)
+
+    results = []
+
+    for line_num, line in enumerate(infile):
+
+        if reg_a.search(line) and reg_b.search(line):
+            results.append(line_num+1)
+
+    return results

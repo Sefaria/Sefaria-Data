@@ -69,6 +69,25 @@ def file_to_ja(structure, infile, expressions, cleaner, grab_all=False):
     return ja
 
 
+def get_file_names(category):
+    """
+    Get a list of all the file names for specified category
+    :param category: משניות, יכין, בועז
+    :return: List of all filenames in specified category
+    """
+
+    tractates = library.get_indexes_in_category('Mishnah')
+    file_names = []
+
+    for book in tractates:
+
+        he_name = Ref(book).he_book()
+        he_name = he_name.replace(u'משנה', category)
+        file_names.append(u'{}.txt'.format(he_name))
+
+    return file_names
+
+
 def do_nothing(text_array):
     return text_array
 
@@ -299,6 +318,19 @@ def yachin_boaz_diffs(output_file):
                 output_file.write(u'{} strange issue at {} chapter {}\n'.format(count, book, index+1))
 
 
-outfile = codecs.open('yachin_boaz_diffs.txt', 'w', 'utf-8')
-yachin_boaz_diffs(outfile)
-outfile.close()
+def double_tags():
+
+    chap_reg = u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})'
+    boaz_reg = u'@44\([\u05d0-\u05ea"]{1,3}'
+
+    for text_file in get_file_names(u'משניות'):
+
+        input_file = codecs.open(text_file, 'r', 'utf-8')
+
+        double_tags = find_double_tags(chap_reg, boaz_reg, input_file)
+
+        if double_tags:
+
+            print u'{}: {}'.format(text_file, double_tags)
+
+double_tags()
