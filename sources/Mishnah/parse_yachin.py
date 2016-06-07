@@ -333,4 +333,38 @@ def double_tags():
 
             print u'{}: {}'.format(text_file, double_tags)
 
-double_tags()
+
+def yachin_builder(text_list):
+    """
+    Takes a raw list of yachin comments in a chapter and parses them into the correct structure.
+    Does not remove links and other garbage that might exist in the text.
+    :param text_list: A list of strings
+    :return: Nested list of strings (unicode)
+    """
+
+    chapter = []
+
+    new_comment = re.compile(u'@11[\u05d0-\u05ea"]{1,3}\)')
+
+    for line in text_list:
+
+        # if nothing has been added to chapter, this is clearly the start of something new - append
+        if not chapter:
+            chapter.append([line])
+
+        # tagged lines get added as a new list
+        elif new_comment.search(line):
+            chapter.append([line])
+
+        # lines that don't match the tag get added to the last entry
+        else:
+            chapter[-1].append(line)
+
+    return chapter
+
+a = codecs.open(u'יכין כלים.txt', 'r', 'utf-8')
+b = codecs.open('yachintest.txt', 'w', 'utf-8')
+ja = file_to_ja([[]], a, [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4)([\u05d0-\u05ea"]{1,3})'], yachin_builder)
+j_to_file(b, ja.array(), [u'chapter', u'comment group', u'comment'])
+a.close()
+b.close()
