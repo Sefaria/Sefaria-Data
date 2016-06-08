@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import sys
+import os
 import codecs
 from sefaria.datatype import jagged_array
 import re
@@ -349,8 +351,11 @@ def yachin_builder(text_list):
 
     for line in text_list:
 
+        if skip_line.match(line):
+            continue
+
         # if nothing has been added to chapter, this is clearly the start of something new - append
-        if not chapter:
+        elif not chapter:
             chapter.append([line])
 
         # tagged lines get added as a new list
@@ -381,3 +386,38 @@ def find_reg_in_file(input_file, pattern):
             print '{} '.format(line_num+1),
 
     print 'Total lines: {}'.format(count)
+
+
+def find_unclear_lines(input_file, pattern_list):
+    """
+    Print out line numbers that can't be identified by any regex
+    :param pattern_list: list of regular expression patterns
+    """
+
+    expression_list = [re.compile(pattern) for pattern in pattern_list]
+
+    for line_num, line in enumerate(input_file):
+
+        line = line.replace(u'\n', u'')
+        line = line.replace(u'\r', u'')
+        line = line.replace(u'\ufeff', u'')
+        line = line.rstrip()
+        if line == u'':
+            continue
+
+        if not any(expression.search(line) for expression in expression_list):
+            print '{}: '.format(line_num+1), line
+
+# [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})', u'@11[\u05d0-\u05ea"]{1,3}\*?\)', u'@99']
+
+
+def combine_lines_in_file(file_name, pattern):
+    """
+    Look for lines that BEGIN with a specific pattern, and make them a continuation of the previous
+    line
+    :param file_name: name of the file to be fixed
+    :param pattern: regex pattern to identify lines that need to be fixed
+    """
+
+
+
