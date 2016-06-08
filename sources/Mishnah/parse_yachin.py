@@ -345,6 +345,7 @@ def yachin_builder(text_list):
     chapter = []
 
     new_comment = re.compile(u'@11[\u05d0-\u05ea"]{1,3}\)')
+    skip_line = re.compile(u'@99')
 
     for line in text_list:
 
@@ -362,9 +363,21 @@ def yachin_builder(text_list):
 
     return chapter
 
-a = codecs.open(u'יכין כלים.txt', 'r', 'utf-8')
-b = codecs.open('yachintest.txt', 'w', 'utf-8')
-ja = file_to_ja([[]], a, [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4)([\u05d0-\u05ea"]{1,3})'], yachin_builder)
-j_to_file(b, ja.array(), [u'chapter', u'comment group', u'comment'])
-a.close()
-b.close()
+
+def find_reg_in_file(input_file, pattern):
+    """
+    Prints line numbers where pattern matches text
+    :param pattern: Pattern to compile regex
+    """
+
+    regex = re.compile(pattern)
+
+    count = 0
+
+    for line_num, line in enumerate(input_file):
+
+        count += 1
+        if regex.search(line):
+            print '{} '.format(line_num+1),
+
+    print 'Total lines: {}'.format(count)
