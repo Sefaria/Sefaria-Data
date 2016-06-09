@@ -1,47 +1,78 @@
-import re
-
+# -*- coding: utf-8 -*-
 import regex
-
 from sefaria.model import *
-
-#print(Ref('Shemot.24.1').text('he').text)
-
-pattern = regex.compile('\((\u05dc\u05e2\u05d9\u05dc|\u05dc\u05e7\u05de\u05df).+\)')
-listOfMatches = list()
-
-#tosafotTrial = TextChunk(Ref('Tosafot on Menachot 105b'),'he').as_string()
-#print(tosafotTrial)
-#list = regex.findall(pattern, tosafotTrial)
-#list = regex.findall('/((\u05dc\u05e2\u05d9\u05dc|\u05dc\u05e7\u05de\u05df).*/)',tosafotTrial)
-#print(list)
+from sources import functions
 
 
-
-
+pattern = regex.compile(u'\((\u05dc\u05e2\u05d9\u05dc|\u05dc\u05e7\u05de\u05df)\s?([\u05d0-\u05ea]{1,3})(?:\s\u05d3\u05e3\s)?([.:])\)')
+everyRashiReference = list()
+everyTosafotReference = list()
+listOfRashiLinks = list()
+listOfTosafotLinks = list()
 
 def linkSelfReferences():
     listOfMesechtaNames = library.get_indexes_in_category('Bavli')
-    isolateEachAmud(listOfMesechtaNames)
+    getEveryCommentReference(listOfMesechtaNames)
+    findEveryRashiSelfReference()
+    findEveryTosafotSelfReference()
 
 
-def isolateEachAmud(listOfMesechtaNames):
-    for mesechet in listOfMesechtaNames:
-        everyAmud = Ref(mesechet).all_subrefs()
-        for amud in everyAmud:
-
-            takeTheText(amud)
-
-def takeTheText(amud):
-    rashiCommentary = TextChunk(Ref('Rashi on '+amud.uid()),'he').as_string()
-    tosafotfCommentary = TextChunk(Ref('Tosafot on '+amud.uid()),'he').as_string()
-    findEverySelfReference(rashiCommentary)
-    findEverySelfReference(tosafotfCommentary)
-
-def findEverySelfReference(Commentary):
-    listOfMatches.append(regex.findall(pattern, Commentary))
+def getEveryCommentReference(listOfMesechtaNames):
+    #for mesechet in listOfMesechtaNames:
+        mesechet = 'Niddah'
+        print(mesechet)
+        everyRashiReference.append(library.get_index('Rashi on ' + mesechet).all_segment_refs())
+        everyTosafotReference.append(library.get_index('Tosafot on ' + mesechet).all_segment_refs())
 
 
+def findEveryRashiSelfReference():
+    for mesechet in everyRashiReference:
+        print('we are in Rashi References')
+        for comment in mesechet:
+            rashiCommentary = TextChunk(comment,'he').as_string()
+            listOfSelfReferences = pattern.findall(rashiCommentary)
+            createRashiDictionaries(listOfSelfReferences,comment)
+
+
+def createRashiDictionaries(listOfSelfReferences, source):
+    theSource = source.uid()
+    for everySelfReference in listOfSelfReferences:
+        selfReference = createStringForReference(everySelfReference,theSource)
+        listOfRashiLinks.append({"refs":[theSource,selfReference],
+                                 "type":"commentary",
+                                 "auto":False,
+                                 "generate_by":"Josh's link script"})
+
+
+def createStringForReference(everySelfReference,theSource):
+    theDafNumber = functions.getGematria(everySelfReference[1])
+    if (everySelfReference[2] == '.'):
+        whichAmud = 'a'
+    else:
+        whichAmud = 'b'
+    splitString = theSource.split(' ')
+    return u'{} {} {} {}{}'.format(splitString[0],splitString[1],splitString[2],theDafNumber,whichAmud)
+
+
+def findEveryTosafotSelfReference():
+    for mesechet in everyTosafotReference:
+        print('we are in tosafot references')
+        for comment in mesechet:
+            tosafotCommentary = TextChunk(comment,'he').as_string()
+            listOfSelfReferences = pattern.findall(tosafotCommentary)
+            createTosafotDictionaries(listOfSelfReferences,comment)
+
+
+def createTosafotDictionaries(listOfSelfReferences, source):
+    theSource = source.uid()
+    for everySelfReference in listOfSelfReferences:
+        selfReference = createStringForReference(everySelfReference,theSource)
+        listOfTosafotLinks.append({"refs":[theSource,selfReference],
+                                   "type":"commentary",
+                                   "auto":False,
+                                   "generated_by":"Josh's link script"})
 
 
 linkSelfReferences()
-print(listOfMatches.__sizeof__())
+print(listOfRashiLinks)
+print(listOfTosafotLinks)
