@@ -10,20 +10,43 @@ everyTosafotReference = list()
 listOfRashiLinks = list()
 listOfTosafotLinks = list()
 
+
 def linkSelfReferences():
-    listOfMesechtaNames = library.get_indexes_in_category('Bavli')
-    getEveryCommentReference(listOfMesechtaNames)
+    #listOfMesechtaNames = library.get_indexes_in_category('Bavli')
+    #getEveryCommentReference(listOfMesechtaNames)
+
+    rashiRefs = getCommentatorReferenceCollection("Rashi")
+    tosRefs = getCommentatorReferenceCollection("Tosafot")
+
     findEveryRashiSelfReference()
     findEveryTosafotSelfReference()
 
 
+def getEveryCommentReferenceForBookAndCommentator(book, commentator):
+    commentaryBookName = "{} on {}".format(commentator, book)
+    index = library.get_index(commentaryBookName)
+    return index.all_segment_refs()
+
+
+def getCommentatorReferenceCollection(commentator):
+    allRefs = []
+    for mesechet in library.get_indexes_in_category('Bavli'):
+        allRefs.append(getEveryCommentReferenceForBookAndCommentator(mesechet, commentator))
+    return allRefs
+
+"""
 def getEveryCommentReference(listOfMesechtaNames):
     #for mesechet in listOfMesechtaNames:
         mesechet = 'Niddah'
         print(mesechet)
         everyRashiReference.append(library.get_index('Rashi on ' + mesechet).all_segment_refs())
         everyTosafotReference.append(library.get_index('Tosafot on ' + mesechet).all_segment_refs())
+"""
 
+def findEverySelfReference(listOfRefs):
+    for mesechet in listOfRefs:
+        for eachComment in mesechet:
+            """..."""
 
 def findEveryRashiSelfReference():
     for mesechet in everyRashiReference:
