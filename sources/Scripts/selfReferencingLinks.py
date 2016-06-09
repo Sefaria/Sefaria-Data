@@ -14,21 +14,21 @@ def linkSelfReferences():
     listOfTosafotRefWithSource = findEverySelfReference(tosRefs)
     listOfRashiLinks = createLinks(listOfRashiRefsWithSource)
     listOfTosafotLinks = createLinks(listOfTosafotRefWithSource)
-    functions.post_link(listOfRashiLinks)
-    functions.post_link(listOfTosafotLinks)
+    # functions.post_link(listOfRashiLinks)
+    # functions.post_link(listOfTosafotLinks)
 
-    # print(listOfRashiLinks)
-    # print(listOfTosafotLinks)
+    print(listOfRashiLinks)
+    print(listOfTosafotLinks)
     # print(len(listOfRashiLinks))
     # print(len(listOfTosafotLinks))
 
 
 def getCommentatorReferenceCollection(commentator):
-    allRefs = []
-    for mesechet in library.get_indexes_in_category('Bavli'):
-        print(mesechet)
+        allRefs = []
+    #for mesechet in library.get_indexes_in_category('Bavli'):
+        mesechet = 'Niddah'
         allRefs.append(library.get_index(getReferenceName(commentator,mesechet)).all_segment_refs())
-    return allRefs
+        return allRefs
 
 def getReferenceName(commentator, mesechet):
     return "{} on {}".format(commentator, mesechet)
@@ -49,9 +49,9 @@ def createLinks(listOfRefsWithSources):
         for eachSelfReference in eachSourceWithRef[0]:
             selfReference = createStringForReference(eachSelfReference, theSource)
             dictList.append({"refs":[theSource,selfReference],
-                                 "type":"commentary",
-                                 "auto":False,
-                                 "generate_by":"Josh's link script"})
+                             "type":"commentary",
+                             "auto":False,
+                             "generate_by":"Josh's link script"})
     return dictList
 
 
@@ -63,7 +63,7 @@ def createStringForReference(everySelfReference,theSource):
         whichAmud = 'b'
     splitString = theSource.split(' ')
     if (splitString[3].isalpha()):
-        return u'{} {} {} {} {}{}'.format(splitString[0],splitString[1],splitString[2],splitString[3],theDafNumber,whichAmud)
-    return u'{} {} {} {}{}'.format(splitString[0],splitString[1],splitString[2],theDafNumber,whichAmud)
+        return u'{} {} {}{}'.format(splitString[2],splitString[3],theDafNumber,whichAmud)
+    return u'{} {}{}'.format(splitString[2],theDafNumber,whichAmud)
 
 linkSelfReferences()
