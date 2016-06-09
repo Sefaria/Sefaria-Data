@@ -411,22 +411,24 @@ def find_unclear_lines(input_file, pattern_list):
 # [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})', u'@11[\u05d0-\u05ea"]{1,3}\*?\)', u'@99']
 
 
-def combine_lines_in_file(file_name, pattern):
+def combine_lines_in_file(file_name, pattern, skip_pattern):
     """
     Look for lines that BEGIN with a specific pattern, and make them a continuation of the previous
     line
     :param file_name: name of the file to be fixed
     :param pattern: regex pattern to identify lines that need to be fixed
+    :param skip_pattern: regex pattern that if found line should not be ignored
     """
 
     expression = re.compile(pattern)
+    skip_expression = re.compile(skip_pattern)
     old_file = codecs.open(file_name, 'r', 'utf-8')
     new_file = codecs.open(u'{}.tmp'.format(file_name), 'w', 'utf-8')
     previous_line = u''
 
     for line in old_file:
 
-        if expression.match(line):
+        if expression.match(line) and not skip_expression.search(line):
 
             # remove line breaks from previous line
             previous_line = previous_line.replace(u'\n', u' ')
@@ -445,7 +447,16 @@ def combine_lines_in_file(file_name, pattern):
     new_file.close()
     os.remove(file_name)
     os.rename(u'{}.tmp'.format(file_name), file_name)
-    
 
+
+outfile = codecs.open('output2.txt', 'w', 'utf-8')
+sys.stdout = outfile
+for book in get_file_names(u'יכין'):
+    print book
+    #combine_lines_in_file(book, u'@22\([\u05d0-\u05ea]{1,3}\)', u'@11[\u05d0-\u05ea]{1,3}\)')
+    with codecs.open(book, 'r', 'utf-8') as infile:
+        find_unclear_lines(infile, [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})', u'@11[\u05d0-\u05ea"]{1,3}\*?\)', u'@99'])
+
+outfile.close()
 
 
