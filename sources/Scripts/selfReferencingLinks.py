@@ -14,10 +14,13 @@ def linkSelfReferences():
     listOfTosafotRefWithSource = findEverySelfReference(tosRefs)
     listOfRashiLinks = createLinks(listOfRashiRefsWithSource)
     listOfTosafotLinks = createLinks(listOfTosafotRefWithSource)
-    print(listOfRashiLinks)
-    print(listOfTosafotLinks)
-    print(len(listOfRashiLinks))
-    print(len(listOfTosafotLinks))
+    functions.post_link(listOfRashiLinks)
+    functions.post_link(listOfTosafotLinks)
+
+    # print(listOfRashiLinks)
+    # print(listOfTosafotLinks)
+    # print(len(listOfRashiLinks))
+    # print(len(listOfTosafotLinks))
 
 
 def getCommentatorReferenceCollection(commentator):
