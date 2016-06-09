@@ -419,5 +419,33 @@ def combine_lines_in_file(file_name, pattern):
     :param pattern: regex pattern to identify lines that need to be fixed
     """
 
+    expression = re.compile(pattern)
+    old_file = codecs.open(file_name, 'r', 'utf-8')
+    new_file = codecs.open(u'{}.tmp'.format(file_name), 'w', 'utf-8')
+    previous_line = u''
+
+    for line in old_file:
+
+        if expression.match(line):
+
+            # remove line breaks from previous line
+            previous_line = previous_line.replace(u'\n', u' ')
+            previous_line = previous_line.replace(u'\r', u' ')
+            previous_line = re.sub(u' +', u' ', previous_line)
+
+        if previous_line:
+            new_file.write(previous_line)
+
+        previous_line = line
+
+    else:
+        new_file.write(previous_line)
+
+    old_file.close()
+    new_file.close()
+    os.remove(file_name)
+    os.rename(u'{}.tmp'.format(file_name), file_name)
+    
+
 
 
