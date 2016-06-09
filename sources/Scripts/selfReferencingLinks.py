@@ -14,8 +14,8 @@ def linkSelfReferences():
     listOfTosafotRefWithSource = findEverySelfReference(tosRefs)
     listOfRashiLinks = createLinks(listOfRashiRefsWithSource)
     listOfTosafotLinks = createLinks(listOfTosafotRefWithSource)
-    # functions.post_link(listOfRashiLinks)
-    # functions.post_link(listOfTosafotLinks)
+    functions.post_link(listOfRashiLinks)
+    functions.post_link(listOfTosafotLinks)
 
     print(listOfRashiLinks)
     print(listOfTosafotLinks)
@@ -26,7 +26,7 @@ def linkSelfReferences():
 def getCommentatorReferenceCollection(commentator):
         allRefs = []
     #for mesechet in library.get_indexes_in_category('Bavli'):
-        mesechet = 'Niddah'
+        mesechet = "Moed Katan"
         allRefs.append(library.get_index(getReferenceName(commentator,mesechet)).all_segment_refs())
         return allRefs
 
