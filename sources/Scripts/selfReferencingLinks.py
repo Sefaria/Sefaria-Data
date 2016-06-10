@@ -16,7 +16,7 @@ def linkSelfReferences():
     listOfTosafotLinks = createLinks(listOfTosafotRefWithSource)
 
 
-    brokenLinks = open('C:\Users\joshuaegoldmeier\Documents\BrokenLinks.txt','a')
+    brokenLinks = open('..\BrokenLinks.txt','a')
 
     for eachLink in listOfRashiLinks:
         try:
