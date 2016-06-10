@@ -14,21 +14,31 @@ def linkSelfReferences():
     listOfTosafotRefWithSource = findEverySelfReference(tosRefs)
     listOfRashiLinks = createLinks(listOfRashiRefsWithSource)
     listOfTosafotLinks = createLinks(listOfTosafotRefWithSource)
-    functions.post_link(listOfRashiLinks)
-    functions.post_link(listOfTosafotLinks)
 
-    print(listOfRashiLinks)
-    print(listOfTosafotLinks)
-    # print(len(listOfRashiLinks))
-    # print(len(listOfTosafotLinks))
+
+    brokenLinks = open('..\BrokenLinks.txt','a')
+
+    for eachLink in listOfRashiLinks:
+        try:
+            functions.post_link(eachLink)
+        except Exception:
+            brokenLinks.write(eachLink)
+    for eachLink in listOfTosafotLinks:
+        try:
+            functions.post_link(eachLink)
+        except Exception:
+            brokenLinks.write(eachLink)
+
+    brokenLinks.close()
+
 
 
 def getCommentatorReferenceCollection(commentator):
-        allRefs = []
-    #for mesechet in library.get_indexes_in_category('Bavli'):
-        mesechet = "Moed Katan"
+    allRefs = []
+    for mesechet in library.get_indexes_in_category('Bavli'):
+        print(mesechet)
         allRefs.append(library.get_index(getReferenceName(commentator,mesechet)).all_segment_refs())
-        return allRefs
+    return allRefs
 
 def getReferenceName(commentator, mesechet):
     return "{} on {}".format(commentator, mesechet)
