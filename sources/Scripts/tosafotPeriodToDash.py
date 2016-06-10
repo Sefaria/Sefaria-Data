@@ -18,7 +18,8 @@ TODO:
 
 def tosafotPeriodToDash():
     tosafotReferences = getCommentatorReferenceCollection("Tosafot")
-    listOfFixedTosafot = removeAllDashedTosafot(tosafotReferences)
+    listOfFixedTosafot = removeAllPeriodTosafot(tosafotReferences)
+    print(listOfFixedTosafot)
 
 
 def getCommentatorReferenceCollection(commentator):
@@ -33,7 +34,7 @@ def getReferenceName(commentator, mesechet):
 
 
 
-def removeAllDashedTosafot(tosafotReferences):
+def removeAllPeriodTosafot(tosafotReferences):
     selectedTosafot = []
     for mesechet in tosafotReferences:
         for eachComment in mesechet:
@@ -42,13 +43,9 @@ def removeAllDashedTosafot(tosafotReferences):
             theFirstPeriod = commentary.find('.')
             if (theFirstDash != -1):
                 if(theFirstPeriod < theFirstDash):
-                    convertToTempList = list(commentary)
-                    convertToTempList[theFirstPeriod] = ' -'
-                    selectedTosafot.append(''.join(convertToTempList))
+                    selectedTosafot.append(commentary.replace('.','-',1))
             else:
-                convertToTempList = list(commentary)
-                convertToTempList[theFirstPeriod] = ' -'
-                selectedTosafot.append(''.join(convertToTempList))
+                selectedTosafot.append(commentary.replace('.','-',1))
 
 
 
