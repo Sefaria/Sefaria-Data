@@ -3,6 +3,7 @@
 from data_utilities import sanity_checks as tests
 from sources import functions
 import codecs
+import os
 from sefaria.model import *
 
 noda_file = codecs.open('Noda_BeYehuda.txt', 'r', 'utf-8')
@@ -34,3 +35,4 @@ def chapter_in_order(infile, tag, tag_reg, group=0):
                 print 'error in {} chapter {}'.format(book_num+1, chapter)
 
 noda_file.close()
+os.remove('errors.html')
