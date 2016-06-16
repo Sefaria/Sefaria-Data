@@ -449,7 +449,7 @@ def file_to_ja(structure, infile, expressions, cleaner, grab_all=False):
 
                 # increment index that's been hit, reset all subsequent indices
                 indices[i] += 1
-                indices[i+1:] = [0 for x in indices[i+1:]]
+                indices[i+1:] = [0 if x > 0 else x for x in indices[i+1:]]
                 break
 
         else:
