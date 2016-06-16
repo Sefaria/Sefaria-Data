@@ -8,7 +8,8 @@ import codecs
 import os
 from sefaria.model import *
 
-noda_file = codecs.open('Noda_BeYehuda.txt', 'r', 'utf-8')
+filename = 'Noda_BeYehuda.txt'
+noda_file = codecs.open(filename, 'r', 'utf-8')
 
 
 def chapter_in_order(infile, tag, tag_reg, group=0):
@@ -75,6 +76,47 @@ def find_important_tags(infile, search_pattern):
             print u'bad line at {}'.format(line_num+1)
 
     return data
+
+"""
+Parse outline:
+
+@00 - Start of a new Node
+@77 / @88 - These need to be the beginning of a new line
+@15 - Numbered section. Should start a new line, but other line breaks appear within text. Can appear on it's
+own line - this needs to be handled.
+@11 - Seems to be the default for a new segment, is superseded many times by other tags.
+@66 - Occasionally starts a new line - does not appear to have any importance on it's own
+
+"""
+
+
+def join_singlet_tags(infile, infile_name, tag):
+    """
+    Certain tags may appear on their own line when they need to be inline with the text. This function
+    fixes this.
+    :param infile: Input file to be edited
+    :param infile_name: Path to file to be edited
+    :param tag: tag to search for
+    :return: The updated file
+    """
+
+    infile.seek(0)
+    temp_file_name = '{}.tmp'.format(infile_name)
+    temp_file = codecs.open(temp_file_name, 'w', 'utf-8')
+    replacements = {u'\r': u' ', u'\n': u' '}
+
+    # clean up problematic lines then write them to temp file
+    for line in infile:
+        if re.match(tag, line) and len(line.split()) == 1:
+            line = util.multiple_replace(line, replacements)
+            line = re.sub(u' +', u' ', line)
+        temp_file.write(line)
+
+    infile.close(), temp_file.close()
+    os.remove(infile_name)
+    os.rename(temp_file_name, infile_name)
+
+    return codecs.open(infile_name, 'r', 'utf-8')
 
 
 noda_file.close()
