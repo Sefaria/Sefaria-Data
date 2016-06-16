@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 __author__ = 'stevenkaplan'
+import sys
 import re
+from sefaria.datatype import jagged_array
+from sources.local_settings import *
+from urllib2 import HTTPError, URLError
+import json
+import urllib2
+from sefaria.model import *
 
 gematria = {}
 gematria[u'א'] = 1
@@ -355,7 +362,7 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
                         file_buffer.write(chapter.normal() + '\n')
 
                     # get next chapter
-                    next_chapter = reg_replace(' \d', version_text['next'], ' ', '.')
+                    next_chapter = replace_using_regex(' \d', version_text['next'], ' ', '.')
                     next_chapter = next_chapter.replace(' ', '_')
                     url = SEFARIA_SERVER+'/api/texts/'+next_chapter+'/'+language+'/'+version_title
 
