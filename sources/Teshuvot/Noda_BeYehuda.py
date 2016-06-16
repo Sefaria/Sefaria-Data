@@ -1,6 +1,7 @@
 # encoding=utf-8
 
 from data_utilities import sanity_checks as tests
+from data_utilities import util
 from sources import functions
 import codecs
 import os
@@ -33,6 +34,18 @@ def chapter_in_order(infile, tag, tag_reg, group=0):
         for index, chapter in enumerate(book):
             if chapter - index != 1:
                 print 'error in {} chapter {}'.format(book_num+1, chapter)
+
+
+def starts_line(tag_list):
+
+    for tag in tag_list:
+        checker = tests.TagTester(tag, noda_file)
+        if checker.starts_line:
+            print u'tag {} is good'.format(tag)
+
+        else:
+            print u'tag {} is bad'.format(tag)
+
 
 noda_file.close()
 os.remove('errors.html')
