@@ -2,6 +2,7 @@
 
 from data_utilities import sanity_checks as tests
 from data_utilities import util
+import re
 from sources import functions
 import codecs
 import os
@@ -45,6 +46,35 @@ def starts_line(tag_list):
 
         else:
             print u'tag {} is bad'.format(tag)
+
+
+def find_important_tags(infile, search_pattern):
+    """
+    Find all the tags that start lines. All lines begin with a @ character
+    :param infile: File to scan
+    :param search_pattern: Regular expression pattern
+    :return: Dictionary containing all tags and the number of times they appear. A total field counts total
+    lines.
+    """
+
+    data = {u'total': 0}
+    search_reg = re.compile(search_pattern)
+
+    for line_num, line in enumerate(infile):
+
+        match = search_reg.match(line)
+        data[u'total'] += 1
+
+        if match:
+            if match.group() in data.keys():
+                data[match.group()] += 1
+            else:
+                data[match.group()] = 1
+
+        else:
+            print u'bad line at {}'.format(line_num+1)
+
+    return data
 
 
 noda_file.close()
