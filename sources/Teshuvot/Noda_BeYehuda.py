@@ -83,9 +83,16 @@ Parse outline:
 @00 - Start of a new Node
 @77 / @88 - These need to be the beginning of a new line
 @15 - Numbered section. Should start a new line, but other line breaks appear within text. Can appear on it's
-own line - this needs to be handled.
+own line - this needs to be handled. Bulk fixed this with a function.
 @11 - Seems to be the default for a new segment, is superseded many times by other tags.
 @66 - Occasionally starts a new line - does not appear to have any importance on it's own
+
+Structure - complex text. Start with a depth 3 jaggedArray, convert the highest level to a named structure.
+It seems that each line should be it's own segment with no need for combining or splitting the original
+breakup.
+
+Some characters that may be important for the source file but should not go live:
+!*
 
 """
 
@@ -118,6 +125,30 @@ def join_singlet_tags(infile, infile_name, tag):
 
     return codecs.open(infile_name, 'r', 'utf-8')
 
+
+def clean_and_align(section):
+    """
+    Take a section of a raw parse, clean out tags and align segments.
+    :param section: List of strings representing a raw text segment.
+    :return: List of strings, cleaned and properly structured.
+    """
+
+    cleaned = []
+
+    for line in section:
+        line = re.sub(u'@[0-9]{2}', u'', line)
+        line = re.sub(u'[!*]', u'', line)
+        line = re.sub(u' +', u' ', line)
+        line = util.multiple_replace(line, {u'\n': u'', u'\r': u''})
+        cleaned.append(line)
+
+    return cleaned
+
+patterns = [u'@00', u'@22']
+names = [u'חלק', u'סימן', u'טקסט']
+parsed = util.file_to_ja([[[]]], noda_file, patterns, clean_and_align)
+with codecs.open('testfile.txt', 'w', 'utf-8') as check_parse:
+    util.jagged_array_to_file(check_parse, parsed.array(), names)
 
 noda_file.close()
 os.remove('errors.html')
