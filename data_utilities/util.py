@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 __author__ = 'stevenkaplan'
+import sys
 import re
+from sefaria.datatype import jagged_array
+from sources.local_settings import *
+from urllib2 import HTTPError, URLError
+import json
+import urllib2
+from sefaria.model import *
 
 gematria = {}
 gematria[u'א'] = 1
@@ -355,7 +362,7 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
                         file_buffer.write(chapter.normal() + '\n')
 
                     # get next chapter
-                    next_chapter = reg_replace(' \d', version_text['next'], ' ', '.')
+                    next_chapter = replace_using_regex(' \d', version_text['next'], ' ', '.')
                     next_chapter = next_chapter.replace(' ', '_')
                     url = SEFARIA_SERVER+'/api/texts/'+next_chapter+'/'+language+'/'+version_title
 
@@ -391,6 +398,67 @@ def jagged_array_to_file(output_file, jagged_array, section_names):
             print 'jagged array contains unknown type'
             output_file.close()
             raise TypeError
+
+
+def file_to_ja(structure, infile, expressions, cleaner, grab_all=False):
+    """
+    Designed to be the first stage of a reusable parsing tool. Adds lines of text to the Jagged
+    Array in the desired structure (Chapter, verse, etc.)
+    :param structure: A nested list one level lower than the final result. Example: for a depth 2
+    text, structure should be [[]].
+    :param infile: Text file to read from
+    :param expressions: A list of regular expressions with which to identify segment (chapter) level. Do
+    not include an expression with which to break up the actual text.
+    :param cleaner: A function that takes a list of strings and returns an array with the text broken up
+    correctly. Should also break up and remove unnecessary tagging data.
+    :param grab_all: If set to true, will grab the lines indicating new sections.
+    :return: A jagged_array with the text properly structured.
+    """
+
+    # instantiate ja
+    ja = jagged_array.JaggedArray(structure)
+
+    if structure == []:
+        depth = 1
+    else:
+        depth = ja.get_depth()
+
+    # ensure there is a regex for every level except the lowest
+    if depth - len(expressions) != 1:
+        raise AttributeError('Not enough data to parse. Need {} expressions, '
+                             'received {}'.format(depth-1, len(expressions)))
+
+    # compile regexes, instantiate index list
+    regexes, indices = [re.compile(ex) for ex in expressions], [-1]*len(expressions)
+    temp = []
+
+    # loop through file
+    for line in infile:
+
+        # check for matches to the regexes
+        for i, reg in enumerate(regexes):
+
+            if reg.search(line):
+                # check that we've hit the first chapter and verse
+                if indices.count(-1) == 0:
+                    ja.set_element(indices, cleaner(temp))
+                    temp = []
+
+                    if grab_all:
+                        temp.append(line)
+
+                # increment index that's been hit, reset all subsequent indices
+                indices[i] += 1
+                indices[i+1:] = [0 if x > 0 else x for x in indices[i+1:]]
+                break
+
+        else:
+            if indices.count(-1) == 0:
+                temp.append(line)
+    else:
+        ja.set_element(indices, cleaner(temp))
+
+    return ja
 
 
 def he_array_to_int(he_array):

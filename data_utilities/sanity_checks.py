@@ -88,6 +88,7 @@ class TagTester:
 
         # this is a file object associated with the tag
         self.file = tag_file
+        self.file.seek(0)
 
         # number of time tag appears in associated file
         self.appearances = self.count_all_tags()
