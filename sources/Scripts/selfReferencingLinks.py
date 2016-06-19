@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
+import codecs
+
 import regex
+
 from sefaria.model import *
+
 from sources import functions
 
 pattern = regex.compile(
-        u'\((\u05dc\u05e2\u05d9\u05dc|\u05dc\u05e7\u05de\u05df)\s?([\u05d0-\u05ea]{1,3})(?:\s?\u05d3\u05e3\s?)?([.:])\)')
+        u'\((\u05dc\u05e2\u05d9\u05dc|\u05dc\u05e7\u05de\u05df)(?:\s\u05d3[\u05e3\u0027])?\s([\u05d0-\u05ea]{1,3})([.:])\)')
 
 
 def linkSelfReferences():
