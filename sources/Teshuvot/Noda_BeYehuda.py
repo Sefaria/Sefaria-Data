@@ -149,7 +149,7 @@ def clean_and_align(section):
 def build_index(section_names):
     record = SchemaNode()
     record.add_title(u'Noda BeYehuda', 'en', True)
-    record.add_title(u'2נודע ביהודה', 'he', True)
+    record.add_title(u'נודע ביהודה', 'he', True)
     record.key = u'Noda BeYehuda'
 
     for section in section_names:
