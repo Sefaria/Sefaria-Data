@@ -6,6 +6,7 @@ import re
 from sources import functions
 import codecs
 import os
+from sefaria.utils.hebrew import hebrew_term
 from sefaria.model import *
 
 filename = 'Noda_BeYehuda.txt'
@@ -144,11 +145,55 @@ def clean_and_align(section):
 
     return cleaned
 
+
+def build_index(section_names):
+    record = SchemaNode()
+    record.add_title(u'Noda BeYehuda', 'en', True)
+    record.add_title(u'נודע ביהודה', 'he', True)
+    record.key = u'Noda BeYehuda'
+
+    for section in section_names:
+        node = JaggedArrayNode()
+        node.add_title(section, 'en', True)
+        node.add_title(hebrew_term(section), 'he', True)
+        node.key = section
+        node.depth = 2
+        node.addressTypes = ['Integer', 'Integer']
+        node.sectionNames = ['Teshuva', 'Paragraph']
+        record.append(node)
+
+    record.validate()
+
+    index = {'title': 'Noda BeYehuda',
+             'categories': ['Responsa'],
+             'schema': record.serialize()}
+
+    return index
+
+
+def post_text_and_index(text_struct, section_names):
+
+    index = build_index(section_names)
+    functions.post_index(index)
+
+    for section_num, section in enumerate(section_names):
+
+        new_text = {
+            "versionTitle": 'Noda BeYehuda Warsaw 1880',
+            "versionSource": 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001983501',
+            "language": 'he',
+            "text": text_struct[section_num]
+        }
+        functions.post_text('Noda BeYehuda, {}'.format(section), new_text)
+
 patterns = [u'@00', u'@22']
 names = [u'חלק', u'סימן', u'טקסט']
+section_names = ['Orach Chaim', 'Yoreh Deah', 'Even HaEzer', 'Choshen Mishpat']
 parsed = util.file_to_ja([[[]]], noda_file, patterns, clean_and_align)
 with codecs.open('testfile.txt', 'w', 'utf-8') as check_parse:
     util.jagged_array_to_file(check_parse, parsed.array(), names)
+
+post_text_and_index(parsed.array(), section_names)
 
 noda_file.close()
 os.remove('errors.html')
