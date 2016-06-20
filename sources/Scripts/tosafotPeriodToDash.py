@@ -87,6 +87,20 @@ def make_the_switches(list_of_dicts):
 
     return changed_tosafots
 
+"""
+An explanation of this tester.  This list parallels the different statements separated by ands
+1. Makes sure the punctuation we want to change exists
+2. Make sure that it is within the first 150 characters.  Any symbol this far off is most likely not a
+    Divrei Hamatchil indicator and therefore shouldn't be changed
+3. This check is prevents an index out of range in the next check
+4. This makes sure that we are not changed a period or colon that indicates amud aleph or bet
+    (not a bullet proof solution)
+5. Assuming the first dash we see is a divrei hamatchil indicator, we therefore do not want to change any period
+    or colon after a dash
+6. Any comment with a dash within the first 150 characters is likely a divrei hamatchil indicator and therefore
+    the string shouldn't be altered
+7. We do not want to change the last character of the string
+"""
 
 def tester(commentary, the_first_dash, the_changeable_punctuation):
     return (the_changeable_punctuation != -1 and the_changeable_punctuation < 150 and the_changeable_punctuation != len(commentary)-1 and
