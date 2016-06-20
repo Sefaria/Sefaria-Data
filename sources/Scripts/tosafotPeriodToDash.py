@@ -34,7 +34,7 @@ def standardize_tosafot_divrei_hamatchil_to_dash():
 def get_commentator_reference_collection(commentator):
         all_refs = []
     #for mesechet in library.get_indexes_in_category('Bavli'):
-        mesechet = 'Shevuot'
+        mesechet = 'Berakhot'
         all_refs.append(library.get_index(get_reference_name(commentator, mesechet)).all_segment_refs())
         return all_refs
 
@@ -54,7 +54,6 @@ def remove_comments_every_period_and_colon_is_amud_marker(tosafot_references):
             number_of_colons_in_parentheses = len(colons.findall(commentary))
             if commentary.count('.') > number_of_periods_in_parentheses or commentary.count(':') > (
                         number_of_colons_in_parentheses + 1):
-                commentary = commentary.replace(u'\u2013', u'-').replace(u'\u2014', u'-')
                 after_the_first_trim.append({'ref': eachComment, 'comment': commentary})
     return after_the_first_trim
 
@@ -68,14 +67,22 @@ def make_the_switches(list_of_dicts):
         the_first_dash = commentary.find('-')
         the_first_period = commentary.find('.')
         the_first_colon = commentary.find(':')
-        if commentary[-1] != ':':
-            badTosafot.write(comment['ref'].uid() + '\r\n')
-        elif tester(commentary, the_first_dash, the_first_period):
-            commentary = commentary.replace('.', ' -', 1)
+        length = len(commentary)
+
+        if commentary.count(u'\u2013')+commentary.count(u'\u2014') > 0:
+            commentary = commentary.replace(u'\u2013', u'-').replace(u'\u2014', u'-')
             changed_tosafots.append({'ref': comment['ref'].uid(), 'comment': create_texts(commentary, comment['ref'])})
-        # elif tester(commentary, the_first_dash, the_first_colon):
-        #     commentary = commentary.replace(':', ' -', 1)
-        #     changed_tosafots.append({'ref': comment['ref'].uid(), 'comment': create_texts(commentary, comment['ref'])})
+
+        elif tester(commentary, the_first_dash, the_first_period):
+            commentary = commentary.replace('.', u' -', 1)
+            commentary = commentary.replace(u'\u2013', u'-').replace(u'\u2014', u'-')
+            changed_tosafots.append({'ref': comment['ref'].uid(), 'comment': create_texts(commentary, comment['ref'])})
+        elif tester(commentary, the_first_dash, the_first_colon):
+            commentary = commentary.replace(':', ' -', 1)
+            commentary = commentary.replace(u'\u2013', u'-').replace(u'\u2014', u'-')
+            changed_tosafots.append({'ref': comment['ref'].uid(), 'comment': create_texts(commentary, comment['ref'])})
+
+
     badTosafot.close()
     return changed_tosafots
 
