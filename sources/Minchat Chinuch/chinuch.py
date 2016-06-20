@@ -66,4 +66,51 @@ def check_segments():
                 index = count
             index += 1
 
-check_segments()
+
+def tag_position(text, pattern, position):
+    """
+    Given a line of text, check if the given pattern can be found at the word of specified position
+    :param text: text to be examined
+    :param pattern: pattern to search for
+    :param position: Word number pattern is expected to appear
+    :return: True of False
+    """
+
+    expression = re.compile(pattern)
+
+    words = text.split()
+
+    if expression.search(words[position]):
+        return True
+    else:
+        return False
+
+
+def analyze_lines(pattern, condition, *args):
+    """
+    Outputs a list of lines that contain pattern but don't satisfy condition
+    :param pattern: Pattern to identify lines of interest
+    :param condition: Condition lines are expected to fulfill
+    :return: List of dictionaries with line numbers and text where lines don't meet condition
+    """
+
+    expression = re.compile(pattern)
+    bad_lines = []
+    count = 0
+
+    with codecs.open(filename, 'r', 'utf-8') as thefile:
+
+        for line_num, line in enumerate(thefile):
+
+            if expression.search(line):
+                if not condition(line, *args):
+                    data = {
+                        'line number': line_num,
+                        'text': line
+                    }
+                    count += 1
+                    bad_lines.append(data)
+    print '{} bad lines'.format(count)
+
+    return bad_lines
+
