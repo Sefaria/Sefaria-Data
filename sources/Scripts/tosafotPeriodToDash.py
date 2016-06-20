@@ -61,7 +61,7 @@ def remove_comments_every_period_and_colon_is_amud_marker(tosafot_references):
 
 def make_the_switches(list_of_dicts):
     changed_tosafots = []
-    badTosafot = open('badTosafot.txt', 'w')
+
     for comment in list_of_dicts:
         commentary = comment['comment']
         the_first_dash = commentary.find('-')
@@ -77,20 +77,21 @@ def make_the_switches(list_of_dicts):
             commentary = commentary.replace('.', u' -', 1)
             commentary = commentary.replace(u'\u2013', u'-').replace(u'\u2014', u'-')
             changed_tosafots.append({'ref': comment['ref'].uid(), 'comment': create_texts(commentary, comment['ref'])})
+
         elif tester(commentary, the_first_dash, the_first_colon):
             commentary = commentary.replace(':', ' -', 1)
             commentary = commentary.replace(u'\u2013', u'-').replace(u'\u2014', u'-')
             changed_tosafots.append({'ref': comment['ref'].uid(), 'comment': create_texts(commentary, comment['ref'])})
 
 
-    badTosafot.close()
+
     return changed_tosafots
 
 
 def tester(commentary, the_first_dash, the_changeable_punctuation):
-    return (the_changeable_punctuation != -1 and the_changeable_punctuation < 150 and commentary[the_changeable_punctuation + 1] != ')' and
-            (the_changeable_punctuation < the_first_dash or the_first_dash == -1) and (the_first_dash > 150 or the_first_dash == -1) and
-            (the_changeable_punctuation+1) != len(commentary))
+    return (the_changeable_punctuation != -1 and the_changeable_punctuation < 150 and the_changeable_punctuation != len(commentary)-1 and
+            commentary[the_changeable_punctuation + 1] != ')' and (the_changeable_punctuation < the_first_dash or the_first_dash == -1) and
+            (the_first_dash > 150 or the_first_dash == -1) and (the_changeable_punctuation+1) != len(commentary))
 
 
 def create_texts(commentary, reference):
