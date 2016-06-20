@@ -32,11 +32,11 @@ def standardize_tosafot_divrei_hamatchil_to_dash():
 
 
 def get_commentator_reference_collection(commentator):
-    all_refs = []
-    # for mesechet in library.get_indexes_in_category('Bavli'):
-    mesechet = 'Shevuot'
-    all_refs.append(library.get_index(get_reference_name(commentator, mesechet)).all_segment_refs())
-    return all_refs
+        all_refs = []
+    #for mesechet in library.get_indexes_in_category('Bavli'):
+        mesechet = 'Shevuot'
+        all_refs.append(library.get_index(get_reference_name(commentator, mesechet)).all_segment_refs())
+        return all_refs
 
 
 def get_reference_name(commentator, mesechet):
@@ -54,26 +54,36 @@ def remove_comments_every_period_and_colon_is_amud_marker(tosafot_references):
             number_of_colons_in_parentheses = len(colons.findall(commentary))
             if commentary.count('.') > number_of_periods_in_parentheses or commentary.count(':') > (
                         number_of_colons_in_parentheses + 1):
-                commentary = commentary.replace(u'\u2013', '-').replace(u'\u2014', '-')
+                commentary = commentary.replace(u'\u2013', u'-').replace(u'\u2014', u'-')
                 after_the_first_trim.append({'ref': eachComment, 'comment': commentary})
     return after_the_first_trim
 
 
+
 def make_the_switches(list_of_dicts):
     changed_tosafots = []
+    badTosafot = open('badTosafot.txt', 'w')
     for comment in list_of_dicts:
         commentary = comment['comment']
         the_first_dash = commentary.find('-')
         the_first_period = commentary.find('.')
-        if the_first_period != -1 and the_first_period < 150 and commentary[the_first_period+1] != ')' and \
-                (the_first_period < the_first_dash or the_first_dash == -1):
+        the_first_colon = commentary.find(':')
+        if commentary[-1] != ':':
+            badTosafot.write(comment['ref'].uid() + '\r\n')
+        elif tester(commentary, the_first_dash, the_first_period):
             commentary = commentary.replace('.', ' -', 1)
             changed_tosafots.append({'ref': comment['ref'].uid(), 'comment': create_texts(commentary, comment['ref'])})
-        elif (commentary.find(':')+1) != len(commentary) and commentary.find(':') < 150 \
-                and (commentary.find(':')+1) != commentary.find('('):
-            commentary = commentary.replace(':', ' -', 1)
-            changed_tosafots.append({'ref': comment['ref'].uid(), 'comment': create_texts(commentary, comment['ref'])})
+        # elif tester(commentary, the_first_dash, the_first_colon):
+        #     commentary = commentary.replace(':', ' -', 1)
+        #     changed_tosafots.append({'ref': comment['ref'].uid(), 'comment': create_texts(commentary, comment['ref'])})
+    badTosafot.close()
     return changed_tosafots
+
+
+def tester(commentary, the_first_dash, the_changeable_punctuation):
+    return (the_changeable_punctuation != -1 and the_changeable_punctuation < 150 and commentary[the_changeable_punctuation + 1] != ')' and
+            (the_changeable_punctuation < the_first_dash or the_first_dash == -1) and (the_first_dash > 150 or the_first_dash == -1) and
+            (the_changeable_punctuation+1) != len(commentary))
 
 
 def create_texts(commentary, reference):
@@ -87,6 +97,7 @@ def create_texts(commentary, reference):
 
 def replace_the_texts_via_api(list_of_fixed_tosafot):
     for eachTosafot in list_of_fixed_tosafot:
+        print(eachTosafot['ref'])
         post_text(eachTosafot['ref'], eachTosafot['comment'])
 
 
