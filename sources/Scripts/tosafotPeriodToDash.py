@@ -31,17 +31,10 @@ def standardize_tosafot_divrei_hamatchil_to_dash():
 
 def get_commentator_reference_collection(commentator):
     all_refs = []
-    mesechet = 'Berakhot'
-    print (mesechet)
-    all_refs.append(library.get_index(get_reference_name(commentator, mesechet)).all_segment_refs())
+    for mesechet in library.get_indexes_in_category('Bavli'):
+        print (mesechet)
+        all_refs.append(library.get_index(get_reference_name(commentator, mesechet)).all_segment_refs())
     return all_refs
-
-
-    # all_refs = []
-    # for mesechet in library.get_indexes_in_category('Bavli'):
-    #     print (mesechet)
-    #     all_refs.append(library.get_index(get_reference_name(commentator, mesechet)).all_segment_refs())
-    # return all_refs
 
 
 def get_reference_name(commentator, mesechet):
