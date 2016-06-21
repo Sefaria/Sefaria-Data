@@ -31,10 +31,8 @@ def standardize_tosafot_divrei_hamatchil_to_dash():
 
 def get_commentator_reference_collection(commentator):
     all_refs = []
-    a = ['Shevuot', 'Bava Batra']
-    #for mesechet in library.get_indexes_in_category('Bavli'):
-    for mesechet in a:
-        print mesechet
+    for mesechet in library.get_indexes_in_category('Bavli'):
+        print (mesechet)
         all_refs.append(library.get_index(get_reference_name(commentator, mesechet)).all_segment_refs())
     return all_refs
 
