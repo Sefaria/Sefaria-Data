@@ -31,10 +31,17 @@ def standardize_tosafot_divrei_hamatchil_to_dash():
 
 def get_commentator_reference_collection(commentator):
     all_refs = []
-    for mesechet in library.get_indexes_in_category('Bavli'):
-        print (mesechet)
-        all_refs.append(library.get_index(get_reference_name(commentator, mesechet)).all_segment_refs())
+    mesechet = 'Berakhot'
+    print (mesechet)
+    all_refs.append(library.get_index(get_reference_name(commentator, mesechet)).all_segment_refs())
     return all_refs
+
+
+    # all_refs = []
+    # for mesechet in library.get_indexes_in_category('Bavli'):
+    #     print (mesechet)
+    #     all_refs.append(library.get_index(get_reference_name(commentator, mesechet)).all_segment_refs())
+    # return all_refs
 
 
 def get_reference_name(commentator, mesechet):
@@ -69,17 +76,17 @@ def make_the_switches(list_of_dicts):
         print( all_hebrew_versions)
         for eachVersion in all_hebrew_versions:
 
-            if commentary.count(u'\u2013')+commentary.count(u'\u2014') > 0:
-                commentary = commentary.replace(u'\u2013', u'-').replace(u'\u2014', u'-')
-                changed_tosafots.append({'ref': comment['ref'].uid(), 'comment': create_texts(commentary, eachVersion['versionTitle'], eachVersion['versionSource'])})
-
-            elif tester(commentary, the_first_dash, the_first_period):
+            if tester(commentary, the_first_dash, the_first_period):
                 commentary = commentary.replace('.', u' -', 1)
                 commentary = commentary.replace(u'\u2013', u'-').replace(u'\u2014', u'-')
                 changed_tosafots.append({'ref': comment['ref'].uid(), 'comment': create_texts(commentary, eachVersion['versionTitle'], eachVersion['versionSource'])})
 
             elif tester(commentary, the_first_dash, the_first_colon):
                 commentary = commentary.replace(':', ' -', 1)
+                commentary = commentary.replace(u'\u2013', u'-').replace(u'\u2014', u'-')
+                changed_tosafots.append({'ref': comment['ref'].uid(), 'comment': create_texts(commentary, eachVersion['versionTitle'], eachVersion['versionSource'])})
+
+            elif commentary.count(u'\u2013')+commentary.count(u'\u2014') > 0:
                 commentary = commentary.replace(u'\u2013', u'-').replace(u'\u2014', u'-')
                 changed_tosafots.append({'ref': comment['ref'].uid(), 'comment': create_texts(commentary, eachVersion['versionTitle'], eachVersion['versionSource'])})
 
