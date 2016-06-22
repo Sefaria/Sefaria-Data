@@ -114,3 +114,54 @@ def analyze_lines(pattern, condition, *args):
 
     return bad_lines
 
+
+def grab_dh(text, start_tag, end_tag):
+    """
+    for a given string grab the text that rests between start_tag and end_tag
+    :param text:
+    :param start_tag:
+    :param end_tag:
+    :return: the text identified as the dh. Will return None if one cannot be identified.
+    """
+
+    start_reg = re.compile(start_tag)
+    end_reg = re.compile(end_tag)
+
+    start = start_reg.search(text)
+    if not start:
+        return None
+
+    end = end_reg.search(text[start.end():])
+    if not end:
+        return None
+
+    # add the text that goes from the end of the start tag to the beginning of the end tag
+    return text[start.end():end.start()+start.end()]
+
+
+def grab_all_dh(comment_tag, start_tag, end_tag):
+    """
+    Grabs all dh in a file
+    :param comment_tag:
+    :param start_tag:
+    :param end_tag:
+    :return: Dictionary with the text and line_number fields
+    """
+
+    data = []
+    comment_reg = re.compile(comment_tag)
+
+    with codecs.open(filename, 'r', 'utf-8') as infile:
+
+        for index, line in enumerate(infile):
+
+            if comment_reg.search(line):
+                dh = grab_dh(line, start_tag, end_tag)
+
+                if dh:
+                    data.append({'text': dh, 'line_number': index+1})
+
+                else:
+                    print 'bad line at {}'.format(index+1)
+
+    return data
