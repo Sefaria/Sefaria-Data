@@ -1,10 +1,15 @@
 # encoding=utf-8
+import os
 import re
 import codecs
 from data_utilities.sanity_checks import TagTester
 from data_utilities import util
+from sources.Match.match_new import Match
 
 filename = 'Minchat_Chinuch.txt'
+m_pattern = u'@30מצוה ([\u05d0-\u05ea"]{1,5})'
+comment_pattern = u'@44\(([\u05d0-\u05ea]{1,2})\)'
+
 """
 מקרא:
 
@@ -165,3 +170,26 @@ def grab_all_dh(comment_tag, start_tag, end_tag):
                     print 'bad line at {}'.format(index+1)
 
     return data
+
+
+def nothing(something):
+    return something
+
+
+def add_line_breaks(text, pattern):
+    """
+    Align the file so that tags for a new comment take up their own line
+    """
+
+    expression = re.compile(pattern)
+
+    if expression.match(text):
+
+        words = text.split(u' ')
+        words[0] += u'\n'
+        return words[0] + u' '.join(words[1:])
+
+    else:
+        return text
+
+util.restructure_file(filename, add_line_breaks, comment_pattern)
