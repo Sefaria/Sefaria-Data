@@ -15,8 +15,6 @@ TODO:
 5. Replace necessary colons with a dash
 6. upload them using the API
 
-.count of period should not be equal to the number of groups with a period
-.count of colon should be 2 greater than groups
 
 first run a method only selecting those tosafot
 then, run the remaining Tosafot through a changer
@@ -32,11 +30,11 @@ def standardize_tosafot_divrei_hamatchil_to_dash():
 
 
 def get_commentator_reference_collection(commentator):
-        all_refs = []
-    #for mesechet in library.get_indexes_in_category('Bavli'):
-        mesechet = 'Berakhot'
+    all_refs = []
+    for mesechet in library.get_indexes_in_category('Bavli'):
+        print (mesechet)
         all_refs.append(library.get_index(get_reference_name(commentator, mesechet)).all_segment_refs())
-        return all_refs
+    return all_refs
 
 
 def get_reference_name(commentator, mesechet):
@@ -52,8 +50,7 @@ def remove_comments_every_period_and_colon_is_amud_marker(tosafot_references):
             commentary = TextChunk(eachComment, 'he').as_string()
             number_of_periods_in_parentheses = len(periods.findall(commentary))
             number_of_colons_in_parentheses = len(colons.findall(commentary))
-            if commentary.count('.') > number_of_periods_in_parentheses or commentary.count(':') > (
-                        number_of_colons_in_parentheses + 1):
+            if commentary.count('.') > number_of_periods_in_parentheses or commentary.count(':') > (number_of_colons_in_parentheses + 1):
                 after_the_first_trim.append({'ref': eachComment, 'comment': commentary})
     return after_the_first_trim
 
@@ -61,31 +58,33 @@ def remove_comments_every_period_and_colon_is_amud_marker(tosafot_references):
 
 def make_the_switches(list_of_dicts):
     changed_tosafots = []
-
     for comment in list_of_dicts:
         commentary = comment['comment']
+        reference = comment['ref']
         the_first_dash = commentary.find('-')
         the_first_period = commentary.find('.')
         the_first_colon = commentary.find(':')
-        length = len(commentary)
 
-        if commentary.count(u'\u2013')+commentary.count(u'\u2014') > 0:
-            commentary = commentary.replace(u'\u2013', u'-').replace(u'\u2014', u'-')
-            changed_tosafots.append({'ref': comment['ref'].uid(), 'comment': create_texts(commentary, comment['ref'])})
+        all_hebrew_versions = [n for n in reference.version_list() if n['language'] == 'he']
+        print( all_hebrew_versions)
+        for eachVersion in all_hebrew_versions:
 
-        elif tester(commentary, the_first_dash, the_first_period):
-            commentary = commentary.replace('.', u' -', 1)
-            commentary = commentary.replace(u'\u2013', u'-').replace(u'\u2014', u'-')
-            changed_tosafots.append({'ref': comment['ref'].uid(), 'comment': create_texts(commentary, comment['ref'])})
+            if tester(commentary, the_first_dash, the_first_period):
+                commentary = commentary.replace('.', u' -', 1)
+                commentary = commentary.replace(u'\u2013', u'-').replace(u'\u2014', u'-')
+                changed_tosafots.append({'ref': comment['ref'].uid(), 'comment': create_texts(commentary, eachVersion['versionTitle'], eachVersion['versionSource'])})
 
-        elif tester(commentary, the_first_dash, the_first_colon):
-            commentary = commentary.replace(':', ' -', 1)
-            commentary = commentary.replace(u'\u2013', u'-').replace(u'\u2014', u'-')
-            changed_tosafots.append({'ref': comment['ref'].uid(), 'comment': create_texts(commentary, comment['ref'])})
+            elif tester(commentary, the_first_dash, the_first_colon):
+                commentary = commentary.replace(':', ' -', 1)
+                commentary = commentary.replace(u'\u2013', u'-').replace(u'\u2014', u'-')
+                changed_tosafots.append({'ref': comment['ref'].uid(), 'comment': create_texts(commentary, eachVersion['versionTitle'], eachVersion['versionSource'])})
 
-
+            elif commentary.count(u'\u2013')+commentary.count(u'\u2014') > 0:
+                commentary = commentary.replace(u'\u2013', u'-').replace(u'\u2014', u'-')
+                changed_tosafots.append({'ref': comment['ref'].uid(), 'comment': create_texts(commentary, eachVersion['versionTitle'], eachVersion['versionSource'])})
 
     return changed_tosafots
+
 
 """
 An explanation of this tester.  This list parallels the different statements separated by ands
@@ -108,10 +107,11 @@ def tester(commentary, the_first_dash, the_changeable_punctuation):
             (the_first_dash > 150 or the_first_dash == -1) and (the_changeable_punctuation+1) != len(commentary))
 
 
-def create_texts(commentary, reference):
+def create_texts(commentary, title, source):
+
     return {
-        "versionTitle": reference.version_list()[0]["versionTitle"],
-        "versionSource": reference.version_list()[0]["versionSource"],
+        "versionTitle": title,
+        "versionSource": source,
         "language": "he",
         "text": commentary
     }
