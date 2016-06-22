@@ -192,4 +192,8 @@ def add_line_breaks(text, pattern):
     else:
         return text
 
-util.restructure_file(filename, add_line_breaks, comment_pattern)
+with codecs.open(filename, 'r', 'utf-8') as datafile:
+    parsed = util.file_to_ja([[[]]], datafile, (m_pattern, comment_pattern), nothing)
+
+with codecs.open('outfile.txt', 'w', 'utf-8') as outfile:
+    util.jagged_array_to_file(outfile, parsed.array(), (u'Mitzva', u'comment', u'paragraph'))
