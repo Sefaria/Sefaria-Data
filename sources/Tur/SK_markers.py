@@ -18,7 +18,7 @@ from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
 
 #pattern = re.compile('@\d\d\s?[\[\(].*?[\]\)]')
-#pattern = re.compile('(@\d\d)+[\[\(].{1,4}[\]\)]')
+#pattern = re.compile('(@\d\d)+[\[\(].{1,2}[\]\)]')
 pattern =  re.compile('(@?\d\d)+[\[\(][^&]{1,6}[\]\)]')
 curr_siman = 0
 curr_seif_katan = 0
@@ -32,10 +32,10 @@ def replaceWithHTMLTags(line):
     line = line.replace("*(", "(%")
     line = line.replace('(*', '(%')
     commentaries = ["Drisha", "Prisha", "Darchei Moshe", "Hagahot", "Beit_Yosef", "Bach", "Mystery"]
-    matches_array = [re.findall(u"\[[\u05D0-\u05EA]{1,4}\]", line), re.findall(u"\([\u05D0-\u05EA]{1,4}\)", line),
-                        re.findall(u"\(%[\u05D0-\u05EA]{1,4}\)", line), re.findall(u"\s#[\u05D0-\u05EA]{1,4}", line),
-                        re.findall(u"\{[\u05D0-\u05EA]{1,4}\}",line), re.findall(u"\|[\u05D0-\u05EA]{1,4}\|", line),
-                        re.findall(u"<[\u05D0-\u05EA]{1,4}>",line)]
+    matches_array = [re.findall(u"\[[\u05D0-\u05EA]{1,2}\]", line), re.findall(u"\([\u05D0-\u05EA]{1,2}\)", line),
+                        re.findall(u"\(%[\u05D0-\u05EA]{1,2}\)", line), re.findall(u"\s#[\u05D0-\u05EA]{1,2}", line),
+                        re.findall(u"\{[\u05D0-\u05EA]{1,2}\}",line), re.findall(u"\|[\u05D0-\u05EA]{1,2}\|", line),
+                        re.findall(u"<[\u05D0-\u05EA]{1,2}>",line)]
     for commentary_count, matches in enumerate(matches_array):
         how_many_shams = 0
         for order_count, match in enumerate(matches):
@@ -224,7 +224,7 @@ def parse_text(helekim, files, commentator):
           if poss_siman == curr_siman - 2 and siman.find('ה')>=0:
                 poss_siman += 3
           elif poss_siman <= curr_siman:
-                print 'siman issue'
+                pdb.set_trace()
                 siman_file.write(helek+","+commentator+","+str(poss_siman)+","+str(curr_siman)+","+actual_line+"\n")
           if curr_siman > 0:
                 checkCSV(helek, commentator, curr_siman, len(text[helek][curr_siman]), prev_line)
@@ -242,7 +242,7 @@ def parse_text(helekim, files, commentator):
           if poss_siman == curr_siman - 2 and beg.find('ה')>=0:
                 poss_siman += 3
           elif poss_siman <= curr_siman:
-                print 'siman issue'
+                pdb.set_trace()
                 siman_file.write(helek+","+commentator+","+str(poss_siman)+","+str(curr_siman)+","+actual_line+"\n")
 
           if len(bach_bi_lines)>0 and (commentator == "Bach" or commentator == "Beit Yosef"):
@@ -258,7 +258,7 @@ def parse_text(helekim, files, commentator):
           text[helek][curr_siman] = []
           seif_list = []
           seif_list.append(curr_seif_katan)
-          line, old_header, header, just_saw_00, will_see_00 = addHeader(line, old_header, header, just_saw_00, will_see_00)
+          #line, old_header, header, just_saw_00, will_see_00 = addHeader(line, old_header, header, just_saw_00, will_see_00)
           line = replaceWithHTMLTags(line).encode('utf-8')
           bach_bi_lines += line
           continue
@@ -272,25 +272,23 @@ def parse_text(helekim, files, commentator):
             poss_seif_katan += 3
         elif poss_seif_katan < curr_seif_katan:
             seif_file.write(helek+","+commentator+","+str(curr_siman)+","+str(poss_seif_katan)+","+str(curr_seif_katan)+","+actual_line+"\n")
-        if poss_seif_katan in seif_list:
-            seif_katan = pattern.match(line).group(0)
-            marked_seif_katan = seif_katan[0:len(seif_katan)-1]+'*'+seif_katan[len(seif_katan)-1]
-            line = line.replace(seif_katan, marked_seif_katan)
-        else:
-            seif_katan = pattern.match(line).group(0)
-            line = line.replace(seif_katan, "")
-            seif_list.append(poss_seif_katan)
+        
+        seif_katan = pattern.match(line).group(0)
+        line = line.replace(seif_katan, "")
 
-        line, old_header, header, just_saw_00, will_see_00 = addHeader(line, old_header, header, just_saw_00, will_see_00)
+        #line, old_header, header, just_saw_00, will_see_00 = addHeader(line, old_header, header, just_saw_00, will_see_00)
         line = replaceWithHTMLTags(line).encode('utf-8')
         bach_bi_lines += line
         line = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9"], line)
         curr_seif_katan = poss_seif_katan
-        actual_seif_katan += 1
-        curr_seif_katan_line = actual_line
-        if line.find("@")>=0:
-            print '@'
-        text[helek][curr_siman].append([line])
+
+        if poss_seif_katan in seif_list:
+            prev_seif = len(text[helek][curr_siman])-1
+            text[helek][curr_siman][prev_seif].append(line)
+        else:
+            text[helek][curr_siman].append([line])
+
+        seif_list.append(poss_seif_katan)
       elif line.find("@22סי'")>=0 or (line.find("@22")<4 and line.find("@22")>=0 and len(line.split(" ")) < 4):
             line = line.replace("@22סי' ", "").replace("@22ס' ","").replace("@22סי ","")
             line = line.replace("@22", "").replace("@66","").replace("@77","")
@@ -307,8 +305,10 @@ def parse_text(helekim, files, commentator):
                 poss_siman += 1
             if poss_siman == curr_siman - 2 and line.find('ה')>=0:
                 poss_siman += 3
+            elif poss_siman == 8 and curr_siman == 4:
+                poss_siman = 5
             elif poss_siman <= curr_siman:
-                print 'siman issue'
+                pdb.set_trace()
                 siman_file.write(helek+","+commentator+","+str(poss_siman)+","+str(curr_siman)+","+actual_line+"\n")
 
             prev_siman = curr_siman
@@ -319,7 +319,7 @@ def parse_text(helekim, files, commentator):
             seif_list = []
             text[helek][curr_siman] = []
       else: #just add it to current seif katan
-          line, old_header, header, just_saw_00, will_see_00 = addHeader(line, old_header, header, just_saw_00, will_see_00)
+          #line, old_header, header, just_saw_00, will_see_00 = addHeader(line, old_header, header, just_saw_00, will_see_00)
           line = replaceWithHTMLTags(line).encode('utf-8')
           if commentator == "Prisha" or commentator == "Drisha":
               line = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9"], line)
@@ -347,7 +347,7 @@ def post_commentary(commentator):
     commentator = commentator.replace("Bi", "Beit Yosef")
     links = []
     for helek in text:
-        if helek != "Even HaEzer":
+        if helek != "Orach Chaim":
           continue
         data = tag_csv_files[helek].read()
         data = eval(data)
@@ -357,7 +357,7 @@ def post_commentary(commentator):
             "text": text_array,
             "language": "he",
             "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001935970",
-            "versionTitle": helek+", Vilna, 1923"
+            "versionTitle": "Tur "+helek+", Vilna, 1923"
         }
     
         for siman_num, siman in enumerate(text_array):
@@ -378,7 +378,6 @@ def post_commentary(commentator):
                 links.append({'refs': [link_to, commentator_end], 'type': 'commentary', 'auto': 'True', 'generated_by': commentator+"choshenmishpat"})
         
         post_text(commentator+",_"+helek, send_text)
-    
     post_link(links)
 
 
@@ -395,13 +394,13 @@ if __name__ == "__main__":
   if sys.argv[1] == 'Drisha':
     files_helekim = ["Orach_Chaim/drisha orach chaim helek a.txt", "yoreh deah/drisha yoreh deah.txt",
    "Even HaEzer/drisha even haezer.txt"]
-    #create_indexes(eng_helekim, heb_helekim, "Drisha", u"דרישה")
+    create_indexes(eng_helekim, heb_helekim, "Drisha", u"דרישה")
     parse_text(eng_helekim, files_helekim, "Drisha")
     post_commentary("Drisha")
   elif sys.argv[1] == 'Prisha':
     files_helekim = ["Orach_Chaim/prisha orach chaim.txt", "yoreh deah/prisha yoreh deah.txt",
    "Even HaEzer/prisha even haezer.txt"]
-    #create_indexes(eng_helekim, heb_helekim, "Prisha", u"פרישה")
+    create_indexes(eng_helekim, heb_helekim, "Prisha", u"פרישה")
     parse_text(eng_helekim, files_helekim, "Prisha")
     post_commentary("Prisha")
   elif sys.argv[1] == 'BeitYosef':
@@ -412,7 +411,7 @@ if __name__ == "__main__":
     post_commentary("Beit Yosef")
   elif sys.argv[1].find("Bach")>=0:
     files_helekim = ["Orach_Chaim/bach orach chaim helek a.txt", "yoreh deah/bach yoreh deah.txt", "Even HaEzer/bach even haezer.txt"]
-    create_indexes(eng_helekim, heb_helekim, "Bach", u'ב"ח')
+    #create_indexes(eng_helekim, heb_helekim, "Bach", u'ב"ח')
     parse_text(eng_helekim, files_helekim, "Bach")
     post_commentary("Bach")
   elif sys.argv[1].find("DarcheiMoshe")>=0:

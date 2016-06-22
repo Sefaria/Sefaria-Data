@@ -119,6 +119,8 @@ class TagTester:
 
         self.file.seek(0)
 
+
+
     def count_all_tags(self):
         """
         :return: Number of times tag can be found in file
@@ -176,42 +178,78 @@ class TagTester:
         self.file.seek(0)
         return all_counts
 
-    def in_order_one_section(self, capture_group=0):  #
+
+    def in_order_one_section(self, capture_group=0, callback_tester=None):  
         array_headers = self.grab_each_header(None, capture_group)
         prev_val = -1
+        ones_that_passed = []
+        for header in array_headers:
+            curr_val = util.getGematria(header) if len(header) <= 2 else util.wordToNumber[header]
+            if callback_tester is None and prev_val >= curr_val:
+                return ("FAILURE", ones_that_passed)
+            elif callback_tester is not None and callback_tester(prev_val=prev_val, curr_val=curr_val) == False:
+                pdb.set_trace()
+                return ("FAILURE", ones_that_passed)
+            ones_that_passed.append(curr_val)
+            prev_val = curr_val
+        return ("SUCCESS", array_headers)
+
+
+    def in_order_one_section_return_all(self, capture_group=0, callback_tester=None):  
+        #Difference between this function and in_order_one_section() is that in_order_one_section()
+        #on its first failure, ends the test and returns what has passed the test SO FAR.
+        #This function iterates through everything, separating things into failed array and success array
+        #and returns both
+
+        array_headers = self.grab_each_header(None, capture_group)
+        prev_val = -1
+        ones_that_passed = []
+        ones_that_failed = []
         for header in array_headers:
             curr_val = util.getGematria(header)
-            if prev_val >= curr_val:
-                print header
+            if callback_tester is None and prev_val >= curr_val:  #default test
+                ones_that_failed.append(header)
+            elif callback_tester is not None and callback_tester(prev_val=prev_val, curr_val=curr_val) == False:
+                ones_that_failed.append(header)
+            else:
+                ones_that_passed.append(header)
             prev_val = curr_val
+        return (ones_that_passed, ones_that_failed)
     
 
     def in_order_many_sections(self, end_tag, capture_group=0):
         if end_tag == None:
             print 'End tag must have value to distinguish between each section.'
             self.fail_func()
-        headers_2d_array = self.grab_each_header(end_tag, capture_group)
+        headers_2d_array = []
+        ones_that_passed = []
+        while self.eof == False:
+            headers_2d_array.append(self.grab_each_header(end_tag, capture_group))
+        if headers_2d_array[0] == []:
+            headers_2d_array.pop(0)
         for headers_1d_array in headers_2d_array:
             prev_val = -1
             for header in headers_1d_array:
                 curr_val = util.getGematria(header)
                 if prev_val >= curr_val:
-                    print header
+                    return ("FAILURE", ones_that_passed)
+                else:
+                    ones_that_passed.append(curr_val)
                 prev_val = curr_val
+        return ("SUCCESS", headers_2d_array)
 
     def grab_each_header(self, end_tag=None, capture_group=0):
         """
         Grab all matches of the regular expression and add to an array. This will analyze the file until it hits
         a match for the end tag or the end of the file. 
-        If there is an end_tag specified Running this function in a loop till the end of a file will return a 2-D
-        array, with each sub-array containing the captures within the matching segment.
+        Each time you call this function, as long as the end of the file hasn't been reached, 
         If there is no end_tag and it simply hits the end of the file, it will return a 1-D array.
         :param segment_tag:  String that indicates end of segment. If not set, function will run to the
         end of the file
         :param capture_group: Capture group to be returned.
         :return: An array of strings which match the regular expression.
-        """
 
+        """
         captures = []
         for line in self.file:
             if not isinstance(self.reg, unicode):
@@ -231,6 +269,30 @@ class TagTester:
         else:
             self.eof = True
             return captures
+
+
+    def daf_processor(self):
+        headers = self.grab_each_header()
+        daf_values = []
+        prev_val = 0
+        curr_val = 0
+        for count, header in enumerate(headers):
+            if header.find(u'וע"ב') >= 0:
+                pdb.set_trace()
+            header = header.replace(u"דף",u"").replace(u'ע"א', u'').replace(self.tag, u"").replace(u"\n", u"").replace("]","").replace("[","")
+            if header.find(u'ע"ב') >= 0:
+                header = header.replace(u'וע"ב', u'').replace(u'ע"ב', u'').replace(u" ", u"")
+                if len(header) > 0:
+                    curr_val = util.getGematria(header)
+                    daf_values.append(curr_val * 2)
+                else:
+                    daf_values.append(curr_val * 2)
+            else:
+                curr_val = util.getGematria(header)
+                daf_values.append(curr_val * 2 - 1)
+        return daf_values, headers
+
+
 
     def skip_to_next_segment(self, segment_tag):
         """

@@ -186,7 +186,8 @@ def getHebrewParsha(eng_parsha):
             return heb_parshiot[count]
         count+=1
 
-def getHebrewTitle(sefer):
+def getHebrewTitle(sefer, SEFARIA_SERVER='http://www.sefaria.org/'):
+   sefer = sefer.title() 
    sefer_url = SEFARIA_SERVER+'api/index/'+sefer.replace(" ","_")
    req = urllib2.Request(sefer_url)
    res = urllib2.urlopen(req)
@@ -253,6 +254,7 @@ def checkLengthsDicts(x_dict, y_dict):
             pdb.set_trace()
 
 errors = open('errors.html', 'w')
+
 def post_index(index):
     url = SEFARIA_SERVER+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
     indexJSON = json.dumps(index)
@@ -342,6 +344,7 @@ def post_text(ref, text, index_count="off"):
         if x.find("error")>=0 and x.find("Daf")>=0 and x.find("0")>=0:
             return "error"
     except HTTPError, e:
+        pdb.set_trace()
         errors.write(e.read())
 
 
@@ -456,36 +459,17 @@ def get_text(ref):
     except:
         print 'Error'
 
-def get_text_plus(ref):
-    ref = Ref(ref).url()
-    url = 'http://www.sefaria.org/api/texts/'+ref
+def get_text_plus(ref, SERVER='www'):
+    #ref = Ref(ref).url()
+    url = 'http://'+SERVER+'.sefaria.org/api/texts/'+ref.replace(" ","_")+'?commentary=0&context=0&pad=0'
     req = urllib2.Request(url)
     try:
         response = urllib2.urlopen(req)
         data = json.load(response)
-        for i, temp_text in enumerate(data['he']):
-
-            data['he'][i] = data['he'][i].replace(u"\u05B0", "")
-            data['he'][i] = data['he'][i].replace(u"\u05B1", "")
-            data['he'][i] = data['he'][i].replace(u"\u05B2", "")
-            data['he'][i] = data['he'][i].replace(u"\u05B3", "")
-            data['he'][i] = data['he'][i].replace(u"\u05B4", "")
-            data['he'][i] = data['he'][i].replace(u"\u05B5", "")
-            data['he'][i] = data['he'][i].replace(u"\u05B6", "")
-            data['he'][i] = data['he'][i].replace(u"\u05B7", "")
-            data['he'][i] = data['he'][i].replace(u"\u05B8", "")
-            data['he'][i] = data['he'][i].replace(u"\u05B9", "")
-            data['he'][i] = data['he'][i].replace(u"\u05BB", "")
-            data['he'][i] = data['he'][i].replace(u"\u05BC", "")
-            data['he'][i] = data['he'][i].replace(u"\u05BD", "")
-            data['he'][i] = data['he'][i].replace(u"\u05BF", "")
-            data['he'][i] = data['he'][i].replace(u"\u05C1", "")
-            data['he'][i] = data['he'][i].replace(u"\u05C2", "")
-            data['he'][i] = data['he'][i].replace(u"\u05C3", "")
-            data['he'][i] = data['he'][i].replace(u"\u05C4", "")
         return data
-    except:
-        print 'Error'
+    except HTTPError as e:
+        pdb.set_trace()
+
 def isGematria(txt):
     txt = txt.replace('.','')
     if txt.find("ך")>=0:

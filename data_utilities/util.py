@@ -35,6 +35,18 @@ gematria[u'ר'] = 200
 gematria[u'ש'] = 300
 gematria[u'ת'] = 400
 
+wordToNumber = {}
+wordToNumber[u'ראשון'] = 1
+wordToNumber[u'שני'] = 2
+wordToNumber[u'שלישי'] = 3
+wordToNumber[u'רביעי'] = 4
+wordToNumber[u'חמישי'] = 5
+wordToNumber[u'ששי'] = 6
+wordToNumber[u'שביעי'] = 7
+wordToNumber[u'שמיני'] = 8
+wordToNumber[u'תשיעי'] = 9
+wordToNumber[u'עשירי'] = 10
+
 class Util:
     def __init__(self, output_file, fail):
         self.output_file = output_file

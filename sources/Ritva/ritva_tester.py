@@ -23,8 +23,10 @@ from sefaria.model import *
 def perek_checker(prev_val, curr_val):
 	return (curr_val > prev_val)
 
-def checkPerakim():
+def checkPerakim(files):
 	for file in files:
+		if file == "Berakhot":
+			continue
 		print file
 		reg = u'(?:@00\u05e4\u05e8\u05e7 |@00\u05e4")([\u05d0-\u05ea]+)'
 		open_file = open(file+".txt")
@@ -70,38 +72,44 @@ def check_all_22s(files):
 
 
 
-def checkDappim():
-	files = ["Yoma", "Rosh Hashanah", "Taanit", "Eruvin", "Niddah"]
-	files = ["Rosh Hashanah"]
+def checkDappim(files):
+	errors = open('daf_issues.txt', 'w')
 	for file in files:
-		flagged = []
 		print file
-		reg = u'@22[\u05d0-\u05ea\s"]+'
+		flagged = []
+		errors.write("\n"+file+"\n")
+		reg = u'@22\[?[\u05d0-\u05ea\s"]+\]?'
 		open_file = open(file+".txt")
 		tt = TagTester("@22", open_file, reg=reg)
 		num_array, string_array = tt.daf_processor()
 		prev_value = 2
 		for count, this_value in enumerate(num_array):
-			if this_value - prev_value != 1 and this_value - prev_value != 2:
-				flagged.append(this_value)
+			if this_value - prev_value <= 0:
+				flagged.append(string_array[count])
 			prev_value = this_value
-		print "Flagged as likely mistakes: "
-		print flagged
-		print "Numerical Order of Dappim: "
-		print num_array
-		print "Dappim from the Text File: "
+		errors.write("Flagged mistakes: "+"\n")
+		flagged_str = ""
+		for each_one in flagged:
+			flagged_str += each_one.replace("\n","").replace("@22", "")+",  "
+		errors.write(flagged_str.encode('utf-8')+"\n")
+		errors.write("All Dappim in this Masechet: "+"\n")
 		dappim_str = ""
 		for each_one in string_array:
 			dappim_str += each_one.replace("\n", "").replace("@22", "")+",   "
-		print dappim_str
+		errors.write(dappim_str.encode('utf-8')+"\n")
+	errors.close()
 	#check that we go in order, redo above test
 	#check that nothing is missing, redo above test except that we dont want it to fail 
 	#separate function print the dappim headers into a file
 
+
+
+
 if __name__ == "__main__":
-	#checkDappim()
-	#checkPerakim()
-	files = ["Sukkah", "Berakhot", "Megillah", "Moed Katan", "Yoma", "Rosh Hashanah", "Taanit", "Eruvin", "Niddah"]
+	
+	files = ["Sukkah", "Berakhot", "Megillah", "Moed Katan", "Yoma", "Rosh Hashanah", "Taanit", "Niddah"]
+	checkPerakim(files)
+	checkDappim(files)
 	check_all_22s(files)
 	check_all_00s(files)
 	check_all_exceptions(files)

@@ -80,6 +80,7 @@ def gatherData(data, line, helek, siman_num, matches_array, commentaries):
 
 
 def replaceWithHTMLTags(line, helek, siman_num, data):
+    global prisha_file
     line = line.decode('utf-8')
     line = line.replace('%(', '(%')
     line = line.replace('(#', '(%')
@@ -107,23 +108,25 @@ def replaceWithHTMLTags(line, helek, siman_num, data):
             if helek == "Choshen Mishpat" and commentaries[commentary_count] == "Replace":
                 line = line.replace(match, "#$!^")
             else:
-                if match == u"(שם)" or match == u"[שם]":
-                    how_many_shams += 1
-                    continue
                 this_gematria = getGematria(match)
                 if this_gematria in hash_tags:
                     hash_tags[this_gematria] += 1
+                    prisha_file += 1
                 else:
                     hash_tags[this_gematria] = 1
                 HTML_tag =  '<i data-commentator="'+commentaries[commentary_count]+'" data-order="'+str(this_gematria)+"."+str(hash_tags[this_gematria])+'"></i>'
-                line = line.replace(match, HTML_tag)
+                line = line.replace(match, HTML_tag, 1)
     return line, data
 
 
 def create_indexes(eng_helekim, heb_helekim):
   tur = SchemaNode()
   tur.add_title("Tur", 'en', primary=True)
+  tur.add_title("Arbah Turim", 'en', primary=False)
+  tur.add_title("Arbaah Turim", 'en', primary=False)
+  tur.add_title("Arba Turim", 'en', primary=False)
   tur.add_title(u"טור", 'he', primary=True)
+  tur.add_title(u"ארבעה טורים", 'he', primary=False)
   tur.key = 'tur'
   for count, helek in enumerate(eng_helekim):
       if helek == "Choshen Mishpat":
@@ -147,6 +150,7 @@ def create_indexes(eng_helekim, heb_helekim):
   tur.validate()
   index = {
     "title": "Tur",
+    "titleVariants": ["Arba Turim", "Arbaah Turim", "Arbah Turim"],
     "categories": ["Halakhah", "Tur and Commentaries"],
     "schema": tur.serialize()
     }
@@ -296,6 +300,8 @@ if __name__ == "__main__":
     tag_csv_files["Orach Chaim"] = 'OC_tags.csv'
 
     global text
+    global prisha_file
+    prisha_file = 0
     global headers
     headers = {}
     text = {}
@@ -308,9 +314,10 @@ if __name__ == "__main__":
     at_88 = " <> "
     files_helekim = ["Orach_Chaim/tur orach chaim.txt", "Yoreh Deah/tur yoreh deah.txt", "Even HaEzer/tur even haezer.txt", "Choshen Mishpat/tur choshen mishpat.txt"]
     create_indexes(eng_helekim, heb_helekim)
+    pdb.set_trace()
     data = parse_text(at_66, at_77, at_88, eng_helekim, files_helekim)
     for helek in data:
-        f = open(tag_csv_files[helek], 'a')
+        f = open(tag_csv_files[helek], 'w')
         f.write(json.dumps(data[helek]))
         f.close()
     print 'done parsing'

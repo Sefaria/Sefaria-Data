@@ -62,11 +62,12 @@ def replaceWithHTMLTags(line):
     line = line.replace('(#', '(%')
     line = line.replace("*(", "(%")
     line = line.replace('(*', '(%')
-    commentaries = ["Drisha", "Darchei Moshe", "Hagahot", "Beit_Yosef", "Bach", "Mystery"]
-    matches_array = [re.findall(u"\[[\u05D0-\u05EA]{1,4}\]", line),
-                        re.findall(u"\(%[\u05D0-\u05EA]{1,4}\)", line), re.findall(u"\s#[\u05D0-\u05EA]{1,4}", line),
-                        re.findall(u"\{[\u05D0-\u05EA]{1,4}\}",line), re.findall(u"\|[\u05D0-\u05EA]{1,4}\|", line),
-                        re.findall(u"<[\u05D0-\u05EA]{1,4}>",line)]
+    line = line.replace(u'\u202a', '').replace(u'\u202c','')
+    commentaries = ["Drisha", "Darchei Moshe", "Hagahot", "Beit_Yosef", "Bach", "Mystery", "Mystery#2"]
+    matches_array = [re.findall(u"\[[\u05D0-\u05EA]{1,2}\]", line),
+                        re.findall(u"\(%[\u05D0-\u05EA]{1,2}\)", line), re.findall(u"\s#[\u05D0-\u05EA]{1,2}", line) or re.findall(u"\s\*[\u05D0-\u05EA]{1,2}", line),
+                        re.findall(u"\{[\u05D0-\u05EA]{1,2}\}",line), re.findall(u"\|[\u05D0-\u05EA]{1,2}\|", line),
+                        re.findall(u"<[\u05D0-\u05EA]{1,2}>",line), re.findall(u"\[&[\u05D0-\u05EA]{1,2}\]", line)]
     for commentary_count, matches in enumerate(matches_array):
         how_many_shams = 0
         for order_count, match in enumerate(matches):
@@ -140,7 +141,7 @@ def parse_text(commentators, files):
             else:
                 just_saw_00 = True
                 continue
-
+        
         if line.find("@22") >= 0 and len(line) > 13:
             line = line.replace(u"@22סי' ", "").replace(u"@22ס' ", "").replace(u"@22סי ", "")
             if line[0] == ' ':
@@ -174,12 +175,10 @@ def parse_text(commentators, files):
             choshen_mishpat[commentator][curr_siman] = {}
 
 
-            try:
-                seif = re.findall(u"\([\u05D0-\u05EA]+\)", line)[0]
-            except:
-                pdb.set_trace()
-            temp_arr = re.split('\d\d', seif)
-            seif = temp_arr[len(temp_arr) - 1]
+
+            seif = re.findall(u"\([\u05D0-\u05EA]{1,2}\)", line)[0]
+            temp_arr = re.findall(u"\([\u05D0-\u05EA]{1,2}\)", line)
+
             poss_seif = getGematria(removeAllStrings(["[", "]", "(", ")"], seif))
             if poss_seif == curr_seif - 2 and seif.find(u'ה') >= 0:
                 poss_seif += 3
@@ -202,19 +201,18 @@ def parse_text(commentators, files):
                     print 'skipping in '+str(curr_siman)+' curr_seif = '+str(curr_seif)+' poss_seif = '+str(poss_seif)
                     choshen_mishpat[commentator][curr_siman][i+1+curr_seif] = [""]
 
-            temp_arr.pop(len(temp_arr) - 1)
+            temp_arr.pop(0)
             if len(temp_arr) > 0:
                 for each_one in temp_arr:
-                    this_one_gematria = getGematria(each_one)
-                    if this_one_gematria > curr_seif:
-                        pdb.set_trace()
-                        choshen_mishpat[commentator][curr_siman][this_one_gematria] = [u"ראו סעיף "+str(poss_seif)]
+                    next_one = getGematria(each_one)
+                    if next_one - poss_seif == 1 or next_one - poss_seif == 2:
+                        choshen_mishpat[commentator][curr_siman][next_one] = [u"ראו סעיף "+str(poss_seif)]
 
             line = line.replace(seif, "")
             line = removeAllStrings(["@11", "@22", "@33", "@44", "@55", "@66", "@77", "@87", "@88", "@89", "@98"],
                                     line)
 
-            line, old_header, header, just_saw_00, will_see_00 = addHeader(line, old_header, header, just_saw_00, will_see_00)
+            #line, old_header, header, just_saw_00, will_see_00 = addHeader(line, old_header, header, just_saw_00, will_see_00)
             choshen_mishpat[commentator][curr_siman][poss_seif] = [line]
 
 
@@ -226,9 +224,8 @@ def parse_text(commentators, files):
             prev_seif = curr_seif
 
         elif len(re.findall(u"\([\u05D0-\u05EA]+\)", line)) > 0 and line.find(re.findall(u"\([\u05D0-\u05EA]+\)", line)[0]) < 10:
-            seif = re.findall(u"\([\u05D0-\u05EA]+\)", line)[0]
-            temp_arr = re.split('\d\d', seif)
-            seif = temp_arr[len(temp_arr) - 1]
+            seif = re.findall(u"\([\u05D0-\u05EA]{1,2}\)", line)[0]
+            temp_arr = re.findall(u"\([\u05D0-\u05EA]{1,2}\)", line)
             poss_seif = getGematria(removeAllStrings(["[", "]", "(", ")"], seif))
             if poss_seif == curr_seif - 2 and seif.find(u'ה') >= 0:
                 poss_seif += 3
@@ -250,19 +247,18 @@ def parse_text(commentators, files):
                     choshen_mishpat[commentator][curr_siman][i+1+curr_seif] = [""]
 
 
-            temp_arr.pop(len(temp_arr) - 1)
+            temp_arr.pop(0)
             if len(temp_arr) > 0:
                 for each_one in temp_arr:
-                    this_one_gematria = getGematria(each_one)
-                    if this_one_gematria > curr_seif:
-                        pdb.set_trace()
-                        choshen_mishpat[commentator][curr_siman][this_one_gematria] = [u"ראו סעיף "+str(poss_seif)]
+                    next_one = getGematria(each_one)
+                    if next_one - poss_seif == 1 or next_one - poss_seif == 2:
+                        choshen_mishpat[commentator][curr_siman][next_one] = [u"ראו סעיף "+str(poss_seif)]
 
             line = line.replace(seif, "")
             line = removeAllStrings(["@11", "@22", "@33", "@44", "@55", "@66", "@77", "@87", "@88", "@89", "@98"],
                                     line)
 
-            line, old_header, header, just_saw_00, will_see_00 = addHeader(line, old_header, header, just_saw_00, will_see_00)
+            #line, old_header, header, just_saw_00, will_see_00 = addHeader(line, old_header, header, just_saw_00, will_see_00)
             choshen_mishpat[commentator][curr_siman][poss_seif] = [line]
 
             curr_seif = poss_seif
@@ -345,6 +341,9 @@ def dealWithTwoSimanim(text):
 
 def post_text_and_link(choshen_mishpat, commentators):
     links = []
+    tag_file = open('CM_tags.csv', 'r')
+    data = tag_file.read()
+    data = eval(data)
     for commentator in commentators:
         print commentator
         choshen_mishpat[commentator] = convertDictToArray(choshen_mishpat[commentator])
@@ -355,9 +354,21 @@ def post_text_and_link(choshen_mishpat, commentators):
 
             for seif_num, seif in enumerate(choshen_mishpat[commentator][siman_num]):
                 if choshen_mishpat[commentator][siman_num][seif_num] != "":
-                    tur_end = "Tur,_Choshen_Mishpat."+str(siman_num+1)+"."+str(seif_num+1)
+                    if commentator == "Drisha" or commentator == "Prisha" or commentator == "Darchei Moshe": 
+                        try:  
+                            if commentator in data[str(siman_num+1)] and str(seif_num+1) in data[str(siman_num+1)][commentator]:
+                                print "Beit Yosef"
+                                link_to = "Beit_Yosef,_Choshen_Mishpat."+str(siman_num+1)+"."+str(seif_num+1)
+                            else:
+                                print "Tur"
+                                link_to = "Tur,_Choshen_Mishpat."+str(siman_num+1)+"."+str(seif_num+1)
+                        except:
+                            print 'tur vs beit yosef'
+                            pdb.set_trace()
+                    else:
+                        link_to = "Tur,_Choshen_Mishpat."+str(siman_num+1)+"."+str(seif_num+1)
                     commentator_end = commentator+",_Choshen_Mishpat."+str(siman_num+1)+"."+str(seif_num+1)
-                    links.append({'refs': [tur_end, commentator_end], 'type': 'commentary', 'auto': 'True', 'generated_by': commentator+"choshenmishpat"})
+                    links.append({'refs': [link_to, commentator_end], 'type': 'commentary', 'auto': 'True', 'generated_by': commentator+"choshenmishpat"})
         send_text = \
         {
                 "text": choshen_mishpat[commentator],
@@ -367,8 +378,6 @@ def post_text_and_link(choshen_mishpat, commentators):
         }
         post_text(commentator+",_Choshen_Mishpat", send_text)
         post_link(links)
-
-
 
 
 

@@ -53,8 +53,8 @@ def create_indexes(sections, eng_helekim, heb_helekim):
     "title": "Tur",
     "titleVariants": ["Arba Turim", "Arbaah Turim", "Arbah Turim"],
     "categories": ["Halakhah", "Tur and Commentaries"],
+    "default_struct": "Contents",
     "alt_structs": {"Sections": sections},
-    "default_struct": "Siman",
     "schema": tur.serialize()
     }
   post_index(index)
@@ -65,29 +65,38 @@ Structure is that for each Helek of Tur, there is a list of nodes named by Hilch
 Tur,_(Helek).(Siman_1)-(Siman_2)
 
 '''
-sections = {}
-sections["nodes"] = []
-eng_helekim = ["Orach Chaim", "Yoreh Deah", "Even HaEzer", "Choshen Mishpat"]
-heb_helekim = [u"אורח חיים", u"יורה דעה", u"אבן העזר", u"חושן משפט"]
+if __name__ == "__main__":
+  sections = {}
+  sections["nodes"] = []
+  eng_helekim = ["Orach Chaim", "Yoreh Deah", "Even HaEzer", "Choshen Mishpat"]
+  heb_helekim = [u"אורח חיים", u"יורה דעה", u"אבן העזר", u"חושן משפט"]
 
-for helek in eng_helekim:
-  with open('tur '+helek+'.csv', 'r') as csvfile:
-	reader = csv.reader(csvfile)
-	for count, row in enumerate(reader):
-		if count > 0:
-			simanim = row[1]
-			first_siman = getGematria(simanim.split("-")[0])
-			second_siman = getGematria(simanim.split("-")[1])
-			wholeRef = Ref("Tur, "+helek+"."+first_siman+"-"+second_siman)
-			node = ArrayMapNode()
-			node.add_title(row[0], "he", primary=True)
-			node.add_title(row[2], "en", primary=True)
-			node.key = row[2]
-			node.wholeRef = wholeRef
-			node.depth = 0
-			node.addressTypes = []
-			node.sectionNames = []
-			node.refs = []
-			sections["nodes"].append(node.serialize())
+  for helek in eng_helekim:
+    if helek != "Orach Chaim":
+      continue
+    with open('tur '+helek+'.csv', 'r') as csvfile:
+      reader = csv.reader(csvfile)
+      for count, row in enumerate(reader):
+        if count > 0:
+          simanim = row[1].decode('utf-8')
+          if simanim.find(u"\u2013") > 0:
+            simanim = simanim.replace(u"\u2013", "-")
+          if simanim.find('-') > 0:
+            first_siman = getGematria(simanim.split("-")[0])
+            second_siman = getGematria(simanim.split("-")[1])
+          else:
+            first_siman = getGematria(simanim)
+            second_siman = getGematria(simanim)
+          wholeRef = "Tur, "+helek+"."+str(first_siman)+"-"+str(second_siman)
+          node = ArrayMapNode()
+          node.add_title(row[0].decode('utf-8'), "he", primary=True)
+          node.add_title(row[2].decode('utf-8'), "en", primary=True)
+          node.key = row[2]
+          node.wholeRef = wholeRef
+          node.depth = 0
+          node.addressTypes = []
+          node.sectionNames = []
+          node.refs = []
+          sections["nodes"].append(node.serialize())
 
-create_indexes(sections, eng_helekim, heb_helekim)
+  create_indexes(sections, eng_helekim, heb_helekim)
