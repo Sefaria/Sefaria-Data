@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 __author__ = 'stevenkaplan'
+import os
 import sys
 import re
+import codecs
 from sefaria.datatype import jagged_array
 from sources.local_settings import *
 from urllib2 import HTTPError, URLError
@@ -621,3 +623,24 @@ def convert_dict_to_array(dictionary):
             count = key+1
 
     return array
+
+
+def restructure_file(filename, function, *args):
+    """
+    Restructures a file according to function
+    :param filename:
+    :param function:
+    :param args:
+    """
+    original = codecs.open(filename, 'r', 'utf-8')
+    updated = codecs.open('{}.tmp'.format(filename), 'w', 'utf-8')
+
+    for line in original:
+        new_line = function(line, *args)
+        updated.write(new_line)
+
+    original.close()
+    updated.close()
+
+    os.remove(filename)
+    os.rename('{}.tmp'.format(filename), filename)
