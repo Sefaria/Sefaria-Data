@@ -518,7 +518,7 @@ def clean_jagged_array(messy_array, strip_list):
         elif type(item) is str or type(item) is unicode:
 
             for case in strip_list:
-                item = replace_using_regex(case, item, u'')
+                item = re.sub(case, u'', item)
             clean_array.append(re.sub(u' +', u' ', item))
 
         else:
