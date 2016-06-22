@@ -553,3 +553,71 @@ def traverse_ja(ja, indices=[], bottom=unicode):
                 for thing in traverse_ja(data, indices, bottom):
                     yield thing
         indices.pop()
+
+
+def grab_section_names(section_expression, input_file, group_number=0):
+    """
+    Grab the names of the sections that need to be converted into a complex text
+    :param section_expression: An expression that can be compiled into a regex that will find
+     the corresponding sections
+    :param input_file: File from which to grab the results
+    :param group_number: If needed, supply the capture group that will return the correct name.
+    :return: List of strings.
+    """
+
+    section_reg = re.compile(section_expression)
+    names = []
+
+    for line in input_file:
+
+        found_match = section_reg.search(line)
+        if found_match:
+            names.append(found_match.group(group_number))
+
+    return names
+
+
+def simple_to_complex(segment_names, jagged_text_array):
+    """
+    Given a simple text and the names of each section, convert a simple text into a complex one.
+    :param segment_names: A list of names for each section
+    :param jagged_text_array: A parsed jagged array to be converted from a simple to a complex text
+    :return: Dictionary representing the complex text structure
+    """
+
+    # Ensure there are the correct number of segment names
+    if len(segment_names) != len(jagged_text_array):
+        raise IndexError('Length of segment_names does not match length of jaggedArray')
+
+    complex_text = {}
+
+    for index, name in enumerate(segment_names):
+        complex_text[name] = jagged_text_array[index]
+
+    return complex_text
+
+
+def convert_dict_to_array(dictionary):
+
+    array = []
+    count = 1
+    sorted_keys = sorted(dictionary.keys())
+
+    for key in sorted_keys:
+
+        if count == key:
+
+            array.append(dictionary[key])
+            count += 1
+
+        else:
+            diff = key - count
+
+            while diff > 0:
+                array.append([])
+                diff -= 1
+
+            array.append(dictionary[key])
+            count = key+1
+
+    return array
