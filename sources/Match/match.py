@@ -130,133 +130,7 @@ class Match:
             match = re.search(html_end_tag, line)
         return line
 
-    def replaceAcronyms(self, dh):
-        if self.acronyms_file == "":
-            return []
-        dh_list = []
-        duplicates = False
-        for acronym in self.acronyms:
-            if acronym in dh:
-                for expansion in self.acronyms[acronym]:
-                    new_dh = dh.replace(acronym, expansion)
-                    if new_dh.find('"')>=0 or new_dh.find("'")>=0:
-                        temp_dh_list = self.replaceAcronyms(new_dh)
-                        for i in range(len(temp_dh_list)):
-                            dh_list.append(temp_dh_list[i])
-                        return dh_list
-                    else:
-                        dh_list.append(new_dh)
-        return dh_list
 
-    def removeEtcFromDH(self, dh):
-        etc = u" כו'"
-        etc_plus_and = u" וכו'"
-        dh_arr = dh.split(" ")
-        last_word = dh_arr[len(dh_arr)-1]
-        if dh.find(etc_plus_and) >= 0:
-            dh = dh.replace(etc_plus_and, "")
-        elif dh.find(etc) >= 0:
-            dh = dh.replace(etc, "")
-        return dh
-
-    def splitPara(self, para, len_phrase):
-        len_phrase *= 2
-        phrases = []
-        words = para.split(" ")
-        len_para = len(words)
-        for i in range(len_para):
-            phrase = ""
-            if i+len_phrase >= len_para:
-                j = i
-                while j < len_para:
-                    phrase += words[j] + " "
-                    j+=1
-                phrases.append(phrase)
-                break
-            else:
-                for j in range(len_phrase):
-                    phrase += words[i+j] + " "
-                phrases.append(phrase)
-        return phrases
-
-    def forceUTF(self, list_dh):
-        new_list = []
-        for orig_dh in list_dh:
-            #pdb.set_trace()
-            #if orig_dh != orig_dh.encode('utf-8'):
-            #	orig_dh = orig_dh.encode('utf-8')
-            new_list.append(orig_dh)
-        return new_list
-
-    def match_list(self, dh_orig_list, page):
-        self.maxLine = len(page)-1
-        self.found_dict = {}
-        self.dh_orig_list = self.forceUTF(dh_orig_list)
-        dh_pos = 0
-        for dh in self.dh_orig_list:
-            self.match(dh, page, dh_pos)
-            dh_pos+=1
-        self.non_match_file.close()
-        self.multipleMatches()
-        if self.range==True:
-            self.getRanges()
-        return self.confirmed_dict
-
-    def match(self, orig_dh, page, dh_position, ratio=85):
-        partial_ratios = []
-        self.found_dict[dh_position] = {}
-        self.found_dict[dh_position][orig_dh] = []
-        dh = self.removeEtcFromDH(orig_dh)
-        found = 0
-        dh_acronym_list = []
-        if dh.find('"') >= 0 or dh.find("'")>=0:
-            dh_acronym_list = self.replaceAcronyms(dh)
-        for line_n, para in enumerate(page):
-            found_this_line = False
-            para = self.removeHTMLtags(para)
-            para = para
-            if dh in para:
-                found += 1
-                self.found_dict[dh_position][orig_dh].append((line_n, 100))
-                continue
-            para_pr = fuzz.partial_ratio(dh, para)
-            if para_pr < 40: #not worth checking
-                continue
-            elif para_pr >= ratio:
-                found += 1
-                self.found_dict[dh_position][orig_dh].append((line_n, para_pr))
-                continue
-            phrases = self.splitPara(para, len(dh))
-            for phrase in phrases:
-                phrase_pr = fuzz.partial_ratio(dh, phrase)
-                if found_this_line == True:
-                    break
-                if dh in phrase:
-                    found += 1
-                    self.found_dict[dh_position][orig_dh].append((line_n, 100))
-                    break
-                elif phrase_pr >= ratio:
-                    found += 1
-                    self.found_dict[dh_position][orig_dh].append((line_n, phrase_pr))
-                    break
-                for expanded_acronym in dh_acronym_list:  #only happens if there is an acronym, found_dh refers to expanded acronym
-                    acronym_pr = fuzz.partial_ratio(expanded_acronym, phrase)
-                    if expanded_acronym in phrase:
-                        found += 1
-                        self.found_dict[dh_position][orig_dh].append((line_n, 100))
-                        found_this_line = True
-                        break
-                    elif acronym_pr >=ratio:
-                        found += 1
-                        self.found_dict[dh_position][orig_dh].append((line_n, acronym_pr))
-                        found_this_line = True
-                        break
-        if found == 0:
-            if ratio > self.min_ratio:
-                self.match(orig_dh, page, dh_position, ratio-self.step)
-            else:
-                self.non_match_file.write(orig_dh.encode("utf-8"))
-                self.non_match_file.write(u"\n")
 
     def replaceAcronyms(self, dh):
         if self.acronyms_file == "":
@@ -294,7 +168,10 @@ class Match:
         return dh
 
 
-    def match_list(self, dh_orig_list, page, ref_title):
+    def match_list(self, dh_orig_list, page, ref_title=None):
+        if self.can_expand == True and ref_title == None:
+            print 'Error: If can_expand is set to true, you must pass a valid reference so we know where to start expanding from.'
+            pdb.set_trace()
         self.maxLine = len(page)-1
         self.ref_title = ref_title
         self.found_dict = {}
