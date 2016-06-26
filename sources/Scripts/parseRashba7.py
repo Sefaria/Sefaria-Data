@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 import codecs
 import regex
+from sefaria.model import *
+from sources import functions
 from data_utilities import util
+
 
 
 def parse(file1):
@@ -52,3 +55,129 @@ rashba_section_seven = parse('rashba7.txt')
 hello = codecs.open('hello.txt', 'w', 'utf-8')
 util.jagged_array_to_file(hello,rashba_section_seven,('Siman', 'Text'))
 hello.close()
+
+
+
+rashba_text = {
+    "versionTitle": "Warsaw, 1868",
+    "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001124680",
+    "language": "he",
+    "text": rashba_section_seven
+}
+
+rashba_index = {
+    "pubDate": "1470",
+    "title": "Teshuvot haRashba part VII",
+    "pubPlace": "Rome",
+    "maps": [ ],
+    "era": "RI",
+    "authors": [
+        "Rashba"
+    ],
+    "categories": [
+        "Responsa",
+        "Rashba"
+    ],
+    "schema": {
+        "nodeType": "JaggedArrayNode",
+        "addressTypes": [
+            "Integer",
+            "Integer"
+        ],
+        "depth": 2,
+        "titles": [
+        {
+            "lang": "en",
+            "text": "Teshuvot helek Sheva"
+        },
+        {
+            "lang": "en",
+            "text": "shut harashba part seven"
+        },
+        {
+            "lang": "he",
+            "text": u"\u05e9\u05d5\u0022\u05ea \u05d4\u05e8\u05e9\u05d1\u0022\u05d0 \u05d7\u05dc\u05e7 \u05d6",
+            "primary": True
+        },
+        {
+            "lang": "he",
+            "text": u"\u05e9\u05d0\u05dc\u05d5\u05ea \u05d5\u05ea\u05e9\u05d5\u05d1\u05d5\u05ea \u05d4\u05e8\u05e9\u05d1\u0022\u05d0 \u05d7\u05dc\u05e7 \u05d6"
+        },
+        {
+            "lang": "he",
+            "text": u"\u05e9\u05d5\u0022\u05ea \u05d4\u05e8\u05e9\u05d1\u0022\u05d0 \u05d6"
+        },
+        {
+            "lang": "en",
+            "text": "Teshuvot haRashba part VII",
+            "primary": True
+        }
+        ],
+    "key": "Teshuvot haRashba part VII",
+    "sectionNames": [
+        "Teshuva",
+        "Part"
+        ]
+    }
+}
+
+
+#functions.post_index(repair_index)
+functions.post_index(rashba_index)
+functions.post_text('Teshuvot haRashba part VII', rashba_text)
+
+# repair_index = {
+#     "pubDate": "1470",
+#     "title": "Teshuvot haRashba part V",
+#     "pubPlace": "Rome",
+#     "maps": [ ],
+#     "era": "RI",
+#     "authors": [
+#         "Rashba"
+#     ],
+#     "categories": [
+#         "Responsa",
+#         "Rashba"
+#     ],
+#     "schema": {
+#     "nodeType": "JaggedArrayNode",
+#     "addressTypes": [
+#         "Integer",
+#         "Integer"
+#     ],
+#     "depth": 2,
+#     "titles": [
+#     {
+#         "lang": "en",
+#         "text": "Teshuvot helek khamesh"
+#     },
+#     {
+#         "lang": "en",
+#         "text": "shut harashba h'"
+#     },
+#     {
+#         "lang": "he",
+#         "text": u"\u05e9\u05d5\u0022\u05ea \u05d4\u05e8\u05e9\u05d1\u0022\u05d0 \u05d7\u05dc\u05e7 \u05d4",
+#         "primary": True
+#     },
+#     {
+#         "lang": "he",
+#         "text": u"\u05e9\u05d0\u05dc\u05d5\u05ea \u05d5\u05ea\u05e9\u05d5\u05d1\u05d5\u05ea \u05d4\u05e8\u05e9\u05d1\u0022\u05d0 \u05d7\u05dc\u05e7 \u05d4"
+#     },
+#     {
+#         "lang": "he",
+#         "text": u"\u05e9\u05d5\u0022\u05ea \u05d4\u05e8\u05e9\u05d1\u0022\u05d0 \u05d4"
+#     },
+#     {
+#         "lang": "en",
+#         "text": "Teshuvot haRashba part V",
+#         "primary": True
+#     }
+#     ],
+#     "key": "Teshuvot haRashba part V",
+#     "sectionNames": [
+#     "Teshuva",
+#     "Part"
+#     ]
+#     }
+# }
