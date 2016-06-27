@@ -38,8 +38,7 @@ def parse(file1):
                 continue
 
             else:
-                each_line = each_line.strip( '+' )
-                second_level_list.append(each_line)
+                second_level_list.append(clean_up_string(each_line))
 
         while siman_number > count:
             rashba_section_seven.append(None)
@@ -47,6 +46,12 @@ def parse(file1):
 
         rashba_section_seven.append(second_level_list)
     return rashba_section_seven
+
+
+def clean_up_string(each_line):
+    each_line = each_line.strip('+')
+    result = ''.join(char for char in each_line if not char.isdigit())
+    return result
 
 
 rashba_section_seven = parse('rashba7.txt')
