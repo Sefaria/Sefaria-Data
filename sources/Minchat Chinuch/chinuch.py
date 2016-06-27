@@ -1,10 +1,12 @@
 # encoding=utf-8
-import os
 import re
+import csv
 import codecs
 from data_utilities.sanity_checks import TagTester
 from data_utilities import util
 from sources.Match.match_new import Match
+from sources import functions
+from sefaria.model import *
 
 filename = 'Minchat_Chinuch.txt'
 m_pattern = u'@30מצוה ([\u05d0-\u05ea"]{1,5})'
@@ -192,8 +194,150 @@ def add_line_breaks(text, pattern):
     else:
         return text
 
+
+def find_links(current_text, parent_text, dh_finder, *args):
+    """
+
+    :param current_text: Text being parsed. Must have keys "name" and "text"
+    :param parent_text: Parent text text should be linked to. Must have keys "name" and "text"
+    :param dh_finder:  function to find dh in text
+    :return: List of links
+    """
+
+    matcher = Match(guess=True)
+    links = []
+
+    for chapter_num, chapter in enumerate(current_text['text']):
+
+        if chapter:
+            dh_list = [dh_finder(seif[0], *args) for seif in chapter if dh_finder(seif[0], *args)]
+            matches = matcher.match_list(dh_list, parent_text['text'][chapter_num])
+            links.append(build_links(parent_text['name'], current_text['name'], chapter_num+1, matches))
+
+    return [linker for sublist in links for linker in sublist]
+
+
+def build_links(parent_name, current_name, chapter, match_list):
+    """
+
+    :param parent_name: Name of parent text
+    :param current_name: Name of text being parsed
+    :param chapter: chapter number being analyzed
+    :param match_list: data returned from calling Match.match_list()
+    :return: List of links
+    """
+
+    links = []
+
+    for match in match_list.keys():
+        if len(match_list[match]) == 1:
+            if match_list[match][0] > 0:
+
+                parent = u'{}.{}.{}'.format(parent_name, chapter, match_list[match][0])
+                child = u'{}.{}.{}'.format(current_name, chapter, match)
+
+                new_link = {
+                    'refs': [parent, child],
+                    'type': 'commentary2',
+                    'auto': False,
+                    'generated_by': 'Minchat Chinukh parse script',
+                }
+                links.append(new_link)
+            else:
+                continue
+        else:
+            continue
+
+    return links
+
+
+def get_data(filename):
+
+    with codecs.open(filename, 'r', 'utf-8') as data_file:
+
+        data = []
+        data_reader = csv.reader(data_file, delimiter=',')
+
+        for row in data_reader:
+
+            data.append({
+                'Parsha': row[0],
+                'ref': row[1]
+            })
+
+    return data
+
+
+def construct_alt_struct(data_file):
+
+    struct = {'nodes': []}
+
+    for title in get_data(data_file):
+
+        node = {
+            'depth': 0,
+            'sharedTitle': title['Parsha'],
+            'nodeType': 'ArrayMapNode',
+            'wholeRef': 'Minchat Chinukh.{}'.format(title['ref']),
+            'includeSections': True
+        }
+
+        struct['nodes'].append(node)
+
+    return struct
+
+
+def construct_index(alt_struct):
+
+    index = JaggedArrayNode()
+    index.add_title(u'Minchat Chinukh', 'en', primary=True)
+    index.add_title(u'מנחת חינוך', 'he', primary=True)
+    index.key = u'Minchat Chinukh'
+    index.depth = 3
+    index.addressTypes = ['Integer', 'Integer', 'Integer']
+    index.sectionNames = ['Mitzva', 'Seif', 'Paragraph']
+    index.alt_structs = alt_struct
+    index.validate()
+
+    return {
+        'title': "Minchat Chinukh",
+        'categories': ['Halakhah'],
+        'schema': index.serialize()
+    }
+
 with codecs.open(filename, 'r', 'utf-8') as datafile:
     parsed = util.file_to_ja([[[]]], datafile, (m_pattern, comment_pattern), nothing)
 
-with codecs.open('outfile.txt', 'w', 'utf-8') as outfile:
-    util.jagged_array_to_file(outfile, parsed.array(), (u'Mitzva', u'comment', u'paragraph'))
+    datafile.seek(0)
+
+    names = util.grab_section_names(m_pattern, datafile, 1)
+    names = [int(util.getGematria(name)) for name in names]
+
+comp_text = util.simple_to_complex(names, parsed.array())
+parsed = util.convert_dict_to_array(comp_text)
+
+with codecs.open('parsed.txt', 'w', 'utf-8') as outfile:
+    util.jagged_array_to_file(outfile, parsed, [u'Mitzva', u'Seif', u'Paragraph'])
+
+minchat = {'name': 'Minchat Chinukh', 'text': parsed}
+sefer = {'name': 'Sefer HaChinukh', 'text': Ref('Sefer HaChinukh').text('he').text}
+
+chinukh_links = find_links(minchat, sefer, grab_dh, u'@55', u'@66')
+
+with codecs.open('links.txt', 'w', 'utf-8') as outfile:
+    for each_link in chinukh_links:
+        outfile.write(u'{}\n'.format(each_link['refs']))
+
+alt = construct_alt_struct('Chinukh_by_Parsha.csv')
+
+full_text = {
+    'versionTitle': 'The Minchat Chinukh',
+    'versionSource': 'who knows',
+    'language': 'he',
+    'text': parsed
+}
+
+index = construct_index(alt)
+functions.post_index(index)
+functions.post_text('Minchat Chinukh', full_text)
+functions.post_link(chinukh_links)
