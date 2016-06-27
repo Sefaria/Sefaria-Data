@@ -268,7 +268,7 @@ def get_data(filename):
     return data
 
 
-def construct_alt_struct(data_file):
+def construct_alt_struct(data_file, name):
 
     struct = {'nodes': []}
 
@@ -284,42 +284,49 @@ def construct_alt_struct(data_file):
 
         struct['nodes'].append(node)
 
-    return struct
+    return {name: struct}
 
 
-def construct_index(alt_struct):
+def construct_index(alt_struct=None):
 
-    index = JaggedArrayNode()
-    index.add_title(u'Minchat Chinukh', 'en', primary=True)
-    index.add_title(u'מנחת חינוך', 'he', primary=True)
-    index.key = u'Minchat Chinukh'
-    index.depth = 3
-    index.addressTypes = ['Integer', 'Integer', 'Integer']
-    index.sectionNames = ['Mitzva', 'Seif', 'Paragraph']
-    index.alt_structs = alt_struct
-    index.validate()
+    schema = JaggedArrayNode()
+    schema.add_title(u'Minchat Chinukh', 'en', primary=True)
+    schema.add_title(u'מנחת חינוך', 'he', primary=True)
+    schema.key = u'Minchat Chinukh'
+    schema.depth = 3
+    schema.addressTypes = ['Integer', 'Integer', 'Integer']
+    schema.sectionNames = ['Mitzvah', 'Seif', 'Paragraph']
+    schema.validate()
 
-    return {
+    index = {
         'title': "Minchat Chinukh",
         'categories': ['Halakhah'],
-        'schema': index.serialize()
+        'schema': schema.serialize()
     }
 
-with codecs.open(filename, 'r', 'utf-8') as datafile:
-    parsed = util.file_to_ja([[[]]], datafile, (m_pattern, comment_pattern), nothing)
+    if alt_struct:
+        index['alt_structs'] = alt_struct
 
-    datafile.seek(0)
+    return index
 
-    names = util.grab_section_names(m_pattern, datafile, 1)
-    names = [int(util.getGematria(name)) for name in names]
 
-comp_text = util.simple_to_complex(names, parsed.array())
-parsed = util.convert_dict_to_array(comp_text)
+def produce_parsed_data(filename):
 
-with codecs.open('parsed.txt', 'w', 'utf-8') as outfile:
-    util.jagged_array_to_file(outfile, parsed, [u'Mitzva', u'Seif', u'Paragraph'])
+    with codecs.open(filename, 'r', 'utf-8') as datafile:
+        parsed = util.file_to_ja([[[]]], datafile, (m_pattern, comment_pattern), nothing)
 
-minchat = {'name': 'Minchat Chinukh', 'text': parsed}
+        datafile.seek(0)
+
+        names = util.grab_section_names(m_pattern, datafile, 1)
+        names = [int(util.getGematria(name)) for name in names]
+
+    comp_text = util.simple_to_complex(names, parsed.array())
+    parsed = util.convert_dict_to_array(comp_text)
+
+    return parsed
+
+
+minchat = {'name': 'Minchat Chinukh', 'text': produce_parsed_data(filename)}
 sefer = {'name': 'Sefer HaChinukh', 'text': Ref('Sefer HaChinukh').text('he').text}
 
 chinukh_links = find_links(minchat, sefer, grab_dh, u'@55', u'@66')
@@ -328,13 +335,18 @@ with codecs.open('links.txt', 'w', 'utf-8') as outfile:
     for each_link in chinukh_links:
         outfile.write(u'{}\n'.format(each_link['refs']))
 
-alt = construct_alt_struct('Chinukh_by_Parsha.csv')
+alt = construct_alt_struct('Chinukh_by_Parsha.csv', u'Parsha')
+
+cleaned = util.clean_jagged_array(minchat['text'], [m_pattern, comment_pattern, u'@[0-9]{2}',
+                                  u'\n', u'\r'])
+with codecs.open('parsed.txt', 'w', 'utf-8') as outfile:
+    util.jagged_array_to_file(outfile, cleaned, [u'Mitzva', u'Seif', u'Paragraph'])
 
 full_text = {
     'versionTitle': 'The Minchat Chinukh',
     'versionSource': 'who knows',
     'language': 'he',
-    'text': parsed
+    'text': cleaned
 }
 
 index = construct_index(alt)
