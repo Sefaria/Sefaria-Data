@@ -41,7 +41,7 @@ def parse(file1):
                 second_level_list.append(clean_up_string(each_line))
 
         while siman_number > count:
-            rashba_section_seven.append(None)
+            rashba_section_seven.append([])
             count += 1
 
         rashba_section_seven.append(second_level_list)
