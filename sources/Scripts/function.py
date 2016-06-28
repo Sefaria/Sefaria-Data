@@ -148,7 +148,7 @@ def create_text(dictionary, text):
         }
 
 
-def create_links(teshuvot_ja, roman_numeral):
+def create_links(teshuvot_ja, dictionary):
     list_of_links = []
     for siman_index, siman in enumerate(teshuvot_ja):
         for text_index, text in enumerate(siman):
@@ -158,8 +158,8 @@ def create_links(teshuvot_ja, roman_numeral):
                     for number in list_of_footnote_tags:
                         list_of_links.append({
                             "refs": [
-                                    "Footnotes on Teshuvot haRashba part {}.{}.{}".format(roman_numeral,siman_index+1,number),
-                                    "Teshuvot haRashba part {}.{}.{}".format(roman_numeral,siman_index+1, text_index+1)
+                                    "Footnotes on Teshuvot haRashba part {}.{}.{}".format(dictionary['roman numeral'], siman_index+1, number),
+                                    "Teshuvot haRashba part {}.{}.{}".format(dictionary['roman numeral'], siman_index+1, text_index+1)
                                 ],
                             "type": "Footnotes",
                             "auto": False,
