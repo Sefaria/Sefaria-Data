@@ -234,7 +234,7 @@ def build_links(parent_name, current_name, chapter, match_list):
             if match_list[match][0] > 0:
 
                 parent = u'{}.{}.{}'.format(parent_name, chapter, match_list[match][0])
-                child = u'{}.{}.{}'.format(current_name, chapter, match)
+                child = u'{}.{}.{}.1'.format(current_name, chapter, match)
 
                 new_link = {
                     'refs': [parent, child],
