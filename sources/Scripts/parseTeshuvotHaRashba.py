@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
-import codecs
-from sources.Scripts import parseRashba7
+from data_utilities import util
 from sources import functions
 from sources.Scripts import function
-from data_utilities import util
-
 
 footnotes = 'Footnotes on '
 footnotes_hebrew = u'\u05d4\u05e2\u05e8\u05d5\u05ea \u05e2\u05dc '
@@ -59,9 +56,6 @@ teshuvot_harashba_footnotes_text_4 = function.create_text(four_dict, teshuvot_ha
 teshuvot_harashba_footnotes_text_5 = function.create_text(four_dict, teshuvot_harashba_footnotes_5)
 teshuvot_harashba_footnotes_text_6 = function.create_text(four_dict, teshuvot_harashba_footnotes_6)
 teshuvot_harashba_footnotes_text_7 = function.create_text(four_dict, teshuvot_harashba_footnotes_7)
-
-# for link in list_of_links_4:
-#     print link
 
 
 functions.post_index(teshuvot_harashba_index_4)
