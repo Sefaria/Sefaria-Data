@@ -38,7 +38,7 @@ def parse(file1):
                 continue
 
             else:
-                second_level_list.append(each_line)
+                second_level_list.append(remove_forward_slashes(each_line))
 
         while siman_number > count:
             rashba_section_seven.append([])
@@ -52,6 +52,20 @@ def clean_up_string(each_line):
     each_line = each_line.strip('+')
     result = ''.join(char for char in each_line if not char.isdigit())
     return result
+
+
+def remove_forward_slashes(string):
+    open_parenthesis = True
+    char_list = list(string)
+    for index, letter in enumerate(char_list):
+        if letter == '/':
+            if open_parenthesis:
+                char_list[index] = '('
+            else:
+                char_list[index] = ')'
+            open_parenthesis = not open_parenthesis
+    return ''.join(char_list)
+
 
 
 def create_dict(roman_numeral, transliterated, hebrew_letter, number, version_title, version_source):
