@@ -145,7 +145,7 @@ def create_links(teshuvot_ja, roman_numeral):
                         list_of_links.append({
                             "refs": [
                                     "Footnotes on Teshuvot haRashba part {}.{}.{}".format(roman_numeral,siman_index+1,number),
-                                    "Teshuvot haRashba part {}.{}.{}".format(roman_numeral,siman_index+1, text_index)
+                                    "Teshuvot haRashba part {}.{}.{}".format(roman_numeral,siman_index+1, text_index+1)
                                 ],
                             "type": "Footnotes",
                             "auto": False,
