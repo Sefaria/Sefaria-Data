@@ -38,7 +38,7 @@ def parse(file1):
                 continue
 
             else:
-                second_level_list.append(remove_forward_slashes(each_line))
+                second_level_list.append(remove_forward_slashes_and_equals(each_line))
 
         while siman_number > count:
             rashba_section_seven.append([])
@@ -54,16 +54,24 @@ def clean_up_string(each_line):
     return result
 
 
-def remove_forward_slashes(string):
-    open_parenthesis = True
+def remove_forward_slashes_and_equals(string):
+    open_parenthesis_slash = True
+    open_parenthesis_equals = True
     char_list = list(string)
     for index, letter in enumerate(char_list):
         if letter == '/':
-            if open_parenthesis:
+            if open_parenthesis_slash:
                 char_list[index] = '('
             else:
                 char_list[index] = ')'
-            open_parenthesis = not open_parenthesis
+            open_parenthesis_slash = not open_parenthesis_slash
+        elif letter == '=':
+            if open_parenthesis_equals:
+                char_list[index] = '('
+            else:
+                char_list[index] = ')'
+            open_parenthesis_equals = not open_parenthesis_equals
+
     return ''.join(char_list)
 
 
