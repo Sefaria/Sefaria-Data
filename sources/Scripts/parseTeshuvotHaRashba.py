@@ -38,7 +38,7 @@ def parse_the_text(file_name_teshuvot, file_name_footnotes, dictionary):
 
 
 for number in range(4,8):
-    parse_the_text('rashba'+str(number)+'.txt', 'rashba'+str(number)+'cmnt.txt', the_dictionaries[str(number)])
+    parse_the_text('rashba{}.txt'.format(str(number)), 'rashba{}cmnt.txt'.format(str(number)), the_dictionaries[str(number)])
 
 # hello = codecs.open("hello.txt", 'w', 'utf-8')
 # util.jagged_array_to_file(hello, teshuvot_harashba_4,['Siman', 'Text'])
