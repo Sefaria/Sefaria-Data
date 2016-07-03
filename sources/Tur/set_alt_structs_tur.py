@@ -37,7 +37,7 @@ def create_indexes(sections, eng_helekim, heb_helekim):
           choshen.key = helek
           choshen.depth = 2
           choshen.addressTypes = ["Integer", "Integer"]
-          choshen.sectionNames = ["Siman", "Seif"]
+          choshen.sectionNames = ["Chapter", "Seif"]
           tur.append(choshen)
       else:
           helek_node = JaggedArrayNode()
@@ -46,14 +46,13 @@ def create_indexes(sections, eng_helekim, heb_helekim):
           helek_node.key = helek
           helek_node.depth = 2
           helek_node.addressTypes = ["Integer", "Integer"]
-          helek_node.sectionNames = ["Siman", "Seif"]
+          helek_node.sectionNames = ["Chapter", "Seif"]
           tur.append(helek_node)
   tur.validate()
   index = {
     "title": "Tur",
     "titleVariants": ["Arba Turim", "Arbaah Turim", "Arbah Turim"],
     "categories": ["Halakhah", "Tur and Commentaries"],
-    "default_struct": "Contents",
     "alt_structs": {"Sections": sections},
     "schema": tur.serialize()
     }

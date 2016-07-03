@@ -210,8 +210,12 @@ class Match:
           para_pr = fuzz.partial_ratio(dh, para)
           if para_pr < 40: #not worth checking
               continue
-          elif len(dh)*6 < len(para):
+          elif len(dh)*4 < len(para):
               result_pr = self.matchSplitPara(para, dh, dh_position, orig_dh, line_n, ratio)
+              print result_pr
+              print para_pr
+              print "************"
+              #is result_pr different from para_pr?
               if result_pr > 0:
                 found+=1
                 continue

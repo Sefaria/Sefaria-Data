@@ -320,9 +320,9 @@ def parse_text(helekim, files, commentator):
             text[helek][curr_siman] = []
       else: #just add it to current seif katan
           #line, old_header, header, just_saw_00, will_see_00 = addHeader(line, old_header, header, just_saw_00, will_see_00)
-          line = replaceWithHTMLTags(line).encode('utf-8')
           if commentator == "Prisha" or commentator == "Drisha":
               line = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9"], line)
+              line = replaceWithHTMLTags(line).encode('utf-8')
               if line.find("@")>=0:
                   print line.find("@")
                   pdb.set_trace()
@@ -332,6 +332,7 @@ def parse_text(helekim, files, commentator):
                   len_text = len(text[helek][curr_siman])
                   text[helek][curr_siman][len_text-1][0] += "<br>"+line
           else:
+              line = replaceWithHTMLTags(line).encode('utf-8')
               bach_bi_lines += line
       prev_line = actual_line
     if len(bach_bi_lines)>0 and (commentator == "Bach" or commentator == "Beit Yosef"):
@@ -347,8 +348,6 @@ def post_commentary(commentator):
     commentator = commentator.replace("Bi", "Beit Yosef")
     links = []
     for helek in text:
-        if helek != "Orach Chaim":
-          continue
         data = tag_csv_files[helek].read()
         data = eval(data)
         print helek
@@ -378,7 +377,7 @@ def post_commentary(commentator):
                 links.append({'refs': [link_to, commentator_end], 'type': 'commentary', 'auto': 'True', 'generated_by': commentator+"choshenmishpat"})
         
         post_text(commentator+",_"+helek, send_text)
-    post_link(links)
+    #post_link(links)
 
 
 if __name__ == "__main__":

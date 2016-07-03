@@ -27,24 +27,20 @@ from sefaria.model.schema import AddressTalmud
 def createIndex(enTitle):
 	heTitle = getHebrewTitle(enTitle)
 
-	root = SchemaNode()
-	root.add_title("Ritva on "+enTitle, "en", primary=True) 
-	root.add_title(u' ריטב"א'+heTitle, "he", primary=True)
-	root.key = "ritva"+enTitle
+	root = JaggedArrayNode()
+	root.add_title("Rita on "+enTitle, "en", primary=True) 
+	root.add_title(u'ריטב"א על '+heTitle, "he", primary=True)
+	root.key = "Rita+"+enTitle
+	root.sectionNames = ["Daf", "Comment"]
+	root.depth = 2
+	root.addressTypes = ["Talmud", "Integer"]
 
-	main_node = JaggedArrayNode()
-	main_node.default = True
-	main_node.key = "default"
-	main_node.sectionNames = ["Daf", "Comment"]
-	main_node.depth = 2
-	main_node.addressTypes = ["Integer", "Integer"]
-	root.append(main_node)
 		
 	root.validate()
 
 	index = {
-	    "title": "Ritva on "+enTitle,
-	    "categories": ["Commentary2", "Talmud", "Ritva"],
+	    "title": "Rita on "+enTitle,
+	    "categories": ["Talmud", "Rita"],
 	    "schema": root.serialize()
 	}
 
@@ -52,10 +48,9 @@ def createIndex(enTitle):
 
 
 def dealWithDaf(line, current_daf):
-	print line
 	orig_line = line
 	line = line.replace("@22", "").replace('ע"א','').replace('דף', '')
-	if len(line.replace('ע"ב','').replace(' ','')) == 0:
+	if len(line.replace('ע"ב','').replace(' ','').replace('[', '').replace(']', '')) == 0:
 		return current_daf + 1
 	elif line.find('ע"ב') >= 0:
 		line = line.replace('ע"ב', '')
@@ -75,11 +70,19 @@ def dealWithDaf(line, current_daf):
 def parse(file):
 	header = ""
 	text = {}
+	dhs = {}
 	current_daf = 0
 	for line in file:
 		line = line.replace('\n', '')
 		if line.find("@11") >= 0:
 			line = line.replace("@11", "").replace("@33", "")
+			dh, comment, found = getDHComment(line)
+			if current_daf in dhs:
+				dhs[current_daf].append(dh)
+			else:
+				dhs[current_daf] = []
+			if found == True:
+				line = "<b>"+dh+"</b>"+comment
 			if len(header) > 0:
 				line = "<b>"+header+"</b><br>"+line
 				header = ""
@@ -89,33 +92,43 @@ def parse(file):
 			text[current_daf] = []
 		elif line.find("@00") >= 0:
 			header = line.replace("@00", "")
-	return text
+	return text, dhs
+
+
+def getDHComment(each_line):
+	found = True
+	if each_line.find("כו'") >= 0:
+		dh, comment = each_line.split("כו'", 1)
+		dh += "כו'"
+	elif each_line.find(".") >= 0:
+		dh, comment = each_line.split(".", 1)
+		dh += "."
+	else:
+		found = False
+		dh, comment = splitText(each_line, 10)
+	return dh, comment, found
 
 
 def splitText(text, num_words):
+	num_words = num_words if len(text.split(" ")) > 20 else len(text.split(" "))/4 
 	text_arr = text.split(" ", num_words)
 	before = " ".join(text_arr[0:num_words])
 	after = text_arr[num_words]
 	return before, after
 
 
-def match_and_link(text, masechet):
+def match_and_link(dhs, masechet):
 	match = Match(in_order=True, min_ratio=80, guess=False, range=True, can_expand=False)
-	for daf_count, daf in enumerate(text):
-		dhs = []
-		comments = []
-		for each_line in daf:
-			if each_line.find("כו'") >= 0:
-				dh, comment = each_line.split("כו'", 1)
-			elif each_line.find(".") >= 0:
-				dh, comment = each_line.split(".", 1)
-			else:
-				dh, comment = splitText(each_line, 10)
-			dhs.append(dh)
-			comments.append(comment)
-		pdb.set_trace()
-		talmud_text = get_text_plus(masechet+"."+AddressTalmud.toStr("en", daf_count+3))['he']
-		result = match.match_list(dhs, talmud_text)
+	links = []
+	for daf in dhs:
+		talmud_text = get_text_plus(masechet+"."+AddressTalmud.toStr("en", daf))['he']
+		result = match.match_list(dhs[daf], talmud_text)
+		for line in result:
+			talmud_range = result[line].replace("0:", "")
+			Rita_end = "Rita on "+masechet+"."+str(AddressTalmud.toStr("en", daf))+"."+str(line)
+			talmud_end = masechet + "." + AddressTalmud.toStr("en", daf) + "." + talmud_range
+			links.append({'refs': [Rita_end, talmud_end], 'type': 'commentary', 'auto': 'True', 'generated_by': masechet+"Rita"})
+	post_link(links)
 
 if __name__ == "__main__":
 	versionTitle = {}
@@ -123,20 +136,20 @@ if __name__ == "__main__":
 	versionTitle['Berakhot'] = 'Berakhah Meshuleshet, Warsaw, 1863.'
 	versionTitle['Megillah'] = 'Kodshei David, Livorno, 1792.'
 	versionTitle['Moed Katan'] = 'f'
-	versionTitle['Yoma'] = 'Chidushei HaRitva, Berlin, 1860.'
-	versionTitle['Rosh Hashanah'] = 'Chiddushei HaRitva, Königsberg, 1858.'
-	versionTitle['Taanit'] = 'Chidushi HaRitva, Amsterdam, 1729.'
+	versionTitle['Yoma'] = 'Chidushei HaRita, Berlin, 1860.'
+	versionTitle['Rosh Hashanah'] = 'Chiddushei HaRita, Königsberg, 1858.'
+	versionTitle['Taanit'] = 'Chidushi HaRita, Amsterdam, 1729.'
 	versionTitle['Niddah'] = 'f'
 	files = ["Sukkah", "Berakhot", "Megillah", "Moed Katan", "Yoma", "Rosh Hashanah", "Taanit", "Niddah"]
 	for file in files:
-		#createIndex(file)
-		text = parse(open(file+".txt"))
-		text = convertDictToArray(text)
+		createIndex(file)
+		text, dhs = parse(open(file+".txt"))
+		text_array = convertDictToArray(text)
 		send_text = {
-		"text": text,
+		"text": text_array,
 		"language": "he",
 		"versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001201716",
 		"versionTitle": versionTitle[file]
 		}
-		#post_text("Ritva on "+file, send_text)
-		match_and_link(text, file)
+		post_text("Rita on "+file, send_text)
+		match_and_link(dhs, file)

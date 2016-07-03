@@ -268,7 +268,7 @@ def post_index(index):
         response = urllib2.urlopen(req)
         print response.read()
     except HTTPError as e:
-        errors.write(e.read())
+        pdb.set_trace()
         print "error"
 
 
