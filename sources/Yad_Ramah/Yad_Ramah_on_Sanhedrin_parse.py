@@ -13,9 +13,11 @@ from data_utilities import util
 from sources.Yad_Ramah import function
 
 
+sanhedrin_ja = TextChunk(Ref('Sanhedrin'), 'he').text
 yad_ramah = function.parse('yad_ramah.txt')
 index = function.create_index()
 text = function.create_text(yad_ramah)
+links = function.create_links(sanhedrin_ja, yad_ramah)
 
 
 hello = codecs.open("hello.txt", 'w', 'utf-8')

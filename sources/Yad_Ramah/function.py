@@ -4,7 +4,9 @@ import regex
 from sefaria.model import *
 from sources import functions
 from data_utilities import util
-
+from sources.Match import match_new
+from sources.Match.match import Match
+from sefaria.model.schema import AddressTalmud
 
 
 def parse(file1):
@@ -131,3 +133,44 @@ def create_text(text):
             "language": "he",
             "text": text
         }
+
+def create_links (sanhedrin_ja, yad_ramah_ja):
+    list_of_links = []
+    amud_number = 1
+    match_object = Match(in_order=True, min_ratio=70, guess=True, range=True, can_expand=True)
+    for amud_of_sanhedrin, amud_yad_ramah in zip(sanhedrin_ja, yad_ramah_ja):
+        ref = 'Sanhedrin {}'.format(AddressTalmud.toStr('en', amud_number))
+        the_first_few_words = take_the_first_ten_words(amud_yad_ramah)
+        matches_dict = match_object.match_list(the_first_few_words, amud_of_sanhedrin, ref)
+        for index_comment_number, key in enumerate(matches_dict):
+            print 'Amud: {} comment: {} corresponds to {}'.format(AddressTalmud.toStr('en', amud_number), key , matches_dict[key])
+            # if matches_dict[key][0] != '0':
+            #     print create_link_text(AddressTalmud.toStr('en', amud_number), matches_dict[key], key)
+            #     list_of_links.append(create_link_text(AddressTalmud.toStr('en', amud_number), matches_dict[key], key))
+        amud_number += 1
+
+    return list_of_links
+
+
+def take_the_first_ten_words(list_of_strings):
+    list_of_potential_divrei_hamatchil = []
+    the_first_few_words = 5
+    for comment in list_of_strings:
+        split_string = comment.split()
+        if len(split_string) > the_first_few_words:
+            list_of_potential_divrei_hamatchil.append(''.join(split_string[:the_first_few_words]))
+        else:
+            list_of_potential_divrei_hamatchil.append(''.join(split_string))
+    return list_of_potential_divrei_hamatchil
+
+
+def create_link_text(source_index, line_number, comment_number):
+    amud_number = AddressTalmud.toStr('en', source_index)
+    return {
+                "refs": [
+                        "Sanhedrin {}.{}".format(amud_number, line_number),
+                        "Yad Ramah on Sanhedrin {}.{}".format(amud_number, comment_number)
+                    ],
+                "type": "commentary",
+            }
+
