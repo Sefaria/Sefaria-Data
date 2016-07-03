@@ -61,15 +61,15 @@ def remove_forward_slashes_and_equals(string):
     for index, letter in enumerate(char_list):
         if letter == '/':
             if open_parenthesis_slash:
-                char_list[index] = '('
+                char_list[index] = '['
             else:
-                char_list[index] = ')'
+                char_list[index] = ']'
             open_parenthesis_slash = not open_parenthesis_slash
         elif letter == '=':
             if open_parenthesis_equals:
-                char_list[index] = '('
+                char_list[index] = '[= '
             else:
-                char_list[index] = ')'
+                char_list[index] = ']'
             open_parenthesis_equals = not open_parenthesis_equals
 
     return ''.join(char_list)
