@@ -66,7 +66,7 @@ def create_dict(roman_numeral, transliterated, hebrew_letter, number, version_ti
     return {
             'roman numeral': roman_numeral,
             'transliterated': transliterated,
-            'hebrew letter':hebrew_letter,
+            'hebrew letter': hebrew_letter,
             'number': number,
             'version title': version_title,
             'version source': version_source
@@ -137,7 +137,7 @@ def create_text(text):
 def create_links (sanhedrin_ja, yad_ramah_ja):
     list_of_links = []
     amud_number = 1
-    match_object = Match(in_order=True, min_ratio=70, guess=True, range=True, can_expand=True)
+    match_object = Match(in_order=True, min_ratio=70, guess=False, range=True, can_expand=True)
     for amud_of_sanhedrin, amud_yad_ramah in zip(sanhedrin_ja, yad_ramah_ja):
         ref = 'Sanhedrin {}'.format(AddressTalmud.toStr('en', amud_number))
         the_first_few_words = take_the_first_ten_words(amud_yad_ramah)
@@ -158,9 +158,9 @@ def take_the_first_ten_words(list_of_strings):
     for comment in list_of_strings:
         split_string = comment.split()
         if len(split_string) > the_first_few_words:
-            list_of_potential_divrei_hamatchil.append(''.join(split_string[:the_first_few_words]))
+            list_of_potential_divrei_hamatchil.append(' '.join(split_string[:the_first_few_words]))
         else:
-            list_of_potential_divrei_hamatchil.append(''.join(split_string))
+            list_of_potential_divrei_hamatchil.append(' '.join(split_string))
     return list_of_potential_divrei_hamatchil
 
 
