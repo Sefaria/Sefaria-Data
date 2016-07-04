@@ -32,9 +32,9 @@ def parse_the_text(file_name_teshuvot, file_name_footnotes, dictionary):
     text_footnotes = function.create_text(dictionary, footnotes_ja)
     functions.post_index(index_teshuvot)
     functions.post_index(index_footnotes)
-    functions.post_text('Teshuvot haRashba part {}'.format(dictionary['roman numeral']), text_teshuvot)
-    functions.post_text('Footnotes on Teshuvot haRashba part {}'.format(dictionary['roman numeral']), text_footnotes)
-    functions.post_link(links)
+    functions.post_text_weak_connection('Teshuvot haRashba part {}'.format(dictionary['roman numeral']), text_teshuvot)
+    functions.post_text_weak_connection('Footnotes on Teshuvot haRashba part {}'.format(dictionary['roman numeral']), text_footnotes)
+    functions.post_link_weak_connection(links)
 
 
 for number in range(4,8):
