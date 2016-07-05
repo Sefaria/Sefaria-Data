@@ -343,8 +343,8 @@ with codecs.open('parsed.txt', 'w', 'utf-8') as outfile:
     util.jagged_array_to_file(outfile, cleaned, [u'Mitzva', u'Seif', u'Paragraph'])
 
 full_text = {
-    'versionTitle': 'The Minchat Chinukh',
-    'versionSource': 'who knows',
+    'versionTitle': 'Minchat Chinuch, Piotrków, 1902',
+    'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001175092',
     'language': 'he',
     'text': cleaned
 }
