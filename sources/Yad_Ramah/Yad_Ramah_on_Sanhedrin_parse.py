@@ -11,13 +11,21 @@ import regex
 from sefaria.model import *
 from data_utilities import util
 from sources.Yad_Ramah import function
+from sources import functions
 
 
 sanhedrin_ja = TextChunk(Ref('Sanhedrin'), 'he').text
 yad_ramah = function.parse('yad_ramah.txt')
+yad_ramah = util.clean_jagged_array(yad_ramah, ['\d+', '@'])
 index = function.create_index()
 text = function.create_text(yad_ramah)
+print('I am now creating links')
 links = function.create_links(sanhedrin_ja, yad_ramah)
+print('I am now posting texts')
+functions.post_index(index)
+functions.post_text_weak_connection('Yad Ramah on Sanhedrin', text)
+functions.post_link_weak_connection(links)
+
 
 
 hello = codecs.open("hello.txt", 'w', 'utf-8')
