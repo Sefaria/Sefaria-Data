@@ -510,12 +510,86 @@ def check_chapter_intro():
         for issue in issues:
             print issue
 
-with codecs.open(u'יכין כלים.txt', 'r', 'utf-8') as datafile:
-    kelim = util.file_to_ja([[]], datafile, [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})'],
-                       yachin_builder)
 
-with codecs.open('output.txt', 'w', 'utf-8') as outfile:
-    j_to_file(outfile, kelim.array(), [u'chapter', u'section', u'segment'])
-os.remove('errors.html')
+def parse_files():
+
+    results = {}
+
+    chap_expression = [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})']
+
+    tractates = library.get_indexes_in_category('Mishnah')
+
+    for tractate in tractates:
+
+        en_name = tractate.replace(u'Mishnah', u'Yachin')
+        he_name = Ref(tractate).he_book().replace(u'משנה', u'יכין')
+        filename = u'{}.txt'.format(he_name)
+        print en_name
+
+        with codecs.open(filename, 'r', 'utf-8') as datafile:
+            results[en_name] = {
+                'he': he_name,
+                'data': util.file_to_ja([[]], datafile, chap_expression, yachin_builder)
+            }
+    return results
+
+
+def parse_mishna(input_file, perek_tag, mishna_tag, skip_tag):
+    """
+    The Mishna parsing was done before the reusable parser was written (Yachin was the first project
+    to use it). This is the function as it appears in the mishna parser. It was decided to forgo DRY
+    to maintain reverse compatibility for the sake of linking in this case.
+    :param input_file: File to parse
+    :param perek_tag: Used to identify the start of a new perek.
+    :param mishna_tag: Identify next mishna.
+    :return: A 2D jaggedArray to match Sefaria's format. Rough, will require more processing.
+    """
+
+    chapters, mishnayot, current = [], [], []
+    found_first_chapter = False
+
+    for line in input_file:
+
+        # look for skip_tag
+        if re.search(skip_tag, line):
+            continue
+
+        # look for tags
+        new_chapter, new_mishna = re.search(perek_tag, line), re.search(mishna_tag, line)
+
+        # make sure perek and mishna don't appear on the same line
+        if new_chapter and new_mishna:
+            print 'Mishna starts on same line as chapter\n'
+            print '{}\n\n'.format(new_chapter.group())
+            input_file.close()
+            sys.exit(1)
+
+        # found chapter tag.
+        if new_chapter:
+            if found_first_chapter:
+                if current != []:
+                    mishnayot.append(u' '.join(current).lstrip())
+                    current = []
+                chapters.append(mishnayot)
+                mishnayot = []
+            else:
+                found_first_chapter = True
+            continue
+
+        if found_first_chapter:
+            if new_mishna:
+                if current != []:
+                    mishnayot.append(u' '.join(current).lstrip())
+                current = [util.multiple_replace(line, {u'\n': u'', u'\r': u'', new_mishna.group(): u''})]
+
+            else:
+                current.append(util.multiple_replace(line, {u'\n': u'', }))
+            # add next line
+
+    else:
+        mishnayot.append(u''.join(current).lstrip())
+        chapters.append(mishnayot)
+
+    return chapters
 
 
