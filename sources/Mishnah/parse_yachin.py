@@ -354,25 +354,49 @@ def yachin_builder(text_list):
 
     chapter = []
 
+    # set up regexes for each line type
     new_comment = re.compile(u'@11[\u05d0-\u05ea"]{1,3}\)')
     skip_line = re.compile(u'@99')
+    intro, has_intro = re.compile(u'@42'), False
+    star_comment = re.compile(u'@11[\u05d0-\u05ea"]{1,3}\*?\)')
+    line_break = re.compile(u'@53')
 
     for line in text_list:
+
+        # clean up line
+        line = line.replace(u'\n', u'')
+        line = line.replace(u'\r', u'')
+        line = line.replace(u'\ufeff', u'')
+        line = line.rstrip()
+        if line == u'':
+            continue
 
         if skip_line.match(line):
             continue
 
-        # if nothing has been added to chapter, this is clearly the start of something new - append
-        elif not chapter:
+        elif intro.match(line):
             chapter.append([line])
+            has_intro = True
 
-        # tagged lines get added as a new list
         elif new_comment.search(line):
-            chapter.append([line])
+            # if an intro exists, add comment immediately afterwords
+            if has_intro:
+                chapter[-1].append(line)
+                has_intro = False
+            else:
+                chapter.append([line])
 
-        # lines that don't match the tag get added to the last entry
-        else:
+        elif star_comment.search(line):
             chapter[-1].append(line)
+
+        # Replace @53 tags with <br>, then add to last string in structure
+        elif line_break.search(line):
+            line = re.sub(line_break, u'<br>', line)
+            chapter[-1][-1] += line
+
+        else:
+            print 'bad line'
+            raise RuntimeError
 
     return chapter
 
@@ -486,7 +510,12 @@ def check_chapter_intro():
         for issue in issues:
             print issue
 
-check_chapter_intro()
+with codecs.open(u'יכין כלים.txt', 'r', 'utf-8') as datafile:
+    kelim = util.file_to_ja([[]], datafile, [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})'],
+                       yachin_builder)
+
+with codecs.open('output.txt', 'w', 'utf-8') as outfile:
+    j_to_file(outfile, kelim.array(), [u'chapter', u'section', u'segment'])
 os.remove('errors.html')
 
 
