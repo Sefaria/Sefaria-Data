@@ -456,8 +456,9 @@ for book in get_file_names(u'יכין'):
     #combine_lines_in_file(book, u'@22\([\u05d0-\u05ea]{1,3}\)', u'@11[\u05d0-\u05ea]{1,3}\)')
     with codecs.open(book, 'r', 'utf-8') as infile:
         find_unclear_lines(infile, [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})',
-                                    u'@11[\u05d0-\u05ea"]{1,3}\*?\)', u'@99', u'@42'])
+                                    u'@11[\u05d0-\u05ea"]{1,3}\*?\)', u'@99', u'@42', u'@53'])
 
 outfile.close()
+os.remove('errors.html')
 
 
