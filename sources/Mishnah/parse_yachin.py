@@ -593,3 +593,28 @@ def parse_mishna(input_file, perek_tag, mishna_tag, skip_tag):
     return chapters
 
 
+def build_links(tractate):
+    """
+    Link creator for Yachin. Links from Mishnah to Yachin are depicted in the Mishna. Tags are removed
+    from the uploaded Mishna, so the files are re-parsed, and the link data is extracted
+    :param tractate: tractate to which links are to be built
+    :return: A list of link objects, ready for upload
+    """
+    links = []
+
+    filename = Ref(tractate).he_book().replace(u'משנה', u'משניות') + u'.txt'
+    with codecs.open(filename, 'r', 'utf-8') as datafile:
+        parsed_mishna = parse_mishna(datafile, u'@00(?:\u05e4\u05e8\u05e7 |\u05e4)([\u05d0-\u05ea"]{1,3})',
+                                     u'@22[\u05d0-\u05ea]{1,2}', u'@99')
+    comment_reg = re.compile(u'@44([\u05d0-\u05ea]{1,3})')
+
+    for line in util.traverse_ja(parsed_mishna):
+        for match in comment_reg.finditer(line['data']):
+            m_ref = u'{}.{}.{}'.format(tractate, line['indices'][0]+1, line['indices'][1]+1)
+            y_ref = u'{}.{}.{}'.format(tractate.replace(u'Mishnah', u'Yachin'), line['indices'][0]+1,
+                                       util.getGematria(match.group(1)))
+            links.append([m_ref, y_ref])
+
+    return links
+
+os.remove('errors.html')
