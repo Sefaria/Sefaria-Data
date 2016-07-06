@@ -342,6 +342,14 @@ def yachin_builder(text_list):
     Does not remove links and other garbage that might exist in the text.
     :param text_list: A list of strings
     :return: Nested list of strings (unicode)
+
+    tags and their meaning:
+    @42 - This is an introduction. Saved as the first segment in a section.
+    @11 - New comment
+    @11 with * - needs to be appended to the end of a section
+    @53 - Requires <br> tag
+    @99 - skip line completely
+
     """
 
     chapter = []
@@ -408,7 +416,8 @@ def find_unclear_lines(input_file, pattern_list):
         if not any(expression.search(line) for expression in expression_list):
             print '{}: '.format(line_num+1), line
 
-# [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})', u'@11[\u05d0-\u05ea"]{1,3}\*?\)', u'@99']
+# [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})',
+#  u'@11[\u05d0-\u05ea"]{1,3}\*?\)', u'@99', u'@42', u'@53']
 
 
 def combine_lines_in_file(file_name, pattern, skip_pattern):
@@ -449,16 +458,35 @@ def combine_lines_in_file(file_name, pattern, skip_pattern):
     os.rename(u'{}.tmp'.format(file_name), file_name)
 
 
-outfile = codecs.open('output2.txt', 'w', 'utf-8')
-sys.stdout = outfile
-for book in get_file_names(u'יכין'):
-    print book
-    #combine_lines_in_file(book, u'@22\([\u05d0-\u05ea]{1,3}\)', u'@11[\u05d0-\u05ea]{1,3}\)')
-    with codecs.open(book, 'r', 'utf-8') as infile:
-        find_unclear_lines(infile, [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})',
-                                    u'@11[\u05d0-\u05ea"]{1,3}\*?\)', u'@99', u'@42', u'@53'])
+def check_chapter_intro():
 
-outfile.close()
+    new_chap = re.compile(u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})')
+    intro = re.compile(u'@42')
+    issues = []
+
+    for file_name in get_file_names(u'יכין'):
+        with codecs.open(file_name, 'r', 'utf-8') as current_file:
+            found_intro = False
+            for line_num, line in enumerate(current_file):
+
+                if intro.search(line):
+                    found_intro = True
+                    continue
+
+                elif new_chap.search(line) and found_intro:
+                    issues.append(u'{}: {}\n'.format(file_name, line_num))
+                    found_intro = False
+
+                else:
+                    found_intro = False
+
+    if len(issues) == 0:
+        print 'no issues found'
+    else:
+        for issue in issues:
+            print issue
+
+check_chapter_intro()
 os.remove('errors.html')
 
 
