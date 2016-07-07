@@ -16,7 +16,7 @@ from sources import functions
 
 sanhedrin_ja = TextChunk(Ref('Sanhedrin'), 'he').text
 yad_ramah = function.parse('yad_ramah.txt')
-yad_ramah = util.clean_jagged_array(yad_ramah, ['(@33)', '(@22)', '(@11)', '(@99)', '(@100)'])
+yad_ramah = util.clean_jagged_array(yad_ramah, ['(@22)', '(@100)'])
 index = function.create_index()
 text = function.create_text(yad_ramah)
 links = function.create_links(sanhedrin_ja, yad_ramah)
