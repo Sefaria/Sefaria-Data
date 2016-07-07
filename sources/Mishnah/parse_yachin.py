@@ -342,29 +342,61 @@ def yachin_builder(text_list):
     Does not remove links and other garbage that might exist in the text.
     :param text_list: A list of strings
     :return: Nested list of strings (unicode)
+
+    tags and their meaning:
+    @42 - This is an introduction. Saved as the first segment in a section.
+    @11 - New comment
+    @11 with * - needs to be appended to the end of a section
+    @53 - Requires <br> tag
+    @99 - skip line completely
+
     """
 
     chapter = []
 
+    # set up regexes for each line type
     new_comment = re.compile(u'@11[\u05d0-\u05ea"]{1,3}\)')
     skip_line = re.compile(u'@99')
+    intro, has_intro = re.compile(u'@42'), False
+    star_comment = re.compile(u'@11[\u05d0-\u05ea"]{1,3}\*?\)')
+    line_break = re.compile(u'@53')
 
     for line in text_list:
+
+        # clean up line
+        line = line.replace(u'\n', u'')
+        line = line.replace(u'\r', u'')
+        line = line.replace(u'\ufeff', u'')
+        line = line.rstrip()
+        if line == u'':
+            continue
 
         if skip_line.match(line):
             continue
 
-        # if nothing has been added to chapter, this is clearly the start of something new - append
-        elif not chapter:
+        elif intro.match(line):
             chapter.append([line])
+            has_intro = True
 
-        # tagged lines get added as a new list
         elif new_comment.search(line):
-            chapter.append([line])
+            # if an intro exists, add comment immediately afterwords
+            if has_intro:
+                chapter[-1].append(line)
+                has_intro = False
+            else:
+                chapter.append([line])
 
-        # lines that don't match the tag get added to the last entry
-        else:
+        elif star_comment.search(line):
             chapter[-1].append(line)
+
+        # Replace @53 tags with <br>, then add to last string in structure
+        elif line_break.search(line):
+            line = re.sub(line_break, u'<br>', line)
+            chapter[-1][-1] += line
+
+        else:
+            print 'bad line'
+            raise RuntimeError
 
     return chapter
 
@@ -408,7 +440,8 @@ def find_unclear_lines(input_file, pattern_list):
         if not any(expression.search(line) for expression in expression_list):
             print '{}: '.format(line_num+1), line
 
-# [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})', u'@11[\u05d0-\u05ea"]{1,3}\*?\)', u'@99']
+# [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})',
+#  u'@11[\u05d0-\u05ea"]{1,3}\*?\)', u'@99', u'@42', u'@53']
 
 
 def combine_lines_in_file(file_name, pattern, skip_pattern):
@@ -449,16 +482,155 @@ def combine_lines_in_file(file_name, pattern, skip_pattern):
     os.rename(u'{}.tmp'.format(file_name), file_name)
 
 
-outfile = codecs.open('output2.txt', 'w', 'utf-8')
-sys.stdout = outfile
-for book in get_file_names(u'יכין'):
-    print book
-    #combine_lines_in_file(book, u'@22\([\u05d0-\u05ea]{1,3}\)', u'@11[\u05d0-\u05ea]{1,3}\)')
-    with codecs.open(book, 'r', 'utf-8') as infile:
-        find_unclear_lines(infile, [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})',
-                                    u'@11[\u05d0-\u05ea"]{1,3}\*?\)', u'@99', u'@42', u'@53'])
+def check_chapter_intro():
 
-outfile.close()
+    new_chap = re.compile(u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})')
+    intro = re.compile(u'@42')
+    issues = []
+
+    for file_name in get_file_names(u'יכין'):
+        with codecs.open(file_name, 'r', 'utf-8') as current_file:
+            found_intro = False
+            for line_num, line in enumerate(current_file):
+
+                if intro.search(line):
+                    found_intro = True
+                    continue
+
+                elif new_chap.search(line) and found_intro:
+                    issues.append(u'{}: {}\n'.format(file_name, line_num))
+                    found_intro = False
+
+                else:
+                    found_intro = False
+
+    if len(issues) == 0:
+        print 'no issues found'
+    else:
+        for issue in issues:
+            print issue
+
+
+def parse_files():
+
+    results = {}
+
+    chap_expression = [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})']
+
+    tractates = library.get_indexes_in_category('Mishnah')
+
+    for tractate in tractates:
+
+        en_name = tractate.replace(u'Mishnah', u'Yachin')
+        he_name = Ref(tractate).he_book().replace(u'משנה', u'יכין')
+        filename = u'{}.txt'.format(he_name)
+        print en_name
+
+        with codecs.open(filename, 'r', 'utf-8') as datafile:
+            results[en_name] = {
+                'he': he_name,
+                'data': util.file_to_ja([[]], datafile, chap_expression, yachin_builder)
+            }
+    return results
+
+
+def parse_mishna(input_file, perek_tag, mishna_tag, skip_tag):
+    """
+    The Mishna parsing was done before the reusable parser was written (Yachin was the first project
+    to use it). This is the function as it appears in the mishna parser. It was decided to forgo DRY
+    to maintain reverse compatibility for the sake of linking in this case.
+    :param input_file: File to parse
+    :param perek_tag: Used to identify the start of a new perek.
+    :param mishna_tag: Identify next mishna.
+    :return: A 2D jaggedArray to match Sefaria's format. Rough, will require more processing.
+    """
+
+    chapters, mishnayot, current = [], [], []
+    found_first_chapter = False
+
+    for line in input_file:
+
+        # look for skip_tag
+        if re.search(skip_tag, line):
+            continue
+
+        # look for tags
+        new_chapter, new_mishna = re.search(perek_tag, line), re.search(mishna_tag, line)
+
+        # make sure perek and mishna don't appear on the same line
+        if new_chapter and new_mishna:
+            print 'Mishna starts on same line as chapter\n'
+            print '{}\n\n'.format(new_chapter.group())
+            input_file.close()
+            sys.exit(1)
+
+        # found chapter tag.
+        if new_chapter:
+            if found_first_chapter:
+                if current != []:
+                    mishnayot.append(u' '.join(current).lstrip())
+                    current = []
+                chapters.append(mishnayot)
+                mishnayot = []
+            else:
+                found_first_chapter = True
+            continue
+
+        if found_first_chapter:
+            if new_mishna:
+                if current != []:
+                    mishnayot.append(u' '.join(current).lstrip())
+                current = [util.multiple_replace(line, {u'\n': u'', u'\r': u'', new_mishna.group(): u''})]
+
+            else:
+                current.append(util.multiple_replace(line, {u'\n': u'', }))
+            # add next line
+
+    else:
+        mishnayot.append(u''.join(current).lstrip())
+        chapters.append(mishnayot)
+
+    return chapters
+
+
+def collect_links(tractate):
+    """
+    Link creator for Yachin. Links from Mishnah to Yachin are depicted in the Mishna. Tags are removed
+    from the uploaded Mishna, so the files are re-parsed, and the link data is extracted
+    :param tractate: tractate to which links are to be built
+    :return: A list of link objects, ready for upload
+    """
+    links = []
+
+    filename = Ref(tractate).he_book().replace(u'משנה', u'משניות') + u'.txt'
+    with codecs.open(filename, 'r', 'utf-8') as datafile:
+        parsed_mishna = parse_mishna(datafile, u'@00(?:\u05e4\u05e8\u05e7 |\u05e4)([\u05d0-\u05ea"]{1,3})',
+                                     u'@22[\u05d0-\u05ea]{1,2}', u'@99')
+    comment_reg = re.compile(u'@44([\u05d0-\u05ea]{1,3})')
+
+    for line in util.traverse_ja(parsed_mishna):
+        for match in comment_reg.finditer(line['data']):
+            m_ref = u'{}.{}.{}'.format(tractate, line['indices'][0]+1, line['indices'][1]+1)
+            y_ref = u'{}.{}.{}'.format(tractate.replace(u'Mishnah', u'Yachin'), line['indices'][0]+1,
+                                       util.getGematria(match.group(1)))
+            links.append([m_ref, y_ref])
+
+    return links
+
+
+def build_links(ref_list):
+
+    # flatten links to depth 1 list
+    references = [ref for ref_array in ref_list for ref in ref_array]
+
+    links = []
+    for ref in references:
+        linker = {
+            'refs': ref,
+            'type': 'commentary',
+            'auto': False,
+            'generated_by': 'Yachin Parse Script'
+        }
+        links.append(linker)
+
 os.remove('errors.html')
-
-
