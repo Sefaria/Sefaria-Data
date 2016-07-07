@@ -593,7 +593,7 @@ def parse_mishna(input_file, perek_tag, mishna_tag, skip_tag):
     return chapters
 
 
-def build_links(tractate):
+def collect_links(tractate):
     """
     Link creator for Yachin. Links from Mishnah to Yachin are depicted in the Mishna. Tags are removed
     from the uploaded Mishna, so the files are re-parsed, and the link data is extracted
@@ -616,5 +616,21 @@ def build_links(tractate):
             links.append([m_ref, y_ref])
 
     return links
+
+
+def build_links(ref_list):
+
+    # flatten links to depth 1 list
+    references = [ref for ref_array in ref_list for ref in ref_array]
+
+    links = []
+    for ref in references:
+        linker = {
+            'refs': ref,
+            'type': 'commentary',
+            'auto': False,
+            'generated_by': 'Yachin Parse Script'
+        }
+        links.append(linker)
 
 os.remove('errors.html')
