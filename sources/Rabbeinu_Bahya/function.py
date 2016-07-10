@@ -46,23 +46,74 @@ english_names.append(vayikra_english)
 english_names.append(bamidbar_english)
 english_names.append(devarim_english)
 
+introduction_en = 'Introduction '
+introduction_he = 'הקדמה '
+
 
 
 def create_indices():
-    rabbeinu_bahya_book = SchemaNode()
-    rabbeinu_bahya_book
+    rabbeinu_bahya_book = rabbeinu_bahya_index()
+    rabbeinu_bahya_book.validate()
+    index = {
+        "title": "Rabbeinu Bahya on Torah",
+        "titleVariants": ["Rabbeinu Bechaye on Torah", "Rabbeinu Bahya ben Asher on Torah"],
+        "categories": ["Torah", "Commentary2"],
+        "schema": rabbeinu_bahya_book.serialize()
+            }
+    return index
 
 
+def rabbeinu_bahya_index():
+    rb_on_humash = SchemaNode()
+    rb_on_humash.add_title('Rabbeinu Bahya on Torah', 'en', primary=True)
+    rb_on_humash.add_title('רבינו בחיי על תורה', 'he', primary=True)
+    rb_on_humash.key = 'Rabbeinu Bahya on Torah'
+    rb_on_humash.append(create_unique_intro_nodes('Torah', 'תורה'))
+    for en_names, he_names in zip(english_names, hebrew_names):
+        rb_on_humash.append(create_book_node(en_names, he_names))
+    return rb_on_humash
 
-def create_jagged_array_node(dictionary):
+
+def create_book_node(en_dict, he_dict):
+    book = SchemaNode()
+    book.key = 'Rabbeinu Bahya on Sefer {}'.format(en_dict[0])
+    book.add_title('Rabbeinu Bahya on Sefer {}'.format(en_dict[0]), 'en', primary=True)
+    book.add_title('רבינו בחיי על ספר {}'.format(he_dict[0]), 'he', primary=True)
+    if en_dict[0] == 'Bereishit':
+        book.append(create_unique_intro_nodes('Sefer Bereishit', 'ספר בראשית'))
+    for en_name, he_name in zip(en_dict, he_dict):
+        book.append(create_parsha_node(en_name, he_name))
+    return book
+
+
+def create_parsha_node(parhsa_name_en, parsha_name_he):
+    parsha = SchemaNode
+    parsha.key = 'Rabbeinu Bahya on Parsha {}'.format(parhsa_name_en)
+    parsha.add_title('Rabbeinu Bahya on Parsha {}'.format(parhsa_name_en), 'en', primary=True)
+    parsha.add_title('רבינו בחיי על פרשה {}'.format(parsha_name_he), 'he', primary=True)
+    parsha_one_intro_node = create_jagged_array_node(parhsa_name_en, parsha_name_he, introduction_en, introduction_he)
+    parsha_one_content_node = create_jagged_array_node(parhsa_name_en, parsha_name_he)
+    parsha.append(parsha_one_intro_node)
+    parsha.append(parsha_one_content_node)
+    return parsha
+
+
+def create_jagged_array_node(parhsa_name_en, parsha_name_he, intro_en='', intro_he=''):
     intro_node = JaggedArrayNode()
-    intro_node.add_title(dictionary['english_title'],"en", primary=True)
-    intro_node.add_title(dictionary['hebrew_title'],"he", primary=True)
-    intro_node.key = dictionary['english_title']
+    intro_node.add_title('Rabbeinu Bahya {}on Parsha {}'.format(intro_en, parhsa_name_en), "en", primary=True)
+    intro_node.add_title('רבינו בחיי {}על פרשה {}'.format(intro_he, parsha_name_he), "he", primary=True)
+    intro_node.key = 'Rabbeinu Bahya {}on Parsha {}'.format(intro_en, parhsa_name_en)
     intro_node.depth = 1
     intro_node.addressTypes = ["Integer"]
     intro_node.sectionNames = ["Comment"]
     return intro_node
 
 
-
+def create_unique_intro_nodes(en_name, he_name):
+    intro_node = JaggedArrayNode()
+    intro_node.add_title('Rabbeinu Bahya Introduction on {}'.format(en_name), "en", primary=True)
+    intro_node.add_title('רבינו בחיי הקדמה על {}'.format(he_name), "he", primary=True)
+    intro_node.key = 'Rabbeinu Bahya Introduction on {}'.format(en_name)
+    intro_node.depth = 1
+    intro_node.addressTypes = ["Integer"]
+    intro_node.sectionNames = ["Comment"]
