@@ -21,8 +21,6 @@ sys.path.insert(0, p)
 
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 
-hebrew_names = []
-english_names = []
 bereishit = [u'בראשית', u'נח', u'לך-לך', u'וירא', u'חיי שרה', u'תולדות', u'ויצא', u'וישלח', u'וישב', u'מקץ', u'ויגש',
              u'ויחי']
 shemot = [u'שמות', u'וארא', u'בא', u'בשלח', u'יתרו', u'משפטים', u'תרומה', u'תצוה', u'כי תשא', u'ויקהל', u'פקודי']
@@ -30,11 +28,7 @@ vayikra = [u'ויקרא', u'צו', u'שמיני', u'תזריא', u'מצרא', u'
 bamidbar = [u'במדבר', u'נשא', u'בהעלתך', u'שלח', u'קרח', u'חקת', u'בלק', u'פינחס', u'מטות', u'מסעי']
 devarim = [u'דברים', u'ואתחנן', u'עקב', u'ראה', u'שפטים', u'כי תצא', u'כי תבוא', u'נצבים', u'וילך', u'האזינו',
            u'וזאת הברכה']
-hebrew_names.append(bereishit)
-hebrew_names.append(shemot)
-hebrew_names.append(vayikra)
-hebrew_names.append(bamidbar)
-hebrew_names.append(devarim)
+hebrew_names = [bereishit, shemot, vayikra, bamidbar, devarim]
 
 bereishit_english = ['Bereishit', 'Noah', 'Lech Lecha', 'Vayeira', 'Chaya Sarah', 'Toldos', 'Vayetze', 'Vayishlach',
                      'Vayeishev', 'Miketz', 'Vayigash', 'Vayihi']
@@ -45,14 +39,15 @@ vayikra_english = ['Vayikra', 'Tzav', 'Shimini', 'Tazria', 'Metzora', 'Ahrei Mot
 bamidbar_english = ['Bamidbar', 'Naso', 'Behaloteha', 'Shelah', 'Korah', 'Hukat', 'Balak', 'Pinheas', 'Matos', 'Masai']
 devarim_english = ['Devarim', 'Veethanan', 'Ekev', 'Reah', 'Shoftim', 'Ki Taza', 'Ki Tavo', 'Netzavim', 'Vayaleh',
                    'Hazinu', 'Vzot Habraha']
-english_names.append(bereishit_english)
-english_names.append(shemot_english)
-english_names.append(vayikra_english)
-english_names.append(bamidbar_english)
-english_names.append(devarim_english)
+english_names = [bereishit_english, shemot_english, vayikra_english, bamidbar_english, devarim_english]
 
 introduction_en = 'Introduction '
 introduction_he = u'הקדמה '
+
+parsha_sefer_dictionary = {
+        'Parsha': 'Parsha',
+        'Sefer': 'Sefer'
+    }
 
 
 def create_indices():
@@ -95,9 +90,10 @@ def create_parsha_node(parhsa_name_en, parsha_name_he):
     parsha.add_title('Rabbeinu Bahya on Parsha {}'.format(parhsa_name_en), 'en', primary=True)
     parsha.add_title(u'רבינו בחיי על פרשה {}'.format(parsha_name_he), 'he', primary=True)
     parsha.key = 'Rabbeinu Bahya on Parsha {}'.format(parhsa_name_en)
-    parsha_one_intro_node = create_jagged_array_node(parhsa_name_en, parsha_name_he, introduction_en, introduction_he)
+    if parhsa_name_en is not "Bereishit":
+        parsha_one_intro_node = create_jagged_array_node(parhsa_name_en, parsha_name_he, introduction_en, introduction_he)
+        parsha.append(parsha_one_intro_node)
     parsha_one_content_node = create_jagged_array_node(parhsa_name_en, parsha_name_he)
-    parsha.append(parsha_one_intro_node)
     parsha.append(parsha_one_content_node)
     return parsha
 
@@ -127,43 +123,50 @@ def create_unique_intro_nodes(en_name, he_name):
 def parse_and_post(rabbeinu_bahya_text_file):
     array_of_comments = []
     book_counter = 0
-    parsha_counter = 0
+    parsha_counter = -1
     intro_counter = 0
     parsha_was_changed = False
     work_intro = "Rabbeinu Bahya Introduction on Torah"
-    bereishit_intro = "Rabbeinu Bahya Introduction on Sefer Bereishit"
-    introduction = "Rabbeinu Bahya Introduction on Parsha"
-    comment = "Rabbeinu Bahya on Parsha"
+    introduction = "Rabbeinu Bahya Introduction on"
+    comment = "Rabbeinu Bahya on"
+
+
     with codecs.open(rabbeinu_bahya_text_file, 'r', 'utf-8') as the_file:
         for each_line in the_file:
             if "@00" in each_line:
-                if intro_counter == 0:
-                    functions.post_text(work_intro, array_of_comments)
-                elif intro_counter == 1:
-                    functions.post_text(bereishit_intro, array_of_comments)
+                if book_counter == 0 and parsha_counter == -1:
+                    #functions.post_text(work_intro, array_of_comments)
+                    print 'first {} {}'.format(book_counter, parsha_counter)
                 else:
-                    post_the_text(array_of_comments, comment, book_counter, parsha_counter)
-                array_of_comments = []
-                intro_counter += 1
-                parsha_was_changed = True
-
-            elif "@01" in each_line and parsha_was_changed:
-                post_the_text(array_of_comments, introduction, book_counter, parsha_counter)
+                    post_the_text(array_of_comments, comment, parsha_sefer_dictionary, book_counter, parsha_counter)
                 array_of_comments = []
                 parsha_counter += 1
+                parsha_was_changed = True
+
+            elif "@22" in each_line and parsha_was_changed:
+                post_the_text(array_of_comments, introduction, parsha_sefer_dictionary, book_counter, parsha_counter)
+                array_of_comments = []
                 parsha_was_changed = False
 
             elif "@99" in each_line:
-                post_the_text(array_of_comments, introduction, book_counter, parsha_counter)
-                array_of_comments = []
+                post_the_text(array_of_comments, comment, parsha_sefer_dictionary, book_counter, parsha_counter)
                 book_counter += 1
+                parsha_counter = 0
+                parsha_was_changed = True
+                array_of_comments = []
+                print('---------Getting thru books all day-----------')
 
             else:
                 array_of_comments.append(each_line)
 
+    post_the_text(array_of_comments, comment, parsha_sefer_dictionary, book_counter, parsha_counter)
 
-def post_the_text(jagged_array, reference, book_number, parsha_number):
-    ref = '{} {}'.format(reference, english_names[book_number][parsha_number])
+
+def post_the_text(jagged_array, reference, dictionary, book_number, parsha_number):
+    if book_number == 0 and parsha_number == 0:
+        ref = '{} {} {}'.format(reference, dictionary['Sefer'], english_names[book_number][parsha_number])
+    else:
+        ref = '{} {} {}'.format(reference, dictionary['Parsha'], english_names[book_number][parsha_number])
 
     text = {
         "versionTitle": "Midrash Rabbeinu Bachya [ben Asher]. Warsaw, 1878",
@@ -171,5 +174,5 @@ def post_the_text(jagged_array, reference, book_number, parsha_number):
         "language": "he",
         "text": jagged_array
     }
-
-    functions.post_text(ref, text)
+    print '{} {} {}'.format(ref, book_number, parsha_number)
+    #functions.post_text(ref, text)

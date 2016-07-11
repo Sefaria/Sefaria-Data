@@ -15,4 +15,4 @@ from sources import functions
 
 index = function.create_indices()
 functions.post_index(index)
-function.parse_and_post(rabbeinu_bahya.txt)
+# function.parse_and_post('rabbeinu_bahya1.txt')
