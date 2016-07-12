@@ -58,7 +58,7 @@ def create_indices():
     index = {
         "title": "Rabbeinu Bahya",
         "titleVariants": ["Rabbeinu Bechaye", "Rabbeinu Bahya ben Asher"],
-        "categories": ["Torah", "Commentary2"],
+        "categories": ["Tanakh", "Commentary2"],
         "schema": rabbeinu_bahya_book.serialize()
     }
     return index
@@ -80,7 +80,7 @@ def create_book_node(en_dict, he_dict):
     book.key = 'Sefer {}'.format(en_dict[0])
     book.add_title('Sefer {}'.format(en_dict[0]), 'en', primary=True)
     book.add_title(u'ספר {}'.format(he_dict[0]), 'he', primary=True)
-    if en_dict[0] == 'Bereishit':
+    if en_dict[0] == u'Bereshit':
         book.append(create_intro_nodes())
     for en_name, he_name in zip(en_dict, he_dict):
         book.append(create_parsha_node(en_name, he_name))
@@ -91,7 +91,7 @@ def create_parsha_node(parhsa_name_en, parsha_name_he):
     parsha = SchemaNode()
     parsha.key = parhsa_name_en
     parsha.add_shared_term(parhsa_name_en)
-    if parhsa_name_en is not "Bereishit":
+    if parhsa_name_en is not u'Bereshit':
         parsha_one_intro_node = create_intro_nodes()
         parsha.append(parsha_one_intro_node)
     parsha_one_content_node = create_jagged_array_node()
@@ -124,22 +124,20 @@ def parse_and_post(rabbeinu_bahya_text_file):
     array_of_comments = []
     book_counter = -1
     parsha_counter = -1
-    intro_counter = 0
     parsha_was_changed = False
     work_intro = "Rabbeinu Bahya, Introduction"
 
-    #Rabbeinu Bahya, Sefer ---, Parsha, (Intro)
 
     with codecs.open(rabbeinu_bahya_text_file, 'r', 'utf-8') as the_file:
         for each_line in the_file:
             if "@00" in each_line:
-                post_the_text(array_of_comments, parsha_sefer_dictionary, book_counter, parsha_counter)
+                post_the_text(array_of_comments, book_counter, parsha_counter)
                 array_of_comments = []
                 parsha_counter += 1
                 parsha_was_changed = True
 
             elif "@22" in each_line and parsha_was_changed:
-                post_the_text(array_of_comments, parsha_sefer_dictionary, book_counter, parsha_counter, intro=True)
+                post_the_text(array_of_comments, book_counter, parsha_counter, intro=True)
                 array_of_comments = []
                 parsha_was_changed = False
 
@@ -148,7 +146,7 @@ def parse_and_post(rabbeinu_bahya_text_file):
                     #functions.post_text(work_intro, array_of_comments)
                     print work_intro
                 else:
-                    post_the_text(array_of_comments, parsha_sefer_dictionary, book_counter, parsha_counter)
+                    post_the_text(array_of_comments, book_counter, parsha_counter)
                 book_counter += 1
                 parsha_counter = 0
                 parsha_was_changed = True
@@ -156,24 +154,46 @@ def parse_and_post(rabbeinu_bahya_text_file):
                 print('---------Getting thru books all day-----------')
 
             else:
+                each_line = clean_up(each_line)
                 array_of_comments.append(each_line)
 
-    post_the_text(array_of_comments, parsha_sefer_dictionary, book_counter, parsha_counter)
+    post_the_text(array_of_comments, book_counter, parsha_counter)
 
 
-def post_the_text(jagged_array, dictionary, book_number, parsha_number, intro=False):
-    if book_number == 0 and parsha_number == 0:
-        ref = 'Rabbeinu Bahya, Sefer Bereshit, Introduction'
-    elif intro:
-        ref = 'Rabbeinu Bahya, Sefer {}, {}, Introduction'.format(english_names[book_number][0], english_names[book_number][parsha_number])
+def clean_up(string):
+    if "@05" in string:
+        string = string.replace("@05", '<b>', 1)
+        string += "</b>"
+    if "@11" in string or "@66" in string:
+        string = string.replace("@11", '<b>')
+        string = string.replace("@66", '<b>')
+    if "@33" in string:
+        string = string.replace("@33", '</b>')
+
+    string = string.replace("@44", "")
+    string = string.replace("@55", "")
+    string = string.replace("@22", "")
+    string = string.replace("@01", "")
+
+    return string
+
+
+def post_the_text(jagged_array, book_number, parsha_number, intro=False):
+
+    if intro:
+        if book_number == 0 and parsha_number == 0:
+            ref = 'Rabbeinu Bahya, Sefer Bereshit, Introduction'
+        else:
+            ref = 'Rabbeinu Bahya, Sefer {}, {}, Introduction'.format(english_names[book_number][0], english_names[book_number][parsha_number])
     else:
         ref = 'Rabbeinu Bahya, Sefer {}, {}'.format(english_names[book_number][0], english_names[book_number][parsha_number])
-
+    reg_array = ['hello', 'world', 'james', 'lebron']
     text = {
         "versionTitle": "Midrash Rabbeinu Bachya [ben Asher]. Warsaw, 1878",
         "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001202474",
         "language": "he",
         "text": jagged_array
     }
-    print ref
-    #functions.post_text(ref, text)
+    # print ref
+    # print text
+    functions.post_text(ref, text)
