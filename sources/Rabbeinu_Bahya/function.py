@@ -125,8 +125,6 @@ def parse_and_post(rabbeinu_bahya_text_file):
     book_counter = -1
     parsha_counter = -1
     parsha_was_changed = False
-    work_intro = "Rabbeinu Bahya, Introduction"
-
 
     with codecs.open(rabbeinu_bahya_text_file, 'r', 'utf-8') as the_file:
         for each_line in the_file:
@@ -143,10 +141,9 @@ def parse_and_post(rabbeinu_bahya_text_file):
 
             elif "@99" in each_line:
                 if book_counter == -1 and parsha_counter == -1:
-                    #functions.post_text(work_intro, array_of_comments)
-                    print work_intro
-                else:
-                    post_the_text(array_of_comments, book_counter, parsha_counter)
+                    introduction = True
+                post_the_text(array_of_comments, book_counter, parsha_counter, introduction)
+                introduction = False
                 book_counter += 1
                 parsha_counter = 0
                 parsha_was_changed = True
@@ -162,38 +159,44 @@ def parse_and_post(rabbeinu_bahya_text_file):
 
 def clean_up(string):
     if "@05" in string:
-        string = string.replace("@05", '<b>', 1)
         string += "</b>"
-    if "@11" in string or "@66" in string:
-        string = string.replace("@11", '<b>')
-        string = string.replace("@66", '<b>')
-    if "@33" in string:
-        string = string.replace("@33", '</b>')
 
-    string = string.replace("@44", "")
-    string = string.replace("@55", "")
-    string = string.replace("@22", "")
-    string = string.replace("@01", "")
+    string = add_bold(string, ["@05", "@11", "@66"], ["@33"])
+    string = remove_tags(string, ["@44", "@55", "@22", "@01"])
 
+    return string
+
+def add_bold(string, list_of_opening_tags, list_of_closing_tags):
+    for tag in list_of_opening_tags:
+        string = string.replace(tag, '<b>')
+    for tag in list_of_closing_tags:
+        string = string.replace(tag, '</b>')
+    return string
+
+def remove_tags(string, list_of_tags):
+    for tag in list_of_tags:
+        string = string.replace(tag, '')
     return string
 
 
 def post_the_text(jagged_array, book_number, parsha_number, intro=False):
 
     if intro:
-        if book_number == 0 and parsha_number == 0:
+        if book_number == -1 and parsha_number == -1:
+            ref = 'Rabbeinu Bahya, Introduction'
+        elif book_number == 0 and parsha_number == 0:
             ref = 'Rabbeinu Bahya, Sefer Bereshit, Introduction'
         else:
             ref = 'Rabbeinu Bahya, Sefer {}, {}, Introduction'.format(english_names[book_number][0], english_names[book_number][parsha_number])
     else:
         ref = 'Rabbeinu Bahya, Sefer {}, {}'.format(english_names[book_number][0], english_names[book_number][parsha_number])
-    reg_array = ['hello', 'world', 'james', 'lebron']
+
     text = {
         "versionTitle": "Midrash Rabbeinu Bachya [ben Asher]. Warsaw, 1878",
         "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001202474",
         "language": "he",
         "text": jagged_array
     }
-    # print ref
+    print ref
     # print text
-    functions.post_text(ref, text)
+    #functions.post_text(ref, text)
