@@ -440,6 +440,14 @@ def find_unclear_lines(input_file, pattern_list):
         if not any(expression.search(line) for expression in expression_list):
             print '{}: '.format(line_num+1), line
 
+
+def tags_to_strip():
+    """
+    :return: List of tags to remove from parsed structure
+    """
+    return [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})', u'@11[\u05d0-\u05ea"]{1,3}\*?\)',
+            u'@99', u'@42', u'@53', u'@[0-9]{2}\([\u05d0-\u05ea]{1,3}\)', u'@[0-9]{2}']
+
 # [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})',
 #  u'@11[\u05d0-\u05ea"]{1,3}\*?\)', u'@99', u'@42', u'@53']
 
@@ -522,12 +530,14 @@ def parse_files():
     for tractate in tractates:
 
         en_name = tractate.replace(u'Mishnah', u'Yachin')
+        en_name = en_name.replace(u'Pirkei', u'Yachin')
         he_name = Ref(tractate).he_book().replace(u'משנה', u'יכין')
         filename = u'{}.txt'.format(he_name)
         print en_name
 
         with codecs.open(filename, 'r', 'utf-8') as datafile:
             results[en_name] = {
+                'en': en_name,
                 'he': he_name,
                 'data': util.file_to_ja([[]], datafile, chap_expression, yachin_builder)
             }
@@ -613,9 +623,10 @@ def collect_links(tractate):
             m_ref = u'{}.{}.{}'.format(tractate, line['indices'][0]+1, line['indices'][1]+1)
             y_ref = u'{}.{}.{}'.format(tractate.replace(u'Mishnah', u'Yachin'), line['indices'][0]+1,
                                        util.getGematria(match.group(1)))
-            links.append([m_ref, y_ref])
+            y_ref = y_ref.replace(u'Pirkei', u'Yachin')
+            links.append((m_ref, y_ref))
 
-    return links
+    return list(set(links))
 
 
 def build_links(ref_list):
@@ -632,5 +643,45 @@ def build_links(ref_list):
             'generated_by': 'Yachin Parse Script'
         }
         links.append(linker)
+    return links
+
+
+def upload(data):
+
+    # create index
+    schema = JaggedArrayNode()
+    schema.add_title(data['en'], 'en', True)
+    schema.add_title(data['he'], 'he', True)
+    schema.key = data['en']
+    schema.depth = 3
+    schema.addressTypes = ['Integer', 'Integer', 'Integer']
+    schema.sectionNames = ['Chapter', 'Seif', 'Comment']
+    schema.validate()
+
+    index = {
+        'title': data['en'],
+        'categories': ['Commentary2', 'Mishnah', 'Yachin'],
+        'schema': schema.serialize()
+    }
+    functions.post_index(index)
+
+    # clean and upload text
+    upload_text = util.clean_jagged_array(data['data'].array(), tags_to_strip())
+    text_version = {
+        'versionTitle': u'{} Vilna Edition'.format(data['en']),
+        'versionSource': 'http://www.daat.ac.il/daat/bibliogr/allbooks.asp?sub=2',
+        'language': 'he',
+        'text': upload_text
+    }
+    functions.post_text(data['en'], text_version)
+
+tracs = library.get_indexes_in_category('Mishnah')
+parsed = parse_files()
+link_refs = [collect_links(tractate) for tractate in tracs]
+full_links = build_links(link_refs)
+for num, data in enumerate(parsed.keys()):
+    print num+1, data
+    upload(parsed[data])
+functions.post_link(full_links)
 
 os.remove('errors.html')
