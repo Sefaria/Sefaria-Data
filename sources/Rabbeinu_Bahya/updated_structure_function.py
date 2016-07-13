@@ -74,6 +74,7 @@ def parse_and_post(rabbeinu_bahya_text_file):
     most_recent_chapter = 1
     most_recent_verse = 1
     new_book = False
+    new_chapter = False
     with codecs.open(rabbeinu_bahya_text_file, 'r', 'utf-8') as the_file:
         for each_line in the_file:
 
@@ -99,6 +100,10 @@ def parse_and_post(rabbeinu_bahya_text_file):
                     book.append(chapter)
                     chapter = []
                     verse = []
+                else:
+                    new_book = False
+
+                new_chapter = True
 
                 matchObject = pasuk_perek_number.search(each_line)
                 current_chapter = util.getGematria(matchObject.group(1))
@@ -114,11 +119,11 @@ def parse_and_post(rabbeinu_bahya_text_file):
 
             elif "@22" in each_line:
 
-                if not new_book:
+                if not new_chapter:
                     chapter.append(verse)
                     verse = []
                 else:
-                    new_book = False
+                    new_chapter = False
 
                 matchObject = pasuk_perek_number.search(each_line)
                 current_verse = util.getGematria(matchObject.group(1))
