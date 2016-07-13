@@ -43,6 +43,8 @@ devarim_english = [u'Devarim', u'Vaetchanan', u'Eikev', u"Re'eh", u'Shoftim', u'
 english_names = [bereishit_english, shemot_english, vayikra_english, bamidbar_english, devarim_english]
 
 
+
+
 introduction_en = 'Introduction '
 introduction_he = u'הקדמה '
 
@@ -58,7 +60,7 @@ def create_indices():
     index = {
         "title": "Rabbeinu Bahya",
         "titleVariants": ["Rabbeinu Bechaye", "Rabbeinu Bahya ben Asher"],
-        "categories": ["Tanakh", "Commentary2"],
+        "categories": ["Commentary2", "Tanakh"],
         "schema": rabbeinu_bahya_book.serialize()
     }
     return index
@@ -166,12 +168,14 @@ def clean_up(string):
 
     return string
 
+
 def add_bold(string, list_of_opening_tags, list_of_closing_tags):
     for tag in list_of_opening_tags:
         string = string.replace(tag, '<b>')
     for tag in list_of_closing_tags:
         string = string.replace(tag, '</b>')
     return string
+
 
 def remove_tags(string, list_of_tags):
     for tag in list_of_tags:
@@ -181,6 +185,15 @@ def remove_tags(string, list_of_tags):
 
 def post_the_text(jagged_array, book_number, parsha_number, intro=False):
 
+    ref = create_ref(book_number, parsha_number, intro)
+    text = create_text(jagged_array)
+
+    #print ref
+    # print text
+    functions.post_text(ref, text)
+
+
+def create_ref(book_number, parsha_number, intro):
     if intro:
         if book_number == -1 and parsha_number == -1:
             ref = 'Rabbeinu Bahya, Introduction'
@@ -190,13 +203,13 @@ def post_the_text(jagged_array, book_number, parsha_number, intro=False):
             ref = 'Rabbeinu Bahya, Sefer {}, {}, Introduction'.format(english_names[book_number][0], english_names[book_number][parsha_number])
     else:
         ref = 'Rabbeinu Bahya, Sefer {}, {}'.format(english_names[book_number][0], english_names[book_number][parsha_number])
+    return ref
 
-    text = {
+
+def create_text(jagged_array):
+    return {
         "versionTitle": "Midrash Rabbeinu Bachya [ben Asher]. Warsaw, 1878",
         "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001202474",
         "language": "he",
         "text": jagged_array
-    }
-    print ref
-    # print text
-    #functions.post_text(ref, text)
+        }

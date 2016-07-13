@@ -9,10 +9,11 @@ Alternate Structure
 """
 
 from sources.Rabbeinu_Bahya import function
+from sources.Rabbeinu_Bahya import updated_structure_function
 from data_utilities import util
 from sources import functions
 
 
-index = function.create_indices()
+index = updated_structure_function.create_rb_indices()
 functions.post_index(index)
-# function.parse_and_post('rabbeinu_bahya1.txt')
+updated_structure_function.parse_and_post('rabbeinu_bahya1.txt')
