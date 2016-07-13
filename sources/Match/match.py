@@ -210,16 +210,7 @@ class Match:
           para_pr = fuzz.partial_ratio(dh, para)
           if para_pr < 40: #not worth checking
               continue
-          elif len(dh)*4 < len(para):
-              result_pr = self.matchSplitPara(para, dh, dh_position, orig_dh, line_n, ratio)
-              print result_pr
-              print para_pr
-              print "************"
-              #is result_pr different from para_pr?
-              if result_pr > 0:
-                found+=1
-                continue
-          elif len(para)*6 < len(dh) and self.can_expand == True:
+          elif len(para)*4 < len(dh) and self.can_expand == True:
               result_pr = self.matchExpandPara(para, dh, dh_position, orig_dh, line_n+1, ratio)
               if result_pr > 0:
                 found+=1
@@ -239,7 +230,7 @@ class Match:
         start_line = line_n-1
         end_line = start_line
         current_ref = Ref(self.ref_title+" "+str(line_n))
-        while len(para)*4 < len(dh):
+        while len(para)*2 < len(dh):
             end_line+=1
             try:
                 next_line_ref = current_ref.next_segment_ref()
@@ -259,38 +250,6 @@ class Match:
                 self.found_dict[dh_position][orig_dh].append((i+start_line, para_pr))
             return para_pr
         return self.matchAcronyms(dh, para)
-
-    def matchSplitPara(self, para, dh, dh_position, orig_dh, line_n, ratio):
-        dh_acronym_list = []
-        phrases = self.splitPara(para, len(dh.split(" ")))
-        for count, phrase in enumerate(phrases):
-            phrase_pr = fuzz.partial_ratio(dh, phrase)
-            if dh == phrase:
-                self.found_dict[dh_position][orig_dh].append((line_n, 100))
-                return 100
-            elif phrase_pr >= ratio:
-                self.found_dict[dh_position][orig_dh].append((line_n, phrase_pr))
-                return phrase_pr
-        return self.matchAcronyms(dh, phrase)
-
-    def splitPara(self, para, len_phrase):
-        phrases = []
-        words = para.split(" ")
-        len_para = len(words)
-        for i in range(len_para):
-            phrase = ""
-            if i+len_phrase >= len_para:
-                j = i
-                while j < len_para:
-                    phrase += words[j] + " "
-                    j+=1
-                phrases.append(phrase)
-                break
-            else:
-                for j in range(len_phrase):
-                    phrase += words[i+j] + " "
-                phrases.append(phrase)
-        return phrases
 
     def matchAcronyms(self, dh, text):
         dh_acronym_list = []
