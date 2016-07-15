@@ -28,9 +28,9 @@ def createIndex(enTitle):
 	heTitle = getHebrewTitle(enTitle)
 
 	root = JaggedArrayNode()
-	root.add_title("Rita on "+enTitle, "en", primary=True) 
+	root.add_title("Ritva on "+enTitle, "en", primary=True) 
 	root.add_title(u'ריטב"א על '+heTitle, "he", primary=True)
-	root.key = "Rita+"+enTitle
+	root.key = "Ritva+"+enTitle
 	root.sectionNames = ["Daf", "Comment"]
 	root.depth = 2
 	root.addressTypes = ["Talmud", "Integer"]
@@ -39,8 +39,8 @@ def createIndex(enTitle):
 	root.validate()
 
 	index = {
-	    "title": "Rita on "+enTitle,
-	    "categories": ["Talmud", "Rita"],
+	    "title": "Ritva on "+enTitle,
+	    "categories": ["Talmud", "Ritva"],
 	    "schema": root.serialize()
 	}
 
@@ -50,7 +50,7 @@ def createIndex(enTitle):
 def dealWithDaf(line, current_daf):
 	orig_line = line
 	line = line.replace("@22", "").replace('ע"א','').replace('דף', '')
-	if len(line.replace('ע"ב','').replace(' ','').replace('[', '').replace(']', '')) == 0:
+	if len(line.replace('ע"ב','').replace(' ','').replace('[', '').replace(']', '').replace('(', '').replace(')', '')) == 0:
 		return current_daf + 1
 	elif line.find('ע"ב') >= 0:
 		line = line.replace('ע"ב', '')
@@ -125,9 +125,9 @@ def match_and_link(dhs, masechet):
 		result = match.match_list(dhs[daf], talmud_text)
 		for line in result:
 			talmud_range = result[line].replace("0:", "")
-			Rita_end = "Rita on "+masechet+"."+str(AddressTalmud.toStr("en", daf))+"."+str(line)
+			Ritva_end = "Ritva on "+masechet+"."+str(AddressTalmud.toStr("en", daf))+"."+str(line)
 			talmud_end = masechet + "." + AddressTalmud.toStr("en", daf) + "." + talmud_range
-			links.append({'refs': [Rita_end, talmud_end], 'type': 'commentary', 'auto': 'True', 'generated_by': masechet+"Rita"})
+			links.append({'refs': [Ritva_end, talmud_end], 'type': 'commentary', 'auto': 'True', 'generated_by': masechet+"Ritva"})
 	post_link(links)
 
 if __name__ == "__main__":
@@ -136,12 +136,18 @@ if __name__ == "__main__":
 	versionTitle['Berakhot'] = 'Berakhah Meshuleshet, Warsaw, 1863.'
 	versionTitle['Megillah'] = 'Kodshei David, Livorno, 1792.'
 	versionTitle['Moed Katan'] = 'f'
-	versionTitle['Yoma'] = 'Chidushei HaRita, Berlin, 1860.'
-	versionTitle['Rosh Hashanah'] = 'Chiddushei HaRita, Königsberg, 1858.'
-	versionTitle['Taanit'] = 'Chidushi HaRita, Amsterdam, 1729.'
+	versionTitle['Yoma'] = 'Chidushei HaRitva, Berlin, 1860.'
+	versionTitle['Rosh Hashanah'] = 'Chiddushei HaRitva, Königsberg, 1858.'
+	versionTitle['Taanit'] = 'Chidushi HaRitva, Amsterdam, 1729.'
 	versionTitle['Niddah'] = 'f'
 	files = ["Sukkah", "Berakhot", "Megillah", "Moed Katan", "Yoma", "Rosh Hashanah", "Taanit", "Niddah"]
+	not_yet = True
+	until_this_one = "Sukkah"
 	for file in files:
+		if file == until_this_one:
+			not_yet = False
+		if not_yet:
+			continue
 		createIndex(file)
 		text, dhs = parse(open(file+".txt"))
 		text_array = convertDictToArray(text)
@@ -151,5 +157,5 @@ if __name__ == "__main__":
 		"versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001201716",
 		"versionTitle": versionTitle[file]
 		}
-		post_text("Rita on "+file, send_text)
+		post_text("Ritva on "+file, send_text)
 		match_and_link(dhs, file)

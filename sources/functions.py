@@ -61,9 +61,12 @@ eng_parshiot = ["Bereishit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "To
 "Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo", "Nitzavim", "Vayeilech", "Ha'Azinu",
 "V'Zot HaBerachah"]
 
+
 def removeExtraSpaces(txt):
     while txt.find("  ") >= 0:
         txt = txt.replace("  ", " ")
+    while txt.find("\xc2\xa0\xc2\xa0") >= 0:
+        txt = txt.replace("\xc2\xa0\xc2\xa0", "\xc2\xa0")
     return txt
 
 
@@ -122,6 +125,7 @@ def in_order_multiple_segments(line, curr_num, increment_by):
                  curr_num = poss_num
      return curr_num
 
+
 def fixChetHay(poss_num, curr_num):
     if poss_num == 8 and curr_num == 4:
         return 5
@@ -129,6 +133,7 @@ def fixChetHay(poss_num, curr_num):
         return 8
     else:
         return poss_num
+
 
 def in_order(list_tags, multiple_segments=False, dont_count=[], increment_by=1):
      poss_num = 0
@@ -155,6 +160,7 @@ def in_order(list_tags, multiple_segments=False, dont_count=[], increment_by=1):
 
      return ""
 
+
 def wordHasNekudot(word):
     data = word.decode('utf-8')
     data = data.replace(u"\u05B0", "")
@@ -177,6 +183,7 @@ def wordHasNekudot(word):
     data = data.replace(u"\u05C4", "")
     return data != word.decode('utf-8')
 
+
 def getHebrewParsha(eng_parsha):
     count=0
     eng_parsha = eng_parsha.replace("’", "'")
@@ -186,6 +193,7 @@ def getHebrewParsha(eng_parsha):
             return heb_parshiot[count]
         count+=1
 
+
 def getHebrewTitle(sefer, SEFARIA_SERVER='http://www.sefaria.org/'):
    sefer = sefer.title() 
    sefer_url = SEFARIA_SERVER+'api/index/'+sefer.replace(" ","_")
@@ -194,10 +202,15 @@ def getHebrewTitle(sefer, SEFARIA_SERVER='http://www.sefaria.org/'):
    data = json.load(res)
    return data['heTitle']
 
-def removeAllStrings(array, orig_string):	
-    for unwanted_string in array:
-        orig_string = orig_string.replace(unwanted_string, "")
+
+def removeAllStrings(orig_string, array = ['@', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0']):	
+    try:
+        for unwanted_string in array:
+            orig_string = orig_string.replace(unwanted_string, "")
+    except:
+        pdb.set_trace()
     return orig_string
+
 
 def convertDictToArray(dict, empty=[]):
     array = []
@@ -255,6 +268,7 @@ def checkLengthsDicts(x_dict, y_dict):
 
 errors = open('errors.html', 'w')
 
+
 def post_index(index):
     url = SEFARIA_SERVER+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
     indexJSON = json.dumps(index)
@@ -273,12 +287,9 @@ def post_index(index):
 
 
 def hasTags(comment):
-    num_tag = re.compile('\d+')
-    words = comment.split(" ")
-    for word in words:
-        if num_tag.match(word):
-            return True
-    return False
+    mod_comment = removeAllStrings(comment)
+    return mod_comment != comment 
+
 
 def post_link(info):
     url = SEFARIA_SERVER+'/api/links/'

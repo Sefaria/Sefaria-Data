@@ -4,6 +4,10 @@ import os
 import sys
 import re
 import codecs
+p = os.path.dirname(os.path.abspath(__file__))+"/sources"
+sys.path.insert(0, p)
+from local_settings import *
+sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from sefaria.datatype import jagged_array
 from sources.local_settings import *
 from urllib2 import HTTPError, URLError
