@@ -5,11 +5,10 @@ import sys
 import re
 import codecs
 p = os.path.dirname(os.path.abspath(__file__))+"/sources"
+from sources.local_settings import *
 sys.path.insert(0, p)
-from local_settings import *
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from sefaria.datatype import jagged_array
-from sources.local_settings import *
 from urllib2 import HTTPError, URLError
 import json
 import urllib2
@@ -649,7 +648,7 @@ def restructure_file(filename, function, *args):
     :param args:
     """
     original = codecs.open(filename, 'r', 'utf-8')
-    updated = codecs.open('{}.tmp'.format(filename), 'w', 'utf-8')
+    updated = codecs.open(u'{}.tmp'.format(filename), 'w', 'utf-8')
 
     for line in original:
         new_line = function(line, *args)
@@ -659,4 +658,4 @@ def restructure_file(filename, function, *args):
     updated.close()
 
     os.remove(filename)
-    os.rename('{}.tmp'.format(filename), filename)
+    os.rename(u'{}.tmp'.format(filename), filename)
