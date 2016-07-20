@@ -165,16 +165,16 @@ def clean_up(string):
         string = amend_mishlei_verse(string)
 
     string = add_bold(string, ["@05", "@11", "@66"], ["@33"])
-    string = remove_tags(string, ["@44", "@55", "@22", "@01", "@00"])
+    string = remove_substrings(string, ["@44", "@55", "@22", "@01", "@00"])
 
     return string
 
 
 def amend_mishlei_verse(string):
-    string = remove_tags(string, ['.', ':'])
+    string = remove_substrings(string, ['.', ':'])
     string = regex.sub(u'\(\u05de\u05e9\u05dc\u05d9\s[\u05d0-\u05ea]{1,3}\)', '', string)
     string = string.strip()
-    string += u" \u2013 \u05de\u05e9\u05dc\u05d9</b>"
+    string += u"#$</b>"
     return string
 
 
@@ -186,7 +186,7 @@ def add_bold(string, list_of_opening_tags, list_of_closing_tags):
     return string
 
 
-def remove_tags(string, list_of_tags):
+def remove_substrings(string, list_of_tags):
     for tag in list_of_tags:
         string = string.replace(tag, '')
     return string
@@ -195,11 +195,14 @@ def remove_tags(string, list_of_tags):
 def post_the_text(jagged_array, title_counter):
     ref = create_ref(title_counter)
     text = create_text(jagged_array)
-    functions.post_text(ref, text)
     if title_counter > 0:
         list_of_links = create_links(jagged_array, title_counter)
-        print(list_of_links)
+
+    functions.post_text(ref, text)
+    if title_counter > 0:
         functions.post_link(list_of_links)
+        print(list_of_links)
+
     print ref
 
 
@@ -230,8 +233,12 @@ def create_links(rb_ja, title_counter):
                 divrei_hamatchil = get_divrei_hamatchil(comment)
                 if divrei_hamatchil:
                     rb_dictionary = create_rb_dict(titles[title_counter], perek_index+1, pasuk_index+1, comment_index+1)
-                    if u'\u05de\u05e9\u05dc\u05d9' in divrei_hamatchil:
-                        list_of_links.append(create_mishlei_link(divrei_hamatchil, proverbs, rb_dictionary))
+                    if u'#$' in divrei_hamatchil:
+                        #list_of_links.append(create_mishlei_link(divrei_hamatchil, proverbs, rb_dictionary))
+                        mishlei_info_dict = find_mishlei_info(divrei_hamatchil, proverbs, rb_dictionary)
+                        print divrei_hamatchil
+                        rb_ja[perek_index][pasuk_index][comment_index] = u'<b>{} (\u05de\u05e9\u05dc\u05d9 {}, {})</b>'.format(divrei_hamatchil[:-2], mishlei_info_dict['perek'], mishlei_info_dict['pasuk'])
+                        #mishlei_info_dict['perek'], mishlei_info_dict['pasuk']
 
                     elif divrei_hamatchil[-1] == '.':
                         list_of_links.append(create_the_link(rb_dictionary))
@@ -262,6 +269,13 @@ def get_divrei_hamatchil(comment):
     divrei_hamatchil = comment[divrei_hamatchil_start:divrei_hamatchil_end]
     divrei_hamatchil = divrei_hamatchil.strip()
     return divrei_hamatchil
+
+
+def find_mishlei_info(divrei_hamatchil, proverbs, rb_dict):
+    for mishlei_perek_index, perek in enumerate(proverbs):
+        for mishlei_pasuk_index, pasuk in enumerate(perek):
+            if fuzz.partial_ratio(divrei_hamatchil, pasuk) > 70:
+                return {'perek': functions.numToHeb(mishlei_perek_index+1), 'pasuk': functions.numToHeb(mishlei_pasuk_index+1)}
 
 
 def create_mishlei_link(divrei_hamatchil, proverbs, rb_dict):
