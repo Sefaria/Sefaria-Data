@@ -167,11 +167,9 @@ class Match:
           pdb.set_trace()
         return dh
 
-
     def match_list(self, dh_orig_list, page, ref_title=None):
-        if self.can_expand == True and ref_title == None:
-            print 'Error: If can_expand is set to true, you must pass a valid reference so we know where to start expanding from.'
-            pdb.set_trace()
+        if self.can_expand and not ref_title:
+            raise ValueError('Error: If can_expand is set to true, you must pass a valid reference.')
         self.maxLine = len(page)-1
         self.ref_title = ref_title
         self.found_dict = {}
@@ -180,7 +178,7 @@ class Match:
         dh_pos = 0
         for dh in self.dh_orig_list:
             self.match(dh, page, dh_pos)
-            dh_pos+=1
+            dh_pos += 1
         self.non_match_file.close()
         self.multipleMatches()
         if self.range==True:
