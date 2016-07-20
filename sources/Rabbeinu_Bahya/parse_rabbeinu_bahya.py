@@ -17,5 +17,4 @@ from sources import functions
 index = updated_structure_function.create_rb_indices()
 functions.post_index(index)
 #print updated_structure_function.create_alt_struct_dict('rabbeinu_bahya1.txt')
-#print updated_structure_function.create_alternate_structs()
-# updated_structure_function.parse_and_post('rabbeinu_bahya1.txt')
+updated_structure_function.parse_and_post('rabbeinu_bahya1.txt')
