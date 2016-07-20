@@ -4,7 +4,7 @@ import csv
 import codecs
 from data_utilities.sanity_checks import TagTester
 from data_utilities import util
-from sources.Match.match_new import Match
+from sources.Match.match import Match
 from sources import functions
 from sefaria.model import *
 
@@ -211,7 +211,7 @@ def find_links(current_text, parent_text, dh_finder, *args):
 
         if chapter:
             dh_list = [dh_finder(seif[0], *args) for seif in chapter if dh_finder(seif[0], *args)]
-            matches = matcher.match_list(dh_list, parent_text['text'][chapter_num])
+            matches = matcher.match_list(dh_list, parent_text['text'][chapter_num], parent_text['name'])
             links.append(build_links(parent_text['name'], current_text['name'], chapter_num+1, matches))
 
     return [linker for sublist in links for linker in sublist]
