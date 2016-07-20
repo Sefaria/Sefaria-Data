@@ -161,12 +161,12 @@ def create_links(teshuvot_ja, dictionary):
     for siman_index, siman in enumerate(teshuvot_ja):
         for text_index, text in enumerate(siman):
             if text:
-                list_of_footnote_tags = regex.findall(r'\d+',text)
+                list_of_footnote_tags = regex.findall(r'\d+', text)
                 if list_of_footnote_tags:
                     for number in list_of_footnote_tags:
                         list_of_links.append({
                             "refs": [
-                                    "Footnotes on Teshuvot haRashba part {}.{}.{}".format(dictionary['roman numeral'], siman_index+1, number),
+                                    "Footnotes to Teshuvot haRashba part {}.{}.{}".format(dictionary['roman numeral'], siman_index+1, number),
                                     "Teshuvot haRashba part {}.{}.{}".format(dictionary['roman numeral'], siman_index+1, text_index+1)
                                 ],
                             "type": "Footnotes",

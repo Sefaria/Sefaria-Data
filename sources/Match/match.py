@@ -191,6 +191,7 @@ class Match:
         self.found_dict[dh_position][orig_dh] = []
         dh = self.removeEtcFromDH(orig_dh)
         found = 0
+
         for line_n, para in enumerate(page):
           skip_this_line = False
           len_already_here = len(self.found_dict[dh_position][orig_dh])
@@ -208,6 +209,7 @@ class Match:
           para_pr = fuzz.partial_ratio(dh, para)
           if para_pr < 40: #not worth checking
               continue
+
           elif len(para)*4 < len(dh) and self.can_expand == True:
               result_pr = self.matchExpandPara(para, dh, dh_position, orig_dh, line_n+1, ratio)
               if result_pr > 0:

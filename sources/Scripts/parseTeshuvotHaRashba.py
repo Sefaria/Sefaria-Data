@@ -5,7 +5,7 @@ from data_utilities import util
 from sources import functions
 from sources.Scripts import function
 
-footnotes = 'Footnotes on '
+footnotes = 'Footnotes to '
 footnotes_hebrew = u'\u05d4\u05e2\u05e8\u05d5\u05ea \u05e2\u05dc '
 
 four_dict = function.create_dict('IV', 'Arbah', u'\u05d3', '4', "St.Petersburg, 1883","http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001124682" )
@@ -32,9 +32,9 @@ def parse_the_text(file_name_teshuvot, file_name_footnotes, dictionary):
     text_footnotes = function.create_text(dictionary, footnotes_ja)
     functions.post_index(index_teshuvot)
     functions.post_index(index_footnotes)
-    functions.post_text('Teshuvot haRashba part {}'.format(dictionary['roman numeral']), text_teshuvot)
-    functions.post_text('Footnotes on Teshuvot haRashba part {}'.format(dictionary['roman numeral']), text_footnotes)
-    functions.post_link(links)
+    functions.post_text_weak_connection('Teshuvot haRashba part {}'.format(dictionary['roman numeral']), text_teshuvot)
+    functions.post_text_weak_connection('Footnotes to Teshuvot haRashba part {}'.format(dictionary['roman numeral']), text_footnotes)
+    functions.post_link_weak_connection(links)
 
 
 for number in range(4,8):
