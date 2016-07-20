@@ -22,17 +22,12 @@ sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
 
-def removeExtraSpaces(txt):
-	while txt.find("  ") >= 0:
-		txt = txt.replace("  ", " ")
-	return txt
-
 
 def create_index(tractate):
 	root=JaggedArrayNode()
 	heb_masechet = get_text_plus(tractate)['heBook']
-	root.add_title(u"Ramban on "+tractate.replace("_"," "), "en", primary=True)
-	root.add_title(u'רמב"ן על '+heb_masechet, "he", primary=True)
+	root.add_title(u"Chiddushei Ramban on "+tractate.replace("_"," "), "en", primary=True)
+	root.add_title(u'חידושי רמב"ן על '+heb_masechet, "he", primary=True)
 	root.key = 'ramban'
 	root.sectionNames = ["Daf", "Comment"]
 	root.depth = 2
@@ -41,11 +36,11 @@ def create_index(tractate):
 	root.validate()
 
 	index = {
-		"title": "Ramban on "+tractate.replace("_"," "),
+		"title": "Chiddushei Ramban on "+tractate.replace("_"," "),
 		"categories": ["Commentary2", "Talmud", "Ramban"],
 		"schema": root.serialize()
 	}
-	#post_index(index)
+	post_index(index)
 	return tractate
 '''
 perek = 5@.*?2@
@@ -54,30 +49,59 @@ dh = 4@.*?1@
 before_dh = 7@.*?4@ or 1@.*?4@
 
 '''
-def getInfo(line):
-	 line = line.replace('@2', '2@').replace('@1', '1@').replace('@4', '4@').replace('@7', '7@').replace('@5', '5@')
-	 if line.find('5')>=0:
-		 perek_info = re.findall('5@.*?\d@', line)[0]
-	 else:
+def getInfo(line, errors):
+	 orig_line = line
+	 line = line.replace('@2', '2@').replace('@1', '1@').replace('@4', '4@').replace('@7', '7@').replace('@5', '5@').replace('@3', '3@')
+	 try:
+		 if line.find('5')>=0:
+			 perek_info = removeAllStrings(re.findall('5@.*?\d@', line)[0])
+		 else:
+			 perek_info = ""
+	 except:
+		 errors.write(orig_line+"\n\n")
 		 perek_info = ""
 
-	 if line.find('2')>=0:
-		 daf_info = re.findall('2@.*?\d@', line)[0]
-	 else:
+	 
+	 try:
+		 if line.find('2')>=0:
+			 daf_info = re.findall('2@.*?\d@', line)[0]
+		 else:
+			 daf_info = ""
+	 except:
+		 errors.write(orig_line+"\n\n")
 		 daf_info = ""
-	 dh_info = re.findall('4@.*?1@', line)[0]
+	 
 
-	 if line.find('7@')>0:
-	   before_dh_info = re.findall('7@.*?4@', line)[0]
-	 else:
-	   poss = re.findall('1@.*?4@', line)
-	   if len(poss)>0:
-		 before_dh_info = poss[0]
-	   else:
-		 before_dh_info = ""
+	 try:
+		 if line.find("4@") >= 0 and line.find('1@') >= 0:
+			dh_info = re.findall('4@.*?1@', line)[0]
+		 elif line.find("4@") >= 0:
+			dh_info = re.findall('4@.*', line)[0]
+		 else:
+		 	dh_info = ""
+	 except:
+	 	errors.write(orig_line+"\n\n")
+	 	dh_info = ""
+
+
+	 try:
+		 if line.find('7@')>=0:
+		   before_dh_info = re.findall('7@.*?4@', line)[0]
+		 else:
+		   poss = re.findall('1@.*?4@', line)
+		   if len(poss)>0:
+			 before_dh_info = poss[0]
+		   else:
+			 before_dh_info = ""
+	 except:
+	 	errors.write(orig_line+"\n\n")
+	 	before_dh_info = ""
+
+
 	 dh = dh_info.replace("4@","").replace("1@","")
 	 before_dh = before_dh_info.replace("7@","").replace("1@","").replace("4@","")
 	 return perek_info, daf_info, dh, before_dh
+
 
 def getDaf(daf_info):
 	daf = daf_info.replace("2@", "").replace("1@","").replace("7@","")
@@ -109,7 +133,8 @@ def getDaf(daf_info):
 	 	daf = 2*getGematria(daf)
 	return daf
 
-def parse(tractate):
+
+def parse(tractate, errors):
 	 tractate = tractate.replace(" ", "_")
 	 prev_daf = 1
 	 problems = open('problems.txt','w')
@@ -118,16 +143,32 @@ def parse(tractate):
 	 prev_daf = 3
 	 dh_dict = {}
 	 for line in open(tractate+"_complete.txt"):
-		 line = line.replace("\n", "")
+	 	 orig_line = line
+		 line = line.replace("\n", "").replace('\x80\xa8\xe2\x80\xa8', '')
 		 if len(line.replace(' ',''))==0:
 			 continue
-		 perek_info, daf_info, dh, before_dh = getInfo(line)
+
+		 perek_info, daf_info, dh, before_dh = getInfo(line, errors)
 		 if len(daf_info) > 0:
 		 	daf = getDaf(daf_info)
-		 comment_start = line.rfind("1@")
+		 if perek_info.find('@') >= 0 or dh.find('@') >= 0 or before_dh.find('@') >= 0:
+		 	errors.write(orig_line+"\n\n")
+
+
+		 line = line.replace('@2', '2@').replace('@1', '1@').replace('@4', '4@').replace('@7', '7@').replace('@5', '5@').replace('@3', '3@')
+		 comment_start = line.rfind("1@") if line.rfind("1@") >= 0 else line.rfind("4@")
 		 comment = line[comment_start+2:].replace("3@","<br>")
 		 comment = comment.replace(" .", ".")
+
+
 		 comment = removeExtraSpaces(comment)
+		 dh = removeExtraSpaces(dh)
+		 before_dh = removeExtraSpaces(before_dh)
+		 
+
+		 if comment.find('@') >= 0:
+		 	errors.write(orig_line+"\n\n")
+
 		 if type(daf) is int and daf not in text:
 			 if daf < prev_daf:
 				 print 'daf error'
@@ -137,6 +178,13 @@ def parse(tractate):
 			 prev_daf = daf
 		 text[daf].append(before_dh + "<b>" + dh+"</b>"+comment)
 		 dh_dict[daf].append(dh)
+		 
+		 try:
+			 comment.decode('utf-8')
+			 dh.decode('utf-8')
+		 	 before_dh.decode('utf-8')
+		 except:
+		 	pdb.set_trace()
 	 return text, dh_dict
 
 
@@ -148,18 +196,17 @@ def post(text, dh_dict, tractate):
 		 "versionSource": "http://www.sefaria.org",
 		 "language": "he"
 	 }
-	 #post_text("Ramban on "+tractate, send_text)
+	 post_text("Chiddushei Ramban on "+tractate, send_text)
 	 links_to_post = []
 	 daf_array = get_text_plus(tractate)['he']
 	 match = Match(in_order=True, min_ratio=80, guess=False, range=True, can_expand=False)
 	 for daf in sorted(dh_dict.keys()):
-	 	 print daf 
 		 dh_list = dh_dict[daf]
 		 results = match.match_list(dh_list, daf_array[daf-1], tractate+" "+AddressTalmud.toStr("en", daf))
 		 for key, value in results.iteritems():
 			 value = value.replace("0:", "")
 			 talmud_end = tractate + "." + AddressTalmud.toStr("en", daf) + "." + value
-			 ramban_end = "Ramban_on_" + tractate + "." + AddressTalmud.toStr("en", daf) + "." + str(key)
+			 ramban_end = "Chiddushei_Ramban_on_" + tractate + "." + AddressTalmud.toStr("en", daf) + "." + str(key)
 			 links_to_post.append({'refs': [talmud_end, ramban_end], 'type': 'commentary', 'auto': 'True', 'generated_by': "ramban"+tractate})    
 	 post_link(links_to_post)
 
@@ -168,17 +215,21 @@ if __name__ == "__main__":
 	global tractate
 	global text
 	global dh_dict
-	skip = ["Beitzah"]
+	global errors
+	errors = open('probs_ramban.txt', 'w')
 	not_yet = True
+	until_this_one = "shabbat"
 	for file in glob.glob(u"*.txt"):
 		print file
+		errors.write(file+"\n")
 		if file.find("_complete") >= 0:
 			tractate = file.replace("_complete.txt", "").replace("_", " ").title()
-			if tractate in skip:
-				not_yet = False
+			if not_yet and file.find(until_this_one) == -1:
 				continue
+			else:
+				not_yet = False 
 			if not_yet == False:
-				create_index(tractate)
-				text, dh_dict = parse(tractate)
-				post(text, dh_dict, tractate)
+				#create_index(tractate)
+				text, dh_dict = parse(tractate, errors)
+				#post(text, dh_dict, tractate)
 			

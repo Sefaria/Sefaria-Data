@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+ # -*- coding: utf-8 -*-
 import urllib2
 import urllib
 from urllib2 import URLError, HTTPError
@@ -47,7 +47,7 @@ def getText(line):
 		if len(match) > 0:
 			line = line.replace(match[0] + " ", "").replace(match[0], "")
 		line = line.replace("@11", "").replace("@33", "")
-		line = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], line)
+		line = removeAllStrings(line)
 		if line.find(".") >= 0:
 			dh, comment = line.split(".", 1)
 			line = "<b>" + dh + "</b>." + comment			
@@ -101,7 +101,7 @@ def post_text_TYT(masechet, text):
 		text_array = convertDictToArray(text)
 		send_text = {
 			"text": text_array,
-			"versionTitle": "http://www.daat.ac.il/daat/vl/tohen.asp?id=202",
+			"versionTitle": "Mishnah, ed. Romm, Vilna 1913",
 			"versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002036659",
 			"language": "he"
 		}
@@ -113,6 +113,7 @@ def post_text_TYT(masechet, text):
 			TYT_link = "Tosafot_Yom_Tov_on_"+masechet+"."+str(perek+1)+"."+str(mishnah+1)
 			links.append({'refs': [mishnah_link, TYT_link], 'type': 'commentary', 'auto': 'True', 'generated_by': 'TYT'})
 	post_link(links)
+
 
 def parseFile(file):
 	text = {}
@@ -134,9 +135,11 @@ def parseFile(file):
 	return text
 
 
+
 if __name__ == "__main__":
 	not_yet = True
-	until_this_one = "niddah.txt"
+	until_this_one = "berakhot.txt"
+	only_these = ["sukkah.txt"] #ALSO "shevuot.txt"
 	masechet_has_intro = {}
 	for file in glob.glob(u"*.txt"):
 		if file.find("intro") >= 0:
@@ -144,19 +147,34 @@ if __name__ == "__main__":
 		else:
 			masechet_has_intro[file.replace("_intro", "")] = False
 
-
 	for file in glob.glob(u"*.txt"):
-		if file.find("intro") == -1:
-			if not_yet and file.find(until_this_one) == -1:
-				continue
-			else:
-				not_yet = False 
+		if file in only_these:
+			print file
+			#if not_yet and file.find(until_this_one) == -1:
+			#	continue
+			#else:
+			#	not_yet = False 
 			open_file = open(file)
 			masechet = file.replace(".txt", "").replace("_", " ").title()
 			has_intro = masechet_has_intro[file]
 			post_index_TYT(masechet, has_intro)
 			text = parseFile(open_file)
 			post_text_TYT(masechet, text)
+		'''
+		elif file.find("intro") >= 0:
+			masechet = file.replace("_intro.txt", "").replace("_", " ").title()
+			open_file = open(file)
+			text = getText(open_file)
+			send_text = {
+			"text": [text],
+			"versionTitle": "Mishnah, ed. Romm, Vilna 1913",
+			"versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002036659",
+			"language": "he"
+			}
+			if masechet == "Avot":
+				post_text("Tosafot Yom Tov on Pirkei "+masechet+",_Pirkei "+masechet+",_Introduction", send_text)
+			else:
+				post_text("Tosafot Yom Tov on Mishnah "+masechet+",_Mishnah "+masechet+",_Introduction", send_text)
 			
-
+		'''
 			

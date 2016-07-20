@@ -43,13 +43,8 @@ def addMitzvah(mitzvah, text):
 		pdb.set_trace()
 	return current_mitzvah
 	
-def addLineMitzvah(current_mitzvah, line):
-	lines = line.split(", ")
-	for count, line in enumerate(lines):	
-		if count == len(lines)-1:
-			text[current_mitzvah].append(line)
-		else:
-			text[current_mitzvah].append(line+", ")
+
+
 smag = open(files[0],'r')
 current_mitzvah = 0
 tag = re.compile('@\d+')
@@ -72,7 +67,7 @@ for line in smag:
 		if how_many_blank > 0:
 			text[current_mitzvah].append(u"מצוות "+u" "+msg+str(current_mitzvah))
 			how_many_blank = 0
-		addLineMitzvah(current_mitzvah, words)
+		text[current_mitzvah].append(words)
 	elif line.find("@22")>=0:
 		line = line.replace("@22","").replace(".","").replace("'","").replace('"','')
 		if line[len(line)-1]==" ":

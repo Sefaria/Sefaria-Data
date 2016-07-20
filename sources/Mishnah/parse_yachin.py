@@ -526,11 +526,11 @@ def parse_files():
     chap_expression = [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})']
 
     tractates = library.get_indexes_in_category('Mishnah')
+    print tractates
 
     for tractate in tractates:
 
-        en_name = tractate.replace(u'Mishnah', u'Yachin')
-        en_name = en_name.replace(u'Pirkei', u'Yachin')
+        en_name = u'Yachin on ' + tractate
         he_name = Ref(tractate).he_book().replace(u'משנה', u'יכין')
         filename = u'{}.txt'.format(he_name)
         print en_name
@@ -621,9 +621,8 @@ def collect_links(tractate):
     for line in util.traverse_ja(parsed_mishna):
         for match in comment_reg.finditer(line['data']):
             m_ref = u'{}.{}.{}'.format(tractate, line['indices'][0]+1, line['indices'][1]+1)
-            y_ref = u'{}.{}.{}'.format(tractate.replace(u'Mishnah', u'Yachin'), line['indices'][0]+1,
+            y_ref = u'{}.{}.{}'.format(u'Yachin on ' + tractate, line['indices'][0]+1,
                                        util.getGematria(match.group(1)))
-            y_ref = y_ref.replace(u'Pirkei', u'Yachin')
             links.append((m_ref, y_ref))
 
     return list(set(links))
@@ -668,8 +667,8 @@ def upload(data):
     # clean and upload text
     upload_text = util.clean_jagged_array(data['data'].array(), tags_to_strip())
     text_version = {
-        'versionTitle': u'{} Vilna Edition'.format(data['en']),
-        'versionSource': 'http://www.daat.ac.il/daat/bibliogr/allbooks.asp?sub=2',
+        'versionTitle': u'Mishnah, ed. Romm, Vilna 1913',
+        'versionSource': 'http://http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001741739',
         'language': 'he',
         'text': upload_text
     }
@@ -679,7 +678,7 @@ tracs = library.get_indexes_in_category('Mishnah')
 parsed = parse_files()
 link_refs = [collect_links(tractate) for tractate in tracs]
 full_links = build_links(link_refs)
-for num, data in enumerate(parsed.keys()):
+for num, data in enumerate(sorted(parsed.keys())):
     print num+1, data
     upload(parsed[data])
 functions.post_link(full_links)
