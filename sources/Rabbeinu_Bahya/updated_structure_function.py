@@ -49,7 +49,8 @@ def create_rb_indices():
         "title": "Rabbeinu Bahya",
         "titleVariants": ["Rabbeinu Bechaye", "Rabbeinu Bahya ben Asher"],
         "categories": ["Commentary2", "Tanakh", "Rabbeinu Bahya"],
-        "alt_structs": {"Parsha": structs.serialize()},
+        "alt_structs": {"Parasha": structs.serialize()},
+        "default_struct": "Parasha",
         "schema": rabbeinu_bahya_book.serialize()
     }
     return index
@@ -61,15 +62,18 @@ def new_index():
     rb_on_humash.add_title(u'רבינו בחיי', 'he', primary=True)
     rb_on_humash.key = 'Rabbeinu Bahya'
     rb_on_humash.append(create_intro_nodes())
-    for book_name in book_english_names:
-        rb_on_humash.append(create_book_ja_node(book_name))
+    for english_book_name, hebrew_book_name in zip(english_names, hebrew_names):
+        rb_on_humash.append(create_book_ja_node(english_book_name, hebrew_book_name))
     return rb_on_humash
 
 
-def create_book_ja_node(book_name):
+def create_book_ja_node(english_book_name, hebrew_book_name):
+    en_name = english_book_name[0]
+    he_name = hebrew_book_name[0]
     book_node = JaggedArrayNode()
-    book_node.add_shared_term(book_name)
-    book_node.key = book_name
+    book_node.key = en_name
+    book_node.add_title(en_name, 'en', primary=True)
+    book_node.add_title(he_name, 'he', primary=True)
     book_node.depth = 3
     book_node.addressTypes = ["Integer", "Integer", "Integer"]
     book_node.sectionNames = ["Chapter", "Verse", "Comment"]
@@ -79,7 +83,7 @@ def create_book_ja_node(book_name):
 def create_intro_nodes():
     intro_node = JaggedArrayNode()
     intro_node.add_title('Introduction', "en", primary=True)
-    intro_node.add_title(u'הקדמה', "he", primary=True)
+    intro_node.add_title('הקדמה', "he", primary=True)
     intro_node.key = 'Introduction'
     intro_node.depth = 1
     intro_node.addressTypes = ["Integer"]
@@ -141,7 +145,6 @@ def parse_and_post(rabbeinu_bahya_text_file):
                 matchObject = pasuk_perek_number.search(each_line)
                 current_verse = util.getGematria(matchObject.group(1))
                 diff = current_verse - most_recent_verse
-
                 while diff > 1:
                         chapter.append([])
                         diff -= 1
@@ -197,13 +200,10 @@ def post_the_text(jagged_array, title_counter):
     text = create_text(jagged_array)
     if title_counter > 0:
         list_of_links = create_links(jagged_array, title_counter)
-
+    #The post_text must be after the creation of the links because that method changed the actual text
     functions.post_text(ref, text)
     if title_counter > 0:
         functions.post_link(list_of_links)
-        print(list_of_links)
-
-    print ref
 
 
 def create_ref(title_counter):
@@ -234,11 +234,9 @@ def create_links(rb_ja, title_counter):
                 if divrei_hamatchil:
                     rb_dictionary = create_rb_dict(titles[title_counter], perek_index+1, pasuk_index+1, comment_index+1)
                     if u'#$' in divrei_hamatchil:
-                        #list_of_links.append(create_mishlei_link(divrei_hamatchil, proverbs, rb_dictionary))
                         mishlei_info_dict = find_mishlei_info(divrei_hamatchil, proverbs, rb_dictionary)
                         print divrei_hamatchil
                         rb_ja[perek_index][pasuk_index][comment_index] = u'<b>{} (\u05de\u05e9\u05dc\u05d9 {}, {})</b>'.format(divrei_hamatchil[:-2], mishlei_info_dict['perek'], mishlei_info_dict['pasuk'])
-                        #mishlei_info_dict['perek'], mishlei_info_dict['pasuk']
 
                     elif divrei_hamatchil[-1] == '.':
                         list_of_links.append(create_the_link(rb_dictionary))
@@ -318,7 +316,7 @@ def create_alternate_structs():
 
 def rabbeinu_bahya_index():
     rb_on_humash = SchemaNode()
-    rb_on_humash.append(create_alt_struct_intro_nodes('Rabbeinu_Bahya,_Introduction.1-5', include_section=False))
+    rb_on_humash.append(create_alt_struct_intro_nodes('Rabbeinu_Bahya,_Introduction.1-5', 'Introduction to the Book', u'הקדמה לספר', include_section=False))
     for english_parsha_names, hebrew__parsha_names in zip(english_names, hebrew_names):
         rb_on_humash.append(create_book_node(english_parsha_names, hebrew__parsha_names))
     return rb_on_humash
@@ -339,7 +337,7 @@ def create_parsha_node(english_parsha_name):
     parsha_node = SchemaNode()
     parsha_node.add_shared_term(english_parsha_name)
     parsha_node.key = english_parsha_name
-    parsha_node.append(create_alt_struct_intro_nodes(dictionary[english_parsha_name]['intro']))
+    parsha_node.append(create_alt_struct_intro_nodes(dictionary[english_parsha_name]['intro'], 'Introduction', u'הקדמה'))
     parsha_node.append(create_jagged_array_node(english_parsha_name, dictionary[english_parsha_name]['comments']))
     return parsha_node
 
@@ -353,10 +351,10 @@ def create_jagged_array_node(en_parsha_name, whole_ref, include_section=True):
     return ja_node
 
 
-def create_alt_struct_intro_nodes(whole_ref, include_section=True):
+def create_alt_struct_intro_nodes(whole_ref, en_title, he_title, include_section=True):
     intro_node = ArrayMapNode()
-    intro_node.add_title('Introduction', 'en', True)
-    intro_node.add_title('הקדמה', 'he', True)
+    intro_node.add_title(en_title, 'en', True)
+    intro_node.add_title(he_title, 'he', True)
     intro_node.depth = 0
     intro_node.wholeRef = whole_ref
     intro_node.includeSections = include_section
