@@ -155,7 +155,7 @@ def parse_and_post(rabbeinu_bahya_text_file):
                 continue
 
             else:
-                each_line = clean_up(each_line)
+                each_line = clean_up(each_line, title_counter)
                 verse.append(each_line)
 
     chapter.append(verse)
@@ -163,9 +163,9 @@ def parse_and_post(rabbeinu_bahya_text_file):
     post_the_text(book, title_counter)
 
 
-def clean_up(string):
+def clean_up(string, title_counter):
     if "@05" in string:
-        string = amend_mishlei_verse(string)
+        string = amend_mishlei_verse(string, title_counter)
 
     string = add_bold(string, ["@05", "@11", "@66"], ["@33"])
     string = remove_substrings(string, ["@44", "@55", "@22", "@01", "@00"])
@@ -173,11 +173,13 @@ def clean_up(string):
     return string
 
 
-def amend_mishlei_verse(string):
+def amend_mishlei_verse(string, title_counter):
     string = remove_substrings(string, ['.', ':'])
     string = regex.sub(u'\(\u05de\u05e9\u05dc\u05d9\s[\u05d0-\u05ea]{1,3}\)', '', string)
     string = string.strip()
     string += u"#$</b>"
+    if title_counter == 0:
+        string = string.replace(u'#$', u'')
     return string
 
 
@@ -203,6 +205,7 @@ def post_the_text(jagged_array, title_counter):
     #The post_text must be after the creation of the links because that method changed the actual text
     functions.post_text(ref, text)
     if title_counter > 0:
+        print 1
         functions.post_link(list_of_links)
 
 
@@ -235,8 +238,12 @@ def create_links(rb_ja, title_counter):
                     rb_dictionary = create_rb_dict(titles[title_counter], perek_index+1, pasuk_index+1, comment_index+1)
                     if u'#$' in divrei_hamatchil:
                         mishlei_info_dict = find_mishlei_info(divrei_hamatchil, proverbs, rb_dictionary)
+                        divrei_hamatchil = remove_substrings(divrei_hamatchil, [u'#$'])
                         print divrei_hamatchil
-                        rb_ja[perek_index][pasuk_index][comment_index] = u'<b>{} (\u05de\u05e9\u05dc\u05d9 {}, {})</b>'.format(divrei_hamatchil[:-2], mishlei_info_dict['perek'], mishlei_info_dict['pasuk'])
+
+                        rb_ja[perek_index][pasuk_index][comment_index] = u'<b>{} (\u05de\u05e9\u05dc\u05d9 {}, {})</b>'.format(divrei_hamatchil, mishlei_info_dict['perek'], mishlei_info_dict['pasuk'])
+                        if title_counter == 2 and perek_index+1 == 35 and pasuk_index+1 == 1 and comment_index+1 == 1:
+                            rb_ja[perek_index][pasuk_index][comment_index] = u'<b>{} (\u05de\u05e9\u05dc\u05d9 \u05db\u05d3, \u05d9\u05d2\u002d\u05d9\u05d3)</b>'.format(divrei_hamatchil)
 
                     elif divrei_hamatchil[-1] == '.':
                         list_of_links.append(create_the_link(rb_dictionary))
