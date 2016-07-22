@@ -4,7 +4,7 @@ import csv
 import codecs
 from data_utilities.sanity_checks import TagTester
 from data_utilities import util
-from sources.Match.match_new import Match
+from sources.Match.match import Match
 from sources import functions
 from sefaria.model import *
 
@@ -211,7 +211,7 @@ def find_links(current_text, parent_text, dh_finder, *args):
 
         if chapter:
             dh_list = [dh_finder(seif[0], *args) for seif in chapter if dh_finder(seif[0], *args)]
-            matches = matcher.match_list(dh_list, parent_text['text'][chapter_num])
+            matches = matcher.match_list(dh_list, parent_text['text'][chapter_num], parent_text['name'])
             links.append(build_links(parent_text['name'], current_text['name'], chapter_num+1, matches))
 
     return [linker for sublist in links for linker in sublist]
@@ -253,18 +253,26 @@ def build_links(parent_name, current_name, chapter, match_list):
 
 def get_data(filename):
 
+    data = []
     with codecs.open(filename, 'r', 'utf-8') as data_file:
 
-        data = []
-        data_reader = csv.reader(data_file, delimiter=',')
+        parsha = None
 
-        for row in data_reader:
+        for line in data_file:
 
-            data.append({
-                'Parsha': row[0],
-                'ref': row[1]
-            })
+            if re.match(u'@55', line):
+                if parsha:
+                    data.append(parsha)
 
+                parsha = {
+                    'parsha_name': line.replace(u'@55', u''),
+                    'mitzvot': []
+                }
+
+            elif re.match(u'@51', line):
+                parsha['mitzvot'].append(line.replace(u'@51', u''))
+        else:
+            data.append(parsha)
     return data
 
 
@@ -326,30 +334,32 @@ def produce_parsed_data(filename):
     return parsed
 
 
-minchat = {'name': 'Minchat Chinukh', 'text': produce_parsed_data(filename)}
-sefer = {'name': 'Sefer HaChinukh', 'text': Ref('Sefer HaChinukh').text('he').text}
+def post():
+    minchat = {'name': 'Minchat Chinukh', 'text': produce_parsed_data(filename)}
+    sefer = {'name': 'Sefer HaChinukh', 'text': Ref('Sefer HaChinukh').text('he').text}
 
-chinukh_links = find_links(minchat, sefer, grab_dh, u'@55', u'@66')
+    chinukh_links = find_links(minchat, sefer, grab_dh, u'@55', u'@66')
 
-with codecs.open('links.txt', 'w', 'utf-8') as outfile:
-    for each_link in chinukh_links:
-        outfile.write(u'{}\n'.format(each_link['refs']))
+    with codecs.open('links.txt', 'w', 'utf-8') as outfile:
+        for each_link in chinukh_links:
+            outfile.write(u'{}\n'.format(each_link['refs']))
 
-alt = construct_alt_struct('Chinukh_by_Parsha.csv', u'Parsha')
+    alt = construct_alt_struct('Chinukh_by_Parsha.csv', u'Parsha')
 
-cleaned = util.clean_jagged_array(minchat['text'], [m_pattern, comment_pattern, u'@[0-9]{2}',
-                                  u'\n', u'\r'])
-with codecs.open('parsed.txt', 'w', 'utf-8') as outfile:
-    util.jagged_array_to_file(outfile, cleaned, [u'Mitzva', u'Seif', u'Paragraph'])
+    cleaned = util.clean_jagged_array(minchat['text'], [m_pattern, comment_pattern, u'@[0-9]{2}',
+                                      u'\n', u'\r'])
+    with codecs.open('parsed.txt', 'w', 'utf-8') as outfile:
+        util.jagged_array_to_file(outfile, cleaned, [u'Mitzva', u'Seif', u'Paragraph'])
 
-full_text = {
-    'versionTitle': 'Minchat Chinuch, Piotrków, 1902',
-    'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001175092',
-    'language': 'he',
-    'text': cleaned
-}
+    full_text = {
+        'versionTitle': 'Minchat Chinuch, Piotrków, 1902',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001175092',
+        'language': 'he',
+        'text': cleaned
+    }
 
-index = construct_index(alt)
-functions.post_index(index)
-functions.post_text('Minchat Chinukh', full_text)
-functions.post_link(chinukh_links)
+    index = construct_index(alt)
+    functions.post_index(index)
+    functions.post_text('Minchat Chinukh', full_text)
+    functions.post_link(chinukh_links)
+
