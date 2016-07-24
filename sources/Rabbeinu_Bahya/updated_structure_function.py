@@ -16,34 +16,64 @@ import pdb
 import os
 import sys
 
-bereishit = [u'בראשית', u'נח', u'לך-לך', u'וירא', u'חיי שרה', u'תולדות', u'ויצא', u'וישלח', u'וישב', u'מקץ', u'ויגש',
-             u'ויחי']
-shemot = [u'שמות', u'וארא', u'בא', u'בשלח', u'יתרו', u'משפטים', u'תרומה', u'תצוה', u'כי תשא', u'ויקהל', u'פקודי']
-vayikra = [u'ויקרא', u'צו', u'שמיני', u'תזריא', u'מצרא', u'אחרי מות', u'קדשים', u'אמור', u'בהר', u'בחקתי']
-bamidbar = [u'במדבר', u'נשא', u'בהעלתך', u'שלח', u'קרח', u'חקת', u'בלק', u'פינחס', u'מטות', u'מסעי']
-devarim = [u'דברים', u'ואתחנן', u'עקב', u'ראה', u'שפטים', u'כי תצא', u'כי תבוא', u'נצבים', u'וילך', u'האזינו',
-           u'וזאת הברכה']
-hebrew_names = [bereishit, shemot, vayikra, bamidbar, devarim]
+# bereishit = [u'בראשית', u'נח', u'לך-לך', u'וירא', u'חיי שרה', u'תולדות', u'ויצא', u'וישלח', u'וישב', u'מקץ', u'ויגש',
+#              u'ויחי']
+# shemot = [u'שמות', u'וארא', u'בא', u'בשלח', u'יתרו', u'משפטים', u'תרומה', u'תצוה', u'כי תשא', u'ויקהל', u'פקודי']
+# vayikra = [u'ויקרא', u'צו', u'שמיני', u'תזריא', u'מצרא', u'אחרי מות', u'קדשים', u'אמור', u'בהר', u'בחקתי']
+# bamidbar = [u'במדבר', u'נשא', u'בהעלתך', u'שלח', u'קרח', u'חקת', u'בלק', u'פינחס', u'מטות', u'מסעי']
+# devarim = [u'דברים', u'ואתחנן', u'עקב', u'ראה', u'שפטים', u'כי תצא', u'כי תבוא', u'נצבים', u'וילך', u'האזינו',
+#            u'וזאת הברכה']
+# hebrew_names = [bereishit, shemot, vayikra, bamidbar, devarim]
+#
+# bereishit_english = [u'Bereshit', u'Noach', u'Lech Lecha', u'Vayera', u'Chayei Sara', u'Toldot', u'Vayetzei',
+#                      u'Vayishlach', u'Vayeshev', u'Miketz', u'Vayigash', u'Vayechi']
+# shemot_english = [u'Shemot', u'Vaera', u'Bo', u'Beshalach', u'Yitro', u'Mishpatim', u'Terumah', u'Tetzaveh',
+#                   u'Ki Tisa', u'Vayakhel', u'Pekudei']
+# vayikra_english = [u'Vayikra', u'Tzav', u'Shmini', u'Tazria', u'Metzora', u'Achrei Mot', u'Kedoshim', u'Emor',
+#                    u'Behar', u'Bechukotai']
+# bamidbar_english = [u'Bamidbar', u'Nasso', u"Beha'alotcha", u"Sh'lach", u'Korach', u'Chukat', u'Balak',
+#                     u'Pinchas', u'Matot', u'Masei']
+# devarim_english = [u'Devarim', u'Vaetchanan', u'Eikev', u"Re'eh", u'Shoftim', u'Ki Teitzei', u'Ki Tavo',
+#                    u'Nitzavim', u'Vayeilech', u"Ha'Azinu", u"V'Zot HaBerachah"]
+# english_names = [bereishit_english, shemot_english, vayikra_english, bamidbar_english, devarim_english]
+#
+# book_english_names = [u'Bereshit', u'Shemot', u'Vayikra', u'Bamidbar', u'Devarim']
 
-bereishit_english = [u'Bereshit', u'Noach', u'Lech Lecha', u'Vayera', u'Chayei Sara', u'Toldot', u'Vayetzei',
-                     u'Vayishlach', u'Vayeshev', u'Miketz', u'Vayigash', u'Vayechi']
-shemot_english = [u'Shemot', u'Vaera', u'Bo', u'Beshalach', u'Yitro', u'Mishpatim', u'Terumah', u'Tetzaveh',
-                  u'Ki Tisa', u'Vayakhel', u'Pekudei']
-vayikra_english = [u'Vayikra', u'Tzav', u'Shmini', u'Tazria', u'Metzora', u'Achrei Mot', u'Kedoshim', u'Emor',
-                   u'Behar', u'Bechukotai']
-bamidbar_english = [u'Bamidbar', u'Nasso', u"Beha'alotcha", u"Sh'lach", u'Korach', u'Chukat', u'Balak',
-                    u'Pinchas', u'Matot', u'Masei']
-devarim_english = [u'Devarim', u'Vaetchanan', u'Eikev', u"Re'eh", u'Shoftim', u'Ki Teitzei', u'Ki Tavo',
-                   u'Nitzavim', u'Vayeilech', u"Ha'Azinu", u"V'Zot HaBerachah"]
-english_names = [bereishit_english, shemot_english, vayikra_english, bamidbar_english, devarim_english]
-
-book_english_names = [u'Bereshit', u'Shemot', u'Vayikra', u'Bamidbar', u'Devarim']
 pasuk_perek_number = regex.compile(u'\(?([\u05d0-\u05ea]{1,3})\)?([-_][\u05d0-\u05ea]{1,3})?\)?')
 
 
-def create_rb_indices():
-    structs = create_alternate_structs()
-    rabbeinu_bahya_book = new_index()
+def get_hebrew_parsha_names():
+    bereishit = [u'בראשית', u'נח', u'לך-לך', u'וירא', u'חיי שרה', u'תולדות', u'ויצא', u'וישלח', u'וישב', u'מקץ', u'ויגש',
+             u'ויחי']
+    shemot = [u'שמות', u'וארא', u'בא', u'בשלח', u'יתרו', u'משפטים', u'תרומה', u'תצוה', u'כי תשא', u'ויקהל', u'פקודי']
+    vayikra = [u'ויקרא', u'צו', u'שמיני', u'תזריא', u'מצרא', u'אחרי מות', u'קדשים', u'אמור', u'בהר', u'בחקתי']
+    bamidbar = [u'במדבר', u'נשא', u'בהעלתך', u'שלח', u'קרח', u'חקת', u'בלק', u'פינחס', u'מטות', u'מסעי']
+    devarim = [u'דברים', u'ואתחנן', u'עקב', u'ראה', u'שפטים', u'כי תצא', u'כי תבוא', u'נצבים', u'וילך', u'האזינו',
+               u'וזאת הברכה']
+    hebrew_names = [bereishit, shemot, vayikra, bamidbar, devarim]
+    return hebrew_names
+
+
+def get_english_parsha_names():
+    bereishit_english = [u'Bereshit', u'Noach', u'Lech Lecha', u'Vayera', u'Chayei Sara', u'Toldot', u'Vayetzei',
+                         u'Vayishlach', u'Vayeshev', u'Miketz', u'Vayigash', u'Vayechi']
+    shemot_english = [u'Shemot', u'Vaera', u'Bo', u'Beshalach', u'Yitro', u'Mishpatim', u'Terumah', u'Tetzaveh',
+                      u'Ki Tisa', u'Vayakhel', u'Pekudei']
+    vayikra_english = [u'Vayikra', u'Tzav', u'Shmini', u'Tazria', u'Metzora', u'Achrei Mot', u'Kedoshim', u'Emor',
+                       u'Behar', u'Bechukotai']
+    bamidbar_english = [u'Bamidbar', u'Nasso', u"Beha'alotcha", u"Sh'lach", u'Korach', u'Chukat', u'Balak',
+                        u'Pinchas', u'Matot', u'Masei']
+    devarim_english = [u'Devarim', u'Vaetchanan', u'Eikev', u"Re'eh", u'Shoftim', u'Ki Teitzei', u'Ki Tavo',
+                       u'Nitzavim', u'Vayeilech', u"Ha'Azinu", u"V'Zot HaBerachah"]
+    english_names = [bereishit_english, shemot_english, vayikra_english, bamidbar_english, devarim_english]
+    book_english_names = [u'Bereshit', u'Shemot', u'Vayikra', u'Bamidbar', u'Devarim']
+    return english_names
+
+
+def create_rb_indices(english_names, hebrew_names):
+    structs = rabbeinu_bahya_alt_struct(english_names, hebrew_names)
+    #structs.validate()
+    rabbeinu_bahya_book = new_index(english_names, hebrew_names)
     rabbeinu_bahya_book.validate()
     index = {
         "title": "Rabbeinu Bahya",
@@ -56,7 +86,7 @@ def create_rb_indices():
     return index
 
 
-def new_index():
+def new_index(english_names, hebrew_names):
     rb_on_humash = SchemaNode()
     rb_on_humash.add_title('Rabbeinu Bahya', 'en', primary=True)
     rb_on_humash.add_title(u'רבינו בחיי', 'he', primary=True)
@@ -83,7 +113,7 @@ def create_book_ja_node(english_book_name, hebrew_book_name):
 def create_intro_nodes():
     intro_node = JaggedArrayNode()
     intro_node.add_title('Introduction', "en", primary=True)
-    intro_node.add_title('הקדמה', "he", primary=True)
+    intro_node.add_title(u'הקדמה', "he", primary=True)
     intro_node.key = 'Introduction'
     intro_node.depth = 1
     intro_node.addressTypes = ["Integer"]
@@ -177,9 +207,9 @@ def amend_mishlei_verse(string, title_counter):
     string = remove_substrings(string, ['.', ':'])
     string = regex.sub(u'\(\u05de\u05e9\u05dc\u05d9\s[\u05d0-\u05ea]{1,3}\)', '', string)
     string = string.strip()
-    string += u"#$</b>"
-    if title_counter == 0:
-        string = string.replace(u'#$', u'')
+    if title_counter > 0:
+        string += u"#$"
+    string += u"</b>"
     return string
 
 
@@ -316,12 +346,12 @@ def create_the_link(rb_dict):
         }
 
 
-def create_alternate_structs():
-    index = rabbeinu_bahya_index()
+def create_alternate_structs(english_names, hebrew_names):
+    index = rabbeinu_bahya_alt_struct(english_names, hebrew_names)
     return index
 
 
-def rabbeinu_bahya_index():
+def rabbeinu_bahya_alt_struct(english_names, hebrew_names):
     rb_on_humash = SchemaNode()
     rb_on_humash.append(create_alt_struct_intro_nodes('Rabbeinu_Bahya,_Introduction.1-5', 'Introduction to the Book', u'הקדמה לספר', include_section=False))
     for english_parsha_names, hebrew__parsha_names in zip(english_names, hebrew_names):
