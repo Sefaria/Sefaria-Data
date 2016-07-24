@@ -232,7 +232,7 @@ def post_the_text(jagged_array, title_counter):
     text = create_text(jagged_array)
     if title_counter > 0:
         list_of_links = create_links(jagged_array, title_counter)
-    #The post_text must be after the creation of the links because that method changed the actual text
+    #The post_text must be after the creation of the links because create_links() changes the actual text
     functions.post_text(ref, text)
     if title_counter > 0:
         print 1
@@ -276,13 +276,13 @@ def create_links(rb_ja, title_counter):
                             rb_ja[perek_index][pasuk_index][comment_index] = u'<b>{} (\u05de\u05e9\u05dc\u05d9 \u05db\u05d3, \u05d9\u05d2\u002d\u05d9\u05d3)</b>'.format(divrei_hamatchil)
 
                     elif divrei_hamatchil[-1] == '.':
-                        list_of_links.append(create_the_link(rb_dictionary))
+                        list_of_links.append(create_link_dictionary(rb_dictionary))
 
                     else:
                         divrei_hamatchil = reduce_it_to_letters(divrei_hamatchil)
                         pasuk_chumash = reduce_it_to_letters(pasuk_chumash)
                         if divrei_hamatchil in pasuk_chumash:
-                            list_of_links.append(create_the_link(rb_dictionary))
+                            list_of_links.append(create_link_dictionary(rb_dictionary))
 
     return list_of_links
 
@@ -336,7 +336,7 @@ def reduce_it_to_letters(full_string):
     return ''.join(just_hebrew_letters)
 
 
-def create_the_link(rb_dict):
+def create_link_dictionary(rb_dict):
     return {
                 "refs": [
                         "Rabbeinu Bahya, {}.{}.{}.{}".format(rb_dict['sefer'], rb_dict['perek'], rb_dict['pasuk'], rb_dict['comment']),
@@ -407,8 +407,8 @@ def create_alt_struct_refs():
         "Vayera" : {'intro': 'Rabbeinu_Bahya,_Bereshit.18.1.1-2', 'comments': 'Rabbeinu_Bahya,_Bereshit.18.1.3-22.20.1'},
         "Chayei Sara" : {'intro': 'Rabbeinu_Bahya,_Bereshit.23.1.1-6', 'comments': 'Rabbeinu_Bahya,_Bereshit.23.1.7-25.8.2'},
         "Toldot" : {'intro': 'Rabbeinu_Bahya,_Bereshit.25.19.1-3', 'comments': 'Rabbeinu_Bahya,_Bereshit.25.19.4-27.41.4'},
-        "Vayetzei" : {'intro': 'Rabbeinu_Bahya,_Bereshit.28.10.1-4', 'comments': 'Rabbeinu_Bahya,_Bereshit.28.10.5-32.2.1'},
-        "Vayishlach" : {'intro': 'Rabbeinu_Bahya,_Bereshit.32.3.1-10', 'comments': 'Rabbeinu_Bahya,_Bereshit.32.4.1-36.39.3'},
+        "Vayetzei" : {'intro': 'Rabbeinu_Bahya,_Bereshit.28.10.1-4', 'comments': 'Rabbeinu_Bahya,_Bereshit.28.10.5-32.3.1'},
+        "Vayishlach" : {'intro': 'Rabbeinu_Bahya,_Bereshit.32.4.1-10', 'comments': 'Rabbeinu_Bahya,_Bereshit.32.4.1-36.39.3'},
         "Vayeshev" : {'intro': 'Rabbeinu_Bahya,_Bereshit.37.1.1-2', 'comments': 'Rabbeinu_Bahya,_Bereshit.37.1.3-40.20.4'},
         "Miketz" : {'intro': 'Rabbeinu_Bahya,_Bereshit.41.1.1-5', 'comments': 'Rabbeinu_Bahya,_Bereshit.41.1.6-44.17.6'},
         "Vayigash" : {'intro': 'Rabbeinu_Bahya,_Bereshit.44.18.1-6', 'comments': 'Rabbeinu_Bahya,_Bereshit.44.18.7-47.27.4'},
