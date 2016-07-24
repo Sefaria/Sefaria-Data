@@ -16,30 +16,10 @@ import pdb
 import os
 import sys
 
-# bereishit = [u'בראשית', u'נח', u'לך-לך', u'וירא', u'חיי שרה', u'תולדות', u'ויצא', u'וישלח', u'וישב', u'מקץ', u'ויגש',
-#              u'ויחי']
-# shemot = [u'שמות', u'וארא', u'בא', u'בשלח', u'יתרו', u'משפטים', u'תרומה', u'תצוה', u'כי תשא', u'ויקהל', u'פקודי']
-# vayikra = [u'ויקרא', u'צו', u'שמיני', u'תזריא', u'מצרא', u'אחרי מות', u'קדשים', u'אמור', u'בהר', u'בחקתי']
-# bamidbar = [u'במדבר', u'נשא', u'בהעלתך', u'שלח', u'קרח', u'חקת', u'בלק', u'פינחס', u'מטות', u'מסעי']
-# devarim = [u'דברים', u'ואתחנן', u'עקב', u'ראה', u'שפטים', u'כי תצא', u'כי תבוא', u'נצבים', u'וילך', u'האזינו',
-#            u'וזאת הברכה']
-# hebrew_names = [bereishit, shemot, vayikra, bamidbar, devarim]
-#
-# bereishit_english = [u'Bereshit', u'Noach', u'Lech Lecha', u'Vayera', u'Chayei Sara', u'Toldot', u'Vayetzei',
-#                      u'Vayishlach', u'Vayeshev', u'Miketz', u'Vayigash', u'Vayechi']
-# shemot_english = [u'Shemot', u'Vaera', u'Bo', u'Beshalach', u'Yitro', u'Mishpatim', u'Terumah', u'Tetzaveh',
-#                   u'Ki Tisa', u'Vayakhel', u'Pekudei']
-# vayikra_english = [u'Vayikra', u'Tzav', u'Shmini', u'Tazria', u'Metzora', u'Achrei Mot', u'Kedoshim', u'Emor',
-#                    u'Behar', u'Bechukotai']
-# bamidbar_english = [u'Bamidbar', u'Nasso', u"Beha'alotcha", u"Sh'lach", u'Korach', u'Chukat', u'Balak',
-#                     u'Pinchas', u'Matot', u'Masei']
-# devarim_english = [u'Devarim', u'Vaetchanan', u'Eikev', u"Re'eh", u'Shoftim', u'Ki Teitzei', u'Ki Tavo',
-#                    u'Nitzavim', u'Vayeilech', u"Ha'Azinu", u"V'Zot HaBerachah"]
-# english_names = [bereishit_english, shemot_english, vayikra_english, bamidbar_english, devarim_english]
-#
-# book_english_names = [u'Bereshit', u'Shemot', u'Vayikra', u'Bamidbar', u'Devarim']
 
-pasuk_perek_number = regex.compile(u'\(?([\u05d0-\u05ea]{1,3})\)?([-_][\u05d0-\u05ea]{1,3})?\)?')
+def create_the_regex():
+    pasuk_perek_number = regex.compile(u'\(?([\u05d0-\u05ea]{1,3})\)?([-_][\u05d0-\u05ea]{1,3})?\)?')
+    return pasuk_perek_number
 
 
 def get_hebrew_parsha_names():
@@ -121,7 +101,7 @@ def create_intro_nodes():
     return intro_node
 
 
-def parse_and_post(rabbeinu_bahya_text_file):
+def parse_and_post(rabbeinu_bahya_text_file, the_regex):
     book, chapter, verse = [], [], []
     title_counter = 0
     most_recent_chapter = 0
@@ -154,7 +134,7 @@ def parse_and_post(rabbeinu_bahya_text_file):
 
                 new_chapter = True
 
-                matchObject = pasuk_perek_number.search(each_line)
+                matchObject = the_regex.search(each_line)
                 current_chapter = util.getGematria(matchObject.group(1))
                 diff = current_chapter - most_recent_chapter
                 while diff > 1:
@@ -172,7 +152,7 @@ def parse_and_post(rabbeinu_bahya_text_file):
                 else:
                     new_chapter = False
 
-                matchObject = pasuk_perek_number.search(each_line)
+                matchObject = the_regex.search(each_line)
                 current_verse = util.getGematria(matchObject.group(1))
                 diff = current_verse - most_recent_verse
                 while diff > 1:
@@ -408,7 +388,7 @@ def create_alt_struct_refs():
         "Chayei Sara" : {'intro': 'Rabbeinu_Bahya,_Bereshit.23.1.1-6', 'comments': 'Rabbeinu_Bahya,_Bereshit.23.1.7-25.8.2'},
         "Toldot" : {'intro': 'Rabbeinu_Bahya,_Bereshit.25.19.1-3', 'comments': 'Rabbeinu_Bahya,_Bereshit.25.19.4-27.41.4'},
         "Vayetzei" : {'intro': 'Rabbeinu_Bahya,_Bereshit.28.10.1-4', 'comments': 'Rabbeinu_Bahya,_Bereshit.28.10.5-32.3.1'},
-        "Vayishlach" : {'intro': 'Rabbeinu_Bahya,_Bereshit.32.4.1-10', 'comments': 'Rabbeinu_Bahya,_Bereshit.32.4.1-36.39.3'},
+        "Vayishlach" : {'intro': 'Rabbeinu_Bahya,_Bereshit.32.4.1-10', 'comments': 'Rabbeinu_Bahya,_Bereshit.32.4.11-36.39.3'},
         "Vayeshev" : {'intro': 'Rabbeinu_Bahya,_Bereshit.37.1.1-2', 'comments': 'Rabbeinu_Bahya,_Bereshit.37.1.3-40.20.4'},
         "Miketz" : {'intro': 'Rabbeinu_Bahya,_Bereshit.41.1.1-5', 'comments': 'Rabbeinu_Bahya,_Bereshit.41.1.6-44.17.6'},
         "Vayigash" : {'intro': 'Rabbeinu_Bahya,_Bereshit.44.18.1-6', 'comments': 'Rabbeinu_Bahya,_Bereshit.44.18.7-47.27.4'},
@@ -477,7 +457,7 @@ def create_parsha_refs():
     return parsha
 
 
-def create_alt_struct_dict(rabbeinu_bahya_text_file):
+def create_alt_struct_dict(rabbeinu_bahya_text_file, the_regex):
     first_perek, first_pasuk, current_perek, current_pasuk = 0, 0, 0, 0
     second_to_last_pasuk, second_to_last_comment_number = 0, 0
     first_comment_number, current_comment_number = 0, 0
@@ -503,18 +483,18 @@ def create_alt_struct_dict(rabbeinu_bahya_text_file):
 
             elif "@01" in each_line:
 
-                matchObject = pasuk_perek_number.search(each_line)
+                matchObject = the_regex.search(each_line)
                 if new_first_perek:
-                    matchObject = pasuk_perek_number.search(each_line)
+                    matchObject = the_regex.search(each_line)
                     first_perek = util.getGematria(matchObject.group(1))
                     new_first_perek = False
                 current_perek = util.getGematria(matchObject.group(1))
 
             elif "@22" in each_line:
 
-                matchObject = pasuk_perek_number.search(each_line)
+                matchObject = the_regex.search(each_line)
                 if new_first_pasuk:
-                    matchObject = pasuk_perek_number.search(each_line)
+                    matchObject = the_regex.search(each_line)
                     first_pasuk = util.getGematria(matchObject.group(1))
                     new_first_pasuk = False
                     new_comment = True
