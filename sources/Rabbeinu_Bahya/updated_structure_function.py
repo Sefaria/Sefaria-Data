@@ -16,60 +16,74 @@ import pdb
 import os
 import sys
 
-bereishit = [u'בראשית', u'נח', u'לך-לך', u'וירא', u'חיי שרה', u'תולדות', u'ויצא', u'וישלח', u'וישב', u'מקץ', u'ויגש',
+
+def create_the_regex():
+    pasuk_perek_number = regex.compile(u'\(?([\u05d0-\u05ea]{1,3})\)?([-_][\u05d0-\u05ea]{1,3})?\)?')
+    return pasuk_perek_number
+
+
+def get_hebrew_parsha_names():
+    bereishit = [u'בראשית', u'נח', u'לך-לך', u'וירא', u'חיי שרה', u'תולדות', u'ויצא', u'וישלח', u'וישב', u'מקץ', u'ויגש',
              u'ויחי']
-shemot = [u'שמות', u'וארא', u'בא', u'בשלח', u'יתרו', u'משפטים', u'תרומה', u'תצוה', u'כי תשא', u'ויקהל', u'פקודי']
-vayikra = [u'ויקרא', u'צו', u'שמיני', u'תזריא', u'מצרא', u'אחרי מות', u'קדשים', u'אמור', u'בהר', u'בחקתי']
-bamidbar = [u'במדבר', u'נשא', u'בהעלתך', u'שלח', u'קרח', u'חקת', u'בלק', u'פינחס', u'מטות', u'מסעי']
-devarim = [u'דברים', u'ואתחנן', u'עקב', u'ראה', u'שפטים', u'כי תצא', u'כי תבוא', u'נצבים', u'וילך', u'האזינו',
-           u'וזאת הברכה']
-hebrew_names = [bereishit, shemot, vayikra, bamidbar, devarim]
-
-bereishit_english = [u'Bereshit', u'Noach', u'Lech Lecha', u'Vayera', u'Chayei Sara', u'Toldot', u'Vayetzei',
-                     u'Vayishlach', u'Vayeshev', u'Miketz', u'Vayigash', u'Vayechi']
-shemot_english = [u'Shemot', u'Vaera', u'Bo', u'Beshalach', u'Yitro', u'Mishpatim', u'Terumah', u'Tetzaveh',
-                  u'Ki Tisa', u'Vayakhel', u'Pekudei']
-vayikra_english = [u'Vayikra', u'Tzav', u'Shmini', u'Tazria', u'Metzora', u'Achrei Mot', u'Kedoshim', u'Emor',
-                   u'Behar', u'Bechukotai']
-bamidbar_english = [u'Bamidbar', u'Nasso', u"Beha'alotcha", u"Sh'lach", u'Korach', u'Chukat', u'Balak',
-                    u'Pinchas', u'Matot', u'Masei']
-devarim_english = [u'Devarim', u'Vaetchanan', u'Eikev', u"Re'eh", u'Shoftim', u'Ki Teitzei', u'Ki Tavo',
-                   u'Nitzavim', u'Vayeilech', u"Ha'Azinu", u"V'Zot HaBerachah"]
-english_names = [bereishit_english, shemot_english, vayikra_english, bamidbar_english, devarim_english]
-
-book_english_names = [u'Bereshit', u'Shemot', u'Vayikra', u'Bamidbar', u'Devarim']
-pasuk_perek_number = regex.compile(u'\(?([\u05d0-\u05ea]{1,3})\)?([-_][\u05d0-\u05ea]{1,3})?\)?')
+    shemot = [u'שמות', u'וארא', u'בא', u'בשלח', u'יתרו', u'משפטים', u'תרומה', u'תצוה', u'כי תשא', u'ויקהל', u'פקודי']
+    vayikra = [u'ויקרא', u'צו', u'שמיני', u'תזריא', u'מצרא', u'אחרי מות', u'קדשים', u'אמור', u'בהר', u'בחקתי']
+    bamidbar = [u'במדבר', u'נשא', u'בהעלתך', u'שלח', u'קרח', u'חקת', u'בלק', u'פינחס', u'מטות', u'מסעי']
+    devarim = [u'דברים', u'ואתחנן', u'עקב', u'ראה', u'שפטים', u'כי תצא', u'כי תבוא', u'נצבים', u'וילך', u'האזינו',
+               u'וזאת הברכה']
+    hebrew_names = [bereishit, shemot, vayikra, bamidbar, devarim]
+    return hebrew_names
 
 
-def create_rb_indices():
-    structs = create_alternate_structs()
-    rabbeinu_bahya_book = new_index()
+def get_english_parsha_names():
+    bereishit_english = [u'Bereshit', u'Noach', u'Lech Lecha', u'Vayera', u'Chayei Sara', u'Toldot', u'Vayetzei',
+                         u'Vayishlach', u'Vayeshev', u'Miketz', u'Vayigash', u'Vayechi']
+    shemot_english = [u'Shemot', u'Vaera', u'Bo', u'Beshalach', u'Yitro', u'Mishpatim', u'Terumah', u'Tetzaveh',
+                      u'Ki Tisa', u'Vayakhel', u'Pekudei']
+    vayikra_english = [u'Vayikra', u'Tzav', u'Shmini', u'Tazria', u'Metzora', u'Achrei Mot', u'Kedoshim', u'Emor',
+                       u'Behar', u'Bechukotai']
+    bamidbar_english = [u'Bamidbar', u'Nasso', u"Beha'alotcha", u"Sh'lach", u'Korach', u'Chukat', u'Balak',
+                        u'Pinchas', u'Matot', u'Masei']
+    devarim_english = [u'Devarim', u'Vaetchanan', u'Eikev', u"Re'eh", u'Shoftim', u'Ki Teitzei', u'Ki Tavo',
+                       u'Nitzavim', u'Vayeilech', u"Ha'Azinu", u"V'Zot HaBerachah"]
+    english_names = [bereishit_english, shemot_english, vayikra_english, bamidbar_english, devarim_english]
+    book_english_names = [u'Bereshit', u'Shemot', u'Vayikra', u'Bamidbar', u'Devarim']
+    return english_names
+
+
+def create_rb_indices(english_names, hebrew_names):
+    structs = rabbeinu_bahya_alt_struct(english_names, hebrew_names)
+    #structs.validate()
+    rabbeinu_bahya_book = new_index(english_names, hebrew_names)
     rabbeinu_bahya_book.validate()
     index = {
         "title": "Rabbeinu Bahya",
         "titleVariants": ["Rabbeinu Bechaye", "Rabbeinu Bahya ben Asher"],
         "categories": ["Commentary2", "Tanakh", "Rabbeinu Bahya"],
-        "alt_structs": {"Parsha": structs.serialize()},
+        "alt_structs": {"Parasha": structs.serialize()},
+        "default_struct": "Parasha",
         "schema": rabbeinu_bahya_book.serialize()
     }
     return index
 
 
-def new_index():
+def new_index(english_names, hebrew_names):
     rb_on_humash = SchemaNode()
     rb_on_humash.add_title('Rabbeinu Bahya', 'en', primary=True)
     rb_on_humash.add_title(u'רבינו בחיי', 'he', primary=True)
     rb_on_humash.key = 'Rabbeinu Bahya'
     rb_on_humash.append(create_intro_nodes())
-    for book_name in book_english_names:
-        rb_on_humash.append(create_book_ja_node(book_name))
+    for english_book_name, hebrew_book_name in zip(english_names, hebrew_names):
+        rb_on_humash.append(create_book_ja_node(english_book_name, hebrew_book_name))
     return rb_on_humash
 
 
-def create_book_ja_node(book_name):
+def create_book_ja_node(english_book_name, hebrew_book_name):
+    en_name = english_book_name[0]
+    he_name = hebrew_book_name[0]
     book_node = JaggedArrayNode()
-    book_node.add_shared_term(book_name)
-    book_node.key = book_name
+    book_node.key = en_name
+    book_node.add_title(en_name, 'en', primary=True)
+    book_node.add_title(he_name, 'he', primary=True)
     book_node.depth = 3
     book_node.addressTypes = ["Integer", "Integer", "Integer"]
     book_node.sectionNames = ["Chapter", "Verse", "Comment"]
@@ -87,7 +101,7 @@ def create_intro_nodes():
     return intro_node
 
 
-def parse_and_post(rabbeinu_bahya_text_file):
+def parse_and_post(rabbeinu_bahya_text_file, the_regex):
     book, chapter, verse = [], [], []
     title_counter = 0
     most_recent_chapter = 0
@@ -120,7 +134,7 @@ def parse_and_post(rabbeinu_bahya_text_file):
 
                 new_chapter = True
 
-                matchObject = pasuk_perek_number.search(each_line)
+                matchObject = the_regex.search(each_line)
                 current_chapter = util.getGematria(matchObject.group(1))
                 diff = current_chapter - most_recent_chapter
                 while diff > 1:
@@ -138,10 +152,9 @@ def parse_and_post(rabbeinu_bahya_text_file):
                 else:
                     new_chapter = False
 
-                matchObject = pasuk_perek_number.search(each_line)
+                matchObject = the_regex.search(each_line)
                 current_verse = util.getGematria(matchObject.group(1))
                 diff = current_verse - most_recent_verse
-
                 while diff > 1:
                         chapter.append([])
                         diff -= 1
@@ -152,7 +165,7 @@ def parse_and_post(rabbeinu_bahya_text_file):
                 continue
 
             else:
-                each_line = clean_up(each_line)
+                each_line = clean_up(each_line, title_counter)
                 verse.append(each_line)
 
     chapter.append(verse)
@@ -160,21 +173,23 @@ def parse_and_post(rabbeinu_bahya_text_file):
     post_the_text(book, title_counter)
 
 
-def clean_up(string):
+def clean_up(string, title_counter):
     if "@05" in string:
-        string = amend_mishlei_verse(string)
+        string = amend_mishlei_verse(string, title_counter)
 
     string = add_bold(string, ["@05", "@11", "@66"], ["@33"])
-    string = remove_tags(string, ["@44", "@55", "@22", "@01", "@00"])
+    string = remove_substrings(string, ["@44", "@55", "@22", "@01", "@00"])
 
     return string
 
 
-def amend_mishlei_verse(string):
-    string = remove_tags(string, ['.', ':'])
+def amend_mishlei_verse(string, title_counter):
+    string = remove_substrings(string, ['.', ':'])
     string = regex.sub(u'\(\u05de\u05e9\u05dc\u05d9\s[\u05d0-\u05ea]{1,3}\)', '', string)
     string = string.strip()
-    string += u" \u2013 \u05de\u05e9\u05dc\u05d9</b>"
+    if title_counter > 0:
+        string += u"#$"
+    string += u"</b>"
     return string
 
 
@@ -186,7 +201,7 @@ def add_bold(string, list_of_opening_tags, list_of_closing_tags):
     return string
 
 
-def remove_tags(string, list_of_tags):
+def remove_substrings(string, list_of_tags):
     for tag in list_of_tags:
         string = string.replace(tag, '')
     return string
@@ -195,12 +210,13 @@ def remove_tags(string, list_of_tags):
 def post_the_text(jagged_array, title_counter):
     ref = create_ref(title_counter)
     text = create_text(jagged_array)
-    functions.post_text(ref, text)
     if title_counter > 0:
         list_of_links = create_links(jagged_array, title_counter)
-        print(list_of_links)
+    #The post_text must be after the creation of the links because create_links() changes the actual text
+    functions.post_text(ref, text)
+    if title_counter > 0:
+        print 1
         functions.post_link(list_of_links)
-    print ref
 
 
 def create_ref(title_counter):
@@ -230,17 +246,23 @@ def create_links(rb_ja, title_counter):
                 divrei_hamatchil = get_divrei_hamatchil(comment)
                 if divrei_hamatchil:
                     rb_dictionary = create_rb_dict(titles[title_counter], perek_index+1, pasuk_index+1, comment_index+1)
-                    if u'\u05de\u05e9\u05dc\u05d9' in divrei_hamatchil:
-                        list_of_links.append(create_mishlei_link(divrei_hamatchil, proverbs, rb_dictionary))
+                    if u'#$' in divrei_hamatchil:
+                        mishlei_info_dict = find_mishlei_info(divrei_hamatchil, proverbs, rb_dictionary)
+                        divrei_hamatchil = remove_substrings(divrei_hamatchil, [u'#$'])
+                        print divrei_hamatchil
+
+                        rb_ja[perek_index][pasuk_index][comment_index] = u'<b>{} (\u05de\u05e9\u05dc\u05d9 {}, {})</b>'.format(divrei_hamatchil, mishlei_info_dict['perek'], mishlei_info_dict['pasuk'])
+                        if title_counter == 2 and perek_index+1 == 35 and pasuk_index+1 == 1 and comment_index+1 == 1:
+                            rb_ja[perek_index][pasuk_index][comment_index] = u'<b>{} (\u05de\u05e9\u05dc\u05d9 \u05db\u05d3, \u05d9\u05d2\u002d\u05d9\u05d3)</b>'.format(divrei_hamatchil)
 
                     elif divrei_hamatchil[-1] == '.':
-                        list_of_links.append(create_the_link(rb_dictionary))
+                        list_of_links.append(create_link_dictionary(rb_dictionary))
 
                     else:
                         divrei_hamatchil = reduce_it_to_letters(divrei_hamatchil)
                         pasuk_chumash = reduce_it_to_letters(pasuk_chumash)
                         if divrei_hamatchil in pasuk_chumash:
-                            list_of_links.append(create_the_link(rb_dictionary))
+                            list_of_links.append(create_link_dictionary(rb_dictionary))
 
     return list_of_links
 
@@ -262,6 +284,13 @@ def get_divrei_hamatchil(comment):
     divrei_hamatchil = comment[divrei_hamatchil_start:divrei_hamatchil_end]
     divrei_hamatchil = divrei_hamatchil.strip()
     return divrei_hamatchil
+
+
+def find_mishlei_info(divrei_hamatchil, proverbs, rb_dict):
+    for mishlei_perek_index, perek in enumerate(proverbs):
+        for mishlei_pasuk_index, pasuk in enumerate(perek):
+            if fuzz.partial_ratio(divrei_hamatchil, pasuk) > 70:
+                return {'perek': functions.numToHeb(mishlei_perek_index+1), 'pasuk': functions.numToHeb(mishlei_pasuk_index+1)}
 
 
 def create_mishlei_link(divrei_hamatchil, proverbs, rb_dict):
@@ -287,7 +316,7 @@ def reduce_it_to_letters(full_string):
     return ''.join(just_hebrew_letters)
 
 
-def create_the_link(rb_dict):
+def create_link_dictionary(rb_dict):
     return {
                 "refs": [
                         "Rabbeinu Bahya, {}.{}.{}.{}".format(rb_dict['sefer'], rb_dict['perek'], rb_dict['pasuk'], rb_dict['comment']),
@@ -297,14 +326,14 @@ def create_the_link(rb_dict):
         }
 
 
-def create_alternate_structs():
-    index = rabbeinu_bahya_index()
+def create_alternate_structs(english_names, hebrew_names):
+    index = rabbeinu_bahya_alt_struct(english_names, hebrew_names)
     return index
 
 
-def rabbeinu_bahya_index():
+def rabbeinu_bahya_alt_struct(english_names, hebrew_names):
     rb_on_humash = SchemaNode()
-    rb_on_humash.append(create_alt_struct_intro_nodes('Rabbeinu_Bahya,_Introduction.1-5', include_section=False))
+    rb_on_humash.append(create_alt_struct_intro_nodes('Rabbeinu_Bahya,_Introduction.1-5', 'Introduction to the Book', u'הקדמה לספר', include_section=False))
     for english_parsha_names, hebrew__parsha_names in zip(english_names, hebrew_names):
         rb_on_humash.append(create_book_node(english_parsha_names, hebrew__parsha_names))
     return rb_on_humash
@@ -325,7 +354,7 @@ def create_parsha_node(english_parsha_name):
     parsha_node = SchemaNode()
     parsha_node.add_shared_term(english_parsha_name)
     parsha_node.key = english_parsha_name
-    parsha_node.append(create_alt_struct_intro_nodes(dictionary[english_parsha_name]['intro']))
+    parsha_node.append(create_alt_struct_intro_nodes(dictionary[english_parsha_name]['intro'], 'Introduction', u'הקדמה'))
     parsha_node.append(create_jagged_array_node(english_parsha_name, dictionary[english_parsha_name]['comments']))
     return parsha_node
 
@@ -339,10 +368,10 @@ def create_jagged_array_node(en_parsha_name, whole_ref, include_section=True):
     return ja_node
 
 
-def create_alt_struct_intro_nodes(whole_ref, include_section=True):
+def create_alt_struct_intro_nodes(whole_ref, en_title, he_title, include_section=True):
     intro_node = ArrayMapNode()
-    intro_node.add_title('Introduction', 'en', True)
-    intro_node.add_title('הקדמה', 'he', True)
+    intro_node.add_title(en_title, 'en', True)
+    intro_node.add_title(he_title, 'he', True)
     intro_node.depth = 0
     intro_node.wholeRef = whole_ref
     intro_node.includeSections = include_section
@@ -358,8 +387,8 @@ def create_alt_struct_refs():
         "Vayera" : {'intro': 'Rabbeinu_Bahya,_Bereshit.18.1.1-2', 'comments': 'Rabbeinu_Bahya,_Bereshit.18.1.3-22.20.1'},
         "Chayei Sara" : {'intro': 'Rabbeinu_Bahya,_Bereshit.23.1.1-6', 'comments': 'Rabbeinu_Bahya,_Bereshit.23.1.7-25.8.2'},
         "Toldot" : {'intro': 'Rabbeinu_Bahya,_Bereshit.25.19.1-3', 'comments': 'Rabbeinu_Bahya,_Bereshit.25.19.4-27.41.4'},
-        "Vayetzei" : {'intro': 'Rabbeinu_Bahya,_Bereshit.28.10.1-4', 'comments': 'Rabbeinu_Bahya,_Bereshit.28.10.5-32.2.1'},
-        "Vayishlach" : {'intro': 'Rabbeinu_Bahya,_Bereshit.32.3.1-10', 'comments': 'Rabbeinu_Bahya,_Bereshit.32.4.1-36.39.3'},
+        "Vayetzei" : {'intro': 'Rabbeinu_Bahya,_Bereshit.28.10.1-4', 'comments': 'Rabbeinu_Bahya,_Bereshit.28.10.5-32.3.1'},
+        "Vayishlach" : {'intro': 'Rabbeinu_Bahya,_Bereshit.32.4.1-10', 'comments': 'Rabbeinu_Bahya,_Bereshit.32.4.11-36.39.3'},
         "Vayeshev" : {'intro': 'Rabbeinu_Bahya,_Bereshit.37.1.1-2', 'comments': 'Rabbeinu_Bahya,_Bereshit.37.1.3-40.20.4'},
         "Miketz" : {'intro': 'Rabbeinu_Bahya,_Bereshit.41.1.1-5', 'comments': 'Rabbeinu_Bahya,_Bereshit.41.1.6-44.17.6'},
         "Vayigash" : {'intro': 'Rabbeinu_Bahya,_Bereshit.44.18.1-6', 'comments': 'Rabbeinu_Bahya,_Bereshit.44.18.7-47.27.4'},
@@ -428,7 +457,7 @@ def create_parsha_refs():
     return parsha
 
 
-def create_alt_struct_dict(rabbeinu_bahya_text_file):
+def create_alt_struct_dict(rabbeinu_bahya_text_file, the_regex):
     first_perek, first_pasuk, current_perek, current_pasuk = 0, 0, 0, 0
     second_to_last_pasuk, second_to_last_comment_number = 0, 0
     first_comment_number, current_comment_number = 0, 0
@@ -454,18 +483,18 @@ def create_alt_struct_dict(rabbeinu_bahya_text_file):
 
             elif "@01" in each_line:
 
-                matchObject = pasuk_perek_number.search(each_line)
+                matchObject = the_regex.search(each_line)
                 if new_first_perek:
-                    matchObject = pasuk_perek_number.search(each_line)
+                    matchObject = the_regex.search(each_line)
                     first_perek = util.getGematria(matchObject.group(1))
                     new_first_perek = False
                 current_perek = util.getGematria(matchObject.group(1))
 
             elif "@22" in each_line:
 
-                matchObject = pasuk_perek_number.search(each_line)
+                matchObject = the_regex.search(each_line)
                 if new_first_pasuk:
-                    matchObject = pasuk_perek_number.search(each_line)
+                    matchObject = the_regex.search(each_line)
                     first_pasuk = util.getGematria(matchObject.group(1))
                     new_first_pasuk = False
                     new_comment = True
