@@ -1,11 +1,12 @@
 # encoding=utf-8
 import re
-import csv
+import unicodecsv as csv
 import codecs
 from data_utilities.sanity_checks import TagTester
 from data_utilities import util
 from sources.Match.match import Match
 from sources import functions
+import json
 from sefaria.model import *
 
 filename = 'Minchat_Chinuch.txt'
@@ -251,48 +252,76 @@ def build_links(parent_name, current_name, chapter, match_list):
     return links
 
 
-def get_data(filename):
+def read_csv(filename):
 
     data = []
-    with codecs.open(filename, 'r', 'utf-8') as data_file:
+    with open(filename) as data_file:
+        names = csv.DictReader(data_file, encoding='utf-8')
 
-        parsha = None
-
-        for line in data_file:
-
-            if re.match(u'@55', line):
-                if parsha:
-                    data.append(parsha)
-
-                parsha = {
-                    'parsha_name': line.replace(u'@55', u''),
-                    'mitzvot': []
-                }
-
-            elif re.match(u'@51', line):
-                parsha['mitzvot'].append(line.replace(u'@51', u''))
-        else:
-            data.append(parsha)
+        for line in names:
+            data.append(line)
     return data
 
 
-def construct_alt_struct(data_file, name):
+def add_mitzva(mitzva, index):
+    """
+    Create an ArrayMapNode for an individual Mitzva
+    :param mitzva: Dictionary with keys "English" and "Hebrew" for corresponding language names.
+    :param index: Index of the mitzva to be called by Ref or url
+    :return: Assembled ArrayMapNode
+    """
 
-    struct = {'nodes': []}
+    # check if English was added
+    if re.search(u'English Translation Here', mitzva['English']):
+        mitzva['English'] = u'Mitzva {}'.format(index)
 
-    for title in get_data(data_file):
+    node = ArrayMapNode()
+    node.wholeRef = 'Minchat Chinukh.{}'.format(index)
+    node.depth = 0
+    node.add_title(mitzva['English'], 'en', True)
+    node.add_title(mitzva['Hebrew'], 'he', True)
 
-        node = {
-            'depth': 0,
-            'sharedTitle': title['Parsha'],
-            'nodeType': 'ArrayMapNode',
-            'wholeRef': 'Minchat Chinukh.{}'.format(title['ref']),
-            'includeSections': True
-        }
+    return node
 
-        struct['nodes'].append(node)
 
-    return {name: struct}
+def add_parsha(parsha_name, children, mitzva_node_list):
+    """
+    Creates a SchemaNode for a parsha with all ArrayMapNodes for mitzvot properly appended
+    :param parsha_name: Name of the Parsha
+    :param children: Integer or range (i.e. 3-8)
+    :param mitzva_node_list: A list of ArrayMapNodes from which to select children for this Node.
+    :return: SchemaNode
+    """
+
+    # determine if node has one child or many
+    if children.find('-') >= 0:
+        edges = [int(x) for x in children.split('-')]
+        child_nodes = mitzva_node_list[edges[0]-1:edges[1]]
+
+    else:
+        child_nodes = [mitzva_node_list[int(children)-1]]
+
+    node = SchemaNode()
+    node.add_shared_term(parsha_name)
+    for child in child_nodes:
+        node.append(child)
+
+    return node
+
+
+def construct_alt_struct(parsha_file, mitzva_file):
+
+    mitzvot, parashot = read_csv(mitzva_file), read_csv(parsha_file)
+    mitzva_nodes= []
+    root = SchemaNode()
+
+    for index, mitzva in enumerate(mitzvot):
+        mitzva_nodes.append(add_mitzva(mitzva, index+1))
+
+    for parsha in parashot:
+        root.append(add_parsha(parsha['Parsha'], parsha['Includes'], mitzva_nodes))
+
+    return root
 
 
 def construct_index(alt_struct=None):
@@ -313,7 +342,8 @@ def construct_index(alt_struct=None):
     }
 
     if alt_struct:
-        index['alt_structs'] = alt_struct
+        index['alt_structs'] = {'Parsha': alt_struct.serialize()}
+        index['default_struct'] = 'Parsha'
 
     return index
 
@@ -344,7 +374,7 @@ def post():
         for each_link in chinukh_links:
             outfile.write(u'{}\n'.format(each_link['refs']))
 
-    alt = construct_alt_struct('Chinukh_by_Parsha.csv', u'Parsha')
+    alt = construct_alt_struct('Chinukh_by_Parsha.csv', 'Chinukh Mitzva names.csv')
 
     cleaned = util.clean_jagged_array(minchat['text'], [m_pattern, comment_pattern, u'@[0-9]{2}',
                                       u'\n', u'\r'])
@@ -363,3 +393,4 @@ def post():
     functions.post_text('Minchat Chinukh', full_text)
     functions.post_link(chinukh_links)
 
+post()
