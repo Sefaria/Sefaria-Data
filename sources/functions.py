@@ -282,7 +282,7 @@ def post_index(index):
         response = urllib2.urlopen(req)
         print response.read()
     except HTTPError as e:
-        pdb.set_trace()
+        errors.write(e.read())
         print "error"
 
 
@@ -355,7 +355,6 @@ def post_text(ref, text, index_count="off"):
         if x.find("error")>=0 and x.find("Daf")>=0 and x.find("0")>=0:
             return "error"
     except HTTPError, e:
-        pdb.set_trace()
         errors.write(e.read())
 
 
