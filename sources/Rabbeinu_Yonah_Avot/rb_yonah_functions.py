@@ -32,15 +32,15 @@ def create_schema():
     rb_schema.add_title('Rabbeinu Yonah on Pirkei Avot', 'en', primary=True)
     rb_schema.add_title(u'רבינו יונה על פרקי אבות', 'he', primary=True)
     rb_schema.key = 'Rabbeinu Yonah on Pirkei Avot'
-    rb_schema.depth = 2
-    rb_schema.addressTypes = ["Integer", "Integer"]
-    rb_schema.sectionNames = ["Perek", "Mishna"]
+    rb_schema.depth = 3
+    rb_schema.addressTypes = ["Integer", "Integer", "Integer"]
+    rb_schema.sectionNames = ["Perek", "Mishna", "Comment"]
     return rb_schema
 
 
 def parse_and_post(file_name):
     mishna_number_regex = regex.compile(u'([\u05d0-\u05ea]{1,3})')
-    rb_yonah_on_avot, perek_level_list = [], []
+    rb_yonah_on_avot, perek_level_list, mishna_level_list = [], [], []
     new_perek, first_perek = True, True
     last_mishna = 0
     with codecs.open(file_name, 'r', 'utf-8') as the_file:
@@ -48,25 +48,38 @@ def parse_and_post(file_name):
 
             if "@00" in each_line:
                 if not first_perek:
+                    perek_level_list.append(mishna_level_list)
                     rb_yonah_on_avot.append(perek_level_list)
-                    perek_level_list = []
+                    perek_level_list, mishna_level_list = [], []
+                    new_perek = True
+
                 else:
                     first_perek = False
-                last_mishna = 0
 
             elif "@22" in each_line:
-                match_object = mishna_number_regex.search(each_line)
-                mishna_number = util.getGematria(match_object.group(1))
-                diff = mishna_number - last_mishna
-                if diff > 1:
-                    perek_level_list.append("")
-                    diff -= 1
+                if not new_perek:
 
-                last_mishna = mishna_number
+                    match_object = mishna_number_regex.search(each_line)
+                    mishna_number = util.getGematria(match_object.group(1))
+                    diff = mishna_number - last_mishna
+                    if diff > 1:
+                        perek_level_list.append([])
+                        diff -= 1
+
+                    perek_level_list.append(mishna_level_list)
+                    mishna_level_list = []
+                    last_mishna = mishna_number
+
+                else:
+                    new_perek = False
+                    last_mishna = 1
 
             else:
                 each_line = clean_up_string(each_line)
-                perek_level_list.append(each_line)
+                divided_string = each_line.split(':')
+                for line in divided_string:
+                    if line.strip():
+                        mishna_level_list.append(line)
 
         rb_yonah_on_avot.append(perek_level_list)
         post_the_text(rb_yonah_on_avot)
@@ -95,7 +108,7 @@ def change_brackets_to_paranthesis(string):
 
 def post_the_text(ja):
     testing_file = codecs.open("testing_file.txt", 'w', 'utf-8')
-    util.jagged_array_to_file(testing_file, ja, ['Perek', 'Mishna'])
+    util.jagged_array_to_file(testing_file, ja, ['Perek', 'Mishna','Comment'])
     testing_file.close()
     ref = create_ref()
     text = create_text(ja)
