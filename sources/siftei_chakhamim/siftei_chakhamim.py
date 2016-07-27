@@ -3,6 +3,7 @@ import codecs
 from bs4 import BeautifulSoup
 import urllib2
 import re
+import unicodecsv as ucsv
 from data_utilities import util
 from sefaria.model import *
 
@@ -36,7 +37,7 @@ class DaatRashiGrabber:
             else:
                 verse['verse_number'] = util.getGematria(match.group(1))
 
-            for line in span.text.split(u'\n'):
+            for line in self.structure_rashi(span.text):
                 if line is not u'':
                     # add all Siftei Chakhamim in an array according to each Rashi comment.
                     verse['comments'].append(re.findall(u'\[([\u05d0-\u05ea])\]', line))
@@ -44,12 +45,49 @@ class DaatRashiGrabber:
             rashis.append(verse)
         return rashis
 
-    def write_to_csv(self, output_file):
+    @staticmethod
+    def structure_rashi(rashi_text):
+        """
+        take rashi on a verse and break it up into individual comments
+        :param rashi_text: unicode without any html tags
+        :return:
+        """
+        current, comments = None, []
+        lines = rashi_text.split(u'\n')
+        for line in lines:
+            if line == u'':
+                continue
+
+            elif line.find(u'-') >= 0 or current is None:
+                if current is not None:
+                    comments.append(current)
+                current = line
+
+            else:
+                current += line
+        else:
+            if current is not None and current is not u'':
+                comments.append(current)
+
+        return comments
+
+    def write_to_csv(self, output_file, headers=False):
+
+        columns = [u'Book', u'Chapter', u'Verse', u'Comment', u'Super Comment']
+        writer = ucsv.DictWriter(output_file, fieldnames=columns, encoding='utf-8')
+        if headers:
+            writer.writeheader()
 
         for rashi in self.rashis:
             for index, comment in enumerate(rashi['comments']):
                 for super_comment in comment:
-                    output_file.write(u'{};{};{};{};{}\n'.format(
-                        self.book, self.chapter, rashi['verse_number'], index+1, super_comment
-                    ))
+                    writer.writerow({
+                        u'Book': self.book,
+                        u'Chapter': self.chapter,
+                        u'Verse': rashi['verse_number'],
+                        u'Comment': index+1,
+                        u'Super Comment': super_comment
+                    })
+
+
 
