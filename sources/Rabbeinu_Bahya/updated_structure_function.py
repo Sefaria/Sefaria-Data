@@ -87,6 +87,7 @@ def create_book_ja_node(english_book_name, hebrew_book_name):
     book_node.depth = 3
     book_node.addressTypes = ["Integer", "Integer", "Integer"]
     book_node.sectionNames = ["Chapter", "Verse", "Comment"]
+    book_node.toc_zoom = 2
     return book_node
 
 
