@@ -58,11 +58,16 @@ def parse_and_post(file_name):
 
             elif "@22" in each_line:
                 if not new_perek:
+                    """
+                    perek_level_list.append(mishna_level_list)
+                    mishna_level_list = []
+                    last_mishna = mishna_number
+                    """
 
                     match_object = mishna_number_regex.search(each_line)
                     mishna_number = util.getGematria(match_object.group(1))
                     diff = mishna_number - last_mishna
-                    if diff > 1:
+                    while diff > 1:
                         perek_level_list.append([])
                         diff -= 1
 
