@@ -133,15 +133,16 @@ def create_links(rb_ja):
     list_of_links = []
     for perek_index, perek in enumerate(rb_ja):
         for mishna_index, mishna in enumerate(perek):
-            list_of_links.append(create_link_dicttionary(perek_index+1, mishna_index+1))
+            for comment_index, comment in enumerate(mishna):
+                list_of_links.append(create_link_dicttionary(perek_index+1, mishna_index+1, comment_index+1))
     functions.post_link(list_of_links)
 
 
-def create_link_dicttionary(perek_bumber, mishna_number):
+def create_link_dicttionary(perek_bumber, mishna_number, comment_index):
     return {
                 "refs": [
                         "Pirkei Avot {}.{}".format(perek_bumber, mishna_number),
-                        "Rabbeinu Yonah on Pirkei Avot {}.{}".format(perek_bumber, mishna_number)
+                        "Rabbeinu Yonah on Pirkei Avot {}.{}.{}".format(perek_bumber, mishna_number, comment_index)
                     ],
                 "type": "commentary",
         }

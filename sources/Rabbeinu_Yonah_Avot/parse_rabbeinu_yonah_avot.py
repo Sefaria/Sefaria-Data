@@ -27,4 +27,4 @@ text record
 rb_index = rb_yonah_functions.create_index()
 functions.post_index(rb_index)
 rb_yonah_ja = rb_yonah_functions.parse_and_post('rabbeinu_yonah_on_avot.txt')
-# rb_yonah_functions.create_links(rb_yonah_ja)
+rb_yonah_functions.create_links(rb_yonah_ja)
