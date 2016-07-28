@@ -3,6 +3,7 @@ import codecs
 from bs4 import BeautifulSoup
 import urllib2
 import re
+from data_utilities import util
 from xml.etree import ElementTree as ET
 import unicodecsv as ucsv
 from data_utilities import util
@@ -21,7 +22,8 @@ Chapters can be found using the @75-@73 pattern:
 @75([\u05d0-\u05ea]{1,2})@73
 
 Individual comments can be found with @55-@73, although work needs to be done to ensure there are no missed tags.
-@55([\u05d0-\u05ea]{1,2})@73
+A sequence of characters and numbers can appear after the @55, so this must be accounted for.
+@55(>!05#[0-9]{4}<)?([\u05d0-\u05ea]{1,2})@73
 
 This text numbers comments by letter (i.e. א,ב,ג...י,כ,ל). Therefore, a custom key is needed to examine the data.
 """
@@ -161,3 +163,53 @@ class DaatRashiGrabber:
                     scomment.text = super_comment
 
         return ET.ElementTree(root)
+
+
+class TextParser:
+    chap_reg = re.compile(u'@75([\u05d0-\u05ea]{1,2})@73')
+    comment_reg = re.compile(u'@55(>!05#[0-9]{4}<)?([\u05d0-\u05ea]{1,2})@73')
+
+    def __init__(self, file_name):
+        self.file_name = file_name
+        self.string = self.file_to_string()
+        self.chapter_strings = self.string_to_chapters()
+        self.parsed_chapters = self.parse_chapters()
+
+    def file_to_string(self):
+        with codecs.open(self.file_name, 'r', 'utf-8') as text_file:
+            lines = [line.replace(u'\n', u'') for line in text_file]
+
+        all_text = u' '.join(lines)
+        all_text = re.sub(u' +', u' ', all_text)
+        return all_text
+
+    def string_to_chapters(self):
+
+        # find all chapters
+        matches = self.chap_reg.finditer(self.string)
+
+        chapters = []
+        start_index = next(matches)
+        for next_index in matches:
+            chapters.append(self.string[start_index.start():next_index.start()])
+            start_index = next_index
+        else:
+            chapters.append(self.string[start_index.start():])
+
+        return chapters
+
+    def parse_chapters(self):
+        chapters = []
+
+        for unparsed in self.chapter_strings:
+            matches = self.comment_reg.finditer(unparsed)
+            comments = []
+            start_index = next(matches)
+            for next_index in matches:
+                comments.append(unparsed[start_index.start():next_index.start()])
+                start_index = next_index
+            else:
+                comments.append(unparsed[start_index.start():])
+            chapters.append(comments)
+
+        return chapters
