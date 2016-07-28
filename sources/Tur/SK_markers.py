@@ -350,6 +350,7 @@ def post_commentary(commentator):
     for helek in text:
         data = tag_csv_files[helek].read()
         data = eval(data)
+        pdb.set_trace()
         print helek
         text_array = convertDictToArray(text[helek])
         send_text = {
@@ -363,6 +364,7 @@ def post_commentary(commentator):
             for seif_katan_num, seif_katan in enumerate(text_array[siman_num]):
                 if commentator == "Drisha" or commentator == "Prisha" or commentator == "Darchei Moshe": 
                     try:
+                      pdb.set_trace()
                       if str(seif_katan_num+1) in data[str(siman_num+1)][commentator]:
                         link_to = "Tur,_"+str(helek)+"."+str(siman_num+1)+".1"
                       elif str(seif_katan_num+1) in data[str(siman_num+1)]["Beit_Yosef"]:
@@ -399,7 +401,7 @@ if __name__ == "__main__":
   elif sys.argv[1] == 'Prisha':
     files_helekim = ["Orach_Chaim/prisha orach chaim.txt", "yoreh deah/prisha yoreh deah.txt",
    "Even HaEzer/prisha even haezer.txt"]
-    create_indexes(eng_helekim, heb_helekim, "Prisha", u"פרישה")
+    #create_indexes(eng_helekim, heb_helekim, "Prisha", u"פרישה")
     parse_text(eng_helekim, files_helekim, "Prisha")
     post_commentary("Prisha")
   elif sys.argv[1] == 'BeitYosef':

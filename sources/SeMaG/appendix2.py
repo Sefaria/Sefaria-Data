@@ -28,27 +28,22 @@ root.add_title(u'סמ"ג', 'he')
 root.key = "smg"
 
 
-vol1 = SchemaNode()
-vol1.key = 'vol2'
+vol1 = JaggedArrayNode()
+vol1.key = 'vol1'
 vol1.add_title("Volume One", "en", primary=True)
-vol1.add_title(u"חלק "+numToHeb(1), "he", primary=True)
-
-default_node = JaggedArrayNode()
-default_node.depth = 2
-default_node.sectionNames = ["Mitzvah", "Paragraph"]
-default_node.addressTypes = ["Integer", "Integer"]
-default_node.default = True
-default_node.key = "default"
-vol1.append(default_node)
+vol1.add_title(u"חלק הלאוין", "he", primary=True)
+vol1.sectionNames = ["Negative Mitzvah", "Paragraph"]
+vol1.addressTypes = ["Integer", "Integer"]
+vol1.depth = 2
 
 vol2 = SchemaNode()
 vol2.key = 'vol2'
 vol2.add_title("Volume Two", "en", primary=True)
-vol2.add_title(u"חלק "+numToHeb(2), "he", primary=True)
+vol2.add_title(u"חלק העשין", "he", primary=True)
 
 default_node = JaggedArrayNode()
 default_node.depth = 2
-default_node.sectionNames = ["Mitzvah", "Paragraph"]
+default_node.sectionNames = ["Positive Mitzvah", "Paragraph"]
 default_node.addressTypes = ["Integer", "Integer"]
 default_node.default = True
 default_node.key = "default"
