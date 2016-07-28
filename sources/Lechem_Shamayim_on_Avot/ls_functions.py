@@ -69,7 +69,6 @@ def parse_and_post(file_name):
                         perek_level_list.append([])
                         diff -= 1
 
-
                     last_mishna = mishna_number
 
                 else:
