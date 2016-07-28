@@ -33,11 +33,11 @@ grdn = Garden({"key": garden_key, "title": u"Jerusalem", "heTitle": u"ירושל
 grdn.updateConfig({
     "timeline_scale": "linear"
 })
-grdn.updateFilter("NamesOfJerusalem", {"en": "Names of Jerusalem", "he": u"שמות ירושלים", "logic": "AND"})
-grdn.updateFilter("Geography", {"en": "Geography", "he": u"מקום", "logic": "AND"})
-grdn.updateFilter("TimeReferenced", {"en": "Time Referenced", "he": u"זמן", "logic": "AND"})
-grdn.updateFilter("Characters", {"en": "Characters", "he": u"דמויות", "logic": "AND"})
-
+grdn.updateFilter("NamesOfJerusalem", {"en": "Names of Jerusalem", "he": u"שמות ירושלים", "logic": "AND", "position": "TOP"})
+grdn.updateFilter("Geography", {"en": "Geography", "he": u"מקום", "logic": "AND", "position": "TOP"})
+grdn.updateFilter("TimeReferenced", {"en": "Time Referenced", "he": u"זמן", "logic": "AND", "position": "TOP"})
+grdn.updateFilter("Characters", {"en": "Characters", "he": u"דמויות", "logic": "AND", "position": "TOP"})
+grdn.updateFilter("default", {"position": "TOP"})
 
 with open("Jerusalem Anthology - Sheet1.tsv") as tsv:
     next(tsv)
