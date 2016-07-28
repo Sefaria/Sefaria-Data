@@ -3,6 +3,7 @@ import codecs
 from bs4 import BeautifulSoup
 import urllib2
 import re
+from xml.etree import ElementTree as ET
 import unicodecsv as ucsv
 from data_utilities import util
 from sefaria.model import *
@@ -26,6 +27,9 @@ class DaatRashiGrabber:
 
         rashis = []
         for span in self.parsed_html.find_all('span', id='katom'):
+            if span.text == u'\n':
+                continue
+
             verse = {'comments': []}
 
             # grab the verse number
@@ -89,5 +93,28 @@ class DaatRashiGrabber:
                         u'Super Comment': super_comment
                     })
 
+    def add_to_xml(self, xml):
+        """
+        Adds derived data into an xml document
+        :param xml: class ET.ElementTree
+        """
+        assert isinstance(xml, ET.ElementTree)
 
+        # check if book node has been added
+        root = xml.getroot()
+        if root.find(self.book) is None:
+            book = ET.SubElement(root, self.book)
+        else:
+            book = root.find(self.book)
 
+        chapter = ET.SubElement(book, 'chapter', {'chap_index': str(self.chapter)})
+
+        for rashi in self.rashis:
+            verse = ET.SubElement(chapter, 'verse', {'verse_index': str(rashi['verse_number'])})
+
+            for index, comment in enumerate(rashi['comments']):
+                for super_comment in comment:
+                    scomment = ET.SubElement(verse, 'comment', {'rashi_comment': str(index+1)})
+                    scomment.text = super_comment
+
+        return ET.ElementTree(root)
