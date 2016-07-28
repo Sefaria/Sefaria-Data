@@ -59,6 +59,9 @@ def parse_and_post(file_name):
             elif "@22" in each_line:
                 if not new_perek:
 
+                    perek_level_list.append(mishna_level_list)
+                    mishna_level_list = []
+
                     match_object = mishna_number_regex.search(each_line)
                     mishna_number = util.getGematria(match_object.group(1))
                     diff = mishna_number - last_mishna
@@ -66,8 +69,7 @@ def parse_and_post(file_name):
                         perek_level_list.append([])
                         diff -= 1
 
-                    perek_level_list.append(mishna_level_list)
-                    mishna_level_list = []
+
                     last_mishna = mishna_number
 
                 else:
@@ -76,10 +78,7 @@ def parse_and_post(file_name):
 
             else:
                 each_line = clean_up_string(each_line)
-                divided_string = each_line.split(':')
-                for line in divided_string:
-                    if line.strip():
-                        mishna_level_list.append(line)
+                mishna_level_list.append(each_line)
 
         lechem_shamayim_on_avot.append(perek_level_list)
         post_the_text(lechem_shamayim_on_avot)
@@ -89,6 +88,13 @@ def parse_and_post(file_name):
 def clean_up_string(string):
     string = add_bold(string, ['@11', '@44'], ['@33', '@55'])
     string = make_small(string, ['@77'], ['@88'])
+    string = remove_substrings(string, ['*'])
+    return string
+
+
+def remove_substrings(string, list_of_tags):
+    for tag in list_of_tags:
+        string = string.replace(tag, '')
     return string
 
 

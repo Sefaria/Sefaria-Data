@@ -25,5 +25,5 @@ text record
 
 ls_index = ls_functions.create_index()
 functions.post_index(ls_index)
-lechem_shamayim_ja = ls_functions.parse_and_post('rabbeinu_yonah_on_avot.txt')
+lechem_shamayim_ja = ls_functions.parse_and_post('ls_on_avot.txt')
 ls_functions.create_links(lechem_shamayim_ja)
