@@ -67,5 +67,15 @@ def unclear_lines(expected_tags):
 unclear_lines([u'@00פרק', u'@22', u'@23', u'@44', u'\n', u'@99'])
 
 
+def structure_boaz(chapter):
 
+    new_comment = re.compile(u'@22')
+    break_tag = re.compile(u'@23')
+    skip_tag = re.compile(u'@99')
+    parsed = []
 
+    for line in chapter:
+        if new_comment.match(line):
+            parsed.append(line.replace(u'\n', u''))
+        elif break_tag.match(line):
+            parsed[-1] += line.replace(break_tag.pattern, u'<br>')
