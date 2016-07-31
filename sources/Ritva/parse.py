@@ -49,7 +49,7 @@ def createIndex(enTitle):
 
 def dealWithDaf(line, current_daf):
 	orig_line = line
-	line = line.replace("@22", "").replace('ע"א','').replace('דף', '')
+	line = line.replace("@22", "").replace('ע"א','').replace('דף', '').replace('\r', '').replace(' ', '').replace('.', '')
 	if len(line.replace('ע"ב','').replace(' ','').replace('[', '').replace(']', '').replace('(', '').replace(')', '')) == 0:
 		return current_daf + 1
 	elif line.find('ע"ב') >= 0:
@@ -121,7 +121,10 @@ def match_and_link(dhs, masechet):
 	match = Match(in_order=True, min_ratio=80, guess=False, range=True, can_expand=False)
 	links = []
 	for daf in dhs:
-		talmud_text = get_text_plus(masechet+"."+AddressTalmud.toStr("en", daf))['he']
+		try:
+			talmud_text = get_text_plus(masechet+"."+AddressTalmud.toStr("en", daf))['he']
+		except:
+			pdb.set_trace()
 		result = match.match_list(dhs[daf], talmud_text)
 		for line in result:
 			talmud_range = result[line].replace("0:", "")
@@ -130,19 +133,20 @@ def match_and_link(dhs, masechet):
 			links.append({'refs': [Ritva_end, talmud_end], 'type': 'commentary', 'auto': 'True', 'generated_by': masechet+"Ritva"})
 	post_link(links)
 
+
 if __name__ == "__main__":
 	versionTitle = {}
 	versionTitle['Sukkah'] = 'Chiddushei HaRashba, Sheva Shitot, Warsaw, 1883.'
 	versionTitle['Berakhot'] = 'Berakhah Meshuleshet, Warsaw, 1863.'
+	versionTitle['Moed Katan'] = 'Chidushi HaRitva, Amsterdam, 1729.'
+	versionTitle['Yoma'] = 'Chiddushei HaRitva, Berlin, 1860.'
 	versionTitle['Megillah'] = 'Kodshei David, Livorno, 1792.'
-	versionTitle['Moed Katan'] = 'f'
-	versionTitle['Yoma'] = 'Chidushei HaRitva, Berlin, 1860.'
 	versionTitle['Rosh Hashanah'] = 'Chiddushei HaRitva, Königsberg, 1858.'
 	versionTitle['Taanit'] = 'Chidushi HaRitva, Amsterdam, 1729.'
-	versionTitle['Niddah'] = 'f'
-	files = ["Sukkah", "Berakhot", "Megillah", "Moed Katan", "Yoma", "Rosh Hashanah", "Taanit", "Niddah"]
+	versionTitle['Niddah'] = 'Hidushe ha-Ritba al Nidah; Wien 1868.'
+	files = ["Sukkah", "Berakhot", "Moed Katan", "Yoma", "Megillah", "Rosh Hashanah", "Taanit", "Niddah"]
 	not_yet = True
-	until_this_one = "Sukkah"
+	until_this_one = "Megillah"
 	for file in files:
 		if file == until_this_one:
 			not_yet = False

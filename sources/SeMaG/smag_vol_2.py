@@ -85,12 +85,11 @@ for line in smag:
 	prev_line = line
 	
 text = convertDictToArray(text)
-for current_mitzvah, actual_text in enumerate(text):
-	send_text = {
+send_text = {
 		"versionTitle": "Munkatch, 1901",
 		"versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002023637",
 		"language": "he",
-		"text": actual_text,
-	}
-	post_text("Sefer HaMitzvot Gadol, Volume Two."+str(current_mitzvah+1), send_text, "on")
+		"text": text,
+	}	
+post_text("Sefer Mitzvot Gadol, Volume Two", send_text, "on")
 	

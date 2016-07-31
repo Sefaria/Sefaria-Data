@@ -53,7 +53,7 @@ def create_indexes(sections, eng_helekim, heb_helekim):
     "title": "Tur",
     "titleVariants": ["Arba Turim", "Arbaah Turim", "Arbah Turim"],
     "categories": ["Halakhah", "Tur and Commentaries"],
-    "alt_structs": {"Sections": sections},
+    "alt_structs": {"Orach Chaim": sections["Orach Chaim"]},
     "schema": tur.serialize()
     }
   post_index(index)
@@ -66,13 +66,12 @@ Tur,_(Helek).(Siman_1)-(Siman_2)
 '''
 if __name__ == "__main__":
   sections = {}
-  sections["nodes"] = []
   eng_helekim = ["Orach Chaim", "Yoreh Deah", "Even HaEzer", "Choshen Mishpat"]
   heb_helekim = [u"אורח חיים", u"יורה דעה", u"אבן העזר", u"חושן משפט"]
 
   for helek in eng_helekim:
-    if helek != "Orach Chaim":
-      continue
+    sections[helek] = {}
+    sections[helek]["nodes"] = []
     with open('tur '+helek+'.csv', 'r') as csvfile:
       reader = csv.reader(csvfile)
       for count, row in enumerate(reader):
@@ -96,6 +95,6 @@ if __name__ == "__main__":
           node.addressTypes = []
           node.sectionNames = []
           node.refs = []
-          sections["nodes"].append(node.serialize())
+          sections[helek]["nodes"].append(node.serialize())
 
   create_indexes(sections, eng_helekim, heb_helekim)

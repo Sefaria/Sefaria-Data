@@ -13,6 +13,9 @@ break instead. I've marked these cases with the @23 tag.
 
 I've skipped the text labeled as פירוש הקצר in בועז שבת, as I'm not sure this is actually a part of Boaz. This is
 tagged with @10.
+
+There is section called פתח האוהל in בועז אוהלות. This is styled as a run-on segment. These get an @23 tag which add a
+line break.
 """
 
 

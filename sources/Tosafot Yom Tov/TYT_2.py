@@ -44,26 +44,32 @@ def dealWithMishnah(line, current_mishnah):
 def flagBadChars(line, chars, masechet, current_perek, current_mishnah):
 	flagged = open('flagged', 'a')
 	for char in chars:
-		if char != '#' or char != '!':
+		if char != '#' and char != '!':
 			flagged.write(masechet + ', '+str(current_perek)+', '+str(current_mishnah)+' : ' + char.encode('utf-8') + '\n')
 	flagged.close()
 
 
 
-def addITags(line, chars):
-	bad_char = '@'
-	desired_chars = []
-	if '#' in line:
-		desired_chars = [char for char in chars if char == '#']
-		bad_char = '#'
-	elif '!' in line:
-		desired_chars = [char for char in chars if char == '!']
-		bad_char = '!'
+def addITags(lines, chars_arr):
+	new_lines = []
+	count = 0
+	for line_n, line in enumerate(lines):
+		chars = chars_arr[line_n]
+		bad_char = '@'
+		desired_chars = []
+		if '#' in line:
+			desired_chars = [char for char in chars if char == '#']
+			bad_char = '#'
+		elif '!' in line:
+			desired_chars = [char for char in chars if char == '!']
+			bad_char = '!'
 
-	for i in range(len(desired_chars)):
-		i_tag = """<i data-commentator="R' Akiva Eiger" data-order='"""+str(i+1)+"'>"
-		line = line.replace(bad_char, i_tag, 1)
-	return line
+		for i in range(len(desired_chars)):
+			i_tag = """<i data-commentator="R' Akiva Eiger" data-order='"""+str(i+1+count)+"'></i>"
+			line = line.replace(bad_char, i_tag, 1)
+		count += len(desired_chars)
+		new_lines.append(line)
+	return new_lines
 
 
 def getText(line, masechet, current_perek, current_mishnah):
@@ -150,27 +156,38 @@ def post_text_TYT(masechet, text):
 def parseFile(file, masechet):
 	text = {}
 	current_perek = 0
+	lines_current_mishnah = []
+	other_chars_current_mishnah = []
 	for line in file:
 		line = line.decode('utf-8')
-		if len(line.replace(" ", "")) == 0:
+		if len(line.replace(" ", "").replace("\n", "")) == 0:
 			continue
 		if line.find("@00") >= 0:
+			if len(lines_current_mishnah) > 0:
+				lines_current_mishnah = addITags(lines_current_mishnah, other_chars_current_mishnah)
+				text[current_perek][current_mishnah] = lines_current_mishnah
+
+			lines_current_mishnah = []
+			other_chars_current_mishnah = []
 			current_perek = dealWithPerek(line, current_perek)
 			text[current_perek] = {}
 			current_mishnah = 0
 			continue
 		elif line.find("@22") >= 0:
+			if len(lines_current_mishnah) > 0:
+				lines_current_mishnah = addITags(lines_current_mishnah, other_chars_current_mishnah)
+				text[current_perek][current_mishnah] = lines_current_mishnah
+
 			current_mishnah = dealWithMishnah(line, current_mishnah)
 			text[current_perek][current_mishnah] = []
+			lines_current_mishnah = []
+			other_chars_current_mishnah = []
 
-		try:
-			this_line, other_chars = getText(line, masechet, current_perek, current_mishnah)
-		except:
-			pdb.set_trace()
+		this_line, other_chars = getText(line, masechet, current_perek, current_mishnah)
 		
-		this_line = addITags(this_line, other_chars)
 		if len(this_line) > 0:
-			text[current_perek][current_mishnah].append(this_line)
+			lines_current_mishnah.append(this_line)
+			other_chars_current_mishnah.append(other_chars)
 		prev_line = line
 	return text
 
