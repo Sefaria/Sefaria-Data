@@ -218,18 +218,20 @@ if __name__ == "__main__":
 	global errors
 	errors = open('probs_ramban.txt', 'w')
 	not_yet = True
+	only_these = ["yevamot_complete.txt", "yoma_complete.txt"]
 	until_this_one = "shabbat"
 	for file in glob.glob(u"*.txt"):
 		print file
+		print file.find("_complete") >= 0 and file in only_these
 		errors.write(file+"\n")
-		if file.find("_complete") >= 0:
+		if file.find("_complete") >= 0 and file in only_these:
 			tractate = file.replace("_complete.txt", "").replace("_", " ").title()
-			if not_yet and file.find(until_this_one) == -1:
-				continue
-			else:
-				not_yet = False 
-			if not_yet == False:
-				#create_index(tractate)
-				text, dh_dict = parse(tractate, errors)
-				#post(text, dh_dict, tractate)
-			
+			#if not_yet and file.find(until_this_one) == -1:
+			#	continue
+			#else:
+			#	not_yet = False 
+			#if not_yet == True:
+			#create_index(tractate)
+			text, dh_dict = parse(tractate, errors)
+			post(text, dh_dict, tractate)
+		

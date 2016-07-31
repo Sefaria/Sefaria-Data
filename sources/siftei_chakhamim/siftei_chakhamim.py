@@ -3,10 +3,55 @@ import codecs
 from bs4 import BeautifulSoup
 import urllib2
 import re
+from data_utilities import util
 from xml.etree import ElementTree as ET
 import unicodecsv as ucsv
 from data_utilities import util
 from sefaria.model import *
+
+"""
+Very little data is available from the source file for this text. It is possible to break up text into chapters and
+comments, but it isn't clear how to get from comments to the verses or Rashi comments. This data had to be "scraped"
+from the web using the DaatRashiGrabber class, which attempts to match each comment to the correct verse and Rashi
+comment.
+
+It is important to note that the line breaks in this text are arbitrary, therefore it is necessary to treat the entire
+text as one long string.
+
+Chapters can be found using the @75-@73 pattern:
+@75([\u05d0-\u05ea]{1,2})@73
+
+Individual comments can be found with @55-@73, although work needs to be done to ensure there are no missed tags.
+A sequence of characters and numbers can appear after the @55, so this must be accounted for.
+@55(>!05#[0-9]{4}<)?([\u05d0-\u05ea]{1,2})@73
+
+This text numbers comments by letter (i.e. א,ב,ג...י,כ,ל). Therefore, a custom key is needed to examine the data.
+"""
+
+letters = {
+    u'א': 1,
+    u'ב': 2,
+    u'ג': 3,
+    u'ד': 4,
+    u'ה': 5,
+    u'ו': 6,
+    u'ז': 7,
+    u'ח': 8,
+    u'ט': 9,
+    u'י': 10,
+    u'כ': 11,
+    u'ל': 12,
+    u'מ': 13,
+    u'נ': 14,
+    u'ס': 15,
+    u'ע': 16,
+    u'פ': 17,
+    u'צ': 18,
+    u'ק': 19,
+    u'ר': 20,
+    u'ש': 21,
+    u'ת': 22,
+}
 
 
 class DaatRashiGrabber:
@@ -118,3 +163,53 @@ class DaatRashiGrabber:
                     scomment.text = super_comment
 
         return ET.ElementTree(root)
+
+
+class TextParser:
+    chap_reg = re.compile(u'@75([\u05d0-\u05ea]{1,2})@73')
+    comment_reg = re.compile(u'@55(>!05#[0-9]{4}<)?([\u05d0-\u05ea]{1,2})@73')
+
+    def __init__(self, file_name):
+        self.file_name = file_name
+        self.string = self.file_to_string()
+        self.chapter_strings = self.string_to_chapters()
+        self.parsed_chapters = self.parse_chapters()
+
+    def file_to_string(self):
+        with codecs.open(self.file_name, 'r', 'utf-8') as text_file:
+            lines = [line.replace(u'\n', u'') for line in text_file]
+
+        all_text = u' '.join(lines)
+        all_text = re.sub(u' +', u' ', all_text)
+        return all_text
+
+    def string_to_chapters(self):
+
+        # find all chapters
+        matches = self.chap_reg.finditer(self.string)
+
+        chapters = []
+        start_index = next(matches)
+        for next_index in matches:
+            chapters.append(self.string[start_index.start():next_index.start()])
+            start_index = next_index
+        else:
+            chapters.append(self.string[start_index.start():])
+
+        return chapters
+
+    def parse_chapters(self):
+        chapters = []
+
+        for unparsed in self.chapter_strings:
+            matches = self.comment_reg.finditer(unparsed)
+            comments = []
+            start_index = next(matches)
+            for next_index in matches:
+                comments.append(unparsed[start_index.start():next_index.start()])
+                start_index = next_index
+            else:
+                comments.append(unparsed[start_index.start():])
+            chapters.append(comments)
+
+        return chapters

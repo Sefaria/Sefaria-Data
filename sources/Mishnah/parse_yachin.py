@@ -4,6 +4,7 @@ import os
 import codecs
 from sefaria.datatype import jagged_array
 import re
+import json
 from data_utilities.util import jagged_array_to_file as j_to_file, getGematria
 from data_utilities.sanity_checks import *
 from sources import functions
@@ -674,13 +675,43 @@ def upload(data):
     }
     functions.post_text(data['en'], text_version)
 
-tracs = library.get_indexes_in_category('Mishnah')
-parsed = parse_files()
-link_refs = [collect_links(tractate) for tractate in tracs]
-full_links = build_links(link_refs)
-for num, data in enumerate(sorted(parsed.keys())):
-    print num+1, data
-    upload(parsed[data])
-functions.post_link(full_links)
 
-os.remove('errors.html')
+def post_index_text_links():
+    tracs = library.get_indexes_in_category('Mishnah')
+    parsed = parse_files()
+    link_refs = [collect_links(tractate) for tractate in tracs]
+    full_links = build_links(link_refs)
+    for num, data in enumerate(sorted(parsed.keys())):
+        print num+1, data
+        upload(parsed[data])
+    functions.post_link(full_links)
+
+    os.remove('errors.html')
+
+
+def grab_boaz_links():
+    """
+    Extract links from Yachin and save as a json file
+    :return:
+    """
+    comment_reg = re.compile(u'@22\(([\u05d0-\u05ea]{1,3})\)')
+    links = []
+
+    yachin_data = parse_files()
+    for book in yachin_data:
+        for line in util.traverse_ja(yachin_data[book]['data'].array()):
+            indices = line['indices']
+            for match in comment_reg.finditer(line['data']):
+                y_ref = u'{}.{}.{}.{}'.format(yachin_data[book]['en'], indices[0]+1, indices[1]+1, indices[2]+1)
+                b_ref = u'{}.{}.{}'.format(yachin_data[book]['en'].replace('Yachin', 'Boaz'), indices[0]+1,
+                                           util.getGematria(match.group(1)))
+                links.append({
+                    'refs': (y_ref, b_ref),
+                    'type': 'commentary',
+                    'auto': False,
+                    'generated_by': 'Yachin Parse Script'
+                })
+
+    with open('boaz_links.json', 'w') as json_output:
+        data = json.dumps(links)
+        json_output.write(data)

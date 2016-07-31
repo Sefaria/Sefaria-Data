@@ -98,7 +98,7 @@ def replaceWithHTMLTags(line, helek, siman_num, data):
                         re.findall(u"\s#[\u05D0-\u05EA]{1,4}", line),
                         re.findall(u"\{[\u05D0-\u05EA]{1,4}\}",line), re.findall(u"\|[\u05D0-\u05EA]{1,4}\|", line),
                         re.findall(u"<[\u05D0-\u05EA]{1,4}>",line)]
-
+                        
     data = gatherData(data, line, helek, siman_num, matches_array, commentaries)
     
     for commentary_count, matches in enumerate(matches_array):
@@ -313,8 +313,7 @@ if __name__ == "__main__":
     at_77 = " || "
     at_88 = " <> "
     files_helekim = ["Orach_Chaim/tur orach chaim.txt", "Yoreh Deah/tur yoreh deah.txt", "Even HaEzer/tur even haezer.txt", "Choshen Mishpat/tur choshen mishpat.txt"]
-    create_indexes(eng_helekim, heb_helekim)
-    pdb.set_trace()
+    #create_indexes(eng_helekim, heb_helekim)
     data = parse_text(at_66, at_77, at_88, eng_helekim, files_helekim)
     for helek in data:
         f = open(tag_csv_files[helek], 'w')
