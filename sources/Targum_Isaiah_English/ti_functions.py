@@ -30,8 +30,8 @@ def parse_targum_isaiah_english():
 
 def create_text(text):
     return {
-        "versionTitle": "The Targum of Jonathan ben Uzziel, trans. J. W. Etheridge, London, 1862",
-        "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001969104",
+        "versionTitle": "",
+        "versionSource": "",
         "language": "en",
         "text": text
     }
