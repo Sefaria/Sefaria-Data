@@ -4,22 +4,18 @@ import regex
 from sefaria.model import *
 from sources import functions
 from data_utilities import util
-# from sources.Match import match_new
-from sources.Match.match import Match
 from sources.Targum_Jerusalem_in_English import tj_functions
-from sefaria.model.schema import AddressTalmud, SchemaNode, JaggedArrayNode
-from fuzzywuzzy import fuzz
-import urllib
-import urllib2
-from urllib2 import URLError, HTTPError
-import json
-import pdb
-import os
-import sys
 
+english_book_names = ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']
 
-all_five_book = tj_functions.parse_targum_jerusalem_english()
+all_five_books = tj_functions.parse_targum_jerusalem_english()
+
+for book, book_name in zip(all_five_books, english_book_names):
+    print(book_name)
+    ref = 'Targum Jonathan on {}'.format(book_name)
+    text = tj_functions.create_text(book)
+    functions.post_text(ref, text)
 
 testing_file = codecs.open("testing_file.txt", 'w', 'utf-8')
-util.jagged_array_to_file(testing_file, all_five_book,['Book', 'Chapter', 'Verse'])
+util.jagged_array_to_file(testing_file, all_five_books, ['Book', 'Chapter', 'Verse'])
 testing_file.close()

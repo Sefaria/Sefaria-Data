@@ -4,15 +4,6 @@ import regex
 from sefaria.model import *
 from sources import functions
 from data_utilities import util
-from sefaria.model.schema import AddressTalmud, SchemaNode, JaggedArrayNode
-from fuzzywuzzy import fuzz
-import urllib
-import urllib2
-from urllib2 import URLError, HTTPError
-import json
-import pdb
-import os
-import sys
 
 
 def parse_targum_jerusalem_english():
@@ -32,7 +23,6 @@ def parse_targum_jerusalem_english():
                 last_book, last_chapter = match_object.group(1), match_object.group(2)
 
             elif match_object.group(2) != last_chapter:
-                trial = match_object.group(2)
                 book.append(chapter)
                 chapter = [each_line]
                 last_chapter = match_object.group(2)
@@ -45,8 +35,10 @@ def parse_targum_jerusalem_english():
     return all_of_chumash
 
 
-
-
-
-
-
+def create_text(text):
+    return {
+        "versionTitle": "The Targum of Jonathan ben Uzziel, trans. J. W. Etheridge, London, 1862",
+        "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001969104",
+        "language": "en",
+        "text": text
+    }
