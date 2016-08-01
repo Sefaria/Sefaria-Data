@@ -11,7 +11,7 @@ def parse_targum_jerusalem_english():
     all_of_chumash, book, chapter = [], [], []
     last_book, last_chapter = 'Gen', '1'
 
-    with codecs.open('targum_jerusalem_english.txt', 'r', 'utf-8') as the_file:
+    with codecs.open('targum_pseudo_jonathan.txt', 'r', 'utf-8') as the_file:
         for each_line in the_file:
             match_object = book_chapter_verse.search(each_line)
             each_line = each_line.replace(match_object.group(0), '')
@@ -38,7 +38,7 @@ def parse_targum_jerusalem_english():
 def create_text(text):
     return {
         "versionTitle": "The Targum of Jonathan ben Uzziel, trans. J. W. Etheridge, London, 1862",
-        "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001969104",
+        "versionSource": "http://targum.info/targumic-texts/pentateuchal-targumim/",
         "language": "en",
         "text": text
     }
