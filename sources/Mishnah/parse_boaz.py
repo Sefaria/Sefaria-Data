@@ -61,11 +61,6 @@ def unclear_lines(expected_tags):
                     problems += 1
     print '{} issues found'.format(problems)
 
-# for book in get_file_names():
-#     util.restructure_file(book, lambda x: x.replace(u'\ufeff', u''))
-
-unclear_lines([u'@00פרק', u'@22', u'@23', u'@44', u'\n', u'@99'])
-
 
 def structure_boaz(chapter):
 
@@ -75,7 +70,20 @@ def structure_boaz(chapter):
     parsed = []
 
     for line in chapter:
+        line = util.multiple_replace(line, {u'\n': u'', u'\r': u''})
+
         if new_comment.match(line):
-            parsed.append(line.replace(u'\n', u''))
+            parsed.append(line)
+
         elif break_tag.match(line):
-            parsed[-1] += line.replace(break_tag.pattern, u'<br>')
+            line = line.replace(break_tag.pattern, u'<br>')
+            parsed[-1] += line
+
+        elif skip_tag.match(line) or line == u'':
+            continue
+
+        else:
+            print u'the line is: {} All good'.format(line)
+            raise AssertionError('line starts with no set tag')
+
+    return parsed
