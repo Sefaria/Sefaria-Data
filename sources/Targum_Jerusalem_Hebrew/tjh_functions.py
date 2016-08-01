@@ -107,3 +107,22 @@ def create_text(ja):
         "language": "he",
         "text": ja
     }
+
+def create_links(tj_ja):
+    english_names = ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']
+    list_of_links = []
+    for book, book_name in zip(tj_ja, english_names):
+        for chapter_index, chapter in enumerate(book):
+            for verse_index, verse in enumerate(chapter):
+                list_of_links.append(create_link_dictionary(book_name, chapter_index+1, verse_index+1))
+    return list_of_links
+
+
+def create_link_dictionary(book_name, chapter_index, verse_index):
+    return {
+                "refs": [
+                        "{}.{}.{}".format(book_name, chapter_index, verse_index),
+                        "Targum Jerusalem,_{}.{}.{}".format(book_name, chapter_index, verse_index)
+                    ],
+                "type": "targum",
+        }
