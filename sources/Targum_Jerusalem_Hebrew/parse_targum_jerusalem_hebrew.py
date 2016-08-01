@@ -7,9 +7,16 @@ from data_utilities import util
 from sources.Targum_Jerusalem_Hebrew import tjh_functions
 
 
-
+english_names = ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']
+index = tjh_functions.create_index_record()
+functions.post_index(index)
 
 all_of_humash = tjh_functions.parse()
+
+for book, book_name in zip(all_of_humash, english_names):
+    ref = 'Targum Jerusalem, {}'.format(book_name)
+    text = tjh_functions.create_text(book)
+    functions.post_text(ref, text)
 
 
 
