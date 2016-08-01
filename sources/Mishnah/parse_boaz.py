@@ -18,6 +18,8 @@ There is section called פתח האוהל in בועז אוהלות. This is styl
 line break.
 """
 
+strip_list = [u'@22\([\u05d0-\u05ea]{1,2}\)', u'@[0-9]{2}']
+
 
 def get_file_names():
 
@@ -83,7 +85,21 @@ def structure_boaz(chapter):
             continue
 
         else:
-            print u'the line is: {} All good'.format(line)
-            raise AssertionError('line starts with no set tag')
+            parsed[-1] += u' {}'.format(line)
 
     return parsed
+
+
+def align_boaz_chapters(source_file, simple_array):
+    """
+    Boaz does not guarantee text for every chapter. Using the util library, this method will pad the parsed text with
+     empty sections as necessary to accurately represent the data.
+    :param source_file: File from which to derive chapter numbers
+    :param simple_array: A "naive" parse of the data structured as a nested list.
+    :return: Nested array, with proper padding to account for empty chapters.
+    """
+
+    # grab each chapter number from the source file
+    chapters = [util.getGematria(n) for n in util.grab_section_names(u'@00פרק ([\u05d0-\u05ea]{1,2})', source_file, 1)]
+    as_dict = util.simple_to_complex(chapters, simple_array)
+    return util.convert_dict_to_array(as_dict)
