@@ -7,14 +7,6 @@ from data_utilities import util
 # from sources.Match import match_new
 from sources.Match.match import Match
 from sefaria.model.schema import AddressTalmud, SchemaNode, JaggedArrayNode
-from fuzzywuzzy import fuzz
-import urllib
-import urllib2
-from urllib2 import URLError, HTTPError
-import json
-import pdb
-import os
-import sys
 
 
 def create_index():
@@ -75,10 +67,12 @@ def parse_and_post(file_name):
                     last_mishna = 1
 
             else:
-                each_line = clean_up_string(each_line)
+                #each_line = clean_up_string(each_line)
                 divided_string = each_line.split(':')
                 for line in divided_string:
-                    if line.strip():
+                    line = line.strip()
+                    if line:
+                        line = clean_up_string(line)
                         mishna_level_list.append(line)
 
         rb_yonah_on_avot.append(perek_level_list)
@@ -87,18 +81,22 @@ def parse_and_post(file_name):
 
 
 def clean_up_string(string):
-    string = add_bold(string, ['@11'], ['@33'])
+    string = add_bold(string)
+    string = remove_substrings(string, ['@11', '@33'])
     string = change_brackets_to_paranthesis(string)
     return string
 
 
-def add_bold(string, list_of_opening_tags, list_of_closing_tags):
-    for tag in list_of_opening_tags:
-        string = string.replace(tag, '<b>')
-    for tag in list_of_closing_tags:
-        string = string.replace(tag, '</b>')
-    return string
+def add_bold(string):
+    update_string = u'{}{}'.format(u'<b>', string)
+    update_string = update_string.replace(u'.', u'.</b>', 1)
+    return update_string
 
+
+def remove_substrings(string, list_of_tags):
+    for tag in list_of_tags:
+        string = string.replace(tag, '')
+    return string
 
 def change_brackets_to_paranthesis(string):
     string = string.replace('[', '(')
@@ -108,7 +106,7 @@ def change_brackets_to_paranthesis(string):
 
 def post_the_text(ja):
     testing_file = codecs.open("testing_file.txt", 'w', 'utf-8')
-    util.jagged_array_to_file(testing_file, ja, ['Perek', 'Mishna','Comment'])
+    util.jagged_array_to_file(testing_file, ja, ['Perek', 'Mishna', 'Comment'])
     testing_file.close()
     ref = create_ref()
     text = create_text(ja)
