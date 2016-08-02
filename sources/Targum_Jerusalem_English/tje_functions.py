@@ -13,22 +13,24 @@ def parse_targum_jerusalem_english():
 
     with codecs.open('targum_jerusalem_english.txt', 'r', 'utf-8') as the_file:
         for each_line in the_file:
-            print each_line
             match_object = book_chapter_verse.search(each_line)
             each_line = each_line.replace(match_object.group(0), '')
 
             if match_object.group(1) != last_book:
                 book.append(chapter)
                 all_of_chumash.append(book)
+                each_line = each_line.strip()
                 book, chapter = [], [each_line]
                 last_book, last_chapter = match_object.group(1), match_object.group(2)
 
             elif match_object.group(2) != last_chapter:
                 book.append(chapter)
+                each_line = each_line.strip()
                 chapter = [each_line]
                 last_chapter = match_object.group(2)
 
             else:
+                each_line = each_line.strip()
                 chapter.append(each_line)
 
     book.append(chapter)
