@@ -29,7 +29,13 @@ garden_key = u"sefaria.custom.jerusalem"
 grdn = Garden().load({"key": garden_key})
 if grdn:
     grdn.delete()
-grdn = Garden({"key": garden_key, "title": u"Jerusalem", "heTitle": u"ירושלים"})
+grdn = Garden({
+    "key": garden_key,
+    "title": u"Jerusalem",
+    "heTitle": u"ירושלים",
+    "subtitle": u"Curated and translated by <a href='/profile/michael-feuer'>Rabbi Mike Feuer</a>",
+    "heSubtitle": u""
+})
 grdn.updateConfig({
     "timeline_scale": "linear"
 })
@@ -37,7 +43,7 @@ grdn.updateFilter("NamesOfJerusalem", {"en": "Names of Jerusalem", "he": u"שמ�
 grdn.updateFilter("Geography", {"en": "Geography", "he": u"מקום", "logic": "AND", "position": "TOP"})
 grdn.updateFilter("TimeReferenced", {"en": "Time Referenced", "he": u"זמן", "logic": "AND", "position": "TOP"})
 grdn.updateFilter("Characters", {"en": "Characters", "he": u"דמויות", "logic": "AND", "position": "TOP"})
-grdn.updateFilter("default", {"position": "TOP"})
+grdn.updateFilter("default", {"logic": "AND", "position": "TOP"})
 
 with open("Jerusalem Anthology - Sheet1.tsv") as tsv:
     next(tsv)

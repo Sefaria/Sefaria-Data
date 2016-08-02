@@ -421,12 +421,12 @@ def file_to_ja(structure, infile, expressions, cleaner, grab_all=False):
     """
     Designed to be the first stage of a reusable parsing tool. Adds lines of text to the Jagged
     Array in the desired structure (Chapter, verse, etc.)
-    :param structure: A nested list one level lower than the final result. Example: for a depth 2
+    :param structure: A nested list at the depth of the final result. Example: for a depth 2
     text, structure should be [[]].
     :param infile: Text file to read from
     :param expressions: A list of regular expressions with which to identify segment (chapter) level. Do
-    not include an expression with which to break up the actual text.
-    :param cleaner: A function that takes a list of strings and returns an array with the text broken up
+    not include an expression with which to break up the segment levels.
+    :param cleaner: A function that takes a list of strings and returns an array with the text parsed
     correctly. Should also break up and remove unnecessary tagging data.
     :param grab_all: If set to true, will grab the lines indicating new sections.
     :return: A jagged_array with the text properly structured.
@@ -536,7 +536,8 @@ def clean_jagged_array(messy_array, strip_list):
 
             for case in strip_list:
                 item = re.sub(case, u'', item)
-            clean_array.append(re.sub(u' +', u' ', item))
+            item = re.sub(u' +', u' ', item)
+            clean_array.append(item.lstrip(u' '))
 
         else:
             print 'Jagged array contains unknown type'

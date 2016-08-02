@@ -18,6 +18,8 @@ There is section called פתח האוהל in בועז אוהלות. This is styl
 line break.
 """
 
+strip_list = [u'@22\([\u05d0-\u05ea]{1,2}\)', u'@[0-9]{2}']
+
 
 def get_file_names():
 
@@ -61,11 +63,43 @@ def unclear_lines(expected_tags):
                     problems += 1
     print '{} issues found'.format(problems)
 
-# for book in get_file_names():
-#     util.restructure_file(book, lambda x: x.replace(u'\ufeff', u''))
 
-unclear_lines([u'@00פרק', u'@22', u'@23', u'@44', u'\n', u'@99'])
+def structure_boaz(chapter):
+
+    new_comment = re.compile(u'@22')
+    break_tag = re.compile(u'@23')
+    skip_tag = re.compile(u'@99')
+    parsed = []
+
+    for line in chapter:
+        line = util.multiple_replace(line, {u'\n': u'', u'\r': u''})
+
+        if new_comment.match(line):
+            parsed.append(line)
+
+        elif break_tag.match(line):
+            line = line.replace(break_tag.pattern, u'<br>')
+            parsed[-1] += line
+
+        elif skip_tag.match(line) or line == u'':
+            continue
+
+        else:
+            parsed[-1] += u' {}'.format(line)
+
+    return parsed
 
 
+def align_boaz_chapters(source_file, simple_array):
+    """
+    Boaz does not guarantee text for every chapter. Using the util library, this method will pad the parsed text with
+     empty sections as necessary to accurately represent the data.
+    :param source_file: File from which to derive chapter numbers
+    :param simple_array: A "naive" parse of the data structured as a nested list.
+    :return: Nested array, with proper padding to account for empty chapters.
+    """
 
-
+    # grab each chapter number from the source file
+    chapters = [util.getGematria(n) for n in util.grab_section_names(u'@00פרק ([\u05d0-\u05ea]{1,2})', source_file, 1)]
+    as_dict = util.simple_to_complex(chapters, simple_array)
+    return util.convert_dict_to_array(as_dict)
