@@ -62,7 +62,7 @@ def fill_in_missing_sections_and_updated_last(each_line, base_list, this_regex, 
 
 def clean_up(string, this_regex):
     match_object = this_regex.search(string)
-    string = string.replace(match_object.group(1), '')
+    string = string.replace(match_object.group(1), '', 1)
     return string.strip()
 
 
