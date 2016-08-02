@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 from data_utilities import util
-import sys
 import codecs
 import re
+from sources import functions
 from sefaria.model import *
+import json
 
 """
 Parsing strategy: Use @00 and @22 for structure in the auto-parser.
@@ -103,3 +104,49 @@ def align_boaz_chapters(source_file, simple_array):
     chapters = [util.getGematria(n) for n in util.grab_section_names(u'@00פרק ([\u05d0-\u05ea]{1,2})', source_file, 1)]
     as_dict = util.simple_to_complex(chapters, simple_array)
     return util.convert_dict_to_array(as_dict)
+
+
+def build_index(mishna_name):
+
+    jnode = JaggedArrayNode()
+    jnode.add_title('Boaz on {}'.format(mishna_name), 'en', True)
+    jnode.add_title(u'בועז על {}'.format(Ref(mishna_name).he_book()), 'he', True)
+    jnode.key = 'Boaz on {}'.format(mishna_name)
+    jnode.depth = 2
+    jnode.addressTypes = ['Integer', 'Integer']
+    jnode.sectionNames = ['Chapter', 'comment']
+    jnode.validate()
+
+    index = {
+        'title': 'Boaz on {}'.format(mishna_name),
+        'categories': ['Commentary2', 'Mishnah', 'Boaz'],
+        'schema': jnode.serialize()
+    }
+    functions.post_index(index)
+
+
+def parse_and_post(filename, index_key):
+
+    with codecs.open(filename, 'r', 'utf-8') as source_file:
+        data = util.file_to_ja([[]], source_file, [u'@00'], structure_boaz)
+        data = util.clean_jagged_array(data.array(), strip_list)
+        source_file.seek(0)
+        data = align_boaz_chapters(source_file, data)
+
+    text_version = {
+        'versionTitle': u'Mishnah, ed. Romm, Vilna 1913',
+        'versionSource': 'http://http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001741739',
+        'language': 'he',
+        'text': data
+    }
+    functions.post_text(index_key, text_version)
+
+for number, filename in enumerate(get_file_names()):
+    mishna = library.get_indexes_in_category('Mishnah')[number]
+    boaz = 'Boaz on {}'.format(mishna)
+    print boaz
+    build_index(mishna)
+    parse_and_post(filename, boaz)
+
+with open('boaz_links.json') as links:
+    functions.post_link(json.load(links))
