@@ -87,6 +87,7 @@ def create_book_ja_node(english_book_name, hebrew_book_name):
     book_node.depth = 3
     book_node.addressTypes = ["Integer", "Integer", "Integer"]
     book_node.sectionNames = ["Chapter", "Verse", "Comment"]
+    book_node.toc_zoom = 2
     return book_node
 
 
@@ -263,7 +264,7 @@ def create_links(rb_ja, title_counter):
                         pasuk_chumash = reduce_it_to_letters(pasuk_chumash)
                         if divrei_hamatchil in pasuk_chumash:
                             list_of_links.append(create_link_dictionary(rb_dictionary))
-
+    print list_of_links
     return list_of_links
 
 
@@ -307,7 +308,7 @@ def create_mishlei_links(rb_dict, proverbs_perek, proverb_pasuk):
                         "Rabbeinu Bahya, {}.{}.{}.{}".format(rb_dict['sefer'], rb_dict['perek'], rb_dict['pasuk'], rb_dict['comment']),
                         "Proverbs.{}.{}".format(proverbs_perek, proverb_pasuk)
                     ],
-                "type": "Commentary",
+                "type": "commentary",
         }
 
 
@@ -322,7 +323,7 @@ def create_link_dictionary(rb_dict):
                         "Rabbeinu Bahya, {}.{}.{}.{}".format(rb_dict['sefer'], rb_dict['perek'], rb_dict['pasuk'], rb_dict['comment']),
                         "{}.{}.{}".format(rb_dict['sefer'], rb_dict['perek'], rb_dict['pasuk'])
                     ],
-                "type": "Commentary",
+                "type": "commentary",
         }
 
 
