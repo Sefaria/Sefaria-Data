@@ -67,7 +67,6 @@ def parse_and_post(file_name):
                     last_mishna = 1
 
             else:
-                #each_line = clean_up_string(each_line)
                 divided_string = each_line.split(':')
                 for line in divided_string:
                     line = line.strip()
@@ -120,7 +119,7 @@ def create_ref():
 
 def create_text(jagged_array):
     return {
-        "versionTitle": "What the hell",
+        "versionTitle": "Pirkei Avot, Berlin, 1848",
         "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001063744",
         "language": "he",
         "text": jagged_array

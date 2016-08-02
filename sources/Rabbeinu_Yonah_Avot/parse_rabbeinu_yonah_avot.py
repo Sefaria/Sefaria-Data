@@ -14,7 +14,6 @@ Clean
 index record
 text record
 """
-# pirkei_avot_ja = TextChunk(Ref('Pirkei Avot'), 'he').text
 
 rb_index = rb_yonah_functions.create_index()
 functions.post_index(rb_index)
