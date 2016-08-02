@@ -646,7 +646,7 @@ def build_links(ref_list):
     return links
 
 
-def upload(data):
+def upload(data, post_index=True):
 
     # create index
     schema = JaggedArrayNode()
@@ -663,7 +663,8 @@ def upload(data):
         'categories': ['Commentary2', 'Mishnah', 'Yachin'],
         'schema': schema.serialize()
     }
-    functions.post_index(index)
+    if post_index:
+        functions.post_index(index)
 
     # clean and upload text
     upload_text = util.clean_jagged_array(data['data'].array(), tags_to_strip())
@@ -683,8 +684,8 @@ def post_index_text_links():
     full_links = build_links(link_refs)
     for num, data in enumerate(sorted(parsed.keys())):
         print num+1, data
-        upload(parsed[data])
-    functions.post_link(full_links)
+        upload(parsed[data], False)
+    # functions.post_link(full_links)
 
     os.remove('errors.html')
 
@@ -715,3 +716,5 @@ def grab_boaz_links():
     with open('boaz_links.json', 'w') as json_output:
         data = json.dumps(links)
         json_output.write(data)
+
+post_index_text_links()
