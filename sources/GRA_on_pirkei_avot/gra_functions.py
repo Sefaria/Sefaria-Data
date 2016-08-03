@@ -10,24 +10,24 @@ from sefaria.model.schema import AddressTalmud, SchemaNode, JaggedArrayNode
 
 
 def create_index():
-    rabbeinu_yonah_schema = create_schema()
-    rabbeinu_yonah_schema.validate()
+    gra_schema = create_schema()
+    gra_schema.validate()
     index = {
         "title": "Gra on Pirkei Avot",
         "categories": ["Commentary2", "Pirkei Avot", "Gra"],
-        "schema": rabbeinu_yonah_schema.serialize()
+        "schema": gra_schema.serialize()
     }
     return index
 
 def create_schema():
-    rb_schema = JaggedArrayNode()
-    rb_schema.add_title('Gra on Pirkei Avot', 'en', primary=True)
-    rb_schema.add_title(u'גר"א על פרקי אבות', 'he', primary=True)
-    rb_schema.key = 'Gra on Pirkei Avot'
-    rb_schema.depth = 3
-    rb_schema.addressTypes = ["Integer", "Integer", "Integer"]
-    rb_schema.sectionNames = ["Perek", "Mishna", "Comment"]
-    return rb_schema
+    gra_schema = JaggedArrayNode()
+    gra_schema.add_title('Gra on Pirkei Avot', 'en', primary=True)
+    gra_schema.add_title(u'גר"א על פרקי אבות', 'he', primary=True)
+    gra_schema.key = 'Gra on Pirkei Avot'
+    gra_schema.depth = 3
+    gra_schema.addressTypes = ["Integer", "Integer", "Integer"]
+    gra_schema.sectionNames = ["Perek", "Mishna", "Comment"]
+    return gra_schema
 
 
 def parse():
