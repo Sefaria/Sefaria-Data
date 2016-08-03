@@ -1,0 +1,441 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Net.Configuration;
+using System.Net.Mime;
+using System.Runtime.InteropServices;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Text;
+using System.Threading.Tasks;
+using System.IO;
+using System.Text.RegularExpressions;
+
+namespace DibburHamatchilMatcher {
+	class Program {
+
+		public const bool fdebug = false;
+
+		// constants for generating distance score. a 0 means a perfect match, although it will never be 0, due to the smoothing.
+		public const int normalizingFactor = 100;
+		public const int smoothingFactor = 1;
+		public const int fullWordValue = 3;
+		public const int abbreviationPenalty = 1;
+		public const int ImaginaryContenderPerWord = 22;
+
+
+		public const bool fUseSerializedData = false;
+		public const bool fSerializeData = false;
+
+
+		public const int ourmod = 134217728;
+		public static long[] pregeneratedKWordValues;
+		public static long[] pregeneratedKMultiwordValues;
+		public const int NumPregeneratedValues = 20;
+		public const int kForWordHash = 41;
+		public const int kForMultiWordHash = 39;
+		public static List<char> lettersInOrderOfFrequency = new List<char> { 'ו', 'י', 'א', 'מ', 'ה', 'ל', 'ר', 'נ', 'ב', 'ש', 'ת', 'ד', 'כ', 'ע', 'ח', 'ק', 'פ', 'ס', 'ז', 'ט', 'ג', 'צ' };
+
+		// debug
+		public static int gdebugiteration = 0;
+
+		static void Main(string[] args) {
+
+			// Initialization
+			InitializeHashTables();
+
+			// first, set the base directory
+			//string baseDir = @"R:\Avi\data\Dicta\Searia\";
+			string baseDir = @"R:\Avi\data\Dicta\Sefaria-Gittin\";
+
+			// First, get all the masechtot with rashi.
+			List<GemaraMasechet> allMasechtot;
+			if (fUseSerializedData)
+				allMasechtot = GetAllMasechtotWithRashiFromSerializedData(baseDir);
+			else
+				allMasechtot = GetAllMasechtotWithRashi(baseDir);
+
+			StringBuilder sbreport = new StringBuilder();
+			sbreport.AppendLine("NewMasechet: " + allMasechtot[0].masechetNameEng);
+
+			// Iterate through the dapim
+			foreach (GemaraDaf curDaf in allMasechtot[0].allDapim.Values) {
+
+				Console.Write("\r" + curDaf.dafLocation);
+
+				// calculate hashes for the gemara words
+				curDaf.wordhashes = CalculateHashes(curDaf.allWords);
+
+				// now we go through each rashi, and find all potential matches for each, with a rating
+				for (int irashi = 0; irashi < curDaf.allRashi.Count; irashi++) {
+					RashiUnit ru = curDaf.allRashi[irashi];
+
+					// give it a number so we know the order
+					ru.place = irashi;
+
+					int endword = curDaf.allWords.Count;
+
+					List<TextMatch> approxMatches = GetAllApproximateMatches(curDaf, ru, 0, endword, .2);
+					List<TextMatch> approxAbbrevMatches = GetAllApproximateMatchesWithAbbrev(curDaf, ru, 0, endword, .2);
+					List<TextMatch> approxSkipWordMatches = GetAllApproximateMatchesWithWordSkip(curDaf, ru, 0, endword, .2);
+
+					ru.rashimatches.AddRange(approxMatches);
+					ru.rashimatches.AddRange(approxAbbrevMatches);
+					
+					// only add skip-matches that don't overlap with existing matching
+					List<int> foundpoints = new List<int>();
+					foreach (TextMatch tm in ru.rashimatches) {
+						foundpoints.Add(tm.startWord);
+					}
+
+					// for the skip words, of course, it may find items that are one-off or two-off from the actual match. Filter these out
+					foreach (TextMatch tm in approxSkipWordMatches) {
+						int startword = tm.startWord;
+						if (foundpoints.Contains(startword) || foundpoints.Contains(startword - 1) || foundpoints.Contains(startword + 1))
+							continue;
+						ru.rashimatches.Add(tm);
+					}
+
+					// sort the rashis by score
+					ru.rashimatches.Sort((x, y) => x.score.CompareTo(y.score));
+
+					// now figure out disambiguation score
+					CalculateAndFillInDisambiguity(ru);
+				}
+
+				// let's make a list of our rashis in disambiguity order
+				List<RashiUnit> rashisByDisambiguity = new List<RashiUnit>(curDaf.allRashi);
+				rashisByDisambiguity.Sort((x, y) => y.disambiguationScore.CompareTo(x.disambiguationScore));
+
+				// remove any rashis that have no matches at all
+				for (int irashi = rashisByDisambiguity.Count - 1; irashi >= 0; irashi--) {
+					if (rashisByDisambiguity[irashi].rashimatches.Count == 0)
+						rashisByDisambiguity.RemoveAt(irashi);
+				}
+
+				while (rashisByDisambiguity.Count > 0) {
+
+					gdebugiteration++;
+					if (gdebugiteration == 50) {
+					}
+
+					// take top disambiguous rashi
+					RashiUnit topru = rashisByDisambiguity[0];
+
+					// get its boundaries
+					int startBound = -1, endBound = -1, prevMatchedRashi = -1, nextMatchedRashi = -1;
+					GetRashiBoundaries(curDaf.allRashi, topru.place, ref startBound, ref endBound, ref prevMatchedRashi, ref nextMatchedRashi, maxBound: curDaf.allWords.Count);
+
+					// take the first bunch in order of disambiguity and put them in
+
+					int highestrating = topru.disambiguationScore;
+					if (highestrating < 0) {
+						
+					}
+
+					// if we're up to 0 disambiguity, rate them in terms of their place in the amud
+					if (highestrating == 0) {
+
+						for (int irashi = 0; irashi < rashisByDisambiguity.Count; irashi++) {
+
+							RashiUnit curru = rashisByDisambiguity[irashi];
+
+							// figure out how many are tied, or at least within 5 of each other
+							int topscore = rashisByDisambiguity[irashi].rashimatches[0].score;
+							//int thresholdlocal = topscore + 5;
+
+							List<TextMatch> tobesorted = new List<TextMatch>();
+							for (int imatch = 0; imatch < curru.rashimatches.Count; imatch++) {
+								if (curru.rashimatches[imatch].score == topscore) {
+									// this is one of the top matches, and should be sorted
+									tobesorted.Add(curru.rashimatches[imatch]);
+								}
+							}
+
+							// sort those top rashis by place
+							tobesorted.Sort((x,y) => x.startWord.CompareTo(y.startWord));
+
+							// now add in the rest
+							for (int imatch = tobesorted.Count; imatch < curru.rashimatches.Count; imatch++) {
+								tobesorted.Add(curru.rashimatches[imatch]);
+							}
+
+							// put them all in
+							curru.rashimatches = tobesorted;
+						}
+					}
+
+
+
+					// .. debuggigng
+					int lowestrating = -1;
+					List<RashiUnit> rashiUnitsCandidates = new List<RashiUnit>();
+					//List<RashiUnit> ruToProcess = new List<RashiUnit>();
+					for (int irashi = 0; irashi < rashisByDisambiguity.Count; irashi++) {
+
+						RashiUnit ru = rashisByDisambiguity[irashi];
+
+						// if this is outside the region, chuck it
+						// the rashi are coming in in a completely diff order, hence we need to check each one
+						if (ru.place <= prevMatchedRashi || ru.place >= nextMatchedRashi)
+							continue;
+
+
+						//if (ru.disambiguationScore < (highestrating/2))
+						//	break;
+
+						rashiUnitsCandidates.Add(ru);
+						//if (ruToProcess.Count == 5)
+						//	break;
+					}
+
+					// now we figure out how many of these we want to process
+					// we want to take the top three at the least, seven at most, and anything that fits into the current threshold.
+					
+					List<RashiUnit> ruToProcess = new List<RashiUnit>();
+					int threshold = Math.Max(rashiUnitsCandidates[0].disambiguationScore - 5, rashiUnitsCandidates[0].disambiguationScore/2);
+					int thresholdBediavad = rashiUnitsCandidates[0].disambiguationScore / 2;
+					for (int irashi = 0; irashi < rashiUnitsCandidates.Count; irashi++) {
+						RashiUnit ru = rashiUnitsCandidates[irashi];
+						int curScore = rashiUnitsCandidates[irashi].disambiguationScore;
+
+						if (curScore >= threshold || (ruToProcess.Count < 3 && curScore >= thresholdBediavad)) {
+							ruToProcess.Add(rashiUnitsCandidates[irashi]);
+
+							if (highestrating == -1 || ru.disambiguationScore > highestrating)
+								highestrating = ru.disambiguationScore;
+							if (lowestrating == -1 || ru.disambiguationScore < lowestrating)
+								lowestrating = ru.disambiguationScore;
+						}
+						else {
+							break;
+						}
+
+						if (ruToProcess.Count == 7)
+							break;
+					}
+					
+
+					// are these in order?
+					// .. order them by place in the rashi order
+					ruToProcess.Sort((x, y) => x.place.CompareTo(y.place));
+
+					// .. see if they are in order
+					bool fAllInOrder = true;
+					bool fFirstTime = true;
+					while (!fAllInOrder || fFirstTime) {
+
+						// if there are ties, allow for those
+						// **
+
+
+						fFirstTime = false;
+						fAllInOrder = true;
+						int prevstartpos = -1;
+						int prevendpos = -1;
+						for (int irashi = 0; irashi < ruToProcess.Count; irashi++) {
+
+							// if this one is prior to the current position, break
+							if (ruToProcess[irashi].rashimatches[0].startWord < prevstartpos) {
+								fAllInOrder = false;
+								break;
+							}
+
+							// if this one is the same as curpos, only ok if it is shorter
+							if (ruToProcess[irashi].rashimatches[0].startWord == prevstartpos) {
+								if (ruToProcess[irashi].rashimatches[0].endWord >= prevendpos) {
+									fAllInOrder = false;
+									break;
+								}
+							}
+
+							prevstartpos = ruToProcess[irashi].rashimatches[0].startWord;
+							prevendpos = ruToProcess[irashi].rashimatches[0].endWord;
+						}
+
+						// if they are not in order, then we need to figure out which ones are causing trouble and throw them out
+						if (!fAllInOrder) {
+
+							if (ruToProcess.Count == 2) {
+
+								// there are only 2
+
+								// if the top one is much higher in its disambig score than the next one, then don't try to reverse; just take the top score
+								if (Math.Abs(ruToProcess[0].disambiguationScore - ruToProcess[1].disambiguationScore) > 10) {
+									ruToProcess.Sort((x, y) => y.disambiguationScore.CompareTo(x.disambiguationScore));
+									ruToProcess.RemoveAt(1);
+								}
+								else {
+
+									// if there are only 2, see if we can reverse them by going to the secondary matches
+									// .. try the first
+									bool ffixed = false;
+									if (ruToProcess[0].rashimatches.Count > 1) {
+										if (ruToProcess[0].rashimatches[1].startWord < ruToProcess[1].rashimatches[0].startWord) {
+
+											// make sure they are reasonably close
+											if (ruToProcess[0].disambiguationScore < 10) {
+												ruToProcess[0].rashimatches.RemoveAt(0);
+												ffixed = true;
+											}
+										}
+									}
+
+									if (!ffixed) {
+										// .. try the second
+										ffixed = false;
+										if (ruToProcess[1].rashimatches.Count > 1) {
+											if (ruToProcess[1].rashimatches[1].startWord > ruToProcess[0].rashimatches[0].startWord) {
+
+												if (ruToProcess[1].disambiguationScore < 10) {
+													ruToProcess[1].rashimatches.RemoveAt(0);
+													ffixed = true;
+												}
+											}
+										}
+									}
+
+									if (!ffixed) {
+										// .. try the second of both
+										ffixed = false;
+										if (ruToProcess[0].rashimatches.Count > 1 && ruToProcess[1].rashimatches.Count > 1) {
+											if (ruToProcess[1].rashimatches[1].startWord > ruToProcess[0].rashimatches[1].startWord) {
+												if (ruToProcess[1].disambiguationScore < 10 && ruToProcess[0].disambiguationScore < 10) {
+
+													ruToProcess[0].rashimatches.RemoveAt(0);
+													ruToProcess[1].rashimatches.RemoveAt(0);
+													ffixed = true;
+												}
+											}
+										}
+									}
+
+									// if not, take the one with the highest score
+									if (!ffixed) {
+										ruToProcess.Sort((x, y) => y.disambiguationScore.CompareTo(x.disambiguationScore));
+										ruToProcess.RemoveAt(1);
+									}
+								}
+							}
+							else {
+								int[] outoforder = new int[ruToProcess.Count];
+								for (int irashi = 0; irashi < ruToProcess.Count; irashi++) {
+									outoforder[irashi] = 0;
+								}
+								int highestDeviation = 0;
+								for (int irashi = 0; irashi < ruToProcess.Count; irashi++) {
+
+									// how many are out of order vis-a-vis this one?
+									for (int jrashi = 0; jrashi < ruToProcess.Count; jrashi++) {
+
+										if (jrashi == irashi) continue;
+
+										if (irashi < jrashi) {
+
+											// easy case: they start at diff places
+											if (ruToProcess[irashi].rashimatches[0].startWord > ruToProcess[jrashi].rashimatches[0].startWord)
+												outoforder[irashi]++;
+
+												// deal with case of same starting word. only ok if irashi is of greater length
+											else if (ruToProcess[irashi].rashimatches[0].startWord == ruToProcess[jrashi].rashimatches[0].startWord) {
+												if (ruToProcess[irashi].rashimatches[0].endWord <= ruToProcess[jrashi].rashimatches[0].endWord) {
+													outoforder[irashi]++;
+												}
+											}
+										}
+										else {
+
+											// in this case, irashi is after jrashi
+
+											if (ruToProcess[irashi].rashimatches[0].startWord < ruToProcess[jrashi].rashimatches[0].startWord)
+												outoforder[irashi]++;
+
+												// deal with case of same starting word. only ok if jrashi is of greater length
+											else if (ruToProcess[irashi].rashimatches[0].startWord == ruToProcess[jrashi].rashimatches[0].startWord) {
+												if (ruToProcess[irashi].rashimatches[0].endWord >= ruToProcess[jrashi].rashimatches[0].endWord) {
+													outoforder[irashi]++;
+												}
+											}
+										}
+									}
+									if (outoforder[irashi] > highestDeviation)
+										highestDeviation = outoforder[irashi];
+								}
+								// now throw out all those that have the highest out-of-order ranking
+								for (int irashi = ruToProcess.Count - 1; irashi >= 0; irashi--) {
+									if (outoforder[irashi] == highestDeviation && ruToProcess.Count > 1) {
+										ruToProcess.RemoveAt(irashi);
+									}
+								}
+							}
+						}
+					}
+
+
+					// TODO: deal with the case of only 2 in ruToProcess in a smarter way
+
+					for (int irashi = 0; irashi < ruToProcess.Count; irashi++) {
+						if (ruToProcess[irashi].startingText == "והא") {
+
+						}
+
+					}
+
+					// by this point they are all in order, so we can put them all in
+					for (int irashi = 0; irashi < ruToProcess.Count; irashi++) {
+
+						RashiUnit curru = ruToProcess[irashi];
+
+						// put it in
+
+
+						// TODO: if disambiguity is low, apply other criteria
+						TextMatch match = curru.rashimatches[0];
+						curru.startWord = match.startWord;
+						curru.endWord = match.endWord;
+						curru.matchedGemaraText = match.textMatched;
+
+						// remove this guy from the disambiguities, now that it is matched up 
+						rashisByDisambiguity.Remove(curru);
+						if (curru.startingText.Contains("מאי לאו בהא קמיפלגי")) {
+							
+						}
+
+						// recalculate the disambiguities for all those who were potentially relevant, based on this one's place
+						RecalculateDisambiguities(curDaf.allRashi, rashisByDisambiguity, prevMatchedRashi, nextMatchedRashi, startBound, endBound, curru);
+					}
+
+					// resort the disambiguity array
+					rashisByDisambiguity.Sort((x, y) => y.disambiguationScore.CompareTo(x.disambiguationScore));
+				}
+				
+				int unmatched = CountUnmatchedUpRashi(curDaf);
+
+				// now we check for dapim that have a lot of unmatched items, and then we take items out one at a time to see if we can 
+				// minimize it
+				// because usually this results from one misplaced item.
+
+				sbreport.AppendLine("----------------------------------------------");
+				sbreport.AppendLine(curDaf.dafLocation);
+				sbreport.AppendLine("----------------------------------------------");
+				// now do a full report
+				for (int i = 0; i < curDaf.allRashi.Count; i++) {
+					RashiUnit ru = curDaf.allRashi[i];
+					if (ru.startWord == -1) {
+						sbreport.AppendLine("UNMATCHED: " + ru.startingText);
+					}
+					else {
+						sbreport.AppendLine(ru.startingText + " //" + ru.matchedGemaraText + "[" + ru.startWord + "-" + ru.endWord + "]");
+					}
+				}
+			}
+			string s = sbreport.ToString();
+		}
+
+
+
+
+
+
+
+		
