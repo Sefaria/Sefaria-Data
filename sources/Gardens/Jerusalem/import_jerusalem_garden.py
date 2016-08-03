@@ -23,7 +23,18 @@ import unicodecsv as csv
 16	English
 17	Shoshana's Notes
 18	Text Notes
+19  Work Title
 """
+
+books = {}
+with open("Jerusalem Anthology - Bibliographic Data.tsv") as tsv:
+    next(tsv)
+    for l in csv.reader(tsv, dialect="excel-tab"):
+        books[l[0]] = {
+            "year": int(l[1]),
+            "margin": int(l[2] or 0),
+            "place": l[3]
+        }
 
 garden_key = u"sefaria.custom.jerusalem"
 grdn = Garden().load({"key": garden_key})
@@ -80,6 +91,7 @@ with open("Jerusalem Anthology - Sheet1.tsv") as tsv:
         except (InputError, AttributeError) as e:
             if l[13] != "no":
                 print u"Placed Ref Failed - {} - {}".format(l[14], l[1])
+
             stop = {
                 "type": "outside_source",
                 'title': l[1],
@@ -88,6 +100,14 @@ with open("Jerusalem Anthology - Sheet1.tsv") as tsv:
                 'enText': l[16],
                 "tags": tags,
             }
+            if l[19]:
+                book = books[l[19]]
+                print u"Referencing {}".format(l[19])
+                stop["placeKey"] = book["place"]
+                stop["start"] = book["year"] - book["margin"]
+                stop["end"] = book["year"] + book["margin"]
+                stop["startIsApprox"] = book["margin"] != 0
+                stop["endIsApprox"] = book["margin"] != 0
 
         grdn.add_stop(stop)
 
