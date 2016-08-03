@@ -1,0 +1,16 @@
+Program Questions
+-----------------
+
+what is disambiguity score? is lower better? is zero the lowest value?
+
+line 126. why do you get bounds and then not use them?
+line 156. why sort top rashis by position? are we assuming early matches are more likely?
+line 196. nuff said.
+
+are we saving this file correctly? line 1226.GetAllMasechtotWithRashi()
+
+go to functions with "out" and fix them. 
+
+check that any functions that return tuples are in parentheses
+
+check that we made the backwards for loops correctly (off by 1)
