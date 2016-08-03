@@ -59,47 +59,59 @@ def parse():
     lev_sameach, depth_two, depth_three = [], [], []
     shorash, mitzvah, positive_commandment, negative_commandment = True, False, False, False
     last_mitzvah = 1
+    first_text = True
 
     with codecs.open('lev_sameach.txt', 'r', 'utf-8') as the_file:
         for each_line in the_file:
             if "@00" in each_line:
                 #reset(lev_sameach, depth_two, depth_three, last_mitzvah, shorash, positive_commandment, negative_commandment)
+                depth_two.append(depth_three)
                 lev_sameach.append(depth_two)
                 depth_two, depth_three = [], []
                 last_mitzvah = 1
                 if shorash:
                     positive_commandment = True
+                    first_text = True
                     shorash = False
                 if positive_commandment:
                     negative_commandment = True
+                    first_text = True
                     positive_commandment = False
-            if shorash:
+            elif shorash:
                 if "@22" in each_line:
-                    depth_two.append(depth_three)
-                    each_line = clean_up_string(each_line)
-                    depth_three = []
-                    depth_three.append(each_line)
+                    if not first_text:
+                        depth_two.append(depth_three)
+                        each_line = clean_up_string(each_line)
+                        depth_three = [each_line]
+                    else:
+                        first_text = False
 
                 else:
                     each_line = clean_up_string(each_line)
                     depth_three.append(each_line)
 
-            if positive_commandment:
+            elif positive_commandment:
                 if "@22" in each_line:
-                    depth_two.append(depth_three)
-                    last_mitzvah = fill_in_missing_sections_and_update_last(each_line, depth_two, mitzvah_number, [], last_mitzvah)
-                    each_line = clean_up_string(each_line)
-                    depth_three = [each_line]
+                    if not first_text:
+                        depth_two.append(depth_three)
+                        last_mitzvah = fill_in_missing_sections_and_update_last(each_line, depth_two, mitzvah_number, [], last_mitzvah)
+                        each_line = clean_up_string(each_line)
+                        depth_three = [each_line]
+                    else:
+                        first_text = False
 
                 else:
                     each_line = clean_up_string(each_line)
                     depth_three.append(each_line)
-            if negative_commandment:
+            elif negative_commandment:
                 if "@22" in each_line:
-                    depth_two.append(depth_three)
-                    last_mitzvah = fill_in_missing_sections_and_update_last(each_line, depth_two, mitzvah_number, [], last_mitzvah)
-                    each_line = clean_up_string(each_line)
-                    depth_three = [each_line]
+                    if not first_text:
+                        depth_two.append(depth_three)
+                        last_mitzvah = fill_in_missing_sections_and_update_last(each_line, depth_two, mitzvah_number, [], last_mitzvah)
+                        each_line = clean_up_string(each_line)
+                        depth_three = [each_line]
+                    else:
+                        first_text = False
 
                 else:
                     each_line = clean_up_string(each_line)
