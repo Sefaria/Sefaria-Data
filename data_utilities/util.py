@@ -426,7 +426,7 @@ def ja_to_xml(ja, section_names, filename='output.xml'):
     Length must match depth of of jagged_array
     :param filename: Name of file to output result.
     """
-    def build_xml(data, sections, parent=ET.Element('root')):
+    def build_xml(data, sections, parent):
 
         for index, item in enumerate(data):
             child = ET.SubElement(parent, sections[0], attrib={'index': str(index+1)})
@@ -435,14 +435,14 @@ def ja_to_xml(ja, section_names, filename='output.xml'):
                 child.text = item
 
             elif isinstance(item, list):
-                child = build_xml(item, sections[1:], parent=child)
+                build_xml(item, sections[1:], parent=child)
 
             else:
                 raise TypeError('Jagged Array contains unknown type')
 
-        return parent
-
-    tree = ET.ElementTree(build_xml(ja, section_names))
+    root = ET.Element('root')
+    build_xml(ja, section_names, root)
+    tree = ET.ElementTree(root)
     tree.write(filename, 'utf-8')
 
 
