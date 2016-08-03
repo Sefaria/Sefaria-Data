@@ -4,6 +4,7 @@ import os
 import sys
 import re
 import codecs
+from xml.etree import ElementTree as ET
 p = os.path.dirname(os.path.abspath(__file__))+"/sources"
 from sources.local_settings import *
 sys.path.insert(0, p)
@@ -415,6 +416,34 @@ def jagged_array_to_file(output_file, jagged_array, section_names):
             print 'jagged array contains unknown type'
             output_file.close()
             raise TypeError
+
+
+def ja_to_xml(ja, section_names, filename='output.xml'):
+    """
+    Takes a jagged array and prints an xml file
+    :param ja: list or nested list, bottom must be string or unicode
+    :param section_names: list of names with which to identify sections (E.g. ['Chapter', 'Verse'])
+    Length must match depth of of jagged_array
+    :param filename: Name of file to output result.
+    """
+    def build_xml(data, sections, parent=ET.Element('root')):
+
+        for index, item in enumerate(data):
+            child = ET.SubElement(parent, sections[0], attrib={'index': str(index+1)})
+
+            if isinstance(item, basestring):
+                child.text = item
+
+            elif isinstance(item, list):
+                child = build_xml(item, sections[1:], parent=child)
+
+            else:
+                raise TypeError('Jagged Array contains unknown type')
+
+        return parent
+
+    tree = ET.ElementTree(build_xml(ja, section_names))
+    tree.write(filename, 'utf-8')
 
 
 def file_to_ja(structure, infile, expressions, cleaner, grab_all=False):

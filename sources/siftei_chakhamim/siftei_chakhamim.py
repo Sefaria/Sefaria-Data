@@ -213,3 +213,34 @@ class TextParser:
             chapters.append(comments)
 
         return chapters
+
+
+def recover_data(chapter):
+    """
+    Some of the verses do not have their verse index recorded on the daat site. Attempt to derive the missing data
+    by examining the surrounding verses
+    :param chapter: A 'class' Element from Elementtree of a single chapter
+    """
+    assert isinstance(chapter, ET.Element)
+
+    # get all verse elements
+    verses = chapter.findall("./verse")
+
+    for index, verse in enumerate(verses):
+
+        if verse.attrib['verse_index'] == '<unknown>':
+            # is this the first verse?
+            if index == 0:
+                if verses[1].attrib['verse_index'] == '2':
+                    verse.attrib['verse_index'] = '1'
+            else:
+                try:
+                    previous = int(verses[index-1].attrib['verse_index'])
+                    next_one = int(verses[index+1].attrib['verse_index'])
+                except IndexError:
+                    break
+                except ValueError:
+                    continue
+                if next_one - previous == 2:
+                    value = previous + 1
+                    verse.attrib['verse_index'] = str(value)
