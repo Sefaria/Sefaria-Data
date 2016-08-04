@@ -29,28 +29,28 @@ This text numbers comments by letter (i.e. א,ב,ג...י,כ,ל). Therefore, a cu
 """
 
 letters = {
-    u'א': 1,
-    u'ב': 2,
-    u'ג': 3,
-    u'ד': 4,
-    u'ה': 5,
-    u'ו': 6,
-    u'ז': 7,
-    u'ח': 8,
-    u'ט': 9,
-    u'י': 10,
-    u'כ': 11,
-    u'ל': 12,
-    u'מ': 13,
-    u'נ': 14,
-    u'ס': 15,
-    u'ע': 16,
-    u'פ': 17,
-    u'צ': 18,
-    u'ק': 19,
-    u'ר': 20,
-    u'ש': 21,
-    u'ת': 22,
+    u'א': 0,
+    u'ב': 1,
+    u'ג': 2,
+    u'ד': 3,
+    u'ה': 4,
+    u'ו': 5,
+    u'ז': 6,
+    u'ח': 7,
+    u'ט': 8,
+    u'י': 9,
+    u'כ': 10,
+    u'ל': 11,
+    u'מ': 12,
+    u'נ': 13,
+    u'ס': 14,
+    u'ע': 15,
+    u'פ': 16,
+    u'צ': 17,
+    u'ק': 18,
+    u'ר': 19,
+    u'ש': 20,
+    u'ת': 21,
 }
 
 
@@ -174,6 +174,7 @@ class TextParser:
         self.string = self.file_to_string()
         self.chapter_strings = self.string_to_chapters()
         self.parsed_chapters = self.parse_chapters()
+        self.books = self.break_into_books()
 
     def file_to_string(self):
         with codecs.open(self.file_name, 'r', 'utf-8') as text_file:
@@ -214,6 +215,18 @@ class TextParser:
 
         return chapters
 
+    def break_into_books(self):
+
+        books = []
+        start = 0
+        torah = library.get_indexes_in_category('Torah')
+        for book in torah:
+            end = start + len(Ref(book).all_subrefs())
+            books.append(self.parsed_chapters[start:end])
+            start = end
+
+        return books
+
 
 def recover_data(chapter):
     """
@@ -244,3 +257,62 @@ def recover_data(chapter):
                 if next_one - previous == 2:
                     value = previous + 1
                     verse.attrib['verse_index'] = str(value)
+
+
+def modulo_sequence(values, modulo, offset=0):
+    """
+    checks if values are sequential when values follow a modulo pattern (i.e. 0,1,2,3,0,1,2,3,0...)
+    :param values: list of values to examine. Values must be zero indexed.
+    :param modulo: number to run modulo on. In the example of 0,1,2,3 this would be 4
+    :param offset: integer that can be used if values don't start at 0
+    :return: Dictionary, with key in_order with a boolean value, and key errors a list of dictionaries
+    with previous, expected and found.
+    """
+    errors = []
+
+    for index, value in enumerate(values):
+        expected = (index+offset) % modulo
+        if expected != value:
+            if index == 0:
+                previous = None
+            else:
+                previous = values[index-1]
+            errors.append({'previous': previous, 'expected': expected, 'found': value})
+
+            # update offset to account for the skip
+            offset += value - expected
+
+    if len(errors) == 0:
+        return {'in_order': True, 'errors': errors}
+    else:
+        return {'in_order': False, 'errors': errors}
+
+
+def find_skips(filename):
+    """
+    Looks for skipped comments.
+    :param filename: File to scan
+    """
+
+    parser = TextParser(filename)
+    offset = 0
+    total_errors = 0
+    for chapter in parser.chapter_strings:
+        chap_number = util.getGematria(parser.chap_reg.search(chapter).group(1))
+        if chap_number == 1:
+            offset = 0
+        comments = parser.comment_reg.findall(chapter)
+        comment_values = [letters[comment[1]] for comment in comments]
+
+        sequence = modulo_sequence(comment_values, 22, offset)
+        offset = comment_values[-1]+1
+
+        if sequence['in_order']:
+            continue
+        else:
+            print 'error in chapter {}'.format(chap_number)
+            for error in sequence['errors']:
+                print 'previous: {} expected: {} found: {}'.format(
+                    error['previous'], error['expected'], error['found'])
+            total_errors += len(sequence['errors'])
+    print 'total errors: {}'.format(total_errors)
