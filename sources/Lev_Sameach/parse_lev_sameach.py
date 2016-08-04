@@ -14,16 +14,16 @@ link
 clean
 """
 
-# index = ls_functions.create_index()
-# functions.post_index(index)
+index = ls_functions.create_index()
+functions.post_index(index)
 
 lev_sameach = ls_functions.parse()
 
-# a = ['Shorashim', 'Positive_Commandments', 'Negative_Commandments']
-# for index, each_depth_two in enumerate(lev_sameach):
-#     ref = 'Lev Sameach,_{}'.format(a[index])
-#     text = ls_functions.create_text(each_depth_two)
-#     functions.post_text(ref, text)
+a = ['Shorashim', 'Positive_Commandments', 'Negative_Commandments']
+for index, each_depth_two in enumerate(lev_sameach):
+    ref = 'Lev Sameach,_{}'.format(a[index])
+    text = ls_functions.create_text(each_depth_two)
+    functions.post_text(ref, text)
 
 
 list_of_links = ls_functions.create_links(lev_sameach[0])

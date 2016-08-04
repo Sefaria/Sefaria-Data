@@ -57,9 +57,8 @@ def create_mitzvah_node(en_name, he_name):
 
 def parse():
     lev_sameach, depth_two, depth_three = [], [], []
-    shorash, mitzvah, positive_commandment, negative_commandment = True, False, False, False
+    first_text, shorash, commandments = True, True, False
     last_mitzvah = 0
-    first_text = True
 
     with codecs.open('lev_sameach.txt', 'r', 'utf-8') as the_file:
         for each_line in the_file:
@@ -70,12 +69,9 @@ def parse():
                 last_mitzvah = 0
                 first_text = True
                 if shorash:
-                    positive_commandment = True
+                    commandments = True
                     shorash = False
-                # if positive_commandment:
-                #     negative_commandment = True
-                #     first_text = True
-                #     positive_commandment = False
+
             elif shorash:
                 if "@22" in each_line:
                     if not first_text:
@@ -89,7 +85,7 @@ def parse():
                     each_line = clean_up_string(each_line)
                     depth_three.append(each_line)
 
-            elif positive_commandment:
+            elif commandments:
                 if "@22" in each_line:
                     if not first_text:
                         depth_two.append(depth_three)
@@ -98,27 +94,12 @@ def parse():
                         first_text = False
 
                     last_mitzvah = fill_in_missing_sections_and_update_last(each_line, depth_two, mitzvah_number, [], last_mitzvah)
-                    each_line = clean_up_string(each_line)
+                    each_line = clean_up_string(each_line, mitzvot=True)
                     depth_three = [each_line]
 
                 else:
-                    each_line = clean_up_string(each_line)
+                    each_line = clean_up_string(each_line, mitzvot=True)
                     depth_three.append(each_line)
-
-            # elif negative_commandment:
-            #     if "@22" in each_line:
-            #         if not first_text:
-            #             depth_two.append(depth_three)
-            #             last_mitzvah = fill_in_missing_sections_and_update_last(each_line, depth_two, mitzvah_number, [], last_mitzvah)
-            #             each_line = clean_up_string(each_line)
-            #             depth_three = [each_line]
-            #         else:
-            #             first_text = False
-            #
-            #     else:
-            #         each_line = clean_up_string(each_line)
-            #         depth_three.append(each_line)
-
 
     lev_sameach.append(depth_two)
     return lev_sameach
@@ -134,8 +115,12 @@ def fill_in_missing_sections_and_update_last(each_line, base_list, this_regex, f
     return current_index
 
 
-def clean_up_string(string):
+def clean_up_string(string, mitzvot=False):
     string = add_bold(string, ['@11', '@22', '@44'], ['@33', '@55'])
+    if mitzvot:
+        match_object = mitzvah_number.search(string)
+        if match_object:
+            string = string.replace(match_object.group(0), '', 1)
     return string
 
 
