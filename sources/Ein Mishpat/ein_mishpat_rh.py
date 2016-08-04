@@ -24,6 +24,9 @@ with open("Ein Mishpat - Rosh HaShanah - Links.tsv") as tsv:
     next(tsv)
     next(tsv)
     for l in csv.reader(tsv, dialect="excel-tab"):
+        if not l[10]:
+            continue
+
         current_ref = Ref(l[10])
         if not current_ref:
             print "Not a ref? {}".format(l[10])
@@ -44,6 +47,7 @@ with open("Ein Mishpat - Rosh HaShanah - Links.tsv") as tsv:
         # otherwise is for the same ref as the last
             # Add these references to the last collection
             cluster_refs += [Ref(l[n]) for n in range(11, 15) if l[n]]
+
 #last line
 if cluster_refs:
     total += create_cluster(cluster_refs)
