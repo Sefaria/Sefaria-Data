@@ -58,25 +58,24 @@ def create_mitzvah_node(en_name, he_name):
 def parse():
     lev_sameach, depth_two, depth_three = [], [], []
     shorash, mitzvah, positive_commandment, negative_commandment = True, False, False, False
-    last_mitzvah = 1
+    last_mitzvah = 0
     first_text = True
 
     with codecs.open('lev_sameach.txt', 'r', 'utf-8') as the_file:
         for each_line in the_file:
             if "@00" in each_line:
-                #reset(lev_sameach, depth_two, depth_three, last_mitzvah, shorash, positive_commandment, negative_commandment)
                 depth_two.append(depth_three)
                 lev_sameach.append(depth_two)
                 depth_two, depth_three = [], []
-                last_mitzvah = 1
+                last_mitzvah = 0
+                first_text = True
                 if shorash:
                     positive_commandment = True
-                    first_text = True
                     shorash = False
-                if positive_commandment:
-                    negative_commandment = True
-                    first_text = True
-                    positive_commandment = False
+                # if positive_commandment:
+                #     negative_commandment = True
+                #     first_text = True
+                #     positive_commandment = False
             elif shorash:
                 if "@22" in each_line:
                     if not first_text:
@@ -94,28 +93,31 @@ def parse():
                 if "@22" in each_line:
                     if not first_text:
                         depth_two.append(depth_three)
-                        last_mitzvah = fill_in_missing_sections_and_update_last(each_line, depth_two, mitzvah_number, [], last_mitzvah)
-                        each_line = clean_up_string(each_line)
-                        depth_three = [each_line]
+
                     else:
                         first_text = False
+
+                    last_mitzvah = fill_in_missing_sections_and_update_last(each_line, depth_two, mitzvah_number, [], last_mitzvah)
+                    each_line = clean_up_string(each_line)
+                    depth_three = [each_line]
 
                 else:
                     each_line = clean_up_string(each_line)
                     depth_three.append(each_line)
-            elif negative_commandment:
-                if "@22" in each_line:
-                    if not first_text:
-                        depth_two.append(depth_three)
-                        last_mitzvah = fill_in_missing_sections_and_update_last(each_line, depth_two, mitzvah_number, [], last_mitzvah)
-                        each_line = clean_up_string(each_line)
-                        depth_three = [each_line]
-                    else:
-                        first_text = False
 
-                else:
-                    each_line = clean_up_string(each_line)
-                    depth_three.append(each_line)
+            # elif negative_commandment:
+            #     if "@22" in each_line:
+            #         if not first_text:
+            #             depth_two.append(depth_three)
+            #             last_mitzvah = fill_in_missing_sections_and_update_last(each_line, depth_two, mitzvah_number, [], last_mitzvah)
+            #             each_line = clean_up_string(each_line)
+            #             depth_three = [each_line]
+            #         else:
+            #             first_text = False
+            #
+            #     else:
+            #         each_line = clean_up_string(each_line)
+            #         depth_three.append(each_line)
 
 
     lev_sameach.append(depth_two)
@@ -130,18 +132,6 @@ def fill_in_missing_sections_and_update_last(each_line, base_list, this_regex, f
         base_list.append(filler)
         diff -= 1
     return current_index
-
-
-def reset(lev_sameach, depth_two, depth_three, last_mitzvah, shorash, positive_commandment, negative_commandment):
-    lev_sameach.append(depth_two)
-    depth_two, depth_three = [], []
-    last_mitzvah = 1
-    if shorash:
-        positive_commandment = True
-        shorash = False
-    if positive_commandment:
-        negative_commandment = True
-        positive_commandment = False
 
 
 def clean_up_string(string):
@@ -166,14 +156,15 @@ def create_links(lev_sameach_ja):
         list_of_links.append(create_link_dicttionary(shoresh_index + 1, rambam))
         if shoresh_index + 1 in ramban_shoreshim:
             list_of_links.append(create_link_dicttionary(shoresh_index + 1, ramban))
-    functions.post_link(list_of_links)
+
+    return list_of_links
 
 
 def create_link_dicttionary(shoresh_number, ramban_or_ramban):
     return {
         "refs": [
             "{}.{}.1".format(ramban_or_ramban, shoresh_number),
-            "Lev Sameach {}.1".format(shoresh_number)
+            "Lev Sameach,_Shorashim.{}.1".format(shoresh_number)
         ],
         "type": "commentary",
     }
