@@ -11,9 +11,13 @@ from sefaria.helper.link import create_link_cluster
 # 13 ShuA
 # 14 Tur
 
+total = 0
+
 
 def create_cluster(c):
     create_link_cluster(c, 28, "Ein Mishpat / Ner Mitsvah", {"generated_by": "Ein Mishpat Cluster"})
+    l = len(c)
+    return (l * (l-1)) / 2
 
 cluster_refs = None
 with open("Ein Mishpat - Rosh HaShanah - Links.tsv") as tsv:
@@ -32,7 +36,7 @@ with open("Ein Mishpat - Rosh HaShanah - Links.tsv") as tsv:
         # If this line's ref differs from the last
         elif cluster_refs and current_ref != cluster_refs[0]:
             # Load up the previous collection
-            create_cluster(cluster_refs)
+            total += create_cluster(cluster_refs)
 
             # and start new cluster, including Talmud
             cluster_refs = [Ref(l[n]) for n in range(10, 15) if l[n]]
@@ -42,4 +46,6 @@ with open("Ein Mishpat - Rosh HaShanah - Links.tsv") as tsv:
             cluster_refs += [Ref(l[n]) for n in range(11, 15) if l[n]]
 #last line
 if cluster_refs:
-    create_cluster(cluster_refs)
+    total += create_cluster(cluster_refs)
+
+print total
