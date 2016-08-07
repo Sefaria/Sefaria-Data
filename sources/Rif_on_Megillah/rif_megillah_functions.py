@@ -10,6 +10,9 @@ from sefaria.model.schema import AddressTalmud, SchemaNode, JaggedArrayNode
 
 
 bach = regex.compile(u'\([#\*][\u05d0-\u05ea]{1,2}\)')
+ein_mishpat = regex.compile(u'@(?:11|22)[\u05d0-\u05ea]{1,2}')
+gemara_internal_links = regex.compile(u'\((@13\u05d3\u05e3)\s[\u05d0-\u05ea]{1,2}\s\u05e2\u0022(?:\u05d0|\u05d1)\)')
+gemara_external_links = regex.compile(u'\((@13)([\u05d0-\u05ea]{3,15})\s[\u05d0-\u05ea]{1,2}\s\u05e2\u0022(?:\u05d0|\u05d1)\)')
 
 def create_index():
     rif = create_schema()
@@ -69,6 +72,7 @@ def parse():
                     if each_line:
                         amud.append(each_line)
 
+    rif_on_megillah.append(amud)
     return rif_on_megillah
 
 
@@ -76,6 +80,9 @@ def clean_up(string):
     string = string.strip()
     string = add_bold(string, ['@44'], ["@55"])
     string = remove_bach_tags(string)
+    string = remove_ein_mishpat_tags(string)
+    string = internal_links(string)
+    string = external_links(string)
     string = remove_substrings(string, [u'\u00B0'])
     return string
 
@@ -95,45 +102,37 @@ def remove_bach_tags(string):
     return string
 
 
+def remove_ein_mishpat_tags(string):
+    list_of_tags = ein_mishpat.findall(string)
+    for tag in list_of_tags:
+        string = string.replace(tag, '')
+    return string
+
+
+def internal_links(string):
+    list_of_tags = gemara_internal_links.findall(string)
+    for tag in list_of_tags:
+        string = string.replace(tag, u'מגילה')
+    return string
+
+
+def external_links(string):
+    list_of_tags = gemara_external_links.findall(string)
+    for tag in list_of_tags:
+        string = string.replace(tag[0], '')
+    return string
+
+
 def remove_substrings(string, list_of_tags):
     for tag in list_of_tags:
         string = string.replace(tag, '')
     return string
 
 
-def fill_in_missing_sections_and_update_last(each_line, base_list, this_regex, filler, last_index):
-    match_object = this_regex.search(each_line)
-    current_index = util.getGematria(match_object.group(1))
-    diff = current_index - last_index
-    while diff > 1:
-        base_list.append(filler)
-        diff -= 1
-    return current_index
-
-
-def create_links(eee_ja):
-    list_of_links = []
-    for perek_index, perek in enumerate(eee_ja):
-        for pasuk_index, pasuk in enumerate(perek):
-            for comment_index, comment in enumerate(pasuk):
-                list_of_links.append(create_link_dicttionary(perek_index+1, pasuk_index+1, comment_index+1))
-    return list_of_links
-
-
-def create_link_dicttionary(perek, pasuk, comment):
-    return {
-        "refs": [
-            "",
-            ""
-        ],
-        "type": "commentary",
-    }
-
-
 def create_text(jagged_array):
     return {
-        "versionTitle": "",
-        "versionSource": "",
+        "versionTitle": "Vilna Edition",
+        "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957",
         "language": "he",
         "text": jagged_array
     }
