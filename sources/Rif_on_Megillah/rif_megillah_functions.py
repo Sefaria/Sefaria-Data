@@ -9,14 +9,14 @@ from sources.Match.match import Match
 from sefaria.model.schema import AddressTalmud, SchemaNode, JaggedArrayNode
 
 
-mitzvah_number = regex.compile(u'@88\(([\u05d0-\u05ea]{1,4})\)')
+bach = regex.compile(u'\([#\*][\u05d0-\u05ea]{1,2}\)')
 
 def create_index():
     rif = create_schema()
     rif.validate()
     index = {
-        "title": "",
-        "categories": ["Commentary2", "", ""],
+        "title": "Rif_Megillah",
+        "categories": ["Talmud", "Rif", "Seder Moed"],
         "schema": rif.serialize()
     }
     return index
@@ -24,9 +24,9 @@ def create_index():
 
 def create_schema():
     rif_on_megillah = JaggedArrayNode()
-    rif_on_megillah.add_title('', 'en', primary=True)
-    rif_on_megillah.add_title('', 'he', primary=True)
-    rif_on_megillah.key = ''
+    rif_on_megillah.add_title('Rif_Megillah', 'en', primary=True)
+    rif_on_megillah.add_title(u'רי"ף מגילה', 'he', primary=True)
+    rif_on_megillah.key = 'Rif_Megillah'
     rif_on_megillah.depth = 2
     rif_on_megillah.addressTypes = ["Talmud", "Integer"]
     rif_on_megillah.sectionNames = ["Daf", "Line"]
@@ -45,9 +45,13 @@ def parse():
                     if ":" in page:
                         list_of_comments = page.split(":")
                         for comment in list_of_comments:
-                            amud.append(comment)
+                            comment = clean_up(comment)
+                            if comment:
+                                amud.append(comment)
                     else:
-                        amud.append(page)
+                        page = clean_up(page)
+                        if page:
+                            amud.append(page)
 
                     if index < (len(list_of_pages)-1):
                         rif_on_megillah.append(amud)
@@ -57,11 +61,44 @@ def parse():
                 if ":" in each_line:
                     list_of_comments = each_line.split(":")
                     for comment in list_of_comments:
-                        amud.append(comment)
+                        comment = clean_up(comment)
+                        if comment:
+                            amud.append(comment)
                 else:
-                    amud.append(each_line)
+                    each_line = clean_up(each_line)
+                    if each_line:
+                        amud.append(each_line)
 
     return rif_on_megillah
+
+
+def clean_up(string):
+    string = string.strip()
+    string = add_bold(string, ['@44'], ["@55"])
+    string = remove_bach_tags(string)
+    string = remove_substrings(string, [u'\u00B0'])
+    return string
+
+
+def add_bold(string, list_of_opening_tags, list_of_closing_tags):
+    for tag in list_of_opening_tags:
+        string = string.replace(tag, '<b>')
+    for tag in list_of_closing_tags:
+        string = string.replace(tag, '</b>')
+    return string
+
+
+def remove_bach_tags(string):
+    list_of_tags = bach.findall(string)
+    for tag in list_of_tags:
+        string = string.replace(tag, '')
+    return string
+
+
+def remove_substrings(string, list_of_tags):
+    for tag in list_of_tags:
+        string = string.replace(tag, '')
+    return string
 
 
 def fill_in_missing_sections_and_update_last(each_line, base_list, this_regex, filler, last_index):
