@@ -21,6 +21,7 @@ if grdn:
     grdn.delete()
 grdn = Garden({"key": garden_key, "title": u"Responsa Anthology", "heTitle": u"עולם השו״ת"})
 grdn.updateConfig({
+    "filter_rows": 200,
     "timeline_scale": "linear"
 })
 
