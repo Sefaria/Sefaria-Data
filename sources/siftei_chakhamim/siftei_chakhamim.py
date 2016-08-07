@@ -26,6 +26,10 @@ A sequence of characters and numbers can appear after the @55, so this must be a
 @55(>!05#[0-9]{4}<)?([\u05d0-\u05ea]{1,2})@73
 
 This text numbers comments by letter (i.e. א,ב,ג...י,כ,ל). Therefore, a custom key is needed to examine the data.
+
+Missing data in the Genuzot source files led me to attempt a parse HTML taken from Torat Emet. This HTML does not have
+a well formed tree like structure. The approach I took was to combine iterating line by line with the along with the
+BeautifulSoup HTML parser.
 """
 
 letters = {
@@ -316,3 +320,81 @@ def find_skips(filename):
                     error['previous'], error['expected'], error['found'])
             total_errors += len(sequence['errors'])
     print 'total errors: {}'.format(total_errors)
+
+
+class HTMLParser:
+
+    def __init__(self, filename, codec='cp1255'):
+        self.filename = filename
+        self.lines = self.file_by_lines(codec)
+        self.important_text = self.important_lines()
+        self.parsed_text = self.build_structure()
+
+    def file_by_lines(self, codec):
+        with codecs.open(self.filename, 'r', codec) as datafile:
+            data = datafile.readlines()
+        return data
+
+    def important_lines(self):
+        good_lines = []
+        for line_num, line in enumerate(self.lines):
+            if re.search(u'<B><span', line):
+                data = {'text': self.remove_bad_tags(line)}
+
+                # extract meatadata from previous line in file
+                info = self.chapter_verse(self.lines[line_num-1])
+                data['chapter'] = info['chapter']
+                data['verse'] = info['verse']
+                good_lines.append(data)
+
+        return good_lines
+
+    @staticmethod
+    def remove_bad_tags(html_fragment):
+        soup = BeautifulSoup(html_fragment, 'html.parser')
+        while soup.small is not None:
+            soup.small.unwrap()
+        soup.span.decompose()
+        for bold in soup.find_all('b'):
+            if bold.text == u'':
+                bold.decompose()
+        return unicode(soup)
+
+    @staticmethod
+    def chapter_verse(text_fragment):
+        searcher = re.compile(u'.*B.*-([\u05d0-\u05ea]{1,2})-\{([\u05d0-\u05ea]{1,2})\}')
+        data = searcher.search(text_fragment)
+        return {'chapter': util.getGematria(data.group(1)), 'verse': util.getGematria(data.group(2))}
+
+    def build_structure(self):
+
+        book = {}
+        for line in self.important_text:
+            chapter, verse = line['chapter'], line['verse']
+
+            if chapter not in book.keys():
+                book[chapter] ={}
+
+            book[chapter][verse] = self.structure_comments(line['text'])
+
+        book = util.convert_dict_to_array(book)
+        for index, section in enumerate(book):
+            book[index] = util.convert_dict_to_array(section)
+        return book
+
+    @staticmethod
+    def structure_comments(text_fragment):
+
+        comments = []
+
+        bold = re.compile(u'<b>')
+        matches = bold.finditer(text_fragment)
+        start = next(matches)
+
+        for next_match in matches:
+            comments.append(text_fragment[start.start(): next_match.start()])
+            start = next_match
+        else:
+            comments.append(text_fragment[start.start():])
+        return comments
+
