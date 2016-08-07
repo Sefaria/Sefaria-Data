@@ -43,14 +43,14 @@ def create_intro_node():
     return intro
 
 def create_commentary_node():
-    mitzvah = JaggedArrayNode()
-    mitzvah.default = True
-    mitzvah.key = 'default'
-    mitzvah.depth = 3
-    mitzvah.addressTypes = ["Integer", "Integer", "Integer"]
-    mitzvah.sectionNames = ["Perek", "Pasuk", "Comment"]
-    mitzvah.toc_zoom = 2
-    return mitzvah
+    commentary = JaggedArrayNode()
+    commentary.default = True
+    commentary.key = 'default'
+    commentary.depth = 3
+    commentary.addressTypes = ["Integer", "Integer", "Integer"]
+    commentary.sectionNames = ["Perek", "Pasuk", "Comment"]
+    commentary.toc_zoom = 2
+    return commentary
 
 
 def parse():
