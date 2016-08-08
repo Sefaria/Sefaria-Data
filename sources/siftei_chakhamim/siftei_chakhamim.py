@@ -90,10 +90,13 @@ class DaatRashiGrabber:
             else:
                 verse['verse_number'] = util.getGematria(match.group(1))
 
-            for line in self.structure_rashi(span.text):
+            structured_rashi = self.structure_rashi(span.text)
+            for line in structured_rashi:
                 if line is not u'':
                     # add all Siftei Chakhamim in an array according to each Rashi comment.
                     verse['comments'].append(re.findall(u'\[([\u05d0-\u05ea])\]', line))
+
+            verse['total_rashis'] = len(structured_rashi)
 
             rashis.append(verse)
         return rashis
@@ -111,7 +114,7 @@ class DaatRashiGrabber:
             if line == u'':
                 continue
 
-            elif line.find(u'-') >= 0 or current is None:
+            elif re.search(u'-|\u2013', line) or current is None:
                 if current is not None:
                     comments.append(current)
                 current = line
@@ -165,6 +168,8 @@ class DaatRashiGrabber:
                 for super_comment in comment:
                     scomment = ET.SubElement(verse, 'comment', {'rashi_comment': str(index+1)})
                     scomment.text = super_comment
+            total_rashis = ET.SubElement(verse, 'total_rashis')
+            total_rashis.text = str(rashi['total_rashis'])
 
         return ET.ElementTree(root)
 
@@ -398,3 +403,73 @@ class HTMLParser:
             comments.append(text_fragment[start.start():])
         return comments
 
+
+def parse_multiple():
+    book_names = library.get_indexes_in_category('Torah')
+    parsed_text = {}
+    for book in book_names:
+        parser = HTMLParser('{}.html'.format(book))
+        parsed_text[book] = parser.parsed_text
+
+    return parsed_text
+
+
+def compare_data(parsed, daat_xml):
+    """
+    compare number of Rashi comments in our system to daat, as well as number of Siftei chakhamim comments on Torat
+    emet to daat.
+    :param parsed: Parsed text as a dictionary, with book names as keys and ja as values.
+    :param daat_xml: Filename of daat xml data
+    :return:
+    """
+    daat = ET.parse(daat_xml)
+    root = daat.getroot()
+    comment_verses, bad_verses = 0, 0
+
+    for book in library.get_indexes_in_category('Torah'):
+        daat_book = root.find(book)
+        daat_chapters = list(daat_book)
+        for chap_index, chapter in enumerate(parsed[book]):
+            # daat_verses = list(daat_chapters[chap_index])
+            for v_index, verse in enumerate(chapter):
+
+                bad_verse = False
+                total_rashis = len(Ref('Rashi on {}.{}.{}'.format(book, chap_index+1, v_index+1)).all_subrefs())
+                daat_verse = daat_chapters[chap_index].find("./verse[@verse_index='{}']".format(v_index+1))
+                if daat_verse is None:
+                    total_daat_comments = 0
+                else:
+                    total_daat_comments = len(daat_verse.findall("./comment"))
+                    comment_verses += 1
+
+                if total_daat_comments > 0:
+                    total_daat_rashis = int(daat_verse.find("./total_rashis").text)
+                else:
+                    total_daat_rashis = 0
+
+                if total_rashis != total_daat_rashis and len(verse) > 0:
+                    print 'Rashi mismatch {} {} {}'.format(book, chap_index+1, v_index+1)
+                    bad_verse = True
+
+                if total_daat_comments != len(verse):
+                    print 'comment mismatch {} {} {}'.format(book, chap_index+1, v_index+1)
+                    bad_verse = True
+                if bad_verse:
+                    bad_verses += 1
+    print 'verses with comments: {}\nbad verses: {}'.format(comment_verses, bad_verses)
+
+
+def rebuild_daat_file():
+    xml = ET.ElementTree(ET.Element('root'))
+    for book in library.get_indexes_in_category('Torah'):
+        for ref in Ref(book).all_subrefs():
+            parser = DaatRashiGrabber(ref)
+            parser.add_to_xml(xml)
+
+    xml.write('link_data2.xml')
+    root = xml.getroot()
+    for book in library.get_indexes_in_category('Torah'):
+        for chapter in list(root.find(book)):
+            recover_data(chapter)
+
+    xml.write('fixed_links2.xml')
