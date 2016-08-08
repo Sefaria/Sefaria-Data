@@ -587,7 +587,7 @@ def traverse_ja(ja, indices=[], bottom=unicode):
     corresponding address.
     """
 
-    if type(ja) is bottom:
+    if isinstance(ja, bottom):
         yield {'data': ja, 'indices': indices}
 
     else:
