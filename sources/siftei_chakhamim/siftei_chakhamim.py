@@ -97,7 +97,7 @@ class DaatRashiGrabber:
             structured_rashi = self.structure_rashi(span.text)
             for line in structured_rashi:
                 if line is not u'':
-                    # add all Siftei Chakhamim in an array according to each Rashi comment.
+                    # add all Siftei Hakhamim in an array according to each Rashi comment.
                     verse['comments'].append(re.findall(u'\[([\u05d0-\u05ea])\]', line))
 
             verse['total_rashis'] = len(structured_rashi)
@@ -420,7 +420,7 @@ def parse_multiple():
 
 def compare_data(parsed, daat_xml):
     """
-    compare number of Rashi comments in our system to daat, as well as number of Siftei chakhamim comments on Torat
+    compare number of Rashi comments in our system to daat, as well as number of Siftei Hakhamim comments on Torat
     emet to daat.
     :param parsed: Parsed text as a dictionary, with book names as keys and ja as values.
     :param daat_xml: Filename of daat xml data
@@ -506,17 +506,17 @@ def generate_links(parsed_data, link_filename='fixed_links.xml', error_file='err
 
                 # build the link object
                 links.append({
-                    'refs': [u'Siftei Chakhamim, {}.{}.{}.{}'.format(book, *[x+1 for x in comment['indices']]),
+                    'refs': [u'Siftei Hakhamim, {}.{}.{}.{}'.format(book, *[x+1 for x in comment['indices']]),
                              u'Rashi on {}.{}.{}.{}'.format(book, chapter+1, verse+1, rashi_value)],
                     'type': 'commentary',
                     'auto': False,
-                    'generated_by': 'Siftei Chakhamim parse script'
+                    'generated_by': 'Siftei Hakhamim parse script'
                 })
 
             else:
                 bad_link = [book]
                 bad_link.extend([x+1 for x in comment['indices']])
-                url = 'draft.sefaria.org/Siftei_Chakhamim,_{}.{}.{}.{}'\
+                url = 'draft.sefaria.org/Siftei_Hakhamim,_{}.{}.{}.{}'\
                     .format(book, *[x+1 for x in comment['indices']])
                 bad_link.append(url)
                 errors.append(bad_link)
@@ -552,9 +552,9 @@ def build_index():
 
     # create index record
     record = SchemaNode()
-    record.add_title('Siftei Chakhamim', 'en', primary=True, )
+    record.add_title('Siftei Hakhamim', 'en', primary=True, )
     record.add_title(u'שפתי חכמים', 'he', primary=True, )
-    record.key = 'Siftei Chakhamim'
+    record.key = 'Siftei Hakhamim'
 
     # add nodes
     for book in books:
@@ -570,7 +570,7 @@ def build_index():
     record.validate()
 
     index = {
-        "title": "Siftei Chakhamim",
+        "title": "Siftei Hakhamim",
         "categories": ["Commentary2", "Torah", "Rashi"],
         "schema": record.serialize()
     }
@@ -581,12 +581,12 @@ def post_text(parsed_data):
 
     for book in library.get_indexes_in_category('Torah'):
         version = {
-            'versionTitle': 'Siftei Chakhamim',
+            'versionTitle': 'Siftei Hakhamim',
             'versionSource': 'http://www.toratemetfreeware.com/',
             'language': 'he',
             'text': parsed_data[book]
         }
-        functions.post_text('Siftei Chakhamim, {}'.format(book), version)
+        functions.post_text('Siftei Hakhamim, {}'.format(book), version)
 
 parsed = parse_multiple()
 slinks = generate_links(parsed)
