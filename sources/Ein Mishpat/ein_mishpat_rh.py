@@ -15,9 +15,10 @@ total = 0
 
 
 def create_cluster(c):
-    create_link_cluster(c, 28, "Ein Mishpat / Ner Mitsvah", {"generated_by": "Ein Mishpat Cluster"})
-    l = len(c)
-    return (l * (l-1)) / 2
+    return create_link_cluster(c, 28, "Ein Mishpat / Ner Mitsvah",
+                        attrs={"generated_by": "Ein Mishpat Cluster"},
+                        exception_pairs=[("Tur", "Shulchan Arukh")])
+
 
 cluster_refs = None
 with open("Ein Mishpat - Rosh HaShanah - Links.tsv") as tsv:
