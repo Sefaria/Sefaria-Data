@@ -14,7 +14,7 @@ def create_index():
     ralbag.validate()
     index = {
         "title": "Ralbag on Ruth",
-        "categories": ["Commentary2", "", "Ralbag"],
+        "categories": ["Commentary2", "Ruth", "Ralbag"],
         "schema": ralbag.serialize()
     }
     return index
@@ -35,8 +35,8 @@ def create_commentary_node():
     commentary.default = True
     commentary.key = 'default'
     commentary.depth = 3
-    commentary.addressTypes = ["Integer", "Integer"]
-    commentary.sectionNames = ["Perek", "Pasuk"]
+    commentary.addressTypes = ["Integer", "Integer", "Integer"]
+    commentary.sectionNames = ["Perek", "Pasuk", "Comment"]
     return commentary
 
 
@@ -56,6 +56,8 @@ def parse():
     commentary_on_ruth, perek, pasuk = [], [], []
     toalot = []
     toalot_section = False
+    last_pasuk = 1
+    pasuk_number_regex = regex.compile(u'@22([\u05d0-\u05ea]{1,2})')
 
     with codecs.open('ralbag_on_ruth.txt', 'r', 'utf-8') as the_file:
         for each_line in the_file:
@@ -70,12 +72,11 @@ def parse():
                 perek.append(pasuk)
                 commentary_on_ruth.append(perek)
                 perek, pasuk = [], []
+                last_pasuk = 0
 
             elif "@22" in each_line:
                 perek.append(pasuk)
-
-                #play catch up
-
+                last_pasuk = fill_in_missing_sections_and_updated_last(each_line, perek, pasuk_number_regex, [], last_pasuk)
                 pasuk = []
 
             elif toalot_section:
@@ -88,25 +89,14 @@ def parse():
     return the_whole_thing
 
 
-def clean_up(string):
-    string = string.strip()
-    string = add_bold(string, ['@44'], ["@55"])
-    string = remove_substrings(string, [u'\u00B0'])
-    return string
-
-
-def add_bold(string, list_of_opening_tags, list_of_closing_tags):
-    for tag in list_of_opening_tags:
-        string = string.replace(tag, '<b>')
-    for tag in list_of_closing_tags:
-        string = string.replace(tag, '</b>')
-    return string
-
-
-def remove_substrings(string, list_of_tags):
-    for tag in list_of_tags:
-        string = string.replace(tag, '')
-    return string
+def fill_in_missing_sections_and_updated_last(each_line, base_list, this_regex, filler, last_index):
+    match_object = this_regex.search(each_line)
+    current_index = util.getGematria(match_object.group(1))
+    diff = current_index - last_index
+    while diff > 1:
+        base_list.append(filler)
+        diff -= 1
+    return current_index
 
 
 def create_text(jagged_array):
@@ -116,3 +106,22 @@ def create_text(jagged_array):
         "language": "he",
         "text": jagged_array
     }
+
+
+def create_links(ralbag_ja):
+    list_of_links = []
+    for perek_index, perek in enumerate(ralbag_ja):
+        for pasuk_index, pasuk in enumerate(perek):
+            for comment_index, comment in enumerate(pasuk):
+                list_of_links.append(create_link_dicttionary(perek_index+1, pasuk_index+1, comment_index+1))
+    return list_of_links
+
+
+def create_link_dicttionary(perek_bumber, mishna_number, comment_index):
+    return {
+                "refs": [
+                        "Ruth.{}.{}".format(perek_bumber, mishna_number),
+                        "Ralbag on Ruth.{}.{}.{}".format(perek_bumber, mishna_number, comment_index)
+                    ],
+                "type": "commentary",
+        }
