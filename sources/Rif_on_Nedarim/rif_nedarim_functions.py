@@ -9,7 +9,7 @@ from sources.Match.match import Match
 from sefaria.model.schema import AddressTalmud, SchemaNode, JaggedArrayNode
 
 os_hagah = regex.compile(u'@22\([\u05d0-\u05ea]{1,2}\)')
-gemara_internal_links = regex.compile(u'\((@13\u05d3\u05e3)\s[\u05d0-\u05ea]{1,2}\s\u05e2\u0022(?:\u05d0|\u05d1)\)')
+gemara_internal_links = regex.compile(u'(@13\(\u05d3\u05e3)\s[\u05d0-\u05ea]{1,2}\s\u05e2\u0022(?:\u05d0|\u05d1)\)')
 gemara_external_links = regex.compile(u'\((@13)([\u05d0-\u05ea]{3,15})\s[\u05d0-\u05ea]{1,2}\s\u05e2\u0022(?:\u05d0|\u05d1)\)')
 
 def create_index():
@@ -102,7 +102,7 @@ def remove_os_hagah_tags(string):
 def internal_links(string):
     list_of_tags = gemara_internal_links.findall(string)
     for tag in list_of_tags:
-        string = string.replace(tag, u'נדרים')
+        string = string.replace(tag, u'(נדרים')
     return string
 
 
