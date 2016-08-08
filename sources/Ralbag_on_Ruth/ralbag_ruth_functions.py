@@ -14,7 +14,7 @@ def create_index():
     ralbag.validate()
     index = {
         "title": "Ralbag on Ruth",
-        "categories": ["Commentary2", "Ruth", "Ralbag"],
+        "categories": ["Commentary2", "Tanakh", "Ralbag"],
         "schema": ralbag.serialize()
     }
     return index
