@@ -13,7 +13,7 @@ def create_index():
     ralbag = create_schema()
     ralbag.validate()
     index = {
-        "title": "Ralbag on Ruth",
+        "title": "Ralbag Ruth",
         "categories": ["Commentary2", "Tanakh", "Ralbag"],
         "schema": ralbag.serialize()
     }
@@ -22,9 +22,9 @@ def create_index():
 
 def create_schema():
     ralbag_on_ruth = SchemaNode()
-    ralbag_on_ruth.add_title('Ralbag on Ruth', 'en', primary=True)
-    ralbag_on_ruth.add_title(u'רלב"ג על רות', 'he', primary=True)
-    ralbag_on_ruth.key = 'Ralbag on Ruth'
+    ralbag_on_ruth.add_title('Ralbag Ruth', 'en', primary=True)
+    ralbag_on_ruth.add_title(u'רלב"ג רות', 'he', primary=True)
+    ralbag_on_ruth.key = 'Ralbag Ruth'
     ralbag_on_ruth.append(create_commentary_node())
     ralbag_on_ruth.append(create_toalot_node())
     return ralbag_on_ruth
@@ -52,7 +52,7 @@ def create_toalot_node():
 
 
 def parse():
-    the_whole_thing = []
+    the_whole_thing = {}
     commentary_on_ruth, perek, pasuk = [], [], []
     toalot = []
     toalot_section = False
@@ -66,7 +66,7 @@ def parse():
                 toalot_section = True
                 perek.append(pasuk)
                 commentary_on_ruth.append(perek)
-                the_whole_thing.append(commentary_on_ruth)
+                the_whole_thing['Commentary'] = commentary_on_ruth
 
             elif "@01" in each_line:
                 perek.append(pasuk)
@@ -85,7 +85,7 @@ def parse():
             else:
                 pasuk.append(each_line)
 
-    the_whole_thing.append(toalot)
+    the_whole_thing['Benefits'] = toalot
     return the_whole_thing
 
 
@@ -121,7 +121,7 @@ def create_link_dicttionary(perek_bumber, mishna_number, comment_index):
     return {
                 "refs": [
                         "Ruth.{}.{}".format(perek_bumber, mishna_number),
-                        "Ralbag on Ruth.{}.{}.{}".format(perek_bumber, mishna_number, comment_index)
+                        "Ralbag Ruth.{}.{}.{}".format(perek_bumber, mishna_number, comment_index)
                     ],
                 "type": "commentary",
         }

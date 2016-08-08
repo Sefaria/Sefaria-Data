@@ -17,17 +17,18 @@ clean
 index = ralbag_ruth_functions.create_index()
 functions.post_index(index)
 
-ralbag_ruth = ralbag_ruth_functions.parse()
+ralbag_ruth_dict = ralbag_ruth_functions.parse()
 
-for index, each_text in enumerate(ralbag_ruth):
-    ref = 'Ralbag on Ruth'
-    if index == 1:
+for key in ralbag_ruth_dict:
+    ref = 'Ralbag Ruth'
+    if key == 'Benefits':
         ref += ',_Benefits'
-    text = ralbag_ruth_functions.create_text(each_text)
+    text = ralbag_ruth_functions.create_text(ralbag_ruth_dict[key])
     functions.post_text(ref, text)
 
-list_of_links = ralbag_ruth_functions.create_links(ralbag_ruth[0])
+list_of_links = ralbag_ruth_functions.create_links(ralbag_ruth_dict['Commentary'])
 functions.post_link(list_of_links)
 
+ralbag_ruth = [ralbag_ruth_dict['Commentary'], ralbag_ruth_dict['Benefits']]
 
 util.ja_to_xml(ralbag_ruth, ['FIRST', 'SECOND', 'THIRD', 'FOURTH'])
