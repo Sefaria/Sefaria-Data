@@ -68,6 +68,9 @@ with open("Jerusalem Anthology - Sheet1.tsv") as tsv:
             "Characters": [a.title().strip() for a in l[6].split(",") if a]
         }
         try:
+            if l[13] == "no":
+                raise InputError  # Not placed. Add as an outside source.
+
             ref = Ref(l[14])
 
             if u"Tanakh" in ref.index.categories:
