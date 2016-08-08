@@ -72,7 +72,7 @@ def parse():
                 perek.append(pasuk)
                 commentary_on_ruth.append(perek)
                 perek, pasuk = [], []
-                last_pasuk = 0
+                last_pasuk = 1
 
             elif "@22" in each_line:
                 perek.append(pasuk)
