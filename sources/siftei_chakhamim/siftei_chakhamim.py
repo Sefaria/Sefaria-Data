@@ -511,6 +511,14 @@ def generate_links(parsed_data, link_filename='fixed_links.xml', error_file='err
                 refs = [u'Siftei Hakhamim, {}.{}.{}.{}'.format(book, *[x+1 for x in comment['indices']]),
                         u'Rashi on {}.{}.{}.{}'.format(book, chapter+1, verse+1, rashi_value)]
 
+                # build the link object
+                links.append({
+                    'refs': refs,
+                    'type': 'commentary',
+                    'auto': False,
+                    'generated_by': 'Siftei Hakhamim parse script'
+                })
+
             else:
                 bad_link = [book]
                 bad_link.extend([x+1 for x in comment['indices']])
@@ -518,17 +526,6 @@ def generate_links(parsed_data, link_filename='fixed_links.xml', error_file='err
                     .format(book, *[x+1 for x in comment['indices']])
                 bad_link.append(url)
                 errors.append(bad_link)
-
-                refs = [u'Siftei Hakhamim, {}.{}.{}.{}'.format(book, *[x + 1 for x in comment['indices']]),
-                        u'Rashi on {}.{}.{}'.format(book, chapter + 1, verse + 1)]
-
-            # build the link object
-            links.append({
-                'refs': refs,
-                'type': 'commentary',
-                'auto': False,
-                'generated_by': 'Siftei Hakhamim parse script'
-            })
 
     # write errors to csv file
     with open(error_file, 'w') as outfile:
