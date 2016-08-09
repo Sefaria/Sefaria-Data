@@ -14,8 +14,8 @@ link
 clean
 """
 
-index = rif_nedarim_functions.create_index()
-functions.post_index(index)
+# index = rif_nedarim_functions.create_index()
+# functions.post_index(index)
 
 rif_nedarim = rif_nedarim_functions.parse()
 
@@ -26,3 +26,5 @@ functions.post_text(ref, text)
 testing_file = codecs.open("testing_file.txt", 'w', 'utf-8')
 util.jagged_array_to_file(testing_file, rif_nedarim, ['Daf', 'Line'])
 testing_file.close()
+
+util.ja_to_xml(rif_nedarim, ['Daf', 'Line'])

@@ -80,7 +80,7 @@ def clean_up(string):
     string = remove_os_hagah_tags(string)
     string = internal_links(string)
     string = external_links(string)
-    string = remove_substrings(string, ['@88'])
+    string = remove_substrings(string, ['@88', '@00', '@99'])
     if string:
         string += ':'
     return string
