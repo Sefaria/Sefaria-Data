@@ -81,6 +81,8 @@ def clean_up(string):
     string = internal_links(string)
     string = external_links(string)
     string = remove_substrings(string, ['@88'])
+    if string:
+        string += ':'
     return string
 
 
