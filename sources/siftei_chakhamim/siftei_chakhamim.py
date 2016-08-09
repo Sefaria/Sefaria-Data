@@ -485,12 +485,13 @@ def generate_links(parsed_data, link_filename='fixed_links.xml', error_file='err
             verse_element = book_element.find("./chapter[@chap_index='{}']/verse[@verse_index='{}']"
                                               .format(chapter+1, verse+1))
             rashis = Ref('Rashi on {}.{}.{}'.format(book, chapter+1, verse+1))
+            total_rashis = len(rashis.all_subrefs())
 
-            # compare number of Rashis on daat and sefaria
             if verse_element is None:
                 good_verse = False
 
-            elif len(rashis.all_subrefs()) != int(verse_element.find('total_rashis').text):
+            # compare number of Rashis on daat and sefaria. If only one Rashi link can be made
+            elif total_rashis != int(verse_element.find('total_rashis').text) and total_rashis != 1:
                 good_verse = False
 
             # compare number of siftei chakhmim on daat and Torat Emet
@@ -502,16 +503,13 @@ def generate_links(parsed_data, link_filename='fixed_links.xml', error_file='err
                 # grab the exact Rashi comment number to link to
                 comment_number = comment['indices'][2]
                 comment_element = verse_element.findall('comment')[comment_number]
-                rashi_value = int(comment_element.attrib['rashi_comment'])
+                if total_rashis == 1:
+                    rashi_value = 1
+                else:
+                    rashi_value = int(comment_element.attrib['rashi_comment'])
 
-                # build the link object
-                links.append({
-                    'refs': [u'Siftei Hakhamim, {}.{}.{}.{}'.format(book, *[x+1 for x in comment['indices']]),
-                             u'Rashi on {}.{}.{}.{}'.format(book, chapter+1, verse+1, rashi_value)],
-                    'type': 'commentary',
-                    'auto': False,
-                    'generated_by': 'Siftei Hakhamim parse script'
-                })
+                refs = [u'Siftei Hakhamim, {}.{}.{}.{}'.format(book, *[x+1 for x in comment['indices']]),
+                        u'Rashi on {}.{}.{}.{}'.format(book, chapter+1, verse+1, rashi_value)]
 
             else:
                 bad_link = [book]
@@ -520,6 +518,17 @@ def generate_links(parsed_data, link_filename='fixed_links.xml', error_file='err
                     .format(book, *[x+1 for x in comment['indices']])
                 bad_link.append(url)
                 errors.append(bad_link)
+
+                refs = [u'Siftei Hakhamim, {}.{}.{}.{}'.format(book, *[x + 1 for x in comment['indices']]),
+                        u'Rashi on {}.{}.{}'.format(book, chapter + 1, verse + 1)]
+
+            # build the link object
+            links.append({
+                'refs': refs,
+                'type': 'commentary',
+                'auto': False,
+                'generated_by': 'Siftei Hakhamim parse script'
+            })
 
     # write errors to csv file
     with open(error_file, 'w') as outfile:
