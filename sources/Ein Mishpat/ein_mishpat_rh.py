@@ -12,7 +12,7 @@ from sefaria.helper.link import create_link_cluster
 # 14 Tur
 
 total = 0
-
+#todo: introduce error-checking to avoid dead links.  Checked by Ref on section level, but not segment.
 
 def create_cluster(c):
     return create_link_cluster(c, 28, "Ein Mishpat / Ner Mitsvah",
