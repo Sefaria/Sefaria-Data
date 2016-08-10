@@ -1,13 +1,17 @@
 # encoding=utf-8
 import codecs
 from bs4 import BeautifulSoup
+from xml.etree import ElementTree as ET
+import csv
 import urllib2
 import re
 from data_utilities import util
-from xml.etree import ElementTree as ET
 import unicodecsv as ucsv
 from data_utilities import util
+from sefaria.utils.hebrew import hebrew_term
 from sefaria.model import *
+import json
+from sources import functions
 
 """
 Very little data is available from the source file for this text. It is possible to break up text into chapters and
@@ -93,7 +97,7 @@ class DaatRashiGrabber:
             structured_rashi = self.structure_rashi(span.text)
             for line in structured_rashi:
                 if line is not u'':
-                    # add all Siftei Chakhamim in an array according to each Rashi comment.
+                    # add all Siftei Hakhamim in an array according to each Rashi comment.
                     verse['comments'].append(re.findall(u'\[([\u05d0-\u05ea])\]', line))
 
             verse['total_rashis'] = len(structured_rashi)
@@ -416,7 +420,7 @@ def parse_multiple():
 
 def compare_data(parsed, daat_xml):
     """
-    compare number of Rashi comments in our system to daat, as well as number of Siftei chakhamim comments on Torat
+    compare number of Rashi comments in our system to daat, as well as number of Siftei Hakhamim comments on Torat
     emet to daat.
     :param parsed: Parsed text as a dictionary, with book names as keys and ja as values.
     :param daat_xml: Filename of daat xml data
@@ -459,6 +463,79 @@ def compare_data(parsed, daat_xml):
     print 'verses with comments: {}\nbad verses: {}'.format(comment_verses, bad_verses)
 
 
+def generate_links(parsed_data, link_filename='fixed_links.xml', error_file='errors.csv'):
+    """
+    Using an xml of data from daat and parsed text, generate all links
+    :param parsed_data: Dictionary keys are books of Torah, values are parsed text into ja.
+    :param link_filename: Filename of xml file that holds link data.
+    :param error_file: Filename of csv file which contains all comments that could not be linked.
+    :return: List of link objects
+    """
+    links, errors = [], []
+    root = ET.parse(link_filename).getroot()
+
+    for book in library.get_indexes_in_category('Torah'):
+        book_element = root.find(book)
+        for comment in util.traverse_ja(parsed_data[book], bottom=basestring):
+
+            good_verse = True
+            chapter, verse = comment['indices'][0], comment['indices'][1]
+
+            # get the verse from the xml
+            verse_element = book_element.find("./chapter[@chap_index='{}']/verse[@verse_index='{}']"
+                                              .format(chapter+1, verse+1))
+            rashis = Ref('Rashi on {}.{}.{}'.format(book, chapter+1, verse+1))
+            total_rashis = len(rashis.all_subrefs())
+
+            if verse_element is None:
+                good_verse = False
+
+            # compare number of Rashis on daat and sefaria. If only one Rashi link can be made
+            elif total_rashis != int(verse_element.find('total_rashis').text) and total_rashis != 1:
+                good_verse = False
+
+            # compare number of siftei chakhmim on daat and Torat Emet
+            elif len(parsed_data[book][chapter][verse]) != len(verse_element.findall('comment')):
+                good_verse = False
+
+            if good_verse:
+
+                # grab the exact Rashi comment number to link to
+                comment_number = comment['indices'][2]
+                comment_element = verse_element.findall('comment')[comment_number]
+                if total_rashis == 1:
+                    rashi_value = 1
+                else:
+                    rashi_value = int(comment_element.attrib['rashi_comment'])
+
+                refs = [u'Siftei Hakhamim, {}.{}.{}.{}'.format(book, *[x+1 for x in comment['indices']]),
+                        u'Rashi on {}.{}.{}.{}'.format(book, chapter+1, verse+1, rashi_value)]
+
+                # build the link object
+                links.append({
+                    'refs': refs,
+                    'type': 'commentary',
+                    'auto': False,
+                    'generated_by': 'Siftei Hakhamim parse script'
+                })
+
+            else:
+                bad_link = [book]
+                bad_link.extend([x+1 for x in comment['indices']])
+                url = 'draft.sefaria.org/Siftei_Hakhamim,_{}.{}.{}.{}'\
+                    .format(book, *[x+1 for x in comment['indices']])
+                bad_link.append(url)
+                errors.append(bad_link)
+
+    # write errors to csv file
+    with open(error_file, 'w') as outfile:
+        writer = csv.writer(outfile, delimiter=';')
+        writer.writerow(['Book', 'Chapter', 'Verse', 'Comment', 'url'])
+        writer.writerows(errors)
+
+    return links
+
+
 def rebuild_daat_file():
     xml = ET.ElementTree(ET.Element('root'))
     for book in library.get_indexes_in_category('Torah'):
@@ -473,3 +550,52 @@ def rebuild_daat_file():
             recover_data(chapter)
 
     xml.write('fixed_links2.xml')
+
+
+def build_index():
+
+    books = library.get_indexes_in_category('Torah')
+
+    # create index record
+    record = SchemaNode()
+    record.add_title('Siftei Hakhamim', 'en', primary=True, )
+    record.add_title(u'שפתי חכמים', 'he', primary=True, )
+    record.key = 'Siftei Hakhamim'
+
+    # add nodes
+    for book in books:
+        node = JaggedArrayNode()
+        node.add_title(book, 'en', primary=True)
+        node.add_title(hebrew_term(book), 'he', primary=True)
+        node.key = book
+        node.depth = 3
+        node.addressTypes = ['Integer', 'Integer', 'Integer']
+        node.sectionNames = ['Chapter', 'Verse', 'Comment']
+        node.toc_zoom = 2
+        record.append(node)
+    record.validate()
+
+    index = {
+        "title": "Siftei Hakhamim",
+        "categories": ["Commentary2", "Torah", "Rashi"],
+        "schema": record.serialize()
+    }
+    return index
+
+
+def post_text(parsed_data):
+
+    for book in library.get_indexes_in_category('Torah'):
+        version = {
+            'versionTitle': 'Siftei Hakhamim',
+            'versionSource': 'http://www.toratemetfreeware.com/',
+            'language': 'he',
+            'text': parsed_data[book]
+        }
+        functions.post_text('Siftei Hakhamim, {}'.format(book), version)
+
+parsed = parse_multiple()
+slinks = generate_links(parsed)
+functions.post_index(build_index())
+post_text(parsed)
+functions.post_link(slinks)
