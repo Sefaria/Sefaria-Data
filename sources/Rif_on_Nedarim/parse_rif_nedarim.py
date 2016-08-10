@@ -14,8 +14,8 @@ link
 clean
 """
 
-# index = rif_nedarim_functions.create_index()
-# functions.post_index(index)
+index = rif_nedarim_functions.create_index()
+functions.post_index(index)
 
 rif_nedarim = rif_nedarim_functions.parse()
 
