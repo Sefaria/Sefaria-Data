@@ -6,7 +6,7 @@ from sources import functions
 from data_utilities import util
 
 
-def parse_targum_jerusalem_english():
+def parse_targum_pseudo_jonathan():
     book_chapter_verse = regex.compile('(Gen|Exo|Lev|Num|Deu)\s(\d{1,2}):(\d{1,2})')
     all_of_chumash, book, chapter = [], [], []
     last_book, last_chapter = 'Gen', '1'
