@@ -15,7 +15,7 @@ sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
 from sefaria.utils.util import replace_using_regex as reg_replace
-
+import base64
 
 gematria = {}
 gematria[u'א'] = 1
@@ -104,6 +104,8 @@ def in_order_caller(file, reg_exp_tag, reg_exp_reset="", dont_count=[], output_f
         output_file.write(file.encode('utf-8')+"\n")
         output_file.write("חסר פרק "+result.encode('utf-8')+"\n\n\n")
     output_file.close()
+
+
 
 
 def in_order_multiple_segments(line, curr_num, increment_by):
@@ -570,6 +572,7 @@ def isGematria(txt):
     return True
 
 def getGematria(txt):
+    txt = txt.replace("ך", "כ").replace("ץ", "צ")
     if not isinstance(txt, unicode):
         txt = txt.decode('utf-8')
     index=0
@@ -687,37 +690,6 @@ def isGematria(txt):
         print txt
         return False
     return True
-
-def getGematria(txt):
-    if not isinstance(txt, unicode):
-        txt = txt.decode('utf-8')
-    index=0
-    sum=0
-    while index <= len(txt)-1:
-        if txt[index:index+1] in gematria:
-            sum += gematria[txt[index:index+1]]
-
-        index+=1
-    return sum
-
-def numToHeb(engnum=""):
-    engnum = str(engnum)
-    numdig = len(engnum)
-    hebnum = ""
-    letters = [["" for i in range(3)] for j in range(10)]
-    letters[0]=["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט"]
-    letters[1]=["", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ"]
-    letters[2]=["", "ק", "ר", "ש", "ת", "תק", "תר", "תש", "תת", "תתק"]
-    if (numdig > 3):
-        print "We currently can't handle numbers larger than 999"
-        exit()
-    for count in range(numdig):
-        hebnum += letters[numdig-count-1][int(engnum[count])]
-    hebnum = re.sub('יה', 'טו', hebnum)
-    hebnum = re.sub('יו', 'טז', hebnum)
-    hebnum = hebnum.decode('utf-8')
-    return hebnum
-
 
 def multiple_replace(old_string, replacement_dictionary):
     """
