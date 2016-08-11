@@ -689,3 +689,41 @@ def restructure_file(filename, function, *args):
 
     os.remove(filename)
     os.rename(u'{}.tmp'.format(filename), filename)
+
+
+class ToratEmetData:
+    """
+    Base class for parsing HTML downloaded from Torat Emet. Strategy is to iterate through the data line
+    by line, identifying lines that contain important data. These lines can then be fed through an html
+    parser (such as Beautiful soup) for cleanup and identification, and then ultimately structured into
+    a proper jagged array or dictionary of jagged arrays.
+    """
+
+    def __init__(self, path, from_url=False, codec='cp1255'):
+        """
+
+        :param path: Path to file or url
+        :param from_url: Set to True if data must be downloaded from url
+        :param codec:
+        """
+        self._path = path
+        self._from_url = from_url
+        self._codec = codec
+        self.lines = self._get_lines()
+        self._important_lines = self._extract_important_data()
+        self.parsed_text = self.parse()
+
+    def _get_lines(self):
+
+        if self._from_url:
+            with codecs.open(self._path, 'r', self._codec) as infile:
+                return infile.readlines()
+
+        else:
+            return urllib2.urlopen(self._path).readlines()
+
+    def _extract_important_data(self):
+        raise NotImplementedError
+
+    def parse(self):
+        raise NotImplementedError
