@@ -25,21 +25,21 @@ def create_schema():
     ralbag_on_esther.add_title('Ralbag Esther', 'en', primary=True)
     ralbag_on_esther.add_title(u'רלב"ג אסתר', 'he', primary=True)
     ralbag_on_esther.key = 'Ralbag Esther'
-    ralbag_on_esther.append(create_proposal_nodes())
+    ralbag_on_esther.append(create_intro_nodes())
     ralbag_on_esther.append(create_commentary_node())
     ralbag_on_esther.append(create_toalot_node())
     return ralbag_on_esther
 
 
-def create_proposal_nodes():
-    proposal_node = JaggedArrayNode()
-    proposal_node.add_title('Proposal', "en", primary=True)
-    proposal_node.add_title(u'הצעה', "he", primary=True)
-    proposal_node.key = 'Proposal'
-    proposal_node.depth = 1
-    proposal_node.addressTypes = ["Integer"]
-    proposal_node.sectionNames = ["Comment"]
-    return proposal_node
+def create_intro_nodes():
+    intro_node = JaggedArrayNode()
+    intro_node.add_title('Introduction', "en", primary=True)
+    intro_node.add_title(u'הצעה', "he", primary=True)
+    intro_node.key = 'Introduction'
+    intro_node.depth = 1
+    intro_node.addressTypes = ["Integer"]
+    intro_node.sectionNames = ["Comment"]
+    return intro_node
 
 
 def create_commentary_node():
@@ -76,7 +76,7 @@ def parse():
         for each_line in the_file:
 
             if "@99" in each_line:
-                the_whole_thing['Proposal'] = pasuk
+                the_whole_thing['Introduction'] = pasuk
                 pasuk = []
 
             elif "@00" in each_line:

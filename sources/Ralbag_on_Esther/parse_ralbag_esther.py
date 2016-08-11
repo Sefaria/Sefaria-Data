@@ -29,6 +29,6 @@ for key in ralbag_esther_dict:
 list_of_links = ralbag_esther_functions.create_links(ralbag_esther_dict['Commentary'])
 functions.post_link(list_of_links)
 
-ralbag_esther = [ralbag_esther_dict['Proposal'], ralbag_esther_dict['Commentary'], ralbag_esther_dict['Benefits']]
+ralbag_esther = [ralbag_esther_dict['Introduction'], ralbag_esther_dict['Commentary'], ralbag_esther_dict['Benefits']]
 
 util.ja_to_xml(ralbag_esther, ['FIRST', 'SECOND', 'THIRD', 'FOURTH'])
