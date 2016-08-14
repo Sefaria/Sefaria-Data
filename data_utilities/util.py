@@ -711,19 +711,54 @@ class ToratEmetData:
         self._codec = codec
         self.lines = self._get_lines()
         self._important_lines = self._extract_important_data()
-        self.parsed_text = self.parse()
+        self.parsed_text = self._parse()
 
     def _get_lines(self):
 
         if self._from_url:
-            with codecs.open(self._path, 'r', self._codec) as infile:
-                return infile.readlines()
+            lines = []
+            for line in urllib2.urlopen(self._path).readlines():
+                lines.append(line.decode(self._codec))
+            return lines
 
         else:
-            return urllib2.urlopen(self._path).readlines()
+            with codecs.open(self._path, 'r', self._codec) as infile:
+                return infile.readlines()
 
     def _extract_important_data(self):
         raise NotImplementedError
 
-    def parse(self):
-        raise NotImplementedError
+    @staticmethod
+    def build_segments(section):
+
+        comments = []
+
+        bold = re.compile(u'<b>')
+        if not bold.search(section):
+            return [section]
+        matches = bold.finditer(section)
+        start = next(matches)
+
+        for next_match in matches:
+            comments.append(section[start.start(): next_match.start()])
+            start = next_match
+        else:
+            comments.append(section[start.start():])
+        return comments
+
+    def _parse(self):
+
+        book = {}
+        for line in self._important_lines:
+            chapter, verse = line['chapter'], line['verse']
+
+            if chapter not in book.keys():
+                book[chapter] = {}
+
+            book[chapter][verse] = self.build_segments(line['text'])
+
+        for key in book.keys():
+            book[key] = convert_dict_to_array(book[key])
+
+        book = convert_dict_to_array(book)
+        return book
