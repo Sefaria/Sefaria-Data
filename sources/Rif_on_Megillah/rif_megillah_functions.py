@@ -9,9 +9,9 @@ from sources.Match.match import Match
 from sefaria.model.schema import AddressTalmud, SchemaNode, JaggedArrayNode
 
 
-bach = regex.compile(u'\([#\*][\u05d0-\u05ea]{1,2}\)')
+bach = regex.compile(u'\([#\*]?[\u05d0-\u05ea]{1,2}\)')
 ein_mishpat = regex.compile(u'@(?:11|22)[\u05d0-\u05ea]{1,2}')
-gemara_internal_links = regex.compile(u'\((@13\u05d3\u05e3)\s[\u05d0-\u05ea]{1,2}\s\u05e2\u0022(?:\u05d0|\u05d1)\)')
+gemara_internal_links = regex.compile(u'\((\u05d3\u05e3)\s[\u05d0-\u05ea]{1,2}\s\u05e2\u0022(?:\u05d0|\u05d1)\)')
 gemara_external_links = regex.compile(u'\((@13)([\u05d0-\u05ea]{3,15})(\s[\u05d0-\u05ea]{1,8})?\s[\u05d0-\u05ea]{1,2}\s\u05e2\u0022(?:\u05d0|\u05d1)\)')
 
 def create_index():
@@ -46,7 +46,7 @@ def parse():
                 list_of_pages = each_line.split("@20")
                 for index, page in enumerate(list_of_pages):
                     if ":" in page:
-                        list_of_comments = page.split(":")
+                        list_of_comments = page.split(u"~")
                         for comment in list_of_comments:
                             comment = clean_up(comment)
                             if comment:
@@ -67,7 +67,7 @@ def parse():
 
             else:
                 if ":" in each_line:
-                    list_of_comments = each_line.split(":")
+                    list_of_comments = each_line.split(u"~")
                     for comment in list_of_comments:
                         comment = clean_up(comment)
                         if comment:
@@ -88,9 +88,7 @@ def clean_up(string):
     string = remove_ein_mishpat_tags(string)
     string = internal_links(string)
     string = external_links(string)
-    string = remove_substrings(string, [u'\u00B0'])
-    if string:
-        string += ':'
+    string = remove_substrings(string, [u'\u00B0', '@99', '*'])
     return string
 
 
