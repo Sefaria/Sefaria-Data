@@ -67,7 +67,7 @@ def parse_and_post(file_name):
                     last_mishna = 1
 
             else:
-                divided_string = each_line.split(':')
+                divided_string = each_line.split(u'~')
                 for line in divided_string:
                     line = line.strip()
                     if line:
@@ -80,26 +80,13 @@ def parse_and_post(file_name):
 
 
 def clean_up_string(string):
-    string = add_bold(string)
     string = remove_substrings(string, ['@11', '@33'])
-    string = change_brackets_to_paranthesis(string)
     return string
-
-
-def add_bold(string):
-    update_string = u'{}{}'.format(u'<b>', string)
-    update_string = update_string.replace(u'.', u'.</b>', 1)
-    return update_string
 
 
 def remove_substrings(string, list_of_tags):
     for tag in list_of_tags:
         string = string.replace(tag, '')
-    return string
-
-def change_brackets_to_paranthesis(string):
-    string = string.replace('[', '(')
-    string = string.replace(']', ')')
     return string
 
 
