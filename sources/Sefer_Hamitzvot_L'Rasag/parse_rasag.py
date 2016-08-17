@@ -76,7 +76,7 @@ def create_communal_laws_nodes():
 def create_intro_nodes():
     intro_node = JaggedArrayNode()
     intro_node.add_title('Introduction', "en", primary=True)
-    intro_node.add_title(u'הקדמה', "he", primary=True)
+    intro_node.add_title(u'פתיחה', "he", primary=True)
     intro_node.key = 'Introduction'
     intro_node.depth = 1
     intro_node.addressTypes = ["Integer"]
@@ -124,9 +124,9 @@ index = create_index()
 functions.post_index(index)
 
 for number in xrange(7):
-    section_names = ['Positive Commandments','Negative Commandments','Negative Commandments','Laws of the Courts','Laws of the Courts','Communal Laws','Communal Laws']
-    intro = number % 2 != 0
-    ref = create_ref(section_names[number], intro)
-    text = create_text()
-    functions.post_text(ref, text)
+   section_names = ['Positive Commandments','Negative Commandments','Negative Commandments','Laws of the Courts','Laws of the Courts','Communal Laws','Communal Laws']
+   intro = number % 2 != 0
+   ref = create_ref(section_names[number], intro)
+   text = create_text()
+   functions.post_text(ref, text)
 
