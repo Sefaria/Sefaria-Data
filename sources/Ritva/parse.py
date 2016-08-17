@@ -73,6 +73,7 @@ Objective:  Need to get all the image file names in order, get the encoding, the
 Regular expression will find all occurrences
 '''
 def getBase64(text):
+    found = False
     tags = re.findall("<img.*?>", text)
     for tag in tags:
         first_pos = tag.find('"')
@@ -82,9 +83,10 @@ def getBase64(text):
         data = file.read()
         file.close()
         data = data.encode("base64")
-        new_tag = '<img src="'+data+'">'
+        new_tag = '<img src="data:image/png;base64,'+data+'">'
         text = text.replace(tag, new_tag)
-    return text
+        found = True
+    return text, found
 
 
 def parse(file):
@@ -96,19 +98,22 @@ def parse(file):
         line = line.replace('\n', '')
         if line.find("@11") >= 0:
             line = line.replace("@11", "").replace("@33", "")
-            dh, comment, found = getDHComment(line)
-            comment = getBase64(comment)
+            dh, comment, found_dh = getDHComment(line)
+            comment, found_img = getBase64(comment)
             if current_daf in dhs:
                 dhs[current_daf].append(dh)
             else:
                 dhs[current_daf] = []
                 dhs[current_daf].append(dh)
-            if found == True:
+            if found_dh == True:
                 line = "<b>"+dh+"</b>"+comment
+            elif found_img == True:
+                line = dh + " " + comment
             if len(header) > 0:
                 line = "<b>"+header+"</b><br>"+line
                 header = ""
-            line = removeAllStrings(line)
+            if found_img == False:
+                line = removeAllStrings(line)
             text[current_daf].append(line)
         elif line.find("@22") >= 0:
             current_daf = dealWithDaf(line, current_daf)
@@ -180,7 +185,7 @@ if __name__ == "__main__":
             not_yet = False
         if not_yet:
             continue
-        #createIndex(file)
+        createIndex(file)
         text, dhs = parse(open(file+".txt"))
         text_array = convertDictToArray(text)
         send_text = {
@@ -190,5 +195,5 @@ if __name__ == "__main__":
         "versionTitle": versionTitle[file]
         }
         post_text("Ritva on "+file, send_text)
-        #match_and_link(dhs, file)
+        match_and_link(dhs, file)
         pdb.set_trace()

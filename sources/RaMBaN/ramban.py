@@ -216,22 +216,20 @@ if __name__ == "__main__":
     global text
     global dh_dict
     global errors
-    not_yet = True
-    only_these = ["yevamot_complete.txt", "yoma_complete.txt"]
-    until_this_one = "shabbat"
+    not_yet = False
+    only_these = ["avodah_zarah_complete.txt", "makkot_complete.txt", "sanhedrin_complete.txt"]
+    until_this_one = "ketubot"
     for file in glob.glob(u"*.txt"):
         print file
-        if file.find("shabbat") > 0:
-            pdb.set_trace()
         print file.find("_complete") >= 0
         errors.write(file+"\n")
-        if file.find("_complete") >= 0:
+        if file.find("_complete") >= 0 and file in only_these:
             tractate = file.replace("_complete.txt", "").replace("_", " ").title()
-            if not_yet and file.find(until_this_one) == -1:
-                continue
-            else:
-                not_yet = False
-            if not_yet == True:
+            #if not_yet and file.find(until_this_one) == -1:
+            #    continue
+            #else:
+            #    not_yet = False
+            if not_yet == False:
                create_index(tractate)
                text, dh_dict = parse(tractate, errors)
                post(text, dh_dict, tractate)

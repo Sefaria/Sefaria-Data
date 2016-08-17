@@ -130,21 +130,26 @@ for line in f:
 		line = line.replace("@66", "").replace("@55","").replace("@44","")
 		text[current_mitzvah][comment].append(line)
 	prev_line = actual_line
-			
-for mitzvah in text:
-	send_text = {		
+
+
+text_array = convertDictToArray(text)
+send_text = {
 		"versionTitle":  "Munkatch, 1901",
 		"versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002023637",
-		"text": text[mitzvah],
+		"text": text_array,
 		"language": "he"
 		}
-	post_text("Brit Moshe, Volume One."+str(mitzvah), send_text)
-	post_link({
+
+post_text("Brit Moshe, Volume One", send_text)
+links = []
+for mitzvah in text:
+	links.append({
 				"refs": [
-						 "Brit Moshe, Volume One."+str(mitzvah)+".1",
+						 "Brit Moshe, Volume One."+str(mitzvah),
 						"Sefer Mitzvot Gadol, Volume One."+str(mitzvah)
 					],
 				"type": "commentary",
 				"auto": True,
 				"generated_by": "Brit Moshe to SEMAG linker"
 			 })
+post_link(links)
