@@ -9,6 +9,7 @@ from sources.Rasag_commentary import positive_and_negative_parse
 from sources.Rasag_commentary import punishments_parse
 from sources.Rasag_commentary import rasag_commentaries_functions
 from sources.Rasag_commentary import miluim_parse
+from sources.Rasag_commentary import book_intro_parse
 
 """
 index record
@@ -26,6 +27,22 @@ clean
 Still need the intro
 """
 
+introduction = book_intro_parse.parse('text_book_intro.txt')
+
+
+"""
+Refs to upload
+Rav Perla on Sefer Hamitzvot of Rasag,
+Rav Perla on Sefer Hamitzvot of Rasag, Positive Commandments
+Rav Perla on Sefer Hamitzvot of Rasag, Negative Commandments
+Rav Perla on Sefer Hamitzvot of Rasag, Laws of the Court, Introduction
+Rav Perla on Sefer Hamitzvot of Rasag, Laws of the Court
+Rav Perla on Sefer Hamitzvot of Rasag, Communal Laws, Introduction
+Rav Perla on Sefer Hamitzvot of Rasag, Communal Laws
+Rav Perla on Sefer Hamitzvot of Rasag, Appendix, Introduction
+Rav Perla on Sefer Hamitzvot of Rasag, Appendix
+"""
+
 # positive_mitzvah_number = regex.compile(u'@00\u05e2\u05e9\u05d4((?:\s[\u05d0-\u05ea]{1,4}){1,9})')
 # positive_commandments = positive_and_negative_parse.parse('text_positive_commandments.txt', positive_mitzvah_number)
 
@@ -40,7 +57,7 @@ Still need the intro
 # communal = punishments_parse.parse('text_communal.txt', communal_mitzvah_number)
 
 
-miluim = miluim_parse.parse('text_appendix.txt')
+# miluim = miluim_parse.parse('text_appendix.txt')
 
 
 # list_of_links = rasag_commentaries_functions.create_links(negative_commandments)
@@ -48,8 +65,7 @@ miluim = miluim_parse.parse('text_appendix.txt')
 
 
 """
-Appendix
 Link
 """
 
-util.ja_to_xml(miluim, ['FIRST', 'SECOND', 'THIRD'])
+util.ja_to_xml(introduction, ['FIRST', 'SECOND', 'THIRD', 'FOURTH'])
