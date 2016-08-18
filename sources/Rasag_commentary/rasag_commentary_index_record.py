@@ -10,12 +10,12 @@ from sefaria.model.schema import AddressTalmud, SchemaNode, JaggedArrayNode
 
 
 def create_index():
-    rasag_commentary = create_schema()
-    rasag_commentary.validate()
+    rav_perla = create_schema()
+    rav_perla.validate()
     index = {
         "title": "Rav Perla on Sefer Hamitzvot of Rasag",
         "categories": ["Commentary2", "Sefer Hamitzvot of Rasag", "Rav Perla on Sefer Hamitzvot of Rasag"],
-        "schema": rasag_commentary.serialize()
+        "schema": rav_perla.serialize()
     }
     return index
 
@@ -25,7 +25,7 @@ def create_schema():
     rasag_commentary.add_title('Rav Perla on Sefer Hamitzvot of Rasag', 'en', primary=True)
     rasag_commentary.add_title(u'רב פערלא על ספר מצות לרסג', 'he', primary=True)
     rasag_commentary.key = 'Rav Perla on Sefer Hamitzvot of Rasag'
-    rasag_commentary.append(create_book_intro_node)
+    rasag_commentary.append(create_book_intro_node())
     rasag_commentary.append(create_positive_commandments_node())
     rasag_commentary.append(create_negative_commandments_node())
     rasag_commentary.append(create_onshim_node())
@@ -39,7 +39,7 @@ def create_book_intro_node():
     intro_node.add_title('Introduction', "en", primary=True)
     intro_node.add_title(u'מבוא', "he", primary=True)
     intro_node.key = 'Introduction'
-    for number in range(1,7):
+    for number in range(1, 7):
         intro_node.append(regular_chapter_nodes(number))
     intro_node.append(chapter_seven(7))
     intro_node.append(regular_chapter_nodes(8))
@@ -125,7 +125,7 @@ def regular_chapter_nodes(number):
     hebrew_letter = util.numToHeb(number)
     chapter = JaggedArrayNode()
     chapter.add_title('Chapter {}'.format(number), "en", primary=True)
-    chapter.add_title(u'סימן }{'.format(hebrew_letter), "he", primary=True)
+    chapter.add_title(u'{} {}'.format(u'סימן',hebrew_letter), "he", primary=True)
     chapter.key = 'Chapter {}'.format(number)
     chapter.depth = 1
     chapter.addressTypes = ["Integer"]
@@ -137,7 +137,7 @@ def chapter_seven(number):
     hebrew_letter = util.numToHeb(number)
     chapter = SchemaNode()
     chapter.add_title('Chapter {}'.format(number), "en", primary=True)
-    chapter.add_title(u'סימן }{'.format(hebrew_letter), "he", primary=True)
+    chapter.add_title(u'{} {}'.format(u'סימן',hebrew_letter), "he", primary=True)
     chapter.key = 'Chapter {}'.format(number)
     chapter.append(create_intro_nodes())
     chapter.append(create_default_nodes())
@@ -148,7 +148,7 @@ def chapter_nine(number):
     hebrew_letter = util.numToHeb(number)
     chapter = JaggedArrayNode()
     chapter.add_title('Chapter {}'.format(number), "en", primary=True)
-    chapter.add_title(u'סימן }{'.format(hebrew_letter), "he", primary=True)
+    chapter.add_title(u'{} {}'.format(u'סימן',hebrew_letter), "he", primary=True)
     chapter.key = 'Chapter {}'.format(number)
     chapter.depth = 2
     chapter.addressTypes = ["Integer", "Integer"]

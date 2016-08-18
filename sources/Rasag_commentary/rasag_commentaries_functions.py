@@ -9,32 +9,10 @@ from sources.Match.match import Match
 from sefaria.model.schema import AddressTalmud, SchemaNode, JaggedArrayNode
 
 
-
-
-
-def parse():
-
-    with codecs.open('ralbag_on_esther.txt', 'r', 'utf-8') as the_file:
-        for each_line in the_file:
-            print each_line
-
-
-
-
-def fill_in_missing_sections_and_updated_last(each_line, base_list, this_regex, filler, last_index):
-    match_object = this_regex.search(each_line)
-    current_index = util.getGematria(match_object.group(1))
-    diff = current_index - last_index
-    while diff > 1:
-        base_list.append(filler)
-        diff -= 1
-    return current_index
-
-
 def create_text(jagged_array):
     return {
-        "versionTitle": "",
-        "versionSource": "",
+        "versionTitle": "Sefer Hamitzvot L'Rasag, Warsaw, 1914",
+        "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002027638",
         "language": "he",
         "text": jagged_array
     }
