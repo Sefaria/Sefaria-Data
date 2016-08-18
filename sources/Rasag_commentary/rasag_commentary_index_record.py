@@ -87,6 +87,16 @@ def create_communal_node():
     return communal
 
 
+def create_miluim_node():
+    miluim_node = SchemaNode()
+    miluim_node.add_title('Appendix', "en", primary=True)
+    miluim_node.add_title(u'מלואים', "he", primary=True)
+    miluim_node.key = 'Appendix'
+    miluim_node.append(create_intro_nodes())
+    miluim_node.append(create_default_nodes())
+    return miluim_node
+
+
 def create_intro_nodes():
     intro_node = JaggedArrayNode()
     intro_node.add_title('Introduction', "en", primary=True)
@@ -105,14 +115,3 @@ def create_default_nodes():
     default.addressTypes = ["Integer", "Integer"]
     default.sectionNames = ["Mitzvah", "Comment"]
     return default
-
-
-def create_miluim_node():
-    miluim_node = JaggedArrayNode()
-    miluim_node.add_title('Appendix', "en", primary=True)
-    miluim_node.add_title('', "he", primary=True)
-    miluim_node.key = 'Appendix'
-    miluim_node.depth = 1
-    miluim_node.addressTypes = ["Integer"]
-    miluim_node.sectionNames = ["Comment"]
-    return miluim_node
