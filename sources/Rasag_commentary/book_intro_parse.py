@@ -12,12 +12,10 @@ from sefaria.model.schema import AddressTalmud, SchemaNode, JaggedArrayNode
 def parse(file_name):
     chapter_number = regex.compile('@00([\u05d0-\u05ea]{1,2})')
     chapter_index = 1
+    section, comment = [], []
 
-    the_whole_thing, section, comment = [], [], []
-    seven, shorashim = [], []
+    seven, shorashim, nine = [], [], []
     chapter_seven_intro = True
-
-    nine = []
 
     with codecs.open(file_name, 'r', 'utf-8') as the_file:
         for each_line in the_file:
@@ -65,10 +63,8 @@ def parse(file_name):
                 else:
                     comment.append(each_line)
 
-
     section.append(comment)
-    the_whole_thing.append(section)
-    return the_whole_thing
+    return section
 
 
 def clean_up(string):

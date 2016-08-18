@@ -32,7 +32,19 @@ introduction = book_intro_parse.parse('text_book_intro.txt')
 
 """
 Refs to upload
-Rav Perla on Sefer Hamitzvot of Rasag,
+Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 1
+Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 2
+Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 3
+Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 4
+Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 5
+Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 6
+Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 7, Introduction
+Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 7, Shorashim
+Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 8
+Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 9
+Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 10
+Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 11
+Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 12
 Rav Perla on Sefer Hamitzvot of Rasag, Positive Commandments
 Rav Perla on Sefer Hamitzvot of Rasag, Negative Commandments
 Rav Perla on Sefer Hamitzvot of Rasag, Laws of the Court, Introduction
