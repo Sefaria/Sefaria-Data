@@ -35,13 +35,17 @@ def create_schema():
 
 
 def create_book_intro_node():
-    intro_node = JaggedArrayNode()
+    intro_node = SchemaNode()
     intro_node.add_title('Introduction', "en", primary=True)
     intro_node.add_title(u'מבוא', "he", primary=True)
     intro_node.key = 'Introduction'
-    intro_node.depth = 1
-    intro_node.addressTypes = ["Integer"]
-    intro_node.sectionNames = ["Comment"]
+    for number in range(1,7):
+        intro_node.append(regular_chapter_nodes(number))
+    intro_node.append(chapter_seven(7))
+    intro_node.append(regular_chapter_nodes(8))
+    intro_node.append(chapter_nine(9))
+    for number in range(10, 13):
+        intro_node.append(regular_chapter_nodes(number))
     return intro_node
 
 
@@ -115,3 +119,38 @@ def create_default_nodes():
     default.addressTypes = ["Integer", "Integer"]
     default.sectionNames = ["Mitzvah", "Comment"]
     return default
+
+
+def regular_chapter_nodes(number):
+    hebrew_letter = util.numToHeb(number)
+    chapter = JaggedArrayNode()
+    chapter.add_title('Chapter {}'.format(number), "en", primary=True)
+    chapter.add_title(u'סימן }{'.format(hebrew_letter), "he", primary=True)
+    chapter.key = 'Chapter {}'.format(number)
+    chapter.depth = 1
+    chapter.addressTypes = ["Integer"]
+    chapter.sectionNames = ["Comment"]
+    return chapter
+
+
+def chapter_seven(number):
+    hebrew_letter = util.numToHeb(number)
+    chapter = SchemaNode()
+    chapter.add_title('Chapter {}'.format(number), "en", primary=True)
+    chapter.add_title(u'סימן }{'.format(hebrew_letter), "he", primary=True)
+    chapter.key = 'Chapter {}'.format(number)
+    chapter.append(create_intro_nodes())
+    chapter.append(create_default_nodes())
+    return chapter
+
+
+def chapter_nine(number):
+    hebrew_letter = util.numToHeb(number)
+    chapter = JaggedArrayNode()
+    chapter.add_title('Chapter {}'.format(number), "en", primary=True)
+    chapter.add_title(u'סימן }{'.format(hebrew_letter), "he", primary=True)
+    chapter.key = 'Chapter {}'.format(number)
+    chapter.depth = 2
+    chapter.addressTypes = ["Integer", "Integer"]
+    chapter.sectionNames = ["Section", "Mitzvah"]
+    return chapter

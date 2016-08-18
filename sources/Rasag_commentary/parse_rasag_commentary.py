@@ -39,7 +39,7 @@ Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 4
 Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 5
 Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 6
 Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 7, Introduction
-Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 7, Shorashim
+Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 7
 Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 8
 Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 9
 Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 10
