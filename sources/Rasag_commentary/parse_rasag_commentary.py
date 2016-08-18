@@ -68,4 +68,4 @@ Rav Perla on Sefer Hamitzvot of Rasag, Appendix
 Link
 """
 
-util.ja_to_xml(introduction, ['FIRST', 'SECOND', 'THIRD', 'FOURTH'])
+util.ja_to_xml(introduction, ['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH'])

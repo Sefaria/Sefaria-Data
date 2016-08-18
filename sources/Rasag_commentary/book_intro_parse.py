@@ -10,24 +10,60 @@ from sefaria.model.schema import AddressTalmud, SchemaNode, JaggedArrayNode
 
 
 def parse(file_name):
+    chapter_number = regex.compile('@00([\u05d0-\u05ea]{1,2})')
+    chapter_index = 1
+
     the_whole_thing, section, comment = [], [], []
-    intro = True
+    seven, shorashim = [], []
+    chapter_seven_intro = True
+
+    nine = []
 
     with codecs.open(file_name, 'r', 'utf-8') as the_file:
         for each_line in the_file:
 
             if "@00" in each_line:
-                if intro:
-                    the_whole_thing.append(comment)
-                    comment = []
-                    intro = False
-                else:
+                if chapter_index != 7 and chapter_index != 9:
                     section.append(comment)
                     comment = []
 
-            else:
+                elif chapter_index == 7:
+                    shorashim.append(comment)
+                    seven.append(shorashim)
+                    section.append(seven)
+                    comment = []
+
+                elif chapter_index == 9:
+                    nine.append(comment)
+                    section.append(nine)
+                    comment = []
+
+                match_object = chapter_number.search(each_line)
+                chapter_index = util.getGematria(match_object.group(1))
+
+            elif chapter_index != 7 and chapter_index != 9:
                 each_line = clean_up(each_line)
                 comment.append(each_line)
+
+            elif chapter_index == 7:
+                if "@01" in each_line:
+                    if chapter_seven_intro:
+                        seven.append(comment)
+                        comment = []
+                        chapter_seven_intro = False
+                    else:
+                        shorashim.append(comment)
+                        comment = []
+                else:
+                    comment.append(each_line)
+
+            elif chapter_index == 9:
+                if "@01" in each_line:
+                    nine.append(comment)
+                    comment = []
+
+                else:
+                    comment.append(each_line)
 
 
     section.append(comment)
