@@ -4,12 +4,15 @@ from data_utilities.util import ja_to_xml, multiple_replace
 from bs4 import BeautifulSoup
 import re
 import unicodecsv as csv
+import pdb
+from fuzzywuzzy import fuzz
 from sefaria.model import *
 
 """
 parsed from this url: http://www.toratemetfreeware.com/online/f_01917.html
 """
 url = 'http://www.toratemetfreeware.com/online/f_01917.html'
+
 
 class PeneiDavid(ToratEmetData):
 
@@ -20,6 +23,7 @@ class PeneiDavid(ToratEmetData):
         self.he_parsha_names = [re.sub(u'פרשת ', u'', x) for x in self._important_lines['parsha names']]
         self.parsha_names = []
         self.parsha_map = {}
+        self.parsha_names_translated = {}
         self._build_parsha_map()
         self.parsha_by_book = self._get_parsha_by_book()
         self.parsed_as_dict = self._dict_parse()
@@ -135,6 +139,7 @@ class PeneiDavid(ToratEmetData):
                 # construct a dictionary mapping hebrew parsha names to english
                 he_to_en[row[1]] = row[0]
                 self.parsha_map[row[0]] = row[2]
+                self.parsha_names_translated[row[0]] = row[1]
 
             for name in self.he_parsha_names:
                 self.parsha_names.append(he_to_en[name])
@@ -161,4 +166,47 @@ class PeneiDavid(ToratEmetData):
 
             books[book_name] = parashot
         return books
+
+
+def build_links(parser):
+    """
+    Use the PeneiDavid parsed text to generate links
+    :param parser:
+    :return:
+    """
+
+    assert isinstance(parser, PeneiDavid)
+    links = []
+
+    for book in parser.book_names:
+        for parsha in parser.parsha_by_book[book]:
+            parsha_ref = Ref(parser.parsha_map[parsha])
+            print parsha_ref
+            first_segment = Ref('{}.{}.{}'.format(book, *parsha_ref.sections))
+
+            for sec_num, section in enumerate(parsed.parsed_as_dict[book][parsha]):
+
+                # verse is the first segment of each section
+                best_match = None
+                verse = re.sub(u'[^\u05d0-\u05ea ]', u'', section[0])
+                segment = first_segment
+                max_score = 0.0
+                while parsha_ref.contains(segment):
+                    sefaria_verse = segment.text('he', 'Tanach with Text Only').text
+                    score = fuzz.partial_ratio(verse, sefaria_verse)
+                    if score > max_score:
+                        best_match = segment
+                        max_score = score
+                    segment = segment.next_segment_ref()
+                    if segment is None:
+                        break
+
+                links.append({
+                    'refs': [best_match, 'Penei David {}.{}.{}'.format(book, parsha, sec_num+1)],
+                    'type': 'commentary',
+                    'auto': False,
+                    'generated_by': 'Penei David parse script'
+                })
+
+    return links
 
