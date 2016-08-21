@@ -24,18 +24,11 @@ def get_content_array(chapter_url):
     for child in soup.find("div", class_ = "entry-content" ).descendants:
         if unicode(child)[0] !="<" and unicode(child)[0] !="i" and len(unicode(child)) !=1:
             content_array.append(child)
-            print "child " + child
+            print "building..." + child[0:5]
 
     buf.close()
     return content_array[:-1];
 
-def get_JSON_text(paragraph_array):
-    return_text = "["
-    for index in range(0,len(paragraph_array)-2):
-        return_text+=" '"+paragraph_array[index]+"',"
-    #so there's no "," after last element
-    return_text+=" '"+paragraph_array[len(paragraph_array)-1]+"']"
-    return return_text;
     
 def post_text(ref, text):
     textJSON = json.dumps(text)
@@ -49,7 +42,8 @@ def post_text(ref, text):
         print response.read()
     except HTTPError, e:
         print 'Error code: ', e.code
-        print e.read();
+        with open('error.html', "w") as error_file:
+           error_file.write(e.read());
 
 chapter_buf = cStringIO.StringIO()
 c = pycurl.Curl()
@@ -65,14 +59,9 @@ final_list = []
 for index in range(len(chapters)):
     final_list.append(get_content_array(chapters[index]['href']))
     
-#upload_text = "{["
-#for index in range(0,len(final_list)-2):
-#    upload_text+= get_JSON_text(final_list[index])+","
-#upload_text+= get_JSON_text(final_list[len(final_list)-1])
-#upload_text+= "]}"
-upload_text = json.dumps(final_list)
+upload_text = final_list
 
-print upload_text
+print "uploading..."
 
 text_version = {
     'versionTitle': "Likutei Moharan - rabenubook.com",
@@ -81,7 +70,7 @@ text_version = {
     'text': upload_text
 }
 
-post_text("Likutei Moharan", upload_text)
+post_text("Likutei Moharan", text_version)
 
 
 chapter_buf.close()
