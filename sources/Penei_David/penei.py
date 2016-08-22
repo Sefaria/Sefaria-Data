@@ -6,7 +6,9 @@ import re
 import unicodecsv as csv
 import pdb
 from fuzzywuzzy import fuzz
+from sources import functions
 from sefaria.model import *
+from sefaria.utils.hebrew import hebrew_term
 
 """
 parsed from this url: http://www.toratemetfreeware.com/online/f_01917.html
@@ -184,7 +186,7 @@ def build_links(parser):
             print parsha_ref
             first_segment = Ref('{}.{}.{}'.format(book, *parsha_ref.sections))
 
-            for sec_num, section in enumerate(parsed.parsed_as_dict[book][parsha]):
+            for sec_num, section in enumerate(parser.parsed_as_dict[book][parsha]):
 
                 # verse is the first segment of each section
                 best_match = None
@@ -202,7 +204,7 @@ def build_links(parser):
                         break
 
                 links.append({
-                    'refs': [best_match, 'Penei David {}.{}.{}'.format(book, parsha, sec_num+1)],
+                    'refs': [best_match.url(), 'Penei David, {}, {}.{}'.format(book, parsha, sec_num+1)],
                     'type': 'commentary',
                     'auto': False,
                     'generated_by': 'Penei David parse script'
@@ -210,3 +212,69 @@ def build_links(parser):
 
     return links
 
+
+def build_index(parser):
+
+    assert isinstance(parser, PeneiDavid)
+
+    root = SchemaNode()
+    root.add_title('Penei David', 'en', primary=True)
+    root.add_title(u'פני דוד', 'he', primary=True)
+    root.key = 'Penei David'
+
+    title_node = JaggedArrayNode()
+    title_node.add_title('Title Page', 'en', primary=True)
+    title_node.add_title(u'עמוד שער', 'he', primary=True)
+    title_node.key = 'Title Page'
+    title_node.depth = 1
+    title_node.addressTypes = ['Integer']
+    title_node.sectionNames = ["Paragraph"]
+    root.append(title_node)
+
+    # add book nodes
+    for book in parser.book_names:
+        book_node = SchemaNode()
+        book_node.add_title(book, 'en', primary=True)
+        book_node.add_title(hebrew_term(book), 'he', primary=True)
+        book_node.key = book
+
+        # add parsha nodes
+        for parsha in parser.parsha_by_book[book]:
+            parsha_node = JaggedArrayNode()
+            parsha_node.add_title(parsha, 'en', primary=True)
+            parsha_node.add_title(parser.parsha_names_translated[parsha], 'he', primary=True)
+            parsha_node.key = parsha
+            parsha_node.depth = 2
+            parsha_node.addressTypes = ['Integer', 'Integer']
+            parsha_node.sectionNames = ['Comment', 'Paragraph']
+            book_node.append(parsha_node)
+
+        root.append(book_node)
+    root.validate()
+
+    index = {
+        "title": "Penei David",
+        "categories": ["Commentary2", "Torah", "Penei David"],
+        "schema": root.serialize()
+    }
+    return index
+
+
+def upload_text(parser):
+
+    assert isinstance(parser, PeneiDavid)
+    for book in parser.book_names:
+        for parsha in parser.parsha_by_book[book]:
+            print 'uploading {}'.format(parsha)
+            version = {
+                "versionTitle": "Torat Emet Penei David",
+                "versionSource": url,
+                "language": 'he',
+                "text": parser.parsed_as_dict[book][parsha]
+            }
+            functions.post_text("Penei David, {}, {}".format(book, parsha), version)
+
+penei = PeneiDavid(url, True)
+functions.post_index(build_index(penei))
+upload_text(penei)
+functions.post_link(build_links(penei))
