@@ -134,7 +134,7 @@ def divideUpLines(text, commentator):
         text = text.replace(tag,"", 1)
     text_array = text.split(tag)
     for i in range(len(text_array)):
-        text_array[i] = [removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9"], text_array[i])]
+        text_array[i] = [removeAllStrings(text_array[i])]
     return text_array
 
 
@@ -147,8 +147,8 @@ def lookForHeader(line, curr_header, just_saw_00, will_see_00):
         old_header = header
       header = line[start:end]
       line = line.replace(header, "")
-      header = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], header)
-      line_wout_tags = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], line)
+      header = removeAllStrings(header)
+      line_wout_tags = removeAllStrings(line)
       if len(line_wout_tags) > 1:
           will_see_00 = True
       else:
@@ -204,8 +204,8 @@ def parse_text(helekim, files, commentator):
               old_header = header
           header = line[start:end]
           line = line.replace(header, "")
-          header = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], header)
-          line_wout_tags = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], line)
+          header = removeAllStrings(header)
+          line_wout_tags = removeAllStrings(line)
           if len(line_wout_tags) > 1:
               will_see_00 = True
           else:
@@ -267,7 +267,7 @@ def parse_text(helekim, files, commentator):
         seif_katan = pattern.match(line).group(0)
         temp_arr = re.split('\d\d', seif_katan)
         seif_katan = temp_arr[len(temp_arr)-1]
-        poss_seif_katan = getGematria(removeAllStrings(["[","]","(",")"], seif_katan))
+        poss_seif_katan = getGematria(removeAllStrings(seif_katan, ["[","]","(",")"]))
         if poss_seif_katan == curr_seif_katan-2 and seif_katan.find('ה')>=0:
             poss_seif_katan += 3
         elif poss_seif_katan < curr_seif_katan:
@@ -279,7 +279,7 @@ def parse_text(helekim, files, commentator):
         #line, old_header, header, just_saw_00, will_see_00 = addHeader(line, old_header, header, just_saw_00, will_see_00)
         line = replaceWithHTMLTags(line).encode('utf-8')
         bach_bi_lines += line
-        line = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9"], line)
+        line = removeAllStrings(line)
         curr_seif_katan = poss_seif_katan
 
         if poss_seif_katan in seif_list:
@@ -321,7 +321,7 @@ def parse_text(helekim, files, commentator):
       else: #just add it to current seif katan
           #line, old_header, header, just_saw_00, will_see_00 = addHeader(line, old_header, header, just_saw_00, will_see_00)
           if commentator == "Prisha" or commentator == "Drisha":
-              line = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9"], line)
+              line = removeAllStrings(line)
               line = replaceWithHTMLTags(line).encode('utf-8')
               if line.find("@")>=0:
                   print line.find("@")
@@ -350,7 +350,6 @@ def post_commentary(commentator):
     for helek in text:
         data = tag_csv_files[helek].read()
         data = eval(data)
-        pdb.set_trace()
         print helek
         text_array = convertDictToArray(text[helek])
         send_text = {
@@ -364,7 +363,6 @@ def post_commentary(commentator):
             for seif_katan_num, seif_katan in enumerate(text_array[siman_num]):
                 if commentator == "Drisha" or commentator == "Prisha" or commentator == "Darchei Moshe": 
                     try:
-                      pdb.set_trace()
                       if str(seif_katan_num+1) in data[str(siman_num+1)][commentator]:
                         link_to = "Tur,_"+str(helek)+"."+str(siman_num+1)+".1"
                       elif str(seif_katan_num+1) in data[str(siman_num+1)]["Beit_Yosef"]:
@@ -378,7 +376,7 @@ def post_commentary(commentator):
                 commentator_end = commentator+",_"+helek+"."+str(siman_num+1)+"."+str(seif_katan_num+1)+".1"
                 links.append({'refs': [link_to, commentator_end], 'type': 'commentary', 'auto': 'True', 'generated_by': commentator+"choshenmishpat"})
         
-        post_text(commentator+",_"+helek, send_text)
+        #post_text(commentator+",_"+helek, send_text)
     #post_link(links)
 
 

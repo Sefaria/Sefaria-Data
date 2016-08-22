@@ -69,7 +69,7 @@ def gatherData(data, line, helek, siman_num, matches_array, commentaries):
             continue
         data[helek][siman_num][this_commentary] = {}
         for order_count, match in enumerate(matches):
-            this_match = getGematria(match)
+            this_match = getGematria(match.encode('utf-8'))
             if this_match in hash_tags:
                 hash_tags[this_match] += 1
             else:
@@ -108,7 +108,7 @@ def replaceWithHTMLTags(line, helek, siman_num, data):
             if helek == "Choshen Mishpat" and commentaries[commentary_count] == "Replace":
                 line = line.replace(match, "#$!^")
             else:
-                this_gematria = getGematria(match)
+                this_gematria = getGematria(match.encode('utf-8'))
                 if this_gematria in hash_tags:
                     hash_tags[this_gematria] += 1
                     prisha_file += 1
@@ -201,8 +201,8 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
                 old_header = header
             header = line[start:end]
             line = line.replace(header, "")
-            header = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], header)
-            line_wout_tags = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], line)
+            header = removeAllStrings(header)
+            line_wout_tags = removeAllStrings(line)
             if len(line_wout_tags) > 1:
                 will_see_00 = True
             else:
@@ -229,7 +229,7 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
                 print line
             line_wout_first_word = line[first_space+1:]
             second_word = line_wout_first_word[0:line_wout_first_word.find(' ')]
-            second_word = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], second_word)
+            second_word = removeAllStrings(second_word)
             second_gematria = getGematria(second_word)
             current_siman = this_siman
             line = line[first_space+1:]
@@ -251,7 +251,7 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
         line = replaceWithOrder(line, at_66)
         line = replaceWithOrder(line, at_77)
         line = replaceWithOrder(line, at_88)
-        line = removeAllStrings(["@", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], line)
+        line = removeAllStrings(line)
         
         
         if just_saw_00 == True:

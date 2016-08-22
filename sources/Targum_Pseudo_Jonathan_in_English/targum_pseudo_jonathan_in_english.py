@@ -8,7 +8,7 @@ from sources.Targum_Pseudo_Jonathan_in_English import tsj_functions
 
 english_book_names = ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']
 
-all_five_books = tsj_functions.parse_targum_jerusalem_english()
+all_five_books = tsj_functions.parse_targum_pseudo_jonathan()
 
 for book, book_name in zip(all_five_books, english_book_names):
     print(book_name)

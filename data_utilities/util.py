@@ -587,7 +587,7 @@ def traverse_ja(ja, indices=[], bottom=unicode):
     corresponding address.
     """
 
-    if type(ja) is bottom:
+    if isinstance(ja, bottom):
         yield {'data': ja, 'indices': indices}
 
     else:
@@ -689,3 +689,76 @@ def restructure_file(filename, function, *args):
 
     os.remove(filename)
     os.rename(u'{}.tmp'.format(filename), filename)
+
+
+class ToratEmetData:
+    """
+    Base class for parsing HTML downloaded from Torat Emet. Strategy is to iterate through the data line
+    by line, identifying lines that contain important data. These lines can then be fed through an html
+    parser (such as Beautiful soup) for cleanup and identification, and then ultimately structured into
+    a proper jagged array or dictionary of jagged arrays.
+    """
+
+    def __init__(self, path, from_url=False, codec='cp1255'):
+        """
+
+        :param path: Path to file or url
+        :param from_url: Set to True if data must be downloaded from url
+        :param codec:
+        """
+        self._path = path
+        self._from_url = from_url
+        self._codec = codec
+        self.lines = self._get_lines()
+        self._important_lines = self._extract_important_data()
+        self.parsed_text = self._parse()
+
+    def _get_lines(self):
+
+        if self._from_url:
+            lines = []
+            for line in urllib2.urlopen(self._path).readlines():
+                lines.append(line.decode(self._codec))
+            return lines
+
+        else:
+            with codecs.open(self._path, 'r', self._codec) as infile:
+                return infile.readlines()
+
+    def _extract_important_data(self):
+        raise NotImplementedError
+
+    @staticmethod
+    def build_segments(section):
+
+        comments = []
+
+        bold = re.compile(u'<b>')
+        if not bold.search(section):
+            return [section]
+        matches = bold.finditer(section)
+        start = next(matches)
+
+        for next_match in matches:
+            comments.append(section[start.start(): next_match.start()])
+            start = next_match
+        else:
+            comments.append(section[start.start():])
+        return comments
+
+    def _parse(self):
+
+        book = {}
+        for line in self._important_lines:
+            chapter, verse = line['chapter'], line['verse']
+
+            if chapter not in book.keys():
+                book[chapter] = {}
+
+            book[chapter][verse] = self.build_segments(line['text'])
+
+        for key in book.keys():
+            book[key] = convert_dict_to_array(book[key])
+
+        book = convert_dict_to_array(book)
+        return book
