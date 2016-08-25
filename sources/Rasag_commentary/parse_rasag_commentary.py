@@ -13,31 +13,31 @@ from sources.Rasag_commentary import book_intro_parse
 
 """
 Refs to upload
-Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 1
-Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 2
-Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 3
-Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 4
-Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 5
-Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 6
-Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 7, Introduction
-Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 7
-Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 8
-Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 9
-Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 10
-Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 11
-Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 12
-Rav Perla on Sefer Hamitzvot of Rasag, Positive Commandments
-Rav Perla on Sefer Hamitzvot of Rasag, Negative Commandments
-Rav Perla on Sefer Hamitzvot of Rasag, Laws of the Court, Introduction
-Rav Perla on Sefer Hamitzvot of Rasag, Laws of the Court
-Rav Perla on Sefer Hamitzvot of Rasag, Communal Laws, Introduction
-Rav Perla on Sefer Hamitzvot of Rasag, Communal Laws
-Rav Perla on Sefer Hamitzvot of Rasag, Appendix, Introduction
-Rav Perla on Sefer Hamitzvot of Rasag, Appendix
+Commentary on Sefer Hamitzvot of Rasag, Introduction, Chapter 1
+Commentary on Sefer Hamitzvot of Rasag, Introduction, Chapter 2
+Commentary on Sefer Hamitzvot of Rasag, Introduction, Chapter 3
+Commentary on Sefer Hamitzvot of Rasag, Introduction, Chapter 4
+Commentary on Sefer Hamitzvot of Rasag, Introduction, Chapter 5
+Commentary on Sefer Hamitzvot of Rasag, Introduction, Chapter 6
+Commentary on Sefer Hamitzvot of Rasag, Introduction, Chapter 7, Introduction
+Commentary on Sefer Hamitzvot of Rasag, Introduction, Chapter 7, Shorashim
+Commentary on Sefer Hamitzvot of Rasag, Introduction, Chapter 8
+Commentary on Sefer Hamitzvot of Rasag, Introduction, Chapter 9
+Commentary on Sefer Hamitzvot of Rasag, Introduction, Chapter 10
+Commentary on Sefer Hamitzvot of Rasag, Introduction, Chapter 11
+Commentary on Sefer Hamitzvot of Rasag, Introduction, Chapter 12
+Commentary on Sefer Hamitzvot of Rasag, Positive Commandments
+Commentary on Sefer Hamitzvot of Rasag, Negative Commandments
+Commentary on Sefer Hamitzvot of Rasag, Laws of the Court, Introduction
+Commentary on Sefer Hamitzvot of Rasag, Laws of the Court
+Commentary on Sefer Hamitzvot of Rasag, Communal Laws, Introduction
+Commentary on Sefer Hamitzvot of Rasag, Communal Laws
+Commentary on Sefer Hamitzvot of Rasag, Appendix, Introduction
+Commentary on Sefer Hamitzvot of Rasag, Appendix
 """
 
-index = rasag_commentary_index_record.create_index()
-functions.post_index(index)
+# index = rasag_commentary_index_record.create_index()
+# functions.post_index(index)
 
 introduction = book_intro_parse.parse('text_book_intro.txt')
 
@@ -55,64 +55,79 @@ communal = punishments_parse.parse('text_communal.txt', communal_mitzvah_number)
 
 miluim = miluim_parse.parse('text_appendix.txt')
 
-
-for number in range(1, 7):
-    ref = 'Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter {}'.format(number)
-    text = rasag_commentaries_functions.create_text(introduction[number-1])
-    functions.post_text(ref, text)
-
-ref = 'Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 7, Introduction'
-text = rasag_commentaries_functions.create_text(introduction[6][0])
-functions.post_text(ref, text)
-
-ref = 'Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter 7'
-text = rasag_commentaries_functions.create_text(introduction[6][1])
-functions.post_text(ref, text)
-
-for number in range(8, 13):
-    ref = 'Rav Perla on Sefer Hamitzvot of Rasag, Introduction, Chapter {}'.format(number)
-    text = rasag_commentaries_functions.create_text(introduction[number-1])
-    functions.post_text(ref, text)
-
-ref = 'Rav Perla on Sefer Hamitzvot of Rasag, Positive Commandments'
-text = rasag_commentaries_functions.create_text(positive_commandments)
-functions.post_text(ref, text)
-
-ref = 'Rav Perla on Sefer Hamitzvot of Rasag, Negative Commandments'
-text = rasag_commentaries_functions.create_text(negative_commandments)
-functions.post_text(ref, text)
-
-ref = 'Rav Perla on Sefer Hamitzvot of Rasag, Laws of the Court, Introduction'
-text = rasag_commentaries_functions.create_text(punishments[0])
-functions.post_text(ref, text)
-
-ref = 'Rav Perla on Sefer Hamitzvot of Rasag, Laws of the Court'
-text = rasag_commentaries_functions.create_text(punishments[1])
-functions.post_text(ref, text)
-
-ref = 'Rav Perla on Sefer Hamitzvot of Rasag, Communal Laws, Introduction'
-text = rasag_commentaries_functions.create_text(communal[0])
-functions.post_text(ref, text)
-
-ref = 'Rav Perla on Sefer Hamitzvot of Rasag, Communal Laws'
+#
+# for number in range(1, 7):
+#     ref = 'Commentary on Sefer Hamitzvot of Rasag, Introduction, Chapter {}'.format(number)
+#     text = rasag_commentaries_functions.create_text(introduction[number-1])
+#     functions.post_text(ref, text)
+#
+# ref = 'Commentary on Sefer Hamitzvot of Rasag, Introduction, Chapter 7, Introduction'
+# text = rasag_commentaries_functions.create_text(introduction[6][0])
+# functions.post_text(ref, text)
+#
+# ref = 'Commentary on Sefer Hamitzvot of Rasag, Introduction, Chapter 7, Shorashim'
+# text = rasag_commentaries_functions.create_text(introduction[6][1])
+# functions.post_text(ref, text)
+#
+# for number in range(8, 13):
+#     ref = 'Commentary on Sefer Hamitzvot of Rasag, Introduction, Chapter {}'.format(number)
+#     text = rasag_commentaries_functions.create_text(introduction[number-1])
+#     functions.post_text(ref, text)
+#
+# ref = 'Commentary on Sefer Hamitzvot of Rasag, Positive Commandments'
+# text = rasag_commentaries_functions.create_text(positive_commandments)
+# functions.post_text(ref, text)
+#
+# ref = 'Commentary on Sefer Hamitzvot of Rasag, Negative Commandments'
+# text = rasag_commentaries_functions.create_text(negative_commandments)
+# functions.post_text(ref, text)
+#
+# ref = 'Commentary on Sefer Hamitzvot of Rasag, Laws of the Courts, Introduction'
+# text = rasag_commentaries_functions.create_text(punishments[0])
+# functions.post_text(ref, text)
+#
+# ref = 'Commentary on Sefer Hamitzvot of Rasag, Laws of the Courts'
+# text = rasag_commentaries_functions.create_text(punishments[1])
+# functions.post_text(ref, text)
+#
+util.ja_to_xml(communal[1], ['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH'])
+#
+# ref = 'Commentary on Sefer Hamitzvot of Rasag, Communal Laws, Introduction'
+# text = rasag_commentaries_functions.create_text(communal[0])
+# functions.post_text(ref, text)
+#
+ref = 'Commentary on Sefer Hamitzvot of Rasag, Communal Laws'
 text = rasag_commentaries_functions.create_text(communal[1])
 functions.post_text(ref, text)
-
-ref = 'Rav Perla on Sefer Hamitzvot of Rasag, Appendix, Introduction'
-text = rasag_commentaries_functions.create_text(miluim[0])
-functions.post_text(ref, text)
-
-ref = 'Rav Perla on Sefer Hamitzvot of Rasag, Appendix'
-text = rasag_commentaries_functions.create_text(miluim[1])
-functions.post_text(ref, text)
+#
+# ref = 'Commentary on Sefer Hamitzvot of Rasag, Appendix, Introduction'
+# text = rasag_commentaries_functions.create_text(miluim[0])
+# functions.post_text(ref, text)
+#
+# ref = 'Commentary on Sefer Hamitzvot of Rasag, Appendix'
+# text = rasag_commentaries_functions.create_text(miluim[1])
+# functions.post_text(ref, text)
 
 
 """
 Link
 """
-# list_of_links = rasag_commentaries_functions.create_links(negative_commandments)
-# print list_of_links
+# list_of_links_positive = rasag_commentaries_functions.create_links(positive_commandments, 'Positive Commandments')
+# print list_of_links_positive
+# functions.post_link(list_of_links_positive)
+#
+# list_of_links_negative = rasag_commentaries_functions.create_links(negative_commandments, 'Negative Commandments')
+# print list_of_links_negative
+# functions.post_link(list_of_links_negative)
+#
+# list_of_links_laws = rasag_commentaries_functions.create_links(punishments[1], 'Laws of the Courts')
+# print list_of_links_laws
+# functions.post_link(list_of_links_laws)
+#
+# list_of_links_communal = rasag_commentaries_functions.create_links(communal[1], 'Communal Laws')
+# print list_of_links_communal
+# functions.post_link(list_of_links_communal)
 
 
 
-#util.ja_to_xml(introduction, ['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH'])
+# util.ja_to_xml(communal, ['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH'])

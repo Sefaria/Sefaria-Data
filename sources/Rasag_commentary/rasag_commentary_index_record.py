@@ -13,8 +13,8 @@ def create_index():
     rav_perla = create_schema()
     rav_perla.validate()
     index = {
-        "title": "Rav Perla on Sefer Hamitzvot of Rasag",
-        "categories": ["Commentary2", "Sefer Hamitzvot of Rasag", "Rav Perla on Sefer Hamitzvot of Rasag"],
+        "title": "Commentary on Sefer Hamitzvot of Rasag",
+        "categories": ["Commentary2", "Sefer Hamitzvot of Rasag", "Commentary on Sefer Hamitzvot of Rasag"],
         "schema": rav_perla.serialize()
     }
     return index
@@ -22,9 +22,9 @@ def create_index():
 
 def create_schema():
     rasag_commentary = SchemaNode()
-    rasag_commentary.add_title('Rav Perla on Sefer Hamitzvot of Rasag', 'en', primary=True)
-    rasag_commentary.add_title(u'רב פערלא על ספר מצות לרסג', 'he', primary=True)
-    rasag_commentary.key = 'Rav Perla on Sefer Hamitzvot of Rasag'
+    rasag_commentary.add_title('Commentary on Sefer Hamitzvot of Rasag', 'en', primary=True)
+    rasag_commentary.add_title(u'ביאור על ספר המצוות לרס"ג', 'he', primary=True)
+    rasag_commentary.key = 'Commentary on Sefer Hamitzvot of Rasag'
     rasag_commentary.append(create_book_intro_node())
     rasag_commentary.append(create_positive_commandments_node())
     rasag_commentary.append(create_negative_commandments_node())
@@ -73,9 +73,9 @@ def create_negative_commandments_node():
 
 def create_onshim_node():
     onshim = SchemaNode()
-    onshim.add_title('Laws of the Court', 'en', primary=True)
+    onshim.add_title('Laws of the Courts', 'en', primary=True)
     onshim.add_title(u'מנין העונשין', 'he', primary=True)
-    onshim.key = 'Laws of the Court'
+    onshim.key = 'Laws of the Courts'
     onshim.append(create_intro_nodes())
     onshim.append(create_default_nodes())
     return onshim
@@ -86,7 +86,7 @@ def create_communal_node():
     communal.add_title('Communal Laws', 'en', primary=True)
     communal.add_title(u'מנין הפרשיות', 'he', primary=True)
     communal.key = 'Communal Laws'
-    communal.append(create_intro_nodes())
+    communal.append(create_depth_two_intro_nodes())
     communal.append(create_default_nodes())
     return communal
 
@@ -137,10 +137,10 @@ def chapter_seven(number):
     hebrew_letter = util.numToHeb(number)
     chapter = SchemaNode()
     chapter.add_title('Chapter {}'.format(number), "en", primary=True)
-    chapter.add_title(u'{} {}'.format(u'סימן',hebrew_letter), "he", primary=True)
+    chapter.add_title(u'{} {}'.format(u'סימן', hebrew_letter), "he", primary=True)
     chapter.key = 'Chapter {}'.format(number)
     chapter.append(create_intro_nodes())
-    chapter.append(create_default_nodes())
+    chapter.append(create_shorash_node())
     return chapter
 
 
@@ -148,9 +148,30 @@ def chapter_nine(number):
     hebrew_letter = util.numToHeb(number)
     chapter = JaggedArrayNode()
     chapter.add_title('Chapter {}'.format(number), "en", primary=True)
-    chapter.add_title(u'{} {}'.format(u'סימן',hebrew_letter), "he", primary=True)
+    chapter.add_title(u'{} {}'.format(u'סימן', hebrew_letter), "he", primary=True)
     chapter.key = 'Chapter {}'.format(number)
     chapter.depth = 2
     chapter.addressTypes = ["Integer", "Integer"]
     chapter.sectionNames = ["Section", "Mitzvah"]
     return chapter
+
+
+def create_shorash_node():
+    intro_node = JaggedArrayNode()
+    intro_node.add_title('Shorashim', "en", primary=True)
+    intro_node.add_title(u'שורשים', "he", primary=True)
+    intro_node.key = 'Shorashim'
+    intro_node.depth = 2
+    intro_node.addressTypes = ["Integer", "Integer"]
+    intro_node.sectionNames = ["Shorash", "Comment"]
+    return intro_node
+
+def create_depth_two_intro_nodes():
+    intro_node = JaggedArrayNode()
+    intro_node.add_title('Introduction', "en", primary=True)
+    intro_node.add_title(u'הקדמה', "he", primary=True)
+    intro_node.key = 'Introduction'
+    intro_node.depth = 2
+    intro_node.addressTypes = ["Integer", "Integer"]
+    intro_node.sectionNames = ["Section", "Comment"]
+    return intro_node
