@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import re
-from fuzzywuzzy import fuzz
 import csv
 #from get_section_titles import get_he_section_title_array
 #from get_section_titles import standardize_title
@@ -25,6 +24,7 @@ def extract_text(file_input):
             #as a general outline to our approach, we append paragaphs to ois's, then ois's to sections, then sections to topics
             if True!=wordHasNekudot(line) and len(line)<200:
                 ois_box.append(paragraph_box)
+                paragraph_box = []
                 #if the word אות is not in the line, it's a section header. If it does have the word אות, it's the begging of an ois
                 #EXCEPT second section of nederim in yoreh daya doesn't have the word אות , for that we check the length of the line
                 #since all these lines are less than 18 chars, and no section titles are that short (challah is the shortest, and is still included. HOWEVER, IF SECTIONS ARE MISSING I'd LOOK INTO THIS QUALIFIER, JUST TO MAKE SURE
@@ -34,18 +34,16 @@ def extract_text(file_input):
                     #to distinuish new topics from new sections, we keep a log of topics already parsed
                     title = extract_title(line)
                     if title not in parsed_topics:
-                        for word in title:
-                            print "index is"+str(index)+" title is"+ word
-                        print line
-                        print
                         topic_box.append(section_box)
                         section_box = []
                         parsed_topics.append(title)
-                paragraph_box = []
+        #paragraph_box = []
         #we sdon't want to append names of sections, ois's, or topics, so we only append if our line is none of these, hence "else"
             else:
                 paragraph_box.append(line)
-"""
+        
+    return [parsed_topics, topic_box]
+"""USEFUL PRINT METHOD TO CHECK RESULTS
     for index_0, topic in enumerate(topic_box):
         for index, box in enumerate(topic):
             for index2, text in enumerate(box):
@@ -53,6 +51,29 @@ def extract_text(file_input):
                     print str(index_0)+" "+str(index)+" "+str(index2)+" "+str(index3)
                     print ois
 """
+def get_parsed_text():
+    OC_files = ["orah haim a m.txt","orah haim b m.txt","orah haim c m.txt"]
+    YD_files = ["yore deha a m.txt", "yore deha b m.txt"]
+    OH_files = ["even aezel m.txt"]
+    CM_files = ["hoshen mishpat a m.txt","hoshen mishpat b m.txt"]
+
+    order_files = [OC_files, YD_files, OH_files, CM_files]
+
+    parsed_order_text = []
+    parsed_order_topics = []
+
+    final_text = []
+
+    for order in order_files:
+        for file_str in order:
+            for topic_title in extract_text(file_str)[0]:
+                print ' '.join(topic_title)
+                parsed_order_topics.append(topic_title)
+            for topics in extract_text(file_str)[1]:
+                for topic in topics:
+                    parsed_order_text.append(topic)
+            final_text.append(parsed_order_text)
+    return final_text
 def extract_title(s):
     #fix minor glitch:
     if  "פרשיות" in s and "ארבע" in s:
@@ -98,17 +119,13 @@ def wordHasNekudot(word):
     data = data.replace(u"\u05C4", "")
     return data != word.decode('utf-8')
 
-
-OC_files = ["orah haim a m.txt","orah haim b m.txt","orah haim c m.txt"]
-YD_files = ["yore deha a m.txt", "yore deha b m.txt"]
-OH_files = ["even aezel m.txt"]
-CM_files = ["hoshen mishpat a m.txt","hoshen mishpat b m.txt"]
-
-order_files = [OC_files, YD_files, OH_files, CM_files]
-parsed_text = []
-for order in order_files:
-    for file_str in order:
-        parsed_text.append(extract_text(file_str))
-
-
+"""uncomment to see results
+for index, order in enumerate(get_parsed_text()):
+    print "ORDER "+ str(index)
+    for index1, topic in enumerate(order):
+        for index2, section in enumerate(topic):
+            for index3, ois in enumerate(section):
+                    print str(index1) +" "+str(index2)+" "+str(index3)
+                    print ois
+"""
     
