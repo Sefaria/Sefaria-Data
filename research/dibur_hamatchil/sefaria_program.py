@@ -367,7 +367,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
     for ru in curDaf.allRashi:
         if ru.startWord == -1:
             if verbose: sbreport += u"\nUNMATCHED: {}".format(ru.startingText)
-            if not verbose: print u"\tUNMATCHED: {}".format(ru.startingText)
+            #if not verbose: print u"\tUNMATCHED: {}".format(ru.startingText)
             start_end_map.append((ru.startWord,ru.startWord))
         else:
             if verbose:

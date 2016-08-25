@@ -133,7 +133,7 @@ def weighted_levenshtein_cost(c1, c2=None,min_cost=1.0):
     w1 = letter_freqs[c1] if c1 in letter_freqs else 0.0
     if c2:
         w2 = letter_freqs[c2] if c2 in letter_freqs else 0.0
-        return max(w1,w2) + min_cost
+        return w1 + min_cost if w1 > w2 else w2 + min_cost
     else:
         return w1 + min_cost
 
@@ -157,11 +157,11 @@ def weighted_levenshtein(s1,s2,cost_fn,min_cost=1.0):
         return len(s1)
 
     v0 = range(len(s2)+1)
-    v1 = np.zeros(len(s2)+1).tolist()
+    v1 = [0 for _ in xrange(len(s2)+1)]
 
-    for i in range(len(s1)):
+    for i in xrange(len(s1)):
         v1[0] = i + 1
-        for j in range(len(s2)):
+        for j in xrange(len(s2)):
             cost_sub = 0.0 if (s1[i] == s2[j]) else cost_fn(s1[i],s2[j],min_cost=min_cost)
             cost_ins = cost_fn(s2[j],min_cost=min_cost)
             cost_del = cost_fn(s1[i],min_cost=min_cost)
@@ -174,10 +174,7 @@ def weighted_levenshtein(s1,s2,cost_fn,min_cost=1.0):
     return v0[len(s2)]
 
 def sofit_swap(C):
-    try:
-        return sofit_map[C]
-    except KeyError:
-        return C
+    return sofit_map[C] if C in sofit_map else C
 
 
 def get_two_letter_word(word):
@@ -449,46 +446,109 @@ def print_tagged_corpus_to_html(test_set_name="test",test_set_type="init"):
     fp.write(str)
     fp.close()
 
-def print_tagged_corpus_to_html_table(test_set_name="test",test_set_type="init"):
-    test_set = json.load(codecs.open("{}_{}.json".format(test_set_name, test_set_type), "r", encoding="utf-8"))
-    word_list = test_set["words"]
-    str = u"<html><head><style>table{margin-right:auto;margin-left:auto;width:1200px}.sef{color:black}.cal{color:grey}.good-cal{color:red}.POS{color:orange}</style><meta charset='utf-8'></head><body><table>"
-    count = 0
-    while count < len(word_list):
-        row_obj = word_list[count:count+10]
-        row_sef = u"<tr class='sef'><td>{}</td></tr>".format(u"</td><td>".join([wo["word"] for wo in reversed(row_obj)]))
+def print_tagged_corpus_to_html_table(text_name,ref_list,num_daf_per_doc,test_set_name="test",test_set_type="init"):
+    cal_dh_root = "../../dibur_hamatchil/dh_source_scripts/cal_matcher_output"
 
-        row_cal = u"<tr class='cal'>"
-        for wo in reversed(row_obj):
-            if "cal_word" in wo:
-                row_cal += u"<td class='good-cal'>{} <span class='POS'>({})</span></td>".format(wo["cal_word"],wo["POS"])
-            else:
-                row_cal += u"<td>UKN</td>"
-        row_cal += u"</tr>"
+    iref = 0
+    while iref < len(ref_list):
+        str = u"<html><head><style>h1{text-align:center;background:grey}td{text-align:center}table{margin-top:20px;margin-bottom:20px;margin-right:auto;margin-left:auto;width:1200px}.missed{color:white;background:red}.b{color:green}.m{color:blue}.sef{color:black}.cal{color:grey}.good-cal{color:red}.POS{color:orange}</style><meta charset='utf-8'></head><body>"
 
-        str += row_sef
-        str += row_cal
-        count += 10
-    str += u"</table></body></html>"
-    fp = codecs.open("{}{}{}".format(test_set_name,'_str','.html'),'w',encoding='utf-8')
-    fp.write(str)
-    fp.close()
+        start_daf = ""
+        end_daf = ""
+        for idaf in xrange(num_daf_per_doc):
+            if iref >= len(ref_list): break
+            ref = ref_list[iref]
+            daf = ref.__str__().replace("{} ".format(text_name),"").encode('utf8')
+            str += u"<h1>DAF {}</h1>".format(daf)
+            str += u"<table>"
+            if idaf == 0: start_daf = daf
+            if idaf == num_daf_per_doc-1: end_daf = daf
 
-def get_test_set(text_name, limit=-1, strip_html=True, get_bib_links=False):
+            test_set = json.load(codecs.open("{}/{}/test_set/{}_{}_{}.json".format(cal_dh_root,text_name,test_set_name, test_set_type,daf), "r", encoding="utf-8"))
+            word_list = test_set["words"]
+            missed_word_list = test_set["missed_words"]
+            missed_dic = {wo["index"]:wo["word"] for wo in missed_word_list}
+
+            sef_count = 0
+            cal_count = 0
+            while sef_count < len(word_list):
+                row_obj = word_list[sef_count:sef_count+10]
+                row_sef = u"<tr class='sef'><td>{}</td>".format(u"</td><td>".join([wo["word"] for wo in reversed(row_obj)]))
+                row_sef += u"<td>({}-{})</td></tr>".format(sef_count,sef_count+len(row_obj)-1)
+
+
+                row_cal = u"<tr class='cal'>"
+                start_cal_count = cal_count
+                for wo in reversed(row_obj):
+                    while cal_count in missed_dic:
+                        cal_count += 1
+                    if "cal_word" in wo:
+                        cal_count += 1
+                        row_cal += u"<td class='good-cal'>{} <span class='POS'>({})</span></td>".format(wo["cal_word"],wo["POS"])
+                    else:
+                        row_cal += u"<td class='{}'>{}</td>".format(wo["class"][0],wo["class"][0:3].upper())
+                row_cal += u"<td>({}-{})</td>".format(start_cal_count,cal_count-1)
+                row_cal += u"</tr>"
+
+                str += row_sef
+                str += row_cal
+                sef_count += 10
+            str += u"</table>"
+
+            str += u"<table>"
+            count = 0
+            while count < len(missed_word_list):
+                row_obj = missed_word_list[count:count+10]
+                word_str = [u"{}:{}".format(wo["word"],wo["index"]) for wo in reversed(row_obj)]
+                row_missed = u"<tr class='missed'><td>{}</td></tr>".format(u"</td><td>".join(word_str))
+                str += row_missed
+                count += 10
+            str += u"</table>"
+            iref += 1
+        str += u"</body></html>"
+        fp = codecs.open("{}/{}/html_table/{}_{}-{}.html".format(cal_dh_root,text_name,test_set_name,start_daf,end_daf),'w',encoding='utf-8')
+        fp.write(str)
+        fp.close()
+
+def get_ref_list(text_name,start_ref=None,end_ref=None):
     mesechta = library.get_index(text_name)
-    if limit == -1:
-        all_segs = mesechta.all_section_refs()
-    else:
-        all_segs = mesechta.all_segment_refs()[:limit]
+    if start_ref is None:
+        start_ref = mesechta.all_section_refs()[0]
+    if end_ref is None:
+        end_ref = mesechta.all_section_refs()[-1]
+
+    ref_list = []
+    curr_ref = start_ref
+    finished_yet = False
+    while not finished_yet and not curr_ref is None:
+        finished_yet = curr_ref == end_ref
+        ref_list.append(curr_ref)
+        curr_ref = curr_ref.next_section_ref()
+
+    return ref_list
+
+def get_test_set(text_name, ref_list, strip_html=True, get_bib_links=False):
+    mesechta = library.get_index(text_name)
+
     all_seg_str_list = []
     bib_links = []
-    for seg in all_segs:
-        all_seg_str_list.append(tokenize_words(seg.text("he").as_string(), strip_html))
+    ref_list = []
+    for ref in ref_list:
+        temp_seg_str_list = []
+        temp_bib_links = []
+        for seg in ref.all_subrefs():
+            temp_seg_str_list.append(tokenize_words(seg.text("he").as_string(), strip_html))
+            if get_bib_links:
+                temp_bib_links.append(seg.linkset().filter("Tanakh"))
+        all_seg_str_list.append(temp_seg_str_list)
         if get_bib_links:
-            bib_links.append(seg.linkset().filter("Tanakh"))
+            bib_links.append(temp_bib_links)
 
-    lens = [len(word_list) for word_list in all_seg_str_list]
-    return [word for word_list in all_seg_str_list for word in word_list],lens,bib_links
+
+
+    #i like array comprehensions...
+    lens = [[len(word_list) for word_list in word_list_list] for word_list_list in all_seg_str_list]
+    return [[word for word_list in word_list_list for word in word_list] for word_list_list in all_seg_str_list ],lens,bib_links,ref_list
 
 #return start and end indices of best subsequence from sub_seg which matches main_seg
 
@@ -516,61 +576,77 @@ def match_segments_without_order(sub_seg, main_seg,threshold=1.4):
 
     return index_list
 
-def tag_testing_naive(text_name,bib_links,seg_len_list,word_list_in,test_set_name="test"):
-    curr_state = ""
-    caldb_words = json.load(codecs.open("caldb_words_{}.json".format(text_name), "r", encoding="utf-8"))
-    cal_pre_tagged_words = json.load(codecs.open("../../dibur_hamatchil/dh_source_scripts/lang_naive_talmud.json","r",encoding="utf8"))["words"]
-    word_list_out = []
-    count = 0
+def tag_testing_naive(text_name,bib_links,seg_len_list,word_list_in,ref_list,test_set_name="test"):
+    cal_dh_root = "../../dibur_hamatchil/dh_source_scripts/cal_matcher_output"
 
-    main_i = 0
+    curr_state = "" #state should be retained, even b/w dafs
+    #caldb_words = json.load(codecs.open("caldb_words_{}.json".format(text_name), "r", encoding="utf-8"))
+    for iref,ref in enumerate(ref_list):
+        curr_seg_len_list = seg_len_list[iref]
+        curr_bib_links = bib_links[iref]
+        curr_word_list_in = word_list_in[iref]
 
-    while main_i < len(seg_len_list):
-        seg_len = seg_len_list[main_i]
-        bib_linkset = bib_links[main_i]
-        seg = word_list_in[count:count+seg_len]
-        count += seg_len
+        daf = ref.__str__().replace("{} ".format(text_name),"").encode('utf8')
 
-        b_start = -1; b_end = -1
-        if len(bib_linkset) > 0:
-            for bib_link in bib_linkset:
-                #there is an assumption here that the links to Tanakh are always 1
-                try:
-                    bib_seg = tokenize_words(hebrew.strip_cantillation(Ref(bib_link.refs[1]).text('he').as_string(),strip_vowels=True),strip_html=True)
-                    b_start,b_end = match_segments(seg, bib_seg)
-                except InputError:
-                    continue
-        for i,word in enumerate(seg):
-            state_switch_pat = re.compile(r"\<big\>\<strong\>[^\<\>]+\</strong\>\</big\>")
-            if re.match(state_switch_pat,word):
-                if curr_state == "mishnaic":
-                    curr_state = "talmudic"
-                elif curr_state == "talmudic" or curr_state == "":
-                    curr_state = "mishnaic"
+        try:
+            cal_pre_tagged_words = \
+            json.load(codecs.open("{}/{}/lang_naive_talmud/lang_naive_talmud_{}.json".format(cal_dh_root,text_name,daf), "r", encoding="utf8"))
+        except IOError:
+            cal_pre_tagged_words = None
 
-            cal_obj = None
-            if b_start != -1 and b_end != -1 and i in xrange(b_start,b_end):
-                lang = "biblical"
-            elif curr_state == "talmudic":
-                #lang = cal_pre_tagged_words[count-seg_len+i]["class"]
-                try:
-                    cal_obj = cal_pre_tagged_words[count-seg_len+i]
-                except IndexError:
-                    break
-            elif curr_state == "mishnaic":
-                lang = "mishnaic"
-            else:
-                lang = "unknown"
 
-            if cal_obj:
-                word_list_out.append(cal_obj)
-            else:
-                word_list_out.append({"word":word,"class":lang})
-        main_i += 1
-    doc = {}
-    doc["words"] = word_list_out
-    fp = codecs.open("{}_naive.json".format(test_set_name), "w", encoding='utf-8')
-    json.dump(doc, fp, indent=4, encoding='utf-8', ensure_ascii=False)
+        word_list_out = []
+        count = 0
+        main_i = 0
+        while main_i < len(curr_seg_len_list):
+            seg_len = curr_seg_len_list[main_i]
+            bib_linkset = curr_bib_links[main_i]
+            seg = curr_word_list_in[count:count+seg_len]
+            count += seg_len
+
+            b_start = -1; b_end = -1
+            if len(bib_linkset) > 0:
+                for bib_link in bib_linkset:
+                    #there is an assumption here that the links to Tanakh are always 1
+                    try:
+                        bib_seg = tokenize_words(hebrew.strip_cantillation(Ref(bib_link.refs[1]).text('he').as_string(),strip_vowels=True),strip_html=True)
+                        b_start,b_end = match_segments(seg, bib_seg)
+                    except InputError:
+                        continue
+            for i,word in enumerate(seg):
+                state_switch_pat = re.compile(r"\<big\>\<strong\>[^\<\>]+\</strong\>\</big\>")
+                if re.match(state_switch_pat,word):
+                    if curr_state == "mishnaic":
+                        curr_state = "talmudic"
+                    elif curr_state == "talmudic" or curr_state == "":
+                        curr_state = "mishnaic"
+
+                cal_obj = None
+                if b_start != -1 and b_end != -1 and i in xrange(b_start,b_end):
+                    lang = "biblical"
+                elif curr_state == "talmudic":
+                    #lang = cal_pre_tagged_words[count-seg_len+i]["class"]
+                    if not cal_pre_tagged_words is None:
+                        try:
+                            cal_obj = cal_pre_tagged_words["words"][count-seg_len+i]
+                            if cal_obj["class"] == "talmud":
+                                yo = 45453
+                        except IndexError:
+                            break
+                elif curr_state == "mishnaic":
+                    lang = "mishnaic"
+                else:
+                    lang = "unknown"
+
+                if cal_obj:
+                    word_list_out.append(cal_obj)
+                else:
+                    word_list_out.append({"word":word,"class":lang})
+            main_i += 1
+        missed_words = [] if cal_pre_tagged_words is None else cal_pre_tagged_words["missed_words"]
+        doc = {"words":word_list_out,"missed_words":missed_words}
+        fp = codecs.open("{}/{}/test_set/{}_naive_{}.json".format(cal_dh_root,text_name,test_set_name,daf), "w", encoding='utf-8')
+        json.dump(doc, fp, indent=4, encoding='utf-8', ensure_ascii=False)
 
 
 
