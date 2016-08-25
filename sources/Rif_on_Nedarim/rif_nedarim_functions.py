@@ -44,7 +44,7 @@ def parse():
                 list_of_pages = each_line.split("@20")
                 for index, page in enumerate(list_of_pages):
                     if ":" in page:
-                        list_of_comments = page.split(":")
+                        list_of_comments = page.split("~")
                         for comment in list_of_comments:
                             comment = clean_up(comment)
                             if comment:
@@ -60,7 +60,7 @@ def parse():
 
             else:
                 if ":" in each_line:
-                    list_of_comments = each_line.split(":")
+                    list_of_comments = each_line.split("~")
                     for comment in list_of_comments:
                         comment = clean_up(comment)
                         if comment:
@@ -81,8 +81,6 @@ def clean_up(string):
     string = internal_links(string)
     string = external_links(string)
     string = remove_substrings(string, ['@88', '@00', '@99'])
-    if string:
-        string += ':'
     return string
 
 
