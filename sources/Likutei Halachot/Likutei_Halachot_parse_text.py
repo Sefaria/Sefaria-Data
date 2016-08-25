@@ -104,8 +104,11 @@ YD_files = ["yore deha a m.txt", "yore deha b m.txt"]
 OH_files = ["even aezel m.txt"]
 CM_files = ["hoshen mishpat a m.txt","hoshen mishpat b m.txt"]
 
-for file_str in CM_files:
-    extract_text(file_str)
+order_files = [OC_files, YD_files, OH_files, CM_files]
+parsed_text = []
+for order in order_files:
+    for file_str in order:
+        parsed_text.append(extract_text(file_str))
 
 
     
