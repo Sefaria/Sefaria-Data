@@ -390,7 +390,7 @@ class Maharam:
                         "generated_by": "Maharam on "+masechet+" linker",
                     })
 
-    def postLinks(self):
+    def postLinks(self, match_in_order):
         mishnah_in_order = {}
         mishnah_out_order = {}
         for perek in self.mishnah1_dict:
@@ -444,8 +444,8 @@ def create_index(tractate):
     root=JaggedArrayNode()
     heb_masechet = get_text_plus(tractate)['heBook']
     root.add_title(u"Maharam on "+tractate.replace("_"," "), "en", primary=True)
-    root.add_title(u'חידושי רמב"ן על '+heb_masechet, "he", primary=True)
-    root.key = 'ramban'
+    root.add_title(u'מהר"ם '+heb_masechet, "he", primary=True)
+    root.key = 'maharam'
     root.sectionNames = ["Daf", "Comment"]
     root.depth = 2
     root.addressTypes = ["Talmud","Integer"]
@@ -453,8 +453,8 @@ def create_index(tractate):
     root.validate()
 
     index = {
-        "title": "Chiddushei Ramban on "+tractate.replace("_"," "),
-        "categories": ["Commentary2", "Talmud", "Ramban"],
+        "title": "Maharam on "+tractate.replace("_"," "),
+        "categories": ["Commentary2", "Talmud", "Maharam"],
         "schema": root.serialize()
     }
     post_index(index)
@@ -462,27 +462,31 @@ def create_index(tractate):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 3:
-        masechet = sys.argv[1]+" "+sys.argv[2]
-    else:
-        masechet = sys.argv[1]
+    titles = ["Bava Batra", "Bava Kamma", "Bava Metzia", "Chullin", "Eruvin", "Gittin", "Ketubot", "Kiddushin", "Makkot",
+              "Niddah", "Sanhedrin", "Shabbat", "Sukkah", "Yevamot"
+              ]
+    done = ["Bava Batra", "Bava Kamma"]
+    for masechet in titles:
+        if masechet in done:
+            continue
 
-    create_index(masechet)
-    file = open(masechet+"2.txt", 'r')
+        print masechet
 
-    maharam = Maharam()
-    maharam.parseText(file)
+        create_index(masechet)
+        file = open(masechet+"2.txt", 'r')
 
-    match_in_order=Match(in_order=True, min_ratio=80, guess=False, range=True, can_expand=False)
-    match_out_of_order = Match(in_order=False, min_ratio=85, guess=False, range=True, can_expand=False)
-    text_to_post = convertDictToArray(maharam.comm_dict)
-    send_text = {
-                    "versionTitle": "Vilna Edition",
-                    "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002023637",
-                    "language": "he",
-                    "text": text_to_post,
-                }
-    post_text("Maharam on "+masechet, send_text, "on")
+        maharam = Maharam()
+        maharam.parseText(file)
 
-    maharam.postLinks()
+        match_in_order=Match(in_order=True, min_ratio=86, guess=False, range=True, can_expand=False)
+        text_to_post = convertDictToArray(maharam.comm_dict)
+        send_text = {
+                        "versionTitle": "Vilna Edition",
+                        "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002023637",
+                        "language": "he",
+                        "text": text_to_post,
+                    }
+        post_text("Maharam on "+masechet, send_text, "on")
+
+        maharam.postLinks(match_in_order)
 

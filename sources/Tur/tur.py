@@ -78,6 +78,22 @@ def gatherData(data, line, helek, siman_num, matches_array, commentaries):
     return data
 
 
+def checkPrisha(siman_num, helek, matches_array, commentaries):
+    hash_tags = {}
+    report = open("report_prisha_duplicates.txt", "a")
+    for commentary_count, matches in enumerate(matches_array):
+        if commentaries[commentary_count] == "Prisha":
+            for order_count, match in enumerate(matches):
+                this_gematria = getGematria(match.encode('utf-8'))
+                if this_gematria in hash_tags:
+                    hash_tags[this_gematria] += 1
+                else:
+                    hash_tags[this_gematria] = 1
+    for number in hash_tags:
+        if hash_tags[number] > 1:
+            report.write("Siman "+str(siman_num)+", "+helek+": "+numToHeb(number).encode('utf8')+" has "+str(hash_tags[number])+"\n")
+    report.close()
+
 
 def replaceWithHTMLTags(line, helek, siman_num, data):
     global prisha_file
@@ -101,6 +117,9 @@ def replaceWithHTMLTags(line, helek, siman_num, data):
                         
     data = gatherData(data, line, helek, siman_num, matches_array, commentaries)
     
+    checkPrisha(siman_num, helek, matches_array, commentaries)
+
+
     for commentary_count, matches in enumerate(matches_array):
         hash_tags = {}
         how_many_shams = 0
@@ -272,7 +291,6 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
                     header = ""
         elif will_see_00 == False:
             if len(header) > 0:
-                print 'have you forgotten?'
                 pdb.set_trace()
 
         if will_see_00 == True:
@@ -341,5 +359,5 @@ if __name__ == "__main__":
             "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001935970",
             "versionTitle": helek + ", Vilna, 1923"
         }
-        post_text("Tur,_"+helek, send_text)
+        #post_text("Tur,_"+helek, send_text)
     
