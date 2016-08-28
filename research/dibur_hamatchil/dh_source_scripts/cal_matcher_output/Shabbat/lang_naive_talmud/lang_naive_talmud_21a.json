@@ -21,19 +21,11 @@
             "word": "מדרבן"
         }, 
         {
-            "index": 42, 
-            "word": "טעמ\""
-        }, 
-        {
-            "index": 43, 
-            "word": "דתנא"
-        }, 
-        {
-            "index": 59, 
+            "index": 57, 
             "word": "אטו"
         }, 
         {
-            "index": 60, 
+            "index": 58, 
             "word": "אטו"
         }
     ], 
@@ -363,18 +355,8 @@
             "side": 1
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 0, 
-            "daf": "21a", 
             "word": "דקאזא", 
-            "line_num": 11, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 21, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "ריש", 
@@ -1210,10 +1192,10 @@
         }, 
         {
             "head_word": "קמא", 
-            "word_num": 3, 
+            "word_num": 0, 
             "daf": "21a", 
             "word": "קמא", 
-            "line_num": 31, 
+            "line_num": 29, 
             "cal_word": "קמא", 
             "POS": "A02", 
             "class": "talmud", 
@@ -1279,12 +1261,38 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "מאי טעמא", 
+            "word_num": 0, 
+            "daf": "21a", 
             "word": "מ\"ט", 
-            "class": "unknown"
+            "line_num": 31, 
+            "cal_word": "מאי טעמ\"", 
+            "POS": "P01", 
+            "class": "talmud", 
+            "pg_num": 21, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
+            "head_word": "תנא קמא", 
+            "word_num": 2, 
+            "daf": "21a", 
             "word": "דת\"ק", 
-            "class": "unknown"
+            "line_num": 31, 
+            "cal_word": "דתנא קמא", 
+            "POS": "A02", 
+            "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
+            "pg_num": 21, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "head_word": "כל", 

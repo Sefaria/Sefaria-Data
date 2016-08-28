@@ -1,83 +1,63 @@
 {
     "missed_words": [
         {
-            "index": 13, 
-            "word": "הכא"
+            "index": 39, 
+            "word": "מי"
         }, 
         {
-            "index": 15, 
-            "word": "לא"
-        }, 
-        {
-            "index": 16, 
-            "word": "שנא"
-        }, 
-        {
-            "index": 42, 
-            "word": "לא"
-        }, 
-        {
-            "index": 43, 
-            "word": "הכא"
-        }, 
-        {
-            "index": 45, 
+            "index": 40, 
             "word": "לא"
         }, 
         {
             "index": 46, 
-            "word": "שנא"
-        }, 
-        {
-            "index": 50, 
             "word": "אע\"ג"
         }, 
         {
-            "index": 57, 
+            "index": 53, 
             "word": "אלא"
         }, 
         {
-            "index": 60, 
+            "index": 56, 
+            "word": "נמי"
+        }, 
+        {
+            "index": 70, 
+            "word": "מי"
+        }, 
+        {
+            "index": 71, 
+            "word": "לא"
+        }, 
+        {
+            "index": 72, 
+            "word": "הכא"
+        }, 
+        {
+            "index": 73, 
             "word": "נמי"
         }, 
         {
             "index": 74, 
-            "word": "מי"
+            "word": "לא"
         }, 
         {
             "index": 75, 
-            "word": "לא"
-        }, 
-        {
-            "index": 76, 
-            "word": "הכא"
-        }, 
-        {
-            "index": 77, 
-            "word": "נמי"
-        }, 
-        {
-            "index": 78, 
-            "word": "לא"
-        }, 
-        {
-            "index": 79, 
             "word": "שנא"
         }, 
         {
-            "index": 88, 
+            "index": 84, 
             "word": "שפיר"
         }, 
         {
-            "index": 96, 
+            "index": 92, 
             "word": "מתקיף"
         }, 
         {
-            "index": 97, 
+            "index": 93, 
             "word": "לה"
         }, 
         {
-            "index": 103, 
+            "index": 99, 
             "word": "ליה"
         }
     ], 
@@ -293,12 +273,32 @@
             "side": 1
         }, 
         {
+            "head_word": "הכא נמי", 
+            "word_num": 1, 
+            "daf": "6a", 
             "word": "ה\"נ", 
-            "class": "unknown"
+            "line_num": 3, 
+            "cal_word": "הכא נמי", 
+            "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 6, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
+            "head_word": "לא שני", 
+            "word_num": 3, 
+            "daf": "6a", 
             "word": "ל\"ש", 
-            "class": "unknown"
+            "line_num": 3, 
+            "cal_word": "לא שנא", 
+            "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 6, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "head_word": "מי", 
@@ -751,12 +751,32 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "הכא נמי", 
+            "word_num": 0, 
+            "daf": "6a", 
             "word": "ה\"נ", 
-            "class": "unknown"
+            "line_num": 11, 
+            "cal_word": "הכא נמי", 
+            "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 6, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
+            "head_word": "לא שני", 
+            "word_num": 2, 
+            "daf": "6a", 
             "word": "ל\"ש", 
-            "class": "unknown"
+            "line_num": 11, 
+            "cal_word": "לא שנא", 
+            "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 6, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "head_word": "מי", 
@@ -899,26 +919,8 @@
             "side": 1
         }, 
         {
-            "head_word": "עלמ", 
-            "word_num": 14, 
-            "daf": "6a", 
             "word": "מקום", 
-            "line_num": 11, 
-            "cal_word": "לכולי עלמא", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "prefix": [
-                "ל_", 
-                "כל"
-            ], 
-            "pg_num": 6, 
-            "prefix_POS": [
-                "p03", 
-                "N04"
-            ], 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "חיוב", 
@@ -975,26 +977,8 @@
             "side": 1
         }, 
         {
-            "head_word": "עלמ", 
-            "word_num": 20, 
-            "daf": "6a", 
             "word": "מקום", 
-            "line_num": 11, 
-            "cal_word": "לכולי עלמא", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "prefix": [
-                "ל_", 
-                "כל"
-            ], 
-            "pg_num": 6, 
-            "prefix_POS": [
-                "p03", 
-                "N04"
-            ], 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "פטור", 

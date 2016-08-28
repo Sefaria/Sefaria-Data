@@ -1,12 +1,8 @@
 {
     "missed_words": [
         {
-            "index": 2, 
-            "word": "איכא"
-        }, 
-        {
-            "index": 9, 
-            "word": "חסר"
+            "index": 8, 
+            "word": "היא"
         }
     ], 
     "words": [
@@ -502,7 +498,7 @@
         }, 
         {
             "head_word": "בינ", 
-            "word_num": 3, 
+            "word_num": 1, 
             "daf": "16b", 
             "word": "בינייהו", 
             "line_num": 18, 
@@ -515,14 +511,38 @@
             "class": "talmud"
         }, 
         {
+            "head_word": "איכא", 
+            "word_num": 2, 
+            "daf": "16b", 
             "word": "א\"ב", 
-            "class": "unknown"
+            "line_num": 18, 
+            "cal_word": "איכא", 
+            "POS": "a", 
+            "side": 2, 
+            "pg_num": 16, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "class": "talmud"
+        }, 
+        {
+            "head_word": "בינ", 
+            "word_num": 3, 
+            "daf": "16b", 
+            "word": "דרצפינהו", 
+            "line_num": 18, 
+            "cal_word": "ביניהו", 
+            "POS": "p02", 
+            "side": 2, 
+            "pg_num": 16, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "class": "talmud"
         }, 
         {
             "head_word": "רצפ", 
             "word_num": 4, 
             "daf": "16b", 
-            "word": "דרצפינהו", 
+            "word": "מרצף", 
             "line_num": 18, 
             "cal_word": "דרצופינהו", 
             "POS": "V01", 
@@ -542,7 +562,7 @@
             "head_word": "רצפ", 
             "word_num": 0, 
             "daf": "16b", 
-            "word": "מרצף", 
+            "word": "ואידך", 
             "line_num": 19, 
             "cal_word": "מירצף", 
             "POS": "V01", 
@@ -556,7 +576,7 @@
             "head_word": "אידכ", 
             "word_num": 1, 
             "daf": "16b", 
-            "word": "ואידך", 
+            "word": "מאי", 
             "line_num": 19, 
             "cal_word": "אידך", 
             "POS": "P01", 
@@ -570,23 +590,9 @@
             "head_word": "מאי", 
             "word_num": 2, 
             "daf": "16b", 
-            "word": "מאי", 
-            "line_num": 19, 
-            "cal_word": "מאי", 
-            "POS": "P01", 
-            "side": 2, 
-            "pg_num": 16, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "class": "talmud"
-        }, 
-        {
-            "head_word": "היא", 
-            "word_num": 3, 
-            "daf": "16b", 
             "word": "היא", 
             "line_num": 19, 
-            "cal_word": "היא", 
+            "cal_word": "מאי", 
             "POS": "P01", 
             "side": 2, 
             "pg_num": 16, 
@@ -995,21 +1001,15 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "האי", 
-            "word_num": 3, 
+            "head_word": "חסר", 
+            "word_num": 2, 
             "daf": "16b", 
             "word": "להו", 
             "line_num": 34, 
-            "cal_word": "להי", 
-            "POS": "P02", 
+            "cal_word": "חסר", 
+            "POS": "V01", 
             "side": 2, 
-            "prefix": [
-                "ל_"
-            ], 
             "pg_num": 16, 
-            "prefix_POS": [
-                "p"
-            ], 
             "ms": "01", 
             "book_num": 71002, 
             "class": "talmud"

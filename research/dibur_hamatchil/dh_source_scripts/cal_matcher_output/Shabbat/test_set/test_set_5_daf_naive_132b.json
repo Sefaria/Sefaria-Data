@@ -45,8 +45,12 @@
             "word": "הוא"
         }, 
         {
-            "index": 47, 
-            "word": "דקא"
+            "index": 46, 
+            "word": "דבעידנא"
+        }, 
+        {
+            "index": 49, 
+            "word": "לא"
         }, 
         {
             "index": 50, 
@@ -59,10 +63,6 @@
         {
             "index": 52, 
             "word": "בעידנא"
-        }, 
-        {
-            "index": 53, 
-            "word": "דקא"
         }
     ], 
     "words": [
@@ -1077,18 +1077,8 @@
             "class": "talmud"
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 2, 
-            "daf": "132b", 
             "word": "דוחה", 
-            "line_num": 37, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
-            "side": 2, 
-            "pg_num": 132, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "class": "talmud"
+            "class": "unknown"
         }, 
         {
             "word": "את", 
@@ -1811,18 +1801,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "נמי", 
-            "word_num": 1, 
-            "daf": "132b", 
             "word": "מאי", 
-            "line_num": 51, 
-            "cal_word": "נמי", 
-            "POS": "a", 
-            "side": 2, 
-            "pg_num": 132, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "class": "talmud"
+            "class": "unknown"
         }, 
         {
             "word": "איכא", 
@@ -1881,8 +1861,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אי", 
+            "word_num": 0, 
+            "daf": "132b", 
             "word": "א\"נ", 
-            "class": "unknown"
+            "line_num": 51, 
+            "cal_word": "אי", 
+            "POS": "c", 
+            "side": 2, 
+            "pg_num": 132, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "class": "talmud"
         }, 
         {
             "word": "ציצית", 
@@ -1893,20 +1883,34 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "בעידנא ד_", 
-            "word_num": 2, 
+            "head_word": "נמי", 
+            "word_num": 1, 
             "daf": "132b", 
             "word": "דבעידנא", 
-            "line_num": 52, 
-            "cal_word": "דבעידנא", 
-            "POS": "c", 
+            "line_num": 51, 
+            "cal_word": "נמי", 
+            "POS": "a", 
+            "side": 2, 
+            "pg_num": 132, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "class": "talmud"
+        }, 
+        {
+            "head_word": "קא", 
+            "word_num": 3, 
+            "daf": "132b", 
+            "word": "דמתעקר", 
+            "line_num": 53, 
+            "cal_word": "דקא", 
+            "POS": "a", 
             "side": 2, 
             "prefix": [
                 "ד_"
             ], 
             "pg_num": 132, 
             "prefix_POS": [
-                "p"
+                "c"
             ], 
             "ms": "01", 
             "book_num": 71002, 
@@ -1916,7 +1920,7 @@
             "head_word": "עקר", 
             "word_num": 4, 
             "daf": "132b", 
-            "word": "דמתעקר", 
+            "word": "לאו", 
             "line_num": 53, 
             "cal_word": "מיתעקר", 
             "POS": "V04", 
@@ -1930,7 +1934,7 @@
             "head_word": "לאו", 
             "word_num": 5, 
             "daf": "132b", 
-            "word": "לאו", 
+            "word": "קא", 
             "line_num": 53, 
             "cal_word": "לאו", 
             "POS": "a", 
@@ -1944,24 +1948,10 @@
             "head_word": "קא", 
             "word_num": 6, 
             "daf": "132b", 
-            "word": "קא", 
+            "word": "מוקי\"", 
             "line_num": 53, 
             "cal_word": "קא", 
             "POS": "a", 
-            "side": 2, 
-            "pg_num": 132, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "class": "talmud"
-        }, 
-        {
-            "head_word": "קומ", 
-            "word_num": 7, 
-            "daf": "132b", 
-            "word": "מוקי\"", 
-            "line_num": 53, 
-            "cal_word": "מוקים", 
-            "POS": "V03", 
             "side": 2, 
             "pg_num": 132, 
             "ms": "01", 

@@ -12,15 +12,15 @@ print language_tools.get_two_letter_word(word1)
 test_set_name = "test_set_5_daf"
 text_name = "Shabbat"
 start_ref = None #Ref("{} 2a".format(text_name))
-end_ref   = None #Ref("{} 3b".format(text_name))
+end_ref   = None #Ref("{} 5a".format(text_name))
 
 #test_discrete()
 #make_training_sets("talmudic")
 #language_tools.make_cal_db_word_list(text_name)
 print "done making training"
 ref_list = language_tools.get_ref_list(text_name,start_ref,end_ref)
-#word_list_in,test_set_lens,bib_links,ref_list = language_tools.get_test_set(text_name,ref_list,strip_html=False,get_bib_links=True)
-#language_tools.tag_testing_naive(text_name,bib_links,test_set_lens,word_list_in,ref_list,test_set_name)
+word_list_in,test_set_lens,bib_links = language_tools.get_test_set(text_name,ref_list,strip_html=False,get_bib_links=True)
+language_tools.tag_testing_naive(text_name,bib_links,test_set_lens,word_list_in,ref_list,test_set_name)
 #tag_testing_init(word_list_in,test_set_lens,test_set_name=test_set_name)
 #get_hmm_initial_state(test_set_name=test_set_name)
 #run_baum_welch(test_set_name=test_set_name)

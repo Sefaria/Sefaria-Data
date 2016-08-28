@@ -5,23 +5,23 @@
             "word": "סבר"
         }, 
         {
-            "index": 71, 
+            "index": 70, 
             "word": "חד"
         }, 
         {
-            "index": 72, 
+            "index": 71, 
             "word": "גברא"
         }, 
         {
-            "index": 73, 
+            "index": 72, 
             "word": "מפני"
         }, 
         {
-            "index": 74, 
+            "index": 73, 
             "word": "לכולהו"
         }, 
         {
-            "index": 97, 
+            "index": 96, 
             "word": "איהו"
         }
     ], 
@@ -1103,27 +1103,13 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "לא", 
-            "word_num": 4, 
+            "head_word": "עלמ מעט", 
+            "word_num": 5, 
             "daf": "127a", 
             "word": "לא", 
             "line_num": 25, 
-            "cal_word": "לא", 
-            "POS": "a", 
-            "class": "talmud", 
-            "pg_num": 127, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
-        }, 
-        {
-            "head_word": "עלמ", 
-            "word_num": 5, 
-            "daf": "127a", 
-            "word": "דכ\"ע", 
-            "line_num": 25, 
-            "cal_word": "דכולי עלמא", 
-            "POS": "N02", 
+            "cal_word": "דכולי עלמא מעוטי", 
+            "POS": "V02", 
             "class": "talmud", 
             "prefix": [
                 "ד_", 
@@ -1139,15 +1125,45 @@
             "side": 1
         }, 
         {
-            "head_word": "מעט", 
-            "word_num": 6, 
+            "head_word": "עלמ מעט", 
+            "word_num": 5, 
+            "daf": "127a", 
+            "word": "דכ\"ע", 
+            "line_num": 25, 
+            "cal_word": "דכולי עלמא מעוטי", 
+            "POS": "V02", 
+            "class": "talmud", 
+            "prefix": [
+                "ד_", 
+                "כל"
+            ], 
+            "pg_num": 127, 
+            "prefix_POS": [
+                "c", 
+                "N04"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
+        }, 
+        {
+            "head_word": "עלמ מעט", 
+            "word_num": 5, 
             "daf": "127a", 
             "word": "מעוטי", 
             "line_num": 25, 
-            "cal_word": "מעוטי", 
+            "cal_word": "דכולי עלמא מעוטי", 
             "POS": "V02", 
             "class": "talmud", 
+            "prefix": [
+                "ד_", 
+                "כל"
+            ], 
             "pg_num": 127, 
+            "prefix_POS": [
+                "c", 
+                "N04"
+            ], 
             "ms": "01", 
             "book_num": 71002, 
             "side": 1

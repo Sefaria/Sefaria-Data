@@ -1,14 +1,5 @@
 {
-    "missed_words": [
-        {
-            "index": 12, 
-            "word": "לתנא"
-        }, 
-        {
-            "index": 13, 
-            "word": "קמא"
-        }
-    ], 
+    "missed_words": [], 
     "words": [
         {
             "word": "ונתחדשה", 
@@ -991,14 +982,44 @@
             "class": "talmud"
         }, 
         {
+            "head_word": "תנא", 
+            "word_num": 1, 
+            "daf": "135b", 
             "word": "לת\"ק", 
-            "class": "unknown"
+            "line_num": 30, 
+            "cal_word": "לתנא", 
+            "POS": "N02", 
+            "side": 2, 
+            "prefix": [
+                "ל_"
+            ], 
+            "pg_num": 135, 
+            "prefix_POS": [
+                "p03"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "class": "talmud"
+        }, 
+        {
+            "head_word": "קמא", 
+            "word_num": 2, 
+            "daf": "135b", 
+            "word": "בשלמא", 
+            "line_num": 30, 
+            "cal_word": "קמא", 
+            "POS": "A02", 
+            "side": 2, 
+            "pg_num": 135, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "class": "talmud"
         }, 
         {
             "head_word": "בשלמא", 
             "word_num": 3, 
             "daf": "135b", 
-            "word": "בשלמא", 
+            "word": "כולהו", 
             "line_num": 30, 
             "cal_word": "בשלמא", 
             "POS": "a", 
@@ -1012,7 +1033,7 @@
             "head_word": "כל", 
             "word_num": 4, 
             "daf": "135b", 
-            "word": "כולהו", 
+            "word": "משכחת", 
             "line_num": 30, 
             "cal_word": "כולהי", 
             "POS": "N02", 
@@ -1026,7 +1047,7 @@
             "head_word": "שכח", 
             "word_num": 5, 
             "daf": "135b", 
-            "word": "משכחת", 
+            "word": "להו", 
             "line_num": 30, 
             "cal_word": "משכחת", 
             "POS": "V01", 
@@ -1040,24 +1061,10 @@
             "head_word": "ל_", 
             "word_num": 6, 
             "daf": "135b", 
-            "word": "להו", 
+            "word": "אלא", 
             "line_num": 30, 
             "cal_word": "להי", 
             "POS": "p03", 
-            "side": 2, 
-            "pg_num": 135, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "class": "talmud"
-        }, 
-        {
-            "head_word": "אלא", 
-            "word_num": 7, 
-            "daf": "135b", 
-            "word": "אלא", 
-            "line_num": 30, 
-            "cal_word": "אלא", 
-            "POS": "c", 
             "side": 2, 
             "pg_num": 135, 
             "ms": "01", 
@@ -1081,10 +1088,24 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אלא", 
+            "word_num": 7, 
+            "daf": "135b", 
+            "word": "היכי", 
+            "line_num": 30, 
+            "cal_word": "אלא", 
+            "POS": "c", 
+            "side": 2, 
+            "pg_num": 135, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "class": "talmud"
+        }, 
+        {
             "head_word": "היכי", 
             "word_num": 3, 
             "daf": "135b", 
-            "word": "היכי", 
+            "word": "משכחת", 
             "line_num": 31, 
             "cal_word": "היכי", 
             "POS": "a", 
@@ -1098,24 +1119,10 @@
             "head_word": "שכח", 
             "word_num": 4, 
             "daf": "135b", 
-            "word": "משכחת", 
+            "word": "לה", 
             "line_num": 31, 
             "cal_word": "משכחת", 
             "POS": "V01", 
-            "side": 2, 
-            "pg_num": 135, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "class": "talmud"
-        }, 
-        {
-            "head_word": "ל_", 
-            "word_num": 5, 
-            "daf": "135b", 
-            "word": "לה", 
-            "line_num": 31, 
-            "cal_word": "לה", 
-            "POS": "p02", 
             "side": 2, 
             "pg_num": 135, 
             "ms": "01", 
@@ -1363,13 +1370,13 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "הא", 
-            "word_num": 0, 
+            "head_word": "ל_", 
+            "word_num": 5, 
             "daf": "135b", 
             "word": "הא", 
-            "line_num": 40, 
-            "cal_word": "הא", 
-            "POS": "P", 
+            "line_num": 31, 
+            "cal_word": "לה", 
+            "POS": "p02", 
             "side": 2, 
             "pg_num": 135, 
             "ms": "01", 
@@ -1385,13 +1392,13 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ספיקא", 
-            "word_num": 3, 
+            "head_word": "הא", 
+            "word_num": 0, 
             "daf": "135b", 
             "word": "ספיקא", 
             "line_num": 40, 
-            "cal_word": "ספיקא", 
-            "POS": "N02", 
+            "cal_word": "הא", 
+            "POS": "P", 
             "side": 2, 
             "pg_num": 135, 
             "ms": "01", 
@@ -1399,13 +1406,13 @@
             "class": "talmud"
         }, 
         {
-            "head_word": "הוי", 
-            "word_num": 4, 
+            "head_word": "ספיקא", 
+            "word_num": 3, 
             "daf": "135b", 
             "word": "הוי", 
             "line_num": 40, 
-            "cal_word": "הוי", 
-            "POS": "V01", 
+            "cal_word": "ספיקא", 
+            "POS": "N02", 
             "side": 2, 
             "pg_num": 135, 
             "ms": "01", 

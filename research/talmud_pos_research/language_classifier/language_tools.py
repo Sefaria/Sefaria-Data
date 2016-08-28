@@ -451,7 +451,7 @@ def print_tagged_corpus_to_html_table(text_name,ref_list,num_daf_per_doc,test_se
 
     iref = 0
     while iref < len(ref_list):
-        str = u"<html><head><style>h1{text-align:center;background:grey}td{text-align:center}table{margin-top:20px;margin-bottom:20px;margin-right:auto;margin-left:auto;width:1200px}.missed{color:white;background:red}.b{color:green}.m{color:blue}.sef{color:black}.cal{color:grey}.good-cal{color:red}.POS{color:orange}</style><meta charset='utf-8'></head><body>"
+        str = u"<html><head><style>h1{text-align:center;background:grey}td{text-align:center}table{margin-top:20px;margin-bottom:20px;margin-right:auto;margin-left:auto;width:1200px}.missed{color:white;background:red}.b{color:green}.m{color:blue}.sef{color:black}.cal{color:grey}.good-cal{color:red}.good-jba{background:#eee;color:red}.POS{color:orange}</style><meta charset='utf-8'></head><body>"
 
         start_daf = ""
         end_daf = ""
@@ -485,6 +485,8 @@ def print_tagged_corpus_to_html_table(text_name,ref_list,num_daf_per_doc,test_se
                     if "cal_word" in wo:
                         cal_count += 1
                         row_cal += u"<td class='good-cal'>{} <span class='POS'>({})</span></td>".format(wo["cal_word"],wo["POS"])
+                    elif "jba_word" in wo:
+                        row_cal += u"<td class='good-jba'>{} <span class='POS'>({})</span><br>{}</td>".format(wo["jba_word"],wo["POS"],wo["head_word"])
                     else:
                         row_cal += u"<td class='{}'>{}</td>".format(wo["class"][0],wo["class"][0:3].upper())
                 row_cal += u"<td>({}-{})</td>".format(start_cal_count,cal_count-1)
@@ -532,7 +534,6 @@ def get_test_set(text_name, ref_list, strip_html=True, get_bib_links=False):
 
     all_seg_str_list = []
     bib_links = []
-    ref_list = []
     for ref in ref_list:
         temp_seg_str_list = []
         temp_bib_links = []
@@ -548,7 +549,7 @@ def get_test_set(text_name, ref_list, strip_html=True, get_bib_links=False):
 
     #i like array comprehensions...
     lens = [[len(word_list) for word_list in word_list_list] for word_list_list in all_seg_str_list]
-    return [[word for word_list in word_list_list for word in word_list] for word_list_list in all_seg_str_list ],lens,bib_links,ref_list
+    return [[word for word_list in word_list_list for word in word_list] for word_list_list in all_seg_str_list ],lens,bib_links
 
 #return start and end indices of best subsequence from sub_seg which matches main_seg
 
@@ -578,7 +579,7 @@ def match_segments_without_order(sub_seg, main_seg,threshold=1.4):
 
 def tag_testing_naive(text_name,bib_links,seg_len_list,word_list_in,ref_list,test_set_name="test"):
     cal_dh_root = "../../dibur_hamatchil/dh_source_scripts/cal_matcher_output"
-
+    jba_count = 0
     curr_state = "" #state should be retained, even b/w dafs
     #caldb_words = json.load(codecs.open("caldb_words_{}.json".format(text_name), "r", encoding="utf-8"))
     for iref,ref in enumerate(ref_list):
@@ -594,10 +595,12 @@ def tag_testing_naive(text_name,bib_links,seg_len_list,word_list_in,ref_list,tes
         except IOError:
             cal_pre_tagged_words = None
 
+        jbaforms = json.load(codecs.open("JBAHashtable.json","rb",encoding='utf8'))
 
         word_list_out = []
         count = 0
         main_i = 0
+
         while main_i < len(curr_seg_len_list):
             seg_len = curr_seg_len_list[main_i]
             bib_linkset = curr_bib_links[main_i]
@@ -629,8 +632,15 @@ def tag_testing_naive(text_name,bib_links,seg_len_list,word_list_in,ref_list,tes
                     if not cal_pre_tagged_words is None:
                         try:
                             cal_obj = cal_pre_tagged_words["words"][count-seg_len+i]
-                            if cal_obj["class"] == "talmud":
-                                yo = 45453
+                            if cal_obj["class"] == "unknown":
+                                if word in jbaforms and len(jbaforms[word]) == 1 and False:
+                                    temp_cal_obj = jbaforms[word][0].copy()
+                                    if temp_cal_obj["word"][-1] != "'" and temp_cal_obj["head_word"][-1] != "_":
+                                        cal_obj = temp_cal_obj
+                                        cal_obj["jba_word"] = cal_obj["word"]
+                                        cal_obj["word"] = word
+                                        cal_obj["class"] = "talmud"
+                                        jba_count += 1
                         except IndexError:
                             break
                 elif curr_state == "mishnaic":
@@ -648,7 +658,7 @@ def tag_testing_naive(text_name,bib_links,seg_len_list,word_list_in,ref_list,tes
         fp = codecs.open("{}/{}/test_set/{}_naive_{}.json".format(cal_dh_root,text_name,test_set_name,daf), "w", encoding='utf-8')
         json.dump(doc, fp, indent=4, encoding='utf-8', ensure_ascii=False)
 
-
+    print "NUM JBA WORDS: {}".format(jba_count)
 
 
 def make_cal_db_word_list(text_name):

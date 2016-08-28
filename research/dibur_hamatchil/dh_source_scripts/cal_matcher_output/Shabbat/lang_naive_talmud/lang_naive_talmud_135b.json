@@ -1,14 +1,5 @@
 {
-    "missed_words": [
-        {
-            "index": 12, 
-            "word": "לתנא"
-        }, 
-        {
-            "index": 13, 
-            "word": "קמא"
-        }
-    ], 
+    "missed_words": [], 
     "words": [
         {
             "word": "ונתחדשה", 
@@ -991,8 +982,24 @@
             "side": 2
         }, 
         {
+            "head_word": "תנא קמא", 
+            "word_num": 1, 
+            "daf": "135b", 
             "word": "לת\"ק", 
-            "class": "unknown"
+            "line_num": 30, 
+            "cal_word": "לתנא קמא", 
+            "POS": "A02", 
+            "class": "talmud", 
+            "prefix": [
+                "ל_"
+            ], 
+            "pg_num": 135, 
+            "prefix_POS": [
+                "p03"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "head_word": "בשלמא", 

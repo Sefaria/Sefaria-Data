@@ -250,17 +250,27 @@ def savePOSHashtable(calFilename,outFilename):
 
 def saveJBAForms(outFilename):
     obj = {}
-    with open("cal DB/jbaforms.txt", 'rb') as jba:
+    with open("jbaforms.txt", 'rb') as jba:
         for line in jba:
-            lineObj = parseJBALine(line,True)
+            lineObj = parseJBALine(line,True,False)
             if lineObj == {}:
                 continue
             try:
-                tempSet = set(obj[lineObj["word"]])
-                tempSet.add(lineObj["POS"])
-                obj[lineObj["word"]] = list(tempSet)
+                obj[lineObj["word"]].append(lineObj)
             except KeyError:
-                obj[lineObj["word"]] = [lineObj["POS"]]
+                obj[lineObj["word"]] = [lineObj]
+
+    for word in obj:
+        pos_dic = {}
+        head_dic = {}
+        for lineObj in reversed(obj[word]):
+            if lineObj["POS"] in pos_dic and lineObj["head_word"] in head_dic:
+                obj[word].remove(lineObj)
+            else:
+                pos_dic[lineObj["POS"]] = True
+                head_dic[lineObj["head_word"]] = True
+
+
     saveUTFStr(obj, outFilename + ".json")
 
 
@@ -291,5 +301,5 @@ def stupidTagger(outFilename):
 #caldb2hebdb("cal DB/bavliwords.txt","cal DB/bavliwordsHE.txt")
 #saveHeadwordHashtable("cal DB/bavliwords.txt","cal DB/headwordHashtable.txt")
 #savePOSHashtable("cal DB/bavliwords.txt","cal DB/POSHashtable")
-#saveJBAForms("cal DB/JBAHashtable")
+#saveJBAForms("JBAHashtable")
 #stupidTagger("output/stupidBerakhot.txt")

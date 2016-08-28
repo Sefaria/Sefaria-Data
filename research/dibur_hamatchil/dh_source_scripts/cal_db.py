@@ -22,6 +22,8 @@ def make_cal_segments(mesechta):
             line_obj = cal_tools.parseCalLine(line,True,False)
             line_obj["daf"] = get_daf_str(line_obj['pg_num'],line_obj['side']) #add a daf str prop
             line_obj["word"] = line_obj["word"].replace("'",'"')
+            if len(line_obj["word"]) > 1 and line_obj["word"][-1] == '"':
+                line_obj["word"] = line_obj["word"][0:-1] #remove abbreviations
 
             if line_obj["line_num"] != curr_gem_line_num:
                 if len(temp_gem_line) > 0:
@@ -96,6 +98,19 @@ def match_cal_segments(mesechta):
         word_list = filter(bool, re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]", str))
         return word_list
 
+    def merge_cal_word_objs(s,e,word_obj_list):
+        obj_list = word_obj_list[s:e]
+        m_word = u" ".join([o["word"] for o in obj_list])
+        m_head_word = u" ".join([o["head_word"] for o in obj_list])
+        m_pos_list = [o["POS"] for o in obj_list]
+        m_pos = max(set(m_pos_list), key=m_pos_list.count)
+
+        new_obj = obj_list[0].copy()
+        new_obj["word"] = m_word
+        new_obj["head_word"] = m_head_word
+        new_obj["POS"] = m_pos
+        return [new_obj] #returns a single element array which will replace a range s:e in the original array
+
     cal_lines = json.load(open("cal_lines_{}.json".format(mesechta), "r"), encoding="utf8")
     dafs = cal_lines["dafs"]
     lines_by_daf = cal_lines["lines"]
@@ -103,7 +118,6 @@ def match_cal_segments(mesechta):
     super_base_ref = Ref(mesechta)
     subrefs = super_base_ref.all_subrefs()
     ical = 0
-
 
     for curr_sef_ref in subrefs:
         if curr_sef_ref.is_empty(): continue
@@ -133,16 +147,30 @@ def match_cal_segments(mesechta):
         word_for_word_se = []
         cal_words = []
         missed_words = []
+
+        global_offset = 0
         if curr_sef_ref == curr_cal_ref:
-            start_end_map = sefaria_program.match_text(bas_word_list,lines_by_str,verbose=True,word_threshold=0.5)
+            start_end_map,abbrev_ranges = sefaria_program.match_text(bas_word_list,lines_by_str,verbose=True,word_threshold=0.5,with_abbrev_ranges=True)
             for iline,se in enumerate(start_end_map):
 
                 curr_cal_line = lines[iline]
+
+                # if there is an expanded abbrev, concat those words into one element
+                if len(abbrev_ranges[iline]) > 0:
+                    offset = 0 # account for the fact that you're losing elements in the array as you merge them
+                    for ar in abbrev_ranges[iline]:
+                        if ar[1] - ar[0] <= 0: continue #TODO there's an issue with the abbrev func, but i'm too lazy to fix now. sometimes they're zero length
+                        curr_cal_line[ar[0]-offset:ar[1]+1-offset] = [u' '.join(curr_cal_line[ar[0]-offset:ar[1]+1-offset])]
+                        word_obj_list[ar[0]-offset+len(cal_words):ar[1]+1-offset+len(cal_words)] = merge_cal_word_objs(ar[0]-offset+len(cal_words),ar[1]+1-offset+len(cal_words),word_obj_list)
+                        offset += ar[1]-ar[0]
+                        global_offset += offset
+                        print offset
+
                 cal_words += curr_cal_line
                 if se[0] == -1:
                     word_for_word_se += [(-1,-1) for i in range(len(curr_cal_line))]
                     continue
-                #matched_cal_objs_indexes = language_tools.match_segments_without_order(lines[iline],bas_word_list[se[0]:se[1]+1],2.0)
+                # matched_cal_objs_indexes = language_tools.match_segments_without_order(lines[iline],bas_word_list[se[0]:se[1]+1],2.0)
                 curr_bas_line = bas_word_list[se[0]:se[1]+1]
 
                 matched_words_base = sefaria_program.match_text(curr_bas_line,curr_cal_line,char_threshold=0.4)
@@ -150,15 +178,12 @@ def match_cal_segments(mesechta):
 
             matched_word_for_word = sefaria_program.match_text(bas_word_list,cal_words,char_threshold=0.4,prev_matched_results=word_for_word_se)
 
-
             for ical_word,temp_se in enumerate(matched_word_for_word):
                 if temp_se[0] == -1:
                     missed_words.append({"word":word_obj_list[ical_word]["word"],"index":ical_word})
                     continue
 
                 #dictionary juggling...
-
-
                 for i in xrange(temp_se[0],temp_se[1]+1):
                     cal_word_obj = word_obj_list[ical_word].copy()
                     cal_word_obj["cal_word"] = cal_word_obj["word"]
@@ -198,7 +223,7 @@ def make_cal_lines_text(mesechta):
     fp.write(out)
     fp.close()
 
-mesechta = "Shabbat"
+mesechta = "Berakhot"
 make_cal_segments(mesechta)
 match_cal_segments(mesechta)
 make_cal_lines_text(mesechta)

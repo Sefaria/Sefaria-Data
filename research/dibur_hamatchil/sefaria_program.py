@@ -33,6 +33,7 @@ class TextMatch:
         self.endWord = 0
         self.score = 0
         self.skippedWords = []
+        self.abbrevRange = [] #list of tuples of range of abbreviation found, if any
 
 # should be private?
 class GemaraDaf:
@@ -54,6 +55,7 @@ class RashiUnit:
         self.disambiguationScore = 0
         self.rashimatches = []  # list of TextMatch
         self.skippedWords = []
+        self.abbrevRange = []
         self.startingText = startingText
 
         normalizedCV = re.sub(ur" ו" + u"?" + u"כו" + u"'?" + u"$", u"", self.startingText).strip()
@@ -126,14 +128,14 @@ def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,
         prev_ref = matched_ref
     return zip(ref_matches,comment_ref_list) if comment_ref_list else ref_matches
 
-def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,word_threshold=0.27,char_threshold=0.2,prev_matched_results=None):
+def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,word_threshold=0.27,char_threshold=0.2,prev_matched_results=None,with_abbrev_ranges=False):
     """
     base_text: list - list of words
     comments: list - list of comment strings
     dh_extract_method: f(string)->string
     prev_matched_results: [(start,end)] list of start/end indexes found in a previous iteration of match_text
-
-    returns: [(start,end)] - start and end index of each comment
+    with_abbrev_ranges: True if you want a second return value which is a list of tuples. each tuple contains the range of text in the comment text which matched as an abbreviation in the base text, if any was found
+    returns: [(start,end)] - start and end index of each comment. optionally also returns abbrev_ranges (see with_abbrev_ranges parameter)
     """
 
     InitializeHashTables()
@@ -145,6 +147,9 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
         if ru.startWord != -1:
             #this rashi was initialized with the `prev_matched_results` list and should be ignored with regards to matching
             continue
+
+        if u'קמ"ל' in ru.startingText:
+            yo = 3434
         startword,endword = (0,len(curDaf.allWords)) if prev_matched_results == None else GetRashiBoundaries(curDaf.allRashi,ru.place,len(curDaf.allWords))[0:2]
         approxMatches = GetAllApproximateMatches(curDaf,ru,startword,endword,word_threshold,char_threshold)
         approxAbbrevMatches = GetAllApproximateMatchesWithAbbrev(curDaf, ru, startword, endword,char_threshold)
@@ -163,7 +168,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
         for tm in approxSkipWordMatches:
             startword = tm.startWord
             #TODO maybe consider changing the range
-            if any([x in foundpoints for x in range(startword - 1, startword + 2)]):
+            if any([x in foundpoints for x in xrange(startword - 1, startword + 2)]):
                 continue
             ru.rashimatches.append(tm)
 
@@ -306,7 +311,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                             ruToProcess.sort( key = lambda x: -x.disambiguationScore)
                             del ruToProcess[1]
                 else:
-                    outoforder = [0 for i in range(len(ruToProcess))]
+                    outoforder = [0 for i in xrange(len(ruToProcess))]
                     highestDeviation = 0
                     for irashi,temp_irashi in enumerate(ruToProcess):
                         #how many are out of order vis-a-vis this one?
@@ -333,7 +338,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                             highestDeviation = outoforder[irashi]
 
                     #now throw out all those that have the highest out-of-order ranking
-                    for irashi in reversed(range(len(ruToProcess))):
+                    for irashi in reversed(xrange(len(ruToProcess))):
                         if outoforder[irashi] == highestDeviation and len(ruToProcess) > 1:
                             del ruToProcess[irashi]
         #TODO: deal with the case of only 2 in ruToProcess in a smarter way
@@ -348,6 +353,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
             curru.endWord = match.endWord
             curru.matchedGemaraText = match.textMatched
             curru.skippedWords = match.skippedWords
+            curru.abbrevRange = match.abbrevRange
 
             # remove this guy from the disambiguities, now that it is matched up
             rashisByDisambiguity.remove(curru) #check remove
@@ -363,12 +369,14 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
 
     if verbose: sbreport = ""
     start_end_map = []
+    abbrev_ranges = []
     #now do a full report
     for ru in curDaf.allRashi:
         if ru.startWord == -1:
             if verbose: sbreport += u"\nUNMATCHED: {}".format(ru.startingText)
             #if not verbose: print u"\tUNMATCHED: {}".format(ru.startingText)
             start_end_map.append((ru.startWord,ru.startWord))
+            abbrev_ranges.append(ru.abbrevRange)
         else:
             if verbose:
                 if len(ru.skippedWords) > 0:
@@ -376,14 +384,18 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                 else:
                     sbreport += u"\n{} //{}[{}-{}]".format(ru.startingText,ru.matchedGemaraText,ru.startWord,ru.endWord)
             start_end_map.append((ru.startWord,ru.endWord))
+            abbrev_ranges.append(ru.abbrevRange)
 
     if verbose: print sbreport
-    return start_end_map
+    if with_abbrev_ranges:
+        return start_end_map,abbrev_ranges
+    else:
+        return start_end_map
 
 
 def RecalculateDisambiguities(allRashis, rashisByDisambiguity, prevMatchedRashi, nextMatchedRashi, startbound, endbound,
                               newlyMatchedRashiUnit):  # List<RashiUnit>,List<RashiUnit>,int,int,int,int,RashiUnit
-    for irashi in range(len(rashisByDisambiguity) - 1, -1, -1):
+    for irashi in xrange(len(rashisByDisambiguity) - 1, -1, -1):
         ru = rashisByDisambiguity[irashi]
         if ru.place <= prevMatchedRashi or ru.place >= nextMatchedRashi or ru.place == newlyMatchedRashiUnit.place:
             continue
@@ -392,7 +404,7 @@ def RecalculateDisambiguities(allRashis, rashisByDisambiguity, prevMatchedRashi,
         localendbound = endbound if (ru.place > newlyMatchedRashiUnit.place) else newlyMatchedRashiUnit.startWord
 
         # now remove any potential matches that are blocked by the newly matched rashi
-        for imatch in range(len(ru.rashimatches) - 1, -1, -1):
+        for imatch in xrange(len(ru.rashimatches) - 1, -1, -1):
             tm = ru.rashimatches[imatch]
             if tm.startWord < localstartbound or tm.startWord > localendbound:
                 del ru.rashimatches[imatch]
@@ -472,7 +484,7 @@ def GetAllApproximateMatches(curDaf, curRashi, startBound, endBound,
                 # see if the rest match up
                 mismatches = 0
 
-                for icvword in range(1, wordCount):
+                for icvword in xrange(1, wordCount):
                     if curDaf.wordhashes[iWord + icvword] != cvhashes[icvword]:
                         mismatches += 1
 
@@ -512,6 +524,7 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
                                        char_threshold):  # inputs (GemaraDaf, RashiUnit, int, int, double)
     global normalizingFactor
     allMatches = []
+    abbrev_ranges = set()
     startText = curRashi.startingTextNormalized
     wordCount = curRashi.cvWordcount
     if wordCount == 0:
@@ -534,135 +547,141 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
         # .. keep track of how the gemara text differs from rashi length
         gemaraDifferential = 0
 
-        for iWordWithinPhrase in range(0, wordCount - offsetWithinRashiCV):
+        iWordWithinPhrase = 0
+        while iWordWithinPhrase + offsetWithinRashiCV < wordCount:
             # first check if the cv word has a quotemark
-            try:
-                if "\"" in startTextWords[iWordWithinPhrase + offsetWithinRashiCV]:
-                    # get our ראשי תיבות word without the quote mark
-                    cleanRT = startTextWords[iWordWithinPhrase + offsetWithinRashiCV].replace(u"\"", u"")
-                    maxlen = len(cleanRT)
 
-                    # let's see if this matches the start of the next few words
-                    curpos = iStartingWordInGemara + iWordWithinPhrase + offsetWithinGemara
-                    fIsMatch = False
+            #try:
+            if "\"" in startTextWords[iWordWithinPhrase + offsetWithinRashiCV]:
+                # get our ראשי תיבות word without the quote mark
+                cleanRT = startTextWords[iWordWithinPhrase + offsetWithinRashiCV].replace(u"\"", u"")
+                maxlen = len(cleanRT)
 
-                    if curpos + maxlen <= len(curDaf.allWords):
+                # let's see if this matches the start of the next few words
+                curpos = iStartingWordInGemara + iWordWithinPhrase + offsetWithinGemara
+                fIsMatch = False
+
+                if curpos + maxlen <= len(curDaf.allWords):
+                    fIsMatch = True
+                    for igemaraword in xrange(curpos, curpos + maxlen):
+                        if curDaf.allWords[igemaraword][0] != cleanRT[igemaraword - curpos]:
+                            fIsMatch = False
+                            break
+
+                    if fIsMatch:
+                        # we condensed maxlen words into 1. minus one, because later we'll increment one.
+                        offsetWithinGemara += maxlen - 1
+
+                # let's see if we can match by combining the first two into one word
+                if curpos + maxlen <= len(curDaf.allWords) + 1:
+                    if not fIsMatch and maxlen > 2:
                         fIsMatch = True
-                        for igemaraword in range(curpos, curpos + maxlen):
-                            if curDaf.allWords[igemaraword][0] != cleanRT[igemaraword - curpos]:
-                                fIsMatch = False
-                                break
-
+                        if len(curDaf.allWords[curpos]) < 2 or curDaf.allWords[curpos][0] != cleanRT[0] or \
+                                        curDaf.allWords[curpos][1] != cleanRT[1]:
+                            fIsMatch = False
+                        else:
+                            for igemaraword in xrange(curpos + 1, curpos + maxlen - 1):
+                                if curDaf.allWords[igemaraword][0] != cleanRT[igemaraword - curpos + 1]:
+                                    fIsMatch = False
+                                    break
                         if fIsMatch:
                             # we condensed maxlen words into 1. minus one, because later we'll increment one.
-                            offsetWithinGemara += maxlen - 1
+                            offsetWithinGemara += maxlen - 2
 
-                    # let's see if we can match by combining the first two into one word
-                    if curpos + maxlen <= len(curDaf.allWords) + 1:
-                        if not fIsMatch and maxlen > 2:
-                            fIsMatch = True
-                            if len(curDaf.allWords[curpos]) < 2 or curDaf.allWords[curpos][0] != cleanRT[0] or \
-                                            curDaf.allWords[curpos][1] != cleanRT[1]:
-                                fIsMatch = False
-                            else:
-                                for igemaraword in range(curpos + 1, curpos + maxlen - 1):
-                                    if curDaf.allWords[igemaraword][0] != cleanRT[igemaraword - curpos + 1]:
-                                        fIsMatch = False
-                                        break
-                            if fIsMatch:
-                                # we condensed maxlen words into 1. minus one, because later we'll increment one.
-                                offsetWithinGemara += maxlen - 2
-
-                    # let's see if we can match by combining the first three into one word
-                    if curpos + maxlen <= len(curDaf.allWords) + 2:
-                        if not fIsMatch and maxlen > 3:
-                            fIsMatch = True
-
-                            if len(curDaf.allWords[curpos]) < 3 or curDaf.allWords[curpos][0] != cleanRT[0] or \
-                                            curDaf.allWords[curpos][1] != cleanRT[1] or curDaf.allWords[curpos][2] != \
-                                    cleanRT[2]:
-                                fIsMatch = False
-                            else:
-                                for igemaraword in range(curpos + 1, curpos + maxlen - 2):
-                                    if curDaf.allWords[igemaraword][0] != cleanRT[igemaraword - curpos + 2]:
-                                        fIsMatch = False
-                                        break
-                            if fIsMatch:
-                                # we condensed maxlen words into 1. minus one, because later we'll increment one.
-                                offsetWithinGemara += maxlen - 3
-
-                    if not fIsMatch:
-                        break
-
-                # now increment the offset to correspond, so that we'll know we're skipping over x number of words
-                elif "\"" in curDaf.allWords[iStartingWordInGemara + offsetWithinGemara + iWordWithinPhrase]:
-                    # get our ראשי תיבות word without the quote mark
-                    cleanRT = curDaf.allWords[iStartingWordInGemara + offsetWithinGemara + iWordWithinPhrase].replace(u"\"",
-                                                                                                                      u"")
-                    maxlen = len(cleanRT)
-
-                    # let's see if this matches the start of the next few words
-                    curpos = iWordWithinPhrase + offsetWithinRashiCV
-                    fIsMatch = False
-
-                    # note. these next three if statements can be made into a function
-                    if curpos + maxlen <= wordCount:
+                # let's see if we can match by combining the first three into one word
+                if curpos + maxlen <= len(curDaf.allWords) + 2:
+                    if not fIsMatch and maxlen > 3:
                         fIsMatch = True
-                        for icvword in range(curpos, curpos + maxlen):
-                            if startTextWords[icvword][0] != cleanRT[icvword - curpos]:
-                                fIsMatch = False
-                                break
 
+                        if len(curDaf.allWords[curpos]) < 3 or curDaf.allWords[curpos][0] != cleanRT[0] or \
+                                        curDaf.allWords[curpos][1] != cleanRT[1] or curDaf.allWords[curpos][2] != \
+                                cleanRT[2]:
+                            fIsMatch = False
+                        else:
+                            for igemaraword in xrange(curpos + 1, curpos + maxlen - 2):
+                                if curDaf.allWords[igemaraword][0] != cleanRT[igemaraword - curpos + 2]:
+                                    fIsMatch = False
+                                    break
                         if fIsMatch:
                             # we condensed maxlen words into 1. minus one, because later we'll increment one.
-                            offsetWithinRashiCV += maxlen - 1
+                            offsetWithinGemara += maxlen - 3
 
-                    # let's see if we can match by combining the first two into one word
-                    if curpos + maxlen <= wordCount + 1:
-                        if not fIsMatch and maxlen > 2:
-                            fIsMatch = True
-                            if len(startTextWords[curpos]) < 2 or startTextWords[curpos][0] != cleanRT[0] or \
-                                            startTextWords[curpos][1] != cleanRT[1]:
-                                fIsMatch = False
-                            else:
-                                for icvword in range(curpos + 1, curpos + maxlen - 1):
-                                    if startTextWords[icvword][0] != cleanRT[icvword - curpos + 1]:
-                                        fIsMatch = False
-                                        break
-                            if fIsMatch:
-                                # we condensed maxlen words into 1. minus one, because later we'll increment one.
-                                offsetWithinRashiCV += maxlen - 2
-                    # let's see if we can match by combining the first three into one word
-                    if curpos + maxlen <= wordCount + 2:
-                        if not fIsMatch and maxlen > 3:
-                            fIsMatch = True
-                            if len(startTextWords[curpos]) < 3 or startTextWords[curpos][0] != cleanRT[0] or \
-                                            startTextWords[curpos][1] != cleanRT[1] or startTextWords[curpos][2] != cleanRT[
-                                2]:
-                                fIsMatch = False
-                            else:
-                                for icvword in range(curpos + 1, curpos + maxlen - 2):
-                                    if startTextWords[icvword][0] != cleanRT[icvword - curpos + 2]:
-                                        fIsMatch = False
-                                        break
-                            if fIsMatch:
-                                # we condensed maxlen words into 1. minus one, because later we'll increment one.
-                                offsetWithinRashiCV += maxlen - 3
-                    if not fIsMatch:
-                        break
-                else:
-                    # great, this is a basic compare.
-                    distance, fMatch = IsStringMatchup(startTextWords[iWordWithinPhrase + offsetWithinRashiCV],
-                                                       curDaf.allWords[
-                                                           iStartingWordInGemara + offsetWithinGemara + iWordWithinPhrase],
-                                                       char_threshold)
-                    totaldistance += distance
-                    # if these words don't match, break and this isn't a match.
-                    if not fMatch:
-                        fIsMatch = False
-                        break
-            except IndexError:
-                continue
+                if not fIsMatch:
+                    break
+
+            # now increment the offset to correspond, so that we'll know we're skipping over x number of words
+            elif "\"" in curDaf.allWords[iStartingWordInGemara + offsetWithinGemara + iWordWithinPhrase]:
+                # get our ראשי תיבות word without the quote mark
+                cleanRT = curDaf.allWords[iStartingWordInGemara + offsetWithinGemara + iWordWithinPhrase].replace(u"\"",
+                                                                                                                  u"")
+                maxlen = len(cleanRT)
+
+                # let's see if this matches the start of the next few words
+                curpos = iWordWithinPhrase + offsetWithinRashiCV
+                fIsMatch = False
+
+                # note. these next three if statements can be made into a function
+                if curpos + maxlen <= wordCount:
+                    fIsMatch = True
+                    for icvword in xrange(curpos, curpos + maxlen):
+                        if startTextWords[icvword][0] != cleanRT[icvword - curpos]:
+                            fIsMatch = False
+                            break
+
+                    if fIsMatch:
+                        # we condensed maxlen words into 1. minus one, because later we'll increment one.
+                        offsetWithinRashiCV += maxlen - 1
+                        abbrev_ranges.add((curpos,curpos+maxlen-1))
+
+                # let's see if we can match by combining the first two into one word
+                if curpos + maxlen <= wordCount + 1:
+                    if not fIsMatch and maxlen > 2:
+                        fIsMatch = True
+                        if len(startTextWords[curpos]) < 2 or startTextWords[curpos][0] != cleanRT[0] or \
+                                        startTextWords[curpos][1] != cleanRT[1]:
+                            fIsMatch = False
+                        else:
+                            for icvword in xrange(curpos + 1, curpos + maxlen - 1):
+                                if startTextWords[icvword][0] != cleanRT[icvword - curpos + 1]:
+                                    fIsMatch = False
+                                    break
+                        if fIsMatch:
+                            # we condensed maxlen words into 1. minus one, because later we'll increment one.
+                            offsetWithinRashiCV += maxlen - 2
+                            abbrev_ranges.add((curpos, curpos + maxlen - 2))
+                # let's see if we can match by combining the first three into one word
+                if curpos + maxlen <= wordCount + 2:
+                    if not fIsMatch and maxlen > 3:
+                        fIsMatch = True
+                        if len(startTextWords[curpos]) < 3 or startTextWords[curpos][0] != cleanRT[0] or \
+                                        startTextWords[curpos][1] != cleanRT[1] or startTextWords[curpos][2] != cleanRT[
+                            2]:
+                            fIsMatch = False
+                        else:
+                            for icvword in xrange(curpos + 1, curpos + maxlen - 2):
+                                if startTextWords[icvword][0] != cleanRT[icvword - curpos + 2]:
+                                    fIsMatch = False
+                                    break
+                        if fIsMatch:
+                            # we condensed maxlen words into 1. minus one, because later we'll increment one.
+                            offsetWithinRashiCV += maxlen - 3
+                            abbrev_ranges.add((curpos, curpos + maxlen - 3))
+                if not fIsMatch:
+                    break
+            else:
+                # great, this is a basic compare.
+                distance, fMatch = IsStringMatchup(startTextWords[iWordWithinPhrase + offsetWithinRashiCV],
+                                                   curDaf.allWords[
+                                                       iStartingWordInGemara + offsetWithinGemara + iWordWithinPhrase],
+                                                   char_threshold)
+                totaldistance += distance
+                # if these words don't match, break and this isn't a match.
+                if not fMatch:
+                    fIsMatch = False
+                    break
+            #except IndexError:
+            #    continue
+            iWordWithinPhrase += 1
         gemaraDifferential = offsetWithinRashiCV
         gemaraDifferential -= offsetWithinGemara
 
@@ -673,12 +692,16 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
             curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iStartingWordInGemara,
                                                         wordCount - gemaraDifferential)
             curMatch.startWord = iStartingWordInGemara
-            curMatch.endWord = iStartingWordInGemara + wordCount - gemaraDifferential
+            curMatch.endWord = iStartingWordInGemara + wordCount - gemaraDifferential - 1 #I added the -1 b/c there was an off-by-one error
+
+            #if we found an abbrev in gemara, save the words which matched in the TextMatch
+            curMatch.abbrevRange = list(abbrev_ranges)
 
             # calculate the score, adding in the penalty for abbreviation
             totaldistance += abbreviationPenalty
             normalizedDistance = 1.0*(totaldistance + smoothingFactor) / (len(startText) + smoothingFactor) * normalizingFactor
             curMatch.score = normalizedDistance
+
 
             allMatches.append(curMatch)
 
@@ -700,7 +723,7 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
 
     # Iterate through all the starting words within the phrase, allowing for one word to be ignored
 
-    for iWordToIgnore in range(-1, wordCount):
+    for iWordToIgnore in xrange(-1, wordCount):
         rashiwords = re.split(ur"\s+", startText.strip())
         cvhashes = CalculateHashes(rashiwords)
 
@@ -716,13 +739,13 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
         while iWord <= len(curDaf.allWords) - wordCount and iWord + wordCount - 1 <= endBound:
 
             # Start from -1 (which means the phrase as is)
-            for gemaraWordToIgnore in range(-1, wordCount):
+            for gemaraWordToIgnore in xrange(-1, wordCount):
                 # no point in skipping first word - we might as well just let the item start from the next startword
                 if gemaraWordToIgnore == 0:
                     continue
 
                 # and, choose a second word to ignore (-1 means no second word)
-                for gemaraWord2ToIgnore in range(-1, wordCount):
+                for gemaraWord2ToIgnore in xrange(-1, wordCount):
 
                     # if not skipping first, this is not relevant unless it is also -1
                     if gemaraWordToIgnore == -1 and gemaraWord2ToIgnore != -1:
@@ -754,7 +777,7 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
                             offset = 0
                             fIsMatch = True
 
-                            for icvword in range(1, wordCount - 1):
+                            for icvword in xrange(1, wordCount - 1):
                                 if icvword == gemaraWordToIgnore or icvword == gemaraWord2ToIgnore:
                                     offset += 1
 
@@ -841,7 +864,7 @@ def GetStringWithRemovedWord(p, iWordToIgnore):  # string,int
     words = p.split(' ')
     ret = u""
 
-    for i in range(len(words)):
+    for i in xrange(len(words)):
         if i == iWordToIgnore:
             continue
 
@@ -852,7 +875,7 @@ def GetStringWithRemovedWord(p, iWordToIgnore):  # string,int
 #done
 def BuildPhraseFromArray(allWords, iWord, leng, wordToSkip=-1, word2ToSkip=-1):  # list<string>,int,int,int,int
     phrase = u""
-    for jump in range(leng):
+    for jump in xrange(leng):
         if jump == wordToSkip or jump == word2ToSkip:
             continue
         phrase += allWords[iWord + jump] + u" "
@@ -908,7 +931,7 @@ def GetRashiBoundaries(allRashi, dwRashi, maxBound):  # List<RashiUnit>, int
 
     # Okay, look as much up as you can from iRashi to find the start bound
 
-    for iRashi in range(dwRashi - 1, -1, -1):
+    for iRashi in xrange(dwRashi - 1, -1, -1):
         if  allRashi[iRashi].startWord == -1:
             continue
         prevMatchedRashi = iRashi
@@ -918,7 +941,7 @@ def GetRashiBoundaries(allRashi, dwRashi, maxBound):  # List<RashiUnit>, int
         break
 
     # // Second part, look down as much as possible to find the end bound
-    for iRashi in range(dwRashi + 1, len(allRashi)):
+    for iRashi in xrange(dwRashi + 1, len(allRashi)):
         if allRashi[iRashi].startWord == -1:
             continue
         # // Okay, this is the closest one below that has a value
@@ -948,7 +971,7 @@ def ComputeLevenshteinDistanceByWord(s, t):  # s and t are strings
 
     totaldistance = 0
 
-    for i in range(len(words1)):
+    for i in xrange(len(words1)):
         if i >= len(words2):
             totaldistance += fullWordValue
         else:
@@ -1000,11 +1023,11 @@ def ComputeLevenshteinDistance(s, t):
 def InitializeHashTables():
     global pregeneratedKWordValues,pregeneratedKMultiwordValues
     # Populate the pregenerated K values for the polynomial hash calculation
-    pregeneratedKWordValues = [GetPolynomialKValueReal(i, kForWordHash) for i in range(NumPregeneratedValues)]
+    pregeneratedKWordValues = [GetPolynomialKValueReal(i, kForWordHash) for i in xrange(NumPregeneratedValues)]
     # pregenerated K values for the multi word
     # these need to go from higher to lower, for the rolling algorithm
     # and we know that it will always be exactly 4
-    pregeneratedKMultiwordValues = [GetPolynomialKValueReal(3 - i, kForMultiWordHash) for i in range(4)]
+    pregeneratedKMultiwordValues = [GetPolynomialKValueReal(3 - i, kForMultiWordHash) for i in xrange(4)]
 
 #done
 def CalculateHashes(allwords):  # input list

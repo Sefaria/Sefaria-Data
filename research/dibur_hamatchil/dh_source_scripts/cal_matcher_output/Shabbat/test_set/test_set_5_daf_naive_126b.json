@@ -3,22 +3,6 @@
         {
             "index": 15, 
             "word": "לה"
-        }, 
-        {
-            "index": 24, 
-            "word": "מר"
-        }, 
-        {
-            "index": 25, 
-            "word": "סבר"
-        }, 
-        {
-            "index": 27, 
-            "word": "ומר"
-        }, 
-        {
-            "index": 28, 
-            "word": "סבר"
         }
     ], 
     "words": [
@@ -951,14 +935,38 @@
             "class": "talmud"
         }, 
         {
+            "head_word": "מר", 
+            "word_num": 5, 
+            "daf": "126b", 
             "word": "מ\"ס", 
-            "class": "unknown"
+            "line_num": 22, 
+            "cal_word": "מר", 
+            "POS": "N02", 
+            "side": 2, 
+            "pg_num": 126, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "class": "talmud"
+        }, 
+        {
+            "head_word": "סבר", 
+            "word_num": 6, 
+            "daf": "126b", 
+            "word": "גזרינן", 
+            "line_num": 22, 
+            "cal_word": "סבר", 
+            "POS": "V01", 
+            "side": 2, 
+            "pg_num": 126, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "class": "talmud"
         }, 
         {
             "head_word": "גזר", 
             "word_num": 7, 
             "daf": "126b", 
-            "word": "גזרינן", 
+            "word": "ומ\"ס", 
             "line_num": 22, 
             "cal_word": "גזרינן", 
             "POS": "V01", 
@@ -969,30 +977,32 @@
             "class": "talmud"
         }, 
         {
-            "word": "ומ\"ס", 
-            "class": "unknown"
-        }, 
-        {
-            "head_word": "לא", 
-            "word_num": 2, 
+            "head_word": "מר", 
+            "word_num": 0, 
             "daf": "126b", 
             "word": "לא", 
             "line_num": 23, 
-            "cal_word": "לא", 
-            "POS": "a", 
+            "cal_word": "ומר", 
+            "POS": "N02", 
             "side": 2, 
+            "prefix": [
+                "ו_"
+            ], 
             "pg_num": 126, 
+            "prefix_POS": [
+                "c"
+            ], 
             "ms": "01", 
             "book_num": 71002, 
             "class": "talmud"
         }, 
         {
-            "head_word": "גזר", 
-            "word_num": 3, 
+            "head_word": "סבר", 
+            "word_num": 1, 
             "daf": "126b", 
             "word": "גזרינן", 
             "line_num": 23, 
-            "cal_word": "גזרינן", 
+            "cal_word": "סבר", 
             "POS": "V01", 
             "side": 2, 
             "pg_num": 126, 

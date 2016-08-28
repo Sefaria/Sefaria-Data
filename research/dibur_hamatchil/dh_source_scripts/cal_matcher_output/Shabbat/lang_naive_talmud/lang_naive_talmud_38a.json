@@ -9,79 +9,79 @@
             "word": "מאי"
         }, 
         {
-            "index": 21, 
+            "index": 20, 
             "word": "תרויהו"
         }, 
         {
-            "index": 23, 
+            "index": 22, 
             "word": "מבשל"
+        }, 
+        {
+            "index": 23, 
+            "word": "הוא"
         }, 
         {
             "index": 24, 
-            "word": "הוא"
-        }, 
-        {
-            "index": 25, 
             "word": "דקא"
         }, 
         {
-            "index": 26, 
+            "index": 25, 
             "word": "עביד"
+        }, 
+        {
+            "index": 27, 
+            "word": "דלא"
         }, 
         {
             "index": 28, 
-            "word": "דלא"
-        }, 
-        {
-            "index": 29, 
             "word": "קא"
         }, 
         {
-            "index": 30, 
+            "index": 29, 
             "word": "עביד"
         }, 
         {
-            "index": 32, 
+            "index": 31, 
             "word": "רב"
         }, 
         {
-            "index": 33, 
+            "index": 32, 
             "word": "בר"
         }, 
         {
-            "index": 35, 
+            "index": 34, 
             "word": "לאיסורא"
         }, 
         {
-            "index": 36, 
+            "index": 35, 
             "word": "מבשל"
         }, 
         {
-            "index": 37, 
+            "index": 36, 
             "word": "הוא"
         }, 
         {
-            "index": 38, 
+            "index": 37, 
             "word": "דלא"
         }, 
         {
-            "index": 40, 
+            "index": 39, 
             "word": "לאיערומי"
         }, 
         {
-            "index": 41, 
+            "index": 40, 
             "word": "הוא"
         }, 
         {
-            "index": 43, 
+            "index": 42, 
             "word": "דאתי"
         }, 
         {
-            "index": 44, 
+            "index": 43, 
             "word": "לאיערומי"
         }, 
         {
-            "index": 45, 
+            "index": 44, 
             "word": "אפילו"
         }
     ], 
@@ -223,12 +223,12 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "לא", 
+            "head_word": "לא שני", 
             "word_num": 6, 
             "daf": "38a", 
             "word": "ולא", 
             "line_num": 4, 
-            "cal_word": "ולא", 
+            "cal_word": "ולא שאנא", 
             "POS": "a", 
             "class": "talmud", 
             "prefix": [
@@ -243,15 +243,21 @@
             "side": 1
         }, 
         {
-            "head_word": "שני", 
-            "word_num": 7, 
+            "head_word": "לא שני", 
+            "word_num": 6, 
             "daf": "38a", 
             "word": "שנא", 
             "line_num": 4, 
-            "cal_word": "שאנא", 
-            "POS": "V01", 
+            "cal_word": "ולא שאנא", 
+            "POS": "a", 
             "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
             "pg_num": 38, 
+            "prefix_POS": [
+                "c"
+            ], 
             "ms": "01", 
             "book_num": 71002, 
             "side": 1

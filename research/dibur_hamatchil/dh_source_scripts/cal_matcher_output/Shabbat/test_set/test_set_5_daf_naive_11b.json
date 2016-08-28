@@ -31,10 +31,6 @@
         {
             "index": 59, 
             "word": "נמי"
-        }, 
-        {
-            "index": 67, 
-            "word": "שנא"
         }
     ], 
     "words": [
@@ -1639,18 +1635,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "מאי", 
-            "word_num": 0, 
-            "daf": "11b", 
             "word": "לא", 
-            "line_num": 35, 
-            "cal_word": "מאי", 
-            "POS": "P01", 
-            "side": 2, 
-            "pg_num": 11, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "class": "talmud"
+            "class": "unknown"
         }, 
         {
             "word": "קשיא", 
@@ -1697,8 +1683,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "מאי", 
+            "word_num": 0, 
+            "daf": "11b", 
             "word": "מ\"ש", 
-            "class": "unknown"
+            "line_num": 35, 
+            "cal_word": "מאי", 
+            "POS": "P01", 
+            "side": 2, 
+            "pg_num": 11, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "class": "talmud"
         }, 
         {
             "word": "זב", 
@@ -1721,10 +1717,24 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "שני", 
+            "word_num": 1, 
+            "daf": "11b", 
+            "word": "דמיבעי", 
+            "line_num": 35, 
+            "cal_word": "שנא", 
+            "POS": "V01", 
+            "side": 2, 
+            "pg_num": 11, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "class": "talmud"
+        }, 
+        {
             "head_word": "בעי", 
             "word_num": 3, 
             "daf": "11b", 
-            "word": "דמיבעי", 
+            "word": "ליה", 
             "line_num": 36, 
             "cal_word": "דמיבעי", 
             "POS": "V04", 
@@ -1744,32 +1754,12 @@
             "head_word": "ל_", 
             "word_num": 4, 
             "daf": "11b", 
-            "word": "ליה", 
+            "word": "לבדיקה", 
             "line_num": 36, 
             "cal_word": "ליה", 
             "POS": "p02", 
             "side": 2, 
             "pg_num": 11, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "class": "talmud"
-        }, 
-        {
-            "head_word": "בדק", 
-            "word_num": 5, 
-            "daf": "11b", 
-            "word": "לבדיקה", 
-            "line_num": 36, 
-            "cal_word": "למבדקיה", 
-            "POS": "V01", 
-            "side": 2, 
-            "prefix": [
-                "ל_"
-            ], 
-            "pg_num": 11, 
-            "prefix_POS": [
-                "p03"
-            ], 
             "ms": "01", 
             "book_num": 71002, 
             "class": "talmud"
@@ -1859,10 +1849,30 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "בדק", 
+            "word_num": 5, 
+            "daf": "11b", 
+            "word": "האי", 
+            "line_num": 36, 
+            "cal_word": "למבדקיה", 
+            "POS": "V01", 
+            "side": 2, 
+            "prefix": [
+                "ל_"
+            ], 
+            "pg_num": 11, 
+            "prefix_POS": [
+                "p03"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "class": "talmud"
+        }, 
+        {
             "head_word": "האי", 
             "word_num": 0, 
             "daf": "11b", 
-            "word": "האי", 
+            "word": "תנא", 
             "line_num": 38, 
             "cal_word": "האי", 
             "POS": "P01", 
@@ -1876,7 +1886,7 @@
             "head_word": "תנא", 
             "word_num": 1, 
             "daf": "11b", 
-            "word": "תנא", 
+            "word": "הוא", 
             "line_num": 38, 
             "cal_word": "תנא", 
             "POS": "N02", 
@@ -1890,7 +1900,7 @@
             "head_word": "הוא", 
             "word_num": 2, 
             "daf": "11b", 
-            "word": "הוא", 
+            "word": "דאמר", 
             "line_num": 38, 
             "cal_word": "הוא", 
             "POS": "P01", 
@@ -1904,7 +1914,7 @@
             "head_word": "אמר", 
             "word_num": 3, 
             "daf": "11b", 
-            "word": "דאמר", 
+            "word": "כל", 
             "line_num": 38, 
             "cal_word": "דאמ\"", 
             "POS": "V01", 
@@ -1924,24 +1934,10 @@
             "head_word": "כל", 
             "word_num": 4, 
             "daf": "11b", 
-            "word": "כל", 
+            "word": "אצולי", 
             "line_num": 38, 
             "cal_word": "כל", 
             "POS": "N01", 
-            "side": 2, 
-            "pg_num": 11, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "class": "talmud"
-        }, 
-        {
-            "head_word": "נצל", 
-            "word_num": 5, 
-            "daf": "11b", 
-            "word": "אצולי", 
-            "line_num": 38, 
-            "cal_word": "אצולי", 
-            "POS": "V03", 
             "side": 2, 
             "pg_num": 11, 
             "ms": "01", 
@@ -1953,13 +1949,13 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "לא", 
-            "word_num": 7, 
+            "head_word": "נצל", 
+            "word_num": 5, 
             "daf": "11b", 
             "word": "לא", 
             "line_num": 38, 
-            "cal_word": "לא", 
-            "POS": "a", 
+            "cal_word": "אצולי", 
+            "POS": "V03", 
             "side": 2, 
             "pg_num": 11, 
             "ms": "01", 
@@ -1971,13 +1967,13 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "חשב", 
-            "word_num": 8, 
+            "head_word": "לא", 
+            "word_num": 7, 
             "daf": "11b", 
             "word": "חשיב", 
             "line_num": 38, 
-            "cal_word": "חשיב", 
-            "POS": "V01", 
+            "cal_word": "לא", 
+            "POS": "a", 
             "side": 2, 
             "pg_num": 11, 
             "ms": "01", 
