@@ -80,6 +80,8 @@ def parse():
                         depth_three = [each_line]
                     else:
                         first_text = False
+                        each_line = clean_up_string(each_line)
+                        depth_three = [each_line]
 
                 else:
                     each_line = clean_up_string(each_line)
@@ -100,7 +102,7 @@ def parse():
                 else:
                     each_line = clean_up_string(each_line, mitzvot=True)
                     depth_three.append(each_line)
-
+    depth_two.append(depth_three)
     lev_sameach.append(depth_two)
     return lev_sameach
 
