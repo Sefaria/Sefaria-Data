@@ -594,8 +594,27 @@ def post_text(parsed_data):
         }
         functions.post_text('Siftei Hakhamim, {}'.format(book), version)
 
+
+def manual_links():
+    """
+    Some links had to be created manually by the content team. The refs to link were saved in a
+    csv
+    :return: Json object of links parsed from the aforementioned csv.
+    """
+
+    with open('siftei hakhamim manual links.csv') as infile:
+        csv_reader = ucsv.reader(infile, delimiter=';')
+        links = [{'refs': [ref[0], ref[1]],
+                  'type': 'commentary',
+                  'auto': False,
+                  'generated_by': 'Sefaria Content Team'}
+                 for ref in csv_reader]
+    return links
+
+
 parsed = parse_multiple()
 slinks = generate_links(parsed)
 functions.post_index(build_index())
 post_text(parsed)
 functions.post_link(slinks)
+functions.post_link(manual_links())
