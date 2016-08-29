@@ -370,6 +370,7 @@ def yachin_builder(text_list):
         line = line.replace(u'\r', u'')
         line = line.replace(u'\ufeff', u'')
         line = line.replace(u'!', u'')
+        line = line.replace(u' @22', u'@22')
         line = line.rstrip()
         if line == u'':
             continue
@@ -621,7 +622,7 @@ def collect_links(tractate):
     with codecs.open(filename, 'r', 'utf-8') as datafile:
         parsed_mishna = parse_mishna(datafile, u'@00(?:\u05e4\u05e8\u05e7 |\u05e4)([\u05d0-\u05ea"]{1,3})',
                                      u'@22[\u05d0-\u05ea]{1,2}', u'@99')
-    comment_reg = re.compile(u'(?:[).\d])(?:[ \d@]*)([\u05d0-\u05ea" ]*?)(?:[ \d@]*)@44([\u05d0-\u05ea]{1,3})')
+    comment_reg = re.compile(u'(?:[).\d])(?:[ \d@]*)([\u05d0-\u05ea"\' ]*?)(?:[ \d@]*)@44([\u05d0-\u05ea]{1,3})')
 
     for line in util.traverse_ja(parsed_mishna):
         for match in comment_reg.finditer(util.multiple_replace(line['data'], {u'!': u'', u'@33': u''})):
@@ -707,7 +708,7 @@ def add_dh_to_text(link_dict, parsed_files):
         except IndexError:
             break
     else:
-        temp.insert(0, u'<b>{}</b>'.format(link_dict['text']))
+        temp[0] = u'<b>{}</b><br>'.format(link_dict['text']) + temp[0]
 
     del link_dict['text']
 
