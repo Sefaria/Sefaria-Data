@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
-from research.dibur_hamatchil import sefaria_program
-from sefaria.model import *
+import codecs
+import json
+import re
+
+from data_utilities import dibur_hamatchil_matcher
 from research.talmud_pos_research.language_classifier import cal_tools
-from research.talmud_pos_research.language_classifier import language_tools
-import json,re,codecs
+from sefaria.model import *
 
 cal_db_location = "../../talmud_pos_research/language_classifier/caldb_"
 
@@ -150,7 +152,7 @@ def match_cal_segments(mesechta):
 
         global_offset = 0
         if curr_sef_ref == curr_cal_ref:
-            start_end_map,abbrev_ranges = sefaria_program.match_text(bas_word_list,lines_by_str,verbose=True,word_threshold=0.5,with_abbrev_ranges=True)
+            start_end_map,abbrev_ranges = dibur_hamatchil_matcher.match_text(bas_word_list, lines_by_str, verbose=True, word_threshold=0.5, with_abbrev_ranges=True)
             for iline,se in enumerate(start_end_map):
 
                 curr_cal_line = lines[iline]
@@ -173,10 +175,10 @@ def match_cal_segments(mesechta):
                 # matched_cal_objs_indexes = language_tools.match_segments_without_order(lines[iline],bas_word_list[se[0]:se[1]+1],2.0)
                 curr_bas_line = bas_word_list[se[0]:se[1]+1]
 
-                matched_words_base = sefaria_program.match_text(curr_bas_line,curr_cal_line,char_threshold=0.4)
+                matched_words_base = dibur_hamatchil_matcher.match_text(curr_bas_line, curr_cal_line, char_threshold=0.4)
                 word_for_word_se += [(tse[0]+se[0],tse[1]+se[0]) if tse[0] != -1 else tse for tse in matched_words_base]
 
-            matched_word_for_word = sefaria_program.match_text(bas_word_list,cal_words,char_threshold=0.4,prev_matched_results=word_for_word_se)
+            matched_word_for_word = dibur_hamatchil_matcher.match_text(bas_word_list, cal_words, char_threshold=0.4, prev_matched_results=word_for_word_se)
 
             for ical_word,temp_se in enumerate(matched_word_for_word):
                 if temp_se[0] == -1:
@@ -223,7 +225,7 @@ def make_cal_lines_text(mesechta):
     fp.write(out)
     fp.close()
 
-mesechta = "Berakhot"
+mesechta = "Eruvin"
 make_cal_segments(mesechta)
 match_cal_segments(mesechta)
 make_cal_lines_text(mesechta)

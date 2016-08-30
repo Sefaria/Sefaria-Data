@@ -10,7 +10,7 @@ print language_tools.get_two_letter_word(word1)
 
 
 test_set_name = "test_set_5_daf"
-text_name = "Shabbat"
+text_name = "Berakhot"
 start_ref = None #Ref("{} 2a".format(text_name))
 end_ref   = None #Ref("{} 5a".format(text_name))
 

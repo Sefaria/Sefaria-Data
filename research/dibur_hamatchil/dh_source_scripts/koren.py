@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from research.dibur_hamatchil import sefaria_program
-import re
-from sefaria.model import *
 import csv
+import re
+
+from data_utilities import dibur_hamatchil_matcher
+from sefaria.model import *
 
 super_base_ref = Ref("Berakhot")
 # TODO this path is deliberately outside of the repo so that people don't know we have PROJECT K (wink wink)
@@ -45,6 +46,6 @@ with open("/Users/nss/Documents/Sefaria-Docs/Parsed_Brachot.csv", "r") as f:
             else:
                 return ""
 
-        yo = sefaria_program.match_ref(base_tc, comment_list, base_tokenizer=base_tokenizer)
+        yo = dibur_hamatchil_matcher.match_ref(base_tc, comment_list, base_tokenizer=base_tokenizer)
         print "MATCHES - {}".format(yo)
         print "DAF {} -----END-----".format(base_ref)
