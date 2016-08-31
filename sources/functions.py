@@ -268,8 +268,6 @@ def checkLengthsDicts(x_dict, y_dict):
             print "lengths off"
             pdb.set_trace()
 
-errors = open('errors.html', 'w')
-
 
 def post_index(index):
     url = SEFARIA_SERVER+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
@@ -284,7 +282,8 @@ def post_index(index):
         response = urllib2.urlopen(req)
         print response.read()
     except HTTPError as e:
-        errors.write(e.read())
+        with open('errors.html', 'w') as errors:
+            errors.write(e.read())
         print "error"
 
 
@@ -331,7 +330,8 @@ def post_link_weak_connection(info, repeat=10):
             if x == 200:
                 break
         except HTTPError, e:
-            errors.write(e.read())
+            with open('errors.html', 'w') as errors:
+                errors.write(e.read())
             continue
         except Exception, e:
             print 'Exception {}'.format(i + 1)
@@ -357,7 +357,8 @@ def post_text(ref, text, index_count="off"):
         if x.find("error")>=0 and x.find("Daf")>=0 and x.find("0")>=0:
             return "error"
     except HTTPError, e:
-        errors.write(e.read())
+        with open('errors.html', 'w') as errors:
+            errors.write(e.read())
 
 
 def post_text_weak_connection(ref, text, index_count="off", repeat=10):
@@ -382,7 +383,8 @@ def post_text_weak_connection(ref, text, index_count="off", repeat=10):
             if code == 200:
                 break
         except HTTPError, e:
-            errors.write(e.read())
+            with open('errors.html', 'w') as errors:
+                errors.write(e.read())
             continue
         except Exception, e:
             print 'Exception {}'.format(i+1)
@@ -415,7 +417,8 @@ def post_text_burp(ref, text, index_count="off"):
         if x.find("error") >= 0 and x.find("Daf") >= 0 and x.find("0") >= 0:
             return "error"
     except HTTPError, e:
-        errors.write(e.read())
+        with open('errors.html', 'w') as errors:
+            errors.write(e.read())
 
 def post_flags(version, flags):
     """
@@ -439,7 +442,8 @@ def post_flags(version, flags):
         if x.find("error") >= 0 and x.find("Daf") >= 0 and x.find("0") >= 0:
             return "error"
     except HTTPError, e:
-        errors.write(e.read())
+        with open('errors.html', 'w') as errors:
+            errors.write(e.read())
 
 def get_text(ref):
     ref = ref.replace(" ", "_")
