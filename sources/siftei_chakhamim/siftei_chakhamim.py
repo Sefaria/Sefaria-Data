@@ -559,6 +559,7 @@ def build_index():
     # create index record
     record = SchemaNode()
     record.add_title('Siftei Hakhamim', 'en', primary=True, )
+    record.add_title('Siftei Chakhamim', 'en')
     record.add_title(u'שפתי חכמים', 'he', primary=True, )
     record.key = 'Siftei Hakhamim'
 
