@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-import csv
+import unicodecsv as csv
 import urllib2
 from get_section_titles import get_he_section_title_array
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 
 def match_titles(he_sections, tur_table_csv_url):
-    url = 'http://winterolympicsmedals.com/medals.csv'
     response = urllib2.urlopen(tur_table_csv_url)
     reader = csv.reader(response)
     tur_table = list(reader)
@@ -27,7 +26,7 @@ def match_titles(he_sections, tur_table_csv_url):
         if result[1] >= 70:
             he_and_en_title_list.append([u"%s" % section, tur_table[tur_he_title_list.index(result[0])+1][2]])
         else:
-            he_and_en_title_list.append([section, ""])
+            he_and_en_title_list.append([u"%s" % section, ""])
     
     return he_and_en_title_list;
 
@@ -52,8 +51,9 @@ orders= ["orach chaim","yoreh deah","even haezer","choshen mishpat"]
 #loop through orders and create csv files
 for index, order in enumerate(orders):
     myfile = open(make_title(order), 'wb')
-    wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-    wr.writerow(match_titles(he_sections[index], make_link(order)))
+    wr = csv.writer(myfile)
+    for row in match_titles(he_sections[index], make_link(order)):
+        wr.writerow(row)
     myfile.close()
 """"
 oc = match_titles(he_sections[0], 'https://raw.githubusercontent.com/Sefaria/Sefaria-Data/master/sources/Tur/tur%20orach%20chaim.csv')
