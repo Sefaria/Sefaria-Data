@@ -2,8 +2,11 @@
 import re
 import os
 import codecs
-from collections import Counter
+from collections import Counter, OrderedDict
 from data_utilities import util
+from sefaria.utils.hebrew import hebrew_term
+from urllib2 import HTTPError, URLError
+from sources import functions
 from sefaria.model import *
 
 
@@ -105,3 +108,210 @@ def isolate_years(line):
         line = u'{}\n{}'.format(year, line)
 
     return line
+
+
+def get_parsha_dict():
+    """
+    Terms map English parsha names to Hebrew. We need to build a dictionary that will do the reverse.
+    :return: Dictionary
+    """
+
+    # We have some special cases that can't be looked up in mongo
+    parashot = {u'לחנוכה': 'For Chanuka',
+                u'פרשת שקלים': 'Parashat Shekalim',
+                u'פרשת זכור': 'Parashat Zachor',
+                u'לפורים': 'For Purim',
+                u'פרשת פרה': 'Parashat Parah',
+                u'פרשת החודש': 'Parashat HaChodesh',
+                u'לשבת הגדול': 'For Shabbat HaGadol',
+                u'פסח': 'Passover',
+                u'שבועות': 'Shavuot',
+                u'לחודש אלול': 'For the Month of Elul',
+                u'ראש השנה': 'Rosh HaShanah',
+                u'שבת תשובה': 'Shabbat Shuva',
+                u'ליום כיפור': 'For the Day of Atonement',
+                u'לסוכות': 'Sukkot'}
+    terms = TermSet({"scheme": "Parasha"})
+
+    for term in terms.array():
+        contents = term.contents()
+        he_name = contents['titles'][-1]['text']
+        parashot[he_name] = contents['name']
+
+    return parashot
+
+
+def node_names():
+    """
+    Assemble a collection of names to use on each node.
+    :return: OrderedDict of keys 'parasha' to values <year>
+    """
+    year_reg = re.compile(u'@44\[([\u05d0-\u05ea" -]+)]')
+    parsha_reg = re.compile(u'@88([\u05d0-\u05ea ].+?) ?$')
+    books = OrderedDict()
+    book_names = library.get_indexes_in_category('Torah')
+
+    for number, filename in enumerate(filenames()):
+        parsha, years = None, []
+        names = OrderedDict()
+        with codecs.open(filename, 'r', 'utf-8') as source:
+            for line in source:
+                new_parsha, year = parsha_reg.match(line), year_reg.match(line)
+
+                if new_parsha:
+                    if parsha is None: # First case, no years were found yet
+                        parsha = new_parsha.group(1)
+                    else:
+                        names[parsha] = years
+                        parsha = new_parsha.group(1)
+                        years = []
+
+                elif year:
+                    years.append(year.group(1))
+
+                else:
+                    continue
+            else:
+                names[parsha] = years
+        books[book_names[number]] = names
+    return books
+
+
+def get_civil_year(year_line, book):
+    """
+    JN are named by year. The he_title can be lifted directly from the text, this function converts them to English
+    equivalent. The conversion is not exact, as an exact mapping of Parsha - Date is not available at this time.
+    Therefore, each book will get a "typical" Hebrew data which is used to extract the standard civil date. This may
+    contain several errors, which will be corrected down the road.
+    :param year_line: A line of text from which year data is extracted. May contain multiple years (i.e. תרל"ז-תרל"ח)
+    :param book: What book is this taken from (i.e. Genesis, Exodus etc.).
+    :return: civil year(s)
+    """
+
+    typical_dates = {
+        'Genesis': [7, 1],
+        'Exodus': [10, 20],
+        'Leviticus': [1, 1],
+        'Numbers': [3, 20],
+        'Deuteronomy': [5, 1]
+    }
+
+    he_years = [util.getGematria(match)+5000 for match in re.findall(u'[\u05d0-\u05ea"]{4,5}', year_line)]
+    en_years = [str(year) for year in he_years]
+
+    return '; '.join(en_years)
+
+
+def sefat_parse_helper(lines):
+
+    parsed = []
+    for line in lines:
+        line = re.sub(u' +', u' ', line)
+        line = line.replace(u'\n', u'')
+        line = line.rstrip(u' ')
+        line = line.replace(u'@22', u'')
+        if line == u'':
+            continue
+        else:
+            parsed.append(line)
+    return parsed
+
+
+def parse():
+    book_names = library.get_indexes_in_category('Torah')
+    names = node_names()
+    parsed = {}
+    for book_num, filename in enumerate(filenames()):
+        with codecs.open(filename, 'r', 'utf-8') as infile:
+            current = util.file_to_ja([[[]]], infile, [u'@88', u'@44'], sefat_parse_helper).array()
+            parsed[book_names[book_num]] = util.clean_jagged_array(current, [u'@[0-9]{2}', u'\?'])
+    for book in book_names:
+        parashot = names[book].keys()
+        parsed[book] = util.simple_to_complex(parashot, parsed[book])
+        for parsha in parashot:
+            parsed[book][parsha] = util.simple_to_complex(names[book][parsha], parsed[book][parsha])
+
+    return parsed
+
+
+def fix_hebrew_years(to_fix):
+    if re.search(u'-', to_fix):
+        to_fix = to_fix.replace(u'-', u' ; ')
+        to_fix = re.sub(u' +', u' ', to_fix)
+        to_fix = to_fix.replace(u' ;', u';')
+        return to_fix
+    else:
+        return to_fix
+
+
+def construct_index():
+    names = node_names()
+    en_parasha = get_parsha_dict()
+
+    root = SchemaNode()
+    root.add_title('Sefat Emet', 'en', primary=True)
+    root.add_title(u'שפת אמת', 'he', primary=True)
+    root.key = 'Sefat Emet'
+
+    for book in names.keys():
+        book_node = SchemaNode()
+        book_node.add_title(book, 'en', primary=True)
+        book_node.add_title(hebrew_term(book), 'he', primary=True)
+        book_node.key = book
+
+        for parasha in names[book].keys():
+            parsha_node = SchemaNode()
+            parsha_node.add_title(en_parasha[parasha], 'en', primary=True)
+            parsha_node.add_title(parasha, 'he', primary=True)
+            parsha_node.key = en_parasha[parasha]
+
+            for year in names[book][parasha]:
+                year_node = JaggedArrayNode()
+                civil_year = get_civil_year(year, book)
+                year_node.add_title(civil_year, 'en', primary=True)
+                year_node.add_title(fix_hebrew_years(year), 'he', primary=True)
+                year_node.key = civil_year
+                year_node.depth = 1
+                year_node.addressTypes = ['Integer']
+                year_node.sectionNames = ['Paragraph']
+                parsha_node.append(year_node)
+            book_node.append(parsha_node)
+        root.append(book_node)
+    root.validate()
+
+    index = {
+        'title': 'Sefat Emet',
+        'categories': ['Chasidut'],
+        'schema': root.serialize()
+    }
+    return index
+
+
+def upload():
+    functions.post_index(construct_index())
+    parsed = parse()
+    names = node_names()
+    en_parasha_names = get_parsha_dict()
+    for book in names.keys():
+        for parasha in names[book].keys():
+            for year in names[book][parasha]:
+                current_text = {
+                    'versionTitle': 'Sefat emet, Piotrków, 1905-1908',
+                    'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001186213',
+                    'language': 'he',
+                    'text': parsed[book][parasha][year]
+                }
+                en_parasha = en_parasha_names[parasha]
+                civil_year = get_civil_year(year, book)
+                url = 'Sefat Emet, {}, {}, {}'.format(book, en_parasha, civil_year)
+                print url
+                for i in range(10):
+                    try:
+                        functions.post_text(url, current_text)
+                    except (URLError, HTTPError):
+                        print 'handling weak network'
+                        continue
+                    else:
+                        break
+
+upload()
