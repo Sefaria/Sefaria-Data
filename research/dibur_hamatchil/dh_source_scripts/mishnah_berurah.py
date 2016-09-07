@@ -15,6 +15,7 @@ def base_tokenizer(str):
     punc_pat = re.compile(ur"(\.|,|:)$")
 
     str = re.sub(ur"\([^\(\)]+\)", u"", str)
+    str = re.sub(ur"''",ur'"',str) # looks like double apostrophe in shulchan arukh is meant to be a quote
     str = re.sub(r"</?[a-z]+>", "", str)  # get rid of html tags
     str = hebrew.strip_cantillation(str, strip_vowels=True)
     word_list = re.split(ur"\s+", str)
@@ -37,7 +38,7 @@ def match():
     oc = library.get_index("Shulchan Arukh, Orach Chayim")
 
     mbRefList = mb.all_section_refs()
-    ocRefList = oc.all_section_refs()
+    ocRefList = oc.all_section_refs()[24:25]
     mbInd = 0
 
     num_matched = 0
@@ -45,6 +46,8 @@ def match():
 
     link_list = []
     log = open("mishnah_berurah.log","w")
+    rt_log = codecs.open("rashei_tevot.csv","w",encoding='utf8')
+    rt_log.write(u"{},{},{},{}\n".format(u"rashei_tevot",u"expanded",u"context_before",u"context_after"))
     for ocRef in ocRefList:
         ocSiman = getSimanNum(ocRef)
         while getSimanNum(mbRefList[mbInd]) != ocSiman:
@@ -56,7 +59,12 @@ def match():
         octc = TextChunk(ocRef,"he")
         mbtc = TextChunk(mbRef,"he")
 
-        ref_map = dibur_hamatchil_matcher.match_ref(octc,mbtc,base_tokenizer=base_tokenizer,dh_extract_method=dh_extraction_method,verbose=True)
+        ref_map_with_abbrevs = dibur_hamatchil_matcher.match_ref(octc,mbtc,base_tokenizer=base_tokenizer,dh_extract_method=dh_extraction_method,verbose=True,with_abbrev_matches=True)
+        ref_map = [(tup[0],tup[1]) for tup in ref_map_with_abbrevs]
+        abbrev_map = [am for tup in ref_map_with_abbrevs for am in tup[2]]
+        for am in abbrev_map:
+            rt_log.write(u"{},{},{},{}\n".format(am.abbrev,u" ".join(am.expanded),u" ".join(am.contextBefore),u" ".join(am.contextAfter)))
+
         temp_link_list = [l for l in ref_map if not l[0] is None and not l[1] is None]
         link_list += temp_link_list
         unlink_list = [ul[1] for ul in ref_map if ul[0] is None or ul[1] is None]
@@ -77,6 +85,7 @@ def match():
     json.dump(doc, fp, indent=4, encoding='utf-8', ensure_ascii=False)
     fp.close()
     log.close()
+    rt_log.close()
 
 def save_links():
     link_list = json.load(open("mishnah_berurah_links.json","r"))["link_list"]
@@ -87,7 +96,22 @@ def save_links():
         except DuplicateRecordError:
             pass #poopy
 
+def make_better_log_file():
+    nf = open("mishnah_berurah_not_found.csv","w")
+    with open("mishnah_berurah.log","r") as f:
+        for line in f:
+            m = re.match(r"NOT FOUND - \[(.+)\]",line)
+            if m:
+                match = m.group(1)
+                match_list = match.split(", ")
+                for yo in match_list:
+                    ym = re.match(r"Ref\(\'(.+)\'\)",yo)
+                    nf.write("{},\n".format(ym.group(1)))
+
+    nf.close()
 
 
-#match()
-save_links()
+
+match()
+#save_links()
+#make_better_log_file()

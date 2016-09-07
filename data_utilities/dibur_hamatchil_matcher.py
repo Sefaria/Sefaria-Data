@@ -41,7 +41,24 @@ class TextMatch:
         self.endWord = 0
         self.score = 0
         self.skippedWords = []
-        self.abbrevRange = [] #list of tuples of range of abbreviation found, if any
+        self.abbrev_matches = [] #list of tuples of range of abbreviation found, if any
+
+class AbbrevMatch:
+    def __init__(self,abbrev,expanded,rashiRange,gemaraRange,contextBefore,contextAfter):
+        self.abbrev = abbrev
+        self.expanded = expanded
+        self.rashiRange = rashiRange
+        self.gemaraRange = gemaraRange
+        self.contextBefore = contextBefore
+        self.contextAfter = contextAfter
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 # should be private?
 class GemaraDaf:
@@ -63,7 +80,7 @@ class RashiUnit:
         self.disambiguationScore = 0
         self.rashimatches = []  # list of TextMatch
         self.skippedWords = []
-        self.abbrevRange = []
+        self.abbrev_matches = []
         self.startingText = startingText
 
         normalizedCV = re.sub(ur" ו" + u"?" + u"כו" + u"'?" + u"$", u"", self.startingText).strip()
@@ -84,7 +101,7 @@ class RashiUnit:
         self.matchedGemaraText = ""
 
 
-def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,verbose=False, word_threshold=0.27,char_threshold=0.2):
+def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,verbose=False, word_threshold=0.27,char_threshold=0.2,with_abbrev_matches=False):
     """
     base_text: TextChunk
     comments: TextChunk or list of comment strings
@@ -116,7 +133,10 @@ def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,
     else:
         raise TypeError("'comments' needs to be either a TextChunk or a list of comment strings")
 
-    start_end_map = match_text(bas_word_list,comment_list,dh_extract_method,verbose,word_threshold,char_threshold)
+    if with_abbrev_matches:
+        start_end_map,abbrev_matches = match_text(bas_word_list,comment_list,dh_extract_method,verbose,word_threshold,char_threshold,with_abbrev_matches=with_abbrev_matches)
+    else:
+        start_end_map = match_text(bas_word_list,comment_list,dh_extract_method,verbose,word_threshold,char_threshold)
 
     ref_matches = []
     prev_ref = None
@@ -138,15 +158,18 @@ def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,
 
         ref_matches.append(matched_ref)
         prev_ref = matched_ref
-    return zip(ref_matches,comment_ref_list) if comment_ref_list else ref_matches
+    if with_abbrev_matches:
+        return zip(ref_matches, comment_ref_list,abbrev_matches) if comment_ref_list else zip(ref_matches,abbrev_matches)
+    else:
+        return zip(ref_matches,comment_ref_list) if comment_ref_list else ref_matches
 
-def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,word_threshold=0.27,char_threshold=0.2,prev_matched_results=None,with_abbrev_ranges=False):
+def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,word_threshold=0.27,char_threshold=0.2,prev_matched_results=None,with_abbrev_matches=False):
     """
     base_text: list - list of words
     comments: list - list of comment strings
     dh_extract_method: f(string)->string
     prev_matched_results: [(start,end)] list of start/end indexes found in a previous iteration of match_text
-    with_abbrev_ranges: True if you want a second return value which is a list of tuples. each tuple contains the range of text in the comment text which matched as an abbreviation in the base text, if any was found
+    with_abbrev_matches: True if you want a second return value which is a list AbbrevMatch objects (see class definition above)
     returns: [(start,end)] - start and end index of each comment. optionally also returns abbrev_ranges (see with_abbrev_ranges parameter)
     """
 
@@ -166,9 +189,6 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
         approxSkipWordMatches = GetAllApproximateMatchesWithWordSkip(curDaf, ru, startword, endword,char_threshold)
 
         ru.rashimatches += approxMatches + approxAbbrevMatches
-
-        if ru.startingText == u'למעוטי הא דר"':
-            yo = 45
 
         #only add skip-matches that don't overlap with existing matching
         foundpoints = []
@@ -363,7 +383,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
             curru.endWord = match.endWord
             curru.matchedGemaraText = match.textMatched
             curru.skippedWords = match.skippedWords
-            curru.abbrevRange = match.abbrevRange
+            curru.abbrev_matches = match.abbrev_matches
 
             # remove this guy from the disambiguities, now that it is matched up
             rashisByDisambiguity.remove(curru) #check remove
@@ -379,14 +399,14 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
 
     if verbose: sbreport = ""
     start_end_map = []
-    abbrev_ranges = []
+    abbrev_matches = []
     #now do a full report
     for ru in curDaf.allRashi:
         if ru.startWord == -1:
             if verbose: sbreport += u"\nUNMATCHED: {}".format(ru.startingText)
             #if not verbose: print u"\tUNMATCHED: {}".format(ru.startingText)
             start_end_map.append((ru.startWord,ru.startWord))
-            abbrev_ranges.append(ru.abbrevRange)
+            abbrev_matches.append(ru.abbrev_matches)
         else:
             if verbose:
                 if len(ru.skippedWords) > 0:
@@ -394,11 +414,11 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                 else:
                     sbreport += u"\n{} //{}[{}-{}]".format(ru.startingText,ru.matchedGemaraText,ru.startWord,ru.endWord)
             start_end_map.append((ru.startWord,ru.endWord))
-            abbrev_ranges.append(ru.abbrevRange)
+            abbrev_matches.append(ru.abbrev_matches)
 
     if verbose: print sbreport
-    if with_abbrev_ranges:
-        return start_end_map,abbrev_ranges
+    if with_abbrev_matches:
+        return start_end_map,abbrev_matches
     else:
         return start_end_map
 
@@ -535,7 +555,7 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
     global normalizingFactor
 
     allMatches = []
-    abbrev_ranges = set()
+    abbrev_matches = []
     startText = curRashi.startingTextNormalized
 
     wordCountRashi = curRashi.cvWordcount
@@ -573,6 +593,18 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
                 # let's see if this matches the start of the next few words
                 curpos = iStartingWordInGemara + iWordWithinPhrase + offsetWithinGemara
                 fIsMatch,newOffsetWithinGemara = isAbbrevMatch(curpos,cleanRT,curDaf.allWords)
+
+
+                iStartContext = 3 if curpos >= 3 else curpos
+
+                if fIsMatch:
+                    abbrevMatch = AbbrevMatch(cleanRT,curDaf.allWords[curpos:curpos+newOffsetWithinGemara+1],(
+                        iWordWithinPhrase+offsetWithinRashiCV,iWordWithinPhrase+offsetWithinRashiCV),
+                                                   (curpos,curpos+newOffsetWithinGemara),
+                                                   curDaf.allWords[curpos-iStartContext:curpos],
+                                                   curDaf.allWords[curpos+newOffsetWithinGemara+1:curpos+4])
+                    if not abbrevMatch in abbrev_matches:
+                        abbrev_matches.append(abbrevMatch)
                 offsetWithinGemara += newOffsetWithinGemara
 
                 if not fIsMatch:
@@ -587,8 +619,17 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
                 # let's see if this matches the start of the next few words
                 curpos = iWordWithinPhrase + offsetWithinRashiCV
                 fIsMatch,newOffsetWithinRashiCV = isAbbrevMatch(curpos,cleanRT,startTextWords)
+
+                curposGemara = iStartingWordInGemara + offsetWithinGemara + iWordWithinPhrase
+                iStartContext = 3 if curposGemara >= 3 else curposGemara
                 if fIsMatch:
-                    abbrev_ranges.add((curpos,curpos+newOffsetWithinRashiCV))
+                    abbrevMatch = AbbrevMatch(cleanRT, startTextWords[curpos:curpos + newOffsetWithinRashiCV + 1],
+                                                   (curpos, curpos + newOffsetWithinRashiCV),
+                                                   (curposGemara,curposGemara),
+                                                   curDaf.allWords[curposGemara - iStartContext:curposGemara],
+                                                   curDaf.allWords[curposGemara + 1:curposGemara + 4])
+                    if not abbrevMatch in abbrev_matches:
+                        abbrev_matches.append(abbrevMatch)
                 offsetWithinRashiCV += newOffsetWithinRashiCV
 
                 if not fIsMatch:
@@ -610,7 +651,7 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
         gemaraDifferential = offsetWithinRashiCV
         gemaraDifferential -= offsetWithinGemara
 
-        # if it is, add it in
+        # if it is, add it in!
         if fIsMatch:
             curMatch = TextMatch()
             curMatch.textToMatch = curRashi.startingText
@@ -620,7 +661,7 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
             curMatch.endWord = iStartingWordInGemara + wordCountRashi - gemaraDifferential - 1 #I added the -1 b/c there was an off-by-one error
 
             #if we found an abbrev in gemara, save the words which matched in the TextMatch
-            curMatch.abbrevRange = list(abbrev_ranges)
+            curMatch.abbrev_matches = abbrev_matches
             # calculate the score, adding in the penalty for abbreviation
             totaldistance += abbreviationPenalty
             normalizedDistance = 1.0*(totaldistance + smoothingFactor) / (len(startText) + smoothingFactor) * normalizingFactor
@@ -644,6 +685,9 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
     # No point to this unless we have at least 2 words
     if wordCount < 2:
         return []
+
+    skipOnlyOne = wordCount == 2
+
 
     # Iterate through all the starting words within the phrase, allowing for one word to be ignored
 
@@ -669,7 +713,9 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
                     continue
 
                 # and, choose a second word to ignore (-1 means no second word)
-                for gemaraWord2ToIgnore in xrange(-1, wordCount):
+
+                skipWord2End = 0 if skipOnlyOne else wordCount
+                for gemaraWord2ToIgnore in xrange(-1, skipWord2End):
 
                     # if not skipping first, this is not relevant unless it is also -1
                     if gemaraWordToIgnore == -1 and gemaraWord2ToIgnore != -1:
@@ -686,6 +732,7 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
                     # if this would bring us to the end, don't do it
                     if gemaraWord2ToIgnore != -1 and iWord + wordCount >= len(curDaf.allWords):
                         continue
+
 
                     fIsMatch = False
                     distance = 0
@@ -743,6 +790,7 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
                         # whether or not we used the two-letter shortcut, let's calculate full distance here.
                         targetPhrase = BuildPhraseFromArray(curDaf.allWords, iWord, wordCount, gemaraWordToIgnore,
                                                             gemaraWord2ToIgnore)
+
                         dist = ComputeLevenshteinDistanceByWord(alternateStartText, targetPhrase)
 
                         # add penalty for skipped words
@@ -850,6 +898,29 @@ def cleanAbbrev(str):
 def isAbbrevMatch(curpos, abbrevText, unabbrevText):
     maxAbbrevLen = len(abbrevText)
     isMatch = False
+
+    abbrevPatterns = [[],[1],[2],[1,1],[2,1]]
+    for comboList in abbrevPatterns:
+
+        numWordsCombined = sum(comboList)
+        if curpos + maxAbbrevLen <= len(unabbrevText) + numWordsCombined:
+            if maxAbbrevLen > numWordsCombined + 1:
+                isMatch = True
+
+                prev_combo_sum = 0
+                for i_combo,currCombo in enumerate(comboList):
+                    if len(unabbrevText[curpos+i_combo]) <= currCombo+1 or unabbrevText[curpos+i_combo][:currCombo+1] != abbrevText[prev_combo_sum:prev_combo_sum+currCombo+1]:
+                        isMatch = False
+                        break
+                    prev_combo_sum += currCombo+1
+
+                for igemaraword in xrange(curpos + len(comboList), curpos + maxAbbrevLen - numWordsCombined):
+                    if unabbrevText[igemaraword][0] != abbrevText[igemaraword - curpos + numWordsCombined]:
+                        isMatch = False
+                        break
+                if isMatch:
+                    return isMatch, maxAbbrevLen - (1 + numWordsCombined)
+    """
     for numWordsCombined in xrange(0, 3):
         if curpos + maxAbbrevLen <= len(unabbrevText) + numWordsCombined:
             if maxAbbrevLen > numWordsCombined + 1 and len(unabbrevText[curpos]) > numWordsCombined:
@@ -867,6 +938,7 @@ def isAbbrevMatch(curpos, abbrevText, unabbrevText):
                         break
                 if isMatch:
                     return isMatch, maxAbbrevLen - (1 + numWordsCombined)
+    """
     return isMatch, 0
 
 
@@ -1061,3 +1133,5 @@ def sofit_swap(C):
     return sofit_map[C] if C in sofit_map else C
 
 
+#if it can get this, it can get anything
+#print isAbbrevMatch(0,u'בחוהמ',[u'בחול',u'המועד'])

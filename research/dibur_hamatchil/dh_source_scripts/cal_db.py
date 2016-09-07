@@ -152,7 +152,8 @@ def match_cal_segments(mesechta):
 
         global_offset = 0
         if curr_sef_ref == curr_cal_ref:
-            start_end_map,abbrev_ranges = dibur_hamatchil_matcher.match_text(bas_word_list, lines_by_str, verbose=True, word_threshold=0.5, with_abbrev_ranges=True)
+            start_end_map,abbrev_matches = dibur_hamatchil_matcher.match_text(bas_word_list, lines_by_str, verbose=True, word_threshold=0.5, with_abbrev_matches=True)
+            abbrev_ranges = [[am.rashiRange for am in am_list] for am_list in abbrev_matches ]
             for iline,se in enumerate(start_end_map):
 
                 curr_cal_line = lines[iline]
