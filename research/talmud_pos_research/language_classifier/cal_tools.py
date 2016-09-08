@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import math
 import re
-import numpy as np
+#import numpy as np
 import json
 import codecs
 import csv

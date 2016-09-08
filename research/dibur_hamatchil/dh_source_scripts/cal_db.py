@@ -9,7 +9,6 @@ sys.path.insert(0,'../../../')
 
 from sources.local_settings import *
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
-print sys.path
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 
 from sefaria.model import *
