@@ -3,10 +3,20 @@
 import codecs
 import json
 import re
+import sys,os
+
+sys.path.insert(0,'../../../')
+
+from sources.local_settings import *
+sys.path.insert(0, SEFARIA_PROJECT_PATH)
+print sys.path
+os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
+
+from sefaria.model import *
 
 from data_utilities import dibur_hamatchil_matcher
 from research.talmud_pos_research.language_classifier import cal_tools
-from sefaria.model import *
+
 
 cal_db_location = "../../talmud_pos_research/language_classifier/caldb_"
 
@@ -114,8 +124,8 @@ def match_cal_segments(mesechta):
         return [new_obj] #returns a single element array which will replace a range s:e in the original array
 
     cal_lines = json.load(open("cal_lines_{}.json".format(mesechta), "r"), encoding="utf8")
-    dafs = cal_lines["dafs"][0:10]
-    lines_by_daf = cal_lines["lines"][0:10]
+    dafs = cal_lines["dafs"]
+    lines_by_daf = cal_lines["lines"]
 
     super_base_ref = Ref(mesechta)
     subrefs = super_base_ref.all_subrefs()

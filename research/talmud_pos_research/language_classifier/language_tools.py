@@ -5,8 +5,8 @@ import json
 import codecs
 import cal_tools
 import itertools
-from hmmlearn import hmm
-from sklearn.preprocessing import LabelEncoder
+#from hmmlearn import hmm
+#from sklearn.preprocessing import LabelEncoder
 
 from sefaria.model import *
 from sefaria.utils import hebrew
