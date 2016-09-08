@@ -397,7 +397,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
     #now we check for dapim that have a lot of unmatched items, and then we take items out one at a time to see if we can
     #minimize it because usually this results from one misplaced item.
 
-    if verbose: sbreport = ""
+    if verbose: sbreport = u""
     start_end_map = []
     abbrev_matches = []
     #now do a full report
