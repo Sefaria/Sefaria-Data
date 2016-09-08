@@ -122,8 +122,8 @@ def match_cal_segments(mesechta):
         return [new_obj] #returns a single element array which will replace a range s:e in the original array
 
     cal_lines = json.load(open("cal_lines_{}.json".format(mesechta), "r"), encoding="utf8")
-    dafs = cal_lines["dafs"][31:32]
-    lines_by_daf = cal_lines["lines"][31:32]
+    dafs = cal_lines["dafs"]
+    lines_by_daf = cal_lines["lines"]
 
     super_base_ref = Ref(mesechta)
     subrefs = super_base_ref.all_subrefs()
