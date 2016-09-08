@@ -236,6 +236,6 @@ def make_cal_lines_text(mesechta):
     fp.close()
 
 mesechta = "Pesachim"
-#make_cal_segments(mesechta)
+make_cal_segments(mesechta)
 match_cal_segments(mesechta)
 #make_cal_lines_text(mesechta)
