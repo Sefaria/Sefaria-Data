@@ -114,8 +114,8 @@ def match_cal_segments(mesechta):
         return [new_obj] #returns a single element array which will replace a range s:e in the original array
 
     cal_lines = json.load(open("cal_lines_{}.json".format(mesechta), "r"), encoding="utf8")
-    dafs = cal_lines["dafs"]
-    lines_by_daf = cal_lines["lines"]
+    dafs = cal_lines["dafs"][0:10]
+    lines_by_daf = cal_lines["lines"][0:10]
 
     super_base_ref = Ref(mesechta)
     subrefs = super_base_ref.all_subrefs()
@@ -226,7 +226,7 @@ def make_cal_lines_text(mesechta):
     fp.write(out)
     fp.close()
 
-mesechta = "Eruvin"
-make_cal_segments(mesechta)
+mesechta = "Pesachim"
+#make_cal_segments(mesechta)
 match_cal_segments(mesechta)
-make_cal_lines_text(mesechta)
+#make_cal_lines_text(mesechta)

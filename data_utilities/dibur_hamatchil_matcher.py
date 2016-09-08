@@ -967,7 +967,7 @@ def GetRashiBoundaries(allRashi, dwRashi, maxBound):  # List<RashiUnit>, int
 
     # // Second part, look down as much as possible to find the end bound
     for iRashi in xrange(dwRashi + 1, len(allRashi)):
-        if allRashi[iRashi].startWord == -1:
+        if allRashi[iRashi].startWord == -1 or allRashi[iRashi].startWord < startBound: #added startWord < startBound condition to avoid getting endBound which might be before startBound in the case when rashis matched out of order
             continue
         # // Okay, this is the closest one below that has a value
         # // our end bound will be the startword - 1.

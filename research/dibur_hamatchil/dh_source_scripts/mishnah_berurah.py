@@ -12,7 +12,7 @@ def getSimanNum(ref):
     return ref.normal().split(" ")[-1]
 
 def base_tokenizer(str):
-    punc_pat = re.compile(ur"(\.|,|:)$")
+    punc_pat = re.compile(ur"(\.|,|:|;)$")
 
     str = re.sub(ur"\([^\(\)]+\)", u"", str)
     str = re.sub(ur"''",ur'"',str) # looks like double apostrophe in shulchan arukh is meant to be a quote
@@ -24,11 +24,12 @@ def base_tokenizer(str):
 
 
 def dh_extraction_method(str):
-    m = re.search(ur"(\([^\(]+\))([^–]+)–", str)
+    #searches for '(blah) other blah -' or '{blah} other blah -'
+    m = re.search(ur"((\([^\(]+\))|(\{[^\{]+\}))([^–]+)–", str)
     if m is None:
-        m = re.search(ur"(\([^\(]+\))([^-]+)-", str)
+        m = re.search(ur"((\([^\(]+\))|(\{[^\{]+\}))([^-]+)-", str)
     if m:
-        dh = m.group(2).strip()
+        dh = m.group(4).strip()
         return dh.replace(u"וכו'",u"")
     else:
         return ""
@@ -38,7 +39,7 @@ def match():
     oc = library.get_index("Shulchan Arukh, Orach Chayim")
 
     mbRefList = mb.all_section_refs()
-    ocRefList = oc.all_section_refs()[24:25]
+    ocRefList = oc.all_section_refs()
     mbInd = 0
 
     num_matched = 0
@@ -97,7 +98,7 @@ def save_links():
             pass #poopy
 
 def make_better_log_file():
-    nf = open("mishnah_berurah_not_found.csv","w")
+    nf = open("mishnah_berurah_not_found1.csv","w")
     with open("mishnah_berurah.log","r") as f:
         for line in f:
             m = re.match(r"NOT FOUND - \[(.+)\]",line)
@@ -112,6 +113,6 @@ def make_better_log_file():
 
 
 
-match()
+#match()
 #save_links()
-#make_better_log_file()
+make_better_log_file()

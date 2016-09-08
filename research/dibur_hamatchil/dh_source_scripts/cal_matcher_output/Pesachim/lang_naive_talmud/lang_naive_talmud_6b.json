@@ -13,6 +13,10 @@
             "word": "כולהי"
         }, 
         {
+            "index": 10, 
+            "word": "סוף סוף"
+        }, 
+        {
             "index": 18, 
             "word": "קאיי"
         }, 
@@ -109,16 +113,12 @@
             "word": "צריכה"
         }, 
         {
+            "index": 108, 
+            "word": "דלבתר"
+        }, 
+        {
             "index": 109, 
             "word": "הכי"
-        }, 
-        {
-            "index": 110, 
-            "word": "משכח"
-        }, 
-        {
-            "index": 111, 
-            "word": "לה"
         }, 
         {
             "index": 114, 
@@ -603,15 +603,21 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "סופ סופ", 
+            "head_word": "הכא", 
             "word_num": 0, 
             "daf": "6b", 
             "word": "מהכא", 
-            "line_num": 15, 
-            "cal_word": "סוף סוף", 
+            "line_num": 14, 
+            "cal_word": "מהכא", 
             "POS": "a", 
             "class": "talmud", 
+            "prefix": [
+                "מ_"
+            ], 
             "pg_num": 6, 
+            "prefix_POS": [
+                "p"
+            ], 
             "ms": "01", 
             "book_num": 71004, 
             "side": 2
@@ -2399,13 +2405,13 @@
             "side": 2
         }, 
         {
-            "head_word": "חשיב", 
-            "word_num": 12, 
+            "head_word": "ל_", 
+            "word_num": 1, 
             "daf": "6b", 
             "word": "ליה", 
             "line_num": 49, 
-            "cal_word": "", 
-            "POS": "A01", 
+            "cal_word": "לה", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 6, 
             "ms": "01", 
@@ -2413,13 +2419,13 @@
             "side": 2
         }, 
         {
-            "head_word": "בטל", 
-            "word_num": 2, 
+            "head_word": "חשיב", 
+            "word_num": 12, 
             "daf": "6b", 
             "word": "לבטליה", 
             "line_num": 49, 
-            "cal_word": "ליבטלה", 
-            "POS": "V02", 
+            "cal_word": "", 
+            "POS": "A01", 
             "class": "talmud", 
             "pg_num": 6, 
             "ms": "01", 
@@ -2431,32 +2437,36 @@
             "class": "unknown"
         }, 
         {
-            "word": "משכחת", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "ליה", 
-            "class": "unknown"
-        }, 
-        {
-            "head_word": "לבתר", 
-            "word_num": 0, 
+            "head_word": "שכח", 
+            "word_num": 2, 
             "daf": "6b", 
-            "word": "לבתר", 
+            "word": "משכחת", 
             "line_num": 50, 
-            "cal_word": "דלבתר", 
-            "POS": "p01", 
+            "cal_word": "משכח", 
+            "POS": "V01", 
             "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
             "pg_num": 6, 
-            "prefix_POS": [
-                "p"
-            ], 
             "ms": "01", 
             "book_num": 71004, 
             "side": 2
+        }, 
+        {
+            "head_word": "ל_", 
+            "word_num": 3, 
+            "daf": "6b", 
+            "word": "ליה", 
+            "line_num": 50, 
+            "cal_word": "לה", 
+            "POS": "p02", 
+            "class": "talmud", 
+            "pg_num": 6, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 2
+        }, 
+        {
+            "word": "לבתר", 
+            "class": "unknown"
         }, 
         {
             "word": "איסורא", 
