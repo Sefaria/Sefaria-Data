@@ -53,7 +53,8 @@ class AbbrevMatch:
         self.contextAfter = contextAfter
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
+            #TODO i feel like gemaraRange should be compared here also, but apparently that wasn't right
+            return self.abbrev == other.abbrev and self.expanded == other.expanded and self.rashiRange == other.rashiRange
         else:
             return False
 
@@ -662,6 +663,8 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
 
             #if we found an abbrev in gemara, save the words which matched in the TextMatch
             curMatch.abbrev_matches = abbrev_matches
+            for am in abbrev_matches:
+                print am.rashiRange,am.gemaraRange,am.abbrev,am.expanded
             # calculate the score, adding in the penalty for abbreviation
             totaldistance += abbreviationPenalty
             normalizedDistance = 1.0*(totaldistance + smoothingFactor) / (len(startText) + smoothingFactor) * normalizingFactor

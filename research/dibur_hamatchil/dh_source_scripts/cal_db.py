@@ -115,7 +115,6 @@ def match_cal_segments(mesechta):
         m_head_word = u" ".join([o["head_word"] for o in obj_list])
         m_pos_list = [o["POS"] for o in obj_list]
         m_pos = max(set(m_pos_list), key=m_pos_list.count)
-
         new_obj = obj_list[0].copy()
         new_obj["word"] = m_word
         new_obj["head_word"] = m_head_word
@@ -123,8 +122,8 @@ def match_cal_segments(mesechta):
         return [new_obj] #returns a single element array which will replace a range s:e in the original array
 
     cal_lines = json.load(open("cal_lines_{}.json".format(mesechta), "r"), encoding="utf8")
-    dafs = cal_lines["dafs"]
-    lines_by_daf = cal_lines["lines"]
+    dafs = cal_lines["dafs"][31:32]
+    lines_by_daf = cal_lines["lines"][31:32]
 
     super_base_ref = Ref(mesechta)
     subrefs = super_base_ref.all_subrefs()
@@ -170,7 +169,8 @@ def match_cal_segments(mesechta):
                 # if there is an expanded abbrev, concat those words into one element
                 if len(abbrev_ranges[iline]) > 0:
                     offset = 0 # account for the fact that you're losing elements in the array as you merge them
-                    for ar in abbrev_ranges[iline]:
+                    abbrev_ranges[iline].sort(key=lambda x: x[0])
+                    for ar in abbrev_ranges[iline]: #cast to set to remove duplicates
                         if ar[1] - ar[0] <= 0: continue #TODO there's an issue with the abbrev func, but i'm too lazy to fix now. sometimes they're zero length
                         curr_cal_line[ar[0]-offset:ar[1]+1-offset] = [u' '.join(curr_cal_line[ar[0]-offset:ar[1]+1-offset])]
                         word_obj_list[ar[0]-offset+len(cal_words):ar[1]+1-offset+len(cal_words)] = merge_cal_word_objs(ar[0]-offset+len(cal_words),ar[1]+1-offset+len(cal_words),word_obj_list)
