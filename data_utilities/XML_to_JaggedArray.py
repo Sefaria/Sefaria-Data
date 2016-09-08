@@ -26,54 +26,43 @@ class XML_to_JaggedArray:
     def run(self):
         for count, child in enumerate(self.root):
             attrib = child.attrib
-            name = attrib["id"] if len(attrib) > 0 else self.JA_array[count][0] #if I have an attribute identifying my name, use that, else use name user provided in JA_array
+
+            '''if I have an attribute identifying my name, use that, otherwise use name user provided in JA_array'''
+            name = attrib["id"] if len(attrib) > 0 else self.JA_array[count][0]
+
             depth = self.JA_array[count][1]
             has_subtitle = self.JA_array[count][2]
-            self.JA_nodes[name] = self.goDownToText(child, 0, depth)
+            self.JA_nodes[name] = self.goDownToText(child, depth, 0, has_subtitle)
             subtitle = ""
-            how_many_to_pop = -1 #collapse all the subtitle slots in the array to one; we start from negative one because we don't want to get rid of all of them, but to collapse them into one
+            how_many_to_pop = -1
 
+            '''collapse all the subtitle slots in the array to one; we start from negative one instead of 0,
+            because we don't want to get rid of all of them, but to keep one that the rest collapse into'''
             if has_subtitle:
-                print name
-                '''
-                if there is a subtitle, this means add to subtitle every item that is a string not array, keep count, then collapse them into one
-                '''
                 for gchild_count, gchild in enumerate(self.JA_nodes[name]):
-                    if type(gchild) is str:
+                    if type(gchild) is not list:
                         subtitle += gchild
                         how_many_to_pop += 1
 
-                pdb.set_trace()
                 for i in range(how_many_to_pop):
                     self.JA_nodes[name].pop(0)
 
                 self.JA_nodes[name][0] = subtitle
 
-        pdb.set_trace()
 
 
-    def goDownToText(self, element, level, depth):
+    def goDownToText(self, element, depth, level=0, has_subtitle=False):
         if level == depth:
             return element.xpath("string()").replace("\n\n", " ")
         else:
             text = []
             for child in element:
-                result = self.goDownToText(child, level+1, depth)
+                result = self.goDownToText(child, depth, level+1, has_subtitle)
                 text.append(result)
+            if has_subtitle and len(element) == 0:
+                text = element.xpath("string()")
             return text
 
 
     def getNodes(self):
-        print 'hi'
-
-
-if __name__ == "__main__":
-    JA_array = [("intro", 1, False), ("part", 2, True), ("part", 2, True), ("part", 2, True), ("part", 2, True), ("part", 2, True)]
-    JA_array += [("part", 2, True), ("part", 1, False), ("appendix", 2, True)]
-    allowedTags = ["book", "intro", "part", "appendix", "chapter", "p", "ftnote", "title"]
-    allowedAttributes = ["id"]
-    parser = XML_to_JaggedArray("../sources/DC labs/Robinson_MosesCordoveroIntroductionToKabbalah.xml", JA_array, allowedTags, allowedAttributes)
-    print parser.root
-    parser.run()
-    nodes = parser.getNodes()
-    pdb.set_trace()
+        return self.JA_nodes
