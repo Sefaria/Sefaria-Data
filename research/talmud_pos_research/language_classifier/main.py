@@ -11,8 +11,8 @@ print language_tools.get_two_letter_word(word1)
 
 test_set_name = "test_set_5_daf"
 text_name = "Pesachim"
-start_ref = Ref("{} 2a".format(text_name))
-end_ref   = Ref("{} 7a".format(text_name))
+start_ref = None #Ref("{} 2a".format(text_name))
+end_ref   = None #Ref("{} 7a".format(text_name))
 
 #test_discrete()
 #make_training_sets("talmudic")

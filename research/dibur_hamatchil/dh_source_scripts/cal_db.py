@@ -123,8 +123,8 @@ def match_cal_segments(mesechta):
         return [new_obj] #returns a single element array which will replace a range s:e in the original array
 
     cal_lines = json.load(open("cal_lines_{}.json".format(mesechta), "r"), encoding="utf8")
-    dafs = cal_lines["dafs"]
-    lines_by_daf = cal_lines["lines"]
+    dafs = cal_lines["dafs"][12:13]
+    lines_by_daf = cal_lines["lines"][12:13]
 
     super_base_ref = Ref(mesechta)
     subrefs = super_base_ref.all_subrefs()
@@ -190,6 +190,7 @@ def match_cal_segments(mesechta):
 
             matched_word_for_word = dibur_hamatchil_matcher.match_text(bas_word_list, cal_words, char_threshold=0.4, prev_matched_results=word_for_word_se)
 
+            bad_word_offset = 0
             for ical_word,temp_se in enumerate(matched_word_for_word):
                 if temp_se[0] == -1:
                     missed_words.append({"word":word_obj_list[ical_word]["word"],"index":ical_word})
@@ -197,6 +198,11 @@ def match_cal_segments(mesechta):
 
                 #dictionary juggling...
                 for i in xrange(temp_se[0],temp_se[1]+1):
+                    #in case a cal_words and word_obj_list aren't the same length bc a word got split up
+                    if cal_words[ical_word] != word_obj_list[ical_word-bad_word_offset]["word"]:
+                        if ical_word+1 < len(cal_words) and cal_words[ical_word+1] != word_obj_list[ical_word-bad_word_offset+1]["word"]:
+                            bad_word_offset += 1
+                        continue
                     cal_word_obj = word_obj_list[ical_word].copy()
                     cal_word_obj["cal_word"] = cal_word_obj["word"]
                     temp_sef_word = temp_out[i]["word"]
