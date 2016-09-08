@@ -48,7 +48,6 @@ def createIndex(enTitle):
 
 
 def dealWithDaf(line, current_daf):
-    print line
     orig_line = line
     line = line.replace(" ", "").replace("\xe2\x80\x9d", '"')
     line = line.replace("@22", "").replace('ע"א','').replace('דף', '').replace('\r', '').replace(' ', '').replace('.', '').replace("\xe2\x80", "").replace("\xac", "").replace("\xaa", "")
@@ -196,4 +195,3 @@ if __name__ == "__main__":
         }
         post_text("Ritva on "+file, send_text)
         match_and_link(dhs, file)
-        pdb.set_trace()

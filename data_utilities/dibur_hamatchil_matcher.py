@@ -121,13 +121,21 @@ def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,
     #get all non-empty segment refs for 'comments'
     if type(comments) == TextChunk:
         comm_ref = comments._oref
-        sub_ja = comm_ref.get_state_ja("he").subarray_with_ref(comm_ref)
-        #if len(sub_ja.non_empty_sections()) == 1 and len(sub_ja.non_empty_sections()[0]) == 0:
-        comment_ref_list = comments._oref.all_subrefs()
-        comment_list = comments.text
-        """else:
+
+        if comm_ref.get_state_ja("he").depth() == 2:
+            sub_ja = comm_ref.get_state_ja("he").subarray_with_ref(comm_ref)
             comment_ref_list = [comm_ref.subref(i + 1) for k in sub_ja.non_empty_sections() for i in k]
-            comment_list = [temp_comm for temp_sec  in comments.text for temp_comm in temp_sec]"""
+            comment_list = [temp_comm for temp_sec  in comments.text for temp_comm in temp_sec]
+        elif comm_ref.get_state_ja("he").depth() == 3:
+            daf = comm_ref[comm_ref.rfind(" ") + 1:]
+            amud = -2 if daf.find("a") > 0 else -1
+            daf = (int(daf.replace("a", "").replace("b", "")) * 2) + amud
+            ref_data_array = ref.get_state_ja("he").array()[daf]
+            comment_ref_list = []
+            for first_level_count, ref_data in enumerate(ref_data_array):
+                for second_level_count, each_one in enumerate(ref_data):
+                    comment_ref_list.append(ref_title + ":" + str(first_level_count + 1) + ":" + str(second_level_count + 1))
+            comment_list = [temp_comm for temp_sec  in comments.text for temp_comm in temp_sec]
     elif type(comments) == list:
         comment_list = comments
         comment_ref_list = None

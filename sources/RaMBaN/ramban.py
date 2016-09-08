@@ -165,6 +165,11 @@ def parse(tractate, errors):
          dh = removeExtraSpaces(dh)
          before_dh = removeExtraSpaces(before_dh)
 
+         if len(dh) > 0 and dh[0] == ' ':
+             dh = dh[1:]
+
+         if len(comment) > 0 and comment[0] == ' ':
+             comment = comment[1:]
 
          if comment.find('@') >= 0:
             errors.write(orig_line+"\n\n")
@@ -192,8 +197,8 @@ def post(text, dh_dict, tractate):
      text_array = convertDictToArray(text)
      send_text = {
          "text": text_array,
-         "versionTitle": "Ramban on Talmud",
-         "versionSource": "http://www.sefaria.org",
+         "versionTitle": "Chiddushei HaRamban, Jerusalem 1928-29",
+         "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001294828",
          "language": "he"
      }
      post_text("Chiddushei Ramban on "+tractate, send_text)
@@ -216,15 +221,15 @@ if __name__ == "__main__":
     global text
     global dh_dict
     global errors
+    errors = open("errors", 'w')
     not_yet = False
-    only_these = ["avodah_zarah_complete.txt", "makkot_complete.txt", "sanhedrin_complete.txt"]
+    only_these = ["bava_batra_complete.txt"]
     until_this_one = "ketubot"
     for file in glob.glob(u"*.txt"):
-        print file
-        print file.find("_complete") >= 0
         errors.write(file+"\n")
         if file.find("_complete") >= 0 and file in only_these:
             tractate = file.replace("_complete.txt", "").replace("_", " ").title()
+            print tractate
             #if not_yet and file.find(until_this_one) == -1:
             #    continue
             #else:

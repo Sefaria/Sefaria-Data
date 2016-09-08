@@ -33,28 +33,25 @@ class Maharam:
         whatever the category is we increment the maharam line and post the link between maharam and the appropriate
         book based on the category. remember to deal with paragraph case and gemara case.
         '''
-        self.heb_numbers = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "ששי", "שביעי", "שמיני", "תשיעי", "עשירי", "אחד עשר", "שנים עשר", "שלשה עשר", "ארבעה עשר"]
+        self.heb_numbers = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "ששי", "שביעי", "שמיני", "תשיעי", "עשירי", "אחד עשר", "שנים עשר", "שלשה עשר", "ארבעה עשר", "חמשה", "ששה"]
         self.comm_dict = {}
         self.dh1_dict = {}
-        self.dh2_dict = {}
         self.gemara1_dict = {}
-        self.gemara2_dict = {}
         self.tosafot1_dict = {}
-        self.tosafot2_dict = {}
         self.rashi1_dict = {}
-        self.rashi2_dict = {}
         self.mishnah1_dict = {}
-        self.mishnah2_dict = {}
         self.rashi ='רש"י'
         self.tosafot = "תוס"
         self.dibbur_hamatchil = ['בד"ה', 'ד"ה', 'בא"ד', """ד'"ה"""]
         self.gemara = "גמ"
+        self.shom = "שם"
         self.amud_bet = 'ע"ב'
         self.mishnah = ['במשנה', 'מתני']
         self.current_daf = 3
         self.current_perek = 1
         self.categories = ['rashi', 'tosafot', 'gemara', 'mishnah', 'paragraph']
         self.links_to_post = []
+        self.category = ""
 
 
 
@@ -90,38 +87,28 @@ class Maharam:
             ref = ref[0:second_colon]
         return ref.replace(replace_text, "")
 
-    def addDHComment(self, dh1, dh2, comment, category, heb_category):
-        if hasTags(dh1) or hasTags(dh2) or hasTags(comment):
-            print "tags!"
-            pdb.set_trace()
-        if len(dh1)>0 and len(dh2)>0:
+    def addDHComment(self, dh1, comment, category, heb_category):
+        if len(dh1)>0:
             self.dh1_dict[self.current_daf].append((category, dh1))
-            self.dh2_dict[self.current_daf].append((category, dh2))
-            self.comm_dict[self.current_daf].append(self.heb_category+" <b>"+dh1+" "+dh2+" </b>"+comment)
-        elif len(dh1)>0:
-            self.dh1_dict[self.current_daf].append((category, dh1))
-            self.dh2_dict[self.current_daf].append((category, ""))
-            self.comm_dict[self.current_daf].append(self.heb_category+" <b>"+dh1+" </b>"+comment)
+            first_word = dh1.split(" ")[0]
+            dh1 = " ".join(dh1.split(" ")[1:])
+            append_str = first_word + " <b>" + dh1 + "</b> " + comment + ": "
+            self.comm_dict[self.current_daf].append(append_str)
         else:
             last_comment = len(self.comm_dict[self.current_daf])-1
             if last_comment == -1:
                 self.comm_dict[self.current_daf].append(comment)
                 self.dh1_dict[self.current_daf].append((category, ""))
-                self.dh2_dict[self.current_daf].append((category, ""))
             else:
-                self.comm_dict[self.current_daf][last_comment] += "<br>"+comment
+                self.comm_dict[self.current_daf][last_comment] += "<br>"+comment+": "
         if category == 'gemara':
             self.gemara1_dict[self.current_daf].append(dh1)
-            self.gemara2_dict[self.current_daf].append(dh2)
         elif category == 'rashi':
             self.rashi1_dict[self.current_daf].append(dh1)
-            self.rashi2_dict[self.current_daf].append(dh2)
         elif category == 'tosafot':
             self.tosafot1_dict[self.current_daf].append(dh1)
-            self.tosafot2_dict[self.current_daf].append(dh2)
         elif category == 'mishnah':
             self.mishnah1_dict[current_perek].append(dh1)
-            self.mishnah2_dict[current_perek].append(dh2)
 
     def removeBDH(self, array):
         try:
@@ -162,81 +149,56 @@ class Maharam:
             actual_text = line[3:]
         if not self.current_daf in self.dh1_dict:
             self.dh1_dict[self.current_daf] = []
-            self.dh2_dict[self.current_daf] = []
             self.gemara1_dict[self.current_daf] = []
-            self.gemara2_dict[self.current_daf] = []
             self.tosafot1_dict[self.current_daf] = []
-            self.tosafot2_dict[self.current_daf] = []
             self.rashi1_dict[self.current_daf] = []
-            self.rashi2_dict[self.current_daf] = []
             self.mishnah1_dict[self.current_perek] = []
-            self.mishnah2_dict[self.current_perek] = []
         self.actual_text = actual_text
         return self.current_daf
 
-    def getCategory(self, count, comment):
+
+
+
+    def determineCategory(self, count, comment):
         comment = comment + ':'
         if count == 0 and len(comment) == 0:
             return ""
-        self.heb_category = comment.split(" ")[0]
-        if self.heb_category.find(self.rashi)>=0:
-            category = 'rashi'
-        elif self.heb_category.find(self.tosafot)>=0:
-            category = 'tosafot'
-        elif self.heb_category.find(self.gemara)>=0:
-            category = 'gemara'
-        elif self.heb_category in self.mishnah:
-            category = 'mishnah'
-        elif self.heb_category in self.dibbur_hamatchil:
-            if count == 0:
-                category = 'gemara'
-        else:
-            if count == 0:
-                category = 'gemara'
-            else:
-                if comment.split(".",1)[0].find('וכו') > 0:
-                    category = 'gemara'
-                category = 'paragraph'
-        return category
+        first_line = " ".join(comment.split(" ")[0:10])
+        word = comment.split(" ")[0] if comment.split(" ")[0] != " " else comment.split(" ")[1]
+        if word.find(self.rashi)>=0:
+            self.category = 'rashi'
+            self.heb_category = word
+        elif word.find(self.tosafot)>=0:
+            self.category = 'tosafot'
+            self.heb_category = word
+        elif word.find(self.gemara)>=0:
+            self.category = 'gemara'
+            self.heb_category = word
+        elif word in self.mishnah:
+            self.category = 'mishnah'
+            self.heb_category = word
 
 
     def parseDH(self, comment, category):
-        end_of_first_word = comment.find(' ')
-        comment = comment[end_of_first_word+1:]
-        marker_max = max(comment.rfind('.'), comment.rfind(':'))
-        marker_min = min(comment.find('.'), comment.find(':'))
-        if marker_min == -1:
-            marker_min = max(comment.find('.'), comment.find(':'))
-        if marker_min == marker_max or (onlyOne(comment, '.') and onlyOne(comment, ':') and comment.find('.')>comment.find(':')):
-            if onlyOne(comment, "כו'"):
-                dh1, comment = comment.split("כו'", 1)
-                if len(comment)<5:
-                    dh1 += "כו'"
-                else:
-                    dh1 += "כו'. "
-                dh2 = ""
-            elif comment.find("כו'")>=0: #multiple cases
-                dh1, dh2, comment = comment.split("כו'", 2)
-                dh1 += "כו' "
-                if len(comment)<5:
-                    dh2 += "כו'"
-                else:
-                    dh2 += "כו'. "
-            else: #no periods or etc so nothing to work with, should this be a comment or DH?
-                    #depends on whether it's paragraph comment??
-                dh1 = comment
-                dh2 = ""
-                comment = ""
-        elif comment.find(".")>=0:
-            dh, comment = comment.split(".", 1)
-            dh += ". "
-            if dh.find("כו'")>=0:
-                dh1, dh2 = dh.split("כו'", 1)
-                dh1 += "כו' "
+        first_10 = " ".join(comment.split(" ")[0:10])
+        if first_10 == " ".join(comment.split(" ")[0:9]):
+            dh = ""
+            self.addDHComment(dh, comment, category, self.heb_category)
+        else:
+            if first_10.find(".") > 0:
+                dh, comment = comment.split(".", 1)
+                comment = comment[1:] if comment[0] == ' ' else comment
+                dh += ". "
+            elif first_10.find("כו'") > 0:
+                dh, comment = comment.split("כו'", 1)
+                comment = comment[1:] if comment[0] == ' ' else comment
+                dh += "כו' "
+            elif len(comment) > 20:
+                dh = first_10 + " "
+                comment = " ".join(comment.split(" ")[10:])
             else:
-                dh1 = dh
-                dh2 = ""
-        self.addDHComment(dh1, dh2, comment, category, self.heb_category)
+                dh = ""
+            self.addDHComment(dh, comment, category, self.heb_category)
 
 
     def parseText(self, file):
@@ -247,7 +209,7 @@ class Maharam:
                 continue
 
             if line.find("@00")>=0 and line.find("פרק")>=0:
-                self.current_perek = self.getPerek(line)
+                self.current_perek += 1
                 continue
 
             if line[0] == " ":    #not part of the logic, just solving something caused by the text file
@@ -263,20 +225,21 @@ class Maharam:
 
                 comments = self.actual_text.split(":")
                 for count, comment in enumerate(comments):
-                    if len(comment) < 2:
+                    if comment[0] == ' ':
+                        comment = comment[1:]
+                    if len(comment) < 5:
                         continue
-                    category = self.getCategory(count, comment)
-                    if category == "":
+                    self.determineCategory(count, comment)
+                    if self.category == "":
                         continue
-                    if hasTags(comment):
-                        pdb.set_trace()
-                    if category == 'paragraph':
+                    if self.category == 'paragraph':
                         self.addDHComment("","", comment, 'paragraph', "")
                     else:
-                        self.parseDH(comment, category)
+                        self.parseDH(comment, self.category)
             else:
                 print line
             prev_line = line
+
 
     def RashiOrTosafot(self, daf, category, rashi_in_order, tosafot_in_order):
         if category == 'rashi':
@@ -301,8 +264,8 @@ class Maharam:
                 out_order = in_order
             replace_text = "Tosafot on "
         if category == 'rashi' or category == 'tosafot':
-            in_order = in_order.replace('0:','')
-            out_order = out_order.replace('0:','')
+            if in_order.find('0')>=0 or out_order.find('0')>=0:
+                return
             in_order = int(in_order)
             out_order = int(out_order)
             if out_order != 0: #out_order only equals 0 if there really is no Tosafot or Rashi on the given daf
@@ -321,21 +284,14 @@ class Maharam:
                     "type": "commentary",
                     "auto": True,
                     "generated_by": "Maharam on "+masechet+" linker"})
-                if len(masechet_daf_line)>0:
-                    talmud_ref = self.convertRefCommentaryTalmud(masechet_daf_line, replace_text)
-                    self.links_to_post.append({
-                        "refs": [
-                                 talmud_ref,
-                                "Maharam on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line)
-                            ],
-                        "type": "commentary",
-                        "auto": True,
-                        "generated_by": "Maharam "+masechet+" linker"})
+
 
     def Gemara(self, daf, gemara_in_order):
         self.maharam_line+=1
         self.gemara_line+=1
-        gemara_in_order[self.gemara_line] = gemara_in_order[self.gemara_line].replace('0:','')
+        if gemara_in_order[self.gemara_line].find('0') >= 0:
+            return
+        gemara_in_order[self.gemara_line] = gemara_in_order[self.gemara_line]
         if gemara_in_order[self.gemara_line].find('-')>=0:
             in_order, out_order = gemara_in_order[self.gemara_line].split('-')
         else:
@@ -366,7 +322,8 @@ class Maharam:
             for key in mishnah_in_order[perek]:
                 pos+=1
                 if pos==mishnah_line:
-                    mishnah_in_order[perek][key] = mishnah_in_order[perek][key].replace('0:','')
+                    if mishnah_in_order[perek][key].find('0') >= 0:
+                        return
                     if mishnah_in_order[perek][key].find('-')>=0:
                         in_order, out_order = mishnah_in_order[perek][key].split('-')
                     else:
@@ -395,12 +352,13 @@ class Maharam:
         mishnah_out_order = {}
         for perek in self.mishnah1_dict:
             print "matching mishnah"
-            mishnah_text = get_text_plus("Mishnah "+masechet+"."+str(perek))['he']
+            mishnah_text = Ref("Mishnah "+masechet+"."+str(perek)).text('he').text
             mishnah_in_order[perek] = match_in_order.match_list(self.removeBDH(self.mishnah1_dict[perek]), mishnah_text, "Mishnah "+masechet+"."+str(perek))
-            #mishnah_out_order[perek] = match_out_of_order.match_list(removeBDH(self.mishnah2_dict[perek]), mishnah_text, "Mishnah "+masechet+"."+str(perek))
+            mishnah_in_order[perek] = dibur_hamatchil_matcher.match_ref(mishnah_text,
+
 
         links_to_post = []
-        for daf in self.dh1_dict:
+        for daf in sorted(self.dh1_dict.keys()):
             print daf
             self.maharam_line = 0
             self.rashi_line=0
@@ -408,24 +366,19 @@ class Maharam:
             self.gemara_line = 0
             mishnah_line = 0
             tosafot1_arr = self.tosafot1_dict[daf]
-            tosafot2_arr = self.tosafot2_dict[daf]
             rashi1_arr = self.rashi1_dict[daf]
-            rashi2_arr = self.rashi2_dict[daf]
             gemara1_arr = self.gemara1_dict[daf]
-            gemara2_arr = self.gemara2_dict[daf]
             print "matching tosafot"+str(len(tosafot1_arr))
-            tosafot_text = compileCommentaryIntoPage("Tosafot on "+masechet, daf)
+            #tosafot_text = compileCommentaryIntoPage("Tosafot on "+masechet, daf)
+            tosafot_text =
             tosafot_in_order = match_in_order.match_list(self.removeBDH(tosafot1_arr), tosafot_text, "Tosafot on "+masechet+" "+AddressTalmud.toStr("en", daf))
-            #tosafot_out_order = match_out_of_order.match_list(removeBDH(tosafot2_arr), tosafot_text, "Tosafot on "+masechet+" "+AddressTalmud.toStr("en", daf))
             if not (masechet == "Bava Batra" and daf > 57):
                 print "matching rashi"+str(len(rashi1_arr))
                 rashi_text = compileCommentaryIntoPage("Rashi on "+masechet, daf)
                 rashi_in_order = match_in_order.match_list(self.removeBDH(rashi1_arr), rashi_text, "Rashi on "+masechet+" "+AddressTalmud.toStr("en", daf))
-                #rashi_out_order = match_out_of_order.match_list(removeBDH(rashi2_arr), rashi_text, "Rashi on "+masechet+" "+AddressTalmud.toStr("en", daf))
             print "matching gemara"+str(len(gemara1_arr))
-            gemara_text = get_text(masechet+" "+AddressTalmud.toStr("en", daf))
+            gemara_text = Ref(masechet+" "+AddressTalmud.toStr("en", daf)).text('he').text
             gemara_in_order = match_in_order.match_list(self.removeBDH(gemara1_arr), gemara_text, masechet+" "+AddressTalmud.toStr("en", daf))
-            #gemara_out_order = match_out_of_order.match_list(removeBDH(gemara2_arr), gemara_text, masechet+" "+AddressTalmud.toStr("en", daf))
             dh1_arr = self.dh1_dict[daf]
             print "done matching"
             for category, dh in self.dh1_dict[daf]:
@@ -438,11 +391,12 @@ class Maharam:
                     self.Mishnah(daf, mishnah_in_order)
                 elif category == 'paragraph' and self.maharam_line == 0:
                     self.maharam_line+=1
-        post_link(links_to_post)
+        post_link(self.links_to_post)
+
 
 def create_index(tractate):
     root=JaggedArrayNode()
-    heb_masechet = get_text_plus(tractate)['heBook']
+    heb_masechet = library.get_index(tractate).get_title('he')
     root.add_title(u"Maharam on "+tractate.replace("_"," "), "en", primary=True)
     root.add_title(u'מהר"ם '+heb_masechet, "he", primary=True)
     root.key = 'maharam'
@@ -462,23 +416,25 @@ def create_index(tractate):
 
 
 if __name__ == "__main__":
-    titles = ["Bava Batra", "Bava Kamma", "Bava Metzia", "Chullin", "Eruvin", "Gittin", "Ketubot", "Kiddushin", "Makkot",
+    titles = ["Bava Batra", "Bava Kamma","Bava Metzia"]
+    ''', "Chullin", "Eruvin", "Gittin", "Ketubot", "Kiddushin", "Makkot",
               "Niddah", "Sanhedrin", "Shabbat", "Sukkah", "Yevamot"
               ]
-    done = ["Bava Batra", "Bava Kamma"]
+        '''
+    done = []
     for masechet in titles:
         if masechet in done:
             continue
 
         print masechet
 
-        create_index(masechet)
+        #create_index(masechet)
         file = open(masechet+"2.txt", 'r')
 
         maharam = Maharam()
         maharam.parseText(file)
 
-        match_in_order=Match(in_order=True, min_ratio=86, guess=False, range=True, can_expand=False)
+        match_in_order=Match(in_order=True, min_ratio=80, guess=False, range=True, can_expand=False)
         text_to_post = convertDictToArray(maharam.comm_dict)
         send_text = {
                         "versionTitle": "Vilna Edition",
@@ -486,7 +442,7 @@ if __name__ == "__main__":
                         "language": "he",
                         "text": text_to_post,
                     }
-        post_text("Maharam on "+masechet, send_text, "on")
+        #post_text("Maharam on "+masechet, send_text, "on")
 
         maharam.postLinks(match_in_order)
 

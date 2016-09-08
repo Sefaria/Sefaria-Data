@@ -63,10 +63,22 @@ eng_parshiot = ["Bereishit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "To
 
 
 def removeExtraSpaces(txt):
-    while txt.find("  ") >= 0:
+    txt = txt.replace("\xc2\xa0", " ") #make sure we only have one kind of space, get rid of unicode space
+    while txt.find("  ") >= 0:          #now get rid of all double spaces
         txt = txt.replace("  ", " ")
-    while txt.find("\xc2\xa0\xc2\xa0") >= 0:
-        txt = txt.replace("\xc2\xa0\xc2\xa0", "\xc2\xa0")
+
+
+    '''we want to make sure every end bold tag has one and only one space after it
+    right now, we know that all instances have one space or zero.
+    this is because we just ran code to get rid of 2 or more spaces
+    so first get rid of instances of having a space so we have one case: zero spaces
+    then convert all of those cases into having one space in the following line'''
+    txt = txt.replace("</b> ", "</b>")
+    txt = txt.replace("</b>", "</b> ")
+
+    txt = txt.replace("( ", "(").replace(" )", ")")
+    txt = txt.replace("<br> ", "<br>") #paragraphs shouldn't start with a space
+
     return txt
 
 
@@ -232,35 +244,38 @@ def convertDictToArray(dict, empty=[]):
             count = key+1
     return array
 
+
 def compileCommentaryIntoPage(title, daf):
     page = []
-    next = title+" "+AddressTalmud.toStr("en", daf)+".1"
-    while next is not None and next.find(AddressTalmud.toStr("en", daf)) >= 0:
-        text = get_text_plus(next)
-        for line in text['he']:
+    ref = Ref(title+" "+AddressTalmud.toStr("en", daf)+".1")
+    while ref is not None and ref.normal().find(AddressTalmud.toStr("en", daf)) >= 0:
+        text = ref.text('he').text
+        for line in text:
             page.append(line)
-
-        next = text['next']
+        ref = ref.next_section_ref() if ref.next_section_ref() != ref else None
     return page
+
 
 def lookForLineInCommentary(title, daf, line_n):
     total_count = 0
-    next = title+" "+AddressTalmud.toStr("en", daf)+":1"
-    while next.find(AddressTalmud.toStr("en", daf)) >= 0:
-        text = get_text_plus(next)
+    ref = Ref(title+" "+AddressTalmud.toStr("en", daf)+":1")
+    while ref is not None and ref.normal().find(AddressTalmud.toStr("en", daf)) >= 0:
+        text = ref.text('he').text
         local_count = 0
-        for line in text['he']:
+        for line in text:
             local_count+=1
             total_count+=1
             if total_count == line_n:
-                return next+"."+str(local_count)
-        next = text['next']
+                return ref.normal()+"."+str(local_count)
+        ref = ref.next_section_ref() if ref.next_section_ref() != ref else None
     return ""
+
 
 def onlyOne(text, subset):
     if text.find(subset)>=0 and text.find(subset)==text.rfind(subset):
         return True
     return False
+
 
 def checkLengthsDicts(x_dict, y_dict):
     for daf in x_dict:

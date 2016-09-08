@@ -1,6 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import csv
+import os
+import sys
+#p = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+#sys.path.insert(0, p)
+#import sefaria_program
+from research.dibur_hamatchil import sefaria_program
 import re
 
 from data_utilities import dibur_hamatchil_matcher
@@ -49,3 +55,4 @@ with open("/Users/nss/Documents/Sefaria-Docs/Parsed_Brachot.csv", "r") as f:
         yo = dibur_hamatchil_matcher.match_ref(base_tc, comment_list, base_tokenizer=base_tokenizer)
         print "MATCHES - {}".format(yo)
         print "DAF {} -----END-----".format(base_ref)
+
