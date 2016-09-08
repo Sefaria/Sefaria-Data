@@ -671,8 +671,6 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
 
             #if we found an abbrev in gemara, save the words which matched in the TextMatch
             curMatch.abbrev_matches = abbrev_matches
-            for am in abbrev_matches:
-                print am.rashiRange,am.gemaraRange,am.abbrev,am.expanded
             # calculate the score, adding in the penalty for abbreviation
             totaldistance += abbreviationPenalty
             normalizedDistance = 1.0*(totaldistance + smoothingFactor) / (len(startText) + smoothingFactor) * normalizingFactor
