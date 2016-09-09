@@ -57,6 +57,10 @@
             "word": "דהוה"
         }, 
         {
+            "index": 86, 
+            "word": "בי מדרשא"
+        }, 
+        {
             "index": 87, 
             "word": "האי"
         }, 
@@ -107,14 +111,6 @@
         {
             "index": 123, 
             "word": "דקבלה"
-        }, 
-        {
-            "index": 129, 
-            "word": "אלא"
-        }, 
-        {
-            "index": 132, 
-            "word": "במתניתין"
         }, 
         {
             "index": 133, 
@@ -1919,13 +1915,13 @@
             "side": 1
         }, 
         {
-            "head_word": "בי מדרשא", 
-            "word_num": 14, 
+            "head_word": "קשי", 
+            "word_num": 13, 
             "daf": "48a", 
             "word": "דקשיא", 
             "line_num": 22, 
-            "cal_word": "בי מדרשא", 
-            "POS": "N02", 
+            "cal_word": "קשיא", 
+            "POS": "A01", 
             "class": "talmud", 
             "pg_num": 48, 
             "ms": "01", 
@@ -2593,8 +2589,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אלא", 
+            "word_num": 0, 
+            "daf": "48a", 
             "word": "אלא", 
-            "class": "unknown"
+            "line_num": 29, 
+            "cal_word": "אלא", 
+            "POS": "c", 
+            "class": "talmud", 
+            "pg_num": 48, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "word": "שתיק", 
@@ -2617,8 +2623,24 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "מתניתא", 
+            "word_num": 3, 
+            "daf": "48a", 
             "word": "במתני\"", 
-            "class": "unknown"
+            "line_num": 29, 
+            "cal_word": "במתניתין", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "prefix": [
+                "ב_"
+            ], 
+            "pg_num": 48, 
+            "prefix_POS": [
+                "p02"
+            ], 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "word": "ה\"נ", 

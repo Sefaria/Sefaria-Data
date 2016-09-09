@@ -387,6 +387,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
         for curru in ruToProcess:
             # put it in
             #TODO: if disambiguity is low, apply other criteria
+            if len(curru.rashimatches) == 0: continue
             match = curru.rashimatches[0]
             curru.startWord = match.startWord
             curru.endWord = match.endWord
