@@ -762,3 +762,27 @@ class ToratEmetData:
 
         book = convert_dict_to_array(book)
         return book
+
+
+def get_cards_from_trello(list_name, board_json):
+    """
+    Trello can export a board as a JSON object. Use this function to grab the names of all the cards that
+    belong to a certain list on the board.
+    :param list_name: Name of the list that holds the cards of interest
+    :param board_json: The exported JSON file from trello that relates to the board of interest
+    :return: A list of all the cards on the specified Trello list.
+    """
+
+    board = json.loads(board_json.read())
+
+    list_id = u''
+    for column in board['lists']:
+        if column['name'] == list_name:
+            list_id = column['id']
+
+    cards = []
+    for card in board['cards']:
+        if card['idList'] == list_id:
+            cards.append(card['name'])
+
+    return cards
