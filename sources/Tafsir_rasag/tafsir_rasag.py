@@ -1,9 +1,11 @@
 # encoding=utf-8
 
 import re
+import os
 import codecs
 from collections import OrderedDict
-from data_utilities.util import ja_to_xml
+from data_utilities.util import ja_to_xml, traverse_ja
+from sources import functions
 from sefaria.model import *
 
 
@@ -63,9 +65,79 @@ def sanity_check(parsed):
             if len(old.all_subrefs()) == len(new):
                 continue
             else:
-                print 'problem at {}'.format(old)
+                print 'problem at {}: Should be {}, found {}'.format(old, len(old.all_subrefs()), len(new))
 
-books = file_to_books()
-for book in library.get_indexes_in_category('Torah'):
-    books[book] = align_text(books[book], u'@\u05e4\u05e8\u05e7 [\u05d0-\u05ea]{1,2}', u'[0-9]{1,2}\.')
-sanity_check(books)
+
+def build_links(parsed_data):
+
+    link_bases = []
+
+    for book in library.get_indexes_in_category('Torah'):
+        for segment in traverse_ja(parsed_data[book]):
+            link_bases.append('{} {}:{}'.format(book, *[i+1 for i in segment['indices']]))
+
+    return [{
+        'refs': [base, 'Tafsir Rasag, {}'.format(base)],
+        'type': 'targum',
+        'auto': False,
+        'generated_by': 'Tafsir Rasag Parse script'
+    } for base in link_bases]
+
+
+def build_index():
+
+    root = SchemaNode()
+    root.add_title('Tafsir Rasag', 'en', primary=True)
+    root.add_title(u'תפסיר רס"ג', 'he', primary=True)
+    root.key = 'Tafsir Rasag'
+    root.add_title('Tafsir Torah', 'en')
+    root.add_title(u'תפסיר תורה', 'he')
+    root.add_title('Tafsir Rasag Arabic Translation to Torah', 'en')
+
+    intro_node = JaggedArrayNode()
+    intro_node.add_title('Introduction', 'en', primary=True)
+    intro_node.add_title(u'הקדמה', 'he', primary=True)
+    intro_node.key = 'Introduction'
+    intro_node.depth = 1
+    intro_node.addressTypes = ['Integer']
+    intro_node.sectionNames = ['Paragraph']
+    root.append(intro_node)
+
+    for book in library.get_indexes_in_category('Torah'):
+        book_node = JaggedArrayNode()
+        book_node.add_title(book, 'en', primary=True)
+        book_node.add_title(Ref(book).he_book(), 'he', primary=True)
+        book_node.key = book
+        book_node.depth = 2
+        book_node.addressTypes = ['Integer', 'Integer']
+        book_node.sectionNames = ['Chapter', 'Verse']
+        root.append(book_node)
+    root.validate()
+
+    return {
+        'title': 'Tafsir Rasag',
+        'categories': ['Tanakh', 'Targum'],
+        'schema': root.serialize()
+    }
+
+
+def post():
+    books = file_to_books()
+    for book in library.get_indexes_in_category('Torah'):
+        books[book] = align_text(books[book], u'@\u05e4\u05e8\u05e7 [\u05d0-\u05ea]{1,2}', u'[0-9]{1,2}\.')
+
+    functions.post_index(build_index())
+    node_names = ['Introduction'] + library.get_indexes_in_category('Torah')
+    for name in node_names:
+        version = {
+            'versionTitle': 'Tafsir al-Torah bi-al-Arabiya, Paris, 1893',
+            'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001863864',
+            'language': 'he',
+            'text': books[name]
+        }
+        functions.post_text('Tafsir Rasag, {}'.format(name), version)
+
+    functions.post_link(build_links(books))
+
+
+post()
