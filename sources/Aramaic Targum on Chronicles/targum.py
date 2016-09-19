@@ -118,7 +118,7 @@ def build_links(parsed):
 
     links = [{
         'refs': [base, 'Aramaic Targum to {}'.format(base)],
-        'type': 'commentary2',
+        'type': 'targum',
         'auto': False,
         'generated_by': 'Chronicles parse script'
     }for base in bases]
