@@ -2,11 +2,16 @@
 
 import re
 import codecs
-import os
 from data_utilities.util import get_cards_from_trello
 
 with open('../trello_board.json') as board:
     cards = [card.replace(' on', '') for card in get_cards_from_trello('Parse Rambam Talmud style', board)]
+"""
+To open files:
+for card in cards:
+    with codecs.open('{}.txt'.format(card), 'r', 'utf-8') as infile:
+        <code here>
+"""
 
 
 def check_header(lines):
@@ -48,7 +53,7 @@ def align_header(filename):
 
         if re.match(u'@11', previous_line):
             if re.search(u'@22', previous_line):
-                continue
+                pass
             else:
                 if re.search(u'@22', next_line):
                     previous_line = previous_line.replace(u'\n', u'')
@@ -60,12 +65,31 @@ def align_header(filename):
         previous_line = next_line
     else:
         new_lines.append(previous_line)
-    with codecs.open(filename, 'w', 'utf-8') as outfile:
+    with codecs.open(filename+'.tmp', 'w', 'utf-8') as outfile:
         outfile.writelines(new_lines)
 
-for card in cards:
-    with codecs.open('{}.txt'.format(card), 'r', 'utf-8') as infile:
-        data = infile.readlines()
-    r = check_header(data)
-    if not r:
-        print '{} is bad'.format(card)
+
+def format_reference(filename):
+    """
+    Ensure that each reference line contains an actual reference and that it is encapsulated inside parentheses. Calls
+    str.rstrip() on each line to remove trailing spaces.
+    DANGER: Will overwrite file!!!
+    :param filename: path to file
+    """
+
+    with codecs.open(filename, 'r', 'utf-8') as infile:
+        file_lines = [re.sub(u' +', u' ', line).replace(u' \n', u'\n') for line in infile]
+
+    fixed_lines = []
+    for line in file_lines:
+        if re.match(u'@11', line):
+            has_reference = re.search(u'@22', line)
+            assert has_reference is not None
+
+            ref = re.search(u'@22([\u05d0-\u05ea" ]+)$', line)
+            if ref is not None:
+                line = line.replace(ref.group(1), u'({})'.format(ref.group(1)))
+        fixed_lines.append(line)
+
+    with codecs.open(filename+'.tmp', 'w', 'utf-8') as outfile:
+        outfile.writelines(fixed_lines)
