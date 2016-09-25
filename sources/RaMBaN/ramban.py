@@ -25,7 +25,7 @@ from sefaria.model.schema import AddressTalmud
 
 def create_index(tractate):
     root=JaggedArrayNode()
-    heb_masechet = get_text_plus(tractate)['heBook']
+    heb_masechet = library.get_index(tractate).toc_contents()['heTitle']
     root.add_title(u"Chiddushei Ramban on "+tractate.replace("_"," "), "en", primary=True)
     root.add_title(u'חידושי רמב"ן על '+heb_masechet, "he", primary=True)
     root.key = 'ramban'
@@ -202,18 +202,19 @@ def post(text, dh_dict, tractate):
          "language": "he"
      }
      post_text("Chiddushei Ramban on "+tractate, send_text)
-     links_to_post = []
-     daf_array = get_text_plus(tractate)['he']
+     '''links_to_post = []
      match = Match(in_order=True, min_ratio=80, guess=False, range=True, can_expand=False)
      for daf in sorted(dh_dict.keys()):
          dh_list = dh_dict[daf]
-         results = match.match_list(dh_list, daf_array[daf-1], tractate+" "+AddressTalmud.toStr("en", daf))
+         daf_text = Ref(tractate+" "+AddressTalmud.toStr("en", daf)).text('he').text
+         results = match.match_list(dh_list, daf_text, tractate+" "+AddressTalmud.toStr("en", daf))
          for key, value in results.iteritems():
              value = value.replace("0:", "")
              talmud_end = tractate + "." + AddressTalmud.toStr("en", daf) + "." + value
              ramban_end = "Chiddushei_Ramban_on_" + tractate + "." + AddressTalmud.toStr("en", daf) + "." + str(key)
              links_to_post.append({'refs': [talmud_end, ramban_end], 'type': 'commentary', 'auto': 'True', 'generated_by': "ramban"+tractate})
      post_link(links_to_post)
+     '''
 
 
 if __name__ == "__main__":
@@ -222,19 +223,20 @@ if __name__ == "__main__":
     global dh_dict
     global errors
     errors = open("errors", 'w')
-    not_yet = False
-    only_these = ["bava_batra_complete.txt"]
-    until_this_one = "ketubot"
+    not_yet = True
+    until_this_one = "avodah_zarah"
     for file in glob.glob(u"*.txt"):
         errors.write(file+"\n")
-        if file.find("_complete") >= 0 and file in only_these:
+        if file.find("_complete") >= 0:
             tractate = file.replace("_complete.txt", "").replace("_", " ").title()
-            print tractate
-            #if not_yet and file.find(until_this_one) == -1:
-            #    continue
-            #else:
-            #    not_yet = False
+            print file
+            if not_yet and file.find(until_this_one) == -1:
+                continue
+            else:
+                not_yet = False
             if not_yet == False:
-               create_index(tractate)
+               #create_index(tractate)
+               print 'about to parse'
                text, dh_dict = parse(tractate, errors)
+               print 'about to post'
                post(text, dh_dict, tractate)

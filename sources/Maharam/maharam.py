@@ -10,6 +10,8 @@ from bs4 import BeautifulSoup
 import re
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
+sys.path.append(p+"/data_utilities")
+from data_utilities.dibur_hamatchil_matcher import *
 sys.path.insert(0, '../Match/')
 from match import Match
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
@@ -115,7 +117,7 @@ class Maharam:
             new_array = []
             for elem in array:
                 elem = elem.replace('בד"ה', '')
-                new_array.append(elem)
+                new_array.append(elem.decode('utf-8'))
         except:
             pdb.set_trace()
         return new_array
@@ -241,71 +243,53 @@ class Maharam:
             prev_line = line
 
 
+    def convertToOldFormat(self, arr):
+        try:
+          for index, item in enumerate(arr):
+            if item is None:
+                arr[index] = '0'
+            else:
+                arr[index] = str(arr[index])
+        except:
+          pdb.set_trace()
+
+        return arr
+
+
+
     def RashiOrTosafot(self, daf, category, rashi_in_order, tosafot_in_order):
         if category == 'rashi':
             self.maharam_line+=1
             self.rashi_line+=1
             title = 'Rashi on '+masechet
-            if rashi_in_order[self.rashi_line].find('-')>=0:
-                in_order, out_order = rashi_in_order[self.rashi_line].split('-')
-            else:
-                in_order = rashi_in_order[self.rashi_line]
-                out_order = in_order
-            replace_text = "Rashi on "
+            in_order = rashi_in_order[self.rashi_line]
+            if in_order == '0':
+                return
         elif category == 'tosafot':
             self.maharam_line+=1
             self.tosafot_line+=1
             title = 'Tosafot on '+masechet
-            if tosafot_in_order[self.tosafot_line].find('-')>=0:
-                print tosafot_in_order[self.tosafot_line]
-                in_order, out_order = tosafot_in_order[self.tosafot_line].split('-')
-            else:
-                in_order = tosafot_in_order[self.tosafot_line]
-                out_order = in_order
-            replace_text = "Tosafot on "
-        if category == 'rashi' or category == 'tosafot':
-            if in_order.find('0')>=0 or out_order.find('0')>=0:
+            in_order = tosafot_in_order[self.tosafot_line]
+            if in_order == '0':
                 return
-            in_order = int(in_order)
-            out_order = int(out_order)
-            if out_order != 0: #out_order only equals 0 if there really is no Tosafot or Rashi on the given daf
-                masechet_daf_line_start = lookForLineInCommentary(title, daf, in_order)
-                masechet_daf_line_end = lookForLineInCommentary(title, daf, out_order)
-                try:
-                    masechet_daf_line = Ref(masechet_daf_line_start).to(Ref(masechet_daf_line_end)).normal()
-                except:
-                    masechet_daf_line = masechet_daf_line_start
-                if len(masechet_daf_line)>0:
-                    self.links_to_post.append({
-                    "refs": [
-                                 masechet_daf_line,
-                                "Maharam on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line)
-                            ],
-                    "type": "commentary",
-                    "auto": True,
-                    "generated_by": "Maharam on "+masechet+" linker"})
+        self.links_to_post.append({
+                "refs": [
+                             in_order,
+                            "Maharam on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line)
+                        ],
+                "type": "commentary",
+                "auto": True,
+                "generated_by": "Maharam on "+masechet+" linker"})
 
 
     def Gemara(self, daf, gemara_in_order):
         self.maharam_line+=1
         self.gemara_line+=1
-        if gemara_in_order[self.gemara_line].find('0') >= 0:
+        if gemara_in_order[self.gemara_line] == '0':
             return
-        gemara_in_order[self.gemara_line] = gemara_in_order[self.gemara_line]
-        if gemara_in_order[self.gemara_line].find('-')>=0:
-            in_order, out_order = gemara_in_order[self.gemara_line].split('-')
-        else:
-            in_order = gemara_in_order[self.gemara_line]
-            out_order = in_order
-        masechet_daf_line_start = masechet+" "+AddressTalmud.toStr("en", daf)+":"+in_order
-        masechet_daf_line_end = masechet+" "+AddressTalmud.toStr("en", daf)+":"+out_order
-        try:
-            masechet_daf_line = Ref(masechet_daf_line_start).to(Ref(masechet_daf_line_end)).normal()
-        except:
-            masechet_daf_line = masechet_daf_line_start
         self.links_to_post.append({
             "refs": [
-                     masechet_daf_line,
+                     gemara_in_order[self.gemara_line],
                     "Maharam on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line)
                 ],
             "type": "commentary",
@@ -313,6 +297,7 @@ class Maharam:
             "generated_by": "Maharam on "+masechet+" linker",
          })
 
+    '''
 
     def Mishnah(self, daf, mishnah_in_order):
         self.maharam_line+=1
@@ -346,39 +331,52 @@ class Maharam:
                         "auto": True,
                         "generated_by": "Maharam on "+masechet+" linker",
                     })
+    '''
 
     def postLinks(self, match_in_order):
+        def base_tokenizer(str):
+            return str.split(" ")
+            '''
+            str = re.sub(ur"\([^\(\)]+\)", u"", str)
+            word_list = re.split(ur"\s+", str)
+            word_list = [w for w in word_list if w]  # remove empty strings
+            return word_list
+            '''
+
         mishnah_in_order = {}
         mishnah_out_order = {}
+        '''
         for perek in self.mishnah1_dict:
             print "matching mishnah"
-            mishnah_text = Ref("Mishnah "+masechet+"."+str(perek)).text('he').text
-            mishnah_in_order[perek] = match_in_order.match_list(self.removeBDH(self.mishnah1_dict[perek]), mishnah_text, "Mishnah "+masechet+"."+str(perek))
-            mishnah_in_order[perek] = dibur_hamatchil_matcher.match_ref(mishnah_text,
-
-
+            mishnah_text = Ref("Mishnah "+masechet+"."+str(perek)).text('he')
+            mishnah_in_order[perek] = match_ref(mishnah_text, self.removeBDH(self.mishnah1_dict[perek]), lambda x: x)
+            mishnah_in_order[perek] = self.convertNoneTo0(mishnah_in_order[perek])
+        '''
         links_to_post = []
         for daf in sorted(self.dh1_dict.keys()):
             print daf
             self.maharam_line = 0
-            self.rashi_line=0
-            self.tosafot_line = 0
-            self.gemara_line = 0
+            self.rashi_line = -1
+            self.tosafot_line = -1
+            self.gemara_line = -1
             mishnah_line = 0
             tosafot1_arr = self.tosafot1_dict[daf]
             rashi1_arr = self.rashi1_dict[daf]
             gemara1_arr = self.gemara1_dict[daf]
             print "matching tosafot"+str(len(tosafot1_arr))
             #tosafot_text = compileCommentaryIntoPage("Tosafot on "+masechet, daf)
-            tosafot_text =
-            tosafot_in_order = match_in_order.match_list(self.removeBDH(tosafot1_arr), tosafot_text, "Tosafot on "+masechet+" "+AddressTalmud.toStr("en", daf))
+            tosafot_text = Ref("Tosafot on "+masechet+"."+AddressTalmud.toStr("en", daf)).text('he')
+            tosafot_in_order = match_ref(tosafot_text, self.removeBDH(tosafot1_arr), lambda x: x)
+            tosafot_in_order = self.convertToOldFormat(tosafot_in_order)
             if not (masechet == "Bava Batra" and daf > 57):
                 print "matching rashi"+str(len(rashi1_arr))
-                rashi_text = compileCommentaryIntoPage("Rashi on "+masechet, daf)
-                rashi_in_order = match_in_order.match_list(self.removeBDH(rashi1_arr), rashi_text, "Rashi on "+masechet+" "+AddressTalmud.toStr("en", daf))
+                rashi_text = Ref("Rashi on "+masechet+"."+AddressTalmud.toStr("en", daf)).text('he')
+                rashi_in_order = match_ref(rashi_text, self.removeBDH(rashi1_arr), lambda x: x)
+                rashi_in_order = self.convertToOldFormat(rashi_in_order)
             print "matching gemara"+str(len(gemara1_arr))
-            gemara_text = Ref(masechet+" "+AddressTalmud.toStr("en", daf)).text('he').text
-            gemara_in_order = match_in_order.match_list(self.removeBDH(gemara1_arr), gemara_text, masechet+" "+AddressTalmud.toStr("en", daf))
+            gemara_text = Ref(masechet+" "+AddressTalmud.toStr("en", daf)).text('he')
+            gemara_in_order = match_ref(gemara_text, self.removeBDH(gemara1_arr), lambda x: x)
+            gemara_in_order = self.convertToOldFormat(gemara_in_order)
             dh1_arr = self.dh1_dict[daf]
             print "done matching"
             for category, dh in self.dh1_dict[daf]:
@@ -387,8 +385,8 @@ class Maharam:
                     self.RashiOrTosafot(daf, category, rashi_in_order, tosafot_in_order)
                 elif category == 'gemara':
                     self.Gemara(daf, gemara_in_order)
-                elif category == "mishnah":
-                    self.Mishnah(daf, mishnah_in_order)
+                #elif category == "mishnah":
+                #    self.Mishnah(daf, mishnah_in_order)
                 elif category == 'paragraph' and self.maharam_line == 0:
                     self.maharam_line+=1
         post_link(self.links_to_post)

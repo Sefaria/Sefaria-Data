@@ -11,9 +11,14 @@ p = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, p)
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
+
+sys.path.insert(0, p)
+sys.path.append('../../data_utilites')
+os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
+
+import data_utilities.util
 sys.path.insert(0, '../Match/')
 from match import Match
-os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 from data_utilities import util, sanity_checks
 from data_utilities.sanity_checks import TagTester
 from functions import *
@@ -93,11 +98,15 @@ def parse(file):
     text = {}
     dhs = {}
     current_daf = 0
-    for line in file:
+    for line in open(file):
         line = line.replace('\n', '')
+        if line.find("@22") >= 0:
+            end = len(line) if line.find("@11") == -1 else line.find("@11")
+            current_daf = dealWithDaf(line[:end], current_daf)
+            text[current_daf] = []
         if line.find("@11") >= 0:
             line = line.replace("@11", "").replace("@33", "")
-            dh, comment, found_dh = getDHComment(line)
+            dh, comment, found_dh = getDHComment(line, file)
             comment, found_img = getBase64(comment)
             if current_daf in dhs:
                 dhs[current_daf].append(dh)
@@ -114,16 +123,20 @@ def parse(file):
             if found_img == False:
                 line = removeAllStrings(line)
             text[current_daf].append(line)
-        elif line.find("@22") >= 0:
-            current_daf = dealWithDaf(line, current_daf)
-            text[current_daf] = []
         elif line.find("@00") >= 0:
             header = line.replace("@00", "")
     return text, dhs
 
 
 
-def getDHComment(each_line):
+def getDHComment(each_line, file):
+    if file.find("makkot") >= 0:
+        if each_line.find(".") > 0:
+            dh, comment = each_line.split(".", 1)
+            return dh, comment, True
+        else:
+            first_10, rest = splitText(each_line, 10)
+            return first_10, rest, False
     found = True
     words = ["פירוש", "כו'", "פי'", "פירש", "פרוש", "פירשו", "ופירש", "ופרשו", 'פרש"י', "."]
     first_10, rest = splitText(each_line, 10)
@@ -176,16 +189,19 @@ if __name__ == "__main__":
     versionTitle['Rosh Hashanah'] = 'Chiddushei HaRitva, Königsberg, 1858.'
     versionTitle['Taanit'] = 'Chidushi HaRitva, Amsterdam, 1729.'
     versionTitle['Niddah'] = 'Hidushe ha-Ritba al Nidah; Wien 1868.'
-    files = ["Eruvin", "Sukkah", "Berakhot", "Moed Katan", "Yoma", "Megillah", "Rosh Hashanah", "Taanit", "Niddah"]
+    versionTitle['Makkot'] = 'Hamisha Shitot, Sulzbach 1761. Published by Meshulam Zalman'
+    versionTitle['Avodah Zarah'] = "Orian Tlita'i, Salonika, 1758."
+    files = ["Avodah Zarah", "Makkot", "Eruvin", "Sukkah", "Berakhot", "Moed Katan", "Yoma", "Megillah", "Rosh Hashanah", "Taanit", "Niddah"]
     not_yet = True
-    until_this_one = "Eruvin"
+    until_this_one = "Megillah"
     for file in files:
         if file == until_this_one:
             not_yet = False
         if not_yet:
             continue
         createIndex(file)
-        text, dhs = parse(open(file+".txt"))
+        print file
+        text, dhs = parse(file+".txt")
         text_array = convertDictToArray(text)
         send_text = {
         "text": text_array,
