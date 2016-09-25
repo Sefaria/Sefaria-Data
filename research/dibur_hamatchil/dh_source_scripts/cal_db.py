@@ -166,8 +166,8 @@ def match_cal_segments(mesechta):
             abbrev_count = 0
             for ar in abbrev_ranges:
                 abbrev_count += len(ar)
-            if abbrev_count > 0:
-                print "GRESATLJL THNA DZEOR", abbrev_ranges
+            #if abbrev_count > 0:
+            #    print "GRESATLJL THNA DZEOR", abbrev_ranges
             for iline,se in enumerate(start_end_map):
 
                 curr_cal_line = lines[iline]
@@ -191,7 +191,7 @@ def match_cal_segments(mesechta):
                     continue
                 # matched_cal_objs_indexes = language_tools.match_segments_without_order(lines[iline],bas_word_list[se[0]:se[1]+1],2.0)
                 curr_bas_line = bas_word_list[se[0]:se[1]+1]
-                print u'base line',u' '.join(curr_bas_line)
+                #print u'base line',u' '.join(curr_bas_line)
                 matched_words_base = dibur_hamatchil_matcher.match_text(curr_bas_line, curr_cal_line, char_threshold=0.4,verbose=False)
                 word_for_word_se += [(tse[0]+se[0],tse[1]+se[0]) if tse[0] != -1 else tse for tse in matched_words_base]
 
