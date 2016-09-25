@@ -5,18 +5,6 @@
             "word": "דאית"
         }, 
         {
-            "index": 20, 
-            "word": "אתי\""
-        }, 
-        {
-            "index": 36, 
-            "word": "האי"
-        }, 
-        {
-            "index": 37, 
-            "word": "נמי"
-        }, 
-        {
             "index": 42, 
             "word": "ההוא"
         }, 
@@ -148,7 +136,7 @@
             "daf": "132a", 
             "word": "רחמנא", 
             "line_num": 4, 
-            "cal_word": "רחמנ\"", 
+            "cal_word": "רחמנ", 
             "POS": "N02", 
             "class": "talmud", 
             "pg_num": 132, 
@@ -698,7 +686,7 @@
             "daf": "132a", 
             "word": "דכתיב", 
             "line_num": 19, 
-            "cal_word": "דכתי\"", 
+            "cal_word": "דכתי", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 132, 
@@ -901,8 +889,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אתי", 
+            "word_num": 6, 
+            "daf": "132a", 
             "word": "אות", 
-            "class": "unknown"
+            "line_num": 21, 
+            "cal_word": "אתי", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 132, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "ברית", 
@@ -1122,7 +1120,7 @@
             "daf": "132a", 
             "word": "דכתיב", 
             "line_num": 28, 
-            "cal_word": "דכתי\"", 
+            "cal_word": "דכתי", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 132, 
@@ -1230,10 +1228,10 @@
         }, 
         {
             "head_word": "ל_", 
-            "word_num": 1, 
+            "word_num": 2, 
             "daf": "132a", 
             "word": "ליה", 
-            "line_num": 30, 
+            "line_num": 29, 
             "cal_word": "ליה", 
             "POS": "p", 
             "class": "talmud", 
@@ -1255,20 +1253,50 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "האי", 
+            "word_num": 6, 
+            "daf": "132a", 
             "word": "האי", 
-            "class": "unknown"
+            "line_num": 29, 
+            "cal_word": "האי", 
+            "POS": "P01", 
+            "class": "talmud", 
+            "pg_num": 132, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
+            "head_word": "נמי", 
+            "word_num": 7, 
+            "daf": "132a", 
             "word": "נמי", 
-            "class": "unknown"
+            "line_num": 29, 
+            "cal_word": "נמי", 
+            "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 132, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "מיבעי", 
             "class": "unknown"
         }, 
         {
+            "head_word": "ל_", 
+            "word_num": 1, 
+            "daf": "132a", 
             "word": "ליה", 
-            "class": "unknown"
+            "line_num": 30, 
+            "cal_word": "ליה", 
+            "POS": "p", 
+            "class": "talmud", 
+            "pg_num": 132, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "ביום", 
@@ -1462,7 +1490,7 @@
             "daf": "132a", 
             "word": "רחמנא", 
             "line_num": 33, 
-            "cal_word": "רחמנ\"", 
+            "cal_word": "רחמנ", 
             "POS": "N02", 
             "class": "talmud", 
             "pg_num": 132, 
@@ -2082,7 +2110,7 @@
             "daf": "132a", 
             "word": "כדרבי", 
             "line_num": 42, 
-            "cal_word": "כדר\"", 
+            "cal_word": "כדר", 
             "POS": "p", 
             "class": "talmud", 
             "pg_num": 132, 
@@ -2392,7 +2420,7 @@
             "daf": "132a", 
             "word": "קא", 
             "line_num": 46, 
-            "cal_word": "קאמ\"", 
+            "cal_word": "קאמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 132, 

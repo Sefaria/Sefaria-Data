@@ -5,8 +5,28 @@
             "word": "פרענא"
         }, 
         {
-            "index": 29, 
-            "word": "עפיץ"
+            "index": 32, 
+            "word": "וכמה"
+        }, 
+        {
+            "index": 33, 
+            "word": "ריבעא"
+        }, 
+        {
+            "index": 34, 
+            "word": "דריבעא"
+        }, 
+        {
+            "index": 35, 
+            "word": "דפומבדיתא"
+        }, 
+        {
+            "index": 36, 
+            "word": "דמליח"
+        }, 
+        {
+            "index": 37, 
+            "word": "ולא"
         }
     ], 
     "words": [
@@ -1514,7 +1534,7 @@
         }, 
         {
             "head_word": "לא", 
-            "word_num": 6, 
+            "word_num": 4, 
             "daf": "79a", 
             "word": "ודלא", 
             "line_num": 34, 
@@ -1533,12 +1553,20 @@
             "side": 1
         }, 
         {
-            "head_word": "קמח", 
-            "word_num": 7, 
-            "daf": "79a", 
             "word": "קמיח", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "ודלא", 
+            "class": "unknown"
+        }, 
+        {
+            "head_word": "אפצ", 
+            "word_num": 5, 
+            "daf": "79a", 
+            "word": "עפיץ", 
             "line_num": 34, 
-            "cal_word": "קמיח", 
+            "cal_word": "עפיץ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 79, 
@@ -1547,32 +1575,8 @@
             "side": 1
         }, 
         {
-            "word": "ודלא", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "עפיץ", 
-            "class": "unknown"
-        }, 
-        {
-            "head_word": "כמה ד_", 
-            "word_num": 0, 
-            "daf": "79a", 
             "word": "וכמה", 
-            "line_num": 35, 
-            "cal_word": "וכמה", 
-            "POS": "c", 
-            "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
-            "pg_num": 79, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "שיעורו", 
@@ -1635,83 +1639,31 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ריבעא", 
-            "word_num": 2, 
-            "daf": "79a", 
             "word": "ריבעא", 
-            "line_num": 35, 
-            "cal_word": "ריבעא", 
-            "POS": "n01", 
-            "class": "talmud", 
-            "pg_num": 79, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
-            "head_word": "ריבעא", 
-            "word_num": 3, 
-            "daf": "79a", 
             "word": "דריבעא", 
-            "line_num": 35, 
-            "cal_word": "דריבעא", 
-            "POS": "n01", 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 79, 
-            "prefix_POS": [
-                "p"
-            ], 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
-            "head_word": "ד_", 
-            "word_num": 0, 
-            "daf": "79a", 
             "word": "דפומבדיתא", 
-            "line_num": 36, 
-            "cal_word": "דפומבדיתא", 
-            "POS": "p", 
-            "class": "talmud", 
-            "pg_num": 79, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "חיפה", 
             "class": "unknown"
         }, 
         {
-            "head_word": "מלח", 
-            "word_num": 2, 
-            "daf": "79a", 
             "word": "דמליח", 
-            "line_num": 36, 
-            "cal_word": "דמליח", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 79, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "לא", 
-            "word_num": 3, 
+            "word_num": 6, 
             "daf": "79a", 
             "word": "ולא", 
-            "line_num": 36, 
+            "line_num": 34, 
             "cal_word": "ולא", 
             "POS": "a", 
             "class": "talmud", 

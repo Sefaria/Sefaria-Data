@@ -5,16 +5,8 @@
             "word": "לא"
         }, 
         {
-            "index": 5, 
-            "word": "דאכל"
-        }, 
-        {
             "index": 47, 
             "word": "ן"
-        }, 
-        {
-            "index": 56, 
-            "word": "דאמ\""
         }, 
         {
             "index": 61, 
@@ -26,7 +18,7 @@
         }, 
         {
             "index": 74, 
-            "word": "אפי\""
+            "word": "אפי"
         }, 
         {
             "index": 75, 
@@ -490,7 +482,7 @@
             "daf": "118a", 
             "word": "מתני\"", 
             "line_num": 7, 
-            "cal_word": "מתני\"", 
+            "cal_word": "מתני", 
             "POS": "N02", 
             "class": "talmud", 
             "pg_num": 118, 
@@ -524,7 +516,7 @@
             "daf": "118a", 
             "word": "כרבי", 
             "line_num": 8, 
-            "cal_word": "כר\"", 
+            "cal_word": "כר", 
             "POS": "p02", 
             "class": "talmud", 
             "pg_num": 118, 
@@ -816,7 +808,7 @@
             "daf": "118a", 
             "word": "דאמרינן", 
             "line_num": 13, 
-            "cal_word": "דאמרי\"", 
+            "cal_word": "דאמרי", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [
@@ -1016,7 +1008,7 @@
             "daf": "118a", 
             "word": "אפי\"", 
             "line_num": 15, 
-            "cal_word": "אפי\"", 
+            "cal_word": "אפי", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 118, 
@@ -1047,8 +1039,24 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אמר", 
+            "word_num": 6, 
+            "daf": "118a", 
             "word": "דאמרינן", 
-            "class": "unknown"
+            "line_num": 15, 
+            "cal_word": "דאמ", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
+            "pg_num": 118, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "head_word": "ל_", 
@@ -1222,7 +1230,7 @@
             "daf": "118a", 
             "word": "מותבינן", 
             "line_num": 18, 
-            "cal_word": "מותבי\"", 
+            "cal_word": "מותבי", 
             "POS": "V03", 
             "class": "talmud", 
             "pg_num": 118, 
@@ -1536,7 +1544,7 @@
             "daf": "118a", 
             "word": "דאמרינן", 
             "line_num": 25, 
-            "cal_word": "דאמרי\"", 
+            "cal_word": "דאמרי", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [

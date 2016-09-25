@@ -53,8 +53,8 @@
             "word": "ארבע"
         }, 
         {
-            "index": 60, 
-            "word": "סכנתא"
+            "index": 59, 
+            "word": "חולשא"
         }, 
         {
             "index": 70, 
@@ -603,10 +603,24 @@
             "side": 2
         }, 
         {
+            "head_word": "חד בשבא", 
+            "word_num": 2, 
+            "daf": "129b", 
+            "word": "חד", 
+            "line_num": 9, 
+            "cal_word": "חד בשבא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "pg_num": 129, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
+        }, 
+        {
             "head_word": "ארבעא בשבא", 
             "word_num": 3, 
             "daf": "129b", 
-            "word": "חד", 
+            "word": "בשבתא", 
             "line_num": 9, 
             "cal_word": "ובארבעא בשבא", 
             "POS": "N02", 
@@ -618,20 +632,6 @@
             "prefix_POS": [
                 "c"
             ], 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 2
-        }, 
-        {
-            "head_word": "חד בשבא", 
-            "word_num": 2, 
-            "daf": "129b", 
-            "word": "בשבתא", 
-            "line_num": 9, 
-            "cal_word": "חד בשבא", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "pg_num": 129, 
             "ms": "01", 
             "book_num": 71002, 
             "side": 2
@@ -806,7 +806,7 @@
             "daf": "129b", 
             "word": "טעמא", 
             "line_num": 13, 
-            "cal_word": "טעמ\"", 
+            "cal_word": "טעמ", 
             "POS": "N02", 
             "class": "talmud", 
             "pg_num": 129, 
@@ -848,7 +848,7 @@
             "daf": "129b", 
             "word": "דקיימא", 
             "line_num": 14, 
-            "cal_word": "דקיימ\"", 
+            "cal_word": "דקיימ", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [
@@ -922,7 +922,7 @@
             "daf": "129b", 
             "word": "קיימא", 
             "line_num": 15, 
-            "cal_word": "קיימ\"", 
+            "cal_word": "קיימ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 129, 
@@ -1188,10 +1188,10 @@
         }, 
         {
             "head_word": "סכנתא", 
-            "word_num": 3, 
+            "word_num": 2, 
             "daf": "129b", 
             "word": "סכנתא", 
-            "line_num": 18, 
+            "line_num": 19, 
             "cal_word": "סכנתא", 
             "POS": "N02", 
             "class": "talmud", 
@@ -1213,18 +1213,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "חולשא", 
-            "word_num": 0, 
-            "daf": "129b", 
             "word": "חולשא", 
-            "line_num": 19, 
-            "cal_word": "חולשא", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "pg_num": 129, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "שלישי", 

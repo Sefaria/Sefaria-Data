@@ -29,10 +29,6 @@
             "word": "אלא"
         }, 
         {
-            "index": 54, 
-            "word": "דמעיקרא"
-        }, 
-        {
             "index": 55, 
             "word": "לאו"
         }, 
@@ -65,8 +61,16 @@
             "word": "לר"
         }, 
         {
+            "index": 65, 
+            "word": "פטר"
+        }, 
+        {
             "index": 66, 
             "word": "לא"
+        }, 
+        {
+            "index": 67, 
+            "word": "פטר"
         }, 
         {
             "index": 68, 
@@ -83,6 +87,10 @@
         {
             "index": 88, 
             "word": "דמי"
+        }, 
+        {
+            "index": 90, 
+            "word": "ותו"
         }, 
         {
             "index": 93, 
@@ -1442,10 +1450,10 @@
         }, 
         {
             "head_word": "פטר", 
-            "word_num": 8, 
+            "word_num": 3, 
             "daf": "26a", 
             "word": "פטר", 
-            "line_num": 29, 
+            "line_num": 28, 
             "cal_word": "פטר", 
             "POS": "V01", 
             "class": "talmud", 
@@ -2077,25 +2085,15 @@
             "side": 1
         }, 
         {
-            "head_word": "עלמ", 
-            "word_num": 0, 
+            "head_word": "ההיא", 
+            "word_num": 2, 
             "daf": "26a", 
             "word": "ההיא", 
-            "line_num": 45, 
-            "cal_word": "ודכולי עלמ", 
-            "POS": "N02", 
+            "line_num": 44, 
+            "cal_word": "ההיא", 
+            "POS": "P01", 
             "class": "talmud", 
-            "prefix": [
-                "ו_", 
-                "ד_", 
-                "כל"
-            ], 
             "pg_num": 26, 
-            "prefix_POS": [
-                "c", 
-                "p", 
-                "N04"
-            ], 
             "ms": "01", 
             "book_num": 71001, 
             "side": 1
@@ -2153,24 +2151,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "תו", 
-            "word_num": 3, 
-            "daf": "26a", 
             "word": "ותו", 
-            "line_num": 45, 
-            "cal_word": "ותו", 
-            "POS": "a", 
-            "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
-            "pg_num": 26, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "book_num": 71001, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "לא", 

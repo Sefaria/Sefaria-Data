@@ -415,7 +415,7 @@
             "daf": "133a", 
             "word": "סברא", 
             "line_num": 10, 
-            "cal_word": "סבר\"", 
+            "cal_word": "סבר", 
             "POS": "N02", 
             "class": "talmud", 
             "pg_num": 133, 
@@ -1204,10 +1204,32 @@
             "side": 1
         }, 
         {
+            "head_word": "ידי", 
+            "word_num": 1, 
+            "daf": "133a", 
+            "word": "מודה", 
+            "line_num": 24, 
+            "cal_word": "מודה", 
+            "POS": "V03", 
+            "class": "talmud", 
+            "pg_num": 133, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
+        }, 
+        {
+            "word": "ר\"", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "שמעון", 
+            "class": "unknown"
+        }, 
+        {
             "head_word": "פסיק רישא", 
             "word_num": 4, 
             "daf": "133a", 
-            "word": "מודה", 
+            "word": "בפסיק", 
             "line_num": 24, 
             "cal_word": "בדפסיק רישיה", 
             "POS": "N02", 
@@ -1224,20 +1246,24 @@
             "side": 1
         }, 
         {
-            "word": "ר\"", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "שמעון", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "בפסיק", 
-            "class": "unknown"
-        }, 
-        {
+            "head_word": "פסיק רישא", 
+            "word_num": 4, 
+            "daf": "133a", 
             "word": "רישיה", 
-            "class": "unknown"
+            "line_num": 24, 
+            "cal_word": "בדפסיק רישיה", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "prefix": [
+                "בד_"
+            ], 
+            "pg_num": 133, 
+            "prefix_POS": [
+                "p"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "head_word": "לא", 
@@ -1369,7 +1395,7 @@
             "daf": "133a", 
             "word": "דרבי", 
             "line_num": 25, 
-            "cal_word": "דר\"", 
+            "cal_word": "דר", 
             "POS": "p", 
             "class": "talmud", 
             "pg_num": 133, 

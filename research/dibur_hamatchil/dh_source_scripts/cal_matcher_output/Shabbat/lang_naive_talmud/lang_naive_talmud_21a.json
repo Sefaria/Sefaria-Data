@@ -1,14 +1,6 @@
 {
     "missed_words": [
         {
-            "index": 3, 
-            "word": "משחא"
-        }, 
-        {
-            "index": 4, 
-            "word": "דקאזא"
-        }, 
-        {
             "index": 16, 
             "word": "חנואן"
         }, 
@@ -327,27 +319,17 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 0, 
-            "daf": "21a", 
             "word": "אמר", 
-            "line_num": 11, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 21, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 0, 
+            "head_word": "מישחא", 
+            "word_num": 2, 
             "daf": "21a", 
             "word": "משחא", 
-            "line_num": 11, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
+            "line_num": 10, 
+            "cal_word": "משחא", 
+            "POS": "N02", 
             "class": "talmud", 
             "pg_num": 21, 
             "ms": "01", 
@@ -355,8 +337,24 @@
             "side": 1
         }, 
         {
+            "head_word": "קאזא", 
+            "word_num": 3, 
+            "daf": "21a", 
             "word": "דקאזא", 
-            "class": "unknown"
+            "line_num": 10, 
+            "cal_word": "דקאזא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
+            "pg_num": 21, 
+            "prefix_POS": [
+                "p"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "ריש", 
@@ -367,8 +365,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אמר", 
+            "word_num": 5, 
+            "daf": "21a", 
             "word": "אמר", 
-            "class": "unknown"
+            "line_num": 10, 
+            "cal_word": "אמ", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 21, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "קיקיון", 
@@ -379,8 +387,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אמר", 
+            "word_num": 0, 
+            "daf": "21a", 
             "word": "אמר", 
-            "class": "unknown"
+            "line_num": 11, 
+            "cal_word": "אמ", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 21, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "רבה", 
@@ -1266,7 +1284,7 @@
             "daf": "21a", 
             "word": "מ\"ט", 
             "line_num": 31, 
-            "cal_word": "מאי טעמ\"", 
+            "cal_word": "מאי טעמ", 
             "POS": "P01", 
             "class": "talmud", 
             "pg_num": 21, 
@@ -2120,7 +2138,7 @@
             "daf": "21a", 
             "word": "אמר", 
             "line_num": 45, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 21, 

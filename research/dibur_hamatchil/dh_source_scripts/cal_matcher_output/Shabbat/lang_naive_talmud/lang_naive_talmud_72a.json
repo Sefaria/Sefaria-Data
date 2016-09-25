@@ -367,15 +367,21 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ו_", 
-            "word_num": 3, 
+            "head_word": "פלג", 
+            "word_num": 0, 
             "daf": "72a", 
             "word": "ופליגי", 
             "line_num": 11, 
-            "cal_word": "וריש לקיש", 
-            "POS": "c", 
+            "cal_word": "ופליגי", 
+            "POS": "V01", 
             "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
             "pg_num": 72, 
+            "prefix_POS": [
+                "c"
+            ], 
             "ms": "01", 
             "book_num": 71002, 
             "side": 1
@@ -401,8 +407,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "ו_", 
+            "word_num": 3, 
+            "daf": "72a", 
             "word": "לקיש", 
-            "class": "unknown"
+            "line_num": 11, 
+            "cal_word": "וריש לקיש", 
+            "POS": "c", 
+            "class": "talmud", 
+            "pg_num": 72, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "head_word": "שתק", 
@@ -658,7 +674,7 @@
             "daf": "72a", 
             "word": "דרבי", 
             "line_num": 21, 
-            "cal_word": "דר\"", 
+            "cal_word": "דר", 
             "POS": "p", 
             "class": "talmud", 
             "pg_num": 72, 

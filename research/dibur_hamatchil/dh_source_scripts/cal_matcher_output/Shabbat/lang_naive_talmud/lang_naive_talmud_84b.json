@@ -1,12 +1,16 @@
 {
     "missed_words": [
         {
-            "index": 6, 
-            "word": "אמ\""
+            "index": 5, 
+            "word": "אמ"
         }, 
         {
-            "index": 7, 
+            "index": 6, 
             "word": "ליה"
+        }, 
+        {
+            "index": 19, 
+            "word": "עסיקי"
         }
     ], 
     "words": [
@@ -19,18 +23,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 0, 
-            "daf": "84b", 
             "word": "ומה", 
-            "line_num": 5, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 84, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "פכין", 
@@ -101,18 +95,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 1, 
-            "daf": "84b", 
             "word": "ליה", 
-            "line_num": 5, 
-            "cal_word": "ליה", 
-            "POS": "p", 
-            "class": "talmud", 
-            "pg_num": 84, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "טהרה", 
@@ -155,8 +139,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אמר ל_", 
+            "word_num": 0, 
+            "daf": "84b", 
             "word": "א\"ל", 
-            "class": "unknown"
+            "line_num": 5, 
+            "cal_word": "אמ ליה", 
+            "POS": "p", 
+            "class": "talmud", 
+            "pg_num": 84, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "head_word": "רחמנא", 
@@ -234,7 +228,7 @@
             "daf": "84b", 
             "word": "רחמנא", 
             "line_num": 6, 
-            "cal_word": "רחמ\"", 
+            "cal_word": "רחמ", 
             "POS": "N02", 
             "class": "talmud", 
             "pg_num": 84, 
@@ -296,7 +290,7 @@
             "daf": "84b", 
             "word": "וטעמא", 
             "line_num": 6, 
-            "cal_word": "וטעמ\"", 
+            "cal_word": "וטעמ", 
             "POS": "N02", 
             "class": "talmud", 
             "prefix": [
@@ -591,18 +585,8 @@
             "side": 2
         }, 
         {
-            "head_word": "עסק", 
-            "word_num": 0, 
-            "daf": "84b", 
             "word": "עסקינן", 
-            "line_num": 14, 
-            "cal_word": "עסיקי\"", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 84, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "יחד", 
@@ -638,7 +622,7 @@
             "daf": "84b", 
             "word": "וקאמר", 
             "line_num": 14, 
-            "cal_word": "וקאמ\"", 
+            "cal_word": "וקאמ", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [

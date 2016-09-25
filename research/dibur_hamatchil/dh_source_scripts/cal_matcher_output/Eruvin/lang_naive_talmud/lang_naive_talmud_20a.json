@@ -1,8 +1,8 @@
 {
     "missed_words": [
         {
-            "index": 17, 
-            "word": "דהדרי"
+            "index": 18, 
+            "word": "ערבי"
         }, 
         {
             "index": 20, 
@@ -19,6 +19,10 @@
         {
             "index": 31, 
             "word": "מיבעיא"
+        }, 
+        {
+            "index": 38, 
+            "word": "דרב"
         }, 
         {
             "index": 45, 
@@ -51,10 +55,6 @@
         {
             "index": 64, 
             "word": "בה"
-        }, 
-        {
-            "index": 73, 
-            "word": "קמ\"ל"
         }, 
         {
             "index": 77, 
@@ -569,13 +569,13 @@
             "side": 1
         }, 
         {
-            "head_word": "ערב", 
-            "word_num": 1, 
+            "head_word": "רב", 
+            "word_num": 5, 
             "daf": "20a", 
             "word": "רב", 
-            "line_num": 13, 
-            "cal_word": "ערבי", 
-            "POS": "V01", 
+            "line_num": 12, 
+            "cal_word": "רב", 
+            "POS": "N02", 
             "class": "talmud", 
             "pg_num": 20, 
             "ms": "01", 
@@ -601,8 +601,24 @@
             "side": 1
         }, 
         {
+            "head_word": "הדר", 
+            "word_num": 0, 
+            "daf": "20a", 
             "word": "דהדרן", 
-            "class": "unknown"
+            "line_num": 13, 
+            "cal_word": "דהדרי", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
+            "pg_num": 20, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71003, 
+            "side": 1
         }, 
         {
             "word": "וערבן", 
@@ -1064,44 +1080,6 @@
         }, 
         {
             "head_word": "אמר", 
-            "word_num": 1, 
-            "daf": "20a", 
-            "word": "איתמר", 
-            "line_num": 23, 
-            "cal_word": "איתמ", 
-            "POS": "V04", 
-            "class": "talmud", 
-            "pg_num": 20, 
-            "ms": "01", 
-            "book_num": 71003, 
-            "side": 1
-        }, 
-        {
-            "head_word": "רב", 
-            "word_num": 0, 
-            "daf": "20a", 
-            "word": "דר\"נ", 
-            "line_num": 24, 
-            "cal_word": "דרב", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 20, 
-            "prefix_POS": [
-                "p"
-            ], 
-            "ms": "01", 
-            "book_num": 71003, 
-            "side": 1
-        }, 
-        {
-            "word": "אמזיד", 
-            "class": "unknown"
-        }, 
-        {
-            "head_word": "אמר", 
             "word_num": 3, 
             "daf": "20a", 
             "word": "איתמר", 
@@ -1113,6 +1091,18 @@
             "ms": "01", 
             "book_num": 71003, 
             "side": 1
+        }, 
+        {
+            "word": "דר\"נ", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "אמזיד", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "איתמר", 
+            "class": "unknown"
         }, 
         {
             "word": "אמר", 
@@ -1761,16 +1751,46 @@
             "side": 1
         }, 
         {
+            "head_word": "שמע", 
+            "word_num": 7, 
+            "daf": "20a", 
             "word": "קא", 
-            "class": "unknown"
+            "line_num": 36, 
+            "cal_word": "קמ\"ל", 
+            "POS": "V03", 
+            "class": "talmud", 
+            "pg_num": 20, 
+            "ms": "01", 
+            "book_num": 71003, 
+            "side": 1
         }, 
         {
+            "head_word": "שמע", 
+            "word_num": 7, 
+            "daf": "20a", 
             "word": "משמע", 
-            "class": "unknown"
+            "line_num": 36, 
+            "cal_word": "קמ\"ל", 
+            "POS": "V03", 
+            "class": "talmud", 
+            "pg_num": 20, 
+            "ms": "01", 
+            "book_num": 71003, 
+            "side": 1
         }, 
         {
+            "head_word": "שמע", 
+            "word_num": 7, 
+            "daf": "20a", 
             "word": "לן", 
-            "class": "unknown"
+            "line_num": 36, 
+            "cal_word": "קמ\"ל", 
+            "POS": "V03", 
+            "class": "talmud", 
+            "pg_num": 20, 
+            "ms": "01", 
+            "book_num": 71003, 
+            "side": 1
         }, 
         {
             "word": "כאן", 

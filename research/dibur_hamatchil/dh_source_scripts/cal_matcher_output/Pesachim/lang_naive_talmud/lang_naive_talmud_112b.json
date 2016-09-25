@@ -45,10 +45,6 @@
             "word": "דביעי"
         }, 
         {
-            "index": 75, 
-            "word": "לא"
-        }, 
-        {
             "index": 76, 
             "word": "ניזיל"
         }, 
@@ -85,10 +81,6 @@
             "word": "מניהו"
         }, 
         {
-            "index": 131, 
-            "word": "ותרי"
-        }, 
-        {
             "index": 132, 
             "word": "הוו"
         }, 
@@ -109,16 +101,8 @@
             "word": "שפעא"
         }, 
         {
-            "index": 137, 
-            "word": "ולא"
-        }, 
-        {
             "index": 138, 
             "word": "אמרן"
-        }, 
-        {
-            "index": 139, 
-            "word": "אלא"
         }, 
         {
             "index": 140, 
@@ -145,12 +129,16 @@
             "word": "בה"
         }, 
         {
-            "index": 148, 
-            "word": "ואפילו"
-        }, 
-        {
             "index": 149, 
             "word": "לא"
+        }, 
+        {
+            "index": 150, 
+            "word": "הוי"
+        }, 
+        {
+            "index": 151, 
+            "word": "בר שתא"
         }, 
         {
             "index": 152, 
@@ -1885,8 +1873,18 @@
             "side": 2
         }, 
         {
+            "head_word": "לא", 
+            "word_num": 3, 
+            "daf": "112b", 
             "word": "לא", 
-            "class": "unknown"
+            "line_num": 28, 
+            "cal_word": "לא", 
+            "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 112, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 2
         }, 
         {
             "word": "ניעול", 
@@ -2650,10 +2648,10 @@
         }, 
         {
             "head_word": "הוי", 
-            "word_num": 5, 
+            "word_num": 7, 
             "daf": "112b", 
             "word": "הוי", 
-            "line_num": 42, 
+            "line_num": 41, 
             "cal_word": "הוי", 
             "POS": "V01", 
             "class": "talmud", 
@@ -2663,12 +2661,12 @@
             "side": 2
         }, 
         {
-            "head_word": "בר שתא", 
-            "word_num": 6, 
+            "head_word": "בעל דינא", 
+            "word_num": 11, 
             "daf": "112b", 
             "word": "בעל", 
-            "line_num": 42, 
-            "cal_word": "בר שתא", 
+            "line_num": 33, 
+            "cal_word": "בעיל דינכ", 
             "POS": "N02", 
             "class": "talmud", 
             "pg_num": 112, 
@@ -2691,8 +2689,24 @@
             "side": 2
         }, 
         {
+            "head_word": "תרי", 
+            "word_num": 0, 
+            "daf": "112b", 
             "word": "ותרי", 
-            "class": "unknown"
+            "line_num": 34, 
+            "cal_word": "ותרי", 
+            "POS": "n02", 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 112, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 2
         }, 
         {
             "word": "סהדי", 

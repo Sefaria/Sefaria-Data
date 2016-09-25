@@ -2,7 +2,7 @@
     "missed_words": [
         {
             "index": 0, 
-            "word": "וקאמ\""
+            "word": "וקאמ"
         }, 
         {
             "index": 2, 
@@ -21,16 +21,12 @@
             "word": "מודית"
         }, 
         {
-            "index": 7, 
-            "word": "וקאמ\""
-        }, 
-        {
             "index": 9, 
             "word": "לאיתויי"
         }, 
         {
-            "index": 15, 
-            "word": "מתני\""
+            "index": 14, 
+            "word": "ודייק"
         }, 
         {
             "index": 16, 
@@ -46,11 +42,11 @@
         }, 
         {
             "index": 26, 
-            "word": "ברית\""
+            "word": "ברית"
         }, 
         {
             "index": 27, 
-            "word": "כות\""
+            "word": "כות"
         }
     ], 
     "words": [
@@ -151,8 +147,24 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אמר", 
+            "word_num": 0, 
+            "daf": "151a", 
             "word": "קאי", 
-            "class": "unknown"
+            "line_num": 13, 
+            "cal_word": "וקאמ", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 151, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "אבל", 
@@ -1029,28 +1041,22 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "דקק", 
-            "word_num": 0, 
-            "daf": "151a", 
             "word": "דיקא", 
+            "class": "unknown"
+        }, 
+        {
+            "head_word": "מתניתא", 
+            "word_num": 1, 
+            "daf": "151a", 
+            "word": "מתניתין", 
             "line_num": 33, 
-            "cal_word": "ודייק\"", 
-            "POS": "V01", 
+            "cal_word": "מתני", 
+            "POS": "N02", 
             "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
             "pg_num": 151, 
-            "prefix_POS": [
-                "c"
-            ], 
             "ms": "01", 
             "book_num": 71002, 
             "side": 1
-        }, 
-        {
-            "word": "מתניתין", 
-            "class": "unknown"
         }, 
         {
             "head_word": "כוות", 
@@ -1126,7 +1132,7 @@
             "daf": "151a", 
             "word": "אלמא", 
             "line_num": 35, 
-            "cal_word": "אלמ\"", 
+            "cal_word": "אלמ", 
             "POS": "a", 
             "class": "talmud", 
             "pg_num": 151, 

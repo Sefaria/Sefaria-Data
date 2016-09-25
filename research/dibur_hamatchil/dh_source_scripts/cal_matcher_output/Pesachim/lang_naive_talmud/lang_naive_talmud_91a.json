@@ -1,39 +1,23 @@
 {
     "missed_words": [
         {
-            "index": 1, 
-            "word": "טעמא"
-        }, 
-        {
-            "index": 2, 
-            "word": "כיון"
-        }, 
-        {
-            "index": 3, 
-            "word": "דאבטחוה"
-        }, 
-        {
-            "index": 4, 
-            "word": "ודאי"
-        }, 
-        {
             "index": 5, 
             "word": "מפקיה"
         }, 
         {
-            "index": 15, 
+            "index": 14, 
             "word": "דריש"
         }, 
         {
-            "index": 23, 
+            "index": 22, 
             "word": "אמרי"
         }, 
         {
-            "index": 30, 
+            "index": 29, 
             "word": "דרב"
         }, 
         {
-            "index": 42, 
+            "index": 41, 
             "word": "תופלא"
         }
     ], 
@@ -59,7 +43,7 @@
             "word_num": 0, 
             "daf": "91a", 
             "word": "מי", 
-            "line_num": 16, 
+            "line_num": 10, 
             "cal_word": "מאי", 
             "POS": "P01", 
             "class": "talmud", 
@@ -229,7 +213,7 @@
             "word_num": 1, 
             "daf": "91a", 
             "word": "טמא", 
-            "line_num": 16, 
+            "line_num": 10, 
             "cal_word": "טעמא", 
             "POS": "N02", 
             "class": "talmud", 
@@ -323,12 +307,38 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "כיונ", 
+            "word_num": 2, 
+            "daf": "91a", 
             "word": "כיון", 
-            "class": "unknown"
+            "line_num": 10, 
+            "cal_word": "כיון", 
+            "POS": "c", 
+            "class": "talmud", 
+            "pg_num": 91, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
+            "head_word": "בטח", 
+            "word_num": 0, 
+            "daf": "91a", 
             "word": "דאבטחינהו", 
-            "class": "unknown"
+            "line_num": 11, 
+            "cal_word": "דאבטחוה", 
+            "POS": "V03", 
+            "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
+            "pg_num": 91, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "word": "מפיק", 
@@ -363,8 +373,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "ודאי", 
+            "word_num": 1, 
+            "daf": "91a", 
             "word": "ולא", 
-            "class": "unknown"
+            "line_num": 11, 
+            "cal_word": "ודאי", 
+            "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 91, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "word": "ידברו", 
@@ -471,8 +491,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "מאי טעמא", 
+            "word_num": 0, 
+            "daf": "91a", 
             "word": "מ\"ט", 
-            "class": "unknown"
+            "line_num": 16, 
+            "cal_word": "מאי טעמא", 
+            "POS": "P01", 
+            "class": "talmud", 
+            "pg_num": 91, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "head_word": "איפשר", 

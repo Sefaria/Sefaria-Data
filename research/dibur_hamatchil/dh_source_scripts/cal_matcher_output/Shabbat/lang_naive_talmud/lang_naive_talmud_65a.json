@@ -13,8 +13,8 @@
             "word": "בעי"
         }, 
         {
-            "index": 25, 
-            "word": "ליה"
+            "index": 26, 
+            "word": "לדור שני"
         }, 
         {
             "index": 30, 
@@ -99,8 +99,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "ברא", 
+            "word_num": 2, 
+            "daf": "65a", 
             "word": "בר", 
-            "class": "unknown"
+            "line_num": 6, 
+            "cal_word": "בר", 
+            "POS": "N01", 
+            "class": "talmud", 
+            "pg_num": 65, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "יחזקאל", 
@@ -175,18 +185,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ברא", 
-            "word_num": 2, 
-            "daf": "65a", 
             "word": "סבר", 
-            "line_num": 6, 
-            "cal_word": "בר", 
-            "POS": "N01", 
-            "class": "talmud", 
-            "pg_num": 65, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "רמי", 
@@ -246,7 +246,7 @@
             "daf": "65a", 
             "word": "אמר", 
             "line_num": 7, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 65, 
@@ -779,24 +779,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "דורא", 
-            "word_num": 3, 
-            "daf": "65a", 
             "word": "לדורשיני", 
-            "line_num": 18, 
-            "cal_word": "לדור שני", 
-            "POS": "N05", 
-            "class": "talmud", 
-            "prefix": [
-                "ל_"
-            ], 
-            "pg_num": 65, 
-            "prefix_POS": [
-                "p03"
-            ], 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "וכל", 
@@ -815,8 +799,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "ל_", 
+            "word_num": 6, 
+            "daf": "65a", 
             "word": "פיה", 
-            "class": "unknown"
+            "line_num": 17, 
+            "cal_word": "ליה", 
+            "POS": "p02", 
+            "class": "talmud", 
+            "pg_num": 65, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "head_word": "זנגבילא", 
@@ -1022,7 +1016,7 @@
             "daf": "65a", 
             "word": "ור\"", 
             "line_num": 22, 
-            "cal_word": "ור\"", 
+            "cal_word": "ור", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 65, 
@@ -1920,7 +1914,7 @@
             "daf": "65a", 
             "word": "אמר", 
             "line_num": 32, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 65, 

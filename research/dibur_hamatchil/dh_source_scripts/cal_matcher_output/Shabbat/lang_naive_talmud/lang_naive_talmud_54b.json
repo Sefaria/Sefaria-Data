@@ -2,7 +2,7 @@
     "missed_words": [
         {
             "index": 6, 
-            "word": "דילמ\""
+            "word": "דילמ"
         }, 
         {
             "index": 7, 
@@ -25,26 +25,6 @@
             "word": "ליפרחו"
         }, 
         {
-            "index": 45, 
-            "word": "אליתייהו"
-        }, 
-        {
-            "index": 46, 
-            "word": "יתיב"
-        }, 
-        {
-            "index": 47, 
-            "word": "רב"
-        }, 
-        {
-            "index": 48, 
-            "word": "בר"
-        }, 
-        {
-            "index": 49, 
-            "word": "קמיה"
-        }, 
-        {
             "index": 50, 
             "word": "דרב"
         }, 
@@ -54,11 +34,23 @@
         }, 
         {
             "index": 52, 
-            "word": "וקאמ\""
+            "word": "וקאמ"
         }, 
         {
             "index": 54, 
             "word": "הא"
+        }, 
+        {
+            "index": 55, 
+            "word": "דיתיב"
+        }, 
+        {
+            "index": 56, 
+            "word": "רב"
+        }, 
+        {
+            "index": 57, 
+            "word": "בר"
         }, 
         {
             "index": 93, 
@@ -1181,8 +1173,18 @@
             "side": 2
         }, 
         {
+            "head_word": "אליתא", 
+            "word_num": 0, 
+            "daf": "54b", 
             "word": "אלייתיה", 
-            "class": "unknown"
+            "line_num": 23, 
+            "cal_word": "אליתייהו", 
+            "POS": "N05", 
+            "class": "talmud", 
+            "pg_num": 54, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "word": "ואין", 
@@ -1202,30 +1204,24 @@
         }, 
         {
             "head_word": "יתב", 
-            "word_num": 2, 
+            "word_num": 0, 
             "daf": "54b", 
             "word": "יתיב", 
-            "line_num": 28, 
-            "cal_word": "דיתיב", 
+            "line_num": 24, 
+            "cal_word": "יתיב", 
             "POS": "V01", 
             "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
             "pg_num": 54, 
-            "prefix_POS": [
-                "c"
-            ], 
             "ms": "01", 
             "book_num": 71002, 
             "side": 2
         }, 
         {
             "head_word": "רב", 
-            "word_num": 3, 
+            "word_num": 1, 
             "daf": "54b", 
             "word": "רב", 
-            "line_num": 28, 
+            "line_num": 24, 
             "cal_word": "רב", 
             "POS": "N02", 
             "class": "talmud", 
@@ -1240,10 +1236,10 @@
         }, 
         {
             "head_word": "ברא", 
-            "word_num": 5, 
+            "word_num": 3, 
             "daf": "54b", 
             "word": "בר", 
-            "line_num": 28, 
+            "line_num": 24, 
             "cal_word": "בר", 
             "POS": "N01", 
             "class": "talmud", 
@@ -1794,7 +1790,7 @@
             "daf": "54b", 
             "word": "אמר", 
             "line_num": 37, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 54, 
@@ -2526,7 +2522,7 @@
             "daf": "54b", 
             "word": "והא", 
             "line_num": 47, 
-            "cal_word": "והאמ\"", 
+            "cal_word": "והאמ", 
             "POS": "I", 
             "class": "talmud", 
             "prefix": [
@@ -2588,7 +2584,7 @@
             "daf": "54b", 
             "word": "אמר", 
             "line_num": 47, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 54, 
@@ -2620,7 +2616,7 @@
             "daf": "54b", 
             "word": "אמר", 
             "line_num": 47, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 54, 
@@ -2858,7 +2854,7 @@
             "daf": "54b", 
             "word": "ור\"", 
             "line_num": 50, 
-            "cal_word": "ור\"", 
+            "cal_word": "ור", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 54, 

@@ -1,14 +1,6 @@
 {
     "missed_words": [
         {
-            "index": 8, 
-            "word": "אלמא"
-        }, 
-        {
-            "index": 9, 
-            "word": "קסבר"
-        }, 
-        {
             "index": 29, 
             "word": "ליה"
         }, 
@@ -18,7 +10,7 @@
         }, 
         {
             "index": 37, 
-            "word": "במתנית\""
+            "word": "במתנית"
         }, 
         {
             "index": 39, 
@@ -210,11 +202,11 @@
         }, 
         {
             "head_word": "עבד", 
-            "word_num": 2, 
+            "word_num": 4, 
             "daf": "61a", 
             "word": "עביד", 
-            "line_num": 5, 
-            "cal_word": "עבוד", 
+            "line_num": 3, 
+            "cal_word": "עביד", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 61, 
@@ -255,12 +247,32 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אלמא", 
+            "word_num": 0, 
+            "daf": "61a", 
             "word": "אלמא", 
-            "class": "unknown"
+            "line_num": 4, 
+            "cal_word": "אלמא", 
+            "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 61, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
+            "head_word": "סבר", 
+            "word_num": 1, 
+            "daf": "61a", 
             "word": "קסבר", 
-            "class": "unknown"
+            "line_num": 4, 
+            "cal_word": "קסבר", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 61, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "לשום", 
@@ -271,8 +283,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "עבד", 
+            "word_num": 2, 
+            "daf": "61a", 
             "word": "עביד", 
-            "class": "unknown"
+            "line_num": 5, 
+            "cal_word": "עבוד", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 61, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "וזו", 
@@ -684,7 +706,7 @@
             "daf": "61a", 
             "word": "קאמר", 
             "line_num": 10, 
-            "cal_word": "קאמ\"", 
+            "cal_word": "קאמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 61, 
@@ -1614,7 +1636,7 @@
             "daf": "61a", 
             "word": "אמר", 
             "line_num": 23, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 61, 

@@ -22,7 +22,7 @@
         }, 
         {
             "index": 11, 
-            "word": "אמ\""
+            "word": "אמ"
         }, 
         {
             "index": 12, 
@@ -42,11 +42,7 @@
         }, 
         {
             "index": 29, 
-            "word": "לר\""
-        }, 
-        {
-            "index": 36, 
-            "word": "דקא"
+            "word": "לר"
         }
     ], 
     "words": [
@@ -708,7 +704,7 @@
             "daf": "137a", 
             "word": "אמר", 
             "line_num": 22, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 137, 
@@ -722,7 +718,7 @@
             "daf": "137a", 
             "word": "רחמנא", 
             "line_num": 22, 
-            "cal_word": "רחמנ\"", 
+            "cal_word": "רחמנ", 
             "POS": "N02", 
             "class": "talmud", 
             "pg_num": 137, 
@@ -1222,7 +1218,7 @@
             "daf": "137a", 
             "word": "ור\"", 
             "line_num": 25, 
-            "cal_word": "ור\"", 
+            "cal_word": "ור", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 137, 
@@ -1649,8 +1645,24 @@
             "side": 1
         }, 
         {
+            "head_word": "קא", 
+            "word_num": 10, 
+            "daf": "137a", 
             "word": "דקא", 
-            "class": "unknown"
+            "line_num": 35, 
+            "cal_word": "דקא", 
+            "POS": "a", 
+            "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
+            "pg_num": 137, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "עביד", 

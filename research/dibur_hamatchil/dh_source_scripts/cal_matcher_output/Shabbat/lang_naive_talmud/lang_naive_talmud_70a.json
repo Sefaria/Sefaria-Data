@@ -1,10 +1,6 @@
 {
     "missed_words": [
         {
-            "index": 28, 
-            "word": "מהיכא"
-        }, 
-        {
             "index": 29, 
             "word": "דנפק"
         }, 
@@ -14,7 +10,11 @@
         }, 
         {
             "index": 31, 
-            "word": "לר\""
+            "word": "לר"
+        }, 
+        {
+            "index": 33, 
+            "word": "לי"
         }
     ], 
     "words": [
@@ -326,7 +326,7 @@
             "daf": "70a", 
             "word": "אמר", 
             "line_num": 5, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 70, 
@@ -1204,10 +1204,10 @@
         }, 
         {
             "head_word": "ל_", 
-            "word_num": 0, 
+            "word_num": 4, 
             "daf": "70a", 
             "word": "ליה", 
-            "line_num": 14, 
+            "line_num": 13, 
             "cal_word": "לי", 
             "POS": "p02", 
             "class": "talmud", 
@@ -1272,7 +1272,7 @@
             "daf": "70a", 
             "word": "לר\"", 
             "line_num": 14, 
-            "cal_word": "לר\"", 
+            "cal_word": "לר", 
             "POS": "p03", 
             "class": "talmud", 
             "pg_num": 70, 

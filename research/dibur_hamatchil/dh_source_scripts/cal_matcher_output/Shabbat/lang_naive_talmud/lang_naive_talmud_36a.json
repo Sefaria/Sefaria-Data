@@ -5,20 +5,12 @@
             "word": "שיפורא"
         }, 
         {
-            "index": 16, 
-            "word": "פתורא"
+            "index": 21, 
+            "word": "נפקא"
         }, 
         {
-            "index": 17, 
-            "word": "פתורתא"
-        }, 
-        {
-            "index": 18, 
-            "word": "פתורתא"
-        }, 
-        {
-            "index": 19, 
-            "word": "פתורא"
+            "index": 22, 
+            "word": "מינה"
         }
     ], 
     "words": [
@@ -312,10 +304,10 @@
         }, 
         {
             "head_word": "מאי", 
-            "word_num": 1, 
+            "word_num": 0, 
             "daf": "36a", 
             "word": "למאי", 
-            "line_num": 11, 
+            "line_num": 10, 
             "cal_word": "למאי", 
             "POS": "P01", 
             "class": "talmud", 
@@ -332,11 +324,11 @@
         }, 
         {
             "head_word": "נפק", 
-            "word_num": 2, 
+            "word_num": 1, 
             "daf": "36a", 
             "word": "נפקא", 
-            "line_num": 11, 
-            "cal_word": "נפקא", 
+            "line_num": 10, 
+            "cal_word": "נפק", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 36, 
@@ -346,10 +338,10 @@
         }, 
         {
             "head_word": "מנ", 
-            "word_num": 3, 
+            "word_num": 2, 
             "daf": "36a", 
             "word": "מינה", 
-            "line_num": 11, 
+            "line_num": 10, 
             "cal_word": "מינה", 
             "POS": "p02", 
             "class": "talmud", 
@@ -403,24 +395,80 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "פתורא", 
+            "word_num": 4, 
+            "daf": "36a", 
             "word": "פתורה", 
-            "class": "unknown"
+            "line_num": 10, 
+            "cal_word": "פתורא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "pg_num": 36, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
+            "head_word": "פתורתא", 
+            "word_num": 5, 
+            "daf": "36a", 
             "word": "פתורתא", 
-            "class": "unknown"
+            "line_num": 10, 
+            "cal_word": "פתורתא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "pg_num": 36, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
+            "head_word": "פתורתא", 
+            "word_num": 6, 
+            "daf": "36a", 
             "word": "פתורתא", 
-            "class": "unknown"
+            "line_num": 10, 
+            "cal_word": "פתורתא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "pg_num": 36, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
+            "head_word": "פתורא", 
+            "word_num": 0, 
+            "daf": "36a", 
             "word": "פתורה", 
-            "class": "unknown"
+            "line_num": 11, 
+            "cal_word": "פתורא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "pg_num": 36, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
+            "head_word": "מאי", 
+            "word_num": 1, 
+            "daf": "36a", 
             "word": "למאי", 
-            "class": "unknown"
+            "line_num": 11, 
+            "cal_word": "למאי", 
+            "POS": "P01", 
+            "class": "talmud", 
+            "prefix": [
+                "ל_"
+            ], 
+            "pg_num": 36, 
+            "prefix_POS": [
+                "p03"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "נ\"מ", 

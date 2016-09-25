@@ -13,10 +13,6 @@
             "word": "וסתמה"
         }, 
         {
-            "index": 68, 
-            "word": "כר\""
-        }, 
-        {
             "index": 76, 
             "word": "בכורא"
         }, 
@@ -1762,7 +1758,7 @@
         }, 
         {
             "head_word": "ידע", 
-            "word_num": 5, 
+            "word_num": 10, 
             "daf": "105a", 
             "word": "ידיעי", 
             "line_num": 36, 
@@ -1817,18 +1813,8 @@
             "side": 1
         }, 
         {
-            "head_word": "ידע", 
-            "word_num": 10, 
-            "daf": "105a", 
             "word": "ידיעי", 
-            "line_num": 36, 
-            "cal_word": "ידיעי", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 105, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "תניא", 
@@ -2015,28 +2001,22 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "סתמא", 
-            "word_num": 0, 
-            "daf": "105a", 
             "word": "סתמא", 
-            "line_num": 43, 
-            "cal_word": "וסתמא", 
-            "POS": "N02", 
+            "class": "unknown"
+        }, 
+        {
+            "head_word": "כ_", 
+            "word_num": 1, 
+            "daf": "105a", 
+            "word": "כר\"א", 
+            "line_num": 40, 
+            "cal_word": "כר", 
+            "POS": "p02", 
             "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
             "pg_num": 105, 
-            "prefix_POS": [
-                "c"
-            ], 
             "ms": "01", 
             "book_num": 71002, 
             "side": 1
-        }, 
-        {
-            "word": "כר\"א", 
-            "class": "unknown"
         }, 
         {
             "word": "תניא", 
@@ -2215,8 +2195,24 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "סתמא", 
+            "word_num": 0, 
+            "daf": "105a", 
             "word": "סתמא", 
-            "class": "unknown"
+            "line_num": 43, 
+            "cal_word": "וסתמא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 105, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "head_word": "רבננ", 
@@ -2282,7 +2278,7 @@
             "daf": "105a", 
             "word": "אמר", 
             "line_num": 44, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 105, 

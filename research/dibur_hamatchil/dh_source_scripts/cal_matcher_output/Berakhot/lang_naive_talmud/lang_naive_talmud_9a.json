@@ -45,22 +45,6 @@
             "word": "ור"
         }, 
         {
-            "index": 85, 
-            "word": "האי"
-        }, 
-        {
-            "index": 86, 
-            "word": "מאי"
-        }, 
-        {
-            "index": 87, 
-            "word": "עביד"
-        }, 
-        {
-            "index": 88, 
-            "word": "ליה"
-        }, 
-        {
             "index": 89, 
             "word": "מיבעי"
         }, 
@@ -77,12 +61,20 @@
             "word": "למעוטי"
         }, 
         {
+            "index": 94, 
+            "word": "ליה"
+        }, 
+        {
             "index": 95, 
             "word": "נפקא"
         }, 
         {
-            "index": 98, 
-            "word": "הוא"
+            "index": 96, 
+            "word": "לי"
+        }, 
+        {
+            "index": 97, 
+            "word": "דכל היכא"
         }, 
         {
             "index": 99, 
@@ -2310,10 +2302,10 @@
         }, 
         {
             "head_word": "מאי", 
-            "word_num": 3, 
+            "word_num": 4, 
             "daf": "9a", 
             "word": "מאי", 
-            "line_num": 39, 
+            "line_num": 40, 
             "cal_word": "מאי", 
             "POS": "P01", 
             "class": "talmud", 
@@ -2367,8 +2359,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "הוא", 
+            "word_num": 27, 
+            "daf": "9a", 
             "word": "הוא", 
-            "class": "unknown"
+            "line_num": 40, 
+            "cal_word": "הוא", 
+            "POS": "P01", 
+            "class": "talmud", 
+            "pg_num": 9, 
+            "ms": "01", 
+            "book_num": 71001, 
+            "side": 1
         }, 
         {
             "word": "והני", 
@@ -2679,8 +2681,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "עבד", 
+            "word_num": 5, 
+            "daf": "9a", 
             "word": "ביד", 
-            "class": "unknown"
+            "line_num": 40, 
+            "cal_word": "עביד", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 9, 
+            "ms": "01", 
+            "book_num": 71001, 
+            "side": 1
         }, 
         {
             "word": "רמה", 
@@ -2948,7 +2960,7 @@
         }, 
         {
             "head_word": "ל_", 
-            "word_num": 17, 
+            "word_num": 6, 
             "daf": "9a", 
             "word": "ליה", 
             "line_num": 40, 
@@ -3009,26 +3021,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "היכא", 
-            "word_num": 23, 
-            "daf": "9a", 
             "word": "כלי", 
-            "line_num": 40, 
-            "cal_word": "דכל היכא", 
-            "POS": "a", 
-            "class": "talmud", 
-            "prefix": [
-                "ד_", 
-                "כל"
-            ], 
-            "pg_num": 9, 
-            "prefix_POS": [
-                "c", 
-                "N01"
-            ], 
-            "ms": "01", 
-            "book_num": 71001, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "כסף", 

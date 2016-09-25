@@ -1,28 +1,8 @@
 {
     "missed_words": [
         {
-            "index": 2, 
-            "word": "ולא"
-        }, 
-        {
-            "index": 3, 
-            "word": "היא"
-        }, 
-        {
-            "index": 4, 
-            "word": "התם"
-        }, 
-        {
-            "index": 5, 
-            "word": "כיון"
-        }, 
-        {
-            "index": 6, 
-            "word": "דאהדקה"
-        }, 
-        {
-            "index": 7, 
-            "word": "שוייה"
+            "index": 0, 
+            "word": "ומותבי"
         }, 
         {
             "index": 29, 
@@ -331,8 +311,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "שמעתא", 
+            "word_num": 1, 
+            "daf": "125b", 
             "word": "אשמעתין", 
-            "class": "unknown"
+            "line_num": 11, 
+            "cal_word": "אשמעתין", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "pg_num": 125, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "word": "האבן", 
@@ -371,28 +361,100 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "לא", 
+            "word_num": 0, 
+            "daf": "125b", 
             "word": "ולא", 
-            "class": "unknown"
+            "line_num": 13, 
+            "cal_word": "ולא", 
+            "POS": "a", 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 125, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
+            "head_word": "היא", 
+            "word_num": 1, 
+            "daf": "125b", 
             "word": "היא", 
-            "class": "unknown"
+            "line_num": 13, 
+            "cal_word": "היא", 
+            "POS": "P01", 
+            "class": "talmud", 
+            "pg_num": 125, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
+            "head_word": "התמ", 
+            "word_num": 2, 
+            "daf": "125b", 
             "word": "התם", 
-            "class": "unknown"
+            "line_num": 13, 
+            "cal_word": "התם", 
+            "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 125, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
+            "head_word": "כיונ", 
+            "word_num": 3, 
+            "daf": "125b", 
             "word": "כיון", 
-            "class": "unknown"
+            "line_num": 13, 
+            "cal_word": "כיון", 
+            "POS": "c", 
+            "class": "talmud", 
+            "pg_num": 125, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
+            "head_word": "הדק", 
+            "word_num": 4, 
+            "daf": "125b", 
             "word": "דהדקה", 
-            "class": "unknown"
+            "line_num": 13, 
+            "cal_word": "דאהדקה", 
+            "POS": "V03", 
+            "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
+            "pg_num": 125, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
+            "head_word": "שוי", 
+            "word_num": 5, 
+            "daf": "125b", 
             "word": "שויא", 
-            "class": "unknown"
+            "line_num": 13, 
+            "cal_word": "שוייה", 
+            "POS": "V02", 
+            "class": "talmud", 
+            "pg_num": 125, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "word": "דופן", 
@@ -792,7 +854,7 @@
             "daf": "125b", 
             "word": "דימי", 
             "line_num": 28, 
-            "cal_word": "דאמ\"", 
+            "cal_word": "דאמ", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [

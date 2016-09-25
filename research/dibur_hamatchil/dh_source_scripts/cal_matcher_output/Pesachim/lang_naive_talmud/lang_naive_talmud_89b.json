@@ -33,6 +33,10 @@
             "word": "דניתי"
         }, 
         {
+            "index": 56, 
+            "word": "כל היכי"
+        }, 
+        {
             "index": 57, 
             "word": "דמתכל"
         }, 
@@ -65,31 +69,23 @@
             "word": "דאדעתא"
         }, 
         {
-            "index": 118, 
+            "index": 127, 
             "word": "אמר"
-        }, 
-        {
-            "index": 120, 
-            "word": "פלוג"
         }, 
         {
             "index": 128, 
-            "word": "אמר"
-        }, 
-        {
-            "index": 129, 
             "word": "ליה"
         }, 
         {
-            "index": 137, 
+            "index": 136, 
             "word": "אדעתא"
         }, 
         {
-            "index": 139, 
+            "index": 138, 
             "word": "הוא"
         }, 
         {
-            "index": 140, 
+            "index": 139, 
             "word": "דקבילנך"
         }
     ], 
@@ -1223,21 +1219,15 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "היכא", 
-            "word_num": 9, 
+            "head_word": "קבל", 
+            "word_num": 8, 
             "daf": "89b", 
             "word": "קבילתון", 
             "line_num": 21, 
-            "cal_word": "כל היכי", 
-            "POS": "a", 
+            "cal_word": "קבילתון", 
+            "POS": "V02", 
             "class": "talmud", 
-            "prefix": [
-                "כל"
-            ], 
             "pg_num": 89, 
-            "prefix_POS": [
-                "N01"
-            ], 
             "ms": "01", 
             "book_num": 71004, 
             "side": 2
@@ -2387,12 +2377,32 @@
             "side": 2
         }, 
         {
+            "head_word": "אמר ל_", 
+            "word_num": 2, 
+            "daf": "89b", 
             "word": "א\"ל", 
-            "class": "unknown"
+            "line_num": 40, 
+            "cal_word": "אמר ליה", 
+            "POS": "p", 
+            "class": "talmud", 
+            "pg_num": 89, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 2
         }, 
         {
+            "head_word": "פלג", 
+            "word_num": 4, 
+            "daf": "89b", 
             "word": "פלג", 
-            "class": "unknown"
+            "line_num": 40, 
+            "cal_word": "פלוג", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 89, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 2
         }, 
         {
             "head_word": "ל_", 

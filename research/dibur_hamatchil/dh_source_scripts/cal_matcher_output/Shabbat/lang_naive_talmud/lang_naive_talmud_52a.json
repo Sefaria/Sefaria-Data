@@ -1,31 +1,23 @@
 {
     "missed_words": [
         {
-            "index": 3, 
-            "word": "אמ\""
-        }, 
-        {
-            "index": 4, 
-            "word": "ליה"
-        }, 
-        {
-            "index": 14, 
+            "index": 13, 
             "word": "מי"
         }, 
         {
-            "index": 15, 
+            "index": 14, 
             "word": "אמרינן"
         }, 
         {
-            "index": 61, 
-            "word": "אמ\""
+            "index": 60, 
+            "word": "אמ"
         }, 
         {
-            "index": 74, 
+            "index": 73, 
             "word": "הני"
         }, 
         {
-            "index": 75, 
+            "index": 74, 
             "word": "מילי"
         }
     ], 
@@ -65,13 +57,13 @@
             "side": 1
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 2, 
+            "head_word": "אמר ל_", 
+            "word_num": 6, 
             "daf": "52a", 
             "word": "א\"ל", 
-            "line_num": 1, 
-            "cal_word": "א\"ל", 
-            "POS": "V01", 
+            "line_num": 2, 
+            "cal_word": "אמ ליה", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 52, 
             "ms": "01", 
@@ -133,8 +125,18 @@
             "side": 1
         }, 
         {
+            "head_word": "אמר", 
+            "word_num": 1, 
+            "daf": "52a", 
             "word": "אמר", 
-            "class": "unknown"
+            "line_num": 3, 
+            "cal_word": "אמ", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 52, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "head_word": "אבא", 
@@ -750,7 +752,7 @@
             "daf": "52a", 
             "word": "דאמר", 
             "line_num": 11, 
-            "cal_word": "דאמ\"", 
+            "cal_word": "דאמ", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [
@@ -1924,7 +1926,7 @@
             "daf": "52a", 
             "word": "אמר", 
             "line_num": 46, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 52, 

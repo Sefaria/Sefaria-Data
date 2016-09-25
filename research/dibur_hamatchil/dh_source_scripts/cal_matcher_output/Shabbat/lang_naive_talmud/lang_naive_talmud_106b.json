@@ -5,10 +5,6 @@
             "word": "דמי"
         }, 
         {
-            "index": 13, 
-            "word": "רב"
-        }, 
-        {
             "index": 15, 
             "word": "דכי"
         }, 
@@ -33,39 +29,35 @@
             "word": "אוקסי"
         }, 
         {
-            "index": 36, 
-            "word": "ליה"
-        }, 
-        {
-            "index": 47, 
+            "index": 46, 
             "word": "ומאי שנא"
         }, 
         {
-            "index": 49, 
-            "word": "אמ\""
+            "index": 48, 
+            "word": "אמ"
         }, 
         {
-            "index": 50, 
+            "index": 49, 
             "word": "ליה"
         }, 
         {
-            "index": 52, 
+            "index": 51, 
             "word": "בעיין"
         }, 
         {
-            "index": 56, 
+            "index": 55, 
             "word": "בעיין"
         }, 
         {
-            "index": 58, 
+            "index": 57, 
             "word": "דכמאן"
         }, 
         {
-            "index": 59, 
+            "index": 58, 
             "word": "דכפיתי"
         }, 
         {
-            "index": 60, 
+            "index": 59, 
             "word": "דאמו"
         }
     ], 
@@ -791,26 +783,36 @@
             "class": "unknown"
         }, 
         {
-            "word": "אמר", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "רב", 
-            "class": "unknown"
-        }, 
-        {
             "head_word": "אמר", 
             "word_num": 2, 
             "daf": "106b", 
-            "word": "אשי", 
+            "word": "אמר", 
             "line_num": 22, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 106, 
             "ms": "01", 
             "book_num": 71002, 
             "side": 2
+        }, 
+        {
+            "head_word": "רב", 
+            "word_num": 3, 
+            "daf": "106b", 
+            "word": "רב", 
+            "line_num": 22, 
+            "cal_word": "רב", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "pg_num": 106, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
+        }, 
+        {
+            "word": "אשי", 
+            "class": "unknown"
         }, 
         {
             "head_word": "היכא", 
@@ -1271,13 +1273,13 @@
             "side": 2
         }, 
         {
-            "head_word": "אמר", 
+            "head_word": "אמר ל_", 
             "word_num": 3, 
             "daf": "106b", 
             "word": "א\"ל", 
             "line_num": 30, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
+            "cal_word": "אמ ליה", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 106, 
             "ms": "01", 
@@ -1304,7 +1306,7 @@
             "daf": "106b", 
             "word": "נפקא", 
             "line_num": 31, 
-            "cal_word": "נפק\"", 
+            "cal_word": "נפק", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 106, 

@@ -1,8 +1,12 @@
 {
     "missed_words": [
         {
-            "index": 9, 
-            "word": "דקודשא בריך הוא"
+            "index": 10, 
+            "word": "דעבד"
+        }, 
+        {
+            "index": 11, 
+            "word": "ניסי"
         }, 
         {
             "index": 12, 
@@ -147,6 +151,10 @@
         {
             "index": 90, 
             "word": "משתמע"
+        }, 
+        {
+            "index": 95, 
+            "word": "בי תלתא"
         }, 
         {
             "index": 104, 
@@ -883,46 +891,52 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "עבד", 
-            "word_num": 1, 
-            "daf": "50a", 
             "word": "עביד", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "ניסי", 
+            "class": "unknown"
+        }, 
+        {
+            "head_word": "קדוש", 
+            "word_num": 0, 
+            "daf": "50a", 
+            "word": "קודשא", 
             "line_num": 21, 
-            "cal_word": "דעבד", 
-            "POS": "V01", 
+            "cal_word": "דקודשא בריך הוא", 
+            "POS": "N02", 
             "class": "talmud", 
             "prefix": [
                 "ד_"
             ], 
             "pg_num": 50, 
             "prefix_POS": [
-                "c"
+                "p"
             ], 
             "ms": "01", 
             "book_num": 71001, 
             "side": 1
         }, 
         {
-            "head_word": "ניסא", 
-            "word_num": 2, 
+            "head_word": "קדוש", 
+            "word_num": 0, 
             "daf": "50a", 
-            "word": "ניסי", 
+            "word": "ב\"ה", 
             "line_num": 21, 
-            "cal_word": "ניסי", 
-            "POS": "N05", 
+            "cal_word": "דקודשא בריך הוא", 
+            "POS": "N02", 
             "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
             "pg_num": 50, 
+            "prefix_POS": [
+                "p"
+            ], 
             "ms": "01", 
             "book_num": 71001, 
             "side": 1
-        }, 
-        {
-            "word": "קודשא", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "ב\"ה", 
-            "class": "unknown"
         }, 
         {
             "word": "א\"ר", 
@@ -2347,21 +2361,15 @@
             "side": 1
         }, 
         {
-            "head_word": "תלת", 
-            "word_num": 4, 
+            "head_word": "הני", 
+            "word_num": 3, 
             "daf": "50a", 
             "word": "הני", 
             "line_num": 38, 
-            "cal_word": "בי תלתא", 
-            "POS": "n01", 
+            "cal_word": "הני", 
+            "POS": "P01", 
             "class": "talmud", 
-            "prefix": [
-                "בי"
-            ], 
             "pg_num": 50, 
-            "prefix_POS": [
-                "p"
-            ], 
             "ms": "01", 
             "book_num": 71001, 
             "side": 1

@@ -1,20 +1,16 @@
 {
     "missed_words": [
         {
-            "index": 4, 
-            "word": "לר"
-        }, 
-        {
             "index": 6, 
             "word": "בענן"
         }, 
         {
-            "index": 7, 
-            "word": "עד"
-        }, 
-        {
             "index": 8, 
             "word": "דמיתדע"
+        }, 
+        {
+            "index": 9, 
+            "word": "ליה"
         }, 
         {
             "index": 10, 
@@ -25,8 +21,16 @@
             "word": "ולר"
         }, 
         {
+            "index": 12, 
+            "word": "דאמ"
+        }, 
+        {
             "index": 15, 
             "word": "לביתרי"
+        }, 
+        {
+            "index": 16, 
+            "word": "ולריש לקיש"
         }, 
         {
             "index": 20, 
@@ -381,24 +385,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 2, 
-            "daf": "81b", 
             "word": "אי", 
-            "line_num": 13, 
-            "cal_word": "דאמ", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 81, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "זהו", 
@@ -425,18 +413,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 4, 
-            "daf": "81b", 
             "word": "בה", 
-            "line_num": 14, 
-            "cal_word": "ליה", 
-            "POS": "p02", 
-            "class": "talmud", 
-            "pg_num": 81, 
-            "ms": "01", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "אחד", 
@@ -491,11 +469,53 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אמר", 
+            "word": "דאמר", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "במחוורת", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "עליו", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "עד", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "דידע", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "הוא", 
+            "class": "unknown"
+        }, 
+        {
+            "head_word": "ל_", 
             "word_num": 0, 
             "daf": "81b", 
+            "word": "לר\"", 
+            "line_num": 13, 
+            "cal_word": "לר", 
+            "POS": "p03", 
+            "class": "talmud", 
+            "pg_num": 81, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 2
+        }, 
+        {
+            "word": "יוחנן", 
+            "class": "unknown"
+        }, 
+        {
+            "head_word": "אמר", 
+            "word_num": 2, 
+            "daf": "81b", 
             "word": "דאמר", 
-            "line_num": 15, 
+            "line_num": 13, 
             "cal_word": "דאמ", 
             "POS": "V01", 
             "class": "talmud", 
@@ -511,11 +531,15 @@
             "side": 2
         }, 
         {
+            "word": "לכם", 
+            "class": "unknown"
+        }, 
+        {
             "word": "במחוורת", 
             "class": "unknown"
         }, 
         {
-            "word": "עליו", 
+            "word": "לכם", 
             "class": "unknown"
         }, 
         {
@@ -533,35 +557,29 @@
             "side": 2
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 0, 
+            "head_word": "ידע", 
+            "word_num": 3, 
             "daf": "81b", 
-            "word": "דידע", 
-            "line_num": 16, 
-            "cal_word": "ולריש לקיש", 
-            "POS": "p03", 
+            "word": "דידעי", 
+            "line_num": 15, 
+            "cal_word": "דמיתדע", 
+            "POS": "V04", 
             "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
             "pg_num": 81, 
-            "prefix_POS": [
-                "c"
-            ], 
             "ms": "01", 
             "book_num": 71004, 
             "side": 2
         }, 
         {
-            "word": "הוא", 
+            "word": "בה", 
             "class": "unknown"
         }, 
         {
-            "word": "לר\"", 
+            "word": "תרין", 
             "class": "unknown"
         }, 
         {
-            "word": "יוחנן", 
+            "word": "לרשב\"ל", 
             "class": "unknown"
         }, 
         {
@@ -585,15 +603,7 @@
             "side": 2
         }, 
         {
-            "word": "לכם", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "במחוורת", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "לכם", 
+            "word": "כדרך", 
             "class": "unknown"
         }, 
         {
@@ -609,34 +619,6 @@
             "ms": "01", 
             "book_num": 71004, 
             "side": 2
-        }, 
-        {
-            "word": "דידעי", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "בה", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "תרין", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "לרשב\"ל", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "דאמר", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "כדרך", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "עד", 
-            "class": "unknown"
         }, 
         {
             "head_word": "ידע", 

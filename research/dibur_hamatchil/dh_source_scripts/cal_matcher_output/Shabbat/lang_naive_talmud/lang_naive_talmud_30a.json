@@ -1,10 +1,6 @@
 {
     "missed_words": [
         {
-            "index": 3, 
-            "word": "היא"
-        }, 
-        {
             "index": 9, 
             "word": "ליה"
         }, 
@@ -19,6 +15,10 @@
         {
             "index": 22, 
             "word": "איני"
+        }, 
+        {
+            "index": 34, 
+            "word": "מן קדם"
         }, 
         {
             "index": 41, 
@@ -81,10 +81,32 @@
             "side": 1
         }, 
         {
+            "word": "ר\"", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "יהודה", 
+            "class": "unknown"
+        }, 
+        {
+            "head_word": "היא", 
+            "word_num": 6, 
+            "daf": "30a", 
+            "word": "היא", 
+            "line_num": 1, 
+            "cal_word": "היא", 
+            "POS": "P01", 
+            "class": "talmud", 
+            "pg_num": 30, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
+        }, 
+        {
             "head_word": "רישא", 
             "word_num": 7, 
             "daf": "30a", 
-            "word": "ר\"", 
+            "word": "רישא", 
             "line_num": 1, 
             "cal_word": "רישא", 
             "POS": "N02", 
@@ -93,18 +115,6 @@
             "ms": "01", 
             "book_num": 71002, 
             "side": 1
-        }, 
-        {
-            "word": "יהודה", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "היא", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "רישא", 
-            "class": "unknown"
         }, 
         {
             "head_word": "מאי", 
@@ -506,7 +516,7 @@
             "daf": "30a", 
             "word": "ורבי", 
             "line_num": 8, 
-            "cal_word": "ור\"", 
+            "cal_word": "ור", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 30, 
@@ -659,15 +669,21 @@
             "side": 1
         }, 
         {
-            "head_word": "מנ קדמ", 
-            "word_num": 2, 
+            "head_word": "נורא", 
+            "word_num": 1, 
             "daf": "30a", 
             "word": "דנורא", 
             "line_num": 10, 
-            "cal_word": "מן קדם", 
-            "POS": "p02", 
+            "cal_word": "דנורא", 
+            "POS": "N02", 
             "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
             "pg_num": 30, 
+            "prefix_POS": [
+                "p"
+            ], 
             "ms": "01", 
             "book_num": 71002, 
             "side": 1
@@ -730,7 +746,7 @@
             "daf": "30a", 
             "word": "ואמר", 
             "line_num": 10, 
-            "cal_word": "ואמ\"", 
+            "cal_word": "ואמ", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [

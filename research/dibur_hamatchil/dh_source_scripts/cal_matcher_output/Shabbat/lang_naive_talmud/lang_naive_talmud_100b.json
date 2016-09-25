@@ -1,103 +1,103 @@
 {
     "missed_words": [
         {
-            "index": 23, 
+            "index": 22, 
             "word": "לא"
         }, 
         {
-            "index": 37, 
+            "index": 36, 
             "word": "אמינא"
         }, 
         {
-            "index": 39, 
+            "index": 38, 
             "word": "מילי"
         }, 
         {
-            "index": 46, 
+            "index": 45, 
             "word": "אינמי"
         }, 
         {
-            "index": 47, 
+            "index": 46, 
             "word": "משום"
         }, 
         {
-            "index": 54, 
+            "index": 53, 
             "word": "לא"
+        }, 
+        {
+            "index": 56, 
+            "word": "הני"
         }, 
         {
             "index": 57, 
-            "word": "הני"
-        }, 
-        {
-            "index": 58, 
             "word": "מילי"
         }, 
         {
-            "index": 64, 
+            "index": 63, 
             "word": "אימא"
         }, 
         {
-            "index": 68, 
+            "index": 67, 
             "word": "קמ\"ל"
         }, 
         {
-            "index": 70, 
+            "index": 69, 
             "word": "סד\"א"
         }, 
         {
-            "index": 71, 
+            "index": 70, 
             "word": "הני"
         }, 
         {
-            "index": 72, 
+            "index": 71, 
             "word": "מילי"
         }, 
         {
-            "index": 75, 
+            "index": 74, 
             "word": "ארבעה"
         }, 
         {
-            "index": 80, 
-            "word": "אימ\""
+            "index": 79, 
+            "word": "אימ"
         }, 
         {
-            "index": 81, 
+            "index": 80, 
             "word": "לא"
         }, 
         {
-            "index": 82, 
+            "index": 81, 
             "word": "משום"
         }, 
         {
-            "index": 86, 
+            "index": 85, 
             "word": "קמ\"ל"
         }, 
         {
-            "index": 110, 
+            "index": 109, 
             "word": "קא"
         }, 
         {
-            "index": 116, 
+            "index": 115, 
             "word": "ארעא"
         }, 
         {
-            "index": 117, 
+            "index": 116, 
             "word": "סמיכתא"
         }, 
         {
-            "index": 122, 
+            "index": 121, 
             "word": "ליה"
         }, 
         {
-            "index": 131, 
+            "index": 130, 
             "word": "גמירי"
         }, 
         {
-            "index": 132, 
-            "word": "ודילמ\""
+            "index": 131, 
+            "word": "ודילמ"
         }, 
         {
-            "index": 144, 
+            "index": 143, 
             "word": "תימא"
         }
     ], 
@@ -142,7 +142,7 @@
             "daf": "100b", 
             "word": "מתני\"", 
             "line_num": 1, 
-            "cal_word": "מתני\"", 
+            "cal_word": "מתני", 
             "POS": "N02", 
             "class": "talmud", 
             "pg_num": 100, 
@@ -371,32 +371,12 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 0, 
-            "daf": "100b", 
             "word": "אם", 
-            "line_num": 9, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 100, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 1, 
-            "daf": "100b", 
             "word": "היה", 
-            "line_num": 9, 
-            "cal_word": "ליה", 
-            "POS": "p", 
-            "class": "talmud", 
-            "pg_num": 100, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "רקק", 
@@ -519,8 +499,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אמר ל_", 
+            "word_num": 0, 
+            "daf": "100b", 
             "word": "א\"ל", 
-            "class": "unknown"
+            "line_num": 9, 
+            "cal_word": "אמ ליה", 
+            "POS": "p", 
+            "class": "talmud", 
+            "pg_num": 100, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "head_word": "ההוא", 
@@ -1156,7 +1146,7 @@
             "daf": "100b", 
             "word": "אמר", 
             "line_num": 18, 
-            "cal_word": "אימ\"", 
+            "cal_word": "אימ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 100, 
@@ -1371,14 +1361,10 @@
             "side": 2
         }, 
         {
-            "word": "דהוה", 
-            "class": "unknown"
-        }, 
-        {
             "head_word": "הוי", 
             "word_num": 0, 
             "daf": "100b", 
-            "word": "ד\"", 
+            "word": "דהוה", 
             "line_num": 22, 
             "cal_word": "דהוי", 
             "POS": "V01", 
@@ -1387,6 +1373,10 @@
             "ms": "01", 
             "book_num": 71002, 
             "side": 2
+        }, 
+        {
+            "word": "ד\"", 
+            "class": "unknown"
         }, 
         {
             "word": "אבל", 

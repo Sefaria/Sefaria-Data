@@ -1670,7 +1670,7 @@
             "daf": "87b", 
             "word": "חד", 
             "line_num": 36, 
-            "cal_word": "בחד בשבת\"", 
+            "cal_word": "בחד בשבת", 
             "POS": "N02", 
             "class": "talmud", 
             "prefix": [
@@ -1690,7 +1690,7 @@
             "daf": "87b", 
             "word": "בשבת", 
             "line_num": 36, 
-            "cal_word": "בחד בשבת\"", 
+            "cal_word": "בחד בשבת", 
             "POS": "N02", 
             "class": "talmud", 
             "prefix": [
@@ -1705,10 +1705,34 @@
             "side": 2
         }, 
         {
+            "head_word": "אשתקד", 
+            "word_num": 2, 
+            "daf": "87b", 
+            "word": "דאשתקד", 
+            "line_num": 36, 
+            "cal_word": "דאשתקד", 
+            "POS": "a", 
+            "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
+            "pg_num": 87, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
+        }, 
+        {
+            "word": "בד\"", 
+            "class": "unknown"
+        }, 
+        {
             "head_word": "ארבעא בשבא", 
             "word_num": 3, 
             "daf": "87b", 
-            "word": "דאשתקד", 
+            "word": "בשבת", 
             "line_num": 36, 
             "cal_word": "בארבעה בשבתא", 
             "POS": "N02", 
@@ -1723,14 +1747,6 @@
             "ms": "01", 
             "book_num": 71002, 
             "side": 2
-        }, 
-        {
-            "word": "בד\"", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "בשבת", 
-            "class": "unknown"
         }, 
         {
             "word": "דתניא", 
@@ -1869,10 +1885,38 @@
             "side": 2
         }, 
         {
+            "head_word": "אייר", 
+            "word_num": 3, 
+            "daf": "87b", 
+            "word": "דאייר", 
+            "line_num": 40, 
+            "cal_word": "דאייר", 
+            "POS": "N01", 
+            "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
+            "pg_num": 87, 
+            "prefix_POS": [
+                "p"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
+        }, 
+        {
+            "word": "מעלי", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "שבתא", 
+            "class": "unknown"
+        }, 
+        {
             "head_word": "ריש ירחא", 
             "word_num": 5, 
             "daf": "87b", 
-            "word": "דאייר", 
+            "word": "וריש", 
             "line_num": 40, 
             "cal_word": "וריש ירחא", 
             "POS": "N02", 
@@ -1889,20 +1933,24 @@
             "side": 2
         }, 
         {
-            "word": "מעלי", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "שבתא", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "וריש", 
-            "class": "unknown"
-        }, 
-        {
+            "head_word": "ריש ירחא", 
+            "word_num": 5, 
+            "daf": "87b", 
             "word": "ירחא", 
-            "class": "unknown"
+            "line_num": 40, 
+            "cal_word": "וריש ירחא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 87, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "head_word": "סיונ", 

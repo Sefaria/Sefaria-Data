@@ -14,7 +14,11 @@
         }, 
         {
             "index": 33, 
-            "word": "דר\""
+            "word": "דר"
+        }, 
+        {
+            "index": 39, 
+            "word": "דקאמרי"
         }, 
         {
             "index": 41, 
@@ -26,7 +30,7 @@
         }, 
         {
             "index": 77, 
-            "word": "אמ\""
+            "word": "אמ"
         }, 
         {
             "index": 78, 
@@ -42,7 +46,7 @@
         }, 
         {
             "index": 97, 
-            "word": "ואמ\""
+            "word": "ואמ"
         }, 
         {
             "index": 98, 
@@ -236,7 +240,7 @@
             "daf": "130a", 
             "word": "איבעיא", 
             "line_num": 8, 
-            "cal_word": "איבעי\"", 
+            "cal_word": "איבעי", 
             "POS": "V02", 
             "class": "talmud", 
             "pg_num": 130, 
@@ -278,7 +282,7 @@
             "daf": "130a", 
             "word": "דר\"א", 
             "line_num": 8, 
-            "cal_word": "דר\"", 
+            "cal_word": "דר", 
             "POS": "p", 
             "class": "talmud", 
             "pg_num": 130, 
@@ -292,7 +296,7 @@
             "daf": "130a", 
             "word": "משום", 
             "line_num": 8, 
-            "cal_word": "משו\"", 
+            "cal_word": "משו", 
             "POS": "p", 
             "class": "talmud", 
             "pg_num": 130, 
@@ -338,7 +342,7 @@
             "daf": "130a", 
             "word": "דילמא", 
             "line_num": 9, 
-            "cal_word": "דילמ\"", 
+            "cal_word": "דילמ", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 130, 
@@ -628,7 +632,7 @@
             "daf": "130a", 
             "word": "אפי\"", 
             "line_num": 12, 
-            "cal_word": "אפי\"", 
+            "cal_word": "אפי", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 130, 
@@ -1001,10 +1005,22 @@
             "side": 1
         }, 
         {
+            "word": "להו", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "עדים", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "דקאמר", 
+            "class": "unknown"
+        }, 
+        {
             "head_word": "ל_", 
             "word_num": 0, 
             "daf": "130a", 
-            "word": "להו", 
+            "word": "איהו", 
             "line_num": 22, 
             "cal_word": "להו", 
             "POS": "p02", 
@@ -1013,34 +1029,6 @@
             "ms": "01", 
             "book_num": 71002, 
             "side": 1
-        }, 
-        {
-            "word": "עדים", 
-            "class": "unknown"
-        }, 
-        {
-            "head_word": "אמר", 
-            "word_num": 2, 
-            "daf": "130a", 
-            "word": "דקאמר", 
-            "line_num": 22, 
-            "cal_word": "דקאמרי\"", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 130, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
-        }, 
-        {
-            "word": "איהו", 
-            "class": "unknown"
         }, 
         {
             "word": "וחד", 
@@ -1066,7 +1054,7 @@
             "daf": "130a", 
             "word": "דילמא", 
             "line_num": 22, 
-            "cal_word": "דילמ\"", 
+            "cal_word": "דילמ", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 130, 
@@ -1736,7 +1724,7 @@
             "daf": "130a", 
             "word": "דר\"", 
             "line_num": 28, 
-            "cal_word": "דר\"", 
+            "cal_word": "דר", 
             "POS": "p", 
             "class": "talmud", 
             "pg_num": 130, 
@@ -1828,7 +1816,7 @@
             "daf": "130a", 
             "word": "כר\"", 
             "line_num": 29, 
-            "cal_word": "כר\"", 
+            "cal_word": "כר", 
             "POS": "p02", 
             "class": "talmud", 
             "pg_num": 130, 

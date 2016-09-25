@@ -5,59 +5,39 @@
             "word": "דקא"
         }, 
         {
-            "index": 7, 
-            "word": "ליה"
-        }, 
-        {
-            "index": 8, 
-            "word": "מתני\""
-        }, 
-        {
-            "index": 12, 
+            "index": 10, 
             "word": "לרב"
         }, 
         {
-            "index": 16, 
+            "index": 13, 
+            "word": "היא"
+        }, 
+        {
+            "index": 14, 
             "word": "אתא"
         }, 
         {
-            "index": 17, 
-            "word": "שיילי\""
+            "index": 30, 
+            "word": "אמ"
         }, 
         {
-            "index": 18, 
-            "word": "לאביי"
-        }, 
-        {
-            "index": 19, 
-            "word": "אמ\""
-        }, 
-        {
-            "index": 20, 
+            "index": 31, 
             "word": "ליה"
         }, 
         {
-            "index": 33, 
-            "word": "אמ\""
-        }, 
-        {
-            "index": 34, 
-            "word": "ליה"
-        }, 
-        {
-            "index": 45, 
+            "index": 42, 
             "word": "אי"
         }, 
         {
-            "index": 46, 
+            "index": 43, 
             "word": "נמי"
         }, 
         {
-            "index": 58, 
+            "index": 55, 
             "word": "או"
         }, 
         {
-            "index": 83, 
+            "index": 80, 
             "word": "אמרינן"
         }
     ], 
@@ -266,7 +246,7 @@
             "daf": "99b", 
             "word": "דילמא", 
             "line_num": 7, 
-            "cal_word": "דילמ\"", 
+            "cal_word": "דילמ", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 99, 
@@ -297,26 +277,12 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אתי", 
+            "head_word": "אתי לא", 
             "word_num": 4, 
             "daf": "99b", 
             "word": "קאתיא", 
             "line_num": 7, 
-            "cal_word": "אתיא", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 99, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 2
-        }, 
-        {
-            "head_word": "לא", 
-            "word_num": 7, 
-            "daf": "99b", 
-            "word": "לא", 
-            "line_num": 7, 
-            "cal_word": "לא", 
+            "cal_word": "אתיא לא", 
             "POS": "a", 
             "class": "talmud", 
             "pg_num": 99, 
@@ -325,13 +291,13 @@
             "side": 2
         }, 
         {
-            "head_word": "אמר", 
+            "head_word": "אמר ל_", 
             "word_num": 8, 
             "daf": "99b", 
-            "word": "א\"ל", 
+            "word": "לא", 
             "line_num": 7, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
+            "cal_word": "אמ ליה", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 99, 
             "ms": "01", 
@@ -339,13 +305,17 @@
             "side": 2
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 8, 
+            "word": "א\"ל", 
+            "class": "unknown"
+        }, 
+        {
+            "head_word": "מתניתא", 
+            "word_num": 0, 
             "daf": "99b", 
             "word": "מתניתין", 
-            "line_num": 7, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
+            "line_num": 8, 
+            "cal_word": "מתני", 
+            "POS": "N02", 
             "class": "talmud", 
             "pg_num": 99, 
             "ms": "01", 
@@ -413,8 +383,8 @@
             "word_num": 3, 
             "daf": "99b", 
             "word": "שייליה", 
-            "line_num": 8, 
-            "cal_word": "שייליה", 
+            "line_num": 9, 
+            "cal_word": "שיילי", 
             "POS": "V02", 
             "class": "talmud", 
             "pg_num": 99, 
@@ -423,17 +393,27 @@
             "side": 2
         }, 
         {
+            "head_word": "ל_", 
+            "word_num": 4, 
+            "daf": "99b", 
             "word": "לאביי", 
-            "class": "unknown"
+            "line_num": 9, 
+            "cal_word": "לאביי", 
+            "POS": "p03", 
+            "class": "talmud", 
+            "pg_num": 99, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 6, 
+            "head_word": "אמר ל_", 
+            "word_num": 5, 
             "daf": "99b", 
             "word": "א\"ל", 
-            "line_num": 8, 
-            "cal_word": "א\"ל", 
-            "POS": "V01", 
+            "line_num": 9, 
+            "cal_word": "אמ ליה", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 99, 
             "ms": "01", 
@@ -446,7 +426,7 @@
             "daf": "99b", 
             "word": "מתני\"", 
             "line_num": 10, 
-            "cal_word": "מתני\"", 
+            "cal_word": "מתני", 
             "POS": "N02", 
             "class": "talmud", 
             "pg_num": 99, 
@@ -474,7 +454,7 @@
             "daf": "99b", 
             "word": "אמר", 
             "line_num": 10, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 99, 
@@ -670,7 +650,7 @@
             "daf": "99b", 
             "word": "דילמא", 
             "line_num": 12, 
-            "cal_word": "דילמ\"", 
+            "cal_word": "דילמ", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 99, 
@@ -684,7 +664,7 @@
             "daf": "99b", 
             "word": "מתני\"", 
             "line_num": 12, 
-            "cal_word": "מתני\"", 
+            "cal_word": "מתני", 
             "POS": "N02", 
             "class": "talmud", 
             "pg_num": 99, 
@@ -1002,7 +982,7 @@
             "daf": "99b", 
             "word": "דילמא", 
             "line_num": 18, 
-            "cal_word": "דילמ\"", 
+            "cal_word": "דילמ", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 99, 

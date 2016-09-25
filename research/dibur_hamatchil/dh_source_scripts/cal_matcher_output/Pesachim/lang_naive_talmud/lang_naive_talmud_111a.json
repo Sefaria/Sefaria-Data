@@ -73,143 +73,115 @@
             "word": "סיים"
         }, 
         {
-            "index": 94, 
-            "word": "והני"
-        }, 
-        {
-            "index": 95, 
-            "word": "מלי"
-        }, 
-        {
-            "index": 99, 
+            "index": 98, 
             "word": "דאיכא"
         }, 
         {
-            "index": 106, 
+            "index": 105, 
             "word": "ההוא"
         }, 
         {
-            "index": 107, 
+            "index": 106, 
             "word": "עובדא"
         }, 
         {
-            "index": 108, 
+            "index": 107, 
             "word": "בההוא"
         }, 
         {
-            "index": 119, 
+            "index": 118, 
             "word": "פצא"
         }, 
         {
-            "index": 124, 
+            "index": 123, 
             "word": "דפציא"
         }, 
         {
-            "index": 127, 
+            "index": 126, 
             "word": "תרתין"
         }, 
         {
-            "index": 131, 
+            "index": 130, 
             "word": "ומכונה"
         }, 
         {
-            "index": 133, 
-            "word": "עסיקן"
-        }, 
-        {
-            "index": 135, 
-            "word": "דרכא"
-        }, 
-        {
-            "index": 136, 
-            "word": "אוחריתי"
-        }, 
-        {
-            "index": 137, 
-            "word": "ניזיל"
-        }, 
-        {
             "index": 138, 
-            "word": "ולא"
+            "word": "ניזיל"
         }, 
         {
             "index": 139, 
-            "word": "ניזיל"
-        }, 
-        {
-            "index": 140, 
             "word": "ביניהו"
         }, 
         {
-            "index": 141, 
+            "index": 140, 
             "word": "כלל"
         }, 
         {
-            "index": 142, 
+            "index": 141, 
             "word": "או"
         }, 
         {
-            "index": 158, 
+            "index": 157, 
             "word": "בהדי"
         }, 
         {
-            "index": 161, 
+            "index": 160, 
             "word": "בת"
         }, 
         {
-            "index": 162, 
+            "index": 161, 
             "word": "מתלקטין"
         }, 
         {
-            "index": 164, 
+            "index": 163, 
             "word": "מתקטלין"
         }, 
         {
-            "index": 173, 
+            "index": 172, 
             "word": "ף"
         }, 
         {
-            "index": 178, 
+            "index": 177, 
             "word": "לדידה"
         }, 
         {
-            "index": 179, 
+            "index": 178, 
             "word": "או"
         }, 
         {
-            "index": 180, 
+            "index": 179, 
             "word": "קדמא"
         }, 
         {
-            "index": 181, 
+            "index": 180, 
             "word": "משמשא"
         }, 
         {
-            "index": 182, 
+            "index": 181, 
             "word": "אחדא"
         }, 
         {
-            "index": 185, 
+            "index": 184, 
             "word": "ונימא"
         }, 
         {
-            "index": 201, 
+            "index": 200, 
             "word": "והני"
         }, 
         {
-            "index": 203, 
+            "index": 202, 
             "word": "אע\"ג"
         }, 
         {
-            "index": 208, 
+            "index": 207, 
             "word": "אין"
         }, 
         {
-            "index": 214, 
+            "index": 213, 
             "word": "דאע\"ג"
         }, 
         {
-            "index": 225, 
+            "index": 224, 
             "word": "מדנחה"
         }
     ], 
@@ -1833,8 +1805,24 @@
             "side": 1
         }, 
         {
+            "head_word": "הני מילתא", 
+            "word_num": 2, 
+            "daf": "111a", 
             "word": "וה\"מ", 
-            "class": "unknown"
+            "line_num": 20, 
+            "cal_word": "והני מלי", 
+            "POS": "N05", 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 111, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "head_word": "היכא", 
@@ -2554,15 +2542,15 @@
         }, 
         {
             "head_word": "הדדי", 
-            "word_num": 0, 
+            "word_num": 2, 
             "daf": "111a", 
             "word": "להדדי", 
             "line_num": 27, 
-            "cal_word": "להדדי הדדי", 
+            "cal_word": "בהדי הדדי", 
             "POS": "P", 
             "class": "talmud", 
             "prefix": [
-                "להדי"
+                "בהדי"
             ], 
             "pg_num": 111, 
             "prefix_POS": [
@@ -2597,8 +2585,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "עסק", 
+            "word_num": 1, 
+            "daf": "111a", 
             "word": "עסיקן", 
-            "class": "unknown"
+            "line_num": 28, 
+            "cal_word": "עסיקן", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 111, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "word": "מאי", 
@@ -2613,44 +2611,84 @@
             "class": "unknown"
         }, 
         {
-            "word": "איכא", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "דירכא", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "אחרינא", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "ליזיל", 
-            "class": "unknown"
-        }, 
-        {
-            "head_word": "הדדי", 
+            "head_word": "איכא", 
             "word_num": 2, 
             "daf": "111a", 
-            "word": "בה", 
-            "line_num": 27, 
-            "cal_word": "בהדי הדדי", 
-            "POS": "P", 
+            "word": "איכא", 
+            "line_num": 28, 
+            "cal_word": "איכא", 
+            "POS": "a", 
             "class": "talmud", 
-            "prefix": [
-                "בהדי"
-            ], 
             "pg_num": 111, 
-            "prefix_POS": [
-                "p01"
-            ], 
             "ms": "01", 
             "book_num": 71004, 
             "side": 1
         }, 
         {
-            "word": "ואי", 
+            "head_word": "דרכא", 
+            "word_num": 3, 
+            "daf": "111a", 
+            "word": "דירכא", 
+            "line_num": 28, 
+            "cal_word": "דרכא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "pg_num": 111, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 1
+        }, 
+        {
+            "head_word": "אחרינא", 
+            "word_num": 4, 
+            "daf": "111a", 
+            "word": "אחרינא", 
+            "line_num": 28, 
+            "cal_word": "אוחריתי", 
+            "POS": "P", 
+            "class": "talmud", 
+            "pg_num": 111, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 1
+        }, 
+        {
+            "head_word": "אזל", 
+            "word_num": 5, 
+            "daf": "111a", 
+            "word": "ליזיל", 
+            "line_num": 28, 
+            "cal_word": "ניזיל", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 111, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 1
+        }, 
+        {
+            "word": "בה", 
             "class": "unknown"
+        }, 
+        {
+            "head_word": "לא", 
+            "word_num": 6, 
+            "daf": "111a", 
+            "word": "ואי", 
+            "line_num": 28, 
+            "cal_word": "ולא", 
+            "POS": "a", 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 111, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "head_word": "ליכא", 

@@ -13,10 +13,6 @@
             "word": "קפיד"
         }, 
         {
-            "index": 23, 
-            "word": "ומאן"
-        }, 
-        {
             "index": 48, 
             "word": "קא"
         }, 
@@ -27,6 +23,10 @@
         {
             "index": 63, 
             "word": "קא"
+        }, 
+        {
+            "index": 76, 
+            "word": "עסיקי"
         }, 
         {
             "index": 86, 
@@ -288,7 +288,7 @@
             "daf": "123a", 
             "word": "כר\"", 
             "line_num": 9, 
-            "cal_word": "כר\"", 
+            "cal_word": "כר", 
             "POS": "p02", 
             "class": "talmud", 
             "pg_num": 123, 
@@ -655,8 +655,8 @@
             "word_num": 1, 
             "daf": "123a", 
             "word": "דאמר", 
-            "line_num": 16, 
-            "cal_word": "דאמ\"", 
+            "line_num": 15, 
+            "cal_word": "דאמ", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [
@@ -683,12 +683,44 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "מאנ", 
+            "word_num": 0, 
+            "daf": "123a", 
             "word": "מאן", 
-            "class": "unknown"
+            "line_num": 16, 
+            "cal_word": "ומאן", 
+            "POS": "P01", 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 123, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
+            "head_word": "אמר", 
+            "word_num": 1, 
+            "daf": "123a", 
             "word": "דאמר", 
-            "class": "unknown"
+            "line_num": 16, 
+            "cal_word": "דאמ", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
+            "pg_num": 123, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "של", 
@@ -998,7 +1030,7 @@
             "daf": "123a", 
             "word": "והאמר", 
             "line_num": 24, 
-            "cal_word": "והאמ\"", 
+            "cal_word": "והאמ", 
             "POS": "I", 
             "class": "talmud", 
             "prefix": [
@@ -1297,8 +1329,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אמר", 
+            "word_num": 0, 
+            "daf": "123a", 
             "word": "או", 
-            "class": "unknown"
+            "line_num": 32, 
+            "cal_word": "אמ", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 123, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "עוקצה", 
@@ -1385,32 +1427,12 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 0, 
-            "daf": "123a", 
             "word": "איתיביה", 
-            "line_num": 32, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 123, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 0, 
-            "daf": "123a", 
             "word": "מחט", 
-            "line_num": 32, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 123, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "שניטל", 
@@ -1943,18 +1965,8 @@
             "side": 1
         }, 
         {
-            "head_word": "עסק", 
-            "word_num": 2, 
-            "daf": "123a", 
             "word": "עסקינן", 
-            "line_num": 41, 
-            "cal_word": "עסיקי\"", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 123, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "זימנא", 

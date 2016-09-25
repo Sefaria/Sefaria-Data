@@ -9,6 +9,10 @@
             "word": "זמנא"
         }, 
         {
+            "index": 8, 
+            "word": "ואלא"
+        }, 
+        {
             "index": 9, 
             "word": "קמיפלגי"
         }, 
@@ -25,24 +29,12 @@
             "word": "קאמ"
         }, 
         {
-            "index": 28, 
-            "word": "דאיתיה"
-        }, 
-        {
-            "index": 29, 
-            "word": "איסורא"
-        }, 
-        {
-            "index": 30, 
-            "word": "הוא"
-        }, 
-        {
             "index": 31, 
             "word": "מודי"
         }, 
         {
-            "index": 32, 
-            "word": "ליה"
+            "index": 33, 
+            "word": "משום"
         }, 
         {
             "index": 34, 
@@ -63,6 +55,10 @@
         {
             "index": 39, 
             "word": "קאמ"
+        }, 
+        {
+            "index": 40, 
+            "word": "בהא"
         }
     ], 
     "words": [
@@ -972,10 +968,10 @@
         }, 
         {
             "head_word": "משומ", 
-            "word_num": 0, 
+            "word_num": 3, 
             "daf": "63b", 
             "word": "משום", 
-            "line_num": 29, 
+            "line_num": 25, 
             "cal_word": "משום", 
             "POS": "c", 
             "class": "talmud", 
@@ -986,40 +982,28 @@
         }, 
         {
             "head_word": "איסורא", 
-            "word_num": 4, 
+            "word_num": 1, 
             "daf": "63b", 
             "word": "דאיסור", 
-            "line_num": 25, 
-            "cal_word": "דאיסורא", 
+            "line_num": 26, 
+            "cal_word": "איסורא", 
             "POS": "N02", 
             "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
             "pg_num": 63, 
-            "prefix_POS": [
-                "c"
-            ], 
             "ms": "01", 
             "book_num": 71004, 
             "side": 2
         }, 
         {
-            "head_word": "הא", 
-            "word_num": 1, 
+            "head_word": "הוא", 
+            "word_num": 2, 
             "daf": "63b", 
             "word": "הוא", 
-            "line_num": 33, 
-            "cal_word": "בהא", 
+            "line_num": 26, 
+            "cal_word": "הוא", 
             "POS": "P01", 
             "class": "talmud", 
-            "prefix": [
-                "ב_"
-            ], 
             "pg_num": 63, 
-            "prefix_POS": [
-                "p02"
-            ], 
             "ms": "01", 
             "book_num": 71004, 
             "side": 2
@@ -1065,8 +1049,24 @@
             "side": 2
         }, 
         {
+            "head_word": "אית", 
+            "word_num": 0, 
+            "daf": "63b", 
             "word": "דאיתיה", 
-            "class": "unknown"
+            "line_num": 26, 
+            "cal_word": "דאיתיה", 
+            "POS": "a", 
+            "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
+            "pg_num": 63, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 2
         }, 
         {
             "word": "איתיה", 
@@ -1089,8 +1089,24 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "או", 
+            "word_num": 0, 
+            "daf": "63b", 
             "word": "לא", 
-            "class": "unknown"
+            "line_num": 30, 
+            "cal_word": "ואו", 
+            "POS": "c", 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 63, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 2
         }, 
         {
             "word": "קדיש", 

@@ -5,20 +5,20 @@
             "word": "אמרו"
         }, 
         {
-            "index": 12, 
-            "word": "אמ\""
+            "index": 20, 
+            "word": "אמ"
         }, 
         {
-            "index": 22, 
-            "word": "ליה"
+            "index": 24, 
+            "word": "אמ"
         }, 
         {
             "index": 27, 
-            "word": "אמ\""
+            "word": "מיבעי"
         }, 
         {
-            "index": 31, 
-            "word": "אמ\""
+            "index": 29, 
+            "word": "אמ"
         }
     ], 
     "words": [
@@ -538,7 +538,7 @@
             "daf": "89a", 
             "word": "דאמר", 
             "line_num": 16, 
-            "cal_word": "דאמ\"", 
+            "cal_word": "דאמ", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [
@@ -1638,12 +1638,12 @@
         }, 
         {
             "head_word": "ל_", 
-            "word_num": 1, 
+            "word_num": 3, 
             "daf": "89a", 
             "word": "ליה", 
-            "line_num": 42, 
+            "line_num": 41, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 89, 
             "ms": "01", 
@@ -1685,8 +1685,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אמר ל_", 
+            "word_num": 0, 
+            "daf": "89a", 
             "word": "א\"ל", 
-            "class": "unknown"
+            "line_num": 42, 
+            "cal_word": "אמ ליה", 
+            "POS": "p", 
+            "class": "talmud", 
+            "pg_num": 89, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "head_word": "ההוא", 
@@ -1841,22 +1851,22 @@
             "class": "unknown"
         }, 
         {
-            "word": "ליה", 
-            "class": "unknown"
-        }, 
-        {
-            "head_word": "אמר", 
-            "word_num": 12, 
+            "head_word": "ל_", 
+            "word_num": 13, 
             "daf": "89a", 
-            "word": "אלא", 
+            "word": "ליה", 
             "line_num": 42, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
+            "cal_word": "ליה", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 89, 
             "ms": "01", 
             "book_num": 71002, 
             "side": 1
+        }, 
+        {
+            "word": "אלא", 
+            "class": "unknown"
         }, 
         {
             "word": "הר", 
@@ -1888,10 +1898,10 @@
         }, 
         {
             "head_word": "בעי", 
-            "word_num": 1, 
+            "word_num": 4, 
             "daf": "89a", 
             "word": "מיבעי", 
-            "line_num": 44, 
+            "line_num": 43, 
             "cal_word": "מיבעי", 
             "POS": "V04", 
             "class": "talmud", 
@@ -1915,18 +1925,8 @@
             "side": 1
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 6, 
-            "daf": "89a", 
             "word": "א\"ל", 
-            "line_num": 43, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 89, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "טעמא", 

@@ -49,6 +49,10 @@
             "word": "קא"
         }, 
         {
+            "index": 125, 
+            "word": "דכולי עלמא"
+        }, 
+        {
             "index": 128, 
             "word": "אטו"
         }
@@ -291,26 +295,26 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ד_", 
-            "word_num": 3, 
-            "daf": "3b", 
             "word": "דאי", 
-            "line_num": 3, 
-            "cal_word": "דר\"", 
-            "POS": "p", 
-            "class": "talmud", 
-            "pg_num": 3, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "לאו", 
             "class": "unknown"
         }, 
         {
+            "head_word": "ד_", 
+            "word_num": 3, 
+            "daf": "3b", 
             "word": "דרבי", 
-            "class": "unknown"
+            "line_num": 3, 
+            "cal_word": "דר", 
+            "POS": "p", 
+            "class": "talmud", 
+            "pg_num": 3, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "head_word": "גברא", 
@@ -1110,7 +1114,7 @@
             "daf": "3b", 
             "word": "ואיבעית", 
             "line_num": 18, 
-            "cal_word": "ואיבעי\"", 
+            "cal_word": "ואיבעי", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [
@@ -1864,7 +1868,7 @@
             "daf": "3b", 
             "word": "אימא", 
             "line_num": 30, 
-            "cal_word": "אימ\"", 
+            "cal_word": "אימ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 3, 
@@ -2032,7 +2036,7 @@
             "daf": "3b", 
             "word": "אימא", 
             "line_num": 32, 
-            "cal_word": "אימ\"", 
+            "cal_word": "אימ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 3, 
@@ -2308,7 +2312,7 @@
             "daf": "3b", 
             "word": "ואיבעית", 
             "line_num": 35, 
-            "cal_word": "ואיבעי\"", 
+            "cal_word": "ואיבעי", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [
@@ -2323,23 +2327,15 @@
             "side": 2
         }, 
         {
-            "head_word": "עלמ", 
-            "word_num": 6, 
+            "head_word": "אמר", 
+            "word_num": 5, 
             "daf": "3b", 
             "word": "אימא", 
             "line_num": 35, 
-            "cal_word": "דכולי עלמא", 
-            "POS": "N02", 
+            "cal_word": "אימ", 
+            "POS": "V01", 
             "class": "talmud", 
-            "prefix": [
-                "ד_", 
-                "כל"
-            ], 
             "pg_num": 3, 
-            "prefix_POS": [
-                "c", 
-                "N04"
-            ], 
             "ms": "01", 
             "book_num": 71002, 
             "side": 2

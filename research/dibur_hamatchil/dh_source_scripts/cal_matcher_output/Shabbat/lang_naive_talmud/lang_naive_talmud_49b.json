@@ -17,12 +17,8 @@
             "word": "האי"
         }, 
         {
-            "index": 26, 
-            "word": "לאו"
-        }, 
-        {
-            "index": 46, 
-            "word": "ליה"
+            "index": 47, 
+            "word": "דשלימא"
         }
     ], 
     "words": [
@@ -74,7 +70,7 @@
             "daf": "49b", 
             "word": "ואמר", 
             "line_num": 1, 
-            "cal_word": "ואמ\"", 
+            "cal_word": "ואמ", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [
@@ -973,13 +969,13 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "מני", 
-            "word_num": 3, 
+            "head_word": "אתי", 
+            "word_num": 0, 
             "daf": "49b", 
             "word": "וליתי", 
             "line_num": 25, 
-            "cal_word": "ולימני", 
-            "POS": "V01", 
+            "cal_word": "וליתי", 
+            "POS": "V03", 
             "class": "talmud", 
             "prefix": [
                 "ו_"
@@ -1001,8 +997,24 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "מני", 
+            "word_num": 3, 
+            "daf": "49b", 
             "word": "ולימני", 
-            "class": "unknown"
+            "line_num": 25, 
+            "cal_word": "ולימני", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 49, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "word": "מי", 
@@ -1194,7 +1206,7 @@
             "daf": "49b", 
             "word": "דאמר", 
             "line_num": 29, 
-            "cal_word": "דאמ\"", 
+            "cal_word": "דאמ", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [
@@ -1344,7 +1356,7 @@
             "daf": "49b", 
             "word": "קאמר", 
             "line_num": 32, 
-            "cal_word": "קאמ\"", 
+            "cal_word": "קאמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 49, 
@@ -1353,24 +1365,8 @@
             "side": 2
         }, 
         {
-            "head_word": "שלמ", 
-            "word_num": 2, 
-            "daf": "49b", 
             "word": "דשלים", 
-            "line_num": 32, 
-            "cal_word": "דשלימא", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 49, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "ל_", 

@@ -85,16 +85,16 @@
             "word": "ליה"
         }, 
         {
+            "index": 77, 
+            "word": "לשליחא דציבורא"
+        }, 
+        {
             "index": 78, 
             "word": "דלודע"
         }, 
         {
             "index": 84, 
             "word": "אמ"
-        }, 
-        {
-            "index": 86, 
-            "word": "ואמאי"
         }
     ], 
     "words": [
@@ -3297,20 +3297,20 @@
             "side": 2
         }, 
         {
-            "head_word": "שליחא דציבורא", 
-            "word_num": 18, 
+            "head_word": "אמר", 
+            "word_num": 17, 
             "daf": "7b", 
             "word": "ולימא", 
             "line_num": 48, 
-            "cal_word": "לשליחא דציבורא", 
-            "POS": "N02", 
+            "cal_word": "ולימא", 
+            "POS": "V01", 
             "class": "talmud", 
             "prefix": [
-                "ל_"
+                "ו_"
             ], 
             "pg_num": 7, 
             "prefix_POS": [
-                "p03"
+                "c"
             ], 
             "ms": "01", 
             "book_num": 71001, 
@@ -3423,25 +3423,35 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "כולי האי", 
-            "word_num": 9, 
-            "daf": "7b", 
             "word": "א\"ל", 
-            "line_num": 49, 
-            "cal_word": "כולי האי", 
-            "POS": "a", 
-            "class": "talmud", 
-            "pg_num": 7, 
-            "ms": "01", 
-            "book_num": 71001, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
-            "head_word": "כולי האי", 
-            "word_num": 9, 
+            "head_word": "אמאי", 
+            "word_num": 8, 
             "daf": "7b", 
             "word": "מאי", 
             "line_num": 49, 
+            "cal_word": "ואמאי", 
+            "POS": "c", 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 7, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71001, 
+            "side": 2
+        }, 
+        {
+            "head_word": "כולי האי", 
+            "word_num": 9, 
+            "daf": "7b", 
+            "word": "כולי", 
+            "line_num": 49, 
             "cal_word": "כולי האי", 
             "POS": "a", 
             "class": "talmud", 
@@ -3451,12 +3461,18 @@
             "side": 2
         }, 
         {
-            "word": "כולי", 
-            "class": "unknown"
-        }, 
-        {
+            "head_word": "כולי האי", 
+            "word_num": 9, 
+            "daf": "7b", 
             "word": "האי", 
-            "class": "unknown"
+            "line_num": 49, 
+            "cal_word": "כולי האי", 
+            "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 7, 
+            "ms": "01", 
+            "book_num": 71001, 
+            "side": 2
         }, 
         {
             "word": "א\"ל", 

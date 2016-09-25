@@ -1,10 +1,6 @@
 {
     "missed_words": [
         {
-            "index": 5, 
-            "word": "כר\""
-        }, 
-        {
             "index": 18, 
             "word": "צריכא"
         }, 
@@ -18,7 +14,7 @@
         }, 
         {
             "index": 23, 
-            "word": "לאשמועי\""
+            "word": "לאשמועי"
         }
     ], 
     "words": [
@@ -321,8 +317,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "כ_", 
+            "word_num": 3, 
+            "daf": "122a", 
             "word": "כר\"", 
-            "class": "unknown"
+            "line_num": 8, 
+            "cal_word": "כר", 
+            "POS": "p02", 
+            "class": "talmud", 
+            "pg_num": 122, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "אליעזר", 
@@ -604,7 +610,7 @@
             "daf": "122a", 
             "word": "וצריכא", 
             "line_num": 16, 
-            "cal_word": "וצריכ\"", 
+            "cal_word": "וצריכ", 
             "POS": "A02", 
             "class": "talmud", 
             "prefix": [
@@ -644,7 +650,7 @@
             "daf": "122a", 
             "word": "אשמעינן", 
             "line_num": 17, 
-            "cal_word": "אשמעי\"", 
+            "cal_word": "אשמעי", 
             "POS": "V03", 
             "class": "talmud", 
             "pg_num": 122, 
@@ -714,7 +720,7 @@
             "daf": "122a", 
             "word": "דילמא", 
             "line_num": 18, 
-            "cal_word": "דילמ\"", 
+            "cal_word": "דילמ", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 122, 
@@ -1366,7 +1372,7 @@
             "daf": "122a", 
             "word": "דרובא", 
             "line_num": 37, 
-            "cal_word": "דרוב\"", 
+            "cal_word": "דרוב", 
             "POS": "N02", 
             "class": "talmud", 
             "prefix": [

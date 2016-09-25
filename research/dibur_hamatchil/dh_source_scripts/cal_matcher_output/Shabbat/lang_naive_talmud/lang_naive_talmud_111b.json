@@ -73,16 +73,20 @@
             "word": "הוא"
         }, 
         {
-            "index": 65, 
-            "word": "דשרי"
-        }, 
-        {
             "index": 66, 
             "word": "ור\"ש"
         }, 
         {
             "index": 67, 
             "word": "סבר"
+        }, 
+        {
+            "index": 71, 
+            "word": "לכולי עלמא"
+        }, 
+        {
+            "index": 77, 
+            "word": "לכולי עלמא"
         }, 
         {
             "index": 78, 
@@ -206,7 +210,7 @@
             "daf": "111b", 
             "word": "אפילו", 
             "line_num": 1, 
-            "cal_word": "אפי\"", 
+            "cal_word": "אפי", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 111, 
@@ -682,7 +686,7 @@
             "daf": "111b", 
             "word": "אילימא", 
             "line_num": 11, 
-            "cal_word": "אילימ\"", 
+            "cal_word": "אילימ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 111, 
@@ -1171,23 +1175,15 @@
             "side": 2
         }, 
         {
-            "head_word": "עלמ", 
-            "word_num": 24, 
+            "head_word": "שכיח", 
+            "word_num": 23, 
             "daf": "111b", 
             "word": "שכיח", 
             "line_num": 18, 
-            "cal_word": "לכולי עלמא", 
-            "POS": "N02", 
+            "cal_word": "שכיח", 
+            "POS": "A01", 
             "class": "talmud", 
-            "prefix": [
-                "ל_", 
-                "כל"
-            ], 
             "pg_num": 111, 
-            "prefix_POS": [
-                "p03", 
-                "N04"
-            ], 
             "ms": "01", 
             "book_num": 71002, 
             "side": 2
@@ -1249,23 +1245,15 @@
             "side": 2
         }, 
         {
-            "head_word": "עלמ", 
-            "word_num": 30, 
+            "head_word": "שכיח", 
+            "word_num": 29, 
             "daf": "111b", 
             "word": "שכיח", 
             "line_num": 18, 
-            "cal_word": "לכולי עלמא", 
-            "POS": "N02", 
+            "cal_word": "שכיח", 
+            "POS": "A01", 
             "class": "talmud", 
-            "prefix": [
-                "ל_", 
-                "כל"
-            ], 
             "pg_num": 111, 
-            "prefix_POS": [
-                "p03", 
-                "N04"
-            ], 
             "ms": "01", 
             "book_num": 71002, 
             "side": 2
@@ -1542,7 +1530,7 @@
             "daf": "111b", 
             "word": "אילימא", 
             "line_num": 25, 
-            "cal_word": "אילימ\"", 
+            "cal_word": "אילימ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 111, 
@@ -1898,7 +1886,7 @@
             "daf": "111b", 
             "word": "דר\"מ", 
             "line_num": 32, 
-            "cal_word": "דר\"", 
+            "cal_word": "דר", 
             "POS": "p", 
             "class": "talmud", 
             "pg_num": 111, 

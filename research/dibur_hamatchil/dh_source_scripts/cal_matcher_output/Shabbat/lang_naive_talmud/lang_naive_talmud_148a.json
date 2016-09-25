@@ -21,8 +21,8 @@
             "word": "אתי"
         }, 
         {
-            "index": 76, 
-            "word": "ואמ\""
+            "index": 77, 
+            "word": "ליה"
         }, 
         {
             "index": 79, 
@@ -33,67 +33,71 @@
             "word": "כי"
         }, 
         {
+            "index": 85, 
+            "word": "אמ"
+        }, 
+        {
             "index": 92, 
-            "word": "אמ\""
+            "word": "אמ ליה"
         }, 
         {
             "index": 93, 
-            "word": "ליה"
-        }, 
-        {
-            "index": 94, 
             "word": "ולא"
         }, 
         {
-            "index": 110, 
+            "index": 109, 
             "word": "רבנן"
         }, 
         {
-            "index": 112, 
+            "index": 111, 
             "word": "ליה"
         }, 
         {
-            "index": 123, 
+            "index": 122, 
             "word": "והא"
         }, 
         {
-            "index": 126, 
+            "index": 125, 
             "word": "דקא"
         }, 
         {
-            "index": 131, 
+            "index": 128, 
+            "word": "ביומא טבא"
+        }, 
+        {
+            "index": 130, 
             "word": "קא"
         }, 
         {
-            "index": 132, 
+            "index": 131, 
             "word": "משנין"
         }, 
         {
-            "index": 134, 
-            "word": "אמרי\""
+            "index": 133, 
+            "word": "אמרי"
         }, 
         {
-            "index": 137, 
+            "index": 136, 
             "word": "א\"ל"
         }, 
         {
-            "index": 138, 
+            "index": 137, 
             "word": "התם"
         }, 
         {
-            "index": 143, 
+            "index": 142, 
             "word": "דדריא"
         }, 
         {
-            "index": 146, 
+            "index": 145, 
             "word": "תדרי"
         }, 
         {
-            "index": 152, 
+            "index": 151, 
             "word": "דדריה"
         }, 
         {
-            "index": 155, 
+            "index": 154, 
             "word": "תדרי"
         }
     ], 
@@ -1206,7 +1210,7 @@
             "daf": "148a", 
             "word": "איתמר", 
             "line_num": 18, 
-            "cal_word": "איתמ\"", 
+            "cal_word": "איתמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 148, 
@@ -1702,7 +1706,7 @@
         }, 
         {
             "head_word": "ל_", 
-            "word_num": 9, 
+            "word_num": 6, 
             "daf": "148a", 
             "word": "ליה", 
             "line_num": 26, 
@@ -1719,8 +1723,24 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אמר", 
+            "word_num": 8, 
+            "daf": "148a", 
             "word": "וא\"ל", 
-            "class": "unknown"
+            "line_num": 26, 
+            "cal_word": "ואמ", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 148, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "השאילני", 
@@ -1809,13 +1829,13 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 6, 
+            "head_word": "נמי", 
+            "word_num": 4, 
             "daf": "148a", 
             "word": "נמי", 
             "line_num": 27, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
+            "cal_word": "נמי", 
+            "POS": "a", 
             "class": "talmud", 
             "pg_num": 148, 
             "ms": "01", 
@@ -2407,21 +2427,15 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "יומא טבא", 
-            "word_num": 10, 
+            "head_word": "מיא", 
+            "word_num": 9, 
             "daf": "148a", 
             "word": "מיא", 
             "line_num": 31, 
-            "cal_word": "ביומא טבא", 
-            "POS": "N02", 
+            "cal_word": "מיא", 
+            "POS": "N05", 
             "class": "talmud", 
-            "prefix": [
-                "ב_"
-            ], 
             "pg_num": 148, 
-            "prefix_POS": [
-                "p02"
-            ], 
             "ms": "01", 
             "book_num": 71002, 
             "side": 1

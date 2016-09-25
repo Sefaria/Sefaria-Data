@@ -3,10 +3,6 @@
         {
             "index": 5, 
             "word": "דאיתידע"
-        }, 
-        {
-            "index": 25, 
-            "word": "לוקמיה"
         }
     ], 
     "words": [
@@ -1077,8 +1073,8 @@
             "word_num": 0, 
             "daf": "71b", 
             "word": "אדמוקים", 
-            "line_num": 29, 
-            "cal_word": "אדמוקים", 
+            "line_num": 27, 
+            "cal_word": "אדמוקי", 
             "POS": "V03", 
             "class": "talmud", 
             "pg_num": 71, 
@@ -1091,8 +1087,8 @@
             "word_num": 1, 
             "daf": "71b", 
             "word": "ליה", 
-            "line_num": 29, 
-            "cal_word": "לה", 
+            "line_num": 27, 
+            "cal_word": "ליה", 
             "POS": "p02", 
             "class": "talmud", 
             "pg_num": 71, 
@@ -1105,7 +1101,7 @@
             "word_num": 2, 
             "daf": "71b", 
             "word": "קרא", 
-            "line_num": 29, 
+            "line_num": 27, 
             "cal_word": "לקרא", 
             "POS": "N02", 
             "class": "talmud", 
@@ -1133,7 +1129,7 @@
             "word_num": 5, 
             "daf": "71b", 
             "word": "לוקמיה", 
-            "line_num": 29, 
+            "line_num": 27, 
             "cal_word": "לוקמיה", 
             "POS": "V03", 
             "class": "talmud", 
@@ -1219,16 +1215,52 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "קומ", 
+            "word_num": 0, 
+            "daf": "71b", 
             "word": "אדמוקי", 
-            "class": "unknown"
+            "line_num": 29, 
+            "cal_word": "אדמוקים", 
+            "POS": "V03", 
+            "class": "talmud", 
+            "pg_num": 71, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
+            "head_word": "ל_", 
+            "word_num": 1, 
+            "daf": "71b", 
             "word": "ליה", 
-            "class": "unknown"
+            "line_num": 29, 
+            "cal_word": "לה", 
+            "POS": "p02", 
+            "class": "talmud", 
+            "pg_num": 71, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
+            "head_word": "קרא", 
+            "word_num": 2, 
+            "daf": "71b", 
             "word": "קרא", 
-            "class": "unknown"
+            "line_num": 29, 
+            "cal_word": "לקרא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "prefix": [
+                "ל_"
+            ], 
+            "pg_num": 71, 
+            "prefix_POS": [
+                "p03"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "word": "בכזית", 
@@ -1239,8 +1271,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "קומ", 
+            "word_num": 5, 
+            "daf": "71b", 
             "word": "לוקמיה", 
-            "class": "unknown"
+            "line_num": 29, 
+            "cal_word": "לוקמיה", 
+            "POS": "V03", 
+            "class": "talmud", 
+            "pg_num": 71, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "word": "קודם", 
@@ -1290,7 +1332,7 @@
             "daf": "71b", 
             "word": "מספקא", 
             "line_num": 30, 
-            "cal_word": "מספק\"", 
+            "cal_word": "מספק", 
             "POS": "V02", 
             "class": "talmud", 
             "pg_num": 71, 
@@ -1330,7 +1372,7 @@
             "daf": "71b", 
             "word": "קאמר", 
             "line_num": 30, 
-            "cal_word": "קאמ\"", 
+            "cal_word": "קאמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 71, 

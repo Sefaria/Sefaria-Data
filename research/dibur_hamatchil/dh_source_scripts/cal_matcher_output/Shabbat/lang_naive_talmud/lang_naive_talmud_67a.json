@@ -10,7 +10,7 @@
         }, 
         {
             "index": 31, 
-            "word": "ושב\""
+            "word": "ושב"
         }, 
         {
             "index": 66, 
@@ -34,11 +34,11 @@
         }, 
         {
             "index": 92, 
-            "word": "קדיש\""
+            "word": "קדיש"
         }, 
         {
             "index": 101, 
-            "word": "קדיש\""
+            "word": "קדיש"
         }, 
         {
             "index": 131, 
@@ -110,7 +110,7 @@
         }, 
         {
             "index": 231, 
-            "word": "ואמ\""
+            "word": "ואמ"
         }, 
         {
             "index": 232, 
@@ -118,7 +118,7 @@
         }, 
         {
             "index": 239, 
-            "word": "ואמ\""
+            "word": "ואמ"
         }, 
         {
             "index": 243, 
@@ -560,7 +560,7 @@
             "daf": "67a", 
             "word": "ושבעה", 
             "line_num": 5, 
-            "cal_word": "ושב\"", 
+            "cal_word": "ושב", 
             "POS": "n01", 
             "class": "talmud", 
             "prefix": [
@@ -3185,15 +3185,21 @@
             "side": 1
         }, 
         {
-            "head_word": "בי משארא", 
-            "word_num": 3, 
+            "head_word": "שידא", 
+            "word_num": 1, 
             "daf": "67a", 
             "word": "לשידאי", 
             "line_num": 32, 
-            "cal_word": "בי מישרא", 
+            "cal_word": "לשידא", 
             "POS": "N02", 
             "class": "talmud", 
+            "prefix": [
+                "ל_"
+            ], 
             "pg_num": 67, 
+            "prefix_POS": [
+                "p03"
+            ], 
             "ms": "01", 
             "book_num": 71002, 
             "side": 1
@@ -3211,8 +3217,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "בי משארא", 
+            "word_num": 3, 
+            "daf": "67a", 
             "word": "במישרא", 
-            "class": "unknown"
+            "line_num": 32, 
+            "cal_word": "בי מישרא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "pg_num": 67, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "head_word": "כרתי", 

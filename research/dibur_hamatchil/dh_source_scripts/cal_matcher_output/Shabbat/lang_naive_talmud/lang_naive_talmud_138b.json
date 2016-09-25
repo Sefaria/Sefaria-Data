@@ -29,28 +29,12 @@
             "word": "מיחת"
         }, 
         {
-            "index": 74, 
-            "word": "אמ\""
-        }, 
-        {
             "index": 75, 
             "word": "ליה"
         }, 
         {
             "index": 76, 
             "word": "לא"
-        }, 
-        {
-            "index": 77, 
-            "word": "אמרי\""
-        }, 
-        {
-            "index": 78, 
-            "word": "ליחזייה"
-        }, 
-        {
-            "index": 79, 
-            "word": "להאי"
         }
     ], 
     "words": [
@@ -524,7 +508,7 @@
             "daf": "138b", 
             "word": "קשיא", 
             "line_num": 12, 
-            "cal_word": "קשי\"", 
+            "cal_word": "קשי", 
             "POS": "A01", 
             "class": "talmud", 
             "pg_num": 138, 
@@ -910,7 +894,7 @@
             "daf": "138b", 
             "word": "אימא", 
             "line_num": 16, 
-            "cal_word": "אימ\"", 
+            "cal_word": "אימ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 138, 
@@ -2255,16 +2239,52 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אמר", 
+            "word_num": 11, 
+            "daf": "138b", 
             "word": "אמרינן", 
-            "class": "unknown"
+            "line_num": 40, 
+            "cal_word": "אמרי", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 138, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
+            "head_word": "חזי", 
+            "word_num": 12, 
+            "daf": "138b", 
             "word": "ליחזייה", 
-            "class": "unknown"
+            "line_num": 40, 
+            "cal_word": "ליחזייה", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 138, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
+            "head_word": "האי", 
+            "word_num": 13, 
+            "daf": "138b", 
             "word": "האי", 
-            "class": "unknown"
+            "line_num": 40, 
+            "cal_word": "להאי", 
+            "POS": "P01", 
+            "class": "talmud", 
+            "prefix": [
+                "ל_"
+            ], 
+            "pg_num": 138, 
+            "prefix_POS": [
+                "p03"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "word": "תנורא", 

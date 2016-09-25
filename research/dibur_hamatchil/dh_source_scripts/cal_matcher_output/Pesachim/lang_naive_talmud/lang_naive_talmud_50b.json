@@ -1064,24 +1064,30 @@
         }, 
         {
             "head_word": "לא", 
-            "word_num": 1, 
+            "word_num": 5, 
             "daf": "50b", 
             "word": "ולא", 
-            "line_num": 25, 
-            "cal_word": "לא", 
+            "line_num": 23, 
+            "cal_word": "ולא", 
             "POS": "a", 
             "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
             "pg_num": 50, 
+            "prefix_POS": [
+                "c"
+            ], 
             "ms": "01", 
             "book_num": 71004, 
             "side": 2
         }, 
         {
             "head_word": "עבד", 
-            "word_num": 2, 
+            "word_num": 6, 
             "daf": "50b", 
             "word": "עביד", 
-            "line_num": 25, 
+            "line_num": 23, 
             "cal_word": "עביד", 
             "POS": "V01", 
             "class": "talmud", 
@@ -1139,12 +1145,32 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "לא", 
+            "word_num": 1, 
+            "daf": "50b", 
             "word": "דלא", 
-            "class": "unknown"
+            "line_num": 25, 
+            "cal_word": "לא", 
+            "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 50, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 2
         }, 
         {
+            "head_word": "עבד", 
+            "word_num": 2, 
+            "daf": "50b", 
             "word": "עביד", 
-            "class": "unknown"
+            "line_num": 25, 
+            "cal_word": "עביד", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 50, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 2
         }, 
         {
             "word": "כולי", 

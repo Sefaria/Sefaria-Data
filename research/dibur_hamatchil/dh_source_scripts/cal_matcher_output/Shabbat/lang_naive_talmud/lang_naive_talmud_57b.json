@@ -13,8 +13,8 @@
             "word": "אלא"
         }, 
         {
-            "index": 36, 
-            "word": "מתני\""
+            "index": 35, 
+            "word": "נמי"
         }, 
         {
             "index": 40, 
@@ -22,15 +22,7 @@
         }, 
         {
             "index": 42, 
-            "word": "אמ\""
-        }, 
-        {
-            "index": 46, 
-            "word": "אמ\""
-        }, 
-        {
-            "index": 47, 
-            "word": "ליה"
+            "word": "אמ"
         }
     ], 
     "words": [
@@ -538,7 +530,7 @@
             "daf": "57b", 
             "word": "קאמר", 
             "line_num": 9, 
-            "cal_word": "קאמ\"", 
+            "cal_word": "קאמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 57, 
@@ -713,22 +705,22 @@
             "class": "unknown"
         }, 
         {
-            "word": "תניא", 
-            "class": "unknown"
-        }, 
-        {
-            "head_word": "נמי", 
-            "word_num": 4, 
+            "head_word": "מתניתא", 
+            "word_num": 0, 
             "daf": "57b", 
-            "word": "נמי", 
-            "line_num": 11, 
-            "cal_word": "נמי", 
-            "POS": "a", 
+            "word": "תניא", 
+            "line_num": 15, 
+            "cal_word": "מתני", 
+            "POS": "N02", 
             "class": "talmud", 
             "pg_num": 57, 
             "ms": "01", 
             "book_num": 71002, 
             "side": 2
+        }, 
+        {
+            "word": "נמי", 
+            "class": "unknown"
         }, 
         {
             "word": "הכי", 
@@ -1041,8 +1033,18 @@
             "side": 2
         }, 
         {
+            "head_word": "אמר ל_", 
+            "word_num": 7, 
+            "daf": "57b", 
             "word": "א\"ל", 
-            "class": "unknown"
+            "line_num": 20, 
+            "cal_word": "אמ ליה", 
+            "POS": "p02", 
+            "class": "talmud", 
+            "pg_num": 57, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "word": "אביי", 
@@ -1116,7 +1118,7 @@
             "daf": "57b", 
             "word": "אמר", 
             "line_num": 21, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 57, 
@@ -1580,7 +1582,7 @@
             "daf": "57b", 
             "word": "דעבדא", 
             "line_num": 32, 
-            "cal_word": "דעבד\"", 
+            "cal_word": "דעבד", 
             "POS": "N02", 
             "class": "talmud", 
             "prefix": [

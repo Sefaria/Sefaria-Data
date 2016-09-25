@@ -1,10 +1,6 @@
 {
     "missed_words": [
         {
-            "index": 2, 
-            "word": "א\"ל"
-        }, 
-        {
             "index": 7, 
             "word": "הכא"
         }, 
@@ -17,8 +13,8 @@
             "word": "קא"
         }, 
         {
-            "index": 19, 
-            "word": "לי"
+            "index": 20, 
+            "word": "ממר שמואל"
         }, 
         {
             "index": 25, 
@@ -71,10 +67,6 @@
         {
             "index": 65, 
             "word": "בסברא"
-        }, 
-        {
-            "index": 66, 
-            "word": "פליגי"
         }
     ], 
     "words": [
@@ -113,12 +105,32 @@
             "side": 2
         }, 
         {
+            "head_word": "אמר", 
+            "word_num": 2, 
+            "daf": "49b", 
             "word": "אמר", 
-            "class": "unknown"
+            "line_num": 1, 
+            "cal_word": "א\"ל", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 49, 
+            "ms": "01", 
+            "book_num": 71001, 
+            "side": 2
         }, 
         {
+            "head_word": "אמר", 
+            "word_num": 2, 
+            "daf": "49b", 
             "word": "ליה", 
-            "class": "unknown"
+            "line_num": 1, 
+            "cal_word": "א\"ל", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 49, 
+            "ms": "01", 
+            "book_num": 71001, 
+            "side": 2
         }, 
         {
             "head_word": "האי", 
@@ -625,15 +637,21 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "מ_", 
-            "word_num": 4, 
+            "head_word": "אמר", 
+            "word_num": 2, 
             "daf": "49b", 
             "word": "ואמר", 
             "line_num": 14, 
-            "cal_word": "ממר שמואל", 
-            "POS": "p03", 
+            "cal_word": "ואמ", 
+            "POS": "V01", 
             "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
             "pg_num": 49, 
+            "prefix_POS": [
+                "c"
+            ], 
             "ms": "01", 
             "book_num": 71001, 
             "side": 2

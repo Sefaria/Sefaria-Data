@@ -1,6 +1,14 @@
 {
     "missed_words": [
         {
+            "index": 4, 
+            "word": "בשמעתיה"
+        }, 
+        {
+            "index": 6, 
+            "word": "לך"
+        }, 
+        {
             "index": 10, 
             "word": "קארו"
         }, 
@@ -25,15 +33,7 @@
             "word": "לא"
         }, 
         {
-            "index": 82, 
-            "word": "דאמ\""
-        }, 
-        {
-            "index": 83, 
-            "word": "ליה"
-        }, 
-        {
-            "index": 89, 
+            "index": 88, 
             "word": "אהייא"
         }
     ], 
@@ -229,66 +229,20 @@
             "side": 1
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 4, 
-            "daf": "7a", 
             "word": "אמר", 
-            "line_num": 6, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 7, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
-            "head_word": "שמעתא", 
-            "word_num": 5, 
-            "daf": "7a", 
             "word": "כשמעתיה", 
-            "line_num": 6, 
-            "cal_word": "בשמעתיה", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "prefix": [
-                "ב_"
-            ], 
-            "pg_num": 7, 
-            "prefix_POS": [
-                "p02"
-            ], 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 6, 
-            "daf": "7a", 
             "word": "אמר", 
-            "line_num": 6, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 7, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 7, 
-            "daf": "7a", 
             "word": "לך", 
-            "line_num": 6, 
-            "cal_word": "לך", 
-            "POS": "p02", 
-            "class": "talmud", 
-            "pg_num": 7, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "אי", 
@@ -2081,8 +2035,24 @@
             "side": 1
         }, 
         {
+            "head_word": "אמר ל_", 
+            "word_num": 10, 
+            "daf": "7a", 
             "word": "דא\"ל", 
-            "class": "unknown"
+            "line_num": 36, 
+            "cal_word": "דאמ ליה", 
+            "POS": "p", 
+            "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
+            "pg_num": 7, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "שמואל", 

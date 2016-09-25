@@ -1,6 +1,26 @@
 {
     "missed_words": [
         {
+            "index": 4, 
+            "word": "בהו"
+        }, 
+        {
+            "index": 5, 
+            "word": "רבנן"
+        }, 
+        {
+            "index": 6, 
+            "word": "דזימנין"
+        }, 
+        {
+            "index": 7, 
+            "word": "דאכיל"
+        }, 
+        {
+            "index": 8, 
+            "word": "ושקיל"
+        }, 
+        {
             "index": 9, 
             "word": "ושדי"
         }, 
@@ -22,23 +42,7 @@
         }, 
         {
             "index": 14, 
-            "word": "טעמ\""
-        }, 
-        {
-            "index": 15, 
-            "word": "גזרו"
-        }, 
-        {
-            "index": 16, 
-            "word": "בהו"
-        }, 
-        {
-            "index": 17, 
-            "word": "רבנן"
-        }, 
-        {
-            "index": 18, 
-            "word": "דזמנין"
+            "word": "טעמ"
         }, 
         {
             "index": 19, 
@@ -306,10 +310,10 @@
         }, 
         {
             "head_word": "גזר", 
-            "word_num": 2, 
+            "word_num": 0, 
             "daf": "14a", 
             "word": "גזרו", 
-            "line_num": 8, 
+            "line_num": 11, 
             "cal_word": "גזרו", 
             "POS": "V01", 
             "class": "talmud", 
@@ -320,10 +324,10 @@
         }, 
         {
             "head_word": "ב_", 
-            "word_num": 3, 
+            "word_num": 1, 
             "daf": "14a", 
             "word": "ביה", 
-            "line_num": 8, 
+            "line_num": 11, 
             "cal_word": "בהו", 
             "POS": "p02", 
             "class": "talmud", 
@@ -334,10 +338,10 @@
         }, 
         {
             "head_word": "רבננ", 
-            "word_num": 4, 
+            "word_num": 2, 
             "daf": "14a", 
             "word": "רבנן", 
-            "line_num": 8, 
+            "line_num": 11, 
             "cal_word": "רבנן", 
             "POS": "N05", 
             "class": "talmud", 
@@ -352,11 +356,11 @@
         }, 
         {
             "head_word": "זימנא", 
-            "word_num": 6, 
+            "word_num": 4, 
             "daf": "14a", 
             "word": "דזימנין", 
-            "line_num": 8, 
-            "cal_word": "דזימנין", 
+            "line_num": 11, 
+            "cal_word": "דזמנין", 
             "POS": "N03", 
             "class": "talmud", 
             "prefix": [
@@ -371,24 +375,8 @@
             "side": 1
         }, 
         {
-            "head_word": "אכל", 
-            "word_num": 7, 
-            "daf": "14a", 
             "word": "דאכיל", 
-            "line_num": 8, 
-            "cal_word": "דאכיל", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 14, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "אוכלין", 
@@ -1236,7 +1224,7 @@
             "daf": "14a", 
             "word": "קיימא", 
             "line_num": 26, 
-            "cal_word": "קימ\"", 
+            "cal_word": "קימ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 14, 

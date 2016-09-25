@@ -65,8 +65,12 @@
             "word": "בריה"
         }, 
         {
-            "index": 86, 
-            "word": "חייבין"
+            "index": 84, 
+            "word": "בר בריה"
+        }, 
+        {
+            "index": 85, 
+            "word": "בר ברי\" בריה"
         }
     ], 
     "words": [
@@ -2607,13 +2611,13 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "בר ברא", 
-            "word_num": 9, 
+            "head_word": "איהו", 
+            "word_num": 7, 
             "daf": "54a", 
             "word": "איהו", 
             "line_num": 41, 
-            "cal_word": "בר בריה", 
-            "POS": "N02", 
+            "cal_word": "איהו", 
+            "POS": "P01", 
             "class": "talmud", 
             "pg_num": 54, 
             "ms": "01", 
@@ -2621,8 +2625,18 @@
             "side": 1
         }, 
         {
+            "head_word": "חייב", 
+            "word_num": 11, 
+            "daf": "54a", 
             "word": "חייב", 
-            "class": "unknown"
+            "line_num": 41, 
+            "cal_word": "חייבין", 
+            "POS": "A03", 
+            "class": "talmud", 
+            "pg_num": 54, 
+            "ms": "01", 
+            "book_num": 71001, 
+            "side": 1
         }, 
         {
             "word": "לברוכי", 
@@ -2789,8 +2803,24 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "עלמ", 
+            "word_num": 12, 
+            "daf": "54a", 
             "word": "כולן", 
-            "class": "unknown"
+            "line_num": 41, 
+            "cal_word": "כולי עלמא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "prefix": [
+                "כל"
+            ], 
+            "pg_num": 54, 
+            "prefix_POS": [
+                "N04"
+            ], 
+            "ms": "01", 
+            "book_num": 71001, 
+            "side": 1
         }, 
         {
             "word": "צריך", 
@@ -2885,46 +2915,16 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "בר בר ברא", 
-            "word_num": 10, 
-            "daf": "54a", 
             "word": "ברית", 
-            "line_num": 41, 
-            "cal_word": "בר ברי\" בריה", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "pg_num": 54, 
-            "ms": "01", 
-            "book_num": 71001, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
-            "head_word": "בר בר ברא", 
-            "word_num": 10, 
-            "daf": "54a", 
             "word": "ה\"", 
-            "line_num": 41, 
-            "cal_word": "בר ברי\" בריה", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "pg_num": 54, 
-            "ms": "01", 
-            "book_num": 71001, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
-            "head_word": "בר בר ברא", 
-            "word_num": 10, 
-            "daf": "54a", 
             "word": "בחרבה", 
-            "line_num": 41, 
-            "cal_word": "בר ברי\" בריה", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "pg_num": 54, 
-            "ms": "01", 
-            "book_num": 71001, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "בתוך", 
@@ -2939,24 +2939,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "עלמ", 
-            "word_num": 12, 
-            "daf": "54a", 
             "word": "וכל", 
-            "line_num": 41, 
-            "cal_word": "כולי עלמא", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "prefix": [
-                "כל"
-            ], 
-            "pg_num": 54, 
-            "prefix_POS": [
-                "N04"
-            ], 
-            "ms": "01", 
-            "book_num": 71001, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "ישראל", 

@@ -1,12 +1,24 @@
 {
     "missed_words": [
         {
-            "index": 0, 
-            "word": "אי"
+            "index": 2, 
+            "word": "לא"
+        }, 
+        {
+            "index": 3, 
+            "word": "פליגי"
+        }, 
+        {
+            "index": 4, 
+            "word": "דכדרב"
+        }, 
+        {
+            "index": 5, 
+            "word": "מאי"
         }, 
         {
             "index": 6, 
-            "word": "טעמ\""
+            "word": "טעמ"
         }, 
         {
             "index": 17, 
@@ -31,76 +43,20 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "עלמ", 
-            "word_num": 3, 
-            "daf": "8a", 
             "word": "דכ\"ע", 
-            "line_num": 1, 
-            "cal_word": "דכולי עלמא", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "prefix": [
-                "ד_", 
-                "כל"
-            ], 
-            "pg_num": 8, 
-            "prefix_POS": [
-                "c", 
-                "N04"
-            ], 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
-            "head_word": "לא", 
-            "word_num": 4, 
-            "daf": "8a", 
             "word": "לא", 
-            "line_num": 1, 
-            "cal_word": "לא", 
-            "POS": "a", 
-            "class": "talmud", 
-            "pg_num": 8, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
-            "head_word": "פלג", 
-            "word_num": 5, 
-            "daf": "8a", 
             "word": "פליגי", 
-            "line_num": 1, 
-            "cal_word": "פליגי", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 8, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
-            "head_word": "רב", 
-            "word_num": 6, 
-            "daf": "8a", 
             "word": "כדרב", 
-            "line_num": 1, 
-            "cal_word": "דכדרב", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "prefix": [
-                "כ_", 
-                "כד_"
-            ], 
-            "pg_num": 8, 
-            "prefix_POS": [
-                "p", 
-                "p"
-            ], 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "חסדא", 
@@ -299,13 +255,13 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "מאי", 
+            "head_word": "אי", 
             "word_num": 0, 
             "daf": "8a", 
             "word": "אי", 
-            "line_num": 14, 
-            "cal_word": "מאי", 
-            "POS": "P01", 
+            "line_num": 1, 
+            "cal_word": "אי", 
+            "POS": "c", 
             "class": "talmud", 
             "pg_num": 8, 
             "ms": "01", 
@@ -429,8 +385,26 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "עלמ", 
+            "word_num": 3, 
+            "daf": "8a", 
             "word": "עולא", 
-            "class": "unknown"
+            "line_num": 1, 
+            "cal_word": "דכולי עלמא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "prefix": [
+                "ד_", 
+                "כל"
+            ], 
+            "pg_num": 8, 
+            "prefix_POS": [
+                "c", 
+                "N04"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "עמוד", 

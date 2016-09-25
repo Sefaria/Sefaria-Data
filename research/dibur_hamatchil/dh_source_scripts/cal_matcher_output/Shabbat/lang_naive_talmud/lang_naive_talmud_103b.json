@@ -7,6 +7,10 @@
         {
             "index": 12, 
             "word": "קמא"
+        }, 
+        {
+            "index": 31, 
+            "word": "לאשמועי"
         }
     ], 
     "words": [
@@ -916,7 +920,7 @@
             "daf": "103b", 
             "word": "איכא", 
             "line_num": 24, 
-            "cal_word": "איכ\"", 
+            "cal_word": "איכ", 
             "POS": "a", 
             "class": "talmud", 
             "pg_num": 103, 
@@ -1022,7 +1026,7 @@
             "daf": "103b", 
             "word": "ור\"ש", 
             "line_num": 25, 
-            "cal_word": "ור\"", 
+            "cal_word": "ור", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 103, 
@@ -1104,7 +1108,7 @@
             "daf": "103b", 
             "word": "בעלמא", 
             "line_num": 25, 
-            "cal_word": "בעלמ\"", 
+            "cal_word": "בעלמ", 
             "POS": "a", 
             "class": "talmud", 
             "pg_num": 103, 
@@ -1152,7 +1156,7 @@
             "daf": "103b", 
             "word": "דר\"ש", 
             "line_num": 26, 
-            "cal_word": "דר\"", 
+            "cal_word": "דר", 
             "POS": "p", 
             "class": "talmud", 
             "pg_num": 103, 
@@ -1355,24 +1359,8 @@
             "side": 2
         }, 
         {
-            "head_word": "שמע", 
-            "word_num": 0, 
-            "daf": "103b", 
             "word": "לאשמעינן", 
-            "line_num": 29, 
-            "cal_word": "לאשמועי\"", 
-            "POS": "V03", 
-            "class": "talmud", 
-            "prefix": [
-                "ל_"
-            ], 
-            "pg_num": 103, 
-            "prefix_POS": [
-                "p02"
-            ], 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "עד", 
@@ -1523,18 +1511,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "הכי", 
-            "word_num": 1, 
-            "daf": "103b", 
             "word": "הכי", 
-            "line_num": 30, 
-            "cal_word": "הכי", 
-            "POS": "a", 
-            "class": "talmud", 
-            "pg_num": 103, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "יכול", 
@@ -2225,8 +2203,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "הכי", 
+            "word_num": 1, 
+            "daf": "103b", 
             "word": "כי", 
-            "class": "unknown"
+            "line_num": 30, 
+            "cal_word": "הכי", 
+            "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 103, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "word": "האי", 

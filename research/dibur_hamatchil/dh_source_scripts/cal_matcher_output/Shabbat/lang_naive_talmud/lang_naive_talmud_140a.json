@@ -13,6 +13,10 @@
             "word": "אחריתי"
         }, 
         {
+            "index": 93, 
+            "word": "אמ"
+        }, 
+        {
             "index": 94, 
             "word": "ליה"
         }, 
@@ -26,7 +30,7 @@
         }, 
         {
             "index": 118, 
-            "word": "אמ\""
+            "word": "אמ"
         }, 
         {
             "index": 119, 
@@ -34,7 +38,7 @@
         }, 
         {
             "index": 122, 
-            "word": "חמש\""
+            "word": "חמש"
         }, 
         {
             "index": 130, 
@@ -53,10 +57,6 @@
             "word": "לא"
         }, 
         {
-            "index": 154, 
-            "word": "אפ\""
-        }, 
-        {
             "index": 163, 
             "word": "דאישתי"
         }, 
@@ -66,7 +66,7 @@
         }, 
         {
             "index": 181, 
-            "word": "אמ\""
+            "word": "אמ"
         }, 
         {
             "index": 182, 
@@ -86,7 +86,7 @@
         }, 
         {
             "index": 209, 
-            "word": "אמ\""
+            "word": "אמ"
         }, 
         {
             "index": 210, 
@@ -97,59 +97,55 @@
             "word": "כיתניתא"
         }, 
         {
-            "index": 221, 
-            "word": "ליה"
-        }, 
-        {
-            "index": 224, 
+            "index": 223, 
             "word": "מר"
         }, 
         {
-            "index": 225, 
+            "index": 224, 
             "word": "מיניה"
         }, 
         {
-            "index": 226, 
+            "index": 225, 
             "word": "א\"ל"
         }, 
         {
-            "index": 235, 
+            "index": 234, 
             "word": "שרי"
         }, 
         {
-            "index": 245, 
+            "index": 244, 
             "word": "מיניה"
         }, 
         {
-            "index": 254, 
+            "index": 253, 
             "word": "מיחזי"
         }, 
         {
-            "index": 255, 
+            "index": 254, 
             "word": "דלאולודי"
         }, 
         {
-            "index": 256, 
+            "index": 255, 
             "word": "חיורא"
         }, 
         {
-            "index": 257, 
+            "index": 256, 
             "word": "קא"
         }, 
         {
-            "index": 258, 
+            "index": 257, 
             "word": "מיכוין"
         }, 
         {
-            "index": 259, 
+            "index": 258, 
             "word": "התם"
         }, 
         {
-            "index": 264, 
+            "index": 263, 
             "word": "קא"
         }, 
         {
-            "index": 265, 
+            "index": 264, 
             "word": "מיכוין"
         }
     ], 
@@ -828,7 +824,7 @@
             "daf": "140a", 
             "word": "אמר", 
             "line_num": 12, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 140, 
@@ -2531,18 +2527,8 @@
             "side": 1
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 6, 
-            "daf": "140a", 
             "word": "מעתה", 
-            "line_num": 34, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 140, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "שרה", 
@@ -2810,7 +2796,7 @@
             "daf": "140a", 
             "word": "יחידאה", 
             "line_num": 37, 
-            "cal_word": "יחידא\"", 
+            "cal_word": "יחידא", 
             "POS": "A02", 
             "class": "talmud", 
             "pg_num": 140, 
@@ -3736,7 +3722,7 @@
             "daf": "140a", 
             "word": "ואמר", 
             "line_num": 43, 
-            "cal_word": "ואמ\"", 
+            "cal_word": "ואמ", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [
@@ -3813,8 +3799,18 @@
             "side": 1
         }, 
         {
+            "head_word": "אפלו", 
+            "word_num": 4, 
+            "daf": "140a", 
             "word": "אפילו", 
-            "class": "unknown"
+            "line_num": 44, 
+            "cal_word": "אפ", 
+            "POS": "c", 
+            "class": "talmud", 
+            "pg_num": 140, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "head_word": "מאנ", 
@@ -4346,7 +4342,7 @@
             "daf": "140a", 
             "word": "מיניה", 
             "line_num": 46, 
-            "cal_word": "מיני\"", 
+            "cal_word": "מיני", 
             "POS": "p02", 
             "class": "talmud", 
             "pg_num": 140, 
@@ -4490,7 +4486,7 @@
             "daf": "140a", 
             "word": "דילמא", 
             "line_num": 47, 
-            "cal_word": "דילמ\"", 
+            "cal_word": "דילמ", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 140, 
@@ -4701,13 +4697,13 @@
             "side": 1
         }, 
         {
-            "head_word": "אמר", 
+            "head_word": "אמר ל_", 
             "word_num": 7, 
             "daf": "140a", 
             "word": "א\"ל", 
             "line_num": 48, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
+            "cal_word": "אמ ליה", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 140, 
             "ms": "01", 
@@ -4812,7 +4808,7 @@
             "daf": "140a", 
             "word": "כיתניתא", 
             "line_num": 48, 
-            "cal_word": "כתנית\"", 
+            "cal_word": "כתנית", 
             "POS": "N02", 
             "class": "talmud", 
             "pg_num": 140, 
@@ -4826,7 +4822,7 @@
             "daf": "140a", 
             "word": "בשבתא", 
             "line_num": 48, 
-            "cal_word": "בשבת\"", 
+            "cal_word": "בשבת", 
             "POS": "N02", 
             "class": "talmud", 
             "prefix": [
@@ -4846,7 +4842,7 @@
             "daf": "140a", 
             "word": "ואמר", 
             "line_num": 49, 
-            "cal_word": "ואמ\"", 
+            "cal_word": "ואמ", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [

@@ -10,7 +10,7 @@
         }, 
         {
             "index": 34, 
-            "word": "דר\""
+            "word": "דר"
         }, 
         {
             "index": 36, 
@@ -22,7 +22,7 @@
         }, 
         {
             "index": 40, 
-            "word": "אמ\""
+            "word": "אמ"
         }, 
         {
             "index": 41, 
@@ -38,27 +38,11 @@
         }, 
         {
             "index": 68, 
-            "word": "אמ\""
-        }, 
-        {
-            "index": 72, 
-            "word": "אמ\""
-        }, 
-        {
-            "index": 77, 
-            "word": "שלח"
-        }, 
-        {
-            "index": 78, 
-            "word": "להו"
+            "word": "אמ"
         }, 
         {
             "index": 80, 
             "word": "אתא"
-        }, 
-        {
-            "index": 83, 
-            "word": "ליה"
         }
     ], 
     "words": [
@@ -334,7 +318,7 @@
             "daf": "63b", 
             "word": "אמר", 
             "line_num": 5, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 63, 
@@ -962,7 +946,7 @@
             "daf": "63b", 
             "word": "וקא", 
             "line_num": 21, 
-            "cal_word": "וקאמ\"", 
+            "cal_word": "וקאמ", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [
@@ -1610,11 +1594,11 @@
         }, 
         {
             "head_word": "אמר", 
-            "word_num": 1, 
+            "word_num": 2, 
             "daf": "63b", 
             "word": "אמר", 
-            "line_num": 36, 
-            "cal_word": "אמ\"", 
+            "line_num": 37, 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 63, 
@@ -1991,12 +1975,32 @@
             "side": 2
         }, 
         {
+            "head_word": "שלח", 
+            "word_num": 3, 
+            "daf": "63b", 
             "word": "שלח", 
-            "class": "unknown"
+            "line_num": 44, 
+            "cal_word": "שלח", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 63, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
+            "head_word": "ל_", 
+            "word_num": 4, 
+            "daf": "63b", 
             "word": "להו", 
-            "class": "unknown"
+            "line_num": 44, 
+            "cal_word": "להו", 
+            "POS": "p03", 
+            "class": "talmud", 
+            "pg_num": 63, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "word": "דברים", 
@@ -2031,32 +2035,12 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 5, 
-            "daf": "63b", 
             "word": "אמרו", 
-            "line_num": 47, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 63, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 5, 
-            "daf": "63b", 
             "word": "משום", 
-            "line_num": 47, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 63, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "רבי", 
@@ -2196,11 +2180,11 @@
         }, 
         {
             "head_word": "אמר", 
-            "word_num": 0, 
+            "word_num": 5, 
             "daf": "63b", 
             "word": "אמר", 
-            "line_num": 53, 
-            "cal_word": "אמ\"", 
+            "line_num": 47, 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 63, 
@@ -2289,8 +2273,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אמר ל_", 
+            "word_num": 0, 
+            "daf": "63b", 
             "word": "א\"ל", 
-            "class": "unknown"
+            "line_num": 53, 
+            "cal_word": "אמ ליה", 
+            "POS": "p", 
+            "class": "talmud", 
+            "pg_num": 63, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "head_word": "ההוא", 

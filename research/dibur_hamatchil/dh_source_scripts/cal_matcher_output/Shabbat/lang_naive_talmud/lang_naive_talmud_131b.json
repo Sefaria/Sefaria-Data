@@ -3,26 +3,6 @@
         {
             "index": 14, 
             "word": "ההוא"
-        }, 
-        {
-            "index": 38, 
-            "word": "וליגמרו"
-        }, 
-        {
-            "index": 39, 
-            "word": "מיניה"
-        }, 
-        {
-            "index": 40, 
-            "word": "משום"
-        }, 
-        {
-            "index": 41, 
-            "word": "דאיכא"
-        }, 
-        {
-            "index": 42, 
-            "word": "למיפרך"
         }
     ], 
     "words": [
@@ -304,7 +284,7 @@
             "daf": "131b", 
             "word": "אילימא", 
             "line_num": 7, 
-            "cal_word": "אילימ\"", 
+            "cal_word": "אילימ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 131, 
@@ -456,7 +436,7 @@
             "daf": "131b", 
             "word": "ור\"א", 
             "line_num": 10, 
-            "cal_word": "ור\"", 
+            "cal_word": "ור", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 131, 
@@ -902,7 +882,7 @@
             "daf": "131b", 
             "word": "לר\"א", 
             "line_num": 19, 
-            "cal_word": "לר\"", 
+            "cal_word": "לר", 
             "POS": "p03", 
             "class": "talmud", 
             "pg_num": 131, 
@@ -1057,8 +1037,8 @@
             "word_num": 0, 
             "daf": "131b", 
             "word": "וליכתוב", 
-            "line_num": 33, 
-            "cal_word": "ולכתו\"", 
+            "line_num": 24, 
+            "cal_word": "וליכתוב", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [
@@ -1078,7 +1058,7 @@
             "daf": "131b", 
             "word": "רחמנא", 
             "line_num": 33, 
-            "cal_word": "רחמנ\"", 
+            "cal_word": "רחמנ", 
             "POS": "N02", 
             "class": "talmud", 
             "pg_num": 131, 
@@ -1125,24 +1105,86 @@
             "side": 2
         }, 
         {
+            "head_word": "גמר", 
+            "word_num": 5, 
+            "daf": "131b", 
             "word": "וניגמור", 
-            "class": "unknown"
+            "line_num": 24, 
+            "cal_word": "וליגמרו", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 131, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
+            "head_word": "מנ", 
+            "word_num": 0, 
+            "daf": "131b", 
             "word": "מיניה", 
-            "class": "unknown"
+            "line_num": 25, 
+            "cal_word": "מיניה", 
+            "POS": "p02", 
+            "class": "talmud", 
+            "pg_num": 131, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
+            "head_word": "משומ", 
+            "word_num": 1, 
+            "daf": "131b", 
             "word": "משום", 
-            "class": "unknown"
+            "line_num": 25, 
+            "cal_word": "משום", 
+            "POS": "c", 
+            "class": "talmud", 
+            "pg_num": 131, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
+            "head_word": "איכא", 
+            "word_num": 2, 
+            "daf": "131b", 
             "word": "דאיכא", 
-            "class": "unknown"
+            "line_num": 25, 
+            "cal_word": "דאיכא", 
+            "POS": "a", 
+            "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
+            "pg_num": 131, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
+            "head_word": "ל_", 
+            "word_num": 3, 
+            "daf": "131b", 
             "word": "למיפרך", 
-            "class": "unknown"
+            "line_num": 25, 
+            "cal_word": "למיפרך", 
+            "POS": "p02", 
+            "class": "talmud", 
+            "pg_num": 131, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "word": "מה", 
@@ -1373,8 +1415,24 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "כתב", 
+            "word_num": 0, 
+            "daf": "131b", 
             "word": "וליכתוב", 
-            "class": "unknown"
+            "line_num": 33, 
+            "cal_word": "ולכתו", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 131, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "word": "רחמנא", 
@@ -1871,26 +1929,26 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ו_", 
-            "word_num": 5, 
-            "daf": "131b", 
             "word": "ולא", 
-            "line_num": 47, 
-            "cal_word": "ור\"", 
-            "POS": "c", 
-            "class": "talmud", 
-            "pg_num": 131, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "בלילה", 
             "class": "unknown"
         }, 
         {
+            "head_word": "ו_", 
+            "word_num": 5, 
+            "daf": "131b", 
             "word": "ור\"א", 
-            "class": "unknown"
+            "line_num": 47, 
+            "cal_word": "ור", 
+            "POS": "c", 
+            "class": "talmud", 
+            "pg_num": 131, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "word": "ביום", 
@@ -2024,7 +2082,7 @@
             "daf": "131b", 
             "word": "וליכתוב", 
             "line_num": 48, 
-            "cal_word": "ולכתו\"", 
+            "cal_word": "ולכתו", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [
@@ -2160,7 +2218,7 @@
             "daf": "131b", 
             "word": "למיגמר", 
             "line_num": 49, 
-            "cal_word": "למיגמ\"", 
+            "cal_word": "למיגמ", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [
@@ -2336,7 +2394,7 @@
             "daf": "131b", 
             "word": "לר\"א", 
             "line_num": 53, 
-            "cal_word": "לר\"", 
+            "cal_word": "לר", 
             "POS": "p03", 
             "class": "talmud", 
             "pg_num": 131, 

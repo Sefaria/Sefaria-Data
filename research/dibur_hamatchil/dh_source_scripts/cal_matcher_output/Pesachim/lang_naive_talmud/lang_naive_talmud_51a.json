@@ -1,10 +1,6 @@
 {
     "missed_words": [
         {
-            "index": 5, 
-            "word": "בכותאיי"
-        }, 
-        {
             "index": 7, 
             "word": "ליה"
         }, 
@@ -681,24 +677,20 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "עלמ", 
+            "head_word": "כותאה", 
             "word_num": 0, 
             "daf": "51a", 
             "word": "בכותאי", 
-            "line_num": 12, 
-            "cal_word": "ובכולי עלמא", 
-            "POS": "N02", 
+            "line_num": 11, 
+            "cal_word": "בכותאיי", 
+            "POS": "A05", 
             "class": "talmud", 
             "prefix": [
-                "ו_", 
-                "ב_", 
-                "כל"
+                "ב_"
             ], 
             "pg_num": 51, 
             "prefix_POS": [
-                "c", 
-                "p02", 
-                "N04"
+                "p02"
             ], 
             "ms": "01", 
             "book_num": 71004, 
@@ -1697,13 +1689,13 @@
             "side": 1
         }, 
         {
-            "head_word": "בר ברא", 
-            "word_num": 3, 
+            "head_word": "אתי", 
+            "word_num": 1, 
             "daf": "51a", 
             "word": "אתא", 
             "line_num": 40, 
-            "cal_word": "בר בר", 
-            "POS": "N01", 
+            "cal_word": "אתה", 
+            "POS": "V01", 
             "class": "talmud", 
             "pg_num": 51, 
             "ms": "01", 
@@ -1715,12 +1707,32 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "בר ברא", 
+            "word_num": 3, 
+            "daf": "51a", 
             "word": "בר", 
-            "class": "unknown"
+            "line_num": 40, 
+            "cal_word": "בר בר", 
+            "POS": "N01", 
+            "class": "talmud", 
+            "pg_num": 51, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
+            "head_word": "בר ברא", 
+            "word_num": 3, 
+            "daf": "51a", 
             "word": "בר", 
-            "class": "unknown"
+            "line_num": 40, 
+            "cal_word": "בר בר", 
+            "POS": "N01", 
+            "class": "talmud", 
+            "pg_num": 51, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "word": "חנה", 
@@ -1811,10 +1823,24 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "ו_", 
+            "word_num": 0, 
+            "daf": "51a", 
+            "word": "ורבה", 
+            "line_num": 42, 
+            "cal_word": "ורבה", 
+            "POS": "c", 
+            "class": "talmud", 
+            "pg_num": 51, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 1
+        }, 
+        {
             "head_word": "בר ברא", 
             "word_num": 1, 
             "daf": "51a", 
-            "word": "ורבה", 
+            "word": "בריה", 
             "line_num": 42, 
             "cal_word": "בר בר", 
             "POS": "N01", 
@@ -1825,12 +1851,18 @@
             "side": 1
         }, 
         {
-            "word": "בריה", 
-            "class": "unknown"
-        }, 
-        {
+            "head_word": "בר ברא", 
+            "word_num": 1, 
+            "daf": "51a", 
             "word": "דרב", 
-            "class": "unknown"
+            "line_num": 42, 
+            "cal_word": "בר בר", 
+            "POS": "N01", 
+            "class": "talmud", 
+            "pg_num": 51, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "word": "הונא", 
@@ -2201,17 +2233,13 @@
             "side": 1
         }, 
         {
-            "word": "לא\"י", 
-            "class": "unknown"
-        }, 
-        {
-            "head_word": "או", 
-            "word_num": 2, 
+            "head_word": "ל_", 
+            "word_num": 1, 
             "daf": "51a", 
-            "word": "אי", 
+            "word": "לא\"י", 
             "line_num": 46, 
-            "cal_word": "או", 
-            "POS": "c", 
+            "cal_word": "לארץ ישראל", 
+            "POS": "p03", 
             "class": "talmud", 
             "pg_num": 51, 
             "ms": "01", 
@@ -2219,12 +2247,26 @@
             "side": 1
         }, 
         {
-            "head_word": "נמי", 
-            "word_num": 3, 
+            "head_word": "או נמי", 
+            "word_num": 2, 
+            "daf": "51a", 
+            "word": "אי", 
+            "line_num": 46, 
+            "cal_word": "או נמי", 
+            "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 51, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 1
+        }, 
+        {
+            "head_word": "או נמי", 
+            "word_num": 2, 
             "daf": "51a", 
             "word": "נמי", 
             "line_num": 46, 
-            "cal_word": "נמי", 
+            "cal_word": "או נמי", 
             "POS": "a", 
             "class": "talmud", 
             "pg_num": 51, 
@@ -2325,18 +2367,8 @@
             "side": 1
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 0, 
-            "daf": "51a", 
             "word": "להו", 
-            "line_num": 47, 
-            "cal_word": "להו", 
-            "POS": "p", 
-            "class": "talmud", 
-            "pg_num": 51, 
-            "ms": "01", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "עבדינן", 

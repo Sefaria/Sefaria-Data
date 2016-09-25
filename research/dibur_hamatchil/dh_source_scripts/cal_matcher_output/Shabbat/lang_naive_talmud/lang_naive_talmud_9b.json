@@ -6,15 +6,11 @@
         }, 
         {
             "index": 17, 
-            "word": "אפי\""
-        }, 
-        {
-            "index": 22, 
-            "word": "לאימשוכי"
+            "word": "אפי"
         }, 
         {
             "index": 23, 
-            "word": "אפי\""
+            "word": "אפי"
         }, 
         {
             "index": 28, 
@@ -26,7 +22,7 @@
         }, 
         {
             "index": 50, 
-            "word": "דאמ\""
+            "word": "דאמ"
         }, 
         {
             "index": 51, 
@@ -288,7 +284,7 @@
             "daf": "9b", 
             "word": "דר\"", 
             "line_num": 9, 
-            "cal_word": "דר\"", 
+            "cal_word": "דר", 
             "POS": "p", 
             "class": "talmud", 
             "pg_num": 9, 
@@ -690,7 +686,7 @@
             "daf": "9b", 
             "word": "דילמא", 
             "line_num": 20, 
-            "cal_word": "דילמ\"", 
+            "cal_word": "דילמ", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 9, 
@@ -843,8 +839,24 @@
             "side": 2
         }, 
         {
+            "head_word": "משכ", 
+            "word_num": 0, 
+            "daf": "9b", 
             "word": "לאמשוכי", 
-            "class": "unknown"
+            "line_num": 23, 
+            "cal_word": "לאימשוכי", 
+            "POS": "V04", 
+            "class": "talmud", 
+            "prefix": [
+                "ל_"
+            ], 
+            "pg_num": 9, 
+            "prefix_POS": [
+                "p02"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "word": "ולא", 
@@ -1278,7 +1290,7 @@
             "daf": "9b", 
             "word": "דאמר", 
             "line_num": 32, 
-            "cal_word": "דאמ\"", 
+            "cal_word": "דאמ", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [
@@ -1499,8 +1511,26 @@
             "side": 2
         }, 
         {
+            "head_word": "עלמ", 
+            "word_num": 0, 
+            "daf": "9b", 
             "word": "חובה", 
-            "class": "unknown"
+            "line_num": 35, 
+            "cal_word": "דכולי עלמא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "prefix": [
+                "ד_", 
+                "כל"
+            ], 
+            "pg_num": 9, 
+            "prefix_POS": [
+                "c", 
+                "N04"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "head_word": "היא", 

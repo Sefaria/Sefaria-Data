@@ -1,10 +1,6 @@
 {
     "missed_words": [
         {
-            "index": 8, 
-            "word": "והא"
-        }, 
-        {
             "index": 28, 
             "word": "ואי"
         }, 
@@ -66,7 +62,7 @@
             "daf": "58a", 
             "word": "אמר", 
             "line_num": 1, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 58, 
@@ -132,7 +128,7 @@
             "daf": "58a", 
             "word": "אמר", 
             "line_num": 3, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 58, 
@@ -159,8 +155,24 @@
             "side": 1
         }, 
         {
+            "head_word": "הא", 
+            "word_num": 0, 
+            "daf": "58a", 
             "word": "והאמר", 
-            "class": "unknown"
+            "line_num": 3, 
+            "cal_word": "והא", 
+            "POS": "I", 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 58, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "שמואל", 
@@ -356,7 +368,7 @@
             "daf": "58a", 
             "word": "אוקימתא", 
             "line_num": 6, 
-            "cal_word": "אוקימת\"", 
+            "cal_word": "אוקימת", 
             "POS": "V03", 
             "class": "talmud", 
             "pg_num": 58, 
@@ -1998,7 +2010,7 @@
             "daf": "58a", 
             "word": "אמר", 
             "line_num": 40, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 58, 
@@ -2090,7 +2102,7 @@
             "daf": "58a", 
             "word": "דילמא", 
             "line_num": 41, 
-            "cal_word": "דילמ\"", 
+            "cal_word": "דילמ", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 58, 
@@ -2184,7 +2196,7 @@
             "daf": "58a", 
             "word": "דילמא", 
             "line_num": 43, 
-            "cal_word": "דילמ\"", 
+            "cal_word": "דילמ", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 58, 

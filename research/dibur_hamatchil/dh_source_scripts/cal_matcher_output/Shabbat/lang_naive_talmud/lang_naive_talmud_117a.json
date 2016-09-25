@@ -630,7 +630,7 @@
             "daf": "117a", 
             "word": "אמר", 
             "line_num": 13, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 117, 
@@ -684,7 +684,7 @@
             "daf": "117a", 
             "word": "כדאמרינן", 
             "line_num": 14, 
-            "cal_word": "כדאמרי\"", 
+            "cal_word": "כדאמרי", 
             "POS": "V01", 
             "class": "talmud", 
             "prefix": [
@@ -917,10 +917,28 @@
             "side": 1
         }, 
         {
+            "head_word": "ידי", 
+            "word_num": 3, 
+            "daf": "117a", 
+            "word": "מודה", 
+            "line_num": 17, 
+            "cal_word": "מודה", 
+            "POS": "V03", 
+            "class": "talmud", 
+            "pg_num": 117, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
+        }, 
+        {
+            "word": "ר\"ש", 
+            "class": "unknown"
+        }, 
+        {
             "head_word": "פסיק רישא", 
             "word_num": 6, 
             "daf": "117a", 
-            "word": "מודה", 
+            "word": "בפסיק", 
             "line_num": 17, 
             "cal_word": "בדיפסיק רישיה", 
             "POS": "N02", 
@@ -937,16 +955,24 @@
             "side": 1
         }, 
         {
-            "word": "ר\"ש", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "בפסיק", 
-            "class": "unknown"
-        }, 
-        {
+            "head_word": "פסיק רישא", 
+            "word_num": 6, 
+            "daf": "117a", 
             "word": "רישיה", 
-            "class": "unknown"
+            "line_num": 17, 
+            "cal_word": "בדיפסיק רישיה", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "prefix": [
+                "ב_"
+            ], 
+            "pg_num": 117, 
+            "prefix_POS": [
+                "p02"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "head_word": "לא", 

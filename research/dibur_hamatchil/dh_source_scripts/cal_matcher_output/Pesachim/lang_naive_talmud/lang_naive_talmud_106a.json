@@ -1,6 +1,10 @@
 {
     "missed_words": [
         {
+            "index": 2, 
+            "word": "דבית שמאי"
+        }, 
+        {
             "index": 9, 
             "word": "רב"
         }, 
@@ -35,6 +39,10 @@
         {
             "index": 45, 
             "word": "מיהת"
+        }, 
+        {
+            "index": 46, 
+            "word": "דכל היכי"
         }, 
         {
             "index": 47, 
@@ -129,15 +137,21 @@
             "side": 1
         }, 
         {
-            "head_word": "ד_", 
-            "word_num": 4, 
+            "head_word": "אליבא", 
+            "word_num": 3, 
             "daf": "106a", 
             "word": "ואליבא", 
             "line_num": 2, 
-            "cal_word": "דבית שמאי", 
-            "POS": "p", 
+            "cal_word": "ואליבא", 
+            "POS": "p01", 
             "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
             "pg_num": 106, 
+            "prefix_POS": [
+                "c"
+            ], 
             "ms": "01", 
             "book_num": 71004, 
             "side": 1
@@ -1465,15 +1479,21 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "חד בשבא", 
-            "word_num": 2, 
+            "head_word": "יתב", 
+            "word_num": 0, 
             "daf": "106a", 
             "word": "ויתיב", 
             "line_num": 29, 
-            "cal_word": "חד בשבא", 
-            "POS": "N02", 
+            "cal_word": "ויתיב", 
+            "POS": "V01", 
             "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
             "pg_num": 106, 
+            "prefix_POS": [
+                "c"
+            ], 
             "ms": "01", 
             "book_num": 71004, 
             "side": 1
@@ -1491,12 +1511,32 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "חד בשבא", 
+            "word_num": 2, 
+            "daf": "106a", 
             "word": "חדא", 
-            "class": "unknown"
+            "line_num": 29, 
+            "cal_word": "חד בשבא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "pg_num": 106, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
+            "head_word": "חד בשבא", 
+            "word_num": 2, 
+            "daf": "106a", 
             "word": "בשבתא", 
-            "class": "unknown"
+            "line_num": 29, 
+            "cal_word": "חד בשבא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "pg_num": 106, 
+            "ms": "01", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "head_word": "תרי", 

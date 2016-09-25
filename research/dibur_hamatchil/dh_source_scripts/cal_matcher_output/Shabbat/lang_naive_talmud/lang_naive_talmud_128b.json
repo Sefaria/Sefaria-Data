@@ -5,16 +5,12 @@
             "word": "הא"
         }, 
         {
-            "index": 20, 
-            "word": "לא"
-        }, 
-        {
             "index": 37, 
             "word": "מקהי"
         }, 
         {
-            "index": 64, 
-            "word": "פשיט\""
+            "index": 65, 
+            "word": "אמ"
         }, 
         {
             "index": 84, 
@@ -1043,13 +1039,31 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 11, 
+            "head_word": "אינ", 
+            "word_num": 8, 
             "daf": "128b", 
             "word": "אין", 
             "line_num": 24, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
+            "cal_word": "אין", 
+            "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 128, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
+        }, 
+        {
+            "word": "מדדין", 
+            "class": "unknown"
+        }, 
+        {
+            "head_word": "לא", 
+            "word_num": 10, 
+            "daf": "128b", 
+            "word": "לא", 
+            "line_num": 24, 
+            "cal_word": "לא", 
+            "POS": "a", 
             "class": "talmud", 
             "pg_num": 128, 
             "ms": "01", 
@@ -1060,23 +1074,15 @@
             "head_word": "אמר", 
             "word_num": 11, 
             "daf": "128b", 
-            "word": "מדדין", 
+            "word": "אמר", 
             "line_num": 24, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 128, 
             "ms": "01", 
             "book_num": 71002, 
             "side": 2
-        }, 
-        {
-            "word": "לא", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "אמר", 
-            "class": "unknown"
         }, 
         {
             "word": "אביי", 
@@ -1314,7 +1320,7 @@
             "daf": "128b", 
             "word": "דדילמא", 
             "line_num": 26, 
-            "cal_word": "דדילמ\"", 
+            "cal_word": "דדילמ", 
             "POS": "c", 
             "class": "talmud", 
             "prefix": [
@@ -2425,18 +2431,8 @@
             "side": 2
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 1, 
-            "daf": "128b", 
             "word": "אם", 
-            "line_num": 42, 
-            "cal_word": "אמ\"", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 128, 
-            "ms": "01", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "היתה", 
@@ -2471,8 +2467,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "פשיט", 
+            "word_num": 0, 
+            "daf": "128b", 
             "word": "פשיטא", 
-            "class": "unknown"
+            "line_num": 42, 
+            "cal_word": "פשיט", 
+            "POS": "A01", 
+            "class": "talmud", 
+            "pg_num": 128, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "word": "לא", 
@@ -2506,7 +2512,7 @@
             "daf": "128b", 
             "word": "דתימא", 
             "line_num": 42, 
-            "cal_word": "דתימ\"", 
+            "cal_word": "דתימ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 128, 

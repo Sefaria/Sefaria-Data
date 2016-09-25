@@ -1,14 +1,6 @@
 {
     "missed_words": [
         {
-            "index": 3, 
-            "word": "דאמ\""
-        }, 
-        {
-            "index": 4, 
-            "word": "בר"
-        }, 
-        {
             "index": 17, 
             "word": "קא"
         }, 
@@ -46,7 +38,7 @@
         }, 
         {
             "index": 76, 
-            "word": "אמ\""
+            "word": "אמ"
         }, 
         {
             "index": 77, 
@@ -207,16 +199,42 @@
             "side": 1
         }, 
         {
+            "head_word": "אמר", 
+            "word_num": 3, 
+            "daf": "116a", 
             "word": "דא\"ר", 
-            "class": "unknown"
+            "line_num": 3, 
+            "cal_word": "דאמ", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
+            "pg_num": 116, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "שמואל", 
             "class": "unknown"
         }, 
         {
+            "head_word": "ברא", 
+            "word_num": 6, 
+            "daf": "116a", 
             "word": "בר", 
-            "class": "unknown"
+            "line_num": 3, 
+            "cal_word": "בר", 
+            "POS": "N01", 
+            "class": "talmud", 
+            "pg_num": 116, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "נחמן", 
@@ -324,7 +342,7 @@
             "daf": "116a", 
             "word": "דר\"", 
             "line_num": 5, 
-            "cal_word": "דר\"", 
+            "cal_word": "דר", 
             "POS": "p", 
             "class": "talmud", 
             "pg_num": 116, 
@@ -2502,7 +2520,7 @@
             "daf": "116a", 
             "word": "אמר", 
             "line_num": 46, 
-            "cal_word": "אמ\"", 
+            "cal_word": "אמ", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 116, 
@@ -2705,8 +2723,18 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אמר", 
+            "word_num": 14, 
+            "daf": "116a", 
             "word": "אמר", 
-            "class": "unknown"
+            "line_num": 47, 
+            "cal_word": "אמ", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 116, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "head_word": "אנא", 
@@ -2996,7 +3024,7 @@
             "daf": "116a", 
             "word": "דרבי", 
             "line_num": 49, 
-            "cal_word": "דר\"", 
+            "cal_word": "דר", 
             "POS": "p", 
             "class": "talmud", 
             "pg_num": 116, 

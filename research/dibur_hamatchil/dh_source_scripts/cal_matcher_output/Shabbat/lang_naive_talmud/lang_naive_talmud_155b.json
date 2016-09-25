@@ -1,10 +1,6 @@
 {
     "missed_words": [
         {
-            "index": 6, 
-            "word": "טרחי\""
-        }, 
-        {
             "index": 51, 
             "word": "אלא"
         }, 
@@ -14,7 +10,7 @@
         }, 
         {
             "index": 83, 
-            "word": "מיני\""
+            "word": "מיני"
         }, 
         {
             "index": 97, 
@@ -176,7 +172,7 @@
             "daf": "155b", 
             "word": "אלמא", 
             "line_num": 3, 
-            "cal_word": "אלמ\"", 
+            "cal_word": "אלמ", 
             "POS": "a", 
             "class": "talmud", 
             "pg_num": 155, 
@@ -185,8 +181,18 @@
             "side": 2
         }, 
         {
+            "head_word": "טרח", 
+            "word_num": 0, 
+            "daf": "155b", 
             "word": "טרחינן", 
-            "class": "unknown"
+            "line_num": 4, 
+            "cal_word": "טרחי", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 155, 
+            "ms": "01", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "head_word": "אוכלא", 
@@ -530,7 +536,7 @@
             "daf": "155b", 
             "word": "אלמא", 
             "line_num": 10, 
-            "cal_word": "אלמ\"", 
+            "cal_word": "אלמ", 
             "POS": "a", 
             "class": "talmud", 
             "pg_num": 155, 
@@ -1297,10 +1303,18 @@
             "class": "unknown"
         }, 
         {
+            "word": "מאי", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "מהלקטין", 
+            "class": "unknown"
+        }, 
+        {
             "head_word": "מאי", 
             "word_num": 2, 
             "daf": "155b", 
-            "word": "מאי", 
+            "word": "ומאי", 
             "line_num": 21, 
             "cal_word": "ומאי", 
             "POS": "P01", 
@@ -1315,14 +1329,6 @@
             "ms": "01", 
             "book_num": 71002, 
             "side": 2
-        }, 
-        {
-            "word": "מהלקטין", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "ומאי", 
-            "class": "unknown"
         }, 
         {
             "word": "מלקיטין", 
@@ -2216,7 +2222,7 @@
             "daf": "155b", 
             "word": "וליטעמיך", 
             "line_num": 32, 
-            "cal_word": "וליטעמי\"", 
+            "cal_word": "וליטעמי", 
             "POS": "N02", 
             "class": "talmud", 
             "prefix": [
@@ -2268,7 +2274,7 @@
             "daf": "155b", 
             "word": "אפילו", 
             "line_num": 32, 
-            "cal_word": "אפי\"", 
+            "cal_word": "אפי", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 155, 
