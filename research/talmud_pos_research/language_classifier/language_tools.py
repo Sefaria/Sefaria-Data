@@ -15,7 +15,9 @@ from sefaria.system.exceptions import InputError
 #sys.path.append("../hmm")
 #from hmm.discrete.DiscreteHMM import DiscreteHMM
 
-#import numpy as np
+sys.path.append("/Users/nss/cnn/pycnn")
+from pycnn import *
+import numpy as np
 
 #this class is garbage now...i think
 class Cal_ngram:

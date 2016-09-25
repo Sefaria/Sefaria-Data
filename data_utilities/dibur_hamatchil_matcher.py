@@ -579,7 +579,7 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
     # go through all possible starting words in the gemara text
 
     iStartingWordInGemara = startBound
-    while iStartingWordInGemara < wordCountGemara - wordCountRashi and iStartingWordInGemara + wordCountRashi - 1 <= endBound:
+    while iStartingWordInGemara < wordCountGemara: #and iStartingWordInGemara + wordCountRashi - 1 <= endBound:
         fIsMatch = False
         offsetWithinGemara = 0
         offsetWithinRashiCV = 0
@@ -591,7 +591,7 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
         gemaraDifferential = 0
 
         iWordWithinPhrase = 0
-        while iWordWithinPhrase + offsetWithinRashiCV < wordCountRashi and iStartingWordInGemara < wordCountGemara - wordCountRashi and iStartingWordInGemara + wordCountRashi - 1 <= endBound:
+        while iWordWithinPhrase + offsetWithinRashiCV < wordCountRashi  and iStartingWordInGemara + offsetWithinGemara + iWordWithinPhrase < wordCountGemara:
             # first check if the cv word has a quotemark
 
             #try:

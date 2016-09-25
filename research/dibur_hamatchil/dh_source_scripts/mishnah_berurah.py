@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 import re
 import codecs
-import json
+import json,csv
 from data_utilities import dibur_hamatchil_matcher
 from sefaria.model import *
 from sefaria.utils import hebrew
 from sefaria.system.exceptions import DuplicateRecordError
 
+from sources.functions import post_link
 
 def getSimanNum(ref):
     return ref.normal().split(" ")[-1]
@@ -89,13 +90,14 @@ def match():
     rt_log.close()
 
 def save_links():
-    link_list = json.load(open("mishnah_berurah_links.json","r"))["link_list"]
-    for link in link_list:
-        link_obj = {"auto":True,"refs":link,"anchorText":"","generated_by":"dibur_hamatchil_matcher.py","type":"commentary"}
-        try:
-            Link(link_obj).save()
-        except DuplicateRecordError:
-            pass #poopy
+    with open("Mishnah Berurah found.csv","r") as f:
+        r = csv.reader(f)
+        for row in r:
+            link_obj = {"auto":False,"refs":row,"anchorText":"","generated_by":"dibur_hamatchil_matcher review","type":"commentary"}
+            try:
+                Link(link_obj).save()
+            except DuplicateRecordError:
+                pass #poopy
 
 def make_better_log_file():
     nf = open("mishnah_berurah_not_found1.csv","w")
@@ -111,8 +113,16 @@ def make_better_log_file():
 
     nf.close()
 
+def save_links_post_request():
+    query = {"generated_by":"dibur_hamatchil_matcher review","auto":False}
+    ls = LinkSet(query)
+    links = [l.contents() for l in ls]
+    post_link(links)
+
+
 
 
 #match()
 #save_links()
-make_better_log_file()
+#make_better_log_file()
+save_links_post_request()

@@ -122,6 +122,7 @@ def match_cal_segments(mesechta):
         return [new_obj] #returns a single element array which will replace a range s:e in the original array
 
     cal_lines = json.load(open("cal_lines_{}.json".format(mesechta), "r"), encoding="utf8")
+
     dafs = cal_lines["dafs"]
     lines_by_daf = cal_lines["lines"]
 
@@ -162,6 +163,11 @@ def match_cal_segments(mesechta):
         if curr_sef_ref == curr_cal_ref:
             start_end_map,abbrev_matches = dibur_hamatchil_matcher.match_text(bas_word_list, lines_by_str, verbose=False, word_threshold=0.5, with_abbrev_matches=True)
             abbrev_ranges = [[am.rashiRange for am in am_list] for am_list in abbrev_matches ]
+            abbrev_count = 0
+            for ar in abbrev_ranges:
+                abbrev_count += len(ar)
+            if abbrev_count > 0:
+                print "GRESATLJL THNA DZEOR", abbrev_ranges
             for iline,se in enumerate(start_end_map):
 
                 curr_cal_line = lines[iline]
@@ -170,13 +176,14 @@ def match_cal_segments(mesechta):
                 if len(abbrev_ranges[iline]) > 0:
                     offset = 0 # account for the fact that you're losing elements in the array as you merge them
                     abbrev_ranges[iline].sort(key=lambda x: x[0])
-                    for ar in abbrev_ranges[iline]: #cast to set to remove duplicates
-                        if ar[1] - ar[0] <= 0: continue #TODO there's an issue with the abbrev func, but i'm too lazy to fix now. sometimes they're zero length
+                    for ar in abbrev_ranges[iline]:
+                        if ar[1] - ar[0] <= 0:
+                            continue #TODO there's an issue with the abbrev func, but i'm too lazy to fix now. sometimes they're zero length
                         curr_cal_line[ar[0]-offset:ar[1]+1-offset] = [u' '.join(curr_cal_line[ar[0]-offset:ar[1]+1-offset])]
-                        word_obj_list[ar[0]-offset+len(cal_words):ar[1]+1-offset+len(cal_words)] = merge_cal_word_objs(ar[0]-offset+len(cal_words),ar[1]+1-offset+len(cal_words),word_obj_list)
+                        #word_obj_list[ar[0]-offset+len(cal_words):ar[1]+1-offset+len(cal_words)] = merge_cal_word_objs(ar[0]-offset+len(cal_words),ar[1]+1-offset+len(cal_words),word_obj_list)
+                        #print word_obj_list[ar[0]-offset+len(cal_words):ar[1]+1-offset+len(cal_words)]
                         offset += ar[1]-ar[0]
                         global_offset += offset
-                        print offset
 
                 cal_words += curr_cal_line
                 if se[0] == -1:
@@ -184,8 +191,8 @@ def match_cal_segments(mesechta):
                     continue
                 # matched_cal_objs_indexes = language_tools.match_segments_without_order(lines[iline],bas_word_list[se[0]:se[1]+1],2.0)
                 curr_bas_line = bas_word_list[se[0]:se[1]+1]
-
-                matched_words_base = dibur_hamatchil_matcher.match_text(curr_bas_line, curr_cal_line, char_threshold=0.4)
+                print u'base line',u' '.join(curr_bas_line)
+                matched_words_base = dibur_hamatchil_matcher.match_text(curr_bas_line, curr_cal_line, char_threshold=0.4,verbose=True)
                 word_for_word_se += [(tse[0]+se[0],tse[1]+se[0]) if tse[0] != -1 else tse for tse in matched_words_base]
 
             matched_word_for_word = dibur_hamatchil_matcher.match_text(bas_word_list, cal_words, char_threshold=0.4, prev_matched_results=word_for_word_se)
@@ -199,10 +206,12 @@ def match_cal_segments(mesechta):
                 #dictionary juggling...
                 for i in xrange(temp_se[0],temp_se[1]+1):
                     #in case a cal_words and word_obj_list aren't the same length bc a word got split up
+                    """
                     if cal_words[ical_word] != word_obj_list[ical_word-bad_word_offset]["word"]:
                         if ical_word+1 < len(cal_words) and cal_words[ical_word+1] != word_obj_list[ical_word-bad_word_offset+1]["word"]:
                             bad_word_offset += 1
                         continue
+                    """
                     cal_word_obj = word_obj_list[ical_word].copy()
                     cal_word_obj["cal_word"] = cal_word_obj["word"]
                     temp_sef_word = temp_out[i]["word"]
@@ -212,7 +221,7 @@ def match_cal_segments(mesechta):
 
             cal_len = len(matched_word_for_word)
             print u"\n-----\nFOUND {}/{} ({}%)".format(cal_len - len(missed_words), cal_len, (1 - round(1.0 * len(missed_words) / cal_len, 4)) * 100)
-            #print u"MISSED: {}".format(u" ,".join([u"{}:{}".format(wo["word"], wo["index"]) for wo in missed_words]))
+            print u"MISSED: {}".format(u" ,".join([u"{}:{}".format(wo["word"], wo["index"]) for wo in missed_words]))
             ical += 1
         out += temp_out
 
@@ -241,7 +250,7 @@ def make_cal_lines_text(mesechta):
     fp.write(out)
     fp.close()
 
-mesechta = "Pesachim"
+mesechta = "Eruvin"
 make_cal_segments(mesechta)
 match_cal_segments(mesechta)
 #make_cal_lines_text(mesechta)
