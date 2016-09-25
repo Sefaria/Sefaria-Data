@@ -192,7 +192,7 @@ def match_cal_segments(mesechta):
                 # matched_cal_objs_indexes = language_tools.match_segments_without_order(lines[iline],bas_word_list[se[0]:se[1]+1],2.0)
                 curr_bas_line = bas_word_list[se[0]:se[1]+1]
                 print u'base line',u' '.join(curr_bas_line)
-                matched_words_base = dibur_hamatchil_matcher.match_text(curr_bas_line, curr_cal_line, char_threshold=0.4,verbose=True)
+                matched_words_base = dibur_hamatchil_matcher.match_text(curr_bas_line, curr_cal_line, char_threshold=0.4,verbose=False)
                 word_for_word_se += [(tse[0]+se[0],tse[1]+se[0]) if tse[0] != -1 else tse for tse in matched_words_base]
 
             matched_word_for_word = dibur_hamatchil_matcher.match_text(bas_word_list, cal_words, char_threshold=0.4, prev_matched_results=word_for_word_se)
@@ -221,7 +221,7 @@ def match_cal_segments(mesechta):
 
             cal_len = len(matched_word_for_word)
             print u"\n-----\nFOUND {}/{} ({}%)".format(cal_len - len(missed_words), cal_len, (1 - round(1.0 * len(missed_words) / cal_len, 4)) * 100)
-            print u"MISSED: {}".format(u" ,".join([u"{}:{}".format(wo["word"], wo["index"]) for wo in missed_words]))
+            #print u"MISSED: {}".format(u" ,".join([u"{}:{}".format(wo["word"], wo["index"]) for wo in missed_words]))
             ical += 1
         out += temp_out
 
