@@ -277,6 +277,15 @@ def onlyOne(text, subset):
     return False
 
 
+
+def replaceBadNodeTitlesHelper(title, replaceBadNodeTitles, bad_char, good_char):
+    url = SEFARIA_SERVER+'api/index/'+title.replace(" ", "_")
+    req = urllib2.Request(url)
+    data = json.load(urllib2.urlopen(req))
+    replaceBadNodeTitles(bad_char, good_char, data)
+    post_index(data)
+
+
 def checkLengthsDicts(x_dict, y_dict):
     for daf in x_dict:
         if len(x_dict[daf]) != len(y_dict[daf]):
@@ -459,6 +468,16 @@ def post_flags(version, flags):
     except HTTPError, e:
         with open('errors.html', 'w') as errors:
             errors.write(e.read())
+
+
+def get_index(ref):
+    ref = ref.replace(" ", "_")
+    url = 'http://www.sefaria.org/api/v2/raw/index/'+ref
+    req = urllib2.Request(url)
+    response = urllib2.urlopen(req)
+    data = json.load(response)
+    return data
+
 
 def get_text(ref):
     ref = ref.replace(" ", "_")
