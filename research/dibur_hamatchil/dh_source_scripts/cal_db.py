@@ -5,6 +5,8 @@ import json
 import re
 import sys,os
 
+sys.stdout = codecs.open('cal_output.txt', 'w',encoding='utf8')
+
 sys.path.insert(0,'../../../')
 
 from sources.local_settings import *
@@ -136,7 +138,7 @@ def match_cal_segments(mesechta):
 
 
         daf = dafs[ical]
-        print "----- DAF {}  ({}/{})-----".format(daf,ical,len(dafs))
+        print "-----{} DAF {}  ({}/{})-----".format(mesechta,daf,ical,len(dafs))
 
 
         base_tc = TextChunk(curr_sef_ref, "he")
@@ -161,7 +163,7 @@ def match_cal_segments(mesechta):
 
         global_offset = 0
         if curr_sef_ref == curr_cal_ref:
-            start_end_map,abbrev_matches = dibur_hamatchil_matcher.match_text(bas_word_list, lines_by_str, verbose=False, word_threshold=0.5, with_abbrev_matches=True)
+            start_end_map,abbrev_matches = dibur_hamatchil_matcher.match_text(bas_word_list, lines_by_str, verbose=True, word_threshold=0.27, char_threshold=1.5,with_abbrev_matches=True)
             abbrev_ranges = [[am.rashiRange for am in am_list] for am_list in abbrev_matches ]
             abbrev_count = 0
             for ar in abbrev_ranges:
@@ -195,7 +197,7 @@ def match_cal_segments(mesechta):
                 matched_words_base = dibur_hamatchil_matcher.match_text(curr_bas_line, curr_cal_line, char_threshold=0.4,verbose=False)
                 word_for_word_se += [(tse[0]+se[0],tse[1]+se[0]) if tse[0] != -1 else tse for tse in matched_words_base]
 
-            matched_word_for_word = dibur_hamatchil_matcher.match_text(bas_word_list, cal_words, char_threshold=0.4, prev_matched_results=word_for_word_se)
+            matched_word_for_word = dibur_hamatchil_matcher.match_text(bas_word_list, cal_words, char_threshold=0.4, prev_matched_results=word_for_word_se,boundaryFlexibility=2)
 
             bad_word_offset = 0
             for ical_word,temp_se in enumerate(matched_word_for_word):

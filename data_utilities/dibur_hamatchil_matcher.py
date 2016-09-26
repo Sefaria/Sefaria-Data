@@ -102,12 +102,13 @@ class RashiUnit:
         self.matchedGemaraText = ""
 
 
-def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,verbose=False, word_threshold=0.27,char_threshold=0.2,with_abbrev_matches=False):
+def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,verbose=False, word_threshold=0.27,char_threshold=0.2,with_abbrev_matches=False,boundaryFlexibility=0):
     """
     base_text: TextChunk
     comments: TextChunk or list of comment strings
     base_tokenizer: f(string)->list(string)
     dh_extract_method: f(string)->string
+    boundaryFlexibility: int which indicates how much leeway there is in the order of rashis
     :returns: [(Ref, Ref)] - base text, commentary
          or
          [Ref] - base text refs - if comments is a list
@@ -143,9 +144,9 @@ def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,
         raise TypeError("'comments' needs to be either a TextChunk or a list of comment strings")
 
     if with_abbrev_matches:
-        start_end_map,abbrev_matches = match_text(bas_word_list,comment_list,dh_extract_method,verbose,word_threshold,char_threshold,with_abbrev_matches=with_abbrev_matches)
+        start_end_map,abbrev_matches = match_text(bas_word_list,comment_list,dh_extract_method,verbose,word_threshold,char_threshold,with_abbrev_matches=with_abbrev_matches,boundaryFlexibility=boundaryFlexibility)
     else:
-        start_end_map = match_text(bas_word_list,comment_list,dh_extract_method,verbose,word_threshold,char_threshold)
+        start_end_map = match_text(bas_word_list,comment_list,dh_extract_method,verbose,word_threshold,char_threshold,boundaryFlexibility=boundaryFlexibility)
 
     ref_matches = []
     prev_ref = None
@@ -172,7 +173,7 @@ def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,
     else:
         return zip(ref_matches,comment_ref_list) if comment_ref_list else ref_matches
 
-def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,word_threshold=0.27,char_threshold=0.2,prev_matched_results=None,with_abbrev_matches=False):
+def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,word_threshold=0.27,char_threshold=0.2,prev_matched_results=None,with_abbrev_matches=False,boundaryFlexibility=0):
     """
     base_text: list - list of words
     comments: list - list of comment strings
@@ -192,7 +193,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
             #this rashi was initialized with the `prev_matched_results` list and should be ignored with regards to matching
             continue
 
-        startword,endword = (0,len(curDaf.allWords)) if prev_matched_results == None else GetRashiBoundaries(curDaf.allRashi,ru.place,len(curDaf.allWords))[0:2]
+        startword,endword = (0,len(curDaf.allWords)) if prev_matched_results == None else GetRashiBoundaries(curDaf.allRashi,ru.place,len(curDaf.allWords),boundaryFlexibility)[0:2]
         approxMatches = GetAllApproximateMatches(curDaf,ru,startword,endword,word_threshold,char_threshold)
         approxAbbrevMatches = GetAllApproximateMatchesWithAbbrev(curDaf, ru, startword, endword,char_threshold)
         approxSkipWordMatches = GetAllApproximateMatchesWithWordSkip(curDaf, ru, startword, endword,char_threshold)
@@ -231,7 +232,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
         topru = rashisByDisambiguity[0]
 
         #get its boundaries
-        startBound,endBound,prevMatchedRashi,nextMatchedRashi = GetRashiBoundaries(curDaf.allRashi,topru.place,len(curDaf.allWords))
+        startBound,endBound,prevMatchedRashi,nextMatchedRashi = GetRashiBoundaries(curDaf.allRashi,topru.place,len(curDaf.allWords),boundaryFlexibility)
 
         #take the first bunch in order of disambiguity and put them in
         highestrating = topru.disambiguationScore
@@ -662,13 +663,15 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
         gemaraDifferential -= offsetWithinGemara
 
         # if it is, add it in!
-        if fIsMatch:
+        # else you didn't match the whole rashi b/c you got to the end of the daf too quickly
+        if fIsMatch and iStartingWordInGemara + wordCountRashi - gemaraDifferential < wordCountGemara:
+
             curMatch = TextMatch()
             curMatch.textToMatch = curRashi.startingText
             curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iStartingWordInGemara,
                                                         wordCountRashi - gemaraDifferential)
             curMatch.startWord = iStartingWordInGemara
-            curMatch.endWord = iStartingWordInGemara + wordCountRashi - gemaraDifferential - 1 #I added the -1 b/c there was an off-by-one error
+            curMatch.endWord = iStartingWordInGemara + wordCountRashi - gemaraDifferential #I added the -1 b/c there was an off-by-one error
 
             #if we found an abbrev in gemara, save the words which matched in the TextMatch
             curMatch.abbrev_matches = abbrev_matches
@@ -952,7 +955,7 @@ def isAbbrevMatch(curpos, abbrevText, unabbrevText):
     return isMatch, 0
 
 
-def GetRashiBoundaries(allRashi, dwRashi, maxBound):  # List<RashiUnit>, int
+def GetRashiBoundaries(allRashi, dwRashi, maxBound,boundaryFlexibility):  # List<RashiUnit>, int
     # often Rashis overlap - e.g., first שבועות שתים שהן ארבע and then שתים and then שהן ארבע
     # so we can't always close off the boundaries
     # but sometimes we want to
@@ -990,6 +993,8 @@ def GetRashiBoundaries(allRashi, dwRashi, maxBound):  # List<RashiUnit>, int
         break
 
     # Done!
+    startBound = startBound - boundaryFlexibility if startBound - boundaryFlexibility >= 0 else startBound
+    endBound = endBound + boundaryFlexibility if endBound + boundaryFlexibility < maxBound else endBound
     return startBound, endBound, prevMatchedRashi, nextMatchedRashi
 
 

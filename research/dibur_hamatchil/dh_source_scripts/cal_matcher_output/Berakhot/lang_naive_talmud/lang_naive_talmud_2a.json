@@ -1,24 +1,12 @@
 {
     "missed_words": [
         {
-            "index": 19, 
-            "word": "תנא"
-        }, 
-        {
-            "index": 20, 
-            "word": "פתח"
-        }, 
-        {
             "index": 24, 
             "word": "ואיידי"
         }, 
         {
             "index": 43, 
             "word": "וקמ\"ל"
-        }, 
-        {
-            "index": 46, 
-            "word": "להו"
         }, 
         {
             "index": 49, 
@@ -885,12 +873,32 @@
             "side": 1
         }, 
         {
+            "head_word": "תנא", 
+            "word_num": 1, 
+            "daf": "2a", 
             "word": "תנא", 
-            "class": "unknown"
+            "line_num": 25, 
+            "cal_word": "תנא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "pg_num": 2, 
+            "ms": "01", 
+            "book_num": 71001, 
+            "side": 1
         }, 
         {
+            "head_word": "פתח", 
+            "word_num": 2, 
+            "daf": "2a", 
             "word": "פתח", 
-            "class": "unknown"
+            "line_num": 25, 
+            "cal_word": "פתח", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 2, 
+            "ms": "01", 
+            "book_num": 71001, 
+            "side": 1
         }, 
         {
             "word": "בערבית", 
@@ -1341,13 +1349,13 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "לא", 
-            "word_num": 1, 
+            "head_word": "ל_", 
+            "word_num": 3, 
             "daf": "2a", 
             "word": "לא", 
             "line_num": 33, 
-            "cal_word": "לא", 
-            "POS": "a", 
+            "cal_word": "להו", 
+            "POS": "p", 
             "class": "talmud", 
             "pg_num": 2, 
             "ms": "01", 
@@ -1426,11 +1434,11 @@
         }, 
         {
             "head_word": "מאי", 
-            "word_num": 0, 
+            "word_num": 3, 
             "daf": "2a", 
             "word": "וממאי", 
             "line_num": 35, 
-            "cal_word": "וממאי", 
+            "cal_word": "ומאי", 
             "POS": "P01", 
             "class": "talmud", 
             "prefix": [
@@ -1481,24 +1489,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "מאי", 
-            "word_num": 3, 
-            "daf": "2a", 
             "word": "והאי", 
-            "line_num": 35, 
-            "cal_word": "ומאי", 
-            "POS": "P01", 
-            "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
-            "pg_num": 2, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "book_num": 71001, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "וטהר", 
