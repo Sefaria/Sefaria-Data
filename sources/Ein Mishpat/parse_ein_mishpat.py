@@ -7,6 +7,8 @@ usage = "\n%prog [options] inputfile\n  inputfile is a TSV, with references in c
 parser = OptionParser(usage=usage)
 parser.add_option("-c", "--check", action="store_true", dest="check_only",
                   help="Check references only, don't write links")
+parser.add_option("-s", "--statcheck", action="store_true", dest="check_stats",
+                  help="Check for statistical outliers")
 parser.add_option("-f", "--force", action="store_true", dest="force",
                   help="Force post of data, even with known errors")
 (options, args) = parser.parse_args()
@@ -50,17 +52,66 @@ with open(args[0]) as tsv:
                 print u"Line: {} Malformed Ref: {}".format(line_num, l[n])
                 clean = False
 
+if options.check_stats:
+    data = {}
+    sas = {}
+    rms = {}
+
+    def add_to_ref_dict(d, from_ref, to_ref):
+        if not d.get(from_ref):
+            d[from_ref] = {}
+        if d[from_ref].get(to_ref):
+            d[from_ref][to_ref] += 1
+        else:
+            d[from_ref][to_ref] = 1
+
+    def check_ref_dict(d):
+        for ref_from, to_dict in d.iteritems():
+            if len(to_dict) < 2:
+                continue
+            total = float(sum(to_dict.values()))
+            card = float(len(to_dict))
+            for ref_to, count in to_dict.iteritems():
+                if count < float(total / card):
+                    tls = data.get((ref_to, ref_from), data.get((ref_from, ref_to)))
+                    print "Suspect: {},  Compared to: {}".format(ref_to, ref_from)
+                    print "Total: {}, Cardinality: {}, Count: {}".format(int(total), int(card), count)
+                    print "Others: {}".format(
+                        ", ".join(["{}({})".format(r.normal(), c) for r, c in to_dict.items() if r != ref_to]))
+                    print "Found at: {}\n".format(", ".join([r.normal() for r in tls]))
+
+
+    with open(args[0]) as tsv:
+        next(tsv)
+        next(tsv)
+        for l in csv.reader(tsv, dialect="excel-tab"):
+            if not l[16] or not l[17] or not l[19]:
+                continue
+            tl = Ref(l[16])
+            rm = Ref(l[17])
+            sa = Ref(l[19])
+
+            if not data.get((rm,sa)):
+                data[(rm, sa)] = []
+            data[(rm, sa)] += [tl]
+
+            add_to_ref_dict(sas, sa, rm)
+            add_to_ref_dict(rms, rm, sa)
+
+    check_ref_dict(sas)
+    check_ref_dict(rms)
+
+
+if options.check_only or options.check_stats:
+    exit()
+if not clean and not options.force:
+    exit()
+
 
 def create_cluster(c):
     return create_link_cluster(c, 28, "Ein Mishpat / Ner Mitsvah",
                         attrs={"generated_by": "Ein Mishpat Cluster"},
                         exception_pairs=[("Tur", "Shulchan Arukh")])
-
-
-if options.check_only:
-    exit()
-if not clean and not options.force:
-    exit()
 
 total = 0
 cluster_refs = None
