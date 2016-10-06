@@ -32,7 +32,7 @@ class XML_to_JaggedArray:
 
             depth = self.JA_array[count][1]
             has_subtitle = self.JA_array[count][2]
-            self.JA_nodes[name] = self.goDownToText(child, depth, 0, has_subtitle)
+            self.JA_nodes[name] = self.go_down_to_text(child, depth, 0, has_subtitle)
             subtitle = ""
             how_many_to_pop = -1
 
@@ -41,28 +41,43 @@ class XML_to_JaggedArray:
             if has_subtitle:
                 for gchild_count, gchild in enumerate(self.JA_nodes[name]):
                     if type(gchild) is not list:
-                        subtitle += gchild
+                        subtitle += gchild.encode('utf-8')
                         how_many_to_pop += 1
 
                 for i in range(how_many_to_pop):
                     self.JA_nodes[name].pop(0)
 
                 self.JA_nodes[name][0] = subtitle
+        return self.JA_nodes
 
 
+    def get_depth(self, array):
+        depth = 0
+        while type(array) is list:
+            array = array[1]
+            depth += 1
+        return depth
 
-    def goDownToText(self, element, depth, level=0, has_subtitle=False):
+
+    def go_down_to_text(self, element, depth, level=0, has_subtitle=False):
         if level == depth:
             return element.xpath("string()").replace("\n\n", " ")
         else:
             text = []
             for child in element:
-                result = self.goDownToText(child, depth, level+1, has_subtitle)
+                result = self.go_down_to_text(child, depth, level+1, has_subtitle)
                 text.append(result)
             if has_subtitle and len(element) == 0:
                 text = element.xpath("string()")
             return text
 
+    def convert_nodes_to_JA(self):
+        for name in self.JA_nodes:
+            each_node = self.JA_nodes[name]
+            title = each_node[0]
+            each_node.pop(0)
+            depth = get_depth(each_node)
+            key = name
+            new_node = SchemaNode()
 
-    def getNodes(self):
-        return self.JA_nodes
+
