@@ -115,12 +115,12 @@ def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,
     """
     bas_word_list = [] #re.split(r"\s+"," ".join(base_text.text))
     base_depth = base_text.ja().depth()
+    bas_ind_list,bas_ref_list = base_text.text_index_map(base_tokenizer)
+
     if base_depth == 1:
-        bas_ind_list,bas_ref_list = base_text.text_index_map(base_tokenizer)
         for segment in base_text.text:
             bas_word_list += base_tokenizer(segment)
     elif base_depth == 2:
-        bas_ind_list,bas_ref_list = base_text.text_index_map_depth_3(base_tokenizer)
         for section in base_text.text:
             for segment in section:
                 bas_word_list += base_tokenizer(segment)
@@ -129,14 +129,10 @@ def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,
     if type(comments) == TextChunk:
         comm_ref = comments._oref
         if comm_ref.get_state_ja("he").depth() == 2:
-            sub_ja = comm_ref.get_state_ja("he").subarray_with_ref(comm_ref)
             comment_ref_list = [comm_ref.subref(i + 1) for k in sub_ja.non_empty_sections() for i in k]
-            comment_list = [temp_comm for temp_sec in comments.text] #old line was:
-                                                                    #comment_list = [temp_comm for temp_sec in comments.text for temp_comm in temp_sec]
-                                                                    #but this goes one level too deep -- (Steve K)
-
+            comment_list = [temp_comm for temp_sec in comments.text]
         elif comm_ref.get_state_ja("he").depth() == 3:
-            comment_ind_list, comment_ref_list = base_text.text_index_map_depth_3(base_tokenizer)
+            comment_ind_list, comment_ref_list = base_text.text_index_map(base_tokenizer)
             comment_list = [temp_comm for temp_sec in comments.text for temp_comm in temp_sec]
     elif type(comments) == list:
         comment_list = comments

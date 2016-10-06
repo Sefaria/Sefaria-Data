@@ -112,15 +112,9 @@ class Maharam:
         elif category == 'mishnah':
             self.mishnah1_dict[current_perek].append(dh1)
 
-    def removeBDH(self, array):
-        try:
-            new_array = []
-            for elem in array:
-                elem = elem.replace('בד"ה', '')
-                new_array.append(elem.decode('utf-8'))
-        except:
-            pdb.set_trace()
-        return new_array
+    def dh_extract_method(self, str):
+        str = str.replace(u'בד"ה', u'').replace(u'וכו', u'')
+        return str
 
 
     def getPerek(self, line):
@@ -335,23 +329,13 @@ class Maharam:
 
     def postLinks(self, match_in_order):
         def base_tokenizer(str):
-            return str.split(" ")
-            '''
             str = re.sub(ur"\([^\(\)]+\)", u"", str)
             word_list = re.split(ur"\s+", str)
             word_list = [w for w in word_list if w]  # remove empty strings
             return word_list
-            '''
 
         mishnah_in_order = {}
         mishnah_out_order = {}
-        '''
-        for perek in self.mishnah1_dict:
-            print "matching mishnah"
-            mishnah_text = Ref("Mishnah "+masechet+"."+str(perek)).text('he')
-            mishnah_in_order[perek] = match_ref(mishnah_text, self.removeBDH(self.mishnah1_dict[perek]), lambda x: x)
-            mishnah_in_order[perek] = self.convertNoneTo0(mishnah_in_order[perek])
-        '''
         links_to_post = []
         for daf in sorted(self.dh1_dict.keys()):
             print daf
@@ -366,16 +350,19 @@ class Maharam:
             print "matching tosafot"+str(len(tosafot1_arr))
             #tosafot_text = compileCommentaryIntoPage("Tosafot on "+masechet, daf)
             tosafot_text = Ref("Tosafot on "+masechet+"."+AddressTalmud.toStr("en", daf)).text('he')
-            tosafot_in_order = match_ref(tosafot_text, self.removeBDH(tosafot1_arr), lambda x: x)
+            tosafot1_arr = [text.decode('utf-8') for text in tosafot1_arr]
+            tosafot_in_order = match_ref(tosafot_text, tosafot1_arr, base_tokenizer, self.dh_extract_method, verbose=True)
             tosafot_in_order = self.convertToOldFormat(tosafot_in_order)
             if not (masechet == "Bava Batra" and daf > 57):
                 print "matching rashi"+str(len(rashi1_arr))
                 rashi_text = Ref("Rashi on "+masechet+"."+AddressTalmud.toStr("en", daf)).text('he')
-                rashi_in_order = match_ref(rashi_text, self.removeBDH(rashi1_arr), lambda x: x)
+                rashi1_arr = [text.decode('utf-8') for text in rashi1_arr]
+                rashi_in_order = match_ref(rashi_text, rashi1_arr, base_tokenizer, self.dh_extract_method, verbose=True)
                 rashi_in_order = self.convertToOldFormat(rashi_in_order)
             print "matching gemara"+str(len(gemara1_arr))
             gemara_text = Ref(masechet+" "+AddressTalmud.toStr("en", daf)).text('he')
-            gemara_in_order = match_ref(gemara_text, self.removeBDH(gemara1_arr), lambda x: x)
+            gemara1_arr = [text.decode('utf-8') for text in gemara1_arr]
+            gemara_in_order = match_ref(gemara_text, gemara1_arr, base_tokenizer, self.dh_extract_method, verbose=True)
             gemara_in_order = self.convertToOldFormat(gemara_in_order)
             dh1_arr = self.dh1_dict[daf]
             print "done matching"
@@ -414,8 +401,10 @@ def create_index(tractate):
 
 
 if __name__ == "__main__":
-    titles = ["Bava Batra", "Bava Kamma","Bava Metzia"]
-    ''', "Chullin", "Eruvin", "Gittin", "Ketubot", "Kiddushin", "Makkot",
+    titles = ["Bava Metzia"]
+    '''
+        ["Bava Batra", "Bava Kamma","Bava Metzia"]
+    , "Chullin", "Eruvin", "Gittin", "Ketubot", "Kiddushin", "Makkot",
               "Niddah", "Sanhedrin", "Shabbat", "Sukkah", "Yevamot"
               ]
         '''
@@ -426,7 +415,7 @@ if __name__ == "__main__":
 
         print masechet
 
-        #create_index(masechet)
+        create_index(masechet)
         file = open(masechet+"2.txt", 'r')
 
         maharam = Maharam()
@@ -440,7 +429,7 @@ if __name__ == "__main__":
                         "language": "he",
                         "text": text_to_post,
                     }
-        #post_text("Maharam on "+masechet, send_text, "on")
+        post_text("Maharam on "+masechet, send_text, "on")
 
         maharam.postLinks(match_in_order)
 

@@ -274,6 +274,42 @@ def make_training_sets(type):
         fp = codecs.open("talmudic_2_letters_training.json", "w", encoding='utf-8')
         json.dump(talmud_dict, fp, indent=4, encoding='utf-8', ensure_ascii=False)
 
+def make_pos_hashtable_cal():
+    out = {}
+    with open("caldb.txt","r") as cal:
+        for line in cal:
+            line_obj = cal_tools.parseCalLine(line,False,False)
+            word = line_obj["word"]
+            head_word = line_obj["head_word"]
+            pos = line_obj["POS"]
+
+            if pos[0] == 'p':
+                pos = "P" + pos[1:]
+            if word in out:
+
+                pos_list = out[word]["POS"]
+                hw_list = out[word]["head_word"]
+                if not pos in pos_list and not head_word in hw_list:
+                    pos_list.append(pos)
+                    hw_list.append(head_word)
+                    out[word]["POS"] = pos_list
+                    out[word]["head_word"] = hw_list
+
+            else:
+                out[word] = {
+                    "POS" : [pos],
+                    "head_word" : [head_word]
+                }
+
+    for key in out:
+        if len(out[key]["POS"]) > 1:
+            print u"^{}^".format(key), u"*-*".join(out[key]["head_word"]), out[key]["POS"]
+
+
+
+    cal_tools.saveUTFStr(out,"cal_pos_hashtable.json")
+
+
 def tag_testing_init(word_list_in,test_set_lens,test_set_name="test"):
     print "tag_testing_init"
     doc = {}

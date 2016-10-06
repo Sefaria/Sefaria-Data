@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import cal_tools
 import language_tools
 from sefaria.model import *
 
@@ -30,4 +30,17 @@ for text_name in text_names:
     #print_tagged_corpus(test_set_name=test_set_name)
     print "yo"
     language_tools.print_tagged_corpus_to_html_table(text_name,ref_list,10,test_set_name,"naive")
+"""
+
+language_tools.make_pos_hashtable_cal()
+"""
+print cal_tools.parseCalLine("7100101062246	4	)d_ c+nqp#3 V03 )dmqypn)",False)
+print cal_tools.parseCalLine("7100101062234	1	d_ c+mny V02 dmmnynwN",False)
+print cal_tools.parseCalLine("7100101057217	9	br) N05+byn p02 bbnyyhw",False)
+print cal_tools.parseCalLine("7100201078125	4	^ ^ br)",False)
+print cal_tools.parseCalLine("7100101062206	6	)d_ c+rtx V01 )drtx)",False)
+print cal_tools.parseCalLine("7100201119123	11	d_ p+m(ly N01+$bh N02 dm(ly@$bt)",False)
+print cal_tools.parseCalLine("7100101036121	0	w_ c+h) I+)mr V01 wh)'",False)
+print cal_tools.parseCalLine("7100101043203	1	xylp)@dym) N05+l) a xylpy@dym)",False)
+print cal_tools.parseCalLine("7100101044238	8	l_ p03+by N01+! ! lby@brwK",False)
 """
