@@ -17,25 +17,7 @@ import re
 import data_utilities
 import codecs
 from sources import functions
-"""
-def numToHeb(engnum=""):
-    engnum = str(engnum)
-    numdig = len(engnum)
-    hebnum = ""
-    letters = [["" for i in range(3)] for j in range(10)]
-    letters[0]=["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט"]
-    letters[1]=["", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ"]
-    letters[2]=["", "ק", "ר", "ש", "ת", "תק", "תר", "תש", "תת", "תתק"]
-    if (numdig > 3):
-        print "We currently can't handle numbers larger than 999"
-        exit()
-    for count in range(numdig):
-        hebnum += letters[numdig-count-1][int(engnum[count])]
-    hebnum = re.sub('יה', 'טו', hebnum)
-    hebnum = re.sub('יו', 'טז', hebnum)
-    hebnum = hebnum.decode('utf-8')
-    return hebnum
-"""
+
 
 # create index record
 record = SchemaNode()
@@ -89,6 +71,7 @@ record.validate()
 
 index = {
     "title": "Shev Shmatta",
+    "titleVariants": ["Shev Shmat’ta","Shev Shmatsa"],
     "categories": ["Halakhah"],
     "schema": record.serialize()
 }
