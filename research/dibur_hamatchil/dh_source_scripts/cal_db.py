@@ -105,7 +105,7 @@ def make_cal_segments(mesechta):
 def match_cal_segments(mesechta):
     def tokenize_words(str):
         str = str.replace(u"־", " ")
-        str = re.sub(r"</?[a-z]+>", "", str)  # get rid of html tags
+        str = re.sub(r"</?.+>", "", str)  # get rid of html tags
         str = re.sub(r"\([^\(\)]+\)", "", str)  # get rid of refs
         str = str.replace("'", '"')
         word_list = filter(bool, re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]", str))

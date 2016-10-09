@@ -529,6 +529,7 @@
             "class": "talmud", 
             "pg_num": 32, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71002, 
             "side": 2
         }, 
@@ -540,6 +541,9 @@
             "line_num": 18, 
             "cal_word": "דשמעה", 
             "POS": "V01", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
             "prefix": [
                 "ד_"
@@ -549,6 +553,7 @@
                 "c"
             ], 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71002, 
             "side": 2
         }, 
@@ -575,6 +580,7 @@
             "class": "talmud", 
             "pg_num": 32, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71002, 
             "side": 2
         }, 
@@ -589,6 +595,7 @@
             "class": "talmud", 
             "pg_num": 32, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71002, 
             "side": 2
         }, 
@@ -609,16 +616,26 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ו_", 
+            "head_word": "ר'", 
             "word_num": 2, 
             "daf": "32b", 
             "word": "ור\"", 
             "line_num": 19, 
             "cal_word": "ור", 
-            "POS": "c", 
+            "POS": "PN", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
             "pg_num": 32, 
+            "prefix_POS": [
+                "c"
+            ], 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71002, 
             "side": 2
         }, 
@@ -1985,6 +2002,7 @@
             "class": "talmud", 
             "pg_num": 32, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71002, 
             "side": 2
         }, 
@@ -1995,10 +2013,11 @@
             "word": "הני", 
             "line_num": 49, 
             "cal_word": "הני", 
-            "POS": "P01", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 32, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71002, 
             "side": 2
         }, 
@@ -2013,6 +2032,7 @@
             "class": "talmud", 
             "pg_num": 32, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71002, 
             "side": 2
         }, 

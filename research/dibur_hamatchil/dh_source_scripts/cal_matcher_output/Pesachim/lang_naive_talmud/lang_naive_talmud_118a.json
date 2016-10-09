@@ -169,6 +169,7 @@
             "class": "talmud", 
             "pg_num": 118, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
@@ -855,6 +856,7 @@
             "class": "talmud", 
             "pg_num": 118, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
@@ -869,6 +871,7 @@
             "class": "talmud", 
             "pg_num": 118, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
@@ -883,6 +886,7 @@
             "class": "talmud", 
             "pg_num": 118, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
@@ -898,6 +902,9 @@
             "line_num": 21, 
             "cal_word": "דקאכלינן", 
             "POS": "V01", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
             "prefix": [
                 "ד_"
@@ -907,6 +914,7 @@
                 "c"
             ], 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
@@ -921,6 +929,7 @@
             "class": "talmud", 
             "pg_num": 118, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
@@ -932,6 +941,9 @@
             "line_num": 21, 
             "cal_word": "דדברא", 
             "POS": "N02", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
             "prefix": [
                 "ד_"
@@ -941,6 +953,7 @@
                 "p"
             ], 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
@@ -1387,6 +1400,7 @@
             "class": "talmud", 
             "pg_num": 118, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
@@ -1401,6 +1415,7 @@
             "class": "talmud", 
             "pg_num": 118, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
@@ -1420,6 +1435,9 @@
             "line_num": 30, 
             "cal_word": "וכי", 
             "POS": "c", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
             "prefix": [
                 "ו_"
@@ -1429,6 +1447,7 @@
                 "c"
             ], 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
@@ -1443,6 +1462,7 @@
             "class": "talmud", 
             "pg_num": 118, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
@@ -1454,6 +1474,9 @@
             "line_num": 30, 
             "cal_word": "דאיכא", 
             "POS": "a", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
             "prefix": [
                 "ד_"
@@ -1463,6 +1486,7 @@
                 "c"
             ], 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
@@ -1481,24 +1505,41 @@
             "word": "אנן", 
             "line_num": 30, 
             "cal_word": "אנן", 
-            "POS": "P01", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 118, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
         {
-            "head_word": "מאי טעמא", 
+            "head_word": "מאי", 
             "word_num": 9, 
             "daf": "118a", 
             "word": "מ\"ט", 
             "line_num": 30, 
-            "cal_word": "מאי טעמא", 
-            "POS": "P01", 
+            "cal_word": "מאי", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 118, 
             "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
+        }, 
+        {
+            "head_word": "טעמא", 
+            "word_num": 10, 
+            "daf": "118a", 
+            "word": "אמרינן", 
+            "line_num": 30, 
+            "cal_word": "טעמא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "pg_num": 118, 
+            "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
@@ -1506,27 +1547,14 @@
             "head_word": "אמר", 
             "word_num": 11, 
             "daf": "118a", 
-            "word": "אמרינן", 
+            "word": "האי", 
             "line_num": 30, 
             "cal_word": "אמרינן", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 118, 
             "ms": "01", 
-            "book_num": 71004, 
-            "side": 1
-        }, 
-        {
-            "head_word": "האי", 
-            "word_num": 12, 
-            "daf": "118a", 
-            "word": "האי", 
-            "line_num": 30, 
-            "cal_word": "האי", 
-            "POS": "P01", 
-            "class": "talmud", 
-            "pg_num": 118, 
-            "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
@@ -1551,16 +1579,17 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "הלילא", 
-            "word_num": 13, 
+            "head_word": "האי", 
+            "word_num": 12, 
             "daf": "118a", 
             "word": "הללו", 
             "line_num": 30, 
-            "cal_word": "הלילא", 
-            "POS": "N02", 
+            "cal_word": "האי", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 118, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 

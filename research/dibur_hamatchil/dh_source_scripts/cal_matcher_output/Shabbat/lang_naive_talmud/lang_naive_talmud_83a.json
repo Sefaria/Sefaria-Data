@@ -11,14 +11,6 @@
         {
             "index": 12, 
             "word": "ור"
-        }, 
-        {
-            "index": 15, 
-            "word": "מתריץ"
-        }, 
-        {
-            "index": 17, 
-            "word": "ור"
         }
     ], 
     "words": [
@@ -37,7 +29,10 @@
             "word": "למאי", 
             "line_num": 1, 
             "cal_word": "למאי", 
-            "POS": "P01", 
+            "POS": "p01", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
             "prefix": [
                 "ל_"
@@ -47,6 +42,7 @@
                 "p03"
             ], 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71002, 
             "side": 1
         }, 
@@ -61,6 +57,7 @@
             "class": "talmud", 
             "pg_num": 83, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71002, 
             "side": 1
         }, 
@@ -75,6 +72,7 @@
             "class": "talmud", 
             "pg_num": 83, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71002, 
             "side": 1
         }, 
@@ -97,6 +95,7 @@
             "class": "talmud", 
             "pg_num": 83, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71002, 
             "side": 1
         }, 
@@ -115,6 +114,7 @@
             "class": "talmud", 
             "pg_num": 83, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71002, 
             "side": 1
         }, 
@@ -129,6 +129,7 @@
             "class": "talmud", 
             "pg_num": 83, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71002, 
             "side": 1
         }, 
@@ -143,6 +144,7 @@
             "class": "talmud", 
             "pg_num": 83, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71002, 
             "side": 1
         }, 
@@ -157,6 +159,7 @@
             "class": "talmud", 
             "pg_num": 83, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71002, 
             "side": 1
         }, 
@@ -714,26 +717,30 @@
         }, 
         {
             "head_word": "תרצ", 
-            "word_num": 2, 
+            "word_num": 9, 
             "daf": "83a", 
             "word": "מתרץ", 
-            "line_num": 21, 
+            "line_num": 19, 
             "cal_word": "מתריץ", 
             "POS": "V02", 
             "class": "talmud", 
             "pg_num": 83, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71002, 
             "side": 1
         }, 
         {
             "head_word": "טעמא", 
-            "word_num": 3, 
+            "word_num": 10, 
             "daf": "83a", 
             "word": "לטעמיה", 
-            "line_num": 21, 
+            "line_num": 19, 
             "cal_word": "לטעמיה", 
             "POS": "N02", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
             "prefix": [
                 "ל_"
@@ -743,6 +750,7 @@
                 "p03"
             ], 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71002, 
             "side": 1
         }, 
@@ -843,20 +851,71 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "ר'", 
+            "word_num": 0, 
+            "daf": "83a", 
             "word": "ורבי", 
-            "class": "unknown"
+            "line_num": 21, 
+            "cal_word": "ור", 
+            "POS": "PN", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 83, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "אלעזר", 
             "class": "unknown"
         }, 
         {
+            "head_word": "תרצ", 
+            "word_num": 2, 
+            "daf": "83a", 
             "word": "מתרץ", 
-            "class": "unknown"
+            "line_num": 21, 
+            "cal_word": "מתריץ", 
+            "POS": "V02", 
+            "class": "talmud", 
+            "pg_num": 83, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
+            "head_word": "טעמא", 
+            "word_num": 3, 
+            "daf": "83a", 
             "word": "לטעמיה", 
-            "class": "unknown"
+            "line_num": 21, 
+            "cal_word": "לטעמיה", 
+            "POS": "N02", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ל_"
+            ], 
+            "pg_num": 83, 
+            "prefix_POS": [
+                "p03"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "נכרי", 

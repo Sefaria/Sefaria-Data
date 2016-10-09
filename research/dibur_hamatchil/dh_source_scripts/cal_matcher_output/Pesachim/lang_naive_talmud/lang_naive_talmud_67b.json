@@ -15,10 +15,6 @@
         {
             "index": 19, 
             "word": "בהדיא"
-        }, 
-        {
-            "index": 20, 
-            "word": "כת"
         }
     ], 
     "words": [
@@ -53,12 +49,24 @@
             "class": "talmud", 
             "pg_num": 67, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 2
         }, 
         {
+            "head_word": "טמי", 
+            "word_num": 1, 
+            "daf": "67b", 
             "word": "מטמי", 
-            "class": "unknown"
+            "line_num": 1, 
+            "cal_word": "מטמא", 
+            "POS": "V02", 
+            "class": "talmud", 
+            "pg_num": 67, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 2
         }, 
         {
             "word": "באונס", 
@@ -169,18 +177,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "טמי", 
-            "word_num": 1, 
-            "daf": "67b", 
             "word": "מטמא", 
-            "line_num": 1, 
-            "cal_word": "מטמא", 
-            "POS": "V02", 
-            "class": "talmud", 
-            "pg_num": 67, 
-            "ms": "01", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "משכב", 
@@ -213,6 +211,7 @@
             "class": "talmud", 
             "pg_num": 67, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 2
         }, 
@@ -395,6 +394,7 @@
             "class": "talmud", 
             "pg_num": 67, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 2
         }, 
@@ -433,6 +433,7 @@
             "class": "talmud", 
             "pg_num": 67, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 2
         }, 
@@ -447,6 +448,7 @@
             "class": "talmud", 
             "pg_num": 67, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 2
         }, 
@@ -477,6 +479,7 @@
             "class": "talmud", 
             "pg_num": 67, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 2
         }, 
@@ -491,6 +494,7 @@
             "class": "talmud", 
             "pg_num": 67, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 2
         }, 
@@ -503,16 +507,26 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ו_", 
+            "head_word": "ר'", 
             "word_num": 0, 
             "daf": "67b", 
             "word": "ורבי", 
             "line_num": 14, 
             "cal_word": "ור", 
-            "POS": "c", 
+            "POS": "PN", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
             "pg_num": 67, 
+            "prefix_POS": [
+                "c"
+            ], 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 2
         }, 
@@ -531,6 +545,7 @@
             "class": "talmud", 
             "pg_num": 67, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 2
         }, 
@@ -545,6 +560,7 @@
             "class": "talmud", 
             "pg_num": 67, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 2
         }, 
@@ -563,10 +579,11 @@
             "word": "ההוא", 
             "line_num": 15, 
             "cal_word": "ההוא", 
-            "POS": "P01", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 67, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 2
         }, 
@@ -581,6 +598,7 @@
             "class": "talmud", 
             "pg_num": 67, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 2
         }, 
@@ -595,6 +613,7 @@
             "class": "talmud", 
             "pg_num": 67, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 2
         }, 
@@ -606,6 +625,9 @@
             "line_num": 15, 
             "cal_word": "לכדתניא", 
             "POS": "V01", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
             "prefix": [
                 "לכד_"
@@ -615,6 +637,7 @@
                 "c"
             ], 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 2
         }, 
@@ -671,18 +694,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ב_", 
-            "word_num": 3, 
-            "daf": "67b", 
             "word": "יהו", 
-            "line_num": 26, 
-            "cal_word": "בהו", 
-            "POS": "p02", 
-            "class": "talmud", 
-            "pg_num": 67, 
-            "ms": "01", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "חייבין", 
@@ -941,12 +954,34 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "כתב", 
+            "word_num": 2, 
+            "daf": "67b", 
             "word": "כתיב", 
-            "class": "unknown"
+            "line_num": 26, 
+            "cal_word": "כת", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 67, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 2
         }, 
         {
+            "head_word": "ב_", 
+            "word_num": 3, 
+            "daf": "67b", 
             "word": "ביה", 
-            "class": "unknown"
+            "line_num": 26, 
+            "cal_word": "בהו", 
+            "POS": "p02", 
+            "class": "talmud", 
+            "pg_num": 67, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 2
         }, 
         {
             "word": "והאי", 

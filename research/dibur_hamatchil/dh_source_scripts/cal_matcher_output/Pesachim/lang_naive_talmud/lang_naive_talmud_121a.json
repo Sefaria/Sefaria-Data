@@ -1,8 +1,20 @@
 {
     "missed_words": [
         {
-            "index": 11, 
-            "word": "מתני"
+            "index": 4, 
+            "word": "מאן"
+        }, 
+        {
+            "index": 6, 
+            "word": "משום"
+        }, 
+        {
+            "index": 7, 
+            "word": "מן"
+        }, 
+        {
+            "index": 9, 
+            "word": "משום"
         }
     ], 
     "words": [
@@ -17,20 +29,22 @@
             "class": "talmud", 
             "pg_num": 121, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
         {
             "head_word": "תני", 
-            "word_num": 1, 
+            "word_num": 4, 
             "daf": "121a", 
             "word": "תני", 
-            "line_num": 1, 
+            "line_num": 3, 
             "cal_word": "מתני", 
             "POS": "V03", 
             "class": "talmud", 
             "pg_num": 121, 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
@@ -40,12 +54,15 @@
         }, 
         {
             "head_word": "חד", 
-            "word_num": 3, 
+            "word_num": 6, 
             "daf": "121a", 
             "word": "וחד", 
-            "line_num": 1, 
+            "line_num": 3, 
             "cal_word": "וחד", 
             "POS": "n01", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
             "prefix": [
                 "ו_"
@@ -55,20 +72,31 @@
                 "c"
             ], 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
         {
             "head_word": "תני", 
-            "word_num": 4, 
+            "word_num": 7, 
             "daf": "121a", 
             "word": "תני", 
-            "line_num": 1, 
+            "line_num": 3, 
             "cal_word": "מתני", 
             "POS": "V03", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
             "pg_num": 121, 
+            "prefix_POS": [
+                "c"
+            ], 
             "ms": "01", 
+            "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
@@ -77,56 +105,20 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "מאנ", 
-            "word_num": 6, 
-            "daf": "121a", 
             "word": "מאן", 
-            "line_num": 1, 
-            "cal_word": "מאן", 
-            "POS": "P01", 
-            "class": "talmud", 
-            "pg_num": 121, 
-            "ms": "01", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
-            "head_word": "תני", 
-            "word_num": 7, 
-            "daf": "121a", 
             "word": "דתני", 
-            "line_num": 1, 
-            "cal_word": "דמתני", 
-            "POS": "V03", 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 121, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "אפיגול", 
             "class": "unknown"
         }, 
         {
-            "head_word": "משומ", 
-            "word_num": 1, 
-            "daf": "121a", 
             "word": "משום", 
-            "line_num": 2, 
-            "cal_word": "משום", 
-            "POS": "p01", 
-            "class": "talmud", 
-            "pg_num": 121, 
-            "ms": "01", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "חשדי", 
@@ -137,56 +129,20 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "מאנ", 
-            "word_num": 4, 
-            "daf": "121a", 
             "word": "מאן", 
-            "line_num": 2, 
-            "cal_word": "מן", 
-            "POS": "P", 
-            "class": "talmud", 
-            "pg_num": 121, 
-            "ms": "01", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
-            "head_word": "תני", 
-            "word_num": 5, 
-            "daf": "121a", 
             "word": "דתני", 
-            "line_num": 2, 
-            "cal_word": "דמתני", 
-            "POS": "V03", 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 121, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "אנותר", 
             "class": "unknown"
         }, 
         {
-            "head_word": "משומ", 
-            "word_num": 0, 
-            "daf": "121a", 
             "word": "משום", 
-            "line_num": 3, 
-            "cal_word": "משום", 
-            "POS": "p01", 
-            "class": "talmud", 
-            "pg_num": 121, 
-            "ms": "01", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "עצלי", 
@@ -197,24 +153,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "חד", 
-            "word_num": 6, 
-            "daf": "121a", 
             "word": "חד", 
-            "line_num": 3, 
-            "cal_word": "וחד", 
-            "POS": "n01", 
-            "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
-            "pg_num": 121, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "אמר", 
@@ -269,24 +209,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "תני", 
-            "word_num": 7, 
-            "daf": "121a", 
             "word": "מתני׳", 
-            "line_num": 3, 
-            "cal_word": "מתני", 
-            "POS": "V03", 
-            "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
-            "pg_num": 121, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "בירך", 
