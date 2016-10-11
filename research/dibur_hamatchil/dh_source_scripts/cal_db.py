@@ -5,7 +5,7 @@ import json
 import re
 import sys,os
 
-sys.stdout = codecs.open('cal_output.txt', 'w',encoding='utf8')
+#sys.stdout = codecs.open('cal_output.txt', 'w',encoding='utf8')
 
 sys.path.insert(0,'../../../')
 

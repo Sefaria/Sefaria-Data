@@ -269,3 +269,30 @@ HIDDEN_DIM: 100
 BILSTM_LAYERS: 2
 MLP Layers: 2
 Loading path: ../../dibur_hamatchil/dh_source_scripts/cal_matcher_output/
+EMBED_DIM: 50
+HIDDEN_DIM: 100
+BILSTM_LAYERS: 2
+MLP Layers: 2
+Loading path: ../../dibur_hamatchil/dh_source_scripts/cal_matcher_output/
+Total words: 328432
+Total daf: 880
+pos: 36
+let: 99
+Validation: pos_prec: 0.0, class_prec: 83.5993720965
+Paras processed: 50, loss: 0.94308203596, pos_prec: 21.2838682922, class_prec: 82.6997417997
+Paras processed: 100, loss: 0.631684881333, pos_prec: 21.4531636426, class_prec: 89.1311546827
+Paras processed: 150, loss: 0.692700476813, pos_prec: 23.0617384785, class_prec: 89.5836956421
+Paras processed: 200, loss: 0.80597841406, pos_prec: 23.3231241623, class_prec: 88.4615800377
+Paras processed: 250, loss: 0.678602374502, pos_prec: 26.8892822163, class_prec: 89.0474954606
+Paras processed: 300, loss: 0.704091971963, pos_prec: 30.745157422, class_prec: 89.4222123776
+Paras processed: 350, loss: 0.563601749088, pos_prec: 34.6062541482, class_prec: 90.8708686057
+Paras processed: 400, loss: 0.637875877915, pos_prec: 35.5473846474, class_prec: 89.6475013159
+Paras processed: 450, loss: 0.599520814537, pos_prec: 37.1359617695, class_prec: 90.5055307086
+Paras processed: 500, loss: 0.610370530599, pos_prec: 36.0895025095, class_prec: 89.8492301064
+Paras processed: 550, loss: 0.637951087457, pos_prec: 42.4332627175, class_prec: 89.6928188186
+Paras processed: 600, loss: 0.645372226264, pos_prec: 39.9142130345, class_prec: 90.0884809094
+Paras processed: 650, loss: 0.594033877671, pos_prec: 39.1492752121, class_prec: 90.2576736732
+Paras processed: 700, loss: 0.537186857986, pos_prec: 37.874151027, class_prec: 91.4350937901
+Paras processed: 750, loss: 0.562319710075, pos_prec: 42.0525925441, class_prec: 90.8658570358
+Finished epoch 0
+Validation: pos_prec: 22.1557773893, class_prec: 83.5477675408

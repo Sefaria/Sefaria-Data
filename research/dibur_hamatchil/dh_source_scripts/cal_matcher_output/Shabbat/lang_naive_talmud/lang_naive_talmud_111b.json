@@ -17,10 +17,6 @@
             "word": "אע\"ג"
         }, 
         {
-            "index": 64, 
-            "word": "הוא"
-        }, 
-        {
             "index": 65, 
             "word": "דשרי"
         }, 
@@ -41,8 +37,8 @@
             "word": "דלא"
         }, 
         {
-            "index": 71, 
-            "word": "לכולי עלמא"
+            "index": 70, 
+            "word": "שכיח"
         }, 
         {
             "index": 72, 
@@ -57,16 +53,12 @@
             "word": "סבר"
         }, 
         {
-            "index": 75, 
-            "word": "אי"
+            "index": 76, 
+            "word": "שכיח"
         }, 
         {
             "index": 77, 
             "word": "לכולי עלמא"
-        }, 
-        {
-            "index": 78, 
-            "word": "שרי"
         }, 
         {
             "index": 79, 
@@ -75,6 +67,14 @@
         {
             "index": 80, 
             "word": "לא"
+        }, 
+        {
+            "index": 81, 
+            "word": "שכיח"
+        }, 
+        {
+            "index": 82, 
+            "word": "הוא"
         }, 
         {
             "index": 83, 
@@ -1511,14 +1511,23 @@
         }, 
         {
             "head_word": "שכיח", 
-            "word_num": 34, 
+            "word_num": 14, 
             "daf": "111b", 
             "word": "שכיח", 
             "line_num": 18, 
-            "cal_word": "שכיח", 
+            "cal_word": "דשכיח", 
             "POS": "A01", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
             "pg_num": 111, 
+            "prefix_POS": [
+                "c"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71002, 
@@ -1533,27 +1542,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "הדרן", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "עלך", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "שמנה", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "שרצים", 
-            "class": "unknown"
-        }, 
-        {
             "word": "מתני׳", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "ואלו", 
             "class": "unknown"
         }, 
         {
@@ -1610,7 +1599,7 @@
         }, 
         {
             "head_word": "הוא", 
-            "word_num": 37, 
+            "word_num": 17, 
             "daf": "111b", 
             "word": "הוא", 
             "line_num": 18, 
@@ -1656,8 +1645,31 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "עלמ", 
+            "word_num": 24, 
+            "daf": "111b", 
             "word": "יכול", 
-            "class": "unknown"
+            "line_num": 18, 
+            "cal_word": "לכולי עלמא", 
+            "POS": "N02", 
+            "prefix_homograph": [
+                "", 
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ל_", 
+                "כל"
+            ], 
+            "pg_num": 111, 
+            "prefix_POS": [
+                "p03", 
+                "N04"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "word": "להתירו", 
@@ -1681,10 +1693,6 @@
         }, 
         {
             "word": "עליו", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "גמ׳", 
             "class": "unknown"
         }, 
         {
@@ -1712,8 +1720,19 @@
             "side": 2
         }, 
         {
+            "head_word": "שרי", 
+            "word_num": 31, 
+            "daf": "111b", 
             "word": "קשר", 
-            "class": "unknown"
+            "line_num": 18, 
+            "cal_word": "שרי", 
+            "POS": "A01", 
+            "class": "talmud", 
+            "pg_num": 111, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "word": "הגמלין", 
@@ -2253,10 +2272,6 @@
             "side": 2
         }, 
         {
-            "word": "מתני׳", 
-            "class": "unknown"
-        }, 
-        {
             "word": "יש", 
             "class": "unknown"
         }, 
@@ -2394,10 +2409,6 @@
         }, 
         {
             "word": "תצא", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "גמ׳", 
             "class": "unknown"
         }, 
         {
