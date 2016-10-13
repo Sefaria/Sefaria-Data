@@ -1,21 +1,22 @@
 #!/usr/bin/env python
 
 #
-# Generated Thu Oct 13 08:59:48 2016 by generateDS.py version 2.23a.
+# Generated Thu Oct 13 14:51:23 2016 by generateDS.py version 2.23a.
 #
 # Command line options:
 #   ('-o', 'DCXML.py')
 #   ('--super', 'DCXML')
 #   ('-s', 'DCXMLsubs.py')
+#   ('--external-encoding', 'utf-8')
 #
 # Command line arguments:
 #   ./Sefaria-DC.xsd
 #
 # Command line:
-#   /usr/local/bin/generateDS.py -o "DCXML.py" --super="DCXML" -s "DCXMLsubs.py" ./Sefaria-DC.xsd
+#   /usr/local/bin/generateDS.py -o "DCXML.py" --super="DCXML" -s "DCXMLsubs.py" --external-encoding="utf-8" ./Sefaria-DC.xsd
 #
 # Current working directory (os.getcwd()):
-#   DCXML
+#   Mesechtot Ketanot
 #
 
 import sys
@@ -35,7 +36,7 @@ def parsexml_(infile, parser=None, **kwargs):
 # Globals
 #
 
-ExternalEncoding = 'ascii'
+ExternalEncoding = 'utf-8'
 
 #
 # Data representation classes

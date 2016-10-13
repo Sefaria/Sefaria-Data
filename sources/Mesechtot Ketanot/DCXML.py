@@ -2,21 +2,22 @@
 # -*- coding: utf-8 -*-
 
 #
-# Generated Thu Oct 13 08:59:47 2016 by generateDS.py version 2.23a.
+# Generated Thu Oct 13 14:51:23 2016 by generateDS.py version 2.23a.
 #
 # Command line options:
 #   ('-o', 'DCXML.py')
 #   ('--super', 'DCXML')
 #   ('-s', 'DCXMLsubs.py')
+#   ('--external-encoding', 'utf-8')
 #
 # Command line arguments:
 #   ./Sefaria-DC.xsd
 #
 # Command line:
-#   /usr/local/bin/generateDS.py -o "DCXML.py" --super="DCXML" -s "DCXMLsubs.py" ./Sefaria-DC.xsd
+#   /usr/local/bin/generateDS.py -o "DCXML.py" --super="DCXML" -s "DCXMLsubs.py" --external-encoding="utf-8" ./Sefaria-DC.xsd
 #
 # Current working directory (os.getcwd()):
-#   DCXML
+#   Mesechtot Ketanot
 #
 
 import sys
@@ -393,7 +394,7 @@ except ImportError as exp:
 # Globals
 #
 
-ExternalEncoding = 'ascii'
+ExternalEncoding = 'utf-8'
 Tag_pattern_ = re_.compile(r'({.*})?(.*)')
 String_cleanup_pat_ = re_.compile(r"[\n\r\s]+")
 Namespace_extract_pat_ = re_.compile(r'{(.*)}(.*)')
@@ -541,7 +542,7 @@ class MixedContainer:
         elif self.category == MixedContainer.CategorySimple:
             self.exportSimple(outfile, level, name)
         else:    # category == MixedContainer.CategoryComplex
-            self.value.export(outfile, level, namespace, name, pretty_print)
+            self.value.export(outfile, level, name, namespace, pretty_print=pretty_print)
     def exportSimple(self, outfile, level, name):
         if self.content_type == MixedContainer.TypeString:
             outfile.write('<%s>%s</%s>' % (
