@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import re,sys,random
-sys.path.append("/Users/nss/cnn/pycnn")
+#sys.path.append("/Users/nss/dynet/dynet")
 import numpy as np
 from codecs import open
-from pycnn import *
+from dynet import *
 import argparse
 from os.path import join
 import os
@@ -13,8 +13,8 @@ import json
 # set the seed
 random.seed(2823274491)
 
-filename_to_load = ''
-START_EPOCH = 0
+filename_to_load = 'postagger_model_embdim50_hiddim100_lyr2_e18_trainloss0.27900648059_trainprec82.3913522467_valprec88.5511805797.model'
+START_EPOCH = 19
 
 # argument parse
 parser = argparse.ArgumentParser()
@@ -178,6 +178,7 @@ class BILSTMTransducer:
 
 def CalculateLossForDaf(daf, fValidation=False):
     renew_cg()
+
     
     # add a bos before and after
     seq = ['<BOS>'] + list(' '.join([word for word,_,_ in daf])) + ['<BOS>']
@@ -193,7 +194,7 @@ def CalculateLossForDaf(daf, fValidation=False):
     word_bilstm_outputs = []
     iLet_start = 0
     for iLet, char in enumerate(seq):
-        # if it is a bos, check if it should be a space
+        # if it is a bos, check if it's at the end of the sequence
         if char == '<BOS>':
             if iLet + 1 == len(seq): char = ' '
             else: continue
@@ -312,7 +313,7 @@ log_message('pos: ' + str(pos_vocab.size()))
 log_message('let: ' + str(let_vocab.size()))
 
 #debug - write out the vocabularies
-# write out to files the nikud vocab and the letter vocab
+# write out to files the pos vocab and the letter vocab
 with open('let_vocab.txt', 'w', encoding='utf8') as f:
     for let, id in let_vocab.get_c2i().items():
         f.write(str(id) + ' : ' + let + '\n')
