@@ -3,6 +3,8 @@
 import re
 import codecs
 from data_utilities.util import get_cards_from_trello
+from data_utilities.util import getGematria
+from sefaria.model import *
 
 with open('../trello_board.json') as board:
     cards = [card.replace(' on', '') for card in get_cards_from_trello('Parse Rambam Talmud style', board)]
@@ -93,3 +95,146 @@ def format_reference(filename):
 
     with codecs.open(filename+'.tmp', 'w', 'utf-8') as outfile:
         outfile.writelines(fixed_lines)
+
+
+class RambamReferenceError(Exception):
+    pass
+
+
+class RambamReference:
+
+    def __init__(self):
+
+        self.reference = None
+        self.daf = None
+        self.ammud = None
+        self._daf_is_sham = False
+        self._explicit_ammud = False
+        self._he_daf = None
+        self._he_ammud = None
+        self._previous_daf = None
+        self._previous_ammud = None
+
+    def _parse_he_reference(self):
+        ref_list = self.reference.split(u' ')
+        ammud_pattern = re.compile(u'\u05e2"(\u05d0|\u05d1)')
+        data_dict = {
+            'daf': None,
+            'ammud': None
+        }
+
+        # case 1: reference splits into 3
+        if len(ref_list) == 3:
+            if ref_list[0] != u'דף' or ammud_pattern.search(ref_list[2]) is None:
+                print self.reference
+                raise RambamReferenceError('Does not match header or ammud patterns')
+
+            self._explicit_ammud = True
+            data_dict['ammud'] = ref_list[2]
+            data_dict['daf'] = ref_list[1]
+
+        # case 2: reference splits into 2
+        elif len(ref_list) == 2:
+            # no explicit ammud
+            if ref_list[0] == u'דף' and ammud_pattern.search(ref_list[1]) is None:
+                self._explicit_ammud = False
+                data_dict['daf'] = ref_list[1]
+
+            # no header
+            elif ref_list[0] != u'דף' and ammud_pattern.search(ref_list[1]) is not None:
+                self._explicit_ammud = True
+                data_dict['daf'] = ref_list[0]
+                data_dict['ammud'] = ref_list[1]
+
+            else:
+                print self.reference
+                raise RambamReferenceError("Unrecognized pattern for length 2 reference")
+
+        # case 3: reference has only one word
+        elif len(ref_list) == 1:
+            if ammud_pattern.search(ref_list[0]):
+                # only the ammud was found, treat daf as sham
+                self._explicit_ammud = True
+                data_dict['ammud'] = ref_list[0]
+                data_dict['daf'] = u'שם'
+            else:
+                data_dict['daf'] = ref_list[0]
+                self._explicit_ammud = False
+
+        else:
+            print self.reference
+            raise RambamReferenceError("Reference must consist of 1-3 words")
+
+        if data_dict['daf'] == u'שם':
+            self._daf_is_sham = True
+        else:
+            self._he_daf = data_dict['daf']
+        if self._explicit_ammud:
+            self._he_ammud = data_dict['ammud']
+
+    def _construct_reference(self):
+
+        if self._daf_is_sham:
+            if self._previous_daf is None:
+                print self.reference
+                raise RambamReferenceError("Non explicit reference with no previous entry provided")
+            self.daf = self._previous_daf
+        else:
+            self.daf = getGematria(self._he_daf)
+
+        if self._explicit_ammud:
+            if self._he_ammud == u'ע"ב':
+                self.ammud = 'b'
+            elif self._he_ammud == u'ע"א':
+                self.ammud = 'a'
+            else:
+                print self.reference
+                raise RambamReferenceError("Invalid entry for ammud")
+        else:
+            if self._daf_is_sham:
+                self.ammud = self._previous_ammud
+            else:
+                self.ammud = 'a'  # sets the default to 'a'
+
+    def update(self, reference):
+        self._previous_ammud = self.ammud
+        self._previous_daf = self.daf
+        self.reference = re.sub(u"'", u"", reference)
+        self.daf = None
+        self.ammud = None
+        self._daf_is_sham = False
+        self._explicit_ammud = False
+        self._he_daf = None
+        self._he_ammud = None
+        self._parse_he_reference()
+        self._construct_reference()
+
+    def normal(self, tractate=None):
+        if self.reference is None:
+            raise RambamReferenceError("No reference set")
+        simple = str(self.daf) + self.ammud
+        if tractate is None:
+            return simple
+        else:
+            return '{} {}'.format(tractate, simple)
+
+    def ref(self, tractate):
+        return Ref(self.normal(tractate=tractate))
+
+
+def add_english_ref(tractate):
+    with codecs.open('Rambam Mishnah {}.txt'.format(tractate), 'r', 'utf-8') as infile:
+        lines = infile.readlines()
+
+    new_lines = []
+    reference = RambamReference()
+    for line in lines:
+        he_ref = re.search(u'@22\((.*)\)', line)
+        if he_ref is not None:
+            reference.update(he_ref.group(1))
+            new_line = line.replace(he_ref.group(), u'{} @23({})'.format(he_ref.group(), reference.normal(tractate)))
+            new_lines.append(new_line)
+        else:
+            new_lines.append(line)
+    with codecs.open('Rambam Mishnah {}.txt.tmp'.format(tractate), 'w', 'utf-8') as outfile:
+        outfile.writelines(new_lines)
