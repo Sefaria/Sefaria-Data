@@ -5,7 +5,7 @@ import json
 import re
 import sys,os
 
-#sys.stdout = codecs.open('cal_output.txt', 'w',encoding='utf8')
+sys.stdout = codecs.open('cal_output.txt', 'w',encoding='utf8')
 
 sys.path.insert(0,'../../../')
 
@@ -233,7 +233,7 @@ def match_cal_segments(mesechta):
             if word in cal_pos_hashtable:
                 if len(cal_pos_hashtable[word]) == 1:
                     temp_out[word] = {"word":word,"cal_word":word,"class":"talmud","POS":cal_pos_hashtable[word][0]}
-                    
+
         out += temp_out
 
         sef_daf = curr_sef_ref.__str__().replace("{} ".format(mesechta),"").encode('utf8')
