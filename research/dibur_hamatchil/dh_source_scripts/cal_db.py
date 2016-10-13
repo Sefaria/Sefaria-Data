@@ -284,9 +284,9 @@ def make_cal_lines_text(mesechta):
     fp.write(out)
     fp.close()
 
-#mesechtas = ["Berakhot","Shabbat","Eruvin","Pesachim"]
-#for mesechta in mesechtas:
-#    make_cal_segments(mesechta)
-#    match_cal_segments(mesechta)
+mesechtas = ["Berakhot","Shabbat","Eruvin","Pesachim"]
+for mesechta in mesechtas:
+    make_cal_segments(mesechta)
+    match_cal_segments(mesechta)
     #make_cal_lines_text(mesechta)
-make_cal_pos_hashtable()
+#make_cal_pos_hashtable()
