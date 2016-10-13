@@ -91,12 +91,16 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "עליה", 
             "word": "עליה", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "p02"
         }, 
         {
+            "cal_word": "אפילו", 
             "word": "אפילו", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "c"
         }, 
         {
             "word": "בכלי", 
@@ -155,28 +159,10 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "כשר", 
-            "word_num": 0, 
-            "daf": "20a", 
+            "cal_word": "דאיתכשר", 
             "word": "דאיתכשר", 
-            "line_num": 4, 
-            "cal_word": "דאתכשר", 
-            "POS": "V06", 
-            "prefix_homograph": [
-                ""
-            ], 
             "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 20, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "V06"
         }, 
         {
             "head_word": "מאי", 
@@ -218,23 +204,16 @@
             "side": 1
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 4, 
-            "daf": "20a", 
-            "word": "נימא", 
-            "line_num": 3, 
             "cal_word": "נימא", 
-            "POS": "V01", 
+            "word": "נימא", 
             "class": "talmud", 
-            "pg_num": 20, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "V01"
         }, 
         {
+            "cal_word": "דאיתכשר", 
             "word": "דאיתכשר", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "V06"
         }, 
         {
             "word": "בדם", 
@@ -257,8 +236,10 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "אבא", 
             "word": "אבא", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "N02"
         }, 
         {
             "word": "א\"ר", 
@@ -285,8 +266,10 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "מכשיר", 
             "word": "מכשיר", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "V03"
         }, 
         {
             "word": "שנאמר", 
@@ -317,8 +300,10 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "דם", 
             "word": "דם", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "N01"
         }, 
         {
             "word": "שנשפך", 
@@ -329,8 +314,10 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "מכשיר", 
             "word": "מכשיר", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "V03"
         }, 
         {
             "word": "ושאינו", 
@@ -349,64 +336,32 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "מכשיר", 
             "word": "מכשיר", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "V03"
         }, 
         {
-            "head_word": "אילא", 
-            "word_num": 0, 
-            "daf": "20a", 
+            "cal_word": "ואלא", 
             "word": "ואלא", 
-            "line_num": 8, 
-            "cal_word": "ואילא", 
-            "POS": "c", 
-            "prefix_homograph": [
-                ""
-            ], 
             "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
-            "pg_num": 20, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "c"
         }, 
         {
-            "head_word": "כשר", 
-            "word_num": 1, 
-            "daf": "20a", 
-            "word": "דאיתכשר", 
-            "line_num": 8, 
             "cal_word": "דאיתכשר", 
-            "POS": "V06", 
-            "prefix_homograph": [
-                ""
-            ], 
+            "word": "דאיתכשר", 
             "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 20, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "V06"
         }, 
         {
             "word": "במשקי", 
             "class": "unknown"
         }, 
         {
+            "cal_word": "בית", 
             "word": "בית", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "N01"
         }, 
         {
             "word": "מטבחיא", 
@@ -437,8 +392,10 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "בית", 
             "word": "בית", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "N01"
         }, 
         {
             "word": "מטבחיא", 
@@ -461,8 +418,10 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "אלא", 
             "word": "אלא", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "c"
         }, 
         {
             "word": "שאין", 
@@ -473,43 +432,16 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אלא", 
-            "word_num": 0, 
-            "daf": "20a", 
+            "cal_word": "ואלא", 
             "word": "ואלא", 
-            "line_num": 11, 
-            "cal_word": "אלא", 
-            "POS": "c", 
             "class": "talmud", 
-            "pg_num": 20, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "c"
         }, 
         {
-            "head_word": "כשר", 
-            "word_num": 1, 
-            "daf": "20a", 
-            "word": "דאיתכשר", 
-            "line_num": 11, 
             "cal_word": "דאיתכשר", 
-            "POS": "V06", 
-            "prefix_homograph": [
-                ""
-            ], 
+            "word": "דאיתכשר", 
             "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 20, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "V06"
         }, 
         {
             "word": "בחיבת", 
@@ -520,43 +452,16 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 0, 
-            "daf": "20a", 
-            "word": "אימור", 
-            "line_num": 12, 
             "cal_word": "אימור", 
-            "POS": "V01", 
+            "word": "אימור", 
             "class": "talmud", 
-            "pg_num": 20, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "V01"
         }, 
         {
-            "head_word": "הני", 
-            "word_num": 1, 
-            "daf": "20a", 
-            "word": "דמהניא", 
-            "line_num": 12, 
             "cal_word": "דמהניא", 
-            "POS": "V03", 
-            "prefix_homograph": [
-                ""
-            ], 
+            "word": "דמהניא", 
             "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 20, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "V03"
         }, 
         {
             "head_word": "ל_", 
@@ -582,32 +487,16 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "פסל", 
-            "word_num": 5, 
-            "daf": "20a", 
-            "word": "לאיפסולי", 
-            "line_num": 12, 
             "cal_word": "לאיפסולי", 
-            "POS": "V04", 
-            "prefix_homograph": [
-                ""
-            ], 
+            "word": "לאיפסולי", 
             "class": "talmud", 
-            "prefix": [
-                "ל_"
-            ], 
-            "pg_num": 20, 
-            "prefix_POS": [
-                "p03"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "V04"
         }, 
         {
+            "cal_word": "גופיה", 
             "word": "גופיה", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "N02"
         }, 
         {
             "word": "למימנא", 
@@ -637,62 +526,28 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "נמי", 
-            "word_num": 4, 
-            "daf": "20a", 
-            "word": "נמי", 
-            "line_num": 13, 
             "cal_word": "נמי", 
-            "POS": "a", 
+            "word": "נמי", 
             "class": "talmud", 
-            "pg_num": 20, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "a"
         }, 
         {
-            "head_word": "פשט", 
-            "word_num": 5, 
-            "daf": "20a", 
+            "cal_word": "תיפשוט", 
             "word": "תיפשוט", 
-            "line_num": 13, 
-            "cal_word": "תפשוט", 
-            "POS": "V01", 
             "class": "talmud", 
-            "pg_num": 20, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "V01"
         }, 
         {
-            "head_word": "בעי", 
-            "word_num": 1, 
-            "daf": "20a", 
-            "word": "דבעי", 
-            "line_num": 14, 
             "cal_word": "דבעי", 
-            "POS": "V01", 
-            "prefix_homograph": [
-                ""
-            ], 
+            "word": "דבעי", 
             "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 20, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "V01"
         }, 
         {
+            "cal_word": "ריש", 
             "word": "ריש", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "N01"
         }, 
         {
             "word": "לקיש", 
@@ -735,20 +590,26 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "אמר", 
             "word": "אמר", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "V01"
         }, 
         {
+            "cal_word": "רב", 
             "word": "רב", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "N02"
         }, 
         {
             "word": "יהודה", 
             "class": "unknown"
         }, 
         {
+            "cal_word": "אמר", 
             "word": "אמר", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "V01"
         }, 
         {
             "word": "שמואל", 
@@ -763,8 +624,10 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "פרה", 
             "word": "פרה", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "V01"
         }, 
         {
             "word": "של", 
@@ -791,8 +654,10 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "ועדיין", 
             "word": "ועדיין", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "a"
         }, 
         {
             "word": "משקה", 
@@ -803,8 +668,10 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "עליה", 
             "word": "עליה", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "p02"
         }, 
         {
             "word": "נמצאת", 
@@ -870,23 +737,16 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אמאי", 
-            "word_num": 0, 
-            "daf": "20a", 
+            "cal_word": "אמר", 
             "word": "אמר", 
-            "line_num": 18, 
-            "cal_word": "אמאי", 
-            "POS": "c", 
             "class": "talmud", 
-            "pg_num": 20, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "V01"
         }, 
         {
+            "cal_word": "רב", 
             "word": "רב", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "N02"
         }, 
         {
             "word": "אדא", 
@@ -909,16 +769,20 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "רב", 
             "word": "רב", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "N02"
         }, 
         {
             "word": "אשי", 
             "class": "unknown"
         }, 
         {
+            "cal_word": "אמר", 
             "word": "אמר", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "V01"
         }, 
         {
             "head_word": "אפלו", 
@@ -936,19 +800,10 @@
             "side": 1
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 1, 
-            "daf": "20a", 
-            "word": "תימא", 
-            "line_num": 20, 
             "cal_word": "תימא", 
-            "POS": "V01", 
+            "word": "תימא", 
             "class": "talmud", 
-            "pg_num": 20, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "V01"
         }, 
         {
             "word": "בפרש", 
@@ -974,28 +829,10 @@
             "side": 1
         }, 
         {
-            "head_word": "הוי", 
-            "word_num": 2, 
-            "daf": "20a", 
+            "cal_word": "דהוי", 
             "word": "דהוי", 
-            "line_num": 21, 
-            "cal_word": "דהוה", 
-            "POS": "V01", 
-            "prefix_homograph": [
-                ""
-            ], 
             "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 20, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "V01"
         }, 
         {
             "word": "משקה", 
@@ -1006,16 +843,20 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "תני", 
             "word": "תני", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "V01"
         }, 
         {
             "word": "תנא", 
             "class": "unknown"
         }, 
         {
+            "cal_word": "קמיה", 
             "word": "קמיה", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "p02"
         }, 
         {
             "word": "דרב", 
@@ -1030,23 +871,16 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "טמי", 
-            "word_num": 7, 
-            "daf": "20a", 
-            "word": "מטמא", 
-            "line_num": 21, 
             "cal_word": "מטמא", 
-            "POS": "V02", 
+            "word": "מטמא", 
             "class": "talmud", 
-            "pg_num": 20, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "V02"
         }, 
         {
+            "cal_word": "את", 
             "word": "את", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "p01"
         }, 
         {
             "word": "המשקין", 
@@ -1061,8 +895,10 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "את", 
             "word": "את", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "p01"
         }, 
         {
             "word": "הכלי", 
@@ -1073,12 +909,16 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "מטמא", 
             "word": "מטמא", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "V02"
         }, 
         {
+            "cal_word": "את", 
             "word": "את", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "p01"
         }, 
         {
             "word": "האוכלין", 
@@ -1093,8 +933,10 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "את", 
             "word": "את", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "p01"
         }, 
         {
             "word": "המשקין", 
@@ -1117,34 +959,16 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "הני", 
-            "word_num": 5, 
-            "daf": "20a", 
-            "word": "הני", 
-            "line_num": 24, 
             "cal_word": "הני", 
-            "POS": "p01", 
+            "word": "הני", 
             "class": "talmud", 
-            "pg_num": 20, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "p01"
         }, 
         {
-            "head_word": "ארבעא", 
-            "word_num": 6, 
-            "daf": "20a", 
+            "cal_word": "ארבעה", 
             "word": "ארבעה", 
-            "line_num": 24, 
-            "cal_word": "ארבעי", 
-            "POS": "n02", 
             "class": "talmud", 
-            "pg_num": 20, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "n01"
         }, 
         {
             "head_word": "הוי", 
@@ -1181,28 +1005,10 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "רישא", 
-            "word_num": 18, 
-            "daf": "20a", 
+            "cal_word": "דרישא", 
             "word": "דרישא", 
-            "line_num": 24, 
-            "cal_word": "דרישה", 
-            "POS": "N02", 
-            "prefix_homograph": [
-                ""
-            ], 
             "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 20, 
-            "prefix_POS": [
-                "p"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "N02"
         }, 
         {
             "word": "אדרבה", 
@@ -1217,28 +1023,10 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "סופא", 
-            "word_num": 1, 
-            "daf": "20a", 
+            "cal_word": "דסיפא", 
             "word": "דסיפא", 
-            "line_num": 25, 
-            "cal_word": "דסופה", 
-            "POS": "N02", 
-            "prefix_homograph": [
-                ""
-            ], 
             "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 20, 
-            "prefix_POS": [
-                "p"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "N02"
         }, 
         {
             "head_word": "לא", 
@@ -1256,19 +1044,10 @@
             "side": 1
         }, 
         {
-            "head_word": "שכח", 
-            "word_num": 3, 
-            "daf": "20a", 
-            "word": "אשכחן", 
-            "line_num": 25, 
             "cal_word": "אשכחן", 
-            "POS": "V01", 
+            "word": "אשכחן", 
             "class": "talmud", 
-            "pg_num": 20, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "V01"
         }, 
         {
             "head_word": "תנא", 
@@ -1286,28 +1065,10 @@
             "side": 1
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 5, 
-            "daf": "20a", 
+            "cal_word": "דאמר", 
             "word": "דאמר", 
-            "line_num": 25, 
-            "cal_word": "דאמ", 
-            "POS": "V01", 
-            "prefix_homograph": [
-                ""
-            ], 
             "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 20, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "V01"
         }, 
         {
             "word": "משקין", 
@@ -1322,19 +1083,10 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אלא", 
-            "word_num": 10, 
-            "daf": "20a", 
-            "word": "אלא", 
-            "line_num": 25, 
             "cal_word": "אלא", 
-            "POS": "c", 
+            "word": "אלא", 
             "class": "talmud", 
-            "pg_num": 20, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "c"
         }, 
         {
             "word": "רבי", 
@@ -1345,28 +1097,10 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "הדר", 
-            "word_num": 0, 
-            "daf": "20a", 
-            "word": "והדר", 
-            "line_num": 26, 
             "cal_word": "והדר", 
-            "POS": "V01", 
-            "prefix_homograph": [
-                ""
-            ], 
+            "word": "והדר", 
             "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
-            "pg_num": 20, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "V01"
         }, 
         {
             "head_word": "ב_", 
@@ -1392,12 +1126,16 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "תנן", 
             "word": "תנן", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "V01"
         }, 
         {
+            "cal_word": "התם", 
             "word": "התם", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "a"
         }, 
         {
             "word": "שרץ", 
@@ -1420,8 +1158,10 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "שניה", 
             "word": "שניה", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "N05"
         }, 
         {
             "word": "מפני", 
@@ -1436,19 +1176,10 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 7, 
-            "daf": "20a", 
+            "cal_word": "אמר", 
             "word": "אמר", 
-            "line_num": 28, 
-            "cal_word": "אמ", 
-            "POS": "V01", 
             "class": "talmud", 
-            "pg_num": 20, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "POS": "V01"
         }, 
         {
             "head_word": "ל_", 
@@ -1466,8 +1197,10 @@
             "side": 1
         }, 
         {
+            "cal_word": "רב", 
             "word": "רב", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "N02"
         }, 
         {
             "word": "אדא", 
@@ -1482,16 +1215,20 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "לרבא", 
             "word": "לרבא", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "PN"
         }, 
         {
             "word": "וניחזי", 
             "class": "unknown"
         }, 
         {
+            "cal_word": "להאי", 
             "word": "להאי", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "p01"
         }, 
         {
             "word": "תנור", 
@@ -1545,8 +1282,10 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "ותיהוי", 
             "word": "ותיהוי", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "V01"
         }, 
         {
             "word": "האי", 
@@ -1561,8 +1300,10 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "אמר", 
             "word": "אמר", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "V01"
         }, 
         {
             "word": "ליה", 
@@ -1588,12 +1329,16 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "דעתך", 
             "word": "דעתך", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "N02"
         }, 
         {
+            "cal_word": "דתניא", 
             "word": "דתניא", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "V01"
         }, 
         {
             "word": "יכול", 
@@ -1604,8 +1349,10 @@
             "class": "unknown"
         }, 
         {
+            "cal_word": "כל", 
             "word": "כל", 
-            "class": "unknown"
+            "class": "talmud", 
+            "POS": "N01"
         }, 
         {
             "word": "הכלים", 

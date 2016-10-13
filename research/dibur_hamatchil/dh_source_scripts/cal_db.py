@@ -226,14 +226,14 @@ def match_cal_segments(mesechta):
             print u"\n-----\nFOUND {}/{} ({}%)".format(cal_len - len(missed_words), cal_len, (1 - round(1.0 * len(missed_words) / cal_len, 4)) * 100)
             #print u"MISSED: {}".format(u" ,".join([u"{}:{}".format(wo["word"], wo["index"]) for wo in missed_words]))
             ical += 1
-
+        """
         #tag 1 pos words if still untagged
         for iwo,word_obj in enumerate(temp_out):
             word = word_obj["word"]
             if word in cal_pos_hashtable:
                 if len(cal_pos_hashtable[word]) == 1:
                     temp_out[iwo] = {"word":word,"cal_word":word,"class":"talmud","POS":cal_pos_hashtable[word][0]}
-
+        """
         out += temp_out
 
         sef_daf = curr_sef_ref.__str__().replace("{} ".format(mesechta),"").encode('utf8')
