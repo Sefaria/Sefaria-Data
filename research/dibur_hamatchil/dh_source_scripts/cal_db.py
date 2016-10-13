@@ -228,11 +228,11 @@ def match_cal_segments(mesechta):
             ical += 1
 
         #tag 1 pos words if still untagged
-        for word_obj in temp_out:
+        for iwo,word_obj in enumerate(temp_out):
             word = word_obj["word"]
             if word in cal_pos_hashtable:
                 if len(cal_pos_hashtable[word]) == 1:
-                    temp_out[word] = {"word":word,"cal_word":word,"class":"talmud","POS":cal_pos_hashtable[word][0]}
+                    temp_out[iwo] = {"word":word,"cal_word":word,"class":"talmud","POS":cal_pos_hashtable[word][0]}
 
         out += temp_out
 
