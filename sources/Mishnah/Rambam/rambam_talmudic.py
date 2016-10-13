@@ -222,7 +222,11 @@ class RambamReference:
         return Ref(self.normal(tractate=tractate))
 
 
-def add_english_ref(tractate):
+def add_english_ref(tractate, safe_mode=False):
+    if safe_mode:
+        tmp = '.tmp'
+    else:
+        tmp = ''
     with codecs.open('Rambam Mishnah {}.txt'.format(tractate), 'r', 'utf-8') as infile:
         lines = infile.readlines()
 
@@ -236,5 +240,5 @@ def add_english_ref(tractate):
             new_lines.append(new_line)
         else:
             new_lines.append(line)
-    with codecs.open('Rambam Mishnah {}.txt.tmp'.format(tractate), 'w', 'utf-8') as outfile:
+    with codecs.open('Rambam Mishnah {}.txt{}'.format(tractate, tmp), 'w', 'utf-8') as outfile:
         outfile.writelines(new_lines)
