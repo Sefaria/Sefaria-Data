@@ -224,7 +224,7 @@ def CalculateLossForDaf(daf, fValidation=False):
         mlp_input = concatenate([bilstm_output, prev_pos_lstm_state.output()])
         
         # run through the class mlp
-        class_mlp_output = class_mlp(mlp_input)
+        pos_mlp_output = pos_mlp(mlp_input)
         
         predicted_word_class = np.argmax(class_mlp_output.npvalue())
         # prec
@@ -292,11 +292,25 @@ def run_network_on_validation(suffix):
     
 # read in all the data
 all_data = list(read_data())
+
+word_hash = {}
+
+for daf in all_data:
+    for word,clas,pos in daf:
+        if not word in word_hash:
+            word_hash[word] = [0,0]
+        word_hash[word][clas] += 1
+
+objStr = json.dumps(word_hash, indent=4, ensure_ascii=False)
+with open("words_talmud_unknown_count.json", "w") as f:
+    f.write(objStr.encode('utf-8'))
+
+
 random.shuffle(all_data)
 # train val will be split up 100-780
 train_data = all_data[100:]
 val_data = all_data[:100]
-
+"""
 # create the vocabulary
 pos_vocab = Vocabulary()
 let_vocab = Vocabulary()
@@ -400,4 +414,4 @@ for epoch in range(START_EPOCH, 100):
     filename_to_save = 'postagger_model_embdim' + str(EMBED_DIM) + '_hiddim' + str(HIDDEN_DIM) + '_lyr' + sLAYERS + '_e' + str(epoch)
     filename_to_save += '_trainloss' +  str(last_loss) + '_trainprec' + str(last_pos_prec) + '_valprec' + str(val_pos_prec) + '.model'
     model.save(filename_to_save)
-    
+"""

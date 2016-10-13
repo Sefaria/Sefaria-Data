@@ -19,7 +19,8 @@ from data_utilities import dibur_hamatchil_matcher
 from research.talmud_pos_research.language_classifier import cal_tools
 
 
-cal_db_location = "../../talmud_pos_research/language_classifier/caldb_"
+full_cal_db_location = "../../talmud_pos_research/language_classifier/noahcaldb.txt"
+mesechta_cal_db_location = "../../talmud_pos_research/language_classifier/caldb_"
 
 def make_cal_segments(mesechta):
 
@@ -27,7 +28,7 @@ def make_cal_segments(mesechta):
         return '{}{}'.format(daf_num,'a' if daf_side_num == 1 else 'b')
 
     cal_gem_lines = []
-    with open("{}{}.txt".format(cal_db_location,mesechta),"rb") as f:
+    with open("{}{}.txt".format(mesechta_cal_db_location, mesechta), "rb") as f:
         temp_gem_line = []
         curr_gem_line_num = -1
         curr_daf = ''
@@ -124,7 +125,7 @@ def match_cal_segments(mesechta):
         return [new_obj] #returns a single element array which will replace a range s:e in the original array
 
     cal_lines = json.load(open("cal_lines_{}.json".format(mesechta), "r"), encoding="utf8")
-
+    cal_pos_hashtable = json.load(open("cal_pos_hashtable.json","r"),encoding='utf8')
     dafs = cal_lines["dafs"]
     lines_by_daf = cal_lines["lines"]
 
@@ -225,6 +226,14 @@ def match_cal_segments(mesechta):
             print u"\n-----\nFOUND {}/{} ({}%)".format(cal_len - len(missed_words), cal_len, (1 - round(1.0 * len(missed_words) / cal_len, 4)) * 100)
             #print u"MISSED: {}".format(u" ,".join([u"{}:{}".format(wo["word"], wo["index"]) for wo in missed_words]))
             ical += 1
+
+        #tag 1 pos words if still untagged
+        for word_obj in temp_out:
+            word = word_obj["word"]
+            if word in cal_pos_hashtable:
+                if len(cal_pos_hashtable[word]) == 1:
+                    temp_out[word] = {"word":word,"cal_word":word,"class":"talmud","POS":cal_pos_hashtable[word][0]}
+                    
         out += temp_out
 
         sef_daf = curr_sef_ref.__str__().replace("{} ".format(mesechta),"").encode('utf8')
@@ -234,7 +243,30 @@ def match_cal_segments(mesechta):
         fp.close()
 
 
+def make_cal_pos_hashtable():
+    obj = {}
+    with open(full_cal_db_location,'rb') as cal:
+        for line in cal:
+            lineObj = cal_tools.parseCalLine(line,True,False)
+            word = lineObj["word"]
+            pos = lineObj["POS"]
+            if not word in obj:
+                obj[word] = []
+            pos_set = set(obj[word])
+            pos_set.add(pos)
+            obj[word] = list(pos_set)
 
+    num_one_pos_words = 0
+    total_num_pos = 0
+    for word in obj:
+        total_num_pos += len(obj[word])
+        if len(obj[word]) == 1:
+            num_one_pos_words += 1
+
+    print "Percent Words With 1 POS",round(100.0*num_one_pos_words/len(obj),3)
+    print "Avg Num POS per word",round(1.0*total_num_pos/len(obj),3)
+
+    cal_tools.saveUTFStr(obj,"cal_pos_hashtable.json")
 
 
 def make_cal_lines_text(mesechta):
@@ -252,8 +284,9 @@ def make_cal_lines_text(mesechta):
     fp.write(out)
     fp.close()
 
-mesechtas = ["Berakhot","Shabbat","Eruvin","Pesachim"]
-for mesechta in mesechtas:
-    make_cal_segments(mesechta)
-    match_cal_segments(mesechta)
+#mesechtas = ["Berakhot","Shabbat","Eruvin","Pesachim"]
+#for mesechta in mesechtas:
+#    make_cal_segments(mesechta)
+#    match_cal_segments(mesechta)
     #make_cal_lines_text(mesechta)
+make_cal_pos_hashtable()
