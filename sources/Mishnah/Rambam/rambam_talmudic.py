@@ -2,8 +2,11 @@
 
 import re
 import codecs
+import csv
 from data_utilities.util import get_cards_from_trello
 from data_utilities.util import getGematria
+from sources.local_settings import SEFARIA_PROJECT_PATH
+from sefaria.utils.talmud import section_to_daf
 from sefaria.model import *
 
 with open('../trello_board.json') as board:
@@ -242,3 +245,19 @@ def add_english_ref(tractate, safe_mode=False):
             new_lines.append(line)
     with codecs.open('Rambam Mishnah {}.txt{}'.format(tractate, tmp), 'w', 'utf-8') as outfile:
         outfile.writelines(new_lines)
+
+
+def construct_mishnah_map():
+    mishnah_map = {}
+
+    with open('{}/data/Mishnah Map.csv'.format(SEFARIA_PROJECT_PATH)) as infile:
+        rows = csv.DictReader(infile)
+        for row in rows:
+            mishnah = 'Mishnah {} {}:{}-{}'.format(
+                row['Book'], row['Mishnah Chapter'], row['Start Mishnah'], row['End Mishnah'])
+            if row['Book'] not in mishnah_map.keys():
+                mishnah_map[row['Book']] = {}
+            if row['Start Daf'] not in mishnah_map[row['Book']].keys():
+                mishnah_map[row['Book']][row['Start Daf']] = []
+            mishnah_map[row['Book']][row['Start Daf']].extend(Ref(mishnah).range_list())
+    return mishnah_map
