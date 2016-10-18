@@ -248,55 +248,73 @@ def add_english_ref(tractate, safe_mode=False):
         outfile.writelines(new_lines)
 
 
-def construct_mishnah_map():
-    mishnah_map = {}
+class MishnahMap:
 
-    with open('{}/data/Mishnah Map.csv'.format(SEFARIA_PROJECT_PATH)) as infile:
-        rows = csv.DictReader(infile)
-        for row in rows:
-            row['Book'] = row['Book'].replace('_', ' ')
-            mishnah = 'Mishnah {} {}:{}-{}'.format(
-                row['Book'], row['Mishnah Chapter'], row['Start Mishnah'], row['End Mishnah'])
-            if row['Book'] not in mishnah_map.keys():
-                mishnah_map[row['Book']] = {}
-            if row['Start Daf'] not in mishnah_map[row['Book']].keys():
-                mishnah_map[row['Book']][row['Start Daf']] = []
-            mishnah_map[row['Book']][row['Start Daf']].extend(Ref(mishnah).range_list())
+    def __init__(self):
+        self.map = self.construct_mishnah_map()
 
-    # Remove duplicates
-    for book in mishnah_map.keys():
-        for daf in mishnah_map[book]:
-            mishnah_map[book][daf] = [Ref(tref) for tref in set([oref.normal() for oref in mishnah_map[book][daf]])]
-    return mishnah_map
+    @staticmethod
+    def construct_mishnah_map():
+        mishnah_map = {}
 
+        with open('{}/data/Mishnah Map.csv'.format(SEFARIA_PROJECT_PATH)) as infile:
+            rows = csv.DictReader(infile)
+            for row in rows:
+                row['Book'] = row['Book'].replace('_', ' ')
+                mishnah = 'Mishnah {} {}:{}-{}'.format(
+                    row['Book'], row['Mishnah Chapter'], row['Start Mishnah'], row['End Mishnah'])
+                if row['Book'] not in mishnah_map.keys():
+                    mishnah_map[row['Book']] = {}
+                if row['Start Daf'] not in mishnah_map[row['Book']].keys():
+                    mishnah_map[row['Book']][row['Start Daf']] = []
+                mishnah_map[row['Book']][row['Start Daf']].extend(Ref(mishnah).range_list())
 
-def find_best_match(quote, ref_list, error_tolerance=70):
-    """
-    given a quote and a list of refs, find the ref that best matches the quote
-    :param quote: quote from talmud/mishnah that needs to be resolved
-    :param ref_list: list refs that are all possible contenders for the source of quote
-    :param error_tolerance: If the best score is lower than this value, method will return None
-    :return: The ref which best matches quote
-    """
+        # Remove duplicates
+        for book in mishnah_map.keys():
+            for daf in mishnah_map[book]:
+                mishnah_map[book][daf] = [Ref(tref) for tref in set([oref.normal() for oref in mishnah_map[book][daf]])]
+        return mishnah_map
 
-    def split_by_length(input_string, length):
-        words = input_string.split()
-        return [u' '.join(words[i:i+length]) for i in range(len(words)-(length-1))]
+    @staticmethod
+    def find_best_match(quote, ref_list, error_tolerance=70):
+        """
+        given a quote and a list of refs, find the ref that best matches the quote
+        :param quote: quote from talmud/mishnah that needs to be resolved
+        :param ref_list: list refs that are all possible contenders for the source of quote
+        :param error_tolerance: If the best score is lower than this value, method will return None
+        :return: The ref which best matches quote
+        """
 
-    assert isinstance(ref_list, list)
-    for ref in ref_list:
-        assert isinstance(ref, Ref)
-        assert ref.is_segment_level()
+        def split_by_length(input_string, length):
+            words = input_string.split()
+            return [u' '.join(words[i:i+length]) for i in range(len(words)-(length-1))]
 
-    if len(ref_list) == 1:
-        return ref_list[0]
-    else:
-        ref_texts = [ref.text('he', u'Mishnah, ed. Romm, Vilna 1913').text for ref in ref_list]
-        scores = [process.extractOne(quote, split_by_length(ref_text, len(quote.split())), scorer=fuzz.UWRatio)
-                  for ref_text in ref_texts]
-        results = sorted(zip(ref_list, scores), key=lambda x: x[1][1], reverse=True)  # sort by score, descending
+        assert isinstance(ref_list, list)
+        for ref in ref_list:
+            assert isinstance(ref, Ref)
+            assert ref.is_segment_level()
 
-        if results[0][1][1] > error_tolerance:
-            return results[0][0]
+        if len(ref_list) == 1:
+            return ref_list[0]
         else:
-            return None
+            ref_texts = [ref.text('he', u'Mishnah, ed. Romm, Vilna 1913').text for ref in ref_list]
+            scores = [process.extractOne(quote, split_by_length(ref_text, len(quote.split())), scorer=fuzz.UWRatio)
+                      for ref_text in ref_texts]
+            results = sorted(zip(ref_list, scores), key=lambda x: x[1][1], reverse=True)  # sort by score, descending
+
+            if results[0][1][1] > error_tolerance:
+                return results[0][0]
+            else:
+                return None
+
+    def resolve_quote(self, quote, talmud_ref, tolerance=70):
+
+        assert isinstance(talmud_ref, Ref)
+        assert isinstance(quote, basestring)
+
+        book = talmud_ref.book
+        daf = section_to_daf(talmud_ref.sections[0])
+        ref_list = self.map[book][daf]
+        return self.find_best_match(quote, ref_list, tolerance)
+
+
