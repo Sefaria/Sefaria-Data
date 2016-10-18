@@ -262,6 +262,11 @@ def construct_mishnah_map():
             if row['Start Daf'] not in mishnah_map[row['Book']].keys():
                 mishnah_map[row['Book']][row['Start Daf']] = []
             mishnah_map[row['Book']][row['Start Daf']].extend(Ref(mishnah).range_list())
+
+    # Remove duplicates
+    for book in mishnah_map.keys():
+        for daf in mishnah_map[book]:
+            mishnah_map[book][daf] = [Ref(tref) for tref in set([oref.normal() for oref in mishnah_map[book][daf]])]
     return mishnah_map
 
 
@@ -289,7 +294,7 @@ def find_best_match(quote, ref_list, error_tolerance=70):
         ref_texts = [ref.text('he', u'Mishnah, ed. Romm, Vilna 1913').text for ref in ref_list]
         scores = [process.extractOne(quote, split_by_length(ref_text, len(quote.split())), scorer=fuzz.UWRatio)
                   for ref_text in ref_texts]
-        results = sorted(zip(ref_list, scores), key=lambda x: -x[1][1])
+        results = sorted(zip(ref_list, scores), key=lambda x: x[1][1], reverse=True)  # sort by score, descending
 
         if results[0][1][1] > error_tolerance:
             return results[0][0]
