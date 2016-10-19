@@ -2,8 +2,12 @@
 
 import re
 import codecs
+import csv
 from data_utilities.util import get_cards_from_trello
 from data_utilities.util import getGematria
+from sources.local_settings import SEFARIA_PROJECT_PATH
+from sefaria.utils.talmud import section_to_daf
+from fuzzywuzzy import process, fuzz
 from sefaria.model import *
 
 with open('../trello_board.json') as board:
@@ -241,4 +245,116 @@ def add_english_ref(tractate, safe_mode=False):
         else:
             new_lines.append(line)
     with codecs.open('Rambam Mishnah {}.txt{}'.format(tractate, tmp), 'w', 'utf-8') as outfile:
+        outfile.writelines(new_lines)
+
+
+class MishnahMap:
+
+    def __init__(self):
+        self.map = self.construct_mishnah_map()
+
+    @staticmethod
+    def construct_mishnah_map():
+        mishnah_map = {}
+
+        with open('{}/data/Mishnah Map.csv'.format(SEFARIA_PROJECT_PATH)) as infile:
+            rows = csv.DictReader(infile)
+            for row in rows:
+                row['Book'] = row['Book'].replace('_', ' ')
+                mishnah = 'Mishnah {} {}:{}-{}'.format(
+                    row['Book'], row['Mishnah Chapter'], row['Start Mishnah'], row['End Mishnah'])
+                if row['Book'] not in mishnah_map.keys():
+                    mishnah_map[row['Book']] = {
+                        'Start Daf': {},
+                        'End Daf': {}
+                    }
+                for location in ('Start Daf', 'End Daf'):
+                    if row[location] not in mishnah_map[row['Book']][location].keys():
+                        mishnah_map[row['Book']][location][row[location]] = []
+                    mishnah_map[row['Book']][location][row[location]].extend(Ref(mishnah).range_list())
+
+        # Remove duplicates
+        for book in mishnah_map.keys():
+            for location in ('Start Daf', 'End Daf'):
+                for daf in mishnah_map[book][location]:
+                    mishnah_map[book][location][daf] = [
+                        Ref(tref) for tref in set([oref.normal() for oref in mishnah_map[book][location][daf]])
+                        ]
+        return mishnah_map
+
+    @staticmethod
+    def find_best_match(quote, ref_list, error_tolerance=70):
+        """
+        given a quote and a list of refs, find the ref that best matches the quote
+        :param quote: quote from talmud/mishnah that needs to be resolved
+        :param ref_list: list refs that are all possible contenders for the source of quote
+        :param error_tolerance: If the best score is lower than this value, method will return None
+        :return: The ref which best matches quote
+        """
+
+        def split_by_length(input_string, length):
+            words = input_string.split()
+            return [u' '.join(words[i:i+length]) for i in range(len(words)-(length-1))]
+
+        assert isinstance(ref_list, list)
+        for ref in ref_list:
+            assert isinstance(ref, Ref)
+            assert ref.is_segment_level()
+
+        if len(ref_list) == 1:
+            return ref_list[0]
+        else:
+            ref_texts = [ref.text('he', u'Mishnah, ed. Romm, Vilna 1913').text for ref in ref_list]
+            scores = [process.extractOne(quote, split_by_length(ref_text, len(quote.split())), scorer=fuzz.UWRatio)
+                      for ref_text in ref_texts]
+            results = sorted(zip(ref_list, scores), key=lambda x: x[1][1], reverse=True)  # sort by score, descending
+
+            if results[0][1][1] > error_tolerance:
+                return results[0][0]
+            else:
+                return None
+
+    def resolve_quote(self, quote, talmud_ref, tolerance=70):
+
+        assert isinstance(talmud_ref, Ref)
+        assert isinstance(quote, basestring)
+
+        book = talmud_ref.book
+        daf = section_to_daf(talmud_ref.sections[0])
+        try:
+            ref_list = self.map[book]['Start Daf'][daf]
+        except KeyError:
+            ref_list = self.map[book]['End Daf'][daf]
+        return self.find_best_match(quote, ref_list, tolerance)
+
+
+def resolve_talmud_refs(filename, safe_mode=False):
+    mishna_map = MishnahMap()
+
+    with codecs.open(filename, 'r', 'utf-8') as infile:
+        lines = infile.readlines()
+    new_lines = []
+
+    for line in lines:
+        match = re.match(u"@11(.*?):", line)
+        if match is None:
+            new_lines.append(line)
+            continue
+        quote = match.group(1)
+        quote = u' '.join(quote.split()[:-1])  # strip out last word which is usually וכו'
+        talmud_ref = re.search(u"@23\((.*?)\)", line).group(1)
+
+        resolved_quote = mishna_map.resolve_quote(quote, Ref(talmud_ref))
+        if resolved_quote is None:
+            resolved_quote = u'Unable to resolve'
+        if isinstance(resolved_quote, Ref):
+            resolved_quote = resolved_quote.normal()
+
+        line += u' @24({}) '.format(resolved_quote)
+        line = u' '.join(line.split()) + u'\n'
+        new_lines.append(line)
+
+    if safe_mode:
+        filename += '.tmp'
+    with codecs.open(filename, 'w', 'utf-8') as outfile:
         outfile.writelines(new_lines)
