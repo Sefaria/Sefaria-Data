@@ -2,7 +2,16 @@
 
 import re
 import codecs
+import csv
 from data_utilities.util import get_cards_from_trello
+from data_utilities.util import getGematria
+from sources.local_settings import SEFARIA_PROJECT_PATH
+from sefaria.utils.talmud import section_to_daf
+from fuzzywuzzy import process, fuzz
+from sefaria.datatype.jagged_array import JaggedArray
+from data_utilities.util import ja_to_xml
+from sources.functions import post_index, post_link, post_text
+from sefaria.model import *
 
 with open('../trello_board.json') as board:
     cards = [card.replace(' on', '') for card in get_cards_from_trello('Parse Rambam Talmud style', board)]
@@ -93,3 +102,397 @@ def format_reference(filename):
 
     with codecs.open(filename+'.tmp', 'w', 'utf-8') as outfile:
         outfile.writelines(fixed_lines)
+
+
+class RambamReferenceError(Exception):
+    pass
+
+
+class RambamReference:
+
+    def __init__(self):
+
+        self.reference = None
+        self.daf = None
+        self.ammud = None
+        self._daf_is_sham = False
+        self._explicit_ammud = False
+        self._he_daf = None
+        self._he_ammud = None
+        self._previous_daf = None
+        self._previous_ammud = None
+
+    def _parse_he_reference(self):
+        ref_list = self.reference.split(u' ')
+        ammud_pattern = re.compile(u'\u05e2"(\u05d0|\u05d1)')
+        data_dict = {
+            'daf': None,
+            'ammud': None
+        }
+
+        # case 1: reference splits into 3
+        if len(ref_list) == 3:
+            if ref_list[0] != u'דף' or ammud_pattern.search(ref_list[2]) is None:
+                print self.reference
+                raise RambamReferenceError('Does not match header or ammud patterns')
+
+            self._explicit_ammud = True
+            data_dict['ammud'] = ref_list[2]
+            data_dict['daf'] = ref_list[1]
+
+        # case 2: reference splits into 2
+        elif len(ref_list) == 2:
+            # no explicit ammud
+            if ref_list[0] == u'דף' and ammud_pattern.search(ref_list[1]) is None:
+                self._explicit_ammud = False
+                data_dict['daf'] = ref_list[1]
+
+            # no header
+            elif ref_list[0] != u'דף' and ammud_pattern.search(ref_list[1]) is not None:
+                self._explicit_ammud = True
+                data_dict['daf'] = ref_list[0]
+                data_dict['ammud'] = ref_list[1]
+
+            else:
+                print self.reference
+                raise RambamReferenceError("Unrecognized pattern for length 2 reference")
+
+        # case 3: reference has only one word
+        elif len(ref_list) == 1:
+            if ammud_pattern.search(ref_list[0]):
+                # only the ammud was found, treat daf as sham
+                self._explicit_ammud = True
+                data_dict['ammud'] = ref_list[0]
+                data_dict['daf'] = u'שם'
+            else:
+                data_dict['daf'] = ref_list[0]
+                self._explicit_ammud = False
+
+        else:
+            print self.reference
+            raise RambamReferenceError("Reference must consist of 1-3 words")
+
+        if data_dict['daf'] == u'שם':
+            self._daf_is_sham = True
+        else:
+            self._he_daf = data_dict['daf']
+        if self._explicit_ammud:
+            self._he_ammud = data_dict['ammud']
+
+    def _construct_reference(self):
+
+        if self._daf_is_sham:
+            if self._previous_daf is None:
+                print self.reference
+                raise RambamReferenceError("Non explicit reference with no previous entry provided")
+            self.daf = self._previous_daf
+        else:
+            self.daf = getGematria(self._he_daf)
+
+        if self._explicit_ammud:
+            if self._he_ammud == u'ע"ב':
+                self.ammud = 'b'
+            elif self._he_ammud == u'ע"א':
+                self.ammud = 'a'
+            else:
+                print self.reference
+                raise RambamReferenceError("Invalid entry for ammud")
+        else:
+            if self._daf_is_sham:
+                self.ammud = self._previous_ammud
+            else:
+                self.ammud = 'a'  # sets the default to 'a'
+
+    def update(self, reference):
+        self._previous_ammud = self.ammud
+        self._previous_daf = self.daf
+        self.reference = re.sub(u"'", u"", reference)
+        self.daf = None
+        self.ammud = None
+        self._daf_is_sham = False
+        self._explicit_ammud = False
+        self._he_daf = None
+        self._he_ammud = None
+        self._parse_he_reference()
+        self._construct_reference()
+
+    def normal(self, tractate=None):
+        if self.reference is None:
+            raise RambamReferenceError("No reference set")
+        simple = str(self.daf) + self.ammud
+        if tractate is None:
+            return simple
+        else:
+            return '{} {}'.format(tractate, simple)
+
+    def ref(self, tractate):
+        return Ref(self.normal(tractate=tractate))
+
+
+def add_english_ref(tractate, safe_mode=False):
+    if safe_mode:
+        tmp = '.tmp'
+    else:
+        tmp = ''
+    with codecs.open('Rambam Mishnah {}.txt'.format(tractate), 'r', 'utf-8') as infile:
+        lines = infile.readlines()
+
+    new_lines = []
+    reference = RambamReference()
+    for line in lines:
+        he_ref = re.search(u'@22\((.*)\)', line)
+        if he_ref is not None:
+            reference.update(he_ref.group(1))
+            new_line = line.replace(he_ref.group(), u'{} @23({})'.format(he_ref.group(), reference.normal(tractate)))
+            new_lines.append(new_line)
+        else:
+            new_lines.append(line)
+    with codecs.open('Rambam Mishnah {}.txt{}'.format(tractate, tmp), 'w', 'utf-8') as outfile:
+        outfile.writelines(new_lines)
+
+
+class MishnahMap:
+
+    def __init__(self):
+        self.map = self.construct_mishnah_map()
+
+    @staticmethod
+    def construct_mishnah_map():
+        mishnah_map = {}
+
+        with open('{}/data/Mishnah Map.csv'.format(SEFARIA_PROJECT_PATH)) as infile:
+            rows = csv.DictReader(infile)
+            for row in rows:
+                row['Book'] = row['Book'].replace('_', ' ')
+                mishnah = 'Mishnah {} {}:{}-{}'.format(
+                    row['Book'], row['Mishnah Chapter'], row['Start Mishnah'], row['End Mishnah'])
+                if row['Book'] not in mishnah_map.keys():
+                    mishnah_map[row['Book']] = {
+                        'Start Daf': {},
+                        'End Daf': {}
+                    }
+                for location in ('Start Daf', 'End Daf'):
+                    if row[location] not in mishnah_map[row['Book']][location].keys():
+                        mishnah_map[row['Book']][location][row[location]] = []
+                    mishnah_map[row['Book']][location][row[location]].extend(Ref(mishnah).range_list())
+
+        # Remove duplicates
+        for book in mishnah_map.keys():
+            for location in ('Start Daf', 'End Daf'):
+                for daf in mishnah_map[book][location]:
+                    mishnah_map[book][location][daf] = [
+                        Ref(tref) for tref in set([oref.normal() for oref in mishnah_map[book][location][daf]])
+                        ]
+        return mishnah_map
+
+    @staticmethod
+    def find_best_match(quote, ref_list, error_tolerance=70):
+        """
+        given a quote and a list of refs, find the ref that best matches the quote
+        :param quote: quote from talmud/mishnah that needs to be resolved
+        :param ref_list: list refs that are all possible contenders for the source of quote
+        :param error_tolerance: If the best score is lower than this value, method will return None
+        :return: The ref which best matches quote
+        """
+
+        def split_by_length(input_string, length):
+            words = input_string.split()
+            return [u' '.join(words[i:i+length]) for i in range(len(words)-(length-1))]
+
+        assert isinstance(ref_list, list)
+        for ref in ref_list:
+            assert isinstance(ref, Ref)
+            assert ref.is_segment_level()
+
+        if len(ref_list) == 1:
+            return ref_list[0]
+        else:
+            ref_texts = [ref.text('he', u'Mishnah, ed. Romm, Vilna 1913').text for ref in ref_list]
+            scores = [process.extractOne(quote, split_by_length(ref_text, len(quote.split())), scorer=fuzz.UWRatio)
+                      for ref_text in ref_texts]
+            results = sorted(zip(ref_list, scores), key=lambda x: x[1][1], reverse=True)  # sort by score, descending
+
+            if results[0][1][1] > error_tolerance:
+                return results[0][0]
+            else:
+                return None
+
+    def resolve_quote(self, quote, talmud_ref, tolerance=70):
+
+        assert isinstance(talmud_ref, Ref)
+        assert isinstance(quote, basestring)
+
+        book = talmud_ref.book
+        daf = section_to_daf(talmud_ref.sections[0])
+        try:
+            ref_list = self.map[book]['Start Daf'][daf]
+        except KeyError:
+            ref_list = self.map[book]['End Daf'][daf]
+        return self.find_best_match(quote, ref_list, tolerance)
+
+
+def resolve_talmud_refs(filename, safe_mode=False):
+    mishna_map = MishnahMap()
+
+    with codecs.open(filename, 'r', 'utf-8') as infile:
+        lines = infile.readlines()
+    new_lines = []
+
+    for line in lines:
+        match = re.match(u"@11(.*?):", line)
+        if match is None:
+            new_lines.append(line)
+            continue
+        quote = match.group(1)
+        quote = u' '.join(quote.split()[:-1])  # strip out last word which is usually וכו'
+        talmud_ref = re.search(u"@23\((.*?)\)", line).group(1)
+
+        resolved_quote = mishna_map.resolve_quote(quote, Ref(talmud_ref))
+        if resolved_quote is None:
+            resolved_quote = u'Unable to resolve'
+        elif isinstance(resolved_quote, Ref):
+            resolved_quote = resolved_quote.normal()
+
+        line += u' @24({}) '.format(resolved_quote)
+        line = u' '.join(line.split()) + u'\n'
+        new_lines.append(line)
+
+    if safe_mode:
+        filename += '.tmp'
+    with codecs.open(filename, 'w', 'utf-8') as outfile:
+        outfile.writelines(new_lines)
+
+
+class RambamSegmentError(Exception):
+    pass
+
+
+class RambamSegment:
+
+    def __init__(self):
+        self.raw_quotes = []
+        self.quotes = []
+        self.text = None
+        self.primary_ref = None
+        self.all_refs = []
+        self.quote_pattern = re.compile(u'@11(.*?):')
+        self.links = []
+
+    def reset(self):
+        self.raw_quotes = []
+        self.quotes = []
+        self.text = None
+        self.primary_ref = None
+        self.all_refs = []
+
+    def is_quote(self, query):
+        if self.quote_pattern.match(query) is None:
+            return False
+        else:
+            return True
+
+    def add_raw_quote(self, raw_quote):
+        self.raw_quotes.append(raw_quote)
+
+    def _extract_quotes(self):
+        for raw_quote in self.raw_quotes:
+            self.quotes.append(self.quote_pattern.search(raw_quote).group(1)+u':')
+
+    def _extract_refs(self):
+        for raw_quote in self.raw_quotes:
+            self.all_refs.append(re.search(u'@24\((.*?)\)', raw_quote).group(1))
+        self.primary_ref = self.all_refs[0]
+        self.all_refs = list(set(self.all_refs))  # remove duplicates
+
+    @staticmethod
+    def is_text(query):
+        if re.search(u'@33', query) is None:
+            return False
+        else:
+            return True
+
+    def add_text(self, input_text):
+        input_text = re.sub(u'@[0-9]{2}', u'', input_text)
+        self.text = input_text
+
+    def add_segment(self, jagged_array):
+        assert isinstance(jagged_array, JaggedArray)
+        self._extract_quotes()
+        self._extract_refs()
+        quotes = [u'<b>{}</b><br>'.format(quote) for quote in self.quotes]
+        output_text = u''.join(quotes) + self.text
+
+        # resolve storage location for segment
+        mishnah_ref = Ref(self.primary_ref)
+        chapter, section = mishnah_ref.sections[0]-1, mishnah_ref.sections[1]-1
+        # this returns the first available location for a segment
+        segment = jagged_array.sub_array_length([chapter, section])
+        if segment is None:
+            segment = 0
+        jagged_array.set_element([chapter, section, segment], output_text, pad=u'')
+
+        current_ref = u'Rambam {}:{}'.format(self.primary_ref, segment+1)
+        for ref in self.all_refs:
+            self.links.append([current_ref, ref])
+        self.reset()
+
+    def extract_links(self):
+        return [{
+            'refs': link_pair,
+            'type': 'commentary',
+            'auto': True,
+            'generated_by': 'Talmudic Rambam Parse Script'
+        } for link_pair in self.links]
+
+
+def parse_file(filename):
+    with codecs.open(filename, 'r', 'utf-8') as infile:
+        lines = infile.readlines()
+    jagged_array = JaggedArray([[[]]])
+
+    segment = RambamSegment()
+    for line in lines:
+        if segment.is_quote(line):
+            segment.add_raw_quote(line)
+        elif segment.is_text(line):
+            segment.add_text(line)
+            segment.add_segment(jagged_array)
+
+    return {'parsed text': jagged_array.array(),
+            'links': segment.extract_links()}
+
+
+def upload():
+    links = []
+    for tractate in cards:
+        he_name = Ref(' '.join(tractate.split()[1:])).he_normal()
+        he_name = u'רמב"ם {}'.format(he_name)
+
+        node = JaggedArrayNode()
+        node.add_title(tractate, 'en', primary=True)
+        node.add_title(he_name, 'he', primary=True)
+        node.key = tractate
+        node.depth = 3
+        node.addressTypes = ['Integer', 'Integer', 'Integer']
+        node.sectionNames = ['Chapter', 'Mishnah', 'Comment']
+        node.validate()
+
+        index = {
+            'title': tractate,
+            'categories': ['Commentary2', 'Mishnah', 'Rambam'],
+            'schema': node.serialize(),
+            'toc_zoom': 2
+        }
+
+        parsed = parse_file('{}.txt'.format(tractate))
+        links.extend(parsed['links'])
+        version = {
+            'versionTitle': u'Vilna Edition',
+            'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957',
+            'language': 'he',
+            'text': parsed['parsed text']
+        }
+        print 'posting {}'.format(tractate)
+        post_index(index)
+        post_text(tractate, version, index_count='on')
+    post_link(links)

@@ -3,7 +3,7 @@ import re,sys,random
 #sys.path.append("/Users/nss/dynet/dynet")
 import numpy as np
 from codecs import open
-from dynet import *
+import dynet as dy
 import argparse
 from os.path import join
 import os
@@ -13,8 +13,8 @@ import json
 # set the seed
 random.seed(2823274491)
 
-filename_to_load = 'postagger_model_embdim50_hiddim100_lyr2_e18_trainloss0.27900648059_trainprec82.3913522467_valprec88.5511805797.model'
-START_EPOCH = 19
+filename_to_load = ''
+START_EPOCH = 0
 
 # argument parse
 parser = argparse.ArgumentParser()
@@ -91,12 +91,22 @@ def read_data(dir=''):
     log_message('Total words: ' + str(total_words))
     log_message('Total daf: ' + str(total_daf))
     
-    
+def make_pos_hashtable(data):
+    pos_hashtable = {}
+    for daf in data:
+        for w,w_class,w_pos in daf:
+            if w_class:
+                if not w in pos_hashtable:
+                    pos_hashtable[w] = set()
+                pos_hashtable[w].add(w_pos)
+    return pos_hashtable
+
 # Classes:
 # 1] Vocabulary class (the dictionary for char-to-int)
 # 2] WordEncoder (actually, it'll be a char encoder)
 # 3] Simple character BiLSTM
 # 4] MLP
+# 5] ConfusionMatrix
 class Vocabulary(object):
     def __init__(self):
         self.all_items = []
@@ -135,7 +145,7 @@ class WordEncoder(object):
     
     def __call__(self, char, DIRECT_LOOKUP=False):
         char_i = char if DIRECT_LOOKUP else self.vocab[char]
-        return lookup(self.enc, char_i)
+        return dy.lookup(self.enc, char_i)
         
 class MLP:
     def __init__(self, model, name, in_dim, hidden_dim, out_dim):
@@ -150,21 +160,21 @@ class MLP:
             self.mw3 = model.add_parameters((out_dim, hidden_dim))
             self.mb3 = model.add_parameters((out_dim))
     def __call__(self, x):
-        W = parameter(self.mw)
-        b = parameter(self.mb)
-        W2 = parameter(self.mw2)
-        b2 = parameter(self.mb2)
-        mlp_output = W2*(tanh(W*x+b))+b2
+        W = dy.parameter(self.mw)
+        b = dy.parameter(self.mb)
+        W2 = dy.parameter(self.mw2)
+        b2 = dy.parameter(self.mb2)
+        mlp_output = W2*(dy.tanh(W*x+b))+b2
         if fDo_3_Layers:
-            W3 = parameter(self.mw3)
-            b3 = parameter(self.mb3)
-            mlp_output = W3*(tanh(mlpoutput))+b3
-        return softmax(mlp_output)
+            W3 = dy.parameter(self.mw3)
+            b3 = dy.parameter(self.mb3)
+            mlp_output = W3*(dy.tanh(dy.mlpoutput))+b3
+        return dy.softmax(mlp_output)
         
 class BILSTMTransducer:
     def __init__(self, LSTM_LAYERS, IN_DIM, OUT_DIM, model):
-        self.lstmF = LSTMBuilder(LSTM_LAYERS, IN_DIM, (int)(OUT_DIM / 2), model)
-        self.lstmB = LSTMBuilder(LSTM_LAYERS, IN_DIM, (int)(OUT_DIM / 2), model)
+        self.lstmF = dy.LSTMBuilder(LSTM_LAYERS, IN_DIM, (int)(OUT_DIM / 2), model)
+        self.lstmB = dy.LSTMBuilder(LSTM_LAYERS, IN_DIM, (int)(OUT_DIM / 2), model)
             
     def __call__(self, seq):
         """
@@ -174,10 +184,34 @@ class BILSTMTransducer:
         bw = self.lstmB.initial_state()
         outf = fw.transduce(seq)
         outb = list(reversed(bw.transduce(reversed(seq))))
-        return [concatenate([f,b]) for f,b in zip(outf,outb)]
+        return [dy.concatenate([f,b]) for f,b in zip(outf,outb)]
+
+
+class ConfusionMatrix:
+    def __init__(self, size, vocab):
+        self.matrix = np.zeros((size,size))
+        self.size = size
+        self.vocab = vocab
+
+    def __call__(self,x,y):
+        self.matrix[x,y] += 1
+
+    def to_html(self):
+        html = "<html><head><style>tc{width:50px,height:50px,border:solid 1px black}</style></head><body><table>"
+        first_row = "<tr><tc></tc><tc>{}</tc></tr>".format("</tc><tc>".join([self.vocab.getItem(i) for i in range(self.size)]))
+        html += first_row
+        for i in range(self.size):
+            html += "<tr><tc>{}</tc>".format(self.vocab.getItem(i))
+            for j in range(self.size):
+                html += "<tc>{}</tc>".format(self.matrix[i,j])
+            html += "</tr>"
+        html += "</table></body></html>"
+        return html
+    def clear(self):
+        self.matrix = np.zeros((self.size,self.size))
 
 def CalculateLossForDaf(daf, fValidation=False):
-    renew_cg()
+    dy.renew_cg()
 
     
     # add a bos before and after
@@ -200,7 +234,7 @@ def CalculateLossForDaf(daf, fValidation=False):
             else: continue
         # if we are at a space, take this bilstm output and the one at the letter start
         if char == ' ':
-            cur_word_bilstm_output = concatenate([char_bilstm_outputs[iLet_start], char_bilstm_outputs[iLet]])
+            cur_word_bilstm_output = dy.concatenate([char_bilstm_outputs[iLet_start], char_bilstm_outputs[iLet]])
             # add it in
             word_bilstm_outputs.append(cur_word_bilstm_output)
             
@@ -217,85 +251,84 @@ def CalculateLossForDaf(daf, fValidation=False):
     all_losses = []
     pos_prec = 0.0
     pos_items = 0
-    class_prec = 0.0
+
     # now iterate through the bilstm outputs, and each word in the daf
     for (word, gold_word_class, gold_word_pos), bilstm_output in zip(daf, word_bilstm_outputs):
+        should_backprop = gold_word_class == 1
+
         # create the mlp input, a concatenate of the bilstm output and of the prev pos output
-        mlp_input = concatenate([bilstm_output, prev_pos_lstm_state.output()])
+        mlp_input = dy.concatenate([bilstm_output, prev_pos_lstm_state.output()])
         
         # run through the class mlp
-        class_mlp_output = class_mlp(mlp_input)
-        
-        predicted_word_class = np.argmax(class_mlp_output.npvalue())
-        # prec
-        class_prec += 1 if predicted_word_class == gold_word_class else 0
-        
-        # if we aren't doing validation, calculate the loss
-        if not fValidation:
-            all_losses.append(-log(pick(class_mlp_output, gold_word_class)))
-            word_class_ans = gold_word_class
-        # otherwise, set the answer to be the argmax
-        else:
-            word_class_ans = predicted_word_class
-            
-            
-        # if the word_class answer is 1, do the pos!
-        if word_class_ans:
-            # run the pos mlp output
-            pos_mlp_output = pos_mlp(mlp_input)
-            
-            predicted_word_pos = pos_vocab.getItem(np.argmax(pos_mlp_output.npvalue()))
-            # prec
+        pos_mlp_output = pos_mlp(mlp_input)
+        try:
+            temp_pos_array = pos_mlp_output.npvalue()
+            possible_pos_array = np.zeros(temp_pos_array.shape)
+            possible_pos_indices = [pos_vocab[temp_pos] for temp_pos in pos_hashtable[word]]
+            possible_pos_array[possible_pos_indices] = temp_pos_array[possible_pos_indices]
+        except KeyError:
+            possible_pos_array = pos_mlp_output.npvalue()
+
+        predicted_word_pos = pos_vocab.getItem(np.argmax(possible_pos_array))
+
+
+
+        if should_backprop:
             pos_prec += 1 if predicted_word_pos == gold_word_pos else 0
             pos_items += 1
-            
-            # if we aren't doing validation, calculate the loss
-            if not fValidation:
-                all_losses.append(-log(pick(pos_mlp_output, pos_vocab[gold_word_pos])))
-                word_pos_ans = gold_word_pos
-            # otherwise, set the answer to be the argmax
-            else:
-                word_pos_ans = predicted_word_pos
-                
-            # run through the prev-pos-mlp
-            prev_pos_lstm_state = prev_pos_lstm_state.add_input(pos_enc(word_pos_ans))
-        # if the answer is 0, put a '' through the prev-pos lstm 
+
+        # if we aren't doing validation, calculate the loss
+        if not fValidation:
+            if should_backprop: all_losses.append(-dy.log(dy.pick(pos_mlp_output, pos_vocab[gold_word_pos])))
+            word_pos_ans = gold_word_pos
+        # otherwise, set the answer to be the argmax
         else:
-            prev_pos_lstm_state = prev_pos_lstm_state.add_input(pos_enc(''))
+            pos_conf_matrix(pos_vocab[predicted_word_pos], pos_vocab[gold_word_class])
+            word_pos_ans = predicted_word_pos
+
+        # run through the prev-pos-mlp
+        prev_pos_lstm_state = prev_pos_lstm_state.add_input(pos_enc(word_pos_ans))
+
+        #prev_pos_lstm_state = prev_pos_lstm_state.add_input(pos_enc(''))
     
     pos_prec = pos_prec / pos_items if pos_items > 0 else None
-    
+    #class_prec = class_prec / class_items if class_items > 0 else None
+
     if fValidation:
-        return class_prec / len(daf), pos_prec
-        
-    return esum(all_losses), class_prec / len(daf), pos_prec
+        return pos_prec
+
+    total_loss = dy.esum(all_losses) if len(all_losses) > 0 else None
+    return total_loss, pos_prec
     
 def run_network_on_validation(suffix):
     val_pos_prec, val_class_prec = 0.0, 0.0
-    val_pos_items = 0
+    val_pos_items, val_class_items = 0, 0
     # iterate
     for daf in val_data:
-        class_prec, pos_prec = CalculateLossForDaf(daf, fValidation=True)
+        pos_prec = CalculateLossForDaf(daf, fValidation=True)
         # increment and continue
         if not pos_prec is None:
             val_pos_prec += pos_prec
             val_pos_items += 1
-        val_class_prec += class_prec
+
         
     # divide
     val_pos_prec = val_pos_prec / val_pos_items * 100 if val_pos_items > 0 else 0.0
-    val_class_prec = val_class_prec / len(val_data) * 100
     # print the results
-    log_message('Validation: pos_prec: ' + str(val_pos_prec) + ', class_prec: ' + str(val_class_prec))
+    log_message('Validation: pos_prec: ' + str(val_pos_prec))
     
     return val_pos_prec, val_class_prec
     
 # read in all the data
 all_data = list(read_data())
+
+
 random.shuffle(all_data)
 # train val will be split up 100-780
-train_data = all_data[100:]
+train_data = all_data[100:101]
 val_data = all_data[:100]
+
+pos_hashtable = make_pos_hashtable(train_data)
 
 # create the vocabulary
 pos_vocab = Vocabulary()
@@ -308,6 +341,8 @@ for daf in all_data:
 
 pos_vocab.finalize()
 let_vocab.finalize()
+
+pos_conf_matrix = ConfusionMatrix(pos_vocab.size(),pos_vocab)
 
 log_message('pos: ' + str(pos_vocab.size()))
 log_message('let: ' + str(let_vocab.size()))
@@ -326,7 +361,7 @@ with open('pos_vocab.txt', 'w', encoding='utf8') as f:
 all_data = None
 
 # create the model and all it's parameters
-model = Model()
+model = dy.Model()
 
 # create the word encoders (an encoder for the chars for the bilstm, and an encoder for the prev-pos lstm)
 pos_enc = WordEncoder("posenc", EMBED_DIM, model, pos_vocab)
@@ -337,7 +372,7 @@ let_enc = WordEncoder("letenc", EMBED_DIM, model, let_vocab)
 bilstm = BILSTMTransducer(BILSTM_LAYERS, EMBED_DIM, HIDDEN_DIM, model)
 
 # a prev-pos lstm. The mlp's will take this as input as well
-prev_pos_lstm = LSTMBuilder(BILSTM_LAYERS, EMBED_DIM, EMBED_DIM, model)
+prev_pos_lstm = dy.LSTMBuilder(BILSTM_LAYERS, EMBED_DIM, EMBED_DIM, model)
 
 # now the class mlp, it will take input of 2*HIDDEN_DIM (A concatenate of the before and after the word) + EMBED_DIM from the prev-pos
 # output of 2, unknown\talmud
@@ -346,7 +381,7 @@ class_mlp = MLP(model, "classmlp", 2*HIDDEN_DIM + EMBED_DIM, HIDDEN_DIM, 2)
 pos_mlp = MLP(model, 'posmlp', 2*HIDDEN_DIM + EMBED_DIM, HIDDEN_DIM, pos_vocab.size())
 
 # the trainer
-trainer = AdamTrainer(model)
+trainer = dy.AdamTrainer(model)
 
 # if we are loading in a model
 if filename_to_load:
@@ -357,7 +392,7 @@ run_network_on_validation(START_EPOCH - 1)
 for epoch in range(START_EPOCH, 100):
     last_loss, last_pos_prec, last_class_prec = 0.0, 0.0, 0.0
     total_loss, total_pos_prec, total_class_prec = 0.0, 0.0, 0.0
-    total_pos_items = 0
+    total_pos_items, total_class_items = 0, 0
     
     # shuffle the train data
     random.shuffle(train_data)
@@ -366,20 +401,18 @@ for epoch in range(START_EPOCH, 100):
     # iterate
     for daf in train_data:
         # calculate the loss & prec
-        loss, class_prec, pos_prec = CalculateLossForDaf(daf, fValidation=False)
+        loss, pos_prec = CalculateLossForDaf(daf, fValidation=False)
         
         # forward propagate
-        total_loss += loss.value() / len(daf)
+        total_loss += loss.value() / len(daf) if loss else 0.0
         # back propagate
-        loss.backward()
+        if loss: loss.backward()
         trainer.update()
         
         # increment the prec variable
         if not pos_prec is None:
             total_pos_prec += pos_prec
             total_pos_items += 1
-
-        total_class_prec += class_prec
         
         items_seen += 1
         # breakpoint?
@@ -387,12 +420,12 @@ for epoch in range(START_EPOCH, 100):
         if items_seen % breakpoint == 0:    
             last_loss = total_loss / breakpoint
             last_pos_prec = total_pos_prec / total_pos_items * 100
-            last_class_prec = total_class_prec / breakpoint * 100
             
-            log_message ("Paras processed: " + str(items_seen) + ", loss: " + str(last_loss) + ', pos_prec: ' + str(last_pos_prec) + ', class_prec: ' + str(last_class_prec))
+            log_message ("Paras processed: " + str(items_seen) + ", loss: " + str(last_loss) + ', pos_prec: ' + str(last_pos_prec))
             
             total_loss, total_pos_prec, total_class_prec = 0.0, 0.0, 0.0
             total_pos_items = 0
+            total_class_items = 0
             
     log_message ('Finished epoch ' + str(epoch))
     val_class_prec, val_pos_prec = run_network_on_validation(epoch)
@@ -400,4 +433,8 @@ for epoch in range(START_EPOCH, 100):
     filename_to_save = 'postagger_model_embdim' + str(EMBED_DIM) + '_hiddim' + str(HIDDEN_DIM) + '_lyr' + sLAYERS + '_e' + str(epoch)
     filename_to_save += '_trainloss' +  str(last_loss) + '_trainprec' + str(last_pos_prec) + '_valprec' + str(val_pos_prec) + '.model'
     model.save(filename_to_save)
-    
+
+    f = open("conf_matrix_e{}.html".format(epoch),'w')
+    f.write(pos_conf_matrix.to_html())
+    f.close()
+    pos_conf_matrix.clear()
