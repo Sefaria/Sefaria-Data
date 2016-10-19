@@ -8,6 +8,9 @@ from data_utilities.util import getGematria
 from sources.local_settings import SEFARIA_PROJECT_PATH
 from sefaria.utils.talmud import section_to_daf
 from fuzzywuzzy import process, fuzz
+from sefaria.datatype.jagged_array import JaggedArray
+from data_utilities.util import ja_to_xml
+from sources.functions import post_index, post_link, post_text
 from sefaria.model import *
 
 with open('../trello_board.json') as board:
@@ -347,7 +350,7 @@ def resolve_talmud_refs(filename, safe_mode=False):
         resolved_quote = mishna_map.resolve_quote(quote, Ref(talmud_ref))
         if resolved_quote is None:
             resolved_quote = u'Unable to resolve'
-        if isinstance(resolved_quote, Ref):
+        elif isinstance(resolved_quote, Ref):
             resolved_quote = resolved_quote.normal()
 
         line += u' @24({}) '.format(resolved_quote)
@@ -358,3 +361,138 @@ def resolve_talmud_refs(filename, safe_mode=False):
         filename += '.tmp'
     with codecs.open(filename, 'w', 'utf-8') as outfile:
         outfile.writelines(new_lines)
+
+
+class RambamSegmentError(Exception):
+    pass
+
+
+class RambamSegment:
+
+    def __init__(self):
+        self.raw_quotes = []
+        self.quotes = []
+        self.text = None
+        self.primary_ref = None
+        self.all_refs = []
+        self.quote_pattern = re.compile(u'@11(.*?):')
+        self.links = []
+
+    def reset(self):
+        self.raw_quotes = []
+        self.quotes = []
+        self.text = None
+        self.primary_ref = None
+        self.all_refs = []
+
+    def is_quote(self, query):
+        if self.quote_pattern.match(query) is None:
+            return False
+        else:
+            return True
+
+    def add_raw_quote(self, raw_quote):
+        self.raw_quotes.append(raw_quote)
+
+    def _extract_quotes(self):
+        for raw_quote in self.raw_quotes:
+            self.quotes.append(self.quote_pattern.search(raw_quote).group(1)+u':')
+
+    def _extract_refs(self):
+        for raw_quote in self.raw_quotes:
+            self.all_refs.append(re.search(u'@24\((.*?)\)', raw_quote).group(1))
+        self.primary_ref = self.all_refs[0]
+        self.all_refs = list(set(self.all_refs))  # remove duplicates
+
+    @staticmethod
+    def is_text(query):
+        if re.search(u'@33', query) is None:
+            return False
+        else:
+            return True
+
+    def add_text(self, input_text):
+        input_text = re.sub(u'@[0-9]{2}', u'', input_text)
+        self.text = input_text
+
+    def add_segment(self, jagged_array):
+        assert isinstance(jagged_array, JaggedArray)
+        self._extract_quotes()
+        self._extract_refs()
+        quotes = [u'<b>{}</b><br>'.format(quote) for quote in self.quotes]
+        output_text = u''.join(quotes) + self.text
+
+        # resolve storage location for segment
+        mishnah_ref = Ref(self.primary_ref)
+        chapter, section = mishnah_ref.sections[0]-1, mishnah_ref.sections[1]-1
+        # this returns the first available location for a segment
+        segment = jagged_array.sub_array_length([chapter, section])
+        if segment is None:
+            segment = 0
+        jagged_array.set_element([chapter, section, segment], output_text, pad=u'')
+
+        current_ref = u'Rambam {}:{}'.format(self.primary_ref, segment+1)
+        for ref in self.all_refs:
+            self.links.append([current_ref, ref])
+        self.reset()
+
+    def extract_links(self):
+        return [{
+            'refs': link_pair,
+            'type': 'commentary',
+            'auto': True,
+            'generated_by': 'Talmudic Rambam Parse Script'
+        } for link_pair in self.links]
+
+
+def parse_file(filename):
+    with codecs.open(filename, 'r', 'utf-8') as infile:
+        lines = infile.readlines()
+    jagged_array = JaggedArray([[[]]])
+
+    segment = RambamSegment()
+    for line in lines:
+        if segment.is_quote(line):
+            segment.add_raw_quote(line)
+        elif segment.is_text(line):
+            segment.add_text(line)
+            segment.add_segment(jagged_array)
+
+    return {'parsed text': jagged_array.array(),
+            'links': segment.extract_links()}
+
+
+def upload():
+    links = []
+    for tractate in cards:
+        he_name = Ref(' '.join(tractate.split()[1:])).he_normal()
+        he_name = u'רמב"ם {}'.format(he_name)
+
+        node = JaggedArrayNode()
+        node.add_title(tractate, 'en', primary=True)
+        node.add_title(he_name, 'he', primary=True)
+        node.key = tractate
+        node.depth = 3
+        node.addressTypes = ['Integer', 'Integer', 'Integer']
+        node.sectionNames = ['Chapter', 'Mishnah', 'Comment']
+        node.validate()
+
+        index = {
+            'title': tractate,
+            'categories': ['Commentary2', 'Mishnah', 'Rambam'],
+            'schema': node.serialize(),
+            'toc_zoom': 2
+        }
+
+        parsed = parse_file('{}.txt'.format(tractate))
+        links.extend(parsed['links'])
+        version = {
+            'versionTitle': u'Vilna Edition',
+            'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957',
+            'language': 'he',
+            'text': parsed['parsed text']
+        }
+        print 'posting {}'.format(tractate)
+        post_index(index)
+        post_text(tractate, version, index_count='on')
+    post_link(links)
