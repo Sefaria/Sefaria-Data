@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
-algorithm:
-- make 484 hashtables
+algorithm - credit Dicta (dicta.org.il):
+- make 484 (=22^2) hashtables
 - each hash_table should have a size of 22^6
 - go through shas. for every 5 words 5-gram, do:
     - get skip-gram-list for 5-gram
@@ -20,6 +20,7 @@ algorithm:
 """
 
 import re, bisect, pickle, csv, codecs
+from collections import OrderedDict
 from sefaria.model import *
 
 min_matching_skip_grams = 2
@@ -246,7 +247,6 @@ def mesechta_index_map(mesechat_name):
 def make_mesorat_hashas():
     ght = Gemara_Hashtable()
     mesechtot_names = [name for name in library.get_indexes_in_category("Talmud") if not "Jerusalem " in name and not "Ritva " in name and not "Rif " in name]
-    mesechtot_names = mesechtot_names
     mesechtot_data = {}
     for mes in mesechtot_names:
         mes_wl,mes_il,mes_rl = mesechta_index_map(mes)
@@ -345,9 +345,45 @@ def make_mesorat_hashas():
     f = codecs.open('mesorat_hashas.csv','wb',encoding='utf8')
     for match in mesorat_hashas:
         f.write(u','.join([str(match.a.ref),str(match.b.ref),u' '.join(mesechtot_data[match.a.mesechta][0][match.a.location[0]:match.a.location[1]+1]),u' '.join(mesechtot_data[match.b.mesechta][0][match.b.location[0]:match.b.location[1]+1])]) + u'\n')
+    f.close()
 
+
+def minify_mesorat_hashas():
+    out = codecs.open('mesorat_hashas_refs.csv','wb',encoding='utf8')
+    with codecs.open('mesorat_hashas.csv','rb',encoding='utf8') as inn:
+        for line in inn:
+            line_array = line.split(u',')
+            out.write(u','.join(line_array[0:2]) + u'\n')
+    out.close()
+
+def find_most_quoted():
+    mesechtot_names = [name for name in library.get_indexes_in_category("Talmud") if not "Jerusalem " in name and not "Ritva " in name and not "Rif " in name]
+    seg_map = OrderedDict()
+    for name in mesechtot_names:
+        mes = library.get_index(name)
+        for seg in mes.all_segment_refs():
+            seg_map[str(seg)] = 0
+    with codecs.open('mesorat_hashas_refs.csv','rb',encoding='utf8') as meshas:
+        for line in meshas:
+            line_array = line.split(u',')
+            for ref in line_array:
+                ref_list = Ref(ref).range_list()
+                for rref in ref_list:
+                    seg_map[str(rref)] += 1
+
+    most_quoted = ''
+    num = 0
+    with open('gemara_popularity.csv','wb') as pop:
+        for seg,count in seg_map.items():
+            if count > num:
+                most_quoted = seg
+                num = count
+            pop.write('{},{}\n'.format(seg,count))
+
+    print "the most quoted gemara is:",most_quoted,num,'times'
 
 
 
 #make_mesorat_hashas()
-
+#minify_mesorat_hashas()
+find_most_quoted()
