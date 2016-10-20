@@ -69,3 +69,28 @@ def insert_chapter_marker(filename, safe_mode=False):
         filename += '.tmp'
     with codecs.open(filename, 'w', 'utf-8') as outfile:
         outfile.writelines(new_lines)
+
+
+def replace_in_file(filename, pattern, replacement, safe_mode=False):
+    with codecs.open(filename, 'r', 'utf-8') as infile:
+        lines = infile.readlines()
+
+    new_lines = []
+    for line in lines:
+        new_lines.append(re.sub(pattern, replacement, line))
+    if safe_mode:
+        filename += '.tmp'
+    with codecs.open(filename, 'w', 'utf-8') as outfile:
+        outfile.writelines(new_lines)
+
+
+def remove_blank_lines(filename, safe_mode=False):
+    with codecs.open(filename, 'r', 'utf-8') as infile:
+        lines = infile.readlines()
+    new_lines = filter(None, [None if line.isspace() else line.lstrip() for line in lines])
+
+    if safe_mode:
+        filename += '.tmp'
+    with codecs.open(filename, 'w', 'utf-8') as outfile:
+        outfile.writelines(new_lines)
+

@@ -575,7 +575,7 @@ def clean_jagged_array(messy_array, strip_list):
     return clean_array
 
 
-def traverse_ja(ja, indices=[], bottom=unicode):
+def traverse_ja(ja, indices=None, bottom=unicode):
     """
     A generator to move through a JaggedArray like structure, retrieving the indices  of each element of
     the JA as you go.
@@ -586,6 +586,8 @@ def traverse_ja(ja, indices=[], bottom=unicode):
     :yield: Dictionary with the keys indices and data, corresponding to the retrieved data and its
     corresponding address.
     """
+    if indices is None:
+        indices = []
 
     if isinstance(ja, bottom):
         yield {'data': ja, 'indices': indices}
