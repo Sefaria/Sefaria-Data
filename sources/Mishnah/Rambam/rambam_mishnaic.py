@@ -69,9 +69,3 @@ def insert_chapter_marker(filename, safe_mode=False):
         filename += '.tmp'
     with codecs.open(filename, 'w', 'utf-8') as outfile:
         outfile.writelines(new_lines)
-
-results = check_chapters()
-for item in results['bad']:
-    print item
-    insert_chapter_marker('{}.txt'.format(item), safe_mode=True)
-
