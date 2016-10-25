@@ -94,3 +94,13 @@ def remove_blank_lines(filename, safe_mode=False):
     with codecs.open(filename, 'w', 'utf-8') as outfile:
         outfile.writelines(new_lines)
 
+
+def align_files():
+    cards = get_cards()
+    for card in cards:
+        name = '{}.txt'.format(card)
+        replace_in_file(name, ur'@22([\u05d0-\u05ea]{1,2})', ur'\n@22\1\n')
+        replace_in_file(name, ur'@11', ur'\n@11')
+        remove_blank_lines(name)
+
+
