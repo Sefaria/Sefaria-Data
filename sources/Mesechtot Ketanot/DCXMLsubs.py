@@ -46,6 +46,9 @@ ExternalEncoding = 'utf-8'
 class bookSub(supermod.book):
     def __init__(self, id=None, front=None, body=None, back=None):
         super(bookSub, self).__init__(id, front, body, back, )
+
+    def getBaseTextArray(self):
+        return self.get_body().getTextArray()
 supermod.book.subclass = bookSub
 # end class bookSub
 
@@ -67,6 +70,10 @@ supermod.back.subclass = backSub
 class bodySub(supermod.body):
     def __init__(self, chapter=None, commentaries=None):
         super(bodySub, self).__init__(chapter, commentaries, )
+
+    def getTextArray(self):
+        return [c.getVerseArray() for c in self.chapter]
+
 supermod.body.subclass = bodySub
 # end class bodySub
 
@@ -102,6 +109,10 @@ supermod.author.subclass = authorSub
 class chapterSub(supermod.chapter):
     def __init__(self, num=None, label=None, phrase=None, p=None, pgbrk=None, verse=None):
         super(chapterSub, self).__init__(num, label, phrase, p, pgbrk, verse, )
+
+    def getVerseArray(self):
+        return [v.asString() for v in self.verse]
+
 supermod.chapter.subclass = chapterSub
 # end class chapterSub
 
@@ -109,6 +120,9 @@ supermod.chapter.subclass = chapterSub
 class verseSub(supermod.verse):
     def __init__(self, num=None, label=None, p=None, pgbrk=None):
         super(verseSub, self).__init__(num, label, p, pgbrk, )
+
+    def asString(self):
+        return " ".join([p.asString() for p in self.p])
 supermod.verse.subclass = verseSub
 # end class verseSub
 
@@ -137,6 +151,25 @@ supermod.comment.subclass = commentSub
 class pSub(supermod.p):
     def __init__(self, xref=None, pgbrk=None, valueOf_=None, mixedclass_=None, content_=None):
         super(pSub, self).__init__(xref, pgbrk, valueOf_, mixedclass_, content_, )
+
+    def _mcAsString(self, mc):
+        if mc.getCategory() == mc.CategoryText:
+            if mc.getValue().strip():
+                return mc.getValue().strip().replace(u"\n", u" ")
+            else:
+                return u""
+        elif mc.getCategory() == mc.CategoryComplex:
+            if mc.getName() == "xref":
+                return mc.getValue().asITagString()
+            elif mc.getName() == "pgbrk":
+                return u" "
+        else:
+            raise Exception("What am I?")
+
+    def asString(self):
+        return "".join([self._mcAsString(mc) for mc in self.content_])
+
+
 supermod.p.subclass = pSub
 # end class pSub
 
@@ -144,6 +177,10 @@ supermod.p.subclass = pSub
 class xrefSub(supermod.xref):
     def __init__(self, rid=None, valueOf_=None, mixedclass_=None, content_=None):
         super(xrefSub, self).__init__(rid, valueOf_, mixedclass_, content_, )
+
+    def asITagString(self):
+        return u"<i data-rid='{}' data-commentator='{}' data-order='{}'/>".format(self.get_rid(), None, None)
+
 supermod.xref.subclass = xrefSub
 # end class xrefSub
 
