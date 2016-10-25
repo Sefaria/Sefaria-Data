@@ -2,7 +2,7 @@
     "missed_words": [
         {
             "index": 27, 
-            "word": "איקפד"
+            "word": "דתרוייהו"
         }
     ], 
     "words": [
@@ -1068,12 +1068,12 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "מאי", 
+            "head_word": "מאי טעמא", 
             "word_num": 3, 
             "daf": "51a", 
             "word": "מ\"ט", 
             "line_num": 26, 
-            "cal_word": "מאי", 
+            "cal_word": "מאי טעמא", 
             "POS": "p01", 
             "class": "talmud", 
             "pg_num": 51, 
@@ -1083,39 +1083,15 @@
             "side": 1
         }, 
         {
-            "head_word": "טעמא", 
-            "word_num": 4, 
+            "head_word": "קפד", 
+            "word_num": 5, 
             "daf": "51a", 
             "word": "איקפד", 
             "line_num": 26, 
-            "cal_word": "טעמא", 
-            "POS": "N02", 
+            "cal_word": "איקפד", 
+            "POS": "V04", 
             "class": "talmud", 
             "pg_num": 51, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 1
-        }, 
-        {
-            "head_word": "תרי", 
-            "word_num": 8, 
-            "daf": "51a", 
-            "word": "כרבוותיה", 
-            "line_num": 26, 
-            "cal_word": "דתרוייהו", 
-            "POS": "n02", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 51, 
-            "prefix_POS": [
-                "c"
-            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71002, 
@@ -1125,7 +1101,7 @@
             "head_word": "רבא", 
             "word_num": 0, 
             "daf": "51a", 
-            "word": "עביד", 
+            "word": "כרבוותיה", 
             "line_num": 27, 
             "cal_word": "כרבואתא", 
             "POS": "N05", 
@@ -1140,7 +1116,7 @@
             "head_word": "עבד", 
             "word_num": 1, 
             "daf": "51a", 
-            "word": "חדא", 
+            "word": "עביד", 
             "line_num": 27, 
             "cal_word": "עבד", 
             "POS": "V01", 
@@ -1155,7 +1131,7 @@
             "head_word": "חד", 
             "word_num": 2, 
             "daf": "51a", 
-            "word": "כרב", 
+            "word": "חדא", 
             "line_num": 27, 
             "cal_word": "חדא", 
             "POS": "n01", 
@@ -1170,7 +1146,7 @@
             "head_word": "רב", 
             "word_num": 3, 
             "daf": "51a", 
-            "word": "וחדא", 
+            "word": "כרב", 
             "line_num": 27, 
             "cal_word": "כרב", 
             "POS": "PN", 
@@ -1194,7 +1170,7 @@
             "head_word": "חד", 
             "word_num": 4, 
             "daf": "51a", 
-            "word": "כשמואל", 
+            "word": "וחדא", 
             "line_num": 27, 
             "cal_word": "וחדא", 
             "POS": "n01", 
@@ -1208,6 +1184,30 @@
             "pg_num": 51, 
             "prefix_POS": [
                 "c"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
+        }, 
+        {
+            "head_word": "שמואל", 
+            "word_num": 5, 
+            "daf": "51a", 
+            "word": "כשמואל", 
+            "line_num": 27, 
+            "cal_word": "כשמואל", 
+            "POS": "PN", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "כ_"
+            ], 
+            "pg_num": 51, 
+            "prefix_POS": [
+                "p02"
             ], 
             "ms": "01", 
             "homograph": "", 

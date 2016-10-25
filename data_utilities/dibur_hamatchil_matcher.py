@@ -61,6 +61,9 @@ class AbbrevMatch:
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __str__(self):
+        return u"Abbrev: {}, Expanded: {}, RashiRange: {}, GemaraRange: {}".format(self.abbrev,self.expanded,self.rashiRange,self.gemaraRange)
+
 # should be private?
 class GemaraDaf:
     def __init__(self,word_list,comments,dh_extraction_method=lambda x: x,prev_matched_results=None):
@@ -670,8 +673,23 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
             curMatch.startWord = iStartingWordInGemara
             curMatch.endWord = iStartingWordInGemara + wordCountRashi - gemaraDifferential #I added the -1 b/c there was an off-by-one error
 
+            #one final check on abbrev matches. get rid of any matches that are subsets
+            new_abbrev_matches = []
+            for iam1 in range(len(abbrev_matches)):
+                am1 = abbrev_matches[iam1]
+                issubset = False
+                for iam2 in range(len(abbrev_matches)):
+                    if iam1 == iam2: continue
+                    am2 = abbrev_matches[iam2]
+                    if am1.rashiRange[0] >= am2.rashiRange[0] and am1.rashiRange[1] <= am2.rashiRange[1]:
+                        issubset = True
+                        break
+                if not issubset:
+                    new_abbrev_matches.append(am1)
+
+
             #if we found an abbrev in gemara, save the words which matched in the TextMatch
-            curMatch.abbrev_matches = abbrev_matches
+            curMatch.abbrev_matches = new_abbrev_matches
             # calculate the score, adding in the penalty for abbreviation
             totaldistance += abbreviationPenalty
             normalizedDistance = 1.0*(totaldistance + smoothingFactor) / (len(startText) + smoothingFactor) * normalizingFactor

@@ -453,7 +453,7 @@ def file_to_ja(structure, infile, expressions, cleaner, grab_all=False):
     :param structure: A nested list at the depth of the final result. Example: for a depth 2
     text, structure should be [[]].
     :param infile: Text file to read from
-    :param expressions: A list of regular expressions with which to identify segment (chapter) level. Do
+    :param expressions: A list of regular expressions with which to identify section (chapter) level. Do
     not include an expression with which to break up the segment levels.
     :param cleaner: A function that takes a list of strings and returns an array with the text parsed
     correctly. Should also break up and remove unnecessary tagging data.

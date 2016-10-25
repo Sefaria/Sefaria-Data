@@ -26,7 +26,7 @@
         }, 
         {
             "index": 79, 
-            "word": "בדו בר"
+            "word": "שרית"
         }
     ], 
     "words": [
@@ -2245,13 +2245,13 @@
             "side": 2
         }, 
         {
-            "head_word": "אמר", 
+            "head_word": "אמר ל_", 
             "word_num": 1, 
             "daf": "6b", 
             "word": "א\"ל", 
             "line_num": 30, 
-            "cal_word": "אמ", 
-            "POS": "V01", 
+            "cal_word": "אמ ליה", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 6, 
             "ms": "01", 
@@ -2260,13 +2260,13 @@
             "side": 2
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 2, 
+            "head_word": "בדובר", 
+            "word_num": 3, 
             "daf": "6b", 
             "word": "כדו", 
             "line_num": 30, 
-            "cal_word": "ליה", 
-            "POS": "p02", 
+            "cal_word": "בדו בר", 
+            "POS": "N01", 
             "class": "talmud", 
             "pg_num": 6, 
             "ms": "01", 
@@ -2275,13 +2275,13 @@
             "side": 2
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 2, 
+            "head_word": "בדובר", 
+            "word_num": 3, 
             "daf": "6b", 
             "word": "בר", 
             "line_num": 30, 
-            "cal_word": "ליה", 
-            "POS": "p02", 
+            "cal_word": "בדו בר", 
+            "POS": "N01", 
             "class": "talmud", 
             "pg_num": 6, 
             "ms": "01", 
@@ -2298,25 +2298,10 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "שרי", 
-            "word_num": 4, 
-            "daf": "6b", 
-            "word": "מרך", 
-            "line_num": 30, 
-            "cal_word": "שרית", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 6, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71001, 
-            "side": 2
-        }, 
-        {
             "head_word": "מריא", 
             "word_num": 5, 
             "daf": "6b", 
-            "word": "שלף", 
+            "word": "מרך", 
             "line_num": 30, 
             "cal_word": "ממרך", 
             "POS": "N02", 
@@ -2331,7 +2316,7 @@
             "head_word": "שלפ", 
             "word_num": 6, 
             "daf": "6b", 
-            "word": "ספסרא", 
+            "word": "שלף", 
             "line_num": 30, 
             "cal_word": "שלף", 
             "POS": "V01", 
@@ -2346,12 +2331,36 @@
             "head_word": "ספסירא", 
             "word_num": 7, 
             "daf": "6b", 
-            "word": "וקטליה", 
+            "word": "ספסרא", 
             "line_num": 30, 
             "cal_word": "ספסירא", 
             "POS": "N02", 
             "class": "talmud", 
             "pg_num": 6, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71001, 
+            "side": 2
+        }, 
+        {
+            "head_word": "קטל", 
+            "word_num": 8, 
+            "daf": "6b", 
+            "word": "וקטליה", 
+            "line_num": 30, 
+            "cal_word": "וקטליה", 
+            "POS": "V01", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 6, 
+            "prefix_POS": [
+                "c"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71001, 

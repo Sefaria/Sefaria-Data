@@ -18,15 +18,15 @@
         }, 
         {
             "index": 41, 
-            "word": "טעמ"
+            "word": "קביל"
         }, 
         {
             "index": 46, 
-            "word": "מיניה"
+            "word": "משום"
         }, 
         {
             "index": 47, 
-            "word": "משום"
+            "word": "גופיה"
         }
     ], 
     "words": [
@@ -1897,12 +1897,12 @@
             "side": 1
         }, 
         {
-            "head_word": "מאי", 
+            "head_word": "מאי טעמא", 
             "word_num": 9, 
             "daf": "56a", 
             "word": "מ\"ט", 
             "line_num": 43, 
-            "cal_word": "מאי", 
+            "cal_word": "מאי טעמ", 
             "POS": "p01", 
             "class": "talmud", 
             "pg_num": 56, 
@@ -1912,12 +1912,12 @@
             "side": 1
         }, 
         {
-            "head_word": "מאי", 
+            "head_word": "מאי טעמא", 
             "word_num": 9, 
             "daf": "56a", 
             "word": "קיבלה", 
             "line_num": 43, 
-            "cal_word": "מאי", 
+            "cal_word": "מאי טעמ", 
             "POS": "p01", 
             "class": "talmud", 
             "pg_num": 56, 
@@ -1983,25 +1983,10 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "קבל", 
-            "word_num": 11, 
-            "daf": "56a", 
-            "word": "ומנא", 
-            "line_num": 43, 
-            "cal_word": "קביל", 
-            "POS": "V02", 
-            "class": "talmud", 
-            "pg_num": 56, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 1
-        }, 
-        {
             "head_word": "מנא", 
             "word_num": 0, 
             "daf": "56a", 
-            "word": "לן", 
+            "word": "ומנא", 
             "line_num": 45, 
             "cal_word": "ומנא", 
             "POS": "a", 
@@ -2025,7 +2010,7 @@
             "head_word": "ל_", 
             "word_num": 1, 
             "daf": "56a", 
-            "word": "דקיבל", 
+            "word": "לן", 
             "line_num": 45, 
             "cal_word": "לן", 
             "POS": "p02", 
@@ -2040,7 +2025,7 @@
             "head_word": "קבל", 
             "word_num": 2, 
             "daf": "56a", 
-            "word": "מיניה", 
+            "word": "דקיבל", 
             "line_num": 45, 
             "cal_word": "דקביל", 
             "POS": "V02", 
@@ -2055,6 +2040,21 @@
             "prefix_POS": [
                 "c"
             ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
+        }, 
+        {
+            "head_word": "מנ", 
+            "word_num": 3, 
+            "daf": "56a", 
+            "word": "מיניה", 
+            "line_num": 45, 
+            "cal_word": "מיניה", 
+            "POS": "p02", 
+            "class": "talmud", 
+            "pg_num": 56, 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71002, 
@@ -2153,13 +2153,13 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "גופא", 
-            "word_num": 2, 
+            "head_word": "חזי", 
+            "word_num": 5, 
             "daf": "56a", 
             "word": "חזא", 
             "line_num": 47, 
-            "cal_word": "גופיה", 
-            "POS": "N02", 
+            "cal_word": "חזא", 
+            "POS": "V01", 
             "class": "talmud", 
             "pg_num": 56, 
             "ms": "01", 
@@ -2168,13 +2168,13 @@
             "side": 1
         }, 
         {
-            "head_word": "חזי", 
-            "word_num": 5, 
+            "head_word": "ב_", 
+            "word_num": 6, 
             "daf": "56a", 
             "word": "ביה", 
             "line_num": 47, 
-            "cal_word": "חזא", 
-            "POS": "V01", 
+            "cal_word": "ביה", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 56, 
             "ms": "01", 

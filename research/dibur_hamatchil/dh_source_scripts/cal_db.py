@@ -5,7 +5,7 @@ import json
 import re
 import sys,os
 
-sys.stdout = codecs.open('cal_output.txt', 'w',encoding='utf8')
+#sys.stdout = codecs.open('cal_output.txt', 'w',encoding='utf8')
 
 sys.path.insert(0,'../../../')
 
@@ -126,8 +126,8 @@ def match_cal_segments(mesechta):
 
     cal_lines = json.load(open("cal_lines_{}.json".format(mesechta), "r"), encoding="utf8")
     cal_pos_hashtable = json.load(open("cal_pos_hashtable.json","r"),encoding='utf8')
-    dafs = cal_lines["dafs"]
-    lines_by_daf = cal_lines["lines"]
+    dafs = cal_lines["dafs"][33:]
+    lines_by_daf = cal_lines["lines"][33:]
 
     super_base_ref = Ref(mesechta)
     subrefs = super_base_ref.all_subrefs()
@@ -166,6 +166,7 @@ def match_cal_segments(mesechta):
         if curr_sef_ref == curr_cal_ref:
             start_end_map,abbrev_matches = dibur_hamatchil_matcher.match_text(bas_word_list, lines_by_str, verbose=True, word_threshold=0.27, char_threshold=1.5,with_abbrev_matches=True)
             abbrev_ranges = [[am.rashiRange for am in am_list] for am_list in abbrev_matches ]
+            print u' --- '.join([unicode(am) for am_list in abbrev_matches for am in am_list])
             abbrev_count = 0
             for ar in abbrev_ranges:
                 abbrev_count += len(ar)
@@ -174,7 +175,6 @@ def match_cal_segments(mesechta):
             for iline,se in enumerate(start_end_map):
 
                 curr_cal_line = lines[iline]
-
                 # if there is an expanded abbrev, concat those words into one element
                 if len(abbrev_ranges[iline]) > 0:
                     offset = 0 # account for the fact that you're losing elements in the array as you merge them
@@ -182,9 +182,30 @@ def match_cal_segments(mesechta):
                     for ar in abbrev_ranges[iline]:
                         if ar[1] - ar[0] <= 0:
                             continue #TODO there's an issue with the abbrev func, but i'm too lazy to fix now. sometimes they're zero length
+
+                        #redefine ar by how many actual words are in the range, not just how many elements
+                        start_ar = ar[0]
+                        i_abbrev = start_ar
+                        num_words = 0
+                        while i_abbrev < len(curr_cal_line):
+                            temp_w = curr_cal_line[i_abbrev]
+                            num_words += len(re.split(ur'\s+',temp_w))
+                            if num_words >= (ar[1]-ar[0]+1):
+                                break
+                            i_abbrev += 1
+                        end_ar = i_abbrev
+
+                        ar = (start_ar,end_ar)
+                        if len(curr_cal_line[ar[0]-offset:ar[1]+1-offset]) != len( word_obj_list[ar[0]-offset+len(cal_words):ar[1]+1-offset+len(cal_words)]):
+                            #something's wrong. not sure what, but best to ignore this
+                            continue
+                        print u"ABBREV RANGE {} --- OFFSET {}".format(ar,offset)
+                        print u"CURR CAL LINE BEFORE {}".format(u','.join(curr_cal_line[ar[0]-offset:ar[1]+1-offset]))
                         curr_cal_line[ar[0]-offset:ar[1]+1-offset] = [u' '.join(curr_cal_line[ar[0]-offset:ar[1]+1-offset])]
-                        #word_obj_list[ar[0]-offset+len(cal_words):ar[1]+1-offset+len(cal_words)] = merge_cal_word_objs(ar[0]-offset+len(cal_words),ar[1]+1-offset+len(cal_words),word_obj_list)
-                        #print word_obj_list[ar[0]-offset+len(cal_words):ar[1]+1-offset+len(cal_words)]
+                        print u"CURR CAL LINE AFTER {}".format(curr_cal_line[ar[0]-offset])
+                        print u"WORD OBJ LIST BEFORE {}".format(u','.join([u'({})'.format(obj['word']) for obj in merge_cal_word_objs(ar[0]-offset+len(cal_words),ar[1]+1-offset+len(cal_words),word_obj_list)]))
+                        word_obj_list[ar[0]-offset+len(cal_words):ar[1]+1-offset+len(cal_words)] = merge_cal_word_objs(ar[0]-offset+len(cal_words),ar[1]+1-offset+len(cal_words),word_obj_list)
+                        print u"WORD OBJ LIST AFTER {}".format(word_obj_list[ar[0]-offset+len(cal_words)]['word'])
                         offset += ar[1]-ar[0]
                         global_offset += offset
 
@@ -243,7 +264,7 @@ def match_cal_segments(mesechta):
         fp.close()
 
 
-def make_cal_pos_hashtable():
+def make_cal_pos_hashtable(cutoff=0):
     obj = {}
     with open(full_cal_db_location,'rb') as cal:
         for line in cal:
@@ -258,16 +279,22 @@ def make_cal_pos_hashtable():
 
     num_one_pos_words = 0
     total_num_pos = 0
-    for word in obj:
-        total_num_pos += len(obj[word])
-        if len(obj[word]) == 1:
+    for word,pos in reversed(obj.items()):
+        if len(pos) < cutoff:
+            del obj[word]
+            continue
+        total_num_pos += len(pos)
+        if len(pos) == 1:
             num_one_pos_words += 1
 
     print "Percent Words With 1 POS",round(100.0*num_one_pos_words/len(obj),3)
     print "Avg Num POS per word",round(1.0*total_num_pos/len(obj),3)
 
-    cal_tools.saveUTFStr(obj,"cal_pos_hashtable.json")
-
+    #cal_tools.saveUTFStr(obj,"cal_pos_hashtable.json")
+    #f = codecs.open("double_pos_before.txt","wb",encoding='utf8')
+    #for word,pos in obj.items():
+    #    f.write(u'{} ~-~ {}\n'.format(word,str(pos)))
+    #f.close()
 
 def make_cal_lines_text(mesechta):
     cal_lines = json.load(open("cal_lines_{}.json".format(mesechta), "r"), encoding="utf8")
@@ -284,9 +311,9 @@ def make_cal_lines_text(mesechta):
     fp.write(out)
     fp.close()
 
-mesechtas = ["Berakhot","Shabbat","Eruvin","Pesachim"]
+mesechtas = ["Shabbat"] #,"Shabbat","Eruvin","Pesachim"]
 for mesechta in mesechtas:
     make_cal_segments(mesechta)
     match_cal_segments(mesechta)
     #make_cal_lines_text(mesechta)
-#make_cal_pos_hashtable()
+#make_cal_pos_hashtable(2)

@@ -22,6 +22,8 @@ algorithm - credit Dicta (dicta.org.il):
 import re, bisect, pickle, csv, codecs
 from collections import OrderedDict
 from sefaria.model import *
+from sources.functions import post_link
+from sefaria.system.exceptions import DuplicateRecordError
 
 min_matching_skip_grams = 2
 max_words_between = 8
@@ -382,8 +384,27 @@ def find_most_quoted():
 
     print "the most quoted gemara is:",most_quoted,num,'times'
 
+def save_links():
+    with open("mesorat_hashas_refs.csv","r") as f:
+        r = csv.reader(f)
+        for row in r:
+            link_obj = {"auto":True,"refs":row,"anchorText":"","generated_by":"mesorat_hashas.py","type":"Automatic Mesorat HaShas"}
+            try:
+                Link(link_obj).save()
+            except DuplicateRecordError:
+                pass #poopy
+
+def save_links_post_request():
+    query = {"generated_by": "mesorat_hashas.py", "auto": True, "type": "Automatic Mesorat HaShas"}
+    ls = LinkSet(query)
+    links = [l.contents() for l in ls]
+    post_link(links)
+
+
 
 
 #make_mesorat_hashas()
 #minify_mesorat_hashas()
-find_most_quoted()
+#find_most_quoted()
+#save_links()
+#save_links_post_request()

@@ -3,9 +3,11 @@
 import os
 import re
 import codecs
-from data_utilities.util import get_cards_from_trello, numToHeb
+from data_utilities.util import get_cards_from_trello, numToHeb, ja_to_xml, getGematria, traverse_ja
+from sefaria.datatype.jagged_array import JaggedArray
 from sefaria.model.text import Ref, JaggedArrayNode
 from data_utilities.sanity_checks import TagTester
+from sources.functions import post_link, post_text, post_index
 
 
 def get_cards():
@@ -103,4 +105,89 @@ def align_files():
         replace_in_file(name, ur'@11', ur'\n@11')
         remove_blank_lines(name)
 
+
+def check_mishnayot():
+    cards = get_cards()
+    success, failure = [], []
+    for card in cards:
+        with codecs.open('{}.txt'.format(card), 'r', 'utf-8') as infile:
+            tester = TagTester(u'@22', infile, u'@22([\u05d0-\u05ea]{1,2})')
+            result = tester.in_order_many_sections(end_tag=u'@00', capture_group=1)
+        if result[0] == 'SUCCESS':
+            success.append(card)
+        else:
+            print 'failure: {}'.format(card)
+            print len(result[1])
+
+    print 'successes: {}'.format(len(success))
+    print 'failures: {}'.format(len(failure))
+    print 'total: {}'.format(len(cards))
+    for item in failure:
+        print item
+
+
+def parser(name):
+    with codecs.open('{}.txt'.format(name), 'r', 'utf-8') as infile:
+        lines = infile.readlines()
+    parsed_text = JaggedArray([[[]]])
+    links = []
+    chapter, mishnah, comment = -1, -1, -1
+    for line in lines:
+        if re.match(ur'@00\u05e4\u05e8\u05e7', line) is not None:
+            chapter += 1
+            comment = -1
+            continue
+
+        elif re.match(ur'@22', line) is not None:
+            mishnah = getGematria(re.match(ur'@22([\u05d0-\u05ea]{1,2})', line).group(1)) - 1
+            comment = -1
+            continue
+
+        elif re.match(ur'@11' ,line) is not None:
+            comment += 1
+            line = re.sub(ur'@[1-9]{2}(\(|\[)?[\u05d0-\u05ea]{1,2}(\)|\])', u'', line)
+            line = re.sub(ur'@[0-9]{2}', u'', line)
+            parsed_text.set_element((chapter, mishnah, comment), line, pad=u'')
+            links.append({
+                'refs': ('{} {}:{}:{}'.format(name, chapter+1, mishnah+1, comment+1),
+                         '{} {}:{}'.format(name.replace('Rambam ', ''), chapter+1, mishnah+1)),
+                'type': 'commentary',
+                'auto': True,
+                'generated_by': 'Mishnaic Rambam Parse Script'
+            })
+    return {'parsed': parsed_text.array(), 'links': links}
+
+
+def parse_and_upload():
+    cards = get_cards()
+    links = []
+    for card in cards:
+        node = JaggedArrayNode()
+        node.add_title(card, 'en', primary=True)
+        node.add_title(u'רמב"ם ' + Ref(card.replace('Rambam ', '')).he_normal(), 'he', primary=True)
+        node.key = card
+        node.depth = 3
+        node.addressTypes = ['Integer', 'Integer', 'Integer']
+        node.sectionNames = ['Chapter', 'Mishnah', 'Comment']
+        node.validate()
+        node.toc_zoom = 2
+
+        index = {
+            'title': card,
+            'categories': ['Commentary2', 'Mishnah', 'Rambam'],
+            'schema': node.serialize(),
+        }
+
+        parsed = parser(card)
+        links.extend(parsed['links'])
+        version = {
+            'versionTitle': u'Vilna Edition',
+            'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957',
+            'language': 'he',
+            'text': parsed['parsed']
+        }
+        print 'posting {}'.format(card)
+        post_index(index)
+        post_text(card, version, index_count='on')
+    post_link(links)
 
