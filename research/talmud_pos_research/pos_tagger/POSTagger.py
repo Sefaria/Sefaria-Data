@@ -8,7 +8,9 @@ import argparse
 from os.path import join
 import os
 import os.path
-import json
+import json, codecs
+
+from research.talmud_pos_research.language_classifier import cal_tools
 
 # set the seed
 random.seed(2823274491)
@@ -82,6 +84,8 @@ def read_data(dir=''):
             if word_class: word_pos = word['POS']
             
             total_words += 1
+            if word_class and word_s == u'הכא' and word_pos != u'a':
+                print "OH NO! {}".format(file)
             all_words.append((word_s, word_class, word_pos))
         
         total_daf += 1
@@ -121,8 +125,8 @@ class Vocabulary(object):
         self.c2i = {c:i for i,c in enumerate(self.vocab, c2i_start)}
         self.i2c = self.vocab
         if fAddBOS:
-            self.c2i['<BOS>'] = 0
-            self.i2c = ['<BOS>'] + self.vocab
+            self.c2i['*BOS*'] = 0
+            self.i2c = ['*BOS*'] + self.vocab
         self.all_items = None
         
     # debug
@@ -197,16 +201,72 @@ class ConfusionMatrix:
         self.matrix[x,y] += 1
 
     def to_html(self):
-        html = "<html><head><style>tc{width:50px,height:50px,border:solid 1px black}</style></head><body><table>"
-        first_row = "<tr><tc></tc><tc>{}</tc></tr>".format("</tc><tc>".join([self.vocab.getItem(i) for i in range(self.size)]))
+        fp_matrix = np.sum(self.matrix,1)
+        fn_matrix = np.sum(self.matrix,0)
+
+        html = """
+                    <html>
+                        <head>
+                            <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+                            <script src="confused.js"></script>
+                            <style>.good{background-color:green;color:white}.bad{background-color:red;color:white}table{table-layout:fixed}td{text-align:center;padding:10px;border:solid 1px black}</style>
+                        </head>
+                        <body><h2>A Confusing Matrix</h2><table>"""
+        first_row = "<tr><td></td>"
+        for i in range(self.size):
+            first_row += "<td data-col-head={}>{}</td>".format(i,self.vocab.getItem(i))
+        first_row += "<td>False Positives</td></tr>"
         html += first_row
         for i in range(self.size):
-            html += "<tr><tc>{}</tc>".format(self.vocab.getItem(i))
+            html += "<tr><td data-row-head={}>{}</td>".format(i,self.vocab.getItem(i))
             for j in range(self.size):
-                html += "<tc>{}</tc>".format(self.matrix[i,j])
-            html += "</tr>"
-        html += "</table></body></html>"
+                classy = "good" if i == j else "bad"
+                opacity = self.matrix[i,j] / (np.mean(self.matrix[self.matrix > 0]))
+                if opacity < 0.2: opacity = 0.2
+                if opacity > 1.0: opacity = 1.0
+                html += "<td data-i={} data-j={} class=\"{}\" style=\"opacity:{}\">{}</td>".format(i,j,classy,opacity,self.matrix[i,j])
+
+            html += "<td>{}</td></tr>".format(round(100.0*(fp_matrix[i]-self.matrix[i,i])/fp_matrix[i],2))
+        #add confusion table for each class
+        stats = {"precision":self.precision,"recall":self.recall,"F1":self.f1}
+
+
+        html += "<tr><td>False Negatives</td>"
+        for i in range(self.size):
+            html += "<td>{}</td>".format(round(100.0*(fn_matrix[i]-self.matrix[i,i])/fn_matrix[i],2))
+        html += "</tr>"
+
+        for k,v in stats.items():
+            html += "<tr><td>{}</td>".format(k)
+            for j in range(self.size):
+                tp = self.matrix[j,j]
+                fp = fp_matrix[j]-tp
+                fn = fn_matrix[j]-tp
+                html += "<td>{}</td>".format(round(100*v(tp,fp,fn),2))
+            html +="</tr>"
+        html += "</table><h2>Table of Confusion</h2>"
+        total_tp = sum([self.matrix[i,i] for i in range(self.size)])
+        total_fp = np.sum(fp_matrix) - total_tp
+        total_fn = np.sum(fn_matrix) - total_tp
+        html += "<h3>Precision: {}</h3>".format(round(100*self.precision(total_tp,total_fp,total_fn),2))
+        html += "<h3>Recall: {}</h3>".format(round(100*self.recall(total_tp,total_fp,total_fn),2))
+        html += "<h3>F1: {}</h3>".format(round(100*self.f1(total_tp,total_fp,total_fn),2))
+
+
+        html += "</body></html>"
         return html
+
+    def f1(self,tp,fp,fn):
+        return 2.0*tp / (2.0*tp + fp + fn) if tp + fp + fn != 0 else 0.0
+
+    def recall(self,tp,fp,fn):
+        return 1.0*tp / (tp + fn) if tp + fn != 0 else 0.0
+
+    def precision(self,tp,fp,fn):
+        return 1.0*tp / (tp + fp) if tp + fn != 0 else 0.0
+
+
+
     def clear(self):
         self.matrix = np.zeros((self.size,self.size))
 
@@ -215,7 +275,7 @@ def CalculateLossForDaf(daf, fValidation=False):
 
     
     # add a bos before and after
-    seq = ['<BOS>'] + list(' '.join([word for word,_,_ in daf])) + ['<BOS>']
+    seq = ['*BOS*'] + list(' '.join([word for word,_,_ in daf])) + ['*BOS*']
     
     # get all the char encodings for the daf
     char_embeds = [let_enc(let) for let in seq]
@@ -229,7 +289,7 @@ def CalculateLossForDaf(daf, fValidation=False):
     iLet_start = 0
     for iLet, char in enumerate(seq):
         # if it is a bos, check if it's at the end of the sequence
-        if char == '<BOS>':
+        if char == '*BOS*':
             if iLet + 1 == len(seq): char = ' '
             else: continue
         # if we are at a space, take this bilstm output and the one at the letter start
@@ -246,7 +306,7 @@ def CalculateLossForDaf(daf, fValidation=False):
         log_message('Size mismatch!! word_bilstm_outputs: ' + str(len(word_bilstm_outputs)) + ', daf: ' + str(len(daf)))
         
     
-    prev_pos_lstm_state = prev_pos_lstm.initial_state().add_input(pos_enc('<BOS>'))
+    prev_pos_lstm_state = prev_pos_lstm.initial_state().add_input(pos_enc('*BOS*'))
     
     all_losses = []
     pos_prec = 0.0
@@ -264,7 +324,9 @@ def CalculateLossForDaf(daf, fValidation=False):
         try:
             temp_pos_array = pos_mlp_output.npvalue()
             possible_pos_array = np.zeros(temp_pos_array.shape)
-            possible_pos_indices = [pos_vocab[temp_pos] for temp_pos in pos_hashtable[word]]
+            pos_list = pos_hashtable[word]
+            if fValidation: pos_list.add('') #concat 'unknown' as possible pos for validation
+            possible_pos_indices = [pos_vocab[temp_pos] for temp_pos in pos_list]
             possible_pos_array[possible_pos_indices] = temp_pos_array[possible_pos_indices]
         except KeyError:
             possible_pos_array = pos_mlp_output.npvalue()
@@ -279,11 +341,11 @@ def CalculateLossForDaf(daf, fValidation=False):
 
         # if we aren't doing validation, calculate the loss
         if not fValidation:
-            if should_backprop: all_losses.append(-dy.log(dy.pick(pos_mlp_output, pos_vocab[gold_word_pos])))
+            all_losses.append(-dy.log(dy.pick(pos_mlp_output, pos_vocab[gold_word_pos])))
             word_pos_ans = gold_word_pos
         # otherwise, set the answer to be the argmax
         else:
-            pos_conf_matrix(pos_vocab[predicted_word_pos], pos_vocab[gold_word_class])
+            if should_backprop: pos_conf_matrix(pos_vocab[predicted_word_pos], pos_vocab[gold_word_pos])
             word_pos_ans = predicted_word_pos
 
         # run through the prev-pos-mlp
@@ -322,10 +384,24 @@ def run_network_on_validation(suffix):
 # read in all the data
 all_data = list(read_data())
 
+words = {}
+for daf in all_data:
+    for w,c,p in daf:
+        if not w in words:
+            words[w] = set()
+        if c: words[w].add(p)
 
+f = codecs.open('double_pos_after.txt','wb',encoding='utf8')
+for w,p in words.items():
+    if len(p) > 1:
+        f.write('{} ~-~ {}\n'.format(cal_tools.heb2cal(w),str(list(p))))
+f.close()
+
+
+"""
 random.shuffle(all_data)
 # train val will be split up 100-780
-train_data = all_data[100:101]
+train_data = all_data[100:]
 val_data = all_data[:100]
 
 pos_hashtable = make_pos_hashtable(train_data)
@@ -387,7 +463,7 @@ trainer = dy.AdamTrainer(model)
 if filename_to_load:
     model.load(filename_to_load)
 run_network_on_validation(START_EPOCH - 1)
-
+pos_conf_matrix.clear()
 # train!
 for epoch in range(START_EPOCH, 100):
     last_loss, last_pos_prec, last_class_prec = 0.0, 0.0, 0.0
@@ -438,3 +514,4 @@ for epoch in range(START_EPOCH, 100):
     f.write(pos_conf_matrix.to_html())
     f.close()
     pos_conf_matrix.clear()
+"""

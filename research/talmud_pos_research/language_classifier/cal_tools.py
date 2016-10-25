@@ -16,39 +16,41 @@ def calClean(calIn):
     else:
         return re.sub(r'[!?<>{}\+=/\[\]\^\*\-\|#0-9\"\.]',"",calIn)
 
+
+cal2hebDic = {
+    ")": "א",
+    "b": "ב",
+    "g": "ג",
+    "d": "ד",
+    "h": "ה",
+    "w": "ו",
+    "z": "ז",
+    "x": "ח",
+    "T": "ט",
+    "y": "י",
+    "k": "כ",
+    "K": "ך",
+    "l": "ל",
+    "m": "מ",
+    "M": "ם",
+    "n": "נ",
+    "N": "ן",
+    "s": "ס",
+    "(": "ע",
+    "p": "פ",
+    "P": "ף",
+    "c": "צ",
+    "C": "ץ",
+    "q": "ק",
+    "r": "ר",
+    "$": "שׁ",
+    "&": "שׂ",
+    "t": "ת",
+    "@": " "  # TODO think about what @ means syntactically
+}
 def cal2heb(calIn,withshinsin=True):
     hebStr = ""
-    cal2hebDic = {
-        ")" : "א",
-        "b" : "ב",
-        "g" : "ג",
-        "d" : "ד",
-        "h" : "ה",
-        "w" : "ו",
-        "z" : "ז",
-        "x" : "ח",
-        "T" : "ט",
-        "y" : "י",
-        "k" : "כ",
-        "K" : "ך",
-        "l" : "ל",
-        "m" : "מ",
-        "M" : "ם",
-        "n" : "נ",
-        "N" : "ן",
-        "s" : "ס",
-        "(" : "ע",
-        "p" : "פ",
-        "P" : "ף",
-        "c" : "צ",
-        "C" : "ץ",
-        "q" : "ק",
-        "r" : "ר",
-        "$" : "שׁ",
-        "&" : "שׂ",
-        "t" : "ת",
-        "@" : " "  #TODO think about what @ means syntactically
-    }
+
 
     no_shinsin_dic = {"$":"ש","&":"ש"}
     if type(calIn) == list:
@@ -64,6 +66,21 @@ def cal2heb(calIn,withshinsin=True):
                 hebStr += char
 
     return unicode(hebStr,'utf-8')
+
+def heb2cal(hebIn):
+    calStr = ""
+    inv_map = {unicode(v,'utf-8'): k for k, v in cal2hebDic.iteritems() if not k == '$' and not k == '&'}
+    inv_map[u'ש'] = '$'
+    if type(hebIn) == list:
+        return [heb2cal(tempHebIn) for tempHebIn in hebIn]
+    else:
+        for char in hebIn:
+            if char in inv_map.keys():
+                calStr += inv_map[char]
+            else:
+                calStr += char
+
+    return calStr
 
 def daf2num(daf,side):
     return daf*2 + side - 2
