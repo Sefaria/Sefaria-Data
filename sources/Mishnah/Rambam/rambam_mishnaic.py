@@ -104,3 +104,23 @@ def align_files():
         remove_blank_lines(name)
 
 
+def check_mishnayot():
+    cards = get_cards()
+    success, failure = [], []
+    for card in cards:
+        with codecs.open('{}.txt'.format(card), 'r', 'utf-8') as infile:
+            tester = TagTester(u'@22', infile, u'@22([\u05d0-\u05ea]{1,2})')
+            result = tester.in_order_many_sections(end_tag=u'@00', capture_group=1)
+        if result[0] == 'SUCCESS':
+            success.append(card)
+        else:
+            print 'failure: {}'.format(card)
+            print len(result[1])
+
+    print 'successes: {}'.format(len(success))
+    print 'failures: {}'.format(len(failure))
+    print 'total: {}'.format(len(cards))
+    for item in failure:
+        print item
+
+
