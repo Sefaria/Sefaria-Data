@@ -1,0 +1,95 @@
+<?xml encoding="UTF-8"?>
+
+<!-- THIS DTD IS CREATED BY DCL FOR SEFARIA
+ Version dated October 10,2016.
+-->
+<!-- Any change requests should go to Data Conversion Laboratory, Inc.
+POC: Devorah Ashlem
+Phone: 718 307-5720
+E-mail: dashlem@dclab.com
+
+
+-->
+
+
+<!ELEMENT book (front,body,back)>
+
+<!ELEMENT front (#PCDATA|chapter)*>
+<!ELEMENT back (#PCDATA|chapter)*>
+
+
+<!ELEMENT body (chapter*,commentaries?)>
+<!ATTLIST book
+  id CDATA #IMPLIED>
+
+<!ELEMENT pgbrk (#PCDATA)>
+<!ATTLIST pgbrk
+	id NMTOKEN #REQUIRED
+>
+
+<!ELEMENT commentaries (commentary*)>
+<!ELEMENT commentary (label?,author,(phrase|p|chapter)*)>
+<!ATTLIST commentary
+  id CDATA #IMPLIED>
+
+<!ELEMENT author (#PCDATA)>
+
+<!ELEMENT chapter (label?,(phrase|p|pgbrk|verse)*)>
+<!ATTLIST chapter
+  num NMTOKEN #REQUIRED>
+
+<!ELEMENT verse (label?,p*,pgbrk*)>
+<!ATTLIST verse
+  num NMTOKEN #REQUIRED>
+
+<!ELEMENT phrase (label?,dh?,comment)>
+<!ATTLIST phrase
+  id NMTOKEN #IMPLIED>
+
+<!ELEMENT dh (#PCDATA)>
+
+<!ELEMENT comment (#PCDATA|xref)*>
+
+<!ELEMENT p (#PCDATA|xref|pgbrk)*>
+
+<!ELEMENT xref (#PCDATA)>
+<!ATTLIST xref
+  rid NMTOKEN #REQUIRED>
+
+<!ELEMENT label (#PCDATA)>
+
+<!ELEMENT italic (#PCDATA)>
+<!ELEMENT bold (#PCDATA)>
+<!ELEMENT underline (#PCDATA)>
+<!ELEMENT bold-italic (#PCDATA)>
+<!ELEMENT sup (#PCDATA)>
+<!ELEMENT sub (#PCDATA)>
+
+<!ELEMENT fig (label?, caption?, img+) >
+<!ATTLIST fig
+	id ID #REQUIRED
+        position (float|anchor) #REQUIRED 
+	float CDATA #IMPLIED
+>
+
+<!ELEMENT caption (title?, p*) >
+<!ELEMENT title (p*) >
+
+<!ELEMENT img (#PCDATA)>
+<!ATTLIST img
+	src CDATA #REQUIRED
+	width CDATA #IMPLIED
+	height CDATA #IMPLIED
+>
+
+<!ELEMENT list (label?, title?, list-item+) >
+<!ATTLIST list
+	id ID #IMPLIED
+	list-type (bullet | alpha | order | roman-upper | roman-lower | simple) #IMPLIED
+>
+<!ELEMENT list-item (label?, p+)>
+<!ATTLIST list-item
+	id ID #IMPLIED
+>
+
+

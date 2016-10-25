@@ -453,7 +453,7 @@ def file_to_ja(structure, infile, expressions, cleaner, grab_all=False):
     :param structure: A nested list at the depth of the final result. Example: for a depth 2
     text, structure should be [[]].
     :param infile: Text file to read from
-    :param expressions: A list of regular expressions with which to identify segment (chapter) level. Do
+    :param expressions: A list of regular expressions with which to identify section (chapter) level. Do
     not include an expression with which to break up the segment levels.
     :param cleaner: A function that takes a list of strings and returns an array with the text parsed
     correctly. Should also break up and remove unnecessary tagging data.
@@ -575,7 +575,7 @@ def clean_jagged_array(messy_array, strip_list):
     return clean_array
 
 
-def traverse_ja(ja, indices=[], bottom=unicode):
+def traverse_ja(ja, indices=None, bottom=unicode):
     """
     A generator to move through a JaggedArray like structure, retrieving the indices  of each element of
     the JA as you go.
@@ -586,6 +586,8 @@ def traverse_ja(ja, indices=[], bottom=unicode):
     :yield: Dictionary with the keys indices and data, corresponding to the retrieved data and its
     corresponding address.
     """
+    if indices is None:
+        indices = []
 
     if isinstance(ja, bottom):
         yield {'data': ja, 'indices': indices}
