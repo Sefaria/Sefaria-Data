@@ -5,7 +5,7 @@ import json
 import re
 import sys,os
 
-#sys.stdout = codecs.open('cal_output.txt', 'w',encoding='utf8')
+sys.stdout = codecs.open('cal_output.txt', 'w',encoding='utf8')
 
 sys.path.insert(0,'../../../')
 
@@ -126,8 +126,8 @@ def match_cal_segments(mesechta):
 
     cal_lines = json.load(open("cal_lines_{}.json".format(mesechta), "r"), encoding="utf8")
     cal_pos_hashtable = json.load(open("cal_pos_hashtable.json","r"),encoding='utf8')
-    dafs = cal_lines["dafs"][33:]
-    lines_by_daf = cal_lines["lines"][33:]
+    dafs = cal_lines["dafs"]
+    lines_by_daf = cal_lines["lines"]
 
     super_base_ref = Ref(mesechta)
     subrefs = super_base_ref.all_subrefs()
@@ -311,7 +311,7 @@ def make_cal_lines_text(mesechta):
     fp.write(out)
     fp.close()
 
-mesechtas = ["Shabbat"] #,"Shabbat","Eruvin","Pesachim"]
+mesechtas = ["Berakhot" ,"Shabbat","Eruvin","Pesachim"]
 for mesechta in mesechtas:
     make_cal_segments(mesechta)
     match_cal_segments(mesechta)
