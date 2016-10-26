@@ -38,11 +38,11 @@
         }, 
         {
             "index": 49, 
-            "word": "לא"
+            "word": "מקיים"
         }, 
         {
             "index": 53, 
-            "word": "דקא"
+            "word": "מיתעקר"
         }
     ], 
     "words": [
@@ -1885,13 +1885,13 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אי", 
+            "head_word": "אי נמי", 
             "word_num": 0, 
             "daf": "132b", 
             "word": "א\"נ", 
             "line_num": 51, 
-            "cal_word": "אי", 
-            "POS": "c", 
+            "cal_word": "אי נמי", 
+            "POS": "a", 
             "class": "talmud", 
             "pg_num": 132, 
             "ms": "01", 
@@ -1900,13 +1900,13 @@
             "side": 2
         }, 
         {
-            "head_word": "אי", 
+            "head_word": "אי נמי", 
             "word_num": 0, 
             "daf": "132b", 
             "word": "ציצית", 
             "line_num": 51, 
-            "cal_word": "אי", 
-            "POS": "c", 
+            "cal_word": "אי נמי", 
+            "POS": "a", 
             "class": "talmud", 
             "pg_num": 132, 
             "ms": "01", 
@@ -1919,55 +1919,10 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "נמי", 
-            "word_num": 1, 
-            "daf": "132b", 
-            "word": "דבעידנא", 
-            "line_num": 51, 
-            "cal_word": "נמי", 
-            "POS": "a", 
-            "class": "talmud", 
-            "pg_num": 132, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
-        }, 
-        {
-            "head_word": "קא", 
-            "word_num": 3, 
-            "daf": "132b", 
-            "word": "דמתעקר", 
-            "line_num": 52, 
-            "cal_word": "דקא", 
-            "POS": "a", 
-            "class": "talmud", 
-            "pg_num": 132, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
-        }, 
-        {
-            "head_word": "עקר", 
-            "word_num": 4, 
-            "daf": "132b", 
-            "word": "לאו", 
-            "line_num": 52, 
-            "cal_word": "מיתעקר", 
-            "POS": "V04", 
-            "class": "talmud", 
-            "pg_num": 132, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
-        }, 
-        {
             "head_word": "בעידנא ד_", 
             "word_num": 2, 
             "daf": "132b", 
-            "word": "קא", 
+            "word": "דבעידנא", 
             "line_num": 52, 
             "cal_word": "דבעידנא", 
             "POS": "c", 
@@ -1988,21 +1943,13 @@
             "side": 2
         }, 
         {
-            "word": "מוקי\"", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "עשה", 
-            "class": "unknown"
-        }, 
-        {
-            "head_word": "קומ", 
-            "word_num": 6, 
+            "head_word": "עקר", 
+            "word_num": 4, 
             "daf": "132b", 
-            "word": "הכא", 
+            "word": "דמתעקר", 
             "line_num": 52, 
-            "cal_word": "מקיים", 
-            "POS": "V02", 
+            "cal_word": "מיתעקר", 
+            "POS": "V04", 
             "class": "talmud", 
             "pg_num": 132, 
             "ms": "01", 
@@ -2011,13 +1958,66 @@
             "side": 2
         }, 
         {
+            "head_word": "לא", 
+            "word_num": 5, 
+            "daf": "132b", 
+            "word": "לאו", 
+            "line_num": 52, 
+            "cal_word": "לא", 
+            "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 132, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 2
+        }, 
+        {
+            "head_word": "קא", 
+            "word_num": 3, 
+            "daf": "132b", 
+            "word": "קא", 
+            "line_num": 52, 
+            "cal_word": "דקא", 
+            "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 132, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 2
+        }, 
+        {
+            "word": "מוקי\"", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "עשה", 
+            "class": "unknown"
+        }, 
+        {
             "head_word": "הכא", 
             "word_num": 1, 
             "daf": "132b", 
-            "word": "בעידנא", 
+            "word": "הכא", 
             "line_num": 53, 
             "cal_word": "הכא", 
             "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 132, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 2
+        }, 
+        {
+            "head_word": "בעידנא ד_", 
+            "word_num": 2, 
+            "daf": "132b", 
+            "word": "בעידנא", 
+            "line_num": 53, 
+            "cal_word": "בעידנא", 
+            "POS": "c", 
             "class": "talmud", 
             "pg_num": 132, 
             "ms": "01", 
@@ -2034,25 +2034,10 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "עקר", 
-            "word_num": 4, 
-            "daf": "132b", 
-            "word": "לא", 
-            "line_num": 53, 
-            "cal_word": "מיתעקר", 
-            "POS": "V04", 
-            "class": "talmud", 
-            "pg_num": 132, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
-        }, 
-        {
             "head_word": "לאו", 
             "word_num": 5, 
             "daf": "132b", 
-            "word": "קא", 
+            "word": "לא", 
             "line_num": 53, 
             "cal_word": "לאו", 
             "POS": "a", 
@@ -2067,10 +2052,25 @@
             "head_word": "קא", 
             "word_num": 6, 
             "daf": "132b", 
-            "word": "מוקים", 
+            "word": "קא", 
             "line_num": 53, 
             "cal_word": "קא", 
             "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 132, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 2
+        }, 
+        {
+            "head_word": "קומ", 
+            "word_num": 7, 
+            "daf": "132b", 
+            "word": "מוקים", 
+            "line_num": 53, 
+            "cal_word": "מוקים", 
+            "POS": "V03", 
             "class": "talmud", 
             "pg_num": 132, 
             "ms": "01", 

@@ -333,7 +333,40 @@ def make_mesorat_hashas():
             bad_match = True
 
         if not bad_match:
-            for j in range(i+1,len(list_mesorat_hashas)):
+            for j in range(1,len(list_mesorat_hashas)):
+                b = list_mesorat_hashas[j]
+                if (b.a.ref.contains(a.a.ref) and b.b.ref.contains(a.b.ref)) or \
+                        (b.a.ref.contains(a.b.ref) and b.b.ref.contains(a.a.ref)):
+                    bad_match = True
+                    break
+        if not bad_match:
+            temp_mesorat_hashas.append(a)
+
+    mesorat_hashas = temp_mesorat_hashas
+
+    f = codecs.open('mesorat_hashas.csv','wb',encoding='utf8')
+    for match in mesorat_hashas:
+        f.write(u','.join([str(match.a.ref),str(match.b.ref),u' '.join(mesechtot_data[match.a.mesechta][0][match.a.location[0]:match.a.location[1]+1]),u' '.join(mesechtot_data[match.b.mesechta][0][match.b.location[0]:match.b.location[1]+1])]) + u'\n')
+    f.close()
+
+def clean_mesorat_hashas():
+    mh_f = codecs.open('mesorat_hashas_refs.csv','rb')
+
+
+
+    temp_mesorat_hashas = []
+
+    list_mesorat_hashas = list(mesorat_hashas)
+    for i,a in enumerate(list_mesorat_hashas):
+        bad_match = False
+
+        if a.a.ref == a.b.ref or a.a.ref.section_ref() == a.b.ref.section_ref() or \
+                   (a.b.ref.prev_section_ref() and a.a.ref.section_ref() == a.b.ref.prev_section_ref()) or \
+                   (a.a.ref.prev_section_ref() and a.b.ref.section_ref() == a.a.ref.prev_section_ref()):
+            bad_match = True
+
+        if not bad_match:
+            for j in range(1,len(list_mesorat_hashas)):
                 b = list_mesorat_hashas[j]
                 if (b.a.ref.contains(a.a.ref) and b.b.ref.contains(a.b.ref)) or \
                         (b.a.ref.contains(a.b.ref) and b.b.ref.contains(a.a.ref)):
