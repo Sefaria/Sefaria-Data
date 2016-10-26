@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #!/usr/bin/env python
 
 #
@@ -38,6 +39,14 @@ def parsexml_(infile, parser=None, **kwargs):
 
 ExternalEncoding = 'utf-8'
 
+# Global reference for id'd comments
+commentStore = {}
+
+commentatorNames = {
+    u"הגהות": "Hagahot",
+    u"מסורת הש״ס": "Mesorat HaShas"
+}
+
 #
 # Data representation classes
 #
@@ -47,8 +56,22 @@ class bookSub(supermod.book):
     def __init__(self, id=None, front=None, body=None, back=None):
         super(bookSub, self).__init__(id, front, body, back, )
 
+    def populateCommentStore(self):
+        for c in self.get_body().get_commentaries().get_commentary():
+            heName = c.get_author().content_[0].getValue()
+            enName = commentatorNames.get(heName)
+            chapters = c.get_chapter() if c.get_chapter() else [c]
+            for chapter in chapters:
+                order = 0
+                for p in chapter.get_phrase():
+                    order += 1
+                    if p.id:
+                        commentStore[p.id] = {"commentator": enName, "order": order}
+
     def getBaseTextArray(self):
         return self.get_body().getTextArray()
+
+
 supermod.book.subclass = bookSub
 # end class bookSub
 
@@ -179,7 +202,11 @@ class xrefSub(supermod.xref):
         super(xrefSub, self).__init__(rid, valueOf_, mixedclass_, content_, )
 
     def asITagString(self):
-        return u"<i data-rid='{}' data-commentator='{}' data-order='{}'/>".format(self.get_rid(), None, None)
+        commentData = commentStore.get(self.get_rid())
+        if commentData:
+            return u"<i data-commentator='{}' data-order='{}'/>".format(commentData["commentator"], commentData["order"])
+        else:
+            raise Exception("Where am I?")
 
 supermod.xref.subclass = xrefSub
 # end class xrefSub
@@ -295,6 +322,10 @@ def parse(inFilename, silence=False):
         rootClass = supermod.book
     rootObj = rootClass.factory()
     rootObj.build(rootNode)
+
+    #bespoke
+    rootObj.populateCommentStore()
+
     # Enable Python to collect the space used by the DOM.
     doc = None
     if not silence:
