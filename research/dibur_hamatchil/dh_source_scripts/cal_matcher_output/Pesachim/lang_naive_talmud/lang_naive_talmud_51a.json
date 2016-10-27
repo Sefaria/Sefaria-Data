@@ -59,10 +59,6 @@
         {
             "index": 86, 
             "word": "כי"
-        }, 
-        {
-            "index": 99, 
-            "word": "מבבל"
         }
     ], 
     "words": [
@@ -2349,22 +2345,22 @@
         }, 
         {
             "head_word": "ארץ ישראל", 
-            "word_num": 0, 
+            "word_num": 7, 
             "daf": "51a", 
             "word": "ומארץ", 
             "line_num": 46, 
-            "cal_word": "ומארץ ישראל", 
+            "cal_word": "מארץ ישראל", 
             "POS": "GN", 
             "prefix_homograph": [
                 ""
             ], 
             "class": "talmud", 
             "prefix": [
-                "ו_"
+                "מ_"
             ], 
             "pg_num": 51, 
             "prefix_POS": [
-                "c"
+                "p"
             ], 
             "ms": "01", 
             "homograph": "", 
@@ -2373,22 +2369,22 @@
         }, 
         {
             "head_word": "ארץ ישראל", 
-            "word_num": 0, 
+            "word_num": 7, 
             "daf": "51a", 
             "word": "ישראל", 
             "line_num": 46, 
-            "cal_word": "ומארץ ישראל", 
+            "cal_word": "מארץ ישראל", 
             "POS": "GN", 
             "prefix_homograph": [
                 ""
             ], 
             "class": "talmud", 
             "prefix": [
-                "ו_"
+                "מ_"
             ], 
             "pg_num": 51, 
             "prefix_POS": [
-                "c"
+                "p"
             ], 
             "ms": "01", 
             "homograph": "", 
@@ -2397,7 +2393,7 @@
         }, 
         {
             "head_word": "ארץ ישראל", 
-            "word_num": 1, 
+            "word_num": 5, 
             "daf": "51a", 
             "word": "לא\"י", 
             "line_num": 46, 
@@ -2420,28 +2416,37 @@
             "side": 1
         }, 
         {
-            "head_word": "או", 
-            "word_num": 2, 
+            "head_word": "ארץ ישראל", 
+            "word_num": 5, 
             "daf": "51a", 
             "word": "אי", 
             "line_num": 46, 
-            "cal_word": "או", 
-            "POS": "c", 
+            "cal_word": "לארץ ישראל", 
+            "POS": "GN", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "ל_"
+            ], 
             "pg_num": 51, 
+            "prefix_POS": [
+                "p03"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
         {
-            "head_word": "או", 
+            "head_word": "או נמי", 
             "word_num": 2, 
             "daf": "51a", 
             "word": "נמי", 
             "line_num": 46, 
-            "cal_word": "או", 
-            "POS": "c", 
+            "cal_word": "או נמי", 
+            "POS": "a", 
             "class": "talmud", 
             "pg_num": 51, 
             "ms": "01", 
@@ -2450,12 +2455,12 @@
             "side": 1
         }, 
         {
-            "head_word": "ארץ ישראל", 
-            "word_num": 5, 
+            "head_word": "בבל", 
+            "word_num": 8, 
             "daf": "51a", 
             "word": "מבבל", 
             "line_num": 46, 
-            "cal_word": "לארץ ישראל", 
+            "cal_word": "לבבל", 
             "POS": "GN", 
             "prefix_homograph": [
                 ""
@@ -2494,58 +2499,10 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ארץ ישראל", 
-            "word_num": 7, 
-            "daf": "51a", 
-            "word": "כיון", 
-            "line_num": 46, 
-            "cal_word": "מארץ ישראל", 
-            "POS": "GN", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "מ_"
-            ], 
-            "pg_num": 51, 
-            "prefix_POS": [
-                "p"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
-        }, 
-        {
-            "head_word": "בבל", 
-            "word_num": 8, 
-            "daf": "51a", 
-            "word": "דאנן", 
-            "line_num": 46, 
-            "cal_word": "לבבל", 
-            "POS": "GN", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ל_"
-            ], 
-            "pg_num": 51, 
-            "prefix_POS": [
-                "p03"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
-        }, 
-        {
             "head_word": "כיונ", 
             "word_num": 9, 
             "daf": "51a", 
-            "word": "כייפינן", 
+            "word": "כיון", 
             "line_num": 46, 
             "cal_word": "כיון", 
             "POS": "c", 
@@ -2560,7 +2517,7 @@
             "head_word": "אננ", 
             "word_num": 11, 
             "daf": "51a", 
-            "word": "להו", 
+            "word": "דאנן", 
             "line_num": 46, 
             "cal_word": "דאנן", 
             "POS": "p01", 
@@ -2575,6 +2532,36 @@
             "prefix_POS": [
                 "p"
             ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
+        }, 
+        {
+            "head_word": "כפפ", 
+            "word_num": 12, 
+            "daf": "51a", 
+            "word": "כייפינן", 
+            "line_num": 46, 
+            "cal_word": "כיפינן", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 51, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
+        }, 
+        {
+            "head_word": "ל_", 
+            "word_num": 0, 
+            "daf": "51a", 
+            "word": "להו", 
+            "line_num": 47, 
+            "cal_word": "להו", 
+            "POS": "p", 
+            "class": "talmud", 
+            "pg_num": 51, 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71004, 
@@ -2697,13 +2684,13 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "כפפ", 
-            "word_num": 12, 
+            "head_word": "לא", 
+            "word_num": 1, 
             "daf": "51a", 
             "word": "לא", 
-            "line_num": 46, 
-            "cal_word": "כיפינן", 
-            "POS": "V01", 
+            "line_num": 47, 
+            "cal_word": "לא", 
+            "POS": "a", 
             "class": "talmud", 
             "pg_num": 51, 
             "ms": "01", 
@@ -2840,40 +2827,10 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 0, 
-            "daf": "51a", 
-            "word": "ופליגא", 
-            "line_num": 47, 
-            "cal_word": "להו", 
-            "POS": "p", 
-            "class": "talmud", 
-            "pg_num": 51, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
-        }, 
-        {
-            "head_word": "לא", 
-            "word_num": 1, 
-            "daf": "51a", 
-            "word": "דידיה", 
-            "line_num": 47, 
-            "cal_word": "לא", 
-            "POS": "a", 
-            "class": "talmud", 
-            "pg_num": 51, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
-        }, 
-        {
             "head_word": "פלג", 
             "word_num": 0, 
             "daf": "51a", 
-            "word": "אדידיה", 
+            "word": "ופליגא", 
             "line_num": 51, 
             "cal_word": "ופליגא", 
             "POS": "V01", 
@@ -2888,6 +2845,36 @@
             "prefix_POS": [
                 "c"
             ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
+        }, 
+        {
+            "head_word": "דיד_", 
+            "word_num": 1, 
+            "daf": "51a", 
+            "word": "דידיה", 
+            "line_num": 51, 
+            "cal_word": "דידיה", 
+            "POS": "p02", 
+            "class": "talmud", 
+            "pg_num": 51, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
+        }, 
+        {
+            "head_word": "דיד_", 
+            "word_num": 2, 
+            "daf": "51a", 
+            "word": "אדידיה", 
+            "line_num": 51, 
+            "cal_word": "אדידיה", 
+            "POS": "p02", 
+            "class": "talmud", 
+            "pg_num": 51, 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71004, 

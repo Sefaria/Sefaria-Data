@@ -18,79 +18,79 @@
         }, 
         {
             "index": 40, 
-            "word": "רחמנא"
-        }, 
-        {
-            "index": 41, 
             "word": "קרי"
         }, 
         {
-            "index": 42, 
+            "index": 41, 
             "word": "מחטא"
         }, 
         {
-            "index": 43, 
+            "index": 42, 
             "word": "תלמיותא"
         }, 
         {
-            "index": 44, 
+            "index": 43, 
             "word": "האי"
         }, 
         {
-            "index": 45, 
+            "index": 44, 
             "word": "פסוקא"
         }, 
         {
+            "index": 45, 
+            "word": "דדריש"
+        }, 
+        {
             "index": 47, 
-            "word": "ליה"
+            "word": "מסיפיה"
         }, 
         {
             "index": 49, 
-            "word": "לרישיה"
+            "word": "מידריש"
         }, 
         {
             "index": 50, 
-            "word": "מידריש"
+            "word": "דדריש"
         }, 
         {
             "index": 52, 
-            "word": "ליה"
+            "word": "מרישיה"
         }, 
         {
             "index": 53, 
-            "word": "מרישיה"
+            "word": "לסיפיה"
         }, 
         {
             "index": 54, 
-            "word": "לסיפיה"
+            "word": "מידריש"
         }, 
         {
             "index": 55, 
-            "word": "מידריש"
+            "word": "דדריש"
         }, 
         {
             "index": 57, 
-            "word": "ליה"
-        }, 
-        {
-            "index": 58, 
             "word": "מרישיה"
         }, 
         {
-            "index": 59, 
+            "index": 58, 
             "word": "לסיפיה"
         }, 
         {
-            "index": 60, 
+            "index": 59, 
             "word": "מידריש"
         }, 
         {
+            "index": 60, 
+            "word": "דדריש"
+        }, 
+        {
             "index": 62, 
-            "word": "ליה"
+            "word": "מסיפיה"
         }, 
         {
             "index": 64, 
-            "word": "לרישיה"
+            "word": "מידריש"
         }
     ], 
     "words": [
@@ -1871,12 +1871,12 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "איגרא", 
+            "head_word": "איגרא רחמנא", 
             "word_num": 13, 
             "daf": "63a", 
             "word": "דר\"", 
             "line_num": 33, 
-            "cal_word": "דאיגרא", 
+            "cal_word": "דאיגרא רחמנא", 
             "POS": "N02", 
             "prefix_homograph": [
                 ""
@@ -1895,12 +1895,12 @@
             "side": 1
         }, 
         {
-            "head_word": "איגרא", 
+            "head_word": "איגרא רחמנא", 
             "word_num": 13, 
             "daf": "63a", 
             "word": "פרנך", 
             "line_num": 33, 
-            "cal_word": "דאיגרא", 
+            "cal_word": "דאיגרא רחמנא", 
             "POS": "N02", 
             "prefix_homograph": [
                 ""
@@ -2051,24 +2051,15 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "דרש", 
-            "word_num": 13, 
+            "head_word": "ל_", 
+            "word_num": 14, 
             "daf": "63a", 
             "word": "ליה", 
             "line_num": 38, 
-            "cal_word": "דדריש", 
-            "POS": "V01", 
-            "prefix_homograph": [
-                ""
-            ], 
+            "cal_word": "ליה", 
+            "POS": "p", 
             "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
             "pg_num": 63, 
-            "prefix_POS": [
-                "c"
-            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71001, 
@@ -2159,24 +2150,15 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "דרש", 
-            "word_num": 18, 
+            "head_word": "ל_", 
+            "word_num": 19, 
             "daf": "63a", 
             "word": "לו", 
             "line_num": 38, 
-            "cal_word": "דדריש", 
-            "POS": "V01", 
-            "prefix_homograph": [
-                ""
-            ], 
+            "cal_word": "ליה", 
+            "POS": "p", 
             "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
             "pg_num": 63, 
-            "prefix_POS": [
-                "c"
-            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71001, 
@@ -2243,24 +2225,15 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "דרש", 
-            "word_num": 24, 
+            "head_word": "ל_", 
+            "word_num": 25, 
             "daf": "63a", 
             "word": "לו", 
             "line_num": 38, 
-            "cal_word": "דדריש", 
-            "POS": "V01", 
-            "prefix_homograph": [
-                ""
-            ], 
+            "cal_word": "ליה", 
+            "POS": "p02", 
             "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
             "pg_num": 63, 
-            "prefix_POS": [
-                "c"
-            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71001, 
@@ -2443,15 +2416,24 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "סיפא", 
-            "word_num": 26, 
+            "head_word": "רישא", 
+            "word_num": 27, 
             "daf": "63a", 
             "word": "יאשיה", 
             "line_num": 38, 
-            "cal_word": "מסיפיה", 
+            "cal_word": "לרישיה", 
             "POS": "N02", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "ל_"
+            ], 
             "pg_num": 63, 
+            "prefix_POS": [
+                "p03"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71001, 

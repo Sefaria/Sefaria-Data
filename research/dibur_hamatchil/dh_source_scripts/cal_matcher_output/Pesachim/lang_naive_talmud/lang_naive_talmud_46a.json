@@ -18,7 +18,7 @@
         }, 
         {
             "index": 49, 
-            "word": "משמע"
+            "word": "כי"
         }
     ], 
     "words": [
@@ -1313,12 +1313,12 @@
             "side": 1
         }, 
         {
-            "head_word": "קא", 
+            "head_word": "קא שמע ל_", 
             "word_num": 3, 
             "daf": "46a", 
             "word": "קמ\"ל", 
             "line_num": 25, 
-            "cal_word": "קא", 
+            "cal_word": "קא משמע לן", 
             "POS": "a", 
             "class": "talmud", 
             "pg_num": 46, 
@@ -1328,12 +1328,12 @@
             "side": 1
         }, 
         {
-            "head_word": "קא", 
+            "head_word": "קא שמע ל_", 
             "word_num": 3, 
             "daf": "46a", 
             "word": "דשיעורא", 
             "line_num": 25, 
-            "cal_word": "קא", 
+            "cal_word": "קא משמע לן", 
             "POS": "a", 
             "class": "talmud", 
             "pg_num": 46, 
@@ -1347,30 +1347,48 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 5, 
+            "head_word": "מגדל נוניא", 
+            "word_num": 1, 
             "daf": "46a", 
             "word": "כממגדל", 
-            "line_num": 25, 
-            "cal_word": "לן", 
-            "POS": "p02", 
+            "line_num": 26, 
+            "cal_word": "ממגדל נוניא", 
+            "POS": "GN", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "מ_"
+            ], 
             "pg_num": 46, 
+            "prefix_POS": [
+                "p"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71004, 
             "side": 1
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 5, 
+            "head_word": "מגדל נוניא", 
+            "word_num": 1, 
             "daf": "46a", 
             "word": "נוניא", 
-            "line_num": 25, 
-            "cal_word": "לן", 
-            "POS": "p02", 
+            "line_num": 26, 
+            "cal_word": "ממגדל נוניא", 
+            "POS": "GN", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "מ_"
+            ], 
             "pg_num": 46, 
+            "prefix_POS": [
+                "p"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71004, 
@@ -1381,15 +1399,24 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "כי", 
-            "word_num": 0, 
+            "head_word": "טבריא", 
+            "word_num": 2, 
             "daf": "46a", 
             "word": "טבריא", 
             "line_num": 26, 
-            "cal_word": "כי", 
-            "POS": "p01", 
+            "cal_word": "לטבריא", 
+            "POS": "GN", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "ל_"
+            ], 
             "pg_num": 46, 
+            "prefix_POS": [
+                "p03"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71004, 
@@ -1472,58 +1499,10 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "מגדל נוניא", 
-            "word_num": 1, 
-            "daf": "46a", 
-            "word": "אמרה", 
-            "line_num": 26, 
-            "cal_word": "ממגדל נוניא", 
-            "POS": "GN", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "מ_"
-            ], 
-            "pg_num": 46, 
-            "prefix_POS": [
-                "p"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
-        }, 
-        {
-            "head_word": "טבריא", 
-            "word_num": 2, 
-            "daf": "46a", 
-            "word": "וארבעה", 
-            "line_num": 26, 
-            "cal_word": "לטבריא", 
-            "POS": "GN", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ל_"
-            ], 
-            "pg_num": 46, 
-            "prefix_POS": [
-                "p03"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
-        }, 
-        {
             "head_word": "אמר", 
             "word_num": 1, 
             "daf": "46a", 
-            "word": "אמר", 
+            "word": "אמרה", 
             "line_num": 29, 
             "cal_word": "אמרה", 
             "POS": "V01", 
@@ -1538,7 +1517,7 @@
             "head_word": "ארבעא", 
             "word_num": 2, 
             "daf": "46a", 
-            "word": "בה", 
+            "word": "וארבעה", 
             "line_num": 29, 
             "cal_word": "וארבעה", 
             "POS": "n01", 
@@ -1562,7 +1541,7 @@
             "head_word": "אמר", 
             "word_num": 3, 
             "daf": "46a", 
-            "word": "וחדא", 
+            "word": "אמר", 
             "line_num": 29, 
             "cal_word": "אמ", 
             "POS": "V01", 
@@ -1577,9 +1556,48 @@
             "head_word": "ב_", 
             "word_num": 4, 
             "daf": "46a", 
-            "word": "מינייהו", 
+            "word": "בה", 
             "line_num": 29, 
             "cal_word": "בה", 
+            "POS": "p02", 
+            "class": "talmud", 
+            "pg_num": 46, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
+        }, 
+        {
+            "head_word": "חד", 
+            "word_num": 0, 
+            "daf": "46a", 
+            "word": "וחדא", 
+            "line_num": 30, 
+            "cal_word": "וחדא", 
+            "POS": "n01", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 46, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
+        }, 
+        {
+            "head_word": "מנ", 
+            "word_num": 1, 
+            "daf": "46a", 
+            "word": "מינייהו", 
+            "line_num": 30, 
+            "cal_word": "מניהו", 
             "POS": "p02", 
             "class": "talmud", 
             "pg_num": 46, 

@@ -1216,12 +1216,12 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "הכי", 
+            "head_word": "הכי נמי", 
             "word_num": 0, 
             "daf": "42b", 
             "word": "ה\"נ", 
             "line_num": 30, 
-            "cal_word": "הכי", 
+            "cal_word": "הכי נמי", 
             "POS": "a", 
             "class": "talmud", 
             "pg_num": 42, 
@@ -1231,15 +1231,24 @@
             "side": 2
         }, 
         {
-            "head_word": "נמי", 
-            "word_num": 1, 
+            "head_word": "גזר", 
+            "word_num": 2, 
             "daf": "42b", 
             "word": "דגזרי", 
             "line_num": 30, 
-            "cal_word": "נמי", 
-            "POS": "a", 
+            "cal_word": "דגזרי", 
+            "POS": "V01", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
             "pg_num": 42, 
+            "prefix_POS": [
+                "c"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71003, 
@@ -1486,58 +1495,10 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "גזר", 
-            "word_num": 2, 
-            "daf": "42b", 
-            "word": "דכולי", 
-            "line_num": 30, 
-            "cal_word": "דגזרי", 
-            "POS": "V01", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 42, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 2
-        }, 
-        {
-            "head_word": "גזר", 
-            "word_num": 2, 
-            "daf": "42b", 
-            "word": "עלמא", 
-            "line_num": 30, 
-            "cal_word": "דגזרי", 
-            "POS": "V01", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 42, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 2
-        }, 
-        {
             "head_word": "עלמ", 
             "word_num": 0, 
             "daf": "42b", 
-            "word": "מיהת", 
+            "word": "דכולי", 
             "line_num": 39, 
             "cal_word": "דכולי עלמא", 
             "POS": "N02", 
@@ -1555,6 +1516,48 @@
                 "p", 
                 "N04"
             ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71003, 
+            "side": 2
+        }, 
+        {
+            "head_word": "עלמ", 
+            "word_num": 0, 
+            "daf": "42b", 
+            "word": "עלמא", 
+            "line_num": 39, 
+            "cal_word": "דכולי עלמא", 
+            "POS": "N02", 
+            "prefix_homograph": [
+                "", 
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ד_", 
+                "כל"
+            ], 
+            "pg_num": 42, 
+            "prefix_POS": [
+                "p", 
+                "N04"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71003, 
+            "side": 2
+        }, 
+        {
+            "head_word": "מיהא", 
+            "word_num": 1, 
+            "daf": "42b", 
+            "word": "מיהת", 
+            "line_num": 39, 
+            "cal_word": "מיהת", 
+            "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 42, 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71003, 

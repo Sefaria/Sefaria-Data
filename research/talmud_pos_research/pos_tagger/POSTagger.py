@@ -325,7 +325,7 @@ def CalculateLossForDaf(daf, fValidation=False):
             temp_pos_array = pos_mlp_output.npvalue()
             possible_pos_array = np.zeros(temp_pos_array.shape)
             pos_list = pos_hashtable[word]
-            if fValidation: pos_list.add('') #concat 'unknown' as possible pos for validation
+            #if fValidation: pos_list.add('') #concat 'unknown' as possible pos for validation
             possible_pos_indices = [pos_vocab[temp_pos] for temp_pos in pos_list]
             possible_pos_array[possible_pos_indices] = temp_pos_array[possible_pos_indices]
         except KeyError:
@@ -383,7 +383,7 @@ def run_network_on_validation(suffix):
     
 # read in all the data
 all_data = list(read_data())
-
+"""
 words = {}
 for daf in all_data:
     for w,c,p in daf:
@@ -396,9 +396,9 @@ for w,p in words.items():
     if len(p) > 1:
         f.write('{} ~-~ {}\n'.format(cal_tools.heb2cal(w),str(list(p))))
 f.close()
-
-
 """
+
+
 random.shuffle(all_data)
 # train val will be split up 100-780
 train_data = all_data[100:]
@@ -514,4 +514,3 @@ for epoch in range(START_EPOCH, 100):
     f.write(pos_conf_matrix.to_html())
     f.close()
     pos_conf_matrix.clear()
-"""

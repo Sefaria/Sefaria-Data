@@ -249,6 +249,7 @@ def mesechta_index_map(mesechat_name):
 def make_mesorat_hashas():
     ght = Gemara_Hashtable()
     mesechtot_names = [name for name in library.get_indexes_in_category("Talmud") if not "Jerusalem " in name and not "Ritva " in name and not "Rif " in name]
+    mesechtot_names = ["Berakhot"]
     mesechtot_data = {}
     for mes in mesechtot_names:
         mes_wl,mes_il,mes_rl = mesechta_index_map(mes)
@@ -322,39 +323,61 @@ def make_mesorat_hashas():
     #final pass through matches to remove duplicates
 
     temp_mesorat_hashas = []
-
+    bad_mesorat_hashas = []
     list_mesorat_hashas = list(mesorat_hashas)
     for i,a in enumerate(list_mesorat_hashas):
         bad_match = False
 
-        if a.a.ref == a.b.ref or a.a.ref.section_ref() == a.b.ref.section_ref() or \
-                   (a.b.ref.prev_section_ref() and a.a.ref.section_ref() == a.b.ref.prev_section_ref()) or \
-                   (a.a.ref.prev_section_ref() and a.b.ref.section_ref() == a.a.ref.prev_section_ref()):
+        if a.a.ref.section_ref().contains(a.b.ref.section_ref()) or a.b.ref.section_ref().contains(a.a.ref.section_ref()) or\
+                   (a.b.ref.prev_section_ref() and (a.a.ref.section_ref().contains(a.b.ref.prev_section_ref()) or a.b.ref.prev_section_ref().contains(a.a.ref.section_ref()))) or \
+                   (a.a.ref.prev_section_ref() and (a.b.ref.section_ref().contains(a.a.ref.prev_section_ref()) or a.a.ref.prev_section_ref().contains(a.b.ref.section_ref()))):
             bad_match = True
 
         if not bad_match:
-            for j in range(1,len(list_mesorat_hashas)):
+            for j in range(0,len(list_mesorat_hashas)):
+                if i == j: continue
                 b = list_mesorat_hashas[j]
-                if (b.a.ref.contains(a.a.ref) and b.b.ref.contains(a.b.ref)) or \
-                        (b.a.ref.contains(a.b.ref) and b.b.ref.contains(a.a.ref)):
+                if (b.a.ref.contains(a.a.ref) and b.b.ref.contains(a.b.ref) and b.a.ref != a.a.ref and b.b.ref != a.b.ref) or \
+                        (b.a.ref.contains(a.b.ref) and b.b.ref.contains(a.a.ref) and b.a.ref != a.b.ref and b.b.ref != a.a.ref):
+                    bad_match = True
+                    break
+
+        if not bad_match:
+            for b in temp_mesorat_hashas:
+                if (a.a == b.a and a.b == b.b) or \
+                        (a.b == b.a and a.a == b.b):
                     bad_match = True
                     break
         if not bad_match:
             temp_mesorat_hashas.append(a)
+        else:
+            bad_mesorat_hashas.append(a)
 
-    mesorat_hashas = temp_mesorat_hashas
-
-    f = codecs.open('mesorat_hashas.csv','wb',encoding='utf8')
+    #mesorat_hashas = temp_mesorat_hashas
+    print len(temp_mesorat_hashas)
+    mesorat_hashas = temp_mesorat_hashas + bad_mesorat_hashas
+    f = codecs.open('mesorat_hashas_test.csv','wb',encoding='utf8')
+    f.write([u'Ref A',u'Ref B',u'Text A',u'Text B',u'Location A',u'Location B'])
     for match in mesorat_hashas:
-        f.write(u','.join([str(match.a.ref),str(match.b.ref),u' '.join(mesechtot_data[match.a.mesechta][0][match.a.location[0]:match.a.location[1]+1]),u' '.join(mesechtot_data[match.b.mesechta][0][match.b.location[0]:match.b.location[1]+1])]) + u'\n')
+        f.write(u','.join([str(match.a.ref),str(match.b.ref),u' '.join(mesechtot_data[match.a.mesechta][0][match.a.location[0]:match.a.location[1]+1]),u' '.join(mesechtot_data[match.b.mesechta][0][match.b.location[0]:match.b.location[1]+1]),str(match.a.location),str(match.b.location)]) + u'\n')
     f.close()
 
 def clean_mesorat_hashas():
-    mh_f = codecs.open('mesorat_hashas_refs.csv','rb')
+    mesechtot_names = [name for name in library.get_indexes_in_category("Talmud") if not "Jerusalem " in name and not "Ritva " in name and not "Rif " in name]
+    seg_map = OrderedDict()
+    for name in mesechtot_names:
+        mes = library.get_index(name)
+        for seg in mes.all_segment_refs():
+            seg_map[str(seg)] = None
+    with codecs.open('mesorat_hashas_refs.csv','rb',encoding='utf8') as meshas:
+        for line in meshas:
+            line_array = line.split(u',')
+            line_array.sort(key=lambda r: Ref(r).order_id())
+            seg_map[str(line_array[0])] = str(line_array[1])
 
 
 
-    temp_mesorat_hashas = []
+    """temp_mesorat_hashas = []
 
     list_mesorat_hashas = list(mesorat_hashas)
     for i,a in enumerate(list_mesorat_hashas):
@@ -366,7 +389,7 @@ def clean_mesorat_hashas():
             bad_match = True
 
         if not bad_match:
-            for j in range(1,len(list_mesorat_hashas)):
+            for j in range(0,len(list_mesorat_hashas)):
                 b = list_mesorat_hashas[j]
                 if (b.a.ref.contains(a.a.ref) and b.b.ref.contains(a.b.ref)) or \
                         (b.a.ref.contains(a.b.ref) and b.b.ref.contains(a.a.ref)):
@@ -380,7 +403,7 @@ def clean_mesorat_hashas():
     f = codecs.open('mesorat_hashas.csv','wb',encoding='utf8')
     for match in mesorat_hashas:
         f.write(u','.join([str(match.a.ref),str(match.b.ref),u' '.join(mesechtot_data[match.a.mesechta][0][match.a.location[0]:match.a.location[1]+1]),u' '.join(mesechtot_data[match.b.mesechta][0][match.b.location[0]:match.b.location[1]+1])]) + u'\n')
-    f.close()
+    f.close()"""
 
 
 def minify_mesorat_hashas():
@@ -436,8 +459,9 @@ def save_links_post_request():
 
 
 
-#make_mesorat_hashas()
+make_mesorat_hashas()
 #minify_mesorat_hashas()
 #find_most_quoted()
 #save_links()
 #save_links_post_request()
+#clean_mesorat_hashas()
