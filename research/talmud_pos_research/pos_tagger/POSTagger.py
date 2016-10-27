@@ -330,7 +330,8 @@ def CalculateLossForDaf(daf, fValidation=False):
             possible_pos_array[possible_pos_indices] = temp_pos_array[possible_pos_indices]
         except KeyError:
             possible_pos_array = pos_mlp_output.npvalue()
-
+            if fValidation:
+                possible_pos_array[pos_vocab['']] = 0.0 # don't allow validation to guess UNK b/c it never trained against that TODO this makes sense, right?
         predicted_word_pos = pos_vocab.getItem(np.argmax(possible_pos_array))
 
 
@@ -404,7 +405,7 @@ random.shuffle(all_data)
 train_data = all_data[100:]
 val_data = all_data[:100]
 
-pos_hashtable = make_pos_hashtable(train_data)
+pos_hashtable = {} #make_pos_hashtable(train_data)
 
 # create the vocabulary
 pos_vocab = Vocabulary()
