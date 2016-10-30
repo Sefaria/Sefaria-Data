@@ -14,40 +14,47 @@ from functions import *
 import re
 import data_utilities
 import codecs
-from sources import functions
 
 print "buidling text..."
 shev_shmatta_text = get_final_parsed_text()
+print "posting introduction..."
 
+for index, shmatta in enumerate(shev_shmatta_text[1:8]):
+    print str(index)
+    print shmatta[0][0]
 
 #upload introduction
 version = {
     'versionTitle': 'Shev Shmatta',
-    'versionSource': 'https://he.wikisource.org/',
+    'versionSource': 'https://he.wikisource.org/wiki/%D7%A9%D7%91_%D7%A9%D7%9E%D7%A2%D7%AA%D7%AA%D7%90',
     'language': 'he',
     'text': shev_shmatta_text[0]
 }
 
-post_text('Shev Shmatta, Introduction', version)
-
+post_text_weak_connection('Shev Shmatta, Introduction', version)
+"""
 #upload body
+#for shmatta in enumerate(shev_shmatta_text[7:8]):
 for index, shmatta in enumerate(shev_shmatta_text[1:8]):
+
     version = {
-    'versionTitle': 'Shev Shmatta',
-    'versionSource': 'https://he.wikisource.org/',
-    'language': 'he',
-    'text': shmatta
+        'versionTitle': 'Shev Shmatta',
+        'versionSource': 'https://he.wikisource.org/wiki/%D7%A9%D7%91_%D7%A9%D7%9E%D7%A2%D7%AA%D7%AA%D7%90',
+        'language': 'he',
+        'text': shmatta
     }
 
-    post_text('Shev Shmatta, Shmatta '+str(index+1), version)
+    post_text_weak_connection('Shev Shmatta, Shmatta '+str(index+1), version)
+
 
 #upload titles
 for index, title in enumerate(get_chapter_subjects()):
     version = {
     'versionTitle': 'Shev Shmatta',
-    'versionSource': 'https://he.wikisource.org/',
+    'versionSource': 'https://he.wikisource.org/wiki/%D7%A9%D7%91_%D7%A9%D7%9E%D7%A2%D7%AA%D7%AA%D7%90',
     'language': 'he',
     'text': [title]
     }
     #note that because into doesn't have a title, the indices are one off
-    post_text('Shev Shmatta, Shmatta '+str(index+1) +', Subject', version)
+    post_text_weak_connection('Shev Shmatta, Shmatta '+str(index+1) +', Subject', version)
+"""
