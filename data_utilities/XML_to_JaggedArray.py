@@ -28,27 +28,46 @@ class XML_to_JaggedArray:
             attrib = child.attrib
 
             '''if I have an attribute identifying my name, use that, otherwise use name user provided in JA_array'''
-            name = attrib["id"] if len(attrib) > 0 else self.JA_array[count][0]
+            #name = attrib["id"] if len(attrib) > 0 else self.JA_array[count][0]
+
 
             depth = self.JA_array[count][1]
             has_subtitle = self.JA_array[count][2]
+            name = self.get_name(child)
+            child = self.reorder_structure(child)
+#ISSUE IS WE LOSE THE NAME OF THE LEVEL 1 NODES LIKE "KABBALAH" in "INTRODUCTION"
             self.JA_nodes[name] = self.go_down_to_text(child, depth, 0, has_subtitle)
-            subtitle = ""
-            how_many_to_pop = -1
 
-            '''collapse all the subtitle slots in the array to one; we start from negative one instead of 0,
-            because we don't want to get rid of all of them, but to keep one that the rest collapse into'''
             if has_subtitle:
-                for gchild_count, gchild in enumerate(self.JA_nodes[name]):
-                    if type(gchild) is not list:
-                        subtitle += gchild.encode('utf-8')
-                        how_many_to_pop += 1
+                self.collapse_subtitles(name)
 
-                for i in range(how_many_to_pop):
-                    self.JA_nodes[name].pop(0)
-
-                self.JA_nodes[name][0] = subtitle
         return self.JA_nodes
+
+
+    def get_name(self, element):
+        '''
+        Get the name return it and delete the first element
+        '''
+        if element[0].tag == "title":
+            name = element[0].text
+            name = bleach.clean(name, strip=True)
+            element.remove(element[0])
+            return name
+
+    def collapse_subtitles(self, name):
+        '''collapse all the subtitle slots in the array to one; we start from negative one instead of 0,
+            because we don't want to get rid of all of them, but to keep one that the rest collapse into'''
+        how_many_to_pop = -1
+        subtitle = ""
+        for gchild_count, gchild in enumerate(self.JA_nodes[name]):
+            if type(gchild) is not list:
+                subtitle += gchild.encode('utf-8')
+                how_many_to_pop += 1
+
+        for i in range(how_many_to_pop):
+            self.JA_nodes[name].pop(0)
+
+        self.JA_nodes[name][0] = subtitle
 
 
     def get_depth(self, array):
@@ -59,14 +78,39 @@ class XML_to_JaggedArray:
         return depth
 
 
+    def reorder_structure(self, element):
+        next_will_be_children = False
+        parent = None
+        children = []
+        for index, child in enumerate(element):
+            if child.tag == "title":
+                if next_will_be_children == True:
+                    for new_child in children:
+                        parent.append(new_child)
+                    children = []
+                parent = child
+                next_will_be_children = True
+            elif child.tag == "ftnote" and next_will_be_children:
+                for new_child in children:
+                    parent.append(new_child)
+                return element
+            elif next_will_be_children == True:
+                children.append(child)
+            if index == len(element) - 1:
+                for new_child in children:
+                    parent.append(new_child)
+        return element
+
+
     def go_down_to_text(self, element, depth, level=0, has_subtitle=False):
         if level == depth:
             return element.xpath("string()").replace("\n\n", " ")
         else:
-            text = []
+            text = {}
+            name = "HI" #self.get_name(element)
             for child in element:
                 result = self.go_down_to_text(child, depth, level+1, has_subtitle)
-                text.append(result)
+                text[name] = result
             if has_subtitle and len(element) == 0:
                 text = element.xpath("string()")
             return text

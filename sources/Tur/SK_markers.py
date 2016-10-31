@@ -26,7 +26,6 @@ text = {}
  
 
 def replaceWithHTMLTags(line):
-    line = line.decode('utf-8')
     line = line.replace('%(', '(%')
     line = line.replace('(#', '(%')
     line = line.replace("*(", "(%")
@@ -176,8 +175,9 @@ def parse_text(helekim, files, commentator):
     will_see_00 = False
     store_this_line = ""
     for line in f:
-      actual_line = line
       line = line.replace("@44","").replace("@55","").replace("\n", "").replace("\r", "").replace('\xef','').replace('\xbb','').replace('\xbf','')
+      line = line.decode('utf-8')
+      actual_line = line
       line = smallFont(line)
       #deal with case where seif katan marker is separated from comment and is on line before comment
       if len(store_this_line)>0:
@@ -213,15 +213,15 @@ def parse_text(helekim, files, commentator):
               continue
 
       #deal with strange cases first
-      if (line.find("@22סי'")>=0 or line.find("@22סי")>=0) and len(line.split(" "))>4: #ONLY DRISHA ON YOREH DEAH
+      if (line.find(u"@22סי'")>=0 or line.find(u"@22סי")>=0) and len(line.split(" "))>4: #ONLY DRISHA ON YOREH DEAH
           try:
             nothing, siman, line = line.split("@",2)
           except:
             pdb.set_trace()
-          siman = siman.replace("22סי'","").replace("22סי","")
+          siman = siman.replace(u"22סי'","").replace(u"22סי","")
           siman = dealWithTwoSimanim(siman)
           poss_siman = getGematria(siman)
-          if poss_siman == curr_siman - 2 and siman.find('ה')>=0:
+          if poss_siman == curr_siman - 2 and siman.find(u'ה')>=0:
                 poss_siman += 3
           elif poss_siman <= curr_siman:
                 pdb.set_trace()
@@ -268,7 +268,7 @@ def parse_text(helekim, files, commentator):
         temp_arr = re.split('\d\d', seif_katan)
         seif_katan = temp_arr[len(temp_arr)-1]
         poss_seif_katan = getGematria(removeAllStrings(seif_katan, ["[","]","(",")"]))
-        if poss_seif_katan == curr_seif_katan-2 and seif_katan.find('ה')>=0:
+        if poss_seif_katan == curr_seif_katan-2 and seif_katan.find(u'ה')>=0:
             poss_seif_katan += 3
         elif poss_seif_katan < curr_seif_katan:
             seif_file.write(helek+","+commentator+","+str(curr_siman)+","+str(poss_seif_katan)+","+str(curr_seif_katan)+","+actual_line+"\n")
@@ -289,8 +289,8 @@ def parse_text(helekim, files, commentator):
             text[helek][curr_siman].append([line])
 
         seif_list.append(poss_seif_katan)
-      elif line.find("@22סי'")>=0 or (line.find("@22")<4 and line.find("@22")>=0 and len(line.split(" ")) < 4):
-            line = line.replace("@22סי' ", "").replace("@22ס' ","").replace("@22סי ","")
+      elif line.find(u"@22סי'")>=0 or (line.find("@22")<4 and line.find("@22")>=0 and len(line.split(" ")) < 4):
+            line = line.replace(u"@22סי' ", "").replace(u"@22ס' ","").replace(u"@22סי ","")
             line = line.replace("@22", "").replace("@66","").replace("@77","")
             if len(bach_bi_lines)>0 and (commentator == "Bach" or commentator == "Beit Yosef"):
                 text[helek][curr_siman] = divideUpLines(bach_bi_lines, commentator)
@@ -303,7 +303,7 @@ def parse_text(helekim, files, commentator):
                 poss_siman = getGematria(line)
             else:
                 poss_siman += 1
-            if poss_siman == curr_siman - 2 and line.find('ה')>=0:
+            if poss_siman == curr_siman - 2 and line.find(u'ה')>=0:
                 poss_siman += 3
             elif poss_siman == 8 and curr_siman == 4:
                 poss_siman = 5
@@ -361,6 +361,8 @@ def post_commentary(commentator):
     
         for siman_num, siman in enumerate(text_array):
             for seif_katan_num, seif_katan in enumerate(text_array[siman_num]):
+                if siman_num + 1 == 24 and seif_katan_num + 1 == 10:
+                    pdb.set_trace()
                 if commentator == "Drisha" or commentator == "Prisha" or commentator == "Darchei Moshe": 
                     try:
                       if str(seif_katan_num+1) in data[str(siman_num+1)][commentator]:
@@ -375,7 +377,7 @@ def post_commentary(commentator):
                     link_to = "Tur,_"+str(helek)+"."+str(siman_num+1)+".1"
                 commentator_end = commentator+",_"+helek+"."+str(siman_num+1)+"."+str(seif_katan_num+1)+".1"
                 links.append({'refs': [link_to, commentator_end], 'type': 'commentary', 'auto': 'True', 'generated_by': commentator+"choshenmishpat"})
-        
+
         #post_text(commentator+",_"+helek, send_text)
     #post_link(links)
 
@@ -404,7 +406,7 @@ if __name__ == "__main__":
     post_commentary("Prisha")
   elif sys.argv[1] == 'BeitYosef':
     print SEFARIA_SERVER
-    files_helekim = ["Orach_Chaim/Beit Yosef orach chaim helek a.txt", "yoreh deah/Beit Yosef yoreh deah.txt", "Even HaEzer/Bi Even HaEzer.txt"]
+    files_helekim = ["Orach_Chaim/Beit Yosef orach chaim.txt", "yoreh deah/Beit Yosef yoreh deah.txt", "Even HaEzer/Bi Even HaEzer.txt"]
     #create_indexes(eng_helekim, heb_helekim, "Beit Yosef", u'בית יוסף')
     parse_text(eng_helekim, files_helekim, "Beit Yosef")
     post_commentary("Beit Yosef")
