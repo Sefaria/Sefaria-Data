@@ -89,6 +89,4 @@ def post():
         'language': 'he',
         'text': parsed['text']
     }
-    # post_text('Sefer HaKana', version, index_count='on')
-
-post()
+    post_text('Sefer HaKana', version, index_count='on')
