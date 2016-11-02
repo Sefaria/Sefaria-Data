@@ -31,10 +31,10 @@ def parse():
 
         elif found_beginning:
             my_line = bleach.clean(line, tags=[], strip=True)
-            if my_line.isspace():
+            if my_line.isspace() or len(my_line) == 0:
                 continue
             my_line = re.sub(u'(\n|\r)', u'', my_line)
-            chapter.extend(my_line.split(u'.'))
+            chapter.extend(filter(lambda x: x if len(x) > 0 else None, my_line.split(u'.')))
 
         else:
             continue
