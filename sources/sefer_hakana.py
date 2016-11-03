@@ -22,7 +22,7 @@ def parse():
 
         if re.search(u'^<b>', line):
             if found_beginning:
-                root.append(chapter)
+                root.append([u'{}.'.format(i) if not re.search(u':(>)?$', i) else i for i in chapter])
                 chapter = []
             else:
                 found_beginning = True
