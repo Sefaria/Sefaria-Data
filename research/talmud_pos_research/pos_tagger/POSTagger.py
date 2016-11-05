@@ -90,7 +90,10 @@ def read_data(dir=''):
         
         total_daf += 1
         # yield it
-        yield all_words
+        split_file = file.split('/')
+        mesechta = split_file[split_file.index('cal_matcher_output')+1]
+        daf_num = split_file[split_file.index('lang_naive_talmud')+1].split('lang_naive_talmud_')[1].split('.json')[0]
+        yield {"words":all_words,"file":'{}_{}'.format(mesechta,daf_num)}
         
     log_message('Total words: ' + str(total_words))
     log_message('Total daf: ' + str(total_daf))
@@ -98,7 +101,7 @@ def read_data(dir=''):
 def make_pos_hashtable(data):
     pos_hashtable = {}
     for daf in data:
-        for w,w_class,w_pos in daf:
+        for w,w_class,w_pos in daf["words"]:
             if w_class:
                 if not w in pos_hashtable:
                     pos_hashtable[w] = set()
@@ -272,7 +275,8 @@ class ConfusionMatrix:
 
 def CalculateLossForDaf(daf, fValidation=False):
     dy.renew_cg()
-
+    tagged_daf = {"words":[],"file":daf["file"]}
+    daf = daf["words"]
     
     # add a bos before and after
     seq = ['*BOS*'] + list(' '.join([word for word,_,_ in daf])) + ['*BOS*']
@@ -325,24 +329,22 @@ def CalculateLossForDaf(daf, fValidation=False):
             temp_pos_array = pos_mlp_output.npvalue()
             possible_pos_array = np.zeros(temp_pos_array.shape)
             pos_list = pos_hashtable[word]
-            #if fValidation: pos_list.add('') #concat 'unknown' as possible pos for validation
+            #pos_list.add('') #concat 'unknown' as possible pos
             possible_pos_indices = [pos_vocab[temp_pos] for temp_pos in pos_list]
             possible_pos_array[possible_pos_indices] = temp_pos_array[possible_pos_indices]
         except KeyError:
             possible_pos_array = pos_mlp_output.npvalue()
-            if fValidation:
-                possible_pos_array[pos_vocab['']] = 0.0 # don't allow validation to guess UNK b/c it never trained against that TODO this makes sense, right?
+            #if fValidation:
+            #    possible_pos_array[pos_vocab['']] = 0.0 # don't allow validation to guess UNK b/c it never trained against that TODO this makes sense, right?
         predicted_word_pos = pos_vocab.getItem(np.argmax(possible_pos_array))
-
-
-
+        confidence = np.max(possible_pos_array)/np.sum(possible_pos_array)
         if should_backprop:
             pos_prec += 1 if predicted_word_pos == gold_word_pos else 0
             pos_items += 1
 
         # if we aren't doing validation, calculate the loss
         if not fValidation:
-            all_losses.append(-dy.log(dy.pick(pos_mlp_output, pos_vocab[gold_word_pos])))
+            if should_backprop: all_losses.append(-dy.log(dy.pick(pos_mlp_output, pos_vocab[gold_word_pos])))
             word_pos_ans = gold_word_pos
         # otherwise, set the answer to be the argmax
         else:
@@ -353,26 +355,37 @@ def CalculateLossForDaf(daf, fValidation=False):
         prev_pos_lstm_state = prev_pos_lstm_state.add_input(pos_enc(word_pos_ans))
 
         #prev_pos_lstm_state = prev_pos_lstm_state.add_input(pos_enc(''))
+
+        tagged_daf["words"].append({"word":word,"gold_pos":gold_word_pos,"predicted_pos":predicted_word_pos,"confidence":confidence})
     
     pos_prec = pos_prec / pos_items if pos_items > 0 else None
     #class_prec = class_prec / class_items if class_items > 0 else None
 
     if fValidation:
-        return pos_prec
+        return pos_prec,tagged_daf
 
     total_loss = dy.esum(all_losses) if len(all_losses) > 0 else None
     return total_loss, pos_prec
     
-def run_network_on_validation(suffix):
+def run_network_on_validation(epoch_num):
     val_pos_prec, val_class_prec = 0.0, 0.0
     val_pos_items, val_class_items = 0, 0
     # iterate
-    for daf in val_data:
-        pos_prec = CalculateLossForDaf(daf, fValidation=True)
+    num_dafs_to_save = 6
+    dafs_to_save = []
+
+    for idaf,daf in enumerate(val_data):
+        pos_prec,tagged_daf = CalculateLossForDaf(daf, fValidation=True)
         # increment and continue
         if not pos_prec is None:
             val_pos_prec += pos_prec
             val_pos_items += 1
+        if epoch_num >= 0 and idaf % round(1.0*len(val_data)/num_dafs_to_save) == 0:
+            objStr = json.dumps(tagged_daf, indent=4, ensure_ascii=False)
+            if not os.path.exists('epoch_{}'.format(epoch_num)):
+                os.makedirs('epoch_{}'.format(epoch_num))
+            with open("epoch_{}/{}_tagged.json".format(epoch_num,tagged_daf["file"]), "w") as f:
+                f.write(objStr.encode('utf-8'))
 
         
     # divide
@@ -405,7 +418,7 @@ random.shuffle(all_data)
 train_data = all_data[100:]
 val_data = all_data[:100]
 
-pos_hashtable = {} #make_pos_hashtable(train_data)
+pos_hashtable = make_pos_hashtable(train_data)
 
 # create the vocabulary
 pos_vocab = Vocabulary()
@@ -413,8 +426,8 @@ let_vocab = Vocabulary()
 
 # iterate through all the dapim and put everything in the vocabulary
 for daf in all_data:
-    let_vocab.add_text(list(' '.join([word for word,_,_ in daf])))
-    pos_vocab.add_text([pos for _,_,pos in daf])
+    let_vocab.add_text(list(' '.join([word for word,_,_ in daf["words"]])))
+    pos_vocab.add_text([pos for _,_,pos in daf["words"]])
 
 pos_vocab.finalize()
 let_vocab.finalize()
@@ -481,7 +494,7 @@ for epoch in range(START_EPOCH, 100):
         loss, pos_prec = CalculateLossForDaf(daf, fValidation=False)
         
         # forward propagate
-        total_loss += loss.value() / len(daf) if loss else 0.0
+        total_loss += loss.value() / len(daf["words"]) if loss else 0.0
         # back propagate
         if loss: loss.backward()
         trainer.update()
@@ -506,12 +519,13 @@ for epoch in range(START_EPOCH, 100):
             
     log_message ('Finished epoch ' + str(epoch))
     val_class_prec, val_pos_prec = run_network_on_validation(epoch)
-    
-    filename_to_save = 'postagger_model_embdim' + str(EMBED_DIM) + '_hiddim' + str(HIDDEN_DIM) + '_lyr' + sLAYERS + '_e' + str(epoch)
+    if not os.path.exists('epoch_{}'.format(epoch)):
+        os.makedirs('epoch_{}'.format(epoch))
+    filename_to_save = 'epoch_' + str(epoch) + '/postagger_model_embdim' + str(EMBED_DIM) + '_hiddim' + str(HIDDEN_DIM) + '_lyr' + sLAYERS + '_e' + str(epoch)
     filename_to_save += '_trainloss' +  str(last_loss) + '_trainprec' + str(last_pos_prec) + '_valprec' + str(val_pos_prec) + '.model'
     model.save(filename_to_save)
 
-    f = open("conf_matrix_e{}.html".format(epoch),'w')
+    f = open("epoch_{}/conf_matrix_e{}.html".format(epoch,epoch),'w')
     f.write(pos_conf_matrix.to_html())
     f.close()
     pos_conf_matrix.clear()

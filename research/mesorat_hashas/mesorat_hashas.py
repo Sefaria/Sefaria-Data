@@ -21,6 +21,7 @@ algorithm - credit Dicta (dicta.org.il):
 
 import re, bisect, pickle, csv, codecs
 from collections import OrderedDict
+from copy import deepcopy
 from sefaria.model import *
 from sources.functions import post_link
 from sefaria.system.exceptions import DuplicateRecordError
@@ -71,15 +72,18 @@ class Gemara_Hashtable:
         """
 
         :param five_gram: list of 5 consecutive words
-        :param value: tuple of the form (mes_name,word_start_index,segment_ref)
+        :param value: MesorahItem
         """
         skip_gram_list = self.get_skip_grams(five_gram)
         ht = self.ht_list[self.w2i(skip_gram_list[0][0])] #should be the same for all four skip grams
         for skip_gram in skip_gram_list:
             index = self.w2i(u''.join(skip_gram[1:]))
             if not index in ht:
-                ht[index] = set()
-            ht[index].add(value)
+                ht[index] = list()
+            if len(ht[index]) > 0:
+                yo = 45
+            if not value in ht[index]:
+                ht[index].append(value)
 
     def __getitem__(self,five_gram):
 
@@ -90,9 +94,11 @@ class Gemara_Hashtable:
             index = self.w2i(u''.join(skip_gram[1:]))
             if not index in ht:
                 continue
-            results += ht[index]
+            for elem in ht[index]:
+                if not elem in results:
+                    results.append(elem)
 
-        return set(results)
+        return results
 
 
     def get_skip_grams(self,five_gram):
@@ -172,7 +178,7 @@ class Mesorah_Item:
             raise ValueError("Mesechtot need to be the same")
 
     def __str__(self):
-        return "{} {} {}".format(self.mesechta,self.location,self.ref)
+        return "{} - {} - {}".format(self.mesechta,self.location,self.ref)
 
     def __len__(self):
         return self.location[1] - self.location[0] + 1
@@ -189,17 +195,12 @@ class Mesorah_Item:
             return other.location[0] - self.location[1]
 
     def __eq__(self, other):
-        return self.ref == other.ref
+        return self.mesechta == other.mesechta and self.location == other.location
 
-    """
-    def __ne__(self, other):
-        return self.ref != other.ref and self.ref.section_ref() != other.ref.section_ref() and \
-               (other.ref.prev_section_ref() is None or self.ref.section_ref() != other.ref.prev_section_ref()) and \
-               (self.ref.prev_section_ref() is None or other.ref.section_ref() != self.ref.prev_section_ref())
-    """
-
-    def __hash__(self):
-        return hash(self.mesechta + str(self.location) + self.ref.normal())
+    def contains(self,other):
+        return self.mesechta == other.mesechta and \
+               ((self.location[0] < other.location[0] and self.location[1] >= other.location[1]) or \
+               (self.location[0] <= other.location[0] and self.location[1] > other.location[1]))
 
 
 class Mesorah_Match:
@@ -212,11 +213,10 @@ class Mesorah_Match:
         return "{} <===> {}".format(self.a,self.b)
 
     def __eq__(self, other):
-        return (self.a == other.a and self.b == other.b) or \
-               (self.a == other.b and self.b == other.a)
+       return self.__hash__() == other.__hash__()
 
     def __hash__(self):
-        return hash(self.a) + hash(self.b)
+        return hash(self.a.mesechta + str(self.a.location) + self.b.mesechta + str(self.b.location))
 
     def valid(self):
         return self.a.num_skip_grams >= min_matching_skip_grams and self.b.num_skip_grams >= min_matching_skip_grams and \
@@ -226,6 +226,8 @@ class Mesorah_Match:
 def mesechta_index_map(mesechat_name):
     mes = library.get_index(mesechat_name)
     mes_sec_ref_list = mes.all_section_refs()
+
+    #mes_sec_ref_list = Ref('Taanit 23a-26a').starting_refs_of_span() if mesechat_name == "Taanit" else Ref("Bava Batra 80b-81a").starting_refs_of_span()
     mes_word_list = []
     mes_ind_list = []
     mes_seg_ref_list = []
@@ -233,6 +235,9 @@ def mesechta_index_map(mesechat_name):
     for sec_ref in mes_sec_ref_list:
         sec_tc = TextChunk(sec_ref,"he")
         temp_ind_list,temp_ref_list = sec_tc.text_index_map(tokenize_words)
+        #TODO this is a temporary fix
+        if len(temp_ind_list) != len(temp_ref_list):
+            temp_ref_list = temp_ref_list[:len(temp_ind_list)]
         temp_word_list = []
         for seg in sec_tc.text:
             temp_word_list += tokenize_words(seg)
@@ -243,13 +248,14 @@ def mesechta_index_map(mesechat_name):
 
         index_offset += len(temp_word_list)
 
+
     return mes_word_list,mes_ind_list,mes_seg_ref_list
 
 
 def make_mesorat_hashas():
     ght = Gemara_Hashtable()
     mesechtot_names = [name for name in library.get_indexes_in_category("Talmud") if not "Jerusalem " in name and not "Ritva " in name and not "Rif " in name]
-    mesechtot_names = ["Berakhot"]
+    mesechtot_names = ["Taanit"]
     mesechtot_data = {}
     for mes in mesechtot_names:
         mes_wl,mes_il,mes_rl = mesechta_index_map(mes)
@@ -265,10 +271,11 @@ def make_mesorat_hashas():
             ght[mes_wl[i_word:i_word+5]] = Mesorah_Item(mes,(i_word,i_word+4),matched_ref)
     #ght.save()
 
-    mesorat_hashas = set()
+    mesorat_hashas = list()
 
     for mes in mesechtot_data:
         (mes_wl,mes_il,mes_rl) = mesechtot_data[mes]
+
         for i_word in range(len(mes_wl)-4):
             if i_word % 4000 == 0:
                 print "{}\t{}%\tNum Found: {}".format(mes,round(100.0*i_word/len(mes_wl),2),len(mesorat_hashas))
@@ -289,35 +296,36 @@ def make_mesorat_hashas():
             for j_word in range(i_word+1,len(mes_wl)-4):
                 if len(mes_matches) == 0:
                     break
-                start_ref = mes_rl[bisect.bisect_right(mes_il, j_word) - 1]
-                end_ref = mes_rl[bisect.bisect_right(mes_il, j_word + 4) - 1]
-                if start_ref == end_ref:
-                    matched_ref = start_ref
+                temp_start_ref = mes_rl[bisect.bisect_right(mes_il, j_word) - 1]
+                temp_end_ref = mes_rl[bisect.bisect_right(mes_il, j_word + 4) - 1]
+                if temp_start_ref == temp_end_ref:
+                    temp_matched_ref = temp_start_ref
                 else:
-                    matched_ref = start_ref.to(end_ref)
+                    temp_matched_ref = temp_start_ref.to(temp_end_ref)
 
-                temp_a = Mesorah_Item(mes,(j_word,j_word+4),matched_ref)
-                skip_matches = ght[mes_wl[j_word:j_word + 5]]
-                skip_matches.remove(temp_a)
+                temp_a = Mesorah_Item(mes,(j_word,j_word+4),temp_matched_ref)
+                temp_skip_matches = ght[mes_wl[j_word:j_word + 5]]
+                temp_skip_matches.remove(temp_a)
 
                 for temp_mes_match in reversed(mes_matches):
                     if temp_mes_match.a - temp_a > max_words_between:
                         #before removing, check if this is a valid mesorat hashas match
                         if temp_mes_match.valid():
-                            mesorat_hashas.add(temp_mes_match)
+                            mesorat_hashas.append(temp_mes_match)
 
                         mes_matches.remove(temp_mes_match)
 
                         continue
 
                     found = False #TODO right now I'm just choosing the first match. maybe choose closest?
-                    for temp_skip_gram in skip_matches:
+                    for temp_skip_gram in temp_skip_matches:
                         if found: break
                         dist =  temp_mes_match.b - temp_skip_gram
                         if not dist is None and 0 < dist <= max_words_between:
                             found = True
                             temp_mes_match.a += temp_a
                             temp_mes_match.b += temp_skip_gram
+
 
 
     #final pass through matches to remove duplicates
@@ -337,8 +345,8 @@ def make_mesorat_hashas():
             for j in range(0,len(list_mesorat_hashas)):
                 if i == j: continue
                 b = list_mesorat_hashas[j]
-                if (b.a.ref.contains(a.a.ref) and b.b.ref.contains(a.b.ref) and b.a.ref != a.a.ref and b.b.ref != a.b.ref) or \
-                        (b.a.ref.contains(a.b.ref) and b.b.ref.contains(a.a.ref) and b.a.ref != a.b.ref and b.b.ref != a.a.ref):
+                if (b.a.contains(a.a) and b.b.contains(a.b)) or \
+                        (b.a.contains(a.b) and b.b.contains(a.a)):
                     bad_match = True
                     break
 
@@ -357,9 +365,9 @@ def make_mesorat_hashas():
     print len(temp_mesorat_hashas)
     mesorat_hashas = temp_mesorat_hashas + bad_mesorat_hashas
     f = codecs.open('mesorat_hashas_test.csv','wb',encoding='utf8')
-    f.write([u'Ref A',u'Ref B',u'Text A',u'Text B',u'Location A',u'Location B'])
+    f.write(u','.join([u'Ref A',u'Ref B',u'Text A',u'Text B',u'Location A',u'Location B']) + u'\n')
     for match in mesorat_hashas:
-        f.write(u','.join([str(match.a.ref),str(match.b.ref),u' '.join(mesechtot_data[match.a.mesechta][0][match.a.location[0]:match.a.location[1]+1]),u' '.join(mesechtot_data[match.b.mesechta][0][match.b.location[0]:match.b.location[1]+1]),str(match.a.location),str(match.b.location)]) + u'\n')
+        f.write(u','.join([str(match.a.ref),str(match.b.ref),u' '.join(mesechtot_data[match.a.mesechta][0][match.a.location[0]:match.a.location[1]+1]),u' '.join(mesechtot_data[match.b.mesechta][0][match.b.location[0]:match.b.location[1]+1]),str(match.a.location).replace(u',',u'-'),str(match.b.location).replace(u',',u'-')]) + u'\n')
     f.close()
 
 def clean_mesorat_hashas():
@@ -370,8 +378,12 @@ def clean_mesorat_hashas():
         for seg in mes.all_segment_refs():
             seg_map[str(seg)] = None
     with codecs.open('mesorat_hashas_refs.csv','rb',encoding='utf8') as meshas:
+        isfirstline = True
         for line in meshas:
-            line_array = line.split(u',')
+            if isfirstline:
+                isfirstline = False
+                continue
+            line_array = line.split(u',')[0:2]
             line_array.sort(key=lambda r: Ref(r).order_id())
             seg_map[str(line_array[0])] = str(line_array[1])
 
@@ -422,7 +434,11 @@ def find_most_quoted():
         for seg in mes.all_segment_refs():
             seg_map[str(seg)] = 0
     with codecs.open('mesorat_hashas_refs.csv','rb',encoding='utf8') as meshas:
+        isfirstline = True
         for line in meshas:
+            if isfirstline:
+                isfirstline = False
+                continue
             line_array = line.split(u',')
             for ref in line_array:
                 ref_list = Ref(ref).range_list()
@@ -441,9 +457,13 @@ def find_most_quoted():
     print "the most quoted gemara is:",most_quoted,num,'times'
 
 def save_links():
-    with open("mesorat_hashas_refs.csv","r") as f:
+    with open("mesorat_hashas_refs.csv","rb") as f:
         r = csv.reader(f)
+        isfirstline = True
         for row in r:
+            if isfirstline:
+                isfirstline = False
+                continue
             link_obj = {"auto":True,"refs":row,"anchorText":"","generated_by":"mesorat_hashas.py","type":"Automatic Mesorat HaShas"}
             try:
                 Link(link_obj).save()
@@ -456,6 +476,41 @@ def save_links_post_request():
     links = [l.contents() for l in ls]
     post_link(links)
 
+def find_bad_bad_gemaras():
+    mesechtot_names = [name for name in library.get_indexes_in_category("Talmud") if
+                       not "Jerusalem " in name and not "Ritva " in name and not "Rif " in name]
+    for mesechta in mesechtot_names:
+        wl,il,rl = mesechta_index_map(mesechta)
+
+def merge_matches(mesorat_hashas):
+    pass
+    """
+    make dictionary where each key is mesechta name and value is array for every word
+    populate arrays so that each word is an array of all matches which include that word
+    mesorah_dict = {old_mesorah_match : merged_mesorah_match}
+
+    updated = False
+    for every mesechta
+        for every word
+            close_matches = matches that are close to each other
+            temp_merged = merge(matches)
+            for match in matches
+                mesorah_dict[match] = max(mesorah_dict[match],match)
+                if you did something:
+                    updated = True
+
+    new_mesorah = set(all matches in mesorah_dict)
+    if updated
+        return merge_matches(new_mesorh)
+    """
+    mesechtot_names = [name for name in library.get_indexes_in_category("Talmud") if
+                       not "Jerusalem " in name and not "Ritva " in name and not "Rif " in name]
+
+    mesechta_dict = {}
+    for mesechta in mesechtot_names:
+        wl,il,rl = mesechta_index_map(mesechta)
+        mesechta_dict[mesechta] = [set() for _ in wl]
+
 
 
 
@@ -465,3 +520,4 @@ make_mesorat_hashas()
 #save_links()
 #save_links_post_request()
 #clean_mesorat_hashas()
+#find_bad_bad_gemaras()
