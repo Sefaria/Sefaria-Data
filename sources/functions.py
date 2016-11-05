@@ -293,6 +293,26 @@ def checkLengthsDicts(x_dict, y_dict):
             pdb.set_trace()
 
 
+def weak_connection(func):
+    def post_weak_connection(*args, **kwargs):
+        success = False
+        weak_network = kwargs.pop('weak_network', False)
+        num_tries = kwargs.pop('num_tries', 3)
+        if weak_network:
+            for i in range(num_tries-1):
+                try:
+                    func(*args, **kwargs)
+                except (HTTPError, URLError) as e:
+                    print 'handling weak network'
+                else:
+                    success = True
+                    break
+        if not success:
+            func(*args, **kwargs)
+    return post_weak_connection
+
+
+@weak_connection
 def post_index(index):
     url = SEFARIA_SERVER+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
     indexJSON = json.dumps(index)
@@ -316,6 +336,7 @@ def hasTags(comment):
     return mod_comment != comment 
 
 
+@weak_connection
 def post_link(info):
     url = SEFARIA_SERVER+'/api/links/'
     infoJSON = json.dumps(info)
@@ -364,13 +385,17 @@ def post_link_weak_connection(info, repeat=10):
         print 'too many errors'
         sys.exit(1)
 
-def post_text(ref, text, index_count="off"):
+
+@weak_connection
+def post_text(ref, text, index_count="off", skip_links=False):
     textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
     if index_count == "off":
         url = SEFARIA_SERVER+'/api/texts/'+ref
     else:
         url = SEFARIA_SERVER+'/api/texts/'+ref+'?count_after=1'
+    if skip_links:
+        url += '&skip_links={}'.format(skip_links)
     values = {'json': textJSON, 'apikey': API_KEY}
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)
@@ -444,6 +469,8 @@ def post_text_burp(ref, text, index_count="off"):
         with open('errors.html', 'w') as errors:
             errors.write(e.read())
 
+
+@weak_connection
 def post_flags(version, flags):
     """
     Update flags of a specific version.
@@ -610,7 +637,7 @@ def isGematria(txt):
     return True
 
 def getGematria(txt):
-    txt = txt.replace("ך", "כ").replace("ץ", "צ")
+    txt = txt.replace(u"ך", u"כ").replace(u"ץ", u"צ")
     if not isinstance(txt, unicode):
         txt = txt.decode('utf-8')
     index=0

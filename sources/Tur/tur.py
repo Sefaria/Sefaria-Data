@@ -78,11 +78,11 @@ def gatherData(data, line, helek, siman_num, matches_array, commentaries):
     return data
 
 
-def checkPrisha(siman_num, helek, matches_array, commentaries):
+def check_simple(which_one, siman_num, helek, matches_array, commentaries):
     hash_tags = {}
-    report = open("report_prisha_duplicates.txt", "a")
+    report = open("report_"+which_one+"_duplicates.txt", "a")
     for commentary_count, matches in enumerate(matches_array):
-        if commentaries[commentary_count] == "Prisha":
+        if commentaries[commentary_count] == which_one:
             for order_count, match in enumerate(matches):
                 this_gematria = getGematria(match.encode('utf-8'))
                 if this_gematria in hash_tags:
@@ -95,7 +95,12 @@ def checkPrisha(siman_num, helek, matches_array, commentaries):
     report.close()
 
 
+#def darchei_moshe():
+
+
+
 def replaceWithHTMLTags(line, helek, siman_num, data):
+    pdb.set_trace()
     global prisha_file
     line = line.decode('utf-8')
     line = line.replace('%(', '(%')
@@ -117,7 +122,8 @@ def replaceWithHTMLTags(line, helek, siman_num, data):
                         
     data = gatherData(data, line, helek, siman_num, matches_array, commentaries)
     
-    checkPrisha(siman_num, helek, matches_array, commentaries)
+    check_simple("drisha", siman_num, helek, matches_array, commentaries)
+
 
 
     for commentary_count, matches in enumerate(matches_array):
@@ -211,7 +217,20 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
           header_pos = line.find("@00")
           len_line = len(line)
           if header_pos > 10 and header_pos < len_line-100:
-            pdb.set_trace()
+            start = line.find("@00")
+            there_yet = 0
+            end = -1
+            for index, char in enumerate(line):
+                if index > start:
+                    if char == ' ':
+                        there_yet += 1
+                if there_yet == 2:
+                    end = index
+                    print line[start:end]
+                    break
+            line = line.replace(line[start:end], "<br><b>"+line[start:end]+"<br>")
+
+
 
         if line.find("@00") >= 0 and len(line.split(" ")) >= 2:
             start = line.find("@00")
