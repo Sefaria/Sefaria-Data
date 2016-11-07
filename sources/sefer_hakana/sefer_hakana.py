@@ -8,10 +8,14 @@ from sources.functions import post_text, post_index
 from sefaria.model.schema import JaggedArrayNode, TitledTreeNode, ArrayMapNode
 
 
-def get_text():
-    url = 'http://www.hebrew.grimoar.cz/anonym/sefer_ha-kana.htm'
-    response = urllib2.urlopen(url)
-    return response.read()
+def get_text(from_url=False):
+    if from_url:
+        url = 'http://www.hebrew.grimoar.cz/anonym/sefer_ha-kana.htm'
+        response = urllib2.urlopen(url)
+        return response.read()
+    else:
+        with open('sefer_ha-kana.htm') as infile:
+            return infile.read()
 
 
 def parse():
@@ -20,7 +24,7 @@ def parse():
     found_beginning = False
     for line in my_text:
 
-        if re.search(u'^<b>', line):
+        if re.search(u'^ ?<b>', line):
             if found_beginning:
                 root.append([u'{}.'.format(i) if not re.search(u':(>)?$', i) else i for i in chapter])
                 chapter = []
