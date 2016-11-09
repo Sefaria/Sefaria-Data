@@ -12,7 +12,7 @@ def parse_yitzira():
                       [re.sub(u'@[0-9]{2}', u'', line) if re.search(u'@11', line) else None for line in my_text])
 
     with codecs.open('yitzira_mishna.txt', 'r', 'utf-8') as infile:
-        return file_to_ja([[]], infile, [u'@00\u05e4\u05e8\u05e7 [\u05d0-\u05ea]{1,2}'], cleaner)
+        return file_to_ja(2, infile, [u'@00\u05e4\u05e8\u05e7 [\u05d0-\u05ea]{1,2}'], cleaner)
 
 
 def parse_general(filename):
@@ -27,4 +27,5 @@ def parse_general(filename):
 
     regs = [u'@00\u05e4\u05e8\u05e7 [\u05d0-\u05ea]{1,2}', u'@22[\u05d0-\u05ea]{1,2}']
     with codecs.open(filename, 'r', 'utf-8') as infile:
-        return file_to_ja([[[]]], infile, regs, cleaner)
+        return file_to_ja(3, infile, regs, cleaner)
+
