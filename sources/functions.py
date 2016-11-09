@@ -387,13 +387,15 @@ def post_link_weak_connection(info, repeat=10):
 
 
 @weak_connection
-def post_text(ref, text, index_count="off"):
+def post_text(ref, text, index_count="off", skip_links=False):
     textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
     if index_count == "off":
         url = SEFARIA_SERVER+'/api/texts/'+ref
     else:
         url = SEFARIA_SERVER+'/api/texts/'+ref+'?count_after=1'
+    if skip_links:
+        url += '&skip_links={}'.format(skip_links)
     values = {'json': textJSON, 'apikey': API_KEY}
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)
@@ -635,7 +637,7 @@ def isGematria(txt):
     return True
 
 def getGematria(txt):
-    txt = txt.replace("ך", "כ").replace("ץ", "צ")
+    txt = txt.replace(u"ך", u"כ").replace(u"ץ", u"צ")
     if not isinstance(txt, unicode):
         txt = txt.decode('utf-8')
     index=0

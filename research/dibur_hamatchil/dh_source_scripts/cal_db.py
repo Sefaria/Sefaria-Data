@@ -5,7 +5,7 @@ import json
 import re
 import sys,os
 
-sys.stdout = codecs.open('cal_output.txt', 'w',encoding='utf8')
+#sys.stdout = codecs.open('cal_output.txt', 'w',encoding='utf8')
 
 sys.path.insert(0,'../../../')
 
@@ -216,10 +216,10 @@ def match_cal_segments(mesechta):
                 # matched_cal_objs_indexes = language_tools.match_segments_without_order(lines[iline],bas_word_list[se[0]:se[1]+1],2.0)
                 curr_bas_line = bas_word_list[se[0]:se[1]+1]
                 #print u'base line',u' '.join(curr_bas_line)
-                matched_words_base = dibur_hamatchil_matcher.match_text(curr_bas_line, curr_cal_line, char_threshold=0.4,verbose=False)
+                matched_words_base = dibur_hamatchil_matcher.match_text(curr_bas_line, curr_cal_line, char_threshold=0.3,verbose=False)
                 word_for_word_se += [(tse[0]+se[0],tse[1]+se[0]) if tse[0] != -1 else tse for tse in matched_words_base]
 
-            matched_word_for_word = dibur_hamatchil_matcher.match_text(bas_word_list, cal_words, char_threshold=0.4, prev_matched_results=word_for_word_se,boundaryFlexibility=2)
+            matched_word_for_word = dibur_hamatchil_matcher.match_text(bas_word_list, cal_words, char_threshold=0.3, prev_matched_results=word_for_word_se,boundaryFlexibility=2)
 
             bad_word_offset = 0
             for ical_word,temp_se in enumerate(matched_word_for_word):
@@ -311,7 +311,7 @@ def make_cal_lines_text(mesechta):
     fp.write(out)
     fp.close()
 
-mesechtas = ["Berakhot" ,"Shabbat","Eruvin","Pesachim"]
+mesechtas = ["Eruvin"]
 for mesechta in mesechtas:
     make_cal_segments(mesechta)
     match_cal_segments(mesechta)

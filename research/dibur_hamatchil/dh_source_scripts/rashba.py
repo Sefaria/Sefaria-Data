@@ -17,12 +17,16 @@ def tokenize_words(str):
     return word_list
 
 def dh_extraction_method(str):
-    bold_list = re.findall(ur'<b>(.+)</b>',str)
+    bold_list = re.findall(ur'<b>(.+?)</b>',str)
     if len(bold_list) > 0:
         bold = bold_list[0]
         if u"וכו'" in bold:
             bold = bold[:bold.index(u"וכו'")]
         bold = re.sub(ur'[\,\.\:\;]',u'',bold)
+
+        bold_split = re.split(ur'\s+',bold)
+        if len(bold_split) > 6:
+            bold = u' '.join(bold_split[-6:])
         return bold
     else:
         return str
