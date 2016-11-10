@@ -70,6 +70,7 @@ class bookSub(supermod.book):
 
     def getBaseTextArray(self):
         return self.get_body().getTextArray()
+        # Note the offset issue w/ Semachot
 
 
 supermod.book.subclass = bookSub
