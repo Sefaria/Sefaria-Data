@@ -102,7 +102,7 @@ class Maharam:
                 self.comm_dict[self.current_daf].append(comment)
                 self.dh1_dict[self.current_daf].append((category, ""))
             else:
-                self.comm_dict[self.current_daf][last_comment] += "<br>"+comment+": "
+                self.comm_dict[self.current_daf].append(comment)
         if category == 'gemara':
             self.gemara1_dict[self.current_daf].append(dh1)
         elif category == 'rashi':
@@ -177,24 +177,18 @@ class Maharam:
 
     def parseDH(self, comment, category):
         first_10 = " ".join(comment.split(" ")[0:10])
-        if first_10 == " ".join(comment.split(" ")[0:9]):
-            dh = ""
-            self.addDHComment(dh, comment, category, self.heb_category)
+        if first_10.find(".") > 0:
+            dh, comment = comment.split(".", 1)
+            comment = comment[1:] if comment[0] == ' ' else comment
+            dh += ". "
+        elif first_10.find("כו'") > 0:
+            dh, comment = comment.split("כו'", 1)
+            comment = comment[1:] if comment[0] == ' ' else comment
+            dh += "כו' "
         else:
-            if first_10.find(".") > 0:
-                dh, comment = comment.split(".", 1)
-                comment = comment[1:] if comment[0] == ' ' else comment
-                dh += ". "
-            elif first_10.find("כו'") > 0:
-                dh, comment = comment.split("כו'", 1)
-                comment = comment[1:] if comment[0] == ' ' else comment
-                dh += "כו' "
-            elif len(comment) > 20:
-                dh = first_10 + " "
-                comment = " ".join(comment.split(" ")[10:])
-            else:
-                dh = ""
-            self.addDHComment(dh, comment, category, self.heb_category)
+            dh = first_10 + " "
+            comment = " ".join(comment.split(" ")[10:])
+        self.addDHComment(dh, comment, category, self.heb_category)
 
 
     def parseText(self, file):
@@ -226,12 +220,7 @@ class Maharam:
                     if len(comment) < 5:
                         continue
                     self.determineCategory(count, comment)
-                    if self.category == "":
-                        continue
-                    if self.category == 'paragraph':
-                        self.addDHComment("","", comment, 'paragraph', "")
-                    else:
-                        self.parseDH(comment, self.category)
+                    self.parseDH(comment, self.category)
             else:
                 print line
             prev_line = line
@@ -326,6 +315,11 @@ class Maharam:
                         "generated_by": "Maharam on "+masechet+" linker",
                     })
     '''
+    def reportMissingOnes(self, filename, tosafot_in_order, rashi_in_order, gemara_in_order):
+        file = open(filename, "a")
+
+
+
 
     def postLinks(self, match_in_order):
         def base_tokenizer(str):
@@ -338,6 +332,8 @@ class Maharam:
         mishnah_out_order = {}
         links_to_post = []
         for daf in sorted(self.dh1_dict.keys()):
+            if daf < 13:
+                continue
             print daf
             self.maharam_line = 0
             self.rashi_line = -1
@@ -364,6 +360,7 @@ class Maharam:
             gemara1_arr = [text.decode('utf-8') for text in gemara1_arr]
             gemara_in_order = match_ref(gemara_text, gemara1_arr, base_tokenizer, self.dh_extract_method, verbose=True)
             gemara_in_order = self.convertToOldFormat(gemara_in_order)
+            #reportMissingOnes("reportmissing.txt", tosafot_in_order, rashi_in_order, gemara_in_order)
             dh1_arr = self.dh1_dict[daf]
             print "done matching"
             for category, dh in self.dh1_dict[daf]:
@@ -429,7 +426,8 @@ if __name__ == "__main__":
                         "language": "he",
                         "text": text_to_post,
                     }
-        post_text("Maharam on "+masechet, send_text, "on")
+        #post_text("Maharam on "+masechet, send_text, "on")
+        print 'posted'
 
         maharam.postLinks(match_in_order)
 

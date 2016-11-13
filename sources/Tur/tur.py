@@ -63,44 +63,102 @@ def gatherData(data, line, helek, siman_num, matches_array, commentaries):
     #for this siman, this commentary, there are these tags
     data[helek][siman_num] = {}
     for commentary_count, matches in enumerate(matches_array):
-        hash_tags = {}
+        hash = {}
         this_commentary = commentaries[commentary_count]
         if this_commentary == "Replace":
             continue
         data[helek][siman_num][this_commentary] = {}
         for order_count, match in enumerate(matches):
             this_match = getGematria(match.encode('utf-8'))
-            if this_match in hash_tags:
-                hash_tags[this_match] += 1
+            if this_match in hash:
+                hash[this_match] += 1
             else:
-                hash_tags[this_match] = 1
-        data[helek][siman_num][this_commentary] = hash_tags
+                hash[this_match] = 1
+        data[helek][siman_num][this_commentary] = hash
     return data
 
 
-def check_simple(which_one, siman_num, helek, matches_array, commentaries):
-    hash_tags = {}
-    report = open("report_"+which_one+"_duplicates.txt", "a")
+def skippedAny(array):
+    length = len(array)
+    prev = 0
+    report = ""
+    for each_one in array:
+        if each_one != prev + 1:
+            report += "Skipped " + numToHeb(prev+1).encode('utf-8') + "\n"
+        prev = each_one
+
+    return report
+
+
+def genDict(matches_array, commentaries, which_one):
+    hash = {}
     for commentary_count, matches in enumerate(matches_array):
         if commentaries[commentary_count] == which_one:
             for order_count, match in enumerate(matches):
-                this_gematria = getGematria(match.encode('utf-8'))
-                if this_gematria in hash_tags:
-                    hash_tags[this_gematria] += 1
+                this_gematria = getGematria(match)
+                if this_gematria in hash:
+                    hash[this_gematria] += 1
                 else:
-                    hash_tags[this_gematria] = 1
-    for number in hash_tags:
-        if hash_tags[number] > 1:
-            report.write("Siman "+str(siman_num)+", "+helek+": "+numToHeb(number).encode('utf8')+" has "+str(hash_tags[number])+"\n")
-    report.close()
+                    hash[this_gematria] = 1
+
+    return hash
+
+def check_simple(which_one, siman_num, helek, matches_array, commentaries):
+    duplicate_report = open("report_"+which_one+"_duplicates.txt", "a")
+    skipped_report = open("skipped_"+which_one+".txt", "a")
+    hash = genDict(matches_array, commentaries, which_one)
+    write_duplicate(hash, duplicate_report, siman_num, helek)
+    keys = sorted(hash.keys())
+    skipped_any = skippedAny(keys)
+    if len(skipped_any) > 0:
+        skipped_report.write("{} Siman #: {}\n".format(helek, siman_num))
+    skipped_report.write(skipped_any)
+    duplicate_report.close()
+    skipped_report.close()
 
 
-#def darchei_moshe():
+def update_dict_BY_data(hash, other_file, siman_num, duplicate_report):
+    data = eval(other_file.read())
+    if str(siman_num) not in data:
+        duplicate_report.write("In Beit Yosef, not finding Siman #"+str(siman_num)+"\n")
+        return
+    else:
+        array = data[str(siman_num)]
+    for each in array:
+        if each in hash:
+            hash[each] += 1
+        else:
+            hash[each] = 1
 
+    return hash
+
+def check_darchei_moshe(siman_num, helek, matches_array, commentaries):
+    if helek == "Choshen Mishpat":
+        return
+    hash = {}
+    skipped_report = open("skipped_darchei.txt", "a")
+    duplicate_report = open("report_darchei_duplicates.txt", "a")
+    other_file = open("{} darchei moshe.txt".format(helek))
+    hash = genDict(matches_array, commentaries, "Darchei Moshe")
+    update_dict_BY_data(hash, other_file, siman_num, duplicate_report)
+    write_duplicate(hash, duplicate_report, siman_num, helek)
+    keys = sorted(hash.keys())
+    skipped_any = skippedAny(keys)
+    if len(skipped_any) > 0:
+        skipped_report.write("{} Siman #: {}\n".format(helek, siman_num))
+    skipped_report.write(skipped_any)
+    duplicate_report.close()
+    skipped_report.close()
+
+
+def write_duplicate(hash, duplicate_report, siman_num, helek):
+    for number in hash:
+        if hash[number] > 1:
+            print "Siman "+str(siman_num)+", "+helek+": "+numToHeb(number).encode('utf8')+" has "+str(hash[number])+"\n"
+            duplicate_report.write("Siman "+str(siman_num)+", "+helek+": "+numToHeb(number).encode('utf8')+" has "+str(hash[number])+"\n")
 
 
 def replaceWithHTMLTags(line, helek, siman_num, data):
-    pdb.set_trace()
     global prisha_file
     line = line.decode('utf-8')
     line = line.replace('%(', '(%')
@@ -122,24 +180,24 @@ def replaceWithHTMLTags(line, helek, siman_num, data):
                         
     data = gatherData(data, line, helek, siman_num, matches_array, commentaries)
     
-    check_simple("drisha", siman_num, helek, matches_array, commentaries)
-
-
+    check_simple("Drisha", siman_num, helek, matches_array, commentaries)
+    check_simple("Prisha", siman_num, helek, matches_array, commentaries)
+    check_darchei_moshe(siman_num, helek, matches_array, commentaries)
 
     for commentary_count, matches in enumerate(matches_array):
-        hash_tags = {}
+        hash = {}
         how_many_shams = 0
         for order_count, match in enumerate(matches):
             if helek == "Choshen Mishpat" and commentaries[commentary_count] == "Replace":
                 line = line.replace(match, "#$!^")
             else:
                 this_gematria = getGematria(match.encode('utf-8'))
-                if this_gematria in hash_tags:
-                    hash_tags[this_gematria] += 1
+                if this_gematria in hash:
+                    hash[this_gematria] += 1
                     prisha_file += 1
                 else:
-                    hash_tags[this_gematria] = 1
-                HTML_tag =  '<i data-commentator="'+commentaries[commentary_count]+'" data-order="'+str(this_gematria)+"."+str(hash_tags[this_gematria])+'"></i>'
+                    hash[this_gematria] = 1
+                HTML_tag =  '<i data-commentator="'+commentaries[commentary_count]+'" data-order="'+str(this_gematria)+"."+str(hash[this_gematria])+'"></i>'
                 line = line.replace(match, HTML_tag, 1)
     return line, data
 

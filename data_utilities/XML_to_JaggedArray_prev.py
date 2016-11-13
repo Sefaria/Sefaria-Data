@@ -16,10 +16,9 @@ from sefaria.model import *
 class XML_to_JaggedArray:
 
 
-    def __init__(self, title, file, JA_array, allowedTags, allowedAttributes, post_info, parse):
+    def __init__(self, title, file, JA_array, allowedTags, allowedAttributes, post_info):
         #depth is level at which tree has text
         self.title = title
-        self.parse = parse
         self.post_info = post_info
         self.file = file
         xml_text = ""
@@ -29,7 +28,8 @@ class XML_to_JaggedArray:
         self.root = etree.XML(xml_text)
         self.JA_array = JA_array
         self.JA_nodes = {}
-        self.pages = {}
+        self.book_dict = {} #this eventually will have keys that are the string equivalent of Ref objects
+                            # and the values will all be text at those Refs
 
 
     def run(self):
@@ -41,14 +41,8 @@ class XML_to_JaggedArray:
             #child = self.reorder_structure(child, name)
             self.JA_nodes[name] = self.go_down_to_text(name, child, has_subtitle)
             ref = self.title + ", " + name
-            assert Ref(ref), ref
+            assert Ref(ref)
             self.interpret(self.JA_nodes[name], ref)
-        self.post()
-
-
-    def post(self):
-        for key in self.book_dict:
-            post_text(key, self.book_dict[key])
 
 
     def grab_title(self, element, tag="bold", delete=True):
@@ -197,10 +191,8 @@ class XML_to_JaggedArray:
                 self.interpret(node[key], new_running_ref, "string")
             elif key == "text" and len_node == 1:
                 assert Ref(running_ref)
-                node[key] = self.parse(node[key])
-                text = self.get_pages(node[key], running_ref)
                 send_text = {
-                    "text": text,
+                    "text": node[key],
                     "language": self.post_info["language"],
                     "versionSource": self.post_info["versionSource"],
                     "versionTitle": self.post_info["versionTitle"]
@@ -208,36 +200,31 @@ class XML_to_JaggedArray:
                 post_text(running_ref, send_text)
             elif key == "text":
                 assert Ref(running_ref)
-                new_running_ref = running_ref + ",_Subject"
-                assert Ref(new_running_ref)
-                node[key] = self.parse(node[key])
-                text = self.get_pages(node[key], new_running_ref)
                 send_text = {
-                    "text": text,
+                    "text": node[key],
                     "language": self.post_info["language"],
                     "versionSource": self.post_info["versionSource"],
                     "versionTitle": self.post_info["versionTitle"]
                 }
-
+                new_running_ref = running_ref + ",_Subject"
+                assert Ref(new_running_ref)
                 post_text(new_running_ref, send_text)
 
+'''
+Issue for tomorrow.  Need to go over logic of if statement. What to do when see number, when see an actual name of node,
+the default text, and its two situations: one where it is a subject, and one where it is the content of the current ref
+Need to step through an actual run
+'''
 
-    def get_pages(self, text, ref):
-        print ref
-        for index, each_line in enumerate(text):
-            pages = re.findall("\[\d+[a-z]+\]", text[index])
-            for page in pages:
-                if ref+"."+str(index+1) in self.pages:
-                    self.pages[ref+"."+str(index+1)] += [page]
-                else:
-                    self.pages[ref+"."+str(index+1)] = [page]
-                text[index] = text[index].replace(page, "")
-        return text
+
 '''
-1. Need to remove pages from text before it gets posted
-2. But also need to keep track of the Ref of every time there is a page
-So when I have the text and the ref to post, I go through text adding every ref that has a page and the actual page itself
-to a dict.
-Then remove them.
-Then post text
-'''
+1. create schema myself
+2. loop through extending each key name to the next to build up reference and then just post the contents
+either by converting it to an array or changing code earlier
+
+if only key is 'text', we're at end, post
+else add to ref and call on each node that isn't text
+
+if there is both 'text' and other things, we need to post the 'text' and call recurisvely on other nodes
+
+            '''
