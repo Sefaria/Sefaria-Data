@@ -4,8 +4,6 @@ import os
 # for a script located two directories below this file
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
-sys.path.append("/Users/Eytan/Desktop/sefaria/Sefaria-Data/sources")
-
 from local_settings import *
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
