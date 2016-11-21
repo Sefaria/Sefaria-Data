@@ -44,7 +44,7 @@ def create_schema():
 
         subject = JaggedArrayNode()
         subject.add_title("Subject", "en", primary=True)
-        subject.add_title(u"נושא", "he", primary=True)
+        subject.add_title(u"סס", "he", primary=True)
         subject.key = "subject"
         subject.depth = 1
         subject.sectionNames = ["Paragraph"]
@@ -70,7 +70,7 @@ def create_schema():
     book.append(pt7)
 
     appendix = SchemaNode()
-    appendix.add_title("Appendix The Introductory Material", "en", primary=True)
+    appendix.add_title("Appendix: The Introductory Material", "en", primary=True)
     appendix.add_title(u"נספח: הקדמות", "he", primary=True)
     appendix.key = "appendix"
 
@@ -91,30 +91,8 @@ def create_schema():
     appendix.append(subject)
     appendix.append(default)
 
-    footnotes_array = ["Introduction", "PART I", "PART II", "PART III", "PART IV", "PART V", "PART VI", "PART VII", "Appendix The Introductory Material"]
-    footnotes_heb = [u"הקדמה", u"חלק א", u"חלק ב", u"חלק ג", u"חלק ד", u"חלק ה", u"חלק ו", u"חלק ז", u"נספח"]
-    footnotes = SchemaNode()
-    footnotes.key = "footnotes"
-    footnotes.add_title("Footnotes", "en", primary=True)
-    footnotes.add_title(u"הערות", "he", primary=True)
-    for i in range(len(footnotes_array)):
-        node = JaggedArrayNode()
-        if footnotes_array[i] == "Introduction" or footnotes_array[i] == "PART VII":
-            node.depth = 1
-            node.sectionNames = ["Paragraph"]
-            node.addressTypes = ["Integer"]
-        else:
-            node.depth = 2
-            node.sectionNames = ["Chapter", "Paragraph"]
-            node.addressTypes = ["Integer", "Integer"]
-        node.key = footnotes_array[i]
-        node.add_title(footnotes_array[i], "en", primary=True)
-        node.add_title(footnotes_heb[i], "he", primary=True)
-        footnotes.append(node)
-
 
     book.append(appendix)
-    book.append(footnotes)
 
     book.validate()
     index = {
@@ -125,6 +103,8 @@ def create_schema():
     post_index(index)
 
 if __name__ == "__main__":
+    JA_array = [("Introduction", 2, False), ("PART I", 2, True), ("PART II", 2, True), ("PART III", 2, True), ("PART IV", 2, True), ("PART V", 2, True)]
+    JA_array += [("PART VI", 2, True), ("PART VII", 1, False), ("Appendix The Introductory Material", 2, True)]
     post_info = {}
     post_info["versionTitle"] = "hi"
     post_info["versionSource"] = "hi"
@@ -136,7 +116,7 @@ if __name__ == "__main__":
     allowed_attributes = ["id"]
     file_name = "../sources/DC labs/Robinson_MosesCordoveroIntroductionToKabbalah.xml"
     title = "Or Neerav"
-    ramak = XML_to_JaggedArray(title, file_name, allowed_tags, allowed_attributes, post_info, parse)
+    ramak = XML_to_JaggedArray(title, file_name, JA_array, allowed_tags, allowed_attributes, post_info, parse)
 
 
     create_schema()

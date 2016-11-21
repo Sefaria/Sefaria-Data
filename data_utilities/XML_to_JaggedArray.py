@@ -16,8 +16,7 @@ from sefaria.model import *
 class XML_to_JaggedArray:
 
 
-    def __init__(self, title, file, JA_array, allowedTags, allowedAttributes, post_info, parse):
-        #depth is level at which tree has text
+    def __init__(self, title, file, allowedTags, allowedAttributes, post_info, parse):
         self.title = title
         self.parse = parse
         self.post_info = post_info
@@ -27,28 +26,30 @@ class XML_to_JaggedArray:
             xml_text += line
         xml_text = bleach.clean(xml_text, tags=allowedTags, attributes=allowedAttributes, strip=False)
         self.root = etree.XML(xml_text)
-        self.JA_array = JA_array
         self.JA_nodes = {}
         self.pages = {}
+        self.alt_struct = True
+        self.footnotes = {}
 
 
     def run(self):
         for count, child in enumerate(self.root):
-            attrib = child.attrib
-            depth = self.JA_array[count][1]
-            has_subtitle = self.JA_array[count][2]
             name = self.grab_title(child)
-            #child = self.reorder_structure(child, name)
-            self.JA_nodes[name] = self.go_down_to_text(name, child, has_subtitle)
+            ref = self.title + ", Footnotes, " + name
+            self.JA_nodes[name] = self.go_down_to_text(name, child, ref)
             ref = self.title + ", " + name
-            assert Ref(ref), ref
             self.interpret(self.JA_nodes[name], ref)
-        self.post()
+            self.interpret_footnotes(name)
+            self.footnotes = {}
 
+        if self.alt_struct:
+            file = open("alt_struct.txt", "w")
+            for ref in self.pages:
+                for each_one in self.pages[ref]:
+                    file.write(ref+"; ")
+                    file.write(each_one+"\n\n")
+            file.close()
 
-    def post(self):
-        for key in self.book_dict:
-            post_text(key, self.book_dict[key])
 
 
     def grab_title(self, element, tag="bold", delete=True):
@@ -64,28 +65,105 @@ class XML_to_JaggedArray:
         return ""
 
 
-    def collapse_subtitles(self, name):
-        '''collapse all the subtitle slots in the array to one; we start from negative one instead of 0,
-            because we don't want to get rid of all of them, but to keep one that the rest collapse into'''
-        how_many_to_pop = -1
-        subtitle = ""
-        for gchild_count, gchild in enumerate(self.JA_nodes[name]):
-            if type(gchild) is not list:
-                subtitle += gchild.encode('utf-8')
-                how_many_to_pop += 1
+    def go_down_to_text(self, name, element, base_ref):
+        text = {}
+        text["text"] = []
+        for index, child in enumerate(element):
+            if len(child) > 0:
+                name_node = ""
+                if child.tag != "title":
+                    self.grab_title(child) #take the title underneath, set it to text var,  so afterward, child.text will be the correct title
+                new_ref = base_ref+"."+child.text if child.text.isdigit() else ref+", "+child.text
+                text[child.text] = self.go_down_to_text(child.text, child, new_ref)
+            else:
+                if child.tag == "ftnote":
+                    if base_ref not in self.footnotes:
+                        self.footnotes[base_ref] = []
+                    self.footnotes[base_ref].append(child.xpath("string()"))
+                else:
+                    text["text"] += [child.xpath("string()").replace("\n\n", " ")]
 
-        for i in range(how_many_to_pop):
-            self.JA_nodes[name].pop(0)
-
-        self.JA_nodes[name][0] = subtitle
+        return text
 
 
-    def get_depth(self, array):
-        depth = 0
-        while type(array) is list:
-            array = array[1]
-            depth += 1
-        return depth
+    def interpret_footnotes(self, name):
+        prev_num = 0
+        header = "Chapter"
+        chapter = 1
+        text = []
+        for ref in self.footnotes:
+            comments = self.footnotes[ref]
+            for index, comment in enumerate(comments):
+                poss_num = int(comment.split(".", 1)[0])
+                comments[index] = comment.replace(str(poss_num)+". ", "")
+
+            comments = self.parse(comments)
+            send_text = {
+                    "text": comments,
+                    "language": self.post_info["language"],
+                    "versionSource": self.post_info["versionSource"],
+                    "versionTitle": self.post_info["versionTitle"]
+                }
+            print self.title+", Footnotes, "+name
+            post_text(ref, send_text)
+
+
+
+
+    def interpret(self, node, running_ref, prev="string"):
+        assert Ref(running_ref)
+        len_node = len(node)
+        for key in node:
+            if key.isdigit():
+                if prev == "int":
+                    new_running_ref = "%s.%s" % (running_ref, key)
+                else:
+                    new_running_ref = "%s, %s." % (running_ref, key)
+
+                assert Ref(new_running_ref)
+                self.interpret(node[key], new_running_ref, "int")
+            elif key != "text":
+                new_running_ref = "%s, %s" % (running_ref, node[key])
+                assert Ref(new_running_ref)
+                self.interpret(node[key], new_running_ref, "string")
+            elif key == "text" and len_node == 1:
+                assert Ref(running_ref)
+                node[key] = self.parse(node[key])
+                text = self.get_pages(node[key], running_ref)
+                send_text = {
+                    "text": text,
+                    "language": self.post_info["language"],
+                    "versionSource": self.post_info["versionSource"],
+                    "versionTitle": self.post_info["versionTitle"]
+                }
+                print running_ref
+                post_text(running_ref, send_text)
+            elif key == "text":
+                assert Ref(running_ref)
+                new_running_ref = running_ref + ",_Subject"
+                assert Ref(new_running_ref)
+                node[key] = self.parse(node[key])
+                text = self.get_pages(node[key], new_running_ref)
+                send_text = {
+                    "text": text,
+                    "language": self.post_info["language"],
+                    "versionSource": self.post_info["versionSource"],
+                    "versionTitle": self.post_info["versionTitle"]
+                }
+                post_text(new_running_ref, send_text)
+
+
+    def get_pages(self, text, ref):
+        print ref
+        for index, each_line in enumerate(text):
+            pages = re.findall("\[\d+[a-z]+\]", text[index])
+            for page in pages:
+                if ref+"."+str(index+1) in self.pages:
+                    self.pages[ref+"."+str(index+1)] += [page]
+                else:
+                    self.pages[ref+"."+str(index+1)] = [page]
+                text[index] = text[index].replace(page, "")
+        return text
 
 
     def reorder_structure(self, element, name):
@@ -132,36 +210,7 @@ class XML_to_JaggedArray:
         return element
 
 
-    def convert_nodes_to_JA(self):
-        for name in self.JA_nodes:
-            each_node = self.JA_nodes[name]
-            title = each_node[0]
-            each_node.pop(0)
-            depth = get_depth(each_node)
-            key = name
-            new_node = SchemaNode()
-
-
-
-    def go_down_to_text(self, name, element, has_subtitle=False):
-        text = {}
-        text["text"] = []
-        #text[name] = {}
-        for index, child in enumerate(element):
-            if len(child) > 0:
-                name_node = ""
-                if child.tag != "title":
-                    self.grab_title(child) #take the title underneath it so afterward, child.text will be the correct title
-                if child.text.isdigit():
-                    text
-                text[child.text] = self.go_down_to_text(child.text, child, has_subtitle)
-            else:
-                text["text"] += [child.xpath("string()").replace("\n\n", " ")]
-
-        return text
-
-
-
+'''
     def convert_into_schema(self):
         for name in self.JA_nodes:
             depth = self.JA_dict[name]
@@ -176,68 +225,35 @@ class XML_to_JaggedArray:
         for key in dict:
             process(key, dict[key], depth, level+1)
 
+    def convert_nodes_to_JA(self):
+        for name in self.JA_nodes:
+            each_node = self.JA_nodes[name]
+            title = each_node[0]
+            each_node.pop(0)
+            depth = get_depth(each_node)
+            key = name
+            new_node = SchemaNode()
+    def collapse_subtitles(self, name):
+        collapse all the subtitle slots in the array to one; we start from negative one instead of 0,
+            because we don't want to get rid of all of them, but to keep one that the rest collapse into
+        how_many_to_pop = -1
+        subtitle = ""
+        for gchild_count, gchild in enumerate(self.JA_nodes[name]):
+            if type(gchild) is not list:
+                subtitle += gchild.encode('utf-8')
+                how_many_to_pop += 1
 
-    def interpret(self, node, running_ref, prev="string"):
-        len_node = len(node)
-        for key in node:
-            if key.isdigit():
-                if prev == "int":
-                    new_running_ref = "%s.%s" % (running_ref, key)
-                else:
-                    new_running_ref = "%s, %s." % (running_ref, key)
-                try:
-                    assert Ref(new_running_ref)
-                except:
-                    pdb.set_trace()
-                assert Ref(new_running_ref)
-                self.interpret(node[key], new_running_ref, "int")
-            elif key != "text":
-                new_running_ref = "%s, %s" % (running_ref, node[key])
-                assert Ref(new_running_ref)
-                self.interpret(node[key], new_running_ref, "string")
-            elif key == "text" and len_node == 1:
-                assert Ref(running_ref)
-                node[key] = self.parse(node[key])
-                text = self.get_pages(node[key], running_ref)
-                send_text = {
-                    "text": text,
-                    "language": self.post_info["language"],
-                    "versionSource": self.post_info["versionSource"],
-                    "versionTitle": self.post_info["versionTitle"]
-                }
-                post_text(running_ref, send_text)
-            elif key == "text":
-                assert Ref(running_ref)
-                new_running_ref = running_ref + ",_Subject"
-                assert Ref(new_running_ref)
-                node[key] = self.parse(node[key])
-                text = self.get_pages(node[key], new_running_ref)
-                send_text = {
-                    "text": text,
-                    "language": self.post_info["language"],
-                    "versionSource": self.post_info["versionSource"],
-                    "versionTitle": self.post_info["versionTitle"]
-                }
+        for i in range(how_many_to_pop):
+            self.JA_nodes[name].pop(0)
 
-                post_text(new_running_ref, send_text)
+        self.JA_nodes[name][0] = subtitle
 
 
-    def get_pages(self, text, ref):
-        print ref
-        for index, each_line in enumerate(text):
-            pages = re.findall("\[\d+[a-z]+\]", text[index])
-            for page in pages:
-                if ref+"."+str(index+1) in self.pages:
-                    self.pages[ref+"."+str(index+1)] += [page]
-                else:
-                    self.pages[ref+"."+str(index+1)] = [page]
-                text[index] = text[index].replace(page, "")
-        return text
-'''
-1. Need to remove pages from text before it gets posted
-2. But also need to keep track of the Ref of every time there is a page
-So when I have the text and the ref to post, I go through text adding every ref that has a page and the actual page itself
-to a dict.
-Then remove them.
-Then post text
+
+    def get_depth(self, array):
+        depth = 0
+        while type(array) is list:
+            array = array[1]
+            depth += 1
+        return depth
 '''

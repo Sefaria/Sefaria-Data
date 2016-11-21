@@ -11,8 +11,8 @@ import re
 import glob
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
-sys.path.insert(0, '../Match/')
-from match import Match
+from data_utilities.dibur_hamatchil_matcher import *
+
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 from local_settings import *
 from functions import *
@@ -181,7 +181,7 @@ def parse(tractate, errors):
              text[daf] = []
              dh_dict[daf] = []
              prev_daf = daf
-         text[daf].append(before_dh + "<b>" + dh+"</b>"+comment)
+         text[daf].append(before_dh + "<b>" + dh+"</b> "+comment)
          dh_dict[daf].append(dh)
 
          try:
@@ -202,8 +202,8 @@ def post(text, dh_dict, tractate):
          "language": "he"
      }
      post_text("Chiddushei Ramban on "+tractate, send_text)
-     '''links_to_post = []
-     match = Match(in_order=True, min_ratio=80, guess=False, range=True, can_expand=False)
+     links_to_post = []
+
      for daf in sorted(dh_dict.keys()):
          dh_list = dh_dict[daf]
          daf_text = Ref(tractate+" "+AddressTalmud.toStr("en", daf)).text('he').text
@@ -211,10 +211,11 @@ def post(text, dh_dict, tractate):
          for key, value in results.iteritems():
              value = value.replace("0:", "")
              talmud_end = tractate + "." + AddressTalmud.toStr("en", daf) + "." + value
+             talmud_end = tractate + "." + AddressTalmud.toStr("en", daf) + "." + value
              ramban_end = "Chiddushei_Ramban_on_" + tractate + "." + AddressTalmud.toStr("en", daf) + "." + str(key)
              links_to_post.append({'refs': [talmud_end, ramban_end], 'type': 'commentary', 'auto': 'True', 'generated_by': "ramban"+tractate})
      post_link(links_to_post)
-     '''
+
 
 
 if __name__ == "__main__":
@@ -223,20 +224,16 @@ if __name__ == "__main__":
     global dh_dict
     global errors
     errors = open("errors", 'w')
-    not_yet = True
-    until_this_one = "avodah_zarah"
+    these = ["Shabbat", "Kiddushin"]
     for file in glob.glob(u"*.txt"):
         errors.write(file+"\n")
         if file.find("_complete") >= 0:
             tractate = file.replace("_complete.txt", "").replace("_", " ").title()
-            print file
-            if not_yet and file.find(until_this_one) == -1:
+            print tractate
+            if tractate not in these:
                 continue
-            else:
-                not_yet = False
-            if not_yet == False:
-               #create_index(tractate)
-               print 'about to parse'
-               text, dh_dict = parse(tractate, errors)
-               print 'about to post'
-               post(text, dh_dict, tractate)
+            create_index(tractate)
+            print 'about to parse'
+            text, dh_dict = parse(tractate, errors)
+            print 'about to post'
+            post(text, dh_dict, tractate)
