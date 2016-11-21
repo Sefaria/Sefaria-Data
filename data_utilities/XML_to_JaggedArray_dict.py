@@ -16,10 +16,9 @@ from sefaria.model import *
 class XML_to_JaggedArray:
 
 
-    def __init__(self, title, file, JA_array, allowedTags, allowedAttributes, post_info, parse):
+    def __init__(self, title, file, JA_array, allowedTags, allowedAttributes, post_info):
         #depth is level at which tree has text
         self.title = title
-        self.parse = parse
         self.post_info = post_info
         self.file = file
         xml_text = ""
@@ -41,7 +40,7 @@ class XML_to_JaggedArray:
             #child = self.reorder_structure(child, name)
             self.JA_nodes[name] = self.go_down_to_text(name, child, has_subtitle)
             ref = self.title + ", " + name
-            assert Ref(ref), ref
+            assert Ref(ref)
             self.interpret(self.JA_nodes[name], ref)
         self.post()
 
@@ -222,17 +221,17 @@ class XML_to_JaggedArray:
                 post_text(new_running_ref, send_text)
 
 
-    def get_pages(self, text, ref):
-        print ref
-        for index, each_line in enumerate(text):
-            pages = re.findall("\[\d+[a-z]+\]", text[index])
-            for page in pages:
-                if ref+"."+str(index+1) in self.pages:
-                    self.pages[ref+"."+str(index+1)] += [page]
-                else:
-                    self.pages[ref+"."+str(index+1)] = [page]
-                text[index] = text[index].replace(page, "")
-        return text
+def get_pages(self, text, ref):
+    print ref
+    for index, each_line in enumerate(text):
+        pages = re.findall("\[\d+[a-z]+\]", text)
+        for page in pages:
+            if ref+"."+str(index+1) in pages_dict:
+                self.pages[ref+"."+str(index+1)] += [page]
+            else:
+                self.pages[ref+"."+str(index+1)] = [page]
+            text[index] = text[index].replace(page, "")
+    return text
 '''
 1. Need to remove pages from text before it gets posted
 2. But also need to keep track of the Ref of every time there is a page

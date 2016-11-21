@@ -41,19 +41,19 @@ def match():
     rashba = Ref("Rashi on Berakhot")
     gemara = library.get_index("Berakhot")
 
-    rashba_ref_list =  [ref for ref in rashba.all_subrefs() if ref.text('he').text != []]
+    rashba_ref_list = [ref for ref in rashba.all_subrefs() if ref.text('he').text != []]
     gemara_ref_list = gemara.all_section_refs()
 
     gemara_ind = 0
     for rashba_ref in rashba_ref_list:
         while gemara_ind < len(gemara_ref_list) and gemara_ref_list[gemara_ind].normal_last_section() != rashba_ref.normal_last_section():
             gemara_ind += 1
-        gemara_ref = gemara_ref_list[gemara_ind]
+        gemara_ref = rashba_ref_list[gemara_ind]
 
         rashba_tc = TextChunk(rashba_ref,"he")
         gemara_tc = TextChunk(gemara_ref,"he")
 
-        ref_map_with_abbrevs = dibur_hamatchil_matcher.match_ref(gemara_tc, rashba_tc, base_tokenizer=tokenize_words,
+        ref_map_with_abbrevs = dibur_hamatchil_matcher.match_ref(rashba_tc, gemara_tc,base_tokenizer=tokenize_words,
                                                                  dh_extract_method=dh_extraction_method, verbose=True,
                                                                  with_abbrev_matches=True)
         ref_map = [(tup[0], tup[1]) for tup in ref_map_with_abbrevs]
