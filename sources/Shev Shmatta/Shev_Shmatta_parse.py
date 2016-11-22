@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 #returns parsed text with acrostic-adjusted index
 def get_final_parsed_text():
     parsed_text = get_parsed_text()
-    parsed_text[0] = make_intro_accrostic(parsed_text[0])
+    parsed_text[0] = remove_braket_notes(make_intro_accrostic(parsed_text[0]))
     return parsed_text;
 
 #returns plain parsed text
@@ -40,25 +40,22 @@ def get_parsed_text():
     return final_text;
 
 def make_intro_accrostic(intro):
-    #intro startuing in the 3rd pararaph (index 2) is an acrostic (besides last paragraph), so we want to bold the first letter of those paragraphs. For last paragraph, acrostic includes
+    #intro starting in the 3rd pararaph (index 2) is an acrostic (besides last paragraph), so we want to bold the first letter of those paragraphs. For last paragraph, acrostic includes
     #first two letters of the paragraph ("הן" in "הכהן")
     return_intro =[]
     for index, paragraph in enumerate(intro):
         return_intro.append( bold_letters(paragraph, 1) if index>2 and index<len(intro)-2 else paragraph if index!=len(intro)-2 else bold_letters(paragraph, 2) )
-
-
-
-#intro[-1] = bold_letters(intro[-2],2)
-
     return return_intro;
 
 def bold_letters(string, index):
-    print type(string)
     string = string.decode('utf8')
-    print type(string)
     string = u"<b><big>"+string[0:index]+u"</b></big>"+string[index:]
     string = string.encode('utf8')
     return string
+
+def add_period_at_end_of_paragraph(s):
+    s = s.replace(":",".")
+    return s+"." if s.strip()[-1] != "." else s
 
 #get section links from wikisource page
 def get_chapter_links(url):
@@ -91,6 +88,7 @@ def get_subchapter_content(url):
     for index, chapter in enumerate(chapter_content):
         text = remove_html(str(chapter))
         if not_blank(text):
+            text = add_period_at_end_of_paragraph(text)
             return_array.append(text)
     
     
@@ -114,6 +112,12 @@ def remove_html(s):
     s = re.sub("[.*?]","",s)
     return s;
 
+def remove_braket_notes(list):
+    return_list =[]
+    for p in list:
+        return_list.append(re.sub('\[[0-9]{1,3}\]','',p))
+    return return_list
+
 def not_blank(s):
     return (len(s.replace(" ","").replace("\n","").replace("\r","").replace("\t",""))!=0);
 
@@ -129,14 +133,18 @@ def url_to_soup(url):
     c.perform()
     soup = BeautifulSoup(chapter_buf.getvalue(), 'html.parser')
     return soup;
+"""useful print method to test output
+"""
 
 text = get_final_parsed_text()
-
+for p in text[0]:
+    print p
+"""
 for index, paragraph in enumerate(text[0]):
     print str(index)+" "+paragraph
 for chapter in text[1:]:
     for subchapter in chapter:
         for index, paragraph in enumerate(subchapter):
             print str(index) + " "+ paragraph
-
+"""
 
