@@ -63,22 +63,23 @@ def get_parsed_text():
                 print str(index)+" "+str(index2)+" "+comment
 
     version = {
+        'title': "Malbim Beur Hamilot on Jonah",
         'versionTitle': 'Malbim on Jonah--Wikisource',
         'versionSource': 'https://he.wikisource.org/wiki/%D7%A7%D7%98%D7%92%D7%95%D7%A8%D7%99%D7%94:%D7%9E%D7%9C%D7%91%D7%99%22%D7%9D_%D7%A2%D7%9C_%D7%94%D7%9E%D7%A7%D7%A8%D7%90',
         'language': 'he',
         'text': Biur_array
     }
-    post_text_weak_connection('Malbim Beur Hamilot on Jonah', version)
+    post_text('Malbim Beur Hamilot on Jonah', version, weak_network=True)
 
     version = {
     'title':"Malbim on Jonah",
     'versionTitle': 'Malbim on Jonah--Wikisource',
-        'versionSource': 'https://he.wikisource.org/wiki/%D7%A7%D7%98%D7%92%D7%95%D7%A8%D7%99%D7%94:%D7%9E%D7%9C%D7%91%D7%99%22%D7%9D_%D7%A2%D7%9C_%D7%94%D7%9E%D7%A7%D7%A8%D7%90',
-        'language': 'he',
-        'text': Malbim_array
+    'versionSource': 'https://he.wikisource.org/wiki/%D7%A7%D7%98%D7%92%D7%95%D7%A8%D7%99%D7%94:%D7%9E%D7%9C%D7%91%D7%99%22%D7%9D_%D7%A2%D7%9C_%D7%94%D7%9E%D7%A7%D7%A8%D7%90',
+    'language': 'he',
+    'text': Malbim_array
     }
     
-    post_text_weak_connection('Malbim', version)
+    post_text('Malbim on Jonah', version, weak_network=True)
     
     return perek_split
     
