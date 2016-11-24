@@ -1,6 +1,10 @@
 {
     "missed_words": [
         {
+            "index": 1, 
+            "word": "מנא"
+        }, 
+        {
             "index": 2, 
             "word": "לן"
         }, 
@@ -11,6 +15,10 @@
         {
             "index": 26, 
             "word": "היא"
+        }, 
+        {
+            "index": 28, 
+            "word": "והא"
         }
     ], 
     "words": [
@@ -94,19 +102,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "מנא", 
-            "word_num": 2, 
-            "daf": "65a", 
             "word": "תנא", 
-            "line_num": 1, 
-            "cal_word": "מנא", 
-            "POS": "a", 
-            "class": "talmud", 
-            "pg_num": 65, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "היא", 
@@ -259,7 +256,7 @@
             "word": "להו", 
             "line_num": 5, 
             "cal_word": "להו", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 65, 
             "ms": "01", 
@@ -1203,28 +1200,8 @@
             "side": 1
         }, 
         {
-            "head_word": "הא", 
-            "word_num": 4, 
-            "daf": "65a", 
             "word": "והלא", 
-            "line_num": 30, 
-            "cal_word": "והא", 
-            "POS": "I", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
-            "pg_num": 65, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "דם", 

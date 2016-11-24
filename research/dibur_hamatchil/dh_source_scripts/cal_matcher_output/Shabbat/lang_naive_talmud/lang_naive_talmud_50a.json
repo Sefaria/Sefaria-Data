@@ -5,11 +5,19 @@
             "word": "הוא"
         }, 
         {
+            "index": 25, 
+            "word": "א\"ר"
+        }, 
+        {
             "index": 32, 
             "word": "מדקאמ"
         }, 
         {
             "index": 72, 
+            "word": "הוא"
+        }, 
+        {
+            "index": 75, 
             "word": "הוא"
         }, 
         {
@@ -486,7 +494,7 @@
             "word": "לה", 
             "line_num": 14, 
             "cal_word": "לה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 50, 
             "ms": "01", 
@@ -540,7 +548,7 @@
             "word": "לה", 
             "line_num": 14, 
             "cal_word": "לה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 50, 
             "ms": "01", 
@@ -1151,8 +1159,19 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אמר", 
+            "word_num": 6, 
+            "daf": "50a", 
             "word": "א\"ר", 
-            "class": "unknown"
+            "line_num": 31, 
+            "cal_word": "א\"ר", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 50, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "חנינא", 
@@ -1253,7 +1272,7 @@
             "word": "להם", 
             "line_num": 31, 
             "cal_word": "לה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 50, 
             "ms": "01", 
@@ -1801,7 +1820,7 @@
             "word": "דרב", 
             "line_num": 41, 
             "cal_word": "דרב", 
-            "POS": "N02", 
+            "POS": "PN", 
             "prefix_homograph": [
                 ""
             ], 
@@ -1977,7 +1996,7 @@
             "word": "להו", 
             "line_num": 42, 
             "cal_word": "להו", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 50, 
             "ms": "01", 
@@ -2411,7 +2430,7 @@
             "word": "דמר", 
             "line_num": 45, 
             "cal_word": "דמר", 
-            "POS": "N02", 
+            "POS": "PN", 
             "prefix_homograph": [
                 ""
             ], 
@@ -2469,7 +2488,7 @@
             "word": "ומר", 
             "line_num": 46, 
             "cal_word": "ומר", 
-            "POS": "N02", 
+            "POS": "PN", 
             "prefix_homograph": [
                 ""
             ], 
@@ -2684,7 +2703,7 @@
             "word": "הא", 
             "line_num": 47, 
             "cal_word": "הא", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 50, 
             "ms": "01", 

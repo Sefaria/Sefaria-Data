@@ -5,6 +5,10 @@
             "word": "שפיר"
         }, 
         {
+            "index": 7, 
+            "word": "דמי"
+        }, 
+        {
             "index": 10, 
             "word": "איסורא"
         }, 
@@ -17,12 +21,12 @@
             "word": "חזי"
         }, 
         {
-            "index": 27, 
-            "word": "דדאחו"
+            "index": 25, 
+            "word": "בין"
         }, 
         {
-            "index": 28, 
-            "word": "דדאחי"
+            "index": 26, 
+            "word": "בין"
         }, 
         {
             "index": 34, 
@@ -31,6 +35,10 @@
         {
             "index": 40, 
             "word": "תהוי"
+        }, 
+        {
+            "index": 41, 
+            "word": "ליה"
         }, 
         {
             "index": 42, 
@@ -233,7 +241,7 @@
             "word": "ליה", 
             "line_num": 5, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 66, 
             "ms": "01", 
@@ -442,19 +450,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "דמי", 
-            "word_num": 1, 
-            "daf": "66b", 
             "word": "נמי", 
-            "line_num": 9, 
-            "cal_word": "דמי", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 66, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "נהי", 
@@ -1751,16 +1748,56 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "דחי", 
+            "word_num": 6, 
+            "daf": "66b", 
             "word": "דדחו", 
-            "class": "unknown"
+            "line_num": 45, 
+            "cal_word": "דדאחו", 
+            "POS": "V01", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
+            "pg_num": 66, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 2
         }, 
         {
             "word": "שבת", 
             "class": "unknown"
         }, 
         {
+            "head_word": "דחי", 
+            "word_num": 9, 
+            "daf": "66b", 
             "word": "דדחו", 
-            "class": "unknown"
+            "line_num": 45, 
+            "cal_word": "דדאחי", 
+            "POS": "V01", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
+            "pg_num": 66, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 2
         }, 
         {
             "word": "טומאה", 

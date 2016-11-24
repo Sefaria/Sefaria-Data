@@ -14,7 +14,7 @@ def calClean(calIn):
     if type(calIn) == list:
         return [calClean(tempCalIn) for tempCalIn in calIn]
     else:
-        return re.sub(r'[!?<>{}\+=/\[\]\^\*\-\|#0-9\"\.]',"",calIn)
+        return re.sub(r'[!?<>{}\+/\[\]\^\*\|#0-9\"\.]',"",calIn)
 
 
 cal2hebDic = {
@@ -368,13 +368,13 @@ def fix_wrong_pos_in_dataset():
 
 
 def fixPNandGN():
-    ncaldb = open("noahcaldb2.txt", 'w')
+    ncaldb = open("noahcaldbfull.txt", 'w')
     numfixed = 0
-    with open("noahcaldb.txt", 'r') as f:
+    with open("bavliwordsfull.txt", 'r') as f:
         for line in f:
             line = line[:-1]
             lineObj = parseCalLine(line, False)
-            if ('-' in lineObj["word"] or '=' in lineObj["word"]) and lineObj["head_word"][-1] == '_':
+            if ('-' in lineObj["word"] or '=' in lineObj["word"]) and len(lineObj['head_word']) > 0 and lineObj["head_word"][-1] == '_':
                 prefix = lineObj["head_word"]
                 prefixPOS = lineObj["POS"]
                 prefixHomo = lineObj["homograph"]
@@ -391,10 +391,11 @@ def fixPNandGN():
                 lineObj["homograph"] = ''
 
                 new_line = writeCalLine(lineObj)
+                print new_line
                 ncaldb.write(new_line + '\n')
                 numfixed +=1
             else:
-                ncaldb.write(line + '\n')
+                ncaldb.write(writeCalLine(lineObj) + '\n')
 
     ncaldb.close()
     print numfixed

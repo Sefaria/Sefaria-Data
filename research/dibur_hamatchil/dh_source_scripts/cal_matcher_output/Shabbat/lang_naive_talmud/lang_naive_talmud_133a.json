@@ -413,7 +413,7 @@
             "word": "ליה", 
             "line_num": 10, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 133, 
             "ms": "01", 
@@ -849,8 +849,17 @@
             "line_num": 14, 
             "cal_word": "אהא", 
             "POS": "p01", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "א_"
+            ], 
             "pg_num": 133, 
+            "prefix_POS": [
+                "p02"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71002, 
@@ -1228,7 +1237,7 @@
             "word": "ליה", 
             "line_num": 23, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 133, 
             "ms": "01", 
@@ -1613,8 +1622,19 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "האי", 
+            "word_num": 5, 
+            "daf": "133a", 
             "word": "האי", 
-            "class": "unknown"
+            "line_num": 25, 
+            "cal_word": "האי", 
+            "POS": "p01", 
+            "class": "talmud", 
+            "pg_num": 133, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "בשר", 
@@ -1657,7 +1677,7 @@
             "word": "ליה", 
             "line_num": 25, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 133, 
             "ms": "01", 

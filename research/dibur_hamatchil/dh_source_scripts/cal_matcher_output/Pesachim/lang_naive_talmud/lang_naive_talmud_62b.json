@@ -13,6 +13,10 @@
             "word": "אשתראי"
         }, 
         {
+            "index": 15, 
+            "word": "אין"
+        }, 
+        {
             "index": 16, 
             "word": "שום"
         }, 
@@ -59,6 +63,10 @@
         {
             "index": 28, 
             "word": "פליגי"
+        }, 
+        {
+            "index": 29, 
+            "word": "אלא"
         }, 
         {
             "index": 30, 
@@ -113,6 +121,10 @@
             "word": "אמר"
         }, 
         {
+            "index": 59, 
+            "word": "ליה"
+        }, 
+        {
             "index": 60, 
             "word": "תנינא"
         }, 
@@ -123,6 +135,10 @@
         {
             "index": 62, 
             "word": "אמר"
+        }, 
+        {
+            "index": 63, 
+            "word": "ליה"
         }, 
         {
             "index": 64, 
@@ -189,8 +205,8 @@
             "word": "הא"
         }, 
         {
-            "index": 108, 
-            "word": "ארבע"
+            "index": 107, 
+            "word": "הוי"
         }, 
         {
             "index": 115, 
@@ -885,7 +901,7 @@
             "word": "לי", 
             "line_num": 19, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 62, 
             "ms": "01", 
@@ -957,7 +973,7 @@
             "word": "א\"ל", 
             "line_num": 20, 
             "cal_word": "אמר ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 62, 
             "ms": "01", 
@@ -1228,7 +1244,7 @@
             "word": "א\"ל", 
             "line_num": 24, 
             "cal_word": "אמר ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 62, 
             "ms": "01", 
@@ -1580,7 +1596,7 @@
             "word": "א\"ל", 
             "line_num": 28, 
             "cal_word": "אמר ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 62, 
             "ms": "01", 
@@ -1595,7 +1611,7 @@
             "word": "רבי", 
             "line_num": 28, 
             "cal_word": "אמר ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 62, 
             "ms": "01", 
@@ -1873,8 +1889,19 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "ארבעא", 
+            "word_num": 4, 
+            "daf": "62b", 
             "word": "בארבע", 
-            "class": "unknown"
+            "line_num": 43, 
+            "cal_word": "ארבע", 
+            "POS": "n01", 
+            "class": "talmud", 
+            "pg_num": 62, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 2
         }, 
         {
             "word": "עבודות", 
@@ -1969,19 +1996,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "הוי", 
-            "word_num": 2, 
-            "daf": "62b", 
             "word": "היא", 
-            "line_num": 43, 
-            "cal_word": "הוי", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 62, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "דמה", 

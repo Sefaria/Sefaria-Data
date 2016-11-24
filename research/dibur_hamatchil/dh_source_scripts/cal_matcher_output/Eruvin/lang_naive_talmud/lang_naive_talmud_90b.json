@@ -5,6 +5,10 @@
             "word": "כותיה"
         }, 
         {
+            "index": 5, 
+            "word": "דרב"
+        }, 
+        {
             "index": 9, 
             "word": "כוותיה"
         }, 
@@ -163,28 +167,8 @@
             "side": 2
         }, 
         {
-            "head_word": "רב", 
-            "word_num": 0, 
-            "daf": "90b", 
             "word": "כרב", 
-            "line_num": 5, 
-            "cal_word": "דרב", 
-            "POS": "PN", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 90, 
-            "prefix_POS": [
-                "p"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "אמר", 
@@ -208,7 +192,7 @@
             "word": "ליה", 
             "line_num": 5, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 90, 
             "ms": "01", 
@@ -232,10 +216,18 @@
             "side": 2
         }, 
         {
+            "word": "כרב", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "אמר", 
+            "class": "unknown"
+        }, 
+        {
             "head_word": "רב", 
             "word_num": 5, 
             "daf": "90b", 
-            "word": "כרב", 
+            "word": "רב", 
             "line_num": 5, 
             "cal_word": "דרב", 
             "POS": "PN", 
@@ -256,14 +248,6 @@
             "side": 2
         }, 
         {
-            "word": "אמר", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "רב", 
-            "class": "unknown"
-        }, 
-        {
             "word": "גידל", 
             "class": "unknown"
         }, 
@@ -272,8 +256,28 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "רב", 
+            "word_num": 0, 
+            "daf": "90b", 
             "word": "רב", 
-            "class": "unknown"
+            "line_num": 17, 
+            "cal_word": "לרב", 
+            "POS": "PN", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ל_"
+            ], 
+            "pg_num": 90, 
+            "prefix_POS": [
+                "p03"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71003, 
+            "side": 2
         }, 
         {
             "word": "חייא", 
@@ -584,28 +588,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "רב", 
-            "word_num": 0, 
-            "daf": "90b", 
             "word": "ורב", 
-            "line_num": 17, 
-            "cal_word": "לרב", 
-            "POS": "PN", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ל_"
-            ], 
-            "pg_num": 90, 
-            "prefix_POS": [
-                "p03"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "אליבא", 

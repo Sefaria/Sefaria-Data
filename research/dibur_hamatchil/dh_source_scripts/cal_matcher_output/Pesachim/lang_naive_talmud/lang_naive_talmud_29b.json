@@ -1,6 +1,10 @@
 {
     "missed_words": [
         {
+            "index": 3, 
+            "word": "ומר"
+        }, 
+        {
             "index": 8, 
             "word": "לאו"
         }, 
@@ -121,7 +125,7 @@
             "word": "דאמר", 
             "line_num": 4, 
             "cal_word": "דמר", 
-            "POS": "N02", 
+            "POS": "PN", 
             "prefix_homograph": [
                 ""
             ], 
@@ -189,28 +193,8 @@
             "side": 2
         }, 
         {
-            "head_word": "מר", 
-            "word_num": 3, 
-            "daf": "29b", 
             "word": "ומאן", 
-            "line_num": 5, 
-            "cal_word": "ומר", 
-            "POS": "N02", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
-            "pg_num": 29, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "דאמר", 
@@ -550,8 +534,28 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "הא", 
+            "word_num": 0, 
+            "daf": "29b", 
             "word": "והא", 
-            "class": "unknown"
+            "line_num": 12, 
+            "cal_word": "והא", 
+            "POS": "I", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 29, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 2
         }, 
         {
             "word": "רב", 
@@ -1059,7 +1063,7 @@
             "word": "רב", 
             "line_num": 26, 
             "cal_word": "דרב", 
-            "POS": "N02", 
+            "POS": "PN", 
             "prefix_homograph": [
                 ""
             ], 

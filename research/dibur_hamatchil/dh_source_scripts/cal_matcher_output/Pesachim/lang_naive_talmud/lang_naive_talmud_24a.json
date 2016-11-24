@@ -25,20 +25,28 @@
             "word": "והאי"
         }, 
         {
-            "index": 19, 
-            "word": "קמא"
-        }, 
-        {
             "index": 20, 
             "word": "נימא"
+        }, 
+        {
+            "index": 21, 
+            "word": "קרא"
         }, 
         {
             "index": 22, 
             "word": "ונישתוק"
         }, 
         {
+            "index": 33, 
+            "word": "דאו"
+        }, 
+        {
             "index": 34, 
             "word": "מדר"
+        }, 
+        {
+            "index": 35, 
+            "word": "הוה"
         }, 
         {
             "index": 38, 
@@ -858,11 +866,11 @@
         }, 
         {
             "head_word": "קרא", 
-            "word_num": 4, 
+            "word_num": 1, 
             "daf": "24a", 
             "word": "מקרא", 
-            "line_num": 26, 
-            "cal_word": "קרא", 
+            "line_num": 25, 
+            "cal_word": "מקרא", 
             "POS": "N02", 
             "class": "talmud", 
             "pg_num": 24, 
@@ -872,8 +880,19 @@
             "side": 1
         }, 
         {
+            "head_word": "קמא", 
+            "word_num": 0, 
+            "daf": "24a", 
             "word": "קמא", 
-            "class": "unknown"
+            "line_num": 26, 
+            "cal_word": "קמא", 
+            "POS": "A02", 
+            "class": "talmud", 
+            "pg_num": 24, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "word": "ואיפוך", 
@@ -1229,13 +1248,13 @@
             "side": 1
         }, 
         {
-            "head_word": "הוי", 
-            "word_num": 1, 
+            "head_word": "ל_", 
+            "word_num": 2, 
             "daf": "24a", 
             "word": "ליה", 
-            "line_num": 32, 
-            "cal_word": "הוה", 
-            "POS": "V01", 
+            "line_num": 31, 
+            "cal_word": "ליה", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 24, 
             "ms": "01", 
@@ -1244,28 +1263,8 @@
             "side": 1
         }, 
         {
-            "head_word": "או", 
-            "word_num": 5, 
-            "daf": "24a", 
             "word": "לאו", 
-            "line_num": 31, 
-            "cal_word": "דאו", 
-            "POS": "c", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 24, 
-            "prefix_POS": [
-                "p"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "גופא", 

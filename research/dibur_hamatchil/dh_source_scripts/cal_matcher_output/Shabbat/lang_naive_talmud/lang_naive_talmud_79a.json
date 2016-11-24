@@ -5,8 +5,12 @@
             "word": "פרענא"
         }, 
         {
-            "index": 29, 
-            "word": "עפיץ"
+            "index": 28, 
+            "word": "ולא"
+        }, 
+        {
+            "index": 30, 
+            "word": "ולא"
         }
     ], 
     "words": [
@@ -1042,7 +1046,7 @@
             "word": "הא", 
             "line_num": 27, 
             "cal_word": "הא", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 79, 
             "ms": "01", 
@@ -1081,7 +1085,7 @@
             "word": "הא", 
             "line_num": 27, 
             "cal_word": "הא", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 79, 
             "ms": "01", 
@@ -1582,28 +1586,8 @@
             "side": 1
         }, 
         {
-            "head_word": "לא", 
-            "word_num": 6, 
-            "daf": "79a", 
             "word": "ודלא", 
-            "line_num": 34, 
-            "cal_word": "ולא", 
-            "POS": "a", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
-            "pg_num": 79, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "קמח", 
@@ -1625,8 +1609,19 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אפצ", 
+            "word_num": 5, 
+            "daf": "79a", 
             "word": "עפיץ", 
-            "class": "unknown"
+            "line_num": 34, 
+            "cal_word": "עפיץ", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 79, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "head_word": "כמה ד_", 

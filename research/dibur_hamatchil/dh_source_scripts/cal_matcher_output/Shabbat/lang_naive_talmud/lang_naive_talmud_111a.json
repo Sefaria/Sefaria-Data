@@ -1,8 +1,8 @@
 {
     "missed_words": [
         {
-            "index": 9, 
-            "word": "והכתי"
+            "index": 8, 
+            "word": "להו"
         }, 
         {
             "index": 33, 
@@ -516,7 +516,7 @@
             "word": "ליה", 
             "line_num": 18, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 111, 
             "ms": "01", 
@@ -554,7 +554,7 @@
             "word": "דהוא", 
             "line_num": 19, 
             "cal_word": "דהוא", 
-            "POS": "p", 
+            "POS": "p01", 
             "prefix_homograph": [
                 ""
             ], 
@@ -706,8 +706,28 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "כתב", 
+            "word_num": 0, 
+            "daf": "111a", 
             "word": "והכתיב", 
-            "class": "unknown"
+            "line_num": 22, 
+            "cal_word": "והכתי", 
+            "POS": "V01", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 111, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "כחומץ", 
@@ -762,7 +782,7 @@
             "word": "הא", 
             "line_num": 23, 
             "cal_word": "הא", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 111, 
             "ms": "01", 
@@ -805,7 +825,7 @@
             "word": "הא", 
             "line_num": 23, 
             "cal_word": "הא", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 111, 
             "ms": "01", 
@@ -883,7 +903,7 @@
             "word": "הא", 
             "line_num": 24, 
             "cal_word": "הא", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 111, 
             "ms": "01", 
@@ -898,7 +918,7 @@
             "word": "והא", 
             "line_num": 24, 
             "cal_word": "והא", 
-            "POS": "p", 
+            "POS": "p01", 
             "prefix_homograph": [
                 ""
             ], 
@@ -946,7 +966,7 @@
             "word": "הא", 
             "line_num": 24, 
             "cal_word": "והא", 
-            "POS": "p", 
+            "POS": "p01", 
             "prefix_homograph": [
                 ""
             ], 

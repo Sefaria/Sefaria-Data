@@ -33,10 +33,6 @@
             "word": "משום"
         }, 
         {
-            "index": 31, 
-            "word": "דלא"
-        }, 
-        {
             "index": 32, 
             "word": "ידעיתו"
         }, 
@@ -49,16 +45,16 @@
             "word": "תעבדו"
         }, 
         {
+            "index": 35, 
+            "word": "להו"
+        }, 
+        {
             "index": 36, 
             "word": "תקטלונהו"
         }, 
         {
             "index": 37, 
             "word": "כולהו"
-        }, 
-        {
-            "index": 38, 
-            "word": "לא"
         }, 
         {
             "index": 39, 
@@ -2368,7 +2364,7 @@
             "word": "דא\"ל", 
             "line_num": 42, 
             "cal_word": "דאמ ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "prefix_homograph": [
                 ""
             ], 
@@ -2480,7 +2476,7 @@
             "word": "מינייכו", 
             "line_num": 42, 
             "cal_word": "מניכו", 
-            "POS": "p", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 87, 
             "ms": "01", 
@@ -2809,13 +2805,13 @@
             "side": 2
         }, 
         {
-            "head_word": "עילוי", 
-            "word_num": 9, 
+            "head_word": "ל_", 
+            "word_num": 8, 
             "daf": "87b", 
             "word": "ליה", 
-            "line_num": 44, 
-            "cal_word": "עלויהו", 
-            "POS": "p02", 
+            "line_num": 43, 
+            "cal_word": "ליה", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 87, 
             "ms": "01", 
@@ -2972,8 +2968,19 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "לא", 
+            "word_num": 7, 
+            "daf": "87b", 
             "word": "לא", 
-            "class": "unknown"
+            "line_num": 44, 
+            "cal_word": "לא", 
+            "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 87, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 2
         }, 
         {
             "word": "הגלה", 

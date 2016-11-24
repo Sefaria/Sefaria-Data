@@ -1,6 +1,14 @@
 {
     "missed_words": [
         {
+            "index": 11, 
+            "word": "נמי"
+        }, 
+        {
+            "index": 13, 
+            "word": "דאסירי"
+        }, 
+        {
             "index": 17, 
             "word": "הנך"
         }, 
@@ -710,19 +718,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "נמי", 
-            "word_num": 3, 
-            "daf": "61b", 
             "word": "נאמר", 
-            "line_num": 53, 
-            "cal_word": "נמי", 
-            "POS": "a", 
-            "class": "talmud", 
-            "pg_num": 61, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71001, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "בכל", 
@@ -1627,8 +1624,19 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "הוי", 
+            "word_num": 1, 
+            "daf": "61b", 
             "word": "היה", 
-            "class": "unknown"
+            "line_num": 57, 
+            "cal_word": "הוה", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 61, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71001, 
+            "side": 2
         }, 
         {
             "word": "והיו", 
@@ -2411,28 +2419,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אסיר", 
-            "word_num": 6, 
-            "daf": "61b", 
             "word": "אסור", 
-            "line_num": 53, 
-            "cal_word": "דאסירי", 
-            "POS": "A03", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 61, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71001, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "מזרח", 
@@ -2603,19 +2591,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "הוי", 
-            "word_num": 1, 
-            "daf": "61b", 
             "word": "הוו", 
-            "line_num": 57, 
-            "cal_word": "הוה", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 61, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71001, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "שדי", 
@@ -2639,7 +2616,7 @@
             "word": "ליה", 
             "line_num": 57, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 61, 
             "ms": "01", 

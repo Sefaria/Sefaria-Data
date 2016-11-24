@@ -1,5 +1,10 @@
 {
-    "missed_words": [], 
+    "missed_words": [
+        {
+            "index": 13, 
+            "word": "מכולתא"
+        }
+    ], 
     "words": [
         {
             "word": "שהגיעו", 
@@ -590,7 +595,7 @@
             "word": "להו", 
             "line_num": 14, 
             "cal_word": "להו", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 43, 
             "ms": "01", 
@@ -629,19 +634,8 @@
             "side": 1
         }, 
         {
-            "head_word": "מכולתא", 
-            "word_num": 1, 
-            "daf": "43a", 
             "word": "מתכילתא", 
-            "line_num": 15, 
-            "cal_word": "מכולתא", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "pg_num": 43, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "שמע", 
@@ -704,7 +698,7 @@
             "word": "ליה", 
             "line_num": 15, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 43, 
             "ms": "01", 

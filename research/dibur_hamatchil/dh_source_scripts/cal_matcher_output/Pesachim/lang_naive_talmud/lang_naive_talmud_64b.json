@@ -5,6 +5,10 @@
             "word": "טעמא"
         }, 
         {
+            "index": 6, 
+            "word": "קאמ"
+        }, 
+        {
             "index": 7, 
             "word": "רחמ"
         }, 
@@ -31,6 +35,10 @@
         {
             "index": 55, 
             "word": "הכי"
+        }, 
+        {
+            "index": 58, 
+            "word": "אקטורינין"
         }, 
         {
             "index": 68, 
@@ -325,13 +333,13 @@
             "side": 2
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 2, 
+            "head_word": "או", 
+            "word_num": 4, 
             "daf": "64b", 
             "word": "אי", 
             "line_num": 10, 
-            "cal_word": "קאמ", 
-            "POS": "V01", 
+            "cal_word": "או", 
+            "POS": "c", 
             "class": "talmud", 
             "pg_num": 64, 
             "ms": "01", 
@@ -348,19 +356,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "או", 
-            "word_num": 4, 
-            "daf": "64b", 
             "word": "אי", 
-            "line_num": 10, 
-            "cal_word": "או", 
-            "POS": "c", 
-            "class": "talmud", 
-            "pg_num": 64, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "בזה", 
@@ -1744,19 +1741,8 @@
             "side": 2
         }, 
         {
-            "head_word": "קטר", 
-            "word_num": 5, 
-            "daf": "64b", 
             "word": "אקטורה", 
-            "line_num": 28, 
-            "cal_word": "אקטורינין", 
-            "POS": "V03", 
-            "class": "talmud", 
-            "pg_num": 64, 
-            "ms": "01", 
-            "homograph": "#2", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "הדר", 
@@ -1887,7 +1873,7 @@
         }, 
         {
             "head_word": "חד", 
-            "word_num": 2, 
+            "word_num": 1, 
             "daf": "64b", 
             "word": "חדא", 
             "line_num": 30, 
@@ -1901,8 +1887,19 @@
             "side": 2
         }, 
         {
+            "head_word": "חד", 
+            "word_num": 2, 
+            "daf": "64b", 
             "word": "חדא", 
-            "class": "unknown"
+            "line_num": 30, 
+            "cal_word": "חדא", 
+            "POS": "n01", 
+            "class": "talmud", 
+            "pg_num": 64, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 2
         }, 
         {
             "word": "והתניא", 
@@ -2032,7 +2029,7 @@
             "word": "ליה", 
             "line_num": 31, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 64, 
             "ms": "01", 
@@ -2955,7 +2952,7 @@
             "word": "ליה", 
             "line_num": 40, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 64, 
             "ms": "01", 

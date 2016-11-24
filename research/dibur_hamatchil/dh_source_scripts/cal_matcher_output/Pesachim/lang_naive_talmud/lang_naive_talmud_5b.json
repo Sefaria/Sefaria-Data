@@ -33,6 +33,10 @@
             "word": "מתנס"
         }, 
         {
+            "index": 48, 
+            "word": "כדידכו"
+        }, 
+        {
             "index": 62, 
             "word": "רבי"
         }, 
@@ -1364,7 +1368,7 @@
             "word": "והאי", 
             "line_num": 40, 
             "cal_word": "האיי", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 5, 
             "ms": "01", 
@@ -1448,7 +1452,7 @@
             "word": "לה", 
             "line_num": 41, 
             "cal_word": "לה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 5, 
             "ms": "01", 
@@ -1836,7 +1840,7 @@
             "word": "להו", 
             "line_num": 45, 
             "cal_word": "להו", 
-            "POS": "p03", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 5, 
             "ms": "01", 
@@ -2028,19 +2032,8 @@
             "side": 2
         }, 
         {
-            "head_word": "דיד_", 
-            "word_num": 4, 
-            "daf": "5b", 
             "word": "כדילכון", 
-            "line_num": 46, 
-            "cal_word": "כדידכו", 
-            "POS": "p02", 
-            "class": "talmud", 
-            "pg_num": 5, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "דמי", 
@@ -2121,28 +2114,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 3, 
-            "daf": "5b", 
             "word": "דמי", 
-            "line_num": 47, 
-            "cal_word": "דאמ", 
-            "POS": "V01", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 5, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "אלא", 
@@ -2184,15 +2157,24 @@
             "side": 2
         }, 
         {
-            "head_word": "דמי", 
-            "word_num": 8, 
+            "head_word": "אמר", 
+            "word_num": 0, 
             "daf": "5b", 
             "word": "דאמר", 
-            "line_num": 47, 
-            "cal_word": "דאמו", 
+            "line_num": 48, 
+            "cal_word": "דאמ", 
             "POS": "V01", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
             "pg_num": 5, 
+            "prefix_POS": [
+                "c"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71004, 

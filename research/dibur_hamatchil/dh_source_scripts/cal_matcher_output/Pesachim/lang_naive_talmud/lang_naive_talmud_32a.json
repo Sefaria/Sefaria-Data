@@ -1,8 +1,16 @@
 {
     "missed_words": [
         {
+            "index": 12, 
+            "word": "אלא"
+        }, 
+        {
             "index": 32, 
             "word": "אמרינן"
+        }, 
+        {
+            "index": 37, 
+            "word": "אכל"
         }, 
         {
             "index": 39, 
@@ -348,15 +356,24 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אלא", 
+            "head_word": "לא", 
             "word_num": 0, 
             "daf": "32a", 
             "word": "דלא", 
-            "line_num": 8, 
-            "cal_word": "אלא", 
-            "POS": "c", 
+            "line_num": 7, 
+            "cal_word": "דלא", 
+            "POS": "a", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
             "pg_num": 32, 
+            "prefix_POS": [
+                "c"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71004, 
@@ -908,19 +925,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אכל", 
-            "word_num": 0, 
-            "daf": "32a", 
             "word": "דאכיל", 
-            "line_num": 14, 
-            "cal_word": "אכל", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 32, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "גריוא", 

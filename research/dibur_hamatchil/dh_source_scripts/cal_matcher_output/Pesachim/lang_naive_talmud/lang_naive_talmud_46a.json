@@ -1,6 +1,10 @@
 {
     "missed_words": [
         {
+            "index": 13, 
+            "word": "אין"
+        }, 
+        {
             "index": 23, 
             "word": "וקא"
         }, 
@@ -192,7 +196,7 @@
             "word": "בהאי", 
             "line_num": 3, 
             "cal_word": "בהאי", 
-            "POS": "p", 
+            "POS": "p01", 
             "prefix_homograph": [
                 ""
             ], 
@@ -318,19 +322,8 @@
             "side": 1
         }, 
         {
-            "head_word": "אינ", 
-            "word_num": 1, 
-            "daf": "46a", 
             "word": "אם", 
-            "line_num": 6, 
-            "cal_word": "אין", 
-            "POS": "a", 
-            "class": "talmud", 
-            "pg_num": 46, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "מקפיד", 
@@ -390,7 +383,7 @@
             "word": "לה", 
             "line_num": 7, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 46, 
             "ms": "01", 
@@ -674,7 +667,7 @@
             "word": "לה", 
             "line_num": 11, 
             "cal_word": "לה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 46, 
             "ms": "01", 
@@ -952,7 +945,7 @@
             "word": "בהאי", 
             "line_num": 17, 
             "cal_word": "בהאי", 
-            "POS": "p", 
+            "POS": "p01", 
             "prefix_homograph": [
                 ""
             ], 
@@ -1046,7 +1039,7 @@
             "word": "לה", 
             "line_num": 18, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 46, 
             "ms": "01", 

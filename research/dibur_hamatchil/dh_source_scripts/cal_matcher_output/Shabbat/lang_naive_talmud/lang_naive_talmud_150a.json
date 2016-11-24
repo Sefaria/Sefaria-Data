@@ -1024,7 +1024,7 @@
             "word": "ליה", 
             "line_num": 34, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 150, 
             "ms": "01", 
@@ -1033,25 +1033,28 @@
             "side": 1
         }, 
         {
-            "head_word": "ד_", 
+            "head_word": "רב", 
             "word_num": 3, 
             "daf": "150a", 
             "word": "לכדרב", 
             "line_num": 34, 
             "cal_word": "לכדרב", 
-            "POS": "p", 
+            "POS": "PN", 
             "prefix_homograph": [
+                "", 
                 "", 
                 ""
             ], 
             "class": "talmud", 
             "prefix": [
                 "ל_", 
-                "כ_"
+                "כ_", 
+                "ד_"
             ], 
             "pg_num": 150, 
             "prefix_POS": [
                 "p03", 
+                "p", 
                 "p"
             ], 
             "ms": "01", 

@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
-import re
+import regex as re
 import math as mathy
 import bisect
 import csv
 import codecs
 from sefaria.model import *
-from research.talmud_pos_research.language_classifier import language_tools
+from sefaria.utils.hebrew import gematria
+from research.talmud_pos_research.language_classifier.language_tools import weighted_levenshtein, weighted_levenshtein_cost
+from num2words import num2words
+
+
 
 fdebug = False
 # constants for generating distance score. a 0 means a perfect match, although it will never be 0, due to the smoothing.
@@ -44,13 +48,14 @@ class TextMatch:
         self.abbrev_matches = [] #list of tuples of range of abbreviation found, if any
 
 class AbbrevMatch:
-    def __init__(self,abbrev,expanded,rashiRange,gemaraRange,contextBefore,contextAfter):
+    def __init__(self,abbrev,expanded,rashiRange,gemaraRange,contextBefore,contextAfter,isNumber):
         self.abbrev = abbrev
         self.expanded = expanded
         self.rashiRange = rashiRange
         self.gemaraRange = gemaraRange
         self.contextBefore = contextBefore
         self.contextAfter = contextAfter
+        self.isNumber = isNumber
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             #TODO i feel like gemaraRange should be compared here also, but apparently that wasn't right
@@ -66,16 +71,78 @@ class AbbrevMatch:
 
 # should be private?
 class GemaraDaf:
-    def __init__(self,word_list,comments,dh_extraction_method=lambda x: x,prev_matched_results=None):
+    def __init__(self,word_list,comments,dh_extraction_method=lambda x: x,prev_matched_results=None,dh_split=None):
         self.allWords = word_list
         self.gemaraText = " ".join(self.allWords)
         self.wordhashes = CalculateHashes(self.allWords)
         self.allRashi = []
+        self.did_dh_split = not dh_split is None
+        self.dh_map = []
+        # dh split
+        dh_list = []
+        if dh_split:
+            new_comments = []
+            for i,comment in enumerate(comments):
+                dh = dh_extraction_method(comment)
+                sub_dhs = dh_split(dh)
+                if sub_dhs:
+                    new_comments += [comment for _ in sub_dhs]
+                    dh_list += sub_dhs
+                    self.dh_map += [dh for _ in sub_dhs]
+                else:
+                    new_comments.append(comment)
+                    dh_list.append(dh)
+                    self.dh_map.append(None)
+            comments = new_comments
+        else:
+            dh_list = [dh_extraction_method(comm) for comm in comments]
+
         count = 0
         for i,comm in enumerate(comments):
             prev_result = prev_matched_results[i] if prev_matched_results else (-1,-1)
-            self.allRashi.append(RashiUnit(dh_extraction_method(comm),comm,count,prev_result))
+            self.allRashi.append(RashiUnit(dh_list[i],comm,count,prev_result))
             count+=1
+
+
+    def mergeRashis(self):
+        if not self.did_dh_split: return
+        new_all_rashi = []
+        i = 0
+        while i < len(self.allRashi):
+            if self.dh_map[i]:
+                old_dh = self.dh_map[i]
+                sub_rashis = []
+                start_i = i
+                while i < len(self.allRashi) and self.dh_map[i] == old_dh:
+                    if self.allRashi[i].startWord != -1:
+                        sub_rashis.append(self.allRashi[i])
+                    i += 1
+                if len(sub_rashis) == 0:
+                    new_all_rashi.append(self.allRashi[start_i]) #just append the first one
+                else:
+                    new_start_word = len(self.gemaraText)
+                    new_end_word = -1
+                    new_matching_text = u'חדש:'
+                    for sub_ru in sub_rashis:
+                        print u"Old {}".format(sub_ru)
+                        new_matching_text += u" " + sub_ru.matchedGemaraText
+                        if sub_ru.startWord < new_start_word:
+                            new_start_word = sub_ru.startWord
+                        if sub_ru.endWord > new_end_word:
+                            new_end_word = sub_ru.endWord
+
+                    new_ru = RashiUnit(old_dh,sub_rashis[0].fullText,sub_rashis[0].place)
+                    new_ru.startWord = new_start_word
+                    new_ru.endWord = new_end_word
+                    new_ru.matchedGemaraText = new_matching_text
+                    print u"New {}".format(new_ru)
+
+                    new_all_rashi.append(new_ru)
+            else:
+                new_all_rashi.append(self.allRashi[i])
+                i += 1
+        self.allRashi = new_all_rashi
+
 
 
 class RashiUnit:
@@ -87,15 +154,16 @@ class RashiUnit:
         self.abbrev_matches = []
         self.startingText = startingText
 
+
         normalizedCV = re.sub(ur" ו" + u"?" + u"כו" + u"'?" + u"$", u"", self.startingText).strip()
         normalizedCV = re.sub(ur"^(גמ|גמרא|מתני|מתניתין|משנה)'? ", u"", normalizedCV)
 
         # if it starts with הג, then take just 3 words afterwords
-        if self.startingText.startswith(u"ה\"ג"):
+        if self.startingText.startswith(u"ה\"ג") or self.startingText.startswith(u"ה״ג"):
             normalizedCV = re.search(ur"[^ ]+ ([^ ]+( [^ ]+)?( [^ ]+)?)", normalizedCV).group(1)
 
         # // now remove all non-letters, allowing just quotes
-        normalizedCV = re.sub(ur"[^א-ת \"]", u"", normalizedCV).strip()
+        normalizedCV = re.sub(ur"[^א-ת \"״]", u"", normalizedCV).strip()
 
         self.startingTextNormalized = normalizedCV
         self.fullText = fullText
@@ -103,15 +171,24 @@ class RashiUnit:
         self.endWord = prev_result[1]
         self.cvWordcount = len(re.split(r"\s+",normalizedCV))
         self.matchedGemaraText = ""
+    def __str__(self):
+        return u"{}: ({},{}) place = {}".format(self.startingText,self.startWord,self.endWord, self.place)
 
 
-def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,verbose=False, word_threshold=0.27,char_threshold=0.2,with_abbrev_matches=False,boundaryFlexibility=0):
+def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,verbose=False, word_threshold=0.27,char_threshold=0.2,
+              with_abbrev_matches=False,boundaryFlexibility=0,dh_split=None, rashi_filter=None, strict_boundaries=False, place_all=False):
     """
     base_text: TextChunk
     comments: TextChunk or list of comment strings
     base_tokenizer: f(string)->list(string)
     dh_extract_method: f(string)->string
-    boundaryFlexibility: int which indicates how much leeway there is in the order of rashis
+    word_threshold: float - percentage of mismatched words to allow. higher means allow more non-matching words in a successful match (range is [0,1])
+    char_threshold: float - roughly a percentage of letters that can differ in a word match (not all letters are equally weighted so its not a linear percentage). higher allows more differences within a word match. (range is [0,1])
+    with_abbrev_matches: True if you want a second return value which is a list AbbrevMatch objects (see class definition above)
+    dh_split: prototype, split long dibur hamatchil
+    rashi_filter: function(str) -> bool , if False, remove rashi from matching
+    boundaryFlexibility: int which indicates how much leeway there is in the order of rashis. higher values allow more disorder in matches. 0 means the start positions of matches must be in order. a high value (higher than the number of words in the doc) means order doesn't matter
+
     :returns: [(Ref, Ref)] - base text, commentary
          or
          [Ref] - base text refs - if comments is a list
@@ -131,26 +208,73 @@ def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,
     #get all non-empty segment refs for 'comments'
     if type(comments) == TextChunk:
         comm_ref = comments._oref
-        if comm_ref.get_state_ja("he").depth() == 2:
-            sub_ja = comm_ref.get_state_ja("he").subarray_with_ref(comm_ref)
-            comment_ref_list = [comm_ref.subref(i + 1) for k in sub_ja.non_empty_sections() for i in k]
+        comm_depth = comm_ref.get_state_ja("he").depth()
+        if comm_depth == 2:
+            _, comment_ref_list = comments.text_index_map(base_tokenizer)
+            #sub_ja = comm_ref.get_state_ja("he").subarray_with_ref(comm_ref)
+            #comment_ref_list = [comm_ref.subref(i + 1) for k in sub_ja.non_empty_sections() for i in k]
             comment_list = [temp_comm for temp_comm in comments.text]
-        elif comm_ref.get_state_ja("he").depth() == 3:
-            comment_ind_list, comment_ref_list = base_text.text_index_map(base_tokenizer)
+        elif comm_depth == 3:
+            _, comment_ref_list = comments.text_index_map(base_tokenizer)
             comment_list = [temp_comm for temp_sec in comments.text for temp_comm in temp_sec]
+        else:
+            raise TypeError("'comments' as a TextChunk needs to be either depth 2 or 3. You passed depth {}".format(comm_depth))
+
+        if rashi_filter:
+            filter_out = filter(lambda x: rashi_filter(x[0]) if rashi_filter(x[0]) else None,zip(comment_list,comment_ref_list))
+            comment_list = [x[0] for x in filter_out]
+            comment_ref_list = [x[1] for x in filter_out]
+
     elif type(comments) == list:
         comment_list = comments
         comment_ref_list = None
+        if rashi_filter:
+            comment_list = filter(lambda x: rashi_filter(x) if rashi_filter(x) else None, comment_list)
+
     else:
         raise TypeError("'comments' needs to be either a TextChunk or a list of comment strings")
 
+
+
+
+    matched = match_text(bas_word_list,comment_list,dh_extract_method,verbose,word_threshold,char_threshold,with_abbrev_matches=with_abbrev_matches,boundaryFlexibility=boundaryFlexibility,dh_split=dh_split,rashi_filter=rashi_filter,strict_boundaries=strict_boundaries,place_all=place_all)
+    start_end_map = matched['matches']
+    text_matches = matched['match_text']
     if with_abbrev_matches:
-        start_end_map,abbrev_matches = match_text(bas_word_list,comment_list,dh_extract_method,verbose,word_threshold,char_threshold,with_abbrev_matches=with_abbrev_matches,boundaryFlexibility=boundaryFlexibility)
-    else:
-        start_end_map = match_text(bas_word_list,comment_list,dh_extract_method,verbose,word_threshold,char_threshold,boundaryFlexibility=boundaryFlexibility)
+        abbrev_matches = matched['abbrevs']
+    if place_all:
+        fixed = matched['fixed']
+
+    if strict_boundaries:
+        for ise, se in enumerate(start_end_map):
+            # if it slightly overlaps, correct the boundary
+            # (49, 64) (65, 80)
+            # (49, 65) (66, 80)
+            if ise > 0 and start_end_map[ise - 1][0] != -1 and \
+                            se[0] != -1 and \
+                            se[0] <= start_end_map[ise - 1][1]:
+
+                # you have two options how to fix this. choose the one that doesn't cause a ref split
+                # se[0] = start_end_map[ise - 1][1] + 1
+                # start_end_map[ise - 1] = se[0] - 1
+                start = start_end_map[ise - 1][1] - 1
+                end = se[0]
+                mid = (1.0*start + end) / 2
+                possibilities = [(p, p+1) for p in xrange(start,end + 1)]
+                possibilities.sort(key=lambda x: abs(x[0] - mid))
+
+                #print "Before {} After {}".format(start_end_map[ise - 1], se)
+                #print "Start {} End {} Mid {}".format(start, end, mid)
+                #print "Possibs {}".format(possibilities)
+                for p in possibilities:
+                    start_ref = bas_ref_list[bisect.bisect_right(bas_ind_list,p[0])-1]
+                    end_ref = bas_ref_list[bisect.bisect_right(bas_ind_list,p[1])-1]
+                    if start_ref != end_ref:
+                        start_end_map[ise - 1] = (start_end_map[ise - 1][0], p[0])
+                        start_end_map[ise] = (p[1], start_end_map[ise][1])
+                        break
 
     ref_matches = []
-    prev_ref = None
     for i,x in enumerate(start_end_map):
         start = x[0]
         end = x[1]
@@ -164,17 +288,22 @@ def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,
             else:
                 matched_ref = start_ref.to(end_ref)
 
-            #if verbose and prev_ref and prev_ref.overlaps(matched_ref):
-            #    print u"\t{} overlaps {}. \n\t\tPREV\n\t\t\tSEFARIA:({})\n\t\t\tKOREN({})\n\t\tNEXT\n\t\t\tSEFARIA:({})\n\t\t\tKOREN({})".format(prev_ref,matched_ref,TextChunk(prev_ref,"he").as_string(),comment_list[i-1],TextChunk(matched_ref,"he").as_string(),comment_list[i])
-
         ref_matches.append(matched_ref)
-        prev_ref = matched_ref
-    if with_abbrev_matches:
-        return zip(ref_matches, comment_ref_list,abbrev_matches) if comment_ref_list else zip(ref_matches,abbrev_matches)
-    else:
-        return zip(ref_matches,comment_ref_list) if comment_ref_list else ref_matches
 
-def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,word_threshold=0.27,char_threshold=0.2,prev_matched_results=None,with_abbrev_matches=False,boundaryFlexibility=0):
+
+    ret = {'matches': ref_matches, 'match_word_indices': start_end_map, 'match_text': text_matches}
+    if comment_ref_list:
+        ret['comment_refs'] = comment_ref_list
+    if with_abbrev_matches:
+        ret['abbrevs'] = abbrev_matches
+    if place_all:
+        ret['fixed'] = fixed
+
+    return ret
+
+def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,word_threshold=0.27,char_threshold=0.2,
+               prev_matched_results=None,with_abbrev_matches=False,boundaryFlexibility=0,dh_split=None,rashi_filter=None,
+               strict_boundaries=False, place_all=True):
     """
     base_text: list - list of words
     comments: list - list of comment strings
@@ -183,21 +312,25 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
     with_abbrev_matches: True if you want a second return value which is a list AbbrevMatch objects (see class definition above)
     returns: [(start,end)] - start and end index of each comment. optionally also returns abbrev_ranges (see with_abbrev_ranges parameter)
     """
+    if rashi_filter:
+        comments = filter(lambda x: rashi_filter(x) if rashi_filter(x) else None, comments)
 
     InitializeHashTables()
 
-    curDaf = GemaraDaf(base_text,comments,dh_extract_method,prev_matched_results)
-
+    curDaf = GemaraDaf(base_text,comments,dh_extract_method,prev_matched_results,dh_split)
     #now we go through each rashi, and find all potential matches for each, with a rating
     for irashi,ru in enumerate(curDaf.allRashi):
         if ru.startWord != -1:
             #this rashi was initialized with the `prev_matched_results` list and should be ignored with regards to matching
             continue
 
+        if ru.place == len(curDaf.allRashi) - 2:
+            pass
+
         startword,endword = (0,len(curDaf.allWords)) if prev_matched_results == None else GetRashiBoundaries(curDaf.allRashi,ru.place,len(curDaf.allWords),boundaryFlexibility)[0:2]
         approxMatches = GetAllApproximateMatches(curDaf,ru,startword,endword,word_threshold,char_threshold)
-        approxAbbrevMatches = GetAllApproximateMatchesWithAbbrev(curDaf, ru, startword, endword,char_threshold)
-        approxSkipWordMatches = GetAllApproximateMatchesWithWordSkip(curDaf, ru, startword, endword,char_threshold)
+        approxAbbrevMatches = GetAllApproximateMatchesWithAbbrev(curDaf, ru, startword, endword, word_threshold, char_threshold)
+        approxSkipWordMatches = GetAllApproximateMatchesWithWordSkip(curDaf, ru, startword, endword, word_threshold, char_threshold)
 
         ru.rashimatches += approxMatches + approxAbbrevMatches
 
@@ -231,7 +364,6 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
 
         #take top disambiguous rashi
         topru = rashisByDisambiguity[0]
-
         #get its boundaries
         startBound,endBound,prevMatchedRashi,nextMatchedRashi = GetRashiBoundaries(curDaf.allRashi,topru.place,len(curDaf.allWords),boundaryFlexibility)
 
@@ -265,14 +397,15 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                 continue
             rashiUnitsCandidates.append(ru)
 
+
         # now we figure out how many of these we want to process
         # we want to take the top three at the least, seven at most, and anything that fits into the current threshold.
         ruToProcess = []
-        threshold = max(rashiUnitsCandidates[0].disambiguationScore -5, rashiUnitsCandidates[0].disambiguationScore/2)
-        thresholdBediavad = rashiUnitsCandidates[0].disambiguationScore /2
+        threshold = max(rashiUnitsCandidates[0].disambiguationScore - 5, rashiUnitsCandidates[0].disambiguationScore/2)
+        thresholdBediavad = rashiUnitsCandidates[0].disambiguationScore/2
         for ru in rashiUnitsCandidates:
             curScore = ru.disambiguationScore
-            if curScore >= threshold or (len(ruToProcess) < 3 and curScore >= thresholdBediavad):
+            if (curScore >= threshold or (len(ruToProcess) < 3 and curScore >= thresholdBediavad)) or False:
                 ruToProcess.append(ru)
                 if highestrating == -1 or ru.disambiguationScore > highestrating:
                     highestrating = ru.disambiguationScore
@@ -287,6 +420,8 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
         #.. order them by place in the rashi order
         ruToProcess.sort(key=lambda x: x.place)
 
+
+
         #see if they are in order
         fAllInOrder = True
         fFirstTime = True
@@ -299,15 +434,21 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
             for ru in ruToProcess:
 
                 best_rashi = ru.rashimatches[0]
-                #if this one is prior to the current position, break
-                if best_rashi.startWord < prevstartpos:
-                    fAllInOrder = False
-                    break
-                #if this one is the same as curpos, only ok it it is shorter
-                if best_rashi.startWord == prevstartpos:
-                    if best_rashi.endWord >= prevendpos:
+
+                if strict_boundaries:
+                    if best_rashi.startWord < prevendpos:
                         fAllInOrder = False
                         break
+                else:
+                    #if this one is prior to the current position, break
+                    if best_rashi.startWord < prevstartpos:
+                        fAllInOrder = False
+                        break
+                    # if this one is the same as curpos, only ok it it is shorter
+                    if best_rashi.startWord == prevstartpos:
+                        if best_rashi.endWord >= prevendpos:
+                            fAllInOrder = False
+                            break
 
                 prevstartpos = best_rashi.startWord
                 prevendpos = best_rashi.endWord
@@ -325,7 +466,9 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                         # try the first
                         ffixed = False
                         if len(ruToProcess[0].rashimatches) > 1:
-                            if ruToProcess[0].rashimatches[1].startWord < ruToProcess[1].rashimatches[0].startWord:
+
+                            if (not strict_boundaries and ruToProcess[0].rashimatches[1].startWord < ruToProcess[1].rashimatches[0].startWord) or \
+                                (strict_boundaries and ruToProcess[0].rashimatches[1].startWord <= ruToProcess[1].rashimatches[0].endWord):
                                 #make sure they are reasonably close
                                 if ruToProcess[0].disambiguationScore < 10:
                                     del ruToProcess[0].rashimatches[0]
@@ -334,7 +477,8 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                             #.. try the second
                             ffixed = False
                             if len(ruToProcess[1].rashimatches) > 1:
-                                if ruToProcess[1].rashimatches[1].startWord > ruToProcess[0].rashimatches[0].startWord:
+                                if (not strict_boundaries and ruToProcess[1].rashimatches[1].startWord > ruToProcess[0].rashimatches[0].startWord) or \
+                                        (strict_boundaries and ruToProcess[1].rashimatches[1].endWord >= ruToProcess[0].rashimatches[0].startWord):
                                     if ruToProcess[1].disambiguationScore < 10:
                                         del ruToProcess[1].rashimatches[0]
                                         ffixed = True
@@ -342,7 +486,8 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                             #try the second of both
                             ffixed = False
                             if len(ruToProcess[0].rashimatches) > 1 and len(ruToProcess[1].rashimatches) > 1:
-                                if ruToProcess[1].rashimatches[1].startWord > ruToProcess[0].rashimatches[1].startWord:
+                                if (not strict_boundaries and ruToProcess[1].rashimatches[1].startWord > ruToProcess[0].rashimatches[1].startWord) or \
+                                        (strict_boundaries and ruToProcess[1].rashimatches[1].endWord >= ruToProcess[0].rashimatches[1].startWord):
                                     if ruToProcess[1].disambiguationScore < 10 and ruToProcess[0].disambiguationScore < 10:
                                         del ruToProcess[0].rashimatches[0]
                                         del ruToProcess[1].rashimatches[0]
@@ -361,20 +506,28 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                                 continue
                             if irashi < jrashi:
                                 #easy case: they start at diff places
-                                if temp_irashi.rashimatches[0].startWord > temp_jrashi.rashimatches[0].startWord:
-                                    outoforder[irashi] += 1
-                                    #deal with case of same starting word. only ok if irashi is of greater length
-                                elif temp_irashi.rashimatches[0].startWord == temp_jrashi.rashimatches[0].startWord:
-                                    if temp_irashi.rashimatches[0].endWord <= temp_jrashi.rashimatches[0].endWord:
+                                if strict_boundaries:
+                                    if temp_irashi.rashimatches[0].endWord >= temp_jrashi.rashimatches[0].startWord:
                                         outoforder[irashi] += 1
+                                else:
+                                    if temp_irashi.rashimatches[0].startWord > temp_jrashi.rashimatches[0].startWord:
+                                        outoforder[irashi] += 1
+                                        #deal with case of same starting word. only ok if irashi is of greater length
+                                    elif temp_irashi.rashimatches[0].startWord == temp_jrashi.rashimatches[0].startWord:
+                                        if temp_irashi.rashimatches[0].endWord <= temp_jrashi.rashimatches[0].endWord:
+                                            outoforder[irashi] += 1
                             else:
                                 #in this case, irashi is after jrashi
-                                if temp_irashi.rashimatches[0].startWord < temp_jrashi.rashimatches[0].startWord:
-                                    outoforder[irashi] += 1
-                                # deal with case of same starting word. only ok if jrashi is of greater length
-                                elif temp_irashi.rashimatches[0].startWord == temp_jrashi.rashimatches[0].startWord:
-                                    if temp_irashi.rashimatches[0].endWord >= temp_jrashi.rashimatches[0].endWord:
+                                if strict_boundaries:
+                                    if temp_irashi.rashimatches[0].startWord <= temp_jrashi.rashimatches[0].endWord:
                                         outoforder[irashi] += 1
+                                else:
+                                    if temp_irashi.rashimatches[0].startWord < temp_jrashi.rashimatches[0].startWord:
+                                        outoforder[irashi] += 1
+                                    # deal with case of same starting word. only ok if jrashi is of greater length
+                                    elif temp_irashi.rashimatches[0].startWord == temp_jrashi.rashimatches[0].startWord:
+                                        if temp_irashi.rashimatches[0].endWord >= temp_jrashi.rashimatches[0].endWord:
+                                            outoforder[irashi] += 1
                         if outoforder[irashi] > highestDeviation:
                             highestDeviation = outoforder[irashi]
 
@@ -400,7 +553,8 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
             # remove this guy from the disambiguities, now that it is matched up
             rashisByDisambiguity.remove(curru) #check remove
             #recalculate the disambiguities for all those who were potentially relevant, based on this one's place
-            RecalculateDisambiguities(curDaf.allRashi, rashisByDisambiguity, prevMatchedRashi, nextMatchedRashi, startBound, endBound, curru)
+            RecalculateDisambiguities(curDaf.allRashi, rashisByDisambiguity, prevMatchedRashi, nextMatchedRashi, startBound,
+                                      endBound, curru, boundaryFlexibility, len(curDaf.allWords)-1, place_all)
 
         #resort the disambiguity array
         rashisByDisambiguity.sort(key = lambda x: -x.disambiguationScore)
@@ -409,47 +563,88 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
     #now we check for dapim that have a lot of unmatched items, and then we take items out one at a time to see if we can
     #minimize it because usually this results from one misplaced item.
 
-    if verbose: sbreport = u""
+    curDaf.mergeRashis()
+
+
+
+
+    if place_all:
+        fixed = []
+        #place the unmatched comments which fall between 2 matched comments
+        for irm, ru in enumerate(curDaf.allRashi):
+            s = ru.startWord
+            e = ru.endWord
+            prev_match = curDaf.allRashi[irm - 1].endWord if irm > 0                      else -1
+            next_match = curDaf.allRashi[irm + 1].startWord if irm < len(curDaf.allRashi) - 1 else -1
+            new_match = None
+            if s == -1:
+                if prev_match != -1 and next_match != -1:
+                    new_match = (prev_match, next_match)
+                elif irm == 0 and next_match != -1:
+                    new_match = (0, next_match)
+                elif irm == len(curDaf.allRashi) - 1 and prev_match != -1:
+                    new_match = (prev_match, len(curDaf.allWords) - 1)
+
+                if not new_match is None and new_match[0] < new_match[1]:
+                    curDaf.allRashi[irm].matchedGemaraText = u" ".join(curDaf.allWords[new_match[0]:new_match[1]+1])
+                    curDaf.allRashi[irm].startWord = new_match[0]
+                    curDaf.allRashi[irm].endWord = new_match[1]
+                    fixed.append(True)
+                else:
+                    fixed.append(False)
+            fixed.append(False)
+
     start_end_map = []
     abbrev_matches = []
+    text_matches = []
     #now do a full report
-    for ru in curDaf.allRashi:
-        if ru.startWord == -1:
-            if verbose: sbreport += u"\nUNMATCHED: {}".format(ru.startingText)
-            #if not verbose: print u"\tUNMATCHED: {}".format(ru.startingText)
-            start_end_map.append((ru.startWord,ru.startWord))
-            abbrev_matches.append(ru.abbrev_matches)
-        else:
-            if verbose:
-                if len(ru.skippedWords) > 0:
-                    sbreport += u"\n[{}-{} not {},{} ] {} // {} ".format(ru.startWord,ru.endWord,ru.skippedWords[0],ru.skippedWords[1],ru.startingText,ru.matchedGemaraText)
-                else:
-                    sbreport += u"\n{} //{}[{}-{}]".format(ru.startingText,ru.matchedGemaraText,ru.startWord,ru.endWord)
-            start_end_map.append((ru.startWord,ru.endWord))
-            abbrev_matches.append(ru.abbrev_matches)
+    for iru,ru in enumerate(curDaf.allRashi):
+        start_end_map.append((ru.startWord,ru.endWord))
+        abbrev_matches.append(ru.abbrev_matches)
+        text_matches.append((ru.matchedGemaraText,ru.startingText))
 
-    if verbose: print sbreport
+    if verbose:
+        sbreport = u""
+        for irm, (s, e) in enumerate(start_end_map):
+            ru = curDaf.allRashi[irm]
+            if s == -1:
+                sbreport += u"\nUNMATCHED: {}\n".format(ru.startingText)
+            else:
+                sbreport += u"\n\t{}\n\t{}\n[{}-{}]".format(ru.startingText, ru.matchedGemaraText, ru.startWord, ru.endWord)
+
+        print sbreport
+
+    ret = {"matches":start_end_map, "match_text": text_matches}
     if with_abbrev_matches:
-        return start_end_map,abbrev_matches
-    else:
-        return start_end_map
+        ret["abbrevs"] = abbrev_matches
+    if place_all:
+        ret["fixed"] = fixed
+
+    return ret
 
 
 def RecalculateDisambiguities(allRashis, rashisByDisambiguity, prevMatchedRashi, nextMatchedRashi, startbound, endbound,
-                              newlyMatchedRashiUnit):  # List<RashiUnit>,List<RashiUnit>,int,int,int,int,RashiUnit
+                              newlyMatchedRashiUnit, boundaryFlexibility, maxendbound, place_all):  # List<RashiUnit>,List<RashiUnit>,int,int,int,int,RashiUnit
     for irashi in xrange(len(rashisByDisambiguity) - 1, -1, -1):
         ru = rashisByDisambiguity[irashi]
         if ru.place <= prevMatchedRashi or ru.place >= nextMatchedRashi or ru.place == newlyMatchedRashiUnit.place:
             continue
         # this rashi falls out somewhere inside the current window, either before the newest match or after the newest match
-        localstartbound = startbound if (ru.place < newlyMatchedRashiUnit.place) else newlyMatchedRashiUnit.startWord
-        localendbound = endbound if (ru.place > newlyMatchedRashiUnit.place) else newlyMatchedRashiUnit.startWord
+        localstartbound = startbound if (ru.place < newlyMatchedRashiUnit.place) else newlyMatchedRashiUnit.startWord - boundaryFlexibility
+        localendbound = endbound if (ru.place > newlyMatchedRashiUnit.place) else newlyMatchedRashiUnit.startWord + boundaryFlexibility
+
+        if localstartbound < 0:
+            localstartbound = 0
+
+        if localendbound > maxendbound:
+            localendbound = maxendbound
 
         # now remove any potential matches that are blocked by the newly matched rashi
-        for imatch in xrange(len(ru.rashimatches) - 1, -1, -1):
-            tm = ru.rashimatches[imatch]
-            if tm.startWord < localstartbound or tm.startWord > localendbound:
-                del ru.rashimatches[imatch]
+        if not place_all:
+            for imatch in xrange(len(ru.rashimatches) - 1, -1, -1):
+                tm = ru.rashimatches[imatch]
+                if tm.startWord < localstartbound or tm.startWord > localendbound:
+                    del ru.rashimatches[imatch]
 
         # special shift: if there are two close items, and one is an overlap with a current anchor and one is not, switch (them?) and their scores
         endOfPrevRashi = -1 if prevMatchedRashi == -1 else allRashis[prevMatchedRashi].endWord
@@ -471,7 +666,7 @@ def RecalculateDisambiguities(allRashis, rashisByDisambiguity, prevMatchedRashi,
                         ru.rashimatches[0].score = ru.rashimatches[1].score
                         ru.rashimatches[1].score = tempscore
         # if there are none left, remove it altogether
-        if len(ru.rashimatches) == 0:
+        if len(ru.rashimatches) == 0 and not place_all:
             del rashisByDisambiguity[irashi]
         else:
             # now recalculate the disambiguity
@@ -491,6 +686,8 @@ def CalculateAndFillInDisambiguity(ru):  # RashiUnit
     else:
         ru.disambiguationScore = ru.rashimatches[1].score - ru.rashimatches[0].score
 
+def sigmoid(x):
+    return 1.0 / (1 + mathy.exp(-x))
 
 def CountUnmatchedUpRashi(curDaf):  # GemaraDar
     # This function counts all the Rashi's in a given daf and
@@ -503,7 +700,7 @@ def CountUnmatchedUpRashi(curDaf):  # GemaraDar
 
 
 def GetAllApproximateMatches(curDaf, curRashi, startBound, endBound,
-                             word_threshold,char_threshold):  # inputs (GemaraDaf, RashiUnit, int, int, double)
+                             word_threshold, char_threshold):  # inputs (GemaraDaf, RashiUnit, int, int, double)
     global normalizingFactor
     allMatches = []
     startText = curRashi.startingTextNormalized
@@ -563,7 +760,7 @@ def GetAllApproximateMatches(curDaf, curRashi, startBound, endBound,
 
 
 def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
-                                       char_threshold):  # inputs (GemaraDaf, RashiUnit, int, int, double)
+                                       word_threshold, char_threshold):  # inputs (GemaraDaf, RashiUnit, int, int, double)
     global normalizingFactor
 
     allMatches = []
@@ -577,6 +774,7 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
 
     # convert string into an array of words
     startTextWords = re.split(ur"\s+", startText)
+    allowedMismatches = mathy.ceil(len(startTextWords) * word_threshold)
 
     # go through all possible starting words in the gemara text
 
@@ -587,6 +785,7 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
         offsetWithinRashiCV = 0
         distance = 0
         totaldistance = 0
+        mismatches = 0
 
         # now we loop according to the number of words in the cv
         # .. keep track of how the gemara text differs from rashi length
@@ -597,14 +796,14 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
             # first check if the cv word has a quotemark
 
             #try:
-            if u"\"" in startTextWords[iWordWithinPhrase + offsetWithinRashiCV]:
+            if u"\"" in startTextWords[iWordWithinPhrase + offsetWithinRashiCV] or u"״" in startTextWords[iWordWithinPhrase + offsetWithinRashiCV]:
                 # get our ראשי תיבות word without the quote mark
                 cleanRT = cleanAbbrev(startTextWords[iWordWithinPhrase + offsetWithinRashiCV])
                 maxlen = len(cleanRT)
 
                 # let's see if this matches the start of the next few words
                 curpos = iStartingWordInGemara + iWordWithinPhrase + offsetWithinGemara
-                fIsMatch,newOffsetWithinGemara = isAbbrevMatch(curpos,cleanRT,curDaf.allWords)
+                fIsMatch,newOffsetWithinGemara, fIsNumber = isAbbrevMatch(curpos,cleanRT,curDaf.allWords, char_threshold)
 
 
                 iStartContext = 3 if curpos >= 3 else curpos
@@ -614,23 +813,26 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
                         iWordWithinPhrase+offsetWithinRashiCV,iWordWithinPhrase+offsetWithinRashiCV),
                                                    (curpos,curpos+newOffsetWithinGemara),
                                                    curDaf.allWords[curpos-iStartContext:curpos],
-                                                   curDaf.allWords[curpos+newOffsetWithinGemara+1:curpos+4])
+                                                   curDaf.allWords[curpos+newOffsetWithinGemara+1:curpos+4],
+                                                    fIsNumber)
                     if not abbrevMatch in abbrev_matches:
                         abbrev_matches.append(abbrevMatch)
                 offsetWithinGemara += newOffsetWithinGemara
 
                 if not fIsMatch:
-                    break
+                    mismatches += 1
+                    if mismatches > allowedMismatches:
+                        break
 
             # now increment the offset to correspond, so that we'll know we're skipping over x number of words
-            elif u"\"" in curDaf.allWords[iStartingWordInGemara + offsetWithinGemara + iWordWithinPhrase]:
+            elif u"\"" in curDaf.allWords[iStartingWordInGemara + offsetWithinGemara + iWordWithinPhrase] or u"״" in curDaf.allWords[iStartingWordInGemara + offsetWithinGemara + iWordWithinPhrase]:
                 # get our ראשי תיבות word without the quote mark
                 cleanRT = cleanAbbrev(curDaf.allWords[iStartingWordInGemara + offsetWithinGemara + iWordWithinPhrase])
                 maxlen = len(cleanRT)
 
                 # let's see if this matches the start of the next few words
                 curpos = iWordWithinPhrase + offsetWithinRashiCV
-                fIsMatch,newOffsetWithinRashiCV = isAbbrevMatch(curpos,cleanRT,startTextWords)
+                fIsMatch,newOffsetWithinRashiCV, fIsNumber = isAbbrevMatch(curpos,cleanRT,startTextWords, char_threshold)
 
                 curposGemara = iStartingWordInGemara + offsetWithinGemara + iWordWithinPhrase
                 iStartContext = 3 if curposGemara >= 3 else curposGemara
@@ -639,13 +841,16 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
                                                    (curpos, curpos + newOffsetWithinRashiCV),
                                                    (curposGemara,curposGemara),
                                                    curDaf.allWords[curposGemara - iStartContext:curposGemara],
-                                                   curDaf.allWords[curposGemara + 1:curposGemara + 4])
+                                                   curDaf.allWords[curposGemara + 1:curposGemara + 4],
+                                                    fIsNumber)
                     if not abbrevMatch in abbrev_matches:
                         abbrev_matches.append(abbrevMatch)
                 offsetWithinRashiCV += newOffsetWithinRashiCV
 
                 if not fIsMatch:
-                    break
+                    mismatches += 1
+                    if mismatches > allowedMismatches:
+                        break
             else:
                 # great, this is a basic compare.
                 distance, fMatch = IsStringMatch(startTextWords[iWordWithinPhrase + offsetWithinRashiCV],
@@ -655,8 +860,10 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
                 totaldistance += distance
                 # if these words don't match, break and this isn't a match.
                 if not fMatch:
-                    fIsMatch = False
-                    break
+                    mismatches += 1
+                    if mismatches > allowedMismatches:
+                        fIsMatch = False
+                        break
             #except IndexError:
             #    continue
             iWordWithinPhrase += 1
@@ -703,13 +910,14 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
     return allMatches
 
 
-def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,char_threshold):  # GemaraDaf, RashiUnit,int,int,double
+def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound, word_threshold, char_threshold):  # GemaraDaf, RashiUnit,int,int,double
     global normalizingFactor
     allMatches = []
     usedStartwords = []
 
     startText = curRashi.startingTextNormalized
     wordCount = curRashi.cvWordcount
+    allowedMismatches = mathy.ceil(wordCount * word_threshold)
 
     # No point to this unless we have at least 2 words
     if wordCount < 2:
@@ -766,6 +974,7 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
                     fIsMatch = False
                     distance = 0
                     totaldistance = 0
+                    #TODO make sure this still works the same
 
                     if wordCount >= 4:
                         nonMatchAllowance = wordCount / 2 - 1
@@ -782,24 +991,14 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
                                     offset += 1
 
                                 # check the hash, and or first letter
-
-
-                                try:
-                                    temp = curDaf.allWords[iWord + icvword + offset]
-                                except IndexError:
-                                    print "curDaf.allWords[iWord + icvword + offset][0]"
-
-
-
-
-                                if curDaf.wordhashes[iWord + icvword + offset] != cvhashes[icvword] and \
-                                                curDaf.allWords[iWord + icvword + offset][0] != rashiwords[icvword][0]:
+                                if curDaf.wordhashes[iWord + icvword + offset] != cvhashes[icvword]:
                                     nonMatchAllowance -= 1
 
                                     if nonMatchAllowance < 0:
                                         fIsMatch = False
                                         break
                     else:
+
                         # build the phrase
                         targetPhrase = BuildPhraseFromArray(curDaf.allWords, iWord, wordCount, gemaraWordToIgnore,
                                                             gemaraWord2ToIgnore)
@@ -919,12 +1118,12 @@ def IsStringMatch(orig, target, threshold):  # string,string,double,out double
 
 
 def cleanAbbrev(str):
-    str = str.replace(u"\"", u"")
+    str = re.sub(ur'[\"״]',u'',str)
     str = u"".join([sofit_swap(c) for c in str])
     return str
 
 
-def isAbbrevMatch(curpos, abbrevText, unabbrevText):
+def isAbbrevMatch(curpos, abbrevText, unabbrevText, char_threshold):
     maxAbbrevLen = len(abbrevText)
     isMatch = False
 
@@ -948,27 +1147,29 @@ def isAbbrevMatch(curpos, abbrevText, unabbrevText):
                         isMatch = False
                         break
                 if isMatch:
-                    return isMatch, maxAbbrevLen - (1 + numWordsCombined)
-    """
-    for numWordsCombined in xrange(0, 3):
-        if curpos + maxAbbrevLen <= len(unabbrevText) + numWordsCombined:
-            if maxAbbrevLen > numWordsCombined + 1 and len(unabbrevText[curpos]) > numWordsCombined:
-                isMatch = True
+                    return isMatch, maxAbbrevLen - (1 + numWordsCombined), False
 
-                # combine up to `numWordsCombined+1` words together at the beginning of the abbreviation
-                for tempoffset in xrange(0, numWordsCombined + 1):
-                    if unabbrevText[curpos][tempoffset] != abbrevText[tempoffset]:
-                        isMatch = False
-                        break
+    #prepare text for hebrew check
+    if len(abbrevText) > 1:
+        hebrew_num = u'{}"{}'.format(abbrevText[:-1],abbrevText[-1])
+    else:
+        hebrew_num = u"{}'".format(abbrevText)
 
-                for igemaraword in xrange(curpos + (numWordsCombined > 0), curpos + maxAbbrevLen - numWordsCombined):
-                    if unabbrevText[igemaraword][0] != abbrevText[igemaraword - curpos + numWordsCombined]:
-                        isMatch = False
-                        break
-                if isMatch:
-                    return isMatch, maxAbbrevLen - (1 + numWordsCombined)
-    """
-    return isMatch, 0
+    if is_hebrew_number(hebrew_num):
+        #print u"IS HEB NUM {} {} {} {}".format(hebrew_num, abbrevText,gematria(abbrevText),num2words(gematria(abbrevText), lang='he'))
+        isMatch, dist = IsStringMatch(u' '.join(unabbrevText), num2words(gematria(abbrevText), lang='he'), char_threshold)
+        if isMatch:
+            return isMatch, len(abbrevText) - 1, True
+
+    #if still not matched, check if there's a prefix
+    if len(hebrew_num) > 1 and is_hebrew_number(hebrew_num[1:]):
+        prefix = hebrew_num[0]
+        isMatch, dist = IsStringMatch(u' '.join(unabbrevText), prefix + num2words(gematria(abbrevText[1:]), lang='he'), char_threshold)
+        if isMatch:
+            return isMatch, len(abbrevText) - 2, True # to account for the prefix
+
+
+    return isMatch, 0, False
 
 
 def GetRashiBoundaries(allRashi, dwRashi, maxBound,boundaryFlexibility):  # List<RashiUnit>, int
@@ -986,12 +1187,12 @@ def GetRashiBoundaries(allRashi, dwRashi, maxBound,boundaryFlexibility):  # List
     # Okay, look as much up as you can from iRashi to find the start bound
 
     for iRashi in xrange(dwRashi - 1, -1, -1):
-        if  allRashi[iRashi].startWord == -1:
+        if allRashi[iRashi].startWord == -1:
             continue
         prevMatchedRashi = iRashi
         # // Okay, this is our closest one on top that has a value
-        # // allow it to overlap
-        startBound = allRashi[iRashi].startWord
+        # // allow it to overlap (changed to not allow overlap. you can get overlap with boundaryFlexibility param)
+        startBound = allRashi[iRashi].endWord + 1
         break
 
     # // Second part, look down as much as possible to find the end bound
@@ -1003,14 +1204,14 @@ def GetRashiBoundaries(allRashi, dwRashi, maxBound,boundaryFlexibility):  # List
 
         nextMatchedRashi = iRashi
 
-        # allow it to overlap
-        endBound = allRashi[iRashi].startWord
+        # DONT allow it to overlap
+        endBound = allRashi[iRashi].startWord - 1
 
         break
 
     # Done!
-    startBound = startBound - boundaryFlexibility if startBound - boundaryFlexibility >= 0 else startBound
-    endBound = endBound + boundaryFlexibility if endBound + boundaryFlexibility < maxBound else endBound
+    startBound = startBound - boundaryFlexibility if startBound - boundaryFlexibility >= 0 else 0
+    endBound = endBound + boundaryFlexibility if endBound + boundaryFlexibility < maxBound else maxBound-1
     return startBound, endBound, prevMatchedRashi, nextMatchedRashi
 
 
@@ -1073,7 +1274,7 @@ def ComputeLevenshteinDistance(s, t):
             d[i][j] = min(min(d[i - 1][j] + 1, d[i][j - 1] + 1), d[i - 1][j - 1] + cost)
     # Step7
     return d[n][m]'''
-    return language_tools.weighted_levenshtein(s,t,language_tools.weighted_levenshtein_cost,min_cost=0.6)
+    return weighted_levenshtein(s,t,weighted_levenshtein_cost,min_cost=0.6)
 
 
 def InitializeHashTables():
@@ -1163,6 +1364,35 @@ def Get2LetterForm(stringy):
 def sofit_swap(C):
     return sofit_map[C] if C in sofit_map else C
 
+def is_hebrew_number(str):
+    return re.findall(hebrew_number_regex(), str)[0] == str
+
+
+def hebrew_number_regex():
+    """
+    Regular expression component to capture a number expressed in Hebrew letters
+    :return string:
+    \p{Hebrew} ~= [\u05d0–\u05ea]
+    """
+    rx =  ur"""                                    # 1 of 3 styles:
+    ((?=[\u05d0-\u05ea]+(?:"|\u05f4|'')[\u05d0-\u05ea])    # (1: ") Lookahead:  At least one letter, followed by double-quote, two single quotes, or gershayim, followed by  one letter
+            \u05ea*(?:"|\u05f4|'')?				    # Many Tavs (400), maybe dbl quote
+            [\u05e7-\u05ea]?(?:"|\u05f4|'')?	    # One or zero kuf-tav (100-400), maybe dbl quote
+            [\u05d8-\u05e6]?(?:"|\u05f4|'')?	    # One or zero tet-tzaddi (9-90), maybe dbl quote
+            [\u05d0-\u05d8]?					    # One or zero alef-tet (1-9)															#
+        |[\u05d0-\u05ea]['\u05f3]					# (2: ') single letter, followed by a single quote or geresh
+        |(?=[\u05d0-\u05ea])					    # (3: no punc) Lookahead: at least one Hebrew letter
+            \u05ea*								    # Many Tavs (400)
+            [\u05e7-\u05ea]?					    # One or zero kuf-tav (100-400)
+            [\u05d8-\u05e6]?					    # One or zero tet-tzaddi (9-90)
+            [\u05d0-\u05d8]?					    # One or zero alef-tet (1-9)
+    )"""
+
+    return re.compile(rx, re.VERBOSE)
+
 
 #if it can get this, it can get anything
 #print isAbbrevMatch(0,u'בחוהמ',[u'בחול',u'המועד'])
+#he = [u'י״א',u'י׳',u'א״י']
+#for h in he:
+#    print h, is_hebrew_number(h)

@@ -23,6 +23,10 @@
         {
             "index": 77, 
             "word": "נעביד"
+        }, 
+        {
+            "index": 78, 
+            "word": "אחריתי"
         }
     ], 
     "words": [
@@ -543,7 +547,7 @@
             "word": "ליה", 
             "line_num": 14, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 117, 
             "ms": "01", 
@@ -1901,7 +1905,7 @@
             "word": "ליה", 
             "line_num": 50, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 117, 
             "ms": "01", 
@@ -1916,7 +1920,7 @@
             "word": "לרב", 
             "line_num": 50, 
             "cal_word": "לרב", 
-            "POS": "N02", 
+            "POS": "PN", 
             "prefix_homograph": [
                 ""
             ], 
@@ -2117,7 +2121,7 @@
             "word": "ליה", 
             "line_num": 51, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 117, 
             "ms": "01", 
@@ -2136,7 +2140,7 @@
             "word": "לרב", 
             "line_num": 51, 
             "cal_word": "לרב", 
-            "POS": "N02", 
+            "POS": "PN", 
             "prefix_homograph": [
                 ""
             ], 
@@ -2242,7 +2246,7 @@
             "word": "ליה", 
             "line_num": 51, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 117, 
             "ms": "01", 
@@ -2468,7 +2472,7 @@
             "word": "ורבי", 
             "line_num": 52, 
             "cal_word": "ורב", 
-            "POS": "N02", 
+            "POS": "PN", 
             "prefix_homograph": [
                 ""
             ], 
@@ -2520,12 +2524,12 @@
             "side": 2
         }, 
         {
-            "head_word": "הוא", 
-            "word_num": 1, 
+            "head_word": "ל_", 
+            "word_num": 17, 
             "daf": "117b", 
             "word": "להו", 
-            "line_num": 53, 
-            "cal_word": "הוא", 
+            "line_num": 52, 
+            "cal_word": "להו", 
             "POS": "p01", 
             "class": "talmud", 
             "pg_num": 117, 
@@ -2608,8 +2612,19 @@
             "side": 2
         }, 
         {
+            "head_word": "הוא", 
+            "word_num": 1, 
+            "daf": "117b", 
             "word": "הואיל", 
-            "class": "unknown"
+            "line_num": 53, 
+            "cal_word": "הוא", 
+            "POS": "p01", 
+            "class": "talmud", 
+            "pg_num": 117, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "head_word": "עבד", 
@@ -2682,19 +2697,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אחרינא", 
-            "word_num": 16, 
-            "daf": "117b", 
             "word": "אחרינא", 
-            "line_num": 53, 
-            "cal_word": "אחריתי", 
-            "POS": "p01", 
-            "class": "talmud", 
-            "pg_num": 117, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "כיצד", 

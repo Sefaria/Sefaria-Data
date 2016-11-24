@@ -73,6 +73,10 @@
             "word": "נהוג"
         }, 
         {
+            "index": 56, 
+            "word": "עלמ"
+        }, 
+        {
             "index": 59, 
             "word": "הוינא"
         }, 
@@ -113,6 +117,10 @@
             "word": "הוינן"
         }, 
         {
+            "index": 71, 
+            "word": "תשע"
+        }, 
+        {
             "index": 72, 
             "word": "מפלגינן"
         }, 
@@ -151,6 +159,10 @@
         {
             "index": 90, 
             "word": "משתמע"
+        }, 
+        {
+            "index": 91, 
+            "word": "להו"
         }, 
         {
             "index": 95, 
@@ -1059,14 +1071,23 @@
         }, 
         {
             "head_word": "לא", 
-            "word_num": 0, 
+            "word_num": 4, 
             "daf": "50a", 
             "word": "לא", 
             "line_num": 24, 
-            "cal_word": "לא", 
+            "cal_word": "דלא", 
             "POS": "a", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
             "pg_num": 50, 
+            "prefix_POS": [
+                "c"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71001, 
@@ -1088,24 +1109,15 @@
             "side": 1
         }, 
         {
-            "head_word": "לא", 
-            "word_num": 4, 
+            "head_word": "אלא", 
+            "word_num": 2, 
             "daf": "50a", 
             "word": "אלא", 
             "line_num": 24, 
-            "cal_word": "דלא", 
-            "POS": "a", 
-            "prefix_homograph": [
-                ""
-            ], 
+            "cal_word": "אלא", 
+            "POS": "c", 
             "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
             "pg_num": 50, 
-            "prefix_POS": [
-                "c"
-            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71001, 
@@ -1642,7 +1654,7 @@
             "word": "ליה", 
             "line_num": 31, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 50, 
             "ms": "01", 
@@ -1672,7 +1684,7 @@
             "word": "ליה", 
             "line_num": 31, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 50, 
             "ms": "01", 
@@ -1771,7 +1783,7 @@
             "word": "ואידך", 
             "line_num": 33, 
             "cal_word": "ואידך", 
-            "POS": "p", 
+            "POS": "p01", 
             "prefix_homograph": [
                 ""
             ], 
@@ -1834,7 +1846,7 @@
             "word": "ורב", 
             "line_num": 34, 
             "cal_word": "ורב", 
-            "POS": "N02", 
+            "POS": "PN", 
             "prefix_homograph": [
                 ""
             ], 
@@ -2080,19 +2092,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "עלמא", 
-            "word_num": 7, 
-            "daf": "50a", 
             "word": "לא", 
-            "line_num": 35, 
-            "cal_word": "עלמ", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "pg_num": 50, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71001, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "צריכת", 
@@ -2465,13 +2466,13 @@
             "side": 1
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 9, 
+            "head_word": "לא", 
+            "word_num": 7, 
             "daf": "50a", 
             "word": "לא", 
             "line_num": 37, 
-            "cal_word": "להו", 
-            "POS": "p02", 
+            "cal_word": "לא", 
+            "POS": "a", 
             "class": "talmud", 
             "pg_num": 50, 
             "ms": "01", 
@@ -3236,7 +3237,7 @@
             "word": "למה", 
             "line_num": 42, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 50, 
             "ms": "01", 

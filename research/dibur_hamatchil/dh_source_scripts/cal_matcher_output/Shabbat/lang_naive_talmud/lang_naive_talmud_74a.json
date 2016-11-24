@@ -1,8 +1,16 @@
 {
     "missed_words": [
         {
+            "index": 16, 
+            "word": "להו"
+        }, 
+        {
             "index": 45, 
             "word": "ושטח"
+        }, 
+        {
+            "index": 59, 
+            "word": "תרמוסא"
         }
     ], 
     "words": [
@@ -76,7 +84,7 @@
             "word": "לה", 
             "line_num": 1, 
             "cal_word": "לה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 74, 
             "ms": "01", 
@@ -115,7 +123,7 @@
             "word": "לה", 
             "line_num": 1, 
             "cal_word": "לה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 74, 
             "ms": "01", 
@@ -213,7 +221,7 @@
             "word": "הא", 
             "line_num": 3, 
             "cal_word": "הא", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 74, 
             "ms": "01", 
@@ -338,19 +346,8 @@
             "side": 1
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 4, 
-            "daf": "74a", 
             "word": "ליה", 
-            "line_num": 5, 
-            "cal_word": "להו", 
-            "POS": "p02", 
-            "class": "talmud", 
-            "pg_num": 74, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "ארבעא", 
@@ -1257,7 +1254,7 @@
             "word": "להו", 
             "line_num": 31, 
             "cal_word": "להו", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 74, 
             "ms": "01", 
@@ -1559,7 +1556,7 @@
             "word": "דרב", 
             "line_num": 37, 
             "cal_word": "דרב", 
-            "POS": "N02", 
+            "POS": "PN", 
             "prefix_homograph": [
                 ""
             ], 
@@ -1962,19 +1959,8 @@
             "side": 1
         }, 
         {
-            "head_word": "תורמוסא", 
-            "word_num": 1, 
-            "daf": "74a", 
             "word": "תורמוסים", 
-            "line_num": 43, 
-            "cal_word": "תרמוסא", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "pg_num": 74, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }
     ]
 }

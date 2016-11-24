@@ -1,8 +1,8 @@
 {
     "missed_words": [
         {
-            "index": 32, 
-            "word": "בר"
+            "index": 20, 
+            "word": "חטא"
         }, 
         {
             "index": 39, 
@@ -423,7 +423,7 @@
             "word": "הא", 
             "line_num": 13, 
             "cal_word": "הא", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 56, 
             "ms": "01", 
@@ -2436,7 +2436,7 @@
             "word": "דרבי", 
             "line_num": 44, 
             "cal_word": "דרב", 
-            "POS": "N02", 
+            "POS": "PN", 
             "prefix_homograph": [
                 ""
             ], 
@@ -2507,7 +2507,7 @@
             "word": "לה", 
             "line_num": 45, 
             "cal_word": "לה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 56, 
             "ms": "01", 
@@ -2535,10 +2535,65 @@
             "side": 2
         }, 
         {
+            "word": "דאבא", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "אבוה", 
+            "class": "unknown"
+        }, 
+        {
+            "head_word": "רב", 
+            "word_num": 2, 
+            "daf": "56b", 
+            "word": "דרב", 
+            "line_num": 45, 
+            "cal_word": "דרב", 
+            "POS": "PN", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
+            "pg_num": 56, 
+            "prefix_POS": [
+                "p"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 2
+        }, 
+        {
+            "word": "ירמיה", 
+            "class": "unknown"
+        }, 
+        {
+            "head_word": "ברא", 
+            "word_num": 4, 
+            "daf": "56b", 
+            "word": "בר", 
+            "line_num": 45, 
+            "cal_word": "בר", 
+            "POS": "N01", 
+            "class": "talmud", 
+            "pg_num": 56, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 2
+        }, 
+        {
+            "word": "אבא", 
+            "class": "unknown"
+        }, 
+        {
             "head_word": "אמר", 
             "word_num": 6, 
             "daf": "56b", 
-            "word": "דאבא", 
+            "word": "דאמר", 
             "line_num": 45, 
             "cal_word": "דאמ", 
             "POS": "V01", 
@@ -2557,30 +2612,6 @@
             "homograph": "", 
             "book_num": 71002, 
             "side": 2
-        }, 
-        {
-            "word": "אבוה", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "דרב", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "ירמיה", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "בר", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "אבא", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "דאמר", 
-            "class": "unknown"
         }, 
         {
             "head_word": "מר", 

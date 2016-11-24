@@ -260,7 +260,7 @@
             "word": "ליה", 
             "line_num": 5, 
             "cal_word": "לה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 131, 
             "ms": "01", 
@@ -1152,15 +1152,24 @@
             "side": 1
         }, 
         {
-            "head_word": "ל_", 
+            "head_word": "פרכ", 
             "word_num": 3, 
             "daf": "131a", 
             "word": "למיפרך", 
             "line_num": 20, 
             "cal_word": "למיפרך", 
-            "POS": "p02", 
+            "POS": "V01", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "ל_"
+            ], 
             "pg_num": 131, 
+            "prefix_POS": [
+                "p03"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71002, 

@@ -21,6 +21,10 @@
             "word": "כי"
         }, 
         {
+            "index": 44, 
+            "word": "הרדיפא"
+        }, 
+        {
             "index": 46, 
             "word": "חד"
         }, 
@@ -494,7 +498,7 @@
             "word": "לה", 
             "line_num": 15, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 39, 
             "ms": "01", 
@@ -1019,7 +1023,7 @@
             "word": "לרב", 
             "line_num": 25, 
             "cal_word": "לרב", 
-            "POS": "N02", 
+            "POS": "PN", 
             "prefix_homograph": [
                 ""
             ], 
@@ -1140,7 +1144,7 @@
             "word": "א\"ל", 
             "line_num": 26, 
             "cal_word": "אמ ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 39, 
             "ms": "01", 
@@ -1496,7 +1500,7 @@
             "word": "א\"ל", 
             "line_num": 30, 
             "cal_word": "אמר ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 39, 
             "ms": "01", 
@@ -1794,19 +1798,8 @@
             "side": 1
         }, 
         {
-            "head_word": "הרדופא", 
-            "word_num": 5, 
-            "daf": "39a", 
             "word": "הרזיפו", 
-            "line_num": 32, 
-            "cal_word": "הרדיפא", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "pg_num": 39, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "דומיא", 
@@ -2360,7 +2353,7 @@
             "word": "להו", 
             "line_num": 40, 
             "cal_word": "להו", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 39, 
             "ms": "01", 

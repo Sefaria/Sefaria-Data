@@ -37,12 +37,28 @@
             "word": "אטו"
         }, 
         {
+            "index": 54, 
+            "word": "ומי"
+        }, 
+        {
             "index": 55, 
             "word": "דמי"
         }, 
         {
             "index": 56, 
             "word": "התם"
+        }, 
+        {
+            "index": 58, 
+            "word": "הוא"
+        }, 
+        {
+            "index": 71, 
+            "word": "הוו"
+        }, 
+        {
+            "index": 76, 
+            "word": "הוו"
         }
     ], 
     "words": [
@@ -296,7 +312,7 @@
             "word": "ליה", 
             "line_num": 5, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 144, 
             "ms": "01", 
@@ -385,7 +401,7 @@
             "word": "ליה", 
             "line_num": 6, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 144, 
             "ms": "01", 
@@ -938,7 +954,7 @@
             "word": "לה", 
             "line_num": 14, 
             "cal_word": "לה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 144, 
             "ms": "01", 
@@ -1043,24 +1059,15 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "מי", 
-            "word_num": 0, 
+            "head_word": "הוי", 
+            "word_num": 9, 
             "daf": "144b", 
             "word": "הוי", 
-            "line_num": 21, 
-            "cal_word": "ומי", 
-            "POS": "c", 
-            "prefix_homograph": [
-                ""
-            ], 
+            "line_num": 16, 
+            "cal_word": "הוי", 
+            "POS": "V01", 
             "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
             "pg_num": 144, 
-            "prefix_POS": [
-                "c"
-            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71002, 
@@ -1547,19 +1554,8 @@
             "side": 2
         }, 
         {
-            "head_word": "הוי", 
-            "word_num": 9, 
-            "daf": "144b", 
             "word": "הוה", 
-            "line_num": 25, 
-            "cal_word": "הוו", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 144, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "ל_", 
@@ -1568,7 +1564,7 @@
             "word": "להו", 
             "line_num": 25, 
             "cal_word": "להו", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 144, 
             "ms": "01", 
@@ -1635,19 +1631,8 @@
             "side": 2
         }, 
         {
-            "head_word": "הוי", 
-            "word_num": 4, 
-            "daf": "144b", 
             "word": "הוה", 
-            "line_num": 26, 
-            "cal_word": "הוו", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 144, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "ל_", 
@@ -1656,7 +1641,7 @@
             "word": "להו", 
             "line_num": 26, 
             "cal_word": "להו", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 144, 
             "ms": "01", 

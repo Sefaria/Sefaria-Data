@@ -13,3 +13,27 @@ Bava Kamma 55b ???
 Bava Metzia 23b
 Bava Batra 28a
 Makkot 3a
+
+
+//notes
+ignore shamela code
+
+
+getmatchesfornoteitemw6
+line 5141 uses slope to bin items
+
+
+you have bins going into cluster
+clustermatchword
+line 2830
+
+merging matches with conflate
+line 4321
+we have a large list of matches
+
+key for dict is bookid, begin pos binned in bins of 30
+every element is items that can potentially be merged
+
+you want to look for matches that dont have conflicts
+
+repeat until no more conflations

@@ -7,6 +7,10 @@
         {
             "index": 15, 
             "word": "כיון"
+        }, 
+        {
+            "index": 19, 
+            "word": "דלידעו"
         }
     ], 
     "words": [
@@ -447,28 +451,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ידע", 
-            "word_num": 0, 
-            "daf": "114b", 
             "word": "ידעי", 
-            "line_num": 8, 
-            "cal_word": "דלידעו", 
-            "POS": "V01", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 114, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "דחלבי", 
@@ -1234,15 +1218,24 @@
             "side": 2
         }, 
         {
-            "head_word": "כד_", 
+            "head_word": "רב", 
             "word_num": 2, 
             "daf": "114b", 
             "word": "כדרב", 
             "line_num": 23, 
             "cal_word": "כדרב", 
-            "POS": "p01", 
+            "POS": "PN", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "כד_"
+            ], 
             "pg_num": 114, 
+            "prefix_POS": [
+                "p"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71002, 

@@ -9,6 +9,10 @@
             "word": "מר"
         }, 
         {
+            "index": 28, 
+            "word": "כבר"
+        }, 
+        {
             "index": 38, 
             "word": "מילי"
         }, 
@@ -23,6 +27,10 @@
         {
             "index": 75, 
             "word": "מסליק"
+        }, 
+        {
+            "index": 84, 
+            "word": "וכי"
         }, 
         {
             "index": 90, 
@@ -99,7 +107,7 @@
             "word": "להו", 
             "line_num": 1, 
             "cal_word": "להו", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 68, 
             "ms": "01", 
@@ -181,7 +189,7 @@
             "word": "ליה", 
             "line_num": 2, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 68, 
             "ms": "01", 
@@ -196,7 +204,7 @@
             "word": "למר", 
             "line_num": 2, 
             "cal_word": "למר", 
-            "POS": "N02", 
+            "POS": "PN", 
             "prefix_homograph": [
                 ""
             ], 
@@ -534,7 +542,7 @@
             "word": "ליה", 
             "line_num": 7, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 68, 
             "ms": "01", 
@@ -592,7 +600,7 @@
             "word": "ליה", 
             "line_num": 8, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 68, 
             "ms": "01", 
@@ -601,19 +609,8 @@
             "side": 2
         }, 
         {
-            "head_word": "כבר", 
-            "word_num": 2, 
-            "daf": "68b", 
             "word": "כבן", 
-            "line_num": 8, 
-            "cal_word": "כבר", 
-            "POS": "a", 
-            "class": "talmud", 
-            "pg_num": 68, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "חצר", 
@@ -2057,13 +2054,13 @@
             "side": 2
         }, 
         {
-            "head_word": "כי", 
-            "word_num": 0, 
+            "head_word": "הכי", 
+            "word_num": 3, 
             "daf": "68b", 
             "word": "והכי", 
-            "line_num": 51, 
-            "cal_word": "וכי", 
-            "POS": "c", 
+            "line_num": 37, 
+            "cal_word": "והכי", 
+            "POS": "a", 
             "prefix_homograph": [
                 ""
             ], 

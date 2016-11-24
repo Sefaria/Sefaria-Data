@@ -1,12 +1,20 @@
 {
     "missed_words": [
         {
+            "index": 0, 
+            "word": "ורב"
+        }, 
+        {
             "index": 3, 
             "word": "דמקדיש"
         }, 
         {
             "index": 5, 
             "word": "ואלא"
+        }, 
+        {
+            "index": 7, 
+            "word": "למא"
         }, 
         {
             "index": 9, 
@@ -83,46 +91,10 @@
             "class": "unknown"
         }, 
         {
-            "word": "לא", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "יצאו", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "אלא", 
-            "class": "unknown"
-        }, 
-        {
-            "head_word": "רב", 
-            "word_num": 0, 
-            "daf": "101a", 
-            "word": "לרב", 
-            "line_num": 1, 
-            "cal_word": "ורב", 
-            "POS": "PN", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
-            "pg_num": 101, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
-        }, 
-        {
             "head_word": "למה", 
             "word_num": 1, 
             "daf": "101a", 
-            "word": "למה", 
+            "word": "לא", 
             "line_num": 1, 
             "cal_word": "למא", 
             "POS": "c", 
@@ -134,13 +106,29 @@
             "side": 1
         }, 
         {
+            "word": "יצאו", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "אלא", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "לרב", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "למה", 
+            "class": "unknown"
+        }, 
+        {
             "head_word": "ל_", 
             "word_num": 2, 
             "daf": "101a", 
             "word": "ליה", 
             "line_num": 1, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 101, 
             "ms": "01", 
@@ -218,7 +206,7 @@
             "word": "למה", 
             "line_num": 3, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 101, 
             "ms": "01", 
@@ -583,7 +571,7 @@
             "word": "להו", 
             "line_num": 9, 
             "cal_word": "להו", 
-            "POS": "p03", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 101, 
             "ms": "01", 
@@ -884,7 +872,7 @@
             "word": "דרב", 
             "line_num": 12, 
             "cal_word": "דרב", 
-            "POS": "N02", 
+            "POS": "PN", 
             "prefix_homograph": [
                 ""
             ], 
@@ -965,7 +953,7 @@
             "word": "ליה", 
             "line_num": 13, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 101, 
             "ms": "01", 
@@ -1665,7 +1653,7 @@
             "word": "דמר", 
             "line_num": 23, 
             "cal_word": "דמר", 
-            "POS": "N02", 
+            "POS": "PN", 
             "prefix_homograph": [
                 ""
             ], 
@@ -1718,7 +1706,7 @@
             ], 
             "pg_num": 101, 
             "prefix_POS": [
-                "p"
+                "p02"
             ], 
             "ms": "01", 
             "homograph": "", 

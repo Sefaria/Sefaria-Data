@@ -1,6 +1,10 @@
 {
     "missed_words": [
         {
+            "index": 3, 
+            "word": "להו"
+        }, 
+        {
             "index": 4, 
             "word": "אמרו"
         }, 
@@ -17,8 +21,16 @@
             "word": "או"
         }, 
         {
+            "index": 19, 
+            "word": "דלא"
+        }, 
+        {
             "index": 21, 
             "word": "דלמא"
+        }, 
+        {
+            "index": 22, 
+            "word": "לאו"
         }, 
         {
             "index": 25, 
@@ -29,8 +41,12 @@
             "word": "אמרי"
         }, 
         {
-            "index": 28, 
-            "word": "וניתיו"
+            "index": 29, 
+            "word": "דלא"
+        }, 
+        {
+            "index": 30, 
+            "word": "עבדי"
         }, 
         {
             "index": 31, 
@@ -41,8 +57,8 @@
             "word": "כולהו"
         }, 
         {
-            "index": 37, 
-            "word": "נפקי"
+            "index": 36, 
+            "word": "דקא"
         }, 
         {
             "index": 38, 
@@ -61,6 +77,10 @@
             "word": "הוה"
         }, 
         {
+            "index": 51, 
+            "word": "דאיתיי"
+        }, 
+        {
             "index": 52, 
             "word": "השתא"
         }, 
@@ -69,8 +89,8 @@
             "word": "ניהוי"
         }, 
         {
-            "index": 54, 
-            "word": "או"
+            "index": 56, 
+            "word": "הוה"
         }, 
         {
             "index": 74, 
@@ -99,6 +119,10 @@
         {
             "index": 98, 
             "word": "להו"
+        }, 
+        {
+            "index": 99, 
+            "word": "אלא"
         }, 
         {
             "index": 100, 
@@ -277,19 +301,8 @@
             "side": 1
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 0, 
-            "daf": "89a", 
             "word": "ליה", 
-            "line_num": 2, 
-            "cal_word": "להו", 
-            "POS": "p", 
-            "class": "talmud", 
-            "pg_num": 89, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "וניתי", 
@@ -548,18 +561,18 @@
         }, 
         {
             "head_word": "לא", 
-            "word_num": 4, 
+            "word_num": 5, 
             "daf": "89a", 
             "word": "ולא", 
-            "line_num": 6, 
-            "cal_word": "דלא", 
+            "line_num": 5, 
+            "cal_word": "ולא", 
             "POS": "a", 
             "prefix_homograph": [
                 ""
             ], 
             "class": "talmud", 
             "prefix": [
-                "ד_"
+                "ו_"
             ], 
             "pg_num": 89, 
             "prefix_POS": [
@@ -572,11 +585,11 @@
         }, 
         {
             "head_word": "עבד", 
-            "word_num": 6, 
+            "word_num": 7, 
             "daf": "89a", 
             "word": "עביד", 
-            "line_num": 6, 
-            "cal_word": "עבדי", 
+            "line_num": 5, 
+            "cal_word": "עביד", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 89, 
@@ -590,8 +603,28 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אתי", 
+            "word_num": 1, 
+            "daf": "89a", 
             "word": "וניתי", 
-            "class": "unknown"
+            "line_num": 6, 
+            "cal_word": "וניתיו", 
+            "POS": "V03", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 89, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "word": "כל", 
@@ -716,8 +749,19 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "נפק", 
+            "word_num": 1, 
+            "daf": "89a", 
             "word": "נפקי", 
-            "class": "unknown"
+            "line_num": 8, 
+            "cal_word": "נפקי", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 89, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "word": "ביה", 
@@ -888,13 +932,13 @@
             "side": 1
         }, 
         {
-            "head_word": "האי", 
-            "word_num": 4, 
+            "head_word": "או", 
+            "word_num": 1, 
             "daf": "89a", 
             "word": "אי", 
-            "line_num": 12, 
-            "cal_word": "האי", 
-            "POS": "p01", 
+            "line_num": 13, 
+            "cal_word": "או", 
+            "POS": "c", 
             "class": "talmud", 
             "pg_num": 89, 
             "ms": "01", 
@@ -1111,12 +1155,12 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אלא", 
-            "word_num": 4, 
+            "head_word": "אילו", 
+            "word_num": 0, 
             "daf": "89a", 
             "word": "אלא", 
-            "line_num": 16, 
-            "cal_word": "אלא", 
+            "line_num": 17, 
+            "cal_word": "אלו", 
             "POS": "c", 
             "class": "talmud", 
             "pg_num": 89, 
@@ -1517,14 +1561,10 @@
             "class": "unknown"
         }, 
         {
-            "word": "דאי", 
-            "class": "unknown"
-        }, 
-        {
             "head_word": "דיעבד", 
             "word_num": 3, 
             "daf": "89a", 
-            "word": "עבד", 
+            "word": "דאי", 
             "line_num": 26, 
             "cal_word": "דאיעבד", 
             "POS": "a", 
@@ -1534,6 +1574,10 @@
             "homograph": "", 
             "book_num": 71004, 
             "side": 1
+        }, 
+        {
+            "word": "עבד", 
+            "class": "unknown"
         }, 
         {
             "word": "לכתחלה", 
@@ -1895,13 +1939,13 @@
             "side": 1
         }, 
         {
-            "head_word": "אלא", 
-            "word_num": 0, 
+            "head_word": "לא", 
+            "word_num": 1, 
             "daf": "89a", 
             "word": "דלא", 
-            "line_num": 36, 
-            "cal_word": "אלא", 
-            "POS": "c", 
+            "line_num": 34, 
+            "cal_word": "לא", 
+            "POS": "a", 
             "class": "talmud", 
             "pg_num": 89, 
             "ms": "01", 

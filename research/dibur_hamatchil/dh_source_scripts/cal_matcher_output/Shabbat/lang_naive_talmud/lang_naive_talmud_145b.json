@@ -39,6 +39,14 @@
         {
             "index": 116, 
             "word": "שכניה"
+        }, 
+        {
+            "index": 124, 
+            "word": "דלא"
+        }, 
+        {
+            "index": 125, 
+            "word": "במא"
         }
     ], 
     "words": [
@@ -2421,7 +2429,7 @@
             "word": "להו", 
             "line_num": 27, 
             "cal_word": "להו", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 145, 
             "ms": "01", 
@@ -2550,7 +2558,7 @@
             "word": "ליה", 
             "line_num": 28, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 145, 
             "ms": "01", 
@@ -3571,28 +3579,8 @@
             "side": 2
         }, 
         {
-            "head_word": "מאה", 
-            "word_num": 5, 
-            "daf": "145b", 
             "word": "בלא", 
-            "line_num": 42, 
-            "cal_word": "במא", 
-            "POS": "n02", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ב_"
-            ], 
-            "pg_num": 145, 
-            "prefix_POS": [
-                "p02"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "מתא", 

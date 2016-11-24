@@ -5,6 +5,10 @@
             "word": "כי"
         }, 
         {
+            "index": 2, 
+            "word": "אזל"
+        }, 
+        {
             "index": 3, 
             "word": "בתר"
         }, 
@@ -19,6 +23,10 @@
         {
             "index": 16, 
             "word": "וקא"
+        }, 
+        {
+            "index": 26, 
+            "word": "ולא"
         }, 
         {
             "index": 31, 
@@ -143,19 +151,8 @@
             "side": 1
         }, 
         {
-            "head_word": "אזל", 
-            "word_num": 2, 
-            "daf": "26a", 
             "word": "אבל", 
-            "line_num": 1, 
-            "cal_word": "אזל", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 26, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "מתכוין", 
@@ -253,7 +250,7 @@
             "word": "לה", 
             "line_num": 4, 
             "cal_word": "לה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 26, 
             "ms": "01", 
@@ -546,7 +543,7 @@
             "word": "לה", 
             "line_num": 8, 
             "cal_word": "לה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 26, 
             "ms": "01", 
@@ -631,13 +628,13 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "לא", 
-            "word_num": 2, 
+            "head_word": "הא", 
+            "word_num": 0, 
             "daf": "26a", 
             "word": "והא", 
             "line_num": 12, 
-            "cal_word": "ולא", 
-            "POS": "a", 
+            "cal_word": "והא", 
+            "POS": "I", 
             "prefix_homograph": [
                 ""
             ], 
@@ -970,7 +967,7 @@
             "word": "לה", 
             "line_num": 17, 
             "cal_word": "לה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 26, 
             "ms": "01", 

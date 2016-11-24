@@ -1,6 +1,14 @@
 {
     "missed_words": [
         {
+            "index": 3, 
+            "word": "הוא"
+        }, 
+        {
+            "index": 4, 
+            "word": "דמטלטלינן"
+        }, 
+        {
             "index": 11, 
             "word": "קתני"
         }, 
@@ -19,6 +27,10 @@
         {
             "index": 60, 
             "word": "אמ"
+        }, 
+        {
+            "index": 61, 
+            "word": "ליה"
         }, 
         {
             "index": 68, 
@@ -500,19 +512,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "הוא", 
-            "word_num": 0, 
-            "daf": "67b", 
             "word": "והא", 
-            "line_num": 16, 
-            "cal_word": "הוא", 
-            "POS": "p01", 
-            "class": "talmud", 
-            "pg_num": 67, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "מכרמלית", 
@@ -1804,7 +1805,7 @@
             "word": "ליה", 
             "line_num": 38, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 67, 
             "ms": "01", 
@@ -1971,7 +1972,7 @@
             "word": "ליה", 
             "line_num": 39, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 67, 
             "ms": "01", 
@@ -2005,7 +2006,7 @@
             "word": "ליה", 
             "line_num": 39, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 67, 
             "ms": "01", 
@@ -2067,7 +2068,7 @@
             "word": "למר", 
             "line_num": 40, 
             "cal_word": "למר", 
-            "POS": "N02", 
+            "POS": "PN", 
             "prefix_homograph": [
                 ""
             ], 
@@ -2296,15 +2297,24 @@
             "side": 2
         }, 
         {
-            "head_word": "בד_", 
+            "head_word": "אורייתא", 
             "word_num": 4, 
             "daf": "67b", 
             "word": "בדאורייתא", 
             "line_num": 41, 
             "cal_word": "בדאוריתא", 
-            "POS": "p", 
+            "POS": "N02", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "בד_"
+            ], 
             "pg_num": 67, 
+            "prefix_POS": [
+                "p"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71003, 
@@ -2523,7 +2533,7 @@
             "word": "ליה", 
             "line_num": 42, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 67, 
             "ms": "01", 

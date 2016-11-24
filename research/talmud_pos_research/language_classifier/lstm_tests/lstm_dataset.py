@@ -21,7 +21,7 @@ def tokenize_words(str,strip_html=True):
 
 def make_aramaic_training():
     training = []
-    with open('noahcaldb.txt','rb') as cal:
+    with open('../noahcaldbfull.txt','rb') as cal:
         for line in cal:
             line_obj = cal_tools.parseCalLine(line,True,withshinsin=False)
             training.append({'word':line_obj['word'],'tag':'aramaic'})
@@ -198,10 +198,73 @@ def dilate_lang():
                 fp.close()
                 html_out = OrderedDict()
 
+#CONTEXT
 
+def make_aramaic_training_context():
+    training = []
+    with open('../noahcaldbfull.txt','rb') as cal:
+        temp_phrase = []
+        curr_line_num = None
+        curr_word_num = None
+        for line in cal:
+            try:
+                lineObj = cal_tools.parseCalLine(line,True,False)
+            except IndexError:
+                continue
+            if curr_line_num is None:
+                curr_line_num = lineObj['line_num']
+            if curr_word_num is None:
+                curr_word_num = lineObj['word_num'] - 1
+            if curr_line_num == lineObj['line_num'] and (curr_word_num + 1) == lineObj['word_num']:
+                temp_phrase.extend(lineObj['word'].split(' '))
+                curr_word_num = lineObj['word_num']
+            else:
+                training.append({'language': 'aramaic','phrase': temp_phrase[:]})
+                curr_line_num = lineObj['line_num']
+                curr_word_num = lineObj['word_num']
+                temp_phrase = lineObj['word'].split(' ')
 
+    total_words = 0
+    total_phrases = len(training)
+    for p in training:
+        total_words += len(p['phrase'])
 
+    print 'NUM PHRASES: {} AVG WORDS PER PHRASE: {}'.format(total_phrases,total_words/total_phrases)
 
+    return training
+
+def make_mishnaic_training_context():
+    training = []
+    mishnah_indexes = [library.get_index(ind) for ind in library.get_indexes_in_category("Mishnah")]
+
+    mishnah_indexes += [library.get_index(ind) for ind in library.get_indexes_in_category("Torah")]
+
+    for ind in mishnah_indexes:
+        mishna_segs = ind.all_section_refs()
+        for seg in mishna_segs:
+            first_sec_str = hebrew.strip_cantillation(seg.text('he').as_string(), strip_vowels=True)
+            training += [{'language':'mishnaic', 'phrase':tokenize_words(p)} for p in first_sec_str.split(u'. ')]
+
+    total_words = 0
+    total_phrases = len(training)
+    for p in training:
+        total_words += len(p['phrase'])
+
+    print 'NUM PHRASES: {} AVG WORDS PER PHRASE: {}'.format(total_phrases,total_words/total_phrases)
+    return training
+
+def merge_sets_context(a,m):
+    full = []
+    phrases =  a + m
+    random.shuffle(phrases)
+
+    num_phrases_per_section = 100
+    i = 0
+    while i < len(phrases):
+        temp_phrases = phrases[i:i+num_phrases_per_section]
+        full.append([{'l': p['language'][0], 'w': w} for p in temp_phrases for w in p['phrase']])
+        i += num_phrases_per_section
+    return full
 
 
 """
@@ -217,4 +280,11 @@ fp = codecs.open("lstm_training.json", "wb", encoding='utf-8')
 json.dump(full, fp, indent=4, encoding='utf-8', ensure_ascii=False)
 """
 
-dilate_lang()
+#dilate_lang()
+
+m = make_mishnaic_training_context()
+a = make_aramaic_training_context()
+
+full = merge_sets_context(a, m)
+fp = codecs.open("lstm_training.json", "wb", encoding='utf-8')
+json.dump(full, fp, encoding='utf-8', ensure_ascii=False)

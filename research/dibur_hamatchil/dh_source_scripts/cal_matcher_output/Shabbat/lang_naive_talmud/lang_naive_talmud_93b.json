@@ -7,6 +7,10 @@
         {
             "index": 11, 
             "word": "ליבעי"
+        }, 
+        {
+            "index": 27, 
+            "word": "ביה"
         }
     ], 
     "words": [
@@ -109,7 +113,7 @@
             "word": "הא", 
             "line_num": 14, 
             "cal_word": "הא", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 93, 
             "ms": "01", 
@@ -1520,15 +1524,24 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ד_", 
+            "head_word": "עלמא", 
             "word_num": 1, 
             "daf": "93b", 
             "word": "דעלמא", 
             "line_num": 39, 
             "cal_word": "דעלמא", 
-            "POS": "p", 
+            "POS": "N02", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
             "pg_num": 93, 
+            "prefix_POS": [
+                "p"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71002, 
@@ -1613,19 +1626,8 @@
             "side": 2
         }, 
         {
-            "head_word": "ב_", 
-            "word_num": 7, 
-            "daf": "93b", 
             "word": "בי\"", 
-            "line_num": 39, 
-            "cal_word": "ביה", 
-            "POS": "p02", 
-            "class": "talmud", 
-            "pg_num": 93, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "כדי", 
@@ -1795,7 +1797,7 @@
             "word": "דרב", 
             "line_num": 40, 
             "cal_word": "דרב", 
-            "POS": "N02", 
+            "POS": "PN", 
             "prefix_homograph": [
                 ""
             ], 

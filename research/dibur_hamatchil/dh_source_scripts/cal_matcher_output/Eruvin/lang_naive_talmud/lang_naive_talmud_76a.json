@@ -1,8 +1,32 @@
 {
     "missed_words": [
         {
+            "index": 4, 
+            "word": "משוינן"
+        }, 
+        {
+            "index": 5, 
+            "word": "ליה"
+        }, 
+        {
             "index": 14, 
             "word": "אי"
+        }, 
+        {
+            "index": 17, 
+            "word": "הוי"
+        }, 
+        {
+            "index": 20, 
+            "word": "ולא"
+        }, 
+        {
+            "index": 25, 
+            "word": "הוא"
+        }, 
+        {
+            "index": 28, 
+            "word": "הוא"
         }, 
         {
             "index": 46, 
@@ -124,7 +148,7 @@
             "word": "להו", 
             "line_num": 4, 
             "cal_word": "להו", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 76, 
             "ms": "01", 
@@ -268,34 +292,12 @@
             "side": 1
         }, 
         {
-            "head_word": "שוי", 
-            "word_num": 1, 
-            "daf": "76a", 
             "word": "משוי\"", 
-            "line_num": 7, 
-            "cal_word": "משוינן", 
-            "POS": "V02", 
-            "class": "talmud", 
-            "pg_num": 76, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 2, 
-            "daf": "76a", 
             "word": "להו", 
-            "line_num": 7, 
-            "cal_word": "ליה", 
-            "POS": "p02", 
-            "class": "talmud", 
-            "pg_num": 76, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "לגבי", 
@@ -392,8 +394,19 @@
             "side": 1
         }, 
         {
+            "head_word": "האי", 
+            "word_num": 6, 
+            "daf": "76a", 
             "word": "דהאי", 
-            "class": "unknown"
+            "line_num": 8, 
+            "cal_word": "האי", 
+            "POS": "p01", 
+            "class": "talmud", 
+            "pg_num": 76, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71003, 
+            "side": 1
         }, 
         {
             "word": "בית", 
@@ -515,13 +528,13 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "הוי", 
-            "word_num": 2, 
+            "head_word": "אי", 
+            "word_num": 0, 
             "daf": "76a", 
             "word": "אי", 
             "line_num": 12, 
-            "cal_word": "הוי", 
-            "POS": "V01", 
+            "cal_word": "אי", 
+            "POS": "c", 
             "class": "talmud", 
             "pg_num": 76, 
             "ms": "01", 
@@ -576,28 +589,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "לא", 
-            "word_num": 1, 
-            "daf": "76a", 
             "word": "דלא", 
-            "line_num": 13, 
-            "cal_word": "ולא", 
-            "POS": "a", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
-            "pg_num": 76, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "ערב", 
@@ -897,19 +890,8 @@
             "side": 1
         }, 
         {
-            "head_word": "הוא", 
-            "word_num": 1, 
-            "daf": "76a", 
             "word": "לא", 
-            "line_num": 20, 
-            "cal_word": "הוא", 
-            "POS": "p01", 
-            "class": "talmud", 
-            "pg_num": 76, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "מינכרא", 

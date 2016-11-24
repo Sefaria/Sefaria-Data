@@ -5,6 +5,10 @@
             "word": "נקלף"
         }, 
         {
+            "index": 3, 
+            "word": "קלי"
+        }, 
+        {
             "index": 4, 
             "word": "ונתבריה"
         }, 
@@ -63,6 +67,10 @@
         {
             "index": 27, 
             "word": "כי"
+        }, 
+        {
+            "index": 32, 
+            "word": "להו"
         }, 
         {
             "index": 35, 
@@ -153,6 +161,10 @@
             "word": "כמאן"
         }, 
         {
+            "index": 64, 
+            "word": "דמי פרתי"
+        }, 
+        {
             "index": 65, 
             "word": "דאמו"
         }, 
@@ -175,6 +187,10 @@
         {
             "index": 71, 
             "word": "דלית"
+        }, 
+        {
+            "index": 72, 
+            "word": "בהו"
         }, 
         {
             "index": 73, 
@@ -205,12 +221,16 @@
             "word": "מיבעיא"
         }, 
         {
+            "index": 81, 
+            "word": "ליה"
+        }, 
+        {
             "index": 87, 
             "word": "קא"
         }, 
         {
-            "index": 88, 
-            "word": "מיבעיא"
+            "index": 89, 
+            "word": "ליה"
         }
     ], 
     "words": [
@@ -1378,19 +1398,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "קלי", 
-            "word_num": 0, 
-            "daf": "85a", 
             "word": "לא", 
-            "line_num": 21, 
-            "cal_word": "קלי", 
-            "POS": "a", 
-            "class": "talmud", 
-            "pg_num": 85, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "מטמיא", 
@@ -1534,7 +1543,7 @@
             "word": "ומאן", 
             "line_num": 29, 
             "cal_word": "ומן", 
-            "POS": "p", 
+            "POS": "p01", 
             "prefix_homograph": [
                 ""
             ], 
@@ -1914,19 +1923,8 @@
             "side": 1
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 1, 
-            "daf": "85a", 
             "word": "לן", 
-            "line_num": 30, 
-            "cal_word": "להו", 
-            "POS": "p", 
-            "class": "talmud", 
-            "pg_num": 85, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "לא", 
@@ -1997,19 +1995,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ב_", 
-            "word_num": 1, 
-            "daf": "85a", 
             "word": "בני", 
-            "line_num": 42, 
-            "cal_word": "בהו", 
-            "POS": "p02", 
-            "class": "talmud", 
-            "pg_num": 85, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "חבורה", 
@@ -2054,13 +2041,13 @@
             "side": 1
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 5, 
+            "head_word": "ב_", 
+            "word_num": 0, 
             "daf": "85a", 
             "word": "ביה", 
             "line_num": 55, 
-            "cal_word": "ליה", 
-            "POS": "p", 
+            "cal_word": "ביה", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 85, 
             "ms": "01", 
@@ -2099,8 +2086,19 @@
             "side": 1
         }, 
         {
+            "head_word": "בעי", 
+            "word_num": 4, 
+            "daf": "85a", 
             "word": "קמיבעיא", 
-            "class": "unknown"
+            "line_num": 55, 
+            "cal_word": "מיבעיא", 
+            "POS": "V04", 
+            "class": "talmud", 
+            "pg_num": 85, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "word": "לן", 

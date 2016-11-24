@@ -25,6 +25,10 @@
             "word": "אסיר"
         }, 
         {
+            "index": 13, 
+            "word": "תני"
+        }, 
+        {
             "index": 14, 
             "word": "רישה"
         }, 
@@ -75,10 +79,6 @@
         {
             "index": 39, 
             "word": "יתירא"
-        }, 
-        {
-            "index": 40, 
-            "word": "מיבעי"
         }
     ], 
     "words": [
@@ -863,19 +863,8 @@
             "side": 1
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 7, 
-            "daf": "29a", 
             "word": "לא", 
-            "line_num": 19, 
-            "cal_word": "ליה", 
-            "POS": "p", 
-            "class": "talmud", 
-            "pg_num": 29, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "יאכל", 
@@ -886,12 +875,34 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "בעי", 
+            "word_num": 6, 
+            "daf": "29a", 
             "word": "מיבעי", 
-            "class": "unknown"
+            "line_num": 19, 
+            "cal_word": "מיבעי", 
+            "POS": "V04", 
+            "class": "talmud", 
+            "pg_num": 29, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
+            "head_word": "ל_", 
+            "word_num": 7, 
+            "daf": "29a", 
             "word": "ליה", 
-            "class": "unknown"
+            "line_num": 19, 
+            "cal_word": "ליה", 
+            "POS": "p01", 
+            "class": "talmud", 
+            "pg_num": 29, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "word": "מי", 

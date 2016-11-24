@@ -13,8 +13,16 @@
             "word": "אמ"
         }, 
         {
+            "index": 17, 
+            "word": "ליה"
+        }, 
+        {
             "index": 22, 
             "word": "לה"
+        }, 
+        {
+            "index": 41, 
+            "word": "לקבעיה"
         }
     ], 
     "words": [
@@ -248,7 +256,7 @@
             "word": "דרב", 
             "line_num": 5, 
             "cal_word": "דרב", 
-            "POS": "N02", 
+            "POS": "PN", 
             "prefix_homograph": [
                 ""
             ], 
@@ -379,13 +387,13 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 5, 
+            "head_word": "לא", 
+            "word_num": 3, 
             "daf": "101b", 
             "word": "לא", 
             "line_num": 7, 
-            "cal_word": "ליה", 
-            "POS": "p02", 
+            "cal_word": "לא", 
+            "POS": "a", 
             "class": "talmud", 
             "pg_num": 101, 
             "ms": "01", 
@@ -518,28 +526,8 @@
             "side": 2
         }, 
         {
-            "head_word": "בי בר", 
-            "word_num": 5, 
-            "daf": "101b", 
             "word": "רב", 
-            "line_num": 8, 
-            "cal_word": "דבי בר", 
-            "POS": "PN", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 101, 
-            "prefix_POS": [
-                "p"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "הינק", 
@@ -576,7 +564,7 @@
             "word": "ליה", 
             "line_num": 9, 
             "cal_word": "לה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 101, 
             "ms": "01", 
@@ -633,28 +621,8 @@
             "side": 2
         }, 
         {
-            "head_word": "בי רב", 
-            "word_num": 3, 
-            "daf": "101b", 
             "word": "בר", 
-            "line_num": 9, 
-            "cal_word": "דבי רב", 
-            "POS": "PN", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 101, 
-            "prefix_POS": [
-                "p"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "הינק", 
@@ -1000,28 +968,8 @@
             "side": 2
         }, 
         {
-            "head_word": "קבאעא", 
-            "word_num": 2, 
-            "daf": "101b", 
             "word": "לקיבעא", 
-            "line_num": 16, 
-            "cal_word": "לקבעיה", 
-            "POS": "N02", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ל_"
-            ], 
-            "pg_num": 101, 
-            "prefix_POS": [
-                "p03"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "קמא", 

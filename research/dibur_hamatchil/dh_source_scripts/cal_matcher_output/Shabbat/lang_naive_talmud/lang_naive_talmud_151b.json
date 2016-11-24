@@ -9,8 +9,20 @@
             "word": "שליט"
         }, 
         {
+            "index": 42, 
+            "word": "להו"
+        }, 
+        {
             "index": 64, 
             "word": "אפי"
+        }, 
+        {
+            "index": 65, 
+            "word": "מלי"
+        }, 
+        {
+            "index": 77, 
+            "word": "כאכסנא"
         }, 
         {
             "index": 102, 
@@ -342,7 +354,7 @@
             "word": "הא", 
             "line_num": 10, 
             "cal_word": "הא", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 151, 
             "ms": "01", 
@@ -2541,7 +2553,7 @@
             "word": "ליה", 
             "line_num": 42, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 151, 
             "ms": "01", 
@@ -2664,7 +2676,7 @@
             "word": "ליה", 
             "line_num": 42, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 151, 
             "ms": "01", 
@@ -2724,7 +2736,7 @@
             "word": "להו", 
             "line_num": 42, 
             "cal_word": "להו", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 151, 
             "ms": "01", 
@@ -2754,7 +2766,7 @@
             "word": "לה", 
             "line_num": 42, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 151, 
             "ms": "01", 
@@ -2782,14 +2794,10 @@
             "class": "unknown"
         }, 
         {
-            "word": "כתיב", 
-            "class": "unknown"
-        }, 
-        {
             "head_word": "כתב", 
             "word_num": 16, 
             "daf": "151b", 
-            "word": "כי", 
+            "word": "כתיב", 
             "line_num": 42, 
             "cal_word": "כתי", 
             "POS": "V01", 
@@ -2799,6 +2807,10 @@
             "homograph": "", 
             "book_num": 71002, 
             "side": 2
+        }, 
+        {
+            "word": "כי", 
+            "class": "unknown"
         }, 
         {
             "word": "בגלל", 
@@ -3211,13 +3223,13 @@
             "side": 2
         }, 
         {
-            "head_word": "מלי", 
-            "word_num": 11, 
+            "head_word": "לא", 
+            "word_num": 8, 
             "daf": "151b", 
             "word": "לא", 
             "line_num": 47, 
-            "cal_word": "מלי", 
-            "POS": "A01", 
+            "cal_word": "לא", 
+            "POS": "a", 
             "class": "talmud", 
             "pg_num": 151, 
             "ms": "01", 
@@ -3421,19 +3433,8 @@
             "side": 2
         }, 
         {
-            "head_word": "אכסנא", 
-            "word_num": 7, 
-            "daf": "151b", 
             "word": "כאביסנא", 
-            "line_num": 48, 
-            "cal_word": "כאכסנא", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "pg_num": 151, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "גרדאה", 
@@ -3708,7 +3709,7 @@
             "word": "ליה", 
             "line_num": 49, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 151, 
             "ms": "01", 
@@ -3905,7 +3906,7 @@
             "word": "לה", 
             "line_num": 50, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 151, 
             "ms": "01", 

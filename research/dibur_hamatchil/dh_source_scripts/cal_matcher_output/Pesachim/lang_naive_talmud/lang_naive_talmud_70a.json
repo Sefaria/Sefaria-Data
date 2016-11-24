@@ -29,12 +29,12 @@
             "word": "בידיה"
         }, 
         {
-            "index": 20, 
-            "word": "שמע"
+            "index": 19, 
+            "word": "אלא"
         }, 
         {
-            "index": 21, 
-            "word": "מינה"
+            "index": 20, 
+            "word": "שמע"
         }, 
         {
             "index": 22, 
@@ -75,6 +75,10 @@
         {
             "index": 38, 
             "word": "דחיא"
+        }, 
+        {
+            "index": 39, 
+            "word": "אלא"
         }, 
         {
             "index": 40, 
@@ -123,6 +127,10 @@
         {
             "index": 63, 
             "word": "אתקש"
+        }, 
+        {
+            "index": 68, 
+            "word": "מאי"
         }, 
         {
             "index": 69, 
@@ -187,6 +195,10 @@
         {
             "index": 110, 
             "word": "מיכעי"
+        }, 
+        {
+            "index": 111, 
+            "word": "ליה"
         }
     ], 
     "words": [
@@ -894,7 +906,7 @@
             "word": "להו", 
             "line_num": 14, 
             "cal_word": "להו", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 70, 
             "ms": "01", 
@@ -1541,7 +1553,7 @@
             "word": "ליה", 
             "line_num": 29, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 70, 
             "ms": "01", 
@@ -1779,8 +1791,19 @@
             "side": 1
         }, 
         {
+            "head_word": "האי", 
+            "word_num": 0, 
+            "daf": "70a", 
             "word": "האי", 
-            "class": "unknown"
+            "line_num": 32, 
+            "cal_word": "האי", 
+            "POS": "p01", 
+            "class": "talmud", 
+            "pg_num": 70, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "word": "בו", 
@@ -2104,19 +2127,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 1, 
-            "daf": "70a", 
             "word": "לא", 
-            "line_num": 35, 
-            "cal_word": "ליה", 
-            "POS": "p", 
-            "class": "talmud", 
-            "pg_num": 70, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "לעולם", 

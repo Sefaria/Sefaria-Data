@@ -1,8 +1,16 @@
 {
     "missed_words": [
         {
+            "index": 17, 
+            "word": "הוא"
+        }, 
+        {
             "index": 39, 
             "word": "ומטלטל"
+        }, 
+        {
+            "index": 50, 
+            "word": "כפה"
         }
     ], 
     "words": [
@@ -1035,7 +1043,7 @@
             "word": "ליה", 
             "line_num": 24, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 142, 
             "ms": "01", 
@@ -1093,7 +1101,7 @@
             "word": "לה", 
             "line_num": 24, 
             "cal_word": "לה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 142, 
             "ms": "01", 
@@ -2158,19 +2166,8 @@
             "side": 2
         }, 
         {
-            "head_word": "כפא", 
-            "word_num": 5, 
-            "daf": "142b", 
             "word": "כפא", 
-            "line_num": 41, 
-            "cal_word": "כפה", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "pg_num": 142, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "כפא", 
@@ -2665,15 +2662,24 @@
             "side": 2
         }, 
         {
-            "head_word": "ד_", 
+            "head_word": "רבא", 
             "word_num": 7, 
             "daf": "142b", 
             "word": "דרבא", 
             "line_num": 44, 
             "cal_word": "דרבא", 
-            "POS": "p", 
+            "POS": "PN", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
             "pg_num": 142, 
+            "prefix_POS": [
+                "p"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71002, 
@@ -2729,7 +2735,7 @@
             "word": "ליה", 
             "line_num": 45, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 142, 
             "ms": "01", 

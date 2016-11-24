@@ -1,6 +1,10 @@
 {
     "missed_words": [
         {
+            "index": 12, 
+            "word": "דמבטיל"
+        }, 
+        {
             "index": 13, 
             "word": "לי"
         }, 
@@ -17,6 +21,10 @@
             "word": "קא"
         }, 
         {
+            "index": 42, 
+            "word": "ליתחיל"
+        }, 
+        {
             "index": 43, 
             "word": "גופיה"
         }, 
@@ -29,8 +37,20 @@
             "word": "בשבתא"
         }, 
         {
+            "index": 69, 
+            "word": "אסיר"
+        }, 
+        {
+            "index": 70, 
+            "word": "מאי"
+        }, 
+        {
             "index": 71, 
             "word": "טעמ"
+        }, 
+        {
+            "index": 72, 
+            "word": "לאו"
         }, 
         {
             "index": 73, 
@@ -41,12 +61,12 @@
             "word": "דאולודי"
         }, 
         {
-            "index": 77, 
-            "word": "ואולודי"
+            "index": 76, 
+            "word": "הוא"
         }, 
         {
-            "index": 79, 
-            "word": "אסיר"
+            "index": 77, 
+            "word": "ואולודי"
         }, 
         {
             "index": 81, 
@@ -57,8 +77,16 @@
             "word": "אתי"
         }, 
         {
+            "index": 84, 
+            "word": "מאי"
+        }, 
+        {
             "index": 86, 
             "word": "איכא"
+        }, 
+        {
+            "index": 87, 
+            "word": "אלא"
         }, 
         {
             "index": 88, 
@@ -67,6 +95,10 @@
         {
             "index": 89, 
             "word": "אתי"
+        }, 
+        {
+            "index": 90, 
+            "word": "לאשויי"
         }, 
         {
             "index": 91, 
@@ -85,12 +117,20 @@
             "word": "אתי"
         }, 
         {
+            "index": 95, 
+            "word": "לאשויי"
+        }, 
+        {
             "index": 96, 
             "word": "מ\"ט"
         }, 
         {
-            "index": 102, 
-            "word": "ואולודי"
+            "index": 97, 
+            "word": "לאו"
+        }, 
+        {
+            "index": 101, 
+            "word": "הוא"
         }, 
         {
             "index": 108, 
@@ -606,7 +646,7 @@
             "word": "ליה", 
             "line_num": 14, 
             "cal_word": "ליה", 
-            "POS": "p02", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 104, 
             "ms": "01", 
@@ -692,28 +732,8 @@
             "side": 1
         }, 
         {
-            "head_word": "בטל", 
-            "word_num": 0, 
-            "daf": "104a", 
             "word": "דמבטליה", 
-            "line_num": 16, 
-            "cal_word": "דמבטיל", 
-            "POS": "V02", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 104, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "קא", 
@@ -1490,12 +1510,12 @@
         }, 
         {
             "head_word": "חלל", 
-            "word_num": 5, 
+            "word_num": 3, 
             "daf": "104a", 
             "word": "מחיל", 
             "line_num": 33, 
-            "cal_word": "ליתחיל", 
-            "POS": "V04", 
+            "cal_word": "מחיל", 
+            "POS": "V03", 
             "class": "talmud", 
             "pg_num": 104, 
             "ms": "01", 
@@ -2377,18 +2397,18 @@
         }, 
         {
             "head_word": "ילד", 
-            "word_num": 0, 
+            "word_num": 3, 
             "daf": "104a", 
             "word": "דאולודי", 
             "line_num": 47, 
-            "cal_word": "דאולודי", 
+            "cal_word": "ואולודי", 
             "POS": "V03", 
             "prefix_homograph": [
                 ""
             ], 
             "class": "talmud", 
             "prefix": [
-                "ד_"
+                "ו_"
             ], 
             "pg_num": 104, 
             "prefix_POS": [
@@ -2430,15 +2450,24 @@
             "side": 1
         }, 
         {
-            "head_word": "הוא", 
-            "word_num": 2, 
+            "head_word": "שוי", 
+            "word_num": 3, 
             "daf": "104a", 
             "word": "לא", 
-            "line_num": 47, 
-            "cal_word": "הוא", 
-            "POS": "p01", 
+            "line_num": 43, 
+            "cal_word": "לאשויי", 
+            "POS": "V03", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "ל_"
+            ], 
             "pg_num": 104, 
+            "prefix_POS": [
+                "p02"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71003, 

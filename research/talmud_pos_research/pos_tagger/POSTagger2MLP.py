@@ -66,29 +66,39 @@ def read_data(dir=''):
         all_json_files.extend([join(dirpath, filename) for filename in filenames if
                                filename.endswith('.json') and "lang_naive_talmud" in dirpath])
 
+
+    all_lang_files = []
+    for dirpath, dirnames, filenames in os.walk(dir):
+        all_lang_files.extend([join(dirpath, filename) for filename in filenames if
+                               filename.endswith('.json') and "lang_tagged_dilated" in dirpath])
     total_words = 0
     total_daf = 0
 
     log_message('Loading path: ' + str(dir))
 
     # iterate through all the files, and load them in
-    for file in all_json_files:
+    for file,lang_file in zip(all_json_files,all_lang_files):
         with open(file, 'r', encoding='utf8') as f:
             all_text = f.read()
+
+        with open(lang_file,'r',encoding='utf8') as lf:
+            all_lang_text = lf.read()
         # parse
         daf_data = json.loads(all_text)
+        lang_data = json.loads(all_lang_text)
 
         all_words = []
-        for word in daf_data['words']:
+        for word,lang_word in zip(daf_data['words'],lang_data):
             word_s = word['word']
             # class will be 1 if talmud, 0 if unknown
-            word_class = 1 if word['class'] != 'unknown' else 0
+            word_known = word['class'] != 'unknown'
+            word_class = 1 if lang_word['lang'] == 'aramaic' and word_known else 0
             word_pos = ''
             # if the class isn't unkown
-            if word_class: word_pos = word['POS']
+            if word_known: word_pos = word['POS']
 
             total_words += 1
-            if word_class and word_s == u'הכא' and word_pos != u'a':
+            if word_known and word_s == u'הכא' and word_pos != u'a':
                 print "OH NO! {}".format(file)
             all_words.append((word_s, word_class, word_pos))
 

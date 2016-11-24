@@ -13,6 +13,10 @@
             "word": "חסרי"
         }, 
         {
+            "index": 28, 
+            "word": "להי"
+        }, 
+        {
             "index": 30, 
             "word": "תרתי"
         }, 
@@ -789,7 +793,7 @@
             "word": "ליה", 
             "line_num": 23, 
             "cal_word": "ליה", 
-            "POS": "p", 
+            "POS": "p01", 
             "class": "talmud", 
             "pg_num": 104, 
             "ms": "01", 
@@ -1520,19 +1524,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ל_", 
-            "word_num": 4, 
-            "daf": "104a", 
             "word": "ה\"", 
-            "line_num": 40, 
-            "cal_word": "להי", 
-            "POS": "p02", 
-            "class": "talmud", 
-            "pg_num": 104, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "את", 
@@ -1719,15 +1712,24 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "א_", 
+            "head_word": "הא", 
             "word_num": 1, 
             "daf": "104a", 
             "word": "אהא", 
             "line_num": 48, 
             "cal_word": "אהא", 
-            "POS": "p02", 
+            "POS": "p01", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "א_"
+            ], 
             "pg_num": 104, 
+            "prefix_POS": [
+                "p02"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71004, 
