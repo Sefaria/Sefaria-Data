@@ -5,7 +5,7 @@ import urllib
 import urllib2
 from urllib2 import URLError, HTTPError
 import json
-from sources.local_setting import *
+from sources.local_settings import *
 
 
 def count_instances(queries, input_file):
