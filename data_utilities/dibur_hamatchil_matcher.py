@@ -73,6 +73,7 @@ class AbbrevMatch:
 class GemaraDaf:
     def __init__(self,word_list,comments,dh_extraction_method=lambda x: x,prev_matched_results=None,dh_split=None):
         self.allWords = word_list
+        self.matched_words = [False for _ in xrange(len(self.allWords))]
         self.gemaraText = " ".join(self.allWords)
         self.wordhashes = CalculateHashes(self.allWords)
         self.allRashi = []
@@ -324,9 +325,6 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
             #this rashi was initialized with the `prev_matched_results` list and should be ignored with regards to matching
             continue
 
-        if ru.place == len(curDaf.allRashi) - 2:
-            pass
-
         startword,endword = (0,len(curDaf.allWords)) if prev_matched_results == None else GetRashiBoundaries(curDaf.allRashi,ru.place,len(curDaf.allWords),boundaryFlexibility)[0:2]
         approxMatches = GetAllApproximateMatches(curDaf,ru,startword,endword,word_threshold,char_threshold)
         approxAbbrevMatches = GetAllApproximateMatchesWithAbbrev(curDaf, ru, startword, endword, word_threshold, char_threshold)
@@ -542,10 +540,26 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
         for curru in ruToProcess:
             # put it in
             #TODO: if disambiguity is low, apply other criteria
-            if len(curru.rashimatches) == 0: continue
+
+
+            #find first rashimatch which doesn't overlap too many words in already matched gemara
+            if len(curru.rashimatches) > 0 and not filter_matches_out_of_order(curDaf.matched_words, curru.rashimatches[0]):
+                if len(curru.rashimatches) > 1 and abs(curru.rashimatches[0].score - curru.rashimatches[1].score) < 10:
+                    #only delete if you know the one after is close in score
+                    del curru.rashimatches[0]
+
+            if len(curru.rashimatches) == 0:
+                rashisByDisambiguity.remove(curru)
+                continue
+
+
             match = curru.rashimatches[0]
             curru.startWord = match.startWord
             curru.endWord = match.endWord
+
+            for imatchedword in xrange(curru.startWord, curru.endWord+1):
+                curDaf.matched_words[imatchedword] = True
+
             curru.matchedGemaraText = match.textMatched
             curru.skippedWords = match.skippedWords
             curru.abbrev_matches = match.abbrev_matches
@@ -622,6 +636,17 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
 
     return ret
 
+
+def filter_matches_out_of_order(matched_words, temprashimatch):
+    num_unmatched = temprashimatch.endWord - temprashimatch.startWord + 1
+    for imatchedword in xrange(temprashimatch.startWord, temprashimatch.endWord + 1):
+        if matched_words[imatchedword]:
+            num_unmatched -= 1
+
+    percent_matched = 1.0 * num_unmatched / (temprashimatch.endWord - temprashimatch.startWord + 1)
+    if percent_matched <= 0.3:
+        print "DELETING {}".format(percent_matched)
+    return percent_matched > 0.3
 
 def RecalculateDisambiguities(allRashis, rashisByDisambiguity, prevMatchedRashi, nextMatchedRashi, startbound, endbound,
                               newlyMatchedRashiUnit, boundaryFlexibility, maxendbound, place_all):  # List<RashiUnit>,List<RashiUnit>,int,int,int,int,RashiUnit
@@ -872,14 +897,14 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
 
         # if it is, add it in!
         # else you didn't match the whole rashi b/c you got to the end of the daf too quickly
-        if fIsMatch and iStartingWordInGemara + wordCountRashi - gemaraDifferential < wordCountGemara:
+        if fIsMatch and iStartingWordInGemara + wordCountRashi - gemaraDifferential - 1 < wordCountGemara:
 
             curMatch = TextMatch()
             curMatch.textToMatch = curRashi.startingText
             curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iStartingWordInGemara,
                                                         wordCountRashi - gemaraDifferential)
             curMatch.startWord = iStartingWordInGemara
-            curMatch.endWord = iStartingWordInGemara + wordCountRashi - gemaraDifferential #I added the -1 b/c there was an off-by-one error
+            curMatch.endWord = iStartingWordInGemara + wordCountRashi - gemaraDifferential - 1 # I added the -1 b/c there was an off-by-one error
 
             #one final check on abbrev matches. get rid of any matches that are subsets
             new_abbrev_matches = []
@@ -1074,13 +1099,21 @@ def GetStringWithRemovedWord(p, iWordToIgnore):  # string,int
 
 #done
 def BuildPhraseFromArray(allWords, iWord, leng, wordToSkip=-1, word2ToSkip=-1):  # list<string>,int,int,int,int
-    phrase = u""
-    for jump in xrange(leng):
-        if jump == wordToSkip or jump == word2ToSkip:
-            continue
-        phrase += allWords[iWord + jump] + u" "
+    if wordToSkip == -1 and word2ToSkip == -1:
+        return u" ".join(allWords[iWord:iWord + leng]).strip()
+    elif wordToSkip != -1 and word2ToSkip == -1:
+        return u" ".join(allWords[iWord:iWord + wordToSkip] + allWords[iWord + wordToSkip+1:iWord + leng]).strip()
+    elif wordToSkip == -1 and word2ToSkip != -1:
+        return u" ".join(allWords[iWord:iWord + word2ToSkip] + allWords[iWord + word2ToSkip + 1:iWord + leng]).strip()
+    else:  # wordToSkip != -1 and word2ToSkip != -1
+        if word2ToSkip < wordToSkip: #swap
+            tempWordToSkip = wordToSkip
+            wordToSkip = word2ToSkip
+            word2ToSkip = tempWordToSkip
 
-    return phrase.strip()
+        return u" ".join(allWords[iWord:iWord + wordToSkip] + allWords[iWord + wordToSkip + 1:iWord + word2ToSkip] +
+                         allWords[iWord + word2ToSkip + 1:iWord + leng]).strip()
+
 
 #done
 def CountWords(s):
@@ -1127,7 +1160,7 @@ def isAbbrevMatch(curpos, abbrevText, unabbrevText, char_threshold):
     maxAbbrevLen = len(abbrevText)
     isMatch = False
 
-    abbrevPatterns = [[],[1],[2],[1,1],[2,1]]
+    abbrevPatterns = [[],[1],[2],[3],[1,1],[2,1]]
     for comboList in abbrevPatterns:
 
         numWordsCombined = sum(comboList)
