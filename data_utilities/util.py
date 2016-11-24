@@ -446,12 +446,11 @@ def ja_to_xml(ja, section_names, filename='output.xml'):
     tree.write(filename, 'utf-8')
 
 
-def file_to_ja(structure, infile, expressions, cleaner, grab_all=False):
+def file_to_ja(depth, infile, expressions, cleaner, grab_all=False):
     """
     Designed to be the first stage of a reusable parsing tool. Adds lines of text to the Jagged
     Array in the desired structure (Chapter, verse, etc.)
-    :param structure: A nested list at the depth of the final result. Example: for a depth 2
-    text, structure should be [[]].
+    :param depth: depth of the JaggedArray.
     :param infile: Text file to read from
     :param expressions: A list of regular expressions with which to identify section (chapter) level. Do
     not include an expression with which to break up the segment levels.
@@ -462,12 +461,8 @@ def file_to_ja(structure, infile, expressions, cleaner, grab_all=False):
     """
 
     # instantiate ja
+    structure = reduce(lambda x, y: [x], range(depth-1), [])
     ja = jagged_array.JaggedArray(structure)
-
-    if structure == []:
-        depth = 1
-    else:
-        depth = ja.get_depth()
 
     # ensure there is a regex for every level except the lowest
     if depth - len(expressions) != 1:

@@ -10,12 +10,11 @@ from bs4 import BeautifulSoup
 import re
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
-sys.path.append(p+"/data_utilities")
-from data_utilities.dibur_hamatchil_matcher import *
-sys.path.insert(0, '../Match/')
-from match import Match
+sys.path.insert(0,p+"/sources")
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 from local_settings import *
+sys.path.append(p+"/data_utilities")
+from data_utilities.dibur_hamatchil_matcher import *
 from functions import *
 
 
@@ -35,6 +34,7 @@ class Maharam:
         whatever the category is we increment the maharam line and post the link between maharam and the appropriate
         book based on the category. remember to deal with paragraph case and gemara case.
         '''
+        self.missing_ones = []
         self.heb_numbers = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "ששי", "שביעי", "שמיני", "תשיעי", "עשירי", "אחד עשר", "שנים עשר", "שלשה עשר", "ארבעה עשר", "חמשה", "ששה"]
         self.comm_dict = {}
         self.dh1_dict = {}
@@ -102,7 +102,7 @@ class Maharam:
                 self.comm_dict[self.current_daf].append(comment)
                 self.dh1_dict[self.current_daf].append((category, ""))
             else:
-                self.comm_dict[self.current_daf][last_comment] += "<br>"+comment+": "
+                self.comm_dict[self.current_daf].append(comment)
         if category == 'gemara':
             self.gemara1_dict[self.current_daf].append(dh1)
         elif category == 'rashi':
@@ -177,24 +177,18 @@ class Maharam:
 
     def parseDH(self, comment, category):
         first_10 = " ".join(comment.split(" ")[0:10])
-        if first_10 == " ".join(comment.split(" ")[0:9]):
-            dh = ""
-            self.addDHComment(dh, comment, category, self.heb_category)
+        if first_10.find(".") > 0:
+            dh, comment = comment.split(".", 1)
+            comment = comment[1:] if comment[0] == ' ' else comment
+            dh += ". "
+        elif first_10.find("כו'") > 0:
+            dh, comment = comment.split("כו'", 1)
+            comment = comment[1:] if comment[0] == ' ' else comment
+            dh += "כו' "
         else:
-            if first_10.find(".") > 0:
-                dh, comment = comment.split(".", 1)
-                comment = comment[1:] if comment[0] == ' ' else comment
-                dh += ". "
-            elif first_10.find("כו'") > 0:
-                dh, comment = comment.split("כו'", 1)
-                comment = comment[1:] if comment[0] == ' ' else comment
-                dh += "כו' "
-            elif len(comment) > 20:
-                dh = first_10 + " "
-                comment = " ".join(comment.split(" ")[10:])
-            else:
-                dh = ""
-            self.addDHComment(dh, comment, category, self.heb_category)
+            dh = first_10 + " "
+            comment = " ".join(comment.split(" ")[10:])
+        self.addDHComment(dh, comment, category, self.heb_category)
 
 
     def parseText(self, file):
@@ -226,12 +220,7 @@ class Maharam:
                     if len(comment) < 5:
                         continue
                     self.determineCategory(count, comment)
-                    if self.category == "":
-                        continue
-                    if self.category == 'paragraph':
-                        self.addDHComment("","", comment, 'paragraph', "")
-                    else:
-                        self.parseDH(comment, self.category)
+                    self.parseDH(comment, self.category)
             else:
                 print line
             prev_line = line
@@ -257,16 +246,15 @@ class Maharam:
             self.rashi_line+=1
             title = 'Rashi on '+masechet
             in_order = rashi_in_order[self.rashi_line]
-            if in_order == '0':
-                return
         elif category == 'tosafot':
             self.maharam_line+=1
             self.tosafot_line+=1
             title = 'Tosafot on '+masechet
             in_order = tosafot_in_order[self.tosafot_line]
-            if in_order == '0':
-                return
-        self.links_to_post.append({
+        if in_order == '0':
+            self.missing_ones.append("Maharam on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line))
+        else:
+            self.links_to_post.append({
                 "refs": [
                              in_order,
                             "Maharam on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line)
@@ -280,8 +268,9 @@ class Maharam:
         self.maharam_line+=1
         self.gemara_line+=1
         if gemara_in_order[self.gemara_line] == '0':
-            return
-        self.links_to_post.append({
+            self.missing_ones.append("Maharam on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line))
+        else:
+            self.links_to_post.append({
             "refs": [
                      gemara_in_order[self.gemara_line],
                     "Maharam on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line)
@@ -327,7 +316,9 @@ class Maharam:
                     })
     '''
 
-    def postLinks(self, match_in_order):
+
+
+    def postLinks(self):
         def base_tokenizer(str):
             str = re.sub(ur"\([^\(\)]+\)", u"", str)
             word_list = re.split(ur"\s+", str)
@@ -348,7 +339,6 @@ class Maharam:
             rashi1_arr = self.rashi1_dict[daf]
             gemara1_arr = self.gemara1_dict[daf]
             print "matching tosafot"+str(len(tosafot1_arr))
-            #tosafot_text = compileCommentaryIntoPage("Tosafot on "+masechet, daf)
             tosafot_text = Ref("Tosafot on "+masechet+"."+AddressTalmud.toStr("en", daf)).text('he')
             tosafot1_arr = [text.decode('utf-8') for text in tosafot1_arr]
             tosafot_in_order = match_ref(tosafot_text, tosafot1_arr, base_tokenizer, self.dh_extract_method, verbose=True)
@@ -421,7 +411,6 @@ if __name__ == "__main__":
         maharam = Maharam()
         maharam.parseText(file)
 
-        match_in_order=Match(in_order=True, min_ratio=80, guess=False, range=True, can_expand=False)
         text_to_post = convertDictToArray(maharam.comm_dict)
         send_text = {
                         "versionTitle": "Vilna Edition",
@@ -430,6 +419,11 @@ if __name__ == "__main__":
                         "text": text_to_post,
                     }
         post_text("Maharam on "+masechet, send_text, "on")
+        print 'posted'
 
-        maharam.postLinks(match_in_order)
+        maharam.postLinks()
+
+        missing = open("missing_ones_"+masechet+".txt", "w")
+        for each_ref in maharam.missing_ones:
+            missing.write(each_ref+"\n")
 

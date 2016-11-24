@@ -637,9 +637,9 @@ def isGematria(txt):
     return True
 
 def getGematria(txt):
-    txt = txt.replace(u"ך", u"כ").replace(u"ץ", u"צ")
     if not isinstance(txt, unicode):
         txt = txt.decode('utf-8')
+    txt = txt.replace(u"ך", u"כ").replace(u"ץ", u"צ")
     index=0
     sum=0
     while index <= len(txt)-1:
