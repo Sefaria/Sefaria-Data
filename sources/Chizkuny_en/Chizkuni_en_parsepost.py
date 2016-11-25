@@ -17,7 +17,8 @@ from bs4 import BeautifulSoup
 
 books_of_Torah = ["Genesis","Exodus","Leviticus","Numbers","Deuteronomy"]
 def get_parsed_text():
-    with open("Chizkuni - Munk.html", 'r') as myfile:
+    print "here"
+    with open("Chizkuni - Munk (1).html", 'r') as myfile:
         text = ''.join(myfile.readlines())
     soup = BeautifulSoup(text, 'html.parser')
     spans = soup.find_all('span')
@@ -60,7 +61,6 @@ def get_parsed_text():
     for book in all_books:
         for comment in book:
             print "P!: "+comment
-    print "BOOKS OF MOSES: "+str(len(make_perek_array('Genesis')[0]))
     final_text = []
     misplaced = []
     for index, book in enumerate(all_books):
@@ -68,7 +68,7 @@ def get_parsed_text():
         last_pasuk = 0
         for comment in book:
             comment_index = get_comment_index(comment)
-            if last_perek > comment_index[0]:
+            if last_pasuk > comment_index[1] and last_perek == comment_index[0]:
                 misplaced.append(comment)
             else:
                 last_perek = comment_index[0]
@@ -228,6 +228,8 @@ def remove_extra_space(s):
         s = s.replace("  "," ")
     return s
 
+get_parsed_text()
+"""
 for index, book in enumerate(get_parsed_text()[3:]):
     index+=3
     version = {
@@ -237,4 +239,4 @@ for index, book in enumerate(get_parsed_text()[3:]):
         'text': book
     }
     post_text_weak_connection('Chizkuni, '+books_of_Torah[index], version)
-
+"""
