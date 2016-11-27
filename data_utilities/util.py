@@ -784,78 +784,130 @@ def get_cards_from_trello(list_name, board_json):
 
     return cards
 
-#WEIGHTED LEVENSHTEIN START
 
-letter_freqs = {
-    u'י': 0.0,
-    u'ו': 0.2145,
-    u'א': 0.2176,
-    u'מ': 0.3555,
-    u'ה': 0.4586,
-    u'ל': 0.4704,
-    u'ר': 0.4930,
-    u'נ': 0.5592,
-    u'ב': 0.5678,
-    u'ש': 0.7007,
-    u'ת': 0.7013,
-    u'ד': 0.7690,
-    u'כ': 0.8038,
-    u'ע': 0.8362,
-    u'ח': 0.8779,
-    u'ק': 0.9124,
-    u'פ': 0.9322,
-    u'ס': 0.9805,
-    u'ט': 0.9924,
-    u'ז': 0.9948,
-    u'ג': 0.9988,
-    u'צ': 1.0
-}
-
-sofit_map = {
-    u'ך': u'כ',
-    u'ם': u'מ',
-    u'ן': u'נ',
-    u'ף': u'פ',
-    u'ץ': u'צ',
-}
-
-def sofit_swap(C):
-    return sofit_map[C] if C in sofit_map else C
+class LevenshteinError(Exception):
+    pass
 
 
-def weighted_levenshtein_cost(c1, c2=None,min_cost=1.0):
-    c1 = sofit_swap(c1)
-    c2 = sofit_swap(c2)
-    w1 = letter_freqs[c1] if c1 in letter_freqs else 0.0
-    if c2:
-        w2 = letter_freqs[c2] if c2 in letter_freqs else 0.0
-        return w1 + min_cost if w1 > w2 else w2 + min_cost
-    else:
-        return w1 + min_cost
+class WeightedLevenshtein:
+    """
+    Use this class to calculate the Weighted Levenshtein between strings. The default letter frequencies defined here
+    are based off of the Talmud. The default min_cost value is recommended, and should only be changed by engineers with
+    a proficient understanding of the weighted Levenshtein algorithm.
+    """
 
-def weighted_levenshtein(s1,s2,cost_fn,min_cost=1.0):
-    if s1 == s2:
-        return 0
-    if len(s1) == 0:
-        return len(s2)
-    if len(s2) == 0:
-        return len(s1)
+    def __init__(self, letter_freqs=None, min_cost=None):
 
-    v0 = range(len(s2)+1)
-    v1 = [0 for _ in xrange(len(s2)+1)]
+        if letter_freqs is None:
+            self.letter_freqs = {
+                u'י': 0.0,
+                u'ו': 0.2145,
+                u'א': 0.2176,
+                u'מ': 0.3555,
+                u'ה': 0.4586,
+                u'ל': 0.4704,
+                u'ר': 0.4930,
+                u'נ': 0.5592,
+                u'ב': 0.5678,
+                u'ש': 0.7007,
+                u'ת': 0.7013,
+                u'ד': 0.7690,
+                u'כ': 0.8038,
+                u'ע': 0.8362,
+                u'ח': 0.8779,
+                u'ק': 0.9124,
+                u'פ': 0.9322,
+                u'ס': 0.9805,
+                u'ט': 0.9924,
+                u'ז': 0.9948,
+                u'ג': 0.9988,
+                u'צ': 1.0
+            }
+        else:
+            self.letter_freqs = letter_freqs
 
-    for i in xrange(len(s1)):
-        v1[0] = i + 1
-        for j in xrange(len(s2)):
-            cost_sub = 0.0 if (s1[i] == s2[j]) else cost_fn(s1[i],s2[j],min_cost=min_cost)
-            cost_ins = cost_fn(s2[j],min_cost=min_cost)
-            cost_del = cost_fn(s1[i],min_cost=min_cost)
-            v1[j+1] = min(v1[j]+cost_ins,min(v0[j+1]+cost_del,v0[j]+cost_sub))
+        self.sofit_map = {
+            u'ך': u'כ',
+            u'ם': u'מ',
+            u'ן': u'נ',
+            u'ף': u'פ',
+            u'ץ': u'צ',
+        }
 
-        vtemp = v0
-        v0 = v1
-        v1 = vtemp
+        if min_cost is None:
+            self.min_cost = 1.0
+        else:
+            self.min_cost = min_cost
 
-    return v0[len(s2)]
+    def sofit_swap(self, c):
+        return self.sofit_map.get(c, c)
 
-#WEIGHTED LEVENSHTEIN END
+    def cost(self, c1, c2=None):
+        c1 = self.sofit_swap(c1)
+        c2 = self.sofit_swap(c2)
+        w1 = self.letter_freqs[c1] if c1 in self.letter_freqs else 0.0
+        if c2:
+            w2 = self.letter_freqs[c2] if c2 in self.letter_freqs else 0.0
+            return w1 + self.min_cost if w1 > w2 else w2 + self.min_cost
+        else:
+            return w1 + self.min_cost
+
+    def calculate(self, s1, s2, normalize=True):
+        """
+        This method calculates the Weighted Levenshtein between two strings. It should be noted however that the
+        Levenshtein score between two strings is dependant on the lengths of the two strings. Therefore, it is possible
+        that two short strings with a low Levenshtein score may score more poorly than two long strings with a higher
+        Levenshtien score.
+
+        The code for this method is redacted from https://en.wikipedia.org/wiki/Levenshtein_distance. As we are only
+        calculating the distance, without building an alignment, we only save two rows of the Levenshtein matrix at
+        any given time.
+        :param s1: First string. Determines the number of rows in the Levenshtein matrix.
+        :param s2: Second string. Determines the number of columns in the Levenshtein matrix.
+        :param normalize: True to get a score between 0-100, False to get the weighted Levenshtein score.
+        :return: If normalize is True, will return an integer between 0-100, with 100 being a perfect match and 0 being
+        two ompletely different strings with the most expensive swap at every location. Otherwise, the exact weighted
+        Levenshtein score will be returned.
+        """
+        if len(s1) == 0 and len(s2) == 0:
+            raise LevenshteinError
+
+        if s1 == s2:
+            score = 0
+
+        else:
+            """
+            v0 corresponds to row i-1 in the Levenshtein matrix, where i is the index of the current letter in s1.
+            It is initialized to the cost of deleting every letter in s2 up to letter j for each letter j in s2
+            v1 corresponds to row i of the Levenshtein matrix.
+            """
+            v0 = []
+            for j in xrange(len(s2) + 1):
+                if j == 0:
+                    v0.append(0)
+                else:
+                    v0.append(self.cost(s2[j-1]) + v0[j-1])
+            v1 = [0] * (len(s2) + 1)
+
+            for i in xrange(len(s1)):
+                v1[0] = self.cost(s1[i])  # Set to the cost of inserting the first char of s1 into s2
+                for j in xrange(len(s2)):
+                    cost_sub = 0.0 if (self.sofit_swap(s1[i]) == self.sofit_swap(s2[j])) else self.cost(s1[i], s2[j])
+                    cost_ins = self.cost(s2[j])
+                    cost_del = self.cost(s1[i])
+                    v1[j+1] = min(v1[j]+cost_ins, min(v0[j+1]+cost_del, v0[j]+cost_sub))
+
+                vtemp = v0
+                v0 = v1
+                v1 = vtemp
+            score = v0[-1]
+
+        if normalize:
+            expensive = max(self.letter_freqs.values())
+            length = max(len(s1), len(s2))
+            max_score = length * (expensive + self.min_cost)
+            return int(100.0*(1 - (score / max_score)))
+
+        else:
+            return score
+
