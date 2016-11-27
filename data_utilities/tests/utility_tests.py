@@ -1,5 +1,6 @@
 # encoding=utf-8
 
+import pytest
 from data_utilities import util
 
 
@@ -17,3 +18,7 @@ class Test_WeightedLevenshtein:
 
     def test_sofit(self):
         assert self.instance.calculate(u'שלומ', u'שלום') == 100
+
+    def test_nothing(self):
+        with pytest.raises(util.LevenshteinError):
+            self.instance.calculate(u'', u'')

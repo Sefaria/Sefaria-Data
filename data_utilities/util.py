@@ -785,6 +785,10 @@ def get_cards_from_trello(list_name, board_json):
     return cards
 
 
+class LevenshteinError(Exception):
+    pass
+
+
 class WeightedLevenshtein:
     """
     Use this class to calculate the Weighted Levenshtein between strings. The default letter frequencies defined here
@@ -865,6 +869,9 @@ class WeightedLevenshtein:
         two ompletely different strings with the most expensive swap at every location. Otherwise, the exact weighted
         Levenshtein score will be returned.
         """
+        if len(s1) == 0 and len(s2) == 0:
+            raise LevenshteinError
+
         if s1 == s2:
             score = 0
 
