@@ -19,7 +19,7 @@ from data_utilities import dibur_hamatchil_matcher
 from research.talmud_pos_research.language_classifier import cal_tools
 
 
-full_cal_db_location = "../../talmud_pos_research/language_classifier/noahcaldb.txt"
+full_cal_db_location = "../../talmud_pos_research/language_classifier/noahcaldbfull.txt"
 mesechta_cal_db_location = "../../talmud_pos_research/language_classifier/caldb_"
 
 def make_cal_segments(mesechta):
@@ -268,7 +268,11 @@ def make_cal_pos_hashtable(cutoff=0):
     obj = {}
     with open(full_cal_db_location,'rb') as cal:
         for line in cal:
-            lineObj = cal_tools.parseCalLine(line,True,False)
+            try:
+                lineObj = cal_tools.parseCalLine(line,False,False)
+            except IndexError:
+                print line
+                continue
             word = lineObj["word"]
             pos = lineObj["POS"]
             if not word in obj:
@@ -290,11 +294,11 @@ def make_cal_pos_hashtable(cutoff=0):
     print "Percent Words With 1 POS",round(100.0*num_one_pos_words/len(obj),3)
     print "Avg Num POS per word",round(1.0*total_num_pos/len(obj),3)
 
-    #cal_tools.saveUTFStr(obj,"cal_pos_hashtable.json")
-    #f = codecs.open("double_pos_before.txt","wb",encoding='utf8')
-    #for word,pos in obj.items():
-    #    f.write(u'{} ~-~ {}\n'.format(word,str(pos)))
-    #f.close()
+    cal_tools.saveUTFStr(obj,"cal_pos_hashtable.json")
+    f = codecs.open("double_pos_before_eng.txt","wb",encoding='utf8')
+    for word,pos in obj.items():
+        f.write(u'{} ~-~ {}\n'.format(word,str(pos)))
+    f.close()
 
 def make_cal_lines_text(mesechta):
     cal_lines = json.load(open("cal_lines_{}.json".format(mesechta), "r"), encoding="utf8")
@@ -311,9 +315,9 @@ def make_cal_lines_text(mesechta):
     fp.write(out)
     fp.close()
 
-mesechtas = ["Eruvin"]
+mesechtas = [] #["Eruvin"]
 for mesechta in mesechtas:
     make_cal_segments(mesechta)
     match_cal_segments(mesechta)
     #make_cal_lines_text(mesechta)
-#make_cal_pos_hashtable(2)
+make_cal_pos_hashtable(2)

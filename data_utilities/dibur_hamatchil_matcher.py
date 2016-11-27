@@ -44,8 +44,11 @@ class TextMatch:
         self.startWord = 0
         self.endWord = 0
         self.score = 0
-        self.skippedWords = []
+        self.skippedWords = [] #this currently isn't implemented correctly
         self.abbrev_matches = [] #list of tuples of range of abbreviation found, if any
+
+    def __str__(self):
+        return u'{} ==> {} ({},{}) Score: {}'.format(self.textToMatch, self.textMatched, self.startWord, self.endWord, self.score)
 
 class AbbrevMatch:
     def __init__(self,abbrev,expanded,rashiRange,gemaraRange,contextBefore,contextAfter,isNumber):
@@ -183,16 +186,23 @@ def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,
     comments: TextChunk or list of comment strings
     base_tokenizer: f(string)->list(string)
     dh_extract_method: f(string)->string
+    verbose: True means print debug info
     word_threshold: float - percentage of mismatched words to allow. higher means allow more non-matching words in a successful match (range is [0,1])
     char_threshold: float - roughly a percentage of letters that can differ in a word match (not all letters are equally weighted so its not a linear percentage). higher allows more differences within a word match. (range is [0,1])
     with_abbrev_matches: True if you want a second return value which is a list AbbrevMatch objects (see class definition above)
+    boundaryFlexibility: int which indicates how much leeway there is in the order of rashis. higher values allow more disorder in matches. 0 means the start positions of matches must be in order. a high value (higher than the number of words in the doc) means order doesn't matter
     dh_split: prototype, split long dibur hamatchil
     rashi_filter: function(str) -> bool , if False, remove rashi from matching
-    boundaryFlexibility: int which indicates how much leeway there is in the order of rashis. higher values allow more disorder in matches. 0 means the start positions of matches must be in order. a high value (higher than the number of words in the doc) means order doesn't matter
+    strict_boundaries: True means no matches can overlap
+    place_all: True means every comment is place, regardless of whether it matches well or not
 
-    :returns: [(Ref, Ref)] - base text, commentary
-         or
-         [Ref] - base text refs - if comments is a list
+    :returns: dict
+    {"matches": list of base_refs. each element corresponds to each comment in comments,
+    "match_word_indices": copied from output of match_text(). (start,end) indexes of text matched in base_text,
+    "match_text": text matched for each comment}
+    if comments is a TextChunk, dict also contains "comment_refs", list of refs corresponding to comments
+    if with_abbrev_matches, dict also contains "abbrevs", list of AbbrevMatches
+    if place_all, dict also contains "fixed", list of bools for each comment. True if comment originally didn't match, but later was matched b/c the comments around it were matched
     """
     bas_word_list = [] #re.split(r"\s+"," ".join(base_text.text))
     base_depth = base_text.ja().depth()
@@ -309,9 +319,24 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
     base_text: list - list of words
     comments: list - list of comment strings
     dh_extract_method: f(string)->string
+    verbose: True means print debug info
+    word_threshold: float - percentage of mismatched words to allow. higher means allow more non-matching words in a successful match (range is [0,1])
+    char_threshold: float - roughly a percentage of letters that can differ in a word match (not all letters are equally weighted so its not a linear percentage). higher allows more differences within a word match. (range is [0,1])
     prev_matched_results: [(start,end)] list of start/end indexes found in a previous iteration of match_text
     with_abbrev_matches: True if you want a second return value which is a list AbbrevMatch objects (see class definition above)
-    returns: [(start,end)] - start and end index of each comment. optionally also returns abbrev_ranges (see with_abbrev_ranges parameter)
+    boundaryFlexibility: int which indicates how much leeway there is in the order of rashis. higher values allow more disorder in matches. 0 means the start positions of matches must be in order. a high value (higher than the number of words in the doc) means order doesn't matter
+    dh_split: prototype, split long dibur hamatchil
+    rashi_filter: function(str) -> bool , if False, remove rashi from matching
+    strict_boundaries: True means no matches can overlap
+    place_all: True means every comment is place, regardless of whether it matches well or not
+
+    :returns: dict
+    {"matches": list of (start,end) indexes for each comment. indexes correspond to words matched in base_text,
+    "match_text": list of str for each comment corresponding to the base_text text matched by each comment}
+    if comments is a TextChunk, dict also contains "comment_refs", list of refs corresponding to comments
+    if with_abbrev_matches, dict also contains "abbrevs", list of AbbrevMatches
+    if place_all, dict also contains "fixed", list of bools for each comment. True if comment originally didn't match, but later was matched b/c the comments around it were matched
+
     """
     if rashi_filter:
         comments = filter(lambda x: rashi_filter(x) if rashi_filter(x) else None, comments)
@@ -1059,9 +1084,14 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
                         curMatch.textToMatch = curRashi.startingText
 
                         # the "text matched" is the actual text of the gemara, including the word we skipped.
-                        curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iWord, wordCount)
+                        len_matched = wordCount
+                        if gemaraWordToIgnore != -1:
+                            len_matched += 1
+                        if gemaraWord2ToIgnore != -1:
+                            len_matched += 1
+                        curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iWord, len_matched)
                         curMatch.startWord = iWord
-                        curMatch.endWord = iWord + wordCount - 1
+                        curMatch.endWord = iWord + len_matched - 1
                         curMatch.skippedWords = [gemaraWordToIgnore,gemaraWord2ToIgnore]
 
                         # if we skipped the last word or two words, then we should cut them out of here
@@ -1070,6 +1100,10 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
                             curMatch.endWord -= 2
                         elif gemaraWordToIgnore == wordCount - 1:
                             curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iWord, wordCount - 1)
+                            curMatch.endWord -= 1
+
+                        if iWordToIgnore == 0:
+                            curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iWord, wordCount-1)
                             curMatch.endWord -= 1
 
                         allMatches.append(curMatch)
