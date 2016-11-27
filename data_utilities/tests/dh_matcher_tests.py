@@ -31,6 +31,8 @@ class TestDHMatcherFunctions:
         assert (True, 4, False) == iam(0,u'aabbcde',sp(u'aa123 bb123 c123 d123 e123'),0)
         assert (True, 3, False) == iam(0,u'aaabbcd',sp(u'aaa123 bb123 c123 d123'),0)
 
+    # test full matches and 1 word missing matches at end of daf
+
     def test_GetAllApproximateMatchesWithWordSkip_one_rashi_skip(self):
         textMatchList = dhm.GetAllApproximateMatchesWithWordSkip(daf,daf.allRashi[5],0,len(daf.allWords) - 1,0,0)
         assert daf.allRashi[5].startingText == textMatchList[0].textToMatch

@@ -8,8 +8,7 @@ from sefaria.model import *
 from sefaria.utils.hebrew import gematria
 from research.talmud_pos_research.language_classifier.language_tools import weighted_levenshtein, weighted_levenshtein_cost
 from num2words import num2words
-
-
+import itertools
 
 fdebug = False
 # constants for generating distance score. a 0 means a perfect match, although it will never be 0, due to the smoothing.
@@ -175,6 +174,10 @@ class RashiUnit:
         self.endWord = prev_result[1]
         self.cvWordcount = len(re.split(r"\s+",normalizedCV))
         self.matchedGemaraText = ""
+
+        self.words = re.split(ur"\s+", self.startingTextNormalized)
+        self.cvhashes = CalculateHashes(self.words)
+
     def __str__(self):
         return u"{}: ({},{}) place = {}".format(self.startingText,self.startWord,self.endWord, self.place)
 
@@ -959,6 +962,8 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
         iStartingWordInGemara += 1
     return allMatches
 
+class StartWordUsed(Exception):
+    pass
 
 def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound, word_threshold, char_threshold):  # GemaraDaf, RashiUnit,int,int,double
     global normalizingFactor
@@ -966,170 +971,172 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
     usedStartwords = []
 
     startText = curRashi.startingTextNormalized
-    wordCount = curRashi.cvWordcount
-    allowedMismatches = mathy.ceil(wordCount * word_threshold)
+
+    rashiWordCountWithoutSkip = curRashi.cvWordcount
+    rashiWordCountWithSkip = rashiWordCountWithoutSkip - 1
+
+    allowedMismatches = mathy.ceil(rashiWordCountWithoutSkip * word_threshold)
+
+    iLastGemaraStartWordWithoutSkip = len(curDaf.allWords) - rashiWordCountWithoutSkip
+    iLastGemaraStartWordWithRashiSkip = iLastGemaraStartWordWithoutSkip - 1
 
     # No point to this unless we have at least 2 words
-    if wordCount < 2:
+    # todo: Should this be 3?  Are we willing to skip one word out of 2?
+    if rashiWordCountWithoutSkip < 2:
         return []
 
-    skipOnlyOne = wordCount == 2
+    skipOnlyOne = rashiWordCountWithoutSkip == 2
 
 
     # Iterate through all the starting words within the phrase, allowing for one word to be ignored
 
-    for iWordToIgnore in xrange(-1, wordCount):
-        rashiwords = re.split(ur"\s+", startText.strip())
-        cvhashes = CalculateHashes(rashiwords)
+    for iRashiWordToIgnore in xrange(-1, rashiWordCountWithoutSkip):
 
-        if iWordToIgnore >= 0:
-            del cvhashes[iWordToIgnore]
-            alternateStartText = GetStringWithRemovedWord(startText, iWordToIgnore).strip()
-
+        if iRashiWordToIgnore >= 0:
+            cvhashes = curRashi.cvhashes[:]
+            del cvhashes[iRashiWordToIgnore]
+            alternateStartText = u' '.join(curRashi.words[:iRashiWordToIgnore] + curRashi.words[iRashiWordToIgnore+1:])
+            iLastGemaraStartWord = iLastGemaraStartWordWithRashiSkip
+            rashiWordCount = rashiWordCountWithSkip
         else:
+            cvhashes = curRashi.cvhashes  # No need to slice, not modifying
             alternateStartText = startText
+            iLastGemaraStartWord = iLastGemaraStartWordWithoutSkip
+            rashiWordCount = rashiWordCountWithoutSkip
 
         # Iterate through all possible starting words within the gemara, allowing for the word afterward to be ignored
-        iWord = startBound
-        while iWord <= len(curDaf.allWords) - wordCount and iWord + wordCount - 1 <= endBound:
+        iGemaraWord = startBound
 
+        while iGemaraWord <= iLastGemaraStartWord:  # and iGemaraWord + rashiWordCount - 1 <= endBound:
+            """
             # Start from -1 (which means the phrase as is)
-            for gemaraWordToIgnore in xrange(-1, wordCount):
+            for gemaraWordToIgnore in xrange(-1, rashiWordCount):
                 # no point in skipping first word - we might as well just let the item start from the next startword
                 if gemaraWordToIgnore == 0:
                     continue
 
                 # and, choose a second word to ignore (-1 means no second word)
 
-                skipWord2End = 0 if skipOnlyOne else wordCount
-                for gemaraWord2ToIgnore in xrange(-1, skipWord2End):
+
+                skipWord2End = 0 if skipOnlyOne else rashiWordCount
+                for gemaraSecondWordToIgnore in xrange(-1, skipWord2End):
 
                     # if not skipping first, this is not relevant unless it is also -1
-                    if gemaraWordToIgnore == -1 and gemaraWord2ToIgnore != -1:
+                    if gemaraWordToIgnore == -1 and gemaraSecondWordToIgnore != -1:
                         continue
 
                     # we don't need to do things both directions
-                    if iWordToIgnore != -1 and gemaraWord2ToIgnore != -1:
-                        continue
-
-                    # if we are skipping a cv word, don't also skip a second word
-                    if iWordToIgnore != -1 and gemaraWord2ToIgnore != -1:
+                    # todo: pull me up!
+                    if iRashiWordToIgnore != -1 and gemaraSecondWordToIgnore != -1:
                         continue
 
                     # if this would bring us to the end, don't do it
-                    if gemaraWord2ToIgnore != -1 and iWord + wordCount >= len(curDaf.allWords):
+                    # todo: verify off by one
+                    if gemaraSecondWordToIgnore != -1 and iGemaraWord + rashiWordCount >= len(curDaf.allWords):
                         continue
 
+            """
 
-                    fIsMatch = False
-                    distance = 0
-                    totaldistance = 0
-                    #TODO make sure this still works the same
+            possibilities = itertools.chain([(-1, -1)],    # Skip none
+                                            [(x, -1) for x in xrange(1, rashiWordCount)], # skip one
+                                            itertools.combinations(xrange(1, rashiWordCount), 2)  # skip two
+                                                if iRashiWordToIgnore != -1 and not skipOnlyOne
+                                                else []
+                                            )
+            for (gemaraWordToIgnore, gemaraSecondWordToIgnore) in possibilities:
+                if iGemaraWord in usedStartwords:
+                    iGemaraWord += 1
+                    break
 
-                    if wordCount >= 4:
-                        nonMatchAllowance = wordCount / 2 - 1
+                fIsMatch = False
 
-                        initialhash = cvhashes[0]
+                # distance = 0
+                # totaldistance = 0
 
-                        if curDaf.wordhashes[iWord] == initialhash:
-                            # see if the rest match up
-                            offset = 0
-                            fIsMatch = True
+                if rashiWordCount >= 4:
+                    nonMatchAllowance = allowedMismatches
 
-                            for icvword in xrange(1, wordCount - 1):
-                                if icvword == gemaraWordToIgnore or icvword == gemaraWord2ToIgnore:
-                                    offset += 1
+                    if curDaf.wordhashes[iGemaraWord] == cvhashes[0]:
+                        # see if the rest match up
+                        offset = 0
+                        fIsMatch = True
 
-                                # check the hash, and or first letter
-                                if curDaf.wordhashes[iWord + icvword + offset] != cvhashes[icvword]:
-                                    nonMatchAllowance -= 1
+                        #todo: If we skip a word in rashi, do we want "rashiWordCount - 1"?
+                        for icvword in xrange(1, rashiWordCount - 1):
+                            if icvword == gemaraWordToIgnore or icvword == gemaraSecondWordToIgnore:
+                                offset += 1
 
-                                    if nonMatchAllowance < 0:
-                                        fIsMatch = False
-                                        break
-                    else:
+                            # check the hash, and or first letter
+                            if curDaf.wordhashes[iGemaraWord + icvword + offset] != cvhashes[icvword]:
+                                nonMatchAllowance -= 1
 
-                        # build the phrase
-                        targetPhrase = BuildPhraseFromArray(curDaf.allWords, iWord, wordCount, gemaraWordToIgnore,
-                                                            gemaraWord2ToIgnore)
+                                if nonMatchAllowance < 0:
+                                    fIsMatch = False
+                                    break
+                else:
 
-                        # Now check if it is a match
-                        distance, fIsMatch = IsStringMatch(alternateStartText, targetPhrase, char_threshold)
+                    # build the phrase
+                    targetPhrase = BuildPhraseFromArray(curDaf.allWords, iGemaraWord, rashiWordCount, gemaraWordToIgnore,
+                                                        gemaraSecondWordToIgnore)
 
-                    # if it is, add it in
-                    if fIsMatch:
-                        if iWord in usedStartwords:
-                            continue
-                        curMatch = TextMatch()
+                    # Now check if it is a match
+                    distance, fIsMatch = IsStringMatch(alternateStartText, targetPhrase, char_threshold)
 
-                        # if gemaraWordToIgnore is -1, then we didn't skip anything in the gemara.
-                        # if iWordToIgnore is -1, then we didn't skip anything in the main phrase
+                # if it is, add it in
+                if fIsMatch:
+                    curMatch = TextMatch()
 
-                        # whether or not we used the two-letter shortcut, let's calculate full distance here.
-                        targetPhrase = BuildPhraseFromArray(curDaf.allWords, iWord, wordCount, gemaraWordToIgnore,
-                                                            gemaraWord2ToIgnore)
+                    # if gemaraWordToIgnore is -1, then we didn't skip anything in the gemara.
+                    # if iRashiWordToIgnore is -1, then we didn't skip anything in the main phrase
 
-                        dist = ComputeLevenshteinDistanceByWord(alternateStartText, targetPhrase)
+                    # whether or not we used the two-letter shortcut, let's calculate full distance here.
+                    targetPhrase = BuildPhraseFromArray(curDaf.allWords, iGemaraWord, rashiWordCount, gemaraWordToIgnore,
+                                                        gemaraSecondWordToIgnore)
 
-                        # add penalty for skipped words
-                        if gemaraWordToIgnore >= 0:
-                            dist += fullWordValue
-                        if gemaraWord2ToIgnore >= 0:
-                            dist += fullWordValue
-                        if iWordToIgnore >= 0:
-                            dist += fullWordValue
+                    dist = ComputeLevenshteinDistanceByWord(alternateStartText, targetPhrase)
 
-                        normalizedDistance = 1.0*(dist + smoothingFactor) / (len(startText) + smoothingFactor) * normalizingFactor
-                        curMatch.score = normalizedDistance
-                        curMatch.textToMatch = curRashi.startingText
+                    # add penalty for skipped words
+                    if gemaraWordToIgnore >= 0:
+                        dist += fullWordValue
+                    if gemaraSecondWordToIgnore >= 0:
+                        dist += fullWordValue
+                    if iRashiWordToIgnore >= 0:
+                        dist += fullWordValue
 
-                        # the "text matched" is the actual text of the gemara, including the word we skipped.
-                        len_matched = wordCount
-                        if gemaraWordToIgnore != -1:
-                            len_matched += 1
-                        if gemaraWord2ToIgnore != -1:
-                            len_matched += 1
-                        curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iWord, len_matched)
-                        curMatch.startWord = iWord
-                        curMatch.endWord = iWord + len_matched - 1
-                        curMatch.skippedWords = [gemaraWordToIgnore,gemaraWord2ToIgnore]
+                    normalizedDistance = 1.0*(dist + smoothingFactor) / (len(startText) + smoothingFactor) * normalizingFactor
+                    curMatch.score = normalizedDistance
+                    curMatch.textToMatch = curRashi.startingText
 
-                        # if we skipped the last word or two words, then we should cut them out of here
-                        if gemaraWordToIgnore == wordCount - 2 and gemaraWord2ToIgnore == wordCount - 1:
-                            curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iWord, wordCount - 2)
-                            curMatch.endWord -= 2
-                        elif gemaraWordToIgnore == wordCount - 1:
-                            curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iWord, wordCount - 1)
-                            curMatch.endWord -= 1
+                    # the "text matched" is the actual text of the gemara, including the word we skipped.
+                    len_matched = rashiWordCount
+                    if gemaraWordToIgnore != -1:
+                        len_matched += 1
+                    if gemaraSecondWordToIgnore != -1:
+                        len_matched += 1
+                    curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iGemaraWord, len_matched)
+                    curMatch.startWord = iGemaraWord
+                    curMatch.endWord = iGemaraWord + len_matched - 1
+                    curMatch.skippedWords = [gemaraWordToIgnore, gemaraSecondWordToIgnore]
 
-                        if iWordToIgnore == 0:
-                            curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iWord, wordCount-1)
-                            curMatch.endWord -= 1
+                    # if we skipped the last word or two words, then we should cut them out of here
+                    if gemaraWordToIgnore == rashiWordCount - 2 and gemaraSecondWordToIgnore == rashiWordCount - 1:
+                        curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iGemaraWord, rashiWordCount - 2)
+                        curMatch.endWord -= 2
+                    elif gemaraWordToIgnore == rashiWordCount - 1:
+                        curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iGemaraWord, rashiWordCount - 1)
+                        curMatch.endWord -= 1
 
-                        allMatches.append(curMatch)
-                        usedStartwords.append(iWord)
-                        break
+                    if iRashiWordToIgnore == 0:
+                        curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iGemaraWord, rashiWordCount-1)
+                        curMatch.endWord -= 1
 
-            iWord += 1
+                    allMatches += [curMatch]
+                    usedStartwords += [iGemaraWord]
+                    break
+            iGemaraWord += 1
+
     return allMatches
 
-#done
-def GetStringWithRemovedWord(p, iWordToIgnore):  # string,int
-    # remove the word specified in iWordtoIgnore
-    # if -1, return word as is
-    if iWordToIgnore == -1:
-        return p
-
-    words = p.split(' ')
-    ret = u""
-
-    for i in xrange(len(words)):
-        if i == iWordToIgnore:
-            continue
-
-        ret += words[i] + u" "
-
-    return ret.strip()
 
 #done
 def BuildPhraseFromArray(allWords, iWord, leng, wordToSkip=-1, word2ToSkip=-1):  # list<string>,int,int,int,int
