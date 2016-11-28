@@ -76,17 +76,36 @@ class TestDHMatcherFunctions:
 
 class Test_MatchMatrix:
 
-    def test_nomismatch(self):
-        rashi_hashes = [1,2]
-        daf_hashes = [1, 3, 2]
+    def test_skip_one_base_word(self):
+        rashi_hashes = [1,2,7,5]
+        daf_hashes =   [1,3,2,7,5]
 
-        mm = dhm.MatchMatrix(daf_hashes, rashi_hashes, 0,0,1,1)
-        print 'first'
+        mm = dhm.MatchMatrix(daf_hashes, rashi_hashes, 0, 0, 1, 1)
+        print "First"
         print mm.matrix
         paths = mm.find_paths()
+        assert len(paths) == 1
+        assert paths[0]["daf_indexes_skipped"] == [1]
+        assert paths[0]["daf_start_index"] == 0
+        assert paths[0]["comment_indexes_skipped"] == []
         for p in paths:
             if p:
                 print 'PATH {}'.format(p)
                 print mm.print_path(p)
 
+        """
+        # Test that behavior is the same even if more lattitude is allowed
+        mm = dhm.MatchMatrix(daf_hashes, rashi_hashes, .2, 1, 2, 2)
+        print "Second"
+        print mm.matrix
+        paths = mm.find_paths()
+        assert len(paths) == 1
+        assert paths[0]["daf_indexes_skipped"] == [1]
+        assert paths[0]["daf_start_index"] == 0
+        assert paths[0]["comment_indexes_skipped"] == []
+        for p in paths:
+            if p:
+                print 'PATH {}'.format(p)
+                print mm.print_path(p)
 
+        """
