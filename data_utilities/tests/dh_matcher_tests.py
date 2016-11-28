@@ -73,3 +73,20 @@ class TestDHMatcherFunctions:
         assert textMatchList[1].textMatched == u'סוף האשמורה הראשונה דברי'
         assert textMatchList[1].startWord == 6
         assert textMatchList[1].endWord == 9
+
+class Test_MatchMatrix:
+
+    def test_nomismatch(self):
+        rashi_hashes = [1,2]
+        daf_hashes = [1, 3, 2]
+
+        mm = dhm.MatchMatrix(daf_hashes, rashi_hashes, 0,0,1,1)
+        print 'first'
+        print mm.matrix
+        paths = mm.find_paths()
+        for p in paths:
+            if p:
+                print 'PATH {}'.format(p)
+                print mm.print_path(p)
+
+

@@ -967,11 +967,14 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
 
 
 class MatchMatrix(object):
-    def __init__(self, daf_hashes, comment_hashes, word_threshold):
+    def __init__(self, daf_hashes, comment_hashes, word_threshold, comment_word_skip_threshold = 1, base_word_skip_threshold = 2, overall_word_skip_threshold = 2):
         """
         :param daf_hashes: List of hashes
         :param rashi_hashes: List of hashes
         :param word_threshold:
+        :param comment_word_skip_threshold:
+        :param base_word_skip_threshold:
+        :param overall_word_skip_threshold: min = max(comment_word_skip_threshold, base_word_skip_threshold) max = comment_word_skip_threshold + base_word_skip_threshold
         :return:
         """
 
@@ -981,9 +984,9 @@ class MatchMatrix(object):
         self.comment_len = self.matrix.shape[0]
         self.daf_len = self.matrix.shape[1]
 
-        self.comment_word_skip_threshold = 1
-        self.base_word_skip_threshold = 2
-        self.overall_word_skip_threshold = 2
+        self.comment_word_skip_threshold = comment_word_skip_threshold
+        self.base_word_skip_threshold = base_word_skip_threshold
+        self.overall_word_skip_threshold = overall_word_skip_threshold
         self.mismatch_threshold = mathy.ceil(self.comment_len * word_threshold)
 
     def _explore_path(self, current_position, daf_start_index,
@@ -1052,35 +1055,15 @@ class MatchMatrix(object):
 
 
         if is_a_match:
-            self.matrix[(next_comment_index, next_base_index)] is True
-            # if next step gives me a successful path, return
-            if current_position[0] + 2 == self.comment_len:
-                return [{
-                            "daf_start_index": daf_start_index,
-                            "comment_indexes_skipped": comment_indexes_skipped,
-                            "daf_indexes_skipped": daf_indexes_skipped
-                        }]
-            # otherwise, recourse into the path
             return self._explore_path((next_comment_index, next_base_index), daf_start_index, comment_indexes_skipped, daf_indexes_skipped, mismatches,
                                       comment_threshold_hit, daf_threshold_hit, mismatch_threshold_hit)
 
         # best next doesn't match, explore other possibilities
-        """
-        number_of_mismatches_left = self.mismatch_threshold - mismatches
-        number_of_comment_skips_left = len(comment_indexes_skipped)
-        number_of_base_skips_left = len(daf_indexes_skipped)
-
-        possible_moves = number_of_mismatches_left * [(2,2)] + number_of_comment_skips_left * [(2,1)] + number_of_base_skips_left * [(1,2)]
-        max_moves = len(possible_moves)
-        itertools.chain([itertools.combinations(possible_moves, r) for r in range(1, max_moves + 1)])
-
-        """
-
 
         results = []
         if not comment_threshold_hit:
-            new_comment_indexes_skipped = comment_indexes_skipped + [current_position[0] + 1]
-            results += self._explore_path(numpy.add(current_position, (2, 1)),
+            new_comment_indexes_skipped = comment_indexes_skipped + [current_position[0]]
+            results += self._explore_path((next_comment_index, current_position[1]),
                                           daf_start_index,
                                           new_comment_indexes_skipped,
                                           daf_indexes_skipped,
@@ -1091,8 +1074,8 @@ class MatchMatrix(object):
                                               and len(new_comment_indexes_skipped) + len(daf_indexes_skipped) < self.overall_word_skip_threshold,
                                           mismatch_threshold_hit)
         if not daf_threshold_hit:
-            new_daf_indexes_skipped = daf_indexes_skipped + [current_position[1] + 1]
-            results += self._explore_path(numpy.add(current_position, (1, 2)),
+            new_daf_indexes_skipped = daf_indexes_skipped + [current_position[1]]
+            results += self._explore_path((current_position[0], next_base_index),
                                           daf_start_index,
                                           comment_indexes_skipped,
                                           new_daf_indexes_skipped,
@@ -1103,7 +1086,7 @@ class MatchMatrix(object):
                                               and len(comment_indexes_skipped) + len(new_daf_indexes_skipped) < self.overall_word_skip_threshold,
                                           mismatch_threshold_hit)
         if not mismatch_threshold_hit:
-            results += self._explore_path(numpy.add(current_position, (2, 2)),
+            results += self._explore_path((next_comment_index, next_base_index),
                                           daf_start_index,
                                           comment_indexes_skipped,
                                           daf_indexes_skipped,
@@ -1112,10 +1095,6 @@ class MatchMatrix(object):
                                           daf_threshold_hit,
                                           mismatches + 1 < self.mismatch_threshold)
 
-
-        # explore next good position
-
-        # failing that, explore other options
         return results
 
     def find_paths(self):
@@ -1127,6 +1106,44 @@ class MatchMatrix(object):
             for word_index in self.matrix[c_skips, 0:last_possible_daf_word_index + 1].nonzero()[0]:
                 paths += self._explore_path((c_skips, word_index), word_index, range(c_skips), [])
         return paths
+
+    def print_path(self, path):
+        """
+        :param path: one element of array of output of find_paths()
+        :return: None
+        """
+        start_col = path['daf_start_index']
+        comment_indexes_skipped = path['comment_indexes_skipped']
+        daf_indexes_skipped = path['daf_indexes_skipped']
+
+        last_matched = (-1,start_col-1)
+        for row in xrange(self.comment_len):
+            row_str = ''
+            char_found = False
+            for col in xrange(self.daf_len):
+                col_char = '.'
+                if not char_found and row in comment_indexes_skipped and col == last_matched[1]:
+                    col_char = 'O'
+                    last_matched = (row, col)
+                    char_found = True
+                elif col in daf_indexes_skipped and col - 1 == last_matched[1] and row == last_matched[0]:
+                    col_char = '0'
+                    last_matched = (row, col)
+                    char_found = True
+                elif not char_found and row == last_matched[0] + 1 and col == last_matched[1] + 1:
+                    col_char = 'X' if self.matrix[row,col] else '#'
+                    last_matched = (row, col)
+                    char_found = True
+                else:
+                    col_char = '.'
+
+
+                row_str += col_char
+            print row_str
+
+
+
+
 
 
 
