@@ -1098,13 +1098,19 @@ class MatchMatrix(object):
         return results
 
     def find_paths(self):
+        init_comment_threshold_hit = 0 == self.comment_word_skip_threshold
+        init_base_threshold_hit = 0 == self.base_word_skip_threshold
+        init_mismatch_threshold_hit = 0 == self.mismatch_threshold
         paths = []
         # for each potential starting index of the comment, allowing for skips
         for c_skips in range(self.comment_word_skip_threshold + 1):
             # find potential start words in the daf, and explore
             last_possible_daf_word_index = self.daf_len - (self.comment_len - c_skips)
             for word_index in self.matrix[c_skips, 0:last_possible_daf_word_index + 1].nonzero()[0]:
-                paths += self._explore_path((c_skips, word_index), word_index, range(c_skips), [])
+                paths += self._explore_path((c_skips, word_index), word_index, range(c_skips), [],
+                                            comment_threshold_hit=init_comment_threshold_hit,
+                                            daf_threshold_hit=init_base_threshold_hit,
+                                            mismatch_threshold_hit=init_mismatch_threshold_hit)
         return paths
 
     def print_path(self, path):
