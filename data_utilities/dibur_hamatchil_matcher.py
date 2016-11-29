@@ -1183,7 +1183,7 @@ class MatchMatrix(object):
 
 
                 row_str += col_char
-            print row_str
+            # print row_str
 
 
 def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound, word_threshold, char_threshold):  # GemaraDaf, RashiUnit,int,int,double
@@ -1235,7 +1235,7 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
                                                 gemaraWordToIgnore, gemaraSecondWordToIgnore)
 
 
-            print u"Target {}".format(targetPhrase)
+            # print u"Target {}".format(targetPhrase)
             dist = ComputeLevenshteinDistanceByWord(alternateStartText, targetPhrase)
 
             # add penalty for skipped words
