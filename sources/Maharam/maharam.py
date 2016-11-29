@@ -405,7 +405,7 @@ if __name__ == "__main__":
 
         print masechet
 
-        create_index(masechet)
+        #create_index(masechet)
         file = open(masechet+"2.txt", 'r')
 
         maharam = Maharam()
@@ -421,7 +421,7 @@ if __name__ == "__main__":
         post_text("Maharam on "+masechet, send_text, "on")
         print 'posted'
 
-        maharam.postLinks()
+        #maharam.postLinks()
 
         missing = open("missing_ones_"+masechet+".txt", "w")
         for each_ref in maharam.missing_ones:

@@ -35,11 +35,15 @@ class XML_to_JaggedArray:
     def run(self):
         for count, child in enumerate(self.root):
             name = self.grab_title(child)
+            child = self.reorder_structure(child, name)
             ref = self.title + ", Footnotes, " + name
             self.JA_nodes[name] = self.go_down_to_text(name, child, ref)
             ref = self.title + ", " + name
             self.interpret(self.JA_nodes[name], ref)
-            self.interpret_footnotes(name)
+            if self.title == "Or Neerav" and name == "PART VII":
+                 self.interpret_footnotes_partvii()
+            else:
+                self.interpret_footnotes(name)
             self.footnotes = {}
 
         if self.alt_struct:
@@ -73,7 +77,7 @@ class XML_to_JaggedArray:
                 name_node = ""
                 if child.tag != "title":
                     self.grab_title(child) #take the title underneath, set it to text var,  so afterward, child.text will be the correct title
-                new_ref = base_ref+"."+child.text if child.text.isdigit() else ref+", "+child.text
+                new_ref = base_ref+"."+child.text if child.text.isdigit() else base_ref+", "+child.text
                 text[child.text] = self.go_down_to_text(child.text, child, new_ref)
             else:
                 if child.tag == "ftnote":
@@ -86,6 +90,23 @@ class XML_to_JaggedArray:
         return text
 
 
+    def interpret_footnotes_partvii(self):
+        comments = self.footnotes.values()[0]
+        for index, comment in enumerate(comments):
+            poss_num = int(comment.split(".", 1)[0])
+            comments[index] = comment.replace(str(poss_num)+". ", "")
+
+        comments = self.parse(comments)
+        send_text = {
+                    "text": comments,
+                    "language": self.post_info["language"],
+                    "versionSource": self.post_info["versionSource"],
+                    "versionTitle": self.post_info["versionTitle"]
+                }
+        print self.title+", Footnotes, Part VII"
+        post_text(self.title+", Footnotes, PART VII", send_text)
+
+
     def interpret_footnotes(self, name):
         prev_num = 0
         header = "Chapter"
@@ -94,7 +115,10 @@ class XML_to_JaggedArray:
         for ref in self.footnotes:
             comments = self.footnotes[ref]
             for index, comment in enumerate(comments):
-                poss_num = int(comment.split(".", 1)[0])
+                try:
+                    poss_num = int(comment.split(".", 1)[0])
+                except:
+                    pdb.set_trace()
                 comments[index] = comment.replace(str(poss_num)+". ", "")
 
             comments = self.parse(comments)
@@ -104,7 +128,6 @@ class XML_to_JaggedArray:
                     "versionSource": self.post_info["versionSource"],
                     "versionTitle": self.post_info["versionTitle"]
                 }
-            print self.title+", Footnotes, "+name
             post_text(ref, send_text)
 
 
@@ -123,7 +146,7 @@ class XML_to_JaggedArray:
                 assert Ref(new_running_ref)
                 self.interpret(node[key], new_running_ref, "int")
             elif key != "text":
-                new_running_ref = "%s, %s" % (running_ref, node[key])
+                new_running_ref = "%s, %s" % (running_ref, key)
                 assert Ref(new_running_ref)
                 self.interpret(node[key], new_running_ref, "string")
             elif key == "text" and len_node == 1:
@@ -188,7 +211,8 @@ class XML_to_JaggedArray:
         children = []
         orig_length = len(element) - 1
         for index, child in enumerate(element):
-            if (child.text.find("<bold>") >= 0 or child.tag == "bold") and name == "Introduction":
+            if child.text.find("<italic>") >= 0 and child.tag == "title" and name == "PART VII":
+                child.text = child.text.replace("<italic>", "").replace("</italic>", "")
                 if next_will_be_children == True:
                     for new_child in children:
                         parent.append(new_child)

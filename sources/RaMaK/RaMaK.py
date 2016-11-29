@@ -17,6 +17,12 @@ def parse(text_arr):
     assert type(text_arr) is list
     for index, text in enumerate(text_arr):
         text_arr[index] = text_arr[index].replace("<bold>", "<b>").replace("<italic>", "<i>").replace("</bold>", "</b>").replace("</italic>", "</i>")
+        xref_start = re.findall("<xref.*?>", text_arr[index])
+        xref_end = re.findall("</xref.*?>", text_arr[index])
+        xrefs = xref_start + xref_end
+        for xref in xrefs:
+            text_arr[index] = text_arr[index].replace(xref, "")
+
     return text_arr
 
 
@@ -35,13 +41,12 @@ def create_schema():
     intro.key = "intro"
     book.append(intro)
 
-    arr = ["I", "II", "III", "IV", "V", "VI"]
-    for i in range(6):
+    arr = ["I", "II", "III", "IV", "V", "VI", "VII"]
+    for i in range(7):
         pt = SchemaNode()
         pt.key = "pt"+str(i)+"schema"
         pt.add_title("PART " + arr[i], "en", primary=True)
         pt.add_title(u"חלק "+numToHeb(1+i), "he", primary=True)
-
         subject = JaggedArrayNode()
         subject.add_title("Subject", "en", primary=True)
         subject.add_title(u"נושא", "he", primary=True)
@@ -49,25 +54,32 @@ def create_schema():
         subject.depth = 1
         subject.sectionNames = ["Paragraph"]
         subject.addressTypes = ["Integer"]
+        if i < 6:
+            default = JaggedArrayNode()
+            default.depth = 2
+            default.default = True
+            default.sectionNames = ["Chapter", "Paragraph"] if i < 6 else ["Letter", "Paragraph"]
+            default.addressTypes = ["Integer", "Integer"]
+            default.key = "default"
+            pt.append(subject)
+            pt.append(default)
+            book.append(pt)
+        else:
+            pt.append(subject)
+            glossary_eng = ["Alef", "Bet", "Gimel", "Daled", "Heh", "Vav", "Zayin", "Chet", "Tet", "Yod", "Kaf", "Lamed", "Mem", "Nun", "Samekh",
+                    "Ayin", "Peh", "Tzadi", "Kof", "Resh", "Shin", "Tav"]
+            for j in range(len(glossary_eng)):
+                gloss_node = JaggedArrayNode()
+                gloss_node.depth = 1
+                gloss_node.sectionNames = ["Paragraph"]
+                gloss_node.addressTypes = ["Integer"]
+                gloss_node.key = "Letter {}".format(glossary_eng[j])
+                gloss_node.add_title("Letter {}".format(glossary_eng[j]), "en", primary=True)
+                gloss_node.add_title(u"אות {}".format(numToHeb(j+1)), "he", primary=True)
+                pt.append(gloss_node)
+            book.append(pt)
 
-        default = JaggedArrayNode()
-        default.depth = 2
-        default.default = True
-        default.sectionNames = ["Chapter", "Paragraph"]
-        default.addressTypes = ["Integer", "Integer"]
-        default.key = "default"
-        pt.append(subject)
-        pt.append(default)
-        book.append(pt)
 
-    pt7 = JaggedArrayNode()
-    pt7.add_title("PART VII", "en", primary=True)
-    pt7.add_title(u"חלק ז", "he", primary=True)
-    pt7.depth = 1
-    pt7.sectionNames = ["Paragraph"]
-    pt7.addressTypes = ["Integer"]
-    pt7.key = "pt7"
-    book.append(pt7)
 
     appendix = SchemaNode()
     appendix.add_title("Appendix The Introductory Material", "en", primary=True)
@@ -110,6 +122,7 @@ def create_schema():
         node.key = footnotes_array[i]
         node.add_title(footnotes_array[i], "en", primary=True)
         node.add_title(footnotes_heb[i], "he", primary=True)
+
         footnotes.append(node)
 
 
@@ -126,15 +139,15 @@ def create_schema():
 
 if __name__ == "__main__":
     post_info = {}
-    post_info["versionTitle"] = "hi"
-    post_info["versionSource"] = "hi"
+    post_info["versionTitle"] = "Moses Cordovero’s Introduction to Kabbalah, Annotated trans. of Or ne'erav, Ira Robinson, 1994."
+    post_info["versionSource"] = "http://www.ktav.com/index.php/moses-cordovero-s-introduction-to-kabbalah.html"
     post_info["language"] = "en"
     allowed_tags = ["book", "intro", "part", "appendix", "chapter", "p", "ftnote", "title"]
     structural_tags = ["title"] #this is not all tags with structural significance, but just
                                 #the ones we must explicitly mention, because it has no children,
                                 #we want what comes after it until the next instance of it to be its children anyway
     allowed_attributes = ["id"]
-    file_name = "../sources/DC labs/Robinson_MosesCordoveroIntroductionToKabbalah.xml"
+    file_name = "english_or_neerav.xml"
     title = "Or Neerav"
     ramak = XML_to_JaggedArray(title, file_name, allowed_tags, allowed_attributes, post_info, parse)
 
