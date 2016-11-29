@@ -10,14 +10,18 @@ def setup_module(module):
     global daf
     dhm.InitializeHashTables()
 
-    daf_words = sp(u'משעה שהכהנים נכנסים לאכול בתרומתן עד סוף האשמורה הראשונה דברי רבי אליעזר. וחכמים אומרים עד חצות. ר"ג אומר עד שיעלה עמוד השחר. מעשה ובאו בניו מבית המשתה אמרו לו')
+    daf_words = sp(u'משעה שהכהנים נכנסים לאכול בתרומתן עד סוף האשמורה הראשונה דברי רבי אליעזר. וחכמים אומרים עד חצות ר"ג אומר עד שיעלה עמוד השחר. מעשה ובאו בניו מבית המשתה אמרו לו')
     comments = [u'משעה שהכהנים נכנסים לאכול', #exact
                 u'עד האשמורה הראשונה דברי רבי אליעזר.', # 1 skip
                 u'עד הראשונה דברי רבי אליעזר.', # 2 skip
                 u'עד סוף האשמורה הראשונה דברי.', # 2 skip at end of word
                 u'רבן גמליאל אומר עד שיעלה', # abbrev in base_text
                 u'משעה שהכהנים עלין נכנסים לאכול', #extra word in Rashi
-                u'בניו מבית המשתה אמרו לו וולה!'] #extra (ridiculous) word in rashi at end of daf
+                u'בניו מבית המשתה אמרו לו וולה!', #extra (ridiculous) word in rashi at end of daf
+                u'עד סוף האשמורה הראשונה דברי רבי בלהבלה.', #last word is a mismatch
+                u'וחכמים אומרים עד חצות', #small rashi
+                u'וחכמים אומרים סבבה עד חצות ר"ג שיעלה עמוד השחר.', #too many skips
+                u'וחכמים אומרים סבבה עד חצות ר"ג אומר שיעלה עמוד השחר'] #max skips
     daf = dhm.GemaraDaf(daf_words,comments)
 
 class TestDHMatcherFunctions:
@@ -75,11 +79,41 @@ class TestDHMatcherFunctions:
         assert textMatchList[1].startWord == 6
         assert textMatchList[1].endWord == 9
 
+
     def test_GetAllApproximateMatchesWithWordSkip_rashi_skip_end_of_daf(self):
         textMatchList = dhm.GetAllApproximateMatchesWithWordSkip(daf, daf.allRashi[6], 0, len(daf.allWords) - 1, 0, 0)
-        for tm in textMatchList:
-            print u'{}'.format(tm)
-        assert True == True
+        assert len(textMatchList) == 1
+        assert textMatchList[0].textMatched == u'בניו מבית המשתה אמרו לו'
+        assert textMatchList[0].startWord == 24
+        assert textMatchList[0].endWord == 28
+
+    def test_GetAllApproximateMatchesWithWordSkip_mismatch_on_last_word_of_daf(self):
+        textMatchList = dhm.GetAllApproximateMatchesWithWordSkip(daf, daf.allRashi[7], 0, len(daf.allWords) - 1, 0, 0)
+        assert len(textMatchList) == 1
+        assert textMatchList[0].textMatched == u'עד סוף האשמורה הראשונה דברי רבי'
+        assert textMatchList[0].startWord == 5
+        assert textMatchList[0].endWord == 10
+
+    def test_GetAllApproximateMatchesWithWordSkip_small_rashi(self):
+        textMatchList = dhm.GetAllApproximateMatchesWithWordSkip(daf, daf.allRashi[8], 0, len(daf.allWords) - 1, 0, 0)
+        assert len(textMatchList) == 2
+        assert textMatchList[0].textMatched == u'וחכמים אומרים עד חצות'
+        assert textMatchList[0].startWord == 12
+        assert textMatchList[0].endWord == 15
+        assert textMatchList[1].textMatched == u'אומרים עד חצות'
+        assert textMatchList[1].startWord == 13
+        assert textMatchList[1].endWord == 15
+
+    def test_GetAllApproximateMatchesWithWordSkip_too_skips(self):
+        textMatchList = dhm.GetAllApproximateMatchesWithWordSkip(daf, daf.allRashi[9], 0, len(daf.allWords) - 1, 0, 0)
+        assert len(textMatchList) == 0
+
+    def test_GetAllApproximateMatchesWithWordSkip_max_skips(self):
+        textMatchList = dhm.GetAllApproximateMatchesWithWordSkip(daf, daf.allRashi[10], 0, len(daf.allWords) - 1, 0, 0)
+        assert len(textMatchList) == 1
+        assert textMatchList[0].textMatched == u'וחכמים אומרים עד חצות ר"ג אומר עד שיעלה עמוד השחר.'
+        assert textMatchList[0].startWord == 12
+        assert textMatchList[0].endWord == 21
 
 class Test_MatchMatrix:
 
@@ -100,19 +134,3 @@ class Test_MatchMatrix:
                 print 'PATH {}'.format(p)
                 print mm.print_path(p)
 
-        """
-        # Test that behavior is the same even if more lattitude is allowed
-        mm = dhm.MatchMatrix(daf_hashes, rashi_hashes, .2, 1, 2, 2)
-        print "Second"
-        print mm.matrix
-        paths = mm.find_paths()
-        assert len(paths) == 1
-        assert paths[0]["daf_indexes_skipped"] == [1]
-        assert paths[0]["daf_start_index"] == 0
-        assert paths[0]["comment_indexes_skipped"] == []
-        for p in paths:
-            if p:
-                print 'PATH {}'.format(p)
-                print mm.print_path(p)
-
-        """
