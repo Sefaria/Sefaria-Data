@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 from data_utilities import dibur_hamatchil_matcher as dhm
+from sefaria.model import *
+from sefaria.utils import hebrew
+from research.dibur_hamatchil.dh_source_scripts import mishnah_berurah
 import regex as re
+import pickle
 
 
 def sp(string):
@@ -24,17 +28,74 @@ def setup_module(module):
                 u'וחכמים אומרים סבבה עד חצות ר"ג אומר שיעלה עמוד השחר'] #max skips
     daf = dhm.GemaraDaf(daf_words,comments)
 
+
+def mb_base_tokenizer(str):
+    punc_pat = re.compile(ur"(\.|,|:|;)$")
+
+    str = re.sub(ur"\([^\(\)]+\)", u"", str)
+    str = re.sub(ur"''", ur'"', str)  # looks like double apostrophe in shulchan arukh is meant to be a quote
+    str = re.sub(r"</?[a-z]+>", "", str)  # get rid of html tags
+    str = hebrew.strip_cantillation(str, strip_vowels=True)
+    word_list = re.split(ur"\s+", str)
+    word_list = [re.sub(punc_pat, u"", w).strip() for w in word_list if len(
+        re.sub(punc_pat, u"", w).strip()) > 0]  # remove empty strings and punctuation at the end of a word
+    return word_list
+
+
+def mb_dh_extraction_method(str):
+    # searches for '(blah) other blah -' or '{blah} other blah -'
+    m = re.search(ur"((\([^\(]+\))|(\{[^\{]+\}))([^–]+)–", str)
+    if m is None:
+        m = re.search(ur"((\([^\(]+\))|(\{[^\{]+\}))([^-]+)-", str)
+    if m:
+        dh = m.group(4).strip()
+        return dh.replace(u"וכו'", u"")
+    else:
+        return ""
+
+class TestDHMatcher:
+
+    def test_mb(self):
+        simanim = [1] #[1, 51, 202]
+        all_matched = []
+        for sim in simanim:
+            ocRef = Ref('Shulchan Arukh, Orach Chayim {}'.format(sim))
+            mbRef = Ref('Mishnah Berurah {}'.format(sim))
+            octc = TextChunk(ocRef,"he")
+            mbtc = TextChunk(mbRef,"he")
+            matched = dhm.match_ref(octc,mbtc,base_tokenizer=mb_base_tokenizer,dh_extract_method=mb_dh_extraction_method,with_abbrev_matches=True)
+            all_matched.append(matched)
+        #pickle.dump(all_matched, open('mb_matched.pkl','wb'))
+        comparison = pickle.load(open('mb_matched.pkl','rb'))
+        comparison = comparison[0]
+        assert comparison == all_matched[0]
+
+
 class TestDHMatcherFunctions:
 
     def test_is_abbrev(self):
         iam = dhm.isAbbrevMatch
-
 
         assert (True, 1, False) == iam(0,u'אל',sp(u'אמר ליה'),0)
         assert (True, 2, False) == iam(0,u'אעפ',sp(u'אף על פי'),0)
         assert (True, 1, False) == iam(0,u'בביכנ',sp(u'בבית כנסת'),0)
         assert (True, 4, False) == iam(0,u'aabbcde',sp(u'aa123 bb123 c123 d123 e123'),0)
         assert (True, 3, False) == iam(0,u'aaabbcd',sp(u'aaa123 bb123 c123 d123'),0)
+
+    def test_is_string_match(self):
+        ism = dhm.IsStringMatch
+
+        score,ismatch = ism(u'אבגדהוז',u'אבגדהוז',0) # exact
+        assert ismatch == True
+        score, ismatch = ism(u'אבגדהז',u'אבגדהוז',0.2) #small change
+        print score
+        assert ismatch == True
+        score, ismatch = ism(u'אבגדהז',u'אבגדהוז',0) # exact wrong
+        assert ismatch == False
+
+
+
+
 
     # test full matches and 1 word missing matches at end of daf
 

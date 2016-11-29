@@ -674,6 +674,8 @@ def filter_matches_out_of_order(matched_words, temprashimatch):
         if matched_words[imatchedword]:
             num_unmatched -= 1
 
+    if (temprashimatch.endWord - temprashimatch.startWord + 1) == 0:
+        return False
     percent_matched = 1.0 * num_unmatched / (temprashimatch.endWord - temprashimatch.startWord + 1)
     if percent_matched <= 0.3:
         print "DELETING {}".format(percent_matched)
@@ -1192,7 +1194,7 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
     startText = curRashi.startingTextNormalized
     global normalizingFactor
 
-    daf_skips = min(2, mathy.floor((curRashi.cvWordcount-1)/2))
+    daf_skips = int(min(2, mathy.floor((curRashi.cvWordcount-1)/2)))
     rashi_skips = 1 if daf_skips > 0 else 0
     overall = 2 if daf_skips + rashi_skips >= 2 else 1
     mm = MatchMatrix(curDaf.wordhashes,
@@ -1448,34 +1450,6 @@ def ComputeLevenshteinDistanceByWord(s, t):  # s and t are strings
     return totaldistance
 
 def ComputeLevenshteinDistance(s, t):
-    '''n = len(s)
-    m = len(t)
-    d = [[0 for j in range(m + 1)] for i in range(n + 1)]
-
-    # step 1
-    if n == 0:
-        return m
-
-    if m == 0:
-        return n
-
-    # Step2
-    for i in range(n+1):
-        d[i][0] = i
-    for j in range(m+1):
-        d[0][j] = j
-
-    # Step3
-
-    for i in range(1,n+1):
-        # step4
-        for j in range(1,m+1):
-            # step5
-            cost = 0 if t[j - 1] == s[i - 1] else 1
-            # step6
-            d[i][j] = min(min(d[i - 1][j] + 1, d[i][j - 1] + 1), d[i - 1][j - 1] + cost)
-    # Step7
-    return d[n][m]'''
     return weighted_levenshtein(s,t,weighted_levenshtein_cost,min_cost=0.6)
 
 
@@ -1567,7 +1541,10 @@ def sofit_swap(C):
     return sofit_map[C] if C in sofit_map else C
 
 def is_hebrew_number(str):
-    return re.findall(hebrew_number_regex(), str)[0] == str
+    matches = re.findall(hebrew_number_regex(), str)
+    if len(matches) == 0:
+        return False
+    return matches[0] == str
 
 
 def hebrew_number_regex():
