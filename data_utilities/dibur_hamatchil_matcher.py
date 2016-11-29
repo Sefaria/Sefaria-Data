@@ -1183,7 +1183,7 @@ class MatchMatrix(object):
 
 
                 row_str += col_char
-            print row_str
+            # print row_str
 
 
 def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound, word_threshold, char_threshold):  # GemaraDaf, RashiUnit,int,int,double
@@ -1192,76 +1192,76 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
     startText = curRashi.startingTextNormalized
     global normalizingFactor
 
-    if curRashi.cvWordcount > 4 or True:
-        daf_skips = min(2, mathy.floor((curRashi.cvWordcount-1)/2))
-        rashi_skips = 1 if daf_skips > 0 else 0
-        overall = 2 if daf_skips + rashi_skips >= 2 else 1
-        mm = MatchMatrix(curDaf.wordhashes,
-                         curRashi.cvhashes,
-                         word_threshold,
-                         comment_word_skip_threshold=rashi_skips,
-                         base_word_skip_threshold=daf_skips,
-                         overall_word_skip_threshold=overall)
-        paths = mm.find_paths()
+    daf_skips = min(2, mathy.floor((curRashi.cvWordcount-1)/2))
+    rashi_skips = 1 if daf_skips > 0 else 0
+    overall = 2 if daf_skips + rashi_skips >= 2 else 1
+    mm = MatchMatrix(curDaf.wordhashes,
+                     curRashi.cvhashes,
+                     word_threshold,
+                     comment_word_skip_threshold=rashi_skips,
+                     base_word_skip_threshold=daf_skips,
+                     overall_word_skip_threshold=overall)
+    paths = mm.find_paths()
 
-        """
-            daf_start_index: #,
-            comment_indexes_skipped: [],
-            daf_indexes_skipped: [],
-            mismatches: #
-        """
-        for path in paths:
-            curMatch = TextMatch()
-            #print 'PATH'
-            #mm.print_path(path)
-            gemaraWordToIgnore = path["daf_indexes_skipped"][0] if len(path["daf_indexes_skipped"]) > 0 else -1 
-            gemaraSecondWordToIgnore = path["daf_indexes_skipped"][1] if len(path["daf_indexes_skipped"]) > 1 else -1
-            iRashiWordToIgnore = path["comment_indexes_skipped"][0] if len(path["comment_indexes_skipped"]) > 0 else -1
-            iGemaraWord = path["daf_start_index"]
+    """
+        daf_start_index: #,
+        comment_indexes_skipped: [],
+        daf_indexes_skipped: [],
+        mismatches: #
+    """
+    for path in paths:
+        curMatch = TextMatch()
+        #print 'PATH'
+        #mm.print_path(path)
+        gemaraWordToIgnore = path["daf_indexes_skipped"][0] if len(path["daf_indexes_skipped"]) > 0 else -1
+        gemaraSecondWordToIgnore = path["daf_indexes_skipped"][1] if len(path["daf_indexes_skipped"]) > 1 else -1
+        iRashiWordToIgnore = path["comment_indexes_skipped"][0] if len(path["comment_indexes_skipped"]) > 0 else -1
+        iGemaraWord = path["daf_start_index"]
 
 
-            #figure out the bounds of what you actually matched
-            if iRashiWordToIgnore != -1:
-                alternateStartText = u' '.join(curRashi.words[:iRashiWordToIgnore] + curRashi.words[iRashiWordToIgnore+1:])
-                rashiWordCount = curRashi.cvWordcount - 1
-            else:
-                rashiWordCount = curRashi.cvWordcount
-                alternateStartText = startText
-            # the "text matched" is the actual text of the gemara, including the word we skipped.
-            len_matched = rashiWordCount
-            if gemaraWordToIgnore != -1:
-                len_matched += 1
-            if gemaraSecondWordToIgnore != -1:
-                len_matched += 1
+        #figure out the bounds of what you actually matched
+        if iRashiWordToIgnore != -1:
+            alternateStartText = u' '.join(curRashi.words[:iRashiWordToIgnore] + curRashi.words[iRashiWordToIgnore+1:])
+            rashiWordCount = curRashi.cvWordcount - 1
+        else:
+            rashiWordCount = curRashi.cvWordcount
+            alternateStartText = startText
+        # the "text matched" is the actual text of the gemara, including the word we skipped.
+        len_matched = rashiWordCount
+        if gemaraWordToIgnore != -1:
+            len_matched += 1
+        if gemaraSecondWordToIgnore != -1:
+            len_matched += 1
 
-            targetPhrase = BuildPhraseFromArray(curDaf.allWords, iGemaraWord , len_matched,
-                                                gemaraWordToIgnore, gemaraSecondWordToIgnore)
+        targetPhrase = BuildPhraseFromArray(curDaf.allWords, iGemaraWord , len_matched,
+                                            gemaraWordToIgnore, gemaraSecondWordToIgnore)
 
-            fIsMatch = True
-            #check small matches to make sure they actually match
-            if curRashi.cvWordcount <= 4:
-                distance, fIsMatch = IsStringMatch(alternateStartText, targetPhrase, char_threshold)
+        fIsMatch = True
+        #check small matches to make sure they actually match
+        if curRashi.cvWordcount <= 4:
+            distance, fIsMatch = IsStringMatch(alternateStartText, targetPhrase, char_threshold)
 
-            if fIsMatch:
+        if fIsMatch:
 
-                dist = ComputeLevenshteinDistanceByWord(alternateStartText, targetPhrase)
+            dist = ComputeLevenshteinDistanceByWord(alternateStartText, targetPhrase)
 
-                # add penalty for skipped words
-                if gemaraWordToIgnore >= 0:
-                    dist += fullWordValue
-                if gemaraSecondWordToIgnore >= 0:
-                    dist += fullWordValue
-                if iRashiWordToIgnore >= 0:
-                    dist += fullWordValue
+            # add penalty for skipped words
+            if gemaraWordToIgnore >= 0:
+                dist += fullWordValue
+            if gemaraSecondWordToIgnore >= 0:
+                dist += fullWordValue
+            if iRashiWordToIgnore >= 0:
+                dist += fullWordValue
 
-                normalizedDistance = 1.0 * (dist + smoothingFactor) / (len(startText) + smoothingFactor) * normalizingFactor
-                curMatch.score = normalizedDistance
-                curMatch.textToMatch = curRashi.startingText
-                curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iGemaraWord , len_matched)
-                curMatch.startWord = iGemaraWord
-                curMatch.endWord = iGemaraWord + len_matched - 1
-                curMatch.skippedWords = [gemaraWordToIgnore, gemaraSecondWordToIgnore]
-                allMatches += [curMatch]
+            normalizedDistance = 1.0 * (dist + smoothingFactor) / (len(startText) + smoothingFactor) * normalizingFactor
+            curMatch.score = normalizedDistance
+            curMatch.textToMatch = curRashi.startingText
+            curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iGemaraWord , len_matched)
+            curMatch.startWord = iGemaraWord
+            curMatch.endWord = iGemaraWord + len_matched - 1
+            curMatch.skippedWords = [gemaraWordToIgnore, gemaraSecondWordToIgnore]
+            allMatches += [curMatch]
+
 
     return allMatches
 
