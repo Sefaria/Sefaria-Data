@@ -1129,14 +1129,15 @@ class MatchMatrix(object):
         return results
 
     def find_paths(self):
-        init_comment_threshold_hit = 0 == self.comment_word_skip_threshold
+
         init_base_threshold_hit = 0 == self.base_word_skip_threshold
         init_mismatch_threshold_hit = 0 == self.mismatch_threshold
         paths = []
         # for each potential starting index of the comment, allowing for skips
         for c_skips in range(self.comment_word_skip_threshold + 1):
+            init_comment_threshold_hit = c_skips == self.comment_word_skip_threshold
             # find potential start words in the daf, and explore
-            last_possible_daf_word_index = self.daf_len - (self.comment_len - c_skips)
+            last_possible_daf_word_index = self.daf_len - (self.comment_len - (self.comment_word_skip_threshold - c_skips))
             for word_index in self.matrix[c_skips, 0:last_possible_daf_word_index + 1].nonzero()[0]:
                 word_paths = self._explore_path((c_skips, word_index), word_index, range(c_skips), [],
                                                 comment_threshold_hit=init_comment_threshold_hit,
@@ -1192,9 +1193,10 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
     global normalizingFactor
 
     if curRashi.cvWordcount >= 4:
-        paths = MatchMatrix(curDaf.wordhashes,
+        mm = MatchMatrix(curDaf.wordhashes,
                          curRashi.cvhashes,
-                         word_threshold).find_paths()
+                         word_threshold)
+        paths = mm.find_paths()
 
         """
             daf_start_index: #,
@@ -1204,7 +1206,8 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
         """
         for path in paths:
             curMatch = TextMatch()
-
+            #print 'PATH'
+            #mm.print_path(path)
             #gemaraWordToIgnore ,= path["daf_indexes_skipped"][0:] or -1,  # magic:  http://stackoverflow.com/a/22685248/213042
             #gemaraSecondWordToIgnore ,= path["daf_indexes_skipped"][1:] or -1,
             #iRashiWordToIgnore ,= path["comment_indexes_skipped"][0:] or -1,
@@ -1213,16 +1216,26 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
             iRashiWordToIgnore = path["comment_indexes_skipped"][0] if len(path["comment_indexes_skipped"]) > 0 else -1
             iGemaraWord = path["daf_start_index"]
 
-            targetPhrase = BuildPhraseFromArray(curDaf.allWords, iGemaraWord , curRashi.cvWordcount - len(path["comment_indexes_skipped"]), gemaraWordToIgnore,
-                                                gemaraSecondWordToIgnore)
 
+            #figure out the bounds of what you actually matched
             if iRashiWordToIgnore != -1:
                 alternateStartText = u' '.join(curRashi.words[:iRashiWordToIgnore] + curRashi.words[iRashiWordToIgnore+1:])
                 rashiWordCount = curRashi.cvWordcount - 1
             else:
                 rashiWordCount = curRashi.cvWordcount
                 alternateStartText = startText
+            # the "text matched" is the actual text of the gemara, including the word we skipped.
+            len_matched = rashiWordCount
+            if gemaraWordToIgnore != -1:
+                len_matched += 1
+            if gemaraSecondWordToIgnore != -1:
+                len_matched += 1
 
+            targetPhrase = BuildPhraseFromArray(curDaf.allWords, iGemaraWord , len_matched,
+                                                gemaraWordToIgnore, gemaraSecondWordToIgnore)
+
+
+            print u"Target {}".format(targetPhrase)
             dist = ComputeLevenshteinDistanceByWord(alternateStartText, targetPhrase)
 
             # add penalty for skipped words
@@ -1236,18 +1249,12 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
             normalizedDistance = 1.0 * (dist + smoothingFactor) / (len(startText) + smoothingFactor) * normalizingFactor
             curMatch.score = normalizedDistance
             curMatch.textToMatch = curRashi.startingText
-
-            # the "text matched" is the actual text of the gemara, including the word we skipped.
-            len_matched = rashiWordCount
-            if gemaraWordToIgnore != -1:
-                len_matched += 1
-            if gemaraSecondWordToIgnore != -1:
-                len_matched += 1
-            curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iGemaraWord, len_matched)
+            curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iGemaraWord , len_matched)
             curMatch.startWord = iGemaraWord
             curMatch.endWord = iGemaraWord + len_matched - 1
             curMatch.skippedWords = [gemaraWordToIgnore, gemaraSecondWordToIgnore]
 
+            """
             # if we skipped the last word or two words, then we should cut them out of here
             if gemaraWordToIgnore == rashiWordCount - 2 and gemaraSecondWordToIgnore == rashiWordCount - 1:
                 curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iGemaraWord, rashiWordCount - 2)
@@ -1259,7 +1266,7 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
             if iRashiWordToIgnore == 0:
                 curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iGemaraWord, rashiWordCount - 1)
                 curMatch.endWord -= 1
-
+            """
             allMatches += [curMatch]
 
     else:
@@ -1376,17 +1383,17 @@ def BuildPhraseFromArray(allWords, iWord, leng, wordToSkip=-1, word2ToSkip=-1): 
     if wordToSkip == -1 and word2ToSkip == -1:
         return u" ".join(allWords[iWord:iWord + leng]).strip()
     elif wordToSkip != -1 and word2ToSkip == -1:
-        return u" ".join(allWords[iWord:iWord + wordToSkip] + allWords[iWord + wordToSkip+1:iWord + leng]).strip()
+        return u" ".join(allWords[iWord:wordToSkip] + allWords[wordToSkip+1:iWord + leng]).strip()
     elif wordToSkip == -1 and word2ToSkip != -1:
-        return u" ".join(allWords[iWord:iWord + word2ToSkip] + allWords[iWord + word2ToSkip + 1:iWord + leng]).strip()
+        return u" ".join(allWords[iWord:word2ToSkip] + allWords[word2ToSkip + 1:iWord + leng]).strip()
     else:  # wordToSkip != -1 and word2ToSkip != -1
         if word2ToSkip < wordToSkip: #swap
             tempWordToSkip = wordToSkip
             wordToSkip = word2ToSkip
             word2ToSkip = tempWordToSkip
 
-        return u" ".join(allWords[iWord:iWord + wordToSkip] + allWords[iWord + wordToSkip + 1:iWord + word2ToSkip] +
-                         allWords[iWord + word2ToSkip + 1:iWord + leng]).strip()
+        return u" ".join(allWords[iWord:wordToSkip] + allWords[wordToSkip + 1:word2ToSkip] +
+                         allWords[word2ToSkip + 1:iWord + leng]).strip()
 
 
 #done

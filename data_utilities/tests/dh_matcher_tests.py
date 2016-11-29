@@ -16,7 +16,8 @@ def setup_module(module):
                 u'עד הראשונה דברי רבי אליעזר.', # 2 skip
                 u'עד סוף האשמורה הראשונה דברי.', # 2 skip at end of word
                 u'רבן גמליאל אומר עד שיעלה', # abbrev in base_text
-                u'משעה שהכהנים עלין נכנסים לאכול'] #extra word in Rashi
+                u'משעה שהכהנים עלין נכנסים לאכול', #extra word in Rashi
+                u'בניו מבית המשתה אמרו לו וולה!'] #extra (ridiculous) word in rashi at end of daf
     daf = dhm.GemaraDaf(daf_words,comments)
 
 class TestDHMatcherFunctions:
@@ -73,6 +74,12 @@ class TestDHMatcherFunctions:
         assert textMatchList[1].textMatched == u'סוף האשמורה הראשונה דברי'
         assert textMatchList[1].startWord == 6
         assert textMatchList[1].endWord == 9
+
+    def test_GetAllApproximateMatchesWithWordSkip_rashi_skip_end_of_daf(self):
+        textMatchList = dhm.GetAllApproximateMatchesWithWordSkip(daf, daf.allRashi[6], 0, len(daf.allWords) - 1, 0, 0)
+        for tm in textMatchList:
+            print u'{}'.format(tm)
+        assert True == True
 
 class Test_MatchMatrix:
 
