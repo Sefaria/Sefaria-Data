@@ -866,7 +866,7 @@ class WeightedLevenshtein:
     def cost_str(self,string):
         cost = 0
         for c in string:
-            cost += self.cost(c)
+            cost += self._cost.get(c, self.min_cost)
         return cost
 
     def calculate(self, s1, s2, normalize=True):
@@ -903,15 +903,17 @@ class WeightedLevenshtein:
                 if j == 0:
                     v0.append(0)
                 else:
-                    v0.append(self._cost[s2[j - 1]] + v0[j - 1])
+                    v0.append(self._cost.get(s2[j - 1], self.min_cost) + v0[j - 1])
             v1 = [0] * (len(s2) + 1)
 
             for i in xrange(len(s1)):
-                v1[0] = self._cost[s1[i]]  # Set to the cost of inserting the first char of s1 into s2
+                v1[0] = self._cost.get(s1[i], self.min_cost)  # Set to the cost of inserting the first char of s1 into s2
                 for j in xrange(len(s2)):
-                    cost_sub = 0.0 if (self.sofit_map.get(s1[i], s1[i]) == self.sofit_map.get(s2[j], s2[j])) else self._cost[(s1[i], s2[j])]
-                    cost_ins = self._cost[s2[j]]
-                    cost_del = self._cost[s1[i]]
+                    cost_ins = self._cost.get(s2[j], self.min_cost)
+                    cost_del = self._cost.get(s1[i], self.min_cost)
+                    cost_sub = 0.0 if (
+                    self.sofit_map.get(s1[i], s1[i]) == self.sofit_map.get(s2[j], s2[j])) else self._cost.get(
+                        (s1[i], s2[j]), cost_ins if cost_ins > cost_del else cost_del)
                     v1[j + 1] = min(v1[j] + cost_ins, min(v0[j + 1] + cost_del, v0[j] + cost_sub))
 
                 vtemp = v0
