@@ -84,11 +84,17 @@ class TestDHMatcherFunctions:
     def test_is_abbrev(self):
         iam = dhm.isAbbrevMatch
 
+        #abbreviations
         assert (True, 1, False) == iam(0,u'אל',sp(u'אמר ליה'),0)
         assert (True, 2, False) == iam(0,u'אעפ',sp(u'אף על פי'),0)
         assert (True, 1, False) == iam(0,u'בביכנ',sp(u'בבית כנסת'),0)
         assert (True, 4, False) == iam(0,u'aabbcde',sp(u'aa123 bb123 c123 d123 e123'),0)
         assert (True, 3, False) == iam(0,u'aaabbcd',sp(u'aaa123 bb123 c123 d123'),0)
+
+        #numbers
+        assert (True, 2, True) == iam(0, u'רלט',sp(u'מאתיים שלשים ותשע'),0)
+        assert (True, 2, True) == iam(0, u'ברלט',sp(u'במאתיים שלשים ותשע'),0) #with prefix
+        assert (False, 0, False) == iam(0, u'רלט',sp(u'מה שלשים תא'),0.1)
 
     def test_is_string_match(self):
         ism = dhm.IsStringMatch
@@ -103,8 +109,13 @@ class TestDHMatcherFunctions:
 
 
 
-
-
+    def test_GetAbbrevMatch(self):
+        daftext = sp(u'מימיך רב נחמן בר יצחק אמר עשה כדברי בית שמאי חייב מיתה דתנן אמר ר"ט אני הייתי בא בדרך והטתי לקרות כדברי ב"ש וסכנתי בעצמי מפני הלסטים אמרו לו כדאי היית לחוב בעצמך שעברת על דברי ב"ה: מתני׳')
+        rashi = [u'רב נחמן בר יצחק אמר עשה כדברי בית שמאי חייב מיתה דתנן אמר רבי טרפון אני הייתי בא בדרך והטתי לקרות כדברי בית שמאי וסכנתי בעצמי מפני הלסטים אמרו לו כדאי היית לחוב בעצמך שעברת על דברי בית הלל']
+        daf = dhm.GemaraDaf(daftext,rashi)
+        textMatchList = dhm.GetAllApproximateMatchesWithAbbrev(daf,daf.allRashi[0],0,len(daf.allWords)-1,0.27,0.2)
+        for tm in textMatchList:
+            print u'{}'.format(tm)
     # test full matches and 1 word missing matches at end of daf
 
     def test_GetAllApproximateMatchesWithWordSkip_one_rashi_skip(self):

@@ -35,13 +35,6 @@ weighted_levenshtein = WeightedLevenshtein()
 
 lettersInOrderOfFrequency = [ u'ו', u'י', u'א', u'מ', u'ה', u'ל', u'ר', u'נ', u'ב', u'ש', u'ת', u'ד', u'כ', u'ע', u'ח', u'ק', u'פ', u'ס', u'ז', u'ט', u'ג', u'צ' ]
 
-sofit_map = {
-    u'ך': u'כ',
-    u'ם': u'מ',
-    u'ן': u'נ',
-    u'ף': u'פ',
-    u'ץ': u'צ',
-}
 
 class TextMatch:
     def __init__(self):
@@ -50,8 +43,10 @@ class TextMatch:
         self.startWord = 0
         self.endWord = 0
         self.score = 0
-        self.skippedWords = [] #this currently isn't implemented correctly
+        self.skippedRashiWords = []
+        self.skippedDafWords = [] # list of words skipped in match
         self.abbrev_matches = [] #list of tuples of range of abbreviation found, if any
+        self.match_type = '' # 'exact', 'skip', 'abbrev'
 
     def __str__(self):
         return u'{} ==> {} ({},{}) Score: {}'.format(self.textToMatch, self.textMatched, self.startWord, self.endWord, self.score)
@@ -160,9 +155,11 @@ class RashiUnit:
         self.place = place
         self.disambiguationScore = 0
         self.rashimatches = []  # list of TextMatch
-        self.skippedWords = []
+        self.skippedRashiWords = []
+        self.skippedDafWords = []
         self.abbrev_matches = []
         self.startingText = startingText
+        self.match_type = ''
 
 
         normalizedCV = re.sub(ur" ו" + u"?" + u"כו" + u"'?" + u"$", u"", self.startingText).strip()
@@ -186,7 +183,9 @@ class RashiUnit:
         self.cvhashes = CalculateHashes(self.words)
 
     def __str__(self):
-        return u"{}: ({},{}) place = {}".format(self.startingText,self.startWord,self.endWord, self.place)
+        return u"\n\t{}\n\t{}\n[{}-{}] place: {} type: {} skipped gemara: {} skipped rashi: {}\nabbrevs:\n\t\t{}".format(
+            self.startingText, self.matchedGemaraText, self.startWord, self.endWord, self.place, self.match_type,
+            u', '.join(self.skippedDafWords), u', '.join(self.skippedRashiWords), u'\n\t\t'.join([am.__str__() for am in self.abbrev_matches]))
 
 
 def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,verbose=False, word_threshold=0.27,char_threshold=0.2,
@@ -596,8 +595,10 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                 curDaf.matched_words[imatchedword] = True
 
             curru.matchedGemaraText = match.textMatched
-            curru.skippedWords = match.skippedWords
+            curru.skippedRashiWords = match.skippedRashiWords
+            curru.skippedDafWords = match.skippedDafWords
             curru.abbrev_matches = match.abbrev_matches
+            curru.match_type = match.match_type
 
             # remove this guy from the disambiguities, now that it is matched up
             rashisByDisambiguity.remove(curru) #check remove
@@ -638,6 +639,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                     curDaf.allRashi[irm].matchedGemaraText = u" ".join(curDaf.allWords[new_match[0]:new_match[1]+1])
                     curDaf.allRashi[irm].startWord = new_match[0]
                     curDaf.allRashi[irm].endWord = new_match[1]
+                    curDaf.allRashi[irm].match_type = 'fixed'
                     fixed.append(True)
                 else:
                     fixed.append(False)
@@ -657,9 +659,9 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
         for irm, (s, e) in enumerate(start_end_map):
             ru = curDaf.allRashi[irm]
             if s == -1:
-                sbreport += u"\nUNMATCHED: {}\n".format(ru.startingText)
+                sbreport += u"\nUNMATCHED:\n{}\n".format(ru)
             else:
-                sbreport += u"\n\t{}\n\t{}\n[{}-{}]".format(ru.startingText, ru.matchedGemaraText, ru.startWord, ru.endWord)
+                sbreport += u"\n{}\n".format(ru)
 
         print sbreport
 
@@ -809,6 +811,7 @@ def GetAllApproximateMatches(curDaf, curRashi, startBound, endBound,
             curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iWord, wordCount)
             curMatch.startWord = iWord
             curMatch.endWord = iWord + wordCount - 1
+            curMatch.match_type = 'exact'
 
             # calculate the score - how distant is it
             dist = ComputeLevenshteinDistanceByWord(startText, curMatch.textMatched)
@@ -826,7 +829,7 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
     global normalizingFactor
 
     allMatches = []
-    abbrev_matches = []
+
     startText = curRashi.startingTextNormalized
 
     wordCountRashi = curRashi.cvWordcount
@@ -842,6 +845,7 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
 
     iStartingWordInGemara = startBound
     while iStartingWordInGemara < wordCountGemara: #and iStartingWordInGemara + wordCountRashi - 1 <= endBound:
+        abbrev_matches = []
         fIsMatch = False
         offsetWithinGemara = 0
         offsetWithinRashiCV = 0
@@ -856,6 +860,8 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
         iWordWithinPhrase = 0
         while iWordWithinPhrase + offsetWithinRashiCV < wordCountRashi  and iStartingWordInGemara + offsetWithinGemara + iWordWithinPhrase < wordCountGemara:
             # first check if the cv word has a quotemark
+            if iWordWithinPhrase == 33:
+                pass
 
             #try:
             if u"\"" in startTextWords[iWordWithinPhrase + offsetWithinRashiCV] or u"״" in startTextWords[iWordWithinPhrase + offsetWithinRashiCV]:
@@ -942,6 +948,7 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
                                                         wordCountRashi - gemaraDifferential)
             curMatch.startWord = iStartingWordInGemara
             curMatch.endWord = iStartingWordInGemara + wordCountRashi - gemaraDifferential - 1 # I added the -1 b/c there was an off-by-one error
+            curMatch.match_type = 'abbrev'
 
             #one final check on abbrev matches. get rid of any matches that are subsets
             new_abbrev_matches = []
@@ -1217,6 +1224,7 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
     """
     for path in paths:
         curMatch = TextMatch()
+        curMatch.match_type = 'skip'
         #print 'PATH'
         #mm.print_path(path)
         gemaraWordToIgnore = path["daf_indexes_skipped"][0] if len(path["daf_indexes_skipped"]) > 0 else -1
@@ -1265,7 +1273,8 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
             curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iGemaraWord , len_matched)
             curMatch.startWord = iGemaraWord
             curMatch.endWord = iGemaraWord + len_matched - 1
-            curMatch.skippedWords = [gemaraWordToIgnore, gemaraSecondWordToIgnore]
+            curMatch.skippedRashiWords = [curRashi.words[iskip] for iskip in path['comment_indexes_skipped']]
+            curMatch.skippedDafWords = [curDaf.allWords[iskip] for iskip in path['daf_indexes_skipped']]
             allMatches += [curMatch]
 
 
@@ -1327,7 +1336,7 @@ def IsStringMatch(orig, target, threshold):  # string,string,double,out double
 
 def cleanAbbrev(str):
     str = re.sub(ur'[\"״]',u'',str)
-    str = u"".join([sofit_swap(c) for c in str])
+    str = u"".join([weighted_levenshtein.sofit_map.get(c,c) for c in str])
     return str
 
 
@@ -1368,7 +1377,7 @@ def isAbbrevMatch(curpos, abbrevText, unabbrevText, char_threshold):
         #print u"IS HEB NUM {} {} {} {}".format(hebrew_num, abbrevText,gematria(abbrevText),num2words(gematria(abbrevText), lang='he'))
         dist, isMatch = IsStringMatch(u' '.join(potential_unabbrev_number), num2words(gematria(abbrevText), lang='he'), char_threshold)
         if isMatch:
-            print u"NUMBER FOUND {} == {} DIST: {}".format(u' '.join(unabbrevText),num2words(gematria(abbrevText),lang='he'),dist)
+            #print u"NUMBER FOUND {} == {} DIST: {}".format(u' '.join(unabbrevText),num2words(gematria(abbrevText),lang='he'),dist)
             return isMatch, len(abbrevText) - 1, True
 
     #if still not matched, check if there's a prefix
@@ -1377,8 +1386,8 @@ def isAbbrevMatch(curpos, abbrevText, unabbrevText, char_threshold):
         potential_unabbrev_number = unabbrevText[curpos:curpos + len(abbrevText) - 1]
         dist, isMatch = IsStringMatch(u' '.join(potential_unabbrev_number), prefix + num2words(gematria(abbrevText[1:]), lang='he'), char_threshold)
         if isMatch:
-            print u"PREFIX NUMBER FOUND {} == {} DIST: {}".format(u' '.join(unabbrevText), prefix + num2words(gematria(abbrevText[1:]),lang='he'),
-                                                           dist)
+            #print u"PREFIX NUMBER FOUND {} == {} DIST: {}".format(u' '.join(unabbrevText), prefix + num2words(gematria(abbrevText[1:]),lang='he'),
+            #                                               dist)
             return isMatch, len(abbrevText) - 2, True # to account for the prefix
 
 
@@ -1546,8 +1555,6 @@ def Get2LetterForm(stringy):
     # now put those two most frequent letters in order according to where they are in the words
     return u"{}{}".format(stringy[letter1], stringy[letter2]) if letter1 < letter2 else u"{}{}".format(stringy[letter2],
                                                                                                     stringy[letter1])
-def sofit_swap(C):
-    return sofit_map[C] if C in sofit_map else C
 
 def is_hebrew_number(str):
     matches = re.findall(hebrew_number_regex(), str)
