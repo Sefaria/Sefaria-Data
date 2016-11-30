@@ -839,12 +839,23 @@ class WeightedLevenshtein:
         else:
             self.min_cost = min_cost
 
+        #self._cost is a dictionary with keys either single letters, or tuples of two letters.
+        all_letters = self.letter_freqs.keys() + self.sofit_map.keys()
+        self._cost = {c: self._build_cost(c) for c in all_letters}  # single letters
+        self._cost.update({(c1, c2): self._build_cost(c1, c2) for c1 in all_letters for c2 in all_letters}) # tuples
+
+
+    #Cost of calling this isn't worth the syntax benefit
+    """
     def sofit_swap(self, c):
         return self.sofit_map.get(c, c)
+    """
 
-    def cost(self, c1, c2=None):
-        c1 = self.sofit_swap(c1)
-        c2 = self.sofit_swap(c2)
+
+    #This is a pure function with limited inputs.  Building as a lookup saves lots of time.
+    def _build_cost(self, c1, c2=None):
+        c1 = self.sofit_map.get(c1, c1)
+        c2 = self.sofit_map.get(c2, c2)
         w1 = self.letter_freqs[c1] if c1 in self.letter_freqs else 0.0
         if c2:
             w2 = self.letter_freqs[c2] if c2 in self.letter_freqs else 0.0
@@ -892,16 +903,16 @@ class WeightedLevenshtein:
                 if j == 0:
                     v0.append(0)
                 else:
-                    v0.append(self.cost(s2[j-1]) + v0[j-1])
+                    v0.append(self._cost[s2[j - 1]] + v0[j - 1])
             v1 = [0] * (len(s2) + 1)
 
             for i in xrange(len(s1)):
-                v1[0] = self.cost(s1[i])  # Set to the cost of inserting the first char of s1 into s2
+                v1[0] = self._cost[s1[i]]  # Set to the cost of inserting the first char of s1 into s2
                 for j in xrange(len(s2)):
-                    cost_sub = 0.0 if (self.sofit_swap(s1[i]) == self.sofit_swap(s2[j])) else self.cost(s1[i], s2[j])
-                    cost_ins = self.cost(s2[j])
-                    cost_del = self.cost(s1[i])
-                    v1[j+1] = min(v1[j]+cost_ins, min(v0[j+1]+cost_del, v0[j]+cost_sub))
+                    cost_sub = 0.0 if (self.sofit_map.get(s1[i], s1[i]) == self.sofit_map.get(s2[j], s2[j])) else self._cost[(s1[i], s2[j])]
+                    cost_ins = self._cost[s2[j]]
+                    cost_del = self._cost[s1[i]]
+                    v1[j + 1] = min(v1[j] + cost_ins, min(v0[j + 1] + cost_del, v0[j] + cost_sub))
 
                 vtemp = v0
                 v0 = v1
