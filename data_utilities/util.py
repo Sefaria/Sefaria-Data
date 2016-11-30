@@ -901,7 +901,10 @@ class WeightedLevenshtein:
         Levenshtein score will be returned.
         """
         if not self._calculate_cache.get((s1,s2,normalize), None):
-            if len(s1) == 0 and len(s2) == 0:
+            s1_len = len(s1)
+            s2_len = len(s2)
+
+            if s1_len == 0 and s2_len == 0:
                 raise LevenshteinError
 
             if s1 == s2:
@@ -916,16 +919,16 @@ class WeightedLevenshtein:
                 s1 = s1.translate(self._sofit_transx_table)
                 s2 = s2.translate(self._sofit_transx_table)
                 v0 = []
-                for j in xrange(len(s2) + 1):
+                for j in xrange(s2_len + 1):
                     if j == 0:
                         v0.append(0)
                     else:
                         v0.append(self._cost[s2[j - 1]] + v0[j - 1])
-                v1 = [0] * (len(s2) + 1)
+                v1 = [0] * (s2_len + 1)
 
-                for i in xrange(len(s1)):
+                for i in xrange(s1_len):
                     v1[0] = self._cost.get(s1[i], self.min_cost)  # Set to the cost of inserting the first char of s1 into s2
-                    for j in xrange(len(s2)):
+                    for j in xrange(s2_len):
                         cost_ins = self._cost[s2[j]]
                         cost_del = self._cost[s1[i]]
                         cost_sub = 0.0 if s1[i] == s2[j] else self._cost.get(
@@ -938,11 +941,11 @@ class WeightedLevenshtein:
                 score = v0[-1]
 
             if normalize:
-                length = max(len(s1), len(s2))
+                length = max(s1_len, s2_len)
                 max_score = length * (self._most_expensive + self.min_cost)
                 self._calculate_cache[(s1, s2, normalize)] = int(100.0 * (1 - (score / max_score)))
 
             else:
                 self._calculate_cache[(s1, s2, normalize)] = score
 
-        return self._calculate_cache[(s1,s2,normalize)]
+        return self._calculate_cache[(s1, s2, normalize)]
