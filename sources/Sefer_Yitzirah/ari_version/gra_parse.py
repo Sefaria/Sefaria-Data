@@ -3,17 +3,14 @@
 import codecs
 import re
 from data_utilities.util import ja_to_xml,  traverse_ja
-from sources.functions import post_text, post_index
+from sources.functions import post_text, post_index, post_link
 from sefaria.model import *
 from sefaria.system.exceptions import DuplicateRecordError
 
 # init section lists - do we want this in the method or not?
-parsed = []
-perek = []
-mishna = []
-dibur = []
 
 def text_parse():
+    ofen = False
     # open, read, close the original txt file
     with codecs.open('yitzira_gra.txt', 'r', 'utf-8') as fp:
         lines = fp.readlines()
@@ -24,10 +21,10 @@ def text_parse():
             starting = line_num + 1
             break
     # init section lists
-    # parsed = []
-    # perek = []
-    # mishna = []
-    # dibur = []
+    parsed = []
+    perek = []
+    mishna = []
+    dibur = []
     # loop on lines and creat the jagged array
     for line in lines[starting:]:
         if line.find(u'@00') == 0: #is not -1:
@@ -51,17 +48,22 @@ def text_parse():
                 mishna = []
         else: # this line is going to be part of the dibur
             # Dibur Hamatchil
-            if line.find(u'@31') is not -1 and dibur:
-                dibur = ' '.join(dibur)
-                mishna.append(dibur)
-                dibur = []
+            if re.search(u'@(03|31|98)', line): # Ofen issue close prev but don't open an new one on the next @31
+                if not ofen:
+                    dibur = ' '.join(dibur)
+                    mishna.append(dibur)
+                    dibur = []
+                else:
+                    ofen = False
             # note: can make this peace of code slimmer, kept it like this in case we want to change the html <> tags of orginal legend @ tag to somthing else
             # segment ocr tag fixing
             line = re.sub(u'@(31)', u'<b>', line)
             line = re.sub(u'@(32)', u'</b>', line)
             # title 'Ofen' in the gra's commentary
-            line = re.sub(u'@(03)', u'<br>', line)
-            line = re.sub(u'@(04)', u'</br>', line)
+            if re.search(u'@(03)', line):
+                ofen = True
+            line = re.sub(u'@(03)', u'<b>', line)
+            line = re.sub(u'@(04)', u'</b><br>', line)
             # in text was modgash
             line = re.sub(u'@(44)', u'<b>', line)
             line = re.sub(u'@(45)', u'</b>', line)
@@ -70,6 +72,10 @@ def text_parse():
             line = re.sub(u'@(99)', u'</small>', line)
             # not necessary ocr tag
             line = re.sub(u'@(11)', u'', line)
+            # deal with footnotes
+            if re.search(u'\*\[.*?\]', line):
+                line = re.sub(u'\*\[.', u'<small>[', line)
+                line = re.sub(u'\]', u']</small>', line)
             # append this line to the given dibur
             dibur.append(line.strip())
 
@@ -105,22 +111,22 @@ def post_this():
     }
 
     schema = JaggedArrayNode()
-    schema.add_title('GRA on Sefer Yetzirah Ari Version', 'en', True)
-    schema.add_title(u'פירוש הגרא על ספר יצירה', 'he', True)
-    schema.key = 'GRA on Sefer Yetzirah Ari Version'
+    schema.add_title('HaGra on Sefer Yetzirah', 'en', True)
+    schema.add_title(u'פירוש הגר"א על ספר יצירה', 'he', True)
+    schema.key = 'HaGra on Sefer Yetzirah'
     schema.depth = 3
     schema.addressTypes = ['Integer', 'Integer','Integer']
     schema.sectionNames = ['Chapter', 'Mishnah','Comment']
     schema.validate()
 
     index_dict = {
-        'title': 'GRA on Sefer Yetzirah Ari Version',
-        'categories': ['Commentray2','Kabbalah','Gra'],
+        'title': 'HaGra on Sefer Yetzirah',
+        'categories': ['Commentary2','Kabbalah','Gra'],
         'schema': schema.serialize() # This line converts the schema into json
     }
     post_index(index_dict)
 
-    post_text('GRA on Sefer Yetzirah Ari Version', text_version, index_count='on')
+    post_text('HaGra on Sefer Yetzirah', text_version, index_count='on')
 
 # post with the post function
 post_this()
@@ -132,20 +138,18 @@ for dh in traverse_ja(gra):
         link = (
             {
             "refs": [
-                "GRA on Sefer Yetzirah Ari Version " + '%d:%d:%d' %tuple(x+1 for x in dh['indices']),
+                "HaGra on Sefer Yetzirah " + '%d:%d:%d' %tuple(x+1 for x in dh['indices']),
                 "Sefer Yetzirah Ari Version " + '%d:%d' %tuple(x+1 for x in dh['indices'][:2]),
             ],
             "type": "commentary",
             "auto": True,
             "generated_by": "gra_parse"
         })
+        dh_text = dh['data']
+        # append to links list excluding Slik
         gra_links.append(link)
+        # if re.search(u'בס"ד סליק פירוש',dh_text):
+        #     gra_links.append(link)
 
 # save to mongo the list of dictionaries.
-for link in gra_links:
-    try:
-        Link(link).save()
-    except DuplicateRecordError:
-        print 'error: DuplicateRecordError flew'
-
-
+post_link(gra_links)
