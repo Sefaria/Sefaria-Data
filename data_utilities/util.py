@@ -921,9 +921,9 @@ class WeightedLevenshtein:
                 v0 = []
                 for j in xrange(s2_len + 1):
                     if j == 0:
-                        v0.append(0)
+                        v0 += [0]
                     else:
-                        v0.append(self._cost[s2[j - 1]] + v0[j - 1])
+                        v0 += [self._cost[s2[j - 1]] + v0[j - 1]]
                 v1 = [0] * (s2_len + 1)
 
                 for i in xrange(s1_len):
@@ -933,11 +933,9 @@ class WeightedLevenshtein:
                         cost_del = self._cost[s1[i]]
                         cost_sub = 0.0 if s1[i] == s2[j] else self._cost.get(
                             (s1[i], s2[j]), cost_ins if cost_ins > cost_del else cost_del)
-                        v1[j + 1] = min(v1[j] + cost_ins, min(v0[j + 1] + cost_del, v0[j] + cost_sub))
+                        v1[j + 1] = min(v1[j] + cost_ins, v0[j + 1] + cost_del, v0[j] + cost_sub)
 
-                    vtemp = v0
-                    v0 = v1
-                    v1 = vtemp
+                    v0, v1 = v1, v0
                 score = v0[-1]
 
             if normalize:
