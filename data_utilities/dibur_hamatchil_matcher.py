@@ -1,11 +1,23 @@
 # -*- coding: utf-8 -*-
-import regex as re
+
 import math as mathy
 import bisect
 import csv
 import codecs
 import itertools
 import numpy
+
+import logging
+logger = logging.getLogger(__name__)
+
+try:
+    import re2 as re
+    re.set_fallback_notification(re.FALLBACK_WARNING)
+except ImportError:
+    logging.warning("Failed to load 're2'.  Falling back to 're' for regular expression parsing. See https://github.com/blockspeiser/Sefaria-Project/wiki/Regular-Expression-Engines")
+    import re
+
+import regex
 
 from sefaria.model import *
 from sefaria.utils.hebrew import gematria
@@ -769,6 +781,7 @@ def GetAllApproximateMatches(curDaf, curRashi, startBound, endBound,
     allMatches = []
     startText = curRashi.startingTextNormalized
     wordCount = curRashi.cvWordcount
+    cvhashes = curRashi.cvhashes
     if wordCount == 0:
         return allMatches
     # Okay, start going through all the permutations..
@@ -779,11 +792,8 @@ def GetAllApproximateMatches(curDaf, curRashi, startBound, endBound,
         fIsMatch = False
         # if phrase is 4 or more words, use the 2-letter hashes
         if wordCount >= 4:
-            # get the hashes for the starting text
-            cvhashes = CalculateHashes(re.split(ur"\s+", startText.strip()))
-            initialhash = cvhashes[0]
 
-            if curDaf.wordhashes[iWord] == initialhash:
+            if curDaf.wordhashes[iWord] == cvhashes[0]:
                 # see if the rest match up
                 mismatches = 0
 
@@ -1485,13 +1495,14 @@ def CalculateHashes(allwords):  # input list
     return [GetWordSignature(w) for w in allwords]
 
 
+alefint = ord(u"א")
+
 def GetWordSignature(word):
     # make sure there is nothing but letters
     word = re.sub(ur"[^א-ת]", u"", word)
     word = Get2LetterForm(word)
 
     hash = 0
-    alefint = ord(u"א")
     for i, char in enumerate(word):
         chval = ord(char)
         chval = chval - alefint + 1
@@ -1550,7 +1561,7 @@ def Get2LetterForm(stringy):
                                                                                                     stringy[letter1])
 
 def is_hebrew_number(str):
-    matches = re.findall(hebrew_number_regex(), str)
+    matches = regex.findall(hebrew_number_regex(), str)
     if len(matches) == 0:
         return False
     return matches[0] == str
@@ -1576,7 +1587,7 @@ def hebrew_number_regex():
             [\u05d0-\u05d8]?					    # One or zero alef-tet (1-9)
     )"""
 
-    return re.compile(rx, re.VERBOSE)
+    return regex.compile(rx, regex.VERBOSE)
 
 
 #if it can get this, it can get anything
