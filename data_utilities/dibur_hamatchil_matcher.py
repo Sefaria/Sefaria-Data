@@ -1472,7 +1472,7 @@ def ComputeLevenshteinDistance(s, t):
 
 
 def InitializeHashTables():
-    global pregeneratedKWordValues,pregeneratedKMultiwordValues
+    global pregeneratedKWordValues, pregeneratedKMultiwordValues
     # Populate the pregenerated K values for the polynomial hash calculation
     pregeneratedKWordValues = [GetPolynomialKValueReal(i, kForWordHash) for i in xrange(NumPregeneratedValues)]
     # pregenerated K values for the multi word
