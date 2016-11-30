@@ -1500,21 +1500,6 @@ def GetWordSignature(word):
     return hash
 
 
-def GetNormalizedLetter(ch):
-    if ch == u'ם':
-        return u'מ'
-    elif ch == u'ן':
-        return u'נ'
-    elif ch == u'ך':
-        return u'כ'
-    elif ch == u'ף':
-        return u'פ'
-    elif ch == u'ץ':
-        return u'צ'
-    else:
-        return ch
-
-
 def GetPolynomialKMultiWordValue(pos):
     global kForWordHash, NumPregeneratedValues, pregeneratedKMultiwordValues
     if pos < NumPregeneratedValues:
@@ -1536,6 +1521,15 @@ def GetPolynomialKValueReal(pos, k):
     return k ** pos
 
 
+# Merge into util.py?
+_sofit_transx_table = {
+    1498: u'\u05db',
+    1501: u'\u05de',
+    1503: u'\u05e0',
+    1507: u'\u05e4',
+    1509: u'\u05e6'
+}
+
 def Get2LetterForm(stringy):
     if stringy == u"ר":
         return u"רב"
@@ -1544,9 +1538,8 @@ def Get2LetterForm(stringy):
         return stringy
 
     # take a word, and keep only the two most infrequent letters
-
-    freqchart = [(lettersInOrderOfFrequency.index(GetNormalizedLetter(tempchar)), i) for i, tempchar in
-                 enumerate(stringy)]
+    stringy = stringy.translate(_sofit_transx_table)
+    freqchart = [(lettersInOrderOfFrequency.index(tempchar), i) for i, tempchar in enumerate(stringy)]
 
     # sort it descending, so the higher they are the more rare they are
     freqchart.sort(key=lambda freq: -freq[0])
