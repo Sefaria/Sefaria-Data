@@ -3,7 +3,8 @@ import sys
 import os
 import codecs
 from sefaria.datatype import jagged_array
-import re
+from collections import Counter
+from urllib2 import URLError
 import json
 from data_utilities.util import jagged_array_to_file as j_to_file, getGematria
 from data_utilities.sanity_checks import *
@@ -368,6 +369,8 @@ def yachin_builder(text_list):
         line = line.replace(u'\n', u'')
         line = line.replace(u'\r', u'')
         line = line.replace(u'\ufeff', u'')
+        line = line.replace(u'!', u'')
+        line = line.replace(u' @22', u'@22')
         line = line.rstrip()
         if line == u'':
             continue
@@ -397,6 +400,7 @@ def yachin_builder(text_list):
 
         else:
             print 'bad line'
+            print line
             raise RuntimeError
 
     return chapter
@@ -447,7 +451,7 @@ def tags_to_strip():
     :return: List of tags to remove from parsed structure
     """
     return [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})', u'@11[\u05d0-\u05ea"]{1,3}\*?\)',
-            u'@99', u'@42', u'@53', u'@[0-9]{2}']
+            u'@22\([\u05d0-\u05ea]{1,2}\)', u'@[0-9]{2}']
 
 # [u'@00(?:\u05e4\u05e8\u05e7 |\u05e4")([\u05d0-\u05ea"]{1,3})',
 #  u'@11[\u05d0-\u05ea"]{1,3}\*?\)', u'@99', u'@42', u'@53']
@@ -612,21 +616,32 @@ def collect_links(tractate):
     :return: A list of link objects, ready for upload
     """
     links = []
+    y_counter = Counter([])
 
     filename = Ref(tractate).he_book().replace(u'משנה', u'משניות') + u'.txt'
     with codecs.open(filename, 'r', 'utf-8') as datafile:
         parsed_mishna = parse_mishna(datafile, u'@00(?:\u05e4\u05e8\u05e7 |\u05e4)([\u05d0-\u05ea"]{1,3})',
                                      u'@22[\u05d0-\u05ea]{1,2}', u'@99')
-    comment_reg = re.compile(u'@44([\u05d0-\u05ea]{1,3})')
+    comment_reg = re.compile(u'(?:[).\d])(?:[ \d@]*)([\u05d0-\u05ea"\' ]*?)(?:[ \d@]*)@44([\u05d0-\u05ea]{1,3})')
 
     for line in util.traverse_ja(parsed_mishna):
-        for match in comment_reg.finditer(line['data']):
+        for match in comment_reg.finditer(util.multiple_replace(line['data'], {u'!': u'', u'@33': u''})):
             m_ref = u'{}.{}.{}'.format(tractate, line['indices'][0]+1, line['indices'][1]+1)
             y_ref = u'{}.{}.{}'.format(u'Yachin on ' + tractate, line['indices'][0]+1,
-                                       util.getGematria(match.group(1)))
-            links.append((m_ref, y_ref))
+                                       util.getGematria(match.group(2)))
+            y_counter.update([y_ref])
+            if y_counter[y_ref] != 1:
+                continue
 
-    return list(set(links))
+            links.append({
+                'refs': [m_ref, y_ref],
+                'type': 'commentary',
+                'auto': False,
+                'generated_by': 'Yachin Parse Script',
+                'text': match.group(1)
+            })
+
+    return links
 
 
 def build_links(ref_list):
@@ -634,16 +649,7 @@ def build_links(ref_list):
     # flatten links to depth 1 list
     references = [ref for ref_array in ref_list for ref in ref_array]
 
-    links = []
-    for ref in references:
-        linker = {
-            'refs': ref,
-            'type': 'commentary',
-            'auto': False,
-            'generated_by': 'Yachin Parse Script'
-        }
-        links.append(linker)
-    return links
+    return references
 
 
 def upload(data, post_index=True):
@@ -677,15 +683,57 @@ def upload(data, post_index=True):
     functions.post_text(data['en'], text_version)
 
 
+def add_dh_to_text(link_dict, parsed_files):
+
+    # grab appropriate ref in the link object
+    try:
+        ref = filter(lambda x: re.search('Yachin on', x), link_dict['refs'])[0]
+    except IndexError:
+        raise IndexError('could not find Yachin in either link')
+
+    # parse out the tractate name and indexes
+    book_name = ref[:ref.index('.')]
+    index_string = ref[ref.index('.')+1:]
+    indexes = [int(i)-1 for i in index_string.split('.')]
+    del index_string
+
+    our_text = parsed_files[book_name]
+    temp = None
+    for i in indexes:
+        try:
+            if temp is None:
+                temp = our_text['data'].array()[i]
+            else:
+                temp = temp[i]
+        except IndexError:
+            break
+    else:
+        temp[0] = u'<b>{}</b><br>'.format(link_dict['text']) + temp[0]
+
+    del link_dict['text']
+
+
 def post_index_text_links():
     tracs = library.get_indexes_in_category('Mishnah')
     parsed = parse_files()
     link_refs = [collect_links(tractate) for tractate in tracs]
     full_links = build_links(link_refs)
+    for linker in full_links:
+        add_dh_to_text(linker, parsed)
     for num, data in enumerate(sorted(parsed.keys())):
         print num+1, data
-        upload(parsed[data], False)
-    # functions.post_link(full_links)
+        for attempt in range(3):
+            try:
+                upload(parsed[data], True)
+            except URLError:
+                print 'handling weak network'
+            else:
+                break
+        else:
+            raise URLError
+        # util.ja_to_xml(parsed[data]['data'].array(), ['chapter', 'comment', 'line'])
+        # break
+    functions.post_link(full_links)
 
     os.remove('errors.html')
 

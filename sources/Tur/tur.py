@@ -63,20 +63,99 @@ def gatherData(data, line, helek, siman_num, matches_array, commentaries):
     #for this siman, this commentary, there are these tags
     data[helek][siman_num] = {}
     for commentary_count, matches in enumerate(matches_array):
-        hash_tags = {}
+        hash = {}
         this_commentary = commentaries[commentary_count]
         if this_commentary == "Replace":
             continue
         data[helek][siman_num][this_commentary] = {}
         for order_count, match in enumerate(matches):
             this_match = getGematria(match.encode('utf-8'))
-            if this_match in hash_tags:
-                hash_tags[this_match] += 1
+            if this_match in hash:
+                hash[this_match] += 1
             else:
-                hash_tags[this_match] = 1
-        data[helek][siman_num][this_commentary] = hash_tags
+                hash[this_match] = 1
+        data[helek][siman_num][this_commentary] = hash
     return data
 
+
+def skippedAny(array):
+    length = len(array)
+    prev = 0
+    report = ""
+    for each_one in array:
+        if each_one != prev + 1:
+            report += "Skipped " + numToHeb(prev+1).encode('utf-8') + "\n"
+        prev = each_one
+
+    return report
+
+
+def genDict(matches_array, commentaries, which_one):
+    hash = {}
+    for commentary_count, matches in enumerate(matches_array):
+        if commentaries[commentary_count] == which_one:
+            for order_count, match in enumerate(matches):
+                this_gematria = getGematria(match)
+                if this_gematria in hash:
+                    hash[this_gematria] += 1
+                else:
+                    hash[this_gematria] = 1
+
+    return hash
+
+def check_simple(which_one, siman_num, helek, matches_array, commentaries):
+    duplicate_report = open("report_"+which_one+"_duplicates.txt", "a")
+    skipped_report = open("skipped_"+which_one+".txt", "a")
+    hash = genDict(matches_array, commentaries, which_one)
+    write_duplicate(hash, duplicate_report, siman_num, helek)
+    keys = sorted(hash.keys())
+    skipped_any = skippedAny(keys)
+    if len(skipped_any) > 0:
+        skipped_report.write("{} Siman #: {}\n".format(helek, siman_num))
+    skipped_report.write(skipped_any)
+    duplicate_report.close()
+    skipped_report.close()
+
+
+def update_dict_BY_data(hash, other_file, siman_num, duplicate_report):
+    data = eval(other_file.read())
+    if str(siman_num) not in data:
+        duplicate_report.write("In Beit Yosef, not finding Siman #"+str(siman_num)+"\n")
+        return
+    else:
+        array = data[str(siman_num)]
+    for each in array:
+        if each in hash:
+            hash[each] += 1
+        else:
+            hash[each] = 1
+
+    return hash
+
+def check_darchei_moshe(siman_num, helek, matches_array, commentaries):
+    if helek == "Choshen Mishpat":
+        return
+    hash = {}
+    skipped_report = open("skipped_darchei.txt", "a")
+    duplicate_report = open("report_darchei_duplicates.txt", "a")
+    other_file = open("{} darchei moshe.txt".format(helek))
+    hash = genDict(matches_array, commentaries, "Darchei Moshe")
+    update_dict_BY_data(hash, other_file, siman_num, duplicate_report)
+    write_duplicate(hash, duplicate_report, siman_num, helek)
+    keys = sorted(hash.keys())
+    skipped_any = skippedAny(keys)
+    if len(skipped_any) > 0:
+        skipped_report.write("{} Siman #: {}\n".format(helek, siman_num))
+    skipped_report.write(skipped_any)
+    duplicate_report.close()
+    skipped_report.close()
+
+
+def write_duplicate(hash, duplicate_report, siman_num, helek):
+    for number in hash:
+        if hash[number] > 1:
+            print "Siman "+str(siman_num)+", "+helek+": "+numToHeb(number).encode('utf8')+" has "+str(hash[number])+"\n"
+            duplicate_report.write("Siman "+str(siman_num)+", "+helek+": "+numToHeb(number).encode('utf8')+" has "+str(hash[number])+"\n")
 
 
 def replaceWithHTMLTags(line, helek, siman_num, data):
@@ -101,20 +180,24 @@ def replaceWithHTMLTags(line, helek, siman_num, data):
                         
     data = gatherData(data, line, helek, siman_num, matches_array, commentaries)
     
+    check_simple("Drisha", siman_num, helek, matches_array, commentaries)
+    check_simple("Prisha", siman_num, helek, matches_array, commentaries)
+    check_darchei_moshe(siman_num, helek, matches_array, commentaries)
+
     for commentary_count, matches in enumerate(matches_array):
-        hash_tags = {}
+        hash = {}
         how_many_shams = 0
         for order_count, match in enumerate(matches):
             if helek == "Choshen Mishpat" and commentaries[commentary_count] == "Replace":
                 line = line.replace(match, "#$!^")
             else:
                 this_gematria = getGematria(match.encode('utf-8'))
-                if this_gematria in hash_tags:
-                    hash_tags[this_gematria] += 1
+                if this_gematria in hash:
+                    hash[this_gematria] += 1
                     prisha_file += 1
                 else:
-                    hash_tags[this_gematria] = 1
-                HTML_tag =  '<i data-commentator="'+commentaries[commentary_count]+'" data-order="'+str(this_gematria)+"."+str(hash_tags[this_gematria])+'"></i>'
+                    hash[this_gematria] = 1
+                HTML_tag =  '<i data-commentator="'+commentaries[commentary_count]+'" data-order="'+str(this_gematria)+"."+str(hash[this_gematria])+'"></i>'
                 line = line.replace(match, HTML_tag, 1)
     return line, data
 
@@ -192,7 +275,20 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
           header_pos = line.find("@00")
           len_line = len(line)
           if header_pos > 10 and header_pos < len_line-100:
-            pdb.set_trace()
+            start = line.find("@00")
+            there_yet = 0
+            end = -1
+            for index, char in enumerate(line):
+                if index > start:
+                    if char == ' ':
+                        there_yet += 1
+                if there_yet == 2:
+                    end = index
+                    print line[start:end]
+                    break
+            line = line.replace(line[start:end], "<br><b>"+line[start:end]+"<br>")
+
+
 
         if line.find("@00") >= 0 and len(line.split(" ")) >= 2:
             start = line.find("@00")
@@ -272,7 +368,6 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
                     header = ""
         elif will_see_00 == False:
             if len(header) > 0:
-                print 'have you forgotten?'
                 pdb.set_trace()
 
         if will_see_00 == True:
@@ -341,5 +436,5 @@ if __name__ == "__main__":
             "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001935970",
             "versionTitle": helek + ", Vilna, 1923"
         }
-        post_text("Tur,_"+helek, send_text)
+        #post_text("Tur,_"+helek, send_text)
     

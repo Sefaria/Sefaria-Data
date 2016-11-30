@@ -1,0 +1,253 @@
+<schema
+  xmlns='http://www.w3.org/2000/10/XMLSchema'
+  targetNamespace='http://www.w3.org/namespace/'
+  xmlns:t='http://www.w3.org/namespace/'>
+
+ <element name='book'>
+  <complexType>
+   <sequence>
+    <element ref='t:front'/>
+    <element ref='t:body'/>
+    <element ref='t:back'/>
+   </sequence>
+   <attribute name='id' type='string' use='optional'/>
+  </complexType>
+ </element>
+
+ <element name='front'>
+  <complexType mixed='true'>
+   <sequence minOccurs='0' maxOccurs='unbounded'>
+    <element ref='t:chapter'/>
+   </sequence>
+  </complexType>
+ </element>
+
+ <element name='back'>
+  <complexType mixed='true'>
+   <sequence minOccurs='0' maxOccurs='unbounded'>
+    <element ref='t:chapter'/>
+   </sequence>
+  </complexType>
+ </element>
+
+ <element name='body'>
+  <complexType>
+   <sequence>
+    <element ref='t:chapter' minOccurs='0' maxOccurs='unbounded'/>
+    <element ref='t:commentaries' minOccurs='0' maxOccurs='1'/>
+   </sequence>
+  </complexType>
+ </element>
+
+ <element name='pgbrk'>
+  <complexType mixed='true'>
+   <attribute name='id' type='NMTOKEN' use='required'/>
+  </complexType>
+ </element>
+
+ <element name='commentaries'>
+  <complexType>
+   <sequence>
+    <element ref='t:commentary' minOccurs='0' maxOccurs='unbounded'/>
+   </sequence>
+  </complexType>
+ </element>
+
+ <element name='commentary'>
+  <complexType>
+   <sequence>
+    <element ref='t:label' minOccurs='0' maxOccurs='1'/>
+    <element ref='t:author'/>
+    <choice minOccurs='0' maxOccurs='unbounded'>
+     <element ref='t:phrase'/>
+     <element ref='t:p'/>
+     <element ref='t:chapter'/>
+    </choice>
+   </sequence>
+   <attribute name='id' type='string' use='optional'/>
+  </complexType>
+ </element>
+
+ <element name='author'>
+  <complexType mixed='true'>
+  </complexType>
+ </element>
+
+ <element name='chapter'>
+  <complexType>
+   <sequence>
+    <element ref='t:label' minOccurs='0' maxOccurs='1'/>
+    <choice minOccurs='0' maxOccurs='unbounded'>
+     <element ref='t:phrase'/>
+     <element ref='t:p'/>
+     <element ref='t:pgbrk'/>
+     <element ref='t:verse'/>
+    </choice>
+   </sequence>
+   <attribute name='num' type='NMTOKEN' use='required'/>
+  </complexType>
+ </element>
+
+ <element name='verse'>
+  <complexType>
+   <sequence>
+    <element ref='t:label' minOccurs='0' maxOccurs='1'/>
+    <element ref='t:p' minOccurs='0' maxOccurs='unbounded'/>
+    <element ref='t:pgbrk' minOccurs='0' maxOccurs='unbounded'/>
+   </sequence>
+   <attribute name='num' type='NMTOKEN' use='required'/>
+  </complexType>
+ </element>
+
+ <element name='phrase'>
+  <complexType>
+   <sequence>
+    <element ref='t:label' minOccurs='0' maxOccurs='1'/>
+    <element ref='t:dh' minOccurs='0' maxOccurs='1'/>
+    <element ref='t:comment'/>
+   </sequence>
+   <attribute name='id' type='NMTOKEN' use='optional'/>
+  </complexType>
+ </element>
+
+ <element name='dh'>
+  <complexType mixed='true'>
+  </complexType>
+ </element>
+
+ <element name='comment'>
+  <complexType mixed='true'>
+   <sequence minOccurs='0' maxOccurs='unbounded'>
+    <element ref='t:xref'/>
+   </sequence>
+  </complexType>
+ </element>
+
+ <element name='p'>
+  <complexType mixed='true'>
+   <choice minOccurs='0' maxOccurs='unbounded'>
+    <element ref='t:xref'/>
+    <element ref='t:pgbrk'/>
+   </choice>
+  </complexType>
+ </element>
+
+ <element name='xref'>
+  <complexType mixed='true'>
+   <attribute name='rid' type='NMTOKEN' use='required'/>
+  </complexType>
+ </element>
+
+ <element name='label'>
+  <complexType mixed='true'>
+  </complexType>
+ </element>
+
+ <element name='italic'>
+  <complexType mixed='true'>
+  </complexType>
+ </element>
+
+ <element name='bold'>
+  <complexType mixed='true'>
+  </complexType>
+ </element>
+
+ <element name='underline'>
+  <complexType mixed='true'>
+  </complexType>
+ </element>
+
+ <element name='bold-italic'>
+  <complexType mixed='true'>
+  </complexType>
+ </element>
+
+ <element name='sup'>
+  <complexType mixed='true'>
+  </complexType>
+ </element>
+
+ <element name='sub'>
+  <complexType mixed='true'>
+  </complexType>
+ </element>
+
+ <element name='fig'>
+  <complexType>
+   <sequence>
+    <element ref='t:label' minOccurs='0' maxOccurs='1'/>
+    <element ref='t:caption' minOccurs='0' maxOccurs='1'/>
+    <element ref='t:img' maxOccurs='unbounded'/>
+   </sequence>
+   <attribute name='id' type='ID' use='required'/>
+   <attribute name='position' use='required'>
+    <simpleType>
+     <restriction base='string'>
+      <enumeration value='float'/>
+      <enumeration value='anchor'/>
+     </restriction>
+    </simpleType>
+   </attribute>
+   <attribute name='float' type='string' use='optional'/>
+  </complexType>
+ </element>
+
+ <element name='caption'>
+  <complexType>
+   <sequence>
+    <element ref='t:title' minOccurs='0' maxOccurs='1'/>
+    <element ref='t:p' minOccurs='0' maxOccurs='unbounded'/>
+   </sequence>
+  </complexType>
+ </element>
+
+ <element name='title'>
+  <complexType>
+   <sequence>
+    <element ref='t:p' minOccurs='0' maxOccurs='unbounded'/>
+   </sequence>
+  </complexType>
+ </element>
+
+ <element name='img'>
+  <complexType mixed='true'>
+   <attribute name='src' type='string' use='required'/>
+   <attribute name='width' type='string' use='optional'/>
+   <attribute name='height' type='string' use='optional'/>
+  </complexType>
+ </element>
+
+ <element name='list'>
+  <complexType>
+   <sequence>
+    <element ref='t:label' minOccurs='0' maxOccurs='1'/>
+    <element ref='t:title' minOccurs='0' maxOccurs='1'/>
+    <element ref='t:list-item' maxOccurs='unbounded'/>
+   </sequence>
+   <attribute name='id' type='ID' use='optional'/>
+   <attribute name='list-type' use='optional'>
+    <simpleType>
+     <restriction base='string'>
+      <enumeration value='bullet'/>
+      <enumeration value='alpha'/>
+      <enumeration value='order'/>
+      <enumeration value='roman-upper'/>
+      <enumeration value='roman-lower'/>
+      <enumeration value='simple'/>
+     </restriction>
+    </simpleType>
+   </attribute>
+  </complexType>
+ </element>
+
+ <element name='list-item'>
+  <complexType>
+   <sequence>
+    <element ref='t:label' minOccurs='0' maxOccurs='1'/>
+    <element ref='t:p' maxOccurs='unbounded'/>
+   </sequence>
+   <attribute name='id' type='ID' use='optional'/>
+  </complexType>
+ </element>
+</schema>

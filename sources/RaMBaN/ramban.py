@@ -11,8 +11,8 @@ import re
 import glob
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
-sys.path.insert(0, '../Match/')
-from match import Match
+from data_utilities.dibur_hamatchil_matcher import *
+
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 from local_settings import *
 from functions import *
@@ -25,7 +25,7 @@ from sefaria.model.schema import AddressTalmud
 
 def create_index(tractate):
     root=JaggedArrayNode()
-    heb_masechet = get_text_plus(tractate)['heBook']
+    heb_masechet = library.get_index(tractate).toc_contents()['heTitle']
     root.add_title(u"Chiddushei Ramban on "+tractate.replace("_"," "), "en", primary=True)
     root.add_title(u'חידושי רמב"ן על '+heb_masechet, "he", primary=True)
     root.key = 'ramban'
@@ -165,6 +165,11 @@ def parse(tractate, errors):
          dh = removeExtraSpaces(dh)
          before_dh = removeExtraSpaces(before_dh)
 
+         if len(dh) > 0 and dh[0] == ' ':
+             dh = dh[1:]
+
+         if len(comment) > 0 and comment[0] == ' ':
+             comment = comment[1:]
 
          if comment.find('@') >= 0:
             errors.write(orig_line+"\n\n")
@@ -176,7 +181,7 @@ def parse(tractate, errors):
              text[daf] = []
              dh_dict[daf] = []
              prev_daf = daf
-         text[daf].append(before_dh + "<b>" + dh+"</b>"+comment)
+         text[daf].append(before_dh + "<b>" + dh+"</b> "+comment)
          dh_dict[daf].append(dh)
 
          try:
@@ -192,23 +197,25 @@ def post(text, dh_dict, tractate):
      text_array = convertDictToArray(text)
      send_text = {
          "text": text_array,
-         "versionTitle": "Ramban on Talmud",
-         "versionSource": "http://www.sefaria.org",
+         "versionTitle": "Chiddushei HaRamban, Jerusalem 1928-29",
+         "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001294828",
          "language": "he"
      }
      post_text("Chiddushei Ramban on "+tractate, send_text)
      links_to_post = []
-     daf_array = get_text_plus(tractate)['he']
-     match = Match(in_order=True, min_ratio=80, guess=False, range=True, can_expand=False)
+
      for daf in sorted(dh_dict.keys()):
          dh_list = dh_dict[daf]
-         results = match.match_list(dh_list, daf_array[daf-1], tractate+" "+AddressTalmud.toStr("en", daf))
+         daf_text = Ref(tractate+" "+AddressTalmud.toStr("en", daf)).text('he').text
+         results = match.match_list(dh_list, daf_text, tractate+" "+AddressTalmud.toStr("en", daf))
          for key, value in results.iteritems():
              value = value.replace("0:", "")
+             talmud_end = tractate + "." + AddressTalmud.toStr("en", daf) + "." + value
              talmud_end = tractate + "." + AddressTalmud.toStr("en", daf) + "." + value
              ramban_end = "Chiddushei_Ramban_on_" + tractate + "." + AddressTalmud.toStr("en", daf) + "." + str(key)
              links_to_post.append({'refs': [talmud_end, ramban_end], 'type': 'commentary', 'auto': 'True', 'generated_by': "ramban"+tractate})
      post_link(links_to_post)
+
 
 
 if __name__ == "__main__":
@@ -216,20 +223,17 @@ if __name__ == "__main__":
     global text
     global dh_dict
     global errors
-    not_yet = False
-    only_these = ["avodah_zarah_complete.txt", "makkot_complete.txt", "sanhedrin_complete.txt"]
-    until_this_one = "ketubot"
+    errors = open("errors", 'w')
+    these = ["Shabbat", "Kiddushin"]
     for file in glob.glob(u"*.txt"):
-        print file
-        print file.find("_complete") >= 0
         errors.write(file+"\n")
-        if file.find("_complete") >= 0 and file in only_these:
+        if file.find("_complete") >= 0:
             tractate = file.replace("_complete.txt", "").replace("_", " ").title()
-            #if not_yet and file.find(until_this_one) == -1:
-            #    continue
-            #else:
-            #    not_yet = False
-            if not_yet == False:
-               create_index(tractate)
-               text, dh_dict = parse(tractate, errors)
-               post(text, dh_dict, tractate)
+            print tractate
+            if tractate not in these:
+                continue
+            create_index(tractate)
+            print 'about to parse'
+            text, dh_dict = parse(tractate, errors)
+            print 'about to post'
+            post(text, dh_dict, tractate)

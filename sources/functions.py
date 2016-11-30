@@ -63,10 +63,22 @@ eng_parshiot = ["Bereishit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "To
 
 
 def removeExtraSpaces(txt):
-    while txt.find("  ") >= 0:
+    txt = txt.replace("\xc2\xa0", " ") #make sure we only have one kind of space, get rid of unicode space
+    while txt.find("  ") >= 0:          #now get rid of all double spaces
         txt = txt.replace("  ", " ")
-    while txt.find("\xc2\xa0\xc2\xa0") >= 0:
-        txt = txt.replace("\xc2\xa0\xc2\xa0", "\xc2\xa0")
+
+
+    '''we want to make sure every end bold tag has one and only one space after it
+    right now, we know that all instances have one space or zero.
+    this is because we just ran code to get rid of 2 or more spaces
+    so first get rid of instances of having a space so we have one case: zero spaces
+    then convert all of those cases into having one space in the following line'''
+    txt = txt.replace("</b> ", "</b>")
+    txt = txt.replace("</b>", "</b> ")
+
+    txt = txt.replace("( ", "(").replace(" )", ")")
+    txt = txt.replace("<br> ", "<br>") #paragraphs shouldn't start with a space
+
     return txt
 
 
@@ -232,35 +244,47 @@ def convertDictToArray(dict, empty=[]):
             count = key+1
     return array
 
+
 def compileCommentaryIntoPage(title, daf):
     page = []
-    next = title+" "+AddressTalmud.toStr("en", daf)+".1"
-    while next is not None and next.find(AddressTalmud.toStr("en", daf)) >= 0:
-        text = get_text_plus(next)
-        for line in text['he']:
+    ref = Ref(title+" "+AddressTalmud.toStr("en", daf)+".1")
+    while ref is not None and ref.normal().find(AddressTalmud.toStr("en", daf)) >= 0:
+        text = ref.text('he').text
+        for line in text:
             page.append(line)
-
-        next = text['next']
+        ref = ref.next_section_ref() if ref.next_section_ref() != ref else None
     return page
+
 
 def lookForLineInCommentary(title, daf, line_n):
     total_count = 0
-    next = title+" "+AddressTalmud.toStr("en", daf)+":1"
-    while next.find(AddressTalmud.toStr("en", daf)) >= 0:
-        text = get_text_plus(next)
+    ref = Ref(title+" "+AddressTalmud.toStr("en", daf)+":1")
+    while ref is not None and ref.normal().find(AddressTalmud.toStr("en", daf)) >= 0:
+        text = ref.text('he').text
         local_count = 0
-        for line in text['he']:
+        for line in text:
             local_count+=1
             total_count+=1
             if total_count == line_n:
-                return next+"."+str(local_count)
-        next = text['next']
+                return ref.normal()+"."+str(local_count)
+        ref = ref.next_section_ref() if ref.next_section_ref() != ref else None
     return ""
+
 
 def onlyOne(text, subset):
     if text.find(subset)>=0 and text.find(subset)==text.rfind(subset):
         return True
     return False
+
+
+
+def replaceBadNodeTitlesHelper(title, replaceBadNodeTitles, bad_char, good_char):
+    url = SEFARIA_SERVER+'api/index/'+title.replace(" ", "_")
+    req = urllib2.Request(url)
+    data = json.load(urllib2.urlopen(req))
+    replaceBadNodeTitles(bad_char, good_char, data)
+    post_index(data)
+
 
 def checkLengthsDicts(x_dict, y_dict):
     for daf in x_dict:
@@ -268,9 +292,27 @@ def checkLengthsDicts(x_dict, y_dict):
             print "lengths off"
             pdb.set_trace()
 
-errors = open('errors.html', 'w')
+
+def weak_connection(func):
+    def post_weak_connection(*args, **kwargs):
+        success = False
+        weak_network = kwargs.pop('weak_network', False)
+        num_tries = kwargs.pop('num_tries', 3)
+        if weak_network:
+            for i in range(num_tries-1):
+                try:
+                    func(*args, **kwargs)
+                except (HTTPError, URLError) as e:
+                    print 'handling weak network'
+                else:
+                    success = True
+                    break
+        if not success:
+            func(*args, **kwargs)
+    return post_weak_connection
 
 
+@weak_connection
 def post_index(index):
     url = SEFARIA_SERVER+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
     indexJSON = json.dumps(index)
@@ -284,7 +326,8 @@ def post_index(index):
         response = urllib2.urlopen(req)
         print response.read()
     except HTTPError as e:
-        errors.write(e.read())
+        with open('errors.html', 'w') as errors:
+            errors.write(e.read())
         print "error"
 
 
@@ -293,6 +336,7 @@ def hasTags(comment):
     return mod_comment != comment 
 
 
+@weak_connection
 def post_link(info):
     url = SEFARIA_SERVER+'/api/links/'
     infoJSON = json.dumps(info)
@@ -331,7 +375,8 @@ def post_link_weak_connection(info, repeat=10):
             if x == 200:
                 break
         except HTTPError, e:
-            errors.write(e.read())
+            with open('errors.html', 'w') as errors:
+                errors.write(e.read())
             continue
         except Exception, e:
             print 'Exception {}'.format(i + 1)
@@ -340,13 +385,17 @@ def post_link_weak_connection(info, repeat=10):
         print 'too many errors'
         sys.exit(1)
 
-def post_text(ref, text, index_count="off"):
+
+@weak_connection
+def post_text(ref, text, index_count="off", skip_links=False):
     textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
     if index_count == "off":
         url = SEFARIA_SERVER+'/api/texts/'+ref
     else:
         url = SEFARIA_SERVER+'/api/texts/'+ref+'?count_after=1'
+    if skip_links:
+        url += '&skip_links={}'.format(skip_links)
     values = {'json': textJSON, 'apikey': API_KEY}
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)
@@ -357,7 +406,8 @@ def post_text(ref, text, index_count="off"):
         if x.find("error")>=0 and x.find("Daf")>=0 and x.find("0")>=0:
             return "error"
     except HTTPError, e:
-        errors.write(e.read())
+        with open('errors.html', 'w') as errors:
+            errors.write(e.read())
 
 
 def post_text_weak_connection(ref, text, index_count="off", repeat=10):
@@ -382,7 +432,8 @@ def post_text_weak_connection(ref, text, index_count="off", repeat=10):
             if code == 200:
                 break
         except HTTPError, e:
-            errors.write(e.read())
+            with open('errors.html', 'w') as errors:
+                errors.write(e.read())
             continue
         except Exception, e:
             print 'Exception {}'.format(i+1)
@@ -415,8 +466,11 @@ def post_text_burp(ref, text, index_count="off"):
         if x.find("error") >= 0 and x.find("Daf") >= 0 and x.find("0") >= 0:
             return "error"
     except HTTPError, e:
-        errors.write(e.read())
+        with open('errors.html', 'w') as errors:
+            errors.write(e.read())
 
+
+@weak_connection
 def post_flags(version, flags):
     """
     Update flags of a specific version.
@@ -439,7 +493,18 @@ def post_flags(version, flags):
         if x.find("error") >= 0 and x.find("Daf") >= 0 and x.find("0") >= 0:
             return "error"
     except HTTPError, e:
-        errors.write(e.read())
+        with open('errors.html', 'w') as errors:
+            errors.write(e.read())
+
+
+def get_index(ref):
+    ref = ref.replace(" ", "_")
+    url = 'http://www.sefaria.org/api/v2/raw/index/'+ref
+    req = urllib2.Request(url)
+    response = urllib2.urlopen(req)
+    data = json.load(response)
+    return data
+
 
 def get_text(ref):
     ref = ref.replace(" ", "_")
@@ -572,9 +637,9 @@ def isGematria(txt):
     return True
 
 def getGematria(txt):
-    txt = txt.replace("ך", "כ").replace("ץ", "צ")
     if not isinstance(txt, unicode):
         txt = txt.decode('utf-8')
+    txt = txt.replace(u"ך", u"כ").replace(u"ץ", u"צ")
     index=0
     sum=0
     while index <= len(txt)-1:

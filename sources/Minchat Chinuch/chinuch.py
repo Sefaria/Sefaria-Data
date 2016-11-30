@@ -235,13 +235,13 @@ def build_links(parent_name, current_name, chapter, match_list):
             if match_list[match][0] > 0:
 
                 parent = u'{}.{}.{}'.format(parent_name, chapter, match_list[match][0])
-                child = u'{}.{}.{}.1'.format(current_name, chapter, match)
+                child = u'{}.{}.{}'.format(current_name, chapter, match)
 
                 new_link = {
                     'refs': [parent, child],
                     'type': 'commentary2',
                     'auto': False,
-                    'generated_by': 'Minchat Chinukh parse script',
+                    'generated_by': 'Minchat Chinuch parse script',
                 }
                 links.append(new_link)
             else:
@@ -276,7 +276,7 @@ def add_mitzva(mitzva, index):
         mitzva['English'] = u'Mitzva {}'.format(index)
 
     node = ArrayMapNode()
-    node.wholeRef = 'Minchat Chinukh.{}'.format(index)
+    node.wholeRef = 'Minchat Chinuch.{}'.format(index)
     node.depth = 0
     node.add_title(mitzva['English'], 'en', True)
     node.add_title(mitzva['Hebrew'], 'he', True)
@@ -326,19 +326,40 @@ def construct_alt_struct(parsha_file, mitzva_file):
 
 def construct_index(alt_struct=None):
 
-    schema = JaggedArrayNode()
-    schema.add_title(u'Minchat Chinukh', 'en', primary=True)
-    schema.add_title(u'מנחת חינוך', 'he', primary=True)
-    schema.key = u'Minchat Chinukh'
-    schema.depth = 3
-    schema.addressTypes = ['Integer', 'Integer', 'Integer']
-    schema.sectionNames = ['Mitzvah', 'Seif', 'Paragraph']
-    schema.validate()
+    root = SchemaNode()
+    root.add_title('Minchat Chinuch', 'en', primary=True)
+    root.add_title(u'מנחת חינוך', 'he', primary=True)
+    root.key = 'Minchat Chinuch'
+
+    with open('headers.csv') as infile:
+        read = csv.DictReader(infile, delimiter=';')
+        for line in read:
+            node = JaggedArrayNode()
+
+            if re.search(u'Minchat Chinuch', line['en']):
+                node.default = True
+                node.key = 'default'
+                node.depth = 3
+                node.addressTypes = ['Integer', 'Integer', 'Integer']
+                node.sectionNames = ['Mitzvah', 'Seif', 'Paragraph']
+                node.toc_zoom = 2
+
+            else:
+                node.add_title(line['en'], 'en', primary=True)
+                node.add_title(line['he'], 'he', primary=True)
+                node.key = line['en']
+                node.depth = 1
+                node.addressTypes = ['Integer']
+                node.sectionNames = ['Comment']
+
+            root.append(node)
+
+    root.validate()
 
     index = {
-        'title': "Minchat Chinukh",
+        'title': "Minchat Chinuch",
         'categories': ['Halakhah'],
-        'schema': schema.serialize()
+        'schema': root.serialize()
     }
 
     if alt_struct:
@@ -365,10 +386,10 @@ def produce_parsed_data(filename):
 
 
 def post():
-    minchat = {'name': 'Minchat Chinukh', 'text': produce_parsed_data(filename)}
+    minchat = {'name': 'Minchat Chinuch', 'text': produce_parsed_data(filename)}
     sefer = {'name': 'Sefer HaChinukh', 'text': Ref('Sefer HaChinukh').text('he').text}
 
-    chinukh_links = find_links(minchat, sefer, grab_dh, u'@55', u'@66')
+    chinukh_links = find_links(minchat, sefer, grab_dh, u'<b>', u'</b>')
 
     with codecs.open('links.txt', 'w', 'utf-8') as outfile:
         for each_link in chinukh_links:
@@ -390,7 +411,7 @@ def post():
 
     index = construct_index(alt)
     functions.post_index(index)
-    functions.post_text('Minchat Chinukh', full_text)
+    functions.post_text('Minchat Chinuch', full_text)
     functions.post_link(chinukh_links)
 
 post()

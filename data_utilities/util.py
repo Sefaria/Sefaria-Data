@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
-__author__ = 'stevenkaplan'
 import os
 import sys
 import re
 import codecs
+from collections import defaultdict
 from xml.etree import ElementTree as ET
+from urllib2 import HTTPError, URLError
+import json
+import urllib2
 p = os.path.dirname(os.path.abspath(__file__))+"/sources"
 from sources.local_settings import *
 sys.path.insert(0, p)
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from sefaria.datatype import jagged_array
-from urllib2 import HTTPError, URLError
-import json
-import urllib2
 from sefaria.model import *
+
 
 gematria = {}
 gematria[u'א'] = 1
@@ -446,14 +447,13 @@ def ja_to_xml(ja, section_names, filename='output.xml'):
     tree.write(filename, 'utf-8')
 
 
-def file_to_ja(structure, infile, expressions, cleaner, grab_all=False):
+def file_to_ja(depth, infile, expressions, cleaner, grab_all=False):
     """
     Designed to be the first stage of a reusable parsing tool. Adds lines of text to the Jagged
     Array in the desired structure (Chapter, verse, etc.)
-    :param structure: A nested list at the depth of the final result. Example: for a depth 2
-    text, structure should be [[]].
+    :param depth: depth of the JaggedArray.
     :param infile: Text file to read from
-    :param expressions: A list of regular expressions with which to identify segment (chapter) level. Do
+    :param expressions: A list of regular expressions with which to identify section (chapter) level. Do
     not include an expression with which to break up the segment levels.
     :param cleaner: A function that takes a list of strings and returns an array with the text parsed
     correctly. Should also break up and remove unnecessary tagging data.
@@ -462,12 +462,8 @@ def file_to_ja(structure, infile, expressions, cleaner, grab_all=False):
     """
 
     # instantiate ja
+    structure = reduce(lambda x, y: [x], range(depth-1), [])
     ja = jagged_array.JaggedArray(structure)
-
-    if structure == []:
-        depth = 1
-    else:
-        depth = ja.get_depth()
 
     # ensure there is a regex for every level except the lowest
     if depth - len(expressions) != 1:
@@ -575,7 +571,7 @@ def clean_jagged_array(messy_array, strip_list):
     return clean_array
 
 
-def traverse_ja(ja, indices=[], bottom=unicode):
+def traverse_ja(ja, indices=None, bottom=unicode):
     """
     A generator to move through a JaggedArray like structure, retrieving the indices  of each element of
     the JA as you go.
@@ -586,6 +582,8 @@ def traverse_ja(ja, indices=[], bottom=unicode):
     :yield: Dictionary with the keys indices and data, corresponding to the retrieved data and its
     corresponding address.
     """
+    if indices is None:
+        indices = []
 
     if isinstance(ja, bottom):
         yield {'data': ja, 'indices': indices}
@@ -762,3 +760,190 @@ class ToratEmetData:
 
         book = convert_dict_to_array(book)
         return book
+
+
+def get_cards_from_trello(list_name, board_json):
+    """
+    Trello can export a board as a JSON object. Use this function to grab the names of all the cards that
+    belong to a certain list on the board.
+    :param list_name: Name of the list that holds the cards of interest
+    :param board_json: The exported JSON file from trello that relates to the board of interest
+    :return: A list of all the cards on the specified Trello list.
+    """
+
+    board = json.loads(board_json.read())
+
+    list_id = u''
+    for column in board['lists']:
+        if column['name'] == list_name:
+            list_id = column['id']
+
+    cards = []
+    for card in board['cards']:
+        if card['idList'] == list_id:
+            cards.append(card['name'])
+
+    return cards
+
+
+class LevenshteinError(Exception):
+    pass
+
+
+class WeightedLevenshtein:
+    """
+    Use this class to calculate the Weighted Levenshtein between strings. The default letter frequencies defined here
+    are based off of the Talmud. The default min_cost value is recommended, and should only be changed by engineers with
+    a proficient understanding of the weighted Levenshtein algorithm.
+    """
+
+    def __init__(self, letter_freqs=None, min_cost=None):
+
+        if letter_freqs is None:
+            self.letter_freqs = {
+                u'י': 0.0,
+                u'ו': 0.2145,
+                u'א': 0.2176,
+                u'מ': 0.3555,
+                u'ה': 0.4586,
+                u'ל': 0.4704,
+                u'ר': 0.4930,
+                u'נ': 0.5592,
+                u'ב': 0.5678,
+                u'ש': 0.7007,
+                u'ת': 0.7013,
+                u'ד': 0.7690,
+                u'כ': 0.8038,
+                u'ע': 0.8362,
+                u'ח': 0.8779,
+                u'ק': 0.9124,
+                u'פ': 0.9322,
+                u'ס': 0.9805,
+                u'ט': 0.9924,
+                u'ז': 0.9948,
+                u'ג': 0.9988,
+                u'צ': 1.0
+            }
+        else:
+            self.letter_freqs = letter_freqs
+
+        self.sofit_map = {
+            u'ך': u'כ',
+            u'ם': u'מ',
+            u'ן': u'נ',
+            u'ף': u'פ',
+            u'ץ': u'צ',
+        }
+
+        if min_cost is None:
+            self.min_cost = 1.0
+        else:
+            self.min_cost = min_cost
+
+        #self._cost is a dictionary with keys either single letters, or tuples of two letters.
+        # note that for calculate, we remove the sofit letters.  We could probably remove them from here as well, save for cost_str().
+        all_letters = self.letter_freqs.keys() + self.sofit_map.keys()
+        self._cost = defaultdict(lambda: self.min_cost)
+        self._cost.update({c: self._build_cost(c) for c in all_letters})  # single letters
+        self._cost.update({(c1, c2): self._build_cost(c1, c2) for c1 in all_letters for c2 in all_letters}) # tuples
+
+        self._most_expensive = max(self.letter_freqs.values())
+
+        # dict((ord(char), sofit_map[char]) for char in self.sofit_map.keys())
+        self._sofit_transx_table = {
+            1498: u'\u05db',
+            1501: u'\u05de',
+            1503: u'\u05e0',
+            1507: u'\u05e4',
+            1509: u'\u05e6'
+        }
+    #Cost of calling this isn't worth the syntax benefit
+    """
+    def sofit_swap(self, c):
+        return self.sofit_map.get(c, c)
+    """
+
+
+    #This is a pure function with limited inputs.  Building as a lookup saves lots of time.
+    def _build_cost(self, c1, c2=None):
+        c1 = self.sofit_map.get(c1, c1)
+        c2 = self.sofit_map.get(c2, c2)
+        w1 = self.letter_freqs[c1] if c1 in self.letter_freqs else 0.0
+        if c2:
+            w2 = self.letter_freqs[c2] if c2 in self.letter_freqs else 0.0
+            return w1 + self.min_cost if w1 > w2 else w2 + self.min_cost
+        else:
+            return w1 + self.min_cost
+
+    # used?
+    def cost_str(self, string):
+        cost = 0
+        for c in string:
+            cost += self._cost[c]
+        return cost
+
+    _calculate_cache = {}
+    def calculate(self, s1, s2, normalize=True):
+        """
+        This method calculates the Weighted Levenshtein between two strings. It should be noted however that the
+        Levenshtein score between two strings is dependant on the lengths of the two strings. Therefore, it is possible
+        that two short strings with a low Levenshtein score may score more poorly than two long strings with a higher
+        Levenshtien score.
+
+        The code for this method is redacted from https://en.wikipedia.org/wiki/Levenshtein_distance. As we are only
+        calculating the distance, without building an alignment, we only save two rows of the Levenshtein matrix at
+        any given time.
+        :param s1: First string. Determines the number of rows in the Levenshtein matrix.
+        :param s2: Second string. Determines the number of columns in the Levenshtein matrix.
+        :param normalize: True to get a score between 0-100, False to get the weighted Levenshtein score.
+        :return: If normalize is True, will return an integer between 0-100, with 100 being a perfect match and 0 being
+        two ompletely different strings with the most expensive swap at every location. Otherwise, the exact weighted
+        Levenshtein score will be returned.
+        """
+        if not self._calculate_cache.get((s1,s2,normalize), None):
+            s1_len = len(s1)
+            s2_len = len(s2)
+
+            if s1_len == 0 and s2_len == 0:
+                raise LevenshteinError
+
+            if s1 == s2:
+                score = 0
+
+            else:
+                """
+                v0 corresponds to row i-1 in the Levenshtein matrix, where i is the index of the current letter in s1.
+                It is initialized to the cost of deleting every letter in s2 up to letter j for each letter j in s2
+                v1 corresponds to row i of the Levenshtein matrix.
+                """
+                s1 = s1.translate(self._sofit_transx_table)
+                s2 = s2.translate(self._sofit_transx_table)
+                v0 = []
+                for j in xrange(s2_len + 1):
+                    if j == 0:
+                        v0 += [0]
+                    else:
+                        v0 += [self._cost[s2[j - 1]] + v0[j - 1]]
+                v1 = [0] * (s2_len + 1)
+
+                for i in xrange(s1_len):
+                    v1[0] = self._cost.get(s1[i], self.min_cost)  # Set to the cost of inserting the first char of s1 into s2
+                    for j in xrange(s2_len):
+                        cost_ins = self._cost[s2[j]]
+                        cost_del = self._cost[s1[i]]
+                        cost_sub = 0.0 if s1[i] == s2[j] else self._cost.get(
+                            (s1[i], s2[j]), cost_ins if cost_ins > cost_del else cost_del)
+                        v1[j + 1] = min(v1[j] + cost_ins, v0[j + 1] + cost_del, v0[j] + cost_sub)
+
+                    v0, v1 = v1, v0
+                score = v0[-1]
+
+            if normalize:
+                length = max(s1_len, s2_len)
+                max_score = length * (self._most_expensive + self.min_cost)
+                self._calculate_cache[(s1, s2, normalize)] = int(100.0 * (1 - (score / max_score)))
+
+            else:
+                self._calculate_cache[(s1, s2, normalize)] = score
+
+        return self._calculate_cache[(s1, s2, normalize)]
