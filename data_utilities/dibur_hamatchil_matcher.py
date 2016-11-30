@@ -9,7 +9,8 @@ import numpy
 
 from sefaria.model import *
 from sefaria.utils.hebrew import gematria
-from research.talmud_pos_research.language_classifier.language_tools import weighted_levenshtein, weighted_levenshtein_cost
+#from research.talmud_pos_research.language_classifier.language_tools import weighted_levenshtein, weighted_levenshtein_cost
+from data_utilities.util import WeightedLevenshtein
 from num2words import num2words
 
 
@@ -29,6 +30,9 @@ pregeneratedKMultiwordValues = []
 NumPregeneratedValues = 20
 kForWordHash = 41
 kForMultiWordHash = 39
+
+weighted_levenshtein = WeightedLevenshtein()
+
 lettersInOrderOfFrequency = [ u'ו', u'י', u'א', u'מ', u'ה', u'ל', u'ר', u'נ', u'ב', u'ש', u'ת', u'ד', u'כ', u'ע', u'ח', u'ק', u'פ', u'ס', u'ז', u'ט', u'ג', u'צ' ]
 
 sofit_map = {
@@ -72,7 +76,7 @@ class AbbrevMatch:
         return not self.__eq__(other)
 
     def __str__(self):
-        return u"Abbrev: {}, Expanded: {}, RashiRange: {}, GemaraRange: {}".format(self.abbrev,self.expanded,self.rashiRange,self.gemaraRange)
+        return u"Abbrev: {}, Expanded: {}, RashiRange: {}, GemaraRange: {} Is Number: {}".format(self.abbrev,u' '.join(self.expanded),self.rashiRange,self.gemaraRange,self.isNumber)
 
 # should be private?
 class GemaraDaf:
@@ -677,8 +681,8 @@ def filter_matches_out_of_order(matched_words, temprashimatch):
     if (temprashimatch.endWord - temprashimatch.startWord + 1) == 0:
         return False
     percent_matched = 1.0 * num_unmatched / (temprashimatch.endWord - temprashimatch.startWord + 1)
-    if percent_matched <= 0.3:
-        print "DELETING {}".format(percent_matched)
+    #if percent_matched <= 0.3:
+    #    print "DELETING {}".format(percent_matched)
     return percent_matched > 0.3
 
 def RecalculateDisambiguities(allRashis, rashisByDisambiguity, prevMatchedRashi, nextMatchedRashi, startbound, endbound,
@@ -1249,11 +1253,11 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
 
             # add penalty for skipped words
             if gemaraWordToIgnore >= 0:
-                dist += fullWordValue
+                dist += fullWordValue #weighted_levenshtein.cost_str(curDaf.allWords[gemaraWordToIgnore])
             if gemaraSecondWordToIgnore >= 0:
-                dist += fullWordValue
+                dist += fullWordValue #weighted_levenshtein.cost_str(curDaf.allWords[gemaraSecondWordToIgnore])
             if iRashiWordToIgnore >= 0:
-                dist += fullWordValue
+                dist += fullWordValue #weighted_levenshtein.cost_str(curRashi.words[iRashiWordToIgnore])
 
             normalizedDistance = 1.0 * (dist + smoothingFactor) / (len(startText) + smoothingFactor) * normalizingFactor
             curMatch.score = normalizedDistance
@@ -1360,16 +1364,21 @@ def isAbbrevMatch(curpos, abbrevText, unabbrevText, char_threshold):
         hebrew_num = u"{}'".format(abbrevText)
 
     if is_hebrew_number(hebrew_num):
+        potential_unabbrev_number = unabbrevText[curpos:curpos + len(abbrevText)]
         #print u"IS HEB NUM {} {} {} {}".format(hebrew_num, abbrevText,gematria(abbrevText),num2words(gematria(abbrevText), lang='he'))
-        isMatch, dist = IsStringMatch(u' '.join(unabbrevText), num2words(gematria(abbrevText), lang='he'), char_threshold)
+        dist, isMatch = IsStringMatch(u' '.join(potential_unabbrev_number), num2words(gematria(abbrevText), lang='he'), char_threshold)
         if isMatch:
+            print u"NUMBER FOUND {} == {} DIST: {}".format(u' '.join(unabbrevText),num2words(gematria(abbrevText),lang='he'),dist)
             return isMatch, len(abbrevText) - 1, True
 
     #if still not matched, check if there's a prefix
     if len(hebrew_num) > 1 and is_hebrew_number(hebrew_num[1:]):
         prefix = hebrew_num[0]
-        isMatch, dist = IsStringMatch(u' '.join(unabbrevText), prefix + num2words(gematria(abbrevText[1:]), lang='he'), char_threshold)
+        potential_unabbrev_number = unabbrevText[curpos:curpos + len(abbrevText) - 1]
+        dist, isMatch = IsStringMatch(u' '.join(potential_unabbrev_number), prefix + num2words(gematria(abbrevText[1:]), lang='he'), char_threshold)
         if isMatch:
+            print u"PREFIX NUMBER FOUND {} == {} DIST: {}".format(u' '.join(unabbrevText), prefix + num2words(gematria(abbrevText[1:]),lang='he'),
+                                                           dist)
             return isMatch, len(abbrevText) - 2, True # to account for the prefix
 
 
@@ -1450,7 +1459,7 @@ def ComputeLevenshteinDistanceByWord(s, t):  # s and t are strings
     return totaldistance
 
 def ComputeLevenshteinDistance(s, t):
-    return weighted_levenshtein(s,t,weighted_levenshtein_cost,min_cost=0.6)
+    return weighted_levenshtein.calculate(s, t, normalize=False)
 
 
 def InitializeHashTables():

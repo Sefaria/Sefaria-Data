@@ -852,6 +852,12 @@ class WeightedLevenshtein:
         else:
             return w1 + self.min_cost
 
+    def cost_str(self,string):
+        cost = 0
+        for c in string:
+            cost += self.cost(c)
+        return cost
+
     def calculate(self, s1, s2, normalize=True):
         """
         This method calculates the Weighted Levenshtein between two strings. It should be noted however that the

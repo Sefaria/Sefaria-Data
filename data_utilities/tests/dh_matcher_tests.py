@@ -12,6 +12,7 @@ def sp(string):
 
 def setup_module(module):
     global daf
+
     dhm.InitializeHashTables()
 
     daf_words = sp(u'משעה שהכהנים נכנסים לאכול בתרומתן עד סוף האשמורה הראשונה דברי רבי אליעזר. וחכמים אומרים עד חצות ר"ג אומר עד שיעלה עמוד השחר. מעשה ובאו בניו מבית המשתה אמרו לו')
@@ -27,6 +28,7 @@ def setup_module(module):
                 u'וחכמים אומרים סבבה עד חצות ר"ג שיעלה עמוד השחר.', #too many skips
                 u'וחכמים אומרים סבבה עד חצות ר"ג אומר שיעלה עמוד השחר'] #max skips
     daf = dhm.GemaraDaf(daf_words,comments)
+
 
 
 def mb_base_tokenizer(str):
@@ -56,7 +58,7 @@ def mb_dh_extraction_method(str):
 class TestDHMatcher:
 
     def test_mb(self):
-        simanim = [1] #[1, 51, 202]
+        simanim = [1, 51, 202]
         all_matched = []
         for sim in simanim:
             ocRef = Ref('Shulchan Arukh, Orach Chayim {}'.format(sim))
@@ -64,11 +66,17 @@ class TestDHMatcher:
             octc = TextChunk(ocRef,"he")
             mbtc = TextChunk(mbRef,"he")
             matched = dhm.match_ref(octc,mbtc,base_tokenizer=mb_base_tokenizer,dh_extract_method=mb_dh_extraction_method,with_abbrev_matches=True)
+
+            abbrevs = [am for seg in matched['abbrevs'] for am in seg]
+            print 'ABBREVS'
+            for am in abbrevs:
+                print u'{}'.format(am)
+
             all_matched.append(matched)
         #pickle.dump(all_matched, open('mb_matched.pkl','wb'))
         comparison = pickle.load(open('mb_matched.pkl','rb'))
-        comparison = comparison[0]
-        assert comparison == all_matched[0]
+        #comparison = [comparison[2]]
+        assert comparison == all_matched
 
 
 class TestDHMatcherFunctions:
