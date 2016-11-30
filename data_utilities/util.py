@@ -844,6 +844,7 @@ class WeightedLevenshtein:
         self._cost = {c: self._build_cost(c) for c in all_letters}  # single letters
         self._cost.update({(c1, c2): self._build_cost(c1, c2) for c1 in all_letters for c2 in all_letters}) # tuples
 
+        self._most_expensive = max(self.letter_freqs.values())
 
     #Cost of calling this isn't worth the syntax benefit
     """
@@ -914,9 +915,8 @@ class WeightedLevenshtein:
             score = v0[-1]
 
         if normalize:
-            expensive = max(self.letter_freqs.values())
             length = max(len(s1), len(s2))
-            max_score = length * (expensive + self.min_cost)
+            max_score = length * (self._most_expensive + self.min_cost)
             return int(100.0*(1 - (score / max_score)))
 
         else:
