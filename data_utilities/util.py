@@ -882,6 +882,7 @@ class WeightedLevenshtein:
             cost += self._cost[c]
         return cost
 
+    _calculate_cache = {}
     def calculate(self, s1, s2, normalize=True):
         """
         This method calculates the Weighted Levenshtein between two strings. It should be noted however that the
@@ -899,47 +900,49 @@ class WeightedLevenshtein:
         two ompletely different strings with the most expensive swap at every location. Otherwise, the exact weighted
         Levenshtein score will be returned.
         """
-        if len(s1) == 0 and len(s2) == 0:
-            raise LevenshteinError
+        if not self._calculate_cache.get((s1,s2,normalize), None):
+            if len(s1) == 0 and len(s2) == 0:
+                raise LevenshteinError
 
-        if s1 == s2:
-            score = 0
+            if s1 == s2:
+                score = 0
 
-        else:
-            """
-            v0 corresponds to row i-1 in the Levenshtein matrix, where i is the index of the current letter in s1.
-            It is initialized to the cost of deleting every letter in s2 up to letter j for each letter j in s2
-            v1 corresponds to row i of the Levenshtein matrix.
-            """
-            s1 = s1.translate(self._sofit_transx_table)
-            s2 = s2.translate(self._sofit_transx_table)
-            v0 = []
-            for j in xrange(len(s2) + 1):
-                if j == 0:
-                    v0.append(0)
-                else:
-                    v0.append(self._cost[s2[j - 1]] + v0[j - 1])
-            v1 = [0] * (len(s2) + 1)
+            else:
+                """
+                v0 corresponds to row i-1 in the Levenshtein matrix, where i is the index of the current letter in s1.
+                It is initialized to the cost of deleting every letter in s2 up to letter j for each letter j in s2
+                v1 corresponds to row i of the Levenshtein matrix.
+                """
+                s1 = s1.translate(self._sofit_transx_table)
+                s2 = s2.translate(self._sofit_transx_table)
+                v0 = []
+                for j in xrange(len(s2) + 1):
+                    if j == 0:
+                        v0.append(0)
+                    else:
+                        v0.append(self._cost[s2[j - 1]] + v0[j - 1])
+                v1 = [0] * (len(s2) + 1)
 
-            for i in xrange(len(s1)):
-                v1[0] = self._cost.get(s1[i], self.min_cost)  # Set to the cost of inserting the first char of s1 into s2
-                for j in xrange(len(s2)):
-                    cost_ins = self._cost[s2[j]]
-                    cost_del = self._cost[s1[i]]
-                    cost_sub = 0.0 if s1[i] == s2[j] else self._cost.get(
-                        (s1[i], s2[j]), cost_ins if cost_ins > cost_del else cost_del)
-                    v1[j + 1] = min(v1[j] + cost_ins, min(v0[j + 1] + cost_del, v0[j] + cost_sub))
+                for i in xrange(len(s1)):
+                    v1[0] = self._cost.get(s1[i], self.min_cost)  # Set to the cost of inserting the first char of s1 into s2
+                    for j in xrange(len(s2)):
+                        cost_ins = self._cost[s2[j]]
+                        cost_del = self._cost[s1[i]]
+                        cost_sub = 0.0 if s1[i] == s2[j] else self._cost.get(
+                            (s1[i], s2[j]), cost_ins if cost_ins > cost_del else cost_del)
+                        v1[j + 1] = min(v1[j] + cost_ins, min(v0[j + 1] + cost_del, v0[j] + cost_sub))
 
-                vtemp = v0
-                v0 = v1
-                v1 = vtemp
-            score = v0[-1]
+                    vtemp = v0
+                    v0 = v1
+                    v1 = vtemp
+                score = v0[-1]
 
-        if normalize:
-            length = max(len(s1), len(s2))
-            max_score = length * (self._most_expensive + self.min_cost)
-            return int(100.0*(1 - (score / max_score)))
+            if normalize:
+                length = max(len(s1), len(s2))
+                max_score = length * (self._most_expensive + self.min_cost)
+                self._calculate_cache[(s1, s2, normalize)] = int(100.0 * (1 - (score / max_score)))
 
-        else:
-            return score
+            else:
+                self._calculate_cache[(s1, s2, normalize)] = score
 
+        return self._calculate_cache[(s1,s2,normalize)]
