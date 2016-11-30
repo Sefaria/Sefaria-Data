@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
-__author__ = 'stevenkaplan'
 import os
 import sys
 import re
 import codecs
+from collections import defaultdict
 from xml.etree import ElementTree as ET
+from urllib2 import HTTPError, URLError
+import json
+import urllib2
 p = os.path.dirname(os.path.abspath(__file__))+"/sources"
 from sources.local_settings import *
 sys.path.insert(0, p)
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from sefaria.datatype import jagged_array
-from urllib2 import HTTPError, URLError
-import json
-import urllib2
 from sefaria.model import *
+
 
 gematria = {}
 gematria[u'א'] = 1
@@ -840,12 +841,22 @@ class WeightedLevenshtein:
             self.min_cost = min_cost
 
         #self._cost is a dictionary with keys either single letters, or tuples of two letters.
+        # note that for calculate, we remove the sofit letters.  We could probably remove them from here as well, save for cost_str().
         all_letters = self.letter_freqs.keys() + self.sofit_map.keys()
-        self._cost = {c: self._build_cost(c) for c in all_letters}  # single letters
+        self._cost = defaultdict(lambda: self.min_cost)
+        self._cost.update({c: self._build_cost(c) for c in all_letters})  # single letters
         self._cost.update({(c1, c2): self._build_cost(c1, c2) for c1 in all_letters for c2 in all_letters}) # tuples
 
         self._most_expensive = max(self.letter_freqs.values())
 
+        # dict((ord(char), sofit_map[char]) for char in self.sofit_map.keys())
+        self._sofit_transx_table = {
+            1498: u'\u05db',
+            1501: u'\u05de',
+            1503: u'\u05e0',
+            1507: u'\u05e4',
+            1509: u'\u05e6'
+        }
     #Cost of calling this isn't worth the syntax benefit
     """
     def sofit_swap(self, c):
@@ -864,10 +875,11 @@ class WeightedLevenshtein:
         else:
             return w1 + self.min_cost
 
-    def cost_str(self,string):
+    # used?
+    def cost_str(self, string):
         cost = 0
         for c in string:
-            cost += self._cost.get(c, self.min_cost)
+            cost += self._cost[c]
         return cost
 
     def calculate(self, s1, s2, normalize=True):
@@ -899,21 +911,22 @@ class WeightedLevenshtein:
             It is initialized to the cost of deleting every letter in s2 up to letter j for each letter j in s2
             v1 corresponds to row i of the Levenshtein matrix.
             """
+            s1 = s1.translate(self._sofit_transx_table)
+            s2 = s2.translate(self._sofit_transx_table)
             v0 = []
             for j in xrange(len(s2) + 1):
                 if j == 0:
                     v0.append(0)
                 else:
-                    v0.append(self._cost.get(s2[j - 1], self.min_cost) + v0[j - 1])
+                    v0.append(self._cost[s2[j - 1]] + v0[j - 1])
             v1 = [0] * (len(s2) + 1)
 
             for i in xrange(len(s1)):
                 v1[0] = self._cost.get(s1[i], self.min_cost)  # Set to the cost of inserting the first char of s1 into s2
                 for j in xrange(len(s2)):
-                    cost_ins = self._cost.get(s2[j], self.min_cost)
-                    cost_del = self._cost.get(s1[i], self.min_cost)
-                    cost_sub = 0.0 if (
-                    self.sofit_map.get(s1[i], s1[i]) == self.sofit_map.get(s2[j], s2[j])) else self._cost.get(
+                    cost_ins = self._cost[s2[j]]
+                    cost_del = self._cost[s1[i]]
+                    cost_sub = 0.0 if s1[i] == s2[j] else self._cost.get(
                         (s1[i], s2[j]), cost_ins if cost_ins > cost_del else cost_del)
                     v1[j + 1] = min(v1[j] + cost_ins, min(v0[j + 1] + cost_del, v0[j] + cost_sub))
 
