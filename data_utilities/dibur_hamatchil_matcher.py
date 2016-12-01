@@ -870,8 +870,7 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
         iWordWithinPhrase = 0
         while iWordWithinPhrase + offsetWithinRashiCV < wordCountRashi  and iStartingWordInGemara + offsetWithinGemara + iWordWithinPhrase < wordCountGemara:
             # first check if the cv word has a quotemark
-            if iWordWithinPhrase == 33:
-                pass
+
 
             #try:
             if u"\"" in startTextWords[iWordWithinPhrase + offsetWithinRashiCV] or u"״" in startTextWords[iWordWithinPhrase + offsetWithinRashiCV]:
@@ -1346,6 +1345,7 @@ def IsStringMatch(orig, target, threshold):  # string,string,double,out double
 
 def cleanAbbrev(str):
     str = re.sub(ur'[\"״]',u'',str)
+    str = re.sub(ur"[^א-ת]", u"", str).strip()
     str = u"".join([weighted_levenshtein.sofit_map.get(c,c) for c in str])
     return str
 
