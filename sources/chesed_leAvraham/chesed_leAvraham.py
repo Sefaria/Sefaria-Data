@@ -7,12 +7,17 @@ this seems to grab the "rivers": u'\u05de\u05e2\u05d9\u05df ([\u05d0-\u05ea]{1,2
 import re
 import codecs
 import urllib2
-from data_utilities.util import getGematria
+import bleach
+from data_utilities.util import getGematria, file_to_ja, ja_to_xml
 
 
-def get_text():
-    response = urllib2.urlopen('http://www.hebrew.grimoar.cz/azulaj/chesed_le-avraham.htm')
-    return codecs.decode(response.read(), 'windows-1255')
+def get_text(from_disk=True):
+    if from_disk:
+        with codecs.open('chesed_le-avraham.htm', 'r', 'windows-1255') as infile:
+            return infile.read()
+    else:
+        response = urllib2.urlopen('http://www.hebrew.grimoar.cz/azulaj/chesed_le-avraham.htm')
+        return codecs.decode(response.read(), 'windows-1255')
 
 
 def test_expression(pattern):
@@ -40,8 +45,17 @@ def test_expression(pattern):
         expected_river += 1
     return issues
 
-trial = u'\u05de\u05e2\u05d9\u05df ([\u05d0-\u05ea]{1,2}) - \u05e0\u05d4\u05e8 (- )?([\u05d0-\u05ea]{1,2})'
-stuff = test_expression(trial)
-print len(stuff)
-for thing in stuff:
-    print thing
+
+def parse_body():
+
+    def cleaner(section):
+        bleached = [bleach.clean(segment, tags=[], strip=True) for segment in section]
+        return filter(lambda x: None if len(x) == 0 else x, bleached)
+
+    my_text = get_text().splitlines()[:1795]
+    expressions = [u'<b>\u05d4?\u05de\u05e2\u05d9\u05d9?\u05df.*:</b>',
+                   u'\u05de\u05e2\u05d9\u05df ([\u05d0-\u05ea]{1,2}) - \u05e0\u05d4\u05e8 (- )?([\u05d0-\u05ea]{1,2})']
+    parsed = file_to_ja(3, my_text, expressions, cleaner)
+    return parsed.array()
+
+
