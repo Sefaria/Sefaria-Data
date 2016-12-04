@@ -11,7 +11,7 @@ from sefaria.system.exceptions import DuplicateRecordError
 
 def text_parse():
     # open, read, close the original txt file
-    with codecs.open('yitzira_gra.txt', 'r', 'utf-8') as fp:
+    with codecs.open('yitzira_pri_yitzhak.txt', 'r', 'utf-8') as fp:
         lines = fp.readlines()
     starting = None
     # check if we got to the end of the legend and change to started
@@ -30,7 +30,7 @@ def text_parse():
     ofen = False # 'ofen' flag
 
     # dictionary for line ocr tag fixing
-    replace_dict = {u'@03': u'<b>', u'@04': u'</b><br>',  # title 'Ofen' in the gra's commentary
+    replace_dict = {
                     u'@11': u'',  # not necessary ocr tag
                     u'@31': u'<b>', u'@32': u'</b>',  # bold dibur hamatchil
                     u'@44': u'<b>', u'@45': u'</b>',  # was bold in text
@@ -87,61 +87,61 @@ def text_parse():
     mishna.append(dibur)
     perek.append(mishna)
     parsed.append(perek)
-    # ja_to_xml(parsed,['perek','mishna','dibur'],filename = 'gra.xml')
+    ja_to_xml(parsed,['perek','mishna','dibur'],filename = 'pri.xml')
     return parsed
 
 # get the parssed text (it is a jagged array depth 3, ['perek','mishna','dibur']
-gra = text_parse()
+pri = text_parse()
 # specefid post function
 def post_this():
     text_version = {
         'versionTitle': 'Sefer Yetzirah, Warsaw 1884',
         'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001310968',
         'language': 'he',
-        'text': gra
+        'text': pri
     }
 
     schema = JaggedArrayNode()
-    schema.add_title('HaGra on Sefer Yetzirah', 'en', True)
-    schema.add_title(u'פירוש הגר"א על ספר יצירה', 'he', True)
-    schema.key = 'HaGra on Sefer Yetzirah'
+    schema.add_title('Pri Yitzhak on Sefer Yetzirah', 'en', True)
+    schema.add_title(u'פרי יצחק על ספר יצירה', 'he', True)
+    schema.key = 'Pri Yitzhak on Sefer Yetzirah'
     schema.depth = 3
     schema.addressTypes = ['Integer', 'Integer','Integer']
     schema.sectionNames = ['Chapter', 'Mishnah','Comment']
     schema.validate()
 
     index_dict = {
-        'title': 'HaGra on Sefer Yetzirah',
-        'categories': ['Commentary2','Kabbalah','Gra'],
+        'title': 'Pri Yitzhak on Sefer Yetzirah',
+        'categories': ['Commentary2','Kabbalah','pri yitzhak'],
         'schema': schema.serialize() # This line converts the schema into json
     }
     post_index(index_dict)
 
-    post_text('HaGra on Sefer Yetzirah', text_version, index_count='on')
+    post_text('Pri Yitzhak on Sefer Yetzirah', text_version, index_count='on')
 
 # post with the post function
 post_this()
 
-# create the link objects btween the dibur HaMatchil of the GRA and the main text
-gra_links = []
+# create the link objects btween the dibur HaMatchil of the Pri Yitzhak and the main text
+pri_links = []
 # use a generator to go over the text and find the 3 level indices
-for dh in traverse_ja(gra):
+for dh in traverse_ja(pri):
         link = (
             {
             "refs": [
-                "HaGra on Sefer Yetzirah " + '%d:%d:%d' %tuple(x+1 for x in dh['indices']),
+                "Pri Yitzhak on Sefer Yetzirah " + '%d:%d:%d' %tuple(x+1 for x in dh['indices']),
                 "Sefer Yetzirah Ari Version " + '%d:%d' %tuple(x+1 for x in dh['indices'][:2]),
             ],
             "type": "commentary",
             "auto": True,
-            "generated_by": "gra_parse"
+            "generated_by": "pri_yitzhak_parse"
         })
         dh_text = dh['data']
         # append to links list
-        gra_links.append(link)
+        pri_links.append(link)
 
 # shave off the last link of "slik" shpuldn't be linked in
-gra_links.pop()
+pri_links.pop()
 
 # save to mongo the list of dictionaries.
-post_link(gra_links)
+post_link(pri_links)

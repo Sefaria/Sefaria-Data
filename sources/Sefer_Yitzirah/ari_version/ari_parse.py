@@ -2,11 +2,10 @@
 
 import codecs
 import re
-from data_utilities.util import ja_to_xml
+from data_utilities.util import ja_to_xml, multiple_replace
 from sources.functions import post_text, post_index
 from sefaria.model import *
 
-#
 
 def ari_parse():
     with codecs.open('yitzira_mishna.txt', 'r', 'utf-8') as fp:
@@ -15,6 +14,10 @@ def ari_parse():
     perek = []
     mishna = []
     starting = None
+    # dictionary for line ocr tag fixing
+    replace_dict = {u'@(44)': u'<small>', u'@(45)':u'</small>',  # bava in parenthesis
+                    ur'(@(11|12|66|67)|\[\*.*?\])': u''  # ocr tags that are not relevant (including erasing footnotes)
+                    }
     # check if we got to the end of the legend and change to started
     for line_num, line in enumerate(lines):
         if line == u'\n':
@@ -35,18 +38,17 @@ def ari_parse():
                 perek.append(mishna)
                 mishna = []
         else:
-            small = re.sub(u'@(44)', u'<small>', line)
-            end_small = re.sub(u'@(45)', u'</small>', small)
-            fixed_line = re.sub(u'@(11|12|66|67)', u'', end_small)
-            mishna.append(fixed_line.strip())
+            line = multiple_replace(line, replace_dict, regex=True)
+            mishna.append(line.strip())
 
     mishna = ' '.join(mishna)
     perek.append(mishna)
     parsed.append(perek)
-    ja_to_xml(parsed,['perek', 'mishna'])
+    # ja_to_xml(parsed,['perek', 'mishna'])
     return parsed
 
 ari_parse()
+
 
 def post_this():
     text_version = {
