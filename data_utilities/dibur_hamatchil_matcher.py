@@ -48,10 +48,11 @@ weighted_levenshtein = WeightedLevenshtein()
 lettersInOrderOfFrequency = [ u'ו', u'י', u'א', u'מ', u'ה', u'ל', u'ר', u'נ', u'ב', u'ש', u'ת', u'ד', u'כ', u'ע', u'ח', u'ק', u'פ', u'ס', u'ז', u'ט', u'ג', u'צ' ]
 
 class MatchMatrix(object):
-    def __init__(self, daf_hashes, comment_hashes, word_threshold, comment_word_skip_threshold = 1, base_word_skip_threshold = 2, overall_word_skip_threshold = 2):
+    def __init__(self, daf_hashes, comment_hashes, jump_coordinates, word_threshold, comment_word_skip_threshold = 1, base_word_skip_threshold = 2, overall_word_skip_threshold = 2):
         """
         :param daf_hashes: List of hashes
         :param rashi_hashes: List of hashes
+        :param jump_coordinates: List of tuples. each tuple is ((row_start,col_start),(row_end,col_end)) for possible jumps
         :param word_threshold:
         :param comment_word_skip_threshold:
         :param base_word_skip_threshold:
@@ -61,7 +62,11 @@ class MatchMatrix(object):
 
         C = numpy.array(comment_hashes)
         D = numpy.array(daf_hashes)
-        self.matrix = C[:, None] == D
+        self.matrix = (C[:, None] == D).astype(int)
+        self.jump_coordinates = jump_coordinates
+        for ijump, jump_coord in enumerate(jump_coordinates):
+            self.matrix[jump_coord[0]] = ijump + 2
+
         self.comment_len = self.matrix.shape[0]
         self.daf_len = self.matrix.shape[1]
 
@@ -71,7 +76,7 @@ class MatchMatrix(object):
         self.mismatch_threshold = mathy.ceil(self.comment_len * word_threshold)
 
     def _explore_path(self, current_position, daf_start_index,
-                      comment_indexes_skipped, daf_indexes_skipped, mismatches = 0,
+                      comment_indexes_skipped, daf_indexes_skipped, jump_indexes, mismatches = 0,
                       comment_threshold_hit=False, daf_threshold_hit=False, mismatch_threshold_hit=False):  #, _comment_words_skipped=0, _base_words_skipped=0, _mismatches=0):
         """
         Invoked from both matched and non-matched positions
@@ -89,17 +94,20 @@ class MatchMatrix(object):
                     mismatches: #
                  }
         """
-        is_a_match = self.matrix[current_position]
+        is_a_match = self.matrix[current_position] == 1
+        is_jump_start = self.matrix[current_position] > 1
+        is_jump_end = len(jump_indexes) > 0 and self.jump_coordinates[jump_indexes[-1]][1] == current_position
         next_base_index = current_position[1] + 1
         next_comment_index = current_position[0] + 1
 
-        if next_comment_index == self.comment_len:
+        if not is_jump_start and next_comment_index == self.comment_len:
             # We've hit the last comment word
-            if is_a_match:
+            if is_a_match or is_jump_end:
                 return [{
                     "daf_start_index": daf_start_index,
                     "comment_indexes_skipped": comment_indexes_skipped,
                     "daf_indexes_skipped": daf_indexes_skipped,
+                    "jump_indexes": jump_indexes,
                     "mismatches": mismatches
                 }]
             if not daf_threshold_hit:
@@ -108,11 +116,12 @@ class MatchMatrix(object):
                                           self.base_word_skip_threshold,
                                           self.daf_len - next_base_index)
                 for skip in range(1, possible_base_skips + 1):
-                    if self.matrix[(current_position[0], current_position[1] + skip)]:
+                    if self.matrix[(current_position[0], current_position[1] + skip)] == 1:
                         return [{
                             "daf_start_index": daf_start_index,
                             "comment_indexes_skipped": comment_indexes_skipped,
                             "daf_indexes_skipped": daf_indexes_skipped + range(current_position[1], current_position[1] + skip),
+                            "jump_indexes": jump_indexes,
                             "mismatches": mismatches
                         }]
             if not comment_threshold_hit:
@@ -121,6 +130,7 @@ class MatchMatrix(object):
                     "daf_start_index": daf_start_index,
                     "comment_indexes_skipped": comment_indexes_skipped + [current_position[0]],
                     "daf_indexes_skipped": daf_indexes_skipped,
+                    "jump_indexes": jump_indexes,
                     "mismatches": mismatches
                 }]
             if not mismatch_threshold_hit:
@@ -129,20 +139,23 @@ class MatchMatrix(object):
                     "daf_start_index": daf_start_index,
                     "comment_indexes_skipped": comment_indexes_skipped,
                     "daf_indexes_skipped": daf_indexes_skipped,
+                    "jump_indexes": jump_indexes,
                     "mismatches": mismatches
                 }]
             return [None]
-        elif next_base_index == self.daf_len:
+        elif not is_jump_start and next_base_index == self.daf_len:
             # We've hit the end of the daf, but not the end of the comment
             possible_comment_skips = min(self.overall_word_skip_threshold - (len(comment_indexes_skipped) + len(daf_indexes_skipped)),
                                          self.comment_word_skip_threshold)
 
-            if is_a_match:
+
+            if is_a_match or is_jump_end:
                 if current_position[0] + possible_comment_skips + 1 >= self.comment_len:
                     return [{
                         "daf_start_index": daf_start_index,
                         "comment_indexes_skipped": comment_indexes_skipped + range(current_position[0] + 1, self.comment_len),
                         "daf_indexes_skipped": daf_indexes_skipped,
+                        "jump_indexes": jump_indexes,
                         "mismatches": mismatches
                     }]
                 else:
@@ -153,6 +166,7 @@ class MatchMatrix(object):
                         "daf_start_index": daf_start_index,
                         "comment_indexes_skipped": comment_indexes_skipped + range(current_position[0] + 1, self.comment_len),
                         "daf_indexes_skipped": daf_indexes_skipped,
+                        "jump_indexes": jump_indexes,
                         "mismatches": mismatches
                     }]
                 else:
@@ -161,11 +175,25 @@ class MatchMatrix(object):
                 return [None]
 
         # Greedily match next in-sequence match
-        if is_a_match:
+        if is_a_match or is_jump_end:
             return self._explore_path((next_comment_index, next_base_index),
                                       daf_start_index,
                                       comment_indexes_skipped,
                                       daf_indexes_skipped,
+                                      jump_indexes,
+                                      mismatches,
+                                      comment_threshold_hit,
+                                      daf_threshold_hit,
+                                      mismatch_threshold_hit)
+        elif is_jump_start:
+            jump_index = self.matrix[current_position] - 2
+            jump_end = self.jump_coordinates[jump_index][1] # current pos holds info on the jump number
+            new_jump_indexes = jump_indexes + [jump_index]
+            return self._explore_path(jump_end,
+                                      daf_start_index,
+                                      comment_indexes_skipped,
+                                      daf_indexes_skipped,
+                                      new_jump_indexes,
                                       mismatches,
                                       comment_threshold_hit,
                                       daf_threshold_hit,
@@ -179,6 +207,7 @@ class MatchMatrix(object):
                                           daf_start_index,
                                           new_comment_indexes_skipped,
                                           daf_indexes_skipped,
+                                          jump_indexes,
                                           mismatches,
                                           len(new_comment_indexes_skipped) >= self.comment_word_skip_threshold
                                               or len(new_comment_indexes_skipped) + len(daf_indexes_skipped) >= self.overall_word_skip_threshold,
@@ -191,6 +220,7 @@ class MatchMatrix(object):
                                           daf_start_index,
                                           comment_indexes_skipped,
                                           new_daf_indexes_skipped,
+                                          jump_indexes,
                                           mismatches,
                                           len(comment_indexes_skipped) >= self.comment_word_skip_threshold
                                               or len(comment_indexes_skipped) + len(new_daf_indexes_skipped) >= self.overall_word_skip_threshold,
@@ -202,6 +232,7 @@ class MatchMatrix(object):
                                           daf_start_index,
                                           comment_indexes_skipped,
                                           daf_indexes_skipped,
+                                          jump_indexes,
                                           mismatches + 1,
                                           comment_threshold_hit,
                                           daf_threshold_hit,
@@ -218,9 +249,9 @@ class MatchMatrix(object):
         for c_skips in range(self.comment_word_skip_threshold + 1):
             init_comment_threshold_hit = c_skips == self.comment_word_skip_threshold
             # find potential start words in the daf, and explore
-            last_possible_daf_word_index = self.daf_len - (self.comment_len - (self.comment_word_skip_threshold - c_skips))
+            last_possible_daf_word_index = self.daf_len - (self.comment_len - (self.comment_word_skip_threshold - c_skips) - len(self.jump_coordinates))
             for word_index in self.matrix[c_skips, 0:last_possible_daf_word_index + 1].nonzero()[0]:
-                word_paths = self._explore_path((c_skips, word_index), word_index, range(c_skips), [],
+                word_paths = self._explore_path((c_skips, word_index), word_index, range(c_skips), [], [],
                                                 comment_threshold_hit=init_comment_threshold_hit,
                                                 daf_threshold_hit=init_base_threshold_hit,
                                                 mismatch_threshold_hit=init_mismatch_threshold_hit)
@@ -242,30 +273,49 @@ class MatchMatrix(object):
         daf_indexes_skipped = path['daf_indexes_skipped']
 
         last_matched = (-1,start_col-1)
+        jump_mode = False
+        jump_is_horiz = False
         for row in xrange(self.comment_len):
             row_str = ''
             char_found = False
             for col in xrange(self.daf_len):
-                col_char = '.'
-                if not char_found and row in comment_indexes_skipped and col == last_matched[1]:
-                    col_char = 'V'
-                    last_matched = (row, col)
-                    char_found = True
-                elif col in daf_indexes_skipped and col - 1 == last_matched[1] and row == last_matched[0]:
-                    col_char = '>'
-                    last_matched = (row, col)
-                    char_found = True
-                elif not char_found and row == last_matched[0] + 1 and col == last_matched[1] + 1:
-                    col_char = 'X' if self.matrix[row,col] else 'O'
-                    last_matched = (row, col)
-                    char_found = True
+                if not jump_mode:
+                    jump_index = self.matrix[row,col] - 2 if self.matrix[row,col] > 1 else None
+                if not jump_index is None and not jump_mode:
+                    jump_mode = True
+                    jump_is_horiz = self.jump_coordinates[jump_index][0][0] == self.jump_coordinates[jump_index][1][0]
+                    col_char = '@'
+                elif jump_mode:
+                    if self.jump_coordinates[jump_index][1] == (row + int(not jump_is_horiz),col + int(jump_is_horiz)):
+                        jump_mode = False
+                        col_char = '@'
+                        last_matched = (row, col)
+                    elif jump_is_horiz and self.jump_coordinates[jump_index][0][0] == row:
+                        col_char = '-'
+                    elif not jump_is_horiz and self.jump_coordinates[jump_index][0][1] == col: #vert
+                        col_char = '|'
+                    else:
+                        col_char = '.'
                 else:
-                    col_char = '.'
+                    if not char_found and row in comment_indexes_skipped and col == last_matched[1]:
+                        col_char = 'V'
+                        last_matched = (row, col)
+                        char_found = True
+                    elif col in daf_indexes_skipped and col - 1 == last_matched[1] and row == last_matched[0]:
+                        col_char = '>'
+                        last_matched = (row, col)
+                        char_found = True
+                    elif not char_found and row == last_matched[0] + 1 and col == last_matched[1] + 1:
+                        col_char = 'X' if self.matrix[row,col] == 1 else 'O'
+                        last_matched = (row, col)
+                        char_found = True
+                    else:
+                        col_char = '.'
 
 
                 row_str += col_char
-            # print row_str
-                
+            print row_str
+
 class TextMatch:
     def __init__(self):
         self.textToMatch = ""
@@ -359,7 +409,7 @@ class GemaraDaf:
                     new_end_word = -1
                     new_matching_text = u'חדש:'
                     for sub_ru in sub_rashis:
-                        print u"Old {}".format(sub_ru)
+                        #print u"Old {}".format(sub_ru)
                         new_matching_text += u" " + sub_ru.matchedGemaraText
                         if sub_ru.startWord < new_start_word:
                             new_start_word = sub_ru.startWord
@@ -370,7 +420,7 @@ class GemaraDaf:
                     new_ru.startWord = new_start_word
                     new_ru.endWord = new_end_word
                     new_ru.matchedGemaraText = new_matching_text
-                    print u"New {}".format(new_ru)
+                    #print u"New {}".format(new_ru)
 
                     new_all_rashi.append(new_ru)
             else:
@@ -418,12 +468,13 @@ class RashiUnit:
             u', '.join(self.skippedDafWords), u', '.join(self.skippedRashiWords), u'\n\t\t'.join([am.__str__() for am in self.abbrev_matches]))
 
 
-def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,verbose=False, word_threshold=0.27,char_threshold=0.2,
+def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh_extract_method=lambda x: x,verbose=False, word_threshold=0.27,char_threshold=0.2,
               with_abbrev_matches=False,boundaryFlexibility=0,dh_split=None, rashi_filter=None, strict_boundaries=False, place_all=False):
     """
     base_text: TextChunk
     comments: TextChunk or list of comment strings
     base_tokenizer: f(string)->list(string)
+    prev_matched_results: [(start,end)] list of start/end indexes found in a previous iteration of match_text
     dh_extract_method: f(string)->string
     verbose: True means print debug info
     word_threshold: float - percentage of mismatched words to allow. higher means allow more non-matching words in a successful match (range is [0,1])
@@ -484,10 +535,8 @@ def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,
     else:
         raise TypeError("'comments' needs to be either a TextChunk or a list of comment strings")
 
-
-
-
-    matched = match_text(bas_word_list,comment_list,dh_extract_method,verbose,word_threshold,char_threshold,with_abbrev_matches=with_abbrev_matches,boundaryFlexibility=boundaryFlexibility,dh_split=dh_split,rashi_filter=rashi_filter,strict_boundaries=strict_boundaries,place_all=place_all)
+    matched = match_text(bas_word_list,comment_list,dh_extract_method,verbose,word_threshold,char_threshold,prev_matched_results=prev_matched_results,
+                         with_abbrev_matches=with_abbrev_matches,boundaryFlexibility=boundaryFlexibility,dh_split=dh_split,rashi_filter=rashi_filter,strict_boundaries=strict_boundaries,place_all=place_all)
     start_end_map = matched['matches']
     text_matches = matched['match_text']
     if with_abbrev_matches:
@@ -589,7 +638,11 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
             #this rashi was initialized with the `prev_matched_results` list and should be ignored with regards to matching
             continue
 
-        startword,endword = (0,len(curDaf.allWords)) if prev_matched_results == None else GetRashiBoundaries(curDaf.allRashi,ru.place,len(curDaf.allWords),boundaryFlexibility)[0:2]
+        startword,endword = (0,len(curDaf.allWords)-1) if prev_matched_results == None else GetRashiBoundaries(curDaf.allRashi,ru.place,len(curDaf.allWords),boundaryFlexibility)[0:2]
+        #TODO implement startword endword in GetAllMatches()
+        ru.rashimatches = GetAllMatches(curDaf,ru,startword,endword,word_threshold,char_threshold)
+
+        """
         approxMatches = GetAllApproximateMatches(curDaf,ru,startword,endword,word_threshold,char_threshold)
         approxAbbrevMatches = GetAllApproximateMatchesWithAbbrev(curDaf, ru, startword, endword, word_threshold, char_threshold)
         approxSkipWordMatches = GetAllApproximateMatchesWithWordSkip(curDaf, ru, startword, endword, word_threshold, char_threshold)
@@ -607,7 +660,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
             if any([x in foundpoints for x in xrange(startword - 1, startword + 2)]):
                 continue
             ru.rashimatches.append(tm)
-
+        """
         #sort the rashis by score
         ru.rashimatches.sort(key=lambda x: x.score) #note: check this works
 
@@ -992,10 +1045,159 @@ def CountUnmatchedUpRashi(curDaf):  # GemaraDar
             toRet += 1
     return toRet
 
+def GetAbbrevs(dafwords, rashiwords, char_threshold, startBound, endBound):
+    allabbrevinds = []
+    allabbrevs = []
+    for id, dword in enumerate(dafwords):
+        if id < startBound or id > endBound:
+            continue
+        if u"\"" in dword or u"״" in dword:
+            abbrev_range = None
+            for ir, rword in enumerate(rashiwords):
+                if abbrev_range and ir in abbrev_range:
+                    continue
+                isMatch, offset, isNum = isAbbrevMatch(ir,cleanAbbrev(dword),rashiwords, char_threshold)
+                if isMatch:
+                    istartcontext = 3 if id >= 3 else id
+                    abbrevMatch = AbbrevMatch(dword, rashiwords[ir:ir+offset+1],(ir,ir+offset),(id,id),
+                                              dafwords[id-istartcontext:id],dafwords[id+1:id+4],isNum)
+                    allabbrevs.append(abbrevMatch)
+                    allabbrevinds.append(((ir,id),(ir+offset,id)))
+                    abbrev_range = range(ir,ir+offset+1)
+    for ir, rword in enumerate(rashiwords):
+        if u"\"" in rword or u"״" in rword:
+            abbrev_range = None
+            for id, dword in enumerate(dafwords):
+                if abbrev_range and id in abbrev_range:
+                    continue
+                isMatch, offset, isNum = isAbbrevMatch(id,cleanAbbrev(rword),dafwords, char_threshold)
+                if isMatch:
+                    istartcontext = 3 if id >= 3 else id
+                    abbrevMatch = AbbrevMatch(rword, dafwords[id:id+offset+1],(ir,ir),(id,id+offset),
+                                              dafwords[id-istartcontext:id],dafwords[id+offset+1:id+offset+4],isNum)
+                    allabbrevs.append(abbrevMatch)
+                    allabbrevinds.append(((ir,id),(ir,id+offset)))
+                    abbrev_range = range(id,id+offset+1)
+
+    return allabbrevinds, allabbrevs
+
 
 def GetAllMatches(curDaf, curRashi, startBound, endBound,
                              word_threshold, char_threshold):
-    pass
+    allMatches = []
+    startText = curRashi.startingTextNormalized
+    global normalizingFactor
+
+    dafwords = curDaf.allWords[startBound:endBound+1]
+    dafhashes = curDaf.wordhashes[startBound:endBound+1]
+
+    allabbrevinds, allabbrevs = GetAbbrevs(dafwords, curRashi.words, char_threshold, startBound, endBound)
+
+    daf_skips = int(min(2, mathy.floor((curRashi.cvWordcount-1)/2)))
+    rashi_skips = 1 if daf_skips > 0 else 0
+    overall = 2 if daf_skips + rashi_skips >= 2 else 1
+    mm = MatchMatrix(dafhashes,
+                     curRashi.cvhashes,
+                     allabbrevinds,
+                     word_threshold,
+                     comment_word_skip_threshold=rashi_skips,
+                     base_word_skip_threshold=daf_skips,
+                     overall_word_skip_threshold=overall)
+    paths = mm.find_paths()
+
+    """
+        daf_start_index: #,
+        comment_indexes_skipped: [],
+        daf_indexes_skipped: [],
+        mismatches: #
+    """
+    for path in paths:
+        curMatch = TextMatch()
+        curMatch.match_type = 'skip'
+        #print 'PATH'
+        #print path
+        #mm.print_path(path)
+        gemaraWordToIgnore = path["daf_indexes_skipped"][0] + startBound if len(path["daf_indexes_skipped"]) > 0 else -1
+        gemaraSecondWordToIgnore = path["daf_indexes_skipped"][1] + startBound if len(path["daf_indexes_skipped"]) > 1 else -1
+        iRashiWordToIgnore = path["comment_indexes_skipped"][0] if len(path["comment_indexes_skipped"]) > 0 else -1
+        abbrevs = [allabbrevs[iabbrev] for iabbrev in path["jump_indexes"]]
+        iGemaraWord = path["daf_start_index"] + startBound
+
+
+        #figure out the bounds of what you actually matched
+        rashiSkipWords = []
+        dafSkipWords = []
+        len_matched = curRashi.cvWordcount
+        for abb in abbrevs:
+            #normalize to startBound
+            abb.gemaraRange = (abb.gemaraRange[0] + startBound, abb.gemaraRange[1] + startBound)
+
+            if abb.rashiRange[0] == abb.rashiRange[1]:
+                rashiSkipWords.append(abb.rashiRange[0])
+                len_matched -= 1
+            else:
+                rashiSkipWords += range(abb.rashiRange[0],abb.rashiRange[1]+1)
+                len_matched -= (abb.rashiRange[1] - abb.rashiRange[0] + 1)
+            if abb.gemaraRange[0] == abb.gemaraRange[1]:
+                dafSkipWords.append(abb.gemaraRange[0])
+                len_matched += 1
+            else:
+                dafSkipWords += range(abb.gemaraRange[0],abb.gemaraRange[1]+1)
+                len_matched += (abb.gemaraRange[1] - abb.gemaraRange[0] + 1)
+
+        if iRashiWordToIgnore != -1:
+            rashiSkipWords.append(iRashiWordToIgnore)
+            len_matched -= 1
+
+        if gemaraWordToIgnore != -1:
+            dafSkipWords.append(gemaraWordToIgnore)
+            len_matched += 1
+        if gemaraSecondWordToIgnore != -1:
+            dafSkipWords.append(gemaraSecondWordToIgnore)
+            len_matched += 1
+
+        alternateStartText = BuildPhraseFromArray(curRashi.words, 0, len(curRashi.words), rashiSkipWords)
+        # the "text matched" is the actual text of the gemara, including the word we skipped.
+
+
+
+        targetPhrase = BuildPhraseFromArray(curDaf.allWords, iGemaraWord , len_matched, dafSkipWords)
+
+        #print u'target {} alt {}'.format(targetPhrase,alternateStartText)
+
+        fIsMatch = True
+        #check small matches to make sure they actually match
+        if curRashi.cvWordcount <= 4:
+            distance, fIsMatch = IsStringMatch(alternateStartText, targetPhrase, char_threshold)
+
+        if fIsMatch:
+
+            dist = ComputeLevenshteinDistanceByWord(alternateStartText, targetPhrase)
+
+            # add penalty for skipped words
+            if gemaraWordToIgnore >= 0:
+                dist += fullWordValue #weighted_levenshtein.cost_str(curDaf.allWords[gemaraWordToIgnore])
+            if gemaraSecondWordToIgnore >= 0:
+                dist += fullWordValue #weighted_levenshtein.cost_str(curDaf.allWords[gemaraSecondWordToIgnore])
+            if iRashiWordToIgnore >= 0:
+                dist += fullWordValue #weighted_levenshtein.cost_str(curRashi.words[iRashiWordToIgnore])
+            if len(abbrevs) > 0:
+                dist += abbreviationPenalty
+
+
+            normalizedDistance = 1.0 * (dist + smoothingFactor) / (len(startText) + smoothingFactor) * normalizingFactor
+            curMatch.score = normalizedDistance
+            curMatch.textToMatch = curRashi.startingText
+            curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iGemaraWord , len_matched)
+            curMatch.startWord = iGemaraWord
+            curMatch.abbrev_matches = abbrevs
+            curMatch.endWord = iGemaraWord + len_matched - 1
+            curMatch.skippedRashiWords = [curRashi.words[iskip] for iskip in path['comment_indexes_skipped']]
+            curMatch.skippedDafWords = [curDaf.allWords[iskip] for iskip in path['daf_indexes_skipped']]
+            allMatches += [curMatch]
+
+
+    return allMatches
 
 def GetAllApproximateMatches(curDaf, curRashi, startBound, endBound,
                              word_threshold, char_threshold):  # inputs (GemaraDaf, RashiUnit, int, int, double)
@@ -1113,7 +1315,7 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
                         iWordWithinPhrase+offsetWithinRashiCV,iWordWithinPhrase+offsetWithinRashiCV),
                                                    (curpos,curpos+newOffsetWithinGemara),
                                                    curDaf.allWords[curpos-iStartContext:curpos],
-                                                   curDaf.allWords[curpos+newOffsetWithinGemara+1:curpos+4],
+                                                   curDaf.allWords[curpos+newOffsetWithinGemara+1:curpos+newOffsetWithinGemara+4],
                                                     fIsNumber)
                     if not abbrevMatch in abbrev_matches:
                         abbrev_matches.append(abbrevMatch)
@@ -1294,21 +1496,12 @@ def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound,
 
 
 #done
-def BuildPhraseFromArray(allWords, iWord, leng, wordToSkip=-1, word2ToSkip=-1):  # list<string>,int,int,int,int
-    if wordToSkip == -1 and word2ToSkip == -1:
+def BuildPhraseFromArray(allWords, iWord, leng, skipWords=None):  # list<string>,int,int,int,int
+    if skipWords:
+        wordList = [w for i,w in enumerate(allWords[iWord:iWord+leng]) if i+iWord not in skipWords]
+        return u" ".join(wordList).strip()
+    else:
         return u" ".join(allWords[iWord:iWord + leng]).strip()
-    elif wordToSkip != -1 and word2ToSkip == -1:
-        return u" ".join(allWords[iWord:wordToSkip] + allWords[wordToSkip+1:iWord + leng]).strip()
-    elif wordToSkip == -1 and word2ToSkip != -1:
-        return u" ".join(allWords[iWord:word2ToSkip] + allWords[word2ToSkip + 1:iWord + leng]).strip()
-    else:  # wordToSkip != -1 and word2ToSkip != -1
-        if word2ToSkip < wordToSkip: #swap
-            tempWordToSkip = wordToSkip
-            wordToSkip = word2ToSkip
-            word2ToSkip = tempWordToSkip
-
-        return u" ".join(allWords[iWord:wordToSkip] + allWords[wordToSkip + 1:word2ToSkip] +
-                         allWords[word2ToSkip + 1:iWord + leng]).strip()
 
 
 #done
@@ -1357,7 +1550,7 @@ def isAbbrevMatch(curpos, abbrevText, unabbrevText, char_threshold):
     maxAbbrevLen = len(abbrevText)
     isMatch = False
 
-    abbrevPatterns = [[],[1],[2],[3],[1,1],[2,1]]
+    abbrevPatterns = [[],[1],[2],[3],[1,1],[2,1],[2,2]]
     for comboList in abbrevPatterns:
 
         numWordsCombined = sum(comboList)
