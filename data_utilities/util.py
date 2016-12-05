@@ -297,7 +297,7 @@ def numToHeb(engnum=""):
         return hebnum
 
 
-def multiple_replace(old_string, replacement_dictionary, regex = False):
+def multiple_replace(old_string, replacement_dictionary, using_regex = False):
         """
         Use a dictionary to make multiple replacements to a single string
 
@@ -307,7 +307,7 @@ def multiple_replace(old_string, replacement_dictionary, regex = False):
         :param 'regex = True' uses re.sub rather then str.replace
         :return: String with replacements made.
         """
-        if regex:
+        if using_regex:
             for keys, value in replacement_dictionary.iteritems():
                 old_string = re.sub(keys,value,old_string)
         else:
