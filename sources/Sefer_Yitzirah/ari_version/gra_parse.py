@@ -79,7 +79,7 @@ def text_parse():
             if re.search(u'@03', line):
                 ofen = True
             # segment ocr tag fixing
-            line = multiple_replace(line, replace_dict, regex = True)
+            line = multiple_replace(line, replace_dict, using_regex = True)
             dibur.append(line)
 
     # once reached the end close all what was opened

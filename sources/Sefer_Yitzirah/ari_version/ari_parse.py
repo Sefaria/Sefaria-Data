@@ -38,7 +38,7 @@ def ari_parse():
                 perek.append(mishna)
                 mishna = []
         else:
-            line = multiple_replace(line, replace_dict, regex=True)
+            line = multiple_replace(line, replace_dict, using_regex=True)
             mishna.append(line.strip())
 
     mishna = ' '.join(mishna)

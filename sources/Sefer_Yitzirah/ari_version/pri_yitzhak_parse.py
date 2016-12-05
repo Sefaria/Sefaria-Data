@@ -158,4 +158,3 @@ def find_links_in_pri():
 
 # save to mongo the list of dictionaries.
 post_link(pri_links)
-
