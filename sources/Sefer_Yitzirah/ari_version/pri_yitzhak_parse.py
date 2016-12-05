@@ -1,7 +1,7 @@
 # encoding=utf-8
 
 import codecs
-import re
+import regex
 from data_utilities.util import ja_to_xml,  traverse_ja, multiple_replace
 from sources.functions import post_text, post_index, post_link
 from sefaria.model import *
@@ -35,7 +35,7 @@ def text_parse():
                     u'@31': u'<b>', u'@32': u'</b>',  # bold dibur hamatchil
                     u'@44': u'<b>', u'@45': u'</b>',  # was bold in text
                     u'@98': u'<small>', u'@99': u'</small>',  # the slik at the end
-                    ur'\*\[(.*?)\]': ur'<small>[\1]</small>'  # footnotes
+                    ur'\[\*(.*?)\]': ur'<small>[\1]</small>'  # footnotes
                     }
     # loop on lines and creat the jagged array
     for line in lines[starting:]:
@@ -66,7 +66,7 @@ def text_parse():
                 first_d = True  # since this is opening a new mishna
         else: # this line is going to be part of the dibur
             # Dibur Hamatchil
-            if re.search(u'@(03|31|98)', line):  # probably start a new dibur
+            if regex.search(u'@(03|31|98)', line):  # probably start a new dibur
                  if (not ofen) and (not first_d): # prob close prev dibur
                     dibur = ' '.join(dibur)
                     mishna.append(dibur)
@@ -76,10 +76,10 @@ def text_parse():
                         ofen = False
                     if first_d:
                         first_d = False
-            if re.search(u'@03', line):
+            if regex.search(u'@03', line):
                 ofen = True
             # segment ocr tag fixing
-            line = multiple_replace(line, replace_dict, regex = True)
+            line = multiple_replace(line, replace_dict, using_regex = True)
             dibur.append(line)
 
     # once reached the end close all what was opened
@@ -143,5 +143,19 @@ for dh in traverse_ja(pri):
 # shave off the last link of "slik" shpuldn't be linked in
 pri_links.pop()
 
+# find links in the pri that are of form bookName(chapter leter)
+def find_links_in_pri():
+    a = ur'\(.*?\)'
+    with codecs.open('yitzira_pri_yitzhak.txt', 'r', 'utf-8') as fp:
+        lines = fp.readlines()
+        txt = " ".join(lines)
+        books = library.get_titles_in_string(txt,'he')
+        for b in books:
+            site_re = ur"{}{}{} ".format('\(\s*',b,'.*?\)')
+            site = regex.search(site_re,txt)
+            if site:
+                print site.span(), site.group()
+
 # save to mongo the list of dictionaries.
 post_link(pri_links)
+

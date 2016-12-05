@@ -145,3 +145,12 @@ gra_links.pop()
 
 # save to mongo the list of dictionaries.
 post_link(gra_links)
+
+# link_ofen = (
+#             {
+#             "refs": [
+#                 "Pri Yitzhak on Sefer Yetzirah " + '%d:%d:%d' %tuple(x+1 for x in dh['indices']),
+#                 "Sefer Yetzirah Ari Version " + '%d:%d' %tuple(x+1 for x in dh['indices'][:2]),
+#             ],
+#             "type": "reference"
+#         })
