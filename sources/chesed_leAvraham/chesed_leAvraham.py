@@ -9,7 +9,9 @@ import bleach
 import codecs
 import urllib2
 from bs4 import BeautifulSoup
+from sources.functions import post_index, post_text
 from sefaria.datatype.jagged_array import JaggedArray
+from sefaria.model.schema import SchemaNode, JaggedArrayNode
 from data_utilities.util import getGematria, file_to_ja, ja_to_xml
 
 
@@ -93,3 +95,82 @@ def parse_shokets():
                 parsed.set_element([shoket, paragraph], u'<b>{}</b>'.format(new_section.group(3)))
 
     return parsed.array()
+
+
+def build_alt_struct():
+    return None
+
+
+def construct_index():
+    root = SchemaNode()
+    root.add_title('Chesed LeAvraham', 'en', primary=True)
+    root.add_title(u'חסד לאברהם', 'he', primary=True)
+    root.key = 'Chesed LeAvraham'
+
+    intro = JaggedArrayNode()
+    intro.add_title('Introduction', 'en', primary=True)
+    intro.add_title(u'הקדמה', 'he', primary=True)
+    intro.key = 'Introduction'
+    intro.depth = 1
+    intro.sectionNames = ['Paragraph']
+    intro.addressTypes = ['Integer']
+    intro.validate()
+    root.append(intro)
+
+    even = JaggedArrayNode()
+    even.add_title('Even Shetiya', 'en', primary=True)
+    even.add_title(u'אבן שתיה', 'he', primary=True)
+    even.key = 'Even Shetiya'
+    even.sectionNames = ['Maayan']
+    even.depth = 1
+    even.addressTypes = ['Integer']
+
+    maayanot = [u'עין כל', u'עין הקורא', u'עין הארץ', u'עין יעקב', u'עין משפט', u'עין גנים', u'עין גדי']
+    for i, title in enumerate(maayanot):
+        node = JaggedArrayNode()
+        node.add_title('Maayan {}'.format(i+1), 'en', primary=True)
+        node.add_title(title, 'he', primary=True)
+        node.key = 'Maayan {}'.format(i+1)
+        node.depth = 2
+        node.sectionNames = ['Nahar', 'Paragraph']
+        node.addressTypes = ['Integer', 'Integer']
+        node.validate()
+        even.append(node)
+    even.validate()
+    root.append(even)
+
+    breichat = JaggedArrayNode()
+    breichat.add_title('Breichat Avraham', 'en', primary=True)
+    breichat.add_title(u'בריכת אברהם', 'he', primary=True)
+    breichat.key = 'Breichat Avraham'
+    breichat.depth = 2
+    breichat.sectionNames = ['Shoket', 'Paragraph']
+    breichat.addressTypes = ['Integer', 'Integer']
+    breichat.validate()
+    root.append(breichat)
+
+    root.validate()
+    return {
+        'title': 'Chesed LeAvraham',
+        'categories': ['Kabbalah'],
+        'schema': root.serialize()
+    }
+
+
+def upload():
+    post_index(construct_index())
+    version = {
+        'versionTitle': 'Placeholder',
+        'versionSource': 'http://www.hebrew.grimoar.cz/azulaj/chesed_le-avraham.htm',
+        'language': 'he',
+        'text': parse_intro()
+    }
+    post_text('Chesed LeAvraham, Introduction', version)
+    body = parse_body()
+    for i, part in enumerate(body):
+        version['text'] = part
+        post_text('Chesed LeAvraham, Even Shetiya, Maayan {}'.format(i+1), version)
+    version['text'] = parse_shokets()
+    post_text('Chesed LeAvraham, Breichat Avraham', version, index_count='on')
+
+upload()
