@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import re
 import codecs
-import json,csv
+from collections import OrderedDict
+import json,csv,unicodecsv
 from data_utilities import dibur_hamatchil_matcher
 from sefaria.model import *
 from sefaria.utils import hebrew
@@ -22,6 +23,9 @@ def base_tokenizer(str):
     word_list = re.split(ur"\s+", str)
     word_list = [re.sub(punc_pat,u"",w).strip() for w in word_list if len(re.sub(punc_pat,u"",w).strip()) > 0]  # remove empty strings and punctuation at the end of a word
     return word_list
+
+def rashi_filter(str):
+    return dh_extraction_method(str) != ''
 
 
 def dh_extraction_method(str):
@@ -48,8 +52,9 @@ def match():
 
     link_list = []
     log = open("mishnah_berurah.log","w")
-    rt_log = codecs.open("rashei_tevot.csv","w",encoding='utf8')
-    rt_log.write(u"{},{},{},{}\n".format(u"rashei_tevot",u"expanded",u"context_before",u"context_after"))
+    rt_log = open("rashei_tevot.csv","w")
+    rt_log_csv = unicodecsv.DictWriter(rt_log, fieldnames=["abbrev","expanded","context_before","context_after"])
+    rt_log_csv.writeheader()
     for ocRef in ocRefList:
         ocSiman = getSimanNum(ocRef)
         while getSimanNum(mbRefList[mbInd]) != ocSiman:
@@ -60,12 +65,17 @@ def match():
         log.write("----- SIMAN {} -----\n".format(ocSiman))
         octc = TextChunk(ocRef,"he")
         mbtc = TextChunk(mbRef,"he")
+        try:
+            matched = dibur_hamatchil_matcher.match_ref(octc,mbtc,base_tokenizer=base_tokenizer,dh_extract_method=dh_extraction_method,verbose=True,with_abbrev_matches=True,rashi_filter=rashi_filter)
+        except ValueError:
+            continue
+        if 'comment_refs' not in matched:
+            continue
 
-        ref_map_with_abbrevs = dibur_hamatchil_matcher.match_ref(octc,mbtc,base_tokenizer=base_tokenizer,dh_extract_method=dh_extraction_method,verbose=True,with_abbrev_matches=True)
-        ref_map = [(tup[0],tup[1]) for tup in ref_map_with_abbrevs]
-        abbrev_map = [am for tup in ref_map_with_abbrevs for am in tup[2]]
-        for am in abbrev_map:
-            rt_log.write(u"{},{},{},{}\n".format(am.abbrev,u" ".join(am.expanded),u" ".join(am.contextBefore),u" ".join(am.contextAfter)))
+        ref_map = [(base,comment) for base,comment in zip(matched['matches'],matched['comment_refs'])]
+        abbrevs = [am for seg in matched['abbrevs'] for am in seg]
+        for am in abbrevs:
+            rt_log_csv.writerow({'abbrev':dibur_hamatchil_matcher.cleanAbbrev(am.abbrev), 'expanded':u' '.join(am.expanded), 'context_before':u' '.join(am.contextBefore), 'context_after':u' '.join(am.contextAfter)})
 
         temp_link_list = [l for l in ref_map if not l[0] is None and not l[1] is None]
         link_list += temp_link_list
@@ -119,10 +129,31 @@ def save_links_post_request():
     links = [l.contents() for l in ls]
     post_link(links)
 
+def deal_with_abbrevs():
+    abbrev_dict = OrderedDict()
+    abbrevfile = open("rashei_tevot.csv",'rb')
+    abbrevcsv = unicodecsv.DictReader(abbrevfile)
+    for row in abbrevcsv:
+        abbrev = row['abbrev']
+        expanded = row['expanded']
+        if abbrev not in abbrev_dict:
+            abbrev_dict[abbrev] = {}
+
+        if expanded not in abbrev_dict[abbrev]:
+            abbrev_dict[abbrev][expanded] = 0
+        abbrev_dict[abbrev][expanded] += 1
+    abbrevfile.close()
+    objStr = json.dumps(abbrev_dict, indent=4, ensure_ascii=False)
+    with open('all_mishnah_berurah_abbrevs.json', "w") as f:
+        f.write(objStr.encode('utf-8'))
+
+    print 'Num Abbrevs {}'.format(len(abbrev_dict))
 
 
 
-#match()
+
+match()
 #save_links()
 #make_better_log_file()
 #save_links_post_request()
+#deal_with_abbrevs()

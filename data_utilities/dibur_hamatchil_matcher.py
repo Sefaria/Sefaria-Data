@@ -185,11 +185,15 @@ class MatchMatrix(object):
                                       comment_threshold_hit,
                                       daf_threshold_hit,
                                       mismatch_threshold_hit)
-        elif is_jump_start:
+
+        # Next in-sequence word doesn't match.  Explore other possibilities
+        results = []
+
+        if is_jump_start:
             jump_index = self.matrix[current_position] - 2
             jump_end = self.jump_coordinates[jump_index][1] # current pos holds info on the jump number
             new_jump_indexes = jump_indexes + [jump_index]
-            return self._explore_path(jump_end,
+            results += self._explore_path(jump_end,
                                       daf_start_index,
                                       comment_indexes_skipped,
                                       daf_indexes_skipped,
@@ -199,9 +203,7 @@ class MatchMatrix(object):
                                       daf_threshold_hit,
                                       mismatch_threshold_hit)
 
-        # Next in-sequence word doesn't match.  Explore other possibilities
-        results = []
-        if not comment_threshold_hit:
+        if not comment_threshold_hit and next_comment_index < self.comment_len:
             new_comment_indexes_skipped = comment_indexes_skipped + [current_position[0]]
             results += self._explore_path((next_comment_index, current_position[1]),
                                           daf_start_index,
@@ -214,7 +216,7 @@ class MatchMatrix(object):
                                           len(daf_indexes_skipped) >= self.base_word_skip_threshold
                                               or len(new_comment_indexes_skipped) + len(daf_indexes_skipped) >= self.overall_word_skip_threshold,
                                           mismatch_threshold_hit)
-        if not daf_threshold_hit:
+        if not daf_threshold_hit and next_base_index < self.daf_len:
             new_daf_indexes_skipped = daf_indexes_skipped + [current_position[1]]
             results += self._explore_path((current_position[0], next_base_index),
                                           daf_start_index,
@@ -227,7 +229,7 @@ class MatchMatrix(object):
                                           len(new_daf_indexes_skipped) >= self.base_word_skip_threshold
                                               or len(comment_indexes_skipped) + len(new_daf_indexes_skipped) >= self.overall_word_skip_threshold,
                                           mismatch_threshold_hit)
-        if not mismatch_threshold_hit:
+        if not mismatch_threshold_hit and next_comment_index < self.comment_len and next_base_index < self.daf_len:
             results += self._explore_path((next_comment_index, next_base_index),
                                           daf_start_index,
                                           comment_indexes_skipped,
