@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 
 books_of_Torah = ["Genesis","Exodus","Leviticus","Numbers","Deuteronomy"]
 def get_parsed_text():
-    with open("Chizkuni - Munk.html", 'r') as myfile:
+    with open("Chizkuni - Munk (1).html", 'r') as myfile:
         text = ''.join(myfile.readlines())
     soup = BeautifulSoup(text, 'html.parser')
     spans = soup.find_all('span')
@@ -48,7 +48,10 @@ def get_parsed_text():
             get_comment_index(comment)
             indexed_comments.append(comment)
         except AttributeError:
-            indexed_comments[-1]+=comment
+            if len(comment.replace("@SKIP@","")) == len(comment):
+                indexed_comments[-1]+=comment
+            else:
+                indexed_comments[-1]+="<br>"+comment.replace("@SKIP@","")
     book_box = []
     all_books = []
     for comment in indexed_comments:
@@ -60,7 +63,6 @@ def get_parsed_text():
     for book in all_books:
         for comment in book:
             print "P!: "+comment
-    print "BOOKS OF MOSES: "+str(len(make_perek_array('Genesis')[0]))
     final_text = []
     misplaced = []
     for index, book in enumerate(all_books):
@@ -68,7 +70,7 @@ def get_parsed_text():
         last_pasuk = 0
         for comment in book:
             comment_index = get_comment_index(comment)
-            if last_perek > comment_index[0]:
+            if last_pasuk > comment_index[1] and last_perek == comment_index[0]:
                 misplaced.append(comment)
             else:
                 last_perek = comment_index[0]
@@ -198,6 +200,9 @@ def fix_stubs(pasuk):
     return return_comments
 
 def get_comment_index(comment):
+    #check for skip flag:
+    if "@SKIP@" in comment:
+        raise AttributeError()
     string_index= re.split("[,.]",re.match("^\d+[,.]\d+",comment).group())
     return [int(string_index[0]),int(string_index[1])]
     
@@ -228,8 +233,10 @@ def remove_extra_space(s):
         s = s.replace("  "," ")
     return s
 
-for index, book in enumerate(get_parsed_text()[3:]):
-    index+=3
+get_parsed_text()
+
+for index, book in enumerate(get_parsed_text()[1:]):
+    index+=1
     version = {
         'versionTitle': 'Chizkuni, translated and annotated by Eliyahu Munk',
         'versionSource': 'http://www.urimpublications.com/Merchant2/merchant.mv?Screen=PROD&Store_Code=UP&Product_Code=Chizkuni&Category_Code=bd',
