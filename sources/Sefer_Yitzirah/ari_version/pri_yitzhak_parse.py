@@ -102,22 +102,22 @@ def post_this():
     }
 
     schema = JaggedArrayNode()
-    schema.add_title('Pri Yitzhak on Sefer Yetzirah', 'en', True)
+    schema.add_title('Pri Yitzhak on Sefer Yetzirah Ari Version', 'en', True)
     schema.add_title(u'פרי יצחק על ספר יצירה', 'he', True)
-    schema.key = 'Pri Yitzhak on Sefer Yetzirah'
+    schema.key = 'Pri Yitzhak on Sefer Yetzirah Ari Version'
     schema.depth = 3
     schema.addressTypes = ['Integer', 'Integer','Integer']
     schema.sectionNames = ['Chapter', 'Mishnah','Comment']
     schema.validate()
 
     index_dict = {
-        'title': 'Pri Yitzhak on Sefer Yetzirah',
+        'title': 'Pri Yitzhak on Sefer Yetzirah Ari Version',
         'categories': ['Commentary2','Kabbalah','pri yitzhak'],
         'schema': schema.serialize() # This line converts the schema into json
     }
     post_index(index_dict)
 
-    post_text('Pri Yitzhak on Sefer Yetzirah', text_version, index_count='on')
+    post_text('Pri Yitzhak on Sefer Yetzirah Ari Version', text_version, index_count='on')
 
 # post with the post function
 post_this()
@@ -129,7 +129,7 @@ for dh in traverse_ja(pri):
         link = (
             {
             "refs": [
-                "Pri Yitzhak on Sefer Yetzirah " + '%d:%d:%d' %tuple(x+1 for x in dh['indices']),
+                "Pri Yitzhak on Sefer Yetzirah Ari Version" + '%d:%d:%d' %tuple(x+1 for x in dh['indices']),
                 "Sefer Yetzirah Ari Version " + '%d:%d' %tuple(x+1 for x in dh['indices'][:2]),
             ],
             "type": "commentary",
