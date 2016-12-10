@@ -148,7 +148,6 @@ class MatchMatrix(object):
             possible_comment_skips = min(self.overall_word_skip_threshold - (len(comment_indexes_skipped) + len(daf_indexes_skipped)),
                                          self.comment_word_skip_threshold)
 
-
             if is_a_match or is_jump_end:
                 if current_position[0] + possible_comment_skips + 1 >= self.comment_len:
                     return [{
@@ -191,7 +190,7 @@ class MatchMatrix(object):
 
         if is_jump_start:
             jump_index = self.matrix[current_position] - 2
-            jump_end = self.jump_coordinates[jump_index][1] # current pos holds info on the jump number
+            jump_end = self.jump_coordinates[jump_index][1]  # current pos holds info on the jump number
             new_jump_indexes = jump_indexes + [jump_index]
             results += self._explore_path(jump_end,
                                       daf_start_index,
@@ -601,6 +600,7 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
         ret['fixed'] = fixed
 
     return ret
+
 
 def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,word_threshold=0.27,char_threshold=0.2,
                prev_matched_results=None,with_abbrev_matches=False,boundaryFlexibility=0,dh_split=None,rashi_filter=None,
