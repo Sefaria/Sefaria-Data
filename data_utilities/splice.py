@@ -640,6 +640,8 @@ class SegmentMap(object):
         self.first_segment_index = self.start_ref.sections[-1] - 1
         self.last_segment_index = self.end_ref.sections[-1] - 1
 
+        self.commentary_mappings = {}
+
     def __eq__(self, other):
         if (self.__class__ == other.__class__ and
                 self.start_ref == other.start_ref and
@@ -658,9 +660,9 @@ class SegmentMap(object):
     def is_blank(self):
         return False
 
+    #used?
     def unbroken_segment_indexes(self):
-        usi = []
-        usi += [self.first_segment_index] if self.start_word is None else []
+        usi = [self.first_segment_index] if self.start_word is None else []
         usi += range(self.first_segment_index+1, self.last_segment_index)
         usi += [self.last_segment_index] if self.end_word is None else []
         return usi
@@ -672,34 +674,45 @@ class SegmentMap(object):
             return True
         return False
 
-    def reshape_other_commentator(self, commentator_ref, commentator_text_chunk):
+    # todo? Can these two be merged?  The only question is what kind of return values we need.
+    def reshape_commentary_version(self, commentator_ref, commentator_text_chunk):
+        """
+
+        :param commentator_ref: Used to identify which commentator we're working with
+        :param commentator_text_chunk:
+        :return:
+        """
         assert self.end_word is None and self.start_word is None
         assert isinstance(commentator_text_chunk, TextChunk)
 
-        csections = commentator_text_chunk.text[self.first_segment_index:self.last_segment_index + 1]
-        return [comment for csec in csections for comment in csec]
+        old_length_map = self.commentary_mappings[commentator_ref]
 
-    def reshape_base_commentator(self, commentator_ref, commentator_text_chunk, base_text_chunk):
-        """
-        returning map from old commentator refs to new refs
-        """
-        # Assuming this only called on non-split chunks
-        # 1.1, 1.2, 3.1, 4.1, 4.2
-        # ["","","", ..]
+        full_segment = []
 
-        assert self.end_word is None and self.start_word is None
-        assert isinstance(commentator_text_chunk, TextChunk)
-
-        new_section_text = []
-        old_ref_list = []
         csections = commentator_text_chunk.text[self.first_segment_index:self.last_segment_index + 1]
         for i, csec in enumerate(csections):
-            for j, comment in enumerate(csec):
-                new_section_text += [comment]
-                old_ref_list += [commentator_ref.subref([i+1, j+1])]
+            new_text = [u""] * old_length_map[i]
+            new_text[:len(csec)] = csec
+            full_segment += new_text
+        return full_segment
 
-        return new_section_text, old_ref_list
+    def build_master_commentary_mapping(self, commentator_ref, merged_text_chunk):
+        """
+        returning map from old commentator refs to new refs
+        :param commentator_ref: Used to identify which commentator we're working with
+        :param merged_text_chunk: The merged version of the commentary text chunk for this super-section
+        :return:
+        """
+        # Assuming this only called on non-split chunks
+        # Keep track of number of comments per old segment
 
+        assert self.end_word is None and self.start_word is None
+        assert isinstance(merged_text_chunk, TextChunk)
+
+        csections = merged_text_chunk.text[self.first_segment_index:self.last_segment_index + 1]
+        old_length_map = [len(section) for section in csections]
+
+        self.commentary_mappings[commentator_ref] = old_length_map
 
     def get_text(self, current_text_chunk):
 
@@ -729,6 +742,7 @@ class SegmentMap(object):
         """
         return self.joiner.join(self.tokenizer(section_text_chunk.text[segment_index])[start_word and start_word - 1: end_word])
 
+
 class SplitSegmentGroup(object):
     def __init__(self, segment_maps, section_text):
         assert isinstance(section_text, TextChunk)
@@ -739,12 +753,23 @@ class SplitSegmentGroup(object):
         self.num_segments = len(segment_maps)
         self.segment_range = range(self.segment_maps[0].first_segment_index, self.segment_maps[-1].last_segment_index + 1)
         self.segment_breaks = self._get_segment_breaks()
+        # self.broken_segments_list = [i for i in self.segment_range if self.segment_breaks[i]]
+        # self.broken_segments_mask = [True if self.segment_breaks[i] else False for i in self.segment_range]
+        self.commentary_mappings = {}
 
-    def reshape_other_commentator(self, commentator_ref, commentator_text_chunk):
-        pass
+    def __repr__(self):
+        return "SplitSegmentGroup(\n\t{}\n)".format("\t".join(self.segment_maps))
 
     def _get_segment_breaks(self):
-        segment_breaks = {i:{} for i in self.segment_range}
+        """
+        Return a dictionary, keyed by segment number, one for each segment contained in this group.
+        If a segment isn't broken, value is an empty dictionary
+        If a segment is broken, value is a dictionary with keys:
+            "offset": index in self.segment_maps where this segment is found
+            "breaks": list of word where segments transition
+        :return:
+        """
+        segment_breaks = {i: {} for i in self.segment_range}
         for smi, sm in enumerate(self.segment_maps):
             if sm.start_word is not None:
                 segment_breaks[sm.first_segment_index]["breaks"] += [sm.start_word]
@@ -753,29 +778,51 @@ class SplitSegmentGroup(object):
                     segment_breaks[sm.last_segment_index] = {"breaks":[], "offset": smi}
         return segment_breaks
 
-    def reshape_base_commentator(self, commentator_ref, commentator_text_chunk, base_text_chunk):
-        new_sections = []
-        # populate unbroken elements of sections
-        for sm in self.segment_maps:
-            new_section = []
-            for i in sm.unbroken_segment_indexes():
-                new_section += commentator_text_chunk.text[i]
-            new_sections += [new_section]
+    def build_master_commentary_mapping(self, commentator_ref, merged_text_chunk):
+        """
+        Use the merged Hebrew version of the commentator in order to build a master map
+        of how the old commentary maps to the new.
+        In the shape of the old commentary, a list of offsets in the new commentary to place at.
+        :param commentator_ref: Used to identify which commentator we're working with
+        :param merged_text_chunk: The merged version of the commentary text chunk for this super-section
+        :return:
+        """
+        old_to_new = []
+        for offset, i in enumerate(self.segment_range):
+            try:
+                if not self.segment_breaks[i]:
+                    old_to_new += [len(merged_text_chunk.text[i]) * [offset]]
+                else:
+                    # returns [(start,end)...] - we're  using just the start word to make our judgement
+                    words = re.split("\s+", self.section_text.text[i])
+                    word_ranges = match_text(words, merged_text_chunk.text[i])["matches"]
+                    old_to_new += [[bisect.bisect_right(self.segment_breaks[i]["breaks"], w[0]) + self.segment_breaks[i]["offset"]
+                                 for w in word_ranges]]
+            except IndexError:
+                # Commentary ends before end of section
+                break
+        self.commentary_mappings[commentator_ref] = old_to_new
 
-        # determine and populate broken elements
-        # an element can be broken into 2 or more
-        for i in [i for i in self.segment_range if self.segment_breaks[i]]:
-            comments = commentator_text_chunk.text[i]
+    def reshape_commentary_version(self, commentator_ref, commentator_text_chunk):
+        """
+        Use the master mapping of a commentator to reshape this text
+        :param commentator_ref: Used to identify which commentator we're working with
+        :param commentator_text_chunk:
+        :return:
+        """
+        old_to_new = self.commentary_mappings[commentator_ref]
+        new_sections = [[] * len(self.segment_maps)]
 
-            list_of_word_ranges = match_text(self.section_text.text[i],comments) # returns [(start,end)...]
-            for word_ranges in list_of_word_ranges:
-                # Note - we're  using just the start word to make our judgement
-                segment_map_index_chosen = bisect.bisect_right(self.segment_breaks["breaks"],word_ranges[0]) + self.segment_breaks["offset"]
+        # Iterate over map, move new segments into place as indicated
+        for i, section in enumerate(old_to_new):
+            for j, offset in section:
+                try:
+                    new_sections[offset] += commentator_text_chunk.text[i][j]
+                except IndexError:
+                    new_sections[offset] += u""
 
+        return new_sections
 
-
-    def _determine_places(self, base_tc, list_of_commentary_or_tc):
-        pass
 
 class SectionSplicer(AbstractSplicer):
     """
@@ -806,6 +853,8 @@ class SectionSplicer(AbstractSplicer):
         self.adjusted_segment_maps = []  # List of SegmentMap objects, with segment specificity, for other versions
         self.commentary_split_mappers = []
 
+    def __repr__(self):
+        return "SectionSplicer({})".format(self.section_ref.normal())
 
     def set_section(self, ref):
         assert ref.is_section_level()
@@ -921,6 +970,7 @@ class SectionSplicer(AbstractSplicer):
                 continue
 
         self._build_commentary_mappers()
+        self._build_commentary_mappings()
 
     def _build_commentary_mappers(self):
         """
@@ -944,29 +994,50 @@ class SectionSplicer(AbstractSplicer):
                 temp += [sm]
                 if sm.end_word is None:
                     in_split = False
-                    self.commentary_split_mappers += [SplitSegmentGroup(temp)]
+                    self.commentary_split_mappers += [SplitSegmentGroup(temp, self.base_text_chunk)]
                     temp = []
             else:
                 assert sm.start_word is None
                 self.commentary_split_mappers += [sm]
 
-    def _reshape_commentary_version_segments(self):
-        pass
-
     def _build_commentary_mappings(self):
         for commentator in self.commentary_titles:
             commentator_ref = Ref(commentator)
-            commentator_tc = TextChunk(commentator_ref, "he")
+            commentator = commentator.split(" on ")[0]
+            cssec_ref = Ref("{} on {}".format(commentator, self.section_ref))
+            commentator_merged_tc = TextChunk(cssec_ref, "he")
+
             for mapper in self.commentary_split_mappers:
-                #reshaped_commentary += mapper.get_commentator_sections(commentator_ref, commentator_tc, self.base_text_chunk)
-
+                mapper.build_master_commentary_mapping(commentator_ref, commentator_merged_tc)
     """
-    def _derive_commentary_lookup_dictionary(self):
+    def reshape_commentary_version(self, commentator_ref, commentator_text_chunk):
+        '''
+        Push this up to book level?
+        :param commentator_ref:
+        :param commentator_text_chunk:
+        :return:
+        '''
+        reshaped_commentary = []
+        for mapper in self.commentary_split_mappers:
+            reshaped_commentary += mapper.get_commentator_sections(commentator_ref, commentator_text_chunk)
+        return reshaped_commentary
+    """
 
+    def _reshape_all_commentary_versions(self):
+        for v in self.commentary_versions():
+            assert isinstance(v, Version)
             reshaped_commentary = []
+            title_ref = Ref(v.title)
+            commentator = v.title.split(" on ")[0]
+            cssec_ref = Ref("{} on {}".format(commentator, self.section_ref))
+            tc = TextChunk(cssec_ref, v.language, v.versionTitle)
             for mapper in self.commentary_split_mappers:
-                reshaped_commentary += mapper.get_commentator_sections(commentator_ref, commentator_tc, self.base_text_chunk)
-    """
+                reshaped_commentary += mapper.get_commentator_sections(title_ref, tc)
+            if self._report:
+                print u"{}".format(cssec_ref.normal())
+            if self._save:
+                tc.text = reshaped_commentary
+                tc.save()
 
     def _reshape_base_text_version_segments(self):
         # for each version, merge the text
@@ -979,7 +1050,7 @@ class SectionSplicer(AbstractSplicer):
             if self._save:
                 v["text_chunk"].save()
 
-    def run(self):
+    def _run(self):
         if self._report:
             print u"\n----\n*** Running SectionSplicer on {}\n".format(self.section_ref.normal())
 
@@ -987,6 +1058,7 @@ class SectionSplicer(AbstractSplicer):
         self._reshape_base_text_version_segments()
 
         print u"\n*** Merging Commentary 1 Texts"
+        self._reshape_all_commentary_versions()
         #self._merge_commentary_version_sections()  # Simple for segment boundaries
 
 
@@ -1074,6 +1146,9 @@ class BookSplicer(object):
 
         self.segment_map = self._build_segment_map
 
+    def test(self):
+        for sp in self.section_splicers:
+            sp.report()
 
     def _build_segment_map(self):
         res = {}
