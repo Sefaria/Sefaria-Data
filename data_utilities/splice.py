@@ -758,7 +758,7 @@ class SplitSegmentGroup(object):
         self.commentary_mappings = {}
 
     def __repr__(self):
-        return "SplitSegmentGroup(\n\t{}\n)".format("\t".join(self.segment_maps))
+        return "SplitSegmentGroup({})".format(self.segment_maps)
 
     def _get_segment_breaks(self):
         """
@@ -773,9 +773,13 @@ class SplitSegmentGroup(object):
         for smi, sm in enumerate(self.segment_maps):
             if sm.start_word is not None:
                 segment_breaks[sm.first_segment_index]["breaks"] += [sm.start_word]
-            if sm.end_word is not None:
-                if not segment_breaks[sm.last_segment_index]:
-                    segment_breaks[sm.last_segment_index] = {"breaks":[], "offset": smi}
+                for i in range(sm.first_segment_index + 1, sm.last_segment_index + 1):
+                    segment_breaks[i]["offset"] = smi
+            else:
+                for i in range(sm.first_segment_index, sm.last_segment_index + 1):
+                    segment_breaks[i]["offset"] = smi
+            if sm.end_word is not None and segment_breaks[sm.last_segment_index].get("breaks", None) is None:
+                segment_breaks[sm.last_segment_index] = {"breaks": [], "offset": smi}
         return segment_breaks
 
     def build_master_commentary_mapping(self, commentator_ref, merged_text_chunk):
@@ -790,14 +794,18 @@ class SplitSegmentGroup(object):
         old_to_new = []
         for offset, i in enumerate(self.segment_range):
             try:
-                if not self.segment_breaks[i]:
-                    old_to_new += [len(merged_text_chunk.text[i]) * [offset]]
+                if self.segment_breaks[i].get("breaks", None) is None:
+                    old_to_new += [len(merged_text_chunk.text[i]) * [self.segment_breaks[i]["offset"]]]
                 else:
                     # returns [(start,end)...] - we're  using just the start word to make our judgement
                     words = re.split("\s+", self.section_text.text[i])
-                    word_ranges = match_text(words, merged_text_chunk.text[i])["matches"]
-                    old_to_new += [[bisect.bisect_right(self.segment_breaks[i]["breaks"], w[0]) + self.segment_breaks[i]["offset"]
-                                 for w in word_ranges]]
+                    word_ranges = match_text(words,
+                                             merged_text_chunk.text[i],
+                                             dh_extract_method=lambda s: s.split(u" - ")[0]
+                                             )["matches"]
+                    old_to_new += [[bisect.bisect_right(self.segment_breaks[i]["breaks"], w[0]) +
+                                    self.segment_breaks[i]["offset"]
+                                    for w in word_ranges]]
             except IndexError:
                 # Commentary ends before end of section
                 break
