@@ -22,7 +22,7 @@
 
 import sys
 from lxml import etree as etree_
-
+from sefaria.datatype.jagged_array import JaggedArray
 import DCXML as supermod
 
 def parsexml_(infile, parser=None, **kwargs):
@@ -71,15 +71,36 @@ class bookSub(supermod.book):
         super(bookSub, self).__init__(id, front, body, back, )
 
     def populateCommentStore(self):
+
+        for chap_index, chapter in enumerate(self.get_body().get_chapter()):
+            for verse_index, verse in enumerate(chapter.get_verse()):
+                refs = verse.get_xrefs()
+                for ref in refs:
+                    commentStore[ref.rid] = {'chapter': chap_index+1, 'verse': verse_index+1}
+
         try:
             for c in self.get_body().get_commentaries().get_commentary():
-                heName = c.get_author().content_[0].getValue()
+                linked = True
+                heName = c.get_author()#.content_[0].getValue()
                 enName = commentatorNames.get(heName)
                 chapters = c.get_chapter() if c.get_chapter() else [c]
-                for chap_index, chapter in enumerate(chapters):
-                    for p_index, p in enumerate(chapter.get_phrase()):
+                current_chapter, order = 0, 0
+                for chapter in chapters:
+                    for p in chapter.get_phrase():
                         if p.id:
-                            commentStore[p.id] = {"commentator": enName, "order": p_index+1, 'chapter': chap_index+1}
+                            if commentStore.get(p.id) is None:
+                                linked = False
+                                continue
+                            if commentStore[p.id]["chapter"] != current_chapter:
+                                current_chapter = commentStore[p.id]["chapter"]
+                                order = 0
+                            order += 1
+                            commentStore[p.id]["commentator"] = enName
+                            commentStore[p.id]["order"] = order
+                        else:
+                            linked = False
+                self.get_body().get_commentaries().linked[heName] = linked
+
         except AttributeError:
             return
 
@@ -87,6 +108,16 @@ class bookSub(supermod.book):
         return self.get_body().getTextArray()
         # Note the offset issue w/ Semachot
 
+    def review_commentaries(self):
+        for commentary, linked in self.get_body().get_commentaries().linked.iteritems():
+            print u'{} : {}'.format(commentary, linked)
+
+    def check_commentary_chapters(self):
+        problems = []
+        for commentary in self.get_body().get_commentaries().get_commentary():
+            if not commentary.validate_chapters():
+                problems.append(commentary)
+        return problems
 
 supermod.book.subclass = bookSub
 # end class bookSub
@@ -127,9 +158,13 @@ supermod.pgbrk.subclass = pgbrkSub
 class commentariesSub(supermod.commentaries):
     def __init__(self, commentary=None):
         super(commentariesSub, self).__init__(commentary, )
+        self.linked = {}
 
     def get_authors(self):
         return [commentator.author.valueOf_ for commentator in self.commentary]
+
+    def is_linked_commentary(self, commentary):
+        return self.linked[commentary.get_author()]
 
 supermod.commentaries.subclass = commentariesSub
 # end class commentariesSub
@@ -138,6 +173,36 @@ supermod.commentaries.subclass = commentariesSub
 class commentarySub(supermod.commentary):
     def __init__(self, id=None, label=None, author=None, phrase=None, p=None, chapter=None):
         super(commentarySub, self).__init__(id, label, author, phrase, p, chapter, )
+
+    def validate_chapters(self):
+        last_chapter = 0
+        for chapter in self.get_chapter():
+            if int(chapter.num) - last_chapter != 1:
+                return False
+            last_chapter += 1
+        return True
+
+    def get_author(self):
+        return self.author.content_[0].getValue()
+
+    def print_bad_chapters(self):
+        expected_chapter = 1
+        for chapter in self.get_chapter():
+            if int(chapter.num) != expected_chapter:
+                print 'expected chapter {} found chapter {}'.format(expected_chapter, chapter.num)
+                expected_chapter = int(chapter.num)
+
+            expected_chapter += 1
+
+    def parse_linked(self):
+        parsed = JaggedArray([[]])  # all commentaries are depth 2?
+        for phrase in self.get_phrase():
+            indices = (commentStore[phrase.id]['chapter'], commentStore[phrase.id]['order'])
+            text = phrase.get_comment().valueOf_.replace(u'\n', u'')
+            parsed.set_element([i-1 for i in indices], text)
+        return parsed.array()
+
+
 supermod.commentary.subclass = commentarySub
 # end class commentarySub
 
@@ -166,6 +231,9 @@ class verseSub(supermod.verse):
 
     def asString(self):
         return " ".join([p.asString() for p in self.p])
+
+    def get_xrefs(self):
+        return [xref for xref in self.get_p()[0].get_xref()]
 supermod.verse.subclass = verseSub
 # end class verseSub
 
