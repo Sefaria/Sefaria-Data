@@ -43,8 +43,22 @@ ExternalEncoding = 'utf-8'
 commentStore = {}
 
 commentatorNames = {
-    u"הגהות": "Hagahot",
-    u"מסורת הש״ס": "Mesorat HaShas"
+    u"מסורת הש״ס": "Mesorat HaShas",
+    u"פי׳ החיד״א": "Commentary of Chida",
+    u"הגהות": "Haggahot",
+    u"הגהות הגרי״ב": "Haggahot R' Yeshaya Berlin",
+    u"בנין יהושע": "Binyan Yehoshua",
+    u"נוסחא חדשה": "New Nuschah",
+    u"נוסחאות כ״י": "Nuschaot from Manuscripts",
+    u"ראשון לציון": "Rishon Letzion",
+    u"נחלת יעקב": "Nahalat Yaakov",
+    u"תומת ישרים": "Tumat Yesharim",
+    u"הגהות ומראה מקומות": "Haggahot and Marei Mekomot",
+    u"כסא רחמים": "Kisse Rahamim",
+    u"הגהות מהריעב״ץ": "Haggahot Ya'avetz",
+    u"נוסחת הגר״א": "Gra's Nuschah",
+    u"לב חכמים": "Lev Hakhamim",
+    u"מצפה איתן": "Mitzpeh Etan"
 }
 
 #
@@ -57,16 +71,17 @@ class bookSub(supermod.book):
         super(bookSub, self).__init__(id, front, body, back, )
 
     def populateCommentStore(self):
-        for c in self.get_body().get_commentaries().get_commentary():
-            heName = c.get_author().content_[0].getValue()
-            enName = commentatorNames.get(heName)
-            chapters = c.get_chapter() if c.get_chapter() else [c]
-            for chapter in chapters:
-                order = 0
-                for p in chapter.get_phrase():
-                    order += 1
-                    if p.id:
-                        commentStore[p.id] = {"commentator": enName, "order": order}
+        try:
+            for c in self.get_body().get_commentaries().get_commentary():
+                heName = c.get_author().content_[0].getValue()
+                enName = commentatorNames.get(heName)
+                chapters = c.get_chapter() if c.get_chapter() else [c]
+                for chap_index, chapter in enumerate(chapters):
+                    for p_index, p in enumerate(chapter.get_phrase()):
+                        if p.id:
+                            commentStore[p.id] = {"commentator": enName, "order": p_index+1, 'chapter': chap_index+1}
+        except AttributeError:
+            return
 
     def getBaseTextArray(self):
         return self.get_body().getTextArray()
@@ -112,6 +127,10 @@ supermod.pgbrk.subclass = pgbrkSub
 class commentariesSub(supermod.commentaries):
     def __init__(self, commentary=None):
         super(commentariesSub, self).__init__(commentary, )
+
+    def get_authors(self):
+        return [commentator.author.valueOf_ for commentator in self.commentary]
+
 supermod.commentaries.subclass = commentariesSub
 # end class commentariesSub
 
