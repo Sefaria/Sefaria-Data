@@ -23,7 +23,9 @@
 import sys
 from lxml import etree as etree_
 from sefaria.datatype.jagged_array import JaggedArray
+from sefaria.model.schema import SchemaNode, JaggedArrayNode
 import DCXML as supermod
+
 
 def parsexml_(infile, parser=None, **kwargs):
     if parser is None:
@@ -43,22 +45,22 @@ ExternalEncoding = 'utf-8'
 commentStore = {}
 
 commentatorNames = {
-    u"מסורת הש״ס": "Mesorat HaShas",
-    u"פי׳ החיד״א": "Commentary of Chida",
-    u"הגהות": "Haggahot",
-    u"הגהות הגרי״ב": "Haggahot R' Yeshaya Berlin",
-    u"בנין יהושע": "Binyan Yehoshua",
-    u"נוסחא חדשה": "New Nuschah",
-    u"נוסחאות כ״י": "Nuschaot from Manuscripts",
-    u"ראשון לציון": "Rishon Letzion",
-    u"נחלת יעקב": "Nahalat Yaakov",
-    u"תומת ישרים": "Tumat Yesharim",
-    u"הגהות ומראה מקומות": "Haggahot and Marei Mekomot",
-    u"כסא רחמים": "Kisse Rahamim",
-    u"הגהות מהריעב״ץ": "Haggahot Ya'avetz",
-    u"נוסחת הגר״א": "Gra's Nuschah",
-    u"לב חכמים": "Lev Hakhamim",
-    u"מצפה איתן": "Mitzpeh Etan"
+    u"מסורת הש״ס": "Mesorat HaShas on Masechtot Ketanot",
+    u"פי׳ החיד״א": "Commentary of Chida on Masechtot Ketanot",
+    u"הגהות": "Haggahot on Masechtot Ketanot",
+    u"הגהות הגרי״ב": "Haggahot R' Yeshaya Berlin on Masechtot Ketanot",
+    u"בנין יהושע": "Binyan Yehoshua on Masechtot Ketanot",
+    u"נוסחא חדשה": "New Nuschah on Masechtot Ketanot",
+    u"נוסחאות כ״י": "Nuschaot from Manuscripts on Masechtot Ketanot",
+    u"ראשון לציון": "Rishon Letzion on Masechtot Ketanot",
+    u"נחלת יעקב": "Nahalat Yaakov on Masechtot Ketanot",
+    u"תומת ישרים": "Tumat Yesharim on Masechtot Ketanot",
+    u"הגהות ומראה מקומות": "Haggahot and Marei Mekomot on Masechtot Ketanot",
+    u"כסא רחמים": "Kisse Rahamim on Masechtot Ketanot",
+    u"הגהות מהריעב״ץ": "Haggahot Ya'avetz on Masechtot Ketanot",
+    u"מצפה איתן": "Mitzpeh Etan on Masechtot Ketanot",
+    u"לב חכמים": "Lev Hakhamim on Masechtot Ketanot",
+    u"נוסחת הגר״א": "Gra's Nuschah on Masechtot Ketanot",
 }
 
 #
@@ -84,15 +86,16 @@ class bookSub(supermod.book):
                 heName = c.get_author()#.content_[0].getValue()
                 enName = commentatorNames.get(heName)
                 chapters = c.get_chapter() if c.get_chapter() else [c]
-                current_chapter, order = 0, 0
+                current_chapter, current_verse, order = 0, 0, 0
                 for chapter in chapters:
                     for p in chapter.get_phrase():
                         if p.id:
                             if commentStore.get(p.id) is None:
                                 linked = False
                                 continue
-                            if commentStore[p.id]["chapter"] != current_chapter:
+                            if (commentStore[p.id]["chapter"] != current_chapter) or (commentStore[p.id]["verse"]) != current_verse:
                                 current_chapter = commentStore[p.id]["chapter"]
+                                current_verse = commentStore[p.id]["verse"]
                                 order = 0
                             order += 1
                             commentStore[p.id]["commentator"] = enName
@@ -118,6 +121,37 @@ class bookSub(supermod.book):
             if not commentary.validate_chapters():
                 problems.append(commentary)
         return problems
+
+    @staticmethod
+    def commentary_ja_node(en_title, he_title):
+        """
+        Each commentary is a complex text, with a root schema and depth 3 JAnodes for each tractate. The JAnode for each
+        tractate is essentially identical across commentaries. The root schema is what defines the particular
+        commentator.
+        :param en_title: English Title of base text
+        :param he_title: Hebrew Title of base text
+        :return: JaggedArrayNode
+        """
+        node = JaggedArrayNode()
+        node.add_primary_titles(en_title, he_title)
+        node.add_structure(['Chapter', 'Halakhah', 'Comment'])
+        node.validate()
+        return node
+
+    @staticmethod
+    def get_stored_links(base_title):
+        links = []
+        for comment in commentStore:
+            base_ref = '{} {}:{}'.format(base_title, comment['chapter'], comment['verse'])
+            comment_ref = '{}, {}:{}'.format(comment['commentator'], base_ref, comment['order'])
+            links.append({
+                'refs': [base_ref, comment_ref],
+                'type': 'commentary',
+                'auto': True,
+                'genrated_by': 'Masechtot Ketanot Parser'
+            })
+        return links
+
 
 supermod.book.subclass = bookSub
 # end class bookSub
@@ -195,12 +229,25 @@ class commentarySub(supermod.commentary):
             expected_chapter += 1
 
     def parse_linked(self):
-        parsed = JaggedArray([[]])  # all commentaries are depth 2?
+        parsed = JaggedArray([[[]]])  # all commentaries are depth 2?
         for phrase in self.get_phrase():
-            indices = (commentStore[phrase.id]['chapter'], commentStore[phrase.id]['order'])
+            indices = (commentStore[phrase.id]['chapter'], commentStore[phrase.id]['verse'], commentStore[phrase.id]['order'])
             text = phrase.get_comment().valueOf_.replace(u'\n', u'')
             parsed.set_element([i-1 for i in indices], text)
         return parsed.array()
+
+    def parse_unlinked(self):
+        pass
+
+    def build_node(self):
+        """
+        Builds the root schema node for the commentary
+        :return: SchemaNode
+        """
+        node = SchemaNode()
+        he_title = self.get_author()
+        node.add_primary_titles(commentatorNames[he_title], he_title)
+        return node
 
 
 supermod.commentary.subclass = commentarySub
@@ -412,6 +459,7 @@ def parse(inFilename, silence=False):
     rootObj.build(rootNode)
 
     #bespoke
+    commentStore.clear()
     rootObj.populateCommentStore()
 
     # Enable Python to collect the space used by the DOM.

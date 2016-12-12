@@ -90,6 +90,7 @@ def text_parse():
     ja_to_xml(parsed,['perek','mishna','dibur'],filename = 'pri.xml')
     return parsed
 
+
 # get the parssed text (it is a jagged array depth 3, ['perek','mishna','dibur']
 pri = text_parse()
 # specefid post function
@@ -102,46 +103,47 @@ def post_this():
     }
 
     schema = JaggedArrayNode()
-    schema.add_title('Pri Yitzhak on Sefer Yetzirah Ari Version', 'en', True)
+    schema.add_title('Pri Yitzhak on Sefer Yetzirah Gra Version', 'en', True)
     schema.add_title(u'פרי יצחק על ספר יצירה', 'he', True)
-    schema.key = 'Pri Yitzhak on Sefer Yetzirah Ari Version'
+    schema.key = 'Pri Yitzhak on Sefer Yetzirah Gra Version'
     schema.depth = 3
     schema.addressTypes = ['Integer', 'Integer','Integer']
     schema.sectionNames = ['Chapter', 'Mishnah','Comment']
     schema.validate()
 
     index_dict = {
-        'title': 'Pri Yitzhak on Sefer Yetzirah Ari Version',
+        'title': 'Pri Yitzhak on Sefer Yetzirah Gra Version',
         'categories': ['Commentary2','Kabbalah','pri yitzhak'],
         'schema': schema.serialize() # This line converts the schema into json
     }
     post_index(index_dict)
 
-    post_text('Pri Yitzhak on Sefer Yetzirah Ari Version', text_version, index_count='on')
+    post_text('Pri Yitzhak on Sefer Yetzirah Gra Version', text_version, index_count='on')
 
 # post with the post function
 post_this()
 
-# create the link objects btween the dibur HaMatchil of the Pri Yitzhak and the main text
-pri_links = []
-# use a generator to go over the text and find the 3 level indices
-for dh in traverse_ja(pri):
-        link = (
-            {
-            "refs": [
-                "Pri Yitzhak on Sefer Yetzirah Ari Version" + '%d:%d:%d' %tuple(x+1 for x in dh['indices']),
-                "Sefer Yetzirah Ari Version " + '%d:%d' %tuple(x+1 for x in dh['indices'][:2]),
-            ],
-            "type": "commentary",
-            "auto": True,
-            "generated_by": "pri_yitzhak_parse"
-        })
-        dh_text = dh['data']
-        # append to links list
-        pri_links.append(link)
-
-# shave off the last link of "slik" shpuldn't be linked in
-pri_links.pop()
+def link_pri(text_ja):
+    # create the link objects btween the dibur HaMatchil of the Pri Yitzhak and the main text
+    pri_links = []
+    # use a generator to go over the text and find the 3 level indices
+    for dh in traverse_ja(text_ja):
+            link = (
+                {
+                "refs": [
+                    "Pri Yitzhak on Sefer Yetzirah Gra Version" + '%d:%d:%d' %tuple(x+1 for x in dh['indices']),
+                    "Sefer Yetzirah Gra Version " + '%d:%d' %tuple(x+1 for x in dh['indices'][:2]),
+                ],
+                "type": "commentary",
+                "auto": True,
+                "generated_by": "pri_yitzhak_parse"
+            })
+            dh_text = dh['data']
+            # append to links list
+            pri_links.append(link)
+    return pri_links
+    # shave off the last link of "slik" shpuldn't be linked in
+    pri_links.pop()
 
 # find links in the pri that are of form bookName(chapter leter)
 def find_links_in_pri():
@@ -157,4 +159,4 @@ def find_links_in_pri():
                 print site.span(), site.group()
 
 # save to mongo the list of dictionaries.
-post_link(pri_links)
+post_link(link_pri())

@@ -102,16 +102,16 @@ def post_this():
     }
 
     schema = JaggedArrayNode()
-    schema.add_title('HaGra on Sefer Yetzirah Ari Version', 'en', True)
+    schema.add_title('HaGra on Sefer Yetzirah Gra Version', 'en', True)
     schema.add_title(u'פירוש הגר"א על ספר יצירה', 'he', True)
-    schema.key = 'HaGra on Sefer Yetzirah Ari Version'
+    schema.key = 'HaGra on Sefer Yetzirah Gra Version'
     schema.depth = 3
     schema.addressTypes = ['Integer', 'Integer','Integer']
     schema.sectionNames = ['Chapter', 'Mishnah','Comment']
     schema.validate()
 
     index_dict = {
-        'title': 'HaGra on Sefer Yetzirah Ari Version',
+        'title': 'HaGra on Sefer Yetzirah Gra Version',
         'categories': ['Commentary2','Kabbalah','Gra'],
         'schema': schema.serialize() # This line converts the schema into json
     }
@@ -129,8 +129,8 @@ for dh in traverse_ja(gra):
         link = (
             {
             "refs": [
-                "HaGra on Sefer Yetzirah Ari Version " + '%d:%d:%d' %tuple(x+1 for x in dh['indices']),
-                "Sefer Yetzirah Ari Version " + '%d:%d' %tuple(x+1 for x in dh['indices'][:2]),
+                "HaGra on Sefer Yetzirah Gra Version " + '%d:%d:%d' %tuple(x+1 for x in dh['indices']),
+                "Sefer Yetzirah Gra Version " + '%d:%d' %tuple(x+1 for x in dh['indices'][:2]),
             ],
             "type": "commentary",
             "auto": True,
