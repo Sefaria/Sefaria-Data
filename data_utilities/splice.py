@@ -768,11 +768,10 @@ class SplitSegmentGroup(object):
 
     def _get_segment_breaks(self):
         """
-        Return a dictionary, keyed by segment number, one for each segment contained in this group.
-        If a segment isn't broken, value is an empty dictionary
-        If a segment is broken, value is a dictionary with keys:
-            "offset": index in self.segment_maps where this segment is found
-            "breaks": list of word where segments transition
+        Return a dictionary, keyed by source segment number, one for each segment contained in this group.
+        Value is a dictionary, with key "offset" - indicating position of resultant segments
+            (relative to this SplitSegmentGroup only, i.e. index in self.segment_maps where this segment is found)
+        If a segment is broken, value has key "breaks": list of word indexes where segments transition
         :return:
         """
         segment_breaks = {}
@@ -780,7 +779,7 @@ class SplitSegmentGroup(object):
             segment_breaks[i] = {}
         for smi, sm in enumerate(self.segment_maps):
             if sm.start_word is not None:
-                segment_breaks[sm.first_segment_index]["breaks"] += [sm.start_word]
+                segment_breaks[sm.first_segment_index]["breaks"] += [sm.start_word - 1]
                 for i in range(sm.first_segment_index + 1, sm.last_segment_index + 1):
                     segment_breaks[i]["offset"] = smi
             else:
@@ -809,7 +808,8 @@ class SplitSegmentGroup(object):
                     words = re.split("\s+", self.section_text.text[i])
                     word_ranges = match_text(words,
                                              merged_text_chunk.text[i],
-                                             dh_extract_method=lambda s: s.split(u" - ")[0]
+                                             dh_extract_method=dh_extract_method,
+                                             place_all=True
                                              )["matches"]
                     old_to_new += [[bisect.bisect_right(self.segment_breaks[i]["breaks"], w[0]) +
                                     self.segment_breaks[i]["offset"]
@@ -1205,9 +1205,13 @@ class BookSplicer(object):
         for c in self.section_splicers[-1].commentary_titles:
             rebuild_commentary_links(c, 28)
 
-
     def _build_segment_map(self):
         res = {}
         for s in self.section_splicers:
             res.update(s.get_segment_lookup_dictionary())
         return res
+
+
+def dh_extract_method(s):
+    dh = re.split(u"\s+[-\u2013]\s+", s)[0]
+    return re.sub(ur"\s+\u05d5?\u05db\u05d5['\u05f3]", u"", dh)  # space, vav?, kaf, vav, single quote or geresh
