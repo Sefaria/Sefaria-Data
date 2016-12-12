@@ -25,6 +25,7 @@ from lxml import etree as etree_
 from sefaria.datatype.jagged_array import JaggedArray
 import DCXML as supermod
 
+
 def parsexml_(infile, parser=None, **kwargs):
     if parser is None:
         # Use the lxml ElementTree compatible parser so that, e.g.,
@@ -84,15 +85,16 @@ class bookSub(supermod.book):
                 heName = c.get_author()#.content_[0].getValue()
                 enName = commentatorNames.get(heName)
                 chapters = c.get_chapter() if c.get_chapter() else [c]
-                current_chapter, order = 0, 0
+                current_chapter, current_verse, order = 0, 0, 0
                 for chapter in chapters:
                     for p in chapter.get_phrase():
                         if p.id:
                             if commentStore.get(p.id) is None:
                                 linked = False
                                 continue
-                            if commentStore[p.id]["chapter"] != current_chapter:
+                            if (commentStore[p.id]["chapter"] != current_chapter) or (commentStore[p.id]["verse"]) != current_verse:
                                 current_chapter = commentStore[p.id]["chapter"]
+                                current_verse = commentStore[p.id]["verse"]
                                 order = 0
                             order += 1
                             commentStore[p.id]["commentator"] = enName
@@ -195,9 +197,9 @@ class commentarySub(supermod.commentary):
             expected_chapter += 1
 
     def parse_linked(self):
-        parsed = JaggedArray([[]])  # all commentaries are depth 2?
+        parsed = JaggedArray([[[]]])  # all commentaries are depth 2?
         for phrase in self.get_phrase():
-            indices = (commentStore[phrase.id]['chapter'], commentStore[phrase.id]['order'])
+            indices = (commentStore[phrase.id]['chapter'], commentStore[phrase.id]['verse'], commentStore[phrase.id]['order'])
             text = phrase.get_comment().valueOf_.replace(u'\n', u'')
             parsed.set_element([i-1 for i in indices], text)
         return parsed.array()
