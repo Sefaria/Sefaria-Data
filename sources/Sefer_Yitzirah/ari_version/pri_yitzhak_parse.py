@@ -94,7 +94,7 @@ def text_parse():
 # get the parssed text (it is a jagged array depth 3, ['perek','mishna','dibur']
 pri = text_parse()
 # specefid post function
-def post_this():
+def post_this(pri):
     text_version = {
         'versionTitle': 'Sefer Yetzirah, Warsaw 1884',
         'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001310968',
@@ -121,7 +121,7 @@ def post_this():
     post_text('Pri Yitzhak on Sefer Yetzirah Gra Version', text_version, index_count='on')
 
 # post with the post function
-post_this()
+post_this(pri)
 
 def link_pri(text_ja):
     # create the link objects btween the dibur HaMatchil of the Pri Yitzhak and the main text
@@ -131,7 +131,7 @@ def link_pri(text_ja):
             link = (
                 {
                 "refs": [
-                    "Pri Yitzhak on Sefer Yetzirah Gra Version" + '%d:%d:%d' %tuple(x+1 for x in dh['indices']),
+                    "Pri Yitzhak on Sefer Yetzirah Gra Version " + '%d:%d:%d' %tuple(x+1 for x in dh['indices']),
                     "Sefer Yetzirah Gra Version " + '%d:%d' %tuple(x+1 for x in dh['indices'][:2]),
                 ],
                 "type": "commentary",
@@ -141,9 +141,10 @@ def link_pri(text_ja):
             dh_text = dh['data']
             # append to links list
             pri_links.append(link)
-    return pri_links
-    # shave off the last link of "slik" shpuldn't be linked in
+            # shave off the last link of "slik" shpuldn't be linked in
     pri_links.pop()
+    return pri_links
+
 
 # find links in the pri that are of form bookName(chapter leter)
 def find_links_in_pri():
@@ -159,4 +160,4 @@ def find_links_in_pri():
                 print site.span(), site.group()
 
 # save to mongo the list of dictionaries.
-post_link(link_pri())
+post_link(link_pri(pri))

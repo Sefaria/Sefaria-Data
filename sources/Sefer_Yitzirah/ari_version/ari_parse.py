@@ -58,22 +58,23 @@ def post_this():
         'text': ari_parse()
     }
 
-    schema = JaggedArrayNode()
-    schema.add_title('Sefer Yetzirah Ari Version', 'en', True)
-    schema.add_title(u'ספר יצירה גרסאת הארי', 'he', True)
-    schema.key = 'Sefer Yetzirah Ari Version'
-    schema.depth = 2
-    schema.addressTypes = ['Integer', 'Integer']
-    schema.sectionNames = ['Chapter', 'Mishnah']
-    schema.validate()
+# we decide to put it as another version of the SeferYetzira Gra version that is up already.
+    # schema = JaggedArrayNode()
+    # schema.add_title('Sefer Yetzirah Gra Version', 'en', True)
+    # schema.add_title(u'ספר יצירה גרסאת הארי', 'he', True)
+    # schema.key = 'Sefer Yetzirah Gra Version'
+    # schema.depth = 2
+    # schema.addressTypes = ['Integer', 'Integer']
+    # schema.sectionNames = ['Chapter', 'Mishnah']
+    # schema.validate()
+    #
+    # index_dict = {
+    #     'title': 'Sefer Yetzirah Gra Version',
+    #     'categories': ['Kabbalah'],
+    #     'schema': schema.serialize() # This line converts the schema into json
+    # }
+    # post_index(index_dict)
 
-    index_dict = {
-        'title': 'Sefer Yetzirah Ari Version',
-        'categories': ['Kabbalah'],
-        'schema': schema.serialize() # This line converts the schema into json
-    }
-    post_index(index_dict)
-
-    post_text('Sefer Yetzirah Ari Version', text_version, index_count='on')
+    post_text('Sefer Yetzirah Gra Version', text_version, index_count='on')
 
 post_this()

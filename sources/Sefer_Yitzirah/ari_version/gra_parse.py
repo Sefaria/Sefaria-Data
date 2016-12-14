@@ -117,7 +117,7 @@ def post_this():
     }
     post_index(index_dict)
 
-    post_text('HaGra on Sefer Yetzirah', text_version, index_count='on')
+    post_text('HaGra on Sefer Yetzirah Gra Version', text_version, index_count='on')
 
 # post with the post function
 post_this()
