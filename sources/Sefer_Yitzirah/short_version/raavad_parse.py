@@ -32,7 +32,8 @@ def raavad_parse():
     ja_32_netivot = threty_two_parse(lines[ja_sp[2]:ja_sp[3]], replace_dict, 'netivot')
     ja_32_hakdama_p = threty_two_parse(lines[ja_sp[3]:ja_sp[4]], replace_dict, 'hakdama_p')
     ja_32_perush = threty_two_parse(lines[ja_sp[4]:ja_sp[5]], replace_dict, 'perush')
-    ja_raavad_perush = raavad_perush_parse(lines[ja_sp[5]:], replace_dict)
+    ja_old_parse = raavad_perush_parse(lines[ja_sp[5]:], replace_dict)
+    ja_raavad_perush = raavad_new_parse(ja_old_parse)
 
     #  not nice fixing of segments into break tags
     ja_32_netivot[31] = ja_32_netivot[31] + '<br><small>' + ja_32_netivot[32] + '</small>'
@@ -44,7 +45,9 @@ def raavad_parse():
                 'Raavad on Sefer Yetzirah, Introduction, The Fifty Gates of Understanding': ja_fifty,
                 'Raavad on Sefer Yetzirah, Introduction, The Thirty Two Paths of Wisdom, Introduction': ja_32_hakdama_n,
                 'Raavad on Sefer Yetzirah, Introduction, The Thirty Two Paths of Wisdom': ja_32_netivot,
-                'Raavad on Sefer Yetzirah, Introduction, The Thirty Two Paths of Wisdom, The Thirty Two Paths Explained': ja_32_perush}
+                'Raavad on Sefer Yetzirah, Introduction, The Thirty Two Paths of Wisdom, The Thirty Two Paths Explained': ja_32_perush,
+                'old_parsing_of_perush' : ja_old_parse # outputing the old parse since it is used for the linking and linking is an outer function
+            }
 
 
 def fifty_parse(lines, replace_dict):
@@ -52,8 +55,12 @@ def fifty_parse(lines, replace_dict):
     arr = []
     perek = []
     peska = []
-    lines = split_lines(lines)
+    new_lines = []
     for line in lines:
+        line = split_lines(line)
+        new_lines.extend(line)
+
+    for line in new_lines:
         if line.find(ur'@05') is not -1:
             if perek:
 
@@ -73,16 +80,14 @@ def fifty_parse(lines, replace_dict):
 
     return arr
 
-# split long lines into smaller ones useing key words like "VeHene".
+# split a long line into a list of smaller lines useing key words like "VeHene".
 #   note: if you use this spliting methos you want to be sure not to use the "".join()
 
-def split_lines(lines):
-    ret = []
-    for line in lines:
-        line = re.sub(u'\. (\u05d5?(\u05d4\u05e0\u05d4|\u05e2\u05d5\u05d3))',ur'. #\1', line)
-        line_list = re.split(ur'#', line)
-        ret = ret + line_list
-    return ret
+def split_lines(line):
+    # for line in lines:
+    line = re.sub(u'\. (\u05d5?(\u05d4\u05e0\u05d4|\u05e2\u05d5\u05d3))',ur'. ~\1', line)
+    line_list = re.split(ur'~', line)
+    return line_list
 
 def threty_two_parse(lines, replace_dict, str):
     # start the parsing of 32 netivot
@@ -129,7 +134,7 @@ def raavad_perush_parse(lines, replace_dict):
                 arr.append(perek)
                 perek = []
                 first_m = True  # since this is opening a new perek
-
+                first_d = True
         elif line.find(u'@22') is not -1:  # notice that this parsing is given that there is no text on same line with @22 and @00
             # mishna
             if first_m:
@@ -161,6 +166,19 @@ def raavad_perush_parse(lines, replace_dict):
     ja_to_xml(arr,['perek', 'mishna', 'dibur'], 'raavad_text.xml')
 
     return arr
+
+
+def raavad_new_parse(ja):
+
+    newJa, m1, p1 = [], [], []
+    for p in ja:
+        for m in p:
+            d1 = [split_lines(d) for d in m]
+            p1.extend(d1)
+        newJa.append(p1)
+        p1 = []
+    ja_to_xml(newJa,['perek', 'dibur','paragraph'], 'new_parse.xml')
+    return newJa
 
 
 def ravaad_schema():
@@ -258,7 +276,8 @@ def post_raavad_text(text_dict):
             'language': 'he',
             'text': text_dict[ja]
         }
-        post_text(ja, version)
+        if ja != 'old_parsing_of_perush':
+            post_text(ja, version)
     # index_count = "off"
 
 
@@ -292,7 +311,7 @@ def link_raavad(text_ja):
         link = (
             {
                 "refs": [
-                    "Raavad on Sefer Yetzirah , " + '%d:%d:%d' % tuple(x + 1 for x in dh['indices']),
+                    "Raavad on Sefer Yetzirah " + '%d:%d:%d' % tuple(x + 1 for x in dh['indices']),
                     "Sefer Yetzirah " + '%d:%d' % tuple(x + 1 for x in dh['indices'][:2]),
                 ],
                 "type": "commentary",
@@ -308,14 +327,57 @@ def link_raavad(text_ja):
 
 # main
 #get the dictionary with all the ja.
-text_dict = raavad_parse()
+def main():
+    text_dict = raavad_parse()
 
-post_raavad_index()
+    post_raavad_index()
 
-post_raavad_text(text_dict)
+    post_raavad_text(text_dict)
+    # save to mongo the links text <-> raavad.
+    post_link(linking(text_dict['old_parsing_of_perush']))
+    # save to mongo links 32 <-> perush 32
+    post_link(link_32())
 
-# save to mongo the links text <-> raavad.
-post_link(link_raavad(text_dict['Raavad on Sefer Yetzirah']))
+def build_table(old_ja):
+    j = 0
+    ind_list = []
+    for x in traverse_ja(old_ja):
+        k = x['indices']
+        # k0 = '{}'.format(k[0])
+        # k1 = '{}'.format(k[1])
+        # k2 = '{}'.format(k[2])
+        # l = [j_str,k0,k1,k2]
+        l = [j, k[0], k[1], k[2]]
+        ind_list.append(l)
+        j += 1
+    return ind_list
 
-# save to mongo links 32 <-> perush 32
-post_link(link_32())
+
+def linking(old_ja):
+    # create the link objects btween the dibur HaMatchil and the main text
+    links = []
+    # count comment in perek
+    comm_counter = 0
+    for i_perek, perek in enumerate(old_ja):
+        for i_mishna, mishna in enumerate(perek):
+
+            for i in range(len(mishna)):
+                link = (
+                    {
+                        "refs": [
+                            'Raavad on Sefer Yetzirah {}:{}'.format(i_perek + 1, i + comm_counter  + 1),
+                            'Sefer Yetzirah {}:{}'.format(i_perek + 1, i_mishna + 1),
+                        ],
+                        "type": "commentary",
+                        "auto": True,
+                        "generated_by": "raavad_parse"
+                    })
+                    # append to links list
+                links.append(link)
+            comm_counter += len(mishna)
+        comm_counter = 0
+    # shave off the last link of "slik" shouldn't be linked in  -todo: maybe should be with <br> otherwise it counts it as a comment in the TOC?
+    links.pop()
+    return links
+
+# main()
