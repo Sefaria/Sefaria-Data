@@ -21,6 +21,7 @@
 #
 
 import sys
+import itertools
 from lxml import etree as etree_
 from sefaria.datatype.jagged_array import JaggedArray
 from sefaria.model.schema import SchemaNode, JaggedArrayNode
@@ -43,6 +44,9 @@ ExternalEncoding = 'utf-8'
 
 # Global reference for id'd comments
 commentStore = {}
+
+# Global reference for non-id'd comments
+unlinkedCommentStore = {}
 
 commentatorNames = {
     u"מסורת הש״ס": "Mesorat HaShas on Masechtot Ketanot",
@@ -141,9 +145,9 @@ class bookSub(supermod.book):
     @staticmethod
     def get_stored_links(base_title):
         links = []
-        for comment in commentStore:
+        for comment in itertools.chain(commentStore, unlinkedCommentStore):
             base_ref = '{} {}:{}'.format(base_title, comment['chapter'], comment['verse'])
-            comment_ref = '{}, {}:{}'.format(comment['commentator'], base_ref, comment['order'])
+            comment_ref = '{}, {}:{}:{}'.format(comment['commentator'], base_ref, comment['verse'], comment['order'])
             links.append({
                 'refs': [base_ref, comment_ref],
                 'type': 'commentary',
@@ -151,6 +155,19 @@ class bookSub(supermod.book):
                 'genrated_by': 'Masechtot Ketanot Parser'
             })
         return links
+
+    @staticmethod
+    def get_base_index(en_title, he_title):
+        node = JaggedArrayNode()
+        node.add_primary_titles(en_title, he_title)
+        node.add_structure(['Chapter', 'Halakhah'])
+        node.validate()
+
+        return {
+            'title': en_title,
+            'categories': ["Masechtot Ketanot"],
+            'schema': node.serialize()
+        }
 
 
 supermod.book.subclass = bookSub
@@ -460,6 +477,7 @@ def parse(inFilename, silence=False):
 
     #bespoke
     commentStore.clear()
+    unlinkedCommentStore.clear()
     rootObj.populateCommentStore()
 
     # Enable Python to collect the space used by the DOM.
