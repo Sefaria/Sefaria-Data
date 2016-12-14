@@ -448,7 +448,12 @@ class RashiUnit:
 
         # if it starts with הג, then take just 3 words afterwords
         if self.startingText.startswith(u"ה\"ג") or self.startingText.startswith(u"ה״ג"):
-            normalizedCV = re.search(ur"[^ ]+ ([^ ]+( [^ ]+)?( [^ ]+)?)", normalizedCV).group(1)
+            try:
+                normalizedCV = re.search(ur"[^ ]+ ([^ ]+( [^ ]+)?( [^ ]+)?)", normalizedCV).group(1)
+            except AttributeError:
+                print u"Tripped up on " + u"ה״ג"
+                normalizedCV = normalizedCV
+
 
         # // now remove all non-letters, allowing just quotes
         normalizedCV = re.sub(ur"[^א-ת \"״]", u"", normalizedCV).strip()

@@ -2,6 +2,7 @@
 
 import regex as re
 import bisect
+import itertools
 
 from sefaria.model import *
 from sefaria.system.exceptions import InputError
@@ -640,6 +641,8 @@ class SegmentMap(object):
         self.first_segment_index = self.start_ref.sections[-1] - 1
         self.last_segment_index = self.end_ref.sections[-1] - 1
 
+        self.num_segments = 1
+
         self.commentary_mappings = {}
 
     def __eq__(self, other):
@@ -660,12 +663,14 @@ class SegmentMap(object):
     def is_blank(self):
         return False
 
+    """
     #used?
     def unbroken_segment_indexes(self):
         usi = [self.first_segment_index] if self.start_word is None else []
         usi += range(self.first_segment_index+1, self.last_segment_index)
         usi += [self.last_segment_index] if self.end_word is None else []
         return usi
+    """
 
     def immediately_follows(self, other):
         if not other.end_word and not self.start_word and self.start_ref.sections[-1] == other.end_ref.sections[-1] + 1:
@@ -674,7 +679,25 @@ class SegmentMap(object):
             return True
         return False
 
-    # todo? Can these two be merged?  The only question is what kind of return values we need.
+    def ref_maps(self):
+        """
+        Returns dict String -> Offset
+            Offset is a list of offsets after the Daf section.
+            Each element may be a digit.  Last element may be a digit or a tuple (indicating range).
+        For all refs in base text and commentary covered by this segment map
+        :return:
+        """
+        d = {source_ref.normal():[0] for source_ref in self.start_ref.to(self.end_ref).range_list()}
+        for commentor in self.commentary_mappings:
+            base_ref = Ref("{} on {}".format(commentor, self.start_ref.section_ref().normal()))
+            offset_aggregator = 0
+            for i, num_in_line in enumerate(self.commentary_mappings[commentor]):
+                line_ref = base_ref.subref(self.start_ref.sections[-1] + i)
+                for j in range(1, num_in_line + 1):
+                    d[line_ref.subref(j).normal()] = [0, offset_aggregator + j]
+                offset_aggregator += num_in_line
+        return d
+
     def reshape_commentary_version(self, commentator_name, commentator_text_chunk):
         """
 
@@ -691,9 +714,12 @@ class SegmentMap(object):
 
         csections = commentator_text_chunk.text[self.first_segment_index:self.last_segment_index + 1]
         for i, csec in enumerate(csections):
-            new_text = [u""] * old_length_map[i]
-            new_text[:len(csec)] = csec
-            full_segment += new_text
+            try:
+                new_text = [u""] * old_length_map[i]
+                new_text[:len(csec)] = csec
+                full_segment += new_text
+            except IndexError:
+                break
         return [full_segment]
 
     def build_master_commentary_mapping(self, commentator_name, merged_text_chunk):
@@ -750,7 +776,15 @@ class SegmentMap(object):
 
 
 class SplitSegmentGroup(object):
+    """
+    When a old segment is split between new segments, this is used to rewrite the commentaries,
+    using Dibbur Hamatchil matching in order to place them
+    """
     def __init__(self, segment_maps, section_text):
+        """
+        :param segment_maps: List of SegmentMaps
+        :param section_text: TextChunk - the canonical Hebrew for this base text section
+        """
         assert isinstance(section_text, TextChunk)
         assert all([isinstance(a, SegmentMap) for a in segment_maps])
 
@@ -759,9 +793,8 @@ class SplitSegmentGroup(object):
         self.num_segments = len(segment_maps)
         self.segment_range = range(self.segment_maps[0].first_segment_index, self.segment_maps[-1].last_segment_index + 1)
         self.segment_breaks = self._get_segment_breaks()
-        # self.broken_segments_list = [i for i in self.segment_range if self.segment_breaks[i]]
-        # self.broken_segments_mask = [True if self.segment_breaks[i] else False for i in self.segment_range]
-        self.commentary_mappings = {}
+        self.commentary_mappings = {}   # In the shape of the old commentary, a list of offsets in the new commentary to place at.
+        self.commentary_determinations = []  # List of {} with keys: section: string, commentator: string, comment: string, dh: string, choice: int, potential_placements: list,
 
     def __repr__(self):
         return "SplitSegmentGroup({})".format(self.segment_maps)
@@ -789,6 +822,36 @@ class SplitSegmentGroup(object):
                 segment_breaks[sm.last_segment_index] = {"breaks": [], "offset": smi}
         return segment_breaks
 
+    def ref_maps(self):
+        """
+        Returns dict String -> Offset
+            Offset is a list of offsets after the Daf section.
+            Each element may be a digit.  Last element may be a digit or a tuple (indicating range).
+        For all refs in base text and commentary covered by this segment map
+        :return:
+        """
+        d = {}
+        section_ref = self.segment_maps[0].start_ref.section_ref()
+        for seg_num in self.segment_range:
+            if "breaks" not in self.segment_breaks[seg_num]:
+                d[section_ref.subref(seg_num + 1).normal()] = [self.segment_breaks[seg_num]["offset"]]
+            else:
+                d[section_ref.subref(seg_num + 1).normal()] = [(self.segment_breaks[seg_num]["offset"], self.segment_breaks[seg_num]["offset"] + len(self.segment_breaks[seg_num]["breaks"]))]
+
+        for commentor in self.commentary_mappings:
+            base_ref = Ref("{} on {}".format(commentor, section_ref.normal()))
+
+            old_to_new = self.commentary_mappings[commentor]
+
+            offset_aggregator = {a:1 for a in xrange(self.num_segments)}
+            for i, section in enumerate(old_to_new):
+                for j, offset in enumerate(section):
+                    d[base_ref.subref(self.segment_range[i] + 1).subref(j+1).normal()] = [offset, offset_aggregator[offset]]
+                    offset_aggregator[offset] += 1
+
+        return d
+
+
     def build_master_commentary_mapping(self, commentator_name, merged_text_chunk):
         """
         Use the merged Hebrew version of the commentator in order to build a master map
@@ -811,9 +874,21 @@ class SplitSegmentGroup(object):
                                              dh_extract_method=dh_extract_method,
                                              place_all=True
                                              )["matches"]
-                    old_to_new += [[bisect.bisect_right(self.segment_breaks[i]["breaks"], w[0]) +
-                                    self.segment_breaks[i]["offset"]
-                                    for w in word_ranges]]
+                    breaks = self.segment_breaks[i]["breaks"]
+                    offset = self.segment_breaks[i]["offset"]
+                    subsegs = [(0, breaks[0])] + [(breaks[bi-1], breaks[bi]) for bi in xrange(1,len(breaks))] + [(breaks[-1], None)]
+                    potential_placements = [u" ".join(words[a:b]) for a,b in subsegs]
+                    placements = [bisect.bisect_right(breaks, w[0]) for w in word_ranges]
+                    old_to_new += [[p + offset for p in placements]]
+
+                    self.commentary_determinations += [{
+                        "section": self.section_text._oref.normal(),
+                        "commentator": commentator_name,
+                        "comment": comment,
+                        "dh": dh_extract_method(comment),
+                        "choice": placements[j] + 1,
+                        "potential_placements": potential_placements,
+                    } for j, comment in enumerate(merged_text_chunk.text[i])]
             except IndexError:
                 # Commentary ends before end of section
                 break
@@ -923,21 +998,44 @@ class SectionSplicer(AbstractSplicer):
             # If we want to review the complete collection of segments before processing, here's the place.
             self._ready = True
 
+    def get_commentary_determinations(self):
+        r = []
+        for sm in self.commentary_split_mappers:
+            if isinstance(sm, SplitSegmentGroup):
+                r += sm.commentary_determinations
+        return r
+
     def get_segment_lookup_dictionary(self):
         """
-        Returns a dictionary: Ref -> List of Refs
+        Returns a dictionary: Ref -> Ref
         Maps Refs in old segmentation to a list of refs in new segmentation that have content from the old ref.
+        Both base text and commentary
+
+        Relies on ref_maps() of underlying mappers, which return dict String -> Offsets
+            Offsets is a list of offsets after the Daf section.
+            Each element may be a digit.  Last element may be a digit or a tuple (indicating range).
+        For all refs in base text and commentary covered by this segment map
         :return:
         """
         result = {}
-        for i, sm in enumerate(self.segment_maps):
-            target_ref = self.section_ref.subref(i + 1)
-            for source_ref in sm.start_ref.to(sm.end_ref).range_list():
-                if result.get(source_ref):
-                    result[source_ref] += [target_ref]
+        current_segment = 1
+        for mapper in self.commentary_split_mappers:
+            for ref, offsets in mapper.ref_maps().iteritems():
+                target_ref = Ref(ref).top_section_ref()
+                # first element is daf segment
+
+                if isinstance(offsets[0], tuple):
+                    target_ref = target_ref.subref(current_segment + offsets[0][0]).to(target_ref.subref(current_segment + offsets[0][1]))
                 else:
-                    result[source_ref] = [target_ref]
+                    target_ref = target_ref.subref(current_segment + offsets[0])
+                    if len(offsets) == 2:
+                        target_ref = target_ref.subref(offsets[1])
+
+                result[ref] = target_ref.normal()
+
+            current_segment += mapper.num_segments
         return result
+
 
     """
     This may not actually be useful
@@ -1164,7 +1262,7 @@ class BookSplicer(object):
         assert all([isinstance(a, SectionSplicer) for a in section_splicers])
         self.section_splicers = section_splicers
 
-        self.segment_map = self._build_segment_map
+        self.segment_map = self._build_segment_map()
 
     def test(self):
         for sp in self.section_splicers:
@@ -1197,13 +1295,21 @@ class BookSplicer(object):
 
         en_version.save()
         he_version.save()
+
         self.section_splicers[-1].refresh_states()
-        # self.section_splicers[-1]._update_summaries()
+
         from sefaria.helper.link import rebuild_links_from_text, rebuild_commentary_links
-        # rebuild_links_from_text(self.book_ref.normal(), 28)
+        #  This is long-running, and probably unnecesarry, given that all of the links were resaved.
+        #  rebuild_links_from_text(self.book_ref.normal(), 28)
 
         for c in self.section_splicers[-1].commentary_titles:
             rebuild_commentary_links(c, 28)
+
+    def get_commentary_determinations(self):
+        r = []
+        for s in self.section_splicers:
+            r += s.get_commentary_determinations()
+        return r
 
     def _build_segment_map(self):
         res = {}
@@ -1213,5 +1319,5 @@ class BookSplicer(object):
 
 
 def dh_extract_method(s):
-    dh = re.split(u"\s+[-\u2013]\s+", s)[0]
+    dh = re.split(u"(\s+[-\u2013]\s+|\.\s+)", s)[0] # Try " - ", or failing that ". "
     return re.sub(ur"\s+\u05d5?\u05db\u05d5['\u05f3]", u"", dh)  # space, vav?, kaf, vav, single quote or geresh
