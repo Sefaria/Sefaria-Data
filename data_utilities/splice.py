@@ -851,7 +851,6 @@ class SplitSegmentGroup(object):
 
         return d
 
-
     def build_master_commentary_mapping(self, commentator_name, merged_text_chunk):
         """
         Use the merged Hebrew version of the commentator in order to build a master map
@@ -1303,7 +1302,7 @@ class BookSplicer(object):
         #  rebuild_links_from_text(self.book_ref.normal(), 28)
 
         for c in self.section_splicers[-1].commentary_titles:
-            rebuild_commentary_links(c, 28)
+            rebuild_commentary_links(c, 28, commentary_override=True)
 
     def get_commentary_determinations(self):
         r = []

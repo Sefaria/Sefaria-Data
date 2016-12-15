@@ -212,7 +212,6 @@ class TestSegmentMapPartialVerse(object):
         assert self.splicer.segment_maps[9].get_text(tc) == u"מתנה לאביי הא תמני"
 
 
-
 class TestSegmentMapAdjustment(object):
     def setup_method(self, method):
         splicer = SectionSplicer()
@@ -229,7 +228,7 @@ class TestSegmentMapAdjustment(object):
         self.splicer = splicer
 
     def test_adjustment(self):
-        assert len(self.splicer.adjusted_segment_maps) # Did it derive the new ones?
+        assert len(self.splicer.adjusted_segment_maps)  # Did it derive the new ones?
 
         target = [
             SegmentMap(Ref("Shabbat 2b:1"), Ref("Shabbat 2b:2")),
