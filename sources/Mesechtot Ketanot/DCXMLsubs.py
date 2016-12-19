@@ -25,7 +25,7 @@ import itertools
 from lxml import etree as etree_
 from sefaria.datatype.jagged_array import JaggedArray
 from sefaria.model.schema import SchemaNode, JaggedArrayNode
-import DCXML as supermod
+import DCxml2 as supermod
 
 
 def parsexml_(infile, parser=None, **kwargs):
@@ -46,7 +46,7 @@ ExternalEncoding = 'utf-8'
 commentStore = {}
 
 # Global reference for non-id'd comments
-unlinkedCommentStore = {}
+unlinkedCommentStore = []
 
 commentatorNames = {
     u"מסורת הש״ס": "Mesorat HaShas on Masechtot Ketanot",
@@ -145,7 +145,7 @@ class bookSub(supermod.book):
     @staticmethod
     def get_stored_links(base_title):
         links = []
-        for comment in itertools.chain(commentStore, unlinkedCommentStore):
+        for comment in itertools.chain(commentStore.values(), unlinkedCommentStore):
             base_ref = '{} {}:{}'.format(base_title, comment['chapter'], comment['verse'])
             comment_ref = '{}, {}:{}:{}'.format(comment['commentator'], base_ref, comment['verse'], comment['order'])
             links.append({
@@ -253,9 +253,6 @@ class commentarySub(supermod.commentary):
             parsed.set_element([i-1 for i in indices], text)
         return parsed.array()
 
-    def parse_unlinked(self):
-        pass
-
     def build_node(self):
         """
         Builds the root schema node for the commentary
@@ -265,6 +262,17 @@ class commentarySub(supermod.commentary):
         he_title = self.get_author()
         node.add_primary_titles(commentatorNames[he_title], he_title)
         return node
+
+    def set_verses(self, verse_map):
+        """
+        Map each phrase to a verse
+        :param verse_map: A list of lists. Outer list length == number of chapters. Inner list length == number of
+        phrases per chapter
+        """
+        chapters = self.get_chapter()
+        assert len(verse_map) == len(chapters)
+        for chapter, inner_map in zip(chapters, verse_map):
+            chapter.set_verses(inner_map)
 
 
 supermod.commentary.subclass = commentarySub
@@ -284,6 +292,19 @@ class chapterSub(supermod.chapter):
 
     def getVerseArray(self):
         return [v.asString() for v in self.verse]
+
+    def set_verses(self, verse_map):
+        """
+        Sets the verse attribute on phrases
+        :param verse_map: List of integers which map each phrase to a verse (0-indexed). Must be the same length
+        as the number of verses
+        :return:
+        """
+        phrases = self.get_phrase()
+        assert len(verse_map) == len(phrases)
+        for index, phrase in zip(verse_map, phrases):
+            phrase.verse = str(index+1)
+
 
 supermod.chapter.subclass = chapterSub
 # end class chapterSub
@@ -356,7 +377,7 @@ class xrefSub(supermod.xref):
     def asITagString(self):
         commentData = commentStore.get(self.get_rid())
         if commentData:
-            return u"<i data-commentator='{}' data-order='{}'/>".format(commentData["commentator"], commentData["order"])
+            return u' <i data-commentator="{}" data-order="{}"></i>'.format(commentData["commentator"], commentData["order"])
         else:
             raise Exception("Where am I?")
 
@@ -477,7 +498,7 @@ def parse(inFilename, silence=False):
 
     #bespoke
     commentStore.clear()
-    unlinkedCommentStore.clear()
+    del unlinkedCommentStore[:]
     rootObj.populateCommentStore()
 
     # Enable Python to collect the space used by the DOM.
