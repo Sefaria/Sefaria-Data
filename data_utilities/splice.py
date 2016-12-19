@@ -1004,6 +1004,8 @@ class SectionSplicer(AbstractSplicer):
                 r += sm.commentary_determinations
         return r
 
+
+
     def get_segment_lookup_dictionary(self):
         """
         Returns a dictionary: Ref -> Ref
@@ -1035,19 +1037,11 @@ class SectionSplicer(AbstractSplicer):
             current_segment += mapper.num_segments
         return result
 
-
-    """
-    This may not actually be useful
-    This returns a dictionary of mappings for non-base, segment aligned versions.
-    result = {}
-    for i, sm in enumerate(self.adjusted_segment_maps):
-        target_ref = self.section_ref.subref(i + 1)
-        if sm.is_blank():
-            continue
-        for source_ref in sm.start_ref.to(sm.end_ref).range_list():
-            result[source_ref] = target_ref
-    return result
-    """
+    def get_empty_refs(self):
+        """
+        :return: a list of empty references in the new merged non-primary texts
+        """
+        return filter(None, [self.section_ref.subref(i + 1).normal() if sm.is_blank() else None for i, sm in enumerate(self.adjusted_segment_maps)])
 
     def _process_segment_maps(self):
         # Note that we're reusing SegmentMap objects here.  Keep 'em stateless!
@@ -1062,10 +1056,7 @@ class SectionSplicer(AbstractSplicer):
                 continue
 
             # Otherwise, determine adjusted ref.
-
-
             # If this has a beginning word, it was already covered.  advance past this segment
-
             elif detailed_sm.start_word is not None:
                 # If end ref is later than start ref, just advance start ref
                     # If this has an end word, we want to extend to cover whole segment.
@@ -1123,19 +1114,6 @@ class SectionSplicer(AbstractSplicer):
 
             for mapper in self.commentary_split_mappers:
                 mapper.build_master_commentary_mapping(commentator, commentator_merged_tc)
-    """
-    def reshape_commentary_version(self, commentator_ref, commentator_text_chunk):
-        '''
-        Push this up to book level?
-        :param commentator_ref:
-        :param commentator_text_chunk:
-        :return:
-        '''
-        reshaped_commentary = []
-        for mapper in self.commentary_split_mappers:
-            reshaped_commentary += mapper.get_commentator_sections(commentator_ref, commentator_text_chunk)
-        return reshaped_commentary
-    """
 
     def _reshape_all_commentary_versions(self):
         for v in self.commentary_versions:
@@ -1172,78 +1150,6 @@ class SectionSplicer(AbstractSplicer):
 
         print u"\n*** Merging Commentary 1 Texts"
         self._reshape_all_commentary_versions()
-        #self._merge_commentary_version_sections()  # Simple for segment boundaries
-
-
-        # For all of the below -
-        # It takes longer, but we start at the base text, so as not to miss any ranged refs
-        """
-        if not self._save_text_only:
-            # Rewrite links to base text (including links from own commentary)
-            print u"\n*** Rewriting Refs to Base Text"
-            print u"\n*** Rewriting Links"
-            self._generic_set_rewrite(LinkSet(self.section_ref), ref_attr_name="refs", is_set=True)
-
-            # Note refs
-            print u"\n*** Rewriting Note Refs"
-            self._generic_set_rewrite(NoteSet({"ref": {"$regex": self.section_ref.regex()}}))
-
-            # Translation requests
-            print u"\n*** Rewriting Translation Request Refs"
-            self._generic_set_rewrite(TranslationRequestSet({"ref": {"$regex": self.section_ref.regex()}}))
-
-            # History
-            # these can be made faster by splitting up the regex
-            print u"\n*** Rewriting History Refs"
-            self._generic_set_rewrite(HistorySet({"ref": {"$regex": self.section_ref.regex()}}))
-            self._generic_set_rewrite(HistorySet({"new.ref": {"$regex": self.section_ref.regex()}}), ref_attr_name="new",
-                                      sub_ref_attr_name="ref")
-            self._generic_set_rewrite(HistorySet({"new.refs": {"$regex": self.section_ref.regex()}}), ref_attr_name="new",
-                                      sub_ref_attr_name="refs", is_set=True)
-            self._generic_set_rewrite(HistorySet({"old.ref": {"$regex": self.section_ref.regex()}}), ref_attr_name="old",
-                                      sub_ref_attr_name="ref")
-            self._generic_set_rewrite(HistorySet({"old.refs": {"$regex": self.section_ref.regex()}}), ref_attr_name="old",
-                                      sub_ref_attr_name="refs", is_set=True)
-
-            print u"\n*** Rewriting Refs to Commentary"
-            for commentary_title in self.commentary_titles:
-                commentator_chapter_ref = Ref(commentary_title).subref(self.section_ref.sections)
-                # Rewrite links to commentary (including to base text)
-                print u"\n*** {}".format(commentator_chapter_ref.normal())
-                print u"\n*** Rewriting Links"
-                self._generic_set_rewrite(LinkSet(commentator_chapter_ref), ref_attr_name="refs", is_set=True,
-                                          commentary=True)
-                print u"\n*** Rewriting Note Refs"
-                self._generic_set_rewrite(NoteSet({"ref": {"$regex": commentator_chapter_ref.regex()}}), commentary=True)
-                print u"\n*** Rewriting Translation Request Refs"
-                self._generic_set_rewrite(TranslationRequestSet({"ref": {"$regex": commentator_chapter_ref.regex()}}),
-                                          commentary=True)
-
-                # History?
-                # these can be made faster by splitting up the regex
-                print u"\n*** Rewriting History Refs"
-                self._generic_set_rewrite(HistorySet({"ref": {"$regex": commentator_chapter_ref.regex()}}), commentary=True)
-                self._generic_set_rewrite(HistorySet({"new.ref": {"$regex": commentator_chapter_ref.regex()}}),
-                                          ref_attr_name="new", sub_ref_attr_name="ref", commentary=True)
-                self._generic_set_rewrite(HistorySet({"new.refs": {"$regex": commentator_chapter_ref.regex()}}),
-                                          ref_attr_name="new", sub_ref_attr_name="refs", is_set=True, commentary=True)
-                self._generic_set_rewrite(HistorySet({"old.ref": {"$regex": commentator_chapter_ref.regex()}}),
-                                          ref_attr_name="old", sub_ref_attr_name="ref", commentary=True)
-                self._generic_set_rewrite(HistorySet({"old.refs": {"$regex": commentator_chapter_ref.regex()}}),
-                                          ref_attr_name="old", sub_ref_attr_name="refs", is_set=True, commentary=True)
-
-            # Source sheet refs
-            print u"\n*** Rewriting Source Sheet Refs"
-            self._find_sheets()
-            self._clean_sheets()
-
-            # alt structs?
-            print u"\n*** Rewriting Alt Struct Refs"
-            self._rewrite_alt_structs()
-
-            print u"\n*** Pushing changes to Elastic Search"
-            self._clean_elastisearch()
-            """
 
 
 class BookSplicer(object):
@@ -1266,6 +1172,9 @@ class BookSplicer(object):
     def test(self):
         for sp in self.section_splicers:
             sp.report()
+
+    def get_empty_refs(self):
+        return [r for sec in self.section_splicers for r in sec.get_empty_refs()]
 
     def execute(self):
         en_version = Version({
