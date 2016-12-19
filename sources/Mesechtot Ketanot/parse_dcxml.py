@@ -1,8 +1,12 @@
 import DCXMLsubs
 import os
 import re
+import bleach
+import bisect
+import codecs
 import unicodecsv as csv
 from data_utilities.util import ja_to_xml
+from data_utilities.dibur_hamatchil_matcher import match_text
 from sources.functions import post_text, post_index, post_link
 
 
@@ -102,3 +106,48 @@ def basic_test_suite():
             parsed = c.parse_linked()
             ja_to_xml(parsed, ['Chapter', 'Verse', 'Comment'], 'commentary.xml')
             break
+
+
+def first_word_indices(string_list):
+    """
+    Get a list of indices representing the index of the first word of each string should the list be collapsed to a list
+    of words
+    :param string_list: list of strings
+    :return: list of integers
+    """
+    indices = []
+    for line in string_list:
+        if len(indices) == 0:
+            indices.append(len(line.split()))
+        else:
+            indices.append(len(line.split()) + indices[-1])
+    return indices
+
+
+root = DCXMLsubs.parse("XML/tractate-avot_drabi_natan-xml.xml", silence=True)
+base_text = root.getBaseTextArray()[0]
+base_text = [bleach.clean(segment, tags=[], strip=True) for segment in base_text]
+seg_indices = first_word_indices(base_text)
+word_list = u' '.join(base_text).split()
+c = root.body.commentaries.commentary[6].chapter[0]
+dh_list = [p.dh.get_valueOf_() for p in c.get_phrase()]
+
+
+def cleaner(input_string):
+    assert isinstance(input_string, basestring)
+    pattern = u'\u05d5?(\u05db|\u05d2)\u05d5\u05f3?'
+    match = re.search(pattern, input_string)
+    if match is None:
+        return input_string
+    if match.start() > 6 and (match.start() > len(input_string) / 2):
+        return re.sub(u'\u05d5?(\u05db|\u05d2)\u05d5\u05f3?.*', u'', input_string)
+    elif match.start() > 6 and (match.start() < len(input_string) / 2):
+        return re.sub(u'.*?{}'.format(pattern), u'', input_string)
+    else:
+        return re.sub(pattern, u'', input_string)
+
+matches = match_text(word_list, dh_list, dh_extract_method=cleaner, place_all=False)
+locations = [bisect.bisect_right(seg_indices, match[0]) if match[0] >= 0 else match[0] for match in matches['matches']]
+c.set_verses(locations)
+with codecs.open('text.xml', 'w', 'utf-8') as outfile:
+    c.export(outfile, level=1)
