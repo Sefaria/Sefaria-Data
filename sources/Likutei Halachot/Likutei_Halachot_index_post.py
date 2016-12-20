@@ -24,8 +24,11 @@ def get_english_title(he_title, order):
     #for some reason, fuzzywuzzy doesn't work with הקדמת המחבר so we
     #do that explicitly
     if "הקדמת" in he_title:
-        print "Author"
         return "Author's Introduction"
+    if "‏ארבע‏ ‏פרש" in he_title:
+        return "Laws of the Four Festive Torah Portions"
+    if "ברכת הריח" in he_title:
+        return "Laws of Blessing on Fragrance"
     with open("Likutei_Halachot_"+order+".csv", 'rb') as csvfile:
         reader = csv.reader(csvfile)
         title_table = list(reader)
@@ -48,7 +51,6 @@ def get_match_index(byte_term, input_list):
             return_index = index
     return return_index
 
-print SEFARIA_SERVER
 text = get_parsed_text()
 
 # create root record
@@ -79,6 +81,7 @@ for index, order in enumerate(orders):
 
     #add topic nodes to order node
     for topic in text[index][0]:
+        print "INDEX TOPIC: ",topic,get_english_title(topic, order[0])
         topic_node = JaggedArrayNode()
         topic_node.add_title(get_english_title(topic, order[0]), 'en', primary = True)
         topic_node.add_title(topic, 'he', primary = True)
@@ -100,4 +103,4 @@ index = {
 }
 
 
-post_index(index)	
+post_index(index)
