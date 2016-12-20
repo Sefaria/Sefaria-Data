@@ -1170,6 +1170,13 @@ class BookSplicer(object):
             self.segment_map_list += s.ref_maps()
         self.segment_map = dict(self.segment_map_list)
 
+        self.he_version = None
+        self.en_version = None
+
+    def set_text_versions(self, he_version, en_version):
+        self.he_version = he_version
+        self.en_version = en_version
+
     def test(self):
         for sp in self.section_splicers:
             sp.report()
@@ -1178,32 +1185,16 @@ class BookSplicer(object):
         return [r for sec in self.section_splicers for r in sec.get_empty_refs()]
 
     def execute(self):
-        en_version = Version({
-            "chapter": [[], []],
-            "versionTitle": "The Koren-Steinsaltz Talmud Bavli - English",
-            "versionSource": "https://www.korenpub.com/koren_en_usd/koren/talmud.html",
-            "license": "CC-BY-NC",
-            "priority": 2,
-            "language": "en",
-            "title": self.book_ref.normal()
-        })
-        he_version = Version({
-            "chapter": [[], []],
-            "versionTitle": "The Koren-Steinsaltz Talmud Bavli - Hebrew",
-            "versionSource": "https://www.korenpub.com/koren_en_usd/koren/talmud.html",
-            "license": "CC-BY-NC",
-            "language": "he",
-            "title": self.book_ref.normal()
-        })
+        assert self.he_version and self.en_version
 
         for sp in self.section_splicers:
             sp.bulk_mode()
             sp.execute()
-            en_version.chapter += [sp.new_en_text]
-            he_version.chapter += [sp.new_he_text]
+            self.en_version.chapter += [sp.new_en_text]
+            self.he_version.chapter += [sp.new_he_text]
 
-        en_version.save()
-        he_version.save()
+        self.en_version.save()
+        self.he_version.save()
 
         self.section_splicers[-1].refresh_states()
 
