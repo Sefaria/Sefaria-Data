@@ -681,20 +681,20 @@ class SegmentMap(object):
 
     def ref_maps(self):
         """
-        Returns dict String -> Offset
+        Returns List of tuples: String -> Offset
             Offset is a list of offsets after the Daf section.
             Each element may be a digit.  Last element may be a digit or a tuple (indicating range).
         For all refs in base text and commentary covered by this segment map
         :return:
         """
-        d = {source_ref.normal():[0] for source_ref in self.start_ref.to(self.end_ref).range_list()}
+        d = [(source_ref.normal(),[0]) for source_ref in self.start_ref.to(self.end_ref).range_list()]
         for commentor in self.commentary_mappings:
             base_ref = Ref("{} on {}".format(commentor, self.start_ref.section_ref().normal()))
             offset_aggregator = 0
             for i, num_in_line in enumerate(self.commentary_mappings[commentor]):
                 line_ref = base_ref.subref(self.start_ref.sections[-1] + i)
                 for j in range(1, num_in_line + 1):
-                    d[line_ref.subref(j).normal()] = [0, offset_aggregator + j]
+                    d += [(line_ref.subref(j).normal(), [0, offset_aggregator + j])]
                 offset_aggregator += num_in_line
         return d
 
@@ -824,29 +824,29 @@ class SplitSegmentGroup(object):
 
     def ref_maps(self):
         """
-        Returns dict String -> Offset
+        Returns list of tuples String -> Offset
             Offset is a list of offsets after the Daf section.
             Each element may be a digit.  Last element may be a digit or a tuple (indicating range).
         For all refs in base text and commentary covered by this segment map
         :return:
         """
-        d = {}
+        d = []
         section_ref = self.segment_maps[0].start_ref.section_ref()
         for seg_num in self.segment_range:
             if "breaks" not in self.segment_breaks[seg_num]:
-                d[section_ref.subref(seg_num + 1).normal()] = [self.segment_breaks[seg_num]["offset"]]
+                d += [(section_ref.subref(seg_num + 1).normal(), [self.segment_breaks[seg_num]["offset"]])]
             else:
-                d[section_ref.subref(seg_num + 1).normal()] = [(self.segment_breaks[seg_num]["offset"], self.segment_breaks[seg_num]["offset"] + len(self.segment_breaks[seg_num]["breaks"]))]
+                d += [(section_ref.subref(seg_num + 1).normal(), [(self.segment_breaks[seg_num]["offset"], self.segment_breaks[seg_num]["offset"] + len(self.segment_breaks[seg_num]["breaks"]))])]
 
         for commentor in self.commentary_mappings:
             base_ref = Ref("{} on {}".format(commentor, section_ref.normal()))
 
             old_to_new = self.commentary_mappings[commentor]
 
-            offset_aggregator = {a:1 for a in xrange(self.num_segments)}
+            offset_aggregator = {a: 1 for a in xrange(self.num_segments)}
             for i, section in enumerate(old_to_new):
                 for j, offset in enumerate(section):
-                    d[base_ref.subref(self.segment_range[i] + 1).subref(j+1).normal()] = [offset, offset_aggregator[offset]]
+                    d += [(base_ref.subref(self.segment_range[i] + 1).subref(j+1).normal(), [offset, offset_aggregator[offset]])]
                     offset_aggregator[offset] += 1
 
         return d
@@ -1004,24 +1004,22 @@ class SectionSplicer(AbstractSplicer):
                 r += sm.commentary_determinations
         return r
 
-
-
-    def get_segment_lookup_dictionary(self):
+    def ref_maps(self):
         """
-        Returns a dictionary: Ref -> Ref
+        Returns a list of tuples: Ref -> Ref
         Maps Refs in old segmentation to a list of refs in new segmentation that have content from the old ref.
         Both base text and commentary
 
-        Relies on ref_maps() of underlying mappers, which return dict String -> Offsets
+        Relies on ref_maps() of underlying mappers, which return lists of tuples String -> Offsets
             Offsets is a list of offsets after the Daf section.
             Each element may be a digit.  Last element may be a digit or a tuple (indicating range).
         For all refs in base text and commentary covered by this segment map
         :return:
         """
-        result = {}
+        result = []
         current_segment = 1
         for mapper in self.commentary_split_mappers:
-            for ref, offsets in mapper.ref_maps().iteritems():
+            for ref, offsets in mapper.ref_maps():
                 target_ref = Ref(ref).top_section_ref()
                 # first element is daf segment
 
@@ -1032,7 +1030,7 @@ class SectionSplicer(AbstractSplicer):
                     if len(offsets) == 2:
                         target_ref = target_ref.subref(offsets[1])
 
-                result[ref] = target_ref.normal()
+                result += [(ref, target_ref.normal())]
 
             current_segment += mapper.num_segments
         return result
@@ -1167,7 +1165,10 @@ class BookSplicer(object):
         assert all([isinstance(a, SectionSplicer) for a in section_splicers])
         self.section_splicers = section_splicers
 
-        self.segment_map = self._build_segment_map()
+        self.segment_map_list = []
+        for s in self.section_splicers:
+            self.segment_map_list += s.ref_maps()
+        self.segment_map = dict(self.segment_map_list)
 
     def test(self):
         for sp in self.section_splicers:
@@ -1219,11 +1220,6 @@ class BookSplicer(object):
             r += s.get_commentary_determinations()
         return r
 
-    def _build_segment_map(self):
-        res = {}
-        for s in self.section_splicers:
-            res.update(s.get_segment_lookup_dictionary())
-        return res
 
 
 def dh_extract_method(s):
