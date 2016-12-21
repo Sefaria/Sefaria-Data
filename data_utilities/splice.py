@@ -1212,7 +1212,6 @@ class BookSplicer(object):
         return r
 
 
-
 def dh_extract_method(s):
     dh = re.split(u"(\s+[-\u2013]\s+|\.\s+)", s)[0] # Try " - ", or failing that ". "
     return re.sub(ur"\s+\u05d5?\u05db\u05d5['\u05f3]", u"", dh)  # space, vav?, kaf, vav, single quote or geresh
