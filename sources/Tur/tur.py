@@ -103,22 +103,52 @@ def genDict(matches_array, commentaries, which_one):
 
     return hash
 
-def check_simple(which_one, siman_num, helek, matches_array, commentaries):
+
+def check(which_one, siman_num, helek, matches_array, commentaries, line):
+    if helek == 'Choshen Mishpat':
+        return
+
     duplicate_report = open("report_"+which_one+"_duplicates.txt", "a")
     skipped_report = open("skipped_"+which_one+".txt", "a")
+    which_one = which_one.replace(" ", "")
+    siman_report = open("siman_off_report.txt", 'a')
+    name_of_file_lengths = "{}_{}_length_siman.txt".format(which_one, helek.replace(" ", ""))
+    print helek
+    print which_one
     hash = genDict(matches_array, commentaries, which_one)
-    write_duplicate(hash, duplicate_report, siman_num, helek)
-    keys = sorted(hash.keys())
-    skipped_any = skippedAny(keys)
-    if len(skipped_any) > 0:
-        skipped_report.write("{} Siman #: {}\n".format(helek, siman_num))
-    skipped_report.write(skipped_any)
-    duplicate_report.close()
-    skipped_report.close()
+    lengths_of_simans = json.loads(open(name_of_file_lengths).read())
+    if which_one == "DarcheiMoshe":
+        darchei_file = open("{} darchei moshe.txt".format(helek))
+        update_dict_BY_data(hash, darchei_file, siman_num, duplicate_report)
+        darchei_file.close()
+    if len(hash) == 0 and str(siman_num) in lengths_of_simans:
+        siman_report.write("{} {}".format(siman_num, helek))
+        siman_report.write("\nThere are 0 {} tags in Tur but there is a comment in {} files".format(which_one, which_one))
+        siman_report.write("\n\n")
+        siman_report.close()
+        return
+    elif len(hash) > 0 and str(siman_num) not in lengths_of_simans:
+        siman_report.write("{} {}".format(siman_num, helek))
+        siman_report.write("\nThere are {} tags in Tur but there are 0 comments in {} files.".format(which_one, which_one))
+        siman_report.write("\n\n")
+        siman_report.close()
+        return
+    if len(hash) > 0:
+        helek = helek.replace(" ", "")
+        length_of_siman = lengths_of_simans[str(siman_num)]
+        remove_keys_beyond_length(hash, length_of_siman)
+        write_duplicate(hash, duplicate_report, siman_num, helek)
+        keys = sorted(hash.keys())
+        skipped_any = skippedAny(keys)
+        if len(skipped_any) > 0:
+            skipped_report.write("{} Siman #: {}\n".format(helek, siman_num))
+        skipped_report.write(skipped_any)
+        duplicate_report.close()
+        skipped_report.close()
 
 
 def update_dict_BY_data(hash, other_file, siman_num, duplicate_report):
-    data = eval(other_file.read())
+    data = json.loads(other_file.read())
     if str(siman_num) not in data:
         duplicate_report.write("In Beit Yosef, not finding Siman #"+str(siman_num)+"\n")
         return
@@ -130,25 +160,16 @@ def update_dict_BY_data(hash, other_file, siman_num, duplicate_report):
         else:
             hash[each] = 1
 
-    return hash
 
-def check_darchei_moshe(siman_num, helek, matches_array, commentaries):
-    if helek == "Choshen Mishpat":
-        return
-    hash = {}
-    skipped_report = open("skipped_darchei.txt", "a")
-    duplicate_report = open("report_darchei_duplicates.txt", "a")
-    other_file = open("{} darchei moshe.txt".format(helek))
-    hash = genDict(matches_array, commentaries, "Darchei Moshe")
-    update_dict_BY_data(hash, other_file, siman_num, duplicate_report)
-    write_duplicate(hash, duplicate_report, siman_num, helek)
-    keys = sorted(hash.keys())
-    skipped_any = skippedAny(keys)
-    if len(skipped_any) > 0:
-        skipped_report.write("{} Siman #: {}\n".format(helek, siman_num))
-    skipped_report.write(skipped_any)
-    duplicate_report.close()
-    skipped_report.close()
+def remove_keys_beyond_length(hash, length_of_siman):
+    ones_beyond_range = []
+    for key in hash:
+        if key > length_of_siman:
+            ones_beyond_range.append(key)
+    for el in ones_beyond_range:
+        hash.pop(el)
+
+
 
 
 def write_duplicate(hash, duplicate_report, siman_num, helek):
@@ -166,12 +187,12 @@ def replaceWithHTMLTags(line, helek, siman_num, data):
     line = line.replace("&%", "(%")
     line = line.replace('(*', '(%')
     if helek == "Choshen Mishpat":
-       commentaries = ["Darchei Moshe", "Hagahot", "Beit_Yosef", "Bach", "Replace", "Mystery"]
+       commentaries = ["DarcheiMoshe", "Hagahot", "Beit_Yosef", "Bach", "Replace", "Mystery"]
        matches_array = [re.findall(u"\(%[\u05D0-\u05EA]{1,4}\)", line), re.findall(u"\s#[\u05D0-\u05EA]{1,4}", line),
                         re.findall(u"\{[\u05D0-\u05EA]{1,4}\}",line), re.findall(u"\|[\u05D0-\u05EA]{1,4}\|", line),
                         re.findall(u"\([\u05D0-\u05EA]{1,4}\)", line), re.findall(u"<[\u05D0-\u05EA]{1,4}>",line)]
     else:
-       commentaries = ["Drisha", "Prisha", "Darchei Moshe", "Hagahot", "Beit_Yosef", "Bach", "Mystery"]
+       commentaries = ["Drisha", "Prisha", "DarcheiMoshe", "Hagahot", "Beit_Yosef", "Bach", "Mystery"]
        matches_array = [re.findall(u"\[[\u05D0-\u05EA]{1,4}\]", line), re.findall(u"\([\u05D0-\u05EA]{1,4}\)", line),
                         re.findall(u"\(%[\u05D0-\u05EA]{1,4}\)", line) or re.findall(u"\[%[\u05D0-\u05EA]{1,4}\]", line),
                         re.findall(u"\s#[\u05D0-\u05EA]{1,4}", line),
@@ -180,9 +201,9 @@ def replaceWithHTMLTags(line, helek, siman_num, data):
                         
     data = gatherData(data, line, helek, siman_num, matches_array, commentaries)
     
-    check_simple("Drisha", siman_num, helek, matches_array, commentaries)
-    check_simple("Prisha", siman_num, helek, matches_array, commentaries)
-    check_darchei_moshe(siman_num, helek, matches_array, commentaries)
+    check("Drisha", siman_num, helek, matches_array, commentaries, line)
+    check("Prisha", siman_num, helek, matches_array, commentaries, line)
+    check("Darchei Moshe", siman_num, helek, matches_array, commentaries, line)
 
     for commentary_count, matches in enumerate(matches_array):
         hash = {}
@@ -255,7 +276,7 @@ def parse_text(at_66, at_77, at_88, helekim, files_helekim):
     for line in f:
         actual_line = line
         line = line.replace('\n','').replace('\r','')
-        if len(line)==0:
+        if len(line) < 1:
             continue
         if (len(line)<=20 and line.find("@22")>=0):
             append_to_next_line = True
@@ -407,7 +428,7 @@ if __name__ == "__main__":
     at_66 = " {} "
     at_77 = " || "
     at_88 = " <> "
-    files_helekim = ["Orach_Chaim/tur orach chaim.txt", "Yoreh Deah/tur yoreh deah.txt", "Even HaEzer/tur even haezer.txt", "Choshen Mishpat/tur choshen mishpat.txt"]
+    files_helekim = ["Orach_Chaim/turorachchaim.txt", "Yoreh Deah/tur yoreh deah.txt", "Even HaEzer/tur even haezer.txt", "Choshen Mishpat/tur choshen mishpat.txt"]
     #create_indexes(eng_helekim, heb_helekim)
     data = parse_text(at_66, at_77, at_88, eng_helekim, files_helekim)
     for helek in data:

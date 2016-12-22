@@ -19,43 +19,52 @@ sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
 
+
+def goodTag(poss_siman, curr_siman, line, prev_line):
+    line = removeAllStrings(line).replace("\r", "").replace("\n", "")
+    return abs(poss_siman - curr_siman) <= 10 and len(line) <= 4
+
+
 if __name__ == "__main__":
     BY_values = {}
-    files = ["Even HaEzer/Bi Even HaEzer.txt", "Orach_Chaim/beit yosef orach chaim.txt", "Yoreh Deah/beit yosef yoreh deah.txt"]
+    prev_line = ""
+    files = ["Even HaEzer/Bi Even HaEzer.txt", "Orach_Chaim/beit yosef orach chaim 1.txt", "Yoreh Deah/beit yosef yoreh deah.txt"]
     for file in files:
         print file
         accum_text = ""
         curr_siman = 0
         for line in open(file):
             line = line.decode('utf-8')
+            orig_line = line
+            line = line.split(" ")[0]
             if line.find("@22") >= 0 or (line.find("@00") >= 0 and len(line) < 15):
                 if line.find("@22") >= 0:
                     poss_siman = re.findall(u"@22[\u05d0-\u05EA]+", line)
                 else:
                     poss_siman = re.findall(u"@00[\u05d0-\u05EA]+", line)
-                assert len(poss_siman) == 1, "Siman array off {}".format(poss_siman)
+                assert len(poss_siman) == 1, "Siman array off {}, {}".format(poss_siman, line.encode('utf-8'), prev_line.encode('utf-8'))
+
                 poss_siman = getGematria(poss_siman[0])
+                poss_siman = ChetAndHey(poss_siman, curr_siman)
 
-
-                #two cases to switch: daled and then chet becomes hey, curr_siman - 4 == poss_siman - 8, poss_siman = poss_siman - 8 + 5
-                ##  or hey after zion becomes chet, if curr_siman - 7 == poss_siman - 5, poss_siman = poss_siman - 5 + 8
-                if curr_siman - 4 == poss_siman - 8:
-                    poss_siman = poss_siman - 3
-                if curr_siman - 7 == poss_siman - 5:
-                    poss_siman = poss_siman + 3
+                if not goodTag(poss_siman, curr_siman, line, prev_line):
+                    print line
+                    continue
 
                 assert poss_siman > curr_siman, str(poss_siman) + " > " + str(curr_siman)
+
                 if curr_siman > 0:
                     convert = []
-                    temp = [each_one for each_one in re.findall(u"\([\u05D0-\u05EA]{1,2}\)", accum_text) if each_one.find(u"שם") == -1]
+                    temp = [each_one for each_one in re.findall(u"\*?\([\u05D0-\u05EA]{1,2}\)", accum_text) if each_one.find(u"שם") == -1]
                     for each_one in temp:
                         convert += [getGematria(each_one)]
                     BY_values[curr_siman] = convert
 
                 curr_siman = poss_siman
+                prev_line = orig_line
                 accum_text = ""
 
-            accum_text += line + "\n"
+            accum_text += orig_line + "\n"
 
         if file.find("Orach") >= 0:
             new_file = codecs.open("orach chaim darchei moshe.txt", 'w', encoding='utf-8')

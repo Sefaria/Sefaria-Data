@@ -16,9 +16,8 @@ from sefaria.model import *
 class XML_to_JaggedArray:
 
 
-    def __init__(self, title, file, allowedTags, allowedAttributes, post_info, parse):
+    def __init__(self, title, file, allowedTags, allowedAttributes, post_info, array_of_names=[]):
         self.title = title
-        self.parse = parse
         self.post_info = post_info
         self.file = file
         xml_text = ""
@@ -30,20 +29,28 @@ class XML_to_JaggedArray:
         self.pages = {}
         self.alt_struct = True
         self.footnotes = {}
+        self.array_of_names = array_of_names
+
+
+    def set_funcs(self, parse, grab_title_lambda, reorder_lambda):
+        self.parse = parse
+        self.grab_title_lambda = grab_title_lambda
+        self.reorder_lambda = reorder_lambda
 
 
     def run(self):
         for count, child in enumerate(self.root):
-            name = self.grab_title(child)
-            child = self.reorder_structure(child, name)
+            #USE DEFAULT LAMBDA SO NOTHING HAPPENS
+            if self.array_of_names:
+                name = self.array_of_names[count]
+            else:
+                name = self.grab_title(child, True, self.grab_title_lambda)
+            child = self.reorder_structure(child, name, self.reorder_lambda)
             ref = self.title + ", Footnotes, " + name
             self.JA_nodes[name] = self.go_down_to_text(name, child, ref)
             ref = self.title + ", " + name
             self.interpret(self.JA_nodes[name], ref)
-            if self.title == "Or Neerav" and name == "PART VII":
-                 self.interpret_footnotes_partvii()
-            else:
-                self.interpret_footnotes(name)
+            self.interpret_footnotes(name)
             self.footnotes = {}
 
         if self.alt_struct:
@@ -56,11 +63,11 @@ class XML_to_JaggedArray:
 
 
 
-    def grab_title(self, element, tag="bold", delete=True):
+    def grab_title(self, element, delete=True, test_lambda=lambda x: False):
         '''
         Get the name return it and delete the first element
         '''
-        if element[0].tag == tag or element[0].text.find("<bold>") >= 0:
+        if test_lambda(element):
             name = bleach.clean(element[0].text, strip=True)
             element.text = name
             if delete:
@@ -76,7 +83,8 @@ class XML_to_JaggedArray:
             if len(child) > 0:
                 name_node = ""
                 if child.tag != "title":
-                    self.grab_title(child) #take the title underneath, set it to text var,  so afterward, child.text will be the correct title
+                    self.grab_title(child, True, self.grab_title_lambda)
+                    #above: take the title underneath, set it to text var,  so afterward, child.text will be the correct title
                 new_ref = base_ref+"."+child.text if child.text.isdigit() else base_ref+", "+child.text
                 text[child.text] = self.go_down_to_text(child.text, child, new_ref)
             else:
@@ -115,10 +123,7 @@ class XML_to_JaggedArray:
         for ref in self.footnotes:
             comments = self.footnotes[ref]
             for index, comment in enumerate(comments):
-                try:
-                    poss_num = int(comment.split(".", 1)[0])
-                except:
-                    pdb.set_trace()
+                poss_num = int(comment.split(".", 1)[0])
                 comments[index] = comment.replace(str(poss_num)+". ", "")
 
             comments = self.parse(comments)
@@ -134,7 +139,8 @@ class XML_to_JaggedArray:
 
 
     def interpret(self, node, running_ref, prev="string"):
-        assert Ref(running_ref)
+        print running_ref
+        assert Ref(running_ref), running_ref
         len_node = len(node)
         for key in node:
             if key.isdigit():
@@ -189,7 +195,7 @@ class XML_to_JaggedArray:
         return text
 
 
-    def reorder_structure(self, element, name):
+    def reorder_structure(self, element, name, test_lambda=lambda x: False):
         '''
         We have something like this:
         A. Root
@@ -211,7 +217,7 @@ class XML_to_JaggedArray:
         children = []
         orig_length = len(element) - 1
         for index, child in enumerate(element):
-            if child.text.find("<italic>") >= 0 and child.tag == "title" and name == "PART VII":
+            if test_lambda(child):
                 child.text = child.text.replace("<italic>", "").replace("</italic>", "")
                 if next_will_be_children == True:
                     for new_child in children:

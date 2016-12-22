@@ -81,6 +81,14 @@ def removeExtraSpaces(txt):
 
     return txt
 
+def ChetAndHey(poss_siman, siman):
+    if siman - 4 == poss_siman - 8 and poss_siman % 10 == 8:
+        poss_siman = poss_siman - 3
+    if siman - 7 == poss_siman - 5 and poss_siman % 10 == 5:
+        poss_siman = poss_siman + 3
+
+    return poss_siman
+
 
 def in_order_caller(file, reg_exp_tag, reg_exp_reset="", dont_count=[], output_file="in_order_output.txt"):
     ##open file, create an array based on reg_exp,
@@ -218,11 +226,8 @@ def getHebrewTitle(sefer, SEFARIA_SERVER='http://www.sefaria.org/'):
 
 
 def removeAllStrings(orig_string, array = ['@', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0']):	
-    try:
-        for unwanted_string in array:
-            orig_string = orig_string.replace(unwanted_string, "")
-    except:
-        pdb.set_trace()
+    for unwanted_string in array:
+        orig_string = orig_string.replace(unwanted_string, "")
     return orig_string
 
 

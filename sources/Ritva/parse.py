@@ -191,14 +191,9 @@ if __name__ == "__main__":
     versionTitle['Niddah'] = 'Hidushe ha-Ritba al Nidah; Wien 1868.'
     versionTitle['Makkot'] = 'Hamisha Shitot, Sulzbach 1761. Published by Meshulam Zalman'
     versionTitle['Avodah Zarah'] = "Orian Tlita'i, Salonika, 1758."
-    files = ["Avodah Zarah", "Makkot", "Eruvin", "Sukkah", "Berakhot", "Moed Katan", "Yoma", "Megillah", "Rosh Hashanah", "Taanit", "Niddah"]
+    files = ["Sukkah", "Moed Katan", "Megillah", "Taanit"]
     not_yet = True
-    until_this_one = "Megillah"
     for file in files:
-        if file == until_this_one:
-            not_yet = False
-        if not_yet:
-            continue
         createIndex(file)
         print file
         text, dhs = parse(file+".txt")

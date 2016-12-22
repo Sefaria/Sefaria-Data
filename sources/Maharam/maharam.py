@@ -329,6 +329,8 @@ class Maharam:
         mishnah_out_order = {}
         links_to_post = []
         for daf in sorted(self.dh1_dict.keys()):
+            if daf < 179:
+                continue
             print daf
             self.maharam_line = 0
             self.rashi_line = -1
@@ -418,10 +420,10 @@ if __name__ == "__main__":
                         "language": "he",
                         "text": text_to_post,
                     }
-        post_text("Maharam on "+masechet, send_text, "on")
+        #post_text("Maharam on "+masechet, send_text, "on")
         print 'posted'
 
-        #maharam.postLinks()
+        maharam.postLinks()
 
         missing = open("missing_ones_"+masechet+".txt", "w")
         for each_ref in maharam.missing_ones:
