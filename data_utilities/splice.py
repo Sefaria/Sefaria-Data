@@ -1150,6 +1150,40 @@ class SectionSplicer(AbstractSplicer):
         self._reshape_all_commentary_versions()
 
 
+class BlankSectionSplicer(SectionSplicer):
+    def __init__(self):
+        super(SectionSplicer, self).__init__()
+        self._ready = True
+        self.new_en_text = []
+        self.new_he_text = []
+        pass
+
+    def __repr__(self):
+        return "BlankSectionSplicer({})".format(self.section_ref.normal())
+
+    def set_section(self, ref):
+        assert ref.is_section_level()
+        assert not ref.is_range()
+        assert not ref.is_commentary()
+
+        self.section_ref = ref
+        self.book_ref = ref.index_node.ref()
+        self.index = ref.index
+        return self
+
+    def get_empty_refs(self):
+        return []
+
+    def ref_maps(self):
+        return []
+
+    def get_commentary_determinations(self):
+        return []
+
+    def _run(self):
+        return
+
+
 class BookSplicer(object):
     """
     This currently has a lot of bespoke code for its particular project
@@ -1199,7 +1233,7 @@ class BookSplicer(object):
         self.section_splicers[-1].refresh_states()
 
         from sefaria.helper.link import rebuild_links_from_text, rebuild_commentary_links
-        #  This is long-running, and probably unnecesarry, given that all of the links were resaved.
+        #  This is long-running, and probably unnecessary, given that all of the links were resaved.
         #  rebuild_links_from_text(self.book_ref.normal(), 28)
 
         for c in self.section_splicers[-1].commentary_titles:
