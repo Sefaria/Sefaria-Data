@@ -25,46 +25,47 @@ def extract_text(file_input):
     for index, paragraph in enumerate(text):
         paragraph = fix_parens(paragraph)
         paragraph = remove_nekudot_from_parenthetical_statements(paragraph)
-        if "@TEXT@" in paragraph:
-            for paragraph_split in invert_brackets(unmark(paragraph.strip())).split(":"):
-                if not_blank(paragraph_split):
-                    ois_box.append(paragraph_split+":")
-        #we don't append blanks or assorted non-text put in by publisher
-        elif not_blank(paragraph) and is_text_segment(paragraph) and is_not_header(paragraph):
-            #for these dosuments, the sections titles and אתיות don't have nikudot, so we parse by finding non-nikudot paragraphs
-            #EXCEPT some random paragraphs in YD, these are dealt with with the length qualifyer
-            #as a general outline to our approach, we append paragaphs to ois's, then ois's to sections, then sections to topics
-            if True!=wordHasNekudot(paragraph) and len(paragraph)<200 and no_ignore(paragraph):
-                if "אות‏ ‏א" in paragraph:
-                    continue
-                if len(ois_box)!=0:
-                    section_box.append(ois_box)
-                    ois_box = []
-                #if the word אות is not in the paragraph, it's a section header. If it does have the word אות, it's the begging of an ois
-                #EXCEPT second section of nederim in yoreh daya doesn't have the word אות , for that we check the length of the paragraph
-                #since all these paragraphs are less than 18 chars, and no section titles are that short (challah is the shortest, and is still included. HOWEVER, IF SECTIONS ARE MISSING I'd LOOK INTO THIS QUALIFIER, JUST TO MAKE SURE
-                if ("‏אות" not in paragraph and len(paragraph)>17 or "@@BREAK" in paragraph) or "NEWOIS" in paragraph:
-                    if len(section_box)!=0:
-                        topic_box.append(section_box)
-                        section_box=[]
-                    #to distinuish new topics from new sections, we keep a log of topics already parsed
-                    if "NEWOIS" not in paragraph:
-                        title = extract_title(paragraph)
-                        if not_blank(title) and not_marker(title) and "שיך" not in title and "למה‏ ‏שכתו" not in title:
-                            if "הקדמת" not in title:
-                                title = "הלכות"+" "+title.strip()
-                                title = remove_blanks(title)
-                            if title not in parsed_topics:
-                                #print str(index)+" "+''.join(title)
-                                if len(topic_box)!=0:
-                                    order_box.append(topic_box)
-                                    topic_box = []
-                                parsed_topics.append(title)
-            #we don't want to append names of sections, ois's, or topics, so we only append if our paragraph is none of these, hence "else"
-            else:
+        if "@SKIP@" not in paragraph:
+            if "@TEXT@" in paragraph:
                 for paragraph_split in invert_brackets(unmark(paragraph.strip())).split(":"):
                     if not_blank(paragraph_split):
                         ois_box.append(paragraph_split+":")
+            #we don't append blanks or assorted non-text put in by publisher
+            elif not_blank(paragraph) and is_text_segment(paragraph) and is_not_header(paragraph):
+                #for these dosuments, the sections titles and אתיות don't have nikudot, so we parse by finding non-nikudot paragraphs
+                #EXCEPT some random paragraphs in YD, these are dealt with with the length qualifyer
+                #as a general outline to our approach, we append paragaphs to ois's, then ois's to sections, then sections to topics
+                if True!=wordHasNekudot(paragraph) and len(paragraph)<200 and no_ignore(paragraph):
+                    if "אות‏ ‏א" in paragraph:
+                        continue
+                    if len(ois_box)!=0:
+                        section_box.append(ois_box)
+                        ois_box = []
+                    #if the word אות is not in the paragraph, it's a section header. If it does have the word אות, it's the begging of an ois
+                    #EXCEPT second section of nederim in yoreh daya doesn't have the word אות , for that we check the length of the paragraph
+                    #since all these paragraphs are less than 18 chars, and no section titles are that short (challah is the shortest, and is still included. HOWEVER, IF SECTIONS ARE MISSING I'd LOOK INTO THIS QUALIFIER, JUST TO MAKE SURE
+                    if ("‏אות" not in paragraph and len(paragraph)>17 or "@@BREAK" in paragraph) or "NEWOIS" in paragraph:
+                        if len(section_box)!=0:
+                            topic_box.append(section_box)
+                            section_box=[]
+                        #to distinuish new topics from new sections, we keep a log of topics already parsed
+                        if "NEWOIS" not in paragraph:
+                            title = extract_title(paragraph)
+                            if not_blank(title) and not_marker(title) and "שיך" not in title and "למה‏ ‏שכתו" not in title:
+                                if "הקדמת" not in title:
+                                    title = "הלכות"+" "+title.strip()
+                                    title = remove_blanks(title)
+                                if title not in parsed_topics:
+                                    #print str(index)+" "+''.join(title)
+                                    if len(topic_box)!=0:
+                                        order_box.append(topic_box)
+                                        topic_box = []
+                                    parsed_topics.append(title)
+                #we don't want to append names of sections, ois's, or topics, so we only append if our paragraph is none of these, hence "else"
+                else:
+                    for paragraph_split in invert_brackets(unmark(paragraph.strip())).split(":"):
+                        if not_blank(paragraph_split.replace("(","").replace(")","")):
+                            ois_box.append(paragraph_split+":")
 
     #still have to store last entry in text, since hitting a title calls the append chain and there's no title after the last title.
     section_box.append(ois_box)
@@ -276,7 +277,7 @@ for index, order in enumerate(get_parsed_text()):
                     if paragraph.count("(")!=paragraph.count(")"):
                         bad_paren.append(str(index_0)+" "+str(index)+" "+str(index2)+" "+str(index3)+"\n"+ois)
 
-
+"""
 orders = [ ["Orach Chaim","אורח חיים"],["Yoreh Deah","יורה דעה"],["Even HaEzer","אבן העזר"],["Choshen Mishpat","חושן משפט"]]
 html_str=""
 text = get_parsed_text()
@@ -290,7 +291,7 @@ for x in range(4):
 Html_file= open("missing_parens.html","w")
 Html_file.write(html_str)
 Html_file.close()
-"""
+
 
 
 
