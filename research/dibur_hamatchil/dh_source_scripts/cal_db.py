@@ -277,18 +277,25 @@ def make_cal_pos_hashtable(cutoff=0):
             pos = lineObj["POS"]
             if not word in obj:
                 obj[word] = []
-            pos_set = set(obj[word])
-            pos_set.add(pos)
-            obj[word] = list(pos_set)
+
+            #pos_set = set(obj[word])
+            #pos_set.add(pos)
+            obj[word].append(pos)
 
     num_one_pos_words = 0
     total_num_pos = 0
     for word,pos in reversed(obj.items()):
-        if len(pos) < cutoff:
+        pos_counts = {}
+        for p in pos:
+            if not p in pos_counts:
+                pos_counts[p] = 0
+            pos_counts[p] += 1
+        obj[word] = pos_counts
+        if len(pos_counts) < cutoff:
             del obj[word]
             continue
-        total_num_pos += len(pos)
-        if len(pos) == 1:
+        total_num_pos += len(pos_counts)
+        if len(pos_counts) == 1:
             num_one_pos_words += 1
 
     print "Percent Words With 1 POS",round(100.0*num_one_pos_words/len(obj),3)

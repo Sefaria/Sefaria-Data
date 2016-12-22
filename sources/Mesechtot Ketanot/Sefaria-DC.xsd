@@ -107,6 +107,7 @@
     <element ref='t:comment'/>
    </sequence>
    <attribute name='id' type='NMTOKEN' use='optional'/>
+   <attribute name='verse' type='NMTOKEN' use='optional'/>
   </complexType>
  </element>
 
