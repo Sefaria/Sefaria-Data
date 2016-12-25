@@ -246,12 +246,17 @@ class commentarySub(supermod.commentary):
             expected_chapter += 1
 
     def parse_linked(self):
-        parsed = JaggedArray([[[]]])  # all commentaries are depth 2?
+        parsed = JaggedArray([[[]]])
         for phrase in self.get_phrase():
             indices = (commentStore[phrase.id]['chapter'], commentStore[phrase.id]['verse'], commentStore[phrase.id]['order'])
             text = phrase.get_comment().valueOf_.replace(u'\n', u'')
             parsed.set_element([i-1 for i in indices], text)
         return parsed.array()
+
+    def parse_unlinked(self):
+        parsed = JaggedArray([[[]]])
+        for chap_index, chapter in enumerate(self.get_chapter()):
+            pass
 
     def build_node(self):
         """
@@ -273,6 +278,18 @@ class commentarySub(supermod.commentary):
         assert len(verse_map) == len(chapters)
         for chapter, inner_map in zip(chapters, verse_map):
             chapter.set_verses(inner_map)
+
+    def correct_phrase_verses(self):
+        errors = []
+        for chapter in self.get_chapter():
+            errors.append(chapter.correct_phrase_verses())
+        for chapter, error in enumerate(errors):
+            if len(error) > 0:
+                print 'chapter {} errors found at: '.format(chapter+1),
+                for i in error:
+                    print '{}, '.format(i),
+                else:
+                    print '\n'
 
 
 supermod.commentary.subclass = commentarySub
@@ -303,7 +320,46 @@ class chapterSub(supermod.chapter):
         phrases = self.get_phrase()
         assert len(verse_map) == len(phrases)
         for index, phrase in zip(verse_map, phrases):
-            phrase.verse = str(index+1)
+            if not hasattr(phrase, 'subchap'):
+                phrase.subchap = str(index+1)
+
+    def _get_verse_boundaries(self):
+        current_verse, current_boundary = 1, [0, 0]
+        boundaries = []
+        phrases = self.get_phrase()
+
+        for p_index, phrase in enumerate(phrases):
+            verse = int(phrase.subchapter)
+            if verse == current_verse:
+                current_boundary[1] = p_index
+            elif verse - current_verse == 1:  # have we hit the next chapter?
+                try:
+                    first, second = phrases[p_index+1], phrases[p_index+2]
+                except IndexError:
+                    continue
+                if (phrase.subchap == first.subchap) or (phrase.subchap == second.subchap):
+                    current_verse = verse
+                    boundaries.append(current_boundary)
+                    current_boundary = [p_index, p_index]
+            else:
+                continue
+        else:
+            current_boundary[-1] == len(phrases) - 1
+            boundaries.append(current_boundary)
+        return boundaries
+
+    def correct_phrase_verses(self):
+        boundaries = self._get_verse_boundaries()
+        phrases = self.get_phrase()
+        errors = []
+        for verse, boundary in enumerate(boundaries):
+            for phrase in phrases[boundary[0]:boundary[1]]:
+                phrase.subchapter = str(verse+1)
+            if verse >= 1:  # check if there is a gap between verse boundaries
+                if boundary[0] - boundaries[verse-1][1] != 1:
+                    errors.append(verse+1)
+        return errors
+
 
 
 supermod.chapter.subclass = chapterSub

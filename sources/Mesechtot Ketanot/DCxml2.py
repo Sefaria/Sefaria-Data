@@ -1390,7 +1390,9 @@ class author(GeneratedsSuper):
     def exportAttributes(self, outfile, level, already_processed, namespace_='t:', name_='author'):
         pass
     def exportChildren(self, outfile, level, namespace_='t:', name_='author', fromsubclass_=False, pretty_print=True):
-        pass
+        if not fromsubclass_:
+            for item_ in self.content_:
+                item_.export(outfile, level, item_.name, namespace_, pretty_print=pretty_print)
     def build(self, node):
         already_processed = set()
         self.buildAttributes(node, node.attrib, already_processed)
@@ -1677,10 +1679,10 @@ class verse(GeneratedsSuper):
 class phrase(GeneratedsSuper):
     subclass = None
     superclass = None
-    def __init__(self, id=None, verse=None, label=None, dh=None, comment=None):
+    def __init__(self, id=None, subchap=None, label=None, dh=None, comment=None):
         self.original_tagname_ = None
         self.id = _cast(None, id)
-        self.verse = _cast(None, verse)
+        self.subchap = _cast(None, subchap)
         self.label = label
         self.dh = dh
         self.comment = comment
@@ -1703,8 +1705,8 @@ class phrase(GeneratedsSuper):
     def set_comment(self, comment): self.comment = comment
     def get_id(self): return self.id
     def set_id(self, id): self.id = id
-    def get_verse(self): return self.verse
-    def set_verse(self, verse): self.verse = verse
+    def get_subchap(self): return self.subchap
+    def set_subchap(self, subchap): self.subchap = subchap
     def hasContent_(self):
         if (
             self.label is not None or
@@ -1736,9 +1738,9 @@ class phrase(GeneratedsSuper):
         if self.id is not None and 'id' not in already_processed:
             already_processed.add('id')
             outfile.write(' id=%s' % (self.gds_encode(self.gds_format_string(quote_attrib(self.id), input_name='id')), ))
-        if self.verse is not None and 'verse' not in already_processed:
-            already_processed.add('verse')
-            outfile.write(' verse=%s' % (self.gds_encode(self.gds_format_string(quote_attrib(self.verse), input_name='verse')), ))
+        if self.subchap is not None and 'subchap' not in already_processed:
+            already_processed.add('subchap')
+            outfile.write(' subchap=%s' % (self.gds_encode(self.gds_format_string(quote_attrib(self.subchap), input_name='subchap')), ))
     def exportChildren(self, outfile, level, namespace_='t:', name_='phrase', fromsubclass_=False, pretty_print=True):
         if pretty_print:
             eol_ = '\n'
@@ -1762,10 +1764,10 @@ class phrase(GeneratedsSuper):
         if value is not None and 'id' not in already_processed:
             already_processed.add('id')
             self.id = value
-        value = find_attr_value_('verse', node)
-        if value is not None and 'verse' not in already_processed:
-            already_processed.add('verse')
-            self.verse = value
+        value = find_attr_value_('subchap', node)
+        if value is not None and 'subchap' not in already_processed:
+            already_processed.add('subchap')
+            self.subchap = value
     def buildChildren(self, child_, node, nodeName_, fromsubclass_=False):
         if nodeName_ == 'label':
             obj_ = label.factory()

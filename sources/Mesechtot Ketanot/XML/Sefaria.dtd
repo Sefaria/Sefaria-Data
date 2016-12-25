@@ -45,7 +45,7 @@ E-mail: dashlem@dclab.com
 <!ELEMENT phrase (label?,dh?,comment)>
 <!ATTLIST phrase
   id NMTOKEN #IMPLIED
-  verse NMTOKEN #IMPLIED>
+  subchap NMTOKEN #IMPLIED>
 
 <!ELEMENT dh (#PCDATA)>
 
