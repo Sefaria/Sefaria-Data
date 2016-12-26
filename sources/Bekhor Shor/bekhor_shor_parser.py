@@ -20,7 +20,6 @@ def file_to_ja_g(depth, infile, expressions, cleaner,grab_all=False):
     not include an expression with which to break up the segment levels.
     :param cleaner: A function that takes a list of strings and returns an array with the text parsed
     correctly. Should also break up and remove unnecessary tagging data.
-    :param gimatria_names: if the nameing of the beginig of the parts is with gematria, change this param to True
     :param grab_all: If set to true, will grab the lines indicating new sections.
     :return: A jagged_array with the text properly structured.
     """
@@ -68,7 +67,6 @@ def file_to_ja_g(depth, infile, expressions, cleaner,grab_all=False):
 
     return ja
 
-
 def parse_general(filename):
 
     def cleaner(my_text):
@@ -82,9 +80,9 @@ def parse_general(filename):
         return bs_ja
 
 def parse_all():
-    ja_bershit = parse_general('bs_genesis_exodus.txt')
+    ja_bershit = parse_general('bs_genesis.txt')
     ja_shemot = parse_general('bs_exodus.txt')
-    ja_vikra = parse_general('leviticus.txt')
+    ja_vikra = parse_general('bs_leviticus.txt')
     ja_bamidbar_1 = parse_general('bs_numbers1.txt')
     ja_bamidbar_2 = parse_general('bs_numbers2.txt')
     ja_devarim_1 = parse_general('bs_deuteronomy1.txt')
@@ -191,10 +189,11 @@ def link_bs(text_dict):
         for dh in traverse_ja(text_dict[text]):
             perek = (dh['indices'][0] + 1)
             pasuk = (dh['indices'][1] + 1)
+            comment = (dh['indices'][2]+1)
             link = (
                 {
                     "refs": [
-                        'Bekhor Shor, {} {}:{}'.format(book, perek, pasuk),
+                        'Bekhor Shor, {} {}:{}:{}'.format(book, perek, pasuk, comment),
                         '{} {}:{}'.format(book,perek, pasuk),
                     ],
                     "type": "commentary",
