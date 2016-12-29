@@ -552,7 +552,11 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
     if type(comments) == TextChunk:
         comm_ref = comments._oref
         comm_depth = comm_ref.get_state_ja("he").depth()
-        if comm_depth == 2:
+        if comm_depth == 1:
+            comment_list = comments.text
+            _, comment_ref_list = comments.text_index_map(base_tokenizer)
+
+        elif comm_depth == 2:
             _, comment_ref_list = comments.text_index_map(base_tokenizer)
             #sub_ja = comm_ref.get_state_ja("he").subarray_with_ref(comm_ref)
             #comment_ref_list = [comm_ref.subref(i + 1) for k in sub_ja.non_empty_sections() for i in k]
