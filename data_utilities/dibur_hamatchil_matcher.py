@@ -442,9 +442,10 @@ class RashiUnit:
         self.startingText = startingText
         self.match_type = ''
 
-
         normalizedCV = re.sub(ur" ו" + u"?" + u"כו" + u"'?" + u"$", u"", self.startingText).strip()
-        normalizedCV = re.sub(ur"^(גמ|גמרא|מתני|מתניתין|משנה)'? ", u"", normalizedCV)
+        temp = re.sub(ur"^(גמ|גמרא|מתני|מתניתין|משנה)'? ", u"", normalizedCV)
+        if len(temp) > 4:
+            normalizedCV = temp
 
         # if it starts with הג, then take just 3 words afterwords
         if self.startingText.startswith(u"ה\"ג") or self.startingText.startswith(u"ה״ג"):
