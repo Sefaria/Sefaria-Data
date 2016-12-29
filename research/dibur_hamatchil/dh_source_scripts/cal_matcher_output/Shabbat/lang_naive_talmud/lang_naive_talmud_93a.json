@@ -9,6 +9,10 @@
             "word": "קא"
         }, 
         {
+            "index": 30, 
+            "word": "מסייעי"
+        }, 
+        {
             "index": 37, 
             "word": "בה"
         }, 
@@ -312,12 +316,43 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "חד", 
+            "word_num": 0, 
+            "daf": "93a", 
             "word": "חד", 
-            "class": "unknown"
+            "line_num": 11, 
+            "cal_word": "חד", 
+            "POS": "n01", 
+            "class": "talmud", 
+            "pg_num": 93, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
+            "head_word": "מעט", 
+            "word_num": 7, 
+            "daf": "93a", 
             "word": "למעוטי", 
-            "class": "unknown"
+            "line_num": 11, 
+            "cal_word": "למעוטי", 
+            "POS": "V02", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ל_"
+            ], 
+            "pg_num": 93, 
+            "prefix_POS": [
+                "p02"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "זה", 
@@ -336,12 +371,52 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "חד", 
+            "word_num": 3, 
+            "daf": "93a", 
             "word": "וחד", 
-            "class": "unknown"
+            "line_num": 12, 
+            "cal_word": "וחד", 
+            "POS": "n01", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 93, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
+            "head_word": "מעט", 
+            "word_num": 4, 
+            "daf": "93a", 
             "word": "למעוטי", 
-            "class": "unknown"
+            "line_num": 12, 
+            "cal_word": "למעוטי", 
+            "POS": "V02", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ל_"
+            ], 
+            "pg_num": 93, 
+            "prefix_POS": [
+                "p02"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "זה", 
@@ -448,52 +523,12 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "חד", 
-            "word_num": 3, 
-            "daf": "93a", 
             "word": "וחד", 
-            "line_num": 12, 
-            "cal_word": "וחד", 
-            "POS": "n01", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
-            "pg_num": 93, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
-            "head_word": "מעט", 
-            "word_num": 4, 
-            "daf": "93a", 
             "word": "למעוטי", 
-            "line_num": 12, 
-            "cal_word": "למעוטי", 
-            "POS": "V02", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ל_"
-            ], 
-            "pg_num": 93, 
-            "prefix_POS": [
-                "p02"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "יחיד", 
@@ -782,7 +817,7 @@
             "word": "הי", 
             "line_num": 21, 
             "cal_word": "הי", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 93, 
             "ms": "01", 
@@ -1004,7 +1039,7 @@
             "word": "אנן", 
             "line_num": 25, 
             "cal_word": "אנן", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 93, 
             "ms": "01", 
@@ -1111,7 +1146,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ור\"", 
+            "word": "ור'", 
             "class": "unknown"
         }, 
         {
@@ -1143,7 +1178,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "וד\"", 
+            "word": "וד'", 
             "class": "unknown"
         }, 
         {
@@ -1183,7 +1218,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ג\"", 
+            "word": "ג'", 
             "class": "unknown"
         }, 
         {
@@ -1217,7 +1252,7 @@
             "word": "הא", 
             "line_num": 31, 
             "cal_word": "הא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 93, 
             "ms": "01", 
@@ -1226,19 +1261,8 @@
             "side": 1
         }, 
         {
-            "head_word": "סייע", 
-            "word_num": 3, 
-            "daf": "93a", 
             "word": "קמסייע", 
-            "line_num": 31, 
-            "cal_word": "מסייעי", 
-            "POS": "V02", 
-            "class": "talmud", 
-            "pg_num": 93, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "הדדי", 
@@ -1247,7 +1271,7 @@
             "word": "בהדי", 
             "line_num": 31, 
             "cal_word": "בהדי הדדי", 
-            "POS": "p", 
+            "POS": "P", 
             "prefix_homograph": [
                 ""
             ], 
@@ -1271,7 +1295,7 @@
             "word": "הדדי", 
             "line_num": 31, 
             "cal_word": "בהדי הדדי", 
-            "POS": "p", 
+            "POS": "P", 
             "prefix_homograph": [
                 ""
             ], 
@@ -1586,7 +1610,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ה\"", 
+            "word": "ה'", 
             "class": "unknown"
         }, 
         {
@@ -1602,7 +1626,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ה\"", 
+            "word": "ה'", 
             "class": "unknown"
         }, 
         {

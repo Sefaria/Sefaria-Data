@@ -3,6 +3,10 @@
         {
             "index": 1, 
             "word": "איכול"
+        }, 
+        {
+            "index": 6, 
+            "word": "לא"
         }
     ], 
     "words": [
@@ -191,7 +195,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "וכו\"", 
+            "word": "וכו'", 
             "class": "unknown"
         }, 
         {
@@ -247,7 +251,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "וכו\"", 
+            "word": "וכו'", 
             "class": "unknown"
         }, 
         {
@@ -452,19 +456,8 @@
             "side": 1
         }, 
         {
-            "head_word": "לא", 
-            "word_num": 1, 
-            "daf": "92a", 
             "word": "ולא", 
-            "line_num": 15, 
-            "cal_word": "לא", 
-            "POS": "a", 
-            "class": "talmud", 
-            "pg_num": 92, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "קבל", 
@@ -876,12 +869,12 @@
         }, 
         {
             "head_word": "הא", 
-            "word_num": 1, 
+            "word_num": 0, 
             "daf": "92a", 
             "word": "הא", 
-            "line_num": 31, 
+            "line_num": 21, 
             "cal_word": "הא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 92, 
             "ms": "01", 
@@ -891,10 +884,10 @@
         }, 
         {
             "head_word": "אמר", 
-            "word_num": 0, 
+            "word_num": 1, 
             "daf": "92a", 
             "word": "דאמרן", 
-            "line_num": 32, 
+            "line_num": 21, 
             "cal_word": "דאמרן", 
             "POS": "V01", 
             "prefix_homograph": [
@@ -1030,12 +1023,43 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "הא", 
+            "word_num": 1, 
+            "daf": "92a", 
             "word": "הא", 
-            "class": "unknown"
+            "line_num": 31, 
+            "cal_word": "הא", 
+            "POS": "P", 
+            "class": "talmud", 
+            "pg_num": 92, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
+            "head_word": "אמר", 
+            "word_num": 0, 
+            "daf": "92a", 
             "word": "דאמרן", 
-            "class": "unknown"
+            "line_num": 32, 
+            "cal_word": "דאמרן", 
+            "POS": "V01", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
+            "pg_num": 92, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "word": "מצורע", 
@@ -1242,7 +1266,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ה\"", 
+            "word": "ה'", 
             "class": "unknown"
         }, 
         {

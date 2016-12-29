@@ -1,12 +1,20 @@
 {
     "missed_words": [
         {
+            "index": 7, 
+            "word": "בפרהגבאני"
+        }, 
+        {
             "index": 10, 
             "word": "נמי"
         }, 
         {
             "index": 21, 
             "word": "לאיניש"
+        }, 
+        {
+            "index": 26, 
+            "word": "לדמתניתין"
         }
     ], 
     "words": [
@@ -575,7 +583,7 @@
             "word": "הא", 
             "line_num": 18, 
             "cal_word": "הא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 36, 
             "ms": "01", 
@@ -584,19 +592,8 @@
             "side": 2
         }, 
         {
-            "head_word": "פרהגבנא", 
-            "word_num": 1, 
-            "daf": "36b", 
             "word": "בפרה", 
-            "line_num": 18, 
-            "cal_word": "בפרהגבאני", 
-            "POS": "N05", 
-            "class": "talmud", 
-            "pg_num": 36, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "גבנא", 
@@ -725,7 +722,7 @@
             "word": "הא", 
             "line_num": 19, 
             "cal_word": "הא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 36, 
             "ms": "01", 
@@ -779,7 +776,7 @@
             "word": "הא", 
             "line_num": 19, 
             "cal_word": "הא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 36, 
             "ms": "01", 
@@ -816,7 +813,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -844,7 +841,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "וכו\"", 
+            "word": "וכו'", 
             "class": "unknown"
         }, 
         {
@@ -897,7 +894,7 @@
             "word": "ליה", 
             "line_num": 21, 
             "cal_word": "ליה", 
-            "POS": "p01", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 36, 
             "ms": "01", 
@@ -983,31 +980,8 @@
             "side": 2
         }, 
         {
-            "head_word": "מתניתא", 
-            "word_num": 1, 
-            "daf": "36b", 
             "word": "למתניתין", 
-            "line_num": 22, 
-            "cal_word": "לדמתניתין", 
-            "POS": "N02", 
-            "prefix_homograph": [
-                "", 
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ל_", 
-                "ד_"
-            ], 
-            "pg_num": 36, 
-            "prefix_POS": [
-                "p", 
-                "p"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "תני", 
@@ -1037,7 +1011,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {

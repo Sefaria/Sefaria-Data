@@ -1,8 +1,20 @@
 {
     "missed_words": [
         {
+            "index": 0, 
+            "word": "סבר"
+        }, 
+        {
+            "index": 10, 
+            "word": "דבי ריש גלותא"
+        }, 
+        {
             "index": 15, 
             "word": "לה"
+        }, 
+        {
+            "index": 22, 
+            "word": "וחברינהו"
         }
     ], 
     "words": [
@@ -43,19 +55,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "סבר", 
-            "word_num": 2, 
-            "daf": "126b", 
             "word": "בר", 
-            "line_num": 8, 
-            "cal_word": "סבר", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 126, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "שילא", 
@@ -248,7 +249,7 @@
             "word": "ליה", 
             "line_num": 8, 
             "cal_word": "לה", 
-            "POS": "p01", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 126, 
             "ms": "01", 
@@ -412,58 +413,12 @@
             "side": 2
         }, 
         {
-            "head_word": "ריש גלותא", 
-            "word_num": 0, 
-            "daf": "126b", 
             "word": "דריש", 
-            "line_num": 10, 
-            "cal_word": "דבי ריש גלותא", 
-            "POS": "N02", 
-            "prefix_homograph": [
-                "", 
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_", 
-                "בי"
-            ], 
-            "pg_num": 126, 
-            "prefix_POS": [
-                "p", 
-                "N01"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
-            "head_word": "ריש גלותא", 
-            "word_num": 0, 
-            "daf": "126b", 
             "word": "גלותא", 
-            "line_num": 10, 
-            "cal_word": "דבי ריש גלותא", 
-            "POS": "N02", 
-            "prefix_homograph": [
-                "", 
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_", 
-                "בי"
-            ], 
-            "pg_num": 126, 
-            "prefix_POS": [
-                "p", 
-                "N01"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "הלכה", 
@@ -528,7 +483,7 @@
             "word": "מאי", 
             "line_num": 12, 
             "cal_word": "מאי", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 126, 
             "ms": "01", 
@@ -591,8 +546,19 @@
             "side": 2
         }, 
         {
+            "head_word": "סתמא", 
+            "word_num": 2, 
+            "daf": "126b", 
             "word": "סתמא", 
-            "class": "unknown"
+            "line_num": 13, 
+            "cal_word": "סתמא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "pg_num": 126, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "word": "נגר", 
@@ -639,7 +605,7 @@
             "word": "היא", 
             "line_num": 13, 
             "cal_word": "הוא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 126, 
             "ms": "01", 
@@ -648,7 +614,7 @@
             "side": 2
         }, 
         {
-            "word": "ואפי\"", 
+            "word": "ואפי'", 
             "class": "unknown"
         }, 
         {
@@ -918,28 +884,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "חבר", 
-            "word_num": 3, 
-            "daf": "126b", 
             "word": "דחברינהו", 
-            "line_num": 22, 
-            "cal_word": "וחברינהו", 
-            "POS": "V02", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
-            "pg_num": 126, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "ארעא", 
@@ -1354,7 +1300,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {

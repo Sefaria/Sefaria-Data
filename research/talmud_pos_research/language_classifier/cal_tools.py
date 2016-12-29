@@ -401,10 +401,10 @@ def fixPNandGN():
     print numfixed
 
 def split_training_set_into_mesechtot():
-    mesechta_map = {71001:"Berakhot",71002:"Shabbat",71003:"Eruvin",71004:"Pesachim"}
+    mesechta_map = {71001:"Berakhot",71002:"Shabbat",71003:"Eruvin",71004:"Pesachim",71020:"Bava Kamma",71021:"Bava Metzia",71022:"Bava Batra"}
     curr_book = -1
     curr_book_file = None
-    with open("noahcaldb.txt","r") as ncal:
+    with open("noahcaldbfull.txt","r") as ncal:
         for line in ncal:
             lo = parseCalLine(line,False)
             if lo["book_num"] != curr_book:

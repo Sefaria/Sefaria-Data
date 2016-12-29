@@ -1,16 +1,40 @@
 {
     "missed_words": [
         {
+            "index": 1, 
+            "word": "סבר"
+        }, 
+        {
             "index": 3, 
             "word": "ומר"
+        }, 
+        {
+            "index": 4, 
+            "word": "סבר"
         }, 
         {
             "index": 8, 
             "word": "לאו"
         }, 
         {
+            "index": 12, 
+            "word": "דר"
+        }, 
+        {
+            "index": 13, 
+            "word": "ור"
+        }, 
+        {
             "index": 14, 
             "word": "קא"
+        }, 
+        {
+            "index": 15, 
+            "word": "מיפלגו"
+        }, 
+        {
+            "index": 18, 
+            "word": "דאמ"
         }, 
         {
             "index": 21, 
@@ -147,19 +171,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "סבר", 
-            "word_num": 1, 
-            "daf": "29b", 
             "word": "קסבר", 
-            "line_num": 4, 
-            "cal_word": "סבר", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 29, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "דבר", 
@@ -209,19 +222,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "סבר", 
-            "word_num": 0, 
-            "daf": "29b", 
             "word": "קסבר", 
-            "line_num": 6, 
-            "cal_word": "סבר", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 29, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "דבר", 
@@ -423,75 +425,24 @@
             "side": 2
         }, 
         {
-            "head_word": "ר'", 
-            "word_num": 1, 
-            "daf": "29b", 
             "word": "דרבי", 
-            "line_num": 9, 
-            "cal_word": "דר", 
-            "POS": "PN", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 29, 
-            "prefix_POS": [
-                "p"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "יהודה", 
             "class": "unknown"
         }, 
         {
-            "head_word": "ר'", 
-            "word_num": 3, 
-            "daf": "29b", 
             "word": "ורבי", 
-            "line_num": 9, 
-            "cal_word": "ור", 
-            "POS": "PN", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
-            "pg_num": 29, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "שמעון", 
             "class": "unknown"
         }, 
         {
-            "head_word": "פלג", 
-            "word_num": 6, 
-            "daf": "29b", 
             "word": "קמיפלגי", 
-            "line_num": 9, 
-            "cal_word": "מיפלגו", 
-            "POS": "V04", 
-            "class": "talmud", 
-            "pg_num": 29, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "מאן", 
@@ -580,7 +531,7 @@
             "word": "הוא", 
             "line_num": 12, 
             "cal_word": "הוא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 29, 
             "ms": "01", 
@@ -589,31 +540,11 @@
             "side": 2
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 2, 
-            "daf": "29b", 
             "word": "דאמר", 
-            "line_num": 12, 
-            "cal_word": "דאמ", 
-            "POS": "V01", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 29, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
-            "word": "דר\"", 
+            "word": "דר'", 
             "class": "unknown"
         }, 
         {
@@ -1005,8 +936,28 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "רב", 
+            "word_num": 0, 
+            "daf": "29b", 
             "word": "דרב", 
-            "class": "unknown"
+            "line_num": 26, 
+            "cal_word": "דרב", 
+            "POS": "PN", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
+            "pg_num": 29, 
+            "prefix_POS": [
+                "p"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 2
         }, 
         {
             "word": "ושמואל", 
@@ -1057,28 +1008,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "רב", 
-            "word_num": 0, 
-            "daf": "29b", 
             "word": "רב", 
-            "line_num": 26, 
-            "cal_word": "דרב", 
-            "POS": "PN", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 29, 
-            "prefix_POS": [
-                "p"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "גזר", 
@@ -1442,7 +1373,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "כר\"", 
+            "word": "כר'", 
             "class": "unknown"
         }, 
         {
@@ -1570,7 +1501,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -1582,7 +1513,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "דר\"", 
+            "word": "דר'", 
             "class": "unknown"
         }, 
         {
@@ -1678,7 +1609,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "כר\"", 
+            "word": "כר'", 
             "class": "unknown"
         }, 
         {

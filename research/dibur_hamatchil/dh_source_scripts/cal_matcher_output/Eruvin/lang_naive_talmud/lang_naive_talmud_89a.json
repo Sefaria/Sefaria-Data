@@ -9,6 +9,10 @@
             "word": "אחריתי"
         }, 
         {
+            "index": 20, 
+            "word": "דאמ"
+        }, 
+        {
             "index": 23, 
             "word": "והא"
         }, 
@@ -188,7 +192,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "י\"", 
+            "word": "י'", 
             "class": "unknown"
         }, 
         {
@@ -200,7 +204,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "י\"", 
+            "word": "י'", 
             "class": "unknown"
         }, 
         {
@@ -629,7 +633,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "מי\"", 
+            "word": "מי'", 
             "class": "unknown"
         }, 
         {
@@ -658,7 +662,7 @@
             "word": "היא", 
             "line_num": 14, 
             "cal_word": "היא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 89, 
             "ms": "01", 
@@ -687,7 +691,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "י\"", 
+            "word": "י'", 
             "class": "unknown"
         }, 
         {
@@ -758,7 +762,7 @@
             "word": "הא", 
             "line_num": 19, 
             "cal_word": "הא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 89, 
             "ms": "01", 
@@ -767,28 +771,8 @@
             "side": 1
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 4, 
-            "daf": "89a", 
             "word": "דאמר", 
-            "line_num": 19, 
-            "cal_word": "דאמ", 
-            "POS": "V01", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 89, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "רב", 
@@ -905,7 +889,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ד\"", 
+            "word": "ד'", 
             "class": "unknown"
         }, 
         {
@@ -1065,7 +1049,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ב\"", 
+            "word": "ב'", 
             "class": "unknown"
         }, 
         {
@@ -1167,7 +1151,7 @@
             "word": "מאי", 
             "line_num": 31, 
             "cal_word": "מאי", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 89, 
             "ms": "01", 
@@ -1355,7 +1339,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "בד\"", 
+            "word": "בד'", 
             "class": "unknown"
         }, 
         {
@@ -1451,11 +1435,11 @@
             "class": "unknown"
         }, 
         {
-            "word": "בד\"", 
+            "word": "בד'", 
             "class": "unknown"
         }, 
         {
-            "word": "אמו\"", 
+            "word": "אמו'", 
             "class": "unknown"
         }, 
         {
@@ -1464,6 +1448,75 @@
         }, 
         {
             "word": "אמר", 
+            "class": "unknown"
+        }, 
+        {
+            "head_word": "נגד", 
+            "word_num": 0, 
+            "daf": "89a", 
+            "word": "גוד", 
+            "line_num": 39, 
+            "cal_word": "גוד", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 89, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71003, 
+            "side": 1
+        }, 
+        {
+            "head_word": "סלק", 
+            "word_num": 1, 
+            "daf": "89a", 
+            "word": "אסיק", 
+            "line_num": 39, 
+            "cal_word": "אסיק", 
+            "POS": "V03", 
+            "class": "talmud", 
+            "pg_num": 89, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71003, 
+            "side": 1
+        }, 
+        {
+            "head_word": "מחיצתא", 
+            "word_num": 2, 
+            "daf": "89a", 
+            "word": "מחיצתא", 
+            "line_num": 39, 
+            "cal_word": "מחיצתא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "pg_num": 89, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71003, 
+            "side": 1
+        }, 
+        {
+            "word": "ושמואל", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "אמר", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "מותר", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "לטלטל", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "בכולו", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "דאמר", 
             "class": "unknown"
         }, 
         {
@@ -1510,42 +1563,6 @@
             "homograph": "", 
             "book_num": 71003, 
             "side": 1
-        }, 
-        {
-            "word": "ושמואל", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "אמר", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "מותר", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "לטלטל", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "בכולו", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "דאמר", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "גוד", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "אסיק", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "מחיצתא", 
-            "class": "unknown"
         }, 
         {
             "word": "תנן", 

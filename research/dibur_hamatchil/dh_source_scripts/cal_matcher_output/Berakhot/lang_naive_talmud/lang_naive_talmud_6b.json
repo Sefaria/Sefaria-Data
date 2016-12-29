@@ -21,12 +21,20 @@
             "word": "הוה"
         }, 
         {
-            "index": 35, 
-            "word": "דפירקא"
+            "index": 32, 
+            "word": "דכלה"
         }, 
         {
-            "index": 36, 
-            "word": "ריהטא"
+            "index": 33, 
+            "word": "דחקא"
+        }, 
+        {
+            "index": 71, 
+            "word": "אפי"
+        }, 
+        {
+            "index": 78, 
+            "word": "בדו בר"
         }, 
         {
             "index": 79, 
@@ -174,7 +182,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ה\"", 
+            "word": "ה'", 
             "class": "unknown"
         }, 
         {
@@ -274,7 +282,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ה\"", 
+            "word": "ה'", 
             "class": "unknown"
         }, 
         {
@@ -306,7 +314,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ה\"", 
+            "word": "ה'", 
             "class": "unknown"
         }, 
         {
@@ -322,7 +330,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -378,7 +386,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "שנא\"", 
+            "word": "שנא'", 
             "class": "unknown"
         }, 
         {
@@ -699,15 +707,24 @@
             "side": 2
         }, 
         {
-            "head_word": "ל_", 
+            "head_word": "נפק", 
             "word_num": 3, 
             "daf": "6b", 
             "word": "למיפק", 
             "line_num": 20, 
             "cal_word": "למיפק", 
-            "POS": "p02", 
+            "POS": "V01", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "ל_"
+            ], 
             "pg_num": 6, 
+            "prefix_POS": [
+                "p02"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71001, 
@@ -750,7 +767,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "שנא\"", 
+            "word": "שנא'", 
             "class": "unknown"
         }, 
         {
@@ -766,7 +783,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ה\"", 
+            "word": "ה'", 
             "class": "unknown"
         }, 
         {
@@ -1066,7 +1083,7 @@
             "word": "להא", 
             "line_num": 23, 
             "cal_word": "להא", 
-            "POS": "p01", 
+            "POS": "P", 
             "prefix_homograph": [
                 ""
             ], 
@@ -1136,7 +1153,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "שנא\"", 
+            "word": "שנא'", 
             "class": "unknown"
         }, 
         {
@@ -1144,7 +1161,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ה\"", 
+            "word": "ה'", 
             "class": "unknown"
         }, 
         {
@@ -1160,7 +1177,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "וגו\"", 
+            "word": "וגו'", 
             "class": "unknown"
         }, 
         {
@@ -1170,7 +1187,7 @@
             "word": "אנא", 
             "line_num": 24, 
             "cal_word": "אנא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 6, 
             "ms": "01", 
@@ -1213,31 +1230,11 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
             "word": "זירא", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "אגרא", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "דפרקא", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "רהטא", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "אמר", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "אביי", 
             "class": "unknown"
         }, 
         {
@@ -1256,13 +1253,13 @@
             "side": 2
         }, 
         {
-            "head_word": "כלה", 
-            "word_num": 1, 
+            "head_word": "פירקא", 
+            "word_num": 4, 
             "daf": "6b", 
-            "word": "דכלה", 
+            "word": "דפרקא", 
             "line_num": 25, 
-            "cal_word": "דכלה", 
-            "POS": "N01", 
+            "cal_word": "דפירקא", 
+            "POS": "N02", 
             "prefix_homograph": [
                 ""
             ], 
@@ -1280,12 +1277,12 @@
             "side": 2
         }, 
         {
-            "head_word": "דוחקא", 
-            "word_num": 2, 
+            "head_word": "ריהטא", 
+            "word_num": 5, 
             "daf": "6b", 
-            "word": "דוחקא", 
+            "word": "רהטא", 
             "line_num": 25, 
-            "cal_word": "דחקא", 
+            "cal_word": "ריהטא", 
             "POS": "N02", 
             "class": "talmud", 
             "pg_num": 6, 
@@ -1299,7 +1296,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "רבא", 
+            "word": "אביי", 
             "class": "unknown"
         }, 
         {
@@ -1316,6 +1313,26 @@
             "homograph": "", 
             "book_num": 71001, 
             "side": 2
+        }, 
+        {
+            "word": "דכלה", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "דוחקא", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "אמר", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "רבא", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "אגרא", 
+            "class": "unknown"
         }, 
         {
             "head_word": "שמעתא", 
@@ -1460,7 +1477,7 @@
         }, 
         {
             "head_word": "אגרא", 
-            "word_num": 6, 
+            "word_num": 3, 
             "daf": "6b", 
             "word": "אגרא", 
             "line_num": 26, 
@@ -1525,8 +1542,19 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "אגרא", 
+            "word_num": 6, 
+            "daf": "6b", 
             "word": "אגרא", 
-            "class": "unknown"
+            "line_num": 26, 
+            "cal_word": "אגרא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "pg_num": 6, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71001, 
+            "side": 2
         }, 
         {
             "head_word": "הספידא", 
@@ -2002,7 +2030,7 @@
             "word": "ההוא", 
             "line_num": 29, 
             "cal_word": "ההוא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 6, 
             "ms": "01", 
@@ -2116,19 +2144,8 @@
             "side": 2
         }, 
         {
-            "head_word": "אפי", 
-            "word_num": 9, 
-            "daf": "6b", 
             "word": "אפיה", 
-            "line_num": 29, 
-            "cal_word": "אפי", 
-            "POS": "N05", 
-            "class": "talmud", 
-            "pg_num": 6, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71001, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "בי כנישתא", 
@@ -2223,7 +2240,7 @@
             "word": "ליה", 
             "line_num": 29, 
             "cal_word": "ליה", 
-            "POS": "p01", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 6, 
             "ms": "01", 
@@ -2253,7 +2270,7 @@
             "word": "א\"ל", 
             "line_num": 30, 
             "cal_word": "אמ ליה", 
-            "POS": "p01", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 6, 
             "ms": "01", 
@@ -2262,34 +2279,12 @@
             "side": 2
         }, 
         {
-            "head_word": "בדובר", 
-            "word_num": 3, 
-            "daf": "6b", 
             "word": "כדו", 
-            "line_num": 30, 
-            "cal_word": "בדו בר", 
-            "POS": "N01", 
-            "class": "talmud", 
-            "pg_num": 6, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71001, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
-            "head_word": "בדובר", 
-            "word_num": 3, 
-            "daf": "6b", 
             "word": "בר", 
-            "line_num": 30, 
-            "cal_word": "בדו בר", 
-            "POS": "N01", 
-            "class": "talmud", 
-            "pg_num": 6, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71001, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "קיימת", 
@@ -2497,7 +2492,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -2505,7 +2500,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ור\"", 
+            "word": "ור'", 
             "class": "unknown"
         }, 
         {
@@ -2649,7 +2644,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -2657,7 +2652,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ור\"", 
+            "word": "ור'", 
             "class": "unknown"
         }, 
         {
@@ -2833,7 +2828,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "וגו\"", 
+            "word": "וגו'", 
             "class": "unknown"
         }, 
         {
@@ -2841,7 +2836,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ה\"", 
+            "word": "ה'", 
             "class": "unknown"
         }, 
         {
@@ -2893,7 +2888,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -2989,7 +2984,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ה\"", 
+            "word": "ה'", 
             "class": "unknown"
         }, 
         {
@@ -3129,7 +3124,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ה\"", 
+            "word": "ה'", 
             "class": "unknown"
         }, 
         {
@@ -3253,7 +3248,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "וגו\"", 
+            "word": "וגו'", 
             "class": "unknown"
         }, 
         {
@@ -3269,7 +3264,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "וגו\"", 
+            "word": "וגו'", 
             "class": "unknown"
         }, 
         {
@@ -3381,7 +3376,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ה\"", 
+            "word": "ה'", 
             "class": "unknown"
         }, 
         {
@@ -3457,7 +3452,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ה\"", 
+            "word": "ה'", 
             "class": "unknown"
         }, 
         {
@@ -3545,7 +3540,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "וגו\"", 
+            "word": "וגו'", 
             "class": "unknown"
         }, 
         {
@@ -3661,7 +3656,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -3689,7 +3684,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {

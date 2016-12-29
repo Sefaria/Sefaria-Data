@@ -1,14 +1,5 @@
 {
-    "missed_words": [
-        {
-            "index": 13, 
-            "word": "בינייהו"
-        }, 
-        {
-            "index": 14, 
-            "word": "דמאיס"
-        }
-    ], 
+    "missed_words": [], 
     "words": [
         {
             "word": "הואיל", 
@@ -47,7 +38,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -55,7 +46,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "בר\"", 
+            "word": "בר'", 
             "class": "unknown"
         }, 
         {
@@ -87,7 +78,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -123,7 +114,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ור\"", 
+            "word": "ור'", 
             "class": "unknown"
         }, 
         {
@@ -175,7 +166,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "וגו\"", 
+            "word": "וגו'", 
             "class": "unknown"
         }, 
         {
@@ -287,7 +278,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -347,7 +338,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ור\"", 
+            "word": "ור'", 
             "class": "unknown"
         }, 
         {
@@ -423,7 +414,7 @@
             "word": "ומאי", 
             "line_num": 14, 
             "cal_word": "ומאי", 
-            "POS": "p01", 
+            "POS": "P", 
             "prefix_homograph": [
                 ""
             ], 
@@ -591,7 +582,7 @@
             "word": "למאי", 
             "line_num": 18, 
             "cal_word": "למאי", 
-            "POS": "p01", 
+            "POS": "P", 
             "prefix_homograph": [
                 ""
             ], 
@@ -652,7 +643,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ור\"", 
+            "word": "ור'", 
             "class": "unknown"
         }, 
         {
@@ -684,7 +675,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ור\"", 
+            "word": "ור'", 
             "class": "unknown"
         }, 
         {
@@ -745,10 +736,10 @@
         }, 
         {
             "head_word": "בינ", 
-            "word_num": 1, 
+            "word_num": 0, 
             "daf": "59a", 
             "word": "בין", 
-            "line_num": 23, 
+            "line_num": 22, 
             "cal_word": "בין", 
             "POS": "p01", 
             "class": "talmud", 
@@ -764,9 +755,114 @@
         }, 
         {
             "head_word": "ר'", 
+            "word_num": 2, 
+            "daf": "59a", 
+            "word": "לר'", 
+            "line_num": 22, 
+            "cal_word": "לר", 
+            "POS": "PN", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ל_"
+            ], 
+            "pg_num": 59, 
+            "prefix_POS": [
+                "p03"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
+        }, 
+        {
+            "word": "חנינא", 
+            "class": "unknown"
+        }, 
+        {
+            "head_word": "איכא", 
             "word_num": 4, 
             "daf": "59a", 
-            "word": "לר\"", 
+            "word": "איכא", 
+            "line_num": 22, 
+            "cal_word": "איכא", 
+            "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 59, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
+        }, 
+        {
+            "head_word": "בינ", 
+            "word_num": 5, 
+            "daf": "59a", 
+            "word": "בינייהו", 
+            "line_num": 22, 
+            "cal_word": "בינייהו", 
+            "POS": "p02", 
+            "class": "talmud", 
+            "pg_num": 59, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
+        }, 
+        {
+            "head_word": "מאיס", 
+            "word_num": 0, 
+            "daf": "59a", 
+            "word": "דמאיס", 
+            "line_num": 23, 
+            "cal_word": "דמאיס", 
+            "POS": "A01", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
+            "pg_num": 59, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
+        }, 
+        {
+            "head_word": "בינ", 
+            "word_num": 1, 
+            "daf": "59a", 
+            "word": "בין", 
+            "line_num": 23, 
+            "cal_word": "בין", 
+            "POS": "p01", 
+            "class": "talmud", 
+            "pg_num": 59, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
+        }, 
+        {
+            "word": "ר'", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "יוחנן", 
+            "class": "unknown"
+        }, 
+        {
+            "head_word": "ר'", 
+            "word_num": 4, 
+            "daf": "59a", 
+            "word": "לר'", 
             "line_num": 23, 
             "cal_word": "לר", 
             "POS": "PN", 
@@ -819,38 +915,6 @@
             "homograph": "", 
             "book_num": 71002, 
             "side": 1
-        }, 
-        {
-            "word": "דמאיס", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "בין", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "ר\"", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "יוחנן", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "לר\"", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "חנינא", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "איכא", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "בינייהו", 
-            "class": "unknown"
         }, 
         {
             "head_word": "יקיר", 

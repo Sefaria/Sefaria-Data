@@ -1,5 +1,14 @@
 {
-    "missed_words": [], 
+    "missed_words": [
+        {
+            "index": 20, 
+            "word": "דגברא"
+        }, 
+        {
+            "index": 21, 
+            "word": "מוכסא"
+        }
+    ], 
     "words": [
         {
             "word": "נייר", 
@@ -106,7 +115,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ב\"", 
+            "word": "ב'", 
             "class": "unknown"
         }, 
         {
@@ -314,7 +323,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -649,7 +658,7 @@
             "word": "אידי", 
             "line_num": 20, 
             "cal_word": "אידי", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 78, 
             "ms": "01", 
@@ -664,7 +673,7 @@
             "word": "ואידי", 
             "line_num": 20, 
             "cal_word": "ואידי", 
-            "POS": "p01", 
+            "POS": "P", 
             "prefix_homograph": [
                 ""
             ], 
@@ -718,7 +727,7 @@
             "word": "הוא", 
             "line_num": 20, 
             "cal_word": "הוא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 78, 
             "ms": "01", 
@@ -1277,7 +1286,7 @@
             "word": "מאי", 
             "line_num": 40, 
             "cal_word": "מאי", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 78, 
             "ms": "01", 
@@ -1332,8 +1341,19 @@
             "side": 2
         }, 
         {
+            "head_word": "מכסא", 
+            "word_num": 1, 
+            "daf": "78b", 
             "word": "מוכסא", 
-            "class": "unknown"
+            "line_num": 41, 
+            "cal_word": "מיכסא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "pg_num": 78, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "word": "רבא", 
@@ -1384,19 +1404,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "מכסא", 
-            "word_num": 1, 
-            "daf": "78b", 
             "word": "מוכס", 
-            "line_num": 41, 
-            "cal_word": "מיכסא", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "pg_num": 78, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "איכא", 
@@ -1472,43 +1481,12 @@
             "side": 2
         }, 
         {
-            "head_word": "גברא", 
-            "word_num": 1, 
-            "daf": "78b", 
             "word": "גברא", 
-            "line_num": 44, 
-            "cal_word": "דגברא", 
-            "POS": "N02", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 78, 
-            "prefix_POS": [
-                "p"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
-            "head_word": "מכסא", 
-            "word_num": 2, 
-            "daf": "78b", 
             "word": "דמוכס", 
-            "line_num": 44, 
-            "cal_word": "מוכסא", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "pg_num": 78, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "אנא", 
@@ -1517,7 +1495,7 @@
             "word": "אנא", 
             "line_num": 44, 
             "cal_word": "אנא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 78, 
             "ms": "01", 

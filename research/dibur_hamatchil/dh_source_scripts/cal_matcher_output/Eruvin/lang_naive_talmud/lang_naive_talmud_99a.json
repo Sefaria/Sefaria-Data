@@ -7,6 +7,10 @@
         {
             "index": 14, 
             "word": "ואמאי"
+        }, 
+        {
+            "index": 18, 
+            "word": "אמ"
         }
     ], 
     "words": [
@@ -267,7 +271,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ד\"", 
+            "word": "ד'", 
             "class": "unknown"
         }, 
         {
@@ -275,7 +279,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ד\"", 
+            "word": "ד'", 
             "class": "unknown"
         }, 
         {
@@ -355,7 +359,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "וכו\"", 
+            "word": "וכו'", 
             "class": "unknown"
         }, 
         {
@@ -415,7 +419,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ד\"", 
+            "word": "ד'", 
             "class": "unknown"
         }, 
         {
@@ -523,7 +527,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ד\"", 
+            "word": "ד'", 
             "class": "unknown"
         }, 
         {
@@ -725,7 +729,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "וכו\"", 
+            "word": "וכו'", 
             "class": "unknown"
         }, 
         {
@@ -1027,7 +1031,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -1067,7 +1071,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ד\"", 
+            "word": "ד'", 
             "class": "unknown"
         }, 
         {
@@ -1132,7 +1136,7 @@
                 "c"
             ], 
             "ms": "01", 
-            "homograph": "", 
+            "homograph": "#2", 
             "book_num": 71003, 
             "side": 1
         }, 
@@ -1416,7 +1420,7 @@
             "word": "מאי", 
             "line_num": 43, 
             "cal_word": "מאי", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 99, 
             "ms": "01", 
@@ -1425,19 +1429,8 @@
             "side": 1
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 2, 
-            "daf": "99a", 
             "word": "אמר", 
-            "line_num": 43, 
-            "cal_word": "אמ", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 99, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "אביי", 
@@ -1445,12 +1438,12 @@
         }, 
         {
             "head_word": "היא", 
-            "word_num": 5, 
+            "word_num": 0, 
             "daf": "99a", 
             "word": "היא", 
-            "line_num": 43, 
+            "line_num": 44, 
             "cal_word": "היא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 99, 
             "ms": "01", 
@@ -1471,19 +1464,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "היא", 
-            "word_num": 0, 
-            "daf": "99a", 
             "word": "היא", 
-            "line_num": 44, 
-            "cal_word": "היא", 
-            "POS": "p01", 
-            "class": "talmud", 
-            "pg_num": 99, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "גופא", 
@@ -1511,7 +1493,7 @@
             "word": "ואנן", 
             "line_num": 44, 
             "cal_word": "ואנן", 
-            "POS": "p01", 
+            "POS": "P", 
             "prefix_homograph": [
                 ""
             ], 

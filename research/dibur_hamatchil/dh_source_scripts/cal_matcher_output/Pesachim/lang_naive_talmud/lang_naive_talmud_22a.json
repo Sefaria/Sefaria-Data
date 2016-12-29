@@ -1,6 +1,14 @@
 {
     "missed_words": [
         {
+            "index": 2, 
+            "word": "דאמ"
+        }, 
+        {
+            "index": 3, 
+            "word": "אוכלא"
+        }, 
+        {
             "index": 4, 
             "word": "שרא"
         }, 
@@ -9,8 +17,20 @@
             "word": "רחמ"
         }, 
         {
+            "index": 6, 
+            "word": "אוכלא"
+        }, 
+        {
             "index": 7, 
             "word": "הוא"
+        }, 
+        {
+            "index": 8, 
+            "word": "מיסר"
+        }, 
+        {
+            "index": 14, 
+            "word": "אמ"
         }, 
         {
             "index": 15, 
@@ -75,7 +95,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ור\"", 
+            "word": "ור'", 
             "class": "unknown"
         }, 
         {
@@ -275,7 +295,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -328,7 +348,7 @@
             "word": "למאן", 
             "line_num": 10, 
             "cal_word": "למאן", 
-            "POS": "p01", 
+            "POS": "P", 
             "prefix_homograph": [
                 ""
             ], 
@@ -346,28 +366,8 @@
             "side": 1
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 0, 
-            "daf": "22a", 
             "word": "דאמר", 
-            "line_num": 11, 
-            "cal_word": "דאמ", 
-            "POS": "V01", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 22, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "יש", 
@@ -418,28 +418,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אוכלא", 
-            "word_num": 5, 
-            "daf": "22a", 
             "word": "איכא", 
-            "line_num": 11, 
-            "cal_word": "אוכלא", 
-            "POS": "N02", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 22, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "למימר", 
@@ -490,19 +470,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אוכלא", 
-            "word_num": 9, 
-            "daf": "22a", 
             "word": "האוכל", 
-            "line_num": 11, 
-            "cal_word": "אוכלא", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "pg_num": 22, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "מגיד", 
@@ -913,19 +882,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 0, 
-            "daf": "22a", 
             "word": "אמר", 
-            "line_num": 27, 
-            "cal_word": "אמ", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 22, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "רב", 

@@ -1,5 +1,14 @@
 {
-    "missed_words": [], 
+    "missed_words": [
+        {
+            "index": 3, 
+            "word": "מרבנן"
+        }, 
+        {
+            "index": 8, 
+            "word": "אגמרה"
+        }
+    ], 
     "words": [
         {
             "word": "הבכורות", 
@@ -356,7 +365,7 @@
             "word": "א\"ל", 
             "line_num": 14, 
             "cal_word": "אמ ליה", 
-            "POS": "p01", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 21, 
             "ms": "01", 
@@ -390,7 +399,7 @@
             "word": "לההוא", 
             "line_num": 14, 
             "cal_word": "לההוא", 
-            "POS": "p01", 
+            "POS": "P", 
             "prefix_homograph": [
                 ""
             ], 
@@ -408,19 +417,8 @@
             "side": 2
         }, 
         {
-            "head_word": "רבננ", 
-            "word_num": 5, 
-            "daf": "21b", 
             "word": "מדרבנן", 
-            "line_num": 14, 
-            "cal_word": "מרבנן", 
-            "POS": "N05", 
-            "class": "talmud", 
-            "pg_num": 21, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "הוי", 
@@ -652,7 +650,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "וגו\"", 
+            "word": "וגו'", 
             "class": "unknown"
         }, 
         {
@@ -1012,7 +1010,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -2264,19 +2262,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "גמר", 
-            "word_num": 0, 
-            "daf": "21b", 
             "word": "דאגמריה", 
-            "line_num": 48, 
-            "cal_word": "אגמרה", 
-            "POS": "V03", 
-            "class": "talmud", 
-            "pg_num": 21, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "סימנא", 
@@ -2362,7 +2349,7 @@
             "word": "ליה", 
             "line_num": 49, 
             "cal_word": "ליה", 
-            "POS": "p01", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 21, 
             "ms": "01", 

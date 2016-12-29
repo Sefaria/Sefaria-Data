@@ -1,5 +1,14 @@
 {
-    "missed_words": [], 
+    "missed_words": [
+        {
+            "index": 6, 
+            "word": "אמ"
+        }, 
+        {
+            "index": 13, 
+            "word": "לא"
+        }
+    ], 
     "words": [
         {
             "word": "בשל", 
@@ -320,7 +329,7 @@
             "word": "הוא", 
             "line_num": 12, 
             "cal_word": "הוא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 32, 
             "ms": "01", 
@@ -427,19 +436,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 2, 
-            "daf": "32a", 
             "word": "אמר", 
-            "line_num": 13, 
-            "cal_word": "אמ", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 32, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "ל_", 
@@ -1198,19 +1196,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "הא", 
-            "word_num": 2, 
-            "daf": "32a", 
             "word": "הוא", 
-            "line_num": 43, 
-            "cal_word": "הא", 
-            "POS": "I", 
-            "class": "talmud", 
-            "pg_num": 32, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "על", 
@@ -1309,8 +1296,19 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "הא", 
+            "word_num": 2, 
+            "daf": "32a", 
             "word": "האי", 
-            "class": "unknown"
+            "line_num": 43, 
+            "cal_word": "הא", 
+            "POS": "I", 
+            "class": "talmud", 
+            "pg_num": 32, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71003, 
+            "side": 1
         }, 
         {
             "word": "עם", 
@@ -1380,19 +1378,8 @@
             "side": 1
         }, 
         {
-            "head_word": "לא", 
-            "word_num": 3, 
-            "daf": "32a", 
             "word": "אלא", 
-            "line_num": 43, 
-            "cal_word": "לא", 
-            "POS": "a", 
-            "class": "talmud", 
-            "pg_num": 32, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "בעם", 

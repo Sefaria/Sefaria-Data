@@ -1,12 +1,28 @@
 {
     "missed_words": [
         {
+            "index": 1, 
+            "word": "הא"
+        }, 
+        {
+            "index": 10, 
+            "word": "האדי"
+        }, 
+        {
             "index": 14, 
             "word": "והדרת"
         }, 
         {
             "index": 16, 
             "word": "כי"
+        }, 
+        {
+            "index": 17, 
+            "word": "זייתא"
+        }, 
+        {
+            "index": 21, 
+            "word": "באגרא"
         }
     ], 
     "words": [
@@ -318,19 +334,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "הא", 
-            "word_num": 1, 
-            "daf": "85b", 
             "word": "והא", 
-            "line_num": 11, 
-            "cal_word": "הא", 
-            "POS": "I", 
-            "class": "talmud", 
-            "pg_num": 85, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "לא", 
@@ -369,7 +374,7 @@
             "word": "הוא", 
             "line_num": 12, 
             "cal_word": "הוא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 85, 
             "ms": "01", 
@@ -399,7 +404,7 @@
             "word": "לה", 
             "line_num": 12, 
             "cal_word": "לה", 
-            "POS": "p01", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 85, 
             "ms": "01", 
@@ -414,7 +419,7 @@
             "word": "והוא", 
             "line_num": 12, 
             "cal_word": "והוא", 
-            "POS": "p01", 
+            "POS": "P", 
             "prefix_homograph": [
                 ""
             ], 
@@ -453,7 +458,7 @@
             "word": "לה", 
             "line_num": 12, 
             "cal_word": "לה", 
-            "POS": "p01", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 85, 
             "ms": "01", 
@@ -686,19 +691,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "הדי", 
-            "word_num": 0, 
-            "daf": "85b", 
             "word": "הא", 
-            "line_num": 21, 
-            "cal_word": "האדי", 
-            "POS": "p01", 
-            "class": "talmud", 
-            "pg_num": 85, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "גופא", 
@@ -1026,7 +1020,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "וכו\"", 
+            "word": "וכו'", 
             "class": "unknown"
         }, 
         {
@@ -1078,19 +1072,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "זיתא", 
-            "word_num": 1, 
-            "daf": "85b", 
             "word": "כזיתא", 
-            "line_num": 34, 
-            "cal_word": "זייתא", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "pg_num": 85, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "פסחא", 
@@ -1147,28 +1130,8 @@
             "side": 2
         }, 
         {
-            "head_word": "איגרא", 
-            "word_num": 5, 
-            "daf": "85b", 
             "word": "איגרא", 
-            "line_num": 34, 
-            "cal_word": "באגרא", 
-            "POS": "N02", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ב_"
-            ], 
-            "pg_num": 85, 
-            "prefix_POS": [
-                "p02"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }
     ]
 }

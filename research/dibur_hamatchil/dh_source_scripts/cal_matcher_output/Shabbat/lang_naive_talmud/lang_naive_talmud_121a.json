@@ -5,20 +5,24 @@
             "word": "היא"
         }, 
         {
+            "index": 6, 
+            "word": "מהדרי"
+        }, 
+        {
+            "index": 19, 
+            "word": "שרית"
+        }, 
+        {
+            "index": 20, 
+            "word": "לדעתא"
+        }, 
+        {
             "index": 22, 
             "word": "קא"
         }, 
         {
-            "index": 29, 
-            "word": "איקלעו"
-        }, 
-        {
             "index": 31, 
             "word": "דמינשיקיא"
-        }, 
-        {
-            "index": 32, 
-            "word": "לרב"
         }
     ], 
     "words": [
@@ -77,7 +81,7 @@
             "head_word": "ר'", 
             "word_num": 6, 
             "daf": "121a", 
-            "word": "ור\"", 
+            "word": "ור'", 
             "line_num": 1, 
             "cal_word": "ור", 
             "POS": "PN", 
@@ -153,26 +157,15 @@
             "side": 1
         }, 
         {
-            "head_word": "הדר", 
-            "word_num": 5, 
-            "daf": "121a", 
             "word": "מהדרינן", 
-            "line_num": 2, 
-            "cal_word": "מהדרי", 
-            "POS": "V02", 
-            "class": "talmud", 
-            "pg_num": 121, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "וסבר", 
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -280,7 +273,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -320,7 +313,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -328,7 +321,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "בר\"", 
+            "word": "בר'", 
             "class": "unknown"
         }, 
         {
@@ -1224,47 +1217,16 @@
             "side": 1
         }, 
         {
-            "head_word": "שרי", 
-            "word_num": 0, 
-            "daf": "121a", 
             "word": "שרי", 
-            "line_num": 35, 
-            "cal_word": "שרית", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 121, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "נכרי", 
             "class": "unknown"
         }, 
         {
-            "head_word": "דעתא", 
-            "word_num": 2, 
-            "daf": "121a", 
             "word": "לדעתיה", 
-            "line_num": 35, 
-            "cal_word": "לדעתא", 
-            "POS": "N02", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ל_"
-            ], 
-            "pg_num": 121, 
-            "prefix_POS": [
-                "p03"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "נפשא", 
@@ -1430,11 +1392,69 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "רב", 
+            "word_num": 0, 
+            "daf": "121a", 
             "word": "רב", 
-            "class": "unknown"
+            "line_num": 40, 
+            "cal_word": "רב", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "pg_num": 121, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "יהודה", 
+            "class": "unknown"
+        }, 
+        {
+            "head_word": "רב", 
+            "word_num": 2, 
+            "daf": "121a", 
+            "word": "ורב", 
+            "line_num": 40, 
+            "cal_word": "ורב", 
+            "POS": "PN", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 121, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
+        }, 
+        {
+            "word": "ירמיה", 
+            "class": "unknown"
+        }, 
+        {
+            "head_word": "ברא", 
+            "word_num": 4, 
+            "daf": "121a", 
+            "word": "בר", 
+            "line_num": 40, 
+            "cal_word": "בר", 
+            "POS": "N01", 
+            "class": "talmud", 
+            "pg_num": 121, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
+        }, 
+        {
+            "word": "אבא", 
             "class": "unknown"
         }, 
         {
@@ -1462,7 +1482,7 @@
             "side": 1
         }, 
         {
-            "word": "ירמיה", 
+            "word": "חנן", 
             "class": "unknown"
         }, 
         {
@@ -1481,10 +1501,29 @@
             "side": 1
         }, 
         {
+            "word": "רבא", 
+            "class": "unknown"
+        }, 
+        {
+            "head_word": "קלע", 
+            "word_num": 5, 
+            "daf": "121a", 
+            "word": "איקלעו", 
+            "line_num": 41, 
+            "cal_word": "איקלעו", 
+            "POS": "V04", 
+            "class": "talmud", 
+            "pg_num": 121, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
+        }, 
+        {
             "head_word": "ביתא", 
             "word_num": 6, 
             "daf": "121a", 
-            "word": "אבא", 
+            "word": "לבי", 
             "line_num": 41, 
             "cal_word": "לאבי", 
             "POS": "N01", 
@@ -1505,13 +1544,53 @@
             "side": 1
         }, 
         {
+            "word": "אבין", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "דמן", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "נשיקיא", 
+            "class": "unknown"
+        }, 
+        {
+            "head_word": "רב", 
+            "word_num": 1, 
+            "daf": "121a", 
+            "word": "לרב", 
+            "line_num": 42, 
+            "cal_word": "לרב", 
+            "POS": "PN", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ל_"
+            ], 
+            "pg_num": 121, 
+            "prefix_POS": [
+                "p03"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
+        }, 
+        {
+            "word": "יהודה", 
+            "class": "unknown"
+        }, 
+        {
             "head_word": "רב", 
             "word_num": 3, 
             "daf": "121a", 
             "word": "ורב", 
             "line_num": 42, 
             "cal_word": "ולרב", 
-            "POS": "N02", 
+            "POS": "PN", 
             "prefix_homograph": [
                 "", 
                 ""
@@ -1532,7 +1611,7 @@
             "side": 1
         }, 
         {
-            "word": "חנן", 
+            "word": "ירמיה", 
             "class": "unknown"
         }, 
         {
@@ -1549,50 +1628,6 @@
             "homograph": "", 
             "book_num": 71002, 
             "side": 1
-        }, 
-        {
-            "word": "רבא", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "איקלעו", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "לבי", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "אבין", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "דמן", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "נשיקיא", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "לרב", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "יהודה", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "ורב", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "ירמיה", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "בר", 
-            "class": "unknown"
         }, 
         {
             "word": "אבא", 

@@ -45,7 +45,7 @@ def make_mishnaic_training():
             first_sec_str = hebrew.strip_cantillation(seg.text('he').as_string(), strip_vowels=True)
             word_list = tokenize_words(first_sec_str)
             for word in word_list:
-                if random.random() > 0.1 and word in mish_set:
+                if random.random() > 0.5 and word in mish_set:
                     num_removed += 1
                     continue
                 training.append({'word':word,'tag':'mishnaic'})
@@ -148,8 +148,8 @@ def print_tagged_corpus_to_html_table(lang_out):
 
 
 def dilate_lang():
-    cal_matcher_path = '../../dibur_hamatchil/dh_source_scripts/cal_matcher_output'
-    mesechtot_names = ['Berakhot','Shabbat','Eruvin','Pesachim']
+    cal_matcher_path = '../../../dibur_hamatchil/dh_source_scripts/cal_matcher_output'
+    mesechtot_names = ['Berakhot','Shabbat','Eruvin','Pesachim','Bava Kamma','Bava Metzia','Bava Batra']
     for mesechta in mesechtot_names:
         mesechta_path = '{}/{}/lang_tagged'.format(cal_matcher_path, mesechta)
         if not os.path.exists('{}/{}/lang_tagged_dilated'.format(cal_matcher_path, mesechta)):
@@ -280,11 +280,12 @@ fp = codecs.open("lstm_training.json", "wb", encoding='utf-8')
 json.dump(full, fp, indent=4, encoding='utf-8', ensure_ascii=False)
 """
 
-#dilate_lang()
-
+dilate_lang()
+"""
 m = make_mishnaic_training_context()
 a = make_aramaic_training_context()
 
 full = merge_sets_context(a, m)
 fp = codecs.open("lstm_training.json", "wb", encoding='utf-8')
 json.dump(full, fp, encoding='utf-8', ensure_ascii=False)
+"""

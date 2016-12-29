@@ -1,5 +1,10 @@
 {
-    "missed_words": [], 
+    "missed_words": [
+        {
+            "index": 9, 
+            "word": "דניחא"
+        }
+    ], 
     "words": [
         {
             "word": "ובלבד", 
@@ -66,7 +71,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -375,7 +380,7 @@
             "word": "מאי", 
             "line_num": 14, 
             "cal_word": "מאי", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 58, 
             "ms": "01", 
@@ -631,7 +636,7 @@
             "word": "ההוא", 
             "line_num": 21, 
             "cal_word": "ההוא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 58, 
             "ms": "01", 
@@ -1111,28 +1116,8 @@
             "side": 1
         }, 
         {
-            "head_word": "ניח", 
-            "word_num": 1, 
-            "daf": "58a", 
             "word": "ניחא", 
-            "line_num": 37, 
-            "cal_word": "דניחא", 
-            "POS": "A01", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 58, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "תשמשתא", 

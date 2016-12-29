@@ -1,6 +1,10 @@
 {
     "missed_words": [
         {
+            "index": 0, 
+            "word": "מאי"
+        }, 
+        {
             "index": 6, 
             "word": "הכת"
         }, 
@@ -15,6 +19,14 @@
         {
             "index": 18, 
             "word": "ביה"
+        }, 
+        {
+            "index": 24, 
+            "word": "אמ"
+        }, 
+        {
+            "index": 29, 
+            "word": "אמ"
         }, 
         {
             "index": 38, 
@@ -155,7 +167,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -515,8 +527,19 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "שני", 
+            "word_num": 1, 
+            "daf": "66a", 
             "word": "שני", 
-            "class": "unknown"
+            "line_num": 40, 
+            "cal_word": "שנא", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 66, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "word": "גדולי", 
@@ -967,19 +990,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "מאי", 
-            "word_num": 0, 
-            "daf": "66a", 
             "word": "מי", 
-            "line_num": 40, 
-            "cal_word": "מאי", 
-            "POS": "p01", 
-            "class": "talmud", 
-            "pg_num": 66, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "גרם", 
@@ -1030,19 +1042,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "שני", 
-            "word_num": 1, 
-            "daf": "66a", 
             "word": "שני", 
-            "line_num": 40, 
-            "cal_word": "שנא", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 66, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "גדולי", 
@@ -1069,7 +1070,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -1520,7 +1521,7 @@
             "word": "ליה", 
             "line_num": 42, 
             "cal_word": "ליה", 
-            "POS": "p01", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 66, 
             "ms": "01", 
@@ -1819,11 +1820,11 @@
         }, 
         {
             "head_word": "אמר", 
-            "word_num": 6, 
+            "word_num": 3, 
             "daf": "66a", 
             "word": "אמר", 
             "line_num": 45, 
-            "cal_word": "אמ", 
+            "cal_word": "אמרי", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 66, 
@@ -1911,19 +1912,8 @@
             "side": 1
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 1, 
-            "daf": "66a", 
             "word": "אמר", 
-            "line_num": 46, 
-            "cal_word": "אמ", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 66, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "ל_", 
@@ -2025,12 +2015,12 @@
         }, 
         {
             "head_word": "ל_", 
-            "word_num": 9, 
+            "word_num": 13, 
             "daf": "66a", 
             "word": "למה", 
-            "line_num": 48, 
+            "line_num": 46, 
             "cal_word": "ליה", 
-            "POS": "p01", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 66, 
             "ms": "01", 
@@ -2039,28 +2029,8 @@
             "side": 1
         }, 
         {
-            "head_word": "דונ", 
-            "word_num": 2, 
-            "daf": "66a", 
             "word": "לי", 
-            "line_num": 48, 
-            "cal_word": "לימדן", 
-            "POS": "V01", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ל_"
-            ], 
-            "pg_num": 66, 
-            "prefix_POS": [
-                "p03"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "אלא", 
@@ -2228,8 +2198,28 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "דונ", 
+            "word_num": 2, 
+            "daf": "66a", 
             "word": "למידן", 
-            "class": "unknown"
+            "line_num": 48, 
+            "cal_word": "לימדן", 
+            "POS": "V01", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ל_"
+            ], 
+            "pg_num": 66, 
+            "prefix_POS": [
+                "p03"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "head_word": "אמר", 
@@ -2247,8 +2237,19 @@
             "side": 1
         }, 
         {
+            "head_word": "ל_", 
+            "word_num": 9, 
+            "daf": "66a", 
             "word": "ליה", 
-            "class": "unknown"
+            "line_num": 48, 
+            "cal_word": "ליה", 
+            "POS": "p02", 
+            "class": "talmud", 
+            "pg_num": 66, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "word": "קל", 

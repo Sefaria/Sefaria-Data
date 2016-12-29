@@ -1,8 +1,20 @@
 {
     "missed_words": [
         {
+            "index": 8, 
+            "word": "וריש לקיש"
+        }, 
+        {
             "index": 11, 
             "word": "ובפלוגתא"
+        }, 
+        {
+            "index": 12, 
+            "word": "דר"
+        }, 
+        {
+            "index": 13, 
+            "word": "וריש לקיש"
         }
     ], 
     "words": [
@@ -64,7 +76,7 @@
             "word": "לה", 
             "line_num": 2, 
             "cal_word": "לה", 
-            "POS": "p01", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 72, 
             "ms": "01", 
@@ -401,7 +413,7 @@
             "side": 1
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -421,28 +433,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ריש לקיש", 
-            "word_num": 3, 
-            "daf": "72a", 
             "word": "לקיש", 
-            "line_num": 11, 
-            "cal_word": "וריש לקיש", 
-            "POS": "PN", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
-            "pg_num": 72, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "שתק", 
@@ -695,28 +687,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ר'", 
-            "word_num": 0, 
-            "daf": "72a", 
             "word": "דרבי", 
-            "line_num": 21, 
-            "cal_word": "דר", 
-            "POS": "PN", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 72, 
-            "prefix_POS": [
-                "p"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "יוחנן", 
@@ -735,52 +707,12 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "ריש לקיש", 
-            "word_num": 2, 
-            "daf": "72a", 
             "word": "לקיש", 
-            "line_num": 21, 
-            "cal_word": "וריש לקיש", 
-            "POS": "PN", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
-            "pg_num": 72, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
-            "head_word": "ריש לקיש", 
-            "word_num": 2, 
-            "daf": "72a", 
             "word": "איתמר", 
-            "line_num": 21, 
-            "cal_word": "וריש לקיש", 
-            "POS": "PN", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
-            "pg_num": 72, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }
     ]
 }

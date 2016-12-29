@@ -8,14 +8,17 @@ import argparse
 from os.path import join
 import os
 import os.path
+from os import listdir
+from os.path import isfile, join
 import json, codecs
+from collections import OrderedDict
 
 from research.talmud_pos_research.language_classifier import cal_tools
 
 # set the seed
 random.seed(2823274491)
 
-filename_to_load = ''
+filename_to_load = 'epoch_8-12-22-dict/postagger_model_embdim50_hiddim100_lyr2_e8_trainloss0.0291745622821_trainprec96.6592804887_valprec100.0.model'
 START_EPOCH = 0
 
 # argument parse
@@ -57,7 +60,7 @@ if filename_to_load:
     log_message('Starting epoch: ' + str(START_EPOCH))
 
 
-def read_data(dir=''):
+def read_data(dir='', mesechta=None):
     if not dir: dir = '../../dibur_hamatchil/dh_source_scripts/cal_matcher_output/'
 
     all_json_files = []
@@ -78,6 +81,9 @@ def read_data(dir=''):
 
     # iterate through all the files, and load them in
     for file,lang_file in zip(all_json_files,all_lang_files):
+        if mesechta and mesechta not in file: #this is kind of hacky...but who cares?
+            continue
+
         with open(file, 'r', encoding='utf8') as f:
             all_text = f.read()
 
@@ -93,6 +99,7 @@ def read_data(dir=''):
             # class will be 1 if talmud, 0 if unknown
             word_known = word['class'] != 'unknown'
             word_class = 1 if lang_word['lang'] == 'aramaic' and word_known else 0
+            word_lang = 1 if lang_word['lang'] == 'aramaic' else 0
             word_pos = ''
             # if the class isn't unkown
             if word_known: word_pos = word['POS']
@@ -100,14 +107,14 @@ def read_data(dir=''):
             total_words += 1
             if word_known and word_s == u'הכא' and word_pos != u'a':
                 print "OH NO! {}".format(file)
-            all_words.append((word_s, word_class, word_pos))
+            all_words.append((word_s, word_class, word_pos, word_lang))
 
         total_daf += 1
         # yield it
         split_file = file.split('/')
-        mesechta = split_file[split_file.index('cal_matcher_output') + 1]
+        mesechta_name = split_file[split_file.index('cal_matcher_output') + 1]
         daf_num = split_file[split_file.index('lang_naive_talmud') + 1].split('lang_naive_talmud_')[1].split('.json')[0]
-        yield {"words": all_words, "file": '{}_{}'.format(mesechta, daf_num)}
+        yield {"words": all_words, "file": '{}_{}'.format(mesechta_name, daf_num)}
 
     log_message('Total words: ' + str(total_words))
     log_message('Total daf: ' + str(total_daf))
@@ -116,7 +123,7 @@ def read_data(dir=''):
 def make_pos_hashtable(data):
     pos_hashtable = {}
     for daf in data:
-        for w, w_class, w_pos in daf["words"]:
+        for w, w_class, w_pos, w_lang in daf["words"]:
             if w_class:
                 if not w in pos_hashtable:
                     pos_hashtable[w] = set()
@@ -292,13 +299,13 @@ class ConfusionMatrix:
         self.matrix = np.zeros((self.size, self.size))
 
 
-def CalculateLossForDaf(daf, fValidation=False):
+def CalculateLossForDaf(daf, fValidation=False, fRunning=False):
     dy.renew_cg()
     tagged_daf = {"words":[],"file":daf["file"]}
     daf = daf["words"]
 
     # add a bos before and after
-    seq = ['*BOS*'] + list(' '.join([word for word, _, _ in daf])) + ['*BOS*']
+    seq = ['*BOS*'] + list(' '.join([word for word, _, _, _ in daf])) + ['*BOS*']
 
     # get all the char encodings for the daf
     char_embeds = [let_enc(let) for let in seq]
@@ -334,11 +341,12 @@ def CalculateLossForDaf(daf, fValidation=False):
 
     all_losses = []
     pos_prec = 0.0
+    rough_pos_prec = 0.0
     pos_items = 0
     class_prec = 0.0
     class_items = 0.0
     # now iterate through the bilstm outputs, and each word in the daf
-    for (word, gold_word_class, gold_word_pos), bilstm_output in zip(daf, word_bilstm_outputs):
+    for (word, gold_word_class, gold_word_pos, gold_word_lang), bilstm_output in zip(daf, word_bilstm_outputs):
         should_backprop = gold_word_class == 1
 
         # create the mlp input, a concatenate of the bilstm output and of the prev pos output
@@ -357,7 +365,7 @@ def CalculateLossForDaf(daf, fValidation=False):
             class_items += 1
 
         # if we aren't doing validation, calculate the loss
-        if not fValidation:
+        if not fValidation and not fRunning:
             if should_backprop: all_losses.append(-dy.log(dy.pick(class_mlp_output, gold_word_class)))
             word_class_ans = gold_word_class
         # otherwise, set the answer to be the argmax
@@ -365,7 +373,8 @@ def CalculateLossForDaf(daf, fValidation=False):
             word_class_ans = predicted_word_class
 
         # if the word_class answer is 1, do the pos!
-        if word_class_ans:
+        # alternatively, if validating and it's aramic, do the pos!
+        if word_class_ans or (fValidation and gold_word_lang) or (fRunning and gold_word_lang):
             # run the pos mlp output
             pos_mlp_output = pos_mlp(mlp_input)
             try:
@@ -385,15 +394,18 @@ def CalculateLossForDaf(daf, fValidation=False):
             # prec
             if should_backprop:
                 pos_prec += 1 if predicted_word_pos == gold_word_pos else 0
+                rough_pos_prec += 1 if predicted_word_pos[0] == gold_word_pos[0] else 0 # you got at least the rough pos right
                 pos_items += 1
 
             # if we aren't doing validation, calculate the loss
-            if not fValidation:
+            if not fValidation and not fRunning:
                 if should_backprop: all_losses.append(-dy.log(dy.pick(pos_mlp_output, pos_vocab[gold_word_pos])))
                 word_pos_ans = gold_word_pos
             # otherwise, set the answer to be the argmax
-            else:
+            elif not fRunning and fValidation:
                 if should_backprop: pos_conf_matrix(pos_vocab[predicted_word_pos], pos_vocab[gold_word_pos])
+                word_pos_ans = predicted_word_pos
+            else:
                 word_pos_ans = predicted_word_pos
 
             # run through the prev-pos-mlp
@@ -404,30 +416,72 @@ def CalculateLossForDaf(daf, fValidation=False):
             predicted = 'UNK'
             prev_pos_lstm_state = prev_pos_lstm_state.add_input(pos_enc(''))
 
-        tagged_daf["words"].append({"word":word,"gold_pos":gold_word_pos,"gold_class":gold_word_class,"predicted":predicted,"confidence":confidence})
+        tagged_daf["words"].append({"word":word,"gold_pos":gold_word_pos,"gold_class":gold_word_class,"predicted":predicted,"confidence":confidence, "lang": gold_word_lang})
+
+    if fRunning:
+        return tagged_daf
 
     pos_prec = pos_prec / pos_items if pos_items > 0 else None
+    rough_pos_prec = rough_pos_prec / pos_items if pos_items > 0 else None
     class_prec = class_prec / class_items if class_items > 0 else None
 
     if fValidation:
-        return class_prec, pos_prec,tagged_daf
+        return class_prec, pos_prec,tagged_daf, rough_pos_prec
 
     total_loss = dy.esum(all_losses) if len(all_losses) > 0 else None
-    return total_loss, class_prec, pos_prec
+    return total_loss, class_prec, pos_prec, rough_pos_prec
 
+def print_tagged_corpus_to_html_table(tagged_dafs):
+    str = u"""<html>
+            <head>
+            <style>
+                h1{text-align:center;background:grey}
+                td{text-align:center}
+                table{margin-top:20px;margin-bottom:20px;margin-right:auto;margin-left:auto;width:1200px}
+                .aramaic{background-color: rgba(0,0,255,0.5); color: white}
+                .mishnaic{border: solid red 2px}
+                .notincal{background-color: blue}
+                .gold_pos{font-weight: 800}
+                .predicted_pos{}
+            </style><meta charset='utf-8'></head><body>"""
+    for daf in tagged_dafs:
+        str += u"<h1>DAF {}</h1>".format(daf)
+        str += u"<table>"
+        count = 0
+        while count < len(tagged_dafs[daf]['words']):
+            row_obj = tagged_dafs[daf]['words'][count:count+10]
+            word_row = u"<tr>"
+            for w in reversed(row_obj):
+                lang_class = u'aramaic' if w['lang'] else u'mishnaic'
+                notincal_class = u'notincal' if w['lang'] and w['gold_pos'] != '' else u''
+                word_row += u"<td class='{} {}'>{} (<span class='gold_pos'>{}</span>/<span class='predicted_pos'>{}</span>)</td>".format(lang_class,notincal_class,w['word'],w['gold_pos'],w['predicted'])
+            word_row += u"</tr>"
+
+            conf_row = u"<tr>"
+            for w in reversed(row_obj):
+                conf_row += u"<td>{}</td>".format(round(w['confidence'],2))
+
+            #row_sef += u"<td>({}-{})</td></tr>".format(count,count+len(row_obj)-1)
+            str += word_row
+            str += conf_row
+            count += 10
+        str += u"</table>"
+        str += u"</body></html>"
+    return str
 
 def run_network_on_validation(epoch_num):
-    val_pos_prec, val_class_prec = 0.0, 0.0
+    val_pos_prec, val_class_prec, val_rough_pos_prec = 0.0, 0.0, 0.0
     val_pos_items, val_class_items = 0, 0
     # iterate
     num_dafs_to_save = 6
     dafs_to_save = []
 
     for idaf, daf in enumerate(val_data):
-        class_prec, pos_prec, tagged_daf = CalculateLossForDaf(daf, fValidation=True)
+        class_prec, pos_prec, tagged_daf, rough_pos_prec = CalculateLossForDaf(daf, fValidation=True)
         # increment and continue
         if not pos_prec is None:
             val_pos_prec += pos_prec
+            val_rough_pos_prec += rough_pos_prec
             val_pos_items += 1
         if not class_prec is None:
             val_class_prec += class_prec
@@ -442,11 +496,12 @@ def run_network_on_validation(epoch_num):
 
     # divide
     val_pos_prec = val_pos_prec / val_pos_items * 100 if val_pos_items > 0 else 0.0
+    val_rough_pos_prec = val_rough_pos_prec / val_pos_items * 100 if val_pos_items > 0 else 0.0
     val_class_prec = val_class_prec / val_class_items * 100 if val_class_items > 0 else 0.0
     # print the results
-    log_message('Validation: pos_prec: ' + str(val_pos_prec) + ', class_prec: ' + str(val_class_prec))
+    log_message('Validation: pos_prec: ' + str(val_pos_prec) + ', class_prec: ' + str(val_class_prec) + ', rough pos prec: ' + str(val_rough_pos_prec))
 
-    return val_pos_prec, val_class_prec
+    return val_pos_prec, val_class_prec, val_rough_pos_prec
 
 
 # read in all the data
@@ -467,9 +522,13 @@ f.close()
 """
 
 random.shuffle(all_data)
-# train val will be split up 100-780
-train_data = all_data[100:]
-val_data = all_data[:100]
+percent_training = 0.2
+split_index = int(round(len(all_data) * percent_training))
+train_data = all_data[split_index:]
+val_data = all_data[:split_index]
+
+print 'Training dafs: {}'.format(len(train_data))
+print 'Validation dafs: {}'.format(len(val_data))
 
 pos_hashtable = make_pos_hashtable(train_data)
 
@@ -479,8 +538,8 @@ let_vocab = Vocabulary()
 
 # iterate through all the dapim and put everything in the vocabulary
 for daf in all_data:
-    let_vocab.add_text(list(' '.join([word for word, _, _ in daf["words"]])))
-    pos_vocab.add_text([pos for _, _, pos in daf["words"]])
+    let_vocab.add_text(list(' '.join([word for word, _, _, _ in daf["words"]])))
+    pos_vocab.add_text([pos for _, _, pos, _ in daf["words"]])
 
 pos_vocab.finalize()
 let_vocab.finalize()
@@ -528,63 +587,106 @@ trainer = dy.AdamTrainer(model)
 # if we are loading in a model
 if filename_to_load:
     model.load(filename_to_load)
-run_network_on_validation(START_EPOCH - 1)
-pos_conf_matrix.clear()
-# train!
-for epoch in range(START_EPOCH, 100):
-    last_loss, last_pos_prec, last_class_prec = 0.0, 0.0, 0.0
-    total_loss, total_pos_prec, total_class_prec = 0.0, 0.0, 0.0
-    total_pos_items, total_class_items = 0, 0
 
-    # shuffle the train data
-    random.shuffle(train_data)
+train_test = False
 
-    items_seen = 0
-    # iterate
-    for daf in train_data:
-        # calculate the loss & prec
-        loss, class_prec, pos_prec = CalculateLossForDaf(daf, fValidation=False)
-
-        # forward propagate
-        total_loss += loss.value() / len(daf["words"]) if loss else 0.0
-        # back propagate
-        if loss: loss.backward()
-        trainer.update()
-
-        # increment the prec variable
-        if not pos_prec is None:
-            total_pos_prec += pos_prec
-            total_pos_items += 1
-        if not class_prec is None:
-            total_class_prec += class_prec
-            total_class_items += 1
-
-        items_seen += 1
-        # breakpoint?
-        breakpoint = 50
-        if items_seen % breakpoint == 0:
-            last_loss = total_loss / breakpoint
-            last_pos_prec = total_pos_prec / total_pos_items * 100
-            last_class_prec = total_class_prec / total_class_items * 100
-
-            log_message("Paras processed: " + str(items_seen) + ", loss: " + str(last_loss) + ', pos_prec: ' + str(
-                last_pos_prec) + ', class_prec: ' + str(last_class_prec))
-
-            total_loss, total_pos_prec, total_class_prec = 0.0, 0.0, 0.0
-            total_pos_items = 0
-            total_class_items = 0
-
-    log_message('Finished epoch ' + str(epoch))
-    val_class_prec, val_pos_prec = run_network_on_validation(epoch)
-    if not os.path.exists('epoch_{}'.format(epoch)):
-        os.makedirs('epoch_{}'.format(epoch))
-    filename_to_save = 'epoch_' + str(epoch) + '/postagger_model_embdim' + str(EMBED_DIM) + '_hiddim' + str(
-        HIDDEN_DIM) + '_lyr' + sLAYERS + '_e' + str(epoch)
-    filename_to_save += '_trainloss' + str(last_loss) + '_trainprec' + str(last_pos_prec) + '_valprec' + str(
-        val_pos_prec) + '.model'
-    model.save(filename_to_save)
-
-    f = open("epoch_{}/conf_matrix_e{}.html".format(epoch, epoch), 'w')
-    f.write(pos_conf_matrix.to_html())
-    f.close()
+if train_test:
+    run_network_on_validation(START_EPOCH - 1)
     pos_conf_matrix.clear()
+    # train!
+    for epoch in range(START_EPOCH, 100):
+        last_loss, last_pos_prec, last_class_prec, last_rough_pos_prec = 0.0, 0.0, 0.0, 0.0
+        total_loss, total_pos_prec, total_class_prec, total_rough_pos_prec = 0.0, 0.0, 0.0, 0.0
+        total_pos_items, total_class_items = 0, 0
+
+        # shuffle the train data
+        random.shuffle(train_data)
+
+        items_seen = 0
+        # iterate
+        for daf in train_data:
+            # calculate the loss & prec
+            loss, class_prec, pos_prec, rough_pos_prec = CalculateLossForDaf(daf, fValidation=False)
+
+            # forward propagate
+            total_loss += loss.value() / len(daf["words"]) if loss else 0.0
+            # back propagate
+            if loss: loss.backward()
+            trainer.update()
+
+            # increment the prec variable
+            if not pos_prec is None:
+                total_pos_prec += pos_prec
+                total_rough_pos_prec += rough_pos_prec
+                total_pos_items += 1
+            if not class_prec is None:
+                total_class_prec += class_prec
+                total_class_items += 1
+
+            items_seen += 1
+            # breakpoint?
+            breakpoint = 50
+            if items_seen % breakpoint == 0:
+                last_loss = total_loss / breakpoint
+                last_pos_prec = total_pos_prec / total_pos_items * 100
+                last_rough_pos_prec = total_rough_pos_prec / total_pos_items * 100
+                last_class_prec = total_class_prec / total_class_items * 100
+
+                log_message("Paras processed: " + str(items_seen) + ", loss: " + str(last_loss) + ', pos_prec: ' + str(
+                    last_pos_prec) + ', class_prec: ' + str(last_class_prec) + ', rough pos prec: ' + str(last_rough_pos_prec))
+
+                total_loss, total_pos_prec, total_class_prec, total_rough_pos_prec = 0.0, 0.0, 0.0, 0.0
+                total_pos_items = 0
+                total_class_items = 0
+
+        log_message('Finished epoch ' + str(epoch))
+        val_class_prec, val_pos_prec, val_rough_pos_prec = run_network_on_validation(epoch)
+        if not os.path.exists('epoch_{}'.format(epoch)):
+            os.makedirs('epoch_{}'.format(epoch))
+        filename_to_save = 'epoch_' + str(epoch) + '/postagger_model_embdim' + str(EMBED_DIM) + '_hiddim' + str(
+            HIDDEN_DIM) + '_lyr' + sLAYERS + '_e' + str(epoch)
+        filename_to_save += '_trainloss' + str(last_loss) + '_trainprec' + str(last_pos_prec) + '_valprec' + str(
+            val_pos_prec) + '.model'
+        model.save(filename_to_save)
+
+        f = open("epoch_{}/conf_matrix_e{}.html".format(epoch, epoch), 'w')
+        f.write(pos_conf_matrix.to_html())
+        f.close()
+        pos_conf_matrix.clear()
+else:
+    #tag all of shas!
+    cal_matcher_path = '../../dibur_hamatchil/dh_source_scripts/cal_matcher_output'
+    mesechtot_names = ['Berakhot','Shabbat','Eruvin','Pesachim','Bava Kamma','Bava Metzia','Bava Batra']
+    for mesechta in mesechtot_names:
+        mesechta_path = '{}/{}/lang_naive_talmud'.format(cal_matcher_path,mesechta)
+        if not os.path.exists('{}/{}/pos_tagged'.format(cal_matcher_path, mesechta)):
+            os.makedirs('{}/{}/pos_tagged'.format(cal_matcher_path, mesechta))
+        if not os.path.exists('{}/{}/html_pos_tagged'.format(cal_matcher_path, mesechta)):
+            os.makedirs('{}/{}/html_pos_tagged'.format(cal_matcher_path, mesechta))
+
+
+        def sortdaf(daf_obj):
+            daf = daf_obj['file'].split('_')[-1]
+            daf_int = int(daf[:-1])
+            amud_int = 1 if daf[-1] == 'b' else 0
+            return daf_int*2 + amud_int
+        dafs = list(read_data(mesechta=mesechta))
+        dafs.sort(key=sortdaf)
+        html_out = OrderedDict()
+        for i_f,daf_obj in enumerate(dafs):
+            tagged_daf = CalculateLossForDaf(daf_obj, fRunning=True)
+
+            fp = codecs.open("{}/{}/pos_tagged/{}.json".format(cal_matcher_path,mesechta,daf_obj['file']), "wb", encoding='utf-8')
+            json.dump(tagged_daf, fp, indent=4, encoding='utf-8', ensure_ascii=False)
+            fp.close()
+
+            daf = daf_obj['file'].split('_')[-1]
+            html_out[daf] = tagged_daf
+            if i_f % 10 == 0:
+                print '{}/{}'.format(mesechta,daf_obj['file'])
+                html = print_tagged_corpus_to_html_table(html_out)
+                fp = codecs.open("{}/{}/html_pos_tagged/{}.html".format(cal_matcher_path, mesechta, daf), "wb",
+                                 encoding='utf-8')
+                fp.write(html)
+                fp.close()
+                html_out = OrderedDict()

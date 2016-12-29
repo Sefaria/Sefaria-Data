@@ -146,7 +146,7 @@ class MatchMatrix(object):
         elif not is_jump_start and next_base_index == self.daf_len:
             # We've hit the end of the daf, but not the end of the comment
             possible_comment_skips = min(self.overall_word_skip_threshold - (len(comment_indexes_skipped) + len(daf_indexes_skipped)),
-                                         self.comment_word_skip_threshold)
+                                         self.comment_word_skip_threshold - len(comment_indexes_skipped))
 
             if is_a_match or is_jump_end:
                 if current_position[0] + possible_comment_skips + 1 >= self.comment_len:
@@ -248,6 +248,7 @@ class MatchMatrix(object):
         paths = []
         # for each potential starting index of the comment, allowing for skips
         for c_skips in range(self.comment_word_skip_threshold + 1):
+
             init_comment_threshold_hit = c_skips == self.comment_word_skip_threshold
             # find potential start words in the daf, and explore
             last_possible_daf_word_index = self.daf_len - (self.comment_len - (self.comment_word_skip_threshold - c_skips) - len(self.jump_coordinates))
@@ -475,8 +476,41 @@ class RashiUnit:
             u', '.join(self.skippedDafWords), u', '.join(self.skippedRashiWords), u'\n\t\t'.join([am.__str__() for am in self.abbrev_matches]))
 
 
+def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(ur'\s+',x), max_dh_len=None, word_threshold=0.27, char_threshold=0.2):
+    if type(base_text) == TextChunk:
+        base_text_str = base_text.ja().flatten_to_string()
+    else:
+        base_text_str = base_text
+
+    if type(comment) == TextChunk:
+        comment_str = comment.ja().flatten_to_string()
+    else:
+        comment_str = comment
+
+    base_word_list = tokenizer(base_text_str)
+    comment_word_list = tokenizer(comment_str)
+
+    if max_dh_len is None:
+        max_dh_len = len(comment_word_list)
+
+
+    InitializeHashTables()
+    curDaf = GemaraDaf(base_word_list, [])
+
+    best_dh_start = 0
+    best_dh_end = 0
+    for i in xrange(max_dh_len):
+        curRashi = RashiUnit(u' '.join(comment_word_list[best_dh_start:best_dh_start+i+1]),comment,0)
+        matches = GetAllMatches(curDaf,curRashi,0,len(base_word_list)-1,word_threshold,char_threshold)
+        if len(matches) > 0:
+            best_dh_end = best_dh_start + i
+        else:
+            break
+
+    return comment_word_list[best_dh_start:best_dh_end+1]
+
 def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh_extract_method=lambda x: x,verbose=False, word_threshold=0.27,char_threshold=0.2,
-              with_abbrev_matches=False,boundaryFlexibility=0,dh_split=None, rashi_filter=None, strict_boundaries=False, place_all=False):
+              with_abbrev_matches=False,with_num_abbrevs=True,boundaryFlexibility=0,dh_split=None, rashi_filter=None, strict_boundaries=False, place_all=False):
     """
     base_text: TextChunk
     comments: TextChunk or list of comment strings
@@ -487,6 +521,7 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
     word_threshold: float - percentage of mismatched words to allow. higher means allow more non-matching words in a successful match (range is [0,1])
     char_threshold: float - roughly a percentage of letters that can differ in a word match (not all letters are equally weighted so its not a linear percentage). higher allows more differences within a word match. (range is [0,1])
     with_abbrev_matches: True if you want a second return value which is a list AbbrevMatch objects (see class definition above)
+    with_num_abbrevs: True if you also allow abbreviations to match corresponding numbers
     boundaryFlexibility: int which indicates how much leeway there is in the order of rashis. higher values allow more disorder in matches. 0 means the start positions of matches must be in order. a high value (higher than the number of words in the doc) means order doesn't matter
     dh_split: prototype, split long dibur hamatchil
     rashi_filter: function(str) -> bool , if False, remove rashi from matching
@@ -543,7 +578,7 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
         raise TypeError("'comments' needs to be either a TextChunk or a list of comment strings")
 
     matched = match_text(bas_word_list,comment_list,dh_extract_method,verbose,word_threshold,char_threshold,prev_matched_results=prev_matched_results,
-                         with_abbrev_matches=with_abbrev_matches,boundaryFlexibility=boundaryFlexibility,dh_split=dh_split,rashi_filter=rashi_filter,strict_boundaries=strict_boundaries,place_all=place_all)
+                         with_abbrev_matches=with_abbrev_matches,with_num_abbrevs=with_num_abbrevs,boundaryFlexibility=boundaryFlexibility,dh_split=dh_split,rashi_filter=rashi_filter,strict_boundaries=strict_boundaries,place_all=place_all)
     start_end_map = matched['matches']
     text_matches = matched['match_text']
     if with_abbrev_matches:
@@ -609,8 +644,9 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
 
 
 def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,word_threshold=0.27,char_threshold=0.2,
-               prev_matched_results=None,with_abbrev_matches=False,boundaryFlexibility=0,dh_split=None,rashi_filter=None,
-               strict_boundaries=False, place_all=True):
+               prev_matched_results=None,with_abbrev_matches=False,with_num_abbrevs=True,
+               boundaryFlexibility=0,dh_split=None,rashi_filter=None,
+               strict_boundaries=False, place_all=False):
     """
     base_text: list - list of words
     comments: list - list of comment strings
@@ -620,6 +656,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
     char_threshold: float - roughly a percentage of letters that can differ in a word match (not all letters are equally weighted so its not a linear percentage). higher allows more differences within a word match. (range is [0,1])
     prev_matched_results: [(start,end)] list of start/end indexes found in a previous iteration of match_text
     with_abbrev_matches: True if you want a second return value which is a list AbbrevMatch objects (see class definition above)
+    with_num_abbrevs: True if you also allow abbreviations to match corresponding numbers
     boundaryFlexibility: int which indicates how much leeway there is in the order of rashis. higher values allow more disorder in matches. 0 means the start positions of matches must be in order. a high value (higher than the number of words in the doc) means order doesn't matter
     dh_split: prototype, split long dibur hamatchil
     rashi_filter: function(str) -> bool , if False, remove rashi from matching
@@ -648,7 +685,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
 
         startword,endword = (0,len(curDaf.allWords)-1) if prev_matched_results == None else GetRashiBoundaries(curDaf.allRashi,ru.place,len(curDaf.allWords),boundaryFlexibility)[0:2]
         #TODO implement startword endword in GetAllMatches()
-        ru.rashimatches = GetAllMatches(curDaf,ru,startword,endword,word_threshold,char_threshold)
+        ru.rashimatches = GetAllMatches(curDaf,ru,startword,endword,word_threshold,char_threshold,with_num_abbrevs=with_num_abbrevs)
 
         """
         approxMatches = GetAllApproximateMatches(curDaf,ru,startword,endword,word_threshold,char_threshold)
@@ -874,7 +911,8 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                     del curru.rashimatches[0]
 
             if len(curru.rashimatches) == 0:
-                rashisByDisambiguity.remove(curru)
+                if curru in rashisByDisambiguity:
+                    rashisByDisambiguity.remove(curru)
                 continue
 
 
@@ -1053,7 +1091,7 @@ def CountUnmatchedUpRashi(curDaf):  # GemaraDar
             toRet += 1
     return toRet
 
-def GetAbbrevs(dafwords, rashiwords, char_threshold, startBound, endBound):
+def GetAbbrevs(dafwords, rashiwords, char_threshold, startBound, endBound, with_num_abbrevs=True):
     allabbrevinds = []
     allabbrevs = []
     for id, dword in enumerate(dafwords):
@@ -1064,7 +1102,7 @@ def GetAbbrevs(dafwords, rashiwords, char_threshold, startBound, endBound):
             for ir, rword in enumerate(rashiwords):
                 if abbrev_range and ir in abbrev_range:
                     continue
-                isMatch, offset, isNum = isAbbrevMatch(ir,cleanAbbrev(dword),rashiwords, char_threshold)
+                isMatch, offset, isNum = isAbbrevMatch(ir,cleanAbbrev(dword),rashiwords, char_threshold, with_num_abbrevs=with_num_abbrevs)
                 if isMatch:
                     istartcontext = 3 if id >= 3 else id
                     abbrevMatch = AbbrevMatch(dword, rashiwords[ir:ir+offset+1],(ir,ir+offset),(id,id),
@@ -1078,7 +1116,7 @@ def GetAbbrevs(dafwords, rashiwords, char_threshold, startBound, endBound):
             for id, dword in enumerate(dafwords):
                 if abbrev_range and id in abbrev_range:
                     continue
-                isMatch, offset, isNum = isAbbrevMatch(id,cleanAbbrev(rword),dafwords, char_threshold)
+                isMatch, offset, isNum = isAbbrevMatch(id,cleanAbbrev(rword),dafwords, char_threshold, with_num_abbrevs=with_num_abbrevs)
                 if isMatch:
                     istartcontext = 3 if id >= 3 else id
                     abbrevMatch = AbbrevMatch(rword, dafwords[id:id+offset+1],(ir,ir),(id,id+offset),
@@ -1091,7 +1129,7 @@ def GetAbbrevs(dafwords, rashiwords, char_threshold, startBound, endBound):
 
 
 def GetAllMatches(curDaf, curRashi, startBound, endBound,
-                             word_threshold, char_threshold):
+                             word_threshold, char_threshold, daf_skips=2, rashi_skips=1, overall=2,with_num_abbrevs=True):
     allMatches = []
     startText = curRashi.startingTextNormalized
     global normalizingFactor
@@ -1099,11 +1137,14 @@ def GetAllMatches(curDaf, curRashi, startBound, endBound,
     dafwords = curDaf.allWords[startBound:endBound+1]
     dafhashes = curDaf.wordhashes[startBound:endBound+1]
 
-    allabbrevinds, allabbrevs = GetAbbrevs(dafwords, curRashi.words, char_threshold, startBound, endBound)
+    if curRashi.place == 3:
+        pass
 
-    daf_skips = int(min(2, mathy.floor((curRashi.cvWordcount-1)/2)))
-    rashi_skips = 1 if daf_skips > 0 else 0
-    overall = 2 if daf_skips + rashi_skips >= 2 else 1
+    allabbrevinds, allabbrevs = GetAbbrevs(dafwords, curRashi.words, char_threshold, startBound, endBound, with_num_abbrevs=with_num_abbrevs)
+
+    daf_skips = int(min(daf_skips, mathy.floor((curRashi.cvWordcount-1)/2)))
+    rashi_skips = int(min(rashi_skips, mathy.floor((curRashi.cvWordcount-1)/2)))
+    overall = overall if daf_skips + rashi_skips >= overall else daf_skips + rashi_skips
     mm = MatchMatrix(dafhashes,
                      curRashi.cvhashes,
                      allabbrevinds,
@@ -1554,7 +1595,7 @@ def cleanAbbrev(str):
     return str
 
 
-def isAbbrevMatch(curpos, abbrevText, unabbrevText, char_threshold):
+def isAbbrevMatch(curpos, abbrevText, unabbrevText, char_threshold, with_num_abbrevs=True):
     maxAbbrevLen = len(abbrevText)
     isMatch = False
 
@@ -1581,28 +1622,29 @@ def isAbbrevMatch(curpos, abbrevText, unabbrevText, char_threshold):
                     return isMatch, maxAbbrevLen - (1 + numWordsCombined), False
 
     #prepare text for hebrew check
-    if len(abbrevText) > 1:
-        hebrew_num = u'{}"{}'.format(abbrevText[:-1],abbrevText[-1])
-    else:
-        hebrew_num = u"{}'".format(abbrevText)
+    if with_num_abbrevs:
+        if len(abbrevText) > 1:
+            hebrew_num = u'{}"{}'.format(abbrevText[:-1],abbrevText[-1])
+        else:
+            hebrew_num = u"{}'".format(abbrevText)
 
-    if is_hebrew_number(hebrew_num):
-        potential_unabbrev_number = unabbrevText[curpos:curpos + len(abbrevText)]
-        #print u"IS HEB NUM {} {} {} {}".format(hebrew_num, abbrevText,gematria(abbrevText),num2words(gematria(abbrevText), lang='he'))
-        dist, isMatch = IsStringMatch(u' '.join(potential_unabbrev_number), num2words(gematria(abbrevText), lang='he'), char_threshold)
-        if isMatch:
-            #print u"NUMBER FOUND {} == {} DIST: {}".format(u' '.join(unabbrevText),num2words(gematria(abbrevText),lang='he'),dist)
-            return isMatch, len(abbrevText) - 1, True
+        if is_hebrew_number(hebrew_num):
+            potential_unabbrev_number = unabbrevText[curpos:curpos + len(abbrevText)]
+            #print u"IS HEB NUM {} {} {} {}".format(hebrew_num, abbrevText,gematria(abbrevText),num2words(gematria(abbrevText), lang='he'))
+            dist, isMatch = IsStringMatch(u' '.join(potential_unabbrev_number), num2words(gematria(abbrevText), lang='he'), char_threshold)
+            if isMatch:
+                #print u"NUMBER FOUND {} == {} DIST: {}".format(u' '.join(unabbrevText),num2words(gematria(abbrevText),lang='he'),dist)
+                return isMatch, len(abbrevText) - 1, True
 
-    #if still not matched, check if there's a prefix
-    if len(hebrew_num) > 1 and is_hebrew_number(hebrew_num[1:]):
-        prefix = hebrew_num[0]
-        potential_unabbrev_number = unabbrevText[curpos:curpos + len(abbrevText) - 1]
-        dist, isMatch = IsStringMatch(u' '.join(potential_unabbrev_number), prefix + num2words(gematria(abbrevText[1:]), lang='he'), char_threshold)
-        if isMatch:
-            #print u"PREFIX NUMBER FOUND {} == {} DIST: {}".format(u' '.join(unabbrevText), prefix + num2words(gematria(abbrevText[1:]),lang='he'),
-            #                                               dist)
-            return isMatch, len(abbrevText) - 2, True # to account for the prefix
+        #if still not matched, check if there's a prefix
+        if len(hebrew_num) > 1 and is_hebrew_number(hebrew_num[1:]):
+            prefix = hebrew_num[0]
+            potential_unabbrev_number = unabbrevText[curpos:curpos + len(abbrevText) - 1]
+            dist, isMatch = IsStringMatch(u' '.join(potential_unabbrev_number), prefix + num2words(gematria(abbrevText[1:]), lang='he'), char_threshold)
+            if isMatch:
+                #print u"PREFIX NUMBER FOUND {} == {} DIST: {}".format(u' '.join(unabbrevText), prefix + num2words(gematria(abbrevText[1:]),lang='he'),
+                #                                               dist)
+                return isMatch, len(abbrevText) - 2, True # to account for the prefix
 
 
     return isMatch, 0, False

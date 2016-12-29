@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import re
+import os
 import json
 import codecs
 import cal_tools
@@ -17,7 +18,7 @@ from sefaria.system.exceptions import InputError
 
 #sys.path.append("/Users/nss/cnn/pycnn")
 #from pycnn import *
-#import numpy as np
+import numpy as np
 
 #this class is garbage now...i think
 class Cal_ngram:
@@ -484,7 +485,7 @@ def print_tagged_corpus_to_html(test_set_name="test",test_set_type="init"):
     fp.write(str)
     fp.close()
 
-def print_tagged_corpus_to_html_table(text_name,ref_list,num_daf_per_doc,test_set_name="test",test_set_type="init"):
+def print_tagged_corpus_to_html_table(text_name,ref_list,num_daf_per_doc):
     cal_dh_root = "../../dibur_hamatchil/dh_source_scripts/cal_matcher_output"
 
     iref = 0
@@ -502,7 +503,10 @@ def print_tagged_corpus_to_html_table(text_name,ref_list,num_daf_per_doc,test_se
             if idaf == 0: start_daf = daf
             if idaf == num_daf_per_doc-1: end_daf = daf
 
-            test_set = json.load(codecs.open("{}/{}/test_set/{}_{}_{}.json".format(cal_dh_root,text_name,test_set_name, test_set_type,daf), "r", encoding="utf-8"))
+            try:
+                test_set = json.load(codecs.open("{}/{}/lang_naive_talmud/lang_naive_talmud_{}.json".format(cal_dh_root,text_name,daf), "r", encoding="utf-8"))
+            except IOError:
+                continue #this daf apparently didn't exist in cal dataset but does in sefaria
             word_list = test_set["words"]
             missed_word_list = test_set["missed_words"]
             missed_dic = {wo["index"]:wo["word"] for wo in missed_word_list}
@@ -546,7 +550,9 @@ def print_tagged_corpus_to_html_table(text_name,ref_list,num_daf_per_doc,test_se
             str += u"</table>"
             iref += 1
         str += u"</body></html>"
-        fp = codecs.open("{}/{}/html_table/{}_{}-{}.html".format(cal_dh_root,text_name,test_set_name,start_daf,end_daf),'w',encoding='utf-8')
+        if not os.path.exists('{}/{}/html_table'.format(cal_dh_root,text_name)):
+            os.makedirs('{}/{}/html_table'.format(cal_dh_root,text_name))
+        fp = codecs.open("{}/{}/html_table/{}-{}.html".format(cal_dh_root,text_name,start_daf,end_daf),'w',encoding='utf-8')
         fp.write(str)
         fp.close()
 

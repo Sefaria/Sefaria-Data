@@ -451,15 +451,24 @@
             "side": 2
         }, 
         {
-            "head_word": "ב_", 
+            "head_word": "מתניתא", 
             "word_num": 3, 
             "daf": "36b", 
-            "word": "במתני\"", 
+            "word": "במתני'", 
             "line_num": 14, 
             "cal_word": "במתני", 
-            "POS": "p02", 
+            "POS": "N02", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "ב_"
+            ], 
             "pg_num": 36, 
+            "prefix_POS": [
+                "p02"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71002, 
@@ -751,14 +760,23 @@
         }, 
         {
             "head_word": "פלג", 
-            "word_num": 3, 
+            "word_num": 1, 
             "daf": "36b", 
             "word": "דפליגי", 
             "line_num": 23, 
-            "cal_word": "פליגי", 
+            "cal_word": "דפליגי", 
             "POS": "V01", 
+            "prefix_homograph": [
+                ""
+            ], 
             "class": "talmud", 
+            "prefix": [
+                "ד_"
+            ], 
             "pg_num": 36, 
+            "prefix_POS": [
+                "c"
+            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71002, 
@@ -769,8 +787,19 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "פלג", 
+            "word_num": 3, 
+            "daf": "36b", 
             "word": "פליגי", 
-            "class": "unknown"
+            "line_num": 23, 
+            "cal_word": "פליגי", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 36, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "head_word": "נמי", 

@@ -1,6 +1,14 @@
 {
     "missed_words": [
         {
+            "index": 11, 
+            "word": "דנרש"
+        }, 
+        {
+            "index": 16, 
+            "word": "והני"
+        }, 
+        {
             "index": 17, 
             "word": "מילי"
         }
@@ -429,7 +437,7 @@
             "word": "הני", 
             "line_num": 10, 
             "cal_word": "הני", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 56, 
             "ms": "01", 
@@ -453,18 +461,10 @@
             "side": 1
         }, 
         {
-            "word": "דבי", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "בירי", 
-            "class": "unknown"
-        }, 
-        {
             "head_word": "ד_", 
             "word_num": 0, 
             "daf": "56a", 
-            "word": "ודבי", 
+            "word": "דבי", 
             "line_num": 11, 
             "cal_word": "דבי בארי", 
             "POS": "p", 
@@ -476,28 +476,27 @@
             "side": 1
         }, 
         {
-            "head_word": "נרש", 
-            "word_num": 1, 
+            "head_word": "ד_", 
+            "word_num": 0, 
             "daf": "56a", 
-            "word": "נרש", 
+            "word": "בירי", 
             "line_num": 11, 
-            "cal_word": "דנרש", 
-            "POS": "GN", 
-            "prefix_homograph": [
-                ""
-            ], 
+            "cal_word": "דבי בארי", 
+            "POS": "p", 
             "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
             "pg_num": 56, 
-            "prefix_POS": [
-                "p"
-            ], 
             "ms": "01", 
             "homograph": "", 
             "book_num": 71003, 
             "side": 1
+        }, 
+        {
+            "word": "ודבי", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "נרש", 
+            "class": "unknown"
         }, 
         {
             "head_word": "זקנ", 
@@ -919,22 +918,22 @@
         }, 
         {
             "head_word": "הני", 
-            "word_num": 0, 
+            "word_num": 1, 
             "daf": "56a", 
             "word": "להני", 
-            "line_num": 40, 
-            "cal_word": "והני", 
-            "POS": "p01", 
+            "line_num": 25, 
+            "cal_word": "להני", 
+            "POS": "P", 
             "prefix_homograph": [
                 ""
             ], 
             "class": "talmud", 
             "prefix": [
-                "ו_"
+                "ל_"
             ], 
             "pg_num": 56, 
             "prefix_POS": [
-                "c"
+                "p03"
             ], 
             "ms": "01", 
             "homograph": "", 
