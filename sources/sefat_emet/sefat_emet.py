@@ -204,16 +204,25 @@ def get_civil_year(year_line, book):
 
 def sefat_parse_helper(lines):
 
-    parsed = []
+    parsed, current = [], None
     for line in lines:
         line = re.sub(u' +', u' ', line)
         line = line.replace(u'\n', u'')
         line = line.rstrip(u' ')
         line = line.replace(u'@22', u'')
-        if line == u'':
-            continue
+
+        if re.search(ur'@44\[.*]', line):
+            if current is not None:
+                parsed.append(current)
+            current = [re.sub(ur'@44\[(.*)]', ur'\1', line)]
+
         else:
-            parsed.append(line)
+            if line == u'':
+                continue
+            else:
+                current.append(line)
+    else:
+        parsed.append(current)
     return parsed
 
 
@@ -221,15 +230,13 @@ def parse():
     book_names = library.get_indexes_in_category('Torah')
     names = node_names()
     parsed = {}
-    for book_num, filename in enumerate(filenames()):
+    for book_name, filename in zip(book_names, filenames()):
         with codecs.open(filename, 'r', 'utf-8') as infile:
-            current = util.file_to_ja([[[]]], infile, [u'@88', u'@44'], sefat_parse_helper).array()
-            parsed[book_names[book_num]] = util.clean_jagged_array(current, [u'@[0-9]{2}', u'\?'])
+            current = util.file_to_ja(2, infile, [u'@88'], sefat_parse_helper).array()
+            parsed[book_name] = util.clean_jagged_array(current, [u'@[0-9]{2}', u'\?'])
     for book in book_names:
         parashot = names[book].keys()
         parsed[book] = util.simple_to_complex(parashot, parsed[book])
-        for parsha in parashot:
-            parsed[book][parsha] = util.simple_to_complex(names[book][parsha], parsed[book][parsha])
 
     return parsed
 
@@ -260,21 +267,14 @@ def construct_index():
         book_node.key = book
 
         for parasha in names[book].keys():
-            parsha_node = SchemaNode()
-            parsha_node.add_title(en_parasha[parasha], 'en', primary=True)
-            parsha_node.add_title(parasha, 'he', primary=True)
-            parsha_node.key = en_parasha[parasha]
-
-            for year in names[book][parasha]:
-                year_node = JaggedArrayNode()
-                civil_year = get_civil_year(year, book)
-                year_node.add_title(civil_year, 'en', primary=True)
-                year_node.add_title(fix_hebrew_years(year), 'he', primary=True)
-                year_node.key = civil_year
-                year_node.depth = 1
-                year_node.addressTypes = ['Integer']
-                year_node.sectionNames = ['Paragraph']
-                parsha_node.append(year_node)
+            parsha_node = JaggedArrayNode()
+            p_names = [p.contents()['name'] for p in TermSet({'scheme': "Parasha"})]
+            if en_parasha[parasha] in p_names:
+                parsha_node.add_shared_term(en_parasha[parasha])
+                parsha_node.key = en_parasha[parasha]
+            else:
+                parsha_node.add_primary_titles(en_parasha[parasha], parasha)
+            parsha_node.add_structure(['Section', 'Comment'])
             book_node.append(parsha_node)
         root.append(book_node)
     root.validate()
@@ -294,24 +294,15 @@ def upload():
     en_parasha_names = get_parsha_dict()
     for book in names.keys():
         for parasha in names[book].keys():
-            for year in names[book][parasha]:
-                current_text = {
-                    'versionTitle': 'Sefat emet, Piotrków, 1905-1908',
-                    'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001186213',
-                    'language': 'he',
-                    'text': parsed[book][parasha][year]
-                }
-                en_parasha = en_parasha_names[parasha]
-                civil_year = get_civil_year(year, book)
-                url = 'Sefat Emet, {}, {}, {}'.format(book, en_parasha, civil_year)
-                print url
-                for i in range(10):
-                    try:
-                        functions.post_text(url, current_text)
-                    except (URLError, HTTPError):
-                        print 'handling weak network'
-                        continue
-                    else:
-                        break
+            current_text = {
+                'versionTitle': 'Sefat emet, Piotrków, 1905-1908',
+                'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001186213',
+                'language': 'he',
+                'text': parsed[book][parasha]
+            }
+            en_parasha = en_parasha_names[parasha]
+            url = 'Sefat Emet, {}, {}'.format(book, en_parasha)
+            print url
+            functions.post_text(url, current_text, weak_network=True)
 
 upload()
