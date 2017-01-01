@@ -722,7 +722,7 @@ class SegmentMap(object):
                 break
         return [full_segment]
 
-    def build_master_commentary_mapping(self, commentator_name, merged_text_chunk):
+    def build_master_commentary_mapping(self, commentator_name, merged_text_chunk, dh_overrides = None):
         """
         returning map from old commentator refs to new refs
         :param commentator_name: Used to identify which commentator we're working with
@@ -851,13 +851,14 @@ class SplitSegmentGroup(object):
 
         return d
 
-    def build_master_commentary_mapping(self, commentator_name, merged_text_chunk):
+    def build_master_commentary_mapping(self, commentator_name, merged_text_chunk, dh_overrides = None):
         """
         Use the merged Hebrew version of the commentator in order to build a master map
         of how the old commentary maps to the new.
         In the shape of the old commentary, a list of offsets in the new commentary to place at.
         :param commentator_name: Used to identify which commentator we're working with
         :param merged_text_chunk: The merged version of the commentary text chunk for this super-section
+        :param dh_overrides: dictionary keyed by tuple (commentator, dh) -> placing
         :return:
         """
         old_to_new = []
@@ -866,18 +867,27 @@ class SplitSegmentGroup(object):
                 if self.segment_breaks[i].get("breaks", None) is None:
                     old_to_new += [len(merged_text_chunk.text[i]) * [self.segment_breaks[i]["offset"]]]
                 else:
-                    # returns [(start,end)...] - we're  using just the start word to make our judgement
                     words = re.split("\s+", self.section_text.text[i])
+                    breaks = self.segment_breaks[i]["breaks"]
+                    offset = self.segment_breaks[i]["offset"]
+                    subsegs = [(0, breaks[0])] + [(breaks[bi - 1], breaks[bi]) for bi in xrange(1, len(breaks))] + [(breaks[-1], None)]
+                    potential_placements = [u" ".join(words[a:b]) for a, b in subsegs]
+
+                    # match_text returns [(start,end)...] - we're  using just the start word to make our judgement
                     word_ranges = match_text(words,
                                              merged_text_chunk.text[i],
                                              dh_extract_method=dh_extract_method,
                                              place_all=True
                                              )["matches"]
-                    breaks = self.segment_breaks[i]["breaks"]
-                    offset = self.segment_breaks[i]["offset"]
-                    subsegs = [(0, breaks[0])] + [(breaks[bi-1], breaks[bi]) for bi in xrange(1,len(breaks))] + [(breaks[-1], None)]
-                    potential_placements = [u" ".join(words[a:b]) for a,b in subsegs]
                     placements = [bisect.bisect_right(breaks, w[0]) for w in word_ranges]
+
+                    # Check if there are any manual overrides for these comments
+                    if dh_overrides:
+                        for j, comment in enumerate(merged_text_chunk.text[i]):
+                            dh = dh_extract_method(comment)
+                            if (commentator_name, dh) in dh_overrides:
+                                placements[j] = int(dh_overrides[(commentator_name, dh)]) - 1
+
                     old_to_new += [[p + offset for p in placements]]
 
                     self.commentary_determinations += [{
@@ -943,6 +953,7 @@ class SectionSplicer(AbstractSplicer):
         self.segment_maps = []           # List of SegmentMap objects, with word specificity, based on primary version
         self.adjusted_segment_maps = []  # List of SegmentMap objects, with segment specificity, for other versions
         self.commentary_split_mappers = []
+        self.dh_overrides = []
 
     def __repr__(self):
         return "SectionSplicer({})".format(self.section_ref.normal())
@@ -962,6 +973,14 @@ class SectionSplicer(AbstractSplicer):
         for v in self.version_list:
             v["text_chunk"] = TextChunk(ref, v["language"], v["versionTitle"])
         return self
+
+    def set_dh_overrides(self, dh_overrides):
+        """
+        :param dh_overrides: dictionary keyed by tuple (commentator, dh) -> placing
+        :return:
+        """
+        assert isinstance(dh_overrides, dict)
+        self.dh_overrides = dh_overrides
 
     def set_new_texts(self, text_dict_list):
         self.new_en_text = [a["english"] for a in text_dict_list]
@@ -1111,7 +1130,7 @@ class SectionSplicer(AbstractSplicer):
             commentator_merged_tc = TextChunk(cssec_ref, "he")
 
             for mapper in self.commentary_split_mappers:
-                mapper.build_master_commentary_mapping(commentator, commentator_merged_tc)
+                mapper.build_master_commentary_mapping(commentator, commentator_merged_tc, self.dh_overrides)
 
     def _reshape_all_commentary_versions(self):
         for v in self.commentary_versions:
@@ -1232,8 +1251,8 @@ class BookSplicer(object):
 
         self.section_splicers[-1].refresh_states()
 
-        from sefaria.helper.link import rebuild_links_from_text, rebuild_commentary_links
-        #  This is long-running, and probably unnecessary, given that all of the links were resaved.
+        from sefaria.helper.link import rebuild_commentary_links
+        #  This is long-running - postponing to after-deploy step
         #  rebuild_links_from_text(self.book_ref.normal(), 28)
 
         for c in self.section_splicers[-1].commentary_titles:
