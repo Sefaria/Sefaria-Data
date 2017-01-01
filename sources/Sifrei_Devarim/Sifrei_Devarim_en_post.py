@@ -54,7 +54,7 @@ def parse_text():
             if perek_pasuk[0]>0 and perek_pasuk[0]!=last_perek:
                 perek_index.append([perek_pasuk[0], piskas.index(part)+1])
                 if index>0:
-                    perek_index[-2]=[perek_index[-2][0],perek_index[-2][1],piskas.index(part)-1]
+                    perek_index[-2]=[perek_index[-2][0],perek_index[-2][1],piskas.index(part)]
                 last_perek = perek_pasuk[0]
     perek_index[-1]=[perek_index[-1][0],perek_index[-1][1],len(piskas)]
     for entry in perek_index:
