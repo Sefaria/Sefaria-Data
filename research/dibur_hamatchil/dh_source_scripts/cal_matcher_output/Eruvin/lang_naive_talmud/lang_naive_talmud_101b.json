@@ -1,6 +1,14 @@
 {
     "missed_words": [
         {
+            "index": 7, 
+            "word": "אי"
+        }, 
+        {
+            "index": 8, 
+            "word": "דאית"
+        }, 
+        {
             "index": 11, 
             "word": "קאמרי"
         }
@@ -605,7 +613,7 @@
             "word": "האי", 
             "line_num": 23, 
             "cal_word": "האי", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 101, 
             "ms": "01", 
@@ -720,7 +728,7 @@
             "word": "הוא", 
             "line_num": 25, 
             "cal_word": "הוא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 101, 
             "ms": "01", 
@@ -729,43 +737,12 @@
             "side": 2
         }, 
         {
-            "head_word": "אי", 
-            "word_num": 1, 
-            "daf": "101b", 
             "word": "ואי", 
-            "line_num": 25, 
-            "cal_word": "אי", 
-            "POS": "c", 
-            "class": "talmud", 
-            "pg_num": 101, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
-            "head_word": "אית", 
-            "word_num": 2, 
-            "daf": "101b", 
             "word": "אית", 
-            "line_num": 25, 
-            "cal_word": "דאית", 
-            "POS": "a", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 101, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "ב_", 
@@ -793,7 +770,7 @@
             "word": "בהא", 
             "line_num": 25, 
             "cal_word": "בהא", 
-            "POS": "p01", 
+            "POS": "P", 
             "prefix_homograph": [
                 ""
             ], 
@@ -846,7 +823,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "מי\"", 
+            "word": "מי'", 
             "class": "unknown"
         }, 
         {
@@ -1016,7 +993,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "לד\"", 
+            "word": "לד'", 
             "class": "unknown"
         }, 
         {
@@ -1084,34 +1061,12 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "שמע מנ", 
-            "word_num": 0, 
-            "daf": "101b", 
             "word": "ש\"מ", 
-            "line_num": 34, 
-            "cal_word": "שמ מי", 
-            "POS": "p02", 
-            "class": "talmud", 
-            "pg_num": 101, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
-            "head_word": "שמע מנ", 
-            "word_num": 0, 
-            "daf": "101b", 
             "word": "מהא", 
-            "line_num": 34, 
-            "cal_word": "שמ מי", 
-            "POS": "p02", 
-            "class": "talmud", 
-            "pg_num": 101, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "מתניתא", 
@@ -1133,8 +1088,19 @@
             "side": 2
         }, 
         {
+            "head_word": "שמע מנ", 
+            "word_num": 0, 
+            "daf": "101b", 
             "word": "ש\"מ", 
-            "class": "unknown"
+            "line_num": 34, 
+            "cal_word": "שמ מי", 
+            "POS": "p02", 
+            "class": "talmud", 
+            "pg_num": 101, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71003, 
+            "side": 2
         }, 
         {
             "word": "חוקקין", 
@@ -1397,7 +1363,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {

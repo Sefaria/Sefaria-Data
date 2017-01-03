@@ -89,7 +89,7 @@ def make_cal_segments(mesechta):
     all_dafs = []
     curr_daf = ''
     curr_daf_lines = []
-    for line in cal_gem_lines:
+    for iline, line in enumerate(cal_gem_lines):
         if line[0]["daf"] != curr_daf:
             if len(curr_daf_lines) > 0:
                 all_daf_lines.append(curr_daf_lines)
@@ -98,6 +98,13 @@ def make_cal_segments(mesechta):
             curr_daf_lines = [line]
         else:
             curr_daf_lines.append(line)
+
+        # dont forget to add the last daf in
+        if iline == len(cal_gem_lines) - 1:
+            if len(curr_daf_lines) > 0:
+                all_daf_lines.append(curr_daf_lines)
+                all_dafs.append(curr_daf)
+
 
     cal_tools.saveUTFStr({"lines":all_daf_lines,"dafs":all_dafs},"cal_lines_{}.json".format(mesechta))
 
@@ -108,7 +115,7 @@ def match_cal_segments(mesechta):
         str = str.replace(u"־", " ")
         str = re.sub(r"</?.+>", "", str)  # get rid of html tags
         str = re.sub(r"\([^\(\)]+\)", "", str)  # get rid of refs
-        str = str.replace("'", '"')
+        #str = str.replace("'", '"')
         word_list = filter(bool, re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]", str))
         return word_list
 
@@ -132,6 +139,10 @@ def match_cal_segments(mesechta):
     super_base_ref = Ref(mesechta)
     subrefs = super_base_ref.all_subrefs()
     ical = 0
+
+    num_sef_words = 0
+    num_cal_words = 0
+    num_words_matched = 0
 
     for curr_sef_ref in subrefs:
         if curr_sef_ref.is_empty(): continue
@@ -164,7 +175,9 @@ def match_cal_segments(mesechta):
 
         global_offset = 0
         if curr_sef_ref == curr_cal_ref:
-            start_end_map,abbrev_matches = dibur_hamatchil_matcher.match_text(bas_word_list, lines_by_str, verbose=True, word_threshold=0.27, char_threshold=1.5,with_abbrev_matches=True)
+            matched = dibur_hamatchil_matcher.match_text(bas_word_list, lines_by_str, verbose=True, word_threshold=0.27, char_threshold=0.6,with_abbrev_matches=True,with_num_abbrevs=False)
+            start_end_map = matched["matches"]
+            abbrev_matches = matched["abbrevs"]
             abbrev_ranges = [[am.rashiRange for am in am_list] for am_list in abbrev_matches ]
             print u' --- '.join([unicode(am) for am_list in abbrev_matches for am in am_list])
             abbrev_count = 0
@@ -216,11 +229,13 @@ def match_cal_segments(mesechta):
                 # matched_cal_objs_indexes = language_tools.match_segments_without_order(lines[iline],bas_word_list[se[0]:se[1]+1],2.0)
                 curr_bas_line = bas_word_list[se[0]:se[1]+1]
                 #print u'base line',u' '.join(curr_bas_line)
-                matched_words_base = dibur_hamatchil_matcher.match_text(curr_bas_line, curr_cal_line, char_threshold=0.3,verbose=False)
+                matched_obj_words_base = dibur_hamatchil_matcher.match_text(curr_bas_line, curr_cal_line, char_threshold=0.35,verbose=False,with_num_abbrevs=False)
+                matched_words_base = matched_obj_words_base["matches"]
                 word_for_word_se += [(tse[0]+se[0],tse[1]+se[0]) if tse[0] != -1 else tse for tse in matched_words_base]
 
-            matched_word_for_word = dibur_hamatchil_matcher.match_text(bas_word_list, cal_words, char_threshold=0.3, prev_matched_results=word_for_word_se,boundaryFlexibility=2)
-
+            matched_word_for_word_obj = dibur_hamatchil_matcher.match_text(bas_word_list, cal_words, char_threshold=0.35, prev_matched_results=word_for_word_se,boundaryFlexibility=2,with_num_abbrevs=False)
+            matched_word_for_word = matched_word_for_word_obj["matches"]
+            cal_len = len(matched_word_for_word)
             bad_word_offset = 0
             for ical_word,temp_se in enumerate(matched_word_for_word):
                 if temp_se[0] == -1:
@@ -243,10 +258,12 @@ def match_cal_segments(mesechta):
                     temp_out[i]["class"] = "talmud"
                     temp_out[i]["word"] = temp_sef_word
 
-            cal_len = len(matched_word_for_word)
+
             print u"\n-----\nFOUND {}/{} ({}%)".format(cal_len - len(missed_words), cal_len, (1 - round(1.0 * len(missed_words) / cal_len, 4)) * 100)
             #print u"MISSED: {}".format(u" ,".join([u"{}:{}".format(wo["word"], wo["index"]) for wo in missed_words]))
             ical += 1
+            num_cal_words += cal_len
+            num_words_matched += (cal_len - len(missed_words))
         """
         #tag 1 pos words if still untagged
         for iwo,word_obj in enumerate(temp_out):
@@ -255,6 +272,9 @@ def match_cal_segments(mesechta):
                 if len(cal_pos_hashtable[word]) == 1:
                     temp_out[iwo] = {"word":word,"cal_word":word,"class":"talmud","POS":cal_pos_hashtable[word][0]}
         """
+
+        num_sef_words += len(temp_out)
+
         out += temp_out
 
         sef_daf = curr_sef_ref.__str__().replace("{} ".format(mesechta),"").encode('utf8')
@@ -262,6 +282,8 @@ def match_cal_segments(mesechta):
         fp = codecs.open("cal_matcher_output/{}/lang_naive_talmud/lang_naive_talmud_{}.json".format(mesechta,sef_daf), "w", encoding='utf-8')
         json.dump(doc, fp, indent=4, encoding='utf-8', ensure_ascii=False)
         fp.close()
+
+    return num_sef_words, num_cal_words, num_words_matched
 
 
 def make_cal_pos_hashtable(cutoff=0):
@@ -322,9 +344,18 @@ def make_cal_lines_text(mesechta):
     fp.write(out)
     fp.close()
 
-mesechtas = [] #["Eruvin"]
+mesechtas = ["Berakhot","Shabbat","Eruvin","Pesachim","Bava Kamma","Bava Metzia","Bava Batra"]
+
+total_sef_words = 0
+total_cal_words = 0
+total_words_matched = 0
 for mesechta in mesechtas:
-    make_cal_segments(mesechta)
-    match_cal_segments(mesechta)
+    #make_cal_segments(mesechta)
+    temp_sef_words, temp_cal_words, temp_matched_words = match_cal_segments(mesechta)
+    total_sef_words += temp_sef_words
+    total_cal_words += temp_cal_words
+    total_words_matched += temp_matched_words
     #make_cal_lines_text(mesechta)
-make_cal_pos_hashtable(2)
+#make_cal_pos_hashtable(2)
+
+print "SEF:{} CAL:{} MATCHED:{} (SEF: {}% CAL: {}%)".format(total_sef_words,total_cal_words,total_words_matched,round((100.0*total_words_matched)/total_sef_words,3),round((100.0*(total_words_matched))/total_cal_words,3))

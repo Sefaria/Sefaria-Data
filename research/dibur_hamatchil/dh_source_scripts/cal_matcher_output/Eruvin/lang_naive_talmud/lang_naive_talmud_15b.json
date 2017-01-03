@@ -1,8 +1,13 @@
 {
-    "missed_words": [], 
+    "missed_words": [
+        {
+            "index": 24, 
+            "word": "רחמ"
+        }
+    ], 
     "words": [
         {
-            "word": "ור\"", 
+            "word": "ור'", 
             "class": "unknown"
         }, 
         {
@@ -30,7 +35,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ור\"", 
+            "word": "ור'", 
             "class": "unknown"
         }, 
         {
@@ -50,7 +55,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -412,7 +417,7 @@
             "word": "הוא", 
             "line_num": 13, 
             "cal_word": "הוא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 15, 
             "ms": "01", 
@@ -475,7 +480,7 @@
             "word": "האי", 
             "line_num": 14, 
             "cal_word": "האי", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 15, 
             "ms": "01", 
@@ -498,7 +503,7 @@
             "word": "מאי", 
             "line_num": 14, 
             "cal_word": "מאי", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 15, 
             "ms": "01", 
@@ -628,7 +633,7 @@
             "head_word": "ר'", 
             "word_num": 0, 
             "daf": "15b", 
-            "word": "ור\"", 
+            "word": "ור'", 
             "line_num": 18, 
             "cal_word": "ור", 
             "POS": "PN", 
@@ -663,7 +668,7 @@
             "word": "האי", 
             "line_num": 18, 
             "cal_word": "האי", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 15, 
             "ms": "01", 
@@ -708,7 +713,7 @@
             "word": "ליה", 
             "line_num": 18, 
             "cal_word": "ליה", 
-            "POS": "p01", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 15, 
             "ms": "01", 
@@ -1359,19 +1364,8 @@
             "side": 2
         }, 
         {
-            "head_word": "רחמנא", 
-            "word_num": 0, 
-            "daf": "15b", 
             "word": "רחמנא", 
-            "line_num": 37, 
-            "cal_word": "רחמ", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "pg_num": 15, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "משה", 

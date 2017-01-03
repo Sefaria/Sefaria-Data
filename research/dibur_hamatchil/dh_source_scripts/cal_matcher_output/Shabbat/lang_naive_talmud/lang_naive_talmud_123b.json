@@ -1,8 +1,20 @@
 {
     "missed_words": [
         {
+            "index": 13, 
+            "word": "אובלא"
+        }, 
+        {
+            "index": 16, 
+            "word": "אמ"
+        }, 
+        {
             "index": 17, 
             "word": "האי"
+        }, 
+        {
+            "index": 24, 
+            "word": "דאמו"
         }
     ], 
     "words": [
@@ -407,7 +419,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "דר\"", 
+            "word": "דר'", 
             "class": "unknown"
         }, 
         {
@@ -439,7 +451,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -505,7 +517,7 @@
             "word": "האי", 
             "line_num": 14, 
             "cal_word": "האי", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 123, 
             "ms": "01", 
@@ -514,19 +526,8 @@
             "side": 2
         }, 
         {
-            "head_word": "אוכלא", 
-            "word_num": 1, 
-            "daf": "123b", 
             "word": "אוכלא", 
-            "line_num": 14, 
-            "cal_word": "אובלא", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "pg_num": 123, 
-            "ms": "01", 
-            "homograph": "#2", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "קצרא", 
@@ -580,19 +581,8 @@
             "side": 2
         }, 
         {
-            "head_word": "אמר", 
-            "word_num": 0, 
-            "daf": "123b", 
             "word": "אמר", 
-            "line_num": 15, 
-            "cal_word": "אמ", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 123, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "אביי", 
@@ -746,19 +736,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "דמי", 
-            "word_num": 5, 
-            "daf": "123b", 
             "word": "דמי", 
-            "line_num": 16, 
-            "cal_word": "דאמו", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 123, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "ת\"ר", 
@@ -1093,7 +1072,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ואפי\"", 
+            "word": "ואפי'", 
             "class": "unknown"
         }, 
         {
@@ -1477,7 +1456,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -1557,7 +1536,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {

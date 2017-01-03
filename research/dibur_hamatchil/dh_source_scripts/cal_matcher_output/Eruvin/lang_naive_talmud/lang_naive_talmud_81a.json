@@ -1,5 +1,10 @@
 {
-    "missed_words": [], 
+    "missed_words": [
+        {
+            "index": 17, 
+            "word": "דהוה"
+        }
+    ], 
     "words": [
         {
             "head_word": "תני", 
@@ -575,7 +580,7 @@
             "word": "הא", 
             "line_num": 26, 
             "cal_word": "הא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 81, 
             "ms": "01", 
@@ -822,7 +827,7 @@
             "word": "הא", 
             "line_num": 26, 
             "cal_word": "הא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 81, 
             "ms": "01", 
@@ -1132,7 +1137,7 @@
             "word": "ההיא", 
             "line_num": 32, 
             "cal_word": "ההוא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 81, 
             "ms": "01", 
@@ -1141,28 +1146,8 @@
             "side": 1
         }, 
         {
-            "head_word": "הוי", 
-            "word_num": 2, 
-            "daf": "81a", 
             "word": "דהואי", 
-            "line_num": 32, 
-            "cal_word": "דהוה", 
-            "POS": "V01", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 81, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "שתא", 
@@ -1340,7 +1325,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "וגו\"", 
+            "word": "וגו'", 
             "class": "unknown"
         }, 
         {

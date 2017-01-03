@@ -16,7 +16,8 @@ random.seed(2823274491)
 
 #filename_to_load = '' #'epoch_9-11-3/langtagger_model_embdim20_hiddim40_lyr2_e9_trainloss0.179809275561_trainprec95.34_valprec95.8651582151.model'
 #filename_to_load = 'epoch_10-11-4-with-Tanakh/langtagger_model_embdim20_hiddim40_lyr2_e10_trainloss0.206057158064_trainprec94.26_valprec93.2793903924.model'
-filename_to_load = 'epoch_9-11-4-with-better-ambiguous/langtagger_model_embdim20_hiddim40_lyr2_e9_trainloss0.23960972284_trainprec93.48_valprec93.1008844017.model'
+#filename_to_load = 'epoch_9-11-4-with-better-ambiguous/langtagger_model_embdim20_hiddim40_lyr2_e9_trainloss0.23960972284_trainprec93.48_valprec93.1008844017.model'
+filename_to_load = 'epoch_9-12-22-bigger-dataset/langtagger_model_embdim20_hiddim40_lyr2_e9_trainloss0.201322334121_trainprec95.12_valprec94.1795254687.model'
 START_EPOCH = 0
 
 # argument parse
@@ -438,8 +439,8 @@ if train_test:
         lang_conf_matrix.clear()
 else:
     #tag all of shas!
-    cal_matcher_path = '../../dibur_hamatchil/dh_source_scripts/cal_matcher_output'
-    mesechtot_names = ['Berakhot','Shabbat','Eruvin','Pesachim']
+    cal_matcher_path = '../../../dibur_hamatchil/dh_source_scripts/cal_matcher_output'
+    mesechtot_names = ['Berakhot','Shabbat','Eruvin','Pesachim','Bava Kamma','Bava Metzia','Bava Batra']
     for mesechta in mesechtot_names:
         mesechta_path = '{}/{}/lang_naive_talmud'.format(cal_matcher_path,mesechta)
         if not os.path.exists('{}/{}/lang_tagged'.format(cal_matcher_path, mesechta)):

@@ -1,20 +1,24 @@
 {
     "missed_words": [
         {
+            "index": 0, 
+            "word": "אם"
+        }, 
+        {
+            "index": 1, 
+            "word": "איתה"
+        }, 
+        {
             "index": 5, 
             "word": "הא"
         }, 
         {
-            "index": 8, 
-            "word": "ביה"
+            "index": 6, 
+            "word": "לא"
         }, 
         {
             "index": 9, 
             "word": "בגופיה"
-        }, 
-        {
-            "index": 10, 
-            "word": "ואידך"
         }, 
         {
             "index": 11, 
@@ -27,10 +31,6 @@
         {
             "index": 13, 
             "word": "דאתקש"
-        }, 
-        {
-            "index": 14, 
-            "word": "ואידך"
         }, 
         {
             "index": 18, 
@@ -219,34 +219,12 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אמ", 
-            "word_num": 0, 
-            "daf": "25a", 
             "word": "ואם", 
-            "line_num": 7, 
-            "cal_word": "אם", 
-            "POS": "c", 
-            "class": "talmud", 
-            "pg_num": 25, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
-            "head_word": "אית", 
-            "word_num": 1, 
-            "daf": "25a", 
             "word": "איתא", 
-            "line_num": 7, 
-            "cal_word": "איתה", 
-            "POS": "a", 
-            "class": "talmud", 
-            "pg_num": 25, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "פרכ", 
@@ -338,7 +316,7 @@
             "word": "במאי", 
             "line_num": 9, 
             "cal_word": "במאי", 
-            "POS": "p01", 
+            "POS": "P", 
             "prefix_homograph": [
                 ""
             ], 
@@ -408,16 +386,58 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "כתב", 
+            "word_num": 2, 
+            "daf": "25a", 
             "word": "כתיבה", 
-            "class": "unknown"
+            "line_num": 11, 
+            "cal_word": "כתיבא", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 25, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
+            "head_word": "ב_", 
+            "word_num": 3, 
+            "daf": "25a", 
             "word": "ביה", 
-            "class": "unknown"
+            "line_num": 11, 
+            "cal_word": "ביה", 
+            "POS": "p02", 
+            "class": "talmud", 
+            "pg_num": 25, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
+            "head_word": "אידכ", 
+            "word_num": 0, 
+            "daf": "25a", 
             "word": "ואידך", 
-            "class": "unknown"
+            "line_num": 14, 
+            "cal_word": "ואידך", 
+            "POS": "P", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ו_"
+            ], 
+            "pg_num": 25, 
+            "prefix_POS": [
+                "c"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71004, 
+            "side": 1
         }, 
         {
             "word": "דקא", 
@@ -586,7 +606,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "אפי\"", 
+            "word": "אפי'", 
             "class": "unknown"
         }, 
         {
@@ -1035,7 +1055,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ואפי\"", 
+            "word": "ואפי'", 
             "class": "unknown"
         }, 
         {
@@ -1059,7 +1079,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {

@@ -1,12 +1,24 @@
 {
     "missed_words": [
         {
+            "index": 9, 
+            "word": "דאיפשר"
+        }, 
+        {
             "index": 11, 
             "word": "על"
         }, 
         {
             "index": 14, 
             "word": "נמי"
+        }, 
+        {
+            "index": 16, 
+            "word": "עילוה"
+        }, 
+        {
+            "index": 18, 
+            "word": "לטבלה"
         }
     ], 
     "words": [
@@ -241,7 +253,7 @@
             "word": "כמאן", 
             "line_num": 9, 
             "cal_word": "כמאן", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 30, 
             "ms": "01", 
@@ -604,7 +616,7 @@
             "word": "מאי", 
             "line_num": 19, 
             "cal_word": "מאי", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 30, 
             "ms": "01", 
@@ -628,28 +640,8 @@
             "side": 2
         }, 
         {
-            "head_word": "איפשר", 
-            "word_num": 1, 
-            "daf": "30b", 
             "word": "אפשר", 
-            "line_num": 20, 
-            "cal_word": "דאיפשר", 
-            "POS": "a", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ד_"
-            ], 
-            "pg_num": 30, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "שאל", 
@@ -749,19 +741,8 @@
             "side": 2
         }, 
         {
-            "head_word": "עילוי", 
-            "word_num": 3, 
-            "daf": "30b", 
             "word": "עלה", 
-            "line_num": 21, 
-            "cal_word": "עילוה", 
-            "POS": "p02", 
-            "class": "talmud", 
-            "pg_num": 30, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "הדר", 
@@ -779,28 +760,8 @@
             "side": 2
         }, 
         {
-            "head_word": "טיבלא", 
-            "word_num": 1, 
-            "daf": "30b", 
             "word": "לטיבלא", 
-            "line_num": 22, 
-            "cal_word": "לטבלה", 
-            "POS": "N02", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ל_"
-            ], 
-            "pg_num": 30, 
-            "prefix_POS": [
-                "p02"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "פרש", 
@@ -994,7 +955,7 @@
             "word": "ומאי", 
             "line_num": 25, 
             "cal_word": "ומאי", 
-            "POS": "p01", 
+            "POS": "P", 
             "prefix_homograph": [
                 ""
             ], 
@@ -1093,7 +1054,7 @@
             "word": "כמאן", 
             "line_num": 27, 
             "cal_word": "כמאן", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 30, 
             "ms": "01", 
@@ -1274,7 +1235,7 @@
             "word": "מאי", 
             "line_num": 32, 
             "cal_word": "מאי", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 30, 
             "ms": "01", 
@@ -1313,7 +1274,7 @@
             "word": "ליה", 
             "line_num": 32, 
             "cal_word": "ליה", 
-            "POS": "p01", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 30, 
             "ms": "01", 
@@ -1689,7 +1650,7 @@
             "word": "דהני", 
             "line_num": 44, 
             "cal_word": "דהני", 
-            "POS": "p01", 
+            "POS": "P", 
             "prefix_homograph": [
                 ""
             ], 

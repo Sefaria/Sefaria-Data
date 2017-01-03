@@ -1,8 +1,16 @@
 {
     "missed_words": [
         {
+            "index": 6, 
+            "word": "לקמיה"
+        }, 
+        {
             "index": 9, 
             "word": "עליה"
+        }, 
+        {
+            "index": 12, 
+            "word": "או"
         }
     ], 
     "words": [
@@ -25,7 +33,7 @@
             "word": "מאי", 
             "line_num": 1, 
             "cal_word": "מאי", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 100, 
             "ms": "01", 
@@ -211,19 +219,8 @@
             "side": 2
         }, 
         {
-            "head_word": "לקמי", 
-            "word_num": 3, 
-            "daf": "100b", 
             "word": "קמיה", 
-            "line_num": 3, 
-            "cal_word": "לקמיה", 
-            "POS": "p02", 
-            "class": "talmud", 
-            "pg_num": 100, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "פרס", 
@@ -444,19 +441,8 @@
             "side": 2
         }, 
         {
-            "head_word": "או", 
-            "word_num": 1, 
-            "daf": "100b", 
             "word": "אי", 
-            "line_num": 10, 
-            "cal_word": "או", 
-            "POS": "c", 
-            "class": "talmud", 
-            "pg_num": 100, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "אמר", 

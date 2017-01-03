@@ -1,12 +1,32 @@
 {
     "missed_words": [
         {
+            "index": 3, 
+            "word": "ויהי"
+        }, 
+        {
+            "index": 5, 
+            "word": "רדיף"
+        }, 
+        {
+            "index": 17, 
+            "word": "באליאתא"
+        }, 
+        {
             "index": 22, 
             "word": "דברא"
         }, 
         {
+            "index": 24, 
+            "word": "מתא"
+        }, 
+        {
             "index": 25, 
             "word": "יתיב"
+        }, 
+        {
+            "index": 33, 
+            "word": "איכא"
         }
     ], 
     "words": [
@@ -151,7 +171,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "דר\"", 
+            "word": "דר'", 
             "class": "unknown"
         }, 
         {
@@ -159,7 +179,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "בר\"", 
+            "word": "בר'", 
             "class": "unknown"
         }, 
         {
@@ -199,28 +219,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "הוי", 
-            "word_num": 0, 
-            "daf": "114a", 
             "word": "ויהא", 
-            "line_num": 5, 
-            "cal_word": "ויהי", 
-            "POS": "V01", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
-            "pg_num": 114, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "ליבא", 
@@ -238,19 +238,8 @@
             "side": 1
         }, 
         {
-            "head_word": "רדפ", 
-            "word_num": 2, 
-            "daf": "114a", 
             "word": "רודף", 
-            "line_num": 5, 
-            "cal_word": "רדיף", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 114, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "על", 
@@ -459,28 +448,8 @@
             "side": 1
         }, 
         {
-            "head_word": "אליתא", 
-            "word_num": 2, 
-            "daf": "114a", 
             "word": "אליתא", 
-            "line_num": 8, 
-            "cal_word": "באליאתא", 
-            "POS": "N05", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ב_"
-            ], 
-            "pg_num": 114, 
-            "prefix_POS": [
-                "p02"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "טשי", 
@@ -585,19 +554,8 @@
             "side": 1
         }, 
         {
-            "head_word": "מתא", 
-            "word_num": 4, 
-            "daf": "114a", 
             "word": "דמתא", 
-            "line_num": 9, 
-            "cal_word": "מתא", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "pg_num": 114, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71004, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "שכיב", 
@@ -1033,12 +991,12 @@
             "side": 1
         }, 
         {
-            "head_word": "איכא", 
-            "word_num": 5, 
+            "head_word": "הכי", 
+            "word_num": 3, 
             "daf": "114a", 
             "word": "הכא", 
             "line_num": 22, 
-            "cal_word": "איכא", 
+            "cal_word": "הכי", 
             "POS": "a", 
             "class": "talmud", 
             "pg_num": 114, 

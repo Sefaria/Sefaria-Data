@@ -94,7 +94,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -106,7 +106,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -118,7 +118,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -164,7 +164,7 @@
             "word": "הני", 
             "line_num": 6, 
             "cal_word": "הני", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 36, 
             "ms": "01", 
@@ -265,6 +265,21 @@
         }, 
         {
             "head_word": "שיפורא", 
+            "word_num": 3, 
+            "daf": "36a", 
+            "word": "שופרא", 
+            "line_num": 7, 
+            "cal_word": "שיפורא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "pg_num": 36, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
+        }, 
+        {
+            "head_word": "שיפורא", 
             "word_num": 2, 
             "daf": "36a", 
             "word": "שופרא", 
@@ -277,10 +292,6 @@
             "homograph": "", 
             "book_num": 71002, 
             "side": 1
-        }, 
-        {
-            "word": "שופרא", 
-            "class": "unknown"
         }, 
         {
             "head_word": "חצוצרתא", 
@@ -299,12 +310,12 @@
         }, 
         {
             "head_word": "מאי", 
-            "word_num": 0, 
+            "word_num": 3, 
             "daf": "36a", 
             "word": "למאי", 
-            "line_num": 10, 
+            "line_num": 8, 
             "cal_word": "למאי", 
-            "POS": "p01", 
+            "POS": "P", 
             "prefix_homograph": [
                 ""
             ], 
@@ -323,11 +334,11 @@
         }, 
         {
             "head_word": "נפק", 
-            "word_num": 1, 
+            "word_num": 4, 
             "daf": "36a", 
             "word": "נפקא", 
-            "line_num": 10, 
-            "cal_word": "נפק", 
+            "line_num": 8, 
+            "cal_word": "נפקא", 
             "POS": "V01", 
             "class": "talmud", 
             "pg_num": 36, 
@@ -338,10 +349,10 @@
         }, 
         {
             "head_word": "מנ", 
-            "word_num": 2, 
+            "word_num": 5, 
             "daf": "36a", 
             "word": "מינה", 
-            "line_num": 10, 
+            "line_num": 8, 
             "cal_word": "מינה", 
             "POS": "p02", 
             "class": "talmud", 
@@ -384,12 +395,43 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "מאי", 
+            "word_num": 0, 
+            "daf": "36a", 
             "word": "למאי", 
-            "class": "unknown"
+            "line_num": 10, 
+            "cal_word": "למאי", 
+            "POS": "P", 
+            "prefix_homograph": [
+                ""
+            ], 
+            "class": "talmud", 
+            "prefix": [
+                "ל_"
+            ], 
+            "pg_num": 36, 
+            "prefix_POS": [
+                "p03"
+            ], 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
+            "head_word": "נפק מנ", 
+            "word_num": 1, 
+            "daf": "36a", 
             "word": "נ\"מ", 
-            "class": "unknown"
+            "line_num": 10, 
+            "cal_word": "נפק מינה", 
+            "POS": "p02", 
+            "class": "talmud", 
+            "pg_num": 36, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "ללולב", 
@@ -462,7 +504,7 @@
             "word": "למאי", 
             "line_num": 11, 
             "cal_word": "למאי", 
-            "POS": "p01", 
+            "POS": "P", 
             "prefix_homograph": [
                 ""
             ], 
@@ -495,19 +537,8 @@
             "side": 1
         }, 
         {
-            "head_word": "נפק מנ", 
-            "word_num": 2, 
-            "daf": "36a", 
             "word": "למקח", 
-            "line_num": 11, 
-            "cal_word": "נפקא מינה", 
-            "POS": "p02", 
-            "class": "talmud", 
-            "pg_num": 36, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "וממכר", 
@@ -538,7 +569,7 @@
             "word_num": 0, 
             "daf": "36a", 
             "word": "הובלילא", 
-            "line_num": 13, 
+            "line_num": 12, 
             "cal_word": "הובלילא", 
             "POS": "N02", 
             "class": "talmud", 
@@ -609,8 +640,19 @@
             "side": 1
         }, 
         {
+            "head_word": "הובלילא", 
+            "word_num": 0, 
+            "daf": "36a", 
             "word": "הובלילא", 
-            "class": "unknown"
+            "line_num": 13, 
+            "cal_word": "הובלילא", 
+            "POS": "N02", 
+            "class": "talmud", 
+            "pg_num": 36, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 1
         }, 
         {
             "word": "למאי", 

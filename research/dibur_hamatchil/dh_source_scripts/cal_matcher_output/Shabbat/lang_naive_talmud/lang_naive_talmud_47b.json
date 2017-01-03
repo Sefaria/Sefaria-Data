@@ -1,12 +1,28 @@
 {
     "missed_words": [
         {
+            "index": 2, 
+            "word": "הואי"
+        }, 
+        {
             "index": 3, 
             "word": "להו"
         }, 
         {
             "index": 5, 
             "word": "דהוו"
+        }, 
+        {
+            "index": 11, 
+            "word": "מרבנן"
+        }, 
+        {
+            "index": 17, 
+            "word": "דליכ"
+        }, 
+        {
+            "index": 18, 
+            "word": "איסורא"
         }
     ], 
     "words": [
@@ -101,19 +117,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "הוי", 
-            "word_num": 0, 
-            "daf": "47b", 
             "word": "הוה", 
-            "line_num": 3, 
-            "cal_word": "הואי", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 47, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "מטה", 
@@ -160,7 +165,7 @@
             "word": "לה", 
             "line_num": 3, 
             "cal_word": "לה", 
-            "POS": "p01", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 47, 
             "ms": "01", 
@@ -223,7 +228,7 @@
             "word": "א\"ל", 
             "line_num": 4, 
             "cal_word": "אמ ליה", 
-            "POS": "p01", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 47, 
             "ms": "01", 
@@ -238,7 +243,7 @@
             "word": "ההוא", 
             "line_num": 4, 
             "cal_word": "ההוא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 47, 
             "ms": "01", 
@@ -247,19 +252,8 @@
             "side": 2
         }, 
         {
-            "head_word": "רבננ", 
-            "word_num": 3, 
-            "daf": "47b", 
             "word": "מדרבנן", 
-            "line_num": 4, 
-            "cal_word": "מרבנן", 
-            "POS": "N05", 
-            "class": "talmud", 
-            "pg_num": 47, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "רבא", 
@@ -292,7 +286,7 @@
             "word": "מאי", 
             "line_num": 4, 
             "cal_word": "מאי", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 47, 
             "ms": "01", 
@@ -334,7 +328,7 @@
             "word": "הוא", 
             "line_num": 5, 
             "cal_word": "הוא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 47, 
             "ms": "01", 
@@ -358,19 +352,8 @@
             "side": 2
         }, 
         {
-            "head_word": "איסורא", 
-            "word_num": 6, 
-            "daf": "47b", 
             "word": "דאיסורא", 
-            "line_num": 5, 
-            "cal_word": "איסורא", 
-            "POS": "N02", 
-            "class": "talmud", 
-            "pg_num": 47, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "אורייתא", 
@@ -397,19 +380,8 @@
             "side": 2
         }, 
         {
-            "head_word": "ד_", 
-            "word_num": 5, 
-            "daf": "47b", 
             "word": "ליכא", 
-            "line_num": 5, 
-            "cal_word": "דליכ", 
-            "POS": "c", 
-            "class": "talmud", 
-            "pg_num": 47, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "איסורא", 
@@ -517,7 +489,7 @@
             "word": "אנא", 
             "line_num": 6, 
             "cal_word": "אנא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 47, 
             "ms": "01", 
@@ -784,7 +756,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -1204,7 +1176,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -1224,7 +1196,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {

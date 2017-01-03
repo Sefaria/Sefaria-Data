@@ -1,8 +1,16 @@
 {
     "missed_words": [
         {
+            "index": 0, 
+            "word": "ואמאי"
+        }, 
+        {
             "index": 3, 
             "word": "דקא"
+        }, 
+        {
+            "index": 4, 
+            "word": "סלקי"
         }, 
         {
             "index": 18, 
@@ -15,6 +23,10 @@
         {
             "index": 32, 
             "word": "לא"
+        }, 
+        {
+            "index": 33, 
+            "word": "חסרא"
         }, 
         {
             "index": 38, 
@@ -47,28 +59,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "אמאי", 
-            "word_num": 0, 
-            "daf": "84a", 
             "word": "ומאי", 
-            "line_num": 1, 
-            "cal_word": "ואמאי", 
-            "POS": "c", 
-            "prefix_homograph": [
-                ""
-            ], 
-            "class": "talmud", 
-            "prefix": [
-                "ו_"
-            ], 
-            "pg_num": 84, 
-            "prefix_POS": [
-                "c"
-            ], 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "head_word": "קרי", 
@@ -92,7 +84,7 @@
             "word": "לה", 
             "line_num": 1, 
             "cal_word": "לה", 
-            "POS": "p01", 
+            "POS": "p02", 
             "class": "talmud", 
             "pg_num": 84, 
             "ms": "01", 
@@ -105,19 +97,8 @@
             "class": "unknown"
         }, 
         {
-            "head_word": "סלק", 
-            "word_num": 5, 
-            "daf": "84a", 
             "word": "דקסלקי", 
-            "line_num": 1, 
-            "cal_word": "סלקי", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 84, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71003, 
-            "side": 1
+            "class": "unknown"
         }, 
         {
             "word": "במרפסת", 
@@ -397,7 +378,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "י\"", 
+            "word": "י'", 
             "class": "unknown"
         }, 
         {
@@ -478,7 +459,7 @@
             "word": "הוא", 
             "line_num": 11, 
             "cal_word": "היא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 84, 
             "ms": "01", 
@@ -875,10 +856,10 @@
         }, 
         {
             "head_word": "חסר", 
-            "word_num": 3, 
+            "word_num": 7, 
             "daf": "84a", 
             "word": "חסרא", 
-            "line_num": 20, 
+            "line_num": 19, 
             "cal_word": "חסרא", 
             "POS": "V01", 
             "class": "talmud", 

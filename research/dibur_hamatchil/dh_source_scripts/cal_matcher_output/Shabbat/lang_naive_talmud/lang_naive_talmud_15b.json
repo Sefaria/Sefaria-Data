@@ -3,6 +3,10 @@
         {
             "index": 4, 
             "word": "על"
+        }, 
+        {
+            "index": 52, 
+            "word": "גזרו"
         }
     ], 
     "words": [
@@ -43,7 +47,7 @@
             "word": "אינהו", 
             "line_num": 1, 
             "cal_word": "אינהו", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 15, 
             "ms": "01", 
@@ -186,7 +190,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "דפ\"", 
+            "word": "דפ'", 
             "class": "unknown"
         }, 
         {
@@ -342,7 +346,7 @@
             "word": "הוא", 
             "line_num": 5, 
             "cal_word": "הוא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 15, 
             "ms": "01", 
@@ -373,7 +377,7 @@
             "word": "מידי", 
             "line_num": 6, 
             "cal_word": "מידי", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 15, 
             "ms": "01", 
@@ -388,7 +392,7 @@
             "word": "אחרינא", 
             "line_num": 6, 
             "cal_word": "אחרינא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 15, 
             "ms": "01", 
@@ -448,7 +452,7 @@
             "word": "אינהו", 
             "line_num": 6, 
             "cal_word": "אינהו", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 15, 
             "ms": "01", 
@@ -591,7 +595,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "דפ\"", 
+            "word": "דפ'", 
             "class": "unknown"
         }, 
         {
@@ -741,7 +745,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ו\"", 
+            "word": "ו'", 
             "class": "unknown"
         }, 
         {
@@ -917,7 +921,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ר\"", 
+            "word": "ר'", 
             "class": "unknown"
         }, 
         {
@@ -985,7 +989,7 @@
             "class": "unknown"
         }, 
         {
-            "word": "ו\"", 
+            "word": "ו'", 
             "class": "unknown"
         }, 
         {
@@ -1037,7 +1041,7 @@
             "word": "אינהו", 
             "line_num": 18, 
             "cal_word": "אינהו", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 15, 
             "ms": "01", 
@@ -1212,8 +1216,19 @@
             "side": 2
         }, 
         {
+            "head_word": "אידי", 
+            "word_num": 2, 
+            "daf": "15b", 
             "word": "אידי", 
-            "class": "unknown"
+            "line_num": 20, 
+            "cal_word": "איידי", 
+            "POS": "P", 
+            "class": "talmud", 
+            "pg_num": 15, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "head_word": "אידי", 
@@ -1222,7 +1237,7 @@
             "word": "ואידי", 
             "line_num": 20, 
             "cal_word": "ואיידי", 
-            "POS": "p", 
+            "POS": "P", 
             "prefix_homograph": [
                 ""
             ], 
@@ -1412,7 +1427,7 @@
             "word": "מ\"ט", 
             "line_num": 22, 
             "cal_word": "מאי טעמא", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 15, 
             "ms": "01", 
@@ -1421,19 +1436,8 @@
             "side": 2
         }, 
         {
-            "head_word": "גזר", 
-            "word_num": 4, 
-            "daf": "15b", 
             "word": "גזור", 
-            "line_num": 22, 
-            "cal_word": "גזרו", 
-            "POS": "V01", 
-            "class": "talmud", 
-            "pg_num": 15, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "head_word": "ב_", 

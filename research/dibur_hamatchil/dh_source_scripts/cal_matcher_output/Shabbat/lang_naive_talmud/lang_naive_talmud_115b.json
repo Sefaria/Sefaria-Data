@@ -5,19 +5,15 @@
             "word": "כיון"
         }, 
         {
-            "index": 16, 
-            "word": "הני"
-        }, 
-        {
-            "index": 17, 
-            "word": "מילי"
-        }, 
-        {
-            "index": 34, 
+            "index": 33, 
             "word": "קא"
         }, 
         {
-            "index": 36, 
+            "index": 34, 
+            "word": "מיבעיא"
+        }, 
+        {
+            "index": 35, 
             "word": "לן"
         }
     ], 
@@ -591,7 +587,7 @@
             "word": "הני", 
             "line_num": 20, 
             "cal_word": "הני", 
-            "POS": "p01", 
+            "POS": "P", 
             "class": "talmud", 
             "pg_num": 115, 
             "ms": "01", 
@@ -615,10 +611,56 @@
             "side": 2
         }, 
         {
-            "head_word": "הכא", 
+            "head_word": "היכא", 
             "word_num": 2, 
             "daf": "115b", 
             "word": "היכא", 
+            "line_num": 20, 
+            "cal_word": "היכא", 
+            "POS": "a", 
+            "class": "talmud", 
+            "pg_num": 115, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 2
+        }, 
+        {
+            "head_word": "כתב", 
+            "word_num": 3, 
+            "daf": "115b", 
+            "word": "דכתיבי", 
+            "line_num": 20, 
+            "cal_word": "דכתיבי", 
+            "POS": "V01", 
+            "class": "talmud", 
+            "pg_num": 115, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 2
+        }, 
+        {
+            "word": "תרגום", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "ובכל", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "לשון", 
+            "class": "unknown"
+        }, 
+        {
+            "word": "אבל", 
+            "class": "unknown"
+        }, 
+        {
+            "head_word": "הכא", 
+            "word_num": 2, 
+            "daf": "115b", 
+            "word": "הכא", 
             "line_num": 21, 
             "cal_word": "הכא", 
             "POS": "a", 
@@ -652,30 +694,6 @@
             "homograph": "", 
             "book_num": 71002, 
             "side": 2
-        }, 
-        {
-            "word": "תרגום", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "ובכל", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "לשון", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "אבל", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "הכא", 
-            "class": "unknown"
-        }, 
-        {
-            "word": "דכתיבי", 
-            "class": "unknown"
         }, 
         {
             "word": "בלשון", 
@@ -723,7 +741,7 @@
             "head_word": "אפלו", 
             "word_num": 3, 
             "daf": "115b", 
-            "word": "אפי\"", 
+            "word": "אפי'", 
             "line_num": 22, 
             "cal_word": "אפי", 
             "POS": "c", 
@@ -741,7 +759,7 @@
             "word": "למ\"ד", 
             "line_num": 22, 
             "cal_word": "למ\"ד", 
-            "POS": "p", 
+            "POS": "P", 
             "prefix_homograph": [
                 ""
             ], 
@@ -763,8 +781,19 @@
             "class": "unknown"
         }, 
         {
+            "head_word": "הני מילתא", 
+            "word_num": 6, 
+            "daf": "115b", 
             "word": "ה\"מ", 
-            "class": "unknown"
+            "line_num": 22, 
+            "cal_word": "הני מילי", 
+            "POS": "N05", 
+            "class": "talmud", 
+            "pg_num": 115, 
+            "ms": "01", 
+            "homograph": "", 
+            "book_num": 71002, 
+            "side": 2
         }, 
         {
             "head_word": "היכא", 
@@ -1314,19 +1343,8 @@
             "side": 2
         }, 
         {
-            "head_word": "בעי", 
-            "word_num": 6, 
-            "daf": "115b", 
             "word": "קמיבעיא", 
-            "line_num": 35, 
-            "cal_word": "מיבעיא", 
-            "POS": "V04", 
-            "class": "talmud", 
-            "pg_num": 115, 
-            "ms": "01", 
-            "homograph": "", 
-            "book_num": 71002, 
-            "side": 2
+            "class": "unknown"
         }, 
         {
             "word": "לי", 
