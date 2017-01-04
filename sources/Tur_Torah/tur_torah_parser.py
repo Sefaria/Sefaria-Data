@@ -3,6 +3,7 @@
 import codecs
 import re
 from data_utilities.util import ja_to_xml, multiple_replace, traverse_ja , file_to_ja_g
+from data_utilities.sanity_checks import TagTester
 from sources.functions import post_text, post_index, post_link
 from sefaria.model import *
 from sefaria.datatype.jagged_array import JaggedArray
@@ -16,7 +17,7 @@ def parse_he(filename):
             line = multiple_replace(line,replace_dict,using_regex=True)
             new.append(line)
 
-        return new #''.join(new) # join is reduces it to depth 2 without comments so it is like the en, return new for depth 3.
+        return new
 
     regs = [ur'@00(?P<gim>)',ur'@02(?P<gim>[\u05d0-\u05ea]{1,3})', ur'@22\((?P<gim>[\u05d0-\u05ea]{1,3})\)']  # ,ur'@77'
     with codecs.open(filename, 'r', 'utf-8') as fp:
@@ -74,7 +75,6 @@ def parse_en(filename):
                 indices = [int(pasuk_dh.group(1))-1, int(pasuk_dh.group(2))-1, indices[2]]
                 indices[2] = 0
             elif reg_dh:
-                # print reg_dh.group(1)
                 indices[2] += 1
         if not line.isspace() and not re.match(ur' *Parshat *(\S+) *(\S+)? *', line):  # don't put into array names of Parasha or empty lines
             temp.append(line)
@@ -97,20 +97,23 @@ def tt_schema():
     record_root.add_title('Tur HaAroch', 'en', True)
     record_root.add_title(u'הטור הארוך', 'he', True)
     record_root.key = 'Tur HaAroch'
-
+    # introduction ja node
+    intro_node = JaggedArrayNode()
+    intro_node.depth = 1
+    intro_node.add_primary_titles(u'Introduction', u'הקדמה')
+    intro_node.add_structure(['Paragraph'])
+    record_root.append(intro_node)
+    # book nodes
     Pentateuch = ['Genesis','Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']
     Chumshai = [u'בראשית',u'שמות',u'ויקרא',u'במדבר',u'דברים']
-    #loop on the Pentateuch to create 5 ja nodes
+    #loop on the Pentateuch to create 5 the ja nodes
     for i in range(5):
         book_node = JaggedArrayNode()
         book_node.add_primary_titles('{}'.format(Pentateuch[i]),u'{}'.format(Chumshai[i]),True)
         book_node.add_structure(['Chapter', 'Verse', 'Comment'])
         book_node.toc_zoom = 2
         record_root.append(book_node)
-    # intro_node = JaggedArrayNode()
-    # intro_node.depth = 1
-    # intro_node.add_primary_titles(u'Introduction', u'הקדמה', True)
-    # record_root.append(intro_node)
+
 
     record_root.validate()
 
@@ -136,6 +139,16 @@ def tt_text_post(text_dict):
         }
         post_text('Tur HaAroch, {}'.format(key), version_dict)
 
+
+
+def intro_text_post():
+    version_dict = {
+        'versionTitle': 'Perush al ha-Torah, Hanover, 1838',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001935796',
+        'language': 'he',
+        'text': [u'צריך להקליד את ההקדמה']
+    }
+    post_text('Tur HaAroch, Introduction', version_dict)
 
 def en_tt_text_post(en_text):
     for key in en_text.keys():
@@ -170,6 +183,20 @@ def links(text_dict):
     return links
 
 
+def test_accercy(tag, filename):
+    with codecs.open(filename, 'r', 'utf-8') as fp:
+        tag_tester = TagTester(tag, fp)
+        appearences = tag_tester.appearances
+        print appearences
+
+
+def test_boolean_ja(ja1, ja2):
+    for data1,data2 in zip(traverse_ja(ja1), traverse_ja(ja2)):
+        if (bool(data1) != bool(data2)):
+            print data1['indices']
+
+
+
 if __name__ == "__main__":
     # parse
     parsed_he = parse_he('tur_he.txt')
@@ -177,8 +204,12 @@ if __name__ == "__main__":
     # index
     tt_index()
     # post
+    intro_text_post()
     tt_text_post(parsed_he)
     en_tt_text_post(parsed_en)
     # link
     links = links(parsed_he)
     post_link(links)
+    # # test_accercy(u'@02', u'tur_he.txt')
+    # for book in ['Genesis','Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']:
+    #     test_boolean_ja(parsed_he['{}'.format(book)],parsed_en['{}'.format(book)].array())
