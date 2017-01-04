@@ -1,3 +1,5 @@
+# encoding=utf-8
+
 import DCXMLsubs
 import os
 import re
@@ -26,35 +28,48 @@ class Collection:
         reader = csv.DictReader(lines)
         return [row for row in reader]
 
-    def parse_file(self, filename, en_title, he_title):
+    def parse_file(self, filename, en_title, he_title, include_commentaries=True):
 
         root = DCXMLsubs.parse('XML/{}'.format(filename), silence=True)
         version = self.get_version_skeleton()
         version['text'] = root.getBaseTextArray()
         self.versionList.append({'ref': en_title, 'version': version})
         self.base_indices.append(root.get_base_index(en_title, he_title))
-        commentaries = root.body.commentaries
 
-        for commentary in commentaries.get_commentary():
-            author = commentary.get_author()
-            if self.commentarySchemas.get(author) is None:
-                self.commentarySchemas[author] = commentary.build_node()
-            self.commentarySchemas[author].append(root.commentary_ja_node(en_title, he_title))
+        if include_commentaries:
+            commentaries = root.body.commentaries
+            for commentary in commentaries.get_commentary():
+                author = commentary.get_author()
+                if self.commentarySchemas.get(author) is None:
+                    self.commentarySchemas[author] = commentary.build_node()
+                self.commentarySchemas[author].append(root.commentary_ja_node(en_title, he_title))
 
-            version = self.get_version_skeleton()
-            if commentaries.is_linked_commentary(commentary):
-                version['text'] = commentary.parse_linked()
-            else:
-                version['text'] = commentary.parse_unlinked()
+                version = self.get_version_skeleton()
+                if commentaries.is_linked_commentary(commentary):
+                    version['text'] = commentary.parse_linked()
+                else:
+                    version['text'] = commentary.parse_unlinked()
 
-            ref = '{}, {}'.format(DCXMLsubs.commentatorNames[author], en_title)
-            self.versionList.append({'ref': ref, 'version': version})
-        self.linkSet.extend(root.get_stored_links(en_title))
+                ref = '{}, {}'.format(DCXMLsubs.commentatorNames[author], en_title)
+                self.versionList.append({'ref': ref, 'version': version})
+            self.linkSet.extend(root.get_stored_links(en_title))
 
-    def parse_collection(self):
+    def parse_collection(self, include_commentaries=True, skip_exceptions=False):
+        """
+        Parse entire collection
+        :param include_commentaries: Set to False to skip all commentaries
+        :param handle_exceptions: Used only for debugging and development, if set to True, will push through all
+        exceptions and upload those files on which exceptions were not raised
+        :return:
+        """
         for mapping in self.file_map:
             assert isinstance(mapping, dict)
-            self.parse_file(mapping['filename'], mapping['en_title'], mapping['he_title'])
+            try:
+                self.parse_file(mapping['filename'], mapping['en_title'], mapping['he_title'], include_commentaries)
+            except Exception as e:
+                print 'Problem found in {}'.format(mapping['filename'])
+                if skip_exceptions:
+                    raise e
 
     @staticmethod
     def get_version_skeleton():
@@ -124,30 +139,64 @@ def first_word_indices(string_list):
     return indices
 
 
-root = DCXMLsubs.parse("XML/tractate-avot_drabi_natan-xml.xml", silence=True)
-base_text = root.getBaseTextArray()[0]
-base_text = [bleach.clean(segment, tags=[], strip=True) for segment in base_text]
-seg_indices = first_word_indices(base_text)
-word_list = u' '.join(base_text).split()
-c = root.body.commentaries.commentary[6].chapter[0]
-dh_list = [p.dh.get_valueOf_() for p in c.get_phrase()]
-
-
 def cleaner(input_string):
     assert isinstance(input_string, basestring)
+    if len(input_string.split()) > 8:
+        input_string = u' '.join(input_string.split()[:8])
     pattern = u'\u05d5?(\u05db|\u05d2)\u05d5\u05f3?'
     match = re.search(pattern, input_string)
     if match is None:
         return input_string
     if match.start() > 6 and (match.start() > len(input_string) / 2):
-        return re.sub(u'\u05d5?(\u05db|\u05d2)\u05d5\u05f3?.*', u'', input_string)
+        return re.sub(u'\u05d5?(\u05db|\u05d2)\u05d5\u05f3?.*', u'', input_string, count=1)
     elif match.start() > 6 and (match.start() < len(input_string) / 2):
-        return re.sub(u'.*?{}'.format(pattern), u'', input_string)
+        return re.sub(u'.*?{}'.format(pattern), u'', input_string, count=1)
     else:
         return re.sub(pattern, u'', input_string)
 
-matches = match_text(word_list, dh_list, dh_extract_method=cleaner, place_all=False)
-locations = [bisect.bisect_right(seg_indices, match[0]) if match[0] >= 0 else match[0] for match in matches['matches']]
-c.set_verses(locations)
-with codecs.open('text.xml', 'w', 'utf-8') as outfile:
-    c.export(outfile, level=1)
+
+def get_commentary_index(doc_root, commentator):
+    assert isinstance(doc_root, DCXMLsubs.bookSub)
+    for i, commentary in enumerate(doc_root.body.commentaries.get_commentary()):
+        assert isinstance(commentary, DCXMLsubs.commentarySub)
+        if commentary.author.get_valueOf_() == commentator:
+            return i
+    else:
+        raise AttributeError("That commentator does not exist")
+
+
+def fix_commentator(filename, commentator, overwrite=False):
+    root = DCXMLsubs.parse("XML/{}.xml".format(filename), silence=True)
+    base_text = root.getBaseTextArray()
+    commentary = root.body.commentaries.commentary[get_commentary_index(root, commentator)]
+    assert isinstance(commentary, DCXMLsubs.commentarySub)
+    locations = []
+    assert len(base_text) == len(commentary.get_chapter())
+    counter = 1
+    for base_chapter, comment_chapter in zip(base_text, commentary.get_chapter()):
+        print 'fixing chapter {}'.format(counter)
+        book_text = [bleach.clean(segment, tags=[], strip=True) for segment in base_chapter]
+        seg_indices = first_word_indices(book_text)
+        word_list = u' '.join(book_text).split()
+        dh_list = [p.dh.get_valueOf_() for p in comment_chapter.get_phrase()]
+        matches = match_text(word_list, dh_list, dh_extract_method=cleaner, place_all=False)
+        locations.append([bisect.bisect_right(seg_indices, match[0]) if match[0] >= 0 else match[0] for match in matches['matches']])
+        counter += 1
+    commentary.set_verses(locations)
+    commentary.correct_phrase_verses()
+
+    if overwrite:
+        outfile = filename
+    else:
+        outfile = '{}_fixed'.format(filename)
+    with codecs.open('XML/{}.xml'.format(outfile), 'w', 'utf-8') as out:
+        root.export(out, level=1)
+
+
+# root = DCXMLsubs.parse('XML/tractate-avot_drabi_natan-xml2.xml', silence=True)
+# for i in root.chapter_page_map():
+#     print 'chapter {}: first: {} last: {}'.format(i['num'], i['first'], i['last'])
+# for phrase in root.body.commentaries.get_commentary()[2].get_phrase():
+#     if DCXMLsubs.commentStore.get(phrase.id) is None:
+#         print phrase.id
+

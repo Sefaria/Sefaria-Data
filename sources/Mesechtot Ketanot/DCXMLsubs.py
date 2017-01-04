@@ -169,6 +169,9 @@ class bookSub(supermod.book):
             'schema': node.serialize()
         }
 
+    def chapter_page_map(self):
+        return self.body.chapter_page_map()
+
 
 supermod.book.subclass = bookSub
 # end class bookSub
@@ -194,6 +197,9 @@ class bodySub(supermod.body):
 
     def getTextArray(self):
         return [c.getVerseArray() for c in self.chapter]
+
+    def chapter_page_map(self):
+        return [chapter.page_map() for chapter in self.get_chapter()]
 
 supermod.body.subclass = bodySub
 # end class bodySub
@@ -360,6 +366,17 @@ class chapterSub(supermod.chapter):
                     errors.append(verse+1)
         return errors
 
+    def page_map(self):
+        breaks = sorted(filter(None, [verse.last_page_break() for verse in self.get_verse()]))
+        result = {
+            'num': self.num,
+            'first': None,
+            'last': None
+        }
+        if len(breaks) > 0:
+            result['first'] = breaks[0]
+            result['last'] = breaks[-1]
+        return result
 
 
 supermod.chapter.subclass = chapterSub
@@ -375,6 +392,15 @@ class verseSub(supermod.verse):
 
     def get_xrefs(self):
         return [xref for xref in self.get_p()[0].get_xref()]
+
+    def last_page_break(self):
+        page = None
+        for p in self.get_p():
+            for pg in p.get_pgbrk():
+                if pg is not None:
+                    page = pg.id
+        return page
+
 supermod.verse.subclass = verseSub
 # end class verseSub
 
