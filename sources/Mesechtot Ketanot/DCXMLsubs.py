@@ -172,6 +172,9 @@ class bookSub(supermod.book):
     def chapter_page_map(self):
         return self.body.chapter_page_map()
 
+    def get_page_numbers(self):
+        return self.body.get_page_numbers()
+
 
 supermod.book.subclass = bookSub
 # end class bookSub
@@ -200,6 +203,12 @@ class bodySub(supermod.body):
 
     def chapter_page_map(self):
         return [chapter.page_map() for chapter in self.get_chapter()]
+
+    def get_page_numbers(self):
+        numbers = []
+        for chapter in self.get_chapter():
+            numbers.extend(chapter.get_page_numbers())
+        return numbers
 
 supermod.body.subclass = bodySub
 # end class bodySub
@@ -378,6 +387,13 @@ class chapterSub(supermod.chapter):
             result['last'] = breaks[-1]
         return result
 
+    def get_page_numbers(self):
+        numbers = []
+        for verse in self.get_verse():
+            numbers.extend(verse.get_page_numbers())
+        return numbers
+
+
 
 supermod.chapter.subclass = chapterSub
 # end class chapterSub
@@ -400,6 +416,14 @@ class verseSub(supermod.verse):
                 if pg is not None:
                     page = pg.id
         return page
+
+    def get_page_numbers(self):
+        numbers = []
+        for p in self.get_p():
+            for pg in p.get_pgbrk():
+                if pg is not None:
+                    numbers.append(pg.id)
+        return numbers
 
 supermod.verse.subclass = verseSub
 # end class verseSub
