@@ -100,7 +100,8 @@ class MatchMatrix(object):
         next_base_index = current_position[1] + 1
         next_comment_index = current_position[0] + 1
 
-        if not is_jump_start and next_comment_index == self.comment_len:
+        # (not is_jump_start or is_jump_end) is meant to capture the edge case when there's a one word abbrev at the end of the dh
+        if (not is_jump_start or is_jump_end) and next_comment_index == self.comment_len:
             # We've hit the last comment word
             if is_a_match or is_jump_end:
                 return [{
@@ -474,6 +475,20 @@ class RashiUnit:
         return u"\n\t{}\n\t{}\n[{}-{}] place: {} type: {} skipped gemara: {} skipped rashi: {}\nabbrevs:\n\t\t{}".format(
             self.startingText, self.matchedGemaraText, self.startWord, self.endWord, self.place, self.match_type,
             u', '.join(self.skippedDafWords), u', '.join(self.skippedRashiWords), u'\n\t\t'.join([am.__str__() for am in self.abbrev_matches]))
+
+
+def get_maximum_subset_dh(base_text, comment_text, threshold=90):
+    """
+    Useful when you have 2 segments, neither of which is a subset of the other. Eg a pasuk quoted in Talmud
+    :param base_text: list of strings
+    :param comment_text: list of strings
+    :param threshold: a weighted levenshtein score above this is considered negative
+    :return: range relative to base_text of best match from comment
+    """
+    wl_tuple_list = [weighted_levenshtein.calculate_best(tword,comment_text,normalize=True) for tword in base_text]
+    dist_list = [temp_tup[1]-threshold for temp_tup in wl_tuple_list]
+    start,end,cost = max_sesquence_sum(dist_list)
+    return start,end
 
 
 def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(ur'\s+',x), max_dh_len=None, word_threshold=0.27, char_threshold=0.2):
@@ -1839,7 +1854,18 @@ def hebrew_number_regex():
 
     return regex.compile(rx, regex.VERBOSE)
 
+def max_sesquence_sum(l):
+    best = cur = 0
+    curi = starti = besti = 0
+    for ind, i in enumerate(l):
+        if cur + i > 0:
+            cur += i
+        else:  # reset start position
+            cur, curi = 0, ind + 1
 
+        if cur > best:
+            starti, besti, best = curi, ind + 1, cur
+    return starti, besti, best
 #if it can get this, it can get anything
 #print isAbbrevMatch(0,u'בחוהמ',[u'בחול',u'המועד'])
 #he = [u'י״א',u'י׳',u'א״י']

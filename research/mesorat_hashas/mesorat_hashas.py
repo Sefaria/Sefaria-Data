@@ -27,7 +27,10 @@ import numpy as np
 from sefaria.model import *
 from sources.functions import post_link
 from sefaria.system.exceptions import DuplicateRecordError
+from sefaria.system.exceptions import InputError
+from sefaria.utils import hebrew
 import itertools
+from data_utilities.dibur_hamatchil_matcher import get_maximum_subset_dh
 
 
 min_matching_skip_grams = 2
@@ -483,8 +486,8 @@ def save_links():
             except DuplicateRecordError:
                 pass #poopy
 
-def save_links_dicta(category):
-    mesorat_hashas = json.load(open("mesorat_hashas2_{}.json".format(category),'rb'))
+def save_links_dicta(category, mesorat_hashas_name):
+    mesorat_hashas = json.load(open(mesorat_hashas_name,'rb'))
     for link in mesorat_hashas:
         link_obj = {"auto": True, "refs": link, "anchorText": "", "generated_by": "mesorat_hashas.cs (Dicta) {}".format(category),
                     "type": "Automatic Mesorat HaShas"}
@@ -536,11 +539,12 @@ def merge_matches(mesorat_hashas):
 
 
 #stop_words = [w[0] for w in json.load(open("word_counts.json", "rb"), encoding='utf8')[:100]]
-#stop_words = [u'רב',u'רבי',u'בן',u'בר',u'בריה',u'אמר',u'כאמר',u'וכאמר',u'דאמר',u'ודאמר',u'כדאמר',u'וכדאמר',u'ואמר',u'כרב',
-#              u'ורב',u'כדרב',u'דרב',u'ודרב',u'וכדרב',u'כרבי',u'ורבי',u'כדרבי',u'דרבי',u'ודרבי',u'וכדרבי',u"כר'",u"ור'",u"כדר'",
-#              u"דר'",u"ודר'",u"וכדר'",u'א״ר',u'וא״ר',u'כא״ר',u'דא״ר',u'דאמרי',u'משמיה',u'קאמר',u'קאמרי',u'לרב',u'לרבי',
-#              u"לר'",u'ברב',u'ברבי',u"בר'",u'ביה',u'הא',u'ליה']
-stop_words = []
+stop_words = [u'רב',u'רבי',u'בן',u'בר',u'בריה',u'אמר',u'כאמר',u'וכאמר',u'דאמר',u'ודאמר',u'כדאמר',u'וכדאמר',u'ואמר',u'כרב',
+              u'ורב',u'כדרב',u'דרב',u'ודרב',u'וכדרב',u'כרבי',u'ורבי',u'כדרבי',u'דרבי',u'ודרבי',u'וכדרבי',u"כר'",u"ור'",u"כדר'",
+              u"דר'",u"ודר'",u"וכדר'",u'א״ר',u'וא״ר',u'כא״ר',u'דא״ר',u'דאמרי',u'משמיה',u'קאמר',u'קאמרי',u'לרב',u'לרבי',
+              u"לר'",u'ברב',u'ברבי',u"בר'",u'הא',u'בהא',u'הך',u'בהך',u'ליה',u'צריכי',u'צריכא',u'וצריכי',u'וצריכא',u'הלל',u'שמאי']
+stop_phrases = [u'למה הדבר דומה',u'כלל ופרט וכלל',u'אלא כעין הפרט',u'מה הפרט',u'כלל ופרט',u'אין בכלל',u'אלא מה שבפרט']
+#stop_words = []
 def base_tokenizer(base_str):
     base_str = base_str.strip()
     base_str = bleach.clean(base_str, tags=[], strip=True)
@@ -549,10 +553,13 @@ def base_tokenizer(base_str):
             base_str = base_str.replace(match.group(), u"")
             # base_str = re.sub(ur"(?:\(.*?\)|<.*?>)", u"", base_str)
     base_str = re.sub(ur'[A-Za-z]',u'',base_str)
+    for phrase in stop_phrases:
+        base_str = base_str.replace(phrase,u'')
     word_list = re.split(ur"\s+", base_str)
     word_list = [re.sub(ur'\P{L}',u'',re.sub(ur'((?<!^)\u05D9)',u'',re.sub(ur'ו',u'',w))) for w in word_list if w not in stop_words] #remove non-leading yuds and all vuvs
     word_list = [w for w in word_list if len(w.strip()) > 0]
     return word_list
+
 
 def generate_dicta_input(category):
 
@@ -572,12 +579,6 @@ def generate_dicta_input(category):
         mes_tim = mes_tc.text_index_map(base_tokenizer,strict=False)
         mes_str_array = [w for seg in mes_tc.ja().flatten_to_array() for w in base_tokenizer(seg)]
         mes_str = u" ".join(mes_str_array)
-
-        #mes_str_array2 = mes_str.strip().split(u' ')
-
-        #random_num = 5000
-        #print u"BEFORE", mes_tim[1][random_num].text("he").text, mes_tim[1][random_num].text("he")
-        #print u"AFTER",u" ".join(mes_str_array2[mes_tim[0][random_num]:mes_tim[0][random_num+1]])
 
         with codecs.open("dicta_input_{}/{}.txt".format(category.lower(),mes),'wb',encoding='utf8') as f:
             f.write(mes_str)
@@ -630,6 +631,7 @@ def generate_dicta_output(category):
         word_indexes = key.split(u'|')
         content = mesorat_hashas_dicta[key].split(u'|')
         match = []
+        match_index = []
         for iwi,wi in enumerate(word_indexes):
             mes = wi.split(u'  ')[0]
             temp_word_index = wi.split(u'  ')[1]
@@ -649,13 +651,15 @@ def generate_dicta_output(category):
             else:
                 ref = start_ref.to(end_ref)
             match.append(str(ref)) # + u' ||| ' + content[iwi])
+            match_index.append([start,end])
 
         matchref = [Ref(match[0]),Ref(match[1])]
-        temp_mesorat_hashas.append(matchref)
+        temp_mesorat_hashas.append({"match":matchref,"match_index":match_index})
 
     #remove matches that are subsets
     intersection_map = {}
-    for matchref in temp_mesorat_hashas:
+    for matchobj in temp_mesorat_hashas:
+        matchref = matchobj['match']
         for i,m in enumerate(matchref):
             mrange = m.range_list()
             for r in mrange:
@@ -665,8 +669,10 @@ def generate_dicta_output(category):
                 intersection_map[r_str].append((matchref[i],matchref[int(i == 0)]))
 
     mesorat_hashas = []
+    mesorat_hashas_with_indexes = []
     num_dups = 0
-    for matchref in temp_mesorat_hashas:
+    for matchobj in temp_mesorat_hashas:
+        matchref = matchobj['match']
         is_subset = False
         intersected2 = []
         intersected1 = intersection_map[matchref[0].starting_ref().normal()]
@@ -683,6 +689,7 @@ def generate_dicta_output(category):
         if not is_subset:
             match = [matchref[0].normal(),matchref[1].normal()]
             mesorat_hashas.append(match)
+            mesorat_hashas_with_indexes.append({'match':match,'match_index':matchobj['match_index']})
 
 
 
@@ -692,7 +699,10 @@ def generate_dicta_output(category):
     with open('dicta_mesorat_hashas_{}.json'.format(category), "w") as f:
         f.write(objStr.encode('utf-8'))
     objStr = json.dumps(mesorat_hashas, indent=4, ensure_ascii=False)
-    with open('mesorat_hashas2_{}.json'.format(category), "w") as f:
+    with open('mesorat_hashas2_9_words_{}.json'.format(category), "w") as f:
+        f.write(objStr.encode('utf-8'))
+    objStr = json.dumps(mesorat_hashas_with_indexes, indent=4, ensure_ascii=False)
+    with open('mesorat_hashas2_with_indexes.json', "w") as f:
         f.write(objStr.encode('utf-8'))
 
 def find_extra_spaces():
@@ -735,10 +745,7 @@ def count_matches():
         matches[tup_l] += 1
     print len(matches)
 
-def compare_mesorat_hashas():
-    compare_a_name = 'mesorat_hashas-10words.json'
-    compare_b_name = 'mesorat_hashas2.json'
-
+def compare_mesorat_hashas(compare_a_name, compare_b_name):
     compare_a = json.load(open(compare_a_name,'rb'))
     compare_b = json.load(open(compare_b_name,'rb'))
 
@@ -757,24 +764,25 @@ def compare_mesorat_hashas():
     with open('mesorat_hashas_comparison.json', "w") as f:
         f.write(objStr.encode('utf-8'))
 
-def filter_close_matches():
+
+def filter_close_matches(mesorat_hashas_name):
     max_cluster_dist = 20
-    mesorat_hashas = json.load(open('mesorat_hashas2_Talmud.json','rb'))
+    mesorat_hashas = json.load(open(mesorat_hashas_name,'rb'))
     new_mesorat_hashas = set()
 
-    mesechtot_names = [name for name in library.get_indexes_in_category("Talmud") if not "Jerusalem " in name and not "Ritva " in name and not "Rif " in name]
     seg_map = {}
-    """
-    for name in mesechtot_names:
-        mes = library.get_index(name)
-        for seg in mes.all_segment_refs():
-            seg_map[str(seg)] = []
-    """
+    all_bad_links = set()
     for l in mesorat_hashas:
-        for ir,r in enumerate(l):
-            if r not in seg_map:
-                seg_map[r] = set()
-            seg_map[r].add(Ref(l[int(ir == 0)]))
+        if Ref(l[0]).order_id() < Ref(l[1]).order_id():
+            r = l[0]
+            ir = 0
+        else:
+            r = l[1]
+            ir = 1
+
+        if r not in seg_map:
+            seg_map[r] = set()
+        seg_map[r].add((Ref(r),Ref(l[int(ir == 0)])))
 
 
     m = len(seg_map.items())
@@ -789,7 +797,7 @@ def filter_close_matches():
                 if i == j:
                     dist_mat[i,j] = 0
                 else:
-                    dist_mat[i,j] = rray[i].distance(rray[j])
+                    dist_mat[i,j] = rray[i][1].distance(rray[j][1])
 
         clusters = []
         non_clustered = set()
@@ -801,7 +809,7 @@ def filter_close_matches():
                     #figure out if a cluster already exists containing one of these guys
                     found = False
                     for c in clusters:
-                        if rray[i] in c or rray[j] in c:
+                        if rray[i][1] in c or rray[j][1] in c:
                             c.add(rray[i])
                             c.add(rray[j])
                             clustered_indexes.add(i)
@@ -821,35 +829,139 @@ def filter_close_matches():
                 non_clustered.add(r)
 
 
-        if len(clusters) + len(non_clustered) > 5:
-            print list(non_clustered)[0]
+        #if len(clusters) + len(non_clustered) > 5:
+        #    print list(non_clustered)[0]
 
         for c in clusters:
             #add one from each cluster
             other_r = None
             for temp_other_r in c:
-                if other_r is None or temp_other_r.order_id() < other_r.order_id():
+                if other_r is None or temp_other_r[1].order_id() < other_r[1].order_id():
                     other_r = temp_other_r
 
-            new_mesorat_hashas.add(tuple(sorted((strr,str(other_r)),key=lambda r: Ref(r).order_id())))
+            c.remove(other_r)
+            for temp_other_r in c:
+                temp_link = tuple(sorted((str(temp_other_r[0]), str(temp_other_r[1])), key=lambda r: Ref(r).order_id()))
+                all_bad_links.add(temp_link)
 
-        for r in non_clustered:
-            new_mesorat_hashas.add(tuple(sorted((strr, str(r)), key=lambda r: Ref(r).order_id())))
+            temp_link = tuple(sorted((str(other_r[0]),str(other_r[1])),key=lambda r: Ref(r).order_id()))
+
+            # make sure temp_link isn't within max_dist of itself
+            temp_dist = Ref(temp_link[0]).distance(Ref(temp_link[1]),max_cluster_dist)
+            if temp_dist == -1: # they're far away from each other
+                new_mesorat_hashas.add(temp_link)
+
+        for other_r in non_clustered:
+            temp_link = tuple(sorted((str(other_r[0]),str(other_r[1])),key=lambda r: Ref(r).order_id()))
+
+            # make sure temp_link isn't within max_dist of itself
+            temp_dist = Ref(temp_link[0]).distance(Ref(temp_link[1]),max_cluster_dist)
+            if temp_dist == -1: # they're far away from each other
+                new_mesorat_hashas.add(temp_link)
+
 
     filtered_mesorat_hashas = []
     for l in new_mesorat_hashas:
-        lray = list(l)
-        filtered_mesorat_hashas += [lray]
+        if l not in all_bad_links:
+            lray = list(l)
+            filtered_mesorat_hashas += [lray]
+        else:
+            print l
 
 
 
     print "Old: {} New: {} Difference: {}".format(len(mesorat_hashas),len(new_mesorat_hashas),len(mesorat_hashas)-len(new_mesorat_hashas))
     objStr = json.dumps(filtered_mesorat_hashas, indent=4, ensure_ascii=False)
-    with open('mesorat_hashas_clustered.json', "w") as f:
+    with open('mesorat_hashas_clustered_9_words.json', "w") as f:
         f.write(objStr.encode('utf-8'))
 
+def filter_pasuk_matches(category, mesorat_hashas_name):
+
+    def bible_tokenizer(s):
+
+        words = re.split(ur'\s+',re.sub(u'\u05be', u' ',s))
+        words = filter(lambda w: not (u'[' in w and u']' in w) and w != u'',words) # strip out kri
+        return words
+
+    def talmud_tokenizer(s):
+        for match in re.finditer(ur'\(.*?\)', s):
+            if library.get_titles_in_string(match.group()) and len(match.group().split()) <= 5:
+                s = s.replace(match.group(), u"")
+        for phrase in stop_phrases:
+            s = s.replace(phrase, u'')
+        words = [w for w in re.split(ur'\s+',s) if w not in stop_words and w != u'']
+        return words
 
 
+    num_nonpasuk_match_words = 4
+    mesorat_hashas = json.load(open(mesorat_hashas_name, 'rb'))
+
+    if category == "Talmud":
+        mesechtot_names = [name for name in library.get_indexes_in_category("Talmud") if
+                       not "Jerusalem " in name and not "Ritva " in name and not "Rif " in name]
+
+    elif category == "Mishnah" or category == "Tosefta":
+        mesechtot_names = library.get_indexes_in_category(category)
+    else:
+        mesechtot_names = []
+
+    pickle_jar = {}
+    for mes in mesechtot_names:
+        pickle_jar[mes] = pickle.load(open('dicta_text_index_map/{}.pkl'.format(mes)))
+
+    #mesorat_hashas = [{'match':['Berakhot 4a:1-3','Berakhot 5a:1-3'],'match_index':[[1,2],[3,4]]}]
+
+    new_mesorat_hashas = []
+    for ildict, ldict in enumerate(mesorat_hashas):
+        if ildict % 100 == 0:
+            print "{}/{}".format(ildict,len(mesorat_hashas))
+        bad_match = False
+        refs = ldict['match']
+        inds = ldict['match_index']
+        m = u' '.join(refs[0].split(' ')[0:-1])
+        ind_list = pickle_jar[m][0]
+        for ir,r in enumerate(refs):
+            rr = Ref(r)
+            t = rr.text("he").ja().flatten_to_string()
+            tt = talmud_tokenizer(t)
+            tb = [False for _ in xrange(len(tt))]
+            biblset = rr.linkset().filter("Tanakh")
+            for bl in biblset:
+                try:
+                    bt = bible_tokenizer(Ref(bl.refs[1]).text('he','Tanach with Text Only').as_string())
+                except InputError as e:
+                    print e
+                    print u"This ref is problematic {} on this Talmud ref {}".format(bl.refs[1],r)
+                bs,be = get_maximum_subset_dh(tt,bt,threshold=85)
+                if bs != -1 and be != -1:
+                    for ib in xrange(bs,be):
+                        tb[ib] = True
+
+            s = ind_list[bisect.bisect_right(ind_list, inds[ir][0])-1]
+            #e = bisect.bisect_right(ind_list, inds[ir][1])-1
+
+            os = inds[ir][0] - s
+            oe = inds[ir][1] - s
+            match_len = oe-os + 1
+            num_pasuk = 0
+            for io in xrange(os,oe):
+                try:
+                    num_pasuk += int(tb[io])
+                except IndexError:
+                    continue
+
+            if match_len - num_pasuk < 4:
+                bad_match = True
+                break
+
+        if not bad_match:
+            new_mesorat_hashas.append(ldict['match'])
+
+    print "Old: {} New: {} Difference: {}".format(len(mesorat_hashas), len(new_mesorat_hashas),
+                                                  len(mesorat_hashas) - len(new_mesorat_hashas))
+    objStr = json.dumps(new_mesorat_hashas, indent=4, ensure_ascii=False)
+    with open('mesorat_hashas_pasuk_filtered.json', "w") as f:
+        f.write(objStr.encode('utf-8'))
 
 
 
@@ -857,14 +969,15 @@ def filter_close_matches():
 #minify_mesorat_hashas()
 #find_most_quoted()
 #save_links()
-#save_links_post_request("Talmud")
+
 #clean_mesorat_hashas()
 #find_bad_bad_gemaras()
+
+
 #generate_dicta_input("Talmud")
 #generate_dicta_output("Talmud")
-#find_extra_spaces()
-save_links_dicta("Talmud")
-#find_gemara_stopwords()
-#count_matches()
-#compare_mesorat_hashas()
-#filter_close_matches()
+#filter_pasuk_matches('Talmud','mesorat_hashas2_with_indexes.json')
+#filter_close_matches('mesorat_hashas_pasuk_filtered.json')
+#save_links_dicta("Talmud", 'mesorat_hashas_clustered_9_words.json')
+#compare_mesorat_hashas('mesorat_hashas_clustered_9_words.json', 'mesorat_hashas_clustered_9_words_old.json')
+save_links_post_request("Talmud")

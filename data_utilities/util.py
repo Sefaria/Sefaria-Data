@@ -949,3 +949,18 @@ class WeightedLevenshtein:
                 self._calculate_cache[(s1, s2, normalize)] = score
 
         return self._calculate_cache[(s1, s2, normalize)]
+
+    def calculate_best(self, s, words, normalize=True):
+        """
+        :param s: str
+        :param words: list of str
+        :return: the lowest distance for s in words and return the index and distance
+        """
+        best_dist = 0 if normalize else 10000 # large number
+        best_ind = -1
+        for i, w in enumerate(words):
+            dist = self.calculate(s, w, normalize)
+            if (dist < best_dist and not normalize) or (dist > best_dist and normalize):
+                best_dist = dist
+                best_ind = i
+        return best_ind, best_dist
