@@ -54,11 +54,11 @@ class Collection:
                 self.versionList.append({'ref': ref, 'version': version})
             self.linkSet.extend(root.get_stored_links(en_title))
 
-    def parse_collection(self, include_commentaries=True, skip_exceptions=False):
+    def parse_collection(self, include_commentaries=True, handle_exceptions=True):
         """
         Parse entire collection
         :param include_commentaries: Set to False to skip all commentaries
-        :param handle_exceptions: Used only for debugging and development, if set to True, will push through all
+        :param handle_exceptions: Used only for debugging and development, if set to False, will push through all
         exceptions and upload those files on which exceptions were not raised
         :return:
         """
@@ -68,7 +68,7 @@ class Collection:
                 self.parse_file(mapping['filename'], mapping['en_title'], mapping['he_title'], include_commentaries)
             except Exception as e:
                 print 'Problem found in {}'.format(mapping['filename'])
-                if skip_exceptions:
+                if handle_exceptions:
                     raise e
 
     @staticmethod
@@ -193,9 +193,69 @@ def fix_commentator(filename, commentator, overwrite=False):
         root.export(out, level=1)
 
 
-# root = DCXMLsubs.parse('XML/tractate-avot_drabi_natan-xml2.xml', silence=True)
-# for i in root.chapter_page_map():
-#     print 'chapter {}: first: {} last: {}'.format(i['num'], i['first'], i['last'])
+def book_by_page(root_element):
+    """
+    Get the pages of the book. Helpful for matching where chapter is unknown.
+    Generates a dictionary of dictionaries. The keys of the outer dictionary are the page numbers. The inner
+    dictionaries have the keys "word_list", "chpt-vrs", "indices". "word_list" contains a list of all words on the page.
+    "chpt-vrs" contains the chapters and verses of the verses on the page. "indices" contains the indices at which the
+    verses end on the page. To find the verse of a phrase, search for the location of its match in the word_list.
+    bisect_left() from that index to the indices,give the location of the appropriate chapter-verse information in
+    the "chpt-vrs" list.
+    :param DCXMLsubs.bookSub root_element:
+    :return: dict
+    """
+
+    def add_words_to_page(page, words_to_add):
+        """
+        Add words to a page, and get the index at which the added words ended
+        :param list page: list of words
+        :param unicode words_to_add: string or unicode
+        :return: length of page after addition - use bisect left to determine which verse this came from
+        """
+        words_to_add.replace(u'\n', u' ')
+        page.extend(words_to_add.split())
+        return len(page)
+
+    page_numbers = root_element.get_page_numbers()
+    pages = dict([(num, {
+        'word_list': [],
+        'chpt-vrs': [],
+        'indices': []
+    }) for num in page_numbers])
+
+    iter_pages = iter(page_numbers)
+    current_page = pages[iter_pages.next()]
+    hit_last_page = False
+
+    verses = root_element.get_base_verses()
+    for verse in verses:
+        container = []
+        for content in verse.get_p()[0].content_:
+            if content.getCategory() == content.CategoryText:
+                container.append(content.getValue())
+            elif content.getName() == "xref":
+                continue
+            elif content.getName() == "pgbrk":
+                index = add_words_to_page(current_page['word_list'], u' '.join(container))
+                current_page['chpt-vrs'].append(verse.num)
+                current_page['indices'].append(index)
+                container = []
+                try:
+                    current_page = pages[iter_pages.next()]
+                except StopIteration:
+                    if hit_last_page:
+                        raise StopIteration("Hit last page more than once!")
+                    hit_last_page = True
+            else:
+                raise AttributeError("Not text, xref or pgbrk")
+
+        index = add_words_to_page(current_page['word_list'], u' '.join(container))
+        current_page['chpt-vrs'].append(verse.num)
+        current_page['indices'].append(index)
+
+    return pages
+
 # for phrase in root.body.commentaries.get_commentary()[2].get_phrase():
 #     if DCXMLsubs.commentStore.get(phrase.id) is None:
 #         print phrase.id

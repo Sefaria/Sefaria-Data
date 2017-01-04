@@ -175,6 +175,10 @@ class bookSub(supermod.book):
     def get_page_numbers(self):
         return self.body.get_page_numbers()
 
+    def get_base_verses(self):
+        return self.body.get_base_verses()
+
+
 
 supermod.book.subclass = bookSub
 # end class bookSub
@@ -209,6 +213,12 @@ class bodySub(supermod.body):
         for chapter in self.get_chapter():
             numbers.extend(chapter.get_page_numbers())
         return numbers
+
+    def get_base_verses(self):
+        verses = []
+        for chapter in self.get_chapter():
+            verses.extend(chapter.get_verse())
+        return verses
 
 supermod.body.subclass = bodySub
 # end class bodySub
