@@ -11,31 +11,16 @@ from sources.functions import *
 import re
 import codecs
 
-def get_parsed_text():
-    return get_parsed_array()[0]
 def get_parsha_index():
-    return get_parsed_array()[1]
-def get_parsed_array():
     parsha_count=0
     shaar_count = 0
     book_files = ["בראשית.txt","שמות.txt","ויקרא.txt","במדבר.txt","דברים.txt"]
-    final_text = []
     parsha_index = []
     for index, file in enumerate(book_files):
         with open(file) as myfile:
             text = myfile.readlines()
-        #first parse the shaarim, the most detailed level of structure:
-        shaar_box = []
-        for line in text:
-            line = fix_bold_lines(line)
-            if "@" in line:
-                if "@22" in line and len(shaar_box)!=0:
-                    final_text.append(shaar_box)
-                    shaar_box = []
-            else:
-                shaar_box.append(line)
-        final_text.append(shaar_box)
-        #now make parsha index:
+        if index!=0:
+            shaar_count-=1
         for line in text:
             if "@22" in line:
                 shaar_count+=1
@@ -44,9 +29,42 @@ def get_parsed_array():
                     parsha_index[-1].append(shaar_count-1)
                 parsha_index.append([heb_parshiot[parsha_count],shaar_count])
                 parsha_count+=1
-                
-        parsha_index[-1].append(shaar_count-1)
-    return [final_text,parsha_index]
+    parsha_index[-1].append(shaar_count)
+    return parsha_index
+def get_parsed_text():
+    book_files = ["בראשית.txt","שמות.txt","ויקרא.txt","במדבר.txt","דברים.txt"]
+    final_text = []
+    parsha_index = []
+    for index, file in enumerate(book_files):
+        with open(file) as myfile:
+            text = myfile.readlines()
+        #first parse the shaarim, the most detailed level of structure:
+        shaar_box = []
+        chapter_box=[]
+        mistakes =[]
+        for line in text:
+            line = fix_bold_lines(line)
+            line = line.replace("@05","").replace("**","")
+            if "@" in line:
+                if "@22" in line and len(chapter_box)!=0:
+                    shaar_box.append(chapter_box)
+                    chapter_box=[]
+                    final_text.append(shaar_box)
+                    shaar_box = []
+                elif "@33" in line and len(chapter_box)!=0:
+                    shaar_box.append(chapter_box)
+                    chapter_box=[]
+                elif "@11" not in line and "@00" not in line:
+                    mistakes.append(file+" EXTRA@ "+ line)
+            else:
+                if "השער" in line and len(line)<50:
+                    mistakes.append(file+" SHAAR "+line)
+                chapter_box.append(line)
+    shaar_box.append(chapter_box)
+    final_text.append(shaar_box)
+    for mistake in mistakes:
+        print mistake
+    return final_text
 def fix_bold_lines(input_line):
     if "@01" in input_line:
         input_line = input_line.replace("@01","<b>")
@@ -54,12 +72,15 @@ def fix_bold_lines(input_line):
             input_line= input_line.replace("@02","</b>")
         else:
             input_line+="</b>"
-    input_line = input_line.replace("@05","<b>").replace("@03","</b>")
+    if "@44" in input_line:
+        input_line = "<b>"+input_line.replace("@44","")+"</b>"
+    input_line = input_line.replace("@04","<b>").replace("@03","</b>")
     return input_line
 text = get_parsed_text()
 for bindex, book in enumerate(text):
-    for pindex, paragraph in enumerate(book):
-        print str(bindex)+" "+str(pindex)+" "+paragraph
+    for cindex,chapter in enumerate(book):
+        for pindex, paragraph in enumerate(chapter):
+            print str(bindex)+" "+str(cindex)+" "+str(pindex)+" "+paragraph
 parshadex = get_parsha_index()
 for parsha in parshadex:
     print parsha[0]+u" ",parsha[1]," ",parsha[2]," end"
