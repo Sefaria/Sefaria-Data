@@ -34,7 +34,7 @@ E-mail: dashlem@dclab.com
 
 <!ELEMENT author (#PCDATA)>
 
-<!ELEMENT chapter (label?,(phrase|p|pgbrk|verse)*)>
+<!ELEMENT chapter (halacha?label?,(phrase|p|pgbrk|verse)*)>
 <!ATTLIST chapter
   num NMTOKEN #REQUIRED>
 
@@ -42,7 +42,7 @@ E-mail: dashlem@dclab.com
 <!ATTLIST verse
   num NMTOKEN #REQUIRED>
 
-<!ELEMENT phrase (label?,dh?,comment)>
+<!ELEMENT phrase (halacha?label?,dh?,comment)>
 <!ATTLIST phrase
   id NMTOKEN #IMPLIED
   subchap NMTOKEN #IMPLIED>
@@ -93,4 +93,4 @@ E-mail: dashlem@dclab.com
 	id ID #IMPLIED
 >
 
-
+<!ELEMENT halacha ()>
