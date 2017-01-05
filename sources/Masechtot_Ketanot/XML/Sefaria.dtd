@@ -18,7 +18,7 @@ E-mail: dashlem@dclab.com
 <!ELEMENT back (#PCDATA|chapter)*>
 
 
-<!ELEMENT body (chapter*,commentaries?)>
+<!ELEMENT body (chapter*,commentaries?opening?)>
 <!ATTLIST book
   id CDATA #IMPLIED>
 
@@ -94,3 +94,5 @@ E-mail: dashlem@dclab.com
 >
 
 <!ELEMENT halacha ()>
+
+<!ELEMENT opening (p)>
