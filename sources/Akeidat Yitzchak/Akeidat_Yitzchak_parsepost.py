@@ -65,6 +65,27 @@ def get_parsed_text():
     for mistake in mistakes:
         print mistake
     return final_text
+"""
+def get_parsed_intro():
+    with open("הקדמה עקידת יצחק.txt") as myfile:
+        lines = myfile.readlines()
+    final_intro = []
+    section_box = []
+    for line in lines:
+        line = line.replace("@22","").replace("@11","")
+        line=line.replace("@66","<b>").replace("@77","</b>")
+        line = re.sub("@[")
+        if "@" in line:
+            if "@00" in line and len(section_box)!=0:
+                final_intro.append(section_box)
+                section_box = []
+        else:
+            section_box.append(line)
+    final_intro.append(section_box)
+    return final_intro
+    """
+
+
 def fix_bold_lines(input_line):
     if "@01" in input_line:
         input_line = input_line.replace("@01","<b>")
@@ -84,6 +105,11 @@ for bindex, book in enumerate(text):
 parshadex = get_parsha_index()
 for parsha in parshadex:
     print parsha[0]+u" ",parsha[1]," ",parsha[2]," end"
+"""
+for index, section in enumerate(get_parsed_intro()):
+    for paragraph in section:
+        print str(index)+" "+paragraph
+        """
 #for b in get_parsed_text():
 #    print "BOOK: "+b
 """
