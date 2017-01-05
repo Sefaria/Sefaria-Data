@@ -16,7 +16,7 @@ def extract_text(file_input):
     ois_box = []
     section_box = []
     topic_box=[]
-    
+    order_box = []
     for index, line in enumerate(text):
         line = line.replace(u"\u200f",u"")
         #we don't append blanks or assorted non-text put in by publisher
@@ -25,26 +25,26 @@ def extract_text(file_input):
             #EXCEPT some random paragraphs in YD, these are dealt with with the length qualifyer
             #as a general outline to our approach, we append paragaphs to ois's, then ois's to sections, then sections to topics
             if True!=wordHasNekudot(line) and len(line)<200:
-                ois_box.append(paragraph_box)
-                paragraph_box = []
+                section_box.append(ois_box)
+                section_box = []
                 #if the word אות is not in the line, it's a section header. If it does have the word אות, it's the begging of an ois
                 #EXCEPT second section of nederim in yoreh daya doesn't have the word אות , for that we check the length of the line
                 #since all these lines are less than 18 chars, and no section titles are that short (challah is the shortest, and is still included. HOWEVER, IF SECTIONS ARE MISSING I'd LOOK INTO THIS QUALIFIER, JUST TO MAKE SURE
-                if u"‏אות" not in line and len(line)>17:
-                    section_box.append(ois_box)
-                    ois_box=[]
+                if "BREAK" not in line or u"‏אות" not in line and len(line)>17:
+                    topic_box.append(section_box)
+                    section_box=[]
                     #to distinuish new topics from new sections, we keep a log of topics already parsed
-                    title = extract_title(line)
+                    title = ' '.join( extract_title(line) )
                     if title not in parsed_topics:
-                        topic_box.append(section_box)
-                        section_box = []
+                        order_box.append(topic_box)
+                        topic_box = []
                         parsed_topics.append(title)
         #paragraph_box = []
         #we sdon't want to append names of sections, ois's, or topics, so we only append if our line is none of these, hence "else"
             else:
-                paragraph_box.append(line)
+                ois_box.append(line)
         
-    return [parsed_topics, topic_box]
+    return [parsed_topics, order_box]
 """USEFUL PRINT METHOD TO CHECK RESULTS
     for index_0, topic in enumerate(topic_box):
         for index, box in enumerate(topic):
@@ -53,6 +53,7 @@ def extract_text(file_input):
                     print str(index_0)+" "+str(index)+" "+str(index2)+" "+str(index3)
                     print ois
 """
+#returns 4 element array, each element containing (1) an array of topics contained in order (2) array of text in order, orgainzed topic=>chapter=>letter=>paragraph
 def get_parsed_text():
     OC_files = ["orah haim a m.txt","orah haim b m.txt","orah haim c m.txt"]
     YD_files = ["yore deha a m.txt", "yore deha b m.txt"]
@@ -69,12 +70,13 @@ def get_parsed_text():
     for order in order_files:
         for file_str in order:
             for topic_title in extract_text(file_str)[0]:
-                print ' '.join(topic_title)
                 parsed_order_topics.append(topic_title)
             for topics in extract_text(file_str)[1]:
                 for topic in topics:
                     parsed_order_text.append(topic)
-            final_text.append(parsed_order_text)
+            final_text.append([parsed_order_topics,parsed_order_text])
+            parsed_order_topics = []
+            parsed_order_text = []
     return final_text
 
 def extract_title(s):
@@ -124,10 +126,15 @@ def wordHasNekudot(word):
     return data != word #.decode('utf-8')
 
 #uncomment to see results
-for index, order in enumerate(get_parsed_text()):
+
+for index, order in enumerate(get_parsed_text()[1]):
     print "ORDER "+ str(index)
     for index1, topic in enumerate(order):
         for index2, section in enumerate(topic):
             for index3, ois in enumerate(section):
                     print str(index1) +" "+str(index2)+" "+str(index3)
                     print ois
+print "now print order"
+for order in get_parsed_text()[0]:
+    for topic in order:
+        print topic
