@@ -20,8 +20,10 @@
 #   Mesechtot Ketanot
 #
 
+import re
 import sys
 import itertools
+from collections import Counter
 from lxml import etree as etree_
 from sefaria.datatype.jagged_array import JaggedArray
 from sefaria.model.schema import SchemaNode, JaggedArrayNode
@@ -49,22 +51,22 @@ commentStore = {}
 unlinkedCommentStore = []
 
 commentatorNames = {
-    u"מסורת הש״ס": "Mesorat HaShas on Masechtot Ketanot",
-    u"פי׳ החיד״א": "Commentary of Chida on Masechtot Ketanot",
-    u"הגהות": "Haggahot on Masechtot Ketanot",
-    u"הגהות הגרי״ב": "Haggahot R' Yeshaya Berlin on Masechtot Ketanot",
-    u"בנין יהושע": "Binyan Yehoshua on Masechtot Ketanot",
-    u"נוסחא חדשה": "New Nuschah on Masechtot Ketanot",
-    u"נוסחאות כ״י": "Nuschaot from Manuscripts on Masechtot Ketanot",
-    u"ראשון לציון": "Rishon Letzion on Masechtot Ketanot",
-    u"נחלת יעקב": "Nahalat Yaakov on Masechtot Ketanot",
-    u"תומת ישרים": "Tumat Yesharim on Masechtot Ketanot",
-    u"הגהות ומראה מקומות": "Haggahot and Marei Mekomot on Masechtot Ketanot",
-    u"כסא רחמים": "Kisse Rahamim on Masechtot Ketanot",
-    u"הגהות מהריעב״ץ": "Haggahot Ya'avetz on Masechtot Ketanot",
-    u"מצפה איתן": "Mitzpeh Etan on Masechtot Ketanot",
-    u"לב חכמים": "Lev Hakhamim on Masechtot Ketanot",
-    u"נוסחת הגר״א": "Gra's Nuschah on Masechtot Ketanot",
+    u"מסורת הש״ס": "Mesorat HaShas",
+    u"פי׳ החיד״א": "Commentary of Chida",
+    u"הגהות": "Haggahot",
+    u"הגהות הגרי״ב": "Haggahot R' Yeshaya Berlin",
+    u"בנין יהושע": "Binyan Yehoshua",
+    u"נוסחא חדשה": "New Nuschah",
+    u"נוסחאות כ״י": "Nuschaot from Manuscripts",
+    u"ראשון לציון": "Rishon Letzion",
+    u"נחלת יעקב": "Nahalat Yaakov",
+    u"תומת ישרים": "Tumat Yesharim",
+    u"הגהות ומראה מקומות": "Haggahot and Marei Mekomot",
+    u"כסא רחמים": "Kisse Rahamim",
+    u"הגהות מהריעב״ץ": "Haggahot Ya'avetz",
+    u"מצפה איתן": "Mitzpeh Etan",
+    u"לב חכמים": "Lev Hakhamim",
+    u"נוסחת הגר״א": "Gra's Nuschah",
 }
 
 #
@@ -88,7 +90,9 @@ class bookSub(supermod.book):
             for c in self.get_body().get_commentaries().get_commentary():
                 linked = True
                 heName = c.get_author()#.content_[0].getValue()
-                enName = commentatorNames.get(heName)
+                if heName == 'UNKNOWN':
+                    continue
+                enName = commentatorNames[heName]
                 chapters = c.get_chapter() if c.get_chapter() else [c]
                 current_chapter, current_verse, order = 0, 0, 0
                 for chapter in chapters:
@@ -131,11 +135,12 @@ class bookSub(supermod.book):
         """
         Each commentary is a complex text, with a root schema and depth 3 JAnodes for each tractate. The JAnode for each
         tractate is essentially identical across commentaries. The root schema is what defines the particular
-        commentator.
+        commentator.  Deprecated - schema system has changed.
         :param en_title: English Title of base text
         :param he_title: Hebrew Title of base text
         :return: JaggedArrayNode
         """
+        raise NotImplementedError("Don't use me!")
         node = JaggedArrayNode()
         node.add_primary_titles(en_title, he_title)
         node.add_structure(['Chapter', 'Halakhah', 'Comment'])
@@ -146,8 +151,12 @@ class bookSub(supermod.book):
     def get_stored_links(base_title):
         links = []
         for comment in itertools.chain(commentStore.values(), unlinkedCommentStore):
-            base_ref = '{} {}:{}'.format(base_title, comment['chapter'], comment['verse'])
-            comment_ref = '{}, {}:{}:{}'.format(comment['commentator'], base_ref, comment['verse'], comment['order'])
+            try:
+                base_ref = '{} {}:{}'.format(base_title, comment['chapter'], comment['verse'])
+                comment_ref = '{} on {} {}:{}:{}'.format(comment['commentator'], base_title, comment['chapter'],
+                                                       comment['verse'], comment['order'])
+            except KeyError:
+                continue
             links.append({
                 'refs': [base_ref, comment_ref],
                 'type': 'commentary',
@@ -165,7 +174,7 @@ class bookSub(supermod.book):
 
         return {
             'title': en_title,
-            'categories': ["Masechtot Ketanot"],
+            'categories': ["Tanaitic", "Masechtot Ketanot"],
             'schema': node.serialize()
         }
 
@@ -280,18 +289,45 @@ class commentarySub(supermod.commentary):
 
     def parse_unlinked(self):
         parsed = JaggedArray([[[]]])
-        for chap_index, chapter in enumerate(self.get_chapter()):
-            pass
+        comment_counter = Counter()
 
-    def build_node(self):
+        for chapter in self.get_chapter():
+            chap_num = chapter.num
+            for phrase in chapter.get_phrase():
+                phrase_num = phrase.subchap
+
+                if phrase_num is None:
+                    raise AttributeError(u'Unlabeled phrase in {} chapter {}'.format(self.get_author(), chap_num))
+
+                comment_number = comment_counter[(chap_num, phrase_num)]
+                parsed.set_element([int(chap_num)-1, int(phrase_num)-1, comment_number], phrase.as_string())
+                comment_counter[(chap_num, phrase_num)] += 1
+
+                # Todo add link to unlinked comment store
+                unlinkedCommentStore.append({
+                    'commentator': commentatorNames[self.get_author()],
+                    'chapter': chap_num,
+                    'verse': phrase_num,
+                    'order': str(comment_number+1)
+                })
+        return parsed.array()
+
+    def build_index(self, base_title, he_base_title):
         """
         Builds the root schema node for the commentary
-        :return: SchemaNode
+        :return: serialized index
         """
-        node = SchemaNode()
-        he_title = self.get_author()
-        node.add_primary_titles(commentatorNames[he_title], he_title)
-        return node
+        node = JaggedArrayNode()
+        he_author = self.get_author()
+        en_author = commentatorNames[he_author]
+        node.add_primary_titles('{} on {}'.format(en_author, base_title), u'{} על {}'.format(he_author, he_base_title))
+        node.add_structure(['Chapter', 'Halakhah', 'Comment'])
+        node.validate()
+        return {
+            'title': '{} on {}'.format(en_author, base_title),
+            'categories': ['Commentary2', 'Tanaitic', en_author],
+            'schema': node.serialize()
+        }
 
     def set_verses(self, verse_map):
         """
@@ -315,6 +351,14 @@ class commentarySub(supermod.commentary):
                     print '{}, '.format(i),
                 else:
                     print '\n'
+
+    def complete_subchaps(self):
+        """
+        Sometimes a commentary will have the first subchap in a series marked. This will fill in the rest.
+        """
+
+        for chapter in self.get_chapter():
+            chapter.complete_subchaps()
 
 
 supermod.commentary.subclass = commentarySub
@@ -345,7 +389,7 @@ class chapterSub(supermod.chapter):
         phrases = self.get_phrase()
         assert len(verse_map) == len(phrases)
         for index, phrase in zip(verse_map, phrases):
-            if not hasattr(phrase, 'subchap'):
+            if phrase.subchap is None:
                 phrase.subchap = str(index+1)
 
     def _get_verse_boundaries(self):
@@ -354,10 +398,10 @@ class chapterSub(supermod.chapter):
         phrases = self.get_phrase()
 
         for p_index, phrase in enumerate(phrases):
-            verse = int(phrase.subchapter)
+            verse = int(phrase.subchap)
             if verse == current_verse:
                 current_boundary[1] = p_index
-            elif verse - current_verse == 1:  # have we hit the next chapter?
+            elif verse - current_verse >= 1:  # have we hit the next verse?
                 try:
                     first, second = phrases[p_index+1], phrases[p_index+2]
                 except IndexError:
@@ -379,7 +423,7 @@ class chapterSub(supermod.chapter):
         errors = []
         for verse, boundary in enumerate(boundaries):
             for phrase in phrases[boundary[0]:boundary[1]]:
-                phrase.subchapter = str(verse+1)
+                phrase.subchap = phrases[boundary[0]].subchap
             if verse >= 1:  # check if there is a gap between verse boundaries
                 if boundary[0] - boundaries[verse-1][1] != 1:
                     errors.append(verse+1)
@@ -403,6 +447,14 @@ class chapterSub(supermod.chapter):
             numbers.extend(verse.get_page_numbers())
         return numbers
 
+    def complete_subchaps(self):
+        current_subchap = None
+        for phrase in self.get_phrase():
+            if phrase.subchap is None:
+                assert current_subchap is not None
+                phrase.subchap = current_subchap
+            else:
+                current_subchap = phrase.subchap
 
 
 supermod.chapter.subclass = chapterSub
@@ -414,7 +466,8 @@ class verseSub(supermod.verse):
         super(verseSub, self).__init__(num, label, p, pgbrk, )
 
     def asString(self):
-        return " ".join([p.asString() for p in self.p])
+        raw_string = " ".join([p.asString() for p in self.p])
+        return re.sub(ur" (\.|:)", ur"\1", raw_string)
 
     def get_xrefs(self):
         return [xref for xref in self.get_p()[0].get_xref()]
@@ -442,6 +495,15 @@ supermod.verse.subclass = verseSub
 class phraseSub(supermod.phrase):
     def __init__(self, id=None, label=None, dh=None, comment=None):
         super(phraseSub, self).__init__(id, label, dh, comment, )
+
+    def as_string(self):
+        dh = u'<b>{}</b>'.format(self.get_dh().get_valueOf_())
+        comment = self.get_comment().get_valueOf_()
+        raw_string = u'{} {}'.format(dh, comment)
+        formatted = re.sub(ur' (:|\.)', ur'\1', raw_string)
+        formatted = re.sub(u' +', u' ', formatted)
+        return formatted
+
 supermod.phrase.subclass = phraseSub
 # end class phraseSub
 
@@ -493,7 +555,10 @@ class xrefSub(supermod.xref):
     def asITagString(self):
         commentData = commentStore.get(self.get_rid())
         if commentData:
-            return u' <i data-commentator="{}" data-order="{}"></i>'.format(commentData["commentator"], commentData["order"])
+            try:
+                return u' <i data-commentator="{}" data-order="{}"></i>'.format(commentData["commentator"], commentData["order"])
+            except KeyError:
+                return u' '
         else:
             raise Exception("Where am I?")
 

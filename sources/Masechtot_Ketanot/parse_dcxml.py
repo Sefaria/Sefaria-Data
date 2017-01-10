@@ -7,7 +7,7 @@ import bleach
 import bisect
 import codecs
 import unicodecsv as csv
-from data_utilities.util import ja_to_xml
+from data_utilities.util import ja_to_xml, getGematria
 from data_utilities.dibur_hamatchil_matcher import match_text
 from sources.functions import post_text, post_index, post_link
 
@@ -16,7 +16,7 @@ class Collection:
 
     def __init__(self):
         self.file_map = self.get_file_mapping()
-        self.commentarySchemas = {}
+        self.commentaryIndices = []
         self.versionList = []
         self.linkSet = []
         self.base_indices = []
@@ -40,9 +40,13 @@ class Collection:
             commentaries = root.body.commentaries
             for commentary in commentaries.get_commentary():
                 author = commentary.get_author()
-                if self.commentarySchemas.get(author) is None:
-                    self.commentarySchemas[author] = commentary.build_node()
-                self.commentarySchemas[author].append(root.commentary_ja_node(en_title, he_title))
+                if author == 'UNKNOWN':
+                    continue
+                self.commentaryIndices.append(commentary.build_index(en_title, he_title))
+
+                # if self.commentarySchemas.get(author) is None:
+                #     self.commentarySchemas[author] = commentary.build_node()
+                # self.commentarySchemas[author].append(root.commentary_ja_node(en_title, he_title))
 
                 version = self.get_version_skeleton()
                 if commentaries.is_linked_commentary(commentary):
@@ -50,7 +54,7 @@ class Collection:
                 else:
                     version['text'] = commentary.parse_unlinked()
 
-                ref = '{}, {}'.format(DCXMLsubs.commentatorNames[author], en_title)
+                ref = '{} on {}'.format(DCXMLsubs.commentatorNames[author], en_title)
                 self.versionList.append({'ref': ref, 'version': version})
             self.linkSet.extend(root.get_stored_links(en_title))
 
@@ -64,12 +68,8 @@ class Collection:
         """
         for mapping in self.file_map:
             assert isinstance(mapping, dict)
-            try:
-                self.parse_file(mapping['filename'], mapping['en_title'], mapping['he_title'], include_commentaries)
-            except Exception as e:
-                print 'Problem found in {}'.format(mapping['filename'])
-                if handle_exceptions:
-                    raise e
+            self.parse_file(mapping['filename'], mapping['en_title'], mapping['he_title'], include_commentaries)
+
 
     @staticmethod
     def get_version_skeleton():
@@ -82,15 +82,10 @@ class Collection:
     def post(self):
         for index in self.base_indices:
             post_index(index, weak_network=True)
-        for he_author in self.commentarySchemas.keys():
-            en_author = DCXMLsubs.commentatorNames[he_author]
-            index = {
-                'title': en_author,
-                'categories': ['Commentary2', 'Masechtot Ketanot', en_author],
-                'schema': self.commentarySchemas[he_author].serialize()
-            }
+        for index in self.commentaryIndices:
             post_index(index)
         for version in self.versionList:
+            print version['ref']
             post_text(version['ref'], version['version'], index_count='on', weak_network=True)
         post_link(self.linkSet)
 
@@ -171,17 +166,20 @@ def fix_commentator(filename, commentator, overwrite=False):
     commentary = root.body.commentaries.commentary[get_commentary_index(root, commentator)]
     assert isinstance(commentary, DCXMLsubs.commentarySub)
     locations = []
-    assert len(base_text) == len(commentary.get_chapter())
-    counter = 1
-    for base_chapter, comment_chapter in zip(base_text, commentary.get_chapter()):
-        print 'fixing chapter {}'.format(counter)
+    # assert len(base_text) == len(commentary.get_chapter())
+    # counter = 1
+    for comment_chapter in commentary.get_chapter():
+        chapter_index = int(comment_chapter.num)
+        base_chapter = base_text[chapter_index - 1]
+        print 'fixing chapter {}'.format(chapter_index)
+
         book_text = [bleach.clean(segment, tags=[], strip=True) for segment in base_chapter]
         seg_indices = first_word_indices(book_text)
         word_list = u' '.join(book_text).split()
-        dh_list = [p.dh.get_valueOf_() for p in comment_chapter.get_phrase()]
-        matches = match_text(word_list, dh_list, dh_extract_method=cleaner, place_all=False)
+        dh_list = [re.sub(ur' (\.|:)', ur'\1', p.dh.get_valueOf_()) for p in comment_chapter.get_phrase()]
+        matches = match_text(word_list, dh_list, dh_extract_method=cleaner, place_all=False, strict_boundaries=True, char_threshold=0.4)
         locations.append([bisect.bisect_right(seg_indices, match[0]) if match[0] >= 0 else match[0] for match in matches['matches']])
-        counter += 1
+
     commentary.set_verses(locations)
     commentary.correct_phrase_verses()
 
@@ -256,7 +254,27 @@ def book_by_page(root_element):
 
     return pages
 
-# for phrase in root.body.commentaries.get_commentary()[2].get_phrase():
-#     if DCXMLsubs.commentStore.get(phrase.id) is None:
-#         print phrase.id
+
+def output_missing_links(filename):
+    root = DCXMLsubs.parse('./XML/{}'.format(filename), silence=True)
+    commentary = root.body.commentaries.get_commentary()[-1]
+    for phrase in commentary.get_phrase():
+        if DCXMLsubs.commentStore.get(phrase.id) is None:
+            print phrase.id
+
+# root = DCXMLsubs.parse('./XML/tractate-sofrim-xml2.xml', silence=True)
+# c = root.body.commentaries.get_commentary()[3]
+# phrases = [phrase for chapter in c.get_chapter() for phrase in chapter.get_phrase()]
+#
+# for phrase in phrases:
+#
+#     assert isinstance(phrase, DCXMLsubs.phraseSub)
+#     dh = phrase.get_dh()
+#     match = re.search(ur'\(\u05d4\u05dc([\u05d0-\u05ea]{1,2}\))', dh.get_valueOf_().replace(u'"', u''))
+#     if match is not None:
+#         phrase.subchap = getGematria(match.group(1))
+# c.complete_subchaps()
+#
+# with codecs.open('./XML/tractate-sofrim-xml2.xml', 'w', 'utf-8') as outfile:
+#     root.export(outfile, level=1)
 
