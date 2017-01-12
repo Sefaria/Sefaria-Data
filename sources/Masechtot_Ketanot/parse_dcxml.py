@@ -7,6 +7,7 @@ import bleach
 import bisect
 import codecs
 import unicodecsv as csv
+from bs4 import BeautifulSoup, Tag
 from data_utilities.util import ja_to_xml, getGematria
 from data_utilities.dibur_hamatchil_matcher import match_text
 from sources.functions import post_text, post_index, post_link
@@ -186,7 +187,7 @@ def fix_commentator(filename, commentator, overwrite=False):
     if overwrite:
         outfile = filename
     else:
-        outfile = '{}_fixed'.format(filename)
+        outfile = '{}_test'.format(filename)
     with codecs.open('XML/{}.xml'.format(outfile), 'w', 'utf-8') as out:
         root.export(out, level=1)
 
@@ -254,6 +255,32 @@ def book_by_page(root_element):
 
     return pages
 
+def fix_commentator_by_page(filename, commentator, overwrite=False):
+
+    root = DCXMLsubs.parse("XML/{}.xml".format(filename), silence=True)
+    commentary = root.body.commentaries.commentary[get_commentary_index(root, commentator)]
+    assert isinstance(commentary, DCXMLsubs.commentarySub)
+
+    page_map = book_by_page(root)
+    phrases_by_page = commentary.phrases_by_page()
+
+    for page in phrases_by_page.keys():  # Not every page necessarily has a commentary phrase
+        dh_list = [re.sub(ur' (\.|:)', ur'\1', phrase.dh.get_valueOf_()) for phrase in phrases_by_page[page]]
+
+        matches = match_text(page_map[page]['word_list'], dh_list, dh_extract_method=cleaner, place_all=False,
+                             strict_boundaries=True, char_threshold=0.4)
+
+        locations = [bisect.bisect_left(page_map[page]['indices'], match[0]) if match[0] >= 0 else match[0]
+                     for match in matches['matches']]
+
+        for location, phrase in zip(locations, phrases_by_page[page]):
+            phrase.subchap = page_map[page]['chpt-vrs'][location]
+
+    if not overwrite:
+        filename += '_test'
+    with codecs.open("XML/{}.xml".format(filename), 'w', 'utf-8') as outfile:
+        root.export(outfile, level=1)
+
 
 def output_missing_links(filename):
     root = DCXMLsubs.parse('./XML/{}'.format(filename), silence=True)
@@ -262,19 +289,66 @@ def output_missing_links(filename):
         if DCXMLsubs.commentStore.get(phrase.id) is None:
             print phrase.id
 
-# root = DCXMLsubs.parse('./XML/tractate-sofrim-xml2.xml', silence=True)
-# c = root.body.commentaries.get_commentary()[3]
-# phrases = [phrase for chapter in c.get_chapter() for phrase in chapter.get_phrase()]
-#
-# for phrase in phrases:
-#
-#     assert isinstance(phrase, DCXMLsubs.phraseSub)
-#     dh = phrase.get_dh()
-#     match = re.search(ur'\(\u05d4\u05dc([\u05d0-\u05ea]{1,2}\))', dh.get_valueOf_().replace(u'"', u''))
-#     if match is not None:
-#         phrase.subchap = getGematria(match.group(1))
-# c.complete_subchaps()
-#
-# with codecs.open('./XML/tractate-sofrim-xml2.xml', 'w', 'utf-8') as outfile:
-#     root.export(outfile, level=1)
 
+def kill_internal_verses(filename, overwrite=True):
+    """
+    Some files have bad verse breakup in the Vilna printing. This method runs through a file, ensuring that for each
+    chapter, only a single verse exists on a given chapter, which encloses the entire text of the chapter.
+    """
+    with open('./XML/{}'.format(filename)) as infile:
+        soup = BeautifulSoup(infile, 'xml')
+    chapters = soup.find('body').find_all('chapter', recursive=False)
+    for chapter in chapters:
+        verses = chapter.find_all('verse')
+        if len(verses) > 1:
+            first_verse = verses[0]
+            for verse in verses[1:]:
+                first_verse.p.append(u' ')
+                first_verse.p.append(verse)
+                for p in verse.find_all('p'):
+                    p.unwrap()
+                verse.unwrap()
+    if overwrite:
+        outfile_name = './XML/{}'.format(filename)
+    else:
+        outfile_name = './XML/temp_{}'.format(filename)
+    with codecs.open(outfile_name, 'w', 'utf-8') as outfile:
+        outfile.write(unicode(soup))
+
+
+def split_chapters_by_pattern(filename, pattern, offset=0, overwrite=True):
+    """
+    Given a chapter, split the chapter into verses based on a pattern
+    :param str filename: full path of file to edit
+    :param unicode pattern: exact pattern on which to split
+    :param int offset: Useful to skip redundant strings that the split may create. For example, the first appearance of
+    "pattern" may create a redundant first string consisting of nothing but spaces.
+    :param overwrite: If True will overwrite original file
+    """
+
+    with open(filename) as infile:
+        soup = BeautifulSoup(infile, 'xml')
+    for chapter in soup.book.body.find_all('chapter', recursive=False):
+        p = chapter.verse.p
+        chapter_text = re.split(pattern, u''.join([unicode(i) for i in p.children]))
+        if len(chapter_text[offset:]) == 0:
+            continue
+        chapter.clear()
+
+        for v_index, verse in enumerate(chapter_text[offset:]):
+            verse = u'<verse num="ch{}-v{}"><p>{}</p></verse>'.format(chapter['num'], v_index+1, verse)
+            verse = BeautifulSoup(verse, 'xml').verse
+            chapter.append(verse)
+    if overwrite:
+        outfile_name = filename
+    else:
+        outfile_name = './XML/test.xml'
+
+    with codecs.open(outfile_name, 'w', 'utf-8') as outfile:
+        outfile.write(unicode(soup))
+
+
+# commentators = [u'כסא רחמים', u'בנין יהושע', u'הגהות מהריעב״ץ']
+# for commentator in commentators:
+#     fix_commentator('tractate-avot_drabi_natan-xml2', commentator, overwrite=True)
+# fix_commentator('tractate-avot_drabi_natan-xml2', u'בנין יהושע', overwrite=False)
