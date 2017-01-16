@@ -3,11 +3,13 @@
 import os
 import re
 import codecs
-from data_utilities.util import get_cards_from_trello, numToHeb, ja_to_xml, getGematria, traverse_ja
+import unicodecsv as csv
+from bs4 import BeautifulSoup, Tag
 from sefaria.datatype.jagged_array import JaggedArray
 from sefaria.model.text import Ref, JaggedArrayNode
 from data_utilities.sanity_checks import TagTester
 from sources.functions import post_link, post_text, post_index
+from data_utilities.util import get_cards_from_trello, numToHeb, ja_to_xml, getGematria, traverse_ja
 
 
 def get_cards():
@@ -191,3 +193,97 @@ def parse_and_upload():
         post_text(card, version, index_count='on')
     post_link(links)
 
+
+def xmlify(filename):
+    """
+    create an xml representation of the text files
+    :param filename: str name of file
+    """
+    with codecs.open(filename, 'r', 'utf-8') as infile:
+        raw_rambam = infile.read()
+
+    chap_index = [getGematria(i.group(1)) for i in re.finditer(ur'@00\u05e4\u05e8\u05e7 ([\u05d0-\u05ea]{1,2})', raw_rambam)]
+    chapters = re.split(ur'@00\u05e4\u05e8\u05e7 [\u05d0-\u05ea]{1,2}', raw_rambam)[1:]
+    assert len(chap_index) == len(chapters)
+
+    soup = BeautifulSoup(u'<root></root>', 'xml')
+    for index, chapter in zip(chap_index, chapters):
+        x_chapter = soup.new_tag('chapter', num=unicode(index))
+        soup.root.append(x_chapter)
+
+        v_indices = [getGematria(i.group(1)) for i in re.finditer(ur'@22([\u05d0-\u05ea]{1,2})', chapter)]
+        verses = re.split(ur'@22[\u05d0-\u05ea]{1,2}', chapter)[1:]
+        assert len(v_indices) == len(verses)
+
+        for v_index, verse in zip(v_indices, verses):
+            x_verse = soup.new_tag('verse', num=unicode(v_index))
+            comments = verse.splitlines()
+            for i, comment in enumerate(comments[1:]):
+                x_comment = soup.new_tag('comment', num=unicode(i+1))
+                x_comment.append(comment)
+                x_verse.append(x_comment)
+
+            x_chapter.append(x_verse)
+    with codecs.open('./xml/{}'.format(filename.replace('.txt', '.xml')), 'w', 'utf-8') as outfile:
+        outfile.write(unicode(soup.prettify()))
+
+
+class Root:
+
+    def __init__(self, infile_name):
+        with codecs.open(infile_name, 'r', 'utf-8') as infile:
+            self._soup = BeautifulSoup(infile, 'xml')
+        self._Tag = self._soup.root
+
+    def get_chapters(self):
+        return [Chapter(c) for c in self._Tag.find_all('chapter', recursive=False)]
+
+    def get_mathces(self, pattern, group=0):
+        return filter(None, [chapter.get_matches(pattern, group) for chapter in self.get_chapters()])
+
+class Chapter:
+
+    def __init__(self, chapter):
+        """
+        :param chapter: Tag
+        """
+        self._Tag = chapter
+
+    def get_verses(self):
+        return [Verse(v) for v in self._Tag.find_all('verse', recursive=False)]
+
+    def get_matches(self, pattern, group=0):
+        matches = filter(None, [verse.get_matches(pattern, group) for verse in self.get_verses()])
+        if len(matches) == 0:
+            return None
+        else:
+            return {'num': self._Tag['num'], 'verses': matches}
+
+class Verse:
+
+    def __init__(self, verse):
+        """
+        :param verse: Tag
+        """
+        self._Tag = verse
+
+    def get_comments(self):
+        return [Comment(c) for c in self._Tag.find_all('comment', recursive=False)]
+
+    def get_matches(self, pattern, group=0):
+        matches = filter(None, [comment.get_matches(pattern, group) for comment in self.get_comments()])
+        if len(matches) == 0:
+            return None
+        else:
+            return {'num': self._Tag['num'], 'comments': matches}
+
+class Comment:
+    def __init__(self, comment):
+        self._Tag = comment
+
+    def get_matches(self, pattern, group=0):
+        match = re.search(pattern, self._Tag.text)
+        if match is None:
+            return None
+        else:
+            return {'num': self._Tag['num'], 'text': match.group(group)}
