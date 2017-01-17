@@ -52,13 +52,11 @@ root.append(vol2)
 root.validate()
 index = {
     "title": "Brit Moshe",
-    "categories": ["comment_indexary2", "Halakhah", "Sefer Mitzvot Gadol"],
+    "categories": ["Commentary2", "Halakhah", "Sefer Mitzvot Gadol"],
     "schema": root.serialize()
     }
-#post_index(index)
+post_index(index)
 for count, fname in enumerate(["Brit Moshe vol 1.txt", "Brit Moshe vol 2.txt"]):
-    if count == 0:
-        continue
     f = open(fname, 'r')
     volume = "Volume Two" if count == 1 else "Volume One"
     print volume
@@ -72,7 +70,7 @@ for count, fname in enumerate(["Brit Moshe vol 1.txt", "Brit Moshe vol 2.txt"]):
         actual_line = line
         line=line.replace("\n","")
         line = line.decode('utf-8')
-        if line.find("@22")>=0:
+        if line.find("@22")>=0 and len(line) < 15:
             line = line.replace(")","").replace(" ","")
             new_comment_index = getGematria(line)
             assert len(text[current_mitzvah]) == comment_index + 1, "{} {}".format(len(text[current_mitzvah]), comment_index)
@@ -132,21 +130,21 @@ for count, fname in enumerate(["Brit Moshe vol 1.txt", "Brit Moshe vol 2.txt"]):
             if line.find("@33")>=0 and line.find("@11")>=0:
                 line = line.replace("@11", "<b>")
                 line = line.replace("@33", "</b>")
-            line = line.replace("@00","").replace("@99","")
+            line = line.replace("@00","").replace("@99","").replace("@22", "")
             line = line.replace("@66", "").replace("@55","").replace("@44","")
             text[current_mitzvah][comment_index].append(line)
         prev_line = actual_line
 
 
-    text_array = convertDictToArray(text)
+    text_array = convertDictToArray(text, empty=[])
     send_text = {
             "versionTitle":  "Munkatch, 1901",
             "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002023637",
-            "tdraext": text_array,
+            "text": text_array,
             "language": "he"
             }
 
-    post_text("Brit Moshe, {}".format(volume), send_text)
+    #post_text("Brit Moshe, {}".format(volume), send_text)
     links = []
     for mitzvah in text:
         mitzvah_text = text[mitzvah]
@@ -155,10 +153,10 @@ for count, fname in enumerate(["Brit Moshe vol 1.txt", "Brit Moshe vol 2.txt"]):
                 links.append({
                     "refs": [
                              "Brit Moshe, {}.{}.{}.{}".format(volume, mitzvah, count+1, line_count+1),
-                            "Sefer Mitzvot Gadol, {}.{}".format(volume, mitzvah)
+                            "Sefer Mitzvot Gadol, {}.{}.1".format(volume, mitzvah)
                         ],
                     "type": "comment_indexary",
                     "auto": True,
                     "generated_by": "Brit Moshe to SEMAG linker"
                  })
-    #post_link(links)
+    post_link(links)

@@ -45,6 +45,8 @@ class XML_to_JaggedArray:
             name = self.grab_title(child, True, self.grab_title_lambda)
             if self.array_of_names:
                 name = self.array_of_names[count]
+            if name != "Bereshit":
+                continue
             child = self.reorder_structure(child, False, self.reorder_test, self.reorder_modify)
             footnote_ref = self.title + ", Footnotes, " + name
             self.JA_nodes[name] = self.go_down_to_text(name, child, footnote_ref)
@@ -62,21 +64,6 @@ class XML_to_JaggedArray:
             file.close()
 
 
-
-    def post(self, ref, text):
-        if self.post_info["server"] == "production":
-            send_text = {
-                    "text": text,
-                    "language": self.post_info["language"],
-                    "versionSource": self.post_info["versionSource"],
-                    "versionTitle": self.post_info["versionTitle"]
-                }
-            post_text(ref, send_text)
-        else:
-            assert Ref(ref)
-            tc = TextChunk(Ref(ref), lang=self.post_info["language"], vtitle=self.post_info["versionTitle"])
-            tc.text = text
-            tc.save()
 
     def grab_title(self, element, delete=True, test_lambda=lambda x: False):
         '''
@@ -101,7 +88,8 @@ class XML_to_JaggedArray:
                     self.grab_title(child, True, self.grab_title_lambda)
                     #above: take the title underneath, set it to text var,  so afterward, child.text will be the correct title
                 new_ref = base_ref+"."+child.text if child.text.isdigit() else base_ref+", "+child.text
-                text[child.text] = self.go_down_to_text(child.text, child, new_ref)
+                if child.text.isdigit():
+                    text[int(child.text)] = self.go_down_to_text(child.text, child, new_ref)
             else:
                 if child.tag == "ftnote":
                     if base_ref not in self.footnotes:
@@ -113,6 +101,21 @@ class XML_to_JaggedArray:
         return text
 
 
+    def interpret_footnotes_partvii(self):
+        comments = self.footnotes.values()[0]
+        for index, comment in enumerate(comments):
+            poss_num = int(comment.split(".", 1)[0])
+            comments[index] = comment.replace(str(poss_num)+". ", "")
+
+        comments = self.parse(comments)
+        send_text = {
+                    "text": comments,
+                    "language": self.post_info["language"],
+                    "versionSource": self.post_info["versionSource"],
+                    "versionTitle": self.post_info["versionTitle"]
+                }
+        print self.title+", Footnotes, Part VII"
+        post_text(self.title+", Footnotes, PART VII", send_text)
 
 
     def interpret_footnotes(self, name):
@@ -127,7 +130,13 @@ class XML_to_JaggedArray:
                 comments[index] = comment.replace(str(poss_num)+". ", "")
 
             comments = self.parse(comments)
-            self.post(ref, comments)
+            send_text = {
+                    "text": comments,
+                    "language": self.post_info["language"],
+                    "versionSource": self.post_info["versionSource"],
+                    "versionTitle": self.post_info["versionTitle"]
+                }
+            post_text(ref, send_text)
 
 
 
@@ -153,15 +162,33 @@ class XML_to_JaggedArray:
                 assert Ref(running_ref)
                 node[key] = self.parse(node[key])
                 text = self.get_pages(node[key], running_ref)
+                send_text = {
+                    "text": text,
+                    "language": self.post_info["language"],
+                    "versionSource": self.post_info["versionSource"],
+                    "versionTitle": self.post_info["versionTitle"]
+                }
                 print running_ref
-                self.post(running_ref, text)
+                running_ref_obj = Ref(running_ref)
+                #if len(running_ref_obj.sections) == 1:
+                #     index_node = running_ref_obj.index_node.full_title()
+
+
+
+                post_text(running_ref, send_text)
             elif key == "text" and len(node[key]) > 0:
                 assert Ref(running_ref)
                 new_running_ref = running_ref + ",_Subject"
                 assert Ref(new_running_ref)
                 node[key] = self.parse(node[key])
                 text = self.get_pages(node[key], new_running_ref)
-                self.post(new_running_ref, text)
+                send_text = {
+                    "text": text,
+                    "language": self.post_info["language"],
+                    "versionSource": self.post_info["versionSource"],
+                    "versionTitle": self.post_info["versionTitle"]
+                }
+                post_text(new_running_ref, send_text)
 
 
     def get_pages(self, text, ref):
@@ -269,20 +296,4 @@ class XML_to_JaggedArray:
             array = array[1]
             depth += 1
         return depth
-
-    def interpret_footnotes_partvii(self):
-        comments = self.footnotes.values()[0]
-        for index, comment in enumerate(comments):
-            poss_num = int(comment.split(".", 1)[0])
-            comments[index] = comment.replace(str(poss_num)+". ", "")
-
-        comments = self.parse(comments)
-        send_text = {
-                    "text": comments,
-                    "language": self.post_info["language"],
-                    "versionSource": self.post_info["versionSource"],
-                    "versionTitle": self.post_info["versionTitle"]
-                }
-        print self.title+", Footnotes, Part VII"
-        post_text(self.title+", Footnotes, PART VII", send_text)
 '''

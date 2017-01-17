@@ -10,6 +10,7 @@ import codecs
 import re
 p = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, p)
+sys.path.insert(0, "../")
 from local_settings import *
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from sefaria.model import *
@@ -392,13 +393,13 @@ def post_link_weak_connection(info, repeat=10):
 
 
 @weak_connection
-def post_text(ref, text, index_count="off", skip_links=False):
+def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SERVER):
     textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
     if index_count == "off":
-        url = SEFARIA_SERVER+'/api/texts/'+ref
+        url = server+'/api/texts/'+ref
     else:
-        url = SEFARIA_SERVER+'/api/texts/'+ref+'?count_after=1'
+        url = server+'/api/texts/'+ref+'?count_after=1'
     if skip_links:
         url += '&skip_links={}'.format(skip_links)
     values = {'json': textJSON, 'apikey': API_KEY}
