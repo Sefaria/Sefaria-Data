@@ -6,6 +6,7 @@ import re
 import bleach
 import bisect
 import codecs
+import StringIO
 import unicodecsv as csv
 from bs4 import BeautifulSoup, Tag
 from data_utilities.util import ja_to_xml, getGematria
@@ -188,8 +189,9 @@ def fix_commentator(filename, commentator, overwrite=False):
         outfile = filename
     else:
         outfile = '{}_test'.format(filename)
-    with codecs.open('XML/{}.xml'.format(outfile), 'w', 'utf-8') as out:
-        root.export(out, level=1)
+    # with codecs.open('XML/{}.xml'.format(outfile), 'w', 'utf-8') as out:
+    #     root.export(out, level=1)
+    clean_export(root, 'XML/{}.xml'.format(outfile))
 
 
 def book_by_page(root_element):
@@ -278,9 +280,9 @@ def fix_commentator_by_page(filename, commentator, overwrite=False):
 
     if not overwrite:
         filename += '_test'
-    with codecs.open("XML/{}.xml".format(filename), 'w', 'utf-8') as outfile:
-        root.export(outfile, level=1)
-
+    # with codecs.open("XML/{}.xml".format(filename), 'w', 'utf-8') as outfile:
+    #     root.export(outfile, level=1)
+    clean_export(root, "XML/{}.xml".format(filename))
 
 def output_missing_links(filename):
     root = DCXMLsubs.parse('./XML/{}'.format(filename), silence=True)
@@ -290,7 +292,6 @@ def output_missing_links(filename):
             print phrase.id
 
 
-<<<<<<< Updated upstream
 def kill_internal_verses(filename, overwrite=True):
     """
     Some files have bad verse breakup in the Vilna printing. This method runs through a file, ensuring that for each
@@ -349,12 +350,25 @@ def split_chapters_by_pattern(filename, pattern, offset=0, overwrite=True):
         outfile.write(unicode(soup))
 
 
+def clean_export(root_tag, filename):
+    temp_file = StringIO.StringIO()
+    root_tag.export(temp_file, level=1)
+    out_text = temp_file.getvalue()
+    temp_file.close()
+    out_text = out_text.replace(u' xmlns:t="http://www.w3.org/namespace/"', u'')
+    out_text = out_text.replace(u't:', u'')
+    out_text = re.sub(ur'^\n', u'', out_text)
+    out_text = re.sub(ur' +', u' ', out_text)
+    out_text = re.sub(ur'\n ', u'\n', out_text)
+
+    with codecs.open(filename, 'w', 'utf-8') as outfile:
+        outfile.write(u"""<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book SYSTEM "sefaria.dtd">""")
+        outfile.write(out_text)
+
+
 # commentators = [u'כסא רחמים', u'בנין יהושע', u'הגהות מהריעב״ץ']
 # for commentator in commentators:
 #     fix_commentator('tractate-avot_drabi_natan-xml2', commentator, overwrite=True)
 # fix_commentator('tractate-avot_drabi_natan-xml2', u'בנין יהושע', overwrite=False)
-=======
-c = Collection()
-c.parse_collection(include_commentaries=False, skip_exceptions=False)
-c.post()
->>>>>>> Stashed changes
+
