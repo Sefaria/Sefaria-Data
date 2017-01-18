@@ -41,12 +41,14 @@ class XML_to_JaggedArray:
 
     def run(self):
         footnote_parent = None
+        OK = False
         for count, child in enumerate(self.root):
             name = self.grab_title(child, True, self.grab_title_lambda)
             if self.array_of_names:
                 name = self.array_of_names[count]
-            if name != "Bereshit":
+            if name != "Terumah" and OK is False:
                 continue
+            OK = True
             child = self.reorder_structure(child, False, self.reorder_test, self.reorder_modify)
             footnote_ref = self.title + ", Footnotes, " + name
             self.JA_nodes[name] = self.go_down_to_text(name, child, footnote_ref)
@@ -65,6 +67,21 @@ class XML_to_JaggedArray:
 
 
 
+    def post(self, ref, text):
+        if self.post_info["server"] == "production":
+            send_text = {
+                    "text": text,
+                    "language": self.post_info["language"],
+                    "versionSource": self.post_info["versionSource"],
+                    "versionTitle": self.post_info["versionTitle"]
+                }
+            post_text(ref, send_text)
+        else:
+            assert Ref(ref)
+            tc = TextChunk(Ref(ref), lang=self.post_info["language"], vtitle=self.post_info["versionTitle"])
+            tc.text = text
+            tc.save()
+
     def grab_title(self, element, delete=True, test_lambda=lambda x: False):
         '''
         Get the name return it and delete the first element
@@ -81,6 +98,7 @@ class XML_to_JaggedArray:
     def go_down_to_text(self, name, element, base_ref):
         text = {}
         text["text"] = []
+        text["subject"] = []
         for index, child in enumerate(element):
             if len(child) > 0:
                 name_node = ""
@@ -89,34 +107,38 @@ class XML_to_JaggedArray:
                     #above: take the title underneath, set it to text var,  so afterward, child.text will be the correct title
                 new_ref = base_ref+"."+child.text if child.text.isdigit() else base_ref+", "+child.text
                 if child.text.isdigit():
-                    text[int(child.text)] = self.go_down_to_text(child.text, child, new_ref)
+                    text["text"].append(self.go_down_to_text(child.text, child, new_ref))
+                else:
+                    text[child.text] = self.go_down_to_text(child.text, child, new_ref)
             else:
                 if child.tag == "ftnote":
                     if base_ref not in self.footnotes:
                         self.footnotes[base_ref] = []
                     self.footnotes[base_ref].append(child.xpath("string()"))
                 else:
-                    text["text"] += [child.xpath("string()").replace("\n\n", " ")]
+                    if self.siblingsHaveChildren(element):
+                        text["subject"] += [child.xpath("string()").replace("\n\n", " ")]
+                    else:
+                        text["text"] += [child.xpath("string()").replace("\n\n", " ")]
 
         return text
 
+    def siblingsHaveChildren(self, element):
+        for index, child in enumerate(element):
+            if len(child) > 0:
+                return True
+        return False
 
-    def interpret_footnotes_partvii(self):
-        comments = self.footnotes.values()[0]
-        for index, comment in enumerate(comments):
-            poss_num = int(comment.split(".", 1)[0])
-            comments[index] = comment.replace(str(poss_num)+". ", "")
-
-        comments = self.parse(comments)
-        send_text = {
-                    "text": comments,
-                    "language": self.post_info["language"],
-                    "versionSource": self.post_info["versionSource"],
-                    "versionTitle": self.post_info["versionTitle"]
-                }
-        print self.title+", Footnotes, Part VII"
-        post_text(self.title+", Footnotes, PART VII", send_text)
-
+    def convertManyIntoOne(self, ref):
+        array = []
+        for x in ref:
+            if type(x) is dict:
+                array.append(self.convertManyIntoOne(x['text']))
+            else:
+                array.append(x)
+        if len(array) > 0 and type(array[0]) is not list:
+            array = self.parse(array)
+        return array
 
     def interpret_footnotes(self, name):
         prev_num = 0
@@ -130,78 +152,28 @@ class XML_to_JaggedArray:
                 comments[index] = comment.replace(str(poss_num)+". ", "")
 
             comments = self.parse(comments)
-            send_text = {
-                    "text": comments,
-                    "language": self.post_info["language"],
-                    "versionSource": self.post_info["versionSource"],
-                    "versionTitle": self.post_info["versionTitle"]
-                }
-            post_text(ref, send_text)
-
-
+            self.post(ref, comments)
 
 
     def interpret(self, node, running_ref, prev="string"):
-        print running_ref
         assert Ref(running_ref), running_ref
         len_node = len(node)
         for key in node:
-            if key.isdigit():
-                if prev == "int":
-                    new_running_ref = "%s.%s" % (running_ref, key)
-                else:
-                    new_running_ref = "%s %s." % (running_ref, key)
-
-                assert Ref(new_running_ref)
-                self.interpret(node[key], new_running_ref, "int")
-            elif key != "text":
+            if key != "text" and key != "subject":
                 new_running_ref = "%s, %s" % (running_ref, key)
                 assert Ref(new_running_ref)
                 self.interpret(node[key], new_running_ref, "string")
-            elif key == "text" and len_node == 1:
-                assert Ref(running_ref)
-                node[key] = self.parse(node[key])
-                text = self.get_pages(node[key], running_ref)
-                send_text = {
-                    "text": text,
-                    "language": self.post_info["language"],
-                    "versionSource": self.post_info["versionSource"],
-                    "versionTitle": self.post_info["versionTitle"]
-                }
-                print running_ref
-                running_ref_obj = Ref(running_ref)
-                #if len(running_ref_obj.sections) == 1:
-                #     index_node = running_ref_obj.index_node.full_title()
-
-
-
-                post_text(running_ref, send_text)
-            elif key == "text" and len(node[key]) > 0:
+            elif key == "subject" and len(node[key]) > 0:
                 assert Ref(running_ref)
                 new_running_ref = running_ref + ",_Subject"
                 assert Ref(new_running_ref)
-                node[key] = self.parse(node[key])
-                text = self.get_pages(node[key], new_running_ref)
-                send_text = {
-                    "text": text,
-                    "language": self.post_info["language"],
-                    "versionSource": self.post_info["versionSource"],
-                    "versionTitle": self.post_info["versionTitle"]
-                }
-                post_text(new_running_ref, send_text)
-
-
-    def get_pages(self, text, ref):
-        print ref
-        for index, each_line in enumerate(text):
-            pages = re.findall("\[\d+[a-z]+\]", text[index])
-            for page in pages:
-                if ref+"."+str(index+1) in self.pages:
-                    self.pages[ref+"."+str(index+1)] += [page]
-                else:
-                    self.pages[ref+"."+str(index+1)] = [page]
-                text[index] = text[index].replace(page, "")
-        return text
+                text = self.parse(node[key])
+                self.post(new_running_ref, text)
+        if len(node.keys()) == 2 and "text" in node.keys() and "subject" in node.keys() and len(node['text']) > 0:
+            assert Ref(running_ref)
+            text = self.convertManyIntoOne(node["text"])
+            print running_ref
+            self.post(running_ref, text)
 
 
     def reorder_structure(self, element, move_footnotes=False, test_lambda=lambda x: False, reorder_modify=lambda x: x):
@@ -296,4 +268,36 @@ class XML_to_JaggedArray:
             array = array[1]
             depth += 1
         return depth
+
+    def interpret_footnotes_partvii(self):
+        comments = self.footnotes.values()[0]
+        for index, comment in enumerate(comments):
+            poss_num = int(comment.split(".", 1)[0])
+            comments[index] = comment.replace(str(poss_num)+". ", "")
+
+        comments = self.parse(comments)
+        send_text = {
+                    "text": comments,
+                    "language": self.post_info["language"],
+                    "versionSource": self.post_info["versionSource"],
+                    "versionTitle": self.post_info["versionTitle"]
+                }
+        print self.title+", Footnotes, Part VII"
+        post_text(self.title+", Footnotes, PART VII", send_text)
+
+
+    def get_pages(self, text, ref):
+        return text
+
+        print ref
+        for index, each_line in enumerate(text):
+            pages = re.findall("\[\d+[a-z]+\]", text[index])
+            for page in pages:
+                if ref+"."+str(index+1) in self.pages:
+                    self.pages[ref+"."+str(index+1)] += [page]
+                else:
+                    self.pages[ref+"."+str(index+1)] = [page]
+                text[index] = text[index].replace(page, "")
+        return text
+
 '''

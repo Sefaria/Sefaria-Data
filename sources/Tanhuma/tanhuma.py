@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 __author__ = 'stevenkaplan'
 import sys
-sys.path.append('../')
-from functions import *
-sys.path.append('../../../')
+import re
 from sefaria.model import *
-from XML_to_JaggedArray import XML_to_JaggedArray
+from XML_to_JaggedArray_new import XML_to_JaggedArray
 
 def create_schema(en_parshiot, he_parshiot):
     book = SchemaNode()

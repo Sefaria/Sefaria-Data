@@ -41,10 +41,14 @@ class XML_to_JaggedArray:
 
     def run(self):
         footnote_parent = None
+        OK = False
         for count, child in enumerate(self.root):
             name = self.grab_title(child, True, self.grab_title_lambda)
             if self.array_of_names:
                 name = self.array_of_names[count]
+            if name != "Beshalach" and OK is False:
+                continue
+            OK = True
             child = self.reorder_structure(child, False, self.reorder_test, self.reorder_modify)
             footnote_ref = self.title + ", Footnotes, " + name
             self.JA_nodes[name] = self.go_down_to_text(name, child, footnote_ref)
@@ -94,6 +98,7 @@ class XML_to_JaggedArray:
     def go_down_to_text(self, name, element, base_ref):
         text = {}
         text["text"] = []
+        #text["subject"] = []
         for index, child in enumerate(element):
             if len(child) > 0:
                 name_node = ""
@@ -112,7 +117,11 @@ class XML_to_JaggedArray:
 
         return text
 
-
+    def siblingsHaveChildren(self, child, element):
+        for index, child in enumerate(element):
+            if len(child) > 0:
+                return True
+        return False
 
 
     def interpret_footnotes(self, name):
@@ -128,8 +137,6 @@ class XML_to_JaggedArray:
 
             comments = self.parse(comments)
             self.post(ref, comments)
-
-
 
 
     def interpret(self, node, running_ref, prev="string"):

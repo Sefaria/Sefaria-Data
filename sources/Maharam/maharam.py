@@ -329,8 +329,6 @@ class Maharam:
         mishnah_out_order = {}
         links_to_post = []
         for daf in sorted(self.dh1_dict.keys()):
-            if daf < 179:
-                continue
             print daf
             self.maharam_line = 0
             self.rashi_line = -1
@@ -345,12 +343,11 @@ class Maharam:
             tosafot1_arr = [text.decode('utf-8') for text in tosafot1_arr]
             tosafot_in_order = match_ref(tosafot_text, tosafot1_arr, base_tokenizer, self.dh_extract_method, verbose=True)
             tosafot_in_order = self.convertToOldFormat(tosafot_in_order)
-            if not (masechet == "Bava Batra" and daf > 57):
-                print "matching rashi"+str(len(rashi1_arr))
-                rashi_text = Ref("Rashi on "+masechet+"."+AddressTalmud.toStr("en", daf)).text('he')
-                rashi1_arr = [text.decode('utf-8') for text in rashi1_arr]
-                rashi_in_order = match_ref(rashi_text, rashi1_arr, base_tokenizer, self.dh_extract_method, verbose=True)
-                rashi_in_order = self.convertToOldFormat(rashi_in_order)
+            print "matching rashi"+str(len(rashi1_arr))
+            rashi_text = Ref("Rashi on "+masechet+"."+AddressTalmud.toStr("en", daf)).text('he')
+            rashi1_arr = [text.decode('utf-8') for text in rashi1_arr]
+            rashi_in_order = match_ref(rashi_text, rashi1_arr, base_tokenizer, self.dh_extract_method, verbose=True)
+            rashi_in_order = self.convertToOldFormat(rashi_in_order)
             print "matching gemara"+str(len(gemara1_arr))
             gemara_text = Ref(masechet+" "+AddressTalmud.toStr("en", daf)).text('he')
             gemara1_arr = [text.decode('utf-8') for text in gemara1_arr]
@@ -393,7 +390,7 @@ def create_index(tractate):
 
 
 if __name__ == "__main__":
-    titles = ["Bava Metzia"]
+    titles = ["Bava Kamma", "Bava Metzia"]
     '''
         ["Bava Batra", "Bava Kamma","Bava Metzia"]
     , "Chullin", "Eruvin", "Gittin", "Ketubot", "Kiddushin", "Makkot",
