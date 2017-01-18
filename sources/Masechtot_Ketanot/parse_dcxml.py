@@ -290,6 +290,7 @@ def output_missing_links(filename):
             print phrase.id
 
 
+<<<<<<< Updated upstream
 def kill_internal_verses(filename, overwrite=True):
     """
     Some files have bad verse breakup in the Vilna printing. This method runs through a file, ensuring that for each
@@ -352,3 +353,8 @@ def split_chapters_by_pattern(filename, pattern, offset=0, overwrite=True):
 # for commentator in commentators:
 #     fix_commentator('tractate-avot_drabi_natan-xml2', commentator, overwrite=True)
 # fix_commentator('tractate-avot_drabi_natan-xml2', u'בנין יהושע', overwrite=False)
+=======
+c = Collection()
+c.parse_collection(include_commentaries=False, skip_exceptions=False)
+c.post()
+>>>>>>> Stashed changes

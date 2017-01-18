@@ -553,7 +553,7 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
     """
     bas_word_list = [] #re.split(r"\s+"," ".join(base_text.text))
     base_depth = base_text.ja().depth()
-    bas_ind_list,bas_ref_list = base_text.text_index_map(base_tokenizer)
+    bas_ind_list,bas_ref_list,total_len = base_text.text_index_map(base_tokenizer)
 
     if base_depth == 1:
         for segment in base_text.text:
@@ -569,15 +569,15 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
         comm_depth = comm_ref.get_state_ja("he").depth()
         if comm_depth == 1:
             comment_list = comments.text
-            _, comment_ref_list = comments.text_index_map(base_tokenizer)
+            _, comment_ref_list, _ = comments.text_index_map(base_tokenizer)
 
         elif comm_depth == 2:
-            _, comment_ref_list = comments.text_index_map(base_tokenizer)
+            _, comment_ref_list, _ = comments.text_index_map(base_tokenizer)
             #sub_ja = comm_ref.get_state_ja("he").subarray_with_ref(comm_ref)
             #comment_ref_list = [comm_ref.subref(i + 1) for k in sub_ja.non_empty_sections() for i in k]
             comment_list = [temp_comm for temp_comm in comments.text]
         elif comm_depth == 3:
-            _, comment_ref_list = comments.text_index_map(base_tokenizer)
+            _, comment_ref_list, _ = comments.text_index_map(base_tokenizer)
             comment_list = [temp_comm for temp_sec in comments.text for temp_comm in temp_sec]
         else:
             raise TypeError("'comments' as a TextChunk needs to be either depth 2 or 3. You passed depth {}".format(comm_depth))
