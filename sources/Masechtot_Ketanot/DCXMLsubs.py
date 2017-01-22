@@ -283,7 +283,8 @@ class commentarySub(supermod.commentary):
         parsed = JaggedArray([[[]]])
         for phrase in self.get_phrase():
             indices = (commentStore[phrase.id]['chapter'], commentStore[phrase.id]['verse'], commentStore[phrase.id]['order'])
-            text = phrase.get_comment().valueOf_.replace(u'\n', u'')
+            text = phrase.get_comment().valueOf_.replace(u'\n', u' ')
+            text = re.sub(u' +', u' ', text)
             parsed.set_element([i-1 for i in indices], text)
         return parsed.array()
 
@@ -513,6 +514,7 @@ class phraseSub(supermod.phrase):
         comment = self.get_comment().get_valueOf_()
         raw_string = u'{} {}'.format(dh, comment)
         formatted = re.sub(ur' (:|\.)', ur'\1', raw_string)
+        formatted = formatted.replace(u'\n', u' ')
         formatted = re.sub(u' +', u' ', formatted)
         return formatted
 
