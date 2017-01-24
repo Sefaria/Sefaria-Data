@@ -285,6 +285,7 @@ class commentarySub(supermod.commentary):
             indices = (commentStore[phrase.id]['chapter'], commentStore[phrase.id]['verse'], commentStore[phrase.id]['order'])
             text = phrase.get_comment().valueOf_.replace(u'\n', u' ')
             text = re.sub(u' +', u' ', text)
+            text = re.sub(ur' (:|\.)', ur'\1', text)
             parsed.set_element([i-1 for i in indices], text)
         return parsed.array()
 
@@ -304,7 +305,6 @@ class commentarySub(supermod.commentary):
                 parsed.set_element([int(chap_num)-1, int(phrase_num)-1, comment_number], phrase.as_string())
                 comment_counter[(chap_num, phrase_num)] += 1
 
-                # Todo add link to unlinked comment store
                 unlinkedCommentStore.append({
                     'commentator': commentatorNames[self.get_author()],
                     'chapter': chap_num,
@@ -513,9 +513,9 @@ class phraseSub(supermod.phrase):
         dh = u'<b>{}</b>'.format(self.get_dh().get_valueOf_())
         comment = self.get_comment().get_valueOf_()
         raw_string = u'{} {}'.format(dh, comment)
-        formatted = re.sub(ur' (:|\.)', ur'\1', raw_string)
-        formatted = formatted.replace(u'\n', u' ')
+        formatted = raw_string.replace(u'\n', u' ')
         formatted = re.sub(u' +', u' ', formatted)
+        formatted = re.sub(ur' (:|\.)', ur'\1', formatted)
         return formatted
 
 supermod.phrase.subclass = phraseSub
