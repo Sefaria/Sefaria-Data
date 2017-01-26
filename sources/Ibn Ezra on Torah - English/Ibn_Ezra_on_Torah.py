@@ -1,15 +1,21 @@
 # encoding=utf-8
 
 import re
+import codecs
 from sefaria.model.text import Ref
 from bs4 import BeautifulSoup, Tag
+from sources.functions import post_text
+from data_utilities.util import ja_to_xml
 from sefaria.datatype.jagged_array import JaggedArray
 
 """
-filenames: 'IbnEzra_Pentateuch_Vol5.xml', The-Commentary-of-Abraham-ibn-Ezra-on-the-Pentateuch-Vol3.xml
+filenames: 'IbnEzra_Pentateuch_Vol5.xml', 'The-Commentary-of-Abraham-ibn-Ezra-on-the-Pentateuch-Vol3.xml'
 
 """
-
+file_data = {
+    'Deuteronomy': 'IbnEzra_Pentateuch_Vol5.xml',
+    'Leviticus': 'The-Commentary-of-Abraham-ibn-Ezra-on-the-Pentateuch-Vol3.xml'
+}
 
 def identify_location(xref):
     """
@@ -48,6 +54,64 @@ def populate_comment_store(filename):
     return comment_store
 
 
+def structure_comments(verse):
+    def clean_string(value):
+        value = value.replace(u'\n', u' ')
+        value = value.replace(u'\xb6', u'')
+        value = re.sub(u' +', u' ', value)
+        value = value.rstrip()
+        value = value.lstrip()
+        return value
+
+    verse = re.sub(u'\[.*?\]', u'', verse, 1)
+    soup = BeautifulSoup(u'<root>{}</root>'.format(verse), 'xml')
+    # destroy empty b tags
+    for element in soup.find_all(lambda x: x.name == 'b' and (x.is_empty_element or x.text.isspace())):
+        element.decompose()
+
+    verse = clean_string(u' '.join(unicode(child) for child in soup.root.children))
+    comments, start_index = [], 0
+    for match in re.finditer(ur'\. <b>', verse):
+        comments.append(verse[start_index:match.start()+1])
+        start_index = match.start() + 2
+    comments.append(verse[start_index:])
+    return comments
+
+
+def pre_parse(filename, overwrite=False):
+    with open(filename) as infile:
+        soup = BeautifulSoup(infile, 'xml')
+
+    for li in soup.find_all('li'):
+        assert li.parent.name == 'ul'
+        li.unwrap()
+    for bold in soup.find_all('bold'):
+        bold.name = u'b'
+    for italic in soup.find_all('italic'):
+        italic.name = u'i'
+
+    for chapter in soup.find_all('chapter'):
+        footnotes = chapter.find_all('ftnote')
+
+        for footnote in footnotes:
+            next_sibling = footnote.next_sibling
+            if next_sibling is None:
+                break
+
+            while next_sibling.name != 'ftnote':
+                footnote.append(next_sibling)
+                if isinstance(next_sibling, Tag):
+                    next_sibling.unwrap()
+                next_sibling = footnote.next_sibling
+                if next_sibling is None:
+                    break
+
+    if not overwrite:
+        filename = filename.replace('.xml', '_copy.xml')
+    with codecs.open(filename, 'w', 'utf-8') as outfile:
+        outfile.write(unicode(soup))
+
+
 def parse(filename):
     comment_store = populate_comment_store(filename)
     parsed = JaggedArray([[]])
@@ -60,11 +124,39 @@ def parse(filename):
         if loc is None:
             continue
         value = u''.join([unicode(child) for child in footnote.children])
-        parsed.set_element([loc['chapter']-1, loc['verse']-1], value)
+        parsed.set_element([loc['chapter']-1, loc['verse']-1], structure_comments(value), pad=[])
     return parsed.array()
 
-deut = parse('IbnEzra_Pentateuch_Vol5.xml')
-torat_emet = Ref("Ibn Ezra on Devarim").text('he', 'Ibn Ezra on Devarim -- Torat Emet').ja().array()
-for i, (mine, te) in enumerate(zip(deut, torat_emet)):
-    if len(mine) != len(te):
-        print 'problem in chapter {}'.format(i+1)
+
+def test(book):
+    qa_issues = open('Ibn Ezra on {} misalignments.txt'.format(book), 'w')
+    levi = parse(file_data[book])
+    vtitle = 'Devarim' if book == 'Deuteronomy' else book
+    torat_emet = Ref("Ibn Ezra on {}".format(book)).text('he', 'Ibn Ezra on {} -- Torat Emet'.format(vtitle)).ja().array()
+    count = 0
+    for c_index, (my_chapter, thier_chapter) in enumerate(zip(levi, torat_emet)):
+        for v_index, (my_verse, their_verse) in enumerate(zip(my_chapter, thier_chapter)):
+            if len(my_verse) != len(their_verse):
+                    qa_issues.write('issue found at {}:{}\n'.format(c_index+1, v_index+1))
+                    count += 1
+        if len(my_chapter) != len(thier_chapter):
+            by_length = sorted((my_chapter, thier_chapter), key=lambda x:len(x))
+            for i in range(len(by_length[0]), len(by_length[1])):
+                qa_issues.write('issue found at {}:{}\n'.format(c_index+1, i+1))
+                count += 1
+    qa_issues.close()
+    print '{} issues found'.format(count)
+    ja_to_xml(levi, ['Chapter', 'Verse', 'Comment'])
+
+
+def post(book):
+    title = 'Ibn Ezra on {}'.format(book)
+    version = {
+        'title': title,
+        'versionTitle': 'Ibn Ezra on the Pentateuch; trans. by Jay F. Shachter',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001028367',
+        'language': 'en',
+        'text': parse(file_data[book])
+    }
+    post_text(title, version)
+
