@@ -8,10 +8,14 @@ from sources.local_settings import *
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
 from sources.functions import *
+from sefaria.model import *
 nach_books_ms = [u"יהושע",u"שופטים",u"מלכים א",u"מלכים ב",u"ישעיהו",u"ירמיהו",u"יחזקאל",u"הושע",u"יואל",u"עמוס",u"עובדיה",u"יונה",u"מיכה",u"נחום",u"חבקןק",u"צפניה",u"חגי",u"זכריה",u"מלאכי",u"תהלים",u"משלי",u"איוב",u"דניאל",u"עזרא",u"נחמיה",u"דברי הימים א",u"דברי הימים ב"]
 nach_books_ms_en = ["Joshua","Judges","I Kings","II Kings","Isaiah","Jeremiah","Ezekiel","Hosea","Joel","Amos","Obadiah","Jonah","Micah","Nahum","Habakkuk","Zephaniah","Haggai","Zechariah","Malachi","Psalms","Proverbs","Job","Daniel","Ezra","Nehemiah","I Chronicles","II Chronicles"]
-#here we can toggle if we're posting the index
+#here we can toggle if we're posting the index and text and the links
 posting_index = True
+posting_text = False
+posting_links = False
+
 def get_parsed_text():
     with open('מנחת שי נך.txt') as myfile:
         lines = myfile.readlines()
@@ -25,12 +29,16 @@ def get_parsed_text():
         line_count+=1
         line = ascii_line.decode('utf-8')
         if u"@99" in line:
-            if sefer_count>=25:
-                if post_index:
+            if sefer_count>=0:
+                if posting_index:
                     print "posting "+nach_books_ms_en[sefer_count]+" index"
                     post_index_ms(sefer_count)
-                print "posting "+nach_books_ms_en[sefer_count]+" text"
-                post_text_ms(sefer_array,sefer_count)
+                if posting_text:
+                    print "posting "+nach_books_ms_en[sefer_count]+" text"
+                    post_text_ms(sefer_array,sefer_count)
+                if posting_links:
+                    print"posting "+nach_books_ms_en[sefer_count]+" links"
+                    post_links_ms(sefer_array,sefer_count)
             sefer_count+=1
             sefer_array = make_perek_array(nach_books_ms_en[sefer_count])
         elif u"@11" in line:
@@ -48,11 +56,17 @@ def get_parsed_text():
                 print len(sefer_array)
 
     #post last text:
-    if post_index:
-        print "posting "+nach_books_ms_en[sefer_count]+" index"
-        post_index_ms(sefer_count)
-    print "posting "+nach_books_ms_en[sefer_count]+" text"
-    post_text_ms(sefer_array,sefer_count)
+    if False:
+        if posting_index:
+            print "posting "+nach_books_ms_en[sefer_count]+" index"
+            post_index_ms(sefer_count)
+        if posting_text:
+            print "posting "+nach_books_ms_en[sefer_count]+" text"
+            post_text_ms(sefer_array,sefer_count)
+        if posting_links:
+            print"posting "+nach_books_ms_en[sefer_count]+" links"
+            post_links_ms(sefer_array,sefer_count)
+
 
 def post_index_ms(sefer_count):
     # create index record
@@ -62,8 +76,8 @@ def post_index_ms(sefer_count):
     ms_schema.key = 'Minchat Shai on '+nach_books_ms_en[sefer_count]
     ms_schema.depth = 3
     ms_schema.addressTypes = ["Integer", "Integer", "Integer"]
-    ms_schema.sectionNames = ["Perek", "Pasuk", "Comment"]
-
+    ms_schema.sectionNames = ["Chapter", "Verse", "Comment"]
+    ms_schema.toc_zoom = 2
     ms_schema.validate()
 
     index = {
@@ -81,7 +95,23 @@ def post_text_ms(text_array, sefer_count):
     }
 
     post_text('Minchat Shai on '+nach_books_ms_en[sefer_count], version,weak_network=True)
-
+def post_links_ms(sefer_array, sefer_count):
+    book = nach_books_ms_en[sefer_count]
+    for perek_index,perek in enumerate(sefer_array):
+        for pasuk_index, pasuk in enumerate(perek):
+            for comment_index, comment in enumerate(pasuk):
+                link = (
+                        {
+                        "refs": [
+                                 'Minchat Shai on {}, {}:{}:{}'.format(book, perek_index+1, pasuk_index+1, comment_index+1),
+                                 '{} {}:{}'.format(book,perek_index+1, pasuk_index+1),
+                                 ],
+                        "type": "commentary",
+                        "auto": True,
+                        "generated_by": "sterling_minchat_shai_"+book+"_parser"
+                        })
+                print link.get('refs')
+                post_link(link, weak_network=True)
 def make_perek_array(book):
     tc = TextChunk(Ref(book), "he")
     return_array = []
@@ -97,6 +127,8 @@ def main():
     pass
 if __name__ == "__main__":
     get_parsed_text()
+    for title in nach_books_ms_en:
+        print "http://draft.sefaria.org/admin/reset/Minchat_Shai_on_"+title
     main()
 """
     if len(sefer_array[0][0])>1:
