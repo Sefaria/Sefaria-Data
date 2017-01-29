@@ -27,9 +27,14 @@ def extract_text(file_input):
         paragraph = remove_nekudot_from_parenthetical_statements(paragraph)
         if "@SKIP@" not in paragraph:
             if "@TEXT@" in paragraph:
+                for paragraph_split in colon_paragraph_break(invert_brackets(unmark(paragraph.strip()))):
+                    if not_blank(paragraph_split.replace("(","").replace(")","")):
+                        ois_box.append(paragraph_split+":" if paragraph_split[-1]!=":" else paragraph_split)
+                """
                 for paragraph_split in invert_brackets(unmark(paragraph.strip())).split(":"):
                     if not_blank(paragraph_split):
                         ois_box.append(paragraph_split+":")
+                """
             #we don't append blanks or assorted non-text put in by publisher
             elif not_blank(paragraph) and is_text_segment(paragraph) and is_not_header(paragraph):
                 #for these dosuments, the sections titles and אתיות don't have nikudot, so we parse by finding non-nikudot paragraphs
@@ -63,9 +68,9 @@ def extract_text(file_input):
                                     parsed_topics.append(title)
                 #we don't want to append names of sections, ois's, or topics, so we only append if our paragraph is none of these, hence "else"
                 else:
-                    for paragraph_split in invert_brackets(unmark(paragraph.strip())).split(":"):
+                    for paragraph_split in colon_paragraph_break(invert_brackets(unmark(paragraph.strip()))):
                         if not_blank(paragraph_split.replace("(","").replace(")","")):
-                            ois_box.append(paragraph_split+":")
+                            ois_box.append(paragraph_split+":" if paragraph_split[-1]!=":" else paragraph_split)
 
     #still have to store last entry in text, since hitting a title calls the append chain and there's no title after the last title.
     section_box.append(ois_box)
@@ -117,6 +122,21 @@ def get_parsed_text():
     final_text[0][0].pop(0)
     final_text[0][1].pop(0)
     return final_text
+def colon_paragraph_break(p):
+    in_paren = False
+    return_list = []
+    last_insert = 0
+    for index, char in enumerate(p):
+        if char=="(":
+            in_paren=True
+        elif char==")":
+            in_paren=False
+        elif char ==":" and in_paren==False and len(p[last_insert:index+1])>1:
+            return_list.append(p[last_insert:index+1])
+            last_insert=index+1
+    if len(p[last_insert:index+1])>1:
+        return_list.append(p[last_insert:index+1])
+    return return_list
 
 def get_parsed_intro():
     file_parse_return = extract_text("orah haim a m.txt")
@@ -241,6 +261,8 @@ def remove_nekudot(word):
 
 def remove_nekudot_from_parenthetical_statements(s):
     words = s.split(' ')
+    if len(words)>3:
+        return s
     return_words = []
     in_paren = False
     for word in words:
@@ -252,45 +274,49 @@ def remove_nekudot_from_parenthetical_statements(s):
         else:
             return_words.append(word)
     return ' '.join(return_words)
+def main():
+    pass
 
-for oindex, order in enumerate(get_parsed_text()):
-    for sindex, section in enumerate(order[1]):
-        for cindex, chapter in enumerate(section):
-            for iindex, ois in enumerate(chapter):
-                for pindex, paragraph in enumerate(ois):
-                    print "ORDER "+str(oindex)+" SECION "+order[0][sindex]+" CHAPTER "+str(cindex)+" OIS "+str(iindex)+" PARAGRAPH "+str(pindex)
-                    print paragraph
+if __name__ == "__main__":
+    for oindex, order in enumerate(get_parsed_text()):
+        for sindex, section in enumerate(order[1]):
+            for cindex, chapter in enumerate(section):
+                for iindex, ois in enumerate(chapter):
+                    for pindex, paragraph in enumerate(ois):
+                        print "ORDER "+str(oindex)+" SECION "+order[0][sindex]+" CHAPTER "+str(cindex)+" OIS "+str(iindex)+" PARAGRAPH "+str(pindex)
+                        print paragraph
 
-#uncomment to see results
-"""
-bad_paren = []
+    #uncomment to see results
+    """
+    bad_paren = []
 
-for index, order in enumerate(get_parsed_text()):
-    print "ORDER " + str(index)
-    for index1, topic in enumerate(order[1]):
-        print order[0][index1]
-        for index2, section in enumerate(topic):
-            for index3, ois in enumerate(section):
-                for index4, paragraph in enumerate(ois):
-                    print str(index1) +" "+str(index2)+" "+str(index3)+" "+str(index4)
-                    print paragraph
-                    if paragraph.count("(")!=paragraph.count(")"):
-                        bad_paren.append(str(index_0)+" "+str(index)+" "+str(index2)+" "+str(index3)+"\n"+ois)
+    for index, order in enumerate(get_parsed_text()):
+        print "ORDER " + str(index)
+        for index1, topic in enumerate(order[1]):
+            print order[0][index1]
+            for index2, section in enumerate(topic):
+                for index3, ois in enumerate(section):
+                    for index4, paragraph in enumerate(ois):
+                        print str(index1) +" "+str(index2)+" "+str(index3)+" "+str(index4)
+                        print paragraph
+                        if paragraph.count("(")!=paragraph.count(")"):
+                            bad_paren.append(str(index_0)+" "+str(index)+" "+str(index2)+" "+str(index3)+"\n"+ois)
 
-"""
-orders = [ ["Orach Chaim","אורח חיים"],["Yoreh Deah","יורה דעה"],["Even HaEzer","אבן העזר"],["Choshen Mishpat","חושן משפט"]]
-html_str=""
-text = get_parsed_text()
-for x in range(4):
-    for topic_index, topic in enumerate(text[x][1]):
-        for chapter_index, chapter in enumerate(topic):
-            for ois_index, ois in enumerate(chapter):
-                for paragraph_index, paragraph in enumerate(ois):
-                    if paragraph.count("(")!=paragraph.count(")"):
-                        html_str+=orders[x][1]+" "+text[x][0][topic_index]+" "+str(chapter_index+1)+" "+str(ois_index+1)+" "+str(paragraph_index+1)+"<br>"+paragraph.replace("(","<b><span style='font-size:35'>(</b></span>").replace(")","<b><span style='font-size:35'>)</b></span>")+"<hr>"
-Html_file= open("missing_parens.html","w")
-Html_file.write(html_str)
-Html_file.close()
+    """
+    orders = [ ["Orach Chaim","אורח חיים"],["Yoreh Deah","יורה דעה"],["Even HaEzer","אבן העזר"],["Choshen Mishpat","חושן משפט"]]
+    html_str=""
+    text = get_parsed_text()
+    for x in range(4):
+        for topic_index, topic in enumerate(text[x][1]):
+            for chapter_index, chapter in enumerate(topic):
+                for ois_index, ois in enumerate(chapter):
+                    for paragraph_index, paragraph in enumerate(ois):
+                        if paragraph.count("(")!=paragraph.count(")"):
+                            html_str+=orders[x][1]+" "+text[x][0][topic_index]+" "+str(chapter_index+1)+" "+str(ois_index+1)+" "+str(paragraph_index+1)+"<br>"+paragraph.replace("(","<b><span style='font-size:35'>(</b></span>").replace(")","<b><span style='font-size:35'>)</b></span>")+"<hr>"
+    Html_file= open("missing_parens.html","w")
+    Html_file.write(html_str)
+    Html_file.close()
+    main()
 
 
 

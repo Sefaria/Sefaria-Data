@@ -50,7 +50,7 @@ for order_index, order_title in enumerate(orders):
                 'language': 'he',
                 'text': topic_text
             }
-        print 'Likutei Halachot, '+order_title[0]+', '+english_title
+        print 'Likutei Halachot, '+order_title[0]+', '+english_title+' ',Likutei_Halachot_text[order_index][0][topic_index]
         print topic_text[0][0][0]
         functions.post_text_weak_connection('Likutei Halachot, '+order_title[0]+', '+english_title, version)
 
