@@ -227,15 +227,12 @@ class Maharam:
 
 
     def convertToOldFormat(self, arr):
-        try:
-          for index, item in enumerate(arr):
+        arr = arr['matches']
+        for index, item in enumerate(arr):
             if item is None:
                 arr[index] = '0'
             else:
-                arr[index] = str(arr[index])
-        except:
-          pdb.set_trace()
-
+                arr[index] = arr[index].normal()
         return arr
 
 
@@ -261,7 +258,26 @@ class Maharam:
                         ],
                 "type": "commentary",
                 "auto": True,
-                "generated_by": "Maharam on "+masechet+" linker"})
+                "generated_by": "Maharam on "+masechet+" linker"
+            })
+            in_order = in_order.replace("Tosafot on", "").replace("Rashi on", "")
+            ref = Ref(in_order)
+            assert len(ref.sections) in [2, 3]
+            if len(ref.sections) == 3:
+                last_colon = ref.normal().rfind(":")
+                gemara_ref = ref.normal()[0:last_colon]
+            else:
+                gemara_ref = ref.normal()
+            print gemara_ref
+            self.links_to_post.append({
+                "refs": [
+                    "Maharam on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line),
+                    gemara_ref
+                ],
+                "type": "commentary",
+                "auto": True,
+                "generated_by": "Maharam on "+masechet+" linker"
+            })
 
 
     def Gemara(self, daf, gemara_in_order):
@@ -279,43 +295,6 @@ class Maharam:
             "auto": True,
             "generated_by": "Maharam on "+masechet+" linker",
          })
-
-    '''
-
-    def Mishnah(self, daf, mishnah_in_order):
-        self.maharam_line+=1
-        mishnah_line+=1
-        pos = 0
-        for perek in self.mishnah1_dict:
-            for key in mishnah_in_order[perek]:
-                pos+=1
-                if pos==mishnah_line:
-                    if mishnah_in_order[perek][key].find('0') >= 0:
-                        return
-                    if mishnah_in_order[perek][key].find('-')>=0:
-                        in_order, out_order = mishnah_in_order[perek][key].split('-')
-                    else:
-                        in_order = mishnah_in_order[perek][key]
-                        out_order = in_order
-                    in_order = int(in_order)
-                    out_order = int(out_order)
-                    masechet_daf_line_start = "Mishnah "+masechet+"."+str(perek)+"."+str(mishnah_in_order[perek][key][0])
-                    masechet_daf_line_end = "Mishnah "+masechet+"."+str(perek)+"."+str(mishnah_out_order[perek][key][0])
-                    try:
-                        masechet_daf_line = Ref(masechet_daf_line_start).to(Ref(masechet_daf_line_end)).normal()
-                    except:
-                        masechet_daf_line = masechet_daf_line_start
-                    self.links_to_post.append({
-                        "refs": [
-                                 masechet_daf_line,
-                                "Maharam "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line)
-                            ],
-                        "type": "commentary",
-                        "auto": True,
-                        "generated_by": "Maharam on "+masechet+" linker",
-                    })
-    '''
-
 
 
     def postLinks(self):
@@ -341,17 +320,17 @@ class Maharam:
             print "matching tosafot"+str(len(tosafot1_arr))
             tosafot_text = Ref("Tosafot on "+masechet+"."+AddressTalmud.toStr("en", daf)).text('he')
             tosafot1_arr = [text.decode('utf-8') for text in tosafot1_arr]
-            tosafot_in_order = match_ref(tosafot_text, tosafot1_arr, base_tokenizer, self.dh_extract_method, verbose=True)
+            tosafot_in_order = match_ref(tosafot_text, tosafot1_arr, base_tokenizer, dh_extract_method=self.dh_extract_method, verbose=True)
             tosafot_in_order = self.convertToOldFormat(tosafot_in_order)
             print "matching rashi"+str(len(rashi1_arr))
             rashi_text = Ref("Rashi on "+masechet+"."+AddressTalmud.toStr("en", daf)).text('he')
             rashi1_arr = [text.decode('utf-8') for text in rashi1_arr]
-            rashi_in_order = match_ref(rashi_text, rashi1_arr, base_tokenizer, self.dh_extract_method, verbose=True)
+            rashi_in_order = match_ref(rashi_text, rashi1_arr, base_tokenizer, dh_extract_method=self.dh_extract_method, verbose=True)
             rashi_in_order = self.convertToOldFormat(rashi_in_order)
             print "matching gemara"+str(len(gemara1_arr))
             gemara_text = Ref(masechet+" "+AddressTalmud.toStr("en", daf)).text('he')
             gemara1_arr = [text.decode('utf-8') for text in gemara1_arr]
-            gemara_in_order = match_ref(gemara_text, gemara1_arr, base_tokenizer, self.dh_extract_method, verbose=True)
+            gemara_in_order = match_ref(gemara_text, gemara1_arr, base_tokenizer, dh_extract_method=self.dh_extract_method, verbose=True)
             gemara_in_order = self.convertToOldFormat(gemara_in_order)
             dh1_arr = self.dh1_dict[daf]
             print "done matching"
@@ -390,7 +369,7 @@ def create_index(tractate):
 
 
 if __name__ == "__main__":
-    titles = ["Bava Kamma", "Bava Metzia"]
+    titles = ["Bava Batra"]
     '''
         ["Bava Batra", "Bava Kamma","Bava Metzia"]
     , "Chullin", "Eruvin", "Gittin", "Ketubot", "Kiddushin", "Makkot",

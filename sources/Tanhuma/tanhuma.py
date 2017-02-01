@@ -2,68 +2,89 @@
 __author__ = 'stevenkaplan'
 import sys
 import re
+from sources.functions import *
 from sefaria.model import *
-from XML_to_JaggedArray_new import XML_to_JaggedArray
+from data_utilities.XML_to_JaggedArray import XML_to_JaggedArray
 
-def create_schema(en_parshiot, he_parshiot):
+def create_schema(en_he_parshiot):
     book = SchemaNode()
-    book.add_title("Buber Midrash Tanchuma", "en", primary=True)
+    book.add_title("Midrash Tanchuma Buber", "en", primary=True)
     book.add_title(u"תנחומא - בובר", "he", primary=True)
     book.key = "buber_midrash_tanhuma"
-    '''
-    cycle through each one, at the beginning of each one add foreword and preface, then add as many parshiot and keep track
-    '''
-    prev = 0
-    for vol_info in [(12, "One"), (21, "Two"), (21, "Three")]:
-        volume = SchemaNode()
-        vol_length = vol_info[0]
-        vol_name = vol_info[1]
-        volume.add_title("Volume {}".format(vol_name), "en", primary=True)
-        volume.add_title(u"שער", "he", primary=True)
-        volume.key = vol_info[1]
-        foreword = JaggedArrayNode()
-        foreword.key = "foreword"+str(vol_length)
-        foreword.add_title("Foreword", "en", primary=True)
-        foreword.add_title(u"פתח דבר", "he", primary=True)
-        foreword.depth = 1
-        foreword.addressTypes = ["Integer"]
-        foreword.sectionNames = ["Paragraph"]
-        preface = JaggedArrayNode()
-        preface.key = "preface"+str(vol_length)
-        preface.add_title("Preface", "en", primary=True)
-        preface.add_title(u"הקדמה", "he", primary=True)
-        preface.depth = 1
-        preface.addressTypes = ["Integer"]
-        preface.sectionNames = ["Paragraph"]
-        volume.append(foreword)
-        volume.append(preface)
-        for count in range(vol_length):
-            parsha = JaggedArrayNode()
-            en_parsha = en_parshiot[count + prev]
-            parsha.key = en_parsha
-            parsha.add_title(en_parsha, "en", primary=True)
-            parsha.add_title(he_parshiot[count + prev], "he", primary=True)
-            parsha.sectionNames = ["Paragraph"]
-            parsha.depth = 1
-            parsha.addressTypes = ["Integer"]
-            volume.append(parsha)
-        book.append(volume)
-        prev += vol_length
+
+    appendices = ["Sh'lach", "Korach", "Chukat", "Devarim", "Vaetchanan", "Re'eh"]
+    en_parshiot = []
+
+    for index, parsha_tuple in enumerate(en_he_parshiot):
+        en_name = parsha_tuple[0]
+        print en_name
+        if en_name == "Vayeilech":
+            continue
+        appendix = None
+        parsha = JaggedArrayNode()
+        parsha.key = en_name
+        parsha.add_title(en_name, "en", primary=True)
+        parsha.add_title(parsha_tuple[1], "he", primary=True)
+        parsha.sectionNames = ["Siman", "Paragraph"]
+        parsha.depth = 2
+        parsha.addressTypes = ["Integer", "Integer"]
+        if en_name in appendices:
+            appendix = JaggedArrayNode()
+            he_title = u"הוספה ל{}".format(parsha_tuple[1])
+            appendix.add_primary_titles("Appendix to {}".format(en_name), he_title)
+            appendix.add_structure(["Siman", "Paragraph"])
+        en_parshiot.append(en_name)
+        book.append(parsha)
+        if appendix is not None:
+            en_parshiot.append("Appendix to {}".format(en_name))
+            book.append(appendix)
+
+    footnotes = SchemaNode()
+    footnotes.key = "footnotes"
+    footnotes.add_title("Footnotes", "en", primary=True)
+    footnotes.add_title(u"הערות", "he", primary=True)
+
+    for index, parsha_tuple in enumerate(en_he_parshiot):
+        en_name = parsha_tuple[0]
+        print en_name
+        if en_name == "Vayeilech":
+            continue
+        appendix = None
+        parsha = JaggedArrayNode()
+        parsha.key = "footnotes"+en_name
+        parsha.add_title(en_name, "en", primary=True)
+        parsha.add_title(parsha_tuple[1], "he", primary=True)
+        parsha.sectionNames = ["Paragraph"]
+        parsha.depth = 1
+        parsha.addressTypes = ["Integer"]
+        if en_name in appendices:
+            appendix = JaggedArrayNode()
+            he_title = u"הוספה ל{}".format(parsha_tuple[1])
+            appendix.add_primary_titles("Appendix to {}".format(en_name), he_title)
+            appendix.add_structure(["Paragraph"])
+        if appendix is not None:
+            footnotes.append(appendix)
+        footnotes.append(parsha)
+
+    book.append(footnotes)
+
 
     book.validate()
     index = {
-        "schema": book.serialize(),
         "title": "Midrash Tanchuma Buber",
-        "categories": ["Midrash", "Midrash Tanchuma"]
+        "schema": book.serialize(),
+        "categories": ["Midrash"]
     }
     post_index(index)
-
+    return en_parshiot
 
 
 def parse(text_arr):
     assert type(text_arr) is list
     for index, text in enumerate(text_arr):
         text_arr[index] = text_arr[index].replace("<bold>", "<b>").replace("<italic>", "<i>").replace("</bold>", "</b>").replace("</italic>", "</i>")
+        text_arr[index] = text_arr[index].replace("<li>", "<br>").replace("</li>", "")
+        text_arr[index] = text_arr[index].replace("3465", "&lt;").replace("3467", "&gt;")
         xref_start = re.findall("<xref.*?>", text_arr[index])
         xref_end = re.findall("</xref.*?>", text_arr[index])
         xrefs = xref_start + xref_end
@@ -73,10 +94,14 @@ def parse(text_arr):
     return text_arr
 
 
+
+def modifyBeforeBleach(text):
+    return text.replace("&#x003C;", "3465").replace("&#x003E;", "3467")
+
 if __name__ == "__main__":
     import csv
-    en_parshiot = []
-    he_parshiot = []
+    print 'got here'
+    en_he_parshiot = [("Introduction", u"הקדמה")]
     with open("../../../Sefaria-Project/data/tmp/parsha.csv") as parsha_file:
         parshiot = csv.reader(parsha_file)
         parshiot.next()
@@ -86,40 +111,40 @@ if __name__ == "__main__":
             if en == "Lech-Lecha":
                 en = "Lech Lecha"
             he = he.decode('utf-8')
-            en_parshiot.append(en)
-            he_parshiot.append(he)
+            en_he_parshiot.append((en, he))
+
+
     post_info = {}
-    post_info["versionTitle"] = "Midrash Tanhuma-Yelammedenu, trans. Samuel A. Berman"
-    post_info["versionSource"] = "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001350458"
     post_info["language"] = "en"
     post_info["server"] = sys.argv[2]
-    allowed_tags = ["book", "volume", "intro", "foreword", "part", "chapter", "p", "ftnote", "title"]
+    allowed_tags = ["book", "volume", "intro", "foreword", "part", "chapter", "p", "ftnote", "title", "ol"]
     allowed_attributes = ["id"]
+    grab_title_lambda = lambda x: x[0].tag == "title"
+    p = re.compile("\d+a?\.")
+    reorder_test_lambda = lambda x: x.tag == "title" and p.match(x.text) is not None
+    def reorder_modify(text):
+        text = text.split(" ")[0]
+        if text.split(".")[-1] == "":
+            return text.split(".")[0]
+        else:
+            return text.split(".")[-1]
+
+
     if sys.argv[1] == "Buber":
+        title = "Midrash Tanchuma Buber"
+        en_parshiot = create_schema(en_he_parshiot)
         file_name = "buber.xml"
-        titles = ["Midrash Tanchuma Buber, Volume One", "Midrash Tanchuma Buber, Volume Two", "Midrash Tanchuma Buber, Volume Three"]
-        create_schema(en_parshiot, he_parshiot)
-        for title in titles:
-            tanhuma = XML_to_JaggedArray(title, file_name, allowed_tags, allowed_attributes, post_info, en_parshiot)
-            grab_title_lambda = lambda x: x[0].tag == "title"
-            p = re.compile("\d+\.")
-            reorder_test_lambda = lambda x: x.tag != "ftnote" and p.match(x.text) is not None
-            def reorder_modify(text):
-                return text.split(" ")[0].replace(".", "")
-            tanhuma.set_funcs(parse, grab_title_lambda, reorder_test_lambda, reorder_modify)
-            tanhuma.run()
+        post_info["versionTitle"] = "Midrash Tanhuma, S. Buber Recension; trans. by John T. Townsend, 1989."
+        post_info["versionSource"] = "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001095601"
     else:
-        en_parshiot.insert(0, "Foreword")
-        en_parshiot.insert(1, "Introduction")
-        he_parshiot.insert(0, u"פתח דבר")
-        he_parshiot.insert(1, u"הקדמה")
+        post_info["versionTitle"] = "Midrash Tanhuma-Yelammedenu, trans. Samuel A. Berman"
+        post_info["versionSource"] = "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001350458"
+        en_he_parshiot.insert(0, ("Foreword", u"פתח דבר"))
+        en_he_parshiot.insert(1, ("Introduction", u"הקדמה"))
         file_name = "Midrash-Tanhuma-Yelammedenu.xml"
         title = "Complex Midrash Tanchuma"
-        tanhuma = XML_to_JaggedArray(title, file_name, allowed_tags, allowed_attributes, post_info, en_parshiot)
-        grab_title_lambda = lambda x: x[0].tag == "title"
-        p = re.compile("\d+\.")
-        reorder_test_lambda = lambda x: x.tag != "ftnote" and p.match(x.text) is not None
-        def reorder_modify(text):
-            return text.split(" ")[0].replace(".", "")
-        tanhuma.set_funcs(parse, grab_title_lambda, reorder_test_lambda, reorder_modify)
-        tanhuma.run()
+
+    could_be_en_parshiot = [list(x) for x in zip(*en_he_parshiot)][0]
+    tanhuma = XML_to_JaggedArray(title, file_name, allowed_tags, allowed_attributes, post_info, en_parshiot)
+    tanhuma.set_funcs(parse, grab_title_lambda, reorder_test_lambda, reorder_modify, modifyBeforeBleach)
+    tanhuma.run()
