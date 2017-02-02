@@ -276,7 +276,10 @@ def fix_commentator_by_page(filename, commentator, overwrite=False):
                      for match in matches['matches']]
 
         for location, phrase in zip(locations, phrases_by_page[page]):
-            phrase.subchap = page_map[page]['chpt-vrs'][location]
+            if location == -1:
+                phrase.subchap = '0'
+            else:
+                phrase.subchap = page_map[page]['chpt-vrs'][location]
 
     if not overwrite:
         filename += '_test'
@@ -357,7 +360,7 @@ def clean_export(root_tag, filename):
     temp_file.close()
     out_text = out_text.replace(u' xmlns:t="http://www.w3.org/namespace/"', u'')
     out_text = out_text.replace(u't:', u'')
-    out_text = re.sub(ur'^\n', u'', out_text)
+    out_text = re.sub(ur'^\n+', u'\n', out_text)
     out_text = re.sub(ur' +', u' ', out_text)
     out_text = re.sub(ur'\n ', u'\n', out_text)
 
@@ -367,8 +370,48 @@ def clean_export(root_tag, filename):
         outfile.write(out_text)
 
 
-# commentators = [u'כסא רחמים', u'בנין יהושע', u'הגהות מהריעב״ץ']
-# for commentator in commentators:
-#     fix_commentator('tractate-avot_drabi_natan-xml2', commentator, overwrite=True)
-# fix_commentator('tractate-avot_drabi_natan-xml2', u'בנין יהושע', overwrite=False)
+def unmatched_comments(filename, commentator):
+
+    def get_phrase_page(phrase_id):
+        return re.search(u'ph-[0-9]{1,2}-([0-9A-Z]{1,3})-[0-9]{1,2}', phrase_id).group(1)
+
+    issues = []
+    root = DCXMLsubs.parse(filename, silence=True)
+    commentary = root.body.commentaries.get_commentary()[get_commentary_index(root, commentator)]
+    for chapter in commentary.get_chapter():
+        for phrase in chapter.get_phrase():
+            if phrase.subchap == '0':
+                issues.append({
+                    'page': get_phrase_page(phrase.id),
+                    'dh': phrase.dh.get_valueOf_(),
+                    'id': phrase.id
+                })
+    with open(u'{} on {} issues.csv'.format(commentator, root.id), 'w') as outfile:
+        writer = csv.DictWriter(outfile, ['id', 'page', 'dh', 'chapter', 'verse'])
+        writer.writeheader()
+        writer.writerows(issues)
+
+# commentators = [u'כסא רחמים', u'הגהות מהריעב״ץ', u'תומת ישרים']
+# for com in commentators:
+#     unmatched_comments('XML/tractate-avot_drabi_natan-xml3.xml', com)
+
+def clear_subchaps(filename, commentator, chap_number=None, overwrite=False):
+    def condition(chapter_element):
+        if chap_number is None:
+            return True
+        else:
+            return int(chapter_element.num) == chap_number
+
+    root = DCXMLsubs.parse(filename, silence=True)
+    commentary = root.body.commentaries.get_commentary()[get_commentary_index(root, commentator)]
+    for chapter in commentary.get_chapter():
+        if condition(chapter):
+            for phrase in chapter.get_phrase():
+                phrase.subchap = None
+
+    if not overwrite:
+        filename = filename.replace('.xml', '_test.xml')
+    clean_export(root, filename)
+
+
 
