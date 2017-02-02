@@ -414,4 +414,44 @@ def clear_subchaps(filename, commentator, chap_number=None, overwrite=False):
     clean_export(root, filename)
 
 
+def correct_commentary_chapters(filename, commentator_name, overwrite=False):
+    """
+    Commentaries that do not have a correct chapter breakup are matched "by page". These commentaries do have have the
+    subchaps set in the "ch<n>-v<m>" format once the alignment is complete. This method seeks to correctly place the
+    chapter elements, as well as set the phrase "subchap" attribute to a simple integer (in str format).
+    :param filename:
+    :param commentator_name:
+    :param overwrite:
+    """
+    with open(filename) as infile:
+        soup = BeautifulSoup(infile, 'xml')
+    commentator = soup.find(lambda x: x.name=='commentary' and x.author.get_text()==commentator_name)
+    assert isinstance(commentator, Tag)
 
+    for phrase in commentator.find_all('phrase'):
+        match = re.search('ch([0-9]{1,2})-v([0-9]{1,2})', phrase.attrs['subchap'])
+        chapter, verse = match.group(1), match.group(2)
+        phrase.attrs['subchap'] = verse
+
+        # if this phrase in in the correct chapter, we can move on to the next one
+        if phrase.parent['num'] == chapter:
+            continue
+
+        # does the correct chapter even exist?
+        correct_chapter = commentator.find(lambda x: x.name=='chapter' and x['num']==chapter)
+
+        if correct_chapter is None:
+            correct_chapter = soup.new_tag(name='chapter', num=chapter)
+            chapters = commentator.find_all('chapter', recursive=False)
+            insert_location = bisect.bisect([int(c['num']) for c in chapters], int(chapter))
+            if insert_location == len(chapters):
+                chapters[-1].insert_after(correct_chapter)
+            else:
+                chapters[insert_location].insert_before(correct_chapter)
+
+        correct_chapter.append(phrase)
+
+    if not overwrite:
+        filename = filename.replace('.xml', '_test.xml')
+    with codecs.open(filename, 'w', 'utf-8') as outfile:
+        outfile.write(unicode(soup))
