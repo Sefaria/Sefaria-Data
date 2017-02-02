@@ -265,6 +265,13 @@ class commentariesSub(supermod.commentaries):
     def is_linked_commentary(self, commentary):
         return self.linked[commentary.get_author()]
 
+    def check_marked_phrases(self):
+        for commentary in self.get_commentary():
+            if commentary.get_author() == 'UNKNOWN':
+                continue
+            if not self.is_linked_commentary(commentary):
+                commentary.check_marked_phrases()
+
 supermod.commentaries.subclass = commentariesSub
 # end class commentariesSub
 
@@ -388,6 +395,11 @@ class commentarySub(supermod.commentary):
                 pages[page_num].append(phrase)
         return pages
 
+    def check_marked_phrases(self):
+        for chapter in self.get_chapter():
+            if not chapter.check_marked_phrases():
+                print u'Unmarked phrase in {} chapter {}'.format(self.get_author(), chapter.num)
+
 supermod.commentary.subclass = commentarySub
 # end class commentarySub
 
@@ -443,6 +455,9 @@ class chapterSub(supermod.chapter):
             current_boundary[-1] == len(phrases) - 1
             boundaries.append(current_boundary)
         return boundaries
+
+    def check_marked_phrases(self):
+        return all([phrase.marked_subchap() for phrase in self.get_phrase()])
 
     def correct_phrase_verses(self):
         boundaries = self._get_verse_boundaries()
@@ -541,6 +556,14 @@ class phraseSub(supermod.phrase):
         formatted = re.sub(u' +', u' ', formatted)
         formatted = re.sub(ur' (:|\.)', ur'\1', formatted)
         return formatted
+
+    def marked_subchap(self):
+        if self.subchap is None:
+            return False
+        elif self.subchap == '0':
+            return False
+        else:
+            return True
 
 supermod.phrase.subclass = phraseSub
 # end class phraseSub
