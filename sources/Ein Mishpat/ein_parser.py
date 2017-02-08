@@ -375,18 +375,16 @@ class TurSh(object):
                             seif = getGematriaVav(str_it.next(), mass)
                     elif self.check_uno(book_sa, siman):
                         seif = 1
+                    # else:
                     else:
-                        if only_tur:
-                            resolved_tur = self.parse_tur(book_sa, siman) #todo: note: might be an issue with None, None to this file
-                            return resolved_tur
-                        else:
-                            # mass.ErrorFile.write(u'error tsh, missing seif')
-                            mass.write_shgia(u'error tsh, missing seif')
-                            if mass.error_flag:
-                                mass.error_flag = [mass.error_flag, u'error tsh, missing seif']
+                        # mass.ErrorFile.write(u'error tsh, missing seif')
+                        mass.write_shgia(u'error tsh, missing seif')
+                        if mass.error_flag:
+                            mass.error_flag = [mass.error_flag, u'error tsh, missing seif']
                             print u'error tsh, missing seif'
 
                             return
+
                 elif re.search(reg_seif, word):
                     to_res = True
                     if re.search(reg_combined, word):
@@ -398,6 +396,8 @@ class TurSh(object):
                     if not re.search(reg_sham, word):
                         seif = getGematriaVav(word, mass)
                         to_res = True
+                else:
+                    getGematriaVav(word, mass)
                     # try:
                     #     next = str_it.next()
                     #     flag_next = True
@@ -406,13 +406,17 @@ class TurSh(object):
                     # if flag_next and (re.search(reg_siman, next) or re.search(reg_seif, next)): # but not with a Vav...
                     #     to_res = False
                 if to_res:
-                    resolved_sa = self._tracker_sa.resolve(book_sa, [siman, seif])
-                    # don't type in the same resolved tur twice... (when there is citations to 2 seifim in the same siman it is twice one citation in the tur, no need)
-                    if resolved_tur != self._tracker_tur.resolve(self._tur_table[book_sa], [siman]): # self._tracker_tur._last_ref: #
-                        resolved_tur = self._tracker_tur.resolve(self._tur_table[book_sa], [siman])
-                        resolveds.append(resolved_tur)
+                    if only_tur:
+                        resolved_tur = self.parse_tur(book_sa,siman)  # todo: note: might be an issue with None, None to this file
+                        resolveds.extend(resolved_tur)
+                    else:
+                        resolved_sa = self._tracker_sa.resolve(book_sa, [siman, seif])
+                        # don't type in the same resolved tur twice... (when there is citations to 2 seifim in the same siman it is twice one citation in the tur, no need)
+                        if resolved_tur != self._tracker_tur.resolve(self._tur_table[book_sa], [siman]): # self._tracker_tur._last_ref: #
+                            resolved_tur = self._tracker_tur.resolve(self._tur_table[book_sa], [siman])
+                            resolveds.append(resolved_tur)
 
-                    resolveds.append(resolved_sa)
+                            resolveds.append(resolved_sa)
             if not resolveds:
                 resolveds.append(self._tracker_sa.resolve(book_sa, [siman, seif]))
                 #note: todo: fix! repeting code!!!
@@ -454,7 +458,6 @@ class Rambam(object):
         reg2 = u'''({}|{}|שם)'''.format(reg21,reg22)  # before the halacha
         reg_double_cit = u''' (ופ'|ופ[א-ת]?"[א-ת]|ופרק)'''
         reg_for_book = ur'''{} (.+?){}'''.format(reg1,reg2)
-        cit = []
 
         # check for multiple citation
         multiple = re.search(reg_double_cit, str)
@@ -492,10 +495,12 @@ class Rambam(object):
         # halacha
         halacha = re.search(u'''{} (.+)'''.format(reg2), str) or re.search(u'''{}'''.format(reg22), str)
         if halacha:
-            hal21 = re.search(u'''({}) (.+)'''.format(reg21), str)
+            hal21 = re.search(u'''({}) (.*)'''.format(reg21), str)  # todo: important! befor it was .+ what did this change ruin
             hal22 = re.search(u'''הל?([א-ת]?"[א-ת])''', str)
             if hal21:
                 halacha = hal21.group(2)
+                if not halacha:
+                    mass.write_shgia(u'error mim, No halacha stated')
             elif hal22:
                 halacha = hal22.group(1)
             elif re.search(u'שם', str):
@@ -766,7 +771,7 @@ def run1(massechet_he = None, massechet_en = None):
 def run2(massechet_he=None, massechet_en=None):
     fromCSV(u'{}.csv'.format(massechet_he), u'{}.txt'.format(massechet_en))  # reads from fixed ביצה.csv to egg.txt
     parse2 = parse_em(u'{}.txt'.format(massechet_en),2, u'{}_error'.format(massechet_en))  # egg.txt to screen output
-    toCSV(u'{}_done.csv'.format(massechet_en), parse2)  # write final to egg_done.csv
+    toCSV(u'{}_done'.format(massechet_en), parse2)  # write final to egg_done.csv
 
 
 def write_errfile(filename):
@@ -799,11 +804,12 @@ if __name__ == "__main__":
     #              u'kidushin',u'rh', u'shvuot', u'shabbat']
     # for m_en, m_he in zip(filenames_eg, filenames_he):
     #     parsed = run1(massechet_he=m_he, massechet_en= m_en)
-    #     parsed = run2(massechet_he=m_he, massechet_en= m_en)
+    #     # parsed = run2(massechet_he=m_he, massechet_en= m_en)
     # parsed = run(massechet_he=u'בבא מציעא')
-    # filenames_he = [ u'חגיגה']#, u'מכות', u'נזיר', u'סוטה', u'סוכה']
+    # filenames_he = [u'חגיגה']#, u'מכות', u'נזיר', u'סוטה', u'סוכה']
     # filenames_en =  [ u'hagiga']#, u'makot', u'nazir', u'sota', u'sukka']
     # for fh, fe in zip(filenames_he, filenames_en):
     #     parsed = run2(massechet_he=fh, massechet_en= fe)
-    parsed = run1(massechet_he=u'בבא מציעא', massechet_en=u'bm')
+    # parse1 = parse_em(u'נדרים.txt', 1, 'nedarim_error')
+    parsed2 = run2(massechet_he=u'מועד קטן', massechet_en=u'moed')
     print 'done'
