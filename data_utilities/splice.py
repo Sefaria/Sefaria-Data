@@ -883,6 +883,7 @@ class SplitSegmentGroup(object):
                                                  )["matches"]
                     except TypeError:
                         print "match_text() error: {} {} {}".format(commentator_name, merged_text_chunk._oref.normal(), words)
+                        continue
                     placements = [bisect.bisect_right(breaks, w[0]) for w in word_ranges]
 
                     # Check if there are any manual overrides for these comments
