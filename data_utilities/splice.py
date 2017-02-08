@@ -875,11 +875,14 @@ class SplitSegmentGroup(object):
                     potential_placements = [u" ".join(words[a:b]) for a, b in subsegs]
 
                     # match_text returns [(start,end)...] - we're  using just the start word to make our judgement
-                    word_ranges = match_text(words,
-                                             merged_text_chunk.text[i],
-                                             dh_extract_method=dh_extract_method,
-                                             place_all=True
-                                             )["matches"]
+                    try:
+                        word_ranges = match_text(words,
+                                                 merged_text_chunk.text[i],
+                                                 dh_extract_method=dh_extract_method,
+                                                 place_all=True
+                                                 )["matches"]
+                    except TypeError:
+                        print "match_text() error: {} {} {}".format(commentator_name, merged_text_chunk._oref.normal(), words)
                     placements = [bisect.bisect_right(breaks, w[0]) for w in word_ranges]
 
                     # Check if there are any manual overrides for these comments
