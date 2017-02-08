@@ -187,7 +187,8 @@ class bookSub(supermod.book):
     def get_base_verses(self):
         return self.body.get_base_verses()
 
-
+    def check_base_verse_order(self):
+        self.body.check_verse_order()
 
 supermod.book.subclass = bookSub
 # end class bookSub
@@ -229,6 +230,19 @@ class bodySub(supermod.body):
             verses.extend(chapter.get_verse())
         return verses
 
+    def check_verse_order(self):
+        no_issues = True
+        issues = [chapter.check_verse_order() for chapter in self.get_chapter()]
+        for chap_index, chapter in enumerate(issues):
+            if len(chapter) == 0:
+                continue
+            else:
+                no_issues = False
+            for issue in chapter:
+                print "Skip found at Chapter {} verse {}".format(chap_index+1, issue)
+        if no_issues:
+            print "All verses in correct order"
+
 supermod.body.subclass = bodySub
 # end class bodySub
 
@@ -250,6 +264,13 @@ class commentariesSub(supermod.commentaries):
 
     def is_linked_commentary(self, commentary):
         return self.linked[commentary.get_author()]
+
+    def check_marked_phrases(self):
+        for commentary in self.get_commentary():
+            if commentary.get_author() == 'UNKNOWN':
+                continue
+            if not self.is_linked_commentary(commentary):
+                commentary.check_marked_phrases()
 
 supermod.commentaries.subclass = commentariesSub
 # end class commentariesSub
@@ -374,6 +395,11 @@ class commentarySub(supermod.commentary):
                 pages[page_num].append(phrase)
         return pages
 
+    def check_marked_phrases(self):
+        for chapter in self.get_chapter():
+            if not chapter.check_marked_phrases():
+                print u'Unmarked phrase in {} chapter {}'.format(self.get_author(), chapter.num)
+
 supermod.commentary.subclass = commentarySub
 # end class commentarySub
 
@@ -430,6 +456,9 @@ class chapterSub(supermod.chapter):
             boundaries.append(current_boundary)
         return boundaries
 
+    def check_marked_phrases(self):
+        return all([phrase.marked_subchap() for phrase in self.get_phrase()])
+
     def correct_phrase_verses(self):
         boundaries = self._get_verse_boundaries()
         phrases = self.get_phrase()
@@ -468,6 +497,16 @@ class chapterSub(supermod.chapter):
                 phrase.subchap = current_subchap
             else:
                 current_subchap = phrase.subchap
+
+    def check_verse_order(self):
+        previous_verse = 0
+        issues = []
+        for verse in self.get_verse():
+            current_verse = int(re.search('ch[0-9]{1,2}-v([0-9]{1,2})', verse.num).group(1))
+            if current_verse - previous_verse != 1:
+                issues.append(current_verse)
+            previous_verse = current_verse
+        return issues
 
 
 supermod.chapter.subclass = chapterSub
@@ -517,6 +556,14 @@ class phraseSub(supermod.phrase):
         formatted = re.sub(u' +', u' ', formatted)
         formatted = re.sub(ur' (:|\.)', ur'\1', formatted)
         return formatted
+
+    def marked_subchap(self):
+        if self.subchap is None:
+            return False
+        elif self.subchap == '0':
+            return False
+        else:
+            return True
 
 supermod.phrase.subclass = phraseSub
 # end class phraseSub

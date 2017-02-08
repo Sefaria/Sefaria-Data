@@ -226,7 +226,7 @@ def getHebrewTitle(sefer, SEFARIA_SERVER='http://www.sefaria.org/'):
    return data['heTitle']
 
 
-def removeAllStrings(orig_string, array = ['@', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0']):	
+def removeAllTags(orig_string, array = ['@', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0']):
     for unwanted_string in array:
         orig_string = orig_string.replace(unwanted_string, "")
     return orig_string
@@ -319,8 +319,8 @@ def weak_connection(func):
 
 
 @weak_connection
-def post_index(index):
-    url = SEFARIA_SERVER+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
+def post_index(index, server=SEFARIA_SERVER):
+    url = server+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
     indexJSON = json.dumps(index)
     values = {
         'json': indexJSON,
@@ -503,9 +503,9 @@ def post_flags(version, flags):
             errors.write(e.read())
 
 
-def get_index(ref):
+def get_index(ref, server='http://www.sefaria.org'):
     ref = ref.replace(" ", "_")
-    url = 'http://www.sefaria.org/api/v2/raw/index/'+ref
+    url = server+'/api/v2/raw/index/'+ref
     req = urllib2.Request(url)
     response = urllib2.urlopen(req)
     data = json.load(response)
