@@ -518,6 +518,10 @@ class Rambam(object):
         # print book, (perek, halacha)
         # resolved = self._tracker.resolve(book, [perek, halacha])
             resolved = [self._tracker.resolve(book, [perek, hal]) for hal in halacha]
+            # if len(filter(lambda x: re.search(u'error', x.tref), resolved)) > 0:
+            # if len([item for item in resolved if isinstance(resolved[0][0], basestring)]) > 0:
+            if len([item for item in resolved if not isinstance(item, Ref)]) > 0:
+                mass.write_shgia(u'error from ibid in Ref or table none problem')
         else:  # halacha was sham
             if perek and book and not re.search(u'שם', str):
                 # mass.ErrorFile.write('error mim, No halacha stated')
@@ -752,13 +756,17 @@ def fromCSV(fromcsv, newfile):
             f.write(row[u'original'].strip() + u'\n')
 
 
-def run(massechet_he = None, massechet_en = None):
+#  run to create csv for QA
+def run1(massechet_he = None, massechet_en = None):
     parse1 = parse_em(u'{}.txt'.format(massechet_he), 1, '{}_error'.format(massechet_en))  # reades from ביצה.txt to screen output
     toCSV(massechet_he, parse1)  # writes to ביצה.csv
-    # fromCSV(u'{}.csv'.format(massechet_he), u'{}.txt'.format(massechet_en))  # reads from fixed ביצה.csv to egg.txt
-    # parse2 = parse_em(u'{}.txt'.format(massechet_en),2)  # egg.txt to screen output
-    # toCSV(u'{}_done.csv'.format(massechet_en), parse2)  # write final to egg_done.csv
-    return parse1
+
+
+#  run to create the csv after first run of QA to get talmud matching
+def run2(massechet_he=None, massechet_en=None):
+    fromCSV(u'{}.csv'.format(massechet_he), u'{}.txt'.format(massechet_en))  # reads from fixed ביצה.csv to egg.txt
+    parse2 = parse_em(u'{}.txt'.format(massechet_en),2, u'{}_error'.format(massechet_en))  # egg.txt to screen output
+    toCSV(u'{}_done.csv'.format(massechet_en), parse2)  # write final to egg_done.csv
 
 
 def write_errfile(filename):
@@ -783,14 +791,19 @@ def write_errfile(filename):
 
 if __name__ == "__main__":
     # test = parse_em('test.txt')
-    filenames_he = [u'בבא מציעא', u'בבא בתרא', u'ראש השנה', u'ביצה', u'ברכות', u'גיטין', u'חגיגה', u'יבמות', u'יומא',
-                 u'כתובות', u'מועד קטן', u'מכות', u'נדרים', u'נזיר', u'סוטה', u'סוכה', u'סנהדרין', u'עירובין', u'פסחים',
-                 u'קידושין',u'ראש השנה', u'שבועות', u'שבת']
-    filenames_eg = [u'bm', u'bb', u'rh', u'egg', u'brachot', u'gittin', u'hagiga', u'yevamot', u'yoma',
-                 u'ktobot', u'moed', u'makot', u'nedarim', u'nazir', u'sota', u'sukka', u'sanhedrim', u'eruvin', u'pesachim',
-                 u'kidushin',u'rh', u'shvuot', u'shabbat']
-    for m_en, m_he in zip(filenames_eg, filenames_he):
-        parsed = run(massechet_he=m_he, massechet_en= m_en)
+    # filenames_he = [u'בבא מציעא', u'בבא בתרא', u'ראש השנה', u'ביצה', u'ברכות', u'גיטין', u'חגיגה', u'יבמות', u'יומא',
+    #              u'כתובות', u'מועד קטן', u'מכות', u'נדרים', u'נזיר', u'סוטה', u'סוכה', u'סנהדרין', u'עירובין', u'פסחים',
+    #              u'קידושין',u'ראש השנה', u'שבועות', u'שבת']
+    # filenames_eg = [u'bm', u'bb', u'rh', u'egg', u'brachot', u'gittin', u'hagiga', u'yevamot', u'yoma',
+    #              u'ktobot', u'moed', u'makot', u'nedarim', u'nazir', u'sota', u'sukka', u'sanhedrim', u'eruvin', u'pesachim',
+    #              u'kidushin',u'rh', u'shvuot', u'shabbat']
+    # for m_en, m_he in zip(filenames_eg, filenames_he):
+    #     parsed = run1(massechet_he=m_he, massechet_en= m_en)
+    #     parsed = run2(massechet_he=m_he, massechet_en= m_en)
     # parsed = run(massechet_he=u'בבא מציעא')
-    # parsed = run(massechet_he=u'שבת', massechet_en= 'shabbat')
+    # filenames_he = [ u'חגיגה']#, u'מכות', u'נזיר', u'סוטה', u'סוכה']
+    # filenames_en =  [ u'hagiga']#, u'makot', u'nazir', u'sota', u'sukka']
+    # for fh, fe in zip(filenames_he, filenames_en):
+    #     parsed = run2(massechet_he=fh, massechet_en= fe)
+    parsed = run1(massechet_he=u'בבא מציעא', massechet_en=u'bm')
     print 'done'
