@@ -551,36 +551,17 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
     if with_abbrev_matches, dict also contains "abbrevs", list of AbbrevMatches
     if place_all, dict also contains "fixed", list of bools for each comment. True if comment originally didn't match, but later was matched b/c the comments around it were matched
     """
-    bas_word_list = [] #re.split(r"\s+"," ".join(base_text.text))
-    base_depth = base_text.ja().depth()
+
+    bas_word_list = [w for seg in base_text.ja().flatten_to_array() for w in base_tokenizer(seg)]
+    if len(bas_word_list) == 0:
+        raise IndexError("No text in base_text after applying base_tokenizer()")
     bas_ind_list,bas_ref_list,total_len = base_text.text_index_map(base_tokenizer)
 
-    if base_depth == 1:
-        for segment in base_text.text:
-            bas_word_list += base_tokenizer(segment)
-    elif base_depth == 2:
-        for section in base_text.text:
-            for segment in section:
-                bas_word_list += base_tokenizer(segment)
 
     #get all non-empty segment refs for 'comments'
     if type(comments) == TextChunk:
-        comm_ref = comments._oref
-        comm_depth = comm_ref.get_state_ja("he").depth()
-        if comm_depth == 1:
-            comment_list = comments.text
-            _, comment_ref_list, _ = comments.text_index_map(base_tokenizer)
-
-        elif comm_depth == 2:
-            _, comment_ref_list, _ = comments.text_index_map(base_tokenizer)
-            #sub_ja = comm_ref.get_state_ja("he").subarray_with_ref(comm_ref)
-            #comment_ref_list = [comm_ref.subref(i + 1) for k in sub_ja.non_empty_sections() for i in k]
-            comment_list = [temp_comm for temp_comm in comments.text]
-        elif comm_depth == 3:
-            _, comment_ref_list, _ = comments.text_index_map(base_tokenizer)
-            comment_list = [temp_comm for temp_sec in comments.text for temp_comm in temp_sec]
-        else:
-            raise TypeError("'comments' as a TextChunk needs to be either depth 2 or 3. You passed depth {}".format(comm_depth))
+        comment_list = comments.ja().flatten_to_array()
+        _, comment_ref_list, _ = comments.text_index_map(base_tokenizer)
 
         if rashi_filter:
             filter_out = filter(lambda x: rashi_filter(x[0]) if rashi_filter(x[0]) else None,zip(comment_list,comment_ref_list))

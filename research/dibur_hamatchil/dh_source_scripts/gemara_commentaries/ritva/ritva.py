@@ -24,7 +24,7 @@ def dh_extraction_method(s):
         bold = bold_list[0] if u'פרק' not in bold_list[0] else bold_list[1]
         if u"וכו'" in bold:
             bold = bold[:bold.index(u"וכו'")]
-        if u"כו'" in bold:
+        elif u"כו'" in bold:
             bold = bold[:bold.index(u"כו'")]
         bold = re.sub(ur'[\,\.\:\;]',u'',bold)
         return bold
