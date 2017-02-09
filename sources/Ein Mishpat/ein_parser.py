@@ -375,14 +375,12 @@ class TurSh(object):
                             seif = getGematriaVav(str_it.next(), mass)
                     elif self.check_uno(book_sa, siman):
                         seif = 1
-                    # else:
-                    else:
+                    elif not only_tur:
                         # mass.ErrorFile.write(u'error tsh, missing seif')
                         mass.write_shgia(u'error tsh, missing seif')
                         if mass.error_flag:
                             mass.error_flag = [mass.error_flag, u'error tsh, missing seif']
                             print u'error tsh, missing seif'
-
                             return
 
                 elif re.search(reg_seif, word):
@@ -448,13 +446,13 @@ class Rambam(object):
 
     def parse_rambam(self, str, mass): # these will be aoutomatic from the privates of the object (Rambam)
         logging.debug('This message should go to the log file')
+        re.sub(u'''יוה"כ''', u'יום הכיפורים', str)
         reg1 = u'''(מהל|מהלכות|מהל'|מהלכו'|מה')'''  # מהלכות before the book name
         reg21 = u''' ו?הלכה| ו?הל'?| ו?הלכ'?| ו?דין'''
         # reg22 = u''' ה"[א-ת]'''
         reg22 = u'''ו?הל?([א-ת]?"[א-ת])'''
         combi = re.search(reg22, str)
-        if combi:
-            str = re.sub(reg22, u'הלכה {}'.format(ur'\1'), str)
+
         reg2 = u'''({}|{}|שם)'''.format(reg21,reg22)  # before the halacha
         reg_double_cit = u''' (ופ'|ופ[א-ת]?"[א-ת]|ופרק)'''
         reg_for_book = ur'''{} (.+?){}'''.format(reg1,reg2)
@@ -486,11 +484,15 @@ class Rambam(object):
             except:
                 print "error mim, couldn't find this book name in table", book
                 mass.error_flag = "error mim, couldn't find this book name in table"
+                mass.write_shgia("error mim, couldn't find this book name in table" + book)
         # perek
         perek = re.search(u'''פרק ([א-ת]"?[א-ת]?)|פ([א-ת]?"[א-ת])|ופ' ([א-ת]"?[א-ת]?)''', str)
         if perek:
             perek = perek.group(1) or perek.group(2) or perek.group(3)
             perek = getGematriaVav(perek, mass)
+
+        if combi:
+            str = re.sub(reg22, u'הלכה {}'.format(ur'\1'), str)
 
         # halacha
         halacha = re.search(u'''{} (.+)'''.format(reg2), str) or re.search(u'''{}'''.format(reg22), str)
@@ -769,9 +771,16 @@ def run1(massechet_he = None, massechet_en = None):
 
 #  run to create the csv after first run of QA to get talmud matching
 def run2(massechet_he=None, massechet_en=None):
-    fromCSV(u'{}.csv'.format(massechet_he), u'{}.txt'.format(massechet_en))  # reads from fixed ביצה.csv to egg.txt
-    parse2 = parse_em(u'{}.txt'.format(massechet_en),2, u'{}_error'.format(massechet_en))  # egg.txt to screen output
+    fromCSV(u'{}1.csv'.format(massechet_he), u'{}1.txt'.format(massechet_en))  # reads from fixed ביצה.csv to egg.txt
+    parse2 = parse_em(u'{}1.txt'.format(massechet_en),2, u'{}1_error'.format(massechet_en))  # egg.txt to screen output
     toCSV(u'{}_done'.format(massechet_en), parse2)  # write final to egg_done.csv
+
+
+def run15(massechet_he=None, massechet_en=None):
+    fromCSV(u'{}2.csv'.format(massechet_he), u'{}1.txt'.format(massechet_he))  # reads from fixed ביצה.csv to egg.txt
+    parse1 = parse_em(u'{}1.txt'.format(massechet_he),1, u'{}1_error'.format(massechet_en))  # egg.txt to screen output
+    toCSV(u'{}2'.format(massechet_he), parse1)
+    return parse1
 
 
 def write_errfile(filename):
@@ -796,20 +805,24 @@ def write_errfile(filename):
 
 if __name__ == "__main__":
     # test = parse_em('test.txt')
-    # filenames_he = [u'בבא מציעא', u'בבא בתרא', u'ראש השנה', u'ביצה', u'ברכות', u'גיטין', u'חגיגה', u'יבמות', u'יומא',
-    #              u'כתובות', u'מועד קטן', u'מכות', u'נדרים', u'נזיר', u'סוטה', u'סוכה', u'סנהדרין', u'עירובין', u'פסחים',
-    #              u'קידושין',u'ראש השנה', u'שבועות', u'שבת']
-    # filenames_eg = [u'bm', u'bb', u'rh', u'egg', u'brachot', u'gittin', u'hagiga', u'yevamot', u'yoma',
-    #              u'ktobot', u'moed', u'makot', u'nedarim', u'nazir', u'sota', u'sukka', u'sanhedrim', u'eruvin', u'pesachim',
-    #              u'kidushin',u'rh', u'shvuot', u'shabbat']
+    # filenames_he = [u'בבא מציעא', u'בבא בתרא', u'ראש השנה', u'ברכות', u'גיטין',  u'יבמות', u'יומא',
+    #              u'כתובות', u'מועד קטן',  u'נדרים',   u'סנהדרין', u'עירובין', u'פסחים',
+    #              u'קידושין',u'ראש השנה', u'שבועות', u'שבת']  # u'נזיר1', u'ביצה1', u'חגיגה1', u'סוכה1',u'מכות1',u'סוטה1',
+    # filenames_eg = [u'bm', u'bb', u'rh',  u'brachot', u'gittin',  u'yevamot', u'yoma',
+    #              u'ktobot', u'moed',  u'nedarim', u'sanhedrim', u'eruvin', u'pesachim',
+    #              u'kidushin',u'rh', u'shvuot', u'shabbat']  # u'nazir', u'egg', u'hagiga', u'sukka', u'makot', u'sota',
     # for m_en, m_he in zip(filenames_eg, filenames_he):
     #     parsed = run1(massechet_he=m_he, massechet_en= m_en)
-    #     # parsed = run2(massechet_he=m_he, massechet_en= m_en)
+        # parsed = run2(massechet_he=m_he, massechet_en= m_en)
     # parsed = run(massechet_he=u'בבא מציעא')
-    # filenames_he = [u'חגיגה']#, u'מכות', u'נזיר', u'סוטה', u'סוכה']
-    # filenames_en =  [ u'hagiga']#, u'makot', u'nazir', u'sota', u'sukka']
-    # for fh, fe in zip(filenames_he, filenames_en):
-    #     parsed = run2(massechet_he=fh, massechet_en= fe)
+
+    filenames_he =[u'חגיגה',u'מכות', u'נזיר', u'סוטה', u'סוכה',u'ביצה']  #
+    filenames_en = [u'hagiga', u'makot', u'nazir', u'sota', u'sukka', u'beitza']  #
+    for fh, fe in zip(filenames_he, filenames_en):
+        parsed = run15(massechet_he=u'{}'.format(fh), massechet_en=u'{}'.format(fe))
+
     # parse1 = parse_em(u'נדרים.txt', 1, 'nedarim_error')
-    parsed2 = run2(massechet_he=u'מועד קטן', massechet_en=u'moed')
+    # parsed2 = run2(massechet_he=u'סוכה', massechet_en=u'sukka')
+    # parse1 = run15(u'סוטה', u'sota')
+
     print 'done'
