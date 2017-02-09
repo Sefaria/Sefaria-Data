@@ -31,6 +31,7 @@ def get_piska_text():
             if p.a:
                 for pa in p.find_all('a'):
                     pa.string = "("+pa.string+")"
+                    pa.string = pa.string.replace("((","(").replace("))",")")
             line = ''.join(p.find_all(text=True))
             if not_blank(line):
                 p_box.append(line)
@@ -51,6 +52,7 @@ def get_perek_text():
             for pa in soup.find_all('a'):
                 if pa.string:
                     pa.string = "("+pa.string+")"
+                    pa.string = pa.string.replace("((","(").replace("))",")")
             lines = soup.find_all(text=True)
             text_lines = []
             final_lines = []
@@ -160,7 +162,6 @@ def combine_perek(perek_pasuk_pairs):
         return_string+=u"פסוק"+" "+numToHeb(pasuk_pair[0])+u"<br>"+pasuk_pair[1][1:]+u"<br>"
     return return_string[:-6]
 
-
 """useful print method to test output
    
 """
@@ -172,24 +173,27 @@ def get_parsed_text():
         print index
         print len(piskas)
         piskas[index]=piska
-    prakim = get_perek_text()[9:]
+    prakim = get_perek_text()[8:]
     #first perek asssigned manually, so as not to overwrite piskas
     piskas[116]=[combine_perek(prakim[0][1])]
     for perek in prakim[1:]:
         #give them the chapter number and find correct piska, assign perek string
         piskas[get_start_piska(perek[0])-1]=[combine_perek(perek[1])]
     return piskas
+def main():
+    pass
 
-piskas = get_parsed_text()
-for pindex, piska in enumerate(piskas):
-    for paindex, para in enumerate(piska):
-        print str(pindex)+" "+str(paindex)+" "+para
+if __name__ == "__main__":
+    piskas = get_parsed_text()
+    for pindex, piska in enumerate(piskas):
+        for paindex, para in enumerate(piska):
+            print str(pindex)+" "+str(paindex)+" "+para
 
-version = {
-    'versionTitle': 'Sifrei Devarim, Hebrew',
-    'versionSource': 'https://he.wikisource.org/wiki/%D7%A1%D7%A4%D7%A8%D7%99_%D7%A2%D7%9C_%D7%93%D7%91%D7%A8%D7%99%D7%9D',
-    'language': 'he',
-    'text': piskas
-    }
-post_text('Sifrei Devarim', version,weak_network=True)
-
+    version = {
+        'versionTitle': 'Sifrei Devarim, Hebrew',
+        'versionSource': 'https://he.wikisource.org/wiki/%D7%A1%D7%A4%D7%A8%D7%99_%D7%A2%D7%9C_%D7%93%D7%91%D7%A8%D7%99%D7%9D',
+        'language': 'he',
+        'text': piskas
+        }
+    post_text('Sifrei Devarim', version,weak_network=True)
+    main()
