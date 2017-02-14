@@ -18,3 +18,7 @@ for siman in range(1, 697): #696 simanim in O.C.
 	title = "Biur_Halacha." + str(siman)
 	name = "ביאור_הלכה_על_אורח_חיים_" + tools.numToHeb(siman)
 	tools.wikiGet("https://he.wikisource.org/w/index.php?title=%s&printable=yes" %(name), title)
+
+
+title = "Biur_Halacha_index"
+tools.wikiGet("https://he.wikisource.org/w/index.php?title=%D7%91%D7%99%D7%90%D7%95%D7%A8_%D7%94%D7%9C%D7%9B%D7%94&printable=yes", title)
