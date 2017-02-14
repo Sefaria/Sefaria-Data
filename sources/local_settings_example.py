@@ -12,13 +12,13 @@ sys.path.insert(0, p)
 from local_settings import *
 
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
-os.environ['DJANGO_SETTINGS_MODULE'] = "settings"
+os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
 from sefaria.model import *
 
 "local_settings.py" is excluded from this Git repo.
 """
 
-# In scripts you can add this value to your Python path so that you can 
+# In scripts you can add this value to your Python path so that you can
 # import from sefaria, if this path is not already set in your environment
 SEFARIA_PROJECT_PATH = "/path/your/copy/of/Sefaria-Project"
 
