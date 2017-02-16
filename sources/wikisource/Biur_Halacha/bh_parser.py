@@ -19,11 +19,8 @@ from data_utilities.util import ja_to_xml, traverse_ja
 reload(sys)
 sys.setdefaultencoding("utf-8")
 
-'''
-create dictionary of simanim:seifim
-create dictionary of seifim: jagged array of content
 
-'''
+simanim_ja = jagged_array.JaggedArray([[[]]]) #JA of Simanim[Seifim[comments]]]
 
 files = os.listdir("./pages")
 
