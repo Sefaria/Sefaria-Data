@@ -24,6 +24,10 @@ simanim_ja = jagged_array.JaggedArray([[[]]]) #JA of Simanim[Seifim[comments]]]
 
 files = os.listdir("./pages")
 
+def soupAndOpen(filename):
+    with open(filename, "r") as file:
+        page = file.read()
+        return BeautifulSoup(page)
 
 def is_titled_seif(tag):
     return tag.has_attr('title') and u"סעיף" in tag['title']
