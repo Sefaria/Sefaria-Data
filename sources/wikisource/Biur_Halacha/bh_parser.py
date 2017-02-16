@@ -3,10 +3,6 @@ import os, sys, re
 
 from bs4 import BeautifulSoup
 
-import json
-
-import sys
-
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
 
