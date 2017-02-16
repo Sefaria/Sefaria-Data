@@ -81,7 +81,6 @@ def url_to_soup(url):
     chapter_buf = cStringIO.StringIO()
     c = pycurl.Curl()
     c.setopt(c.URL, url)
-    
     c.setopt(c.WRITEFUNCTION, chapter_buf.write)
     c.perform()
     soup = BeautifulSoup(chapter_buf.getvalue(), 'html.parser')

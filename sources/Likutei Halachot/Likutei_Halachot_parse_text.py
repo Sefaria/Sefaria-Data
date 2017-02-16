@@ -40,7 +40,7 @@ def extract_text(file_input):
                 #for these dosuments, the sections titles and אתיות don't have nikudot, so we parse by finding non-nikudot paragraphs
                 #EXCEPT some random paragraphs in YD, these are dealt with with the length qualifyer
                 #as a general outline to our approach, we append paragaphs to ois's, then ois's to sections, then sections to topics
-                if True!=wordHasNekudot(paragraph) and len(paragraph)<200 and no_ignore(paragraph):
+                if "@SECTION@" in paragraph or (True!=wordHasNekudot(paragraph) and len(paragraph)<200 and no_ignore(paragraph)):
                     if "אות‏ ‏א" in paragraph:
                         continue
                     if len(ois_box)!=0:
@@ -49,17 +49,18 @@ def extract_text(file_input):
                     #if the word אות is not in the paragraph, it's a section header. If it does have the word אות, it's the begging of an ois
                     #EXCEPT second section of nederim in yoreh daya doesn't have the word אות , for that we check the length of the paragraph
                     #since all these paragraphs are less than 18 chars, and no section titles are that short (challah is the shortest, and is still included. HOWEVER, IF SECTIONS ARE MISSING I'd LOOK INTO THIS QUALIFIER, JUST TO MAKE SURE
-                    if ("‏אות" not in paragraph and len(paragraph)>17 or "@@BREAK" in paragraph) or "NEWOIS" in paragraph:
+                    if ("‏אות" not in paragraph and len(paragraph)>17 or "@@BREAK" in paragraph) or "NEWOIS" in paragraph or "@SECTION@" in paragraph:
                         if len(section_box)!=0:
                             topic_box.append(section_box)
                             section_box=[]
                         #to distinuish new topics from new sections, we keep a log of topics already parsed
                         if "NEWOIS" not in paragraph:
-                            title = extract_title(paragraph)
+                            title = extract_title(paragraph) if "@SECTION@" not in paragraph else "אונאה"
                             if not_blank(title) and not_marker(title) and "שיך" not in title and "למה‏ ‏שכתו" not in title:
                                 if "הקדמת" not in title:
                                     title = "הלכות"+" "+title.strip()
                                     title = remove_blanks(title)
+                                print "TitleT: "+title
                                 if title not in parsed_topics:
                                     #print str(index)+" "+''.join(title)
                                     if len(topic_box)!=0:
@@ -173,7 +174,7 @@ def is_not_header(s):
 def extract_title(s):
     ##remove markers
     #fix minor glitches:
-    s= s.replace("ענין‏","").replace("  "," ")
+    s= s.replace("ענין‏","").replace("  "," ").replace("@SECTION@","")
     #two entries that had a slight difference and should be together, both called birkat hatorah
     s = s.replace("\xe2\x80\x8f \xe2\x80\x8f \xe2\x80\x8f\xd7\xa7\xd7\xa8\xd7\x99\xd7\x90\xd7\xaa\xe2\x80\x8f \xe2\x80\x8f\xd7\x94\xd7\xaa\xd7\x95\xd7\xa8\xd7\x94\xe2\x80\x8f","\xe2\x80\x8f \xe2\x80\x8f\xd7\xa7\xd7\xa8\xd7\x99\xd7\x90\xd7\xaa\xe2\x80\x8f \xe2\x80\x8f\xd7\x94\xd7\xaa\xd7\x95\xd7\xa8\xd7\x94\xe2\x80\x8f")
     s.replace("U+200F","")
@@ -264,13 +265,30 @@ def remove_nekudot_from_parenthetical_statements(s):
     if len(words)>3:
         return s
     return_words = []
+    words_with_nikkud = []
+    words_without_nikkud = []
+    in_paren_count = 0
     in_paren = False
     for word in words:
         if in_paren or "(" in word:
             in_paren = True
-            return_words.append(remove_nekudot(word))
+            if word!="(":
+                in_paren_count+=1
+            words_with_nikkud.append(word)
+            words_without_nikkud.append(remove_nekudot(word))
             if ")" in word:
                 in_paren = False
+                if in_paren_count<=4:
+                    #print "this is a quote "+' '.join(words_without_nikkud)
+                    #print repr(' '.join(words_without_nikkud))
+                    for paren_word in words_without_nikkud:
+                        return_words.append(paren_word)
+                else:
+                    for paren_word in words_with_nikkud:
+                        return_words.append(paren_word)
+                in_paren_count=0
+                words_with_nikkud=[]
+                words_without_nikkud=[]
         else:
             return_words.append(word)
     return ' '.join(return_words)

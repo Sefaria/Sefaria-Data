@@ -94,13 +94,16 @@ def get_sefaria_english_parsha(parsha_name):
             highest_ratio=fuzz.ratio(parsha_name,sefaria_parsha_name)
     return return_title
 
-
-text = get_parsed_text()
-version = {
-    'versionTitle': 'Sifrei Devarim, English',
-    'versionSource': '(missing)',
-    'language': 'en',
-    'text': text
-    }
-#post_text_weak_connection('Sifrei Devarim', version)
+def main():
+    pass
+if __name__ == "__main__":
+    text = get_parsed_text()
+    version = {
+        'versionTitle': 'Sifrei Devarim, English',
+        'versionSource': '(missing)',
+        'language': 'en',
+        'text': text
+        }
+    post_text('Sifrei Devarim', version, weak_network=True)
+    main()
 
