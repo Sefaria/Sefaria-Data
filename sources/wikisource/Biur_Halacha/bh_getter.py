@@ -15,7 +15,6 @@ sys.setdefaultencoding("utf-8")
 
 
 def wikiGet(url, title):
-    print url
 
     try:
         opener = urllib2.build_opener()
