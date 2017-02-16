@@ -39,7 +39,7 @@ def getSeifNumber(txt):
     return getGematria(seif_number_he)
 
 
-def isSeifTitle(txt):
+def isSeifTitle(comment):
     return len(comment.text) < 9 and u"סעיף" in comment.text \
            or comment.name == "h3" or comment.name == "h2" or comment.name == "script"
 
