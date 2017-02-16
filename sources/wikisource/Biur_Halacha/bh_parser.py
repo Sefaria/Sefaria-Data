@@ -33,12 +33,6 @@ def is_titled_seif(tag):
     return tag.has_attr('title') and u"סעיף" in tag['title']
 
 
-def soup(filename):
-    f = open(filename, "r")
-    page = f.read()
-    f.close()
-    return BeautifulSoup(page)
-
 def getSeifNumber(txt):
     assert u"סעיף" in txt
     seif_number_he = txt.split(' ')[1]
