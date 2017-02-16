@@ -58,6 +58,12 @@ def structure_comments(verse):
     def clean_string(value):
         value = value.replace(u'\n', u' ')
         value = value.replace(u'\xb6', u'')
+        value = value.replace(u'\u2283', u'')
+        value = value.replace(u'\2282', u'')
+        value = value.replace(u'\u0259', u'e')
+        value = value.replace(u'[ ', u'[')
+        value = value.replace(u' ]', u']')
+        value = re.sub(u'G ?OD', u'God', value)
         value = re.sub(u' +', u' ', value)
         value = value.rstrip()
         value = value.lstrip()
@@ -68,6 +74,12 @@ def structure_comments(verse):
     # destroy empty b tags
     for element in soup.find_all(lambda x: x.name == 'b' and (x.is_empty_element or x.text.isspace())):
         element.decompose()
+    for element in soup.find_all('xref'):
+        element.decompose()
+    for element in soup.find_all('small'):
+        element.unwrap()
+    for element in soup.find_all('sup'):
+        element.unwrap()
 
     verse = clean_string(u' '.join(unicode(child) for child in soup.root.children))
     comments, start_index = [], 0
@@ -159,4 +171,3 @@ def post(book):
         'text': parse(file_data[book])
     }
     post_text(title, version)
-
