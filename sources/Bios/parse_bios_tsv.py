@@ -43,6 +43,7 @@ for foo, symbol in eras.iteritems():
     # Dependencies take too long here.  Getting rid of relationship dependencies above.  Assumption is that we'll import works right after to handle those dependencies.
     #PersonSet({"era": symbol}).delete()
 
+
 def _(p, attr, field):
     if field:
         setattr(p, attr, field)

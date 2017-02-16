@@ -84,6 +84,8 @@ class bookSub(supermod.book):
             for verse_index, verse in enumerate(chapter.get_verse()):
                 refs = verse.get_xrefs()
                 for ref in refs:
+                    if commentStore.get(ref.rid) is not None:
+                        print '{} appears more than once'.format(ref.rid)
                     commentStore[ref.rid] = {'chapter': chap_index+1, 'verse': verse_index+1}
 
         try:
@@ -347,8 +349,10 @@ class commentarySub(supermod.commentary):
         node.validate()
         return {
             'title': '{} on {}'.format(en_author, base_title),
-            'categories': ['Commentary2', 'Tanaitic', en_author],
-            'schema': node.serialize()
+            'categories': ['Tanaitic', 'Commentary', en_author, "Masechtot Ketanot"],
+            'schema': node.serialize(),
+            'collective_title': en_author,
+            'dependence': "Commentary"
         }
 
     def set_verses(self, verse_map):
