@@ -17,14 +17,22 @@ import codecs
 import pycurl
 import cStringIO
 from bs4 import BeautifulSoup
-eng_bereishit = ["Bereishit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", "Vayetzei", "Vayishlach","Vayeshev","Hannakah", "Miketz", "Vayigash", "Vayechi"]
+eng_parshiot = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", "Vayetzei", "Vayishlach",
+"Vayeshev", "Miketz", "Vayigash", "Vayechi", "Shemot", "Vaera", "Bo", "Beshalach", "Yitro",
+"Mishpatim", "Terumah", "Tetzaveh", "Ki Tisa", "Vayakhel", "Pekudei", "Vayikra", "Tzav", "Shmini",
+"Tazria", "Metzora", "Achrei Mot", "Kedoshim", "Emor", "Behar", "Bechukotai", "Bamidbar", "Nasso",
+"Beha'alotcha", "Sh'lach", "Korach", "Chukat", "Balak", "Pinchas", "Matot", "Masei",
+"Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo", "Nitzavim", "Vayeilech", "Ha'Azinu",
+"V'Zot HaBerachah"]
+
+eng_bereishit = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", "Vayetzei", "Vayishlach","Vayeshev","Hannakah", "Miketz", "Vayigash", "Vayechi"]
 eng_shemot = ["Shemot", "Vaera", "Bo", "Beshalach", "Yitro","Mishpatim", "Terumah", "Tetzaveh", "Ki Tisa", "Vayakhel", "Pekudei"]
 eng_vayikra = ["Vayikra", "Tzav", "Shmini","Tazria Metzora","Achrei Mot Kedoshim", "Emor", "Behar Bechukotai",]
 eng_bamidbar = ["Bamidbar", "Nasso","Beha'alotcha", "Sh'lach", "Korach", "Chukat", "Balak", "Pinchas", "Matot", "Masei"]
 eng_devarim = ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo", "Nitzavim", "Vayeilech", "Ha'Azinu",
 "V'Zot HaBerachah"]
 all_parshas = [eng_bereishit,eng_shemot,eng_vayikra,eng_bamidbar,eng_devarim]
-eng_bereishit2 = ["Bereishit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", "Vayetzei", "Vayishlach", "Miketz", "Vayigash", "Vayechi"]
+eng_bereishit2 = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", "Vayetzei", "Vayishlach", "Miketz", "Vayigash", "Vayechi"]
 eng_shemot2 = ["Shemot", "Vaera", "Bo", "Beshalach", "Yitro","Mishpatim", "Terumah", "Tetzaveh", "Ki Tisa", "Vayakhel", "Pekudei"]
 eng_vayikra2 = ["Vayikra", "Tzav", "Shmini","Tazria", "Metzora", "Achrei Mot", "Kedoshim", "Emor", "Behar Bechukotai"]
 eng_bamidbar2 = ["Nasso","Beha'alotcha", "Sh'lach", "Korach", "Chukat", "Balak", "Pinchas", "Matot", "Masei"]
@@ -150,12 +158,57 @@ def print_text():
 def main():
     pass
 if __name__ == "__main__":
+    #parse intro:
+    version = {
+        'versionTitle': 'Ben Ish Chai; Jerusalem, 1898',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001933796',
+        'language': 'he',
+        'text': get_parsed_intro()
+    }
+    post_text('Ben Ish Hai, Introduction', version, weak_network=True)
+    #post all text
+    parsha_sections = ["Drashot","Halachot Shana 1","Halachot Shana 2"]
+    parsha_content = [get_parsed_drasha(), get_halachas_shana_1(), get_halachas_shana_2()]
+    for section_name, section_content in zip(parsha_sections,parsha_content):
+        for parsha in section_content:
+            #add intro if not drashot:
+            if "Drashot" not in section_name:
+                version = {
+                    'versionTitle': 'Ben Ish Chai; Jerusalem, 1898',
+                    'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001933796',
+                    'language': 'he',
+                    'text': parsha[1] 
+                }
+                print "posting "+section_name+", "+parsha[0][1]+", Introduction"
+                post_text('Ben Ish Hai, '+section_name+", "+parsha[0][1]+", Introduction", version, weak_network=True)
+            
+            version = {
+                'versionTitle': 'Ben Ish Chai; Jerusalem, 1898',
+                'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001933796',
+                'language': 'he',
+                'text': parsha[1] if "Drashot" in section_name else parsha[2]
+            }
+            print "posting "+section_name+", "+parsha[0][1]
+            post_text('Ben Ish Hai, '+section_name+", "+parsha[0][1], version, weak_network=True)
+    
+    """
+    #print parsha titles 
+    print "Drasha"
+    for paindex, parsha in enumerate(get_parsed_drasha()):
+        print parsha[0][0]
+        print parsha[0][1]
+    print "Shana 1"
     for paindex, parsha in enumerate(get_halachas_shana_1()):
+        print parsha[0][0]
+        print parsha[0][1]
+    print "Shana 2"
+    for paindex, parsha in enumerate(get_halachas_shana_2()):
         print parsha[0][0]
         print parsha[0][1]
         #for parsha in sefer:
            # print "TITLE: "+parsha[0][0]+" "+parsha[0][1]
-    
+        """
+    """
         print "INTRO:"
         for p in parsha[1]:
             print p
@@ -163,7 +216,7 @@ if __name__ == "__main__":
         for sindex, sec in enumerate(parsha[2]):
             for pindex, pa in enumerate(sec):
                 print str(sindex)+" "+str(pindex)+" "+pa
-    
+    """
     """
     for section in get_parsed_drashas():
         print "SECTION:"
