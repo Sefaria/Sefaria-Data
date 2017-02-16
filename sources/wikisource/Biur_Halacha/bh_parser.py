@@ -12,8 +12,7 @@ sys.path.insert(0, SEFARIA_PROJECT_PATH)
 os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
 from sefaria.model import *
 
-from sources.functions import *
-# post index, post text, post link
+from sources.functions import numToHeb, getGematria, post_index, post_text
 from sefaria.datatype import jagged_array
 from data_utilities.util import ja_to_xml, traverse_ja
 
