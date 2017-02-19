@@ -394,7 +394,7 @@ class commentarySub(supermod.commentary):
         pages = {}
         for chapter in self.get_chapter():
             for phrase in chapter.get_phrase():
-                page_num = re.search(u'ph-[0-9]{1,2}-([0-9A-Z]{1,3})-[0-9]{1,2}', phrase.id).group(1)
+                page_num = re.search(u'ph-[0-9]{1,2}-([0-9A-Z]{1,4})-[0-9]{1,2}', phrase.id).group(1)
                 pages.setdefault(page_num, [])
                 pages[page_num].append(phrase)
         return pages
