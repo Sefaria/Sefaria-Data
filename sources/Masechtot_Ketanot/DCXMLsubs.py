@@ -355,6 +355,26 @@ class commentarySub(supermod.commentary):
             'dependence': "Commentary"
         }
 
+    def get_term_dict(self):
+        he_author = self.get_author()
+        en_author = commentatorNames[he_author]
+        return {
+            'name': en_author,
+            'scheme': 'commentary_works',
+            'titles': [
+                {
+                    'lang': 'en',
+                    'text': en_author,
+                    'primary': True
+                },
+                {
+                    'lang': 'he',
+                    'text': he_author,
+                    'primary': True
+                }
+            ]
+        }
+
     def set_verses(self, verse_map):
         """
         Map each phrase to a verse
