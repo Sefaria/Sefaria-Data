@@ -11,7 +11,7 @@ import unicodecsv as csv
 from bs4 import BeautifulSoup, Tag
 from data_utilities.util import ja_to_xml, getGematria
 from data_utilities.dibur_hamatchil_matcher import match_text
-from sources.functions import post_text, post_index, post_link
+from sources.functions import post_text, post_index, post_link, post_term
 
 
 class Collection:
@@ -22,6 +22,7 @@ class Collection:
         self.versionList = []
         self.linkSet = []
         self.base_indices = []
+        self.terms = []
 
     @staticmethod
     def get_file_mapping():
@@ -45,6 +46,7 @@ class Collection:
                 if author == 'UNKNOWN':
                     continue
                 self.commentaryIndices.append(commentary.build_index(en_title, he_title))
+                self.terms.append(commentary.get_term_dict())
 
                 # if self.commentarySchemas.get(author) is None:
                 #     self.commentarySchemas[author] = commentary.build_node()
@@ -90,6 +92,10 @@ class Collection:
             print version['ref']
             post_text(version['ref'], version['version'], index_count='on', weak_network=True)
         post_link(self.linkSet)
+
+    def post_commentary_terms(self):
+        for term in self.terms:
+            post_term(term)
 
 
 def check_chapters():
