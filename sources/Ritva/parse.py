@@ -191,7 +191,7 @@ if __name__ == "__main__":
     versionTitle['Niddah'] = 'Hidushe ha-Ritba al Nidah; Wien 1868.'
     versionTitle['Makkot'] = 'Hamisha Shitot, Sulzbach 1761. Published by Meshulam Zalman'
     versionTitle['Avodah Zarah'] = "Orian Tlita'i, Salonika, 1758."
-    files = ["Sukkah", "Moed Katan", "Megillah", "Taanit"]
+    files = ["Moed Katan", "Megillah"]
     not_yet = True
     for file in files:
         createIndex(file)

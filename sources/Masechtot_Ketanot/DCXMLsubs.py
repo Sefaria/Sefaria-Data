@@ -84,6 +84,8 @@ class bookSub(supermod.book):
             for verse_index, verse in enumerate(chapter.get_verse()):
                 refs = verse.get_xrefs()
                 for ref in refs:
+                    if commentStore.get(ref.rid) is not None:
+                        print '{} appears more than once'.format(ref.rid)
                     commentStore[ref.rid] = {'chapter': chap_index+1, 'verse': verse_index+1}
 
         try:
@@ -187,7 +189,8 @@ class bookSub(supermod.book):
     def get_base_verses(self):
         return self.body.get_base_verses()
 
-
+    def check_base_verse_order(self):
+        self.body.check_verse_order()
 
 supermod.book.subclass = bookSub
 # end class bookSub
@@ -229,6 +232,19 @@ class bodySub(supermod.body):
             verses.extend(chapter.get_verse())
         return verses
 
+    def check_verse_order(self):
+        no_issues = True
+        issues = [chapter.check_verse_order() for chapter in self.get_chapter()]
+        for chap_index, chapter in enumerate(issues):
+            if len(chapter) == 0:
+                continue
+            else:
+                no_issues = False
+            for issue in chapter:
+                print "Skip found at Chapter {} verse {}".format(chap_index+1, issue)
+        if no_issues:
+            print "All verses in correct order"
+
 supermod.body.subclass = bodySub
 # end class bodySub
 
@@ -250,6 +266,13 @@ class commentariesSub(supermod.commentaries):
 
     def is_linked_commentary(self, commentary):
         return self.linked[commentary.get_author()]
+
+    def check_marked_phrases(self):
+        for commentary in self.get_commentary():
+            if commentary.get_author() == 'UNKNOWN':
+                continue
+            if not self.is_linked_commentary(commentary):
+                commentary.check_marked_phrases()
 
 supermod.commentaries.subclass = commentariesSub
 # end class commentariesSub
@@ -283,7 +306,9 @@ class commentarySub(supermod.commentary):
         parsed = JaggedArray([[[]]])
         for phrase in self.get_phrase():
             indices = (commentStore[phrase.id]['chapter'], commentStore[phrase.id]['verse'], commentStore[phrase.id]['order'])
-            text = phrase.get_comment().valueOf_.replace(u'\n', u'')
+            text = phrase.get_comment().valueOf_.replace(u'\n', u' ')
+            text = re.sub(u' +', u' ', text)
+            text = re.sub(ur' (:|\.)', ur'\1', text)
             parsed.set_element([i-1 for i in indices], text)
         return parsed.array()
 
@@ -303,7 +328,6 @@ class commentarySub(supermod.commentary):
                 parsed.set_element([int(chap_num)-1, int(phrase_num)-1, comment_number], phrase.as_string())
                 comment_counter[(chap_num, phrase_num)] += 1
 
-                # Todo add link to unlinked comment store
                 unlinkedCommentStore.append({
                     'commentator': commentatorNames[self.get_author()],
                     'chapter': chap_num,
@@ -325,8 +349,31 @@ class commentarySub(supermod.commentary):
         node.validate()
         return {
             'title': '{} on {}'.format(en_author, base_title),
-            'categories': ['Commentary2', 'Tanaitic', en_author],
-            'schema': node.serialize()
+            'categories': ['Tanaitic', 'Commentary', en_author, "Masechtot Ketanot"],
+            'schema': node.serialize(),
+            'collective_title': en_author,
+            'dependence': "Commentary",
+            'base_text_titles': [base_title]
+        }
+
+    def get_term_dict(self):
+        he_author = self.get_author()
+        en_author = commentatorNames[he_author]
+        return {
+            'name': en_author,
+            'scheme': 'commentary_works',
+            'titles': [
+                {
+                    'lang': 'en',
+                    'text': en_author,
+                    'primary': True
+                },
+                {
+                    'lang': 'he',
+                    'text': he_author,
+                    'primary': True
+                }
+            ]
         }
 
     def set_verses(self, verse_map):
@@ -368,10 +415,15 @@ class commentarySub(supermod.commentary):
         pages = {}
         for chapter in self.get_chapter():
             for phrase in chapter.get_phrase():
-                page_num = re.search(u'ph-[0-9]{1,2}-([0-9A-Z]{1,3})-[0-9]{1,2}', phrase.id).group(1)
+                page_num = re.search(u'ph-[0-9]{1,2}-([0-9A-Z]{1,4})-[0-9]{1,2}', phrase.id).group(1)
                 pages.setdefault(page_num, [])
                 pages[page_num].append(phrase)
         return pages
+
+    def check_marked_phrases(self):
+        for chapter in self.get_chapter():
+            if not chapter.check_marked_phrases():
+                print u'Unmarked phrase in {} chapter {}'.format(self.get_author(), chapter.num)
 
 supermod.commentary.subclass = commentarySub
 # end class commentarySub
@@ -429,6 +481,9 @@ class chapterSub(supermod.chapter):
             boundaries.append(current_boundary)
         return boundaries
 
+    def check_marked_phrases(self):
+        return all([phrase.marked_subchap() for phrase in self.get_phrase()])
+
     def correct_phrase_verses(self):
         boundaries = self._get_verse_boundaries()
         phrases = self.get_phrase()
@@ -467,6 +522,16 @@ class chapterSub(supermod.chapter):
                 phrase.subchap = current_subchap
             else:
                 current_subchap = phrase.subchap
+
+    def check_verse_order(self):
+        previous_verse = 0
+        issues = []
+        for verse in self.get_verse():
+            current_verse = int(re.search('ch[0-9]{1,2}-v([0-9]{1,2})', verse.num).group(1))
+            if current_verse - previous_verse != 1:
+                issues.append(current_verse)
+            previous_verse = current_verse
+        return issues
 
 
 supermod.chapter.subclass = chapterSub
@@ -512,9 +577,18 @@ class phraseSub(supermod.phrase):
         dh = u'<b>{}</b>'.format(self.get_dh().get_valueOf_())
         comment = self.get_comment().get_valueOf_()
         raw_string = u'{} {}'.format(dh, comment)
-        formatted = re.sub(ur' (:|\.)', ur'\1', raw_string)
+        formatted = raw_string.replace(u'\n', u' ')
         formatted = re.sub(u' +', u' ', formatted)
+        formatted = re.sub(ur' (:|\.)', ur'\1', formatted)
         return formatted
+
+    def marked_subchap(self):
+        if self.subchap is None:
+            return False
+        elif self.subchap == '0':
+            return False
+        else:
+            return True
 
 supermod.phrase.subclass = phraseSub
 # end class phraseSub

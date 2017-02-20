@@ -110,6 +110,7 @@ def check(which_one, siman_num, helek, matches_array, commentaries, line):
 
     duplicate_report = open("report_"+which_one+"_duplicates.txt", "a")
     skipped_report = open("skipped_"+which_one+".txt", "a")
+    length_report = open("length_"+which_one+".txt", "a")
     which_one = which_one.replace(" ", "")
     siman_report = open("siman_off_report.txt", 'a')
     name_of_file_lengths = "{}_{}_length_siman.txt".format(which_one, helek.replace(" ", ""))
@@ -122,29 +123,34 @@ def check(which_one, siman_num, helek, matches_array, commentaries, line):
         update_dict_BY_data(hash, darchei_file, siman_num, duplicate_report)
         darchei_file.close()
     if len(hash) == 0 and str(siman_num) in lengths_of_simans:
-        siman_report.write("{} {}".format(siman_num, helek))
+        siman_report.write("Siman {} {}".format(siman_num, helek))
         siman_report.write("\nThere are 0 {} tags in Tur but there is a comment in {} files".format(which_one, which_one))
         siman_report.write("\n\n")
         siman_report.close()
         return
     elif len(hash) > 0 and str(siman_num) not in lengths_of_simans:
-        siman_report.write("{} {}".format(siman_num, helek))
+        siman_report.write("Siman {} {}".format(siman_num, helek))
         siman_report.write("\nThere are {} tags in Tur but there are 0 comments in {} files.".format(which_one, which_one))
         siman_report.write("\n\n")
         siman_report.close()
         return
-    if len(hash) > 0:
+    elif len(hash) > 0:
         helek = helek.replace(" ", "")
         length_of_siman = lengths_of_simans[str(siman_num)]
-        remove_keys_beyond_length(hash, length_of_siman)
-        write_duplicate(hash, duplicate_report, siman_num, helek)
-        keys = sorted(hash.keys())
-        skipped_any = skippedAny(keys)
-        if len(skipped_any) > 0:
-            skipped_report.write("{} Siman #: {}\n".format(helek, siman_num))
-        skipped_report.write(skipped_any)
+        length_of_hash = len(hash)
+        if length_of_hash != length_of_siman:
+            msg = "Siman {}, Helek {}  ".format(siman_num, helek)
+            msg += "There are {} tags in Tur and there are {} comments in {}.\n\n".format(length_of_hash, length_of_siman, which_one)
+            length_report.write(msg)
+        #remove_keys_beyond_length(hash, length_of_siman)
+        #write_duplicate(hash, duplicate_report, siman_num, helek)
+        #skipped_any = skippedAny(keys)
+        #if len(skipped_any) > 0:
+        #    skipped_report.write("{} Siman #: {}\n".format(helek, siman_num))
+        #skipped_report.write(skipped_any)
         duplicate_report.close()
         skipped_report.close()
+        length_report.close()
 
 
 def update_dict_BY_data(hash, other_file, siman_num, duplicate_report):

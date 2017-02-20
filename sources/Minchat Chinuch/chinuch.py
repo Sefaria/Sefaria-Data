@@ -372,7 +372,7 @@ def construct_index(alt_struct=None):
 def produce_parsed_data(filename):
 
     with codecs.open(filename, 'r', 'utf-8') as datafile:
-        parsed = util.file_to_ja([[[]]], datafile, (m_pattern, comment_pattern), nothing)
+        parsed = util.file_to_ja(3, datafile, (m_pattern, comment_pattern), nothing)
 
         datafile.seek(0)
 

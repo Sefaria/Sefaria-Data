@@ -226,7 +226,7 @@ def getHebrewTitle(sefer, SEFARIA_SERVER='http://www.sefaria.org/'):
    return data['heTitle']
 
 
-def removeAllStrings(orig_string, array = ['@', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0']):	
+def removeAllTags(orig_string, array = ['@', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0']):
     for unwanted_string in array:
         orig_string = orig_string.replace(unwanted_string, "")
     return orig_string
@@ -319,8 +319,8 @@ def weak_connection(func):
 
 
 @weak_connection
-def post_index(index):
-    url = SEFARIA_SERVER+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
+def post_index(index, server=SEFARIA_SERVER):
+    url = server+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
     indexJSON = json.dumps(index)
     values = {
         'json': indexJSON,
@@ -503,9 +503,25 @@ def post_flags(version, flags):
             errors.write(e.read())
 
 
-def get_index(ref):
+@weak_connection
+def post_term(term_dict, server=SEFARIA_SERVER):
+    name = term_dict['name']
+    term_JSON = json.dumps(term_dict)
+    url = '{}/api/terms/{}'.format(server, urllib.quote(name))
+    values = {'json': term_JSON, 'apikey': API_KEY}
+    data = urllib.urlencode(values)
+    req = urllib2.Request(url, data)
+    try:
+        response = urllib2.urlopen(req)
+        x = response.read()
+        print x
+    except (HTTPError, URLError) as e:
+        with open('errors.html', 'w') as errors:
+            errors.write(e.read())
+
+def get_index(ref, server='http://www.sefaria.org'):
     ref = ref.replace(" ", "_")
-    url = 'http://www.sefaria.org/api/v2/raw/index/'+ref
+    url = server+'/api/v2/raw/index/'+ref
     req = urllib2.Request(url)
     response = urllib2.urlopen(req)
     data = json.load(response)

@@ -29,8 +29,7 @@ db.index.update({}, {"$unset": {
 6  Place composed
 7  Year of first publication
 8  Place of first publication
-X 9  Geocode of first pub
-9 Era
+9  Era
 """
 eras = {
     "Gaonim": "GN",
@@ -49,7 +48,7 @@ with open("Torah Commentators - Bios - Works.tsv") as tsv:
     next(tsv)
     for l in csv.reader(tsv, dialect="excel-tab"):
         indexes_handled.append(l[0])
-    unhandled = set([i.primary_title() for i in library.get_index_forest(True)]) - set(indexes_handled)
+    unhandled = set([i.primary_title() for i in library.get_index_forest()]) - set(indexes_handled)
     if len(unhandled) > 0:
         print "Indexes not covered in the sheet:"
         for a in sorted(unhandled):
@@ -69,20 +68,6 @@ with open("Torah Commentators - Bios - Works.tsv") as tsv:
         sheet_authors = set([a.strip() for a in l[1].split(",") if Person().load({"key": a.strip()})])
         needs_save = current_authors != sheet_authors
         sheet_authors = list(sheet_authors)
-        if i.is_commentary():
-            #todo: Do we handle extended info for commentaries?
-            if needs_save:
-                try:
-                    c = i.c_index
-                except Exception as e:
-                    print u"Failed to get commentary index for {}. {}".format(l[0], e)
-                    continue
-                setattr(c, "authors", sheet_authors)
-                print "= - {}".format(l[0])
-                c.save()
-            else:
-                print "-"
-            continue
 
         setattr(i, "authors", sheet_authors)
         attrs = [("enDesc", l[2]),

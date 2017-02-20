@@ -29,6 +29,10 @@ def get_english_title(he_title, order):
         return "Laws of the Four Festive Torah Portions"
     if "ברכת הריח" in he_title:
         return "Laws of Blessing on Fragrance"
+    if "תשעה‏ ‏באב‏" in he_title:
+        return "Laws of the Ninth of Av and Other Fast Days"
+    if "הלכות ‏שאלה‏" in he_title:
+        return "Laws of Borrowing"
     with open("Likutei_Halachot_"+order+".csv", 'rb') as csvfile:
         reader = csv.reader(csvfile)
         title_table = list(reader)
@@ -50,57 +54,61 @@ def get_match_index(byte_term, input_list):
             score = this_score
             return_index = index
     return return_index
+def main():
+    pass
 
-text = get_parsed_text()
+if __name__ == "__main__":
+    text = get_parsed_text()
 
-# create root record
-record = SchemaNode()
-record.add_title('Likutei Halachot', 'en', primary=True, )
-record.add_title(u'ליקוטי הלכות', 'he', primary=True, )
-record.key = 'Likutei Halachot'
+    # create root record
+    record = SchemaNode()
+    record.add_title('Likutei Halachot', 'en', primary=True, )
+    record.add_title(u'ליקוטי הלכות', 'he', primary=True, )
+    record.key = 'Likutei Halachot'
 
-#add introduction node
-intro_node = JaggedArrayNode()
-intro_node.add_title("Author's Introduction", 'en', primary = True)
-intro_node.add_title("הקדמת המחבר", 'he', primary = True)
-intro_node.key = "Author's Introduction"
-intro_node.depth = 1
-intro_node.addressTypes = ['Integer']
-intro_node.sectionNames = ['Paragraph']
+    #add introduction node
+    intro_node = JaggedArrayNode()
+    intro_node.add_title("Author's Introduction", 'en', primary = True)
+    intro_node.add_title("הקדמת המחבר", 'he', primary = True)
+    intro_node.key = "Author's Introduction"
+    intro_node.depth = 1
+    intro_node.addressTypes = ['Integer']
+    intro_node.sectionNames = ['Paragraph']
 
-record.append(intro_node)
+    record.append(intro_node)
 
-# add order nodes
-orders = [ ["Orach Chaim","אורח חיים"],["Yoreh Deah","יורה דעה"],["Even HaEzer","אבן העזר"],["Choshen Mishpat","חושן משפט"]]
+    # add order nodes
+    orders = [ ["Orach Chaim","אורח חיים"],["Yoreh Deah","יורה דעה"],["Even HaEzer","אבן העזר"],["Choshen Mishpat","חושן משפט"]]
 
-for index, order in enumerate(orders):
-    order_node = SchemaNode()
-    order_node.add_title(order[0], 'en', primary=True)
-    order_node.add_title(order[1], 'he', primary=True)
-    order_node.key = order[0]
+    for index, order in enumerate(orders):
+        order_node = SchemaNode()
+        order_node.add_title(order[0], 'en', primary=True)
+        order_node.add_title(order[1], 'he', primary=True)
+        order_node.key = order[0]
 
-    #add topic nodes to order node
-    for topic in text[index][0]:
-        print "INDEX TOPIC: ",topic,get_english_title(topic, order[0])
-        topic_node = JaggedArrayNode()
-        topic_node.add_title(get_english_title(topic, order[0]), 'en', primary = True)
-        topic_node.add_title(topic, 'he', primary = True)
-        topic_node.key = get_english_title(topic, order[0])
-        topic_node.depth = 3
-        topic_node.addressTypes = ['Integer','Integer','Integer']
-        topic_node.sectionNames = ['Chapter','Section','Paragraph']
+        #add topic nodes to order node
+        for topic in text[index][0]:
+            print "INDEX TOPIC: ",topic,get_english_title(topic, order[0])
+            topic_node = JaggedArrayNode()
+            topic_node.add_title(get_english_title(topic, order[0]), 'en', primary = True)
+            topic_node.add_title(topic, 'he', primary = True)
+            topic_node.key = get_english_title(topic, order[0])
+            topic_node.depth = 3
+            topic_node.addressTypes = ['Integer','Integer','Integer']
+            topic_node.sectionNames = ['Chapter','Section','Paragraph']
 
-        order_node.append(topic_node)
+            order_node.append(topic_node)
 
-    record.append(order_node)
+        record.append(order_node)
 
-record.validate()
-#enter general work index
-index = {
-    "title": "Likutei Halachot",
-    "categories": ["Chasidut"],
-    "schema": record.serialize()
-}
+    record.validate()
+    #enter general work index
+    index = {
+        "title": "Likutei Halachot",
+        "categories": ["Chasidut"],
+        "schema": record.serialize()
+    }
 
 
-post_index(index)
+    post_index(index, weak_network=True)
+    main()

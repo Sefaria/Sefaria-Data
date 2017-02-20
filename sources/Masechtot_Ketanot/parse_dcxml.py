@@ -6,11 +6,12 @@ import re
 import bleach
 import bisect
 import codecs
+import StringIO
 import unicodecsv as csv
 from bs4 import BeautifulSoup, Tag
 from data_utilities.util import ja_to_xml, getGematria
 from data_utilities.dibur_hamatchil_matcher import match_text
-from sources.functions import post_text, post_index, post_link
+from sources.functions import post_text, post_index, post_link, post_term
 
 
 class Collection:
@@ -21,6 +22,7 @@ class Collection:
         self.versionList = []
         self.linkSet = []
         self.base_indices = []
+        self.terms = []
 
     @staticmethod
     def get_file_mapping():
@@ -44,6 +46,7 @@ class Collection:
                 if author == 'UNKNOWN':
                     continue
                 self.commentaryIndices.append(commentary.build_index(en_title, he_title))
+                self.terms.append(commentary.get_term_dict())
 
                 # if self.commentarySchemas.get(author) is None:
                 #     self.commentarySchemas[author] = commentary.build_node()
@@ -89,6 +92,10 @@ class Collection:
             print version['ref']
             post_text(version['ref'], version['version'], index_count='on', weak_network=True)
         post_link(self.linkSet)
+
+    def post_commentary_terms(self):
+        for term in self.terms:
+            post_term(term)
 
 
 def check_chapters():
@@ -188,8 +195,9 @@ def fix_commentator(filename, commentator, overwrite=False):
         outfile = filename
     else:
         outfile = '{}_test'.format(filename)
-    with codecs.open('XML/{}.xml'.format(outfile), 'w', 'utf-8') as out:
-        root.export(out, level=1)
+    # with codecs.open('XML/{}.xml'.format(outfile), 'w', 'utf-8') as out:
+    #     root.export(out, level=1)
+    clean_export(root, 'XML/{}.xml'.format(outfile))
 
 
 def book_by_page(root_element):
@@ -274,13 +282,16 @@ def fix_commentator_by_page(filename, commentator, overwrite=False):
                      for match in matches['matches']]
 
         for location, phrase in zip(locations, phrases_by_page[page]):
-            phrase.subchap = page_map[page]['chpt-vrs'][location]
+            if location == -1:
+                phrase.subchap = '0'
+            else:
+                phrase.subchap = page_map[page]['chpt-vrs'][location]
 
     if not overwrite:
         filename += '_test'
-    with codecs.open("XML/{}.xml".format(filename), 'w', 'utf-8') as outfile:
-        root.export(outfile, level=1)
-
+    # with codecs.open("XML/{}.xml".format(filename), 'w', 'utf-8') as outfile:
+    #     root.export(outfile, level=1)
+    clean_export(root, "XML/{}.xml".format(filename))
 
 def output_missing_links(filename):
     root = DCXMLsubs.parse('./XML/{}'.format(filename), silence=True)
@@ -348,7 +359,105 @@ def split_chapters_by_pattern(filename, pattern, offset=0, overwrite=True):
         outfile.write(unicode(soup))
 
 
-# commentators = [u'כסא רחמים', u'בנין יהושע', u'הגהות מהריעב״ץ']
-# for commentator in commentators:
-#     fix_commentator('tractate-avot_drabi_natan-xml2', commentator, overwrite=True)
-# fix_commentator('tractate-avot_drabi_natan-xml2', u'בנין יהושע', overwrite=False)
+def clean_export(root_tag, filename):
+    temp_file = StringIO.StringIO()
+    root_tag.export(temp_file, level=1)
+    out_text = temp_file.getvalue()
+    temp_file.close()
+    out_text = out_text.replace(u' xmlns:t="http://www.w3.org/namespace/"', u'')
+    out_text = out_text.replace(u't:', u'')
+    out_text = re.sub(ur'^\n+', u'\n', out_text)
+    out_text = re.sub(ur' +', u' ', out_text)
+    out_text = re.sub(ur'\n ', u'\n', out_text)
+
+    with codecs.open(filename, 'w', 'utf-8') as outfile:
+        outfile.write(u"""<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book SYSTEM "sefaria.dtd">""")
+        outfile.write(out_text)
+
+
+def unmatched_comments(filename, commentator):
+
+    def get_phrase_page(phrase_id):
+        return re.search(u'ph-[0-9]{1,2}-([0-9A-Z]{1,3})-[0-9]{1,2}', phrase_id).group(1)
+
+    issues = []
+    root = DCXMLsubs.parse(filename, silence=True)
+    commentary = root.body.commentaries.get_commentary()[get_commentary_index(root, commentator)]
+    for chapter in commentary.get_chapter():
+        for phrase in chapter.get_phrase():
+            if phrase.subchap == '0':
+                issues.append({
+                    'page': get_phrase_page(phrase.id),
+                    'dh': phrase.dh.get_valueOf_(),
+                    'id': phrase.id
+                })
+    with open(u'{} on {} issues.csv'.format(commentator, root.id), 'w') as outfile:
+        writer = csv.DictWriter(outfile, ['id', 'page', 'dh', 'chapter', 'verse'])
+        writer.writeheader()
+        writer.writerows(issues)
+
+# commentators = [u'כסא רחמים', u'הגהות מהריעב״ץ', u'תומת ישרים']
+# for com in commentators:
+#     unmatched_comments('XML/tractate-avot_drabi_natan-xml3.xml', com)
+
+def clear_subchaps(filename, commentator, chap_number=None, overwrite=False):
+    def condition(chapter_element):
+        if chap_number is None:
+            return True
+        else:
+            return int(chapter_element.num) == chap_number
+
+    root = DCXMLsubs.parse(filename, silence=True)
+    commentary = root.body.commentaries.get_commentary()[get_commentary_index(root, commentator)]
+    for chapter in commentary.get_chapter():
+        if condition(chapter):
+            for phrase in chapter.get_phrase():
+                phrase.subchap = None
+
+    if not overwrite:
+        filename = filename.replace('.xml', '_test.xml')
+    clean_export(root, filename)
+
+
+def correct_commentary_chapters(filename, commentator_name, overwrite=False):
+    """
+    Commentaries that do not have a correct chapter breakup are matched "by page". These commentaries do have have the
+    subchaps set in the "ch<n>-v<m>" format once the alignment is complete. This method seeks to correctly place the
+    chapter elements, as well as set the phrase "subchap" attribute to a simple integer (in str format).
+    :param filename:
+    :param commentator_name:
+    :param overwrite:
+    """
+    with open(filename) as infile:
+        soup = BeautifulSoup(infile, 'xml')
+    commentator = soup.find(lambda x: x.name=='commentary' and x.author.get_text()==commentator_name)
+    assert isinstance(commentator, Tag)
+
+    for phrase in commentator.find_all('phrase'):
+        match = re.search('ch([0-9]{1,2})-v([0-9]{1,2})', phrase.attrs['subchap'])
+        chapter, verse = match.group(1), match.group(2)
+        phrase.attrs['subchap'] = verse
+
+        # if this phrase in in the correct chapter, we can move on to the next one
+        if phrase.parent['num'] == chapter:
+            continue
+
+        # does the correct chapter even exist?
+        correct_chapter = commentator.find(lambda x: x.name=='chapter' and x['num']==chapter)
+
+        if correct_chapter is None:
+            correct_chapter = soup.new_tag(name='chapter', num=chapter)
+            chapters = commentator.find_all('chapter', recursive=False)
+            insert_location = bisect.bisect([int(c['num']) for c in chapters], int(chapter))
+            if insert_location == len(chapters):
+                chapters[-1].insert_after(correct_chapter)
+            else:
+                chapters[insert_location].insert_before(correct_chapter)
+
+        correct_chapter.append(phrase)
+
+    if not overwrite:
+        filename = filename.replace('.xml', '_test.xml')
+    with codecs.open(filename, 'w', 'utf-8') as outfile:
+        outfile.write(unicode(soup))

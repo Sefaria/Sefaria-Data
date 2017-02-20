@@ -64,4 +64,4 @@ index = {
     "default_struct": "Chapters",
     "schema": record.serialize()
 }
-functions.post_index(index)
+functions.post_index(index,weak_network=True)
