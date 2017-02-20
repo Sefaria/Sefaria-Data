@@ -352,7 +352,8 @@ class commentarySub(supermod.commentary):
             'categories': ['Tanaitic', 'Commentary', en_author, "Masechtot Ketanot"],
             'schema': node.serialize(),
             'collective_title': en_author,
-            'dependence': "Commentary"
+            'dependence': "Commentary",
+            'base_text_titles': [base_title]
         }
 
     def get_term_dict(self):
