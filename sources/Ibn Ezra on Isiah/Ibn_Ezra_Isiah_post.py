@@ -9,9 +9,11 @@ for chapter in root.iter('chapter'):
         for pitem in p.iter():
             if pitem.tag == 'italic':
                 text = text.replace(pitem.text,"<b>"+pitem.text+"</b>")
-        """
-        for pitem in p[tag='italic']:
-            text = text.replace(pitem.text,"<b>"+pitem.text+"</b>")
-        print text
-        """
+
     print text
+
+"""
+    for pitem in p[tag='italic']:
+    text = text.replace(pitem.text,"<b>"+pitem.text+"</b>")
+    print text
+    """

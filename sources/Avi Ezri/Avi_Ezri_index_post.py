@@ -29,7 +29,7 @@ term_obj = {
         }
     ]
 }
-#post_term(term_obj)
+post_term(term_obj)
 
 # create index record
 record = SchemaNode()

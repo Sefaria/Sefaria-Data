@@ -92,9 +92,9 @@ def make_links(text):
                     Ibn_Ezra_links = match_ref(base_ref,avi_ezri_ref,base_tokenizer,dh_extract_method=dh_extract_method)
                     for IE_link in Ibn_Ezra_links:
                         print link
-                    post_link(link, weak_network=True)
+                        post_link(link, weak_network=True)
 #here starts methods for linking:
-def _filter(some_string):
+def filter(some_string):
     if re.search(ur'<b>(.*?)</b>', some_string) is None:
         return False
     else:

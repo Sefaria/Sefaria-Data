@@ -180,7 +180,7 @@ if __name__ == "__main__":
                     'text': parsha[1] 
                 }
                 print "posting "+section_name+", "+parsha[0][1]+", Introduction"
-                post_text('Ben Ish Hai, '+section_name+", "+parsha[0][1]+", Introduction", version, weak_network=True)
+                post_text_weak_connection('Ben Ish Hai, '+section_name+", "+parsha[0][1]+", Introduction", version)
             
             version = {
                 'versionTitle': 'Ben Ish Chai; Jerusalem, 1898',
@@ -189,7 +189,7 @@ if __name__ == "__main__":
                 'text': parsha[1] if "Drashot" in section_name else parsha[2]
             }
             print "posting "+section_name+", "+parsha[0][1]
-            post_text('Ben Ish Hai, '+section_name+", "+parsha[0][1], version, weak_network=True)
+            post_text_weak_connection('Ben Ish Hai, '+section_name+", "+parsha[0][1], version)
     
     """
     #print parsha titles 
