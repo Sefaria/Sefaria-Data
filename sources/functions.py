@@ -503,6 +503,22 @@ def post_flags(version, flags):
             errors.write(e.read())
 
 
+@weak_connection
+def post_term(term_dict, server=SEFARIA_SERVER):
+    name = term_dict['name']
+    term_JSON = json.dumps(term_dict)
+    url = '{}/api/terms/{}'.format(server, urllib.quote(name))
+    values = {'json': term_JSON, 'apikey': API_KEY}
+    data = urllib.urlencode(values)
+    req = urllib2.Request(url, data)
+    try:
+        response = urllib2.urlopen(req)
+        x = response.read()
+        print x
+    except (HTTPError, URLError) as e:
+        with open('errors.html', 'w') as errors:
+            errors.write(e.read())
+
 def get_index(ref, server='http://www.sefaria.org'):
     ref = ref.replace(" ", "_")
     url = server+'/api/v2/raw/index/'+ref

@@ -352,7 +352,28 @@ class commentarySub(supermod.commentary):
             'categories': ['Tanaitic', 'Commentary', en_author, "Masechtot Ketanot"],
             'schema': node.serialize(),
             'collective_title': en_author,
-            'dependence': "Commentary"
+            'dependence': "Commentary",
+            'base_text_titles': [base_title]
+        }
+
+    def get_term_dict(self):
+        he_author = self.get_author()
+        en_author = commentatorNames[he_author]
+        return {
+            'name': en_author,
+            'scheme': 'commentary_works',
+            'titles': [
+                {
+                    'lang': 'en',
+                    'text': en_author,
+                    'primary': True
+                },
+                {
+                    'lang': 'he',
+                    'text': he_author,
+                    'primary': True
+                }
+            ]
         }
 
     def set_verses(self, verse_map):
@@ -394,7 +415,7 @@ class commentarySub(supermod.commentary):
         pages = {}
         for chapter in self.get_chapter():
             for phrase in chapter.get_phrase():
-                page_num = re.search(u'ph-[0-9]{1,2}-([0-9A-Z]{1,3})-[0-9]{1,2}', phrase.id).group(1)
+                page_num = re.search(u'ph-[0-9]{1,2}-([0-9A-Z]{1,4})-[0-9]{1,2}', phrase.id).group(1)
                 pages.setdefault(page_num, [])
                 pages[page_num].append(phrase)
         return pages
