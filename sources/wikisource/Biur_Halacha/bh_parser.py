@@ -44,6 +44,11 @@ def isSeifTitle(comment):
            or comment.name == "h3" or comment.name == "h2" or comment.name == "script"
 
 
+def cleanUpComment(comment):
+    return comment.replace("(*)", "").strip() if "(*)" in comment \
+        else comment.strip()
+
+
 def regularParse(soup, siman_num):
 
     seif_titles = soup.find_all("span",
@@ -68,10 +73,10 @@ def regularParse(soup, siman_num):
 
                 if comment_text: comments_text.append(comment_text)
 
-                comment_text = comment.text.strip()
+                comment_text = cleanUpComment(comment.text)
 
             else:  # part of the previous comment
-                comment_text += comment.text.strip()
+                comment_text += cleanUpComment(comment.text)
 
         if comment_text: comments_text.append(comment_text.strip())
 
@@ -94,7 +99,7 @@ def outlierParse(soup, siman_num):
         comments = seif_title.find_next('ul')
 
         for comment in comments.find_all("li"):
-            comments_text.append(comment.text.strip())
+            comments_text.append(cleanUpComment(comment.text))
 
         simanim_ja.set_element([siman_num - 1, seif_num - 1], comments_text, [])
 
