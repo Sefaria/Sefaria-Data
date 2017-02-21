@@ -48,6 +48,16 @@ def isSeifTitle(comment):
 
 def cleanUpComment(comment):
     comment = bleach.clean(comment, tags=['b'], strip=True) # remove all non bold tags
+
+    if u":</b>" in comment:  # change `<b>DH:</b>` to `<b>DH</b> - ` for consistency
+        comment = comment.replace(u":</b>", u"</b> - ")
+
+    while u'\xa0' in comment:  # remove &nbsp
+        comment = comment.replace(u'\xa0', u'')
+
+    if u':.' in comment:  # remove .:
+        comment = comment.replace(u':.', u':')
+
     return comment.replace("(*)", "").strip() if "(*)" in comment \
         else comment.strip()
 
