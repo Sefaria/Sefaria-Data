@@ -27,6 +27,8 @@ from sefaria.helper.link import create_link_cluster
 # 18 Smag
 # 19 ShuA
 # 20 Tur
+
+# Checking for validity of references
 clean = True
 line_num = 2
 with open(args[0]) as tsv:
@@ -52,6 +54,7 @@ with open(args[0]) as tsv:
                 print u"Line: {} Malformed Ref: {}".format(line_num, l[n])
                 clean = False
 
+# Statistical model - not working very well
 if options.check_stats:
     data = {}
     sas = {}
@@ -113,14 +116,13 @@ def create_cluster(c):
                         attrs={"generated_by": "Ein Mishpat Cluster"},
                         exception_pairs=[("Tur", "Shulchan Arukh")])
 
+# Aggregate and Post links
 total = 0
 cluster_refs = None
-
 with open(args[0]) as tsv:
     next(tsv)
     next(tsv)
     for l in csv.reader(tsv, dialect="excel-tab"):
-        line_num += 1
         if not l[16]:
             continue
 
