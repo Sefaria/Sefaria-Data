@@ -4,6 +4,8 @@ import os, sys, re
 import urllib2
 from bs4 import BeautifulSoup
 
+import bleach
+
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
 
@@ -45,6 +47,7 @@ def isSeifTitle(comment):
 
 
 def cleanUpComment(comment):
+    comment = bleach.clean(comment, tags=['b'], strip=True) # remove all non bold tags
     return comment.replace("(*)", "").strip() if "(*)" in comment \
         else comment.strip()
 
