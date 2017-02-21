@@ -147,10 +147,10 @@ def parse_em(filename, passing, errorfilename):
                 cit.check_double(u'_mimon', mishneh.parse_rambam(rambam_cit, mass)) #cit._mimon = mishneh.parse_rambam(rambam_cit)
             elif re.search(u'ו?סמג',part):
                 semag_cit = split_it.next()
-                cit.check_double(u'_semag', smg.parse_semag(semag_cit, mass)) #cit._semag = smg.parse_semag(semag_cit)
+                cit.check_double(u'_semag', smg.parse_semag(semag_cit, mass))  # cit._semag = smg.parse_semag(semag_cit)
             elif re.search(u'ו?טוש"ע|ש"ע', part):
                     tsh_cit = split_it.next()
-                    cit.check_double(u'_tsh', tursh.parse_tsh(tsh_cit, mass))# tursh.parse_tsh(tsh_cit)
+                    cit.check_double(u'_tsh', tursh.parse_tsh(tsh_cit, mass))  # tursh.parse_tsh(tsh_cit)
             elif re.search(ur'טור', part):
                 next = split_it.next()
                 if next == ur'שו?"ע':
@@ -189,9 +189,10 @@ class Semag(object):
         split = re.split(reg_book, str.strip())
         str_list = filter(None, [item.strip() for item in split])
         resolveds = []
-        # it = iter(str_list)
         derabanan_flag = False
         book = None
+        reg_siman = u"סי'?|סימן"
+        reg_vav = u'ו{}'.format(reg_siman)
         for i, word in enumerate(str_list):
             if derabanan_flag:
                 derabanan_flag = False
@@ -207,7 +208,6 @@ class Semag(object):
                     return
                 if word == u'עשין' and len(derabanan) > 1:
                     book = re.search(u'[א-ה]',derabanan[1])
-                    # print book.group(0)
                     book = self._table[book.group(0)]
                     derabanan_flag = True
                 elif re.match(reg_book, word):
@@ -218,8 +218,13 @@ class Semag(object):
             else:
                 mitzva = re.split('\s', word)
                 for m in mitzva:
+                    if re.search(reg_vav, m) and not book:
+                        resolved = self._tracker.resolve(book, [None])
+                        resolveds.append(resolved)
                     if m == u'שם':
                         m = None
+                    elif re.search(reg_siman, m):
+                        continue
                     elif getGematriaVav(m, mass):
                         m = getGematriaVav(m, mass)
                     else:
@@ -296,7 +301,7 @@ class TurSh(object):
             return
         str_it = iter(str_list[1:])
         reg_siman = u"סי'?|סימן"
-        reg_seif = u'''סעי'?|סעיף|ס([א-ת]?"[א-ת])'''
+        reg_seif = u'''סעיף|סעי?'?|ס([א-ת]?"[א-ת])'''
         reg_sham = u'שם'
         reg_combined = u'ס([א-ת]?"[א-ת])'
         reg_vav = u'ו({}|{}|{}|{})'.format(reg_seif, reg_siman, reg_sham, reg_combined)
@@ -708,6 +713,7 @@ def fromCSV(fromcsv, newfile):
 def run1(massechet_he = None, massechet_en = None):
     parse1 = parse_em(u'{}.txt'.format(massechet_he), 1, '{}_error'.format(massechet_en))  # reades from ביצה.txt to screen output
     toCSV(massechet_he, parse1)  # writes to ביצה.csv
+    return parse1
 
 
 #  run to create the csv after first run of QA to get talmud matching
@@ -757,6 +763,6 @@ if __name__ == "__main__":
     # for m_en, m_he in zip(filenames_eg, filenames_he):
     #     parsed = run15(massechet_he=m_he, massechet_en= m_en)
         # parsed = run2(massechet_he=m_he, massechet_en= m_en)git
-    # parsed2 = run2(massechet_he=u'חגיגה', massechet_en=u'hagiga')
+    test = run1(massechet_he=u'בבא מציעא', massechet_en=u'bm')
 
     print 'done'
