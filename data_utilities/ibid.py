@@ -11,6 +11,11 @@ class BookIbidTracker(object):
         self._table = {}  # Keys are tuples of (index, (sections))
         self._section_length = 0
         self._last_cit = [None, None]
+        if self._last_cit[0] and self._last_cit[0]:
+            self._last_ref = Ref(u'{}.{}'.format(self._last_cit[0], '.'.join(self._last_cit[1])))
+        else:
+            self._last_ref = None
+
 
     def registerRef(self, oref):
         """
@@ -60,7 +65,7 @@ class BookIbidTracker(object):
                     from_table = self._table[(index_name, tuple(key))].sections
                 except:
                     print "error, couldn't find this key", index_name, tuple(key)
-                    return
+                    return "error, couldn't find this key", index_name, tuple(key)
             else:
                 from_table = sections # that is it wasn't found in _table
             new_sections = []
@@ -74,7 +79,7 @@ class BookIbidTracker(object):
                 resolvedRef = Ref(u'{}.{}'.format(index_name, '.'.join(new_sections)))
             except:
                 print 'error, problem with the Ref iteslf. ', u'{}.{}'.format(index_name, '.'.join(new_sections))
-                return
+                return "error, problem with the Ref iteslf", index_name, tuple(key)
             self._last_cit = [index_name, new_sections]
         self.registerRef(resolvedRef)
         return resolvedRef
