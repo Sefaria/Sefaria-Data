@@ -215,4 +215,4 @@ text_version = {
     'text': simanim_ja.array()
 }
 
-post_text("Biur Halacha", text_version, weak_network=True)
+post_text("Biur Halacha", text_version)
