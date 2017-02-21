@@ -23,7 +23,7 @@ reload(sys)
 sys.setdefaultencoding("utf-8")
 
 
-simanim_ja = jagged_array.JaggedArray([[[]]]) #JA of Simanim[Seifim[comments]]]
+simanim_ja = jagged_array.JaggedArray([[[]]])  #JA of Simanim[Seifim[comments]]]
 
 
 def soupAndOpen(filename):
@@ -64,8 +64,7 @@ def cleanUpComment(comment):
 
 def regularParse(soup, siman_num):
 
-    seif_titles = soup.find_all("span",
-                               class_="mw-headline")
+    seif_titles = soup.find_all("span", class_="mw-headline")
 
     for seif_title in seif_titles:
 
@@ -84,14 +83,16 @@ def regularParse(soup, siman_num):
 
             if comment.b:  # has a new comment with new dibur hamatchil
 
-                if comment_text: comments_text.append(comment_text)
+                if comment_text: # was a previous comment not yet added to array
+                    comments_text.append(comment_text)
 
-                comment_text = cleanUpComment(comment.text)
+                comment_text = cleanUpComment(comment)
 
             else:  # part of the previous comment
-                comment_text += cleanUpComment(comment.text)
+                comment_text += u'<br>' + cleanUpComment(comment)
 
-        if comment_text: comments_text.append(comment_text.strip())
+        if comment_text: # is a last comment that exists
+            comments_text.append(comment_text)
 
         simanim_ja.set_element([siman_num - 1, seif_num - 1], comments_text, [])
 
@@ -112,7 +113,7 @@ def outlierParse(soup, siman_num):
         comments = seif_title.find_next('ul')
 
         for comment in comments.find_all("li"):
-            comments_text.append(cleanUpComment(comment.text))
+            comments_text.append(cleanUpComment(comment))
 
         simanim_ja.set_element([siman_num - 1, seif_num - 1], comments_text, [])
 
@@ -123,8 +124,8 @@ page = opener.open("https://he.wikisource.org/w/index.php?title=%D7%91%D7%99%D7%
 soup = BeautifulSoup(page)
 
 sections = []
-start = 1 # start of first section of halachot
-end = 0 # end is added to start
+start = 1  # start of first section of halachot
+end = 0  # end is added to start
 
 section_titles = soup.find_all("span", class_="mw-headline")
 
@@ -141,17 +142,17 @@ for section_title in section_titles:
 
 files = os.listdir("./pages")
 
-for filename in files: #696 simanim in O.C.
+for filename in files:  #696 simanim in O.C.
 
     siman_num = int(filename.split('.')[1])  # get siman number from title
 
     if siman_num is 5 or siman_num is 6:
         print "not real", siman_num
-        continue # 5 & 6 are simanim with no text but a page
+        continue  # 5 & 6 are simanim with no text but a page
 
     soup = soupAndOpen("./pages/%s" % (filename))
 
-    if siman_num is 3 or siman_num is 4 or siman_num is 7: #siman numbers that did not conform to be able to parse
+    if siman_num is 3 or siman_num is 4 or siman_num is 7:  #siman numbers that did not conform to be able to parse
         print "outlier", siman_num
         outlierParse(soup, siman_num)
 
@@ -167,7 +168,7 @@ links = []
 
 for comment in traverse_ja(simanim_ja.array()):
     links.append({
-        'refs':[
+        'refs': [
             'Shulchan_Arukh, Orach_Chayim.{}.{}'.format(comment['indices'][0] - 1, comment['indices'][1] - 1),
             'Biur Halacha.{}.{}.{}'.format(*[i - 1 for i in comment['indices']])
         ],
@@ -204,7 +205,6 @@ index = {
     "alt_structs": { "Categories": alt_schema.serialize() },
     "base_text_titles": ["Shulchan Arukh, Orach_Chayim"]
 }
-
 
 post_index(index)
 
