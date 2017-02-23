@@ -9,15 +9,24 @@ from data_utilities.util import getGematria
 from data_utilities.ibid import BookIbidTracker
 from sefaria.utils.hebrew import strip_nikkud
 import unicodecsv as csv
-import logging
 
-ErrorFile = codecs.open(u'global_error_file.txt', 'w', encoding='utf-8')
-test = None
+class Massekhet(object):
+
+    def __init__(self,errorfilename):
+        self.ErrorFile = codecs.open(errorfilename, 'w', encoding='utf-8')
+        self.test = None
+        self.error_flag = False
+        self.line_num = 0
+
+    def write_shgia(self, txt):
+        self.error_flag = txt
+        self.ErrorFile.write(str(self.line_num) + ': ' + txt + '\n')
+        print self.line_num, txt
 
 
 class EM_Citation(object):
     """
-    One instance per commentary
+    One instance per row in text file
     """
     def __init__(self, filename, line_number, orig):
         self._massekhet = filename
@@ -42,9 +51,7 @@ class EM_Citation(object):
             for i, small_letter in enumerate(self._page_counter):
                 dict = self.get_dict(i)
                 citations.append(dict)
-        print citations
         return citations
-
 
     def get_dict(self, i):
         try:
@@ -57,7 +64,8 @@ class EM_Citation(object):
                 u'Rambam': self._mimon,
                 u'Semag': self._semag,
                 u'Tur Shulchan Arukh': self._tsh,
-                u'original': self._original
+                u'original': self._original,
+                u'problem': None
                 }
         except IndexError:
             dict = {
@@ -69,18 +77,15 @@ class EM_Citation(object):
                 u'Rambam': self._mimon,
                 u'Semag': self._semag,
                 u'Tur Shulchan Arukh': self._tsh,
-                u'original': self._original
+                u'original': self._original,
+                u'problem': u'error missing little or big letter'
             }
-
-            print 'error missing little or big letter'
-            ErrorFile.write('error missing little or big letter')
+            print u'error missing little or big letter'
         for key in dict.keys():
             if isinstance(dict[key], list):
                 dict[key] = [ref.normal() for ref in dict[key] if (isinstance(ref, Ref))]
         return dict
 
-    def error(self):
-        print self._file_line
 
     def check_double(self, variable, new):
         try:
@@ -92,9 +97,8 @@ class EM_Citation(object):
             return vars(self)[variable]
 
 
-def parse_em(filename, passing):
-    # f = codecs.open(u'{}_error.txt'.format(filename), 'w', encoding='utf-8')
-    ErrorFile.write(u'test')
+def parse_em(filename, passing, errorfilename):
+    mass = Massekhet(errorfilename)
     i = 0
     perek = 0
     page = 0
@@ -104,66 +108,64 @@ def parse_em(filename, passing):
     cit_dictionary = []
     with codecs.open(filename, 'r', 'utf-8') as fp:
         lines = fp.readlines()
-    pattern = ur'''(ו?ש"ע|מיי'|ו?סמג|ו?טוש"ע|ו?ב?טור)'''
-    ram_reg = re.compile(ur"(מיי')")
-    semag_reg = re.compile(ur'(סמג)')
-    tsh_reg = re.compile(ur'(\u05d8\u05d5\u05e9\"\u05e2)')
+    pattern = ur'''(ו?שו?"ע|מיי'|ו?סמג|ו?טוש"ע|ו?ב?טור)'''
 
     for line in lines:
+        mass.error_flag = False
         i += 1
         print i, filename
         print line
+        mass.line_num = i
         line = clean_line(line.strip())
-        # print line
         cit = EM_Citation(filename, i, line)
         # flags
         split = re.split(pattern, line)
         sub_s = re.split('\s',split[0].strip())
         # set the counters
         cit._perek_counter = sub_s[0]
-        cit._page_counter = sub_s[1:]  # the page counters can be a list of letters
+        cit._page_counter = sub_s[1:]  # since the page counters can be a list of letters
         try:
             perek_c = getGematria(cit._perek_counter)
             # check_continues
             if perek_c == 1:
                 perek += 1
                 page = 0
-            elif:
-                perek_c-1 == cit_dictionary[-1][]
+            elif perek_c-1 != getGematria(cit_dictionary[-1][u'Perek running counter']) and cit_dictionary[-1]['problem'] != u'error, cit with the perek/page counters':
+                mass.write_shgia(u'error, cit with the perek/page counters')
+
             cit._perek = perek
             if (not cit._page_counter) or (cit._page_counter[0] == u'א'):
                 page += 1
             cit._page = page
         except:
-            ErrorFile.write('error, cit with the perek/page counters')
-            print 'error, cit with the perek/page counters'
-
+            mass.write_shgia(u'error, cit with the perek/page counters')
         # start the parsing
         split_it = iter(split)
         for part in split_it:
             if part == ur"מיי'":
-                # tochen = split_it.next()
-                # if not tochen:
-                #     tochen = u'שם'
                 rambam_cit = split_it.next()
-                cit.check_double(u'_mimon', mishneh.parse_rambam(rambam_cit)) #cit._mimon = mishneh.parse_rambam(rambam_cit)
+                cit.check_double(u'_mimon', mishneh.parse_rambam(rambam_cit, mass)) #cit._mimon = mishneh.parse_rambam(rambam_cit)
             elif re.search(u'ו?סמג',part):
                 semag_cit = split_it.next()
-                cit.check_double(u'_semag', smg.parse_semag(semag_cit)) #cit._semag = smg.parse_semag(semag_cit)
-            elif re.search(u'ו?טוש"ע|ש"ע', part):
-                # if not cit._tsh: # i think this was in only because the tur alon but that was taken care of.
+                cit.check_double(u'_semag', smg.parse_semag(semag_cit, mass))  # cit._semag = smg.parse_semag(semag_cit)
+            elif re.search(u'ו?טוש"ע|ש"ע|שו"ע', part):
                     tsh_cit = split_it.next()
-                    cit.check_double(u'_tsh', tursh.parse_tsh(tsh_cit))# tursh.parse_tsh(tsh_cit)
+                    cit.check_double(u'_tsh', tursh.parse_tsh(tsh_cit, mass))  # tursh.parse_tsh(tsh_cit)
             elif re.search(ur'טור', part):
                 next = split_it.next()
-                if next == ur'שו?"ע':
-                    tsh_cit = split_it.next()
-                    cit._tsh = tursh.parse_tsh(tsh_cit)
-                else:# basically assuming there isn't SA citation here
-                    tsh_cit = next
-                    cit.check_double('_tsh', tursh.parse_tsh(tsh_cit, only_tur = True))#cit._tsh = tursh.parse_tsh(tsh_cit, only_tur = True)
-
+                # if next == ur'שו?"ע':
+                #     tsh_cit = split_it.next()
+                #     cit._tsh = tursh.parse_tsh(tsh_cit, mass)
+                # else:# basically assuming there isn't SA citation here
+                #     tsh_cit = next
+                #     cit.check_double('_tsh', tursh.parse_tsh(tsh_cit, mass, only_tur = True))#cit._tsh = tursh.parse_tsh(tsh_cit, only_tur = True)
+                tsh_cit = next
+                cit.check_double('_tsh', tursh.parse_tsh(tsh_cit, mass,
+                                                             only_tur=True))  # cit._tsh = tursh.parse_tsh(tsh_cit, only_tur = True)
         cit_dictionary.extend(cit.obj2dict(passing))
+        if cit_dictionary[-1][u'problem'] != u'error missing little or big letter' and cit_dictionary[-1][u'problem'] != u'error, cit with the perek/page counters':
+            cit_dictionary[-1][u'problem'] = mass.error_flag
+        print cit_dictionary[-1]
     return cit_dictionary
 
 
@@ -185,16 +187,16 @@ class Semag(object):
                        }
 
 
-    def parse_semag(self, str):
-        # split = re.split('\s', str.strip())
+
+    def parse_semag(self, str, mass):
         reg_book = re.compile(u'ו?(עשין|שם|לאוין)')
         split = re.split(reg_book, str.strip())
-        # str_list = filter(None, split)
         str_list = filter(None, [item.strip() for item in split])
         resolveds = []
-        # it = iter(str_list)
         derabanan_flag = False
         book = None
+        reg_siman = u"סי'?|סימן"
+        reg_vav = u'ו{}'.format(reg_siman)
         for i, word in enumerate(str_list):
             if derabanan_flag:
                 derabanan_flag = False
@@ -202,35 +204,33 @@ class Semag(object):
                 resolveds.append(resolved)
                 continue
             elif re.search(reg_book, word):
-                # book = word
-                # if book == u'שם':
-                #     book = None
-                # elif book == u'לאוין':
-                #     book = u'Sefer Mitzvot Gadol, Volume One'
                 try:
                     if word != u'שם':
                         derabanan = filter(None, [item.strip() for item in re.split(u'(מד"ס|מ?דרבנן)',str_list[i+1].strip())])
                 except IndexError:
-                    ErrorFile.write('error smg, no place in book notation')
-                    print 'error smg, no place in book notation'
+                    mass.write_shgia('error smg, no place in book notation')
                     return
                 if word == u'עשין' and len(derabanan) > 1:
                     book = re.search(u'[א-ה]',derabanan[1])
-                    # print book.group(0)
                     book = self._table[book.group(0)]
                     derabanan_flag = True
                 elif re.match(reg_book, word):
                     book = self._table[word]
                 else:
-                    print "error smg, don't recognize book name", book
+                    mass.write_shgia("error smg, don't recognize book name")
                     return
             else:
                 mitzva = re.split('\s', word)
                 for m in mitzva:
+                    if re.search(reg_vav, m) and not book:
+                        resolved = self._tracker.resolve(book, [None])
+                        resolveds.append(resolved)
                     if m == u'שם':
                         m = None
-                    elif getGematriaVav(m):
-                        m = getGematriaVav(m)
+                    elif re.search(reg_siman, m):
+                        continue
+                    elif getGematriaVav(m, mass):
+                        m = getGematriaVav(m, mass)
                     else:
                         m = None
                     resolved = self._tracker.resolve(book, [m])
@@ -238,7 +238,6 @@ class Semag(object):
         if not resolveds:
             resolved = self._tracker.resolve(book, [None])
             resolveds.append(resolved)
-        # print resolveds
         return resolveds
 
 
@@ -295,7 +294,7 @@ class TurSh(object):
             return True
         return False
 
-    def parse_tsh(self, str, only_tur = False):
+    def parse_tsh(self, str, mass, only_tur = False):
         ayyen = re.split(u''' ובהג"ה|ועיין|ועי'?|וע"ש''', str)
         if len(ayyen) > 1:
             str = ayyen[0]
@@ -305,10 +304,8 @@ class TurSh(object):
         if not str_list:
             return
         str_it = iter(str_list[1:])
-        # reg_siman = re.compile(u"סי'?|סימן")
         reg_siman = u"סי'?|סימן"
-        # reg_seif = re.compile(u'''סעי'?|סעיף|ס([א-ת]?"[א-ת])''')
-        reg_seif = u'''סעי'?|סעיף|ס([א-ת]?"[א-ת])'''
+        reg_seif = u'''סעיף|סעי?'?|ס([א-ת]?"[א-ת])'''
         reg_sham = u'שם'
         reg_combined = u'ס([א-ת]?"[א-ת])'
         reg_vav = u'ו({}|{}|{}|{})'.format(reg_seif, reg_siman, reg_sham, reg_combined)
@@ -326,16 +323,8 @@ class TurSh(object):
                 book_sa = None
                 str_it = iter(str_list)
             else:
-                print "error tsh, don't recognize book name", book
+                mass.write_shgia(u"error tsh, don't recognize book name")
                 return
-
-            # else:
-            #     try:
-            #         if self._sa_table.has_key(book):
-            #             book_sa = self._sa_table[book]
-            #     except KeyError:
-            #         print "error tsh, don't recognize book name", book
-            #         return
             flag_next = False
             siman = None
             seif = None
@@ -344,7 +333,7 @@ class TurSh(object):
                 to_res = False  # a flag to say there was found a citation we want to resolve
                 if re.search(reg_siman, word) and not re.search(reg_seif, word):
                     to_res = True
-                    siman = getGematriaVav(str_it.next())
+                    siman = getGematriaVav(str_it.next(), mass)
                     hasnext = True
                     try:
                         next = str_it.next()
@@ -353,105 +342,59 @@ class TurSh(object):
                     if hasnext and (re.search(reg_seif,next) or re.search(reg_sham, next)):
                         if re.search(reg_combined, next):
                             combined = re.search(reg_combined, next)
-                            seif = getGematriaVav(combined.group(1))
+                            seif = getGematriaVav(combined.group(1), mass)
                         elif re.search(reg_sham, next):
                             seif = None
                         else:
-                            seif = getGematriaVav(str_it.next())
+                            seif = getGematriaVav(str_it.next(), mass)
                     elif self.check_uno(book_sa, siman):
                         seif = 1
-                    else:
-                        if only_tur:
-                            resolved_tur = self.parse_tur(book_sa, siman) #todo: note: might be an issue with None, None to this file
-                            return resolved_tur
-                        else:
-                            ErrorFile.write(u'error tsh, missing seif')
+                    elif not only_tur:
+                        mass.write_shgia(u'error tsh, missing seif')
+                        if mass.error_flag:
+                            mass.error_flag = [mass.error_flag, u'error tsh, missing seif']
                             print u'error tsh, missing seif'
-
                             return
+
                 elif re.search(reg_seif, word):
                     to_res = True
                     if re.search(reg_combined, word):
                         combined = re.search(reg_combined, word)
-                        seif = getGematriaVav(combined.group(1))
+                        seif = getGematriaVav(combined.group(1), mass)
                     else:
-                        seif = getGematriaVav(str_it.next())
+                        seif = getGematriaVav(str_it.next(), mass)
                 elif len(word) <= 3:# todo: note: 3 is a bit long check that not getting gorbage, deleted: from line start re.match(u'''[א-ת]{1}''', word) and
                     if not re.search(reg_sham, word):
-                        seif = getGematriaVav(word)
+                        seif = getGematriaVav(word, mass)
                         to_res = True
-                    # try:
-                    #     next = str_it.next()
-                    #     flag_next = True
-                    # except:
-                    #     pass
-                    # if flag_next and (re.search(reg_siman, next) or re.search(reg_seif, next)): # but not with a Vav...
-                    #     to_res = False
+                else:
+                    getGematriaVav(word, mass)
                 if to_res:
-                    resolved_sa = self._tracker_sa.resolve(book_sa, [siman, seif])
-                    # don't type in the same resolved tur twice... (when there is citations to 2 seifim in the same siman it is twice one citation in the tur, no need)
-                    if resolved_tur != self._tracker_tur.resolve(self._tur_table[book_sa], [siman]): # self._tracker_tur._last_ref: #
-                        resolved_tur = self._tracker_tur.resolve(self._tur_table[book_sa], [siman])
-                        resolveds.append(resolved_tur)
-
-                    resolveds.append(resolved_sa)
-
-            # for word in str_it:
-            #     if re.search(reg_siman, word):
-            #         if not siman:
-            #             siman = getGematria(str_it.next())
-            #             siman1 = siman
-            #         else:
-            #             siman1 = getGematria(str_it.next())
-            #     elif re.search(reg_seif, word):
-            #         if not seif:
-            #             seif = getGematria(str_it.next())
-            #         else:
-            #             seif1 = getGematria(str_it.next())
-            # if not seif:
-            #    if self.check_uno(book_sa, siman):
-            #        seif = 1
-            #    else:
-            #        seif = None
-            # resolved_sa = self._tracker_sa.resolve(book_sa, [siman, seif])
-            # resolved_tur = self._tracker_tur.resolve(book_tur, [siman])
-            # print resolved_tur
-            # print resolved_sa
-            # if siman1!= siman or seif1:
-            #     resolved_sa1 = self._tracker_sa.resolve(book_sa, [siman1, seif1])
-            #     resolved_tur1 = self._tracker_tur.resolve(book_tur, [siman1])
-            #     if not seif:
-            #         if self.check_uno(book_sa, siman1):
-            #             seif = 1
-            #         else:
-            #             seif = None
-            #     print resolved_tur1
-            #     print resolved_sa1
-            #     return [resolved_sa, resolved_tur, resolved_sa1, resolved_tur1]
-            # else:
-            #     return [resolved_sa, resolved_tur]
+                    if only_tur:
+                        resolved_tur = self.parse_tur(book_sa,siman)  # todo: note: might be an issue with None, None to this file
+                        resolveds.extend(resolved_tur)
+                    else:
+                        resolved_sa = self._tracker_sa.resolve(book_sa, [siman, seif])
+                        if resolved_tur != self._tracker_tur.resolve(self._tur_table[book_sa], [siman]): # self._tracker_tur._last_ref: #
+                            resolved_tur = self._tracker_tur.resolve(self._tur_table[book_sa], [siman])
+                            resolveds.append(resolved_tur)
+                        resolveds.append(resolved_sa)
             if not resolveds:
                 resolveds.append(self._tracker_sa.resolve(book_sa, [siman, seif]))
                 #note: todo: fix! repeting code!!!
                 if resolved_tur != self._tracker_tur._last_cit:  # self._tracker_tur.resolve(self._tur_table[book_sa], [siman]):
                     resolved_tur = self._tracker_tur.resolve(self._tur_table[book_sa], [siman])
                     resolveds.append(resolved_tur)
-            # print resolveds
             return resolveds
         except KeyError:
-            ErrorFile.write('error tsh, there is missing data where in the tur to look')
-            print 'error tsh, there is missing data where in the tur to look'
+            mass.write_shgia(u'error tsh, there is missing data where in the tur to look')
             return
 
     def parse_tur(self, book_sa = None, siman = None):
-        # if book_sa == 'None':
-        #     book_sa = None
-        # if siman == 'None':
-        #     siman = None
         if not book_sa:
             book_sa = self._tur_table[book_sa]
         resolved_tur = self._tracker_tur.resolve(self._tur_table[book_sa], [siman])
-        return resolved_tur
+        return [resolved_tur]
 
 
 class Rambam(object):
@@ -461,28 +404,25 @@ class Rambam(object):
     def __init__(self):
         self._tracker = BookIbidTracker()
         self._conv_table = rambam_name_table()
-        # self.cit = []
 
-    def parse_rambam(self, str): # these will be aoutomatic from the privates of the object (Rambam)
-        logging.debug('This message should go to the log file')
+    def parse_rambam(self, str, mass): # these will be aoutomatic from the privates of the object (Rambam)
+        re.sub(u'''יוה"כ''', u'יום הכיפורים', str)
         reg1 = u'''(מהל|מהלכות|מהל'|מהלכו'|מה')'''  # מהלכות before the book name
         reg21 = u''' ו?הלכה| ו?הל'?| ו?הלכ'?| ו?דין'''
         # reg22 = u''' ה"[א-ת]'''
         reg22 = u'''ו?הל?([א-ת]?"[א-ת])'''
         combi = re.search(reg22, str)
-        if combi:
-            str = re.sub(reg22, u'הלכה {}'.format(ur'\1'), str)
+
         reg2 = u'''({}|{}|שם)'''.format(reg21,reg22)  # before the halacha
         reg_double_cit = u''' (ופ'|ופ[א-ת]?"[א-ת]|ופרק)'''
         reg_for_book = ur'''{} (.+?){}'''.format(reg1,reg2)
-        cit = []
 
         # check for multiple citation
         multiple = re.search(reg_double_cit, str)
         if multiple:
             mul = re.split(reg_double_cit, str, maxsplit=1)
-            a = self.parse_rambam(mul[0])
-            b = self.parse_rambam(mul[1] + mul[2])
+            a = self.parse_rambam(mul[0], mass)
+            b = self.parse_rambam(mul[1] + mul[2], mass)
             return a + b
 
 
@@ -503,19 +443,26 @@ class Rambam(object):
                     book = self._conv_table[key[0]]
             except:
                 print "error mim, couldn't find this book name in table", book
+                mass.error_flag = "error mim, couldn't find this book name in table"
+                mass.write_shgia("error mim, couldn't find this book name in table" + book)
         # perek
         perek = re.search(u'''פרק ([א-ת]"?[א-ת]?)|פ([א-ת]?"[א-ת])|ופ' ([א-ת]"?[א-ת]?)''', str)
         if perek:
             perek = perek.group(1) or perek.group(2) or perek.group(3)
-            perek = getGematriaVav(perek)
+            perek = getGematriaVav(perek, mass)
+
+        if combi:
+            str = re.sub(reg22, u'הלכה {}'.format(ur'\1'), str)
 
         # halacha
         halacha = re.search(u'''{} (.+)'''.format(reg2), str) or re.search(u'''{}'''.format(reg22), str)
         if halacha:
-            hal21 = re.search(u'''({}) (.+)'''.format(reg21), str)
+            hal21 = re.search(u'''({}) (.*)'''.format(reg21), str)  # todo: important! befor it was .+ what did this change ruin
             hal22 = re.search(u'''הל?([א-ת]?"[א-ת])''', str)
             if hal21:
                 halacha = hal21.group(2)
+                if not halacha:
+                    mass.write_shgia(u'error mim, No halacha stated')
             elif hal22:
                 halacha = hal22.group(1)
             elif re.search(u'שם', str):
@@ -532,25 +479,20 @@ class Rambam(object):
             halacha = re.sub(reg2, u'', halacha)  # todo: double check that this is not killing anything
             halacha_split = re.split(u'''\sו?([א-ת]?"?[א-ת]'?)''', halacha.strip())
             halacha_split = filter(None, halacha_split)
-            halacha = [getGematriaVav(i) for i in halacha_split]
-            # halacha = filter(lambda x:x!=0,halacha)
-
-        # print book, (perek, halacha)
-        # resolved = self._tracker.resolve(book, [perek, halacha])
+            halacha = [getGematriaVav(i, mass) for i in halacha_split]
             resolved = [self._tracker.resolve(book, [perek, hal]) for hal in halacha]
+            if len([item for item in resolved if not isinstance(item, Ref)]) > 0:
+                mass.write_shgia(u'error from ibid in Ref or table none problem')
         else:  # halacha was sham
             if perek and book and not re.search(u'שם', str):
-                ErrorFile.write('error mim, No halacha stated')
-                print 'error mim, No halacha stated'
+                mass.write_shgia('error mim, No halacha stated')
             resolved = self._tracker.resolve(book, [perek, halacha])
-        # print resolved
-        # return (book,(perek, halacha))
-        # self.cit.append(resolved)
-        # return self.cit
+
         if isinstance(resolved, list):
             return resolved
         else:
             return [resolved]
+
 
 # note: should call this function only once in init
 def rambam_name_table():
@@ -558,7 +500,6 @@ def rambam_name_table():
     en_names = names
     he_raw = [library.get_index(name).all_titles('he')[0] for name in names]
     he_names = []
-    # name_dict = {}
     name_dict = pygtrie.CharTrie()
     for he, en in zip(he_raw, en_names):
         s = re.split(u''' הלכות | הלכה | הל' | הלכ''' , he)
@@ -586,6 +527,7 @@ def rambam_name_table():
     name_dict[u'אבות הטומאות'] = name_dict[u'שאר אבות הטומאות']
     name_dict[u'שאר א"ה'] = name_dict[u'שאר אבות הטומאות']
     name_dict[u'טומאת משכב ומושב'] = name_dict[u'מטמאי משכב ומושב']
+    name_dict[u'מטמא משכב ומושב'] = name_dict[u'מטמאי משכב ומושב']
     name_dict[u'משכב ומושב'] = name_dict[u'מטמאי משכב ומושב']
     name_dict[u'צרעת'] = name_dict[u'טומאת צרעת']
     # name_dict[u"שכני'"] = name_dict[u'שכנים']
@@ -607,6 +549,7 @@ def rambam_name_table():
     # name_dict[u"מכיר'"] = name_dict[u'מכירה']
     name_dict[u'שאר אבות הטומאה'] = name_dict[u'שאר אבות הטומאות']
     name_dict[u'מעשה קרבנות'] = name_dict[u'מעשה הקרבנות']
+    name_dict[u'מעשה קרבן'] = name_dict[u'מעשה הקרבנות']
     name_dict[u'תענית'] = name_dict[u'תעניות']
     name_dict[u'מקוואות'] = name_dict[u'מקואות']
     name_dict[u'ערכין וחרמין'] = name_dict[u'ערכים וחרמין']
@@ -710,7 +653,7 @@ def clean_line(line):
 
 
 # putting in casses of switching the letter order
-def getGematriaVav(str):
+def getGematriaVav(str, mass):
     str = str.strip()
     str = re.sub(u'''"|''', u'', str)
     case_set = {270,272,274,275,298,304,344,670,672,698,744} # from trello card 'Letter transpositions'
@@ -718,10 +661,10 @@ def getGematriaVav(str):
         return getGematria(str[1:])
     elif is_hebrew_number(str) or getGematria(str) in case_set: # and not re.search(u'''מד"ס'''): or re.search(u'''('|")''', str)
         return getGematria(str)
+    elif re.search(u'בהגהה?', str): # this is not gimatria but there is no need to send an error about it each time...
+        return
     else:
-        ErrorFile.write('error in pointer, not Gimatria...')
-        print 'error in pointer, not Gimatria...', str
-
+        mass.write_shgia('error in pointer, not Gimatria...'+ str)
 #  Noahs code checking that the hundreds, tens, ones, are in the right order
 def is_hebrew_number(str):
     matches = re.findall(hebrew_number_regex(), str)
@@ -753,17 +696,11 @@ def hebrew_number_regex():
     return re.compile(rx, re.VERBOSE)
 
 
-# def obj2dict(obj_list):
-#     dict_list = []
-#     for line in obj_list:
-#         dict_list.append(vars(line))
-#     return dict_list
-
 def toCSV(filename, obj_list):
     list_dict = obj_list
     with open(u'{}.csv'.format(filename), 'w') as csv_file:
         writer = csv.DictWriter(csv_file, [u'txt file line', u'Perek running counter',u'page running counter',
-                                u'Perek aprx', u'Page aprx', u'Rambam', u'Semag', u'Tur Shulchan Arukh', u'original']) #fieldnames = obj_list[0].keys())
+                                u'Perek aprx', u'Page aprx', u'Rambam', u'Semag', u'Tur Shulchan Arukh', u'original', u'problem']) #fieldnames = obj_list[0].keys())
         writer.writeheader()
         writer.writerows(list_dict)
 
@@ -776,12 +713,28 @@ def fromCSV(fromcsv, newfile):
             f.write(row[u'original'].strip() + u'\n')
 
 
-def run(massechet_he = None, massechet_en = None):
-    parse1 = parse_em(u'{}.txt'.format(massechet_he), 1)  # reades from ביצה.txt to screen output
+#  run to create csv for QA
+def run1(massechet_he = None, massechet_en = None):
+    parse1 = parse_em(u'{}.txt'.format(massechet_he), 1, '{}_error'.format(massechet_en))  # reades from ביצה.txt to screen output
     toCSV(massechet_he, parse1)  # writes to ביצה.csv
-    # fromCSV(u'{}.csv'.format(massechet_he), u'{}.txt'.format(massechet_en))  # reads from fixed ביצה.csv to egg.txt
-    # parse2 = parse_em(u'{}.txt'.format(massechet_en),2)  # egg.txt to screen output
-    # toCSV(u'{}_done.csv'.format(massechet_en), parse2)  # write final to egg_done.csv
+    return parse1
+
+
+#  run to create the csv after first run of QA to get talmud matching
+def run2(massechet_he=None, massechet_en=None):
+    fromCSV(u'{}.csv'.format(massechet_he), u'{}.txt'.format(massechet_en))  # reads from fixed ביצה.csv to egg.txt
+    parse2 = parse_em(u'{}.txt'.format(massechet_en),2, u'{}_error'.format(massechet_en))  # egg.txt to screen output
+    toCSV(u'{}_done'.format(massechet_en), parse2)  # write final to egg_done.csv
+    return parse2
+
+def run15(massechet_he=None, massechet_en=None):
+    fromCSV(u'{}.csv'.format(massechet_he), u'{}.txt'.format(massechet_he))  # reads from fixed ביצה.csv to egg.txt
+    parse1 = parse_em(u'{}.txt'.format(massechet_he),1, u'{}_error'.format(massechet_en))  # egg.txt to screen output
+    toCSV(u'{}1'.format(massechet_he), parse1)
+    return parse1
+
+def last_algo_run(withSegments, parsedData):
+    pass
 
 
 def write_errfile(filename):
@@ -803,46 +756,50 @@ def write_errfile(filename):
                     k+=1
                     e.next()
 
+# from csv to txt
+def reverse_collapse(fromcsv, collapsed_file):
+    f = codecs.open(u'{}.txt'.format(collapsed_file), 'w', encoding='utf-8')
+    with open(fromcsv, 'r') as csvfile:
+        file_reader = csv.DictReader(csvfile)
+        prev = None
+        for i, row in enumerate(file_reader):
+            if prev != (row[u'original'].strip() + u'\n'):
+                f.write(row[u'original'].strip() + u'\n')
+            prev = (row[u'original'].strip() + u'\n')
+    run1(u'{}'.format(collapsed_file),u'{}'.format(collapsed_file))
+
+def segment_column(segmentfile, reffile, massekhet):
+    final_list = []
+    with open(segmentfile, 'r') as csvfile:
+        seg_reader = csv.DictReader(csvfile)
+        with open(reffile, 'r') as csvfile:
+            ref_reader = csv.DictReader(csvfile)
+            for segrow, refrow in zip(seg_reader, ref_reader):
+                letter_dict = {u'Segment': u'{}.{}.{}'.format(massekhet, segrow[u'Daf'],segrow[u'Line']),
+                              u'Rambam': refrow[u'Rambam'],
+                              u'Semag': refrow[u'Semag'],
+                              u'Tur Shulchan Arukh':refrow[u'Tur Shulchan Arukh']}
+                final_list.append(letter_dict)
+    return final_list
 
 if __name__ == "__main__":
     # test = parse_em('test.txt')
-    # filenames = [u'בבא מציעא', u'בבא בתרא', u'ראש השנה', u'ביצה', u'ברכות', u'גיטין', u'חגיגה', u'יבמות', u'יומא',
-    #              u'כתובות', u'מועד קטן', u'מכות', u'נדרים', u'נזיר', u'סוטה', u'סוכה', u'סנהדרין', u'עירובין', u'פסחים',
-    #              u'קידושין',u'ראש השנה', u'שבועות', u'שבת']
-    # for mass in filenames:
-    #     ein_mishpat = parse_em(u'{}.txt'.format(mass))
-    #     toCSV(mass, ein_mishpat)
-    # ein_mishpat = parse_em('בבא מציעא.txt')
-    # ein_mishpat = parse_em('בבא בתרא.txt')
-    # ein_mishpat = parse_em('ראש השנה.txt')
-    # ein_mishpat = parse_em(u'ביצה.txt', 1)
-    # toCSV(u'ביצה', ein_mishpat)
-    # ein_mishpat = parse_em('ברכות.txt')
-    # ein_mishpat = parse_em('גיטין.txt')
-    # ein_mishpat = parse_em('חגיגה.txt')
-    # ein_mishpat = parse_em('יבמות.txt')
-    # ein_mishpat = parse_em('יומא.txt')
-    # ein_mishpat = parse_em('כתובות.txt')
-    # ein_mishpat = parse_em('מועד קטן.txt')
-    # ein_mishpat = parse_em('מכות.txt', 1)
-    # ein_mishpat = parse_em('נדרים.txt')
-    # ein_mishpat = parse_em('נזיר.txt')
-    # ein_mishpat = parse_em('חגיגה.txt')
-    # toCSV(u'חגיגה', ein_mishpat)
-    # ein_mishpat = parse_em('סוכה.txt')
-    # ein_mishpat = parse_em('סנהדרין.txt')
-    # ein_mishpat = ein_mishpat = parse_em('עירובין.txt')
-    # ein_mishpat = parse_em('פסחים.txt')
-    # ein_mishpat = parse_em('קידושין.txt')
-    # ein_mishpat = parse_em('שבועות.txt')
-    # ein_mishpat = parse_em('שבת.txt')
-    # fromCSV(u'egg_2fix.csv', u'egg_fixed.txt')
-    # fixed_ein = parse_em(u'egg_fixed.txt', 2)
-    # toCSV(u'egg2', fixed_ein)
-    # fromCSV(u'testing.csv', u'testing.txt')
-    # fixed_ein = parse_em(u'testing.txt')
-    # logging.basicConfig(filename='example.log', level=logging.DEBUG)
-    # logging.debug('This message should go to the log file')
-    run(massechet_he=u'מכות')
-    # write_errfile(filename = u'nazir')
+    # filenames_he = [u'בבא מציעא', u'בבא בתרא', u'ראש השנה', u'ברכות', u'גיטין',  u'יבמות', u'יומא',
+    #              u'כתובות', u'מועד קטן',  u'נדרים',   u'סנהדרין', u'עירובין', u'פסחים',
+    #              u'קידושין',u'ראש השנה', u'שבועות', u'שבת']  #
+    # filenames_he = [u'נזיר', u'ביצה', u'סוכה',u'מכות',u'סוטה']
+    # filenames_eg = [u'bm', u'bb', u'rh',  u'brachot', u'gittin',  u'yevamot', u'yoma',
+    #              u'ktobot', u'moed',  u'nedarim', u'sanhedrim', u'eruvin', u'pesachim',
+    #              u'kidushin',u'rh', u'shvuot', u'shabbat']  # u'nazir', u'egg', u'hagiga', u'sukka', u'makot', u'sota'
+    # filenames_eg = [u'nazir', u'beitza', u'sukka', u'makot', u'sota']
+    # for m_en, m_he in zip(filenames_eg, filenames_he):
+    #     parsed = run15(massechet_he=m_he, massechet_en= m_en)
+        # parsed = run2(massechet_he=m_he, massechet_en= m_en)
+    # parsed = run2(massechet_he=u'מועד קטן', massechet_en= u'mk_test')
+    # test = run2(massechet_he=u'Ein Mishpat - Moed Katan.csv', massechet_en=u'mk - test')
+
+    # final lines to get a dict
+    reverse_collapse(u'mk_done.csv', u'mk_collapsed')
+    parsed = run2(massechet_he=u'mk_collapsed', massechet_en= u'mk_test')
+    # final_list = segment_column('Ein Mishpat - Moed Katan.csv', 'mk_test_done.csv','Moed_Katan')
     print 'done'
