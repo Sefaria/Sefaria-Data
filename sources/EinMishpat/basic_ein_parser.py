@@ -11,8 +11,12 @@ from sefaria.utils.hebrew import strip_nikkud
 import unicodecsv as csv
 import logging
 
-ErrorFile = codecs.open(u'global_error_file.txt', 'w', encoding='utf-8')
-test = None
+class Massekhet(object):
+
+    def __init__(self):
+        # self.ErrorFile = codecs.open(u'global_error_file.txt', 'w', encoding='utf-8')
+        self.test = None
+        self.error_flag = False
 
 
 class EM_Citation(object):
@@ -57,7 +61,8 @@ class EM_Citation(object):
                 u'Rambam': self._mimon,
                 u'Semag': self._semag,
                 u'Tur Shulchan Arukh': self._tsh,
-                u'original': self._original
+                u'original': self._original,
+                u'problem': None
                 }
         except IndexError:
             dict = {
@@ -69,11 +74,11 @@ class EM_Citation(object):
                 u'Rambam': self._mimon,
                 u'Semag': self._semag,
                 u'Tur Shulchan Arukh': self._tsh,
-                u'original': self._original
+                u'original': self._original,
+                u'problem': None
             }
-
-            print 'error missing little or big letter'
-            ErrorFile.write('error missing little or big letter')
+            print u'error missing little or big letter'
+            # ErrorFile.write(u'error missing little or big letter')
         for key in dict.keys():
             if isinstance(dict[key], list):
                 dict[key] = [ref.normal() for ref in dict[key] if (isinstance(ref, Ref))]
@@ -93,8 +98,9 @@ class EM_Citation(object):
 
 
 def parse_em(filename, passing):
+    mass = Massekhet()
     # f = codecs.open(u'{}_error.txt'.format(filename), 'w', encoding='utf-8')
-    ErrorFile.write(u'test')
+    # mass.ErrorFile.write(u'test')
     i = 0
     perek = 0
     page = 0
@@ -110,6 +116,7 @@ def parse_em(filename, passing):
     tsh_reg = re.compile(ur'(\u05d8\u05d5\u05e9\"\u05e2)')
 
     for line in lines:
+        mass.error_flag = False
         i += 1
         print i, filename
         print line
@@ -128,14 +135,13 @@ def parse_em(filename, passing):
             if perek_c == 1:
                 perek += 1
                 page = 0
-            elif:
-                perek_c-1 == cit_dictionary[-1][]
             cit._perek = perek
             if (not cit._page_counter) or (cit._page_counter[0] == u'א'):
                 page += 1
             cit._page = page
         except:
-            ErrorFile.write('error, cit with the perek/page counters')
+            # mass.ErrorFile.write('error, cit with the perek/page counters')
+            mass.error_flag = 'error, cit with the perek/page counters'
             print 'error, cit with the perek/page counters'
 
         # start the parsing
@@ -146,24 +152,25 @@ def parse_em(filename, passing):
                 # if not tochen:
                 #     tochen = u'שם'
                 rambam_cit = split_it.next()
-                cit.check_double(u'_mimon', mishneh.parse_rambam(rambam_cit)) #cit._mimon = mishneh.parse_rambam(rambam_cit)
+                cit.check_double(u'_mimon', mishneh.parse_rambam(rambam_cit, mass)) #cit._mimon = mishneh.parse_rambam(rambam_cit)
             elif re.search(u'ו?סמג',part):
                 semag_cit = split_it.next()
-                cit.check_double(u'_semag', smg.parse_semag(semag_cit)) #cit._semag = smg.parse_semag(semag_cit)
+                cit.check_double(u'_semag', smg.parse_semag(semag_cit, mass)) #cit._semag = smg.parse_semag(semag_cit)
             elif re.search(u'ו?טוש"ע|ש"ע', part):
                 # if not cit._tsh: # i think this was in only because the tur alon but that was taken care of.
                     tsh_cit = split_it.next()
-                    cit.check_double(u'_tsh', tursh.parse_tsh(tsh_cit))# tursh.parse_tsh(tsh_cit)
+                    cit.check_double(u'_tsh', tursh.parse_tsh(tsh_cit, mass))# tursh.parse_tsh(tsh_cit)
             elif re.search(ur'טור', part):
                 next = split_it.next()
                 if next == ur'שו?"ע':
                     tsh_cit = split_it.next()
-                    cit._tsh = tursh.parse_tsh(tsh_cit)
+                    cit._tsh = tursh.parse_tsh(tsh_cit, mass)
                 else:# basically assuming there isn't SA citation here
                     tsh_cit = next
-                    cit.check_double('_tsh', tursh.parse_tsh(tsh_cit, only_tur = True))#cit._tsh = tursh.parse_tsh(tsh_cit, only_tur = True)
-
+                    cit.check_double('_tsh', tursh.parse_tsh(tsh_cit, mass, only_tur = True))#cit._tsh = tursh.parse_tsh(tsh_cit, only_tur = True)
         cit_dictionary.extend(cit.obj2dict(passing))
+        if mass.error_flag:
+            cit_dictionary[-1][u'problem'] = True
     return cit_dictionary
 
 
@@ -185,7 +192,7 @@ class Semag(object):
                        }
 
 
-    def parse_semag(self, str):
+    def parse_semag(self, str, mass):
         # split = re.split('\s', str.strip())
         reg_book = re.compile(u'ו?(עשין|שם|לאוין)')
         split = re.split(reg_book, str.strip())
@@ -211,7 +218,8 @@ class Semag(object):
                     if word != u'שם':
                         derabanan = filter(None, [item.strip() for item in re.split(u'(מד"ס|מ?דרבנן)',str_list[i+1].strip())])
                 except IndexError:
-                    ErrorFile.write('error smg, no place in book notation')
+                    # mass.ErrorFile.write('error smg, no place in book notation')
+                    mass.error_flag = 'error smg, no place in book notation'
                     print 'error smg, no place in book notation'
                     return
                 if word == u'עשין' and len(derabanan) > 1:
@@ -222,6 +230,7 @@ class Semag(object):
                 elif re.match(reg_book, word):
                     book = self._table[word]
                 else:
+                    mass.ErrorFile.write("error smg, don't recognize book name")
                     print "error smg, don't recognize book name", book
                     return
             else:
@@ -295,7 +304,7 @@ class TurSh(object):
             return True
         return False
 
-    def parse_tsh(self, str, only_tur = False):
+    def parse_tsh(self, str, mass, only_tur = False):
         ayyen = re.split(u''' ובהג"ה|ועיין|ועי'?|וע"ש''', str)
         if len(ayyen) > 1:
             str = ayyen[0]
@@ -326,6 +335,7 @@ class TurSh(object):
                 book_sa = None
                 str_it = iter(str_list)
             else:
+                mass.error_flag = "error tsh, don't recognize book name"
                 print "error tsh, don't recognize book name", book
                 return
 
@@ -365,7 +375,9 @@ class TurSh(object):
                             resolved_tur = self.parse_tur(book_sa, siman) #todo: note: might be an issue with None, None to this file
                             return resolved_tur
                         else:
-                            ErrorFile.write(u'error tsh, missing seif')
+                            # mass.ErrorFile.write(u'error tsh, missing seif')
+                            if mass.error_flag:
+                                mass.error_flag = [mass.error_flag, u'error tsh, missing seif']
                             print u'error tsh, missing seif'
 
                             return
@@ -439,15 +451,11 @@ class TurSh(object):
             # print resolveds
             return resolveds
         except KeyError:
-            ErrorFile.write('error tsh, there is missing data where in the tur to look')
+            # mass.ErrorFile.write('error tsh, there is missing data where in the tur to look')
             print 'error tsh, there is missing data where in the tur to look'
             return
 
     def parse_tur(self, book_sa = None, siman = None):
-        # if book_sa == 'None':
-        #     book_sa = None
-        # if siman == 'None':
-        #     siman = None
         if not book_sa:
             book_sa = self._tur_table[book_sa]
         resolved_tur = self._tracker_tur.resolve(self._tur_table[book_sa], [siman])
@@ -461,9 +469,8 @@ class Rambam(object):
     def __init__(self):
         self._tracker = BookIbidTracker()
         self._conv_table = rambam_name_table()
-        # self.cit = []
 
-    def parse_rambam(self, str): # these will be aoutomatic from the privates of the object (Rambam)
+    def parse_rambam(self, str, mass): # these will be aoutomatic from the privates of the object (Rambam)
         logging.debug('This message should go to the log file')
         reg1 = u'''(מהל|מהלכות|מהל'|מהלכו'|מה')'''  # מהלכות before the book name
         reg21 = u''' ו?הלכה| ו?הל'?| ו?הלכ'?| ו?דין'''
@@ -481,8 +488,8 @@ class Rambam(object):
         multiple = re.search(reg_double_cit, str)
         if multiple:
             mul = re.split(reg_double_cit, str, maxsplit=1)
-            a = self.parse_rambam(mul[0])
-            b = self.parse_rambam(mul[1] + mul[2])
+            a = self.parse_rambam(mul[0], mass)
+            b = self.parse_rambam(mul[1] + mul[2], mass)
             return a + b
 
 
@@ -503,6 +510,7 @@ class Rambam(object):
                     book = self._conv_table[key[0]]
             except:
                 print "error mim, couldn't find this book name in table", book
+                mass.error_flag = "error mim, couldn't find this book name in table"
         # perek
         perek = re.search(u'''פרק ([א-ת]"?[א-ת]?)|פ([א-ת]?"[א-ת])|ופ' ([א-ת]"?[א-ת]?)''', str)
         if perek:
@@ -540,7 +548,7 @@ class Rambam(object):
             resolved = [self._tracker.resolve(book, [perek, hal]) for hal in halacha]
         else:  # halacha was sham
             if perek and book and not re.search(u'שם', str):
-                ErrorFile.write('error mim, No halacha stated')
+                # mass.ErrorFile.write('error mim, No halacha stated')
                 print 'error mim, No halacha stated'
             resolved = self._tracker.resolve(book, [perek, halacha])
         # print resolved
@@ -551,6 +559,7 @@ class Rambam(object):
             return resolved
         else:
             return [resolved]
+
 
 # note: should call this function only once in init
 def rambam_name_table():
@@ -719,7 +728,7 @@ def getGematriaVav(str):
     elif is_hebrew_number(str) or getGematria(str) in case_set: # and not re.search(u'''מד"ס'''): or re.search(u'''('|")''', str)
         return getGematria(str)
     else:
-        ErrorFile.write('error in pointer, not Gimatria...')
+        # mass.ErrorFile.write('error in pointer, not Gimatria...')
         print 'error in pointer, not Gimatria...', str
 
 #  Noahs code checking that the hundreds, tens, ones, are in the right order
@@ -753,17 +762,11 @@ def hebrew_number_regex():
     return re.compile(rx, re.VERBOSE)
 
 
-# def obj2dict(obj_list):
-#     dict_list = []
-#     for line in obj_list:
-#         dict_list.append(vars(line))
-#     return dict_list
-
 def toCSV(filename, obj_list):
     list_dict = obj_list
     with open(u'{}.csv'.format(filename), 'w') as csv_file:
         writer = csv.DictWriter(csv_file, [u'txt file line', u'Perek running counter',u'page running counter',
-                                u'Perek aprx', u'Page aprx', u'Rambam', u'Semag', u'Tur Shulchan Arukh', u'original']) #fieldnames = obj_list[0].keys())
+                                u'Perek aprx', u'Page aprx', u'Rambam', u'Semag', u'Tur Shulchan Arukh', u'original', u'problem']) #fieldnames = obj_list[0].keys())
         writer.writeheader()
         writer.writerows(list_dict)
 
@@ -782,6 +785,7 @@ def run(massechet_he = None, massechet_en = None):
     # fromCSV(u'{}.csv'.format(massechet_he), u'{}.txt'.format(massechet_en))  # reads from fixed ביצה.csv to egg.txt
     # parse2 = parse_em(u'{}.txt'.format(massechet_en),2)  # egg.txt to screen output
     # toCSV(u'{}_done.csv'.format(massechet_en), parse2)  # write final to egg_done.csv
+    return parse1
 
 
 def write_errfile(filename):
@@ -831,7 +835,7 @@ if __name__ == "__main__":
     # toCSV(u'חגיגה', ein_mishpat)
     # ein_mishpat = parse_em('סוכה.txt')
     # ein_mishpat = parse_em('סנהדרין.txt')
-    # ein_mishpat = ein_mishpat = parse_em('עירובין.txt')
+    # ein_mishpat = parse_em('עירובין.txt')
     # ein_mishpat = parse_em('פסחים.txt')
     # ein_mishpat = parse_em('קידושין.txt')
     # ein_mishpat = parse_em('שבועות.txt')
@@ -843,6 +847,6 @@ if __name__ == "__main__":
     # fixed_ein = parse_em(u'testing.txt')
     # logging.basicConfig(filename='example.log', level=logging.DEBUG)
     # logging.debug('This message should go to the log file')
-    run(massechet_he=u'מכות')
+    parsed = run(massechet_he=u'כתבות')
     # write_errfile(filename = u'nazir')
     print 'done'

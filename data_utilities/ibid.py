@@ -25,6 +25,7 @@ class BookIbidTracker(object):
         :return:
         """
         assert isinstance(oref, Ref)
+        assert oref.is_empty()
         # d = {}
         # ref = Ref(_obj=d)
         self._table[(None,(None, None))] = oref
