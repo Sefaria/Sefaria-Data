@@ -3,6 +3,8 @@
 from optparse import OptionParser
 import unicodecsv as csv
 from ein_parser import segment_column
+from sources.functions import post_link
+
 
 def validity_and_cluster(dict_list):
     clean = True
@@ -39,12 +41,16 @@ def create_cluster(c):
                         attrs={"generated_by": "Ein Mishpat Cluster"},
                         exception_pairs=[("Tur", "Shulchan Arukh")])
 #
-def post(dict_list):
+def save_links_local(dict_list):
     v_and_c = validity_and_cluster(dict_list)
     if not v_and_c[0]:
         return
     for cluster in v_and_c[1]:
         create_cluster(cluster)
+
+def post_ein_mishpat(massekhet):
+    query = {'generated_by': 'Ein Mishpat Cluster', 'refs': '{}'.format(massekhet)}
+
 
 # usage = "\n%prog [options] inputfile\n  inputfile is a TSV, with references in columns Q-U"
 # parser = OptionParser(usage=usage)
@@ -246,7 +252,8 @@ from sefaria.helper.link import create_link_cluster
 #     print total
 
 if __name__ == "__main__":
-    final_list = segment_column('Ein Mishpat - Moed Katan.csv', 'mk_test_done.csv', 'Moed_Katan')
-    validation = validity_and_cluster(final_list)
-    post = post(final_list)
+    final_list = segment_column(u'Ein Mishpat - Moed Katan.csv', u'mk_test_done.csv', u'Moed Katan')
+    # validation = validity_and_cluster(final_list)
+    save_links_local(final_list)
+    post_ein_mishpat()
     print 'done'

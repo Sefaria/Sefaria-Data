@@ -715,7 +715,7 @@ def fromCSV(fromcsv, newfile):
 
 #  run to create csv for QA
 def run1(massechet_he = None, massechet_en = None):
-    parse1 = parse_em(u'{}.txt'.format(massechet_he), 1, '{}_error'.format(massechet_en))  # reades from ביצה.txt to screen output
+    parse1 = parse_em(u'{}.txt'.format(massechet_he), 1, u'{}_error'.format(massechet_en))  # reades from ביצה.txt to screen output
     toCSV(massechet_he, parse1)  # writes to ביצה.csv
     return parse1
 
@@ -798,8 +798,10 @@ if __name__ == "__main__":
     # parsed = run2(massechet_he=u'מועד קטן', massechet_en= u'mk_test')
     # test = run2(massechet_he=u'Ein Mishpat - Moed Katan.csv', massechet_en=u'mk - test')
 
-    # final lines to get a dict
-    reverse_collapse(u'mk_done.csv', u'mk_collapsed')
-    parsed = run2(massechet_he=u'mk_collapsed', massechet_en= u'mk_test')
-    # final_list = segment_column('Ein Mishpat - Moed Katan.csv', 'mk_test_done.csv','Moed_Katan')
+    # # final lines to get a dict
+    # reverse_collapse(u'hagiga_done.csv', u'hagiga_collapsed')
+    # parsed = run2(massechet_he=u'hagiga_collapsed', massechet_en=u'hg_test')
+    # reverse_collapse(u'hagiga_done.csv', u'hagiga_collapsed')
+    # parsed = run2(massechet_he=u'hagiga_collapsed', massechet_en=u'hg_test')
+    final_list = segment_column('Ein Mishpat - Moed Katan.csv', 'mk_test_done.csv','Moed_Katan')
     print 'done'
