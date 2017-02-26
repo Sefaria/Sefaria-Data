@@ -36,20 +36,25 @@ def validity_and_cluster(dict_list):
     return (clean, all_clusters)
 
 # c - a list of refs all to be interconnected
-def create_cluster(c):
+def create_cluster(c, massekhet):
     return create_link_cluster(c, 30044, "Ein Mishpat / Ner Mitsvah",
-                        attrs={"generated_by": "Ein Mishpat Cluster"},
+                        attrs={"generated_by": "Ein Mishpat Cluster {}".format(massekhet)},
                         exception_pairs=[("Tur", "Shulchan Arukh")])
 #
-def save_links_local(dict_list):
+def save_links_local(dict_list, massekhet):
     v_and_c = validity_and_cluster(dict_list)
     if not v_and_c[0]:
         return
     for cluster in v_and_c[1]:
-        create_cluster(cluster)
+        create_cluster(cluster, massekhet)
 
 def post_ein_mishpat(massekhet):
-    query = {'generated_by': 'Ein Mishpat Cluster', 'refs': '{}'.format(massekhet)}
+    query = {"generated_by":"Ein Mishpat Cluster {}".format(massekhet)}
+    linkset = LinkSet(query)
+    links = [l.contents() for l in linkset]
+    for l in links:
+        l["generated_by"] = "Ein Mishpat Cluster"
+    post_link(links)
 
 
 # usage = "\n%prog [options] inputfile\n  inputfile is a TSV, with references in columns Q-U"
@@ -252,8 +257,9 @@ from sefaria.helper.link import create_link_cluster
 #     print total
 
 if __name__ == "__main__":
-    final_list = segment_column(u'Ein Mishpat - Moed Katan.csv', u'mk_test_done.csv', u'Moed Katan')
+    massekhet = 'Chagigah'
+    # final_list = segment_column(u'Ein Mishpat - Chagigah.csv', u'hg_test_done.csv', massekhet)
     # validation = validity_and_cluster(final_list)
-    save_links_local(final_list)
-    post_ein_mishpat()
+    # save_links_local(final_list,massekhet)
+    post_ein_mishpat(massekhet)
     print 'done'
