@@ -25,7 +25,8 @@ class BookIbidTracker(object):
         :return:
         """
         assert isinstance(oref, Ref)
-        assert oref.is_empty()
+
+
         # d = {}
         # ref = Ref(_obj=d)
         self._table[(None,(None, None))] = oref
@@ -82,7 +83,10 @@ class BookIbidTracker(object):
                 print 'error, problem with the Ref iteslf. ', u'{}.{}'.format(index_name, '.'.join(new_sections))
                 return "error, problem with the Ref iteslf", index_name, tuple(key)
             self._last_cit = [index_name, new_sections]
-        self.registerRef(resolvedRef)
+        if resolvedRef.is_empty():
+            return "error, problem with the Ref iteslf", resolvedRef
+        else:
+            self.registerRef(resolvedRef)
         return resolvedRef
 
     def creat_keys(self, oref, i = 1):
