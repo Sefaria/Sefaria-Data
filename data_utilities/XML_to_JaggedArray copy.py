@@ -4,32 +4,33 @@ User provides in order the names of the JaggedArrayNodes for the given text and 
 Then
 User gives a level of depth to go to and then xpath("string()") on that depth to return a jagged array of that depth. 
 '''
+import pdb
 import bleach
 from lxml import etree
-from sources.functions import *
+import sys
+sys.path.append("../sources")
+from functions import *
+sys.path.append("../../Sefaria-Project")
 from sefaria.model import *
-import re
-from BeautifulSoup import BeautifulSoup
 
 class XML_to_JaggedArray:
 
 
-    def __init__(self, title, file, allowedTags, allowedAttributes, post_info, array_of_names=[], deleteTitles=True, change_name=False, assertions=False):
+    def __init__(self, title, file, allowedTags, allowedAttributes, post_info, array_of_names=[], deleteTitles=True):
         self.title = title
         self.post_info = post_info
         self.file = file
         self.parse_dict = {}
         self.allowedTags = allowedTags
         self.allowedAttributes = allowedAttributes
-        self.result_dict = {}
+        self.JA_nodes = {}
         self.pages = {}
         self.alt_struct = True
         self.footnotes = {}
         self.array_of_names = array_of_names
         self.deleteTitles = deleteTitles
         self.prev_footnote = ""
-        self.change_name = change_name
-        self.assertions = assertions
+
 
 
     def set_funcs(self, grab_title_lambda=lambda x: x[0].tag == "title", reorder_test=lambda x: False, reorder_modify=lambda x: x, modify_before=lambda x: x):
@@ -48,21 +49,23 @@ class XML_to_JaggedArray:
         self.root = etree.XML(xml_text)
 
         for count, child in enumerate(self.root):
+            name = self.grab_title(child, delete=self.deleteTitles, test_lambda=self.grab_title_lambda)
             if self.array_of_names:
-                child.text = str(self.array_of_names[count])
-
+                name = self.array_of_names[count]
+            print name
             child = self.reorder_structure(child, False)
+            this_ref = "{}, {}".format(self.title, name)
+            self.JA_nodes[name] = self.go_down_to_text(name, child)
+            self.interpret(self.JA_nodes[name], this_ref)
 
-        results = self.go_down_to_text(self.root)
-        self.interpret_and_post(results, self.title)
+        if self.alt_struct:
+            file = open("alt_struct.txt", "w")
+            for ref in self.pages:
+                for each_one in self.pages[ref]:
+                    file.write(ref+"; ")
+                    file.write(each_one+"\n\n")
+            file.close()
 
-
-    def cleanNodeName(self, text):
-        bad_chars = [".", ",", "'", '"']
-        for bad_char in bad_chars:
-            text = text.replace(bad_char, "")
-            " ".join(text.split())
-        return text.title()
 
     def getChildren(self, parent):
         titles = []
@@ -82,18 +85,16 @@ class XML_to_JaggedArray:
                 }
             post_text(ref, send_text)
         else:
-            print "Not Posting...."
             assert Ref(ref)
             tc = TextChunk(Ref(ref), lang=self.post_info["language"], vtitle=self.post_info["versionTitle"])
             tc.text = text
             tc.save()
 
     def parse(self, text_arr, footnotes):
-        footnote_pattern = '<xref.*?>.*?</xref>'
         def extractIDsAndSupNums(text):
             ft_ids = []
             ft_sup_nums = []
-            xrefs = BeautifulSoup(text).findAll('xref')
+            xrefs = BeautifulSoup.BeautifulSoup(text).findAll('xref')
             for xref in xrefs:
                 ft_ids.append(xref['rid'])
                 ft_sup_nums.append(xref.text)
@@ -102,20 +103,12 @@ class XML_to_JaggedArray:
 
         def getPositions(text):
             pos = []
-            all = re.findall(footnote_pattern, text)
+            all = re.findall('<sup><xref.*?>\d+</xref></sup>', text)
             for each in all:
                 pos.append(text.find(each))
             return pos
 
-        def removeNumberFromStart(text):
-            if text[0].isdigit():
-                return " ".join(text.split(" ")[1:])
-            return text
-
         def buildFtnoteText(num, text):
-            text = text.replace("<sup>", "").replace("</sup>", "")
-            if text[0].isdigit():
-                text = " ".join(text.split()[1:])
             return u'<sup>{}</sup><i class="footnote">{}</i>'.format(num, text)
 
         #parse code begins...
@@ -123,13 +116,15 @@ class XML_to_JaggedArray:
         assert type(text_arr) is list
         ftnote_texts = []
         for index, text in enumerate(text_arr):
-            text_arr[index] = removeNumberFromStart(text_arr[index])
-            text_arr[index] = text_arr[index].replace("<sup><xref", "<xref").replace("</xref></sup>", "</xref>")
+            text_arr[index] = text_arr[index].replace("<bold>", "<b>").replace("<italic>", "<i>").replace("</bold>", "</b>").replace("</italic>", "</i>")
+            text_arr[index] = text_arr[index].replace("<li>", "<br>").replace("</li>", "")
+            text_arr[index] = text_arr[index].replace("3465", "&lt;").replace("3467", "&gt;")
+
             ft_ids, ft_sup_nums = extractIDsAndSupNums(text_arr[index])
 
             ft_pos = getPositions(text_arr[index])
 
-            assert len(ft_ids) == len(ft_sup_nums) == len(ft_pos), "id={},sups={},pos={},index={}".format(ft_ids, ft_sup_nums, ft_pos, index)
+            assert len(ft_ids) == len(ft_sup_nums) == len(ft_pos)
 
             for i in range(len(ft_ids)):
                 reverse_i = len(ft_ids) - i - 1
@@ -138,45 +133,38 @@ class XML_to_JaggedArray:
                 pos = ft_pos[reverse_i]
                 text_arr[index] = u"{}{}{}".format(text_arr[index][0:pos], text_to_insert, text_arr[index][pos:])
 
-            all = re.findall(footnote_pattern, text_arr[index])
+            all = re.findall('<sup><xref.*?>\d+</xref></sup>', text_arr[index])
             for each in all:
                 text_arr[index] = text_arr[index].replace(each, "")
-            text_arr[index] = text_arr[index].replace("<bold>", "<b>").replace("<italic>", "<i>").replace("</bold>", "</b>").replace("</italic>", "</i>")
-            text_arr[index] = text_arr[index].replace("<li>", "<br>").replace("</li>", "")
-            text_arr[index] = text_arr[index].replace("</title>", "</b>").replace("<title>", "<b>")
-            text_arr[index] = text_arr[index].replace("3465", "&lt;").replace("3467", "&gt;")
 
         return text_arr
 
-    def grab_title(self, element, delete=True, test_lambda=lambda x: False, change_name=True):
+    def grab_title(self, element, delete=True, test_lambda=lambda x: False):
         '''
         Get the name return it and delete the first element
         '''
         if test_lambda(element):
             name = bleach.clean(element[0].text, strip=True)
-            if change_name:
-                element.text = name
+            element.text = name
             if delete:
                 element.remove(element[0])
             return name
         return ""
 
 
-    def go_down_to_text(self, element):
+    def go_down_to_text(self, name, element):
         text = {}
         text["text"] = []
         text["subject"] = []
         for index, child in enumerate(element):
             if len(child) > 0:
+                if child.tag != "title":
+                    self.grab_title(child, delete=False, test_lambda=self.grab_title_lambda)
+                    #above: take the title underneath, set it to text var,  so afterward, child.text will be the correct title
                 if child.text.isdigit():
-                    if child.tag != "title":
-                        self.grab_title(child, delete=self.deleteTitles, test_lambda=self.grab_title_lambda, change_name=False)
-                    text["text"].append(self.go_down_to_text(child))
+                    text["text"].append(self.go_down_to_text(child.text, child))
                 else:
-                    if child.tag != "title":
-                        self.grab_title(child, delete=self.deleteTitles, test_lambda=self.grab_title_lambda, change_name=self.change_name)
-                    child.text = self.cleanNodeName(child.text)
-                    text[child.text] = self.go_down_to_text(child)
+                    text[child.text] = self.go_down_to_text(child.text, child)
             else:
                 if child.tag == "ftnote":
                     if "id" not in child.attrib:
@@ -213,34 +201,24 @@ class XML_to_JaggedArray:
         return array
 
 
-    def interpret_and_post(self, node, running_ref, prev="string"):
-        if self.assertions:
-            assert Ref(running_ref), running_ref
+    def interpret(self, node, running_ref, prev="string"):
+        #assert Ref(running_ref), running_ref
         for key in node:
-            print key
             if key != "text" and key != "subject":
                 new_running_ref = "%s, %s" % (running_ref, key)
-                if self.assertions:
-                    assert Ref(new_running_ref)
-                self.interpret_and_post(node[key], new_running_ref, "string")
+                #assert Ref(new_running_ref)
+                self.interpret(node[key], new_running_ref, "string")
             elif key == "subject" and len(node[key]) > 0:
-                if self.assertions:
-                    assert Ref(running_ref)
+                #assert Ref(running_ref)
                 new_running_ref = running_ref + ",_Subject"
-                if self.assertions:
-                    assert Ref(new_running_ref)
+                #assert Ref(new_running_ref)
                 text = self.parse(node[key])
                 self.post(new_running_ref, text)
-            elif key == "text" and len(node[key]) > 0: #if len(node.keys()) == 2 and "text" in node.keys() and "subject" in node.keys() and len(node['text']) > 0:
-                if self.assertions:
-                    assert Ref(running_ref)
-                text = self.convertManyIntoOne(node["text"])
-                if running_ref == "Ibn Ezra on Isaiah":
-                    for i, chapter in enumerate(text):
-                        for j, verse in enumerate(chapter):
-                            text[i][j] = [verse]
-
-                self.post(running_ref, text)
+        if len(node.keys()) == 2 and "text" in node.keys() and "subject" in node.keys() and len(node['text']) > 0:
+            #assert Ref(running_ref)
+            text = self.convertManyIntoOne(node["text"])
+            print running_ref
+            self.post(running_ref, text)
 
 
     def reorder_structure(self, element, move_footnotes=False):

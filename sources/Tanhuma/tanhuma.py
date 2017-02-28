@@ -5,6 +5,8 @@ import re
 from sources.functions import *
 from sefaria.model import *
 from data_utilities.XML_to_JaggedArray import XML_to_JaggedArray
+from lxml import etree
+import BeautifulSoup
 
 def create_schema(en_he_parshiot):
     book = SchemaNode()
@@ -79,17 +81,63 @@ def create_schema(en_he_parshiot):
     return en_parshiot
 
 
-def parse(text_arr):
+def extractIDsAndSupNums(text):
+    ft_ids = []
+    ft_sup_nums = []
+    xrefs = BeautifulSoup.BeautifulSoup(text).findAll('xref')
+    for xref in xrefs:
+        ft_ids.append(xref['rid'])
+        ft_sup_nums.append(xref.text)
+
+    return ft_ids, ft_sup_nums
+
+
+def getPositions(text):
+    pos = []
+    all = re.findall('<sup><xref.*?>\d+</xref></sup>', text)
+    for each in all:
+        pos.append(text.find(each))
+    return pos
+
+
+'''
+first extract ids and numbers
+create dictionary where each id corresponds to text of footnote
+find position where footnote goes, if tags are there, create critera for deleting them
+delete them
+put in <sup>num</sup><i class="footnote">
+'''
+
+def buildFtnoteText(num, text):
+    return u'<sup>{}</sup><i class="footnote">{}</i>'.format(num, text)
+
+def parse(text_arr, footnotes):
+    key_of_xref = 'rid'
+
     assert type(text_arr) is list
+    ftnote_texts = []
     for index, text in enumerate(text_arr):
         text_arr[index] = text_arr[index].replace("<bold>", "<b>").replace("<italic>", "<i>").replace("</bold>", "</b>").replace("</italic>", "</i>")
         text_arr[index] = text_arr[index].replace("<li>", "<br>").replace("</li>", "")
         text_arr[index] = text_arr[index].replace("3465", "&lt;").replace("3467", "&gt;")
-        xref_start = re.findall("<xref.*?>", text_arr[index])
-        xref_end = re.findall("</xref.*?>", text_arr[index])
-        xrefs = xref_start + xref_end
-        for xref in xrefs:
-            text_arr[index] = text_arr[index].replace(xref, "")
+
+        ft_ids, ft_sup_nums = extractIDsAndSupNums(text_arr[index])
+
+        ft_pos = getPositions(text_arr[index])
+
+        assert len(ft_ids) == len(ft_sup_nums) == len(ft_pos)
+
+        for i in range(len(ft_ids)):
+            reverse_i = len(ft_ids) - i - 1
+            ftnote_text = footnotes[ft_ids[reverse_i]]
+            text_to_insert = buildFtnoteText(ft_sup_nums[reverse_i], ftnote_text)
+            pos = ft_pos[reverse_i]
+            text_arr[index] = u"{}{}{}".format(text_arr[index][0:pos], text_to_insert, text_arr[index][pos:])
+
+        all = re.findall('<sup><xref.*?>\d+</xref></sup>', text_arr[index])
+        for each in all:
+            text_arr[index] = text_arr[index].replace(each, "")
+
 
     return text_arr
 
@@ -129,7 +177,6 @@ if __name__ == "__main__":
         else:
             return text.split(".")[-1]
 
-
     if sys.argv[1] == "Buber":
         title = "Midrash Tanchuma Buber"
         en_parshiot = create_schema(en_he_parshiot)
@@ -140,11 +187,10 @@ if __name__ == "__main__":
         post_info["versionTitle"] = "Midrash Tanhuma-Yelammedenu, trans. Samuel A. Berman"
         post_info["versionSource"] = "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001350458"
         en_he_parshiot.insert(0, ("Foreword", u"פתח דבר"))
-        en_he_parshiot.insert(1, ("Introduction", u"הקדמה"))
         file_name = "Midrash-Tanhuma-Yelammedenu.xml"
-        title = "Complex Midrash Tanchuma"
+        title = "Midrash Tanchuma"
+        en_parshiot = [list(x) for x in zip(*en_he_parshiot)][0]
 
-    could_be_en_parshiot = [list(x) for x in zip(*en_he_parshiot)][0]
     tanhuma = XML_to_JaggedArray(title, file_name, allowed_tags, allowed_attributes, post_info, en_parshiot)
-    tanhuma.set_funcs(parse, grab_title_lambda, reorder_test_lambda, reorder_modify, modifyBeforeBleach)
+    tanhuma.set_funcs(grab_title_lambda, reorder_test_lambda, reorder_modify, modifyBeforeBleach)
     tanhuma.run()
