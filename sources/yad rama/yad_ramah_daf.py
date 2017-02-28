@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from functions import *
+from sources.functions import *
 __author__ = 'stevenkaplan'
 
 

@@ -7,24 +7,12 @@ import pdb
 import glob
 import os
 import sys
-p = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, p)
-p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, p)
-
-sys.path.insert(0, p)
-sys.path.append('../../data_utilites')
-os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 
 import data_utilities.util
-sys.path.insert(0, '../Match/')
-from match import Match
 from data_utilities import util, sanity_checks
 from data_utilities.sanity_checks import TagTester
-from functions import *
-from local_settings import *
-from match import *
-sys.path.insert(0, SEFARIA_PROJECT_PATH)
+from data_utilities.dibur_hamatchil_matcher import *
+from sources.functions import *
 from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
 
@@ -109,10 +97,10 @@ def parse(file):
             dh, comment, found_dh = getDHComment(line, file)
             comment, found_img = getBase64(comment)
             if current_daf in dhs:
-                dhs[current_daf].append(dh)
+                dhs[current_daf].append(dh.decode('utf-8'))
             else:
                 dhs[current_daf] = []
-                dhs[current_daf].append(dh)
+                dhs[current_daf].append(dh.decode('utf-8'))
             if found_dh == True:
                 line = "<b>"+dh+"</b>"+comment
             elif found_img == True:
@@ -121,8 +109,8 @@ def parse(file):
                 line = "<b>"+header+"</b><br>"+line
                 header = ""
             if found_img == False:
-                line = removeAllStrings(line)
-            text[current_daf].append(line)
+                line = removeAllTags(line)
+            text[current_daf].append(line.decode('utf-8'))
         elif line.find("@00") >= 0:
             header = line.replace("@00", "")
     return text, dhs
@@ -165,15 +153,21 @@ def splitText(text, num_words):
 
 
 def match_and_link(dhs, masechet):
-    match = Match(in_order=True, min_ratio=80, guess=False, range=True, can_expand=False)
+    def base_tokenizer(str):
+        str = re.sub(ur"\([^\(\)]+\)", u"", str)
+        word_list = re.split(ur"\s+", str)
+        word_list = [w for w in word_list if w]  # remove empty strings
+        return word_list
     links = []
+
     for daf in dhs:
-        talmud_text = get_text_plus(masechet+"."+AddressTalmud.toStr("en", daf))['he']
-        result = match.match_list(dhs[daf], talmud_text)
-        for line in result:
-            talmud_range = result[line].replace("0:", "")
-            Ritva_end = "Ritva on "+masechet+"."+str(AddressTalmud.toStr("en", daf))+"."+str(line)
-            talmud_end = masechet + "." + AddressTalmud.toStr("en", daf) + "." + talmud_range
+        talmud_text = TextChunk(Ref(masechet+"."+AddressTalmud.toStr("en", daf)), lang="he")
+        result = match_ref(talmud_text, dhs[daf], base_tokenizer=base_tokenizer)['matches']
+        for count, line in enumerate(result):
+            if line is None:
+                continue
+            Ritva_end = "Ritva on "+masechet+"."+str(AddressTalmud.toStr("en", daf))+"."+str(count+1)
+            talmud_end = line.normal()
             links.append({'refs': [Ritva_end, talmud_end], 'type': 'commentary', 'auto': 'True', 'generated_by': masechet+"Ritva"})
     post_link(links)
 
@@ -191,7 +185,7 @@ if __name__ == "__main__":
     versionTitle['Niddah'] = 'Hidushe ha-Ritba al Nidah; Wien 1868.'
     versionTitle['Makkot'] = 'Hamisha Shitot, Sulzbach 1761. Published by Meshulam Zalman'
     versionTitle['Avodah Zarah'] = "Orian Tlita'i, Salonika, 1758."
-    files = ["Moed Katan", "Megillah"]
+    files = ["Moed Katan"]
     not_yet = True
     for file in files:
         createIndex(file)
