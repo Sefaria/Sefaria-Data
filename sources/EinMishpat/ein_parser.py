@@ -117,6 +117,8 @@ def parse_em(filename, passing, errorfilename):
         print line
         mass.line_num = i
         line = clean_line(line.strip())
+        if not line:  # ignore empty lines
+            continue
         cit = EM_Citation(filename, i, line)
         # flags
         split = re.split(pattern, line)
@@ -160,8 +162,7 @@ def parse_em(filename, passing, errorfilename):
                 #     tsh_cit = next
                 #     cit.check_double('_tsh', tursh.parse_tsh(tsh_cit, mass, only_tur = True))#cit._tsh = tursh.parse_tsh(tsh_cit, only_tur = True)
                 tsh_cit = next
-                cit.check_double('_tsh', tursh.parse_tsh(tsh_cit, mass,
-                                                             only_tur=True))  # cit._tsh = tursh.parse_tsh(tsh_cit, only_tur = True)
+                cit.check_double('_tsh', tursh.parse_tsh(tsh_cit, mass,only_tur=True))  # cit._tsh = tursh.parse_tsh(tsh_cit, only_tur = True)
         cit_dictionary.extend(cit.obj2dict(passing))
         if cit_dictionary[-1][u'problem'] != u'error missing little or big letter' and cit_dictionary[-1][u'problem'] != u'error, cit with the perek/page counters':
             cit_dictionary[-1][u'problem'] = mass.error_flag
@@ -326,6 +327,7 @@ class TurSh(object):
                 mass.write_shgia(u"error tsh, don't recognize book name")
                 return
             flag_next = False
+            gim = False
             siman = None
             seif = None
             resolved_tur = None
@@ -355,7 +357,6 @@ class TurSh(object):
                             mass.error_flag = [mass.error_flag, u'error tsh, missing seif']
                             print u'error tsh, missing seif'
                             return
-
                 elif re.search(reg_seif, word):
                     to_res = True
                     if re.search(reg_combined, word):
@@ -364,15 +365,22 @@ class TurSh(object):
                     else:
                         seif = getGematriaVav(str_it.next(), mass)
                 elif len(word) <= 3:# todo: note: 3 is a bit long check that not getting gorbage, deleted: from line start re.match(u'''[א-ת]{1}''', word) and
-                    if not re.search(reg_sham, word):
+                    if not re.search(reg_sham, word) and not only_tur:
                         seif = getGematriaVav(word, mass)
                         to_res = True
+                    elif only_tur:
+                        gim = getGematriaVav(word, mass)
+                        resolved_tur = self.parse_tur(book_sa, gim)
+                        resolveds.extend(resolved_tur)
                 else:
                     getGematriaVav(word, mass)
                 if to_res:
                     if only_tur:
                         resolved_tur = self.parse_tur(book_sa,siman)  # todo: note: might be an issue with None, None to this file
                         resolveds.extend(resolved_tur)
+                        if hasnext:
+                            resolved_tur = self.parse_tur(book_sa,getGematriaVav(next, mass))  # todo: note: might be an issue with None, None to this file
+                            resolveds.extend(resolved_tur)
                     else:
                         resolved_sa = self._tracker_sa.resolve(book_sa, [siman, seif])
                         if resolved_tur != self._tracker_tur.resolve(self._tur_table[book_sa], [siman]): # self._tracker_tur._last_ref: #
@@ -533,6 +541,7 @@ def rambam_name_table():
     # name_dict[u"שכני'"] = name_dict[u'שכנים']
     # name_dict[u"שכני"] = name_dict[u'שכנים']
     name_dict[u'ס"ת'] = name_dict[u'תפילין ומזוזה וספר תורה']
+    name_dict[u'ס"ת ומזוזה'] = name_dict[u'תפילין ומזוזה וספר תורה']
     name_dict[u'ספר תורה'] = name_dict[u'תפילין ומזוזה וספר תורה']
     name_dict[u'מזוזה'] = name_dict[u'תפילין ומזוזה וספר תורה']
     name_dict[u'תפלין'] = name_dict[u'תפילין ומזוזה וספר תורה']
@@ -730,7 +739,7 @@ def run2(massechet_he=None, massechet_en=None):
 def run15(massechet_he=None, massechet_en=None):
     fromCSV(u'{}.csv'.format(massechet_he), u'{}.txt'.format(massechet_he))  # reads from fixed ביצה.csv to egg.txt
     parse1 = parse_em(u'{}.txt'.format(massechet_he),1, u'{}_error'.format(massechet_en))  # egg.txt to screen output
-    toCSV(u'{}1'.format(massechet_he), parse1)
+    toCSV(u'{}_again'.format(massechet_en), parse1)
     return parse1
 
 def last_algo_run(withSegments, parsedData):
@@ -787,21 +796,22 @@ if __name__ == "__main__":
     # filenames_he = [u'בבא מציעא', u'בבא בתרא', u'ראש השנה', u'ברכות', u'גיטין',  u'יבמות', u'יומא',
     #              u'כתובות', u'מועד קטן',  u'נדרים',   u'סנהדרין', u'עירובין', u'פסחים',
     #              u'קידושין',u'ראש השנה', u'שבועות', u'שבת']  #
-    # filenames_he = [u'נזיר', u'ביצה', u'סוכה',u'מכות',u'סוטה']
+    # # filenames_he = [u'נזיר', u'ביצה', u'סוכה',u'מכות',u'סוטה']
     # filenames_eg = [u'bm', u'bb', u'rh',  u'brachot', u'gittin',  u'yevamot', u'yoma',
     #              u'ktobot', u'moed',  u'nedarim', u'sanhedrim', u'eruvin', u'pesachim',
     #              u'kidushin',u'rh', u'shvuot', u'shabbat']  # u'nazir', u'egg', u'hagiga', u'sukka', u'makot', u'sota'
+    # filenames_he = [u'נזיר', u'ביצה', u'סוכה', u'מכות', u'סוטה']
     # filenames_eg = [u'nazir', u'beitza', u'sukka', u'makot', u'sota']
     # for m_en, m_he in zip(filenames_eg, filenames_he):
-    #     parsed = run15(massechet_he=m_he, massechet_en= m_en)
-        # parsed = run2(massechet_he=m_he, massechet_en= m_en)
+    #     parsed = run1(massechet_he=u'{}'.format(m_he), massechet_en= m_en)
+    #     parsed = run2(massechet_he=m_he, massechet_en= m_en)
     # parsed = run2(massechet_he=u'מועד קטן', massechet_en= u'mk_test')
-    # test = run2(massechet_he=u'Ein Mishpat - Moed Katan.csv', massechet_en=u'mk - test')
+    test = run15(massechet_he=u'יומא', massechet_en=u'yuma')
 
     # # final lines to get a dict
     # reverse_collapse(u'hagiga_done.csv', u'hagiga_collapsed')
     # parsed = run2(massechet_he=u'hagiga_collapsed', massechet_en=u'hg_test')
     # reverse_collapse(u'hagiga_done.csv', u'hagiga_collapsed')
     # parsed = run2(massechet_he=u'hagiga_collapsed', massechet_en=u'hg_test')
-    final_list = segment_column('Ein Mishpat - Moed Katan.csv', 'mk_test_done.csv','Moed_Katan')
+    # final_list = segment_column('Ein Mishpat - Moed Katan.csv', 'mk_test_done.csv','Moed_Katan')
     print 'done'
