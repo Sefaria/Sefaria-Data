@@ -45,10 +45,6 @@ from sefaria.profiling import *
 
 logging.disable(logging.WARNING)
 
-min_matching_skip_grams = 2
-max_words_between = 4
-min_words_in_match = 9
-min_distance_between_matches = 1000
 
 def get_texts_from_category(category):
     if isinstance(category,str):
@@ -71,7 +67,7 @@ def get_texts_from_category(category):
                 text_names += library.get_indexes_in_category(c)
 
         elif cat == "Debug":
-            text_names += ["Berakhot"]
+            text_names += ["Berakhot","Taanit"]
 
         else:
             text_names += []
@@ -110,7 +106,7 @@ def tokenize_words(base_str):
 
 class Gemara_Hashtable:
 
-    def __init__(self):
+    def __init__(self, skip_gram_size):
         self.letter_freqs_list = [u'י', u'ו', u'א', u'מ', u'ה', u'ל', u'ר', u'נ', u'ב', u'ש', u'ת', u'ד', u'כ', u'ע', u'ח', u'ק',
                          u'פ', u'ס', u'ט', u'ז', u'ג', u'צ']
 
@@ -127,13 +123,11 @@ class Gemara_Hashtable:
                         u'כ', u'ל', u'מ', u'נ', u'ס',
                         u'ע', u'פ', u'צ', u'ק', u'ר',
                         u'ש', u'ת', unichr(ord(u'ת')+1)]
-        #try:
-        #    self.ht_list = pickle.load(open('gemara_chamutz.pkl','rb'))
-        #    self.loaded = True
-        #except IOError:
+
         self._hash_table = defaultdict(set)
         self._already_matched_start_items = defaultdict(bool)
         self.loaded = False
+        self.skip_gram_size = skip_gram_size
 
     def __setitem__(self,skip_gram,value):
         """
@@ -148,7 +142,7 @@ class Gemara_Hashtable:
 
     def __getitem__(self,five_gram):
 
-        skip_gram_list, _ = self.get_skip_grams(five_gram)
+        skip_gram_list = self.get_skip_grams(five_gram)
         #ht = self.ht_list[self.w2i(skip_gram_list[0][0])]  # should be the same for all four skip grams
         results = set()
         for skip_gram in skip_gram_list:
@@ -166,10 +160,9 @@ class Gemara_Hashtable:
         """
 
         two_letter_five_gram = [self.get_two_letter_word(w) for w in five_gram]
-        skip_gram_list = [u''.join(temp_skip) for temp_skip in itertools.combinations(two_letter_five_gram, 4)]
-        last_index_offset_list = [1 if i == 0 else 0 for i in xrange(4)]
+        skip_gram_list = [u''.join(temp_skip) for temp_skip in itertools.combinations(two_letter_five_gram, self.skip_gram_size)]
         del skip_gram_list[-1] # last one is the one that skips the first element
-        return skip_gram_list, last_index_offset_list
+        return skip_gram_list
 
     def w2i(self,w):
         """
@@ -221,20 +214,19 @@ class Gemara_Hashtable:
 
 class Mesorah_Item:
 
-    def __init__(self,mesechta, mesechta_index, location,ref, num_skip_grams=1):
+    def __init__(self, mesechta, mesechta_index, location,ref, min_distance_between_matches):
         self.mesechta = mesechta
         self.mesechta_index = mesechta_index
         self.location = location
         self.ref = ref
-        self.num_skip_grams = num_skip_grams
+        self.min_distance_between_matches = min_distance_between_matches
 
 
     def __iadd__(self, other):
         if other.mesechta_index == self.mesechta_index:
             temp_loc = (self.location[0],other.location[1])
             temp_ref = self.ref.starting_ref().to(other.ref.ending_ref())
-            temp_num_skip_grams = self.num_skip_grams + 1
-            return Mesorah_Item(self.mesechta,self.mesechta_index, temp_loc,temp_ref,temp_num_skip_grams)
+            return Mesorah_Item(self.mesechta,self.mesechta_index, temp_loc,temp_ref, self.min_distance_between_matches)
         else:
             raise ValueError("Mesechtot need to be the same")
 
@@ -242,8 +234,7 @@ class Mesorah_Item:
         if other.mesechta_index == self.mesechta_index:
             temp_loc = (self.location[0],other.location[1])
             temp_ref = self.ref.starting_ref().to(other.ref.ending_ref())
-            temp_num_skip_grams = self.num_skip_grams + 1
-            return Mesorah_Item(self.mesechta, self.mesechta_index, temp_loc, temp_ref, temp_num_skip_grams)
+            return Mesorah_Item(self.mesechta, self.mesechta_index, temp_loc, temp_ref, self.min_distance_between_matches)
         else:
             raise ValueError("Mesechtot need to be the same")
 
@@ -267,7 +258,7 @@ class Mesorah_Item:
         return self.__hash__() == other.__hash__()
 
     def __hash__(self):
-        return hash(self.mesechta + str(self.location))
+        return hash(str(self.mesechta_index) + str(self.location))
 
     def contains(self,other):
         return self.mesechta_index == other.mesechta_index and \
@@ -280,10 +271,10 @@ class Mesorah_Item:
         else:
             if self.ref.is_bavli():
                 assert other.ref.is_bavli()
-                return abs(self.location[0] - other.location[0]) < min_distance_between_matches
+                return abs(self.location[0] - other.location[0]) < self.min_distance_between_matches
             else:
                 return self.ref == other.ref and \
-                       abs(self.location[0] - other.location[0]) < min_distance_between_matches
+                       abs(self.location[0] - other.location[0]) < self.min_distance_between_matches
 
 
     def mesechta_diff(self, other):
@@ -302,17 +293,20 @@ class Mesorah_Item:
             return self.location[0] - other.location[0]
 
     def copy(self):
-        return Mesorah_Item(self.mesechta, self.mesechta_index, self.location, self.ref, self.num_skip_grams)
+        return Mesorah_Item(self.mesechta, self.mesechta_index, self.location, self.ref, self.min_distance_between_matches)
 
 
 class Mesorah_Match:
 
-    def __init__(self,a,b):
-        self.a = a
-        self.b = b
+    def __init__(self, a, b, min_words_in_match, score=0):
+        yo = sorted((a, b), key=lambda x: x.ref.order_id())
+        self.a = yo[0]
+        self.b = yo[1]
+        self.min_words_in_match = min_words_in_match
+        self.score = score
 
     def __str__(self):
-        return "{} <===> {}".format(self.a,self.b)
+        return "{} <===> {}: SCORE: {}".format(self.a,self.b, self.score)
 
     def __eq__(self, other):
        return self.__hash__() == other.__hash__()
@@ -321,12 +315,11 @@ class Mesorah_Match:
         return hash(self.a.mesechta + str(self.a.location) + self.b.mesechta + str(self.b.location))
 
     def valid(self):
-        return self.a.num_skip_grams >= min_matching_skip_grams and self.b.num_skip_grams >= min_matching_skip_grams and \
-            len(self.a) >= min_words_in_match and len(self.b) >= min_words_in_match
+        return len(self.a) >= self.min_words_in_match and len(self.b) >= self.min_words_in_match
 
 class PartialMesorahMatch:
 
-    def __init__(self, a_start, a_end, b_start, b_end):
+    def __init__(self, a_start, a_end, b_start, b_end, min_words_in_match):
         """
 
         :param Mesorah_Item a_start:
@@ -338,6 +331,7 @@ class PartialMesorahMatch:
         self.a_end = a_end
         self.b_start = b_start
         self.b_end = b_end
+        self.min_words_in_match = min_words_in_match
 
     def __len__(self):
         # TODO does this need to distinguish b/w len(a) and len(b)
@@ -346,228 +340,297 @@ class PartialMesorahMatch:
     def last_a_word_matched(self):
         return self.a_end.location[1]
 
-    def finalize(self):
+    def finalize(self, score=0):
         """
         Convert this partial match into a regular Mesorah_Match
         :return:
         """
-        return Mesorah_Match(self.a_start + self.a_end, self.b_start + self.b_end)
+        return Mesorah_Match(self.a_start + self.a_end, self.b_start + self.b_end, self.min_words_in_match, score)
 
 
-def compare_new_skip_matches(old_partials, new_b_skips, current_a):
-    """
+class ParallelMatcher:
 
-    :param list[PartialMesorahMatch] old_partials:
-    :param list[Mesorah_Item] new_a_skips:
-    :return tuple[list[PartialMesorahMatch],list[PartialMesorahMatch]]
-    """
-    good = []
-    bad = []
+    def __init__(self, tokenizer, ngram_size=5, max_words_between=4, min_words_in_match=9,
+                 min_distance_between_matches=1000, all_to_all=True, parallelize=False, verbose=True, calculate_score=None):
+        """
 
+        :param tokenizer: returns list of words
+        :param ngram_size: int, basic unit of matching. 1 word will be skipped in each ngram of size `ngram_size`
+        :param max_words_between: max words between consecutive ngrams
+        :param min_words_in_match: min words for a match to be considered valid
+        :param min_distance_between_matches: min distance between matches. If matches are closer than this, the first one will be chosen (i think)
+        """
+        self.tokenizer = tokenizer
+        self.ngram_size = ngram_size
+        self.skip_gram_size = self.ngram_size - 1
+        self.ght = Gemara_Hashtable(self.skip_gram_size)
+        self.max_words_between = max_words_between
+        self.min_words_in_match = min_words_in_match
+        self.min_distance_between_matches = min_distance_between_matches
+        self.all_to_all = all_to_all
+        self.parallelize = parallelize
+        self.verbose = verbose
+        if calculate_score:
+            self.with_scoring = True
+            self.calculate_score = calculate_score
 
-    #print u'OLD', u' - '.join([str(o) for o in old])
-    #print u'NEW', u' - '.join([str(o) for o in new])
-    up_to = 0
-    for o in old_partials:
-        found = False
+    def match(self, index_list=None, tc_list=None, use_william=False, output_root="", return_obj=False):
+        """
 
-        while up_to < len(new_b_skips):
-            n = new_b_skips[up_to]
-            dist = o.b_end - n
-            mes_dist = o.b_end.mesechta_diff(n)
-            if dist:
-                new_is_ahead = dist > 0
-            else:
-                new_is_ahead = mes_dist < 0
+        :param tokenize_words: f(str) -> list[str] exactly what it sounds like
+        :param list[str] index_list: list of index names to match against
+        :param list[TextChunk] tc_list: alternatively, you can give a list of TextChunks to match to
+        :param bool all_to_all: if True, make between everything either in index_list or ref_list. False means results get filtered to only match inter-ref matches
+        :param bool parallelize: Do you want this to run in parallel? WARNING: this uses up way more RAM. and this is already pretty RAM-hungry
+        :param bool use_william: True if you want to use William Davidson version for Talmud refs
+        :return: mesorat_hashas, mesorat_hashas_indexes
+        """
+        start_time = pytime.time()
 
-            if new_is_ahead:
-                if dist and 0 < dist <= max_words_between + 4: # plus the length of a single skip-gram
-                    # extend o until n
-                    o.a_end = current_a
-                    o.b_end = n
-                    good += [o]
-                    found = True
-                break
-            else:
-                up_to += 1
-        if not found:
-            bad += [o]
+        if not index_list is None and not tc_list is None:
+            raise Exception("Can only pass one. Choose either index_list or tc_list")
+        if index_list is None and tc_list is None:
+            raise Exception("Either index_list xor tc_list needs to be not None")
 
-    return good, bad
-
-ght = Gemara_Hashtable()
-
-def make_mesorat_hashas(category, parallelize=False):
-    start_time = pytime.time()
-    talmud_titles = library.get_indexes_in_category('Bavli')
-    talmud_titles = talmud_titles[:talmud_titles.index('Bava Batra') + 1]
-    mesechtot_names = get_texts_from_category(category)
-    mesechtot_data = [None for yo in xrange(len(mesechtot_names))]
-    for imes, mes in enumerate(mesechtot_names):
-        print "Hashing {}".format(mes)
-        index = library.get_index(mes)
-        if mes in talmud_titles:
-            vtitle = 'William Davidson Edition - Aramaic'
+        if not index_list is None:
+            unit_list = index_list
+            using_indexes = True
         else:
-            vtitle = None
-        mes_il, mes_rl = index.text_index_map(tokenize_words, lang='he', vtitle=vtitle, strict=False)
-        mes_list = index.nodes.traverse_to_list(
-            lambda n, _: TextChunk(n.ref(), "he", vtitle=vtitle).ja().flatten_to_array() if not n.children else [])
-        mes_wl = [w for seg in mes_list for w in tokenize_words(seg)]
-        mesechtot_data[imes] = (mes_wl, mes_il, mes_rl, mes)
-        total_len = len(mes_wl)
-        pickle.dump((mes_il, mes_rl, total_len), open('text_index_map/{}.pkl'.format(mes), 'wb'))
+            unit_list = tc_list
+            using_indexes = False
 
-        for i_word in xrange(len(mes_wl) - 4):
-            skip_gram_list, last_index_offset_list = ght.get_skip_grams(mes_wl[i_word:i_word + 5])
-            # ht = self.ht_list[self.w2i(skip_gram_list[0])] #should be the same for all four skip grams
-            for skip_gram, offset in zip(skip_gram_list, last_index_offset_list):
-                start_index = i_word
-                end_index = i_word + 4
-
-                start_ref = mes_rl[bisect.bisect_right(mes_il, start_index) - 1]
-                end_ref = mes_rl[bisect.bisect_right(mes_il, end_index) - 1]
-                if start_ref == end_ref:
-                    matched_ref = start_ref
+        talmud_titles = library.get_indexes_in_category('Bavli')
+        talmud_titles = talmud_titles[:talmud_titles.index('Bava Batra') + 1]
+        text_index_map_data = [None for yo in xrange(len(unit_list))]
+        for iunit, unit in enumerate(unit_list):
+            if self.verbose: print "Hashing {}".format(unit)
+            if using_indexes:
+                index = library.get_index(unit)
+                if unit in talmud_titles and use_william:
+                    vtitle = 'William Davidson Edition - Aramaic'
                 else:
-                    try:
-                        matched_ref = start_ref.to(end_ref)
-                    except AssertionError:
-                        continue
+                    vtitle = None
+                unit_il, unit_rl = index.text_index_map(self.tokenizer, lang='he', vtitle=vtitle, strict=False)
+                unit_list_temp = index.nodes.traverse_to_list(
+                    lambda n, _: TextChunk(n.ref(), "he", vtitle=vtitle).ja().flatten_to_array() if not n.children else [])
+                unit_wl = [w for seg in unit_list_temp for w in self.tokenizer(seg)]
+                unit_str = unit
+            else:
+                assert isinstance(unit, TextChunk)
+                unit_il, unit_rl, total_len = unit.text_index_map(self.tokenizer)
+                unit_wl = [w for seg in unit.ja().flatten_to_array() for w in self.tokenizer(seg)]
+                unit_str = unit._oref.normal()
+            text_index_map_data[iunit] = (unit_wl, unit_il, unit_rl, unit_str)
+            total_len = len(unit_wl)
+            if not return_obj:
+                pickle.dump((unit_il, unit_rl, total_len), open('{}text_index_map/{}.pkl'.format(output_root, unit), 'wb'))
 
-                ght[skip_gram] = Mesorah_Item(mes, imes, (start_index, end_index), matched_ref)
+            for i_word in xrange(len(unit_wl) - self.skip_gram_size):
+                skip_gram_list = self.ght.get_skip_grams(unit_wl[i_word:i_word + self.skip_gram_size + 1])
+                # ht = self.ht_list[self.w2i(skip_gram_list[0])] #should be the same for all four skip grams
+                for skip_gram in skip_gram_list:
+                    start_index = i_word
+                    end_index = i_word + self.skip_gram_size
 
+                    start_ref = unit_rl[bisect.bisect_right(unit_il, start_index) - 1]
+                    end_ref = unit_rl[bisect.bisect_right(unit_il, end_index) - 1]
+                    if start_ref == end_ref:
+                        matched_ref = start_ref
+                    else:
+                        try:
+                            matched_ref = start_ref.to(end_ref)
+                        except AssertionError:
+                            continue
 
-    if parallelize:
-        pool = multiprocessing.Pool()
-        mesorat_hashas = reduce(lambda a,b: a + b, pool.map(get_matches_in_mesechta, enumerate(mesechtot_data)), [])
-        pool.close()
-    else:
-        mesorat_hashas = []
-        for input in enumerate(mesechtot_data):
-            mesorat_hashas += get_matches_in_mesechta(input)
-
-
-    # deal with one-off error at end of matches
-    for mm in mesorat_hashas:
-        mes_wl_a, mes_il_a, mes_rl_a, mes = mesechtot_data[mm.a.mesechta_index]
-        mes_wl_b, mes_il_b, mes_rl_b, mes = mesechtot_data[mm.b.mesechta_index]
-
-        new_loc = (mm.a.location[0], mm.a.location[1] - 1)
-        new_start_ref = mes_rl_a[bisect.bisect_right(mes_il_a, new_loc[0]) - 1]
-
-        new_end_ref = mes_rl_a[bisect.bisect_right(mes_il_a, new_loc[1]) - 1]
-        mm.a = Mesorah_Item(mm.a.mesechta, mm.a.mesechta_index, new_loc, new_start_ref.to(new_end_ref),
-                             mm.a.num_skip_grams)
-        new_loc = (mm.b.location[0], mm.b.location[1] - 1)
-        new_start_ref = mes_rl_b[bisect.bisect_right(mes_il_b, new_loc[0]) - 1]
-        new_end_ref = mes_rl_b[bisect.bisect_right(mes_il_b, new_loc[1]) - 1]
-        mm.b = Mesorah_Item(mm.b.mesechta, mm.b.mesechta_index, new_loc, new_start_ref.to(new_end_ref),
-                             mm.b.num_skip_grams)
-
-
-        """
-        short_word_gram_a = u''.join([ght.get_two_letter_word(mes_wl_a[i]) for i in xrange(mm.a.location[1]-4,mm.a.location[1]+1)])
-        short_word_gram_b = u''.join([ght.get_two_letter_word(mes_wl_b[i]) for i in xrange(mm.b.location[1]-4, mm.b.location[1] + 1)])
-        """
-    obj = [[mm.a.ref.normal(), mm.b.ref.normal()] for mm in mesorat_hashas]
-    obj_with_indexes = [{"match":[mm.a.ref.normal(), mm.b.ref.normal()], "match_index":[list(mm.a.location), list(mm.b.location)]} for mm in mesorat_hashas]
-    objStr = json.dumps(obj, indent=4, ensure_ascii=False)
-    with open('mesorat_hashas.json', "wb") as f:
-        f.write(objStr.encode('utf-8'))
-    objStr = json.dumps(obj_with_indexes, indent=4, ensure_ascii=False)
-    with open('mesorat_hashas_indexes.json', "wb") as f:
-        f.write(objStr.encode('utf-8'))
-
-    print "...{}s".format(round(pytime.time()-start_time,2))
+                    self.ght[skip_gram] = Mesorah_Item(unit_str, iunit, (start_index, end_index), matched_ref, self.min_distance_between_matches)
 
 
-def get_matches_in_mesechta(input):
-    imes, (mes_wl, mes_il, mes_rl, mes) = input
-    print 'Searching {}'.format(mes)
-    already_matched_dict = defaultdict(list)  # keys are word indexes that have matched. values are lists of Mesorah_Items that they matched to.
-    matches = []
-    for i_word in xrange(len(mes_wl) - 4):
-        # if i_word % 4000 == 0:
-        #    print "{}\t{}%\tNum Found: {}".format(mes, round(100.0 * global_i_word / total_num_words, 2),len(mesorat_hashas))
-        # global_i_word += 1
-        start_ref = mes_rl[bisect.bisect_right(mes_il, i_word) - 1]
-        end_ref = mes_rl[bisect.bisect_right(mes_il, i_word + 4) - 1]
-
-        if start_ref == end_ref:
-            matched_ref = start_ref
+        if self.parallelize:
+            pool = multiprocessing.Pool()
+            mesorat_hashas = reduce(lambda a,b: a + b, pool.map(self.get_matches_in_unit, enumerate(text_index_map_data)), [])
+            pool.close()
         else:
-            try:
-                matched_ref = start_ref.to(end_ref)
-            except AssertionError:
-                continue
+            mesorat_hashas = []
+            for input in enumerate(text_index_map_data):
+                mesorat_hashas += self.get_matches_in_unit(input)
 
-        a = Mesorah_Item(mes, imes, (i_word, i_word + 4), matched_ref)
-        skip_matches = ght[mes_wl[i_word:i_word + 5]]
-        skip_matches.remove(a)  # remove the skip match that we're inspecting
-        skip_matches = filter(lambda x: not x.too_close(a), skip_matches)
-        skip_matches = filter(lambda x: not ght.already_started_here((a, x)), skip_matches) # TODO use some closeness metric here also
-        try:
-            # avoid matching things close to what we already matched
-            temp_already_matched_list = already_matched_dict[i_word]
 
-            for temp_already_matched in temp_already_matched_list:
-                skip_matches = filter(lambda x: not x.too_close(temp_already_matched), skip_matches)
-        except KeyError:
-            pass
-        skip_matches.sort(lambda x, y: x.compare(y))
-        partial_match_list = [PartialMesorahMatch(a, a, b, b) for b in skip_matches]
+        # deal with one-off error at end of matches
+        for mm in mesorat_hashas:
+            mes_wl_a, mes_il_a, mes_rl_a, unit = text_index_map_data[mm.a.mesechta_index]
+            mes_wl_b, mes_il_b, mes_rl_b, unit = text_index_map_data[mm.b.mesechta_index]
 
-        for j_word in xrange(i_word + 1, len(mes_wl) - 4):
-            if len(partial_match_list) == 0:
-                break
-            temp_start_ref = mes_rl[bisect.bisect_right(mes_il, j_word) - 1]
-            temp_end_ref = mes_rl[bisect.bisect_right(mes_il, j_word + 4) - 1]
-            if temp_start_ref == temp_end_ref:
-                temp_matched_ref = temp_start_ref
+            new_loc = (mm.a.location[0], mm.a.location[1] - 1)
+            new_start_ref = mes_rl_a[bisect.bisect_right(mes_il_a, new_loc[0]) - 1]
+
+            new_end_ref = mes_rl_a[bisect.bisect_right(mes_il_a, new_loc[1]) - 1]
+            mm.a = Mesorah_Item(mm.a.mesechta, mm.a.mesechta_index, new_loc, new_start_ref.to(new_end_ref),
+                                 mm.a.min_distance_between_matches)
+            new_loc = (mm.b.location[0], mm.b.location[1] - 1)
+            new_start_ref = mes_rl_b[bisect.bisect_right(mes_il_b, new_loc[0]) - 1]
+            new_end_ref = mes_rl_b[bisect.bisect_right(mes_il_b, new_loc[1]) - 1]
+            mm.b = Mesorah_Item(mm.b.mesechta, mm.b.mesechta_index, new_loc, new_start_ref.to(new_end_ref),
+                                 mm.b.min_distance_between_matches)
+
+            if self.with_scoring:
+                mm.score = self.calculate_score(mes_wl_a[mm.a.location[0]:mm.a.location[1]+1], mes_wl_b[mm.b.location[0]:mm.b.location[1]+1])
+
+
+
+        if self.verbose: print "...{}s".format(round(pytime.time() - start_time, 2))
+        if return_obj:
+            return mesorat_hashas
+        else:
+            obj = [[mm.a.ref.normal(), mm.b.ref.normal()] for mm in mesorat_hashas]
+            obj_with_indexes = \
+                [{
+                     "match": [mm.a.ref.normal(), mm.b.ref.normal()],
+                     "match_index": [list(mm.a.location), list(mm.b.location)],
+                     "score": mm.score
+                 }
+                 for mm in mesorat_hashas]
+            objStr = json.dumps(obj, indent=4, ensure_ascii=False)
+            with open('{}mesorat_hashas.json'.format(output_root), "wb") as f:
+                f.write(objStr.encode('utf-8'))
+            objStr = json.dumps(obj_with_indexes, indent=4, ensure_ascii=False)
+            with open('{}mesorat_hashas_indexes.json'.format(output_root), "wb") as f:
+                f.write(objStr.encode('utf-8'))
+
+    def compare_new_skip_matches(self, old_partials, new_b_skips, current_a):
+        """
+
+        :param list[PartialMesorahMatch] old_partials:
+        :param list[Mesorah_Item] new_a_skips:
+        :return tuple[list[PartialMesorahMatch],list[PartialMesorahMatch]]
+        """
+        good = []
+        bad = []
+
+        # print u'OLD', u' - '.join([str(o) for o in old])
+        # print u'NEW', u' - '.join([str(o) for o in new])
+        up_to = 0
+        for o in old_partials:
+            found = False
+
+            while up_to < len(new_b_skips):
+                n = new_b_skips[up_to]
+                dist = o.b_end - n
+                mes_dist = o.b_end.mesechta_diff(n)
+                if dist:
+                    new_is_ahead = dist > 0
+                else:
+                    new_is_ahead = mes_dist < 0
+
+                if new_is_ahead:
+                    if dist and 0 < dist <= self.max_words_between + self.skip_gram_size:  # plus the length of a single skip-gram
+                        # extend o until n
+                        o.a_end = current_a
+                        o.b_end = n
+                        good += [o]
+                        found = True
+                    break
+                else:
+                    up_to += 1
+            if not found:
+                bad += [o]
+
+        return good, bad
+
+
+
+
+    def get_matches_in_unit(self, input):
+        imes, (mes_wl, mes_il, mes_rl, mes) = input
+        if self.verbose: print 'Searching {}'.format(mes)
+        already_matched_dict = defaultdict(list)  # keys are word indexes that have matched. values are lists of Mesorah_Items that they matched to.
+        matches = []
+        for i_word in xrange(len(mes_wl) - self.skip_gram_size):
+            # if i_word % 4000 == 0:
+            #    print "{}\t{}%\tNum Found: {}".format(mes, round(100.0 * global_i_word / total_num_words, 2),len(mesorat_hashas))
+            # global_i_word += 1
+            start_ref = mes_rl[bisect.bisect_right(mes_il, i_word) - 1]
+            end_ref = mes_rl[bisect.bisect_right(mes_il, i_word + self.skip_gram_size) - 1]
+
+            if start_ref == end_ref:
+                matched_ref = start_ref
             else:
                 try:
-                    temp_matched_ref = temp_start_ref.to(temp_end_ref)
+                    matched_ref = start_ref.to(end_ref)
                 except AssertionError:
                     continue
 
-            temp_a = Mesorah_Item(mes, imes, (j_word, j_word + 4), temp_matched_ref)
-            temp_skip_matches = ght[mes_wl[j_word:j_word + 5]]
-            temp_skip_matches.remove(temp_a)
-            temp_skip_matches = filter(lambda x: not x.too_close(temp_a), temp_skip_matches)
-            temp_skip_matches.sort(lambda x, y: x.compare(y))
-            new_partial_match_list, dead_matches_possibly = compare_new_skip_matches(partial_match_list,
-                                                                                     temp_skip_matches, temp_a)
+            a = Mesorah_Item(mes, imes, (i_word, i_word + self.skip_gram_size), matched_ref, self.min_distance_between_matches)
+            skip_matches = self.ght[mes_wl[i_word:i_word + self.skip_gram_size + 1]]
+            skip_matches.remove(a)  # remove the skip match that we're inspecting
+            if not self.all_to_all:
+                # filter anything that's in this TextChunk
+                skip_matches = filter(lambda x: not imes == x.mesechta_index, skip_matches)
+            skip_matches = filter(lambda x: not x.too_close(a), skip_matches)
+            skip_matches = filter(lambda x: not self.ght.already_started_here((a, x)), skip_matches) # TODO use some closeness metric here also
+            try:
+                # avoid matching things close to what we already matched
+                temp_already_matched_list = already_matched_dict[i_word]
 
-            for dead in dead_matches_possibly:
-                distance_from_last_match = j_word - dead.last_a_word_matched()
-                if distance_from_last_match > max_words_between:
-                    if len(dead) > min_words_in_match:
-                        ght.put_already_started((dead.b_start, dead.a_start))
-                        for i_matched_word in xrange(dead.a_start.location[0], dead.a_end.location[1] + 100):
-                            already_matched_dict[i_matched_word] += [dead.b_start]
+                for temp_already_matched in temp_already_matched_list:
+                    skip_matches = filter(lambda x: not x.too_close(temp_already_matched), skip_matches)
+            except KeyError:
+                pass
+            skip_matches.sort(lambda x, y: x.compare(y))
+            partial_match_list = [PartialMesorahMatch(a, a, b, b, self.min_words_in_match) for b in skip_matches]
+
+            for j_word in xrange(i_word + 1, len(mes_wl) - self.skip_gram_size):
+                if len(partial_match_list) == 0:
+                    break
+                temp_start_ref = mes_rl[bisect.bisect_right(mes_il, j_word) - 1]
+                temp_end_ref = mes_rl[bisect.bisect_right(mes_il, j_word + self.skip_gram_size) - 1]
+                if temp_start_ref == temp_end_ref:
+                    temp_matched_ref = temp_start_ref
+                else:
+                    try:
+                        temp_matched_ref = temp_start_ref.to(temp_end_ref)
+                    except AssertionError:
+                        continue
+
+                temp_a = Mesorah_Item(mes, imes, (j_word, j_word + self.skip_gram_size), temp_matched_ref, self.min_distance_between_matches)
+                temp_skip_matches = self.ght[mes_wl[j_word:j_word + self.skip_gram_size + 1]]
+                temp_skip_matches.remove(temp_a)
+                temp_skip_matches = filter(lambda x: not x.too_close(temp_a), temp_skip_matches)
+                temp_skip_matches.sort(lambda x, y: x.compare(y))
+                new_partial_match_list, dead_matches_possibly = self.compare_new_skip_matches(partial_match_list,
+                                                                                         temp_skip_matches, temp_a)
+
+                for dead in dead_matches_possibly:
+                    distance_from_last_match = j_word - dead.last_a_word_matched()
+                    if distance_from_last_match > self.max_words_between:
+                        if len(dead) > self.min_words_in_match:
+                            self.ght.put_already_started((dead.b_start, dead.a_start))
+                            for i_matched_word in xrange(dead.a_start.location[0], dead.a_end.location[1] + 100):
+                                already_matched_dict[i_matched_word] += [dead.b_start]
+                            try:
+                                matches += [dead.finalize()]
+                            except AssertionError:
+                                pass
+                    else:
+                        # still could be good
+                        new_partial_match_list += [dead]
+
+                partial_match_list = new_partial_match_list
+
+            # account for matches at end of book
+            for dead in partial_match_list:
+                distance_from_last_match = (len(mes_wl)-self.skip_gram_size) - dead.last_a_word_matched()
+                if distance_from_last_match > self.max_words_between:
+                    if len(dead) > self.min_words_in_match:
+                        self.ght.put_already_started((dead.b_start, dead.a_start))
                         try:
                             matches += [dead.finalize()]
                         except AssertionError:
                             pass
-                else:
-                    # still could be good
-                    new_partial_match_list += [dead]
 
-            partial_match_list = new_partial_match_list
+        return matches
 
-        # account for matches at end of book
-        for dead in partial_match_list:
-            distance_from_last_match = (len(mes_wl)-4) - dead.last_a_word_matched()
-            if distance_from_last_match > max_words_between:
-                if len(dead) > min_words_in_match:
-                    ght.put_already_started((dead.b_start, dead.a_start))
-                    try:
-                        matches += [dead.finalize()]
-                    except AssertionError:
-                        pass
 
-    return matches
+
 
 
 def filter_pasuk_matches(category, mesorat_hashas_name):
@@ -1080,19 +1143,5 @@ def bulk_delete(id_file_name):
         except urllib2.HTTPError:
             print "{} error".format(id)
 
-#make_mesorat_hashas("All", parallelize=False)
-print '-----FILTERING PASUKIM'
-#filter_pasuk_matches("All","mesorat_hashas_indexes.json")
-print '-----FILTERING CLOSE MATCHES'
-#filter_close_matches("mesorat_hashas_pasuk_filtered.json", filter_only_talmud=True)
-#remove_mishnah_talmud_dups('mesorat_hashas_clustered.json')
-#save_links_local('All','mesorat_hashas_mishnah_filtered.json')
-#save_links_post_request('All')
-#compare_mesorat_hashas('mesorat_hashas_mishnah_filtered.json','mesorat_hashas_mishnah_filtered_talmud.json')
-#get_diff_ids('mesorat_hashas_mishnah_filtered.json','sefaria_noa.links.json')
-bulk_delete('mesorat_hashas_comparison.json')
 
-#sort_n_save('all/mesorat_hashas_mishnah_filtered.json')
-#count_cats('all/mesorat_hashas_mishnah_filtered.json')
-#daf_with_most_links('all/mesorat_hashas_mishnah_filtered.json')
 
