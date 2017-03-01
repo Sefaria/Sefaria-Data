@@ -112,8 +112,8 @@ class Record(Element):
     Child = Volume
     def __init__(self, soup_tag):
         super(Record, self).__init__(soup_tag)
-        en_title = self.Tag.find('en_title', recursive=True)
-        he_title = self.Tag.find('he_title', recursive=True)
+        en_title = self.Tag.find('en_title', recursive=False)
+        he_title = self.Tag.find('he_title', recursive=False)
 
         if en_title is None or he_title is None:
             self.titles = None
@@ -160,9 +160,7 @@ class Commentary(Record):
     Parent = Commentaries
 
     def __init__(self, soup_tag):
-        self.id = soup_tag.id
-        if self.id is None:
-            raise AttributeError("No id attribute")
+        self.id = soup_tag['id']
         super(Commentary, self).__init__(soup_tag)
 
 
@@ -180,8 +178,17 @@ class Commentaries(Element):
             self.commentary_ids[commentary.titles['en']] = commentary.id
 
     def add_commentary(self, en_title, he_title):
-        pass
-        #Todo
+        assert self.commentary_ids.get(en_title) is None
+        commentary_id = len(self.commentary_ids)
+        self.commentary_ids[en_title] = commentary_id
+
+        raw_commentary = BeautifulSoup(u'', 'xml').new_tag('commentary')
+        raw_commentary['id'] = commentary_id
+        commentary = Commentary(raw_commentary)
+        commentary.add_titles(en_title, he_title)
+        self.Tag.append(raw_commentary)
+
+
 
 class OrderedElement(Element):
     pass
