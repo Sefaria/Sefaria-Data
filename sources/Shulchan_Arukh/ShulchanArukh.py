@@ -2,6 +2,7 @@
 
 import codecs
 from bs4 import BeautifulSoup, Tag
+from data_utilities.util import Singleton
 
 """
 This module describes an object module for parsing the Shulchan Arukh and it's associated commentaries. The classes
@@ -9,6 +10,9 @@ outlined here are wrappers for BeautifulSoup Tag elements, with the necessary pa
 This allows for a steady accumulation of data to be saved on disk as an xml document.
 """
 
+@Singleton
+class CommentStore(dict):
+    pass
 
 
 class Element(object):
@@ -36,9 +40,9 @@ class Element(object):
             return None
 
         else:
-            parent_cls = locals()[self.parent]
+            parent_cls = module_locals[self.parent]
             parent_element = self.Tag.parent
-            assert parent_cls.Name == parent_element.name
+            assert parent_cls.name == parent_element.name
             return parent_cls(parent_element)
 
     def get_child(self):
@@ -49,11 +53,15 @@ class Element(object):
             return None
 
         elif self.multiple_children:
-            return [self.child(child) for child in self.Tag.find_all(self.child.Name, recursive=False)]
+            child_cls = module_locals[self.child]
+            return [child_cls(child_element) for child_element in self.Tag.find_all(child_cls.name, recursive=False)]
 
         else:
-            child_cls = locals()[self.child]
-            return child_cls(self.Tag.find(child_cls.Name, recursive=False))
+            child_cls = module_locals[self.child]
+            return child_cls(self.Tag.find(child_cls.name, recursive=False))
+
+    def __unicode__(self):
+        return unicode(self.Tag)
 
 
 class Root(Element):
@@ -95,12 +103,16 @@ class Root(Element):
     def create_skeleton(filename):
         """
         Create a blank xml document for a new parsing project
-        :param filename:
+        :param filename: Name of file to store xml
+        :param dict titles: keys: en_title, he_title
         """
-        blank_canvas = u'<?xml version="1.0" encoding="utf-8"?>\n<root><base_text></base_text>' \
-                       u'<commentaries></commentaries></root>'
+        soup = BeautifulSoup('', 'xml')
+        soup.append(soup.new_tag('root'))
+        soup.root.append(soup.new_tag('base_text'))
+        soup.root.append(soup.new_tag('commentaries'))
+
         with codecs.open(filename, 'w', 'utf-8') as outfile:
-            outfile.write(blank_canvas)
+            outfile.write(unicode(soup))
 
     def get_base_text(self):
         return BaseText(self.Tag.base_text)
@@ -114,6 +126,7 @@ class Record(Element):
     Parent class for IndexRecords (entire books)
     """
     child = 'Volume'
+    multiple_children = True
     def __init__(self, soup_tag):
         super(Record, self).__init__(soup_tag)
         en_title = self.Tag.find('en_title', recursive=False)
@@ -133,9 +146,9 @@ class Record(Element):
 
         # add titles to xml
         soup = BeautifulSoup(u'', 'xml')
-        self.Tag.append(soup.new_tag('en_title'))
+        self.Tag.insert(0, soup.new_tag('en_title'))
         self.Tag.en_title.append(en_title)
-        self.Tag.append(soup.new_tag('he_title'))
+        self.Tag.insert(1, soup.new_tag('he_title'))
         self.Tag.he_title.append(he_title)
 
     def _remove_titles(self):
@@ -152,6 +165,32 @@ class Record(Element):
     def get_simanim(self):
         #Todo
         pass
+
+    def add_volume(self, raw_text, vol_num):
+        """
+        Add a new volume to the book. Takes raw text and wraps in a volume tag.
+        :param raw_text: Text to be added
+        :param vol_num: volume number
+        :return: Volume object
+        """
+        raw_xml = u'<volume num="{}">{}</volume>'.format(vol_num, raw_text)
+        current_volume = Volume(BeautifulSoup(raw_xml, 'xml').volume)
+
+        volumes = self.get_child()
+        if len(volumes) == 0:
+            self.Tag.append(current_volume.Tag)
+        else:
+            # assert that volumes are stored in order
+            assert OrderedElement.validate_collection(volumes)
+            for volume in volumes:
+                assert current_volume.num != volume.num
+
+                if current_volume.num < volume.num:
+                    volume.Tag.insert_before(current_volume.Tag)
+                    break
+            else:
+                volumes[-1].Tag.insert_after(current_volume.Tag)
+        return current_volume
 
 
 class BaseText(Record):
@@ -183,7 +222,7 @@ class Commentaries(Element):
 
     def add_commentary(self, en_title, he_title):
         assert self.commentary_ids.get(en_title) is None
-        commentary_id = len(self.commentary_ids)
+        commentary_id = len(self.commentary_ids) + 1
         self.commentary_ids[en_title] = commentary_id
 
         raw_commentary = BeautifulSoup(u'', 'xml').new_tag('commentary')
@@ -191,13 +230,78 @@ class Commentaries(Element):
         commentary = Commentary(raw_commentary)
         commentary.add_titles(en_title, he_title)
         self.Tag.append(raw_commentary)
+        return commentary
 
 
 
 class OrderedElement(Element):
-    pass
+
+    def __init__(self, soup_tag):
+        self.num = soup_tag['num']
+        super(OrderedElement, self).__init__(soup_tag)
+
+    def validate_order(self, previous=None):
+        """
+        Checks that num of this element follows that of previous
+        :param previous: Previous element in an array of OrderedElements. If None will return True (useful for first element)
+        :return: bool
+        """
+        if previous is None:
+            return True
+        else:
+            assert isinstance(previous, OrderedElement)
+            if self.num <= previous.num:
+                return False
+            else:
+                return True
+
+    def validate_complete(self, previous=None):
+        """
+        Checks that the num of this element is exactly 1 more than the previous element. If previous is None, will
+        return True only if the num of self is 0 or 1.
+        :param previous: Previous OrderedElement in array of elements. If first element, pass None.
+        :return: bool
+        """
+        if previous is None:
+            return self.num == 1 or self.num == 0
+        else:
+            assert isinstance(previous, OrderedElement)
+            return (self.num - previous.num) == 1
+
+    @staticmethod
+    def validate_collection(element_list, complete=False, verbose=False):
+        """
+        Run a validation on an array of ordered elements
+        :param list[OrderedElement] element_list: list of OrderedElement instances
+        :param complete: True will run the validate_complete method, otherwise will check only ascending order.
+        :param verbose: Set to True to view print statements regrading locations of missing elements
+        :return: bool
+        """
+        passed = True
+        previous_element = None
+        for element in element_list:
+            if complete:
+                validation = element.validate_complete
+            else:
+                validation = element.validate_order
+            if not validation(previous_element):
+                passed = False
+                if verbose:
+                    print 'misordered element at location {}'.format(element.num)
+        if verbose and passed:
+            print 'Validation Successful'
+        return passed
+
 
 class Volume(OrderedElement):
+    name = 'volume'
+    child = 'siman'
+    multiple_children = True
+
+class Siman(OrderedElement):
+    pass
+
+class Seif(OrderedElement):
     pass
 
 class TextElement(Element):
@@ -207,3 +311,4 @@ class TextElement(Element):
 class Xref(Element):
     pass
 
+module_locals = locals()
