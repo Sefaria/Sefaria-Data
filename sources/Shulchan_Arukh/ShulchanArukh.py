@@ -16,9 +16,9 @@ class Element(object):
     The most abstract class, this class defines the wrapping of the Tag element, as well as methods for going up and
     down the tree.
     """
-    Name = NotImplemented  # name of xml attribute associated with this class
-    Parent = NotImplemented
-    Child = NotImplemented  # This will be the default child. None for Elements where a default child cannot be defined.
+    name = NotImplemented  # name of xml attribute associated with this class
+    parent = NotImplemented
+    child = NotImplemented  # This will be the default child. None for Elements where a default child cannot be defined.
     multiple_children = False
 
 
@@ -29,27 +29,31 @@ class Element(object):
         self.Tag = soup_tag
 
     def get_parent(self):
-        if self.Parent is NotImplemented:
+        if self.parent is NotImplemented:
             raise NotImplementedError
 
-        elif self.Parent is None:
+        elif self.parent is None:
             return None
 
         else:
-            return self.Parent(self.Tag.parent)
+            parent_cls = locals()[self.parent]
+            parent_element = self.Tag.parent
+            assert parent_cls.Name == parent_element.name
+            return parent_cls(parent_element)
 
     def get_child(self):
-        if self.Child is NotImplemented:
+        if self.child is NotImplemented:
             raise NotImplementedError
 
-        elif self.Child is None:
+        elif self.child is None:
             return None
 
         elif self.multiple_children:
-            return [self.Child(child) for child in self.Tag.find_all(self.Child.Name, recursive=False)]
+            return [self.child(child) for child in self.Tag.find_all(self.child.Name, recursive=False)]
 
         else:
-            return self.Child(self.Tag.find(self.Child.Name, recursive=False))
+            child_cls = locals()[self.child]
+            return child_cls(self.Tag.find(child_cls.Name, recursive=False))
 
 
 class Root(Element):
@@ -57,9 +61,9 @@ class Root(Element):
     """
     Root of the data tree.
     """
-    Name = 'root'
-    Parent = None
-    Child = None  # No default child is defined, call to BaseText or Commentaries explicitly
+    name = 'root'
+    parent = None
+    child = None  # No default child is defined, call to BaseText or Commentaries explicitly
 
     def __init__(self, filename):
         self.filename = filename
@@ -109,7 +113,7 @@ class Record(Element):
     """
     Parent class for IndexRecords (entire books)
     """
-    Child = Volume
+    child = 'Volume'
     def __init__(self, soup_tag):
         super(Record, self).__init__(soup_tag)
         en_title = self.Tag.find('en_title', recursive=False)
@@ -151,13 +155,13 @@ class Record(Element):
 
 
 class BaseText(Record):
-    Name = 'base_text'
-    Parent = Root
+    name = 'base_text'
+    parent = Root
 
 
 class Commentary(Record):
-    Name = 'commentary'
-    Parent = Commentaries
+    name = 'commentary'
+    parent = 'Commentaries'
 
     def __init__(self, soup_tag):
         self.id = soup_tag['id']
@@ -165,9 +169,9 @@ class Commentary(Record):
 
 
 class Commentaries(Element):
-    Name = 'commentaries'
-    Parent = Root
-    Child = Commentary
+    name = 'commentaries'
+    parent = 'Root'
+    child = 'Commentary'
     multiple_children = True
 
     def __init__(self, soup_tag):
