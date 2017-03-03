@@ -53,12 +53,10 @@ for en_sefer, he_sefer in zip(en_sefer_names, he_sefer_names):
 record.validate()
 
 index = {
-    "title":"Avi Ezri",
+    "title":"Avi Ezer",
     "base_text_titles": [
        "Genesis","Exodus","Leviticus","Numbers","Deuteronomy"
     ],
-    "base_text_mapping": "commentary_increment_base_text_depth",
-    "collective_title": "Avi Ezer",
     "dependence": "Commentary",
     "categories":['Tanakh','Commentary','Avi Ezer','Torah'],
     "schema": record.serialize()

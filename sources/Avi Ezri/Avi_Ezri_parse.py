@@ -10,6 +10,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
 from sources.functions import *
 import re
 import codecs
+from data_utilities.dibur_hamatchil_matcher import *
 import pdb
 
 sefer_names = ["Genesis","Exodus","Leviticus","Numbers","Deuteronomy"]
@@ -33,8 +34,9 @@ def get_parsed_text():
                         #remove tag at beggining and split by comment:
                         comments  = verse[verse.index(u"3")+1:].split(u"@78")
                         #make DH's bold
-                        comments = list(map(lambda(x): u"<b>"+x.replace(u"@58",u"</b>"),comments))
-                        comments = filter(lambda(x): x.strip()!=u"<b>",comments)
+                        comments = list(map(lambda(x): u"<b>"+x.replace(u"@58",u"</b>").replace(u"@48",u""),comments))
+                        comments = [item for item in comments if item.strip()!=u"<b>"]
+                        #comments = filter(lambda(x): x.strip()!=u"<b>",comments)
                         comments = list(map(lambda(x): x if isinstance(x, unicode) else x.decode('utf8',replace),comments))
                         try:
                             if len(sefer_list[chapter_index][verse_index])>1:
@@ -85,14 +87,14 @@ def make_links(text):
                             "generated_by": "sterling_avi_ezer_torah_linker"
                             })
                     print link.get('refs')
-                    post_link(link, weak_network=True)
+                    #post_link(link, weak_network=True)
                     #for Ibn Ezra, we try and match the actual comment:
-                    base_ref = TextChunk(Ref('Ibn Ezra on {}, {}:{}'.format(key,perek_index+1, pasuk_index+1),"he"))
-                    avi_ezri_ref = TextChunk(Ref('Avi Ezer, {}, {}:{}:{}'.format(key, perek_index+1, pasuk_index+1, comment_index+1),"he"))
+                    base_ref = TextChunk(Ref('Ibn Ezra on {}, {}:{}'.format(key,perek_index+1, pasuk_index+1)),"he")
+                    avi_ezri_ref = TextChunk(Ref('Avi Ezer, {}, {}:{}:{}'.format(key, perek_index+1, pasuk_index+1, comment_index+1)),"he")
                     Ibn_Ezra_links = match_ref(base_ref,avi_ezri_ref,base_tokenizer,dh_extract_method=dh_extract_method)
-                    for IE_link in Ibn_Ezra_links:
-                        print link
-                        post_link(link, weak_network=True)
+                    for base, comment in zip(Ibn_Ezra_links["matches"],Ibn_Ezra_links["comment_refs"]):
+                        print "B",base,"C", comment
+                        #post_link(link, weak_network=True)
 #here starts methods for linking:
 def filter(some_string):
     if re.search(ur'<b>(.*?)</b>', some_string) is None:
@@ -104,7 +106,7 @@ def dh_extract_method(some_string):
     return re.search(ur'<b>(.*?)</b>', some_string).group(1)
 
 def base_tokenizer(some_string):
-    return some_string.split()
+    return some_string.split(" ")
 def get_links(sefer):
     base_ref = TextChunk(Ref(sefer),"he")
     avi_ezri_ref = TextChunk(Ref("Avi Ezri, "+str(sefer_ranges[book_index][1])+"-"+str(sefer_ranges[book_index][2])),"he")
@@ -112,7 +114,7 @@ def get_links(sefer):
     
 text = get_parsed_text()
 
-"""
+
 for sefer in text.keys():
     print key
     for chapter_index, chapter in enumerate(text[sefer]):
@@ -120,6 +122,7 @@ for sefer in text.keys():
             for comment in verse:
                 print str(chapter_index)+" "+str(verse_index)+" "+comment,type(comment)
 """
+
 for key in text.keys():
     version = {
         'versionTitle': 'Avi Ezri',
@@ -128,6 +131,6 @@ for key in text.keys():
         'text': text[key]
     }
     
-    post_text('Avi Ezer, '+key, version, weak_network=True)
-
-#make_links(text)
+    post_text_weak_connection('Avi Ezer, '+key, version)
+"""
+make_links(text)
