@@ -1,20 +1,21 @@
 # -*- coding: utf-8 -*-
 
 from sefaria.model import *
-
+from sefaria.utils import talmud
 
 class BookIbidTracker(object):
     """
     One instance per commentary
     """
-    def __init__(self):
+    def __init__(self, assert_simple = False):
         self._table = {}  # Keys are tuples of (index, (sections))
         self._section_length = 0
         self._last_cit = [None, None]
-        if self._last_cit[0] and self._last_cit[0]:
-            self._last_ref = Ref(u'{}.{}'.format(self._last_cit[0], '.'.join(self._last_cit[1])))
-        else:
-            self._last_ref = None
+        self.assert_simple = assert_simple
+        # if self._last_cit[0] and self._last_cit[1]:
+        #     self._last_ref = Ref(u'{}.{}'.format(self._last_cit[0], '.'.join(self._last_cit[1])))
+        # else:
+        #     self._last_ref = None
 
 
     def registerRef(self, oref):
@@ -25,11 +26,15 @@ class BookIbidTracker(object):
         :return:
         """
         assert isinstance(oref, Ref)
-
+        if self.assert_simple:
+            assert not oref.index.is_complex()
 
         # d = {}
         # ref = Ref(_obj=d)
-        self._table[(None,(None, None))] = oref
+        text_depth = len(oref.sections)  # since smag is a complex text we deal with, this line is needed
+        if self.assert_simple:
+            text_depth = oref.index_node.depth
+        self._table[(None, tuple([None] * text_depth))] = oref
         for key_tuple in self.creat_keys(oref):
             self._table[(oref.book,tuple(key_tuple))] = oref
 
@@ -43,14 +48,17 @@ class BookIbidTracker(object):
         :return: Ref
         """
         #todo: assert if table is empty.
-        #todo: print out an error statment if can't find this sham constilation in table
+        #todo: raise an error if can't find this sham constilation in table
 
         # recognize what kind of key we are looking for
         found_sham = False
         key = []
         if not index_name and sections == [None, None]:  # it says only Sham (all were None)
+            try:
                 resolvedRef = self._table[(None,(None, None))]
                 # notice that self._last_cit doesn't chnge so no need to reasign it
+            except KeyError:
+                raise Exception("Ibid table is empty. Can't retrieve book name")
         else:
             if not index_name:
                 index_name = self._last_cit[0]
@@ -69,16 +77,30 @@ class BookIbidTracker(object):
                     print "error, couldn't find this key", index_name, tuple(key)
                     return "error, couldn't find this key", index_name, tuple(key)
             else:
-                from_table = sections # that is it wasn't found in _table
+                from_table = sections # that is it wasn't in _table
             new_sections = []
-            # merge them, shile prefering the sections that were retrived from the citation
+            # merge them, while preferring the sections that were retrieved from the citation
             for i, sect in enumerate(sections):
                 if sect:
                     new_sections.append(str(sect))
                 else:
                     new_sections.append(str(from_table[i]))
             try:
-                resolvedRef = Ref(u'{}.{}'.format(index_name, '.'.join(new_sections)))
+                book_ref = Ref(index_name)
+                if self.assert_simple:
+                    assert not book_ref.index.is_complex()
+                if self.assert_simple:
+                    addressTypes = book_ref.index_node.addressTypes
+                else:
+                    addressTypes = [None]*len(new_sections)
+                section_str_list = []
+                for section, addressType in zip(new_sections, addressTypes):
+                    if addressType == u'Talmud':
+                        section_str_list += [talmud.section_to_daf(section)]
+                    else:
+                        section_str_list += [str(section)]
+
+                resolvedRef = Ref(u'{}.{}'.format(index_name, '.'.join(section_str_list)))
             except:
                 print 'error, problem with the Ref iteslf. ', u'{}.{}'.format(index_name, '.'.join(new_sections))
                 return "error, problem with the Ref iteslf", index_name, tuple(key)
@@ -90,10 +112,11 @@ class BookIbidTracker(object):
         return resolvedRef
 
     def creat_keys(self, oref, i = 1):
-
         subs = [[None],[oref.sections[0]]]
-        a = len(oref.sections)
-        while i < a:
+        text_depth = len(oref.sections) # since smag is a complex text we deal with, this line is needed
+        if self.assert_simple:
+            text_depth = oref.index_node.depth
+        while i < text_depth:
             subsi = filter(lambda item: len(item) == i, subs)
             for sub in subsi:
                 new0 = sub[:]
@@ -103,4 +126,14 @@ class BookIbidTracker(object):
                 new1.extend([oref.sections[i]])
                 subs.append(new1)
             i += 1
-        return filter(lambda item: len(item) == a, subs)
+        return filter(lambda item: len(item) == text_depth, subs)
+
+
+    def ignore_book_name_keys(self):
+        '''
+        deletes all keys with no book name.
+        called after a citation not resolved in Sefaria
+        '''
+        for k in self._table.keys():
+            if not k[0]:
+                del self._table[k]
