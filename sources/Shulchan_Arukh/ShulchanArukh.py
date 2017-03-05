@@ -91,6 +91,22 @@ class Element(object):
                 self.Tag.append(current_child.Tag)
         return current_child
 
+    def add_special(self, raw_text, name, found_after=None):
+        """
+        Helpful where something appears that doesn't fit into the regular data model (i.e. introductions,
+        chapter titles, siman categories etc.) Appends to the end of the current tag
+        :param raw_text: Raw text to be added
+        :param name: name of the xml element
+        :param found_after: If parent element (self) has ordered children, this keeps track of the location where this
+        was found. If found before the first child segment, set to 0. If None, the attribute will not be set.
+        :return:
+        """
+        raw_xml = u'<{}>{}</{}>'.format(name, raw_text, name)
+        special = BeautifulSoup(raw_xml, 'xml').find(name)
+        if found_after is not None:
+            special['found_after'] = found_after
+        self.Tag.append(special)
+
 
     def __unicode__(self):
         return unicode(self.Tag)
@@ -323,34 +339,79 @@ class Volume(OrderedElement):
         """
         return self._add_child(Siman, raw_text, siman_num)
 
-    def mark_simanim(self, pattern, start_mark=None):
+    def mark_simanim(self, pattern, start_mark=None, specials=None):
         """
         Mark up simanim in xml.
         :param pattern: regex pattern. The first capture group should indicate the siman number
         :param start_mark: regex pattern. If passed, will only begin scanning document from this location.
         Everything before will be thrown away.
+        :param dict specials: Can be used to identify other data that needs to be marked up in addition to simanim,
+        such as siman categories. Keys should be regex patterns, with value a dict with keys {'name', 'end'}. Name
+        should be the name of the xml element this data should be wrapped with. The 'end' key is the regex that will
+        mark a return to standard parsing. If not set, the only a single line will be marked.
         :return:
         """
+        def is_special(line_text, special_patterns):
+            if special_patterns is None:
+                return False
+            regexes = map(re.compile, special_patterns.keys())
+            matches = filter(None, [r.search(line_text) for r in regexes])
+            tot_matches = len(matches)
+            if tot_matches == 0:
+                return False
+            elif tot_matches == 1:
+                return matches[0].re.pattern
+            else:
+                raise AssertionError(u'{} matches more than 1 special pattern!'.format(matches[0].group()))
+
         raw_text = unicode(self.Tag.string.extract())
         if start_mark is None:
             started = True
         else:
             started = False
-        current_siman, siman_num = [], -1
+        current_siman, siman_num  = [], -1
+        special_mode = False  # Special parsing mode captures data that exists outside ordered structure
+        found_after, special_pattern, end_pattern = 0, None, None
 
         for line in raw_text.splitlines(True):  # keeps the endlines for later
             if started:
-                new_siman = re.search(pattern, line)
-                if new_siman is None:  # This is not a new siman
-                    assert siman_num > 0  # Do not add text before the first siman marker has been found
-                    current_siman.append(line)
+                if special_mode:
+                    if end_pattern is None:
+                        self.add_special(line, specials[special_pattern]['name'], found_after)
+                        special_mode = False
+                    else:
+                        if re.search(end_pattern, line):
+                            assert len(current_siman) > 0
+                            self.add_special(''.join(current_siman), specials[special_pattern]['name'], found_after)
+                            current_siman = []
+                            special_mode = False
+                        else:
+                            current_siman.append(line)
 
                 else:
-                    if siman_num > 0:  # add the previous siman, will be -1 if this is the first siman marker in the text
-                        assert len(current_siman) > 0
-                        self._add_siman(u''.join(current_siman), siman_num)
-                        current_siman = []
-                    siman_num = getGematria(new_siman.group(1))
+                    new_siman = re.search(pattern, line)
+                    if new_siman:
+                        if siman_num > 0:  # add the previous siman, will be -1 if this is the first siman marker in the text
+                            assert len(current_siman) > 0
+                            self._add_siman(u''.join(current_siman), siman_num)
+                            current_siman = []
+                        siman_num = getGematria(new_siman.group(1))
+                        continue
+
+                    special_pattern = is_special(line, specials)
+                    if special_pattern:
+                        special_mode = True
+                        if siman_num > 0:
+                            assert len(current_siman) > 0
+                            self._add_siman(u''.join(current_siman), siman_num)
+                            current_siman = []
+                            found_after = siman_num
+                            siman_num = -1
+                        end_pattern = specials[special_pattern].get('end')
+
+                    else:
+                        assert siman_num > 0  # Do not add text before the first siman marker has been found
+                        current_siman.append(line)
             else:
                 if re.search(start_mark, line):
                     started = True
