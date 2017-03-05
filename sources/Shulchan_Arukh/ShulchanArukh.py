@@ -88,7 +88,7 @@ class Element(object):
                     volume.Tag.insert_before(current_child.Tag)
                     break
             else:
-                children[-1].Tag.insert_after(current_child.Tag)
+                self.Tag.append(current_child.Tag)
         return current_child
 
 
@@ -326,9 +326,9 @@ class Volume(OrderedElement):
     def mark_simanim(self, pattern, start_mark=None):
         """
         Mark up simanim in xml.
-        :param regex: pattern. The first capture group should indicate the siman number
-        :param start_mark: pattern. If passed, will only begin scanning document from this location. Everything before
-        will be thrown away.
+        :param pattern: regex pattern. The first capture group should indicate the siman number
+        :param start_mark: regex pattern. If passed, will only begin scanning document from this location.
+        Everything before will be thrown away.
         :return:
         """
         raw_text = unicode(self.Tag.string.extract())
@@ -361,6 +361,7 @@ class Volume(OrderedElement):
 
 class Siman(OrderedElement):
     name = 'siman'
+    parent = 'Siman'
 
 class Seif(OrderedElement):
     pass
