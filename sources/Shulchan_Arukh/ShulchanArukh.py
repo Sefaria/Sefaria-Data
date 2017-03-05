@@ -1,8 +1,9 @@
 # encoding=utf-8
 
+import re
 import codecs
 from bs4 import BeautifulSoup, Tag
-from data_utilities.util import Singleton
+from data_utilities.util import Singleton, getGematria
 
 """
 This module describes an object module for parsing the Shulchan Arukh and it's associated commentaries. The classes
@@ -59,6 +60,37 @@ class Element(object):
         else:
             child_cls = module_locals[self.child]
             return child_cls(self.Tag.find(child_cls.name, recursive=False))
+
+    def _add_child(self, child, raw_text, num):
+        """
+        Add a new ordered child to the parent. Takes raw text and wraps in a child tag.
+        :param child: Child to be added. Must be the child type specified by the parent class
+        :param raw_text: Text to be added
+        :param num: volume number
+        :return: Volume object
+        """
+        assert issubclass(child, OrderedElement)
+        assert module_locals[self.child] == child
+        raw_xml = u'<{} num="{}">{}</{}>'.format(child.name, num, raw_text, child.name)
+        current_child = child(BeautifulSoup(raw_xml, 'xml').find(child.name))
+
+        children = self.get_child()
+        if len(children) == 0:
+            self.Tag.append(current_child.Tag)
+        else:
+            # assert that volumes are stored in order
+            assert OrderedElement.validate_collection(children)
+            for volume in children:
+                if current_child.num == volume.num:
+                    raise DuplicateChildError(u'{} appears more than once!'.format(current_child.num))
+
+                if current_child.num < volume.num:
+                    volume.Tag.insert_before(current_child.Tag)
+                    break
+            else:
+                children[-1].Tag.insert_after(current_child.Tag)
+        return current_child
+
 
     def __unicode__(self):
         return unicode(self.Tag)
@@ -173,24 +205,8 @@ class Record(Element):
         :param vol_num: volume number
         :return: Volume object
         """
-        raw_xml = u'<volume num="{}">{}</volume>'.format(vol_num, raw_text)
-        current_volume = Volume(BeautifulSoup(raw_xml, 'xml').volume)
+        return self._add_child(Volume, raw_text, vol_num)
 
-        volumes = self.get_child()
-        if len(volumes) == 0:
-            self.Tag.append(current_volume.Tag)
-        else:
-            # assert that volumes are stored in order
-            assert OrderedElement.validate_collection(volumes)
-            for volume in volumes:
-                assert current_volume.num != volume.num
-
-                if current_volume.num < volume.num:
-                    volume.Tag.insert_before(current_volume.Tag)
-                    break
-            else:
-                volumes[-1].Tag.insert_after(current_volume.Tag)
-        return current_volume
 
 
 class BaseText(Record):
@@ -295,11 +311,56 @@ class OrderedElement(Element):
 
 class Volume(OrderedElement):
     name = 'volume'
-    child = 'siman'
+    child = 'Siman'
     multiple_children = True
 
+    def _add_siman(self, raw_text, siman_num):
+        """
+        Add a new siman to the volum. Takes raw text and wraps in a siman tag.
+        :param raw_text: Text to be added
+        :param siman_num: siman number
+        :return: Siman object
+        """
+        return self._add_child(Siman, raw_text, siman_num)
+
+    def mark_simanim(self, pattern, start_mark=None):
+        """
+        Mark up simanim in xml.
+        :param regex: pattern. The first capture group should indicate the siman number
+        :param start_mark: pattern. If passed, will only begin scanning document from this location. Everything before
+        will be thrown away.
+        :return:
+        """
+        raw_text = unicode(self.Tag.string.extract())
+        if start_mark is None:
+            started = True
+        else:
+            started = False
+        current_siman, siman_num = [], -1
+
+        for line in raw_text.splitlines(True):  # keeps the endlines for later
+            if started:
+                new_siman = re.search(pattern, line)
+                if new_siman is None:  # This is not a new siman
+                    assert siman_num > 0  # Do not add text before the first siman marker has been found
+                    current_siman.append(line)
+
+                else:
+                    if siman_num > 0:  # add the previous siman, will be -1 if this is the first siman marker in the text
+                        assert len(current_siman) > 0
+                        self._add_siman(u''.join(current_siman), siman_num)
+                        current_siman = []
+                    siman_num = getGematria(new_siman.group(1))
+            else:
+                if re.search(start_mark, line):
+                    started = True
+
+        else:  # add the last siman
+            assert len(current_siman) > 0
+            self._add_siman(u''.join(current_siman), siman_num)
+
 class Siman(OrderedElement):
-    pass
+    name = 'siman'
 
 class Seif(OrderedElement):
     pass
@@ -312,3 +373,6 @@ class Xref(Element):
     pass
 
 module_locals = locals()
+
+class DuplicateChildError(Exception):
+    pass

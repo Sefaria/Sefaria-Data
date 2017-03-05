@@ -1,7 +1,8 @@
 # encoding=utf-8
 
-from ShulchanArukh import *
 import os
+import pytest
+from ShulchanArukh import *
 
 def setup_module():
     Root.create_skeleton('test_document.xml')
@@ -51,3 +52,41 @@ class TestAddVolume(object):
 
         assert unicode(base_text) == u'<base_text>{}{}{}</base_text>'.format(unicode(v1), unicode(v2), unicode(v3))
         assert unicode(root) == u'<root>{}<commentaries/></root>'.format(unicode(base_text))
+
+class TestMarkSimanim(object):
+
+    def test_simple_mark(self):
+        raw_text = u'<volume num="1">@00א\nסימן ראשון\n@00ב\nסימן שני</volume>'
+        v = Volume(BeautifulSoup(raw_text, 'xml').volume)
+        v.mark_simanim(u'@00([\u05d0-\u05ea])')
+
+        assert len(v.get_child()) == 2
+        assert unicode(v) == u'<volume num="1"><siman num="1">סימן ראשון\n</siman><siman num="2">סימן שני</siman></volume>'
+
+    def test_out_of_order(self):
+        raw_text = u'<volume num="1">@00ב\nסימן שני\n@00א\nסימן ראשון</volume>'
+        v = Volume(BeautifulSoup(raw_text, 'xml').volume)
+        v.mark_simanim(u'@00([\u05d0-\u05ea])')
+
+        assert len(v.get_child()) == 2
+        assert unicode(v) == u'<volume num="1"><siman num="1">סימן ראשון</siman><siman num="2">סימן שני\n</siman></volume>'
+
+    def test_duplicate_siman(self):
+        raw_text = u'<volume num="1">@00א\nסימן ראשון\n@00א\nסימן שני</volume>'
+        v = Volume(BeautifulSoup(raw_text, 'xml').volume)
+        with pytest.raises(DuplicateChildError):
+            v.mark_simanim(u'@00([\u05d0-\u05ea])')
+
+    def test_start_mark(self):
+        raw_text = u'<volume num="1">some random stuff\nstart\n@00א\nסימן ראשון\n@00ב\nסימן שני</volume>'
+        v = Volume(BeautifulSoup(raw_text, 'xml').volume)
+        v.mark_simanim(u'@00([\u05d0-\u05ea])', start_mark=u'start')
+
+        assert len(v.get_child()) == 2
+        assert unicode(v) == u'<volume num="1"><siman num="1">סימן ראשון\n</siman><siman num="2">סימן שני</siman></volume>'
+
+    def test_nonsense_before_first_mark(self):
+        raw_text = u'<volume num="1">\n@00א\nסימן ראשון\n@00ב\nסימן שני</volume>'
+        v = Volume(BeautifulSoup(raw_text, 'xml').volume)
+        with pytest.raises(AssertionError):
+            v.mark_simanim(u'@00([\u05d0-\u05ea])')
