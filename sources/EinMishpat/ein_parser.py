@@ -108,7 +108,7 @@ def parse_em(filename, passing, errorfilename):
     cit_dictionary = []
     with codecs.open(filename, 'r', 'utf-8') as fp:
         lines = fp.readlines()
-    pattern = ur'''(ו?שו?"ע|מיי'|ו?סמג|ו?טוש"ע|ו?ב?טור)'''
+    pattern = ur'''(ו?שו?"ע|מיי'|ו?סמג|ו?ב?טוש"ע|ו?ב?טור)'''
 
     for line in lines:
         mass.error_flag = False
@@ -279,7 +279,7 @@ class TurSh(object):
                   230, 231, 360, 233, 369, 370, 117}
         uno_oc = {5, 520, 16, 530, 22, 29, 35, 41, 44, 557, 558, 49, 50, 563, 52, 573, 577, 578, 67, 68, 78, 80, 594,
                   595, 84, 86, 599, 88, 603, 605, 609, 100, 105, 620, 625, 115, 116, 118, 120, 635, 641, 130,
-                  133, 136, 138, 654, 655, 657, 659, 148, 149, 152, 666, 667, 157, 166, 679, 683, 176, 697, 198,
+                  133, 136, 138, 654, 655, 657, 659, 148, 149, 152, 666, 667, 156, 157, 166, 679, 683, 176, 697, 198,
                   207, 214, 598, 226, 231, 237, 241, 242, 256, 258, 556, 642, 278, 281, 283, 287, 300, 564, 342,
                   343, 347, 348, 351, 359, 367, 369, 373, 377, 383, 387, 388, 389, 395, 678, 400, 402, 403, 404,
                   406, 411, 412, 413, 417, 419, 421, 424, 427, 430, 669, 435, 449, 458, 464, 661, 469, 474, 479,
@@ -331,6 +331,7 @@ class TurSh(object):
             siman = None
             seif = None
             resolved_tur = None
+            hasnext = False
             for word in str_it:
                 to_res = False  # a flag to say there was found a citation we want to resolve
                 if re.search(reg_siman, word) and not re.search(reg_seif, word):
@@ -393,6 +394,8 @@ class TurSh(object):
                 if resolved_tur != self._tracker_tur._last_cit:  # self._tracker_tur.resolve(self._tur_table[book_sa], [siman]):
                     resolved_tur = self._tracker_tur.resolve(self._tur_table[book_sa], [siman])
                     resolveds.append(resolved_tur)
+            if len([item for item in resolveds if not isinstance(item, Ref)]) > 0:
+                mass.write_shgia(u'error from ibid in Ref or table none problem')
             return resolveds
         except KeyError:
             mass.write_shgia(u'error tsh, there is missing data where in the tur to look')
@@ -415,7 +418,7 @@ class Rambam(object):
 
     def parse_rambam(self, str, mass): # these will be aoutomatic from the privates of the object (Rambam)
         re.sub(u'''יוה"כ''', u'יום הכיפורים', str)
-        reg1 = u'''(מהל|מהלכות|מהל'|מהלכו'|מה')'''  # מהלכות before the book name
+        reg1 = u'''(מהל|מהלכות|מהל'|מהלכו?'|מה')'''  # מהלכות before the book name
         reg21 = u''' ו?הלכה| ו?הל'?| ו?הלכ'?| ו?דין'''
         # reg22 = u''' ה"[א-ת]'''
         reg22 = u'''ו?הל?([א-ת]?"[א-ת])'''
@@ -569,6 +572,7 @@ def rambam_name_table():
     # name_dict[u'מעשר שני'] = name_dict[u'מעשר שני ונטע רבעי']
     name_dict[u'מ"ש ונטע רבעי'] = name_dict[u'מעשר שני ונטע רבעי']
     name_dict[u'מעשר שני ונ"ר'] = name_dict[u'מעשר שני ונטע רבעי']
+    name_dict[u'מ"ש ונ"ר'] = name_dict[u'מעשר שני ונטע רבעי']
     name_dict[u'מ"ש'] = name_dict[u'מעשר שני ונטע רבעי']
     name_dict[u'נטע רבעי'] = name_dict[u'מעשר שני ונטע רבעי']
     name_dict[u'מתנות ענים'] = name_dict[u'מתנות עניים']
@@ -615,6 +619,8 @@ def rambam_name_table():
     name_dict[u'נשיאת כפים'] = name_dict[u'תפילה וברכת כהנים']
     name_dict[u'חנוכה'] = name_dict[u'מגילה וחנוכה']
     name_dict[u'מצה'] = name_dict[u'חמץ ומצה']
+    name_dict[u'חמץ'] = name_dict[u'חמץ ומצה']
+    name_dict[u'חו"מ'] = name_dict[u'חמץ ומצה'] # note: this is also the r"t of חושן משפט not sopused to be a problem
     name_dict[u'גרושין'] = name_dict[u'גירושין']
     name_dict[u'נ"מ'] = name_dict[u'נזקי ממון']
     name_dict[u'פסולי מוקדשין'] = name_dict[u'פסולי המוקדשין']
@@ -635,7 +641,7 @@ def rambam_name_table():
 
 def clean_line(line):
     line = strip_nikkud(line)
-    line = re.sub(u':', '', line)
+    line = re.sub(u'[:\?]', '', line)
     reg_parentheses = re.compile(u'\((.*?)\)')
     reg_brackets = re.compile(u'\[(.*?)\]')
     in_per = reg_parentheses.search(line)
@@ -722,7 +728,7 @@ def fromCSV(fromcsv, newfile):
             f.write(row[u'original'].strip() + u'\n')
 
 
-#  run to create csv for QA
+#  run to create csv from txt file for QA
 def run1(massechet_he = None, massechet_en = None):
     parse1 = parse_em(u'{}.txt'.format(massechet_he), 1, u'{}_error'.format(massechet_en))  # reades from ביצה.txt to screen output
     toCSV(massechet_he, parse1)  # writes to ביצה.csv
@@ -733,14 +739,16 @@ def run1(massechet_he = None, massechet_en = None):
 def run2(massechet_he=None, massechet_en=None):
     fromCSV(u'{}.csv'.format(massechet_he), u'{}.txt'.format(massechet_en))  # reads from fixed ביצה.csv to egg.txt
     parse2 = parse_em(u'{}.txt'.format(massechet_en),2, u'{}_error'.format(massechet_en))  # egg.txt to screen output
-    toCSV(u'{}_done'.format(massechet_en), parse2)  # write final to egg_done.csv
+    toCSV(u'{}_little_letters'.format(massechet_en), parse2)  # write final to egg_done.csv
     return parse2
+
 
 def run15(massechet_he=None, massechet_en=None):
     fromCSV(u'{}.csv'.format(massechet_he), u'{}.txt'.format(massechet_he))  # reads from fixed ביצה.csv to egg.txt
     parse1 = parse_em(u'{}.txt'.format(massechet_he),1, u'{}_error'.format(massechet_en))  # egg.txt to screen output
-    toCSV(u'{}_again'.format(massechet_en), parse1)
+    toCSV(u'{}'.format(massechet_en), parse1)
     return parse1
+
 
 def last_algo_run(withSegments, parsedData):
     pass
@@ -765,6 +773,7 @@ def write_errfile(filename):
                     k+=1
                     e.next()
 
+
 # from csv to txt
 def reverse_collapse(fromcsv, collapsed_file):
     f = codecs.open(u'{}.txt'.format(collapsed_file), 'w', encoding='utf-8')
@@ -777,13 +786,16 @@ def reverse_collapse(fromcsv, collapsed_file):
             prev = (row[u'original'].strip() + u'\n')
     run1(u'{}'.format(collapsed_file),u'{}'.format(collapsed_file))
 
+
 def segment_column(segmentfile, reffile, massekhet):
     final_list = []
+    i = 0
     with open(segmentfile, 'r') as csvfile:
         seg_reader = csv.DictReader(csvfile)
         with open(reffile, 'r') as csvfile:
             ref_reader = csv.DictReader(csvfile)
             for segrow, refrow in zip(seg_reader, ref_reader):
+                i  += 1
                 letter_dict = {u'Segment': u'{}.{}.{}'.format(massekhet, segrow[u'Daf'],segrow[u'Line']),
                               u'Rambam': refrow[u'Rambam'],
                               u'Semag': refrow[u'Semag'],
@@ -806,12 +818,25 @@ if __name__ == "__main__":
     #     parsed = run1(massechet_he=u'{}'.format(m_he), massechet_en= m_en)
     #     parsed = run2(massechet_he=m_he, massechet_en= m_en)
     # parsed = run2(massechet_he=u'מועד קטן', massechet_en= u'mk_test')
-    test = run15(massechet_he=u'יומא', massechet_en=u'yuma')
+    # reverse_collapse(u'mk.csv', u'mk')
+    # test = run1(massechet_he=u'mk', massechet_en=u'test_david')
+    # test = run1(massechet_he=u'test', massechet_en=u'testing')
 
     # # final lines to get a dict
-    # reverse_collapse(u'hagiga_done.csv', u'hagiga_collapsed')
-    # parsed = run2(massechet_he=u'hagiga_collapsed', massechet_en=u'hg_test')
-    # reverse_collapse(u'hagiga_done.csv', u'hagiga_collapsed')
-    # parsed = run2(massechet_he=u'hagiga_collapsed', massechet_en=u'hg_test')
+    # reverse_collapse(u'hagiga_done.csv', u'hgiga_test')
+    # reverse_collapse(u'done/mk_fixed.csv', u'mk_tush_test')
+    # parsed = run1(massechet_he=u'hagiga_collapsed', massechet_en=u'hg_test')
+    # reverse_collapse(u'done/mk_fixed.csv', u'semag')
+    # parsed = run2(massechet_he=u'test_collapsed', massechet_en=u'mk_fixed')
     # final_list = segment_column('Ein Mishpat - Moed Katan.csv', 'mk_test_done.csv','Moed_Katan')
+
+    ls = 'bbametzia  gittin    makot     rosh_hashana  sota\
+        bbtr       iruvin    nazir     sanhedrim     sukka\
+        beitza     kidushin  nedarim   shabbat       yevamot\
+        brachot    ktobot    pesachim  shevuot       yoma'
+    # ls = 'sota'
+    filenames_he = re.split('\s*', ls)
+    for m_he in  filenames_he:
+        parsed = run15(massechet_he=u'repeating/{}'.format(m_he), massechet_en = u'repeating/{}'.format(m_he))
+
     print 'done'

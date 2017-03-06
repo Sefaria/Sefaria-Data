@@ -52,10 +52,10 @@ def post_ein_mishpat(massekhet):
     query = {"generated_by":"Ein Mishpat Cluster {}".format(massekhet)}
     linkset = LinkSet(query)
     links = [l.contents() for l in linkset]
-    for l in links:
-        l["generated_by"] = "Ein Mishpat Cluster"
+    # for l in links:
+    #     l["generated_by"] = "Ein Mishpat Cluster"
     post_link(links)
-
+    return links
 
 # usage = "\n%prog [options] inputfile\n  inputfile is a TSV, with references in columns Q-U"
 # parser = OptionParser(usage=usage)
@@ -257,9 +257,9 @@ from sefaria.helper.link import create_link_cluster
 #     print total
 
 if __name__ == "__main__":
-    massekhet = 'Chagigah'
-    # final_list = segment_column(u'Ein Mishpat - Chagigah.csv', u'hg_test_done.csv', massekhet)
+    massekhet = 'Moed Katan'
+    # final_list = segment_column(u'done/Ein Mishpat - Moed Katan.csv', u'done/mk_fixed.csv', massekhet)
     # validation = validity_and_cluster(final_list)
     # save_links_local(final_list,massekhet)
-    post_ein_mishpat(massekhet)
+    # links = post_ein_mishpat(massekhet)
     print 'done'
