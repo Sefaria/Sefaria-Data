@@ -2,16 +2,18 @@
 
 from sefaria.model import *
 from sefaria.utils import talmud
-
+from collections import OrderedDict
 class BookIbidTracker(object):
     """
     One instance per commentary
     """
     def __init__(self, assert_simple = False):
-        self._table = {}  # Keys are tuples of (index, (sections))
+        self._table = IbidDict()  # Keys are tuples of (index, (sections))
         self._section_length = 0
         self._last_cit = [None, None]
         self.assert_simple = assert_simple
+
+
         # if self._last_cit[0] and self._last_cit[1]:
         #     self._last_ref = Ref(u'{}.{}'.format(self._last_cit[0], '.'.join(self._last_cit[1])))
         # else:
@@ -31,9 +33,10 @@ class BookIbidTracker(object):
 
         # d = {}
         # ref = Ref(_obj=d)
+
         text_depth = len(oref.sections)  # since smag is a complex text we deal with, this line is needed
-        if self.assert_simple:
-            text_depth = oref.index_node.depth
+        # if self.assert_simple:
+        #     text_depth = oref.index_node.depth
         self._table[(None, tuple([None] * text_depth))] = oref
         for key_tuple in self.creat_keys(oref):
             self._table[(oref.book,tuple(key_tuple))] = oref
@@ -51,9 +54,11 @@ class BookIbidTracker(object):
         #todo: raise an error if can't find this sham constilation in table
 
         # recognize what kind of key we are looking for
+        last_depth = self.get_last_depth(index_name, sections)
+        sections = tuple(list(sections) + [None] * (max(len(sections), last_depth) - len(sections))) # choosing the depth of the ref to resolve
         found_sham = False
         key = []
-        if not index_name and sections == [None, None]:  # it says only Sham (all were None)
+        if False and not index_name and sections == [None, None]:  # it says only Sham (all were None)
             try:
                 resolvedRef = self._table[(None,(None, None))]
                 # notice that self._last_cit doesn't chnge so no need to reasign it
@@ -82,9 +87,9 @@ class BookIbidTracker(object):
             # merge them, while preferring the sections that were retrieved from the citation
             for i, sect in enumerate(sections):
                 if sect:
-                    new_sections.append(str(sect))
+                    new_sections.append(sect)
                 else:
-                    new_sections.append(str(from_table[i]))
+                    new_sections.append(from_table[i])
             try:
                 book_ref = Ref(index_name)
                 if self.assert_simple:
@@ -102,7 +107,7 @@ class BookIbidTracker(object):
 
                 resolvedRef = Ref(u'{}.{}'.format(index_name, '.'.join(section_str_list)))
             except:
-                print 'error, problem with the Ref iteslf. ', u'{}.{}'.format(index_name, '.'.join(new_sections))
+                print 'error, problem with the Ref iteslf. ', u'{}.{}'.format(index_name, '.'.join(str(new_sections)))
                 return "error, problem with the Ref iteslf", index_name, tuple(key)
             self._last_cit = [index_name, new_sections]
         if resolvedRef.is_empty():
@@ -113,9 +118,9 @@ class BookIbidTracker(object):
 
     def creat_keys(self, oref, i = 1):
         subs = [[None],[oref.sections[0]]]
-        text_depth = len(oref.sections) # since smag is a complex text we deal with, this line is needed
-        if self.assert_simple:
-            text_depth = oref.index_node.depth
+        text_depth = len(oref.sections) # creating keys according to this specific ref depth
+        # if self.assert_simple:
+        #     text_depth = oref.index_node.depth
         while i < text_depth:
             subsi = filter(lambda item: len(item) == i, subs)
             for sub in subsi:
@@ -137,3 +142,20 @@ class BookIbidTracker(object):
         for k in self._table.keys():
             if not k[0]:
                 del self._table[k]
+
+    def get_last_depth(self,index_name, sections):
+        last_depth = len(sections)
+        for k, v in reversed(self._table.items()):
+            if k[0] == index_name:
+                last_depth = len(v.sections)
+                break
+        return last_depth
+
+
+class IbidDict(OrderedDict):
+
+    def __setitem__(self, key, value, dict_setitem=dict.__setitem__):
+        if key in self:
+            self.pop(key)
+        return super(IbidDict, self).__setitem__(key, value, dict_setitem)
+
