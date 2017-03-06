@@ -416,9 +416,15 @@ class Volume(OrderedElement):
                 if re.search(start_mark, line):
                     started = True
 
-        else:  # add the last siman
-            assert len(current_siman) > 0
-            self._add_siman(u''.join(current_siman), siman_num)
+        else:  # add the last siman or special text
+            if siman_num == -1 and len(current_siman) == 0:  # Last line was special, everything was added
+                pass
+            else:
+                assert len(current_siman) > 0
+                if special_mode:
+                    self.add_special(u''.join(current_siman), specials[special_pattern]['name'], found_after)
+                else:
+                    self._add_siman(u''.join(current_siman), siman_num)
 
 class Siman(OrderedElement):
     name = 'siman'

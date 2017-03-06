@@ -119,12 +119,55 @@ class TestMarkSimanim(object):
                              u'</title><siman num="2">סימן שני</siman></volume>'
 
     def test_multi_between_segments(self):
-        pass
+        raw_text = u'<volume num="1">@00א\nסימן ראשון\n@11\nSome\nlines\nof\ntext\n@12\n@00ב\nסימן שני</volume>'
+        v = Volume(BeautifulSoup(raw_text, 'xml').volume)
+        v.mark_simanim(u'@00([\u05d0-\u05ea])', specials={u'@11': {'name': 'intro', 'end': '@12'}})
+
+        assert len(v.get_child()) == 2
+        assert unicode(v) == u'<volume num="1"><siman num="1">סימן ראשון\n' \
+                             u'</siman><intro found_after="1">Some\nlines\nof\ntext\n</intro>' \
+                             u'<siman num="2">סימן שני</siman></volume>'
 
     def test_consecutive_specials(self):
-        pass
+        raw_text = u'<volume num="1">@00א\nסימן ראשון\n@11\nThe Title\n@33\nThe Intro\n@00ב\nסימן שני</volume>'
+        v = Volume(BeautifulSoup(raw_text, 'xml').volume)
+        v.mark_simanim(u'@00([\u05d0-\u05ea])', specials={u'@11': {'name': 'title'}, u'@33': {'name': 'intro'}})
+
+        assert len(v.get_child()) == 2
+        assert unicode(v) == u'<volume num="1"><siman num="1">סימן ראשון\n</siman><title found_after="1">The Title\n' \
+                             u'</title><intro found_after="1">The Intro\n</intro><siman num="2">סימן שני</siman></volume>'
 
     def test_matches_two_specials(self):
-        pass
+        raw_text = u'<volume num="1">@00א\nסימן ראשון\n@11\nThe Title\n@1\nThe Intro\n@00ב\nסימן שני</volume>'
+        v = Volume(BeautifulSoup(raw_text, 'xml').volume)
+        with pytest.raises(AssertionError):
+            v.mark_simanim(u'@00([\u05d0-\u05ea])', specials={u'@11': {'name': 'title'}, u'@1': {'name': 'intro'}})
+
+    def test_special_at_end(self):
+        raw_text = u'<volume num="1">@00א\nסימן ראשון\n@00ב\nסימן שני\n@11\nThe Title\n</volume>'
+        v = Volume(BeautifulSoup(raw_text, 'xml').volume)
+        v.mark_simanim(u'@00([\u05d0-\u05ea])', specials={u'@11': {'name': 'title'}})
+
+        assert len(v.get_child()) == 2
+        assert unicode(v) == u'<volume num="1"><siman num="1">סימן ראשון\n</siman><siman num="2">סימן שני\n</siman>' \
+                             u'<title found_after="2">The Title\n</title></volume>'
+
+    def test_multi_line_at_end(self):
+        raw_text = u'<volume num="1">@00א\nסימן ראשון\n@00ב\nסימן שני\n@11\nThe\nmulti\nline\nTitle\n@12</volume>'
+        v = Volume(BeautifulSoup(raw_text, 'xml').volume)
+        v.mark_simanim(u'@00([\u05d0-\u05ea])', specials={u'@11': {'name': 'title', 'end': '@12'}})
+
+        assert len(v.get_child()) == 2
+        assert unicode(v) == u'<volume num="1"><siman num="1">סימן ראשון\n</siman><siman num="2">סימן שני\n</siman>' \
+                             u'<title found_after="2">The\nmulti\nline\nTitle\n</title></volume>'
+
+        # no end mark at end of file
+        raw_text = u'<volume num="1">@00א\nסימן ראשון\n@00ב\nסימן שני\n@11\nThe\nmulti\nline\nTitle\n</volume>'
+        v = Volume(BeautifulSoup(raw_text, 'xml').volume)
+        v.mark_simanim(u'@00([\u05d0-\u05ea])', specials={u'@11': {'name': 'title', 'end': '@12'}})
+
+        assert len(v.get_child()) == 2
+        assert unicode(v) == u'<volume num="1"><siman num="1">סימן ראשון\n</siman><siman num="2">סימן שני\n</siman>' \
+                             u'<title found_after="2">The\nmulti\nline\nTitle\n</title></volume>'
 
 
