@@ -45,7 +45,7 @@ def parse(file):
             next_chapter, next_verse = match.group(0).replace(".","").split(",")
             next_chapter = int(next_chapter)
             next_verse = int(next_verse)
-            #assert next_chapter >= current_chapter
+            assert next_chapter >= current_chapter
             current_chapter = next_chapter
             current_verse = next_verse
             if current_chapter not in text:
