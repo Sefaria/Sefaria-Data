@@ -170,4 +170,48 @@ class TestMarkSimanim(object):
         assert unicode(v) == u'<volume num="1"><siman num="1">סימן ראשון\n</siman><siman num="2">סימן שני\n</siman>' \
                              u'<title found_after="2">The\nmulti\nline\nTitle\n</title></volume>'
 
+class TestTextFormatting(object):
+
+    def test_no_special_formatting(self):
+        raw_text = u'<seif>just some text</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        s.format_text('@33', '@34', 'ramah')
+        assert unicode(s) == u'<seif><reg-text>just some text</reg-text></seif>'
+
+    def test_simple_formatting(self):
+        raw_text = u'<seif>some @33bold @34text</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        s.format_text('@33', '@34', 'b')
+        assert unicode(s) == u'<seif><reg-text>some </reg-text><b>bold </b><reg-text>text</reg-text></seif>'
+
+    def test_start_formatting(self):
+        raw_text = u'<seif>@33bold text @34at the beginning</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        s.format_text('@33', '@34', 'b')
+        assert unicode(s) == u'<seif><b>bold text </b><reg-text>at the beginning</reg-text></seif>'
+
+    def test_end_formatting(self):
+        raw_text = u'<seif>the end is @33marked bold</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        s.format_text('@33', '@34', 'b')
+        assert unicode(s) == u'<seif><reg-text>the end is </reg-text><b>marked bold</b></seif>'
+
+    def test_random_end_tag(self):
+        raw_text = u'<seif>@34just some text</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        s.format_text('@33', '@34', 'b')
+        assert unicode(s) == u'<seif><reg-text>just some text</reg-text></seif>'
+
+    def test_double_start_tag(self):
+        raw_text = u'<seif>@33just @33some text</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        with pytest.raises(AssertionError):
+            s.format_text('@33', '@34', 'b')
+
+    def test_interspersed(self):
+        raw_text = u'<seif>@33just @34some @33text</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        s.format_text('@33', '@34', 'b')
+        assert unicode(s) == u'<seif><b>just </b><reg-text>some </reg-text><b>text</b></seif>'
+
 

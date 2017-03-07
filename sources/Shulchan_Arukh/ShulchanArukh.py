@@ -446,13 +446,88 @@ class Volume(OrderedElement):
 
 class Siman(OrderedElement):
     name = 'siman'
-    parent = 'Siman'
+    parent = 'Volume'
+    child = 'Seif'
+    multiple_children = True
+
+    def _add_seif(self, raw_text, seif_number):
+        self._add_child(Seif, raw_text, seif_number)
+
+    def mark_seifim(self, pattern, start_mark, specials=None):
+        self._mark_children(pattern, start_mark, specials, add_child_callback=self._add_seif)
 
 class Seif(OrderedElement):
-    pass
+    name = 'seif'
+    parent = 'Siman'
+    child = 'TextElement'
+    multiple_children = True
+
+    def __init__(self, soup_tag):
+        self.rid = None
+        super(OrderedElement, self).__init__(soup_tag)
+
+    def format_text(self, start_special, end_special, name):
+        """
+        Mark up the text into regular and "special" formatting. Can only handle one type of special formatting. Useful
+        for marking dh in bold, or רמ"א in the base text.
+        :param start_special: regex pattern to match beginning of formatted text. Warning: Two consecutive start_special
+        patterns will cause this method to fail.
+        :param end_special: regex pattern to match end of formatted text. This pattern will be ignored if not preceded
+        by a start_special pattern.
+        :param name: Name of tag to wrap formatted text in.
+        :return:
+        """
+        def add_formatted_text(words, element_name):
+            if len(words) == 0:
+                return
+            else:
+                self.add_special(u' '.join(words), element_name)
+
+        assert self.Tag.string is not None  # This can happen if xml elements are already present of if Tag is self-closing.
+        text_array = self.Tag.string.extract().split()
+
+        is_special = False
+        element_words = []
+        for word in text_array:
+            if re.search(start_special, word):
+                if is_special:  # Two consecutive special patterns have been found
+                    raise AssertionError('Two consecutive formatting patterns found')
+                else:
+                    word = re.sub(start_special, u'', word)
+                    if len(element_words) > 0:
+                        element_words.append(u'')  # adds a space to the end of the text element
+                        self.add_special(u' '.join(element_words), name=u'reg-text')
+                    element_words = []
+                    is_special = True
+
+            elif re.search(end_special, word):
+                if is_special:
+                    assert len(element_words) > 0  # Do not allow formatted text with no text
+                    element_words.append(u'')
+                    self.add_special(u' '.join(element_words), name=name)
+                    element_words = []
+                    is_special = False
+
+                word = re.sub(end_special, u'', word)
+            element_words.append(word)
+        else:
+            if is_special:
+                add_formatted_text(element_words, element_name=name)
+            else:
+                add_formatted_text(element_words, element_name=u'reg-text')
+
+
+    def set_rid(self, base_id, com_id, siman_num):
+        if com_id == 0:  # 0 is reserved to reference the base text
+            raise AssertionError("Base text seifim do not have an rid")
+
+        self.rid = u'b{}-c{}-si{}-ord{}'.format(base_id, com_id, siman_num, self.num)
+        self.Tag['rid'] = self.rid
 
 class TextElement(Element):
-    pass
+    parent = 'Seif'
+    child = 'Xref'
+    multiple_children = True
 
 
 class Xref(Element):
