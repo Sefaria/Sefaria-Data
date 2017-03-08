@@ -466,6 +466,9 @@ class Seif(OrderedElement):
         self.rid = None
         super(OrderedElement, self).__init__(soup_tag)
 
+    def get_child(self):
+        return [TextElement(c) for c in self.Tag.children]
+
     def format_text(self, start_special, end_special, name):
         """
         Mark up the text into regular and "special" formatting. Can only handle one type of special formatting. Useful
@@ -529,9 +532,61 @@ class TextElement(Element):
     child = 'Xref'
     multiple_children = True
 
+    def mark_references(self, base_id, com_id, siman_num, pattern, found=0, group=None):
+        """
+        Mark a single set of references (i.e. all references from shach to Shulchan Arukh) based on a regular expression
+        :param base_id: id of text where the mark appears. 0 is reserved for Shulchan Arukh itself
+        :param com_id: id of commentary this mark refers to
+        :param siman_num: Siman number where mark first appeared
+        :param pattern: regex pattern to identify reference mark
+        :param int found: Number of marks found in before this element.
+        :param int group: If passed, the gematria of the text in this group will determine the comment order of this
+         reference. If None, the order will just be set by counting the number of matches found by the expression
+        :return: number of matches found in this element, offset by the number found before this element (adds to the
+         `found` parameter passed to this method
+        """
+        # Make sure pattern will not touch the existing xrefs
+        for xref in self.Tag.find_all('xref'):
+            if re.search(pattern, xref.text):
+                raise AssertionError('Pattern matches previously marked reference')
+
+        pre_parsed_text = u''.join([unicode(c) for c in self.Tag.children])
+        words = pre_parsed_text.split()
+
+        for index, word in enumerate(words[:]):
+            matched_ref = re.search(pattern, word)
+            if matched_ref:
+                found += 1
+                if group is None:
+                    order = found
+                else:
+                    order = getGematria(matched_ref.group(group))
+                ref_id = u'b{}-c{}-si{}-ord{}'.format(base_id, com_id, siman_num, order)
+                words[index] = u'<xref id="{}">{}</xref>'.format(ref_id, word)
+
+        parsed_text = u'<{}>{}</{}>'.format(self.Tag.name, u' '.join(words), self.Tag.name)
+        new_tag = BeautifulSoup(parsed_text, 'xml').find(self.Tag.name)
+        self.Tag.replace_with(new_tag)
+        self.Tag = new_tag
+
+        return found
+
 
 class Xref(Element):
-    pass
+    name = 'xref'
+    parent = 'TextElement'
+
+    def __init__(self, soup_tag):
+        self.id = soup_tag['id']
+        super(Xref, self).__init__(soup_tag)
+
+    def __eq__(self, other):
+        if isinstance(other, Xref):
+            return self.id == other.id
+        else:
+            return False
+    def __hash__(self):
+        return hash(self.id)
 
 module_locals = locals()
 

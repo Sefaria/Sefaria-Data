@@ -214,4 +214,65 @@ class TestTextFormatting(object):
         s.format_text('@33', '@34', 'b')
         assert unicode(s) == u'<seif><b>just </b><reg-text>some </reg-text><b>text</b></seif>'
 
+class TestXref(object):
+
+    def test_single_mark(self):
+        """
+        This tests the basic functionality of marking the xrefs, as well as making sure the changes are making their way
+        up the data tree.
+        """
+        basic_text = u'hello @33 world'
+        full_text = u'<seif><reg-text>{}</reg-text></seif>'.format(basic_text)
+        s = Seif(BeautifulSoup(full_text, 'xml').seif)
+        for child in s.get_child():
+            child.mark_references(0, 1, 1, '@33')
+
+        assert len(s.get_child()) == 1
+        for child in s.get_child():
+            assert len(child.get_child()) == 1
+        assert unicode(s) == u'<seif><reg-text>hello <xref id="b0-c1-si1-ord1">@33</xref> world</reg-text></seif>'
+
+    def test_multiple(self):
+        raw_text = u'<b>some @33 random @33 words @33 here</b>'
+        b = TextElement(BeautifulSoup(raw_text, 'xml').find('b'))
+        found = b.mark_references(0, 1, 1, '@33')
+
+        assert found == 3
+        assert len(b.get_child()) == 3
+        assert unicode(b) == u'<b>some <xref id="b0-c1-si1-ord1">@33</xref> random <xref id="b0-c1-si1-ord2">@33</xref>' \
+                             u' words <xref id="b0-c1-si1-ord3">@33</xref> here</b>'
+
+    def test_group(self):
+        raw_text = u'<b>some @33א random @33ג words</b>'
+        b = TextElement(BeautifulSoup(raw_text, 'xml').find('b'))
+        b.mark_references(0, 1, 1, u'@33([\u05d0-\u05da])', group=1)
+
+        assert len(b.get_child()) == 2
+        assert unicode(b) == u'<b>some <xref id="b0-c1-si1-ord1">@33א</xref> random ' \
+                             u'<xref id="b0-c1-si1-ord3">@33ג</xref> words</b>'
+
+    def test_found(self):
+        raw_text = u'<b>some @33 random @33 words @33 here</b>'
+        b = TextElement(BeautifulSoup(raw_text, 'xml').find('b'))
+        b.mark_references(0, 1, 1, '@33', found=23)
+
+        assert len(b.get_child()) == 3
+        assert unicode(b) == u'<b>some <xref id="b0-c1-si1-ord24">@33</xref> random ' \
+                             u'<xref id="b0-c1-si1-ord25">@33</xref> words <xref id="b0-c1-si1-ord26">@33</xref> here</b>'
+
+    def test_other_xrefs(self):
+        raw_text = u'<b>some @33 random <xref id="b0-c5-si1-ord15">@44</xref> words @33 here</b>'
+        b = TextElement(BeautifulSoup(raw_text, 'xml').find('b'))
+        b.mark_references(0, 1, 1, '@33')
+
+        assert len(b.get_child()) == 3
+        assert unicode(b) == u'<b>some <xref id="b0-c1-si1-ord1">@33</xref> random ' \
+                             u'<xref id="b0-c5-si1-ord15">@44</xref> words <xref id="b0-c1-si1-ord2">@33</xref> here</b>'
+
+    def test_match_old_xref(self):
+        raw_text = u'<b>some @33 random <xref id="b0-c5-si1-ord15">@33</xref> words @33 here</b>'
+        b = TextElement(BeautifulSoup(raw_text, 'xml').find('b'))
+        with pytest.raises(AssertionError):
+            b.mark_references(0, 1, 1, '@33')
+
 
