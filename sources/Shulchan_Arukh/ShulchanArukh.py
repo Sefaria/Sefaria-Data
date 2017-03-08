@@ -259,6 +259,15 @@ class Root(Element):
     def get_commentaries(self):
         return Commentaries(self.Tag.commentaries)
 
+    def get_commentary_id(self, commentator, lang='en'):
+        commentaries = self.get_commentaries()
+        if lang == 'en':
+            return commentaries.commentary_ids[commentator]
+        elif lang == 'he':
+            return commentaries.he_commentary_ids[commentator]
+        else:
+            raise AssertionError("Unknown language passed. Recognized values are 'en' or 'he'")
+
 
 class Record(Element):
     """
@@ -339,9 +348,11 @@ class Commentaries(Element):
     def __init__(self, soup_tag):
         super(Commentaries, self).__init__(soup_tag)
         self.commentary_ids = {}
+        self.he_commentary_ids = {}
 
         for commentary in self.get_child():
             self.commentary_ids[commentary.titles['en']] = commentary.id
+            self.he_commentary_ids[commentary.titles['he']] = commentary.id
 
     def add_commentary(self, en_title, he_title):
         assert self.commentary_ids.get(en_title) is None
@@ -421,6 +432,12 @@ class Volume(OrderedElement):
     child = 'Siman'
     multiple_children = True
 
+    def get_book_id(self):
+        if self.Tag.parent.name == 'base_text':
+            return 0
+        else:
+            return Commentary(self.Tag.parent).id
+
     def _add_siman(self, raw_text, siman_num):
         """
         Add a new siman to the volum. Takes raw text and wraps in a siman tag.
@@ -444,6 +461,20 @@ class Volume(OrderedElement):
         """
         self._mark_children(pattern, start_mark, specials, add_child_callback=self._add_siman)
 
+    def mark_seifim(self, pattern, start_mark, specials=None):
+        for siman in self.get_child():
+            assert isinstance(siman, Siman)
+            siman.mark_seifim(pattern, start_mark, specials)
+
+    def format_text(self, start_special, end_special, name):
+        for siman in self.get_child():
+            assert isinstance(siman, Siman)
+            siman.format_text(start_special, end_special, name)
+
+    def mark_references(self, commentary_id, pattern):
+        for child in self.get_child():
+            child.mark_references(self.get_book_id(), commentary_id, self.num, pattern)
+
 class Siman(OrderedElement):
     name = 'siman'
     parent = 'Volume'
@@ -455,6 +486,16 @@ class Siman(OrderedElement):
 
     def mark_seifim(self, pattern, start_mark, specials=None):
         self._mark_children(pattern, start_mark, specials, add_child_callback=self._add_seif)
+
+    def format_text(self, start_special, end_special, name):
+        for seif in self.get_child():
+            assert isinstance(seif, Seif)
+            seif.format_text(start_special, end_special, name)
+
+    def mark_references(self, base_id, com_id, pattern, found=0, group=None):
+        for child in self.get_child():
+            found = child.mark_references(base_id, com_id, self.num, pattern, found, group)
+        return found
 
 class Seif(OrderedElement):
     name = 'seif'
@@ -526,6 +567,11 @@ class Seif(OrderedElement):
 
         self.rid = u'b{}-c{}-si{}-ord{}'.format(base_id, com_id, siman_num, self.num)
         self.Tag['rid'] = self.rid
+
+    def mark_references(self, base_id, com_id, siman, pattern, found=0, group=None):
+        for child in self.get_child():
+            found = child.mark_references(base_id, com_id, siman, pattern, found, group)
+        return found
 
 class TextElement(Element):
     parent = 'Seif'
