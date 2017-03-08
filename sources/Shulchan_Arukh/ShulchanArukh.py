@@ -323,6 +323,18 @@ class Record(Element):
         """
         return self._add_child(Volume, raw_text, vol_num)
 
+    def remove_volume(self, num):
+        for child in self.get_child():
+            if int(child.num) == num:
+                child.Tag.decompose()
+
+    def get_volume(self, num):
+        for child in self.get_child():
+            if child.num == num:
+                return child
+        else:
+            return None
+
 
 
 class BaseText(Record):
@@ -371,7 +383,7 @@ class Commentaries(Element):
 class OrderedElement(Element):
 
     def __init__(self, soup_tag):
-        self.num = soup_tag['num']
+        self.num = int(soup_tag['num'])
         super(OrderedElement, self).__init__(soup_tag)
 
     def validate_order(self, previous=None):
@@ -422,6 +434,7 @@ class OrderedElement(Element):
                 passed = False
                 if verbose:
                     print 'misordered element at location {}'.format(element.num)
+            previous_element = element
         if verbose and passed:
             print 'Validation Successful'
         return passed
@@ -461,15 +474,25 @@ class Volume(OrderedElement):
         """
         self._mark_children(pattern, start_mark, specials, add_child_callback=self._add_siman)
 
-    def mark_seifim(self, pattern, start_mark, specials=None):
+    def mark_seifim(self, pattern, start_mark=None, specials=None):
+        errors = []
         for siman in self.get_child():
             assert isinstance(siman, Siman)
-            siman.mark_seifim(pattern, start_mark, specials)
+            try:
+                siman.mark_seifim(pattern, start_mark, specials)
+            except DuplicateChildError as e:
+                errors.append(e.message)
+        return errors
 
     def format_text(self, start_special, end_special, name):
+        errors = []
         for siman in self.get_child():
             assert isinstance(siman, Siman)
-            siman.format_text(start_special, end_special, name)
+            try:
+                siman.format_text(start_special, end_special, name)
+            except AssertionError as e:
+                errors.append(e.message)
+        return errors
 
     def mark_references(self, commentary_id, pattern):
         for child in self.get_child():
@@ -484,13 +507,19 @@ class Siman(OrderedElement):
     def _add_seif(self, raw_text, seif_number):
         self._add_child(Seif, raw_text, seif_number)
 
-    def mark_seifim(self, pattern, start_mark, specials=None):
-        self._mark_children(pattern, start_mark, specials, add_child_callback=self._add_seif)
+    def mark_seifim(self, pattern, start_mark=None, specials=None):
+        try:
+            self._mark_children(pattern, start_mark, specials, add_child_callback=self._add_seif)
+        except DuplicateChildError as e:
+            raise DuplicateChildError('Siman {}, Seif {}'.format(self.num, e.message))
 
     def format_text(self, start_special, end_special, name):
         for seif in self.get_child():
             assert isinstance(seif, Seif)
-            seif.format_text(start_special, end_special, name)
+            try:
+                seif.format_text(start_special, end_special, name)
+            except AssertionError as e:
+                raise AssertionError('Siman {}, {}'.format(self.num, e.message))
 
     def mark_references(self, base_id, com_id, pattern, found=0, group=None):
         for child in self.get_child():
@@ -505,7 +534,7 @@ class Seif(OrderedElement):
 
     def __init__(self, soup_tag):
         self.rid = None
-        super(OrderedElement, self).__init__(soup_tag)
+        super(Seif, self).__init__(soup_tag)
 
     def get_child(self):
         return [TextElement(c) for c in self.Tag.children]
@@ -535,7 +564,7 @@ class Seif(OrderedElement):
         for word in text_array:
             if re.search(start_special, word):
                 if is_special:  # Two consecutive special patterns have been found
-                    raise AssertionError('Two consecutive formatting patterns found')
+                    raise AssertionError('Seif {}: Two consecutive formatting patterns found'.format(self.num))
                 else:
                     word = re.sub(start_special, u'', word)
                     if len(element_words) > 0:
