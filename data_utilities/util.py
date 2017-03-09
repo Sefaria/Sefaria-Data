@@ -52,6 +52,36 @@ wordToNumber[u'שמיני'] = 8
 wordToNumber[u'תשיעי'] = 9
 wordToNumber[u'עשירי'] = 10
 
+he_char_ord = {
+    u'א': 1,
+    u'ב': 2,
+    u'ג': 3,
+    u'ד': 4,
+    u'ה': 5,
+    u'ו': 6,
+    u'ז': 7,
+    u'ח': 8,
+    u'ט': 9,
+    u'י': 10,
+    u'כ': 11,
+    u'ך': 11,
+    u'ל': 12,
+    u'מ': 13,
+    u'ם': 13,
+    u'נ': 14,
+    u'ן': 14,
+    u'ס': 15,
+    u'ע': 16,
+    u'פ': 17,
+    u'ף': 17,
+    u'צ': 18,
+    u'ץ': 18,
+    u'ק': 19,
+    u'ר': 20,
+    u'ש': 21,
+    u'ת': 22
+}
+
 class Util:
     def __init__(self, output_file, fail):
         self.output_file = output_file
@@ -276,6 +306,19 @@ def getGematria(txt):
             index+=1
         return sum
 
+
+def he_ord(he_char):
+    """
+    Get the order number for a hebrew character (א becomes 1, ת becomes 22). Sofi letters (i.e ך), return the same value
+    as their regular
+    :param he_char:
+    :return:
+    """
+    if len(he_char) != 1:
+        raise AssertionError('Can only evaluate a single character')
+    if re.search(u'[\u05d0-\u05ea]', he_char) is None:
+        raise AssertionError(u'{} is not a Hebrew Character!'.format(he_char))
+    return he_char_ord[he_char]
 
 
 def numToHeb(engnum=""):
