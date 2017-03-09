@@ -235,7 +235,7 @@ def remove_extra_space(s):
 
 get_parsed_text()
 
-for index, book in enumerate(get_parsed_text()[1:]):
+for index, book in enumerate(get_parsed_text()[1:3]):
     index+=1
     version = {
         'versionTitle': 'Chizkuni, translated and annotated by Eliyahu Munk',

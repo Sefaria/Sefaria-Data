@@ -25,7 +25,7 @@ eng_parshiot = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Tol
 "Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo", "Nitzavim", "Vayeilech", "Ha'Azinu",
 "V'Zot HaBerachah"]
 
-eng_bereishit = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", "Vayetzei", "Vayishlach","Vayeshev","Hannakah", "Miketz", "Vayigash", "Vayechi"]
+eng_bereishit = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", "Vayetzei", "Vayishlach","Vayeshev","Chanukah", "Miketz", "Vayigash", "Vayechi"]
 eng_shemot = ["Shemot", "Vaera", "Bo", "Beshalach", "Yitro","Mishpatim", "Terumah", "Tetzaveh", "Ki Tisa", "Vayakhel", "Pekudei"]
 eng_vayikra = ["Vayikra", "Tzav", "Shmini","Tazria Metzora","Achrei Mot Kedoshim", "Emor", "Behar Bechukotai",]
 eng_bamidbar = ["Bamidbar", "Nasso","Beha'alotcha", "Sh'lach", "Korach", "Chukat", "Balak", "Pinchas", "Matot", "Masei"]
@@ -78,11 +78,13 @@ def get_parsed_halachas(shana_num):
         sefer_soup=url_to_soup(sefer_link)
         for index, li in enumerate(sefer_soup.find_all('li')):
             try:
-                if u"פרשת" in ''.join(li.find_all(text=True)) or u"פרשיות" in ''.join(li.find_all(text=True)):
-                    parsha_count+=1
+                if u"פרשת" in ''.join(li.find_all(text=True)) or u"פרשיות" in ''.join(li.find_all(text=True)) or u"חנוכה" in ''.join(li.find_all(text=True)):
                     parsha_box = []
                     parsha_soup = url_to_soup('https://he.wikisource.org'+li.find('a')['href'])
+                    parsha_count+=1
                     parsha_box.append([''.join(li.find_all(text=True)),eng_parshas[shana_num-1][sefer_index][parsha_count] ])
+                    if shana_num == 2:
+                        print parsha_box[0][0],parsha_box[0][1],parsha_count
                     intro_box = []
                     first_headline_box =[]
                     for headline in parsha_soup.find_all(class_="mw-headline"):
@@ -158,57 +160,68 @@ def print_text():
 def main():
     pass
 if __name__ == "__main__":
-    #parse intro:
+    
+    #post intro:
     version = {
         'versionTitle': 'Ben Ish Chai; Jerusalem, 1898',
         'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001933796',
         'language': 'he',
         'text': get_parsed_intro()
     }
-    post_text('Ben Ish Hai, Introduction', version, weak_network=True)
+    post_text_weak_connection('Ben Ish Hai, Introduction', version)
     #post all text
-    parsha_sections = ["Drashot","Halachot Shana 1","Halachot Shana 2"]
+    
+    parsha_sections = ["Drashot","Halachot 1st Year","Halachot 2nd Year"]
     parsha_content = [get_parsed_drasha(), get_halachas_shana_1(), get_halachas_shana_2()]
-    for section_name, section_content in zip(parsha_sections,parsha_content):
+    primo_link = 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001933796'
+    wiki_link = 'https://he.wikisource.org/wiki/%D7%91%D7%9F_%D7%90%D7%99%D7%A9_%D7%97%D7%99'
+    section_index_info = [['Ben Ish Hai -- Wikisource',wiki_link],['Ben Ish Chai; Jerusalem, 1898',primo_link],['Ben Ish Chai; Jerusalem, 1898',primo_link]]
+    
+    for section_name, section_content, section_version in zip(parsha_sections,parsha_content,section_index_info):
         for parsha in section_content:
             #add intro if not drashot:
             if "Drashot" not in section_name:
                 version = {
-                    'versionTitle': 'Ben Ish Chai; Jerusalem, 1898',
-                    'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001933796',
+                    'versionTitle': section_version[0],
+                    'versionSource': section_version[1],
                     'language': 'he',
                     'text': parsha[1] 
                 }
                 print "posting "+section_name+", "+parsha[0][1]+", Introduction"
-                post_text('Ben Ish Hai, '+section_name+", "+parsha[0][1]+", Introduction", version, weak_network=True)
-            
+                post_text_weak_connection('Ben Ish Hai, '+section_name+", "+parsha[0][1]+", Introduction", version)
+    
             version = {
-                'versionTitle': 'Ben Ish Chai; Jerusalem, 1898',
-                'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001933796',
+                'versionTitle': section_version[0],
+                'versionSource': section_version[1],
                 'language': 'he',
                 'text': parsha[1] if "Drashot" in section_name else parsha[2]
             }
             print "posting "+section_name+", "+parsha[0][1]
-            post_text('Ben Ish Hai, '+section_name+", "+parsha[0][1], version, weak_network=True)
+            post_text_weak_connection('Ben Ish Hai, '+section_name+", "+parsha[0][1], version)
     
     """
-    #print parsha titles 
+    #print parsha titles
+    """
+    """ 
     print "Drasha"
     for paindex, parsha in enumerate(get_parsed_drasha()):
         print parsha[0][0]
         print parsha[0][1]
+    
     print "Shana 1"
     for paindex, parsha in enumerate(get_halachas_shana_1()):
         print parsha[0][0]
         print parsha[0][1]
+    
     print "Shana 2"
     for paindex, parsha in enumerate(get_halachas_shana_2()):
         print parsha[0][0]
         print parsha[0][1]
+        print parsha[2][0]
         #for parsha in sefer:
            # print "TITLE: "+parsha[0][0]+" "+parsha[0][1]
-        """
-    """
+       
+    
         print "INTRO:"
         for p in parsha[1]:
             print p
@@ -223,4 +236,17 @@ if __name__ == "__main__":
         for line in section:
             print line
     """
+    """
+    text = get_halachas_shana_2()
+    for parsha in text:
+        print "Parsha:"
+        print parsha[0][0],parsha[0][1]
+        print "Intro:"
+        for index, p in enumerate(parsha[1]):
+            print str(index),p
+        print "body:"
+        for index2, p2 in enumerate(parsha[2]):
+            print index2, p2
+        
     main()
+    """

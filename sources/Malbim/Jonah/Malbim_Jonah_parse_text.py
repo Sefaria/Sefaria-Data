@@ -43,33 +43,12 @@ def get_parsed_text():
             print "PREF: "+pasuk[0].split(" ")[1]
             print "PNUM:"+ str(pasuk_ref-1)
             for line in pasuk[1:]:
-                print line
-                if u"השאלות:" in line:
-                    Biur_array[index][pasuk_ref-1].append(line)
-                else:
-                    for comment in split_comments(line):
-                        print "MA: "+str(len(Malbim_array[index]))
-                        Malbim_array[index][pasuk_ref-1].append(comment)
-    print "BIUR!"
-    for index, perek in enumerate( Biur_array):
-        for index2, pasuk in enumerate( perek):
-            for comment in pasuk:
-                print str(index)+" "+str(index2)+" "+comment
-
+                Malbim_array[index][pasuk_ref-1].append(re.sub("<br>", "",line))
     print "MALBIM!"
     for index, perek in enumerate( Malbim_array):
         for index2, pasuk in enumerate( perek):
             for comment in pasuk:
                 print str(index)+" "+str(index2)+" "+comment
-
-    version = {
-        'title': "Malbim Beur Hamilot on Jonah",
-        'versionTitle': 'Malbim on Jonah--Wikisource',
-        'versionSource': 'https://he.wikisource.org/wiki/%D7%A7%D7%98%D7%92%D7%95%D7%A8%D7%99%D7%94:%D7%9E%D7%9C%D7%91%D7%99%22%D7%9D_%D7%A2%D7%9C_%D7%94%D7%9E%D7%A7%D7%A8%D7%90',
-        'language': 'he',
-        'text': Biur_array
-    }
-    post_text('Malbim Beur Hamilot on Jonah', version, weak_network=True)
 
     version = {
     'title':"Malbim on Jonah",
