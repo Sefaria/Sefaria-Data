@@ -37,7 +37,7 @@ def rashi_filter(text):
 
 
 def match():
-    mesechtot = ["Berakhot","Eruvin","Rosh Hashanah","Yoma", "Makkot","Avodah Zarah","Niddah"]
+    mesechtot = ["Berakhot","Eruvin","Rosh Hashanah", "Yoma", "Makkot","Avodah Zarah","Niddah"]
     gcm = GemaraCommentaryMatcher("Ritva on", mesechtot)
     gcm.match(dh_extraction_method, tokenize_words, rashi_filter, "out", "not_found")
 

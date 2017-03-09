@@ -1,36 +1,89 @@
-Score,Ref,Version,Lang,Content,Field
-40.128136,Ikar Tosafot Yom Tov on Pirkei Avot 5:19:3,On Your Way,he,יורשין <b>גיהנם</b>. בעוה''ז. כדאמר [יומא דף ע''ב]. לא תירתו תרתי <b>גיהנם</b>. מר''ש:,ngram
-38.95629,Rashi on Nedarim 39b:3:1,Vilna Edition,he,ואם לאו - שאין <b>גיהנם</b> נברא עדיין:,ngram
-51.34815,Rashi on Sotah 22a:9:3,Vilna Edition,he,בראת רשעים - לירש <b>גיהנם</b>:,ngram
-39.81318,Nahalat Yaakov on Tractate Gerim 2:6:3,"Talmud Bavli, Vilna 1883 ed.",he,מיראה. מיראת <b>גיהנם</b> והפורעניות האמורה עליהם: ,ngram
-28.276726,Metzudat Zion on Proverbs 27:20:2,On Your Way,he,"ואבדו. <b>הגיהנם</b>:
-",aggresive-ngram
-45.44901,Kitzur Baal Haturim on Genesis 39:10:1,On Your Way,he,"להיות עמה בגימטריא לתוך <b>גיהנם</b>:
+Id,Relevance,Ref,Version,Lang,Content,Field,Score
+0,--,Eruvin 18b:4,William Davidson Edition - Aramaic,he,תנו רבנן המרצה מעות לאשה מידו לידה או מידה לידו בשביל שיסתכל בה אפילו דומה למשה רבינו שקיבל תורה מהר סיני לא ינקה מדינה של גיהנם ועליו הכתוב אומר יד ליד לא ינקה רע לא ינקה מדינה של גיהנם,ngram,29.10529
+1,--,Ikar Tosafot Yom Tov on Pirkei Avot 5:19:3,On Your Way,he,יורשין גיהנם. בעוה''ז. כדאמר [יומא דף ע''ב]. לא תירתו תרתי גיהנם. מר''ש:,ngram,40.128136
+2,--,Rashi on Rosh Hashanah 17a:6:2,WikiSource Rashi,he,ומקריין בני גיהנם - כך יקראו להם:,ngram,38.511112
+3,--,Rashi on Nedarim 39b:3:1,Vilna Edition,he,ואם לאו - שאין גיהנם נברא עדיין:,ngram,38.95629
+4,--,Rashi on Sotah 22a:9:3,Vilna Edition,he,בראת רשעים - לירש גיהנם:,ngram,51.34815
+5,--,Rashi on Pesachim 54a:13:1,Vilna Edition,he,אין לו כבייה עולמית - שהוא אור של גיהנם:,ngram,32.463573
+6,--,Nedarim 39b:3,William Davidson Edition - Aramaic,he,דרש רבא אם בריאה יברא ה׳ אם בריאה גיהנם מוטב תהיה אם לאו יברא ה׳,ngram,28.841375
+7,--,Rashi on Psalms 22:30:2,On Your Way,he,לפניו יכרעו . אז כל מתי הרשעים מתוך גיהנם ולא ירחם עליהם לחיות את נפשם מגיהנם : ,ngram,30.113178
+8,--,Tosafot Yom Tov on Pirkei Avot 5:19:4,"Mishnah, ed. Romm, Vilna 1913",he,"יורשים גיהנם. בעוה""ז כדאמרי' (יומא דף ע""ב) לא תירתו תרתי גיהנם: מד""ש: 
+",ngram,36.728344
+9,--,Rashi on Yevamot 48b:15:3,Vilna Edition,he,מיראה - מיראת גיהנם והפורענות האמורה עליהם:,ngram,38.511112
+10,--,Nahalat Yaakov on Tractate Gerim 2:6:3,"Talmud Bavli, Vilna 1883 ed.",he,מיראה. מיראת גיהנם והפורעניות האמורה עליהם: ,ngram,39.81318
+11,--,Eruvin 41b:14,William Davidson Edition - Aramaic,he,שלשה אין רואין פני גיהנם אלו הן דקדוקי עניות וחולי מעיין והרשות ויש אומרים אף מי שיש לו אשה רעה,ngram,28.604912
+12,--,Metzudat Zion on Proverbs 27:20:2,On Your Way,he,"ואבדו. הגיהנם:
+",aggresive-ngram,28.276726
+13,--,Rashi on Psalms 62:3:1,On Your Way,he,"לא אמוט רבה . מטות גדולות , ומדרש אגדה רבה גיהנם :
+",ngram,32.218613
+14,--,Rashi on Sanhedrin 110a:59:2,Wikisource Rashi,he,לקרובי פתחה - שיקרב פתחה של גיהנם ותפתח הארץ במקום שהן:,ngram,32.24122
+15,--,Metzudat Zion on Proverbs 23:14:1,On Your Way,he,"משאול. מגיהנם:
+",aggresive-ngram,28.365791
+16,--,Berakhot 61a:21,William Davidson Edition - Aramaic,he,תנו רבנן המרצה מעות לאשה מידו לידה כדי להסתכל בה אפילו יש בידו תורה ומעשים טובים כמשה רבינו לא ינקה מדינה של גיהנם שנאמר יד ליד לא ינקה רע לא ינקה מדינה של גיהנם ,ngram,28.928892
+17,--,Gur Aryeh on Bereishit 27:33:3,OYW,he,"שראה גיהנם פתוחה תחתיו. רוצה לומר תחת עשו, כי עם יעקב נכנס גן עדן (רש""י פסוק כז), ועם זה גיהנם:",ngram,32.137302
+18,--,Kitzur Baal Haturim on Genesis 39:10:1,On Your Way,he,"להיות עמה בגימטריא לתוך גיהנם:
 
-",ngram
-28.365791,Metzudat Zion on Proverbs 23:14:1,On Your Way,he,"משאול. <b>מגיהנם</b>:
-",aggresive-ngram
-34.245735,Yoma 72b:13,Wikisource Talmud Bavli,he,אמר להו רבא לרבנן  במטותא מינייכו לא תירתון תרתי <b>גיהנם</b> ,infreq
-41.13793,Kitzur Baal Haturim on Genesis 27:33:2,On Your Way,he, איפוא בגימטריא <b>גהנם</b> שנכנס <b>גיהנם</b> עמו:,ngram
-43.382263,Nedarim 39b:8,William Davidson Edition - Aramaic,he,<b>גיהנם</b> דכתיב כי ערוך מאתמול תפתה,ngram
-34.245735,Yevamot 102b:10,William Davidson Edition - Aramaic,he,והכתיב יחלץ עני בעניו בשכר עניו יחלצו מדינה של <b>גיהנם</b> ,infreq
-29.16783,Kitzur Baal Haturim on Exodus 31:17:3,On Your Way,he, וינפש בגימט' אלו <b>שבגיהנם</b> שאף אור של <b>גיהנם</b> שובת בשבת:,aggresive-ngram
-51.585945,Rashi on Job 38:17:1,On Your Way,he,"שערי מות . זה <b>גיהנם</b> :
-",ngram
-38.95629,Rashi on Sanhedrin 110b:2:1,Wikisource Rashi,he,כל תלתין יומין מהדר להו <b>גיהנם</b> - הכא:,ngram
-51.443012,Kitzur Baal Haturim on Deuteronomy 28:43:2,On Your Way,he," מטה מטה בגימ' <b>גיהנם</b>:
+",ngram,45.44901
+19,--,Rashi on Isaiah 33:17:3,On Your Way,he,"תראינה ארץ מרחקים . תירגם יונתן תסתכל ותחזי בנחתי ארע גיהנם :
+",ngram,32.218613
+20,--,Yoma 72b:13,Wikisource Talmud Bavli,he,אמר להו רבא לרבנן  במטותא מינייכו לא תירתון תרתי גיהנם ,ngram,38.704674
+21,--,Kitzur Baal Haturim on Genesis 27:33:2,On Your Way,he, איפוא בגימטריא גהנם שנכנס גיהנם עמו:,ngram,41.13793
+22,--,Nedarim 39b:8,William Davidson Edition - Aramaic,he,גיהנם דכתיב כי ערוך מאתמול תפתה,ngram,43.382263
+23,--,Chidushei Agadot on Eruvin 19a:3,Vilna Edition,he,שנאמר  ויצאו וראו בפגרי וגו' דמקום פגרי האנשים לאו היינו גיהנם גופיה אלא פתחה של גיהנם הוא מקרי: ,ngram,31.91718
+24,--,Chidushei Agadot on Bava Batra 10a:1,Vilna Edition,he," כדי שניצול מדינה של גיהנם. כדאמרינן לקמן וא' שמצלת מדינה של גיהנם וק""ל: ",ngram,36.4512
+25,--,Rashi on Job 20:26:2,On Your Way,he,אש לא נופח . אש של גיהנם : ,ngram,38.689457
+26,--,Yevamot 102b:10,William Davidson Edition - Aramaic,he,והכתיב יחלץ עני בעניו בשכר עניו יחלצו מדינה של גיהנם ,ngram,38.704674
+27,--,Yevamot 102b:11,William Davidson Edition - Aramaic,he,אלא הא דכתיב חנה מלאך ה׳ סביב ליראיו ויחלצם בשכר יראיו יחלצם מדינה של גיהנם,ngram,28.901234
+28,--,Rashi on Isaiah 41:16:2,On Your Way,he,"ורוח תשאם . מאליהם לגיהנם :
+",aggresive-ngram,22.621382
+29,--,Sotah 5a:1,William Davidson Edition - Aramaic,he,אפילו עושה צדקה בסתר דכתיב מתן בסתר יכפה אף וגו׳ לא ינקה מדינה של גיהנם,ngram,32.27122
+30,--,Rashi on Shabbat 104a:11:3,Vilna Edition,he,לים כל - גיהנם קרוי ים כל לפי שהרוב הולכים שם:,ngram,32.463573
+31,--,Rashi on Pesachim 54a:12:1,Vilna Edition,he,חללה - חלל של גיהנם קודם בריית העולם ותירוצא הוא:,ngram,32.218613
+32,--,Rashi on Shabbat 104a:12:4,Vilna Edition,he,אין לך - גיהנם חלק בהן בישראל:,ngram,38.511112
+33,--,Rashi on Ezekiel 26:20:1,On Your Way,he,את יורדי בור . עם יורדי גיהנם : ,ngram,38.582256
+34,--,Rashi on Genesis 27:33:1,On Your Way,he,ויחרד. כתרגומו ותוה לשון תימה ומדרשו ראה גיהנם פתוחה מתחתיו: ,ngram,32.602207
+35,--,Kitzur Baal Haturim on Exodus 31:17:3,On Your Way,he, וינפש בגימט' אלו שבגיהנם שאף אור של גיהנם שובת בשבת:,ngram,37.592045
+36,--,Eruvin 19a:14,William Davidson Edition - Aramaic,he,בירושלים דכתיב נאם ה׳ אשר אור לו בציון ותנור לו בירושלים ותנא דבי רבי ישמעאל אשר אור לו בציון זו גיהנם ותנור לו בירושלים זו פתחה של גיהנם,ngram,31.040627
+37,--,Chidushei Agadot on Eruvin 41b:2,Vilna Edition,he,"ג'  אינן רואין פני גיהנם כו'. בהרבה מקומות אמרו שהאדם ניצול מדינה של גיהנם והיינו בקיום המצות והכא חשיב ג' שע""י צערן זוכין שאינן רואין פני גיהנם. ועי""ל דהנהו גם שניצולין מדינה של גיהנם מ""מ רואין פני",ngram,31.502281
+38,--,Rashi on Job 38:17:1,On Your Way,he,"שערי מות . זה גיהנם :
+",ngram,51.585945
+39,--,Rashi on Sanhedrin 110b:2:1,Wikisource Rashi,he,כל תלתין יומין מהדר להו גיהנם - הכא:,ngram,38.95629
+40,--,Metzudat David on Psalms 94:13:1,On Your Way,he,להשקיט. בכדי להשקיט להן מן ימי רעה הם ימי גיהנם: ,ngram,32.092594
+41,--,Kitzur Baal Haturim on Deuteronomy 28:43:2,On Your Way,he," מטה מטה בגימ' גיהנם:
 
-",ngram
-38.95629,Rashi on Beitzah 32b:3:1,Vilna Edition,he,יורדי <b>גיהנם</b> הן - שאינן מרחמים לעשות צדקה:,ngram
-38.95629,Rashi on Chullin 133a:49:2,Wikisource Rashi,he,תאכלהו אש לא נופח - אשו של <b>גיהנם</b>: ,ngram
-44.92963,Rashi on Job 26:5:1,On Your Way,he,הרפאים . <b>גיהנם</b> המרפה את הבריות : ,ngram
-45.16976,Rashi on Avodah Zarah 17a:28:1,WikiSource Rashi,he,שצועקות <b>מגיהנם</b> - על רוב ייסורי <b>גיהנם</b>:,ngram
-28.824015,Rashi on Isaiah 66:24:2,On Your Way,he,ואשם . <b>בגיהנם</b> : ,aggresive-ngram
-45.10606,Rashi on Kiddushin 40a:2:4,Vilna Edition,he,נפיל בהא - באור של <b>גיהנם</b>:,ngram
-24.39581,Rashi on Isaiah 30:33:2,On Your Way,he,תפתה . <b>גיהנם</b> שכל המתפתה ביצרו נופל שם : ,hebmorph-standard
-40.21925,Eruvin 19a:18,William Davidson Edition - Aramaic,he,ותו ליכא והאיכא <b>גיהנם</b> גיא שעמוקה (<b>בגיהנם</b>) שהכל יורד לה על עסקי <b>הנם</b>,ngram
-51.549778,Rashi on Proverbs 21:16:2,On Your Way,he,"בקהל רפאים . בעדת <b>גיהנם</b> :
-",ngram
-64.30376,Metzudat Zion on Isaiah 14:9:1,On Your Way,he,שאול. <b>גיהנם</b>: ,ngram
-45.10606,Rashi on Proverbs 5:9:2,On Your Way,he,"ושנותיך לאכזרי . לשר של <b>גיהנם</b> :
-",ngram
+",ngram,51.443012
+42,--,Rashi on Psalms 41:2:2,On Your Way,he,"ביום רעה . זה גיהנם , ובעולם הזה מה שכרו :
+",ngram,32.463573
+43,--,Rashi on Beitzah 32b:3:1,Vilna Edition,he,יורדי גיהנם הן - שאינן מרחמים לעשות צדקה:,ngram,38.95629
+44,--,Rashi on Chullin 133a:49:2,Wikisource Rashi,he,תאכלהו אש לא נופח - אשו של גיהנם: ,ngram,38.95629
+45,--,Rashi on Yoma 72b:13:1,Vilna Edition,he,תרתי גיהנם - להיות יגעים ועמלים בתורה בעולם הזה ולא תקיימוה ותירשו גיהנם במותכם ובחייכם לא נהניתם בעולמכם:,ngram,31.828735
+46,--,Arakhin 15b:46,Wikisource Talmud Bavli,he,"(ישעיהו מב, יג) ה' כגבור יצא גחלי רתמים היינו גיהנם",ngram,32.092594
+47,--,Kitzur Baal Haturim on Deuteronomy 1:17:4,On Your Way,he, כי המשפט תגין על הפ''א כאילו גיהנם פתוחה מתחתיו:,ngram,32.218613
+48,--,Rashi on Job 26:5:1,On Your Way,he,הרפאים . גיהנם המרפה את הבריות : ,ngram,44.92963
+49,--,Rashi on Megillah 15b:6:3,Vilna Edition,he,פקו פליליה - לגיהנם נשפטו:,aggresive-ngram,23.059212
+50,--,Rashi on Isaiah 24:22:2,On Your Way,he,אספה . שהוא לרעתם להכניס אסיר אל בור המוכן לו מחוייבי גיהנם לגיהנם : ,ngram,29.981327
+51,--,Rashi on Isaiah 24:22:3,On Your Way,he,וסוגרו על מסגר . הם שבעה מדורי גיהנם : ,ngram,38.689457
+52,--,Rashi on Isaiah 48:10:1,On Your Way,he,"ולא בכסף . ולא ע""י אור של גיהנם כצורף הכסף באור : ",ngram,32.218613
+53,--,Rashi on Yoma 72b:15:1,Vilna Edition,he,צורפתו - ביסורין ובגיהנם:,aggresive-ngram,23.059212
+54,--,Rashi on Avodah Zarah 17a:28:1,WikiSource Rashi,he,שצועקות מגיהנם - על רוב ייסורי גיהנם:,ngram,45.16976
+55,--,Nedarim 22a:9,Wikisource Talmud Bavli,he,אמר רבי שמואל בר נחמני אמר רבי יונתן כל הכועס כל מיני גיהנם שולטין בו שנאמר והסר כעס מלבך והעבר רעה מבשרך ואין רעה אלא גיהנם שנאמר כל פעל ה' למענהו וגם רשע ליום רעה,infreq,24.648108
+56,--,Pesachim 54a:10,William Davidson Edition - Aramaic,he,גן עדן דכתיב ויטע ה׳ אלהים גן בעדן מקדם גיהנם דכתיב כי ערוך מאתמול תפתה,ngram,31.902435
+57,--,Rashi on Kiddushin 40a:2:4,Vilna Edition,he,נפיל בהא - באור של גיהנם:,ngram,45.10606
+58,--,Rashi on Isaiah 30:33:2,On Your Way,he,תפתה . גיהנם שכל המתפתה ביצרו נופל שם : ,ngram,38.662334
+59,--,Rosh Hashanah 17a:6,William Davidson Edition - Aramaic,he,אמר רבי יצחק בר אבין ופניהם דומין לשולי קדירה ואמר רבא ואינהו משפירי שפירי בני מחוזא ומקריין בני גיהנם ,ngram,28.904947
+60,--,Nedarim 40a:5,William Davidson Edition - Aramaic,he,ואם ביקר מה שכרו מה שכרו כדאמר ניצול מדינה של גיהנם אלא מה שכרו בעולם הזה,ngram,31.360144
+61,--,Eruvin 19a:18,William Davidson Edition - Aramaic,he,ותו ליכא והאיכא גיהנם גיא שעמוקה (בגיהנם) שהכל יורד לה על עסקי הנם,ngram,40.21925
+62,--,Metzudat Zion on Psalms 9:18:1,On Your Way,he,"לשאולה. כן יקרא הגיהנם:
+",aggresive-ngram,22.624826
+63,--,Rashi on Proverbs 21:16:2,On Your Way,he,"בקהל רפאים . בעדת גיהנם :
+",ngram,51.549778
+64,--,Sanhedrin 110b:2,Wikisource Talmud Bavli,he,כל תלתין יומין מהדרא להו גיהנם כבשר בתוך קלחת ואמרי הכי,ngram,28.841375
+65,--,Avodah Zarah 18b:61,Wikisource Talmud Bavli,he,כל המתלוצץ נופל בגיהנם שנאמר,aggresive-ngram,22.264477
+66,--,Metzudat David on Job 17:6:2,On Your Way,he,"ותופת. הנה אני לגיהנם לפני הבריות כי רואים בי מכאובות מחולפים דוגמת יסורי גיהנם:
+",ngram,30.297771
+67,--,Metzudat Zion on Isaiah 14:9:1,On Your Way,he,שאול. גיהנם: ,ngram,64.30376
+68,--,Rashi on Proverbs 5:9:2,On Your Way,he,"ושנותיך לאכזרי . לשר של גיהנם :
+",ngram,45.10606
+69,--,Rashi on Eruvin 19a:19:1,Vilna Edition,he,תפתה - גיהנם דכתיב בההוא קרא מדורתה אש ועצים הרבה:,ngram,32.24122
+70,--,Kitzur Baal Haturim on Numbers 23:7:5,On Your Way,he, ינחני בגימטריא לגיהנם:,aggresive-ngram,22.621382
+71,--,Rashi on Isaiah 66:24:2,On Your Way,he,ואשם . בגיהנם : ,aggresive-ngram,28.824015

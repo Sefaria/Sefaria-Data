@@ -33,7 +33,7 @@ test_he_query_list = [
     'וידבר יהוה אל משה לאמר',
     'ארבע שנכנס',
     'מוקצה מחמת מיאוס',
-    'לא בשבים היא',
+    'לא בשמים היא',
     'עשרת הדיברות',
     'נעשה ונשמע',
     'ברוך שם כבוד מלכותו לעולם ועד',
@@ -462,15 +462,22 @@ def query_result_to_csv_rows(results, field):
     :param field: field that's highlighted
     :return:
     """
+    rows = []
+    for result in results['hits']['hits']:
+        try:
+            od = OrderedDict()
+            od["Ref"] = result["_source"]["ref"]
+            od["Version"] = result["_source"]["version"]
+            od["Lang"] = result["_source"]["lang"]
+            od["Content"] = result["highlight"][field][0]
+            od["Field"] = field
+            od["Score"] = result["_score"]
+            rows += [od]
+        except KeyError:
+            pass
 
-    return [{
-        "Score": result["_score"],
-        "Lang": result["_source"]["lang"],
-        "Ref": result["_source"]["ref"],
-        "Content": result["highlight"][field][0],
-        "Version": result["_source"]["version"],
-        "Field": field
-        } for result in results['hits']['hits']]
+    return rows
+
 
 
 def generate_manual_train_set():
@@ -491,7 +498,7 @@ def generate_manual_train_set():
         ('multi_match', ['infreq', 'hebmorph-standard'])
     ]
 
-    max_size = 30
+    max_size = 70
 
     test_query_list = test_en_query_list + test_he_query_list
 
@@ -508,16 +515,21 @@ def generate_manual_train_set():
 
         html_doc = u'<html><head><link rel="stylesheet" type="text/css" href="noahstyle.css"></head><body><table>'
         f = open('training_files/{}.csv'.format(q),'wb')
-        csv = unicodecsv.DictWriter(f, ['Score', 'Ref', 'Version', 'Lang', 'Content', 'Field'])
+        csv = unicodecsv.DictWriter(f, ['Id', 'Relevance', 'Ref', 'Version', 'Lang', 'Content', 'Field', 'Score'])
         csv.writeheader()
 
         for irow, (ref, dicts) in enumerate(results_dict.items()):
             best = sorted(dicts, key=lambda x: x['Score'])[-1]
+            newbest = OrderedDict()
+            newbest['Id'] = irow
+            for key, value in best.items():
+                newbest[key] = value
             if irow == 0:
-                html_doc += u"<tr><td>{}</td></tr>".format(u"</td><td>".join([unicode(k) for k in best.keys()]))
-            html_doc += u"<tr><td>{}</td></tr>".format(u"</td><td>".join([unicode(v) for v in best.values()]))
-            #best['Content'] = re.sub(ur'<.+?>', u'', best['Content'])
-            csv.writerow(best)
+                html_doc += u"<tr><td>{}</td></tr>".format(u"</td><td>".join([unicode(k) for k in newbest.keys()]))
+            html_doc += u"<tr><td>{}</td></tr>".format(u"</td><td>".join([unicode(v) for v in newbest.values()]))
+            newbest['Content'] = re.sub(ur'<.+?>', u'', newbest['Content'])
+            newbest['Relevance'] = "--"
+            csv.writerow(newbest)
         f.close()
 
         html_doc += u"</table></body></html>"
@@ -610,4 +622,4 @@ def calculate_pagerank():
 }
 """
 
-generate_manual_train_set()
+generate_manual_train_set()  # wow, exactly 613 lines! this is serendipitous (TODO if I add more lines, this comment will look stupid)

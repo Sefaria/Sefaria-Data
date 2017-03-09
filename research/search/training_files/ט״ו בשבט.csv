@@ -1,61 +1,188 @@
-Score,Ref,Version,Lang,Content,Field
-44.201992,Bartenura on Mishnah Rosh Hashanah 1:1:7,On Your Way,he," שניה משנות הערלה, ולתשרי של שנה האחרת מונין לה שנה שלישית, ולאחר שנה שלישית כשיגיע אחד בתשרי של שנה רביעית, אם חנטו בנטיעה זו פירות, עדיין הם אסורים משום ערלה. שאע״פ שתשרי ר״ה לנטיעה, <b>ט״ו</b> <b>בשבט</b> ר״ה לאילן",aggresive-ngram
-11.58255,Footnotes on Mekhilta DeRabbi Shimon Bar Yochai 12:40:4,"Mechilta de-Rabbi Simon b. Jochai, Dr. D. Hoffman, Frankfurt 1905",he,"עי' רש""י בראשית <b>ט״ו</b> י""ג.",aggresive-ngram
-62.301243,"Mishneh Torah, Second Tithes and Fourth Year's Fruit 1:2",Wikisource Mishneh Torah,he," שנגמרו ונאספו בשלישית מפרישין מהן מעשר שני ואם לא באו לעונת המעשרות אלא לאחר ראש השנה של שלישית מפרישין מהן מעשר עני וכן פירות האילן שבאו לעונת המעשרות קודם <b>ט""ו</b> <b>בשבט</b> של שלישית אף על פי שנגמרו ונאספו אחר",hebmorph-standard
-69.405914,"Mishneh Torah, Second Tithes and Fourth Year's Fruit 1:5",Wikisource Mishneh Torah,he,"וכן האתרוג בלבד משאר פירות האילן הרי הוא כירק והולכין אחר לקיטתו בין למעשר בין לשביעית כיצד אם נלקט בשלישית אחר <b>ט""ו</b> <b>בשבט</b> מפרישין ממנו מעשר עני אע""פ שנגמרה בשנייה וכן אם נלקט ברביעית קודם <b>ט""ו</b> <b>בשבט</b> מפרישין ממנו מעשר עני נלקט ברביעית אחר <b>ט""ו</b> <b>בשבט</b> מפרישין ממנו מע""ש.",hebmorph-standard
-85.58162,"Prisha, Yoreh Deah 294:14:1","Tur Yoreh Deah, Vilna, 1923",he," ולאחר <b>ט""ו</b> <b>בשבט</b> כו' פירוש הנחנטין אחר ט""ו וק""ל: ",hebmorph-standard
-23.757238,Metzudat Zion on II Samuel 7:14:3,On Your Way,he,<b>בשבט</b>. בשרביט: ,ngram
-21.122952,"Sefer Hamitzvot of Rasag, Communal Laws 17","Sefer Hamitzvot L'Rasag, Warsaw, 1914",he,ומכה <b>בשבט</b> בכלות:,ngram
-96.32926,Rosh Hashanah 10a:1,Wikisource Talmud Bavli,he,"ופירות נטיעה זו אסורין עד <b>ט""ו</b> <b>בשבט</b> אם לערלה ערלה ואם לרבעי רבעי",hebmorph-standard
-14.419857,Rosh Hashanah 14b:11,Wikisource Talmud Bavli,he,"מיתיבי ר' שמעון בן אלעזר אומר ליקט אתרוג ערב <b>ט""ו</b> <b>בשבט</b> עד שלא תבוא השמש וחזר וליקט משתבוא השמש אין תורמין ומעשרין מזה על זה לפי שאין תורמין ומעשרין לא מן החדש על הישן ולא מן הישן על החדש היתה שלישית נכנסת לרביעית שלישית מעשר ראשון ומעשר עני רביעית מעשר ראשון ומעשר שני",original
-23.953516,Metzudat Zion on I Chronicles 11:23:2,On Your Way,he,"<b>בשבט</b>. בשרביט:
+Id,Relevance,Ref,Version,Lang,Content,Field,Score
+0,--,Metzudat Zion on Proverbs 19:3:1,On Your Way,he,תסלף. תעקם כמו וסלף בה (לעיל ט״ו): ,aggresive-ngram,10.121829
+1,--,"Mei HaShiloach, Volume I, Deuteronomy, Devarim 7","Mei HaShiloach; Publication of Sifrei Izhbitza Radzin, Bnei Brak 2005.",he,"ויהי בארבעים שנה בעשתי עשר חדש באחד לחדש דבר משה וכו'. הענין שנתפרש כאן באיזה חודש, כי חודש שבט מורה על שבט ותוכחת מוסר וכתוב (משלי כ""ט,ט""ו) שבט ותוכחת יתן חכמה, ונתן מרע""ה עצה שיכנסו את עצמם בד""ת",hebmorph-standard,21.35134
+2,--,Metzudat Zion on Isaiah 22:6:2,On Your Way,he,וקיר. שם מקום כמו ויגלם קירה (מ״ב ט״ו): ,aggresive-ngram,8.27325
+3,--,"Mishneh Torah, Second Tithes and Fourth Year's Fruit 1:2",Wikisource Mishneh Torah,he," שנגמרו ונאספו בשלישית מפרישין מהן מעשר שני ואם לא באו לעונת המעשרות אלא לאחר ראש השנה של שלישית מפרישין מהן מעשר עני וכן פירות האילן שבאו לעונת המעשרות קודם ט""ו בשבט של שלישית אף על פי שנגמרו ונאספו אחר",hebmorph-standard,62.301243
+4,--,"Mishneh Torah, Second Tithes and Fourth Year's Fruit 1:3",Wikisource Mishneh Torah,he,"והחרובין אף ע""פ שחנטו פירותיהן קודם ט""ו בשבט מתעשרין להבא הואיל ומתעשרות מדברי סופרים יראה לי שאין הדברים אמורין אלא בחרובי צלמונה וכיוצא בהן שאין ראויין למאכל רוב האדם והן הן שמתעשרות מדברי סופרים אבל שאר החרובין יראה לי שהן כשאר פירות האילן.",hebmorph-standard,41.029953
+5,--,"Ben Ish Hai, Re'eh 13",On Your Way,he," הקונים אתרוג לנענוע מצניעין אותו עד ט""ו בשבט ואוכלים אותו, ואלו אין צריכים לברך שהחיינו מפני שכר ברכו שהחיינו ביו""ט ראשון של סוכות בנטילת הלולב ובזה נפטר האתרוג גם מברכת שהחיינו של אכילה וכמ""ש האחרונים ז""ל, וכן העלתי בסה""ק מקבציאל: 
+",original,1.1881375
+6,--,"Mishneh Torah, Second Tithes and Fourth Year's Fruit 1:7",Wikisource Mishneh Torah,he,"האביונות של צלף נותנין עליהן חומרי אילן וחומרי זרעים שאם היו משנה שנייה שנכנסה לשלישית ונלקטו קודם ט""ו בשבט מפרישין מעשר ראשון ואחר כך מפריש מעשר אחר ופודהו ואחר שפודהו נותנו לעניים ואוכל פדיונו בתורת מעשר שני ונמצא כמו שהפריש מעשר שני ומעשר עני.",hebmorph-standard,40.72979
+7,--,"Mishneh Torah, Second Tithes and Fourth Year's Fruit 1:5",Wikisource Mishneh Torah,he,"וכן האתרוג בלבד משאר פירות האילן הרי הוא כירק והולכין אחר לקיטתו בין למעשר בין לשביעית כיצד אם נלקט בשלישית אחר ט""ו בשבט מפרישין ממנו מעשר עני אע""פ שנגמרה בשנייה וכן אם נלקט ברביעית קודם ט""ו בשבט מפרישין ממנו מעשר עני נלקט ברביעית אחר ט""ו בשבט מפרישין ממנו מע""ש.",hebmorph-standard,69.405914
+8,--,"Prisha, Yoreh Deah 294:14:1","Tur Yoreh Deah, Vilna, 1923",he," ולאחר ט""ו בשבט כו' פירוש הנחנטין אחר ט""ו וק""ל: ",hebmorph-standard,85.58162
+9,--,"Kessef Mishneh on Mishneh Torah, Second Tithes and Fourth Year's Fruit 9:12:1",Torat Emet 363,he,(י-יב) ומ''ש ואם נתעברה השנה נתעברה לערלה ולרבעי. ומה שכתב נטע הנטיעה מר''ח תשרי וכו'. זהו דעת רבינו שסובר שכשאמרו ופירות נטיעה זו אסורים עד ט''ו בשבט לא אמרו אלא דוקא בנטיעה שהקלנו עליה מתחלתה שעלו,hebmorph-standard,21.36907
+10,--,Metzudat Zion on Psalms 14:3:1,On Your Way,he,נאלחו. נבאשו כמו נתעב ונאלח (איוב ט״ו): ,aggresive-ngram,10.0071535
+11,--,Metzudat Zion on Hosea 4:5:1,On Your Way,he,ודמיתי. ענין כריתה כמו ער מואב נדמה (ישעיה ט״ו): ,aggresive-ngram,8.434857
+12,--,"Kessef Mishneh on Mishneh Torah, Heave Offerings 5:11:4",Torat Emet 363,he,"ומ''ש וכן אם ליקט אתרוג בערב ט''ו בשבט וכו'. שם עלה י''ב: 
 
-",ngram
-2.4056091,"Sefer Mitzvot Gadol, Volume Two 136:1","Munkatch, 1901",he, פירות האילן שבאו לעונת המעשרות קודם <b>ט״ו</b> <b>בשבט</b> של שנה שלישית אע״פ שנגמרו ונאספו אח״כ בסוף שנה שלישית מתעשרין לשעבר ומפרישין מהן מעשר שני וכן אם באו לעונת המעשרות קודם <b>ט״ו</b> <b>בשבט</b> של שנה רביעית אע״פ שנגמרו,aggresive-ngram
-24.426945,"Divrey Chamudot on Menachot, Hilchot Orlah 30",Vilna Edition,he,"  והחונטים   אחר <b>ט""ו</b> <b>בשבט</b> וכו'. נמשך אחר ל' זה הטור והש""ע ול""נ דבט""ו <b>בשבט</b> עצמו נמי דין זה שהרי יום הט""ו הוא ראש השנה הבא ול' רש""י שכתב רבינו לעיל כך הוא אין שנתה מתחדשה לצאת מידי ערלה עד <b>ט""ו</b> <b>בשבט</b> אבל",infreq
-11.2050905,Ritva on Rosh Hashanah 3a:10,"Chiddushei HaRitva, Konigsberg, 1858.",he, וכן כולם ובכולה שמעתין נמי פשיטא להו שתהא ר״ה למלכים בר״ח אבל לא באמצע חודש שאין ראוי לקבוע בו ר״ה אלא למה שמוכרח כמו ט״ו בניסן שהוא ר״ה לרגלים <b>וט״ו</b> <b>בשבט</b> ר״ה לאילנות וכן מ״ש בברייתא גבי עומר ושתי הלחם שהם באמצע החדש ע״כ הא במלתא דליכא הכרח אין לקבוע ר״ה באמצע חודש ולחלוק חדש א׳ לשני שנים: ,aggresive-ngram
-68.32429,"Kessef Mishneh on Mishneh Torah, Heave Offerings 5:11:4",Torat Emet 363,he,"ומ''ש וכן אם ליקט אתרוג בערב <b>ט''ו</b> <b>בשבט</b> וכו'. שם עלה י''ב: 
+",hebmorph-standard,68.32429
+13,--,Footnotes on Mekhilta DeRabbi Shimon Bar Yochai 20:10:12,"Mechilta de-Rabbi Simon b. Jochai, Dr. D. Hoffman, Frankfurt 1905",he,"מבואר בע""ז ט״ו ע""א ובשבת פרק במה בהמה.",aggresive-ngram,18.41238
+14,--,"Beit Yosef, Yoreh Deah 294:9:1","Tur Yoreh Deah, Vilna, 1923",he," עד ט""ו בשבט איכא מאן דאמר דדוקא נטיעה שהקלנו עליה בתחילתה שעלו לה ל' יום לשנה תמימה ולפיכך מחמרינן עליה בסופה ולהמשיך שנתה עד ט""ו בשבט שהוא ראש השנה לאילן והיינו דאמר פירות נטיעה זו דמשמע דוקא זו וכן",hebmorph-standard,23.032871
+15,--,"Shulchan Arukh, Yoreh De'ah 294:4",Torat Emet Freeware Shulchan Aruch,he," קודם ט""ו בשבט יש להם גם כן דין ערלה אע""פ שנגמרים אח""כ והנחנטים בו מט""ו בשבט של שנה רביעית עד ט""ו בשבט של שנה חמישית נקראים רבעי ולאחר ט""ו בשבט של שנה חמישית הם חולין גמורים:",hebmorph-standard,46.886715
+16,--,Tosafot on Rosh Hashanah 10a:1:1,Vilna Edition,he,"ופירות נטיעה זו אסורין עד ט""ו בשבט. דנהי דלנטיעה ר""ה תשרי לענין ערלה לאילן מיהא ט""ו בשבט כדדריש רבי ינאי מדכתיב ובשנה הרביעית ובשנה החמישית והא דקבעי שבט ר""ה הואיל ויצאו רוב גשמי שנה כדאמרינן לקמן",hebmorph-standard,52.343323
+17,--,Metzudat Zion on Isaiah 37:4:1,On Your Way,he,אולי. הלואי וכן אולי יראה ה׳ בעניי (ש״ב ט״ו): ,aggresive-ngram,8.242772
+18,--,Rashi on Rosh Hashanah 10a:2:1,WikiSource Rashi,he,"מנא הני מילי - ששנות ערלה ורבעי נמשכין לאסור פירות החנוטים קודם ט""ו בשבט לאחר שכלו שלשת שני ערלה:
+",hebmorph-standard,59.68197
+19,--,Yachin on Mishnah Rosh Hashanah 1:7:1,"Mishnah, ed. Romm, Vilna 1913",he,", עדיין פירותיו ערלה, עד ט""ו בשבט, דאע""ג דא' בתשרי ר""ה לנטיעה, היינו לתחלת נטיעתו, וכדאמרן. אבל השתא אילן הוה ור""ה שלו ט""ו בשבט, וכלקמן סי' ט'. ואחר ט""ו בשבט דין רבעי עליהן [י""ד רצ""ד ס""ד]:",original,2.8555076
+20,--,Rashi on Yevamot 15a:13:1,Vilna Edition,he,"באחד בשבט - ושנה שניה הנכנסת לשלישית היתה ונהג בה שני עישורין מעשר שני כב""ה דאמרי ט""ו בשבט ר""ה לאילנות ואכתי שניה היא ומעשר עני כב""ש דאמרי בא' בשבט ר""ה לאילנות ושלישית היא:",hebmorph-standard,42.629982
+21,--,Yachin on Mishnah Sheviit 2:38:1,"Mishnah, ed. Romm, Vilna 1913",he,"רבי שמעון מתיר באילן ר""ל אילן מלא פירות שיצאו מז' לח'. מותר בעבודות האילן גופיה. אף שפירותיו עדיין קדושים עד ט""ו בשבט של ח':",original,2.8365965
+22,--,"Otzar Midrashim, The Aleph Bet of ben Sira 1:29","Otzar Midrashim, New York, 1915",he,ל׳) לחכימא ברמיזא ולשטיא בכרמזא (מקל. משלי כ׳׳ב ט״ו).,aggresive-ngram,8.225915
+23,--,Tosefta Shevi'it 4:13,Tosefta Shvi'it,he,"כל אילן שחנטו פירותיו קודם חמשה עשר בשבט הרי הן לשעבר לאחר חמשה עשר הרי הן לעתיד לבא ר' נחמיה אומר בד""א באילן שעושה שתי בריכות בשנה אבל אילן שאינו עושה אלא ברך אחת כגון הזתים והתמרים והחרובין אע""פ שחנטו פירותיו קודם ט""ו בשבט כאילו לא חנטו אלא לאחר חמשה עשר בשבט.",hebmorph-standard,44.25184
+24,--,Proverbs 23:14,Tanach with Nikkud,he,אתה בשבט תכנו ונפשו משאול תציל,original,7.067786
+25,--,Metzudat Zion on Psalms 11:2:2,On Your Way,he,לירות. להשליך כמו ירה בים (שמות ט״ו): ,aggresive-ngram,9.871099
+26,--,"Kessef Mishneh on Mishneh Torah, Second Tithes and Fourth Year's Fruit 9:12:2",Torat Emet 363,he,מונה שלש שנים מיום ליום. כתב הראב''ד מיום ליום שאמרו מט''ו לשבט עד ט''ו לשבט וכו'. ואני אומר שמ''ש שאינו ר''ל מראש תשרי לראש תשרי לפי שאינן שלימות וכו' פשוט הוא ולא הוצרך רבינו לבארו אבל מה שכתב,hebmorph-standard,34.23265
+27,--,Metzudat Zion on Jeremiah 50:15:2,On Your Way,he,"אשיותיה. ענין יסודות כמו לאשישי קיר חרשת (ישעיה ט״ו):
+",aggresive-ngram,8.27325
+28,--,Metzudat Zion on I Chronicles 11:11:1,On Your Way,he,השלישים. ענינו שרים וגבורים כמו מבחר שלישיו (שמות ט״ו): ,aggresive-ngram,8.242772
+29,--,Bartenura on Mishnah Eruvin 4:11:5,On Your Way,he,"עד ט״ו אמה. לאו דוקא דהוא הדין פחות או יותר מעט. ואית דמפרשי ט״ו דוקא, ולא ידעתי לישבו יפה:",aggresive-ngram,9.256823
+30,--,Mesorat HaShas on Tractate Avadim 2:8:1,"Talmud Bavli, Vilna 1883 ed.",he,קדושין דף ט״ו ב׳:,ngram,16.332935
+31,--,Rashi on Kiddushin 12b:6:1,Vilna Edition,he,בשוטיתא דאסא - בשבט בד של הדס:,original,7.1154613
+32,--,Malbim on I Samuel 9:21:2,On Your Way,he,"הצעירה בשבט הזה :
+",ngram,18.818405
+33,--,"Maadaney Yom Tov on Menachot, Hilchot Orlah 69",Vilna Edition,he,"  והחונטים   אחר ט""ו בשבט וכו'. וכן ל' התוס' ולאו דוקא אלא אף ט""ו עצמו בכלל הזה שהרי הוא עצמו ר""ה לאילן ולשון הטור והחונטין בו מט""ו בשבט כו': 
+",original,2.87382
+34,--,Mishnah Berurah 580:14,On Your Way,he,(יד) בחמשה בשבט וכו' - במגילת תענית גרסינן בשמנה בשבט:,ngram,16.633278
+35,--,"Mishneh Torah, Heave Offerings 5:11",Wikisource Mishneh Torah,he," שזה חדש וזה ישן וכן אם ליקט אתרוג בערב ט""ו בשבט עד שלא בא השמש וחזר וליקט אתרוג אחר משבאה השמש אין תורמין מזה על זה מפני שאחד בתשרי ראש השנה למעשרות תבואה וקטניות וירקות וט""ו בשבט ראש השנה למעשרות האילן.",hebmorph-standard,36.938732
+36,--,Metzudat Zion on Psalms 40:11:1,On Your Way,he,"כחדתי. מנעתי כמו ולא כחדו מאבותם (איוב ט״ו):
+",aggresive-ngram,8.434857
+37,--,Rashi on Psalms 2:9:2,On Your Way,he,בשבט ברזל . היא החרב : ,ngram,18.843569
+38,--,"Maadaney Yom Tov on Menachot, Hilchot Orlah 62",Vilna Edition,he,"  א""ר   מנא מכיון שעומד בתוך שנתו של אילן הוא משלים שנתו גרס. יהיב טעמא דאע""ג דלא הקלנו עליו בתחילה מחמירין אנו עליו לאסור עד ט""ו בשבט דהואיל ועומד בתוך שנתו של אילן דשנה של אילן הוא עד ט""ו בשבט כדתנן",original,3.3071766
+39,--,Shadal on Exodus 15:15:2,"Shadal first edition, Padua 1871",he,"אלופי אדום: ראשי המשפחות, והמשפחה אשר עליה שר אחד נקראת אלף, כמו הנה אלפי הדל במנשה (שופטים י' ט""ו), לשבטיכם ולאלפיכם (שמואל א' י' י""ט), וחפשתי אותו בכל אלפי יהודה (שם כ""ג כ""ג), והאלוף הוא שר האלף",hebmorph-standard,21.35134
+40,--,"Ba'er Hetev on Shulchan Arukh, Orach Chayyim 580:7",Torat Emet 357,he," בה'.  במ''ת גרסי' בשמנה בשבט: 
+",infreq,15.715244
+41,--,Rosh Hashanah 14b:11,Wikisource Talmud Bavli,he,"מיתיבי ר' שמעון בן אלעזר אומר ליקט אתרוג ערב ט""ו בשבט עד שלא תבוא השמש וחזר וליקט משתבוא השמש אין תורמין ומעשרין מזה על זה לפי שאין תורמין ומעשרין לא מן החדש על הישן ולא מן הישן על החדש היתה שלישית נכנסת לרביעית שלישית מעשר ראשון ומעשר עני רביעית מעשר ראשון ומעשר שני",hebmorph-standard,45.51035
+42,--,Metzudat Zion on II Samuel 7:14:3,On Your Way,he,בשבט. בשרביט: ,ngram,23.757238
+43,--,Rosh Hashanah 10a:1,Wikisource Talmud Bavli,he,"ופירות נטיעה זו אסורין עד ט""ו בשבט אם לערלה ערלה ואם לרבעי רבעי",hebmorph-standard,96.32926
+44,--,Bartenura on Mishnah Megillah 1:2:1,On Your Way,he," קורין המגילה בי״ד כשחל ט״ו להיות בשבת, מ״מ אין קורין ויבא עמלק אלא בשבת שהוא יום ט״ו, ומפטירים פקדתי, ושואלין ודורשין בהלכות פורים כל אותה שבת. וסעודת פורים אית דאמרי דעבדי לה ביום י״ד שבו קורין את",aggresive-ngram,9.706376
+45,--,Metzudat Zion on I Chronicles 11:23:2,On Your Way,he,"בשבט. בשרביט:
 
-",hebmorph-standard
-11.076816,Magen Avraham 580:7,Magen Avraham,he,"בה' <b>בשבט</b>. במ""ת גרסי' בשמנ' <b>בשבט</b>: 
-",aggresive-ngram
-23.361595,Psalms 89:33,Tanach with Text Only,he,ופקדתי <b>בשבט</b> פשעם ובנגעים עונם,ngram
-18.41238,Footnotes on Mekhilta DeRabbi Shimon Bar Yochai 20:10:12,"Mechilta de-Rabbi Simon b. Jochai, Dr. D. Hoffman, Frankfurt 1905",he,"מבואר בע""ז <b>ט״ו</b> ע""א <b>ובשבת</b> פרק במה בהמה.",aggresive-ngram
-10.717179,Haggahot on Tractate Tefillin 1:7:1,"Talmud Bavli, Vilna 1883 ed.",he,עי׳ מג״א סי׳ ל״ט ס״ק <b>ט״ו</b>:,aggresive-ngram
-14.790343,"Shulchan Arukh, Yoreh De'ah 294:4",Torat Emet Freeware Shulchan Aruch,he," קודם <b>ט""ו</b> <b>בשבט</b> יש להם גם כן דין ערלה אע""פ שנגמרים אח""כ והנחנטים בו מט""ו בשבט של שנה רביעית עד <b>ט""ו</b> <b>בשבט</b> של שנה חמישית נקראים רבעי ולאחר <b>ט""ו</b> <b>בשבט</b> של שנה חמישית הם חולין גמורים:",original
-85.40536,Rashi on Rosh Hashanah 14b:9:3,WikiSource Rashi,he,"אלא <b>ט""ו</b> <b>בשבט</b> היה - לדברי הכל נתחדשה שנה:",hebmorph-standard
-59.68197,Rashi on Rosh Hashanah 10a:2:1,WikiSource Rashi,he,"מנא הני מילי - ששנות ערלה ורבעי נמשכין לאסור פירות החנוטים קודם <b>ט""ו</b> <b>בשבט</b> לאחר שכלו שלשת שני ערלה:
-",hebmorph-standard
-21.702915,Rashi on Rosh Hashanah 10a:3:3,WikiSource Rashi,he,"פעמים שבחמישית כו' - כגון פירות שחנטו בה קודם <b>שבט</b> טעונין חלול אבל אם איחרה חניטתה עד לאחר <b>ט""ו</b> <b>בשבט</b> אין בהן איסור:",hebmorph-standard
-27.725409,Ritva on Rosh Hashanah 10a:1,"Chiddushei HaRitva, Konigsberg, 1858.",he,ופירות נטיעה זו אסורה עד <b>ט״ו</b> <b>בשבט</b>. י״מ דארישא קאי דוקא דקתני שלשים יום לפני ר״ה עלתה לו שנה דכיון שעלו לה שלשים יום לשנה נחמיר עליה להמשיך שנתה עד <b>ט״ו</b> <b>בשבט</b> שהוא שנתו של אילן אבל כל שנטע פחות משלשים,aggresive-ngram
-16.62999,Tosafot on Rosh Hashanah 10a:1:1,Vilna Edition,he,"ופירות נטיעה זו אסורין עד <b>ט""ו</b> <b>בשבט</b>. דנהי דלנטיעה ר""ה תשרי לענין ערלה לאילן מיהא <b>ט""ו</b> <b>בשבט</b> כדדריש רבי ינאי מדכתיב ובשנה הרביעית ובשנה החמישית והא דקבעי שבט ר""ה הואיל ויצאו רוב גשמי שנה כדאמרינן לקמן",original
-59.68197,Rashi on Rosh Hashanah 13b:4:1,WikiSource Rashi,he,"בתר חנטה - לקמן (דף טו:) תנא לה בפירקין אילן שחנטו פירותיו קודם <b>ט""ו</b> <b>בשבט</b> שהוא ר""ה לאילנות מתעשר לשנה שעברה:",hebmorph-standard
-25.44126,Rashi on Yevamot 15a:13:1,Vilna Edition,he,"באחד <b>בשבט</b> - ושנה שניה הנכנסת לשלישית היתה ונהג בה שני עישורין מעשר שני כב""ה דאמרי <b>ט""ו</b> <b>בשבט</b> ר""ה לאילנות ואכתי שניה היא ומעשר עני כב""ש דאמרי בא' <b>בשבט</b> ר""ה לאילנות ושלישית היא:",infreq
-23.523006,Metzudat Zion on Micah 4:14:4,On Your Way,he,<b>בשבט</b>. בשרביט: ,ngram
-52.971733,"Shulchan Arukh, Orach Chayim 572:3",Torat Emet 363,he," צבור שבקשו לגזר תענית שני וחמישי ושני, ופגע בתענית <b>ט''ו</b> <b>בשבט</b>, התענית נדחה לשבת הבאה כדי שלא יגזרו תענית בט''ו בשבט שהוא ראש השנה לאילנות;  הגה: מיהו אם התחילו להתענות, אין מפסיקין, כמו בראש חדש וחל המועד  (בית יוסף).  
-",hebmorph-standard
-10.894952,Metzudat Zion on Ezra 6:4:1,On Your Way,he,"נדבכין. שורות ובדרז״ל קורין וכו׳ ובראש הנדבך (ברכות <b>ט״ו</b>):
-",aggresive-ngram
-88.17115,Rosh Hashanah 15b:3,Wikisource Talmud Bavli,he,"ת""ר אילן שחנטו פירותיו קודם <b>ט""ו</b> <b>בשבט</b> מתעשר לשנה שעברה אחר <b>ט""ו</b> <b>בשבט</b> מתעשר לשנה הבאה אמר רבי נחמיה בד""א באילן שעושה שתי בריכות בשנה",hebmorph-standard
-17.957632,Ritva on Rosh Hashanah 14b:3,"Chiddushei HaRitva, Konigsberg, 1858.",he, לאשמועינן בכל כיוצא בהן בשני בתי דינין דעלמא דהני נפישי והני מחדדי כנ״ל. ופרכינן אדר׳ יוסי בר יהודא באחד בשבט כב״ש ופרקינן דהכא באתרוג שחנטו פירותיו אשתקד קודם <b>ט״ו</b> <b>בשבט</b> שהיתה שנה שניה ועכשיו נלקטו בא׳,aggresive-ngram
-23.953516,Metzudat Zion on II Samuel 23:21:1,On Your Way,he,"<b>בשבט</b>. בשרביט:
-",ngram
-71.42424,Rosh Hashanah 15b:5,Wikisource Talmud Bavli,he,"אבל אילן העושה בריכה אחת כגון דקלים וזיתים וחרובין אע""פ שחנטו פירותיהן קודם <b>ט""ו</b> <b>בשבט</b> מתעשרין לשנה הבאה",hebmorph-standard
-26.496624,Tosefta Shevi'it 4:13,Tosefta Shvi'it,he,"כל אילן שחנטו פירותיו קודם חמשה עשר <b>בשבט</b> הרי הן לשעבר לאחר חמשה עשר הרי הן לעתיד לבא ר' נחמיה אומר בד""א באילן שעושה שתי בריכות בשנה אבל אילן שאינו עושה אלא ברך אחת כגון הזתים והתמרים והחרובין אע""פ שחנטו פירותיו קודם <b>ט""ו</b> <b>בשבט</b> כאילו לא חנטו אלא לאחר חמשה עשר <b>בשבט</b>.",infreq
-7.8629413,Kol Bo 92:3,Kol Bo 1547 Venice Unknown Publisher,he,ומאמתי מונין לערלה משעת נטיעה וראש השנ׳ שלה בא׳ בתשרי ואין מונין לה מר״ה לר״ה אלא הנוטע מ״ד יום לפני ראש השנה עלתה לו שנה ב׳ שבתות ללקיטת הנטיעה ול׳ יום לחשב שנה ופירות נטיעה זו אסורין עד <b>ט״ו</b> <b>בשבט</b> של,aggresive-ngram
-11.675013,Bartenura on Mishnah Shevuot 6:3:2,On Your Way,he,לתך. חצי כור. <b>ט״ו</b> סאין:,aggresive-ngram
-23.591936,"Otzar Midrashim, Midrash on Psalms, Addendum to Psalm 118 7","Otzar Midrashim, New York, 1915",he,"ה׳) במה יזכה נער את ארחו לשמר כדברך - אמר שלמה בכל דרכיך דעהו (משלי ג׳), אם ידעת להקב״ה בכל דבר ודבר הוא יישר אורחותיך (שם), וכן דוד אומר שויתי ה' לנגדי תמיד כי מימיני בל אמוט (תהלים <b>ט״ו</b>), <b>ובשביל</b>",aggresive-ngram
-53.099323,"Mishneh Torah, First Fruits and other Gifts to Priests Outside the Sanctuary 2:7",Wikisource Mishneh Torah,he,"אין מביאין בכורים לא מן החדש על הישן ולא מן הישן על החדש כיצד לא יביא מפירות שחנטו קודם <b>ט""ו</b> <b>בשבט</b> על פירות שחנטו אחר ט""ו בו אחד הנטוע ואחד העולה מאליו שנאמר בכורי כל אשר בארצם.",hebmorph-standard
-84.40305,"Prisha, Yoreh Deah 294:11:1","Tur Yoreh Deah, Vilna, 1923",he," כל הפירות שחנטו בו קודם <b>ט""ו</b> <b>בשבט</b> כו' שאף ע""פ שתשרי ר""ה לנטיעה <b>ט""ו</b> <b>בשבט</b> הוא ר""ה לאילן: ",hebmorph-standard
-53.062065,"Mishneh Torah, Second Tithes and Fourth Year's Fruit 9:12",Wikisource Mishneh Torah,he,"נטע הנטיעה מראש חדש תשרי עד <b>ט""ו</b> <b>בשבט</b> מונה לה ג' שנים מיום ליום לערלה ומיום ליום לרבעי וראיתי לגאונים דברים בחשבון ערלה ורבעי אין ראוי להאריך ולהשיב עליהן ובודאי טעות סופרים הם והאמת כבר ביארנו דרכה.",hebmorph-standard
-13.495772,Footnotes on Mekhilta DeRabbi Shimon Bar Yochai 22:4:11,"Mechilta de-Rabbi Simon b. Jochai, Dr. D. Hoffman, Frankfurt 1905",he,"ב""ק <b>ט״ו</b> ע״ב.",aggresive-ngram
-7.838866,Kol Bo 92:22,Kol Bo 1547 Venice Unknown Publisher,he, עד <b>ט״ו</b> <b>בשבט</b> של שנה רביעית ואם נתעברה השנה נתעברה אף לרבעי. נטעה פחות ממ״ד יום לפני ראש השנה הרי הוא נטע רביעי מר״ה של שנה רבעית ועד סופה. נטעה מראש חדש תשרי עד <b>ט״ו</b> <b>בשבט</b> מונה לרבעי מיום ליום.  ,aggresive-ngram
-14.289573,Mesorat HaShas on Tractate Avadim 2:8:1,"Talmud Bavli, Vilna 1883 ed.",he,קדושין דף <b>ט״ו</b> ב׳:,aggresive-ngram
-1.588554,"Sefer Mitzvot Gadol, Volume Two 139:1","Munkatch, 1901",he," אבל מן החג ואילך מביא ואינו קורא, [בירו׳ פ״ק דבכורים] אין מביאין ביכורים לא מן החדש על הישן ולא מן הישן על החדש כיצד לא יביא מפירות שחנטו קודם <b>ט״ו</b> <b>בשבט</b> על פירות שחנטו אחר ט״ו בו, [במיימוני דלעיל] אחד",aggresive-ngram
-59.17057,Rashba on Rosh Hashanah 10a:2,"Gerlitz edition, published by Oraita",he,"ופירות נטיעה זו אסורין עד חמשה  עשר בשבט. ואם תאמר אם כן, מפני מה אמרו שלשים  יום לפני ראש השנה עלתה לו שנה, והלא לא עלתה לו עד <b>ט""ו</b> <b>בשבט</b>. ויש לומר דנפקא מינה  שאם עשו לה <b>ט""ו</b> <b>בשבט</b> ראש השנה הייתי אומר שאילו נטעה שלשים יום לפני <b>ט""ו</b> <b>בשבט</b> עלתה  לו שנה.",hebmorph-standard
-52.978443,"Shulchan Arukh, Yoreh De'ah 331:126",Torat Emet Freeware Shulchan Aruch,he," לקיטתו בין למעשר בין לשביעית כיצד אם נלקט בשלישית אחר <b>ט""ו</b> <b>בשבט</b> מפרישין ממנו מעשר עני אע""פ שנגמרה בשניה וכן אם נלקט ברביעית קודם <b>ט""ו</b> <b>בשבט</b> מפרישין ממנו מעשר עני נלקט בחמישית אחר <b>ט""ו</b> <b>בשבט</b> מפרישין ממנו מעשר שני ואע""פ שהולכין אחר לקיטתו אתרוג בת ששית שנכנסה לשביעית אפי' היתה כזית ונעשית כככר חייבת במעשרות:",hebmorph-standard
-16.103971,"Shulchan Arukh, Yoreh De'ah 331:127",Torat Emet Freeware Shulchan Aruch,he,"האביונות של צלף נותנין עליהם חומרי האילן וחומרי זרעים שאם היו משנה שניה שנכנס לשלישית ונלקטו קודם <b>ט""ו</b> <b>בשבט</b> מפרישין מעשר ראשון ואחר כך מפריש מעשר אחר ופודהו ואחר שפודהו נותנו לעניים:",original
-13.495772,Footnotes on Mekhilta DeRabbi Shimon Bar Yochai 12:19:14,"Mechilta de-Rabbi Simon b. Jochai, Dr. D. Hoffman, Frankfurt 1905",he,עי' לעיל לפסוק <b>ט״ו</b>.,aggresive-ngram
-13.237199,Footnotes on Mekhilta DeRabbi Shimon Bar Yochai 12:19:15,"Mechilta de-Rabbi Simon b. Jochai, Dr. D. Hoffman, Frankfurt 1905",he,כדלעיל פ' <b>ט״ו</b>.,aggresive-ngram
-36.22032,Ritva on Rosh Hashanah 14b:1,"Chiddushei HaRitva, Konigsberg, 1858.",he,ר׳ יוסי בר יהודה וכו'. פי׳ דמספקא ליה אי אזלינן בתר חנטה או בתר לקיטה ולקמן פרכינן וכי אזלינן בתר לקיטה מאי האי דהא לב״ה לא נכנסה שלישית עד <b>ט״ו</b> <b>בשבט</b> (למ״ד) [אלא] כב״ש והא ר״ע מתלמידי ב״ה הוא ועוד ב״ש במקום ב״ה אינה משנה ומפרש לה תלמודא שפיר: ,aggresive-ngram
-65.73008,Rosh Hashanah 14b:9,Wikisource Talmud Bavli,he,"רבינא אמר כרוך ותני לא אחד בשבט היה אלא <b>ט""ו</b> <b>בשבט</b> היה ולא מנהג בית שמאי ובית הלל נהג בה אלא מנהג רבן גמליאל ור' אליעזר נהג בה",hebmorph-standard
+",ngram,23.953516
+46,--,Haamek Davar on Genesis 39:7:3,"Sefer Torat Elohim, Vilna 1879",he,ותאמר שכבה עמי. עי׳ מש״כ בס׳ ויקרא ט״ו י״ח: ,aggresive-ngram,8.225915
+47,--,Chiddushei Ramban on Rosh Hashanah 10b:1,"Chiddushei HaRamban, Jerusalem 1928-29",he," אסורין עד ט""ו בשבט ומתרץ תני ר' יהושע אוניא לית כאן מרכיב א""ר בא אפי' כריש לקיש לית כאן מרכיב לשעבר הא בתחלה לא.ואין פי' דברי ר' בא ברורין לי אבל מ""מ לדעת ר' יוחנן הרי מעלין שאין ערלה נוהגת בהרכבה לעולם",original,1.368447
+48,--,Kitzur Shulkhan Aruch Yalkut Yosef 2:207:3,Kitzur Shulkhan Aruch Yalkut Yosef - Torat Emet 357,he,"ט''ו בשבט הוא ראש השנה לאילנות, וכל פירות האילן שבאו לעונת המעשרות קודם ט''ו בשבט של שנה שלישית לשמיטה, אע''פ שנגמרו ונאספו בסוף שנה שלישית מפרישים מהם מעשר שני, וכל שבאו לעונת המעשרות לאחר ט''ו בשבט, מפרישים",hebmorph-exact,3.3107305
+49,--,Haggahot on Tractate Tefillin 1:7:1,"Talmud Bavli, Vilna 1883 ed.",he,עי׳ מג״א סי׳ ל״ט ס״ק ט״ו:,aggresive-ngram,10.717179
+50,--,Rashi on Rosh Hashanah 10a:1:1,WikiSource Rashi,he,"ופירות נטיעה זו אסורים כו' - ואף על פי שאמרנו עלתה לו שנה אם חנטו בה פירות לאחר ר""ה של שנה שלישית מיד עדיין אסורין הן עולמית משום ערלה שאע""פ שר""ה תשרי לנטיעה ט""ו בשבט ר""ה לאילן וזו כבר נעשית אילן",hebmorph-standard,36.234425
+51,--,Lamentations 3:1,Tanach with Ta'amei Hamikra,he,אני הגבר ראה עני בשבט עברתו,ngram,15.391836
+52,--,Tosefta Rosh HaShanah 1:8,Tosefta Rosh Hashanah  -- Machon Mamre,he," אתרוג בערב ט""ו בשבט עד שלא בא השמש וחזר וליקט [אחר] משבא השמש אין תורמין [ואין מעשרין] מזה על זה מפני שזה חדש וזה ישן היתה שלישית ונכנסה רביעית הראשון מתעשר מעשר [שני] והשני מתעשר מעשר [עני].",hebmorph-standard,34.961254
+53,--,Rashi on Rosh Hashanah 14b:9:3,WikiSource Rashi,he,"אלא ט""ו בשבט היה - לדברי הכל נתחדשה שנה:",hebmorph-standard,85.40536
+54,--,Metzudat Zion on Isaiah 46:8:1,On Your Way,he,"והתאוששו. התחזקו כבנין היסוד כמו לאשישי קיר חרשת (לעיל ט״ו):
+",aggresive-ngram,8.434857
+55,--,Metzudat Zion on Psalms 29:1:2,On Your Way,he,"אלים. חזקים כמו אילי מואב (שמות ט״ו):
+",aggresive-ngram,9.871099
+56,--,Rashi on Rosh Hashanah 10a:3:3,WikiSource Rashi,he,"פעמים שבחמישית כו' - כגון פירות שחנטו בה קודם שבט טעונין חלול אבל אם איחרה חניטתה עד לאחר ט""ו בשבט אין בהן איסור:",hebmorph-standard,51.62086
+57,--,"Ohev Yisrael, Tu B'Shevat 6","Ohev Yisrael, Zhitomir, 1863.",he,"עוד נ""ל טעם אחר. כי ידוע שמחדש חשוון מתחילין הימים להיות קצרי' שמורים על בחי' דין ולכן גם הצירופים של ג' חדשים הללו מתחילין שלא כסדרן. אבל חודש שבט אינו כן כי מחצי החודש שהוא ט""ו בשבט מתחילין ימי",original,1.425765
+58,--,Metzudat Zion on Psalms 9:21:1,On Your Way,he,"מורה. השלכה כמו ירה בים (שמות ט״ו):
+
+",aggresive-ngram,10.0071535
+59,--,"Shulchan Arukh, Yoreh De'ah 331:57",Torat Emet Freeware Shulchan Aruch,he," וזה ישן וכן אם ליקט אתרוג בערב ט""ו בשבט עד שלא בא השמש וחזר וליקט אתרוג אחר משבאה השמש אין תרומין מזה על זה מפני שאחד בתשרי ראש השנה למעשרות תבואה וקטניות וירקות וט""ו בשבט ר""ה למעשרות האילן:",hebmorph-standard,31.390554
+60,--,"Maadaney Yom Tov on Menachot, Hilchot Orlah 68",Vilna Edition,he," כלו כל הג' שנים של שני ערלה כלל וצ""ל דהא דכתב דאין חנטה בשום אילן קודם ט""ו בשבט לאו מן ר""ה קאמר אלא מן ט""ו באב אין שום חנטה לאילן האידנא: 
+",original,1.6546812
+61,--,Metzudat Zion on Ezra 6:4:1,On Your Way,he,"נדבכין. שורות ובדרז״ל קורין וכו׳ ובראש הנדבך (ברכות ט״ו):
+",aggresive-ngram,10.894952
+62,--,Yachin on Mishnah Orlah 1:4:1,"Mishnah, ed. Romm, Vilna 1913",he," למחשב שנה הרי מ""ד יום אלו מחשבי שנה וא""צ למנות עוד רק ב' שנים מר""ה ההוא. אבל בנטע ביום ט""ז באב או אח""כ צריך למטת מר""ה הבא שלש שנים שלימות. מיהו אחר כלות ג' שנות הערלה הפירות החונטים עדיין עד ט""ו בשבט בשנת",original,1.6802801
+63,--,"Shulchan Arukh, Yoreh De'ah 294:5",Torat Emet Freeware Shulchan Aruch,he,"הא דאמרינן שלאחר ר""ח תשרי של שנה רביעית כל הפירות שחנטו קודם ט""ו בשבט יש להם גם כן דין ערלה אע""פ שנגמרים אח""כ דוקא בנטיעה שהקלנו עליה בתחלתה שכיון שעברו עליה מ""ד יום עלתה לה שנה לפיכך החמרנו עליה בסופה הא לאו הכי לא וי""א דלא שנא:",hebmorph-standard,38.980095
+64,--,"Mishneh Torah, First Fruits and other Gifts to Priests Outside the Sanctuary 2:7",Wikisource Mishneh Torah,he,"אין מביאין בכורים לא מן החדש על הישן ולא מן הישן על החדש כיצד לא יביא מפירות שחנטו קודם ט""ו בשבט על פירות שחנטו אחר ט""ו בו אחד הנטוע ואחד העולה מאליו שנאמר בכורי כל אשר בארצם.",hebmorph-standard,53.099323
+65,--,Ibn Ezra on Isaiah 30:31:1,"Michael Friedlander, Society of Hebrew Literature, 1877",he,"לא: בשבט יכה, כאילו בשבט יוכה, או כי בשבט יכנו השם:",ngram,16.297218
+66,--,"Kedushat Levi, Likutim 130",Kedushat Levi - Munkatch 1939,he," נגד יצירת הוולד. ובאמת אנן פסקינן כשני המ""ד. וזה שאנו עושין יומא דפגרא בט""ו באב וט""ו בשבט, ונמצא ט""ו בשבט הוא הכנה לפסח ופסח הוא הכנה למתן תורה, נמצא ט""ו בשבט הוא הכנה למתן תורה, והא ראיה גם כן שהתורה",original,1.6703763
+67,--,Haamek Davar on Deuteronomy 24:10:1,"Sefer Torat Elohim, Vilna 1879",he," לעבוט עבוטו. לא כתיב להעביטו דבאמת משמעות עבוט הוא הלואה. כמו והעבטת גוים רבים ואתה לא תעבוט. אלא מדכתיב בכפילת לשון משמעו להשכין משכונו שמכונה עבוט ע״ש שבא בשביל הלואה וכמש״כ לעיל ט״ו ח׳:
+",aggresive-ngram,9.175528
+68,--,Sanhedrin 16b:32,Wikisource Talmud Bavli,he,לשבטיך ושפטו מצוה בשבט לדון את שבטו:,ngram,19.52506
+69,--,Minchat Chinukh 246:11:1,"Minchat Chinuch, Piotrkew, 1902",he," ל' יום קודם ר""ה עלתה לו שנה א' ומונה עוד ב' שנים ומכל מקום נמשך זמן איסור עד ט""ו בשבט שאותם הפירות שחנטו קודם ט""ו בשבט בשנה הרביעית עדיין אסורין משום ערלה ועיין ר""מ פ""ט מה' מע""ש ונ""ר ובש""ע יו""ד סי'",original,1.3732615
+70,--,"Tur, Yoreh Deah 294:1","Yoreh Deah, Vilna, 1923",he," שנים שלימים ולאחר ראש חדש תשרי של שנה רביעית  כל הפירות שיחנטו בו קודם ט""ו בשבט  יש להם גם כן דין ערלה אף שנגמרים אח""כ לא שנא היו שלשה שנים שלימים ערלה  כגון שנטע מששה עשר באב ואילך לא שנא היו מקוטעים",hebmorph-standard,25.250732
+71,--,Tosafot on Rosh Hashanah 8a:3:1,Vilna Edition,he,[באחד בשבט כבית שמאי. פי' בתמיה]:,original,7.067786
+72,--,Exodus 21:20,Tanach with Text Only,he,וכי־יכה איש את־עבדו או את־אמתו בשבט ומת תחת ידו נקם ינקם,ngram,14.584693
+73,--,"Otzar Midrashim, Eldad HaDani, The Book of Eldad HaDani, Story 2 14","Otzar Midrashim, New York, 1915",he,ואח״כ עלה סנחריב מלך אשור והגלה לראובני ולגדי ולחצי שבט המנשה ויוליכם לחלח וחבור והרא ונהר גוזן (דהי״א ה׳ כ״ו). ועוד עלה סנחריב פעם שניה והגלה לשבט אשר ולשבט נפתלי והולך אותם לארץ אשור (מ״ב ט״ו כ״ט,aggresive-ngram,8.242009
+74,--,Metzudat Zion on Isaiah 37:33:1,On Your Way,he,יורה. ישליך כמו ירה בים (שמות ט״ו): ,aggresive-ngram,10.121829
+75,--,Psalms 2:9,Tanach with Nikkud,he,תרעם בשבט ברזל ככלי יוצר תנפצם,ngram,17.360905
+76,--,Footnotes on Mekhilta DeRabbi Shimon Bar Yochai 21:35:10,"Mechilta de-Rabbi Simon b. Jochai, Dr. D. Hoffman, Frankfurt 1905",he,"ב״ק ט״ו ע""א וע' רמב""ם פ״א מה' נ""מ ה״ג.",aggresive-ngram,8.225915
+77,--,"Divrey Chamudot on Menachot, Hilchot Orlah 30",Vilna Edition,he,"  והחונטים   אחר ט""ו בשבט וכו'. נמשך אחר ל' זה הטור והש""ע ול""נ דבט""ו בשבט עצמו נמי דין זה שהרי יום הט""ו הוא ראש השנה הבא ול' רש""י שכתב רבינו לעיל כך הוא אין שנתה מתחדשה לצאת מידי ערלה עד ט""ו בשבט אבל",hebmorph-standard,45.064003
+78,--,Metzudat Zion on Psalms 78:13:1,On Your Way,he,"נד. צבור ותל כמו נצבו כמו נד (שמות ט״ו):
+",aggresive-ngram,8.434857
+79,--,Tosafot Yom Tov on Mishnah Rosh Hashanah 1:1:8,"Mishnah, ed. Romm, Vilna 1913",he," הרביעית ובשנה החמישית. פעמים שברביעית. ועדיין אסורה משום ערלה. ופעמים שבחמישית ועדיין אסורה משום רבעי. ומה שכתב עד ט""ו בשבט. אתיא כב""ה: 
+",hebmorph-standard,17.051992
+80,--,Ritva on Rosh Hashanah 3a:10,"Chiddushei HaRitva, Konigsberg, 1858.",he, וכן כולם ובכולה שמעתין נמי פשיטא להו שתהא ר״ה למלכים בר״ח אבל לא באמצע חודש שאין ראוי לקבוע בו ר״ה אלא למה שמוכרח כמו ט״ו בניסן שהוא ר״ה לרגלים וט״ו בשבט ר״ה לאילנות וכן מ״ש בברייתא גבי עומר ושתי הלחם שהם באמצע החדש ע״כ הא במלתא דליכא הכרח אין לקבוע ר״ה באמצע חודש ולחלוק חדש א׳ לשני שנים: ,aggresive-ngram,11.2050905
+81,--,"Maadaney Yom Tov on Menachot, Hilchot Orlah 53",Vilna Edition,he,"  ט""ו   בשבט ר""ה לאילן. כדתנן בריש ר""ה ופירש""י לאילן לענין מעשר שאין מעשרין פירות האילן שחנטו קודם שבט על שחנטו לאחר שבט שהאילן הולך אחר חנטה ובגמרא מפרש טעמא הואיל ויצא רוב גשמי שנה שכבר עבר רוב",original,1.4173614
+82,--,Gra on Pirkei Avot 1:15:4,"Pirkei Avot with commentary of the Vilna Gaon, Vilna 1836",he,"והוי כו'. כמ״ש (משלי ט״ו ט״ז) טוב כו': 
+",aggresive-ngram,8.225915
+83,--,Footnotes on Mekhilta DeRabbi Shimon Bar Yochai 12:40:4,"Mechilta de-Rabbi Simon b. Jochai, Dr. D. Hoffman, Frankfurt 1905",he,"עי' רש""י בראשית ט״ו י""ג.",aggresive-ngram,11.58255
+84,--,Metzudat David on II Kings 15:2:1,On Your Way,he,"וחמשים ושתים. ט״ו בחיי אביו, ול״ז אחרי מות אביו:
+",aggresive-ngram,8.434857
+85,--,Jerusalem Talmud Shevi'it 13b:1,Mechon Mamre Talmud Yerushalmi,he," לשעבר א""ר זעירא לא מן דעתיה אמר הדא מילתא אלא מן הדא רבי יוחנן ור""ש בן לקיש רבי יעקב בר אחא בשם שמואל בר אבא הביא שליש קודם ט""ו בשבט מתעשר לשעבר אחר ט""ו בשבט מתעשר לבא אמר ר""ז ויאות הרי אתרוג עקרתה חנטו",original,1.3322927
+86,--,Metzudat Zion on Nehemiah 10:38:1,On Your Way,he,עריסותינו. ענין עיסה כמו ראשית עריסותיכם (במדבר ט״ו): ,aggresive-ngram,8.434857
+87,--,Bartenura on Mishnah Makhshirin 6:6:2,On Your Way,he,זובו של זב. דכתיב (שם ט״ו) זובו טמא הוא:,aggresive-ngram,8.27325
+88,--,"Mishneh Torah, Second Tithes and Fourth Year's Fruit 9:9",Wikisource Mishneh Torah,he,"נמצאת למד שהנוטע מ""ד יום קודם ראש השנה עלתה לו שנה ואעפ""כ אין פירות הנטיעה הזאת מותרות בערלה אלא ברביעית עד ט""ו בשבט שהוא ר""ה לאילנות.",original,2.8262196
+89,--,Mesorat HaShas on Tractate Avadim 2:1:1,"Talmud Bavli, Vilna 1883 ed.",he,קדושין דף ט״ו א׳ מכילתא פרשת משפטים:,aggresive-ngram,10.397905
+90,--,Jerusalem Talmud Rosh Hashanah 6a:2,Mechon Mamre Talmud Yerushalmi,he," לו שנה שלימה אסור לקיימן בשביעית אבל אמרו פירות נטיעה זו אסורין עד ט""ו בשבט.  מ""ט ר' יסא בשם ר' יוחנן (ויקרא יט) ובשנה הרביעית.",hebmorph-standard,12.837245
+91,--,Rif Rosh Hashanah 2b:2,Vilna Edition,he," ופירות נטיעה זו אסורין עד חמשה עשר בשבט אם לערלה ערלה אם לרבעי רבעי מנה""מ דכתיב (ויקרא יט )שלש שנים יהיה לכם ערלים לא יאכל ובשנה הרביעית ובשנה החמישית הא כיצד פעמים שברביעית אסורה משום ערלה ופעמים שבחמישית אסורה משום רבעי מכאן שהן אסורין עד ט""ו בשבט ואוקימנא  דף י:",hebmorph-standard,34.103985
+92,--,Rosh Hashanah 15b:3,Wikisource Talmud Bavli,he,"ת""ר אילן שחנטו פירותיו קודם ט""ו בשבט מתעשר לשנה שעברה אחר ט""ו בשבט מתעשר לשנה הבאה אמר רבי נחמיה בד""א באילן שעושה שתי בריכות בשנה",hebmorph-standard,88.17115
+93,--,Ritva on Rosh Hashanah 14b:3,"Chiddushei HaRitva, Konigsberg, 1858.",he, לאשמועינן בכל כיוצא בהן בשני בתי דינין דעלמא דהני נפישי והני מחדדי כנ״ל. ופרכינן אדר׳ יוסי בר יהודא באחד בשבט כב״ש ופרקינן דהכא באתרוג שחנטו פירותיו אשתקד קודם ט״ו בשבט שהיתה שנה שניה ועכשיו נלקטו בא׳,aggresive-ngram,17.957632
+94,--,"Divrey Chamudot on Menachot, Hilchot Orlah 27",Vilna Edition,he," בשבט ולכך אין נזהרים בערלה אלא שלשה שנים ובודאי דלא כתב כן אלא לסברת הרז""ה דמחמיר ומצריך להמתין עד ט""ו בשבט אע""פ שיהיו יותר מג' שנים והיינו כשנטע פחות מל' יום קודם ר""ה דאילו לסברת רש""י אדרבה מאי אין",hebmorph-standard,38.752728
+95,--,Rosh Hashanah 15b:5,Wikisource Talmud Bavli,he,"אבל אילן העושה בריכה אחת כגון דקלים וזיתים וחרובין אע""פ שחנטו פירותיהן קודם ט""ו בשבט מתעשרין לשנה הבאה",hebmorph-standard,71.42424
+96,--,Rosh Hashanah 8a:3,William Davidson Edition - Aramaic,he,באחד בשבט כבית שמאי הכי קאמר שלשה לדברי הכל באחד בשבט מחלוקת בית שמאי ובית הלל ,ngram,17.652962
+97,--,Bartenura on Mishnah Shevuot 6:3:2,On Your Way,he,לתך. חצי כור. ט״ו סאין:,aggresive-ngram,11.675013
+98,--,Metzudat Zion on Ezra 6:11:1,On Your Way,he,יתנסח. ענין עקירה כמו בית גאים יסח ה׳ (משלי ט״ו): ,aggresive-ngram,8.434857
+99,--,"Prisha, Yoreh Deah 294:11:1","Tur Yoreh Deah, Vilna, 1923",he," כל הפירות שחנטו בו קודם ט""ו בשבט כו' שאף ע""פ שתשרי ר""ה לנטיעה ט""ו בשבט הוא ר""ה לאילן: ",hebmorph-standard,84.40305
+100,--,Footnotes on Mekhilta DeRabbi Shimon Bar Yochai 22:4:11,"Mechilta de-Rabbi Simon b. Jochai, Dr. D. Hoffman, Frankfurt 1905",he,"ב""ק ט״ו ע״ב.",ngram,15.374262
+101,--,Rosh on Rosh Hashanah 1:2:4,Vilna Edition,he,"דף י ופירות נטיעה זו אסורין עד ט""ו בשבט אם לערלה ערלה אם לרבעי רבעי. מנהני מילי כתיב ג' שנים יהיה לכם ערלים וכתיב ובשנה הרביעית וכתיב ובשנה החמישית הא כיצד פעמים שברביעית ועדיין אסורה משום ערלה ופעמים שבחמישית ועדיין אסורה משום רבעי מכאן שהן אסורין עד ט""ו בשבט ואוקימנא לה ",original,2.6726022
+102,--,Isaiah 30:31,Tanach with Ta'amei Hamikra,he,כי־מקול יהוה יחת אשור בשבט יכה,original,7.067786
+103,--,Taanit 30b:9,Wikisource Talmud Bavli,he,"אלא ט""ו באב מאי היא אמר רב יהודה אמר שמואל יום שהותרו שבטים לבוא זה בזה",infreq,18.875235
+104,--,Footnotes on Mekhilta DeRabbi Shimon Bar Yochai 12:19:14,"Mechilta de-Rabbi Simon b. Jochai, Dr. D. Hoffman, Frankfurt 1905",he,עי' לעיל לפסוק ט״ו.,ngram,15.374262
+105,--,Footnotes on Mekhilta DeRabbi Shimon Bar Yochai 12:19:15,"Mechilta de-Rabbi Simon b. Jochai, Dr. D. Hoffman, Frankfurt 1905",he,כדלעיל פ' ט״ו.,ngram,15.122073
+106,--,"Maadaney Yom Tov on Menachot, Hilchot Orlah 56",Vilna Edition,he,"  והא   דקאמר פירות נטיעה זו משום שיש חילוק כו'. כלומר אף ע""ג דתשרי כו' ז""ל בספר המאור והאי דקאמר פירות נטיעה זו כלומר שהנטיעה שגורמת לאיסור ערלה היא מושכתה משנה זו לשנה זו עד ט""ו בשבט וכן לרבעי ע""ב וכך העתיקו הר""ן: 
+",original,1.8841465
+107,--,"Maadaney Yom Tov on Menachot, Hilchot Orlah 55",Vilna Edition,he," חנטו פירות הללו ולפיכך הרי הן כאילו חנטו קודם תשרי דחנטה זו משרף שלפני תשרי הוא וכיון דהיינו טעמא דמלתא ליכא לאפלוגי בין נטעה ל' יום לפני ר""ה או פחות מכן וכי תימא אי הכי דכולהו נטיעות אסורין עד ט""ו בשבט למאי",original,1.6463317
+108,--,Bartenura on Mishnah Rosh Hashanah 1:1:7,On Your Way,he," שניה משנות הערלה, ולתשרי של שנה האחרת מונין לה שנה שלישית, ולאחר שנה שלישית כשיגיע אחד בתשרי של שנה רביעית, אם חנטו בנטיעה זו פירות, עדיין הם אסורים משום ערלה. שאע״פ שתשרי ר״ה לנטיעה, ט״ו בשבט ר״ה לאילן",aggresive-ngram,44.201992
+109,--,Metzudat Zion on Isaiah 38:10:1,On Your Way,he,בדמי. ענין כריתה וכן ער מואב נדמה (לעיל ט״ו): ,aggresive-ngram,8.434857
+110,--,Rashbam on Bava Batra 109b:3:2,Vilna Edition,he,משבט לשבט - נחלת שבט ראובן לשבט שמעון:,hebmorph-standard,14.919126
+111,--,"Maadaney Yom Tov on Menachot, Hilchot Orlah 59",Vilna Edition,he,"  נראין   הדברים שנטעו ל' יום לפני ר""ה. כלומר האי דקתני אסורין עד ט""ו בשבט דוקא בנטיעה שהקלת עליה בתחילתה והיינו בשנטעה שלשים יום לפני ראש השנה שעלו לה שלשים יום בשנה שלימה אבל נטען פחות משלשים יום",original,2.3315122
+112,--,Rashba on Rosh Hashanah 14b:2,"Gerlitz edition, published by Oraita",he,"ופירוש שוה לאילן לערלה ולרבעי. לענין מה ששנו בברייתא  דמייתינן לעיל (י, א), ופירות נטיעה זו אסורין עד ט""ו בשבט, והוי טעמא דמילתא  הואיל ונכנס בתוך שנתו של אילן וכדאיתא בירושלמי (ר""ה פ""א, ה""ב).",original,2.362269
+113,--,"Sefer Hamitzvot of Rasag, Communal Laws 17","Sefer Hamitzvot L'Rasag, Warsaw, 1914",he,ומכה בשבט בכלות:,ngram,21.122952
+114,--,Footnotes on Mekhilta DeRabbi Shimon Bar Yochai 20:17:3,"Mechilta de-Rabbi Simon b. Jochai, Dr. D. Hoffman, Frankfurt 1905",he,"מכת פורענותן, ע' תרגום לשמות ט' ט״ו.",aggresive-ngram,9.871099
+115,--,"Sefer Mitzvot Gadol, Volume Two 136:1","Munkatch, 1901",he, פירות האילן שבאו לעונת המעשרות קודם ט״ו בשבט של שנה שלישית אע״פ שנגמרו ונאספו אח״כ בסוף שנה שלישית מתעשרין לשעבר ומפרישין מהן מעשר שני וכן אם באו לעונת המעשרות קודם ט״ו בשבט של שנה רביעית אע״פ שנגמרו,aggresive-ngram,2.4056091
+116,--,Magen Avraham 580:7,Magen Avraham,he,"בה' בשבט. במ""ת גרסי' בשמנ' בשבט: 
+",ngram,20.158684
+117,--,Tosafot on Kiddushin 38a:10:1,Vilna Edition,he," אסור לגדלם ולזורעם והקשה לו רבינו תם דקתני בספרי יש היתר לאחר איסורו משמע שהאיסור נפקע וה""ר משה מפונטייז""א מפרש דערלה יש היתר לאיסורו על ידי ב""ד דפרי ערלה אסורין עד ט""ו בשבט ואם חיסרו ב""ד חדש כסליו הרי",hebmorph-standard,17.116325
+118,--,Rashi on Rosh Hashanah 13b:4:1,WikiSource Rashi,he,"בתר חנטה - לקמן (דף טו:) תנא לה בפירקין אילן שחנטו פירותיו קודם ט""ו בשבט שהוא ר""ה לאילנות מתעשר לשנה שעברה:",hebmorph-standard,59.68197
+119,--,"Ba'er Hetev on Shulchan Arukh, Yoreh De'ah 294:6",Torat Emet 357,he," הרא''ש דהאידנא אין חנטה בשום אילן קודם ט''ו בשבט ולכן אין נזהרין בערלה אלא ג' שנים והא דלא כתבו המחבר משום דס''ל דעיקר כדעת הרמב''ם בס''ה דס''ל אפילו אם חנטו קודם ט''ו בשבט לעולם לא משכחת לה יותר מן ג' שנים דכשנטע פחות מל' יום קודם ר''ה א''צ להמתין עד ט''ו בשבט ולכך השמיט המחבר דברי הרא''ש וע''ל ס''ה: 
+
+",hebmorph-standard,44.46952
+120,--,Minchat Chinukh 247:10:1,"Minchat Chinuch, Piotrkew, 1902",he,"אין לו שכחה כו'. עמ""ש לעיל במצות לקט ופאה ומ""ש מאימתי מונין לו שנה כו' כבר כתבתי לעיל דהשנה הרביעית מתחלת מט""ו בשבט לרבעי עד ט""ו בשבט האחר ודוקא אם נטעו ל' יום קודם ר""ה וע' לעיל באריכות ואין לכפול",original,2.1128776
+121,--,Metzudat Zion on Isaiah 66:17:2,On Your Way,he,בתוך. באמצע וכן ויבתר אותם בתוך (בראשית ט״ו): ,aggresive-ngram,8.339295
+122,--,Psalms 89:33,Tanach with Text Only,he,ופקדתי בשבט פשעם ובנגעים עונם,ngram,23.361595
+123,--,"Rosh on Menachot, Hilchot Orlah 9:1",Vilna Edition,he," לא עלתה לו שנה ואסור לקיימו בשביעית. ופירות נטיעה זו אסורים עד ט""ו בשבט אם לערלה ערלה ואם לרבעי רבעי ופרש""י ופירות נטיעה זו שאמרנו עלתה לו שנה אם חנטו בה פירות לאחר ר""ה של שנה שלישית מיד עדיין אסורין",hebmorph-standard,25.674486
+124,--,Tosafot Yom Tov on Mishnah Sheviit 2:5:3,"Mishnah, ed. Romm, Vilna 1913",he,"רבי שמעון מתיר באילן וכו'. כתב הר""ב לעשות בו מלאכה במוצאי שביעית. ל' הר""ש כל עבודות הצריכות לאילן כדתניא בת""כ *) שבת שבתון [יהיה לארץ] (ויקרא כה) כיון שיצאת שביעית אע""פ שפירותיה שמיטה מותר אתה לעשות מלאכה בגופו של אילן [אבל] פירותיו אסורין עד ט""ו בשבט: 
+",hebmorph-standard,34.162144
+125,--,"Beit Yosef, Orach Chaim 572:2:1","Tur Orach Chaim, Vilna, 1923",he,"' וב' ופגע בתענית ט""ו בשבט דעתי נוטה שהתעני' נדחה לשבת הבאה ואין קובעין תעני' בו שלא מצינו תעני' בר""ה כלל וכו' ומדכתב שבקשו לגזור משמע דדוקא קודם שיתחילו מיירי וכדפרישי' והגה""מ נראה שלא חשש לדקדק לכתוב",hebmorph-standard,22.803217
+126,--,Rashba on Rosh Hashanah 10a:2,"Gerlitz edition, published by Oraita",he,"ופירות נטיעה זו אסורין עד חמשה  עשר בשבט. ואם תאמר אם כן, מפני מה אמרו שלשים  יום לפני ראש השנה עלתה לו שנה, והלא לא עלתה לו עד ט""ו בשבט. ויש לומר דנפקא מינה  שאם עשו לה ט""ו בשבט ראש השנה הייתי אומר שאילו נטעה שלשים יום לפני ט""ו בשבט עלתה  לו שנה.",hebmorph-standard,59.17057
+127,--,Kitzur Shulkhan Aruch Yalkut Yosef 1:666:1,Kitzur Shulkhan Aruch Yalkut Yosef - Torat Emet 357,he,"יום ט''ו בשבט הוא ראש השנה לאילנות. ונפקא מינה לכמה הלכות בדיני ערלה ותרומות ומעשרות, וכמו שיבואר להלן בהלכות ערלה ותרומות ומעשרות. ואסור להתענות ביום ט''ו בשבט. [ילקוט יוסף מועדים עמוד רמז].
+",hebmorph-exact,3.307114
+128,--,Metzudat Zion on Isaiah 18:6:1,On Your Way,he,לעיט. שם עוף דורס וכן וירד העיט (בראשית ט״ו): ,aggresive-ngram,8.434857
+129,--,"Otzar Midrashim, Midrashim on the Ten Lost Tribes, Introduction 1","Otzar Midrashim, New York, 1915",he," ואת האנשים הגלה אשורה (מ״ב ט״ו), ובימי הושע בן אלה עלה שלמנאסר מלך אשור ויצר על שמרון שלש שנים וילכד אותה ויגל את ישראל אשורה וישב אתם בחלח ובחבור נהר גוזן וערי מדי (שם י״ו), ומאה ול""ג שנים אח״כ היתה גלות יהודה. ",aggresive-ngram,8.676291
+130,--,Ritva on Rosh Hashanah 10a:1,"Chiddushei HaRitva, Konigsberg, 1858.",he,ופירות נטיעה זו אסורה עד ט״ו בשבט. י״מ דארישא קאי דוקא דקתני שלשים יום לפני ר״ה עלתה לו שנה דכיון שעלו לה שלשים יום לשנה נחמיר עליה להמשיך שנתה עד ט״ו בשבט שהוא שנתו של אילן אבל כל שנטע פחות משלשים,aggresive-ngram,27.725409
+131,--,Metzudat Zion on Jeremiah 50:29:2,On Your Way,he,רבים. מורים בחצים כמו יסבו עליו רביו (איוב ט״ו): ,aggresive-ngram,8.339295
+132,--,"Bach, Orach Chaim 572:1:1","Tur Orach Chaim, Vilna, 1923",he," בכך ובהגה""מ פ""א מה' שופר ג""כ מפורש לגבי ט""ו בשבט דוחין התעני' לשבת הבא ומביאו ב""י ומשמע נמי אפי' אם התחילו מפסיקין דלא כב""י דמפרש לה דלא התחילו דא""כ מאי דוחין קאמר דאם ר""ל דאין גוזרין בתחלה הא משנה שלמה",hebmorph-standard,16.12431
+133,--,Metzudat Zion on Micah 4:14:4,On Your Way,he,בשבט. בשרביט: ,ngram,23.523006
+134,--,"Shulchan Arukh, Orach Chayim 572:3",Torat Emet Freeware Shulchan Aruch,he,צבור שבקשו לגזור תענית שני וחמישי ושני ופגע בתענית ט''ו בשבט התענית נדחה לשבת הבאה כדי שלא יגזרו תענית בט''ו בשבט שהוא ראש השנה לאילנות.  הגה: מיהו אם התחילו להתענות אין מפסיקין כמו בראש חדש וחול המועד (בית יוסף):,hebmorph-standard,52.971733
+135,--,Metzudat Zion on II Samuel 23:21:1,On Your Way,he,"בשבט. בשרביט:
+",ngram,23.953516
+136,--,Rashi on II Samuel 7:14:1,On Your Way,he,בשבט אנשים . זה הדד ורזון בן אלידע : ,original,7.1154613
+137,--,"Sefer Mitzvot Gadol, Volume Two 139:1","Munkatch, 1901",he," אבל מן החג ואילך מביא ואינו קורא, [בירו׳ פ״ק דבכורים] אין מביאין ביכורים לא מן החדש על הישן ולא מן הישן על החדש כיצד לא יביא מפירות שחנטו קודם ט״ו בשבט על פירות שחנטו אחר ט״ו בו, [במיימוני דלעיל] אחד",aggresive-ngram,1.588554
+138,--,Metzudat Zion on Psalms 89:33:2,On Your Way,he,"בשבט. ר״ל מוסר פורעניות:
+",ngram,18.843569
+139,--,"Mishneh Torah, Second Tithes and Fourth Year's Fruit 9:10",Wikisource Mishneh Torah,he,"כיצד הנוטע אילן מאכל בט""ו באב משנה עשירית ביובל הרי הוא בתוך שני ערלה עד ט""ו בשבט משנת י""ג וכל מה שיוציא האילן בתוך זמן זה הרי הוא ערלה אף על פי שנגמרו לאחר כמה ימים ומט""ו בשבט משנת י""ג ביובל עד ט""ו",original,2.3400726
+140,--,"Mishneh Torah, Second Tithes and Fourth Year's Fruit 9:12",Wikisource Mishneh Torah,he,"נטע הנטיעה מראש חדש תשרי עד ט""ו בשבט מונה לה ג' שנים מיום ליום לערלה ומיום ליום לרבעי וראיתי לגאונים דברים בחשבון ערלה ורבעי אין ראוי להאריך ולהשיב עליהן ובודאי טעות סופרים הם והאמת כבר ביארנו דרכה.",hebmorph-standard,53.062065
+141,--,"Otzar Midrashim, Midrash on Psalms, Addendum to Psalm 118 7","Otzar Midrashim, New York, 1915",he,"ה׳) במה יזכה נער את ארחו לשמר כדברך - אמר שלמה בכל דרכיך דעהו (משלי ג׳), אם ידעת להקב״ה בכל דבר ודבר הוא יישר אורחותיך (שם), וכן דוד אומר שויתי ה' לנגדי תמיד כי מימיני בל אמוט (תהלים ט״ו), ובשביל",aggresive-ngram,23.591936
+142,--,Kol Bo 92:22,Kol Bo 1547 Venice Unknown Publisher,he, עד ט״ו בשבט של שנה רביעית ואם נתעברה השנה נתעברה אף לרבעי. נטעה פחות ממ״ד יום לפני ראש השנה הרי הוא נטע רביעי מר״ה של שנה רבעית ועד סופה. נטעה מראש חדש תשרי עד ט״ו בשבט מונה לרבעי מיום ליום.  ,aggresive-ngram,7.838866
+143,--,Rashba on Rosh Hashanah 10a:1,"Gerlitz edition, published by Oraita",he,"ופירות נטיעה זו אסורין עד  חמשה עשר בשבט. יש מפרשים נטיעה זו, כלומר  שעלו לו שלשים יום לשנה, נחמיר עליה להמשיך שנתה עד ט""ו בשבט שהיא שנתו של אילן.  ולשון זו מסייען. וכן נמי הא דאמרינן פעמים שברביעית ועדיין אסורין משום ערלה,  דאלמא משמע דלא בכולן",hebmorph-standard,28.645828
+144,--,"Ba'er Hetev on Shulchan Arukh, Yoreh De'ah 294:7",Torat Emet 357,he," לאו.  כגון שנטעו בפחות ממ''ד יום לפני ר''ה דהשתא מונין השנה מר''ה לכך לא החמרנו בסופה לאסור כל החניטה מאחר ר''ה עד ט''ו בשבט: 
+
+",hebmorph-standard,51.28577
+145,--,Rosh Hashanah 14b:6,Wikisource Talmud Bavli,he,"ר""ע גמריה אסתפק ליה ולא ידע אי ב""ה באחד בשבט (אומר) אי בט""ו בשבט (אומר)",ngram,15.193711
+146,--,Ritva on Rosh Hashanah 14b:1,"Chiddushei HaRitva, Konigsberg, 1858.",he,ר׳ יוסי בר יהודה וכו'. פי׳ דמספקא ליה אי אזלינן בתר חנטה או בתר לקיטה ולקמן פרכינן וכי אזלינן בתר לקיטה מאי האי דהא לב״ה לא נכנסה שלישית עד ט״ו בשבט (למ״ד) [אלא] כב״ש והא ר״ע מתלמידי ב״ה הוא ועוד ב״ש במקום ב״ה אינה משנה ומפרש לה תלמודא שפיר: ,aggresive-ngram,36.22032
+147,--,"Shulchan Arukh, Yoreh De'ah 331:125",Torat Emet Freeware Shulchan Aruch,he," שני וכן פירות האילן שבאו לעונת המעשרות קודם ט""ו בשבט של שלישית אע""פ שנגמרו ונאספו אח""כ בסוף שנה שלישית מתעשרין לשעבר ומפרישין מהם מעשר שני וכן ואם באו לעונת המעשרות קודם ט""ו בשבט של רביעית אע""פ שנגמרו ונאספו ברביעית מפרישין מהם מעשר עני ואם באו לעונת המעשרות אחר ט""ו בשבט מתעשרין להבא:",hebmorph-standard,44.938686
+148,--,"Shulchan Arukh, Yoreh De'ah 331:126",Torat Emet Freeware Shulchan Aruch,he," לקיטתו בין למעשר בין לשביעית כיצד אם נלקט בשלישית אחר ט""ו בשבט מפרישין ממנו מעשר עני אע""פ שנגמרה בשניה וכן אם נלקט ברביעית קודם ט""ו בשבט מפרישין ממנו מעשר עני נלקט בחמישית אחר ט""ו בשבט מפרישין ממנו מעשר שני ואע""פ שהולכין אחר לקיטתו אתרוג בת ששית שנכנסה לשביעית אפי' היתה כזית ונעשית כככר חייבת במעשרות:",hebmorph-standard,52.978443
+149,--,"Shulchan Arukh, Yoreh De'ah 331:127",Torat Emet 357,he," האביונות של צלף נותנין עליהם חמרי האילן וחמרי זרעים, שאם היו משנה שניה שנכנסה לשלישית ונלקטו קדם ט''ו בשבט, מפרישין מעשר ראשון ואחר כך מפריש מעשר אחר ופודהו, ואחר שפודהו נותנו לעניים. 
+",hebmorph-standard,50.954517
+150,--,Kol Bo 92:3,Kol Bo 1547 Venice Unknown Publisher,he,ומאמתי מונין לערלה משעת נטיעה וראש השנ׳ שלה בא׳ בתשרי ואין מונין לה מר״ה לר״ה אלא הנוטע מ״ד יום לפני ראש השנה עלתה לו שנה ב׳ שבתות ללקיטת הנטיעה ול׳ יום לחשב שנה ופירות נטיעה זו אסורין עד ט״ו בשבט של,aggresive-ngram,7.8629413
+151,--,Rosh Hashanah 14b:8,Wikisource Talmud Bavli,he,"א""ר חנינא ואיתימא ר' חנניא הכא באתרוג שחנטו פירותיו קודם ט""ו דאידך שבט עסקינן ובדין הוא אפילו קודם לכן ומעשה שהיה כך היה",hebmorph-standard,16.780508
+152,--,Rosh Hashanah 14b:9,Wikisource Talmud Bavli,he,"רבינא אמר כרוך ותני לא אחד בשבט היה אלא ט""ו בשבט היה ולא מנהג בית שמאי ובית הלל נהג בה אלא מנהג רבן גמליאל ור' אליעזר נהג בה",hebmorph-standard,65.73008
+153,--,Ikar Tosafot Yom Tov on Mishnah Sheviit 2:5:2,On Your Way,he,כל עבודות הצריכות לאילן כדתניא בת''כ שבת שבתון יהיה לארץ כיון שיצאה שביעית אף על פי שפירותיה שמיטה מותר אתה לעשות מלאכה בגופו של אילן אבל פירותיו אסורים עד ט''ו בשבט. הר''ש:,hebmorph-standard,42.79081

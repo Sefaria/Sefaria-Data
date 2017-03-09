@@ -1,7 +1,7 @@
 from research.mesorat_hashas_sefaria.mesorat_hashas import *
 pm = ParallelMatcher(tokenize_words)
 
-pm.match(index_list=get_texts_from_category("Debug"), parallelize=False, all_to_all=True, use_william=True, verbose=True)
+#pm.match(index_list=get_texts_from_category("Debug"), parallelize=False, all_to_all=True, use_william=True, verbose=True)
 print '-----FILTERING PASUKIM'
 #filter_pasuk_matches("All","mesorat_hashas_indexes.json")
 print '-----FILTERING CLOSE MATCHES'
@@ -15,4 +15,4 @@ print '-----FILTERING CLOSE MATCHES'
 
 #sort_n_save('all/mesorat_hashas_mishnah_filtered.json')
 #count_cats('all/mesorat_hashas_mishnah_filtered.json')
-#daf_with_most_links('all/mesorat_hashas_mishnah_filtered.json')
+daf_with_most_links('all/mesorat_hashas_mishnah_filtered.json')
