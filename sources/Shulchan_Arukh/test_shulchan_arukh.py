@@ -173,46 +173,46 @@ class TestMarkSimanim(object):
 class TestTextFormatting(object):
 
     def test_no_special_formatting(self):
-        raw_text = u'<seif>just some text</seif>'
+        raw_text = u'<seif num="1">just some text</seif>'
         s = Seif(BeautifulSoup(raw_text, 'xml').seif)
         s.format_text('@33', '@34', 'ramah')
-        assert unicode(s) == u'<seif><reg-text>just some text</reg-text></seif>'
+        assert unicode(s) == u'<seif num="1"><reg-text>just some text</reg-text></seif>'
 
     def test_simple_formatting(self):
-        raw_text = u'<seif>some @33bold @34text</seif>'
+        raw_text = u'<seif num="1">some @33bold @34text</seif>'
         s = Seif(BeautifulSoup(raw_text, 'xml').seif)
         s.format_text('@33', '@34', 'b')
-        assert unicode(s) == u'<seif><reg-text>some </reg-text><b>bold </b><reg-text>text</reg-text></seif>'
+        assert unicode(s) == u'<seif num="1"><reg-text>some </reg-text><b>bold </b><reg-text>text</reg-text></seif>'
 
     def test_start_formatting(self):
-        raw_text = u'<seif>@33bold text @34at the beginning</seif>'
+        raw_text = u'<seif num="1">@33bold text @34at the beginning</seif>'
         s = Seif(BeautifulSoup(raw_text, 'xml').seif)
         s.format_text('@33', '@34', 'b')
-        assert unicode(s) == u'<seif><b>bold text </b><reg-text>at the beginning</reg-text></seif>'
+        assert unicode(s) == u'<seif num="1"><b>bold text </b><reg-text>at the beginning</reg-text></seif>'
 
     def test_end_formatting(self):
-        raw_text = u'<seif>the end is @33marked bold</seif>'
+        raw_text = u'<seif num="1">the end is @33marked bold</seif>'
         s = Seif(BeautifulSoup(raw_text, 'xml').seif)
         s.format_text('@33', '@34', 'b')
-        assert unicode(s) == u'<seif><reg-text>the end is </reg-text><b>marked bold</b></seif>'
+        assert unicode(s) == u'<seif num="1"><reg-text>the end is </reg-text><b>marked bold</b></seif>'
 
     def test_random_end_tag(self):
-        raw_text = u'<seif>@34just some text</seif>'
+        raw_text = u'<seif num="1">@34just some text</seif>'
         s = Seif(BeautifulSoup(raw_text, 'xml').seif)
         s.format_text('@33', '@34', 'b')
-        assert unicode(s) == u'<seif><reg-text>just some text</reg-text></seif>'
+        assert unicode(s) == u'<seif num="1"><reg-text>just some text</reg-text></seif>'
 
     def test_double_start_tag(self):
-        raw_text = u'<seif>@33just @33some text</seif>'
+        raw_text = u'<seif num="1">@33just @33some text</seif>'
         s = Seif(BeautifulSoup(raw_text, 'xml').seif)
         with pytest.raises(AssertionError):
             s.format_text('@33', '@34', 'b')
 
     def test_interspersed(self):
-        raw_text = u'<seif>@33just @34some @33text</seif>'
+        raw_text = u'<seif num="1">@33just @34some @33text</seif>'
         s = Seif(BeautifulSoup(raw_text, 'xml').seif)
         s.format_text('@33', '@34', 'b')
-        assert unicode(s) == u'<seif><b>just </b><reg-text>some </reg-text><b>text</b></seif>'
+        assert unicode(s) == u'<seif num="1"><b>just </b><reg-text>some </reg-text><b>text</b></seif>'
 
 class TestXref(object):
 
@@ -222,7 +222,7 @@ class TestXref(object):
         up the data tree.
         """
         basic_text = u'hello @33 world'
-        full_text = u'<seif><reg-text>{}</reg-text></seif>'.format(basic_text)
+        full_text = u'<seif num="1"><reg-text>{}</reg-text></seif>'.format(basic_text)
         s = Seif(BeautifulSoup(full_text, 'xml').seif)
         for child in s.get_child():
             child.mark_references(0, 1, 1, '@33')
@@ -230,7 +230,7 @@ class TestXref(object):
         assert len(s.get_child()) == 1
         for child in s.get_child():
             assert len(child.get_child()) == 1
-        assert unicode(s) == u'<seif><reg-text>hello <xref id="b0-c1-si1-ord1">@33</xref> world</reg-text></seif>'
+        assert unicode(s) == u'<seif num="1"><reg-text>hello <xref id="b0-c1-si1-ord1">@33</xref> world</reg-text></seif>'
 
     def test_multiple(self):
         raw_text = u'<b>some @33 random @33 words @33 here</b>'
