@@ -498,6 +498,34 @@ class Volume(OrderedElement):
         for child in self.get_child():
             child.mark_references(self.get_book_id(), commentary_id, self.num, pattern)
 
+    def validate_simanim(self, complete=True, verbose=True):
+        self.validate_collection(self.get_child(), complete, verbose)
+
+    def validate_seifim(self, complete=True, verbose=True):
+        for siman in self.get_child():
+            assert isinstance(siman, Siman)
+            if not siman.validate_seifim(complete, verbose=False):
+                print "Found in Siman {}".format(siman.num)
+                if verbose:
+                    siman.validate_seifim(complete, verbose)
+
+    def validate_references(self, pattern, code, group=1, key_callback=getGematria):
+        """
+        Pull all matches to a regular expression for each siman, then check that they all go in order
+        :param pattern: regex pattern
+        :param code: The exact code used to identify this reference
+        :param group: regex group to capture the numeric part of the match
+        :param key_callback: (str) -> int
+        callback function to convert the capture group to an integer
+        :return: bool
+        """
+        passed = True
+        for siman in self.get_child():
+            assert isinstance(siman, Siman)
+            passed = siman.validate_references(pattern, code, group, key_callback)
+        return passed
+
+
 class Siman(OrderedElement):
     name = 'siman'
     parent = 'Volume'
@@ -525,6 +553,39 @@ class Siman(OrderedElement):
         for child in self.get_child():
             found = child.mark_references(base_id, com_id, self.num, pattern, found, group)
         return found
+
+    def validate_seifim(self, complete=True, verbose=True):
+        return self.validate_collection(self.get_child(), complete, verbose)
+
+    def validate_references(self, pattern, code, group=1, key_callback=getGematria):
+        """
+        Pull all mathces to a regular expression, then check that they all go in order
+        :param pattern: regex pattern
+        :param code: The exact code used to identify this reference
+        :param group: regex group to capture the numeric part of the match
+        :param key_callback: (str) -> int
+        callback function to convert the capture group to an integer
+        :return: bool
+        """
+        passed = True
+        matches, errors = [], []
+        for seif in self.get_child():
+            matches.extend(seif.grab_references(pattern))
+        enumerated_matches = [key_callback(match.group(group)) for match in matches]
+        previous = 0
+        for i in enumerated_matches:
+            if i - previous != 1:
+                if i == 1 and previous == 22:  # For refs that run through the he alphabet repeatedly, this handles the reset to א
+                    continue
+                errors.append((previous, i))
+                passed = False
+            previous = i
+        if not passed:
+            print 'Errors for code {} in Siman {}:'.format(code, self.num)
+            for error in errors:
+                print '\t{} followed by {}'.format(*error)
+        return passed
+
 
 class Seif(OrderedElement):
     name = 'seif'
@@ -564,7 +625,7 @@ class Seif(OrderedElement):
         for word in text_array:
             if re.search(start_special, word):
                 if is_special:  # Two consecutive special patterns have been found
-                    raise AssertionError('Seif {}: Two consecutive formatting patterns found'.format(self.num))
+                    raise AssertionError('Seif {}: Two consecutive formatting patterns ({}) found'.format(self.num, start_special))
                 else:
                     word = re.sub(start_special, u'', word)
                     if len(element_words) > 0:
@@ -601,6 +662,15 @@ class Seif(OrderedElement):
         for child in self.get_child():
             found = child.mark_references(base_id, com_id, siman, pattern, found, group)
         return found
+
+    def grab_references(self, pattern):
+        """
+        Find all matches to regex pattern in this seif
+        :param pattern: regex pattern
+        :return: list of regex match objects
+        """
+        pattern = re.compile(pattern)
+        return list(pattern.finditer(self.Tag.text))
 
 class TextElement(Element):
     parent = 'Seif'
