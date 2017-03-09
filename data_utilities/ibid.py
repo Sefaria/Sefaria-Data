@@ -54,10 +54,13 @@ class BookIbidTracker(object):
         #todo: raise an error if can't find this sham constilation in table
 
         # recognize what kind of key we are looking for
-        last_depth = self.get_last_depth(index_name, sections)
-        sections = tuple(list(sections) + [None] * (max(len(sections), last_depth) - len(sections))) # choosing the depth of the ref to resolve
-        found_sham = False
+
+        if not sections[-1]:
+            # if the last element of sections is None, that means we might not know how long sections is meant to be. look it up in the table
+            last_depth = self.get_last_depth(index_name, sections)
+            sections = tuple(list(sections) + [None] * (max(len(sections), last_depth) - len(sections))) # choosing the depth of the ref to resolve
         key = []
+        found_sham = False
         if False and not index_name and sections == [None, None]:  # it says only Sham (all were None)
             try:
                 resolvedRef = self._table[(None,(None, None))]

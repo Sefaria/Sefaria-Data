@@ -3,7 +3,7 @@ from sefaria.model import *
 from data_utilities.ibid import BookIbidTracker, IbidDict
 
 
-# todo: sham = ('Tur, Orach Chaim', (220, None)). I want to write an error for this.
+
 
 def setup_module(module):
     global em_tracker, simple_tracker
@@ -62,6 +62,11 @@ def test_tur():
     resolved = tracker.resolve(sham[0], sham[1])
     assert resolved == Ref('Tur, Orach Chaim.220')
 
+    # todo: sham = ('Tur, Orach Chaim', (220, None)). I want to write an error for this.
+    # sham = (None, (220, None))
+    # resolved = tracker.resolve(sham[0], sham[1])
+    # assert resolved == Ref('Tur, Orach Chaim.220')
+
 
 def test_rambam():
     tracker = em_tracker
@@ -81,9 +86,9 @@ def test_rambam():
     assert resolved == Ref('Mishneh Torah, Rest on a Holiday.7.5')
 
     #TODO: fix code so this test will pass
-    # sham = ('Mishneh Torah, Rest on a Holiday', (8,))
-    # resolved = tracker.resolve(sham[0], sham[1])
-    # assert resolved == Ref('Mishneh Torah, Rest on a Holiday.8')
+    sham = ('Mishneh Torah, Rest on a Holiday', (8,))
+    resolved = tracker.resolve(sham[0], sham[1])
+    assert resolved == Ref('Mishneh Torah, Rest on a Holiday.8')
 
 def test_tanakh():
     tracker = simple_tracker
