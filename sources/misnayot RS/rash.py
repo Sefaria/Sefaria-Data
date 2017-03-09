@@ -22,7 +22,6 @@ def getMishnah(line):
 
 def getLine(line):
     if len(line) > 13:
-        line = removeAllTags(line)
         while line[0] == " ":
             line = line[1:]
         return line
@@ -54,7 +53,18 @@ def parse(file):
 
         line = getLine(line)
         if line:
-             text[perek][mishnah].append(line)
+            if line.find("@22") == 0:
+                line = " ".join(line.split(" ")[1:])
+            if line.find("@58") >= 0 or line.find("@78") >= 0:
+                matches = re.findall("@58\S+|@78\S+", line)
+                for match in matches:
+                    line = line.replace(match, "")
+            line = line.replace("@11", "<b>").replace("@33", "</b>")
+            line = line.replace("@66", "<small>(").replace("@77", ")</small>")
+            line = removeAllTags(line)
+            lines = line.split("<b>")[1:]
+            for each_line in lines:
+                text[perek][mishnah].append("<b>"+each_line)
         prev_line = line
 
     for perek in text:
@@ -77,6 +87,7 @@ def create_schema(title, mishnah_title):
     root = JaggedArrayNode()
     root.add_primary_titles(title, u"רש משמץ על {}".format(he_title))
     root.add_structure(["Perek", "Mishnah", "Paragraph"])
+    root.toc_zoom = 2
     index_to_post = {
         "schema": root.serialize(),
         "title": title,
@@ -104,7 +115,7 @@ if __name__ == "__main__":
             },
             {
                 "lang": "he",
-                "text": u"רש משנץ",
+                "text": u'ר"ש משאנץ',
                 "primary": True
             }
         ]
@@ -112,7 +123,7 @@ if __name__ == "__main__":
     post_term(term_obj)
     files = [f for f in listdir("./") if isfile(f) and f.endswith(".txt")]
     start = False
-    file_start = "bikkurim.txt"
+    file_start = "kelim.txt"
 
     for file in files:
         if file != file_start and start is not True:

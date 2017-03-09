@@ -58,8 +58,9 @@ def create_schema_and_map(title, he_tile, filename, new_structure):
     root.validate()
     return root.serialize(), mapping
 
+
 if __name__ == "__main__":
-    title = sys.argv[1]
+    title = "Siddur, Edot HaMizrach"
     he_title = library.get_index(title).get_title('he')
     filename = "siddur.xml"
     new_structure = library.get_index(title).schema['sectionNames'][1:]
