@@ -1102,6 +1102,7 @@ def GetAbbrevs(dafwords, rashiwords, char_threshold, startBound, endBound, with_
             for ir, rword in enumerate(rashiwords):
                 if abbrev_range and ir in abbrev_range:
                     continue
+
                 isMatch, offset, isNum = isAbbrevMatch(ir,cleanAbbrev(dword),rashiwords, char_threshold, with_num_abbrevs=with_num_abbrevs)
                 if isMatch:
                     istartcontext = 3 if id >= 3 else id
@@ -1137,7 +1138,7 @@ def GetAllMatches(curDaf, curRashi, startBound, endBound,
     dafwords = curDaf.allWords[startBound:endBound+1]
     dafhashes = curDaf.wordhashes[startBound:endBound+1]
 
-    if curRashi.place == 3:
+    if curRashi.place == 5:
         pass
 
     allabbrevinds, allabbrevs = GetAbbrevs(dafwords, curRashi.words, char_threshold, startBound, endBound, with_num_abbrevs=with_num_abbrevs)
@@ -1571,7 +1572,8 @@ def IsStringMatch(orig, target, threshold):  # string,string,double,out double
         return (score, True)
 
     # wait: if one is a substring of the other, then that can be considered an almost perfect match
-    if orig.startswith(target) or target.startswith(orig):
+    # check that the word is at least half as long as the bigger one
+    if (orig.startswith(target) or target.startswith(orig)) and 1.0 * min(len(target), len(orig)) / max(len(target), len(orig)) > 0.5:
         score = -1
         return (score, True)
 
