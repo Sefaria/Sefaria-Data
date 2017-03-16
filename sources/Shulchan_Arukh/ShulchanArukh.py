@@ -579,9 +579,10 @@ class Siman(OrderedElement):
         for i in enumerated_matches:
             if i - previous != 1:
                 if i == 1 and previous == 22:  # For refs that run through the he alphabet repeatedly, this handles the reset to א
-                    continue
-                errors.append((previous, i))
-                passed = False
+                    pass
+                else:
+                    errors.append((previous, i))
+                    passed = False
             previous = i
         if not passed:
             print 'Errors for code {} in Siman {}:'.format(code, self.num)
