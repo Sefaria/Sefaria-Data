@@ -11,6 +11,7 @@ import pageranklowram
 import json
 import logging
 import math
+import time as pytime
 from collections import defaultdict, OrderedDict
 from sefaria.model import *
 from sefaria.settings import SEARCH_ADMIN
@@ -177,6 +178,21 @@ def make_mapping():
                     'analyzer': 'hebrew',
                     'search_analyzer': 'hebrew_exact'
                 },
+                'hebmorph-standard-no-norm': {
+                    'type': 'string',
+                    'analyzer': 'hebrew',
+                    'norms': {
+                        'enabled': False
+                    }
+                },
+                'hebmorph-exact-no-norm': {
+                    'type': 'string',
+                    'analyzer': 'hebrew',
+                    'search_analyzer': 'hebrew_exact',
+                    'norms': {
+                        'enabled': False
+                    }
+                },
                 'ngram': {
                     'type': 'string',
                     'analyzer': 'sefaria-ngram'
@@ -200,6 +216,10 @@ def make_mapping():
                 "ref": {
                     'type': 'string',
                     'index': 'not_analyzed'
+                },
+                "comp-date": {
+                    'type': 'integer',
+                    'index': 'not_analyzed'
                 }
             }
         }
@@ -214,6 +234,10 @@ def orderid2int(orderid):
 
 
 def index_all(merged=False, skip=0):
+    print "WARNING: YOU'RE ABOUT TO DELETE EVERYTHING" + ("#"*100)
+    for i in reversed(range(10)):
+        print "{} seconds until complete desctruction".format(i) + ("-"*100)
+        pytime.sleep(1)
     if skip == 0:
         make_index()
     index_all_sections(skip=skip, merged=merged)
@@ -236,6 +260,16 @@ def make_text_index_document(tref, version, lang):
 
     content = bleach.clean(content, strip=True, tags=())
     content = strip_cantillation(content,strip_vowels=True)
+
+    index = oref.index
+
+    tp = index.best_time_period()
+    if not tp is None:
+        comp_start_date = tp.start
+    else:
+        comp_start_date = 2017
+
+
     return {
         "ref": oref.normal(),
         "ref_order": oref.order_id(),
@@ -246,9 +280,12 @@ def make_text_index_document(tref, version, lang):
         "lang": lang,
         "hebmorph-standard": content,
         "hebmorph-exact": content,
+        "hebmorph-standard-no-norm": content,
+        "hebmorph-exact-no-norm": content,
         "ngram": content,
         "infreq": content,
         "aggresive-ngram": content,
+        "comp-date": comp_start_date,
         "original": content
     }
 
@@ -379,50 +416,69 @@ def unicode_number(u):
     return n
 
 
-def query(q, fields, query_type, size):
+def query(q, fields, query_type, size, from_int, sort_type, search_analyzer=None):
     """
 
     :param q: query string
     :param fields: string or list of fields to query
     :param query_type: so far, multi_match, match and match_phrase are supported
     :param size: max num docs to ret
+    :param sort_type: either 'pagerank' or 'ref_order_int' or 'ref_year'
     :return: query results from ES
     """
 
     q = re.sub('(\S)"(\S)', '\1\u05f4\2', q)  # Replace internal quotes with gershaim.
 
     if query_type == "multi_match":
-        full_query = {
+        inner_query = {
+            "multi_match": {
+                "type": "most_fields",
+                "query": q,
+                "fields": list(fields)
+            }
+        }
 
-          "query":{
-            "function_score":{
-            "query": {
-                "multi_match": {
-                    "type": "most_fields",
-                    "query": q,
-                    "fields": fields
-                }
-            },
-            "field_value_factor": {
-                "field": "pagerank"
-            }}
-        }}
+        if search_analyzer:
+            inner_query['multi_match']["analyzer"] = search_analyzer
+
+        query_body = {
+            "query": inner_query
+        }
+
         fields = fields[0]
     else:
+        inner_query = {
+            "{}".format(query_type): {
+                "{}".format(fields): {
+                    "query": q
+                }
+            }
+        }
+
+        if search_analyzer:
+            inner_query[query_type][fields]["analyzer"] = search_analyzer
+
+
+        query_body = {
+            "query": inner_query
+        }
+
+    if not isinstance(sort_type, tuple):
+        query_body["field_value_factor"] = {
+            "field": sort_type
+        }
+
         full_query = {
             "query": {
-                "function_score": {
-                    "query": {
-                        "{}".format(query_type): {
-                            "{}".format(fields): q
-                        }
-                },
-                    "field_value_factor": {
-                        "field": "pagerank"
-                    }
+                "function_score": query_body
             }
-
-            }
+        }
+    else:
+        full_query = {
+            "query": query_body,
+            "sort": [{
+                "ref_order": {}
+            }]
         }
 
     full_query["highlight"] = {
@@ -450,6 +506,9 @@ def query(q, fields, query_type, size):
     }
     """
     full_query['size'] = size
+    full_query['from'] = from_int
+
+    #print json.dumps(full_query)
     res = es.search(full_query, index=TEST_INDEX_NAME, doc_type="a")
 
     return res
@@ -589,6 +648,141 @@ def calculate_pagerank():
     json.dump(sorted_ranking,f,indent=4)
     f.close()
 
+def validate_csv_files_exist():
+    test_query_list = test_en_query_list + test_he_query_list
+
+    for q in test_query_list:
+        with open("training_files/{}.csv".format(q), 'rb') as f:
+            pass
+        with open("training_files_done/{}.csv".format(q), 'rb') as f:
+            pass
+
+
+def get_training_set_dict():
+    d = defaultdict(dict)
+    test_query_list = test_en_query_list + test_he_query_list
+    for q in test_query_list:
+        csvfile =  open("training_files_done/{}.csv".format(q), 'rb')
+        reader = unicodecsv.DictReader(csvfile)
+        for row in reader:
+            rel = row["Relevance"]
+            if rel == u"--" or rel.strip() == u"":
+                score = 4
+            elif rel.strip() == u"n":
+                score = -4
+            elif rel.strip() == u"m":
+                score = 1
+            else:
+                raise Exception("bad score {} {}".format(q, row["Id"]))
+            d[q][row["Ref"]] = score
+
+    return d
+
+
+def score_position_weight(pos):
+    """
+    this has been mathematically proven to be the ideal curve for scoring
+    max 1, min 0.5. inflection point around 17-ish
+    :param pos: >= 0
+    :return:
+    """
+    try:
+        result = 0.5 + (0.5 / (1 + math.exp((pos - 16)/4)))
+    except OverflowError:
+        result = 0.5  # it assymptotes to 0.5 for high pos
+    return result
+
+
+def score_algo(fields, query_type, sort_type, search_analyzer, consScore, training_dict):
+    test_query_list = test_he_query_list
+
+    page_size = 100
+
+    total_score = 0.0
+    for iq, q in enumerate(test_query_list):
+
+        page = 0
+        result_rows = []
+        temp_result_rows = None
+        while (temp_result_rows is None or len(temp_result_rows) > 0) and len(result_rows) < 20000:
+            results = query(q, fields, query_type, page_size, page * page_size, sort_type, search_analyzer=search_analyzer)
+            if page == 0:
+                print "\t{} - {}/{} num results: {}".format(q, iq, len(test_query_list), results['hits']['total'])
+            field = fields if isinstance(fields, str) else fields[0]
+            temp_result_rows = query_result_to_csv_rows(results, field)
+            result_rows += temp_result_rows
+            page += 1
+
+        for irow, row in enumerate(result_rows):
+            tempScore = training_dict[q].get(row["Ref"], 0)
+            if consScore:
+                total_score += tempScore
+            else:
+                total_score += (score_position_weight(irow) * tempScore)
+
+    avg_score = total_score / len(test_query_list)
+
+    return avg_score
+
+
+def test_all():
+    training_dict = get_training_set_dict()
+
+    query_types = ['match_phrase']
+    fieldss = ['hebmorph-standard', 'hebmorph-exact', 'original', 'aggresive-ngram', 'infreq']
+    sort_types = ['pagerank-original'] #['pagerank', 'pagerank-original', 'ref_order_int', ('comp-date', 'ref_order')]
+
+    query_settings = []
+    for qt in query_types:
+        for fields in fieldss:
+            for st in sort_types:
+                if fields == 'hebmorph-exact':
+                    query_settings+= [(qt, fields, st, 'sefaria-semi-exact')]
+                query_settings += [(qt, fields, st, None)]
+
+    """
+    query_types = ['multi_match']
+    fieldss = [('ngram', 'hebmorph-standard'), ('infreq', 'hebmorph-standard'), ('infreq', 'hebmorph-standard', 'aggresive-ngram', 'original')]
+    sort_types = ['pagerank', 'ref_order_int', ('comp-date', 'ref_order')]
+
+    for qt in query_types:
+        for fields in fieldss:
+            for st in sort_types:
+                if fields == 'hebmorph-exact':
+                    query_settings += [(qt, fields, st, 'sefaria-semi-exact')]
+                query_settings += [(qt, fields, st, None)]
+    """
+
+    all_scores = defaultdict(dict)
+
+    for i, (query_type, fields, sort_type, search_analyzer) in enumerate(query_settings):
+        print '{}/{} - {}'.format(i, len(query_settings), query_settings[i])
+        is_time_ordered = isinstance(sort_type, tuple)
+        temp_score = score_algo(fields, query_type, sort_type, search_analyzer, is_time_ordered, training_dict)
+
+        key = (query_type, fields, search_analyzer)
+        all_scores[key][sort_type] = temp_score
+
+    sort_by_pagerank = sorted(all_scores.items(), key=lambda x: x[1]['pagerank-original'], reverse=True)
+
+    print sort_by_pagerank
+    """
+    f = open('scored_algos.csv', 'wb')
+    csv = unicodecsv.DictWriter(f, ['Query Type', 'Fields', 'Search Analyzer', 'PageRank-Log', 'PageRank', 'RefOrderInt', 'CompDate'])
+    csv.writeheader()
+
+    for (query_type, fields, search_analyzer), sort_dict in sort_by_pagerank:
+        csv.writerow({'Query Type': query_type,
+                      'Fields': fields,
+                      'Search Analyzer': search_analyzer,
+                      'PageRank': sort_dict['pagerank'],
+                      'RefOrderInt': sort_dict['ref_order_int'],
+                      'CompDate': sort_dict[('comp-date', 'ref_order')]
+                      })
+    """
+
+
+
 
 #index_all(merged=False, skip=0)
 #yo = query('אמר',['ngram','ngram.hebmorph'],True)
@@ -622,4 +816,6 @@ def calculate_pagerank():
 }
 """
 
-generate_manual_train_set()  # wow, exactly 613 lines! this is serendipitous (TODO if I add more lines, this comment will look stupid)
+#generate_manual_train_set()  # wow, exactly 613 lines! this is serendipitous (TODO if I add more lines, this comment will look stupid)
+
+test_all()
