@@ -61,7 +61,7 @@ class Element(object):
             child_cls = module_locals[self.child]
             return child_cls(self.Tag.find(child_cls.name, recursive=False))
 
-    def _add_child(self, child, raw_text, num):
+    def _add_child(self, child, raw_text, num, enforce_order=False):
         """
         Add a new ordered child to the parent. Takes raw text and wraps in a child tag.
         :param child: Child to be added. Must be the child type specified by the parent class
@@ -78,13 +78,11 @@ class Element(object):
         if len(children) == 0:
             self.Tag.append(current_child.Tag)
         else:
-            # assert that volumes are stored in order
-            assert OrderedElement.validate_collection(children)
             for volume in children:
                 if current_child.num == volume.num:
                     raise DuplicateChildError(u'{} appears more than once!'.format(current_child.num))
 
-                if current_child.num < volume.num:
+                if current_child.num < volume.num and enforce_order:
                     volume.Tag.insert_before(current_child.Tag)
                     break
             else:
@@ -107,7 +105,7 @@ class Element(object):
             special['found_after'] = found_after
         self.Tag.append(special)
 
-    def _mark_children(self, pattern, start_mark, specials, add_child_callback=None):
+    def _mark_children(self, pattern, start_mark, specials, add_child_callback=None, enforce_order=False):
         """
         Mark up simanim in xml.
         :param pattern: regex pattern. The first capture group should indicate the siman number
@@ -165,7 +163,7 @@ class Element(object):
                     if new_child:
                         if child_num > 0:  # add the previous siman, will be -1 if this is the first siman marker in the text
                             assert len(current_child) > 0
-                            add_child_callback(u''.join(current_child), child_num)
+                            add_child_callback(u''.join(current_child), child_num, enforce_order)
                             current_child = []
                         child_num = getGematria(new_child.group(1))
                         continue
@@ -175,7 +173,7 @@ class Element(object):
                         special_mode = True
                         if child_num > 0:
                             assert len(current_child) > 0
-                            add_child_callback(u''.join(current_child), child_num)
+                            add_child_callback(u''.join(current_child), child_num, enforce_order)
                             current_child = []
                             found_after = child_num
                             child_num = -1
@@ -196,7 +194,7 @@ class Element(object):
                 if special_mode:
                     self.add_special(u''.join(current_child), specials[special_pattern]['name'], found_after)
                 else:
-                    add_child_callback(u''.join(current_child), child_num)
+                    add_child_callback(u''.join(current_child), child_num, enforce_order)
 
 
     def __unicode__(self):
@@ -314,14 +312,16 @@ class Record(Element):
         #Todo
         pass
 
-    def add_volume(self, raw_text, vol_num):
+    def add_volume(self, raw_text, vol_num, enforce_order=True):
         """
         Add a new volume to the book. Takes raw text and wraps in a volume tag.
         :param raw_text: Text to be added
         :param vol_num: volume number
+        :param enforce_order: If True, will add volumes according to thier numerical order, otherwise, the will appear
+        in the order they were added.
         :return: Volume object
         """
-        return self._add_child(Volume, raw_text, vol_num)
+        return self._add_child(Volume, raw_text, vol_num, enforce_order)
 
     def remove_volume(self, num):
         for child in self.get_child():
@@ -433,7 +433,10 @@ class OrderedElement(Element):
             if not validation(previous_element):
                 passed = False
                 if verbose:
-                    print 'misordered element at location {}'.format(element.num)
+                    if previous_element is None:
+                        print 'First element is element {}'.format(element.num)
+                    else:
+                        print 'misordered element: {} followed by {}'.format(previous_element.num, element.num)
             previous_element = element
         if verbose and passed:
             print 'Validation Successful'
@@ -451,16 +454,16 @@ class Volume(OrderedElement):
         else:
             return Commentary(self.Tag.parent).id
 
-    def _add_siman(self, raw_text, siman_num):
+    def _add_siman(self, raw_text, siman_num, enforce_order=False):
         """
         Add a new siman to the volum. Takes raw text and wraps in a siman tag.
         :param raw_text: Text to be added
         :param siman_num: siman number
         :return: Siman object
         """
-        return self._add_child(Siman, raw_text, siman_num)
+        return self._add_child(Siman, raw_text, siman_num, enforce_order)
 
-    def mark_simanim(self, pattern, start_mark=None, specials=None):
+    def mark_simanim(self, pattern, start_mark=None, specials=None, enforce_order=False):
         """
         Mark up simanim in xml.
         :param pattern: regex pattern. The first capture group should indicate the siman number
@@ -472,14 +475,14 @@ class Volume(OrderedElement):
         mark a return to standard parsing. If not set, the only a single line will be marked.
         :return:
         """
-        self._mark_children(pattern, start_mark, specials, add_child_callback=self._add_siman)
+        self._mark_children(pattern, start_mark, specials, add_child_callback=self._add_siman, enforce_order=enforce_order)
 
-    def mark_seifim(self, pattern, start_mark=None, specials=None):
+    def mark_seifim(self, pattern, start_mark=None, specials=None, enforce_order=False):
         errors = []
         for siman in self.get_child():
             assert isinstance(siman, Siman)
             try:
-                siman.mark_seifim(pattern, start_mark, specials)
+                siman.mark_seifim(pattern, start_mark, specials, enforce_order)
             except DuplicateChildError as e:
                 errors.append(e.message)
         return errors
@@ -532,12 +535,12 @@ class Siman(OrderedElement):
     child = 'Seif'
     multiple_children = True
 
-    def _add_seif(self, raw_text, seif_number):
-        self._add_child(Seif, raw_text, seif_number)
+    def _add_seif(self, raw_text, seif_number, enforce_order=False):
+        self._add_child(Seif, raw_text, seif_number, enforce_order)
 
-    def mark_seifim(self, pattern, start_mark=None, specials=None):
+    def mark_seifim(self, pattern, start_mark=None, specials=None, enforce_order=False):
         try:
-            self._mark_children(pattern, start_mark, specials, add_child_callback=self._add_seif)
+            self._mark_children(pattern, start_mark, specials, add_child_callback=self._add_seif, enforce_order=enforce_order)
         except DuplicateChildError as e:
             raise DuplicateChildError('Siman {}, Seif {}'.format(self.num, e.message))
 
@@ -576,9 +579,10 @@ class Siman(OrderedElement):
         for i in enumerated_matches:
             if i - previous != 1:
                 if i == 1 and previous == 22:  # For refs that run through the he alphabet repeatedly, this handles the reset to א
-                    continue
-                errors.append((previous, i))
-                passed = False
+                    pass
+                else:
+                    errors.append((previous, i))
+                    passed = False
             previous = i
         if not passed:
             print 'Errors for code {} in Siman {}:'.format(code, self.num)

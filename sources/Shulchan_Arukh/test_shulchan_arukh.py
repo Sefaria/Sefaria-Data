@@ -69,6 +69,14 @@ class TestMarkSimanim(object):
         v.mark_simanim(u'@00([\u05d0-\u05ea])')
 
         assert len(v.get_child()) == 2
+        assert unicode(v) == u'<volume num="1"><siman num="2">סימן שני\n</siman><siman num="1">סימן ראשון</siman></volume>'
+
+    def test_out_of_order_enforced(self):
+        raw_text = u'<volume num="1">@00ב\nסימן שני\n@00א\nסימן ראשון</volume>'
+        v = Volume(BeautifulSoup(raw_text, 'xml').volume)
+        v.mark_simanim(u'@00([\u05d0-\u05ea])', enforce_order=True)
+
+        assert len(v.get_child()) == 2
         assert unicode(v) == u'<volume num="1"><siman num="1">סימן ראשון</siman><siman num="2">סימן שני\n</siman></volume>'
 
     def test_duplicate_siman(self):

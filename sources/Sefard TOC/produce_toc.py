@@ -4,7 +4,7 @@ __author__ = 'stevenkaplan'
 from bs4 import BeautifulSoup
 from bs4 import NavigableString
 from sefaria.model import *
-from sefaria.helper.schema import migrate_to_complex_structure, cascade
+from sefaria.helper.schema import migrate_to_complex_structure, cascade, change_node_structure
 import sys
 
 def fix(title):
@@ -44,16 +44,16 @@ def create_schema_and_map(title, he_tile, filename, new_structure):
                         orig_ref = "{} {}:{}".format(title, main_count, child_count)
                         mapping[orig_ref] = "{}, {}, {}".format(title, node_en, child_en)
                         child_node.add_primary_titles(child_en, child_he)
-                        child_node.add_structure(new_structure)
+                        child_node.add_structure(new_structure[2:])
                         new_node.append(child_node)
             else:
                 new_node = JaggedArrayNode()
                 node_he, node_en = main_tag['text'].split(" / ")
                 node_en = fix(node_en)
-                orig_ref = "{} {}".format(title, main_count)
+                orig_ref = "{} {}:1".format(title, main_count)
                 mapping[orig_ref] = "{}, {}".format(title, node_en)
                 new_node.add_primary_titles(node_en, node_he)
-                new_node.add_structure(new_structure)
+                new_node.add_structure(new_structure[2:])
             root.append(new_node)
     root.validate()
     return root.serialize(), mapping
@@ -61,8 +61,12 @@ def create_schema_and_map(title, he_tile, filename, new_structure):
 
 if __name__ == "__main__":
     title = "Siddur, Edot HaMizrach"
-    he_title = library.get_index(title).get_title('he')
+    i = library.get_index(title)
+    i.set_title("Siddur Edot HaMizrach")
+    i.save()
+    title = title.replace(",", "")
+    he_title = i.get_title('he')
     filename = "siddur.xml"
-    new_structure = library.get_index(title).schema['sectionNames'][1:]
+    new_structure = i.schema['sectionNames']
     schema, mapping = create_schema_and_map(title, he_title, filename, new_structure)
     migrate_to_complex_structure(title, schema, mapping)

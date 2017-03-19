@@ -81,7 +81,7 @@ class Rashba:
         index = {
             "schema": root.serialize(),
             "title": "Rashba on {}".format(self.tractate),
-            "categories": ["Commentary2", "Talmud", "Rashba"]
+            "categories": ["Talmud", "Commentary", "Rashba"]
         }
         post_index(index)
 
@@ -192,12 +192,31 @@ class Rashba:
 
 
 
+    def postTerm(self):
+        post_term({
+            "name": "Rashba",
+            "scheme": "commentary_works",
+            "titles": [
+                {
+                    "lang": "en",
+                    "text": "Rashba",
+                    "primary": True
+                },
+                {
+                    "lang": "he",
+                    "text": u'רשב"ע',
+                    "primary": True
+                }
+            ]
+        })
 
 if __name__ == "__main__":
+
     rashba = Rashba("no_matches.txt", "Bava Kamma")
-    rashba.create_schema()
+    #rashba.postTerm()
+    #rashba.create_schema()
     #rashba.makeOneFile()
     #rashba.reportProblems("RS.txt")
     rashba.getTextAndReportProblems("RS.txt")
     rashba.postLinks()
-    rashba.postText()
+    #rashba.postText()

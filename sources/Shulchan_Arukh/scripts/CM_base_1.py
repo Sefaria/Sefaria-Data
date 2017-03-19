@@ -31,7 +31,7 @@ patterns = [i.format(ur'[\u05d0-\u05ea]{1,3}') for i in patterns]
 
 for code, pattern in zip(codes, patterns):
     if code == u'@68':
-        volume.validate_references(pattern, code, key_callback=he_ord)
+        volume.validate_references(ur'@68([\u05d0-\u05ea])', code, key_callback=he_ord)
     else:
         volume.validate_references(pattern, code)
 

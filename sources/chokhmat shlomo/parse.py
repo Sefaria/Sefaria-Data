@@ -254,12 +254,12 @@ class Maharshal:
             gemara_ref = self.getGemaraRef(ref)
             self.links_to_post.append({
                 "refs": [
-                    "Maharam on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line),
+                    "Maharshal on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line),
                     gemara_ref
                 ],
                 "type": "commentary",
                 "auto": True,
-                "generated_by": "Maharam on "+masechet+" linker"
+                "generated_by": "Maharshal on "+masechet+" linker"
             })
 
     def getGemaraRef(self, ref):
@@ -276,16 +276,16 @@ class Maharshal:
         self.maharam_line+=1
         self.gemara_line+=1
         if results['gemara'][self.gemara_line] == '0':
-            self.missing_ones.append("Maharam on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line))
+            self.missing_ones.append("Maharshal on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line))
         else:
             self.links_to_post.append({
             "refs": [
                      results['gemara'][self.gemara_line],
-                    "Maharam on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line)
+                    "Maharshal on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line)
                 ],
             "type": "commentary",
             "auto": True,
-            "generated_by": "Maharam on "+masechet+" linker",
+            "generated_by": "Maharshal on "+masechet+" linker",
          })
 
 
@@ -345,7 +345,7 @@ class Maharshal:
                     self.Gemara(daf, results[daf])
                 elif category == 'paragraph' and self.maharam_line == 0:
                     self.maharam_line += 1
-        #post_link(self.links_to_post)
+        post_link(self.links_to_post)
         self.comm_wout_base.close()
 
 
@@ -389,7 +389,8 @@ if __name__ == "__main__":
         ]
     }
     post_term(term_obj)
-    files = [file for file in os.listdir(".") if file.endswith("txt2.txt")]
+    not_those = ["bava batra.txt2.txt", "bava kamma.txt2.txt", "bava metzia.txt2.txt"]
+    files = [file for file in os.listdir(".") if file.endswith("txt2.txt") and file not in not_those]
     files = ["eruvin.txt2.txt", "niddah.txt2.txt", "gittin.txt2.txt"]
     start_file = "sotah.txt2.txt"
     for count, file in enumerate(files):

@@ -33,7 +33,7 @@ def createIndex(enTitle):
 
     index = {
         "title": "Ritva on "+enTitle,
-        "categories": ["Talmud", "Ritva"],
+        "categories": ["Talmud", "Bavli", "Commentary", "Ritva", "Seder Moed"],
         "schema": root.serialize()
     }
 
@@ -162,13 +162,13 @@ def match_and_link(dhs, masechet):
 
     for daf in dhs:
         talmud_text = TextChunk(Ref(masechet+"."+AddressTalmud.toStr("en", daf)), lang="he")
-        result = match_ref(talmud_text, dhs[daf], base_tokenizer=base_tokenizer)['matches']
-        for count, line in enumerate(result):
-            if line is None:
-                continue
-            Ritva_end = "Ritva on "+masechet+"."+str(AddressTalmud.toStr("en", daf))+"."+str(count+1)
-            talmud_end = line.normal()
-            links.append({'refs': [Ritva_end, talmud_end], 'type': 'commentary', 'auto': 'True', 'generated_by': masechet+"Ritva"})
+        result = match_ref(talmud_text, dhs[daf], base_tokenizer=base_tokenizer, create_ranges=True)['matches']
+        if result != [None]:
+            for count, line in enumerate(result):
+                assert line is not None
+                Ritva_end = "Ritva on "+masechet+"."+str(AddressTalmud.toStr("en", daf))+"."+str(count+1)
+                talmud_end = line.normal()
+                links.append({'refs': [Ritva_end, talmud_end], 'type': 'commentary', 'auto': 'True', 'generated_by': masechet+"Ritva"})
     post_link(links)
 
 
@@ -198,5 +198,5 @@ if __name__ == "__main__":
         "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001201716",
         "versionTitle": versionTitle[file]
         }
-        post_text("Ritva on "+file, send_text)
+        #post_text("Ritva on "+file, send_text)
         match_and_link(dhs, file)
