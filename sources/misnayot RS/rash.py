@@ -85,7 +85,7 @@ def create_schema(title, mishnah_title):
     index = Index().load({"title": mishnah_title})
     he_title = index.get_title("he")
     root = JaggedArrayNode()
-    root.add_primary_titles(title, u"רש משמץ על {}".format(he_title))
+    root.add_primary_titles(title, u'ר"ש משאנץ על {}'.format(he_title))
     root.add_structure(["Perek", "Mishnah", "Paragraph"])
     root.toc_zoom = 2
     index_to_post = {
@@ -97,13 +97,28 @@ def create_schema(title, mishnah_title):
         "base_text_titles": [index.get_title("en")]
     }
     post_index(index_to_post)
+    if mishnah_title == "Mishnah Middot":
+        index = Index().load({"title": mishnah_title})
+        he_title = index.get_title("he")
+        root = JaggedArrayNode()
+        root.add_primary_titles(title, u"רבינו שמעיה על משנה מדות")
+        root.add_structure(["Perek", "Mishnah", "Paragraph"])
+        root.toc_zoom = 2
+        index_to_post = {
+            "schema": root.serialize(),
+            "title": title,
+            "categories": ["Mishnah", "Commentary", "R' Shemaiah"],
+            "base_text_mapping": "many_to_one",
+            "dependence": "Commentary",
+            "base_text_titles": [index.get_title("en")]
+        }
+        post_index(index_to_post)
 
 
 
 
 
-
-if __name__ == "__main__":
+def post_terms():
     term_obj = {
         "name": "Rash MiShantz",
         "scheme": "commentary_works",
@@ -121,16 +136,35 @@ if __name__ == "__main__":
         ]
     }
     post_term(term_obj)
-    files = [f for f in listdir("./") if isfile(f) and f.endswith(".txt")]
-    start = False
-    file_start = "kelim.txt"
+    term_obj = {
+        "name": "R' Shemaiah",
+        "scheme": "commentary_works",
+        "titles": [
+            {
+                "lang": "en",
+                "text": "R' Shemaiah",
+                "primary": True
+            },
+            {
+                "lang": "he",
+                "text": u'רבינו שמעיה',
+                "primary": True
+            }
+        ]
+    }
+    post_term(term_obj)
 
+if __name__ == "__main__":
+    #post_terms()
+    files = [f for f in listdir("./") if isfile(f) and f.endswith(".txt")]
+    files = ["middot.txt"]
     for file in files:
-        if file != file_start and start is not True:
-            continue
-        start = True
+        print file
         text = parse(file)
-        title = "Rash MiShantz on Mishnah "+file.replace('.txt', '').title()
+        if file == "middot.txt":
+            title = "R' Shemaiah on Mishnah Middot"
+        else:
+            title = "Rash MiShantz on Mishnah "+file.replace('.txt', '').title()
         create_schema(title, "Mishnah "+file.replace('.txt', '').title())
         text = {
             "text": text,
@@ -138,4 +172,10 @@ if __name__ == "__main__":
             "versionTitle": "Talmud Bavli, Vilna, 1880.",
             "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957"
         }
-        post_text(title, text)
+        if file == "middot.txt":
+            post_text(title, text)
+
+
+    # if library.get_index
+    # go through each book
+    # check length

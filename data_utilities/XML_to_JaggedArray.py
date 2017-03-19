@@ -14,7 +14,7 @@ from BeautifulSoup import BeautifulSoup
 class XML_to_JaggedArray:
 
 
-    def __init__(self, title, file, allowedTags, allowedAttributes, post_info, array_of_names=[], deleteTitles=True, change_name=False, assertions=False):
+    def __init__(self, title, file, allowedTags, allowedAttributes, post_info, array_of_names=[], deleteTitles=True, change_name=False, assertions=False, image_dir=None):
         self.title = title
         self.post_info = post_info
         self.file = file
@@ -30,7 +30,11 @@ class XML_to_JaggedArray:
         self.prev_footnote = ""
         self.change_name = change_name
         self.assertions = assertions
+        self.image_dir = image_dir
 
+
+    def set_title(self, title):
+        self.title = title
 
     def set_funcs(self, grab_title_lambda=lambda x: x[0].tag == "title", reorder_test=lambda x: False, reorder_modify=lambda x: x, modify_before=lambda x: x):
         self.modify_before = modify_before
@@ -58,11 +62,14 @@ class XML_to_JaggedArray:
 
 
     def cleanNodeName(self, text):
+        text = bleach.clean(text, strip=True)
         bad_chars = [".", ",", "'", '"']
         for bad_char in bad_chars:
             text = text.replace(bad_char, "")
             " ".join(text.split())
         return text.title()
+
+
 
     def getChildren(self, parent):
         titles = []
@@ -118,6 +125,19 @@ class XML_to_JaggedArray:
                 text = " ".join(text.split()[1:])
             return u'<sup>{}</sup><i class="footnote">{}</i>'.format(num, text)
 
+        def convertIMGBase64(text):
+            tags = re.findall("<img.*?>", text)
+            for tag in tags:
+                filename = BeautifulSoup(tag).findAll("img")[0]['src']
+                filetype = filename.split(".")[1]
+                file = open("{}/{}".format(self.image_dir, filename))
+                data = file.read()
+                file.close()
+                data = data.encode("base64")
+                new_tag = '<img src="data:image/{};base64,{}">'.format(filetype, data)
+                text = text.replace(tag, new_tag)
+            return text
+
         #parse code begins...
         key_of_xref = 'rid'
         assert type(text_arr) is list
@@ -144,7 +164,8 @@ class XML_to_JaggedArray:
             text_arr[index] = text_arr[index].replace("<bold>", "<b>").replace("<italic>", "<i>").replace("</bold>", "</b>").replace("</italic>", "</i>")
             text_arr[index] = text_arr[index].replace("<li>", "<br>").replace("</li>", "")
             text_arr[index] = text_arr[index].replace("</title>", "</b>").replace("<title>", "<b>")
-            text_arr[index] = text_arr[index].replace("3465", "&lt;").replace("3467", "&gt;")
+            text_arr[index] = convertIMGBase64(text_arr[index])
+
 
         return text_arr
 
@@ -217,7 +238,6 @@ class XML_to_JaggedArray:
         if self.assertions:
             assert Ref(running_ref), running_ref
         for key in node:
-            print key
             if key != "text" and key != "subject":
                 new_running_ref = "%s, %s" % (running_ref, key)
                 if self.assertions:
@@ -267,9 +287,10 @@ class XML_to_JaggedArray:
         orig_length = len(element) - 1
         for index, child in enumerate(element):
             if self.reorder_test(child):
-                child.text, title = (self.reorder_modify(child.text), child.text[3:])
+                child.text = self.reorder_modify(child.text)
                 if next_will_be_children == True:
                     for new_child in children:
+                        new_child = self.reorder_structure(new_child)
                         parent.append(new_child)
                     children = []
                 parent = child
@@ -278,17 +299,12 @@ class XML_to_JaggedArray:
                 if move_footnotes:
                     children.append(child)
             elif next_will_be_children == True:
-                if len(title) > 0:
-                    child.text = "<b>" + title + "</b> " + child.text
-                    title = ""
                 children.append(child)
 
             if index == orig_length:
                 for new_child in children:
+                    new_child = self.reorder_structure(new_child)
                     parent.append(new_child)
-
-        #for child in element:
-        #    child = self.reorder_structure(child)
 
         return element
 
