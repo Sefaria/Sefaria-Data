@@ -108,7 +108,7 @@ def parse_em(filename, passing, errorfilename):
     cit_dictionary = []
     with codecs.open(filename, 'r', 'utf-8') as fp:
         lines = fp.readlines()
-    pattern = ur'''(ו?שו?"ע|מיי'|ו?סמג|ו?ב?טוש"ע|ו?ב?טור)'''
+    pattern = ur'''(ו?שו?"ע|ו?ב?מיי'|ו?ב?סמג|ו?ב?טוש"ע|ו?ב?טור)'''
 
     for line in lines:
         mass.error_flag = False
@@ -334,6 +334,13 @@ class TurSh(object):
             hasnext = False
             for word in str_it:
                 to_res = False  # a flag to say there was found a citation we want to resolve
+                if re.search(reg_vav, word): # note: repeating code from lines at the end. should be a seprate function?
+                    resolved_sa = self._tracker_sa.resolve(book_sa, [siman, seif])
+                    if resolved_tur != self._tracker_tur.resolve(self._tur_table[book_sa],
+                                                                 [siman]):  # self._tracker_tur._last_ref: #
+                        resolved_tur = self._tracker_tur.resolve(self._tur_table[book_sa], [siman])
+                        resolveds.append(resolved_tur)
+                    resolveds.append(resolved_sa)
                 if re.search(reg_siman, word) and not re.search(reg_seif, word):
                     to_res = True
                     siman = getGematriaVav(str_it.next(), mass)
@@ -457,7 +464,7 @@ class Rambam(object):
                 mass.error_flag = "error mim, couldn't find this book name in table"
                 mass.write_shgia("error mim, couldn't find this book name in table" + book)
         # perek
-        perek = re.search(u'''פרק ([א-ת]"?[א-ת]?)|פ([א-ת]?"[א-ת])|ופ' ([א-ת]"?[א-ת]?)''', str)
+        perek = re.search(u'''פרק ([א-ת]"?[א-ת]?)|פ ?([א-ת]?"[א-ת])|ו?פ' ([א-ת]"?[א-ת])''', str) #u'''פרק ([א-ת]"?[א-ת]?)|פ([א-ת]?"[א-ת])|ו?פ' ([א-ת]"?[א-ת]?)'''
         if perek:
             perek = perek.group(1) or perek.group(2) or perek.group(3)
             perek = getGematriaVav(perek, mass)
@@ -830,11 +837,11 @@ if __name__ == "__main__":
     # parsed = run2(massechet_he=u'test_collapsed', massechet_en=u'mk_fixed')
     # final_list = segment_column('Ein Mishpat - Moed Katan.csv', 'mk_test_done.csv','Moed_Katan')
 
-    ls = 'bbametzia  gittin    makot     rosh_hashana  sota\
-        bbtr       iruvin    nazir     sanhedrim     sukka\
-        beitza     kidushin  nedarim   shabbat       yevamot\
-        brachot    ktobot    pesachim  shevuot       yoma'
-    # ls = 'sota'
+    # ls = 'bbametzia  gittin    makot     rosh_hashana  sota\
+    #     bbtr       iruvin    nazir     sanhedrim     sukka\
+    #     beitza     kidushin  nedarim   shabbat       yevamot\
+    #     brachot    ktobot    pesachim  shevuot       yoma'
+    ls = 'bbtr'
     filenames_he = re.split('\s*', ls)
     for m_he in  filenames_he:
         parsed = run15(massechet_he=u'repeating/{}'.format(m_he), massechet_en = u'repeating/{}'.format(m_he))
