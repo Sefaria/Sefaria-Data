@@ -3,7 +3,7 @@
 import re
 import codecs
 from bs4 import BeautifulSoup, Tag
-from data_utilities.util import Singleton, getGematria
+from data_utilities.util import Singleton, getGematria, numToHeb, he_ord, he_num_to_char
 
 """
 This module describes an object module for parsing the Shulchan Arukh and it's associated commentaries. The classes
@@ -741,3 +741,111 @@ module_locals = locals()
 
 class DuplicateChildError(Exception):
     pass
+
+
+def out_of_order_gematria(regex, siman):
+    replacements = {}
+    matches = list(re.finditer(regex, siman))
+    values = [getGematria(match.group(1)) for match in matches]
+
+    for index, value in enumerate(values):
+        if index == 0 or index == len(values) - 1:  # This analysis won't work for the first and last items
+            continue
+        previous_value, next_value = values[index - 1], values[index + 1]
+        if value - previous_value != 1:
+            if next_value - previous_value == 2:
+                replacements[matches[index].group(0)] = {
+                    'start': matches[index].start(),
+                    'replacement': matches[index].group(0).replace(matches[index].group(1),
+                                                                   numToHeb(previous_value + 1))
+                }
+    return replacements
+
+
+def out_of_order_he_letters(regex, siman):
+    replacements = {}
+    matches = list(re.finditer(regex, siman))
+    values = [he_ord(match.group(1)) for match in matches]
+
+    for index, value in enumerate(values):
+        if index == 0 or index == len(values) - 1:  # This analysis won't work for the first and last items
+            continue
+        previous_value, next_value = values[index-1], values[index+1]
+        if (value - previous_value) % 22 != 1:
+            if (next_value - previous_value) % 22 == 2:
+                fixed = (previous_value + 1) % 22
+                if fixed == 0:
+                    fixed = 22
+                replacements[matches[index].group(0)] = {
+                    'start': matches[index].start(),
+                    'replacement': matches[index].group(0).replace(matches[index].group(1),
+                                                                   he_num_to_char(fixed))
+                }
+    return replacements
+
+
+def correct_marks(siman, pattern, error_finder=out_of_order_gematria):
+    """
+    Takes a siman as a string and attempts to make corrections to the codes in that siman. Specifically, this corrects
+    those codes where a single code is misnumbered, but the preceding and following codes are correct. In that case,
+    this method will replace the offending code with the correct number to allow a correct count.
+    Example: @22d, @22h, @22f will reset to @22d, @22e, @22f (English is standing in for hebrew for display purposes).
+    :param unicode siman: Unicode string representing a single siman
+    :param pattern: regular expression pattern. Group 1 must map to an integer
+    :param error_finder: callback function used to identify errors. Must return a dictionary
+    :return: Fixed siman as a string
+    """
+    def repair(match_obj):
+        if replacements.get(match_obj.group(0)):
+            if match_obj.start() == replacements[match_obj.group(0)]['start']:
+                return replacements[match_obj.group(0)]['replacement']
+        return match_obj.group(0)
+
+    regex = re.compile(pattern)
+
+    replacements = error_finder(regex, siman)
+    return regex.sub(repair, siman)
+
+
+def correct_marks_in_file(filename, siman_pattern, code_pattern, error_finder=out_of_order_gematria,
+                          overwrite=True, start_mark=None):
+    """
+    Runs the method "correct_marks" over a single file
+    :param filename: path to file that is to be corrected
+    :param siman_pattern: Pattern to identify new Simanim. Should be at the beginning of a line
+    :param code_pattern: Pattern to match the codes. Must have two groups, one for the code, another for the number
+    :param error_finder: callback function used to identify errors. Must return a dictionary
+    :param overwrite: If True will rewrite the file that was read in. If False, will append "_test" to the end of the
+    filename (before the extension).
+    :param start_mark: A pattern that can be used to identify where changes can begin. If None, will begin from the
+    start of the file.
+    :return:
+    """
+    with codecs.open(filename, 'r', 'utf-8') as infile:
+        lines = infile.readlines()
+    if not overwrite:
+        filename = re.sub(ur'\..{3}$', ur'_test\g<0>', filename)
+    outfile = codecs.open(filename, 'w', 'utf-8')
+    if start_mark is None:
+        started = True
+    else:
+        started = False
+    current_siman = []
+
+    for line in lines:
+        if not started:
+            outfile.write(line)
+            if re.search(start_mark, line):
+                started = True
+            continue
+
+        if re.match(siman_pattern, line):
+            outfile.write(
+                correct_marks(u''.join(current_siman), code_pattern, error_finder))
+            current_siman = []
+        current_siman.append(line)
+    else:
+        outfile.write(
+            correct_marks(u''.join(current_siman), code_pattern, error_finder))
+
+    outfile.close()
