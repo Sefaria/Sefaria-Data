@@ -79,8 +79,8 @@ for index, section in enumerate(parsha_sections):
             alt_parsha_titles = Y1_titles[parsha_index] if index==1 else Y2_titles[parsha_index]
             print "alt sec titles: "+alt_parsha_titles[0]+" "+alt_parsha_titles[1]
             alt_parsha_node = ArrayMapNode()
-            alt_parsha_node.add_title(re.sub(r" *- *",": ",alt_parsha_titles[0]), 'en', primary=True)
-            alt_parsha_node.add_title(alt_parsha_titles[1], 'he', primary=True)
+            alt_parsha_node.add_title(re.sub(r" *- *",": ",alt_parsha_titles[0].strip()), 'en', primary=True)
+            alt_parsha_node.add_title(alt_parsha_titles[1].strip(), 'he', primary=True)
             alt_parsha_node.depth = 0
             alt_parsha_node.wholeRef = "Ben Ish Hai, "+section[0]+", "+parsha[0][1]
             alt_section_node.append(alt_parsha_node)
@@ -115,14 +115,6 @@ for index, section in enumerate(parsha_sections):
             #Parshat Vayeishev for Shana 2 needs special treatment, since its text is omitted from wikisource and must be added manually
             if index==2 and parsha_index==7:
                 vayeshev_parsha_titles = ["Vayeshev","וישב"]
-                alt_parsha_node = ArrayMapNode()
-                alt_parsha_node.add_title(re.sub(r" *- *",": ",vayeshev_parsha_titles[0]), 'en', primary=True)
-                alt_parsha_node.add_title(vayeshev_parsha_titles[1], 'he', primary=True)
-                alt_parsha_node.depth = 0
-                alt_parsha_node.wholeRef = "Ben Ish Hai, "+section[0]+", "+vayeshev_parsha_titles[0]
-                alt_section_node.append(alt_parsha_node)
-            
-                #now regular struct node:
                 parsha_node = SchemaNode()
                 parsha_node.key = vayeshev_parsha_titles[0]
                 parsha_node.add_shared_term(vayeshev_parsha_titles[0])

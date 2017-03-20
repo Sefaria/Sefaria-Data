@@ -190,14 +190,14 @@ if __name__ == "__main__":
                 print "posting "+section_name+", "+parsha[0][1]+", Introduction"
                 post_text_weak_connection('Ben Ish Hai, '+section_name+", "+parsha[0][1]+", Introduction", version)
     
-            version = {
-                'versionTitle': section_version[0],
-                'versionSource': section_version[1],
-                'language': 'he',
-                'text': parsha[1] if "Drashot" in section_name else parsha[2]
-            }
-            print "posting "+section_name+", "+parsha[0][1]
-            post_text_weak_connection('Ben Ish Hai, '+section_name+", "+parsha[0][1], version)
+                version = {
+                    'versionTitle': section_version[0],
+                    'versionSource': section_version[1],
+                    'language': 'he',
+                    'text': parsha[1] if "Drashot" in section_name else parsha[2]
+                }
+                print "posting "+section_name+", "+parsha[0][1]
+                post_text_weak_connection('Ben Ish Hai, '+section_name+", "+parsha[0][1], version)
     
     """
     #print parsha titles
