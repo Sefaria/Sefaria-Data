@@ -283,4 +283,18 @@ class TestXref(object):
         with pytest.raises(AssertionError):
             b.mark_references(0, 1, 1, '@33')
 
+def test_correct_marks():
+    test_text = u'קצת @22א טקסט @22ט @22ג שאין @22ג @22ד @22ח לו\n @22ו משמעות'
+    assert correct_marks(test_text, u'@22([\u05d0-\u05ea]{1,2})') == u'קצת @22א טקסט @22ב @22ג שאין @22ג @22ד @22ה לו\n @22ו משמעות'
+
+    test_text = u'קצת @22ש טקסט @22כ ללא @22א משמעות'
+    assert correct_marks(test_text, u'@22([\u05d0-\u05ea])', error_finder=out_of_order_he_letters) == u'קצת @22ש טקסט @22ת ללא @22א משמעות'
+
+    test_text = u'קצת @22ת טקסט @22כ ללא @22ב משמעות'
+    assert correct_marks(test_text, u'@22([\u05d0-\u05ea])',
+                         error_finder=out_of_order_he_letters) == u'קצת @22ת טקסט @22א ללא @22ב משמעות'
+
+    test_text = u'קצת @22א טקסט @22כ ללא @22ג משמעות'
+    assert correct_marks(test_text, u'@22([\u05d0-\u05ea])',
+                         error_finder=out_of_order_he_letters) == u'קצת @22א טקסט @22ב ללא @22ג משמעות'
 
