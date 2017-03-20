@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from sefaria.model import *
-from data_utilities.ibid import BookIbidTracker, IbidDict
+from data_utilities.ibid import *
 
 
 
@@ -120,3 +120,9 @@ def test_ibid_dict():
     test_dict['2'] = 2
     test_dict['1'] = 10
     assert  test_dict.items() == [('2',2),('1',10)]
+
+def test_ibid_find():
+    string = u'''וילך איש מבית לוי רבותינו אמרו שהלך אחר עצת בתו (סוטה יב:). את בלהה (בראשית לה כב),
+     דבלים (הושע א ג), לכו ונמכרנו לישמעאלים (בראשית שם כז), לכו ונכהו בלשון (שם יח יח), לכו נא ונוכחה (ישעיה א יח).'''
+    refs = ibid_find_and_replace(string, lang='he', citing_only=False, replace=True)
+    print refs

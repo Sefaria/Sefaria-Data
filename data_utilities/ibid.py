@@ -3,6 +3,68 @@
 from sefaria.model import *
 from sefaria.utils import talmud
 from collections import OrderedDict
+import re
+from data_utilities.util import getGematria
+
+def find_all_shams_in_st(st, lang = 'he'):
+    from sefaria.utils.hebrew import strip_nikkud
+    st = strip_nikkud(st)
+    sham_refs = []
+    reg = u'(\(|\([^)]* )שם(\)| [^(]*\))'  # finds shams in parenthesis without רבשם
+    for sham in re.finditer(reg, st):
+        matched = sham.group()
+        if len(re.split('\s+', matched)) > 6: # todo: find stitistics of the cutoff size of a ref-citation 6 is a guess
+            continue
+        sham_refs += [(matched,sham.span())]
+
+    return #list of tuples [([index, [sections]],(s,t))]
+
+def parse_shams(sham_st):
+
+    reg_sham = u'שם'
+    sham_st = re.sub('\((.*)\)','\1',sham_st)
+    sham_split = re.split('\s+', sham_st)
+    index_name = sham_split[0]
+    sections = sham_split[1:]
+    if index_name == reg_sham:
+        index_name = None
+        #todo: if book name isn't a sham it should resolve to it's title in sefaria.
+    sections = [None if sec == reg_sham else getGematria(sec) for sec in sections]
+
+
+def ibid_find_and_replace(st, lang='he', citing_only=False, replace=True):
+    """
+    Returns an list of Ref objects derived from string
+
+    :param string st: the input string
+    :param lang: "he" note: "en" is not yet supported in ibid
+    :param citing_only: boolean whether to use only records explicitly marked as being referenced in text.
+    :return: list of :class:`Ref` objects
+    """
+
+    ref_with_location = []
+    assert lang == 'he'
+    # todo: support english
+
+    from sefaria.utils.hebrew import strip_nikkud
+    st = strip_nikkud(st)
+    unique_titles = set(library.get_titles_in_string(st, lang, citing_only))
+    for title in unique_titles:
+        try:
+            res, locations = library._build_all_refs_from_string(title, st)
+            ref_with_location += zip(res, locations)
+        except AssertionError as e:
+            print u"Skipping Schema Node: {}".format(title)
+        ref_with_location.sort(key=lambda x: x[1][0])
+
+    tracker = BookIbidTracker(assert_simple=True)
+    for ref, location in ref_with_location:
+        tracker.resolve(ref.index_node.full_title(), ref.sections)
+
+
+    return ref_with_location
+
+
 class BookIbidTracker(object):
     """
     One instance per commentary
