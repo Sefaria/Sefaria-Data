@@ -10,6 +10,16 @@ root = Root('../Choshen_Mishpat.xml')
 base = root.get_base_text()
 filename = u'../txt_files/Choshen_Mishpat/part_2/שולחן ערוך חושן משפט חלק ב מחבר מושלם.txt'
 
+codes = [u'@44', u'@55', u'@66', u'@77', u'@99', u']*]', u'-[*]', u'/*)']
+patterns = [ur'@44({})', ur'@55({})', ur'@66\(({})\)', ur'@77\(({})\)', ur'@99\[({})\]', ur'\]({})\]', ur'-\[({})\]',
+            ur'/({})\)']
+patterns = [i.format(ur'[\u05d0-\u05ea]{1,3}') for i in patterns]
+patterns[0] = ur'@44([\u05d0-\u05ea])'
+
+# correct_marks_in_file(filename, u'@22', patterns[0], error_finder=out_of_order_he_letters)
+# for pattern in patterns[1:]:
+#     correct_marks_in_file(filename, u'@22', pattern)
+
 with codecs.open(filename, 'r', 'utf-8') as infile:
     volume = base.add_volume(infile.read(), 2)
 assert isinstance(volume, Volume)
@@ -23,10 +33,7 @@ print 'Validating Seifim'
 volume.validate_seifim()
 # root.export()
 
-codes = [u'@44', u'@55', u'@66', u'@77', u'@99', u']*]', u'-[*]', u'/*)']
-patterns = [ur'@44({})', ur'@55({})', ur'@66\(({})\)', ur'@77\(({})\)', ur'@99\[({})\]', ur'\]({})\]', ur'-\[({})\]',
-            ur'/({})\)']
-patterns = [i.format(ur'[\u05d0-\u05ea]{1,3}') for i in patterns]
+
 
 for code, pattern in zip(codes, patterns):
     if code == u'@44':
