@@ -576,18 +576,18 @@ class Siman(OrderedElement):
             matches.extend(seif.grab_references(pattern))
         enumerated_matches = [key_callback(match.group(group)) for match in matches]
         previous = 0
-        for i in enumerated_matches:
+        for index, i in enumerate(enumerated_matches):
             if i - previous != 1:
                 if i == 1 and previous == 22:  # For refs that run through the he alphabet repeatedly, this handles the reset to א
                     pass
                 else:
-                    errors.append((previous, i))
+                    errors.append((previous, i, index))
                     passed = False
             previous = i
         if not passed:
             print 'Errors for code {} in Siman {}:'.format(code, self.num)
             for error in errors:
-                print '\t{} followed by {}'.format(*error)
+                print '\t{} followed by {} (tag {} in this Siman)'.format(*error)
         return passed
 
 
