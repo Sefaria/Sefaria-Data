@@ -6,9 +6,10 @@ import codecs
 import regex as re
 import pygtrie
 from data_utilities.util import getGematria
-from data_utilities.ibid import BookIbidTracker
+from data_utilities.ibid import BookIbidTracker, IbidKeyNotFoundException, IbidRefException
 from sefaria.utils.hebrew import strip_nikkud
 import unicodecsv as csv
+import os
 
 class Massekhet(object):
 
@@ -23,6 +24,21 @@ class Massekhet(object):
         self.ErrorFile.write(str(self.line_num) + ': ' + txt + '\n')
         print self.line_num, txt
 
+
+def resolveExceptin(tr,book, sectionList):
+    '''
+    This method is refactoring in the raise of Exception written in ibid (instead of print out)
+    :param tr: the BookIbidTracker reffered to for this original resolve
+    :param book: book name needed for the resolve function
+    :param sectionList: sections list needed for the resolve function
+    :return: the line ibid.py returned before the Exceptions refactor
+    '''
+    try:
+        tr.resolve(book, sectionList)
+    except IbidKeyNotFoundException:
+        return "error, couldn't find this key"
+    except IbidRefException:
+        return u"problem with the Ref iteslf. {}.{}"
 
 class EM_Citation(object):
     """
@@ -720,6 +736,10 @@ def hebrew_number_regex():
 
 def toCSV(filename, obj_list):
     list_dict = obj_list
+    for row in list_dict:
+        # erasing the error codes related to letters count
+        if row[u'problem'] == u'error missing little or big letter' or row[u'problem'] == u'error, cit with the perek/page counters':
+            row[u'problem'] = False
     with open(u'{}.csv'.format(filename), 'w') as csv_file:
         writer = csv.DictWriter(csv_file, [u'txt file line', u'Perek running counter',u'page running counter',
                                 u'Perek aprx', u'Page aprx', u'Rambam', u'Semag', u'Tur Shulchan Arukh', u'original', u'problem']) #fieldnames = obj_list[0].keys())
@@ -732,6 +752,8 @@ def fromCSV(fromcsv, newfile):
     with open(fromcsv, 'r') as csvfile:
         file_reader = csv.DictReader(csvfile)
         for i, row in enumerate(file_reader):
+            if not row:
+                continue
             f.write(row[u'original'].strip() + u'\n')
 
 
@@ -742,7 +764,7 @@ def run1(massechet_he = None, massechet_en = None):
     return parse1
 
 
-#  run to create the csv after first run of QA to get talmud matching
+#  run to create the csv to get talmud matching
 def run2(massechet_he=None, massechet_en=None):
     fromCSV(u'{}.csv'.format(massechet_he), u'{}.txt'.format(massechet_en))  # reads from fixed ביצה.csv to egg.txt
     parse2 = parse_em(u'{}.txt'.format(massechet_en),2, u'{}_error'.format(massechet_en))  # egg.txt to screen output
@@ -810,6 +832,20 @@ def segment_column(segmentfile, reffile, massekhet):
                 final_list.append(letter_dict)
     return final_list
 
+def needs_another_cycle(txtfile, mass_name):
+    if os.stat(txtfile).st_size == 0:
+        print '\n' + mass_name + ' is empty from errors'
+    else:
+        with codecs.open(txtfile, 'r', 'utf-8') as fp:
+            lines = fp.readlines()
+        reg_letter_error = u'((error missing little or big letter)|(error, cit with the perek/page counters))'
+        for line in lines:
+            if not re.search(reg_letter_error,line):
+                print '\n' + mass_name + ' needs work'
+                return
+            print '\n' + mass_name + ' is empty from errors'
+            return
+
 if __name__ == "__main__":
     # test = parse_em('test.txt')
     # filenames_he = [u'בבא מציעא', u'בבא בתרא', u'ראש השנה', u'ברכות', u'גיטין',  u'יבמות', u'יומא',
@@ -837,13 +873,41 @@ if __name__ == "__main__":
     # parsed = run2(massechet_he=u'test_collapsed', massechet_en=u'mk_fixed')
     # final_list = segment_column('Ein Mishpat - Moed Katan.csv', 'mk_test_done.csv','Moed_Katan')
 
-    # ls = 'bbametzia  gittin    makot     rosh_hashana  sota\
-    #     bbtr       iruvin    nazir     sanhedrim     sukka\
-    #     beitza     kidushin  nedarim   shabbat       yevamot\
-    #     brachot    ktobot    pesachim  shevuot       yoma'
-    ls = 'bbtr'
+    ls = 'brachot.csv\
+    ktobot.csv\
+    rosh_hashana.csv\
+    bbabtra.csv\
+    gittin.csv\
+    makot.csv\
+    sanhedrim.csv\
+    hagiga_done.csv\
+    nazir.csv\
+    shabbat.csv\
+    bbametzia.csv\
+    iruvin.csv\
+    nedarim.csv\
+    shevuot.csv\
+    beitza.csv\
+    kidushin.csv\
+    pesachim.csv\
+    yevamot.csv\
+    sota.csv\
+    sukka.csv\
+    yoma.csv'
+
+    #
     filenames_he = re.split('\s*', ls)
-    for m_he in  filenames_he:
+    filenames_he = [item[:-4] for item in filenames_he]
+    print filenames_he
+    for m_he in filenames_he:
         parsed = run15(massechet_he=u'repeating/{}'.format(m_he), massechet_en = u'repeating/{}'.format(m_he))
 
-    print 'done'
+
+    # parsed = run2(massechet_he=u'repeating/{}'.format(ls[:-4]), massechet_en=u'repeating/{}'.format(ls[:-4]))
+
+
+    for m_he in filenames_he:
+        txtfile = u'repeating/{}_error'.format(m_he)
+        needs_another_cycle(txtfile, m_he)
+
+        # print 'done'
