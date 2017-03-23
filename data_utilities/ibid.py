@@ -6,63 +6,98 @@ from collections import OrderedDict
 import re
 from data_utilities.util import getGematria
 
-def find_all_shams_in_st(st, lang = 'he'):
-    from sefaria.utils.hebrew import strip_nikkud
-    st = strip_nikkud(st)
-    sham_refs = []
-    reg = u'(\(|\([^)]* )שם(\)| [^(]*\))'  # finds shams in parenthesis without רבשם
-    for sham in re.finditer(reg, st):
-        matched = sham.group()
-        if len(re.split('\s+', matched)) > 6: # todo: find stitistics of the cutoff size of a ref-citation 6 is a guess
-            continue
-        sham_refs += [(matched,sham.span())]
 
-    return #list of tuples [([index, [sections]],(s,t))]
+class IndexIbidFinder(object):
 
-def parse_shams(sham_st):
-
-    reg_sham = u'שם'
-    sham_st = re.sub('\((.*)\)','\1',sham_st)
-    sham_split = re.split('\s+', sham_st)
-    index_name = sham_split[0]
-    sections = sham_split[1:]
-    if index_name == reg_sham:
-        index_name = None
-        #todo: if book name isn't a sham it should resolve to it's title in sefaria.
-    sections = [None if sec == reg_sham else getGematria(sec) for sec in sections]
+    def __init__(self, index, assert_simple = True):
+        '''
+        this searches through `index` and finds all references. resolves all ibid refs
+        :param index: Index
+        '''
+        self._index = index
+        self._tr = BookIbidTracker(assert_simple=assert_simple)
 
 
-def ibid_find_and_replace(st, lang='he', citing_only=False, replace=True):
-    """
-    Returns an list of Ref objects derived from string
 
-    :param string st: the input string
-    :param lang: "he" note: "en" is not yet supported in ibid
-    :param citing_only: boolean whether to use only records explicitly marked as being referenced in text.
-    :return: list of :class:`Ref` objects
-    """
+    def find_all_shams_in_st(self, st, lang = 'he'):
+        '''
 
-    ref_with_location = []
-    assert lang == 'he'
-    # todo: support english
+        :param st: source text
+        :param lang:
+        :return: a list of tuples (Refs objects that originally were Shams, location)
+        '''
+        from sefaria.utils.hebrew import strip_nikkud
+        st = strip_nikkud(st)
+        sham_refs = []
+        reg = u'(\(|\([^)]* )שם(\)| [^(]*\))'  # finds shams in parenthesis without רבשם
+        for sham in re.finditer(reg, st):
+            matched = sham.group()
+            if len(re.split('\s+', matched)) > 6: # todo: find stitistics of the cutoff size of a ref-citation 6 is a guess
+                continue
+            try:
+                sham_refs += [(self.parse_shams(matched),sham.span())]
+            except IbidKeyNotFoundException:
+                pass
+            except IbidRefException:
+                pass # maybe want to call ignore her?
+        return sham_refs
 
-    from sefaria.utils.hebrew import strip_nikkud
-    st = strip_nikkud(st)
-    unique_titles = set(library.get_titles_in_string(st, lang, citing_only))
-    for title in unique_titles:
-        try:
-            res, locations = library._build_all_refs_from_string(title, st)
-            ref_with_location += zip(res, locations)
-        except AssertionError as e:
-            print u"Skipping Schema Node: {}".format(title)
-        ref_with_location.sort(key=lambda x: x[1][0])
+    def parse_shams(self, sham_ref):
+        '''
 
-    tracker = BookIbidTracker(assert_simple=True)
-    for ref, location in ref_with_location:
-        tracker.resolve(ref.index_node.full_title(), ref.sections)
+        :param sham_ref:
+        :return: Resolved Ref obj
+        '''
+        reg_sham = u'שם'
+        sham_ref = re.sub('\((.*)\)', '\1', sham_ref)
+        sham_split = re.split('\s+', sham_ref)
+        index_name = sham_split[0]
+        sections = []
+        if index_name == reg_sham:
+            index_name = None
+        else:
+            try:
+                index_name = library.get_schema_node(index_name, 'he').full_title()
+            except AttributeError:
+                self._tr.ignore_book_name_keys()
+        if sham_split > 1:
+            sections = sham_split[1:]
+            sections = [None if sec == reg_sham else getGematria(sec) for sec in sections]
+
+        return self._tr.resolve(index_name, sections)
 
 
-    return ref_with_location
+    def ibid_find_and_replace(self, st, lang='he', citing_only=False, replace=True):
+        """
+        Returns an list of Ref objects derived from string
+
+        :param string st: the input string
+        :param lang: "he" note: "en" is not yet supported in ibid
+        :param citing_only: boolean whether to use only records explicitly marked as being referenced in text.
+        :return: list of :class:`Ref` objects
+        """
+
+        ref_with_location = []
+        assert lang == 'he'
+        # todo: support english
+
+        from sefaria.utils.hebrew import strip_nikkud
+        st = strip_nikkud(st)
+        unique_titles = set(library.get_titles_in_string(st, lang, citing_only))
+        for title in unique_titles:
+            try:
+                res, locations = library._build_all_refs_from_string(title, st)
+                ref_with_location += zip(res, locations)
+            except AssertionError as e:
+                print u"Skipping Schema Node: {}".format(title)
+            ref_with_location.sort(key=lambda x: x[1][0])
+
+        tracker = BookIbidTracker(assert_simple=True)
+        for ref, location in ref_with_location:
+            tracker.resolve(ref.index_node.full_title(), ref.sections)
+
+
+        return ref_with_location
 
 
 class BookIbidTracker(object):
@@ -128,7 +163,7 @@ class BookIbidTracker(object):
                 resolvedRef = self._table[(None,(None, None))]
                 # notice that self._last_cit doesn't chnge so no need to reasign it
             except KeyError:
-                raise Exception("Ibid table is empty. Can't retrieve book name")
+                raise IbidKeyNotFoundException("Ibid table is empty. Can't retrieve book name")
         else:
             if not index_name:
                 index_name = self._last_cit[0]
@@ -144,8 +179,9 @@ class BookIbidTracker(object):
                 try:
                     from_table = self._table[(index_name, tuple(key))].sections
                 except:
-                    print "error, couldn't find this key", index_name, tuple(key)
-                    return "error, couldn't find this key", index_name, tuple(key)
+                    raise IbidKeyNotFoundException("couldn't find this key")
+                    # print "error, couldn't find this key", index_name, tuple(key)
+                    # return "error, couldn't find this key", index_name, tuple(key)
             else:
                 from_table = sections # that is it wasn't in _table
             new_sections = []
@@ -172,11 +208,13 @@ class BookIbidTracker(object):
 
                 resolvedRef = Ref(u'{}.{}'.format(index_name, '.'.join(section_str_list)))
             except:
-                print 'error, problem with the Ref iteslf. ', u'{}.{}'.format(index_name, '.'.join(str(new_sections)))
-                return "error, problem with the Ref iteslf", index_name, tuple(key)
+                raise IbidRefException(u"problem with the Ref iteslf. {}.{}".format(index_name, '.'.join(str(new_sections))))
+                # print 'error, problem with the Ref iteslf. ', u'{}.{}'.format(index_name, '.'.join(str(new_sections)))
+                # return "error, problem with the Ref iteslf", index_name, tuple(key)
             self._last_cit = [index_name, new_sections]
         if resolvedRef.is_empty():
-            return "error, problem with the Ref iteslf", resolvedRef
+            raise IbidRefException('problem with the Ref iteslf')
+            # return "error, problem with the Ref iteslf", resolvedRef
         else:
             self.registerRef(resolvedRef)
         return resolvedRef
@@ -224,3 +262,9 @@ class IbidDict(OrderedDict):
             self.pop(key)
         return super(IbidDict, self).__setitem__(key, value, dict_setitem)
 
+class IbidKeyNotFoundException(Exception):
+    pass
+
+class IbidRefException(Exception):
+    # when a Ref is structured correctly but can't be found (ex: 'Genesis 60')
+    pass

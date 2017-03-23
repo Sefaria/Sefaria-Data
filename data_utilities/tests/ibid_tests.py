@@ -90,6 +90,7 @@ def test_rambam():
     resolved = tracker.resolve(sham[0], sham[1])
     assert resolved == Ref('Mishneh Torah, Rest on a Holiday.8')
 
+
 def test_tanakh():
     tracker = simple_tracker
 
@@ -121,8 +122,12 @@ def test_ibid_dict():
     test_dict['1'] = 10
     assert  test_dict.items() == [('2',2),('1',10)]
 
+
 def test_ibid_find():
     string = u'''וילך איש מבית לוי רבותינו אמרו שהלך אחר עצת בתו (סוטה יב:). את בלהה (בראשית לה כב),
      דבלים (הושע א ג), לכו ונמכרנו לישמעאלים (בראשית שם כז), לכו ונכהו בלשון (שם יח יח), לכו נא ונוכחה (ישעיה א יח).'''
     refs = ibid_find_and_replace(string, lang='he', citing_only=False, replace=True)
     print refs
+
+#todo: test new class IndexIbidFinder
+#todo: test ibidExceptions
