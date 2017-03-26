@@ -34,7 +34,7 @@ def resolveExceptin(tr,book, sectionList):
     :return: the line ibid.py returned before the Exceptions refactor
     '''
     try:
-        tr.resolve(book, sectionList)
+        return tr.resolve(book, sectionList)
     except IbidKeyNotFoundException:
         return "error, couldn't find this key"
     except IbidRefException:
@@ -217,7 +217,8 @@ class Semag(object):
         for i, word in enumerate(str_list):
             if derabanan_flag:
                 derabanan_flag = False
-                resolved = self._tracker.resolve(book, [1])
+                # resolved = self._tracker.resolve(book, [1])
+                resolved = resolveExceptin(self._tracker, book, [1])
                 resolveds.append(resolved)
                 continue
             elif re.search(reg_book, word):
@@ -240,8 +241,10 @@ class Semag(object):
                 mitzva = re.split('\s', word)
                 for m in mitzva:
                     if re.search(reg_vav, m) and not book:
-                        resolved = self._tracker.resolve(book, [None])
+                        # resolved = self._tracker.resolve(book, [None])
+                        resolved = resolveExceptin(self._tracker,book, [None])
                         resolveds.append(resolved)
+
                     if m == u'שם':
                         m = None
                     elif re.search(reg_siman, m):
@@ -250,10 +253,13 @@ class Semag(object):
                         m = getGematriaVav(m, mass)
                     else:
                         m = None
-                    resolved = self._tracker.resolve(book, [m])
+                    # resolved = self._tracker.resolve(book, [m])
+                    resolved = resolveExceptin(self._tracker, book, [m])
                     resolveds.append(resolved)
         if not resolveds:
-            resolved = self._tracker.resolve(book, [None])
+            # resolved = self._tracker.resolve(book, [None])
+            resolved = resolveExceptin(self._tracker, book, [None])
+
             resolveds.append(resolved)
         return resolveds
 
@@ -332,8 +338,10 @@ class TurSh(object):
             if re.search(reg_sham, book):
                 book_sa = None
                 if len(str_list) > 1 and re.search(reg_vav,str_list[1]):
-                    resolveds.append(self._tracker_sa.resolve(book_sa, [None, None]))
-                    resolveds.append(self._tracker_tur.resolve(self._tur_table[book_sa], [None]))
+                    # resolveds.append(self._tracker_sa.resolve(book_sa, [None, None]))
+                    resolveds.append(resolveExceptin(self._tracker_sa, book_sa, [None, None]))
+                    # resolveds.append(self._tracker_tur.resolve(self._tur_table[book_sa], [None]))
+                    resolveds.append(resolveExceptin(self._tracker_tur, self._tur_table[book_sa], [None]))
             elif self._sa_table.has_key(book):
                         book_sa = self._sa_table[book]
             elif re.search(reg_siman, book) or re.search(reg_seif, book):
@@ -351,10 +359,13 @@ class TurSh(object):
             for word in str_it:
                 to_res = False  # a flag to say there was found a citation we want to resolve
                 if re.search(reg_vav, word): # note: repeating code from lines at the end. should be a seprate function?
-                    resolved_sa = self._tracker_sa.resolve(book_sa, [siman, seif])
-                    if resolved_tur != self._tracker_tur.resolve(self._tur_table[book_sa],
-                                                                 [siman]):  # self._tracker_tur._last_ref: #
-                        resolved_tur = self._tracker_tur.resolve(self._tur_table[book_sa], [siman])
+                    # resolved_sa = self._tracker_sa.resolve(book_sa, [siman, seif])
+                    resolved_sa = resolveExceptin(self._tracker_sa , book_sa, [siman, seif])
+                    # if resolved_tur != self._tracker_tur.resolve(self._tur_table[book_sa],
+                    #                                              [siman]):  # self._tracker_tur._last_ref:
+                    if resolved_tur != resolveExceptin(self._tracker_tur, self._tur_table[book_sa],[siman]):
+                        # resolved_tur = self._tracker_tur.resolve(self._tur_table[book_sa], [siman])
+                        resolved_tur = resolveExceptin(self._tracker_tur,self._tur_table[book_sa], [siman])
                         resolveds.append(resolved_tur)
                     resolveds.append(resolved_sa)
                 if re.search(reg_siman, word) and not re.search(reg_seif, word):
@@ -406,16 +417,22 @@ class TurSh(object):
                             resolved_tur = self.parse_tur(book_sa,getGematriaVav(next, mass))  # todo: note: might be an issue with None, None to this file
                             resolveds.extend(resolved_tur)
                     else:
-                        resolved_sa = self._tracker_sa.resolve(book_sa, [siman, seif])
-                        if resolved_tur != self._tracker_tur.resolve(self._tur_table[book_sa], [siman]): # self._tracker_tur._last_ref: #
-                            resolved_tur = self._tracker_tur.resolve(self._tur_table[book_sa], [siman])
+                        # resolved_sa = self._tracker_sa.resolve(book_sa, [siman, seif])
+                        resolved_sa = resolveExceptin(self._tracker_sa, book_sa, [siman, seif])
+                        # if resolved_tur != self._tracker_tur.resolve(self._tur_table[book_sa], [siman]): # self._tracker_tur._last_ref: #
+                        #     resolved_tur = self._tracker_tur.resolve(self._tur_table[book_sa], [siman])
+                        #     resolveds.append(resolved_tur)
+                        if resolved_tur != resolveExceptin(self._tracker_tur, self._tur_table[book_sa], [siman]): # self._tracker_tur._last_ref: #
+                            resolved_tur = resolveExceptin(self._tracker_tur, self._tur_table[book_sa], [siman])
                             resolveds.append(resolved_tur)
                         resolveds.append(resolved_sa)
             if not resolveds:
-                resolveds.append(self._tracker_sa.resolve(book_sa, [siman, seif]))
+                # resolveds.append(self._tracker_sa.resolve(book_sa, [siman, seif]))
+                resolveds.append(resolveExceptin(self._tracker_sa, book_sa, [siman, seif]))
                 #note: todo: fix! repeting code!!!
                 if resolved_tur != self._tracker_tur._last_cit:  # self._tracker_tur.resolve(self._tur_table[book_sa], [siman]):
-                    resolved_tur = self._tracker_tur.resolve(self._tur_table[book_sa], [siman])
+                    # resolved_tur = self._tracker_tur.resolve(self._tur_table[book_sa], [siman])
+                    resolved_tur = resolveExceptin(self._tracker_tur, self._tur_table[book_sa], [siman])
                     resolveds.append(resolved_tur)
             if len([item for item in resolveds if not isinstance(item, Ref)]) > 0:
                 mass.write_shgia(u'error from ibid in Ref or table none problem')
@@ -427,7 +444,9 @@ class TurSh(object):
     def parse_tur(self, book_sa = None, siman = None):
         if not book_sa:
             book_sa = self._tur_table[book_sa]
-        resolved_tur = self._tracker_tur.resolve(self._tur_table[book_sa], [siman])
+        # resolved_tur = self._tracker_tur.resolve(self._tur_table[book_sa], [siman])
+        resolved_tur = resolveExceptin(self._tracker_tur, self._tur_table[book_sa], [siman])
+
         return [resolved_tur]
 
 
@@ -514,13 +533,16 @@ class Rambam(object):
             halacha_split = re.split(u'''\sו?([א-ת]?"?[א-ת]'?)''', halacha.strip())
             halacha_split = filter(None, halacha_split)
             halacha = [getGematriaVav(i, mass) for i in halacha_split]
-            resolved = [self._tracker.resolve(book, [perek, hal]) for hal in halacha]
+            # resolved = [self._tracker.resolve(book, [perek, hal]) for hal in halacha]
+            resolved = [resolveExceptin(self._tracker, book, [perek, hal]) for hal in halacha]
             if len([item for item in resolved if not isinstance(item, Ref)]) > 0:
                 mass.write_shgia(u'error from ibid in Ref or table none problem')
         else:  # halacha was sham
             if perek and book and not re.search(u'שם', str):
                 mass.write_shgia('error mim, No halacha stated')
-            resolved = self._tracker.resolve(book, [perek, halacha])
+            # resolved = self._tracker.resolve(book, [perek, halacha])
+            resolved = resolveExceptin(self._tracker, book, [perek, halacha])
+
 
         if isinstance(resolved, list):
             return resolved
@@ -896,6 +918,9 @@ if __name__ == "__main__":
     yoma.csv'
 
     #
+
+    ls = 'brachot.csv'
+
     filenames_he = re.split('\s*', ls)
     filenames_he = [item[:-4] for item in filenames_he]
     print filenames_he
