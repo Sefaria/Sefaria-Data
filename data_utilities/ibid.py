@@ -35,22 +35,22 @@ class IndexIbidFinder(object):
             if len(re.split('\s+', matched)) > 6: # todo: find stitistics of the cutoff size of a ref-citation 6 is a guess
                 continue
             try:
-                sham_refs += [(self.parse_shams(matched),sham.span())]
+                sham_refs += [(self.parse_sham(matched),sham.span())]
             except IbidKeyNotFoundException:
                 pass
             except IbidRefException:
                 pass # maybe want to call ignore her?
         return sham_refs
 
-    def parse_shams(self, sham_ref):
+    def parse_sham(self, sham_ref):
         '''
 
         :param sham_ref:
-        :return: Resolved Ref obj
+        :return: (index_name , [sections])
         '''
         reg_sham = u'שם'
-        sham_ref = re.sub('\((.*)\)', '\1', sham_ref)
-        sham_split = re.split('\s+', sham_ref)
+        sham_ref = re.sub(u'\((.*)\)', ur'\1', sham_ref)
+        sham_split = re.split(u'\s+', sham_ref)
         index_name = sham_split[0]
         sections = []
         if index_name == reg_sham:
@@ -64,10 +64,11 @@ class IndexIbidFinder(object):
             sections = sham_split[1:]
             sections = [None if sec == reg_sham else getGematria(sec) for sec in sections]
 
-        return self._tr.resolve(index_name, sections)
+        return (index_name , sections)
 
 
     def ibid_find_and_replace(self, st, lang='he', citing_only=False, replace=True):
+        #todo: implemant replace = True
         """
         Returns an list of Ref objects derived from string
 
@@ -76,7 +77,7 @@ class IndexIbidFinder(object):
         :param citing_only: boolean whether to use only records explicitly marked as being referenced in text.
         :return: list of :class:`Ref` objects
         """
-
+        refs = []
         ref_with_location = []
         assert lang == 'he'
         # todo: support english
@@ -86,19 +87,23 @@ class IndexIbidFinder(object):
         unique_titles = set(library.get_titles_in_string(st, lang, citing_only))
         for title in unique_titles:
             try:
-                res, locations = library._build_all_refs_from_string(title, st)
-                ref_with_location += zip(res, locations)
+                ref_with_location += library._build_all_refs_from_string_w_locations(title, st, lang)
             except AssertionError as e:
                 print u"Skipping Schema Node: {}".format(title)
-            ref_with_location.sort(key=lambda x: x[1][0])
+        shams = self.find_all_shams_in_st(st, lang=lang)
+        ref_with_location.extend(shams)
+        ref_with_location.sort(key=lambda x: x[1][0])
 
         tracker = BookIbidTracker(assert_simple=True)
-        for ref, location in ref_with_location:
-            tracker.resolve(ref.index_node.full_title(), ref.sections)
+        for item, location in ref_with_location:
+            if isinstance(item, Ref):
+                refs += [tracker.resolve(item.index_node.full_title(), item.sections)]
+            else:
+                refs += [tracker.resolve(item[0], item[1])]
 
 
-        return ref_with_location
 
+        return refs
 
 class BookIbidTracker(object):
     """
@@ -151,13 +156,15 @@ class BookIbidTracker(object):
         #todo: raise an error if can't find this sham constilation in table
 
         # recognize what kind of key we are looking for
-
-        if not sections[-1]:
-            # if the last element of sections is None, that means we might not know how long sections is meant to be. look it up in the table
-            last_depth = self.get_last_depth(index_name, sections)
-            sections = tuple(list(sections) + [None] * (max(len(sections), last_depth) - len(sections))) # choosing the depth of the ref to resolve
         key = []
         found_sham = False
+        last_depth = self.get_last_depth(index_name, sections)
+        if not index_name or len(sections) == 0 or not sections[0]: # tzmod to beginning
+            sections = tuple([None] * (max(len(sections), last_depth) - len(sections)) + list(sections)) # choosing the depth of the ref to resolve
+        elif len(sections) > 0 and not sections[-1]:
+            sections = tuple(list(sections) + [None] * (
+                max(len(sections), last_depth) - len(
+                    sections)))
         if False and not index_name and sections == [None, None]:  # it says only Sham (all were None)
             try:
                 resolvedRef = self._table[(None,(None, None))]

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from sefaria.model import *
 from data_utilities.ibid import *
 
@@ -128,6 +129,22 @@ def test_ibid_find():
      דבלים (הושע א ג), לכו ונמכרנו לישמעאלים (בראשית שם כז), לכו ונכהו בלשון (שם יח יח), לכו נא ונוכחה (ישעיה א יח).'''
     refs = ibid_find_and_replace(string, lang='he', citing_only=False, replace=True)
     print refs
+
+class TestIndexIbidFinder:
+
+    @classmethod
+    def setup_class(cls):
+        index = library.get_index('Ramban on Genesis')
+        cls.instance = IndexIbidFinder(index, assert_simple = True)
+
+    def test_find_all_shams_in_st(self):
+        st = u'''(שמות יא ט) בשלישי ברא שלש בריות אילנות ודשאים וגן עדן ועוד אמרו (שם י ו) אין לך כל עֵשֶׂב ועשב מלמטה שאין לו מזל ברקיע ומכה אותו ואומר לו גדל הדא הוא דכתיב (איוב לח לג)'''
+        shams = self.instance.ibid_find_and_replace(st, 'he', citing_only=True)
+        assert shams == [Ref('Exodus.11.9'), Ref('Exodus.10.6'), Ref('Job.38.33')]
+
+        st = u'''(שמות יא ט) בשלישי ברא שלש בריות אילנות ודשאים וגן עדן ועוד אמרו (שם י) אין לך כל עֵשֶׂב ועשב מלמטה שאין לו מזל ברקיע ומכה אותו ואומר לו גדל הדא הוא דכתיב (שם)'''
+        shams = self.instance.ibid_find_and_replace(st, 'he', citing_only=True)
+        assert shams == [Ref('Exodus.11.9'), Ref('Exodus.11.10'),Ref('Exodus.11.10')]
 
 #todo: test new class IndexIbidFinder
 #todo: test ibidExceptions
