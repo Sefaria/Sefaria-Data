@@ -165,7 +165,7 @@ class Element(object):
                             assert len(current_child) > 0
                             add_child_callback(u''.join(current_child), child_num, enforce_order)
                             current_child = []
-                        child_num = getGematria(new_child.group(1))
+                        child_num = getGematria(new_child.group(1))  #Todo needs to be a callback
                         continue
 
                     special_pattern = is_special(line, specials)
@@ -196,6 +196,13 @@ class Element(object):
                 else:
                     add_child_callback(u''.join(current_child), child_num, enforce_order)
 
+    def load_xrefs_to_commentstore(self, *args, **kwargs):
+        for child in self.get_child():
+            child.load_xrefs_to_commentstore(*args, **kwargs)
+
+    def load_comments_to_commentstore(self, *args, **kwargs):
+        for child in self.get_child():
+            child.load_comments_to_commentstore(*args, **kwargs)
 
     def __unicode__(self):
         return unicode(self.Tag)
@@ -266,6 +273,12 @@ class Root(Element):
         else:
             raise AssertionError("Unknown language passed. Recognized values are 'en' or 'he'")
 
+    def populate_comment_store(self):
+        self.get_base_text().load_xrefs_to_commentstore()
+        commentaries = self.get_commentaries()
+        commentaries.load_xrefs_to_commentstore()
+        commentaries.load_comments_to_commentstore()
+
 
 class Record(Element):
     """
@@ -335,11 +348,18 @@ class Record(Element):
         else:
             return None
 
+    def load_xrefs_to_commentstore(self, *args, **kwargs):
+        for child in self.get_child():
+            child.load_xrefs_to_commentstore(self.titles['en'])
+
 
 
 class BaseText(Record):
     name = 'base_text'
     parent = Root
+
+    def load_comments_to_commentstore(self, *args, **kwargs):
+        raise NotImplementedError("Comments in base text not included in commentstore")
 
 
 class Commentary(Record):
@@ -349,6 +369,10 @@ class Commentary(Record):
     def __init__(self, soup_tag):
         self.id = soup_tag['id']
         super(Commentary, self).__init__(soup_tag)
+
+    def load_comments_to_commentstore(self):
+        for child in self.get_child():
+            child.load_comments_to_commentstore(self.titles['en'])
 
 
 class Commentaries(Element):
@@ -590,6 +614,14 @@ class Siman(OrderedElement):
                 print '\t{} followed by {} (tag {} in this Siman)'.format(*error)
         return passed
 
+    def load_xrefs_to_commentstore(self, title):
+        for child in self.get_child():
+            child.load_xrefs_to_commentstore(title, self.num)
+
+    def load_comments_to_commentstore(self, title):
+        for child in self.get_child():
+            child.load_comments_to_commentstore(title, self.num)
+
 
 class Seif(OrderedElement):
     name = 'seif'
@@ -676,6 +708,23 @@ class Seif(OrderedElement):
         pattern = re.compile(pattern)
         return list(pattern.finditer(self.Tag.text))
 
+    def load_xrefs_to_commentstore(self, title, siman):
+        for child in self.get_child():
+            child.load_xrefs_to_commentstore(title, siman, self.num)
+
+    def load_comments_to_commentstore(self, title, siman):
+        comment_store = CommentStore()
+
+        if comment_store.get(self.rid) is None:
+            raise MissingCommentError("No Xref with id {} exists".format(self.rid))
+
+        this_ref = comment_store[self.rid]
+        if this_ref.get('commentator_title') is not None:
+            raise DuplicateCommentError("Found 2 comments with rid: {}".format(self.rid))
+        this_ref['commentator_title'] = title
+        this_ref['commentator_siman'] = siman
+        this_ref['commentator_seif'] = self.num
+
 class TextElement(Element):
     parent = 'Seif'
     child = 'Xref'
@@ -720,6 +769,9 @@ class TextElement(Element):
 
         return found
 
+    def load_comments_to_commentstore(self, *args, **kwargs):
+        raise NotImplementedError("Can't load comments at TextElement depth")
+
 
 class Xref(Element):
     name = 'xref'
@@ -737,9 +789,29 @@ class Xref(Element):
     def __hash__(self):
         return hash(self.id)
 
+    def load_xrefs_to_commentstore(self, title, siman, seif):
+        comment_store = CommentStore()
+        if comment_store.get(self.id) is not None:
+            raise DuplicateCommentError("Xref with id '{}' appears twice".format(self.id))
+
+        comment_store[self.id] = {
+            'base_title': title,
+            'siman': siman,
+            'seif': seif
+        }
+
+    def load_comments_to_commentstore(self, *args, **kwargs):
+        raise NotImplementedError("Can't load comments at Xref depth")
+
 module_locals = locals()
 
 class DuplicateChildError(Exception):
+    pass
+
+class DuplicateCommentError(Exception):
+    pass
+
+class MissingCommentError(Exception):
     pass
 
 
