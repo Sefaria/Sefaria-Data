@@ -298,3 +298,8 @@ def test_correct_marks():
     assert correct_marks(test_text, u'@22([\u05d0-\u05ea])',
                          error_finder=out_of_order_he_letters) == u'קצת @22א טקסט @22ב ללא @22ג משמעות'
 
+def test_validate_double_refs():
+    test_text = u'<siman num="1"><seif num="1">foo @22א bar @22א</seif></siman>'
+    siman = Siman(BeautifulSoup(test_text, 'xml').find('siman'))
+    assert not siman.validate_references(u'@22([\u05d0-\u05ea])', u'@22')
+
