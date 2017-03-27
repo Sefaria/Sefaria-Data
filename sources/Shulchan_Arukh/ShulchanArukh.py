@@ -397,6 +397,7 @@ class Commentaries(Element):
         assert self.commentary_ids.get(en_title) is None
         commentary_id = len(self.commentary_ids) + 1
         self.commentary_ids[en_title] = commentary_id
+        self.he_commentary_ids[he_title] = commentary_id
 
         raw_commentary = BeautifulSoup(u'', 'xml').new_tag('commentary')
         raw_commentary['id'] = commentary_id
@@ -404,6 +405,24 @@ class Commentaries(Element):
         commentary.add_titles(en_title, he_title)
         self.Tag.append(raw_commentary)
         return commentary
+
+    def get_commentary_by_id(self, commentary_id):
+        commentary = self.Tag.find('commentary', attrs={'id': commentary_id})
+        if commentary is None:
+            return None
+        return Commentary(commentary)
+
+    def get_commentary_by_title(self, title, lang='en'):
+        try:
+            if lang == 'en':
+                commentary_id = self.commentary_ids[title]
+            elif lang == 'he':
+                commentary_id = self.he_commentary_ids[title]
+            else:
+                raise AssertionError("lang parameter must be 'en' or 'he'")
+        except KeyError:
+            return None
+        return self.get_commentary_by_id(commentary_id)
 
 
 
