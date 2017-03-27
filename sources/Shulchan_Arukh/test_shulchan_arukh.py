@@ -303,3 +303,33 @@ def test_validate_double_refs():
     siman = Siman(BeautifulSoup(test_text, 'xml').find('siman'))
     assert not siman.validate_references(u'@22([\u05d0-\u05ea])', u'@22')
 
+class TestCommentStore(object):
+
+    def test_populate_comment_store(self):
+        """
+        Make sure the code properly passes down the entire tree
+        """
+        root = Root('test_document.xml')
+        base_text = root.get_base_text()
+        base_text.add_titles('Shulchan Arukh', u'שולחן ערוך')
+        commentaries = root.get_commentaries()
+        shach = commentaries.add_commentary('Shach', u'ש"ך')
+
+        base_volume = u'<siman num="1"><seif num="1"><b>' \
+                      u'some <xref id="b0-c1-s1-ord1"/> text</b></seif></siman>'
+        shach_volume =  u'<siman num="1"><seif num="1" rid="b0-c1-s1-ord1"></seif><b>' \
+                      u'some text</b></siman>'
+        base_text.add_volume(base_volume, 1)
+        shach.add_volume(shach_volume, 1)
+        root.populate_comment_store()
+
+        comment_store = CommentStore()
+        assert comment_store.get("b0-c1-s1-ord1") is not None
+        assert comment_store["b0-c1-s1-ord1"] == {
+            'base_title': 'Shulchan Arukh',
+            'siman': 1,
+            'seif': 1,
+            'commentator_title': 'Shach',
+            'commentator_seif': 1,
+            'commentator_siman': 1
+        }

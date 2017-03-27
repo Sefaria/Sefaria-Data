@@ -11,9 +11,9 @@ outlined here are wrappers for BeautifulSoup Tag elements, with the necessary pa
 This allows for a steady accumulation of data to be saved on disk as an xml document.
 """
 
-@Singleton
+
 class CommentStore(dict):
-    pass
+    __metaclass__ = Singleton
 
 
 class Element(object):
@@ -274,6 +274,9 @@ class Root(Element):
             raise AssertionError("Unknown language passed. Recognized values are 'en' or 'he'")
 
     def populate_comment_store(self):
+        comment_store = CommentStore()
+        comment_store.clear()
+
         self.get_base_text().load_xrefs_to_commentstore()
         commentaries = self.get_commentaries()
         commentaries.load_xrefs_to_commentstore()
@@ -630,7 +633,7 @@ class Seif(OrderedElement):
     multiple_children = True
 
     def __init__(self, soup_tag):
-        self.rid = None
+        self.rid = soup_tag.get('rid')
         super(Seif, self).__init__(soup_tag)
 
     def get_child(self):
@@ -792,13 +795,19 @@ class Xref(Element):
     def load_xrefs_to_commentstore(self, title, siman, seif):
         comment_store = CommentStore()
         if comment_store.get(self.id) is not None:
-            raise DuplicateCommentError("Xref with id '{}' appears twice".format(self.id))
+            if comment_store[self.id]['seif'] == ['seif']:
+                message = "Xref with id '{}' appears twice. Same Seif as previous appearance.".format(self.id)
+                print message
+            else:
+                message = "Xref with id '{}' appears twice. Different Seif as previous appearance.".format(self.id)
+                raise DuplicateCommentError(message)
 
         comment_store[self.id] = {
             'base_title': title,
             'siman': siman,
             'seif': seif
         }
+        print 'a'
 
     def load_comments_to_commentstore(self, *args, **kwargs):
         raise NotImplementedError("Can't load comments at Xref depth")
