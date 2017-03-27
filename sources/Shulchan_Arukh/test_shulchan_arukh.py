@@ -333,3 +333,35 @@ class TestCommentStore(object):
             'commentator_seif': 1,
             'commentator_siman': 1
         }
+        comment_store.clear()
+
+    def test_duplicate_xref(self):
+        first_xref = Xref(BeautifulSoup('<xref id="abcd"/>', 'xml').find('xref'))
+        first_xref.load_xrefs_to_commentstore('a', 1, 1)
+        second_xref = Xref(BeautifulSoup('<xref id="abcd"/>', 'xml').find('xref'))
+        second_xref.load_xrefs_to_commentstore('a', 1, 1)
+
+        comment_store = CommentStore()
+        assert comment_store['abcd'] == {
+            'base_title': 'a',
+            'siman': 1,
+            'seif': 1
+        }
+
+        third_xref = Xref(BeautifulSoup('<xref id="abcd"/>', 'xml').find('xref'))
+        with pytest.raises(DuplicateCommentError):
+            third_xref.load_xrefs_to_commentstore('a', 1, 2)
+        CommentStore().clear()
+
+    def test_no_matching_xref(self):
+        seif = Seif(BeautifulSoup(u'<siman num="1" rid="abcd"/>', 'xml').find('siman'))
+        with pytest.raises(MissingCommentError):
+            seif.load_comments_to_commentstore('a', 1)
+        CommentStore().clear()
+
+    def test_duplicate_comment(self):
+        Xref(BeautifulSoup('<xref id="abcd"/>', 'xml').find('xref')).load_xrefs_to_commentstore('a', 1, 1)
+        Seif(BeautifulSoup(u'<siman num="1" rid="abcd"/>', 'xml').find('siman')).load_comments_to_commentstore('a', 1)
+        with pytest.raises(DuplicateCommentError):
+            Seif(BeautifulSoup(u'<siman num="2" rid="abcd"/>', 'xml').find('siman')).load_comments_to_commentstore('a', 1)
+        CommentStore().clear()
