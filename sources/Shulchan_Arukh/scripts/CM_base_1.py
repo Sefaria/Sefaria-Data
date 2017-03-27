@@ -26,8 +26,10 @@ volume.mark_simanim(u'@22([\u05d0-\u05ea]{1,3})', start_mark=u'!start!', special
 print 'Validating Simanim'
 volume.validate_simanim()
 
-volume.mark_seifim(u'@11([\u05d0-\u05ea]{1,3})', specials={u'@23': {'name': u'title'}})
+bad = volume.mark_seifim(u'@11([\u05d0-\u05ea]{1,3})', specials={u'@23': {'name': u'title'}})
 print 'Validating Seifim'
+for i in bad:
+    print i
 volume.validate_seifim()
 # root.export()
 

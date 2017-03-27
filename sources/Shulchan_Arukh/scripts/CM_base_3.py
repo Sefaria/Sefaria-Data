@@ -15,8 +15,8 @@ patterns = [u'@50({})', ur'@57\(({})\)', ur'@58({})\)', ur'@51\[({})\]', ur'@53(
 patterns = [i.format(ur'[\u05d0-\u05ea]{1,3}') for i in patterns]
 patterns[0] = ur'@50([\u05d0-\u05ea])'
 correct_marks_in_file(filename, u'@00', patterns[0], error_finder=out_of_order_he_letters, start_mark=u'!start!')
-for pattern in patterns[1:]:
-    correct_marks_in_file(filename, u'@00', pattern, start_mark=u'!start!')
+# for pattern in patterns[1:]:
+#     correct_marks_in_file(filename, u'@00', pattern, start_mark=u'!start!')
 
 
 with codecs.open(filename, 'r', 'utf-8') as infile:
@@ -27,8 +27,10 @@ volume.mark_simanim(u'@00([\u05d0-\u05ea]{1,3})', start_mark=u'!start!', special
 print 'Validating Simanim'
 volume.validate_simanim()
 
-volume.mark_seifim(u'@11([\u05d0-\u05ea]{1,3})', specials={u'@22': {'name': u'title'}, u'@91': {'name': u'topic'}})
+bad = volume.mark_seifim(u'@11([\u05d0-\u05ea]{1,3})', specials={u'@22': {'name': u'title'}, u'@91': {'name': u'topic'}})
 print 'Validating Seifim'
+for i in bad:
+    print i
 volume.validate_seifim()
 # root.export()
 
