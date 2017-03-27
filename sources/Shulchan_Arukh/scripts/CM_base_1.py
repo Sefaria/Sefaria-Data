@@ -40,3 +40,4 @@ for code, pattern in zip(codes, patterns):
 errors = volume.format_text('@33', '@34', 'ramah')
 for i in errors:
     print i
+root.export()
