@@ -14,7 +14,7 @@ patterns = [u'@50({})', ur'@57\(({})\)', ur'@58({})\)', ur'@51\[({})\]', ur'@53(
             ur'@56({})\]', ur'@55\[({})\]']
 patterns = [i.format(ur'[\u05d0-\u05ea]{1,3}') for i in patterns]
 patterns[0] = ur'@50([\u05d0-\u05ea])'
-correct_marks_in_file(filename, u'@00', patterns[0], error_finder=out_of_order_he_letters, start_mark=u'!start!')
+# correct_marks_in_file(filename, u'@00', patterns[0], error_finder=out_of_order_he_letters, start_mark=u'!start!')
 # for pattern in patterns[1:]:
 #     correct_marks_in_file(filename, u'@00', pattern, start_mark=u'!start!')
 
@@ -41,3 +41,4 @@ for code, pattern in zip(codes[1:], patterns[1:]):
 errors = volume.format_text('@33', '@44', 'ramah')
 for i in errors:
     print i
+
