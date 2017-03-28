@@ -6,6 +6,36 @@ from collections import OrderedDict
 import re
 from data_utilities.util import getGematria
 
+class CitationFinder():
+    '''
+    class to find all potential citations in a string. classifies citations as either sham, refs, or neither
+    neither can still be a ref, but for some reason it isn't parsed correctly
+    '''
+    def get_potential_refs(self, st, lang = 'he'):
+        unique_titles = set(library.get_titles_in_string(st, lang))
+        unique_titles.add(u'שם')
+        refs = []
+        potential_non_refs = []
+        sham_refs = []
+        non_refs = []
+        reg_sham = u'שם'
+        for title in unique_titles:
+            try:
+                refs_w_location, non_refs_w_locations = library._build_all_refs_from_string_w_locations(title, st,lang=lang, with_bad_refs=True)
+                refs += refs_w_location
+                potential_non_refs += non_refs_w_locations
+            except AssertionError as e:
+                pass
+
+        # separate sham_refs from non_refs
+        for pot_ref, location in potential_non_refs:
+            if re.search(reg_sham, pot_ref):
+                sham_refs += [(pot_ref, location)]
+            else:
+                 non_refs += [(pot_ref, location)]
+
+        return refs, non_refs, sham_refs
+
 
 class IndexIbidFinder(object):
 
@@ -16,8 +46,6 @@ class IndexIbidFinder(object):
         '''
         self._index = index
         self._tr = BookIbidTracker(assert_simple=assert_simple)
-
-
 
     def find_all_shams_in_st(self, st, lang = 'he'):
         '''

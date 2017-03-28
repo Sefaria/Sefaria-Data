@@ -146,5 +146,14 @@ class TestIndexIbidFinder:
         shams = self.instance.ibid_find_and_replace(st, 'he', citing_only=True)
         assert shams == [Ref('Exodus.11.9'), Ref('Exodus.11.10'),Ref('Exodus.11.10')]
 
+def test_get_potential_refs():
+    inst = CitationFinder()
+
+    st = u'''(שמות יא ט) בשלישי ברא שלש בריות אילנות (שו"ע בלה בלה) ודשאים וגן עדן ועוד אמרו (שם י) אין לך כל עֵשֶׂב ועשב מלמטה שאין לו מזל (בראשית שגדכגדכג) ברקיע ומכה אותו ואומר לו גדל הדא הוא דכתיב (שם)'''
+    refs, nons, shams = inst.get_potential_refs(st)
+    print refs
+    print nons
+    print shams
+
 #todo: test new class IndexIbidFinder
 #todo: test ibidExceptions
