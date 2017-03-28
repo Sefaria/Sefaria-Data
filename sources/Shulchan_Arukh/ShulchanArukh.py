@@ -545,7 +545,7 @@ class Volume(OrderedElement):
 
     def mark_references(self, commentary_id, pattern):
         for child in self.get_child():
-            child.mark_references(self.get_book_id(), commentary_id, self.num, pattern)
+            child.mark_references(self.get_book_id(), commentary_id, pattern)
 
     def validate_simanim(self, complete=True, verbose=True):
         self.validate_collection(self.get_child(), complete, verbose)
@@ -578,6 +578,31 @@ class Volume(OrderedElement):
         book_id = self.get_book_id()
         for siman in self.get_child():
             siman.set_rid_on_seifim(base_id, book_id)
+
+    def validate_all_xrefs_matched(self, xref_finding_callback=lambda tag: tag.name=='xref'):
+        """
+        Find a group of xrefs, look up each id in CommentStore and make sure they have all field filled out.
+        :param xref_finding_callback: Callback function that takes a BeautifulSoup Tag object and returns True or
+        False. The verification will be run on all tags that are matched by this function. (This is equivalent to passing
+        a function to the `find_all()` method on a BeautifulSoup Tag object. View BeautifulSoup documentation for more
+        info.
+        :return: list of errors found
+        """
+        comment_store = CommentStore()
+        validation_set = self.Tag.find_all(xref_finding_callback)
+        assert len(validation_set) > 0
+        required_fields = ['base_title', 'siman', 'seif', 'commentator_title', 'commentator_siman', 'commentator_seif']
+        errors = []
+
+        for item in validation_set:
+            if comment_store.get(item['id']) is None:
+                errors.append("xref with id {} not found in comment store".format(item['id']))
+            elif any([i not in comment_store[item['id']] for i in required_fields]):
+                errors.append("xref with id {} missing required field".format(item['id']))
+        if len(errors) == 0:
+            print "No errors found"
+        return errors
+
 
 
 class Siman(OrderedElement):

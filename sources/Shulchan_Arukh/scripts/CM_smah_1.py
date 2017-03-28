@@ -10,6 +10,7 @@ if smah is None:
 
 filename = u'../txt_files/Choshen_Mishpat/part_1/סמע חושן משפט חלק א מוכן.txt'
 smah.remove_volume(1)
+# correct_marks_in_file(filename, u'@00([\u05d0-\u05ea]{1,2})', u'@22([\u05d0-\u05ea]{1,3})')
 with codecs.open(filename, 'r', 'utf-8') as infile:
     volume = smah.add_volume(infile.read(), 1)
 assert isinstance(volume, Volume)
@@ -27,3 +28,11 @@ volume.validate_seifim()
 errors = volume.format_text('@11', '@33', 'dh')
 for i in errors:
     print i
+base = root.get_base_text()
+b_vol = base.get_volume(1)
+assert isinstance(b_vol, Volume)
+b_vol.mark_references(volume.get_book_id(), u'@62([\u05d0-\u05ea]{1,3})')
+volume.set_rid_on_seifim()
+root.populate_comment_store()
+b_vol.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'@62', x.text) is not None)
+root.export()
