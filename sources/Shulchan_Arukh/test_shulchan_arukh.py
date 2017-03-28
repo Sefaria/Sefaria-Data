@@ -335,6 +335,20 @@ class TestCommentStore(object):
         }
         comment_store.clear()
 
+    def test_set_rid(self):
+        root = Root('test_document.xml')
+        base_text = root.get_base_text()
+        base_text.add_titles('Shulchan Arukh', u'שולחן ערוך')
+        commentaries = root.get_commentaries()
+        shach = commentaries.add_commentary('Shach', u'ש"ך')
+
+        volume_text = u'<siman num="1"><seif num="3"><b>some text</b></seif></siman>'
+        volume = shach.add_volume(volume_text, 1)
+        volume.set_rid_on_seifim()
+
+        assert unicode(volume) == u'<volume num="1"><siman num="1"><seif num="3" rid="b0-c1-si1-ord3">' \
+                                  u'<b>some text</b></seif></siman></volume>'
+
     def test_duplicate_xref(self):
         first_xref = Xref(BeautifulSoup('<xref id="abcd"/>', 'xml').find('xref'))
         first_xref.load_xrefs_to_commentstore('a', 1, 1)

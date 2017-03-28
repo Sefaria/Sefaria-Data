@@ -574,6 +574,11 @@ class Volume(OrderedElement):
             passed = siman.validate_references(pattern, code, group, key_callback)
         return passed
 
+    def set_rid_on_seifim(self, base_id=0):
+        book_id = self.get_book_id()
+        for siman in self.get_child():
+            siman.set_rid_on_seifim(base_id, book_id)
+
 
 class Siman(OrderedElement):
     name = 'siman'
@@ -643,6 +648,10 @@ class Siman(OrderedElement):
     def load_comments_to_commentstore(self, title):
         for child in self.get_child():
             child.load_comments_to_commentstore(title, self.num)
+
+    def set_rid_on_seifim(self, base_id, book_id):
+        for seif in self.get_child():
+            seif.set_rid(base_id, book_id, self.num)
 
 
 class Seif(OrderedElement):
