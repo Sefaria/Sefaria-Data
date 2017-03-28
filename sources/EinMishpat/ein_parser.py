@@ -155,6 +155,9 @@ def parse_em(filename, passing, errorfilename):
             if (not cit._page_counter) or (cit._page_counter[0] == u'א'):
                 page += 1
             cit._page = page
+            if filter(lambda x: len(x) > 3 or re.search(u'שם',x), cit._page_counter):
+                mass.write_shgia(u'error, missing an indicator')
+
         except:
             mass.write_shgia(u'error, cit with the perek/page counters')
         # start the parsing
@@ -245,7 +248,7 @@ class Semag(object):
                         resolved = resolveExceptin(self._tracker,book, [None])
                         resolveds.append(resolved)
 
-                    if m == u'שם':
+                    if m == u'ו?שם':
                         m = None
                     elif re.search(reg_siman, m):
                         continue
@@ -261,6 +264,8 @@ class Semag(object):
             resolved = resolveExceptin(self._tracker, book, [None])
 
             resolveds.append(resolved)
+        if len([item for item in resolveds if not isinstance(item, Ref)]) > 0:
+            mass.write_shgia(u'error from ibid in Ref or table none problem')
         return resolveds
 
 
@@ -329,7 +334,7 @@ class TurSh(object):
         str_it = iter(str_list[1:])
         reg_siman = u"סי'?|סימן"
         reg_seif = u'''סעיף|סעי?'?|ס([א-ת]?"[א-ת])'''
-        reg_sham = u'שם'
+        reg_sham = u'ו?שם'
         reg_combined = u'ס([א-ת]?"[א-ת])'
         reg_vav = u'ו({}|{}|{}|{})'.format(reg_seif, reg_siman, reg_sham, reg_combined)
         resolveds = []
@@ -466,8 +471,8 @@ class Rambam(object):
         reg22 = u'''ו?הל?([א-ת]?"[א-ת])'''
         combi = re.search(reg22, str)
 
-        reg2 = u'''({}|{}|שם)'''.format(reg21,reg22)  # before the halacha
-        reg_double_cit = u''' (ופ'|ופ[א-ת]?"[א-ת]|ופרק)'''
+        reg2 = u'''({}|{}|ו?שם)'''.format(reg21,reg22)  # before the halacha
+        reg_double_cit = u''' (ופ'|ופ[א-ת]?"[א-ת]|ופרק|ושם)'''
         reg_for_book = ur'''{} (.+?){}'''.format(reg1,reg2)
 
         # check for multiple citation
@@ -518,7 +523,7 @@ class Rambam(object):
                     mass.write_shgia(u'error mim, No halacha stated')
             elif hal22:
                 halacha = hal22.group(1)
-            elif re.search(u'שם', str):
+            elif re.search(u'ו?שם', str):
                 halacha = None
             # else:
             #     print 'error mim, No halcha stated'
@@ -538,7 +543,7 @@ class Rambam(object):
             if len([item for item in resolved if not isinstance(item, Ref)]) > 0:
                 mass.write_shgia(u'error from ibid in Ref or table none problem')
         else:  # halacha was sham
-            if perek and book and not re.search(u'שם', str):
+            if perek and book and not re.search(u'ו?שם', str):
                 mass.write_shgia('error mim, No halacha stated')
             # resolved = self._tracker.resolve(book, [perek, halacha])
             resolved = resolveExceptin(self._tracker, book, [perek, halacha])
@@ -860,13 +865,21 @@ def needs_another_cycle(txtfile, mass_name):
     else:
         with codecs.open(txtfile, 'r', 'utf-8') as fp:
             lines = fp.readlines()
-        reg_letter_error = u'((error missing little or big letter)|(error, cit with the perek/page counters))'
+        reg_letter_error = u'((error missing little or big letter)|(error, cit with the perek/page counters)|(error, missing))'
+        reg_missing_indicator = u'error, missing an indicator'
+        needs_c = 0
+        indicator_c = 0
         for line in lines:
-            if not re.search(reg_letter_error,line):
-                print '\n' + mass_name + ' needs work'
-                return
+            if not re.search(reg_letter_error, line):
+                needs_c += 1
+            if re.search(reg_missing_indicator, line):
+                indicator_c  += 1
+        if not needs_c and not indicator_c:
             print '\n' + mass_name + ' is empty from errors'
-            return
+        else:
+            print '\n' + mass_name + '\n' \
+            +" indicator count " + str(indicator_c)\
+            +" other problem " + str(needs_c)
 
 if __name__ == "__main__":
     # test = parse_em('test.txt')
@@ -917,12 +930,20 @@ if __name__ == "__main__":
     sukka.csv\
     yoma.csv'
 
-    #
+    ls = 'bbametzia.csv  iruvin.csv nazir.csv  shabbat.csv \
+         beitza.csv     kidushin.csv  nedarim.csv    shevuot.csv  yoma.csv \
+    brachot.csv    ktobot.csv    pesachim.csv   sota.csv \
+    makot.csv     sanhedrim.csv  sukka.csv yevamot.csv gittin.csv'
 
-    ls = 'brachot.csv'
-
+    ls = 'BavaBatra.csv  gittin.csv       makot.csv         sanhedrim.csv  yevamot.csv \
+   hagiga_done.csv  nazir.csv         shabbat.csv    yoma.csv \
+bbametzia.csv  iruvin.csv       nedarim.csv       shevuot.csv \
+beitza.csv     kidushin.csv     pesachim.csv      sota.csv \
+brachot.csv    ktobot.csv       rosh_hashana.csv  sukka.csv'
+    # ls = "BavaBatra.csv"
     filenames_he = re.split('\s*', ls)
     filenames_he = [item[:-4] for item in filenames_he]
+
     print filenames_he
     for m_he in filenames_he:
         parsed = run15(massechet_he=u'repeating/{}'.format(m_he), massechet_en = u'repeating/{}'.format(m_he))
@@ -936,3 +957,7 @@ if __name__ == "__main__":
         needs_another_cycle(txtfile, m_he)
 
         # print 'done'
+
+    # reverse_collapse('done/Pesachim - pesachim_little_letters.csv', 'done/pesachim_collapsed')
+    # parsed = run15('repeating/sota', 'repeating/sota')
+    # needs_another_cycle('repeating/sota_error', 'repeating/sota')
