@@ -34,7 +34,11 @@ def createIndex(enTitle):
     index = {
         "title": "Ritva on "+enTitle,
         "categories": ["Talmud", "Bavli", "Commentary", "Ritva", "Seder Moed"],
-        "schema": root.serialize()
+        "schema": root.serialize(),
+        "base_text_titles": [enTitle],
+        "collective_title": "Ritva",
+        "dependence": "Commentary",
+
     }
 
     post_index(index)
@@ -185,7 +189,7 @@ if __name__ == "__main__":
     versionTitle['Niddah'] = 'Hidushe ha-Ritba al Nidah; Wien 1868.'
     versionTitle['Makkot'] = 'Hamisha Shitot, Sulzbach 1761. Published by Meshulam Zalman'
     versionTitle['Avodah Zarah'] = "Orian Tlita'i, Salonika, 1758."
-    files = ["Moed Katan"]
+    files = ["Moed Katan", "Megillah"]
     not_yet = True
     for file in files:
         createIndex(file)
@@ -198,5 +202,5 @@ if __name__ == "__main__":
         "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001201716",
         "versionTitle": versionTitle[file]
         }
-        #post_text("Ritva on "+file, send_text)
+        post_text("Ritva on "+file, send_text, index_count="on")
         match_and_link(dhs, file)
