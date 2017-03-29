@@ -603,6 +603,25 @@ class Volume(OrderedElement):
             print "No errors found"
         return errors
 
+    def locate_references(self, pattern, verbose=True):
+        """
+        For each match to pattern, output the seif at which pattern was found
+        :param pattern:
+        :param verbose: If True will print out locations where matches were found
+        :return: tuples (seif, siman) at which each location was found
+        """
+        locations = []
+        for siman in self.get_child():
+            seifim = siman.locate_references(pattern)
+            for seif in seifim:
+                locations.append((siman.num, seif))
+
+        if verbose:
+            for location in locations:
+                print "Pattern found at Siman {}, Seif {}".format(*location)
+            if len(locations) == 0:
+                print "No matches found"
+        return locations
 
 
 class Siman(OrderedElement):
@@ -677,6 +696,21 @@ class Siman(OrderedElement):
     def set_rid_on_seifim(self, base_id, book_id):
         for seif in self.get_child():
             seif.set_rid(base_id, book_id, self.num)
+
+    def locate_references(self, pattern):
+        """
+        For each match to pattern, output the seif at which pattern was found
+        :param pattern:
+        :return: list of integers that represent the seif number at which a match was found. E.g. if the pattern !@#$
+        was found once in seif 5 and twice in seif 7 this will return [1, 2].
+        """
+        matches = []
+        for seif in self.get_child():
+            num_patterns = len(seif.grab_references(pattern))
+            for _ in range(num_patterns):
+                matches.append(seif.num)
+        return matches
+
 
 
 class Seif(OrderedElement):
