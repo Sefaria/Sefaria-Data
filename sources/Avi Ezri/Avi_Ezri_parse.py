@@ -36,7 +36,7 @@ def get_parsed_text():
                         #remove tag at beggining and split by comment:
                         comments  = verse[verse.index(u"3")+1:].split(u"@78")
                         #make DH's bold
-                        comments = list(map(lambda(x): u"<b>"+x.replace(u"@58",u".</b>").replace(u"@48",u"").replace(u"@88",u""),comments))
+                        comments = list(map(lambda(x): u"<b>"+re.sub(ur"\.\s*\.",u".",x.replace(u"@58",u"</b>.").replace(u"@48",u"").replace(u"@88",u"")),comments))
                         comments = [item for item in comments if item.strip()!=u"<b>"]
                         #comments = filter(lambda(x): x.strip()!=u"<b>",comments)
                         comments = list(map(lambda(x): x.strip() if isinstance(x, unicode) else x.decode('utf8',replace).split(),comments))
@@ -120,7 +120,6 @@ def make_links(text):
                     except IndexError:
                         errored.append('Ibn Ezra on {}, {}:{}'.format(key,perek_index+1, pasuk_index+1))
                     for base, comment in zip(Ibn_Ezra_links["matches"],Ibn_Ezra_links["comment_refs"]):
-                        "NEWNEWNEW"
                         print "B",base,"C", comment
                         print link.get('refs')
                         if base:
@@ -180,11 +179,7 @@ def dh_extract_method(some_string):
 
 def base_tokenizer(some_string):
     return some_string.replace(u"<b>",u"").replace(u"</b>",u"").replace(".","").split(" ")
-def get_links(sefer):
-    base_ref = TextChunk(Ref(sefer),"he")
-    avi_ezri_ref = TextChunk(Ref("Avi Ezri, "+str(sefer_ranges[book_index][1])+"-"+str(sefer_ranges[book_index][2])),"he")
-    return match_ref(base_ref,akeida_ref,base_tokenizer,dh_extract_method=dh_extract_method)
-    
+
 text = get_parsed_text()
 
 
