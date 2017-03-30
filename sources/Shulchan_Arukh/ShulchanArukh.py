@@ -691,7 +691,10 @@ class Siman(OrderedElement):
 
     def load_comments_to_commentstore(self, title):
         for child in self.get_child():
-            child.load_comments_to_commentstore(title, self.num)
+            try:
+                child.load_comments_to_commentstore(title, self.num)
+            except MissingCommentError as e:
+                print e.message
 
     def set_rid_on_seifim(self, base_id, book_id):
         for seif in self.get_child():
