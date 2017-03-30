@@ -19,7 +19,7 @@ patterns[0] = ur'@44([\u05d0-\u05ea])'
 # correct_marks_in_file(filename, u'@22', patterns[0], error_finder=out_of_order_he_letters)
 # for pattern in patterns[1:]:
 #     correct_marks_in_file(filename, u'@22', pattern)
-
+base.remove_volume(2)
 with codecs.open(filename, 'r', 'utf-8') as infile:
     volume = base.add_volume(infile.read(), 2)
 assert isinstance(volume, Volume)
@@ -46,3 +46,4 @@ for code, pattern in zip(codes, patterns):
 errors = volume.format_text('@33', '@88', 'ramah')
 for i in errors:
     print i
+root.export()
