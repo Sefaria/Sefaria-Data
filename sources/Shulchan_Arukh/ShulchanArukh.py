@@ -198,7 +198,10 @@ class Element(object):
 
     def load_xrefs_to_commentstore(self, *args, **kwargs):
         for child in self.get_child():
-            child.load_xrefs_to_commentstore(*args, **kwargs)
+            try:
+                child.load_xrefs_to_commentstore(*args, **kwargs)
+            except DuplicateCommentError as e:
+                print e.message
 
     def load_comments_to_commentstore(self, *args, **kwargs):
         for child in self.get_child():
@@ -543,9 +546,9 @@ class Volume(OrderedElement):
                 errors.append(e.message)
         return errors
 
-    def mark_references(self, commentary_id, pattern):
+    def mark_references(self, commentary_id, pattern, group=None):
         for child in self.get_child():
-            child.mark_references(self.get_book_id(), commentary_id, pattern)
+            child.mark_references(self.get_book_id(), commentary_id, pattern, group=group)
 
     def validate_simanim(self, complete=True, verbose=True):
         self.validate_collection(self.get_child(), complete, verbose)
