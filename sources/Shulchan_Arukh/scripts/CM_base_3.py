@@ -8,6 +8,7 @@ def markup(b_vol):
     commentaries = root.get_commentaries()
     b_vol.mark_references(commentaries.commentary_ids["Ktsot HaHoshen"], u'@58([\u05d0-\u05ea]{1,3})\)', group=1)
     b_vol.mark_references(commentaries.commentary_ids["Me'irat Einayim"], u'@54([\u05d0-\u05ea]{1,3})', group=1)
+    b_vol.mark_references(commentaries.commentary_ids["Siftei Cohen"], ur'@57\(([\u05d0-\u05ea]{1,3})\)', group=1)
     return
 
 root = Root('../Choshen_Mishpat.xml')
