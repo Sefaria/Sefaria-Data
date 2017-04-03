@@ -7,6 +7,7 @@ from data_utilities.util import he_ord
 def markup(b_vol):
     commentaries = root.get_commentaries()
     b_vol.mark_references(commentaries.commentary_ids["Me'irat Einayim"], u'@55([\u05d0-\u05ea]{1,3})', group=1)
+    b_vol.mark_references(commentaries.commentary_ids["Ktsot HaHoshen"], u'/([\u05d0-\u05ea]{1,3})\)', group=1)
 
 root = Root('../Choshen_Mishpat.xml')
 base = root.get_base_text()
@@ -48,4 +49,5 @@ for code, pattern in zip(codes, patterns):
 errors = volume.format_text('@33', '@88', 'ramah')
 for i in errors:
     print i
+markup(volume)
 root.export()
