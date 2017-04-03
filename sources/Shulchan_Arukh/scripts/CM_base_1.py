@@ -9,6 +9,7 @@ def markup(b_vol):
     b_vol.mark_references(commentaries.commentary_ids["Siftei Cohen"], ur'@65\(([\u05d0-\u05ea]{1,3})\)', group=1)
     b_vol.mark_references(commentaries.commentary_ids["Me'irat Einayim"], u'@62([\u05d0-\u05ea]{1,3})', group=1)
     b_vol.mark_references(commentaries.commentary_ids["Ktsot HaHoshen"], u'@67([\u05d0-\u05ea]{1,3})\)', group=1)
+    b_vol.mark_references(commentaries.commentary_ids["Pithei Teshuva"], u'@64([\u05d0-\u05ea]{1,3})\]', group=1)
     return
 
 root = Root('../Choshen_Mishpat.xml')
@@ -46,5 +47,5 @@ errors = volume.format_text('@33', '@34', 'ramah')
 for i in errors:
     print i
 markup(volume)
-root.populate_comment_store()
-# root.export()
+# root.populate_comment_store()
+root.export()
