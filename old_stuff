@@ -1,0 +1,835 @@
+diff --git a/data_utilities/XML_to_JaggedArray.py b/data_utilities/XML_to_JaggedArray.py
+index b0bad6d..8870929 100644
+--- a/data_utilities/XML_to_JaggedArray.py
++++ b/data_utilities/XML_to_JaggedArray.py
+@@ -26,54 +26,43 @@ class XML_to_JaggedArray:
+     def run(self):
+         for count, child in enumerate(self.root):
+             attrib = child.attrib
+-            name = attrib["id"] if len(attrib) > 0 else self.JA_array[count][0] #if I have an attribute identifying my name, use that, else use name user provided in JA_array
++
++            '''if I have an attribute identifying my name, use that, otherwise use name user provided in JA_array'''
++            name = attrib["id"] if len(attrib) > 0 else self.JA_array[count][0]
++
+             depth = self.JA_array[count][1]
+             has_subtitle = self.JA_array[count][2]
+-            self.JA_nodes[name] = self.goDownToText(child, 0, depth)
++            self.JA_nodes[name] = self.goDownToText(child, depth, 0, has_subtitle)
+             subtitle = ""
+-            how_many_to_pop = -1 #collapse all the subtitle slots in the array to one; we start from negative one because we don't want to get rid of all of them, but to collapse them into one
++            how_many_to_pop = -1
+ 
++            '''collapse all the subtitle slots in the array to one; we start from negative one instead of 0,
++            because we don't want to get rid of all of them, but to keep one that the rest collapse into'''
+             if has_subtitle:
+-                print name
+-                '''
+-                if there is a subtitle, this means add to subtitle every item that is a string not array, keep count, then collapse them into one
+-                '''
+                 for gchild_count, gchild in enumerate(self.JA_nodes[name]):
+-                    if type(gchild) is str:
++                    if type(gchild) is not list:
+                         subtitle += gchild
+                         how_many_to_pop += 1
+ 
+-                pdb.set_trace()
+                 for i in range(how_many_to_pop):
+                     self.JA_nodes[name].pop(0)
+ 
+                 self.JA_nodes[name][0] = subtitle
+ 
+-        pdb.set_trace()
+ 
+ 
+-    def goDownToText(self, element, level, depth):
++    def goDownToText(self, element, depth, level=0, has_subtitle=False):
+         if level == depth:
+             return element.xpath("string()").replace("\n\n", " ")
+         else:
+             text = []
+             for child in element:
+-                result = self.goDownToText(child, level+1, depth)
++                result = self.goDownToText(child, depth, level+1, has_subtitle)
+                 text.append(result)
++            if has_subtitle and len(element) == 0:
++                text = element.xpath("string()")
+             return text
+ 
+ 
+     def getNodes(self):
+-        print 'hi'
+-
+-
+-if __name__ == "__main__":
+-    JA_array = [("intro", 1, False), ("part", 2, True), ("part", 2, True), ("part", 2, True), ("part", 2, True), ("part", 2, True)]
+-    JA_array += [("part", 2, True), ("part", 1, False), ("appendix", 2, True)]
+-    allowedTags = ["book", "intro", "part", "appendix", "chapter", "p", "ftnote", "title"]
+-    allowedAttributes = ["id"]
+-    parser = XML_to_JaggedArray("../sources/DC labs/Robinson_MosesCordoveroIntroductionToKabbalah.xml", JA_array, allowedTags, allowedAttributes)
+-    print parser.root
+-    parser.run()
+-    nodes = parser.getNodes()
+-    pdb.set_trace()
++        return self.JA_nodes
+diff --git a/data_utilities/dibur_hamatchil_matcher.py b/data_utilities/dibur_hamatchil_matcher.py
+index 4be54ec..7446a6b 100644
+--- a/data_utilities/dibur_hamatchil_matcher.py
++++ b/data_utilities/dibur_hamatchil_matcher.py
+@@ -95,9 +95,20 @@ def match_ref(base_text, comments, base_tokenizer,dh_extract_method=lambda x: x,
+     #get all non-empty segment refs for 'comments'
+     if type(comments) == TextChunk:
+         comm_ref = comments._oref
+-        sub_ja = comm_ref.get_state_ja("he").subarray_with_ref(comm_ref)
+-        comment_ref_list = [comm_ref.subref(i + 1) for k in sub_ja.non_empty_sections() for i in k]
+-        comment_list = [temp_comm for temp_sec  in comments.text for temp_comm in temp_sec]
++        if comm_ref.get_state_ja("he").depth() == 2:
++            sub_ja = comm_ref.get_state_ja("he").subarray_with_ref(comm_ref)
++            comment_ref_list = [comm_ref.subref(i + 1) for k in sub_ja.non_empty_sections() for i in k]
++            comment_list = [temp_comm for temp_sec  in comments.text for temp_comm in temp_sec]
++        elif comm_ref.get_state_ja("he").depth() == 3:
++            daf = comm_ref[comm_ref.rfind(" ") + 1:]
++            amud = -2 if daf.find("a") > 0 else -1
++            daf = (int(daf.replace("a", "").replace("b", "")) * 2) + amud
++            ref_data_array = ref.get_state_ja("he").array()[daf]
++            comment_ref_list = []
++            for first_level_count, ref_data in enumerate(ref_data_array):
++                for second_level_count, each_one in enumerate(ref_data):
++                    comment_ref_list.append(ref_title + ":" + str(first_level_count + 1) + ":" + str(second_level_count + 1))
++            comment_list = [temp_comm for temp_sec  in comments.text for temp_comm in temp_sec]
+     elif type(comments) == list:
+         comment_list = comments
+         comment_ref_list = None
+diff --git a/research/dibur_hamatchil/dh_source_scripts/koren.py b/research/dibur_hamatchil/dh_source_scripts/koren.py
+index d4d781e..6aae219 100644
+--- a/research/dibur_hamatchil/dh_source_scripts/koren.py
++++ b/research/dibur_hamatchil/dh_source_scripts/koren.py
+@@ -1,6 +1,12 @@
+ # -*- coding: utf-8 -*-
+ 
+ import csv
++import os
++import sys
++#p = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
++#sys.path.insert(0, p)
++#import sefaria_program
++from research.dibur_hamatchil import sefaria_program
+ import re
+ 
+ from data_utilities import dibur_hamatchil_matcher
+@@ -48,4 +54,5 @@ with open("/Users/nss/Documents/Sefaria-Docs/Parsed_Brachot.csv", "r") as f:
+ 
+         yo = dibur_hamatchil_matcher.match_ref(base_tc, comment_list, base_tokenizer=base_tokenizer)
+         print "MATCHES - {}".format(yo)
+-        print "DAF {} -----END-----".format(base_ref)
+\ No newline at end of file
++        print "DAF {} -----END-----".format(base_ref)
++
+diff --git a/sources/Maharam/errors.html b/sources/Maharam/errors.html
+index e69de29..fc10a99 100644
+--- a/sources/Maharam/errors.html
++++ b/sources/Maharam/errors.html
+@@ -0,0 +1,10 @@
++<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
++<html><head>
++<title>504 Gateway Timeout</title>
++</head><body>
++<h1>Gateway Timeout</h1>
++<p>The gateway did not receive a timely response
++from the upstream server or application.</p>
++<hr>
++<address>Apache/2.4.7 (Ubuntu) Server at ste.sefaria.org Port 80</address>
++</body></html>
+diff --git a/sources/Maharam/maharam.py b/sources/Maharam/maharam.py
+index c942b5f..71bd62c 100644
+--- a/sources/Maharam/maharam.py
++++ b/sources/Maharam/maharam.py
+@@ -33,28 +33,25 @@ class Maharam:
+         whatever the category is we increment the maharam line and post the link between maharam and the appropriate
+         book based on the category. remember to deal with paragraph case and gemara case.
+         '''
+-        self.heb_numbers = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "ששי", "שביעי", "שמיני", "תשיעי", "עשירי", "אחד עשר", "שנים עשר", "שלשה עשר", "ארבעה עשר"]
++        self.heb_numbers = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "ששי", "שביעי", "שמיני", "תשיעי", "עשירי", "אחד עשר", "שנים עשר", "שלשה עשר", "ארבעה עשר", "חמשה", "ששה"]
+         self.comm_dict = {}
+         self.dh1_dict = {}
+-        self.dh2_dict = {}
+         self.gemara1_dict = {}
+-        self.gemara2_dict = {}
+         self.tosafot1_dict = {}
+-        self.tosafot2_dict = {}
+         self.rashi1_dict = {}
+-        self.rashi2_dict = {}
+         self.mishnah1_dict = {}
+-        self.mishnah2_dict = {}
+         self.rashi ='רש"י'
+         self.tosafot = "תוס"
+         self.dibbur_hamatchil = ['בד"ה', 'ד"ה', 'בא"ד', """ד'"ה"""]
+         self.gemara = "גמ"
++        self.shom = "שם"
+         self.amud_bet = 'ע"ב'
+         self.mishnah = ['במשנה', 'מתני']
+         self.current_daf = 3
+         self.current_perek = 1
+         self.categories = ['rashi', 'tosafot', 'gemara', 'mishnah', 'paragraph']
+         self.links_to_post = []
++        self.category = ""
+ 
+ 
+ 
+@@ -90,38 +87,28 @@ class Maharam:
+             ref = ref[0:second_colon]
+         return ref.replace(replace_text, "")
+ 
+-    def addDHComment(self, dh1, dh2, comment, category, heb_category):
+-        if hasTags(dh1) or hasTags(dh2) or hasTags(comment):
+-            print "tags!"
+-            pdb.set_trace()
+-        if len(dh1)>0 and len(dh2)>0:
+-            self.dh1_dict[self.current_daf].append((category, dh1))
+-            self.dh2_dict[self.current_daf].append((category, dh2))
+-            self.comm_dict[self.current_daf].append(self.heb_category+" <b>"+dh1+" "+dh2+" </b>"+comment)
+-        elif len(dh1)>0:
++    def addDHComment(self, dh1, comment, category, heb_category):
++        if len(dh1)>0:
+             self.dh1_dict[self.current_daf].append((category, dh1))
+-            self.dh2_dict[self.current_daf].append((category, ""))
+-            self.comm_dict[self.current_daf].append(self.heb_category+" <b>"+dh1+" </b>"+comment)
++            first_word = dh1.split(" ")[0]
++            dh1 = " ".join(dh1.split(" ")[1:])
++            append_str = first_word + " <b>" + dh1 + "</b> " + comment + ": "
++            self.comm_dict[self.current_daf].append(append_str)
+         else:
+             last_comment = len(self.comm_dict[self.current_daf])-1
+             if last_comment == -1:
+                 self.comm_dict[self.current_daf].append(comment)
+                 self.dh1_dict[self.current_daf].append((category, ""))
+-                self.dh2_dict[self.current_daf].append((category, ""))
+             else:
+-                self.comm_dict[self.current_daf][last_comment] += "<br>"+comment
++                self.comm_dict[self.current_daf][last_comment] += "<br>"+comment+": "
+         if category == 'gemara':
+             self.gemara1_dict[self.current_daf].append(dh1)
+-            self.gemara2_dict[self.current_daf].append(dh2)
+         elif category == 'rashi':
+             self.rashi1_dict[self.current_daf].append(dh1)
+-            self.rashi2_dict[self.current_daf].append(dh2)
+         elif category == 'tosafot':
+             self.tosafot1_dict[self.current_daf].append(dh1)
+-            self.tosafot2_dict[self.current_daf].append(dh2)
+         elif category == 'mishnah':
+             self.mishnah1_dict[current_perek].append(dh1)
+-            self.mishnah2_dict[current_perek].append(dh2)
+ 
+     def removeBDH(self, array):
+         try:
+@@ -162,81 +149,56 @@ class Maharam:
+             actual_text = line[3:]
+         if not self.current_daf in self.dh1_dict:
+             self.dh1_dict[self.current_daf] = []
+-            self.dh2_dict[self.current_daf] = []
+             self.gemara1_dict[self.current_daf] = []
+-            self.gemara2_dict[self.current_daf] = []
+             self.tosafot1_dict[self.current_daf] = []
+-            self.tosafot2_dict[self.current_daf] = []
+             self.rashi1_dict[self.current_daf] = []
+-            self.rashi2_dict[self.current_daf] = []
+             self.mishnah1_dict[self.current_perek] = []
+-            self.mishnah2_dict[self.current_perek] = []
+         self.actual_text = actual_text
+         return self.current_daf
+ 
+-    def getCategory(self, count, comment):
++
++
++
++    def determineCategory(self, count, comment):
+         comment = comment + ':'
+         if count == 0 and len(comment) == 0:
+             return ""
+-        self.heb_category = comment.split(" ")[0]
+-        if self.heb_category.find(self.rashi)>=0:
+-            category = 'rashi'
+-        elif self.heb_category.find(self.tosafot)>=0:
+-            category = 'tosafot'
+-        elif self.heb_category.find(self.gemara)>=0:
+-            category = 'gemara'
+-        elif self.heb_category in self.mishnah:
+-            category = 'mishnah'
+-        elif self.heb_category in self.dibbur_hamatchil:
+-            if count == 0:
+-                category = 'gemara'
+-        else:
+-            if count == 0:
+-                category = 'gemara'
+-            else:
+-                if comment.split(".",1)[0].find('וכו') > 0:
+-                    category = 'gemara'
+-                category = 'paragraph'
+-        return category
++        first_line = " ".join(comment.split(" ")[0:10])
++        word = comment.split(" ")[0] if comment.split(" ")[0] != " " else comment.split(" ")[1]
++        if word.find(self.rashi)>=0:
++            self.category = 'rashi'
++            self.heb_category = word
++        elif word.find(self.tosafot)>=0:
++            self.category = 'tosafot'
++            self.heb_category = word
++        elif word.find(self.gemara)>=0:
++            self.category = 'gemara'
++            self.heb_category = word
++        elif word in self.mishnah:
++            self.category = 'mishnah'
++            self.heb_category = word
+ 
+ 
+     def parseDH(self, comment, category):
+-        end_of_first_word = comment.find(' ')
+-        comment = comment[end_of_first_word+1:]
+-        marker_max = max(comment.rfind('.'), comment.rfind(':'))
+-        marker_min = min(comment.find('.'), comment.find(':'))
+-        if marker_min == -1:
+-            marker_min = max(comment.find('.'), comment.find(':'))
+-        if marker_min == marker_max or (onlyOne(comment, '.') and onlyOne(comment, ':') and comment.find('.')>comment.find(':')):
+-            if onlyOne(comment, "כו'"):
+-                dh1, comment = comment.split("כו'", 1)
+-                if len(comment)<5:
+-                    dh1 += "כו'"
+-                else:
+-                    dh1 += "כו'. "
+-                dh2 = ""
+-            elif comment.find("כו'")>=0: #multiple cases
+-                dh1, dh2, comment = comment.split("כו'", 2)
+-                dh1 += "כו' "
+-                if len(comment)<5:
+-                    dh2 += "כו'"
+-                else:
+-                    dh2 += "כו'. "
+-            else: #no periods or etc so nothing to work with, should this be a comment or DH?
+-                    #depends on whether it's paragraph comment??
+-                dh1 = comment
+-                dh2 = ""
+-                comment = ""
+-        elif comment.find(".")>=0:
+-            dh, comment = comment.split(".", 1)
+-            dh += ". "
+-            if dh.find("כו'")>=0:
+-                dh1, dh2 = dh.split("כו'", 1)
+-                dh1 += "כו' "
++        first_10 = " ".join(comment.split(" ")[0:10])
++        if first_10 == " ".join(comment.split(" ")[0:9]):
++            dh = ""
++            self.addDHComment(dh, comment, category, self.heb_category)
++        else:
++            if first_10.find(".") > 0:
++                dh, comment = comment.split(".", 1)
++                comment = comment[1:] if comment[0] == ' ' else comment
++                dh += ". "
++            elif first_10.find("כו'") > 0:
++                dh, comment = comment.split("כו'", 1)
++                comment = comment[1:] if comment[0] == ' ' else comment
++                dh += "כו' "
++            elif len(comment) > 20:
++                dh = first_10 + " "
++                comment = " ".join(comment.split(" ")[10:])
+             else:
+-                dh1 = dh
+-                dh2 = ""
+-        self.addDHComment(dh1, dh2, comment, category, self.heb_category)
++                dh = ""
++            self.addDHComment(dh, comment, category, self.heb_category)
+ 
+ 
+     def parseText(self, file):
+@@ -247,7 +209,7 @@ class Maharam:
+                 continue
+ 
+             if line.find("@00")>=0 and line.find("פרק")>=0:
+-                self.current_perek = self.getPerek(line)
++                self.current_perek += 1
+                 continue
+ 
+             if line[0] == " ":    #not part of the logic, just solving something caused by the text file
+@@ -263,21 +225,22 @@ class Maharam:
+ 
+                 comments = self.actual_text.split(":")
+                 for count, comment in enumerate(comments):
+-                    if len(comment) < 2:
++                    if comment[0] == ' ':
++                        comment = comment[1:]
++                    if len(comment) < 5:
+                         continue
+-                    category = self.getCategory(count, comment)
+-                    if category == "":
++                    self.determineCategory(count, comment)
++                    if self.category == "":
+                         continue
+-                    if hasTags(comment):
+-                        pdb.set_trace()
+-                    if category == 'paragraph':
++                    if self.category == 'paragraph':
+                         self.addDHComment("","", comment, 'paragraph', "")
+                     else:
+-                        self.parseDH(comment, category)
++                        self.parseDH(comment, self.category)
+             else:
+                 print line
+             prev_line = line
+ 
++
+     def RashiOrTosafot(self, daf, category, rashi_in_order, tosafot_in_order):
+         if category == 'rashi':
+             self.maharam_line+=1
+@@ -301,8 +264,8 @@ class Maharam:
+                 out_order = in_order
+             replace_text = "Tosafot on "
+         if category == 'rashi' or category == 'tosafot':
+-            in_order = in_order.replace('0:','')
+-            out_order = out_order.replace('0:','')
++            if in_order.find('0')>=0 or out_order.find('0')>=0:
++                return
+             in_order = int(in_order)
+             out_order = int(out_order)
+             if out_order != 0: #out_order only equals 0 if there really is no Tosafot or Rashi on the given daf
+@@ -321,21 +284,14 @@ class Maharam:
+                     "type": "commentary",
+                     "auto": True,
+                     "generated_by": "Maharam on "+masechet+" linker"})
+-                if len(masechet_daf_line)>0:
+-                    talmud_ref = self.convertRefCommentaryTalmud(masechet_daf_line, replace_text)
+-                    self.links_to_post.append({
+-                        "refs": [
+-                                 talmud_ref,
+-                                "Maharam on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line)
+-                            ],
+-                        "type": "commentary",
+-                        "auto": True,
+-                        "generated_by": "Maharam "+masechet+" linker"})
++
+ 
+     def Gemara(self, daf, gemara_in_order):
+         self.maharam_line+=1
+         self.gemara_line+=1
+-        gemara_in_order[self.gemara_line] = gemara_in_order[self.gemara_line].replace('0:','')
++        if gemara_in_order[self.gemara_line].find('0') >= 0:
++            return
++        gemara_in_order[self.gemara_line] = gemara_in_order[self.gemara_line]
+         if gemara_in_order[self.gemara_line].find('-')>=0:
+             in_order, out_order = gemara_in_order[self.gemara_line].split('-')
+         else:
+@@ -366,7 +322,8 @@ class Maharam:
+             for key in mishnah_in_order[perek]:
+                 pos+=1
+                 if pos==mishnah_line:
+-                    mishnah_in_order[perek][key] = mishnah_in_order[perek][key].replace('0:','')
++                    if mishnah_in_order[perek][key].find('0') >= 0:
++                        return
+                     if mishnah_in_order[perek][key].find('-')>=0:
+                         in_order, out_order = mishnah_in_order[perek][key].split('-')
+                     else:
+@@ -395,12 +352,13 @@ class Maharam:
+         mishnah_out_order = {}
+         for perek in self.mishnah1_dict:
+             print "matching mishnah"
+-            mishnah_text = get_text_plus("Mishnah "+masechet+"."+str(perek))['he']
++            mishnah_text = Ref("Mishnah "+masechet+"."+str(perek)).text('he').text
+             mishnah_in_order[perek] = match_in_order.match_list(self.removeBDH(self.mishnah1_dict[perek]), mishnah_text, "Mishnah "+masechet+"."+str(perek))
+-            #mishnah_out_order[perek] = match_out_of_order.match_list(removeBDH(self.mishnah2_dict[perek]), mishnah_text, "Mishnah "+masechet+"."+str(perek))
++            mishnah_in_order[perek] = dibur_hamatchil_matcher.match_ref(mishnah_text,
++
+ 
+         links_to_post = []
+-        for daf in self.dh1_dict:
++        for daf in sorted(self.dh1_dict.keys()):
+             print daf
+             self.maharam_line = 0
+             self.rashi_line=0
+@@ -408,24 +366,19 @@ class Maharam:
+             self.gemara_line = 0
+             mishnah_line = 0
+             tosafot1_arr = self.tosafot1_dict[daf]
+-            tosafot2_arr = self.tosafot2_dict[daf]
+             rashi1_arr = self.rashi1_dict[daf]
+-            rashi2_arr = self.rashi2_dict[daf]
+             gemara1_arr = self.gemara1_dict[daf]
+-            gemara2_arr = self.gemara2_dict[daf]
+             print "matching tosafot"+str(len(tosafot1_arr))
+-            tosafot_text = compileCommentaryIntoPage("Tosafot on "+masechet, daf)
++            #tosafot_text = compileCommentaryIntoPage("Tosafot on "+masechet, daf)
++            tosafot_text =
+             tosafot_in_order = match_in_order.match_list(self.removeBDH(tosafot1_arr), tosafot_text, "Tosafot on "+masechet+" "+AddressTalmud.toStr("en", daf))
+-            #tosafot_out_order = match_out_of_order.match_list(removeBDH(tosafot2_arr), tosafot_text, "Tosafot on "+masechet+" "+AddressTalmud.toStr("en", daf))
+             if not (masechet == "Bava Batra" and daf > 57):
+                 print "matching rashi"+str(len(rashi1_arr))
+                 rashi_text = compileCommentaryIntoPage("Rashi on "+masechet, daf)
+                 rashi_in_order = match_in_order.match_list(self.removeBDH(rashi1_arr), rashi_text, "Rashi on "+masechet+" "+AddressTalmud.toStr("en", daf))
+-                #rashi_out_order = match_out_of_order.match_list(removeBDH(rashi2_arr), rashi_text, "Rashi on "+masechet+" "+AddressTalmud.toStr("en", daf))
+             print "matching gemara"+str(len(gemara1_arr))
+-            gemara_text = get_text(masechet+" "+AddressTalmud.toStr("en", daf))
++            gemara_text = Ref(masechet+" "+AddressTalmud.toStr("en", daf)).text('he').text
+             gemara_in_order = match_in_order.match_list(self.removeBDH(gemara1_arr), gemara_text, masechet+" "+AddressTalmud.toStr("en", daf))
+-            #gemara_out_order = match_out_of_order.match_list(removeBDH(gemara2_arr), gemara_text, masechet+" "+AddressTalmud.toStr("en", daf))
+             dh1_arr = self.dh1_dict[daf]
+             print "done matching"
+             for category, dh in self.dh1_dict[daf]:
+@@ -438,11 +391,12 @@ class Maharam:
+                     self.Mishnah(daf, mishnah_in_order)
+                 elif category == 'paragraph' and self.maharam_line == 0:
+                     self.maharam_line+=1
+-        post_link(links_to_post)
++        post_link(self.links_to_post)
++
+ 
+ def create_index(tractate):
+     root=JaggedArrayNode()
+-    heb_masechet = get_text_plus(tractate)['heBook']
++    heb_masechet = library.get_index(tractate).get_title('he')
+     root.add_title(u"Maharam on "+tractate.replace("_"," "), "en", primary=True)
+     root.add_title(u'מהר"ם '+heb_masechet, "he", primary=True)
+     root.key = 'maharam'
+@@ -462,23 +416,25 @@ def create_index(tractate):
+ 
+ 
+ if __name__ == "__main__":
+-    titles = ["Bava Batra", "Bava Kamma", "Bava Metzia", "Chullin", "Eruvin", "Gittin", "Ketubot", "Kiddushin", "Makkot",
++    titles = ["Bava Batra", "Bava Kamma","Bava Metzia"]
++    ''', "Chullin", "Eruvin", "Gittin", "Ketubot", "Kiddushin", "Makkot",
+               "Niddah", "Sanhedrin", "Shabbat", "Sukkah", "Yevamot"
+               ]
+-    done = ["Bava Batra", "Bava Kamma"]
++        '''
++    done = []
+     for masechet in titles:
+         if masechet in done:
+             continue
+ 
+         print masechet
+ 
+-        create_index(masechet)
++        #create_index(masechet)
+         file = open(masechet+"2.txt", 'r')
+ 
+         maharam = Maharam()
+         maharam.parseText(file)
+ 
+-        match_in_order=Match(in_order=True, min_ratio=86, guess=False, range=True, can_expand=False)
++        match_in_order=Match(in_order=True, min_ratio=80, guess=False, range=True, can_expand=False)
+         text_to_post = convertDictToArray(maharam.comm_dict)
+         send_text = {
+                         "versionTitle": "Vilna Edition",
+@@ -486,7 +442,7 @@ if __name__ == "__main__":
+                         "language": "he",
+                         "text": text_to_post,
+                     }
+-        post_text("Maharam on "+masechet, send_text, "on")
++        #post_text("Maharam on "+masechet, send_text, "on")
+ 
+         maharam.postLinks(match_in_order)
+ 
+diff --git a/sources/Maharam/multid-matching.py b/sources/Maharam/multid-matching.py
+new file mode 100644
+index 0000000..e922b19
+--- /dev/null
++++ b/sources/Maharam/multid-matching.py
+@@ -0,0 +1,12 @@
++__author__ = 'stevenkaplan'
++
++
++ref_title = "Tosafot on Bava Batra 2b"
++ref = Ref(ref_title)
++ref.normal()[ref.normal().rfind(" ") + 1:]
++ref_data_array = ref.get_state_ja("he").array()[3]
++new_refs = []
++for first_level_count, ref_data in enumerate(ref_data_array):
++    for second_level_count, each_one in enumerate(ref_data):
++        new_refs.append(ref_title + ":" + str(first_level_count + 1) + ":" + str(second_level_count + 1))
++
+diff --git a/sources/Maharam/sanhedrin2.txt b/sources/Maharam/sanhedrin2.txt
+index b9f5372..d9232df 100644
+--- a/sources/Maharam/sanhedrin2.txt
++++ b/sources/Maharam/sanhedrin2.txt
+@@ -1,5 +1,5 @@
+-@11דף@00מהרם סנהדרין @11
+-דף ב ע"א @44מתניתין @55והרגת את האשה ואת הבהמה ואומר ואת הבהמה תהרוגו כן צריך להיות: @44ברש"י @55ד"ה גזלות וכו' דמלוה להוצאה ניתנה וכתב זה משום שקשה ליה מה לי כופר בפקדון או כופר במלוה ולמה לא מקרי גזלן ותירץ דשאני פקדון דאיהו בעין ומיד שכופר בו נעשה כאילו עתה גוזלו מיד בעלים אבל מלוה אינו בעין דלהוצאה ניתנה וכשכופר בה ולא רצה לשלם אינו נעשה כאלו גוזל עתה מיד הבעלים לכך לא מקרי גזלן: @44ד"ה @55הערכין הממלטלין בגמרא מפרש ר"ל משום דבמטלטלין וקרקעות לא שייך ערכין אלא הקדש קדושת דמים במטלטלין שמין שוה ובקרקעות לפי חשבון בית זרע חומר שעורים בחמשים שקל ולא שייך ערכין כי אם גבי אדם כשאומר ערכי עלי או ערך פלוני עלי ולכך מפרש בגמרא דערכין המטלטלין דקתני דאיירי בענין שמקדש דמי שוויו של כלי עיין לקמן בגמרא דף ט"ו וכן הא דקתני ואדם כיוצא בהן לא איירי באומר ערכי עלי לכך פריך בגמרא אדם מי קדיש ומוקי באומר דמי עלי והא דלא קתני במתניתין ערכין גמורין משום דהתם לא צריך שומא דדמיהם קצובים בפרשה דאם הוא מבן כ' עד ששים חמשים שקלים ומבן חמש עד עשרים עשרים שקלים: @44ד"ה @55הרובע והנרבע שור שרבע אשה וכו' נידונית הבהמה ליסקל בכ"ג כאדם דאיתקש להדדי והוא סוף הדבור כן צ"ל ורצה לומר נידונית הבהמה בין שהבהמה היא הרובע ובין שהבהמה היא הנרבעת נידונית ליסקל בכ"ג באדם ד"ל בין שהאדם הרובע ובין שהאדם הוא הנרבע כגון אשה דבשניהם איתקש הבהמה והאדם להדדי כמו שמפרש אחר כך בהפסוקים שמביא שהרי בפסוק והרגת את האשה איתקש הבהמה שהוא הרובע להאדם שהיא האשה ובפסוק ואת הבהמה תהרוגו איתקש הבהמה שהיא הנרבעת להאדם שהוא האיש הרובע: @44ד"ה @55כמיתת הבעלים וכו' דהאי בעליו יומת קרא יתירה להך דרשה וכו' עיין לקמן דף ט"ו ועיין שם בתוס' דף הנ"ל דיש ע"ב למה איצטריך יתורא להאי דרשה ולא יליף לה מהיקשא דאיתקש בהמה לאדם כמו גבי רובע ונרבע: @44ד"ה @55שומע אני דלטובה לזכות הלך אחריהם שאפילו מיעוט המזכים ורבים המחייבין כתיב לא תהיה אחרי רבים לרעות דברי רש"י צריכין ביאור דהא אי אפשר לפרש כפשוטו דאזלינן בתר מיעוט המזכין אלא ר"ל דלא אזלינן בתר רוב המחייבין אלא מוסיפין עליהם כדלקמן פרק היו בודקין מכלל דאם היו רוב מזכין הולכין אחריהן אם כן אחרי רבים להטות למה לי דלזכות לא איצטריך דמדיוקא שמעינן ליה אבל צריך ליתן טעם לדברי רש"י דלמה האריך לכתוב לשון זה היה לו לומר בקצור שומע אני דלזכות הולכין אחריהן דמדכתיב לא תהיה אחרי רבים לרעות מכלל דלטובה תהיה אחרי רבים וצ"ל דרש"י סבירא ליה דהא דקאמר שומע אני דלטובה הולכין אחריהן לא מדיוקא דייק לה אלא מסברא כיון דחזינן שאפילו היכא דמיעוט מזכין ורבים מחייבין אין הולכים אחר המחייבין סברא הוא דהיכי דמזכין הן רבים פשיטא דהולכין אחרי רבים המזכין: @44בתוס' @55ד"ה ד"מ וכו' אחר ששנה דיני וכו' בא לתרץ מפני מה שנה רבי משנה סנהדרין אחר הג' בבות ב"ק בבא מציעא בבא בתרא ותירץ דבהתלתא בבי שנה הדינים ואחר ששנה הדינים משמיענו בכמה דיינים דנין הדינים: @44בא"ד @55והא דלא תנא כופר ול' של עבד וכו' כצ"ל וענין בפני עצמו הוא: @44בא"ד@55 ובזמן שהשור בסקילה בעלים משלמין כופר. ר"ל ולכך לא הוצרך למתני כופר ושלשים של עבד דממילא שמעינן דבעינן כ"ג דהא אין כופר בלא מיתת השור. וכבר תנא דמיתת השור בכ"ג דלא כרבי אליעזר וכו' דלדידיה אשכחן דמחייבי כופר ושלשים אף במקום שאין כאן מיתת שור כגון בעד אחד ועל פי בעלים ואם כן אי אתיא מתניתין כוותיה הוי ליה למתני כופר ול' בפני עצמו: @44בא"ד @55ואין נראה וכו' ד"ל דתירוצו של הי"מ אינו משום דהא איכא אמוראי דאפילו לר"ע דאשכחן דמשלם כופר אפילו היכא דליכא מיתת השור כגון שלא בכוונה דליכא מיתת שור ואם כן לא אתיא מתני' לא כרבי אליעזר ולא כר"ע דלר"ע נמי הוי ליה למתני לתנא דמתניתין כופר בפני עצמו כיון דאיתא בלא מיתת השור: @44בא"ד @55וללישנא קמא וכו' ר"ל לפי הי"מ דלית להו תירוצו של ר"ת דתירץ דכופר ושלשים הוו בכלל חבלות אלא תירצו דלהכי לא קתני כופר ושלשים משום דלא משלמי כי אם בזמן שהשור בסקילה איך יתורץ לדידהו הא דשייר ולא קתני יציאת עבד בראשי אברים ותירץ דהי"מ סבירא ליה דיציאת עבד בראשי אברים הוי פשיטא בכלל חבלות אבל כופר ושלשים של עבד לא מסתבר להו למימר דהוו בכלל חבלות ולכך תירצו הא דלא קתני כופר ושלשים בתירוץ הראשון אי נמי התנא לא איירי וכו' ר"ל לא תני ראשי אברים דאין שם נתינת ממון כן מתרצין הי"מ דלעיל: 
++@00מהרם סנהדרין 
++@11דף ב ע"א @44מתניתין @55והרגת את האשה ואת הבהמה ואומר ואת הבהמה תהרוגו כן צריך להיות: @44ברש"י @55ד"ה גזלות וכו' דמלוה להוצאה ניתנה וכתב זה משום שקשה ליה מה לי כופר בפקדון או כופר במלוה ולמה לא מקרי גזלן ותירץ דשאני פקדון דאיהו בעין ומיד שכופר בו נעשה כאילו עתה גוזלו מיד בעלים אבל מלוה אינו בעין דלהוצאה ניתנה וכשכופר בה ולא רצה לשלם אינו נעשה כאלו גוזל עתה מיד הבעלים לכך לא מקרי גזלן: @44ד"ה @55הערכין הממלטלין בגמרא מפרש ר"ל משום דבמטלטלין וקרקעות לא שייך ערכין אלא הקדש קדושת דמים במטלטלין שמין שוה ובקרקעות לפי חשבון בית זרע חומר שעורים בחמשים שקל ולא שייך ערכין כי אם גבי אדם כשאומר ערכי עלי או ערך פלוני עלי ולכך מפרש בגמרא דערכין המטלטלין דקתני דאיירי בענין שמקדש דמי שוויו של כלי עיין לקמן בגמרא דף ט"ו וכן הא דקתני ואדם כיוצא בהן לא איירי באומר ערכי עלי לכך פריך בגמרא אדם מי קדיש ומוקי באומר דמי עלי והא דלא קתני במתניתין ערכין גמורין משום דהתם לא צריך שומא דדמיהם קצובים בפרשה דאם הוא מבן כ' עד ששים חמשים שקלים ומבן חמש עד עשרים עשרים שקלים: @44ד"ה @55הרובע והנרבע שור שרבע אשה וכו' נידונית הבהמה ליסקל בכ"ג כאדם דאיתקש להדדי והוא סוף הדבור כן צ"ל ורצה לומר נידונית הבהמה בין שהבהמה היא הרובע ובין שהבהמה היא הנרבעת נידונית ליסקל בכ"ג באדם ד"ל בין שהאדם הרובע ובין שהאדם הוא הנרבע כגון אשה דבשניהם איתקש הבהמה והאדם להדדי כמו שמפרש אחר כך בהפסוקים שמביא שהרי בפסוק והרגת את האשה איתקש הבהמה שהוא הרובע להאדם שהיא האשה ובפסוק ואת הבהמה תהרוגו איתקש הבהמה שהיא הנרבעת להאדם שהוא האיש הרובע: @44ד"ה @55כמיתת הבעלים וכו' דהאי בעליו יומת קרא יתירה להך דרשה וכו' עיין לקמן דף ט"ו ועיין שם בתוס' דף הנ"ל דיש ע"ב למה איצטריך יתורא להאי דרשה ולא יליף לה מהיקשא דאיתקש בהמה לאדם כמו גבי רובע ונרבע: @44ד"ה @55שומע אני דלטובה לזכות הלך אחריהם שאפילו מיעוט המזכים ורבים המחייבין כתיב לא תהיה אחרי רבים לרעות דברי רש"י צריכין ביאור דהא אי אפשר לפרש כפשוטו דאזלינן בתר מיעוט המזכין אלא ר"ל דלא אזלינן בתר רוב המחייבין אלא מוסיפין עליהם כדלקמן פרק היו בודקין מכלל דאם היו רוב מזכין הולכין אחריהן אם כן אחרי רבים להטות למה לי דלזכות לא איצטריך דמדיוקא שמעינן ליה אבל צריך ליתן טעם לדברי רש"י דלמה האריך לכתוב לשון זה היה לו לומר בקצור שומע אני דלזכות הולכין אחריהן דמדכתיב לא תהיה אחרי רבים לרעות מכלל דלטובה תהיה אחרי רבים וצ"ל דרש"י סבירא ליה דהא דקאמר שומע אני דלטובה הולכין אחריהן לא מדיוקא דייק לה אלא מסברא כיון דחזינן שאפילו היכא דמיעוט מזכין ורבים מחייבין אין הולכים אחר המחייבין סברא הוא דהיכי דמזכין הן רבים פשיטא דהולכין אחרי רבים המזכין: @44בתוס' @55ד"ה ד"מ וכו' אחר ששנה דיני וכו' בא לתרץ מפני מה שנה רבי משנה סנהדרין אחר הג' בבות ב"ק בבא מציעא בבא בתרא ותירץ דבהתלתא בבי שנה הדינים ואחר ששנה הדינים משמיענו בכמה דיינים דנין הדינים: @44בא"ד @55והא דלא תנא כופר ול' של עבד וכו' כצ"ל וענין בפני עצמו הוא: @44בא"ד@55 ובזמן שהשור בסקילה בעלים משלמין כופר. ר"ל ולכך לא הוצרך למתני כופר ושלשים של עבד דממילא שמעינן דבעינן כ"ג דהא אין כופר בלא מיתת השור. וכבר תנא דמיתת השור בכ"ג דלא כרבי אליעזר וכו' דלדידיה אשכחן דמחייבי כופר ושלשים אף במקום שאין כאן מיתת שור כגון בעד אחד ועל פי בעלים ואם כן אי אתיא מתניתין כוותיה הוי ליה למתני כופר ול' בפני עצמו: @44בא"ד @55ואין נראה וכו' ד"ל דתירוצו של הי"מ אינו משום דהא איכא אמוראי דאפילו לר"ע דאשכחן דמשלם כופר אפילו היכא דליכא מיתת השור כגון שלא בכוונה דליכא מיתת שור ואם כן לא אתיא מתני' לא כרבי אליעזר ולא כר"ע דלר"ע נמי הוי ליה למתני לתנא דמתניתין כופר בפני עצמו כיון דאיתא בלא מיתת השור: @44בא"ד @55וללישנא קמא וכו' ר"ל לפי הי"מ דלית להו תירוצו של ר"ת דתירץ דכופר ושלשים הוו בכלל חבלות אלא תירצו דלהכי לא קתני כופר ושלשים משום דלא משלמי כי אם בזמן שהשור בסקילה איך יתורץ לדידהו הא דשייר ולא קתני יציאת עבד בראשי אברים ותירץ דהי"מ סבירא ליה דיציאת עבד בראשי אברים הוי פשיטא בכלל חבלות אבל כופר ושלשים של עבד לא מסתבר להו למימר דהוו בכלל חבלות ולכך תירצו הא דלא קתני כופר ושלשים בתירוץ הראשון אי נמי התנא לא איירי וכו' ר"ל לא תני ראשי אברים דאין שם נתינת ממון כן מתרצין הי"מ דלעיל: 
+ @11 בתוס' ד"ה דברי הכל אין דיניהם דין וכו' ואם תאמר כי היכי דילפינן ממשפט אחד נילף נמי לענין ג' ומומחה אפילו מאן דלית ליה עירוב פרשיות נראה דקושית התוס' קאי דלפי סברת המקשה משמע דלמאן דלית ליה עירוב פרשיות לא דריש נמי משפט אחד להשוות הודאות והלואות לגזלות וחבלות כמו שכתבו התוס' לעיל מיניה ואף על גב דכתבו התוס' דרבי יוחנן דריש ג' ומומחין ממשפט אחד אע"ג דלית ליה עירוב פרשיות כתיב כאן מכל מקום אמוראי אחריני לא סבירא להו הכי אלא כל מאן דאמר דלית ליה עירוב פרשיות לא דריש משפט אחד להשוות הודאות והלואות לגזלות וחבלות לענין ג' ומומחין ולא דרשי משפט אחד כי אם לענין דרישה וחקירה ולכך מקשין התוס' דטעמא מאי דס"ל הכי נימא כי היכי דילפינן דרישה וחקירה ממשפט אחד נילף נמי לענין ג' ומומחין ר"ל להשוות כל דיני ממונות להדדי. מקשין העולם מאי קשה להו להתוס' כי היכי דילפינן דרישה וחקירה ממשפט אחד נילף נמי לענין נ' ומומחין אפילו למאן דלית ליה עירוב פרשיות הא נוכל לתרץ דלהכי לא ילפי ממשפט אחד שלשה ומומחין משום דילפי מפסוק דבצדק תשפוט עמיתך דמדאורייתא חד נמי כשר בדיני ממונות כדאמר רב אחא בריה דרב איקא לקמן בסמוך אבל בעיני אין זה קושיא כלל דקושיית התוס' קאי לפי סוגיא דשמעתין והמתרץ דהוא רבא דמסיק אלא אמר רבא תרתי קתני וכו' לית ליה דרב אחא בריה דרב איקא דיליף מבצדק תשפוט עמיתך דחד נמי כשר: @44בא"ד @55ותדע דלקמן בעי גזרה שוה דהיטב היטב בריש פרק היו בודקין לקמן דף מ' יליף ג"ש זו לענין ז' דרישות וחקירות דילפי בדיני נפשות עצמו ליתן מה שכתוב בזה לזה ולא ילפינן כל דיני נפשות מהדדי מהכתוב דמשפט אחד ולא גזרה שוה אלא ודאי משפט אחד לא אתי אלא להשוות דיני ממונות לדיני נפשות לא להשוות כל דיני נפשות אהדדי: @44בא"ד @55אלא איצטריך היטב דלקמן דלכתבינהו רחמנא בחדא ר"ל דלקמן פריך אם איתא דבכל דיני נפשות בעי כל דרישות וחקירות דכתיב בכלהו אם כן ליכתבינהו רחמנא לכלהו בחדא ואי לאו גזרה שוה מחמת קושיא זו לא הוה ילפינן להשוותן למשפט אחד לכך בעי ג"ש: @44בא"ד @55ואם תאמר אכתי לענין מומחין נילף דיני ממונות מדיני נפשות ר"ל דלענין ג' לא מצי למילף דהא בדיני נפשות בעינן כ"ג אבל לענין מומחין נילף דיני ממונות מדיני נפשות ממשפט אחד כמו שילפי' לענין דרישות וחקירות ותירץ מדכתיב מומחין גבי גזלות וכו' משום דאל"כ דילפינן דיני ממונות מדיני נפשות לענין מומחין לא ליכתביה גבי גזלות ונילף מדיני נפשות אלא מדאיצטריך למכתבינהו גבי גזלות ש"מ דלא ילפינן דיני ממונות מדיני נפשות לענין זה אבל קשה למאן דאמר עירוב פרשיות דלפי האמת בכל דיני ממונות בעינן נמי מומחין אפילו גבי הודאות והלואות לדידיה קשה לא ליכתביה גבי גזילות ונילף כל דיני ממונות מדיני נפשות ממשפט אחר ושמא לענין מומחין אין ללמוד מדאשכחן דאין שוין לענין מספד הדיינים דבממונות סגי בג' ובדיני נפשות בעינן כ"נ כן הוא הצעת דברי התוס' הנ"ל: 
+  @11דף ג ע"א @44בתוס' @55ד"ה שלא תנעול דלת וכו' ומיהו כתובת אשה וירושות וכו' וכל הנהו דמסקינן בהחובל דעבדינן שליחותייהו וכו' מדברי התוס' בדבור זה וכן לקמן בד"ה נזק היינו חבלות וכו' משמע דסבירא ליה דטעמא דנעילת דלת וטעמא דשליחותייהו עבדינן תרווייהו חד טעמא הוא דבמידי דאית ביה נעילת דלת כגון דשכיחי ואית בהו חסרון כיס עבדינן שליחותייהו דמומחין ודנין אותן אפילו שאינן מומחין בין בא"י בין בבבל אבל לא משמע כן בדברי רש"י לקמן סוף ד' י"ג ד"ה למידן דיני קנסות וכו' דמשמע שם מפירוש רש"י דבדיני קנסות בעינן מומחין ובשאר דיני ממונות במידי דשייך נעילת דלת לא בעינן מומחין אפילו בא"י ובמידי דלא שייך נעילת דלת כגון בד' שומרים ובגזלות בא"י בעינן מומחין ובבבל אע"ג דליכא סמוכין עבדינן שליחיתייהו משום דשכיחי ואית בהו חסרון כיס וכן משמע מדבדי הרא"ש ז"ל בשמעתין דבתר שכתב סוגיא דשמעתין דבדיני ממונות לא בעינן דרישה וחקירה ולא מומחין מפני שלא תנעול דלת בפני לוין כתב והוא הדין נמי כתובת אשה וירושות ומתנות וכו' כתב אבל גזלות וחבלות בעינן מומחין ודרישה וחקירה וכו' ובפ' החובל מסיק דכל מידי דשכיחי עבדינן שליחותייהו וכו' וקאמר התם דחבלות לא שכיח משמע דבכל שאר מילי שכיחי אפילו גזלות הלכך כל מידי בר מחבלות עבדינן שליחותייהו ולא בעי מומחין וגם דרישה וחקירה לא בעי עכ"ל משמע מדבריו דהא דאיתא במתניתין דגזלות בעי מומחין וממילא בעינן נמי דרישה וחקירה היינו בא"י אבל בבבל דליכא מומחין עבדינן שליחותייהו כיון דשכיחי ואיכא חסרון כיס ודו"ק וי"מ דוקא גזלות שעל ידי חבלות ובו' היינו דוקא לפי מסקנא דשמעתין אבל בתחלת הסוגיא לא הוה סבירא ליה הכי כדמשמע לעיל מהא דאמר משום דעיקר ג' דכתיבי בגזלות וחבלות כתיבי דכתיב ונקרב בעל הבית אל האלהים וכו' ודו"ק: @44ד"ה @55ומדאורייתא חד נמי כשר פירש בקונטרס דקסבר אין עירוב פרשיות כתיב כאן וקשה דאם כן בצדק תשפוט למה לי לכך נראה דאפילו למאן דאית ליה עירוב פרשיות קאמר מקשין העולם מנא להו להתוס' לומר כן דלמא לעולם אימא לך דרב אחא בריה דרב איקא לית ליה עירוב פרשיות והא דאיצטריך פסוק דבצדק תשפוט עמיתך משום דלא נילף ממשפט אחד דבכל דיני ממונות בעינן שלשה מומחין כדיליף רבי יוחנן אף על גב דלית ליה עירוב פרשיות כמו שכתבו התוס' לעיל ד"ה אין דיניהם דין לכך איצטריך למכתב בצדק תשפוט לומר דבדיני ממונות אפילו חד כשר ומשפט אחד לא אתי אלא להשוות דיני ממונות לדיני נפשות לענין דרישה וחקירה ונראה דסבירא להו להתוס' דרב אחא בריה דרב איקא אדברי המקשה דלעיל קא מהדר דפריך לעיל מאי קא סבר אי קסבר עירוב פרשיות כתיב כאן ליבעי מומחין ואי קסבר אין עירוב פרשיות כתיב כאן ג' למה לי דסבירא ליה דלא דריש נמי משפט אחד להשוות כל דיני ממונות להדדי כדלעיל הלכך אם איתא דרב אחא לית ליה עירוב פרשיות למה ליה למנקט פסוק דבצדק תשפוט עמיתך הוה ליה לאהדורי על דברי המקשה דלעיל בקצרה לעולם לית ליה עירוב פרשיות והא דבעי ג' משום יושבי קרנות אלא ודאי הכי קא מהדר רב אחא לעולם קסבר עירוב פרשיות כתיב כאן ואפילו הכי מדאורייתא לא מבעיא דלא בעינן ג' מומחין אלא אפילו חד ומי כשר מדכתיב בצדק תשפוט עמיתך אלא משום יושבי קרנות בעי ג' ולכך קתני מתניתין דדיני ממונות בשלשה אפילו הן הדיוטות וק"ל. ונוכל לומר גם כן דאין הכי נמי דיכול להיות דרב אחא לית ליה עירוב פרשיות ואיצטריך קרא דבצדק תשפוט כדי שלא נילף ממשפט א' דבעינן ג' אלא שהתוס' רבותא קאמרי דאפילו למאן דאמר דאית ליה עירוב פרשיות קאמר רב אהא מדאורייתא חד כשר דקרא דבצדק תשפוט עמיתך אתי לאורויי דלענין זה לא אמרינן עירוב פרשיות ומהאי טעמא נמי ליכא למימר דלא תקשי לרש"י דסבירא ליה דלעולם רב אחא לית ליה עירוב פרשיות והא דאיצטריך קרא דבצדק וגו' משום דלא נילף ממשפט אחד דאם כן מאי דוחקיה לרש"י לפרש דרב אחא לית ליה עירוב פרשיות אדרבה יפרש דלעולם רב אחא אית ליה עירוב פרשיות ואפילו הכי סבירא ליה דמדאורייתא חד כשר מפסוק דבצדק תשפוט וגו' דאתא למילף דלענין זה לא אמרינן עירוב פרשיות אלא ודאי לא עלה בדעת רש"י לומר דאתי קרא דבצדק לסתור שום לימוד דקרא וק"ל אבל הראשון נראה לי עיקר: @44ד"ה @55לרבא לית ליה דשמואל וכו' מודה דקיום שטרות בשלשה כדאמר פ' ח"ה הכי איתא התם דף מ' וקיום שטרות בג' ופירש רשב"ם שם וז"ל לכך צריך ג' וב' שדנו דיניהם דין אלא שנקרא ב"ד חצוף והכא אפילו דיעבד נמי לא דאם כן מה יש בין הנפק לשטר שלמעלה הימנו הכא ב' חתימי והכא ב' חתימי ודומה לעד מפי עד ע"ש: 
+ @11 ברש"י ד"ה והתניא וכו' והא קרא דרשינן כצ"ל וכתב זה משום דקשה לרש"י מאי פריך מהברייתא לרבי יאשיה שהוא תנא ופליג לכך כתב והא קרא דרשינן ובמאי מוקי רבי יאשיה לקרא: @44ד"ה @55אפילו תימא רבי יאשיה מודה היכא דחלוקין אזלינן בתר רובא. ר"ל אע"ג דלרבי יאשיה לית ליה ב"ד נוטה היינו לענין שיכולין להיות זוגות אבל מ"מ אינו צריך שיהא דעת כולן שוה כדס"ד דמקשה אלא מודה הוא היכא דחלוקין אזלינן בתר רובא ק"ו מדיני נפשות: @44בתוס' @55ד"ה מוקי לה בדיני נפשות וכו' מכל מקום אפשר דמפטרו כלהו בהכחשה ר"ל דאין מתחייבים אלא על ידי הזמה דהיינו שבאו שנים ואמרו להם עמנו הייתם באותו יום אבל אם שנים מכחישים אותם ואומרים שזה לא הרגו ושקר אתם מעידים העדות כלה בטלה והרוצח והעדים כולם פטורים: @44ד"ה @55מסנהדרי גדולה פריך שפיר וכו' דבור זה קאי אמאי דפריך בגמרא אלא מעתה תהא סנהדרי גדולה צריכא קמ"א ותהא סנהדרי קטנה צריכא מ"ה וכו': 
+diff --git a/sources/RaMBaN/berakhot_complete copy.txt b/sources/RaMBaN/berakhot_complete copy.txt
+new file mode 100644
+index 0000000..a640efb
+--- /dev/null
++++ b/sources/RaMBaN/berakhot_complete copy.txt	
+@@ -0,0 +1,16 @@
++5@פ"ג - מי שמתו2@דף י"ט ע"א4@ת"ר אין  מוציאין את המת     סמוך לק"ש אא"כ הקדימו שעה אחת כדי שיקראו ויתפללו, והא תנינן קברו את המת וחזרו אם יכולין להתחיל ולגמור עד שלא יגיעו לשורה יתחילו. @1פירוש אלמא סמוך לק"ש הוציאוהו ומבטלין קריאתה בשביל המת. ופריק תפתר באלין דהוויין סברין דאית בה עונה. ובאבל תניא (פ' יו"ד) אין מוציאין את המת סמוך לק"ש אלא א"כ הקדוו שעה אחת כדי שיקראו ויתפללו הוציאוהו סובלי המטה וחלופי חילופיהן. שלפני המטה צורך בהן פטורים מק"ש ואסורים בנעילת הסנדל. את שלאחר המטה שאין למטה צורך בהן חייבין בקריאת שמע ומותרין בנעילת הסנדל. אבל אלו ואלו פטורים מן התפלה ומן התפלין. קברו את המת וחזרו אם יכולין להתחיל ולגמור עד שלא יגיעו לשורה עומדין ואחר כך קורין ואם לאו קורין ומתפללין ואחר כך עומדין והוא לאו דוקא הוא אא"כ יכולין להתהיל ולגמור אפילי פסוק אחד עד שלא יגיע לשורה. מתחילין וגומרים קודם השורה. וא"ל עושין שורתם ואח"כ קורין ומתפללין. ובשורה עצמה הרואה את הפנים חייבין כדבעינן למימר קמן.           3@    ובירושלמי בברכות תני: הכתפים אסורין בנעילת הסנדל שמא תפסק סנדלו של אחד מהן ונמצא  מתעכב מן המצוה. – [לקוטים מס' תורת האדם[.
++2@ דף כ"ב ע"ב7@ מצאתי בתוספות רבותי' הצרפתים ז"ל                     במס' עירובין פרק הדר (דף ס"ד ע"א) גבי ההוא דאמרינן התם 4@שתוי אל יתפלל ואם התפלל תפלתו תפלה שכור אל יתפלל ואם התפלל תפלתו תועבה שלא יצא וצריך לחזור ולהתפלל 1@       כדאיתמר הכא בפ' מי שמתו גבי התפלל ונמצא צואה כנגדו כיון שחטא אע"פ שהתפלל תפלתו תועבה שלא יצא וצריך לחזור ולהתפלל. וצ"ע אם יש להשוות ברכה לתפלה לענין צואה ושכור ועל כרחין לאו  לכל מילי דמי דהרי שתוי אל יתפלל לכתחלה עד שיפוג יינו ואפילו ביין מזוג אל יתפלל ביתר מרביעית א) אפי' לענין הוראה כדקא אמרינן התם ופשיטא דשתוי מברך ברכת המזון וכל הברכות כולן. מיהו משום מי רגלים פשיטא דא"צ לחזור ולברך אפילו אם תמצא לומר דמשוינן ברכה לתפלה דצואה תניא ומי רגלים לא חמירי כצואה דהא אמרינן בפרק מי שמתו לא אסרה תורה אלא כנגד העמוד הא נפל לארעא שרו ורבנן הוא דגזור בהו וכי גזור בהו בודאן אבל בספיקן לא גזור בהו רבנן ע"כ בתוספות. ומפני שזה ענין דתדיר וצריך כתבתי דבריהם ואכתוב דעתי. אין ספק שכל הברכות אסור לברכן כנגד צואה שהרי אמרו בבית המרחץ מקום שבני אדם עומדין ערומין אין שם שאלת שלום. וא"צ לומר ק"ש ותפלה. ואעפ"י שאין בו אדם משום שנאמר ויקרא לו ה' שלום כדאיתא בפ"ק דשבת  ובברכות  ב) ואמר שם בפרק בירה ובכמה מקומות בכל מקום מותר להרהר חוץ מבית המרחץ ובית הכסא ואמרו דברים  של קדש אסור לאמרן בלשון חול אלמא כל ענין של תורה אסור במקום הטנופת כמו שאמר עוד ג) אסור לעמוד במבואות המטונפות לפי שאי אפשר לו בלא הרהור תורה ותנן גמי ד) ( לאחר שיצא אמר לו אין משיבין במרחץ ) וברכות ד"ת נינהו ודברים של קדש נינהו וכיון שדבר ברור הוא שאין ברכ' במקום הטנופת וכנגד צואה וזה מעולם לא נסתפק אצל רבותינו הצרפתים למה לא נאמר אף דיעבד שאם מצא צואה כנגדו שצריך לחזור ולברך קורא אני כאן כיון שחטא אעפ"י שהתפלל תפלתו תועבה דודאי כולה מילתא דאורייתא היא, דרחמנא אמר והיה מחניך קדוש ולא ק"ש ולא תפלה כתיבי התם, לא קראי בכל דבר שבקדושה משתמעי. ועוד דק"ש איננה אלא ד"ת ושינון הוא ולא מצינו לענין צואה שום חילוק והפרש בין ק"ש ותפלה. וברוב מקומו' ק"ש הזכירו בה הלכך שאר ברכות נמי כק"ש ותפלה הם וזה שהזכירו כאן תפלתו תועבה ולא הזכירו ק"ש או מפני שתפלה דרבנן וק"ש דאורייתא או שתפסו א' מהן כמו שמזכירין תמיד אסור לקרוא ק"ש וה"ה לתפלה דשקולין הן הלכך שאר ברכות נמי כק"ש ואע"פ שאמרו לגבי ריח רע שאין לו עיקר תא חזי הני כיפי דבי רב דהני גנו והני גרסי. ולא אמרן אלא לד"ת דשרי אבל ק"ש לא. ובד"ת נמי לא אמרן אלא בדחבריה אבל בדילי' לא. אלמא חמיר ק"ש מד"ת לענין צואה התם שאין לו עיקר חומרא מדבריהם היא שהתורה לא אסרי' אלא בשיש לו עיקר כדכתיב ויצאת שמה חוץ ורבנן הוא דגזרו ולא חשו שיהו מדרשין בטלין כשמקצ' התלמידים ישנים הלכך לענין צואה כל שיש לו צואה אין חלוק והפרש בין תפלה לברכות שהרי (הותרו) ר) ק"ש ותפלה. וק"ש וברכות שוין הם דתרווייהו ד"ת נינהו ומסתברא נמי דלגבי ריח רע שאין לו עיקר ברכות הרי הם כק"ש ולא הקלו אלא בד"ת                מן הטעם שפי'. 3@אבל לענין שכור ושתוי נ"ל שאין ברכות בכלל חומר זה לפי     שלא הזכירו חכמים אלא תפלה אבל ק"ש וא"צ לומר ברכה קורין הן ויוצאין הם ידי חובתן, דטעמא דתפל' משום דבעי כוונה יתירה מפני שהוא כמדבר בפני המלך ומצינו בכ"מ לכוונה חמיר דין תפלה מק"ש כדאמר בכולה מכילתין גבי שאין דעתו מיושבת ובא מן הדרך ומיצר דכולן לענין ק"ש קורין ומברכין על המזון וכל הברכות כולן. וכדאמר לענין מצות מגלה מתנמנם יצא והיכי' דמי מתנמנם, נים ולא נים תיר ולא תיר דקרי ליה ועני ולא ידע לאהדורי סברא וכי מדכרו ליה מדכר ולכתחלה נמי קרי, ואלו לענין תפלה כיון שאינו מדבר בפני המלך אל יתפלל. ומצאתי בירו' בפ' א' דתרומה אמתני' דתנן ה' לא יתרומו ואם תרמו תרומתן תרומה. האנס והשכור הערום והסומא ובעל קרי ותני עלה יש מהן מפני רכה ויש מהן שאינן יכולין לתרום מן המובחר אם יתרום ובעל קרי מפני ברכה סומא ושכור מפני שאינן יכולין לתרום מן המובחר. פי' דלברכה ודאי ראויין הם. ותו התם רב זעירא בעי קומי רב אסי שכור מהו לברך. א"ל ואכלת ושבעת וברכת ואפי' מתנמנם לא צריכא דלא. מהו לקרות ק"ש. א"ל ולא יראה בך ערות דבר תני חזקיה בין לקרות בין לברך עד כאן בירושלמי. והנה נתבררה סברתנו בברכה ובק"ש העלוה בספק            ומסתברא דקורא כדכתיבנא. 
++7@כבר היה מנהג בעיירות לומר בין 4@אהבת עולם 1@לק"ש אל מלך     נאמן. ובילדותי נתקשה עלי לפי שהדבר ידוע שאהבת עולם ברכת המצוות היא לק"ש שכל המצות כולן טעונות הן ברכה עובור לעשייתן וכן בהלל ובן במגלה ובן בקריאת התורה וכ"ש ק"ש. וזהו שאמרנו בהסדיר אחר שקרא אין צריך לברך שכבר נפטר באהבה רבה דברכת שנון תורה היא, אלא שתיקנו בק"ש שתים לפניה מפני שזמנה תלוי ביצירת האיר ובעריבתו אבל ברכת יוצר אור ומעריב ערבים ברכת השבח הן כדמוכח בפלוגתא דכל שלא ראה מאורות מימיו אינו פורס על שמע וכדפרישית לעיל י) וברכת אהבת עולם ברכת המצוה לחובת קרי' של שמע, וה"נ מוכת בשמעת' דאמר להם הממונ' ברכו ברכ' אחת כו', לפיכך עשו נמי ברכת אמת ויציב ברכה הסמוכה לחברתה וכיון שזו ברכת המצוה היא הדבר ברור בכל שמברך על המצוה או על הפירות ועונה אמן אחרי עצמו בין ברכה למצוה שהוא טועה גמור, וכבר פרטו זו בפירוש בירוש' תני הפורס על שמע והעוב' לפני התיבה והנושא את כפיו והקורא בתורה והמפטיר בנביא והמברך על אחת מכל המצוות האמורות בתורה לא יענה אחר עצמו. אבל אני צריך לבאר ענין זה שהוא מפורש לראשונים וכמדומה שהוא הפסק וצריך לחזור ולברך וה"נ בשמעת' דטול ברוך טול ברוך. ומפני שנהגו הוצרכתי לשאול מן הרב ר"מ הלוי והשיב דבר ברור שהוא טעות ואינו נהוג   בספרד אלא בארץ ישראל ונתבטל השבוש הזה ממקומו. 3@ ואחר זמן ראיתי תלמידי צרפתים מקשים ואומרים בידינו מדרש     אגדה דק"ש יש בה רמ"ח תיבות כנגד איבריו של אדם וכשמנו אינן אלא רל"ט. ובשכמל"ו שהצריכו חכמים לומד כדאיתא בפסחים ואל מלך נאמן זה משלימין אותם ובודאי שכך אמרו חכמים בילמדנו בפ' קדושים תהיו. א"ר מני ברבי לא תהא ק"ש קלה בעיניך מפני שיש בה רמ"ח תיבות כמנין איברים של האדם, אמר הקדוש ב"ה אם למדת ושמרת את שלי לקרותה כתקנה, אני אשמור את שלך, לכך דוד מקלס שמרני כאישון בת עין אמר לו הקב"ה שמור מצותי וחיה. ועכשיו אני צריך להודיעם הענין הזה ומהיכן נולד להם. דורות הראשונים לא היו  הצבור מברכין בעצמן כל הברכות אלא שליח צבור העתיד לירד לפני התיבה אומר לפניהן ברכות כולן והן עונין אמן, ולפיכך היה החזן הזה מברך אהבת עולם והצבור עונין אמן וקורין ק"ש בפיהם שהיא המצוה המוטלת על כל יחיד ויחיד שיהא משנן בפיו ולהשלים למנין אברים, כפי המדרש הזה היו אומרים אל מלך נאמן במקום אמן ממה שאמרו מאי אמן אל מלך נאמן ואיפשר שהיו עונין אמן ממש, אלא שהמדרש מונה אותיות של אמן רמז לתשלום האיברים דכיון שהוא נוטריקון לג' תיבות עשו אותו כג' תיבות ברמז המנין הזה . 3@ ואני אובין לפניך כל מה שנהגו עכשיו שהחזן אומרו בקול     ומשמיע לצבור להוציא אותן ידי . חובה הוא עושה ואין עליהןחיוב אצא שיהיו עונין אחריו אמן. וכל שנהגו בו בלחש כל יחיד ויחיד חייב בו, אלא בפריסת שמע וסדר קדושה מפני שאין קדושה ביחיד אומרים הכל בקול כאחד, ונהגו בפסוקים של סדר קדושה פסוקים בקול ותרגום שלהן בלחש, כיון שאין בתרגום משום דבר שבקדושה ואינו צריך עשרה ומ"מ דבר ברור הוא במברך אהבת עולם בפיו שאינו עונה אחר עצמו אמן בין ביחיד בין בצבור ואם          ענה ה"ז בור וטועה גמור הוא.
++5@ פ"ו2@ דף ל"ו ע"א7@ה"ג: 4@רב דאמר כר"ע דתנן רבי אליעזר אומר              צלף מתעשר תמרות אביונות  וקפר' ר"ע אומר אין מתעשר אלא אביונות בלבד מפני שהוא פרי. 1@ופירוש - לר"א מתעשר תמרו' כירק ומתעשר באביונות וקפרס והוא באילן פירא דעבדי צלף ספק ירק, ור"א עביד ליה אילן ועביד ליה ירק לענין מעשר, משום דדמי לירק ונטעי ליה נמי אדעתא דתמרות כענין שהזכירו באתרוג במס' ראש השנה דתניא יש בו דרכים שוה לאילן ושוה לירק כו' וצלף נמי מתעשר כירק וכאילן, ור"ע בתרתי פליג דעביד ליה אילן גמור ולא נהיג ביה מעשר ירק כלל ופליג נמי בקפרס דר"א עביד ליה פירא ור"ע לא עביד ליה פירא. 3@ואי קשיא לר"א לעשר נמי עלין דהא עבידי דאכלי להו אינשי ונטעי ליה אדעתא דהכי כדקתני מתני' דאתיא כותיה על העלין ועל התמרו' אומר בורא פרי האדמה. לאו מילתא היא דכל דבר שעיקר זריעתו לזרע אין ירקו מתעשר, ואפי' במיני זרעים כדתנן כוסבר שזרעה ירק פטור ואין צריך לומר במיני אילן שאין ירקן זרעיו כדתנן כוסבר שזרעה לזרע ירקה פטור, וא"צ לומר במיני אילן שאין ירקן מתעשר אלא פירות שלהן [בין שהן] בפרי העץ בין שהן בזרעוני ירק ב) ולא מצינו אתרוג מעשר עלין ואפי' לדברי העושה אותו כירק למעשר. ומיהו כיון דאכלי ליה אינשי מברך עליה בורא פרי האדמה ואפי' לשמואל דדעתא דאיניש בשעת נטיעה אכל מאי דחזי לי מיניה כו'. ומסקנא כר"י א"ר דזורק אביונות ואוכל את הקפרס ודוקא בח"ל אבל בא"י חיישינן לדר"א. ואע"ג דבעלמא הלכה כר"ע מסתבר ליה לרב טעמא דר"א וחייש ליה בארץ, אבל לב"ש לא חייש כלל דלאו משנה היא ומילתייהו במקום ב"ה אפי' ספיקא לר הויא. 3@וכתב בעל ההלכות ז"ל ומדלגבי ערלה לאו פירא הוא לגבי ברכה נמי לאו פירא הוא ולא מברכי עליה בפה"ע אלא בפה"א וכן כתוב בהלכות רבי' ז"ל ודבר ברור דלאו פה"ע הוא ולא נהיג ביה ערלה דהוה ליה כירק ולא מברכין עלי' בפה"ע. ומיהו כיון דחזי לאכילה מברך עליה בפה"א, ואע"ג דלענין ערלה ספוא הוא ובארץ משוינן ליה פרי העץ, לענין ברבה נמי להוי ספיקא בפה"א מברכינן דנפיק ביה אפי' בפרי העץ הלכך מברך עליה הכי, ואפי' לר"ע ניידי דהוי אעלין לר"א ואע"ג דלא עביד ליה לענין מעשר לא ירק, ולא אילן מברך עליה בורא פה"א, וכענין הזה אמרו בירושלמי אתרוג אעפ"י שאת אומר עליו בפה"ע התמרות שלו את אומר בורא מיני דשאים. פירוש לר' יהודה דהוה ליה כירק ואע"ג דליכא מעשר בתמרות וה"ה לעלין דאתרוג שטעם עצו ופריו שוין. 3@והוצרכתי לכתוב זה מפני שראיתי לרב ר' אברהם בר דוד ז"ל שכת' והאי פסקא לא מיחוורא דלא אתיא לא כר"א ולא כר"ע, דאלו לר"א פרי העץ הוא כפשטא דברייתא [על האביונות ועל הקפריסין] בורא פרי העץ <חסר כאן סוף דברי הראב"ד, ומשמע דסיים דאפי' לר"ע מברך אקפריסין בפה"ע, וכן הוא ברשב"א>, ואם כדברי הרב ז"ל, אע"ג דלגבי ערלה קפריסין מותרין מברך עליהן בורא פרי העץ  ושני ערלה מברכה, וא"כ היכי אקשי בגמרא מברייתא דברכה לרב דאיירי בערלה והויא ליה תיובתא עד דאפיק נפשיה מינה ואוקמיה    כר"ע, אלא דברי שבוש הן והעיקר כדברי הגאונים ז"ל. 
++2@ל"ו ע"ב4@[לא קשיא, הא ברטיבת הא ביבשתא.] 1@ולענין פלפלין כתבו הגאונים ז"ל בלחה מברך בפה"א. וזה תימה    גדול כיון שהוא נוהג בערלה קרינן ביה את פריו פרי העץ בעי ברוכי, ואולי סברו דהאי הימלתא דאתיא מבי הנדואי דאמר רבא שריא ומברכינן עליה בפה"א דפלפלי היא. וזה אינו נכון שאין לנו בפרי הנוהג בערלה אלא ברכת פרי העץ לעולם, אבל הימלתא דהנדאי דזנגבילא רטיבתא היא ובזנגבילא ודאי בורא פרי האדמה מברכינן דשרשין הם  ולאו פירא כלל, אבל פלפלין פרי הוא ונוהג בו ערלה כדברי ר"מ. 3@והתימה גדול שמקצת הגאונים ז"ל כתבו פלפלי רטיבתא ב"פ האדמה מדקא מותבינן עץ מאכל זה פלפלין וכן כתב רב האיי גאון ז"ל. ואדרבה היא הנותנת לברך עליהן פרי העץ. ואפשר שסברו הראשונים מפני שהפלפלין תמרותיהן שנעשות בעץ עצמו כעין אבעבועות והן לבנות והוא פלפל לבן וכשהן מתבשלות יותר מדאי הן פלפל השחור זהו ענין הפלפלין בתולדתן, ומפני זה עשו אותן הגאונים כתמרו' של צלף ושל אתרוג לברך עליהן פרי האדמה דכגופא של אילן הם וכן לענין ערלה שריבה אותו הכתוב מדכתיב עץ מאכל הוא יתכן דעץ מאכל קרי ליה בפה"א מברכי' בעץ הנאבל וקבלת הגאונים נקבל. ומעתה נוכל לפרש שהימלתא הבאה מבית הנדואי עיקר' פלפלין ששם בהנדואה יוצאים הפלפלין ולא במקום אחר גם היום.3@ וקשיא לי לרב ששת דאמר ביבישתא שהכל מאי קסבר אי במלתייהו קיימי וחזו לאכילה לברך פרי האדמה או פרי העץ ואי לאו במילתייהו קיימי ולא חזו ביבישתא ולא כלום. ונ"ל דרב ששת עביד דיבישיא כשינויא וכיון דאישתנו לגריעותא ולא אכלי להו רובא דאינשי בעינייהו גרעינן נמי ברכה דידהו ומברכין עלייהושהכל ודמי לטעמיה דרב נחמן בקמחא דחטי. 3@וראיתי בהלכות גדולות ואית רבנן דאמרי סוכ"ר וקנה דסוכ"ר בפה"א ולאו משום דס"ל דקנה לאו עץ הוא אלא הכי ס"ל אע"ג דעץ הוא כיון דלאו פירא קא מפיק ולא קא אכלינן פירא אלא עץ לא מיתמר לן בפה"ע אלא בורא פרי האדמה מידי דהוה אתיתא ואפירחא. 
++2@ דף ל"ט ע"ב7@ הא דאמרי' 4@ פת צנומה בקערה מברכין עליה              המוציא. 1@כתב הגאון דהוא כלי שני שנותנין את הלחם לתוך מים רותחין מוצקין בקערה או שנותנין אותו בקער' ויוצקין עליו מים רותחין וישהא עד שימוח שהוא צנום. נראה מדברי הגאון דאע"פ שנמוח ואין על הפרוסות תוריתא דנהמא מברך עליהן המוציא מפני שהוא כלי שני שאינו מבשל אבל בחביצא דהוא כלי ראשון בעי תוריתא דנהמא כדלעיל. וכן כתבו רבי'. 3@וזה הפי' קשה עלי בסוגיא הזו שא"כ ר' חייא בר אשי משמיה דרב טובא קמ"ל בברכה גופא דלא בעי' פרוסות קיימות ותורית' דנהמא בפת צנומה בקערה וכיון דהיא גופא קמ"ל מנא לן בגמ' דפליגא עלי' דר' חייא דאמר בלכתחלה צריך שתכלה ברכה עם הפת ואיהו בדליכא פת אחרינא ולומר שמתחייב בברכה זו דהמוציא כדאמרינן לעיל בטחנה אפאה ובשלה ובטרוקנין וכיוצא בהן. 3@וליכא למימר דר' חייא אפי' בדיעבד קאמר דלא מברכינן המוציא אלא במקום שיכול לכלות ברכה על הפת. חדא דהא לא איפשר להפקיע ברכ' דהמוציא מן הפת משום מברך ואחר כך בוצע ובליכא פת אחרינא מאי איכא למימר, מי איכא לאתסורי עליה אכילה דהאי או לאהדורי להאי לברכה אחרינ' כיון דנהמא הוי. ועוד דא"כ קשיא ליה סתמא דטחנה אפאה ובשלה דרך בישול קא אכיל ליה ואפ"ה בפרוסות דכזית הוא מברך עליה המוציא ומאי טעמא לא אמרינן בסוגיא דחביצא פליגי דר' חייא ומאחרינן ליה עד מימרא דפת צנומה. ועוד דהא רבא מוסיף הוא אהא, חייא מברך ואח"כ בוצע, וכ"ש דפליגא דרבא אדר' חייא בר אשי אמר רב, וא"כ לרבא לא מברכינן בצנומה וכ"ש בחביצא המוציא לעולם ואע"ג דליכא פיתא אחרינא וקשי' הלכתא אהלכת', דקי"ל כרבא,וקי"ל כרב ששת בחביצא דמסקנא נינהו, ודרבא אדרבא נמי קשיא, דרב' פריש לה לדרב ששת אמר רבא והוא דאיכא עליה תוריתא דנהמא לפום מאי דאשכחין בעיקר נסחי דרבא בתרוייהו. אלא ודאי דר"ח דאמר צריך שתכלה ברכה עם הפת לכתחלה קאמר בדאיפשר והדרא קושיא לדוכתא.3@ [ובר] מן דין, אפי' בכ"ש שאינו מבשל היכי איפשר דלא בעי תוריתא דנהמא, והא אביי לעיל בסוגיא דחביצ' מדייק מדתניא לקט מכילן כזית ואכל בם מצה אדם יוצא בה ידי חובתו בפסח ואוקימנא בשעירסן, הא לאו הכי אע"ג דאינן מבושלין בעינן ת"ד דומיא דחביצא, א"ו סברא הוא דכל דפריס לגמרי וליכא עליה תוריתא דנהמא לא מברכינן עליה לא שנא מבושל ולא שנא שרוי.3@ ושמעת' דפת צנומה הכי פירושה דרב לאו קמ"ל בחיוב ברכ' דהמוציא דהא לא מפרש צנומה דמאי אי דפרוסות קיימות אי דצנימתן כזית אי דפתותין מכזית, ועוד דכל היכי דאיירינן בחיוב ברכת המוציא ושלש ברכות קאמרינן [כדלעיל ל"ז ע"א] אלא רב לכתחלה איירי וה"ק, צונם אדם פתו בקערה ומברך עליה מתיר בתחנה לצנום פתו בקער' לתוך התבשיל ומברך ועלה קאמרי' פליגי דר"ח וכ"ש דפליגי דרבא דאמר מברך ואח"כ בולע והילכך לית הלכתא כר' חייא בר איש אמר רב וכן אני סובר (כרבינו) [ברבינו פי' בדעתו] הגאון דתוריתא דנהמא בעי בהו אבל מה שהוצרך לאמר דבקערה כלי שני איירי מפני שהוא סובר דאין המוציא במבושלין מדר' יוסי דאמר יוצאין ברקיק השרוי אבל לא במבושל אע"פ שלא נמוח וכן מצאתי בהלכות גדולות ודוקא צנומה דכיון דשדי רותחין עלה הויא ליה כלי שני אבל דמאפת בקדירה הוה ליה כלי ראשון, ואע"ג דאיתיה בעינא נפקא ליה מתורת לחם ומברכי' עליה בורא מיני מזונות דקתני מצה יוצאין ברקיק השרוי ובמבושל שלא נימוח דברי ר' מאיר. ר' יוסי אומר יוצאין ברקיק השרוי אבל לא במבושל אע"פ שלא נימוח והלכה כר' יוסי, עד כאן בהלכות גדולות.3@ ולדבריהם הא דתניא טחנה אפאה ובשלה בזמן שהפרוסות קיימות בתחלה מברך המוציא לר"מ היא, אבל לר' יוסי לא ואע"ג דלגבי שלקות איתמר ג) ולא היא עד כאן לא אמר ר' יוסי התם אלא משום דבעי' טעם מצה אבל הכא ר' יוסי מודה. הני מילי בירקו' אבל בפת כיון דליכא טעם מצה ליכא טעם לחם ולא מברכינן עליה המוציא. ואין זה מחוור כהוגן, אבל פי' שמעתא דפת הצנומה בקערה בין בבישול בין בלא בישול כך היא כמו שפיר' ולהכי סמכי' בגמרא ענין לו הביאו לפניו פתיתין ושלמין וא"ר הונא מברך על הפתיתין ופוטר את השלמין. פירש הגאון בפתיתין פת נקיה ושלמין הדראה וזה הפי' הנכון בסוגיא הזו מכל מה שנתפרש בה בהרבה סברות וזה שלא פירש באיזה פתיתין אמרו לפי משמע הענין כך הוא כשרוצה בפתיתין יותר מן השלמין רב הונא סבר פתיתין עדיף ור' יוחנן סבר שלם עדיף, וירא שמים יוצא ידי כיבוד השלם וידי קרוב דיעה ומניח פרוסה לתוך השלמה ובוצע, אבל בחטין ושעורין דחשי' ושלם נינהו מודה ר' יוחנן דחשי' עדיף משלמין [ור"פ אמר הכל מודים בפסח] וסבר אפי' דחשיב ושלם מניח פרוס' לתוך שלמה ובוצע.3@ וכך מצאתי בירושלמי (ו,א) כדברי הגאון ז"ל תני מברכין על הדגן כשהוא מן המובחר שלמה של קלוסין ושלמה של בעל הבית אומר על קלוסים השלמה. פרוסה של בעל הבית ושלמה של קלוסין אומר על השלמה, פרוסה של קלוסין ושלמה של בעל הבית אומר על השלמה של בעל הבית. פת חטין ופת שעורין אומר על של חטים. פרוס' של חטים ושלמה של שעורי' אומר על פרוסה של חטים. פת שעורין ופת כוסמין אומר על שעורין. והלא כוסמין טוב ממנה אלא שזו ממין שבעה וזו אינו ממין שבעה. פת טמאה ופת טהורה רבי חייא בר' אבא אומר על הטהור' פת נקייה טמא' ופת קיבר טהור' ר"י ברחייא בשם ר"א אומר על איזו מהן שירצה עד כאן בירו' והיא כסברת ר"י דיפה ושלם שלם עדיף וחשוב ושלם חשוב עדיף, ונסמוך בזה פי' הגאון. 3@ומה שאמרו הכל מודים בפסח שמניח הפרוסה בתוך השלמה ובוצע דבר פשוט הוא דבוצע המוציא על הפרוסה קאמר ודומיא דפליגי בשאר ימות השנה מודים בפסח וכן הוא ברור שעליה מברך לאכול מצה דלחם עוני בכזית דמצ' כתיב ועוד שכל המצות שמברך עליהן ברכת הנהנין בכזית א' הוא מברך שתים כדעביד בברכת היין של קידוש היום. וכן במאן דמקדש אריפתא מברך אתרתי ובוצע חדא בציעה וכן אמרור היכא דליכא שאר ירקי מברך בפה"א ולאכול מרור בכזית ואוכל וכן באוכל את הפסח ואוכל את הזבח ואוכל מנחות בירושלים כדקתני בתוס' בפרקין. 3@אבל ראיתי שכתב הגאון ז"ל אם הביאו לפניו בפסח פתיתין ושלמין מניח פרוסה בתוך השנמה ובוצע אבל אם כל מה שהביאו לפניו שלמין לא צריך להניח פרוסה לתוך שלמה, אלא בוצע לו על שני ככרות ככל שאר ימים טובים. והדין פי' מקרב טפי, אלא מיהו מנהגא בעלמא בלילי פסחים שמביאין פרוסה לתוך שלימה ובוצע, ולא ידעי' אי בדוק' נהוג הכי או כי היכי דסליק אדעתיה פשוט, אלו דברי הגאון.3@ ומתחלה קשה עלי משום דאמרי (לקמן ע"ב) מאי טעמא לחם עוני אמר רחמנא דאלמא מצוה הכי וקביעות' הוא למפריסהון ואשכחי' לעיל בענין טרוקנין דאמר רב אשי אדם יוצא ידי חובתו בפסח מאי טעמא לחם עוני אמר רחמנא ולאו למימר' דצריך טרוקנין לכתחלה משום עוני כל היכי דמעיילי לחם נפק ביה, והלכך בהביאו לפניו פתיתין ושלמין לא צרכינן לחשיבותא דשלם לד"ה אלא בוצע בפרוסה דהוא עוני הואיל ואיתיה קמיה ולאו דמחייבינן לאיתויי וליפטר בהכי אלא לחם עוני דחובה לאפוקי עיסה שנילושה ביין ושמן ודבש הוא אלא כיון דמנהגא הוא הכי עבדינן למפרס ולאקבועי מצוה בפרוסה. 
++5@דף מ' ע"א 7@הא דתנן 4@ר"י אומר בורא מיני דשאים. 1@מפני שר'        יהודה סובר בכל דבר שעושה פרי ופריו נאכל אדם מברך בורא פרי אם מין אילן הוא פה"ע ואם אינו מין אילן פה"א כגון קשואים ואבטיחים ושומים וכיוצא בהם אבל הירקות שירקן נאכל ה) וזרען אינו נאכל כגון זרעוני גנה שאינן נאכלין מברך עליהן בורא מיני דשאים, ואיתמר בגמ' בטעמיה דר"י משום דכתיב ברוך ה' יום יום, וכי ביום מברכין בלילה אין מברכין, אלא בכל יום ויום תן לו מעין ברכותיו, ה"נ בכל מן ומין תן לו מעין ברכותיו. ולפום האי טעמא אמרי, בירושלמי בכוסס אורו ובכוסס חיטה בורא פרי זרעונים ושם בתוס' על הזרעים הוא אומר בורא זרעים על הדשאים הוא אומר בורא מיני דשאים ועל הירקות הוא אומר בורא פרי האדמה וכו'. הענין לומר שמברכין על כל מין ומין בפנ"ע.3@ ופסקו בגמ' א"ר זירא ואי תימא רבי חנינא בר פפא הלכה כר"י. [א"ה: בנוסחי דידן גרסי' אין הלכה כר"י וצדקו דברי הגאונים     ז"ל דהוו גרסי הכי בגמ' ולמה שפסק למעלה בכוסס את התט' לעיל בגמ' דף ל"ו אוקמוה כר"י יע"ש והוא ז"ל לטעמיה אזיל דהלכה כר"י ולפום גי' דידן בגמרא לית הלכתא כההיא     ברייתא וכירושלמי כמובן. הלא כה דברי חיים מודעי]. 3@וראיתי לגאונים ורבי' ז"ל שלא כתבו בחבוריהם פסק זה ובכולם     כתבו בפה"א. ונראה שהם ז"ל סומכים בזה בסוגיות שבפרק הזה שלא הזכירו ברכתו של ר"י בשום מקום (בקר') [בקורא] וצנון בסוגי' דר"י ושמואל [דף ל"ו ע"א] ובשלקות בסילק' וכרתי בסוגי' דעולא ורבי יוחנן [דף ל"ח ע"א] [וכרוב] ודורמסקני בסוגי' דתלמידי דבר קפרא (דף ל"ט ע"א) וכן כיוצא בהן. 3@ואנו דעתנו צריכא עיון, שאין לדחות פסק שפסקו בגמר' בלא מחלוקת אלא מסוגיא מפורשת מאלו. דודאי סוגי' דכרוב ודורמסקנין כיון דלאו בפלוגתא דפרי האדמה ומיני דשאי' איתמר, אלא בפלוגתא דתלמידי' בין ברכה דשהכל וברכה דפירות עצמן הוו נקטי בגמ' לישנא דרויחא להו אליבא דת"ק דהיא סתם מתני' ומינה לר' זירא דפסק כר' יהודה פלוגתייהו בהכי נמי היא דמאן דפליג סבר בשר שהכל ושלקות מיני דשאים, הילכך חשיב עדיף תדע דהא דורמסקנין פרי העץ נינהו אלא נקט ליה פרי האדמה דברוכי לרווחא וה"ה לפרי העץ וה"ה לר"י במיני דשאים דחד טעמא וחד דינא הוא וכל שכן סוגיא דשלקות דכולה ארישא דמתני' קיימ' דדייקי עלה קתני ירקות דומיא דפת ונקיט להו ברכ' דת"ק ברישא דמתני' ומינה לר"י מיני דשאים וירקות דכיון דפליגי בשינוי דאור אי משנה להו ברכה דגופייהו לשהכל אי לא לא איכפת להו לאדכורי שתי ברכו' פרי לרבנן ומיני דשאי' לר"י וכל כי האי גוונא לאו דוקא ויגיד עליו ריעו הוא.3@ ובודאי סוגיא (דקרא) [דקורא] קשיא מהנך דכיון דמימרא היא ושמעתא בפ"ע איתמר אע"ג דבפלונת' דפרי (העץ) יב ושהכל איתמרא איכא למיחש לה ואפ"ה לא מסתבר למדחי מינה פסקא דגמ' דמפרשא בהדי' דהלכה כר"י ואסמכיה אקרא ואשכחן נמי גבי ג) היו לפניו מצות הרבה דאמר ת"ק אומר אקב"ו על המצות ור"י אומר מברך על כל אחת ואחת בפ"ע ושם נמי פסק רבי זירא ואיתימא ר' חנינא בר פפא הלכה כר"י ואסמכוה אהאי קרא ודרשי ברוך ה' יום יום כדאיתא בסוכה ושם פסקו הגאונים ז"ל הלכה כר"י ואע"פ שיש לומר שזו מעין ברכה היא דכולהו פרי האדמה נינהו וכולה מין אחד הוא לברכ' מ"מ בגמ' ראו דברי ר"י בשתיהן.3@אלא שיש ראיה לדברי הגאונים הימלתא דבי הנדואי (דף ל"ו ע"ב) דאמר רבא בפה"א וזנגבילא לר"י כיון דלאו פרי הוא ושרשין נינהו לא בעי ברוכי עליה פרי האדמה אלא מיני דשאים או בורא מיני עצים ובתמרות של אתרוג לר"י בירוש' שהזכרתי למעלה ושמע' דהכא עדיפא ובתרתי הוא וזהו סמך לדברי       הגאונים ז"ל בפסק זה, ועדיין צריכא לפנים. 
++5@פרק שלשה שאכלו2@דף מ"ה ע"א 7@זו ששנינו 4@שלשה  שאכלו כאחת חייבין לזמן. 1@אעפ"י שלא הסיבו הוא דחובת זמון קובעת אותם בחבור' דהא אינ' רשאין ליחלק אבל משנתנו דכיצד מברכין [דף מ"ב ע"א] דבעי הסיבה א"נ ניכול נהמא בברכת המוציא ובורא פרי נשנית וכולה מתני' התם  בברכה שלפני אכילה היא וכן כתב בהלכות רבי' ז"ל. ודקא אמרינן עלה נח נפשיה דרב ואפי' ברכת מזונא לא גמרינן כולהו ברכות דמזון כייל בה לומד שאינן בקיאין בהם כלל. 3@לפיכך אני אומר בשתי חבורות שהם בבית א' שאפי' רואין אלו את אלו או שיש שמש ביניהם אינן מצטרפין לברכה דהמוציא שחובת זימון קובעתן ואפי' יש בכל חבורה כדי זימון מתוך שאינן רשאין ליחלק קבועין הם אפי' מחבורה לחבורה שאם רצו לזמן ביחד מזמנין אבל להמוציא אינן קובעין חבורה אלא בשהסיבו במסיבה אחת. וכן זו שאמרו שלשה שאכלו ויצא אחד מהם לשוק קורין לו ומזמנין עליו כלומר כשהוא בשוק והוא דקרו ליה ועני דוקא לאחר אכילה משום  דחובתן קובעתן אבל להמוציא אינו מצטרף כדאמרינן בפסחים מן האגף  ולפנים כלפנים ואמר ר"י אמר רב וכן לתפלה, ולא תימא התם תפלה  דוקא משום דבעי' במקהלות ברכו אלהים דאפי' הוי הם עשרה דמברכין בשם איהו לא עני אמן ולא נפיק. 3@אבל בהלכות גדולות מפרשי' לה כשהסיבו, וכך כתוב שם: והיכא דיתבו ואימלוך אימלוכי וכל חד מנהון איקרי אכל אומצא  לא מחייבין  בברכת זמון ודאי  קבעי סעודתייהו מזמנין דתנן היו  יושבין כו', ואפי' הוו מסגי באורחא ואמר ניזיל נכרוך רפתא בדוכתא פלן אע"ג דכי מטו התם כל איניש ואיניש נכרוך לחודיה איקבעו להו בזימון וקשיא לי' עובדא [דף מ"ז ע"א] דשמואל ורב (כריך וקא) [דרב שימי קא] מסרהיב ואכיל ואע"ג דגמר' לה סעודתייהו איצטריף בהדייהו משום דאלו מייתי גוזליא הוו אכלי והא הכא  ליבא הסיבו וליכא בסל נהמא  דרב שימי שלא מדעתן התחיל לאכול ואפ"ה מצטרף וכן השמש שעומד על שנים דאוכל ואעפ"י שלא נתנו לו רשות מטה ומכריע כדברינו. 
++7@והא דקתני ב4@אוכל טבל ומעשר ראשון שלא ניטלה תרומתו שאין מזמנין. 1@רבותינו מפרשים שאין מזמנין עליהם בחבורה ברכת זמון לפי שאין חבורה לאיסור אבל ברכת המזון מברך הוא לעצמו שכבר נהנה. אבל בתוספתא דמסכת דמאי בפרק שני ראיתי עם הארץ שאמר לחבר תן לי ככר זה ואוכלנו יין זה ואשתנו לא יתן לו שאין מאכילין טהרות לעם הארץ היה נדור מן הככר אמר לו תן לי ואוכלנו מאבטיח שנוקר תן לי ואוכלנו יין ונתגלה תן לי ואשתנו לא יתן לו שאין מאכילין את האדם דבר האסור לו כיוצא בו לא יושיט אדם כוס יין לנזיר ואבר מן החי לבני נח שאין מאכילין את האדם דבר האסור לו אבל כולן אין מברכין עליהן ואין מזמנין עליהם ואין עונין אחריהם אמן.
++2@דף מ"ז ע"ב7@הא דאמרי' 4@וכותי עשורי מעשר דבמאי דכתיב            באורייתא מזהר זהירי. 1@פירשו עשורי מעשר מאי דאכיל לנפשיה, אבל לאחריני לא מעשר דלית להו ולפני  עור לא תתן מכשול כדאיתא בפ"ק דחולין (ג' ע"ב), וזו היא ששנינו [דמאי ז,ד] הלוקח יין מבין הכותים אומר שני לוגין שאני עתיד להפריש הרי הן         תרומה עשרה מעשר ראשון כו'. 
++2@דף מ"ח ע"א7@הא דאמרינן 4@ולית הלכתא ככל הני שמעתתא           אלא כי הא דאמר רב נחמן קטן היודע למי מברכין מזמנין  עליו. 1@כבר פירש' בס' המלחמות שיש הפרש בל' הגמ' בין מקום שאמרי' לית  הלכתא ככל הני שמעתתא מהא דאמר ר' פלוני כנון אותה שאמר במ"א ובין מקום שאומר לית הלכתא ככל הני  שמעתתא אלא כי הא דאמר כענין שאמר בכאן שהלשון הראשון אומרים אותו במקום שהשמועות  חולקות זו עם זו בפי' ואי אפשר לקיים את שתיהן וזה  הלשון שנאמר בשמועה זו אינו במקום מחלוקת ברור שיהא אפשר לקיימן כולן שיהא קטן  המוטל בעריסה נעשה סניף  לעשרה ויודע למי מברכין מזמנין עליו  בשלשה וכן עבד ושבת וארון ותשעה שנראין כעשרה והמחדדין זה את זה אלו כולן אין  להם  שום מחלוקת על מימרא דר' נחמן וכן בדר' יוחנן בפורח יש לקיימן שתיהן אבל כך אמרו בגמ' שאין הלכה ככל הני קולי דברכת המזון אלא כי  האי קולא דרב נחמן  וגמרא הוא דקים ליה בהאי פסקא.3@ וכן מתפרשת אותה שבפ' כיצד  מברכין לעיל  וכן במס' שבת ובכתובות פ' אלמנה נזונית וכן בכל מקום, וזהו דעת הגאונים בהסכמת כולם ז"ל. אבל כאן מפני שמצאו קצתם תניא נמי הכי בקטן פורח קשה עליהם לדחות ברייתא מפורשת מדר"נ בפורח קאמר הכי ולומר דאפי' בפורח בעי' יודע למי מברכין. 3@והנה רב נחמן החמיר יותר מר' יוחנן ופסקו בגמ'  כמותו    ודחו כל שאר השמועות וזה הפירוש  אע"פ שעולה בדרך הסוגיא קשה הוא עלינו דרב נחמן קטן  סתם קאמר ואין במשמע פורח דהא  ר' יוחנן ורב נחמן לאו בהדדי איתמרו דנימא הכי אלא כל חדא וחדא שמעתתא בפני עצמה  איתמר ומאן דאמר קטן סתם אין במשמע דוקא פורח וכל שכן מי שהעמידה כשהגיע לכלל שנותיו ולא פרת שהן דברים פורחין באויר וכבר נדחה להלכות אבל לענין מה שהקשו מן הברייתא יש לתרץ דלשני קטנים  נצרכא שלא אמרו מזמנין עליו  אלא בקטן אחד אבל שנים לא ואם היה פורח הרי הוא כגדול ואין מדקדקין בשנים דכיון שהוא מופלא סמוך לאיש עשאוהו  כגדול לברכות וכענין הזה אמרו בירוש' ר' סימון  בשם ר' יהושע בן לוי קטן עושין אותו סניף לעשרה והתני אין מדקדקין בקטן א"ר יוסי ד) קומי ר' סימון ור' תנינא בשם ר' יהושע בן לוי עושין אותו סניף לשני  קטנים נצרכא שאם  היה קטן עושין         אותו ה) ספק. ספק עושין אותו ודאי . 3@וראיתי להראב"ד ז"ל שכתב דוקא לעשרה דמקילינן בקטן      כדמקילינן באכילת ירק ובכוס של יין  אבל לשלשה בעינן הביאו שתי שערות וכל הנוטה מזה אני נוטה עליו משנתנו דתנן בהדיא נשים ועבדים וקטנים אין מזמנין עליהם ומי הוא שיחלוק על משנתנו והיא כבר פסקה לקטנים שאין מזמנין עליהם והלא הנשים  והעבדים יודעות למי מברכין יותר מן הקטן ולא עוד אלא שהן חייבות בברכת המזון מן התורה אעפ"כ אין מזמנין עליהם לפי שאינן בני קביעות וכל שכן קטן ואע"פ שיודע למי מברכים. ובירוש' ר' יעקב בר  זבדי בעא קומי ר' יוסא  כד"א תמן קטן עושין אותו סניף לעשרה ואומר אף הכא עושין אותו סניף לשלשה מה אם תמן שאומרים את השם עושין אותו סניף כאן שאין אומרין את השם לא כל שכן א"ל תמן ע"י שאומרים את השם עושין אותו סניף וכאן שאין אומרים את השם אין עושין אותו סניף תני קטן  וס"ת עושין אותו סניף א"ר יודן כיני מתניתא קטן לס"ת עושין אותו סניף מאימתי עושין אותו סניף ר' ח"א איתפלגון ר' הונא ור' יודא תרויהון בשם שמואל חד אמר כדי  שיהיה יודע טיב ברכה ותנינא אמר שיהא  יודע  למי  הוא  מברך  א"ר  ניסא כמא זימנין סגיאין אכלית  עם ר' חלפת'  אבא ועם ר' תנינא בר סיסי חביבי ולא זמנין עלי עד שהבאתי שתי שערות  מכל זו הסוגיא נראה שאין שום קטן נעשה סניף אלא לעשרה אבל לשלשה עד שיביא שתי שערות כסתמא דמתני' והוא דרך אמת, כל אלו דברי הרב ז"ל ועשה להם סמוכות ממקומות הרבה.3@ואי אפשר להעמידן בסוגיא  זו שכל מקום שאמרו חכמים  מזמנין עליו זימון בשלשה במשמע וכיון שאמר רב נחמן סתם קטן היודע למי מברכין מזמנין עליו ולא קאמר עושין אותו סניף לעשרה אי נמי מצטרפין [לעשרה] לזימון שלשה קאמר דרב נחמן חד לישנא קאמר מזמנין וכן בשנים אע"פ שיודעין [אין מזמנין], אבל אחד שיודע מצטרף תדע דהא לעיל אמרי' א"ר אסי קטן המוטל בעריסה מזמנין עליו והוינן עליה ממתני' דקתני אין מזמנין עליהן ומתרצינןלה כר' יהושע בן לוי שאמר אע"פ שאמרו קטן אין  מזמנין עליו אבל עושין אותו סניפין לעשרה ושמעת מיניה בהדיא דסתם מזמנין בשלשה הוא הלכך רב נחמן דקאמר ביודע למי מברכין מזמנין עליו אפי' בשלשה קאמר תדע מדלא אקשינן עליה ממתני' כדעבדי' בר' אסי ולא מתרצינן ליה באע"פ שאמרו אין מזמנין אבל מצטרף לעשרה כי התם.3@ ומה שאמר הרב ז"ל שהנשים והעבדים יודעין למי מברכין יותר מן הקטן. והלא נדחה ר' יהושע בן לוי מן העבד שאינו מצטרף אפי' לעשרה וכל קטן היודע למי מברכין מצטרף הוא לדבריו. אלא שאין דינו של הרב ז"ל נכון וסוגית הירוש' שכתב חולקת היא מדר' ניסא ואין סומכין עליו בזה שכבר פסקו כרב נחמן ואין זה צריך לפנים . 
++2@דף מ"ט ע"א7@קשה לי בברכה זו של 4@הטוב והמטיב 1@כיון           דמטבע ארוך הוא למה לא חתמו בה בשלמ' פתיחה להפריש בינה לשל תורה עשו בן שאין של דבריהם סמוכה לשל תורה אלא חתימתה למה סלקיה ואי אפשר לומד שמטבע קצר הוא דהא מאריכי' בה, ועוד  דהא אמרי' תדע ולא  דאורייתא שהרי פותח בה בברוך ואי מטבע קצר בין דאורייתא בין דרבנן לעולם פותחין בה. וצ"ל שהיה ראוי לחתום בה ולא  לפתוח ומפני שהיא של דבריהם הוצרכו להפריש בינה לשל תורה ופתחו בה ולא ראו להעלותה יותר משל תורה שיהיו שאר ברכות שהן של תורה בברוך אחד וזו בשנים והחזירו ברוך שבח תהלה לפתיח'. 3@וראיתי שנתלין לומר דמטבע קצר הוא כמה שאמור בירושלמי       בפ"ק [ה"ה]: אלו ברכות שמקצרין בהם המברך על הפירות ועל המצות וברכת הזימון וברכה אחרונה שבברכת המזון. 3@ולאו מילתא היא, שדרך הירושלמי בזה אינו מטבע קצר דפתיחה ומטבע ארוך דפתיחה וחתימ' אלא שלא יאריך בנוסח ברכות  קצרות ולא  יקצר  ארוכו'  ואף על פי שאומרן  כמטבען וברייתא היא  שנויה בתוספתא והביאו בירוש' עלה  דמתניתין, דתנן בערב שתים לאחריה אחת ארוכה ואחת קצרה, ותני עלה למה אמרו אחת קצרה ואחת ארוכה מקום שאמרו להאריך אינו רשאי לקצר  מקום  שאמרו  לקצר  אינו רשאי  להאריך לחתום אינו רשאי שלא לחתום, שלא לחתום אינו רשאי לחתום, לשוח אינו רשאי שלא לשוח, שלא לשוח אינו רשאי לשוח, אלו ברכות  שמקצרין בהם המברך על הפירו' ועל המצות  ברכת הזימון וברכה אחרונה  שבברכת המזון, אלו ברכות שמאריכין ברכות תענית וברכו' של ר"ה ויוה"כ (והרבה) [והקשו] בירוש' אלו ברכותהמקצרין בהם וכו' הא בשאר כל הברכות אדם מאריך ב) אמר חזקיה מאן דתני המאריך זה הוא מגונה מקצר הרי זה משובח הדא אמרה אין זה כלל ג) תני צריך להאריך בגואל ישראל בתענית הא בשש שהוא מוסיף אינו מאריך אר"י שלא תאמר הואיל והוא מעין י"ח לא יאריך בה לפום כך צ"מ צריך להאריך  בגואל ישראל בתענית. 3@כל אלו דברים ברורים הם, שאין הענין הזה למטבע ארוך דפתיחה וחתימה, אלא שלא יוסיף דברים על מה שתיקנו  חכמים  בברכות אלא במקומות שהאריכו  מאריך כעין גואל ישראל בתענית שאינו משנה בפתיחה וחתימה אלא מוסיף דברים בלבד.3@ ולפי דרכנו למדנו  שהמוסיפים בפיוטים וזמירות אינן נוהגין כשורה וכן מצאתי עוד במדרש קהלת טוב לשמוע גערת חכם אלו הדרשנין מאיש שומע שיר כסילים אלו החזנין שמוסיפין על קבע תפלה ודבר פשוט הוא מיהו מעובדא דמנימין רעיא משמע שהמקצר במקום  שאמרו  להאריך וכן המאריך במקום שאמרו לקצר דיעבד יצא וכבר ראיתי להראב"ד ז"ל באלו  דברים  שאינו כדאי. 3@ והא דקתני ברכה אחרונה שבק"ש לומר שברכה שאחר ק"ש סמוכה היא לברכה  שלפני קריאה, וכן נהגו בהלל שמברכין  לפניו ולאחריו (במקו')  ועשו ברכה שלאחריו סמוכה לשלפניו ולא פתחו בה בברוך אבל במגלה וקריאת התורה לא נהגו כן א"ל במגיל' שאלמלא היו מברכין על קריאת מגלה בלבד היו עושיו כן אבל לפי שמברכין שעשה נסים וזמן לא עשו אותה כסמוכה אבל ברכה אחרונה של הלל בחובה תקנוה בלילי פסחים וסמוכה היא לברכה שלפני ההלל שמברכין בלילי פסחים לגמור את הלל כמו שהוזכר בירושלמי במס' זו פרק ראשון ובמס' סופרים ובכל מקום שנהגו לברך בכל קריאה של הלל משום לילי פסחים הנהיגו אותה ובסמוכה נהגו בה, אבל בקריאה של תורה כיון שעשו של שבעה קורין כאחד שהפותח מברך לפניה והחותם מברך לאחריה לא ראו לעשות ברכה  של שביעי סמוכה לברכה של ראשון ותקנו אותה בפתיחה. 3@וכן מה שתקנו בברכה זו שתי מלכיות לבד מדידה משום בונה ירושלים הוא דאו אורח ארעא הוא דאמר  מלכות בית דוד ולא אמר מלכות שמים ולא רצו לומר בה ממש בעצמה מלכות שלא לשנותה  מסדר ברכות הסמוכות  לפיכך קבעוה בהטוב והמטיב וכיון דהשלימו מלכות לבונה  ירושלים השלימו מלכות לברכת הארץ ששתיהן סמוכות הן ואין  לשנות  מטב' זו מזו ומי שאומר מלכותך ומלכות בית דוד משיחך עבדך מהרה תחזירנה למקומה בבונה ירושלים טועה  הוא ומשתבש  הוא. 3@ ונראה קודם שתקנו הטוב והמטיב היו  אומרין מלכיות הללו בברכות עצמן משום דלאו אורח ארעא דלא לאמרינהו ולא היו חוששין לשנות המטבע משאר ברכות משום דלא אפשר וכיון שתקנו הטוב והמטיב החזירו הדבר לשאר מטבע שבברכות וכן היה בשעה שהיתה מלכות בית דוד קיימה היו אומרים מלכות בית דוד עבדך תכין עד עולם וכיוצא בזה ובזמן החורבן הוא שאמר תחזירנה למקומה וכן בכל ענין ברכות ותפלות עיקר הברכה חובה ושאר תורף שלהם לפי הזמן מתקנין אותה.
++2@דף מ"ט ע"ב4@ר' מאיר סבר ואכלת זו אכילה ושבעת זו שתייה ואכילה בכזית. @1פירוש, ר' מאיר עביד לקרא תרי מילי אכילה ושתיה כיון דכתיב בקרא חטה ושעורה דהיינו אכילה וכתיב ביה גפן וזית ושמן דמשכחת לה בשתיה אהדרינהו כולהו בכלל ברכה דאע"ג דארץ הפסיק הענין כדאמרן בכיצד מברכין ההוא לאיפלוגי בין ברכה לברכה לומר דלא דמו ברכות הדדי אבל כולהו חייבין בברכה ושמעינן מינה לדברי ר' מאיר דברכה אחת מעין שלש דעל הגפן וה"ה לשבעת המינין כולן דבר תורה הן דבכלל ברכת המזון הן ונפקא מינה למי שנסתפק אם בירך אם לא שחוזר ומברך מה שאין כן בשאר ברכות לעיל פרק כיצד מברכין ובפרק מי שמתו וכן בפרק במה מדליקין, וכך אמר בעל הלכות וברכת המזון וכן ברכת שבעת המינין דחיובא דאורייתא נינהו חוזר ומברך אבל שאר ברכות דרבנן לא הדר ומברך.
++2@דף נ' ע"א 4@‎שלשה שבאו משלשה חבורות אינן רשאין לחלק. 1@פרש"י ז"ל משלשה חבורות של ג' ג' בני כדמפרש רב חסדא ואע"פ שלא אכלו אלו ג' הבאים זה עם זה מצטרפין ומברכין ברכת הזימון ואמר רבא לא אמרן אלא דלא אזמין עלייהו בדוכתייהו קודם שנפרד כל אחד ואחד מן החבורה שלו אבל אם כשרצה לצאת זימנו עליו או לאחר שיצא קרו ליה וזימנו עליו ברכת הזימון ולא ברך ברכת המזון ובאו עכשיו לחזור ולברך אין מברכין אלא ברכת המזון דפרח זימון מינייהו ותו לא הדר עלייהו. זהו תורף פירוש הרב ז"ל.3@ואני תמה וכי מה בא רבא ללמדנו דמי שזימן עם חביריי יצא ידי חובת זימון ואינו מזמן וחוזר ומזמן ועוד מאי פרח זימון מינייהו אין כאן זימון פורח אלא שזימן אותו כהוגן ועוד שאין לזה ענין במשנה דמטה שנגנבה כו'.‎3@והראב"ד ז"ל מפרש לה בשלשה שבאו משלש חבורות של חיוב ואכלו שלשתן כאחת אלא שלא הסיבו ולא קבעו להם מקום בכאן ואעפ"כ כיון שבאו ממקום חיוב אינן רשאין לחלק אבל אם לא אכלו כאחת אין עליהם חיוב זימון כלל. והוא ז"ל סומך בזה על הירושלמי שאמור בו על דעתיה דר' זעירא וחברתיה והן שאכלו שלשתן כאחת. ואמר רבא לא אמרן אלא דלא אזמין עלייהו בדוכתייהו כלומר כשיצא כל אחד מחבורה שלו עדיין היו חביריו רוצים לאכול ולא זימנו כלל אבל אם כשבא לצאת כבר גמרו חביריו סעודתם וזימנו עליו קודם שיצא אע"פ שהוא לא היה רוצה להפסיק שהיה דעתו לחזור ולגמור סעודתו פרח זימון מיניה והם יצאו בזימונו שאם לא יצאו אמאי פרח זימון מיניה ומייתי ליה ממטה שחלקוה אחים או שנגנבה חציה דכיון שאין בידו להחזירה לא מקבלה טומאת איברים ולא מקבלה טומאה ולא הדרא לטומאתה כשהחזירוה אלמא מכיון דפלגא פרחה לה טומאתה לגמרי הכא נמי דיחיד אע"ג דאיכא עליה חובת זימון כיון דאיפלג מחבריה ואזמין עליה ולא אפשר ליה למהדרינהו בהדייהו פרח זימון מיניה אבל כי לא אזמין עליה בדוכתיה ודאי דמי למטה שנפסקה וכולה ברשותו דכיון דיכול לחברה הדרא לטומאתה והאי נמי יכול לחזור אצלם וחובת זימון עליו ואע"פ שנפרד מהם ואכל עם השנים הללו שנפרד וזהו פירוש שמועה זו על ברור ולא שמעתי מי שקדמני בפירוש כל אלו דברי הרב ז"ל.‎3@והנה דבריו כדברי רש"י ז"ל בדרך הסוגיא ולא הוסיף בהם אלא השבח הזה שהוא משבחן ועדיין נשאל על שניהם ז"ל אם הוצרכנו למשנה ולברייתא נמי שזימן עם חביריו ויצאו הוא והם ידי זימון שאינו חוזר ומזמן פעם אחרת. ואם יאמר הרב ז"ל שהם זימנו עליו שלא מדעתו שהוא לא היה רוצה להפסיק סעודתו מ"מ כבר זימן עמהם וכבר אמרו אחד מפסיק לשנים ומזמן עמהם וחוזר לסעודתו ומברך ברכת המזון בלא זימון.‎3@ולענין מה שחידש הרב ז"ל והוא שאכלו שלשה הבאין כאחת אני תמה אם הועילה להם חבורה ראשונה וחיוב שהיה עליהן מתחלה אע"פ שלא אכלו בכאן יזמנו ואם לא הועיל להם חיובן הראשון אע"פ שאכלו כל זמן שלא הסיבו ולא הוקבע עליהן חיוב הזימון בחבורה זו רשאין הם לחלוק ואינן מזמנין ועוד פירשנו למעלה שאין צריך לשלשה שאכלו כאחת להסיבה ולא לקביעות מקום אלא כל שאכלו כאחת מזמנין. אבל פירוש השמועה על הנכון שלשה שבאו משלש חבורות של שלשה בני אדם שהוא מקום חיוב ונזדמנו שלשתן למקום אחד לישב ולברך אינן רשאין לחלק אלא מזמנין זה עם זה אע"פ שלא אכלו בכאן יחד דהא אכל חד וחד רמי חיוב זימון ואמר רבא לא אמרן אלא דאכתי לא אדמין עלייהו דהני בדוכתייהו אבל אם זימנו בני חבורתן לעצמן משפירש זה מהן כשהוא יחיד פרח זימון מינייהו דכל חד מהם דהא נשאר יחיד מחבורה שלו ואין תורת זימון על היחיד הלכך אע"פ שנתערב אחר כך עם שנים כיוצא בו אין זימון חוזר וניעור עליהם והא דקאמר עלייהו בדוכתייהו לאו עלייהו דכולהו אלא עלייהו דכל חד מהני קאמר כלומר שזימנו באחת מן החבורות או בשלשה יחד והאי דקאמר עלייהו לאו למימר דהוי בהדייהו אלא כיון דמזימון דידהו פרח זימון מהאי עלייהו הוי וזהו שהביאו מן המשנה מכאן ולהבא אין למפרע לא משום דכיון דפרח מיניה שעה אחת דין מיטה שלימה שוב אינו חוזר עליה טומאה שהיה בה מתחלה הכא נמי כיון שנשאר בלא חבורה שלימה שעה אחת אין זימון חוזר עליו ושמע מינה שאם נתערבו שלשה הבאין ואחר כך ברכו הראשונים בעלי החבורות הללו מזמנין לעצמן דהא לא פרח זימון מינייהו אפילו שעה אחת. זה נ"ל בפירוש השמועה והוא נכון וברור ועונה כהוגן. וגם אני לא ראיתי מי שקדמני בזה אלא שאי אפשר שלא הקדימו בפי' הצרפתים הבקיאים בחדרי הלכה. והירושלמי שכתב הרב ז"ל הריני חוזר כאן לכתוב סוגיא שלו מתחלתה ר' בא בשם ר' הונא ר' זעירא בשם בשם אבא בר ירמיה שלשה חובה ושנים רשות ואמרה ר' זעירא קומי ר' יסא אמר ליה אני אין לי אלא משנה שלשה שאכלו כאחת חייבין לזמן רבנן דבכא בדעתון דרבנן ורבנן דתמן בדעתון כו' ר' הונא אמר שלשה שאכלו זה בפני עצמו כו' ונתערבו מזמנין א"ר חסדא והן שבאו משלש חבורות על דעתיה דר' זעירא וחבורתיה והן שאכלו שלשתן כאחת ר' יונא על הדא דר' הונא הטביל שלשה אזובות זה בפני עצמו וזה בפני עצמו ונתערבו מזה בהם אמר רב חסדא והן שבאו משלש חבילות על דעתיה דרבי זעירא וחבורתיה והוא שהטביל שלשתן כאחת ואין תימר אין למדין אזוב מברכה ואנן חזינן רבנן עצמן קיימין בסוכה וילפינן לה מטיט הנרוק כו'.‎3@הנה סוגיא זו מפורשת שלא כדעת הרב ז"ל שהשלשה שאכלו כל אחד בפני עצמו ונתערבו במקום אחד ולא אכלו כאחת כלום ונעשו חבורה ומזמנין וכן שלשה קלחין של אזוב ונעשו אגודה בשעת טבילה ומזין בהם וכל זה לדעת ר' הונא אבל לדברי ר' זעירא וחבורתיה והוא ר' יוסא שאמר אני אין לי אלא משנה שלשה שאכלו כאחת חייבין לזמן וכל דלא הוי הכי אפילו בתורת רשות אין מזמנין הכא נמי כיון דלאו שלשה שאכלו כאחת היא אין מזמנין לא חובה ולא רשות וכן באזוב אין מזין אלא א"כ הוטבלו שלשה גבעולין כאחת והיינו דאמרי התם ואין תימר אין למדין אזוב מברכה אלא אע"פ שבברכה לדעת ר' זעירא וחבורתיה בעי' חבורה בשעת אכילה מדוקיא דמתני' באזוב לא בעינן אגודה בשעת טבילה הא חזינן דגמרי רבנן סוכה מטי הנרוק ענין משאינו ענין אף כאן נלמד אזוב מברכה. זהו פירוש סוגית ירושלמי 
++5@פרק ח' – אלו דברים2@דף נ' ע"ב 1@[ת"ר אור ששבת מברכין עליו.] נ"ל דברכת האור אינה ברכת הנהנין דא"ה כל שעתא ושעתא מחייב בה שלא תקנו ברכה בהנאות שאינן נכנסות לגוף כגון רחיצת מים קרין וחמין וכגון נשבה הרוח ונהנה וכ"ש באור שאינו נוגע בגוף כלל לא אמרו אלא בדברים הנכנסין לגוף והגוף נהנה מהן כגון אכילה ושתיה וריח נמי דבר הנכנס לגוף וסועד הוא וכאכילה ושתיה דמי אבל ברכת האור כברכת של יוצר המאורות ושתיהן ברכת השבח הן כברכות הללו שבפ' הרואה (ברכות נד א) ברוך עושה בראשית.‎3@ולפי שהעולם אינו משתמש אלא באורה של יום ובלילה הלכה לה אותה האורה והחשך ממשמש ובא וכל בקר מתחדשת לו אורה תקנו בכל שחר ברכות המאורות כמו שסדרו בה המחדש בכל יום תמיד מעשה בראשית וכשם שאורה של יום במאורות כך אורה של לילה במאור האש.‎3@ובדין הוא שיברך בכל לילה, אלא כיון שתשמיש של אש ואורו צריכין לו ומשתמשין בו בין ביום ובין בלילה תדיר לא ראו לברך עליו בכל לילה כענין שאמרו (ברכות נג א): "הנכנס לחנותו של בשם והריח ריח אפילו יושב כל היום כלו אינו מברך אלא אחת", וכן שנו בברכות וכן אמרו בברכות השבח (ברכות נד א): "אימתי בזמן שרואהו לפרקים" ובמוצאי שבת ובמוצאי כפורים כיון שהשבת אסרה עלינו תשמישו ואורו של כל נר שאין אנו משתמשין בו ממש אע"פ שמשתמשין בנר הדלוק מערב שבת מ"מ כבר נפסקה ממנו עיקר הנאתו ותשמישו של אור וכשחזרנו להנא' אורו במותאי שבת ברכנו עליו דהוה ליה כנכנס ויוצא לחנותו של בשם שמברך על כל פעם ופעם. וזהו שאמרו (ברכות נג) : "אין מחזרין על האור כדרך שמחזרין על המצות" אלא כשם שאין מחזרין על ברכת השבח לראות הים הגדול וההרים כדי לברך עליהן כך אין אנו מחזרין על האור.‎3@וקשה לי זו שאמר בפסחים (פסחים נד א) שאור היוצא מן העצים ומן האבנים דבמוצאי שבת מברכין עליו ובמוצאי יום הכפורים אין מברכין עליו והלא היה ראוי לברך יותר לפי שהוא האור המתחדש שלא נשתמשו בו מעולם וי"ל שאין אנו מברכין ברכת השבח אלא במה שנברא במעשה בראשית והוא תמיד בעולם דכשמתעלם ממנו וחוזר ומתחדש לנו אנו מברכין עליו אבל אור היוצא מן העצים לאו ממעשה בראשית הוא אלא דבמוצאי שבת שתחלת בריית תשמישו בו היה כך שהקיש שתי אבנים ויצר מהן אור ובמוצאי שבת היה הניחו לו לברך עליו זכר ליצירה ראשונה והוה ליה כרואה חמה בתקופתה וככוכבים במסילתם ומזלות כסדרן דהיינו בתחלת הוייתן מברך מה שאין כן ביום הכיפורים שאינו מברך אלא על אור של משעשה בראשית כלומר אור ההויה בעולם וחזר לו. ובין במוצאי שבת בין במוצאי יום הכיפורים אין מברכין אלא על אור ששבת ממלאכת עבודה לפי שאין מברכין עליו אלא משום חידושו אצלנו וזה לא פסק תשמישו מהם וה ל כמאורו של אש בשאר הלילות שאין מברכין עליו מפני תדירותו כמו שפירשתי ע"כ השגתי הטעם בברכה זו.‎3@וכיון דאמרינן בגמרא בישראל שהדליק מאינו יהודי דמברכין עלה משום דכי קא מברך אתוספתא דהתירא קא מברך נראה לי שאין מברכין עליו ביום הכפורים דעיקריה דאיסורא הוא ותוספת דידיה אור שנברא עכשיו לא שבת אלא שלא נעשה בו איסור והוי ליה אור שיצא מן העצים ומן האבנים הילכך ביום הכפורים אין מברכין עליו ובמוצאי שבת הוא ששנו כאן מברכין עליו וסעד יש לי לסברא זו במנהג מקומותינו שנהגו במוצאי יום הכפורים להדליק כל אחד ואחד נר מעששית של בית הכנסת שהדליקו אותן מבעוד יום ומוליך כל אחד לביתו בידו לפי שאין נר של ישראל מצוי להם בביתם אלא שמדליקין מאינו יהודי ואין מברכין עליו.
++  
+diff --git a/sources/RaMBaN/errors b/sources/RaMBaN/errors
+new file mode 100644
+index 0000000..9bf1166
+--- /dev/null
++++ b/sources/RaMBaN/errors
+@@ -0,0 +1,61 @@
++avodah_zarah.txt
++avodah_zarah_complete.txt
++bava batra probs.txt
++bava metzia probs.txt
++bava metzia.txt
++bava_batra_complete.txt
++bava_batra_probs.txt
++bava_metzia_complete.txt
++bava_metzia_probs.txt
++beitzah_complete.txt
++berachot_probs.txt
++berakhot.txt
++berakhot_complete copy.txt
++berakhot_complete.txt
++chagigah_complete.txt
++dina.txt
++dina_complete.txt
++eruvin_complete.txt
++gittin.txt
++gittin_complete.txt
++gittin_probs.txt
++ketubot.txt
++ketubot_complete.txt
++ketubot_probs.txt
++kiddushin.txt
++kiddushin_complete.txt
++kiddushin_probs.txt
++makkot.txt
++makkot_complete.txt
++mishpat_complete.txt
++mishpat_ha-cherem.txt
++mishpat_probs.txt
++mishpat_whattodo.txt
++moed_katan.txt
++moed_katan_complete.txt
++moed_katan_probs.txt
++nazir.txt
++nazir_complete.txt
++nazir_probs.txt
++pesachim.txt
++pesachim_complete.txt
++problems.txt
++problems_bavametzia.txt
++probs_ramban.txt
++rosh_hashanah.txt
++rosh_hashanah_complete.txt
++sanhedrin.txt
++sanhedrin_complete.txt
++Shabbat.txt
++shabbat_complete.txt
++sotah.txt
++sotah_complete.txt
++sotah_problems.txt
++sukkah.txt
++sukkah_complete.txt
++taanit_complete.txt
++yevamot.txt
++yevamot_complete.txt
++yevamot_probs.txt
++yoma.txt
++yoma_complete.txt
+diff --git a/sources/RaMBaN/errors.html b/sources/RaMBaN/errors.html
+index e69de29..fc10a99 100644
+--- a/sources/RaMBaN/errors.html
++++ b/sources/RaMBaN/errors.html
+@@ -0,0 +1,10 @@
++<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
++<html><head>
++<title>504 Gateway Timeout</title>
++</head><body>
++<h1>Gateway Timeout</h1>
++<p>The gateway did not receive a timely response
++from the upstream server or application.</p>
++<hr>
++<address>Apache/2.4.7 (Ubuntu) Server at ste.sefaria.org Port 80</address>
++</body></html>
+diff --git a/sources/RaMBaN/ramban.py b/sources/RaMBaN/ramban.py
+index 5cb6597..7ae9927 100644
+--- a/sources/RaMBaN/ramban.py
++++ b/sources/RaMBaN/ramban.py
+@@ -165,6 +165,11 @@ def parse(tractate, errors):
+          dh = removeExtraSpaces(dh)
+          before_dh = removeExtraSpaces(before_dh)
+ 
++         if len(dh) > 0 and dh[0] == ' ':
++             dh = dh[1:]
++
++         if len(comment) > 0 and comment[0] == ' ':
++             comment = comment[1:]
+ 
+          if comment.find('@') >= 0:
+             errors.write(orig_line+"\n\n")
+@@ -192,8 +197,8 @@ def post(text, dh_dict, tractate):
+      text_array = convertDictToArray(text)
+      send_text = {
+          "text": text_array,
+-         "versionTitle": "Ramban on Talmud",
+-         "versionSource": "http://www.sefaria.org",
++         "versionTitle": "Chiddushei HaRamban, Jerusalem 1928-29",
++         "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001294828",
+          "language": "he"
+      }
+      post_text("Chiddushei Ramban on "+tractate, send_text)
+@@ -216,15 +221,15 @@ if __name__ == "__main__":
+     global text
+     global dh_dict
+     global errors
++    errors = open("errors", 'w')
+     not_yet = False
+-    only_these = ["avodah_zarah_complete.txt", "makkot_complete.txt", "sanhedrin_complete.txt"]
++    only_these = ["bava_batra_complete.txt"]
+     until_this_one = "ketubot"
+     for file in glob.glob(u"*.txt"):
+-        print file
+-        print file.find("_complete") >= 0
+         errors.write(file+"\n")
+         if file.find("_complete") >= 0 and file in only_these:
+             tractate = file.replace("_complete.txt", "").replace("_", " ").title()
++            print tractate
+             #if not_yet and file.find(until_this_one) == -1:
+             #    continue
+             #else:
+diff --git a/sources/RaMaK/RaMaK.py b/sources/RaMaK/RaMaK.py
+new file mode 100644
+index 0000000..e60e49b
+--- /dev/null
++++ b/sources/RaMaK/RaMaK.py
+@@ -0,0 +1,23 @@
++__author__ = 'stevenkaplan'
++import XML_to_JaggedArray
++
++
++class RaMaK:
++
++    def __init__(self):
++        self.nodes = []
++
++
++    def parse(self):
++        JA_array = [("intro", 1, False), ("part", 2, True), ("part", 2, True), ("part", 2, True), ("part", 2, True), ("part", 2, True)]
++        JA_array += [("part", 2, True), ("part", 1, False), ("appendix", 2, True)]
++        allowedTags = ["book", "intro", "part", "appendix", "chapter", "p", "ftnote", "title"]
++        allowedAttributes = ["id"]
++        parser = XML_to_JaggedArray("../sources/DC labs/Robinson_MosesCordoveroIntroductionToKabbalah.xml", JA_array, allowedTags, allowedAttributes)
++        parser.run()
++        self.nodes = parser.getNodes()
++
++
++if __name__ == "__main__":
++    ramak = RaMaK()
++
+diff --git a/sources/Ritva/parse.py b/sources/Ritva/parse.py
+index d85a06c..38bbac4 100644
+--- a/sources/Ritva/parse.py
++++ b/sources/Ritva/parse.py
+@@ -48,7 +48,6 @@ def createIndex(enTitle):
+ 
+ 
+ def dealWithDaf(line, current_daf):
+-    print line
+     orig_line = line
+     line = line.replace(" ", "").replace("\xe2\x80\x9d", '"')
+     line = line.replace("@22", "").replace('ע"א','').replace('דף', '').replace('\r', '').replace(' ', '').replace('.', '').replace("\xe2\x80", "").replace("\xac", "").replace("\xaa", "")
+@@ -196,4 +195,3 @@ if __name__ == "__main__":
+         }
+         post_text("Ritva on "+file, send_text)
+         match_and_link(dhs, file)
+-        pdb.set_trace()
+\ No newline at end of file
+diff --git a/sources/functions.py b/sources/functions.py
+index bee55f6..2c82297 100644
+--- a/sources/functions.py
++++ b/sources/functions.py
+@@ -63,10 +63,22 @@ eng_parshiot = ["Bereishit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "To
+ 
+ 
+ def removeExtraSpaces(txt):
+-    while txt.find("  ") >= 0:
++    txt = txt.replace("\xc2\xa0", " ") #make sure we only have one kind of space, get rid of unicode space
++    while txt.find("  ") >= 0:          #now get rid of all double spaces
+         txt = txt.replace("  ", " ")
+-    while txt.find("\xc2\xa0\xc2\xa0") >= 0:
+-        txt = txt.replace("\xc2\xa0\xc2\xa0", "\xc2\xa0")
++
++
++    '''we want to make sure every end bold tag has one and only one space after it
++    right now, we know that all instances have one space or zero.
++    this is because we just ran code to get rid of 2 or more spaces
++    so first get rid of instances of having a space so we have one case: zero spaces
++    then convert all of those cases into having one space in the following line'''
++    txt = txt.replace("</b> ", "</b>")
++    txt = txt.replace("</b>", "</b> ")
++
++    txt = txt.replace("( ", "(").replace(" )", ")")
++    txt = txt.replace("<br> ", "<br>") #paragraphs shouldn't start with a space
++
+     return txt
+ 
+ 
+@@ -232,36 +244,39 @@ def convertDictToArray(dict, empty=[]):
+             count = key+1
+     return array
+ 
++
+ def compileCommentaryIntoPage(title, daf):
+     page = []
+-    next = title+" "+AddressTalmud.toStr("en", daf)+".1"
+-    while next is not None and next.find(AddressTalmud.toStr("en", daf)) >= 0:
+-        text = get_text_plus(next)
+-        for line in text['he']:
++    ref = Ref(title+" "+AddressTalmud.toStr("en", daf)+".1")
++    while ref is not None and ref.normal().find(AddressTalmud.toStr("en", daf)) >= 0:
++        text = ref.text('he').text
++        for line in text:
+             page.append(line)
+-
+-        next = text['next']
++        ref = ref.next_section_ref() if ref.next_section_ref() != ref else None
+     return page
+ 
++
+ def lookForLineInCommentary(title, daf, line_n):
+     total_count = 0
+-    next = title+" "+AddressTalmud.toStr("en", daf)+":1"
+-    while next.find(AddressTalmud.toStr("en", daf)) >= 0:
+-        text = get_text_plus(next)
++    ref = Ref(title+" "+AddressTalmud.toStr("en", daf)+":1")
++    while ref is not None and ref.normal().find(AddressTalmud.toStr("en", daf)) >= 0:
++        text = ref.text('he').text
+         local_count = 0
+-        for line in text['he']:
++        for line in text:
+             local_count+=1
+             total_count+=1
+             if total_count == line_n:
+-                return next+"."+str(local_count)
+-        next = text['next']
++                return ref.normal()+"."+str(local_count)
++        ref = ref.next_section_ref() if ref.next_section_ref() != ref else None
+     return ""
+ 
++
+ def onlyOne(text, subset):
+     if text.find(subset)>=0 and text.find(subset)==text.rfind(subset):
+         return True
+     return False
+ 
++
+ def checkLengthsDicts(x_dict, y_dict):
+     for daf in x_dict:
+         if len(x_dict[daf]) != len(y_dict[daf]):

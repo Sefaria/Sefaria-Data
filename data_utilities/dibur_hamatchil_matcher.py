@@ -525,7 +525,8 @@ def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(ur'\s+',x), 
     return comment_word_list[best_dh_start:best_dh_end+1]
 
 def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh_extract_method=lambda x: x,verbose=False, word_threshold=0.27,char_threshold=0.2,
-              with_abbrev_matches=False,with_num_abbrevs=True,boundaryFlexibility=0,dh_split=None, rashi_filter=None, strict_boundaries=False, place_all=False):
+              with_abbrev_matches=False,with_num_abbrevs=True,boundaryFlexibility=0,dh_split=None, rashi_filter=None, strict_boundaries=False, place_all=False,
+              create_ranges=False):
     """
     base_text: TextChunk
     comments: TextChunk or list of comment strings
@@ -578,7 +579,8 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
         raise TypeError("'comments' needs to be either a TextChunk or a list of comment strings")
 
     matched = match_text(bas_word_list,comment_list,dh_extract_method,verbose,word_threshold,char_threshold,prev_matched_results=prev_matched_results,
-                         with_abbrev_matches=with_abbrev_matches,with_num_abbrevs=with_num_abbrevs,boundaryFlexibility=boundaryFlexibility,dh_split=dh_split,rashi_filter=rashi_filter,strict_boundaries=strict_boundaries,place_all=place_all)
+                         with_abbrev_matches=with_abbrev_matches,with_num_abbrevs=with_num_abbrevs,boundaryFlexibility=boundaryFlexibility,
+                         dh_split=dh_split,rashi_filter=rashi_filter,strict_boundaries=strict_boundaries,place_all=place_all)
     start_end_map = matched['matches']
     text_matches = matched['match_text']
     if with_abbrev_matches:
@@ -640,7 +642,10 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
     if place_all:
         ret['fixed'] = fixed
 
-    return ret
+    if create_ranges:
+        return set_ranges(ret, base_text)
+    else:
+        return ret
 
 
 def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,word_threshold=0.27,char_threshold=0.2,
@@ -1003,6 +1008,72 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
     return ret
 
 
+def set_ranges(results, base_text):
+    '''
+    Takes the results and produces a range wherever there isn't a match.
+    Example: If the first matches to 3, the second doesn't match to anything, and the third matches to 10, then this function
+    set the second result to the range 3-10.
+    :param results:
+    :param base_text:
+    :return:
+    '''
+    if None not in results['matches'] or results['matches'] == [None]:
+        return results
+
+    base_ref = base_text._oref
+    matches = results['matches']
+    num_matches_total = 0
+    first_ref = None
+    last_ref = None
+    for count, match in enumerate(matches):
+        if match:
+            last_ref = match
+            num_matches_total += 1
+            if first_ref is None:
+                first_ref = match
+        elif count == 0:
+            core = base_ref._core_dict()
+            core['sections'] += [1]
+            core['toSections'] += [1]
+            first_ref = Ref(_obj=core)
+
+    if last_ref is None:
+        last_line = len(base_text.text)
+        core = base_ref._core_dict()
+        core['sections'] += [last_line]
+        core['toSections'] += [last_line]
+        last_ref = Ref(_obj=core)
+
+    if num_matches_total == 0:
+        start_to_end = first_ref.to(last_ref)
+        for count in range(len(matches)):
+            matches[count] = start_to_end
+        results['matches'] = matches
+        return results
+
+    num_matches_found = 0
+    prev_ref = first_ref
+    for i, match in enumerate(matches):
+        if match is None:
+            start = prev_ref
+            end = last_ref
+            # iterate through until you get to end, setting end to anything found then set matches[i] to start.to(end)
+            for j in range(i + 1, len(matches) - 1):
+                if matches[j]:
+                    end = matches[j]
+                    break
+            matches[i] = start.to(end)
+        else:
+            num_matches_found += 1
+            prev_ref = match
+
+    results['matches'] = matches
+    return results
+
+
+
+
+
 def filter_matches_out_of_order(matched_words, temprashimatch):
     num_unmatched = temprashimatch.endWord - temprashimatch.startWord + 1
     for imatchedword in xrange(temprashimatch.startWord, temprashimatch.endWord + 1):
@@ -1102,6 +1173,7 @@ def GetAbbrevs(dafwords, rashiwords, char_threshold, startBound, endBound, with_
             for ir, rword in enumerate(rashiwords):
                 if abbrev_range and ir in abbrev_range:
                     continue
+
                 isMatch, offset, isNum = isAbbrevMatch(ir,cleanAbbrev(dword),rashiwords, char_threshold, with_num_abbrevs=with_num_abbrevs)
                 if isMatch:
                     istartcontext = 3 if id >= 3 else id
@@ -1137,7 +1209,7 @@ def GetAllMatches(curDaf, curRashi, startBound, endBound,
     dafwords = curDaf.allWords[startBound:endBound+1]
     dafhashes = curDaf.wordhashes[startBound:endBound+1]
 
-    if curRashi.place == 3:
+    if curRashi.place == 5:
         pass
 
     allabbrevinds, allabbrevs = GetAbbrevs(dafwords, curRashi.words, char_threshold, startBound, endBound, with_num_abbrevs=with_num_abbrevs)
@@ -1571,7 +1643,8 @@ def IsStringMatch(orig, target, threshold):  # string,string,double,out double
         return (score, True)
 
     # wait: if one is a substring of the other, then that can be considered an almost perfect match
-    if orig.startswith(target) or target.startswith(orig):
+    # check that the word is at least half as long as the bigger one
+    if (orig.startswith(target) or target.startswith(orig)) and 1.0 * min(len(target), len(orig)) / max(len(target), len(orig)) > 0.5:
         score = -1
         return (score, True)
 

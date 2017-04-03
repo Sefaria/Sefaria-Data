@@ -516,8 +516,7 @@ def post_term(term_dict, server=SEFARIA_SERVER):
         x = response.read()
         print x
     except (HTTPError, URLError) as e:
-        with open('errors.html', 'w') as errors:
-            errors.write(e.read())
+        print e
 
 def get_index(ref, server='http://www.sefaria.org'):
     ref = ref.replace(" ", "_")

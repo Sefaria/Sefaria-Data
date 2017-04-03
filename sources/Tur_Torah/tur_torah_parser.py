@@ -7,8 +7,11 @@ from data_utilities.sanity_checks import TagTester
 from sources.functions import post_text, post_index, post_link
 from sefaria.model import *
 from sefaria.datatype.jagged_array import JaggedArray
-
+import json
 def parse_he(filename):
+    """
+    :returns a dictionary, key: name of book, value: JaggadArray obj of the ja for the book
+    """
     replace_dict = {u'@(11|44|99)': u'<b>', u'@(33|55)': u'</b>', ur'@22\(([\u05d0-\u05ea]{1,3})\)': u'',
                     ur'@(22|77)': u''}
     def cleaner(my_text):
@@ -104,7 +107,7 @@ def tt_schema():
     intro_node.add_structure(['Paragraph'])
     record_root.append(intro_node)
     # book nodes
-    Pentateuch = ['Genesis','Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']
+    Pentateuch = library.get_indexes_in_category('Torah')
     Chumshai = [u'בראשית',u'שמות',u'ויקרא',u'במדבר',u'דברים']
     #loop on the Pentateuch to create 5 the ja nodes
     for i in range(5):
@@ -140,7 +143,6 @@ def tt_text_post(text_dict):
         post_text('Tur HaAroch, {}'.format(key), version_dict)
 
 
-
 def intro_text_post():
     version_dict = {
         'versionTitle': 'Perush al ha-Torah, Hanover, 1838',
@@ -149,6 +151,7 @@ def intro_text_post():
         'text': [u'צריך להקליד את ההקדמה']
     }
     post_text('Tur HaAroch, Introduction', version_dict)
+
 
 def en_tt_text_post(en_text):
     for key in en_text.keys():
@@ -182,6 +185,26 @@ def links(text_dict):
             links.append(link)
     return links
 
+# the same as links just works book by book really could merge both functions together. but didn't want to change code.
+def relinks(ja_book):
+    links = []
+    for dh in traverse_ja(ja_book):
+            perek = (dh['indices'][0] + 1)
+            pasuk = (dh['indices'][1] + 1)
+            comment = (dh['indices'][2] + 1)
+            link = (
+                {
+                    "refs": [
+                        'Tur HaAroch, {} {}:{}:{}'.format(book, perek, pasuk, comment),
+                        '{} {}:{}'.format(book,perek, pasuk),
+                    ],
+                    "type": "commentary",
+                    "auto": True,
+                    "generated_by": "tur_torah_parser"
+                })
+            # append to links list
+            links.append(link)
+    return links
 
 def test_accercy(tag, filename):
     with codecs.open(filename, 'r', 'utf-8') as fp:
@@ -190,26 +213,54 @@ def test_accercy(tag, filename):
         print appearences
 
 
-def test_boolean_ja(ja1, ja2):
-    for data1,data2 in zip(traverse_ja(ja1), traverse_ja(ja2)):
-        if (bool(data1) != bool(data2)):
-            print data1['indices']
+def test_boolean_ja(book, ja1, ja2):
+    ja1set = set()
+    for i,x in enumerate(ja1):
+        for j,y in enumerate(x):
+            for k,z in enumerate(y):
+                ja1set.add((i+1,j+1,k+1))
+    ja2set = set()
+    for i,x in enumerate(ja2):
+        for j,y in enumerate(x):
+            for k,z in enumerate(y):
+                ja2set.add((i+1,j+1,k+1))
 
+
+    missing = ja1set.symmetric_difference(ja2set)
+    miss_list = list(missing)
+    miss_list.sort()
+    print len(miss_list)
+    for x in miss_list:
+        print '{}.{}.{}.{}'.format(book, x[0], x[1], x[2])
 
 
 if __name__ == "__main__":
     # parse
-    parsed_he = parse_he('tur_he.txt')
-    parsed_en = parse_all_en()
-    # index
-    tt_index()
-    # post
-    intro_text_post()
-    tt_text_post(parsed_he)
-    en_tt_text_post(parsed_en)
+    # parsed_he = parse_he('tur_he.txt')
+    # parsed_en = parse_all_en()
+    # # index
+    # tt_index()
+    # # post
+    # intro_text_post()
+    # tt_text_post(parsed_he)
+    # en_tt_text_post(parsed_en)
     # link
-    links = links(parsed_he)
-    post_link(links)
-    # # test_accercy(u'@02', u'tur_he.txt')
-    # for book in ['Genesis','Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']:
-    #     test_boolean_ja(parsed_he['{}'.format(book)],parsed_en['{}'.format(book)].array())
+    # links = links(parsed_he)
+    # post_link(links)
+
+    # these files were coppied from Draft back to here.
+
+    with open('Tur HaAroch - en - merged.json') as pt:
+        tur_en = json.load(pt)
+
+    with open('Tur HaAroch - he - merged.json') as pt:
+        tur_he = json.load(pt)
+
+    for book in ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']:
+        print book
+        ja_he = tur_he['text'][book]
+        ja_en = tur_en['text'][book]
+        # test_boolean_ja('Tur HaAroch, {}'.format(book),ja_he, ja_en)
+        book_link = relinks(ja_he)
+        post_link(book_link)
+        print book, book_link
