@@ -4,7 +4,10 @@
 from sources.Shulchan_Arukh.ShulchanArukh import *
 from data_utilities.util import he_ord
 
-
+def markup(b_vol):
+    commentaries = root.get_commentaries()
+    b_vol.mark_references(commentaries.commentary_ids["Ktsot HaHoshen"], u'@58([\u05d0-\u05ea]{1,3})\)', group=1)
+    return
 
 root = Root('../Choshen_Mishpat.xml')
 base = root.get_base_text()
@@ -18,7 +21,7 @@ patterns[0] = ur'@50([\u05d0-\u05ea])'
 # for pattern in patterns[1:]:
 #     correct_marks_in_file(filename, u'@00', pattern, start_mark=u'!start!')
 
-
+base.remove_volume(3)
 with codecs.open(filename, 'r', 'utf-8') as infile:
     volume = base.add_volume(infile.read(), 3)
 assert isinstance(volume, Volume)
@@ -41,4 +44,5 @@ for code, pattern in zip(codes[1:], patterns[1:]):
 errors = volume.format_text('@33', '@44', 'ramah')
 for i in errors:
     print i
+markup(volume)
 root.export()
