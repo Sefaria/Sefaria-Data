@@ -11,12 +11,13 @@ from sefaria.model.schema import AddressTalmud
 
 class Rashba:
 
-    def __init__(self, error_file, tractate):
+    def __init__(self, error_file, tractate, server):
         self.error_file = codecs.open(error_file, "w", 'utf-8')
         self.text = ""
         self.dhs = ""
         self.dh_dict = {}
         self.tractate = tractate
+        self.server = server
 
 
     def noContent(self, line):
@@ -79,11 +80,14 @@ class Rashba:
         root.add_primary_titles("Rashba on {}".format(self.tractate), u"""רשב"ע על {}""".format(he_title))
         root.validate()
         index = {
+            "dependence": "Commentary",
+            "base_text_titles": [self.tractate],
+            "collective_title": "Rashba",
             "schema": root.serialize(),
             "title": "Rashba on {}".format(self.tractate),
-            "categories": ["Talmud", "Commentary", "Rashba"]
+            "categories": ["Talmud", "Bavli", "Commentary", "Rashba", library.get_index(self.tractate).categories[-1]]
         }
-        post_index(index)
+        post_index(index, server=self.server)
 
 
 
@@ -92,10 +96,10 @@ class Rashba:
         send_text = {
             "text": self.text,
             "language": "he",
-            "versionTitle": "Rashba on {}".format(self.tractate),
+            "versionTitle": "Gerlitz edition, published by Oraita",
             "versionSource": "http://www.sefaria.org/"
         }
-        post_text("Rashba on {}".format(self.tractate), send_text)
+        post_text("Rashba on {}".format(self.tractate), send_text, server=self.server)
 
 
 
@@ -168,13 +172,12 @@ class Rashba:
         for daf in self.text:
             dhs_arr = [dh for dh in self.dhs[daf] if len(dh) > 0]
             gemara_text = Ref("{} {}".format(self.tractate, AddressTalmud.toStr("en", daf))).text('he')
-            results = match_ref(gemara_text, dhs_arr, base_tokenizer, dh_extract_method=dh_extract_method, verbose=True)['matches']
+            results = match_ref(gemara_text, dhs_arr, base_tokenizer, dh_extract_method=dh_extract_method, verbose=False)['matches']
             self.makeDicts(daf)
             rashba_refs = []
             for dh in dhs_arr:
                 rashba_refs.append("Rashba on {} {}.{}".format(self.tractate, AddressTalmud.toStr("en", daf), self.dh_dict[daf][dh]+1))
             link_pairs = zip(rashba_refs, results)
-            print link_pairs
             for link_pair in link_pairs:
                 if link_pair[1]:
                     links.append(
@@ -188,7 +191,7 @@ class Rashba:
                     "generated_by": "rashba{}".format(self.tractate)
                     }
                     )
-        post_link(links)
+        post_link(links, server=self.server)
 
 
 
@@ -212,11 +215,11 @@ class Rashba:
 
 if __name__ == "__main__":
 
-    rashba = Rashba("no_matches.txt", "Bava Kamma")
+    rashba = Rashba("no_matches.txt", "Bava Kamma", "http://proto.sefaria.org")
     #rashba.postTerm()
     #rashba.create_schema()
     #rashba.makeOneFile()
     #rashba.reportProblems("RS.txt")
     rashba.getTextAndReportProblems("RS.txt")
-    rashba.postLinks()
-    #rashba.postText()
+    #rashba.postLinks()
+    rashba.postText()

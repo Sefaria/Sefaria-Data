@@ -206,6 +206,27 @@ def wordHasNekudot(word):
     data = data.replace(u"\u05C4", "")
     return data != word.decode('utf-8')
 
+def strip_nekud(word):
+    data = word.replace(u"\u05B0", "")
+    data = data.replace(u"\u05B1", "")
+    data = data.replace(u"\u05B2", "")
+    data = data.replace(u"\u05B3", "")
+    data = data.replace(u"\u05B4", "")
+    data = data.replace(u"\u05B5", "")
+    data = data.replace(u"\u05B6", "")
+    data = data.replace(u"\u05B7", "")
+    data = data.replace(u"\u05B8", "")
+    data = data.replace(u"\u05B9", "")
+    data = data.replace(u"\u05BB", "")
+    data = data.replace(u"\u05BC", "")
+    data = data.replace(u"\u05BD", "")
+    data = data.replace(u"\u05BF", "")
+    data = data.replace(u"\u05C1", "")
+    data = data.replace(u"\u05C2", "")
+    data = data.replace(u"\u05C3", "")
+    data = data.replace(u"\u05C4", "")
+    return data
+
 
 def getHebrewParsha(eng_parsha):
     count=0
@@ -343,8 +364,8 @@ def hasTags(comment):
 
 
 @weak_connection
-def post_link(info):
-    url = SEFARIA_SERVER+'/api/links/'
+def post_link(info, server=SEFARIA_SERVER):
+    url = server+'/api/links/'
     infoJSON = json.dumps(info)
     values = {
         'json': infoJSON,

@@ -14,7 +14,7 @@ from BeautifulSoup import BeautifulSoup
 class XML_to_JaggedArray:
 
 
-    def __init__(self, title, file, allowedTags, allowedAttributes, post_info, array_of_names=[], deleteTitles=True, change_name=False, assertions=False, image_dir=None):
+    def __init__(self, title, file, allowedTags, allowedAttributes, post_info=None, array_of_names=[], deleteTitles=True, change_name=False, assertions=False, image_dir=None):
         self.title = title
         self.post_info = post_info
         self.file = file
@@ -45,6 +45,7 @@ class XML_to_JaggedArray:
 
     def run(self):
         xml_text = ""
+        print self.title
         for line in open(self.file):
             if line.find("<title>") == 0:
                 msg = bleach.clean(line, strip=True).replace("\n", "").replace("\r", "")
@@ -61,16 +62,32 @@ class XML_to_JaggedArray:
             child = self.reorder_structure(child, False)
 
         results = self.go_down_to_text(self.root)
-        self.interpret_and_post(results, self.title)
+        #self.interpret_and_post(results, self.title)
 
 
-    def cleanNodeName(self, text):
-        text = bleach.clean(text, strip=True)
-        bad_chars = [".", ",", "'", '"', '-']
+    def cleanNodeName(self, text, titled=False):
+        text = self.cleanText(text)
+        bad_chars = [":", '-', '.', '  ']
+        bad_chars += re.findall(u"[\u05D0-\u05EA]+", text)
         for bad_char in bad_chars:
-            text = text.replace(bad_char, "")
+            text = text.replace(bad_char, " ")
             " ".join(text.split())
-        return text.title()
+        text = bleach.clean(text, strip=True)
+        if titled:
+            return text.title()
+        return text
+
+    def cleanText(self, text):
+        things_to_replace = {
+            u'\xa0': u'',
+            u'\u015b': u's',
+            u'\u2018': u"'",
+            u'\u2019': u"'",
+            u'\u05f4': u'"',
+        }
+        for key in things_to_replace:
+            text = text.replace(key, things_to_replace[key])
+        return text
 
 
 
@@ -83,14 +100,14 @@ class XML_to_JaggedArray:
 
 
     def post(self, ref, text):
-        if self.post_info["server"] == "post":
+        if self.post_info["server"] != "local":
             send_text = {
                     "text": text,
                     "language": self.post_info["language"],
                     "versionSource": self.post_info["versionSource"],
                     "versionTitle": self.post_info["versionTitle"]
                 }
-            post_text(ref, send_text)
+            post_text(ref, send_text, server=self.post_info["server"])
         else:
             print "Not Posting...."
             assert Ref(ref)
@@ -196,9 +213,7 @@ class XML_to_JaggedArray:
                     #if child.tag != "title":
                     #    self.grab_title(child, delete=self.deleteTitles, test_lambda=self.grab_title_lambda, change_name=False)
                     while int(child.text) > len(text["text"]) + 1:
-                        print child.text
-                        print len(text["text"])
-                        text["text"].append([[""]])
+                        text["text"].append([])
                     text["text"].append(self.go_down_to_text(child))
                 else:
                     #if child.tag != "title":
@@ -215,10 +230,10 @@ class XML_to_JaggedArray:
                         self.footnotes[child.attrib['id']] = child.xpath("string()")
                         self.prev_footnote = child.attrib['id']
                 elif self.siblingsHaveChildren(element):
-                    text["subject"] += [child.xpath("string()").replace("\n\n", " ")]
+                    text["subject"] += [self.cleanText(child.xpath("string()").replace("\n\n", " "))]
                 else:
-                    text["text"] += [child.xpath("string()").replace("\n\n", " ")]
-
+                    text["text"] += [self.cleanText(child.xpath("string()").replace("\n\n", " "))]
+            pass
         return text
 
 
@@ -325,6 +340,17 @@ class XML_to_JaggedArray:
                 if move_footnotes:
                     children.append(child)
             elif next_will_be_children == True:
+                if self.title == "Midrash Tanchuma" and len(title) > 0:
+                    # EITHER PUT </b> at end of child.text;
+                    # Just do replace <sup> with </b><sup> and </sup> with </sup><b>
+                    title = title.replace("<sup>", "</b><sup>").replace("</sup>", "</sup><b>")
+                    p = re.compile("^<bold>([A-Z\.]+)</bold>")
+                    if p.match(child.text):
+                        first_letter = p.match(child.text).group(1)
+                        letter_with_tags = p.match(child.text).group(0)
+                        child.text = child.text.replace(letter_with_tags, first_letter)
+                    child.text = "<b>" + title + "</b> " + child.text
+                    title = ""
                 children.append(child)
 
         for new_child in children:

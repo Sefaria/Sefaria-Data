@@ -152,12 +152,11 @@ def post_terms():
             }
         ]
     }
-    post_term(term_obj)
+    #post_term(term_obj)
 
 if __name__ == "__main__":
     #post_terms()
-    files = [f for f in listdir("./") if isfile(f) and f.endswith(".txt")]
-    files = ["middot.txt"]
+    files = [f for f in listdir("./") if isfile(f) and f.endswith(".txt") and not f == "middot.txt"]
     for file in files:
         print file
         text = parse(file)
@@ -172,8 +171,7 @@ if __name__ == "__main__":
             "versionTitle": "Talmud Bavli, Vilna, 1880.",
             "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957"
         }
-        if file == "middot.txt":
-            post_text(title, text)
+        post_text(title, text)
 
 
     # if library.get_index

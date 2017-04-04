@@ -171,11 +171,13 @@ if __name__ == "__main__":
     p = re.compile("\d+a?\.")
     reorder_test_lambda = lambda x: x.tag == "title" and p.match(x.text) is not None
     def reorder_modify(text):
-        text = text.split(" ")[0]
-        if text.split(".")[-1] == "":
-            return text.split(".")[0]
+        text = text.split(" ")
+        marker = text[0]
+        text = " ".join(text[1:])
+        if marker.split(".")[-1] == "":
+            return text, marker.split(".")[0]
         else:
-            return text.split(".")[-1]
+            return text, marker.split(".")[-1]
 
     if sys.argv[1] == "Buber":
         title = "Midrash Tanchuma Buber"
