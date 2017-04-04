@@ -518,6 +518,16 @@ def post_term(term_dict, server=SEFARIA_SERVER):
     except (HTTPError, URLError) as e:
         print e
 
+
+def add_term(en_title, he_title, scheme='toc_categories', server=SEFARIA_SERVER):
+    term_dict = {
+    'name': en_title,
+    'scheme': scheme,
+    'titles': [{'lang': 'en', 'text': en_title, 'primary': True}, {'lang': 'he', 'text': he_title, 'primary': True}]
+    }
+    post_term(term_dict, server)
+
+
 def get_index(ref, server='http://www.sefaria.org'):
     ref = ref.replace(" ", "_")
     url = server+'/api/v2/raw/index/'+ref
