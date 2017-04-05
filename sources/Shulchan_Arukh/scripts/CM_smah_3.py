@@ -28,13 +28,13 @@ volume.validate_seifim()
 errors = volume.format_text('@11', '@33', 'dh')
 for i in errors:
     print i
-# base = root.get_base_text()
-# b_vol = base.get_volume(3)
-# assert isinstance(b_vol, Volume)
-# volume.set_rid_on_seifim()
-# root.populate_comment_store()
-# errors = b_vol.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'@54', x.text) is not None)
-# for i in errors:
-#     print i
-# volume.locate_references(ur'\("\)')
-# root.export()
+base = root.get_base_text()
+b_vol = base.get_volume(3)
+assert isinstance(b_vol, Volume)
+volume.set_rid_on_seifim()
+root.populate_comment_store()
+errors = b_vol.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'@54', x.text) is not None)
+for i in errors:
+    print i
+volume.locate_references(ur'\("\)')
+root.export()
