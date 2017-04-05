@@ -283,4 +283,99 @@ class TestXref(object):
         with pytest.raises(AssertionError):
             b.mark_references(0, 1, 1, '@33')
 
+def test_correct_marks():
+    test_text = u'קצת @22א טקסט @22ט @22ג שאין @22ג @22ד @22ח לו\n @22ו משמעות'
+    assert correct_marks(test_text, u'@22([\u05d0-\u05ea]{1,2})') == u'קצת @22א טקסט @22ב @22ג שאין @22ג @22ד @22ה לו\n @22ו משמעות'
 
+    test_text = u'קצת @22ש טקסט @22כ ללא @22א משמעות'
+    assert correct_marks(test_text, u'@22([\u05d0-\u05ea])', error_finder=out_of_order_he_letters) == u'קצת @22ש טקסט @22ת ללא @22א משמעות'
+
+    test_text = u'קצת @22ת טקסט @22כ ללא @22ב משמעות'
+    assert correct_marks(test_text, u'@22([\u05d0-\u05ea])',
+                         error_finder=out_of_order_he_letters) == u'קצת @22ת טקסט @22א ללא @22ב משמעות'
+
+    test_text = u'קצת @22א טקסט @22כ ללא @22ג משמעות'
+    assert correct_marks(test_text, u'@22([\u05d0-\u05ea])',
+                         error_finder=out_of_order_he_letters) == u'קצת @22א טקסט @22ב ללא @22ג משמעות'
+
+def test_validate_double_refs():
+    test_text = u'<siman num="1"><seif num="1">foo @22א bar @22א</seif></siman>'
+    siman = Siman(BeautifulSoup(test_text, 'xml').find('siman'))
+    assert not siman.validate_references(u'@22([\u05d0-\u05ea])', u'@22')
+
+class TestCommentStore(object):
+
+    def test_populate_comment_store(self):
+        """
+        Make sure the code properly passes down the entire tree
+        """
+        root = Root('test_document.xml')
+        base_text = root.get_base_text()
+        base_text.add_titles('Shulchan Arukh', u'שולחן ערוך')
+        commentaries = root.get_commentaries()
+        shach = commentaries.add_commentary('Shach', u'ש"ך')
+
+        base_volume = u'<siman num="1"><seif num="1"><b>' \
+                      u'some <xref id="b0-c1-s1-ord1"/> text</b></seif></siman>'
+        shach_volume =  u'<siman num="1"><seif num="1" rid="b0-c1-s1-ord1"></seif><b>' \
+                      u'some text</b></siman>'
+        base_text.add_volume(base_volume, 1)
+        shach.add_volume(shach_volume, 1)
+        root.populate_comment_store()
+
+        comment_store = CommentStore()
+        assert comment_store.get("b0-c1-s1-ord1") is not None
+        assert comment_store["b0-c1-s1-ord1"] == {
+            'base_title': 'Shulchan Arukh',
+            'siman': 1,
+            'seif': 1,
+            'commentator_title': 'Shach',
+            'commentator_seif': 1,
+            'commentator_siman': 1
+        }
+        comment_store.clear()
+
+    def test_set_rid(self):
+        root = Root('test_document.xml')
+        base_text = root.get_base_text()
+        base_text.add_titles('Shulchan Arukh', u'שולחן ערוך')
+        commentaries = root.get_commentaries()
+        shach = commentaries.add_commentary('Shach', u'ש"ך')
+
+        volume_text = u'<siman num="1"><seif num="3"><b>some text</b></seif></siman>'
+        volume = shach.add_volume(volume_text, 1)
+        volume.set_rid_on_seifim()
+
+        assert unicode(volume) == u'<volume num="1"><siman num="1"><seif num="3" rid="b0-c1-si1-ord3">' \
+                                  u'<b>some text</b></seif></siman></volume>'
+
+    def test_duplicate_xref(self):
+        first_xref = Xref(BeautifulSoup('<xref id="abcd"/>', 'xml').find('xref'))
+        first_xref.load_xrefs_to_commentstore('a', 1, 1)
+        second_xref = Xref(BeautifulSoup('<xref id="abcd"/>', 'xml').find('xref'))
+        second_xref.load_xrefs_to_commentstore('a', 1, 1)
+
+        comment_store = CommentStore()
+        assert comment_store['abcd'] == {
+            'base_title': 'a',
+            'siman': 1,
+            'seif': 1
+        }
+
+        third_xref = Xref(BeautifulSoup('<xref id="abcd"/>', 'xml').find('xref'))
+        with pytest.raises(DuplicateCommentError):
+            third_xref.load_xrefs_to_commentstore('a', 1, 2)
+        CommentStore().clear()
+
+    def test_no_matching_xref(self):
+        seif = Seif(BeautifulSoup(u'<siman num="1" rid="abcd"/>', 'xml').find('siman'))
+        with pytest.raises(MissingCommentError):
+            seif.load_comments_to_commentstore('a', 1)
+        CommentStore().clear()
+
+    def test_duplicate_comment(self):
+        Xref(BeautifulSoup('<xref id="abcd"/>', 'xml').find('xref')).load_xrefs_to_commentstore('a', 1, 1)
+        Seif(BeautifulSoup(u'<siman num="1" rid="abcd"/>', 'xml').find('siman')).load_comments_to_commentstore('a', 1)
+        with pytest.raises(DuplicateCommentError):
+            Seif(BeautifulSoup(u'<siman num="2" rid="abcd"/>', 'xml').find('siman')).load_comments_to_commentstore('a', 1)
+        CommentStore().clear()

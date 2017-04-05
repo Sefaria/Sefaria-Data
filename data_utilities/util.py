@@ -82,6 +82,30 @@ he_char_ord = {
     u'ת': 22
 }
 
+num_to_char_dict = {1: u"א",
+2: u"ב",
+3: u"ג",
+4: u"ד",
+5: u"ה",
+6: u"ו",
+7: u"ז",
+8: u"ח",
+9: u"ט",
+10: u"י",
+11: u"כ",
+12: u"ל",
+13: u"מ",
+14: u"נ",
+15: u"ס",
+16: u"ע",
+17: u"פ",
+18: u"צ",
+19: u"ק",
+20: u"ר",
+21: u"ש",
+22: u"ת",
+}
+
 class Util:
     def __init__(self, output_file, fail):
         self.output_file = output_file
@@ -319,6 +343,12 @@ def he_ord(he_char):
     if re.search(u'[\u05d0-\u05ea]', he_char) is None:
         raise AssertionError(u'{} is not a Hebrew Character!'.format(he_char))
     return he_char_ord[he_char]
+
+
+def he_num_to_char(num):
+    assert 1 <= num <= 22
+    return num_to_char_dict[num]
+
 
 
 def numToHeb(engnum=""):

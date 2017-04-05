@@ -25,7 +25,6 @@ if __name__ == "__main__":
     array_of_names = ["Prelude"]
     for i in range(66):
         array_of_names.append(i+1)
-        mapping["Ibn Ezra on Isaiah {}".format(i+1)] = "Ibn Ezra on Isaiah"
     array_of_names += ["Addenda", "Translators Foreword"]
     parser = XML_to_JaggedArray(title, file_name, allowed_tags, allowed_attributes, post_info, array_of_names)
     parser.set_funcs()

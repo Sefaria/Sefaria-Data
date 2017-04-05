@@ -36,7 +36,7 @@ class XML_to_JaggedArray:
     def set_title(self, title):
         self.title = title
 
-    def set_funcs(self, grab_title_lambda=lambda x: x[0].tag == "title", reorder_test=lambda x: False, reorder_modify=lambda x: x, modify_before=lambda x: x):
+    def set_funcs(self, grab_title_lambda=lambda x: len(x) > 0 and x[0].tag == "title", reorder_test=lambda x: False, reorder_modify=lambda x: x, modify_before=lambda x: x):
         self.modify_before = modify_before
         self.grab_title_lambda = grab_title_lambda
         self.reorder_test = reorder_test
@@ -46,7 +46,11 @@ class XML_to_JaggedArray:
     def run(self):
         xml_text = ""
         for line in open(self.file):
+            if line.find("<title>") == 0:
+                msg = bleach.clean(line, strip=True).replace("\n", "").replace("\r", "")
+                print msg
             xml_text += line
+        print "****"
         xml_text = self.modify_before(xml_text)
         xml_text = bleach.clean(xml_text, tags=self.allowedTags, attributes=self.allowedAttributes, strip=False)
         self.root = etree.XML(xml_text)
@@ -54,7 +58,6 @@ class XML_to_JaggedArray:
         for count, child in enumerate(self.root):
             if self.array_of_names:
                 child.text = str(self.array_of_names[count])
-
             child = self.reorder_structure(child, False)
 
         results = self.go_down_to_text(self.root)
@@ -63,7 +66,7 @@ class XML_to_JaggedArray:
 
     def cleanNodeName(self, text):
         text = bleach.clean(text, strip=True)
-        bad_chars = [".", ",", "'", '"']
+        bad_chars = [".", ",", "'", '"', '-']
         for bad_char in bad_chars:
             text = text.replace(bad_char, "")
             " ".join(text.split())
@@ -130,7 +133,7 @@ class XML_to_JaggedArray:
             for tag in tags:
                 filename = BeautifulSoup(tag).findAll("img")[0]['src']
                 filetype = filename.split(".")[1]
-                file = open("{}/{}".format(self.image_dir, filename))
+                file = open("./{}".format(filename))
                 data = file.read()
                 file.close()
                 data = data.encode("base64")
@@ -190,12 +193,17 @@ class XML_to_JaggedArray:
         for index, child in enumerate(element):
             if len(child) > 0:
                 if child.text.isdigit():
-                    if child.tag != "title":
-                        self.grab_title(child, delete=self.deleteTitles, test_lambda=self.grab_title_lambda, change_name=False)
+                    #if child.tag != "title":
+                    #    self.grab_title(child, delete=self.deleteTitles, test_lambda=self.grab_title_lambda, change_name=False)
+                    while int(child.text) > len(text["text"]) + 1:
+                        print child.text
+                        print len(text["text"])
+                        text["text"].append([[""]])
                     text["text"].append(self.go_down_to_text(child))
                 else:
-                    if child.tag != "title":
-                        self.grab_title(child, delete=self.deleteTitles, test_lambda=self.grab_title_lambda, change_name=self.change_name)
+                    #if child.tag != "title":
+                    #    self.grab_title(child, delete=self.deleteTitles, test_lambda=self.grab_title_lambda,
+                    #                    change_name=self.change_name)
                     child.text = self.cleanNodeName(child.text)
                     text[child.text] = self.go_down_to_text(child)
             else:
@@ -217,24 +225,28 @@ class XML_to_JaggedArray:
     def siblingsHaveChildren(self, element):
         for index, child in enumerate(element):
             if len(child) > 0:
-                print "Siblings have children: El {} has children".format(index)
+                #print "Siblings have children: El {} has children".format(index)
                 return True
         return False
 
 
-    def convertManyIntoOne(self, ref):
+    def convertManyIntoOne(self, ref, depth_inc=False):
         array = []
         for x in ref:
             if type(x) is dict:
                 array.append(self.convertManyIntoOne(x['text']))
             else:
-                array.append(x)
+                if depth_inc:
+                    array.append([x])
+                else:
+                    array.append(x)
         if len(array) > 0 and type(array[0]) is not list:
             array = self.parse(array, self.footnotes)
         return array
 
 
     def interpret_and_post(self, node, running_ref, prev="string"):
+        print running_ref
         if self.assertions:
             assert Ref(running_ref), running_ref
         for key in node:
@@ -249,21 +261,29 @@ class XML_to_JaggedArray:
                 new_running_ref = running_ref + ",_Subject"
                 if self.assertions:
                     assert Ref(new_running_ref)
-                text = self.parse(node[key])
+                text = self.parse(node[key], self.footnotes)
                 self.post(new_running_ref, text)
             elif key == "text" and len(node[key]) > 0: #if len(node.keys()) == 2 and "text" in node.keys() and "subject" in node.keys() and len(node['text']) > 0:
                 if self.assertions:
                     assert Ref(running_ref)
-                text = self.convertManyIntoOne(node["text"])
+                depth_inc = False
                 if running_ref == "Ibn Ezra on Isaiah":
-                    for i, chapter in enumerate(text):
-                        for j, verse in enumerate(chapter):
-                            text[i][j] = [verse]
-
+                    depth_inc = True
+                    text = self.convertManyIntoOne(node["text"], depth_inc)
+                    text = self.temp_func(text)
+                    text[36] = []
+                    text[38] = []
+                else:
+                    text = self.convertManyIntoOne(node["text"])
                 self.post(running_ref, text)
 
+    def temp_func(self, text):
+        for x, ch in enumerate(text):
+            for y, line in enumerate(ch):
+                text[x][y] = [ch[y]]
+        return text
 
-    def reorder_structure(self, element, move_footnotes=False):
+    def reorder_structure(self, element, move_footnotes=False, recurse_times=0):
         '''
         We have something like this:
         A. Root
@@ -280,17 +300,23 @@ class XML_to_JaggedArray:
             2. Title node
                 a. Str node
         '''
+        if recurse_times < 0:
+            return element
         next_will_be_children = False
         parent = None
         children = []
         title = ""
         orig_length = len(element) - 1
+        change_name = self.array_of_names == [] #because name was already changed if self.array_of_names has any contents
+        if element.text.isdigit():
+            change_name = False
+        self.grab_title(element, delete=self.deleteTitles, test_lambda=self.grab_title_lambda, change_name=change_name)
         for index, child in enumerate(element):
             if self.reorder_test(child):
                 child.text = self.reorder_modify(child.text)
-                if next_will_be_children == True:
+                if next_will_be_children is True:
                     for new_child in children:
-                        new_child = self.reorder_structure(new_child)
+                        new_child = self.reorder_structure(new_child, move_footnotes, recurse_times-1)
                         parent.append(new_child)
                     children = []
                 parent = child
@@ -301,90 +327,9 @@ class XML_to_JaggedArray:
             elif next_will_be_children == True:
                 children.append(child)
 
-            if index == orig_length:
-                for new_child in children:
-                    new_child = self.reorder_structure(new_child)
-                    parent.append(new_child)
+        for new_child in children:
+            new_child = self.reorder_structure(new_child, move_footnotes, recurse_times-1)
+            parent.append(new_child)
+
 
         return element
-
-
-'''
-    def convert_into_schema(self):
-        for name in self.JA_nodes:
-            depth = self.JA_dict[name]
-            process(name, self.JA_nodes[name], depth, 0)
-
-
-
-    def process(self, name, dict, depth, level):
-        node = SchemaNode()
-        node.key = name
-        name.add_title(name, "en", primary=True)
-        for key in dict:
-            process(key, dict[key], depth, level+1)
-
-    def convert_nodes_to_JA(self):
-        for name in self.JA_nodes:
-            each_node = self.JA_nodes[name]
-            title = each_node[0]
-            each_node.pop(0)
-            depth = get_depth(each_node)
-            key = name
-            new_node = SchemaNode()
-    def collapse_subtitles(self, name):
-        collapse all the subtitle slots in the array to one; we start from negative one instead of 0,
-            because we don't want to get rid of all of them, but to keep one that the rest collapse into
-        how_many_to_pop = -1
-        subtitle = ""
-        for gchild_count, gchild in enumerate(self.JA_nodes[name]):
-            if type(gchild) is not list:
-                subtitle += gchild.encode('utf-8')
-                how_many_to_pop += 1
-
-        for i in range(how_many_to_pop):
-            self.JA_nodes[name].pop(0)
-
-        self.JA_nodes[name][0] = subtitle
-
-
-
-    def get_depth(self, array):
-        depth = 0
-        while type(array) is list:
-            array = array[1]
-            depth += 1
-        return depth
-
-    def interpret_footnotes_partvii(self):
-        comments = self.footnotes.values()[0]
-        for index, comment in enumerate(comments):
-            poss_num = int(comment.split(".", 1)[0])
-            comments[index] = comment.replace(str(poss_num)+". ", "")
-
-        comments = self.parse(comments)
-        send_text = {
-                    "text": comments,
-                    "language": self.post_info["language"],
-                    "versionSource": self.post_info["versionSource"],
-                    "versionTitle": self.post_info["versionTitle"]
-                }
-        print self.title+", Footnotes, Part VII"
-        post_text(self.title+", Footnotes, PART VII", send_text)
-
-
-    def get_pages(self, text, ref):
-        return text
-
-        print ref
-        for index, each_line in enumerate(text):
-            pages = re.findall("\[\d+[a-z]+\]", text[index])
-            for page in pages:
-                if ref+"."+str(index+1) in self.pages:
-                    self.pages[ref+"."+str(index+1)] += [page]
-                else:
-                    self.pages[ref+"."+str(index+1)] = [page]
-                text[index] = text[index].replace(page, "")
-        return text
-
-'''
