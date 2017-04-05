@@ -3,7 +3,7 @@
 from sefaria.model import *
 from sefaria.utils import talmud
 from collections import OrderedDict
-import regex as re
+import re2 as re
 from data_utilities.util import getGematria
 
 class CitationFinder():
@@ -24,23 +24,35 @@ class CitationFinder():
         if not node: # title is unrecognized
             address_regex = self.create_or_address_regexes(lang)
         else:
-            address_regex = node.address_regex(lang)
+            address_regex = node.address_regex(lang, for_js=True)
 
         after_title_delimiter_re = ur"[,.: \r\n]+"
 
         inner_paren_reg = re.escape(title) + after_title_delimiter_re + ur'(?:[\[({]' + address_regex + ur'[\])}])(?=\W|$)'
 
-        outer_paren_reg = ur"""(?<=							# look behind for opening brace
-            [({]										# literal '(', brace,
-            [^})]*										# anything but a closing ) or brace
-        )
-        """ + re.escape(title) + after_title_delimiter_re + address_regex + ur"""
-        (?=\W|$)                                        # look ahead for non-word char
-        (?=												# look ahead for closing brace
-            [^({]*										# match of anything but an opening '(' or brace
-            [)}]										# zero-width: literal ')' or brace
-        )"""
-        reg = u'{}|{}'.format(inner_paren_reg,outer_paren_reg)
+        # outer_paren_reg = ur"""(?<=							# look behind for opening brace
+        #     [({]										# literal '(', brace,
+        #     [^})]*										# anything but a closing ) or brace
+        # )
+        # """ + re.escape(title) + after_title_delimiter_re + address_regex + ur"""
+        # (?=\W|$)                                        # look ahead for non-word char
+        # (?=												# look ahead for closing brace
+        #     [^({]*										# match of anything but an opening '(' or brace
+        #     [)}]										# zero-width: literal ')' or brace
+        # )"""
+
+        outer_paren_reg = ur"""(?:
+           [({]										# literal '(', brace,
+           [^})]*										# anything but a closing ) or brace
+       )
+       """ + re.escape(title) + after_title_delimiter_re + address_regex + ur"""
+       (?:\W|$)                                        # non-word char
+       (?:												# look ahead for closing brace
+           [^({]*										# match of anything but an opening '(' or brace
+           [)}]										# zero-width: literal ')' or brace
+       )"""
+        reg = u'(?:{})|(?:{})'.format(inner_paren_reg,outer_paren_reg)
+        #reg = outer_paren_reg
         return re.compile(reg, re.VERBOSE)
 
     def create_or_address_regexes(self, lang):
@@ -64,7 +76,7 @@ class CitationFinder():
             'sectionNames': sectionNames
         }) for address_item in address_list]
 
-        return u'(?:{})'.format(u'|'.join([u'{}'.format(jan.address_regex(lang)) for jan in jagged_array_nodes]))
+        return u'(?:{})'.format(u'|'.join([u'{}'.format(jan.address_regex(lang, for_js=True)) for jan in jagged_array_nodes]))
 
 
 

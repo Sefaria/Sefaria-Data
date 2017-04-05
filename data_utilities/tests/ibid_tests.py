@@ -161,17 +161,17 @@ def test_get_ultimate_regex():
     test1 = u'(בראשית א:ב)'
     r = inst.get_ultimate_title_regex(u'בראשית','he')
     m = re.search(r, test1)
-    assert m.group() == u'בראשית א:ב'
+    assert m.group() == u'(בראשית א:ב)'
 
     test2 = u'(שם ג:ד)'
     r = inst.get_ultimate_title_regex(u'שם','he')
     m = re.search(r, test2)
-    assert m.group() == u'שם ג:ד'
+    assert m.group() == u'(שם ג:ד)'
 
     test3 = u'(ב"ר פרק ג משנה ד)'
     r = inst.get_ultimate_title_regex(u'ב"ר','he')
     m = re.search(r, test3)
-    assert m.group() == u'ב"ר פרק ג משנה ד'
+    assert m.group() == u'(ב"ר פרק ג משנה ד)'
 
     test4 = u'בראשית (ג:ד)'
     r = inst.get_ultimate_title_regex(u'בראשית','he')

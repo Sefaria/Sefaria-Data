@@ -1,9 +1,11 @@
 # encoding=utf-8
 
-import re, unicodecsv, random
+
+import unicodecsv, random
 from collections import defaultdict
 from sefaria.model import *
 from data_utilities.ibid import *
+import re2 as re
 
 def count_regex_in_all_db(pattern=u'(?:\(|\([^)]* )שם(?:\)| [^(]*\))', lang='he', text='all'):
     '''
@@ -24,7 +26,8 @@ def count_regex_in_all_db(pattern=u'(?:\(|\([^)]* )שם(?:\)| [^(]*\))', lang='h
         indecies = library.all_index_records()
     else:
         indecies = [library.get_index(text)]
-    for index in indecies:
+    for iindex, index in enumerate(indecies):
+        print "{}/{}".format(iindex, len(indecies))
         # if index == Index().load({'title': 'Divrei Negidim'}):
         #     continue
         try:
@@ -115,6 +118,7 @@ def make_csv(sham_items):
 
 if __name__ == "__main__":
     inst = CitationFinder()
-    #inst.get_ultimate_title_regex(u'שם', 'he'), text='Midrash Tanchuma'
-    sham_items = count_regex_in_all_db() #, text = 'Ramban on Genesis')
+
+    sham_items = count_regex_in_all_db(inst.get_ultimate_title_regex(u'שם', 'he'), text='all') #, text = 'Ramban on Genesis')
     make_csv(sham_items)
+
