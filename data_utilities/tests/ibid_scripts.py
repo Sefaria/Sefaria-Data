@@ -5,7 +5,7 @@ import unicodecsv, random
 from collections import defaultdict
 from sefaria.model import *
 from data_utilities.ibid import *
-import re2 as re
+import regex as re
 
 def count_regex_in_all_db(pattern=u'(?:\(|\([^)]* )שם(?:\)| [^(]*\))', lang='he', text='all'):
     '''

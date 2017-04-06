@@ -3,7 +3,7 @@
 from sefaria.model import *
 from sefaria.utils import talmud
 from collections import OrderedDict
-import re2 as re
+import regex as re
 from data_utilities.util import getGematria
 
 class CitationFinder():
@@ -11,7 +11,7 @@ class CitationFinder():
     class to find all potential citations in a string. classifies citations as either sham, refs, or neither
     neither can still be a ref, but for some reason it isn't parsed correctly
     '''
-    def get_ultimate_title_regex(self, title, lang):
+    def get_ultimate_title_regex(self, title, lang, compiled=True):
        #todo: consider situations that it is obvious it is a ref although there are no () ex: ברכות פרק ג משנה ה
        #todo: recognize mishnah or talmud according to the addressTypes given
         """
@@ -24,7 +24,7 @@ class CitationFinder():
         if not node: # title is unrecognized
             address_regex = self.create_or_address_regexes(lang)
         else:
-            address_regex = node.address_regex(lang, for_js=True)
+            address_regex = node.address_regex(lang)
 
         after_title_delimiter_re = ur"[,.: \r\n]+"
 
@@ -46,14 +46,14 @@ class CitationFinder():
            [^})]*										# anything but a closing ) or brace
        )
        """ + re.escape(title) + after_title_delimiter_re + address_regex + ur"""
-       (?:\W|$)                                        # non-word char
-       (?:												# look ahead for closing brace
            [^({]*										# match of anything but an opening '(' or brace
            [)}]										# zero-width: literal ')' or brace
-       )"""
+       """
         reg = u'(?:{})|(?:{})'.format(inner_paren_reg,outer_paren_reg)
         #reg = outer_paren_reg
-        return re.compile(reg, re.VERBOSE)
+        if compiled:
+            reg = re.compile(reg, re.VERBOSE)
+        return reg
 
     def create_or_address_regexes(self, lang):
         depth = 2
@@ -76,7 +76,7 @@ class CitationFinder():
             'sectionNames': sectionNames
         }) for address_item in address_list]
 
-        return u'(?:{})'.format(u'|'.join([u'{}'.format(jan.address_regex(lang, for_js=True)) for jan in jagged_array_nodes]))
+        return u'(?:{})'.format(u'|'.join([u'{}'.format(jan.address_regex(lang)) for jan in jagged_array_nodes]))
 
 
 
