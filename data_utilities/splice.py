@@ -968,8 +968,10 @@ class SectionSplicer(AbstractSplicer):
         self.book_ref = ref.index_node.ref()
         self.last_segment_ref = ref.subref(len(ref.text("he").text))  # ref.subref(ref.get_state_ja().sub_array_length([i - 1 for i in ref.sections]))
         self.index = ref.index
-        self.commentary_titles = library.get_commentary_version_titles_on_book(self.index.title)
-        self.commentary_versions = library.get_commentary_versions_on_book(self.index.title)
+        # self.commentary_titles = library.get_commentary_version_titles_on_book(self.index.title)
+        self.commentary_titles = library.get_dependant_indices(self.index.title, structure_match=True)
+        # self.commentary_versions = library.get_commentary_versions_on_book(self.index.title)
+        self.commentary_versions = [v for i in library.get_dependant_indices(self.index.title, structure_match=True, full_records=True) for v in i.versionSet()]
         self.version_list = ref.version_list()
         for v in self.version_list:
             v["text_chunk"] = TextChunk(ref, v["language"], v["versionTitle"])
