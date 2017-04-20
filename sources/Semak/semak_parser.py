@@ -3,7 +3,7 @@
 import codecs
 import re
 from data_utilities.util import ja_to_xml, multiple_replace, traverse_ja, file_to_ja_g
-from data_utilities.util import getGematria
+from data_utilities.util import getGematria, numToHeb
 
 from collections import OrderedDict
 from sources.functions import post_text, post_index, post_link
@@ -102,14 +102,45 @@ def parse_Raph(filename):
 
 def map_semak_page_siman(smk_ja):
     '''
-
+    create a dictionary from key: siman value: page(s) that the siman is on
     :param smk_ja: smk ja parsed according to simanim @22
     :return: simanim to pages (each siman on whitch page in the semak is it presented)
     '''
-    siman_page = OrderedDict()
+    siman_page = OrderedDict()# defaultdict()
+    page_count = 21
+    start_page = False
+    lst_seg = {'data': '', 'indices': []}
     for seg in traverse_ja(smk_ja):
         for i, page in enumerate(re.finditer(u'@77', seg['data'])):
-            print i, page.span(), seg['indices']
+            print page_count, i+1, page.span(), seg['indices']
+            page_count += 1
+            try:
+                siman_page[numToHeb(seg['indices'][0]+1)].append(page_count)
+            except KeyError:
+                if not start_page:
+                    siman_page[numToHeb(seg['indices'][0] + 1)] = [page_count - 1, page_count]
+                    start_page = False
+                else:
+                    siman_page[numToHeb(seg['indices'][0]+1)] = [page_count]
+            if re.search(u'@77 ?$', lst_seg['data']):
+                start_page = True
+                siman_page[numToHeb(lst_seg['indices'][0] + 1)].remove(page_count)
+        if not list(re.finditer(u'@77', seg['data'])):
+            try:
+                siman_page[numToHeb(seg['indices'][0]+1)]
+            except KeyError:
+                siman_page[numToHeb(seg['indices'][0] + 1)] = [page_count]
+            if re.search(u'@77 ?$', lst_seg['data']):
+                start_page = True
+                try:
+                    siman_page[numToHeb(lst_seg['indices'][0] + 1)].remove(page_count)
+                except ValueError:
+                    pass
+        lst_seg = seg
+    for k in siman_page.keys():
+        print k, siman_page[k]
+    # print siman_page
+
 
 def link_semak_raph(smk_ja, raph_ja):
     #if segment in smak_ja has a @55[\u05d0-\u05ea]{0,3} extract the letter and match it to the segment in the ja_raph
