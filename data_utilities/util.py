@@ -600,6 +600,70 @@ def file_to_ja(depth, infile, expressions, cleaner, grab_all=False):
     return ja
 
 
+def file_to_ja_g(depth, infile, expressions, cleaner, gimatria=False, group_name='gim', grab_all=[False] * 6):
+    """
+    like file to ja but with changing the numbers to Gimatria
+    Designed to be the first stage of a reusable parsing tool. Adds lines of text to the Jagged
+    Array in the desired structure (Chapter, verse, etc.)
+    :param depth: depth of the JaggedArray.
+    :param infile: Text file to read from
+    :param expressions: A list of regular expressions with which to identify section (chapter) level. Do
+    not include an expression with which to break up the segment levels.
+    :param cleaner: A function that takes a list of strings and returns an array with the text parsed
+    correctly. Should also break up and remove unnecessary tagging data.
+    :param grab_all: a boolean list accourding to the regexs, if True then grab all of that if False earse line
+            the 5 is just above the 3 whitch is the deepst length we use for now.
+    :param gimatria: if the text is presented with gimatria in it.
+    :param group_name: a name given to the group of letters for the gimatria to actually use
+    :return: A jagged_array with the text properly structured.
+    """
+
+    # instantiate ja
+    structure = reduce(lambda x, y: [x], range(depth - 1), [])
+    ja = jagged_array.JaggedArray(structure)
+
+    # ensure there is a regex for every level except the lowest
+    if depth - len(expressions) != 1:
+        raise AttributeError('Not enough data to parse. Need {} expressions, '
+                             'received {}'.format(depth - 1, len(expressions)))
+
+    # compile regexes, instantiate index list
+    regexes, indices = [re.compile(ex) for ex in expressions], [-1] * len(expressions)
+    temp = []
+
+    # loop through file
+    for line in infile:
+
+        # check for matches to the regexes
+        for i, reg in enumerate(regexes):
+            found = reg.search(line)
+            if found:
+
+                if indices.count(-1) == 0:
+                    ja.set_element(indices, cleaner(temp), [])
+                    temp = []
+                if grab_all[i]:
+                    temp.append(line)
+                    # increment index that's been hit, reset all subsequent indices
+                if gimatria:  # note: if you uncomment the top must make this elif
+                    gimt = getGematria(found.group('{}'.format(group_name)))
+                    if gimt != 0:  # increment index that's been hit, reset all subsequent indices
+                        indices[i] = gimt - 1
+                    else:
+                        indices[i] += 1
+                else:
+                    indices[i] += 1
+                indices[i + 1:] = [-1 if x >= 0 else x for x in indices[i + 1:]]
+                break
+
+        else:
+            if indices.count(-1) == 0:
+                temp.append(line)
+    else:
+        ja.set_element(indices, cleaner(temp), [])
+
+    return ja
+
 def he_array_to_int(he_array):
     """
     Takes an array of hebrew numbers (א,ב, י"א...) and returns array of integers.
@@ -692,7 +756,7 @@ def traverse_ja(ja, indices=None, bottom=unicode):
             else:
                 indices[-1] = index
             if data:
-                for thing in traverse_ja(data, indices, bottom):
+                for thing in traverse_ja(data, indices[:], bottom):
                     yield thing
         indices.pop()
 
