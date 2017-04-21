@@ -1,3 +1,36 @@
+# -*- coding: utf-8 -*-
+import sys
+import os
+p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, p)
+from sources.local_settings import *
+sys.path.insert(0, SEFARIA_PROJECT_PATH)
+os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
+from sources.functions import *
+import re
+import data_utilities
+from sources import functions
+import urllib2
+import json
+from fuzzywuzzy import fuzz
+from fuzzywuzzy import process
+
+def get_ch_title_dic():
+    ch_dict = json.loads(urllib2.urlopen("https://www.sefaria.org/api/v2/raw/index/Duties_of_the_Heart").read())
+    en_titles = []
+    he_titles = []
+    final_dict = {}
+    for title_node in ch_dict["schema"]["nodes"]:
+        for title in title_node["titles"]:
+            if title["lang"]=="en":
+                en_titles.append(title["text"])
+            elif title["lang"]=="he":
+                he_titles.append(title["text"])
+    for he_title, en_title in zip(he_titles, en_titles):
+        final_dict[he_title]=en_title
+    #leave out intro name, as it differs from that of standard text
+    return final_dict
+ch_titles = get_ch_title_dic()
 def ch_post_term(comm_name):
     term_obj = {
         "name": comm_name,
@@ -10,25 +43,248 @@ def ch_post_term(comm_name):
             },
             {
                 "lang": "he",
-                "text": u'תוספות רי\"ד',
+                "text": com_dic[comm_name]["he_title"],
                 "primary": True
             }
         ]
     }
     post_term(term_obj)
-posting_term = True
-posting_index = True
+
+def ch_index_post(com_name):
+    section_titles = get_section_titles(com_name)
+    # create index record
+    com_record = com_dic[com_name]
+    
+    record = SchemaNode()
+    record.add_title(com_name, 'en', primary=True)
+    record.add_title(com_record["he_title"], 'he', primary=True)
+    record.key = com_name
+    
+    #add intro node
+    intro_node = JaggedArrayNode()
+    intro_node.add_title(com_record["introduction_name_en"], 'en', primary=True)
+    intro_node.add_title(com_record["introduction_name_he"], 'he', primary=True)
+    intro_node.key = com_record["introduction_name_en"]
+    intro_node.depth = 1
+    intro_node.addressTypes = ['Integer']
+    intro_node.sectionNames = ['Comment']
+    record.append(intro_node)
+    # add nodes for chapters
+    for title in enumerate(section_titles):
+        section_node = SchemaNode()
+        section_node.add_title(title[1]["en_title"],"en",primary=True)
+        section_node.add_title(title[1]["he_title"],"he",primary=True)
+        section_node.key = title[1]["en_title"]
+        
+        #first we make node for intro
+        intro_node = JaggedArrayNode()
+        intro_node.add_title("Introduction", 'en', primary=True)
+        intro_node.add_title(u"הקדמה", 'he', primary=True)
+        intro_node.key = "Introduction"
+        intro_node.depth = 1
+        intro_node.addressTypes = ['Integer']
+        intro_node.sectionNames = ['Comment']
+        section_node.append(intro_node)
+        
+        #now add chapters, or default
+        text_node = JaggedArrayNode()
+        text_node.key = "default"
+        text_node.default = True
+        text_node.depth = 2
+        text_node.addressTypes = ['Integer', 'Integer']
+        text_node.sectionNames = ['Chapter','Comment']
+        section_node.append(text_node)
+        
+        record.append(section_node)
+
+
+    record.validate()
+
+    index = {
+        "title":com_name,
+        "base_text_titles": [
+           "Duties of the Heart"
+        ],
+        "dependence": "Commentary",
+        "categories":['Philosophy','Commentary',com_name,'Duties of the Heart'],
+        "schema": record.serialize()
+        }
+    functions.post_index(index,weak_network=True)
+    
+def get_section_titles(com_name):
+    with open(com_dic[com_name]["file_name"]) as myfile:
+        lines = list(map(lambda(x): x.decode('utf8','replace'),myfile.readlines()))
+    com_titles = []
+    for line in lines:
+        if u"@00" in line:
+            ch_title = best_ch_fuzz(line)
+            com_titles.append({"he_title":ch_title, "en_title":ch_titles[ch_title]})
+    #leave out introduction, as this differs from the standard text
+    return com_titles[1:]
+def ch_post_text(key):
+    section_titles = get_section_titles(key)
+    """
+    section_chapters = {}
+    for title in section_titles:
+        section_chapters[title] = [[] for x in range(len(TextChunk(Ref("Duties of the Heart, "+section_titles),"en")))]
+    #add intro seperate
+    section_chapters[com_dic[key]["introduction_name_en"]]=[[] for x in range(len(TextChunk(Ref("Duties of the Heart, "+com_dic[key]["introduction_name_en"]),"en")))]
+    """
+    with open(com_dic[key]["file_name"]) as myfile:
+        lines = list(map(lambda(x): x.decode('utf8','replace'), myfile.readlines()))
+    chapter_box=[]
+    section_box=[]
+    current_chapter = 0
+    section_title_index = -1
+    in_intro = False
+    for line in lines:
+        if u"@00הקדמה" in line:
+            in_intro=True
+        if in_intro:
+            if u"@00" in line:                                               
+                if len(section_box)>0:
+                    section_box.append(chapter_box)
+                    chapter_box = []
+                    print key, com_dic[key]["introduction_name_en"] if section_title_index<0 else section_titles[section_title_index]["en_title"]
+                    for cindex, chapter in enumerate(section_box):
+                        for pindex, paragraph in enumerate(chapter):
+                            print cindex, pindex, paragraph
+                    section_title = com_dic[key]["introduction_name_en"] if section_title_index<0 else section_titles[section_title_index]["en_title"]
+                    print "^^",section_title
+                    version = {
+                        'versionTitle': 'Chovat Halevavot, Warsaw 1875',
+                        'versionSource':'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001188038',
+                        'language': 'he',
+                        'text': section_box
+                    }
+                    print "posting "+section_title
+                    #post_text_weak_connection(key+', '+section_title, version)
+                section_title_index+=1
+                section_box=[]
+            elif u"@22" in line:
+                for x in range(getGematria(line.replace(u"פרק",u""))-current_chapter-1):
+                    section_box.append([])
+                current_chapter = getGematria(line.replace(u"פרק",u""))
+                section_box.append(chapter_box)
+                chapter_box = []
+            else:
+                chapter_box.append(line.replace(u"@11",u"<b>").replace(u"@33",u"</b>"))
+"""
+def make_links(key):
+    matched=0.00
+    total=0.00
+    errored = []
+    not_machted = []
+    sample_Ref = Ref("Genesis 1")
+    for section in get_section_titles(key):
+        #do each chapter seperate:
+        for chapter in range(1, len(TextChunk(Ref("Duties of the Heart, "+section),"en"))+1):
+            
+            base_chunk = TextChunk(Ref('Duties of the Heart, {}, {}'.format(section,chapter)),"he")
+            com_chunk = TextChunk(Ref('{}, {}, {}'.format(key, section, chapter)),"he")
+        Ibn_Ezra_links = match_ref(base_ref,avi_ezri_ref,base_tokenizer,dh_extract_method=dh_extract_method,verbose=True,)
+    for base, comment in zip(Ibn_Ezra_links["matches"],Ibn_Ezra_links["comment_refs"]):
+        print "B",base,"C", comment
+        print link.get('refs')
+        if base:
+            link = (
+                    {
+                    "refs": [
+                             base.normal(),
+                             comment.normal(),
+                             ],
+                    "type": "commentary",
+                    "auto": True,
+                    "generated_by": "sterling_avi_ezer_ibn_ezra_linker"
+                    })
+            post_link(link, weak_network=True)    
+            matched+=1
+        #if there is no match and there is only one comment, default will be to link it to that comment    
+        elif len(base_ref.text)==1:
+            print "ONER"
+            link = (
+                    {
+                    "refs": [
+                             'Ibn Ezra on {}, {}:{}:1'.format(key,perek_index+1, pasuk_index+1),
+                             'Avi Ezer, {}, {}:{}:{}'.format(key, perek_index+1, pasuk_index+1, comment_index+1),
+                             ],
+                    "type": "commentary",
+                    "auto": True,
+                    "generated_by": "sterling_avi_ezer_ibn_ezra_linker"
+                    })
+            post_link(link, weak_network=True)    
+            matched+=1
+        else:
+            not_machted.append('Avi Ezer, {}, {}:{}:{}'.format(key, perek_index+1, pasuk_index+1, comment_index+1))
+        total+=1
+pm = matched/total
+print "Result is:",matched,total
+print "Percent matched: "+str(pm)
+print "Not Matched:"
+for nm in not_machted:
+print nm
+print "Errored:"
+for error in errored:
+print error
+#here starts methods for linking:
+def filter(some_string):
+    if re.search(ur'<b>(.*?)</b>', some_string) is None:
+        return False
+    else:
+        return True
+
+def dh_extract_method(some_string):
+    split_group = some_string.split(u"וכו"+u"'")
+    if u"וגומר" in some_string:
+        split_group=some_string.split(u"וגומר")
+    if len(split_group[0])>5:
+        some_string=split_group[0]+u"</b>"
+    return re.search(ur'<b>(.*?)</b>', some_string.replace("\n","")).group(1)
+
+def base_tokenizer(some_string):
+    return some_string.replace(u"<b>",u"").replace(u"</b>",u"").replace(".","").split(" ")
+"""
+        
+def best_ch_fuzz(title):
+    highest_ratio = 0
+    best_match = u''
+    for key in ch_titles.keys():
+        if fuzz.ratio(title,key)>highest_ratio:
+            best_match=key
+            highest_ratio=fuzz.ratio(title,key)
+    return best_match
+posting_term = False
+posting_index = False
 posting_text=True
 linking = True
 com_dic = {"Lev Levanon":{"he_title":u"לב לבנון",
-                           "file_name":"חובת הלבבות לב לבנון.txt"},
-            "Pat Lehem":{"he_title":u"פת לחם",
-                        "file_name":"חובת הלבבות פת לחם.txt"},
+                           "file_name":"חובת הלבבות לב לבנון.txt",
+                           "introduction_name_he":u"הקדמה",
+                           "introduction_name_en":"Introduction"},
+            "Pat Lechem":{"he_title":u"פת לחם",
+                        "file_name":"חובת הלבבות פת לחם.txt",
+                        "introduction_name_he":u"הקדמת המבאר",
+                        "introduction_name_en":"Author's Introduction"},
             "Merapei Lanefesh":{"he_title":u"מרפא לנפש",
-                                "file_name":"חובת הלבבות מרפא לנפש.txt"}
-                           
-eng_names = ["Lev Levnon","M","P"]
-for file in com_file_names:
+                                "file_name":"חובת הלבבות מרפא לנפש.txt",
+                                "introduction_name_he":u"הקדמת המפרש",
+                                 "introduction_name_en":"Author's Introduction"}}    
+admin_urls = []
+site_urls = []     
+for key in com_dic.keys():
+    print key
+    admin_urls.append("localhost:8000/admin/reset/"+key)
+    site_urls.append("localhost:8000/"+key)
     if posting_term:
-        
+        ch_post_term(key)
+    if posting_index:
+        ch_index_post(key)
+    if posting_text:
+        ch_post_text(key)
+print "Admin urls:"
+for url in admin_urls:
+    print url
+print "Site urls:"
+for url in site_urls:
+    print url        
     
