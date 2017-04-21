@@ -148,11 +148,11 @@ def link_drashot():
     not_machted = []
     start_parsha_parse = False
     for parsha in eng_parshiot:
-        if "Vayakhel" in parsha:
+        if "B" in parsha:
             start_parsha_parse=True
-        if start_parsha_parse:
+        if start_parsha_parse and "Miketz" not in parsha and "Pekudei" not in parsha:
             parsha_chunk = TextChunk(Ref("Parashat "+parsha),"he","Tanach with Text Only")
-            bih_chunk = TextChunk(Ref('Ben Ish Hai, Drashot, '+parsha),"he")
+            bih_chunk = TextChunk(Ref('Ben Ish Hai, Drashot, '+parsha),"he","NEW VERSION")
             word_count = parsha_chunk.word_count()
             bih_links = match_ref(parsha_chunk,bih_chunk,base_tokenizer,dh_extract_method=dh_extract_method,verbose=True,rashi_filter=_filter, boundaryFlexibility=word_count-1, char_threshold=1.8)
             for base, comment in zip(bih_links["matches"],bih_links["comment_refs"]):
@@ -235,7 +235,7 @@ if __name__ == "__main__":
     }
     post_text_weak_connection('Ben Ish Hai, Introduction', version)
     #post all text
-    
+    """
     parsha_sections = ["Drashot","Halachot 1st Year","Halachot 2nd Year"]
     parsha_content = [get_parsed_drasha(), get_halachas_shana_1(), get_halachas_shana_2()]
     primo_link = 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001933796'
@@ -254,7 +254,7 @@ if __name__ == "__main__":
                 }
                 print "posting "+section_name+", "+parsha[0][1]+", Introduction"
                 #post_text_weak_connection('Ben Ish Hai, '+section_name+", "+parsha[0][1]+", Introduction", version)
-            else:
+            elif "Miketz" in parsha[0][1]:
                 version = {
                     'versionTitle': section_version[0],
                     'versionSource': section_version[1],
@@ -265,11 +265,8 @@ if __name__ == "__main__":
                 post_text_weak_connection('Ben Ish Hai, '+section_name+", "+parsha[0][1], version)
     
     """
-    pekudei_chunk = TextChunk(Ref("Ben Ish Hai, Drashot, Pekudei"),"he")
-    dhs=[dh_extract_method(paragraph) for paragraph in pekudei_chunk.text]
-    if any([re.search(ur"^\s+$",x) is not None for x in dhs]):
-        print "PROBLEM"
-    link_drashot()
+    """
+    #link_drashot()
     """
     
     #print parsha titles
