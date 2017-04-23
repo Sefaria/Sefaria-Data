@@ -40,7 +40,7 @@ if __name__ == '__main__':
                         "refs": [
                             gemara,
                             mishna ],
-                        "type": "Mishnah in Talmud",
+                        "type": "mishnah in talmud",
                         "auto": True,
                         "generated_by": "connect_mishnah",
                         }
