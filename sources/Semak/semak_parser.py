@@ -57,6 +57,7 @@ def parse_semak(filename):
 
     return smk_ja
 
+
 #todo:
 # i would want to devide the Raph according to simanim as well and not according to pages,
 # once one has the mapping of simanim to dapim this is possible
@@ -83,7 +84,6 @@ def parse_Raph(filename):
             break
     for line_num, line in enumerate(lines[starting:]):
         if not re.search(u'@00', line) and not line.isspace():
-            # if re.search(u'@(77|11)', line):
             line = re.split(u'(@(?:77|11)[\u05d0-\u05ea]{0,3})', line)
             if isinstance(line, basestring):
                 cleaned.append(line)
@@ -100,11 +100,53 @@ def parse_Raph(filename):
 
     return ja
 
+
+def parse_Raph_by_letter(filename):
+    def cleaner(my_text):
+        replace_dict = {u'@(?:11|77)[\u05d0-\u05ea]{0,3}': u'', u'@(33|22)': u''}#{u'@11(.*?)@12': ur'<b>\1</b>', u'@33(.*?)@34': ur'<b>\1</b>', u'@33(.*?)@34': ur'<b>\1</b>', u'@66(.*?)@67': ur'\1'}
+        new = []
+        for line in my_text:
+            line = multiple_replace(line, replace_dict, using_regex=True)
+            new.append(line)
+        return new
+
+    regs = [ur'@11(?P<gim>[\u05d0-\u05ea]{1,3})']
+    with codecs.open(filename, 'r', 'utf-8') as fp:
+        lines = fp.readlines()
+    starting = None
+    # check if we got to the end of the legend and change to started
+    # clean all lines of days start with @00
+    cleaned = []
+    letter_section = []
+    for line_num, line in enumerate(lines):
+        if line == u'\n':
+            starting = line_num + 1
+            break
+    for line_num, line in enumerate(lines[starting:]):
+        if not re.search(u'@00', line) and not line.isspace():
+            line = re.split(u'(@11[\u05d0-\u05ea]{0,3})', line)
+            if isinstance(line, basestring):
+                cleaned.append(line)
+            else:
+                [cleaned.append(st.strip()) for st in line if st]
+    new_ja = regs_devide(cleaned, regs)
+    try:
+        ja = file_to_ja_g(2, cleaned, regs, cleaner, gimatria=True,  grab_all=[True, True], group_name='gim').array()
+    except AttributeError:
+        print 'there are more regs then levels...'
+
+    # ja_to_xml(ja, ['letter', 'segments'], 'raph_letters.xml')
+    ja_to_xml(new_ja, ['siman', 'letter', 'segments'], 'raph_letters.xml')
+
+    return new_ja
+
+
 def map_semak_page_siman(smk_ja):
     '''
     create a dictionary from key: siman value: page(s) that the siman is on
     :param smk_ja: smk ja parsed according to simanim @22
-    :return: simanim to pages (each siman on whitch page in the semak is it presented)
+    :return: dictionary. keys: siman (he letter), value: list of pages the siman spans over. (pages according to scan -
+    starts on p. 21)
     '''
     siman_page = OrderedDict()# defaultdict()
     page_count = 21
@@ -112,7 +154,6 @@ def map_semak_page_siman(smk_ja):
     lst_seg = {'data': '', 'indices': []}
     for seg in traverse_ja(smk_ja):
         for i, page in enumerate(re.finditer(u'@77', seg['data'])):
-            print page_count, i+1, page.span(), seg['indices']
             page_count += 1
             try:
                 siman_page[numToHeb(seg['indices'][0]+1)].append(page_count)
@@ -139,8 +180,7 @@ def map_semak_page_siman(smk_ja):
         lst_seg = seg
     for k in siman_page.keys():
         print k, siman_page[k]
-    # print siman_page
-
+    return siman_page
 
 def link_semak_raph(smk_ja, raph_ja):
     #if segment in smak_ja has a @55[\u05d0-\u05ea]{0,3} extract the letter and match it to the segment in the ja_raph
@@ -171,8 +211,43 @@ def link_semak_raph(smk_ja, raph_ja):
                 [item+1 for item in smk[1]], [item +1 for item in raph['indices']]
     print problem_count
 
+
+def regs_devide(lines, regs):
+    reg = regs[0]
+    ja = []
+    letter = []
+    siman = []
+    for line in lines:
+        comb_letter = ' '.join(letter)
+        if re.search(reg, line):
+            siman.append(comb_letter)
+            letter = []
+            gim = getGematria(re.search(reg, line).group(1))
+            if gim == 1:
+                ja.append(siman)
+                siman = []
+        letter.append(line)
+    return ja
+
+
 if __name__ == "__main__":
     ja_smk = parse_semak('Semak.txt')
-    map_semak_page_siman(ja_smk)
+    # map_semak_page_siman(ja_smk)
     # ja_raph = parse_Raph('Raph_on_Semak.txt')
     # link_semak_raph(ja_smk, ja_raph)
+    letter_ja = parse_Raph_by_letter(u'Raph_on_Semak.txt')
+    # use ja functions and not travers ja. or through them first into a list instead of getting them live. classic...
+    lst_raph = []
+    for seg in traverse_ja(ja_smk):
+        for x in re.findall(u'@55([\u05d0-\u05ea]{1,3})', seg['data']):
+            lst_raph.append((x, seg['data']))
+    for raph, smk_l in zip(traverse_ja(letter_ja), lst_raph):
+        print re.search(u'@11([\u05d0-\u05ea]{1,3})', raph['data']).group(1), smk_l[0]
+        # if re.search(u'@11([\u05d0-\u05ea]{1,3})', raph['data']):
+        #     if re.search(u'@11([\u05d0-\u05ea]{1,3})', raph['data']).group(1) != smk_l[0]:
+        #         print raph['indices']
+        #         print raph['data']
+        #         print smk_l[0]
+        #         print smk_l[1]
+                # break
+    print 'done'
