@@ -19,7 +19,7 @@ if __name__ == "__main__":
     post_info["versionSource"] = "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001338443"
     file_name = "IbnEzra_Isiah.xml"
     title = "Ibn Ezra on Isaiah"
-
+    setattr
 
     mapping = {}
     array_of_names = ["Prelude"]

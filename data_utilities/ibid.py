@@ -11,7 +11,7 @@ class CitationFinder():
     class to find all potential citations in a string. classifies citations as either sham, refs, or neither
     neither can still be a ref, but for some reason it isn't parsed correctly
     '''
-    def get_ultimate_title_regex(self, title, lang):
+    def get_ultimate_title_regex(self, title, lang, compiled=True):
        #todo: consider situations that it is obvious it is a ref although there are no () ex: ברכות פרק ג משנה ה
        #todo: recognize mishnah or talmud according to the addressTypes given
         """
@@ -30,18 +30,30 @@ class CitationFinder():
 
         inner_paren_reg = re.escape(title) + after_title_delimiter_re + ur'(?:[\[({]' + address_regex + ur'[\])}])(?=\W|$)'
 
-        outer_paren_reg = ur"""(?<=							# look behind for opening brace
-            [({]										# literal '(', brace,
-            [^})]*										# anything but a closing ) or brace
-        )
-        """ + re.escape(title) + after_title_delimiter_re + address_regex + ur"""
-        (?=\W|$)                                        # look ahead for non-word char
-        (?=												# look ahead for closing brace
-            [^({]*										# match of anything but an opening '(' or brace
-            [)}]										# zero-width: literal ')' or brace
-        )"""
-        reg = u'{}|{}'.format(inner_paren_reg,outer_paren_reg)
-        return re.compile(reg, re.VERBOSE)
+        # outer_paren_reg = ur"""(?<=							# look behind for opening brace
+        #     [({]										# literal '(', brace,
+        #     [^})]*										# anything but a closing ) or brace
+        # )
+        # """ + re.escape(title) + after_title_delimiter_re + address_regex + ur"""
+        # (?=\W|$)                                        # look ahead for non-word char
+        # (?=												# look ahead for closing brace
+        #     [^({]*										# match of anything but an opening '(' or brace
+        #     [)}]										# zero-width: literal ')' or brace
+        # )"""
+
+        outer_paren_reg = ur"""(?:
+           [({]										# literal '(', brace,
+           [^})]*										# anything but a closing ) or brace
+       )
+       """ + re.escape(title) + after_title_delimiter_re + address_regex + ur"""
+           [^({]*										# match of anything but an opening '(' or brace
+           [)}]										# zero-width: literal ')' or brace
+       """
+        reg = u'(?:{})|(?:{})'.format(inner_paren_reg,outer_paren_reg)
+        #reg = outer_paren_reg
+        if compiled:
+            reg = re.compile(reg, re.VERBOSE)
+        return reg
 
     def create_or_address_regexes(self, lang):
         depth = 2

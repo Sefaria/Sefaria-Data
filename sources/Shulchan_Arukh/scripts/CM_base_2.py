@@ -8,6 +8,10 @@ def markup(b_vol):
     commentaries = root.get_commentaries()
     b_vol.mark_references(commentaries.commentary_ids["Me'irat Einayim"], u'@55([\u05d0-\u05ea]{1,3})', group=1)
     b_vol.mark_references(commentaries.commentary_ids["Ktsot HaHoshen"], u'/([\u05d0-\u05ea]{1,3})\)', group=1)
+    b_vol.mark_references(commentaries.commentary_ids["Pithei Teshuva"], u'\]([\u05d0-\u05ea]{1,3})\]', group=1)
+    b_vol.mark_references(commentaries.commentary_ids["Netivot HaMishpat, Hidushim"], u'@66\(([\u05d0-\u05ea]{1,3})\)', group=1)
+    b_vol.mark_references(commentaries.commentary_ids["Siftei Cohen"], u'@77\(([\u05d0-\u05ea]{1,3})\)', group=1)
+    b_vol.mark_references(commentaries.commentary_ids["Beur HaGra"], u'@99\[([\u05d0-\u05ea]{1,3})\]', group=1)
 
 root = Root('../Choshen_Mishpat.xml')
 base = root.get_base_text()
