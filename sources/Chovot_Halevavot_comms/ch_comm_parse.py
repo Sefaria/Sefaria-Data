@@ -28,7 +28,6 @@ def get_ch_title_dic():
                 he_titles.append(title["text"])
     for he_title, en_title in zip(he_titles, en_titles):
         final_dict[he_title]=en_title
-    #leave out intro name, as it differs from that of standard text
     return final_dict
 ch_titles = get_ch_title_dic()
 def ch_post_term(comm_name):
@@ -60,42 +59,53 @@ def ch_index_post(com_name):
     record.add_title(com_record["he_title"], 'he', primary=True)
     record.key = com_name
     
-    #add intro node
+    #add commentor's intro node
     intro_node = JaggedArrayNode()
     intro_node.add_title(com_record["introduction_name_en"], 'en', primary=True)
     intro_node.add_title(com_record["introduction_name_he"], 'he', primary=True)
     intro_node.key = com_record["introduction_name_en"]
     intro_node.depth = 1
     intro_node.addressTypes = ['Integer']
-    intro_node.sectionNames = ['Comment']
+    intro_node.sectionNames = ['Paragraph']
     record.append(intro_node)
-    # add nodes for chapters
-    for title in enumerate(section_titles):
-        section_node = SchemaNode()
-        section_node.add_title(title[1]["en_title"],"en",primary=True)
-        section_node.add_title(title[1]["he_title"],"he",primary=True)
-        section_node.key = title[1]["en_title"]
+    
+    # add nodes for author's introduction and rest of sections
+    for title_index, title in enumerate(section_titles):
+        #author's intro handled differently
+        if title_index=0:
+            intro_node = JaggedArrayNode()
+            intro_node.add_title(title[1]["en_title"],"en",primary=True)
+            intro_node.add_title(title[1]["he_title"],"he",primary=True)
+            intro_node.key = title[1]["en_title"]
+            intro_node.depth = 1
+            intro_node.addressTypes = ['Integer']
+            intro_node.sectionNames = ['Comment']
+            record.append(intro_node)
+        else:
+            section_node = SchemaNode()
+            section_node.add_title(title[1]["en_title"],"en",primary=True)
+            section_node.add_title(title[1]["he_title"],"he",primary=True)
+            section_node.key = title[1]["en_title"]
+            #first we make node for intro
+            intro_node = JaggedArrayNode()
+            intro_node.add_title("Introduction", 'en', primary=True)
+            intro_node.add_title(u"הקדמה", 'he', primary=True)
+            intro_node.key = "Introduction"
+            intro_node.depth = 1
+            intro_node.addressTypes = ['Integer']
+            intro_node.sectionNames = ['Comment']
+            section_node.append(intro_node)
         
-        #first we make node for intro
-        intro_node = JaggedArrayNode()
-        intro_node.add_title("Introduction", 'en', primary=True)
-        intro_node.add_title(u"הקדמה", 'he', primary=True)
-        intro_node.key = "Introduction"
-        intro_node.depth = 1
-        intro_node.addressTypes = ['Integer']
-        intro_node.sectionNames = ['Comment']
-        section_node.append(intro_node)
+            #now add chapters, or default
+            text_node = JaggedArrayNode()
+            text_node.key = "default"
+            text_node.default = True
+            text_node.depth = 2
+            text_node.addressTypes = ['Integer', 'Integer']
+            text_node.sectionNames = ['Chapter','Comment']
+            section_node.append(text_node)
         
-        #now add chapters, or default
-        text_node = JaggedArrayNode()
-        text_node.key = "default"
-        text_node.default = True
-        text_node.depth = 2
-        text_node.addressTypes = ['Integer', 'Integer']
-        text_node.sectionNames = ['Chapter','Comment']
-        section_node.append(text_node)
-        
-        record.append(section_node)
+            record.append(section_node)
 
 
     record.validate()
@@ -115,14 +125,19 @@ def get_section_titles(com_name):
     with open(com_dic[com_name]["file_name"]) as myfile:
         lines = list(map(lambda(x): x.decode('utf8','replace'),myfile.readlines()))
     com_titles = []
+    in_intro=False
     for line in lines:
-        if u"@00" in line:
-            ch_title = best_ch_fuzz(line)
-            com_titles.append({"he_title":ch_title, "en_title":ch_titles[ch_title]})
-    #leave out introduction, as this differs from the standard text
-    return com_titles[1:]
+        if u"@00הקדמה" in line:
+            in_intro=True
+        if in_intro:
+            if u"@00" in line:
+                ch_title = best_ch_fuzz(line)
+                com_titles.append({"he_title":ch_title, "en_title":ch_titles[ch_title]})
+    return com_titles
 def ch_post_text(key):
     section_titles = get_section_titles(key)
+    for title in section_titles:
+        print "SECTITLE: ",title
     """
     section_chapters = {}
     for title in section_titles:
@@ -135,21 +150,22 @@ def ch_post_text(key):
     chapter_box=[]
     section_box=[]
     current_chapter = 0
-    section_title_index = -1
+    section_title_index = 0
     in_intro = False
     for line in lines:
         if u"@00הקדמה" in line:
             in_intro=True
         if in_intro:
-            if u"@00" in line:                                               
-                if len(section_box)>0:
+            if u"@00" in line: 
+                print key+ " LINE: "+line
+                if len(section_box)>0 or len(chapter_box)>0:
                     section_box.append(chapter_box)
                     chapter_box = []
-                    print key, com_dic[key]["introduction_name_en"] if section_title_index<0 else section_titles[section_title_index]["en_title"]
+                    print key, section_titles[section_title_index]["en_title"]
                     for cindex, chapter in enumerate(section_box):
                         for pindex, paragraph in enumerate(chapter):
                             print cindex, pindex, paragraph
-                    section_title = com_dic[key]["introduction_name_en"] if section_title_index<0 else section_titles[section_title_index]["en_title"]
+                    section_title = section_titles[section_title_index]["en_title"]
                     print "^^",section_title
                     version = {
                         'versionTitle': 'Chovat Halevavot, Warsaw 1875',
@@ -158,17 +174,35 @@ def ch_post_text(key):
                         'text': section_box
                     }
                     print "posting "+section_title
+                    section_title_index+=1                                              
+                    section_box=[]
                     #post_text_weak_connection(key+', '+section_title, version)
-                section_title_index+=1
-                section_box=[]
-            elif u"@22" in line:
+            elif u"@22" in line and u"IGNORE" not in line:
                 for x in range(getGematria(line.replace(u"פרק",u""))-current_chapter-1):
                     section_box.append([])
                 current_chapter = getGematria(line.replace(u"פרק",u""))
                 section_box.append(chapter_box)
                 chapter_box = []
-            else:
-                chapter_box.append(line.replace(u"@11",u"<b>").replace(u"@33",u"</b>"))
+            elif not_blank(line):
+                chapter_box.append(re.sub(ur"@\d{1,3}",u"",line.replace(u"@11",u"<b>").replace(u"@33",u"</b>")))
+    #post last chapter
+    section_box.append(chapter_box)
+    chapter_box = []
+    print key, section_titles[section_title_index]["en_title"]
+    for cindex, chapter in enumerate(section_box):
+        for pindex, paragraph in enumerate(chapter):
+            print cindex, pindex, paragraph
+    section_title = section_titles[section_title_index]["en_title"]
+    print "^^",section_title
+    version = {
+        'versionTitle': 'Chovat Halevavot, Warsaw 1875',
+        'versionSource':'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001188038',
+        'language': 'he',
+        'text': section_box
+    }
+    print "posting "+section_title
+    #post_text_weak_connection(key+', '+section_title, version)
+    
 """
 def make_links(key):
     matched=0.00
@@ -182,7 +216,7 @@ def make_links(key):
             
             base_chunk = TextChunk(Ref('Duties of the Heart, {}, {}'.format(section,chapter)),"he")
             com_chunk = TextChunk(Ref('{}, {}, {}'.format(key, section, chapter)),"he")
-        Ibn_Ezra_links = match_ref(base_ref,avi_ezri_ref,base_tokenizer,dh_extract_method=dh_extract_method,verbose=True,)
+            ch_links = match_ref(base_ref,avi_ezri_ref,base_tokenizer,dh_extract_method=dh_extract_method,verbose=True,)
     for base, comment in zip(Ibn_Ezra_links["matches"],Ibn_Ezra_links["comment_refs"]):
         print "B",base,"C", comment
         print link.get('refs')
@@ -244,7 +278,10 @@ def dh_extract_method(some_string):
 def base_tokenizer(some_string):
     return some_string.replace(u"<b>",u"").replace(u"</b>",u"").replace(".","").split(" ")
 """
-        
+def not_blank(s):
+    while u" " in s:
+        s = s.replace(u" ",u"")
+    return (len(s.replace(u"\n",u"").replace(u"\r",u"").replace(u"\t",u""))!=0);
 def best_ch_fuzz(title):
     highest_ratio = 0
     best_match = u''
@@ -257,18 +294,18 @@ posting_term = False
 posting_index = False
 posting_text=True
 linking = True
-com_dic = {"Lev Levanon":{"he_title":u"לב לבנון",
+com_dic = {"Tov haLevanon":{"he_title":u"טוב הלבנון",
                            "file_name":"חובת הלבבות לב לבנון.txt",
-                           "introduction_name_he":u"הקדמה",
-                           "introduction_name_en":"Introduction"},
+                           "introduction_name_he":u"הקדמת המבאר",
+                           "introduction_name_en":"Commentor's Introduction"},
             "Pat Lechem":{"he_title":u"פת לחם",
                         "file_name":"חובת הלבבות פת לחם.txt",
                         "introduction_name_he":u"הקדמת המבאר",
-                        "introduction_name_en":"Author's Introduction"},
-            "Merapei Lanefesh":{"he_title":u"מרפא לנפש",
+                        "introduction_name_en":"Commentor's Introduction"},
+            "Marpeh la'Nefesh":{"he_title":u"מרפא לנפש",
                                 "file_name":"חובת הלבבות מרפא לנפש.txt",
                                 "introduction_name_he":u"הקדמת המפרש",
-                                 "introduction_name_en":"Author's Introduction"}}    
+                                 "introduction_name_en":"Commentor's Introduction"}}    
 admin_urls = []
 site_urls = []     
 for key in com_dic.keys():
