@@ -1254,12 +1254,12 @@ class BookSplicer(object):
 
         self.section_splicers[-1].refresh_states()
 
-        from sefaria.helper.link import rebuild_commentary_links
+        from sefaria.helper.link import rebuild_links_for_title
         #  This is long-running - postponing to after-deploy step
         #  rebuild_links_from_text(self.book_ref.normal(), 28)
 
         for c in self.section_splicers[-1].commentary_titles:
-            rebuild_commentary_links(c, 28, commentary_override=True)
+            rebuild_links_for_title(c, 28)
 
     def get_commentary_determinations(self):
         r = []
