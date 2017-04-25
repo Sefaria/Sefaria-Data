@@ -17,6 +17,9 @@ import codecs
 import pycurl
 import cStringIO
 from bs4 import BeautifulSoup
+from data_utilities.dibur_hamatchil_matcher import match_ref
+import pdb
+
 eng_parshiot = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", "Vayetzei", "Vayishlach",
 "Vayeshev", "Miketz", "Vayigash", "Vayechi", "Shemot", "Vaera", "Bo", "Beshalach", "Yitro",
 "Mishpatim", "Terumah", "Tetzaveh", "Ki Tisa", "Vayakhel", "Pekudei", "Vayikra", "Tzav", "Shmini",
@@ -138,6 +141,68 @@ def get_intro_parshas():
         if u"@02" in line:
             parshas.append(re.sub(ur"@\d+",u"",line).replace(u"T",""))
     return parshas[1:]
+def link_drashot():
+    matched=0.00
+    total=0.00
+    errored = []
+    not_machted = []
+    start_parsha_parse = False
+    for parsha in eng_parshiot:
+        if "Vayakhel" in parsha:
+            start_parsha_parse=True
+        if start_parsha_parse:
+            parsha_chunk = TextChunk(Ref("Parashat "+parsha),"he","Tanach with Text Only")
+            bih_chunk = TextChunk(Ref('Ben Ish Hai, Drashot, '+parsha),"he")
+            word_count = parsha_chunk.word_count()
+            bih_links = match_ref(parsha_chunk,bih_chunk,base_tokenizer,dh_extract_method=dh_extract_method,verbose=True,rashi_filter=_filter, boundaryFlexibility=word_count-1, char_threshold=1.8)
+            for base, comment in zip(bih_links["matches"],bih_links["comment_refs"]):
+                print "B",base,"C", comment
+                print bih_links.get('refs')
+                if base:
+                    link = (
+                            {
+                            "refs": [
+                                     base.normal(),
+                                     comment.normal(),
+                                     ],
+                            "type": "commentary",
+                            "auto": True,
+                            "generated_by": "sterling_ben_ish_hai_linker"
+                            })
+                    post_link(link, weak_network=True)    
+                    matched+=1
+                #if there is no match and there is only one comment, default will be to link it to that comment    
+                else:
+                    not_machted.append(parsha)
+                total+=1
+    if total!=0:
+        pm = matched/total
+        print "Percent matched: "+str(pm)
+    else:
+        print "None matched :("
+    print "Not Matched:"
+    for nm in not_machted:
+        print nm
+def _filter(some_string):
+    not_dh = [u"אופן",u"בדרך אחר נ\"ל",u"ועוד נ\"ל בס\"ד",u"פרשת"]
+    for ndh in not_dh:
+        if ndh in ' '.join(some_string.split(" ")[:5]):
+            return False
+    return True
+
+def dh_extract_method(some_string):
+    """
+    dh_splitters = [u"נ\"ל",u"וכו"+u"\'",u"י\"ל"]
+    smallest_dh = some_string
+    for splitter in dh_splitters:
+        if len(some_string.split(splitter)[0].split(" "))<smallest_dh.split(" "):
+            smallest_dh=some_string.split(splitter)[0]
+    if len(smallest_dh.split(" "))<18:
+        return smallest_dh
+    """
+    return u' '.join(filter(lambda(x): None if not not_blank(x) else True,some_string.split(u" "))[:5])
+def base_tokenizer(some_string):
+    return filter(lambda(x): not_blank(x),some_string.split(u" "))
 def url_to_soup(url):
     chapter_buf = cStringIO.StringIO()
     c = pycurl.Curl()
@@ -160,7 +225,7 @@ def print_text():
 def main():
     pass
 if __name__ == "__main__":
-    
+    """
     #post intro:
     version = {
         'versionTitle': 'Ben Ish Chai; Jerusalem, 1898',
@@ -188,18 +253,25 @@ if __name__ == "__main__":
                     'text': parsha[1] 
                 }
                 print "posting "+section_name+", "+parsha[0][1]+", Introduction"
-                post_text_weak_connection('Ben Ish Hai, '+section_name+", "+parsha[0][1]+", Introduction", version)
-    
-            version = {
-                'versionTitle': section_version[0],
-                'versionSource': section_version[1],
-                'language': 'he',
-                'text': parsha[1] if "Drashot" in section_name else parsha[2]
-            }
-            print "posting "+section_name+", "+parsha[0][1]
-            post_text_weak_connection('Ben Ish Hai, '+section_name+", "+parsha[0][1], version)
+                #post_text_weak_connection('Ben Ish Hai, '+section_name+", "+parsha[0][1]+", Introduction", version)
+            else:
+                version = {
+                    'versionTitle': section_version[0],
+                    'versionSource': section_version[1],
+                    'language': 'he',
+                    'text': parsha[1] if "Drashot" in section_name else parsha[2]
+                }
+                print "posting "+section_name+", "+parsha[0][1]
+                post_text_weak_connection('Ben Ish Hai, '+section_name+", "+parsha[0][1], version)
     
     """
+    pekudei_chunk = TextChunk(Ref("Ben Ish Hai, Drashot, Pekudei"),"he")
+    dhs=[dh_extract_method(paragraph) for paragraph in pekudei_chunk.text]
+    if any([re.search(ur"^\s+$",x) is not None for x in dhs]):
+        print "PROBLEM"
+    link_drashot()
+    """
+    
     #print parsha titles
     """
     """ 
