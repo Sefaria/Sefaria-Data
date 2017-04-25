@@ -300,20 +300,21 @@ def print_text(file_name):
 posting_term=False
 posting_index=False
 posting_text=False
-linking=True
+linking=False
 admin_links = []
 page_links = []
 if posting_term:
     post_rid_term()
 for findex, file in enumerate(os.listdir("tractates")):
     print "This is file: "+str(findex)
-    if ".txt" in file and file.replace(".txt","") in title_exceptions:
+    if ".txt" in file:
         file_tractate_name = file.replace(".txt","")
         if file_tractate_name in title_exceptions:
             link_name = title_exceptions[file_tractate_name]["en_title"]     
         else:
             link_name = process.extractOne(file_tractate_name, en_talmud)[0]  
-        admin_links.append("proto.sefaria.org/admin/reset/Tosafot Rid on "+link_name)
+        #admin_links.append("proto.sefaria.org/admin/reset/Tosafot Rid on "+link_name)
+        admin_links.append("localhost:8000/admin/reset/Tosafot Rid on "+link_name)
         page_links.append("http://proto.sefaria.org/Tosafot_Rid_on_"+link_name)
         if posting_index:
             print "Posting "+file_tractate_name+" index..."
