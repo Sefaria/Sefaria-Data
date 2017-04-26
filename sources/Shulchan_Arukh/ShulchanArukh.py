@@ -911,18 +911,20 @@ class Xref(Element):
     def load_xrefs_to_commentstore(self, title, siman, seif):
         comment_store = CommentStore()
         if comment_store.get(self.id) is not None:
-            if comment_store[self.id]['seif'] == seif:
+            if seif in comment_store[self.id]['seif']:
                 message = "Xref with id '{}' appears twice. Same Seif as previous appearance.".format(self.id)
                 print message
             else:
                 message = "Xref with id '{}' appears twice. Different Seif as previous appearance.".format(self.id)
-                raise DuplicateCommentError(message)
+                print message
+                comment_store[self.id]['seif'].append(seif)
 
-        comment_store[self.id] = {
-            'base_title': title,
-            'siman': siman,
-            'seif': seif
-        }
+        else:
+            comment_store[self.id] = {
+                'base_title': title,
+                'siman': siman,
+                'seif': [seif]
+            }
 
     def load_comments_to_commentstore(self, *args, **kwargs):
         raise NotImplementedError("Can't load comments at Xref depth")

@@ -607,7 +607,7 @@ def filter_pasuk_matches(category, mesorat_hashas_name):
 
 def remove_mishnah_talmud_dups(mesorat_hashas_name):
     mesorat_hashas = json.load(open(mesorat_hashas_name, 'rb'))
-    mishnah_set = LinkSet({'type': 'Mishnah in Talmud'}).array()
+    mishnah_set = LinkSet({'type': 'mishnah in talmud'}).array()
     mishnah_set = [(Ref(ms.refs[0]),Ref(ms.refs[1])) for ms in mishnah_set]
 
 

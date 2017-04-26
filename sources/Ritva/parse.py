@@ -192,7 +192,7 @@ if __name__ == "__main__":
     files = ["Moed Katan", "Megillah"]
     not_yet = True
     for file in files:
-        createIndex(file)
+        #createIndex(file)
         print file
         text, dhs = parse(file+".txt")
         text_array = convertDictToArray(text)

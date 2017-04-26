@@ -1,6 +1,6 @@
 #encoding=utf-8
 """
-!!!! Used `&` to denote html markers in base text, fix when rendering to json !!!!
+!!!! Used `~` to denote html markers in base text, fix when rendering to json !!!!
 """
 
 from sources.Shulchan_Arukh.ShulchanArukh import *
