@@ -150,10 +150,47 @@ def test_get_potential_refs():
     inst = CitationFinder()
 
     st = u'''(שמות יא ט) בשלישי ברא שלש בריות אילנות (שו"ע בלה בלה) ודשאים וגן עדן ועוד אמרו (שם י) אין לך כל עֵשֶׂב ועשב מלמטה שאין לו מזל (בראשית שגדכגדכג) ברקיע ומכה אותו ואומר לו גדל הדא הוא דכתיב (שם)'''
+    st = u'(רמב"ם הלכות יסודי התורה פ"א ופ"ג)'
     refs, nons, shams = inst.get_potential_refs(st)
-    print refs
-    print nons
-    print shams
+    print 'refs', refs
+    print 'nons', nons
+    print 'shams', shams
 
+def test_get_ultimate_regex():
+    inst = CitationFinder()
+    test1 = u'(בראשית א:ב)'
+    r = inst.get_ultimate_title_regex(u'בראשית','he')
+    m = re.search(r, test1)
+    assert m.group() == u'בראשית א:ב'
+
+    test2 = u'(שם ג:ד)'
+    r = inst.get_ultimate_title_regex(u'שם','he')
+    m = re.search(r, test2)
+    assert m.group() == u'שם ג:ד'
+
+    test3 = u'(ב"ר פרק ג משנה ד)'
+    r = inst.get_ultimate_title_regex(u'ב"ר','he')
+    m = re.search(r, test3)
+    assert m.group() == u'ב"ר פרק ג משנה ד'
+
+    test4 = u'בראשית (ג:ד)'
+    r = inst.get_ultimate_title_regex(u'בראשית','he')
+    m = re.search(r, test4)
+    assert m.group() == u'בראשית (ג:ד)'
+
+    test5 = u'בראשית (שם:ד)'
+    r = inst.get_ultimate_title_regex(u'בראשית','he')
+    m = re.search(r, test5)
+    assert m.group() == u'בראשית (שם:ד)'
+
+    test6 = u'שבת (פח:)'
+    r = inst.get_ultimate_title_regex(u'שבת','he')
+    m = re.search(r, test6)
+    assert m.group() == u'שבת (פח:)'
+
+    test7 = u'((משנה ברכות (פרק ג משנה ה)'
+    r = inst.get_ultimate_title_regex(u'משנה ברכות','he')
+    m = re.search(r, test7)
+    assert m.group() == u'משנה ברכות (פרק ג משנה ה)'
 #todo: test new class IndexIbidFinder
 #todo: test ibidExceptions

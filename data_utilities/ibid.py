@@ -3,7 +3,7 @@
 from sefaria.model import *
 from sefaria.utils import talmud
 from collections import OrderedDict
-import re
+import regex as re
 from data_utilities.util import getGematria
 
 class CitationFinder():
@@ -11,6 +11,64 @@ class CitationFinder():
     class to find all potential citations in a string. classifies citations as either sham, refs, or neither
     neither can still be a ref, but for some reason it isn't parsed correctly
     '''
+    def get_ultimate_title_regex(self, title, lang):
+       #todo: consider situations that it is obvious it is a ref although there are no () ex: ברכות פרק ג משנה ה
+       #todo: recognize mishnah or talmud according to the addressTypes given
+        """
+        returns regex to find either `(title address)` or `title (address)`
+        title can be Sham
+        :param title: str
+        :return: regex
+        """
+        node = library.get_schema_node(title, lang)
+        if not node: # title is unrecognized
+            address_regex = self.create_or_address_regexes(lang)
+        else:
+            address_regex = node.address_regex(lang)
+
+        after_title_delimiter_re = ur"[,.: \r\n]+"
+
+        inner_paren_reg = re.escape(title) + after_title_delimiter_re + ur'(?:[\[({]' + address_regex + ur'[\])}])(?=\W|$)'
+
+        outer_paren_reg = ur"""(?<=							# look behind for opening brace
+            [({]										# literal '(', brace,
+            [^})]*										# anything but a closing ) or brace
+        )
+        """ + re.escape(title) + after_title_delimiter_re + address_regex + ur"""
+        (?=\W|$)                                        # look ahead for non-word char
+        (?=												# look ahead for closing brace
+            [^({]*										# match of anything but an opening '(' or brace
+            [)}]										# zero-width: literal ')' or brace
+        )"""
+        reg = u'{}|{}'.format(inner_paren_reg,outer_paren_reg)
+        return re.compile(reg, re.VERBOSE)
+
+    def create_or_address_regexes(self, lang):
+        depth = 2
+        address_list = [
+            ["Integer", "Integer"],
+            ["Perek", "Mishnah"],
+            ["Talmud", "Integer"],
+            #["Perek", "Halakhah"],
+            #["Siman", "Seif"],
+            ["Volume","Integer"],
+            #["Volume","Siman"]
+        ]
+        lengths = [0, 0]
+        sectionNames = ['','']
+
+        jagged_array_nodes = [JaggedArrayNode({
+            'depth': depth,
+            'addressTypes': address_item,
+            'lengths': lengths,
+            'sectionNames': sectionNames
+        }) for address_item in address_list]
+
+        return u'(?:{})'.format(u'|'.join([u'{}'.format(jan.address_regex(lang)) for jan in jagged_array_nodes]))
+
+
+
+
     def get_potential_refs(self, st, lang = 'he'):
         unique_titles = set(library.get_titles_in_string(st, lang))
         unique_titles.add(u'שם')

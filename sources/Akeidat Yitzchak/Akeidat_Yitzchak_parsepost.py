@@ -11,7 +11,6 @@ os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
 from sources.functions import *
 import re
 import codecs
-import pdb
 
 sefer_ranges=[["Genesis",1,33], ["Exodus",34,56], ["Leviticus",57,71], ["Numbers",72,86], ["Deuteronomy",87,105] ]
 
@@ -230,7 +229,6 @@ def get_parsed_text():
                     chapter_box.append(line)
         shaar_box.append(chapter_box)
         final_text.append(shaar_box)
-    print "MISTAKES!"
     for mistake in mistakes:
         print mistake
     return get_text_with_haaras(final_text, parse_haaras2())
@@ -288,12 +286,12 @@ def get_parsed_neilah():
         line = re.sub("@[\d]+","",line)
         line = line.replace("**","")
         neilah_return.append(line)
-    
+
     #now add haaras. The last 5 haaras belong the neilah:
     neilah_haaras = parse_haaras2()[-5:]
-    
+
     return get_1D_text_with_haaras(neilah_return, neilah_haaras)
-        
+
 def get_star_count(shaar):
     #used to confirm that footnote division went smoothly
     star_count = 0
@@ -320,7 +318,7 @@ def fix_bold_lines(input_line):
 def main():
     pass
 if __name__ == "__main__":
-
+    """
     #for MAIN TEXT
   
     text = get_parsed_text()
@@ -339,15 +337,19 @@ if __name__ == "__main__":
 
     post_text('Akeidat Yitzchak', version,weak_network=True)
     """
-    
+"""
     #for INTROS
     print "this is an intro"
     for sindex, section in enumerate(get_parsed_intro()):
         for pindex, paragraph in enumerate( section):
             print str(sindex)+" "+str(pindex)+" "+paragraph
+    
+    parshadex = get_parsha_index()
+    for parsha in parshadex:
+        print parsha[0]+u" ",parsha[1]," ",parsha[2]," end"
     intro_titles = ["Index","Author's Introduction","Mavo Shearim"]
     intro_text = get_parsed_intro()
-    for index, title in enumerate(intro_titles):    
+    for index, title in enumerate(intro_titles):
         version = {
             'versionTitle': 'Akeidat Yitzchak, Pressburg 1849',
             'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002034858',
@@ -356,7 +358,7 @@ if __name__ == "__main__":
         }
 
         post_text('Akeidat Yitzchak, '+title, version, weak_network=True)
-    
+
     #for NEILAH
     n = get_parsed_neilah()
     for line in n:
@@ -370,16 +372,15 @@ if __name__ == "__main__":
 
     post_text('Akeidat Yitzchak, Neilat Shearim', version, weak_network=True)
     """
-    """
+"""
 
-
-    for index, section in enumerate(get_parsed_intro()):
-        for paragraph in section:
-            print str(index)+" "+paragraph
-            """
-    #for b in get_parsed_text():
-    #    print "BOOK: "+b
-    """
+for index, section in enumerate(get_parsed_intro()):
+    for paragraph in section:
+        print str(index)+" "+paragraph
+        """
+#for b in get_parsed_text():
+#    print "BOOK: "+b
+"""
     @00 - Book
     @44 - Gate/Chapter (should be reorganized to sperate the two)
     @99 - Verse quote
@@ -388,7 +389,7 @@ if __name__ == "__main__":
     5<>6 bold
     * first level footnotes (we have them)
     **) second level footnotes (we haven't got them)
-    """
+"""
                 
             
             
@@ -400,7 +401,7 @@ if __name__ == "__main__":
                     dh_index = haaros_dh.index(dh)
                     matches.append([str(sindex)+" "+str(pindex),str(new_dh)])
                     break
-         
+
     for sindex, sefer in enumerate(get_haara_refs()):
         for iindex, index, in enumerate(sefer):
             print "FOR "+str(sindex)+" "+str(iindex)+":"
@@ -411,7 +412,7 @@ if __name__ == "__main__":
             for pindex, paragraph in enumerate(haarah):
                 print str(sindex)+" "+str(hindex)+" "+str(pindex)
                 print paragraph
-
+    """
     1/0
 
     for sindex, shaar in enumerate(get_text_with_haaras()):
@@ -424,5 +425,5 @@ if __name__ == "__main__":
             print "OOPS! "+str(index)
             print "HA: "+str(len(haarah_shaar))
             print "AK: "+str(get_star_count(akeida_shaar))
-    """
+    #adding shaarim: 104+107+108+139+172=630
     main()

@@ -582,6 +582,26 @@ class Volume(OrderedElement):
         for siman in self.get_child():
             siman.set_rid_on_seifim(base_id, book_id)
 
+    def unlink_seifim(self, bad_rid):
+        """
+        It's possible that several seifim should not be linked to the base text. Given an `rid` (or list of `rid`s)
+        this method will replace the rid field with 'no-link', which will prevent the Seif from being loaded to the
+        commentStore
+        :param bad_rid: rid to invalidate. Can accept a list
+        """
+        if isinstance(bad_rid, basestring):
+            bad_rid_list = [bad_rid]
+        elif isinstance(bad_rid, list):
+            bad_rid_list = bad_rid
+        else:
+            raise TypeError("Cannot recognize type of rid field")
+
+        for rid in bad_rid_list:
+            seif = self.Tag.find(lambda x: x.name=='seif' and x.get('rid')==rid)
+            assert seif is not None
+            seif['rid'] = 'no-link'
+
+
     def validate_all_xrefs_matched(self, xref_finding_callback=lambda tag: tag.name=='xref'):
         """
         Find a group of xrefs, look up each id in CommentStore and make sure they have all field filled out.
@@ -810,6 +830,9 @@ class Seif(OrderedElement):
 
     def load_comments_to_commentstore(self, title, siman):
         comment_store = CommentStore()
+
+        if self.rid == 'no-link':
+            return
 
         if comment_store.get(self.rid) is None:
             raise MissingCommentError("No Xref with id {} exists".format(self.rid))

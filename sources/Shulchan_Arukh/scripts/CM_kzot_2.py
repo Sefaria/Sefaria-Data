@@ -33,6 +33,11 @@ b_vol = base.get_volume(2)
 assert isinstance(b_vol, Volume)
 # b_vol.mark_references(volume.get_book_id(), u'/([\u05d0-\u05ea]{1,3})\)', group=1)
 volume.set_rid_on_seifim()
+volume.unlink_seifim(["b0-c3-si82-ord10", "b0-c3-si82-ord11", "b0-c3-si82-ord12", "b0-c3-si82-ord13",
+                      "b0-c3-si82-ord14", "b0-c3-si82-ord15", "b0-c3-si82-ord16", "b0-c3-si82-ord17",
+                      "b0-c3-si155-ord12", "b0-c3-si155-ord13", "b0-c3-si155-ord14"])
 root.populate_comment_store()
-b_vol.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'/([\u05d0-\u05ea]{1,3})\)', x.text) is not None)
-# root.export()
+errors = b_vol.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'/([\u05d0-\u05ea]{1,3})\)', x.text) is not None)
+for i in errors:
+    print i
+root.export()
