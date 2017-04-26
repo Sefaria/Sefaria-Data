@@ -57,17 +57,7 @@ eng_parshiot_akeida = eng_parshiot
 eng_parshiot_akeida.insert(12, "Introduction to Sefer Shemot")
 #now we make alt structs
 parsha_nodes = SchemaNode()
-"""
-for index, parsha_index in enumerate(get_parsha_index()):
-    print str(index)+" "+parsha_index[0]
-    parsha_node = ArrayMapNode()
-    parsha_node.add_title(eng_parshiot_akeida[index], "en",  primary =True)
-    parsha_node.add_title(parsha_index[0], "he", primary =  True)
-    parsha_node.includeSections = True
-    parsha_node.depth = 0
-    parsha_node.wholeRef = "Akeidat Yitzchak, "+str(parsha_index[1])+"-"+str(parsha_index[2])
-    parsha_nodes.append(parsha_node)
-"""
+
 for index, parsha_index in enumerate(get_parsha_index()):
     parsha_node = ArrayMapNode()
     parsha_node.includeSections = True
@@ -75,7 +65,7 @@ for index, parsha_index in enumerate(get_parsha_index()):
     parsha_node.wholeRef = "Akeidat Yitzchak, "+str(parsha_index[1])+"-"+str(parsha_index[2])
     parsha_node.key = eng_parshiot_akeida[index]
     if eng_parshiot_akeida[index] not in not_shared_title:
-        parsha_node.sharedTitle = eng_parshiot_akeida[index]
+        parsha_node.add_shared_term(eng_parshiot_akeida[index])
     else:
         parsha_node.add_title(eng_parshiot_akeida[index], 'en', primary = True)
         parsha_node.add_title(u"הקדמה לספר שמות", 'he', primary = True)
@@ -90,3 +80,69 @@ index = {
     "schema": record.serialize()
 }
 functions.post_index(index)
+#here we also post index for haaras:
+Mekor Chaim/מקור חיים
+# -*- coding: utf-8 -*-
+import sys
+import os
+# for a script located two directories below this file
+p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, p)
+from sources.local_settings import *
+
+sys.path.insert(0, SEFARIA_PROJECT_PATH)
+os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
+#from sefaria.model import *
+from sources.functions import *
+import re
+
+#for posting commentary term for first time
+term_obj = {
+    "name": "Avi Ezer",
+    "scheme": "commentary_works",
+    "titles": [
+        {
+            "lang": "en",
+            "text": "Avi Ezer",
+            "primary": True
+        },
+        {
+            "lang": "he",
+            "text": u'אבי עזרי',
+            "primary": True
+        }
+    ]
+}
+post_term(term_obj)
+
+# create index record
+record = SchemaNode()
+record.add_title('Avi Ezer', 'en', primary=True, )
+record.add_title(u'אבי עזרי', 'he', primary=True, )
+record.key = 'Avi Ezer'
+
+en_sefer_names = ["Genesis","Exodus","Leviticus","Numbers","Deuteronomy"]
+he_sefer_names =  [u"בראשית",u"שמות" ,u"ויקרא",u"במדבר",u"דברים"]
+for en_sefer, he_sefer in zip(en_sefer_names, he_sefer_names):
+    sefer_node = JaggedArrayNode()
+    sefer_node.add_title(en_sefer, 'en', primary=True, )
+    sefer_node.add_title(he_sefer, 'he', primary=True, )
+    sefer_node.key = en_sefer
+    sefer_node.depth = 3
+    sefer_node.toc_zoom = 2
+    sefer_node.addressTypes = ['Integer', 'Integer','Integer']
+    sefer_node.sectionNames = ['Chapter','Verse','Comment']
+    record.append(sefer_node)
+
+record.validate()
+
+index = {
+    "title":"Avi Ezer",
+    "base_text_titles": [
+       "Genesis","Exodus","Leviticus","Numbers","Deuteronomy"
+    ],
+    "dependence": "Commentary",
+    "categories":['Tanakh','Commentary','Avi Ezer','Torah'],
+    "schema": record.serialize()
+}
+post_index(index,weak_network=True)
