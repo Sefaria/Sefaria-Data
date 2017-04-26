@@ -33,8 +33,11 @@ b_vol = base.get_volume(2)
 assert isinstance(b_vol, Volume)
 # b_vol.mark_references(volume.get_book_id(), u'@66\(([\u05d0-\u05ea]{1,3})\)', group=1)
 volume.set_rid_on_seifim()
+siman_82 = Siman(volume.Tag.find('siman', {'num': 82}))
+bad_rids = [seif.rid for seif in siman_82.get_child()]
+volume.unlink_seifim(bad_rids)
 root.populate_comment_store()
 errors = b_vol.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'@00', x.text) is not None)
 for i in errors:
     print i
-# root.export()
+root.export()
