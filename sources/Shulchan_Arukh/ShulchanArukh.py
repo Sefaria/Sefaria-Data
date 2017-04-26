@@ -911,7 +911,7 @@ class Xref(Element):
     def load_xrefs_to_commentstore(self, title, siman, seif):
         comment_store = CommentStore()
         if comment_store.get(self.id) is not None:
-            if comment_store[self.id]['seif'] == seif:
+            if seif in comment_store[self.id]['seif']:
                 message = "Xref with id '{}' appears twice. Same Seif as previous appearance.".format(self.id)
                 print message
             else:
