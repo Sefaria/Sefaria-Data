@@ -546,9 +546,9 @@ class Volume(OrderedElement):
                 errors.append(e.message)
         return errors
 
-    def mark_references(self, commentary_id, pattern, group=None):
+    def mark_references(self, commentary_id, pattern, group=None, cyclical=False):
         for child in self.get_child():
-            child.mark_references(self.get_book_id(), commentary_id, pattern, group=group)
+            child.mark_references(self.get_book_id(), commentary_id, pattern, group=group, cyclical=cyclical)
 
     def validate_simanim(self, complete=True, verbose=True):
         self.validate_collection(self.get_child(), complete, verbose)
@@ -670,9 +670,9 @@ class Siman(OrderedElement):
             except AssertionError as e:
                 raise AssertionError('Siman {}, {}'.format(self.num, e.message))
 
-    def mark_references(self, base_id, com_id, pattern, found=0, group=None):
+    def mark_references(self, base_id, com_id, pattern, found=0, group=None, cyclical=False):
         for child in self.get_child():
-            found = child.mark_references(base_id, com_id, self.num, pattern, found, group)
+            found = child.mark_references(base_id, com_id, self.num, pattern, found, group, cyclical)
         return found
 
     def validate_seifim(self, complete=True, verbose=True):
@@ -810,9 +810,9 @@ class Seif(OrderedElement):
         self.rid = u'b{}-c{}-si{}-ord{}'.format(base_id, com_id, siman_num, self.num)
         self.Tag['rid'] = self.rid
 
-    def mark_references(self, base_id, com_id, siman, pattern, found=0, group=None):
+    def mark_references(self, base_id, com_id, siman, pattern, found=0, group=None, cyclical=False):
         for child in self.get_child():
-            found = child.mark_references(base_id, com_id, siman, pattern, found, group)
+            found = child.mark_references(base_id, com_id, siman, pattern, found, group, cyclical)
         return found
 
     def grab_references(self, pattern):
@@ -849,7 +849,7 @@ class TextElement(Element):
     child = 'Xref'
     multiple_children = True
 
-    def mark_references(self, base_id, com_id, siman_num, pattern, found=0, group=None):
+    def mark_references(self, base_id, com_id, siman_num, pattern, found=0, group=None, cyclical=False):
         """
         Mark a single set of references (i.e. all references from shach to Shulchan Arukh) based on a regular expression
         :param base_id: id of text where the mark appears. 0 is reserved for Shulchan Arukh itself
@@ -859,6 +859,7 @@ class TextElement(Element):
         :param int found: Number of marks found in before this element.
         :param int group: If passed, the gematria of the text in this group will determine the comment order of this
          reference. If None, the order will just be set by counting the number of matches found by the expression
+        :param cyclical: Set to True for reference style that uses a cyclical pattern (i.e. א,ב,ג,ד,ה,ו,ז,ח,ט,י,כ,ל...ר,ש,ת,א,ב)
         :return: number of matches found in this element, offset by the number found before this element (adds to the
          `found` parameter passed to this method
         """
@@ -876,6 +877,8 @@ class TextElement(Element):
                 found += 1
                 if group is None:
                     order = found
+                elif cyclical:
+                    order = u'{};{}'.format(he_ord(matched_ref.group(group)), found)
                 else:
                     order = getGematria(matched_ref.group(group))
                 ref_id = u'b{}-c{}-si{}-ord{}'.format(base_id, com_id, siman_num, order)
