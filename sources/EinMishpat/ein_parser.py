@@ -464,7 +464,7 @@ class Rambam(object):
         self._conv_table = rambam_name_table()
 
     def parse_rambam(self, str, mass): # these will be aoutomatic from the privates of the object (Rambam)
-        re.sub(u'''יוה"כ''', u'יום הכיפורים', str)
+        str = re.sub(u'''יוה"כ''', u'יום הכפורים', str)
         reg1 = u'''(מהל|מהלכות|מהל'|מהלכו?'|מה')'''  # מהלכות before the book name
         reg21 = u''' ו?הלכה| ו?הל'?| ו?הלכ'?| ו?דין'''
         # reg22 = u''' ה"[א-ת]'''
@@ -663,7 +663,7 @@ def rambam_name_table():
     name_dict[u"תרומה"] = name_dict[u'תרומות']
     # name_dict[u"סנהד'"] = name_dict[u'סנהדרין והעונשין המסורין להם']
     name_dict[u'ק"ש'] = name_dict[u'קריאת שמע']
-    # name_dict[u'עבודת יה"כ'] = name_dict[u'עבודת יום הכפורים'] # because it makes problems with my code...can be fixed by taking it step by step
+    name_dict[u'יום הכפורים'] = name_dict[u'עבודת יום הכפורים'] # because it makes problems with my code...can be fixed by taking it step by step
     name_dict[u'נ"כ'] = name_dict[u'תפילה וברכת כהנים']
     name_dict[u'נשיאות כפים'] = name_dict[u'תפילה וברכת כהנים']
     name_dict[u'נשיאת כפים'] = name_dict[u'תפילה וברכת כהנים']
@@ -852,7 +852,7 @@ def segment_column(segmentfile, reffile, massekhet):
             ref_reader = csv.DictReader(csvfile)
             for segrow, refrow in zip(seg_reader, ref_reader):
                 i  += 1
-                letter_dict = {u'Segment': u'{}.{}.{}'.format(massekhet, segrow[u'Daf'],segrow[u'Line']),
+                letter_dict = {u'Segment': u'{}.{}.{}'.format(massekhet, segrow[u'Daf'], segrow[u'Line']),
                               u'Rambam': refrow[u'Rambam'],
                               u'Semag': refrow[u'Semag'],
                               u'Tur Shulchan Arukh':refrow[u'Tur Shulchan Arukh']}
@@ -882,82 +882,100 @@ def needs_another_cycle(txtfile, mass_name):
             +" other problem " + str(needs_c)
 
 if __name__ == "__main__":
-    # test = parse_em('test.txt')
-    # filenames_he = [u'בבא מציעא', u'בבא בתרא', u'ראש השנה', u'ברכות', u'גיטין',  u'יבמות', u'יומא',
-    #              u'כתובות', u'מועד קטן',  u'נדרים',   u'סנהדרין', u'עירובין', u'פסחים',
-    #              u'קידושין',u'ראש השנה', u'שבועות', u'שבת']  #
-    # # filenames_he = [u'נזיר', u'ביצה', u'סוכה',u'מכות',u'סוטה']
-    # filenames_eg = [u'bm', u'bb', u'rh',  u'brachot', u'gittin',  u'yevamot', u'yoma',
-    #              u'ktobot', u'moed',  u'nedarim', u'sanhedrim', u'eruvin', u'pesachim',
-    #              u'kidushin',u'rh', u'shvuot', u'shabbat']  # u'nazir', u'egg', u'hagiga', u'sukka', u'makot', u'sota'
-    # filenames_he = [u'נזיר', u'ביצה', u'סוכה', u'מכות', u'סוטה']
-    # filenames_eg = [u'nazir', u'beitza', u'sukka', u'makot', u'sota']
-    # for m_en, m_he in zip(filenames_eg, filenames_he):
-    #     parsed = run1(massechet_he=u'{}'.format(m_he), massechet_en= m_en)
-    #     parsed = run2(massechet_he=m_he, massechet_en= m_en)
-    # parsed = run2(massechet_he=u'מועד קטן', massechet_en= u'mk_test')
-    # reverse_collapse(u'mk.csv', u'mk')
-    # test = run1(massechet_he=u'mk', massechet_en=u'test_david')
-    # test = run1(massechet_he=u'test', massechet_en=u'testing')
+#     # test = parse_em('test.txt')
+#     # filenames_he = [u'בבא מציעא', u'בבא בתרא', u'ראש השנה', u'ברכות', u'גיטין',  u'יבמות', u'יומא',
+#     #              u'כתובות', u'מועד קטן',  u'נדרים',   u'סנהדרין', u'עירובין', u'פסחים',
+#     #              u'קידושין',u'ראש השנה', u'שבועות', u'שבת']  #
+#     # # filenames_he = [u'נזיר', u'ביצה', u'סוכה',u'מכות',u'סוטה']
+#     # filenames_eg = [u'bm', u'bb', u'rh',  u'brachot', u'gittin',  u'yevamot', u'yoma',
+#     #              u'ktobot', u'moed',  u'nedarim', u'sanhedrim', u'eruvin', u'pesachim',
+#     #              u'kidushin',u'rh', u'shvuot', u'shabbat']  # u'nazir', u'egg', u'hagiga', u'sukka', u'makot', u'sota'
+#     # filenames_he = [u'נזיר', u'ביצה', u'סוכה', u'מכות', u'סוטה']
+#     # filenames_eg = [u'nazir', u'beitza', u'sukka', u'makot', u'sota']
+#     # for m_en, m_he in zip(filenames_eg, filenames_he):
+#     #     parsed = run1(massechet_he=u'{}'.format(m_he), massechet_en= m_en)
+#     #     parsed = run2(massechet_he=m_he, massechet_en= m_en)
+#     # parsed = run2(massechet_he=u'מועד קטן', massechet_en= u'mk_test')
+#     # reverse_collapse(u'mk.csv', u'mk')
+#     # test = run1(massechet_he=u'mk', massechet_en=u'test_david')
+#     # test = run1(massechet_he=u'test', massechet_en=u'testing')
+#
+#     # # final lines to get a dict
+#     # reverse_collapse(u'hagiga_done.csv', u'hgiga_test')
+#     # reverse_collapse(u'done/mk_fixed.csv', u'mk_tush_test')
+#     # parsed = run1(massechet_he=u'hagiga_collapsed', massechet_en=u'hg_test')
+#     # reverse_collapse(u'done/mk_fixed.csv', u'semag')
+#     # parsed = run2(massechet_he=u'test_collapsed', massechet_en=u'mk_fixed')
+#     # final_list = segment_column('Ein Mishpat - Moed Katan.csv', 'mk_test_done.csv','Moed_Katan')
+#
+#     ls = 'brachot.csv\
+#     ktobot.csv\
+#     rosh_hashana.csv\
+#     bbabtra.csv\
+#     gittin.csv\
+#     makot.csv\
+#     sanhedrim.csv\
+#     hagiga_done.csv\
+#     nazir.csv\
+#     shabbat.csv\
+#     bbametzia.csv\
+#     iruvin.csv\
+#     nedarim.csv\
+#     shevuot.csv\
+#     beitza.csv\
+#     kidushin.csv\
+#     pesachim.csv\
+#     yevamot.csv\
+#     sota.csv\
+#     sukka.csv\
+#     yoma.csv'
+#
+#     ls = 'bbametzia.csv  iruvin.csv    nedarim.csv       shevuot.csv \
+# brachot.csv    kidushin.csv  rosh_hashana.csv  sota.csv \
+# gittin.csv     makot.csv     sanhedrin.csv     yevamot.csv \
+# hagiga.csv     nazir.csv     shabbat.csv       yoma.csv'
+# #
+# #     ls = 'BavaBatra.csv  gittin.csv       makot.csv         sanhedrim.csv  yevamot.csv \
+# #    hagiga_done.csv  nazir.csv         shabbat.csv    yoma.csv \
+# # bbametzia.csv  iruvin.csv       nedarim.csv       shevuot.csv \
+# # beitza.csv     kidushin.csv     pesachim.csv      sota.csv \
+# # brachot.csv    ktobot.csv       rosh_hashana.csv  sukka.csv'
+#     # ls = "sukka.csv beitza.csv"
+#     filenames_he = re.split('\s*', ls)
+#     filenames_he = [item[:-4] for item in filenames_he]
+#
+#     print filenames_he
+#     for m_he in filenames_he:
+#         parsed = run2(massechet_he=u'csvQA/{}'.format(m_he), massechet_en = u'csvQA/{}'.format(m_he))
+#
+#
+#     # parsed = run15(massechet_he=u'repeating/{}'.format(ls[:-4]), massechet_en=u'repeating/{}'.format(ls[:-4]))
+#
+#
+#     for m_he in filenames_he:
+#         txtfile = u'csvQA/{}_error'.format(m_he)
+#         needs_another_cycle(txtfile, m_he)
+#
+#
+#     # txtfile = u'repeating/{}_error'.format(ls[:-4])
+#     # needs_another_cycle(txtfile, ls[:-4])
+#         # print 'done'
+#
+#     # parsed = run15('done/mk_fixed', 'done/mk_fixed')
+#     # needs_another_cycle('done/mk_fixed_error', 'done/mk_fixed')
 
-    # # final lines to get a dict
-    # reverse_collapse(u'hagiga_done.csv', u'hgiga_test')
-    # reverse_collapse(u'done/mk_fixed.csv', u'mk_tush_test')
-    # parsed = run1(massechet_he=u'hagiga_collapsed', massechet_en=u'hg_test')
-    # reverse_collapse(u'done/mk_fixed.csv', u'semag')
-    # parsed = run2(massechet_he=u'test_collapsed', massechet_en=u'mk_fixed')
-    # final_list = segment_column('Ein Mishpat - Moed Katan.csv', 'mk_test_done.csv','Moed_Katan')
+    # parse_hagiga = run1(u'חגיגה', 'eh_testing')
 
-    ls = 'brachot.csv\
-    ktobot.csv\
-    rosh_hashana.csv\
-    bbabtra.csv\
-    gittin.csv\
-    makot.csv\
-    sanhedrim.csv\
-    hagiga_done.csv\
-    nazir.csv\
-    shabbat.csv\
-    bbametzia.csv\
-    iruvin.csv\
-    nedarim.csv\
-    shevuot.csv\
-    beitza.csv\
-    kidushin.csv\
-    pesachim.csv\
-    yevamot.csv\
-    sota.csv\
-    sukka.csv\
-    yoma.csv'
-
-    ls = 'bbametzia.csv  iruvin.csv nazir.csv  shabbat.csv \
-         beitza.csv     kidushin.csv  nedarim.csv    shevuot.csv  yoma.csv \
-    brachot.csv    ktobot.csv    pesachim.csv   sota.csv \
-    makot.csv     sanhedrim.csv  sukka.csv yevamot.csv gittin.csv'
-
-    ls = 'BavaBatra.csv  gittin.csv       makot.csv         sanhedrim.csv  yevamot.csv \
-   hagiga_done.csv  nazir.csv         shabbat.csv    yoma.csv \
-bbametzia.csv  iruvin.csv       nedarim.csv       shevuot.csv \
-beitza.csv     kidushin.csv     pesachim.csv      sota.csv \
-brachot.csv    ktobot.csv       rosh_hashana.csv  sukka.csv'
-    # ls = "BavaBatra.csv"
-    filenames_he = re.split('\s*', ls)
-    filenames_he = [item[:-4] for item in filenames_he]
-
-    print filenames_he
-    for m_he in filenames_he:
-        parsed = run15(massechet_he=u'repeating/{}'.format(m_he), massechet_en = u'repeating/{}'.format(m_he))
-
-
-    # parsed = run2(massechet_he=u'repeating/{}'.format(ls[:-4]), massechet_en=u'repeating/{}'.format(ls[:-4]))
-
-
-    for m_he in filenames_he:
-        txtfile = u'repeating/{}_error'.format(m_he)
-        needs_another_cycle(txtfile, m_he)
-
-        # print 'done'
-
-    # reverse_collapse('done/Pesachim - pesachim_little_letters.csv', 'done/pesachim_collapsed')
-    # parsed = run15('repeating/sota', 'repeating/sota')
-    # needs_another_cycle('repeating/sota_error', 'repeating/sota')
+    # reverse_collapse('small_letters/hagiga.csv', 'small_letters/collapsed_hagiga')
+    # done = re.split(u'\s*', u'beitza_little_letters.csv \
+    # bbabtra_little_letters.csv \
+    # hagiga_little_letters.csv \
+    # mk_fixed.csv \
+    # nazir_little_letters.csv \
+    # pesachim_final.csv \
+    # sota_little_letters.csv \
+    # yoma_talmud_lines.csv')
+    #
+    # for file in done:
+    #     reverse_collapse('done/{}'.format(file), 'collapsed/{}_collapsed'.format(file[:-4]))
+    parsed = run2('small_letters/Yoma_little_letters', 'small_letters/Yoma')
