@@ -141,40 +141,32 @@ def parse_Raph_by_letter(filename):
     return new_ja
 
 
-def parse_Raph_simanim(filename, raph_smk_alignment):
-    def cleaner(my_text):
-        replace_dict = {u'@(?:11|77)[\u05d0-\u05ea]{0,3}': u'', u'@(33|22)': u''}#{u'@11(.*?)@12': ur'<b>\1</b>', u'@33(.*?)@34': ur'<b>\1</b>', u'@33(.*?)@34': ur'<b>\1</b>', u'@66(.*?)@67': ur'\1'}
-        new = []
-        for line in my_text:
-            line = multiple_replace(line, replace_dict, using_regex=True)
-            new.append(line)
-        return new
-
-    regs = [ur'@11(?P<gim>[\u05d0-\u05ea]{1,3})']
-    with codecs.open(filename, 'r', 'utf-8') as fp:
-        lines = fp.readlines()
-    starting = None
-    # check if we got to the end of the legend and change to started
-    # clean all lines of days start with @00
-    cleaned = []
-    for line_num, line in enumerate(lines):
-        if line == u'\n':
-            starting = line_num + 1
-            break
-    for line_num, line in enumerate(lines[starting:]):
-        if not re.search(u'@00', line) and not line.isspace():
-            line = re.split(u'@11[\u05d0-\u05ea]{0,3}', line)
-            if isinstance(line, basestring):
-                cleaned.append(line)
-            else:
-                [cleaned.append(st.strip()) for st in line if st]
-    for ln in cleaned:
-        pass
+def parse_Raph_simanim(alinged_list):
+    '''
+    note: although there is (not often) a differentiation in the original txt file,
+    raph letters can be divided into smaller segments in this code we combined them.
+    hence, every raph letter is a line.
+    '''
     ja = []
-    ja_to_xml(ja, ['siman', 'letter', 'segments'], 'raph_simanim.xml')
-
+    siman = []
+    i = 1
+    prev_siman = u'א'
+    for obj in alinged_list:
+        if obj['siman'] == prev_siman:
+          siman.append(obj['raph line'])
+          continue
+        else:
+            ja.append(siman)
+            while getGematria(obj['siman']) != (getGematria(prev_siman) + i):
+                ja.append([])
+                i += 1
+            i = 1
+            siman = []
+            siman.append(obj['raph line'])
+        prev_siman = obj['siman']
+    ja.append(siman)
+    ja_to_xml(ja, ['siman', 'letter'], 'raph_simanim.xml')
     return ja
-
 
 
 def parse_hagahot_by_letter(filename):
@@ -351,16 +343,37 @@ def toCSV(filename, list_rows, column_names):
 
 
 def hagahot_alignment(ja_smk, ja_raph, ja_hagahot):
-    for seg in traverse_ja(ja_smk):
-        re.search(seg['data'])
+    ja_smk = JaggedArray(ja_smk)
+    ja_raph = JaggedArray(ja_raph)
+    ja_hagahot = JaggedArray(ja_hagahot)
+    # for i, seg_smk, j, seg_raph in zip(enumerate(ja_smk.array()), enumerate(ja_raph.array())):
+    dict_lst = []
+    dict = {u'siman':[], u'smk':[], u'raph':[]}
+    for i, seg in enumerate(zip(ja_smk.array(), ja_raph.array())):
+        # print numToHeb(i+1)
+        dict['siman'] = numToHeb(i+1)
+        for smk_line in seg[0]:
+            hag_lett = re.findall(ur'@88\((?P<gim>[\u05d0-\u05ea]{1,3})\)', smk_line)
+            if hag_lett:
+                dict['smk'].append(hag_lett)
+                # print [getGematria(lett) for lett in hag_lett]
+        print 'RAPH'
+        for raph_line in seg[1]:
+            hag_lett = re.findall(ur'@88\((?P<gim>[\u05d0-\u05ea]{1,3})\)', raph_line)
+            if hag_lett:
+                dict['raph'].append(hag_lett)
+                # print [getGematria(lett) for lett in hag_lett]
+        dict_lst.append(dict)
+        dict = {u'siman': [], u'smk': [], u'raph': []}
+    return dict_lst
+
 
 if __name__ == "__main__":
     ja_smk = parse_semak('Semak.txt')
     siman_page = map_semak_page_siman(ja_smk, to_print=False)
-    # ja_raph = parse_Raph('Raph_on_Semak.txt')
-    # link_semak_raph(ja_smk, ja_raph)
     letter_ja = parse_Raph_by_letter(u'Raph_on_Semak.txt')
     raph_smk_alignment = raph_alignment_report(ja_smk, letter_ja)
     ja_hagahot = parse_hagahot_by_letter(u'Semak_hagahot_chadashot.txt')
-    parse_Raph_simanim(u'Raph_on_Semak.txt', raph_smk_alignment)
+    ja_raph = parse_Raph_simanim(raph_smk_alignment)
+    hgh_align = hagahot_alignment(ja_smk, ja_raph, ja_hagahot)
 # use ja functions and not travers ja. or through them first into a list instead of getting them live. classic...
