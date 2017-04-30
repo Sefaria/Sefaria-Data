@@ -359,7 +359,7 @@ def post_index(index, server=SEFARIA_SERVER):
 
 
 def hasTags(comment):
-    mod_comment = removeAllStrings(comment)
+    mod_comment = removeAllTags(comment)
     return mod_comment != comment 
 
 

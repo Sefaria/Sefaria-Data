@@ -7,6 +7,7 @@ class MetaDataCommentary:
     def __init__(self, comm_title, lang):
         self.comm_title = comm_title
         self.comm = library.get_index(comm_title)
+        self.comm.versionState().refresh()
         temp = self.comm.base_text_titles
         assert len(temp) is 1, "Unclear which text is base text {}".format(str(temp))
         self.base = library.get_index(temp[0])

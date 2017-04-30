@@ -1,7 +1,7 @@
 __author__ = 'stevenkaplan'
 
 from data_utilities.XML_to_JaggedArray import *
-SERVER = "http://ste.sefaria.org"
+SERVER = "http://proto.sefaria.org"
 
 def cleanNodeName(text, titled=False):
     text = cleanText(text)
@@ -84,7 +84,7 @@ def reorder_modify(text):
     return bleach.clean(text, strip=True)
 
 if __name__ == "__main__":
-    #create_schema_parts()
+    create_schema_parts()
     post_info = {}
     post_info["language"] = "en"
     post_info["server"] = SERVER
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     post_info["versionTitle"] = "Contemporary halakhic problems; by J. David Bleich, 1977-2005"
     post_info["versionSource"] = "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001100271"
 
-    for i in [3, 5]:#range(6):
+    for i in [5]:#range(6):
         title = "Contemporary Halakhic Problems, Vol {}".format(i+1)
         file_name = "ContemporaryHalakhicProblems-Vol{}.xml".format(i+1)
         parser = XML_to_JaggedArray(title, file_name, allowed_tags, allowed_attributes, post_info, change_name=True, image_dir="./images")

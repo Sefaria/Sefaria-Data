@@ -21,7 +21,7 @@ from sefaria.model.schema import AddressTalmud
 
 
 class Maharsha:
-    def __init__(self, masechet, title, heTitle):
+    def __init__(self, masechet, title, heTitle, server):
         '''
         dictionary for each category allows matching to work
         then after we have match dictionaries for in order and out of order for each category
@@ -29,6 +29,7 @@ class Maharsha:
         whatever the category is we increment the maharam line and post the link between maharam and the appropriate
         book based on the category. remember to deal with paragraph case and gemara case.
         '''
+        self.server = server
         self.title = title
         self.heTitle = heTitle
         self.comm_wout_base = open("comm_wout_base.txt", 'w')
@@ -237,8 +238,6 @@ class Maharsha:
                     same_dh = self.determineCategory(count, comment)
                     self.parseDH(comment, self.category, same_dh)
 
-            else:
-                print line
             prev_line = line
 
 
@@ -268,7 +267,7 @@ class Maharsha:
                         ],
                 "type": "commentary",
                 "auto": True,
-                "generated_by": self.title+masechet+" linker"
+                "generated_by": self.title+self.masechet+" linker"
             })
             gemara_ref = self.getGemaraRef(base_ref)
             self.links_to_post.append({
@@ -278,7 +277,7 @@ class Maharsha:
                 ],
                 "type": "commentary",
                 "auto": True,
-                "generated_by": self.title+masechet+" linker"
+                "generated_by": self.title+self.masechet+" linker"
             })
 
     def getGemaraRef(self, ref):
@@ -295,16 +294,16 @@ class Maharsha:
         self.maharam_line+=1
         self.which_line['gemara']+=1
         if results['gemara'][self.which_line['gemara']] == '0':
-            self.missing_ones.append(self.title+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line))
+            self.missing_ones.append(self.title+" on "+self.masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line))
         else:
             self.links_to_post.append({
             "refs": [
                      results['gemara'][self.which_line['gemara']],
-                    self.title+" on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line)
+                    self.title+" on "+self.masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line)
                 ],
             "type": "commentary",
             "auto": True,
-            "generated_by": self.title+masechet+" linker",
+            "generated_by": self.title+self.masechet+" linker",
          })
 
 
@@ -315,9 +314,9 @@ class Maharsha:
         elif category == "gemara":
             return Ref(masechet+" "+AddressTalmud.toStr("en", daf)).text('he')
         elif category == "rashi":
-            rashi = Ref("Rashi on "+masechet+"."+AddressTalmud.toStr("en", daf)).text('he')
+            rashi = Ref("Rashi on "+self.masechet+"."+AddressTalmud.toStr("en", daf)).text('he')
             if len(rashi.text) == 0:
-                return Ref("Rashbam on "+masechet+"."+AddressTalmud.toStr("en", daf)).text('he')
+                return Ref("Rashbam on "+self.masechet+"."+AddressTalmud.toStr("en", daf)).text('he')
             else:
                 return rashi
 
@@ -347,7 +346,6 @@ class Maharsha:
         comments = {}
 
         for daf in sorted(self.dh1_dict.keys()):
-            print "DAF {}".format(daf)
             comments[daf] = {}
             results[daf] = {}
             for each_cat in self.categories:
@@ -387,7 +385,7 @@ class Maharsha:
                 else:
                     self.Commentary(daf, category, results[daf])
 
-        post_link(self.links_to_post)
+        post_link(self.links_to_post, server=self.server)
         self.comm_wout_base.close()
 
 
@@ -395,15 +393,14 @@ class Maharsha:
         self.maharam_line += 1
         self.rosh_line += 1
         if results[perek-1][self.rosh_line]:
-            print results[perek-1][self.rosh_line].normal()
             self.links_to_post.append({
                 "refs": [
                          results[perek-1][self.rosh_line].normal(),
-                        self.title+" on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line)
+                        self.title+" on "+self.masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line)
                     ],
                 "type": "commentary",
                 "auto": True,
-                "generated_by": self.title+masechet+" linker",
+                "generated_by": self.title+self.masechet+" linker",
              })
 
 
@@ -430,7 +427,7 @@ class Maharsha:
             "dependence": "Commentary",
 
         }
-        post_index(index)
+        post_index(index, server=self.server)
         return tractate
 
 
@@ -483,7 +480,8 @@ if __name__ == "__main__":
     ch_ag.close()
     ch_ha.close()
     '''
-    files = [file for file in os.listdir(".") if file.endswith("2.txt") and file != "comm_wout_base.txt" and file.startswith("shabbat")]
+    files = [file for file in os.listdir(".") if file.endswith("2.txt") and file != "comm_wout_base.txt"
+             and file.startswith("chid") and "nedarim" in file]
     for file in files:
         '''
         get masechet by splitting title of file
@@ -503,7 +501,7 @@ if __name__ == "__main__":
         if len(obj.comm_dict) > 0:
             print masechet
             print title
-            obj.create_index(masechet)
+            #obj.create_index(masechet)
             text_to_post = convertDictToArray(obj.comm_dict)
             send_text = {
                                 "versionTitle": "Vilna Edition",
@@ -511,5 +509,5 @@ if __name__ == "__main__":
                                 "language": "he",
                                 "text": text_to_post,
                         }
-            post_text("{} on {}".format(title, masechet), send_text, "on")
+            #post_text("{} on {}".format(title, masechet), send_text, "on", server=self.server)
             obj.postLinks(masechet)
