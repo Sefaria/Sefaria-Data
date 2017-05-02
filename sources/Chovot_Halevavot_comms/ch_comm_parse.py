@@ -252,11 +252,13 @@ def make_links(key):
     not_machted = []
     sample_Ref = Ref("Genesis 1")
     for section_index, section in enumerate(get_section_titles(key)):
+        last_not_matched = []
         #first section is intro, so no chapters...
         if section_index==0:
+            last_matched = Ref('Duties of the Heart, {} 1'.format(section["en_title"]))
             base_chunk = TextChunk(Ref('Duties of the Heart, {}'.format(section["en_title"])),"he")
             com_chunk = TextChunk(Ref('{}, {}'.format(key, section["en_title"])),"he")
-            ch_links = match_ref(base_chunk,com_chunk,base_tokenizer,dh_extract_method=dh_extract_method,verbose=True,)
+            ch_links = match_ref(base_chunk,com_chunk,base_tokenizer,dh_extract_method=dh_extract_method,verbose=True,rashi_filter=_filter)
             print "KEYS:"
             for key_thing in ch_links.keys():
                 print key_thing
@@ -264,7 +266,6 @@ def make_links(key):
             for base, comment in zip(ch_links["matches"],ch_links["comment_refs"]):
                 total+=1
                 print "B",base,"C", comment
-                print link.get('refs')
                 if base:
                     link = (
                             {
@@ -276,35 +277,75 @@ def make_links(key):
                             "auto": True,
                             "generated_by": "sterling_"+key.replace(" ","_")+"_linker"
                             })
-                    post_link(link, weak_network=True)    
-                    matched+=1   
-                else:
-                    not_machted.append('{}, {} Introduction'.format(key, section["en_title"]))
-        #for other sections, do each chapter seperate:
-        else:
-            for chapter in range(1, len(TextChunk(Ref("Duties of the Heart, "+section["en_title"]),"en"))+1):
-                base_chunk = TextChunk(Ref('Duties of the Heart, {}, {}'.format(section["en_title"],chapter)),"he")
-                com_chunk = TextChunk(Ref('{}, {}, {}'.format(key, section["en_title"], chapter)),"he")
-                ch_links = match_ref(base_chunk,com_chunk,base_tokenizer,dh_extract_method=dh_extract_method,verbose=True,rashi_filter=_filter)
-                for base, comment in zip(ch_links["matches"],ch_links["comment_refs"]):
-                    total+=1
-                    print "B",base,"C", comment
-                    print link.get('refs')
-                    if base:
+                    #post_link(link, weak_network=True)    
+                    matched+=1
+                    
+                    while len(last_not_matched)>0:
                         link = (
                                 {
                                 "refs": [
-                                         base.normal(),
-                                         comment.normal(),
+                                         last_matched.normal()+"-"+base.ending_ref().normal_last_section(),
+                                         last_not_matched.pop().normal(),
                                          ],
                                 "type": "commentary",
                                 "auto": True,
                                 "generated_by": "sterling_"+key.replace(" ","_")+"_linker"
                                 })
-                        post_link(link, weak_network=True)    
-                        matched+=1   
-                    else:
-                        not_machted.append('{}, {} Chapter {}'.format(key, section["en_title"], chapter))
+                        #post_link(link, weak_network=True)
+                        matched+=1
+                        
+                    last_matched=base
+                       
+                else:
+                    not_machted.append('{}, {} Introduction'.format(key, section["en_title"]))
+                    last_not_matched.append(comment.starting_ref())
+        #for other sections, do each chapter seperate:
+        else:
+            for chapter in range(1, len(TextChunk(Ref("Duties of the Heart, "+section["en_title"]),"en").text)+1):
+                last_matched = Ref('Duties of the Heart, {}, {} 1'.format(section["en_title"],chapter))
+                base_chunk = TextChunk(Ref('Duties of the Heart, {}, {}'.format(section["en_title"],chapter)),"he")
+                com_chunk = TextChunk(Ref('{}, {}, {}'.format(key, section["en_title"], chapter)),"he")
+                ch_links = match_ref(base_chunk,com_chunk,base_tokenizer,dh_extract_method=dh_extract_method,verbose=True,rashi_filter=_filter)
+                if "comment_refs" in ch_links:
+                    for base, comment in zip(ch_links["matches"],ch_links["comment_refs"]):
+                        total+=1
+                        print "B",base,"C", comment
+                        if base:
+                            link = (
+                                    {
+                                    "refs": [
+                                             base.normal(),
+                                             comment.normal(),
+                                             ],
+                                    "type": "commentary",
+                                    "auto": True,
+                                    "generated_by": "sterling_"+key.replace(" ","_")+"_linker"
+                                    })
+                            #post_link(link, weak_network=True)    
+                            matched+=1
+                            
+                            while len(last_not_matched)>0:
+                                link = (
+                                        {
+                                        "refs": [
+                                                 last_matched.normal()+"-"+base.ending_ref().normal_last_section(),
+                                                 last_not_matched.pop().normal(),
+                                                 ],
+                                        "type": "commentary",
+                                        "auto": True,
+                                        "generated_by": "sterling_"+key.replace(" ","_")+"_linker"
+                                        })
+                                #post_link(link, weak_network=True)
+                                matched+=1
+                        
+                            last_matched=base.starting_ref()   
+                        else:
+                            not_machted.append('{}, {} Chapter {}'.format(key, section["en_title"], chapter))
+                            last_not_matched.append(comment)
+                            
+                else:
+                    not_machted.append('{}, {} Chapter {}'.format(key, section["en_title"], chapter))
+                    
     pm = matched/total
     print "Result is:",matched,total
     print "Percent matched: "+str(pm)
@@ -319,11 +360,16 @@ def _filter(some_string):
         return True
 
 def dh_extract_method(some_string):
+    #print "DH!:",some_string
     return re.search(ur'<b>(.*?)</b>', some_string).group(1)
 
 def base_tokenizer(some_string):
-    return some_string.replace(u"<b>",u"").replace(u"</b>",u"").replace(u".",u"").split(" ")
-
+    return filter(lambda(x): x!=u'',remove_extra_spaces(some_string.replace(u"<b>",u"").replace(u"</b>",u"").replace(u".",u"")).split(" "))
+def remove_extra_spaces(string):
+    string = re.sub(ur"\. $",u".",string)
+    while u"  " in string:
+        string=string.replace(u"  ",u" ")
+    return string
 def not_blank(s):
     while u" " in s:
         s = s.replace(u" ",u"")
@@ -355,17 +401,18 @@ com_dic = {"Tov haLevanon":{"he_title":u"טוב הלבנון",
 admin_urls = []
 site_urls = []     
 for key in com_dic.keys():
-    print key
-    admin_urls.append("localhost:8000/admin/reset/"+key)
-    site_urls.append("localhost:8000/"+key)
-    if posting_term:
-        ch_post_term(key)
-    if posting_index:
-        ch_index_post(key)
-    if posting_text:
-        ch_post_text(key)
-    if linking:
-        make_links(key)
+    if "Pat" in key:
+        print key
+        admin_urls.append("proto.sefaria.org/admin/reset/"+key)
+        site_urls.append("proto.sefaria.org/"+key)
+        if posting_term:
+            ch_post_term(key)
+        if posting_index:
+            ch_index_post(key)
+        if posting_text:
+            ch_post_text(key)
+        if linking:
+            make_links(key)
 print "Admin urls:"
 for url in admin_urls:
     print url
