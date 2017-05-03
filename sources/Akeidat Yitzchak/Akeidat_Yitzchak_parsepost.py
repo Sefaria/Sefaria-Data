@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import sys
 import os
 # for a script located two directories below this file
@@ -10,6 +11,8 @@ os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
 from sources.functions import *
 import re
 import codecs
+
+sefer_ranges=[["Genesis",1,33], ["Exodus",34,56], ["Leviticus",57,71], ["Numbers",72,86], ["Deuteronomy",87,105] ]
 
 heb_parshiot = [u"בראשית",u"נח", u"לך לך", u"וירא", u"חיי שרה", u"תולדות", u"ויצא", u"וישלח", u"וישב", u"מקץ",
 u"ויגש", u"ויחי", u"שמות", u"וארא", u"בא", u"בשלח", u"יתרו", u"משפטים", u"תרומה", u"תצוה", u"כי תשא",
@@ -25,7 +28,149 @@ eng_parshiot = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Tol
 "Beha'alotcha", "Sh'lach", "Korach", "Chukat", "Balak", "Pinchas", "Matot", "Masei",
 "Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo", "Nitzavim", "Vayeilech", "Ha'Azinu",
 "V'Zot HaBerachah"]
-
+def parse_haaros():
+    #each sefer has its own marker...
+    haarah_marker = ["2*","*","3*","*","*"]
+    haaros_seforim=[]
+    for index in range(1,6):
+        haaros_box = []
+        sefer_haaros = []
+        with open("הערות"+" "+str(index)+".txt") as myfile:
+            lines = myfile.readlines()
+        for line_index, line in enumerate(lines):
+            decode_line = line.decode('utf8','replace')
+            if decode_line.count(u'{}'.format(haarah_marker[index-1]))>1.5:
+                print "TOO MUCH! "+str(index)+" "+str(line_index)
+                print decode_line
+                print decode_line.replace(u'{}'.format(haarah_marker[index-1]),u"**מרקר**")
+            #if haarah_marker[index-1] in line:
+            if re.search(r"^ *"+haarah_marker[index-1].replace("*","\*"), line) is not None:
+                sefer_haaros.append(haaros_box)
+                haaros_box = []
+            line = re.sub(r"[12*]","",line)
+            if not line.isspace():
+                haaros_box.append(line)
+        sefer_haaros.append(haaros_box)
+        haaros_seforim.append(filter(lambda(x): x is not None and len(x)!=0,sefer_haaros))
+    for index,sefer in enumerate(haaros_seforim):
+        print index, len(sefer)
+    for sindex, sefer in enumerate(haaros_seforim):
+        for hindex, haarah in enumerate(sefer):
+            for pindex, paragraph in enumerate(haarah):
+                print "INDEX\/ "+str(sindex)+" "+str(hindex)+" "+str(pindex)
+                print paragraph
+    for index in range(1,6):
+        with open("הערות"+" "+str(index)+".txt") as myfile:
+            lines = myfile.readlines()
+        haarah_count=0
+        for lindex, line in enumerate(lines):
+            if haarah_marker[index-1] in line:
+                haarah_count+=1
+            print "HAARAHC: "+str(haarah_count)
+            print "SINDEX: "+str(index)+" LINDEX: "+str(lindex)
+            print line
+    return haaros_seforim
+def get_haara_refs():
+    ay_text = get_parsed_text()
+    all_indices = []
+    #need to break up by sefer, since that's how the haaras are broken up
+    sefer_breaks=[]
+    for x in range(1,5):
+        sefer_breaks.append(sefer_ranges[x][1])
+    sefer_box = []    
+    for sindex, shaar in enumerate(ay_text):
+        if sindex in sefer_breaks:
+            all_indices.append(sefer_box)
+            sefer_box=[]
+        for cindex, chapter in enumerate(shaar):
+            for pindex, paragraph in enumerate(chapter):
+                paragraph = paragraph.replace("**","")
+                for x in range(0,paragraph.count("*")):
+                    sefer_box.append([sindex,cindex,pindex])
+    all_indices.append(sefer_box)
+    return all_indices
+def get_haaras_by_shaarim():
+    return_list = [[] for x in range(105)]
+    for sefer_haara_refs, sefer_haaras in zip(get_haara_refs(),parse_haaros()):
+        for haara_ref, haara in zip(sefer_haara_refs, sefer_haaras):
+            for paragraph in haara:
+                return_list[haara_ref[0]].append(paragraph)
+    return return_list
+#after is was decided to change format of text, we changed approach to haarah parsing
+def parse_haaras2():
+    #each sefer has its own marker...
+    haarah_marker = [u"2*",u"*",u"3*",u"*",u"*"]
+    haaros_final=[]
+    haarah_sefer_counts=[]
+    for index in range(1,6):
+        sefer_count=0
+        haaros_box = []
+        with open("הערות"+" "+str(index)+".txt") as myfile:
+            lines = myfile.readlines()
+        for line_index, line in enumerate(lines):
+            #
+            decode_line = line.decode('utf8','replace')
+            if decode_line.count(u'{}'.format(haarah_marker[index-1]))>1.5:
+                print str(decode_line.count(u'{}'.format(haarah_marker[index-1]))),"TOO MUCH! "+str(index)+" "+str(line_index)
+                print decode_line
+                print decode_line.replace(u'{}'.format(haarah_marker[index-1]),u"**מרקר**")
+            if haarah_marker[index-1] in decode_line and len(haaros_box)>0:
+                haaros_final.append(haaros_box)
+                haaros_box = []
+                sefer_count+=1
+            line = re.sub(ur"[123*]","",line)
+            if not line.isspace():
+                haaros_box.append(line)
+        sefer_count+=1
+        haarah_sefer_counts.append(sefer_count)
+        haaros_final.append(haaros_box)
+    haaros_final= filter(lambda(x): x is not None and len(x)!=0,haaros_final)
+    return haaros_final
+def get_text_with_haaras(akeida_text, haaras):
+    haara_index = 0
+    for sindex, shaar in enumerate(akeida_text):
+        for cindex, chapter in enumerate(shaar):
+            for pindex,paragraph in enumerate(chapter):
+                    """
+                    star_indices= [i for i, ltr in enumerate(paragraph) if ltr == "*"]
+                    offset = 0
+                    new_paragraph = paragraph
+                    for star_index in star_indices:
+                        haara_string = '<br>'.join(haaras[haara_index])
+                        new_paragraph = paragraph[star_index+offset:]+"<sup>*</sup><i class=\"footnote\">"+haara_string+"</i>"+paragraph[:star_index+offset+1]
+                        offset+=len(haara_string)
+                    """
+                    new_paragraph = paragraph
+                    while "*" in new_paragraph:
+                        star_index = new_paragraph.index("*")
+                        new_paragraph = new_paragraph[:star_index]+"<sup>STARPLACE</sup><i class=\"footnote\">"+'<br>'.join(haaras[haara_index])+"</i>"+new_paragraph[star_index+1:]
+                        haara_index+=1
+                    new_paragraph=new_paragraph.replace("STARPLACE","*")
+                    akeida_text[sindex][cindex][pindex]=new_paragraph
+    return akeida_text
+def get_1D_text_with_haaras(text, haaras):
+    haara_index = 0
+    for pindex,paragraph in enumerate(text):
+            new_paragraph = paragraph
+            while "*" in new_paragraph:
+                star_index = new_paragraph.index("*")
+                new_paragraph = new_paragraph[:star_index]+"<sup>STARPLACE</sup><i class=\"footnote\">"+'<br>'.join(haaras[haara_index])+"</i>"+new_paragraph[star_index+1:]
+                haara_index+=1
+            new_paragraph=new_paragraph.replace("STARPLACE","*")
+            text[pindex]=new_paragraph
+    return text
+def get_2D_text_with_haaras(text, haaras):
+    haara_index = 0
+    for cindex, chapter in enumerate(text):
+        for pindex,paragraph in enumerate(chapter):
+                new_paragraph = paragraph
+                while "*" in new_paragraph:
+                    star_index = new_paragraph.index("*")
+                    new_paragraph = new_paragraph[:star_index]+"<sup>STARPLACE</sup><i class=\"footnote\">"+haaras[haara_index]+"</i>"+new_paragraph[star_index+1:]
+                    haara_index+=1
+                new_paragraph=new_paragraph.replace("STARPLACE","*")
+                text[cindex][pindex]=new_paragraph
+    return text
 def get_parsha_index():
     parsha_count=0
     shaar_count = 0
@@ -86,9 +231,9 @@ def get_parsed_text():
         final_text.append(shaar_box)
     for mistake in mistakes:
         print mistake
-    return final_text
+    return get_text_with_haaras(final_text, parse_haaras2())
 def remove_unused_tags(s):
-    unused_tags = ["@05","**","@01","@02","@04","@03"]
+    unused_tags = ["@05","**","@01","@02","@04","@03","@50","@88"]
     for tag in unused_tags:
         s = s.replace(tag,"")
     return s
@@ -121,7 +266,13 @@ def get_parsed_intro():
             else:
                 section_box.append(line)
     final_intro.append(section_box)
-    return final_intro[1:]
+    #now add haaras
+    with open("הערות הקדמה ומבוא שערים.txt") as myfile:
+        h_lines = myfile.readlines()
+    for line in h_lines:
+        print line
+    intro_haaras = list(map(lambda(x): x.replace("2*",""),h_lines))
+    return get_2D_text_with_haaras(final_intro[1:], intro_haaras)
 def get_parsed_neilah():
     with open("דברים.txt") as myfile:
         lines = myfile.readlines()
@@ -135,9 +286,20 @@ def get_parsed_neilah():
         line = re.sub("@[\d]+","",line)
         line = line.replace("**","")
         neilah_return.append(line)
-    return neilah_return
-        
-    
+
+    #now add haaras. The last 5 haaras belong the neilah:
+    neilah_haaras = parse_haaras2()[-5:]
+
+    return get_1D_text_with_haaras(neilah_return, neilah_haaras)
+
+def get_star_count(shaar):
+    #used to confirm that footnote division went smoothly
+    star_count = 0
+    for chapter in shaar:
+        for paragraph in chapter:
+            for x in range(paragraph.count("*")):
+                star_count+=1
+    return star_count
 
 def fix_bold_lines(input_line):
     #we decided later not to bold these tags
@@ -156,13 +318,16 @@ def fix_bold_lines(input_line):
 def main():
     pass
 if __name__ == "__main__":
-    
+    """
     #for MAIN TEXT
+  
     text = get_parsed_text()
     for bindex, book in enumerate(text):
         for cindex,chapter in enumerate(book):
             for pindex, paragraph in enumerate(chapter):
                 print str(bindex)+" "+str(cindex)+" "+str(pindex)+" "+paragraph
+    
+    
     version = {
         'versionTitle': 'Akeidat Yitzchak, Pressburg 1849',
         'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002034858',
@@ -170,9 +335,9 @@ if __name__ == "__main__":
         'text': text
     }
 
-    post_text('Akeidat Yitzchak', version, weak_network=True)
-    
+    post_text('Akeidat Yitzchak', version,weak_network=True)
     """
+"""
     #for INTROS
     print "this is an intro"
     for sindex, section in enumerate(get_parsed_intro()):
@@ -183,12 +348,17 @@ if __name__ == "__main__":
     for parsha in parshadex:
         print parsha[0]+u" ",parsha[1]," ",parsha[2]," end"
     intro_titles = ["Index","Author's Introduction","Mavo Shearim"]
+    intro_text = get_parsed_intro()
     for index, title in enumerate(intro_titles):
-        
-    main()
-    """
-    
-    """
+        version = {
+            'versionTitle': 'Akeidat Yitzchak, Pressburg 1849',
+            'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002034858',
+            'language': 'he',
+            'text': intro_text[index]
+        }
+
+        post_text('Akeidat Yitzchak, '+title, version, weak_network=True)
+
     #for NEILAH
     n = get_parsed_neilah()
     for line in n:
@@ -220,5 +390,40 @@ for index, section in enumerate(get_parsed_intro()):
     * first level footnotes (we have them)
     **) second level footnotes (we haven't got them)
 """
-#11:50 - 1:00
-#1:40 - 3:42
+                
+            
+            
+    """
+    for sindex, shaar in enumerate(text):
+        for pindex, paragraph in enumerate(shaar):
+            for sefer[dh_sefer_index] in haaros_dh[dh_sefer_index:]:
+                if dh in paragraph:
+                    dh_index = haaros_dh.index(dh)
+                    matches.append([str(sindex)+" "+str(pindex),str(new_dh)])
+                    break
+
+    for sindex, sefer in enumerate(get_haara_refs()):
+        for iindex, index, in enumerate(sefer):
+            print "FOR "+str(sindex)+" "+str(iindex)+":"
+            print str(index[0])+" "+str(index[1])+" "+str(index[2])
+    print "AY Haaras by Shaar:"
+    for sindex, shaar in enumerate(get_haaras_by_shaarim()):
+        for hindex, haarah in enumerate(shaar):
+            for pindex, paragraph in enumerate(haarah):
+                print str(sindex)+" "+str(hindex)+" "+str(pindex)
+                print paragraph
+    """
+    1/0
+
+    for sindex, shaar in enumerate(get_text_with_haaras()):
+        for cindex, chapter in enumerate(shaar):
+            for pindex, paragraph in enumerate(chapter):
+                print sindex,pindex,paragraph
+
+    for index, (haarah_shaar, akeida_shaar) in enumerate(zip(get_haaras_by_shaarim(), get_parsed_text())):
+        if len(haarah_shaar)!=get_star_count(akeida_shaar):
+            print "OOPS! "+str(index)
+            print "HA: "+str(len(haarah_shaar))
+            print "AK: "+str(get_star_count(akeida_shaar))
+    #adding shaarim: 104+107+108+139+172=630
+    main()

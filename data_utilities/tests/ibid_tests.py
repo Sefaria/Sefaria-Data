@@ -150,7 +150,7 @@ def test_get_potential_refs():
     inst = CitationFinder()
 
     st = u'''(שמות יא ט) בשלישי ברא שלש בריות אילנות (שו"ע בלה בלה) ודשאים וגן עדן ועוד אמרו (שם י) אין לך כל עֵשֶׂב ועשב מלמטה שאין לו מזל (בראשית שגדכגדכג) ברקיע ומכה אותו ואומר לו גדל הדא הוא דכתיב (שם)'''
-    st = u'(רמב"ם הלכות יסודי התורה פ"א ופ"ג)'
+    #st = u'(רמב"ם הלכות יסודי התורה פ"א ופ"ג)'
     refs, nons, shams = inst.get_potential_refs(st)
     print 'refs', refs
     print 'nons', nons
@@ -199,5 +199,10 @@ def test_build_refs():
     title = u'בראשית'
     refs = library._internal_ref_from_string(title,test1,'he',False,True,inst.get_ultimate_title_regex(title, 'he', compiled=False))
     pass
+
+def test_create_address_types():
+    hi = CitationFinder.create_or_address_regexes('en')
+    pass
+
 #todo: test new class IndexIbidFinder
 #todo: test ibidExceptions

@@ -281,7 +281,7 @@ class XML_to_JaggedArray:
             elif key == "subject" and len(node[key]) > 0:
                 if self.assertions:
                     assert Ref(running_ref)
-                new_running_ref = running_ref + ",_Subject"
+                new_running_ref = running_ref + ",_Prelude"
                 if self.assertions:
                     assert Ref(new_running_ref)
                 text = self.parse(node[key], self.footnotes)

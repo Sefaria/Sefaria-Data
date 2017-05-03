@@ -57,17 +57,7 @@ eng_parshiot_akeida = eng_parshiot
 eng_parshiot_akeida.insert(12, "Introduction to Sefer Shemot")
 #now we make alt structs
 parsha_nodes = SchemaNode()
-"""
-for index, parsha_index in enumerate(get_parsha_index()):
-    print str(index)+" "+parsha_index[0]
-    parsha_node = ArrayMapNode()
-    parsha_node.add_title(eng_parshiot_akeida[index], "en",  primary =True)
-    parsha_node.add_title(parsha_index[0], "he", primary =  True)
-    parsha_node.includeSections = True
-    parsha_node.depth = 0
-    parsha_node.wholeRef = "Akeidat Yitzchak, "+str(parsha_index[1])+"-"+str(parsha_index[2])
-    parsha_nodes.append(parsha_node)
-"""
+
 for index, parsha_index in enumerate(get_parsha_index()):
     parsha_node = ArrayMapNode()
     parsha_node.includeSections = True
@@ -75,7 +65,7 @@ for index, parsha_index in enumerate(get_parsha_index()):
     parsha_node.wholeRef = "Akeidat Yitzchak, "+str(parsha_index[1])+"-"+str(parsha_index[2])
     parsha_node.key = eng_parshiot_akeida[index]
     if eng_parshiot_akeida[index] not in not_shared_title:
-        parsha_node.sharedTitle = eng_parshiot_akeida[index]
+        parsha_node.add_shared_term(eng_parshiot_akeida[index])
     else:
         parsha_node.add_title(eng_parshiot_akeida[index], 'en', primary = True)
         parsha_node.add_title(u"הקדמה לספר שמות", 'he', primary = True)

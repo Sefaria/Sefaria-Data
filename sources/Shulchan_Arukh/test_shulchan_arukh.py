@@ -53,7 +53,7 @@ class TestAddVolume(object):
         assert unicode(base_text) == u'<base_text>{}{}{}</base_text>'.format(unicode(v1), unicode(v2), unicode(v3))
         assert unicode(root) == u'<root>{}<commentaries/></root>'.format(unicode(base_text))
 
-class TestMarkSimanim(object):
+class TestMarkChildren(object):
 
     def test_simple_mark(self):
         raw_text = u'<volume num="1">@00א\nסימן ראשון\n@00ב\nסימן שני</volume>'
@@ -178,6 +178,22 @@ class TestMarkSimanim(object):
         assert unicode(v) == u'<volume num="1"><siman num="1">סימן ראשון\n</siman><siman num="2">סימן שני\n</siman>' \
                              u'<title found_after="2">The\nmulti\nline\nTitle\n</title></volume>'
 
+    def test_cyclical_seifim(self):
+        raw_text = u'<siman num="1">@00א\nsome text\n@00ב\nmore text\n@00ת\nfoo\n@00א\nbar</siman>'
+        s = Siman(BeautifulSoup(raw_text, 'xml').siman)
+        s.mark_cyclical_seifim(u'@00([\u05d0-\u05ea])')
+
+        assert len(s.get_child()) == 4
+        assert unicode(s) == u'<siman num="1"><seif label="1" num="1">some text\n</seif><seif label="2" num="2">more' \
+                             u' text\n</seif><seif label="22" num="3">foo\n</seif><seif label="1" num="4">' \
+                             u'bar</seif></siman>'
+
+        rid_list = [u"b0-c1-si1-ord1;1", u"b0-c1-si1-ord2;2", u"b0-c1-si1-ord22;3", u"b0-c1-si1-ord1;4"]
+        for seif, rid in zip(s.get_child(), rid_list):
+            assert isinstance(seif, Seif)
+            seif.set_rid(0, 1, 1, True)
+            assert seif.rid == rid
+
 class TestTextFormatting(object):
 
     def test_no_special_formatting(self):
@@ -283,6 +299,15 @@ class TestXref(object):
         with pytest.raises(AssertionError):
             b.mark_references(0, 1, 1, '@33')
 
+    def test_match_cyclical(self):
+        raw_text = u'<seif num="1"><dh>some @33א random</dh><reg>random @33ב text @33א here</reg></seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').find('seif'))
+        s.mark_references(0, 1, 1, u'@33([\u05d0-\u05ea])', group=1, cyclical=True)
+
+        assert unicode(s) == u'<seif num="1"><dh>some <xref id="b0-c1-si1-ord1;1">@33א</xref> random</dh>' \
+                             u'<reg>random <xref id="b0-c1-si1-ord2;2">@33ב</xref> text ' \
+                             u'<xref id="b0-c1-si1-ord1;3">@33א</xref> here</reg></seif>'
+
 def test_correct_marks():
     test_text = u'קצת @22א טקסט @22ט @22ג שאין @22ג @22ד @22ח לו\n @22ו משמעות'
     assert correct_marks(test_text, u'@22([\u05d0-\u05ea]{1,2})') == u'קצת @22א טקסט @22ב @22ג שאין @22ג @22ד @22ה לו\n @22ו משמעות'
@@ -328,7 +353,7 @@ class TestCommentStore(object):
         assert comment_store["b0-c1-s1-ord1"] == {
             'base_title': 'Shulchan Arukh',
             'siman': 1,
-            'seif': 1,
+            'seif': [1],
             'commentator_title': 'Shach',
             'commentator_seif': 1,
             'commentator_siman': 1
@@ -359,12 +384,16 @@ class TestCommentStore(object):
         assert comment_store['abcd'] == {
             'base_title': 'a',
             'siman': 1,
-            'seif': 1
+            'seif': [1]
         }
 
         third_xref = Xref(BeautifulSoup('<xref id="abcd"/>', 'xml').find('xref'))
-        with pytest.raises(DuplicateCommentError):
-            third_xref.load_xrefs_to_commentstore('a', 1, 2)
+        third_xref.load_xrefs_to_commentstore('a', 1, 2)
+        assert comment_store['abcd'] == {
+            'base_title': 'a',
+            'siman': 1,
+            'seif': [1,2]
+        }
         CommentStore().clear()
 
     def test_no_matching_xref(self):
@@ -379,3 +408,27 @@ class TestCommentStore(object):
         with pytest.raises(DuplicateCommentError):
             Seif(BeautifulSoup(u'<siman num="2" rid="abcd"/>', 'xml').find('siman')).load_comments_to_commentstore('a', 1)
         CommentStore().clear()
+
+    def test_cyclical_refs(self):
+        c = CommentStore()
+        c.clear()
+
+        base_text = u'<seif num="1"><dh>some @33א random</dh><reg>random @33ת text @33א here</reg></seif>'
+        commentary_text = u'<siman num="1">@00א\nsome text\n@00ת\nfoo\n@00א\nbar</siman>'
+
+        base_seif = Seif(BeautifulSoup(base_text, 'xml').seif)
+        base_seif.mark_references(0, 1, 1, u'@33([\u05d0-\u05ea])', group=1, cyclical=True)
+        base_seif.load_xrefs_to_commentstore('foo', 1)
+
+        commentary_siman = Siman(BeautifulSoup(commentary_text, 'xml').siman)
+        commentary_siman.mark_cyclical_seifim(u'@00([\u05d0-\u05ea])')
+        commentary_siman.set_rid_on_seifim(0, 1, True)
+        commentary_siman.load_comments_to_commentstore('foo')
+
+        assert len(c.keys()) == 3
+        required_fields = ['base_title', 'siman', 'seif', 'commentator_title', 'commentator_siman', 'commentator_seif']
+        for i in c:
+            assert all([c[i].get(field) is not None for field in required_fields])
+
+        c.clear()
+
