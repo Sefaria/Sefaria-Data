@@ -749,7 +749,7 @@ class Siman(OrderedElement):
         For each match to pattern, output the seif at which pattern was found
         :param pattern:
         :return: list of integers that represent the seif number at which a match was found. E.g. if the pattern !@#$
-        was found once in seif 5 and twice in seif 7 this will return [1, 2].
+        was found once in seif 5 and twice in seif 7 this will return [5, 7, 7].
         """
         matches = []
         for seif in self.get_child():

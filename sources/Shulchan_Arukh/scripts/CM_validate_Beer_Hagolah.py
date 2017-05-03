@@ -195,7 +195,7 @@ class SimanLocater(object):
         merged_siman['start'] = merged_siman['start'] + best_location['line_num']
         merged_siman['total'] = merged_siman['total'] - best_location['count']
 
-    def output(self, filename='temp_result.txt'):
+    def output(self, filename=u'temp_result.txt'):
         full_text = []
         for com_siman, base_siman in zip(self.commentary_simanim, self.base_simanim):
             if not self.almost_equals(com_siman['total'], base_siman['total_refs']):
@@ -277,5 +277,5 @@ merge_index = s.locate_merge()
 while merge_index is not None:
     s.resolve_merge(merge_index)
     merge_index = s.locate_merge()
-s.output()
+s.output(filename=filenames['part_1'])
 
