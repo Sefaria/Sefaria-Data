@@ -61,7 +61,7 @@ class CitationFinder():
         return reg
 
     @staticmethod
-    def create_or_address_regexes(lang):
+    def get_address_regex_dict(lang):
         address_list_depth1 = [
             ["Integer"],
             ["Perek"],
@@ -71,33 +71,45 @@ class CitationFinder():
         ]
 
         jagged_array_nodes = {
-            "{}".format(address_item[0]): CitationFinder.create_jan_for_address_type(address_item) for address_item in address_list_depth1
-        }
+            "{}".format(address_item[0]): CitationFinder.create_jan_for_address_type(address_item) for address_item in
+            address_list_depth1
+            }
 
         sham_regex = u"שם"
 
         address_regex_dict = {}
         for addressName, jan in jagged_array_nodes.items():
-            address_regex_dict["_".join(["Sham", addressName])] = [sham_regex, jan.address_regex(lang)]
-            address_regex_dict["_".join([addressName, "Sham"])] = [jan.address_regex(lang), sham_regex]
+            address_regex_dict["_".join(["Sham", addressName])] = {"regex": [sham_regex, jan.address_regex(lang)],
+                                                                   "jan_list": [None, jan]}
+            address_regex_dict["_".join([addressName, "Sham"])] = {"regex": [jan.address_regex(lang), sham_regex],
+                                                                   "jan_list": [jan, None]}
 
         address_list_depth2 = [
             ["Integer", "Integer"],
             ["Perek", "Mishnah"],
             ["Talmud", "Integer"],
-            #["Perek", "Halakhah"],
-            #["Siman", "Seif"],
-            ["Volume","Integer"],
-            #["Volume","Siman"]
+            # ["Perek", "Halakhah"],
+            # ["Siman", "Seif"],
+            ["Volume", "Integer"],
+            # ["Volume","Siman"]
         ]
 
         for address_item in address_list_depth2:
-            address_regex_dict["_".join(address_item)] = [jagged_array_nodes[address_item[0]].address_regex(lang), jagged_array_nodes[address_item[1]].address_regex(lang)]
+            jan1 = jagged_array_nodes[address_item[0]]
+            jan2 = jagged_array_nodes[address_item[1]]
+            address_regex_dict["_".join(address_item)] = {"regex": [jan1.address_regex(lang), jan2.address_regex(lang)],
+                                                          "jan_list": [jan1, jan2]}
+
+        return address_regex_dict
+
+    @staticmethod
+    def create_or_address_regexes(lang):
+        address_regex_dict = CitationFinder.get_address_regex_dict(lang)
 
         def regList2Regex(regList):
             return u"{}({}{})?".format(regList[0], CitationFinder.AFTER_TITLE_DELIMETER_RE, regList[1])
 
-        return u'(?:{})'.format(u'|'.join([u'(?P<{}>{})'.format(groupName, regList2Regex(groupRegList)) for groupName, groupRegList in address_regex_dict.items()]))
+        return u'(?:{})'.format(u'|'.join([u'(?P<{}>{})'.format(groupName, regList2Regex(groupRegDict['regex'])) for groupName, groupRegDict in address_regex_dict.items()]))
 
     @staticmethod
     def create_jan_for_address_type(address_type):
