@@ -32,8 +32,8 @@ class CitationFinder():
         else:
             address_regex = node.address_regex(lang)
 
-
-        inner_paren_reg = re.escape(title) + CitationFinder.AFTER_TITLE_DELIMETER_RE + ur'(?:[\[({]' + address_regex + ur'[\])}])(?=\W|$)'
+        inner_paren_reg = u"(?P<Title>" + re.escape(title) + u")" + CitationFinder.AFTER_TITLE_DELIMETER_RE + \
+                          ur'(?:[\[({]' + address_regex + ur'[\])}])(?=\W|$)'
 
         # outer_paren_reg = ur"""(?<=							# look behind for opening brace
         #     [({]										# literal '(', brace,
@@ -47,13 +47,13 @@ class CitationFinder():
         # )"""
 
         outer_paren_reg = ur"""(?:
-           [({]										# literal '(', brace,
-           [^})]*										# anything but a closing ) or brace
-       )
-       """ + re.escape(title) + CitationFinder.AFTER_TITLE_DELIMETER_RE + address_regex + ur"""
-           [^({]*										# match of anything but an opening '(' or brace
-           [)}]										# zero-width: literal ')' or brace
-       """
+            [({]										# literal '(', brace,
+            [^})]*										# anything but a closing ) or brace
+        )
+        """ + u"(?P<Title>" + re.escape(title) + u")" + CitationFinder.AFTER_TITLE_DELIMETER_RE + address_regex + ur"""
+            [^({]*										# match of anything but an opening '(' or brace
+            [)}]										# zero-width: literal ')' or brace
+        """
         reg = u'(?:{})|(?:{})'.format(inner_paren_reg,outer_paren_reg)
         #reg = outer_paren_reg
         if compiled:
@@ -67,7 +67,7 @@ class CitationFinder():
             ["Perek"],
             ["Mishnah"],
             ["Talmud"],
-            ["Volume"]
+            #["Volume"]
         ]
 
         jagged_array_nodes = {
@@ -75,7 +75,7 @@ class CitationFinder():
             address_list_depth1
             }
 
-        sham_regex = u"שם"
+        sham_regex = u"(?P<a0>{})".format(u"שם")
 
         address_regex_dict = {}
         for addressName, jan in jagged_array_nodes.items():
@@ -90,7 +90,7 @@ class CitationFinder():
             ["Talmud", "Integer"],
             # ["Perek", "Halakhah"],
             # ["Siman", "Seif"],
-            ["Volume", "Integer"],
+            #["Volume", "Integer"],
             # ["Volume","Siman"]
         ]
 
@@ -107,6 +107,8 @@ class CitationFinder():
         address_regex_dict = CitationFinder.get_address_regex_dict(lang)
 
         def regList2Regex(regList):
+            #edit regList[1] to make the group name correct
+            regList[1] = regList[1].replace(u"(?P<a0>", u"(?P<a1>")
             return u"{}({}{})?".format(regList[0], CitationFinder.AFTER_TITLE_DELIMETER_RE, regList[1])
 
         return u'(?:{})'.format(u'|'.join([u'(?P<{}>{})'.format(groupName, regList2Regex(groupRegDict['regex'])) for groupName, groupRegDict in address_regex_dict.items()]))
@@ -123,8 +125,16 @@ class CitationFinder():
             'sectionNames': sectionNames
         })
 
+    @staticmethod
+    def parse_sham_match(sham_match, lang):
+        address_regex_dict = CitationFinder.get_address_regex_dict(lang)
+        for groupName, groupRegexDict in address_regex_dict:
+            groupMatch = sham_match.group(groupName)
+            if groupMatch:
+
+                break
+
     def get_potential_refs(self, st, lang = 'he'):
-        #TODO right now these two vars are the same. but just in case
         title_sham = u'שם'
 
         unique_titles = set(library.get_titles_in_string(st, lang))
