@@ -21,6 +21,12 @@ filenames = {
     'part_2': u'../txt_files/Choshen_Mishpat/part_2/שולחן ערוך חושן משפט חלק ב באר הגולה.txt',
     'part_3': u'../txt_files/Choshen_Mishpat/part_3/באר הגולה חושן משפט חלק ג.txt'
 }
+
+footnote_codes = {
+    'part_1': u'@68',
+    'part_2': None,
+    'part_3': u'@50',
+}
 def reasonble_order(index_a, index_b):
     """
     Look for @11(letter) that does not follow a reasonable pattern
@@ -94,7 +100,7 @@ class SimanLocater(object):
 
         self.base_simanim = [{
             'num': s.num,
-            'total_refs': len(s.locate_references(u'@68'))
+            'total_refs': len(s.locate_references(footnote_codes['part_{}'.format(volume)]))
         } for s in Root('../Choshen_Mishpat.xml').get_base_text().get_volume(volume).get_child()]
         self.base_simanim = filter(lambda x: None if x['total_refs']==0 else x, self.base_simanim)
         self.commentary_simanim = self.find_transitions()
@@ -272,10 +278,10 @@ def mark_simanim(volume_number):
     with codecs.open('temp_result.txt', 'w', 'utf-8') as outfile:
         outfile.writelines(full_text)
 
-s = SimanLocater(1)
+s = SimanLocater(3)
 merge_index = s.locate_merge()
 while merge_index is not None:
-    s.resolve_merge(merge_index)
+    s.resolve_merge(merge_index, max_diff=5)
     merge_index = s.locate_merge()
-s.output(filename=filenames['part_1'])
+s.output(filenames['part_3'])
 
