@@ -27,13 +27,16 @@ class CitationFinder():
         :return: regex
         """
         node = library.get_schema_node(title, lang)
-        if not node: # title is unrecognized
-            address_regex = CitationFinder.create_or_address_regexes(lang)
-        else:
-            address_regex = node.address_regex(lang)
+        # if not node:  # title is unrecognized
+        #     address_regex = self.create_or_address_regexes(lang)
+        # else:
+        #     address_regex = node.address_regex(lang)
 
-        inner_paren_reg = u"(?P<Title>" + re.escape(title) + u")" + CitationFinder.AFTER_TITLE_DELIMETER_RE + \
-                          ur'(?:[\[({]' + address_regex + ur'[\])}])(?=\W|$)'
+        address_regex = self.create_or_address_regexes(lang)
+
+        after_title_delimiter_re = ur"[,.: \r\n]+"
+
+        inner_paren_reg = re.escape(title) + after_title_delimiter_re + ur'(?:[\[({]' + address_regex + ur'[\])}])(?=\W|$)'
 
         # outer_paren_reg = ur"""(?<=							# look behind for opening brace
         #     [({]										# literal '(', brace,
@@ -47,13 +50,13 @@ class CitationFinder():
         # )"""
 
         outer_paren_reg = ur"""(?:
-            [({]										# literal '(', brace,
-            [^})]*										# anything but a closing ) or brace
-        )
-        """ + u"(?P<Title>" + re.escape(title) + u")" + CitationFinder.AFTER_TITLE_DELIMETER_RE + address_regex + ur"""
-            [^({]*										# match of anything but an opening '(' or brace
-            [)}]										# zero-width: literal ')' or brace
-        """
+           [({]										# literal '(', brace,
+           [^})]*										# anything but a closing ) or brace
+       )
+       """ + re.escape(title) + after_title_delimiter_re + address_regex + ur"""
+           [^({]*										# match of anything but an opening '(' or brace
+           [)}]									# zero-width: literal ')' or brace
+       """
         reg = u'(?:{})|(?:{})'.format(inner_paren_reg,outer_paren_reg)
         #reg = outer_paren_reg
         if compiled:
@@ -67,7 +70,7 @@ class CitationFinder():
             ["Perek"],
             ["Mishnah"],
             ["Talmud"],
-            #["Volume"]
+            ["Volume"]
         ]
 
         jagged_array_nodes = {
@@ -77,7 +80,7 @@ class CitationFinder():
 
         sham_regex = u"(?P<a0>{})".format(u"שם")
 
-        address_regex_dict = {}
+        address_regex_dict = OrderedDict()
         for addressName, jan in jagged_array_nodes.items():
             address_regex_dict["_".join(["Sham", addressName])] = {"regex": [sham_regex, jan.address_regex(lang)],
                                                                    "jan_list": [None, jan]}
@@ -88,11 +91,13 @@ class CitationFinder():
             ["Integer", "Integer"],
             ["Perek", "Mishnah"],
             ["Talmud", "Integer"],
-            # ["Perek", "Halakhah"],
-            # ["Siman", "Seif"],
-            #["Volume", "Integer"],
+            #["Perek", "Halakhah"],
+            #["Siman", "Seif"],
+            ["Volume", "Integer"],
             # ["Volume","Siman"]
         ]
+        lengths = [0, 0]
+        sectionNames = ['', '']
 
         for address_item in address_list_depth2:
             jan1 = jagged_array_nodes[address_item[0]]
@@ -106,13 +111,18 @@ class CitationFinder():
     def create_or_address_regexes(lang):
         address_regex_dict = CitationFinder.get_address_regex_dict(lang)
 
-        def regList2Regex(regList):
+        def regList2Regex(regList, isDepth2):
             #edit regList[1] to make the group name correct
             regList[1] = regList[1].replace(u"(?P<a0>", u"(?P<a1>")
-            return u"{}({}{})?".format(regList[0], CitationFinder.AFTER_TITLE_DELIMETER_RE, regList[1])
+            if isDepth2:
+                tempReg = u"{}{}{}".format(regList[0], CitationFinder.AFTER_TITLE_DELIMETER_RE, regList[1])
+            else:
+                tempReg = u"{}({}{})?".format(regList[0], CitationFinder.AFTER_TITLE_DELIMETER_RE, regList[1])
+            return tempReg
 
-        return u'(?:{})'.format(u'|'.join([u'(?P<{}>{})'.format(groupName, regList2Regex(groupRegDict['regex'])) for groupName, groupRegDict in address_regex_dict.items()]))
-
+        depth2regex = u'|'.join([u'(?P<{}>{})'.format(groupName, regList2Regex(groupRegDict['regex'], True)) for groupName, groupRegDict in address_regex_dict.items()])
+        depth1regex = u'|'.join([u'(?P<{}>{})'.format(groupName, regList2Regex(groupRegDict['regex'], False)) for groupName, groupRegDict in address_regex_dict.items()])
+        return u"(?:{}|{})".format(depth2regex, depth1regex)
     @staticmethod
     def create_jan_for_address_type(address_type):
         depth = len(address_type)
@@ -306,6 +316,7 @@ class IndexIbidFinder(object):
 
 
         return refs
+
 
 class BookIbidTracker(object):
     """
