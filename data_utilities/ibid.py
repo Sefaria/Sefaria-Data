@@ -147,7 +147,7 @@ class CitationFinder():
         """
         address_regex_dict = CitationFinder.get_address_regex_dict(lang)
         gs = sham_match.groupdict()
-        for groupName, groupRegexDict in address_regex_dict:
+        for groupName, groupRegexDict in address_regex_dict.items():
             groupMatch = gs.get(groupName)
             if groupMatch is not None:
                 sections = []
@@ -158,7 +158,7 @@ class CitationFinder():
                         sections.append(None)
                     elif currSectionStr is None:
                         break # we haven't found anything beyond this point
-                    sections.append(groupMatch["jan_list"][i]._addressTypes[0].toNumber(lang, gs.get(gname)))
+                    sections.append(groupRegexDict["jan_list"][i]._addressTypes[0].toNumber(lang, gs.get(gname)))
                 return [sham_match.group("Title"), sections]
 
 
@@ -189,8 +189,11 @@ class CitationFinder():
                             hasSham = False
                             for i in range(3):
                                 gname = u"a{}".format(i)
-                                if m.group(gname) == title_sham:
-                                    hasSham = True
+                                try:
+                                    if m.group(gname) == title_sham:
+                                        hasSham = True
+                                        break
+                                except IndexError:
                                     break
 
                             if hasSham:

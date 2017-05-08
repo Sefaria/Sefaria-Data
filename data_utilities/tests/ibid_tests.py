@@ -155,6 +155,7 @@ def test_get_potential_refs():
     print 'refs', refs
     print 'nons', nons
     print 'shams', shams
+    pass
 
 def test_get_ultimate_regex():
     inst = CitationFinder()
