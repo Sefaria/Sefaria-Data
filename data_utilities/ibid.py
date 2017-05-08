@@ -36,7 +36,7 @@ class CitationFinder():
 
         after_title_delimiter_re = ur"[,.: \r\n]+"
 
-        inner_paren_reg = re.escape(title) + after_title_delimiter_re + ur'(?:[\[({]' + address_regex + ur'[\])}])(?=\W|$)'
+        inner_paren_reg = u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + ur'(?:[\[({]' + address_regex + ur'[\])}])(?=\W|$)'
 
         # outer_paren_reg = ur"""(?<=							# look behind for opening brace
         #     [({]										# literal '(', brace,
@@ -53,7 +53,7 @@ class CitationFinder():
            [({]										# literal '(', brace,
            [^})]*										# anything but a closing ) or brace
        )
-       """ + re.escape(title) + after_title_delimiter_re + address_regex + ur"""
+       """ + u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + address_regex + ur"""
            [^({]*										# match of anything but an opening '(' or brace
            [)}]									# zero-width: literal ')' or brace
        """
@@ -240,30 +240,6 @@ class IndexIbidFinder(object):
             except IbidRefException:
                 pass # maybe want to call ignore her?
         return sham_refs
-
-    def parse_sham(self, sham_ref):
-        '''
-
-        :param sham_ref:
-        :return: (index_name , [sections])
-        '''
-        reg_sham = u'שם'
-        sham_ref = re.sub(u'\((.*)\)', ur'\1', sham_ref)
-        sham_split = re.split(u'\s+', sham_ref)
-        index_name = sham_split[0]
-        sections = []
-        if index_name == reg_sham:
-            index_name = None
-        else:
-            try:
-                index_name = library.get_schema_node(index_name, 'he').full_title()
-            except AttributeError:
-                self._tr.ignore_book_name_keys()
-        if sham_split > 1:
-            sections = sham_split[1:]
-            sections = [None if sec == reg_sham else getGematria(sec) for sec in sections]
-
-        return (index_name , sections)
 
 
     def ibid_find_and_replace(self, st, lang='he', citing_only=False, replace=True):
