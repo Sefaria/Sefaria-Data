@@ -125,14 +125,28 @@ class CitationFinder():
             'sectionNames': sectionNames
         })
 
+
     @staticmethod
     def parse_sham_match(sham_match, lang):
-        address_regex_dict = CitationFinder.get_address_regex_dict(lang)
-        for groupName, groupRegexDict in address_regex_dict:
-            groupMatch = sham_match.group(groupName)
-            if groupMatch:
+        """
+        TODO - convert the title that was found to an standard title string
 
-                break
+        :param sham_match:
+        :param lang:
+        :return:
+        """
+        address_regex_dict = CitationFinder.get_address_regex_dict(lang)
+        gs = sham_match.groupdict()
+        for groupName, groupRegexDict in address_regex_dict:
+            groupMatch = gs.get(groupName)
+            if groupMatch is not None:
+                sections = []
+                for i in range(2):
+                    gname = u"a{}".format(i)
+
+                    sections.append(groupMatch["jan_list"][i].toNumber(lang, gs.get(gname)))
+                return [sham_match.group("Title"), sections]
+
 
     def get_potential_refs(self, st, lang = 'he'):
         title_sham = u'שם'
@@ -159,7 +173,7 @@ class CitationFinder():
                         except InputError:
                             non_refs += [(m, m.span(), CitationFinder.NON_REF_INT)]
                 else:
-                    sham_refs += [(m, m.span(), CitationFinder.SHAM_INT)]
+                    sham_refs += [(CitationFinder.parse_sham_match(m, lang), m.span(), CitationFinder.SHAM_INT)]
         """
             try:
                 refs_w_location, non_refs_w_locations = library._build_all_refs_from_string_w_locations(title, st,lang=lang, with_bad_refs=True)
@@ -267,7 +281,7 @@ class IndexIbidFinder(object):
             elif type == CitationFinder.NON_REF_INT:
                 self._tr.ignore_book_name_keys()
             elif type == CitationFinder.SHAM_INT:
-                refs += [self._tr.resolve()]
+                refs += [self._tr.resolve(item[0][0], item[0][1])] #  TODO this line doesn't work yet because titles aren't normalized
 
         """
         unique_titles = set(library.get_titles_in_string(st, lang, citing_only))
