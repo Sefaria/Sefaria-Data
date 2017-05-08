@@ -90,7 +90,7 @@ class CitationFinder():
         address_list_depth2 = [
             ["Integer", "Integer"],
             ["Perek", "Mishnah"],
-            ["Talmud", "Integer"],
+            #["Talmud", "Integer"], No such thing as Talmud Integer in our library
             #["Perek", "Halakhah"],
             #["Siman", "Seif"],
             ["Volume", "Integer"],
@@ -153,8 +153,12 @@ class CitationFinder():
                 sections = []
                 for i in range(2):
                     gname = u"a{}".format(i)
-
-                    sections.append(groupMatch["jan_list"][i].toNumber(lang, gs.get(gname)))
+                    currSectionStr = gs.get(gname)
+                    if currSectionStr == u"שם":
+                        sections.append(None)
+                    elif currSectionStr is None:
+                        break # we haven't found anything beyond this point
+                    sections.append(groupMatch["jan_list"][i]._addressTypes[0].toNumber(lang, gs.get(gname)))
                 return [sham_match.group("Title"), sections]
 
 
@@ -181,7 +185,18 @@ class CitationFinder():
                         try:
                             refs += [(library._get_ref_from_match(m, node, lang), m.span(), CitationFinder.REF_INT)]
                         except InputError:
-                            non_refs += [(m, m.span(), CitationFinder.NON_REF_INT)]
+                            # check if this ref failed because it has a Sham in it
+                            hasSham = False
+                            for i in range(3):
+                                gname = u"a{}".format(i)
+                                if m.group(gname) == title_sham:
+                                    hasSham = True
+                                    break
+
+                            if hasSham:
+                                sham_refs += [(CitationFinder.parse_sham_match(m, lang), m.span(), CitationFinder.SHAM_INT)]
+                            else: # failed for some unknown reason
+                                non_refs += [(m, m.span(), CitationFinder.NON_REF_INT)]
                 else:
                     sham_refs += [(CitationFinder.parse_sham_match(m, lang), m.span(), CitationFinder.SHAM_INT)]
         """
