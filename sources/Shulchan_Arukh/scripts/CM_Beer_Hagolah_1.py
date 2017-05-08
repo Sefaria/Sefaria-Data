@@ -28,4 +28,10 @@ for base_siman, com_siman in zip(b_volume.get_child(), volume.get_child()):
     if total_footnotes != comments:
         print "mismatch in siman {}. {} footnotes and {} comments".format(base_siman.num, total_footnotes, comments)
 
-
+volume.format_text('$^', '$^', 'dh')
+volume.set_rid_on_seifim()
+root.populate_comment_store()
+errors = b_volume.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'@68', x.text) is not None)
+for i in errors:
+    print i
+root.export()
