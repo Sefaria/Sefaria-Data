@@ -28,7 +28,8 @@ logging.disable(logging.WARNING)
 es = ElasticSearch(SEARCH_ADMIN)
 TEST_INDEX_NAME = "test"
 
-#pagerank_dict = {r: v for r, v in json.load(open("pagerank.txt","rb"))}
+pagerank_dict = {r: v for r, v in json.load(open("pagerank.json","rb"))}
+sheetrank_dict = json.load(open("sheetrank.json", "rb"))
 
 test_he_query_list = [
     'וידבר יהוה אל משה לאמר',
@@ -276,6 +277,8 @@ def make_text_index_document(tref, version, lang):
         comp_start_date = int(tp.start)
     else:
         comp_start_date = 3000
+
+
 
 
     return {
@@ -662,7 +665,8 @@ def init_pagerank_graph():
             print "{}/{}".format(i,len(all_links))
 
         try:
-            #TODO there's a known issue that a lot of refs don't have order_ids (in which case it's Z). This hopefully doesn't affect the graph too much
+            #TODO pagerank segments except Talmud. Talmud is pageranked by section
+            #TODO if you see a section link, add pagerank to all of its segments
             refs = [Ref(r) for r in link.refs]
             tp1 = refs[0].index.best_time_period()
             tp2 = refs[1].index.best_time_period()
@@ -672,14 +676,13 @@ def init_pagerank_graph():
             older_ref, newer_ref = (refs[0], refs[1]) if start1 < start2 else (refs[1], refs[0])
 
             older_ref = older_ref.padded_ref()
-            newer_ref = newer_ref.padded_ref()
-
             if older_ref.is_range():
                 older_ref = older_ref.range_list()[0]
+            older_ref = older_ref.section_ref()
+
+            newer_ref = newer_ref.padded_ref()
             if newer_ref.is_range():
                 newer_ref = newer_ref.range_list()[0]
-
-            older_ref = older_ref.section_ref()
             newer_ref = newer_ref.section_ref()
 
             put_link_in_graph(older_ref, newer_ref)
@@ -717,11 +720,20 @@ def calculate_sheetrank():
             if "ref" in s and s["ref"] is not None:
                 temp_sources_count += 1
                 try:
-                    oref = Ref(s["ref"]).padded_ref()
+                    oref = Ref(s["ref"])
                     if oref.is_range():
                         oref = oref.range_list()[0]
-                    oref_sec = oref.section_ref()
-                    graph[oref_sec.normal()] += 1
+
+                    ref_list = []
+                    if oref.is_section_level():
+                        ref_list = oref.all_subrefs()
+                    elif oref.is_segment_level():
+                        ref_list = [oref]
+                    else:
+                        pass
+
+                    for r in ref_list:
+                        graph[r.normal()] += 1
                 except InputError:
                     continue
                 except TypeError:
@@ -914,8 +926,8 @@ def sort_prefixes():
 #print yo['b']
 
 #init_pagerank_graph()
-calculate_pagerank()
-#calculate_sheetrank()
+#calculate_pagerank()
+calculate_sheetrank()
 """
 {
   "size": 200,

@@ -2,28 +2,28 @@
 
 import codecs
 import re
-from data_utilities.util import ja_to_xml, multiple_replace, traverse_ja, file_to_ja_g
-from data_utilities.util import getGematria, numToHeb
-
 from collections import OrderedDict
 import unicodecsv as csv
-
-from sources.functions import post_text, post_index, post_link
-from sefaria.model import *
+from data_utilities.util import getGematria, numToHeb
+from data_utilities.util import ja_to_xml, multiple_replace, traverse_ja, file_to_ja_g, file_to_ja
 from sefaria.datatype.jagged_array import JaggedArray
+from sefaria.model import *
+from sources.functions import post_text, post_index, post_link
 
 
-def map_semak_day(filename): # alt struct according to days. (not sure how alt struct works
-    pass
-
+def map_semak_days(ja_smk):# https://github.com/Sefaria/Sefaria-Project/wiki/Index-Records-for-Simple-%26-Complex-Texts
+    days = {'day1': u'א-לו', 'day2': u'לז -קא ','day3': u'קב - קנא', 'day4': u'קנב-קצו', 'day5': u'קצז - רלח',
+            'day6': u'רלט-רעט', 'day7': u'רפ - רצד'}
+    days = {'day1': [1, 36], 'day2': [37, 101], 'day3': [102, 151], 'day4': [152, 196], 'day5': [197, 238],
+            'day6': [239, 279], 'day7': [280, 294]}
 
 def parse_semak(filename):
 
     def cleaner(my_text):
-        replace_dict = {u'@11(.*?)@12': ur'<b>\1</b>', u'@33(.*?)@34': ur'<b>\1</b>', u'@33(.*?)@34': ur'<b>\1</b>', u'@66(.*?)@67': ur'\1'}#, u'@55[\u05d0-\u05ea]{1,3}' : u'<i-tags = >'}
+        replace_dict = {u'@11(.*?)@12': ur'<b>\1</b>', u'@33(.*?)@34': ur'<b>\1</b>', u'@66(.*?)@67': ur'\1'}#, u'@55[\u05d0-\u05ea]{1,3}' : u'<i-tags = >'}
         new = []
         for line in my_text:
-            line = multiple_replace(line,replace_dict,using_regex=True)
+            line = multiple_replace(line, replace_dict, using_regex=True)
             new.append(line)
         return new
 
@@ -36,11 +36,14 @@ def parse_semak(filename):
     # clean all lines of days start with @00
     cleaned = []
     letter_section = []
+    alt_day = []
     for line_num, line in enumerate(lines):
         if line == u'\n':
             starting = line_num + 1
             break
     for line_num, line in enumerate(lines[starting:]):
+        if re.search(u'@00', line):
+            alt_day.append(line_num)
         if not re.search(u'@00', line) and not line.isspace():
             if re.search(u'@22', line):
                 line = re.split(u'(@22[\u05d0-\u05ea]{1,3})', line)
@@ -50,8 +53,10 @@ def parse_semak(filename):
                     [cleaned.append(st) for st in line if st]
             else:
                 cleaned.append(line)
+    alt_day.append(len(lines))
+    print alt_day
     try:
-        smk_ja = file_to_ja_g(2, cleaned, regs, cleaner, gimatria=True,  grab_all=[False, True, True], group_name = 'gim').array() #group_name = 'gim',
+        smk_ja = file_to_ja_g(2, cleaned, regs, cleaner, gimatria=True,  grab_all=[False, True, True], group_name='gim').array()
     except AttributeError:
         print 'there are more regs then levels...'
 
@@ -60,9 +65,6 @@ def parse_semak(filename):
     return smk_ja
 
 
-#todo:
-# i would want to devide the Raph according to simanim as well and not according to pages,
-# once one has the mapping of simanim to dapim this is possible
 def parse_Raph(filename):
     def cleaner(my_text):
         replace_dict = {u'@(?:11|77)[\u05d0-\u05ea]{0,3}': u'', u'@(33|22)': u''}#{u'@11(.*?)@12': ur'<b>\1</b>', u'@33(.*?)@34': ur'<b>\1</b>', u'@33(.*?)@34': ur'<b>\1</b>', u'@66(.*?)@67': ur'\1'}
@@ -104,6 +106,7 @@ def parse_Raph(filename):
 
 
 def parse_Raph_by_letter(filename):
+    '''parsing according to the letters, is the main ja, to post for the raph'''
     def cleaner(my_text):
         replace_dict = {u'@(?:11|77)[\u05d0-\u05ea]{0,3}': u'', u'@(33|22)': u''}#{u'@11(.*?)@12': ur'<b>\1</b>', u'@33(.*?)@34': ur'<b>\1</b>', u'@33(.*?)@34': ur'<b>\1</b>', u'@66(.*?)@67': ur'\1'}
         new = []
@@ -132,13 +135,15 @@ def parse_Raph_by_letter(filename):
                 [cleaned.append(st.strip()) for st in line if st]
     new_ja = regs_devide(cleaned, regs)
     try:
-        ja = file_to_ja_g(2, cleaned, regs, cleaner, gimatria=True,  grab_all=[True, True], group_name='gim').array()
+        # ja = file_to_ja_g(2, cleaned, regs, cleaner, gimatria=True,  grab_all=[True, True], group_name='gim').array()
+        ja = file_to_ja(2, cleaned, regs, cleaner, grab_all=False).array()
     except AttributeError:
         print 'there are more regs then levels...'
 
-    ja_to_xml(new_ja, ['Alef', 'letter', 'segments'], 'raph_letters.xml')
+    # ja_to_xml(new_ja, ['Alef', 'letter', 'segments'], 'raph_letters.xml')
+    ja_to_xml(ja, ['letter', 'segments'], 'raph_letters.xml')
 
-    return new_ja
+    return ja
 
 
 def parse_Raph_simanim(alinged_list):
@@ -368,12 +373,113 @@ def hagahot_alignment(ja_smk, ja_raph, ja_hagahot):
     return dict_lst
 
 
+def smk_schema():
+    record_root = SchemaNode()
+    # record_root.add_title('Semak', 'en', True)
+    # record_root.add_title(u'ספר מצוות קטן', 'he', True)
+    # record_root.key = 'Semak'
+    # intro_node = JaggedArrayNode()
+    # intro_node.depth = 1
+    # intro_node.add_primary_titles(u'Introduction', u'הקדמה')
+    # intro_node.add_structure(['Paragraph'])
+    # record_root.validate()
+
+    return record_root
+
+
+def post_smk(ja_smk):
+    text_version = {
+        'versionTitle': 'Sefer Mitzvot Katan, Kopys, 1820',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001771677',
+        'language': 'he',
+        'text': ja_smk
+    }
+
+    schema = JaggedArrayNode()
+    schema.add_title('Sefer Mitzvot Katan', 'en', True)
+    schema.add_title(u'ספר מצות קטן', 'he', True)
+    schema.key = 'Sefer Mitzvot Katan'
+    schema.depth = 2
+    schema.addressTypes = ['Integer', 'Integer']
+    schema.sectionNames = ['Siman', 'Segment']
+    schema.validate()
+
+    index_dict = {
+        'title': 'Sefer Mitzvot Katan',
+        'categories': ['Halakhah'],
+        'schema': schema.serialize()  # This line converts the schema into json
+    }
+    post_index(index_dict)
+
+    post_text('Sefer Mitzvot Katan', text_version)
+
+
+def post_raph(ja_raph):
+    text_version = {
+        'versionTitle': 'Sefer Mitzvot Katan, Kopys, 1820',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001771677',
+        'language': 'he',
+        'text': ja_raph
+    }
+
+    schema = JaggedArrayNode()
+    schema.add_title('Hagahot Rabbenu Peretz', 'en', True)
+    schema.add_title(u'הגהות רבנו פרץ', 'he', True)
+    schema.key = 'Hagahot Rabbenu Peretz'
+    schema.depth = 2
+    schema.addressTypes = ['Integer', 'Integer']
+    schema.sectionNames = ['Siman', 'Segment']
+    schema.validate()
+
+    index_dict = {
+        'title': 'Hagahot Rabbenu Peretz',
+        'dependence': "Commentary",
+        'base_text_titles': ["Sefer Mitzvot Katan"],
+        "categories": ["Halakhah", "Commentary"],
+        'schema': schema.serialize() # This line converts the schema into json
+    }
+    post_index(index_dict)
+
+    post_text('Hagahot Rabbenu Peretz', text_version)
+
+
+def link_raph(ja_smk, ja_raph):  # look how to get this information where it is coming from.
+    raph_links = []
+    # use a generator to go over the text and find the 3 level indices
+    i = 0
+    for seg in traverse_ja(ja_smk):
+        for x in re.findall(u'@55', seg['data']): # if re.search(u'@55', seg['data']):
+            siman = seg['indices'][0]
+            segment = seg['indices'][1]
+            i += 1
+            link = (
+                {
+                    "refs": [
+                        "Sefer Mitzvot Katan {}:{}".format(siman+1, segment+1),
+                        "Hagahot Rabbenu Peretz {}:{}".format(i, 1),  # really should be a ref link to the whole raph
+                    ],
+                    "type": "commentary",
+                    "auto": True,
+                    "generated_by": "semak_parser"
+                })
+            # dh_text = dh['data']
+            # append to links list
+            raph_links.append(link)
+    return raph_links
+
+
 if __name__ == "__main__":
     ja_smk = parse_semak('Semak.txt')
-    siman_page = map_semak_page_siman(ja_smk, to_print=False)
-    letter_ja = parse_Raph_by_letter(u'Raph_on_Semak.txt')
-    raph_smk_alignment = raph_alignment_report(ja_smk, letter_ja)
-    ja_hagahot = parse_hagahot_by_letter(u'Semak_hagahot_chadashot.txt')
-    ja_raph = parse_Raph_simanim(raph_smk_alignment)
-    hgh_align = hagahot_alignment(ja_smk, ja_raph, ja_hagahot)
-# use ja functions and not travers ja. or through them first into a list instead of getting them live. classic...
+    # # siman_page = map_semak_page_siman(ja_smk, to_print=False)
+    # # letter_ja = parse_Raph_by_letter(u'Raph_on_Semak.txt')
+    # # raph_smk_alignment = raph_alignment_report(ja_smk, letter_ja)
+    # # ja_hagahot = parse_hagahot_by_letter(u'Semak_hagahot_chadashot.txt')
+    # # ja_raph = parse_Raph_simanim(raph_smk_alignment)
+    # # hgh_align = hagahot_alignment(ja_smk, ja_raph, ja_hagahot)
+    # post_smk(ja_smk)
+    # # post_raph(ja_raph)
+    # # link_raph(ja_raph)  # try to find where this is coming from
+    raph = parse_Raph_by_letter('Raph_on_Semak.txt')
+    post_raph(raph)
+    raph_links = link_raph(ja_smk, raph)
+    post_link(raph_links)

@@ -441,7 +441,7 @@ class OrderedElement(Element):
         self.num = int(soup_tag['num'])
         super(OrderedElement, self).__init__(soup_tag)
 
-    def validate_order(self, previous=None):
+    def validate_order(self, previous=None, *args, **kwargs):
         """
         Checks that num of this element follows that of previous
         :param previous: Previous element in an array of OrderedElements. If None will return True (useful for first element)
@@ -456,26 +456,31 @@ class OrderedElement(Element):
             else:
                 return True
 
-    def validate_complete(self, previous=None):
+    def validate_complete(self, previous=None, cyclical=False):
         """
         Checks that the num of this element is exactly 1 more than the previous element. If previous is None, will
         return True only if the num of self is 0 or 1.
         :param previous: Previous OrderedElement in array of elements. If first element, pass None.
+        :param cyclical: Used for seifim that use a cyclical (modulus) markup system (specifically, א,ב...ט,י,כ...ש,ת,א,ב)
         :return: bool
         """
         if previous is None:
             return self.num == 1 or self.num == 0
         else:
             assert isinstance(previous, OrderedElement)
-            return (self.num - previous.num) == 1
+            if cyclical:
+                return (int(self.Tag['label']) - int(previous.Tag['label'])) % 22 == 1
+            else:
+                return (self.num - previous.num) == 1
 
     @staticmethod
-    def validate_collection(element_list, complete=False, verbose=False):
+    def validate_collection(element_list, complete=False, verbose=False, cyclical=False):
         """
         Run a validation on an array of ordered elements
         :param list[OrderedElement] element_list: list of OrderedElement instances
         :param complete: True will run the validate_complete method, otherwise will check only ascending order.
         :param verbose: Set to True to view print statements regrading locations of missing elements
+        :param cyclical: Used for seifim that use a cyclical (modulus) markup system (specifically, א,ב...ט,י,כ...ש,ת,א,ב)
         :return: bool
         """
         passed = True
@@ -485,11 +490,15 @@ class OrderedElement(Element):
                 validation = element.validate_complete
             else:
                 validation = element.validate_order
-            if not validation(previous_element):
+            if not validation(previous_element, cyclical):
                 passed = False
                 if verbose:
                     if previous_element is None:
                         print 'First element is element {}'.format(element.num)
+                    elif cyclical:
+                        print u'misordered element: {} (element {}) followed by {} (element {})'\
+                            .format(he_num_to_char(previous_element.Tag['label']), previous_element.num,
+                                    he_num_to_char(element.Tag['label']), element.num)
                     else:
                         print 'misordered element: {} followed by {}'.format(previous_element.num, element.num)
             previous_element = element
@@ -538,10 +547,11 @@ class Volume(OrderedElement):
             assert isinstance(siman, Siman)
             if cyclical:
                 siman.mark_cyclical_seifim(pattern, start_mark, specials, enforce_order)
-            try:
-                siman.mark_seifim(pattern, start_mark, specials, enforce_order)
-            except DuplicateChildError as e:
-                errors.append(e.message)
+            else:
+                try:
+                    siman.mark_seifim(pattern, start_mark, specials, enforce_order)
+                except DuplicateChildError as e:
+                    errors.append(e.message)
         return errors
 
     def format_text(self, start_special, end_special, name):
@@ -561,13 +571,13 @@ class Volume(OrderedElement):
     def validate_simanim(self, complete=True, verbose=True):
         self.validate_collection(self.get_child(), complete, verbose)
 
-    def validate_seifim(self, complete=True, verbose=True):
+    def validate_seifim(self, complete=True, verbose=True, cyclical=False):
         for siman in self.get_child():
             assert isinstance(siman, Siman)
-            if not siman.validate_seifim(complete, verbose=False):
+            if not siman.validate_seifim(complete, verbose=False, cyclical=cyclical):
                 print "Found in Siman {}".format(siman.num)
                 if verbose:
-                    siman.validate_seifim(complete, verbose)
+                    siman.validate_seifim(complete, verbose, cyclical)
 
     def validate_references(self, pattern, code, group=1, key_callback=getGematria):
         """
@@ -696,8 +706,8 @@ class Siman(OrderedElement):
             found = child.mark_references(base_id, com_id, self.num, pattern, found, group, cyclical)
         return found
 
-    def validate_seifim(self, complete=True, verbose=True):
-        return self.validate_collection(self.get_child(), complete, verbose)
+    def validate_seifim(self, complete=True, verbose=True, cyclical=False):
+        return self.validate_collection(self.get_child(), complete, verbose, cyclical)
 
     def validate_references(self, pattern, code, group=1, key_callback=getGematria):
         """
@@ -749,7 +759,7 @@ class Siman(OrderedElement):
         For each match to pattern, output the seif at which pattern was found
         :param pattern:
         :return: list of integers that represent the seif number at which a match was found. E.g. if the pattern !@#$
-        was found once in seif 5 and twice in seif 7 this will return [1, 2].
+        was found once in seif 5 and twice in seif 7 this will return [5, 7, 7].
         """
         matches = []
         for seif in self.get_child():

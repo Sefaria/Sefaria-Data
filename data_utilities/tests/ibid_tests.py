@@ -125,9 +125,10 @@ def test_ibid_dict():
 
 
 def test_ibid_find():
+    inst = IndexIbidFinder()
     string = u'''וילך איש מבית לוי רבותינו אמרו שהלך אחר עצת בתו (סוטה יב:). את בלהה (בראשית לה כב),
      דבלים (הושע א ג), לכו ונמכרנו לישמעאלים (בראשית שם כז), לכו ונכהו בלשון (שם יח יח), לכו נא ונוכחה (ישעיה א יח).'''
-    refs = ibid_find_and_replace(string, lang='he', citing_only=False, replace=True)
+    refs = inst.ibid_find_and_replace(string, lang='he', citing_only=False, replace=True)
     print refs
 
 class TestIndexIbidFinder:
@@ -155,49 +156,74 @@ def test_get_potential_refs():
     print 'refs', refs
     print 'nons', nons
     print 'shams', shams
+    pass
 
 def test_get_ultimate_regex():
     inst = CitationFinder()
     test1 = u'(בראשית א:ב)'
     r = inst.get_ultimate_title_regex(u'בראשית','he')
     m = re.search(r, test1)
-    assert m.group() == u'(בראשית א:ב)'
+    assert m.groupdict()[u"Title"] == u'בראשית'
+    assert m.groupdict()[u"Integer_Integer"] is not None
+    assert m.groupdict()[u'a0'] == u'א' and m.groupdict()[u'a1'] == u'ב'
 
     test2 = u'(שם ג:ד)'
-    r = inst.get_ultimate_title_regex(u'שם','he')
+    r = inst.get_ultimate_title_regex(u'שם', 'he')
+    print r.pattern
     m = re.search(r, test2)
-    assert m.group() == u'(שם ג:ד)'
+    assert m.groupdict()[u"Title"] == u'שם'
+    assert m.groupdict()[u"Integer_Integer"] is not None
+    assert m.groupdict()[u'a0'] == u'ג' and m.groupdict()[u'a1'] == u'ד'
 
     test3 = u'(ב"ר פרק ג משנה ד)'
-    r = inst.get_ultimate_title_regex(u'ב"ר','he')
+    r = inst.get_ultimate_title_regex(u'ב"ר', 'he')
     m = re.search(r, test3)
-    assert m.group() == u'(ב"ר פרק ג משנה ד)'
+    assert m.groupdict()[u"Title"] == u'ב"ר'
+    assert m.groupdict()[u"Perek_Mishnah"] is not None
+    assert m.groupdict()[u'a0'] == u'ג' and m.groupdict()[u'a1'] == u'ד'
 
     test4 = u'בראשית (ג:ד)'
     r = inst.get_ultimate_title_regex(u'בראשית','he')
     m = re.search(r, test4)
-    assert m.group() == u'בראשית (ג:ד)'
+    assert m.groupdict()[u"Title"] == u'בראשית'
+    assert m.groupdict()[u"Integer_Integer"] is not None
+    assert m.groupdict()[u'a0'] == u'ג' and m.groupdict()[u'a1'] == u'ד'
 
     test5 = u'בראשית (שם:ד)'
     r = inst.get_ultimate_title_regex(u'בראשית','he')
     m = re.search(r, test5)
-    assert m.group() == u'בראשית (שם:ד)'
+    assert m.groupdict()[u"Title"] == u'בראשית'
+    assert m.groupdict()[u"Sham_Perek"] is not None
+    assert m.groupdict()[u'a0'] == u'שם' and m.groupdict()[u'a1'] == u'ד'
 
     test6 = u'שבת (פח:)'
     r = inst.get_ultimate_title_regex(u'שבת','he')
     m = re.search(r, test6)
-    assert m.group() == u'שבת (פח:)'
+    assert m.groupdict()[u"Title"] == u'שבת'
+    assert m.groupdict()[u'Talmud_Sham'] is not None
+    assert m.groupdict()[u'a0'] == u'פח:'
 
     test7 = u'((משנה ברכות (פרק ג משנה ה)'
     r = inst.get_ultimate_title_regex(u'משנה ברכות','he')
     m = re.search(r, test7)
-    assert m.group() == u'משנה ברכות (פרק ג משנה ה)'
+    assert m.groupdict()[u"Title"] == u'משנה ברכות' # or shouldn't this be simply ברכות?
+    assert m.groupdict()[u"Perek_Mishnah"] is not None
+    assert m.groupdict()[u'a0'] == u'ג' and m.groupdict()[u'a1'] == u'ה'
+
+    test8 = u'(בראשית שם)'
+    r = inst.get_ultimate_title_regex(u'בראשית','he')
+    m = re.search(r, test8)
+    assert m.groupdict()[u"Title"] == u'בראשית'
+    assert m.groupdict()[u"Sham_Perek"] is not None
+    assert m.groupdict()[u'a0'] == u'שם'
+
 
 def test_build_refs():
     inst = CitationFinder()
     test1 = u'(בראשית א:ב)'
     title = u'בראשית'
     refs = library._internal_ref_from_string(title,test1,'he',False,True,inst.get_ultimate_title_regex(title, 'he', compiled=False))
-    pass
+    assert refs.group() == u'Genesis 1:2'
+
 #todo: test new class IndexIbidFinder
 #todo: test ibidExceptions
