@@ -137,7 +137,7 @@ class CitationFinder():
 
 
     @staticmethod
-    def parse_sham_match(sham_match, lang):
+    def parse_sham_match(sham_match, lang, node=None):
         """
         TODO - convert the title that was found to an standard title string
 
@@ -159,7 +159,13 @@ class CitationFinder():
                     elif currSectionStr is None:
                         break # we haven't found anything beyond this point
                     sections.append(groupRegexDict["jan_list"][i]._addressTypes[0].toNumber(lang, gs.get(gname)))
-                return [sham_match.group("Title"), sections]
+
+                if node is not None:
+                    title = node.full_title("en")
+                else:
+                    # assume it's a sham. otherwise we have no way of dealing with it
+                    title = None
+                return [title, sections]
 
 
     def get_potential_refs(self, st, lang = 'he'):
@@ -197,7 +203,7 @@ class CitationFinder():
                                     break
 
                             if hasSham:
-                                sham_refs += [(CitationFinder.parse_sham_match(m, lang), m.span(), CitationFinder.SHAM_INT)]
+                                sham_refs += [(CitationFinder.parse_sham_match(m, lang, node=node), m.span(), CitationFinder.SHAM_INT)]
                             else: # failed for some unknown reason
                                 non_refs += [(m, m.span(), CitationFinder.NON_REF_INT)]
                 else:
