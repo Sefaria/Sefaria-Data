@@ -64,11 +64,11 @@ with open("Torah Commentators - Bios - People.tsv") as tsv:
         p.name_group.add_title(l[3].strip(), "he", primary=True, replace_primary=True)
         for x in l[2].split(","):
             x = x.strip()
-            if x:
+            if len(x):
                 p.name_group.add_title(x, "en")
         for x in l[4].split(","):
             x = x.strip()
-            if x:
+            if len(x):
                 p.name_group.add_title(x, "he")
         if len(l[5]) > 0:
             if "c" in l[5]:
