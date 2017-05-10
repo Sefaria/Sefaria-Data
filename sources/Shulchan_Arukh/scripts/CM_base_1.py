@@ -14,6 +14,8 @@ def markup(b_vol):
     b_vol.mark_references(commentaries.commentary_ids["Beur HaGra"], u'@69\[([\u05d0-\u05ea]{1,3})\]', group=1)
     b_vol.mark_references(commentaries.commentary_ids["Netivot HaMishpat, Hidushim"], u'@70\(([\u05d0-\u05ea]{1,3})\)',
                           group=1)
+    b_vol.mark_references(commentaries.commentary_ids["Netivot HaMishpat, Beurim"], u'@71([\u05d0-\u05ea]{1,3})\)',
+                          group=1)
     return
 
 root = Root('../Choshen_Mishpat.xml')
