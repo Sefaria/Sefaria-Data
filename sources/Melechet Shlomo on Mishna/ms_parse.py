@@ -35,8 +35,8 @@ Nezikin, Kadshim, Taharos:
 @11 Start DH
 @33 End DH
 """
-markers_1 = {"Intro":u"@01", "Outro":u"@99", "Perek":u"@00", "Mishna":u"@11", "DH Start": u"@22", "DH End": u"@33", "ERASE":[u"@44",u"@55",u"#",u"T"]}
-markers_2 = {"Intro":u"@01", "Outro": "NONE","Perek":u"@00", "Mishna":u"@22", "DH Start": u"@11", "DH End": u"@33", "ERASE":[]}
+markers_1 = {"Intro":u"@01", "Outro":u"@99", "Perek":u"@00", "Mishna":u"@11", "DH Start": u"@22", "DH End": u"@33", "ERASE":[u"@99",u"@01",u"@44",u"@55",u"#",u"T"]}
+markers_2 = {"Intro":u"@01", "Outro": "NONE","Perek":u"@00", "Mishna":u"@22", "DH Start": u"@11", "DH End": u"@33", "ERASE":[u"@01"]}
 
 #first, create index of english and hebrew titles. Since our titles are in hebrew, this is set as the key
 tractate_titles = {}
@@ -67,35 +67,7 @@ def ms_post_term():
         ]
     }
     post_term(term_obj)
-"""
-the commentary is highly irregular, with each tractate having any number of the following:
- (1) intro
- (2) outro
- (3) random out of index portion
-this method returns an array of which, if any, of these is in a given tractate. For (3), the location of the comment
-    is given as well.
-""" 
-def get_index_details(tractate_object):
-    with open(tractate_object.file_extension) as myfile:
-        lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
-    current_perek = 0
-    current_mishna = 0
-    details = {"Intro":False, "Outro":False, "Other":[]}
-    for line in lines:
-        if tractate_object.markers["Perek"] in line:
-            current_perek = getGematria(line.replace(u"פרק",""))
-            current_mishna = 0
-        elif tractate_object.markers["Mishna"] in line:
-            current_mishna = getGematria(line)
-        elif tractate_object.markers["Intro"] in line:
-            if current_mishna ==0:
-                details["Intro"]=True
-            else:
-                details["Other"].append([current_perek,current_mishna])
-        elif tractate_object.markers["Outro"] in line:
-          details["Outro"]=True
-    return details  
-                
+            
 def ms_post_index(tractate_object):   
     record = JaggedArrayNode()
     record.add_title('Melechet Shlomo on '+tractate_object.record_name_en, 'en', primary=True)
@@ -120,13 +92,38 @@ def ms_post_text(tractate_object):
     with open(tractate_object.file_extension) as myfile:
         lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
     print tractate_object.record_name_en
-    details = get_index_details(tractate_object)
-    for key in details.keys():
-        if details[key]!=[]:
-            print key, details[key]
-    print ""
-    #for line in lines:
-        #print line
+    tractate_array = make_perek_array(tractate_array.record_name_en)
+    current_perek=1
+    current_mishna=1
+    in_next_mishna=[]
+    for line in lines:
+        if tractate_object.markers["Perek"] in line:
+            current_perek = getGematria(line.replace(u"פרק",""))
+            current_mishna = 1
+        elif tractate_object.markers["Mishna"] in line:
+            current_mishna = getGematria(line)
+            while len(in_next_mishna)>0:
+                tractate_array[current_perek-1][current_mishna-1].append(edit_lines(in_next_mishna.pop(0)))
+        elif tractate_object.markers["Intro"] in line:
+            in_next_mishna.append(line)
+        else:
+            tractate_array[current_perek-1][current_mishna-1].append(edit_lines(line))
+def edit_lines(tractate_object,line):
+    for uni in tractate_object.markers["ERASE"]:
+        line = line.replace(uni, u"")
+    line = line.replace(tractate_object.markers["DH Start"],u"<b>").replace(tractate_object.markers["DH End"],u"</b>")
+    return line
+def make_perek_array(book):
+    tc = TextChunk(Ref(book), "he")
+    return_array = []
+    for x in range(len(tc.text)):
+        return_array.append([])
+    for index, perek in enumerate(return_array):
+        tc = TextChunk(Ref(book+" "+str(index+1)), "he")
+        for x in range(len(tc.text)):
+            return_array[index].append([])
+    return return_array
+    
 def get_record_name(title):
     return highest_fuzz(tractate_titles.keys(), title)
 posting_term = False
@@ -148,6 +145,13 @@ def highest_fuzz(input_list, input_item):
     return best_match
 if posting_term:
     ms_post_term()
+if posting_text:
+    f = open("MS Intro Table.csv","w")
+    f.write("Tractate, Component, Status")
+    f.close()
+    f = open("MS Intro Content.txt","w")
+    f.write('')
+    f.close()
 for folder in folder_names:
     for ms_file in os.listdir(folder):
         if ".txt" in ms_file:
@@ -168,3 +172,69 @@ for folder in folder_names:
                 ms_post_index(current_tractate)
             if posting_text:
                 ms_post_text(current_tractate)
+    """for writing record
+    
+    the commentary is highly irregular, with each tractate having any number of the following:
+     (1) intro
+     (2) outro
+     (3) random out of index portion
+    this method returns an array of which, if any, of these is in a given tractate. For (3), the location of the comment
+        is given as well.
+    
+    def get_index_details(tractate_object):
+        with open(tractate_object.file_extension) as myfile:
+            lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
+        current_perek = 0
+        current_mishna = 0
+        details = {"Other":[]}
+        for line in lines:
+            if tractate_object.markers["Perek"] in line:
+                current_perek = getGematria(line.replace(u"פרק",""))
+                current_mishna = 0
+            elif tractate_object.markers["Mishna"] in line:
+                current_mishna = getGematria(line)
+            elif tractate_object.markers["Intro"] in line:
+                if current_mishna ==0:
+                    details["Intro"]=line
+                else:
+                    details["Other"].append([[current_perek,current_mishna],line])
+            elif tractate_object.markers["Outro"] in line:
+              details["Outro"]=line
+        return details  
+    
+    f = open("MS Intro Table.csv","a")
+    details = get_index_details(tractate_object)
+    if "Intro" in details:
+        f.write(tractate_object.record_name_en+", Intro\n")
+    if "Other" in details:
+        for index in details["Other"]:
+            f.write(tractate_object.record_name_en+", "+str(index[0][0])+":"+str(index[0][1])+"\n")
+    if "Outro" in details:
+        f.write(tractate_object.record_name_en+", Outro\n")
+    f.close()
+    f = open("MS Intro Content.txt","a")
+    if "Intro" in details:
+        f.write(tractate_object.record_name_en+", Intro\n")
+        f.write(details["Intro"].encode('utf8'))
+        f.write("\n______________________________________\n")
+    if "Other" in details:
+        for index in details["Other"]:
+            f.write(tractate_object.record_name_en+", "+str(index[0][0])+":"+str(index[0][1])+"\n")
+            f.write(index[1].encode('utf8'))
+            f.write("\n______________________________________\n")
+    if "Outro" in details:
+        f.write(tractate_object.record_name_en+", Outro\n")
+        f.write(details["Outro"].encode('utf8'))
+        f.write("\n______________________________________\n")
+    f.close()
+    """
+    """
+    for key in details.keys():
+        f.write(tractate_object.record_name_en)
+        if details[key]!=[]:
+            print key, details[key]
+            f.write(", "+)
+    print ""
+    """
+    #for line in lines:
+        #print line
