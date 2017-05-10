@@ -154,18 +154,27 @@ class CitationFinder():
         address_regex_dict = CitationFinder.get_address_regex_dict(lang)
         gs = sham_match.groupdict()
 
+        node_depth = 2 if node is None else node.depth
+
         for groupName, groupRegexDict in address_regex_dict.items():
             groupMatch = gs.get(groupName)
-            if groupMatch is not None:
+            if groupMatch is not None or node is not None:
                 sections = []
-                for i in range(2):
+                for i in range(node_depth):
                     gname = u"a{}".format(i)
                     currSectionStr = gs.get(gname)
                     if currSectionStr == u"שם":
                         sections.append(None)
+                        continue
                     elif currSectionStr is None:
                         break # we haven't found anything beyond this point
-                    sections.append(groupRegexDict["jan_list"][i]._addressTypes[0].toNumber(lang, gs.get(gname)))
+
+                    if node is None:
+                        addressType = groupRegexDict["jan_list"][i]._addressTypes[0]
+                    else:
+                        addressType = node._addressTypes[i]
+
+                    sections.append(addressType.toNumber(lang, gs.get(gname)))
 
                 if node is not None:
                     title = node.full_title("en")
@@ -178,8 +187,8 @@ class CitationFinder():
         return [None, [None]]
 
     def get_potential_refs(self, st, lang='he'):
-        title_sham = u'שם'
 
+        title_sham = u'שם'
         unique_titles = set(library.get_titles_in_string(st, lang))
         unique_titles.add(title_sham)
         refs = []
