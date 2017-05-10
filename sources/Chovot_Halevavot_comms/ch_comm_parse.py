@@ -258,12 +258,12 @@ def make_links(key):
             last_matched = Ref('Duties of the Heart, {} 1'.format(section["en_title"]))
             base_chunk = TextChunk(Ref('Duties of the Heart, {}'.format(section["en_title"])),"he")
             com_chunk = TextChunk(Ref('{}, {}'.format(key, section["en_title"])),"he")
-            ch_links = match_ref(base_chunk,com_chunk,base_tokenizer,dh_extract_method=dh_extract_method,verbose=True,rashi_filter=_filter)
+            ch_links = match_ref(base_chunk,com_chunk,base_tokenizer,dh_extract_method=dh_extract_method,rashi_filter=_filter)
             print "KEYS:"
             for key_thing in ch_links.keys():
                 print key_thing
             #pdb.set_trace()
-            for base, comment in zip(ch_links["matches"],ch_links["comment_refs"]):
+            for link_index, (base, comment) in enumerate(zip(ch_links["matches"],ch_links["comment_refs"])):
                 total+=1
                 print "B",base,"C", comment
                 if base:
@@ -281,6 +281,9 @@ def make_links(key):
                     matched+=1
                     
                     while len(last_not_matched)>0:
+                        print "we had ", last_matched.normal()
+                        print "we have ", base.normal()
+                        print "so, we'll do ",last_matched.normal()+"-"+base.ending_ref().normal_last_section()
                         link = (
                                 {
                                 "refs": [
@@ -299,15 +302,37 @@ def make_links(key):
                 else:
                     not_machted.append('{}, {} Introduction'.format(key, section["en_title"]))
                     last_not_matched.append(comment.starting_ref())
+                    if link_index==len(ch_links["matches"])-1:
+                        print "NO LINKS LEFT!"
+                        print "we had ", last_matched.normal()
+                        print "so, we'll do ",last_matched.normal()+"-"+str(len(base_chunk.text))
+                        while len(last_not_matched)>0:
+                            link = (
+                                    {
+                                    "refs": [
+                                             last_matched.normal()+"-"+str(len(base_chunk.text)),
+                                             last_not_matched.pop().normal(),
+                                             ],
+                                    "type": "commentary",
+                                    "auto": True,
+                                    "generated_by": "sterling_"+key.replace(" ","_")+"_linker"
+                                    })
+                            #post_link(link, weak_network=True)
+                            matched+=1
+                         
         #for other sections, do each chapter seperate:
         else:
-            for chapter in range(1, len(TextChunk(Ref("Duties of the Heart, "+section["en_title"]),"en").text)+1):
+            indices = [q for q in range(1, len(TextChunk(Ref("Duties of the Heart, "+section["en_title"]),"en").text)+1)]
+            indices.insert(0, "Introduction")
+            indices = ["Introduction"]
+            #for chapter in range(1, len(TextChunk(Ref("Duties of the Heart, "+section["en_title"]),"en").text)+1):
+            for chapter in indices:
                 last_matched = Ref('Duties of the Heart, {}, {} 1'.format(section["en_title"],chapter))
                 base_chunk = TextChunk(Ref('Duties of the Heart, {}, {}'.format(section["en_title"],chapter)),"he")
                 com_chunk = TextChunk(Ref('{}, {}, {}'.format(key, section["en_title"], chapter)),"he")
-                ch_links = match_ref(base_chunk,com_chunk,base_tokenizer,dh_extract_method=dh_extract_method,verbose=True,rashi_filter=_filter)
+                ch_links = match_ref(base_chunk,com_chunk,base_tokenizer,dh_extract_method=dh_extract_method,rashi_filter=_filter)
                 if "comment_refs" in ch_links:
-                    for base, comment in zip(ch_links["matches"],ch_links["comment_refs"]):
+                    for link_index, (base, comment) in enumerate(zip(ch_links["matches"],ch_links["comment_refs"])):
                         total+=1
                         print "B",base,"C", comment
                         if base:
@@ -321,7 +346,7 @@ def make_links(key):
                                     "auto": True,
                                     "generated_by": "sterling_"+key.replace(" ","_")+"_linker"
                                     })
-                            #post_link(link, weak_network=True)    
+                            post_link(link, weak_network=True)    
                             matched+=1
                             
                             while len(last_not_matched)>0:
@@ -335,13 +360,30 @@ def make_links(key):
                                         "auto": True,
                                         "generated_by": "sterling_"+key.replace(" ","_")+"_linker"
                                         })
-                                #post_link(link, weak_network=True)
+                                post_link(link, weak_network=True)
                                 matched+=1
                         
                             last_matched=base.starting_ref()   
                         else:
                             not_machted.append('{}, {} Chapter {}'.format(key, section["en_title"], chapter))
                             last_not_matched.append(comment)
+                            if link_index==len(ch_links["matches"])-1:
+                                print "NO LINKS LEFT!"
+                                print "we had ", last_matched.normal()
+                                print "so, we'll do ",last_matched.normal()+"-"+str(len(base_chunk.text))
+                                while len(last_not_matched)>0:
+                                    link = (
+                                            {
+                                            "refs": [
+                                                     last_matched.normal()+"-"+str(len(base_chunk.text)),
+                                                     last_not_matched.pop().normal(),
+                                                     ],
+                                            "type": "commentary",
+                                            "auto": True,
+                                            "generated_by": "sterling_"+key.replace(" ","_")+"_linker"
+                                            })
+                                    post_link(link, weak_network=True)
+                                    matched+=1
                             
                 else:
                     not_machted.append('{}, {} Chapter {}'.format(key, section["en_title"], chapter))
@@ -401,18 +443,17 @@ com_dic = {"Tov haLevanon":{"he_title":u"טוב הלבנון",
 admin_urls = []
 site_urls = []     
 for key in com_dic.keys():
-    if "Pat" in key:
-        print key
-        admin_urls.append("proto.sefaria.org/admin/reset/"+key)
-        site_urls.append("proto.sefaria.org/"+key)
-        if posting_term:
-            ch_post_term(key)
-        if posting_index:
-            ch_index_post(key)
-        if posting_text:
-            ch_post_text(key)
-        if linking:
-            make_links(key)
+    print key
+    admin_urls.append("proto.sefaria.org/admin/reset/"+key)
+    site_urls.append("proto.sefaria.org/"+key)
+    if posting_term:
+        ch_post_term(key)
+    if posting_index:
+        ch_index_post(key)
+    if posting_text:
+        ch_post_text(key)
+    if linking:
+        make_links(key)
 print "Admin urls:"
 for url in admin_urls:
     print url
