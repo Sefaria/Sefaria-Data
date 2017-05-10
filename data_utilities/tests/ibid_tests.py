@@ -151,12 +151,11 @@ def test_get_potential_refs():
     inst = CitationFinder()
 
     st = u'''(שמות יא ט) בשלישי ברא שלש בריות אילנות (שו"ע בלה בלה) ודשאים וגן עדן ועוד אמרו (שם י) אין לך כל עֵשֶׂב ועשב מלמטה שאין לו מזל (בראשית שגדכגדכג) ברקיע ומכה אותו ואומר לו גדל הדא הוא דכתיב (שם)'''
-    st = u'(רמב"ם הלכות יסודי התורה פ"א ופ"ג)'
-    refs, nons, shams = inst.get_potential_refs(st)
-    print 'refs', refs
-    print 'nons', nons
-    print 'shams', shams
-    pass
+    # st = u'(רמב"ם הלכות יסודי התורה פ"א ופ"ג)'
+    st = u'''(שם)'''
+    allrefs = inst.get_potential_refs(st)
+    print allrefs
+    return
 
 def test_get_ultimate_regex():
     inst = CitationFinder()
@@ -164,7 +163,7 @@ def test_get_ultimate_regex():
     r = inst.get_ultimate_title_regex(u'בראשית','he')
     m = re.search(r, test1)
     assert m.groupdict()[u"Title"] == u'בראשית'
-    assert m.groupdict()[u"Integer_Integer"] is not None
+    # assert m.groupdict()[u"Integer_Integer"] is not None
     assert m.groupdict()[u'a0'] == u'א' and m.groupdict()[u'a1'] == u'ב'
 
     test2 = u'(שם ג:ד)'
@@ -172,51 +171,57 @@ def test_get_ultimate_regex():
     print r.pattern
     m = re.search(r, test2)
     assert m.groupdict()[u"Title"] == u'שם'
-    assert m.groupdict()[u"Integer_Integer"] is not None
+    # assert m.groupdict()[u"Integer_Integer"] is not None
     assert m.groupdict()[u'a0'] == u'ג' and m.groupdict()[u'a1'] == u'ד'
 
     test3 = u'(ב"ר פרק ג משנה ד)'
     r = inst.get_ultimate_title_regex(u'ב"ר', 'he')
     m = re.search(r, test3)
     assert m.groupdict()[u"Title"] == u'ב"ר'
-    assert m.groupdict()[u"Perek_Mishnah"] is not None
+    # assert m.groupdict()[u"Perek_Mishnah"] is not None
     assert m.groupdict()[u'a0'] == u'ג' and m.groupdict()[u'a1'] == u'ד'
 
     test4 = u'בראשית (ג:ד)'
     r = inst.get_ultimate_title_regex(u'בראשית','he')
     m = re.search(r, test4)
     assert m.groupdict()[u"Title"] == u'בראשית'
-    assert m.groupdict()[u"Integer_Integer"] is not None
+    # assert m.groupdict()[u"Integer_Integer"] is not None
     assert m.groupdict()[u'a0'] == u'ג' and m.groupdict()[u'a1'] == u'ד'
 
     test5 = u'בראשית (שם:ד)'
     r = inst.get_ultimate_title_regex(u'בראשית','he')
     m = re.search(r, test5)
     assert m.groupdict()[u"Title"] == u'בראשית'
-    assert m.groupdict()[u"Sham_Perek"] is not None
+    # assert m.groupdict()[u"Sham_Perek"] is not None
     assert m.groupdict()[u'a0'] == u'שם' and m.groupdict()[u'a1'] == u'ד'
 
     test6 = u'שבת (פח:)'
     r = inst.get_ultimate_title_regex(u'שבת','he')
     m = re.search(r, test6)
     assert m.groupdict()[u"Title"] == u'שבת'
-    assert m.groupdict()[u'Talmud_Sham'] is not None
+    # assert m.groupdict()[u'Talmud_Sham'] is not None
     assert m.groupdict()[u'a0'] == u'פח:'
 
     test7 = u'((משנה ברכות (פרק ג משנה ה)'
     r = inst.get_ultimate_title_regex(u'משנה ברכות','he')
     m = re.search(r, test7)
     assert m.groupdict()[u"Title"] == u'משנה ברכות' # or shouldn't this be simply ברכות?
-    assert m.groupdict()[u"Perek_Mishnah"] is not None
+    # assert m.groupdict()[u"Perek_Mishnah"] is not None
     assert m.groupdict()[u'a0'] == u'ג' and m.groupdict()[u'a1'] == u'ה'
 
     test8 = u'(בראשית שם)'
     r = inst.get_ultimate_title_regex(u'בראשית','he')
     m = re.search(r, test8)
     assert m.groupdict()[u"Title"] == u'בראשית'
-    assert m.groupdict()[u"Sham_Perek"] is not None
+    # assert m.groupdict()[u"Sham_Perek"] is not None
     assert m.groupdict()[u'a0'] == u'שם'
 
+    test9 = u'(משנה ברכות שם מ"ג)'
+    r = inst.get_ultimate_title_regex(u'משנה ברכות', 'he')
+    m = re.search(r, test9)
+    assert m.groupdict()[u"Title"] == u'משנה ברכות'
+    # assert m.groupdict()[u"Sham_Perek"] is not None
+    assert m.groupdict()[u'a0'] == u'שם' and m.groupdict()[u'a1'] == u'ג'
 
 def test_build_refs():
     inst = CitationFinder()

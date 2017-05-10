@@ -7,6 +7,7 @@ from collections import OrderedDict
 import regex as re
 from data_utilities.util import getGematria
 
+
 class CitationFinder():
     '''
     class to find all potential citations in a string. classifies citations as either sham, refs, or neither
@@ -27,38 +28,43 @@ class CitationFinder():
         :return: regex
         """
         node = library.get_schema_node(title, lang)
-        # if not node:  # title is unrecognized
-        #     address_regex = self.create_or_address_regexes(lang)
-        # else:
-        #     address_regex = node.address_regex(lang)
-
-        address_regex = self.create_or_address_regexes(lang)
+        if not node:  # title is unrecognized
+            address_regex = self.create_or_address_regexes(lang)
+        else:
+            address_regex = node.address_regex(lang)
 
         after_title_delimiter_re = ur"[,.: \r\n]+"
 
         inner_paren_reg = u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + ur'(?:[\[({]' + address_regex + ur'[\])}])(?=\W|$)'
 
-        # outer_paren_reg = ur"""(?<=							# look behind for opening brace
-        #     [({]										# literal '(', brace,
-        #     [^})]*										# anything but a closing ) or brace
-        # )
-        # """ + re.escape(title) + after_title_delimiter_re + address_regex + ur"""
-        # (?=\W|$)                                        # look ahead for non-word char
-        # (?=												# look ahead for closing brace
-        #     [^({]*										# match of anything but an opening '(' or brace
-        #     [)}]										# zero-width: literal ')' or brace
-        # )"""
+
 
         outer_paren_reg = ur"""(?:
            [({]										# literal '(', brace,
            [^})]*										# anything but a closing ) or brace
-       )
-       """ + u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + address_regex + ur"""
-           [^({]*										# match of anything but an opening '(' or brace
-           [)}]									# zero-width: literal ')' or brace
-       """
-        reg = u'(?:{})|(?:{})'.format(inner_paren_reg,outer_paren_reg)
-        #reg = outer_paren_reg
+           )
+           """ + u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + address_regex + ur"""
+               [^({]*										# match of anything but an opening '(' or brace
+               [)}]									# zero-width: literal ')' or brace
+           """
+
+        if title == u"שם":
+            sham_reg = u"שם"
+            stam_sham_reg = ur"""(?:
+               [({]										# literal '(', brace,
+               [^})]*										# anything but a closing ) or brace
+           )
+           (?P<Title>""" + sham_reg + u""")
+           """ + ur"""
+               [^({]*										# match of anything but an opening '(' or brace
+               [)}]									# zero-width: literal ')' or brace
+           """
+            reg = u'(?:{})|(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_reg, stam_sham_reg)
+            # (?P<Integer_Integer>(?P<a0>)(?P<a1>))?    # these groups should not match anything. we include them just so that the groups exist
+
+        else:
+           reg = u'(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_reg)
+
         if compiled:
             reg = re.compile(reg, re.VERBOSE)
         return reg
@@ -66,11 +72,11 @@ class CitationFinder():
     @staticmethod
     def get_address_regex_dict(lang):
         address_list_depth1 = [
-            ["Integer"],
             ["Perek"],
             ["Mishnah"],
             ["Talmud"],
-            ["Volume"]
+            ["Volume"],
+            ["Integer"]
         ]
 
         jagged_array_nodes = {
@@ -88,13 +94,13 @@ class CitationFinder():
                                                                    "jan_list": [jan, None]}
 
         address_list_depth2 = [
-            ["Integer", "Integer"],
             ["Perek", "Mishnah"],
             #["Talmud", "Integer"], No such thing as Talmud Integer in our library
             #["Perek", "Halakhah"],
             #["Siman", "Seif"],
             ["Volume", "Integer"],
-            # ["Volume","Siman"]
+            # ["Volume","Siman"],
+            ["Integer", "Integer"]
         ]
         lengths = [0, 0]
         sectionNames = ['', '']
@@ -123,6 +129,7 @@ class CitationFinder():
         depth2regex = u'|'.join([u'(?P<{}>{})'.format(groupName, regList2Regex(groupRegDict['regex'], True)) for groupName, groupRegDict in address_regex_dict.items()])
         depth1regex = u'|'.join([u'(?P<{}>{})'.format(groupName, regList2Regex(groupRegDict['regex'], False)) for groupName, groupRegDict in address_regex_dict.items()])
         return u"(?:{}|{})".format(depth2regex, depth1regex)
+
     @staticmethod
     def create_jan_for_address_type(address_type):
         depth = len(address_type)
@@ -135,11 +142,10 @@ class CitationFinder():
             'sectionNames': sectionNames
         })
 
-
     @staticmethod
     def parse_sham_match(sham_match, lang, node=None):
         """
-        TODO - convert the title that was found to an standard title string
+        TODO - convert the title that was found to a standard title string
 
         :param sham_match:
         :param lang:
@@ -147,6 +153,7 @@ class CitationFinder():
         """
         address_regex_dict = CitationFinder.get_address_regex_dict(lang)
         gs = sham_match.groupdict()
+
         for groupName, groupRegexDict in address_regex_dict.items():
             groupMatch = gs.get(groupName)
             if groupMatch is not None:
@@ -167,8 +174,10 @@ class CitationFinder():
                     title = None
                 return [title, sections]
 
+        # if you're here, you didn't find any address. probably (שם)
+        return [None, [None]]
 
-    def get_potential_refs(self, st, lang = 'he'):
+    def get_potential_refs(self, st, lang='he'):
         title_sham = u'שם'
 
         unique_titles = set(library.get_titles_in_string(st, lang))
