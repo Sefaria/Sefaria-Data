@@ -21,7 +21,6 @@ class CitationFinder():
 
     def get_ultimate_title_regex(self, title, node, lang, compiled=True):
        #todo: consider situations that it is obvious it is a ref although there are no () ex: ברכות פרק ג משנה ה
-       #todo: recognize mishnah or talmud according to the addressTypes given
         """
         returns regex to find either `(title address)` or `title (address)`
         title can be Sham
@@ -32,6 +31,8 @@ class CitationFinder():
             address_regex = self.create_or_address_regexes(lang)
         else:
             address_regex = node.address_regex(lang)
+
+        #todo: if title is sham then we don't want to find prefixes for it
 
         after_title_delimiter_re = ur"[,.: \r\n]+"
         start_paren_reg = ur"(?:[(\[{][^})\]]*)"
@@ -44,7 +45,7 @@ class CitationFinder():
 
         if title == u"שם":
             sham_reg = u"שם"
-            stam_sham_reg = start_paren_reg + ur"(?P<Title>" + sham_reg + u")" + end_paren_reg
+            stam_sham_reg = ur"?:[(\[{])(?P<Title>" + sham_reg + u")(?:[\])}])"
             reg = u'(?:{})|(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_reg, stam_sham_reg)
 
         else:
