@@ -29,6 +29,7 @@ class Maharsha:
         whatever the category is we increment the maharam line and post the link between maharam and the appropriate
         book based on the category. remember to deal with paragraph case and gemara case.
         '''
+        self.list_of_dafs = []
         self.server = server
         self.title = title
         self.heTitle = heTitle
@@ -155,6 +156,7 @@ class Maharsha:
                 self.dh_by_cat[each_cat][self.current_daf] = []
         self.actual_text = actual_text
         assert self.current_daf <= len_masechet
+        self.list_of_dafs.append(self.current_daf)
         return self.current_daf
 
 
@@ -430,6 +432,18 @@ class Maharsha:
         post_index(index, server=self.server)
         return tractate
 
+    def checkDafOrder(self):
+        problem = False
+        prev = 0
+        for daf in self.list_of_dafs:
+            if daf > prev:
+                prev = daf
+            else:
+                print "DAF PROBLEM"
+                print daf
+                problem = True
+        if problem:
+            print self.list_of_dafs
 
 if __name__ == "__main__":
     done = []
@@ -482,6 +496,7 @@ if __name__ == "__main__":
     '''
     files = [file for file in os.listdir(".") if file.endswith("2.txt") and file != "comm_wout_base.txt"
              and file.startswith("chid") and "nedarim" in file]
+    files = ["chidushei_agadot_shabbat2.txt"]
     for file in files:
         '''
         get masechet by splitting title of file
@@ -496,8 +511,9 @@ if __name__ == "__main__":
         elif file.startswith("chidushei_ha"):
             title = "Chidushei Halachot"
             heTitle = u"חדושי הלכות"
-        obj = Maharsha(masechet, title, heTitle)
+        obj = Maharsha(masechet, title, heTitle, server="http://www.sefaria.org")
         obj.parseText(open(file), len_masechet)
+        obj.checkDafOrder()
         if len(obj.comm_dict) > 0:
             print masechet
             print title
@@ -509,5 +525,5 @@ if __name__ == "__main__":
                                 "language": "he",
                                 "text": text_to_post,
                         }
-            #post_text("{} on {}".format(title, masechet), send_text, "on", server=self.server)
-            obj.postLinks(masechet)
+            #post_text("{} on {}".format(title, masechet), send_text, "on", server="http://www.sefaria.org")
+            #obj.postLinks(masechet)

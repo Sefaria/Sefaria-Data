@@ -10,6 +10,8 @@ from sources.functions import *
 from sefaria.model import *
 import re
 from BeautifulSoup import BeautifulSoup
+import PIL
+from PIL import Image
 
 class XML_to_JaggedArray:
 
@@ -46,11 +48,22 @@ class XML_to_JaggedArray:
     def run(self):
         xml_text = ""
         print self.title
+        digit = re.compile(u"<p>\d+. ")
+        chapter = re.compile(u"<title>CHAPTER")
+        prev_line_ch = False
+        ch_line = ""
         for line in open(self.file):
+            if line.find("<p>") == 0 and digit.match(line) is None and prev_line_ch:
+                print ch_line
             if line.find("<title>") == 0:
                 msg = bleach.clean(line, strip=True).replace("\n", "").replace("\r", "")
-                print self.cleanNodeName(msg)
+                #print self.cleanNodeName(msg)
             xml_text += line
+            if chapter.match(line):
+                prev_line_ch = True
+                ch_line = line
+            else:
+                prev_line_ch = False
         print "****"
         xml_text = self.modify_before(xml_text)
         xml_text = bleach.clean(xml_text, tags=self.allowedTags, attributes=self.allowedAttributes, strip=False)
@@ -123,6 +136,7 @@ class XML_to_JaggedArray:
             tc.text = text
             tc.save()
 
+
     def parse(self, text_arr, footnotes):
         footnote_pattern = '<xref.*?>.*?</xref>'
         def extractIDsAndSupNums(text):
@@ -158,7 +172,14 @@ class XML_to_JaggedArray:
             for tag in tags:
                 filename = BeautifulSoup(tag).findAll("img")[0]['src']
                 filetype = filename.split(".")[1]
-                file = open("./{}".format(filename))
+                img = Image.open("./"+filename)
+                orig_height = img.size[1]
+                orig_width = img.size[0]
+                percent = 550 / float(orig_width)
+                height = float(orig_height) * float(percent)
+                img = img.resize((550, height), PIL.Image.ANTIALIAS)
+                img = img.save("New_"+filename)
+                file = open("./{}".format("New_"+filename))
                 data = file.read()
                 file.close()
                 data = data.encode("base64")
@@ -171,6 +192,8 @@ class XML_to_JaggedArray:
         assert type(text_arr) is list
         ftnote_texts = []
         for index, text in enumerate(text_arr):
+            if len(text) == 0:
+                continue
             text_arr[index] = removeNumberFromStart(text_arr[index])
             text_arr[index] = text_arr[index].replace("<sup><xref", "<xref").replace("</xref></sup>", "</xref>")
             ft_ids, ft_sup_nums = extractIDsAndSupNums(text_arr[index])
@@ -192,6 +215,7 @@ class XML_to_JaggedArray:
             text_arr[index] = text_arr[index].replace("<bold>", "<b>").replace("<italic>", "<i>").replace("</bold>", "</b>").replace("</italic>", "</i>")
             text_arr[index] = text_arr[index].replace("<li>", "<br>").replace("</li>", "")
             text_arr[index] = text_arr[index].replace("</title>", "</b>").replace("<title>", "<b>")
+            text_arr[index] = text_arr[index].replace("3465", "&lt;").replace("3467", "&gt;")
             text_arr[index] = convertIMGBase64(text_arr[index])
 
 
@@ -239,6 +263,7 @@ class XML_to_JaggedArray:
                         self.prev_footnote = child.attrib['id']
                 elif self.siblingsHaveChildren(element):
                     text["subject"] += [self.cleanText(child.xpath("string()").replace("\n\n", " "))]
+                    print "found one"
                 else:
                     text["text"] += [self.cleanText(child.xpath("string()").replace("\n\n", " "))]
             pass
@@ -253,19 +278,43 @@ class XML_to_JaggedArray:
         return False
 
 
-    def convertManyIntoOne(self, ref, depth_inc=False):
+    def convertManyIntoOne(self, text):
         array = []
-        for x in ref:
+
+        for count, x in enumerate(text):
             if type(x) is dict:
+                print "Chapter {}...".format(count+1)
                 array.append(self.convertManyIntoOne(x['text']))
             else:
-                if depth_inc:
-                    array.append([x])
-                else:
-                    array.append(x)
+                array.append(x)
+
         if len(array) > 0 and type(array[0]) is not list:
+            array = self.pre_parse(array)
             array = self.parse(array, self.footnotes)
         return array
+
+
+    def pre_parse(self, text_arr):
+        p = re.compile(u"(\d+)[\.|\s+\.]+")
+        content = {}
+        for count, line in enumerate(text_arr):
+            match = p.match(line)
+            if match:
+                num = int(match.group(1))
+                if num not in content:
+                    content[num] = line.replace(match.group(0),"")
+                else:
+                    content[num] += "<br>" + line.replace(match.group(0),"")
+            else:
+                if count > 0:
+                    print "{}".format(count+1)
+                if count+1 in content:
+                    content[count+1] += "<br>" + line
+                else:
+                    content[count+1] = line
+
+        content = convertDictToArray(content, empty="")
+        return content
 
 
     def interpret_and_post(self, node, running_ref, prev="string"):
@@ -289,22 +338,25 @@ class XML_to_JaggedArray:
             elif key == "text" and len(node[key]) > 0: #if len(node.keys()) == 2 and "text" in node.keys() and "subject" in node.keys() and len(node['text']) > 0:
                 if self.assertions:
                     assert Ref(running_ref)
-                depth_inc = False
                 if running_ref == "Ibn Ezra on Isaiah":
-                    depth_inc = True
-                    text = self.convertManyIntoOne(node["text"], depth_inc)
-                    text = self.temp_func(text)
+                    text = self.convertManyIntoOne(node["text"])
                     text[36] = []
                     text[38] = []
+                    for i in range(len(text)):
+                        for j in range(len(text[i])):
+                            text[i][j] = [text[i][j]]
                 else:
                     text = self.convertManyIntoOne(node["text"])
                 self.post(running_ref, text)
+
+
 
     def temp_func(self, text):
         for x, ch in enumerate(text):
             for y, line in enumerate(ch):
                 text[x][y] = [ch[y]]
         return text
+
 
     def reorder_structure(self, element, move_footnotes=False, recurse_times=0):
         '''

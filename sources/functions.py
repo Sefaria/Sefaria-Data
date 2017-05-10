@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import urllib
 import urllib2
 from urllib2 import URLError, HTTPError
@@ -281,6 +282,9 @@ def compileCommentaryIntoPage(title, daf):
             page.append(line)
         ref = ref.next_section_ref() if ref.next_section_ref() != ref else None
     return page
+
+
+
 
 
 def lookForLineInCommentary(title, daf, line_n):

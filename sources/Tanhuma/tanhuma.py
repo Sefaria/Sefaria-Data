@@ -77,7 +77,7 @@ def create_schema(en_he_parshiot):
         "schema": book.serialize(),
         "categories": ["Midrash"]
     }
-    post_index(index)
+    #post_index(index, server="http://ste.sefaria.org")
     return en_parshiot
 
 
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     post_info = {}
     post_info["language"] = "en"
     post_info["server"] = sys.argv[2]
-    allowed_tags = ["book", "volume", "intro", "foreword", "part", "chapter", "p", "ftnote", "title", "ol"]
+    allowed_tags = ["book", "volume", "intro", "foreword", "part", "chapter", "p", "ftnote", "title", "ol", "ul", "table"]
     allowed_attributes = ["id"]
     grab_title_lambda = lambda x: x[0].tag == "title"
     p = re.compile("\d+a?\.")
@@ -175,9 +175,9 @@ if __name__ == "__main__":
         marker = text[0]
         text = " ".join(text[1:])
         if marker.split(".")[-1] == "":
-            return text, marker.split(".")[0]
+            return marker.split(".")[0]
         else:
-            return text, marker.split(".")[-1]
+            return marker.split(".")[-1]
 
     if sys.argv[1] == "Buber":
         title = "Midrash Tanchuma Buber"
