@@ -115,10 +115,24 @@ def make_csv(sham_items):
         csv.writerow(row_dict)
     f.close()
 
+def index_ibid_finder():
+    index = library.get_index("Sefer HaChinukh")
+    inst = IndexIbidFinder(index)
+    inst.index_find_and_replace()
+
+def segment_ibid_finder():
+    index = library.get_index("Sefer HaChinukh")
+    inst = IndexIbidFinder(index)
+    r = Ref("Sefer HaChinukh 7:4")
+    st = r.text("he").text
+    inst.segment_find_and_replace(st)
+
 
 if __name__ == "__main__":
-    inst = CitationFinder()
+    #inst = CitationFinder()
 
-    sham_items = count_regex_in_all_db(inst.get_ultimate_title_regex(u'שם', 'he'), text='all') #, text = 'Ramban on Genesis')
-    make_csv(sham_items)
+    #sham_items = count_regex_in_all_db(inst.get_ultimate_title_regex(u'שם', 'he'), text='all') #, text = 'Ramban on Genesis')
+    #make_csv(sham_items)
 
+    # index_ibid_finder()
+    segment_ibid_finder()

@@ -128,24 +128,27 @@ def test_ibid_find():
     inst = IndexIbidFinder()
     string = u'''וילך איש מבית לוי רבותינו אמרו שהלך אחר עצת בתו (סוטה יב:). את בלהה (בראשית לה כב),
      דבלים (הושע א ג), לכו ונמכרנו לישמעאלים (בראשית שם כז), לכו ונכהו בלשון (שם יח יח), לכו נא ונוכחה (ישעיה א יח).'''
-    refs = inst.ibid_find_and_replace(string, lang='he', citing_only=False, replace=True)
+    refs = inst.segment_find_and_replace(string, lang='he', citing_only=False, replace=True)
     print refs
 
 class TestIndexIbidFinder:
 
     @classmethod
     def setup_class(cls):
-        index = library.get_index('Ramban on Genesis')
+        index = library.get_index('Sefer HaChinukh')
         cls.instance = IndexIbidFinder(index, assert_simple = True)
 
     def test_find_all_shams_in_st(self):
         st = u'''(שמות יא ט) בשלישי ברא שלש בריות אילנות ודשאים וגן עדן ועוד אמרו (שם י ו) אין לך כל עֵשֶׂב ועשב מלמטה שאין לו מזל ברקיע ומכה אותו ואומר לו גדל הדא הוא דכתיב (איוב לח לג)'''
-        shams = self.instance.ibid_find_and_replace(st, 'he', citing_only=True)
+        shams = self.instance.segment_find_and_replace(st, 'he', citing_only=True)
         assert shams == [Ref('Exodus.11.9'), Ref('Exodus.10.6'), Ref('Job.38.33')]
 
         st = u'''(שמות יא ט) בשלישי ברא שלש בריות אילנות ודשאים וגן עדן ועוד אמרו (שם י) אין לך כל עֵשֶׂב ועשב מלמטה שאין לו מזל ברקיע ומכה אותו ואומר לו גדל הדא הוא דכתיב (שם)'''
-        shams = self.instance.ibid_find_and_replace(st, 'he', citing_only=True)
+        shams = self.instance.segment_find_and_replace(st, 'he', citing_only=True)
         assert shams == [Ref('Exodus.11.9'), Ref('Exodus.11.10'),Ref('Exodus.11.10')]
+
+    def test_find_in_index(self):
+        self.instance.index_find_and_replace()
 
 def test_get_potential_refs():
     inst = CitationFinder()
@@ -160,64 +163,76 @@ def test_get_potential_refs():
 def test_get_ultimate_regex():
     inst = CitationFinder()
     test1 = u'(בראשית א:ב)'
-    r = inst.get_ultimate_title_regex(u'בראשית','he')
+    t = u'בראשית'
+    n = library.get_schema_node(t, 'he')
+    r = inst.get_ultimate_title_regex(t, n, 'he')
     m = re.search(r, test1)
     assert m.groupdict()[u"Title"] == u'בראשית'
     # assert m.groupdict()[u"Integer_Integer"] is not None
     assert m.groupdict()[u'a0'] == u'א' and m.groupdict()[u'a1'] == u'ב'
 
     test2 = u'(שם ג:ד)'
-    r = inst.get_ultimate_title_regex(u'שם', 'he')
-    print r.pattern
+    r = inst.get_ultimate_title_regex(u'שם', None, 'he')
+    #print r.pattern
     m = re.search(r, test2)
     assert m.groupdict()[u"Title"] == u'שם'
     # assert m.groupdict()[u"Integer_Integer"] is not None
     assert m.groupdict()[u'a0'] == u'ג' and m.groupdict()[u'a1'] == u'ד'
 
     test3 = u'(ב"ר פרק ג משנה ד)'
-    r = inst.get_ultimate_title_regex(u'ב"ר', 'he')
+    r = inst.get_ultimate_title_regex(u'ב"ר', None, 'he')
     m = re.search(r, test3)
     assert m.groupdict()[u"Title"] == u'ב"ר'
     # assert m.groupdict()[u"Perek_Mishnah"] is not None
     assert m.groupdict()[u'a0'] == u'ג' and m.groupdict()[u'a1'] == u'ד'
 
     test4 = u'בראשית (ג:ד)'
-    r = inst.get_ultimate_title_regex(u'בראשית','he')
+    r = inst.get_ultimate_title_regex(u'בראשית', n, 'he')
     m = re.search(r, test4)
     assert m.groupdict()[u"Title"] == u'בראשית'
     # assert m.groupdict()[u"Integer_Integer"] is not None
     assert m.groupdict()[u'a0'] == u'ג' and m.groupdict()[u'a1'] == u'ד'
 
     test5 = u'בראשית (שם:ד)'
-    r = inst.get_ultimate_title_regex(u'בראשית','he')
+    t = u'בראשית'
+    n = library.get_schema_node(t, 'he')
+    r = inst.get_ultimate_title_regex(t, n, 'he')
     m = re.search(r, test5)
     assert m.groupdict()[u"Title"] == u'בראשית'
     # assert m.groupdict()[u"Sham_Perek"] is not None
     assert m.groupdict()[u'a0'] == u'שם' and m.groupdict()[u'a1'] == u'ד'
 
     test6 = u'שבת (פח:)'
-    r = inst.get_ultimate_title_regex(u'שבת','he')
+    t = u'שבת'
+    n = library.get_schema_node(t, 'he')
+    r = inst.get_ultimate_title_regex(t, n, 'he')
     m = re.search(r, test6)
     assert m.groupdict()[u"Title"] == u'שבת'
     # assert m.groupdict()[u'Talmud_Sham'] is not None
     assert m.groupdict()[u'a0'] == u'פח:'
 
     test7 = u'((משנה ברכות (פרק ג משנה ה)'
-    r = inst.get_ultimate_title_regex(u'משנה ברכות','he')
+    t = u'משנה ברכות'
+    n = library.get_schema_node(t, 'he')
+    r = inst.get_ultimate_title_regex(t, n, 'he')
     m = re.search(r, test7)
     assert m.groupdict()[u"Title"] == u'משנה ברכות' # or shouldn't this be simply ברכות?
     # assert m.groupdict()[u"Perek_Mishnah"] is not None
     assert m.groupdict()[u'a0'] == u'ג' and m.groupdict()[u'a1'] == u'ה'
 
     test8 = u'(בראשית שם)'
-    r = inst.get_ultimate_title_regex(u'בראשית','he')
+    t = u'בראשית'
+    n = library.get_schema_node(t, 'he')
+    r = inst.get_ultimate_title_regex(t, n, 'he')
     m = re.search(r, test8)
     assert m.groupdict()[u"Title"] == u'בראשית'
     # assert m.groupdict()[u"Sham_Perek"] is not None
     assert m.groupdict()[u'a0'] == u'שם'
 
     test9 = u'(משנה ברכות שם מ"ג)'
-    r = inst.get_ultimate_title_regex(u'משנה ברכות', 'he')
+    t = u'משנה ברכות'
+    n = library.get_schema_node(t, 'he')
+    r = inst.get_ultimate_title_regex(t, n, 'he')
     m = re.search(r, test9)
     assert m.groupdict()[u"Title"] == u'משנה ברכות'
     # assert m.groupdict()[u"Sham_Perek"] is not None

@@ -5,6 +5,7 @@ from sefaria.system.exceptions import InputError
 from sefaria.utils import talmud
 from collections import OrderedDict
 import regex as re
+import json
 from data_utilities.util import getGematria
 
 
@@ -18,7 +19,7 @@ class CitationFinder():
     SHAM_INT = 2
     AFTER_TITLE_DELIMETER_RE = ur"[,.: \r\n]+"
 
-    def get_ultimate_title_regex(self, title, lang, compiled=True):
+    def get_ultimate_title_regex(self, title, node, lang, compiled=True):
        #todo: consider situations that it is obvious it is a ref although there are no () ex: ברכות פרק ג משנה ה
        #todo: recognize mishnah or talmud according to the addressTypes given
         """
@@ -27,40 +28,24 @@ class CitationFinder():
         :param title: str
         :return: regex
         """
-        node = library.get_schema_node(title, lang)
-        if not node:  # title is unrecognized
+        if node is None:  # title is unrecognized
             address_regex = self.create_or_address_regexes(lang)
         else:
             address_regex = node.address_regex(lang)
 
         after_title_delimiter_re = ur"[,.: \r\n]+"
+        start_paren_reg = ur"(?:[(\[{][^})\]]*)"
+        end_paren_reg = ur"(?:[\])}]| [^({\[]*[\])}])"
 
         inner_paren_reg = u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + ur'(?:[\[({]' + address_regex + ur'[\])}])(?=\W|$)'
 
-
-
-        outer_paren_reg = ur"""(?:
-           [({]										# literal '(', brace,
-           [^})]*										# anything but a closing ) or brace
-           )
-           """ + u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + address_regex + ur"""
-               [^({]*										# match of anything but an opening '(' or brace
-               [)}]									# zero-width: literal ')' or brace
-           """
+        outer_paren_reg = start_paren_reg + u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + \
+                          address_regex + end_paren_reg
 
         if title == u"שם":
             sham_reg = u"שם"
-            stam_sham_reg = ur"""(?:
-               [({]										# literal '(', brace,
-               [^})]*										# anything but a closing ) or brace
-           )
-           (?P<Title>""" + sham_reg + u""")
-           """ + ur"""
-               [^({]*										# match of anything but an opening '(' or brace
-               [)}]									# zero-width: literal ')' or brace
-           """
+            stam_sham_reg = start_paren_reg + ur"(?P<Title>" + sham_reg + u")" + end_paren_reg
             reg = u'(?:{})|(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_reg, stam_sham_reg)
-            # (?P<Integer_Integer>(?P<a0>)(?P<a1>))?    # these groups should not match anything. we include them just so that the groups exist
 
         else:
            reg = u'(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_reg)
@@ -198,11 +183,13 @@ class CitationFinder():
         for title in unique_titles:
             is_sham = title_sham == title
             node = library.get_schema_node(title, lang)
+            if not isinstance(node, JaggedArrayNode):
+                node = None
 
-            title_reg = self.get_ultimate_title_regex(title, lang, compiled=True)
+            title_reg = self.get_ultimate_title_regex(title, node, lang, compiled=True)
             for m in re.finditer(title_reg, st):
                 if not is_sham:
-                    if node is None or not isinstance(node, JaggedArrayNode):
+                    if node is None:
                         # this is a bad ref
                         non_refs += [(m, m.span(), CitationFinder.NON_REF_INT)]
                     else:
@@ -284,7 +271,7 @@ class IndexIbidFinder(object):
         return sham_refs
 
 
-    def ibid_find_and_replace(self, st, lang='he', citing_only=False, replace=True):
+    def segment_find_and_replace(self, st, lang='he', citing_only=False, replace=True):
         #todo: implemant replace = True
         """
         Returns an list of Ref objects derived from string
@@ -309,7 +296,7 @@ class IndexIbidFinder(object):
             elif type == CitationFinder.NON_REF_INT:
                 self._tr.ignore_book_name_keys()
             elif type == CitationFinder.SHAM_INT:
-                refs += [self._tr.resolve(item[0][0], item[0][1])] #  TODO this line doesn't work yet because titles aren't normalized
+                refs += [self._tr.resolve(item[0], item[1])] #  TODO this line doesn't work yet because titles aren't normalized
 
         """
         unique_titles = set(library.get_titles_in_string(st, lang, citing_only))
@@ -334,6 +321,18 @@ class IndexIbidFinder(object):
 
 
         return refs
+
+    def index_find_and_replace(self, lang='he', citing_only=False, replace=True):
+        seg_refs = self._index.all_segment_refs()
+        out = OrderedDict()
+        for i, r in enumerate(seg_refs):
+            print r, i, len(seg_refs)
+            st = r.text("he").text
+            found_refs = self.segment_find_and_replace(st, lang='he')
+            out[r.normal()] = found_refs
+
+        with open("test_ibid.json", "wb") as fp:
+            json.dump(out, fp, indent=4)
 
 
 class BookIbidTracker(object):
