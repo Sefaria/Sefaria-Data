@@ -19,7 +19,8 @@ class CitationFinder():
     SHAM_INT = 2
     AFTER_TITLE_DELIMETER_RE = ur"[,.: \r\n]+"
 
-    def get_ultimate_title_regex(self, title, node, lang, compiled=True):
+    @staticmethod
+    def get_ultimate_title_regex(title, node, lang, compiled=True):
        #todo: consider situations that it is obvious it is a ref although there are no () ex: ברכות פרק ג משנה ה
         """
         returns regex to find either `(title address)` or `title (address)`
@@ -28,7 +29,7 @@ class CitationFinder():
         :return: regex
         """
         if node is None:  # title is unrecognized
-            address_regex = self.create_or_address_regexes(lang)
+            address_regex = CitationFinder.create_or_address_regexes(lang)
         else:
             address_regex = node.address_regex(lang)
 
@@ -131,7 +132,7 @@ class CitationFinder():
         })
 
     @staticmethod
-    def parse_sham_match(sham_match, lang, node=None):
+    def parse_sham_match(sham_match, lang, node):
         """
         TODO - convert the title that was found to a standard title string
 
@@ -139,42 +140,42 @@ class CitationFinder():
         :param lang:
         :return:
         """
-        address_regex_dict = CitationFinder.get_address_regex_dict(lang)
         gs = sham_match.groupdict()
 
-        node_depth = 2 if node is None else node.depth
+        sections = []
+        for i in range(node.depth):
+            gname = u"a{}".format(i)
+            currSectionStr = gs.get(gname)
+            if currSectionStr == u"שם":
+                sections.append(None)
+                continue
+            elif currSectionStr is None:
+                break # we haven't found anything beyond this point
 
-        for groupName, groupRegexDict in address_regex_dict.items():
-            groupMatch = gs.get(groupName)
-            if groupMatch is not None or node is not None:
-                sections = []
-                for i in range(node_depth):
-                    gname = u"a{}".format(i)
-                    currSectionStr = gs.get(gname)
-                    if currSectionStr == u"שם":
-                        sections.append(None)
-                        continue
-                    elif currSectionStr is None:
-                        break # we haven't found anything beyond this point
+            addressType = node._addressTypes[i]
+            sections.append(addressType.toNumber(lang, gs.get(gname)))
 
-                    if node is None:
-                        addressType = groupRegexDict["jan_list"][i]._addressTypes[0]
-                    else:
-                        addressType = node._addressTypes[i]
+        title = node.full_title("en")
+        return [title, sections]
 
-                    sections.append(addressType.toNumber(lang, gs.get(gname)))
+    @staticmethod
+    def get_sham_ref_with_node(st, node, lang='he'):
+        """
+        used when you know the node that a sham ref belongs to in order to parse the ref according to the address types
+        of that node
+        :param st: string to search for sham ref
+        :param node: node that we believe this sham ref belongs to
+        :param lang:
+        :return:
+        """
+        title_sham = u'שם'
+        title_reg = CitationFinder.get_ultimate_title_regex(title_sham, node, lang, compiled=True)
+        for m in re.finditer(title_reg, st):
+            return CitationFinder.parse_sham_match(m, lang, node)  # there should only be one match
+        raise InputError
 
-                if node is not None:
-                    title = node.full_title("en")
-                else:
-                    # assume it's a sham. otherwise we have no way of dealing with it
-                    title = None
-                return [title, sections]
-
-        # if you're here, you didn't find any address. probably (שם)
-        return [None, [None]]
-
-    def get_potential_refs(self, st, lang='he'):
+    @staticmethod
+    def get_potential_refs(st, lang='he'):
 
         title_sham = u'שם'
         unique_titles = set(library.get_titles_in_string(st, lang))
@@ -189,7 +190,7 @@ class CitationFinder():
             if not isinstance(node, JaggedArrayNode):
                 node = None
 
-            title_reg = self.get_ultimate_title_regex(title, node, lang, compiled=True)
+            title_reg = CitationFinder.get_ultimate_title_regex(title, node, lang, compiled=True)
             for m in re.finditer(title_reg, st):
                 if not is_sham:
                     if node is None:
@@ -211,11 +212,11 @@ class CitationFinder():
                                     break
 
                             if hasSham:
-                                sham_refs += [(CitationFinder.parse_sham_match(m, lang, node=node), m.span(), CitationFinder.SHAM_INT)]
+                                sham_refs += [(CitationFinder.parse_sham_match(m, lang, node), m.span(), CitationFinder.SHAM_INT)]
                             else: # failed for some unknown reason
                                 non_refs += [(m, m.span(), CitationFinder.NON_REF_INT)]
                 else:
-                    sham_refs += [(CitationFinder.parse_sham_match(m, lang), m.span(), CitationFinder.SHAM_INT)]
+                    sham_refs += [(m.group(), m.span(), CitationFinder.SHAM_INT)]
         """
             try:
                 refs_w_location, non_refs_w_locations = library._build_all_refs_from_string_w_locations(title, st,lang=lang, with_bad_refs=True)
@@ -298,7 +299,7 @@ class IndexIbidFinder(object):
         for item, location, type in all_refs:
             if type == CitationFinder.REF_INT:
                 try:
-                    refs += [(self._tr.resolve(item.index_node.full_title(), item.sections), 'ref')]
+                    refs += [self._tr.resolve(item.index_node.full_title(), item.sections)]
                 except IbidRefException:
                     failed_refs += [item.normal()]
             elif type == CitationFinder.NON_REF_INT:
@@ -306,39 +307,19 @@ class IndexIbidFinder(object):
                 self._tr.ignore_book_name_keys()
             elif type == CitationFinder.SHAM_INT:
                 try:
-                    refs += [(self._tr.resolve(item[0], item[1]), 'sham')] #  TODO this line doesn't work yet because titles aren't normalized
+                    if isinstance(item, unicode):
+                        refs += [self._tr.resolve(None, match_str=item)] #  TODO this line doesn't work yet because titles aren't normalized
+                    else:
+                        refs += [self._tr.resolve(item[0], sections=item[1])]
                 except (IbidRefException, IbidKeyNotFoundException) as e:
                     failed_shams += [item]
 
-
-        """
-        unique_titles = set(library.get_titles_in_string(st, lang, citing_only))
-        for title in unique_titles:
-            try:
-                ref_with_location += library._build_all_refs_from_string_w_locations(title, st, lang)
-            except AssertionError as e:
-                print u"Skipping Schema Node: {}".format(title)
-        shams = self.find_all_shams_in_st(st, lang=lang)
-        ref_with_location.extend(shams)
-        ref_with_location.sort(key=lambda x: x[1][0])
-
-        tracker = BookIbidTracker(assert_simple=True)
-        for item, location in ref_with_location:
-            if isinstance(item, Ref):
-                refs += [tracker.resolve(item.index_node.full_title(), item.sections)]
-            else:
-                refs += [tracker.resolve(item[0], item[1])]
-        """
-
-
-
-
-        return refs, failed_refs, failed_non_refs, failed_shams
+        return refs  #, failed_refs, failed_non_refs, failed_shams
 
     def index_find_and_replace(self, lang='he', citing_only=False, replace=True):
         seg_refs = self._index.all_segment_refs()
         out = OrderedDict()
-        for i, r in enumerate(seg_refs[:100]):
+        for i, r in enumerate(seg_refs):
             print r, i, len(seg_refs)
             st = r.text("he").text
             found_refs, failed_refs, failed_non_refs, failed_shams = self.segment_find_and_replace(st, lang='he')
@@ -346,7 +327,7 @@ class IndexIbidFinder(object):
                 'refs': [[fr[0].normal(), fr[1]] for fr in found_refs],
                 'failed_refs': [fr for fr in failed_refs],
                 'failed_non_refs': [fr for fr in failed_non_refs],
-                'failed_shams': [u"{} - {}".format(fr[0] if fr[0] else 'None', u", ".join(str(fr[1]))) for fr in failed_shams]
+                'failed_shams': [unicode(fr) for fr in failed_shams]
             }
 
         with codecs.open("test_ibid.json", "wb", encoding='utf8') as fp:
@@ -393,80 +374,88 @@ class BookIbidTracker(object):
 
         # register this reference according to all possible future ways it could be referenced
 
-    def resolve(self, index_name, sections):
+    def resolve(self, index_name, sections=None, match_str=None):
         """
 
         :param index_name:
         :param list sections: If any entry in this list is "None", then we treat that as a "שם" or "ibid", resolve it, and return a refrence
+        :param unicode match_str: optional match string. if this is provided, sections are ignored. index_name is assumed to be None
         :return: Ref
         """
         #todo: assert if table is empty.
         #todo: raise an error if can't find this sham constilation in table
 
-        # recognize what kind of key we are looking for
-        key = []
-        found_sham = False
-        last_depth = self.get_last_depth(index_name, sections)
-        if not index_name or len(sections) == 0 or not sections[0]: # tzmod to beginning
-            sections = tuple([None] * (max(len(sections), last_depth) - len(sections)) + list(sections)) # choosing the depth of the ref to resolve
-        elif len(sections) > 0 and not sections[-1]:
-            sections = tuple(list(sections) + [None] * (
-                max(len(sections), last_depth) - len(
-                    sections)))
-        if False and not index_name and sections == [None, None]:  # it says only Sham (all were None)
+
+        if not index_name:
+            index_name = self._last_cit[0]
+            if match_str is not None:
+                node = library.get_schema_node(index_name)  # assert JaggedArrayNode?
+                _, sections = CitationFinder.get_sham_ref_with_node(match_str, node, lang='he')
+
+        if sections is not None:
+            last_depth = self.get_last_depth(index_name, sections)
+            if not index_name or len(sections) == 0 or not sections[0]: # tzmod to beginning
+                sections = tuple([None] * (max(len(sections), last_depth) - len(sections)) + list(sections))  # choosing the depth of the ref to resolve
+            elif len(sections) > 0 and not sections[-1]:
+                sections = tuple(list(sections) + [None] * (
+                    max(len(sections), last_depth) - len(
+                        sections)))
+        """if False and not index_name and sections == [None, None]:  # it says only Sham (all were None)
             try:
                 resolvedRef = self._table[(None,(None, None))]
                 # notice that self._last_cit doesn't chnge so no need to reasign it
             except KeyError:
                 raise IbidKeyNotFoundException("Ibid table is empty. Can't retrieve book name")
-        else:
-            if not index_name:
-                index_name = self._last_cit[0]
-            for i, sect in enumerate(sections):
-                if found_sham:  # we are after the place that we need info from
-                    key.append(None)
-                else:
-                    key.append(sections[i])
-                if not sect:  # change bool on the first sham you meet
-                    found_sham = True
-            # if self._table.has_key(index_name, tuple(key)):
-            if found_sham:
-                try:
-                    from_table = self._table[(index_name, tuple(key))].sections
-                except:
-                    raise IbidKeyNotFoundException("couldn't find this key")
-                    # print "error, couldn't find this key", index_name, tuple(key)
-                    # return "error, couldn't find this key", index_name, tuple(key)
-            else:
-                from_table = sections # that is it wasn't in _table
-            new_sections = []
-            # merge them, while preferring the sections that were retrieved from the citation
-            for i, sect in enumerate(sections):
-                if sect:
-                    new_sections.append(sect)
-                else:
-                    new_sections.append(from_table[i])
-            try:
-                book_ref = Ref(index_name)
-                if self.assert_simple:
-                    assert not book_ref.index.is_complex()
-                if self.assert_simple:
-                    addressTypes = book_ref.index_node.addressTypes
-                else:
-                    addressTypes = [None]*len(new_sections)
-                section_str_list = []
-                for section, addressType in zip(new_sections, addressTypes):
-                    if addressType == u'Talmud':
-                        section_str_list += [talmud.section_to_daf(section)]
-                    else:
-                        section_str_list += [str(section)]
+        else:"""
 
-                resolvedRef = Ref(u'{}.{}'.format(index_name, '.'.join(section_str_list)))
+        # recognize what kind of key we are looking for
+        key = []
+        found_sham = False
+        for i, sect in enumerate(sections):
+            if found_sham:  # we are after the place that we need info from
+                key.append(None)
+            else:
+                key.append(sections[i])
+            if not sect:  # change bool on the first sham you meet
+                found_sham = True
+        # if self._table.has_key(index_name, tuple(key)):
+        if found_sham:
+            try:
+                from_table = self._table[(index_name, tuple(key))].sections
             except:
-                raise IbidRefException(u"problem with the Ref iteslf. {}.{}".format(index_name, '.'.join(str(new_sections))))
-                # print 'error, problem with the Ref iteslf. ', u'{}.{}'.format(index_name, '.'.join(str(new_sections)))
-                # return "error, problem with the Ref iteslf", index_name, tuple(key)
-            self._last_cit = [index_name, new_sections]
+                raise IbidKeyNotFoundException("couldn't find this key")
+                # print "error, couldn't find this key", index_name, tuple(key)
+                # return "error, couldn't find this key", index_name, tuple(key)
+        else:
+            from_table = sections # that is it wasn't in _table
+        new_sections = []
+        # merge them, while preferring the sections that were retrieved from the citation
+        for i, sect in enumerate(sections):
+            if sect:
+                new_sections.append(sect)
+            else:
+                new_sections.append(from_table[i])
+        try:
+            book_ref = Ref(index_name)
+            if self.assert_simple:
+                assert not book_ref.index.is_complex()
+            if self.assert_simple:
+                addressTypes = book_ref.index_node.addressTypes
+            else:
+                addressTypes = [None]*len(new_sections)
+            section_str_list = []
+            for section, addressType in zip(new_sections, addressTypes):
+                if addressType == u'Talmud':
+                    section_str_list += [talmud.section_to_daf(section)]
+                else:
+                    section_str_list += [str(section)]
+
+            resolvedRef = Ref(u'{}.{}'.format(index_name, '.'.join(section_str_list)))
+        except:
+            raise IbidRefException(u"problem with the Ref iteslf. {}.{}".format(index_name, '.'.join(str(new_sections))))
+            # print 'error, problem with the Ref iteslf. ', u'{}.{}'.format(index_name, '.'.join(str(new_sections)))
+            # return "error, problem with the Ref iteslf", index_name, tuple(key)
+        self._last_cit = [index_name, new_sections]
         if resolvedRef.is_empty():
             raise IbidRefException('problem with the Ref iteslf')
             # return "error, problem with the Ref iteslf", resolvedRef

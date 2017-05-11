@@ -116,14 +116,14 @@ def make_csv(sham_items):
     f.close()
 
 def index_ibid_finder():
-    index = library.get_index("Sefer HaChinukh")
+    index = library.get_index("Ramban on Genesis")
     inst = IndexIbidFinder(index)
     inst.index_find_and_replace()
 
 def segment_ibid_finder():
     index = library.get_index("Sefer HaChinukh")
     inst = IndexIbidFinder(index)
-    r = Ref("Sefer HaChinukh 9:3")
+    r = Ref("Ramban on Genesis 1:1:2")
     st = r.text("he").text
     inst.segment_find_and_replace(st)
 

@@ -152,6 +152,11 @@ class TestIndexIbidFinder:
     def test_find_in_index(self):
         self.instance.index_find_and_replace()
 
+    def test_get_sham_ref_with_node(self):
+        st = u"(פסחים צו, א)(שם ה, א)"
+        refs = self.instance.segment_find_and_replace(st, 'he', citing_only=True)
+
+
 def test_get_potential_refs():
     inst = CitationFinder()
 
