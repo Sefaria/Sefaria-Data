@@ -125,11 +125,13 @@ def test_ibid_dict():
 
 
 def test_ibid_find():
-    inst = IndexIbidFinder()
+    ind = library.get_index("Genesis")
+    inst = IndexIbidFinder(ind)
     string = u'''וילך איש מבית לוי רבותינו אמרו שהלך אחר עצת בתו (סוטה יב:). את בלהה (בראשית לה כב),
      דבלים (הושע א ג), לכו ונמכרנו לישמעאלים (בראשית שם כז), לכו ונכהו בלשון (שם יח יח), לכו נא ונוכחה (ישעיה א יח).'''
     refs = inst.segment_find_and_replace(string, lang='he', citing_only=False, replace=True)
     print refs
+
 
 class TestIndexIbidFinder:
 
@@ -153,12 +155,15 @@ class TestIndexIbidFinder:
 def test_get_potential_refs():
     inst = CitationFinder()
 
-    st = u'''(שמות יא ט) בשלישי ברא שלש בריות אילנות (שו"ע בלה בלה) ודשאים וגן עדן ועוד אמרו (שם י) אין לך כל עֵשֶׂב ועשב מלמטה שאין לו מזל (בראשית שגדכגדכג) ברקיע ומכה אותו ואומר לו גדל הדא הוא דכתיב (שם)'''
-    # st = u'(רמב"ם הלכות יסודי התורה פ"א ופ"ג)'
-    st = u'''(שם)'''
+    st = u''' (שמות יא ט) בשלישי ברא שלש בריות אילנות (אורח חיים ק) ודשאים וגן עדן ועוד אמרו (שם י) אין לך כל עֵשֶׂב (שמות שם כז) ועשב מלמטה שאין לו מזל (ברכות י:) ברקיע ומכה אותו ואומר לו גדל הדא הוא דכתיב (שם)'''
     allrefs = inst.get_potential_refs(st)
-    print allrefs
-    return
+    ref0 = (Ref('Exodus 11:9'), (1, 12), 0)
+    ref1 = (Ref('Shulchan Arukh, Orach Chayim 100'), (41, 54), 0)
+    ref2 = ([None, [10]], (80, 86), 2)
+    ref3 = ([u'Exodus', [None, 27]], (104, 116), 2)
+    ref4 = (Ref('Berakhot 10b'), (140, 150), 0)
+    ref5 = ([None, [None]], (194, 198), 2)
+    assert allrefs == [ref0, ref1, ref2, ref3, ref4, ref5]
 
 def test_get_ultimate_regex():
     inst = CitationFinder()
@@ -238,11 +243,39 @@ def test_get_ultimate_regex():
     # assert m.groupdict()[u"Sham_Perek"] is not None
     assert m.groupdict()[u'a0'] == u'שם' and m.groupdict()[u'a1'] == u'ג'
 
+    test10 = u'(בראשית י)'
+    t = u'בראשית'
+    n = library.get_schema_node(t, 'he')
+    r = inst.get_ultimate_title_regex(t, n, 'he')
+    m = re.search(r, test10)
+    assert m.groupdict()[u"Title"] == u'בראשית'
+    # assert m.groupdict()[u"Sham_Perek"] is not None
+    assert m.groupdict()[u'a0'] == u'י' and m.groupdict()[u'a1'] == None
+
+    test11 = u'(שם י)'
+    t = u'שם'
+    n = library.get_schema_node(t, 'he')
+    r = inst.get_ultimate_title_regex(t, n, 'he')
+    m = re.search(r, test11)
+    assert m.groupdict()[u"Title"] == u'שם'
+    # assert m.groupdict()[u"Sham_Perek"] is not None
+    assert m.groupdict()[u'a0'] == u'י' and m.groupdict()[u'a1'] == None
+
+    test12 = u'(שם שם י)'
+    t = u'שם'
+    n = library.get_schema_node(t, 'he')
+    r = inst.get_ultimate_title_regex(t, n, 'he')
+    m = re.search(r, test12)
+    assert m.groupdict()[u"Title"] == u'שם'
+    # assert m.groupdict()[u"Sham_Perek"] is not None
+    assert m.groupdict()[u'a0'] == u'שם' and m.groupdict()[u'a1'] == u'י'
+
+
 def test_build_refs():
     inst = CitationFinder()
     test1 = u'(בראשית א:ב)'
     title = u'בראשית'
-    refs = library._internal_ref_from_string(title,test1,'he',False,True,inst.get_ultimate_title_regex(title, 'he', compiled=False))
+    refs = library._internal_ref_from_string(title, test1, 'he', False, True, inst.get_ultimate_title_regex(title, 'he', compiled=False))
     assert refs.group() == u'Genesis 1:2'
 
 #todo: test new class IndexIbidFinder

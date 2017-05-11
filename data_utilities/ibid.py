@@ -45,9 +45,10 @@ class CitationFinder():
 
         if title == u"שם":
             sham_reg = u"שם"
-            stam_sham_reg = ur"?:[(\[{])(?P<Title>" + sham_reg + u")(?:[\])}])"
-            reg = u'(?:{})|(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_reg, stam_sham_reg)
-
+            stam_sham_reg = ur"(?:[(\[{])(?P<Title>" + sham_reg + u")(?:[\])}])"
+            outer_paren_sham_reg = ur"(?:[(\[{])" + u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + \
+                          address_regex + end_paren_reg
+            reg = u'(?:{})|(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_sham_reg, stam_sham_reg)
         else:
            reg = u'(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_reg)
 
