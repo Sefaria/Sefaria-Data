@@ -213,6 +213,23 @@ class Element(object):
         for child in self.get_child():
             child.load_comments_to_commentstore(*args, **kwargs)
 
+    def convert_pattern_to_itag(self, commentator, pattern, group=1, order_callback=getGematria):
+        """
+        Finds patterns and renders them as itags. This is helpful for references where the text is already on production
+        and properly linked, but there is still a need for itags.
+        :param commentator: Title of Commentator
+        :param pattern: regex to substitute
+        :param group: group to use to set the data order.
+        :param order_callback: Callback method used to decode the data order
+        :return:
+        """
+        if not self.multiple_children:
+            raise NotImplementedError
+
+        for child in self.get_child():
+            child.convert_pattern_to_itag(commentator, pattern, group, order_callback)
+
+
     def __unicode__(self):
         return unicode(self.Tag)
 
@@ -941,6 +958,22 @@ class TextElement(Element):
 
     def load_comments_to_commentstore(self, *args, **kwargs):
         raise NotImplementedError("Can't load comments at TextElement depth")
+
+    def convert_pattern_to_itag(self, commentator, pattern, group=1, order_callback=getGematria):
+
+        def repl(s):
+            data_order = order_callback(s.group(group))
+            return u'<i data-commentator="{}" data-order="{}"></i>'.format(commentator, data_order)
+
+        # Make sure pattern will not touch the existing xrefs
+        for xref in self.Tag.find_all('xref'):
+            if re.search(pattern, xref.text):
+                raise AssertionError('Pattern matches previously marked reference')
+
+        tagged = re.sub(pattern, repl, unicode(self))
+        new_tag = BeautifulSoup(tagged, 'xml').find(self.Tag.name)
+        self.Tag.replace_with(new_tag)
+        self.Tag = new_tag
 
 
 class Xref(Element):
