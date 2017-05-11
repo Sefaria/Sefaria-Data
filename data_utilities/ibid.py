@@ -5,7 +5,7 @@ from sefaria.system.exceptions import InputError
 from sefaria.utils import talmud
 from collections import OrderedDict
 import regex as re
-import json
+import json, codecs
 from data_utilities.util import getGematria
 
 
@@ -49,6 +49,7 @@ class CitationFinder():
             outer_paren_sham_reg = ur"(?:[(\[{])" + u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + \
                           address_regex + end_paren_reg
             reg = u'(?:{})|(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_sham_reg, stam_sham_reg)
+
         else:
            reg = u'(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_reg)
 
@@ -284,7 +285,9 @@ class IndexIbidFinder(object):
         :return: list of :class:`Ref` objects
         """
         refs = []
-        ref_with_location = []
+        failed_refs = []
+        failed_non_refs = []
+        failed_shams = []
         assert lang == 'he'
         # todo: support english
 
@@ -294,11 +297,19 @@ class IndexIbidFinder(object):
         all_refs = self._citationFinder.get_potential_refs(st, lang)
         for item, location, type in all_refs:
             if type == CitationFinder.REF_INT:
-                refs += [self._tr.resolve(item.index_node.full_title(), item.sections)]
+                try:
+                    refs += [(self._tr.resolve(item.index_node.full_title(), item.sections), 'ref')]
+                except IbidRefException:
+                    failed_refs += [item.normal()]
             elif type == CitationFinder.NON_REF_INT:
+                failed_non_refs += [item.group()]
                 self._tr.ignore_book_name_keys()
             elif type == CitationFinder.SHAM_INT:
-                refs += [self._tr.resolve(item[0], item[1])] #  TODO this line doesn't work yet because titles aren't normalized
+                try:
+                    refs += [(self._tr.resolve(item[0], item[1]), 'sham')] #  TODO this line doesn't work yet because titles aren't normalized
+                except (IbidRefException, IbidKeyNotFoundException) as e:
+                    failed_shams += [item]
+
 
         """
         unique_titles = set(library.get_titles_in_string(st, lang, citing_only))
@@ -322,19 +333,24 @@ class IndexIbidFinder(object):
 
 
 
-        return refs
+        return refs, failed_refs, failed_non_refs, failed_shams
 
     def index_find_and_replace(self, lang='he', citing_only=False, replace=True):
         seg_refs = self._index.all_segment_refs()
         out = OrderedDict()
-        for i, r in enumerate(seg_refs):
+        for i, r in enumerate(seg_refs[:100]):
             print r, i, len(seg_refs)
             st = r.text("he").text
-            found_refs = self.segment_find_and_replace(st, lang='he')
-            out[r.normal()] = found_refs
+            found_refs, failed_refs, failed_non_refs, failed_shams = self.segment_find_and_replace(st, lang='he')
+            out[r.normal()] = {
+                'refs': [[fr[0].normal(), fr[1]] for fr in found_refs],
+                'failed_refs': [fr for fr in failed_refs],
+                'failed_non_refs': [fr for fr in failed_non_refs],
+                'failed_shams': [u"{} - {}".format(fr[0] if fr[0] else 'None', u", ".join(str(fr[1]))) for fr in failed_shams]
+            }
 
-        with open("test_ibid.json", "wb") as fp:
-            json.dump(out, fp, indent=4)
+        with codecs.open("test_ibid.json", "wb", encoding='utf8') as fp:
+            json.dump(out, fp, indent=4, ensure_ascii=False)
 
 
 class BookIbidTracker(object):

@@ -123,7 +123,7 @@ def index_ibid_finder():
 def segment_ibid_finder():
     index = library.get_index("Sefer HaChinukh")
     inst = IndexIbidFinder(index)
-    r = Ref("Sefer HaChinukh 7:4")
+    r = Ref("Sefer HaChinukh 9:3")
     st = r.text("he").text
     inst.segment_find_and_replace(st)
 
