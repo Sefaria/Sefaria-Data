@@ -35,8 +35,8 @@ Nezikin, Kadshim, Taharos:
 @11 Start DH
 @33 End DH
 """
-markers_1 = {"Intro":u"@01", "Outro":u"@99", "Perek":u"@00", "Mishna":u"@11", "DH Start": u"@22", "DH End": u"@33", "ERASE":[u"@99",u"@01",u"@44",u"@55",u"#",u"T"]}
-markers_2 = {"Intro":u"@01", "Outro": "NONE","Perek":u"@00", "Mishna":u"@22", "DH Start": u"@11", "DH End": u"@33", "ERASE":[u"@01"]}
+markers_1 = {"Intro":u"@01", "Outro":u"@99", "Perek":u"@00", "Mishna":u"@11", "DH Start": u"@22", "DH End": u"@33", "ERASE":[u"$",u"@99",u"@01",u"@44",u"@55",u"#",u"T"]}
+markers_2 = {"Intro":u"@01", "Outro": "NONE","Perek":u"@00", "Mishna":u"@22", "DH Start": u"@11", "DH End": u"@33", "ERASE":[u"$",u"@01",u"@65",u"@66"]}
 
 #first, create index of english and hebrew titles. Since our titles are in hebrew, this is set as the key
 tractate_titles = {}
@@ -46,6 +46,7 @@ for tractate_title in library.get_indexes_in_category("Mishnah"):
 sedarim = [u"זרעים",u"מועד",u"נשים",u"נזיקין",u"קדשים",u"טהרות"]
 #some sedarim have different markings
 sedarim_group_1 = [u"זרעים",u"מועד",u"נשים"]
+seder_1_exceptions = [u"גיטין",u"נזיר",u"סוטה",u"קידושין"]
 class Tractate:
     pass
 def ms_post_term():
@@ -92,34 +93,44 @@ def ms_post_text(tractate_object):
     with open(tractate_object.file_extension) as myfile:
         lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
     print tractate_object.record_name_en
-    tractate_array = make_perek_array(tractate_array.record_name_en)
+    tractate_array = make_perek_array(tractate_object.record_name_en)
     current_perek=1
     current_mishna=1
     in_next_mishna=[]
     for line in lines:
-        if tractate_object.markers["Perek"] in line:
-            current_perek = getGematria(line.replace(u"פרק",""))
-            current_mishna = 1
-        elif tractate_object.markers["Mishna"] in line:
-            current_mishna = getGematria(line)
-            while len(in_next_mishna)>0:
-                tractate_array[current_perek-1][current_mishna-1].append(edit_lines(in_next_mishna.pop(0)))
-        elif tractate_object.markers["Intro"] in line:
-            in_next_mishna.append(line)
-        else:
-            tractate_array[current_perek-1][current_mishna-1].append(edit_lines(line))
+        if u"IGNORE" not in line:
+            if tractate_object.markers["Perek"] in line:
+                current_perek = getGematria(line.replace(u"פרק",""))
+                current_mishna = 1
+            elif tractate_object.markers["Mishna"] in line:
+                current_mishna = getGematria(line)
+                while len(in_next_mishna)>0:
+                    print current_perek, current_mishna
+                    tractate_array[current_perek-1][current_mishna-1].append(edit_lines(tractate_object,in_next_mishna.pop(0)))
+            elif tractate_object.markers["Intro"] in line:
+                in_next_mishna.append(line)
+            elif not_blank(line):
+                print current_perek, current_mishna
+                tractate_array[current_perek-1][current_mishna-1].append(edit_lines(tractate_object,line))
+    for pindex, perek in enumerate(tractate_array):
+        for mindex, mishna in enumerate(perek):
+            for cindex, comment in enumerate(mishna):
+                print tractate_object.record_name_en, pindex, mindex, cindex, comment
 def edit_lines(tractate_object,line):
     for uni in tractate_object.markers["ERASE"]:
         line = line.replace(uni, u"")
+    line = re.sub(ur"@\d{1,3}",u"",line)
     line = line.replace(tractate_object.markers["DH Start"],u"<b>").replace(tractate_object.markers["DH End"],u"</b>")
     return line
 def make_perek_array(book):
-    tc = TextChunk(Ref(book), "he")
+    tc = TextChunk(Ref(book), "he") if "Pesac" not in book else TextChunk(Ref(book), "en")
     return_array = []
     for x in range(len(tc.text)):
         return_array.append([])
+    print "LEN",len(tc.text)
     for index, perek in enumerate(return_array):
-        tc = TextChunk(Ref(book+" "+str(index+1)), "he")
+        print "INDEX",index
+        tc = TextChunk(Ref(book+" "+str(index+1)), "he") if "Pesac" not in book else TextChunk(Ref(book+" "+str(index+1)), "en")
         for x in range(len(tc.text)):
             return_array[index].append([])
     return return_array
@@ -143,6 +154,10 @@ def highest_fuzz(input_list, input_item):
             best_match=item
             highest_ratio=fuzz.ratio(input_item,item)
     return best_match
+def not_blank(s):
+    while " " in s:
+        s = s.replace(u" ",u"")
+    return (len(s.replace(u"\n",u"").replace(u"\r",u"").replace(u"\t",u""))!=0);
 if posting_term:
     ms_post_term()
 if posting_text:
@@ -164,6 +179,8 @@ for folder in folder_names:
                 current_tractate.tractate_name_he = re.search(r"(?<=מסכת).*(?=.txt)",ms_file).group().strip().decode('utf8','replace')
             else:
                 current_tractate.tractate_name_he = re.search(r"(?<=שלמה).*(?=.txt)",ms_file).group().strip().decode('utf8','replace')
+            if current_tractate.tractate_name_he in seder_1_exceptions:
+                current_tractate.markers = markers_2
             current_tractate.record_name_he = get_record_name(current_tractate.tractate_name_he)
             current_tractate.record_name_en = tractate_titles[current_tractate.record_name_he]
             admin_links.append("localhost:8000/admin/reset/Melechet Shlomo on "+current_tractate.record_name_en)
