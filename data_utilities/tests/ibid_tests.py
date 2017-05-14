@@ -2,7 +2,7 @@
 
 from sefaria.model import *
 from data_utilities.ibid import *
-
+import pytest
 
 
 
@@ -120,8 +120,9 @@ def test_ignore_book():
     ref1 = Ref('Genesis 1:2')
     tracker.registerRef(ref1)
     tracker.ignore_book_name_keys()
-    sham = (None, (12,))
-    #with
+    sham = (None, (None,))
+    with pytest.raises(IbidKeyNotFoundException):
+        tracker.resolve(sham[0], sham[1])
 
 
 def test_ibid_dict():
@@ -172,7 +173,7 @@ class TestIndexIbidFinder:
 def test_get_potential_refs():
     inst = CitationFinder()
 
-    st = u'''(לעיל ה ב)  (שמות יא ט) בשלישי ברא שלש בריות אילנות (אורח חיים ק) ודשאים וגן עדן ועוד אמרו (שם י) אין לך כל עֵשֶׂב (שמות שם כז) ועשב מלמטה שאין לו מזל (ברכות י:) ברקיע ומכה אותו ואומר לו גדל הדא הוא דכתיב (שם)'''
+    st = u''' (שמות יא ט) בשלישי ברא שלש בריות אילנות (אורח חיים ק) ודשאים וגן עדן ועוד אמרו (שם י) אין לך כל עֵשֶׂב (שמות שם כז) ועשב מלמטה שאין לו מזל (ברכות י:) ברקיע ומכה אותו ואומר לו גדל הדא הוא דכתיב (שם)'''
     allrefs = inst.get_potential_refs(st)
     ref0 = (Ref('Exodus 11:9'), (1, 12), 0)
     ref1 = (Ref('Shulchan Arukh, Orach Chayim 100'), (41, 54), 0)

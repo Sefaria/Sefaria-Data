@@ -360,7 +360,7 @@ class BookIbidTracker(object):
         self._table[(None, tuple([None] * text_depth))] = oref
         for key_tuple in self.creat_keys(oref):
             self._table[(oref.book,tuple(key_tuple))] = oref
-
+        self._last_cit = [oref.book,tuple(oref.sections)]
         # register this reference according to all possible future ways it could be referenced
 
     def resolve(self, index_name, sections=None, match_str=None):
@@ -448,7 +448,7 @@ class BookIbidTracker(object):
             raise IbidRefException(u"problem with the Ref iteslf. {}.{}".format(index_name, '.'.join(str(new_sections))))
             # print 'error, problem with the Ref iteslf. ', u'{}.{}'.format(index_name, '.'.join(str(new_sections)))
             # return "error, problem with the Ref iteslf", index_name, tuple(key)
-        self._last_cit = [index_name, new_sections]
+
         if resolvedRef.is_empty():
             raise IbidRefException('problem with the Ref iteslf')
             # return "error, problem with the Ref iteslf", resolvedRef
