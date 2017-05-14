@@ -262,9 +262,9 @@ from sefaria.helper.link import create_link_cluster
 
 if __name__ == "__main__":
     massekhet = 'Nedarim'
-    final_list = segment_column(u'done/nedarim_little_letters.csv', u'done/nedarim_little_letters.csv',  massekhet)
-    print final_list
-    validation = validity_and_cluster(final_list)
-    save_links_local(final_list, massekhet)
-    # links = post_ein_mishpat(massekhet)
+    # final_list = segment_column(u'done/sukkah_little_letters.csv', u'done/sukkah_little_letters.csv',  massekhet)
+    # print final_list
+    # validation = validity_and_cluster(final_list)
+    # save_links_local(final_list, massekhet)
+    links = post_ein_mishpat(massekhet)
     print 'done'
