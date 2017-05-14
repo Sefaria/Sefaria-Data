@@ -177,6 +177,7 @@ class CitationFinder():
     def get_potential_refs(st, lang='he'):
 
         title_sham = u'שם'
+        non_ref_titles = [u'לעיל', u'להלן']
         unique_titles = set(library.get_titles_in_string(st, lang))
         unique_titles.add(title_sham)
         refs = []
@@ -216,23 +217,12 @@ class CitationFinder():
                                 non_refs += [(m, m.span(), CitationFinder.NON_REF_INT)]
                 else:
                     sham_refs += [(m.group(), m.span(), CitationFinder.SHAM_INT)]
-        """
-            try:
-                refs_w_location, non_refs_w_locations = library._build_all_refs_from_string_w_locations(title, st,lang=lang, with_bad_refs=True)
-                refs += refs_w_location
-                potential_non_refs += non_refs_w_locations
-            except AssertionError as e:
-                pass
 
-
-
-        # separate sham_refs from non_refs
-        for pot_ref, location in potential_non_refs:
-            if re.search(reg_sham, pot_ref):
-                sham_refs += [(pot_ref, location)]
-            else:
-                 non_refs += [(pot_ref, location)]
-        """
+        for title in non_ref_titles:
+            node = None
+            title_reg = CitationFinder.get_ultimate_title_regex(title, node, lang, compiled=True)
+            for m in re.finditer(title_reg, st):
+                non_refs += [(m, m.span(), CitationFinder.NON_REF_INT)]
         all_refs = refs + non_refs + sham_refs
         all_refs.sort(key=lambda x: x[1][0])
 
@@ -299,7 +289,7 @@ class IndexIbidFinder(object):
             if type == CitationFinder.REF_INT:
                 try:
                     refs += [self._tr.resolve(item.index_node.full_title(), item.sections)]
-                except IbidRefException:
+                except (IbidRefException, IbidKeyNotFoundException) as e:
                     failed_refs += [item.normal()]
             elif type == CitationFinder.NON_REF_INT:
                 failed_non_refs += [item.group()]
@@ -313,7 +303,7 @@ class IndexIbidFinder(object):
                 except (IbidRefException, IbidKeyNotFoundException) as e:
                     failed_shams += [item]
 
-        return refs  #, failed_refs, failed_non_refs, failed_shams
+        return refs #, failed_refs, failed_non_refs, failed_shams
 
     def index_find_and_replace(self, lang='he', citing_only=False, replace=True):
         seg_refs = self._index.all_segment_refs()
@@ -384,16 +374,20 @@ class BookIbidTracker(object):
         #todo: assert if table is empty.
         #todo: raise an error if can't find this sham constilation in table
 
+        is_index_sham = index_name is None
 
-        if not index_name:
+        if index_name is None:
             index_name = self._last_cit[0]
-            if match_str is not None:
-                node = library.get_schema_node(index_name)  # assert JaggedArrayNode?
-                _, sections = CitationFinder.get_sham_ref_with_node(match_str, node, lang='he')
+            if index_name is not None:
+                if match_str is not None:
+                    node = library.get_schema_node(index_name)  # assert JaggedArrayNode?
+                    _, sections = CitationFinder.get_sham_ref_with_node(match_str, node, lang='he')
+            else:
+                raise IbidKeyNotFoundException("couldn't find this key")
 
         if sections is not None:
             last_depth = self.get_last_depth(index_name, sections)
-            if not index_name or len(sections) == 0 or not sections[0]: # tzmod to beginning
+            if is_index_sham or len(sections) == 0 or not sections[0]: # tzmod to beginning
                 sections = tuple([None] * (max(len(sections), last_depth) - len(sections)) + list(sections))  # choosing the depth of the ref to resolve
             elif len(sections) > 0 and not sections[-1]:
                 sections = tuple(list(sections) + [None] * (
@@ -485,9 +479,8 @@ class BookIbidTracker(object):
         deletes all keys with no book name.
         called after a citation not resolved in Sefaria
         '''
-        for k in self._table.keys():
-            if not k[0]:
-                del self._table[k]
+        del self._table[(None, (None, None))]
+        self._last_cit = [None, None]  # reset last citation seen
 
     def get_last_depth(self,index_name, sections):
         last_depth = len(sections)

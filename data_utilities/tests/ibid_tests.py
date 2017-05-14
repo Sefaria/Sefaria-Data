@@ -115,6 +115,14 @@ def test_talmud():
     resolved = tracker.resolve(sham[0], sham[1])
     assert resolved == Ref('Shabbat 21a')
 
+def test_ignore_book():
+    tracker = simple_tracker
+    ref1 = Ref('Genesis 1:2')
+    tracker.registerRef(ref1)
+    tracker.ignore_book_name_keys()
+    sham = (None, (12,))
+    #with
+
 
 def test_ibid_dict():
     test_dict = IbidDict()
@@ -131,6 +139,9 @@ def test_ibid_find():
      דבלים (הושע א ג), לכו ונמכרנו לישמעאלים (בראשית שם כז), לכו ונכהו בלשון (שם יח יח), לכו נא ונוכחה (ישעיה א יח).'''
     refs = inst.segment_find_and_replace(string, lang='he', citing_only=False, replace=True)
     print refs
+
+
+
 
 
 class TestIndexIbidFinder:
@@ -150,7 +161,8 @@ class TestIndexIbidFinder:
         assert shams == [Ref('Exodus.11.9'), Ref('Exodus.11.10'),Ref('Exodus.11.10')]
 
     def test_find_in_index(self):
-        self.instance.index_find_and_replace()
+        pass
+        #self.instance.index_find_and_replace()
 
     def test_get_sham_ref_with_node(self):
         st = u"(פסחים צו, א)(שם ה, א)"
@@ -160,14 +172,14 @@ class TestIndexIbidFinder:
 def test_get_potential_refs():
     inst = CitationFinder()
 
-    st = u''' (שמות יא ט) בשלישי ברא שלש בריות אילנות (אורח חיים ק) ודשאים וגן עדן ועוד אמרו (שם י) אין לך כל עֵשֶׂב (שמות שם כז) ועשב מלמטה שאין לו מזל (ברכות י:) ברקיע ומכה אותו ואומר לו גדל הדא הוא דכתיב (שם)'''
+    st = u'''(לעיל ה ב)  (שמות יא ט) בשלישי ברא שלש בריות אילנות (אורח חיים ק) ודשאים וגן עדן ועוד אמרו (שם י) אין לך כל עֵשֶׂב (שמות שם כז) ועשב מלמטה שאין לו מזל (ברכות י:) ברקיע ומכה אותו ואומר לו גדל הדא הוא דכתיב (שם)'''
     allrefs = inst.get_potential_refs(st)
     ref0 = (Ref('Exodus 11:9'), (1, 12), 0)
     ref1 = (Ref('Shulchan Arukh, Orach Chayim 100'), (41, 54), 0)
-    ref2 = ([None, [10]], (80, 86), 2)
+    ref2 = (u'(שם י)', (80, 86), 2)
     ref3 = ([u'Exodus', [None, 27]], (104, 116), 2)
     ref4 = (Ref('Berakhot 10b'), (140, 150), 0)
-    ref5 = ([None, [None]], (194, 198), 2)
+    ref5 = (u'(שם)', (194, 198), 2)
     assert allrefs == [ref0, ref1, ref2, ref3, ref4, ref5]
 
 def test_get_ultimate_regex():
@@ -225,7 +237,7 @@ def test_get_ultimate_regex():
     n = library.get_schema_node(t, 'he')
     r = inst.get_ultimate_title_regex(t, n, 'he')
     m = re.search(r, test7)
-    assert m.groupdict()[u"Title"] == u'ברכות' # or shouldn't this be simply ברכות?
+    assert m.groupdict()[u"Title"] == u'משנה ברכות' # or shouldn't this be simply ברכות?
     # assert m.groupdict()[u"Perek_Mishnah"] is not None
     assert m.groupdict()[u'a0'] == u'ג' and m.groupdict()[u'a1'] == u'ה'
 

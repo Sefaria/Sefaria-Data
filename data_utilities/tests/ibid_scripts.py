@@ -129,7 +129,7 @@ def index_ibid_finder():
 def segment_ibid_finder():
     index = library.get_index("Sefer HaChinukh")
     inst = IndexIbidFinder(index)
-    r = Ref("Ramban on Genesis 1:1:2")
+    r = Ref("Ramban on Genesis 1:18:1")
     st = r.text("he").text
     inst.segment_find_and_replace(st)
 
@@ -137,9 +137,10 @@ def segment_ibid_finder():
 if __name__ == "__main__":
     inst = CitationFinder()
     example_num = 20
-    sham_items = count_regex_in_all_db(inst.get_ultimate_title_regex(u'בראשית', 'he'), text = 'all', example_num=example_num) #, text = 'Ramban on Genesis')
+    #sham_items = count_regex_in_all_db(inst.get_ultimate_title_regex(u'בראשית', 'he'), text = 'all', example_num=example_num) #, text = 'Ramban on Genesis')
     # sham_items = count_regex_in_all_db(example_num=example_num)
-    make_csv(sham_items, example_num, filename='new_sham_example.csv')
+    #make_csv(sham_items, example_num, filename='new_sham_example.csv')
+
     #
     # import cProfile
     # import pstats
@@ -147,3 +148,6 @@ if __name__ == "__main__":
     # cProfile.run("inst = CitationFinder(); count_regex_in_all_db(inst.get_ultimate_title_regex(u'שם', 'he'), text = 'Ramban on Genesis',example_num=7)", "stats")
     # p = pstats.Stats("stats")
     # p.strip_dirs().sort_stats("cumulative").print_stats()
+
+    #index_ibid_finder()
+    segment_ibid_finder()
