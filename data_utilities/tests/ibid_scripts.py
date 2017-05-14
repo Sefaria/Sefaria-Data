@@ -7,7 +7,8 @@ from sefaria.model import *
 from data_utilities.ibid import *
 import regex as re
 
-def count_regex_in_all_db(pattern=u'(?:\(|\([^)]* )שם(?:\)| [^(]*\))', lang='he', text='all'):
+
+def count_regex_in_all_db(pattern=u'(?:\(|\([^)]*? )שם(?:\)| [^(]*?\))', lang='he', text='all', example_num = 7):
     '''
     This method is for counting testing perepesis,
     :param lang:
@@ -16,20 +17,24 @@ def count_regex_in_all_db(pattern=u'(?:\(|\([^)]* )שם(?:\)| [^(]*\))', lang='h
     '''
 
 
-
     found = []
     category_dict = defaultdict(int)
     shams_dict = defaultdict(list)
 
     vtitle = None
+    ind_done = 0
     if text == 'all':
         indecies = library.all_index_records()
+        inds_len = len(indecies)
     else:
         indecies = [library.get_index(text)]
     for iindex, index in enumerate(indecies):
         print "{}/{}".format(iindex, len(indecies))
         # if index == Index().load({'title': 'Divrei Negidim'}):
         #     continue
+        if text == 'all':
+            ind_done += 1
+            print ind_done*1.0/inds_len
         try:
             unit_list_temp = index.nodes.traverse_to_list(lambda n, _: TextChunk(n.ref(), lang,
                                                                                  vtitle=vtitle).ja().flatten_to_array() if not n.children else [])
@@ -78,7 +83,7 @@ def count_regex_in_all_db(pattern=u'(?:\(|\([^)]* )שם(?:\)| [^(]*\))', lang='h
     cat_sham_dict = defaultdict(list)
     for ci in cat_items:
         population = shams_dict[ci[0]]
-        cat_sham_dict[ci] = random.sample(population, min(len(population), 7))
+        cat_sham_dict[ci] = random.sample(population, min(len(population), example_num))
 
     cat_sham_items = sorted(cat_sham_dict.items(), key=lambda x: x[0][1], reverse=True)
     cat_sham_dict = OrderedDict()
@@ -93,9 +98,10 @@ def count_regex_in_all_db(pattern=u'(?:\(|\([^)]* )שם(?:\)| [^(]*\))', lang='h
     return cat_sham_dict
     # return cat_items
 
-def make_csv(sham_items):
-    f = open('sham_examples.csv', 'wb')
-    keys = ['Category', 'Quantity'] + ['Sham {}'.format(i+1) for i in range(7)]
+
+def make_csv(sham_items, example_num, filename='sham_examples.csv'):
+    f = open(filename, 'wb')
+    keys = ['Category', 'Quantity'] + ['Sham {}'.format(i+1) for i in range(example_num)]
     csv = unicodecsv.DictWriter(f, keys)
     # csv = unicodecsv.DictWriter(f, ['Category', 'Quantity'])#, 'Example Shams'])
     csv.writeheader()
@@ -106,7 +112,7 @@ def make_csv(sham_items):
             'Sham {}'.format(i+1): temp_sham
             for i, temp_sham in enumerate(sham_examples)
         }
-        for i in range(len(sham_examples),7):
+        for i in range(len(sham_examples), example_num):
             row_dict['Sham {}'.format(i+1)] = u''
 
         row_dict['Category'] = cat
@@ -129,10 +135,15 @@ def segment_ibid_finder():
 
 
 if __name__ == "__main__":
-    #inst = CitationFinder()
-
-    #sham_items = count_regex_in_all_db(inst.get_ultimate_title_regex(u'שם', 'he'), text='all') #, text = 'Ramban on Genesis')
-    #make_csv(sham_items)
-
-    # index_ibid_finder()
-    segment_ibid_finder()
+    inst = CitationFinder()
+    example_num = 20
+    sham_items = count_regex_in_all_db(inst.get_ultimate_title_regex(u'בראשית', 'he'), text = 'all', example_num=example_num) #, text = 'Ramban on Genesis')
+    # sham_items = count_regex_in_all_db(example_num=example_num)
+    make_csv(sham_items, example_num, filename='new_sham_example.csv')
+    #
+    # import cProfile
+    # import pstats
+    #
+    # cProfile.run("inst = CitationFinder(); count_regex_in_all_db(inst.get_ultimate_title_regex(u'שם', 'he'), text = 'Ramban on Genesis',example_num=7)", "stats")
+    # p = pstats.Stats("stats")
+    # p.strip_dirs().sort_stats("cumulative").print_stats()

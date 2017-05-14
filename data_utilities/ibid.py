@@ -506,8 +506,10 @@ class IbidDict(OrderedDict):
             self.pop(key)
         return super(IbidDict, self).__setitem__(key, value, dict_setitem)
 
+
 class IbidKeyNotFoundException(Exception):
     pass
+
 
 class IbidRefException(Exception):
     # when a Ref is structured correctly but can't be found (ex: 'Genesis 60')
