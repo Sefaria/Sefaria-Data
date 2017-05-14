@@ -149,8 +149,8 @@ def parse_Raph_by_letter(filename):
 def parse_Raph_simanim(alinged_list):
     '''
     note: although there is (not often) a differentiation in the original txt file,
-    raph letters can be divided into smaller segments in this code we combined them.
-    hence, every raph letter is a line.
+    raph letters can be divided into smaller segments. In this code we combined those segments.
+    returning, every raph letter as a line.
     '''
     ja = []
     siman = []
@@ -443,19 +443,19 @@ def post_raph(ja_raph):
     post_text('Hagahot Rabbenu Peretz', text_version)
 
 
-def link_raph(ja_smk, ja_raph):  # look how to get this information where it is coming from.
-    raph_links = []
-    # use a generator to go over the text and find the 3 level indices
+def link_raph(ja_smk, ja_raph_simanim):  # look how to get this information where it is coming from.
+    # ja_raph_simanim = siman, letter
+    links = []
     i = 0
     for seg in traverse_ja(ja_smk):
         for x in re.findall(u'@55', seg['data']): # if re.search(u'@55', seg['data']):
-            siman = seg['indices'][0]
-            segment = seg['indices'][1]
+            siman = seg['indices'][0] + 1
+            segment = seg['indices'][1] + 1
             i += 1
             link = (
                 {
                     "refs": [
-                        "Sefer Mitzvot Katan {}:{}".format(siman+1, segment+1),
+                        "Sefer Mitzvot Katan {}:{}".format(siman, segment),
                         "Hagahot Rabbenu Peretz {}:{}".format(i, 1),  # really should be a ref link to the whole raph
                     ],
                     "type": "commentary",
@@ -464,22 +464,22 @@ def link_raph(ja_smk, ja_raph):  # look how to get this information where it is 
                 })
             # dh_text = dh['data']
             # append to links list
-            raph_links.append(link)
-    return raph_links
+            links.append(link)
+    return links
 
 
 if __name__ == "__main__":
     ja_smk = parse_semak('Semak.txt')
-    # # siman_page = map_semak_page_siman(ja_smk, to_print=False)
-    # # letter_ja = parse_Raph_by_letter(u'Raph_on_Semak.txt')
-    # # raph_smk_alignment = raph_alignment_report(ja_smk, letter_ja)
-    # # ja_hagahot = parse_hagahot_by_letter(u'Semak_hagahot_chadashot.txt')
-    # # ja_raph = parse_Raph_simanim(raph_smk_alignment)
+    # # # siman_page = map_semak_page_siman(ja_smk, to_print=False)
+    letter_ja = parse_Raph_by_letter(u'Raph_on_Semak.txt')
+    raph_smk_alignment = raph_alignment_report(ja_smk, letter_ja)
+    # # # ja_hagahot = parse_hagahot_by_letter(u'Semak_hagahot_chadashot.txt')
+    ja_raph = parse_Raph_simanim(raph_smk_alignment)
     # # hgh_align = hagahot_alignment(ja_smk, ja_raph, ja_hagahot)
-    # post_smk(ja_smk)
-    # # post_raph(ja_raph)
-    # # link_raph(ja_raph)  # try to find where this is coming from
-    raph = parse_Raph_by_letter('Raph_on_Semak.txt')
-    post_raph(raph)
-    raph_links = link_raph(ja_smk, raph)
-    post_link(raph_links)
+    # # post_smk(ja_smk)
+    # # # post_raph(ja_raph)
+    # # # link_raph(ja_raph)  # try to find where this is coming from
+    # raph = parse_Raph_by_letter('Raph_on_Semak.txt')
+    # post_raph(raph)
+    # raph_links = link_raph(ja_smk, raph)
+    # post_link(raph_links)

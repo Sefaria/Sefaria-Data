@@ -2,12 +2,13 @@
 
 import codecs
 import re
-from data_utilities.util import ja_to_xml, multiple_replace, traverse_ja , file_to_ja_g
+from data_utilities.util import ja_to_xml, multiple_replace, traverse_ja, file_to_ja_g
 from data_utilities.sanity_checks import TagTester
 from sources.functions import post_text, post_index, post_link
 from sefaria.model import *
 from sefaria.datatype.jagged_array import JaggedArray
 import json
+
 def parse_he(filename):
     """
     :returns a dictionary, key: name of book, value: JaggadArray obj of the ja for the book
@@ -148,7 +149,7 @@ def intro_text_post():
         'versionTitle': 'Perush al ha-Torah, Hanover, 1838',
         'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001935796',
         'language': 'he',
-        'text': [u'צריך להקליד את ההקדמה']
+        'text': [u'צריך להקליד את ההקדמה'] # note: if ever coming back to this script
     }
     post_text('Tur HaAroch, Introduction', version_dict)
 
@@ -186,25 +187,25 @@ def links(text_dict):
     return links
 
 # the same as links just works book by book really could merge both functions together. but didn't want to change code.
-def relinks(ja_book):
-    links = []
-    for dh in traverse_ja(ja_book):
-            perek = (dh['indices'][0] + 1)
-            pasuk = (dh['indices'][1] + 1)
-            comment = (dh['indices'][2] + 1)
-            link = (
-                {
-                    "refs": [
-                        'Tur HaAroch, {} {}:{}:{}'.format(book, perek, pasuk, comment),
-                        '{} {}:{}'.format(book,perek, pasuk),
-                    ],
-                    "type": "commentary",
-                    "auto": True,
-                    "generated_by": "tur_torah_parser"
-                })
-            # append to links list
-            links.append(link)
-    return links
+# def relinks(ja_book):
+#     links = []
+#     for dh in traverse_ja(ja_book):
+#             perek = (dh['indices'][0] + 1)
+#             pasuk = (dh['indices'][1] + 1)
+#             comment = (dh['indices'][2] + 1)
+#             link = (
+#                 {
+#                     "refs": [
+#                         'Tur HaAroch, {} {}:{}:{}'.format(book, perek, pasuk, comment),
+#                         '{} {}:{}'.format(book,perek, pasuk),
+#                     ],
+#                     "type": "commentary",
+#                     "auto": True,
+#                     "generated_by": "tur_torah_parser"
+#                 })
+#             # append to links list
+#             links.append(link)
+#     return links
 
 def test_accercy(tag, filename):
     with codecs.open(filename, 'r', 'utf-8') as fp:
@@ -236,7 +237,7 @@ def test_boolean_ja(book, ja1, ja2):
 
 if __name__ == "__main__":
     # parse
-    # parsed_he = parse_he('tur_he.txt')
+    parsed_he = parse_he('tur_he.txt')
     # parsed_en = parse_all_en()
     # # index
     # tt_index()
@@ -250,17 +251,17 @@ if __name__ == "__main__":
 
     # these files were coppied from Draft back to here.
 
-    with open('Tur HaAroch - en - merged.json') as pt:
-        tur_en = json.load(pt)
-
-    with open('Tur HaAroch - he - merged.json') as pt:
-        tur_he = json.load(pt)
-
-    for book in ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']:
-        print book
-        ja_he = tur_he['text'][book]
-        ja_en = tur_en['text'][book]
-        # test_boolean_ja('Tur HaAroch, {}'.format(book),ja_he, ja_en)
-        book_link = relinks(ja_he)
-        post_link(book_link)
-        print book, book_link
+    # with open('Tur HaAroch - en - merged.json') as pt:
+    #     tur_en = json.load(pt)
+    #
+    # with open('Tur HaAroch - he - merged.json') as pt:
+    #     tur_he = json.load(pt)
+    #
+    # for book in ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']:
+    #     print book
+    #     ja_he = tur_he['text'][book]
+    #     ja_en = tur_en['text'][book]
+    #     # test_boolean_ja('Tur HaAroch, {}'.format(book),ja_he, ja_en)
+    #     book_link = relinks(ja_he)
+    #     post_link(book_link)
+    #     print book, book_link

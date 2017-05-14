@@ -183,7 +183,6 @@ def test_get_ultimate_regex():
 
     test2 = u'(שם ג:ד)'
     r = inst.get_ultimate_title_regex(u'שם', None, 'he')
-    #print r.pattern
     m = re.search(r, test2)
     assert m.groupdict()[u"Title"] == u'שם'
     # assert m.groupdict()[u"Integer_Integer"] is not None
@@ -226,7 +225,7 @@ def test_get_ultimate_regex():
     n = library.get_schema_node(t, 'he')
     r = inst.get_ultimate_title_regex(t, n, 'he')
     m = re.search(r, test7)
-    assert m.groupdict()[u"Title"] == u'משנה ברכות' # or shouldn't this be simply ברכות?
+    assert m.groupdict()[u"Title"] == u'ברכות' # or shouldn't this be simply ברכות?
     # assert m.groupdict()[u"Perek_Mishnah"] is not None
     assert m.groupdict()[u'a0'] == u'ג' and m.groupdict()[u'a1'] == u'ה'
 
@@ -274,14 +273,6 @@ def test_get_ultimate_regex():
     assert m.groupdict()[u"Title"] == u'שם'
     # assert m.groupdict()[u"Sham_Perek"] is not None
     assert m.groupdict()[u'a0'] == u'שם' and m.groupdict()[u'a1'] == u'י'
-
-
-def test_build_refs():
-    inst = CitationFinder()
-    test1 = u'(בראשית א:ב)'
-    title = u'בראשית'
-    refs = library._internal_ref_from_string(title, test1, 'he', False, True, inst.get_ultimate_title_regex(title, 'he', compiled=False))
-    assert refs.group() == u'Genesis 1:2'
 
 #todo: test new class IndexIbidFinder
 #todo: test ibidExceptions
