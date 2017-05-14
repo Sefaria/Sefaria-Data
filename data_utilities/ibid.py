@@ -50,7 +50,6 @@ class CitationFinder():
             outer_paren_sham_reg = ur"(?:[(\[{])" + u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + \
                           address_regex + end_paren_reg
             reg = u'(?:{})|(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_sham_reg, stam_sham_reg)
-
         else:
            reg = u'(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_reg)
 
@@ -308,7 +307,7 @@ class IndexIbidFinder(object):
             elif type == CitationFinder.SHAM_INT:
                 try:
                     if isinstance(item, unicode):
-                        refs += [self._tr.resolve(None, match_str=item)] #  TODO this line doesn't work yet because titles aren't normalized
+                        refs += [self._tr.resolve(None, match_str=item)]
                     else:
                         refs += [self._tr.resolve(item[0], sections=item[1])]
                 except (IbidRefException, IbidKeyNotFoundException) as e:
@@ -319,7 +318,7 @@ class IndexIbidFinder(object):
     def index_find_and_replace(self, lang='he', citing_only=False, replace=True):
         seg_refs = self._index.all_segment_refs()
         out = OrderedDict()
-        for i, r in enumerate(seg_refs):
+        for i, r in enumerate(seg_refs[:100]):
             print r, i, len(seg_refs)
             st = r.text("he").text
             found_refs, failed_refs, failed_non_refs, failed_shams = self.segment_find_and_replace(st, lang='he')
