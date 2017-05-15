@@ -3,6 +3,7 @@
 from sefaria.model import *
 from sefaria.system.exceptions import InputError
 from sefaria.utils import talmud
+from sefaria.utils.hebrew import strip_nikkud
 from collections import OrderedDict
 import regex as re
 import json, codecs
@@ -237,6 +238,7 @@ class IndexIbidFinder(object):
         :param index: Index
         '''
         self._index = index
+        self._assert_simple = assert_simple
         self._tr = BookIbidTracker(assert_simple=assert_simple)
         self._citationFinder = CitationFinder()
 
@@ -264,7 +266,7 @@ class IndexIbidFinder(object):
         return sham_refs
 
 
-    def segment_find_and_replace(self, st, lang='he', citing_only=False, replace=True):
+    def find_in_segment(self, st, lang='he', citing_only=False, replace=True):
         #todo: implemant replace = True
         """
         Returns an list of Ref objects derived from string
@@ -272,16 +274,16 @@ class IndexIbidFinder(object):
         :param string st: the input string
         :param lang: "he" note: "en" is not yet supported in ibid
         :param citing_only: boolean whether to use only records explicitly marked as being referenced in text.
-        :return: list of :class:`Ref` objects
+        :return: list of :class:`Ref` objects, list of locations and list of ref types (either REF or SHAM, defined in CitationFinder)
         """
         refs = []
+        locations = []
+        types = []
         failed_refs = []
         failed_non_refs = []
         failed_shams = []
         assert lang == 'he'
         # todo: support english
-
-        from sefaria.utils.hebrew import strip_nikkud
 
         st = strip_nikkud(st)
         all_refs = self._citationFinder.get_potential_refs(st, lang)
@@ -289,6 +291,9 @@ class IndexIbidFinder(object):
             if type == CitationFinder.REF_INT:
                 try:
                     refs += [self._tr.resolve(item.index_node.full_title(), item.sections)]
+                    locations += [location]
+                    types += [type]
+                    #refs += [(self._tr.resolve(item.index_node.full_title(), item.sections), 'ref')]
                 except (IbidRefException, IbidKeyNotFoundException) as e:
                     failed_refs += [item.normal()]
             elif type == CitationFinder.NON_REF_INT:
@@ -298,30 +303,44 @@ class IndexIbidFinder(object):
                 try:
                     if isinstance(item, unicode):
                         refs += [self._tr.resolve(None, match_str=item)]
+                        locations += [location]
+                        types += [type]
+                        #refs += [(self._tr.resolve(None, match_str=item), 'sham')]
                     else:
                         refs += [self._tr.resolve(item[0], sections=item[1])]
+                        locations += [location]
+                        types += [type]
+                        #refs += [(self._tr.resolve(item[0], sections=item[1]), 'sham')]
                 except (IbidRefException, IbidKeyNotFoundException) as e:
                     failed_shams += [item]
 
-        return refs #, failed_refs, failed_non_refs, failed_shams
+        return refs, locations, types  # , failed_refs, failed_non_refs, failed_shams
 
-    def index_find_and_replace(self, lang='he', citing_only=False, replace=True):
+    def find_in_index(self, lang='he', citing_only=False, replace=True):
         seg_refs = self._index.all_segment_refs()
         out = OrderedDict()
-        for i, r in enumerate(seg_refs[:100]):
+
+        prev_node = None
+        for i, r in enumerate(seg_refs[800:]):
+            if prev_node is None:
+                prev_node = r.index_node
+            elif prev_node != r.index_node:
+                prev_node = r.index_node
+                self.reset_tracker()
+
             print r, i, len(seg_refs)
-            st = r.text("he").text
-            found_refs, failed_refs, failed_non_refs, failed_shams = self.segment_find_and_replace(st, lang='he')
+            st = r.text(lang=lang).text
+            refs, locations, types = self.find_in_segment(st, lang, citing_only, replace)
             out[r.normal()] = {
-                'refs': [[fr[0].normal(), fr[1]] for fr in found_refs],
-                'failed_refs': [fr for fr in failed_refs],
-                'failed_non_refs': [fr for fr in failed_non_refs],
-                'failed_shams': [unicode(fr) for fr in failed_shams]
+                'refs': refs,
+                'locations': locations,
+                'types': types
             }
+        return out
 
-        with codecs.open("test_ibid.json", "wb", encoding='utf8') as fp:
-            json.dump(out, fp, indent=4, ensure_ascii=False)
 
+    def reset_tracker(self):
+        self._tr = BookIbidTracker(assert_simple=self._assert_simple)
 
 class BookIbidTracker(object):
     """
@@ -479,7 +498,10 @@ class BookIbidTracker(object):
         deletes all keys with no book name.
         called after a citation not resolved in Sefaria
         '''
-        del self._table[(None, (None, None))]
+        try:
+            del self._table[(None, (None, None))]
+        except KeyError:
+            pass
         self._last_cit = [None, None]  # reset last citation seen
 
     def get_last_depth(self,index_name, sections):

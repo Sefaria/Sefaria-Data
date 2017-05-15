@@ -137,7 +137,7 @@ def test_ibid_find():
     inst = IndexIbidFinder(ind)
     string = u'''וילך איש מבית לוי רבותינו אמרו שהלך אחר עצת בתו (סוטה יב:). את בלהה (בראשית לה כב),
      דבלים (הושע א ג), לכו ונמכרנו לישמעאלים (בראשית שם כז), לכו ונכהו בלשון (שם יח יח), לכו נא ונוכחה (ישעיה א יח).'''
-    refs = inst.segment_find_and_replace(string, lang='he', citing_only=False, replace=True)
+    refs, _, _ = inst.find_in_segment(string, lang='he', citing_only=False, replace=True)
     print refs
 
 
@@ -153,11 +153,11 @@ class TestIndexIbidFinder:
 
     def test_find_all_shams_in_st(self):
         st = u'''(שמות יא ט) בשלישי ברא שלש בריות אילנות ודשאים וגן עדן ועוד אמרו (שם י ו) אין לך כל עֵשֶׂב ועשב מלמטה שאין לו מזל ברקיע ומכה אותו ואומר לו גדל הדא הוא דכתיב (איוב לח לג)'''
-        shams = self.instance.segment_find_and_replace(st, 'he', citing_only=True)
+        shams, _, _ = self.instance.find_in_segment(st, 'he', citing_only=True)
         assert shams == [Ref('Exodus.11.9'), Ref('Exodus.10.6'), Ref('Job.38.33')]
 
         st = u'''(שמות יא ט) בשלישי ברא שלש בריות אילנות ודשאים וגן עדן ועוד אמרו (שם י) אין לך כל עֵשֶׂב ועשב מלמטה שאין לו מזל ברקיע ומכה אותו ואומר לו גדל הדא הוא דכתיב (שם)'''
-        shams = self.instance.segment_find_and_replace(st, 'he', citing_only=True)
+        shams, _, _ = self.instance.find_in_segment(st, 'he', citing_only=True)
         assert shams == [Ref('Exodus.11.9'), Ref('Exodus.11.10'),Ref('Exodus.11.10')]
 
     def test_find_in_index(self):
@@ -166,15 +166,15 @@ class TestIndexIbidFinder:
 
     def test_get_sham_ref_with_node(self):
         st = u"(פסחים צו, א)(שם ה, א)"
-        refs = self.instance.segment_find_and_replace(st, 'he', citing_only=True)
+        refs, _, _ = self.instance.find_in_segment(st, 'he', citing_only=True)
         assert refs == [Ref('Pesachim 96a'), Ref('Pesachim 5a')]
 
         st = u'''(פסחים כא:)(שמות כא ב)(שם ג:)'''
-        allrefs = self.instance.segment_find_and_replace(st, 'he', citing_only=True)
+        allrefs, _, _ = self.instance.find_in_segment(st, 'he', citing_only=True)
         # assert allrefs == [Ref('Pesachim 21b'), Ref('Exodus 21:2'), Ref('Pesachim 3b')]
 
         st = u'''(שמות כב ב)(שמות ל)(שם ה)'''
-        allrefs = self.instance.segment_find_and_replace(st, 'he', citing_only=True)
+        allrefs, _, _ = self.instance.find_in_segment(st, 'he', citing_only=True)
         assert allrefs == [Ref('Exodus 22:2'), Ref('Exodus 30'), Ref('Exodus 5')]
 
 
