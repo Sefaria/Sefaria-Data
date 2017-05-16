@@ -158,7 +158,7 @@ class TestIndexIbidFinder:
 
         st = u'''(שמות יא ט) בשלישי ברא שלש בריות אילנות ודשאים וגן עדן ועוד אמרו (שם י) אין לך כל עֵשֶׂב ועשב מלמטה שאין לו מזל ברקיע ומכה אותו ואומר לו גדל הדא הוא דכתיב (שם)'''
         shams, _, _ = self.instance.find_in_segment(st, 'he', citing_only=True)
-        assert shams == [Ref('Exodus.11.9'), Ref('Exodus.11.10'),Ref('Exodus.11.10')]
+        assert shams == [Ref('Exodus.11.9'), Ref('Exodus.11.10'), Ref('Exodus.11.10')]
 
     def test_find_in_index(self):
         pass
