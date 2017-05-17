@@ -6,6 +6,7 @@ from collections import defaultdict
 from sefaria.model import *
 from data_utilities.ibid import *
 from sefaria.utils.hebrew import strip_nikkud
+from sefaria.system.exceptions import BookNameError
 from itertools import izip
 import regex as re
 
@@ -133,7 +134,11 @@ def run_shaminator():
         title_list += library.get_indexes_in_category(cat)
     for cTitle in collective_titles:
         title_list += library.get_indices_by_collective_title(cTitle)
-    for title in title_list[0:1]:
+    for ititle, title in enumerate(title_list[24:]):
+        print u"-"*50
+        print title, ititle, '/', len(title_list)
+        print u"-"*50
+
         html = u"""
         <!DOCTYPE html>
         <html>
@@ -148,7 +153,11 @@ def run_shaminator():
 
         index = library.get_index(title)
         inst = IndexIbidFinder(index)
-        ref_dict = inst.find_in_index()
+        try:
+            ref_dict = inst.find_in_index()
+        except AssertionError:
+            print "Skipping {}".format(title)
+            continue # problem with Ein Ayah
 
         last_index_ref_seen = {}
         row_num = 1
@@ -159,6 +168,7 @@ def run_shaminator():
                 if t == CitationFinder.SHAM_INT:
                     if last_index_ref_seen[r.index.title] is not None:
                         last_ref_with_citation, last_location_with_citation = last_index_ref_seen[r.index.title]
+
 
                         dist = curr_ref.distance(last_ref_with_citation)
                         if dist == 0:
@@ -175,10 +185,10 @@ def run_shaminator():
                             text = u"{}<span class='r'>{}</span>{}<span class='s'>{}</span>{}".format(before, real_ref, middle, sham_ref, after)
 
                         else:
-                            start_text = last_ref_with_citation.text('he').text
-                            start_text = strip_nikkud(start_text)[last_location_with_citation[0]:]
-                            end_text = curr_ref.text('he').text
-                            end_text = strip_nikkud(end_text)[:l[1]+1]
+                            start_text = strip_nikkud(last_ref_with_citation.text('he').text)
+                            #start_text = strip_nikkud(start_text)[last_location_with_citation[0]:]
+                            end_text = strip_nikkud(curr_ref.text('he').text)
+                            #end_text = strip_nikkud(end_text)[:l[1]+1]
                             if dist > 1:
                                 print u"{} {} {}".format(curr_ref, last_ref_with_citation.next_segment_ref(), curr_ref.prev_segment_ref())
                                 mid_text = last_ref_with_citation.next_segment_ref().to(curr_ref.prev_segment_ref()).text('he').text
@@ -186,11 +196,23 @@ def run_shaminator():
                                     mid_text = reduce(lambda a,b: a + b, mid_text)
                             else:
                                 mid_text = u""
-                            text = u"{} {} {}".format(start_text, mid_text, end_text)
 
-                        print text
+                            start_ind = 0 if last_location_with_citation[0] - char_padding < 0 else last_location_with_citation[0] - char_padding
+                            end_ind = l[1] + char_padding
+
+                            start_before = start_text[start_ind:last_location_with_citation[0]]
+                            start_real_ref = start_text[last_location_with_citation[0]:last_location_with_citation[1]]
+                            start_after = start_text[last_location_with_citation[1]:]
+
+                            end_before = end_text[:l[0]]
+                            end_sham_ref = end_text[l[0]:l[1]]
+                            end_after = end_text[l[1]:end_ind]
+                            text = u"{}<span class='r'>{}</span>{} {} {}<span class='s'>{}</span>{}".format(start_before, start_real_ref, start_after, mid_text, end_before, end_sham_ref, end_after)
+
                         text = bleach.clean(text, strip=True, tags=[u'span'], attributes=[u'class'])
-                        print text
+                        # surround all non interesting parens with spans
+                        text = re.sub(ur"(?<!>)(\([^)]+\))(?!<)",ur"<span class='p'>\1</span>", text)
+
                         row = u"<tr><td>{}</td><td><a href='{}' target='_blank'>{}</a></td><td>{}</td><td class='he'>{}</td></tr>"\
                             .format(row_num, base_url + curr_ref.url(), k, r, text)
                         html += row
@@ -206,7 +228,7 @@ def run_shaminator():
         </html>
         """
 
-        with codecs.open('test_ibid.html','wb',encoding='utf8') as f:
+        with codecs.open('ibid_output/ibid_{}.html'.format(title), 'wb',encoding='utf8') as f:
             f.write(html)
 
 def index_ibid_finder():
@@ -220,6 +242,35 @@ def segment_ibid_finder():
     r = Ref("Ramban on Genesis 1:18:1")
     st = r.text("he").text
     inst.find_in_segment(st)
+
+
+def validate_alt_titles():
+    alt_titles = {
+        u"ויקרא": [u"ויק׳", u"ויק'"],
+        u"במדבר": [u"במ'", u"במ׳"],
+        u"דברים": [u"דב׳", u"דב'"],
+        u"יהושוע": [u"יהוש'", u"יהוש׳"],
+        u"שופטים": [u"שופטי׳", u"שופטי'"],
+        u"ישיהו": [u"ישע'"],
+        u"ירמיהו": [u"ירמ׳", u"ירמ'"],
+        u"יחזקאל": [u"יחז׳", u"יחז'"],
+        u"מיכה": [u"מיכ׳", u"מיכ'"],
+        u"צפניה": [u"צפנ׳", u"צפנ'"],
+        u"זכריה": [u"זכרי"],
+        u"מלאכי": [u"מלא'"],
+        u"תהילים": [u"תה׳", u"תה'"],
+        u"נחמיה": [u"נחמי'"],
+        u"דניאל": [u"דני׳", u"דני'"],
+        u"אסתר": [u"אס׳", u"אס'"],
+        u"איכה": [u"איכ׳", u"איכ'"]
+    }
+    for k, v in alt_titles.items():
+        for t in v:
+            try:
+                i = library.get_index(t)
+                print u"{} -> {}".format(k, t)
+            except BookNameError:
+                pass
 
 
 if __name__ == "__main__":
@@ -240,4 +291,9 @@ if __name__ == "__main__":
     #index_ibid_finder()
     #segment_ibid_finder()
 
-    run_shaminator()
+    #run_shaminator()
+    validate_alt_titles()
+
+
+
+# bug at Bemidbar Rabbah 9:50. It says the sham is Jeremiah 16:16. I believe it should just be Jeremiah 16

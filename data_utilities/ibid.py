@@ -321,7 +321,7 @@ class IndexIbidFinder(object):
         out = OrderedDict()
 
         prev_node = None
-        for i, r in enumerate(seg_refs[800:]):
+        for i, r in enumerate(seg_refs):
             if prev_node is None:
                 prev_node = r.index_node
             elif prev_node != r.index_node:
