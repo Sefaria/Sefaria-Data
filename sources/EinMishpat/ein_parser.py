@@ -787,7 +787,7 @@ def fromCSV(fromcsv, newfile):
 #  run to create csv from txt file for QA
 def run1(massechet_he = None, massechet_en = None):
     parse1 = parse_em(u'{}.txt'.format(massechet_he), 1, u'{}_error'.format(massechet_en))  # reades from ביצה.txt to screen output
-    toCSV(massechet_he, parse1)  # writes to ביצה.csv
+    toCSV(massechet_he, parse1)
     return parse1
 
 
@@ -978,4 +978,6 @@ if __name__ == "__main__":
     #
     # for file in done:
     #     reverse_collapse('done/{}'.format(file), 'collapsed/{}_collapsed'.format(file[:-4]))
-    parsed = run2('small_letters/Yoma_little_letters', 'small_letters/Yoma')
+    # clllapse_kidd = reverse_collapse('small_letters/kidushin_little_letters.csv', 'small_letters/collapsed_kidushin')
+    parsed = run2('small_letters/collapsed_kidushin', 'small_letters/kiddushin')
+    # parse1 = run1('small_letters/collapsed_kidushin', 'ksmall_letters/idushin_test')

@@ -15,6 +15,28 @@ This allows for a steady accumulation of data to be saved on disk as an xml docu
 class CommentStore(dict):
     __metaclass__ = Singleton
 
+    def create_link(self, rid):
+        """
+        Generate link (or links) for a given rid. Since there are occasions where a given seif requires more than 1 link
+        this returns an array of link dictionaries.
+        :param rid:
+        :return:
+        """
+        data = self[rid]
+        links = [
+            {
+                'refs': [
+                    "{} {}:{}".format(data['base_title'], data['seif'], seif),
+                    "{} {}:{}".format(data["commentator_title"], data["commentator_siman"], data["commentator_seif"])
+                ],
+                'auto': True,
+                'generated_by': "Shulchan Arukh Comment Store",
+                'type': "commentary"
+            }
+            for seif in data["seif"]
+        ]
+        return links
+
 
 class Element(object):
     """
@@ -212,6 +234,23 @@ class Element(object):
     def load_comments_to_commentstore(self, *args, **kwargs):
         for child in self.get_child():
             child.load_comments_to_commentstore(*args, **kwargs)
+
+    def convert_pattern_to_itag(self, commentator, pattern, group=1, order_callback=getGematria):
+        """
+        Finds patterns and renders them as itags. This is helpful for references where the text is already on production
+        and properly linked, but there is still a need for itags.
+        :param commentator: Title of Commentator
+        :param pattern: regex to substitute
+        :param group: group to use to set the data order.
+        :param order_callback: Callback method used to decode the data order
+        :return:
+        """
+        if not self.multiple_children:
+            raise NotImplementedError
+
+        for child in self.get_child():
+            child.convert_pattern_to_itag(commentator, pattern, group, order_callback)
+
 
     def __unicode__(self):
         return unicode(self.Tag)
@@ -916,31 +955,44 @@ class TextElement(Element):
             if re.search(pattern, xref.text):
                 raise AssertionError('Pattern matches previously marked reference')
 
+        # Nested function can only modify a mutable object from the outer scope
+        count = [found]
+        def repl(s):
+            count[0] += 1
+            if group is None:
+                order = count[0]
+            elif cyclical:
+                order = u'{};{}'.format(he_ord(s.group(group)), count[0])
+            else:
+                order = getGematria(s.group(group))
+            return u'<xref id="b{}-c{}-si{}-ord{}">{}</xref>'.format(base_id, com_id, siman_num, order, s.group())
+
         pre_parsed_text = u''.join([unicode(c) for c in self.Tag.children])
-        words = pre_parsed_text.split()
-
-        for index, word in enumerate(words[:]):
-            matched_ref = re.search(pattern, word)
-            if matched_ref:
-                found += 1
-                if group is None:
-                    order = found
-                elif cyclical:
-                    order = u'{};{}'.format(he_ord(matched_ref.group(group)), found)
-                else:
-                    order = getGematria(matched_ref.group(group))
-                ref_id = u'b{}-c{}-si{}-ord{}'.format(base_id, com_id, siman_num, order)
-                words[index] = u'<xref id="{}">{}</xref>'.format(ref_id, word)
-
-        parsed_text = u'<{}>{}</{}>'.format(self.Tag.name, u' '.join(words), self.Tag.name)
+        parsed_text = u'<{}>{}</{}>'.format(self.Tag.name, re.sub(pattern, repl, pre_parsed_text), self.Tag.name)
         new_tag = BeautifulSoup(parsed_text, 'xml').find(self.Tag.name)
         self.Tag.replace_with(new_tag)
         self.Tag = new_tag
 
-        return found
+        return count[0]
 
     def load_comments_to_commentstore(self, *args, **kwargs):
         raise NotImplementedError("Can't load comments at TextElement depth")
+
+    def convert_pattern_to_itag(self, commentator, pattern, group=1, order_callback=getGematria):
+
+        def repl(s):
+            data_order = order_callback(s.group(group))
+            return u'<i data-commentator="{}" data-order="{}"></i>'.format(commentator, data_order)
+
+        # Make sure pattern will not touch the existing xrefs
+        for xref in self.Tag.find_all('xref'):
+            if re.search(pattern, xref.text):
+                raise AssertionError('Pattern matches previously marked reference')
+
+        tagged = re.sub(pattern, repl, unicode(self))
+        new_tag = BeautifulSoup(tagged, 'xml').find(self.Tag.name)
+        self.Tag.replace_with(new_tag)
+        self.Tag = new_tag
 
 
 class Xref(Element):
@@ -979,6 +1031,10 @@ class Xref(Element):
 
     def load_comments_to_commentstore(self, *args, **kwargs):
         raise NotImplementedError("Can't load comments at Xref depth")
+
+    def render_itag(self):
+        data = CommentStore()[self.id]
+        return u'<i data-commentator="{}" data-order="{}"/>'.format(data['commentary_title'], data['commentator_seif'])
 
 module_locals = locals()
 

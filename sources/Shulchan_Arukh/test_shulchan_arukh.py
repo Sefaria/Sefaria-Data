@@ -308,6 +308,24 @@ class TestXref(object):
                              u'<reg>random <xref id="b0-c1-si1-ord2;2">@33ב</xref> text ' \
                              u'<xref id="b0-c1-si1-ord1;3">@33א</xref> here</reg></seif>'
 
+    def test_straight_to_itag(self):
+        raw_text = u'<seif num="1"><dh>some @33א random</dh><reg>random @33ב text @33ד here</reg></seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').find('seif'))
+        s.convert_pattern_to_itag(u'author', ur'@\d{2}([\u05d0-\u05ea])', group=1)
+
+        assert unicode(s) == u'<seif num="1"><dh>some <i data-commentator="author" data-order="1"/> random</dh>' \
+                             u'<reg>random <i data-commentator="author" data-order="2"/> text ' \
+                             u'<i data-commentator="author" data-order="4"/> here</reg></seif>'
+
+    def test_marks_touching(self):
+        raw_text = u'<seif num="1"><dh>some @33אrandom</dh><reg>random @33בtext @33דhere</reg></seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').find('seif'))
+        s.convert_pattern_to_itag(u'author', ur'@\d{2}([\u05d0-\u05ea])', group=1)
+
+        assert unicode(s) == u'<seif num="1"><dh>some <i data-commentator="author" data-order="1"/>random</dh>' \
+                             u'<reg>random <i data-commentator="author" data-order="2"/>text ' \
+                             u'<i data-commentator="author" data-order="4"/>here</reg></seif>'
+
 def test_correct_marks():
     test_text = u'קצת @22א טקסט @22ט @22ג שאין @22ג @22ד @22ח לו\n @22ו משמעות'
     assert correct_marks(test_text, u'@22([\u05d0-\u05ea]{1,2})') == u'קצת @22א טקסט @22ב @22ג שאין @22ג @22ד @22ה לו\n @22ו משמעות'

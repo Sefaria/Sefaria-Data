@@ -13,6 +13,7 @@ def markup(b_vol):
     b_vol.mark_references(commentaries.commentary_ids["Siftei Cohen"], u'@77\(([\u05d0-\u05ea]{1,3})\)', group=1)
     b_vol.mark_references(commentaries.commentary_ids["Beur HaGra"], u'@99\[([\u05d0-\u05ea]{1,3})\]', group=1)
     b_vol.mark_references(commentaries.commentary_ids["Netivot HaMishpat, Beurim"], u'@00([\u05d0-\u05ea]{1,3})\)', group=1)
+    b_vol.mark_references(commentaries.commentary_ids["Be'er HaGolah"], ur'@44([\u05d0-\u05ea])')
 
 root = Root('../Choshen_Mishpat.xml')
 base = root.get_base_text()
@@ -55,4 +56,5 @@ errors = volume.format_text('@33', '@88', 'ramah')
 for i in errors:
     print i
 markup(volume)
+volume.convert_pattern_to_itag("Ba'er Hetev on Shulchan Arukh, Choshen Mishpat", ur"-\[([\u05d0-\u05ea]{1,3})\]")
 root.export()

@@ -24,7 +24,7 @@ filenames = {
 
 footnote_codes = {
     'part_1': u'@68',
-    'part_2': None,
+    'part_2': u'@44',
     'part_3': u'@50',
 }
 def reasonble_order(index_a, index_b):
@@ -278,10 +278,10 @@ def mark_simanim(volume_number):
     with codecs.open('temp_result.txt', 'w', 'utf-8') as outfile:
         outfile.writelines(full_text)
 
-s = SimanLocater(3)
+s = SimanLocater(2)
 merge_index = s.locate_merge()
 while merge_index is not None:
     s.resolve_merge(merge_index, max_diff=5)
     merge_index = s.locate_merge()
-s.output(filenames['part_3'])
+s.output()
 
