@@ -85,11 +85,12 @@ def ms_post_index(tractate_object):
           tractate_object.record_name_en
         ],
         "dependence": "Commentary",
+        "collective_title":"Melechet Shlomo",
         "categories":["Mishnah","Commentary","Melechet Shlomo"],
         "schema": record.serialize()
     }
     post_index(index,weak_network=True)
-def ms_post_text(tractate_object):
+def ms_parse_text(tractate_object):
     with open(tractate_object.file_extension) as myfile:
         lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
     print tractate_object.record_name_en
@@ -98,31 +99,66 @@ def ms_post_text(tractate_object):
     current_mishna=1
     in_next_mishna=[]
     for line in lines:
-        if u"IGNORE" not in line:
+        if u"IGNORE" not in line and u"$" not in line:
             if tractate_object.markers["Perek"] in line:
                 current_perek = getGematria(line.replace(u"פרק",""))
                 current_mishna = 1
             elif tractate_object.markers["Mishna"] in line:
                 current_mishna = getGematria(line)
                 while len(in_next_mishna)>0:
-                    print current_perek, current_mishna
                     tractate_array[current_perek-1][current_mishna-1].append(edit_lines(tractate_object,in_next_mishna.pop(0)))
-            elif tractate_object.markers["Intro"] in line:
-                in_next_mishna.append(line)
+            #elif tractate_object.markers["Intro"] in line:
+            #    in_next_mishna.append(line)
             elif not_blank(line):
-                print current_perek, current_mishna
                 tractate_array[current_perek-1][current_mishna-1].append(edit_lines(tractate_object,line))
+    f = open("MS Blank Mishnas.csv","a")
+    for pindex, perek in enumerate(tractate_array):
+        for mindex, mishna in enumerate(perek):
+            if len(mishna)<1:
+                f.write("{} {} {}\n".format(tractate_object.record_name_en, pindex+1, mindex+1))
+    f.close()
+    return tractate_array
+    """
+    #to see parse results
     for pindex, perek in enumerate(tractate_array):
         for mindex, mishna in enumerate(perek):
             for cindex, comment in enumerate(mishna):
                 print tractate_object.record_name_en, pindex, mindex, cindex, comment
+    """
+def ms_post_text(tractate_object):
+    version = {
+        'versionTitle': 'Mishnah, ed. Romm, Vilna 1913',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001741739',
+        'language': 'he',
+        'text': ms_parse_text(tractate_object)
+    }
+    post_text_weak_connection('Melechet Shlomo on '+tractate_object.record_name_en, version)
+def ms_link_text(tractate_object):
+    ms_text = TextChunk(Ref('Melechet Shlomo on '+tractate_object.record_name_en),"he").text
+    for perek_index,perek in enumerate(ms_text):
+        for mishna_index, mishna in enumerate(perek):
+            for comment_index, comment in enumerate(mishna):
+                #link to Torah and Ibn Ezra
+                link = (
+                        {
+                        "refs": [
+                                 'Melechet Shlomo on {}, {}:{}:{}'.format(tractate_object.record_name_en, perek_index+1, mishna_index+1, comment_index+1),
+                                 '{} {}:{}'.format(tractate_object.record_name_en,perek_index+1, mishna_index+1),
+                                 ],
+                        "type": "commentary",
+                        "auto": True,
+                        "generated_by": 'sterling_Melechet_Shlomo_{}_linker'.format(tractate_object.record_name_en.replace(u" ",u"_"))
+                        })
+                print link.get('refs')
+                post_link(link, weak_network=True)
 def edit_lines(tractate_object,line):
+    line = line.replace(tractate_object.markers["DH Start"],u"<b>").replace(tractate_object.markers["DH End"],u"</b>")
     for uni in tractate_object.markers["ERASE"]:
         line = line.replace(uni, u"")
     line = re.sub(ur"@\d{1,3}",u"",line)
-    line = line.replace(tractate_object.markers["DH Start"],u"<b>").replace(tractate_object.markers["DH End"],u"</b>")
     return line
 def make_perek_array(book):
+    #hit a bug with Pesach, fixed since then
     tc = TextChunk(Ref(book), "he") if "Pesac" not in book else TextChunk(Ref(book), "en")
     return_array = []
     for x in range(len(tc.text)):
@@ -139,7 +175,8 @@ def get_record_name(title):
     return highest_fuzz(tractate_titles.keys(), title)
 posting_term = False
 posting_index = False
-posting_text= True
+posting_text= False
+linking_text= False
 admin_links = []
 page_links = []
 folder_names=[x[0]for x in os.walk("files")][1:]
@@ -158,15 +195,11 @@ def not_blank(s):
     while " " in s:
         s = s.replace(u" ",u"")
     return (len(s.replace(u"\n",u"").replace(u"\r",u"").replace(u"\t",u""))!=0);
+    
 if posting_term:
     ms_post_term()
-if posting_text:
-    f = open("MS Intro Table.csv","w")
-    f.write("Tractate, Component, Status")
-    f.close()
-    f = open("MS Intro Content.txt","w")
-    f.write('')
-    f.close()
+f = open("MS Blank Mishnas.csv","w")
+f.close()
 for folder in folder_names:
     for ms_file in os.listdir(folder):
         if ".txt" in ms_file:
@@ -183,14 +216,29 @@ for folder in folder_names:
                 current_tractate.markers = markers_2
             current_tractate.record_name_he = get_record_name(current_tractate.tractate_name_he)
             current_tractate.record_name_en = tractate_titles[current_tractate.record_name_he]
-            admin_links.append("localhost:8000/admin/reset/Melechet Shlomo on "+current_tractate.record_name_en)
-            page_links.append("http://proto.sefaria.org/Melechet Shlomo_on_"+current_tractate.record_name_en)
+            admin_links.append("http://proto.sefaria.org/admin/reset/Melechet_Shlomo_on_"+current_tractate.record_name_en.replace(u" ",u"_"))
+            page_links.append("http://proto.sefaria.org/Melechet_Shlomo_on_"+current_tractate.record_name_en.replace(u" ",u"_"))
             if posting_index:
                 ms_post_index(current_tractate)
             if posting_text:
                 ms_post_text(current_tractate)
+            if linking_text:
+                ms_link_text(current_tractate)
+            ms_parse_text(current_tractate)
+    print "ADMIN LINKS:"
+    for link in admin_links:
+        print link
+    print "Web Links:"
+    for link in page_links:
+        print link
     """for writing record
-    
+    if posting_text:
+        f = open("MS Intro Table.csv","w")
+        f.write("Tractate, Component, Status")
+        f.close()
+        f = open("MS Intro Content.txt","w")
+        f.write('')
+        f.close()
     the commentary is highly irregular, with each tractate having any number of the following:
      (1) intro
      (2) outro
