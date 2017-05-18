@@ -96,6 +96,8 @@ class Maharsha:
         return ref.replace(replace_text, "")
 
     def addDHComment(self, dh, comment, category, same_dh):
+        dh = removeAllTags(dh)
+        comment = removeAllTags(comment)
         dh = dh.decode('utf-8')
         comment = comment.decode('utf-8')
         self.dh1_dict[self.current_daf].append((category, dh))
@@ -156,7 +158,7 @@ class Maharsha:
                 self.dh_by_cat[each_cat][self.current_daf] = []
         self.actual_text = actual_text
         assert self.current_daf <= len_masechet
-        self.list_of_dafs.append(self.current_daf)
+        self.list_of_dafs.append(AddressTalmud.toStr("he", current_daf))
         return self.current_daf
 
 
@@ -205,6 +207,9 @@ class Maharsha:
             orig_line = line
 
             if line.find("@00") >= 0:
+                #if len(line.split("@")) > 2:
+                    #print "Previous daf: {}".format(AddressTalmud.toStr("en", self.current_daf))
+                    #print line
                 self.current_perek += 1
                 if not self.current_perek in self.dh_by_perek:
                     self.dh_by_perek[self.current_perek] = []
@@ -214,7 +219,7 @@ class Maharsha:
             if line.find('ח"א ') == 3:
                 line = line.replace('ח"א ', '')
 
-            line = line.replace("\n", "").replace("@33", "").replace("@55", "").replace("@44","").replace("@77","").replace("@99","")
+            line = line.replace("\n", "")
             if len(line) == 0:
                 continue
 
@@ -225,7 +230,6 @@ class Maharsha:
             if line.find("@11")>=0:
                 category = ""
                 self.current_daf = self.getDaf(line, self.current_daf, len_masechet)
-
 
                 if not self.current_daf in self.comm_dict:
                     self.comm_dict[self.current_daf] = []
@@ -435,15 +439,17 @@ class Maharsha:
     def checkDafOrder(self):
         problem = False
         prev = 0
+        which_ones = []
         for daf in self.list_of_dafs:
             if daf > prev:
                 prev = daf
             else:
-                print "DAF PROBLEM"
-                print daf
+                which_ones.append(AddressTalmud.toStr("he", daf))
                 problem = True
         if problem:
-            print self.list_of_dafs
+            print self.masechet
+            print "Out of Order Dappim: {}".format(which_ones)
+            print "Entire Dappim: {}".format(self.list_of_dafs)
 
 if __name__ == "__main__":
     done = []
@@ -515,8 +521,6 @@ if __name__ == "__main__":
         obj.parseText(open(file), len_masechet)
         obj.checkDafOrder()
         if len(obj.comm_dict) > 0:
-            print masechet
-            print title
             #obj.create_index(masechet)
             text_to_post = convertDictToArray(obj.comm_dict)
             send_text = {
