@@ -16,6 +16,7 @@ from local_settings import *
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
+from data_utilities.dibur_hamatchil_matcher import match_ref
 from sefaria.utils.util import replace_using_regex as reg_replace
 import base64
 
@@ -88,6 +89,8 @@ def ChetAndHey(poss_siman, siman):
         poss_siman = poss_siman - 3
     if siman - 7 == poss_siman - 5 and poss_siman % 10 == 5:
         poss_siman = poss_siman + 3
+    if poss_siman == 20 and siman == 1:
+        return 2
 
     return poss_siman
 
@@ -151,6 +154,8 @@ def in_order_multiple_segments(line, curr_num, increment_by):
 
 
 def fixChetHay(poss_num, curr_num):
+    if poss_num == 20 and curr_num == 1:
+        return 2
     if poss_num == 8 and curr_num == 4:
         return 5
     elif poss_num == 5 and curr_num == 7:
@@ -307,7 +312,12 @@ def onlyOne(text, subset):
         return True
     return False
 
-
+def get_all_non_ascii(text):
+    non = filter(lambda x: ord(x) >= 128, text)
+    non_ascii_set = set()
+    for each_char in non:
+        non_ascii_set.add(each_char)
+    return non_ascii_set
 
 def replaceBadNodeTitlesHelper(title, replaceBadNodeTitles, bad_char, good_char):
     url = SEFARIA_SERVER+'api/index/'+title.replace(" ", "_")
@@ -320,8 +330,7 @@ def replaceBadNodeTitlesHelper(title, replaceBadNodeTitles, bad_char, good_char)
 def checkLengthsDicts(x_dict, y_dict):
     for daf in x_dict:
         if len(x_dict[daf]) != len(y_dict[daf]):
-            print "lengths off"
-            pdb.set_trace()
+            print "{} by {}".format(daf+1, len(x_dict[daf]) - len(y_dict[daf]))
 
 
 def weak_connection(func):
@@ -416,6 +425,38 @@ def post_link_weak_connection(info, repeat=10):
         print 'too many errors'
         sys.exit(1)
 
+def get_matches_for_dict_and_link(dh_dict, base_text_title, commentary_title, talmud=True, lang='he', word_threshold=0.27, server=""):
+    def base_tokenizer(str):
+        str_list = str.split(" ")
+        return [str for str in str_list if len(str) > 0]
+
+
+    assert len(server) > 0, "Please specify a server"
+    results = {}
+    links = []
+    for daf in dh_dict:
+        dhs = dh_dict[daf]
+        if talmud:
+            base_text_ref = "{} {}".format(base_text_title, AddressTalmud.toStr("en", daf))
+        else:
+            base_text_ref = "{} {}".format(base_text_title, daf)
+        base_text = TextChunk(Ref(base_text_ref), lang=lang)
+        results[daf] = match_ref(base_text, dhs, base_tokenizer=base_tokenizer, word_threshold=word_threshold)["matches"]
+        for count, link in enumerate(results[daf]):
+            if link:
+                base_end = link.normal()
+                comm_end = "{} on {}".format(commentary_title, base_text_title, AddressTalmud.toStr("en", daf), count+1)
+                links.append({
+                    "refs": [base_end, comm_end],
+                    "auto": True,
+                    "type": "commentary",
+                    "generated_by": commentary_title+base_text_title
+                })
+    post_link(links, server=server)
+
+    return results
+
+
 
 @weak_connection
 def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SERVER):
@@ -439,6 +480,7 @@ def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SER
     except HTTPError, e:
         with open('errors.html', 'w') as errors:
             errors.write(e.read())
+
 
 
 def post_text_weak_connection(ref, text, index_count="off", repeat=10):

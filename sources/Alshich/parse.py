@@ -44,52 +44,55 @@ def get_DH_comment(line):
 
 
 if __name__ == "__main__":
-    files = [file for file in os.listdir("./") if not file == "intro.txt" and file.endswith(".txt") and not file == "vayikra.txt"]
+    files = [file for file in os.listdir("./") if not file == "intro.txt" and file.endswith(".txt")]
     for file in files:
         perek_num = 0
         line_num = 0
+        last_tag = ""
+        last_perek_tag = ""
         pasuk_num = 0
         text = {}
+        pasuk_list = []
         DHs = {}
-        print "START....{}".format(file)
+        print
+        print "In file {}:".format(file)
         for line in open(file):
             orig_line = line
             line = line.replace("\n", "").replace("\r", "").decode('utf-8')
             if len(line) == 0 or line.startswith("$") or "@02" in line or "@01" in line:
                 continue
 
-            if line.find("00") >= 0:
+            if len(line.split(" ")) > 3:
+                continue
+            elif line.find("00") >= 0:
                 poss_perek_num = getGematria(line)
                 poss_perek_num = ChetAndHey(poss_perek_num, perek_num)
                 if poss_perek_num <= perek_num:
-                    print "PEREK ISSUE: {} {} {}".format(file, poss_perek_num, perek_num)
-                    print line
+                    print u"PEREK ISSUE: found {} after {}".format(line, last_perek_tag)
+                    print poss_perek_num
                     print " ".join(prev_line.split(" ")[0:10])
-                perek_num = poss_perek_num
-                assert perek_num not in text
-                text[perek_num] = []
-                DHs[perek_num] = []
+                    perek_num += 1
+                else:
+                    perek_num = poss_perek_num
+                    last_perek_tag = line
+                pasuk_num = 0
+                #assert perek_num not in text
+                #text[perek_num] = []
+                #DHs[perek_num] = []
                 line_num = 0
             elif line.find("22") >= 0:
+                pasuk_list.append(line)
                 poss_pasuk_num = getGematria(line)
                 poss_pasuk_num = ChetAndHey(poss_pasuk_num, pasuk_num)
                 if poss_pasuk_num <= pasuk_num:
-                    print "PASUK ISSUE: {}, found {} after {}".format(file, poss_pasuk_num, pasuk_num)
+                    print u"In Perek {}: found {} after {}".format(last_perek_tag, line, last_tag)
+                    print
                     pasuk_num += 1
-                text[perek_num].append([])
-                DHs[perek_num].append([])
-            elif line.find("@11") >= 0:# or (line.find(".") > 0 and line.split(".", 1)[0].find(u"כו'") >= 0):
-                line = removeAllTags(line)
-                DH, comment = get_DH_comment(line)
-                line = u"<b>{}></b>{}".format(DH, comment)
-                current = len(text[perek_num]) - 1
-                text[perek_num][current].append(line)
-                DHs[perek_num][current].append(DH)
-            else:
-                line = removeAllTags(line)
-                #DHs[perek_num][current].append("")
-                #text[perek_num][current].append(line)
-
+                else:
+                    pasuk_num = poss_pasuk_num
+                    last_tag = line
+                #text[perek_num].append([])
+                #DHs[perek_num].append([])
             prev_line = orig_line
 
         #match(file, DHs, text)

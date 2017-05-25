@@ -3,6 +3,7 @@ from sources.functions import *
 from sefaria.model import *
 from data_utilities.XML_to_JaggedArray import XML_to_JaggedArray
 from sefaria.helper.schema import *
+from sefaria.helper.text import replace_roman_numerals_including_lowercase
 import re
 
 def align(file):
@@ -55,9 +56,11 @@ def align(file):
                         alphabet = re.compile(u"[a-zA-Z]{1}")
                         last_char = comment[-1]
                         second_last_char = comment[-2]
-                        if alphabet.match(second_last_char):
+                        if alphabet.match(last_char):
                             comment += "."
-                    new_text[current_perek][current_verse].append(comment[start:pos])
+                            pos += 1
+                    actual_comment = replace_roman_numerals_including_lowercase(comment[start:pos])
+                    new_text[current_perek][current_verse].append(actual_comment)
                     start = pos
 
     send_text = {
@@ -67,7 +70,7 @@ def align(file):
         "versionSource": json_data["versionSource"]
 
     }
-    post_text("Ibn Ezra on Isaiah", send_text, server="http://ste.sefaria.org")
+    post_text("Ibn Ezra on Isaiah", send_text, server="http://proto.sefaria.org")
 
     return new_text
 
@@ -77,6 +80,7 @@ def get_num_segments(ch1):
     for verse in ch1:
         count += len(verse)
     print "NEW COUNT {}".format(count)
+
 
 
 if __name__ == "__main__":

@@ -158,23 +158,24 @@ def post(text):
 
 
 if __name__ == "__main__":
-    post_term({
-        "name": "Magen Avot",
-        "scheme": "commentary_works",
-        "titles":
-        [{
-         "lang": "en",
-         "text": "Magen Avot",
-            "primary": True,
-        },
-        {
-            "lang": "he",
-            "text": u"מגן אבות",
-            "primary": True
-        }
-        ]
-    }, server=SERVER)
-    create_schema("Magen Avot", u"מגן אבות")
-    text, dhs = get_text(open("magen avot.txt"))
-    text = restructure(text, dhs)
-    post(text)
+    file = "magenavot.json"
+    comm = "Magen Avot"
+    base = "Pirkei Avot"
+    comm_json = json.load(open(file))
+    text = comm_json["text"][""]
+    links = []
+    for i in range(len(text)):
+        for j in range(len(text[i])):
+            for m in range(len(text[i][j])):
+                link = {
+                "refs": ["{} {}:{}:{}".format(comm, i+1, j+1, m+1), "{} {}:{}".format(base, i+1, j+1)],
+                    "type": "commentary",
+                    "auto": True,
+                    "generated_by": "manytoonelinker"
+                }
+                links.append(link)
+    print len(links)
+    for link in links:
+        post_link(link, server="http://www.sefaria.org")
+
+
