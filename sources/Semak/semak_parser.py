@@ -388,6 +388,8 @@ def smk_schema():
 
 
 def post_smk(ja_smk):
+
+
     text_version = {
         'versionTitle': 'Sefer Mitzvot Katan, Kopys, 1820',
         'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001771677',
