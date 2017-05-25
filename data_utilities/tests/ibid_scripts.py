@@ -276,9 +276,11 @@ def validate_alt_titles():
 if __name__ == "__main__":
     inst = CitationFinder()
     example_num = 20
-    #sham_items = count_regex_in_all_db(inst.get_ultimate_title_regex(u'בראשית', 'he'), text = 'all', example_num=example_num) #, text = 'Ramban on Genesis')
+    title = u'בראשית'
+    node = library.get_schema_node(title, 'he')
+    sham_items = count_regex_in_all_db(inst.get_ultimate_title_regex(u'שם', None ,'he'), text = 'all', example_num=example_num) #, text = 'Ramban on Genesis')
     #sham_items = count_regex_in_all_db(example_num=example_num)
-    #make_csv(sham_items, example_num, filename='new_sham_example.csv')
+    make_csv(sham_items, example_num, filename='new_sham_example.csv')
 
     #
     # import cProfile

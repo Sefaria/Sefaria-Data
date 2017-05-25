@@ -38,12 +38,12 @@ class CitationFinder():
 
         after_title_delimiter_re = ur"[,.: \r\n]+"
         start_paren_reg = ur"(?:[(\[{][^})\]]*)"
-        end_paren_reg = ur"(?:[\])}]| [^({\[]*[\])}])"
+        end_paren_reg = ur"(?:[\])}]|\W[^({\[]*[\])}])"
 
-        inner_paren_reg = u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + ur'(?:[\[({]' + address_regex + ur'[\])}])(?=\W|$)'
-
+        # inner_paren_reg = u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + ur'(?:[\[({]' + address_regex + ur'[\])}])(?=\W|$)'
+        inner_paren_reg = u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + ur'(?:[\[({])' + address_regex + end_paren_reg
         outer_paren_reg = start_paren_reg + u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + \
-                          address_regex + end_paren_reg
+                      address_regex + end_paren_reg
 
         if title == u"שם":
             sham_reg = u"שם"
@@ -85,7 +85,6 @@ class CitationFinder():
         address_list_depth2 = [
             ["Integer", "Integer"],
             ["Perek", "Mishnah"],
-            #["Talmud", "Integer"], No such thing as Talmud Integer in our library
             #["Perek", "Halakhah"],
             #["Siman", "Seif"],
             ["Volume", "Integer"]
@@ -179,7 +178,7 @@ class CitationFinder():
     def get_potential_refs(st, lang='he'):
 
         title_sham = u'שם'
-        non_ref_titles = [u'לעיל', u'להלן']
+        non_ref_titles = [u'לעיל', u'להלן', u'דף']
         unique_titles = set(library.get_titles_in_string(st, lang))
         unique_titles.add(title_sham)
         refs = []
@@ -269,7 +268,7 @@ class IndexIbidFinder(object):
     def find_in_segment(self, st, lang='he', citing_only=False, replace=True):
         #todo: implemant replace = True
         """
-        Returns an list of Ref objects derived from string
+        Returns a list of Ref objects derived from string
 
         :param string st: the input string
         :param lang: "he" note: "en" is not yet supported in ibid
@@ -317,6 +316,9 @@ class IndexIbidFinder(object):
         return refs, locations, types  # , failed_refs, failed_non_refs, failed_shams
 
     def find_in_index(self, lang='he', citing_only=False, replace=True):
+        """
+        Returns an OrderedDict. keys: segments. values: dict {'refs': [Refs obj found in this seg], 'locations': [], 'types':[]}
+        """
         seg_refs = self._index.all_segment_refs()
         out = OrderedDict()
 
@@ -396,8 +398,11 @@ class BookIbidTracker(object):
 
         is_index_sham = index_name is None
         if index_name is None:
-            sham_group_type = self.use_type_get_index(match_str)
-            last_index_type = library.get_schema_node(self._last_cit[0]).addressTypes
+            try:
+                sham_group_type = self.use_type_get_index(match_str)
+                last_index_type = library.get_schema_node(self._last_cit[0]).addressTypes
+            except:
+                pass
             index_name = self._last_cit[0]
             if index_name is not None:
                 if match_str is not None:
