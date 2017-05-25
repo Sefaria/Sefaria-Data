@@ -467,7 +467,10 @@ def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SER
     else:
         url = server+'/api/texts/'+ref+'?count_after=1'
     if skip_links:
-        url += '&skip_links={}'.format(skip_links)
+        if re.search(r'\?', url):
+            url += '&skip_links={}'.format(skip_links)
+        else:
+            url += '?skip_links={}'.format(skip_links)
     values = {'json': textJSON, 'apikey': API_KEY}
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)
