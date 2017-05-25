@@ -152,7 +152,6 @@ text_worker_query_list = [
     'סנה',
     'יום כיפור',
     'יום הכיפורים',
-    'ודברת בם',
     'מצות עשה',
     'חמץ ומצה',
     'בל יראה ובל ימצא',
@@ -165,7 +164,6 @@ text_worker_query_list = [
     'שומר חינם',
     'בן יומו',
     'חייב ממון',
-    'תקנת רבנו גרשום',
     'ברכת המזון',
     'מאכל בן דורסאי',
     'ספק ספיקא',
@@ -179,7 +177,27 @@ text_worker_query_list = [
 ]
 
 def generate_search_urls_for_text_workers():
+    subdomains = [u'noa', u'lev']
+    base_url = u'sefaria.org/search?sort=c&var=1'
+    filters = [u'', u'&filters=Mishnah%20Commentaries|Talmud%20Commentaries|Midrash%20Commentaries|Tanaitic%20Commentaries|Halakhah|Halakhah%20Commentaries|Kabbalah|Kabbalah%20Commentaries|Liturgy|Philosophy|Chasidut|Musar|Responsa|Apocrypha']
 
+    urls = []
+    for q in text_worker_query_list:
+        for f in filters:
+            sub_urls = []
+            for sub in subdomains:
+                sub_urls += [u"{}.{}{}&q={}".format(sub, base_url, f, q.decode('utf8'))]
+            urls += [sub_urls]
+
+    with open("search_options_evaluation.csv", 'wb') as f:
+        csvf = unicodecsv.DictWriter(f, ['URL 1', 'URL 2', 'Which do you prefer (1/2/neither/both)?', 'Notes'])
+        csvf.writeheader()
+        for u in urls:
+            csvf.writerow({"URL 1": u[0],
+                           "URL 2": u[1],
+                           "Which do you prefer (1/2/neither/both)?": "",
+                           "Notes": ""
+                           })
 
 def clear_index():
     """
@@ -916,7 +934,7 @@ def score_algo(fields, query_type, sort_type, search_analyzer, consScore, traini
     return avg_score
 
 
-def test_all():
+def run_tests_all():
     training_dict = get_training_set_dict()
 
     query_types = ['match_phrase']
@@ -986,7 +1004,7 @@ def sort_prefixes():
 
 #init_pagerank_graph()
 #calculate_pagerank()
-calculate_sheetrank()
+#calculate_sheetrank()
 """
 {
   "size": 200,
@@ -1004,6 +1022,9 @@ calculate_sheetrank()
   }
 }
 """
+
+generate_search_urls_for_text_workers()
+
 
 #generate_manual_train_set()  # wow, exactly 613 lines! this is serendipitous (TODO if I add more lines, this comment will look stupid)
 
