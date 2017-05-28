@@ -65,6 +65,9 @@ class CitationFinder():
             ["Perek"],
             ["Mishnah"],
             ["Talmud"],
+            ["Siman"],
+            ["Seif"],
+            ["Halakhah"],
             ["Volume"]
         ]
 
@@ -85,10 +88,10 @@ class CitationFinder():
         address_list_depth2 = [
             ["Integer", "Integer"],
             ["Perek", "Mishnah"],
-            #["Perek", "Halakhah"],
-            #["Siman", "Seif"],
-            ["Volume", "Integer"]
-            # ["Volume","Siman"],
+            ["Perek", "Halakhah"],
+            ["Siman", "Seif"],
+            ["Volume", "Integer"],
+            ["Volume", "Siman"]
 
         ]
         lengths = [0, 0]
@@ -387,10 +390,10 @@ class BookIbidTracker(object):
 
     def resolve(self, index_name, sections=None, match_str=None):
         """
-
+        note: if index_name is None match_str must be not None
         :param index_name: index name or "None" if it is a sham title citation
         :param list sections: If any entry in this list is "None", then we treat that as a "שם" or "ibid", resolve it, and return a refrence
-        :param unicode match_str: optional match string. if this is provided, sections are ignored. index_name is assumed to be None
+        :param unicode match_str: optional match string. if this is provided, sections are ignored. index_name is assumed to be
         :return: Ref
         """
         #todo: assert if table is empty.
@@ -401,7 +404,7 @@ class BookIbidTracker(object):
             try:
                 sham_group_type = self.use_type_get_index(match_str)
                 last_index_type = library.get_schema_node(self._last_cit[0]).addressTypes
-            except:
+            except :
                 pass
             index_name = self._last_cit[0]
             if index_name is not None:
