@@ -134,7 +134,9 @@ def run_shaminator():
         title_list += library.get_indexes_in_category(cat)
     for cTitle in collective_titles:
         title_list += library.get_indices_by_collective_title(cTitle)
-    for ititle, title in enumerate(title_list[24:]):
+
+    title_list = ["Ramban on Genesis"]
+    for ititle, title in enumerate(title_list):
         print u"-"*50
         print title, ititle, '/', len(title_list)
         print u"-"*50
@@ -148,7 +150,7 @@ def run_shaminator():
             </head>
             <body>
                 <table>
-                    <tr><td>Row Id</td><td>Book Ref</td><td>Sham Found</td><td>Sham Text</td></tr>
+                    <tr><td>Row Id</td><td>Book Ref</td><td>Ref Found</td><td>Sham Found</td><td>Sham Text</td></tr>
         """
 
         index = library.get_index(title)
@@ -167,7 +169,7 @@ def run_shaminator():
             for r, l, t in izip(v['refs'], v['locations'], v['types']):
                 if t == CitationFinder.SHAM_INT:
                     if last_index_ref_seen[r.index.title] is not None:
-                        last_ref_with_citation, last_location_with_citation = last_index_ref_seen[r.index.title]
+                        last_ref_with_citation, last_location_with_citation, last_ref_seen = last_index_ref_seen[r.index.title]
 
 
                         dist = curr_ref.distance(last_ref_with_citation)
@@ -213,14 +215,14 @@ def run_shaminator():
                         # surround all non interesting parens with spans
                         text = re.sub(ur"(?<!>)(\([^)]+\))(?!<)",ur"<span class='p'>\1</span>", text)
 
-                        row = u"<tr><td>{}</td><td><a href='{}' target='_blank'>{}</a></td><td>{}</td><td class='he'>{}</td></tr>"\
-                            .format(row_num, base_url + curr_ref.url(), k, r, text)
+                        row = u"<tr><td>{}</td><td><a href='{}' target='_blank'>{}</a></td><td>{}</td><td>{}</td><td class='he'>{}</td></tr>"\
+                            .format(row_num, base_url + curr_ref.url(), k, last_ref_seen, r, text)
                         html += row
                         row_num += 1
                     else:
                         raise InputError("AHHHH!!!")
                 elif t == CitationFinder.REF_INT:
-                    last_index_ref_seen[r.index.title] = (curr_ref, l)
+                    last_index_ref_seen[r.index.title] = (curr_ref, l, r)
 
         html += u"""
                 </table>
@@ -232,7 +234,7 @@ def run_shaminator():
             f.write(html)
 
 def index_ibid_finder():
-    index = library.get_index("Mekhilta_DeRabbi_Shimon_Bar_Yochai")
+    index = library.get_index("Sefer Mitzvot Gadol")
     inst = IndexIbidFinder(index)
     inst.find_in_index()
 
@@ -278,9 +280,9 @@ if __name__ == "__main__":
     example_num = 20
     title = u'בראשית'
     node = library.get_schema_node(title, 'he')
-    sham_items = count_regex_in_all_db(inst.get_ultimate_title_regex(u'שם', None ,'he'), text = 'all', example_num=example_num) #, text = 'Ramban on Genesis')
+    #sham_items = count_regex_in_all_db(inst.get_ultimate_title_regex(u'שם', None ,'he'), text = 'all', example_num=example_num) #, text = 'Ramban on Genesis')
     #sham_items = count_regex_in_all_db(example_num=example_num)
-    make_csv(sham_items, example_num, filename='new_sham_example.csv')
+    #make_csv(sham_items, example_num, filename='new_sham_example.csv')
 
     #
     # import cProfile
@@ -293,8 +295,8 @@ if __name__ == "__main__":
     #index_ibid_finder()
     #segment_ibid_finder()
 
-    #run_shaminator()
-    validate_alt_titles()
+    run_shaminator()
+    #validate_alt_titles()
 
 
 

@@ -21,42 +21,57 @@ class CitationFinder():
     AFTER_TITLE_DELIMETER_RE = ur"[,.: \r\n]+"
 
     @staticmethod
-    def get_ultimate_title_regex(title, node, lang, compiled=True):
+    def get_ultimate_title_regex(title_list, title_node_dict, lang, compiled=True):
        #todo: consider situations that it is obvious it is a ref although there are no () ex: ברכות פרק ג משנה ה
         """
         returns regex to find either `(title address)` or `title (address)`
         title can be Sham
-        :param title: str
+        :param title_list: str or list
+        :param title_node_dict: dict or SchemaNode
         :return: regex
         """
-        if node is None:  # title is unrecognized
-            address_regex = CitationFinder.create_or_address_regexes(lang)
-        else:
-            address_regex = node.address_regex(lang)
 
-        #todo: if title is sham then we don't want to find prefixes for it
+        if not isinstance(title_list, list) and not isinstance(title_node_dict, dict):
+            title_node_dict = {u"{}".format(title_list): title_node_dict}
+            title_list = [title_list]
+
+        #  todo: if title is sham then we don't want to find prefixes for it
 
         after_title_delimiter_re = ur"[,.: \r\n]+"
         start_paren_reg = ur"(?:[(\[{][^})\]]*)"
         end_paren_reg = ur"(?:[\])}]|\W[^({\[]*[\])}])"
 
-        # inner_paren_reg = u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + ur'(?:[\[({]' + address_regex + ur'[\])}])(?=\W|$)'
-        inner_paren_reg = u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + ur'(?:[\[({])' + address_regex + end_paren_reg
-        outer_paren_reg = start_paren_reg + u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + \
-                      address_regex + end_paren_reg
+        title_reg_list = []
 
-        if title == u"שם":
-            sham_reg = u"שם"
-            stam_sham_reg = ur"(?:[(\[{])(?P<Title>" + sham_reg + u")(?:[\])}])"
-            outer_paren_sham_reg = ur"(?:[(\[{])" + u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + \
+        for title in title_list:
+            node = title_node_dict[title]
+            if node is None:  # title is unrecognized
+                address_regex = CitationFinder.create_or_address_regexes(lang)
+            else:
+                address_regex = node.address_regex(lang)
+
+
+            # inner_paren_reg = u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + ur'(?:[\[({]' + address_regex + ur'[\])}])(?=\W|$)'
+            inner_paren_reg = u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + ur'(?:[\[({])' + address_regex + end_paren_reg
+            outer_paren_reg = start_paren_reg + u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + \
                           address_regex + end_paren_reg
-            reg = u'(?:{})|(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_sham_reg, stam_sham_reg)
-        else:
-           reg = u'(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_reg)
+
+            if title == u"שם":
+                sham_reg = u"שם"
+                stam_sham_reg = ur"(?:[(\[{])(?P<Title>" + sham_reg + u")(?:[\])}])"
+                outer_paren_sham_reg = ur"(?:[(\[{])" + u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + \
+                              address_regex + end_paren_reg
+                reg = u'(?:{})|(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_sham_reg, stam_sham_reg)
+            else:
+               reg = u'(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_reg)
+
+            title_reg_list += [reg]
+
+        full_crazy_ultimate_title_reg = u"|".join([u"(?:{})".format(title_reg) for title_reg in title_reg_list])
 
         if compiled:
-            reg = re.compile(reg, re.VERBOSE)
-        return reg
+            full_crazy_ultimate_title_reg = re.compile(full_crazy_ultimate_title_reg, re.VERBOSE)
+        return full_crazy_ultimate_title_reg
 
     @staticmethod
     def get_address_regex_dict(lang):
@@ -188,39 +203,47 @@ class CitationFinder():
         sham_refs = []
         non_refs = []
 
+
+        title_reg_list = []
+        title_node_dict = {}
         for title in unique_titles:
             is_sham = title_sham == title
             node = library.get_schema_node(title, lang)
             if not isinstance(node, JaggedArrayNode):
                 node = None
+            title_node_dict[title] = node
 
-            title_reg = CitationFinder.get_ultimate_title_regex(title, node, lang, compiled=True)
-            for m in re.finditer(title_reg, st):
-                if not is_sham:
-                    if node is None:
-                        # this is a bad ref
-                        non_refs += [(m, m.span(), CitationFinder.NON_REF_INT)]
-                    else:
-                        try:
-                            refs += [(library._get_ref_from_match(m, node, lang), m.span(), CitationFinder.REF_INT)]
-                        except InputError:
-                            # check if this ref failed because it has a Sham in it
-                            hasSham = False
-                            for i in range(3):
-                                gname = u"a{}".format(i)
-                                try:
-                                    if m.group(gname) == title_sham:
-                                        hasSham = True
-                                        break
-                                except IndexError:
-                                    break
+        full_crazy_ultimate_title_reg = CitationFinder.get_ultimate_title_regex(unique_titles, title_node_dict, lang, compiled=True)
 
-                            if hasSham:
-                                sham_refs += [(CitationFinder.parse_sham_match(m, lang, node), m.span(), CitationFinder.SHAM_INT)]
-                            else: # failed for some unknown reason
-                                non_refs += [(m, m.span(), CitationFinder.NON_REF_INT)]
+        for m in re.finditer(full_crazy_ultimate_title_reg, st):
+            title = m.groupdict().get('Title')
+            node = title_node_dict[title]
+            is_sham = title == title_sham
+            if not is_sham:
+                if node is None:
+                    # this is a bad ref
+                    non_refs += [(m, m.span(), CitationFinder.NON_REF_INT)]
                 else:
-                    sham_refs += [(m.group(), m.span(), CitationFinder.SHAM_INT)]
+                    try:
+                        refs += [(library._get_ref_from_match(m, node, lang), m.span(), CitationFinder.REF_INT)]
+                    except InputError:
+                        # check if this ref failed because it has a Sham in it
+                        hasSham = False
+                        for i in range(3):
+                            gname = u"a{}".format(i)
+                            try:
+                                if m.group(gname) == title_sham:
+                                    hasSham = True
+                                    break
+                            except IndexError:
+                                break
+
+                        if hasSham:
+                            sham_refs += [(CitationFinder.parse_sham_match(m, lang, node), m.span(), CitationFinder.SHAM_INT)]
+                        else: # failed for some unknown reason
+                            non_refs += [(m, m.span(), CitationFinder.NON_REF_INT)]
+            else:
+                sham_refs += [(m.group(), m.span(), CitationFinder.SHAM_INT)]
 
         for title in non_ref_titles:
             node = None
@@ -313,7 +336,7 @@ class IndexIbidFinder(object):
                         locations += [location]
                         types += [type]
                         #refs += [(self._tr.resolve(item[0], sections=item[1]), 'sham')]
-                except (IbidRefException, IbidKeyNotFoundException) as e:
+                except (IbidRefException, IbidKeyNotFoundException, InputError) as e:
                     failed_shams += [item]
 
         return refs, locations, types  # , failed_refs, failed_non_refs, failed_shams
@@ -327,6 +350,7 @@ class IndexIbidFinder(object):
 
         prev_node = None
         for i, r in enumerate(seg_refs):
+
             if prev_node is None:
                 prev_node = r.index_node
             elif prev_node != r.index_node:
@@ -401,11 +425,6 @@ class BookIbidTracker(object):
 
         is_index_sham = index_name is None
         if index_name is None:
-            try:
-                sham_group_type = self.use_type_get_index(match_str)
-                last_index_type = library.get_schema_node(self._last_cit[0]).addressTypes
-            except :
-                pass
             index_name = self._last_cit[0]
             if index_name is not None:
                 if match_str is not None:

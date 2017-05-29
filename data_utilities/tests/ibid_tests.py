@@ -133,7 +133,7 @@ def test_ibid_dict():
     assert  test_dict.items() == [('2',2),('1',10)]
 
 
-def test_ibid_find():
+def test_ibid_find_1():
     ind = library.get_index("Genesis")
     inst = IndexIbidFinder(ind)
     string = u'''וילך איש מבית לוי רבותינו אמרו שהלך אחר עצת בתו (סוטה יב:). את בלהה (בראשית לה כב),
@@ -149,6 +149,24 @@ def test_ibid_find_2():
     refs, _, _ = inst.find_in_segment(string, lang='he', citing_only=False, replace=True)
     assert refs == []
 
+
+def test_ibid_find_3():
+    ind = library.get_index("Genesis")
+    inst = IndexIbidFinder(ind)
+    string = u"""היי (שבת כב:) ועוד דברים. וגם שבת [שם] ועוד דברים."""
+    refs, _, _ = inst.find_in_segment(string, lang='he', citing_only=False, replace=True)
+    assert refs == [Ref('Shabbat 22b'), Ref('Shabbat 22b')]
+
+    string = u"""היי (שבת כב:) ועוד. אז אמרו (חולין כב:) לצחוק. ואז שבת [שם] סתם? או לא"""
+    refs, _, _ = inst.find_in_segment(string, lang='he', citing_only=False, replace=True)
+    assert refs == [Ref('Shabbat 22b'), Ref('Chullin 22b'), Ref('Shabbat 22b')]
+
+def test_ibid_find_4():
+    ind = library.get_index("Genesis")
+    inst = IndexIbidFinder(ind)
+    string = u"(מלכים א ח יג) בלה בלה. (שם בפסוק כז)"
+    refs, _, _ = inst.find_in_segment(string, lang='he', citing_only=False, replace=True)
+    assert refs == [Ref("I Kings 8:13")]
 
 class TestIndexIbidFinder:
 
@@ -372,6 +390,9 @@ class TestGetUltimateRegex:
         assert m.groupdict()[u"Title"] == u'משנה תורה, הלכות מגילה'
         # assert m.groupdict()[u"Integer_Integer"] is not None
         assert m.groupdict()[u'a0'] == u'א' and m.groupdict()[u'a1'] == u'ד'
+
+
+
 
 #     def test_smg(self):
 #         st = '''
