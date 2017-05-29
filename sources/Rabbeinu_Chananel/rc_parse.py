@@ -68,37 +68,38 @@ class RC_Tractate:
                 if u"@" in line and u"=" not in line:
                     current_daf_ref = extract_daf(line)
                     past_start=True
-                    print line
                 elif past_start:
                     if not_blank(line):
                         final_list[get_page(current_daf_ref["daf"],current_daf_ref["amud"])].append(remove_markers(line).strip())
         #add blank to offset beggening:
-        return_list = [[] for x in range(len(TextChunk(Ref(self.en_tractate_name),"he").text)-1)]
+        #box for adding to amud what is removed during transfer
+        add_after = []
         for previous_amud_index, amud in enumerate(final_list[1:]):
             if len(amud)>0 and len(final_list[previous_amud_index])>0:
-                print previous_amud_index
                 if final_list[previous_amud_index][-1][-1]!=u"." and final_list[previous_amud_index][-1][-1]!=u":":
                     amud_split = re.findall(ur".*?[\.:]",amud[0])
                     previous_amud_dangler = re.split(ur"[\.:]",final_list[previous_amud_index][-1])[-1]
-                    print previous_amud_dangler
                     if len(amud_split)>1:
                         if len(previous_amud_dangler)>len(amud_split[0]):
-                            print "Pulled Back!"
+                            #print "Pulled Back!"
+                            if amud[0][-1]!=u"." and amud[0][-1]!=u":":
+                                add_after.append(re.split(ur"[\.:]",amud[0])[-1])
                             final_list[previous_amud_index][-1]+=u" "+amud_split[0]
                             final_list[previous_amud_index+1][0]=''.join(amud_split[1:])
-                            if amud[0][-1]!=u"." and amud[0][-1]!=u":":
-                                final_list[previous_amud_index+1][0]+=re.split(ur"[\.:]",amud[0])[-1]
+                            while len(add_after)>0:
+                                final_list[previous_amud_index+1][0]+=add_after.pop()
                         else:
-                            print "Pushed Forward!"
+                            #print "Pushed Forward!"
                             final_list[previous_amud_index][-1]=''.join(re.findall(ur".*?[\.|:]",final_list[previous_amud_index][-1]))
                             final_list[previous_amud_index+1][0]=previous_amud_dangler+u" "+final_list[previous_amud_index+1][0]
+                    """For case where the next amud doesn't have more than one period segment. For now, we do nothing.
                     else:
-                        print "MESSUP"
-                        print "Pulled Back!"
+                        #print "MESSUP"
+                        #print "Pulled Back!"
                         final_list[previous_amud_index][-1]+=u" "+amud_split[0]
                         final_list[previous_amud_index+1][0]=''.join(amud_split[1:])
-                        if amud[0][-1]!=u"." and amud[0][-1]!=u":":
-                            final_list[previous_amud_index+1][0]+=re.split(ur"[\.:]",amud[0])[-1]
+                    """
+
                             
         final_list.insert(0,[])
         self.text = final_list
@@ -118,7 +119,7 @@ class RC_Tractate:
                 try:
                     rc_ref = Ref('Rabbeinu Chananel on '+self.en_tractate_name+"."+get_daf_en(amud_index))
                 except:
-                    print "No RC on Rabbeinu Chananel on ",self.en_tractate_name,".",get_daf_en(amud_index)
+                    #print "No RC on Rabbeinu Chananel on ",self.en_tractate_name,".",get_daf_en(amud_index)
                     continue
                 #for Rabbeinu Channanel, each "comment" contains comments on several passages.
                 #therefore, link each comment to the whole amud
@@ -164,6 +165,7 @@ def not_blank(s):
         s = s.replace(u" ",u"")
     return (len(s.replace(u"\n",u"").replace(u"\r",u"").replace(u"\t",u""))!=0);
 def remove_markers(s):
+    s = re.sub(ur"<\d+>\S{1,4}\)<\d+>",u"",s)
     s = re.sub(ur"<\d+>",u"",s)
     s = re.sub(ur"\*+\)",u"",s)
     return s
@@ -179,11 +181,11 @@ def highest_fuzz(input_list, input_item):
             highest_ratio=fuzz.ratio(input_item,item)
     return best_match
 posting_index = False
-posting_text = False
+posting_text = True
 linking = False
 admin_links = []
 site_links = []
-for rc_file in os.listdir("files")[11:12]:
+for rc_file in os.listdir("files"):
     if ".txt" in rc_file:
         current_tractate = RC_Tractate(rc_file)
         admin_links.append("http://proto.sefaria.org/admin/reset/Rabbeinu_Chananel_on_"+current_tractate.en_tractate_name.replace(u" ",u"_"))
@@ -197,10 +199,11 @@ for rc_file in os.listdir("files")[11:12]:
         if linking:
             print "linking",current_tractate.en_tractate_name,"..."
             current_tractate.rc_link()
-        
+        """
         for dindex, daf in enumerate(current_tractate.text):
             for cindex, comment in enumerate(daf):
                 print dindex, cindex, comment
+        """
         
 print "Admin Links:"
 for link in admin_links:
