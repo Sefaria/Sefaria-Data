@@ -124,7 +124,6 @@ def test_ignore_book():
         tracker.resolve(None, match_str=u'(שם)')
 
 
-
 def test_ibid_dict():
     test_dict = IbidDict()
     test_dict['1'] = 1
@@ -202,6 +201,42 @@ class TestIndexIbidFinder:
         allrefs, _, _ = self.instance.find_in_segment(st, 'he', citing_only=True)
         assert allrefs == [Ref('Exodus 22:2'), Ref('Exodus 30'), Ref('Exodus 5')]
 
+        st = u'''כי בוחר אתה לבן ישי (שמואל א כ ל) והחזיק לו (שם ב טו ה) ורבים כן או פירושו'''
+        allrefs, _, _ = self.instance.find_in_segment(st, 'he', citing_only=True)
+        assert allrefs == [Ref('I Samuel 20:30'), Ref('II Samuel 15:5')]
+        print allrefs
+
+        st = u'''כי בוחר אתה לבן ישי (שמואל א כ ל) והחזיק לו (שם טו ה) ורבים כן או פירושו'''
+        allrefs, _, _ = self.instance.find_in_segment(st, 'he', citing_only=True)
+        assert allrefs == [Ref('I Samuel 20:30'), Ref('I Samuel 15:5')]
+        print allrefs
+
+        st = u'''כי בוחר אתה לבן ישי (שמואל א כ ל) והחזיק לו (שם ה) ורבים כן או פירושו'''
+        allrefs, _, _ = self.instance.find_in_segment(st, 'he', citing_only=True)
+        assert allrefs == [Ref('I Samuel 20:30'), Ref('I Samuel 20:5')]
+        print allrefs
+
+        index = library.get_index('Genesis')
+        instance = IndexIbidFinder(index, assert_simple=True)
+        st = u'''כי בוחר אתה לבן ישי (דברי הימים א כ א) והחזיק לו (שם ב יד) ורבים כן או פירושו'''
+        allrefs, _, _ = instance.find_in_segment(st, 'he', citing_only=True)
+        print allrefs
+        assert allrefs == [Ref('I Chronicles 20:1'), Ref('I Chronicles 2:14')]
+
+        index = library.get_index('Genesis')
+        instance = IndexIbidFinder(index, assert_simple=True)
+        st = u'''כי בוחר אתה לבן ישי (דברי הימים א כ א) והחזיק לו (שם ב ב ב) ורבים כן או פירושו'''
+        allrefs, _, _ = instance.find_in_segment(st, 'he', citing_only=True)
+        print allrefs
+        assert allrefs == [Ref('I Chronicles 20:1'), Ref('II Chronicles 2:2')]
+
+
+        index = library.get_index('Genesis')
+        instance = IndexIbidFinder(index, assert_simple=True)
+        st = u'''כי בוחר אתה לבן ישי (דברי הימים א כ א) והחזיק לו ב (שם ב ב ב) ורבים כן או פירושו'''
+        allrefs, _, _ = instance.find_in_segment(st, 'he', citing_only=True)
+        print allrefs
+        assert allrefs == [Ref('I Chronicles 20:1'), Ref('II Chronicles 2:2')]
 
 def test_get_potential_refs():
     inst = CitationFinder()

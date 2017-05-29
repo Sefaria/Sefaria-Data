@@ -159,7 +159,6 @@ class CitationFinder():
         :return:
         """
         gs = sham_match.groupdict()
-
         sections = []
         for i in range(node.depth):
             gname = u"a{}".format(i)
@@ -188,8 +187,21 @@ class CitationFinder():
         """
         title_sham = u'שם'
         title_reg = CitationFinder.get_ultimate_title_regex(title_sham, node, lang, compiled=True)
-        for m in re.finditer(title_reg, st):
+        if node.full_title() in [u'I Samuel', u'II Samuel', u'I Kings', u'II Kings', u'I Chronicles', u'II Chronicles']:
+            volume = re.search(u'שם (א|ב)\s', st)
+            m = re.search(title_reg, st)
+            if volume:
+                st1 = re.sub(u'(א|ב)\s', u'', st, count=1, pos=m.start())
+                m1 = re.search(title_reg, st1)
+                if m1 and m1.groupdict()['a0'] and m1.groupdict()['a1']:
+                    node = CitationFinder.node_volumes(node, volume.group(1))
+                    return CitationFinder.parse_sham_match(m1, lang, node)
             return CitationFinder.parse_sham_match(m, lang, node)  # there should only be one match
+        else:
+            title_reg = CitationFinder.get_ultimate_title_regex(title_sham, node, lang, compiled=True)
+            m = re.search(title_reg, st)
+            if m:
+                return CitationFinder.parse_sham_match(m, lang, node)
         raise InputError
 
     @staticmethod
@@ -209,6 +221,8 @@ class CitationFinder():
         for title in unique_titles:
             is_sham = title_sham == title
             node = library.get_schema_node(title, lang)
+            # if node.full_title() in [u'I Samuel', u'II Samuel']:
+            #     flag_II = True
             if not isinstance(node, JaggedArrayNode):
                 node = None
             title_node_dict[title] = node
@@ -255,6 +269,17 @@ class CitationFinder():
 
         return all_refs
 
+    @staticmethod
+    def node_volumes(node, volume):
+        book = re.split('\s', node.full_title())
+        book = book[1]
+        if volume == u'א':
+            title = u'I ' + book
+            return library.get_schema_node(title)
+        # if volume == u'ב':
+        #     title = u'II ' + book
+        # return library.get_schema_node(title)
+        return library.get_schema_node(u'II ' + book)
 
 class IndexIbidFinder(object):
 
@@ -343,7 +368,7 @@ class IndexIbidFinder(object):
 
     def find_in_index(self, lang='he', citing_only=False, replace=True):
         """
-        Returns an OrderedDict. keys: segments. values: dict {'refs': [Refs obj found in this seg], 'locations': [], 'types':[]}
+        Returns an OrderedDict. keys: segments. values: dict {'refs': [Refs obj found in this seg], 'locations': [], 'types': []}
         """
         seg_refs = self._index.all_segment_refs()
         out = OrderedDict()
@@ -422,14 +447,16 @@ class BookIbidTracker(object):
         """
         #todo: assert if table is empty.
         #todo: raise an error if can't find this sham constilation in table
-
+        title = None
         is_index_sham = index_name is None
         if index_name is None:
             index_name = self._last_cit[0]
             if index_name is not None:
                 if match_str is not None:
+                    # if index_name in [u'I Samuel', u'II Samuel']: #to disambiguate books that have 2 volumes.
+                    #     re.search('', match_str)
                     node = library.get_schema_node(index_name)  # assert JaggedArrayNode?
-                    _, sections = CitationFinder.get_sham_ref_with_node(match_str, node, lang='he')
+                    title, sections = CitationFinder.get_sham_ref_with_node(match_str, node, lang='he')
             else:
                 raise IbidKeyNotFoundException("couldn't find this key")
 
@@ -490,7 +517,8 @@ class BookIbidTracker(object):
                     section_str_list += [talmud.section_to_daf(section)]
                 else:
                     section_str_list += [str(section)]
-
+            if title and title != index_name:
+                index_name = title
             resolvedRef = Ref(u'{}.{}'.format(index_name, '.'.join(section_str_list)))
         except:
             raise IbidRefException(u"problem with the Ref iteslf. {}.{}".format(index_name, '.'.join(str(new_sections))))
@@ -548,6 +576,7 @@ class BookIbidTracker(object):
             if v and not re.search("Title|a0|a1", k):
                 address_type = k
         return address_type
+
 
 class IbidDict(OrderedDict):
 
