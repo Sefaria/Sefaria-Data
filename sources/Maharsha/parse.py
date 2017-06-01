@@ -158,7 +158,7 @@ class Maharsha:
                 self.dh_by_cat[each_cat][self.current_daf] = []
         self.actual_text = actual_text
         assert self.current_daf <= len_masechet
-        self.list_of_dafs.append(AddressTalmud.toStr("he", current_daf))
+        self.list_of_dafs.append(self.current_daf)
         return self.current_daf
 
 

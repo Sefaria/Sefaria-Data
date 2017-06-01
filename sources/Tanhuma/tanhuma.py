@@ -174,6 +174,8 @@ if __name__ == "__main__":
         text = text.split(" ")
         marker = text[0]
         text = " ".join(text[1:])
+        if marker.find(".") != marker.rfind("."):
+            marker = marker[0:-1]
         if marker.split(".")[-1] == "":
             return marker.split(".")[0]
         else:

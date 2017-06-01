@@ -80,6 +80,8 @@ def parse_mitzvah(line, text, mitzvah_num, num_words_marker, next_mitzvah_number
 
 
 def almost_identical(str1, str2, diff_allowed=1):
+    if len(str1) - len(str2) == 1 and ord(str1[0]) == 65279:
+        str1 = str1[1:]
     if len(str1) is not len(str2):
         return False
     diff = 0
@@ -126,6 +128,7 @@ def parse_text(file, mitzvah_marker):
     next_sec_number_must_be = None
     for line in file:
         orig_line = line
+        line = line.replace("\r", "")
         line = modify_line(line, mitzvah_marker)
         if line.replace(" ", "") == "":
             continue
@@ -166,8 +169,10 @@ def iterate_semag(semag_json, brit_vol, which_volume):
     semag_json = semag_json[which_volume][""]
     links_brit_moshe_to_semag = []
     brit_moshe_pos = None
-
+    found_link_in_brit = False
+    prev_brit_moshe_ref = None
     for i, mitzvah in enumerate(semag_json):
+
         for j, semag_segment in enumerate(mitzvah):
 
             semag_links = re.findall(u"\([\u0590-\u05FF|\"]+\)", semag_segment)
@@ -178,8 +183,8 @@ def iterate_semag(semag_json, brit_vol, which_volume):
                     print "{} Mitzvah {}".format(which_volume, i+1)
                 continue
             semag_ref = "Sefer Mitzvot Gadol, {} {}:{}".format(which_volume, i+1, j+1)
-            found_link_in_brit = False
-            prev_brit_moshe_ref = None
+
+
 
             for brit_moshe_section in brit_vol[i+1]:
                 for brit_moshe_seg_count, brit_moshe_segment in enumerate(brit_vol[i+1][brit_moshe_section]):
@@ -221,7 +226,7 @@ segment holding the new letter, excluding the end and including the start.
 
 if __name__ == "__main__":
     #create_schema()
-    brit_vol_2 = parse_text(open("brit moshe vol 2.txt"), u"@02מצות עשה")
+    brit_vol_2 = parse_text(open("brit moshe vol 2 CORRECTED.txt"), u"@02מצות עשה")
     brit_vol_1 = parse_text(open("brit moshe vol 1.txt"), u"@88מצוה לא תעשה")
 
     links_vol_1 = iterate_semag(json.load(open("semag.json"))["text"], brit_vol_1, "Volume One")
