@@ -75,22 +75,24 @@ class Yad_Ramah:
                 dh_by_daf[page] = []
 
 
-            text_for_dh = " ".join(para.split(" ")[0:7])
+
+            text_for_dh = " ".join(para.split(" ")[0:6])
+            dh_by_daf[page].append(text_for_dh)
 
             siman_match = self.siman_re.match(para)
             if siman_match:
                 siman = siman_match.group(0)
-                text_for_dh = text_for_dh.replace(siman, "")
+
                 para = para.replace(siman, u"<b>{}</b>".format(siman))
 
-            dh_by_daf[page].append(text_for_dh)
 
             assert page in text_by_daf
             text_by_daf[page].append(para)
         return text_by_daf, dh_by_daf
 
 
-    def create_schema(self, siman_alt_struct):
+    def create_schema(self):
+        '''
         siman_alt_struct = convertDictToArray(siman_alt_struct)
         nodes = []
         en =  "Simanim"
@@ -104,6 +106,7 @@ class Yad_Ramah:
 
         node.wholeRef = "Yad Ramah on Bava Batra"
         nodes.append(node.serialize())
+        '''
 
         root = JaggedArrayNode()
         root.add_primary_titles("Yad Ramah on Bava Batra", u"יד רמה על בבא בתרא")
@@ -115,24 +118,33 @@ class Yad_Ramah:
             "collective_title": "Yad Ramah",
             "base_text_titles": ["Bava Batra"],
             "dependence": "Commentary",
-            "base_text_mapping": "many_to_one",
             "categories": ["Talmud", "Bavli", "Commentary", "Seder Nezikin"],
-            'alt_structs': {"Subject": {"nodes": nodes}}
+            #'alt_structs': {"Subject": {"nodes": nodes}}
         }
         post_index(index, server=self.server)
 
 
+    def siman_filter(self, text_segment):
+        return self.siman_re.match(text_segment)
+
+
+    def dh_func(self, string):
+        if self.siman_re.match(string):
+            string = string.replace(self.siman_re.match(string), "")
+
+        return " ".join(string.split(" ")[0:6])
+
 
 if __name__ == "__main__":
-    yad_ramah = Yad_Ramah("http://ste.sefaria.org")
+    yad_ramah = Yad_Ramah("http://localhost:8000")
     text = yad_ramah.getText(open("YR.txt"))
     text, dh_dict = yad_ramah.structureText(text)
     links = []
     text = convertDictToArray(text)
-    results = get_matches_for_dict_and_link(dh_dict, "Bava Batra", "Yad Ramah", word_threshold=0.5, server="http://ste.sefaria.org")
+    results = get_matches_for_dict_and_link(dh_dict, "Bava Batra", "Yad Ramah", server="http://ste.sefaria.org", rashi_filter=yad_ramah.siman_filter, dh_extract_method=yad_ramah.dh_func)
 
 
-    #yad_ramah.create_schema(siman_alt_struct)
+    #yad_ramah.create_schema()
     send_text = {
         "text": text,
         "language": "he",
@@ -140,4 +152,4 @@ if __name__ == "__main__":
         "versionSource": "http://www.sefaria.org/"
     }
     print "about to post"
-    post_text("Yad Ramah on Bava Batra", send_text, server=yad_ramah.server)
+    #post_text("Yad Ramah on Bava Batra", send_text, server=yad_ramah.server)

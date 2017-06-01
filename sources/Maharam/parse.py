@@ -24,7 +24,7 @@ if __name__ == "__main__":
             }
         ]
 
-    }, server="http://proto.sefaria.org")
+    }, server="http://www.sefaria.org")
     '''
     files = [file for file in os.listdir(".") if file.endswith("2.txt")]
     bad_linking_files = ["chullin2.txt", "eruvin2.txt", "makkot2.txt"]
@@ -37,7 +37,8 @@ if __name__ == "__main__":
 
     #files = bad_section_files + bad_linking_files
     #files = ["makkot2.txt"]
-    for file in ["shabbat2.txt"]:
+    for file in ["avodah zarah2.txt"]:
+        print file
         masechet = file.replace("2.txt", "").title()
         obj = Maharsha(masechet, title, heTitle, "http://proto.sefaria.org")
         len_masechet = len(Ref(masechet).text('he').text)
