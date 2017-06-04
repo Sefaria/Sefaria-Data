@@ -18,6 +18,7 @@ class CitationFinder():
     REF_INT = 0
     NON_REF_INT = 1
     SHAM_INT = 2
+    IGNORE_INT = 3
     AFTER_TITLE_DELIMETER_RE = ur"[,.: \r\n]+"
 
     @staticmethod
@@ -206,9 +207,10 @@ class CitationFinder():
 
     @staticmethod
     def get_potential_refs(st, lang='he'):
-
+        REF_SCOPE = 15
         title_sham = u'שם'
         non_ref_titles = [u'לעיל', u'להלן', u'דף']
+        ignore_titles = [u'משנה', u'בבלי', u'ירושלמי', u'תוספתא'] # see Ramban on Genesis 40:16:1
         unique_titles = set(library.get_titles_in_string(st, lang))
         unique_titles.add(title_sham)
         refs = []
@@ -216,20 +218,17 @@ class CitationFinder():
         non_refs = []
 
 
-        title_reg_list = []
         title_node_dict = {}
         for title in unique_titles:
-            is_sham = title_sham == title
             node = library.get_schema_node(title, lang)
-            # if node.full_title() in [u'I Samuel', u'II Samuel']:
-            #     flag_II = True
             if not isinstance(node, JaggedArrayNode):
                 node = None
             title_node_dict[title] = node
 
         full_crazy_ultimate_title_reg = CitationFinder.get_ultimate_title_regex(unique_titles, title_node_dict, lang, compiled=True)
-
+        ref_span_set = set()
         for m in re.finditer(full_crazy_ultimate_title_reg, st):
+            ref_span_set = ref_span_set.union(range(m.start(), m.end()))
             title = m.groupdict().get('Title')
             node = title_node_dict[title]
             is_sham = title == title_sham
@@ -254,7 +253,7 @@ class CitationFinder():
 
                         if hasSham:
                             sham_refs += [(CitationFinder.parse_sham_match(m, lang, node), m.span(), CitationFinder.SHAM_INT)]
-                        else: # failed for some unknown reason
+                        else:  # failed for some unknown reason
                             non_refs += [(m, m.span(), CitationFinder.NON_REF_INT)]
             else:
                 sham_refs += [(m.group(), m.span(), CitationFinder.SHAM_INT)]
@@ -263,8 +262,21 @@ class CitationFinder():
             node = None
             title_reg = CitationFinder.get_ultimate_title_regex(title, node, lang, compiled=True)
             for m in re.finditer(title_reg, st):
+                if set(range(m.start(), m.end())).intersection(ref_span_set):
+                    continue
                 non_refs += [(m, m.span(), CitationFinder.NON_REF_INT)]
         all_refs = refs + non_refs + sham_refs
+        # todo: instead of these lines, learn to differentiate by category (u'משנה', u'בבלי', u'ירושלמי', u'תוספתא')
+        for title in ignore_titles:
+            for ref in all_refs:
+                pre_titles_regex = u'{}'.format(title)
+                m = re.search(pre_titles_regex, st, endpos=ref[1][1])
+                if m and set(range(m.start(), m.end() + REF_SCOPE)).intersection(ref_span_set):
+                    all_refs.remove(ref)
+                    all_refs.append((ref[0], ref[1], 3))
+
+
+        # all_refs = refs + non_refs + sham_refs
         all_refs.sort(key=lambda x: x[1][0])
 
         return all_refs
@@ -276,9 +288,6 @@ class CitationFinder():
         if volume == u'א':
             title = u'I ' + book
             return library.get_schema_node(title)
-        # if volume == u'ב':
-        #     title = u'II ' + book
-        # return library.get_schema_node(title)
         return library.get_schema_node(u'II ' + book)
 
 class IndexIbidFinder(object):
@@ -330,7 +339,7 @@ class IndexIbidFinder(object):
         locations = []
         types = []
         failed_refs = []
-        failed_non_refs = []
+        # failed_non_refs = []
         failed_shams = []
         assert lang == 'he'
         # todo: support english
@@ -346,8 +355,8 @@ class IndexIbidFinder(object):
                     #refs += [(self._tr.resolve(item.index_node.full_title(), item.sections), 'ref')]
                 except (IbidRefException, IbidKeyNotFoundException) as e:
                     failed_refs += [item.normal()]
-            elif type == CitationFinder.NON_REF_INT:
-                failed_non_refs += [item.group()]
+            elif type == CitationFinder.NON_REF_INT or type == CitationFinder.IGNORE_INT:
+                # failed_non_refs += [item.group()]
                 self._tr.ignore_book_name_keys()
             elif type == CitationFinder.SHAM_INT:
                 try:

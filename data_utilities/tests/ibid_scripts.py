@@ -124,7 +124,7 @@ def make_csv(sham_items, example_num, filename='sham_examples_full_cats.csv'):
         csv.writerow(row_dict)
     f.close()
 
-def run_shaminator():
+def run_shaminator(titles=None):
     base_url = u"https://www.sefaria.org/"
 
     title_list = []
@@ -135,7 +135,7 @@ def run_shaminator():
     for cTitle in collective_titles:
         title_list += library.get_indices_by_collective_title(cTitle)
 
-    title_list = ["Ramban on Genesis"]
+    title_list = titles
     for ititle, title in enumerate(title_list):
         print u"-"*50
         print title, ititle, '/', len(title_list)
@@ -238,12 +238,14 @@ def index_ibid_finder():
     inst = IndexIbidFinder(index)
     inst.find_in_index()
 
-def segment_ibid_finder():
+def segment_ibid_finder(title):
     index = library.get_index("Sefer HaChinukh")
     inst = IndexIbidFinder(index)
-    r = Ref("Ramban on Genesis 1:18:1")
+    r = Ref(title)
     st = r.text("he").text
-    inst.find_in_segment(st)
+    refs, locations, types = inst.find_in_segment(st)
+    print refs, locations, types
+
 
 
 def validate_alt_titles():
@@ -253,7 +255,7 @@ def validate_alt_titles():
         u"דברים": [u"דב׳", u"דב'"],
         u"יהושוע": [u"יהוש'", u"יהוש׳"],
         u"שופטים": [u"שופטי׳", u"שופטי'"],
-        u"ישיהו": [u"ישע'"],
+        u"ישעיהו": [u"ישע'"],
         u"ירמיהו": [u"ירמ׳", u"ירמ'"],
         u"יחזקאל": [u"יחז׳", u"יחז'"],
         u"מיכה": [u"מיכ׳", u"מיכ'"],
@@ -274,13 +276,25 @@ def validate_alt_titles():
             except BookNameError:
                 pass
 
+def alt_titles():
+    idxset = IndexSet({'title': {'$regex': '^Mishneh Torah'}})
+
+    for idx in idxset:
+        title = idx.get_title("he")
+        print title
+        newtitle = title.replace(u'תלמוד ירושלמי', u'ירושלמי')
+        print newtitle
+        idx.nodes.add_title(newtitle, "he")
+        idx.save(override_dependencies=True)
+
+    library.rebuild()
 
 if __name__ == "__main__":
-    inst = CitationFinder()
-    example_num = 20
-    title = u'בראשית'
-    node = library.get_schema_node(title, 'he')
-    #sham_items = count_regex_in_all_db(inst.get_ultimate_title_regex(u'שם', None ,'he'), text = 'all', example_num=example_num) #, text = 'Ramban on Genesis')
+    # inst = CitationFinder()
+    # example_num = 20
+    # title = u'בראשית'
+    # node = library.get_schema_node(title, 'he')
+    # sham_items = count_regex_in_all_db(inst.get_ultimate_title_regex(u'שם', None ,'he'), text = 'all', example_num=example_num) #, text = 'Ramban on Genesis')
     #sham_items = count_regex_in_all_db(example_num=example_num)
     #make_csv(sham_items, example_num, filename='new_sham_example.csv')
 
@@ -295,8 +309,10 @@ if __name__ == "__main__":
     #index_ibid_finder()
     #segment_ibid_finder()
 
-    run_shaminator()
+    run_shaminator([u'Ramban on Genesis'])
+    # segment_ibid_finder(u'Ramban on Genesis 27:40:1')
     #validate_alt_titles()
+
 
 
 
