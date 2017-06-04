@@ -66,7 +66,11 @@ return: jagged array
 		line = ""
 		next = pz[i].nextSibling
 		while next:
-            if next # shealot
+            if next is question:
+                line += "<b>" next.text.encode("utf-8")
+            if next is commentary:
+                DM(next)
+                line += next.text.encode("utf-8")
 
 
 
