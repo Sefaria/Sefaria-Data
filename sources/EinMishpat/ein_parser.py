@@ -124,7 +124,7 @@ def parse_em(filename, passing, errorfilename):
     cit_dictionary = []
     with codecs.open(filename, 'r', 'utf-8') as fp:
         lines = fp.readlines()
-    pattern = ur'''(ו?שו?"ע|ו?ב?מיי'|ו?ב?סמג|ו?ב?טוש"ע|ו?ב?טור)'''
+    pattern = ur'''(ו?שו?["\u05f4]ע|ו?ב?מיי['\u05f3]|ו?ב?סמג|ו?ב?טוש["\u05f4]ע|ו?ב?טור)'''
 
     for line in lines:
         mass.error_flag = False
@@ -786,7 +786,7 @@ def fromCSV(fromcsv, newfile):
 
 #  run to create csv from txt file for QA
 def run1(massechet_he = None, massechet_en = None):
-    parse1 = parse_em(u'{}.txt'.format(massechet_he), 1, u'{}_error'.format(massechet_en))  # reades from ביצה.txt to screen output
+    parse1 = parse_em(u'{}.txt'.format(massechet_he), 1, u'{}_error'.format(massechet_en))
     toCSV(massechet_he, parse1)
     return parse1
 
@@ -851,7 +851,7 @@ def segment_column(segmentfile, reffile, massekhet):
         with open(reffile, 'r') as csvfile:
             ref_reader = csv.DictReader(csvfile)
             for segrow, refrow in zip(seg_reader, ref_reader):
-                i  += 1
+                i += 1
                 letter_dict = {u'Segment': u'{}.{}.{}'.format(massekhet, segrow[u'Daf'], segrow[u'Line']),
                               u'Rambam': refrow[u'Rambam'],
                               u'Semag': refrow[u'Semag'],
@@ -979,5 +979,4 @@ if __name__ == "__main__":
     # for file in done:
     #     reverse_collapse('done/{}'.format(file), 'collapsed/{}_collapsed'.format(file[:-4]))
     # clllapse_kidd = reverse_collapse('small_letters/kidushin_little_letters.csv', 'small_letters/collapsed_kidushin')
-    parsed = run2('small_letters/collapsed_kidushin', 'small_letters/kiddushin')
-    # parse1 = run1('small_letters/collapsed_kidushin', 'ksmall_letters/idushin_test')
+    parsed = run2('done/megillah_fixed', 'small_letters/megillah')
