@@ -2,12 +2,14 @@
 import urllib2
 import urllib
 from urllib2 import URLError, HTTPError
-import json 
 import pdb
 import glob
 import os
 import sys
 
+p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, p)
+os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 import data_utilities.util
 from data_utilities import util, sanity_checks
 from data_utilities.sanity_checks import TagTester
@@ -33,7 +35,7 @@ def createIndex(enTitle):
 
     index = {
         "title": "Ritva on "+enTitle,
-        "categories": ["Talmud", "Bavli", "Commentary", "Ritva", "Seder Moed"],
+        "categories": ["Talmud", "Bavli", "Commentary", "Ritva", "Seder Kodashim"],
         "schema": root.serialize(),
         "base_text_titles": [enTitle],
         "collective_title": "Ritva",
@@ -189,17 +191,21 @@ if __name__ == "__main__":
     versionTitle['Niddah'] = 'Hidushe ha-Ritba al Nidah; Wien 1868.'
     versionTitle['Makkot'] = 'Hamisha Shitot, Sulzbach 1761. Published by Meshulam Zalman'
     versionTitle['Avodah Zarah'] = "Orian Tlita'i, Salonika, 1758."
-    files = ["Moed Katan", "Megillah"]
+    versionTitle['Kiddushin'] = "Chiddushei haRitva, Munkatch, 1908."
+    versionTitle['Ketubot'] = "Chiddushei haRitva, Munkatch, 1908."
+    versionTitle['Pesachim'] = "Chiddushei haRitva, Warsaw 1864"
+    versionTitle['Chullin'] = "Chiddushei haRitva, Lemberg 1861"
+    files = ["Chullin"]
     not_yet = True
     for file in files:
-        #createIndex(file)
+        createIndex(file)
         print file
         text, dhs = parse(file+".txt")
         text_array = convertDictToArray(text)
         send_text = {
         "text": text_array,
         "language": "he",
-        "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001201716",
+        "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001096758",
         "versionTitle": versionTitle[file]
         }
         post_text("Ritva on "+file, send_text, index_count="on")
