@@ -210,22 +210,24 @@ class CitationFinder():
         REF_SCOPE = 15
         title_sham = u'שם'
         non_ref_titles = [u'לעיל', u'להלן', u'דף']
-        ignore_titles = [u'משנה', u'בבלי', u'ירושלמי', u'תוספתא'] # see Ramban on Genesis 40:16:1
-        unique_titles = set(library.get_titles_in_string(st, lang))
-        unique_titles.add(title_sham)
+        ignore_titles = [u'משנה', u'ירושלמי', u'תוספתא', u'רש"י'] # see Ramban on Genesis 40:16:1
+        # titles = list(reversed(library.get_titles_in_string(st, lang)))
+        titles = library.get_titles_in_string(st, lang)
+        unique_titles = OrderedDict(zip(titles, range(len(titles))))
+        unique_titles[title_sham] = None
         refs = []
         sham_refs = []
         non_refs = []
 
 
         title_node_dict = {}
-        for title in unique_titles:
+        for title in unique_titles.keys():
             node = library.get_schema_node(title, lang)
             if not isinstance(node, JaggedArrayNode):
                 node = None
             title_node_dict[title] = node
 
-        full_crazy_ultimate_title_reg = CitationFinder.get_ultimate_title_regex(unique_titles, title_node_dict, lang, compiled=True)
+        full_crazy_ultimate_title_reg = CitationFinder.get_ultimate_title_regex(unique_titles.keys(), title_node_dict, lang, compiled=True)
         ref_span_set = set()
         for m in re.finditer(full_crazy_ultimate_title_reg, st):
             ref_span_set = ref_span_set.union(range(m.start(), m.end()))

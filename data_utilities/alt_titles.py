@@ -2,9 +2,10 @@
 
 import re
 from sefaria.model import *
+from sefaria.helper.text import find_and_replace_in_text
 from sefaria.system.exceptions import BookNameError
 from collections import defaultdict
-
+# from sefaria.local_settings import UID
 
 def rambam_alt_names():
     names = library.get_indexes_in_category("Mishneh Torah")
@@ -216,3 +217,4 @@ if __name__ == "__main__":
     # rambam_alt = rambam_alt_names()
     more_titles = alt_name_dict()
     save_alt_titles(more_titles)
+    find_and_replace_in_text(u'Ramban on Exodus', u'On Your Way', u'he', u"''", u'''"''', 30044)
