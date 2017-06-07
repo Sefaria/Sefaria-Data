@@ -36,41 +36,44 @@ def jump_tag(parent_tag, tag_names):
     """
     return u''.join([unicode(c) for c in filter(lambda x: None if x.name in tag_names else True, parent_tag.children)])
 
-simanim = []
-root = Root('../Choshen_Mishpat.xml')
-root.populate_comment_store()
-match_locations = set()
 
-base = root.get_base_text()
-for siman in base.get_simanim():
-    cur = []
-    for seif in siman.get_child():
-        # count stars, but skip over xrefs and itags
-        num_stars = u''.join([jump_tag(p.Tag, {u'xref', u'i'}) for p in seif.get_child()]).count(u'*')
-        cur.append({'SA': num_stars, 'BH': 0})
+def map_star_locations():
+    simanim = []
+    root = Root('../Choshen_Mishpat.xml')
+    root.populate_comment_store()
+    match_locations = set()
 
-        # check for other stars inside xrefs and itags that might cause issues
-        if unicode(seif).count(u'*') != num_stars:
-            print "Problem at Shulchan Arukh {}:{}".format(siman.num, seif.num)
+    base = root.get_base_text()
+    for siman in base.get_simanim():
+        cur = []
+        for seif in siman.get_child():
+            # count stars, but skip over xrefs and itags
+            num_stars = u''.join([jump_tag(p.Tag, {u'xref', u'i'}) for p in seif.get_child()]).count(u'*')
+            cur.append({'SA': num_stars, 'BH': 0})
 
-    simanim.append(cur)
+            # check for other stars inside xrefs and itags that might cause issues
+            if unicode(seif).count(u'*') != num_stars:
+                print "Problem at Shulchan Arukh {}:{}".format(siman.num, seif.num)
 
-beer = root.get_commentaries().get_commentary_by_title(u"Be'er HaGolah")
-store = CommentStore()
-for siman in beer.get_simanim():
-    for seif in siman.get_child():
-        num_stars = u''.join([jump_tag(p.Tag, {u'xref', u'i'}) for p in seif.get_child()]).count(u'*')
-        b_siman, b_seif = store[seif.rid]['siman'], store[seif.rid]['seif'][0]
-        simanim[b_siman-1][b_seif-1]['BH'] += num_stars
+        simanim.append(cur)
 
-        # check for other stars inside xrefs and itags that might cause issues
-        if unicode(seif).count(u'*') != num_stars:
-            print "Problem at Be'er HaGolah {}:{}".format(siman.num, seif.num)
+    beer = root.get_commentaries().get_commentary_by_title(u"Be'er HaGolah")
+    store = CommentStore()
+    for siman in beer.get_simanim():
+        for seif in siman.get_child():
+            num_stars = u''.join([jump_tag(p.Tag, {u'xref', u'i'}) for p in seif.get_child()]).count(u'*')
+            b_siman, b_seif = store[seif.rid]['siman'], store[seif.rid]['seif'][0]
+            simanim[b_siman-1][b_seif-1]['BH'] += num_stars
 
-for si_index, siman in enumerate(simanim):
-    for se_index, seif in enumerate(siman):
-        if (seif['SA'] == seif['BH']) and (seif['SA'] > 0):
-            match_locations.add((si_index, se_index))
+            # check for other stars inside xrefs and itags that might cause issues
+            if unicode(seif).count(u'*') != num_stars:
+                print "Problem at Be'er HaGolah {}:{}".format(siman.num, seif.num)
+
+    for si_index, siman in enumerate(simanim):
+        for se_index, seif in enumerate(siman):
+            if (seif['SA'] == seif['BH']) and (seif['SA'] > 0):
+                match_locations.add((si_index, se_index))
+    return match_locations
 
 """
 We now have a mapping of locations where '*'s can be fixed.
@@ -91,12 +94,14 @@ up stars, a 'start-mark' and for Ba'er HaGolah a mapping to base seifim. Also, a
 
 There are not more stars hidden in xrefs
 """
-def mark_stars(filename, markup, edit_locations, siman_mark, seif_mark, starting_siman=-1, start_mark=None,
+def mark_stars(filename, markup, siman_mark, seif_mark, starting_siman=-1, start_mark=None,
                is_beer=False, test_mode=True):
     with codecs.open(filename, 'r', 'utf-8') as infile:
         lines = infile.readlines()
+    edit_locations = map_star_locations()
     fixed_lines = []
     if is_beer:
+        beer = Root('../Choshen_Mishpat.xml').get_commentaries().get_commentary_by_title(u"Be'er HaGolah")
         beer_mapping = bh_to_sa_mapping(beer.get_simanim())
     else:
         beer_mapping = None
@@ -138,7 +143,6 @@ def mark_stars(filename, markup, edit_locations, siman_mark, seif_mark, starting
 beer_1 = {
     'filename': u'../txt_files/Choshen_Mishpat/part_1/שוע חושן משפט חלק א באר הגולה.txt',
     'markup': u'\n@11s\n',
-    'edit_locations': match_locations,
     'siman_mark': '@12',
     'seif_mark': '@11',
     'is_beer': True
@@ -146,8 +150,51 @@ beer_1 = {
 base_1 = {
     'filename': u'../txt_files/Choshen_Mishpat/part_1/שולחן ערוך חושן משפט חלק א מחבר.txt',
     'markup': u'@68s',
-    'edit_locations': match_locations,
     'siman_mark': u'@22',
     'seif_mark': u'@11',
     'start_mark': u'!start!'
 }
+
+"""
+Fixing the files based on mapping stars in Be'er HaGolah proved to be naive - it was quite common for the number of
+stars to match up despite not having anything to do with one another. They will have to be checked manually.
+
+To do this, we'll need to map seifim in the Be'er HaGolah source files to the Shulchan Arukh:
+
+1) Open a file and read lines
+2) Get Root and record for Be'er HaGolah from xml document
+3) Run Root.populate_comment_store() and bh_to_sa_mapping()
+4) At each Seif marker in text file, append the (siman, seif) to the line from the text_file
+5) Output results
+"""
+
+def add_mapping_to_file(filename, siman_pattern, seif_pattern, test_mode=False):
+    with codecs.open(filename, 'r', 'utf-8') as infile:
+        lines = infile.readlines()
+
+    root = Root("../Choshen_Mishpat.xml")
+    root.populate_comment_store()
+    beer = root.get_commentaries().get_commentary_by_title("Be'er HaGolah")
+    mapping = bh_to_sa_mapping(beer.get_simanim())
+    cur_siman, cur_seif = None, None
+    fixed_lines = []
+
+    for line in lines:
+        siman_match, seif_match = re.search(siman_pattern, line), re.search(seif_pattern, line)
+        assert not (siman_match is not None and seif_match is not None)
+        if siman_match:
+            cur_siman = getGematria(siman_match.group(1)) - 1  # swap to 0 index
+            cur_seif = - 1
+        elif seif_match:
+            assert cur_seif is not None
+            cur_seif += 1
+            line = u'{}  ({}, {})\n'.format(line[:-1], numToHeb(cur_siman+1), numToHeb(mapping[cur_siman][cur_seif]+1))
+        else:
+            pass
+        fixed_lines.append(line)
+
+    if test_mode:
+        filename = filename.replace(u'.txt', u'_test.txt')
+    with codecs.open(filename, 'w', 'utf-8') as outfile:
+        outfile.writelines(fixed_lines)
+add_mapping_to_file(u'../txt_files/Choshen_Mishpat/part_1/שוע חושן משפט חלק א באר הגולה.txt', u'@12([\u05d0-\u05ea]{1,3})', u'@11', test_mode=True)
