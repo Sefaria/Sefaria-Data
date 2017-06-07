@@ -37,18 +37,25 @@ def createIndex(enTitle):
 
     post_index(index)
 
-
-def parseChapter(name):
-'''
-:param:
-:url: url of malbim html to parse
-return: jagged array
-'''
-
+def get_file():
     f = open("./pages/%s" % (name), "r")
     page = f.read()
     f.close()
 
+    files = os.listdir("./pages")
+
+	for f in files:
+		print "parsing %s" % f
+		parsed = parseChapter(f)
+		f = open("./parsed/%s" %(f), "w")
+		f.write(json.dumps(parsed, indent=4))
+		f.close()
+
+def get_lines(infile):
+    with codecs.open() as infile:
+        return infile.readlines()
+
+def get_important_data:
     soup = BeautifulSoup(page)
 
     pz = soup.find_all('p')
@@ -72,14 +79,10 @@ return: jagged array
                 DM(next)
                 line += next.text.encode("utf-8")
 
+def parse():
 
 
-def parseAll():
-	files = os.listdir("./pages")
+if __name__ == '__main__':
+    #get_file()
 
-	for f in files:
-		print "parsing %s" % f
-		parsed = parseChapter(f)
-		f = open("./parsed/%s" %(f), "w")
-		f.write(json.dumps(parsed, indent=4))
-		f.close()
+    #get_lines(file)
