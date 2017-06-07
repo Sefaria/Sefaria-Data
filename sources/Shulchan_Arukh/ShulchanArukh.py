@@ -373,8 +373,10 @@ class Record(Element):
             en_title.decompose()
 
     def get_simanim(self):
-        #Todo
-        pass
+        simanim = []
+        for v in self.get_child():
+            simanim.extend(v.get_child())
+        return simanim
 
     def add_volume(self, raw_text, vol_num, enforce_order=True):
         """
