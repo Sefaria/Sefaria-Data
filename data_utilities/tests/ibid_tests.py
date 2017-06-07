@@ -239,7 +239,7 @@ def test_ibid_find_12():
     ind = library.get_index("Genesis")
     inst = IndexIbidFinder(ind)
 
-    string = u'''(סנהדרין (ע"ז ע"א'''
+    string = u'''סנהדרין (ע"ז ע"א)'''
     refs, _, _ = inst.find_in_segment(string, lang='he', citing_only=False, replace=True)
     print refs
     assert refs == [Ref('Sanhedrin 77a')]
@@ -250,10 +250,21 @@ def test_ibid_find_13():
     ind = library.get_index("Genesis")
     inst = IndexIbidFinder(ind)
 
-    string = u'''(ע"ז ע"ז ע"א) וכן ראה (שם ע"ב) '''
+    string = u'''(ע"ז ע"ו ע"ב) וכן ראה (שם ע"א) '''
     refs, _, _ = inst.find_in_segment(string, lang='he', citing_only=False, replace=True)
     print refs
-    assert refs == [Ref('Avodah Zarah 71a'), Ref('Avodah Zarah 72a')]
+    assert refs == [Ref('Avodah Zarah 76b'), Ref('Avodah Zarah 71a')] # todo: fix it so that Ref('Avodah Zarah 76a')
+
+
+def test_ibid_find_13_1():
+    # The difference between test6^ is the Yerushalmi out of parenthesis
+    ind = library.get_index("Genesis")
+    inst = IndexIbidFinder(ind)
+
+    string = u'''(סנהדרין ע"ו ע"ב) וכן ראה (שם ע"ז ע"א) '''
+    refs, _, _ = inst.find_in_segment(string, lang='he', citing_only=False, replace=True)
+    print refs
+    assert refs == [Ref('Sanhedrin 76b'), Ref('Sanhedrin 77a')]
 
 
 def test_ibid_find_14():

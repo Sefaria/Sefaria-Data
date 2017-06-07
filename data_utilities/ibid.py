@@ -213,8 +213,8 @@ class CitationFinder():
         ignore_titles = [u'משנה', u'ירושלמי', u'תוספתא', u'רש"י'] # see Ramban on Genesis 40:16:1
         # titles = list(reversed(library.get_titles_in_string(st, lang)))
         titles = library.get_titles_in_string(st, lang)
+        titles.insert(0, title_sham)
         unique_titles = OrderedDict(zip(titles, range(len(titles))))
-        unique_titles[title_sham] = None
         refs = []
         sham_refs = []
         non_refs = []
