@@ -174,9 +174,9 @@ def make_perek_array(book):
 def get_record_name(title):
     return highest_fuzz(tractate_titles.keys(), title)
 posting_term = False
-posting_index = False
-posting_text= False
-linking_text= False
+posting_index = True
+posting_text= True
+linking_text= True
 admin_links = []
 page_links = []
 folder_names=[x[0]for x in os.walk("files")][1:]
@@ -202,7 +202,7 @@ f = open("MS Blank Mishnas.csv","w")
 f.close()
 for folder in folder_names:
     for ms_file in os.listdir(folder):
-        if ".txt" in ms_file:
+        if ".txt" in ms_file and "תרומות" in ms_file:
             current_tractate = Tractate()
             current_tractate.file_extension = folder+"/"+ms_file
             current_tractate.seder = get_seder(folder.decode('utf8','replace'))
