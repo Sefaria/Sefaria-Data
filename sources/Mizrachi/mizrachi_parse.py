@@ -41,7 +41,7 @@ class Book:
     
     def m_post_text(self):
         version = {
-            'versionTitle': 'Four commentaries on Rashi. Warsaw, 1862, '+self.en_name,
+            'versionTitle': 'Four commentaries on Rashi. Warsaw, 1862',
             'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001276251',
             'language': 'he',
             'text': self.text
@@ -72,12 +72,13 @@ class Book:
                             "generated_by": "sterling_mizrachi_torah_linker"
                             })
                     post_link(link, weak_network=True)
-                    try:
-                        base_ref = TextChunk(Ref('Rashi on {}, {}:{}'.format(self.en_name,perek_index+1, pasuk_index+1)),"he")
-                        mizrachi_ref = TextChunk(Ref('Mizrachi, {}, {}:{}:{}'.format(self.en_name, perek_index+1, pasuk_index+1, comment_index+1)),"he")
-                        mizrachi_links = match_ref(base_ref,mizrachi_ref,base_tokenizer,dh_extract_method=dh_extract_method,verbose=False)
-                    except IndexError:
-                        errored.append('Mizrachi on {}, {}:{}'.format(self.en_name,perek_index+1, pasuk_index+1))
+                    #try:
+                    base_ref = TextChunk(Ref('Rashi on {}, {}:{}'.format(self.en_name,perek_index+1, pasuk_index+1)),"he")
+                    mizrachi_ref = TextChunk(Ref('Mizrachi, {}, {}:{}:{}'.format(self.en_name, perek_index+1, pasuk_index+1, comment_index+1)),"he")
+                    mizrachi_links = match_ref(base_ref,mizrachi_ref,base_tokenizer,dh_extract_method=dh_extract_method,verbose=False)
+                    last_matched = 
+                    #except IndexError:
+                    #errored.append('Mizrachi on {}, {}:{}'.format(self.en_name,perek_index+1, pasuk_index+1))
                     for base, comment in zip(mizrachi_links["matches"],mizrachi_links["comment_refs"]):
                         print "B",base,"C", comment
                         print link.get('refs')
@@ -163,12 +164,12 @@ def dh_extract_method(some_string):
     return re.search(ur'<b>(.*?)</b>', some_string.replace("\n","")).group(1)
 
 def base_tokenizer(some_string):
-    return some_string.replace(u"<b>",u"").replace(u"</b>",u"").replace(".","").split(" ")
+    return remove_extra_space(some_string.replace(u"<b>",u"").replace(u"</b>",u"").replace(".","")).split(" ")
 def m_post_index():
     # create index record
     record = SchemaNode()
     record.add_title('Mizrachi', 'en', primary=True, )
-    record.add_title(u'מזרכי', 'he', primary=True, )
+    record.add_title(u'מזרחי', 'he', primary=True, )
     record.key = 'Mizrachi'
 
     en_sefer_names = ["Genesis","Exodus","Leviticus","Numbers","Deuteronomy"]
@@ -195,6 +196,8 @@ def m_post_index():
         "categories":['Tanakh','Commentary','Mizrachi','Torah'],
         "schema": record.serialize(),
         "collective_title":"Mizrachi",
+        "heTitleVariants":[u"ר' אליה מזרחי",u"רבינו אליהו מזרחי",u"רא\"ם"],
+        "titleVariants":["Re'em","HaMizrachi","Ha'Mizrachi","Elijah Mizrahi","Eliyahu Mizrachi"]
     
     }
     post_index(index,weak_network=True)
@@ -217,7 +220,7 @@ def m_post_term():
     }
     post_term(term_obj)
 posting_term=False
-posting_index = False
+posting_index = True
 posting_text=True
 posting_links=True
 if posting_term:
@@ -225,7 +228,7 @@ if posting_term:
 if posting_index:
     m_post_index()
 for m_file in os.listdir("files"):
-    if ".txt" in m_file and "Deu" not in m_file:
+    if ".txt" in m_file and ("Lev" in m_file or "Num" in m_file):
         book = Book(m_file)
         if posting_text:
             print "posting ",book.en_name," text..."
