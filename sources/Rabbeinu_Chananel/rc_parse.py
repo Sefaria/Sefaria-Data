@@ -31,7 +31,7 @@ class RC_Tractate:
         he_title = self.he_tractate_name
         record = JaggedArrayNode()
         record.add_title('Rabbeinu Chananel on '+en_title, 'en', primary=True)
-        record.add_title(u"ר' חננאל על"+u" "+he_title, 'he', primary=True)
+        record.add_title(u"רבינו חננאל על מסכת"+u" "+he_title, 'he', primary=True)
         record.key = 'Rabbeinu Chananel on '+en_title
         record.depth = 2
         record.addressTypes = ['Talmud', 'Integer']
@@ -106,8 +106,8 @@ class RC_Tractate:
     
     def rc_post_text(self):
         version = {
-            'versionTitle': 'R. Chananel on Talmud',
-            'versionSource': 'Vilna Edition',
+            'versionTitle': 'Vilna Edition',
+            'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957',
             'language': 'he',
             'text': self.text
         }
@@ -180,13 +180,13 @@ def highest_fuzz(input_list, input_item):
             best_match=item
             highest_ratio=fuzz.ratio(input_item,item)
     return best_match
-posting_index = False
-posting_text = True
+posting_index = True
+posting_text = False
 linking = False
 admin_links = []
 site_links = []
 for rc_file in os.listdir("files"):
-    if ".txt" in rc_file:
+    if ".txt" in rc_file and "01" in rc_file:
         current_tractate = RC_Tractate(rc_file)
         admin_links.append("http://proto.sefaria.org/admin/reset/Rabbeinu_Chananel_on_"+current_tractate.en_tractate_name.replace(u" ",u"_"))
         site_links.append("http://proto.sefaria.org/Rabbeinu_Chananel_on_"+current_tractate.en_tractate_name.replace(u" ",u"_"))
