@@ -197,4 +197,6 @@ def add_mapping_to_file(filename, siman_pattern, seif_pattern, test_mode=False):
         filename = filename.replace(u'.txt', u'_test.txt')
     with codecs.open(filename, 'w', 'utf-8') as outfile:
         outfile.writelines(fixed_lines)
-add_mapping_to_file(u'../txt_files/Choshen_Mishpat/part_1/שוע חושן משפט חלק א באר הגולה.txt', u'@12([\u05d0-\u05ea]{1,3})', u'@11', test_mode=True)
+add_mapping_to_file(u'../txt_files/Choshen_Mishpat/part_1/שוע חושן משפט חלק א באר הגולה.txt', u'@12([\u05d0-\u05ea]{1,3})', u'@11[\u05d0-\u05ea]')
+add_mapping_to_file(u'../txt_files/Choshen_Mishpat/part_2/שולחן ערוך חושן משפט חלק ב באר הגולה.txt', u'@12([\u05d0-\u05ea]{1,3})', u'@11[\u05d0-\u05ea]')
+add_mapping_to_file(u'../txt_files/Choshen_Mishpat/part_3/באר הגולה חושן משפט חלק ג.txt', u'@12([\u05d0-\u05ea]{1,3})', u'@11[\u05d0-\u05ea]')
