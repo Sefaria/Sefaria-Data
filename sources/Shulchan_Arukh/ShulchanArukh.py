@@ -251,6 +251,8 @@ class Element(object):
         for child in self.get_child():
             child.convert_pattern_to_itag(commentator, pattern, group, order_callback)
 
+    def render(self):
+        return [child.render() for child in self.get_child()]
 
     def __unicode__(self):
         return unicode(self.Tag)
@@ -405,6 +407,13 @@ class Record(Element):
         for child in self.get_child():
             child.load_xrefs_to_commentstore(self.titles['en'])
 
+    def render(self):
+        rendered_simanim = []
+        for siman in self.get_simanim():
+            while siman.num - len(rendered_simanim) > 1:
+                rendered_simanim.append([])
+            rendered_simanim.append(siman.render())
+        return rendered_simanim
 
 
 class BaseText(Record):
@@ -473,6 +482,9 @@ class Commentaries(Element):
         except KeyError:
             return None
         return self.get_commentary_by_id(commentary_id)
+
+    def render(self):
+        raise NotImplementedError
 
 
 
@@ -933,6 +945,17 @@ class Seif(OrderedElement):
         this_ref['commentator_siman'] = siman
         this_ref['commentator_seif'] = self.num
 
+    def render(self):
+        seif_text = u' '.join(child.render() for child in self.get_child())
+        if re.search(u'@', seif_text):
+            raise AssertionError("found @ marker in xml at {}:{}".format(self.Tag.parent['num'], self.num))
+        seif_text = re.sub(u' <i data-commentator', u'<i data-commentator', seif_text)  # Remove space between text and itag
+        seif_text = seif_text.replace(u'\n', u' ')
+        seif_text = re.sub(u' {2,}', u' ', seif_text)
+        seif_text = re.sub(u'~br~', u'<br>', seif_text)
+        return seif_text
+
+
 class TextElement(Element):
     parent = 'Seif'
     child = 'Xref'
@@ -996,6 +1019,21 @@ class TextElement(Element):
         self.Tag.replace_with(new_tag)
         self.Tag = new_tag
 
+    def render(self):
+        text_list = []
+        for sub_element in self.Tag.contents:
+            if isinstance(sub_element, Tag) and sub_element.name == u'xref':
+                text_list.append(Xref(sub_element).render())
+            else:
+                text_list.append(unicode(sub_element))
+
+        if self.Tag.name == u'ramah':
+            return u'<small>{}</small>'.format(u''.join(text_list))
+        elif self.Tag.name == u'dh':
+            return u'<b>{}</b>'.format(u''.join(text_list))
+        else:
+            return u''.join(text_list)
+
 
 class Xref(Element):
     name = 'xref'
@@ -1034,9 +1072,13 @@ class Xref(Element):
     def load_comments_to_commentstore(self, *args, **kwargs):
         raise NotImplementedError("Can't load comments at Xref depth")
 
-    def render_itag(self):
+    def render(self):
         data = CommentStore()[self.id]
-        return u'<i data-commentator="{}" data-order="{}"/>'.format(data['commentary_title'], data['commentator_seif'])
+        if data.get('data-label'):
+            return u'<i data-commentator="{}" data-order="{}" data-label="{}"/>'.format(data['commentator_title'],
+                                                                        data['commentator_seif'], data['data-label'])
+        else:
+            return u'<i data-commentator="{}" data-order="{}"/>'.format(data['commentator_title'], data['commentator_seif'])
 
 module_locals = locals()
 
