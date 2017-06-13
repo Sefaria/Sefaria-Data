@@ -38,7 +38,10 @@ class CitationFinder():
 
         #  todo: if title is sham then we don't want to find prefixes for it
 
+        prefixes = u"[משהוכלבד]"
         after_title_delimiter_re = ur"[,.: \r\n]+"
+        # start_paren_reg = ur"(?:[(\[{][^})\]]*\s" + prefixes + ur"{0,2})|(?:[(\[{]" + prefixes + ur"{0,2})"
+        # start_paren_reg = ur"(?:[(\[{](?:[^})\]]* " + prefixes + ur"{0,2}|" + prefixes + ur"{0,2}))"
         start_paren_reg = ur"(?:[(\[{][^})\]]*)"
         end_paren_reg = ur"(?:[\])}]|\W[^({\[]*[\])}])"
 
@@ -207,7 +210,7 @@ class CitationFinder():
 
     @staticmethod
     def get_potential_refs(st, lang='he'):
-        REF_SCOPE = 15
+        REF_SCOPE = 7
         title_sham = u'שם'
         non_ref_titles = [u'לעיל', u'להלן', u'דף']
         ignore_titles = [u'משנה', u'ירושלמי', u'תוספתא', u'רש"י'] # see Ramban on Genesis 40:16:1

@@ -138,8 +138,7 @@ def test_ibid_find_1():
     string = u'''וילך איש מבית לוי רבותינו אמרו שהלך אחר עצת בתו (סוטה יב:). את בלהה (בראשית לה כב),
      דבלים (הושע א ג), לכו ונמכרנו לישמעאלים (בראשית שם כז), לכו ונכהו בלשון (שם יח יח), לכו נא ונוכחה (ישעיה א יח).'''
     refs, _, _ = inst.find_in_segment(string, lang='he', citing_only=False, replace=True)
-    assert refs == [Ref("Sotah 12b"), Ref("Genesis 35:22"), Ref(u"הושע א:ג"), Ref(u"בראשית לה:כז"), Ref(u"בראשית יח:יח"), Ref(u"ישעיהו א:יח")]
-
+    assert refs == [Ref("Sotah 12b"), Ref("Genesis 35:22"), Ref(u"הושע א:ג"), Ref(u"בראשית לה:כז"), Ref(u"בראשית יח:יח"),  Ref(u"ישעיהו א:יח")]
 
 def test_ibid_find_2():
     ind = library.get_index("Genesis")
@@ -176,6 +175,10 @@ def test_ibid_find_5():
     string = u'''ולשון רבותינו משנה (ביצה ב) פתין גריצים וחיורי ואמרו ירושלמי (שם) רבנין שמעין לה מן ה'''
     refs, _, _ = inst.find_in_segment(string, lang='he', citing_only=False, replace=True)
     assert refs == []
+
+    # string = u'''התפילין. מ"ש הר"ב דשבת לאו זמן תפילין לא פסק כן בריש פרק בתרא דעירובין ושם אאריך בס"ד ועוד עיין בסוף פרק קמא דביצה. ומה שכתב דאיתקש תפילין למזוזה פירש רש"י דכתיב (דברים ו) וקשרתם וכתבתם. ומ"ש קא משמע לן. וטעמא דתפילין אתקשו בפרשת ראשונה לת"ת דכתיב (שם) ושננתם וגו' וקשרתם. וכן בשניה (שם יא) והיו לטוטפות וגו'. ולמדתם וגו'. ואילו למזוזה הפסיק ביניהם בשניה בת"ת. גמ' פרק קמא דקדושין (דף לד:):'''
+    # refs, _, _ = inst.find_in_segment(string, lang='he', citing_only=False, replace=True)
+    # assert refs == []
 
 def test_ibid_find_6():
     ind = library.get_index("Genesis")
@@ -298,6 +301,17 @@ def test_ibid_find_16(): #todo: what would you really want in this test?
     print refs
     assert refs == [Ref('II Kings 3:13'), Ref('Genesis 20:5'), Ref('Genesis 42:3')]
 
+def test_ibid_find_prefixes():
+    ind = library.get_index("Genesis")
+    inst = IndexIbidFinder(ind)
+
+    string = u''' (כמו שנאמר בחומש שמות א:ב) '''
+    refs, _, _ = inst.find_in_segment(string)
+    assert refs == [Ref('Exodus 1:2')]
+
+    string = u''' (רמ"א א:ב) '''
+    refs, _, _ = inst.find_in_segment(string)
+    assert refs == []
 
 
 class TestIndexIbidFinder:

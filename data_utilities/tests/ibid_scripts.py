@@ -4,6 +4,7 @@
 import unicodecsv, random, bleach
 from collections import defaultdict
 from sefaria.model import *
+from data_utilities.alt_titles import alt_name_dict , rambam_alt_names
 from data_utilities.ibid import *
 from sefaria.utils.hebrew import strip_nikkud
 from sefaria.system.exceptions import BookNameError
@@ -18,7 +19,6 @@ def count_regex_in_all_db(pattern=u'(?:\(|\([^)]*? )שם(?:\)| [^(]*?\))', lang=
     :param text:
     :return:
     '''
-
 
     found = []
     category_dict = defaultdict(int)
@@ -124,6 +124,7 @@ def make_csv(sham_items, example_num, filename='sham_examples_full_cats.csv'):
         csv.writerow(row_dict)
     f.close()
 
+
 def run_shaminator(titles=None):
     base_url = u"https://www.sefaria.org/"
 
@@ -138,7 +139,7 @@ def run_shaminator(titles=None):
     title_list = titles
     for ititle, title in enumerate(title_list):
         print u"-"*50
-        print title, ititle, '/', len(title_list)
+        print title, ititle+1, '/', len(title_list)
         print u"-"*50
 
         html = u"""
@@ -233,10 +234,12 @@ def run_shaminator(titles=None):
         with codecs.open('ibid_output/ibid_{}.html'.format(title), 'wb',encoding='utf8') as f:
             f.write(html)
 
+
 def index_ibid_finder():
     index = library.get_index("Sefer Mitzvot Gadol")
     inst = IndexIbidFinder(index)
     inst.find_in_index()
+
 
 def segment_ibid_finder(title):
     index = library.get_index("Sefer HaChinukh")
@@ -247,26 +250,25 @@ def segment_ibid_finder(title):
     print refs, locations, types
 
 
-
 def validate_alt_titles():
     alt_titles = {
-        u"ויקרא": [u"ויק׳", u"ויק'"],
-        u"במדבר": [u"במ'", u"במ׳"],
-        u"דברים": [u"דב׳", u"דב'"],
-        u"יהושוע": [u"יהוש'", u"יהוש׳"],
-        u"שופטים": [u"שופטי׳", u"שופטי'"],
+        u"ויקרא": [u"ויק'"],
+        u"במדבר": [u"במ'"],
+        u"דברים": [u"דב'"],
+        u"יהושוע": [u"יהוש'"],
+        u"שופטים": [u"שופטי'"],
         u"ישעיהו": [u"ישע'"],
-        u"ירמיהו": [u"ירמ׳", u"ירמ'"],
-        u"יחזקאל": [u"יחז׳", u"יחז'"],
-        u"מיכה": [u"מיכ׳", u"מיכ'"],
-        u"צפניה": [u"צפנ׳", u"צפנ'"],
+        u"ירמיהו": [u"ירמ'"],
+        u"יחזקאל": [u"יחז'"],
+        u"מיכה": [u"מיכ'"],
+        u"צפניה": [u"צפנ'"],
         u"זכריה": [u"זכרי"],
         u"מלאכי": [u"מלא'"],
-        u"תהילים": [u"תה׳", u"תה'"],
+        u"תהילים": [u"תה'"],
         u"נחמיה": [u"נחמי'"],
-        u"דניאל": [u"דני׳", u"דני'"],
-        u"אסתר": [u"אס׳", u"אס'"],
-        u"איכה": [u"איכ׳", u"איכ'"]
+        u"דניאל": [u"דני'"],
+        u"אסתר": [u"אס'"],
+        u"איכה": [u"איכ'"]
     }
     for k, v in alt_titles.items():
         for t in v:
@@ -275,6 +277,7 @@ def validate_alt_titles():
                 print u"{} -> {}".format(k, t)
             except BookNameError:
                 pass
+
 
 def alt_titles():
     idxset = IndexSet({'title': {'$regex': '^Mishneh Torah'}})
@@ -289,16 +292,30 @@ def alt_titles():
 
     library.rebuild()
 
+
+def check_apperence_alt_titles(alt_titles):
+    inst = CitationFinder()
+    example_num = 20
+    if type(alt_titles) is not list:
+        title = alt_titles
+    else:
+        for i, title in enumerate(alt_titles):
+            sham_items = count_regex_in_all_db(inst.get_ultimate_title_regex(title, None, 'he'), text='all', example_num=example_num) #text='all', text='Ramban on Genesis')
+    cl_title = re.sub(u'''["']''', u'', title)
+    make_csv(sham_items, example_num, filename=u'''ibid_output/alt_titles_output/{}.csv'''.format(cl_title))
+
+
 if __name__ == "__main__":
     # inst = CitationFinder()
     # example_num = 20
-    # title = u'בראשית'
+    # title = u'ר"ה'
     # node = library.get_schema_node(title, 'he')
-    # sham_items = count_regex_in_all_db(inst.get_ultimate_title_regex(u'שם', None ,'he'), text = 'all', example_num=example_num) #, text = 'Ramban on Genesis')
+    # sham_items = count_regex_in_all_db(inst.get_ultimate_title_regex(title, None, 'he'), text = 'all', example_num=example_num) #, text = 'Ramban on Genesis')
     #sham_items = count_regex_in_all_db(example_num=example_num)
-    #make_csv(sham_items, example_num, filename='new_sham_example.csv')
-
-    #
+    # make_csv(sham_items, example_num, filename='alt_title_{}.csv'.format(title))
+    # alt_titles_lst = [item for lst in rambam_alt_names().values() for item in lst]
+    # check_apperence_alt_titles(u'ד"ה')
+    # #
     # import cProfile
     # import pstats
     #
@@ -308,10 +325,10 @@ if __name__ == "__main__":
 
     #index_ibid_finder()
     #segment_ibid_finder()
-
-    run_shaminator([u'Ramban on Genesis'])
+    for mass in ['Mishnah Berakhot']:#library.get_indexes_in_category('Mishnah'):
+        run_shaminator([u'Tosafot Yom Tov on {}'.format(mass)])
     # segment_ibid_finder(u'Ramban on Genesis 27:40:1')
-    #validate_alt_titles()
+    # validate_alt_titles()
 
 
 
