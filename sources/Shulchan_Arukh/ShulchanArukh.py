@@ -3,6 +3,7 @@
 import re
 import codecs
 from bs4 import BeautifulSoup, Tag
+from xml.sax.saxutils import escape, unescape
 from data_utilities.util import Singleton, getGematria, numToHeb, he_ord, he_num_to_char
 
 """
@@ -948,12 +949,13 @@ class Seif(OrderedElement):
     def render(self):
         seif_text = u' '.join(child.render() for child in self.get_child())
         if re.search(u'@', seif_text):
-            raise AssertionError("found @ marker in xml at {}:{}".format(self.Tag.parent['num'], self.num))
+            # raise AssertionError("found @ marker in xml at {}:{}".format(self.Tag.parent['num'], self.num))
+            print "found @ marker in xml at {}:{}".format(self.Tag.parent['num'], self.num)
         seif_text = re.sub(u' <i data-commentator', u'<i data-commentator', seif_text)  # Remove space between text and itag
         seif_text = seif_text.replace(u'\n', u' ')
         seif_text = re.sub(u' {2,}', u' ', seif_text)
         seif_text = re.sub(u'~br~', u'<br>', seif_text)
-        return seif_text
+        return unescape(seif_text)
 
 
 class TextElement(Element):
@@ -1007,7 +1009,7 @@ class TextElement(Element):
 
         def repl(s):
             data_order = order_callback(s.group(group))
-            return u'<i data-commentator="{}" data-order="{}"></i>'.format(commentator, data_order)
+            return escape(u'<i data-commentator="{}" data-order="{}"></i>'.format(commentator, data_order))
 
         # Make sure pattern will not touch the existing xrefs
         for xref in self.Tag.find_all('xref'):
@@ -1075,10 +1077,10 @@ class Xref(Element):
     def render(self):
         data = CommentStore()[self.id]
         if data.get('data-label'):
-            return u'<i data-commentator="{}" data-order="{}" data-label="{}"/>'.format(data['commentator_title'],
+            return u'<i data-commentator="{}" data-order="{}" data-label="{}"></i>'.format(data['commentator_title'],
                                                                         data['commentator_seif'], data['data-label'])
         else:
-            return u'<i data-commentator="{}" data-order="{}"/>'.format(data['commentator_title'], data['commentator_seif'])
+            return u'<i data-commentator="{}" data-order="{}"/></i>'.format(data['commentator_title'], data['commentator_seif'])
 
 module_locals = locals()
 
