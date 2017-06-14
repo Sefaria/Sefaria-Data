@@ -88,8 +88,8 @@ def perek_to_number(perek_num):
 
 
 
-def removeExtraSpaces(txt):
-    txt = txt.replace("\xc2\xa0", " ") #make sure we only have one kind of space, get rid of unicode space
+def removeExtraSpaces(txt, unicode=False):
+    txt = txt.replace("\xc2\xa0", " ").replace("\xe2\x80\x83", "")#make sure we only have one kind of space, get rid of unicode space
     while txt.find("  ") >= 0:          #now get rid of all double spaces
         txt = txt.replace("  ", " ")
 
@@ -416,7 +416,7 @@ def make_title(text):
     return new_text
 
 @weak_connection
-def post_index(index, server=SEFARIA_SERVER, print_json=False):
+def post_index(index, server=SEFARIA_SERVER):
     url = server+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
     indexJSON = json.dumps(index)
     values = {
@@ -427,10 +427,7 @@ def post_index(index, server=SEFARIA_SERVER, print_json=False):
     req = urllib2.Request(url, data)
     try:
         response = urllib2.urlopen(req)
-        if print_json:
-            print response.read()
-        else:
-            print "success"
+        print response.read()
     except HTTPError as e:
         with open('errors.html', 'w') as errors:
             errors.write(e.read())
@@ -515,7 +512,7 @@ def get_matches_for_dict_and_link(dh_dict, base_text_title, commentary_title, ta
             comm_ref = "{} on {} {}".format(commentary_title, base_text_title, daf)
         base_text = TextChunk(Ref(base_text_ref), lang=lang)
         comm_text = TextChunk(Ref(comm_ref), lang=lang)
-        results[daf] = match_ref(base_text, comm_text, base_tokenizer=base_tokenizer, word_threshold=word_threshold, rashi_filter=rashi_filter, dh_extract_method=dh_extract_method)
+        results[daf] = match_ref(base_text, comm_text, base_tokenizer=base_tokenizer, word_threshold=word_threshold, rashi_filter=rashi_filter, dh_extract_method=dh_extract_method)["matches"]
         for count, link in enumerate(results[daf]):
             if link:
                 base_end = link.normal()
@@ -534,7 +531,19 @@ def get_matches_for_dict_and_link(dh_dict, base_text_title, commentary_title, ta
 
     return results
 
+def create_payload_and_post_text(ref, text, language, vtitle, vsource, server=SEFARIA_SERVER):
+    post_text(ref, {
+        "text": text,
+        "language": language,
+        "versionTitle": vtitle,
+        "versionSource": vsource
+    }, server=server)
 
+def first_word_with_period(str):
+    for i in range(len(str.split(" "))):
+        if str.split(" ")[i].endswith("."):
+            return i
+    return len(str.split(" "))
 
 @weak_connection
 def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SERVER):

@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
-from sources.functions import *
 from sefaria.model import *
-from sefaria.model.schema import AddressTalmud
+from sefaria.helper.schema import *
 
 server = "http://draft.sefaria.org"
 
+from sources.functions import *
 
 def create_schema():
+    heb_nodes = [u"הלכות עירובין", u"הלכות אבילות", u"הלכות תשעה באב", u"הלכות מגילה", u"הלכות חנוכה"]
+    eng_nodes = ["Laws of Eruvin", "Laws of Mourning", "Laws of Tisha B'Av", "Laws of Megillah", "Laws of Chanukah"]
+
     root = SchemaNode()
     root.add_title("Brit Moshe", "en", primary=True)
     root.add_title(u"ברית משה", "he", primary=True)
@@ -17,21 +20,31 @@ def create_schema():
     vol1.add_title("Volume One", "en", primary=True)
     vol1.add_title(u"חלק "+numToHeb(1), "he", primary=True)
     vol1.depth = 3
+    vol1.toc_zoom = 2
     vol1.sectionNames = ["Mitzvah", "Comment", "Paragraph"]
     vol1.addressTypes = ["Integer", "Integer", "Integer"]
 
-    vol2 = JaggedArrayNode()
+    vol2 = SchemaNode()
     vol2.key = 'vol2'
     vol2.add_title("Volume Two", "en", primary=True)
     vol2.add_title(u"חלק "+numToHeb(2), "he", primary=True)
-    vol2.depth = 3
-    vol2.sectionNames = ["Mitzvah", "Comment", "Paragraph"]
-    vol2.addressTypes = ["Integer", "Integer", "Integer"]
+
+    default = JaggedArrayNode()
+    default.key = "default"
+    default.default = True
+    default.toc_zoom = 2
+    default.add_structure(["Mitzvah", "Comment", "Paragraph"])
+    vol2.append(default)
+
+    for i in range(5):
+        rabbinic = JaggedArrayNode()
+        rabbinic.add_structure(["Chapter", "Paragraph"])
+        rabbinic.add_primary_titles(eng_nodes[i], heb_nodes[i])
+        vol2.append(rabbinic)
 
     root.append(vol1)
     root.append(vol2)
     root.validate()
-
     term_obj = {
         "name": "Brit Moshe",
         "scheme": "commentary_works",
@@ -56,7 +69,7 @@ def create_schema():
         "dependence": "Commentary",
         "base_text_titles": ["Sefer Mitzvot Gadol"],
         "categories": ["Halakhah", "Commentary"],
-        "schema": root.serialize()
+        "schema": root.serialize(),
         }
     post_index(index, server=server)
 
@@ -138,7 +151,16 @@ def parse_text(file, mitzvah_marker):
                 section_num += 1
                 text[mitzvah_num][section_num] = []
             else:
-                text[mitzvah_num][section_num].append(removeAllTags(line))
+                line = removeAllTags(line)
+                first_25 = " ".join(line.split(" ")[0:25])
+
+                if "." in first_25:
+                    pos = first_25.find(".")
+                    dh = line[0:pos+1]
+                    comm = line[pos+1:]
+                    line = u"<b>{}</b>{}".format(dh, comm)
+
+                text[mitzvah_num][section_num].append(line)
         elif line.find("@99") == 0 or line.find("@00") == 0:
             last_comment = len(text[mitzvah_num][section_num]) - 1
             assert last_comment >= 0
@@ -224,15 +246,232 @@ when we do, we create a link from the SeMaG segment to the range from the segmen
 segment holding the new letter, excluding the end and including the start.
     '''
 
+def rabbinic_mitzvot():
+    heb_nodes = [u"הלכות עירובין", u"הלכות אבילות", u"הלכות תשעה באב", u"הלכות מגילה", u"הלכות חנוכה"]
+    eng_nodes = ["Laws of Eruvin", "Laws of Mourning", "Laws of Tisha B'Av", "Laws of Megillah", "Laws of Chanukah"]
+    he_to_eng = {heb: eng for heb, eng in zip(heb_nodes, eng_nodes)}
+    arr_text = ""
+    for line in open("rm.txt"):
+        arr_text += line
+    arr = arr_text.split("@00")[1:]
+    parsed_text = {}
+    for node in arr:
+        perek = 0
+        title = node.split("\n")[0].decode('utf-8')
+        if title not in heb_nodes:
+            title = title[0:-1]
+        title = he_to_eng[title]
+        parsed_text[title] = {}
+        for chapter in node.split("@22")[1:]:
+            new_perek = getGematria(chapter.split("\n")[0])
+            assert new_perek > perek
+            perek = new_perek
+            parsed_text[title][perek] = []
+            for line in chapter.split("@11")[1:]:
+                line = removeAllTags(line)
+                parsed_text[title][perek].append(line)
+    for title, text_for_section in parsed_text.items():
+        send_text = {
+            "text": convertDictToArray(text_for_section),
+            "language": "he",
+             "versionTitle": "Munkatch, 1901",
+            "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002023637"
+        }
+        post_text("Brit Moshe, Volume Two, {}".format(title), send_text, server=server)
+
+    pass
+
+
+def change_title(vol1, vol2):
+    positive_he = u"עשין"
+    negative_he = u"לאוין"
+    change_node_title(vol1, vol1.primary_title("en"), "en", "Negative Commandments")
+    change_node_title(vol2, vol2.primary_title("en"), "en", "Positive Commandments")
+    change_node_title(vol1, vol1.primary_title("he"), "he", negative_he)
+    change_node_title(vol2, vol2.primary_title("he"), "he", positive_he)
+
+
+def add_rabbinic(title, rabbinic_nodes, depth):
+    index = library.get_index(title)
+    root = index.nodes
+    rabbinic_vol = SchemaNode()
+    rabbinic_vol.add_primary_titles("Rabbinic Commandments",  u"עשין דרבנן")
+    for r_count in range(len(rabbinic_nodes)):
+        en_name = [x["text"] for x in rabbinic_nodes[r_count].get_titles() if x["primary"] == True and x["lang"] == "en"][0]
+        he_name = [x["text"] for x in rabbinic_nodes[r_count].get_titles() if x["primary"] == True and x["lang"] == "he"][0]
+        new_node = JaggedArrayNode()
+        new_node.add_primary_titles(en_name, he_name)
+        new_node.add_structure(depth)
+        rabbinic_vol.append(new_node)
+        rabbinic_vol.validate()
+
+    attach_branch(rabbinic_vol, root, place=2)
+    refresh_version_state(title)
+
+
+
+def move_text(title, rabbinic_nodes):
+    def needs_rewrite(ref_string, *args):
+        ref_string = ref_string.replace("SeMaG", "Sefer Mitzvot Gadol")
+        return ref_string.startswith("Sefer Mitzvot Gadol, Positive Commandments,")
+
+    def rewriter(ref_string):
+        return ref_string.replace("Positive Commandments", "Rabbinic Commandments")
+
+    for node in rabbinic_nodes:
+        en_name = [x["text"] for x in node.get_titles() if x["primary"] == True and x["lang"] == "en"][0]
+        orig_ref = Ref("{}, Positive Commandments, {}".format(title, en_name))
+        new_ref = Ref("{}, Rabbinic Commandments, {}".format(title, en_name))
+        text = TextChunk(orig_ref, vtitle="Munkatch, 1901", lang="he").text
+        new_tc = TextChunk(new_ref, vtitle="Munkatch, 1901", lang="he")
+        new_tc.text = text
+        new_tc.save(force_save=True)
+
+    cascade("Sefer Mitzvot Gadol, Positive Commandments", rewriter=rewriter, needs_rewrite=needs_rewrite)
+
+
+def alter_structure(which_one):
+    for title in ["Sefer Mitzvot Gadol"]:
+        depth = ["Chapter", "Paragraph"] if title == "Brit Moshe" else ["Paragraph"]
+        index = library.get_index(title)
+        root = index.nodes
+        vol1 = root.children[0]
+        vol2 = root.children[1]
+        rabbinic_nodes = vol2.children[1:] if title == "Brit Moshe" else vol2.children[3:]
+
+
+        '''
+        if which_one == "title":
+            change_title(vol1, vol2)
+        elif which_one == "rabbinic":
+            add_rabbinic(title, rabbinic_nodes, depth)
+        elif which_one == "text":
+            move_text(title, rabbinic_nodes)
+        elif which_one == "remove":
+            for node in rabbinic_nodes:
+                print node
+                remove_branch(node)
+        else:
+            intro = JaggedArrayNode()
+            remazim = JaggedArrayNode()
+            intro.add_primary_titles("Introduction", u"הקדמה")
+            remazim.add_primary_titles("Remazim", u"רמזים")
+            intro.add_structure(["Paragraph"])
+            remazim.add_structure(["Paragraph"])
+
+
+        '''
+
+def move_links(old, new):
+    ls = LinkSet(Ref(old))
+    new_links = []
+    new_links_file = open("new_links.txt", 'w')
+    for l in ls:
+        assert old in l.refs[0] or old in l.refs[1]
+        ref1, ref2 = l.refs
+        ref1 = ref1.replace(old, new)
+        ref2 = ref2.replace(old, new)
+        new_link = {"refs": [ref1, ref2], "auto": l.auto, "type": l.type, "generated_by": l.generated_by}
+        new_links_file.write(str(new_link)+"\n")
+    new_links_file.close()
+
+move_links("Sefer Mitzvot Gadol", "SmagTwo")
+
 if __name__ == "__main__":
-    #create_schema()
+    root = library.get_index("SeMaG").nodes
+    convert_ja_to_schema(root.children[0])
+    '''
+
+    def rewriter(ref):
+        ref = ref.replace("Volume One", "Negative Commandments")
+        ref = ref.replace("Volume Two", "Positive Commandments")
+        ref = ref.replace("Positive Commandments, Law", "Rabbinic Commandments, Law")
+
+
+    def needs_rewrite(ref):
+        return ref.startswith("Sefer Mitzvot Gadol")
+
+    cascade("Sefer Mitzvot Gadol", rewriter=rewriter, needs_rewrite=needs_rewrite)
+
+    links = []
+    for line in open('links.txt'):
+        line = line.replace("Brit Moshe, Volume One", "Brit Moshe, Negative Commandments")
+        line = line.replace("Brit Moshe, Volume Two", "Brit Moshe, Positive Commandments")
+        links.append(eval(line.replace("\n", "").replace("Positive Commandments, Law", "Rabbinic Commandments, Law")))
+    post_link(links, server="http://ste.sefaria.org")
+
+
+    title = "Sefer Mitzvot Gadol"
+    depth = ["Paragraph"]
+    index = library.get_index(title)
+    root = index.nodes
+    vol1 = root.children[0]
+    vol2 = root.children[1]
+    rabbinic_nodes = vol2.children[1:]
+
+    new_root = SchemaNode()
+    new_root.add_primary_titles("SmagTwo", u"סג תיים")
+    positive = SchemaNode()
+    positive.add_primary_titles("Positive Commandments", u"עשין")
+    negative = SchemaNode()
+    negative.add_primary_titles("Negative Commandments", u"לאוין")
+    rabbinic = SchemaNode()
+    rabbinic.add_primary_titles("Rabbinic Commandments", u"עשין דרבנן")
+    for node in rabbinic_nodes:
+        copy_node = JaggedArrayNode()
+        en_name = [x["text"] for x in node.get_titles() if x["primary"] == True and x["lang"] == "en"][0]
+        he_name = [x["text"] for x in node.get_titles() if x["primary"] == True and x["lang"] == "he"][0]
+        copy_node.add_primary_titles(en_name, he_name)
+        copy_node.add_structure(["Paragraph"])
+        rabbinic.append(copy_node)
+
+    intro = JaggedArrayNode()
+    remazim = JaggedArrayNode()
+    intro.add_primary_titles("Introduction", u"הקדמה")
+    remazim.add_primary_titles("Remazim", u"רמזים")
+    intro.add_structure(["Paragraph"])
+    remazim.add_structure(["Paragraph"])
+    default = JaggedArrayNode()
+    default.key = "default"
+    default.default = True
+    default.add_structure(["Mitzvah", "Paragraph"])
+
+    negative.append(intro)
+    negative.append(remazim)
+    negative.append(default)
+
+    intro.key += "2"
+    remazim.key += "2"
+
+    positive.append(intro)
+    positive.append(remazim)
+    positive.append(default)
+
+    new_root.append(negative)
+    new_root.append(positive)
+    new_root.append(rabbinic)
+    new_root.validate()
+
+    post_index({
+        "title": "SmagTwo",
+        "schema": new_root.serialize(),
+        "categories": ["Halakhah"]
+    }, server="http://ste.sefaria.org")
+
+
+
+    #alter_structure(rabbinic)
+
+    create_schema()
+    #rabbinic_mitzvot()
+
     brit_vol_2 = parse_text(open("brit moshe vol 2 CORRECTED.txt"), u"@02מצות עשה")
     brit_vol_1 = parse_text(open("brit moshe vol 1.txt"), u"@88מצוה לא תעשה")
 
     links_vol_1 = iterate_semag(json.load(open("semag.json"))["text"], brit_vol_1, "Volume One")
     links_vol_2 = iterate_semag(json.load(open("semag.json"))["text"], brit_vol_2, "Volume Two")
-    post_link(links_vol_1, server=server)
-    post_link(links_vol_2, server=server)
+    #post_link(links_vol_1, server=server)
+    #post_link(links_vol_2, server=server)
 
 
     for mitzvah in brit_vol_1:
@@ -254,6 +493,7 @@ if __name__ == "__main__":
             "versionTitle": "Munkatch, 1901",
             "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002023637"
         }, server=server)
+    '''
 
 
 
