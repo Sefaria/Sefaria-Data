@@ -416,6 +416,9 @@ class Record(Element):
             rendered_simanim.append(siman.render())
         return rendered_simanim
 
+    def collect_links(self):
+        return [link for siman in self.get_simanim() for link in siman.collect_links()]
+
 
 class BaseText(Record):
     name = 'base_text'
@@ -822,6 +825,9 @@ class Siman(OrderedElement):
                 matches.append(seif.num)
         return matches
 
+    def collect_links(self):
+        return [link for seif in self.get_child() for link in seif.collect_links()]
+
 
 
 class Seif(OrderedElement):
@@ -956,6 +962,32 @@ class Seif(OrderedElement):
         seif_text = re.sub(u' {2,}', u' ', seif_text)
         seif_text = re.sub(u'~br~', u'<br>', seif_text)
         return unescape(seif_text)
+
+    def collect_links(self):
+        links = []
+        if self.rid is None or self.rid == 'no-link':
+            return links
+
+        link_record = CommentStore()[self.rid]
+        for segment in link_record['seif']:
+            base_ref = u'{} {}:{}'.format(link_record['base_title'], link_record['siman'], segment)
+            commentary_ref = u'{} on {} {}:{}'.format(link_record['commentator_title'], link_record['base_title'],
+                                                      link_record['commentator_siman'], link_record['commentator_seif'])
+            itag = {
+                'data-commentator': u'{} on {}'.format(link_record['commentator_title'], link_record['base_title']),
+                'data-order': link_record['commentator_seif']
+            }
+            if self.Tag.has_attr('label'):
+                itag['data-label'] = self.Tag['label']
+            links.append({
+                'refs': [base_ref, commentary_ref],
+                'type': 'commentary',
+                'auto': True,
+                'generated_by': 'Shulchan Arukh Parser',
+                'inline_reference': itag
+            })
+
+        return links
 
 
 class TextElement(Element):
