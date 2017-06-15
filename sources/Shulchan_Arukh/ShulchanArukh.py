@@ -743,7 +743,7 @@ class Siman(OrderedElement):
 
     def mark_cyclical_seifim(self, pattern, start_mark=None, specials=None, enforce_order=False):
         def get_label(match_object):
-            label = he_ord(match_object.group(1))
+            label = match_object.group(1)
             return {'label': label}
 
         self._mark_children(pattern, start_mark, specials, add_child_callback=self._add_cyclical_seif,
@@ -951,6 +951,8 @@ class Seif(OrderedElement):
         this_ref['commentator_title'] = title
         this_ref['commentator_siman'] = siman
         this_ref['commentator_seif'] = self.num
+        if self.Tag.has_attr('label'):
+            this_ref['data-label'] = self.Tag['label']
 
     def render(self):
         seif_text = u' '.join(child.render() for child in self.get_child())
@@ -1021,7 +1023,7 @@ class TextElement(Element):
             if group is None:
                 order = count[0]
             elif cyclical:
-                order = u'{};{}'.format(he_ord(s.group(group)), count[0])
+                order = u'{};{}'.format(s.group(group), count[0])
             else:
                 order = getGematria(s.group(group))
             return u'<xref id="b{}-c{}-si{}-ord{}">{}</xref>'.format(base_id, com_id, siman_num, order, s.group())
