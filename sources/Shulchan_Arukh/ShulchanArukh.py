@@ -652,10 +652,10 @@ class Volume(OrderedElement):
             passed = siman.validate_references(pattern, code, group, key_callback)
         return passed
 
-    def set_rid_on_seifim(self, base_id=0):
+    def set_rid_on_seifim(self, base_id=0, cyclical=False):
         book_id = self.get_book_id()
         for siman in self.get_child():
-            siman.set_rid_on_seifim(base_id, book_id)
+            siman.set_rid_on_seifim(base_id, book_id, cyclical=cyclical)
 
     def unlink_seifim(self, bad_rid):
         """
@@ -694,9 +694,9 @@ class Volume(OrderedElement):
 
         for item in validation_set:
             if comment_store.get(item['id']) is None:
-                errors.append("xref with id {} not found in comment store".format(item['id']))
+                errors.append(u"xref with id {} not found in comment store".format(item['id']))
             elif any([i not in comment_store[item['id']] for i in required_fields]):
-                errors.append("xref with id {} missing required field".format(item['id']))
+                errors.append(u"xref with id {} missing required field".format(item['id']))
         if len(errors) == 0:
             print "No errors found"
         return errors
@@ -943,7 +943,7 @@ class Seif(OrderedElement):
             return
 
         if comment_store.get(self.rid) is None:
-            raise MissingCommentError("No Xref with id {} exists".format(self.rid))
+            raise MissingCommentError(u"No Xref with id {} exists".format(self.rid))
 
         this_ref = comment_store[self.rid]
         if this_ref.get('commentator_title') is not None:
