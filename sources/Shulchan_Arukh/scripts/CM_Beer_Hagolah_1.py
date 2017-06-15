@@ -16,8 +16,8 @@ volume.mark_simanim(u'@12([\u05d0-\u05ea]{1,3})')
 print "Validating Simanim"
 volume.validate_simanim()
 
-volume.mark_seifim(u'@11([\u05d0-\u05ea])', cyclical=True)
-volume.validate_seifim(verbose=True, cyclical=True)
+volume.mark_seifim(u'@11([\u05d0-\u05ea\u2022])', cyclical=True)
+# volume.validate_seifim(verbose=True, cyclical=True)
 
 base_text = root.get_base_text()
 b_volume = base_text.get_volume(1)
@@ -29,7 +29,7 @@ for base_siman, com_siman in zip(b_volume.get_child(), volume.get_child()):
         print "mismatch in siman {}. {} footnotes and {} comments".format(base_siman.num, total_footnotes, comments)
 
 volume.format_text('$^', '$^', 'dh')
-volume.set_rid_on_seifim()
+volume.set_rid_on_seifim(cyclical=True)
 root.populate_comment_store()
 errors = b_volume.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'@68', x.text) is not None)
 for i in errors:

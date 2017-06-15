@@ -10,7 +10,7 @@ def markup(b_vol):
     b_vol.mark_references(commentaries.commentary_ids["Me'irat Einayim"], u'@62([\u05d0-\u05ea]{1,3})', group=1)
     b_vol.mark_references(commentaries.commentary_ids["Ktsot HaHoshen"], u'@67([\u05d0-\u05ea]{1,3})\)', group=1)
     b_vol.mark_references(commentaries.commentary_ids["Pithei Teshuva"], u'@64([\u05d0-\u05ea]{1,3})\]', group=1)
-    b_vol.mark_references(commentaries.commentary_ids["Be'er HaGolah"], ur'@68([\u05d0-\u05ea])')
+    b_vol.mark_references(commentaries.commentary_ids["Be'er HaGolah"], ur'@68([\u05d0-\u05ea\u2022])',cyclical=True, group=1)
     b_vol.mark_references(commentaries.commentary_ids["Beur HaGra"], u'@69\[([\u05d0-\u05ea]{1,3})\]', group=1)
     b_vol.mark_references(commentaries.commentary_ids["Netivot HaMishpat, Hidushim"], u'@70\(([\u05d0-\u05ea]{1,3})\)',
                           group=1)
@@ -45,7 +45,7 @@ for i in bad:
 volume.validate_seifim()
 # root.export()
 
-volume.validate_references(ur'@68([\u05d0-\u05ea])', u'@68', key_callback=he_ord)
+# volume.validate_references(ur'@68([\u05d0-\u05ea])', u'@68', key_callback=he_ord)
 for code, pattern in zip(codes, patterns):
     volume.validate_references(pattern, code)
 
