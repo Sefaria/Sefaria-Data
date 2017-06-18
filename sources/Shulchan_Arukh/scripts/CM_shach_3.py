@@ -7,9 +7,9 @@ from sources.Shulchan_Arukh.ShulchanArukh import *
 
 root = Root('../Choshen_Mishpat.xml')
 commentaries = root.get_commentaries()
-shach = commentaries.get_commentary_by_title("Siftei Cohen")
+shach = commentaries.get_commentary_by_title("Siftei Kohen")
 if shach is None:
-    shach = commentaries.add_commentary("Siftei Cohen", u"שפתי כהן")
+    shach = commentaries.add_commentary("Siftei Kohen", u"שפתי כהן")
 
 filename = u'../txt_files/Choshen_Mishpat/part_3/שך חושן משפט חלק ג מוכן.txt'
 shach.remove_volume(3)
