@@ -376,6 +376,25 @@ class ParallelMatcher:
             self.with_scoring = True
             self.calculate_score = calculate_score
 
+
+    def reset(self):
+        self.ght = Gemara_Hashtable(self.skip_gram_size)
+
+    def filter_matches_by_score_and_duplicates(self, matches, min_score=30):
+        '''
+        :param matches: List of Mesorah_Matches
+        :param min_score: The minimum score found by the callback function, calculate_score
+
+        It removes anything with a score less than min_score and also removes duplicate matches.
+
+        :return:
+        '''
+        matches = [x.b.ref for x in matches if x.score >= min_score]
+        match_set = set()
+        for match in matches:
+            match_set.add(match)
+        return list(match_set)
+
     def match(self, index_list=None, tc_list=None, comment_index_list=None, use_william=False, output_root="", return_obj=False):
         """
 
@@ -388,6 +407,7 @@ class ParallelMatcher:
         :param bool use_william: True if you want to use William Davidson version for Talmud refs
         :return: mesorat_hashas, mesorat_hashas_indexes
         """
+        self.reset()
         start_time = pytime.time()
 
         if not index_list is None and not tc_list is None:

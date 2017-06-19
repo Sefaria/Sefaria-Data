@@ -282,7 +282,9 @@ def rabbinic_mitzvot():
     pass
 
 
-def change_title(vol1, vol2):
+def change_title(title):
+    vol1 = library.get_index(title).nodes.children[0]
+    vol2 = library.get_index(title).nodes.children[1]
     positive_he = u"עשין"
     negative_he = u"לאוין"
     change_node_title(vol1, vol1.primary_title("en"), "en", "Negative Commandments")
@@ -291,9 +293,10 @@ def change_title(vol1, vol2):
     change_node_title(vol2, vol2.primary_title("he"), "he", positive_he)
 
 
-def add_rabbinic(title, rabbinic_nodes, depth):
+def add_rabbinic(title):
     index = library.get_index(title)
     root = index.nodes
+    rabbinic_nodes = index.nodes.children[1].children[1:]
     rabbinic_vol = SchemaNode()
     rabbinic_vol.add_primary_titles("Rabbinic Commandments",  u"עשין דרבנן")
     for r_count in range(len(rabbinic_nodes)):
@@ -301,7 +304,7 @@ def add_rabbinic(title, rabbinic_nodes, depth):
         he_name = [x["text"] for x in rabbinic_nodes[r_count].get_titles() if x["primary"] == True and x["lang"] == "he"][0]
         new_node = JaggedArrayNode()
         new_node.add_primary_titles(en_name, he_name)
-        new_node.add_structure(depth)
+        new_node.add_structure(["Paragraph"])
         rabbinic_vol.append(new_node)
         rabbinic_vol.validate()
 
@@ -310,7 +313,7 @@ def add_rabbinic(title, rabbinic_nodes, depth):
 
 
 
-def move_text(title, rabbinic_nodes):
+def change_rabbinic_refs(title):
     def needs_rewrite(ref_string, *args):
         ref_string = ref_string.replace("SeMaG", "Sefer Mitzvot Gadol")
         return ref_string.startswith("Sefer Mitzvot Gadol, Positive Commandments,")
@@ -318,70 +321,49 @@ def move_text(title, rabbinic_nodes):
     def rewriter(ref_string):
         return ref_string.replace("Positive Commandments", "Rabbinic Commandments")
 
-    for node in rabbinic_nodes:
-        en_name = [x["text"] for x in node.get_titles() if x["primary"] == True and x["lang"] == "en"][0]
-        orig_ref = Ref("{}, Positive Commandments, {}".format(title, en_name))
-        new_ref = Ref("{}, Rabbinic Commandments, {}".format(title, en_name))
-        text = TextChunk(orig_ref, vtitle="Munkatch, 1901", lang="he").text
-        new_tc = TextChunk(new_ref, vtitle="Munkatch, 1901", lang="he")
-        new_tc.text = text
-        new_tc.save(force_save=True)
-
     cascade("Sefer Mitzvot Gadol, Positive Commandments", rewriter=rewriter, needs_rewrite=needs_rewrite)
 
 
-def alter_structure(which_one):
-    for title in ["Sefer Mitzvot Gadol"]:
-        depth = ["Chapter", "Paragraph"] if title == "Brit Moshe" else ["Paragraph"]
-        index = library.get_index(title)
-        root = index.nodes
-        vol1 = root.children[0]
-        vol2 = root.children[1]
-        rabbinic_nodes = vol2.children[1:] if title == "Brit Moshe" else vol2.children[3:]
+def add_intro(title):
+    root = library.get_index(title).nodes
+    for i in range(2):
+        intro = JaggedArrayNode()
+        remazim = JaggedArrayNode()
+
+        intro.add_primary_titles("Introduction", u"הקדמה")
+        remazim.add_primary_titles("Remazim", u"רמזים")
+        intro.add_structure(["Paragraph"])
+        remazim.add_structure(["Paragraph"])
+
+        intro.key = "intro" + str(i)
+        remazim.key = "remazim" + str(i)
+
+        attach_branch(intro, root.children[i])
+        attach_branch(remazim, root.children[i], place=1)
 
 
-        '''
-        if which_one == "title":
-            change_title(vol1, vol2)
-        elif which_one == "rabbinic":
-            add_rabbinic(title, rabbinic_nodes, depth)
-        elif which_one == "text":
-            move_text(title, rabbinic_nodes)
-        elif which_one == "remove":
-            for node in rabbinic_nodes:
-                print node
-                remove_branch(node)
-        else:
-            intro = JaggedArrayNode()
-            remazim = JaggedArrayNode()
-            intro.add_primary_titles("Introduction", u"הקדמה")
-            remazim.add_primary_titles("Remazim", u"רמזים")
-            intro.add_structure(["Paragraph"])
-            remazim.add_structure(["Paragraph"])
+def remove_nodes(title):
+    index = library.get_index(title)
+    rabbinic_nodes = index.nodes.children[1].children[1:]
+    for node in rabbinic_nodes:
+        print node
+        remove_branch(node)
 
-
-        '''
-
-def move_links(old, new):
-    ls = LinkSet(Ref(old))
-    new_links = []
-    new_links_file = open("new_links.txt", 'w')
-    for l in ls:
-        assert old in l.refs[0] or old in l.refs[1]
-        ref1, ref2 = l.refs
-        ref1 = ref1.replace(old, new)
-        ref2 = ref2.replace(old, new)
-        new_link = {"refs": [ref1, ref2], "auto": l.auto, "type": l.type, "generated_by": l.generated_by}
-        new_links_file.write(str(new_link)+"\n")
-    new_links_file.close()
-
-move_links("Sefer Mitzvot Gadol", "SmagTwo")
 
 if __name__ == "__main__":
-    root = library.get_index("SeMaG").nodes
-    convert_ja_to_schema(root.children[0])
-    '''
+    title = "Sefer Mitzvot Gadol"
 
+    change_title(title)
+
+    add_rabbinic(title)
+    change_rabbinic_refs(title)
+    remove_nodes(title)
+
+    vol1 = library.get_index(title).nodes.children[0]
+    convert_jagged_array_to_schema_with_default(vol1)
+    add_intro(title)
+
+    '''
     def rewriter(ref):
         ref = ref.replace("Volume One", "Negative Commandments")
         ref = ref.replace("Volume Two", "Positive Commandments")
@@ -493,6 +475,21 @@ if __name__ == "__main__":
             "versionTitle": "Munkatch, 1901",
             "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002023637"
         }, server=server)
+
+def move_links(old, new):
+    ls = LinkSet(Ref(old))
+    new_links = []
+    new_links_file = open("new_links.txt", 'w')
+    for l in ls:
+        assert old in l.refs[0] or old in l.refs[1]
+        ref1, ref2 = l.refs
+        ref1 = ref1.replace(old, new)
+        ref2 = ref2.replace(old, new)
+        new_link = {"refs": [ref1, ref2], "auto": l.auto, "type": l.type, "generated_by": l.generated_by}
+        new_links_file.write(str(new_link)+"\n")
+    new_links_file.close()
+
+move_links("Sefer Mitzvot Gadol", "SmagTwo")
     '''
 
 

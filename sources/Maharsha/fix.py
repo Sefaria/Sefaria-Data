@@ -5,10 +5,10 @@ import os
 from sefaria.model import *
 
 if __name__ == "__main__":
-    files = [file.replace(".txt", "").decode('utf-8') for file in os.listdir("./hebrew") if not file.endswith("2.txt") and file.endswith(".txt")]
+    files = [file.replace(".txt", "").decode('utf-8') for file in os.listdir("./already_on_site_hebrew") if not file.endswith("2.txt") and file.endswith(".txt")]
     for file in files:
         print file
-        f = open("./hebrew/"+file+".txt", 'r')
+        f = open("./already_on_site_hebrew/"+file+".txt", 'r')
         try:
             he_title = file.split(" ")[-1]
             title = library.get_index(he_title).title

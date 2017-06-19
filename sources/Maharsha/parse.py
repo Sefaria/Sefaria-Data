@@ -612,7 +612,6 @@ if __name__ == "__main__":
 
     files = [file for file in os.listdir(".") if file.startswith("chidushei_hal") or (file.startswith("chidushei") and ("Arakhin" in file or "Rosh" in file))]
     for file in files:
-
         masechet = file.split(".txt")[0].split("_")[-1].title()
         print file
         len_masechet = len(Ref(masechet).text('he').text)
@@ -626,7 +625,7 @@ if __name__ == "__main__":
             obj = Maharsha(masechet, title, heTitle, server="http://localhost:8000")
         obj.parseText(open("./"+file), len_masechet)
         if len(obj.comm_dict) > 0:
-            obj.create_index(masechet)
+            #obj.create_index(masechet)
             text_to_post = convertDictToArray(obj.comm_dict)
             send_text = {
                                 "versionTitle": "Vilna Edition",
@@ -634,5 +633,5 @@ if __name__ == "__main__":
                                 "language": "he",
                                 "text": text_to_post,
                         }
-            post_text("{} on {}".format(title, masechet), send_text, "on", server="http://localhost:8000")
-            obj.postLinks(masechet)
+            #post_text("{} on {}".format(title, masechet), send_text, "on", server="http://localhost:8000")
+            #obj.postLinks(masechet)
