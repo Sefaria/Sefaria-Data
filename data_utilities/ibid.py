@@ -40,9 +40,8 @@ class CitationFinder():
 
         prefixes = u"[משהוכלבד]"
         after_title_delimiter_re = ur"[,.: \r\n]+"
-        # start_paren_reg = ur"(?:[(\[{][^})\]]*\s" + prefixes + ur"{0,2})|(?:[(\[{]" + prefixes + ur"{0,2})"
-        # start_paren_reg = ur"(?:[(\[{](?:[^})\]]* " + prefixes + ur"{0,2}|" + prefixes + ur"{0,2}))"
-        start_paren_reg = ur"(?:[(\[{][^})\]]*)"
+        start_paren_reg = ur"(?:(?:[(\[{][^})\]]*\s" + prefixes + ur"{0,2})|(?:[(\[{]" + prefixes + ur"{0,2}))"
+        # start_paren_reg = ur"(?:[(\[{][^})\]]*)"
         end_paren_reg = ur"(?:[\])}]|\W[^({\[]*[\])}])"
 
         title_reg_list = []
