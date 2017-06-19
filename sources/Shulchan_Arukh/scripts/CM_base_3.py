@@ -6,7 +6,7 @@ from data_utilities.util import he_ord
 
 def markup(b_vol):
     commentaries = root.get_commentaries()
-    b_vol.mark_references(commentaries.commentary_ids["Ketsot HaChoshen"], u'@58([\u05d0-\u05ea]{1,3})\)', group=1)
+    b_vol.mark_references(commentaries.commentary_ids["Ketzot HaChoshen"], u'@58([\u05d0-\u05ea]{1,3})\)', group=1)
     b_vol.mark_references(commentaries.commentary_ids["Me'irat Einayim"], u'@54([\u05d0-\u05ea]{1,3})', group=1)
     b_vol.mark_references(commentaries.commentary_ids["Siftei Kohen"], ur'@57\(([\u05d0-\u05ea]{1,3})\)', group=1)
     b_vol.mark_references(commentaries.commentary_ids["Pithei Teshuva"], ur'@56([\u05d0-\u05ea]{1,3})\]', group=1)
