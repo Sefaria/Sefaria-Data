@@ -4,9 +4,9 @@ from sources.Shulchan_Arukh.ShulchanArukh import *
 
 root = Root('../Choshen_Mishpat.xml')
 commentaries = root.get_commentaries()
-kzot = commentaries.get_commentary_by_title("Ketsot HaChoshen")
+kzot = commentaries.get_commentary_by_title("Ketzot HaChoshen")
 if kzot is None:
-    kzot = commentaries.add_commentary("Ketsot HaChoshen", u"קצות החושן")
+    kzot = commentaries.add_commentary("Ketzot HaChoshen", u"קצות החושן")
 
 filename = u"../txt_files/Choshen_Mishpat/part_2/שולחן ערוך חושן משפט חלק ב קצות החושן.txt"
 kzot.remove_volume(2)
