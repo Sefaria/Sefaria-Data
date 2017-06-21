@@ -344,9 +344,18 @@ if __name__ == "__main__":
 
     #index_ibid_finder()
     #segment_ibid_finder()
-    #for mass in ['Mishnah Berakhot']:#library.get_indexes_in_category('Mishnah'):
-    run_shaminator([u'Ramban on Genesis'])
-    # segment_ibid_finder(u'Ramban on Genesis 27:40:1')
+    # for mass in library.get_indexes_in_category('Mishnah'):
+    #     index_title = u'Tosafot Yom Tov on {}'.format(mass)
+    #     tosfot_yt = []
+    #     if library.get_index(index_title):
+    #         print index_title
+    #         tosfot_yt.append(index_title)
+    #         # run_shaminator(index_title)
+    # run_shaminator(tosfot_yt)
+    run_shaminator([u'Ramban on Genesis'], with_real_refs = True)
+    # for humash in library.get_indexes_in_category(u'Torah'):
+    #     run_shaminator([u'Ramban on {}'.format(humash)])
+    # segment_ibid_finder(u'Ramban on Genesis 4:32:1')
     # validate_alt_titles()
 
 
