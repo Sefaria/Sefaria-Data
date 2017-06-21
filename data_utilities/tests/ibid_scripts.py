@@ -172,7 +172,7 @@ def run_shaminator(titles=None, with_real_refs=False):
             for r, l, t in izip(v['refs'], v['locations'], v['types']):
                 sham_ref_key = r.index.title if r.index.title not in double_tanakh_books else double_tanakh_books[
                     r.index.title]
-                if t == CitationFinder.SHAM_INT and last_index_ref_seen[r.index.title] is not None:
+                if t == CitationFinder.SHAM_INT and last_index_ref_seen[sham_ref_key] is not None:
                     last_ref_with_citation, last_location_with_citation, last_ref_seen = last_index_ref_seen[sham_ref_key]
                 else:  # if t == CitationFinder.REF_INT:
                     last_index_ref_seen[sham_ref_key] = (curr_ref, l, r)
@@ -345,7 +345,7 @@ if __name__ == "__main__":
     #index_ibid_finder()
     #segment_ibid_finder()
     #for mass in ['Mishnah Berakhot']:#library.get_indexes_in_category('Mishnah'):
-    run_shaminator([u'Tiferet Yisrael'])
+    run_shaminator([u'Ramban on Genesis'])
     # segment_ibid_finder(u'Ramban on Genesis 27:40:1')
     # validate_alt_titles()
 
