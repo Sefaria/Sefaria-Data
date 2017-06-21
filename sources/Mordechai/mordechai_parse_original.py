@@ -81,11 +81,7 @@ class Tractate:
         perek_box =[]
         remez_index=[]
         daf_refs=[]
-        hagahot_box=[]
-        for line_index, line in enumerate(lines):
-            if u"הגהות דשייכי" in line:
-                hagahot_line=line_index
-                break
+        for line in lines:
             for remez in re.findall(ur"@20.*?@01",line):
                 print line
                 #designed so entries are index locations (starting at 0)
@@ -177,13 +173,6 @@ def not_blank(s):
     return (len(s.replace(u"\n",u"").replace(u"\r",u"").replace(u"\t",u""))!=0);
 def fix_markers(s):
     return s.replace(u"@01",u"</small>").replace(u"@10",u"<small>").replace(u'@20',u"<small>")
-def get_perek(ref):
-    range_dict = get_perek_ranges(ref.book
-    for chapter_range in range_dict.keys():
-        if Ref(chapter_range).contains(ref):
-            return range_dict[chapter_range]
-def get_perek_ranges(tractate_name):
-    return {node['wholeRef']:node['titles'][0]['text'] for node in library.get_index(tractate_name).alt_structs["Chapters"]['nodes']}
 posting_term=True
 posting_index=True
 posting_text=True
