@@ -959,8 +959,12 @@ class Seif(OrderedElement):
         if re.search(u'@', seif_text):
             # raise AssertionError("found @ marker in xml at {}:{}".format(self.Tag.parent['num'], self.num))
             print "found @ marker in xml at {}:{}".format(self.Tag.parent['num'], self.num)
-        seif_text = re.sub(u' <i data-commentator', u'<i data-commentator', seif_text)  # Remove space between text and itag
+        seif_text = re.sub(u'(<i data-commentator.*?></i>) +', ur'\1', seif_text)  # Remove space between text and itag
         seif_text = seif_text.replace(u'\n', u' ')
+        seif_text = seif_text.replace(u'*', u'')
+        seif_text = re.sub(ur'([^ ](?=\())|(\)(?=[^ ]))', ur'\g<0> ', seif_text)  # Parenthesis have spaces before and after
+        seif_text = re.sub(ur'\( | +[:)]', lambda x: x.group(0).replace(u' ', u''), seif_text)  # No spaces padding parenthesis or colon
+        seif_text = re.sub(u' +(</.*?>:?)$', ur'\g<1>', seif_text)
         seif_text = re.sub(u' {2,}', u' ', seif_text)
         seif_text = re.sub(u'~br~', u'<br>', seif_text)
         return unescape(seif_text)
@@ -1061,6 +1065,7 @@ class TextElement(Element):
             if isinstance(sub_element, Tag) and sub_element.name == u'xref':
                 text_list.append(Xref(sub_element).render())
             else:
+                # text_list.append(re.sub(u'(^ +)|( +$)', u'', unicode(sub_element)))
                 text_list.append(unicode(sub_element))
 
         if self.Tag.name == u'ramah':

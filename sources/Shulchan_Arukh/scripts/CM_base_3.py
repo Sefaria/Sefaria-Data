@@ -49,7 +49,7 @@ volume.validate_references(ur'@50([\u05d0-\u05ea])', u'@50', key_callback=he_ord
 for code, pattern in zip(codes[1:], patterns[1:]):
     volume.validate_references(pattern, code)
 
-errors = volume.format_text('@33', '@44', 'ramah')
+errors = volume.format_text('@44', '@33', 'ramah')
 for i in errors:
     print i
 markup(volume)

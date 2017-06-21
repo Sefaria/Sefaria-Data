@@ -87,6 +87,7 @@ def shulchan_arukh_post_parse(shulchan_ja):
             siman_ja[0] = u'<b>{}</b><br>{}'.format(title_text, siman_ja[0])
 
 
+
 def split_segments(text_ja):
     for i, siman in enumerate(text_ja):
         for j, seif in enumerate(siman):
@@ -156,7 +157,7 @@ if __name__ == '__main__':
         book_name = u'{} on {}'.format(user_args.title, base_text)
         book_xml = root.get_commentaries().get_commentary_by_title(user_args.title)
         book_ja = book_xml.render()
-        he_book_name = u'{} על {}'.format(he_base_text, book_xml.titles['he'],)
+        he_book_name = u'{} על {}'.format(book_xml.titles['he'], he_base_text)
         links = book_xml.collect_links()
 
         if user_args.add_term:
