@@ -165,13 +165,17 @@ def run_shaminator(titles=None, with_real_refs=False):
         last_index_ref_seen = {}
         row_num = 1
         char_padding = 20
+        double_tanakh_books = {"I Samuel": "Samuel", "II Samuel": "Samuel", "I Kings": "Kings", "II Kings": "Kings",
+                               "I Chronicles": "Chronicles", "II Chronicles": "Chronicles"}
         for k, v in ref_dict.items():
             curr_ref = Ref(k)
             for r, l, t in izip(v['refs'], v['locations'], v['types']):
+                sham_ref_key = r.index.title if r.index.title not in double_tanakh_books else double_tanakh_books[
+                    r.index.title]
                 if t == CitationFinder.SHAM_INT and last_index_ref_seen[r.index.title] is not None:
-                    last_ref_with_citation, last_location_with_citation, last_ref_seen = last_index_ref_seen[r.index.title]
+                    last_ref_with_citation, last_location_with_citation, last_ref_seen = last_index_ref_seen[sham_ref_key]
                 else:  # if t == CitationFinder.REF_INT:
-                    last_index_ref_seen[r.index.title] = (curr_ref, l, r)
+                    last_index_ref_seen[sham_ref_key] = (curr_ref, l, r)
                     if not with_real_refs:
                         continue
                     last_ref_with_citation = curr_ref
