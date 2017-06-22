@@ -113,6 +113,7 @@ def create_simple_index(en_title, he_title, commentator, depth=2, *args, **kwarg
         jnode.add_structure(["Siman", "Seif"], address_types=["Siman", "Seif"])
     elif depth == 3:
         jnode.add_structure(["Siman", "Seif", "Paragraph"], address_types=["Siman", "Seif", "Integer"])
+        jnode.toc_zoom = 2
     else:
         raise ValueError("Depth must be set to 2 or 3")
     jnode.validate()
@@ -125,8 +126,6 @@ def create_simple_index(en_title, he_title, commentator, depth=2, *args, **kwarg
         'alt_structs': {'Topic': get_alt_struct(en_title)},
         'schema': jnode.serialize()
     }
-    if depth == 3:
-        index_dict['toc_zoom'] = 2
     return index_dict
 
 
