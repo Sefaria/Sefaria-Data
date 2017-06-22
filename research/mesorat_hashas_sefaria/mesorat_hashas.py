@@ -350,17 +350,19 @@ class PartialMesorahMatch:
 
 class ParallelMatcher:
 
-    def __init__(self, tokenizer, ngram_size=5, max_words_between=4, min_words_in_match=9,
+    def __init__(self, tokenizer, dh_extract_method=None, ngram_size=5, max_words_between=4, min_words_in_match=9,
                  min_distance_between_matches=1000, all_to_all=True, parallelize=False, verbose=True, calculate_score=None):
         """
 
         :param tokenizer: returns list of words
+        :param f(str) -> str dh_extract_method: takes the full text of `comment` and returns only the dibur hamatchil. `self.tokenizer` will be applied to it afterward. this will only be used if `comment_index_list` in `match()` is not None
         :param ngram_size: int, basic unit of matching. 1 word will be skipped in each ngram of size `ngram_size`
         :param max_words_between: max words between consecutive ngrams
         :param min_words_in_match: min words for a match to be considered valid
         :param min_distance_between_matches: min distance between matches. If matches are closer than this, the first one will be chosen (i think)
         """
         self.tokenizer = tokenizer
+        self.dh_extract_method = dh_extract_method
         self.ngram_size = ngram_size
         self.skip_gram_size = self.ngram_size - 1
         self.ght = Gemara_Hashtable(self.skip_gram_size)
@@ -374,17 +376,38 @@ class ParallelMatcher:
             self.with_scoring = True
             self.calculate_score = calculate_score
 
-    def match(self, index_list=None, tc_list=None, use_william=False, output_root="", return_obj=False):
+
+    def reset(self):
+        self.ght = Gemara_Hashtable(self.skip_gram_size)
+
+    def filter_matches_by_score_and_duplicates(self, matches, min_score=30):
+        '''
+        :param matches: List of Mesorah_Matches
+        :param min_score: The minimum score found by the callback function, calculate_score
+
+        It removes anything with a score less than min_score and also removes duplicate matches.
+
+        :return:
+        '''
+        matches = [x.b.ref for x in matches if x.score >= min_score]
+        match_set = set()
+        for match in matches:
+            match_set.add(match)
+        return list(match_set)
+
+    def match(self, index_list=None, tc_list=None, comment_index_list=None, use_william=False, output_root="", return_obj=False):
         """
 
         :param tokenize_words: f(str) -> list[str] exactly what it sounds like
         :param list[str] index_list: list of index names to match against
         :param list[TextChunk] tc_list: alternatively, you can give a list of TextChunks to match to
+        :param list[int] comment_index_list: list of indexes which correspond to either `index_list` or `tc_list` (whichever is not None). each index in this list indicates that the corresponding element should be treated as a `comment` meaning `self.dh_extract_method()` will be used on it.
         :param bool all_to_all: if True, make between everything either in index_list or ref_list. False means results get filtered to only match inter-ref matches
         :param bool parallelize: Do you want this to run in parallel? WARNING: this uses up way more RAM. and this is already pretty RAM-hungry
         :param bool use_william: True if you want to use William Davidson version for Talmud refs
         :return: mesorat_hashas, mesorat_hashas_indexes
         """
+        self.reset()
         start_time = pytime.time()
 
         if not index_list is None and not tc_list is None:
@@ -403,6 +426,12 @@ class ParallelMatcher:
         talmud_titles = talmud_titles[:talmud_titles.index('Bava Batra') + 1]
         text_index_map_data = [None for yo in xrange(len(unit_list))]
         for iunit, unit in enumerate(unit_list):
+            if comment_index_list is not None and iunit in comment_index_list:
+                # this unit is a comment. modify tokenizer so that it applies dh_extract_method first
+                unit_tokenizer = lambda x: self.tokenizer(self.dh_extract_method(x))
+            else:
+                unit_tokenizer = self.tokenizer
+
             if self.verbose: print "Hashing {}".format(unit)
             if using_indexes:
                 index = library.get_index(unit)
@@ -410,15 +439,15 @@ class ParallelMatcher:
                     vtitle = 'William Davidson Edition - Aramaic'
                 else:
                     vtitle = None
-                unit_il, unit_rl = index.text_index_map(self.tokenizer, lang='he', vtitle=vtitle, strict=False)
+                unit_il, unit_rl = index.text_index_map(unit_tokenizer, lang='he', vtitle=vtitle, strict=False)
                 unit_list_temp = index.nodes.traverse_to_list(
                     lambda n, _: TextChunk(n.ref(), "he", vtitle=vtitle).ja().flatten_to_array() if not n.children else [])
-                unit_wl = [w for seg in unit_list_temp for w in self.tokenizer(seg)]
+                unit_wl = [w for seg in unit_list_temp for w in unit_tokenizer(seg)]
                 unit_str = unit
             else:
                 assert isinstance(unit, TextChunk)
-                unit_il, unit_rl, total_len = unit.text_index_map(self.tokenizer)
-                unit_wl = [w for seg in unit.ja().flatten_to_array() for w in self.tokenizer(seg)]
+                unit_il, unit_rl, total_len = unit.text_index_map(unit_tokenizer)
+                unit_wl = [w for seg in unit.ja().flatten_to_array() for w in unit_tokenizer(seg)]
                 unit_str = unit._oref.normal()
             text_index_map_data[iunit] = (unit_wl, unit_il, unit_rl, unit_str)
             total_len = len(unit_wl)

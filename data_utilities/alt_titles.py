@@ -4,7 +4,8 @@ import re
 from sefaria.model import *
 from sefaria.helper.text import find_and_replace_in_text
 from sefaria.system.exceptions import BookNameError
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
+
 # from sefaria.local_settings import UID
 
 def rambam_alt_names():
@@ -213,8 +214,20 @@ def save_alt_titles(alt_tit_dict):
             idx.nodes.add_title(nt, "he")
             idx.save(override_dependencies=True)
 
+def change_gershayim(catagory):
+    # title, vtitle, lang - can come from the vtitle.
+    # replace_dict = OrderedDict({u"\u05f3": u"'", u"(?:''|\u05f4|\u201d)": u'"'})
+    replace_dict = OrderedDict({u"\u05f3": u"'", u"''": u'"', u"\u05f4":u'"', u"\u201d)":u'"'})
+    uid = 30044
+    inds = library.get_indexes_in_category(catagory)
+    for title in inds:
+        vSet = library.get_index(title).versionSet().array()
+        for v in vSet:
+            vtitle = v.versionTitle
+            for frm, to in replace_dict.items():
+                find_and_replace_in_text(title, vtitle, u'he', frm, to, 30044)
+
 if __name__ == "__main__":
     # rambam_alt = rambam_alt_names()
     more_titles = alt_name_dict()
     save_alt_titles(more_titles)
-    find_and_replace_in_text(u'Ramban on Exodus', u'On Your Way', u'he', u"''", u'''"''', 30044)

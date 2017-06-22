@@ -152,7 +152,7 @@ class XML_to_JaggedArray:
 
 
 
-    def post(self, ref, text):
+    def post(self, ref, text, not_last_key):
         if self.post_info["server"] != "local":
             send_text = {
                     "text": text,
@@ -160,7 +160,10 @@ class XML_to_JaggedArray:
                     "versionSource": self.post_info["versionSource"],
                     "versionTitle": self.post_info["versionTitle"]
                 }
-            post_text(ref, send_text, server=self.post_info["server"])
+            if not_last_key:
+                post_text(ref, send_text, server=self.post_info["server"])
+            else:
+                post_text(ref, send_text, server=self.post_info["server"], index_count="on")
         else:
             print "Not Posting...."
             assert Ref(ref)
@@ -381,12 +384,19 @@ class XML_to_JaggedArray:
     def interpret_and_post(self, node, running_ref, prev="string"):
         if self.assertions:
             assert Ref(running_ref), running_ref
-        for key in node:
+        sorted_keys = sorted(node.keys())
+        last_key = sorted_keys[len(sorted_keys) - 1]
+        not_last_key = True
+        for key in sorted_keys:
+            if last_key == key:
+                not_last_key = False
+
             if key != "text" and key != "subject":
                 new_running_ref = "%s, %s" % (running_ref, key)
                 if self.assertions:
                     assert Ref(new_running_ref)
                 self.interpret_and_post(node[key], new_running_ref, "string")
+
             elif key == "subject" and len(node[key]) > 0:
                 if self.assertions:
                     assert Ref(running_ref)
@@ -395,7 +405,8 @@ class XML_to_JaggedArray:
                     assert Ref(new_running_ref)
                 print new_running_ref
                 text = self.parse(node[key], self.footnotes)
-                self.post(new_running_ref, text)
+                self.post(new_running_ref, text, not_last_key)
+
             elif key == "text" and len(node[key]) > 0: #if len(node.keys()) == 2 and "text" in node.keys() and "subject" in node.keys() and len(node['text']) > 0:
                 if self.assertions:
                     assert Ref(running_ref)
@@ -409,7 +420,7 @@ class XML_to_JaggedArray:
                 else:
                     text = self.convertManyIntoOne(node["text"], running_ref.split(", ")[-1])
                 print running_ref
-                self.post(running_ref, text)
+                self.post(running_ref, text, not_last_key)
 
 
 

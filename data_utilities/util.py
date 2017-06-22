@@ -1129,3 +1129,44 @@ class Singleton(type):
         if cls._instances.get(cls) is None:
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
+
+
+def set_ranges_between_refs(refs, section_ref):
+    '''
+    :refs: an unsorted list of segments such as [Ref(Rashi on Genesis 2:11), Ref(Rashi on Genesis 2:4), Ref(Rashi on Genesis 2:10)]
+    where all refs have the same section
+    :section_ref: the section reference for the list of refs, in this case Ref(Rashi on Genesis 2)
+    :return: sorted list of ranged refs where the i-th element is a range from itself to the i+1-th element.
+    The last ref in the list is a range from itself to the final segment in the section, which for Rashi on Genesis 2 is 25.
+    In this case:
+    [Ref(Rashi on Genesis 2:4-9), Ref(Rashi on Genesis 2:10), Ref(Rashi on Genesis 2:11-25)]
+    If an empty list is passed as refs, we simply return a list with one range over the entire section, such as:
+    [Ref(Rashi on Genesis 2:1-25)]
+    '''
+    if refs == []:
+        first_ref = section_ref.subref(1)
+        return [first_ref.to(section_ref.all_segment_refs()[-1])]
+
+    ranged_refs = []
+    len_list = len(refs)
+    refs = sorted(refs, key=lambda x: x.order_id())
+    last_ref = section_ref.all_segment_refs()[-1]
+    for i, ref in enumerate(refs):
+        if ref.is_range():
+            ranged_refs.append(ref)
+            continue
+        assert ref.section_ref() is section_ref
+        if i + 1 == len_list:
+            new_range = ref.to(last_ref)
+        else:
+            next_ref = refs[i+1]
+            if next_ref.sections[-1] == ref.sections[-1]:
+                ranged_refs.append(ref)
+                continue
+            else:
+                d = next_ref._core_dict()
+                d['sections'][-1] -= 1
+                d['toSections'][-1] -= 1
+                new_range = ref.to(Ref(_obj=d))
+        ranged_refs.append(new_range)
+    return ranged_refs

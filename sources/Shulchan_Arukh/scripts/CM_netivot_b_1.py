@@ -36,4 +36,4 @@ root.populate_comment_store()
 errors = b_vol.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'@71', x.text) is not None)
 for i in errors:
     print i
-# root.export()
+root.export()

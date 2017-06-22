@@ -8,7 +8,7 @@ from sources.functions import post_text
 import re
 from sources.functions import *
 
-SERVER="http://proto.sefaria.org"
+SERVER="https://www.sefaria.org"
 class Mishneh_Torah_Commentary:
     def __init__(self, file, segment_marker=None, comment_marker=None):
         self.file = file
@@ -114,20 +114,30 @@ def create_schema(en_title, he_title, c):
         "base_text_titles": [base_text_title],
         "base_text_mapping": "many_to_one",
         "title": en_title,
-        "categories": ["Halakha", "Commentary", "Mishneh Torah", category]
+        "collective_title": c["name"],
+        "categories": ["Halakhah", "Mishneh Torah", "Commentary", c["name"], category]
     }
+    print SERVER
     post_index(index, server=SERVER)
     return en_title
+
+
+def get_alternate_spelling(book):
+    import csv
+    reader = csv.reader(open("spellings.csv"))
+    for row in reader:
+        if book == row[0].decode('utf-8'):
+            return row[1].decode('utf-8')
+    raise Exception
 
 
 def post_commentator(commentator, books, hebrew_to_english):
     for book_name, book_text in books.items():
         he_book_name = u"{}, {}".format(u"משנה תורה", book_name)
         if he_book_name not in hebrew_to_english:
-            print he_book_name
-            continue
-        else:
-            en_book_name = hebrew_to_english[he_book_name]
+            he_book_name = get_alternate_spelling(he_book_name)
+            assert he_book_name in hebrew_to_english
+        en_book_name = hebrew_to_english[he_book_name]
         book_name = create_schema(en_book_name, he_book_name, commentator)
         print book_name
         book_text = {
@@ -139,6 +149,26 @@ def post_commentator(commentator, books, hebrew_to_english):
         post_text(book_name, book_text, server=SERVER)
 
 
+
+def terms(dict):
+    add_term(dict["name"], dict["he_name"], scheme="commentary_works", server=SERVER)
+
+
+
+def redo_kessef():
+    kessef_titles = library.get_indices_by_collective_title("Kessef Mishneh")
+    for book_title in kessef_titles:
+        index = library.get_index(book_title)
+        old_categories = index.categories
+        assert len(old_categories) == 5 and old_categories[4].startswith("Sefer")
+        new_categories = ["Halakhah", "Mishneh Torah", "Commentary", "Kessef Mishneh", old_categories[4]]
+        new_dict = index.contents()
+        new_dict["categories"] = new_categories
+        index.load_from_dict(new_dict)
+        index.save()
+
+
+
 if __name__ == "__main__":
     rambam_books = map(lambda x: library.get_index(x), library.get_indexes_in_category("Mishneh Torah"))
     hebrew_to_english = {rambam_book.get_title("he"): rambam_book.get_title("en") for rambam_book in rambam_books}
@@ -147,6 +177,9 @@ if __name__ == "__main__":
     lehem = {"name": "Lehem Mishneh", "segment_marker": 'color:RGB(45,104,176);', "comment_marker": "color:RGB(89,45,0);", "he_name": u"לחם משנה", "exclude": None}
     hasagot = {"name": "Hasagot HaRaavad", "comment_marker": 'color:RGB(15,74,172);', "segment_marker": 'color:RGB(45,104,176);', "he_name": u"""השגות הראב"ד""", "exclude": None}
 
+    terms(maggid)
+    terms(lehem)
+    terms(hasagot)
     results = {}
     results["Maggid Mishneh"] = {}
     results["Lehem Mishneh"] = {}
@@ -172,10 +205,6 @@ if __name__ == "__main__":
     for file in files:
         #if file in skip:
         #    continue
-        if file != "nezikin.html" and dont_start:
-            continue
-        else:
-            dont_start = False
         MTC = Mishneh_Torah_Commentary(file)
 
         for c in [maggid, lehem, hasagot]:

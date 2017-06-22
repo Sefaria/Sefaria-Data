@@ -3,6 +3,7 @@
 import re
 import codecs
 from bs4 import BeautifulSoup, Tag
+from xml.sax.saxutils import escape, unescape
 from data_utilities.util import Singleton, getGematria, numToHeb, he_ord, he_num_to_char
 
 """
@@ -251,6 +252,8 @@ class Element(object):
         for child in self.get_child():
             child.convert_pattern_to_itag(commentator, pattern, group, order_callback)
 
+    def render(self):
+        return [child.render() for child in self.get_child()]
 
     def __unicode__(self):
         return unicode(self.Tag)
@@ -373,8 +376,10 @@ class Record(Element):
             en_title.decompose()
 
     def get_simanim(self):
-        #Todo
-        pass
+        simanim = []
+        for v in self.get_child():
+            simanim.extend(v.get_child())
+        return simanim
 
     def add_volume(self, raw_text, vol_num, enforce_order=True):
         """
@@ -403,6 +408,16 @@ class Record(Element):
         for child in self.get_child():
             child.load_xrefs_to_commentstore(self.titles['en'])
 
+    def render(self):
+        rendered_simanim = []
+        for siman in self.get_simanim():
+            while siman.num - len(rendered_simanim) > 1:
+                rendered_simanim.append([])
+            rendered_simanim.append(siman.render())
+        return rendered_simanim
+
+    def collect_links(self):
+        return [link for siman in self.get_simanim() for link in siman.collect_links()]
 
 
 class BaseText(Record):
@@ -471,6 +486,9 @@ class Commentaries(Element):
         except KeyError:
             return None
         return self.get_commentary_by_id(commentary_id)
+
+    def render(self):
+        raise NotImplementedError
 
 
 
@@ -634,10 +652,10 @@ class Volume(OrderedElement):
             passed = siman.validate_references(pattern, code, group, key_callback)
         return passed
 
-    def set_rid_on_seifim(self, base_id=0):
+    def set_rid_on_seifim(self, base_id=0, cyclical=False):
         book_id = self.get_book_id()
         for siman in self.get_child():
-            siman.set_rid_on_seifim(base_id, book_id)
+            siman.set_rid_on_seifim(base_id, book_id, cyclical=cyclical)
 
     def unlink_seifim(self, bad_rid):
         """
@@ -676,9 +694,9 @@ class Volume(OrderedElement):
 
         for item in validation_set:
             if comment_store.get(item['id']) is None:
-                errors.append("xref with id {} not found in comment store".format(item['id']))
+                errors.append(u"xref with id {} not found in comment store".format(item['id']))
             elif any([i not in comment_store[item['id']] for i in required_fields]):
-                errors.append("xref with id {} missing required field".format(item['id']))
+                errors.append(u"xref with id {} missing required field".format(item['id']))
         if len(errors) == 0:
             print "No errors found"
         return errors
@@ -725,7 +743,7 @@ class Siman(OrderedElement):
 
     def mark_cyclical_seifim(self, pattern, start_mark=None, specials=None, enforce_order=False):
         def get_label(match_object):
-            label = he_ord(match_object.group(1))
+            label = match_object.group(1)
             return {'label': label}
 
         self._mark_children(pattern, start_mark, specials, add_child_callback=self._add_cyclical_seif,
@@ -807,6 +825,9 @@ class Siman(OrderedElement):
                 matches.append(seif.num)
         return matches
 
+    def collect_links(self):
+        return [link for seif in self.get_child() for link in seif.collect_links()]
+
 
 
 class Seif(OrderedElement):
@@ -845,27 +866,50 @@ class Seif(OrderedElement):
         is_special = False
         element_words = []
         for word in text_array:
+
             if re.search(start_special, word):
                 if is_special:  # Two consecutive special patterns have been found
                     raise AssertionError('Seif {}: Two consecutive formatting patterns ({}) found'.format(self.num, start_special))
+
                 else:
-                    word = re.sub(start_special, u'', word)
+                    word_is_special = True
+                    # if pattern appeared after word, exclude the word from the special markup
+                    if re.search(u'{}$'.format(start_special), word):
+                        element_words.append(re.sub(start_special, u'', word))
+                        word_is_special = False
+
                     if len(element_words) > 0:
                         element_words.append(u'')  # adds a space to the end of the text element
                         self.add_special(u' '.join(element_words), name=u'reg-text')
-                    element_words = []
+
+                    if word_is_special:
+                        element_words = [re.sub(start_special, u'', word)]
+                    else:
+                        element_words = []
                     is_special = True
 
             elif re.search(end_special, word):
+                word_is_special = False
                 if is_special:
+                    # if pattern appeared after the word, include the word in the special markup
+                    if re.search(u'{}$'.format(end_special), word):
+                        word_is_special = True
+                        element_words.append(re.sub(end_special, u'', word))
+
                     assert len(element_words) > 0  # Do not allow formatted text with no text
                     element_words.append(u'')
                     self.add_special(u' '.join(element_words), name=name)
-                    element_words = []
                     is_special = False
 
-                word = re.sub(end_special, u'', word)
-            element_words.append(word)
+                    if word_is_special:  # then word has already been added
+                        element_words = []
+                    else:
+                        element_words = [re.sub(end_special, u'', word)]
+
+                else:
+                    element_words.append(re.sub(end_special, u'', word))
+            else:
+                element_words.append(word)
         else:
             if is_special:
                 add_formatted_text(element_words, element_name=name)
@@ -922,7 +966,7 @@ class Seif(OrderedElement):
             return
 
         if comment_store.get(self.rid) is None:
-            raise MissingCommentError("No Xref with id {} exists".format(self.rid))
+            raise MissingCommentError(u"No Xref with id {} exists".format(self.rid))
 
         this_ref = comment_store[self.rid]
         if this_ref.get('commentator_title') is not None:
@@ -930,6 +974,50 @@ class Seif(OrderedElement):
         this_ref['commentator_title'] = title
         this_ref['commentator_siman'] = siman
         this_ref['commentator_seif'] = self.num
+        if self.Tag.has_attr('label'):
+            this_ref['data-label'] = self.Tag['label']
+
+    def render(self):
+        seif_text = u' '.join(child.render() for child in self.get_child())
+        if re.search(u'@', seif_text):
+            # raise AssertionError("found @ marker in xml at {}:{}".format(self.Tag.parent['num'], self.num))
+            print "found @ marker in xml at {}:{}".format(self.Tag.parent['num'], self.num)
+        seif_text = re.sub(u'(<i data-commentator.*?></i>) +', ur'\1', seif_text)  # Remove space between text and itag
+        seif_text = seif_text.replace(u'\n', u' ')
+        seif_text = seif_text.replace(u'*', u'')
+        seif_text = re.sub(ur'([^ ](?=\())|(\)(?=[^ ]))', ur'\g<0> ', seif_text)  # Parenthesis have spaces before and after
+        seif_text = re.sub(ur'\( | +[:)]', lambda x: x.group(0).replace(u' ', u''), seif_text)  # No spaces padding parenthesis or colon
+        seif_text = re.sub(u' +(</.*?>:?)$', ur'\g<1>', seif_text)
+        seif_text = re.sub(u' {2,}', u' ', seif_text)
+        seif_text = re.sub(u'~br~', u'<br>', seif_text)
+        return unescape(seif_text)
+
+    def collect_links(self):
+        links = []
+        if self.rid is None or self.rid == 'no-link':
+            return links
+
+        link_record = CommentStore()[self.rid]
+        for segment in link_record['seif']:
+            base_ref = u'{} {}:{}'.format(link_record['base_title'], link_record['siman'], segment)
+            commentary_ref = u'{} on {} {}:{}'.format(link_record['commentator_title'], link_record['base_title'],
+                                                      link_record['commentator_siman'], link_record['commentator_seif'])
+            itag = {
+                'data-commentator': u'{} on {}'.format(link_record['commentator_title'], link_record['base_title']),
+                'data-order': link_record['commentator_seif']
+            }
+            if self.Tag.has_attr('label'):
+                itag['data-label'] = self.Tag['label']
+            links.append({
+                'refs': [base_ref, commentary_ref],
+                'type': 'commentary',
+                'auto': True,
+                'generated_by': 'Shulchan Arukh Parser',
+                'inline_reference': itag
+            })
+
+        return links
+
 
 class TextElement(Element):
     parent = 'Seif'
@@ -962,7 +1050,7 @@ class TextElement(Element):
             if group is None:
                 order = count[0]
             elif cyclical:
-                order = u'{};{}'.format(he_ord(s.group(group)), count[0])
+                order = u'{};{}'.format(s.group(group), count[0])
             else:
                 order = getGematria(s.group(group))
             return u'<xref id="b{}-c{}-si{}-ord{}">{}</xref>'.format(base_id, com_id, siman_num, order, s.group())
@@ -982,7 +1070,7 @@ class TextElement(Element):
 
         def repl(s):
             data_order = order_callback(s.group(group))
-            return u'<i data-commentator="{}" data-order="{}"></i>'.format(commentator, data_order)
+            return escape(u'<i data-commentator="{}" data-order="{}"></i>'.format(commentator, data_order))
 
         # Make sure pattern will not touch the existing xrefs
         for xref in self.Tag.find_all('xref'):
@@ -993,6 +1081,22 @@ class TextElement(Element):
         new_tag = BeautifulSoup(tagged, 'xml').find(self.Tag.name)
         self.Tag.replace_with(new_tag)
         self.Tag = new_tag
+
+    def render(self):
+        text_list = []
+        for sub_element in self.Tag.contents:
+            if isinstance(sub_element, Tag) and sub_element.name == u'xref':
+                text_list.append(Xref(sub_element).render())
+            else:
+                # text_list.append(re.sub(u'(^ +)|( +$)', u'', unicode(sub_element)))
+                text_list.append(unicode(sub_element))
+
+        if self.Tag.name == u'ramah':
+            return u'<small>{}</small>'.format(u''.join(text_list))
+        elif self.Tag.name == u'dh':
+            return u'<b>{}</b>'.format(u''.join(text_list))
+        else:
+            return u''.join(text_list)
 
 
 class Xref(Element):
@@ -1032,9 +1136,13 @@ class Xref(Element):
     def load_comments_to_commentstore(self, *args, **kwargs):
         raise NotImplementedError("Can't load comments at Xref depth")
 
-    def render_itag(self):
+    def render(self):
         data = CommentStore()[self.id]
-        return u'<i data-commentator="{}" data-order="{}"/>'.format(data['commentary_title'], data['commentator_seif'])
+        if data.get('data-label'):
+            return u'<i data-commentator="{}" data-order="{}" data-label="{}"></i>'.format(data['commentator_title'],
+                                                                        data['commentator_seif'], data['data-label'])
+        else:
+            return u'<i data-commentator="{}" data-order="{}"/></i>'.format(data['commentator_title'], data['commentator_seif'])
 
 module_locals = locals()
 

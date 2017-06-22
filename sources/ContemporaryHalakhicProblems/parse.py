@@ -3,7 +3,7 @@
 __author__ = 'stevenkaplan'
 
 from data_utilities.XML_to_JaggedArray import *
-SERVER = "https://www.sefaria.org"
+SERVER = "http://ste.sefaria.org"
 
 def cleanNodeName(text, titled=False):
     text = cleanText(text)

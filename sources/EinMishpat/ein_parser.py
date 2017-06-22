@@ -559,12 +559,12 @@ class Rambam(object):
 def rambam_name_table():
     names = library.get_indexes_in_category("Mishneh Torah")
     en_names = names
-    he_raw = [library.get_index(name).all_titles('he')[0] for name in names]
+    he_raw = [library.get_index(name).get_title(u'he') for name in names]
     he_names = []
     name_dict = pygtrie.CharTrie()
     for he, en in zip(he_raw, en_names):
-        s = re.split(u''' הלכות | הלכה | הל' | הלכ''' , he)
-        if len(s)>1:
+        s = re.split(u'''(?:הלכות|הלכה|הל'|הלכ)\s''', he)
+        if len(s) > 1:
             he = s[1]
             he_names.append(he)
             name_dict[he] = en
@@ -979,4 +979,4 @@ if __name__ == "__main__":
     # for file in done:
     #     reverse_collapse('done/{}'.format(file), 'collapsed/{}_collapsed'.format(file[:-4]))
     # clllapse_kidd = reverse_collapse('small_letters/kidushin_little_letters.csv', 'small_letters/collapsed_kidushin')
-    parsed = run2('done/megillah_fixed', 'small_letters/megillah')
+    parsed = run2('csvQA/megillah_little_letters', 'csvQA/megillah_little_letters')

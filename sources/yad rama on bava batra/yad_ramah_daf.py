@@ -125,7 +125,8 @@ class Yad_Ramah:
 
 
     def siman_filter(self, text_segment):
-        return self.siman_re.match(text_segment)
+        matched = re.compile(u"^<b>([\u05D0-\u05EA]+)\. </b>").match(text_segment)
+        return matched
 
 
     def dh_func(self, string):
@@ -141,7 +142,7 @@ if __name__ == "__main__":
     text, dh_dict = yad_ramah.structureText(text)
     links = []
     text = convertDictToArray(text)
-    results = get_matches_for_dict_and_link(dh_dict, "Bava Batra", "Yad Ramah", server="http://ste.sefaria.org", rashi_filter=yad_ramah.siman_filter, dh_extract_method=yad_ramah.dh_func)
+    results = get_matches_for_dict_and_link(dh_dict, "Bava Batra", "Yad Ramah", server="http://proto.sefaria.org", rashi_filter=yad_ramah.siman_filter, dh_extract_method=yad_ramah.dh_func)
 
 
     #yad_ramah.create_schema()
