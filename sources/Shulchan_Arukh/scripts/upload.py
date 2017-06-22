@@ -86,6 +86,11 @@ def shulchan_arukh_post_parse(shulchan_ja):
             title_text = re.sub(u' *\n *', u'', xml_siman.Tag.contents[0].text)
             siman_ja[0] = u'<b>{}</b><br>{}'.format(title_text, siman_ja[0])
 
+        for i, seif in enumerate(siman_ja):
+            seif = re.sub(ur'\("\)', u'', seif)
+            seif = re.sub(u' {2,}', u' ', seif)
+            siman_ja[i] = seif
+
 
 
 def split_segments(text_ja):
