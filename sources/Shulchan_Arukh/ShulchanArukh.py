@@ -866,27 +866,50 @@ class Seif(OrderedElement):
         is_special = False
         element_words = []
         for word in text_array:
+
             if re.search(start_special, word):
                 if is_special:  # Two consecutive special patterns have been found
                     raise AssertionError('Seif {}: Two consecutive formatting patterns ({}) found'.format(self.num, start_special))
+
                 else:
-                    word = re.sub(start_special, u'', word)
+                    word_is_special = True
+                    # if pattern appeared after word, exclude the word from the special markup
+                    if re.search(u'{}$'.format(start_special), word):
+                        element_words.append(re.sub(start_special, u'', word))
+                        word_is_special = False
+
                     if len(element_words) > 0:
                         element_words.append(u'')  # adds a space to the end of the text element
                         self.add_special(u' '.join(element_words), name=u'reg-text')
-                    element_words = []
+
+                    if word_is_special:
+                        element_words = [re.sub(start_special, u'', word)]
+                    else:
+                        element_words = []
                     is_special = True
 
             elif re.search(end_special, word):
+                word_is_special = False
                 if is_special:
+                    # if pattern appeared after the word, include the word in the special markup
+                    if re.search(u'{}$'.format(end_special), word):
+                        word_is_special = True
+                        element_words.append(re.sub(end_special, u'', word))
+
                     assert len(element_words) > 0  # Do not allow formatted text with no text
                     element_words.append(u'')
                     self.add_special(u' '.join(element_words), name=name)
-                    element_words = []
                     is_special = False
 
-                word = re.sub(end_special, u'', word)
-            element_words.append(word)
+                    if word_is_special:  # then word has already been added
+                        element_words = []
+                    else:
+                        element_words = [re.sub(end_special, u'', word)]
+
+                else:
+                    element_words.append(re.sub(end_special, u'', word))
+            else:
+                element_words.append(word)
         else:
             if is_special:
                 add_formatted_text(element_words, element_name=name)
