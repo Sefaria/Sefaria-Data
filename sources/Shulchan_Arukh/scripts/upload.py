@@ -86,6 +86,11 @@ def shulchan_arukh_post_parse(shulchan_ja):
             title_text = re.sub(u' *\n *', u'', xml_siman.Tag.contents[0].text)
             siman_ja[0] = u'<b>{}</b><br>{}'.format(title_text, siman_ja[0])
 
+        for i, seif in enumerate(siman_ja):
+            seif = re.sub(ur'\("\)', u'', seif)
+            seif = re.sub(u' {2,}', u' ', seif)
+            siman_ja[i] = seif
+
 
 
 def split_segments(text_ja):
@@ -108,6 +113,7 @@ def create_simple_index(en_title, he_title, commentator, depth=2, *args, **kwarg
         jnode.add_structure(["Siman", "Seif"], address_types=["Siman", "Seif"])
     elif depth == 3:
         jnode.add_structure(["Siman", "Seif", "Paragraph"], address_types=["Siman", "Seif", "Integer"])
+        jnode.toc_zoom = 2
     else:
         raise ValueError("Depth must be set to 2 or 3")
     jnode.validate()
@@ -120,8 +126,6 @@ def create_simple_index(en_title, he_title, commentator, depth=2, *args, **kwarg
         'alt_structs': {'Topic': get_alt_struct(en_title)},
         'schema': jnode.serialize()
     }
-    if depth == 3:
-        index_dict['toc_zoom'] = 2
     return index_dict
 
 
