@@ -423,8 +423,9 @@ def post_index(index, server=SEFARIA_SERVER):
         'json': indexJSON,
         'apikey': API_KEY
     }
+    hdr = {"User-Agent": ""}
     data = urllib.urlencode(values)
-    req = urllib2.Request(url, data)
+    req = urllib2.Request(url, data, headers=hdr)
     try:
         response = urllib2.urlopen(req)
         print response.read()
@@ -447,8 +448,9 @@ def post_link(info, server=SEFARIA_SERVER):
         'json': infoJSON,
         'apikey': API_KEY
     }
+    hdr = {"User-Agent": ""}
     data = urllib.urlencode(values)
-    req = urllib2.Request(url, data)
+    req = urllib2.Request(url, data, headers=hdr)
     try:
         response = urllib2.urlopen(req)
         x= response.read()
@@ -560,7 +562,8 @@ def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SER
             url += '?skip_links={}'.format(skip_links)
     values = {'json': textJSON, 'apikey': API_KEY}
     data = urllib.urlencode(values)
-    req = urllib2.Request(url, data)
+    hdr = {"User-Agent": ""}
+    req = urllib2.Request(url, data, headers=hdr)
     try:
         response = urllib2.urlopen(req)
         x= response.read()
@@ -666,8 +669,10 @@ def post_term(term_dict, server=SEFARIA_SERVER):
     term_JSON = json.dumps(term_dict)
     url = '{}/api/terms/{}'.format(server, urllib.quote(name))
     values = {'json': term_JSON, 'apikey': API_KEY}
+    hdr = {"User-Agent": ""}
+
     data = urllib.urlencode(values)
-    req = urllib2.Request(url, data)
+    req = urllib2.Request(url, data, headers=hdr)
     try:
         response = urllib2.urlopen(req)
         x = response.read()

@@ -1147,10 +1147,14 @@ def set_ranges_between_refs(refs, section_ref):
         first_ref = section_ref.subref(1)
         return [first_ref.to(section_ref.all_segment_refs()[-1])]
 
+
     ranged_refs = []
     len_list = len(refs)
     refs = sorted(refs, key=lambda x: x.order_id())
     last_ref = section_ref.all_segment_refs()[-1]
+    #print "Refs: {}".format(refs)
+    #print "Section: {}".format(section_ref)
+    #print "Last ref: {}".format(last_ref)
     for i, ref in enumerate(refs):
         if ref.is_range():
             ranged_refs.append(ref)

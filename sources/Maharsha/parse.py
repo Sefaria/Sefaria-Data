@@ -29,6 +29,7 @@ class Maharsha:
         whatever the category is we increment the maharam line and post the link between maharam and the appropriate
         book based on the category. remember to deal with paragraph case and gemara case.
         '''
+        self.dont_post = False #if an error occurs in parsing
         self.list_of_dafs = []
         self.server = server
         self.title = title
@@ -163,6 +164,7 @@ class Maharsha:
             #prev_line = " ".join(prev_line.split(" ")[0:5])
             #orig_line = " ".join(orig_line.split(" ")[0:5])
             print u"{} before {}\n".format(he_prev, he_current)
+            self.dont_post = True
             #print u"The line starting: {} is {}\n".format(prev_line, he_prev)
             #print u"It came before the line starting {}, which is {}\n\n".format(orig_line, he_current)
 
@@ -217,13 +219,23 @@ class Maharsha:
         else:
             self.addDHComment(self.prev_dh, comment, category, same_dh)
 
- 
+
+    def pre_parse(self, file):
+        arr_text = []
+        for line in file:
+            temp_list = check_for_other_daf(line)
+            for comment in temp_list:
+                arr_text.append(comment)
+        return arr_text
+
     def parseText(self, file, len_masechet):
         this_line = False
         prev_line_require_text = False
         prev_line = ""
-        for line in file:
+        lines = self.pre_parse(file)
+        for line in lines:
             orig_line = line
+            line = line.encode('utf-8')
 
             if line.find("@00") >= 0 or line.find("0") == 0:
                 #if len(line.split("@")) > 2:
@@ -245,6 +257,10 @@ class Maharsha:
             if line[0] == " ":    #not part of the logic, just solving something caused by the text file
                 start = line.find("@11")
                 line = line[start:]
+
+            if len(re.split(ur'@\d{2}\u05D3\u05E3|@\d{2}\u05D7"\u05D0', line.decode('utf-8'))) > 2:
+                print "BAD FORMATTING of @11"
+                check_for_other_daf(line)
 
             if line.find("@11")>=0:
                 category = ""
@@ -460,8 +476,10 @@ class Maharsha:
 def split_files_agadot_halachot():
     files = [file.decode('utf-8') for file in os.listdir(".") if file.endswith(".txt") and not "2" in file and not file.startswith("chid")
              and not "comm_wout_base" in file]
+    files = [file for file in files]
     prev_line_agadic = False
     for file in files:
+        print file
         if "Arakhin" in file:
             ch_ha = open(u"chidushei_agadot_Arakhin.txt", 'w')
         elif "Rosh" in file:
@@ -512,6 +530,7 @@ def get_titles(file):
 def split_lines_into_amudim():
     files = [file.replace(".txt", "").decode('utf-8') for file in os.listdir("./hebrew") if not file.endswith("2.txt") and file.endswith(".txt")]
     for file in files:
+        print file
         f = open("./hebrew/"+file+".txt", 'r')
         he_title, title = get_titles(file)
 
@@ -523,14 +542,14 @@ def split_lines_into_amudim():
             if len(line.replace(" ", "")) == 0:
                 continue
 
-            if re.compile(u'^@\d+[דף|ח"א]+').match(line.decode('utf-8')) is None:
+            if re.compile(u'^(@\d{2}\u05D3\u05E3|@\d{2}\u05D7"\u05D0)').match(line.decode('utf-8')) is None:
                 if line[0] == "0" or line.startswith("@00") or line.startswith("@99"):
                     continue
                 else:
                     last_pos = len(arr_text) - 1
                     if arr_text == []:
                         print file + " has intro.\n"
-                        break
+                        continue
                     arr_text[last_pos] += "<br/>"+line
                     prev_special = True
                     continue
@@ -554,7 +573,10 @@ def split_lines_into_amudim():
                 continue
             what_to_write = check_for_other_daf(line)
             for each_line in what_to_write:
-                f.write(each_line)
+                try:
+                    f.write(each_line.encode('utf-8'))
+                except:
+                    f.write(each_line)
 
         f.close()
 
@@ -582,12 +604,19 @@ def stamp_amudim_with_11s(line, prev_chid_agadot):
     return lines, prev_chid_agadot
 
 
+def force_encoding(comment):
+    import chardet
+    encoding = chardet.detect(comment)
+    if type(comment) is str:
+        return comment.decode('utf-8')
+
 def check_for_other_daf(comment):
-    lines = re.split('(@\d+דף)', comment)
+    comment = force_encoding(comment)
+    lines = re.split(ur'(@\d{2}\u05D3\u05E3|@\d{2}\u05D7"\u05D0)', comment)
+    text_list = []
     if len(lines) is 1:
-        return [comment + "\n"]
+        text_list = [comment + "\n"]
     else:
-        text_list = []
         if lines[0] == "":
             lines = lines[1:]
         if len(lines) % 2 == 1:
@@ -597,8 +626,9 @@ def check_for_other_daf(comment):
         for i in range(len(lines)):
             text_list.append(lines[i]+lines[i+1]+"\n")
             if i == len(lines) - 2:
-                return text_list
-    pass
+                break
+    return text_list
+
 
 
 
@@ -607,25 +637,32 @@ def check_for_other_daf(comment):
 
 if __name__ == "__main__":
     done = []
-    split_lines_into_amudim()
-    split_files_agadot_halachot()
-
+    #split_lines_into_amudim()
+    #split_files_agadot_halachot()
+    dont_start = True
     files = [file for file in os.listdir(".") if file.startswith("chidushei_hal") or (file.startswith("chidushei") and ("Arakhin" in file or "Rosh" in file))]
     for file in files:
+        if "Bava" in file or "Sotah" in file:
+            continue
+        if dont_start and "Moed Katan" not in file:
+            continue
+        else:
+            dont_start = False
         masechet = file.split(".txt")[0].split("_")[-1].title()
         print file
         len_masechet = len(Ref(masechet).text('he').text)
         if file.startswith("chidushei_ag"):
             title = "Chidushei Agadot"
             heTitle = u"חידושי אגדות"
-            obj = Maharsha(masechet, title, heTitle, server="http://localhost:8000")
+            obj = Maharsha(masechet, title, heTitle, server="http://proto.sefaria.org")
         elif file.startswith("chidushei_ha"):
             title = "Chidushei Halachot"
             heTitle = u"חדושי הלכות"
-            obj = Maharsha(masechet, title, heTitle, server="http://localhost:8000")
+            obj = Maharsha(masechet, title, heTitle, server="http://proto.sefaria.org")
         obj.parseText(open("./"+file), len_masechet)
-        if len(obj.comm_dict) > 0:
-            #obj.create_index(masechet)
+
+        if len(obj.comm_dict) > 0 and obj.dont_post is False:
+            obj.create_index(masechet)
             text_to_post = convertDictToArray(obj.comm_dict)
             send_text = {
                                 "versionTitle": "Vilna Edition",
@@ -633,5 +670,5 @@ if __name__ == "__main__":
                                 "language": "he",
                                 "text": text_to_post,
                         }
-            #post_text("{} on {}".format(title, masechet), send_text, "on", server="http://localhost:8000")
-            #obj.postLinks(masechet)
+            post_text("{} on {}".format(title, masechet), send_text, "on", server="http://proto.sefaria.org")
+            obj.postLinks(masechet)

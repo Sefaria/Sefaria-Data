@@ -5,7 +5,7 @@ from sources.functions import *
 from data_utilities.dibur_hamatchil_matcher import *
 
 
-SERVER = "http://proto.sefaria.org"
+SERVER = "https://www.sefaria.org"
 
 
 def get_DH_comment(line):
@@ -96,7 +96,9 @@ def get_DH_comment(line):
 
 def create_schema():
     root = SchemaNode()
-    root.add_primary_titles("Alshich on Torah", u"אלשיך על תורה")
+    root.add_primary_titles("Alshich on Torah", u"אלשיך על התורה")
+    root.add_title(u"תורת משה", lang='he')
+    root.add_title("Torat Moshe", lang='en')
 
     books = library.get_indexes_in_category("Torah", full_records=True)
     for book in books:
@@ -114,7 +116,7 @@ def create_schema():
         "collective_title": "Alshich",
         "base_text_titles": ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"],
         "categories": ["Tanakh", "Commentary"],
-        "title": u"Alshich on Torah"
+        "title": u"Alshich on Torah",
         }
     post_index(index, server=SERVER)
 
@@ -146,7 +148,7 @@ def make_links(ref, text):
 
 
 if __name__ == "__main__":
-    #add_term("Alshich", u"אלשיך", "commentary_works", SERVER)
+    add_term("Alshich", u"אלשיך", "commentary_works", SERVER)
     files = [file for file in os.listdir("./") if not file == "intro.txt" and file.endswith(".txt")]
     create_schema()
     for file in files:
