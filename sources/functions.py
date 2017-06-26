@@ -392,7 +392,7 @@ def http_request(url, params=None, json_payload=None, method="GET"):
     success = True
     try:
         json_response = response.json()
-        if json_response.get("error"):
+        if isinstance(json_response, dict) and json_response.get("error"):
             success = False
     except ValueError:
         success = False
@@ -477,7 +477,7 @@ def hasTags(comment):
 @weak_connection
 def post_link(info, server=SEFARIA_SERVER):
     url = server+'/api/links/'
-    return http_request(url, json_payload=info, method="POST")
+    return http_request(url, params={'apikey': API_KEY} ,json_payload=info, method="POST")
     # infoJSON = json.dumps(info)
     # values = {
     #     'json': infoJSON,
@@ -704,7 +704,7 @@ def post_term(term_dict, server=SEFARIA_SERVER):
     name = term_dict['name']
     # term_JSON = json.dumps(term_dict)
     url = '{}/api/terms/{}'.format(server, urllib.quote(name))
-    return http_request(url, params={'apikey': API_KEY}, json_payload=term_dict)
+    return http_request(url, params={'apikey': API_KEY}, json_payload=term_dict, method="POST")
     # values = {'json': term_JSON, 'apikey': API_KEY}
     # data = urllib.urlencode(values)
     # req = urllib2.Request(url, data)
