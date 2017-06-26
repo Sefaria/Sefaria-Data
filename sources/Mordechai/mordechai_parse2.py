@@ -72,6 +72,7 @@ class Tractate:
             if remez_segment["Starting Ref"]["Hagahot"]:
                 w_ref+="Amendments, "
             remez_node.wholeRef = w_ref+make_remez_range(remez_segment)
+            print remez_node.wholeRef 
             en_title = "Remez "+str(remez_segment["Starting Ref"]["Remez"])+" Through "+str(remez_segment["Ending Ref"]["Remez"])
             he_title = u"רמז"+u" "+numToHeb(remez_segment["Starting Ref"]["Remez"])+u" עד "+numToHeb(remez_segment["Ending Ref"]["Remez"])
             remez_node.key = en_title
@@ -98,8 +99,10 @@ class Tractate:
         remez_index=[]
         daf_refs=[]
         in_hagahot = False
+        last_paragraph = {}
         for line in lines:
             if u"הגהות דשייכי" in line:
+                remez_index[-1]["Terminating Ref"]=last_paragraph
                 perek_list.append(perek_box)
                 self.text = perek_list
                 perek_box=[]
@@ -107,36 +110,26 @@ class Tractate:
                 in_hagahot=True
             for paragraph in line.split(u":"):
                 if not_blank(paragraph):
-                    perek_box.append(fix_markers(paragraph)+u":")
-            for remez in re.findall(ur"@20.*?@01",line):
-                #designed so entries are index locations (starting at 0)
-                remez_index.append({"Remez":getGematria(remez.replace(u"רמז","")),"Perek":len(perek_list),"Paragraph":len(perek_box),"Hagahot":in_hagahot})
-            for daf_ref in re.findall(ur"@10.*?@01",line):
-                
-                if u"ע\"א" in daf_ref:
-                    amud="a"
-                elif u"ע\"ב" in daf_ref:
-                    amud="b"
-                else:
-                    amud="a-b"
-                """
-                daf_refs.append({"Daf":getGematria(clean_daf_ref(daf_ref)),"Amud":amud,"Perek":len(perek_list),"Paragraph":len(perek_box),"Hagahot":in_hagahot})
-                """
-                if in_hagahot:
-                    perek= get_perek(Ref(self.record_name_en+" "+str(getGematria(clean_daf_ref(daf_ref)))+amud))
-                    if perek-1!=len(perek_list):
-                        perek_list.append(perek_box)
-                        perek_box=[]
-                        #if difference is exactly 1, we need to add. Otherwise, leave it alone
-                        for x in range(perek-len(perek_list)-1):
-                            perek_list.append([])
-            if u"סליק פירקא" in line:
+                    for remez in re.findall(ur"@20.*?@01",paragraph):
+                        #designed so entries are index locations (starting at 0)
+                        if len (remez_index)>0 and "Terminating Ref" not in remez_index[-1]:
+                            remez_index[-1]["Terminating Ref"]=last_paragraph
+                        remez_index.append({"Remez":getGematria(remez.replace(u"רמז","")),"Perek":len(perek_list),"Paragraph":len(perek_box),"Hagahot":in_hagahot})
+                    last_paragraph={"Perek":len(perek_list),"Paragraph":len(perek_box)}
+                    perek_box.append(fix_markers(paragraph)+u":")    
+
+
+            if u"סליק " in line:
                 perek_list.append(perek_box)
+                #bug with double paragraph
+                if u"סליק פרק ו' וז" in line:
+                    perek_list.append([])
                 perek_box = []
         perek_list.append(perek_box)
         self.hagahot=perek_list
-        self.remez_index = remez_index
         self.daf_refs = daf_refs
+        remez_index[-1]["Terminating Ref"]=last_paragraph
+        self.remez_index = remez_index
         
         #to print text:
         for pindex, perek in enumerate(self.text):
@@ -154,7 +147,7 @@ class Tractate:
             'language': 'he',
             'text': self.text
         }
-        #post_text_weak_connection('Mordechai on '+self.record_name_en, version)
+        post_text_weak_connection('Mordechai on '+self.record_name_en, version)
         
         version = {
             'versionTitle': 'Vilna Edition',
@@ -162,7 +155,7 @@ class Tractate:
             'language': 'he',
             'text': self.hagahot
         }
-        post_text_weak_connection('Mordechai on '+self.record_name_en+', Amendments', version)
+        #post_text_weak_connection('Mordechai on '+self.record_name_en+', Amendments', version)
     def mord_link_text(self):
         for link_ref in self.daf_refs:
             print link_ref
@@ -193,31 +186,34 @@ def clean_daf_ref(s):
     return s.replace(u"דף",u"").replace(u"ע\"א",u"").replace(u"ע\"ב",u"")
 def segment_remez_refs(refs):
     remez_count = 0
-    in_hagahot=False
     return_list = []
     starting_ref = refs[0]
+    for index, ref in enumerate(refs[1:]):
+        print "REMEZ", ref["Remez"]
+        if ref["Hagahot"]!=refs[index-1]["Hagahot"]:
+            last_before_hagahot=refs[index-1]
     for index in range(1,len(refs)):
         finished=False
         remez_count+=1
-        if (remez_count>9 and refs[index-1]["Paragraph"]!=refs[index]["Paragraph"] and refs[index-1]["Paragraph"]!=starting_ref["Paragraph"]) or (refs[index]["Hagahot"]!=in_hagahot):
+        skip_next=False
+        if (remez_count>9 and refs[index-1]["Paragraph"]!=refs[index]["Paragraph"] and refs[index-1]["Paragraph"]!=starting_ref["Paragraph"]) or refs[index-1]==last_before_hagahot:
             in_hagahot=refs[index]["Hagahot"]
             return_list.append({"Starting Ref":starting_ref, "Ending Ref":refs[index-1]})
             starting_ref=refs[index]
             finished=True
             remez_count=0
-    if not finished:
-        return_list.append({"Starting Ref":starting_ref, "Ending Ref":refs[index-1]})
+    return_list.append({"Starting Ref":starting_ref, "Ending Ref":refs[-1]})
     return return_list
 
 def make_remez_range(remez_segment):
     return str(remez_segment["Starting Ref"]["Perek"]+1)+":"+str(remez_segment["Starting Ref"]["Paragraph"]+1)+"-"\
-        +str(remez_segment["Ending Ref"]["Perek"]+1)+":"+str(remez_segment["Ending Ref"]["Paragraph"]+1)
+        +str(remez_segment["Ending Ref"]["Terminating Ref"]["Perek"]+1)+":"+str(remez_segment["Ending Ref"]["Terminating Ref"]["Paragraph"]+1)
 def not_blank(s):
     while u" " in s:
         s = s.replace(u" ",u"")
     return (len(s.replace(u"\n",u"").replace(u"\r",u"").replace(u"\t",u""))!=0);
 def fix_markers(s):
-    return s.replace(u"@01",u"</small>").replace(u"@10",u"<small>").replace(u'@20',u"<small>")
+    return s.replace(u"@01",u"</small>").replace(u"@10",u"<small>").replace(u'@20',u"<small>").replace(u"\n","")
 def get_perek(ref):
     range_dict = get_perek_ranges(ref.book)
     for chapter_range in range_dict.keys():
@@ -225,7 +221,7 @@ def get_perek(ref):
             return range_dict[chapter_range]
 def get_perek_ranges(tractate_name):
     return {node['wholeRef']:int(node['titles'][0]['text'].split()[1]) for node in library.get_index(tractate_name).alt_structs["Chapters"]['nodes']}
-posting_term=False
+posting_term=True
 posting_index=False
 posting_text=True
 linking=False
@@ -242,5 +238,25 @@ if linking:
     tractate.mord_link_text()
     
 print SEFARIA_SERVER+"/admin/reset/Mordechai on "+tractate.record_name_en
-
-    
+"""
+EXTRA CODE
+ for daf_ref in re.findall(ur"@10.*?@01",line):
+     
+     if u"ע\"א" in daf_ref:
+         amud="a"
+     elif u"ע\"ב" in daf_ref:
+         amud="b"
+     else:
+         amud="a-b"
+     
+     daf_refs.append({"Daf":getGematria(clean_daf_ref(daf_ref)),"Amud":amud,"Perek":len(perek_list),"Paragraph":len(perek_box),"Hagahot":in_hagahot})
+     
+     if in_hagahot:
+         perek= get_perek(Ref(self.record_name_en+" "+str(getGematria(clean_daf_ref(daf_ref)))+amud))
+         if perek-1!=len(perek_list):
+             perek_list.append(perek_box)
+             perek_box=[]
+             #if difference is exactly 1, we need to add. Otherwise, leave it alone
+             for x in range(perek-len(perek_list)-1):
+                 perek_list.append([])
+"""   
