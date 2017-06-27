@@ -4,6 +4,7 @@ import urllib
 import urllib2
 from urllib2 import URLError, HTTPError
 import json
+import requests
 import pdb
 import os
 import sys
@@ -375,6 +376,39 @@ def weak_connection(func):
     return post_weak_connection
 
 
+def http_request(url, params=None, json_payload=None, method="GET"):
+    if params is None:
+        params = {}
+    if json_payload:
+        params['json'] = json.dumps(json_payload)  # Adds the json as a url parameter - otherwise json gets lost
+
+    if method == "GET":
+        response = requests.get(url, params)
+    elif method == "POST":
+        response = requests.post(url, data=params)
+    else:
+        raise ValueError("Cannot handle HTTP request method {}".format(method))
+
+    success = True
+    try:
+        json_response = response.json()
+        if isinstance(json_response, dict) and json_response.get("error"):
+            success = False
+    except ValueError:
+        success = False
+        json_response = ''
+
+    if success:
+        print u"\033[92m{} request to {} successful\033[0m".format(method, url)
+        return json_response
+    else:
+        print u"\033[91m{} request to {} failed\033[0m".format(method, url)
+        with codecs.open('errors.html', 'w', 'utf-8') as outfile:
+            outfile.write(response.text)
+        return response.text
+
+
+
 def make_title(text):
     '''
     Takes as input a node named 'text' and capitalizes it appropriately
@@ -418,20 +452,21 @@ def make_title(text):
 @weak_connection
 def post_index(index, server=SEFARIA_SERVER):
     url = server+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
-    indexJSON = json.dumps(index)
-    values = {
-        'json': indexJSON,
-        'apikey': API_KEY
-    }
-    data = urllib.urlencode(values)
-    req = urllib2.Request(url, data)
-    try:
-        response = urllib2.urlopen(req)
-        print response.read()
-    except HTTPError as e:
-        with open('errors.html', 'w') as errors:
-            errors.write(e.read())
-        print "error"
+    return http_request(url, params={'apikey': API_KEY}, json_payload=index, method="POST")
+    # indexJSON = json.dumps(index)
+    # values = {
+    #     'json': indexJSON,
+    #     'apikey': API_KEY
+    # }
+    # data = urllib.urlencode(values)
+    # req = urllib2.Request(url, data)
+    # try:
+    #     response = urllib2.urlopen(req)
+    #     print response.read()
+    # except HTTPError as e:
+    #     with open('errors.html', 'w') as errors:
+    #         errors.write(e.read())
+    #     print "error"
 
 
 def hasTags(comment):
@@ -442,22 +477,23 @@ def hasTags(comment):
 @weak_connection
 def post_link(info, server=SEFARIA_SERVER):
     url = server+'/api/links/'
-    infoJSON = json.dumps(info)
-    values = {
-        'json': infoJSON,
-        'apikey': API_KEY
-    }
-    data = urllib.urlencode(values)
-    req = urllib2.Request(url, data)
-    try:
-        response = urllib2.urlopen(req)
-        x= response.read()
-        print x
-        if x.find("error")>=0 and x.find("Daf")>=0 and x.find("0")>=0:
-            return "error"
-
-    except HTTPError, e:
-        print 'Error code: ', e.code
+    return http_request(url, params={'apikey': API_KEY} ,json_payload=info, method="POST")
+    # infoJSON = json.dumps(info)
+    # values = {
+    #     'json': infoJSON,
+    #     'apikey': API_KEY
+    # }
+    # data = urllib.urlencode(values)
+    # req = urllib2.Request(url, data)
+    # try:
+    #     response = urllib2.urlopen(req)
+    #     x= response.read()
+    #     print x
+    #     if x.find("error")>=0 and x.find("Daf")>=0 and x.find("0")>=0:
+    #         return "error"
+    #
+    # except HTTPError, e:
+    #     print 'Error code: ', e.code
 
 
 def post_link_weak_connection(info, repeat=10):
@@ -547,29 +583,32 @@ def first_word_with_period(str):
 
 @weak_connection
 def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SERVER):
-    textJSON = json.dumps(text)
+    # textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
-    if index_count == "off":
-        url = server+'/api/texts/'+ref
-    else:
-        url = server+'/api/texts/'+ref+'?count_after=1'
+    url = server+'/api/texts/'+ref
+    params = {'apikey': API_KEY}
+    if index_count == "on":
+        params['count_after'] = 1
     if skip_links:
-        if re.search(r'\?', url):
-            url += '&skip_links={}'.format(skip_links)
-        else:
-            url += '?skip_links={}'.format(skip_links)
-    values = {'json': textJSON, 'apikey': API_KEY}
-    data = urllib.urlencode(values)
-    req = urllib2.Request(url, data)
-    try:
-        response = urllib2.urlopen(req)
-        x= response.read()
-        print x
-        if x.find("error")>=0 and x.find("Daf")>=0 and x.find("0")>=0:
-            return "error"
-    except HTTPError, e:
-        with open('errors.html', 'w') as errors:
-            errors.write(e.read())
+        params['skip_links'] = True
+        # if re.search(r'\?', url):
+        #     url += '&skip_links={}'.format(skip_links)
+        # else:
+        #     url += '?skip_links={}'.format(skip_links)
+
+    return http_request(url, params=params, json_payload=text, method="POST")
+    # values = {'json': textJSON, 'apikey': API_KEY}
+    # data = urllib.urlencode(values)
+    # req = urllib2.Request(url, data)
+    # try:
+    #     response = urllib2.urlopen(req)
+    #     x= response.read()
+    #     print x
+    #     if x.find("error")>=0 and x.find("Daf")>=0 and x.find("0")>=0:
+    #         return "error"
+    # except HTTPError, e:
+    #     with open('errors.html', 'w') as errors:
+    #         errors.write(e.read())
 
 
 
@@ -663,17 +702,18 @@ def post_flags(version, flags):
 @weak_connection
 def post_term(term_dict, server=SEFARIA_SERVER):
     name = term_dict['name']
-    term_JSON = json.dumps(term_dict)
+    # term_JSON = json.dumps(term_dict)
     url = '{}/api/terms/{}'.format(server, urllib.quote(name))
-    values = {'json': term_JSON, 'apikey': API_KEY}
-    data = urllib.urlencode(values)
-    req = urllib2.Request(url, data)
-    try:
-        response = urllib2.urlopen(req)
-        x = response.read()
-        print x
-    except (HTTPError, URLError) as e:
-        print e
+    return http_request(url, params={'apikey': API_KEY}, json_payload=term_dict, method="POST")
+    # values = {'json': term_JSON, 'apikey': API_KEY}
+    # data = urllib.urlencode(values)
+    # req = urllib2.Request(url, data)
+    # try:
+    #     response = urllib2.urlopen(req)
+    #     x = response.read()
+    #     print x
+    # except (HTTPError, URLError) as e:
+    #     print e
 
 
 def add_term(en_title, he_title, scheme='toc_categories', server=SEFARIA_SERVER):
@@ -688,10 +728,10 @@ def add_term(en_title, he_title, scheme='toc_categories', server=SEFARIA_SERVER)
 def get_index_api(ref, server='http://www.sefaria.org'):
     ref = ref.replace(" ", "_")
     url = server+'/api/v2/raw/index/'+ref
-    req = urllib2.Request(url)
-    response = urllib2.urlopen(req)
-    data = json.load(response)
-    return data
+    # req = urllib2.Request(url)
+    # response = urllib2.urlopen(req)
+    # data = json.load(response)
+    return http_request(url)
 
 
 def get_text(ref):
