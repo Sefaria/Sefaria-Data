@@ -4,9 +4,9 @@ from sources.Shulchan_Arukh.ShulchanArukh import *
 
 root = Root('../Choshen_Mishpat.xml')
 commentaries = root.get_commentaries()
-kzot = commentaries.get_commentary_by_title("Ktsot HaHoshen")
+kzot = commentaries.get_commentary_by_title("Ketzot HaChoshen")
 if kzot is None:
-    kzot = commentaries.add_commentary("Ktsot HaHoshen", u"קצות החושן")
+    kzot = commentaries.add_commentary("Ketzot HaChoshen", u"קצות החושן")
 
 filename = u"../txt_files/Choshen_Mishpat/part_3/קצות החושן שולחן ערוך חושן משפט חלק ג.txt"
 kzot.remove_volume(3)
@@ -35,5 +35,7 @@ volume.set_rid_on_seifim()
 volume.unlink_seifim(["b0-c3-si350-ord2", "b0-c3-si350-ord3", "b0-c3-si350-ord4"])
 print "Cross linking"
 root.populate_comment_store()
-b_vol.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'@58', x.text) is not None)
+errors = b_vol.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'@58', x.text) is not None)
+for i in errors:
+    print i
 root.export()

@@ -2,7 +2,6 @@
 from data_utilities import dibur_hamatchil_matcher as dhm
 from sefaria.model import *
 from sefaria.utils import hebrew
-from research.dibur_hamatchil.dh_source_scripts import mishnah_berurah
 import regex as re
 import pickle
 
@@ -78,6 +77,12 @@ class TestDHMatcher:
         #comparison = [comparison[1]]
         assert comparison == all_matched
 
+    def test_empty_comment(self):
+        daftext = u'אע״ג שאמרו ככה בלה בלה בלה'.split()
+        rashi = [u'', u'אף על גב שאמרו']
+        matched = dhm.match_text(daftext, rashi, verbose=True)
+
+
 
 class TestDHMatcherFunctions:
 
@@ -108,9 +113,18 @@ class TestDHMatcherFunctions:
         assert ismatch == False
 
 
-    def test_GetAllMatches(self):
+    def test_GetAllMatches_nonempty(self):
         daftext = sp(u'אע״ג שאמרו ככה בלה בלה בלה')
         rashi = [u'אף על גב שאמרו']
+        daf = dhm.GemaraDaf(daftext,rashi)
+        textMatchList = dhm.GetAllMatches(daf,daf.allRashi[0],0,len(daf.allWords)-1,0.27,0.2)
+        for tm in textMatchList:
+            print u'{}'.format(tm)
+
+    def test_GetAllMatches_empty(self):
+        print 'yo'
+        daftext = u'אע״ג שאמרו ככה בלה בלה בלה'.split()
+        rashi = [u'', u'אף על גב שאמרו']
         daf = dhm.GemaraDaf(daftext,rashi)
         textMatchList = dhm.GetAllMatches(daf,daf.allRashi[0],0,len(daf.allWords)-1,0.27,0.2)
         for tm in textMatchList:

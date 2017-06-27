@@ -29,14 +29,14 @@ input.close()
 pdb.set_trace()
 '''
 #avodah zarah not working
-files = ["bava batra"]
+files = ["avodah zarah"]
 p = re.compile('@\d\dע"\ב')
 for file in files:
     new_file = open(file+"2.txt", 'w')
     f = open(file+".txt", 'r')
     for line in f:
         no_match = True
-		linw = line.replace("@66", "@11").replace("@33", "")
+        line = line.replace("@66", "@11").replace("@33", "")
         words = line.split(" ")
         for word in words:
             if p.match(word):

@@ -349,7 +349,7 @@ class Maharam:
                 #    self.Mishnah(daf, mishnah_in_order)
                 elif category == 'paragraph' and self.maharam_line == 0:
                     self.maharam_line+=1
-        post_link(self.links_to_post)
+        post_link(self.links_to_post, server=SERVER)
 
 
 def create_index(tractate):
@@ -365,15 +365,19 @@ def create_index(tractate):
     root.validate()
 
     index = {
+        "dependence": "Commentary",
+        "collective_title": "Maharam",
+        "base_text_titles": [tractate]
         "title": "Maharam on "+tractate.replace("_"," "),
-        "categories": ["Commentary2", "Talmud", "Maharam"],
+        "categories": ["Talmud", "Bavli", "Commentary", "Maharam", library.get_index(tractate).categories[-1]],
         "schema": root.serialize()
     }
-    post_index(index)
+    post_index(index, server=SERVER)
     return tractate
 
 
 if __name__ == "__main__":
+    SERVER = "http://proto.sefaria.org"
     titles = ["Chullin", "Eruvin", "Gittin", "Ketubot"]
     '''
         ["Bava Batra", "Bava Kamma","Bava Metzia"]
@@ -402,7 +406,7 @@ if __name__ == "__main__":
                         "language": "he",
                         "text": text_to_post,
                     }
-        post_text("Maharam on "+masechet, send_text, "on")
+        post_text("Maharam on "+masechet, send_text, "on", server=SERVER)
         print 'posted'
 
         maharam.postLinks()

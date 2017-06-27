@@ -77,7 +77,7 @@ class Rashba:
         root = JaggedArrayNode()
         root.add_structure(["Daf", "Paragraph"], ["Talmud", "Integer"])
         he_title = library.get_index(self.tractate).get_title('he')
-        root.add_primary_titles("Rashba on {}".format(self.tractate), u"""רשב"ע על {}""".format(he_title))
+        root.add_primary_titles("Rashba on {}".format(self.tractate), u"""רשב"א על {}""".format(he_title))
         root.validate()
         index = {
             "dependence": "Commentary",
@@ -207,7 +207,7 @@ class Rashba:
                 },
                 {
                     "lang": "he",
-                    "text": u'רשב"ע',
+                    "text": u'רשב"א',
                     "primary": True
                 }
             ]
@@ -215,7 +215,7 @@ class Rashba:
 
 if __name__ == "__main__":
 
-    rashba = Rashba("no_matches.txt", "Bava Kamma", "http://proto.sefaria.org")
+    rashba = Rashba("no_matches.txt", "Bava Kamma", "https://www.sefaria.org")
     #rashba.postTerm()
     #rashba.create_schema()
     #rashba.makeOneFile()

@@ -6,10 +6,16 @@ from data_utilities.util import he_ord
 
 def markup(b_vol):
     commentaries = root.get_commentaries()
-    b_vol.mark_references(commentaries.commentary_ids["Siftei Cohen"], ur'@65\(([\u05d0-\u05ea]{1,3})\)', group=1)
+    b_vol.mark_references(commentaries.commentary_ids["Siftei Kohen"], ur'@65\(([\u05d0-\u05ea]{1,3})\)', group=1)
     b_vol.mark_references(commentaries.commentary_ids["Me'irat Einayim"], u'@62([\u05d0-\u05ea]{1,3})', group=1)
-    b_vol.mark_references(commentaries.commentary_ids["Ktsot HaHoshen"], u'@67([\u05d0-\u05ea]{1,3})\)', group=1)
+    b_vol.mark_references(commentaries.commentary_ids["Ketzot HaChoshen"], u'@67([\u05d0-\u05ea]{1,3})\)', group=1)
     b_vol.mark_references(commentaries.commentary_ids["Pithei Teshuva"], u'@64([\u05d0-\u05ea]{1,3})\]', group=1)
+    b_vol.mark_references(commentaries.commentary_ids["Be'er HaGolah"], ur'@68([\u05d0-\u05ea\u2022])',cyclical=True, group=1)
+    b_vol.mark_references(commentaries.commentary_ids["Beur HaGra"], u'@69\[([\u05d0-\u05ea]{1,3})\]', group=1)
+    b_vol.mark_references(commentaries.commentary_ids["Netivot HaMishpat, Hidushim"], u'@70\(([\u05d0-\u05ea]{1,3})\)',
+                          group=1)
+    b_vol.mark_references(commentaries.commentary_ids["Netivot HaMishpat, Beurim"], u'@71([\u05d0-\u05ea]{1,3})\)',
+                          group=1)
     return
 
 root = Root('../Choshen_Mishpat.xml')
@@ -39,7 +45,7 @@ for i in bad:
 volume.validate_seifim()
 # root.export()
 
-volume.validate_references(ur'@68([\u05d0-\u05ea])', u'@68', key_callback=he_ord)
+# volume.validate_references(ur'@68([\u05d0-\u05ea])', u'@68', key_callback=he_ord)
 for code, pattern in zip(codes, patterns):
     volume.validate_references(pattern, code)
 
@@ -48,4 +54,5 @@ for i in errors:
     print i
 markup(volume)
 # root.populate_comment_store()
+volume.convert_pattern_to_itag("Ba'er Hetev on Shulchan Arukh, Choshen Mishpat", ur"@63\[([\u05d0-\u05ea]{1,3})\]")
 root.export()

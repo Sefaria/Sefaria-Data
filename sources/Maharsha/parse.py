@@ -21,7 +21,7 @@ from sefaria.model.schema import AddressTalmud
 
 
 class Maharsha:
-    def __init__(self, masechet, title, heTitle):
+    def __init__(self, masechet, title, heTitle, server):
         '''
         dictionary for each category allows matching to work
         then after we have match dictionaries for in order and out of order for each category
@@ -29,6 +29,8 @@ class Maharsha:
         whatever the category is we increment the maharam line and post the link between maharam and the appropriate
         book based on the category. remember to deal with paragraph case and gemara case.
         '''
+        self.list_of_dafs = []
+        self.server = server
         self.title = title
         self.heTitle = heTitle
         self.comm_wout_base = open("comm_wout_base.txt", 'w')
@@ -46,7 +48,7 @@ class Maharsha:
         self.shom = "שם"
         self.amud_bet = 'ע"ב'
         self.mishnah = ['במשנה', 'מתני']
-        self.current_daf = 3
+        self.current_daf = 2
         self.current_perek = 0
         self.categories = ['rashi', 'tosafot', 'gemara', 'ran', 'rosh']
         self.dh_by_cat = {}
@@ -57,6 +59,7 @@ class Maharsha:
         self.comm_by_perek = {}
         self.dh_by_perek = {}
         self.rosh_line = 0
+        self.looking_for_perakim = False
 
 
 
@@ -94,6 +97,8 @@ class Maharsha:
         return ref.replace(replace_text, "")
 
     def addDHComment(self, dh, comment, category, same_dh):
+        dh = removeAllTags(dh)
+        comment = removeAllTags(comment)
         dh = dh.decode('utf-8')
         comment = comment.decode('utf-8')
         self.dh1_dict[self.current_daf].append((category, dh))
@@ -106,8 +111,9 @@ class Maharsha:
         post_comment = u"<b>{}</b> {}".format(first_word, " ".join(post_comment.split(" ")[1:]))
         self.comm_dict[self.current_daf].append(post_comment)
         self.dh_by_cat[category][self.current_daf].append(dh)
-        self.dh_by_perek[self.current_perek].append((category, dh, self.current_daf))
-        self.comm_by_perek[self.current_perek].append(post_comment)
+        if self.looking_for_perakim:
+            self.dh_by_perek[self.current_perek].append((category, dh, self.current_daf))
+            self.comm_by_perek[self.current_perek].append(post_comment)
 
     def dh_extract_method(self, str):
         str = str.encode('utf-8')
@@ -130,7 +136,9 @@ class Maharsha:
         return which_perek
 
 
-    def getDaf(self, line, current_daf, len_masechet):
+    def getDaf(self, line, current_daf, len_masechet, prev_line):
+        prev_num = self.current_daf
+        orig_line = line
         line = line.replace("@11 ", "@11")
         if line.split(" ")[0].find('דף')>=0:
             daf_value = getGematria(line.split(" ")[1].replace('"', '').replace("'", ''))
@@ -148,12 +156,27 @@ class Maharsha:
         else:
             self.current_daf += 1
             actual_text = line[3:]
+
+        if self.current_daf <= prev_num:
+            he_current = AddressTalmud.toStr("he", self.current_daf)
+            he_prev = AddressTalmud.toStr("he", prev_num)
+            #prev_line = " ".join(prev_line.split(" ")[0:5])
+            #orig_line = " ".join(orig_line.split(" ")[0:5])
+            print u"{} before {}\n".format(he_prev, he_current)
+            #print u"The line starting: {} is {}\n".format(prev_line, he_prev)
+            #print u"It came before the line starting {}, which is {}\n\n".format(orig_line, he_current)
+
+
         if not self.current_daf in self.dh1_dict:
             self.dh1_dict[self.current_daf] = []
             for each_cat in self.categories:
                 self.dh_by_cat[each_cat][self.current_daf] = []
         self.actual_text = actual_text
-        assert self.current_daf <= len_masechet
+        if self.current_daf > len_masechet:
+            print "DAF EXTRA {} > {} in {} {}".format(self.current_daf, len_masechet, self.title, self.masechet)
+            pass
+        self.list_of_dafs.append(self.current_daf)
+
         return self.current_daf
 
 
@@ -198,10 +221,14 @@ class Maharsha:
     def parseText(self, file, len_masechet):
         this_line = False
         prev_line_require_text = False
+        prev_line = ""
         for line in file:
             orig_line = line
 
-            if line.find("@00") >= 0:
+            if line.find("@00") >= 0 or line.find("0") == 0:
+                #if len(line.split("@")) > 2:
+                    #print "Previous daf: {}".format(AddressTalmud.toStr("en", self.current_daf))
+                    #print line
                 self.current_perek += 1
                 if not self.current_perek in self.dh_by_perek:
                     self.dh_by_perek[self.current_perek] = []
@@ -211,7 +238,7 @@ class Maharsha:
             if line.find('ח"א ') == 3:
                 line = line.replace('ח"א ', '')
 
-            line = line.replace("\n", "").replace("@33", "").replace("@55", "").replace("@44","").replace("@77","").replace("@99","")
+            line = line.replace("\n", "")
             if len(line) == 0:
                 continue
 
@@ -221,8 +248,7 @@ class Maharsha:
 
             if line.find("@11")>=0:
                 category = ""
-                self.current_daf = self.getDaf(line, self.current_daf, len_masechet)
-
+                self.current_daf = self.getDaf(line, self.current_daf, len_masechet, prev_line)
 
                 if not self.current_daf in self.comm_dict:
                     self.comm_dict[self.current_daf] = []
@@ -237,8 +263,6 @@ class Maharsha:
                     same_dh = self.determineCategory(count, comment)
                     self.parseDH(comment, self.category, same_dh)
 
-            else:
-                print line
             prev_line = line
 
 
@@ -268,7 +292,7 @@ class Maharsha:
                         ],
                 "type": "commentary",
                 "auto": True,
-                "generated_by": self.title+masechet+" linker"
+                "generated_by": self.title+self.masechet+" linker"
             })
             gemara_ref = self.getGemaraRef(base_ref)
             self.links_to_post.append({
@@ -278,7 +302,7 @@ class Maharsha:
                 ],
                 "type": "commentary",
                 "auto": True,
-                "generated_by": self.title+masechet+" linker"
+                "generated_by": self.title+self.masechet+" linker"
             })
 
     def getGemaraRef(self, ref):
@@ -291,20 +315,21 @@ class Maharsha:
             gemara_ref = Ref(_obj=d)
         return gemara_ref.normal().replace("Tosafot on ", "").replace("Rashi on ", "").replace("Rosh on ", "").replace("Ran on ", "")
 
+
     def Gemara(self, daf, results):
         self.maharam_line+=1
         self.which_line['gemara']+=1
         if results['gemara'][self.which_line['gemara']] == '0':
-            self.missing_ones.append(self.title+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line))
+            self.missing_ones.append(self.title+" on "+self.masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line))
         else:
             self.links_to_post.append({
             "refs": [
                      results['gemara'][self.which_line['gemara']],
-                    self.title+" on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line)
+                    self.title+" on "+self.masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line)
                 ],
             "type": "commentary",
             "auto": True,
-            "generated_by": self.title+masechet+" linker",
+            "generated_by": self.title+self.masechet+" linker",
          })
 
 
@@ -315,9 +340,9 @@ class Maharsha:
         elif category == "gemara":
             return Ref(masechet+" "+AddressTalmud.toStr("en", daf)).text('he')
         elif category == "rashi":
-            rashi = Ref("Rashi on "+masechet+"."+AddressTalmud.toStr("en", daf)).text('he')
+            rashi = Ref("Rashi on "+self.masechet+"."+AddressTalmud.toStr("en", daf)).text('he')
             if len(rashi.text) == 0:
-                return Ref("Rashbam on "+masechet+"."+AddressTalmud.toStr("en", daf)).text('he')
+                return Ref("Rashbam on "+self.masechet+"."+AddressTalmud.toStr("en", daf)).text('he')
             else:
                 return rashi
 
@@ -347,7 +372,6 @@ class Maharsha:
         comments = {}
 
         for daf in sorted(self.dh1_dict.keys()):
-            print "DAF {}".format(daf)
             comments[daf] = {}
             results[daf] = {}
             for each_cat in self.categories:
@@ -387,7 +411,7 @@ class Maharsha:
                 else:
                     self.Commentary(daf, category, results[daf])
 
-        post_link(self.links_to_post)
+        post_link(self.links_to_post, server=self.server)
         self.comm_wout_base.close()
 
 
@@ -395,15 +419,14 @@ class Maharsha:
         self.maharam_line += 1
         self.rosh_line += 1
         if results[perek-1][self.rosh_line]:
-            print results[perek-1][self.rosh_line].normal()
             self.links_to_post.append({
                 "refs": [
                          results[perek-1][self.rosh_line].normal(),
-                        self.title+" on "+masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line)
+                        self.title+" on "+self.masechet+"."+AddressTalmud.toStr("en", daf)+"."+str(self.maharam_line)
                     ],
                 "type": "commentary",
                 "auto": True,
-                "generated_by": self.title+masechet+" linker",
+                "generated_by": self.title+self.masechet+" linker",
              })
 
 
@@ -430,51 +453,43 @@ class Maharsha:
             "dependence": "Commentary",
 
         }
-        post_index(index)
+        post_index(index, server=self.server)
         return tractate
 
 
-if __name__ == "__main__":
-    done = []
-    term_obj = {
-        "name": "Maharsha",
-        "scheme": "commentary_works",
-        "titles": [
-            {
-                "lang": "en",
-                "text": "Maharsha",
-                "primary": True
-            },
-            {
-                "lang": "he",
-                "text": u'מהרש"א',
-                "primary": True
-            }
-        ]
-    }
-
-    #post_term(term_obj)
-    '''
-    files = [file for file in os.listdir(".") if file.endswith("2.txt") and file != "comm_wout_base.txt" and not file.startswith("chid")]
+def split_files_agadot_halachot():
+    files = [file.decode('utf-8') for file in os.listdir(".") if file.endswith(".txt") and not "2" in file and not file.startswith("chid")
+             and not "comm_wout_base" in file]
     prev_line_agadic = False
     for file in files:
-        ch_ag = open("chidushei_agadot_{}".format(file), 'w')
-        ch_ha = open("chidushei_halachot_{}".format(file), 'w')
-        for line in open(file):
+        if "Arakhin" in file:
+            ch_ha = open(u"chidushei_agadot_Arakhin.txt", 'w')
+        elif "Rosh" in file:
+            ch_ag = open(u"chidushei_agadot_{}".format(file), 'w')
+            ch_ha = open(u"chidushei_halachot_{}".format(file), 'w')
+        else:
+            ch_ha = open(u"chidushei_halachot_{}".format(file), 'w')
+
+        for line in open("./"+file):
+            if line.replace("\r", "").replace(" ", "") == "\n":
+                continue
             if not (line.find("@00") == 0 or line.find("@11") == 0):
                 line = "@11" + line
             if "@00" in line:
-                ch_ag.write(line)
+                if "Rosh" in file:
+                    ch_ag.write(line)
                 ch_ha.write(line)
                 continue
             if line.startswith('@11ח"א'):
-                ch_ag.write(line)
+                if "Rosh" in file:
+                    ch_ag.write(line)
                 prev_line_agadic = True
             elif line.startswith('@11דף'):
                 ch_ha.write(line)
                 prev_line_agadic = False
             elif prev_line_agadic:
-                ch_ag.write(line)
+                if "Rosh" in file or "Arakhin" in file:
+                    ch_ag.write(line)
                 prev_line_agadic = False
             else:
                 ch_ha.write(line)
@@ -482,28 +497,135 @@ if __name__ == "__main__":
 
     ch_ag.close()
     ch_ha.close()
-    '''
-    files = [file for file in os.listdir(".") if file.endswith("2.txt") and file != "comm_wout_base.txt" and file.startswith("shabbat")]
-    for file in files:
-        '''
-        get masechet by splitting title of file
 
-        '''
-        masechet = file.split("2.txt")[0].split("_")[-1].title()
-        print masechet
+
+def get_titles(file):
+    try:
+        he_title = file.split(" ")[-1]
+        title = library.get_index(he_title).title
+    except:
+        he_title = " ".join(file.split(" ")[-2:])
+        title = library.get_index(he_title).title
+    return he_title, title
+
+
+def split_lines_into_amudim():
+    files = [file.replace(".txt", "").decode('utf-8') for file in os.listdir("./hebrew") if not file.endswith("2.txt") and file.endswith(".txt")]
+    for file in files:
+        f = open("./hebrew/"+file+".txt", 'r')
+        he_title, title = get_titles(file)
+
+        arr_text = []
+        prev_special = False
+        prev_chid_agadot = False
+        for count, line in enumerate(f):
+            line = line.replace("\n", "").replace("\r", "")
+            if len(line.replace(" ", "")) == 0:
+                continue
+
+            if re.compile(u'^@\d+[דף|ח"א]+').match(line.decode('utf-8')) is None:
+                if line[0] == "0" or line.startswith("@00") or line.startswith("@99"):
+                    continue
+                else:
+                    last_pos = len(arr_text) - 1
+                    if arr_text == []:
+                        print file + " has intro.\n"
+                        break
+                    arr_text[last_pos] += "<br/>"+line
+                    prev_special = True
+                    continue
+            else:
+                if prev_special:
+                    arr_text[len(arr_text) - 1] += "\n"
+                    prev_special = False
+
+            no_match = True
+            line = line.replace("@66", "@11", 1).replace("@33", "").replace("\n", "").replace("\r", "")
+
+            lines, prev_chid_agadot = stamp_amudim_with_11s(line, prev_chid_agadot)
+            if len(lines[0]) == 0:
+                continue
+            arr_text += lines
+
+        f.close()
+        f = open("./"+title+".txt", 'w')
+        for line in arr_text:
+            if len(line) == 0:
+                continue
+            what_to_write = check_for_other_daf(line)
+            for each_line in what_to_write:
+                f.write(each_line)
+
+        f.close()
+
+
+def stamp_amudim_with_11s(line, prev_chid_agadot):
+    chid_agadot = 'ח"א' in " ".join(line.split(" ")[0:2])
+    lines = re.split('@\d+ע"ב', line)
+    if len(lines[0]) == 0:
+        return lines
+
+    for sub_count, sub_line in enumerate(lines):
+        if lines[sub_count].startswith("@99") or lines[sub_count].startswith("@22"):
+            lines[sub_count] = ""
+            continue
+        while lines[sub_count][0] == ' ':
+            lines[sub_count] = lines[sub_count][1:]
+
+        if lines[sub_count].find("@11") != 0 and lines[sub_count].find("@00") == -1:
+            if prev_chid_agadot:
+                lines[sub_count] = "@11" + 'ח"א ' + lines[sub_count]
+            else:
+                lines[sub_count] = "@11" + lines[sub_count]
+        prev_chid_agadot = chid_agadot
+        chid_agadot = False
+    return lines, prev_chid_agadot
+
+
+def check_for_other_daf(comment):
+    lines = re.split('(@\d+דף)', comment)
+    if len(lines) is 1:
+        return [comment + "\n"]
+    else:
+        text_list = []
+        if lines[0] == "":
+            lines = lines[1:]
+        if len(lines) % 2 == 1:
+            text_list.append(lines[0]+"\n")
+            lines = lines[1:]
+
+        for i in range(len(lines)):
+            text_list.append(lines[i]+lines[i+1]+"\n")
+            if i == len(lines) - 2:
+                return text_list
+    pass
+
+
+
+
+
+
+if __name__ == "__main__":
+    done = []
+    split_lines_into_amudim()
+    split_files_agadot_halachot()
+
+    files = [file for file in os.listdir(".") if file.startswith("chidushei_hal") or (file.startswith("chidushei") and ("Arakhin" in file or "Rosh" in file))]
+    for file in files:
+        masechet = file.split(".txt")[0].split("_")[-1].title()
+        print file
         len_masechet = len(Ref(masechet).text('he').text)
         if file.startswith("chidushei_ag"):
             title = "Chidushei Agadot"
             heTitle = u"חידושי אגדות"
+            obj = Maharsha(masechet, title, heTitle, server="http://localhost:8000")
         elif file.startswith("chidushei_ha"):
             title = "Chidushei Halachot"
             heTitle = u"חדושי הלכות"
-        obj = Maharsha(masechet, title, heTitle)
-        obj.parseText(open(file), len_masechet)
+            obj = Maharsha(masechet, title, heTitle, server="http://localhost:8000")
+        obj.parseText(open("./"+file), len_masechet)
         if len(obj.comm_dict) > 0:
-            print masechet
-            print title
-            obj.create_index(masechet)
+            #obj.create_index(masechet)
             text_to_post = convertDictToArray(obj.comm_dict)
             send_text = {
                                 "versionTitle": "Vilna Edition",
@@ -511,5 +633,5 @@ if __name__ == "__main__":
                                 "language": "he",
                                 "text": text_to_post,
                         }
-            post_text("{} on {}".format(title, masechet), send_text, "on")
-            obj.postLinks(masechet)
+            #post_text("{} on {}".format(title, masechet), send_text, "on", server="http://localhost:8000")
+            #obj.postLinks(masechet)

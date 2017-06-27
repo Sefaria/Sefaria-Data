@@ -28,7 +28,8 @@ logging.disable(logging.WARNING)
 es = ElasticSearch(SEARCH_ADMIN)
 TEST_INDEX_NAME = "test"
 
-#pagerank_dict = {r: v for r, v in json.load(open("pagerank.txt","rb"))}
+pagerank_dict = {r: v for r, v in json.load(open("pagerank.json","rb"))}
+sheetrank_dict = json.load(open("sheetrank.json", "rb"))
 
 test_he_query_list = [
     'וידבר יהוה אל משה לאמר',
@@ -120,6 +121,83 @@ test_en_query_list = [
     'thanksgiving offering',
     'temple jerusalem'
 ]
+
+text_worker_query_list = [
+    'ארבע שנכנס',
+    'מוקצה מחמת מיאוס',
+    'לא בשמים היא',
+    'עשרת הדיברות',
+    'נעשה ונשמע',
+    'צער בעלי חיים',
+    'תפילין',
+    'יצר הרע',
+    'עם הארץ',
+    'קל וחמר',
+    'חנוכה',
+    'עבד עברי',
+    'תיקון עולם',
+    'בית המקדש',
+    'בן יקיר',
+    'פרסום הנס',
+    'ברית שלום',
+    'יעקב ועשו',
+    'ברכה לבטלה',
+    'ענני הכבוד',
+    'עץ חיים',
+    'גיד הנשה',
+    'גיהנם',
+    'אור לגויים',
+    'עבודה זרה',
+    'יד חזקה',
+    'סנה',
+    'יום כיפור',
+    'יום הכיפורים',
+    'מצות עשה',
+    'חמץ ומצה',
+    'בל יראה ובל ימצא',
+    'ממזר',
+    'שמנה שרצים',
+    'דוד המלך',
+    'קדיש שלם',
+    'סיחון ועוג',
+    'חכמים זכרונם לברכה',
+    'שומר חינם',
+    'בן יומו',
+    'חייב ממון',
+    'ברכת המזון',
+    'מאכל בן דורסאי',
+    'ספק ספיקא',
+    'מעשה מרכבה',
+    'בין השמשות',
+    'גזירת שוה',
+    'מאמתי קורין',
+    'רשות הרבים',
+    'בעל מום',
+    'עולם הבא'
+]
+
+def generate_search_urls_for_text_workers():
+    subdomains = [u'noa', u'lev']
+    base_url = u'sefaria.org/search?sort=c&var=1'
+    filters = [u'', u'&filters=Mishnah%20Commentaries|Talmud%20Commentaries|Midrash%20Commentaries|Tanaitic%20Commentaries|Halakhah|Halakhah%20Commentaries|Kabbalah|Kabbalah%20Commentaries|Liturgy|Philosophy|Chasidut|Musar|Responsa|Apocrypha']
+
+    urls = []
+    for q in text_worker_query_list:
+        for f in filters:
+            sub_urls = []
+            for sub in subdomains:
+                sub_urls += [u"{}.{}{}&q={}".format(sub, base_url, f, q.decode('utf8'))]
+            urls += [sub_urls]
+
+    with open("search_options_evaluation.csv", 'wb') as f:
+        csvf = unicodecsv.DictWriter(f, ['URL 1', 'URL 2', 'Which do you prefer (1/2/neither/both)?', 'Notes'])
+        csvf.writeheader()
+        for u in urls:
+            csvf.writerow({"URL 1": u[0],
+                           "URL 2": u[1],
+                           "Which do you prefer (1/2/neither/both)?": "",
+                           "Notes": ""
+                           })
 
 def clear_index():
     """
@@ -276,6 +354,8 @@ def make_text_index_document(tref, version, lang):
         comp_start_date = int(tp.start)
     else:
         comp_start_date = 3000
+
+
 
 
     return {
@@ -662,7 +742,8 @@ def init_pagerank_graph():
             print "{}/{}".format(i,len(all_links))
 
         try:
-            #TODO there's a known issue that a lot of refs don't have order_ids (in which case it's Z). This hopefully doesn't affect the graph too much
+            #TODO pagerank segments except Talmud. Talmud is pageranked by section
+            #TODO if you see a section link, add pagerank to all of its segments
             refs = [Ref(r) for r in link.refs]
             tp1 = refs[0].index.best_time_period()
             tp2 = refs[1].index.best_time_period()
@@ -672,14 +753,13 @@ def init_pagerank_graph():
             older_ref, newer_ref = (refs[0], refs[1]) if start1 < start2 else (refs[1], refs[0])
 
             older_ref = older_ref.padded_ref()
-            newer_ref = newer_ref.padded_ref()
-
             if older_ref.is_range():
                 older_ref = older_ref.range_list()[0]
+            older_ref = older_ref.section_ref()
+
+            newer_ref = newer_ref.padded_ref()
             if newer_ref.is_range():
                 newer_ref = newer_ref.range_list()[0]
-
-            older_ref = older_ref.section_ref()
             newer_ref = newer_ref.section_ref()
 
             put_link_in_graph(older_ref, newer_ref)
@@ -717,11 +797,20 @@ def calculate_sheetrank():
             if "ref" in s and s["ref"] is not None:
                 temp_sources_count += 1
                 try:
-                    oref = Ref(s["ref"]).padded_ref()
+                    oref = Ref(s["ref"])
                     if oref.is_range():
                         oref = oref.range_list()[0]
-                    oref_sec = oref.section_ref()
-                    graph[oref_sec.normal()] += 1
+
+                    ref_list = []
+                    if oref.is_section_level():
+                        ref_list = oref.all_subrefs()
+                    elif oref.is_segment_level():
+                        ref_list = [oref]
+                    else:
+                        pass
+
+                    for r in ref_list:
+                        graph[r.normal()] += 1
                 except InputError:
                     continue
                 except TypeError:
@@ -845,7 +934,7 @@ def score_algo(fields, query_type, sort_type, search_analyzer, consScore, traini
     return avg_score
 
 
-def test_all():
+def run_tests_all():
     training_dict = get_training_set_dict()
 
     query_types = ['match_phrase']
@@ -914,7 +1003,7 @@ def sort_prefixes():
 #print yo['b']
 
 #init_pagerank_graph()
-calculate_pagerank()
+#calculate_pagerank()
 #calculate_sheetrank()
 """
 {
@@ -933,6 +1022,9 @@ calculate_pagerank()
   }
 }
 """
+
+generate_search_urls_for_text_workers()
+
 
 #generate_manual_train_set()  # wow, exactly 613 lines! this is serendipitous (TODO if I add more lines, this comment will look stupid)
 

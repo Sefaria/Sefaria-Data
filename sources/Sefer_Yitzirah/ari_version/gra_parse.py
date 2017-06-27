@@ -106,14 +106,14 @@ def post_this():
     schema.add_title(u'פירוש הגר"א על ספר יצירה', 'he', True)
     schema.key = 'HaGra on Sefer Yetzirah Gra Version'
     schema.depth = 3
-    schema.addressTypes = ['Integer', 'Integer','Integer']
-    schema.sectionNames = ['Chapter', 'Mishnah','Comment']
+    schema.addressTypes = ['Integer', 'Integer', 'Integer']
+    schema.sectionNames = ['Chapter', 'Mishnah', 'Comment']
     schema.validate()
 
     index_dict = {
         'title': 'HaGra on Sefer Yetzirah Gra Version',
-        'categories': ['Commentary2','Kabbalah','Gra'],
-        'schema': schema.serialize() # This line converts the schema into json
+        'categories': ['Commentary2', 'Kabbalah', 'Gra'],
+        'schema': schema.serialize()# This line converts the schema into json
     }
     post_index(index_dict)
 

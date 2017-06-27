@@ -50,6 +50,10 @@ def save_links_local(dict_list, massekhet):
 
 def post_ein_mishpat(massekhet):
     query = {"generated_by":"Ein Mishpat Cluster {}".format(massekhet)}
+    # query_talmud = {''' "generated_by": "Ein Mishpat Cluster {}", $and: [ {{ "refs.0": /.*{}.*/i }} ] '''.format(massekhet,massekhet)}
+    # query_tush = {''' "generated_by": "Ein Mishpat Cluster {}", $and: [ {{ "refs.0": /.*{}.*/i }} ] '''.format(massekhet)}
+    # query_rambam = {''' "generated_by": "Ein Mishpat Cluster {}", $and: [ {{ "refs.0": /.*{}.*/i }} ] '''.format(massekhet)}
+    # query_semag = {''' "generated_by": "Ein Mishpat Cluster {}", $and: [ {{ "refs.0": /.*{}.*/i }} ] '''.format(massekhet)}
     linkset = LinkSet(query)
     links = [l.contents() for l in linkset]
     # for l in links:
@@ -257,9 +261,10 @@ from sefaria.helper.link import create_link_cluster
 #     print total
 
 if __name__ == "__main__":
-    massekhet = 'Moed Katan'
-    # final_list = segment_column(u'done/Ein Mishpat - Moed Katan.csv', u'done/mk_fixed.csv', massekhet)
+    massekhet = 'Nedarim'
+    # final_list = segment_column(u'done/sukkah_little_letters.csv', u'done/sukkah_little_letters.csv',  massekhet)
+    # print final_list
     # validation = validity_and_cluster(final_list)
-    # save_links_local(final_list,massekhet)
-    # links = post_ein_mishpat(massekhet)
+    # save_links_local(final_list, massekhet)
+    links = post_ein_mishpat(massekhet)
     print 'done'
