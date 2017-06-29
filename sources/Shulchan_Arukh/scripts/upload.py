@@ -2,6 +2,7 @@
 
 import re
 import argparse
+import unicodecsv
 from sefaria.model import *
 from data_utilities.util import ja_to_xml
 from sources.Shulchan_Arukh.ShulchanArukh import *
@@ -26,13 +27,19 @@ def get_alt_struct(book_title):
     """
     base_text = root.get_base_text()
     topics = [t for t in base_text.Tag.find_all('topic')]
+
+    with open('Shulchan_Arukh_titles.csv') as infile:
+        reader = unicodecsv.DictReader(infile)
+        en_topics = [row['Shulchan Arukh - en'] for row in reader]
+    assert len(en_topics) == len(topics)
+
     s_node = SchemaNode()
     s_node.add_primary_titles('Topic', u'נושא', False)
 
     start_siman, start_seif = 1, None
-    for i, topic in enumerate(topics):
+    for i, (topic, en_topic) in enumerate(zip(topics, en_topics)):
         node = ArrayMapNode()
-        node.add_primary_titles('Topic', re.sub(u' *\n *', u'', topic.text))
+        node.add_primary_titles(en_topic, re.sub(u' *\n *', u'', topic.text))
         node.depth = 0
         node.includeSections = True
 

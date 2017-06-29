@@ -613,9 +613,11 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
                     start_ref = bas_ref_list[bisect.bisect_right(bas_ind_list,p[0])-1]
                     end_ref = bas_ref_list[bisect.bisect_right(bas_ind_list,p[1])-1]
                     if start_ref != end_ref:
-                        start_end_map[ise - 1] = (start_end_map[ise - 1][0], p[0])
-                        start_end_map[ise] = (p[1], start_end_map[ise][1])
-                        break
+                        if start_end_map[ise - 1][0] <= p[0] and p[1] <= start_end_map[ise][1]:
+                            # make sure the new indexes don't cause an impossible range (i.e. backwards range)
+                            start_end_map[ise - 1] = (start_end_map[ise - 1][0], p[0])
+                            start_end_map[ise] = (p[1], start_end_map[ise][1])
+                            break
 
     ref_matches = []
     for i,x in enumerate(start_end_map):
