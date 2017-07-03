@@ -1,22 +1,24 @@
+#notes:
+    # emulate Ruth
+    # use bs + collections to better understand the data you're working with
+    # parse by line / feed line into soup
+    # switch to line by line, then feed through bs
 # assumptions:
-    #questions: contain reference, don't repeat
-    #commentary: contains reference, if commentary contains range, repeats
+    #question: contains reference, don't repeat
+    #commentary: contains <br />, reference, if commentary contains range, repeats
 #fix manually:
     # 2:1-3 only question contains reference, and repeats, but only twice
         #delete second iteration
-    # 2:4-6 only question contains reference
-    # 2:7 only question contains reference
-    # 2:8 only question contains reference
     # 2:16-17 repeats
         #delelete second occurrence
-    # 2:18 only question contains reference
     # 2:21-25 repeats, but only twice
         #delete second occurrence
     # pasukim in question with ' and " at 8:7
-
 #questions:
-    # how to process footnotes: they're super long
-    # should i add the missing reference to commentary
+    # can we have line breaks within array
+    # remove references in she'elot?
+        # if range should it link to range of psukim or only first?
+    # footnotes as footnotes
 import re
 import os
 import sys
@@ -33,9 +35,9 @@ def get_lines(page):
     with codecs.open(page, 'r', 'utf-8') as infile:
         return infile.readlines()
 
-def get_data(page):
+def get_data(page): # returns object with chapter and verses
 
-    soup = BeautifulSoup(page, 'html.parser')
+    soup = BeautifulSoup(page, 'html5lib')
 
     chapter = gematria(soup.find('h1').text.strip().rsplit(' ', 1)[1])
 
@@ -43,12 +45,20 @@ def get_data(page):
     for tag in soup.find_all('a', class_='mw-redirect', string=u'כל הפסוק'):
             verses.append(gematria(p[0].get('title').rsplit(' ', 1)[1]))
 
-    #store chapter and verses in metadata
-
-
     return metadata
 
-def parse(ja, lines, data):
+def parse(ja, lines, data): # returns jagged array populated with data
+    for tag in soup.find_all('h2'):
+        if len(list(tag.next_siblings)) > 5):
+            if question: (len(list(tag.next_siblings)) > 9)(div containing h3 and p) or search('&#160;&#160;')
+                list.append('<b>שאלות: </b>' + p.text)
+            if commentary (contains <br />):
+                remove (pasuk) from text
+                bold DH (span with class_=pasuq )
+                if footnote:
+                    add into text at
+                list.append(pasuk + text)
+
     for tag in soup.find_all('h2'): # and text != 'תוכן עניינים'
         verse = gematria(tag.child.text.rsplit(' ', 1)[1])
         h3
@@ -74,6 +84,14 @@ def parse(ja, lines, data):
                     DM(next)
                     line += next.text.encode("utf-8")
 
+    print len(soup.find_all('div', style=None, class_=None, id=None))
+    divs = soup.find_all('div', style=None, class_=None, id=None)
+    for div in divs:
+        #skip first
+        print len(list(div.children))
+        for child in div.children:
+            if child.name=='p':
+                print child.string
 
 
 def posterize(text):
@@ -100,9 +118,9 @@ def posterize(text):
         "title": "Malbim on Genesis",
         "categories": [],
         "schema": root.serialize(),
-        "base_text_titles": [enTitle],
-        "collective_title": "",
-        "dependence": "",
+        "base_text_titles": ['Genesis'],
+        "collective_title": "Malbim",
+        "dependence": "Commentary",
 
     }
     #post_index(index)
