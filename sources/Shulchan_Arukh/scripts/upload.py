@@ -99,6 +99,13 @@ def shulchan_arukh_post_parse(shulchan_ja):
             siman_ja[i] = seif
 
 
+def sma_post_parse(sma_ja):
+    for i, siman in enumerate(sma_ja):
+        for j, seif in enumerate(siman):
+            seif = re.sub(ur'\("\)|#', u'', seif)
+            seif = re.sub(u' {2,}', u' ', seif)
+            sma_ja[i][j] = seif
+
 
 def split_segments(text_ja):
     for i, siman in enumerate(text_ja):
@@ -143,6 +150,7 @@ def depth_3_index(en_title, he_title, commentator, *args, **kwargs):
 post_parse = {
     u'Shulchan Arukh, Choshen Mishpat': shulchan_arukh_post_parse,
     u'Ketzot HaChoshen on Shulchan Arukh, Choshen Mishpat': split_segments,
+    u"Me'irat Einayim on Shulchan Arukh, Choshen Mishpat": sma_post_parse
 }
 
 index_methods = {
