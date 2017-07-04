@@ -376,16 +376,18 @@ def weak_connection(func):
     return post_weak_connection
 
 
-def http_request(url, params=None, json_payload=None, method="GET"):
+def http_request(url, params=None, body=None, json_payload=None, method="GET"):
     if params is None:
         params = {}
+    if body is None:
+        body = {}
     if json_payload:
-        params['json'] = json.dumps(json_payload)  # Adds the json as a url parameter - otherwise json gets lost
+        body['json'] = json.dumps(json_payload)  # Adds the json as a url parameter - otherwise json gets lost
 
     if method == "GET":
         response = requests.get(url, params)
     elif method == "POST":
-        response = requests.post(url, data=params)
+        response = requests.post(url, params=params, data=body)
     else:
         raise ValueError("Cannot handle HTTP request method {}".format(method))
 
@@ -452,7 +454,7 @@ def make_title(text):
 @weak_connection
 def post_index(index, server=SEFARIA_SERVER):
     url = server+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
-    return http_request(url, params={'apikey': API_KEY}, json_payload=index, method="POST")
+    return http_request(url, body={'apikey': API_KEY}, json_payload=index, method="POST")
     # indexJSON = json.dumps(index)
     # values = {
     #     'json': indexJSON,
@@ -477,7 +479,7 @@ def hasTags(comment):
 @weak_connection
 def post_link(info, server=SEFARIA_SERVER):
     url = server+'/api/links/'
-    return http_request(url, params={'apikey': API_KEY} ,json_payload=info, method="POST")
+    return http_request(url, body={'apikey': API_KEY} ,json_payload=info, method="POST")
     # infoJSON = json.dumps(info)
     # values = {
     #     'json': infoJSON,
@@ -586,7 +588,7 @@ def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SER
     # textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
     url = server+'/api/texts/'+ref
-    params = {'apikey': API_KEY}
+    params, body = {}, {'apikey': API_KEY}
     if index_count == "on":
         params['count_after'] = 1
     if skip_links:
@@ -596,7 +598,7 @@ def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SER
         # else:
         #     url += '?skip_links={}'.format(skip_links)
 
-    return http_request(url, params=params, json_payload=text, method="POST")
+    return http_request(url, params=params, body=body, json_payload=text, method="POST")
     # values = {'json': textJSON, 'apikey': API_KEY}
     # data = urllib.urlencode(values)
     # req = urllib2.Request(url, data)
