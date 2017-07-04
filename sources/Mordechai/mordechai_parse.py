@@ -1,5 +1,17 @@
-class Tractate:
-    pass
+# -*- coding: utf-8 -*-
+import sys
+import os
+# for a script located two directories below this file
+p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, p)
+from sources.local_settings import *
+sys.path.insert(0, SEFARIA_PROJECT_PATH)
+os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
+from sources.functions import *
+import re
+import codecs
+
+
 
 def mord_post_term():
     term_obj = {
@@ -19,47 +31,175 @@ def mord_post_term():
         ]
     }
     post_term(term_obj)
+class Tractate:
+    def __init__(self):
+        #later, we should be able to extract this info from the file name
+        self.record_name_en = "Bava Batra"
+        self.record_name_he = u"בבא בתרא"
+        self.file_name = "מרדכי בבא בתרא - ערוך לתג - סופי.txt"
+        self.mord_parse_text()
+    def mord_post_index(self):   
+        record = JaggedArrayNode()
+        record.add_title('Mordechai on '+self.record_name_en, 'en', primary=True)
+        record.add_title(u'מרדכי על'+' '+self.record_name_he, 'he', primary=True)
+        record.key = 'Mordechai on '+self.record_name_en
+        record.depth = 2
+        record.addressTypes = ["Integer", "Integer"]
+        record.sectionNames = ["Chapter", "Paragraph"]
+        record.validate()
+        
+        #now we make alt structs
+        remez_nodes = SchemaNode()
 
-def mord_post_index(tractate_object):   
-    record = JaggedArrayNode()
-    record.add_title('Mordechai on '+tractate_object.record_name_en, 'en', primary=True)
-    record.add_title(u'מרדכי על'+' '+tractate_object.record_name_he, 'he', primary=True)
-    record.key = 'Mordechai on '+tractate_object.record_name_en
-    record.depth = 3
-    record.addressTypes = ["Integer", "Integer"]
-    record.sectionNames = ["Chapter", "Paragraph"]
-    record.validate()
+        for remez_segment in segment_remez_refs(self.remez_index):
+            remez_node = ArrayMapNode()
+            remez_node.includeSections = False
+            remez_node.depth = 0
+            remez_node.wholeRef = "Mordechai on "+self.record_name_en+", "+make_remez_range(remez_segment)
+            en_title = "Remez "+str(remez_segment["Starting Ref"]["Remez"])+" Through "+str(remez_segment["Ending Ref"]["Remez"])
+            he_title = u"רמז"+u" "+numToHeb(remez_segment["Starting Ref"]["Remez"])+u" עד "+numToHeb(remez_segment["Ending Ref"]["Remez"])
+            remez_node.key = en_title
+            remez_node.add_title(en_title, 'en', primary = True)
+            remez_node.add_title(he_title, 'he', primary = True)
+            remez_nodes.append(remez_node)
+            
+        index = {
+            "title":'Mordechai on '+self.record_name_en,
+            "base_text_titles": [
+              self.record_name_en
+            ],
+            "alt_structs": {"Remez": remez_nodes.serialize()},
+            "dependence": "Commentary",
+            "categories":["Talmud","Bavli","Commentary","Mordechai"],
+            "schema": record.serialize()
+        }
+        post_index(index,weak_network=True)
+    def mord_parse_text(self):
+        with open(self.file_name) as myfile:
+            lines = list(map(lambda x: x.decode('utf8', 'replace'), myfile.readlines()))
+        perek_list=[]
+        perek_box =[]
+        remez_index=[]
+        daf_refs=[]
+        hagahot_box=[]
+        for line_index, line in enumerate(lines):
+            if u"הגהות דשייכי" in line:
+                hagahot_line=line_index
+                break
+            for remez in re.findall(ur"@20.*?@01",line):
+                print line
+                #designed so entries are index locations (starting at 0)
+                remez_index.append({"Remez":getGematria(remez.replace(u"רמז","")),"Perek":len(perek_list),"Paragraph":len(perek_box)})
+                print remez_index[-1]
+            for daf_ref in re.findall(ur"@10.*?@01",line):
+                if u"ע\"א" in daf_ref:
+                    amud="a"
+                elif u"ע\"ב" in daf_ref:
+                    amud="b"
+                else:
+                    amud="a"
+                daf_refs.append({"Daf":getGematria(clean_daf_ref(daf_ref)),"Amud":amud,"Perek":len(perek_list),"Paragraph":len(perek_box)})
+            for paragraph in line.split(u":"):
+                if not_blank(paragraph):
+                    perek_box.append(fix_markers(paragraph)+u":")
+            if u"סליק פירקא" in line:
+                perek_list.append(perek_box)
+                perek_box = []
+        perek_list.append(perek_box)
+        self.remez_index = remez_index
+        self.daf_refs = daf_refs
+        self.text = perek_list
+        """
+        #to print text:
+        for pindex, perek in enumerate(perek_list):
+            for cindex, comment in enumerate(perek):
+                print pindex, cindex, comment
+        """
+        segment_remez_refs(remez_index)
+    def mord_post_text(self):
+        version = {
+            'versionTitle': 'Vilna Edition',
+            'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957',
+            'language': 'he',
+            'text': self.text
+        }
+        post_text_weak_connection('Mordechai on '+self.record_name_en, version)
+    def mord_link_text(self):
+        for link_ref in self.daf_refs:
+            print link_ref
+            link = (
+                    {
+                    "refs": [
+                             self.record_name_en+" "+str(link_ref["Daf"])+link_ref["Amud"],
+                             'Mordechai on '+self.record_name_en+", "+str(link_ref["Perek"]+1)+":"+str(link_ref["Paragraph"]+1),
+                             ],
+                    "type": "commentary",
+                    "auto": True,
+                    "generated_by": "sterling_tos_rid_linker"
+                    })
+            post_link(link, weak_network=True)
+def make_talmud_array(book):
+    tc = TextChunk(Ref(book), "he")
+    return_array = []
+    for x in range(len(tc.text)):
+        return_array.append([])
+    for index, perek in enumerate(return_array):
+        tc2 = tc.text[index]
+        for x in range(len(tc.text)):
+            return_array[index].append([])
+    return return_array
+def clean_daf_ref(s):
+    return s.replace(u"דף",u"").replace(u"ע\"א",u"").replace(u"ע\"ב",u"")
+def segment_remez_refs(refs):
+    remez_count = 0
+    return_list = []
+    starting_ref = refs[0]
+    for index in range(1,len(refs)):
+        finished=False
+        remez_count+=1
+        if remez_count>9 and refs[index-1]["Paragraph"]!=refs[index]["Paragraph"] and refs[index-1]["Paragraph"]!=starting_ref["Paragraph"]:
+            return_list.append({"Starting Ref":starting_ref, "Ending Ref":refs[index-1]})
+            starting_ref=refs[index]
+            finished=True
+            remez_count=0
+    if not finished:
+        return_list.append({"Starting Ref":starting_ref, "Ending Ref":refs[index-1]})
+    for dude in return_list:
+        print dude
+    return return_list
 
-    index = {
-        "title":'Mordechai on '+tractate_object.record_name_en,
-        "base_text_titles": [
-          tractate_object.record_name_en
-        ],
-        "dependence": "Commentary",
-        "categories":["Talmud","Bavli","Commentary","Mordechai"],
-        "schema": record.serialize()
-    }
-    post_index(index,weak_network=True)
-
-
-with open("מרדכי בבא בתרא - ערוך לתג - סופי.txt") as myfile:
-    lines = list(map(labmda(x): x.decode('utf8', 'replace'), myfile.readlines()))
-for line in lines:
-    print line
-
-posting_term=False
-posting_index=False
-posting_text=False
-linking=False
+def make_remez_range(remez_segment):
+    return str(remez_segment["Starting Ref"]["Perek"]+1)+":"+str(remez_segment["Starting Ref"]["Paragraph"]+1)+"-"\
+        +str(remez_segment["Ending Ref"]["Perek"]+1)+":"+str(remez_segment["Ending Ref"]["Paragraph"]+1)
+def not_blank(s):
+    while u" " in s:
+        s = s.replace(u" ",u"")
+    return (len(s.replace(u"\n",u"").replace(u"\r",u"").replace(u"\t",u""))!=0);
+def fix_markers(s):
+    return s.replace(u"@01",u"</small>").replace(u"@10",u"<small>").replace(u'@20',u"<small>")
+def get_perek(ref):
+    range_dict = get_perek_ranges(ref.book
+    for chapter_range in range_dict.keys():
+        if Ref(chapter_range).contains(ref):
+            return range_dict[chapter_range]
+def get_perek_ranges(tractate_name):
+    return {node['wholeRef']:node['titles'][0]['text'] for node in library.get_index(tractate_name).alt_structs["Chapters"]['nodes']}
+posting_term=True
+posting_index=True
+posting_text=True
+linking=True
 
 tractate = Tractate()
-tractate.record_name_en = "Bava Batra"
-tractate.record_name_he = u"בבא בתרא"
 
 if posting_term:
     mord_post_term()
 if posting_index:
-    mord_post_index(tractate)
+    tractate.mord_post_index()
+if posting_text:
+    tractate.mord_post_text()
+if linking:
+    tractate.mord_link_text()
     
+print SEFARIA_SERVER+"/admin/reset/Mordechai on "+tractate.record_name_en
 
     
