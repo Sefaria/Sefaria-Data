@@ -706,7 +706,7 @@ def post_term(term_dict, server=SEFARIA_SERVER):
     name = term_dict['name']
     # term_JSON = json.dumps(term_dict)
     url = '{}/api/terms/{}'.format(server, urllib.quote(name))
-    return http_request(url, params={'apikey': API_KEY}, json_payload=term_dict, method="POST")
+    return http_request(url, body={'apikey': API_KEY}, json_payload=term_dict, method="POST")
     # values = {'json': term_JSON, 'apikey': API_KEY}
     # data = urllib.urlencode(values)
     # req = urllib2.Request(url, data)
