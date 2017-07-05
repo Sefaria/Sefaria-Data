@@ -54,5 +54,5 @@ for i in errors:
     print i
 markup(volume)
 # root.populate_comment_store()
-volume.convert_pattern_to_itag("Ba'er Hetev on Shulchan Arukh, Choshen Mishpat", ur"@63\[([\u05d0-\u05ea]{1,3})\]")
+volume.convert_pattern_to_itag("Ba'er Hetev", ur"@63\[([\u05d0-\u05ea]{1,3})\]")
 root.export()

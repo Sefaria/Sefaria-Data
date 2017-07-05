@@ -1003,7 +1003,7 @@ class Seif(OrderedElement):
             commentary_ref = u'{} on {} {}:{}'.format(link_record['commentator_title'], link_record['base_title'],
                                                       link_record['commentator_siman'], link_record['commentator_seif'])
             itag = {
-                'data-commentator': u'{} on {}'.format(link_record['commentator_title'], link_record['base_title']),
+                'data-commentator': u'{}'.format(link_record['commentator_title']),
                 'data-order': link_record['commentator_seif']
             }
             if self.Tag.has_attr('label'):
