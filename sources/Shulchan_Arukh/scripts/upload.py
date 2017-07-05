@@ -1,7 +1,9 @@
 #encoding=utf-8
 
 import re
+import os
 import argparse
+import requests
 import unicodecsv
 from sefaria.model import *
 from data_utilities.util import ja_to_xml
@@ -84,6 +86,12 @@ def get_alt_struct(book_title):
     return s_node.serialize()
 
 
+def generic_cleaner(ja, cb):
+    for i, siman in enumerate(ja):
+        for j, seif in enumerate(siman):
+            ja[i][j] = cb(seif)
+
+
 def shulchan_arukh_post_parse(shulchan_ja):
     xml_simanim = root.get_base_text().get_simanim()
     assert len(shulchan_ja) == len(xml_simanim)
@@ -94,7 +102,7 @@ def shulchan_arukh_post_parse(shulchan_ja):
             siman_ja[0] = u'<b>{}</b><br>{}'.format(title_text, siman_ja[0])
 
         for i, seif in enumerate(siman_ja):
-            seif = re.sub(ur'\("\)', u'', seif)
+            seif = re.sub(ur'\(("|\?)\)|\?', u'', seif)
             seif = re.sub(u' {2,}', u' ', seif)
             siman_ja[i] = seif
 
@@ -102,9 +110,26 @@ def shulchan_arukh_post_parse(shulchan_ja):
 def sma_post_parse(sma_ja):
     for i, siman in enumerate(sma_ja):
         for j, seif in enumerate(siman):
-            seif = re.sub(ur'\("\)|#', u'', seif)
+            seif = re.sub(ur'\(("|\?)\)|#', u'', seif)
+            seif = re.sub(ur'%+', u'\u261c', seif)
             seif = re.sub(u' {2,}', u' ', seif)
             sma_ja[i][j] = seif
+
+
+def pithei_clean(ja):
+    for i , siman in enumerate(ja):
+        for j, seif in enumerate(siman):
+            seif = re.sub(ur'%', u'', seif)
+            seif = re.sub(u' {2,}', u' ', seif)
+            ja[i][j] = seif
+
+
+def gra_clean(ja):
+    def clean(t):
+        t = re.sub(ur'\*', u'', t)
+        t = re.sub(u' {2,}', u' ', t)
+        return t
+    generic_cleaner(ja, clean)
 
 
 def split_segments(text_ja):
@@ -147,15 +172,24 @@ def depth_3_index(en_title, he_title, commentator, *args, **kwargs):
     return create_simple_index(en_title, he_title, commentator, depth=3)
 
 
+def gra_index(*args, **kwargs):
+    pre_index = create_simple_index(*args, **kwargs)
+    pre_index['authors'] = "Gra"
+    return pre_index
+
+
 post_parse = {
     u'Shulchan Arukh, Choshen Mishpat': shulchan_arukh_post_parse,
     u'Ketzot HaChoshen on Shulchan Arukh, Choshen Mishpat': split_segments,
-    u"Me'irat Einayim on Shulchan Arukh, Choshen Mishpat": sma_post_parse
+    u"Me'irat Einayim on Shulchan Arukh, Choshen Mishpat": sma_post_parse,
+    u'Pithei Teshuva on Shulchan Arukh, Choshen Mishpat': pithei_clean,
+    u'Beur HaGra on Shulchan Arukh, Choshen Mishpat': gra_clean,
 }
 
 index_methods = {
     u'Shulchan Arukh, Choshen Mishpat': shulchan_arukh_index,
-    u'Ketzot HaChoshen on Shulchan Arukh, Choshen Mishpat': depth_3_index
+    u'Ketzot HaChoshen on Shulchan Arukh, Choshen Mishpat': depth_3_index,
+    u'Beur HaGra on Shulchan Arukh, Choshen Mishpat': gra_index,
 }
 
 if __name__ == '__main__':
@@ -199,3 +233,4 @@ if __name__ == '__main__':
     if links:
         post_link(links, server=user_args.server)
 
+    requests.post(os.environ['SLACK_URL'], json={'text': 'Upload Complete'})
