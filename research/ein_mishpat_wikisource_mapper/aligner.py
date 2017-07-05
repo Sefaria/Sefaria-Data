@@ -1,4 +1,4 @@
-import codecs, json, re, bisect, bleach
+import codecs, json, re, bisect, bleach, unicodecsv
 from sefaria.model import *
 from data_utilities import dibur_hamatchil_matcher
 
@@ -22,10 +22,10 @@ def validate_matches(matches):
 with codecs.open("scraper.out", "rb", encoding='utf8') as f:
     wiki_scraped = json.load(f, encoding='utf8')
 
-out_obj = {}
+out_rows = []
 for mes in mesechtot:
     mes_ind = library.get_index(mes)
-    for daf_ref in [Ref("Sanhedrin 67a")]:  # mes_ind.all_section_refs():
+    for daf_ref in mes_ind.all_section_refs():
         print daf_ref
         daf_scraped = wiki_scraped[daf_ref.book][daf_ref.normal()]
         words_scraped = daf_scraped["text"].split()
@@ -62,23 +62,22 @@ for mes in mesechtot:
         except AttributeError:
             print "OH NO!", daf_ref, matched["matches"]
             super_sefaria_list = [matched["matches"][sc].normal() if matched["matches"][sc] is not None else None for sc in super_comment_list]
-        daf_obj = {
-            "super_indices": daf_scraped["super_indices"],
-            "super_simanim": daf_scraped["super_simanim"],
-            "super_refs": super_sefaria_list
-        }
-        try:
-            out_obj[daf_ref.book][daf_ref.normal()] = daf_obj
-        except KeyError:
-            out_obj[daf_ref.book] = {}
-            out_obj[daf_ref.book][daf_ref.normal()] = daf_obj
 
+        wiki_snippets = [u" <{}> ".format(bleach.clean(sim, strip=True, tags=[])).join([comments_scraped[sc-1],
+                         comments_scraped[sc]]) if sc != 0 else u" <{}> {}".format(bleach.clean(sim, strip=True, tags=[]
+                         ), comments_scraped[sc]) for sim, sc in zip(daf_scraped["super_simanim"], super_comment_list)]
+        out_rows += [
+            {"Index": ind,
+             "Daf": daf_ref.normal(),
+             "Siman": bleach.clean(sim, strip=True, tags=[]),
+             "Siman Ref": Ref(sim_ref).starting_ref().normal() if sim_ref is not None else u"N/A",
+             "Wiki Snippet": ws
+             } for ind, sim, sim_ref, ws in zip(xrange(len(out_rows)+1, len(out_rows)+1+len(super_sefaria_list)),
+                                            daf_scraped["super_simanim"], super_sefaria_list, wiki_snippets)
+        ]
 
-        # if None in matched["matches"]:
-        #     for i, (m, c) in enumerate(zip(matched["matches"], matched["match_text"])):
-        #         if m is None:
-        #             print daf_ref, m, c[1]
+f = open("aligner.csv", "wb")
+writer = unicodecsv.DictWriter(f, ["Index", "Daf", "Siman", "Siman Ref", "Wiki Snippet"])
+writer.writeheader()
+writer.writerows(out_rows)
 
-f = codecs.open("aligner.out", "wb", encoding='utf8')
-json.dump(out_obj, f, ensure_ascii=False, indent=4)
-f.close()
