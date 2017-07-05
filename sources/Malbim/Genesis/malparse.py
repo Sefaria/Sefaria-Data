@@ -1,10 +1,10 @@
 '''
-yoni questions:
-- how to identify commentaries: (psuq ?- ?psuq) [except for ב]
-- how to identify multiple commentaries: i.e. יא:ז
-- how to deal with repeats?
+- repeats
+- footnotes
+- which verse for which chunk
 
-shmuel quesitons:
+s quesitons:
+-
 - how to deal with small at יב:טז
 - how to deal with multiple psuqim in commentary i.e. טו:ה
 
@@ -28,45 +28,42 @@ path = '/pages'
 class Malbim(ToratEmetData):
 
     def __init__(self, path, from_url=False, codec='cp1255'):
+        ToratEmetData.__init__(self, path, from_url, codec)
+        self.parsed_text = self._extract_important_data()
 
-        for filename in os.listdir(path):
-            ToratEmetData.__init__(self, path + '/' + filename, from_url, codec)
-            self.chapter = []
-            self.verses = []
-            self.parsed_as_dict = self._dict_parse()
 
     def _extract_important_data(self):
 
-        book, chapters, verses, sections, segments = u'Genesis', [], [], [], [], None
+        book, chapter, verse, sections, segments = {}, {}, {}, [], []
+
+
+        def useless(html_fragment):
+
+            soup = html_fragment
+            if str(soup).find('<p><br/>') is 0 or soup.text == u'עריכה':
+                return True
+            return False
 
 
         def new_chapter(html_fragment):
 
             soup = html_fragment
-            if soup.h1 is not None:
+            if str(soup).find(u'מלבי"ם על בראשית'):
                 return True
             return False
 
 
         def new_verse(html_fragment):
-
+            # check against verse
             soup = html_fragment
-            if soup.find('a', class_='mw-redirect', string=u'כל הפסוק') is not None:
+            if re.match(u'\(([\u05d0-\u05ea]{1,2}\s?-?–?\s?[\u05d0-\u05ea]{0,2})\)', html_fragment.text) is not None:
                 return True
             return False
 
 
         def new_question(html_fragment):
 
-            if re.search('&#160;&#160;', html_fragment) is not None:
-                return True
-            return False
-
-
-        def new_commentary(html_fragment):
-
-            soup = html_fragment
-            if soup.find() is not None:
+            if re.search('<p><b>', html_fragment) is not None:
                 return True
             return False
 
@@ -81,55 +78,58 @@ class Malbim(ToratEmetData):
 
         def new_footnote(html_fragment):
             soup = html_fragment
-            if soup.find('\[[ aleph - taf ]\]') is not None:
+            if re.match(u'\[([\u05d0-\u05ea]{1,2})\]', soup.text) is not None:
                 return True
             return False
 
-        text_started = False
-        for line in self.lines:
-            line = multiple_replace(line, {u'\n': u'', u'\r': u''})
 
-            soup = BeautifulSoup(line, 'html5lib')
-            if new_chapter(soup):
-                chapters.append(gematria(soup.h1.text.strip().rsplit(' ', 1)[1]))
+        for page in listdir(self.path):
 
-                if new_verse(soup):
-                    tag = soup.find('a', class_='mw-redirect', string=u'כל הפסוק')
-                    verses.append(gematria(tag.get('title').rsplit(' ', 1)[1]))
+            first = True
+            soup = BeautifulSoup(self.path + '/' + page, 'html5lib')
+            psoup = soup.find_all('p')
 
-                elif new_question(soup):
-                    # clean up text
-                    sections.append('<b>שאלות: </b>' + soup.p.text)
+            for p in psoup:
+                if useless(p)
+                    continue
 
-                elif new_commentary(soup):
-                    if pasuq(soup):
-
-                    elif new_footnote(soup):
-
-                    elif sections is not None:
-                        sections.append(segments)
-                        parashot.append(sections)
-
-                    sections, segments = [], None
-
-                        if text_quote(soup):
-                            append('<b>' + soup.span.text + '</b>') # add quotation marks?
-                            if segments is not None:
-                                sections.append(segments)
-                            segments = [NotImplemented] # soup.div.text
-
-                else:
-                    if soup.text == u'':
-                        continue
+                elif new_chapter(p):
+                    m = re.search(u'· ([\u05d0-\u05ea]{1,2}) ·', p.text)
+                    chapter = gematria(m.group(1))
+                elif new_verse(p):
+                    if not first:
+                        line['chapter'] = chapter
+                        line['verse'] = verse
+                        line['text'] = sections
+                        sections = []
                     else:
-                        segments.append(NotImplemented) # soup.text
+                        first = False
+                    m = re.match(u'\(([\u05d0-\u05ea]{1,2}\s?-?–?\s?[\u05d0-\u05ea]{0,2})\)', p.text)
+                    verse = gematria(m.group(1))
+                    if new_DM(p):
+                        pass
+                    chunk = p.text
+                    chunk = re.sub(u'<p>\([\u05d0-\u05ea]{1,2}\s?-?–?\s?[\u05d0-\u05ea]{0,2}\)(.*?)</p>', r'\1', chunk)
+                    sections.append(chunk)
+                elif new_question(p):
+                    chunk = p.text
+                    m = re.match(u'\(([\u05d0-\u05ea]{1,2})\s?-?–?\s?[\u05d0-\u05ea]{0,2}\)', chunk)
+                    verse = m.group(1)
+                    sections.append(re.sub(u'\([\u05d0-\u05ea]{1,2}\s?-?–?\s?[\u05d0-\u05ea]{0,2}\)', u'<b>שאלות: </b>', chunk))
+                    # how to remove the &#160;
+                elif new_footnote(p):
+                    m = re.match(u'\[([\u05d0-\u05ea]{1,2})\]', p.text)
+                    chunk = p.text
+                    # not every footnote starts with [hebrew letter], but always an <h3> before it
+                    # search last section item for m.group(0) [dif if plural] + replace with <sup>p.text</sup>
+                    sections[-1].append('<sup>' + chunk '</sup>')
+                else:
+                    if new_DM(p):
+                        pass
+                    sections.append(p.text)
 
-            else:
-                text_started = start_condition(soup)
 
-        else:
-            sections.append(segments)
-            parashot.append(sections)
+        book = convert_dict_to_array(book)
 
         return {
             'book name': book_name
@@ -138,20 +138,6 @@ class Malbim(ToratEmetData):
 
     def _parse(self):
         return self._important_lines['full_text']
-
-
-    def _dict_parse(self): # is this necessary?
-
-        books = {}
-        for book_num, book in enumerate(self.parsed_text):
-            book_name = self.book_names[book_num]
-            parashot = {}
-
-            for parsha_num, parsha in enumerate(book):
-                parashot[self.parsha_by_book[book_name][parsha_num]] = parsha
-
-            books[book_name] = parashot
-        return books
 
 
 def build_links(parser):
