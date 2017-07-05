@@ -55,7 +55,7 @@ for mes in mesechtot:
             else:
                 comments_scraped += [u" ".join(words_scraped[curr_word:curr_word + chunk_size])]
                 curr_word += chunk_size
-        matched = dibur_hamatchil_matcher.match_ref(daf_ref.text("he"), comments_scraped, base_tokenizer,  with_abbrev_matches=True, with_num_abbrevs=False, place_consecutively=True)
+        matched = dibur_hamatchil_matcher.match_ref(daf_ref.text("he"), comments_scraped, base_tokenizer,  with_abbrev_matches=True, with_num_abbrevs=False, place_consecutively=False)
 
         try:
             super_sefaria_list = [matched["matches"][sc].normal() for sc in super_comment_list]

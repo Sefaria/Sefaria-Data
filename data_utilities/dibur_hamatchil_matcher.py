@@ -769,8 +769,6 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
         #.. order them by place in the rashi order
         ruToProcess.sort(key=lambda x: x.place)
 
-
-
         #see if they are in order
         fAllInOrder = True
         fFirstTime = True
@@ -928,8 +926,8 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
         rashisByDisambiguity.sort(key = lambda x: -x.disambiguationScore)
 
     unmatched = CountUnmatchedUpRashi(curDaf)
-    #now we check for dapim that have a lot of unmatched items, and then we take items out one at a time to see if we can
-    #minimize it because usually this results from one misplaced item.
+    # now we check for dapim that have a lot of unmatched items, and then we take items out one at a time to see if we can
+    # minimize it because usually this results from one misplaced item.
 
     curDaf.mergeRashis()
 
@@ -1055,9 +1053,6 @@ def set_ranges(results, base_text):
     return results
 
 
-
-
-
 def filter_matches_out_of_order(matched_words, temprashimatch):
     num_unmatched = temprashimatch.endWord - temprashimatch.startWord + 1
     for imatchedword in xrange(temprashimatch.startWord, temprashimatch.endWord + 1):
@@ -1070,6 +1065,7 @@ def filter_matches_out_of_order(matched_words, temprashimatch):
     #if percent_matched <= 0.3:
     #    print "DELETING {}".format(percent_matched)
     return percent_matched > 0.3
+
 
 def RecalculateDisambiguities(allRashis, rashisByDisambiguity, prevMatchedRashi, nextMatchedRashi, startbound, endbound,
                               newlyMatchedRashiUnit, boundaryFlexibility, maxendbound, place_all, place_consecutively):  # List<RashiUnit>,List<RashiUnit>,int,int,int,int,RashiUnit
@@ -1520,89 +1516,6 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
     return allMatches
 
 
-def GetAllApproximateMatchesWithWordSkip(curDaf, curRashi, startBound, endBound, word_threshold, char_threshold):  # GemaraDaf, RashiUnit,int,int,double
-
-    allMatches = []
-    startText = curRashi.startingTextNormalized
-    global normalizingFactor
-
-    daf_skips = int(min(2, mathy.floor((curRashi.cvWordcount-1)/2)))
-    rashi_skips = 1 if daf_skips > 0 else 0
-    overall = 2 if daf_skips + rashi_skips >= 2 else 1
-    mm = MatchMatrix(curDaf.wordhashes,
-                     curRashi.cvhashes,
-                     word_threshold,
-                     comment_word_skip_threshold=rashi_skips,
-                     base_word_skip_threshold=daf_skips,
-                     overall_word_skip_threshold=overall)
-    paths = mm.find_paths()
-
-    """
-        daf_start_index: #,
-        comment_indexes_skipped: [],
-        daf_indexes_skipped: [],
-        mismatches: #
-    """
-    for path in paths:
-        curMatch = TextMatch()
-        curMatch.match_type = 'skip'
-        #print 'PATH'
-        #mm.print_path(path)
-        gemaraWordToIgnore = path["daf_indexes_skipped"][0] if len(path["daf_indexes_skipped"]) > 0 else -1
-        gemaraSecondWordToIgnore = path["daf_indexes_skipped"][1] if len(path["daf_indexes_skipped"]) > 1 else -1
-        iRashiWordToIgnore = path["comment_indexes_skipped"][0] if len(path["comment_indexes_skipped"]) > 0 else -1
-        iGemaraWord = path["daf_start_index"]
-
-
-        #figure out the bounds of what you actually matched
-        if iRashiWordToIgnore != -1:
-            alternateStartText = u' '.join(curRashi.words[:iRashiWordToIgnore] + curRashi.words[iRashiWordToIgnore+1:])
-            rashiWordCount = curRashi.cvWordcount - 1
-        else:
-            rashiWordCount = curRashi.cvWordcount
-            alternateStartText = startText
-        # the "text matched" is the actual text of the gemara, including the word we skipped.
-        len_matched = rashiWordCount
-        if gemaraWordToIgnore != -1:
-            len_matched += 1
-        if gemaraSecondWordToIgnore != -1:
-            len_matched += 1
-
-        targetPhrase = BuildPhraseFromArray(curDaf.allWords, iGemaraWord , len_matched,
-                                            gemaraWordToIgnore, gemaraSecondWordToIgnore)
-
-        fIsMatch = True
-        #check small matches to make sure they actually match
-        if curRashi.cvWordcount <= 4:
-            distance, fIsMatch = IsStringMatch(alternateStartText, targetPhrase, char_threshold)
-
-        if fIsMatch:
-
-            dist = ComputeLevenshteinDistanceByWord(alternateStartText, targetPhrase)
-
-            # add penalty for skipped words
-            if gemaraWordToIgnore >= 0:
-                dist += fullWordValue #weighted_levenshtein.cost_str(curDaf.allWords[gemaraWordToIgnore])
-            if gemaraSecondWordToIgnore >= 0:
-                dist += fullWordValue #weighted_levenshtein.cost_str(curDaf.allWords[gemaraSecondWordToIgnore])
-            if iRashiWordToIgnore >= 0:
-                dist += fullWordValue #weighted_levenshtein.cost_str(curRashi.words[iRashiWordToIgnore])
-
-            normalizedDistance = 1.0 * (dist + smoothingFactor) / (len(startText) + smoothingFactor) * normalizingFactor
-            curMatch.score = normalizedDistance
-            curMatch.textToMatch = curRashi.startingText
-            curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iGemaraWord , len_matched)
-            curMatch.startWord = iGemaraWord
-            curMatch.endWord = iGemaraWord + len_matched - 1
-            curMatch.skippedRashiWords = [curRashi.words[iskip] for iskip in path['comment_indexes_skipped']]
-            curMatch.skippedDafWords = [curDaf.allWords[iskip] for iskip in path['daf_indexes_skipped']]
-            allMatches += [curMatch]
-
-
-    return allMatches
-
-
-#done
 def BuildPhraseFromArray(allWords, iWord, leng, skipWords=None):  # list<string>,int,int,int,int
     if skipWords:
         wordList = [w for i,w in enumerate(allWords[iWord:iWord+leng]) if i+iWord not in skipWords]
@@ -1611,12 +1524,11 @@ def BuildPhraseFromArray(allWords, iWord, leng, skipWords=None):  # list<string>
         return u" ".join(allWords[iWord:iWord + leng]).strip()
 
 
-#done
 def CountWords(s):
     pattern = re.compile(ur"\S+")
     return len(re.findall(pattern, s))
 
-#done
+
 def IsStringMatch(orig, target, threshold):  # string,string,double,out double
     # if our threshold is 0, just compare them one to eachother.
     if threshold == 0:
