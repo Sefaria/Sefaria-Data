@@ -151,10 +151,31 @@ def beer_hagola_clean(ja):
     generic_cleaner(ja, cb)
 
 
+def netivot_hiddushum_clean(ja):
+    def cb(t):
+        t = re.sub(ur'\n', u' ', t)
+        t = re.sub(ur'\*|\?', u'' ,t)
+        t = re.sub(ur'[()]{2}', u'\u261c', t)
+        t = re.sub(ur'\("\)', u'', t)
+        return re.sub(ur' {2}', u' ', t)
+    generic_cleaner(ja, cb)
+
+
+
 def split_segments(text_ja):
     for i, siman in enumerate(text_ja):
         for j, seif in enumerate(siman):
             text_ja[i][j] = [re.sub(u' *\n *', u' ', sub_sec) for sub_sec in seif.split(u'~seg~')]
+
+
+def clean_beurim(ja):
+    def cb(t):
+        t = re.sub(ur'[()]{2}', u'\u261c', t)
+        t = re.sub(ur'\("\)', u'', t)
+        t = re.sub(ur'\?|\*', u'', t)
+        t = re.sub(ur'\n', u' ', t)
+        return re.sub(u' {2,}', u' ', t)
+    generic_cleaner(ja, cb)
 
 
 def shulchan_arukh_index(server='http://localhost:8000', *args, **kwargs):
@@ -205,6 +226,7 @@ post_parse = {
     u'Beur HaGra on Shulchan Arukh, Choshen Mishpat': gra_clean,
     u'Siftei Kohen on Shulchan Arukh, Choshen Mishpat': shach_clean_and_split,
     u"Be'er HaGolah on Shulchan Arukh, Choshen Mishpat": beer_hagola_clean,
+    u"Netivot HaMishpat, Hidushim on Shulchan Arukh, Choshen Mishpat": netivot_hiddushum_clean
 }
 
 index_methods = {
