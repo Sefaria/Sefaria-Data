@@ -1,12 +1,12 @@
 '''
-- repeats
-- footnotes
-- which verse for which chunk
+todo:
+- if DM/range: generate reference for relevant psuqim (if multiple psuqim in commentary, should reference multiple psuqim)
+- manually fix footnotes
 
-s quesitons:
--
-- how to deal with small at יב:טז
-- how to deal with multiple psuqim in commentary i.e. טו:ה
+exceptions:
+- footnotes: no [א] at כח:יז, no [א] at מ:כג / correct manually
+- small at יב:טז / manually make into footnote
+- לו has only one psuq, and it doesn't have the psuq in / correct
 
 '''
 from data_utilities.util import ToratEmetData
@@ -18,7 +18,8 @@ import argparse
 import unicodecsv
 import local_settings
 from bs4 import BeautifulSoup
-from sefaria.model.text import library
+from fuzzywuzzy import process
+from sefaria.model import *
 from sefaria.datatype.jagged_array import JaggedArray
 from sefaria.utils.hebrew import decode_hebrew_numeral as gematria
 from sefaria.utils.hebrew import decompose_presentation_forms_in_str as normalize_he
@@ -29,112 +30,153 @@ class Malbim(ToratEmetData):
 
     def __init__(self, path, from_url=False, codec='cp1255'):
         ToratEmetData.__init__(self, path, from_url, codec)
-        self.parsed_text = self._extract_important_data()
+        self.important_lines = self._extract_important_data()
+        self.parsed_text = self._parse()
+
+
+    @staticmethod
+    def useless(html_fragment):
+        soup = html_fragment
+        if str(soup).find('<p><br/>') == 0 or soup.text == u'עריכה':
+            return True
+        return False
+
+
+    @staticmethod
+    def contains_chapter(html_fragment):
+        soup = html_fragment
+        if str(soup).find(u'מלבי"ם על בראשית'):
+            return True
+        return False
+
+
+    @staticmethod
+    def get_location(html_fragment):
+        soup = html_fragment
+        if contains_verse(html_fragment):
+            m = re.match(u'\(([\u05d0-\u05ea]{1,2})(\s?-?–?\s?)([\u05d0-\u05ea]{0,2})\)', soup.text)
+            return gematria(m.group(1))
+        else:
+            return False
+
+
+    @staticmethod
+    def contains_verse(html_fragment):
+        soup = html_fragment
+        if re.match(u'\(([\u05d0-\u05ea]{1,2}\s?-?–?\s?[\u05d0-\u05ea]{0,2})\)', soup.text):
+            return True
+        return False
+
+
+    @staticmethod
+    def is_question(html_fragment):
+        if re.search('<p><b>', html_fragment) is not None:
+            return True
+        return False
+
+
+    @staticmethod
+    def is_footnote(html_fragment):
+        soup = html_fragment
+        if re.match(u'\[\u05d0\]', soup.text) is not None:
+            return True
+        return False
+
+
+    @staticmethod
+    def contains_DM(html_fragment):
+        soup = html_fragment
+        if soup.find('span', class_='psuq') is not None:
+            return True
+        return False
+
+
+    @staticmethod
+    def contains_duplicates(commentaries):
+        for c in commentaries:
+            dupes = process.extract(c, commentaries)
+            for d = dupes:
+                if d[1] > 70:
+                    return True
+        return False
+
+    @staticmethod
+    def ranged_refs(html_fragment):
+        soup = html_fragment
+        m = re.match(u'\(([\u05d0-\u05ea]{1,2})(\s?-?–?\s?)([\u05d0-\u05ea]{0,2})\)', soup.text)
+        if len(m.group(0)) > 4:
+            return True
+        return False
+
 
 
     def _extract_important_data(self):
 
-        book, chapter, verse, sections, segments = {}, {}, {}, [], []
+        chapter, section, segments = None, {}, [],
+
+        for page in os.listdir(self.path):
+
+            cur_verse = 1
+            infile = io.open('/pages/'+ page, 'r')
+            soup = BeautifulSoup(infile, 'html5lib')
+            infile.close()
 
 
-        def useless(html_fragment):
-
-            soup = html_fragment
-            if str(soup).find('<p><br/>') is 0 or soup.text == u'עריכה':
-                return True
-            return False
-
-
-        def new_chapter(html_fragment):
-
-            soup = html_fragment
-            if str(soup).find(u'מלבי"ם על בראשית'):
-                return True
-            return False
-
-
-        def new_verse(html_fragment):
-            # check against verse
-            soup = html_fragment
-            if re.match(u'\(([\u05d0-\u05ea]{1,2}\s?-?–?\s?[\u05d0-\u05ea]{0,2})\)', html_fragment.text) is not None:
-                return True
-            return False
-
-
-        def new_question(html_fragment):
-
-            if re.search('<p><b>', html_fragment) is not None:
-                return True
-            return False
-
-
-        def new_DM(html_fragment):
-
-            soup = html_fragment
-            if soup.find('span', class_='psuq') is not None:
-                return True
-            return False
-
-
-        def new_footnote(html_fragment):
-            soup = html_fragment
-            if re.match(u'\[([\u05d0-\u05ea]{1,2})\]', soup.text) is not None:
-                return True
-            return False
-
-
-        for page in listdir(self.path):
-
-            first = True
-            soup = BeautifulSoup(self.path + '/' + page, 'html5lib')
-            psoup = soup.find_all('p')
-
-            for p in psoup:
-                if useless(p)
+            for p in soup.find_all('p'):
+                if self.useless(p)
                     continue
 
-                elif new_chapter(p):
+                if self.contains_chapter(p):
                     m = re.search(u'· ([\u05d0-\u05ea]{1,2}) ·', p.text)
                     chapter = gematria(m.group(1))
-                elif new_verse(p):
-                    if not first:
-                        line['chapter'] = chapter
-                        line['verse'] = verse
-                        line['text'] = sections
-                        sections = []
-                    else:
-                        first = False
-                    m = re.match(u'\(([\u05d0-\u05ea]{1,2}\s?-?–?\s?[\u05d0-\u05ea]{0,2})\)', p.text)
-                    verse = gematria(m.group(1))
-                    if new_DM(p):
-                        pass
+
+                if self.contains_verse(p):
+                    new_verse = get_location(p)
+
+                if cur_verse != new_verse:
+                    # what if section is empty
+                    section['chapter'] = chapter
+                    section['verse'] = cur_verse
+                    if contains_duplicates(segments):
+                        process.dedupe(segments)
+                    section['text'] = segments
+                    book.append(section)
+                    section = {}
+                    segments = []
+                    cur_verse = new_verse
+
+                if self.is_question(p):
+                    chunk = p.text.replace(u'\xa0\xa0', '')
+                    chunk = re.sub(u'\([\u05d0-\u05ea]{1,2}\s?-?–?\s?[\u05d0-\u05ea]{0,2}\)', u'<b>שאלות: </b>', chunk)
+                    segments.append(chunk)
+                elif self.is_footnote(p):
                     chunk = p.text
-                    chunk = re.sub(u'<p>\([\u05d0-\u05ea]{1,2}\s?-?–?\s?[\u05d0-\u05ea]{0,2}\)(.*?)</p>', r'\1', chunk)
-                    sections.append(chunk)
-                elif new_question(p):
-                    chunk = p.text
-                    m = re.match(u'\(([\u05d0-\u05ea]{1,2})\s?-?–?\s?[\u05d0-\u05ea]{0,2}\)', chunk)
-                    verse = m.group(1)
-                    sections.append(re.sub(u'\([\u05d0-\u05ea]{1,2}\s?-?–?\s?[\u05d0-\u05ea]{0,2}\)', u'<b>שאלות: </b>', chunk))
-                    # how to remove the &#160;
-                elif new_footnote(p):
-                    m = re.match(u'\[([\u05d0-\u05ea]{1,2})\]', p.text)
-                    chunk = p.text
-                    # not every footnote starts with [hebrew letter], but always an <h3> before it
-                    # search last section item for m.group(0) [dif if plural] + replace with <sup>p.text</sup>
-                    sections[-1].append('<sup>' + chunk '</sup>')
+                    m = re.search(u'\[\u05d0\]', chunk)
+                    segments[-1].replace(m.group(0), '<sup>*</sup><i class="footnote">' + chunk + '</i>')
                 else:
-                    if new_DM(p):
-                        pass
-                    sections.append(p.text)
+                    chunk = p.text
+                    if contains_DM(p):
+                        m = p.find_all('span')
+                        for psuq in m:
+                            chunk = re.sub('\"' + psuq + '\"\.', 'B' + psuq + '\B', chunk)
+                        chunk = re.sub(u'\"B(.*?)\B\"', r'<strong>\1</strong>', chunk)
+                    if re.match(u'\([\u05d0-\u05ea]{1,2}\s?-?–?\s?[\u05d0-\u05ea]{0,2}\)',chunk):
+                        m = re.match(u'\([\u05d0-\u05ea]{1,2}\s?-?–?\s?[\u05d0-\u05ea]{0,2}\)',chunk)
+                        chunk.replace(m.group(0), '')
+                    segments.append(chunk)
 
+            section['chapter'] = chapter
+            section['verse'] = cur_verse
+            if contains_duplicates(segments):
+                process.dedupe(segments)
+            section['text'] = segments
+            book.append(section)
+            section = {}
+            segments = []
 
-        book = convert_dict_to_array(book)
+        # is this correct:
+        return book
 
-        return {
-            'book name': book_name
-            'full_text': book
-        }
 
     def _parse(self):
         return self._important_lines['full_text']
