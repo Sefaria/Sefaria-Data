@@ -145,7 +145,7 @@ def shach_clean_and_split(ja):
 def beer_hagola_clean(ja):
     def cb(t):
         t = re.sub(ur'\n', u' ', t)
-        t = re.sub(ur'#|\*', u'\u261c', t)
+        t = re.sub(ur'#|\+', u'\u261c', t)
         t = re.sub(ur'\?', u'', t)
         return re.sub(ur' {2,}', u' ', t)
     generic_cleaner(ja, cb)
