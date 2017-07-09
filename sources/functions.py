@@ -396,17 +396,18 @@ def http_request(url, params=None, body=None, json_payload=None, method="GET"):
         json_response = response.json()
         if isinstance(json_response, dict) and json_response.get("error"):
             success = False
+            print u"Error: {}".format(json_response["error"])
     except ValueError:
         success = False
         json_response = ''
+        with codecs.open('errors.html', 'w', 'utf-8') as outfile:
+            outfile.write(response.text)
 
     if success:
         print u"\033[92m{} request to {} successful\033[0m".format(method, url)
         return json_response
     else:
         print u"\033[91m{} request to {} failed\033[0m".format(method, url)
-        with codecs.open('errors.html', 'w', 'utf-8') as outfile:
-            outfile.write(response.text)
         return response.text
 
 
