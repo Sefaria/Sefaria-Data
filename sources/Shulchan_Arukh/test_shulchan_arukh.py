@@ -184,11 +184,11 @@ class TestMarkChildren(object):
         s.mark_cyclical_seifim(u'@00([\u05d0-\u05ea])')
 
         assert len(s.get_child()) == 4
-        assert unicode(s) == u'<siman num="1"><seif label="1" num="1">some text\n</seif><seif label="2" num="2">more' \
-                             u' text\n</seif><seif label="22" num="3">foo\n</seif><seif label="1" num="4">' \
+        assert unicode(s) == u'<siman num="1"><seif label="א" num="1">some text\n</seif><seif label="ב" num="2">more' \
+                             u' text\n</seif><seif label="ת" num="3">foo\n</seif><seif label="א" num="4">' \
                              u'bar</seif></siman>'
 
-        rid_list = [u"b0-c1-si1-ord1;1", u"b0-c1-si1-ord2;2", u"b0-c1-si1-ord22;3", u"b0-c1-si1-ord1;4"]
+        rid_list = [u"b0-c1-si1-ordא;1", u"b0-c1-si1-ordב;2", u"b0-c1-si1-ordת;3", u"b0-c1-si1-ordא;4"]
         for seif, rid in zip(s.get_child(), rid_list):
             assert isinstance(seif, Seif)
             seif.set_rid(0, 1, 1, True)
@@ -237,6 +237,18 @@ class TestTextFormatting(object):
         s = Seif(BeautifulSoup(raw_text, 'xml').seif)
         s.format_text('@33', '@34', 'b')
         assert unicode(s) == u'<seif num="1"><b>just </b><reg-text>some </reg-text><b>text</b></seif>'
+
+    def test_special_after_word(self):
+        raw_text = u'<seif num="1">just@33 some @34text</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        s.format_text('@33', '@34', 'b')
+        assert unicode(s) == u'<seif num="1"><reg-text>just </reg-text><b>some </b><reg-text>text</reg-text></seif>'
+
+    def test_end_special_after_word(self):
+        raw_text = u'<seif num="1">@33just @34some text</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        s.format_text('@33', '@34', 'b')
+        assert unicode(s) == u'<seif num="1"><b>just </b><reg-text>some text</reg-text></seif>'
 
 class TestXref(object):
 
@@ -304,27 +316,27 @@ class TestXref(object):
         s = Seif(BeautifulSoup(raw_text, 'xml').find('seif'))
         s.mark_references(0, 1, 1, u'@33([\u05d0-\u05ea])', group=1, cyclical=True)
 
-        assert unicode(s) == u'<seif num="1"><dh>some <xref id="b0-c1-si1-ord1;1">@33א</xref> random</dh>' \
-                             u'<reg>random <xref id="b0-c1-si1-ord2;2">@33ב</xref> text ' \
-                             u'<xref id="b0-c1-si1-ord1;3">@33א</xref> here</reg></seif>'
+        assert unicode(s) == u'<seif num="1"><dh>some <xref id="b0-c1-si1-ordא;1">@33א</xref> random</dh>' \
+                             u'<reg>random <xref id="b0-c1-si1-ordב;2">@33ב</xref> text ' \
+                             u'<xref id="b0-c1-si1-ordא;3">@33א</xref> here</reg></seif>'
 
     def test_straight_to_itag(self):
         raw_text = u'<seif num="1"><dh>some @33א random</dh><reg>random @33ב text @33ד here</reg></seif>'
         s = Seif(BeautifulSoup(raw_text, 'xml').find('seif'))
         s.convert_pattern_to_itag(u'author', ur'@\d{2}([\u05d0-\u05ea])', group=1)
 
-        assert unicode(s) == u'<seif num="1"><dh>some <i data-commentator="author" data-order="1"/> random</dh>' \
-                             u'<reg>random <i data-commentator="author" data-order="2"/> text ' \
-                             u'<i data-commentator="author" data-order="4"/> here</reg></seif>'
+        assert unescape(unicode(s)) == u'<seif num="1"><dh>some <i data-commentator="author" data-order="1"></i> random</dh>' \
+                             u'<reg>random <i data-commentator="author" data-order="2"></i> text ' \
+                             u'<i data-commentator="author" data-order="4"></i> here</reg></seif>'
 
     def test_marks_touching(self):
         raw_text = u'<seif num="1"><dh>some @33אrandom</dh><reg>random @33בtext @33דhere</reg></seif>'
         s = Seif(BeautifulSoup(raw_text, 'xml').find('seif'))
         s.convert_pattern_to_itag(u'author', ur'@\d{2}([\u05d0-\u05ea])', group=1)
 
-        assert unicode(s) == u'<seif num="1"><dh>some <i data-commentator="author" data-order="1"/>random</dh>' \
-                             u'<reg>random <i data-commentator="author" data-order="2"/>text ' \
-                             u'<i data-commentator="author" data-order="4"/>here</reg></seif>'
+        assert unescape(unicode(s)) == u'<seif num="1"><dh>some <i data-commentator="author" data-order="1"></i>random</dh>' \
+                             u'<reg>random <i data-commentator="author" data-order="2"></i>text ' \
+                             u'<i data-commentator="author" data-order="4"></i>here</reg></seif>'
 
 def test_correct_marks():
     test_text = u'קצת @22א טקסט @22ט @22ג שאין @22ג @22ד @22ח לו\n @22ו משמעות'

@@ -866,27 +866,50 @@ class Seif(OrderedElement):
         is_special = False
         element_words = []
         for word in text_array:
+
             if re.search(start_special, word):
                 if is_special:  # Two consecutive special patterns have been found
                     raise AssertionError('Seif {}: Two consecutive formatting patterns ({}) found'.format(self.num, start_special))
+
                 else:
-                    word = re.sub(start_special, u'', word)
+                    word_is_special = True
+                    # if pattern appeared after word, exclude the word from the special markup
+                    if re.search(u'{}$'.format(start_special), word):
+                        element_words.append(re.sub(start_special, u'', word))
+                        word_is_special = False
+
                     if len(element_words) > 0:
                         element_words.append(u'')  # adds a space to the end of the text element
                         self.add_special(u' '.join(element_words), name=u'reg-text')
-                    element_words = []
+
+                    if word_is_special:
+                        element_words = [re.sub(start_special, u'', word)]
+                    else:
+                        element_words = []
                     is_special = True
 
             elif re.search(end_special, word):
+                word_is_special = False
                 if is_special:
+                    # if pattern appeared after the word, include the word in the special markup
+                    if re.search(u'{}$'.format(end_special), word):
+                        word_is_special = True
+                        element_words.append(re.sub(end_special, u'', word))
+
                     assert len(element_words) > 0  # Do not allow formatted text with no text
                     element_words.append(u'')
                     self.add_special(u' '.join(element_words), name=name)
-                    element_words = []
                     is_special = False
 
-                word = re.sub(end_special, u'', word)
-            element_words.append(word)
+                    if word_is_special:  # then word has already been added
+                        element_words = []
+                    else:
+                        element_words = [re.sub(end_special, u'', word)]
+
+                else:
+                    element_words.append(re.sub(end_special, u'', word))
+            else:
+                element_words.append(word)
         else:
             if is_special:
                 add_formatted_text(element_words, element_name=name)
@@ -959,8 +982,12 @@ class Seif(OrderedElement):
         if re.search(u'@', seif_text):
             # raise AssertionError("found @ marker in xml at {}:{}".format(self.Tag.parent['num'], self.num))
             print "found @ marker in xml at {}:{}".format(self.Tag.parent['num'], self.num)
-        seif_text = re.sub(u' <i data-commentator', u'<i data-commentator', seif_text)  # Remove space between text and itag
+        seif_text = re.sub(u'(<i data-commentator.*?></i>) +', ur'\1', seif_text)  # Remove space between text and itag
         seif_text = seif_text.replace(u'\n', u' ')
+        seif_text = seif_text.replace(u'*', u'')
+        seif_text = re.sub(ur'([^ ](?=\())|(\)(?=[^ ]))', ur'\g<0> ', seif_text)  # Parenthesis have spaces before and after
+        seif_text = re.sub(ur'\( | +[:)]', lambda x: x.group(0).replace(u' ', u''), seif_text)  # No spaces padding parenthesis or colon
+        seif_text = re.sub(u' +(</[^\u05d0-\u05ea ]*>:?)$', ur'\g<1>', seif_text)  # clean up spaces before the final html closing tag
         seif_text = re.sub(u' {2,}', u' ', seif_text)
         seif_text = re.sub(u'~br~', u'<br>', seif_text)
         return unescape(seif_text)
@@ -1061,6 +1088,7 @@ class TextElement(Element):
             if isinstance(sub_element, Tag) and sub_element.name == u'xref':
                 text_list.append(Xref(sub_element).render())
             else:
+                # text_list.append(re.sub(u'(^ +)|( +$)', u'', unicode(sub_element)))
                 text_list.append(unicode(sub_element))
 
         if self.Tag.name == u'ramah':

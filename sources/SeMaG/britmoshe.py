@@ -358,11 +358,14 @@ if __name__ == "__main__":
 
 
     root = library.get_index("Sefer Mitzvot Gadol").nodes
-    insert_last_child(new_parent, root, invalid=True)
+    insert_last_child(new_parent, root, skip_dependencies=True)
+
 
     for count in range(5):
         index = library.get_index("Sefer Mitzvot Gadol")
         node = index.nodes.children[1].children[1+count]
+        print node.ref().normal()
+        new_parent = index.nodes.children[-1]
         change_parent(node, new_parent, place=count, index=index)
 
 #def change_parent(node, ne, place=0, index=None):

@@ -4,6 +4,7 @@ import urllib
 import urllib2
 from urllib2 import URLError, HTTPError
 import json
+import requests
 import pdb
 import os
 import sys
@@ -65,7 +66,7 @@ eng_parshiot = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Tol
 "V'Zot HaBerachah"]
 
 
-def perek_to_number(perek_num):
+def perek_to_number(perek_num, thing_to_replace=None):
     '''
     Example: Input is "ראשון" and return is 1
     :param perek_num:
@@ -73,7 +74,11 @@ def perek_to_number(perek_num):
     '''
     line = u"""  פרק ראשון   פרק שני   פרק שלישי   פרק רביעי   פרק חמישי   פרק ששי   פרק שביעי   פרק שמיני   פרק תשיעי   פרק עשירי   פרק אחד עשר   פרק שנים עשר   פרק שלשה עשר   פרק ארבעה עשר   פרק חמשה עשר   פרק ששה עשר   פרק שבעה עשר   פרק שמונה עשר   פרק תשעה עשר   פרק עשרים   פרק אחד ועשרים   פרק שנים ועשרים   פרק שלשה ועשרים   פרק ארבעה ועשרים   פרק חמשה ועשרים   פרק ששה ועשרים   פרק שבעה ועשרים   פרק שמונה ועשרים   פרק תשעה ועשרים   פרק שלשים"""
     line = line.replace("\n", "")
-    line = line.split(u"פרק")[1:]
+    if thing_to_replace:
+        line = line.replace(u"פרק", u"")
+    else:
+        thing_to_replace = u"פרק"
+    line = line.split(thing_to_replace)[1:]
     arr_nums = []
     poss_num = 0
     perek_num = perek_num.replace(" ", "")
@@ -375,6 +380,39 @@ def weak_connection(func):
     return post_weak_connection
 
 
+def http_request(url, params=None, json_payload=None, method="GET"):
+    if params is None:
+        params = {}
+    if json_payload:
+        params['json'] = json.dumps(json_payload)  # Adds the json as a url parameter - otherwise json gets lost
+
+    if method == "GET":
+        response = requests.get(url)
+    elif method == "POST":
+        response = requests.post(url, data=params)
+    else:
+        raise ValueError("Cannot handle HTTP request method {}".format(method))
+
+    success = True
+    try:
+        json_response = response.json()
+        if isinstance(json_response, dict) and json_response.get("error"):
+            success = False
+    except ValueError:
+        success = False
+        json_response = ''
+
+    if success:
+        print u"\033[92m{} request to {} successful\033[0m".format(method, url)
+        return json_response
+    else:
+        print u"\033[91m{} request to {} failed\033[0m".format(method, url)
+        with codecs.open('errors.html', 'w', 'utf-8') as outfile:
+            outfile.write(response.text)
+        return response.text
+
+
+
 def make_title(text):
     '''
     Takes as input a node named 'text' and capitalizes it appropriately
@@ -418,21 +456,21 @@ def make_title(text):
 @weak_connection
 def post_index(index, server=SEFARIA_SERVER):
     url = server+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
-    indexJSON = json.dumps(index)
-    values = {
-        'json': indexJSON,
-        'apikey': API_KEY
-    }
-    hdr = {"User-Agent": ""}
-    data = urllib.urlencode(values)
-    req = urllib2.Request(url, data, headers=hdr)
-    try:
-        response = urllib2.urlopen(req)
-        print response.read()
-    except HTTPError as e:
-        with open('errors.html', 'w') as errors:
-            errors.write(e.read())
-        print "error"
+    return http_request(url, params={'apikey': API_KEY}, json_payload=index, method="POST")
+    # indexJSON = json.dumps(index)
+    # values = {
+    #     'json': indexJSON,
+    #     'apikey': API_KEY
+    # }
+    # data = urllib.urlencode(values)
+    # req = urllib2.Request(url, data)
+    # try:
+    #     response = urllib2.urlopen(req)
+    #     print response.read()
+    # except HTTPError as e:
+    #     with open('errors.html', 'w') as errors:
+    #         errors.write(e.read())
+    #     print "error"
 
 
 def hasTags(comment):
@@ -443,23 +481,23 @@ def hasTags(comment):
 @weak_connection
 def post_link(info, server=SEFARIA_SERVER):
     url = server+'/api/links/'
-    infoJSON = json.dumps(info)
-    values = {
-        'json': infoJSON,
-        'apikey': API_KEY
-    }
-    hdr = {"User-Agent": ""}
-    data = urllib.urlencode(values)
-    req = urllib2.Request(url, data, headers=hdr)
-    try:
-        response = urllib2.urlopen(req)
-        x= response.read()
-        print x
-        if x.find("error")>=0 and x.find("Daf")>=0 and x.find("0")>=0:
-            return "error"
-
-    except HTTPError, e:
-        print 'Error code: ', e.code
+    return http_request(url, params={'apikey': API_KEY} ,json_payload=info, method="POST")
+    # infoJSON = json.dumps(info)
+    # values = {
+    #     'json': infoJSON,
+    #     'apikey': API_KEY
+    # }
+    # data = urllib.urlencode(values)
+    # req = urllib2.Request(url, data)
+    # try:
+    #     response = urllib2.urlopen(req)
+    #     x= response.read()
+    #     print x
+    #     if x.find("error")>=0 and x.find("Daf")>=0 and x.find("0")>=0:
+    #         return "error"
+    #
+    # except HTTPError, e:
+    #     print 'Error code: ', e.code
 
 
 def post_link_weak_connection(info, repeat=10):
@@ -549,30 +587,32 @@ def first_word_with_period(str):
 
 @weak_connection
 def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SERVER):
-    textJSON = json.dumps(text)
+    # textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
-    if index_count == "off":
-        url = server+'/api/texts/'+ref
-    else:
-        url = server+'/api/texts/'+ref+'?count_after=1'
+    url = server+'/api/texts/'+ref
+    params = {'apikey': API_KEY}
+    if index_count == "on":
+        params['count_after'] = 1
     if skip_links:
-        if re.search(r'\?', url):
-            url += '&skip_links={}'.format(skip_links)
-        else:
-            url += '?skip_links={}'.format(skip_links)
-    values = {'json': textJSON, 'apikey': API_KEY}
-    data = urllib.urlencode(values)
-    hdr = {"User-Agent": ""}
-    req = urllib2.Request(url, data, headers=hdr)
-    try:
-        response = urllib2.urlopen(req)
-        x= response.read()
-        print x
-        if x.find("error")>=0 and x.find("Daf")>=0 and x.find("0")>=0:
-            return "error"
-    except HTTPError, e:
-        with open('errors.html', 'w') as errors:
-            errors.write(e.read())
+        params['skip_links'] = True
+        # if re.search(r'\?', url):
+        #     url += '&skip_links={}'.format(skip_links)
+        # else:
+        #     url += '?skip_links={}'.format(skip_links)
+
+    return http_request(url, params=params, json_payload=text, method="POST")
+    # values = {'json': textJSON, 'apikey': API_KEY}
+    # data = urllib.urlencode(values)
+    # req = urllib2.Request(url, data)
+    # try:
+    #     response = urllib2.urlopen(req)
+    #     x= response.read()
+    #     print x
+    #     if x.find("error")>=0 and x.find("Daf")>=0 and x.find("0")>=0:
+    #         return "error"
+    # except HTTPError, e:
+    #     with open('errors.html', 'w') as errors:
+    #         errors.write(e.read())
 
 
 
@@ -666,19 +706,18 @@ def post_flags(version, flags):
 @weak_connection
 def post_term(term_dict, server=SEFARIA_SERVER):
     name = term_dict['name']
-    term_JSON = json.dumps(term_dict)
+    # term_JSON = json.dumps(term_dict)
     url = '{}/api/terms/{}'.format(server, urllib.quote(name))
-    values = {'json': term_JSON, 'apikey': API_KEY}
-    hdr = {"User-Agent": ""}
-
-    data = urllib.urlencode(values)
-    req = urllib2.Request(url, data, headers=hdr)
-    try:
-        response = urllib2.urlopen(req)
-        x = response.read()
-        print x
-    except (HTTPError, URLError) as e:
-        print e
+    return http_request(url, params={'apikey': API_KEY}, json_payload=term_dict, method="POST")
+    # values = {'json': term_JSON, 'apikey': API_KEY}
+    # data = urllib.urlencode(values)
+    # req = urllib2.Request(url, data)
+    # try:
+    #     response = urllib2.urlopen(req)
+    #     x = response.read()
+    #     print x
+    # except (HTTPError, URLError) as e:
+    #     print e
 
 
 def add_term(en_title, he_title, scheme='toc_categories', server=SEFARIA_SERVER):
@@ -693,10 +732,10 @@ def add_term(en_title, he_title, scheme='toc_categories', server=SEFARIA_SERVER)
 def get_index_api(ref, server='http://www.sefaria.org'):
     ref = ref.replace(" ", "_")
     url = server+'/api/v2/raw/index/'+ref
-    req = urllib2.Request(url)
-    response = urllib2.urlopen(req)
-    data = json.load(response)
-    return data
+    # req = urllib2.Request(url)
+    # response = urllib2.urlopen(req)
+    # data = json.load(response)
+    return http_request(url)
 
 
 def get_text(ref):
@@ -1079,3 +1118,64 @@ def get_page(daf, amud):
     else:
         print 'invalid daf number'
         return 0
+
+import csv, codecs, cStringIO
+
+class UTF8Recoder:
+    """
+    Iterator that reads an encoded stream and reencodes the input to UTF-8
+    """
+    def __init__(self, f, encoding):
+        self.reader = codecs.getreader(encoding)(f)
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        return self.reader.next().encode("utf-8")
+
+class UnicodeReader:
+    """
+    A CSV reader which will iterate over lines in the CSV file "f",
+    which is encoded in the given encoding.
+    """
+
+    def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
+        f = UTF8Recoder(f, encoding)
+        self.reader = csv.reader(f, dialect=dialect, **kwds)
+
+    def next(self):
+        row = self.reader.next()
+        return [unicode(s, "utf-8") for s in row]
+
+    def __iter__(self):
+        return self
+
+class UnicodeWriter:
+    """
+    A CSV writer which will write rows to CSV file "f",
+    which is encoded in the given encoding.
+    """
+
+    def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
+        # Redirect output to a queue
+        self.queue = cStringIO.StringIO()
+        self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
+        self.stream = f
+        self.encoder = codecs.getincrementalencoder(encoding)()
+
+    def writerow(self, row):
+        self.writer.writerow([s.encode("utf-8") for s in row])
+        # Fetch UTF-8 output from the queue ...
+        data = self.queue.getvalue()
+        data = data.decode("utf-8")
+        # ... and reencode it into the target encoding
+        data = self.encoder.encode(data)
+        # write to the target stream
+        self.stream.write(data)
+        # empty queue
+        self.queue.truncate(0)
+
+    def writerows(self, rows):
+        for row in rows:
+            self.writerow(row)

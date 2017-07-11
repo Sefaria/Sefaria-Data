@@ -40,9 +40,8 @@ class CitationFinder():
 
         prefixes = u"[משהוכלבד]"
         after_title_delimiter_re = ur"[,.: \r\n]+"
-        # start_paren_reg = ur"(?:[(\[{][^})\]]*\s" + prefixes + ur"{0,2})|(?:[(\[{]" + prefixes + ur"{0,2})"
-        # start_paren_reg = ur"(?:[(\[{](?:[^})\]]* " + prefixes + ur"{0,2}|" + prefixes + ur"{0,2}))"
-        start_paren_reg = ur"(?:[(\[{][^})\]]*)"
+        start_paren_reg = ur"(?:(?:[(\[{][^})\]]*\s" + prefixes + ur"{0,2})|(?:[(\[{]" + prefixes + ur"{0,2}))"
+        # start_paren_reg = ur"(?:[(\[{][^})\]]*)"
         end_paren_reg = ur"(?:[\])}]|\W[^({\[]*[\])}])"
 
         title_reg_list = []
@@ -56,6 +55,7 @@ class CitationFinder():
 
 
             # inner_paren_reg = u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + ur'(?:[\[({]' + address_regex + ur'[\])}])(?=\W|$)'
+
             inner_paren_reg = u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + ur'(?:[\[({])' + address_regex + end_paren_reg
             outer_paren_reg = start_paren_reg + u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + \
                           address_regex + end_paren_reg
@@ -65,7 +65,8 @@ class CitationFinder():
                 stam_sham_reg = ur"(?:[(\[{])(?P<Title>" + sham_reg + u")(?:[\])}])"
                 outer_paren_sham_reg = ur"(?:[(\[{])" + u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + \
                               address_regex + end_paren_reg
-                reg = u'(?:{})|(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_sham_reg, stam_sham_reg)
+                inner_paren_sham_reg = u"\s(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + ur'(?:[\[({])' + address_regex + end_paren_reg
+                reg = u'(?:{})|(?:{})|(?:{})'.format(inner_paren_sham_reg, outer_paren_sham_reg, stam_sham_reg)
             else:
                reg = u'(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_reg)
 
@@ -200,7 +201,8 @@ class CitationFinder():
                 if m1 and m1.groupdict()['a0'] and m1.groupdict()['a1']:
                     node = CitationFinder.node_volumes(node, volume.group(1))
                     return CitationFinder.parse_sham_match(m1, lang, node)
-            return CitationFinder.parse_sham_match(m, lang, node)  # there should only be one match
+            if m:
+                return CitationFinder.parse_sham_match(m, lang, node)  # there should be one and only one match
         else:
             title_reg = CitationFinder.get_ultimate_title_regex(title_sham, node, lang, compiled=True)
             m = re.search(title_reg, st)
@@ -213,7 +215,7 @@ class CitationFinder():
         REF_SCOPE = 7
         title_sham = u'שם'
         non_ref_titles = [u'לעיל', u'להלן', u'דף']
-        ignore_titles = [u'משנה', u'ירושלמי', u'תוספתא', u'רש"י'] # see Ramban on Genesis 40:16:1
+        ignore_titles = [u'משנה', u'ירושלמי', u'תוספתא']#, u'רש"י'] # see Ramban on Genesis 40:16:1
         # titles = list(reversed(library.get_titles_in_string(st, lang)))
         titles = library.get_titles_in_string(st, lang)
         titles.insert(0, title_sham)

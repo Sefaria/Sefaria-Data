@@ -125,7 +125,7 @@ def make_csv(sham_items, example_num, filename='sham_examples_full_cats.csv'):
     f.close()
 
 
-def run_shaminator(titles=None):
+def run_shaminator(titles=None, with_real_refs=False):
     base_url = u"https://www.sefaria.org/"
 
     title_list = []
@@ -165,65 +165,84 @@ def run_shaminator(titles=None):
         last_index_ref_seen = {}
         row_num = 1
         char_padding = 20
+        double_tanakh_books = {"I Samuel": "Samuel", "II Samuel": "Samuel", "I Kings": "Kings", "II Kings": "Kings",
+                               "I Chronicles": "Chronicles", "II Chronicles": "Chronicles"}
         for k, v in ref_dict.items():
             curr_ref = Ref(k)
             for r, l, t in izip(v['refs'], v['locations'], v['types']):
-                if t == CitationFinder.SHAM_INT:
-                    if last_index_ref_seen[r.index.title] is not None:
-                        last_ref_with_citation, last_location_with_citation, last_ref_seen = last_index_ref_seen[r.index.title]
+                sham_ref_key = r.index.title if r.index.title not in double_tanakh_books else double_tanakh_books[
+                    r.index.title]
+                if t == CitationFinder.SHAM_INT and last_index_ref_seen[sham_ref_key] is not None:
+                    last_ref_with_citation, last_location_with_citation, last_ref_seen = last_index_ref_seen[sham_ref_key]
+                else:  # if t == CitationFinder.REF_INT:
+                    last_index_ref_seen[sham_ref_key] = (curr_ref, l, r)
+                    if not with_real_refs:
+                        continue
+                    last_ref_with_citation = curr_ref
+                    last_location_with_citation = l
+                    last_ref_seen = r
+                    r = u"N/A"
 
 
-                        dist = curr_ref.distance(last_ref_with_citation)
-                        if dist == 0:
-                            text = strip_nikkud(curr_ref.text('he').text)
+                dist = curr_ref.distance(last_ref_with_citation)
+                if dist == 0:
+                    text = strip_nikkud(curr_ref.text('he').text)
 
-                            start_ind = 0 if last_location_with_citation[0] - char_padding < 0 else last_location_with_citation[0] - char_padding
-                            end_ind = l[1] + char_padding
+                    start_ind = 0 if last_location_with_citation[0] - char_padding < 0 else last_location_with_citation[
+                                                                                                0] - char_padding
+                    end_ind = l[1] + char_padding
 
-                            before = text[start_ind:last_location_with_citation[0]]
-                            real_ref = text[last_location_with_citation[0]:last_location_with_citation[1]]
-                            middle = text[last_location_with_citation[1]:l[0]]
-                            sham_ref = text[l[0]:l[1]]
-                            after = text[l[1]:end_ind]
-                            text = u"{}<span class='r'>{}</span>{}<span class='s'>{}</span>{}".format(before, real_ref, middle, sham_ref, after)
+                    before = text[start_ind:last_location_with_citation[0]]
+                    real_ref = text[last_location_with_citation[0]:last_location_with_citation[1]]
+                    middle = text[last_location_with_citation[1]:l[0]] if last_location_with_citation[1] <= l[0] else u""
+                    sham_ref = text[l[0]:l[1]] if t == CitationFinder.SHAM_INT else u""
+                    after = text[l[1]:end_ind]
+                    text = u"{}<span class='r'>{}</span>{}<span class='s'>{}</span>{}".format(before, real_ref, middle,
+                                                                                              sham_ref, after)
 
-                        else:
-                            start_text = strip_nikkud(last_ref_with_citation.text('he').text)
-                            #start_text = strip_nikkud(start_text)[last_location_with_citation[0]:]
-                            end_text = strip_nikkud(curr_ref.text('he').text)
-                            #end_text = strip_nikkud(end_text)[:l[1]+1]
-                            if dist > 1:
-                                print u"{} {} {}".format(curr_ref, last_ref_with_citation.next_segment_ref(), curr_ref.prev_segment_ref())
-                                mid_text = last_ref_with_citation.next_segment_ref().to(curr_ref.prev_segment_ref()).text('he').text
-                                while isinstance(mid_text, list):
-                                    mid_text = reduce(lambda a,b: a + b, mid_text)
-                            else:
-                                mid_text = u""
-
-                            start_ind = 0 if last_location_with_citation[0] - char_padding < 0 else last_location_with_citation[0] - char_padding
-                            end_ind = l[1] + char_padding
-
-                            start_before = start_text[start_ind:last_location_with_citation[0]]
-                            start_real_ref = start_text[last_location_with_citation[0]:last_location_with_citation[1]]
-                            start_after = start_text[last_location_with_citation[1]:]
-
-                            end_before = end_text[:l[0]]
-                            end_sham_ref = end_text[l[0]:l[1]]
-                            end_after = end_text[l[1]:end_ind]
-                            text = u"{}<span class='r'>{}</span>{} {} {}<span class='s'>{}</span>{}".format(start_before, start_real_ref, start_after, mid_text, end_before, end_sham_ref, end_after)
-
-                        text = bleach.clean(text, strip=True, tags=[u'span'], attributes=[u'class'])
-                        # surround all non interesting parens with spans
-                        text = re.sub(ur"(?<!>)(\([^)]+\))(?!<)",ur"<span class='p'>\1</span>", text)
-
-                        row = u"<tr><td>{}</td><td><a href='{}' target='_blank'>{}</a></td><td>{}</td><td>{}</td><td class='he'>{}</td></tr>"\
-                            .format(row_num, base_url + curr_ref.url(), k, last_ref_seen, r, text)
-                        html += row
-                        row_num += 1
+                else:
+                    start_text = strip_nikkud(last_ref_with_citation.text('he').text)
+                    # start_text = strip_nikkud(start_text)[last_location_with_citation[0]:]
+                    end_text = strip_nikkud(curr_ref.text('he').text)
+                    # end_text = strip_nikkud(end_text)[:l[1]+1]
+                    if dist > 1:
+                        print u"{} {} {}".format(curr_ref, last_ref_with_citation.next_segment_ref(),
+                                                 curr_ref.prev_segment_ref())
+                        mid_text = last_ref_with_citation.next_segment_ref().to(curr_ref.prev_segment_ref()).text(
+                            'he').text
+                        while isinstance(mid_text, list):
+                            mid_text = reduce(lambda a, b: a + b, mid_text)
                     else:
-                        raise InputError("AHHHH!!!")
-                elif t == CitationFinder.REF_INT:
-                    last_index_ref_seen[r.index.title] = (curr_ref, l, r)
+                        mid_text = u""
+
+                    start_ind = 0 if last_location_with_citation[0] - char_padding < 0 else last_location_with_citation[
+                                                                                                0] - char_padding
+                    end_ind = l[1] + char_padding
+
+                    start_before = start_text[start_ind:last_location_with_citation[0]]
+                    start_real_ref = start_text[last_location_with_citation[0]:last_location_with_citation[1]]
+                    start_after = start_text[last_location_with_citation[1]:]
+
+                    end_before = end_text[:l[0]]
+                    end_sham_ref = end_text[l[0]:l[1]]
+                    end_after = end_text[l[1]:end_ind]
+                    text = u"{}<span class='r'>{}</span>{} {} {}<span class='s'>{}</span>{}".format(start_before,
+                                                                                                    start_real_ref,
+                                                                                                    start_after,
+                                                                                                    mid_text,
+                                                                                                    end_before,
+                                                                                                    end_sham_ref,
+                                                                                                    end_after)
+
+                text = bleach.clean(text, strip=True, tags=[u'span'], attributes=[u'class'])
+                # surround all non interesting parens with spans
+                text = re.sub(ur"(?<!>)(\([^)]+\))(?!<)", ur"<span class='p'>\1</span>", text)
+
+                rowclass = u"realrefrow" if t == CitationFinder.REF_INT else u"shamrefrow"
+                row = u"<tr class='{}' ><td>{}</td><td><a href='{}' target='_blank'>{}</a></td><td>{}</td><td>{}</td><td class='he'>{}</td></tr>"\
+                    .format(rowclass, row_num, base_url + curr_ref.url(), k, last_ref_seen, r, text)
+                html += row
+                row_num += 1
 
         html += u"""
                 </table>
@@ -325,9 +344,18 @@ if __name__ == "__main__":
 
     #index_ibid_finder()
     #segment_ibid_finder()
-    for mass in ['Mishnah Berakhot']:#library.get_indexes_in_category('Mishnah'):
-        run_shaminator([u'Tosafot Yom Tov on {}'.format(mass)])
-    # segment_ibid_finder(u'Ramban on Genesis 27:40:1')
+    # for mass in library.get_indexes_in_category('Mishnah'):
+    #     index_title = u'Tosafot Yom Tov on {}'.format(mass)
+    #     tosfot_yt = []
+    #     if library.get_index(index_title):
+    #         print index_title
+    #         tosfot_yt.append(index_title)
+    #         # run_shaminator(index_title)
+    # run_shaminator(tosfot_yt)
+    run_shaminator([u'Ramban on Genesis'], with_real_refs = True)
+    # for humash in library.get_indexes_in_category(u'Torah'):
+    #     run_shaminator([u'Ramban on {}'.format(humash)])
+    # segment_ibid_finder(u'Ramban on Genesis 4:32:1')
     # validate_alt_titles()
 
 

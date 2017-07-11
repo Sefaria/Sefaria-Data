@@ -4,9 +4,9 @@ from sources.Shulchan_Arukh.ShulchanArukh import *
 
 root = Root('../Choshen_Mishpat.xml')
 commentaries = root.get_commentaries()
-kzot = commentaries.get_commentary_by_title("Ketsot HaChoshen")
+kzot = commentaries.get_commentary_by_title("Ketzot HaChoshen")
 if kzot is None:
-    kzot = commentaries.add_commentary("Ketsot HaChoshen", u"קצות החושן")
+    kzot = commentaries.add_commentary("Ketzot HaChoshen", u"קצות החושן")
 
 filename = u"../txt_files/Choshen_Mishpat/part_1/קצות ח''א יותר טוב.txt"
 kzot.remove_volume(1)
@@ -34,5 +34,7 @@ assert isinstance(b_vol, Volume)
 # b_vol.mark_references(volume.get_book_id(), u'@67([\u05d0-\u05ea]{1,3})\)')
 volume.set_rid_on_seifim()
 root.populate_comment_store()
-b_vol.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'@67', x.text) is not None)
-# root.export()
+errors = b_vol.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'@67', x.text) is not None)
+for i in errors:
+    print i
+root.export()

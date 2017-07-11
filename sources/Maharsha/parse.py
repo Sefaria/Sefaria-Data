@@ -108,6 +108,7 @@ class Maharsha:
         else:
             post_comment = dh + comment
 
+        post_comment = post_comment.strip()
         first_word = post_comment.split(" ")[0]
         post_comment = u"<b>{}</b> {}".format(first_word, " ".join(post_comment.split(" ")[1:]))
         self.comm_dict[self.current_daf].append(post_comment)
@@ -257,10 +258,14 @@ class Maharsha:
             if line[0] == " ":    #not part of the logic, just solving something caused by the text file
                 start = line.find("@11")
                 line = line[start:]
-
-            if len(re.split(ur'@\d{2}\u05D3\u05E3|@\d{2}\u05D7"\u05D0', line.decode('utf-8'))) > 2:
-                print "BAD FORMATTING of @11"
-                check_for_other_daf(line)
+            try:
+                if len(re.split(ur'@\d{2}\u05D3\u05E3|@\d{2}\u05D7"\u05D0', line.decode('utf-8'))) > 2:
+                    print "BAD FORMATTING of @11"
+                    check_for_other_daf(line)
+            except UnicodeDecodeError:
+                if len(re.split(ur'@\d{2}\u05D3\u05E3|@\d{2}\u05D7"\u05D0', line)) > 2:
+                    print "BAD FORMATTING of @11"
+                    check_for_other_daf(line)
 
             if line.find("@11")>=0:
                 category = ""
@@ -639,16 +644,20 @@ if __name__ == "__main__":
     done = []
     #split_lines_into_amudim()
     #split_files_agadot_halachot()
+    '''
+    done_arr = ["Bekhorot",
+        "Chagigah",
+        "Kiddushin",
+        "Sanhedrin",
+        "Eruvin",
+        "Taanit", "Bava Batra", "Rosh Hashanah", "Sotah", "Avodah Zarah", "Bava Metzia", "Shabbat", "Beitzah", "Chullin", "Gittin", "Pesachim", "Sukkah", "Yoma"]
+    '''
+    files = [file for file in os.listdir(".") if file.startswith("chidushei_") and file.endswith(".txt")]
     dont_start = True
-    files = [file for file in os.listdir(".") if file.startswith("chidushei_hal") or (file.startswith("chidushei") and ("Arakhin" in file or "Rosh" in file))]
     for file in files:
-        if "Bava" in file or "Sotah" in file:
+        if "Zevachim" not in file:
             continue
-        if dont_start and "Moed Katan" not in file:
-            continue
-        else:
-            dont_start = False
-        masechet = file.split(".txt")[0].split("_")[-1].title()
+        masechet = file.split(".txt")[0].replace("chidushei_agadot_", "").replace("chidushei_halachot_","").title()
         print file
         len_masechet = len(Ref(masechet).text('he').text)
         if file.startswith("chidushei_ag"):
@@ -672,3 +681,5 @@ if __name__ == "__main__":
                         }
             post_text("{} on {}".format(title, masechet), send_text, "on", server="http://proto.sefaria.org")
             obj.postLinks(masechet)
+
+
