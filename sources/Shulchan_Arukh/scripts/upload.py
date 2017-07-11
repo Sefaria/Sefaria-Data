@@ -1,7 +1,10 @@
 #encoding=utf-8
 
 import re
+import os
 import argparse
+import requests
+import unicodecsv
 from sefaria.model import *
 from data_utilities.util import ja_to_xml
 from sources.Shulchan_Arukh.ShulchanArukh import *
@@ -26,13 +29,19 @@ def get_alt_struct(book_title):
     """
     base_text = root.get_base_text()
     topics = [t for t in base_text.Tag.find_all('topic')]
+
+    with open('Shulchan_Arukh_titles.csv') as infile:
+        reader = unicodecsv.DictReader(infile)
+        en_topics = [row['Shulchan Arukh - en'] for row in reader]
+    assert len(en_topics) == len(topics)
+
     s_node = SchemaNode()
     s_node.add_primary_titles('Topic', u'נושא', False)
 
     start_siman, start_seif = 1, None
-    for i, topic in enumerate(topics):
+    for i, (topic, en_topic) in enumerate(zip(topics, en_topics)):
         node = ArrayMapNode()
-        node.add_primary_titles('Topic', re.sub(u' *\n *', u'', topic.text))
+        node.add_primary_titles(en_topic, re.sub(u' *\n *', u'', topic.text))
         node.depth = 0
         node.includeSections = True
 
@@ -77,6 +86,12 @@ def get_alt_struct(book_title):
     return s_node.serialize()
 
 
+def generic_cleaner(ja, cb):
+    for i, siman in enumerate(ja):
+        for j, seif in enumerate(siman):
+            ja[i][j] = cb(seif)
+
+
 def shulchan_arukh_post_parse(shulchan_ja):
     xml_simanim = root.get_base_text().get_simanim()
     assert len(shulchan_ja) == len(xml_simanim)
@@ -87,9 +102,63 @@ def shulchan_arukh_post_parse(shulchan_ja):
             siman_ja[0] = u'<b>{}</b><br>{}'.format(title_text, siman_ja[0])
 
         for i, seif in enumerate(siman_ja):
-            seif = re.sub(ur'\("\)', u'', seif)
+            seif = re.sub(ur'\(("|\?)\)|\?', u'', seif)
             seif = re.sub(u' {2,}', u' ', seif)
+            seif = re.sub(ur'( (<[^>]+>)+) ', ur'\g<1>', seif)
             siman_ja[i] = seif
+
+
+def sma_post_parse(sma_ja):
+    for i, siman in enumerate(sma_ja):
+        for j, seif in enumerate(siman):
+            seif = re.sub(ur'\(("|\?)\)|#', u'', seif)
+            seif = re.sub(ur'%+', u'\u261c', seif)
+            seif = re.sub(u' {2,}', u' ', seif)
+            sma_ja[i][j] = seif
+
+
+def pithei_clean(ja):
+    for i , siman in enumerate(ja):
+        for j, seif in enumerate(siman):
+            seif = re.sub(ur'%', u'', seif)
+            seif = re.sub(u' {2,}', u' ', seif)
+            ja[i][j] = seif
+
+
+def gra_clean(ja):
+    def clean(t):
+        t = re.sub(ur'\*', u'', t)
+        t = re.sub(u' {2,}', u' ', t)
+        return t
+    generic_cleaner(ja, clean)
+
+
+def shach_clean_and_split(ja):
+    def cb(t):
+        t = re.sub(ur'\*|\?|\("\)', ur'', t)
+        t = re.sub(ur' *\n *', u' ', t)
+        t = re.sub(ur' {2,}', u' ', t)
+        return [p for p in t.split(u'~seg~')]
+    generic_cleaner(ja, cb)
+
+
+def beer_hagola_clean(ja):
+    def cb(t):
+        t = re.sub(ur'\n', u' ', t)
+        t = re.sub(ur'#|\+', u'\u261c', t)
+        t = re.sub(ur'\?', u'', t)
+        return re.sub(ur' {2,}', u' ', t)
+    generic_cleaner(ja, cb)
+
+
+def netivot_hiddushum_clean(ja):
+    def cb(t):
+        t = re.sub(ur'\n', u' ', t)
+        t = re.sub(ur'\*|\?', u'' ,t)
+        t = re.sub(ur'[()]{2}', u'\u261c', t)
+        t = re.sub(ur'\("\)', u'', t)
+        return re.sub(ur' {2}', u' ', t)
+    generic_cleaner(ja, cb)
 
 
 
@@ -97,6 +166,16 @@ def split_segments(text_ja):
     for i, siman in enumerate(text_ja):
         for j, seif in enumerate(siman):
             text_ja[i][j] = [re.sub(u' *\n *', u' ', sub_sec) for sub_sec in seif.split(u'~seg~')]
+
+
+def clean_beurim(ja):
+    def cb(t):
+        t = re.sub(ur'[()]{2}', u'\u261c', t)
+        t = re.sub(ur'\("\)', u'', t)
+        t = re.sub(ur'\?|\*', u'', t)
+        t = re.sub(ur'\n', u' ', t)
+        return re.sub(u' {2,}', u' ', t)
+    generic_cleaner(ja, cb)
 
 
 def shulchan_arukh_index(server='http://localhost:8000', *args, **kwargs):
@@ -133,14 +212,28 @@ def depth_3_index(en_title, he_title, commentator, *args, **kwargs):
     return create_simple_index(en_title, he_title, commentator, depth=3)
 
 
+def gra_index(*args, **kwargs):
+    pre_index = create_simple_index(*args, **kwargs)
+    pre_index['authors'] = "Gra"
+    return pre_index
+
+
 post_parse = {
     u'Shulchan Arukh, Choshen Mishpat': shulchan_arukh_post_parse,
     u'Ketzot HaChoshen on Shulchan Arukh, Choshen Mishpat': split_segments,
+    u"Me'irat Einayim on Shulchan Arukh, Choshen Mishpat": sma_post_parse,
+    u'Pithei Teshuva on Shulchan Arukh, Choshen Mishpat': pithei_clean,
+    u'Beur HaGra on Shulchan Arukh, Choshen Mishpat': gra_clean,
+    u'Siftei Kohen on Shulchan Arukh, Choshen Mishpat': shach_clean_and_split,
+    u"Be'er HaGolah on Shulchan Arukh, Choshen Mishpat": beer_hagola_clean,
+    u"Netivot HaMishpat, Hidushim on Shulchan Arukh, Choshen Mishpat": netivot_hiddushum_clean
 }
 
 index_methods = {
     u'Shulchan Arukh, Choshen Mishpat': shulchan_arukh_index,
-    u'Ketzot HaChoshen on Shulchan Arukh, Choshen Mishpat': depth_3_index
+    u'Ketzot HaChoshen on Shulchan Arukh, Choshen Mishpat': depth_3_index,
+    u'Beur HaGra on Shulchan Arukh, Choshen Mishpat': gra_index,
+    u'Siftei Kohen on Shulchan Arukh, Choshen Mishpat': depth_3_index,
 }
 
 if __name__ == '__main__':
@@ -148,6 +241,7 @@ if __name__ == '__main__':
     parser.add_argument("-t", "--title", default=None)
     parser.add_argument("-s", "--server", default="http://localhost:8000")
     parser.add_argument("-a", "--add_term", action='store_true', default=False)
+    parser.add_argument("-v", "--verbose", action='store_true', default=False)
     user_args = parser.parse_args()
 
     base_text = u'Shulchan Arukh, Choshen Mishpat'
@@ -169,6 +263,8 @@ if __name__ == '__main__':
 
     index = index_methods.get(book_name, create_simple_index)(en_title=book_name, he_title=he_book_name,
                                          commentator=user_args.title, server=user_args.server)
+    if user_args.verbose:
+        print index
 
     post_index(index, server=user_args.server)
 
@@ -184,3 +280,4 @@ if __name__ == '__main__':
     if links:
         post_link(links, server=user_args.server)
 
+    requests.post(os.environ['SLACK_URL'], json={'text': 'Upload Complete'})

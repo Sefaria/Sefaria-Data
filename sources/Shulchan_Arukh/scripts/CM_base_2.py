@@ -56,5 +56,5 @@ errors = volume.format_text('@33', '@88', 'ramah')
 for i in errors:
     print i
 markup(volume)
-volume.convert_pattern_to_itag("Ba'er Hetev on Shulchan Arukh, Choshen Mishpat", ur"-\[([\u05d0-\u05ea]{1,3})\]")
+volume.convert_pattern_to_itag("Ba'er Hetev", ur"-\[([\u05d0-\u05ea]{1,3})\]")
 root.export()

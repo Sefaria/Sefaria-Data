@@ -356,7 +356,7 @@ class AbbrevMatch:
     def __str__(self):
         return u"Abbrev: {}, Expanded: {}, RashiRange: {}, GemaraRange: {} Is Number: {}".format(self.abbrev,u' '.join(self.expanded),self.rashiRange,self.gemaraRange,self.isNumber)
 
-# should be private?
+
 class GemaraDaf:
     def __init__(self,word_list,comments,dh_extraction_method=lambda x: x,prev_matched_results=None,dh_split=None):
         self.allWords = word_list
@@ -526,7 +526,7 @@ def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(ur'\s+',x), 
 
 def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh_extract_method=lambda x: x,verbose=False, word_threshold=0.27,char_threshold=0.2,
               with_abbrev_matches=False,with_num_abbrevs=True,boundaryFlexibility=0,dh_split=None, rashi_filter=None, strict_boundaries=False, place_all=False,
-              create_ranges=False):
+              create_ranges=False, place_consecutively=False):
     """
     base_text: TextChunk
     comments: TextChunk or list of comment strings
@@ -543,6 +543,8 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
     rashi_filter: function(str) -> bool , if False, remove rashi from matching
     strict_boundaries: True means no matches can overlap
     place_all: True means every comment is place, regardless of whether it matches well or not
+    place_consecutively: True means that each comment will be placed in the order they are input. This can result in strange results, but is useful if you know the comments must all be placed and they should have a well-defined match
+
 
     :returns: dict
     {"matches": list of base_refs. each element corresponds to each comment in comments,
@@ -580,7 +582,7 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
 
     matched = match_text(bas_word_list,comment_list,dh_extract_method,verbose,word_threshold,char_threshold,prev_matched_results=prev_matched_results,
                          with_abbrev_matches=with_abbrev_matches,with_num_abbrevs=with_num_abbrevs,boundaryFlexibility=boundaryFlexibility,
-                         dh_split=dh_split,rashi_filter=rashi_filter,strict_boundaries=strict_boundaries,place_all=place_all)
+                         dh_split=dh_split,rashi_filter=rashi_filter,strict_boundaries=strict_boundaries,place_all=place_all, place_consecutively=place_consecutively)
     start_end_map = matched['matches']
     text_matches = matched['match_text']
     if with_abbrev_matches:
@@ -613,9 +615,11 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
                     start_ref = bas_ref_list[bisect.bisect_right(bas_ind_list,p[0])-1]
                     end_ref = bas_ref_list[bisect.bisect_right(bas_ind_list,p[1])-1]
                     if start_ref != end_ref:
-                        start_end_map[ise - 1] = (start_end_map[ise - 1][0], p[0])
-                        start_end_map[ise] = (p[1], start_end_map[ise][1])
-                        break
+                        if start_end_map[ise - 1][0] <= p[0] and p[1] <= start_end_map[ise][1]:
+                            # make sure the new indexes don't cause an impossible range (i.e. backwards range)
+                            start_end_map[ise - 1] = (start_end_map[ise - 1][0], p[0])
+                            start_end_map[ise] = (p[1], start_end_map[ise][1])
+                            break
 
     ref_matches = []
     for i,x in enumerate(start_end_map):
@@ -651,7 +655,7 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
 def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,word_threshold=0.27,char_threshold=0.2,
                prev_matched_results=None,with_abbrev_matches=False,with_num_abbrevs=True,
                boundaryFlexibility=0,dh_split=None,rashi_filter=None,
-               strict_boundaries=False, place_all=False):
+               strict_boundaries=False, place_all=False, place_consecutively=False):
     """
     base_text: list - list of words
     comments: list - list of comment strings
@@ -667,6 +671,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
     rashi_filter: function(str) -> bool , if False, remove rashi from matching
     strict_boundaries: True means no matches can overlap
     place_all: True means every comment is place, regardless of whether it matches well or not
+    place_consecutively: True means that each comment will be placed in the order they are input. This can result in strange results, but is useful if you know the comments must all be placed and they should have a well-defined match
 
     :returns: dict
     {"matches": list of (start,end) indexes for each comment. indexes correspond to words matched in base_text,
@@ -681,87 +686,66 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
 
     InitializeHashTables()
 
-    curDaf = GemaraDaf(base_text,comments,dh_extract_method,prev_matched_results,dh_split)
-    #now we go through each rashi, and find all potential matches for each, with a rating
+    curDaf = GemaraDaf(base_text, comments, dh_extract_method, prev_matched_results, dh_split)
+    # now we go through each rashi, and find all potential matches for each, with a rating
     for irashi,ru in enumerate(curDaf.allRashi):
         if ru.startWord != -1:
-            #this rashi was initialized with the `prev_matched_results` list and should be ignored with regards to matching
+            # this rashi was initialized with the `prev_matched_results` list and should be ignored with regards to matching
             continue
 
         startword,endword = (0,len(curDaf.allWords)-1) if prev_matched_results == None else GetRashiBoundaries(curDaf.allRashi,ru.place,len(curDaf.allWords),boundaryFlexibility)[0:2]
-        #TODO implement startword endword in GetAllMatches()
+        # TODO implement startword endword in GetAllMatches()
         ru.rashimatches = GetAllMatches(curDaf,ru,startword,endword,word_threshold,char_threshold,with_num_abbrevs=with_num_abbrevs)
-
-        """
-        approxMatches = GetAllApproximateMatches(curDaf,ru,startword,endword,word_threshold,char_threshold)
-        approxAbbrevMatches = GetAllApproximateMatchesWithAbbrev(curDaf, ru, startword, endword, word_threshold, char_threshold)
-        approxSkipWordMatches = GetAllApproximateMatchesWithWordSkip(curDaf, ru, startword, endword, word_threshold, char_threshold)
-
-        ru.rashimatches += approxMatches + approxAbbrevMatches
-
-        #only add skip-matches that don't overlap with existing matching
-        foundpoints = []
-        for tm in ru.rashimatches:
-            foundpoints.append(tm.startWord)
-        # for the skip words, of course, it may find items that are one-off or two-off from the actual match. Filter these out
-        for tm in approxSkipWordMatches:
-            startword = tm.startWord
-            #TODO maybe consider changing the range
-            if any([x in foundpoints for x in xrange(startword - 1, startword + 2)]):
-                continue
-            ru.rashimatches.append(tm)
-        """
-        #sort the rashis by score
+        # sort the rashis by score
         ru.rashimatches.sort(key=lambda x: x.score) #note: check this works
 
-        #now figure out disambiguation score
-        CalculateAndFillInDisambiguity(ru)
+        # now figure out disambiguation score
+        if not place_consecutively:
+            CalculateAndFillInDisambiguity(ru)
 
-    #let's make a list of our rashis in disambiguity order
-    rashisByDisambiguity = curDaf.allRashi[:] # note: check if this is what he wanted. List<RashiUnit> rashisByDisambiguity = new List<RashiUnit>(curDaf.allRashi);
-    rashisByDisambiguity.sort(key=lambda x: -x.disambiguationScore ) #note: check that this is sorting in the right order. rashisByDisambiguity.Sort((x, y) => y.disambiguationScore.CompareTo(x.disambiguationScore));
-    #remove any rashis that have no matches at all
+    # let's make a list of our rashis in disambiguity order
+    rashisByDisambiguity = curDaf.allRashi[:]
+    rashisByDisambiguity.sort(key=lambda x: -x.disambiguationScore)
+    # remove any rashis that have no matches at all
     for temp_rashi in reversed(rashisByDisambiguity):
         if len(temp_rashi.rashimatches) == 0:
             rashisByDisambiguity.remove(temp_rashi)
 
     while len(rashisByDisambiguity) > 0:
-
-        #take top disambiguous rashi
+        # take top disambiguous rashi
         topru = rashisByDisambiguity[0]
-        #get its boundaries
-        startBound,endBound,prevMatchedRashi,nextMatchedRashi = GetRashiBoundaries(curDaf.allRashi,topru.place,len(curDaf.allWords),boundaryFlexibility)
+        # get its boundaries
+        startBound, endBound, prevMatchedRashi, nextMatchedRashi = GetRashiBoundaries(curDaf.allRashi,topru.place,len(curDaf.allWords),boundaryFlexibility)
 
-        #take the first bunch in order of disambiguity and put them in
+        # take the first bunch in order of disambiguity and put them in
         highestrating = topru.disambiguationScore
-        #if we're up to 0 disambiguity, rate them in terms of their plac in the amud
+        # if we're up to 0 disambiguity, rate them in terms of their place in the amud
         if highestrating == 0:
             for curru in rashisByDisambiguity:
-                #figure out how many are tied, or at least within 5 of each other
+                # figure out how many are tied, or at least within 5 of each other
                 topscore = curru.rashimatches[0].score
                 tobesorted = []
                 for temp_rashimatchi in curru.rashimatches:
                     if temp_rashimatchi.score == topscore:
-                        #this is one of the top matches, and should be sorted
+                        # this is one of the top matches, and should be sorted
                         tobesorted.append(temp_rashimatchi)
 
-                #sort those top rashis by place
+                # sort those top rashis by place
                 tobesorted.sort(key=lambda x: x.startWord)
-                #now add the rest
+                # now add the rest
                 for temp_rashimatchi in curru.rashimatches[len(tobesorted):]:
                     tobesorted.append(temp_rashimatchi)
 
-                #put them all in
+                # put them all in
                 curru.rashimatches = tobesorted
         lowestrating = -1
         rashiUnitsCandidates = []
         for ru in rashisByDisambiguity:
-            #if this is outside the region, chuck it
-            #the rashis are coming in a completely diff order, hence we need to check each one
+            # if this is outside the region, chuck it
+            # the rashis are coming in a completely diff order, hence we need to check each one
             if ru.place <= prevMatchedRashi or ru.place >= nextMatchedRashi:
                 continue
             rashiUnitsCandidates.append(ru)
-
 
         # now we figure out how many of these we want to process
         # we want to take the top three at the least, seven at most, and anything that fits into the current threshold.
@@ -938,7 +922,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
             rashisByDisambiguity.remove(curru) #check remove
             #recalculate the disambiguities for all those who were potentially relevant, based on this one's place
             RecalculateDisambiguities(curDaf.allRashi, rashisByDisambiguity, prevMatchedRashi, nextMatchedRashi, startBound,
-                                      endBound, curru, boundaryFlexibility, len(curDaf.allWords)-1, place_all)
+                                      endBound, curru, boundaryFlexibility, len(curDaf.allWords)-1, place_all, place_consecutively)
 
         #resort the disambiguity array
         rashisByDisambiguity.sort(key = lambda x: -x.disambiguationScore)
@@ -1088,7 +1072,7 @@ def filter_matches_out_of_order(matched_words, temprashimatch):
     return percent_matched > 0.3
 
 def RecalculateDisambiguities(allRashis, rashisByDisambiguity, prevMatchedRashi, nextMatchedRashi, startbound, endbound,
-                              newlyMatchedRashiUnit, boundaryFlexibility, maxendbound, place_all):  # List<RashiUnit>,List<RashiUnit>,int,int,int,int,RashiUnit
+                              newlyMatchedRashiUnit, boundaryFlexibility, maxendbound, place_all, place_consecutively):  # List<RashiUnit>,List<RashiUnit>,int,int,int,int,RashiUnit
     for irashi in xrange(len(rashisByDisambiguity) - 1, -1, -1):
         ru = rashisByDisambiguity[irashi]
         if ru.place <= prevMatchedRashi or ru.place >= nextMatchedRashi or ru.place == newlyMatchedRashiUnit.place:
@@ -1134,10 +1118,12 @@ def RecalculateDisambiguities(allRashis, rashisByDisambiguity, prevMatchedRashi,
             del rashisByDisambiguity[irashi]
         else:
             # now recalculate the disambiguity
-            CalculateAndFillInDisambiguity(ru)
+            if not place_consecutively:
+                CalculateAndFillInDisambiguity(ru)
 
 
 def CalculateAndFillInDisambiguity(ru):  # RashiUnit
+    # lower score is better
     # if just one, it is close to perfect. Although could be that there is no match...
     if len(ru.rashimatches) == 1:
         # ca;culate it vis-a-vis blank
