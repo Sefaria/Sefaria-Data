@@ -525,8 +525,8 @@ def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(ur'\s+',x), 
     return comment_word_list[best_dh_start:best_dh_end+1]
 
 def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh_extract_method=lambda x: x,verbose=False, word_threshold=0.27,char_threshold=0.2,
-              with_abbrev_matches=False,with_num_abbrevs=True,boundaryFlexibility=0,dh_split=None, rashi_filter=None, strict_boundaries=False, place_all=False,
-              create_ranges=False, place_consecutively=False):
+              with_abbrev_matches=False,with_num_abbrevs=True,boundaryFlexibility=0,dh_split=None, rashi_filter=None, strict_boundaries=None, place_all=False,
+              create_ranges=False, place_consecutively=False, daf_skips=2, rashi_skips=1, overall=2):
     """
     base_text: TextChunk
     comments: TextChunk or list of comment strings
@@ -541,10 +541,12 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
     boundaryFlexibility: int which indicates how much leeway there is in the order of rashis. higher values allow more disorder in matches. 0 means the start positions of matches must be in order. a high value (higher than the number of words in the doc) means order doesn't matter
     dh_split: prototype, split long dibur hamatchil
     rashi_filter: function(str) -> bool , if False, remove rashi from matching
-    strict_boundaries: True means no matches can overlap
+    strict_boundaries: str, if not None, means no matches can overlap. possible options are 'refs' or 'text'. 'refs' -> prefer not to break refs. 'text' -> choose breakup that has lowest levenshtein
     place_all: True means every comment is place, regardless of whether it matches well or not
     place_consecutively: True means that each comment will be placed in the order they are input. This can result in strange results, but is useful if you know the comments must all be placed and they should have a well-defined match
-
+    daf_skips: int, max number of words to skip in base text
+    rashi_skips: int, max number of words to skip in commentary
+    overall: int, max number of overall skips, in both base and commentary
 
     :returns: dict
     {"matches": list of base_refs. each element corresponds to each comment in comments,
@@ -582,7 +584,8 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
 
     matched = match_text(bas_word_list,comment_list,dh_extract_method,verbose,word_threshold,char_threshold,prev_matched_results=prev_matched_results,
                          with_abbrev_matches=with_abbrev_matches,with_num_abbrevs=with_num_abbrevs,boundaryFlexibility=boundaryFlexibility,
-                         dh_split=dh_split,rashi_filter=rashi_filter,strict_boundaries=strict_boundaries,place_all=place_all, place_consecutively=place_consecutively)
+                         dh_split=dh_split,rashi_filter=rashi_filter,strict_boundaries=strict_boundaries,
+                         place_all=place_all, place_consecutively=place_consecutively, daf_skips=daf_skips, rashi_skips=rashi_skips, overall=overall)
     start_end_map = matched['matches']
     text_matches = matched['match_text']
     if with_abbrev_matches:
@@ -590,7 +593,7 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
     if place_all:
         fixed = matched['fixed']
 
-    if strict_boundaries:
+    if strict_boundaries == 'refs':
         for ise, se in enumerate(start_end_map):
             # if it slightly overlaps, correct the boundary
             # (49, 64) (65, 80)
@@ -655,7 +658,7 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
 def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,word_threshold=0.27,char_threshold=0.2,
                prev_matched_results=None,with_abbrev_matches=False,with_num_abbrevs=True,
                boundaryFlexibility=0,dh_split=None,rashi_filter=None,
-               strict_boundaries=False, place_all=False, place_consecutively=False):
+               strict_boundaries=None, place_all=False, place_consecutively=False, daf_skips=2, rashi_skips=1, overall=2):
     """
     base_text: list - list of words
     comments: list - list of comment strings
@@ -669,9 +672,12 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
     boundaryFlexibility: int which indicates how much leeway there is in the order of rashis. higher values allow more disorder in matches. 0 means the start positions of matches must be in order. a high value (higher than the number of words in the doc) means order doesn't matter
     dh_split: prototype, split long dibur hamatchil
     rashi_filter: function(str) -> bool , if False, remove rashi from matching
-    strict_boundaries: True means no matches can overlap
+    strict_boundaries: str, if not None, means no matches can overlap. if 'text' -> choose breakup that has lowest levenshtein
     place_all: True means every comment is place, regardless of whether it matches well or not
     place_consecutively: True means that each comment will be placed in the order they are input. This can result in strange results, but is useful if you know the comments must all be placed and they should have a well-defined match
+    daf_skips: int, max number of words to skip in base text
+    rashi_skips: int, max number of words to skip in commentary
+    overall: int, max number of overall skips, in both base and commentary
 
     :returns: dict
     {"matches": list of (start,end) indexes for each comment. indexes correspond to words matched in base_text,
@@ -695,7 +701,8 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
 
         startword,endword = (0,len(curDaf.allWords)-1) if prev_matched_results == None else GetRashiBoundaries(curDaf.allRashi,ru.place,len(curDaf.allWords),boundaryFlexibility)[0:2]
         # TODO implement startword endword in GetAllMatches()
-        ru.rashimatches = GetAllMatches(curDaf,ru,startword,endword,word_threshold,char_threshold,with_num_abbrevs=with_num_abbrevs)
+        ru.rashimatches = GetAllMatches(curDaf, ru, startword, endword, word_threshold, char_threshold,
+                                        with_num_abbrevs=with_num_abbrevs, daf_skips=daf_skips, rashi_skips=rashi_skips, overall=overall)
         # sort the rashis by score
         ru.rashimatches.sort(key=lambda x: x.score) #note: check this works
 
@@ -964,12 +971,51 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
     start_end_map = []
     abbrev_matches = []
     text_matches = []
-    #now do a full report
+
     for iru,ru in enumerate(curDaf.allRashi):
         start_end_map.append((ru.startWord,ru.endWord))
         abbrev_matches.append(ru.abbrev_matches)
         text_matches.append((ru.matchedGemaraText,ru.startingText))
 
+    if strict_boundaries == 'text':
+        for ise, se in enumerate(start_end_map):
+            # if it slightly overlaps, correct the boundary
+            prev_se = start_end_map[ise - 1]
+            if ise > 0 and prev_se[0] != -1 and \
+                            se[0] != -1 and \
+                            se[0] <= prev_se[1]:
+
+                # you have two options how to fix this. choose the one that has the lowest levenshtein for the overlap
+                start = prev_se[1] - 1
+                end = se[0]
+                mid = (1.0*start + end) / 2
+                possibilities = [(p, p+1) for p in xrange(start,end + 1)]
+                possibilities.sort(key=lambda x: abs(x[0] - mid))
+
+                best_possibility = None
+                min_levens = None
+                for p in possibilities:
+                    len_cutoff_left = prev_se[1] - p[0]
+                    len_cutoff_right = se[0] - p[1]
+                    cutoff_left_text = u" ".join(curDaf.allWords[p[0]:prev_se[1]+1])
+                    cutoff_right_text = u" ".join(curDaf.allWords[se[0]:p[1]+1])
+                    comment_left_text = u" ".join(curDaf.allRashi[ise-1].words[-len_cutoff_left:])
+                    comment_right_text = u" ".join(curDaf.allRashi[ise].words[-len_cutoff_right:])
+
+                    total_dist = weighted_levenshtein.calculate(cutoff_left_text, comment_left_text, False) + \
+                                 weighted_levenshtein.calculate(cutoff_right_text, comment_right_text, False)
+                    if min_levens is None or total_dist < min_levens:
+                        min_levens = total_dist
+                        best_possibility = p
+
+                if best_possibility is not None:
+                    if start_end_map[ise - 1][0] <= best_possibility[0] and best_possibility[1] <= start_end_map[ise][1]:
+                        # make sure the new indexes don't cause an impossible range (i.e. backwards range)
+                        start_end_map[ise - 1] = (start_end_map[ise - 1][0], best_possibility[0])
+                        start_end_map[ise] = (best_possibility[1], start_end_map[ise][1])
+
+
+    # now do a full report
     if verbose:
         sbreport = u""
         for irm, (s, e) in enumerate(start_end_map):
@@ -1220,9 +1266,6 @@ def GetAllMatches(curDaf, curRashi, startBound, endBound,
         #print 'PATH'
         #print path
         #mm.print_path(path)
-        gemaraWordToIgnore = path["daf_indexes_skipped"][0] + startBound if len(path["daf_indexes_skipped"]) > 0 else -1
-        gemaraSecondWordToIgnore = path["daf_indexes_skipped"][1] + startBound if len(path["daf_indexes_skipped"]) > 1 else -1
-        iRashiWordToIgnore = path["comment_indexes_skipped"][0] if len(path["comment_indexes_skipped"]) > 0 else -1
         abbrevs = [allabbrevs[iabbrev] for iabbrev in path["jump_indexes"]]
         iGemaraWord = path["daf_start_index"] + startBound
 
@@ -1248,16 +1291,11 @@ def GetAllMatches(curDaf, curRashi, startBound, endBound,
                 dafSkipWords += range(abb.gemaraRange[0],abb.gemaraRange[1]+1)
                 len_matched += (abb.gemaraRange[1] - abb.gemaraRange[0] + 1)
 
-        if iRashiWordToIgnore != -1:
-            rashiSkipWords.append(iRashiWordToIgnore)
-            len_matched -= 1
+        rashiSkipWords.extend(path["comment_indexes_skipped"])
+        len_matched -= len(path["comment_indexes_skipped"])
 
-        if gemaraWordToIgnore != -1:
-            dafSkipWords.append(gemaraWordToIgnore)
-            len_matched += 1
-        if gemaraSecondWordToIgnore != -1:
-            dafSkipWords.append(gemaraSecondWordToIgnore)
-            len_matched += 1
+        dafSkipWords.extend(path["daf_indexes_skipped"])
+        len_matched += len(path["daf_indexes_skipped"])
 
         alternateStartText = BuildPhraseFromArray(curRashi.words, 0, len(curRashi.words), rashiSkipWords)
         # the "text matched" is the actual text of the gemara, including the word we skipped.
@@ -1278,12 +1316,9 @@ def GetAllMatches(curDaf, curRashi, startBound, endBound,
             dist = ComputeLevenshteinDistanceByWord(alternateStartText, targetPhrase)
 
             # add penalty for skipped words
-            if gemaraWordToIgnore >= 0:
-                dist += fullWordValue #weighted_levenshtein.cost_str(curDaf.allWords[gemaraWordToIgnore])
-            if gemaraSecondWordToIgnore >= 0:
-                dist += fullWordValue #weighted_levenshtein.cost_str(curDaf.allWords[gemaraSecondWordToIgnore])
-            if iRashiWordToIgnore >= 0:
-                dist += fullWordValue #weighted_levenshtein.cost_str(curRashi.words[iRashiWordToIgnore])
+            dist += fullWordValue * len(path["daf_indexes_skipped"]) #weighted_levenshtein.cost_str(curDaf.allWords[gemaraWordToIgnore])
+            dist += fullWordValue * len(path["comment_indexes_skipped"]) #weighted_levenshtein.cost_str(curDaf.allWords[gemaraSecondWordToIgnore])
+
             if len(abbrevs) > 0:
                 dist += abbreviationPenalty
 

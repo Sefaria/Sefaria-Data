@@ -860,7 +860,7 @@ class Seif(OrderedElement):
             else:
                 self.add_special(u' '.join(words), element_name)
 
-        assert self.Tag.string is not None  # This can happen if xml elements are already present of if Tag is self-closing.
+        assert self.Tag.string is not None  # This can happen if xml elements are already present or if Tag is self-closing.
         text_array = self.Tag.string.extract().split()
 
         is_special = False
@@ -872,39 +872,47 @@ class Seif(OrderedElement):
                     raise AssertionError('Seif {}: Two consecutive formatting patterns ({}) found'.format(self.num, start_special))
 
                 else:
+                    split_by_pattern = re.split(start_special, word)
+                    assert len(split_by_pattern) == 2
+
                     word_is_special = True
-                    # if pattern appeared after word, exclude the word from the special markup
-                    if re.search(u'{}$'.format(start_special), word):
-                        element_words.append(re.sub(start_special, u'', word))
+                    # add whatever appeared before the pattern
+                    if split_by_pattern[0] != u'':
+                        element_words.append(split_by_pattern[0])
                         word_is_special = False
 
                     if len(element_words) > 0:
-                        element_words.append(u'')  # adds a space to the end of the text element
+                        if u'' in split_by_pattern:  # True when pattern is not in the middle of a word
+                            element_words.append(u'')  # adds a space to the end of the text element
                         self.add_special(u' '.join(element_words), name=u'reg-text')
 
-                    if word_is_special:
-                        element_words = [re.sub(start_special, u'', word)]
+                    # add whatever appeared after the pattern
+                    if split_by_pattern[1] != u'':
+                        element_words = [split_by_pattern[1]]
                     else:
                         element_words = []
                     is_special = True
 
             elif re.search(end_special, word):
+                split_by_pattern = re.split(end_special, word)
+                assert len(split_by_pattern) == 2
                 word_is_special = False
                 if is_special:
-                    # if pattern appeared after the word, include the word in the special markup
-                    if re.search(u'{}$'.format(end_special), word):
+                    # add whatever appeared before the markup
+                    if split_by_pattern[0] != u'':
                         word_is_special = True
-                        element_words.append(re.sub(end_special, u'', word))
+                        element_words.append(split_by_pattern[0])
 
                     assert len(element_words) > 0  # Do not allow formatted text with no text
-                    element_words.append(u'')
+                    if u'' in split_by_pattern:  # True when pattern is not in the middle of a word
+                        element_words.append(u'')
                     self.add_special(u' '.join(element_words), name=name)
                     is_special = False
 
-                    if word_is_special:  # then word has already been added
-                        element_words = []
+                    if split_by_pattern[1] != u'':  # add whatever appeared after pattern
+                        element_words = [split_by_pattern[1]]
                     else:
-                        element_words = [re.sub(end_special, u'', word)]
+                        element_words = []
 
                 else:
                     element_words.append(re.sub(end_special, u'', word))

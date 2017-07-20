@@ -37,6 +37,8 @@ class XML_to_JaggedArray:
         self.change_name = change_name
         self.assertions = assertions
         self.image_dir = image_dir
+        self.get_title_lambda = lambda el: el[0].text
+        self.print_bool = False
 
 
     def set_title(self, title):
@@ -74,21 +76,30 @@ class XML_to_JaggedArray:
         xml_text = bleach.clean(xml_text, tags=self.allowedTags, attributes=self.allowedAttributes, strip=False)
         self.root = etree.XML(xml_text)
 
+        self.root.text = self.title
+
         for count, child in enumerate(self.root):
             if self.array_of_names:
                 child.text = str(self.array_of_names[count])
+            if not child.text == "Introduction":
+                self.move_title_to_first_segment(child)
             child = self.reorder_structure(child, False)
 
-        results = self.go_down_to_text(self.root)
+        self.print_bool = True
+        results = self.go_down_to_text(self.root, self.root.text)
         self.print_out_footnotes_per_node()
         self.interpret_and_post(results, self.title)
 
 
+    def move_title_to_first_segment(self, element):
+        title = self.grab_title(element, delete=False, test_lambda=self.grab_title_lambda, change_name=False)
+        if element[0].tag == "title":
+            element[0].tag = "p"
+
 
     def print_out_footnotes_per_node(self):
         for node, dict_ids in self.footnotes.items():
-            print node
-            assert len(dict_ids.keys()) > 1
+            print dict_ids
             #for id, text in dict_ids.items():
             #    print id
 
@@ -104,6 +115,7 @@ class XML_to_JaggedArray:
         if root:
             print "Set of tags not specified: {}".format(tag_set - set(self.allowedTags))
         return tag_set
+
 
     def cleanNodeName(self, text):
         text = self.cleanText(text)
@@ -153,7 +165,11 @@ class XML_to_JaggedArray:
 
 
     def post(self, ref, text, not_last_key):
-        if self.post_info["server"] != "local":
+        if self.print_bool:
+            with codecs.open(self.title+".txt", 'w', 'utf-8') as f:
+                for line in text:
+                    f.write(line+"\n")
+        elif self.post_info["server"] != "local":
             send_text = {
                     "text": text,
                     "language": self.post_info["language"],
@@ -270,6 +286,7 @@ class XML_to_JaggedArray:
             return name
         return ""
 
+
     def fix_ol(self, element):
         text = element.xpath("string()")
         if text[0] == "\n":
@@ -290,7 +307,7 @@ class XML_to_JaggedArray:
     def print_table_info(self, element, index):
         print "{}, {}.{}".format(self.title, element.text, index)
 
-    def go_down_to_text(self, element):
+    def go_down_to_text(self, element, parent):
         text = {}
         text["text"] = []
         text["subject"] = []
@@ -304,33 +321,36 @@ class XML_to_JaggedArray:
                 child.text = child.text.replace("italic", "bold")
             if len(child) > 0:
                 if child.text.isdigit():
-                    #if child.tag != "title":
-                    #    self.grab_title(child, delete=self.deleteTitles, test_lambda=self.grab_title_lambda, change_name=False)
                     while int(child.text) > len(text["text"]) + 1:
                         text["text"].append([])
-                    text["text"].append(self.go_down_to_text(child))
+                    text["text"].append(self.go_down_to_text(child, element))
                 else:
-                    #if child.tag != "title":
-                    #    self.grab_title(child, delete=self.deleteTitles, test_lambda=self.grab_title_lambda,
-                    #                    change_name=self.change_name)
                     child.text = self.cleanNodeName(child.text)
-                    text[child.text] = self.go_down_to_text(child)
+                    text[child.text] = self.go_down_to_text(child, element)
             else:
                 if child.tag == "ftnote":
-                    if element.text not in self.footnotes:
-                        self.footnotes[element.text] = {}
-                    if "id" not in child.attrib:
-                        assert len(self.prev_footnote) > 0
-                        self.footnotes[element.text][self.prev_footnote] += "<br>" + child.xpath("string()")
-                    else:
-                        self.footnotes[element.text][child.attrib['id']] = child.xpath("string()")
-                        self.prev_footnote = child.attrib['id']
+                    self.add_footnote(parent, element, child)
                 elif self.siblingsHaveChildren(element):
                     text["subject"] += [self.cleanText(child.xpath("string()").replace("\n\n", " "))]
                 else:
                     text["text"] += [self.cleanText(child.xpath("string()").replace("\n\n", " "))]
             pass
         return text
+
+
+    def add_footnote(self, parent, element, child):
+        if element.text.isdigit():
+            key = parent.text + element.text
+        else:
+            key = element.text
+        if key not in self.footnotes:
+            self.footnotes[key] = {}
+        if "id" not in child.attrib:
+            assert len(self.prev_footnote) > 0
+            self.footnotes[key][self.prev_footnote] += "<br>" + child.xpath("string()")
+        else:
+            self.footnotes[key][child.attrib['id']] = child.xpath("string()")
+            self.prev_footnote = child.attrib['id']
 
 
     def siblingsHaveChildren(self, element):
@@ -346,7 +366,7 @@ class XML_to_JaggedArray:
 
         for count, x in enumerate(text):
             if type(x) is dict:
-                array.append(self.convertManyIntoOne(x['text'], node_name))
+                array.append(self.convertManyIntoOne(x['text'], node_name+str(count+1)))
             else:
                 array.append(x)
 

@@ -250,6 +250,24 @@ class TestTextFormatting(object):
         s.format_text('@33', '@34', 'b')
         assert unicode(s) == u'<seif num="1"><b>just </b><reg-text>some text</reg-text></seif>'
 
+    def test_end_special_end_of_word(self):
+        raw_text = u'<seif num="1">@33just some@34 text</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        s.format_text('@33', '@34', 'b')
+        assert unicode(s) == u'<seif num="1"><b>just some </b><reg-text>text</reg-text></seif>'
+
+    def test_end_middle_of_word(self):
+        raw_text = u'<seif num="1">@33just some@34): text</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        s.format_text('@33', '@34', 'b')
+        assert unicode(s) == u'<seif num="1"><b>just some</b><reg-text>): text</reg-text></seif>'
+
+    def test_start_middle_of_word(self):
+        raw_text = u'<seif num="1">(@33just some@34): text</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        s.format_text('@33', '@34', 'b')
+        assert unicode(s) == u'<seif num="1"><reg-text>(</reg-text><b>just some</b><reg-text>): text</reg-text></seif>'
+
 class TestXref(object):
 
     def test_single_mark(self):

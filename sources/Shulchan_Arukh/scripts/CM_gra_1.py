@@ -25,7 +25,7 @@ for i in errors:
     print i
 volume.validate_seifim()
 
-errors = volume.format_text('$^', '$^', 'dh')
+errors = volume.format_text('@76', '@78', 'dh')
 for i in errors:
     print i
 base = root.get_base_text()

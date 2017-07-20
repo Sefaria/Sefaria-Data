@@ -5,7 +5,7 @@ from sefaria.model import *
 import codecs
 import regex as re
 import pygtrie
-from data_utilities.util import getGematria
+from data_utilities.util import getGematria, multiple_replace
 from data_utilities.ibid import BookIbidTracker, IbidKeyNotFoundException, IbidRefException
 from sefaria.utils.hebrew import strip_nikkud
 import unicodecsv as csv
@@ -793,9 +793,9 @@ def run1(massechet_he = None, massechet_en = None):
 
 #  run to create the csv to get talmud matching
 def run2(massechet_he=None, massechet_en=None):
-    fromCSV(u'{}.csv'.format(massechet_he), u'{}.txt'.format(massechet_en))  # reads from fixed ביצה.csv to egg.txt
-    parse2 = parse_em(u'{}.txt'.format(massechet_en),2, u'{}_error'.format(massechet_en))  # egg.txt to screen output
-    toCSV(u'{}_little_letters'.format(massechet_en), parse2)  # write final to egg_done.csv
+    fromCSV(u'{}.csv'.format(massechet_he), u'{}.txt'.format(massechet_en))
+    parse2 = parse_em(u'{}.txt'.format(massechet_en), 2, u'{}_error'.format(massechet_en))
+    toCSV(u'{}_little_letters'.format(massechet_en), parse2)
     return parse2
 
 
@@ -843,7 +843,7 @@ def reverse_collapse(fromcsv, collapsed_file):
     run1(u'{}'.format(collapsed_file),u'{}'.format(collapsed_file))
 
 
-def segment_column(segmentfile, reffile, massekhet):
+def segment_column(segmentfile, reffile, massekhet, wikitext=False):
     final_list = []
     i = 0
     with open(segmentfile, 'r') as csvfile:
@@ -852,12 +852,32 @@ def segment_column(segmentfile, reffile, massekhet):
             ref_reader = csv.DictReader(csvfile)
             for segrow, refrow in zip(seg_reader, ref_reader):
                 i += 1
-                letter_dict = {u'Segment': u'{}.{}.{}'.format(massekhet, segrow[u'Daf'], segrow[u'Line']),
-                              u'Rambam': refrow[u'Rambam'],
-                              u'Semag': refrow[u'Semag'],
-                              u'Tur Shulchan Arukh':refrow[u'Tur Shulchan Arukh']}
+                if not wikitext:
+                    daf, daf_line = segrow[u'Daf'], segrow[u'Line']
+                else:
+                    split = re.split(u'[\s:]', segrow[u'full line'])
+                    daf, daf_line = split[1], split[2]
+                smg = convert_smg(refrow[u'Semag'])
+                letter_dict = {u'Segment': u'{}.{}.{}'.format(massekhet, daf, daf_line),
+                          u'Rambam': refrow[u'Rambam'],
+                          u'Semag': smg,
+                          u'Tur Shulchan Arukh': refrow[u'Tur Shulchan Arukh']}
                 final_list.append(letter_dict)
     return final_list
+
+
+def convert_smg(smg_str):
+    conv_table = {
+    u'Sefer Mitzvot Gadol, Volume One ' : u'Sefer Mitzvot Gadol, Negative Commandments ',
+    u'Sefer Mitzvot Gadol, Volume Two ':u'Sefer Mitzvot Gadol, Positive Commandments ',
+    u'Sefer Mitzvot Gadol, Volume Two, Laws of Eruvin ': u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Eruvin ',
+    u'Sefer Mitzvot Gadol, Volume Two, Laws of Mourning ': u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Mourning ',
+    u"Sefer Mitzvot Gadol, Volume Two, Laws of Tisha B'Av ": u"Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Tisha B'Av ",
+    u'Sefer Mitzvot Gadol, Volume Two, Laws of Megillah ': u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Megillah ',
+    u'Sefer Mitzvot Gadol, Volume Two, Laws of Chanukah ': u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Chanukah '
+    }
+
+    return multiple_replace(smg_str, conv_table, using_regex=True)
 
 def needs_another_cycle(txtfile, mass_name):
     if os.stat(txtfile).st_size == 0:
@@ -979,4 +999,6 @@ if __name__ == "__main__":
     # for file in done:
     #     reverse_collapse('done/{}'.format(file), 'collapsed/{}_collapsed'.format(file[:-4]))
     # clllapse_kidd = reverse_collapse('small_letters/kidushin_little_letters.csv', 'small_letters/collapsed_kidushin')
-    parsed = run2('csvQA/megillah_little_letters', 'csvQA/megillah_little_letters')
+    # parsed = run2('csvQA/collapsed_megillah', 'csvQA/collapsed_megillah_little')
+    # reverse_collapse('csvQA/megillah_little_letters.csv', 'csvQA/collapsed_megillah')
+    print convert_smg(u'Sefer Mitzvot Gadol, Volume Two 90')
