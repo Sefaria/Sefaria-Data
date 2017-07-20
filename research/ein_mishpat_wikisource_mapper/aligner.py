@@ -25,7 +25,7 @@ with codecs.open("scraper.out", "rb", encoding='utf8') as f:
 out_rows = []
 for mes in mesechtot:
     mes_ind = library.get_index(mes)
-    for daf_ref in [Ref("Sanhedrin 67a")]:  # mes_ind.all_section_refs():
+    for daf_ref in mes_ind.all_section_refs():
         print daf_ref
         daf_scraped = wiki_scraped[daf_ref.book][daf_ref.normal()]
         words_scraped = daf_scraped["text"].split()
