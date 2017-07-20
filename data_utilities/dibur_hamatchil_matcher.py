@@ -997,10 +997,10 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                 for p in possibilities:
                     len_cutoff_left = prev_se[1] - p[0]
                     len_cutoff_right = se[0] - p[1]
-                    cutoff_left_text = u" ".join(curDaf.allWords[p[0]:prev_se[1]+1])
-                    cutoff_right_text = u" ".join(curDaf.allWords[se[0]:p[1]+1])
-                    comment_left_text = u" ".join(curDaf.allRashi[ise-1].words[-len_cutoff_left:])
-                    comment_right_text = u" ".join(curDaf.allRashi[ise].words[-len_cutoff_right:])
+                    cutoff_left_text = u" ".join(curDaf.allWords[p[0]:prev_se[1]])
+                    cutoff_right_text = u" ".join(curDaf.allWords[se[0]:p[1]])
+                    comment_left_text = u" ".join(curDaf.allRashi[ise-1].words[-len_cutoff_left:]) if len_cutoff_left > 0 else u''
+                    comment_right_text = u" ".join(curDaf.allRashi[ise].words[-len_cutoff_right:]) if len_cutoff_right > 0 else u''
 
                     total_dist = weighted_levenshtein.calculate(cutoff_left_text, comment_left_text, False) + \
                                  weighted_levenshtein.calculate(cutoff_right_text, comment_right_text, False)
@@ -1013,6 +1013,11 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                         # make sure the new indexes don't cause an impossible range (i.e. backwards range)
                         start_end_map[ise - 1] = (start_end_map[ise - 1][0], best_possibility[0])
                         start_end_map[ise] = (best_possibility[1], start_end_map[ise][1])
+                        # for verbose output
+                        curDaf.allRashi[ise - 1].startWord = start_end_map[ise - 1][0]
+                        curDaf.allRashi[ise - 1].endWord = start_end_map[ise - 1][1]
+                        curDaf.allRashi[ise].startWord = start_end_map[ise][0]
+                        curDaf.allRashi[ise].endWord = start_end_map[ise][1]
 
 
     # now do a full report
