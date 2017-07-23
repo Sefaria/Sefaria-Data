@@ -472,7 +472,7 @@ class RashiUnit:
         self.cvhashes = CalculateHashes(self.words)
 
     def __str__(self):
-        return u"\n\t{}\n\t{}\n[{}-{}] place: {} type: {} skipped gemara: {} skipped rashi: {}\nabbrevs:\n\t\t{}".format(
+        return u"\n\t{}\n\t{}\n[{}-{}] place: {}, type: {}, skipped gemara: {}, skipped rashi: {}\nabbrevs:\n\t\t{}".format(
             self.startingText, self.matchedGemaraText, self.startWord, self.endWord, self.place, self.match_type,
             u', '.join(self.skippedDafWords), u', '.join(self.skippedRashiWords), u'\n\t\t'.join([am.__str__() for am in self.abbrev_matches]))
 
@@ -996,14 +996,24 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                 min_levens = None
                 for p in possibilities:
                     len_cutoff_left = prev_se[1] - p[0]
-                    len_cutoff_right = se[0] - p[1]
-                    cutoff_left_text = u" ".join(curDaf.allWords[p[0]:prev_se[1]])
-                    cutoff_right_text = u" ".join(curDaf.allWords[se[0]:p[1]])
-                    comment_left_text = u" ".join(curDaf.allRashi[ise-1].words[-len_cutoff_left:]) if len_cutoff_left > 0 else u''
-                    comment_right_text = u" ".join(curDaf.allRashi[ise].words[-len_cutoff_right:]) if len_cutoff_right > 0 else u''
+                    len_cutoff_right = p[1] - se[0]
+                    cutoff_left_text = u" ".join(curDaf.allWords[p[0]+1:prev_se[1]+1])
+                    cutoff_right_text = u" ".join(curDaf.allWords[se[0]+1:p[1]+1])
+                    comment_left_text_remove = u" ".join(curDaf.allRashi[ise-1].words[-len_cutoff_left:]) if len_cutoff_left > 0 else u''
+                    comment_left_text_add = u" ".join(curDaf.allRashi[ise - 1].words[-len_cutoff_right:]) if len_cutoff_right > 0 else u''
+                    comment_right_text_remove = u" ".join(curDaf.allRashi[ise].words[:len_cutoff_right]) if len_cutoff_right > 0 else u''
+                    comment_right_text_add = u" ".join(curDaf.allRashi[ise].words[:len_cutoff_left]) if len_cutoff_left > 0 else u''
 
-                    total_dist = weighted_levenshtein.calculate(cutoff_left_text, comment_left_text, False) + \
-                                 weighted_levenshtein.calculate(cutoff_right_text, comment_right_text, False)
+                    dist_lr = -weighted_levenshtein.calculate(cutoff_left_text, comment_left_text_remove, False)
+                    dist_ra =  weighted_levenshtein.calculate(cutoff_left_text, comment_right_text_add, False)
+                    dist_rr = -weighted_levenshtein.calculate(cutoff_right_text, comment_right_text_remove, False)
+                    dist_la =  weighted_levenshtein.calculate(cutoff_right_text, comment_left_text_add, False)
+
+
+                    total_dist = -weighted_levenshtein.calculate(cutoff_left_text, comment_left_text_remove, False) + \
+                                  weighted_levenshtein.calculate(cutoff_left_text, comment_right_text_add, False) + \
+                                 -weighted_levenshtein.calculate(cutoff_right_text, comment_right_text_remove, False) + \
+                                  weighted_levenshtein.calculate(cutoff_right_text, comment_left_text_add, False)
                     if min_levens is None or total_dist < min_levens:
                         min_levens = total_dist
                         best_possibility = p
@@ -1016,8 +1026,10 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                         # for verbose output
                         curDaf.allRashi[ise - 1].startWord = start_end_map[ise - 1][0]
                         curDaf.allRashi[ise - 1].endWord = start_end_map[ise - 1][1]
+                        curDaf.allRashi[ise - 1].matchedGemaraText = u' '.join(curDaf.allWords[start_end_map[ise - 1][0]:start_end_map[ise - 1][1]+1])
                         curDaf.allRashi[ise].startWord = start_end_map[ise][0]
                         curDaf.allRashi[ise].endWord = start_end_map[ise][1]
+                        curDaf.allRashi[ise].matchedGemaraText = u' '.join(curDaf.allWords[start_end_map[ise][0]:start_end_map[ise][1]+1])
 
 
     # now do a full report
@@ -1032,7 +1044,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
 
         print sbreport
 
-    ret = {"matches":start_end_map, "match_text": text_matches}
+    ret = {"matches": start_end_map, "match_text": text_matches}
     if with_abbrev_matches:
         ret["abbrevs"] = abbrev_matches
     if place_all:
