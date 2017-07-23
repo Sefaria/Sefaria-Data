@@ -133,7 +133,7 @@ class Malbim(util.ToratEmetData):
                 text.append(chunk.strip())
             else:
                 chunk = re.sub(u'\{[\u05d0-\u05ea]{1,2}-?–?[\u05d0-\u05ea]{0,2}\}', u'',line)
-                if self.contains_DM(line):
+                if self.contains_DM(chunk):
                     chunk = re.sub(u'@33(.*?)@44', ur'<b>\1</b>', chunk)
                 text.append(chunk.strip())
 
@@ -146,30 +146,33 @@ class Malbim(util.ToratEmetData):
     def _parse(self):
         book = self._important_lines
         for chapter in book.keys():
-            for verse in book[chapter].keys():
-                book[chapter][verse] = util.convert_dict_to_array(book[chapter][verse])
             book[chapter] = util.convert_dict_to_array(book[chapter])
         book = util.convert_dict_to_array(book)
         return book
 
 
-
 def build_links(parser):
     assert isinstance(parser, Malbim)
-    book = parser._important_lines
+    book = parser.parsed_text
     links = []
 
-    for chapter in book.keys():
-        for verse in chapter.keys():
-            comment_len = str(len(chapter[verse]))
-            malbim_ref = Ref('Malbim on Genesis' + chapter + ':' + verse + ":" + '1-' + comment_len)
-            genesis_ref = Ref('Genesis' + chapter + ':' + verse)
-            links.append({
-                'refs': [malbim_ref, genesis_ref],
-                'type': 'commentary',
-                'auto': True,
-                'generated_by': 'Malbim on Genesis external parse script'
-            })
+    for chapter in book:
+        chapter_index = book.index(chapter)
+        for verse in chapter:
+            verse_index = chapter.index(verse)
+            if chapter[verse_index]:
+                comment_len = len(chapter[verse_index])
+                if comment_len > 1:
+                    malbim_ref = 'Malbim on Genesis {}:{}:1-{}'.format(unicode(chapter_index+1), unicode(verse_index+1), unicode(comment_len))
+                else:
+                    malbim_ref = 'Malbim on Genesis {}:{}:1'.format(unicode(chapter_index+1), unicode(verse_index+1))
+                genesis_ref = 'Genesis {}:{}'.format(unicode(chapter_index+1), unicode(verse_index+1))
+                links.append({
+                    'refs': [genesis_ref, malbim_ref],
+                    'type': 'commentary',
+                    'auto': True,
+                    'generated_by': 'Malbim on Genesis external parse script'
+                })
     return links
 
 
@@ -184,7 +187,9 @@ def build_index(parser):
 
     index = {
         "title": "Malbim on Genesis",
-        "categories": ["Torah", "Commentary", "Malbim"],
+        "collective_title": "Malbim",
+        "base_text_titles": ["Genesis"],
+        "categories": ["Tanakh", "Torah", "Commentary", "Malbim"],
         "schema": schema.serialize()
     }
 
@@ -201,10 +206,10 @@ def upload_text(parser):
             "language": 'he',
             "text": book
         }
-    functions.post_text("Malbim on Genesis", version)
+    functions.post_text("Malbim on Genesis", version, index_count='on')
 
 
 malbim = Malbim(path)
 functions.post_index(build_index(malbim))
 upload_text(malbim)
-#functions.post_link(build_links(malbim))
+functions.post_link(build_links(malbim))
