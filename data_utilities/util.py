@@ -1065,8 +1065,8 @@ class WeightedLevenshtein:
             s1_len = len(s1)
             s2_len = len(s2)
 
-            if s1_len == 0 and s2_len == 0:
-                raise LevenshteinError
+            if s1_len == 0 and s2_len == 0 and normalize:
+                raise LevensheinError("both strings can't be empty with normalize=True. leads to divide by zero")
 
             if s1 == s2:
                 score = 0

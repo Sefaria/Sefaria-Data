@@ -25,7 +25,7 @@ with codecs.open("scraper.out", "rb", encoding='utf8') as f:
 out_rows = []
 for mes in mesechtot:
     mes_ind = library.get_index(mes)
-    for daf_ref in [Ref("Sanhedrin 67a")]:  # mes_ind.all_section_refs():
+    for daf_ref in mes_ind.all_section_refs():
         print daf_ref
         daf_scraped = wiki_scraped[daf_ref.book][daf_ref.normal()]
         words_scraped = daf_scraped["text"].split()
@@ -55,7 +55,7 @@ for mes in mesechtot:
             else:
                 comments_scraped += [u" ".join(words_scraped[curr_word:curr_word + chunk_size])]
                 curr_word += chunk_size
-        matched = dibur_hamatchil_matcher.match_ref(daf_ref.text("he"), comments_scraped, base_tokenizer,  with_abbrev_matches=True, with_num_abbrevs=False, place_consecutively=True)
+        matched = dibur_hamatchil_matcher.match_ref(daf_ref.text("he"), comments_scraped, base_tokenizer,  with_abbrev_matches=True, with_num_abbrevs=False, place_consecutively=False)
 
         try:
             super_sefaria_list = [matched["matches"][sc].normal() for sc in super_comment_list]
