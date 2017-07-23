@@ -1,27 +1,4 @@
 # -*- coding: utf-8 -*-
-'''
-todo:
-- fix parse
-
-notes:
--concern: importing method will cause anything in the global scope to run,
- nesting the stuff in if '__name__ '== '__main__': prevents that from getting run
-- gain access to Sefaria-Project with import sys / sys.path(append(path to Sefaria-Project))
- or could declare it as global variable in my os
-*bad*
-def foo(bar, spaz=[]):
-    spaz.append(6)
-    for i in spaz:
-        print i
-
-*good*
-def foo(bar, spaz = none):
-    if spaz is none:
-        spaz = 6
-    for i in spaz:
-        print i
-
-'''
 import re
 import os
 import io
@@ -39,7 +16,7 @@ from sefaria.model import *
 from sefaria.datatype.jagged_array import JaggedArray
 from sefaria.utils.hebrew import decode_hebrew_numeral as gematria
 
-path = '/Users/joelbemis/Documents/programming/Sefaria-Data/sources/Malbim/Genesis/external/commentary.txt'
+# path = '/Users/joelbemis/Documents/programming/Sefaria-Data/sources/Malbim/Genesis/external/commentary.txt'
 
 class Malbim(util.ToratEmetData):
 

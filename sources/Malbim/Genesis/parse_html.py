@@ -1,29 +1,5 @@
 # -*- coding: utf-8 -*-
 '''
-
-fix:
-- chapters 2 + 3
-- manually add chapters to tops of chapter 1
-- check that chapter 1 can work in existing parser
-
-notes:
-- concern: importing method will cause anything in the global scope to run,
- nesting the stuff in if '__name__ '== '__main__': prevents that from getting run
-- gain access to Sefaria-Project with import sys / sys.path(append(path to Sefaria-Project))
- or could declare it as global variable in my os
-*bad*
-def foo(bar, spaz=[]):
-    spaz.append(6)
-    for i in spaz:
-        print i
-
-*good*
-def foo(bar, spaz = none):
-    if spaz is none:
-        spaz = 6
-    for i in spaz:
-        print i
-
 exceptions:
 - footnotes: no [א] at כח:יז, no [א] at מ:כג / correct manually x
 - small at יב:טז / manually make into footnote x
@@ -50,8 +26,8 @@ from sefaria.model import *
 from sefaria.datatype.jagged_array import JaggedArray
 from sefaria.utils.hebrew import decode_hebrew_numeral as gematria
 
-path = u'/Users/joelbemis/Documents/programming/Sefaria-Data/sources/Malbim/Genesis/pages/'
-onePath = u'/Users/joelbemis/Documents/programming/Sefaria-Data/sources/Malbim/Genesis/perek 1/'
+#path = u'/Users/joelbemis/Documents/programming/Sefaria-Data/sources/Malbim/Genesis/pages/'
+#onePath = u'/Users/joelbemis/Documents/programming/Sefaria-Data/sources/Malbim/Genesis/perek 1/'
 
 class Malbim(util.ToratEmetData):
 
