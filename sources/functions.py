@@ -740,6 +740,10 @@ def get_index_api(ref, server='http://www.sefaria.org'):
     # data = json.load(response)
     return http_request(url)
 
+def get_links(ref, server="http://www.sefaria.org"):
+    ref = ref.replace(" ", "_")
+    url = server+'/api/links/'+ref
+    return http_request(url)
 
 def get_text(ref):
     ref = ref.replace(" ", "_")
