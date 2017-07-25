@@ -476,6 +476,18 @@ class RashiUnit:
             self.startingText, self.matchedGemaraText, self.startWord, self.endWord, self.place, self.match_type,
             u', '.join(self.skippedDafWords), u', '.join(self.skippedRashiWords), u'\n\t\t'.join([am.__str__() for am in self.abbrev_matches]))
 
+    def update_after_strict_boundaries(self, start_end, matched_gemara):
+        """
+        called if strict_boundaries==True to update RashiUnit to be in sync with new boundaries
+        :param tuple[int] start_end:
+        :param str matched_gemara:
+        :return: None
+        """
+        self.startWord = start_end[0]
+        self.endWord   = start_end[1]
+        self.matchedGemaraText = matched_gemara
+        self.match_type = 'strict_fixed'
+
 
 def get_maximum_subset_dh(base_text, comment_text, threshold=90):
     """
@@ -1024,12 +1036,8 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                         start_end_map[ise - 1] = (start_end_map[ise - 1][0], best_possibility[0])
                         start_end_map[ise] = (best_possibility[1], start_end_map[ise][1])
                         # for verbose output
-                        curDaf.allRashi[ise - 1].startWord = start_end_map[ise - 1][0]
-                        curDaf.allRashi[ise - 1].endWord = start_end_map[ise - 1][1]
-                        curDaf.allRashi[ise - 1].matchedGemaraText = u' '.join(curDaf.allWords[start_end_map[ise - 1][0]:start_end_map[ise - 1][1]+1])
-                        curDaf.allRashi[ise].startWord = start_end_map[ise][0]
-                        curDaf.allRashi[ise].endWord = start_end_map[ise][1]
-                        curDaf.allRashi[ise].matchedGemaraText = u' '.join(curDaf.allWords[start_end_map[ise][0]:start_end_map[ise][1]+1])
+                        curDaf.allRashi[ise - 1].update_after_strict_boundaries(start_end_map[ise - 1], u' '.join(curDaf.allWords[start_end_map[ise - 1][0]:start_end_map[ise - 1][1]+1]))
+                        curDaf.allRashi[ise].update_after_strict_boundaries(start_end_map[ise],  u' '.join(curDaf.allWords[start_end_map[ise][0]:start_end_map[ise][1]+1]))
 
 
     # now do a full report
