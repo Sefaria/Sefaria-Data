@@ -5,10 +5,11 @@ from sefaria.system.exceptions import *
 import re
 from sources.functions import *
 from sefaria.model import *
+from bs4 import BeautifulSoup
+from BeautifulSoup import NavigableString, Tag
+SERVER = "http://draft.sefaria.org"
 
-SERVER = "http://ste.sefaria.org"
-
-def parse_file(filename, notes):
+def  parse_file(filename, notes):
     text = {}
     text['he'] = {}
     text['en'] = {}
@@ -18,8 +19,18 @@ def parse_file(filename, notes):
     expect_lang = 'he'
     prev_he_title = False
     note_counter = 0
+    prev_note_counter = -1
+    '''
+    check if prev_note_counter is note_counter even though there was a @
+    '''
     prev_note = ""
-    special_tags = set(['@z2:he', '@p2:he', '@ex:en', '@pc:he', '@h1:he', '@cs:en', '@za:he', '@kt:he', '@sa:en', '@p1:he', '@e2:en', '@h2:he', '@ps:he', '@cz:he', '@ip:en', '@ct:en', '@in:en', '@sb:he', '@tx:en', '@zb:he'])
+    current_outer_section = None
+    current_section = None
+    flat_to_multi = {} #in parsing text, we build a flat list of english section names and use this dict to
+                        #determine where in the multidimensional depth 3 text each flat section name corresponds to
+
+    heb_flat_to_eng = {} #there are no multid tags for hebrew, so we build a dictionary of hebrew to english to get the flat en section and then
+                    #use flat_to_multi to get the multid section
     with open(filename) as f:
         for line in f:
             orig_line = line
@@ -31,30 +42,65 @@ def parse_file(filename, notes):
             is_he_title = False
             if is_title_bool:
                 is_he_title = lang == 'he'
-                line += "1"
-                while line in sections[lang]:
-                    line = line[0:-1] + str(int(line[-1]) + 1)
-                text[lang][line] = []
-                sections[lang].append(line)
-                if len(sections[lang]) > 1 and text[lang][sections[lang][-2]] == []:
+                flat_title = set_flat_title(line, sections, text, lang)
+                if len(sections[lang]) > 1 and text[lang][sections[lang][-2]] == [] and prev_en_title_tag == start_tag:
                     combine(text, sections, lang)
-            elif prev_he_title: #if previous is a Hebrew title, this should be an English title, but if not, don't treat prev as title
-                not_real_title = sections['he'][-1]
-                text['he'].pop(not_real_title)
-                sections['he'] = sections['he'][0:-1]
-                he_current_section = sections['he'][-1]
-                text['he'][he_current_section].append(not_real_title)
-                add_line_to_text(line, start_tag, text, sections, lang)
+                current_section, current_outer_section = add_to_map(flat_to_multi, current_outer_section, current_section, flat_title, start_tag, line)
+                if lang == 'en':
+                    prev_en_title_tag = start_tag
+                    curr_he_title = sections['he'][-1]
+                    heb_flat_to_eng[curr_he_title] = flat_title
             else:
+                if prev_he_title: #if previous is a Hebrew title, this should be an English title, but if not, don't treat prev as title
+                    fix_prev_he_title(text, sections)
                 add_line_to_text(line, start_tag, text, sections, lang)
-            expect_lang, found_expected_lang = is_expected_lang(lang, expect_lang, start_tag, special_tags)
+
+            expect_lang, found_expected_lang = is_expected_lang(lang, expect_lang, start_tag)
             if not found_expected_lang:
                 text[expect_lang][sections[expect_lang][-1]].append("")
+
             prev_line = orig_line
             prev_he_title = is_he_title
 
-    print "FINAL COUNT {}".format(note_counter)
-    return verify_he_en_same_size(text, sections)
+    print "FINAL COUNT {} out of {}".format(note_counter, len(notes))
+    return verify_he_en_same_size(text, sections, flat_to_multi, heb_flat_to_eng)
+'''
+
+'''
+
+def add_to_map(flat_to_multi, current_outer_section, current_section, flat_title, start_tag, original_title):
+    if start_tag == "@c2":
+        assert current_outer_section, "No outer section"
+        assert current_section, "No section"
+        flat_to_multi[flat_title] = "{}, {}, {}".format(current_outer_section, current_section, original_title)
+    elif start_tag == "@c1":
+        assert current_outer_section, "No outer section"
+        current_section = original_title
+        flat_to_multi[flat_title] = "{}, {}".format(current_outer_section, current_section)
+    elif start_tag == "@ct":
+        current_outer_section = original_title
+        current_section = None
+        flat_to_multi[flat_title] = current_outer_section
+
+    return current_section, current_outer_section
+
+
+def set_flat_title(line, sections, text, lang):
+    line += "1"
+    while line in sections[lang]:
+        line = line[0:-1] + str(int(line[-1]) + 1)
+    text[lang][line] = []
+    sections[lang].append(line)
+    return line
+
+
+
+def fix_prev_he_title(text, sections):
+    not_real_title = sections['he'][-1]
+    text['he'].pop(not_real_title)
+    sections['he'] = sections['he'][0:-1]
+    he_current_section = sections['he'][-1]
+    text['he'][he_current_section].append(not_real_title)
 
 
 def pre_parse(line, notes, note_counter, prev_note):
@@ -134,7 +180,7 @@ def combine(text, sections, lang):
     sections[lang] = sections[lang][0:-1]
 
 
-def verify_he_en_same_size(text, sections):
+def verify_he_en_same_size(text, sections, flat_to_multi, heb_flat_to_eng):
     num_lines = {"en": 0, "he": 0}
     num_sections = {"en": {}, "he": {}}
     assert len(sections['en']) == len(sections['he']), "{}!={}".format(len(sections['en']), len(sections['he']))
@@ -145,7 +191,6 @@ def verify_he_en_same_size(text, sections):
         #print he_sec
         len_text_en = len(text['en'][en_sec])
         len_text_he = len(text['he'][he_sec])
-        '''
         if len_text_en == 0:
             print "english 0"
             print en_sec
@@ -157,13 +202,12 @@ def verify_he_en_same_size(text, sections):
             print en_sec
             print "DIFFERENCE: {}".format(diff)
             print text['en'][en_sec]
-        '''
-    return text, zip_en_he
+    return text, zip_en_he, flat_to_multi, heb_flat_to_eng
 
 def force_tag_lower_case(line):
     return line[0:3].lower() + line[3:]
 
-def is_expected_lang(curr_lang, expect_lang, start_tag, special_tags):
+def is_expected_lang(curr_lang, expect_lang, start_tag):
     '''
     :return: tuple that tells us what language to expect for the next line and True if the language we expected
     for this line was correct
@@ -173,8 +217,6 @@ def is_expected_lang(curr_lang, expect_lang, start_tag, special_tags):
             return 'he', True
         else:
             return 'en', True
-
-    #assert start_tag+":"+curr_lang in special_tags
 
     return expect_lang, False
 
@@ -225,7 +267,7 @@ def bold_if_necessary(line, start_tag):
         return line
 
 def is_bold(start_tag, times=0):
-    bold = start_tag.startswith("@ct") or start_tag.startswith("@kt") or "b" in start_tag
+    bold = start_tag.startswith("@c") or start_tag.startswith("@kt") or "b" in start_tag
     if not bold and times == 0:
         return reverse(is_bold, start_tag)
 
@@ -236,7 +278,7 @@ def is_title(start_tag, text, lang, prev_he_title, times=0):
         return False
     #the above prevents making something a title when there's english but no hebrew
 
-    is_title_bool = start_tag.startswith("@ct") or start_tag.startswith("@kt")
+    is_title_bool = start_tag.startswith("@ct") or start_tag.startswith("@kt") or start_tag.startswith("@c2") or start_tag.startswith("@c1") or start_tag.startswith("@k1")
     if not is_title_bool and times == 0:
         return reverse(is_title, start_tag, text, lang, prev_he_title)
 
@@ -275,37 +317,7 @@ def strip_at_tags(line, return_start_tag=True):
     else:
         return line
 
-
-def create_schema(parsed_text, title, he_title):
-    root = SchemaNode()
-    root.add_primary_titles(title, he_title)
-
-    en_names = parsed_text['en'].keys()
-    he_names = parsed_text['he'].keys()
-
-
-    assert len(he_names) == len(en_names)
-    for name_pair in zip(en_names, he_names):
-        node = JaggedArrayNode()
-        term = Term().load({"name": name_pair[0].replace("\xe2\x80\x99", "'")})
-        if term:
-            node.add_shared_term(term)
-        else:
-            node.add_primary_titles(name_pair[0].replace("\xe2\x80\x99", "'"), name_pair[1])
-        node.add_structure(["Paragraph"])
-        node.validate()
-        root.append(node)
-
-    root.validate()
-    index = {
-        "schema": root.serialize(),
-        "title": title,
-        "categories": ["Liturgy"],
-    }
-    post_index(index, server=SERVER)
-
-
-def post_en_he(text, zipped_list, title, vtitle, vsource):
+def post_en_he(text, zipped_list, title, vtitle, vsource, flat_to_multi):
     for en, he in zipped_list:
         send_text_en = {
             "versionTitle": vtitle,
@@ -319,9 +331,13 @@ def post_en_he(text, zipped_list, title, vtitle, vsource):
             "text": text['he'][he],
             "language": 'he'
         }
+        en = flat_to_multi[en]
         en = en.replace("\xe2\x80\x99", "'")
-        post_text("{}, {}".format(title, en), send_text_en, server=SERVER)
-        post_text("{}, {}".format(title, en), send_text_he, server=SERVER)
+        print en
+        if send_text_en['text'] != []:
+            post_text("{}, {}".format(title, en), send_text_en, server=SERVER)
+        if send_text_he['text'] != []:
+            post_text("{}, {}".format(title, en), send_text_he, server=SERVER)
 
 def pre_parse_notes(filename):
     lines = []
@@ -390,6 +406,68 @@ def check_old_schema_vs_new_schema(parsed_text):
         if old_node not in new_node_list:
             print "New schema does not have {}".format(old_node)
 
+'''
+Idea is to use flat_to_multi and heb_to_eng
+We use beautiful soup to get order of nodes
+Then each one we divide up by comma and use heb_to_eng to reconstruct it
+'''
+
+def get_heb_nonflat_to_en(name, heb_nonflat_to_en):
+    if name not in heb_nonflat_to_en:
+        print name
+        return "not found"
+    else:
+        return heb_nonflat_to_en[name]
+
+def construct_full_paths(workflowy, heb_nonflat_to_en):
+    soup = BeautifulSoup(open(workflowy)).contents[0].contents[0].contents[0].contents
+    soup = [el for el in soup if el != "\n"][1:]
+    nodes = []
+    for el in soup:
+        el_name = el.attrs['text'].encode('utf-8')
+        title = get_heb_nonflat_to_en(el_name, heb_nonflat_to_en)
+        nodes.append("{}".format(title))
+        el = [sub_el for sub_el in el if sub_el != "\n"]
+        if len(el) > 0:
+            for sub_el in el:
+                sub_el_name = sub_el.attrs['text'].encode('utf-8')
+                subtitle = get_heb_nonflat_to_en(sub_el_name, heb_nonflat_to_en)
+                nodes.append("{}, {}".format(title, subtitle))
+                sub_el = [x for x in sub_el if x != '\n']
+                if len(sub_el) > 0:
+                    for sub_sub_el in sub_el:
+                        sub_sub_el_name = sub_sub_el.attrs['text'].encode('utf-8')
+                        sub_subtitle = get_heb_nonflat_to_en(sub_sub_el_name, heb_nonflat_to_en)
+                        nodes.append("{}, {}, {}".format(title, subtitle, sub_subtitle))
+
+
+    for node in nodes:
+        print node
+    return nodes
+
+
+def create_schema(heb_nonflat_to_eng, workflowy, en_title, he_title):
+    count = 0
+    found_first_line = False
+    en_file = open("english_{}".format(workflowy), 'w')
+    with open(workflowy) as file:
+        for line in file:
+            he_path = re.findall("""<outline text="(.*?)"\s?/?>""", line)
+            if he_path:
+                if not found_first_line:
+                    found_first_line = True
+                    en_file.write('<outline text="{} / {}">\n'.format(he_title.encode('utf-8'), en_title))
+                old_path = he_path[0]
+                new_path = old_path + " / " + heb_nonflat_to_eng[old_path.replace("&quot;", '"')]
+                line = line.replace(old_path, new_path)
+                count += 1
+            elif "outline" not in line and found_first_line: #if it's not outline tag and found first line of outline tag, then we are at the end
+                en_file.write("</outline>\n")
+                found_first_line = False #this way "</outline>" is only added once
+
+            en_file.write(line.replace("\xe2\x80\x99", "'"))
+
+    en_file.close()
 
 
 if __name__ == "__main__":
@@ -398,6 +476,7 @@ if __name__ == "__main__":
     rosh_hashana_dict["content_file"] = "Rosh Hashanah Ashkenaz/Plain Text/Rosh Hashanah.txt"
     rosh_hashana_dict["title"] = "Metsudah Rosh Hashanah Machzor"
     rosh_hashana_dict["schema"] = "Rosh Hashanah_schema.txt"
+    rosh_hashana_dict["workflowy"] = "Rosh Hashanah_workflowy.xml"
     rosh_hashana_dict["heTitle"] = u"מצודה ראש השנה מחזור"
     rosh_hashana_dict["versionTitle"] = "The Metsudah Machzor; Metsudah Publications, New York"
     rosh_hashana_dict["versionSource"] = "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH000996925"
@@ -408,9 +487,13 @@ if __name__ == "__main__":
 
     yom_kippur_dict["heTitle"] = u"מצודה יום כפור מחזור"
 
-    for sefer in [rosh_hashana_dict, yom_kippur_dict]:
+    for sefer in [rosh_hashana_dict]:
         notes = get_notes(sefer["notes_file"])
-        parsed_text, zip_en_he_names = parse_file(sefer["content_file"], notes)
-        check_old_schema_vs_new_schema(parsed_text)
-        create_schema(parsed_text, sefer["title"], sefer["heTitle"])
-        post_en_he(parsed_text, zip_en_he_names, sefer["title"], sefer["versionTitle"], sefer["versionSource"])
+        parsed_text, zip_en_he_names, flat_to_multi, heb_flat_to_eng = parse_file(sefer["content_file"], notes)
+        heb_nonflat_to_eng = {}
+        for k,v in heb_flat_to_eng.items():
+            k = k[0:-1]
+            heb_nonflat_to_eng[k] = v[0:-1]
+        full_paths = construct_full_paths(sefer["workflowy"], heb_nonflat_to_eng)
+        create_schema(heb_nonflat_to_eng, sefer["workflowy"], sefer["title"], sefer["heTitle"])
+        post_en_he(parsed_text, zip_en_he_names, sefer["title"], sefer["versionTitle"], sefer["versionSource"], flat_to_multi)
