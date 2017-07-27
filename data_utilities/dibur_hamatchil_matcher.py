@@ -141,7 +141,7 @@ class MatchMatrix(object):
                     "comment_indexes_skipped": comment_indexes_skipped,
                     "daf_indexes_skipped": daf_indexes_skipped,
                     "jump_indexes": jump_indexes,
-                    "mismatches": mismatches
+                    "mismatches": mismatches + 1
                 }]
             return [None]
         elif not is_jump_start and next_base_index == self.daf_len:
@@ -1262,9 +1262,6 @@ def GetAllMatches(curDaf, curRashi, startBound, endBound,
     dafwords = curDaf.allWords[startBound:endBound+1]
     dafhashes = curDaf.wordhashes[startBound:endBound+1]
 
-    if curRashi.place == 5:
-        pass
-
     allabbrevinds, allabbrevs = GetAbbrevs(dafwords, curRashi.words, char_threshold, startBound, endBound, with_num_abbrevs=with_num_abbrevs)
 
     daf_skips = int(min(daf_skips, mathy.floor((curRashi.cvWordcount-1)/2)))
@@ -1279,6 +1276,8 @@ def GetAllMatches(curDaf, curRashi, startBound, endBound,
                      overall_word_skip_threshold=overall)
     paths = mm.find_paths()
 
+    MIN_PERC_WORDS_MATCHED = 0.25
+    paths = filter(lambda p: len(curRashi.words) - len(p["comment_indexes_skipped"]) - p["mismatches"] > len(curRashi.words)*MIN_PERC_WORDS_MATCHED, paths)
     """
         daf_start_index: #,
         comment_indexes_skipped: [],
@@ -1333,7 +1332,7 @@ def GetAllMatches(curDaf, curRashi, startBound, endBound,
 
         fIsMatch = True
         #check small matches to make sure they actually match
-        if curRashi.cvWordcount <= 4:
+        if curRashi.cvWordcount <= 4: #TODO lower limit if you skip rashi words
             distance, fIsMatch = IsStringMatch(alternateStartText, targetPhrase, char_threshold)
 
         if fIsMatch:
