@@ -2,13 +2,13 @@
 
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
-root = Root('../Choshen_Mishpat.xml')
+root = Root('../../Choshen_Mishpat.xml')
 commentaries = root.get_commentaries()
 gra = commentaries.get_commentary_by_title("Beur HaGra")
 if gra is None:
     gra = commentaries.add_commentary("Beur HaGra", u'ביאור הגר"א')
 
-filename = u"../txt_files/Choshen_Mishpat/part_1/שוע חושן משפט חלק א באור הגר''א.txt"
+filename = u"../../txt_files/Choshen_Mishpat/part_1/שוע חושן משפט חלק א באור הגר''א.txt"
 gra.remove_volume(1)
 # correct_marks_in_file(filename, u'@00([\u05d0-\u05ea]{1,2})', u'@22([\u05d0-\u05ea]{1,3})')
 with codecs.open(filename, 'r', 'utf-8') as infile:

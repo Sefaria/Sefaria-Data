@@ -2,13 +2,13 @@
 
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
-root = Root('../Choshen_Mishpat.xml')
+root = Root('../../Choshen_Mishpat.xml')
 commentaries = root.get_commentaries()
 smah = commentaries.get_commentary_by_title("Me'irat Einayim")
 if smah is None:
     smah = commentaries.add_commentary("Me'irat Einayim", u"מאירת עיניים")
 
-filename = u'../txt_files/Choshen_Mishpat/part_1/סמע חושן משפט חלק א מוכן.txt'
+filename = u'../../txt_files/Choshen_Mishpat/part_1/סמע חושן משפט חלק א מוכן.txt'
 smah.remove_volume(1)
 # correct_marks_in_file(filename, u'@00([\u05d0-\u05ea]{1,2})', u'@22([\u05d0-\u05ea]{1,3})')
 with codecs.open(filename, 'r', 'utf-8') as infile:

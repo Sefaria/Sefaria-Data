@@ -2,11 +2,11 @@
 
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
-root = Root('../Choshen_Mishpat.xml')
+root = Root('../../Choshen_Mishpat.xml')
 commentaries = root.get_commentaries()
 
 b_hagolah = commentaries.get_commentary_by_title("Be'er HaGolah")
-filename = u'../txt_files/Choshen_Mishpat/part_2/שולחן ערוך חושן משפט חלק ב באר הגולה.txt'
+filename = u'../../txt_files/Choshen_Mishpat/part_2/שולחן ערוך חושן משפט חלק ב באר הגולה.txt'
 b_hagolah.remove_volume(2)
 with codecs.open(filename, 'r', 'utf-8') as infile:
     volume = b_hagolah.add_volume(infile.read(), 2)

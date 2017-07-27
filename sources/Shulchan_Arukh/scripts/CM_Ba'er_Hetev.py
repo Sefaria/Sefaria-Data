@@ -38,7 +38,7 @@ def count_markers(siman):
 
 def load_simanim():
     simanim = []
-    base = Root("../Choshen_Mishpat.xml").get_base_text()
+    base = Root("../../Choshen_Mishpat.xml").get_base_text()
     for volume in base.get_child():
         simanim.extend(volume.get_child())
     return simanim

@@ -39,7 +39,7 @@ def jump_tag(parent_tag, tag_names):
 
 def map_star_locations():
     simanim = []
-    root = Root('../Choshen_Mishpat.xml')
+    root = Root('../../Choshen_Mishpat.xml')
     root.populate_comment_store()
     match_locations = set()
 
@@ -101,7 +101,7 @@ def mark_stars(filename, markup, siman_mark, seif_mark, starting_siman=-1, start
     edit_locations = map_star_locations()
     fixed_lines = []
     if is_beer:
-        beer = Root('../Choshen_Mishpat.xml').get_commentaries().get_commentary_by_title(u"Be'er HaGolah")
+        beer = Root('../../Choshen_Mishpat.xml').get_commentaries().get_commentary_by_title(u"Be'er HaGolah")
         beer_mapping = bh_to_sa_mapping(beer.get_simanim())
     else:
         beer_mapping = None
@@ -141,14 +141,14 @@ def mark_stars(filename, markup, siman_mark, seif_mark, starting_siman=-1, start
         outfile.writelines(fixed_lines)
 
 beer_1 = {
-    'filename': u'../txt_files/Choshen_Mishpat/part_1/שוע חושן משפט חלק א באר הגולה.txt',
+    'filename': u'../../txt_files/Choshen_Mishpat/part_1/שוע חושן משפט חלק א באר הגולה.txt',
     'markup': u'\n@11s\n',
     'siman_mark': '@12',
     'seif_mark': '@11',
     'is_beer': True
 }
 base_1 = {
-    'filename': u'../txt_files/Choshen_Mishpat/part_1/שולחן ערוך חושן משפט חלק א מחבר.txt',
+    'filename': u'../../txt_files/Choshen_Mishpat/part_1/שולחן ערוך חושן משפט חלק א מחבר.txt',
     'markup': u'@68s',
     'siman_mark': u'@22',
     'seif_mark': u'@11',
@@ -172,7 +172,7 @@ def add_mapping_to_file(filename, siman_pattern, seif_pattern, test_mode=False):
     with codecs.open(filename, 'r', 'utf-8') as infile:
         lines = infile.readlines()
 
-    root = Root("../Choshen_Mishpat.xml")
+    root = Root("../../Choshen_Mishpat.xml")
     root.populate_comment_store()
     beer = root.get_commentaries().get_commentary_by_title("Be'er HaGolah")
     mapping = bh_to_sa_mapping(beer.get_simanim())
@@ -197,6 +197,6 @@ def add_mapping_to_file(filename, siman_pattern, seif_pattern, test_mode=False):
         filename = filename.replace(u'.txt', u'_test.txt')
     with codecs.open(filename, 'w', 'utf-8') as outfile:
         outfile.writelines(fixed_lines)
-add_mapping_to_file(u'../txt_files/Choshen_Mishpat/part_1/שוע חושן משפט חלק א באר הגולה.txt', u'@12([\u05d0-\u05ea]{1,3})', u'@11[\u05d0-\u05ea]')
-add_mapping_to_file(u'../txt_files/Choshen_Mishpat/part_2/שולחן ערוך חושן משפט חלק ב באר הגולה.txt', u'@12([\u05d0-\u05ea]{1,3})', u'@11[\u05d0-\u05ea]')
-add_mapping_to_file(u'../txt_files/Choshen_Mishpat/part_3/באר הגולה חושן משפט חלק ג.txt', u'@12([\u05d0-\u05ea]{1,3})', u'@11[\u05d0-\u05ea]')
+add_mapping_to_file(u'../../txt_files/Choshen_Mishpat/part_1/שוע חושן משפט חלק א באר הגולה.txt', u'@12([\u05d0-\u05ea]{1,3})', u'@11[\u05d0-\u05ea]')
+add_mapping_to_file(u'../../txt_files/Choshen_Mishpat/part_2/שולחן ערוך חושן משפט חלק ב באר הגולה.txt', u'@12([\u05d0-\u05ea]{1,3})', u'@11[\u05d0-\u05ea]')
+add_mapping_to_file(u'../../txt_files/Choshen_Mishpat/part_3/באר הגולה חושן משפט חלק ג.txt', u'@12([\u05d0-\u05ea]{1,3})', u'@11[\u05d0-\u05ea]')

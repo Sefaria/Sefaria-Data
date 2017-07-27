@@ -17,9 +17,9 @@ def markup(b_vol):
     b_vol.mark_references(commentaries.commentary_ids["Beur HaGra"], u'@51\[([\u05d0-\u05ea]{1,3})\]', group=1)
     return
 
-root = Root('../Choshen_Mishpat.xml')
+root = Root('../../Choshen_Mishpat.xml')
 base = root.get_base_text()
-filename = u'../txt_files/Choshen_Mishpat/part_3/שלחן ערוך חושן משפט חלק ג מחבר.txt'
+filename = u'../../txt_files/Choshen_Mishpat/part_3/שלחן ערוך חושן משפט חלק ג מחבר.txt'
 codes = [u'@50', u'@57', u'@58', u'@51', u'@53', u'@52', u'@54', u'@56', u'@55']
 patterns = [u'@50({})', ur'@57\(({})\)', ur'@58({})\)', ur'@51\[({})\]', ur'@53({})\)', ur'@52\(({})\)', ur'@54({})',
             ur'@56({})\]', ur'@55\[({})\]']

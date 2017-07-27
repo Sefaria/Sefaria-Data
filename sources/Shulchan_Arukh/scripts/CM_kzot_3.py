@@ -2,13 +2,13 @@
 
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
-root = Root('../Choshen_Mishpat.xml')
+root = Root('../../Choshen_Mishpat.xml')
 commentaries = root.get_commentaries()
 kzot = commentaries.get_commentary_by_title("Ketzot HaChoshen")
 if kzot is None:
     kzot = commentaries.add_commentary("Ketzot HaChoshen", u"קצות החושן")
 
-filename = u"../txt_files/Choshen_Mishpat/part_3/קצות החושן שולחן ערוך חושן משפט חלק ג.txt"
+filename = u"../../txt_files/Choshen_Mishpat/part_3/קצות החושן שולחן ערוך חושן משפט חלק ג.txt"
 kzot.remove_volume(3)
 with codecs.open(filename, 'r', 'utf-8') as infile:
     volume = kzot.add_volume(infile.read(), 3)

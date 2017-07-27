@@ -15,9 +15,9 @@ def markup(b_vol):
     b_vol.mark_references(commentaries.commentary_ids["Netivot HaMishpat, Beurim"], u'@00([\u05d0-\u05ea]{1,3})\)', group=1)
     b_vol.mark_references(commentaries.commentary_ids["Be'er HaGolah"], ur'@44([\u05d0-\u05ea\u2022])', cyclical=True, group=1)
 
-root = Root('../Choshen_Mishpat.xml')
+root = Root('../../Choshen_Mishpat.xml')
 base = root.get_base_text()
-filename = u'../txt_files/Choshen_Mishpat/part_2/שולחן ערוך חושן משפט חלק ב מחבר מושלם.txt'
+filename = u'../../txt_files/Choshen_Mishpat/part_2/שולחן ערוך חושן משפט חלק ב מחבר מושלם.txt'
 
 codes = [u'@44', u'@55', u'@66', u'@77', u'@99', u']*]', u'-[*]', u'/*)', u'@00']
 patterns = [ur'@44({})', ur'@55({})', ur'@66\(({})\)', ur'@77\(({})\)', ur'@99\[({})\]', ur'\]({})\]', ur'-\[({})\]',

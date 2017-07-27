@@ -18,9 +18,9 @@ def markup(b_vol):
                           group=1)
     return
 
-root = Root('../Choshen_Mishpat.xml')
+root = Root('../../Choshen_Mishpat.xml')
 base = root.get_base_text()
-filename = u'../txt_files/Choshen_Mishpat/part_1/שולחן ערוך חושן משפט חלק א מחבר.txt'
+filename = u'../../txt_files/Choshen_Mishpat/part_1/שולחן ערוך חושן משפט חלק א מחבר.txt'
 
 codes = [u'@69', u'@70', u'@71', u'@62', u'@63', u'@64', u'@65', u'@67']
 patterns = [ur'@69\[({})\]', ur'@70\(({})\)', ur'@71({})\)', ur'@62({})', ur'@63\[({})\]', ur'@64({})\]',

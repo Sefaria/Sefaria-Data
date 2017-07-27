@@ -2,13 +2,13 @@
 
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
-root = Root('../Choshen_Mishpat.xml')
+root = Root('../../Choshen_Mishpat.xml')
 commentaries = root.get_commentaries()
 netivot = commentaries.get_commentary_by_title("Netivot HaMishpat, Beurim")
 if netivot is None:
     netivot = commentaries.add_commentary("Netivot HaMishpat, Beurim", u"נתיבות המשפט, ביאורים")
 
-filename = u"../txt_files/Choshen_Mishpat/part_3/נתיבות המשפט חושן משפט חלק ג ביאורים מוכן.txt"
+filename = u"../../txt_files/Choshen_Mishpat/part_3/נתיבות המשפט חושן משפט חלק ג ביאורים מוכן.txt"
 netivot.remove_volume(3)
 # correct_marks_in_file(filename, u'@00([\u05d0-\u05ea]{1,2})', u'@22([\u05d0-\u05ea]{1,3})')
 with codecs.open(filename, 'r', 'utf-8') as infile:

@@ -5,13 +5,13 @@
 
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
-root = Root('../Choshen_Mishpat.xml')
+root = Root('../../Choshen_Mishpat.xml')
 commentaries = root.get_commentaries()
 shach = commentaries.get_commentary_by_title("Siftei Kohen")
 if shach is None:
     shach = commentaries.add_commentary("Siftei Kohen", u"שפתי כהן")
 
-filename = u'../txt_files/Choshen_Mishpat/part_1/שך חושן משפט חלק א.txt'
+filename = u'../../txt_files/Choshen_Mishpat/part_1/שך חושן משפט חלק א.txt'
 shach.remove_volume(1)
 # correct_marks_in_file(filename, u'@00([\u05d0-\u05ea]{1,2})', u'@22([\u05d0-\u05ea]{1,3})')
 with codecs.open(filename, 'r', 'utf-8') as infile:

@@ -17,9 +17,9 @@ Attempt to locate that number of references in commentary file
 Ensure that after that number of references, the following reference is 1.
 """
 filenames = {
-    'part_1': u'../txt_files/Choshen_Mishpat/part_1/שוע חושן משפט חלק א באר הגולה.txt',
-    'part_2': u'../txt_files/Choshen_Mishpat/part_2/שולחן ערוך חושן משפט חלק ב באר הגולה.txt',
-    'part_3': u'../txt_files/Choshen_Mishpat/part_3/באר הגולה חושן משפט חלק ג.txt'
+    'part_1': u'../../txt_files/Choshen_Mishpat/part_1/שוע חושן משפט חלק א באר הגולה.txt',
+    'part_2': u'../../txt_files/Choshen_Mishpat/part_2/שולחן ערוך חושן משפט חלק ב באר הגולה.txt',
+    'part_3': u'../../txt_files/Choshen_Mishpat/part_3/באר הגולה חושן משפט חלק ג.txt'
 }
 
 footnote_codes = {
@@ -101,7 +101,7 @@ class SimanLocater(object):
         self.base_simanim = [{
             'num': s.num,
             'total_refs': len(s.locate_references(footnote_codes['part_{}'.format(volume)]))
-        } for s in Root('../Choshen_Mishpat.xml').get_base_text().get_volume(volume).get_child()]
+        } for s in Root('../../Choshen_Mishpat.xml').get_base_text().get_volume(volume).get_child()]
         self.base_simanim = filter(lambda x: None if x['total_refs']==0 else x, self.base_simanim)
         self.commentary_simanim = self.find_transitions()
 
@@ -238,7 +238,7 @@ def mark_simanim(volume_number):
     with codecs.open(filenames['part_{}'.format(volume_number)], 'r', 'utf-8') as infile:
         lines = infile.readlines()
 
-    volume = Root('../Choshen_Mishpat.xml').get_base_text().get_volume(1)
+    volume = Root('../../Choshen_Mishpat.xml').get_base_text().get_volume(1)
     simanim = iter(volume.get_child())
     current_siman, expected_refs = get_next_siman(simanim)
 
