@@ -197,19 +197,20 @@ class Semag(object):
         self._tracker = BookIbidTracker()
         self._table = {
             u'שם': None,
-            u'לאוין': u'Sefer Mitzvot Gadol, Volume One',
-            u'עשין': u'Sefer Mitzvot Gadol, Volume Two',
-            u'א':u'Sefer Mitzvot Gadol, Volume Two, Laws of Eruvin',
-            u'ב': u'Sefer Mitzvot Gadol, Volume Two, Laws of Mourning',
-            u'ג': u"Sefer Mitzvot Gadol, Volume Two, Laws of Tisha B'Av",
-            u'ד': u'Sefer Mitzvot Gadol, Volume Two, Laws of Megillah',
-            u'ה': u'Sefer Mitzvot Gadol, Volume Two, Laws of Chanukah'
+            u'לאוין': u'Sefer Mitzvot Gadol, Negative Commandments',
+            u'לאין': u'Sefer Mitzvot Gadol, Negative Commandments',
+            u'עשין': u'Sefer Mitzvot Gadol, Positive Commandments',
+            u'א':u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Eruvin',
+            u'ב': u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Mourning',
+            u'ג': u"Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Tisha B'Av",
+            u'ד': u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Megillah',
+            u'ה': u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Chanukah'
                        }
 
 
 
     def parse_semag(self, str, mass):
-        reg_book = re.compile(u'ו?(עשין|שם|לאוין)')
+        reg_book = re.compile(u'ו?(עשין|שם|לאוין|לאין)')
         split = re.split(reg_book, str.strip())
         str_list = filter(None, [item.strip() for item in split])
         resolveds = []
@@ -622,6 +623,7 @@ def rambam_name_table():
     # name_dict[u'מעשר שני'] = name_dict[u'מעשר שני ונטע רבעי']
     name_dict[u'מ"ש ונטע רבעי'] = name_dict[u'מעשר שני ונטע רבעי']
     name_dict[u'מעשר שני ונ"ר'] = name_dict[u'מעשר שני ונטע רבעי']
+    # name_dict[u'מע"ש'] = name_dict[u'מעשר שני ונטע רבעי'] # is this right? קכא ג מיי׳ פ״ה מהל׳ אישות הל׳ ה ופ״ג מהל׳ מע״ש הל׳ יז (ב"ק 112)
     name_dict[u'מ"ש ונ"ר'] = name_dict[u'מעשר שני ונטע רבעי']
     name_dict[u'מ"ש'] = name_dict[u'מעשר שני ונטע רבעי']
     name_dict[u'נטע רבעי'] = name_dict[u'מעשר שני ונטע רבעי']
@@ -638,6 +640,7 @@ def rambam_name_table():
     name_dict[u'תמידין'] = name_dict[u'תמידים ומוספין']
     name_dict[u'תמידין ומוספין'] = name_dict[u'תמידים ומוספין']
     name_dict[u'איסורי מזבח'] = name_dict[u'איסורי המזבח']
+    name_dict[u'אסורי מזבח'] = name_dict[u'איסורי המזבח']
     name_dict[u'א"מ'] = name_dict[u'איסורי המזבח']
     name_dict[u'איס"ב'] = name_dict[u'איסורי ביאה']
     name_dict[u'א"ב'] = name_dict[u'איסורי ביאה']
@@ -691,7 +694,10 @@ def rambam_name_table():
 
 def clean_line(line):
     line = strip_nikkud(line)
-    line = re.sub(u'[:\?]', '', line)
+    replace_dict = {u'[:\?]': u'', u'[”״]': u'"', u'[’׳]': u"'"}
+    line = multiple_replace(line, replace_dict, using_regex=True)
+    # line = re.sub(u'[:\?]', '', line)
+    # line = re.sub(u'”', u'"', line)
     reg_parentheses = re.compile(u'\((.*?)\)')
     reg_brackets = re.compile(u'\[(.*?)\]')
     in_per = reg_parentheses.search(line)
@@ -879,6 +885,7 @@ def convert_smg(smg_str):
 
     return multiple_replace(smg_str, conv_table, using_regex=True)
 
+
 def needs_another_cycle(txtfile, mass_name):
     if os.stat(txtfile).st_size == 0:
         print '\n' + mass_name + ' is empty from errors'
@@ -1001,4 +1008,4 @@ if __name__ == "__main__":
     # clllapse_kidd = reverse_collapse('small_letters/kidushin_little_letters.csv', 'small_letters/collapsed_kidushin')
     # parsed = run2('csvQA/collapsed_megillah', 'csvQA/collapsed_megillah_little')
     # reverse_collapse('csvQA/megillah_little_letters.csv', 'csvQA/collapsed_megillah')
-    print convert_smg(u'Sefer Mitzvot Gadol, Volume Two 90')
+    run1(u"csvQA/bava_kamma", u"csvQA/bava_kamma")
