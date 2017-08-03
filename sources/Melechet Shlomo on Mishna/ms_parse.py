@@ -37,13 +37,13 @@ Nezikin, Kadshim, Taharos:
 """
 markers_1 = {"Intro":u"@01", "Outro":u"@99", "Perek":u"@00", "Mishna":u"@11", "DH Start": u"@22", "DH End": u"@33", "ERASE":[u"$",u"@99",u"@01",u"@44",u"@55",u"#",u"T"]}
 markers_2 = {"Intro":u"@01", "Outro": "NONE","Perek":u"@00", "Mishna":u"@22", "DH Start": u"@11", "DH End": u"@33", "ERASE":[u"$",u"@01",u"@65",u"@66"]}
-
 #first, create index of english and hebrew titles. Since our titles are in hebrew, this is set as the key
 tractate_titles = {}
 for tractate_title in library.get_indexes_in_category("Mishnah"):
     he_title = library.get_index(tractate_title).get_title("he")
     tractate_titles[he_title]=tractate_title
-sedarim = [u"זרעים",u"מועד",u"נשים",u"נזיקין",u"קדשים",u"טהרות"]
+sedarim = {u"זרעים":"Zeraim",u"מועד":"Moed",u"נשים":"Nashim",u"נזיקין":"Nezikin",u"קדשים":"Kodashim",u"טהרות":"Tahorot"}
+
 #some sedarim have different markings
 sedarim_group_1 = [u"זרעים",u"מועד",u"נשים"]
 seder_1_exceptions = [u"גיטין",u"נזיר",u"סוטה",u"קידושין"]
@@ -86,7 +86,7 @@ def ms_post_index(tractate_object):
         ],
         "dependence": "Commentary",
         "collective_title":"Melechet Shlomo",
-        "categories":["Mishnah","Commentary","Melechet Shlomo"],
+        "categories":["Mishnah","Commentary","Melechet Shlomo","Seder "+sedarim[tractate_object.seder]],
         "schema": record.serialize()
     }
     post_index(index,weak_network=True)
@@ -175,13 +175,13 @@ def get_record_name(title):
     return highest_fuzz(tractate_titles.keys(), title)
 posting_term = False
 posting_index = True
-posting_text= True
-linking_text= True
+posting_text= False
+linking_text= False
 admin_links = []
 page_links = []
 folder_names=[x[0]for x in os.walk("files")][1:]
 def get_seder(folder_title):
-    return highest_fuzz(sedarim, folder_title)
+    return highest_fuzz(sedarim.keys(), folder_title)
 #bad experiences with fuzzy wuzzy's .process and unicode...
 def highest_fuzz(input_list, input_item):
     highest_ratio = 0
@@ -202,7 +202,7 @@ f = open("MS Blank Mishnas.csv","w")
 f.close()
 for folder in folder_names:
     for ms_file in os.listdir(folder):
-        if ".txt" in ms_file and "תרומות" in ms_file:
+        if ".txt" in ms_file:
             current_tractate = Tractate()
             current_tractate.file_extension = folder+"/"+ms_file
             current_tractate.seder = get_seder(folder.decode('utf8','replace'))

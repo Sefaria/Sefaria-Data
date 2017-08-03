@@ -13,7 +13,7 @@ from sefaria.model.text import *
 import re
 import codecs
 from data_utilities.dibur_hamatchil_matcher import *
-import pdb
+import csv
 
 
 class Book:
@@ -55,10 +55,112 @@ class Book:
         matched=0.00
         total=0.00
         errored = []
-        not_machted = []
+        not_matched = []
         sample_Ref = Ref("Genesis 1")
         for perek_index,perek in enumerate(self.text):
             for pasuk_index, pasuk in enumerate(perek):
+                #try:
+                not_matched=[]
+                base_ref = TextChunk(Ref('Rashi on {}, {}:{}'.format(self.en_name,perek_index+1, pasuk_index+1)),"he","On Your Way")
+                mizrachi_ref = TextChunk(Ref('Mizrachi, {}, {}:{}'.format(self.en_name, perek_index+1, pasuk_index+1)).as_ranged_segment_ref(),"he")
+                if len(base_ref.text)>0:
+                    mizrachi_links = match_ref(base_ref,mizrachi_ref,base_tokenizer,dh_extract_method=dh_extract_method,verbose=True, rashi_filter=_filter)
+                    last_matched = Ref('Mizrachi, {}, {}:{}:1'.format(self.en_name, perek_index+1, pasuk_index+1))
+                    #except IndexError:
+                    #errored.append('Mizrachi on {}, {}:{}'.format(self.en_name,perek_index+1, pasuk_index+1))
+                    if 'comment_refs' in mizrachi_links:
+                        for base, comment in zip(mizrachi_links["matches"],mizrachi_links["comment_refs"]):
+                            print "B",base,"C", comment
+                            if base:
+                                link = (
+                                        {
+                                        "refs": [
+                                                 base.normal(),
+                                                 comment.normal(),
+                                                 ],
+                                        "type": "commentary",
+                                        "auto": True,
+                                        "generated_by": "sterling_mizrachi_rashi_linker"
+                                        })
+                                #post_link(link, weak_network=True)    
+                                matched+=1
+                                if last_matched==base:
+                                    while len(not_matched)>0:
+                                        print "EURIKA! Last match was {} and case is {}!".format(last_matched, base)
+                                        link = (
+                                                {
+                                                "refs": [
+                                                         base.normal(),
+                                                         not_matched.pop().normal(),
+                                                         ],
+                                                "type": "commentary",
+                                                "auto": True,
+                                                "generated_by": "sterling_mizrachi_rashi_linker"
+                                                })
+                                        #post_link(link, weak_network=True)
+                                        matched+=1
+                                else:
+                                    write_missed_comments(not_matched)
+                                    not_matched=[]
+                                last_matched = base
+                            #if there is no match and there is only one comment, default will be to link it to that comment    
+                            elif len(base_ref.text)==1:
+                                link = (
+                                        {
+                                        "refs": [
+                                                 'Rashi on {}, {}:{}:1'.format(self.en_name,perek_index+1, pasuk_index+1),
+                                                 comment.normal(),
+                                                 ],
+                                        "type": "commentary",
+                                        "auto": True,
+                                        "generated_by": "sterling_mizrachi_rashi_linker"
+                                        })
+                                #post_link(link, weak_network=True)
+                                if last_matched==base:
+                                    while len(not_matched)>0:
+                                        print "EURIKA! Last match was {} and case is {}!".format(last_matched, base)
+                                        link = (
+                                                {
+                                                "refs": [
+                                                         base.normal(),
+                                                         not_matched.pop().normal(),
+                                                         ],
+                                                "type": "commentary",
+                                                "auto": True,
+                                                "generated_by": "sterling_mizrachi_rashi_linker"
+                                                })
+                                        matched+=1
+                                        #post_link(link, weak_network=True)
+                                else:
+                                    write_missed_comments(not_matched)
+                                    not_matched=[]
+                                last_matched = base 
+                                matched+=1
+                            else:
+                                not_matched.append(comment)
+                            total+=1
+                if len(Ref('Rashi on {}, {}:{}'.format(self.en_name,perek_index+1, pasuk_index+1)).all_segment_refs())>0:
+                    if last_matched==Ref('Rashi on {}, {}:{}'.format(self.en_name,perek_index+1, pasuk_index+1)).all_segment_refs()[-1]:
+                        while len(not_matched)>0:
+                            print "EURIKALAST! Last match was {} and case is {}!".format(last_matched, base)
+                            link = (
+                                    {
+                                    "refs": [
+                                             last_matched.normal(),
+                                             not_matched.pop().normal(),
+                                             ],
+                                    "type": "commentary",
+                                    "auto": True,
+                                    "generated_by": "sterling_mizrachi_rashi_linker"
+                                    })
+                            #post_link(link, weak_network=True)
+                            matched+=1
+                    else:
+                        write_missed_comments(not_matched)
+                        not_matched=[]
+                else:
+                    write_missed_comments(not_matched)
+                    not_matched=[]
                 for comment_index, comment in enumerate(pasuk):
                     #link to Torah and Rashi
                     link = (
@@ -71,53 +173,14 @@ class Book:
                             "auto": True,
                             "generated_by": "sterling_mizrachi_torah_linker"
                             })
-                    post_link(link, weak_network=True)
-                    #try:
-                    base_ref = TextChunk(Ref('Rashi on {}, {}:{}'.format(self.en_name,perek_index+1, pasuk_index+1)),"he")
-                    mizrachi_ref = TextChunk(Ref('Mizrachi, {}, {}:{}:{}'.format(self.en_name, perek_index+1, pasuk_index+1, comment_index+1)),"he")
-                    mizrachi_links = match_ref(base_ref,mizrachi_ref,base_tokenizer,dh_extract_method=dh_extract_method,verbose=False)
-                    last_matched = 
-                    #except IndexError:
-                    #errored.append('Mizrachi on {}, {}:{}'.format(self.en_name,perek_index+1, pasuk_index+1))
-                    for base, comment in zip(mizrachi_links["matches"],mizrachi_links["comment_refs"]):
-                        print "B",base,"C", comment
-                        print link.get('refs')
-                        if base:
-                            link = (
-                                    {
-                                    "refs": [
-                                             base.normal(),
-                                             comment.normal(),
-                                             ],
-                                    "type": "commentary",
-                                    "auto": True,
-                                    "generated_by": "sterling_mizrachi_rashi_linker"
-                                    })
-                            post_link(link, weak_network=True)    
-                            matched+=1
-                        #if there is no match and there is only one comment, default will be to link it to that comment    
-                        elif len(base_ref.text)==1:
-                            link = (
-                                    {
-                                    "refs": [
-                                             'Rashi on {}, {}:{}:1'.format(self.en_name,perek_index+1, pasuk_index+1),
-                                             'Mizrachi, {}, {}:{}:{}'.format(self.en_name, perek_index+1, pasuk_index+1, comment_index+1),
-                                             ],
-                                    "type": "commentary",
-                                    "auto": True,
-                                    "generated_by": "sterling_mizrachi_rashi_linker"
-                                    })
-                            post_link(link, weak_network=True)    
-                            matched+=1
-                        else:
-                            not_machted.append('Mizrachi, {}, {}:{}:{}'.format(self.en_name, perek_index+1, pasuk_index+1, comment_index+1))
-                        total+=1
+                    #post_link(link, weak_network=True)
+
         pm = matched/total
         print self.en_name
         print "Result is:",matched,total
         print "Percent matched: "+str(pm)
         print "Not Matched:"
-        for nm in not_machted:
+        for nm in not_matched:
             print nm
         print "Errored:"
         for error in errored:
@@ -161,10 +224,10 @@ def dh_extract_method(some_string):
         some_string=split_group[0]+u"</b>"
     """
     print some_string
-    return re.search(ur'<b>(.*?)</b>', some_string.replace("\n","")).group(1)
+    return remove_extra_space(re.search(ur'<b>(.*?)</b>', some_string.replace("\n","")).group(1))
 
 def base_tokenizer(some_string):
-    return remove_extra_space(some_string.replace(u"<b>",u"").replace(u"</b>",u"").replace(".","")).split(" ")
+    return filter(lambda(x): x!=u'',remove_extra_space(strip_nekud(some_string).replace(u"<b>",u"").replace(u"</b>",u"").replace(".","").replace(u"\n",u"")).split(u" "))
 def m_post_index():
     # create index record
     record = SchemaNode()
@@ -219,16 +282,73 @@ def m_post_term():
         ]
     }
     post_term(term_obj)
+def write_missed_comments(comment_list):
+    f = open("Mizrachi Missed Comment Report V2.txt","a")
+    for comment in comment_list:
+        f.write(comment.normal()+"\n")
+    f.close()
+def post_new_links():
+    with open('Mizrachi Manual Linking.csv', 'rb') as f:
+        reader = csv.reader(f)
+        link_list = list(reader)
+    for link in link_list:
+        if link[3]!='':
+            link = (
+                    {
+                    "refs": [
+                             link[2].split("/")[-1]+"."+link[3],
+                             link[1].split("/")[-1]
+                             ],
+                    "type": "commentary",
+                    "auto": True,
+                    "generated_by": "sterling_mizrachi_rashi_linker2"
+                    })
+            post_link(link, weak_network=True)
+def post_more_new_links():
+    with open('Mizrachi_Manual_Linking_-_Sheet3.csv', 'rb') as f:
+        reader = csv.reader(f)
+        link_list = list(reader)
+    for new_link in link_list:
+        print new_link[0],new_link[1]
+        link = (
+                {
+                "refs": [
+                         new_link[1],
+                         new_link[0]
+                         ],
+                "type": "commentary",
+                "auto": True,
+                "generated_by": "sterling_mizrachi_rashi_linker3"
+                })
+        post_link(link, weak_network=True)
+        link = (
+                {
+                "refs": [
+                         re.split(r"[_ ]",new_link[0])[1],
+                         new_link[0]
+                         ],
+                "type": "commentary",
+                "auto": True,
+                "generated_by": "sterling_mizrachi_linker3"
+                })
+        post_link(link, weak_network=True)
+    
 posting_term=False
-posting_index = True
-posting_text=True
-posting_links=True
+posting_index =False
+posting_text=False
+posting_links=False
+posting_new_links=False
+posting_more_new_links=True
 if posting_term:
     m_post_term()
 if posting_index:
     m_post_index()
+"""
+f = open("Mizrachi Missed Comment Report V2.txt","w")
+f.close()
+"""
 for m_file in os.listdir("files"):
-    if ".txt" in m_file and ("Lev" in m_file or "Num" in m_file):
+    if ".txt" in m_file and ("Ex" in m_file or "Gen" in m_file):
         book = Book(m_file)
         if posting_text:
             print "posting ",book.en_name," text..."
@@ -236,5 +356,9 @@ for m_file in os.listdir("files"):
         if posting_links:
             print "posting ",book.en_name," links..."
             book.m_make_links()
+if posting_new_links:
+    post_new_links()
+if posting_more_new_links:
+    post_more_new_links()
             
  

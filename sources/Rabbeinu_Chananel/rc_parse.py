@@ -113,6 +113,8 @@ class RC_Tractate:
         }
         post_text('Rabbeinu Chananel on '+self.en_tractate_name, version,weak_network=True)# skip_links=True, index_count="on")
     def rc_link(self):
+        
+        """"
         for amud_index in range(1,len(TextChunk(Ref(self.en_tractate_name)).text)-1):
             if amud_index>0:
                 #not every amud has a comment...
@@ -136,6 +138,7 @@ class RC_Tractate:
                             "generated_by": "sterling_Rabbeinu_Channanel_"+self.en_tractate_name+"_linker"
                             })
                     post_link(link, weak_network=True)
+            """
 def make_talmud_array(book):
     tc = TextChunk(Ref(book), "he")
     return_array = []
@@ -181,12 +184,12 @@ def highest_fuzz(input_list, input_item):
             highest_ratio=fuzz.ratio(input_item,item)
     return best_match
 posting_index = True
-posting_text = False
+posting_text = True
 linking = False
 admin_links = []
 site_links = []
 for rc_file in os.listdir("files"):
-    if ".txt" in rc_file and "01" in rc_file:
+    if ".txt" in rc_file and "02" in rc_file:
         current_tractate = RC_Tractate(rc_file)
         admin_links.append("http://proto.sefaria.org/admin/reset/Rabbeinu_Chananel_on_"+current_tractate.en_tractate_name.replace(u" ",u"_"))
         site_links.append("http://proto.sefaria.org/Rabbeinu_Chananel_on_"+current_tractate.en_tractate_name.replace(u" ",u"_"))

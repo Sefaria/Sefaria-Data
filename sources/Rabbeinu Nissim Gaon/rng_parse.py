@@ -76,11 +76,11 @@ class RNG_Tractate:
         final_list.insert(0,[])
         
         for previous_amud_index, amud in enumerate(final_list[1:]):
-            if len(amud)>0 and len(final_list[previous_amud_index])>0:
+            if len(amud)>0 and len(final_list[previous_amud_index])>0 and len(final_list[previous_amud_index][-1])>0:
                 if final_list[previous_amud_index][-1][-1]!=u"." and final_list[previous_amud_index][-1][-1]!=u":":
                     amud_split = re.findall(ur".*?[\.:]",amud[0])
                     previous_amud_dangler = re.split(ur"[\.:]",final_list[previous_amud_index][-1])[-1]
-                    if len(amud_split)>1:
+                    if len(amud_split)>0:
                         if len(previous_amud_dangler)>len(amud_split[0]):
                             print previous_amud_index
                             print "Pulled Back!"
@@ -88,7 +88,7 @@ class RNG_Tractate:
                                 add_after.append(re.split(ur"[\.:]",amud[0])[-1])
                             print amud_split[0]
                             final_list[previous_amud_index][-1]+=u" "+amud_split[0]
-                            final_list[previous_amud_index+1][0]=''.join(amud_split[1:])
+                            final_list[previous_amud_index+1][0]=None if len(amud_split)<1 else ''.join(amud_split[1:])
                             while len(add_after)>0:
                                 final_list[previous_amud_index+1][0]+=add_after.pop()
                         else:
@@ -96,7 +96,9 @@ class RNG_Tractate:
                             print "Pushed Forward!"
                             final_list[previous_amud_index][-1]=''.join(re.findall(ur".*?[\.|:]",final_list[previous_amud_index][-1]))
                             final_list[previous_amud_index+1][0]=previous_amud_dangler+u" "+final_list[previous_amud_index+1][0]
-
+        for dindex, daf in enumerate(final_list):
+            for cindex, comment in enumerate(daf):
+                print dindex, cindex, comment
         self.text = final_list
     
     def rc_post_text(self):
@@ -113,19 +115,53 @@ class RNG_Tractate:
             if amud_index>0:
                 #not every amud has a comment...
                 try:
-                    rc_ref = Ref('Rav Nissim Goan on '+self.en_tractate_name+"."+get_daf_en(amud_index))
+                    rng_ref=Ref('Rav Nissim Goan on '+self.en_tractate_name+"."+get_daf_en(amud_index))
+                    rng_chunk = TextChunk(rng_ref,"he")
                 except:
-                    #print "No RC on Rav Nissim Goan on ",self.en_tractate_name,".",get_daf_en(amud_index)
+                    print "No RC on Rav Nissim Goan on ",self.en_tractate_name,".",get_daf_en(amud_index)
                     continue
                 #for Rav Channanel, each "comment" contains comments on several passages.
                 #therefore, link each comment to the whole amud
-                tractate_ref = Ref(self.en_tractate_name+"."+get_daf_en(amud_index))
-                for ref in rc_ref.all_segment_refs():
+                print get_daf_en(amud_index)
+                tractate_ref=Ref(self.en_tractate_name+"."+get_daf_en(amud_index))
+                tractate_chunk = TextChunk(tractate_ref,"he")
+                matches = match_ref(tractate_chunk,rng_chunk,base_tokenizer,dh_extract_method=dh_extract_method,verbose=True)
+                if "comment_refs" in matches:
+                    for link_index, (base, comment) in enumerate(zip(matches["matches"],matches["comment_refs"])):
+                        if base:
+                            print "MATCHED BC:",base,comment,base.normal()+"-"+tractate_ref.as_ranged_segment_ref().normal().split("-")[-1]
+                            link = (
+                                    {
+                                    "refs": [
+                                             base.normal()+"-"+tractate_ref.as_ranged_segment_ref().normal().split("-")[-1],
+                                             comment.normal(),
+                                             ],
+                                    "type": "commentary",
+                                    "auto": True,
+                                    "generated_by": "sterling_tos_rid_linker"
+                                    })
+                            post_link(link, weak_network=True)
+                            
+                        else:
+                            print "UNMATCHED REF: ",comment
+                            link = (
+                                    {
+                                    "refs": [
+                                             tractate_ref.as_ranged_segment_ref().normal(),
+                                             comment.normal(),
+                                             ],
+                                    "type": "commentary",
+                                    "auto": True,
+                                    "generated_by": "sterling_Rav_Nissim_Goan_"+self.en_tractate_name+"_linker"
+                                    })
+                            post_link(link, weak_network=True)
+                else:
+                    print "UNMATCHED REF: ",rng_ref
                     link = (
                             {
                             "refs": [
                                      tractate_ref.as_ranged_segment_ref().normal(),
-                                     ref.normal(),
+                                     rng_ref.normal(),
                                      ],
                             "type": "commentary",
                             "auto": True,
@@ -194,9 +230,22 @@ def rng_post_term():
         ]
     }
     post_term(term_obj)
-posting_term=False
-posting_index = False
-posting_text = True
+#here starts methods for linking:
+
+def dh_extract_method(some_string):
+    first_sentence= remove_extra_space(re.split(ur"[\.:]",some_string)[0])
+    if len(first_sentence.split())>8:
+        return ' '.join(some_string.split()[:8])
+    return first_sentence
+def remove_extra_space(string):
+    while u"  " in string:
+        string = string.replace(u"  ",u" ")
+    return string
+def base_tokenizer(some_string):
+    return filter(lambda(x): x!=u'',remove_extra_space(strip_nekud(some_string).replace(u"<b>",u"").replace(u"</b>",u"").replace(".","").replace(u"\n",u"")).split(u" "))
+posting_term=True
+posting_index = True
+posting_text =True
 linking = True
 
 if posting_term:
