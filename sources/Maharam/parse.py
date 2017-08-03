@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     #files = bad_section_files + bad_linking_files
     #files = ["makkot2.txt"]
-    for file in ["pesachim2.txt", "avodah zarah2.txt"]:
+    for file in ["avodah zarah2.txt"]:
         print file
         masechet = file.replace("2.txt", "").title()
         obj = Maharsha(masechet, title, heTitle, "http://proto.sefaria.org")

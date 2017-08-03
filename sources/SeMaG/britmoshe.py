@@ -351,7 +351,44 @@ def remove_nodes(title):
 
 
 if __name__ == "__main__":
+    new_parent = SchemaNode()
+    new_parent.add_primary_titles("Hello", u"שלום")
+    new_parent.validate()
+    new_parent.serialize()
+
+
+    root = library.get_index("Sefer Mitzvot Gadol").nodes
+    insert_last_child(new_parent, root, skip_dependencies=True)
+
+
+    for count in range(5):
+        index = library.get_index("Sefer Mitzvot Gadol")
+        node = index.nodes.children[1].children[1+count]
+        print node.ref().normal()
+        new_parent = index.nodes.children[-1]
+        change_parent(node, new_parent, place=count, index=index)
+
+#def change_parent(node, ne, place=0, index=None):
+
+    ja_node = JaggedArrayNode()
+    ja_node.add_primary_titles("hi", u"שדגכ")
+    ja_node.serialize()
+
+    ja_node.add_structure(["Paragraph"])
+    ja_node.validate()
+    ja_node.serialize()
+
     title = "Sefer Mitzvot Gadol"
+
+
+
+
+
+    new_node.append(ja_node)
+    new_node.validate()
+    new_node.serialize()
+
+
 
     change_title(title)
 

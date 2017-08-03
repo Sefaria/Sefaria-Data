@@ -81,9 +81,32 @@ def get_num_segments(ch1):
         count += len(verse)
     print "NEW COUNT {}".format(count)
 
+def make_links():
+    print LinkSet(Ref("Ibn Ezra on Isaiah")).count()
+    print "before"
+    all_segments = library.get_index("Ibn Ezra on Isaiah").all_segment_refs()
+    for segment in all_segments:
+        comm_ref = segment.normal()
+        isaiah_ref = comm_ref.rsplit(":", 1)[0].replace("Ibn Ezra on Isaiah ", "Isaiah ")
+        new_link = Link({"type": "Commentary", "auto": True, "generated_by": "ibnezra_isaiah_structural_linking", "refs":
+                    [
+                        comm_ref,
+                        isaiah_ref
+                    ]
+              })
+        try:
+            new_link.save()
+        except:
+            print comm_ref
+
+    print LinkSet(Ref("Ibn Ezra on Isaiah")).count()
+    print "after"
+
+
 
 
 if __name__ == "__main__":
+    make_links()
     new_text = align("ibnezra.json")
     #for perek in new_text:
     #    print get_num_segments(perek)

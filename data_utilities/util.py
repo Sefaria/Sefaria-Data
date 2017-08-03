@@ -1065,8 +1065,8 @@ class WeightedLevenshtein:
             s1_len = len(s1)
             s2_len = len(s2)
 
-            if s1_len == 0 and s2_len == 0:
-                raise LevenshteinError
+            if s1_len == 0 and s2_len == 0 and normalize:
+                raise LevensheinError("both strings can't be empty with normalize=True. leads to divide by zero")
 
             if s1 == s2:
                 score = 0
@@ -1147,10 +1147,14 @@ def set_ranges_between_refs(refs, section_ref):
         first_ref = section_ref.subref(1)
         return [first_ref.to(section_ref.all_segment_refs()[-1])]
 
+
     ranged_refs = []
     len_list = len(refs)
     refs = sorted(refs, key=lambda x: x.order_id())
     last_ref = section_ref.all_segment_refs()[-1]
+    #print "Refs: {}".format(refs)
+    #print "Section: {}".format(section_ref)
+    #print "Last ref: {}".format(last_ref)
     for i, ref in enumerate(refs):
         if ref.is_range():
             ranged_refs.append(ref)

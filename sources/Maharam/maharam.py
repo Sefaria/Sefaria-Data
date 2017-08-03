@@ -378,7 +378,7 @@ def create_index(tractate):
 
 if __name__ == "__main__":
     SERVER = "http://proto.sefaria.org"
-    titles = ["Chullin", "Eruvin", "Gittin", "Ketubot"]
+    titles = ["Avodah Zarah"]
     '''
         ["Bava Batra", "Bava Kamma","Bava Metzia"]
     , "Chullin", "Eruvin", "Gittin", "Ketubot",
