@@ -600,7 +600,7 @@ def file_to_ja(depth, infile, expressions, cleaner, grab_all=False):
     return ja
 
 
-def file_to_ja_g(depth, infile, expressions, cleaner, gimatria=False, group_name='gim', grab_all=[False] * 6):
+def file_to_ja_g(depth, infile, expressions, cleaner, gimatria=False, group_name='gim', grab_all=None):
     """
     like file to ja but with changing the numbers to Gimatria
     Designed to be the first stage of a reusable parsing tool. Adds lines of text to the Jagged
@@ -611,12 +611,15 @@ def file_to_ja_g(depth, infile, expressions, cleaner, gimatria=False, group_name
     not include an expression with which to break up the segment levels.
     :param cleaner: A function that takes a list of strings and returns an array with the text parsed
     correctly. Should also break up and remove unnecessary tagging data.
-    :param grab_all: a boolean list accourding to the regexs, if True then grab all of that if False earse line
-            the 5 is just above the 3 whitch is the deepst length we use for now.
+    :param grab_all: a boolean list according to the regexs, if True then grab all of that if False erase line
+            the 5 is just above the 3 which is the deepest length we use for now.
     :param gimatria: if the text is presented with gimatria in it.
     :param group_name: a name given to the group of letters for the gimatria to actually use
     :return: A jagged_array with the text properly structured.
     """
+
+    if grab_all is None:
+        grab_all = [False] * len(expressions)
 
     # instantiate ja
     structure = reduce(lambda x, y: [x], range(depth - 1), [])
