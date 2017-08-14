@@ -768,9 +768,12 @@ def get_links(ref, server="http://www.sefaria.org"):
     url = server+'/api/links/'+ref
     return http_request(url)
 
-def get_text(ref):
+def get_text(ref, lang="", versionTitle="", server="http://www.sefaria.org"):
     ref = ref.replace(" ", "_")
-    url = 'http://www.sefaria.org/api/texts/'+ref
+    versionTitle = versionTitle.replace(" ", "_")
+    url = '{}/api/texts/{}'.format(server, ref)
+    if lang and versionTitle:
+        url += "/{}/{}".format(lang, versionTitle)
     req = urllib2.Request(url)
     try:
         response = urllib2.urlopen(req)
@@ -794,7 +797,7 @@ def get_text(ref):
             data['he'][i] = data['he'][i].replace(u"\u05C2", "")
             data['he'][i] = data['he'][i].replace(u"\u05C3", "")
             data['he'][i] = data['he'][i].replace(u"\u05C4", "")
-        return data['he']
+        return data
     except:
         print 'Error'
 
