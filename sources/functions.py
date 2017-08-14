@@ -582,6 +582,29 @@ def create_payload_and_post_text(ref, text, language, vtitle, vsource, server=SE
         "versionSource": vsource
     }, server=server)
 
+
+def make_commentary_links(comm_title, base_title):
+    '''
+    Creates structural links between a commentary and a base in the case
+    where a commentary is a complex structure and can't be linked via the index commentary linker.
+    The commentary must have a default node that is supposed to be linked to the base text
+    :param comm_title: Title of commentary
+    :param base_title: Title of base text
+    :return:
+    '''
+    links = []
+    pairs_refs = []
+    all_base_refs = Ref(base_title).all_segment_refs()
+    for base_ref in all_base_refs:
+        base_ref = base_ref.normal()
+        section = base_ref.rsplit(" ", 1)[-1]
+        comm_ref = Ref("{} {}".format(comm_title, section))
+        comm_seg_refs = comm_ref.all_segment_refs()
+        for comm_seg_ref in comm_seg_refs:
+            pairs_refs.append([comm_seg_ref.normal(), base_ref])
+    return pairs_refs
+
+
 def first_word_with_period(str):
     for i in range(len(str.split(" "))):
         if str.split(" ")[i].endswith("."):
@@ -740,6 +763,10 @@ def get_index_api(ref, server='http://www.sefaria.org'):
     # data = json.load(response)
     return http_request(url)
 
+def get_links(ref, server="http://www.sefaria.org"):
+    ref = ref.replace(" ", "_")
+    url = server+'/api/links/'+ref
+    return http_request(url)
 
 def get_text(ref):
     ref = ref.replace(" ", "_")

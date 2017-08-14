@@ -11,6 +11,7 @@ from lxml import etree
 from BeautifulSoup import BeautifulSoup, Tag
 import PIL
 from PIL import Image
+from sefaria.helper.text import replace_roman_numerals
 
 from sources.functions import *
 from sefaria.model import *
@@ -21,6 +22,7 @@ class XML_to_JaggedArray:
 
     def __init__(self, title, file, allowedTags, allowedAttributes, post_info=None, array_of_names=[], deleteTitles=True, change_name=False, assertions=False, image_dir=None, titled=False):
         self.title = title
+        self.writer = UnicodeWriter(open("{}.csv".format(title), 'w'))
         self.post_info = post_info
         self.file = file
         self.parse_dict = {}
@@ -34,11 +36,13 @@ class XML_to_JaggedArray:
         self.array_of_names = array_of_names
         self.deleteTitles = deleteTitles
         self.prev_footnote = ""
+        self.last_chapter = 0
         self.change_name = change_name
         self.assertions = assertions
         self.image_dir = image_dir
         self.get_title_lambda = lambda el: el[0].text
-        self.print_bool = False
+        self.print_bool = True
+        self.footnotes_within_footnotes = {} #used in English Mishneh Torah translations for footnotes with Raavad being quoted
 
 
     def set_title(self, title):
@@ -87,21 +91,83 @@ class XML_to_JaggedArray:
 
         self.print_bool = True
         results = self.go_down_to_text(self.root, self.root.text)
-        self.print_out_footnotes_per_node()
         self.interpret_and_post(results, self.title)
+        self.record_results_to_file()
+
+
+    def record_results_to_file(self):
+        if "Glazer" in self.title:
+            f = open("Raavad.csv", 'w')
+            writer = UnicodeWriter(f, encoding='utf-8')
+            for chapter in self.footnotes_within_footnotes.keys():
+                for comment in self.footnotes_within_footnotes[chapter]:
+                    try:
+                        chapter = chapter.decode('utf-8')
+                        comment = comment.decode('utf-8')
+                    except UnicodeEncodeError:
+                        pass
+                    writer.writerow([chapter, comment])
+
+
+
+
+    def process_footnote_for_MT(self, comment_text, chapter, ftnote_text, ftnote_key):
+        '''
+        check if it has quotes,
+        if it does, return modified text without footnote in it and a bool value saying no_footnote
+        if no_footnote isn't true,
+        proceed as usual
+        '''
+        actual_footnote = True
+        orig_ftnote_text = ftnote_text
+        ftnote_text = self.cleanText(ftnote_text)
+        if ftnote_text.find('</sup>"') > 0:
+            actual_footnote = False
+            #remove footnote from dictionary
+            self.footnotes[chapter].pop(ftnote_key)
+
+            #remove footnote from text
+            ftnote_xref_in_comment = re.compile(".*?(<xref rid=\"{}\">.*?</xref>)".format(ftnote_key)).match(comment_text)
+            assert ftnote_xref_in_comment
+            comment_text = comment_text.replace(ftnote_xref_in_comment.group(1), "")
+
+            #format footnote text right by removing <sup> and
+            #checking for comment on footnote that will become a footnote in turn
+            # and save it in footnotes_within_footnotes
+
+            raavad = re.compile('<sup>.*?</sup>(\".*?\"\.?)').match(ftnote_text)
+            if not raavad:  #if not a normal raavad match, it should be the one exception that is still raavad
+                            #namely, having only one quotation mark
+                assert len(ftnote_text.split('"')) == 2
+                #print "ONLY ONE QUOTATION MARK:"
+                #print ftnote_text
+                pos_start = ftnote_text.find('"')
+                if chapter not in self.footnotes_within_footnotes:
+                    self.footnotes_within_footnotes[chapter] = []
+                self.footnotes_within_footnotes[chapter].append(ftnote_text[pos_start:])
+                return comment_text, actual_footnote
+            else:
+                raavad = raavad.group(1)
+                comm_raavad_pos = ftnote_text.find(raavad) + len(raavad)
+                comm_raavad = ftnote_text[comm_raavad_pos:]
+                if len(comm_raavad) > 0:
+                    #if '"' in comm_raavad and len(comm_raavad.split('"')) % 2 == 0:
+                    #    print "EXTRA QUOTATION MARK:"
+                    #    print comm_raavad
+                    raavad = u"{}<sup>*</sup><i class='footnote'>{}</i>".format(raavad, comm_raavad)
+
+                if chapter not in self.footnotes_within_footnotes:
+                    self.footnotes_within_footnotes[chapter] = []
+                self.footnotes_within_footnotes[chapter].append(raavad)
+
+        return comment_text, actual_footnote
+
 
 
     def move_title_to_first_segment(self, element):
         title = self.grab_title(element, delete=False, test_lambda=self.grab_title_lambda, change_name=False)
         if element[0].tag == "title":
             element[0].tag = "p"
-
-
-    def print_out_footnotes_per_node(self):
-        for node, dict_ids in self.footnotes.items():
-            print dict_ids
-            #for id, text in dict_ids.items():
-            #    print id
 
 
     def get_each_type_tag(self, tags, root=True):
@@ -163,12 +229,39 @@ class XML_to_JaggedArray:
         return titles
 
 
+    def write_text_to_file(self, ref, text):
+        orig_ref = ref
+        if type(text) is str or type(text) is unicode:
+            try:
+                text = text.decode('utf-8')
+            except UnicodeEncodeError:
+                pass
+            self.writer.writerow([ref, self.cleanText(text)])
+        else:
+            assert type(text) is list
+            for count, element in enumerate(text):
+                ref = u"{}.{}".format(orig_ref, count+1)
+                self.write_text_to_file(ref, element)
 
     def post(self, ref, text, not_last_key):
+        ref = u" ".join(ref.split(", ")[1:])
+        if not ref.startswith("THE TREATISE") and not ref.upper().startswith("LAWS"):
+            return
+        writer = UnicodeWriter(codecs.open("{}.csv".format(self.title), 'a'), encoding='utf-8')
+        index_csv = csv.reader(open("names_index.csv"), delimiter='=')
+        title_dict = {}
+        for row in index_csv:
+            row[0] = row[0].replace(',', '')
+            title_dict[row[0]] = row[1]
+        if ref.endswith(","):
+            ref = ref[0:-1]
+        print title_dict[ref]
+        ref = title_dict[ref]
+        '''
         if self.print_bool:
-            with codecs.open(self.title+".txt", 'w', 'utf-8') as f:
-                for line in text:
-                    f.write(line+"\n")
+            if "THE TREATISE" in ref or "LAWS" in ref:
+                return
+            self.write_text_to_file(ref, text)
         elif self.post_info["server"] != "local":
             send_text = {
                     "text": text,
@@ -186,6 +279,7 @@ class XML_to_JaggedArray:
             tc = TextChunk(Ref(ref), lang=self.post_info["language"], vtitle=self.post_info["versionTitle"])
             tc.text = text
             tc.save()
+        '''
 
 
     def parse(self, text_arr, footnotes, node_name):
@@ -213,7 +307,9 @@ class XML_to_JaggedArray:
             return text
 
         def buildFtnoteText(num, text):
-            text = text.replace("<sup>", "").replace("</sup>", "")
+            sup_match = re.compile("^<sup>\d+</sup>").match(text)
+            if sup_match:
+                text = text.replace(sup_match.group(0), "")
             if text[0].isdigit():
                 text = " ".join(text.split()[1:])
             return u'<sup>{}</sup><i class="footnote">{}</i>'.format(num, text)
@@ -254,16 +350,24 @@ class XML_to_JaggedArray:
 
             assert len(ft_ids) == len(ft_sup_nums) == len(ft_pos), "id={},sups={},pos={},index={}".format(ft_ids, ft_sup_nums, ft_pos, index)
 
-            for i in range(len(ft_ids)):
-                reverse_i = len(ft_ids) - i - 1
-                ftnote_text = footnotes[node_name][ft_ids[reverse_i]]
-                text_to_insert = buildFtnoteText(ft_sup_nums[reverse_i], ftnote_text)
-                pos = ft_pos[reverse_i]
-                text_arr[index] = u"{}{}{}".format(text_arr[index][0:pos], text_to_insert, text_arr[index][pos:])
+            if node_name in footnotes.keys():
+                for i in range(len(ft_ids)):
+                    reverse_i = len(ft_ids) - i - 1
+                    ftnote_text = footnotes[node_name][ft_ids[reverse_i]]
+                    modified_text, actual_footnote = self.process_footnote_for_MT(text_arr[index], node_name, ftnote_text, ft_ids[reverse_i])
 
-            all = re.findall(footnote_pattern, text_arr[index])
-            for each in all:
-                text_arr[index] = text_arr[index].replace(each, "")
+                    if actual_footnote:
+                        text_to_insert = buildFtnoteText(ft_sup_nums[reverse_i], ftnote_text)
+                        pos = ft_pos[reverse_i]
+                        modified_text = u"{}{}{}".format(text_arr[index][0:pos], text_to_insert, text_arr[index][pos:])
+
+                    text_arr[index] = modified_text
+
+                all = re.findall(footnote_pattern, text_arr[index])
+                for each in all:
+                    text_arr[index] = text_arr[index].replace(each, "")
+
+
             text_arr[index] = text_arr[index].replace("<bold>", "<b>").replace("<italic>", "<i>").replace("</bold>", "</b>").replace("</italic>", "</i>")
             text_arr[index] = text_arr[index].replace("<li>", "<br>").replace("</li>", "")
             text_arr[index] = text_arr[index].replace("</title>", "</b>").replace("<title>", "<b>")
@@ -317,8 +421,9 @@ class XML_to_JaggedArray:
             if child.tag == "table":
                 self.print_table_info(element, index)
                 continue
-            if child.tag in ["h1", "h2", "h3", "h4", "h5"]:
-                child.text = child.text.replace("italic", "bold")
+            if child.tag in ["h1", "title"] and "CHAPTER" in child.text.upper() and len(child.text.split(" ")) == 2:
+                child.text = str(roman_to_int(child.text.split(" ")[-1].replace(".", "")))
+                self.last_chapter = int(child.text)
             if len(child) > 0:
                 if child.text.isdigit():
                     while int(child.text) > len(text["text"]) + 1:
@@ -334,11 +439,11 @@ class XML_to_JaggedArray:
                     text["subject"] += [self.cleanText(child.xpath("string()").replace("\n\n", " "))]
                 else:
                     text["text"] += [self.cleanText(child.xpath("string()").replace("\n\n", " "))]
-            pass
         return text
 
 
     def add_footnote(self, parent, element, child):
+        xpath_result = unicode(child.xpath("string()"))
         if element.text.isdigit():
             key = parent.text + element.text
         else:
@@ -347,9 +452,9 @@ class XML_to_JaggedArray:
             self.footnotes[key] = {}
         if "id" not in child.attrib:
             assert len(self.prev_footnote) > 0
-            self.footnotes[key][self.prev_footnote] += "<br>" + child.xpath("string()")
+            self.footnotes[key][self.prev_footnote] += "<br>" + xpath_result
         else:
-            self.footnotes[key][child.attrib['id']] = child.xpath("string()")
+            self.footnotes[key][child.attrib['id']] = xpath_result
             self.prev_footnote = child.attrib['id']
 
 
@@ -366,7 +471,7 @@ class XML_to_JaggedArray:
 
         for count, x in enumerate(text):
             if type(x) is dict:
-                array.append(self.convertManyIntoOne(x['text'], node_name+str(count+1)))
+                array.append(self.convertManyIntoOne(x['text'], node_name))
             else:
                 array.append(x)
 
@@ -423,9 +528,8 @@ class XML_to_JaggedArray:
                 new_running_ref = running_ref + ",_Prelude"
                 if self.assertions:
                     assert Ref(new_running_ref)
-                print new_running_ref
-                text = self.parse(node[key], self.footnotes)
-                self.post(new_running_ref, text, not_last_key)
+                #text = self.parse(node[key], self.footnotes, )
+                #self.post(new_running_ref, text, not_last_key)
 
             elif key == "text" and len(node[key]) > 0: #if len(node.keys()) == 2 and "text" in node.keys() and "subject" in node.keys() and len(node['text']) > 0:
                 if self.assertions:
@@ -439,7 +543,6 @@ class XML_to_JaggedArray:
                             text[i][j] = [text[i][j]]
                 else:
                     text = self.convertManyIntoOne(node["text"], running_ref.split(", ")[-1])
-                print running_ref
                 self.post(running_ref, text, not_last_key)
 
 
@@ -479,6 +582,9 @@ class XML_to_JaggedArray:
         self.grab_title(element, delete=self.deleteTitles, test_lambda=self.grab_title_lambda, change_name=change_name)
         for index, child in enumerate(element):
             if self.reorder_test(child):
+                if len(child) == 1:
+                    child.text = child[0].text
+                    child.remove(child[0])
                 child.text = self.reorder_modify(child.text)
                 if next_will_be_children is True:
                     for new_child in children:
@@ -514,3 +620,120 @@ class XML_to_JaggedArray:
 
 
         return element
+
+
+
+
+
+def roman_to_int(input):
+   """
+   Convert a roman numeral to an integer.
+
+   >>> r = range(1, 4000)
+   >>> nums = [int_to_roman(i) for i in r]
+   >>> ints = [roman_to_int(n) for n in nums]
+   >>> print r == ints
+   1
+
+   >>> roman_to_int('VVVIV')
+   Traceback (most recent call last):
+    ...
+   ValueError: input is not a valid roman numeral: VVVIV
+   >>> roman_to_int(1)
+   Traceback (most recent call last):
+    ...
+   TypeError: expected string, got <type 'int'>
+   >>> roman_to_int('a')
+   Traceback (most recent call last):
+    ...
+   ValueError: input is not a valid roman numeral: A
+   >>> roman_to_int('IL')
+   Traceback (most recent call last):
+    ...
+   ValueError: input is not a valid roman numeral: IL
+   """
+   if type(input) != type(""):
+      raise TypeError, "expected string, got %s" % type(input)
+   input = input.upper()
+   nums = ['M', 'D', 'C', 'L', 'X', 'V', 'I']
+   ints = [1000, 500, 100, 50,  10,  5,   1]
+   places = []
+   for c in input:
+      if not c in nums:
+         raise ValueError, "input is not a valid roman numeral: %s" % input
+   for i in range(len(input)):
+      c = input[i]
+      value = ints[nums.index(c)]
+      # If the next place holds a larger number, this value is negative.
+      try:
+         nextvalue = ints[nums.index(input[i +1])]
+         if nextvalue > value:
+            value *= -1
+      except IndexError:
+         # there is no next place.
+         pass
+      places.append(value)
+   sum = 0
+   for n in places: sum += n
+   # Easiest test for validity...
+   if int_to_roman(sum) == input:
+      return sum
+   else:
+      raise ValueError, 'input is not a valid roman numeral: %s' % input
+
+def int_to_roman(input):
+   """
+   Convert an integer to Roman numerals.
+
+   Examples:
+   >>> int_to_roman(0)
+   Traceback (most recent call last):
+   ValueError: Argument must be between 1 and 3999
+
+   >>> int_to_roman(-1)
+   Traceback (most recent call last):
+   ValueError: Argument must be between 1 and 3999
+
+   >>> int_to_roman(1.5)
+   Traceback (most recent call last):
+   TypeError: expected integer, got <type 'float'>
+
+   >>> for i in range(1, 21): print int_to_roman(i)
+   ...
+   I
+   II
+   III
+   IV
+   V
+   VI
+   VII
+   VIII
+   IX
+   X
+   XI
+   XII
+   XIII
+   XIV
+   XV
+   XVI
+   XVII
+   XVIII
+   XIX
+   XX
+   >>> print int_to_roman(2000)
+   MM
+   >>> print int_to_roman(1999)
+   MCMXCIX
+   """
+   if type(input) != type(1):
+      raise TypeError, "expected integer, got %s" % type(input)
+   if not 0 < input < 4000:
+      raise ValueError, "Argument must be between 1 and 3999"
+   ints = (1000, 900,  500, 400, 100,  90, 50,  40, 10,  9,   5,  4,   1)
+   nums = ('M',  'CM', 'D', 'CD','C', 'XC','L','XL','X','IX','V','IV','I')
+   result = ""
+   for i in range(len(ints)):
+      count = int(input / ints[i])
+      result += nums[i] * count
+      input -= ints[i] * count
+   return result
