@@ -485,13 +485,13 @@ def post_category(info, server=SEFARIA_SERVER):
     url = server+'/api/category/'
     return http_request(url, body={'apikey': API_KEY} ,json_payload=info, method="POST")
     
-def add_category(root, parent, en_title, he_title, server=SEFARIA_SERVER):
+def add_category(en_title, he_title, path, server=SEFARIA_SERVER):
     category_dict = {
-    'path': [root, parent, en_title],
+    'path': path,
     'titles': [{'lang': 'en', 'primary': True, 'text': en_title},
     {'lang': 'he', 'primary': True, 'text': he_title}]
     }
-    post_term(category_dict, server)
+    post_category(category_dict, server)
 @weak_connection
 def post_link(info, server=SEFARIA_SERVER):
     url = server+'/api/links/'
