@@ -13,7 +13,7 @@ def split_up_paragraphs_into_lines(file):
     lines = []
     for line in file:
         if "@TX" in line or "@xt" in line or "@P1" in line:
-            split_up_paragraph = re.findall("(@[a-zA-Z0-9]{2}<[A-Z]{3}>)", line)
+            split_up_paragraph = re.findall("(@[a-zA-Z0-9]{2}<[0-9A-Z\-]{1,5}>)", line)
             if split_up_paragraph:
                 for count, each_tag in enumerate(split_up_paragraph):
                     pos = line.find(each_tag)
@@ -22,7 +22,7 @@ def split_up_paragraphs_into_lines(file):
                     else:
                         lines.append(line[0:pos])
                     line = line[pos:]
-                lines.append(line)
+            lines.append(line)
         else:
             lines.append(line)
     return lines
@@ -60,10 +60,6 @@ def parse_file(filename, notes, title, heTitle):
         if not has_content(line):
             continue
         prev_note_counter = note_counter
-        if "good prophets,@n1<*16>16@n2" in line:
-            note_counter += 10
-        if "recognized Your truth,@n1<*1>1@n2" in line:
-            note_counter += 3
         line, note_counter, prev_note = pre_parse(line, notes, note_counter, prev_note)
         if note_counter != prev_note_counter and 1200 < note_counter < 1251:
             print "{}:{}\n{}".format(note_counter, notes[note_counter-1], orig_line)
@@ -104,7 +100,7 @@ def parse_file(filename, notes, title, heTitle):
         prev_line = orig_line
         prev_he_title = is_he_title
 
-    post_schema(root, title)
+    #post_schema(root, title)
     print "FINAL COUNT {} out of {}".format(note_counter, len(notes))
     return verify_he_en_same_size(text, sections, flat_to_multi, heb_flat_to_eng)
 '''
@@ -551,7 +547,7 @@ if __name__ == "__main__":
     rosh_hashana_dict = {}
     rosh_hashana_dict["notes_file"] = "Rosh Hashanah Ashkenaz/Plain Text/Notes.txt"
     rosh_hashana_dict["content_file"] = "Rosh Hashanah Ashkenaz/Plain Text/Rosh Hashanah.txt"
-    rosh_hashana_dict["title"] = "Metsudah Rosh Hashanah Machzor"
+    rosh_hashana_dict["title"] = "Machzor Rosh Hashanah Ashkenaz Interlinear"
     rosh_hashana_dict["schema"] = "Rosh Hashanah_schema.txt"
     rosh_hashana_dict["workflowy"] = "Rosh Hashanah_workflowy.xml"
     rosh_hashana_dict["heTitle"] = u"מצודה ראש השנה מחזור"
@@ -562,7 +558,7 @@ if __name__ == "__main__":
     for key, value in yom_kippur_dict.items():
         yom_kippur_dict[key] = value.replace("Rosh Hashanah", "Yom Kippur")
 
-    yom_kippur_dict["heTitle"] = u"מצודה יום כפור מחזור"
+    yom_kippur_dict["heTitle"] = u"מחזור ליום כיפור - אשכנז"
 
     for sefer in [yom_kippur_dict]:
         notes = get_notes(sefer["notes_file"])

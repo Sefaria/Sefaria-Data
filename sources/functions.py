@@ -316,6 +316,45 @@ def compileCommentaryIntoPage(title, daf):
         ref = ref.next_section_ref() if ref.next_section_ref() != ref else None
     return page
 
+def remove_numbers(text):
+    digit_pattern = re.compile("^\d+\.")
+    for count in range(len(text)):
+        line = text[count]
+        match = digit_pattern.match(line)
+        if match:
+            match = match.group(0)
+            text[count] = text[count].replace(match, "")
+            if text[count][0] == " ":
+                text[count] = text[count][1:]
+        if count == 0 and not match:
+            text[0] = text[0].replace("1. ", "")
+    text = remove_roman_numerals(text)
+    return text
+
+
+def remove_roman_numerals(text):
+    for count, line in enumerate(text):
+        matches = re.findall("[IXV]+\.", text[count])
+        for match in matches:
+            text[count] = text[count].replace(match, "")
+            if text[count][0] == " ":
+                text[count] = text[count][1:]
+    return text
+
+
+def get_rid_of_numbers(book, version_title, version_source, SERVER, relevant_refs=None):
+    sections = library.get_index(book).all_section_refs()
+    for section in sections:
+        text = get_text(section.normal(), lang="en", versionTitle=version_title, server="http://draft.sefaria.org")["text"]
+        text = remove_numbers(text)
+        send_text = {
+            "text": text,
+            "versionTitle": version_title,
+            "versionSource": version_source,
+            "language": 'en'
+        }
+        post_text(section.normal(), send_text, server=SERVER)
+
 
 
 
