@@ -20,3 +20,4 @@ print 'Validating Seifim'
 for i in bad:
     print i
 volume.validate_seifim()
+root.export()
