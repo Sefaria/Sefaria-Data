@@ -793,7 +793,10 @@ class Siman(OrderedElement):
         if not passed:
             print 'Errors for code {} in Siman {}:'.format(code, self.num)
             for error in errors:
-                print '\t{} followed by {} (tag {} in this Siman)'.format(*error)
+                if error[0] == 0:
+                    print '\t First tag in this Siman is {}'.format(error[1])
+                else:
+                    print '\t{} followed by {} (tag {} in this Siman)'.format(*error)
         return passed
 
     def load_xrefs_to_commentstore(self, title):

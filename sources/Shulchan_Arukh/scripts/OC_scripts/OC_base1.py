@@ -20,4 +20,13 @@ print 'Validating Seifim'
 for i in bad:
     print i
 volume.validate_seifim()
+
+codes = [ur'@44', ur'@77', ur'@88', ur'@66', ur'@55']
+patterns = [ur'@44({})', ur'@77\(({})\)', ur'@88({})\]', ur'@66\(({})\)', ur'@55({})']
+patterns = [i.format(ur'[\u05d0-\u05ea]{1,3}') for i in patterns]
+volume.validate_references(patterns[0], codes[0], key_callback=he_ord)
+for pattern, code in zip(patterns[1:], codes[1:]):
+    volume.validate_references(pattern, code)
+
+
 root.export()
