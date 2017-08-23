@@ -22,7 +22,7 @@ for i in bad:
 volume.validate_seifim()
 '''
 אשל אברהם:
-ur'@99({})\]'
+ur'@99([\u05d0-\u05ea]{1,2})\]'
 '''
 
 codes = [ur'@77', ur'@66', ur'@14']
