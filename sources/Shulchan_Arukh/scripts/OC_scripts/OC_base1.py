@@ -21,9 +21,14 @@ for i in bad:
     print i
 volume.validate_seifim()
 
-codes = [ur'@77', ur'@88', ur'@66', ur'@55']
-patterns = [ur'@77\(({})\)', ur'@88({})\]', ur'@66\(({})\)', ur'@55({})']
+codes = [ur'@77', ur'@66', ur'@55']
+patterns = [ur'@77\(({})\)', ur'@66\(({})\)', ur'@55({})']
 patterns = [i.format(ur'[\u05d0-\u05ea]{1,3}') for i in patterns]
+
+'''
+אשל אברהם:
+ur'@88([\u05d0-\u05ea])\]'
+'''
 
 # for pattern in patterns:
 #     correct_marks_in_file(filename, u'@22', pattern)
