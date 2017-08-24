@@ -780,20 +780,25 @@ class Siman(OrderedElement):
         matches, errors = [], []
         for seif in self.get_child():
             matches.extend(seif.grab_references(pattern))
+        refs_by_seif = self.locate_references(pattern)
+        assert len(refs_by_seif) == len(matches)
         enumerated_matches = [key_callback(match.group(group)) for match in matches]
         previous = 0
-        for index, i in enumerate(enumerated_matches):
+        for seif, i in zip(refs_by_seif,enumerated_matches):
             if i - previous != 1:
                 if i == 1 and previous == 22:  # For refs that run through the he alphabet repeatedly, this handles the reset to א
                     pass
                 else:
-                    errors.append((previous, i, index))
+                    errors.append((previous, i, seif))
                     passed = False
             previous = i
         if not passed:
             print 'Errors for code {} in Siman {}:'.format(code, self.num)
             for error in errors:
-                print '\t{} followed by {} (tag {} in this Siman)'.format(*error)
+                if error[0] == 0:
+                    print '\t First tag in this Siman is {} (found in seif {})'.format(*error[1:])
+                else:
+                    print '\t{} followed by {} (found in seif {})'.format(*error)
         return passed
 
     def load_xrefs_to_commentstore(self, title):

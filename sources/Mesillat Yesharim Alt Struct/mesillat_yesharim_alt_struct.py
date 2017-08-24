@@ -12,14 +12,14 @@ if __name__ == "__main__":
         node.add_primary_titles(en, he)
         node.depth = 0
         if count == 0:
-            node.wholeRef = "Mesillat Yesharim, Introduction"
+            node.wholeRef = "Messilat Yesharim, Introduction"
         else:
-            node.wholeRef = "Mesillat Yesharim {}".format(count)
+            node.wholeRef = "Messilat Yesharim {}".format(count)
         node.refs = []
         nodes.append(node.serialize())
 
 
 
-    index = get_index("Mesillat Yesharim", server="http://www.sefaria.org")
+    index = get_index_api("Messilat Yesharim", server="http://www.sefaria.org")
     index['alt_structs'] = {"Subject": {"nodes": nodes}}
-    post_index(index, server="http://www.sefaria.org")
+    post_index(index, server="https://www.sefaria.org")

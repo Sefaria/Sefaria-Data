@@ -316,6 +316,45 @@ def compileCommentaryIntoPage(title, daf):
         ref = ref.next_section_ref() if ref.next_section_ref() != ref else None
     return page
 
+def remove_numbers(text):
+    digit_pattern = re.compile("^\d+\.")
+    for count in range(len(text)):
+        line = text[count]
+        match = digit_pattern.match(line)
+        if match:
+            match = match.group(0)
+            text[count] = text[count].replace(match, "")
+            if text[count][0] == " ":
+                text[count] = text[count][1:]
+        if count == 0 and not match:
+            text[0] = text[0].replace("1. ", "")
+    text = remove_roman_numerals(text)
+    return text
+
+
+def remove_roman_numerals(text):
+    for count, line in enumerate(text):
+        matches = re.findall("[IXV]+\.", text[count])
+        for match in matches:
+            text[count] = text[count].replace(match, "")
+            if text[count][0] == " ":
+                text[count] = text[count][1:]
+    return text
+
+
+def get_rid_of_numbers(book, version_title, version_source, SERVER, relevant_refs=None):
+    sections = library.get_index(book).all_section_refs()
+    for section in sections:
+        text = get_text(section.normal(), lang="en", versionTitle=version_title, server="http://draft.sefaria.org")["text"]
+        text = remove_numbers(text)
+        send_text = {
+            "text": text,
+            "versionTitle": version_title,
+            "versionSource": version_source,
+            "language": 'en'
+        }
+        post_text(section.normal(), send_text, server=SERVER)
+
 
 
 
@@ -478,7 +517,64 @@ def post_index(index, server=SEFARIA_SERVER):
 
 def hasTags(comment):
     mod_comment = removeAllTags(comment)
-    return mod_comment != comment 
+    return mod_comment != comment
+     
+@weak_connection
+def post_category(category_dict, server=SEFARIA_SERVER):
+    url = server+'/api/category/'
+    return requests.post(url, data={'apikey': API_KEY, 'json': json.dumps(category_dict)})
+
+    
+def add_category(en_title, path, he_title=None, server=SEFARIA_SERVER):
+    """
+    Post a category to the desired server. If a hebrew title is not supplied, this method will attempt to post a category
+    using a sharedTerm. This can only work if the corresponding term is present in the local Sefaria.
+    This method will attempt to upload parent categories if they are missing on destination server.
+    IMPORTANT: It is not assumed that parents exist locally, therefore this method can only post parents that use a
+    sharedTerm. All necessary terms must exist locally for this to work.
+
+    :param en_title: Primary English title or sharedTitle
+    :param path: path to this category
+    :param he_title: Primary Hebrew title. Do not supply if a sharedTerm is to be used.
+    :param server: destination server.
+    :return:
+    """
+    # obtain data from server
+    response = requests.get('{}/api/category/{}'.format(server, '/'.join(path))).json()
+
+    if response.get('error') is None:  # category already exists, exit
+        print "Category already exists at {}".format(server)
+        return response
+
+    # add missing parents
+    closest_parent = response['closest_parent']['lastPath']
+    missing_parents = path[path.index(closest_parent)+1:-1]  # grab everything between lastParent and current category
+    for parent in missing_parents:
+        add_category(parent, path[:path.index(parent)+1], server=server)
+
+    if he_title is None:  # upload using a sharedTerm
+        response = requests.get('{}/api/terms/{}'.format(server, en_title)).json()  # check if term exists at destination
+
+        if response.get('error') is not None:
+            term = Term().load({'name': en_title})
+            if term is None:
+                raise ValueError("Attempted to post sharedTitle {} but no such Term exists".format(en_title))
+            post_term(term.contents(), server=server)
+
+        category_dict = {
+            'path': path,
+            'sharedTitle': en_title
+        }
+
+    else:
+        category_dict = {
+            'path': path,
+            'titles': [
+                {'lang': 'en', 'primary': True, 'text': en_title},
+                {'lang': 'he', 'primary': True, 'text': he_title}
+            ]
+        }
+    return requests.post('{}/api/category'.format(server), data={'apikey': API_KEY, 'json': json.dumps(category_dict)})
 
 
 @weak_connection
@@ -768,9 +864,12 @@ def get_links(ref, server="http://www.sefaria.org"):
     url = server+'/api/links/'+ref
     return http_request(url)
 
-def get_text(ref):
+def get_text(ref, lang="", versionTitle="", server="http://www.sefaria.org"):
     ref = ref.replace(" ", "_")
-    url = 'http://www.sefaria.org/api/texts/'+ref
+    versionTitle = versionTitle.replace(" ", "_")
+    url = '{}/api/texts/{}'.format(server, ref)
+    if lang and versionTitle:
+        url += "/{}/{}".format(lang, versionTitle)
     req = urllib2.Request(url)
     try:
         response = urllib2.urlopen(req)
@@ -794,7 +893,7 @@ def get_text(ref):
             data['he'][i] = data['he'][i].replace(u"\u05C2", "")
             data['he'][i] = data['he'][i].replace(u"\u05C3", "")
             data['he'][i] = data['he'][i].replace(u"\u05C4", "")
-        return data['he']
+        return data
     except:
         print 'Error'
 

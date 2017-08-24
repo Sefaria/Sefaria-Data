@@ -41,7 +41,7 @@ class XML_to_JaggedArray:
         self.assertions = assertions
         self.image_dir = image_dir
         self.get_title_lambda = lambda el: el[0].text
-        self.print_bool = True
+        self.print_bool = False
         self.footnotes_within_footnotes = {} #used in English Mishneh Torah translations for footnotes with Raavad being quoted
 
 
@@ -63,18 +63,13 @@ class XML_to_JaggedArray:
         prev_line_ch = False
         ch_line = ""
         for line in open(self.file):
-            #if line.find("<p>") == 0 and digit.match(line) is None and prev_line_ch:
-            #    print ch_line
-            #if line.find("<title>") == 0:
-            #    msg = bleach.clean(line, strip=True).replace("\n", "").replace("\r", "")
-            #    #print self.cleanNodeName(msg)
             xml_text += line
             if chapter.match(line):
                 prev_line_ch = True
                 ch_line = line
             else:
                 prev_line_ch = False
-        print "****"
+
         self.get_each_type_tag(BeautifulSoup(xml_text).contents)
         xml_text = self.modify_before(xml_text)
         xml_text = bleach.clean(xml_text, tags=self.allowedTags, attributes=self.allowedAttributes, strip=False)
@@ -85,11 +80,8 @@ class XML_to_JaggedArray:
         for count, child in enumerate(self.root):
             if self.array_of_names:
                 child.text = str(self.array_of_names[count])
-            if not child.text == "Introduction":
-                self.move_title_to_first_segment(child)
             child = self.reorder_structure(child, False)
 
-        self.print_bool = True
         results = self.go_down_to_text(self.root, self.root.text)
         self.interpret_and_post(results, self.title)
         self.record_results_to_file()
@@ -200,7 +192,6 @@ class XML_to_JaggedArray:
         text = bleach.clean(text, strip=True)
         if self.titled:
             text = make_title(text)
-            print text
         return text
 
 
@@ -244,6 +235,7 @@ class XML_to_JaggedArray:
                 self.write_text_to_file(ref, element)
 
     def post(self, ref, text, not_last_key):
+        '''
         ref = u" ".join(ref.split(", ")[1:])
         if not ref.startswith("THE TREATISE") and not ref.upper().startswith("LAWS"):
             return
@@ -269,6 +261,10 @@ class XML_to_JaggedArray:
                     "versionSource": self.post_info["versionSource"],
                     "versionTitle": self.post_info["versionTitle"]
                 }
+            if ref.split(", ")[1].startswith("Chapter"):
+                num = ref.split(", ")[1].split(" ")[1]
+                assert num.isdigit()
+                ref = ref.split(",")[0] + " " + num
             if not_last_key:
                 post_text(ref, send_text, server=self.post_info["server"])
             else:
@@ -279,7 +275,7 @@ class XML_to_JaggedArray:
             tc = TextChunk(Ref(ref), lang=self.post_info["language"], vtitle=self.post_info["versionTitle"])
             tc.text = text
             tc.save()
-        '''
+
 
 
     def parse(self, text_arr, footnotes, node_name):
@@ -296,9 +292,14 @@ class XML_to_JaggedArray:
 
         def getPositions(text):
             pos = []
+            len_text_skipped = 0
             all = re.findall(footnote_pattern, text)
             for each in all:
-                pos.append(text.find(each))
+                curr_pos = text.find(each)
+                absolute_pos = curr_pos+len_text_skipped
+                pos.append(absolute_pos)
+                text = text[curr_pos:]
+                len_text_skipped += curr_pos
             return pos
 
         def removeNumberFromStart(text):
@@ -354,13 +355,9 @@ class XML_to_JaggedArray:
                 for i in range(len(ft_ids)):
                     reverse_i = len(ft_ids) - i - 1
                     ftnote_text = footnotes[node_name][ft_ids[reverse_i]]
-                    modified_text, actual_footnote = self.process_footnote_for_MT(text_arr[index], node_name, ftnote_text, ft_ids[reverse_i])
-
-                    if actual_footnote:
-                        text_to_insert = buildFtnoteText(ft_sup_nums[reverse_i], ftnote_text)
-                        pos = ft_pos[reverse_i]
-                        modified_text = u"{}{}{}".format(text_arr[index][0:pos], text_to_insert, text_arr[index][pos:])
-
+                    text_to_insert = buildFtnoteText(ft_sup_nums[reverse_i], ftnote_text)
+                    pos = ft_pos[reverse_i]
+                    modified_text = u"{}{}{}".format(text_arr[index][0:pos], text_to_insert, text_arr[index][pos:])
                     text_arr[index] = modified_text
 
                 all = re.findall(footnote_pattern, text_arr[index])
@@ -451,7 +448,7 @@ class XML_to_JaggedArray:
         if key not in self.footnotes:
             self.footnotes[key] = {}
         if "id" not in child.attrib:
-            assert len(self.prev_footnote) > 0
+            assert len(self.prev_footnote) > 0 and len(self.footnotes[key]) > 0
             self.footnotes[key][self.prev_footnote] += "<br>" + xpath_result
         else:
             self.footnotes[key][child.attrib['id']] = xpath_result
@@ -478,8 +475,16 @@ class XML_to_JaggedArray:
         if len(array) > 0 and type(array[0]) is not list:
             array = self.pre_parse(array)
             array = self.parse(array, self.footnotes, node_name)
+            self.any_problems(array, node_name)
         return array
 
+    def any_problems(self, array, node_name):
+        found = False
+        for x in array:
+            if "xref" in x:
+                found = True
+        if found:
+            print node_name
 
     def pre_parse(self, text_arr):
         p = re.compile(u"(\d+)[\.|\s+\.]+")
@@ -513,6 +518,9 @@ class XML_to_JaggedArray:
         last_key = sorted_keys[len(sorted_keys) - 1]
         not_last_key = True
         for key in sorted_keys:
+            if key == '\n':
+                continue
+
             if last_key == key:
                 not_last_key = False
 
@@ -534,15 +542,7 @@ class XML_to_JaggedArray:
             elif key == "text" and len(node[key]) > 0: #if len(node.keys()) == 2 and "text" in node.keys() and "subject" in node.keys() and len(node['text']) > 0:
                 if self.assertions:
                     assert Ref(running_ref)
-                if running_ref == "Ibn Ezra on Isaiah":
-                    text = self.convertManyIntoOne(node["text"])
-                    text[36] = []
-                    text[38] = []
-                    for i in range(len(text)):
-                        for j in range(len(text[i])):
-                            text[i][j] = [text[i][j]]
-                else:
-                    text = self.convertManyIntoOne(node["text"], running_ref.split(", ")[-1])
+                text = self.convertManyIntoOne(node["text"], running_ref.split(", ", 1)[-1])
                 self.post(running_ref, text, not_last_key)
 
 
