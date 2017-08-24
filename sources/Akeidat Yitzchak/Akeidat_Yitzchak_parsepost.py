@@ -226,9 +226,10 @@ def get_parsed_text():
                 else:
                     if "השער" in line and len(line)<50:
                         mistakes.append(file+" SHAAR "+line)
-                    chapter_box.append(line)
+                    chapter_box.append(re.sub(r"\d","",line))
         shaar_box.append(chapter_box)
         final_text.append(shaar_box)
+    print "these are mistakes!"
     for mistake in mistakes:
         print mistake
     return get_text_with_haaras(final_text, parse_haaras2())
@@ -336,17 +337,14 @@ if __name__ == "__main__":
     }
 
     post_text('Akeidat Yitzchak', version,weak_network=True)
+    
     """
-"""
     #for INTROS
     print "this is an intro"
     for sindex, section in enumerate(get_parsed_intro()):
         for pindex, paragraph in enumerate( section):
             print str(sindex)+" "+str(pindex)+" "+paragraph
-    
-    parshadex = get_parsha_index()
-    for parsha in parshadex:
-        print parsha[0]+u" ",parsha[1]," ",parsha[2]," end"
+
     intro_titles = ["Index","Author's Introduction","Mavo Shearim"]
     intro_text = get_parsed_intro()
     for index, title in enumerate(intro_titles):
@@ -371,25 +369,25 @@ if __name__ == "__main__":
     }
 
     post_text('Akeidat Yitzchak, Neilat Shearim', version, weak_network=True)
+    
     """
-"""
 
-for index, section in enumerate(get_parsed_intro()):
-    for paragraph in section:
-        print str(index)+" "+paragraph
-        """
-#for b in get_parsed_text():
-#    print "BOOK: "+b
-"""
-    @00 - Book
-    @44 - Gate/Chapter (should be reorganized to sperate the two)
-    @99 - Verse quote
-    @22 @55 - Introductory Midrash
-    @11 @33 - regular paragraph
-    5<>6 bold
-    * first level footnotes (we have them)
-    **) second level footnotes (we haven't got them)
-"""
+    for index, section in enumerate(get_parsed_intro()):
+        for paragraph in section:
+            print str(index)+" "+paragraph
+            """
+    #for b in get_parsed_text():
+    #    print "BOOK: "+b
+    """
+        @00 - Book
+        @44 - Gate/Chapter (should be reorganized to sperate the two)
+        @99 - Verse quote
+        @22 @55 - Introductory Midrash
+        @11 @33 - regular paragraph
+        5<>6 bold
+        * first level footnotes (we have them)
+        **) second level footnotes (we haven't got them)
+    """
                 
             
             
@@ -412,18 +410,12 @@ for index, section in enumerate(get_parsed_intro()):
             for pindex, paragraph in enumerate(haarah):
                 print str(sindex)+" "+str(hindex)+" "+str(pindex)
                 print paragraph
-    """
-    1/0
+    
 
-    for sindex, shaar in enumerate(get_text_with_haaras()):
+    for sindex, shaar in enumerate(get_parsed_text()):
         for cindex, chapter in enumerate(shaar):
             for pindex, paragraph in enumerate(chapter):
                 print sindex,pindex,paragraph
-
-    for index, (haarah_shaar, akeida_shaar) in enumerate(zip(get_haaras_by_shaarim(), get_parsed_text())):
-        if len(haarah_shaar)!=get_star_count(akeida_shaar):
-            print "OOPS! "+str(index)
-            print "HA: "+str(len(haarah_shaar))
-            print "AK: "+str(get_star_count(akeida_shaar))
+    """
     #adding shaarim: 104+107+108+139+172=630
     main()
