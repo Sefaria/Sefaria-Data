@@ -12,7 +12,7 @@ from BeautifulSoup import BeautifulSoup, Tag
 import PIL
 from PIL import Image
 from sefaria.helper.text import replace_roman_numerals
-
+from num2words import *
 from sources.functions import *
 from sefaria.model import *
 
@@ -20,7 +20,7 @@ from sefaria.model import *
 class XML_to_JaggedArray:
 
 
-    def __init__(self, title, file, allowedTags, allowedAttributes, post_info=None, array_of_names=[], deleteTitles=True, change_name=False, assertions=False, image_dir=None, titled=False):
+    def __init__(self, title, file, allowedTags, allowedAttributes, post_info=None, dict_of_names={}, array_of_names=[], deleteTitles=True, change_name=False, assertions=False, image_dir=None, titled=False):
         self.title = title
         self.writer = UnicodeWriter(open("{}.csv".format(title), 'w'))
         self.post_info = post_info
@@ -34,6 +34,7 @@ class XML_to_JaggedArray:
         self.titled = titled
         self.footnotes = {}
         self.array_of_names = array_of_names
+        self.dict_of_names = dict_of_names
         self.deleteTitles = deleteTitles
         self.prev_footnote = ""
         self.last_chapter = 0
@@ -43,7 +44,7 @@ class XML_to_JaggedArray:
         self.get_title_lambda = lambda el: el[0].text
         self.print_bool = False
         self.footnotes_within_footnotes = {} #used in English Mishneh Torah translations for footnotes with Raavad being quoted
-
+        self.word_to_num = WordsToNumbers()
 
     def set_title(self, title):
         self.title = title
@@ -61,6 +62,7 @@ class XML_to_JaggedArray:
         digit = re.compile(u"<p>\d+. ")
         chapter = re.compile(u"<title>CHAPTER")
         prev_line_ch = False
+        prev_line = ""
         ch_line = ""
         for line in open(self.file):
             xml_text += line
@@ -69,6 +71,7 @@ class XML_to_JaggedArray:
                 ch_line = line
             else:
                 prev_line_ch = False
+            prev_line = line
 
         self.get_each_type_tag(BeautifulSoup(xml_text).contents)
         xml_text = self.modify_before(xml_text)
@@ -80,6 +83,9 @@ class XML_to_JaggedArray:
         for count, child in enumerate(self.root):
             if self.array_of_names:
                 child.text = str(self.array_of_names[count])
+            elif self.dict_of_names:
+                key = self.cleanNodeName(child[0].text)
+                child[0].text = self.dict_of_names[key]
             child = self.reorder_structure(child, False)
 
         results = self.go_down_to_text(self.root, self.root.text)
@@ -177,7 +183,7 @@ class XML_to_JaggedArray:
 
     def cleanNodeName(self, text):
         text = self.cleanText(text)
-        comma_chars = [":", '.']
+        comma_chars = ['.']
         remove_chars = ['?'] + re.findall(u"[\u05D0-\u05EA]+", text)
         space_chars = ['-']
         for char in comma_chars:
@@ -234,25 +240,16 @@ class XML_to_JaggedArray:
                 ref = u"{}.{}".format(orig_ref, count+1)
                 self.write_text_to_file(ref, element)
 
+
+    def split_on_nums(self, text):
+        lines = re.split("\d+\. ", text)
+        lines = lines[1:]
+        for count, line in enumerate(lines):
+            lines[count] = u"{}. {}".format(count+1, line)
+        return lines
+
     def post(self, ref, text, not_last_key):
-        '''
-        ref = u" ".join(ref.split(", ")[1:])
-        if not ref.startswith("THE TREATISE") and not ref.upper().startswith("LAWS"):
-            return
-        writer = UnicodeWriter(codecs.open("{}.csv".format(self.title), 'a'), encoding='utf-8')
-        index_csv = csv.reader(open("names_index.csv"), delimiter='=')
-        title_dict = {}
-        for row in index_csv:
-            row[0] = row[0].replace(',', '')
-            title_dict[row[0]] = row[1]
-        if ref.endswith(","):
-            ref = ref[0:-1]
-        print title_dict[ref]
-        ref = title_dict[ref]
-        '''
         if self.print_bool:
-            if "THE TREATISE" in ref or "LAWS" in ref:
-                return
             self.write_text_to_file(ref, text)
         elif self.post_info["server"] != "local":
             send_text = {
@@ -263,6 +260,8 @@ class XML_to_JaggedArray:
                 }
             if ref.split(", ")[1].startswith("Chapter"):
                 num = ref.split(", ")[1].split(" ")[1]
+                num = roman_to_int(num)
+                num = str(num)
                 assert num.isdigit()
                 ref = ref.split(",")[0] + " " + num
             if not_last_key:
@@ -379,7 +378,11 @@ class XML_to_JaggedArray:
         Get the name return it and delete the first element
         '''
         if test_lambda(element):
-            name = bleach.clean(element[0].text, strip=True)
+            name = element[0].text
+            ftnotes = re.findall("<sup>.*?</sup>", name)
+            for ftnote in ftnotes:
+                name = name.replace(ftnote, "")
+            name = bleach.clean(name, strip=True)
             if change_name:
                 element.text = name
             if delete:
@@ -418,13 +421,12 @@ class XML_to_JaggedArray:
             if child.tag == "table":
                 self.print_table_info(element, index)
                 continue
-            if child.tag in ["h1", "title"] and "CHAPTER" in child.text.upper() and len(child.text.split(" ")) == 2:
-                child.text = str(roman_to_int(child.text.split(" ")[-1].replace(".", "")))
-                self.last_chapter = int(child.text)
+            if child.tag in ["h1", "title"] and "CHAPTER" in child.text.upper() and len(child.text.split(" ")) <= 3:
+                child.text = str(self.word_to_num.parse(child.text.split(" ")[-1]))
             if len(child) > 0:
                 if child.text.isdigit():
                     while int(child.text) > len(text["text"]) + 1:
-                        text["text"].append([])
+                        text["text"].append({"text": []})
                     text["text"].append(self.go_down_to_text(child, element))
                 else:
                     child.text = self.cleanNodeName(child.text)
@@ -465,11 +467,22 @@ class XML_to_JaggedArray:
 
     def convertManyIntoOne(self, text, node_name):
         array = []
-
+        prev_num = 0
         for count, x in enumerate(text):
             if type(x) is dict:
                 array.append(self.convertManyIntoOne(x['text'], node_name))
             else:
+                if "Transmission of the Oral Law" == node_name:
+                    array.append(x)
+                    continue
+                if not x[0].isdigit():
+                    array[-1] += u"<br/>{}".format(x)
+                    continue
+
+                num = int(x.split(".")[0])
+                for i in range(num-prev_num-1):
+                    array.append("")
+                prev_num = int(x.split(".")[0])
                 array.append(x)
 
         if len(array) > 0 and type(array[0]) is not list:
