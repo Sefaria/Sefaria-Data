@@ -1,7 +1,7 @@
 __author__ = 'stevenkaplan'
 
 from data_utilities.XML_to_JaggedArray import *
-SERVER = "http://draft.sefaria.org"
+SERVER = "http://ste.sefaria.org"
 
 def reorder_modify(text):
     return bleach.clean(text, strip=True)
@@ -26,6 +26,24 @@ def fix_vt_and_vs(old_vtitle, old_vsource, arr_books, vt, vs):
                 except:
                     pass
 
+def remove_numbers(text):
+    dig_pattern = re.compile("^\d+\. ")
+    for count in range(len(text)):
+        match = dig_pattern.match(text[count])
+        assert match
+        text_of_match = match.group(0)
+
+def get_rid_of_numbers(glazer, vt, vs):
+    for book in glazer:
+        sections = library.get_index(book).all_section_refs()
+        for sec in sections:
+            text = get_text(sec.normal(), lang="en", versionTitle=vt, server="http://draft.sefaria.org")
+            text = remove_numbers(text)
+            send_text = {
+                "text": text,
+                "versionTitle": vt,
+                "versionSource": vs
+            }
 
 if __name__ == "__main__":
 
@@ -35,15 +53,12 @@ if __name__ == "__main__":
     for each in hyamson:
         print str.format(each)
 
-
     hyamson_vs = "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002108865"
     hyamson_vt = "The Mishneh Torah by Maimonides. trans. by Moses Hyamson, 1937-1949"
     hyamson_old_vt = u'The Mishneh Torah / by Maimonides ; edited according to the Bodleian (Oxford) Codex with introduction, Biblical and Talmudical references, notes and English translation by Moses Hyamson.'
     glazer_vt = "Mishnah Torah, Yod ha-hazakah, trans. by Simon Glazer, 1927"
     glazer_vs = "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001922235"
 
-
-    '''
     post_info = {}
     post_info["language"] = "en"
     post_info["server"] = SERVER
@@ -51,7 +66,8 @@ if __name__ == "__main__":
     allowed_attributes = ["id"]
     p = re.compile("\d+a?\.")
     files = ["Hyamson_Vol1", "Glazer_Vol1", "Hyamson_Vol2"]
-    for file in ["Hyamson_Vol2"]:
+
+    for file in files:
         title = file
         if file.startswith("Hyamson"):
             post_info["versionSource"] = "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002108865"
@@ -65,4 +81,3 @@ if __name__ == "__main__":
         parser.set_funcs(reorder_test=reorder_test, reorder_modify=reorder_modify,
                      grab_title_lambda=lambda x: len(x) > 0)
         parser.run()
-    '''

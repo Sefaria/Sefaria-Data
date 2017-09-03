@@ -61,8 +61,6 @@ def parse_file(filename, notes, title, heTitle):
             continue
         prev_note_counter = note_counter
         line, note_counter, prev_note = pre_parse(line, notes, note_counter, prev_note)
-        if note_counter != prev_note_counter and 1200 < note_counter < 1251:
-            print "{}:{}\n{}".format(note_counter, notes[note_counter-1], orig_line)
 
         line, lang, start_tag = parse(line)
         is_title_bool = is_title(start_tag, text, lang, prev_he_title)
@@ -100,7 +98,7 @@ def parse_file(filename, notes, title, heTitle):
         prev_line = orig_line
         prev_he_title = is_he_title
 
-    #post_schema(root, title)
+    post_schema(root, title)
     print "FINAL COUNT {} out of {}".format(note_counter, len(notes))
     return verify_he_en_same_size(text, sections, flat_to_multi, heb_flat_to_eng)
 '''
