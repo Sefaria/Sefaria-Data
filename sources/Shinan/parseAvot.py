@@ -1,28 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-todo:
-- fix running commentary ex: 4.1
--
-
-
-ranged:
-
-פרק ב      משניות י-יא (doesn't matter)
-פרק ג      משניות יא-יב (doesn't matter)
-x פרק ד      משניות ט
-x פרק ד      משניות י
-פרק ד      משניות כו-כז  (doesn't matter)
-פרק ה      משניות ב-ג (doesn't matter)
-פרק ה      משניות ה-ו (doesn't matter)
-x פרק ה      משניות יד-טו
-x פרק ה      משניות יז-יח
-x פרק ה      משניות כה-כו
-x פרק ו     משניות א-ג
-x פרק ו     משניות ד-ו
-x פרק ו     משניות ז-י
-x פרק ו      משניות י-יא
-
-"""
 import re
 import csv
 import os
@@ -117,7 +93,7 @@ def parse(html_page, csv_page):
         }
         return location
 
-    intro = True
+    intro, first_title, only_commentary = True, True, True
     links, intro_text, chapters, mishnayot, segments = [], [], {}, {}, []
     cur_loc = {'map': u'1:1', 'ch': u'1', 'mishna': u'1'}
 
@@ -143,8 +119,18 @@ def parse(html_page, csv_page):
             # reconcile clashes between shinan / vilna strutures
             if mishna_map[new_loc['map']] != new_loc['map']:
                 new_loc = convert_to_vilna(mishna_map[new_loc['map']])
+
             # store previous mishna
             if cur_loc['mishna'] != new_loc['mishna'] and segments:
+                if only_commentary:
+                    pirkei_ref = u"Pirkei Avot " + cur_loc['map']
+                    shinan_ref = u"A New Israeli Commentary on Pirkei Avot {}:1-{}".format(cur_loc['map'], unicode(len(segments)))
+                    links.append({
+                        'refs': [pirkei_ref, shinan_ref],
+                        'type': 'commentary',
+                        'auto': True,
+                        'generated_by': 'Shinan on Avot parser'
+                    })
                 mishnayot[int(cur_loc['mishna'])] = segments
                 segments = []
             # store previous chapter
@@ -153,18 +139,37 @@ def parse(html_page, csv_page):
                 mishnayot = {}
             cur_loc = new_loc
 
+            first_title = True
+            only_commentary = True
+            if segments:
+                start = unicode(len(segments)+1)
+            else:
+                start = u'1'
+
         if contains_headline(p):
+            if first_title:
+                pirkei_ref = u"Pirkei Avot " + cur_loc['map']
+                shinan_ref = u"A New Israeli Commentary on Pirkei Avot {}:{}-{}".format(cur_loc['map'], start, unicode(len(segments)))
+                links.append({
+                    'refs': [pirkei_ref, shinan_ref],
+                    'type': 'commentary',
+                    'auto': True,
+                    'generated_by': 'Shinan on Avot parser'
+                })
+                first_title = False
+                only_commentary = False
             chunk = p.text.replace(p.text, u"<b>" + p.text.strip() + "</b>")
             segments.append(chunk)
         elif contains_mishna(p):
-            if segments:
-                start = unicode(len(segments))
-            else:
-                start = u'1'
+
             for child in p.children:
                 if isinstance(child, NavigableString):
                     if child == u' ' or child == u'.':
-                        p.contents[p.index(child) - 1].append(child)
+                        if not isinstance(child.previous_sibling, NavigableString):
+                            child.previous_sibling.string += child
+                        else:
+                            child.previous_sibling += child
+
             chunk = u''
             for child in p.children:
                 if isinstance(child, NavigableString):
@@ -182,30 +187,45 @@ def parse(html_page, csv_page):
                         elif child.next_sibling["class"][0] == u'_-פירוש-בירוק':
                             chunk = child.text.replace(child.text, u'<b>' + child.text.strip() + child.next_sibling.text.strip() + u'.</b> ')
                     elif isinstance(child.previous_sibling, NavigableString):
+                        if not isinstance(child.previous_sibling.previous_sibling, NavigableString):
+                            if child.previous_sibling.previous_sibling is not None:
+                                if child.previous_sibling.previous_sibling["class"][0] == u'_-פירוש-בירוק':
+                                    continue
                         segments.append(chunk)
                         if isinstance(child.next_sibling, NavigableString):
-                            print(child)
-                            continue
+                            if child.next_sibling != u" ":
+                                print(child)
+                            elif child.next_sibling.next_sibling["class"][0] == u'_-פירוש-בירוק':
+                                chunk = child.text.replace(child.text, u'<b>' + child.text.strip() + child.next_sibling + child.next_sibling.next_sibling.text.strip() + u'.</b> ')
+                            elif child.next_sibling.next_sibling["class"][0] == u'_-':
+                                chunk = child.text.replace(child.text, u'<b>' + child.text.strip() + u'.</b> ')
                         elif child.next_sibling["class"][0] == u'_-':
                             chunk = child.text.replace(child.text, u'<b>' + child.text.strip() + u'.</b> ')
                         elif child.next_sibling["class"][0] == u'_-פירוש-בירוק':
                             chunk = child.text.replace(child.text, u'<b>' + child.text.strip() + child.next_sibling.text.strip() + u'.</b> ')
                     elif child.previous_sibling["class"][0] == u'_-פירוש-בירוק':
                         continue
+                    elif child.previous_sibling["class"][0] == u"CharOverride-25":
+                        segments.append(chunk)
+                        if child.next_sibling["class"][0] == u'_-':
+                            chunk = child.text.replace(child.text, u'<b>' + child.text.strip() + u'.</b> ')
+                        elif child.next_sibling["class"][0] == u'_-פירוש-בירוק':
+                            chunk = child.text.replace(child.text, u'<b>' + child.text.strip() + child.next_sibling.text.strip() + u'.</b> ')
             else:
                 segments.append(chunk)
-                pirkei_ref = u"Pirkei Avot " + cur_loc['map']
-                shinan_ref = u"A New Israeli Commentary on Pirkei Avot {}:{}-{}".format(cur_loc['map'], start, unicode(len(segments)))
-                links.append({
-                    'refs': [pirkei_ref, shinan_ref],
-                    'type': 'commentary',
-                    'auto': True,
-                    'generated_by': 'Shinan on Avot parser'
-                })
+
         elif contains_commentary(p):
             chunk = p.text.strip()
             segments.append(chunk)
     else:
+        pirkei_ref = u"Pirkei Avot " + cur_loc['map']
+        shinan_ref = u"A New Israeli Commentary on Pirkei Avot {}:1-{}".format(cur_loc['map'], unicode(len(segments)))
+        links.append({
+            'refs': [pirkei_ref, shinan_ref],
+            'type': 'commentary',
+            'auto': True,
+            'generated_by': 'Shinan on Avot parser'
+        })
         mishnayot[int(cur_loc['mishna'])] = segments
         chapters[int(cur_loc['ch'])] = mishnayot
 
@@ -269,6 +289,7 @@ csv_path = u'/Users/joelbemis/Documents/programming/Sefaria-Data/sources/Shinan/
 
 if __name__ == '__main__':
     book = parse(html_path, csv_path)
-    # functions.post_index(build_index())
-    # upload_text(book["intro"], book["content"])
+    #util.ja_to_xml(book["content"], ["Chapter", "Mishnah", "Comment"])
+    functions.post_index(build_index())
+    upload_text(book["intro"], book["content"])
     functions.post_link(book["links"])
