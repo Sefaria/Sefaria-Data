@@ -740,7 +740,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
         highestrating = topru.disambiguationScore
         # if we're up to 0 disambiguity, rate them in terms of their place in the amud
         if highestrating == 0:
-            for curru in rashisByDisambiguity:
+            for icurru, curru in enumerate(rashisByDisambiguity):
                 # figure out how many are tied, or at least within 5 of each other
                 topscore = curru.rashimatches[0].score
                 tobesorted = []
@@ -749,8 +749,8 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                         # this is one of the top matches, and should be sorted
                         tobesorted.append(temp_rashimatchi)
 
-                # sort those top rashis by place
-                tobesorted.sort(key=lambda x: x.startWord)
+                # sort those top rashis by closeness to previous top rashi match end word
+                tobesorted.sort(key=lambda x: x.startWord if icurru == 0 or len(rashisByDisambiguity[icurru-1].rashimatches) == 0 else abs(rashisByDisambiguity[icurru-1].rashimatches[0].endWord - x.startWord))
                 # now add the rest
                 for temp_rashimatchi in curru.rashimatches[len(tobesorted):]:
                     tobesorted.append(temp_rashimatchi)
@@ -834,7 +834,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                         if len(ruToProcess[0].rashimatches) > 1:
 
                             if (not strict_boundaries and ruToProcess[0].rashimatches[1].startWord < ruToProcess[1].rashimatches[0].startWord) or \
-                                (strict_boundaries and ruToProcess[0].rashimatches[1].startWord <= ruToProcess[1].rashimatches[0].endWord):
+                                (strict_boundaries and ruToProcess[0].rashimatches[1].endWord < ruToProcess[1].rashimatches[0].startWord):
                                 #make sure they are reasonably close
                                 if ruToProcess[0].disambiguationScore < 10:
                                     del ruToProcess[0].rashimatches[0]
@@ -844,7 +844,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                             ffixed = False
                             if len(ruToProcess[1].rashimatches) > 1:
                                 if (not strict_boundaries and ruToProcess[1].rashimatches[1].startWord > ruToProcess[0].rashimatches[0].startWord) or \
-                                        (strict_boundaries and ruToProcess[1].rashimatches[1].endWord >= ruToProcess[0].rashimatches[0].startWord):
+                                        (strict_boundaries and ruToProcess[1].rashimatches[1].startWord > ruToProcess[0].rashimatches[0].endWord):
                                     if ruToProcess[1].disambiguationScore < 10:
                                         del ruToProcess[1].rashimatches[0]
                                         ffixed = True
@@ -853,7 +853,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                             ffixed = False
                             if len(ruToProcess[0].rashimatches) > 1 and len(ruToProcess[1].rashimatches) > 1:
                                 if (not strict_boundaries and ruToProcess[1].rashimatches[1].startWord > ruToProcess[0].rashimatches[1].startWord) or \
-                                        (strict_boundaries and ruToProcess[1].rashimatches[1].endWord >= ruToProcess[0].rashimatches[1].startWord):
+                                        (strict_boundaries and ruToProcess[1].rashimatches[1].startWord > ruToProcess[0].rashimatches[1].endWord):
                                     if ruToProcess[1].disambiguationScore < 10 and ruToProcess[0].disambiguationScore < 10:
                                         del ruToProcess[0].rashimatches[0]
                                         del ruToProcess[1].rashimatches[0]
@@ -1015,12 +1015,6 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                     comment_left_text_add = u" ".join(curDaf.allRashi[ise - 1].words[-len_cutoff_right:]) if len_cutoff_right > 0 else u''
                     comment_right_text_remove = u" ".join(curDaf.allRashi[ise].words[:len_cutoff_right]) if len_cutoff_right > 0 else u''
                     comment_right_text_add = u" ".join(curDaf.allRashi[ise].words[:len_cutoff_left]) if len_cutoff_left > 0 else u''
-
-                    dist_lr = -weighted_levenshtein.calculate(cutoff_left_text, comment_left_text_remove, False)
-                    dist_ra =  weighted_levenshtein.calculate(cutoff_left_text, comment_right_text_add, False)
-                    dist_rr = -weighted_levenshtein.calculate(cutoff_right_text, comment_right_text_remove, False)
-                    dist_la =  weighted_levenshtein.calculate(cutoff_right_text, comment_left_text_add, False)
-
 
                     total_dist = -weighted_levenshtein.calculate(cutoff_left_text, comment_left_text_remove, False) + \
                                   weighted_levenshtein.calculate(cutoff_left_text, comment_right_text_add, False) + \
@@ -1221,13 +1215,15 @@ def GetAbbrevs(dafwords, rashiwords, char_threshold, startBound, endBound, with_
     for id, dword in enumerate(dafwords):
         if id < startBound or id > endBound:
             continue
-        if u"\"" in dword or u"״" in dword:
+
+        if re.search(ur"(?:[א-ת][\"״][א-ת]|[\'׳]$)", dword):
             abbrev_range = None
             for ir, rword in enumerate(rashiwords):
                 if abbrev_range and ir in abbrev_range:
                     continue
 
-                isMatch, offset, isNum = isAbbrevMatch(ir,cleanAbbrev(dword),rashiwords, char_threshold, with_num_abbrevs=with_num_abbrevs)
+                is_prefix = (len(dword) > 0 and (dword[-1] == u"'" or dword[-1] == u"׳"))
+                isMatch, offset, isNum = isAbbrevMatch(ir,cleanAbbrev(dword),rashiwords, char_threshold, with_num_abbrevs=with_num_abbrevs, word_prefix=is_prefix)
                 if isMatch:
                     istartcontext = 3 if id >= 3 else id
                     abbrevMatch = AbbrevMatch(dword, rashiwords[ir:ir+offset+1],(ir,ir+offset),(id,id),
@@ -1236,12 +1232,14 @@ def GetAbbrevs(dafwords, rashiwords, char_threshold, startBound, endBound, with_
                     allabbrevinds.append(((ir,id),(ir+offset,id)))
                     abbrev_range = range(ir,ir+offset+1)
     for ir, rword in enumerate(rashiwords):
-        if u"\"" in rword or u"״" in rword:
+        if re.search(ur"(?:[א-ת][\"״][א-ת]|[\'׳]$)", rword):
             abbrev_range = None
             for id, dword in enumerate(dafwords):
                 if abbrev_range and id in abbrev_range:
                     continue
-                isMatch, offset, isNum = isAbbrevMatch(id,cleanAbbrev(rword),dafwords, char_threshold, with_num_abbrevs=with_num_abbrevs)
+
+                is_prefix = (len(dword) > 0 and (dword[-1] == u"'" or dword[-1] == u"׳"))
+                isMatch, offset, isNum = isAbbrevMatch(id,cleanAbbrev(rword),dafwords, char_threshold, with_num_abbrevs=with_num_abbrevs, word_prefix=is_prefix)
                 if isMatch:
                     istartcontext = 3 if id >= 3 else id
                     abbrevMatch = AbbrevMatch(rword, dafwords[id:id+offset+1],(ir,ir),(id,id+offset),
@@ -1619,22 +1617,34 @@ def IsStringMatch(orig, target, threshold):  # string,string,double,out double
 
 
 def cleanAbbrev(str):
-    str = re.sub(ur'[\"״]',u'',str)
+    str = re.sub(ur'[\"״\'׳]',u'',str)
     str = re.sub(ur"[^א-ת]", u"", str).strip()
     str = u"".join([weighted_levenshtein.sofit_map.get(c,c) for c in str])
     return str
 
 
-def isAbbrevMatch(curpos, abbrevText, unabbrevText, char_threshold, with_num_abbrevs=True):
+def isAbbrevMatch(curpos, abbrevText, unabbrevText, char_threshold, with_num_abbrevs=True, word_prefix=False):
+    """
+
+    :param curpos: current position in unabbrevText
+    :param abbrevText: text with a possible abbreviation
+    :param unabbrevText: text to match
+    :param char_threshold:
+    :param with_num_abbrevs: include gematria?
+    :param word_prefix: is this abbreviation a prefix to a word?
+    :return:
+    """
     maxAbbrevLen = len(abbrevText)
     isMatch = False
 
     abbrevPatterns = [[],[1],[2],[3],[1,1],[2,1],[2,2]]
     for comboList in abbrevPatterns:
-
+        if word_prefix and len(comboList) > 1:
+            continue
         numWordsCombined = sum(comboList)
+        minwordlimit = numWordsCombined if word_prefix else numWordsCombined + 1
         if curpos + maxAbbrevLen <= len(unabbrevText) + numWordsCombined:
-            if maxAbbrevLen > numWordsCombined + 1:
+            if maxAbbrevLen > minwordlimit:
                 isMatch = True
 
                 prev_combo_sum = 0

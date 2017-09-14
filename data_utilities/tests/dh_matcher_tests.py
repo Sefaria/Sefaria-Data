@@ -91,6 +91,11 @@ class TestDHMatcherFunctions:
         assert (True, 4, False) == iam(0,u'aabbcde',sp(u'aa123 bb123 c123 d123 e123'),0)
         assert (True, 3, False) == iam(0,u'aaabbcd',sp(u'aaa123 bb123 c123 d123'),0)
 
+        #prefixes
+        assert (True, 0, False) == iam(0, u'ר', sp(u'רבי'), 0, word_prefix=True)
+        assert (True, 0, False) == iam(0, u'ור', sp(u'ורבי'), 0, word_prefix=True)
+        assert (True, 0, False) == iam(0, u'ולר', sp(u'ולרבי'), 0, word_prefix=True)
+
         #numbers
         assert (True, 2, True) == iam(0, u'רלט',sp(u'מאתיים שלשים ותשע'),0)
         assert (True, 2, True) == iam(0, u'ברלט',sp(u'במאתיים שלשים ותשע'),0) #with prefix
