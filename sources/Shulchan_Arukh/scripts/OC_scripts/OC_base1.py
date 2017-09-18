@@ -38,5 +38,8 @@ volume.validate_references(ur'@44([\u05d0-\u05ea])', u'@44', key_callback=he_ord
 for pattern, code in zip(patterns, codes):
     volume.validate_references(pattern, code)
 
+errors = volume.format_text('@33', '@34', 'ramah')
+for i in errors:
+    print i
 
 root.export()
