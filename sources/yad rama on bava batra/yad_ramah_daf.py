@@ -10,6 +10,7 @@ class Yad_Ramah:
         self.server = server
         self.daf_re = re.compile(u"^.*?(\[[\u05D0-\u05EA]{1,3},[\u05D0-\u05EA]{1}\])")
         self.siman_re = re.compile(u"^([\u05D0-\u05EA]+)\. ")
+        self.alt_struct = [] #list of tuples of name of each section and ref str for where it begins
 
 
     def getText(self, file):
@@ -73,7 +74,6 @@ class Yad_Ramah:
                 assert page+1 not in text_by_daf
                 text_by_daf[page] = []
                 dh_by_daf[page] = []
-
 
 
             text_for_dh = " ".join(para.split(" ")[0:6])

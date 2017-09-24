@@ -188,71 +188,12 @@ class Sefer:
     def getStartPos(self, line, dh):
         start_pos = line.find(dh)
         if start_pos == -1:
-            start_pos = line.find(dh)
-        if start_pos == -1:
             start_pos = line.find(dh.lower())
+        start_pos += len(dh)
         return start_pos
 
 if __name__ == "__main__":
-    def parse(text_arr):
-        assert type(text_arr) is list
-        for index, text in enumerate(text_arr):
-            text_arr[index] = text_arr[index].replace("<bold>", "<b>").replace("<italic>", "<i>").replace("</bold>", "</b>").replace("</italic>", "</i>")
-            text_arr[index] = text_arr[index].replace("<li>", "<br>").replace("</li>", "")
-            span_start = re.findall("<span.*?>", text_arr[index])
-            span_end = re.findall("</span.*?>", text_arr[index])
-            xref_start = re.findall("<xref.*?>", text_arr[index])
-            xref_end = re.findall("</xref.*?>", text_arr[index])
-            xrefs = xref_start + xref_end
-            for xref in xrefs:
-                text_arr[index] = text_arr[index].replace(xref, "")
-            for tag in span_start:
-                text_arr[index] = text_arr[index].replace(tag, "")
-            for tag in span_end:
-                text_arr[index] = text_arr[index].replace(tag, "")
-
-        return text_arr
-
-    post_info = {}
-    post_info["language"] = "en"
-    post_info["server"] = sys.argv[1]
-    allowed_tags = ["book", "intro", "part", "chapter", "p", "ftnote", "title", "ol", "footnotes", "appendix"]
-    allowed_attributes = ["id"]
-    grab_title_lambda = lambda x: x[0].tag == "title"
-    p = re.compile("\d+a?\.")
-    reorder_test_lambda = lambda x: x.tag == "title" and p.match(x.text) is not None
-    def reorder_modify(text):
-        text = text.split(" ")[0]
-        if text.split(".")[-1] == "":
-            return text.split(".")[0]
-        else:
-            return text.split(".")[-1]
-
-
-    post_info["versionTitle"] = "Sefer Hayashar, trans. Seymour J. Cohen. 1973."
-    post_info["versionSource"] = "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002199310"
-    file_name = "seferhayashar.xml"
-    title = "Sefer HaYashar"
-
-    sefer = Sefer()
-
-
-    footnote_map = {}
-    footnote_map[0] = "Introduction"
-    for i in range(18):
-        footnote_map[i+1] = "Main Content"
-    footnote_map[19] = "Footnotes"
-    footnote_map[20] = "Translators Foreword"
-    footnote_map[21] = "Addendum I"
-    footnote_map[22] = "Addendum II"
-
-    x = 1
-    if x == 0:
-        parser = XML_to_JaggedArray(title, file_name, allowed_tags, allowed_attributes, post_info, footnote_map=footnote_map, deleteTitles=False)
-        parser.set_funcs(parse, grab_title_lambda, reorder_test_lambda, reorder_modify)
-        parser.run()
-    else:
-        sefer.match_quotes_and_post()
+    Sefer().match_quotes_and_post()
     '''sefer hayashar
 
 1. parse everything normal way with XML parser locally

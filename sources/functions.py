@@ -20,6 +20,7 @@ from sefaria.model.schema import AddressTalmud
 from data_utilities.dibur_hamatchil_matcher import match_ref
 from sefaria.utils.util import replace_using_regex as reg_replace
 import base64
+import Levenshtein
 
 gematria = {}
 gematria[u'א'] = 1
@@ -66,6 +67,83 @@ eng_parshiot = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Tol
 "V'Zot HaBerachah"]
 
 
+def create_simple_index_many_to_one(en_title, he_title, base_title, categories, server=SEFARIA_SERVER):
+    '''
+    Returns a JSON index object for a simple Index that is a Commentary.
+    :param en_title: Name of commentary in English
+    :param he_title: Name in Hebrew
+    :param base_title: Name of text being commented on.
+    :param categories: Array such as ["Tanakh", "Commentary", "Rashi", "Writings", "Psalms"]
+    :return:
+    '''
+    base_index = library.get_index(base_title)
+    root = JaggedArrayNode()
+    full_title = "{} on {}".format(en_title, base_title)
+    he_base_title = base_index.get_title('he')
+    he_full_title = u"{} on {}".format(he_title, he_base_title)
+    root.add_primary_titles(full_title, he_title)
+    structure = base_index.nodes.sectionNames
+    structure.append("Comment")
+    root.add_structure(structure)
+
+    #c = Category().load({"path": categories})
+    #if not c:
+    #    add_category(en_title, categories, server=server)
+
+    index = {
+        "title": full_title,
+        "schema": root.serialize(),
+        "collective_title": en_title,
+        "categories": categories,
+        "dependence": "Commentary",
+        "base_text_titles": [base_title],
+        "base_text_mapping": "many_to_one",
+    }
+    post_index(index, server=server)
+
+
+def create_complex_index_torah_commentary(en_title, he_title, server=SEFARIA_SERVER):
+    path = ["Tanakh", "Commentary", en_title, "Torah"]
+    root = SchemaNode()
+    full_title = "{} on Torah".format(en_title)
+    he_full_title = u"{} על תורה".format(he_title)
+    root.add_primary_titles(full_title, he_full_title)
+
+    for book in library.get_indexes_in_category("Torah"):
+        node = JaggedArrayNode()
+        node.add_primary_titles(book, library.get_index(book).get_title('he'))
+        node.add_structure(["Chapter", "Paragraph", "Comment"])
+        root.append(node)
+
+    '''
+    c = Category().load({"path": ["Tanakh", "Commentary", "{}".format(en_title)]})
+    if not c:
+        result = add_category(en_title, ["Tanakh", "Commentary", "{}".format(en_title)], server=server)
+        f = open('errors', 'w')
+        f.write(result.content)
+        f.close()
+    
+    c = Category().load({"path": path})
+    if not c:
+        result = add_category(en_title, path, server=server)
+        f = open('errors', 'w')
+        f.write(result.content)
+        f.close()
+    '''
+
+    post_index({
+        "title": full_title,
+        "schema": root.serialize(),
+        "categories": path
+    }, server=server)
+
+
+
+
+
+def find_almost_identical(str1, str2, ratio=0.9):
+    return Levenshtein.ratio(str1, str2) >= ratio
+
 def perek_to_number(perek_num, thing_to_replace=None):
     '''
     Example: Input is "ראשון" and return is 1
@@ -89,7 +167,6 @@ def perek_to_number(perek_num, thing_to_replace=None):
             return poss_num
     print u"Not supporting {} yet".format(perek_num)
     return u"Not supporting {} yet".format(perek_num)
-
 
 
 
@@ -295,14 +372,14 @@ def convertDictToArray(dict, empty=[]):
     for key in sorted_keys:
         if count == key:
             array.append(dict[key])
-            count+=1
+            count += 1
         else:
             diff = key - count
-            while(diff>0):
+            while(diff > 0):
                 array.append(empty)
-                diff-=1
+                diff -= 1
             array.append(dict[key])
-            count = key+1
+            count = key + 1
     return array
 
 
@@ -342,10 +419,10 @@ def remove_roman_numerals(text):
     return text
 
 
-def get_rid_of_numbers(book, version_title, version_source, SERVER, relevant_refs=None):
+def get_rid_of_numbers(book, version_title, version_source, get_server, post_server, relevant_refs=None):
     sections = library.get_index(book).all_section_refs()
     for section in sections:
-        text = get_text(section.normal(), lang="en", versionTitle=version_title, server="http://draft.sefaria.org")["text"]
+        text = get_text(section.normal(), lang="en", versionTitle=version_title, server=get_server)["text"]
         text = remove_numbers(text)
         send_text = {
             "text": text,
@@ -353,7 +430,7 @@ def get_rid_of_numbers(book, version_title, version_source, SERVER, relevant_ref
             "versionSource": version_source,
             "language": 'en'
         }
-        post_text(section.normal(), send_text, server=SERVER)
+        post_text(section.normal(), send_text, server=post_server)
 
 
 
@@ -392,6 +469,8 @@ def replaceBadNodeTitlesHelper(title, replaceBadNodeTitles, bad_char, good_char)
     data = json.load(urllib2.urlopen(req))
     replaceBadNodeTitles(bad_char, good_char, data)
     post_index(data)
+
+
 
 
 def checkLengthsDicts(x_dict, y_dict):
@@ -540,6 +619,11 @@ def add_category(en_title, path, he_title=None, server=SEFARIA_SERVER):
     :return:
     """
     # obtain data from server
+    '''
+    for i in range(len(path)):
+        path[i] = path[i].replace(" ", "_")
+    en_title = en_title.replace(" ", "_")
+    '''
     response = requests.get('{}/api/category/{}'.format(server, '/'.join(path))).json()
 
     if response.get('error') is None:  # category already exists, exit
@@ -735,6 +819,44 @@ def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SER
     # except HTTPError, e:
     #     with open('errors.html', 'w') as errors:
     #         errors.write(e.read())
+
+def re_split_line(line, pattern):
+    '''
+    this function splits a string based on a regular expression pattern so that the resultant array of strings
+    still has the pattern at the front of every string in the array
+    :param line: the string to be split
+    :param pattern: the reg exp pattern
+    :return: array of strings
+    '''
+
+    #first make sure pattern is surrounded by parenthesis so that re.split will give us an array like:
+    # 0: pattern
+    # 1: text
+    # 2: pattern
+    # 3: text
+    # Then make an array half the size made up of [pattern + text, pattern + text]
+    if pattern[0] != '(':
+        pattern = '(' + pattern
+    if pattern[-1] != ')':
+        pattern += ')'
+
+    fix_pos_in_arr = 0
+    lines = re.split(pattern, line)
+    assert len(lines) % 2 == 1
+
+    if lines[0] == "":
+        lines = lines[1:]
+        text = [""] * (len(lines) / 2)
+    else:
+        text = [""] * (len(lines) / 2)
+        text.insert(0, lines[0])
+        lines = lines[1:]
+        fix_pos_in_arr = 1
+
+    for i, line in enumerate(lines):
+        pos_in_arr = int(i/2) + fix_pos_in_arr
+        text[pos_in_arr] += line
+    return text
 
 
 

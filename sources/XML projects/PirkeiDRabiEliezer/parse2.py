@@ -16,7 +16,7 @@ if __name__ == "__main__":
     post_info = {}
     post_info["language"] = "en"
     post_info["server"] = SERVER
-    allowed_tags = ["book", "intro", "part", "chapter", "p", "ftnote", "title", "ol", "footnotes", "appendix"]
+    allowed_tags = ["book", "intro", "part", "chapter", "p", "h1", "ftnote", "title", "ol", "footnotes", "appendix"]
     allowed_attributes = ["id"]
     p = re.compile("\d+a?\.")
 
@@ -27,5 +27,6 @@ if __name__ == "__main__":
 
     parser = XML_to_JaggedArray(title, file_name, allowed_tags, allowed_attributes, post_info, change_name=True, image_dir="./images",
                                 titled=True, deleteTitles=False)
-    parser.set_funcs(reorder_test=lambda x: x.tag == "h1", reorder_modify=reorder_modify)
+    parser.set_funcs(reorder_test=lambda x: False, reorder_modify=reorder_modify)
     parser.run()
+
