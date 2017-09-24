@@ -80,7 +80,7 @@ class MatchMatrix(object):
                       comment_threshold_hit=False, daf_threshold_hit=False, mismatch_threshold_hit=False):  #, _comment_words_skipped=0, _base_words_skipped=0, _mismatches=0):
         """
         Invoked from both matched and non-matched positions
-        Check self, explore next positions, and recourse.
+        Check self, explore next positions, and recurse.
 
         :param current_position: (comment word, daf word) tuple
         :param daf_start_index:  word index of starting word
@@ -144,7 +144,8 @@ class MatchMatrix(object):
                     "mismatches": mismatches + 1
                 }]
             return [None]
-        elif not is_jump_start and next_base_index == self.daf_len:
+        # (not is_jump_start or is_jump_end) is meant to capture the edge case when there's a one word abbrev at the end of the daf
+        elif (not is_jump_start or is_jump_end) and next_base_index == self.daf_len:
             # We've hit the end of the daf, but not the end of the comment
             possible_comment_skips = min(self.overall_word_skip_threshold - (len(comment_indexes_skipped) + len(daf_indexes_skipped)),
                                          self.comment_word_skip_threshold - len(comment_indexes_skipped))
@@ -1655,7 +1656,7 @@ def isAbbrevMatch(curpos, abbrevText, unabbrevText, char_threshold, with_num_abb
                     prev_combo_sum += currCombo+1
 
                 for igemaraword in xrange(curpos + len(comboList), curpos + maxAbbrevLen - numWordsCombined):
-                    if unabbrevText[igemaraword][0] != abbrevText[igemaraword - curpos + numWordsCombined]:
+                    if len(unabbrevText[igemaraword]) > 0 and unabbrevText[igemaraword][0] != abbrevText[igemaraword - curpos + numWordsCombined]:
                         isMatch = False
                         break
                 if isMatch:
