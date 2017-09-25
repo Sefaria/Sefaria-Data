@@ -23,4 +23,6 @@ Once a location has been used to match, remove from the list of available matche
 
 Duplicates in a Shaarei Teshuva siman may cause a buggy edge case. Before deciding if this should be handled, it's probably
 wise to determine how often that happens and what bugs might arise.
+
+Shaarei Teshuva marked with @62
 """
