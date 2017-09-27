@@ -93,3 +93,81 @@ class StructuredDocument:
         with codecs.open(filename, 'w', 'utf-8') as outfile:
             outfile.write(self.get_whole_text())
 
+    def get_chapter_values(self):
+        return sorted(self._section_mapping.keys())
+
+
+def collect_matches(chapter, regex):
+    return [getGematria(m.group(1)) for m in re.finditer(regex, chapter)]
+
+
+def load_regex(chapter, mark_type):
+    """
+    Get the necessary regex for markers
+    :param chapter:
+    :param string mark_type: 'baer_marks', 'shaarei_marks' or 'shaarei_seifim'
+    :return: string
+    """
+    return 'foo'
+
+
+def find_mark_locations(baer_marks, shaarei_marks, shaarei_seifim, chapter):
+    locations = []
+    for seif in shaarei_seifim:
+        if seif in shaarei_marks:
+            continue
+        elif seif in baer_marks:
+            locations.append(seif)
+        else:
+            print "Unable to locate position for {} in chapter {}".format(seif, chapter)
+    return locations
+
+
+def add_marks_to_chapter(base_document, shaarei_document, chapter_num):
+    """
+    Given a chapter I can easily extract regexes with a finditer
+    This needs to be called three times - twice on base text to find markers, once on Shaarei Teshuva for seifim
+
+    1) Pick a chapter
+    2) Get text for that chapter for both base and commentary
+    3) Extract all three match sets
+    4) Given match sets, decide where @62 needs to be added -> This can return a regex. Should be an independant function
+    5) Edit given chapter
+
+    :param StructuredDocument base_document:
+    :param StructuredDocument shaarei_document:
+    :param int chapter_num:
+    """
+    def repl(x):
+        return re.sub(u'@66(\([\u05d0-\u05ea]{1,3}\))', u'@62\g<1>', x.group())
+
+    base_chapter, shaarei_chapter = base_document.get_section(chapter_num), shaarei_document.get_section(chapter_num)
+    baer_marks = collect_matches(base_chapter, load_regex(chapter_num, 'baer_marks'))
+    shaarei_marks = collect_matches(base_chapter, load_regex(chapter_num, 'shaarei_marks'))
+    shaarei_seifim = collect_matches(shaarei_chapter, 'shaarei_seifim')
+
+    locations = u'|'.join(find_mark_locations(baer_marks, shaarei_marks, shaarei_seifim, chapter_num))
+
+    base_document.edit_section(chapter_num, lambda x: re.sub(locations, repl, x))
+
+def replace_em():
+    with codecs.open(u'../../txt_files/Orach_Chaim/part_3/שולחן ערוך אורח חיים חלק ג שערי תשובה.txt', 'r', 'utf-8') as infile:
+        the_text = infile.read()
+
+    def repl(x):
+        fixed = re.sub(ur'[\'"]', u'', x.group(1))
+        return u'@00{}'.format(fixed)
+    s = re.compile(ur'@00\u05e1\u05d9(?:\'|\u05de\u05df)? ([\u05d0-\u05ea\'\"]{1,5})')
+    new_text = re.sub(s, repl, the_text)
+    with codecs.open('../../txt_files/Orach_Chaim/part_3/test.txt', 'w', 'utf-8') as outfile:
+        outfile.write(new_text)
+
+
+def print_em():
+    with codecs.open(u'../../txt_files/Orach_Chaim/part_3/שולחן ערוך אורח חיים חלק ג שערי תשובה.txt', 'r', 'utf-8') as infile:
+        the_text = infile.read()
+    matches = re.findall(u'@00[^n]+', the_text.replace(u'\n', u'n'))
+    with codecs.open(u'../../txt_files/Orach_Chaim/part_3/stuff.txt', 'w', 'utf-8') as outfile:
+        outfile.write(u'\n'.join(matches))
+
+
