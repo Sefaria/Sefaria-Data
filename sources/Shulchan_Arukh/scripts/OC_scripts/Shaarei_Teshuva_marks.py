@@ -97,8 +97,9 @@ class StructuredDocument:
         return sorted(self._section_mapping.keys())
 
 
-def collect_matches(chapter, regex):
-    return [getGematria(m.group(1)) for m in re.finditer(regex, chapter)]
+def collect_matches(chapter_text, mark_type, chapter_value):
+    regex = load_regex(chapter_value, mark_type)
+    return [m.group(1) for m in re.finditer(regex, chapter_text)]
 
 
 def load_regex(chapter, mark_type):
@@ -108,18 +109,32 @@ def load_regex(chapter, mark_type):
     :param string mark_type: 'baer_marks', 'shaarei_marks' or 'shaarei_seifim'
     :return: string
     """
-    return 'foo'
+    number_group = u'[\u05d0-\u05ea]{1,2}'
+
+    regs = {
+        'baer_marks': u'@66\(({})\)'.format(number_group),
+        'shaarei_marks': u'@62\(({})\)'.format(number_group),
+    }
+
+    if chapter < 242 or chapter > 416:
+        regs['shaarei_seifim'] = u'@22\(({})\)'.format(number_group)
+    else:
+        regs['shaarei_seifim'] = u'@11\(({})\)'.format(number_group)
+
+    return regs[mark_type]
 
 
 def find_mark_locations(baer_marks, shaarei_marks, shaarei_seifim, chapter):
     locations = []
+    if len(baer_marks) != len(set(baer_marks)):
+        print u"Double Marker in Chapter {}".format(chapter)
     for seif in shaarei_seifim:
         if seif in shaarei_marks:
             continue
         elif seif in baer_marks:
             locations.append(seif)
         else:
-            print "Unable to locate position for {} in chapter {}".format(seif, chapter)
+            print u"Unable to locate position for {} in chapter {}".format(seif, chapter)
     return locations
 
 
@@ -139,16 +154,19 @@ def add_marks_to_chapter(base_document, shaarei_document, chapter_num):
     :param int chapter_num:
     """
     def repl(x):
-        return re.sub(u'@66(\([\u05d0-\u05ea]{1,3}\))', u'@62\g<1>', x.group())
+        return re.sub(u'@66\(([\u05d0-\u05ea]{1,3})\)', u'\g<0> @62(\g<1>)', x.group())
 
     base_chapter, shaarei_chapter = base_document.get_section(chapter_num), shaarei_document.get_section(chapter_num)
-    baer_marks = collect_matches(base_chapter, load_regex(chapter_num, 'baer_marks'))
-    shaarei_marks = collect_matches(base_chapter, load_regex(chapter_num, 'shaarei_marks'))
-    shaarei_seifim = collect_matches(shaarei_chapter, 'shaarei_seifim')
 
-    locations = u'|'.join(find_mark_locations(baer_marks, shaarei_marks, shaarei_seifim, chapter_num))
+    baer_marks     = collect_matches(base_chapter,    'baer_marks',     chapter_num)
+    shaarei_marks  = collect_matches(base_chapter,    'shaarei_marks',  chapter_num)
+    shaarei_seifim = collect_matches(shaarei_chapter, 'shaarei_seifim', chapter_num)
+
+    locations = u'@66\(({})\)'.format(
+        u'|'.join(find_mark_locations(baer_marks, shaarei_marks, shaarei_seifim, chapter_num)))
 
     base_document.edit_section(chapter_num, lambda x: re.sub(locations, repl, x))
+
 
 def replace_em():
     with codecs.open(u'../../txt_files/Orach_Chaim/part_3/שולחן ערוך אורח חיים חלק ג שערי תשובה.txt', 'r', 'utf-8') as infile:
@@ -170,4 +188,38 @@ def print_em():
     with codecs.open(u'../../txt_files/Orach_Chaim/part_3/stuff.txt', 'w', 'utf-8') as outfile:
         outfile.write(u'\n'.join(matches))
 
+source_filename = {
+    'volI': u'../../txt_files/Orach_Chaim/part_1/שוע אורח חיים חלק א.txt',
+    'volII': u'../../txt_files/Orach_Chaim/part_2/שולחן ערוך אורח חיים חלק ב מחבר.txt',
+    'volIII': u'../../txt_files/Orach_Chaim/part_3/מחבר שולחן ערוך אורח חיים חלק ג.txt',
+    'shaarei_I': u'../../txt_files/Orach_Chaim/part_1/שוע אורח חיים חלק א שערי תשובה.txt',
+    'shaarei_II': u'../../txt_files/Orach_Chaim/part_2/שולחן ערוך אורח חיים חלק ב שערי תשובה.txt',
+    'shaarei_III': u'../../txt_files/Orach_Chaim/part_3/שולחן ערוך אורח חיים חלק ג שערי תשובה.txt',
+    'testI': u'../../txt_files/Orach_Chaim/part_1/test.txt',
+    'testII': u'../../txt_files/Orach_Chaim/part_2/test.txt',
+    'testIII': u'../../txt_files/Orach_Chaim/part_3/test.txt',
+}
+base_doc = StructuredDocument(source_filename['volIII'], u'@22([\u05d0-\u05ea]{1,4})')
+shaarei_doc = StructuredDocument(source_filename['shaarei_III'], u'@00([\u05d0-\u05ea]{1,4})')
+available_chapters = shaarei_doc.get_chapter_values()
+previous = 416
+for i in available_chapters:
+    if i - previous != 1:
+        sections = [getGematria(j) for j in collect_matches(shaarei_doc.get_section(i), 'shaarei_seifim', i)]
+        # if len(sections) > 0 and sections[0] != 1:
+        print u'Jump from {} to {}'.format(previous, i)
+        # print [getGematria(j) for j in collect_matches(shaarei_doc.get_section(previous), 'shaarei_seifim', i)]
+        # print sections
+    previous = i
 
+# for c in available_chapters:
+#     add_marks_to_chapter(base_doc, shaarei_doc, c)
+#
+# with codecs.open(source_filename['testI'], 'w', 'utf-8') as outfile:
+#     outfile.write(base_doc.get_whole_text())
+
+
+
+"""
+Siman 267 is weird and is a good test case
+"""
