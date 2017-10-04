@@ -89,6 +89,8 @@ class XML_to_JaggedArray:
             child = self.reorder_structure(child, False)
 
         results = self.go_down_to_text(self.root, self.root.text)
+        if "Or HaChaim" in self.title:
+            results = self.handle_special_case(results)
         self.interpret_and_post(results, self.title)
         self.record_results_to_file()
 
@@ -265,7 +267,11 @@ class XML_to_JaggedArray:
             tc.text = text
             tc.save()
 
-
+    def fix_html(self, line):
+        line = line.replace("<bold>", "<b>").replace("<italic>", "<i>").replace("</bold>", "</b>").replace("</italic>", "</i>")
+        line = line.replace("<li>", "<br>").replace("</li>", "")
+        line = line.replace("</title>", "</b>").replace("<title>", "<b>")
+        return line
 
     def parse(self, text_arr, footnotes, node_name):
         footnote_pattern = '<xref.*?>.*?</xref>'
@@ -355,14 +361,9 @@ class XML_to_JaggedArray:
                 for each in all:
                     text_arr[index] = text_arr[index].replace(each, "")
 
-            text_arr[index] = text_arr[index].replace("<bold>", "<b>").replace("<italic>", "<i>").replace("</bold>", "</b>").replace("</italic>", "</i>")
-            text_arr[index] = text_arr[index].replace("<li>", "<br>").replace("</li>", "")
-            text_arr[index] = text_arr[index].replace("</title>", "</b>").replace("<title>", "<b>")
-            text_arr[index] = text_arr[index].replace("3465", "&lt;").replace("3467", "&gt;")
-            text_arr[index] = convertIMGBase64(text_arr[index])
-
-
+            text_arr[index] = self.fix_html(text_arr[index])
         return text_arr
+
 
     def grab_title(self, element, delete=True, test_lambda=lambda x: False, change_name=True):
         '''
@@ -501,7 +502,7 @@ class XML_to_JaggedArray:
                 '''
                 array.append(x)
 
-        if len(array) > 0 and type(array[0]) is not list:
+        if len(array) > 0 and type(array[0]) is not list: #not list in other words string or unicode
             array = self.pre_parse(array)
             array = self.parse(array, self.footnotes, node_name)
             self.any_problems(array, node_name)
@@ -574,6 +575,60 @@ class XML_to_JaggedArray:
                     assert Ref(running_ref)
                 text = self.convertManyIntoOne(node["text"], running_ref.split(", ", 1)[-1])
                 self.post(running_ref, text, not_last_key)
+
+    def handle_special_case(self, results):
+        #normalize dictionary keys to be Parsha names
+        torah_book = self.title.split(" ")[-1]
+        torah_book = library.get_index(torah_book)
+        parshiot_dicts = torah_book.alt_structs["Parasha"]["nodes"]
+        parshiot = [el["sharedTitle"] for el in parshiot_dicts]
+        old_results = dict(results)
+        for parsha in results.keys():
+            parsha = parsha.decode('utf-8')
+            if parsha in parshiot:
+                continue
+            match = find_almost_identical(parsha, parshiot)
+            if match:
+                results[match] = results[parsha]
+            results.pop(parsha, None)
+
+        #create an array that goes in order instead of an unordered dictionary
+        parshiot_in_order = {"text": []}
+        for parsha_dict in parshiot_dicts:
+            parsha_title = parsha_dict["sharedTitle"]
+            for line in results[parsha_title]["text"]:
+                parshiot_in_order["text"].append(line)
+
+        #structure into depth 3
+        text_dict = {}
+        for line in parshiot_in_order["text"]:
+            orig_line = line
+            if line.startswith("<bold>"):
+                perek_and_verse = re.findall("<bold>(\d+,\d+\.?).*?</bold>", line)
+                assert len(perek_and_verse) in [0,1]
+                if len(perek_and_verse) == 1:
+                    perek, verse = perek_and_verse[0].replace(".", "").split(",")
+                    perek = int(perek)
+                    verse = int(verse)
+                    if perek not in text_dict.keys():
+                        text_dict[perek] = {}
+                    if verse not in text_dict[perek].keys():
+                        text_dict[perek][verse] = []
+                    line = line.replace(perek_and_verse[0], "")
+            if line[0] == " ":
+                line = line[1:]
+            line = self.fix_html(line)
+            text_dict[perek][verse].append(line)
+
+        for perek in text_dict.keys():
+            text_dict[perek] = convertDictToArray(text_dict[perek])
+        text_arr = convertDictToArray(text_dict)
+
+        parshiot_in_order["text"] = text_arr
+        return parshiot_in_order
+
+
+
 
 
 
@@ -767,3 +822,4 @@ def int_to_roman(input):
       result += nums[i] * count
       input -= ints[i] * count
    return result
+

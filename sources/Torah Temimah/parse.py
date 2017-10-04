@@ -52,7 +52,18 @@ def parse(file, type="body"):
                 elif pasuk not in text_dict[perek].keys():
                     text_dict[perek][pasuk] = []
             elif line.startswith("@11"):
-                line = line.replace("@11", "")
+                if "@33" in line and "@11" in line:
+                    line = line.replace("@11", "<b>").replace("@33", "</b>")
+                tags_to_change = re.findall("@\d\d[\[\(].*?[\]\)]@\d\d", line)
+                for tag_to_change in tags_to_change:
+                    if "@66" in tag_to_change and "@77" in tag_to_change:
+                        changed_tag = tag_to_change.replace("@66", "").replace("@77", "")
+                    elif "@44" in tag_to_change and "@55" in tag_to_change:
+                        changed_tag = tag_to_change.replace("@44", "").replace("@55", "")
+                    else:
+                        raise ValueError
+
+                    line = line.replace(tag_to_change, changed_tag)
                 text_dict[perek][pasuk].append(line)
 
     return text_dict
@@ -61,7 +72,8 @@ def parse(file, type="body"):
 def extract_ftnote_text(ftnote_marker, ftnote_num, ftnotes):
     ftnote_comments = ftnotes[ftnote_num]
     ftnote_comment = u"<br/>".join(ftnote_comments)
-    ftnote_marker = ftnote_marker.replace("*", "").replace(")", "").replace("@55", "")
+    ftnote_comment = ftnote_comment.replace("@11", "")
+    ftnote_marker = ftnote_marker.replace("*", "").replace(")", "").replace("@55", "").replace("@77", "")
     i_tag = u"<sup>{}</sup><i class='footnote'>{}</i>".format(ftnote_marker, ftnote_comment)
     return i_tag, ftnote_num
 
@@ -85,7 +97,7 @@ def insert_footnotes_into_base_text(base_text, footnotes):
                     else:
                         i_tag, ftnote_num = extract_ftnote_text(ftnote_marker, ftnote_num, ftnotes_in_perek)
                         prev_ftnote_nums_in_perek.append(int(ftnote_num))
-                        base_text[perek][pasuk][line_count] = line.replace(ftnote_marker, i_tag)
+                        base_text[perek][pasuk][line_count] = base_text[perek][pasuk][line_count].replace(ftnote_marker, i_tag)
 
     return base_text
 
@@ -130,27 +142,106 @@ def pre_parse(dir):
     base = [file for file in files if "מרובע" in file]
     comm = [file for file in files if "הערות" in file]
     base_file = "{}/{}".format(dir, base[0])
-    print base_file
     base_text = parse(base_file, "body")
     if comm != []:
         comm_file = "{}/{}".format(dir, comm[0])
-        print comm_file
         comm_text = parse(comm_file, "footnotes")
         compare_dict_to_dict(base_text, comm_text)
         base_text = insert_footnotes_into_base_text(base_text, comm_text)
     return base_text
 
 
+def make_and_post_links():
+    torah_books = library.get_indexes_in_category("Torah")
+    torah_temimah_on_torah_books = ["Torah Temimah on Torah, {}".format(book) for book in torah_books]
+    refs = []
+    generic_link = {"generated_by": "", "type": "Commentary", "auto": True, "refs": []}
+    links = []
+
+    for base, comm in zip(torah_books, torah_temimah_on_torah_books):
+        refs = create_links_many_to_one(comm, base)
+        for ref_pair in refs:
+            generic_link["refs"] = ref_pair
+            links.append(dict(generic_link))
+
+    post_link(links, server="http://draft.sefaria.org")
+
+
+def make_and_post_intro(send_text):
+    perek = 0
+    intro = {}
+    with open("Genesis/intro.txt") as file:
+        for line in file:
+            line = line.replace("\n", "")
+            if line.startswith("@00פרק"):
+                perek += 1
+                assert perek not in intro
+                intro[perek] = []
+            elif line.startswith("@00"):
+                line = removeAllTags(line)
+                line = "<b>" + line + "</b>"
+                intro[perek].append(line)
+            elif line.startswith("@11"):
+                line = removeAllTags(line)
+                intro[perek].append(line)
+    intro = convertDictToArray(intro)
+    send_text["text"] = intro
+    #post_text("Torah Temimah on Torah, Introduction", send_text, server="http://draft.sefaria.org")
+
+
+
 if __name__ == "__main__":
+    '''
+    cs = CategorySet({"sharedTitle": "Torah Temimah"})
+    cs[0].can_delete()
+    cs[1].can_delete()
+    pass
+    c = Category().load({"path": ["Tanakh", "Commentary", "Torah Temimah", "Torah"]})
+    cs[0].delete()
+    cs[1].delete()
+    '''
+
+    for book in ["Torah", "Ruth", "Song of Songs", "Esther", "Ecclesiastes", "Lamentations"]:
+        print """./run scripts/move_draft_text.py "Torah Temimah on {}" -v "all" -l '2' -d "https://www.sefaria.org" -k 'kAEw7OKw5IjZIG4lFbrYxpSdu78Jsza67HgR0gRBOdg'""".format(book)
+
+    '''
+    
     SERVER = "http://localhost:8000"
-    #add_term("Torah Temimah", u"תורה תמימה", "commentary_works", server=SERVER)
+    posting_index_now = False
+    posting_text = False
     torah_books = library.get_indexes_in_category("Torah")
     dirs = [dir for dir in os.listdir(".") if os.path.isdir(dir)]
-    #create_complex_index_torah_commentary("Torah Temimah", u"תורה תמימה", server=SERVER)
+    if posting_index_now:
+        add_term("Torah Temimah", u"תורה תמימה", "commentary_works", server=SERVER)
+        create_complex_index_torah_commentary("Torah Temimah", u"תורה תמימה", intro_structure=["Chapter", "Paragraph"], server=SERVER)
 
     for dir in dirs:
-        if dir not in torah_books:
-            categories = ["Tanakh", "Commentary", "Torah Temimah", library.get_index(dir).categories[-1]]
-            index = create_simple_index_many_to_one("Torah Temimah", u"תורה תמימה", dir, categories, server=SERVER)
+        if posting_index_now:
+            if dir not in torah_books:
+                categories = ["Tanakh", "Commentary", "Torah Temimah", library.get_index(dir).categories[-1]]
+                index = create_simple_index_commentary("Torah Temimah", u"תורה תמימה", dir, categories, server=SERVER)
+
         text_dict = pre_parse(dir)
+        for key in text_dict.keys():
+            text_dict[key] = convertDictToArray(text_dict[key])
+        text = convertDictToArray(text_dict)
+
+        send_text = {
+            "text": text,
+            "language": "he",
+            "versionTitle": "Torah Temimah, Vilna, 1904",
+            "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001750892"
+        }
+        #if posting_text:
+        #    if dir not in torah_books:
+        #        post_text("Torah Temimah on {}".format(dir), send_text, server=SERVER)
+        #    else:
+        #        post_text("Torah Temimah on Torah, {}".format(dir), send_text, server=SERVER)
+
+    if posting_text:
+        #make_and_post_intro(send_text)
+        make_and_post_links()
+
     print "ERRORS {}".format(errors)
+
+    '''

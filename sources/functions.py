@@ -67,12 +67,13 @@ eng_parshiot = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Tol
 "V'Zot HaBerachah"]
 
 
-def create_simple_index_many_to_one(en_title, he_title, base_title, categories, server=SEFARIA_SERVER):
+def create_simple_index_commentary(en_title, he_title, base_title, categories, type="many_to_one", server=SEFARIA_SERVER):
     '''
     Returns a JSON index object for a simple Index that is a Commentary.
     :param en_title: Name of commentary in English
     :param he_title: Name in Hebrew
     :param base_title: Name of text being commented on.
+    :param type: "many_to_one" or "one_to_one".
     :param categories: Array such as ["Tanakh", "Commentary", "Rashi", "Writings", "Psalms"]
     :return:
     '''
@@ -80,15 +81,12 @@ def create_simple_index_many_to_one(en_title, he_title, base_title, categories, 
     root = JaggedArrayNode()
     full_title = "{} on {}".format(en_title, base_title)
     he_base_title = base_index.get_title('he')
-    he_full_title = u"{} on {}".format(he_title, he_base_title)
-    root.add_primary_titles(full_title, he_title)
-    structure = base_index.nodes.sectionNames
-    structure.append("Comment")
+    he_full_title = u"{} על {}".format(he_title, he_base_title)
+    root.add_primary_titles(full_title, he_full_title)
+    structure = base_index.nodes.sectionNames #this mimics the structure as "one_to_one"
+    if type == "many_to_one":
+        structure.append("Comment")
     root.add_structure(structure)
-
-    #c = Category().load({"path": categories})
-    #if not c:
-    #    add_category(en_title, categories, server=server)
 
     index = {
         "title": full_title,
@@ -97,17 +95,34 @@ def create_simple_index_many_to_one(en_title, he_title, base_title, categories, 
         "categories": categories,
         "dependence": "Commentary",
         "base_text_titles": [base_title],
-        "base_text_mapping": "many_to_one",
+        "base_text_mapping": type,
     }
     post_index(index, server=server)
 
 
-def create_complex_index_torah_commentary(en_title, he_title, server=SEFARIA_SERVER):
-    path = ["Tanakh", "Commentary", en_title, "Torah"]
+def create_complex_index_torah_commentary(en_title, he_title, intro_structure=["Paragraph"], server=SEFARIA_SERVER):
+    '''
+    Creates a complex index commentary on the Torah.
+    :param en_title: English name of commentator
+    :param he_title: Hebrew name of commentator
+    :param intro_structure: if None, there is no intro.  Otherwise the first JA node is an introduction with section
+    names derived from this parameter
+    :param server: server to post to
+    :return:
+    '''
+    path = ["Tanakh", "Commentary", en_title]
     root = SchemaNode()
     full_title = "{} on Torah".format(en_title)
     he_full_title = u"{} על תורה".format(he_title)
     root.add_primary_titles(full_title, he_full_title)
+    root.key = en_title
+
+    if intro_structure:
+        node = JaggedArrayNode()
+        node.add_structure(intro_structure)
+        node.add_shared_term("Introduction")
+        node.key = "intro"
+        root.append(node)
 
     for book in library.get_indexes_in_category("Torah"):
         node = JaggedArrayNode()
@@ -115,22 +130,7 @@ def create_complex_index_torah_commentary(en_title, he_title, server=SEFARIA_SER
         node.add_structure(["Chapter", "Paragraph", "Comment"])
         root.append(node)
 
-    '''
-    c = Category().load({"path": ["Tanakh", "Commentary", "{}".format(en_title)]})
-    if not c:
-        result = add_category(en_title, ["Tanakh", "Commentary", "{}".format(en_title)], server=server)
-        f = open('errors', 'w')
-        f.write(result.content)
-        f.close()
-    
-    c = Category().load({"path": path})
-    if not c:
-        result = add_category(en_title, path, server=server)
-        f = open('errors', 'w')
-        f.write(result.content)
-        f.close()
-    '''
-
+    root.validate()
     post_index({
         "title": full_title,
         "schema": root.serialize(),
@@ -141,10 +141,23 @@ def create_complex_index_torah_commentary(en_title, he_title, server=SEFARIA_SER
 
 
 
-def find_almost_identical(str1, str2, ratio=0.9):
-    return Levenshtein.ratio(str1, str2) >= ratio
+def find_almost_identical(str1, array_of_strings, ratio=0.7):
+    '''
+    Try to find a string in array_of_strings that matches str1 at least as much as ratio.
+    Returns the best match that is at least as much as ratio.
+    Otherwise, return None
+    '''
+    best_str = None
+    best_match = 0
+    for str2 in array_of_strings:
+        temp_ratio = Levenshtein.ratio(str1, str2)
+        if temp_ratio >= ratio and temp_ratio > best_match:
+            best_str = str2
+            best_match = temp_ratio
+    return best_str
 
-def perek_to_number(perek_num, thing_to_replace=None):
+
+def perek_to_number(perek_num):
     '''
     Example: Input is "ראשון" and return is 1
     :param perek_num:
@@ -152,21 +165,17 @@ def perek_to_number(perek_num, thing_to_replace=None):
     '''
     line = u"""  פרק ראשון   פרק שני   פרק שלישי   פרק רביעי   פרק חמישי   פרק ששי   פרק שביעי   פרק שמיני   פרק תשיעי   פרק עשירי   פרק אחד עשר   פרק שנים עשר   פרק שלשה עשר   פרק ארבעה עשר   פרק חמשה עשר   פרק ששה עשר   פרק שבעה עשר   פרק שמונה עשר   פרק תשעה עשר   פרק עשרים   פרק אחד ועשרים   פרק שנים ועשרים   פרק שלשה ועשרים   פרק ארבעה ועשרים   פרק חמשה ועשרים   פרק ששה ועשרים   פרק שבעה ועשרים   פרק שמונה ועשרים   פרק תשעה ועשרים   פרק שלשים"""
     line = line.replace("\n", "")
-    if thing_to_replace:
-        line = line.replace(u"פרק", u"")
-    else:
-        thing_to_replace = u"פרק"
-    line = line.split(thing_to_replace)[1:]
+    perek_num = perek_num.replace(u"פרק ", u"")
+    line = line.split(u" פרק")[1:]
     arr_nums = []
     poss_num = 0
-    perek_num = perek_num.replace(" ", "")
-    for word in line:
-        word = word.replace(" ", "").replace(u"\xa0\xa0", "")
-        poss_num += 1
-        if perek_num == word:
-            return poss_num
-    print u"Not supporting {} yet".format(perek_num)
-    return u"Not supporting {} yet".format(perek_num)
+    line = [el[1:-1] for el in line]
+    result = find_almost_identical(perek_num, line, ratio=0.85)
+    if result:
+        return line.index(result) + 1
+    else:
+        print u"Not supporting {} yet".format(perek_num)
+        return u"Not supporting {} yet".format(perek_num)
 
 
 
@@ -763,23 +772,23 @@ def create_payload_and_post_text(ref, text, language, vtitle, vsource, server=SE
     }, server=server)
 
 
-def make_commentary_links(comm_title, base_title):
+def create_links_many_to_one(comm_ref, base_ref):
     '''
-    Creates structural links between a commentary and a base in the case
+    Creates structural links between a commentary ref and a base ref in the case
     where a commentary is a complex structure and can't be linked via the index commentary linker.
-    The commentary must have a default node that is supposed to be linked to the base text
-    :param comm_title: Title of commentary
-    :param base_title: Title of base text
+    The commentary ref is assumed to be one level deeper than the base ref
+    :param comm_ref: String of comm ref
+    :param base_ref: String of base ref
     :return:
     '''
     links = []
     pairs_refs = []
-    all_base_refs = Ref(base_title).all_segment_refs()
+    all_base_refs = Ref(base_ref).all_segment_refs()
     for base_ref in all_base_refs:
         base_ref = base_ref.normal()
         section = base_ref.rsplit(" ", 1)[-1]
-        comm_ref = Ref("{} {}".format(comm_title, section))
-        comm_seg_refs = comm_ref.all_segment_refs()
+        comm_ref_and_section = Ref("{} {}".format(comm_ref, section))
+        comm_seg_refs = comm_ref_and_section.all_segment_refs()
         for comm_seg_ref in comm_seg_refs:
             pairs_refs.append([comm_seg_ref.normal(), base_ref])
     return pairs_refs

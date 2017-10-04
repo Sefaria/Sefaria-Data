@@ -669,8 +669,13 @@ if __name__ == "__main__":
     '''
     files = [file for file in os.listdir(".") if file.startswith("chidushei_") and file.endswith(".txt")]
     dont_start = True
+
+
+    add_category("Seder Nezikin", ["Talmud", "Bavli", "Commentary", "Chidushei Halachot", "Seder Nezikin"], server="http://ste.sefaria.org")
+
+
     for file in files:
-        if "Yevamot" not in file:
+        if "Pesachim" not in file:
             continue
         masechet = file.split(".txt")[0].replace("chidushei_agadot_", "").replace("chidushei_halachot_","").title()
         print file
@@ -678,11 +683,11 @@ if __name__ == "__main__":
         if file.startswith("chidushei_ag"):
             title = "Chidushei Agadot"
             heTitle = u"חידושי אגדות"
-            obj = Maharsha(masechet, title, heTitle, server="http://draft.sefaria.org")
+            obj = Maharsha(masechet, title, heTitle, server="http://ste.sefaria.org")
         elif file.startswith("chidushei_ha"):
             title = "Chidushei Halachot"
             heTitle = u"חדושי הלכות"
-            obj = Maharsha(masechet, title, heTitle, server="http://draft.sefaria.org")
+            obj = Maharsha(masechet, title, heTitle, server="http://ste.sefaria.org")
         obj.parseText(open("./"+file), len_masechet)
 
         if len(obj.comm_dict) > 0 and obj.dont_post is False:
@@ -694,7 +699,7 @@ if __name__ == "__main__":
                                 "language": "he",
                                 "text": text_to_post,
                         }
-            post_text("{} on {}".format(title, masechet), send_text, "on", server="http://proto.sefaria.org")
+            post_text("{} on {}".format(title, masechet), send_text, "on", server="http://ste.sefaria.org")
             obj.postLinks(masechet)
 
 
