@@ -39,6 +39,7 @@ if it has potential for re-use.
 import re
 import codecs
 from sefaria.model import *
+from fuzzywuzzy import fuzz
 from sources.functions import getGematria
 
 class StructuredDocument:
@@ -199,18 +200,10 @@ source_filename = {
     'testII': u'../../txt_files/Orach_Chaim/part_2/test.txt',
     'testIII': u'../../txt_files/Orach_Chaim/part_3/test.txt',
 }
-base_doc = StructuredDocument(source_filename['volIII'], u'@22([\u05d0-\u05ea]{1,4})')
-shaarei_doc = StructuredDocument(source_filename['shaarei_III'], u'@00([\u05d0-\u05ea]{1,4})')
+base_doc = StructuredDocument(source_filename['volI'], u'@22([\u05d0-\u05ea]{1,4})')
+shaarei_doc = StructuredDocument(source_filename['shaarei_I'], u'@00([\u05d0-\u05ea]{1,4})')
 available_chapters = shaarei_doc.get_chapter_values()
-previous = 416
-for i in available_chapters:
-    if i - previous != 1:
-        sections = [getGematria(j) for j in collect_matches(shaarei_doc.get_section(i), 'shaarei_seifim', i)]
-        # if len(sections) > 0 and sections[0] != 1:
-        print u'Jump from {} to {}'.format(previous, i)
-        # print [getGematria(j) for j in collect_matches(shaarei_doc.get_section(previous), 'shaarei_seifim', i)]
-        # print sections
-    previous = i
+
 
 # for c in available_chapters:
 #     add_marks_to_chapter(base_doc, shaarei_doc, c)
@@ -221,5 +214,69 @@ for i in available_chapters:
 
 
 """
-Siman 267 is weird and is a good test case
+Siman 267 has two א seifim and is a good test case.
+
+Since we are generating marks in Shulchan Arukh from the commentary, we have no ability to cross reference across
+both data sources. There do seem to be several OCR errors in the seif marks inside Sha'arei Teshuva that we have
+no good way of picking up.
+
+One potential solution be to compare the first word after the mark to the first word of the Seif (a fuzzy match
+would be best). This might be a bit naive though.
+
+
+The following will need to be a part of the regex to grab a word:
+([^ ]*( [^\u05d0-\u05ea])?)*
+This allows jumping over any added markers that might be in front of the first word.
+
+find_mark_locations() will give the values that will get an @62 mark added. For each location, I simply 
+check the next word.
+
+@66\(<location>)\)([^ ]*( [^\u05d0-\u05ea])?)* (?P<dh>[\u05d0-\u05ea]+)
+
+In Sha'arei Teshuva, for the first pass, I'll just search for a series of Hebrew characters preceded and followed
+by non Hebrew characters. If that turns up too much garbage, I'll refine.
 """
+
+def compare_dh(base_document, shaarei_document, chapter_num):
+
+    base_chapter, shaarei_chapter = base_document.get_section(chapter_num), shaarei_document.get_section(chapter_num)
+
+    baer_marks = collect_matches(base_chapter, 'baer_marks', chapter_num)
+    shaarei_marks = collect_matches(base_chapter, 'shaarei_marks', chapter_num)
+    shaarei_seifim = collect_matches(shaarei_chapter, 'shaarei_seifim', chapter_num)
+
+    locations = find_mark_locations(baer_marks, shaarei_marks, shaarei_seifim, chapter_num)
+    requires_examination = []
+
+    for i in locations:
+        shaarei_dh, base_dh = None, None
+        base_match = re.search(u'@66\({}\)([^ ]*( [^\u05d0-\u05ea])?)* (?P<dh>[\u05d0-\u05ea]+)'.format(i), base_chapter)
+        if not base_match:
+            print "No dh for {} found in chapter {}".format(i, chapter_num)
+            requires_examination.append((chapter_num, i))
+        else:
+            base_dh = base_match.group('dh')
+
+        shaarei_match = re.search(u'@22\({}\)[^\u05d0-\u05ea]*(?P<dh>[\u05d0-\u05ea]+)'.format(i), shaarei_chapter)
+        if not shaarei_match:
+            print "No dh for {} found in chapter {} of Shaa'rei Teshuva".format(i, chapter_num)
+            requires_examination.append((chapter_num, i))
+        else:
+            shaarei_dh = shaarei_match.group('dh')
+
+        if base_dh is not None and shaarei_dh is not None:
+            ratio = fuzz.ratio(base_dh, shaarei_dh)
+            if ratio < 80.0:
+                requires_examination.append((chapter_num, i))
+                print u'Chapter {} seif {}'.format(chapter_num, i)
+                print u'Base: {}'.format(base_dh)
+                print u'Shaarei: {}'.format(shaarei_dh)
+                print u'Score : {}\n'.format(ratio)
+    return requires_examination
+
+take_a_look = []
+for c in available_chapters:
+    take_a_look.extend(compare_dh(base_doc, shaarei_doc, c))
+# for i, j in take_a_look:
+#     print u'Take a look at chapter {} seif {}'.format(i, j)
+print len(take_a_look)
