@@ -125,8 +125,7 @@ def create_schema(en_title, he_title, c):
         "collective_title": c["name"],
         "categories": ["Halakhah", "Mishneh Torah", "Commentary", c["name"], category]
     }
-    print SERVER
-    post_index(index, server=SERVER)
+    #post_index(index, server=SERVER)
     return en_title
 
 
@@ -147,14 +146,14 @@ def post_commentator(commentator, sections, hebrew_to_english):
             assert he_section_name in hebrew_to_english
         en_section_name = hebrew_to_english[he_section_name]
         section_name = create_schema(en_section_name, he_section_name, commentator)
-        print section_name
+        print "./run scripts/move_draft_text.py '{}' -v 'he:ToratEmet' -d 'https://www.sefaria.org' -k 'kAEw7OKw5IjZIG4lFbrYxpSdu78Jsza67HgR0gRBOdg'".format(section_name)
         section_text = {
             "text": section_text,
             "language": "he",
             "versionTitle": "ToratEmet",
             "versionSource": "http://www.toratemetfreeware.com/online/d_root__035_mshnh_torh_lhrmbm.html"
         }
-        post_text(section_name, section_text, server=SERVER)
+        #post_text(section_name, section_text, server=SERVER)
 
 
 

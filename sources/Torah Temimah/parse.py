@@ -191,7 +191,7 @@ def make_and_post_intro(send_text):
 
 
 if __name__ == "__main__":
-    '''
+
     cs = CategorySet({"sharedTitle": "Torah Temimah"})
     cs[0].can_delete()
     cs[1].can_delete()
@@ -199,12 +199,7 @@ if __name__ == "__main__":
     c = Category().load({"path": ["Tanakh", "Commentary", "Torah Temimah", "Torah"]})
     cs[0].delete()
     cs[1].delete()
-    '''
 
-    for book in ["Torah", "Ruth", "Song of Songs", "Esther", "Ecclesiastes", "Lamentations"]:
-        print """./run scripts/move_draft_text.py "Torah Temimah on {}" -v "all" -l '2' -d "https://www.sefaria.org" -k 'kAEw7OKw5IjZIG4lFbrYxpSdu78Jsza67HgR0gRBOdg'""".format(book)
-
-    '''
     
     SERVER = "http://localhost:8000"
     posting_index_now = False
@@ -243,5 +238,3 @@ if __name__ == "__main__":
         make_and_post_links()
 
     print "ERRORS {}".format(errors)
-
-    '''
