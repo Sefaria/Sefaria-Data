@@ -89,6 +89,8 @@ def parse_tractate(file_tractate_name):
         tractate_name = title_exceptions[file_tractate_name]["masechet"]
     else:
         tractate_name = process.extractOne(file_tractate_name, en_talmud)[0]
+    if "Ketubot" in tractate_name or "Gitt" in tractate_name:
+        return parse_tractate_k(file_tractate_name)
     with open("tractates/"+file_tractate_name+".txt") as myFile:
         lines = list(map(lambda x: x.decode("utf-8",'replace'), myFile.readlines()))
     #if u"@22" in ''.join(lines):
@@ -115,6 +117,97 @@ def parse_tractate(file_tractate_name):
     #add blank to offset beggening:
     final_list.insert(0,[])
     return final_list
+
+#ketubot and gittin need a seperate parse_text method
+def parse_tractate_k(file_tractate_name):
+    print "This is ",file_tractate_name
+    tractate_name = process.extractOne(file_tractate_name, en_talmud)[0]
+    past_start=False
+    last_comment_was_fragment = False
+    #dict contains daf and amud
+    current_daf_ref = {}
+    #subtract 2 since we start at 0, add one since range's range in non-inclusive
+    final_list = [[] for x in range(len(TextChunk(Ref(tractate_name),"he").text)-1)]
+    if "ketubot" in file_tractate_name:
+        with open("tractates/"+file_tractate_name+".txt") as myFile:
+            lines = list(map(lambda x: x.decode("ISO 8859-8",'replace'), myFile.readlines()))
+        for line in lines:
+            if u"@" in line:
+                current_daf_ref = extract_daf_k(line)
+                past_start=True
+            elif past_start:
+                for split_line in re.findall(ur".*?[:\n]",line):
+                    split_line=split_line.replace(u"<פפפ>",u"")
+                    if not_blank(split_line):
+                        final_list[get_page(current_daf_ref["daf"],current_daf_ref["amud"])].append(split_line)   
+    if "gittin" in file_tractate_name:
+        with open("tractates/"+file_tractate_name+".txt") as myFile:
+            lines = list(map(lambda x: x.decode("utf8",'replace'), myFile.readlines()))
+        split_list=[]
+        for line in lines:
+            for split in re.split(ur"<\$.*?>",line):
+                split_list.append(split)
+        for line_b in split_list:
+            print "Gittin",repr(line_b)
+            if u"<דף>" in line_b:
+                current_daf_ref = extract_daf_k(line_b)
+                past_start=True
+            elif past_start:
+                for split in re.findall(ur".*?[:\n]",line_b):
+                    split=split.replace(u"\n",u"").replace(u"<פפפ>",u"")
+                    if not_blank(split):
+                        final_list[get_page(current_daf_ref["daf"],current_daf_ref["amud"])].append(remove_tags(split))
+    next_daf_has_previous_daf_comment = False
+    super_final_list = [[] for x in range(len(TextChunk(Ref(tractate_name),"he").text)-1)]
+    #add blank to offset beggening:
+    #box for adding to amud what is removed during transfer
+    add_after = []
+    final_list.insert(0,[])
+    for previous_amud_index, amud in enumerate(final_list[1:]):
+        if len(amud)>0 and len(final_list[previous_amud_index])>0 and len(final_list[previous_amud_index][-1])>0:
+            if final_list[previous_amud_index][-1][-1]!=u"." and final_list[previous_amud_index][-1][-1]!=u":":
+                amud_split = re.findall(ur".*?[\.:]",amud[0])
+                previous_amud_dangler = re.split(ur"[\.:]",final_list[previous_amud_index][-1])[-1]
+                if len(amud_split)>0:
+                    if len(previous_amud_dangler)>len(amud_split[0]):
+                        #print previous_amud_index
+                        #print "Pulled Back!"
+                        if amud[0][-1]!=u"." and amud[0][-1]!=u":":
+                            add_after.append(re.split(ur"[\.:]",amud[0])[-1])
+                        #print amud_split[0]
+                        final_list[previous_amud_index][-1]+=u" "+amud_split[0]
+                        final_list[previous_amud_index+1][0]=None if len(amud_split)<1 else ''.join(amud_split[1:])
+                        while len(add_after)>0:
+                            final_list[previous_amud_index+1][0]+=add_after.pop()
+                    else:
+                        #print previous_amud_index
+                        #print "Pushed Forward!"
+                        final_list[previous_amud_index][-1]=''.join(re.findall(ur".*?[\.|:]",final_list[previous_amud_index][-1]))
+                        final_list[previous_amud_index+1][0]=previous_amud_dangler+u" "+final_list[previous_amud_index+1][0]
+    """
+    add_after=[]
+    for previous_amud_index, amud in enumerate(final_list[1:]):
+        if len(amud)>0 and len(final_list[previous_amud_index])>0:
+            if final_list[previous_amud_index][-1][-1]!=u":":
+                amud_split = re.findall(ur".*?:",amud[0])
+                if len(amud_split)>1:
+                    #print "Pulled Back!"
+                    if amud[0][-1]!=u"." and amud[0][-1]!=u":":
+                        add_after.append(re.split(ur"[\.:]",amud[0])[-1])
+                    final_list[previous_amud_index][-1]+=u" "+amud_split[0]
+                    final_list[previous_amud_index+1][0]=''.join(amud_split[1:])
+                    while len(add_after)>0:
+                        final_list[previous_amud_index+1][0]+=add_after.pop()
+    """
+    super_final_list = [[] for x in range(len(TextChunk(Ref(tractate_name),"he").text)-1)]
+    super_final_list.insert(0,[])
+    for dindex, daf in enumerate(final_list):
+        super_final_list[dindex]=filter(lambda(x): not_blank(x),final_list[dindex])
+    for dindex, daf in enumerate(super_final_list):
+        for cindex, comment in enumerate(daf):
+            super_final_list[dindex][cindex]=bold_dh(comment)
+            #print dindex,cindex,repr(comment),comment
+    return super_final_list
 def no_marker_parse(tractate_name, rid_text_input):
     #first, make masechet dapim array
     masechet_chunk = TextChunk(Ref(tractate_name),"he")
@@ -128,6 +221,8 @@ def no_marker_parse(tractate_name, rid_text_input):
             comment = split_part
     #now, make table of which daf each rid comment goes to
     #match table = def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,word_threshold=0.27,char_threshold=0.2,prev_matched_results=None,with_abbrev_ranges=False):
+def remove_tags(s):
+    return re.sub(ur"<111>.*?<222>",'',s)
 def fix_markers(s):
     return re.sub(ur"\([א-ת]"+ur"{1,3}\)","",s.replace("@1","<small>(").replace("@3",")</small>"))
 def bold_dh(some_string):
@@ -140,11 +235,15 @@ def bold_dh(some_string):
         }
     #if re.match(ur".*?"+ur"ו?כו"+"\'?",some_string):
     if re.search(ur".*?כו"+ur"\'?(?=[ \.])",some_string):
-        splits["chulei_split"]= [re.search(ur".*?כול?"+"\'?(?=[ \.])",some_string).group(),'']
+        splits["chulei_split"]= [re.search(ur".*?כו?"+"\'?(?=[ \.])",some_string).group(),'']
     split_dh=get_smallest(splits)
-    if len(split_dh.split(" "))<16:
+    if len(split_dh.split(" "))<30:
         return u"<b>"+split_dh+u"</b>"+some_string[len(split_dh):]
     return some_string
+def bold_before_period(s):
+    if u"." in s:
+        return u"<b>"+s[:s.index(u".")+1]+u"</b>"+s[s.index(u".")+1:]
+    return s
 def post_rid_text(file_tractate_name,rid_list):
     if file_tractate_name in title_exceptions:
         en_title = title_exceptions[file_tractate_name]["en_title"]
@@ -174,6 +273,7 @@ def link_tos_rid(file_tractate_name):
             try:
                 rid_chunk = TextChunk(Ref("Tosafot Rid on "+en_title+"."+get_daf_en(amud_index)),"he")
             except:
+                print "ERRD"
                 continue
             matches = match_ref(tractate_chunk,rid_chunk,
                 base_tokenizer,dh_extract_method=dh_extract_method,rashi_filter=rid_filter,verbose=True,char_threshold=0.4)
@@ -247,6 +347,14 @@ def extract_daf(s):
     return_dict["daf"]= getGematria(s.replace(u"@22","").replace(u"דף",u"").replace(u"ע\"ב",u"").replace(u"ע\"א",u""))    
     return_dict["amud"]= "a" if u"ע\"א" in s else "b"
     return return_dict
+def extract_daf_k(s):
+    print "DAF REF ",s
+    s = s.replace(u"דף","")
+    return_dict = {}
+    return_dict["daf"]= getGematria(s)    
+    return_dict["amud"]= "a" if u"." in s else "b"
+    return return_dict
+        
 def rid_filter(some_string):
     #asssume every piece of text has a DH
     print some_string
@@ -254,7 +362,7 @@ def rid_filter(some_string):
         return True
     return False 
 def not_blank(s):
-    while " " in s:
+    while u" " in s:
         s = s.replace(u" ",u"")
     return (len(s.replace(u"\n",u"").replace(u"\r",u"").replace(u"\t",u""))!=0);
 def remove_extra_space(s):
@@ -284,7 +392,6 @@ def get_smallest(dic):
             smallest_so_far=len(dic[key][0])
             return_dh = dic[key][0]
             keyp=key
-    print "KEYP: "+keyp
     return return_dh
 def base_tokenizer(some_string):
     some_string = remove_extra_space(some_string).replace("<b>","").replace("</b>","").replace(":","")
@@ -297,29 +404,31 @@ def print_text(file_name):
         print line
         print ''
 
-posting_term=False
-posting_index=False
-posting_text=False
-linking=False
+posting_term=True
+posting_index=True
+posting_text=True
+linking=True
 admin_links = []
 page_links = []
 if posting_term:
     post_rid_term()
 for findex, file in enumerate(os.listdir("tractates")):
     print "This is file: "+str(findex)
-    if ".txt" in file:
+    if ".txt" in file and ("ketu" in file or "gittin" in file):
         file_tractate_name = file.replace(".txt","")
         if file_tractate_name in title_exceptions:
             link_name = title_exceptions[file_tractate_name]["en_title"]     
         else:
             link_name = process.extractOne(file_tractate_name, en_talmud)[0]  
-        #admin_links.append("proto.sefaria.org/admin/reset/Tosafot Rid on "+link_name)
         admin_links.append("localhost:8000/admin/reset/Tosafot Rid on "+link_name)
         page_links.append("http://proto.sefaria.org/Tosafot_Rid_on_"+link_name)
         if posting_index:
             print "Posting "+file_tractate_name+" index..."
             make_tractate_index(file_tractate_name)
         rid_list = parse_tractate(file_tractate_name)
+        for dindex, daf in enumerate(rid_list):
+            for cindex, comment in enumerate(daf):
+                print dindex, cindex, comment
         if posting_text:
             "Posting "+file_tractate_name+"text..."
             post_rid_text(file_tractate_name,rid_list)
@@ -331,5 +440,15 @@ for link in admin_links:
 print "PAGE LINKS:"
 for link in page_links:
     print link
-        
+
+"""
+        for previous_amud_index, amud in enumerate(final_list[1:]):
+            if len(amud)>0 and len(final_list[previous_amud_index])>0:
+                print previous_amud_index
+                if final_list[previous_amud_index][-1][-1]!=u"." and previous_amud_index>0:
+                    amud_split = re.findall(ur".*?\.",amud[0])
+                    if len(amud_split)>1:
+                        final_list[previous_amud_index][-1]+=u" "+amud_split[0]
+                        final_list[previous_amud_index+1][0]=''.join(amud_split[1:])
+"""
 
