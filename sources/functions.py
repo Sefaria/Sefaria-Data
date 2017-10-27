@@ -930,16 +930,17 @@ def post_text_burp(ref, text, index_count="off"):
 
 
 @weak_connection
-def post_flags(version, flags):
+def post_flags(version, flags, server=SEFARIA_SERVER):
     """
     Update flags of a specific version.
 
     :param version: Dictionary with fields: ref, lang(en or he), vtitle(version title)
     :param flags: Dictionary with flags set as key: value pairs.
+    :param server: url of destination server
     """
     textJSON = json.dumps(flags)
     version['ref'] = version['ref'].replace(' ', '_')
-    url = SEFARIA_SERVER+'/api/version/flags/{}/{}/{}'.format(
+    url = server+'/api/version/flags/{}/{}/{}'.format(
         urllib.quote(version['ref']), urllib.quote(version['lang']), urllib.quote(version['vtitle'])
     )
     values = {'json': textJSON, 'apikey': API_KEY}

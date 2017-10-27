@@ -1,6 +1,10 @@
 # encoding=utf-8
 
+import os
 from sources.Shulchan_Arukh.ShulchanArukh import *
+
+if not os.path.exists('../../Orach_Chaim.xml'):
+    Root.create_skeleton('../../Orach_Chaim.xml')
 
 root = Root('../../Orach_Chaim.xml')
 base = root.get_base_text()

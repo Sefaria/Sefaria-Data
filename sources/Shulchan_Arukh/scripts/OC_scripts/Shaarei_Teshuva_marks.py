@@ -127,7 +127,7 @@ def load_regex(chapter, mark_type):
 
 def find_mark_locations(baer_marks, shaarei_marks, shaarei_seifim, chapter):
     locations = []
-    if len(baer_marks) != len(set(baer_marks)):
+    if len(baer_marks) != len(set(baer_marks)) or len(shaarei_seifim) != len(set(shaarei_seifim)):
         print u"Double Marker in Chapter {}".format(chapter)
     for seif in shaarei_seifim:
         if seif in shaarei_marks:
@@ -205,11 +205,11 @@ shaarei_doc = StructuredDocument(source_filename['shaarei_I'], u'@00([\u05d0-\u0
 available_chapters = shaarei_doc.get_chapter_values()
 
 
-# for c in available_chapters:
-#     add_marks_to_chapter(base_doc, shaarei_doc, c)
-#
-# with codecs.open(source_filename['testI'], 'w', 'utf-8') as outfile:
-#     outfile.write(base_doc.get_whole_text())
+for c in available_chapters:
+    add_marks_to_chapter(base_doc, shaarei_doc, c)
+
+with codecs.open(source_filename['volI'], 'w', 'utf-8') as outfile:
+    outfile.write(base_doc.get_whole_text())
 
 
 
@@ -274,9 +274,4 @@ def compare_dh(base_document, shaarei_document, chapter_num):
                 print u'Score : {}\n'.format(ratio)
     return requires_examination
 
-take_a_look = []
-for c in available_chapters:
-    take_a_look.extend(compare_dh(base_doc, shaarei_doc, c))
-# for i, j in take_a_look:
-#     print u'Take a look at chapter {} seif {}'.format(i, j)
-print len(take_a_look)
+

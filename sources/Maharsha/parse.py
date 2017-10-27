@@ -299,7 +299,6 @@ class Maharsha:
                 arr[index] = arr[index].normal()
         return arr
 
-
     def Commentary(self, daf, category, results):
         self.maharam_line += 1
         self.which_line[category] += 1
