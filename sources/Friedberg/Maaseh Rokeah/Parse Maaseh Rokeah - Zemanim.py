@@ -34,7 +34,9 @@ def clean_segments(segments):
             .replace(u"@04", u"<b>")\
             .replace(u"@06", u"</b>")\
             .replace(u"@01", u"<b>")\
-            .replace(u"@02",u"</b>")\
+            .replace(u"@02",u"</b>") \
+            .replace(u"@79", u"<b>") \
+            .replace(u"@89", u"</b>") \
             .replace(u"@03", u"<br/>")\
             .replace(u"@99", u" ")\
             .strip()
@@ -88,9 +90,9 @@ english_titles = ["Mishneh_Torah,_Rest_on_a_Holiday"]
 mapping = dict(zip(hebrew_titles, english_titles))
 
 # Make a term
-# Maaseh Rokeah
-# מעשה רוקח
-# add_term("Maaseh Rokeah", u"מעשה רוקח", "commentary_works")
+# Maaseh Rokeach
+# מעשה רקח
+# add_term("Maaseh Rokeach", u"מעשה רקח", "commentary_works")
 
 # Make categories
 for sefer in sefarim:
@@ -99,7 +101,7 @@ for sefer in sefarim:
         print u"ARGGG! {}".format(sefer)
 
     http_request(SEFARIA_SERVER + "/api/category", body={'apikey': API_KEY},
-                 json_payload={"path": ["Halakhah", "Mishneh Torah", "Commentary", "Maaseh Rokeah", t.get_primary_title("en")],
+                 json_payload={"path": ["Halakhah", "Mishneh Torah", "Commentary", "Maaseh Rokeach", t.get_primary_title("en")],
                                "sharedTitle": t.get_primary_title("en")}, method="POST")
 
 
@@ -111,8 +113,8 @@ for name, data in processed.iteritems():
     print r.normal()
     short_base_title = r.normal().replace("Mishneh Torah, ", "")
 
-    en_title = "Maaseh Rokeah on " + short_base_title
-    he_title = u"מעשה רוקח על " + name
+    en_title = "Maaseh Rokeach on " + short_base_title
+    he_title = u"מעשה רקח על " + name
 
     j = JaggedArrayNode()
     j.add_primary_titles(en_title, he_title)
@@ -120,12 +122,12 @@ for name, data in processed.iteritems():
 
     index_json = {
         "title": en_title,
-        "categories": ["Halakhah", "Mishneh Torah", "Commentary", "Maaseh Rokeah"] + [Term().load({"titles.text": data["cat"]}).get_primary_title("en")],
+        "categories": ["Halakhah", "Mishneh Torah", "Commentary", "Maaseh Rokeach"] + [Term().load({"titles.text": data["cat"]}).get_primary_title("en")],
         "schema": j.serialize(),
         "dependence": "Commentary",
         "base_text_titles": [r.normal()],
         "base_text_mapping": "many_to_one",
-        "collective_title": "Maaseh Rokeah"
+        "collective_title": "Maaseh Rokeach"
     }
 
     post_index(index_json)
