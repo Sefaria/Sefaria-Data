@@ -2,6 +2,7 @@
 import re
 from sefaria.model import *
 from sources.functions import *
+from data_utilities.dibur_hamatchil_matcher import *
 from glob import glob
 
 pasuk_errors = 0
@@ -52,7 +53,7 @@ def check_pasuk_order_and_parse_text(lines, book, base, lang='en', probs=[], sta
         for closer in closers:
             if closer in line:
                 closer_present = True
-        if True:
+        if closer_present:
             sublines = split_line_by_array(line, start_markers)
         else:
             sublines = [line]
@@ -196,7 +197,7 @@ def convert_one_file(file, lang='he', comm='Siftei'):
 def produce_perek_report(book, comments, torah, lang='en'):
     #check perakim length
     writer = UnicodeWriter(open("{}_{}_{}.csv".format(book, lang, torah), 'w'))
-    writer.writerow(["Assumed to be correct references", "Siftei Chachamim comment"])
+    writer.writerow(["Assumed to be correct references", "Siftei Chakhamim comment"])
     for perek, pasuk, comm in comments:
         ref = "{} {}:{}".format(torah, perek, pasuk)
         writer.writerow([ref, comm])
@@ -251,7 +252,7 @@ def produce_he_to_en_report(comm_title, dict):
 
 def produce_he_to_he_report(comm, comments):
     if comm == "Siftei":
-        comm = ["Siftei Hakhamim"]
+        comm = ["Siftei Chakhamim"]
     else:
         comm = ["Rashi on {}".format(book) for book in library.get_indexes_in_category("Torah")]
 
@@ -280,14 +281,80 @@ def get_split_marker(comm, lang, torah_book):
     return starters, closers
 
 
-def post(text_dict):
+def make_links_siftei(text_dict):
+    '''
+    every DH
+    :param text_dict:
+    :return:
+    '''
+    def dh_extract_method(str):
+        str = str.lower()
+        if "<b>" in str:
+            start = str.find("<b>")
+            end = str.find("</b>")
+            dh = str[start+3:end]
+            return dh.replace("etc.", "")
+        else:
+            return " ".join(str.split(" ")[0:5])
+
+
+    def base_tokenizer(str):
+        str = str.lower().replace("<b>", "").replace("</b>", "")
+        str = strip_nekud(str)
+        str_arr = str.split(" ")
+        return [str for str in str_arr if str]
+
+    links = []
+    for lang in text_dict.iterkeys():
+        results = {}
+        if lang == 'en':
+            continue
+        comm_vtitle = "Sifsei Chachomim Chumash, Metsudah Publications, 2009"
+
+        for torah_book, text in text_dict[lang].iteritems():
+            results[torah_book] = []
+            for perek, perek_arr in text.iteritems():
+                for pasuk, text_arr in enumerate(perek_arr):
+                    pasuk += 1
+                    base_ref = Ref("Rashi on {} {}:{}".format(torah_book, perek, pasuk))
+                    comm_ref = "Siftei Chakhamim, {}".format(torah_book)
+                    comm_ref = Ref("{} {}:{}".format(comm_ref, perek, pasuk))
+                    base_text = TextChunk(base_ref, lang=lang, vtitle="On Your Way")
+                    comm_text = TextChunk(comm_ref, lang=lang, vtitle=comm_vtitle)
+                    if base_text.text == [] or comm_text.text == []:
+                        continue
+                    temp_results = match_ref(base_text, comm_text, base_tokenizer, dh_extract_method=dh_extract_method)
+                    for rashi, siftei in zip(temp_results["matches"], temp_results["comment_refs"]):
+                        link = {"refs": [rashi.normal(), siftei.normal()],
+                                "type": "commentary", "auto": True, "generated_by": "siftei_metsudah"}
+                        links.append(link)
+
+        post_link(links)
+
+
+def make_links_base_text_mapping(text_dict, dont_post=False):
+    links = []
     for comm in text_dict.iterkeys():
-        versionTitle = "Sifsei Chachamim" if comm == "Siftei" else "Rashi"
         for lang in text_dict[comm].iterkeys():
             for torah_book, text in text_dict[comm][lang].iteritems():
-                if torah_book == "Leviticus":
-                    continue
-                ref = "Rashi on {}".format(torah_book) if comm == "Rashi" else "Siftei Hakhamim, {}".format(torah_book)
+                comm_ref = "Rashi on {}".format(torah_book) if comm == "Rashi" else "Siftei Chakhamim, {}".format(torah_book)
+                ref_pairs = create_links_many_to_one(comm_ref, torah_book)
+                for refs in ref_pairs:
+                    link = {"refs": refs,
+                            "type": "commentary",
+                            "auto": True,
+                            "generated_by": "Metsudah_"+comm}
+                    links.append(link)
+    if not dont_post:
+        post_link(links)
+
+
+def post(text_dict, dont_post=False):
+    for comm in text_dict.iterkeys():
+        versionTitle = "Sifsei Chachomim" if comm == "Siftei" else "Rashi"
+        for lang in text_dict[comm].iterkeys():
+            for torah_book, text in text_dict[comm][lang].iteritems():
+                ref = "Rashi on {}".format(torah_book) if comm == "Rashi" else "Siftei Chakhamim, {}".format(torah_book)
                 for perek, perek_dict in text.iteritems():
                     text[perek] = convertDictToArray(text[perek])
                 text = convertDictToArray(text)
@@ -297,8 +364,31 @@ def post(text_dict):
                     "versionTitle": "{} Chumash, Metsudah Publications, 2009".format(versionTitle),
                     "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002691623"
                 }
-                post_text(ref, send_text, server="http://draft.sefaria.org")
+                if not dont_post:
+                    post_text(ref, send_text, server="http://localhost:8000")
 
+def segment_or_hachaim():
+    for book in library.get_indexes_in_category("Or HaChaim", include_dependant=True):
+        for section_ref in library.get_index(book).all_section_refs():
+            section_tc = TextChunk(section_ref, lang='he', vtitle='On Your Way')
+            new_section_arr = []
+            for i, line in enumerate(section_tc.text):
+                brs = re.findall(u"(:(<b>)?<br>)", line)
+                while brs != []:
+                    line_to_append, line = line.split(brs[0][0], 1)
+                    if "<b>" in brs[0][0]:
+                        line = "<b>" + line
+                    new_section_arr.append(line_to_append+":")
+                    brs = re.findall(u"(:(<b>)?<br>)", line)
+                assert len(line) > 0
+                new_section_arr.append(line)
+
+            if len(new_section_arr) > 0:
+                assert len(line) > 0
+                section_tc.text = new_section_arr
+                section_tc.save(force_save=True)
+
+        VersionState(book).refresh()
 
 if __name__ == "__main__":
     '''
@@ -313,7 +403,7 @@ if __name__ == "__main__":
         eng_title = "SE" if comm == "Siftei" else "RE"
         he_title = "SH" if comm == "Siftei" else "RH"
         for lang in ['en', 'he']:
-            if not (comm == "Rashi"):
+            if not (comm == "Siftei"):
                 continue
 
             for i in range(5):
@@ -330,7 +420,7 @@ if __name__ == "__main__":
                     num_chapters = len(library.get_index(comm_book).all_top_section_refs())
                     orig_text = Ref(comm_book).text('he').text
                 else:
-                    comm_book = "Siftei Hakhamim, {}".format(torah_book)
+                    comm_book = "Siftei Chakhamim, {}".format(torah_book)
                     all_top_sections = library.get_index(comm_book).all_top_section_refs()
                     all_top_sections = [sec for sec in all_top_sections if torah_book in sec.normal()]
                     num_chapters = len(all_top_sections)
@@ -344,9 +434,13 @@ if __name__ == "__main__":
                 #results[comm][lang].append("{} {} of {}".format(torah_book, perek_total, num_chapters))
 
 
-    comments = produce_he_to_en_report("Rashi", text_dict["Rashi"])
-    produce_he_to_he_report("Rashi", comments)
-    post(text_dict)
+    #comments = produce_he_to_en_report("Rashi", text_dict["Rashi"])
+    #produce_he_to_he_report("Rashi", comments)
+    dont_post = False
+    #post(text_dict, dont_post=dont_post)
+    make_links_base_text_mapping(text_dict, dont_post=dont_post)
+    make_links_siftei(text_dict["Siftei"])
+
 
     # print results["Rashi"]["en"]
     # print results["Siftei"]["en"]

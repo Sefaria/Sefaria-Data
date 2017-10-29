@@ -171,7 +171,7 @@ class Element(object):
         special_mode = False  # Special parsing mode captures data that exists outside ordered structure
         found_after, special_pattern, end_pattern = 0, None, None
 
-        for line in raw_text.splitlines(True):  # keeps the endlines for later
+        for line_n, line in enumerate(raw_text.splitlines(True)):  # keeps the endlines for later
             if started:
                 if special_mode:
                     if end_pattern is None:
@@ -209,8 +209,10 @@ class Element(object):
                         end_pattern = specials[special_pattern].get('end')
 
                     else:
-                        assert child_num > 0  # Do not add text before the first siman marker has been found
+                        if child_num <= 0:  # Do not add text before the first siman marker has been found
+                            raise MissingChildError("{} {} is missing children.".format(self.name.title(), self.num))
                         current_child.append(line)
+
             else:
                 if re.search(start_mark, line):
                     started = True
@@ -226,15 +228,19 @@ class Element(object):
                     add_child_callback(u''.join(current_child), child_num, enforce_order=enforce_order, **kwargs)
 
     def load_xrefs_to_commentstore(self, *args, **kwargs):
+        errors = []
         for child in self.get_child():
             try:
                 child.load_xrefs_to_commentstore(*args, **kwargs)
             except DuplicateCommentError as e:
-                print e.message
+                errors.append(e)
+        return errors
 
     def load_comments_to_commentstore(self, *args, **kwargs):
+        volume_errors = []
         for child in self.get_child():
-            child.load_comments_to_commentstore(*args, **kwargs)
+            volume_errors += child.load_comments_to_commentstore(*args, **kwargs)
+        return volume_errors
 
     def convert_pattern_to_itag(self, commentator, pattern, group=1, order_callback=getGematria):
         """
@@ -327,11 +333,12 @@ class Root(Element):
     def populate_comment_store(self):
         comment_store = CommentStore()
         comment_store.clear()
-
-        self.get_base_text().load_xrefs_to_commentstore()
+        errors = []
+        errors += self.get_base_text().load_xrefs_to_commentstore()
         commentaries = self.get_commentaries()
-        commentaries.load_xrefs_to_commentstore()
-        commentaries.load_comments_to_commentstore()
+        errors += commentaries.load_xrefs_to_commentstore()
+        errors += commentaries.load_comments_to_commentstore()
+        return errors
 
 
 class Record(Element):
@@ -405,8 +412,10 @@ class Record(Element):
             return None
 
     def load_xrefs_to_commentstore(self, *args, **kwargs):
+        errors = []
         for child in self.get_child():
-            child.load_xrefs_to_commentstore(self.titles['en'])
+            errors += child.load_xrefs_to_commentstore(self.titles['en'])
+        return errors
 
     def render(self):
         rendered_simanim = []
@@ -437,8 +446,10 @@ class Commentary(Record):
         super(Commentary, self).__init__(soup_tag)
 
     def load_comments_to_commentstore(self):
+        errors = []
         for child in self.get_child():
-            child.load_comments_to_commentstore(self.titles['en'])
+            errors += child.load_comments_to_commentstore(self.titles['en'])
+        return errors
 
 
 class Commentaries(Element):
@@ -596,7 +607,12 @@ class Volume(OrderedElement):
         mark a return to standard parsing. If not set, the only a single line will be marked.
         :return:
         """
-        self._mark_children(pattern, start_mark, specials, add_child_callback=self._add_siman, enforce_order=enforce_order)
+        errors = []
+        try:
+            self._mark_children(pattern, start_mark, specials, add_child_callback=self._add_siman, enforce_order=enforce_order)
+        except DuplicateChildError as e:
+            errors.append(e.message)
+        return errors
 
     def mark_seifim(self, pattern, start_mark=None, specials=None, enforce_order=False, cyclical=False):
         errors = []
@@ -608,6 +624,8 @@ class Volume(OrderedElement):
                 try:
                     siman.mark_seifim(pattern, start_mark, specials, enforce_order)
                 except DuplicateChildError as e:
+                    errors.append(e.message)
+                except MissingChildError as e:
                     errors.append(e.message)
         return errors
 
@@ -677,7 +695,7 @@ class Volume(OrderedElement):
             seif['rid'] = 'no-link'
 
 
-    def validate_all_xrefs_matched(self, xref_finding_callback=lambda tag: tag.name=='xref'):
+    def validate_all_xrefs_matched(self, xref_finding_callback=lambda tag: tag.name =='xref', base="", commentary="", simanim_only=False):
         """
         Find a group of xrefs, look up each id in CommentStore and make sure they have all field filled out.
         :param xref_finding_callback: Callback function that takes a BeautifulSoup Tag object and returns True or
@@ -690,16 +708,28 @@ class Volume(OrderedElement):
         validation_set = self.Tag.find_all(xref_finding_callback)
         assert len(validation_set) > 0
         required_fields = ['base_title', 'siman', 'seif', 'commentator_title', 'commentator_siman', 'commentator_seif']
-        errors = []
+        xref_errors = []
+        simanim_errors = {}
 
         for item in validation_set:
+            siman = item['id'].split("-")[2].replace("si", "")
             if comment_store.get(item['id']) is None:
-                errors.append(u"xref with id {} not found in comment store".format(item['id']))
+                xref_errors.append(u"xref with id {} not found in comment store".format(item['id']))
             elif any([i not in comment_store[item['id']] for i in required_fields]):
-                errors.append(u"xref with id {} missing required field".format(item['id']))
-        if len(errors) == 0:
+                if siman not in simanim_errors:
+                    simanim_errors[siman] = 0
+                simanim_errors[siman] += 1
+
+        if len(xref_errors) == 0 and len(simanim_errors) == 0:
             print "No errors found"
-        return errors
+            return []
+        elif simanim_only:
+            assert commentary and base, "When simanim_only is True, you must also pass the name of the commentary and base text."
+            commentary = commentary.strip()
+            msg = u"""{}, Siman {}: {} markers for commentary "{}" but comments not in "{}" files.\n"""
+            return [msg.format(base, siman, num_errors, commentary, commentary) for siman, num_errors in simanim_errors.iteritems()]
+        else:
+            return xref_errors
 
     def locate_references(self, pattern, verbose=True):
         """
@@ -802,15 +832,26 @@ class Siman(OrderedElement):
         return passed
 
     def load_xrefs_to_commentstore(self, title):
+        errors = []
         for child in self.get_child():
-            child.load_xrefs_to_commentstore(title, self.num)
+            errors += child.load_xrefs_to_commentstore(title, self.num)
+        return errors
 
     def load_comments_to_commentstore(self, title):
+        siman_errors = {}
+        errors_report = []
         for child in self.get_child():
             try:
                 child.load_comments_to_commentstore(title, self.num)
             except MissingCommentError as e:
-                print e.message
+                if self.num not in siman_errors.keys():
+                    siman_errors[self.num] = 0
+                siman_errors[self.num] += 1
+
+        msg = "{}, Siman {}: missing {} comments"
+        errors_report = [msg.format(title, siman, num_probs) for siman, num_probs in siman_errors.iteritems()]
+
+        return errors_report
 
     def set_rid_on_seifim(self, base_id, book_id, cyclical=False):
         for seif in self.get_child():
@@ -969,8 +1010,10 @@ class Seif(OrderedElement):
         return list(pattern.finditer(self.Tag.text))
 
     def load_xrefs_to_commentstore(self, title, siman):
+        errors = []
         for child in self.get_child():
-            child.load_xrefs_to_commentstore(title, siman, self.num)
+            errors += child.load_xrefs_to_commentstore(title, siman, self.num)
+        return errors
 
     def load_comments_to_commentstore(self, title, siman):
         comment_store = CommentStore()
@@ -979,7 +1022,8 @@ class Seif(OrderedElement):
             return
 
         if comment_store.get(self.rid) is None:
-            raise MissingCommentError(u"No Xref with id {} exists".format(self.rid))
+            siman = self.rid.split("-")[2].replace("si", "")
+            raise MissingCommentError(siman)
 
         this_ref = comment_store[self.rid]
         if this_ref.get('commentator_title') is not None:
@@ -1132,12 +1176,10 @@ class Xref(Element):
         comment_store = CommentStore()
         if comment_store.get(self.id) is not None:
             if seif in comment_store[self.id]['seif']:
-                message = "Xref with id '{}' appears twice. Same Seif as previous appearance.".format(self.id)
-                print message
+                raise DuplicateCommentError((title, self.id, "same seif"))
             else:
-                message = "Xref with id '{}' appears twice. Different Seif as previous appearance.".format(self.id)
-                print message
                 comment_store[self.id]['seif'].append(seif)
+                raise DuplicateCommentError((title, self.id, "different seif"))
 
         else:
             comment_store[self.id] = {
@@ -1145,6 +1187,7 @@ class Xref(Element):
                 'siman': siman,
                 'seif': [seif]
             }
+
 
     def load_comments_to_commentstore(self, *args, **kwargs):
         raise NotImplementedError("Can't load comments at Xref depth")
@@ -1166,6 +1209,9 @@ class DuplicateCommentError(Exception):
     pass
 
 class MissingCommentError(Exception):
+    pass
+
+class MissingChildError(Exception):
     pass
 
 

@@ -3,17 +3,22 @@
 import os
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
+<<<<<<< Updated upstream
 if not os.path.exists('../../Orach_Chaim.xml'):
     Root.create_skeleton('../../Orach_Chaim.xml')
 
 root = Root('../../Orach_Chaim.xml')
+=======
+root = Root('Orach_Chaim.xml')
+>>>>>>> Stashed changes
 base = root.get_base_text()
-filename = u'../../txt_files/Orach_Chaim/part_1/שוע אורח חיים חלק א.txt'
+filename = u'./txt_files/Orach_Chaim/part_1/שוע אורח חיים חלק א.txt'
 
 base.remove_volume(1)
 with codecs.open(filename, 'r', 'utf-8') as infile:
     volume = base.add_volume(infile.read(), 1)
 assert isinstance(volume, Volume)
+
 
 volume.mark_simanim(u'@22([\u05d0-\u05ea]{1,3})', specials={u'@00': {'name': u'topic'}})
 print "Validating Simanim"
@@ -37,6 +42,7 @@ ur'@88([\u05d0-\u05ea])\]'
 # for pattern in patterns:
 #     correct_marks_in_file(filename, u'@22', pattern)
 # correct_marks_in_file(filename, u'@22', ur'@44([\u05d0-\u05ea])', error_finder=out_of_order_he_letters)
+
 
 volume.validate_references(ur'@44([\u05d0-\u05ea])', u'@44', key_callback=he_ord)
 for pattern, code in zip(patterns, codes):
