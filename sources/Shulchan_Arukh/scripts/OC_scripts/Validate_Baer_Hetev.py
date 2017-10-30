@@ -33,18 +33,19 @@ assert len(simanim) == len(sefaria_simanim)
 
 # walk through simanim
 problems = 0
+print u"The following locations indicate a mismatch between links to Ba'er Hetev on Sefaria and the number of marks in the source file:\n"
 for sefaria_siman, xml_siman in zip(sefaria_simanim, simanim):
 
     # walk through seifim
     sefaria_seifim = sefaria_siman.all_subrefs()
     xml_seifim     = xml_siman.get_child()
     if len(sefaria_seifim) != len(xml_seifim):
-        print "Mismatched Seifim in {}".format(sefaria_siman.normal())
+        # print "Mismatched Seifim in {}".format(sefaria_siman.normal())
         continue
 
     for sefaria_seif, xml_seif in zip(sefaria_seifim, xml_seifim):
         # grab references from xml seif
-        total_xml_refs = len(xml_seif.grab_references(u'@66\([\u05d0-\u05ea]{1,3}\)'))
+        total_xml_refs = len(xml_seif.grab_references(u'@66\(([\u05d0-\u05ea]{1,3})\)'))
         # load LinkSet for Sefaria seif
         ls = LinkSet(sefaria_seif)
         # filter LinkSet for Ba'er Hetev
@@ -52,5 +53,5 @@ for sefaria_siman, xml_siman in zip(sefaria_simanim, simanim):
         # compare number
         if total_xml_refs != total_baer_links:
             problems += 1
-            print u'Problem in {}'.format(sefaria_seif.normal())
+            print u"Ba'er Hetev mismatch: {}  {} in xml; {} on site".format(sefaria_seif.normal(), total_xml_refs, total_baer_links)
 print u'{} problems found'.format(problems)
