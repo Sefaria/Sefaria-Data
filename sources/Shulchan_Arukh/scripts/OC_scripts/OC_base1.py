@@ -3,14 +3,11 @@
 import os
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
-<<<<<<< Updated upstream
 if not os.path.exists('../../Orach_Chaim.xml'):
     Root.create_skeleton('../../Orach_Chaim.xml')
 
 root = Root('../../Orach_Chaim.xml')
-=======
-root = Root('Orach_Chaim.xml')
->>>>>>> Stashed changes
+
 base = root.get_base_text()
 filename = u'./txt_files/Orach_Chaim/part_1/שוע אורח חיים חלק א.txt'
 
