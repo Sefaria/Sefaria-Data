@@ -1,15 +1,20 @@
 # encoding=utf-8
 
 import os
+from os.path import dirname as loc
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
-if not os.path.exists('../../Orach_Chaim.xml'):
-    Root.create_skeleton('../../Orach_Chaim.xml')
+root_dir = loc(loc(loc(os.path.abspath(__file__))))
+xml_loc = os.path.join(root_dir, 'Orach_Chaim.xml')
+print root_dir
 
-root = Root('../../Orach_Chaim.xml')
+if not os.path.exists(xml_loc):
+    Root.create_skeleton(xml_loc)
+
+root = Root(xml_loc)
 
 base = root.get_base_text()
-filename = u'./txt_files/Orach_Chaim/part_1/שוע אורח חיים חלק א.txt'
+filename = os.path.join(root_dir, u'txt_files/Orach_Chaim/part_1/שוע אורח חיים חלק א.txt')
 
 base.remove_volume(1)
 with codecs.open(filename, 'r', 'utf-8') as infile:
