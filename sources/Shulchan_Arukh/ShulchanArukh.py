@@ -103,6 +103,7 @@ class Element(object):
         else:
             for volume in children:
                 if current_child.num == volume.num:
+                    print 'hi'
                     raise DuplicateChildError(u'{} appears more than once!'.format(current_child.num))
 
                 if current_child.num < volume.num and enforce_order:
@@ -627,6 +628,7 @@ class Volume(OrderedElement):
                     errors.append(e.message)
                 except MissingChildError as e:
                     errors.append(e.message)
+
         return errors
 
     def format_text(self, start_special, end_special, name):

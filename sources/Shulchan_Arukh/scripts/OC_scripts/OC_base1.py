@@ -4,6 +4,11 @@ import os
 from os.path import dirname as loc
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
+
+def markup(volume, root):
+    commentaries = root.get_commentaries()
+    volume.mark_references(commentaries.commentary_ids["Taz on Orach Chayim"], u'@77\(([\u05d0-\u05ea]{1,3})\)', group=1)
+
 root_dir = loc(loc(loc(os.path.abspath(__file__))))
 xml_loc = os.path.join(root_dir, 'Orach_Chaim.xml')
 print root_dir
@@ -32,9 +37,13 @@ for i in bad:
     print i
 volume.validate_seifim()
 
+
+
+
 codes = [ur'@77', ur'@66', ur'@55']
 patterns = [ur'@77\(({})\)', ur'@66\(({})\)', ur'@55({})']
 patterns = [i.format(ur'[\u05d0-\u05ea]{1,3}') for i in patterns]
+
 
 '''
 אשל אברהם:
@@ -54,4 +63,7 @@ errors = volume.format_text('@33', '@34', 'ramah')
 for i in errors:
     print i
 
+markup(volume, root)
+
 root.export()
+
