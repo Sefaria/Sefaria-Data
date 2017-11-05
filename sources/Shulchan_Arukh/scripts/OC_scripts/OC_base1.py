@@ -40,6 +40,8 @@ volume.validate_seifim()
 
 
 
+
+
 codes = [ur'@77', ur'@66', ur'@55']
 patterns = [ur'@77\(({})\)', ur'@66\(({})\)', ur'@55({})']
 patterns = [i.format(ur'[\u05d0-\u05ea]{1,3}') for i in patterns]

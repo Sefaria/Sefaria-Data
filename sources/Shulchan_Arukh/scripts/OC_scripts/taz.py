@@ -27,8 +27,8 @@ filenames = [u"../../txt_files/Orach_Chaim/part_1/שוע אורח חיים חל�
              u"../../txt_files/Orach_Chaim/part_3/שו''ע אורח חיים חלק ג -טז מושלם.txt"]
 
 for i, filename in enumerate(filenames):
-    if i == 2:
-        convert_11s(filename)
+    if i != 2:
+        continue
     taz.remove_volume(i+1)
     # correct_marks_in_file(filename, u'@00([\u05d0-\u05ea]{1,2})', u'@22([\u05d0-\u05ea]{1,3})')
     with codecs.open(filename, 'r', 'utf-8') as infile:
@@ -56,5 +56,7 @@ errors += root.populate_comment_store()
 errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u'@77', x.text) is not None, base="Orach Chaim", commentary="Taz on Orach Chaim", simanim_only=True)
 for i in errors:
     print i
+
+
 
 root.export()

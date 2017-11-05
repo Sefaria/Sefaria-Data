@@ -84,6 +84,9 @@ class Element(object):
             child_cls = module_locals[self.child]
             return child_cls(self.Tag.find(child_cls.name, recursive=False))
 
+    def __iter__(self):
+        return (el for el in self.get_child())
+
     def _add_child(self, child, raw_text, num, enforce_order=False):
         """
         Add a new ordered child to the parent. Takes raw text and wraps in a child tag.
@@ -103,7 +106,6 @@ class Element(object):
         else:
             for volume in children:
                 if current_child.num == volume.num:
-                    print 'hi'
                     raise DuplicateChildError(u'{} appears more than once!'.format(current_child.num))
 
                 if current_child.num < volume.num and enforce_order:
@@ -728,7 +730,7 @@ class Volume(OrderedElement):
         elif simanim_only:
             assert commentary and base, "When simanim_only is True, you must also pass the name of the commentary and base text."
             commentary = commentary.strip()
-            msg = u"""{}, Siman {}: {} markers for commentary "{}" but comments not in "{}" files.\n"""
+            msg = u"""{}, Siman {}: {} markers for commentary "{}" but comments not in "{}" files."""
             return [msg.format(base, siman, num_errors, commentary, commentary) for siman, num_errors in simanim_errors.iteritems()]
         else:
             return xref_errors
@@ -850,7 +852,7 @@ class Siman(OrderedElement):
                     siman_errors[self.num] = 0
                 siman_errors[self.num] += 1
 
-        msg = "{}, Siman {}: missing {} comments"
+        msg = "{}, Siman {}: found {} comment(s) not found in base text."
         errors_report = [msg.format(title, siman, num_probs) for siman, num_probs in siman_errors.iteritems()]
 
         return errors_report
@@ -890,6 +892,7 @@ class Seif(OrderedElement):
 
     def get_child(self):
         return [TextElement(c) for c in self.Tag.children]
+
 
     def format_text(self, start_special, end_special, name):
         """

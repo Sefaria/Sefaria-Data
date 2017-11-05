@@ -390,11 +390,24 @@ def segment_or_hachaim():
 
         VersionState(book).refresh()
 
+
+def validation_markers():
+    marker = '\xc2\xb0'
+
+
+
+def validation_links():
+    pass
+
+
 if __name__ == "__main__":
     '''
     Check if Pasuk information alone gives us all 50 chapters
     If it doesn’t work, check Hebrew and English versions that the pasuk go in same order and if they do then Use DH of Hebrew to figure out what Perek we are in
     '''
+    validation_markers()
+    validation_links()
+    print "DONE VALIDATIONS"
     results = {"Rashi": {"en": [], "he": []}, "Siftei": {"en": [], "he": []}}
     text_dict = {"Rashi": {"en": {}, "he": {}}, "Siftei": {"en": {}, "he": {}}}
 
