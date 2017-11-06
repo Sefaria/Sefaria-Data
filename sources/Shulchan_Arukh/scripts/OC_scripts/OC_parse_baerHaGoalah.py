@@ -17,6 +17,7 @@ if b_hagolah is None:
     b_hagolah = commentaries.add_commentary("Be'er HaGolah", u"באר הגולה")
 
 for i in range(1, 4):
+    print '\nVolume {}'.format(i)
     filename = filenames['part_{}'.format(i)]
     b_hagolah.remove_volume(i)
     with codecs.open(filename, 'r', 'utf-8') as infile:
