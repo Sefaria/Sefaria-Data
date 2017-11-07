@@ -34,7 +34,7 @@ for i in range(1, 4):
     for base_siman, baer_siman in zip(base_volume.get_child(), volume.get_child()):
         assert base_siman.num == baer_siman.num
 
-        total_footnotes = len(re.findall(u'@44', unicode(base_siman)))
+        total_footnotes = len(re.findall(u'@44[\u05d0-\u05ea]', unicode(base_siman)))
         total_comments = len(baer_siman.get_child())
         if total_footnotes != total_comments:
             print "mismatch in siman {}. {} footnotes and {} comments".format(baer_siman.num, total_footnotes, total_comments)
