@@ -70,7 +70,7 @@ def post_y_index():
     index = {
         "title": "Sefer Yereim",
         "categories": ["Halakhah"],
-        "alt_structs": {"Amud": amud_nodes.serialize()},
+        "alt_structs": {"Amudim and Vavim": amud_nodes.serialize()},
         "schema": record.serialize()
     }
     post_index(index,weak_network=True)
@@ -141,10 +141,11 @@ def parse_y_text():
                     """
                     add_after_next=get_siman_count(line)-1
                     add_after_next+=line.count("ADD_EXTRA_AFTER")
+    """
     for sindex, siman in enumerate(mitzvas):
         for pindex, paragraph in enumerate(siman):
             print sindex, pindex, paragraph
-    0/1
+    """
     return mitzvas
 def siman_has_siman_starter(s_list):
     #here we check if this siman list has a siman starter marker, to detirmine if this siman marker is a new siman or not
@@ -155,7 +156,13 @@ def siman_has_siman_starter(s_list):
 def remove_tags_y(s):
     #here we return the edited sting as well as the data-order numbers found in the paragraph, so that parser can index them.
     for regmatch in re.findall(ur"@77 *\([א-ת\* ]{1,4}\)",s):
-        s=s.replace(regmatch, u"<i \"data-commentator=Toafot Re\'em\" \"data-order="+str(getGematria(regmatch))+"\"></i>")
+        s=s.replace(regmatch, u"<i data-commentator=\"Toafot Re\'em\" data-order=\""+str(getGematria(regmatch))+"\"></i>")
+    
+    #bold if line is some sort of heading
+    header_labels = [u'@22', u'@03', u'@24', u'@02', u'@27', u'@18']
+    for header_label in header_labels:
+        if header_label in s:
+            s=re.sub(ur'({}.*?)\n'.format(header_label),ur'<b>\1</b>\n',s)
     return re.sub(ur"@\d{1,4}",u"",s).replace(u"BADLABEL",u"").replace(u"SKIP_LABEL",u"")
 def get_data_orders(s):
     #here we get data-order numbers in the paragraph
@@ -164,7 +171,16 @@ def get_data_orders(s):
         found_order_numbers.append(getGematria(regmatch))
     return found_order_numbers
 def remove_tags_ty(s):
+    """
+    if '\uXXXX' in s:
+        print "GOT THE X"
+    s=s.replace('\uXXXX','')
+    
+    escapes = ''.join([chr(char) for char in range(27, 28)])
+    s = s.translate(escapes)
+    """     
     return re.sub(ur"@\d{1,4}",u"",s)
+    
     """
     def bold_dh(some_string):
         splits = {
@@ -226,14 +242,20 @@ def post_y_text():
     final_text = []
     for siman in raw_text:
         final_text.append(list(map(lambda(x):remove_tags_y(x),siman)))
+    """
+    for siman in final_text:
+        for paragraph in siman:
+            print paragraph
+    """
     version = {
         'versionTitle': 'Sefer Yereim HaShalem, Vilna, 1892-1901',
         'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001196456',
         'language': 'he',
         'text': final_text
     }
-    #post_text_weak_connection
-    post_text('Sefer Yereim', version,weak_network=True, skip_links=True, index_count="on")
+    post_text('Sefer Yereim', version,weak_network=True)#, skip_links=True, index_count="on")
+    post_text_weak_connection('Sefer Yereim', version)#,weak_network=True)#, skip_links=True, index_count="on")
+    
 def post_ty_index():
     # create index record
     record = SchemaNode()
@@ -246,6 +268,16 @@ def post_ty_index():
     intro_node.add_title("Commentor's Introduction", 'en', primary = True)
     intro_node.add_title("הקדמת המחבר", 'he', primary = True)
     intro_node.key = "Commentor's Introduction"
+    intro_node.depth = 1
+    intro_node.addressTypes = ['Integer']
+    intro_node.sectionNames = ['Paragraph']
+    record.append(intro_node)
+    
+    #add node for comments on author's introduction
+    intro_node = JaggedArrayNode()
+    intro_node.add_title("Comments on Author's Introduction", 'en', primary = True)
+    intro_node.add_title("הערות על הקדמת המחבר", 'he', primary = True)
+    intro_node.key = "Comments on Author's Introduction"
     intro_node.depth = 1
     intro_node.addressTypes = ['Integer']
     intro_node.sectionNames = ['Paragraph']
@@ -265,10 +297,52 @@ def post_ty_index():
 
     index = {
         "title": 'Toafot Re\'em',
-        "categories": ["Halakhah"],
+        "categories": ["Halakhah","Commentary"],
         "schema": record.serialize()
     }
     post_index(index,weak_network=True)
+def post_intros():
+    with open("יראים מרובע.txt") as myFile:
+        lines = list(map(lambda x: x.decode("utf8",'replace'), myFile.readlines()))
+    mevaar_intro=[]
+    author_intro=[]
+    in_mevaar_intro=False
+    in_author_intro=False
+    for line in lines:
+        if not in_mevaar_intro and not in_author_intro and u"@00" in line:
+            in_mevaar_intro=True
+        elif in_mevaar_intro:
+            if u"@00" in line:
+                in_mevaar_intro=False
+                in_author_intro=True
+                author_intro.append(remove_tags_y(line))
+            elif not_blank(line):
+                mevaar_intro.append(re.sub(ur"@\d{1,4}",u"",line))
+        elif in_author_intro:
+            if u"@00" in line:
+                break
+            elif not_blank(line):
+                author_intro.append(remove_tags_y(line))
+    """
+    for paragraph in mevaar_intro:
+        print "MI", paragraph
+    for paragraph in author_intro:
+        print "AI", paragraph
+    """
+    version = {
+        'versionTitle': 'Sefer Yereim HaShalem, Vilna, 1892-1901',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001196456',
+        'language': 'he',
+        'text': mevaar_intro
+    }
+    post_text('Toafot Re\'em, Commentor\'s Introduction', version,weak_network=True)#, skip_links=True, index_count="on")
+    version = {
+        'versionTitle': 'Sefer Yereim HaShalem, Vilna, 1892-1901',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001196456',
+        'language': 'he',
+        'text': author_intro
+    }
+    #post_text('Sefer Yereim, Author\'s Introduction', version,weak_network=True)#, skip_links=True, index_count="on")
 def parse_ty_text():
     #here we make a 2d array
     #the position of the sub array in the array corresponds to the siman it is indexed under.
@@ -281,8 +355,8 @@ def parse_ty_text():
     for sindex, siman in enumerate(parse_y_text()):
         for pindex, paragraph in enumerate(siman):
             for data_order in get_data_orders(paragraph):
-                siman_data_order_paragraphs[sindex].append(pindex)
-                print sindex, data_order
+                siman_data_order_paragraphs[sindex].append(pindex+1)
+                #print sindex, data_order
                 
     with open('יראים מוכן.txt') as myFile:
         lines = list(map(lambda x: x.decode("utf8",'replace'), myFile.readlines()))
@@ -304,25 +378,53 @@ def parse_ty_text():
                 current_order_number = getGematria(line)
             elif not_blank(line):
                 #print "NOW APPENDING ", current_siman
+                #Here we check if there are more TR refs than footnotes in body text.
                 if len(siman_data_order_paragraphs[current_siman-1])<1:
                     if current_siman not in too_many_box:
                         too_many_box.append(current_siman)
-                elif len(ty_list[current_siman-1])>1:
-                    ty_list[current_siman-1][1]=[ty_list[current_siman-1][1],remove_tags_ty(line)]
+                #elif len(ty_list[current_siman-1])>1:
+                #    ty_list[current_siman-1][1]=[ty_list[current_siman-1][1],remove_tags_ty(line)]
                 else:
                     ty_list[current_siman-1].append([current_order_number, [remove_tags_ty(line)], siman_data_order_paragraphs[current_siman-1].pop(0)])
+    """
+    test for discrepencies in Yereim and TR
     for thindex, that in enumerate(siman_data_order_paragraphs):
         if len(that)<0:
             print "TOO MANY REFS in ", current_siman
     for siman in too_many_box:
         print siman
+    
+    for sindex, siman in enumerate(ty_list):
+        for cindex, comment in enumerate(siman):
+            print sindex, cindex, comment[0], comment[1][0]
+    """
     return ty_list
 def post_ty_text():
+    #here we post intro comments:
+    with open('יראים מוכן.txt') as myFile:
+        lines = list(map(lambda x: x.decode("utf8",'replace'), myFile.readlines()))
+    intro_box = []
+    for line in lines[1:]: #first line is title
+        if u'@00עמוד עריות' in line:
+            break
+        elif not_blank(line) and u"@11" not in line:
+            intro_box.append(remove_tags_ty(line))
+        
+    version = {
+        'versionTitle': 'Sefer Yereim HaShalem, Vilna, 1892-1901',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001196456',
+        'language': 'he',
+        'text': intro_box
+    }
+    #post_text('Toafot Re\'em, Comments on Author\'s Introduction', version,weak_network=True, skip_links=True, index_count="on")
+    #post_text_weak_connection('Toafot Re\'em', version)#,weak_network=True)#, skip_links=True, index_count="on")
+        
+        
     ty_list = parse_ty_text()
     ty_text=[[] for x in range(len(ty_list))]
     for siman, comment_list in enumerate(ty_list):
         for comment in comment_list:
-            ty_text[siman].append(comment[1])
+            ty_text[siman].append(comment[1][0])
     
     version = {
         'versionTitle': 'Sefer Yereim HaShalem, Vilna, 1892-1901',
@@ -331,28 +433,54 @@ def post_ty_text():
         'text': ty_text
     }
     post_text('Toafot Re\'em', version,weak_network=True, skip_links=True, index_count="on")
+    #post_text_weak_connection('Toafot Re\'em', version)#,weak_network=True)#, skip_links=True, index_count="on")
+    
 def link_ty():
+    #first, link intro. 1st comment on 1st paragraph, the rest on the second.
+    link = {
+    'refs': ['Sefer Yereim, Author\'s Introduction 1', 'Toafot Re\'em, Comments on Author\'s Introduction 1'],
+    'type': 'commentary',
+    'inline_reference': {
+        'data-commentator': "Toafot Re\'em",
+        'data-order': 1
+        }
+    }
+    post_link(link, weak_network=True)
+    
+    for pindex in range(2,17):
+        link = {
+        'refs': ['Sefer Yereim, Author\'s Introduction 2', 'Toafot Re\'em, Comments on Author\'s Introduction {}'.format(pindex)],
+        'type': 'commentary',
+        'inline_reference': {
+            'data-commentator': "Toafot Re\'em",
+            'data-order': pindex
+            }
+        }
+        post_link(link, weak_network=True)
     for siman, comment_list in enumerate(parse_ty_text()):
         for comment_index, comment in enumerate(comment_list):
+            print 'Sefer Yereim {}:{}'.format(siman+1, comment[2]), 'Toafot Re\'em {}:{}'.format(siman+1, comment_index+1)
             link = {
-            'refs': ['Sefer Yereim {}:{}'.format(siman, comment[2]), 'Toafot Re\'em {}:{}'.format(siman, comment_index)],
+            'refs': ['Sefer Yereim {}:{}'.format(siman+1, comment[2]), 'Toafot Re\'em {}:{}'.format(siman+1, comment_index+1)],
             'type': 'commentary',
             'inline_reference': {
                 'data-commentator': "Toafot Re\'em",
                 'data-order': comment[0]
                 }
             }
+            post_link(link, weak_network=True)
+            
                 
 def not_blank(s):
     while " " in s:
         s = s.replace(u" ",u"")
     return (len(s.replace(u"\n",u"").replace(u"\r",u"").replace(u"\t",u""))!=0);
-
-#parse_y_text()
-#post_ty_index()
-#post_ty_text()
+post_ty_index()
+#post_intros()
+#post_y_index()
 #post_y_text()
-link_ty()
+#post_ty_text()
+#link_ty()
 """
 method we ended up not using;
 def get_siman_count(line):
@@ -366,4 +494,6 @@ Here we record abnormailities:
 
 -no siman 179
 -two siman 257
+
+headers: @22, @03, @24, @02, @27, @18
 """
