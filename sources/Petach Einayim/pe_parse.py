@@ -13,6 +13,7 @@ import codecs
 from fuzzywuzzy import fuzz
 
 seders = {'Seder Zeraim':u'סדר זרעים','Seder Moed':u'סדר מועד','Seder Nashim':u'סדר נשים','Seder Nezikin':u'סדר נזיקין','Seder Kodashim':u'סדר קדשים','Seder Tahorot':u'סדר טהרות'}
+vechu = u'וכו\''
 
 mishnah_titles = {}
 for tractate_title in library.get_indexes_in_category("Mishnah"):
@@ -33,7 +34,7 @@ class Mishnah_Tractate:
     def pe_post_index(self):   
         record = JaggedArrayNode()
         record.add_title('Petach Einayim on '+self.en_title, 'en', primary=True)
-        record.add_title(u'פתח עיניים על'+' '+self.he_title, 'he', primary=True)
+        record.add_title(u'פתח עינים על'+' '+self.he_title, 'he', primary=True)
         record.key = 'Petach Einayim on '+self.en_title
         record.depth = 3
         record.addressTypes = ["Integer", "Integer", "Integer"]
@@ -70,7 +71,7 @@ class Mishnah_Tractate:
                 current_chapter= getGematria(re.search(ur'פרק'+ur' \S*',line.replace(u"יו\"ד",u"י")).group().replace(u"פרק",u""))
             elif not_blank(line):
                 parsed_text[current_chapter-1][current_mishnah-1].append(fix_mishnah_markers(line, self.version))
-        """"
+        """
         for pindex, perek in enumerate(parsed_text):
             for mindex, mishnah in enumerate(perek):
                 for cindex, comment in enumerate(mishnah):
@@ -82,7 +83,7 @@ class Mishnah_Tractate:
             'language': 'he',
             'text': parsed_text
         }
-        #post_text_weak_connection('Petach Einayim on '+self.en_title, version)
+        post_text_weak_connection('Petach Einayim on '+self.en_title, version)
     def pe_post_links(self):
         pe_text = TextChunk(Ref('Petach Einayim on '+self.en_title),"he").text
         for perek_index,perek in enumerate(pe_text):
@@ -112,7 +113,7 @@ class Talmud_Tractate:
         he_title = self.he_title
         record = JaggedArrayNode()
         record.add_title('Petach Einayim on '+en_title, 'en', primary=True)
-        record.add_title(u'פתח עיניים על'+u" "+he_title, 'he', primary=True)
+        record.add_title(u'פתח עינים על'+u" "+he_title, 'he', primary=True)
         record.key = 'Petach Einayim on '+en_title
         record.depth = 2
         record.addressTypes = ['Talmud', 'Integer']
@@ -348,13 +349,13 @@ def get_tractate_texts():
                 return_list["Mishnah"][current_tractate]["Version"]= 1 if '1' in pe_file else 2
     return return_list
 def post_mishnah_categories():
-    add_category('Petach Einayim', u'פתח עיניים', ["Mishnah","Commentary",'Petach Einayim'])
+    add_category('Petach Einayim', ["Mishnah","Commentary",'Petach Einayim'],u'פתח עינים')
     for seder in seders.keys():
-        add_category(seder, seders[seder], ["Mishnah","Commentary",'Petach Einayim',seder])
+        add_category(seder, ["Mishnah","Commentary",'Petach Einayim',seder], seders[seder])
 def post_talmud_categories():
-    add_category('Petach Einayim', u'פתח עיניים', ["Talmud","Bavli","Commentary",'Petach Einayim'])
+    add_category('Petach Einayim', ["Talmud","Bavli","Commentary",'Petach Einayim'], u'פתח עינים')
     for seder in seders.keys():
-        add_category(seder, seders[seder], ["Talmud","Bavli","Commentary",'Petach Einayim',seder])
+        add_category(seder, ["Talmud","Bavli","Commentary",'Petach Einayim',seder], seders[seder])
 def post_pe_term():
     term_obj = {
         "name": 'Petach Einayim',
@@ -367,7 +368,7 @@ def post_pe_term():
             },
             {
                 "lang": "he",
-                "text": u'פתח עיניים',
+                "text": u'פתח עינים',
                 "primary": True
             }
         ]
@@ -384,20 +385,22 @@ def pe_filter(some_string):
     #asssume every piece of text has a DH
     return re.match(ur"<b>.*</b>",some_string)
 def fix_mishnah_markers(s, version):
-    s= re.sub(ur"@\d{1,3}",u"",s)
     if version==2:
-        if re.search(ur"@99.*?",ur"משנה",ur".*?@11",s):
-            print "MISHNAMARK: ",re.search(ur"@99.*?",ur"משנה",ur".*?@11",s).group()
-            s=s.replace(re.search(ur"@99.*?",ur"משנה",ur".*?@11",s).group(), s)
+        s=re.sub(ur"@99.*?"+ur"משנה"+ur".*?@11",u'',s)
+        if u"@23" in s:
+            s=u"<b>"+s.replace(u"@23",u"</b>")
     else:
-        if re.search(ur"@11.*?",ur"משנה",ur".*?@33",s):
-            print "MISHNAMARK: ",re.search(ur"@11.*?",ur"משנה",ur".*?@33",s).group()
-            s=s.replace(re.search(ur"@11.*?",ur"משנה",ur".*?@33",s).group(), s)
+        s=re.sub(ur"@11.*?"+ur"משנה"+ur".*?@33",u'',s)
+        if vechu in s:
+            if s.index(vechu)<30:
+                s=u'<b>'+s.replace(vechu, vechu+u"</b>")
+    s= re.sub(ur"@\d{1,3}",u"",s)
+    
     """
     s= s.replace(u"@11",u"<b>").replace(u"@33",u"</b>").replace(u"@23",u"</b>")
     if u"</b>" in s and u"<b>" not in s:
         s = u"<b>"+s
-    """
+    
     if re.match(ur".*?\.",s):
         splits["period_split"]= re.match(ur".*?\.",s).group()
     if re.match(ur".*?"+ur"כו"+ur"'", s):
@@ -411,6 +414,7 @@ def fix_mishnah_markers(s, version):
     if len(choice)>0:
         print "TADA ",choice
         return u"<b>"+choice+u"</b>"+s[len(choice):]
+    """
     return s
 def fix_talmud_markers(s, version):
     #s= s.replace(u"@11",u"<b>").replace(u"@33",u"</b>")
@@ -503,12 +507,12 @@ tractate_texts=get_tractate_texts()
 posting_term = False
 if posting_term:
     post_pe_term()
-""""
+
 #for Mishna:
-posting_categories = False
-posting_indices = False
+posting_categories = True
+posting_indices = True
 posting_texts = True
-linking = False
+linking = True
 admin_links = []
 site_links = []
 if posting_categories:
@@ -561,3 +565,4 @@ for link in site_links:
     print link
 for key in results.keys():
     print key, results[key]
+"""
