@@ -958,10 +958,12 @@ def post_flags(version, flags, server=SEFARIA_SERVER):
 
 
 @weak_connection
-def post_term(term_dict, server=SEFARIA_SERVER):
+def post_term(term_dict, server=SEFARIA_SERVER, update=False):
     name = term_dict['name']
     # term_JSON = json.dumps(term_dict)
     url = '{}/api/terms/{}'.format(server, urllib.quote(name))
+    if update:
+        url += "?update=1"
     return http_request(url, body={'apikey': API_KEY}, json_payload=term_dict, method="POST")
     # values = {'json': term_JSON, 'apikey': API_KEY}
     # data = urllib.urlencode(values)
@@ -983,6 +985,22 @@ def add_term(en_title, he_title, scheme='toc_categories', server=SEFARIA_SERVER)
     post_term(term_dict, server)
 
 
+def add_title_existing_term(name, title, lang="en", server=SEFARIA_SERVER):
+    '''
+    Used to add titles to existing terms.  TODO: flag to set new titles as primary
+    :param name: Name of existing term
+    :param title: Title to add to term
+    :parem lang: Language of title
+    :param server:
+    :return:
+    '''
+    url = server+"/api/terms/"+name
+    term = http_request(url)
+    new_title = {'lang': lang, 'text': title}
+    term["titles"].append(new_title)
+    post_term(term, server=server, update=True)
+
+
 def get_index_api(ref, server='http://www.sefaria.org'):
     ref = ref.replace(" ", "_")
     url = server+'/api/v2/raw/index/'+ref
@@ -996,7 +1014,7 @@ def get_links(ref, server="http://www.sefaria.org"):
     url = server+'/api/links/'+ref
     return http_request(url)
 
-def get_text(ref, lang="", versionTitle="", server="http://www.sefaria.org"):
+def get_text(ref, lang="", versionTitle="", server="http://draft.sefaria.org"):
     ref = ref.replace(" ", "_")
     versionTitle = versionTitle.replace(" ", "_")
     url = '{}/api/texts/{}'.format(server, ref)
@@ -1006,25 +1024,6 @@ def get_text(ref, lang="", versionTitle="", server="http://www.sefaria.org"):
     try:
         response = urllib2.urlopen(req)
         data = json.load(response)
-        for i, temp_text in enumerate(data['he']):      
-            data['he'][i] = data['he'][i].replace(u"\u05B0", "")
-            data['he'][i] = data['he'][i].replace(u"\u05B1", "")
-            data['he'][i] = data['he'][i].replace(u"\u05B2", "")
-            data['he'][i] = data['he'][i].replace(u"\u05B3", "")
-            data['he'][i] = data['he'][i].replace(u"\u05B4", "")
-            data['he'][i] = data['he'][i].replace(u"\u05B5", "")
-            data['he'][i] = data['he'][i].replace(u"\u05B6", "")
-            data['he'][i] = data['he'][i].replace(u"\u05B7", "")
-            data['he'][i] = data['he'][i].replace(u"\u05B8", "")
-            data['he'][i] = data['he'][i].replace(u"\u05B9", "")
-            data['he'][i] = data['he'][i].replace(u"\u05BB", "")
-            data['he'][i] = data['he'][i].replace(u"\u05BC", "")
-            data['he'][i] = data['he'][i].replace(u"\u05BD", "")
-            data['he'][i] = data['he'][i].replace(u"\u05BF", "")
-            data['he'][i] = data['he'][i].replace(u"\u05C1", "")
-            data['he'][i] = data['he'][i].replace(u"\u05C2", "")
-            data['he'][i] = data['he'][i].replace(u"\u05C3", "")
-            data['he'][i] = data['he'][i].replace(u"\u05C4", "")
         return data
     except:
         print 'Error'

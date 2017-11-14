@@ -391,22 +391,240 @@ def segment_or_hachaim():
         VersionState(book).refresh()
 
 
+def validate_languages(markers_dict):
+    base_lang = "he"
+    opp_lang = "en"
+    for book, refs in markers_dict[base_lang].iteritems():
+        for ref, value in refs.iteritems():
+            if markers_dict[opp_lang][book][ref] != value:
+                print 'prob'
+            else:
+                print 'good'
+
+
+def post_text_ste(text_dict):
+    for file, text in text_dict.iteritems():
+        lang = "he" if "- he -" in file else "en"
+        book = file.split(" - ")[0]
+        version = file.split(" - ")[-1][0:-4]
+        for perek, perek_dict in text.iteritems():
+            for pasuk, pasuk_dict in perek_dict.iteritems():
+                text[perek][pasuk] = convertDictToArray(text[perek][pasuk])
+            text[perek] = convertDictToArray(text[perek])
+        text = convertDictToArray(text)
+        send_text = {
+            "versionTitle": version,
+            "language": lang,
+            "text": text,
+            "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002691623"
+        }
+        post_text(book, send_text, server="http://ste.sefaria.org")
+
 def validation_markers():
-    marker = '\xc2\xb0'
+    match = 0
+    total = 0
+    markers_dict, text_dict = get_markers_and_text() #markers: Rashi on Leviticus 1:1:1 = 2; Rashi on Leviticus 1:1:2 = 3;
+    post_text_ste(text_dict)
+
+    siftei_en = get_siftei_dict()
+    sec_refs = {}
+    probs_by_segment = []
+    links = []
+    done = []
+    sorted_keys = sorted(markers_dict.keys(), key=lambda x: (x.book, x.sections))
+    for rashi_segment_ref in sorted_keys:
+        num_markers = markers_dict[rashi_segment_ref]
+        if num_markers == 0:
+            continue
+        siftei_pasuk_ref = rashi_segment_ref.section_ref().normal().replace("Rashi on ", "Siftei Chakhamim, ")
+        siftei_pasuk_ref = Ref(siftei_pasuk_ref)
+        if siftei_pasuk_ref not in siftei_en.keys():
+            print "{} has no comments but Rashi has markers".format(siftei_pasuk_ref.normal())
+            continue
+        siftei_segment_refs = siftei_en[siftei_pasuk_ref]
+        for siftei_ref in siftei_segment_refs[0:num_markers]:
+            link = {"refs": [siftei_ref, rashi_segment_ref.normal()], "generated_by": "siftei_rashi_linker", "auto": True, "type": "commentary"}
+            links.append(link)
+        siftei_en[siftei_pasuk_ref] = siftei_segment_refs[num_markers:]
+        if siftei_en[siftei_pasuk_ref] == []:
+            done.append(siftei_pasuk_ref)
+            siftei_en.pop(siftei_pasuk_ref)
+    #post_link(links, server="http://ste.sefaria.org")
+
+
+    '''
+    iterate through Rashis, get number of markers per Rashi segment, convert to Siftei pasuk reference and
+    get number of Siftei comments
+    for ref, value in siftei_en.iteritems():
+        ref = ref.replace("Siftei Chakhamim, ", "Rashi on ")
+        if "Genesis" in ref or "Exodus" in ref:
+            continue
+        if value == markers_dict[ref]:
+            match += 1
+            total += 1
+        else:
+            if markers_dict[ref] == 0:
+                sec_ref = ref.split(":")[0]
+                if sec_ref not in sec_refs:
+                    sec_refs[sec_ref] = 0
+                sec_refs[sec_ref] += 1
+            else:
+                msg = "{}: {} markers in Rashi vs {} Siftei comments".format(ref, markers_dict[ref], value)
+                probs_by_segment.append(msg)
+                total += 1
+
+    print float(match) / float(total)
+    validate_languages(markers_dict)
+    validate_markers_siftei_to_rashi()
+    '''
+
+def compress_markers_dict(markers_dict):
+    compressed_dict = {}
+    for ref, value in markers_dict.iteritemsd():
+        ref = ref.rsplit(":", 1)[0]
+        if ref not in compressed_dict:
+            compressed_dict[ref] = 0
+        compressed_dict[ref] += value
+    return compressed_dict
+
+
+def get_siftei_dict():
+    siftei_dict = {}
+    siftei_files = [f for f in os.listdir(".") if f.endswith("csv") and "Metsudah Publications" in f and "Siftei" in f and "- en -" in f]
+    for f in siftei_files:
+        for row in csv_iterator(f, "Siftei"):
+            ref = row[0]
+            comment = row[1]
+            if comment == "":
+                continue
+            ref = ref.rsplit(":", 1)[0]
+            ref = Ref(ref)
+            if ref not in siftei_dict:
+                siftei_dict[ref] = []
+            seg_count = len(siftei_dict[ref]) + 1
+            siftei_dict[ref].append("{}:{}".format(ref, seg_count))
+    return siftei_dict
+
+
+def validate_markers_siftei_to_rashi():
+    pass
+
+
+def csv_iterator(f, comm):
+    f = open(f)
+    reader = UnicodeReader(f)
+    not_yet = True
+    rows = []
+    for row in reader:
+        ref = row[0]
+        if ref.startswith(comm):
+            not_yet = False
+        if not_yet:
+            continue
+        rows.append(row)
+    f.close()
+    return rows
+
+
+def get_markers_and_text():
+    marker = u'\xb0'
+    files = [f for f in os.listdir(".") if f.endswith("csv") and "Metsudah Publications" in f and "Rashi" in f]
+    en_files = [f for f in files if "- en -" in f]
+    he_files = [f for f in files if "- he -" in f]
+    markers_dict = {}
+    text_dict = {}
+    for lang, files in [("he", he_files), ("en", en_files)]:
+        for f in files:
+            text_dict[f] = {}
+            book = f.split("-")[0]
+            for row in csv_iterator(f, "Rashi"):
+                ref = row[0]
+                ref = Ref(ref)
+                num = len(row[1].split(marker)) - 1
+                if lang == "he":
+                    markers_dict[ref] = num
+                perek, pasuk, segment = ref.sections
+                if perek not in text_dict[f].keys():
+                    text_dict[f][perek] = {}
+                if pasuk not in text_dict[f][perek].keys():
+                    text_dict[f][perek][pasuk] = {}
+                assert segment not in text_dict[f][perek][pasuk]
+                text_dict[f][perek][pasuk][segment] = wrap_itag_around_marker(row[1], marker)
+
+    return markers_dict, text_dict
+
+
+def wrap_itag_around_marker(comment, marker):
+    tag = u"""<i data-commentator="Siftei Chakhamim" data-label="⚬"></i>"""
+    comment = comment.replace(marker, tag)
+    return comment
 
 
 
 def validation_links():
-    pass
+    genesis_refs = Ref("Siftei Chakhamim, Genesis").all_segment_refs()
+    exodus_refs = Ref("Siftei Chakhamim, Exodus").all_segment_refs()
+    total = 0
+    not_linked = {}
+    blank_ones = []
+    for ref in genesis_refs+exodus_refs:
+        tc = TextChunk(ref, lang='en', vtitle="Sifsei Chachomim Chumash, Metsudah Publications, 2009")
+        if len(tc.text) > 0:
+            if LinkSet(ref).count() == 0:
+                sec_ref = ref.section_ref()
+                if sec_ref not in not_linked:
+                    not_linked[sec_ref] = []
+                not_linked[sec_ref].append(ref.normal())
+            total += 1
+        else:
+            blank_ones.append(ref)
 
+
+    csv_file = open("siftei_not_linked.csv", 'w')
+    csv_writer = csv.writer(csv_file)
+    csv_writer.writerow(["Section not fully linked", "Segments not linked"])
+    for sec_ref in sorted(not_linked.keys()):
+        refs = not_linked[sec_ref]
+        refs = "; ".join(refs)
+        csv_writer.writerow([sec_ref, refs])
+    csv_file.close()
+
+
+
+def strip(link):
+    return {"refs": [link[0], link[1]], "generated_by": "siftei_rashi_leviticus", "type": "Commentary", "auto": True}
 
 if __name__ == "__main__":
     '''
     Check if Pasuk information alone gives us all 50 chapters
     If it doesn’t work, check Hebrew and English versions that the pasuk go in same order and if they do then Use DH of Hebrew to figure out what Perek we are in
     '''
-    validation_markers()
-    validation_links()
+    links = get_links("Siftei Chakhamim, Leviticus", server="http://draft.sefaria.org")
+    new_links = []
+    for count, link in enumerate(links):
+        refs = [link["sourceRef"], link["anchorRef"]]
+        link = dict({"type": "Commentary", "auto": True, "generated_by": "rashi_siftei", "refs": refs})
+        if count < 10:
+            link["inline_reference"] = {"data-commentator": "Siftei Chakhamim", "data-order": str(count+1)}
+        else:
+            link["inline_reference"] = {"data-commentator": "Siftei Chakhamim", "data-label": "⚬"}
+        new_links.append(link)
+
+    post_link(new_links, server="http://ste.sefaria.org")
+    # import json
+    # import sources.functions
+    # data = json.load(open("../../../links.json"))
+    # data = [strip(link) for link in data]
+    # post_link(data, server="http://draft.sefaria.org")
+    # #validation_markers()
+    #add_term("Siftei Chakhamim", u"שפתי חכמים", server="http://draft.sefaria.org")
+    # add_title_existing_term("Siftei Hakhamim", "Siftei Chakhamim", server="http://localhost:8000")
+    # cmd = u"""./run scripts/move_draft_text.py "Siftei Chakhamim" -v "all" -l '2' -d "https://www.sefaria.org" -k "kAEw7OKw5IjZIG4lFbrYxpSdu78Jsza67HgR0gRBOdg" """
+    # print cmd
+    # for book in library.get_indexes_in_category("Torah"):
+    #     print cmd.format(u"Rashi on {}".format(book))
+
+    '''
     print "DONE VALIDATIONS"
     results = {"Rashi": {"en": [], "he": []}, "Siftei": {"en": [], "he": []}}
     text_dict = {"Rashi": {"en": {}, "he": {}}, "Siftei": {"en": {}, "he": {}}}
@@ -460,3 +678,12 @@ if __name__ == "__main__":
     #
     # print results["Rashi"]["he"]
     print tog_set
+
+
+for count, book in enumerate(IndexSet()):
+    if hasattr(book, "collective_title"):
+        if book.collective_title not in book.title:
+            print "{}th book, {}; {}".format(count+1, book.title, book.collective_title)
+
+
+    '''

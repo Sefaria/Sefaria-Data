@@ -41,6 +41,6 @@ errors += volume.format_text('@33', '@99', 'ramah')
 for i in errors:
     print i
 
-markup(volume, root)
+markup(volume, root, 2)
 
 root.export()
