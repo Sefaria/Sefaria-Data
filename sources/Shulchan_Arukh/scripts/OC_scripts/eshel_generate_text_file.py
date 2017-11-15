@@ -40,7 +40,7 @@ def break_up_22s(eshel_lines):
 
 
 
-def insert_simanim(eshel_lines, base_dict ):
+def insert_simanim(eshel_lines, base_dict):
     current_key = sorted(base_dict.keys())[0]
     current_pos = 0
     new_eshel_lines = [u"@00א"]

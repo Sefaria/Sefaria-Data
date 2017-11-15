@@ -2,13 +2,15 @@
 
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
-filename = u"../../txt_files/Orach_Chaim/part_1/eshel_3 volumes with simanim.txt"
+filename = [u"../../txt_files/Orach_Chaim/part_3/שלחן ערוך אורח חיים חלק ג עטרת זקנים מושלם.txt",
+            u"../../txt_files/Orach_Chaim/part_2/שולחן ערוך אורח חיים חלק ב עטרת זקנים.txt",
+            u"../../txt_files/Orach_Chaim/part_1/שוע אורח חיים חלק א ‏עטרת זקנים1.txt"]
 
 root = Root('../../Orach_Chaim.xml')
 commentaries = root.get_commentaries()
 eshel = commentaries.get_commentary_by_title("Eshel Avraham on Orach Chayim")
 if eshel is None:
-    eshel = commentaries.add_commentary("Eshel Avraham on Orach Chayim", u"אשל אברהם על אורח חיים")
+    eshel = commentaries.add_commentary("Eshel Avraham on Orach Chayim", u"טז על אורח חיים")
 
 base = root.get_base_text()
 base.add_titles("Orach Chaim", u"אורח חיים")
@@ -41,7 +43,3 @@ for i in range(3):
         print i
 
 root.export()
-
-
-
-
