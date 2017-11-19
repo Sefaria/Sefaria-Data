@@ -114,8 +114,8 @@ def parse_y_text():
                 break
 
             elif in_text:
-               
-                if (u"@22" in line or u"@03" in line) and ("SKIP_LABEL" not in line and siman_has_siman_starter(add_to_next)):
+                #under these condictions, we start a new siman
+                if (u"@22" in line or u"@03" in line or u'@02' in line) and ("SKIP_LABEL" not in line and siman_has_siman_starter(add_to_next)):
                     mitzvas.append(add_to_next)
                     for x in range(add_after_next):
                         mitzvas.append([])
@@ -130,7 +130,13 @@ def parse_y_text():
                         add_to_next[-1]=add_to_next[-1]+line
                         next_one_doesnt_append=False
                     else:
-                        add_to_next.append(line)
+                        if len(add_to_next)>0:
+                            if u'@22' in add_to_next[-1] and u'<br>' not in add_to_next[-1]:
+                                add_to_next[-1]=add_to_next[-1]+u'<br>'+line
+                            else:
+                                add_to_next.append(line)
+                        else:
+                            add_to_next.append(line)
                 #sometimes there's more than one siman in a section, we add blanks to account for this
                 #we need to account for extra simanim seperately, since sometimes siman markers aren't the start of a new index position
                 if u"@22" in line and "SKIP_LABEL" not in line:
@@ -163,7 +169,10 @@ def remove_tags_y(s):
     for header_label in header_labels:
         if header_label in s:
             s=re.sub(ur'({}.*?)\n'.format(header_label),ur'<b>\1</b>\n',s)
-    return re.sub(ur"@\d{1,4}",u"",s).replace(u"BADLABEL",u"").replace(u"SKIP_LABEL",u"")
+    s=remove_extra_space(s)
+    if u'@11' in s and u"@33" in s:
+        s.replace(u'@11',u'<b>').replace(u'@33',u"</b>")
+    return re.sub(ur"@\d{1,4}",u"",s).replace(u"BADLABEL",u"").replace(u"SKIP_LABEL",u"").replace(u'ADD_EXTRA_AFTER',u'')
 def get_data_orders(s):
     #here we get data-order numbers in the paragraph
     found_order_numbers = []
@@ -179,7 +188,10 @@ def remove_tags_ty(s):
     escapes = ''.join([chr(char) for char in range(27, 28)])
     s = s.translate(escapes)
     """     
-    return re.sub(ur"@\d{1,4}",u"",s)
+    return remove_extra_space(re.sub(ur"@\d{1,4}",u"",s))
+def remove_extra_space(s):
+    #s = s.replace(u'\t',u'').replace(ur'\xe2\x80\x83',u'')
+    return re.sub(ur'\s+',u' ',s)
     
     """
     def bold_dh(some_string):
@@ -254,7 +266,7 @@ def post_y_text():
         'text': final_text
     }
     post_text('Sefer Yereim', version,weak_network=True)#, skip_links=True, index_count="on")
-    post_text_weak_connection('Sefer Yereim', version)#,weak_network=True)#, skip_links=True, index_count="on")
+    #post_text_weak_connection('Sefer Yereim', version)#,weak_network=True)#, skip_links=True, index_count="on")
     
 def post_ty_index():
     # create index record
@@ -265,9 +277,9 @@ def post_ty_index():
     
     #add node for introduction
     intro_node = JaggedArrayNode()
-    intro_node.add_title("Commentor's Introduction", 'en', primary = True)
-    intro_node.add_title("הקדמת המחבר", 'he', primary = True)
-    intro_node.key = "Commentor's Introduction"
+    intro_node.add_title("Introduction", 'en', primary = True)
+    intro_node.add_title("הקדמת המבאר", 'he', primary = True)
+    intro_node.key = "Introduction"
     intro_node.depth = 1
     intro_node.addressTypes = ['Integer']
     intro_node.sectionNames = ['Paragraph']
@@ -298,6 +310,7 @@ def post_ty_index():
     index = {
         "title": 'Toafot Re\'em',
         "categories": ["Halakhah","Commentary"],
+        "dependence": "Commentary",
         "schema": record.serialize()
     }
     post_index(index,weak_network=True)
@@ -335,7 +348,7 @@ def post_intros():
         'language': 'he',
         'text': mevaar_intro
     }
-    post_text('Toafot Re\'em, Commentor\'s Introduction', version,weak_network=True)#, skip_links=True, index_count="on")
+    post_text('Toafot Re\'em, Introduction', version,weak_network=True)#, skip_links=True, index_count="on")
     version = {
         'versionTitle': 'Sefer Yereim HaShalem, Vilna, 1892-1901',
         'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001196456',
@@ -475,11 +488,11 @@ def not_blank(s):
     while " " in s:
         s = s.replace(u" ",u"")
     return (len(s.replace(u"\n",u"").replace(u"\r",u"").replace(u"\t",u""))!=0);
-post_ty_index()
+#post_ty_index()
 #post_intros()
 #post_y_index()
 #post_y_text()
-#post_ty_text()
+post_ty_text()
 #link_ty()
 """
 method we ended up not using;
