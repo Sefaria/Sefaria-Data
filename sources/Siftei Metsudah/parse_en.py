@@ -420,11 +420,10 @@ def post_text_ste(text_dict):
         }
         post_text(book, send_text, server="http://ste.sefaria.org")
 
-def validation_markers():
+def validation_markers(server):
     match = 0
     total = 0
     markers_dict, text_dict = get_markers_and_text() #markers: Rashi on Leviticus 1:1:1 = 2; Rashi on Leviticus 1:1:2 = 3;
-    post_text_ste(text_dict)
 
     siftei_en = get_siftei_dict()
     sec_refs = {}
@@ -437,9 +436,8 @@ def validation_markers():
         if num_markers == 0:
             continue
         siftei_pasuk_ref = rashi_segment_ref.section_ref().normal().replace("Rashi on ", "Siftei Chakhamim, ")
-        siftei_pasuk_ref = Ref(siftei_pasuk_ref)
         if siftei_pasuk_ref not in siftei_en.keys():
-            print "{} has no comments but Rashi has markers".format(siftei_pasuk_ref.normal())
+            print "{} has no comments but Rashi has markers".format(siftei_pasuk_ref)
             continue
         siftei_segment_refs = siftei_en[siftei_pasuk_ref]
         for siftei_ref in siftei_segment_refs[0:num_markers]:
@@ -449,7 +447,8 @@ def validation_markers():
         if siftei_en[siftei_pasuk_ref] == []:
             done.append(siftei_pasuk_ref)
             siftei_en.pop(siftei_pasuk_ref)
-    #post_link(links, server="http://ste.sefaria.org")
+    print
+    post_link(links, server=server)
 
 
     '''
@@ -491,18 +490,17 @@ def compress_markers_dict(markers_dict):
 def get_siftei_dict():
     siftei_dict = {}
     siftei_files = [f for f in os.listdir(".") if f.endswith("csv") and "Metsudah Publications" in f and "Siftei" in f and "- en -" in f]
-    for f in siftei_files:
-        for row in csv_iterator(f, "Siftei"):
-            ref = row[0]
-            comment = row[1]
-            if comment == "":
-                continue
-            ref = ref.rsplit(":", 1)[0]
-            ref = Ref(ref)
-            if ref not in siftei_dict:
-                siftei_dict[ref] = []
-            seg_count = len(siftei_dict[ref]) + 1
-            siftei_dict[ref].append("{}:{}".format(ref, seg_count))
+    f = 'Siftei Chakhamim - he - Sifsei Chachomim Chumash, Metsudah Publications, 2009.csv'
+    for row in csv_iterator(f, "Siftei"):
+        ref = row[0]
+        comment = row[1]
+        if comment == "":
+            continue
+        ref = ref.rsplit(":", 1)[0]
+        if ref not in siftei_dict:
+            siftei_dict[ref] = []
+        seg_count = len(siftei_dict[ref]) + 1
+        siftei_dict[ref].append("{}:{}".format(ref, seg_count))
     return siftei_dict
 
 
@@ -594,11 +592,104 @@ def validation_links():
 def strip(link):
     return {"refs": [link[0], link[1]], "generated_by": "siftei_rashi_leviticus", "type": "Commentary", "auto": True}
 
+
+def move_proto_genesis_exodus_links():
+    old_links = get_links("Siftei Hakhamim, Genesis", server="http://proto.sefaria.org")
+    old_links += get_links("Siftei Hakhamim, Exodus", server="http://proto.sefaria.org")
+    return [[link["sourceRef"], link["anchorRef"]] for link in old_links]
+
+def get_json_links(file, param):
+    with open(file) as f:
+        new_lines = []
+        lines = [line for line in list(f) if line != "\n"]
+        for line in lines:
+            refs = json.loads(line)[param]["refs"]
+            new_lines.append(refs)
+    return new_lines
+
+def check_segments_for_rashi():
+    found = []
+    for ref in library.get_index("Siftei Chakhamim").all_segment_refs():
+        ls = LinkSet(ref)
+        found_rashi = False
+        for l in ls:
+            if "Rashi on " in l.refs[0] or "Rashi on " in l.refs[1]:
+                found_rashi = True
+        if not found_rashi:
+            siftei = l.refs[0] if l.refs[0].startswith("Siftei") else l.refs[1]
+            if TextChunk(Ref(siftei)).text != "":
+                found.append(siftei)
+    print found
+
 if __name__ == "__main__":
+    c = {'sharedTitle': u'Siftei Chakhamim', 'path': [u'Tanakh', u'Commentary', u'Siftei Chakhamim'], 'depth': 3, 'lastPath': u'Siftei Chakhamim'}
+    #post_category(c, server="https://www.sefaria.org")
+    #add_category("Siftei Chakhamim", [u'Tanakh', u'Commentary', u'Siftei Chakhamim'], server="https://www.sefaria.org")
+    print
     '''
-    Check if Pasuk information alone gives us all 50 chapters
-    If it doesn’t work, check Hebrew and English versions that the pasuk go in same order and if they do then Use DH of Hebrew to figure out what Perek we are in
-    '''
+    tanakh_links = get_json_links("tanakh links", "new")
+    tanakh_links = [l for l in tanakh_links if l[0].startswith("Siftei Chakhamim") or l[1].startswith("Siftei Chakhamim")]
+    segments_not_linked = [u'Siftei Chakhamim, Genesis 1:12:2',
+ u'Siftei Chakhamim, Genesis 7:14:2',
+ u'Siftei Chakhamim, Leviticus 10:12:6',
+ u'Siftei Chakhamim, Leviticus 10:12:7',
+ u'Siftei Chakhamim, Leviticus 14:4:6',
+ u'Siftei Chakhamim, Numbers 16:4:3',
+ u'Siftei Chakhamim, Numbers 16:4:4',
+ u'Siftei Chakhamim, Numbers 16:4:5',
+ u'Siftei Chakhamim, Numbers 16:24:2',
+ u'Siftei Chakhamim, Numbers 16:24:3',
+ u'Siftei Chakhamim, Numbers 16:24:4',
+ u'Siftei Chakhamim, Numbers 17:25:3',
+ u'Siftei Chakhamim, Numbers 17:25:4',
+ u'Siftei Chakhamim, Numbers 18:8:5',
+ u'Siftei Chakhamim, Numbers 18:8:6',
+ u'Siftei Chakhamim, Numbers 18:8:7',
+ u'Siftei Chakhamim, Numbers 19:2:7',
+ u'Siftei Chakhamim, Numbers 19:9:4',
+ u'Siftei Chakhamim, Numbers 21:29:2',
+ u'Siftei Chakhamim, Numbers 22:4:6',
+ u'Siftei Chakhamim, Numbers 22:4:7',
+ u'Siftei Chakhamim, Numbers 22:4:8',
+ u'Siftei Chakhamim, Numbers 22:4:9',
+ u'Siftei Chakhamim, Numbers 22:4:10',
+ u'Siftei Chakhamim, Numbers 22:4:11',
+ u'Siftei Chakhamim, Numbers 22:4:12',
+ u'Siftei Chakhamim, Numbers 22:4:13',
+ u'Siftei Chakhamim, Numbers 22:4:14',
+ u'Siftei Chakhamim, Numbers 22:4:15',
+ u'Siftei Chakhamim, Numbers 22:4:16',
+ u'Siftei Chakhamim, Numbers 22:4:17',
+ u'Siftei Chakhamim, Numbers 22:4:18',
+ u'Siftei Chakhamim, Deuteronomy 17:19:2']
+    links_to_post = []
+    for segment in segments_not_linked:
+        pasuk = segment.rsplit(":", 1)[0].replace("Siftei Chakhamim, ", "Rashi on ")
+        link = {"refs": [pasuk, segment], "generated_by": "recover_siftei_from_history_set", "auto": True, "type": "Commentary"}
+        links_to_post.append(link)
+
+    print tanakh_links
+    links_to_delete = get_json_links("genesis exodus links to delete", "old")
+    old_gen_ex_links = move_proto_genesis_exodus_links()
+    old_gen_ex_links += get_json_links("genesis exodus links", "new")
+    old_leviticus_links = get_json_links("leviticus links", "new")
+
+    for links in [old_gen_ex_links, old_leviticus_links, tanakh_links]:
+        for link in links:
+            rev_link = link[::-1]
+            if link not in links_to_delete and rev_link not in links_to_delete:
+                actual_link = {"refs": link, "generated_by": "recover_siftei_from_history_set", "auto": True, "type": "Commentary"}
+                if "Rashi on" in link[0] or "Rashi on" in link[1]:
+                    actual_link["inline_reference"] = {"data-commentator": "Siftei Chakhamim", "data-label": "⚬"}
+                links_to_post.append(actual_link)
+            else:
+                print
+
+    post_link(links_to_post, server="http://draft.sefaria.org")
+
+    validation_markers(server="http://draft.sefaria.org")
+
+    
     links = get_links("Siftei Chakhamim, Leviticus", server="http://draft.sefaria.org")
     new_links = []
     for count, link in enumerate(links):
@@ -611,6 +702,7 @@ if __name__ == "__main__":
         new_links.append(link)
 
     post_link(new_links, server="http://ste.sefaria.org")
+    
     # import json
     # import sources.functions
     # data = json.load(open("../../../links.json"))
@@ -624,7 +716,6 @@ if __name__ == "__main__":
     # for book in library.get_indexes_in_category("Torah"):
     #     print cmd.format(u"Rashi on {}".format(book))
 
-    '''
     print "DONE VALIDATIONS"
     results = {"Rashi": {"en": [], "he": []}, "Siftei": {"en": [], "he": []}}
     text_dict = {"Rashi": {"en": {}, "he": {}}, "Siftei": {"en": {}, "he": {}}}
@@ -678,12 +769,6 @@ if __name__ == "__main__":
     #
     # print results["Rashi"]["he"]
     print tog_set
+'''
 
 
-for count, book in enumerate(IndexSet()):
-    if hasattr(book, "collective_title"):
-        if book.collective_title not in book.title:
-            print "{}th book, {}; {}".format(count+1, book.title, book.collective_title)
-
-
-    '''

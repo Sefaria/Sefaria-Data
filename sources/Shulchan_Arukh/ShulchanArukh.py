@@ -106,6 +106,7 @@ class Element(object):
         else:
             for volume in children:
                 if current_child.num == volume.num:
+                    print 'hi'
                     raise DuplicateChildError(u'{} appears more than once!'.format(current_child.num))
 
                 if current_child.num < volume.num and enforce_order:
@@ -213,6 +214,7 @@ class Element(object):
 
                     else:
                         if child_num <= 0:  # Do not add text before the first siman marker has been found
+                            print
                             raise MissingChildError("{} {} is missing children.".format(self.name.title(), self.num))
                         current_child.append(line)
 
@@ -614,10 +616,11 @@ class Volume(OrderedElement):
         try:
             self._mark_children(pattern, start_mark, specials, add_child_callback=self._add_siman, enforce_order=enforce_order)
         except DuplicateChildError as e:
-            errors.append(e.message)
+            errors.append("Siman {}".format(e.message))
         return errors
 
     def mark_seifim(self, pattern, start_mark=None, specials=None, enforce_order=False, cyclical=False):
+        # type: (object, object, object, object, object) -> object
         errors = []
         for siman in self.get_child():
             assert isinstance(siman, Siman)
@@ -730,7 +733,7 @@ class Volume(OrderedElement):
         elif simanim_only:
             assert commentary and base, "When simanim_only is True, you must also pass the name of the commentary and base text."
             commentary = commentary.strip()
-            msg = u"""{}, Siman {}: {} markers for commentary "{}" but comments not in "{}" files."""
+            msg = u"""{}, Siman {}: {} extra markers not found in commentary."""
             return [msg.format(base, siman, num_errors, commentary, commentary) for siman, num_errors in simanim_errors.iteritems()]
         else:
             return xref_errors
@@ -894,7 +897,7 @@ class Seif(OrderedElement):
         return [TextElement(c) for c in self.Tag.children]
 
 
-    def format_text(self, start_special, end_special, name):
+    def format_text(self, start_special, end_special, name="reg_text"):
         """
         Mark up the text into regular and "special" formatting. Can only handle one type of special formatting. Useful
         for marking dh in bold, or רמ"א in the base text.
@@ -902,7 +905,7 @@ class Seif(OrderedElement):
         patterns will cause this method to fail.
         :param end_special: regex pattern to match end of formatted text. This pattern will be ignored if not preceded
         by a start_special pattern.
-        :param name: Name of tag to wrap formatted text in.
+        :param name: Name of tag to wrap formatted text in.  If "reg_text", then start_special and end_special should be empty strings.
         :return:
         """
         def add_formatted_text(words, element_name):
@@ -914,14 +917,17 @@ class Seif(OrderedElement):
         assert self.Tag.string is not None  # This can happen if xml elements are already present or if Tag is self-closing.
         text_array = self.Tag.string.extract().split()
 
+        if name == "reg_text":
+            assert start_special == end_special == "", "If name is 'reg_text', both special arguments must be empty strings."
+            self.add_special(text_array, "reg_text")
+            return
+
         is_special = False
         element_words = []
         for word in text_array:
-
             if re.search(start_special, word):
                 if is_special:  # Two consecutive special patterns have been found
                     raise AssertionError('Seif {}: Two consecutive formatting patterns ({}) found'.format(self.num, start_special))
-
                 else:
                     split_by_pattern = re.split(start_special, word)
                     assert len(split_by_pattern) == 2

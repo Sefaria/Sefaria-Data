@@ -4,5 +4,6 @@ export PYTHONPATH=$PYTHONPATH:$data_home
 python OC_base1.py
 python OC_base2.py
 python OC_base3.py
-python taz.py
-python eshel.py
+python taz.py --run
+python eshel.py --run
+python ateret.py --run

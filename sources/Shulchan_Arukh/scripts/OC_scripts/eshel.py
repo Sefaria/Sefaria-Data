@@ -1,5 +1,5 @@
 #encoding=utf-8
-
+import sys
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
 filename = u"../../txt_files/Orach_Chaim/part_1/eshel_3 volumes with simanim.txt"
@@ -32,13 +32,14 @@ for i in range(3):
 
     assert isinstance(b_vol, Volume)
     volume.set_rid_on_seifim(cyclical=True)
-    print errors
 
-    errors += root.populate_comment_store()
     eshel_mark = u"@88" if i < 2 else u"@99"
-    errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(eshel_mark, x.text) is not None, base="Orach Chaim", commentary="Eshel Avraham on Orach Chaim", simanim_only=True)
-    for i in errors:
-        print i
+    if len(sys.argv) == 2 and sys.argv[1] == "--run":
+        errors += root.populate_comment_store()
+        errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(eshel_mark, x.text) is not None, base="Orach Chaim", commentary="Eshel Avraham on Orach Chaim", simanim_only=True)
+
+for i in errors:
+    print i
 
 root.export()
 
