@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 data_home=$(cd ../../../; pwd)
 export PYTHONPATH=$PYTHONPATH:$data_home
 python OC_base1.py

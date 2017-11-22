@@ -8,7 +8,7 @@ from sources.Shulchan_Arukh.ShulchanArukh import *
 def markup(volume, root, i=1):
     commentaries = root.get_commentaries()
     volume.mark_references(commentaries.commentary_ids["Taz on Orach Chayim"], u'@77\(([\u05d0-\u05ea]{1,3})\)', group=1)
-    eshel_mark = "@88" if i < 3 else "@99"
+    eshel_mark = u"@88" if i < 3 else u"@99"
     volume.mark_references(commentaries.commentary_ids["Eshel Avraham on Orach Chayim"], eshel_mark + u'([\u05d0-\u05ea]{1,3})', group=1, cyclical=True)
 
 
