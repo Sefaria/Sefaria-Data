@@ -180,14 +180,6 @@ def get_data_orders(s):
         found_order_numbers.append(getGematria(regmatch))
     return found_order_numbers
 def remove_tags_ty(s):
-    """
-    if '\uXXXX' in s:
-        print "GOT THE X"
-    s=s.replace('\uXXXX','')
-    
-    escapes = ''.join([chr(char) for char in range(27, 28)])
-    s = s.translate(escapes)
-    """
     return remove_extra_space(re.sub(ur"@\d{1,4}",u"",s))
 def remove_extra_space(s):
     #s = s.replace(u'\t',u'').replace(ur'\xe2\x80\x83',u'')
@@ -195,24 +187,6 @@ def remove_extra_space(s):
     b=b.replace('\xe2\x80\x83','')
     s=b.decode('utf8')
     return re.sub(ur'\s+',u' ',s)
-    
-    """
-    def bold_dh(some_string):
-        splits = {
-            "pi_split":some_string.split(u"פי"+u"'"),
-            "pirush_split": some_string.split(u"פירוש"),
-            "i_kashiya_split": some_string.split(u"אי קשיא"),
-            "kashiya_li_split": some_string.split(u"קשיא לי"),
-            "period_split": [some_string.split(u".")[0]+".",''],
-            }
-        #if re.match(ur".*?"+ur"ו?כו"+"\'?",some_string):
-        if re.search(ur".*?כו"+ur"\'?(?=[ \.])",some_string):
-            splits["chulei_split"]= [re.search(ur".*?כו?"+"\'?(?=[ \.])",some_string).group(),'']
-        split_dh=get_smallest(splits)
-        if len(split_dh.split(" "))<30:
-            return u"<b>"+split_dh+u"</b>"+some_string[len(split_dh):]
-        return some_string
-    """
 def get_siman_count(line):
     line = re.sub(ur"\[.*?\]",u"",line)
     line = re.sub(ur"\(.*?\)",u"",line)
@@ -501,6 +475,7 @@ def not_blank(s):
 #post_y_text()
 post_ty_text()
 link_ty()
+#link_ty()
 """
 method we ended up not using;
 def get_siman_count(line):
