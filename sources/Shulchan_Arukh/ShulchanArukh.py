@@ -106,7 +106,6 @@ class Element(object):
         else:
             for volume in children:
                 if current_child.num == volume.num:
-                    print 'hi'
                     raise DuplicateChildError(u'{} appears more than once!'.format(current_child.num))
 
                 if current_child.num < volume.num and enforce_order:
@@ -214,7 +213,6 @@ class Element(object):
 
                     else:
                         if child_num <= 0:  # Do not add text before the first siman marker has been found
-                            print
                             raise MissingChildError("{} {} is missing children.".format(self.name.title(), self.num))
                         current_child.append(line)
 
@@ -726,6 +724,7 @@ class Volume(OrderedElement):
                 if siman not in simanim_errors:
                     simanim_errors[siman] = 0
                 simanim_errors[siman] += 1
+                xref_errors.append(u"xref with id {} missing required fields".format(item['id']))
 
         if len(xref_errors) == 0 and len(simanim_errors) == 0:
             print "No errors found"
@@ -734,7 +733,7 @@ class Volume(OrderedElement):
             assert commentary and base, "When simanim_only is True, you must also pass the name of the commentary and base text."
             commentary = commentary.strip()
             msg = u"""{}, Siman {}: {} extra markers not found in commentary."""
-            return [msg.format(base, siman, num_errors, commentary, commentary) for siman, num_errors in simanim_errors.iteritems()]
+            return [msg.format(base, siman, num_errors, commentary, commentary) for siman, num_errors in sorted(simanim_errors.iteritems(), key=lambda x:int(x[0]))]
         else:
             return xref_errors
 

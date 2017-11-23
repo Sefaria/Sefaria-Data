@@ -27,17 +27,36 @@ for i in range(1, 4):
     volume.mark_simanim(u'@12([\u05d0-\u05ea]{1,4})')
     print "Validating Simanim"
     volume.validate_simanim()
+    errors = []
 
-    volume.mark_seifim(u'@11([\u05d0-\u05ea])', cyclical=True)
+    if i==2:
+        errors += volume.mark_seifim(u'@11([\u05d0-\u05ea#])', cyclical=True)
+    else:
+        errors += volume.mark_seifim(u'@11([\u05d0-\u05ea])', cyclical=True)
+    print errors
 
-    base_volume = base_text.get_volume(i)
-    for base_siman, baer_siman in zip(base_volume.get_child(), volume.get_child()):
-        assert base_siman.num == baer_siman.num
+    # base_volume = base_text.get_volume(i)
+    # for base_siman, baer_siman in zip(base_volume.get_child(), volume.get_child()):
+    #     assert base_siman.num == baer_siman.num
+    #
+    #     total_footnotes = len(re.findall(u'@44[\u05d0-\u05ea]', unicode(base_siman)))
+    #     total_comments = len(baer_siman.get_child())
+    #     if total_footnotes != total_comments:
+    #         print "mismatch in siman {}. {} footnotes and {} comments".format(baer_siman.num, total_footnotes, total_comments)
+    volume.format_text(u'$^', u'$^', u'dh')
+    volume.set_rid_on_seifim(cyclical=True)
 
-        total_footnotes = len(re.findall(u'@44[\u05d0-\u05ea]', unicode(base_siman)))
-        total_comments = len(baer_siman.get_child())
-        if total_footnotes != total_comments:
-            print "mismatch in siman {}. {} footnotes and {} comments".format(baer_siman.num, total_footnotes, total_comments)
+root.populate_comment_store()
+for i in range(1,4):
+    b_vol = base_text.get_volume(i)
+    assert isinstance(b_vol, Volume)
+    errors= b_vol.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'@44', x.text) is not None,
+                                               base="Orach Chaim", commentary="Be'er Hetev", simanim_only=False)
+    for e in errors:
+        print e
+
+
+root.export()
 
 
 
