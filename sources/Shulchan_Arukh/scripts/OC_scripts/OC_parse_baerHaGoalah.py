@@ -51,7 +51,7 @@ for i in range(1,4):
     b_vol = base_text.get_volume(i)
     assert isinstance(b_vol, Volume)
     errors= b_vol.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'@44', x.text) is not None,
-                                               base="Orach Chaim", commentary="Be'er Hetev", simanim_only=False)
+                                               base="Orach Chaim", commentary="Be'er HaGolah", simanim_only=False)
     for e in errors:
         print e
 

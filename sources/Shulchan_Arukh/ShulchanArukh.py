@@ -732,7 +732,7 @@ class Volume(OrderedElement):
         elif simanim_only:
             assert commentary and base, "When simanim_only is True, you must also pass the name of the commentary and base text."
             commentary = commentary.strip()
-            msg = u"""{}, Siman {}: {} extra markers not found in commentary."""
+            msg = u"""{}, Siman {}: {} extra markers not found in {}."""
             return [msg.format(base, siman, num_errors, commentary, commentary) for siman, num_errors in sorted(simanim_errors.iteritems(), key=lambda x:int(x[0]))]
         else:
             return xref_errors
