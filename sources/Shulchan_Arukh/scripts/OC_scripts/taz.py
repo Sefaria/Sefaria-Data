@@ -17,10 +17,11 @@ def convert_11s(filename):
 
 root = Root('../../Orach_Chaim.xml')
 commentaries = root.get_commentaries()
-taz = commentaries.get_commentary_by_title("Taz on Orach Chayim")
+taz = commentaries.get_commentary_by_title("Taz")
 if taz is None:
-    taz = commentaries.add_commentary("Taz on Orach Chayim", u"טז על אורח חיים")
+    taz = commentaries.add_commentary("Taz", u"טז")
 
+a = {}
 
 filenames = [u"../../txt_files/Orach_Chaim/part_1/שוע אורח חיים חלק א טז.txt",
              u"../../txt_files/Orach_Chaim/part_2/שולחן ערוך אורח חיים חלק ב טז מגן דוד.txt",
@@ -50,7 +51,7 @@ for i, filename in enumerate(filenames):
     volume.set_rid_on_seifim()
     if len(sys.argv) == 2 and sys.argv[1] == "--run":
         errors += root.populate_comment_store()
-        errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u'@77', x.text) is not None, base="Orach Chaim", commentary="Taz on Orach Chaim", simanim_only=True)
+        errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u'@77', x.text) is not None, base="Orach Chaim", commentary="Taz", simanim_only=True)
 
 
 

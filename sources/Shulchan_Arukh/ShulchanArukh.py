@@ -106,7 +106,7 @@ class Element(object):
         else:
             for volume in children:
                 if current_child.num == volume.num:
-                    raise DuplicateChildError(u'{} appears more than once!'.format(current_child.num))
+                    raise DuplicateChildError(u'{} appears more than once!'.format(numToHeb(current_child.num)))
 
                 if current_child.num < volume.num and enforce_order:
                     volume.Tag.insert_before(current_child.Tag)
@@ -775,7 +775,7 @@ class Siman(OrderedElement):
         try:
             self._mark_children(pattern, start_mark, specials, add_child_callback=self._add_seif, enforce_order=enforce_order)
         except DuplicateChildError as e:
-            raise DuplicateChildError('Siman {}, Seif {}'.format(self.num, e.message))
+            raise DuplicateChildError(u'Siman {}, Seif {}'.format(numToHeb(self.num), e.message))
 
     def mark_cyclical_seifim(self, pattern, start_mark=None, specials=None, enforce_order=False):
         def get_label(match_object):
@@ -854,8 +854,8 @@ class Siman(OrderedElement):
                     siman_errors[self.num] = 0
                 siman_errors[self.num] += 1
 
-        msg = "{}, Siman {}: found {} comment(s) not found in base text."
-        errors_report = [msg.format(title, siman, num_probs) for siman, num_probs in siman_errors.iteritems()]
+        msg = u"{}, Siman {}: found {} comment(s) not found in base text."
+        errors_report = [msg.format(title, numToHeb(siman), num_probs) for siman, num_probs in siman_errors.iteritems()]
 
         return errors_report
 

@@ -5,10 +5,11 @@ from os.path import dirname as loc
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
 commentary_list = [
-    ("Taz on Orach Chayim", u"טז על אורח חיים"),
-    ("Eshel Avraham on Orach Chayim", u"אשל אברהם על אורח חיים"),
+    ("Taz", u"טז"),
+    ("Eshel Avraham", u"אשל אברהם"),
     ("Be'er HaGolah", u"באר הגולה"),
-    ("Ateret Zekenim on Orach Chayim", u"עטרת אברהם על אורח חיים")
+    ("Ateret Zekenim", u"עטרת אברהם"),
+    ("Chok Yaakov", u"חוק יעקב")
 
 ]
 commentary_list = [dict(zip(('en_title', 'he_title'), c)) for c in commentary_list]

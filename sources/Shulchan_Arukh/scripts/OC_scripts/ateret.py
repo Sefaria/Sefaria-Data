@@ -38,9 +38,9 @@ for filename in filenames:
 
 root = Root('../../Orach_Chaim.xml')
 commentaries = root.get_commentaries()
-commentary = commentaries.get_commentary_by_title("Ateret Zekenim on Orach Chayim")
+commentary = commentaries.get_commentary_by_title("Ateret Zekenim")
 if commentary is None:
-    commentary = commentaries.add_commentary("Ateret Zekenim on Orach Chayim", u"עטרת אברהם על אורח חיים")
+    commentary = commentaries.add_commentary("Ateret Zekenim", u"עטרת אברהם")
 
 base = root.get_base_text()
 base.add_titles("Orach Chaim", u"אורח חיים")
@@ -54,7 +54,7 @@ for i, filename in enumerate(filenames):
     errors += volume.mark_simanim(u'@00(.{1,6})')
     volume.validate_simanim(complete=False)
 
-    errors += volume.mark_seifim(u'@22(\*)', cyclical=True)
+    errors += volume.mark_seifim(u'@22(.{1,6})', cyclical=True)
     volume.validate_seifim()
 
     errors += volume.format_text(start_special='', end_special='', name="reg_text")
@@ -65,10 +65,11 @@ for i, filename in enumerate(filenames):
     volume.set_rid_on_seifim(cyclical=True)
     if len(sys.argv) == 2 and sys.argv[1] == "--run":
         errors += root.populate_comment_store()
-        errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search("\*", x.text) is not None, base="Orach Chaim", commentary="Ateret Zekenim on Orach Chaim", simanim_only=True)
+        errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search("\*", x.text) is not None, base="Orach Chaim", commentary="Ateret Zekenim", simanim_only=True)
 
-sort_func = lambda x: int(x.split("Orach Chaim, Siman ")[1].split(":")[0])
-errors = sorted(errors, key=sort_func)
+errors = set(errors)
+#sort_func = lambda x: int(x.split("Orach Chaim, Siman ")[1].split(":")[0])
+errors = sorted(errors)
 for i in errors:
     print i
 
