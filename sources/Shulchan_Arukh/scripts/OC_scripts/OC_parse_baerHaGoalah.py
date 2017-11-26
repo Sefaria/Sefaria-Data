@@ -29,7 +29,7 @@ for i in range(1, 4):
     volume.validate_simanim()
     errors = []
 
-    if i==2:
+    if i==2 or i==3:
         errors += volume.mark_seifim(u'@11([\u05d0-\u05ea#])', cyclical=True)
     else:
         errors += volume.mark_seifim(u'@11([\u05d0-\u05ea])', cyclical=True)
