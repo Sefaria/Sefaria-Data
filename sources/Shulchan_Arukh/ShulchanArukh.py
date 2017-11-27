@@ -333,14 +333,14 @@ class Root(Element):
         else:
             raise AssertionError("Unknown language passed. Recognized values are 'en' or 'he'")
 
-    def populate_comment_store(self):
+    def populate_comment_store(self, *args, **kwargs):
         comment_store = CommentStore()
         comment_store.clear()
         errors = []
-        errors += self.get_base_text().load_xrefs_to_commentstore()
+        errors += self.get_base_text().load_xrefs_to_commentstore(*args, **kwargs)
         commentaries = self.get_commentaries()
-        errors += commentaries.load_xrefs_to_commentstore()
-        errors += commentaries.load_comments_to_commentstore()
+        errors += commentaries.load_xrefs_to_commentstore(*args, **kwargs)
+        errors += commentaries.load_comments_to_commentstore(*args, **kwargs)
         return errors
 
 
@@ -448,10 +448,10 @@ class Commentary(Record):
         self.id = soup_tag['id']
         super(Commentary, self).__init__(soup_tag)
 
-    def load_comments_to_commentstore(self):
+    def load_comments_to_commentstore(self, *args, **kwargs):
         errors = []
         for child in self.get_child():
-            errors += child.load_comments_to_commentstore(self.titles['en'])
+            errors += child.load_comments_to_commentstore(self.titles['en'], *args, **kwargs)
         return errors
 
 
@@ -837,13 +837,13 @@ class Siman(OrderedElement):
                     print '\t{} followed by {} (found in seif {})'.format(*error)
         return passed
 
-    def load_xrefs_to_commentstore(self, title):
+    def load_xrefs_to_commentstore(self, title, *args, **kwargs):
         errors = []
         for child in self.get_child():
             errors += child.load_xrefs_to_commentstore(title, self.num)
         return errors
 
-    def load_comments_to_commentstore(self, title):
+    def load_comments_to_commentstore(self, title, verbose=False):
         siman_errors = {}
         errors_report = []
         for child in self.get_child():
@@ -853,6 +853,8 @@ class Siman(OrderedElement):
                 if self.num not in siman_errors.keys():
                     siman_errors[self.num] = 0
                 siman_errors[self.num] += 1
+                if verbose:
+                    print "{}: Siman {} Seif {} missing reference in base text".format(title, self.num, child.num)
 
         msg = "{}, Siman {}: found {} comment(s) not found in base text."
         errors_report = [msg.format(title, siman, num_probs) for siman, num_probs in siman_errors.iteritems()]
@@ -1019,13 +1021,13 @@ class Seif(OrderedElement):
         pattern = re.compile(pattern)
         return list(pattern.finditer(self.Tag.text))
 
-    def load_xrefs_to_commentstore(self, title, siman):
+    def load_xrefs_to_commentstore(self, title, siman, *args, **kwargs):
         errors = []
         for child in self.get_child():
             errors += child.load_xrefs_to_commentstore(title, siman, self.num)
         return errors
 
-    def load_comments_to_commentstore(self, title, siman):
+    def load_comments_to_commentstore(self, title, siman, *args, **kwargs):
         comment_store = CommentStore()
 
         if self.rid == 'no-link':
@@ -1182,7 +1184,7 @@ class Xref(Element):
     def __hash__(self):
         return hash(self.id)
 
-    def load_xrefs_to_commentstore(self, title, siman, seif):
+    def load_xrefs_to_commentstore(self, title, siman, seif, *args, **kwargs):
         comment_store = CommentStore()
         if comment_store.get(self.id) is not None:
             if seif in comment_store[self.id]['seif']:
