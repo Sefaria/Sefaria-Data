@@ -13,7 +13,6 @@ import codecs
 from fuzzywuzzy import fuzz
 import os
 
-print len(heb_parshiot)
 heb_parshiot = [u"בראשית",u"נח", u"לך לך", u"וירא", u"חיי שרה", u"תולדות", u"ויצא", u"וישלח", u"וישב", u"מקץ",
 u"ויגש", u"ויחי", u"שמות", u"וארא", u"בא", u"בשלח", u"יתרו", u"משפטים", u"תרומה", u"תצוה", u"כי תשא",
 u"ויקהל", u"פקודי", u"ויקרא", u"צו", u"שמיני", u"תזריע", u"מצרע", u"אחרי מות", u"קדשים", u"אמר", u"בהר",
@@ -55,8 +54,6 @@ folder_names=[x[0]for x in os.walk("files")][1:]
 last_parsha_index=999
 current_sheilta = 0
 for folder in folders_in_order:
-    print "ORDER ", folder
-for folder in folders_in_order:
     for _file in os.listdir('files/'+folder.decode('utf8')):
         if _file in base_text_files:
             _file=_file.encode('utf8')
@@ -70,8 +67,8 @@ for folder in folders_in_order:
                         if len(parsha_range_table)>0:
                             parsha_range_table[-1]["End Index"]=current_sheilta
                         eng_parsha = eng_parshiot[parsha_index]
-                        print "TEST ",eng_parsha,"LPI ",last_parsha_index,"CS ",current_sheilta
-                        print eng_parsha, parsha_index
+                        #print "TEST ",eng_parsha,"LPI ",last_parsha_index,"CS ",current_sheilta
+                        #print eng_parsha, parsha_index
                         parsha_range_table.append({"Hebrew Parsha": heb_parsha,"English Parsha": eng_parsha, "Start Index": current_sheilta+1})
                         last_parsha_index=parsha_index
                         first_index=False
@@ -83,17 +80,157 @@ for folder in folders_in_order:
                     sheiltot[current_sheilta].append(line)
             #add index for last parsha
             parsha_range_table[-1]["End Index"]=current_sheilta
-            
-def fix_markers_sheiltot(s):
-    return s
-    
-for parsha in parsha_range_table:
-    print parsha
-
+sheiltot=sheiltot[1:]
+def fix_markers_sheiltot(sheilta):
+    #we have to fix markers by sheilta, to properly address the i tags
+    i_tag_table=[]
+    return_array = []
+    eimek_current_order_number = 1
+    shalom_current_order_number = 1
+    for p in sheilta:
+        p = p.replace(u"@11",u"<b>").replace(u"@33",u"</b>")
+        for eimek_match in re.findall(ur'@44\(.*?\)',p):
+            if getGematria(eimek_match)>0:
+                eimek_current_order_number=getGematria(eimek_match)
+            if u'*' in eimek_match:
+                p=p.replace(eimek_match,u"<i data-commentator=\"Haamek Sheilah\" data-label=\"*\" data-order=\""+str(eimek_current_order_number)+"\"></i>")
+            else:
+                p=p.replace(eimek_match,u"<i data-commentator=\"Haamek Sheilah\" data-order=\""+str(eimek_current_order_number)+"\"></i>")
+        for shalom_match in re.findall(ur'@55\S*?',p):
+            if getGematria(shalom_match)>0:
+                shalom_current_order_number=getGematria(shalom_match)
+            if u'*' in shalom_match:
+                p=p.replace(shalom_match,u"<i data-commentator=\"Sheilat Shalom\" data-label=\"*\" data-order=\""+str(shalom_current_order_number)+"\"></i>")
+            else:
+                p=p.replace(shalom_match,u"<i data-commentator=\"Sheilat Shalom\" data-order=\""+str(shalom_current_order_number)+"\"></i>")
+        return_array.append(re.sub(ur"@\d{1,4}",u"",p))
+    return return_array
+"""
 for sindex, sheilta in enumerate(sheiltot):
     for pindex, paragraph in enumerate(sheilta):
         print sindex, pindex, paragraph
+"""
+def post_sra_index():
+    # create index record
+    record = JaggedArrayNode()
+    record.add_title('Sheiltot d\'Rav Achai Gaon', 'en', primary=True, )
+    record.add_title(u'שאילתות דרב אחאי גאון', 'he', primary=True, )
+    record.key = 'Sheiltot d\'Rav Achai Gaon'
+    record.depth = 2
+    record.addressTypes = ['Integer','Integer']
+    record.sectionNames = ['Sheilta','Paragraph']
     
+    #now we make alt structs
+    parsha_nodes =SchemaNode()
+    for parsha in parsha_range_table:
+        parsha_node = ArrayMapNode()
+        parsha_node.includeSections = True
+        parsha_node.depth = 0
+        parsha_node.wholeRef = "Sheiltot d'Rav Achai Gaon, "+str(parsha['Start Index'])+"-"+str(parsha['End Index'])
+        parsha_node.key = parsha['English Parsha']
+        parsha_node.add_shared_term(parsha['English Parsha'])
+        parsha_nodes.append(parsha_node)
+        
+    record.validate()
+
+    index = {
+        "title": "Sheiltot d'Rav Achai Gaon",
+        "categories": ["Halakhah"],
+        "alt_structs": {"Parshas": parsha_nodes.serialize()},
+        "schema": record.serialize()
+    }
+    post_index(index,weak_network=True)
+def post_eimek_index():
+    # create index record
+    record = SchemaNode()
+    record.add_title('Haamek Sheilah', 'en', primary=True, )
+    record.add_title(u'העמק שאלה', 'he', primary=True, )
+    record.key = 'Haamek Sheilah'
+
+    #add node for introduction
+    intro_node = JaggedArrayNode()
+    intro_node.add_title("Introduction", 'en', primary = True)
+    intro_node.add_title("הקדמה", 'he', primary = True)
+    intro_node.key = "Introduction"
+    intro_node.depth = 2
+    intro_node.addressTypes = ['Integer','Integer']
+    intro_node.sectionNames = ['Section','Paragraph']
+    record.append(intro_node)
+    
+    shetila_nodes = JaggedArrayNode()
+    shetila_nodes.key = "default"
+    shetila_nodes.default = True
+    shetila_nodes.depth = 2
+    shetila_nodes.addressTypes = ['Integer', 'Integer']
+    shetila_nodes.sectionNames = ['Sheilta','Comment']
+    record.append(shetila_nodes)
+    
+    record.validate()
+
+    index = {
+        "title": 'Haamek Sheilah',
+        "categories": ["Halakhah","Commentary"],
+        "dependence": "Commentary",
+        "schema": record.serialize()
+    }
+    post_index(index,weak_network=True)
+def get_eimek_paragraph_table():
+    return_array=[[] for x in range(172)]
+    for sindex, sheilta in enumerate(sheiltot):
+        for pindex, paragraph in enumerate(sheilta):
+            for eimek_match in re.findall(ur'@44\(.*?\)',p):
+                return_array[sindex].append(pindex)
+    return return_array
+def fix_comment_markers(s):
+    return re.sub(ur"@\d{1,4}",u"",p.replace(u"@11",u"<b>").replace(u"@33",u"</b>").replace(u'ADDTONEXT',u''))
+def post_eimek_text():    
+    final_text = [[] for x in range(172)]
+    add_to_next=[]
+    for folder in folders_in_order:
+        for _file in os.listdir('files/'+folder.decode('utf8')):
+            if 'העמק' in _file:
+                if u'הקדמת' in _file:
+                    pass
+                #different sefarim are marked differently...
+                elif u'בראשית' in _file:
+                    _file=_file.encode('utf8')
+                    with open('files/'+folder+'/'+_file) as myfile:
+                        lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
+                    current_sheilta=0
+                    for line in lines:
+                        if u'@88' in line:
+                            current_sheilta+=1
+                        #we added a tag to handle this exception
+                        elif u"ADDTONEXT" in line:
+                            add_to_next.append(line)
+                        if u'@22' not in line and u"@00" not in line and not_blank(line):
+                            while len(add_to_next>0):
+                                line = add_to_next.pop()+u'<br>'+line
+                            final_text[current_sheilta].append(fix_comment_markers(line))
+                elif u"דברים" in _file:
+                    _file=_file.encode('utf8')
+                    with open('files/'+folder+'/'+_file) as myfile:
+                        lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
+                    current_sheilta=0
+                    
+                        
+def post_sra_text():
+    to_post=[]
+    for sheilta in sheiltot:
+        to_post.append(fix_markers_sheiltot(sheilta))
+    for sindex, sheilta in enumerate(to_post):
+        for pindex, paragraph in enumerate(sheilta):
+            print sindex, pindex, paragraph
+    version = {
+        'versionTitle': 'Sheiltot d\'Rav Achai Gaon; Vilna, 1861',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001166995',
+        'language': 'he',
+        'text': sheiltot[1:]
+    }
+    #post_text('Sheiltot d\'Rav Achai Gaon', version,weak_network=True, skip_links=True, index_count="on")
+    ##post_text_weak_connection('Sheiltot d\'Rav Achai Gaon', version)#,weak_network=True)#, skip_links=True, index_count="on")
+#post_sra_index()
+post_sra_text()
 """
 keys:
 Base Text:
