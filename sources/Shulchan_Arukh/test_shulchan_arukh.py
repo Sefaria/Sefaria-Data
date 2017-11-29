@@ -96,7 +96,7 @@ class TestMarkChildren(object):
     def test_nonsense_before_first_mark(self):
         raw_text = u'<volume num="1">\n@00א\nסימן ראשון\n@00ב\nסימן שני</volume>'
         v = Volume(BeautifulSoup(raw_text, 'xml').volume)
-        with pytest.raises(AssertionError):
+        with pytest.raises(MissingChildError):
             v.mark_simanim(u'@00([\u05d0-\u05ea])')
 
     def test_title(self):
@@ -193,6 +193,10 @@ class TestMarkChildren(object):
             assert isinstance(seif, Seif)
             seif.set_rid(0, 1, 1, True)
             assert seif.rid == rid
+
+    def test_mixed_seifim(self):
+        raw_text = u'<siman num="1">@00א\nsome text\n@00ב\nmore text\n@00ת\nfoo\n@00א\nbar</siman>'
+        s = Siman(BeautifulSoup(raw_text, 'xml').siman)
 
 class TestTextFormatting(object):
 
