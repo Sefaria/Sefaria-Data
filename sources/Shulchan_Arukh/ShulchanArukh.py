@@ -106,7 +106,7 @@ class Element(object):
         else:
             for volume in children:
                 if current_child.num == volume.num:
-                    raise DuplicateChildError(u'{} appears more than once!'.format(numToHeb(current_child.num)))
+                    raise DuplicateChildError(u'{} appears more than once!'.format(current_child.num))
 
                 if current_child.num < volume.num and enforce_order:
                     volume.Tag.insert_before(current_child.Tag)
@@ -775,7 +775,7 @@ class Siman(OrderedElement):
         try:
             self._mark_children(pattern, start_mark, specials, add_child_callback=self._add_seif, enforce_order=enforce_order)
         except DuplicateChildError as e:
-            raise DuplicateChildError(u'Siman {}, Seif {}'.format(numToHeb(self.num), e.message))
+            raise DuplicateChildError(u'Siman {}, Seif {}'.format(self.num, e.message))
 
     def mark_cyclical_seifim(self, pattern, start_mark=None, specials=None, enforce_order=False):
         def get_label(match_object):
@@ -855,7 +855,7 @@ class Siman(OrderedElement):
                 siman_errors[self.num] += 1
 
         msg = u"{}, Siman {}: found {} comment(s) not found in base text."
-        errors_report = [msg.format(title, numToHeb(siman), num_probs) for siman, num_probs in siman_errors.iteritems()]
+        errors_report = [msg.format(title, siman, num_probs) for siman, num_probs in siman_errors.iteritems()]
 
         return errors_report
 
@@ -896,15 +896,18 @@ class Seif(OrderedElement):
         return [TextElement(c) for c in self.Tag.children]
 
 
-    def format_text(self, start_special, end_special, name="reg_text"):
+    def format_text(self, start_special, end_special, name):
         """
         Mark up the text into regular and "special" formatting. Can only handle one type of special formatting. Useful
-        for marking dh in bold, or רמ"א in the base text.
+        for marking dh in bold, or רמ"א in the base text.  If there is no special formatting,
+        pass name = "reg-text" or pass regular expressions for start_special and end_special that match nothing.
         :param start_special: regex pattern to match beginning of formatted text. Warning: Two consecutive start_special
         patterns will cause this method to fail.
         :param end_special: regex pattern to match end of formatted text. This pattern will be ignored if not preceded
         by a start_special pattern.
-        :param name: Name of tag to wrap formatted text in.  If "reg_text", then start_special and end_special should be empty strings.
+        :param name: Name of tag to wrap formatted text in.
+
+
         :return:
         """
         def add_formatted_text(words, element_name):
@@ -916,9 +919,9 @@ class Seif(OrderedElement):
         assert self.Tag.string is not None  # This can happen if xml elements are already present or if Tag is self-closing.
         text_array = self.Tag.string.extract().split()
 
-        if name == "reg_text":
-            assert start_special == end_special == "", "If name is 'reg_text', both special arguments must be empty strings."
-            self.add_special(text_array, "reg_text")
+        if name == u"reg-text":
+            assert start_special == end_special == ""
+            self.add_special(u" ".join(text_array), u"reg-text")
             return
 
         is_special = False

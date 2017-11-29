@@ -14,7 +14,7 @@ errors = []
 commentary.remove_volume(3)
 with codecs.open(filename, 'r',
                  'utf-8') as infile:
-    volume = commentary.add_volume(infile.read(), 1)
+    volume = commentary.add_volume(infile.read(), 3)
 assert isinstance(volume, Volume)
 
 errors += volume.mark_simanim(u'@00(.{1,8})')
@@ -37,4 +37,4 @@ if len(sys.argv) == 2 and sys.argv[1] == "--run":
 for i in errors:
     print i
 
-#root.export()
+root.export()

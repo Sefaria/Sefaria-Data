@@ -57,7 +57,7 @@ for i, filename in enumerate(filenames):
     errors += volume.mark_seifim(u'@22(.{1,6})', cyclical=True)
     volume.validate_seifim()
 
-    errors += volume.format_text(start_special='', end_special='', name="reg_text")
+    errors += volume.format_text(start_special='', end_special='', name=u"reg-text")
 
     b_vol = base.get_volume(i + 1)
 
