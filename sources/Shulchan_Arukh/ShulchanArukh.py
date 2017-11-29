@@ -794,7 +794,7 @@ class Siman(OrderedElement):
         Some comments were `unique` to the Shaa'rei Teshuva, and did not have a number.
 
         :param pattern:
-        :param is_numbered_callback:
+        :param func is_numbered_callback: Callback, takes string as input returns bool
         :param start_mark:
         :param specials:
         :param enforce_order:
@@ -815,9 +815,14 @@ class Siman(OrderedElement):
 
         def derive_order(label):
             if is_numbered_callback(label):
-                return len(self.get_child())+1
-            else:
                 return getGematria(label)
+            else:
+                children = self.get_child()
+                if len(children) == 0:
+                    return 1
+                else:
+                    return children[-1].num + 1
+
         self._mark_children(pattern, start_mark, specials, add_child_callback=add_seif, enforce_order=enforce_order,
                             derive_order_callback=derive_order, special_callback=set_parsing_method)
 

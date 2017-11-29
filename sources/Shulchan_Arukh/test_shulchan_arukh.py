@@ -195,8 +195,25 @@ class TestMarkChildren(object):
             assert seif.rid == rid
 
     def test_mixed_seifim(self):
-        raw_text = u'<siman num="1">@00א\nsome text\n@00ב\nmore text\n@00ת\nfoo\n@00א\nbar</siman>'
+        def is_numbered(label):
+            if re.search(u'^[\u05d0-\u05ea]+$', label):
+                return True
+            else:
+                return False
+
+        raw_text = u'<siman num="1">@00ב\nsome text\n@00\u2022\nmore text\n@00טו\nfoo\n@00go\nbar</siman>'
         s = Siman(BeautifulSoup(raw_text, 'xml').siman)
+        s.mark_mixed_seifim(u'@00(.{1,2})', is_numbered)
+
+        assert len(s.get_child()) == 4
+        assert unicode(s) == u'<siman num="1"><seif num="2">some text\n</seif><seif label="\u2022" num="3">more text\n</seif>' \
+                             u'<seif num="15">foo\n</seif><seif label="go" num="16">bar</seif></siman>'
+
+        rid_list = [u"b0-c1-si1-ord2", u"b0-c1-si1-ord3", u"b0-c1-si1-ord15", u"b0-c1-si1-ord16"]
+        for seif, rid in zip(s.get_child(), rid_list):
+            assert isinstance(seif, Seif)
+            seif.set_rid(0, 1, 1)
+            assert seif.rid == rid
 
 class TestTextFormatting(object):
 
