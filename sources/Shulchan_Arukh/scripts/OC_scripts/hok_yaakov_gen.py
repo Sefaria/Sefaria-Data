@@ -3,7 +3,7 @@ from sources.Shulchan_Arukh.ShulchanArukh import *
 import sys
 
 
-filename = "../../txt_files/Orach_Chaim/part_3/שלחן ערוך אורח חיים חלק ג חק יעקב מושלם.txt"
+filename = "../../txt_files/Orach_Chaim/part_3/hok_yaakov_part3.txt"
 if __name__ == "__main__":
     with codecs.open(filename) as f:
         lines = f.read().splitlines()
@@ -11,7 +11,7 @@ if __name__ == "__main__":
     prev_seif = 0
     started = False
     siman = 1
-    new_lines.append(u"@00א")
+    new_lines.append(u"@00{}".format(numToHeb(429)))
     for line_n, line in enumerate(lines):
         if line.startswith("@22"):
             seif = getGematria(line)

@@ -1,6 +1,7 @@
 #encoding=utf-8
 import sys
 from sources.Shulchan_Arukh.ShulchanArukh import *
+from check_marks import check_marks
 
 def convert_11s(filename):
     new = []
@@ -17,10 +18,11 @@ def convert_11s(filename):
 
 root = Root('../../Orach_Chaim.xml')
 commentaries = root.get_commentaries()
-taz = commentaries.get_commentary_by_title("Taz on Orach Chayim")
+taz = commentaries.get_commentary_by_title("Taz")
 if taz is None:
-    taz = commentaries.add_commentary("Taz on Orach Chayim", u"טז על אורח חיים")
+    taz = commentaries.add_commentary("Taz", u"טז")
 
+a = {}
 
 filenames = [u"../../txt_files/Orach_Chaim/part_1/שוע אורח חיים חלק א טז.txt",
              u"../../txt_files/Orach_Chaim/part_2/שולחן ערוך אורח חיים חלק ב טז מגן דוד.txt",
@@ -30,7 +32,8 @@ for i, filename in enumerate(filenames):
     taz.remove_volume(i+1)
     # correct_marks_in_file(filename, u'@00([\u05d0-\u05ea]{1,2})', u'@22([\u05d0-\u05ea]{1,3})')
     with codecs.open(filename, 'r', 'utf-8') as infile:
-        volume = taz.add_volume(infile.read(), i+1)
+        contents = infile.read()
+        volume = taz.add_volume(contents, i+1)
     assert isinstance(volume, Volume)
 
     base = root.get_base_text()
@@ -50,13 +53,10 @@ for i, filename in enumerate(filenames):
     volume.set_rid_on_seifim()
     if len(sys.argv) == 2 and sys.argv[1] == "--run":
         errors += root.populate_comment_store()
-        errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u'@77', x.text) is not None, base="Orach Chaim", commentary="Taz on Orach Chaim", simanim_only=True)
-
+        errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u'@77', x.text) is not None, base="Orach Chaim", commentary="Taz", simanim_only=True)
 
 
 for i in errors:
     print i
-
-
 
 root.export()

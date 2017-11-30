@@ -9,3 +9,4 @@ python taz.py --run
 python eshel.py --run
 python ateret.py --run
 python OC_parse_baerHaGoalah.py
+python hok_yaakov.py --run

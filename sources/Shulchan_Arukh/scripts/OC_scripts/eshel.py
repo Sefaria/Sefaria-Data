@@ -6,9 +6,9 @@ filename = u"../../txt_files/Orach_Chaim/part_1/eshel_3 volumes with simanim.txt
 
 root = Root('../../Orach_Chaim.xml')
 commentaries = root.get_commentaries()
-eshel = commentaries.get_commentary_by_title("Eshel Avraham on Orach Chayim")
+eshel = commentaries.get_commentary_by_title("Eshel Avraham")
 if eshel is None:
-    eshel = commentaries.add_commentary("Eshel Avraham on Orach Chayim", u"אשל אברהם על אורח חיים")
+    eshel = commentaries.add_commentary("Eshel Avraham", u"אשל אברהם")
 
 base = root.get_base_text()
 base.add_titles("Orach Chaim", u"אורח חיים")
@@ -36,7 +36,7 @@ for i in range(3):
     eshel_mark = u"@88" if i < 2 else u"@99"
     if len(sys.argv) == 2 and sys.argv[1] == "--run":
         errors += root.populate_comment_store()
-        errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(eshel_mark, x.text) is not None, base="Orach Chaim", commentary="Eshel Avraham on Orach Chaim", simanim_only=True)
+        errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(eshel_mark, x.text) is not None, base="Orach Chaim", commentary="Eshel Avraham", simanim_only=True)
 
 for i in errors:
     print i
