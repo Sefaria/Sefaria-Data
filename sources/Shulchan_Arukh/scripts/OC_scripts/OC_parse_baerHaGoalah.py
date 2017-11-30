@@ -29,10 +29,7 @@ for i in range(1, 4):
     volume.validate_simanim()
     errors = []
 
-    if i==2:
-        errors += volume.mark_seifim(u'@11([\u05d0-\u05ea#])', cyclical=True)
-    else:
-        errors += volume.mark_seifim(u'@11([\u05d0-\u05ea])', cyclical=True)
+    errors += volume.mark_seifim(u'@11([\u05d0-\u05ea#])', cyclical=True)
     print errors
 
     # base_volume = base_text.get_volume(i)
@@ -46,7 +43,9 @@ for i in range(1, 4):
     volume.format_text(u'$^', u'$^', u'dh')
     volume.set_rid_on_seifim(cyclical=True)
 
-root.populate_comment_store()
+errors = root.populate_comment_store(verbose=True)
+for e in errors:
+    print e
 for i in range(1,4):
     b_vol = base_text.get_volume(i)
     assert isinstance(b_vol, Volume)

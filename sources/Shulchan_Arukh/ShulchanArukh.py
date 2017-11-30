@@ -142,7 +142,7 @@ class Element(object):
         such as siman categories. Keys should be regex patterns, with value a dict with keys {'name', 'end'}. Name
         should be the name of the xml element this data should be wrapped with. The 'end' key is the regex that will
         mark a return to standard parsing. If not set, the only a single line will be marked.
-        :param function add_child_callback: Function to add child
+        :param func add_child_callback: Function to add child
         :param derive_order_callback: Method to derive the order of the child. Will accept the first capture group of
         pattern.
         :param special_callback: An optional callback function that will operate on a regex match object and will
@@ -333,14 +333,14 @@ class Root(Element):
         else:
             raise AssertionError("Unknown language passed. Recognized values are 'en' or 'he'")
 
-    def populate_comment_store(self):
+    def populate_comment_store(self, *args, **kwargs):
         comment_store = CommentStore()
         comment_store.clear()
         errors = []
-        errors += self.get_base_text().load_xrefs_to_commentstore()
+        errors += self.get_base_text().load_xrefs_to_commentstore(*args, **kwargs)
         commentaries = self.get_commentaries()
-        errors += commentaries.load_xrefs_to_commentstore()
-        errors += commentaries.load_comments_to_commentstore()
+        errors += commentaries.load_xrefs_to_commentstore(*args, **kwargs)
+        errors += commentaries.load_comments_to_commentstore(*args, **kwargs)
         return errors
 
 
@@ -448,10 +448,10 @@ class Commentary(Record):
         self.id = soup_tag['id']
         super(Commentary, self).__init__(soup_tag)
 
-    def load_comments_to_commentstore(self):
+    def load_comments_to_commentstore(self, *args, **kwargs):
         errors = []
         for child in self.get_child():
-            errors += child.load_comments_to_commentstore(self.titles['en'])
+            errors += child.load_comments_to_commentstore(self.titles['en'], *args, **kwargs)
         return errors
 
 
@@ -610,12 +610,7 @@ class Volume(OrderedElement):
         mark a return to standard parsing. If not set, the only a single line will be marked.
         :return:
         """
-        errors = []
-        try:
-            self._mark_children(pattern, start_mark, specials, add_child_callback=self._add_siman, enforce_order=enforce_order)
-        except DuplicateChildError as e:
-            errors.append("Siman {}".format(e.message))
-        return errors
+        self._mark_children(pattern, start_mark, specials, add_child_callback=self._add_siman, enforce_order=enforce_order)
 
     def mark_seifim(self, pattern, start_mark=None, specials=None, enforce_order=False, cyclical=False):
         # type: (object, object, object, object, object) -> object
@@ -786,6 +781,51 @@ class Siman(OrderedElement):
                             enforce_order=enforce_order, derive_order_callback=lambda x: len(self.get_child())+1,
                             special_callback=get_label)
 
+    def mark_mixed_seifim(self, pattern, is_numbered_callback, start_mark=None, specials=None, enforce_order=False):
+        """
+        Used to markup Seifim where some have an important numerical order but are interspersed with seifim which do
+        not. The 'unmarked' seifim will be added to the first open position (i.e., if an unmarked comment appears after
+        seif 5, the unmarked seif will be seif 6). This can only be done with a relatively sparse commentary, as a dense
+        commentary will cause clashes between the unmarked seifim and the marked seifim.
+
+        Important: This method requires a callback method to determine
+
+        Justification: This became an issue with Shaa'rei Teshuva, who follows the numerical order of the Be'er Hetev.
+        Some comments were `unique` to the Shaa'rei Teshuva, and did not have a number.
+
+        :param pattern:
+        :param func is_numbered_callback: Callback, takes string as input returns bool
+        :param start_mark:
+        :param specials:
+        :param enforce_order:
+        :return:
+        """
+        def set_parsing_method(match_object):
+            if is_numbered_callback(match_object.group(1)):
+                return {'method': 'regular'}
+            else:
+                label = match_object.group(1)
+                return {'method': 'cyclical', 'label': label}
+
+        def add_seif(raw_text, seif_number, method, enforce_order=False, label=None):
+            if method=='regular':
+                self._add_seif(raw_text, seif_number, enforce_order)
+            else:
+                self._add_cyclical_seif(raw_text, seif_number, label, enforce_order)
+
+        def derive_order(label):
+            if is_numbered_callback(label):
+                return getGematria(label)
+            else:
+                children = self.get_child()
+                if len(children) == 0:
+                    return 1
+                else:
+                    return children[-1].num + 1
+
+        self._mark_children(pattern, start_mark, specials, add_child_callback=add_seif, enforce_order=enforce_order,
+                            derive_order_callback=derive_order, special_callback=set_parsing_method)
+
     def format_text(self, start_special, end_special, name):
         for seif in self.get_child():
             assert isinstance(seif, Seif)
@@ -837,13 +877,13 @@ class Siman(OrderedElement):
                     print '\t{} followed by {} (found in seif {})'.format(*error)
         return passed
 
-    def load_xrefs_to_commentstore(self, title):
+    def load_xrefs_to_commentstore(self, title, *args, **kwargs):
         errors = []
         for child in self.get_child():
             errors += child.load_xrefs_to_commentstore(title, self.num)
         return errors
 
-    def load_comments_to_commentstore(self, title):
+    def load_comments_to_commentstore(self, title, verbose=False):
         siman_errors = {}
         errors_report = []
         for child in self.get_child():
@@ -853,6 +893,8 @@ class Siman(OrderedElement):
                 if self.num not in siman_errors.keys():
                     siman_errors[self.num] = 0
                 siman_errors[self.num] += 1
+                if verbose:
+                    print e
 
         msg = u"{}, Siman {}: found {} comment(s) not found in base text."
         errors_report = [msg.format(title, siman, num_probs) for siman, num_probs in siman_errors.iteritems()]
@@ -1022,21 +1064,20 @@ class Seif(OrderedElement):
         pattern = re.compile(pattern)
         return list(pattern.finditer(self.Tag.text))
 
-    def load_xrefs_to_commentstore(self, title, siman):
+    def load_xrefs_to_commentstore(self, title, siman, *args, **kwargs):
         errors = []
         for child in self.get_child():
             errors += child.load_xrefs_to_commentstore(title, siman, self.num)
         return errors
 
-    def load_comments_to_commentstore(self, title, siman):
+    def load_comments_to_commentstore(self, title, siman, *args, **kwargs):
         comment_store = CommentStore()
 
         if self.rid == 'no-link':
             return
 
         if comment_store.get(self.rid) is None:
-            siman = self.rid.split("-")[2].replace("si", "")
-            raise MissingCommentError(siman)
+            raise MissingCommentError("Missing comment in {}, {} (rid: {})".format(title, siman, self.rid))
 
         this_ref = comment_store[self.rid]
         if this_ref.get('commentator_title') is not None:
@@ -1185,15 +1226,16 @@ class Xref(Element):
     def __hash__(self):
         return hash(self.id)
 
-    def load_xrefs_to_commentstore(self, title, siman, seif):
+    def load_xrefs_to_commentstore(self, title, siman, seif, *args, **kwargs):
         comment_store = CommentStore()
         if comment_store.get(self.id) is not None:
             if seif in comment_store[self.id]['seif']:
-                raise DuplicateCommentError((title, self.id, "same seif"))
+                print "Warning: {} {} {} has duplicate reference (id: {}). " \
+                      "Appeared twice in same Seif".format(title, siman, seif, self.id)
             else:
                 comment_store[self.id]['seif'].append(seif)
-                raise DuplicateCommentError((title, self.id, "different seif"))
-
+                print "Warning: {} {} {} has duplicate reference (id: {}). " \
+                      "Appeared different Seif.".format(title, siman, seif, self.id)
         else:
             comment_store[self.id] = {
                 'base_title': title,

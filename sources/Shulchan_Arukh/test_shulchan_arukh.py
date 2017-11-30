@@ -96,7 +96,7 @@ class TestMarkChildren(object):
     def test_nonsense_before_first_mark(self):
         raw_text = u'<volume num="1">\n@00א\nסימן ראשון\n@00ב\nסימן שני</volume>'
         v = Volume(BeautifulSoup(raw_text, 'xml').volume)
-        with pytest.raises(AssertionError):
+        with pytest.raises(MissingChildError):
             v.mark_simanim(u'@00([\u05d0-\u05ea])')
 
     def test_title(self):
@@ -192,6 +192,27 @@ class TestMarkChildren(object):
         for seif, rid in zip(s.get_child(), rid_list):
             assert isinstance(seif, Seif)
             seif.set_rid(0, 1, 1, True)
+            assert seif.rid == rid
+
+    def test_mixed_seifim(self):
+        def is_numbered(label):
+            if re.search(u'^[\u05d0-\u05ea]+$', label):
+                return True
+            else:
+                return False
+
+        raw_text = u'<siman num="1">@00ב\nsome text\n@00\u2022\nmore text\n@00טו\nfoo\n@00go\nbar</siman>'
+        s = Siman(BeautifulSoup(raw_text, 'xml').siman)
+        s.mark_mixed_seifim(u'@00(.{1,2})', is_numbered)
+
+        assert len(s.get_child()) == 4
+        assert unicode(s) == u'<siman num="1"><seif num="2">some text\n</seif><seif label="\u2022" num="3">more text\n</seif>' \
+                             u'<seif num="15">foo\n</seif><seif label="go" num="16">bar</seif></siman>'
+
+        rid_list = [u"b0-c1-si1-ord2", u"b0-c1-si1-ord3", u"b0-c1-si1-ord15", u"b0-c1-si1-ord16"]
+        for seif, rid in zip(s.get_child(), rid_list):
+            assert isinstance(seif, Seif)
+            seif.set_rid(0, 1, 1)
             assert seif.rid == rid
 
 class TestTextFormatting(object):
