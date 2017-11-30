@@ -66,3 +66,14 @@ for i in range(1, 4):
     else:
         for e in errors:
             print e
+
+    if i == 2:
+        errors = volume.format_text(u'@33', u'@34', u'dh')
+    else:
+        errors = volume.format_text(u'@11', u'@33', u'dh')
+    if len(errors) == 0:
+        print 'no formatting errros'
+    else:
+        for e in errors:
+            print e
+
