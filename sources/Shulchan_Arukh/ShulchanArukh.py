@@ -416,8 +416,13 @@ class Record(Element):
 
     def load_xrefs_to_commentstore(self, *args, **kwargs):
         errors = []
+        title = getattr(self, 'titles', None)
+        if title:
+            title = title['en']
+        else:
+            title = 'Base'
         for child in self.get_child():
-            errors += child.load_xrefs_to_commentstore(self.titles['en'])
+            errors += child.load_xrefs_to_commentstore(title)
         return errors
 
     def render(self):
@@ -894,7 +899,7 @@ class Siman(OrderedElement):
                     siman_errors[self.num] = 0
                 siman_errors[self.num] += 1
                 if verbose:
-                    print e
+                    print unicode(e)
 
         msg = u"{}, Siman {}: found {} comment(s) not found in base text."
         errors_report = [msg.format(title, siman, num_probs) for siman, num_probs in siman_errors.iteritems()]
@@ -1077,7 +1082,7 @@ class Seif(OrderedElement):
             return
 
         if comment_store.get(self.rid) is None:
-            raise MissingCommentError("Missing comment in {}, {} (rid: {})".format(title, siman, self.rid))
+            raise MissingCommentError(u"Missing comment in {}, {} (rid: {})".format(title, siman, self.rid))
 
         this_ref = comment_store[self.rid]
         if this_ref.get('commentator_title') is not None:
