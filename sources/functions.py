@@ -67,6 +67,27 @@ eng_parshiot = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Tol
 "V'Zot HaBerachah"]
 
 
+def any_hebrew_in_str(line):
+    '''
+    Returns true if there is one Hebrew character.
+    Useful for when a bad encoding yields nonsense amidst Hebrew text
+    or when a segment has both English and Hebrew words.
+    :param line:
+    :return:
+    '''
+    is_hebrew = False
+    for i in range(len(line)):
+        char = line[i: i + 2]
+        try:
+            char = char.decode('utf-8')
+            any_hebrew = re.findall(u"[\u05d0-\u05EA]", char)
+            is_hebrew = any_hebrew != []
+            if is_hebrew:
+                return True
+        except UnicodeDecodeError:
+            pass
+    return False
+
 def create_simple_index_commentary(en_title, he_title, base_title, categories, type="many_to_one", server=SEFARIA_SERVER):
     '''
     Returns a JSON index object for a simple Index that is a Commentary.

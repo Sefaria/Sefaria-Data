@@ -9,14 +9,13 @@ def markup(volume, root, i=1):
     commentaries = root.get_commentaries()
     volume.mark_references(commentaries.commentary_ids["Taz"], u'@77\(([\u05d0-\u05ea]{1,3})\)', group=1)
     eshel_mark = u"@88" if i < 3 else u"@99"
-    volume.mark_references(commentaries.commentary_ids["Eshel Avraham on Orach Chayim"], eshel_mark + u'([\u05d0-\u05ea]{1,3})', group=1, cyclical=True)
-    volume.mark_references(commentaries.commentary_ids["Ateret Zekenim on Orach Chayim"], u"(\*)", group=1, cyclical=True)
     volume.mark_references(commentaries.commentary_ids["Be'er HaGolah"], u'@44([\u05d0-\u05ea#])', group=1, cyclical=True)
-
     volume.mark_references(commentaries.commentary_ids["Eshel Avraham"], eshel_mark + u'([\u05d0-\u05ea]{1,3})', group=1, cyclical=True)
     volume.mark_references(commentaries.commentary_ids["Ateret Zekenim"], u"(\*)(?!\))", group=1, cyclical=True)
     if i == 3:
         volume.mark_references(commentaries.commentary_ids["Chok Yaakov"], u"(\[[\u05d0-\u05ea]{1,2}\])", group=1)
+    baer_marks = {1: u'@44([\u05d0-\u05ea])', 2: u'@44([\u05d0-\u05ea#])', 3: u'@44([\u05d0-\u05ea])'}
+    volume.mark_references(commentaries.commentary_ids["Be'er HaGolah"], u'@44([\u05d0-\u05ea#])', group=1, cyclical=True)
 
 if __name__ == "__main__":
     root_dir = loc(loc(loc(os.path.abspath(__file__))))
