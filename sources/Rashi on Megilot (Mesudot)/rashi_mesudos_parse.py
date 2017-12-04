@@ -18,6 +18,7 @@ title_dict = {'Esther':{"en_name":"Esther","he_name":u"אסתר"},
 'Shir':{"en_name":"Song of Songs","he_name":u"שיר השירים"},
 'Eicha':{"en_name":"Lamentations","he_name":u"איכה"},
 'Ruth':{"en_name":"Ruth","he_name":u"רות"}}
+
 class megilah:
     def __init__(self, file_name):
         self.file_name = file_name
@@ -37,7 +38,7 @@ class megilah:
             if not_blank(line):
                 if re.search(ur'\W\d+@',line):
                     match = re.search(ur'\W\d+@',line).group()
-                    print match
+                    #print match
                     current_pasuk=int(re.search(ur'\d+',match).group())
                 if re.search(ur'CH\d+',line):
                     match=re.search(ur'CH\d+',line).group()
@@ -53,17 +54,21 @@ class megilah:
                     he_text[current_perek-1][current_pasuk-1][-1]+=line
         self.en_text = make_perek_array(self.megilah_name_en)
         self.he_text = make_perek_array(self.megilah_name_en)
+        self.comment_array = self.get_comment_array()
         for pindex, perek in enumerate(en_text):
             for paindex, pasuk in enumerate(perek):
-                for comment in pasuk:
-                    self.en_text[pindex][paindex].append(u''.join(comment))
-                    
+                for comment_list in pasuk:
+                    comment=u''.join(comment_list)
+                    for footnote_marker in re.findall(ur'<\$\d+ \d+>\d*',comment):
+                        footnote_number = int(re.search(ur'\d+(?=>)',footnote_marker).group())
+                        comment = comment.replace(footnote_marker, u'<sup>'+str(footnote_number)+'</sup><i class=\"footnote\">'+self.comment_array[pindex].pop(0)+'</i>')
+                    self.en_text[pindex][paindex].append(fix_markers_en(comment))
+        
         for pindex, perek in enumerate(he_text):
             for paindex, pasuk in enumerate(perek):
                 for cindex, commentw in enumerate(pasuk):
-                    
                     self.he_text[pindex][paindex].append(fix_markers(''.join(commentw)))
-        """
+        
         for pindex, perek in enumerate(self.en_text):
             for paindex, pasuk in enumerate(perek):
                 for cindex, comment in enumerate(pasuk):
@@ -74,64 +79,47 @@ class megilah:
                 for cindex, comment in enumerate(pasuk):
                     print pindex, paindex, cindex, comment
     
-                    
+        """           
                     
         
-    def final_post_text(self):
-        if len(self.comm_intro)>0:
-            version = {
-                'versionTitle': 'Alshich on Five Megillot, Warsaw, 1862',
-                'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001268473',
-                'language': 'he',
-                'text': self.comm_intro
-            }
-            post_text_weak_connection("Alshich"+' on '+self.megilah_name_en+", Introduction", version)
+    def post_text_mes(self):
         version = {
-            'versionTitle': 'Alshich on Five Megillot, Warsaw, 1862',
-            'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001268473',
+            'versionTitle': 'The Metsudah Five Megillot, Lakewood, N.J., 2001',
+            'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002162036',
             'language': 'he',
-            'text': self.text
+            'text': self.he_text
         }
-        post_text_weak_connection("Alshich"+' on '+self.megilah_name_en, version)
-    def final_link_text(self):
-        for perek_index,perek in enumerate(self.text):
-            for pasuk_index, pasuk in enumerate(perek):
-                has_bold_in_pasuk=False
-                for comment_index, comment in enumerate(pasuk):
-                    if u"<b>" in comment:
-                        range_length = 0
-                        has_bold_in_pasuk = True
-                        hit_bold=False
-                        while comment_index+range_length+1<len(pasuk) and not hit_bold:
-                            if u"<b>" not in pasuk[comment_index+range_length+1]:
-                                range_length+=1
-                            else:
-                                hit_bold=True
-                        print '{} on {}, {}:{}:{}-{}'.format("Alshich",self.megilah_name_en, perek_index+1, pasuk_index+1, comment_index+1, comment_index+range_length+1)
-
-                        link = (
-                                {
-                                "refs": [
-                                         '{} on {}, {}:{}:{}-{}'.format("Alshich",self.megilah_name_en, perek_index+1, pasuk_index+1, comment_index+1, comment_index+range_length+1),
-                                         '{} {}:{}'.format(self.megilah_name_en,perek_index+1, pasuk_index+1),
-                                         ],
-                                "type": "commentary",
-                                "auto": True,
-                                "generated_by": "sterling_"+self.megilah_name_en+"_linker"
-                                })
-                        post_link(link, weak_network=True)
-                    elif not has_bold_in_pasuk:
-                        link = (
-                                {
-                                "refs": [
-                                         '{} on {}, {}:{}:{}'.format("Alshich",self.megilah_name_en, perek_index+1, pasuk_index+1, comment_index+1),
-                                         '{} {}:{}'.format(self.megilah_name_en,perek_index+1, pasuk_index+1),
-                                         ],
-                                "type": "commentary",
-                                "auto": True,
-                                "generated_by": "sterling_"+self.megilah_name_en+"_linker"
-                                })
-                        post_link(link, weak_network=True)
+        post_text_weak_connection("Rashi"+' on '+self.megilah_name_en, version)
+        
+        version = {
+            'versionTitle': 'The Metsudah Five Megillot, Lakewood, N.J., 2001',
+            'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002162036',
+            'language': 'en',
+            'text': self.en_text
+        }
+        post_text_weak_connection("Rashi"+' on '+self.megilah_name_en, version)
+    def get_comment_array(self):
+        #comments continue through chapter, so we return a list of comments for each chapter.
+        with open("files/"+self.file_name.replace('Rashi','N_')) as myfile:
+            lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
+        return_array = []
+        for x in range(len(TextChunk(Ref(self.megilah_name_en), "he").text)):
+            return_array.append([])
+        current_perek = 0
+        for line in lines:
+            if re.search(ur'CH\d+',line):
+                match=re.search(ur'CH\d+',line).group()
+                current_perek=int(re.search(ur'\d+',match).group())
+            list_of_comments= line.split(u"<$")
+            for comment in list_of_comments:
+                if not_blank(comment) and u'CH' not in comment:
+                    return_array[current_perek-1].append(fix_comment_markers(comment))
+        """
+        for pindex, perek in enumerate(return_array):
+            for cindex, comment in enumerate(perek):
+                print self.megilah_name_en, "COMMENT",pindex, cindex, comment
+        """
+        return return_array
 def make_perek_array(book):
     tc = TextChunk(Ref(book), "he")
     return_array = []
@@ -150,14 +138,6 @@ def highest_fuzz(input_list, input_item):
             best_match=item
             highest_ratio=fuzz.ratio(input_item,item)
     return best_match
-def get_book_category(book):
-    if type(book)==str:
-        book = book.decode('utf8')
-    categories = ["Torah","Prophets","Writings"]
-    for cat in categories:
-        if book in library.get_indexes_in_category(cat):
-            return cat
-    return None
 def not_blank(s):
     while u" " in s:
         s = s.replace(u" ",u"")
@@ -167,12 +147,34 @@ def fix_markers(s):
     s = re.sub(ur'\[.*?\]',u'',s)
     while u'  ' in s:
         s = s.replace(u'  ',u' ')
-    s = u'<b>'+s
-    s = s[:s.index(u'.')+1]+u'</b>'+s[s.index(u'.')+1:]
+    if u'.' in s:
+        s = u'<b>'+s
+        s = s[:s.index(u'.')+1]+u'</b>'+s[s.index(u'.')+1:]
+    return s
+def fix_markers_en(s):
+    s= re.sub(ur'[\r\n]',u' ',s)
+    s = re.sub(ur'@[\dA-Za-z]*',u'',s)
+    s = re.sub(ur'\[\d+\]',u'',s)
+    s = s.replace(u'<ENG>]',u'').replace(u'[<HEB>',u'')
+    s = s.replace(u'<ENG>',u'').replace(u'<HEB>',u'').replace(u'<EM>',u'')
+    while u'  ' in s:
+        s = s.replace(u'  ',u' ')
+    if u'.' in s:
+        s = u'<b>'+s
+        s = s[:s.index(u'.')+1]+u'</b>'+s[s.index(u'.')+1:]
+    return s
+def fix_comment_markers(s):
+    s = re.sub(ur'[\d><]+TS>',u'',s)
+    s = re.sub(ur'<.*?>',u'',s)
+    s = s.replace(u'@ms',u'').replace(u'@hh',u'').replace(u'@ee',u'')
+    while u'_  ' in s:
+        s = s.replace(u'_  ',u'_ ')
+    s = s.replace(u'_ ',u'')
+    s.replace(u'_',u'-')
+    s = re.sub(ur'^\s*1\s*',u'',s)
     return s
 
-posting_text= False
-linking=False
+posting_text= True
 links=[]
 reg_links=[]
 
@@ -180,21 +182,10 @@ for a_file in os.listdir("files"):
     if ".txt" in a_file and 'N' not in a_file:# and "נחו"  in a_file:
         
         megilah_object = megilah(a_file)
-        """
-        for cindex, chapter in enumerate(megilah_object.text):
-            for pindex, pasuk in enumerate(chapter):
-                for coindex, comment in enumerate(pasuk):
-                    print megilah_object.megilah_name_en,cindex, pindex, coindex, comment
-        """
-
-        if posting_index:
-            megilah_object.final_index_post()
         if posting_text:
-            megilah_object.final_post_text()
-        if linking:
-            megilah_object.final_link_text()
-        links.append(SEFARIA_SERVER+"/admin/reset/"+'Alshich on '+megilah_object.megilah_name_en)
-        reg_links.append(SEFARIA_SERVER+"/"+'Alshich on '+megilah_object.megilah_name_en)
+            megilah_object.post_text_mes()
+        links.append(SEFARIA_SERVER+"/admin/reset/"+'Rashi on '+megilah_object.megilah_name_en)
+        reg_links.append(SEFARIA_SERVER+"/"+'Rashi on '+megilah_object.megilah_name_en)
 for link in links:
     print link
 for link in reg_links:
