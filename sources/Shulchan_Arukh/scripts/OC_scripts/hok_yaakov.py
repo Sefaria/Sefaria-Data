@@ -17,7 +17,7 @@ with codecs.open(filename, 'r',
     volume = commentary.add_volume(infile.read(), 3)
 assert isinstance(volume, Volume)
 
-errors += volume.mark_simanim(u'@00(.{1,8})')
+volume.mark_simanim(u'@00(.{1,8})')
 volume.validate_simanim(complete=False)
 
 errors += volume.mark_seifim(u'@22(.{1,8})')

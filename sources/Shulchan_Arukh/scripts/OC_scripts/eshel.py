@@ -19,8 +19,9 @@ with codecs.open(filename, 'r',
     volume = eshel.add_volume(infile.read(), 1)
 assert isinstance(volume, Volume)
 
-errors = volume.mark_simanim(u'@00([\u05d0-\u05ea]{1,4})')
+volume.mark_simanim(u'@00([\u05d0-\u05ea]{1,4})')
 volume.validate_simanim(complete=False)
+errors =[]
 
 errors += volume.mark_seifim(u'@22([\u05d0-\u05ea]{1,3})', cyclical=True)
 volume.validate_seifim()

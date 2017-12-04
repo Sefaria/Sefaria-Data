@@ -12,11 +12,11 @@ with codecs.open(filename, 'r', 'utf-8') as infile:
     volume = base.add_volume(infile.read(), 2)
 assert isinstance(volume, Volume)
 
-errors = volume.mark_simanim(u'@22([\u05d0-\u05ea]{1,3})', specials={u'@00': {'name': u'topic'}})
+volume.mark_simanim(u'@22([\u05d0-\u05ea]{1,3})', specials={u'@00': {'name': u'topic'}})
 print "Validating Simanim"
 volume.validate_simanim()
 
-errors += volume.mark_seifim(u'@11([\u05d0-\u05ea]{1,3})', specials={u'@23': {'name': u'title'}})
+errors = volume.mark_seifim(u'@11([\u05d0-\u05ea]{1,3})', specials={u'@23': {'name': u'title'}})
 print 'Validating Seifim'
 volume.validate_seifim()
 

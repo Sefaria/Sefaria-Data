@@ -41,7 +41,7 @@ for i, filename in enumerate(filenames):
     b_vol = base.get_volume(i+1)
     #b_vol.mark_references(volume.get_book_id(), u'@77\(([\u05d0-\u05ea]{1,3})\)', group=1)
 
-    errors += volume.mark_simanim(u'@00([\u05d0-\u05ea]{1,4})') if i == 0 else volume.mark_simanim(u'@22([\u05d0-\u05ea]{1,4})')
+    volume.mark_simanim(u'@00([\u05d0-\u05ea]{1,4})') if i == 0 else volume.mark_simanim(u'@22([\u05d0-\u05ea]{1,4})')
     volume.validate_simanim(complete=False)
 
     errors += volume.mark_seifim(u'@22\(([\u05d0-\u05ea]{1,3})\)') if i == 0 else volume.mark_seifim(u'@11\(([\u05d0-\u05ea]{1,3})\)')

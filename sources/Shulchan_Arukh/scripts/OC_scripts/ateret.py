@@ -51,7 +51,7 @@ for i, filename in enumerate(filenames):
     volume = commentary.add_volume(text, i + 1)
     assert isinstance(volume, Volume)
 
-    errors += volume.mark_simanim(u'@00(.{1,6})')
+    volume.mark_simanim(u'@00(.{1,6})')
     volume.validate_simanim(complete=False)
 
     errors += volume.mark_seifim(u'@22(.{1,6})', cyclical=True)
