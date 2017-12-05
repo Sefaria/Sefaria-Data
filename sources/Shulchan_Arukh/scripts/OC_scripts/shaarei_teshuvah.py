@@ -76,4 +76,23 @@ for i in range(1, 4):
     else:
         for e in errors:
             print e
+
+    volume.set_rid_on_seifim()
+
+    # Those seifim that use a label are "un-numbered", and in the case of Sha'arei Teshuvah, have no mark in the base text
+    # The links were compiled externally
+    bad_rids = [s['rid'] for s in volume.Tag.find_all('seif', label=True)]
+    volume.unlink_seifim(bad_rids)
+
+errors = root.populate_comment_store(verbose=True)
+if len(errors) == 0:
+    print "Populated commentStore successfully - Sha'arei Teshuvah"
+
+for i in range(1,4):
+    b_vol = base_text.get_volume(i)
+    errors = b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u'@62', x.text) is not None,
+                                              base="Orach Chaim", commentary="Sha'arei Teshuvah", simanim_only=False)
+    for e in errors:
+        print e
+
 root.export()

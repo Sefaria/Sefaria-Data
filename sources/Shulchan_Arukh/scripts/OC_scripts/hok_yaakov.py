@@ -33,7 +33,7 @@ if len(sys.argv) == 2 and sys.argv[1] == "--run":
     b_vol = base.get_volume(3)
     assert isinstance(b_vol, Volume)
     errors += root.populate_comment_store()
-    errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u"@14(\[[\u05d0-\u05ea]{1,2}])", x.text) is not None, base="Orach Chaim", commentary="Chok Yaakov", simanim_only=True)
+    errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u"@14(\[[\u05d0-\u05ea]{1,2}\])", x.text) is not None, base="Orach Chaim", commentary="Chok Yaakov", simanim_only=True)
 
 for i in errors:
     print i
