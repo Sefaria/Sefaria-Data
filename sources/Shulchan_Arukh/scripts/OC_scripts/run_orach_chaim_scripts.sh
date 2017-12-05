@@ -19,3 +19,4 @@ echo "OC_parse_baerHaGoalah"
 python OC_parse_baerHaGoalah.py
 echo "hok_yaakov"
 python hok_yaakov.py --run
+python shaarei_teshuvah.py

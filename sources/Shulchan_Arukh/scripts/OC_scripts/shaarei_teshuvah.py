@@ -31,9 +31,9 @@ root = Root('../../Orach_Chaim.xml')
 commentaries = root.get_commentaries()
 base_text = root.get_base_text()
 
-shaarei = commentaries.get_commentary_by_title("Shaarei Teshuvah")
+shaarei = commentaries.get_commentary_by_title("Sha'arei Teshuvah")
 if shaarei is None:
-    shaarei = commentaries.add_commentary("Shaarei Teshuvah", u"שערי תשובה")
+    shaarei = commentaries.add_commentary("Sha'arei Teshuvah", u"שערי תשובה")
 siman_patterns = dict(zip(range(1,4), [ur'@{}([\u05d0-\u05ea]{{1,4}})'.format(i) for i in [u'00', u'22', u'00']]))
 seif_patterns =  dict(zip(range(1,4), [ur'@{}\(([\u05d0-\u05ea\u2022]{{1,2}})\)'.format(i) for i in [u'22', u'11', u'22']]))
 
@@ -44,7 +44,7 @@ def is_numbered(label):
         return False
 
 for i in range(1, 4):
-    print '\nShaarei Teshuva Vol.{}'.format(i)
+    print "\nSha'arei Teshuva Vol.{}".format(i)
     filename = filenames['shaarei_{}'.format(i)]
     shaarei.remove_volume(i)
     with codecs.open(filename, 'r', 'utf-8') as infile:
