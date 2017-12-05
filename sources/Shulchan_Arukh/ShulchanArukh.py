@@ -1093,9 +1093,9 @@ class Seif(OrderedElement):
         if self.Tag.has_attr('label'):
             this_ref['data-label'] = self.Tag['label']
 
-    def render(self):
+    def render(self, suppress_warning=False):
         seif_text = u' '.join(child.render() for child in self.get_child())
-        if re.search(u'@', seif_text):
+        if not suppress_warning and re.search(u'@', seif_text):
             # raise AssertionError("found @ marker in xml at {}:{}".format(self.Tag.parent['num'], self.num))
             print "found @ marker in xml at {}:{}".format(self.Tag.parent['num'], self.num)
         seif_text = re.sub(u'(<i data-commentator.*?></i>) +', ur'\1', seif_text)  # Remove space between text and itag
