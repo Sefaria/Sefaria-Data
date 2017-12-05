@@ -26,7 +26,7 @@ errors =[]
 errors += volume.mark_seifim(u'@22([\u05d0-\u05ea]{1,3})', cyclical=True)
 volume.validate_seifim()
 
-errors += volume.format_text('@11', '@33', 'dh')
+errors += volume.format_text('@11|@44', '@33|@55', 'dh')
 
 for i in range(3):
     b_vol = base.get_volume(i + 1)

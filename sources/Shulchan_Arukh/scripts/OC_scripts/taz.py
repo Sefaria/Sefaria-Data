@@ -47,7 +47,7 @@ for i, filename in enumerate(filenames):
     errors += volume.mark_seifim(u'@22\(([\u05d0-\u05ea]{1,3})\)') if i == 0 else volume.mark_seifim(u'@11\(([\u05d0-\u05ea]{1,3})\)')
     volume.validate_seifim()
 
-    errors += volume.format_text('@11', '@33', 'dh')
+    errors += volume.format_text('@11|@44', '@33|@55', 'dh')
 
     assert isinstance(b_vol, Volume)
     volume.set_rid_on_seifim()

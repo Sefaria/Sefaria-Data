@@ -213,6 +213,7 @@ class Element(object):
 
                     else:
                         if child_num <= 0:  # Do not add text before the first siman marker has been found
+                            print 'hi'
                             raise MissingChildError("{} {} is missing children.".format(self.name.title(), self.num))
                         current_child.append(line)
 
@@ -976,6 +977,7 @@ class Seif(OrderedElement):
         for word in text_array:
             if re.search(start_special, word):
                 if is_special:  # Two consecutive special patterns have been found
+                    print 'hi'
                     raise AssertionError('Seif {}: Two consecutive formatting patterns ({}) found'.format(self.num, start_special))
                 else:
                     split_by_pattern = re.split(start_special, word)
@@ -1106,6 +1108,9 @@ class Seif(OrderedElement):
         seif_text = re.sub(u' +(</[^\u05d0-\u05ea ]*>:?)$', ur'\g<1>', seif_text)  # clean up spaces before the final html closing tag
         seif_text = re.sub(u' {2,}', u' ', seif_text)
         seif_text = re.sub(u'~br~', u'<br>', seif_text)
+        seif_text = re.sub(u'~b~', u'<b>', seif_text)
+        seif_text = seif_text.replace(u"~\b~", u"")
+        seif_text = re.sub(u'!br!', u'<br>', seif_text)
         return unescape(seif_text)
 
     def collect_links(self):

@@ -59,13 +59,14 @@ for i, filename in enumerate(filenames):
 
     errors += volume.format_text(start_special='', end_special='', name=u"reg-text")
 
+
     b_vol = base.get_volume(i + 1)
 
     assert isinstance(b_vol, Volume)
     volume.set_rid_on_seifim(cyclical=True)
     if len(sys.argv) == 2 and sys.argv[1] == "--run":
         errors += root.populate_comment_store()
-        errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search("\*", x.text) is not None, base="Orach Chaim", commentary="Ateret Zekenim", simanim_only=True)
+        errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search("(\*)(?!\))", x.text) is not None, base="Orach Chaim", commentary="Ateret Zekenim", simanim_only=True)
 
 errors = set(errors)
 #sort_func = lambda x: int(x.split("Orach Chaim, Siman ")[1].split(":")[0])

@@ -56,6 +56,7 @@ def split_spaces_and_tags(line):
 def replace_chars(text, char_map, heb_indices):
     bad_char_and_line = {}
     inside_tag = False
+    cantillation_indices = {}
     for index in heb_indices:
         prev = text[index]
         text[index] = split_spaces_and_tags(text[index])
@@ -63,6 +64,11 @@ def replace_chars(text, char_map, heb_indices):
         for word_n, word in enumerate(text[index]):
             if any_hebrew_in_str(word):
                 for k, v in char_map.items():
+                    if k in text_as_str and re.findall("[a-zA-Z]{1}", k) == []:
+                        #cantillation mark
+                        if k not in cantillation_indices:
+                            cantillation_indices[k] = set()
+                        cantillation_indices[k].add(index)
                     text[index][word_n] = text[index][word_n].replace(k, v)
                 poss_probs = re.findall(u"[^\u0591-\u05F4]{1}", text[index][word_n].decode('utf-8'))
                 bad_chars = re.findall(u"""[^\s\[\]\)\(\,\:\;\'\.\"\'\-]""", " ".join(poss_probs))
@@ -73,7 +79,7 @@ def replace_chars(text, char_map, heb_indices):
                         bad_char_and_line[bad_char] = already_found + [text_as_str]
 
         text[index] = " ".join(text[index])
-    return text, bad_char_and_line
+    return text, bad_char_and_line, cantillation_indices
 #
 # def replace_chars(text, char_map, heb_indices):
 #     bad_chars = [u'ƒ', u'€', u'‰', u'‡', u'†', u'„', u'‹', u'•', u'˜', u'|']
@@ -157,12 +163,18 @@ def correct_hebrew_in_tags(text, char_map):
                     text[line_n][char_n] = replace_char
     pass
 
+def sort_indexes(cantillation_indices):
+    for mark, indices in cantillation_indices.iteritems():
+        cantillation_indices[mark] = sorted(list(indices))
+    return cantillation_indices
+
 if __name__ == "__main__":
     with open('metsudah code.csv') as f:
         char_map = get_map(f)
     text = get_text("Weekday Siddur Ashkenaz")
     heb_subset = get_heb_indices(text)
-    text, bad_char_and_line = replace_chars(text, char_map, heb_subset)
+    text, bad_char_and_line, cantillation_indices = replace_chars(text, char_map, heb_subset)
+    cantillation_indices = sort_indexes(cantillation_indices)
     correct_hebrew_in_tags(text, char_map)
     for letter, probs in bad_char_and_line.iteritems():
         for prob in probs:
