@@ -14,7 +14,7 @@ def markup(volume, root, i=1):
     volume.mark_references(commentaries.commentary_ids["Ateret Zekenim"], u"(\*)(?!\))", group=1, cyclical=True)
     if i == 3:
         volume.mark_references(commentaries.commentary_ids["Chok Yaakov"], u"(\[[\u05d0-\u05ea]{1,2}\])", group=1)
-    volume.mark_references(commentaries.commentary_ids["Shaarei Teshuvah"], u"@62\(([\u05d0-\u05ea\u2022]{1,3})\)", group=1)
+    volume.mark_references(commentaries.commentary_ids["Sha'arei Teshuvah"], u"@62\(([\u05d0-\u05ea\u2022]{1,3})\)", group=1)
 
 if __name__ == "__main__":
     root_dir = loc(loc(loc(os.path.abspath(__file__))))
