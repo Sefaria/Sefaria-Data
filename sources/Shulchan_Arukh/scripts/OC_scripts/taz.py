@@ -49,6 +49,8 @@ for i, filename in enumerate(filenames):
 
     errors += volume.format_text('@11|@44', '@33|@55', 'dh')
 
+    volume.render()
+
     assert isinstance(b_vol, Volume)
     volume.set_rid_on_seifim()
     if len(sys.argv) == 2 and sys.argv[1] == "--run":

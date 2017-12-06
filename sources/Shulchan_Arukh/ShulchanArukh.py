@@ -213,7 +213,6 @@ class Element(object):
 
                     else:
                         if child_num <= 0:  # Do not add text before the first siman marker has been found
-                            print 'hi'
                             raise MissingChildError("{} {} is missing children.".format(self.name.title(), self.num))
                         current_child.append(line)
 
@@ -900,7 +899,7 @@ class Siman(OrderedElement):
                     siman_errors[self.num] = 0
                 siman_errors[self.num] += 1
                 if verbose:
-                    print unicode(e)
+                    print unicode(e.message)
 
         msg = u"{}, Siman {}: found {} comment(s) not found in base text."
         errors_report = [msg.format(title, siman, num_probs) for siman, num_probs in siman_errors.iteritems()]
@@ -977,7 +976,6 @@ class Seif(OrderedElement):
         for word in text_array:
             if re.search(start_special, word):
                 if is_special:  # Two consecutive special patterns have been found
-                    print 'hi'
                     raise AssertionError('Seif {}: Two consecutive formatting patterns ({}) found'.format(self.num, start_special))
                 else:
                     split_by_pattern = re.split(start_special, word)
@@ -1109,7 +1107,7 @@ class Seif(OrderedElement):
         seif_text = re.sub(u' {2,}', u' ', seif_text)
         seif_text = re.sub(u'~br~', u'<br>', seif_text)
         seif_text = re.sub(u'~b~', u'<b>', seif_text)
-        seif_text = seif_text.replace(u"~\b~", u"")
+        seif_text = seif_text.replace(u"~\\b~", u"</b>")
         seif_text = re.sub(u'!br!', u'<br>', seif_text)
         return unescape(seif_text)
 
