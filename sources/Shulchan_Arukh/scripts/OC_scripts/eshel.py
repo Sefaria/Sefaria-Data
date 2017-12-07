@@ -62,22 +62,22 @@ for i in range(3):
 
 
 
-    # if len(sys.argv) == 2 and sys.argv[1] == "--run":
-    #     errors += root.populate_comment_store()
-    #     errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(eshel_mark, x.text) is not None, base="Orach Chaim", commentary="Eshel Avraham", simanim_only=True)
+    if len(sys.argv) == 2 and sys.argv[1] == "--run":
+        errors += root.populate_comment_store()
+        errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(eshel_mark, x.text) is not None, base="Orach Chaim", commentary="Eshel Avraham", simanim_only=True)
 
 
 for i in errors:
     print i
 
-for siman in sorted(simanim_w_probs.keys()):
-    probs_arr = simanim_w_probs[siman]
-    print "SIMAN {}\n".format(siman)
-    for eshel, base in probs_arr:
-        print u"Eshel:{}\n".format(eshel)
-        print u"Orach Chaim:{}\n".format(base)
-        print
-    print
+# for siman in sorted(simanim_w_probs.keys()):
+#     probs_arr = simanim_w_probs[siman]
+#     print "SIMAN {}\n".format(siman)
+#     for eshel, base in probs_arr:
+#         print u"Eshel:{}\n".format(eshel)
+#         print u"Orach Chaim:{}\n".format(base)
+#         print
+#     print
 
 root.export()
 
