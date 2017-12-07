@@ -27,9 +27,6 @@ def chok_clean(ja):
 def ateret_clean(ja):
     def clean(str):
         str = str.replace(u"?", u"")
-        if u"@44" in str: #parse @44 here because Ateret Zekenim has no DHs so text is not formatted in the typical way and tags can still remain in text
-           print str
-           str = u"<b>{}</b>".format(str.replace(u"@44", u""))
         return str
     return generic_cleaner(ja, clean)
 
