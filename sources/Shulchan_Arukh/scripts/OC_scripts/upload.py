@@ -1,4 +1,28 @@
+#encoding=utf-8
+
+import unicodecsv
+from sefaria.model import *
 from sources.Shulchan_Arukh.ShulchanArukh import *
+
+
+def get_alt_struct(book_title):
+
+    with open('Orach_Chaim_Topics.csv') as infile:
+        reader = unicodecsv.DictReader(infile)
+        rows = [row for row in reader]
+
+    s_node = SchemaNode()
+    s_node.add_primary_titles('Topic', u'נושא', key_as_title=False)
+    for row in rows:
+        node = ArrayMapNode()
+        node.add_primary_titles(row['en'], row['he'])
+        node.depth = 0
+        node.includeSections = True
+        node.wholeRef = u'{} {}-{}'.format(book_title, row['start'], row['end'])
+        node.validate()
+        s_node.append(node)
+    return s_node.serialize()
+
 
 def generic_cleaner(ja, clean):
     for i, siman in enumerate(ja):
