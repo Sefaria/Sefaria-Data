@@ -32,7 +32,7 @@ def get_text(files):
     #                 temp_line = temp_line.replace(paragraph_end, "")
     #                 text.append(temp_line)
     #                 temp_line = ""
-    onefile = open("weekday.txt")
+    onefile = open("Weekday Siddur Ashkenaz/weekday.txt")
     text = list(onefile)
     return text
 
@@ -177,16 +177,20 @@ def get_all_tags(text):
 
 
 if __name__ == "__main__":
-    with open('metsudah code.csv') as f:
-        char_map = get_map(f)
+    # with open('metsudah code.csv') as f:
+    #     char_map = get_map(f)
     orig_text = get_text("Weekday Siddur Ashkenaz")
-    heb_subset = get_heb_indices(orig_text)
-    decoded_text, bad_char_and_line, cantillation_indices = replace_chars(orig_text, char_map, heb_subset)
+    # heb_subset = get_heb_indices(orig_text)
+    # decoded_text, bad_char_and_line, cantillation_indices = replace_chars(orig_text, char_map, heb_subset)
+    # with open("Weekday Siddur Ashkenaz/weekday.txt", 'w') as f:
+    #     for line in decoded_text:
+    #         f.write(line)
     #cantillation_indices = sort_indexes(cantillation_indices) #places where cantillation marks appear
     #text = correct_hebrew_in_tags(text, char_map)
-    parser = Metsudah_Parser("Weekday Siddur Ashkenaz", u"סידור אשכנז", decoded_text)
-    tags = get_all_tags(decoded_text)
+    cats = ["Liturgy"]
+    parser = Metsudah_Parser("Weekday Siddur Ashkenaz", u"מצודה אשכנז", cats, orig_text)
     parser.parse_into_en_and_he_lists()
-    
-    pass
-
+    print parser.lengths_off
+    parser.create_schema()
+    post_index(parser.index, server="http://ste.sefaria.org")
+    parser.post_text("http://ste.sefaria.org")
