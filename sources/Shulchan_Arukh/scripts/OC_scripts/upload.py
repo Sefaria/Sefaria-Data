@@ -31,27 +31,32 @@ def generic_cleaner(ja, clean):
     return ja
 
 def taz_clean(ja):
-    def clean(str):
+    def clean(strn):
         replacements = [u"\(#\)", u"#\)", u"\[#\]", u"#\]"] #References to Levushei HaSrad
         for r in replacements:
-            str = re.sub(r, u"", str)
-        return str.replace(u"?", u"").replace(u"%%%", u"%")
+            strn = re.sub(r, u"", strn)
+        return strn.replace(u"?", u"").replace(u"%%%", u"%")
     return generic_cleaner(ja, clean)
 
 def eshel_clean(ja):
-    def clean(str):
-        return str.replace(u"?", u"")
+    def clean(strn):
+        return strn.replace(u"?", u"")
     return generic_cleaner(ja, clean)
 
 def chok_clean(ja):
-    def clean(str):
-        return str.replace(u"?", u"")
+    def clean(strn):
+        return strn.replace(u"?", u"")
     return generic_cleaner(ja, clean)
 
 def ateret_clean(ja):
-    def clean(str):
-        str = str.replace(u"?", u"")
-        return str
+    def clean(strn):
+        strn = strn.replace(u"?", u"")
+        return strn
+    return generic_cleaner(ja, clean)
+
+def shaarei_clean(ja):
+    def clean(strn):
+        return strn
     return generic_cleaner(ja, clean)
 
 def check_marks(comm, clean):
@@ -81,7 +86,8 @@ if __name__ == "__main__":
                  u"Taz on Shulchan Arukh, Orach Chaim": taz_clean,
                  u"Eshel Avraham on Shulchan Arukh, Orach Chaim": eshel_clean,
                  u"Ateret Zekenim on Shulchan Arukh, Orach Chaim": ateret_clean,
-                 u"Chok Yaakov on Shulchan Arukh, Orach Chaim": chok_clean
+                 u"Chok Yaakov on Shulchan Arukh, Orach Chaim": chok_clean,
+                u"Sha'arei Teshuvah": shaarei_clean
     }
     for title, clean_func in post_parse.items():
         print
