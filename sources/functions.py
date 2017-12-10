@@ -20,6 +20,7 @@ from sefaria.model.schema import AddressTalmud
 from data_utilities.dibur_hamatchil_matcher import match_ref
 from sefaria.utils.util import replace_using_regex as reg_replace
 import base64
+import enchant
 import Levenshtein
 
 gematria = {}
@@ -69,7 +70,7 @@ eng_parshiot = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Tol
 
 def any_hebrew_in_str(line):
     '''
-    Returns true if there is one Hebrew character.
+    Returns true if there is one Hebrew character in line.
     Useful for when a bad encoding yields nonsense amidst Hebrew text
     or when a segment has both English and Hebrew words.
     :param line:
@@ -80,12 +81,21 @@ def any_hebrew_in_str(line):
         char = line[i: i + 2]
         try:
             char = char.decode('utf-8')
-            any_hebrew = re.findall(u"[\u05d0-\u05EA]", char)
+            any_hebrew = re.findall(u"[\u0591-\u05EA]", char)
             is_hebrew = any_hebrew != []
             if is_hebrew:
                 return True
         except UnicodeDecodeError:
             pass
+    return False
+
+def any_english_in_str(line):
+    return re.findall("[a-zA-Z]{1}", line) != []
+
+def is_english_word(line):
+    if any_english_in_str(line):
+        eng_dictionary = enchant.Dict("en_US")
+        return eng_dictionary.check(line)
     return False
 
 def create_simple_index_commentary(en_title, he_title, base_title, categories, type="many_to_one", server=SEFARIA_SERVER):

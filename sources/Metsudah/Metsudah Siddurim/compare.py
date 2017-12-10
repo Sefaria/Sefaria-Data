@@ -2,9 +2,13 @@
 import codecs
 import csv
 import os
+from metsudah_parser import Metsudah_Parser
+
 from sources.functions import *
 import re
 tags_set = set()
+
+
 def get_map(csv_file):
     char_map = {}
     reader = csv.reader(csv_file)
@@ -19,9 +23,15 @@ def get_text(files):
     for f in sorted(files, key=lambda x: int(x.replace("Weekday Siddur Ashkenaz/F", "").replace(".txt", ""))):
         with open(f) as open_file:
             file_text = list(open_file)
+            paragraph_end = '¶'
+            temp_line = ""
             for i, line in enumerate(file_text):
-                line = line.replace('‘‘', '"').replace('’’', '"').replace("\r", "")
-                text.append(line)
+                line = line.replace('‘‘', '"').replace('’’', '"').replace("\r", "").replace("\n", "")
+                temp_line += line
+                if paragraph_end in line:
+                    temp_line = temp_line.replace(paragraph_end, "")
+                    text.append(temp_line)
+                    temp_line = ""
     return text
 
 def split_spaces_and_tags(line):
@@ -41,6 +51,7 @@ def split_spaces_and_tags(line):
             inside_tag = False
             curr_word += char
             tags_set.add(curr_word)
+            tags_set.add(curr_word)
             words.append(curr_word)
             curr_word = ""
         elif inside_tag:
@@ -51,7 +62,7 @@ def split_spaces_and_tags(line):
                 curr_word = ""
             else:
                 curr_word += char
-    return words
+    return [word for word in words if word]
 
 def replace_chars(text, char_map, heb_indices):
     bad_char_and_line = {}
@@ -62,10 +73,14 @@ def replace_chars(text, char_map, heb_indices):
         text[index] = split_spaces_and_tags(text[index])
         text_as_str = " ".join(text[index])
         for word_n, word in enumerate(text[index]):
-            if any_hebrew_in_str(word):
+            is_tag = word[0] == "<" and word[-1] == ">"
+            if is_tag:
+                continue
+            has_hebrew = any_hebrew_in_str(word)
+            exceptions = ["lB", "aB", "aB:"] #seemingly English words that are really Hebrew that simply need to be converted
+            if has_hebrew or word in exceptions:
                 for k, v in char_map.items():
                     if k in text_as_str and re.findall("[a-zA-Z]{1}", k) == []:
-                        #cantillation mark
                         if k not in cantillation_indices:
                             cantillation_indices[k] = set()
                         cantillation_indices[k].add(index)
@@ -80,26 +95,7 @@ def replace_chars(text, char_map, heb_indices):
 
         text[index] = " ".join(text[index])
     return text, bad_char_and_line, cantillation_indices
-#
-# def replace_chars(text, char_map, heb_indices):
-#     bad_chars = [u'ƒ', u'€', u'‰', u'‡', u'†', u'„', u'‹', u'•', u'˜', u'|']
-#     bad_char_and_line = {k.encode('utf-8'): [] for k in bad_chars}
-#     inside_tag = False
-#     for index in heb_indices:
-#         prev = text[index]
-#         text[index] = text[index].split(" ")
-#         text_as_str = " ".join(text[index])
-#         for word_n, word in enumerate(text[index]):
-#             if any_hebrew_in_str(word):
-#                 for k, v in char_map.items():
-#                     text[index][word_n] = text[index][word_n].replace(k, v)
-#
-#                 for bad_char in bad_char_and_line.keys():
-#                     if bad_char in text[index][word_n] and len(bad_char_and_line[bad_char]) < 2:
-#                         bad_char_and_line[bad_char].append(text_as_str)
-#
-#         text[index] = " ".join(text[index])
-#     return text, bad_char_and_line
+
 
 def remove_tags(line):
     for tag in re.findall("<.*?>", line):
@@ -109,7 +105,6 @@ def remove_tags(line):
 def get_heb_indices(text):
     indices = []
     for i, line in enumerate(text):
-        len_line = len(line)
         any_hebrew = any_hebrew_in_str(line)
         if any_hebrew:
             indices.append(i)
@@ -161,23 +156,33 @@ def correct_hebrew_in_tags(text, char_map):
                 replace_char = inverted_char_map.get(line[char_n: char_n+2], None)
                 if replace_char:
                     text[line_n][char_n] = replace_char
-    pass
+    return text
 
 def sort_indexes(cantillation_indices):
     for mark, indices in cantillation_indices.iteritems():
         cantillation_indices[mark] = sorted(list(indices))
     return cantillation_indices
 
+def get_all_tags(text):
+    tags_set = set()
+    for line in text:
+        tags_in_line = re.findall("<.*?>", line)
+        for tag in tags_in_line:
+            tags_set.add(tag)
+    return tags_set
+
+
 if __name__ == "__main__":
     with open('metsudah code.csv') as f:
         char_map = get_map(f)
-    text = get_text("Weekday Siddur Ashkenaz")
-    heb_subset = get_heb_indices(text)
-    text, bad_char_and_line, cantillation_indices = replace_chars(text, char_map, heb_subset)
-    cantillation_indices = sort_indexes(cantillation_indices)
-    correct_hebrew_in_tags(text, char_map)
-    for letter, probs in bad_char_and_line.iteritems():
-        for prob in probs:
-            print "{} => {}".format(letter, prob)
-
+    orig_text = get_text("Weekday Siddur Ashkenaz")
+    heb_subset = get_heb_indices(orig_text)
+    decoded_text, bad_char_and_line, cantillation_indices = replace_chars(orig_text, char_map, heb_subset)
+    #cantillation_indices = sort_indexes(cantillation_indices) #places where cantillation marks appear
+    #text = correct_hebrew_in_tags(text, char_map)
+    parser = Metsudah_Parser(decoded_text)
+    tags = get_all_tags(decoded_text)
+    parser.parse_into_en_and_he_lists()
+    
+    pass
 

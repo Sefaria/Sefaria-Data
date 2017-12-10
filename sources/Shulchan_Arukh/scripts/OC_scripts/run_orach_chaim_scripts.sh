@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 data_home=$(cd ../../../; pwd)
 export PYTHONPATH=$PYTHONPATH:$data_home
+echo $PYTHONPATH
 echo "startup"
 python startup.py
 echo "OC_base1"
