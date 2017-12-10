@@ -17,21 +17,23 @@ def get_map(csv_file):
     return char_map
 
 def get_text(files):
-    files = os.listdir("Weekday Siddur Ashkenaz")
-    files = ["Weekday Siddur Ashkenaz/"+f for f in files if f.endswith(".txt")]
-    text = []
-    for f in sorted(files, key=lambda x: int(x.replace("Weekday Siddur Ashkenaz/F", "").replace(".txt", ""))):
-        with open(f) as open_file:
-            file_text = list(open_file)
-            paragraph_end = '¶'
-            temp_line = ""
-            for i, line in enumerate(file_text):
-                line = line.replace('‘‘', '"').replace('’’', '"').replace("\r", "").replace("\n", "")
-                temp_line += line
-                if paragraph_end in line:
-                    temp_line = temp_line.replace(paragraph_end, "")
-                    text.append(temp_line)
-                    temp_line = ""
+    # files = os.listdir("Weekday Siddur Ashkenaz")
+    # files = ["Weekday Siddur Ashkenaz/"+f for f in files if f.endswith(".txt")]
+    # text = []
+    # for f in sorted(files, key=lambda x: int(x.replace("Weekday Siddur Ashkenaz/F", "").replace(".txt", ""))):
+    #     with open(f) as open_file:
+    #         file_text = list(open_file)
+    #         paragraph_end = '¶'
+    #         temp_line = ""
+    #         for i, line in enumerate(file_text):
+    #             line = line.replace('‘‘', '"').replace('’’', '"').replace("\r", "").replace("\n", "")
+    #             temp_line += line
+    #             if paragraph_end in line:
+    #                 temp_line = temp_line.replace(paragraph_end, "")
+    #                 text.append(temp_line)
+    #                 temp_line = ""
+    onefile = open("weekday.txt")
+    text = list(onefile)
     return text
 
 def split_spaces_and_tags(line):
@@ -62,6 +64,8 @@ def split_spaces_and_tags(line):
                 curr_word = ""
             else:
                 curr_word += char
+    if curr_word != "":
+        words.append(curr_word)
     return [word for word in words if word]
 
 def replace_chars(text, char_map, heb_indices):
@@ -180,7 +184,7 @@ if __name__ == "__main__":
     decoded_text, bad_char_and_line, cantillation_indices = replace_chars(orig_text, char_map, heb_subset)
     #cantillation_indices = sort_indexes(cantillation_indices) #places where cantillation marks appear
     #text = correct_hebrew_in_tags(text, char_map)
-    parser = Metsudah_Parser(decoded_text)
+    parser = Metsudah_Parser("Weekday Siddur Ashkenaz", u"סידור אשכנז", decoded_text)
     tags = get_all_tags(decoded_text)
     parser.parse_into_en_and_he_lists()
     

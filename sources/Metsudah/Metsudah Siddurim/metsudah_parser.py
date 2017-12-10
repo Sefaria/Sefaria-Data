@@ -1,15 +1,17 @@
 #encoding=utf-8
 from sources.functions import *
+
 class Metsudah_Parser:
-    def __init__(self, input_text=[]):
+    def __init__(self, en_title, he_title, input_text=[]):
+        self.en_title = en_title
+        self.he_title = he_title
         self.input_text = input_text
         self.current_he_ja_node = ""
         self.current_en_ja_node = ""
         self.ja_nodes = []
         self.root_node = SchemaNode()
         self.prev_line_instruction = False
-        self.en_text = {}
-        self.he_text = {}
+        self.text = {"en": {}, "he": {}} #"en" -> english nodes -> list of english comments; "he" -> english_nodes -> list of hebrew comments
         self.en_to_he = {} #which english corresponds to which hebrew node
         self.en_ja_times = 0
         self.he_ja_times = 0
@@ -42,16 +44,14 @@ class Metsudah_Parser:
             if any_english_in_str(line):
                 self.en_ja_times += 1
                 self.current_en_ja_node = line
-                if self.current_en_ja_node in self.en_text.keys():
+                if self.current_en_ja_node in self.text['en'].keys():
                     self.current_en_ja_node += "2"
-                self.en_text[self.current_en_ja_node] = []
+                self.text["en"][self.current_en_ja_node] = []
                 self.prev_line_en_title = self.current_en_ja_node
             elif any_hebrew_in_str(line):
                 self.he_ja_times += 1
+                self.text["he"][self.current_en_ja_node] = []
                 self.current_he_ja_node = line.decode('utf-8')
-                if self.current_he_ja_node in self.he_text.keys():
-                    self.current_he_ja_node += "2"
-                self.he_text[self.current_he_ja_node] = []
                 assert self.prev_line_en_title
                 self.en_to_he[self.prev_line_en_title] = self.current_he_ja_node
                 self.prev_line_en_title = None
@@ -71,18 +71,24 @@ class Metsudah_Parser:
             has_english = any_english_in_str(temp_line)
             has_hebrew = any_hebrew_in_str(temp_line)
             if instruction or (has_hebrew and has_english):
-                self.add_en(line)
-                self.add_he("")
+                self.add_line(line, 'en')
+                self.add_line("", 'he')
             elif has_english:
-                self.add_en(line)
+                self.add_line(line, 'en')
                 assert instruction is False
             elif any_hebrew_in_str(line):
-                self.add_he(line)
+                self.add_line(line, 'he')
                 assert instruction is False
             self.prev_line_instruction = instruction
 
-    def add_en(self, line):
-        self.en_text[self.current_en_ja_node].append(line)
+    def add_line(self, line, lang):
+        self.text[lang][self.current_en_ja_node].append(line)
 
-    def add_he(self, line):
-        self.he_text[self.current_he_ja_node].append(line)
+
+    def create_schema(self):
+        root = SchemaNode()
+        root.add_primary_titles()
+        for en, he in self.en_to_he.items():
+            node = JaggedArrayNode()
+            node.add_primary_titles(en, he)
+            node.add_structure(["Paragraph"])
