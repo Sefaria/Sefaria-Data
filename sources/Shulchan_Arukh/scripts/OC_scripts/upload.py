@@ -1,6 +1,7 @@
 #encoding=utf-8
 
 import unicodecsv
+import collections
 from sefaria.model import *
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
@@ -60,23 +61,18 @@ def shaarei_clean(ja):
     return generic_cleaner(ja, clean)
 
 def check_marks(comm, clean):
-    all_finds = {}
+    finds = []
     commentary_text = comm.render()
-    for volume in comm:
-        volume_text = volume.render()
-        volume_text = clean(volume_text)
-        finds = []
-        for siman_text in volume_text:
-            for seif_text in siman_text:
-                finds += re.findall(u"[^\s\u05d0-\u05ea\'\"\.\:,;\)\(\]\[]{1,7}", seif_text)
-        if len(finds) > 0:
-            for el in finds:
-                if el not in all_finds.keys():
-                    all_finds[el] = 0
-                all_finds[el] += 1
+
+    for siman_text in commentary_text:
+        for seif_text in siman_text:
+            finds += re.findall(u"[^\s\u05d0-\u05ea\'\"\.\:,;\)\(\]\[]{1,7}", seif_text)
+    all_finds = collections.Counter(finds)
+
     for key, value in all_finds.items():
         print u"{} -> {} occurrences".format(key, value)
-    return volume_text
+
+    return commentary_text
 
 
 if __name__ == "__main__":
