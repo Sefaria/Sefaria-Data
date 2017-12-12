@@ -927,6 +927,14 @@ class Siman(OrderedElement):
     def collect_links(self):
         return [link for seif in self.get_child() for link in seif.collect_links()]
 
+    def render(self):
+        rendered_seifim = []
+        for seif in self.get_child():
+            while seif.num - len(rendered_seifim) > 1:
+                rendered_seifim.append(u'')
+            rendered_seifim.append(seif.render())
+        return rendered_seifim
+
 
 
 class Seif(OrderedElement):
@@ -1107,7 +1115,7 @@ class Seif(OrderedElement):
         seif_text = re.sub(u' {2,}', u' ', seif_text)
         seif_text = re.sub(u'~br~', u'<br>', seif_text)
         seif_text = re.sub(u'~b~', u'<b>', seif_text)
-        seif_text = seif_text.replace(u"~\\b~", u"</b>")
+        seif_text = re.sub(ur"~(/|\\)b~", u"</b>", seif_text)
         seif_text = re.sub(u'!br!', u'<br>', seif_text)
         return unescape(seif_text)
 
