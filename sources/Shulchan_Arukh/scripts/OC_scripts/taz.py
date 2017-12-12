@@ -1,7 +1,7 @@
 #encoding=utf-8
 import sys
 from sources.Shulchan_Arukh.ShulchanArukh import *
-from check_marks import check_marks
+
 
 def convert_11s(filename):
     new = []

@@ -2,6 +2,7 @@
 
 import unicodecsv
 import collections
+import bleach
 from sefaria.model import *
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
@@ -31,6 +32,19 @@ def generic_cleaner(ja, clean):
             ja[i][j] = clean(seif)
     return ja
 
+def orach_chaim_clean(ja):
+    def repl(x):
+        stuff = {u'\u05f3': u"'", u'\u05c3': u':', u'\u05f4': u'"'}
+        return stuff[x.group()]
+
+    def clean(strn):
+        strn = re.sub(u'(%|#+)', u'', strn)
+        strn = re.sub(u'[\u05f3\u05c3\u05f4]', repl, strn)
+
+
+        return strn
+    return generic_cleaner(ja, clean)
+
 def taz_clean(ja):
     def clean(strn):
         replacements = [u"\(#\)", u"#\)", u"\[#\]", u"#\]", u"\?", u"%+"] #References to Levushei HaSrad
@@ -41,12 +55,20 @@ def taz_clean(ja):
 
 def eshel_clean(ja):
     def clean(strn):
+        strn = strn.replace(u'\u201c', u'"')
         return strn.replace(u"?", u"")
     return generic_cleaner(ja, clean)
 
 def chok_clean(ja):
+    def repl(x):
+        stuff = {u'\u05f3': u"'", u'\u05c3': u':', u'\u05f4': u'"'}
+        return stuff[x.group()]
+
     def clean(strn):
-        return strn.replace(u"?", u"")
+        strn =  strn.replace(u"?", u"")
+        strn = re.sub(u'[\u05f3\u05c3\u05f4]', repl, strn)
+        return strn
+
     return generic_cleaner(ja, clean)
 
 def ateret_clean(ja):
@@ -67,11 +89,11 @@ def beer_clean(ja):
 
 def check_marks(comm, clean):
     finds = []
-    commentary_text = comm.render()
+    commentary_text = clean(comm.render())
 
     for siman_text in commentary_text:
         for seif_text in siman_text:
-            finds += re.findall(u"[^\s\u05d0-\u05ea\'\"\.\:,;\)\(\]\[]{1,7}", seif_text)
+            finds += re.findall(u"[^\s\u05d0-\u05ea\'\"\.\:,;\)\(\]\[]{1,7}", bleach.clean(seif_text, [], strip=True))
     all_finds = collections.Counter(finds)
 
     for key, value in all_finds.items():
@@ -82,6 +104,7 @@ def check_marks(comm, clean):
 
 if __name__ == "__main__":
     root = Root('../../Orach_Chaim.xml')
+    root.populate_comment_store()
     commentaries = root.get_commentaries()
     post_parse = {
         u"Taz on Shulchan Arukh, Orach Chaim": taz_clean,
@@ -97,7 +120,11 @@ if __name__ == "__main__":
         print title
         comm = commentaries.get_commentary_by_title(title.split(" on")[0])
         comm = check_marks(comm, clean_func)
-        pass
+
+    print
+    print "Checking Orach Chaim"
+    base = check_marks(root.get_base_text(), orach_chaim_clean)
+
 
 
 
