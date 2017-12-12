@@ -33,10 +33,10 @@ def generic_cleaner(ja, clean):
 
 def taz_clean(ja):
     def clean(strn):
-        replacements = [u"\(#\)", u"#\)", u"\[#\]", u"#\]"] #References to Levushei HaSrad
+        replacements = [u"\(#\)", u"#\)", u"\[#\]", u"#\]", u"\?", u"%+"] #References to Levushei HaSrad
         for r in replacements:
             strn = re.sub(r, u"", strn)
-        return strn.replace(u"?", u"").replace(u"%%%", u"%")
+        return strn
     return generic_cleaner(ja, clean)
 
 def eshel_clean(ja):
@@ -62,7 +62,7 @@ def shaarei_clean(ja):
 
 def beer_clean(ja):
     def clean(strn):
-        return strn
+        return re.sub(u'\?', u'', strn)
     return generic_cleaner(ja, clean)
 
 def check_marks(comm, clean):
