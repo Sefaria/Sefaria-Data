@@ -85,12 +85,22 @@ class Metsudah_Parser:
                 self.add_line(line, 'he')
                 assert instruction is False
             self.prev_line_instruction = instruction
-            if abs(len(self.text['en'][self.current_en_ja_node]) - len(self.text['he'][self.current_en_ja_node])) < 2:
+            if abs(len(self.text['en'][self.current_en_ja_node]) - len(self.text['he'][self.current_en_ja_node])) >= 2:
                 if self.current_en_ja_node not in self.lengths_off.keys():
                     self.lengths_off[self.current_en_ja_node] = line
 
+
     def add_line(self, line, lang):
+        #first just add line to he and en dictionaries
         self.text[lang][self.current_en_ja_node].append(line)
+
+        #determine if one language has at least 2 more comments than the other and then attempt to correct it
+        other = "en" if lang == "he" else "he"
+        diff = len(self.text[lang][self.current_en_ja_node]) - len(self.text[other][self.current_en_ja_node])
+        if diff >= 2:
+            self.add_line("", other)
+
+
 
     def post_text(self, server):
         for lang in ["en", "he"]:
@@ -102,9 +112,6 @@ class Metsudah_Parser:
         self.schema.add_primary_titles(self.en_title, self.he_title)
         for en, he in self.en_to_he.items():
             node = JaggedArrayNode()
-            print en
-            print he
-            print
             node.add_primary_titles(en, he)
             node.add_structure(["Paragraph"])
             self.schema.append(node)

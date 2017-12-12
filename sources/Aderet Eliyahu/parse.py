@@ -2,6 +2,7 @@
 from sefaria.model import *
 from data_utilities.dibur_hamatchil_matcher import match_text
 from sources.functions import *
+server = "http://ste.sefaria.org"
 
 def get_poss_parsha(line):
     line = line.replace(u"@00", u"")[0:-1]
@@ -19,6 +20,7 @@ def parse_until_chukat(lines, allowed):
             break
         if line.startswith(u"@11"):
             for line in divide_lines(line):
+                line = line.replace("@33", "")
                 aderet_text[current_parsha].append(line)
         elif line.startswith(u"@00"):
             this_parsha = None
@@ -46,47 +48,64 @@ def divide_lines(line):
 
 def dh_extract_method(str):
     end = str.find("@33")
-    if end == -1:
+    if end >= 0:
+        return str[0:end]
+    elif end == -1:
+        str = " ".join(str.split()[0:15])
         end = str.find(".")
-        if end == -1:
-            end = str.find(" ".join(str.split()[0:5]))
-        else:
-            if abs(end - len(str)) <= 5:
-                return ""
-    return str[0:end]
+        if end:
+            return str[0:end]
+        elif end == -1:
+            return str
+
+def base_tokenizer(str):
+    str = str.replace(u"־", u" ").replace(u"  ", u" ")
+    return [word for word in str.split(" ") if word]
 
 def get_pasukim(aderet_text):
     overall = 0.0
     overall_good = 0.0
+    links = []
+    found_this_ref = {}
     for parsha, comments in aderet_text.iteritems():
         total = 0.0
         good = 0.0
         if parsha == "intro":
             continue
         print parsha
-        parsha = "Parashat "+parsha
-        text_ja = TextChunk(Ref(parsha), vtitle="Tanach with Text Only", lang='he').text
-        how_many = 0
-        for i in range(len(text_ja)):
-            how_many += len(text_ja[i])
-            text_ja[i] = " ".join(text_ja[i])
-        base_text = " ".join(text_ja).split()
-        results = match_text(base_text, comments, dh_extract_method)["matches"]
-        total = len(results)
-        for tuple in results:
-            if tuple != (-1, -1):
-                good += 1
-        percent = good*100.0/total
-        print "{0:.2f}%\n".format(percent)
-        overall += total
-        overall_good += good
-    overall_percent = overall_good*100.0/overall
-    print "{0:.2f}%\n".format(overall_percent)
+        full_parsha = "Parashat "+parsha
+        # refs = Ref(full_parsha).split_spanning_ref()
+        # base_text = [TextChunk(ref, vtitle="Tanach with Text Only", lang='he') for ref in refs]
+        # for ref, tc in zip(refs, base_text):
+        base_text = TextChunk(Ref(full_parsha), vtitle="Tanach with Text Only", lang='he')
+        results = match_ref(base_text, comments, base_tokenizer, dh_extract_method=dh_extract_method)
+        for this_ref, base_ref in enumerate(results["matches"]):
+            #dh_in_text = dh_extract_method(comments[this_ref]) in tc.text
+            if base_ref:# or dh_in_text:
+                this_ref = "Aderet Eliyahu, {} {}".format(parsha, this_ref + 1)
+                if this_ref not in found_this_ref.keys():
+                    found_this_ref[this_ref] = []
+                found_this_ref[this_ref].append(base_ref)
+                link = {"refs": [base_ref.normal(), this_ref], "type": "commentary", "auto": True, "generated_by": "aderet_eliyahu"}
+                links.append(link)
+    post_link(links, server=server)
+
+    #     results = match_text(base_text, comments, dh_extract_method)["matches"]
+    #     total = len(results)
+    #     for tuple in results:
+    #         if tuple != (-1, -1):
+    #             good += 1
+    #     percent = good*100.0/total
+    #     print "{0:.2f}%\n".format(percent)
+    #     overall += total
+    #     overall_good += good
+    # overall_percent = overall_good*100.0/overall
+    # print "{0:.2f}%\n".format(overall_percent)
 
 
 def create_index(text):
     root = SchemaNode()
-    root.add_primary_titles("Eliyahu Aderet", u"אליהו אדרת")
+    root.add_primary_titles("Aderet Eliyahu", u"אדרת אליהו")
     for parsha in text.keys():
         if parsha == "intro":
             continue
@@ -98,10 +117,10 @@ def create_index(text):
     root.validate()
     index = {
         "schema": root.serialize(),
-        "title": "Eliyahu Aderet",
+        "title": "Aderet Eliyahu",
         "categories": ["Other"]
     }
-    post_index(index, server="http://ste.sefaria.org")
+    post_index(index, server=server)
 
 def post_fake_text(text):
     for parsha, comments in text.iteritems():
@@ -116,9 +135,9 @@ def post_fake_text(text):
             "text": new_comments,
             "language": "he",
             "versionTitle": "s",
-            "versionSource": "http://ste.sefaria.org"
+            "versionSource": server
         }
-        post_text("Eliyahu Aderet, {}".format(parsha), new_comments, server="http://ste.sefaria.org")
+        post_text("Aderet Eliyahu, {}".format(parsha), new_comments, server=server)
 
 
 if __name__ == "__main__":
@@ -136,12 +155,12 @@ if __name__ == "__main__":
     allowed.append(u"""מהדורא חמישאה""")
     allowed.append(u"""מהדורא שתיתאה""")
     allowed.append(u"""אופן שני""")
-    with open("eliyahu_aderet.txt") as f:
+    with open("aderet_eliyahu.txt") as f:
         lines = list(f)
         lines = [line for line in lines if line]
         aderet_text = parse_until_chukat(lines, allowed)
-    create_index(aderet_text)
-    #post_fake_text(aderet_text)
+    #create_index(aderet_text)
+    post_fake_text(aderet_text)
     get_pasukim(aderet_text)
 
 
