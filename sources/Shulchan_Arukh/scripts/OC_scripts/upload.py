@@ -60,6 +60,11 @@ def shaarei_clean(ja):
         return strn
     return generic_cleaner(ja, clean)
 
+def beer_clean(ja):
+    def clean(strn):
+        return strn
+    return generic_cleaner(ja, clean)
+
 def check_marks(comm, clean):
     finds = []
     commentary_text = comm.render()
@@ -79,11 +84,13 @@ if __name__ == "__main__":
     root = Root('../../Orach_Chaim.xml')
     commentaries = root.get_commentaries()
     post_parse = {
-                 u"Taz on Shulchan Arukh, Orach Chaim": taz_clean,
-                 u"Eshel Avraham on Shulchan Arukh, Orach Chaim": eshel_clean,
-                 u"Ateret Zekenim on Shulchan Arukh, Orach Chaim": ateret_clean,
-                 u"Chok Yaakov on Shulchan Arukh, Orach Chaim": chok_clean,
-                u"Sha'arei Teshuvah": shaarei_clean
+        u"Taz on Shulchan Arukh, Orach Chaim": taz_clean,
+        u"Eshel Avraham on Shulchan Arukh, Orach Chaim": eshel_clean,
+        u"Ateret Zekenim on Shulchan Arukh, Orach Chaim": ateret_clean,
+        u"Chok Yaakov on Shulchan Arukh, Orach Chaim": chok_clean,
+        u"Sha'arei Teshuvah": shaarei_clean,
+        u"Be'er HaGolah": beer_clean,
+
     }
     for title, clean_func in post_parse.items():
         print
