@@ -37,7 +37,6 @@ for i, filename in enumerate(filenames):
     assert isinstance(volume, Volume)
 
     base = root.get_base_text()
-    base.add_titles("Orach Chaim", u"אורח חיים")
     b_vol = base.get_volume(i+1)
     #b_vol.mark_references(volume.get_book_id(), u'@77\(([\u05d0-\u05ea]{1,3})\)', group=1)
 

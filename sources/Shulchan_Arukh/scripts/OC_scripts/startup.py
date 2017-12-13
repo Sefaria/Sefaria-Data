@@ -21,6 +21,8 @@ xml_loc = os.path.join(root_dir, 'Orach_Chaim.xml')
 if not os.path.exists(xml_loc):
     Root.create_skeleton(xml_loc)
 root = Root(xml_loc)
+base = root.get_base_text()
+base.add_titles("Shulchan Arukh, Orach Chayim", u"שולחן ערוך אורח חיים")
 xml_commentaries = root.get_commentaries()
 for commentary in commentary_list:
     c = xml_commentaries.get_commentary_by_title(commentary['en_title'])

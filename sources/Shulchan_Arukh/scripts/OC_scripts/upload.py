@@ -1,9 +1,11 @@
 #encoding=utf-8
 
+import bleach
+import argparse
 import unicodecsv
 import collections
-import bleach
 from sefaria.model import *
+from sources import functions
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
 
@@ -26,11 +28,35 @@ def get_alt_struct(book_title):
     return s_node.serialize()
 
 
+def shulchan_arukh_index(server='http://localhost:8000', *args, **kwargs):
+    original_index = functions.get_index_api("Shulchan Arukh, Orach Chayim", server=server)
+    original_index['alt_structs'] = {'Topic': get_alt_struct("Shulchan Arukh, Orach Chayim")}
+    return original_index
+
+
+def commentary_index(en_title, he_title, commentator):
+    jnode = JaggedArrayNode()
+    jnode.add_primary_titles(en_title, he_title)
+    jnode.add_structure(["Siman", "Seif"], address_types=["Siman", "Seif"])
+    jnode.validate()
+
+    index_dict = {
+        "title": en_title,
+        "categories": ["Halakhah", "Shulchan Arukh", "Commentary", commentator],
+        "dependence": "Commentary",
+        "collective_title": commentator,
+        "alt_structs": {"Topic": get_alt_struct(en_title)},
+        "schema": jnode.serialize(),
+        "base_text_titels": ["Shulchan Arukh, Orach Chayim"]
+    }
+    return index_dict
+
+
 def generic_cleaner(ja, clean):
     for i, siman in enumerate(ja):
         for j, seif in enumerate(siman):
             ja[i][j] = clean(seif)
-    return ja
+
 
 def orach_chaim_clean(ja):
     def repl(x):
@@ -40,10 +66,12 @@ def orach_chaim_clean(ja):
     def clean(strn):
         strn = re.sub(u'(%|#+)', u'', strn)
         strn = re.sub(u'[\u05f3\u05c3\u05f4]', repl, strn)
-
-
+        strn = re.sub(u'\(\)', u'', strn)
+        strn = re.sub(ur'^([^(]+)\)', u'\g<1>', strn)
+        strn = re.sub(ur'\s{2,}', u' ', strn)
         return strn
-    return generic_cleaner(ja, clean)
+
+    generic_cleaner(ja, clean)
 
 def taz_clean(ja):
     def clean(strn):
@@ -51,13 +79,13 @@ def taz_clean(ja):
         for r in replacements:
             strn = re.sub(r, u"", strn)
         return strn
-    return generic_cleaner(ja, clean)
+    generic_cleaner(ja, clean)
 
 def eshel_clean(ja):
     def clean(strn):
         strn = strn.replace(u'\u201c', u'"')
         return strn.replace(u"?", u"")
-    return generic_cleaner(ja, clean)
+    generic_cleaner(ja, clean)
 
 def chok_clean(ja):
     def repl(x):
@@ -69,23 +97,21 @@ def chok_clean(ja):
         strn = re.sub(u'[\u05f3\u05c3\u05f4]', repl, strn)
         return strn
 
-    return generic_cleaner(ja, clean)
+    generic_cleaner(ja, clean)
 
 def ateret_clean(ja):
     def clean(strn):
         strn = strn.replace(u"?", u"")
         return strn
-    return generic_cleaner(ja, clean)
+    generic_cleaner(ja, clean)
 
 def shaarei_clean(ja):
-    def clean(strn):
-        return strn
-    return generic_cleaner(ja, clean)
+    return
 
 def beer_clean(ja):
     def clean(strn):
         return re.sub(u'\?', u'', strn)
-    return generic_cleaner(ja, clean)
+    generic_cleaner(ja, clean)
 
 def check_marks(comm, clean):
     finds = []
@@ -103,27 +129,75 @@ def check_marks(comm, clean):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-t", "--title", default=None)
+    parser.add_argument("-s", "--server", default="http://localhost:8000")
+    parser.add_argument("-v", "--verbose", action='store_true', default=False)
+    parser.add_argument("-a", "--add_term", action='store_true', default=False)
+    user_args = parser.parse_args()
+
+
     root = Root('../../Orach_Chaim.xml')
     root.populate_comment_store()
-    commentaries = root.get_commentaries()
+
+    base_text_title = u"Shulchan Arukh, Orach Chayim"
+    he_base_title = u"שולחן ערוך אורך חיים"
+    links = []
+
     post_parse = {
-        u"Taz on Shulchan Arukh, Orach Chaim": taz_clean,
-        u"Eshel Avraham on Shulchan Arukh, Orach Chaim": eshel_clean,
-        u"Ateret Zekenim on Shulchan Arukh, Orach Chaim": ateret_clean,
-        u"Chok Yaakov on Shulchan Arukh, Orach Chaim": chok_clean,
+        u"Taz": taz_clean,
+        u"Eshel Avraham": eshel_clean,
+        u"Ateret Zekenim": ateret_clean,
+        u"Chok Yaakov": chok_clean,
         u"Sha'arei Teshuvah": shaarei_clean,
         u"Be'er HaGolah": beer_clean,
-
     }
-    for title, clean_func in post_parse.items():
-        print
-        print title
-        comm = commentaries.get_commentary_by_title(title.split(" on")[0])
-        comm = check_marks(comm, clean_func)
 
-    print
-    print "Checking Orach Chaim"
-    base = check_marks(root.get_base_text(), orach_chaim_clean)
+    if user_args.title is None:
+        book_name, he_book_name = base_text_title, he_base_title
+        book_ja = root.get_base_text().render()
+        index = shulchan_arukh_index(user_args.server)
+        orach_chaim_clean(book_ja)
+
+    else:
+        book_name = u"{} on {}".format(user_args.title, base_text_title)
+        book_xml = root.get_commentaries().get_commentary_by_title(user_args.title)
+        book_ja = book_xml.render()
+        he_book_name = u"{} על {}".format(book_xml.titles['he'], he_base_title)
+        links = book_xml.collect_links()
+        print links[0]
+        index = commentary_index(book_name, he_book_name, user_args.title)
+        post_parse[user_args.title](book_ja)
+
+        if user_args.add_term:
+            functions.add_term(user_args.title, he_book_name, server=user_args.server)
+
+        functions.add_category(user_args.title, index['categories'], server=user_args.server)
+
+    if user_args.verbose:
+        print index
+
+    functions.post_index(index, server=user_args.server)
+
+    version = {
+        "versionTitle": "Maginei Eretz; Shulchan Aruch Orach Chaim, Lemberg, 1893",
+        "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002084080",
+        "language": "he",
+        "text": book_ja
+    }
+    functions.post_text(book_name, version, index_count="on", server=user_args.server)
+    if links:
+        functions.post_link(links, server=user_args.server)
+
+    # for title, clean_func in post_parse.items():
+    #     print
+    #     print title
+    #     comm = commentaries.get_commentary_by_title(title.split(" on")[0])
+    #     comm = check_marks(comm, clean_func)
+    #
+    # print
+    # print "Checking Orach Chaim"
+    # base = check_marks(root.get_base_text(), orach_chaim_clean)
 
 
 

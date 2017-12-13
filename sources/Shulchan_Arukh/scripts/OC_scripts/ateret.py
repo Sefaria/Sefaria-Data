@@ -43,7 +43,6 @@ if commentary is None:
     commentary = commentaries.add_commentary("Ateret Zekenim", u"עטרת אברהם")
 
 base = root.get_base_text()
-base.add_titles("Orach Chaim", u"אורח חיים")
 errors = []
 for i, filename in enumerate(filenames):
     commentary.remove_volume(i + 1)

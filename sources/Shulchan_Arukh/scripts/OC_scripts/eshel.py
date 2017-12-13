@@ -13,7 +13,6 @@ if eshel is None:
     eshel = commentaries.add_commentary("Eshel Avraham", u"אשל אברהם")
 
 base = root.get_base_text()
-base.add_titles("Orach Chaim", u"אורח חיים")
 
 eshel.remove_volume(1)
 with codecs.open(filename, 'r',

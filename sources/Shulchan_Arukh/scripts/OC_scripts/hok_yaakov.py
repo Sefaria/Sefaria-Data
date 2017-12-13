@@ -9,7 +9,6 @@ if commentary is None:
     commentary = commentaries.add_commentary("Chok Yaakov", u"חוק יעקב")
 
 base = root.get_base_text()
-base.add_titles("Orach Chaim", u"אורח חיים")
 errors = []
 commentary.remove_volume(3)
 with codecs.open(filename, 'r',
