@@ -1,6 +1,7 @@
 #encoding=utf-8
 
 import os
+import regex
 import bleach
 import argparse
 import requests
@@ -71,6 +72,7 @@ def orach_chaim_clean(ja):
         strn = re.sub(u'\(\)', u'', strn)
         strn = re.sub(ur'^([^(]+)\)', u'\g<1>', strn)
         strn = re.sub(ur'\s{2,}', u' ', strn)
+        strn = regex.sub(ur'(\s(?:(?><i[^>]+)><\/i>)+)\s', u'\g<1>', strn)
         return strn
 
     generic_cleaner(ja, clean)
@@ -104,6 +106,7 @@ def chok_clean(ja):
 def ateret_clean(ja):
     def clean(strn):
         strn = strn.replace(u"?", u"")
+        strn = re.sub(u'^\u2022 *', u'', strn)
         return strn
     generic_cleaner(ja, clean)
 
