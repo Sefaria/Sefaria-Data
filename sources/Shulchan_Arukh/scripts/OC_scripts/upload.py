@@ -1,7 +1,9 @@
 #encoding=utf-8
 
+import os
 import bleach
 import argparse
+import requests
 import unicodecsv
 import collections
 from sefaria.model import *
@@ -145,7 +147,7 @@ if __name__ == "__main__":
     links = []
 
     post_parse = {
-        u"Taz": taz_clean,
+        u"Turei Zahav": taz_clean,
         u"Eshel Avraham": eshel_clean,
         u"Ateret Zekenim": ateret_clean,
         u"Chok Yaakov": chok_clean,
@@ -165,7 +167,6 @@ if __name__ == "__main__":
         book_ja = book_xml.render()
         he_book_name = u"{} על {}".format(book_xml.titles['he'], he_base_title)
         links = book_xml.collect_links()
-        print links[0]
         index = commentary_index(book_name, he_book_name, user_args.title)
         post_parse[user_args.title](book_ja)
 
@@ -179,11 +180,18 @@ if __name__ == "__main__":
 
     functions.post_index(index, server=user_args.server)
 
+    # version = {
+    #     "versionTitle": "Maginei Eretz; Shulchan Aruch Orach Chaim, Lemberg, 1893",
+    #     "versionTitleInHebrew": u"""ספר מגיני ארץ; שלחן ערוך. למברג, תרנ"ג""",
+    #     "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002084080",
+    #     "language": "he",
+    #     "text": book_ja,
+    # }
     version = {
-        "versionTitle": "Maginei Eretz; Shulchan Aruch Orach Chaim, Lemberg, 1893",
+        "versionTitle": "Maginei Eretz: Shulchan Aruch Orach Chaim, Lemberg, 1893",
         "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002084080",
         "language": "he",
-        "text": book_ja
+        "text": book_ja,
     }
     functions.post_text(book_name, version, index_count="on", server=user_args.server)
     if links:
@@ -198,7 +206,12 @@ if __name__ == "__main__":
     # print
     # print "Checking Orach Chaim"
     # base = check_marks(root.get_base_text(), orach_chaim_clean)
+    functions.post_flags({'ref': book_name, 'lang': 'he', 'vtitle': version['versionTitle']},
+                         {"versionTitleInHebrew": u"""ספר מגיני ארץ: שלחן ערוך. למברג, תרנ"ג""",}, user_args.server)
 
-
+    try:
+        requests.post(os.environ['SLACK_URL'], json={'text':'{} uploaded successfully'.format(book_name)})
+    except KeyError:
+        pass
 
 

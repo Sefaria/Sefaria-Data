@@ -40,7 +40,7 @@ root = Root('../../Orach_Chaim.xml')
 commentaries = root.get_commentaries()
 commentary = commentaries.get_commentary_by_title("Ateret Zekenim")
 if commentary is None:
-    commentary = commentaries.add_commentary("Ateret Zekenim", u"עטרת אברהם")
+    commentary = commentaries.add_commentary("Ateret Zekenim", u"עטרת זקנים")
 
 base = root.get_base_text()
 errors = []

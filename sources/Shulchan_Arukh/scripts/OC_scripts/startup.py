@@ -5,10 +5,10 @@ from os.path import dirname as loc
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
 commentary_list = [
-    ("Taz", u"טז"),
+    ("Turei Zahav", u"טורי זהב"),
     ("Eshel Avraham", u"אשל אברהם"),
     ("Be'er HaGolah", u"באר הגולה"),
-    ("Ateret Zekenim", u"עטרת אברהם"),
+    ("Ateret Zekenim", u"עטרת זקנים"),
     ("Chok Yaakov", u"חוק יעקב"),
     ("Sha'arei Teshuvah", u"שערי תשובה")
 
