@@ -65,30 +65,27 @@ def base_tokenizer(str):
 def get_pasukim(aderet_text):
     overall = 0.0
     overall_good = 0.0
-    links = []
     found_this_ref = {}
     for parsha, comments in aderet_text.iteritems():
-        total = 0.0
-        good = 0.0
-        if parsha == "intro":
-            continue
-        print parsha
-        full_parsha = "Parashat "+parsha
-        # refs = Ref(full_parsha).split_spanning_ref()
-        # base_text = [TextChunk(ref, vtitle="Tanach with Text Only", lang='he') for ref in refs]
-        # for ref, tc in zip(refs, base_text):
-        base_text = TextChunk(Ref(full_parsha), vtitle="Tanach with Text Only", lang='he')
-        results = match_ref(base_text, comments, base_tokenizer, dh_extract_method=dh_extract_method)
-        for this_ref, base_ref in enumerate(results["matches"]):
-            #dh_in_text = dh_extract_method(comments[this_ref]) in tc.text
-            if base_ref:# or dh_in_text:
+        with open("{}.csv".format(parsha), 'w') as f:
+            parsha_csv = UnicodeWriter(f)
+            parsha_csv.writerow(["Aderet Eliyahu Ref", "Aderet Eliyah Text", "Torah Ref"])
+            total = 0.0
+            good = 0.0
+            if parsha == "intro":
+                continue
+            print(parsha)
+            full_parsha = "Parashat "+parsha
+            # refs = Ref(full_parsha).split_spanning_ref()
+            # base_text = [TextChunk(ref, vtitle="Tanach with Text Only", lang='he') for ref in refs]
+            # for ref, tc in zip(refs, base_text):
+            base_text = TextChunk(Ref(full_parsha), vtitle="Tanach with Text Only", lang='he')
+            results = match_ref(base_text, comments, base_tokenizer, dh_extract_method=dh_extract_method)
+            for this_ref, base_ref in enumerate(results["matches"]):
+                base_ref = "" if base_ref is None else base_ref.normal()
+                comment = comments[this_ref]
                 this_ref = "Aderet Eliyahu, {} {}".format(parsha, this_ref + 1)
-                if this_ref not in found_this_ref.keys():
-                    found_this_ref[this_ref] = []
-                found_this_ref[this_ref].append(base_ref)
-                link = {"refs": [base_ref.normal(), this_ref], "type": "commentary", "auto": True, "generated_by": "aderet_eliyahu"}
-                links.append(link)
-    post_link(links, server=server)
+                parsha_csv.writerow([this_ref, dh_extract_method(comment), base_ref])
 
     #     results = match_text(base_text, comments, dh_extract_method)["matches"]
     #     total = len(results)
@@ -160,7 +157,7 @@ if __name__ == "__main__":
         lines = [line for line in lines if line]
         aderet_text = parse_until_chukat(lines, allowed)
     #create_index(aderet_text)
-    post_fake_text(aderet_text)
+    #post_fake_text(aderet_text)
     get_pasukim(aderet_text)
 
 
