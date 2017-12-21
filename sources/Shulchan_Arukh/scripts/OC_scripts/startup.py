@@ -9,7 +9,7 @@ commentary_list = [
     ("Eshel Avraham", u"אשל אברהם"),
     ("Be'er HaGolah", u"באר הגולה"),
     ("Ateret Zekenim", u"עטרת זקנים"),
-    ("Chok Yaakov", u"חוק יעקב"),
+    ("Chok Yaakov", u"חק יעקב"),
     ("Sha'arei Teshuvah", u"שערי תשובה")
 
 ]

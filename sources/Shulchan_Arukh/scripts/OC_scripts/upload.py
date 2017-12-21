@@ -146,7 +146,7 @@ if __name__ == "__main__":
     root.populate_comment_store()
 
     base_text_title = u"Shulchan Arukh, Orach Chayim"
-    he_base_title = u"שולחן ערוך אורך חיים"
+    he_base_title = u"שולחן ערוך אורח חיים"
     links = []
 
     post_parse = {
@@ -174,7 +174,7 @@ if __name__ == "__main__":
         post_parse[user_args.title](book_ja)
 
         if user_args.add_term:
-            functions.add_term(user_args.title, he_book_name, server=user_args.server)
+            functions.add_term(user_args.title, book_xml.titles['he'], server=user_args.server)
 
         functions.add_category(user_args.title, index['categories'], server=user_args.server)
 
