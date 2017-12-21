@@ -77,6 +77,19 @@ def orach_chaim_clean(ja):
 
     generic_cleaner(ja, clean)
 
+
+def add_siman_headers(ja):
+    xml_simanim = root.get_base_text().get_simanim()
+    assert len(ja) == len(xml_simanim)
+    for siman, xml_siman in zip(ja, xml_simanim):
+        title_text = re.sub(u' *\n *', u'', xml_siman.Tag.contents[0].text)
+        if title_text == u'':
+            continue
+        if re.search(u'@', title_text) is not None:
+            print u'Weird mark at Siman {}'.format(xml_siman.num)
+        siman[0] = u'<b>{}</b><br>{}'.format(title_text, siman[0])
+
+
 def taz_clean(ja):
     def clean(strn):
         replacements = [u"\(#\)", u"#\)", u"\[#\]", u"#\]", u"\?", u"%+"] #References to Levushei HaSrad
@@ -163,6 +176,7 @@ if __name__ == "__main__":
         book_ja = root.get_base_text().render()
         index = shulchan_arukh_index(user_args.server)
         orach_chaim_clean(book_ja)
+        add_siman_headers(book_ja)
 
     else:
         book_name = u"{} on {}".format(user_args.title, base_text_title)
