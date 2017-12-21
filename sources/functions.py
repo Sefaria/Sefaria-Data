@@ -581,10 +581,7 @@ def make_title(text):
     :return:
     '''
     #first clean up text
-    if text[0] == " ":
-        text = text[:]
-    if text[-1] == " ":
-        text = text[:-1]
+    text = text.strip()
 
     #just make sure there aren't double spaces in the name or code below fails
     text = text.replace("  ", " ")
@@ -609,8 +606,7 @@ def make_title(text):
         else:
             new_text += word + " "
 
-    if new_text[-1] == " ":  #remove last space
-        new_text = new_text[0:-1]
+    new_text = new_text.strip()
 
     return new_text
 

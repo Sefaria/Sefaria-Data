@@ -209,20 +209,15 @@ if __name__ == "__main__":
             ref = row[0]
             current_ref, segment = ref.split(":")
             dont_attach = current_ref.replace("Yad Ramah on Bava Batra ", "") in dont_attach_list
-            # if "b" in current_ref:
-            #     current_ref = current_ref.replace("b", "")
-            #     current_ref = int(current_ref) * 2
-            # else:
-            #     current_ref = current_ref.replace("a", "")
-            #     current_ref = int(current_ref) * 2 - 1
-
+            current_ref = Ref(current_ref.replace("Yad Ramah on ", "")).sections[0]
             segment = int(segment)
             if segment == 1:
+                new_daf_text[current_ref] = []
                 if len(temp) > 0:
                     temp += ":"
                     new_daf_text[prev].append(temp)
                     temp = u""
-                new_daf_text[current_ref] = []
+
             row[1] = row[1].replace("\n", "")
             row[1] = row[1].decode('utf-8')
             row[1] = is_nonsense(row[1], nonsense_words)
@@ -233,24 +228,27 @@ if __name__ == "__main__":
                 bad += 1
                 temp += " "
             else:
-                temp = temp.replace("H", "").replace("P", "").replace("0", "").replace("b", "")
+                temp = temp.replace("H", "").replace("P", "").replace("0", "")
                 english = set(re.findall("[a-zA-Z0-9]{1}", temp))
                 if english:
                     for char in english:
-                        temp = temp.replace(char, "")
+                        if temp[temp.find(char)-1] == "<":
+                            print 'tag! not removing...'
+                        else:
+                            temp = temp.replace(char, "")
                 new_daf_text[current_ref].append(temp)
                 temp = u""
             prev = current_ref
     print(total)
     print(bad)
-    for daf, text in new_daf_text.items():
-        send_text = {
-            "text": text,
+    #for daf, text in new_daf_text.items():
+    send_text = {
+            "text": convertDictToArray(new_daf_text),
             "language": "he",
             "versionTitle": "modified so that comments end with periods or colons",
             "versionSource": "http://www.sefaria.org"
         }
-        post_text(daf, send_text, server="http://proto.sefaria.org")
+    post_text("Yad Ramah on Bava Batra", send_text, server="http://proto.sefaria.org")
     #
     # yad_ramah = Yad_Ramah("http://localhost:8000")
     # text = yad_ramah.getText(open("YR.txt"))

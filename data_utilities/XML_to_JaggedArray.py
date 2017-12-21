@@ -40,9 +40,9 @@ class XML_to_JaggedArray:
         self.last_chapter = 0
         self.change_name = change_name
         self.assertions = assertions
-        self.image_dir = image_dir
+        self.image_dir = image_dir #where to find images
         self.get_title_lambda = lambda el: el[0].text
-        self.print_bool = print_bool
+        self.print_bool = print_bool #print results to CSV file
         self.footnotes_within_footnotes = {} #used in English Mishneh Torah translations for footnotes with Raavad being quoted
         self.word_to_num = WordsToNumbers()
 
@@ -89,8 +89,7 @@ class XML_to_JaggedArray:
             child = self.reorder_structure(child, False)
 
         results = self.go_down_to_text(self.root, self.root.text)
-        if "Or HaChaim" in self.title:
-            results = self.handle_special_case(results)
+        #    results = self.handle_special_case(results)
         self.interpret_and_post(results, self.title)
         self.record_results_to_file()
 
@@ -180,11 +179,20 @@ class XML_to_JaggedArray:
             print "Set of tags not specified: {}".format(tag_set - set(self.allowedTags))
         return tag_set
 
+    def removeChapter(self, text):
+        match = re.search("^(CHAPTER|chapter|Chapter) [a-zA-Z0-9]{1,5}(\.|\,)?", text)
+        if match:
+            text = text.replace(match.group(0), "").strip()
+        return text
+
     def cleanNodeName(self, text):
         text = self.cleanText(text)
+        text = self.removeChapter(text)
         comma_chars = ['.']
         remove_chars = ['?'] + re.findall(u"[\u05D0-\u05EA]+", text)
         space_chars = ['-']
+        while not any_english_in_str(text[-1]):
+            text = text[0:-1]
         for char in comma_chars:
             if text.replace(char, " ").find("  "):
                 text = text.replace(char, ",")
@@ -541,11 +549,19 @@ class XML_to_JaggedArray:
         '''
         return text_arr
 
+    def sort_by_book_order(self, key):
+        if key == "text":
+            return len(self.array_of_names) + 1
+        if key == "subject":
+            return len(self.array_of_names) + 2
+        index = self.array_of_names.index(key)
+        return index
+
 
     def interpret_and_post(self, node, running_ref, prev="string"):
         if self.assertions:
             assert Ref(running_ref), running_ref
-        sorted_keys = sorted(node.keys())
+        sorted_keys = sorted(node.keys(), key=self.sort_by_book_order)
         last_key = sorted_keys[len(sorted_keys) - 1]
         not_last_key = True
         for key in sorted_keys:

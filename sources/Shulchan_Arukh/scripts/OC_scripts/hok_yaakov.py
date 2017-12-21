@@ -6,7 +6,7 @@ root = Root('../../Orach_Chaim.xml')
 commentaries = root.get_commentaries()
 commentary = commentaries.get_commentary_by_title("Chok Yaakov")
 if commentary is None:
-    commentary = commentaries.add_commentary("Chok Yaakov", u"חוק יעקב")
+    commentary = commentaries.add_commentary("Chok Yaakov", u"חק יעקב")
 
 base = root.get_base_text()
 errors = []
