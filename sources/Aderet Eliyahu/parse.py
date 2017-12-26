@@ -2,6 +2,9 @@
 from sefaria.model import *
 from data_utilities.dibur_hamatchil_matcher import match_text
 from sources.functions import *
+import os
+os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
+
 server = "http://ste.sefaria.org"
 
 def get_poss_parsha(line):
@@ -72,9 +75,15 @@ def get_pasukim(aderet_text):
             parsha_csv.writerow(["Aderet Eliyahu Ref", "Aderet Eliyah Text", "Torah Ref"])
             total = 0.0
             good = 0.0
+            biggest_gap = 0
+            curr_gap = 0
+            curr_gap_started = None
             if parsha == "intro":
                 continue
+            print "\n"
             print(parsha)
+            if parsha != "Vaetchanan":
+                continue
             full_parsha = "Parashat "+parsha
             # refs = Ref(full_parsha).split_spanning_ref()
             # base_text = [TextChunk(ref, vtitle="Tanach with Text Only", lang='he') for ref in refs]
@@ -82,10 +91,24 @@ def get_pasukim(aderet_text):
             base_text = TextChunk(Ref(full_parsha), vtitle="Tanach with Text Only", lang='he')
             results = match_ref(base_text, comments, base_tokenizer, dh_extract_method=dh_extract_method)
             for this_ref, base_ref in enumerate(results["matches"]):
-                base_ref = "" if base_ref is None else base_ref.normal()
-                comment = comments[this_ref]
                 this_ref = "Aderet Eliyahu, {} {}".format(parsha, this_ref + 1)
-                parsha_csv.writerow([this_ref, dh_extract_method(comment), base_ref])
+                if base_ref:
+                    good += 1
+                    biggest_gap = max(biggest_gap, curr_gap)
+                    curr_gap = 0
+                else:
+                    curr_gap += 1
+                    if curr_gap == 1:
+                        curr_gap_started = this_ref
+                total += 1
+                base_ref = "" if base_ref is None else base_ref.normal()
+                #comment = comments[this_ref]
+                #parsha_csv.writerow([this_ref, dh_extract_method(comment), base_ref])
+
+            print "{0:.2f}%".format(good*100.0/total)
+            print "Biggest gap: {} started at {}".format(biggest_gap, curr_gap_started)
+            #except ValueError as e:
+            #    print "PROBLEM WITH THIS PARSHA"
 
     #     results = match_text(base_text, comments, dh_extract_method)["matches"]
     #     total = len(results)
