@@ -31,6 +31,18 @@ def get_alt_struct(book_title):
     return s_node.serialize()
 
 
+def shaarei_special_links():
+    with open('../../Shaarei Teshuvah added links.csv') as infile:
+        reader = unicodecsv.reader(infile)
+        rows = [row for row in reader]
+    return [{
+        'refs': row,
+        'type': 'commentary',
+        'auto': True,
+        'generated_by': 'Shulchan Arukh Parser'
+    } for row in rows]
+
+
 def shulchan_arukh_index(server='http://localhost:8000', *args, **kwargs):
     original_index = functions.get_index_api("Shulchan Arukh, Orach Chayim", server=server)
     original_index['alt_structs'] = {'Topic': get_alt_struct("Shulchan Arukh, Orach Chayim")}
@@ -184,6 +196,8 @@ if __name__ == "__main__":
         book_ja = book_xml.render()
         he_book_name = u"{} על {}".format(book_xml.titles['he'], he_base_title)
         links = book_xml.collect_links()
+        if user_args.title == u"Sha'arei Teshuvah":
+            links += shaarei_special_links()
         index = commentary_index(book_name, he_book_name, user_args.title)
         post_parse[user_args.title](book_ja)
 
