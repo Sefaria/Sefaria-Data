@@ -11,14 +11,14 @@ start_ramah        @33
 end_ramah          @88
 
 Beur HaGra         !.)
-Taz                A[.]  @91
+Taz                @91[.]
 Be'er HaGolah      @44.
 Pithei Teshuva     @66(.)
 
 Marks to existing commentaries:
 Beit Shmuel        @55.
 Chelkat Mechokek   @77(.)
-Ba'er Hetev        B.)  @82
+Ba'er Hetev        @82.)
 """
 
 
@@ -51,18 +51,19 @@ if __name__ == "__main__":
         print "Validating Simanim"
         volume.validate_simanim()
 
-        bad = volume.mark_seifim(u'@11([\u05d0-\u05ea]{1,3})', specials={u'@12': {'name': u'title'}})
+        errors = volume.mark_seifim(u'@11([\u05d0-\u05ea]{1,3})', specials={u'@12': {'name': u'title'}})
         print "Validating Seifim"
-        for i in bad:
-            print i
+        for e in errors:
+            print e
         volume.validate_seifim()
 
         errors = volume.format_text('@33', '@88', 'ramah')
-        for i in errors:
-            print i
+        for e in errors:
+            print e
 
-        codes = [u'!.) -Gra', u'@91[.] -Taz', u'@66 -Pithei Teshuva', u'@55 -Beit Shmuel', u'@77 -Chelkat Mechokek', u'@82.) -Ba\'er Hetev']
-        patterns = [ur'!{}', ur'@91\[{}\]', ur'@66{}', ur'@55{}', ur'@77\({}\)', ur'@82{}\)']
+        codes = [u'!.) -Gra', u'@91[.] -Taz', u'@66(.) -Pithei Teshuva', u'@55 -Beit Shmuel',
+                 u'@77(.) -Chelkat Mechokek', u'@82.) -Ba\'er Hetev']
+        patterns = [ur'!{}', ur'@91\[{}\]', ur'@66\({}\)', ur'@55{}', ur'@77\({}\)', ur'@82{}\)']
         patterns = [pattern.format(ur'([\u05d0-\u05ea]{1,3})') for pattern in patterns]
 
 
@@ -70,4 +71,4 @@ if __name__ == "__main__":
         for pattern, code in zip(patterns, codes):
             volume.validate_references(pattern, code)
 
-        # correct_marks_in_file(filename, u'@22', ur'@82([\u05d0-\u05ea]{1,3})\)', overwrite=False)
+    # correct_marks_in_file(filenames[2], u'@22', ur'@44([\u05d0-\u05ea])', overwrite=False, error_finder=out_of_order_he_letters)
