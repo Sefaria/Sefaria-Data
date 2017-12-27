@@ -172,6 +172,10 @@ def remove_tags_y(s):
     s=remove_extra_space(s)
     if u'@11' in s and u"@33" in s:
         s.replace(u'@11',u'<b>').replace(u'@33',u"</b>")
+    #switch brackets and paraentices
+    s = switch_strings(s, u'(',u'[')
+    s = switch_strings(s, u')',u']')
+    
     return re.sub(ur"@\d{1,4}",u"",s).replace(u"BADLABEL",u"").replace(u"SKIP_LABEL",u"").replace(u'ADD_EXTRA_AFTER',u'')
 def get_data_orders(s):
     #here we get data-order numbers in the paragraph
@@ -179,6 +183,11 @@ def get_data_orders(s):
     for regmatch in re.findall(ur"@77 *\([א-ת\* ]{1,4}\)",s):
         found_order_numbers.append(getGematria(regmatch))
     return found_order_numbers
+def switch_strings(input_string, string_a, string_b):
+    input_string= input_string.replace(string_a,u'IN_BETWEEN')
+    input_string= input_string.replace(string_b, string_a)
+    input_string= input_string.replace(u'IN_BETWEEN',string_b)
+    return input_string
 def remove_tags_ty(s):
     return remove_extra_space(re.sub(ur"@\d{1,4}",u"",s))
 def remove_extra_space(s):
@@ -325,14 +334,14 @@ def post_intros():
         'language': 'he',
         'text': mevaar_intro
     }
-    post_text('Toafot Re\'em, Introduction', version,weak_network=True)#, skip_links=True, index_count="on")
+    #post_text('Toafot Re\'em, Introduction', version,weak_network=True)#, skip_links=True, index_count="on")
     version = {
         'versionTitle': 'Sefer Yereim HaShalem, Vilna, 1892-1901',
         'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001196456',
         'language': 'he',
         'text': author_intro
     }
-    #post_text('Sefer Yereim, Author\'s Introduction', version,weak_network=True)#, skip_links=True, index_count="on")
+    post_text('Sefer Yereim, Author\'s Introduction', version,weak_network=True)#, skip_links=True, index_count="on")
 def parse_ty_text():
     #here we make a 2d array
     #the position of the sub array in the array corresponds to the siman it is indexed under.
@@ -347,7 +356,22 @@ def parse_ty_text():
             for data_order in get_data_orders(paragraph):
                 siman_data_order_paragraphs[sindex].append(pindex+1)
                 #print sindex, data_order
-                
+    
+    #checking for siman with more than 30 links:
+    """
+    siman_link_records={}
+    for sindex, siman in enumerate(siman_data_order_paragraphs):
+        for paragraph_label in siman:
+            if '{} {}'.format(sindex+1, paragraph_label) in siman_link_records:
+                siman_link_records['{} {}'.format(sindex+1, paragraph_label)]+=1
+            else:
+                siman_link_records['{} {}'.format(sindex+1, paragraph_label)]=1
+    print "HERE ARE EXTRAS:"
+    for key in siman_link_records.keys():
+        if siman_link_records[key]>29:
+            print key, ' has ', siman_link_records[key], ' links'
+    1/0
+    """
     with open('יראים מוכן.txt') as myFile:
         lines = list(map(lambda x: x.decode("utf8",'replace'), myFile.readlines()))
     siman_box=[]
@@ -469,11 +493,12 @@ def not_blank(s):
     while " " in s:
         s = s.replace(u" ",u"")
     return (len(s.replace(u"\n",u"").replace(u"\r",u"").replace(u"\t",u""))!=0);
+#parse_ty_text()
 #post_ty_index()
 #post_intros()
 #post_y_index()
 #post_y_text()
-post_ty_text()
+#post_ty_text()
 link_ty()
 #link_ty()
 """
