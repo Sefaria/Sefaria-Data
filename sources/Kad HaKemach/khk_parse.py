@@ -79,7 +79,7 @@ def khk_text_post():
         if u"אות האלף" in line:
             break
         elif past_start and not_blank(line):
-            intro_box.append(re.sub(ur"@\d{1,4}",u"",line))
+            intro_box.append(fix_tags(line))
     for line in intro_box:
         print "INTRO",line
     
@@ -103,7 +103,7 @@ def khk_text_post():
                 section_box=[]
                 parse_title = line.replace(u"@01",u'').strip()
             else:
-                section_box.append(re.sub(ur"@\d{1,4}",u"",line))
+                section_box.append(fix_tags(line))
     #do last section:
     sections[parse_title]=[section_box]
     
@@ -122,8 +122,10 @@ def khk_text_post():
             'text': sections[key]
         }
         post_text_weak_connection('Kad HaKemach, '+title_dict[highest_fuzz(title_dict.keys(),key)], version)
-        post_text('Kad HaKemach, '+title_dict[highest_fuzz(title_dict.keys(),key)], version,weak_network=True)
-
+        #post_text('Kad HaKemach, '+title_dict[highest_fuzz(title_dict.keys(),key)], version,weak_network=True)
+def fix_tags(s):
+    s = s.replace(u"@11",u'<b>').replace(u"@33",u"</b>")
+    return re.sub(ur"@\d{1,4}",u"",s)
 #khk_index_post()
 khk_text_post()
 
