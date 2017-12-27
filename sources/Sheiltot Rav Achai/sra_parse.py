@@ -175,20 +175,62 @@ def post_eimek_index():
     }
     post_index(index,weak_network=True)
 def get_eimek_paragraph_table():
+    #check for extra Shalom tags...
+    """
+    for sindex, sheilta in enumerate(sheiltot):
+        last_order_number=0
+        for pindex, paragraph in enumerate(sheilta):
+            for eimek_match in re.findall(ur'@55\S*?',paragraph):
+                print "SHALOM!", eimek_match
+                #print sindex, eimek_match
+                print "THE ADDITION: ",getGematria(eimek_match)-last_order_number
+                if getGematria(eimek_match)-last_order_number>1:
+                    for x in range(1,getGematria(eimek_match)-last_order_number):
+                        print "SHALOM!",last_order_number+x,'from',sindex+1
+                last_order_number=getGematria(eimek_match)
+    """
+    #check for extra Eimek tags...
+    """
+    for sindex, sheilta in enumerate(sheiltot):
+        last_order_number=0
+        for pindex, paragraph in enumerate(sheilta):
+            for eimek_match in re.findall(ur'@44\(.*?\)',paragraph):
+                #print sindex, eimek_match
+                if getGematria(eimek_match)-last_order_number>1:
+                    for x in range(1,getGematria(eimek_match)-last_order_number):
+                        print last_order_number+x,'from',sindex+1
+                last_order_number=getGematria(eimek_match)
+                return_array[sindex].append(pindex)
+    """
+    return_array=[[] for x in range(172)]
+    return return_array
+get_shalom_paragraph_table():
+    #to properly link the i-tags we need to make a table
+    #linking requires the sheilta-paragraph ref for the shelta side, and the sheilta-comment ref for the shalom side.
+    #for this text, the index order will always be the same as the paragraph in the shalom side.
+    #the sheilta will correspond to the first list position.
+    #so each position will be a dictionary containing order-number and text-paragraph.
     return_array=[[] for x in range(172)]
     for sindex, sheilta in enumerate(sheiltot):
+        last_order_number=0
         for pindex, paragraph in enumerate(sheilta):
-            for eimek_match in re.findall(ur'@44\(.*?\)',p):
-                return_array[sindex].append(pindex)
+            for shalom_match in re.findall(ur'@55\S*?',paragraph):
+                return_array[sindex].append({})
+                return_array[sindex][-1]['sheilta_paragraph']=pindex
+                if getGematria(shalom_match)>0:
+                    return_array[sindex][-1]["order-number"]= getGematria(shalom_match)
+                    last_order_number=getGematria(shalom_match)
+                else:
+                    return_array[sindex][-1]["order-number"]= 0
     return return_array
 def fix_comment_markers(s):
-    return re.sub(ur"@\d{1,4}",u"",p.replace(u"@11",u"<b>").replace(u"@33",u"</b>").replace(u'ADDTONEXT',u''))
+    return re.sub(ur"@\d{1,4}",u"",s.replace(u"@11",u"<b>").replace(u"@33",u"</b>").replace(u'ADDTONEXT',u''))
 def post_eimek_text():    
     final_text = [[] for x in range(172)]
     add_to_next=[]
     for folder in folders_in_order:
         for _file in os.listdir('files/'+folder.decode('utf8')):
-            if 'העמק' in _file:
+            if u'העמק' in _file:
                 if u'הקדמת' in _file:
                     pass
                 #different sefarim are marked differently...
@@ -196,23 +238,100 @@ def post_eimek_text():
                     _file=_file.encode('utf8')
                     with open('files/'+folder+'/'+_file) as myfile:
                         lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
-                    current_sheilta=0
+                    current_sheilta=-1
                     for line in lines:
                         if u'@88' in line:
                             current_sheilta+=1
                         #we added a tag to handle this exception
                         elif u"ADDTONEXT" in line:
                             add_to_next.append(line)
-                        if u'@22' not in line and u"@00" not in line and not_blank(line):
-                            while len(add_to_next>0):
+                        if u'@22' not in line and u"@00" not in line and u"@88" not in line and not_blank(line):
+                            while len(add_to_next)>0:
                                 line = add_to_next.pop()+u'<br>'+line
                             final_text[current_sheilta].append(fix_comment_markers(line))
                 elif u"דברים" in _file:
                     _file=_file.encode('utf8')
                     with open('files/'+folder+'/'+_file) as myfile:
                         lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
-                    current_sheilta=0
-                    
+                    #139 is last sheilta in Bamidbar, so we start from 140 (minus one for the 0th index and one for first label)
+                    current_sheilta=138
+                    for line in lines:
+                        if u"@22" in line and getGematria(line)==1:
+                            current_sheilta+=1
+                        elif u"@22" not in line and u"@00" not in line and not_blank(line):
+                            final_text[current_sheilta].append(fix_comment_markers(line))
+                else:
+                    with open('files/'+folder+'/'+_file) as myfile:
+                        lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
+                    past_start=False
+                    for line in lines:
+                        if u"@88" in line:
+                            past_start=True
+                        if past_start:
+                            if u"@88" in line:
+                                current_sheilta=getGematria(line)
+                            elif u"@00" not in line and not_blank(line):
+                                final_text[current_sheilta].append(line)
+    #now check numbers:
+    copy_paragraph_array = [row[:] for row in get_eimek_paragraph_table()]
+    for sindex, sheilta in enumerate(final_text):
+        for pindex, paragraph in enumerate(sheilta):
+            print "SHEILTA COUNT:",len(final_text[sindex])
+            print "ORDER NUM COUNT:", len(copy_paragraph_array[sindex])
+            print "SHEILTA:",sindex,pindex, paragraph
+            copy_paragraph_array[sindex].pop()
+        if len(copy_paragraph_array[sindex])>0:
+            print "There's too many notes!"
+
+                            
+def post_eimek_index():
+    # create index record
+    record = SchemaNode()
+    record.add_title('Sheilat Shalom', 'en', primary=True, )
+    record.add_title(u'שאילת שלום', 'he', primary=True, )
+    record.key = 'Sheilat Shalom'
+
+    #add node for introduction
+    intro_node = JaggedArrayNode()
+    intro_node.add_title("Introduction", 'en', primary = True)
+    intro_node.add_title("הקדמה", 'he', primary = True)
+    intro_node.key = "Introduction"
+    intro_node.depth = 2
+    intro_node.addressTypes = ['Integer','Integer']
+    intro_node.sectionNames = ['Section','Paragraph']
+    record.append(intro_node)
+    
+    shetila_nodes = JaggedArrayNode()
+    shetila_nodes.key = "default"
+    shetila_nodes.default = True
+    shetila_nodes.depth = 2
+    shetila_nodes.addressTypes = ['Integer', 'Integer']
+    shetila_nodes.sectionNames = ['Sheilta','Comment']
+    record.append(shetila_nodes)
+    
+    record.validate()
+
+    index = {
+        "title": 'Sheilat Shalom',
+        "categories": ["Halakhah","Commentary"],
+        "dependence": "Commentary",
+        "schema": record.serialize()
+    }
+    post_index(index,weak_network=True)
+def post_shalom_text():
+    final_text = [[] for x in range(172)]
+    add_to_next=[]
+    for folder in folders_in_order:
+        for _file in os.listdir('files/'+folder.decode('utf8')):
+            if u'שלום' in _file:
+                _file=_file.encode('utf8')
+                with open('files/'+folder+'/'+_file) as myfile:
+                    lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
+                past_start=False
+                for line in lines:
+                    if u'@22' in line:
+                        past_start=True
+                    if past_start:
                         
 def post_sra_text():
     to_post=[]
@@ -230,7 +349,7 @@ def post_sra_text():
     #post_text('Sheiltot d\'Rav Achai Gaon', version,weak_network=True, skip_links=True, index_count="on")
     ##post_text_weak_connection('Sheiltot d\'Rav Achai Gaon', version)#,weak_network=True)#, skip_links=True, index_count="on")
 #post_sra_index()
-post_sra_text()
+post_eimek_text()
 """
 keys:
 Base Text:
