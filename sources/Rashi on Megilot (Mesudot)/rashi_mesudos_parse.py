@@ -68,11 +68,12 @@ class megilah:
             for paindex, pasuk in enumerate(perek):
                 for cindex, commentw in enumerate(pasuk):
                     self.he_text[pindex][paindex].append(fix_markers(''.join(commentw)))
-        
+        """
         for pindex, perek in enumerate(self.en_text):
             for paindex, pasuk in enumerate(perek):
                 for cindex, comment in enumerate(pasuk):
                     print pindex, paindex, cindex, comment
+        """
         """
         for pindex, perek in enumerate(self.he_text):
             for paindex, pasuk in enumerate(perek):
@@ -145,6 +146,7 @@ def not_blank(s):
 def fix_markers(s):
     s= re.sub(ur'[\r\n<>A-Za-z@0-9]',u' ',s)
     s = re.sub(ur'\[.*?\]',u'',s)
+    s = s.replace(u'§',u'ךָ')
     while u'  ' in s:
         s = s.replace(u'  ',u' ')
     if u'.' in s:
@@ -154,14 +156,22 @@ def fix_markers(s):
 def fix_markers_en(s):
     s= re.sub(ur'[\r\n]',u' ',s)
     s = re.sub(ur'@[\dA-Za-z]*',u'',s)
+    s = re.sub(ur'\[.*?CH\d.*?\]',u'',s)
     s = re.sub(ur'\[\d+\]',u'',s)
     s = s.replace(u'<ENG>]',u'').replace(u'[<HEB>',u'')
-    s = s.replace(u'<ENG>',u'').replace(u'<HEB>',u'').replace(u'<EM>',u'')
+    s = s.replace(u'.<TIE>.<TIE>.<TIE>',u'…')
+    substrings_to_remove = [u'<ENG>',u'<HEB>',u'<EM>',u'<TIE>',u'<tie>']
+    s = remove_substrings(s, substrings_to_remove)
+    s = s.replace(u'_',u'-').replace(u'±',u'-').replace(u'׀',u'—')
     while u'  ' in s:
         s = s.replace(u'  ',u' ')
     if u'.' in s:
         s = u'<b>'+s
         s = s[:s.index(u'.')+1]+u'</b>'+s[s.index(u'.')+1:]
+    return s
+def remove_substrings(s, substring_list):
+    for substring in substring_list:
+        s = s.replace(substring, u'')
     return s
 def fix_comment_markers(s):
     s = re.sub(ur'[\d><]+TS>',u'',s)
@@ -179,10 +189,11 @@ links=[]
 reg_links=[]
 
 for a_file in os.listdir("files"):
-    if ".txt" in a_file and 'N' not in a_file:# and "נחו"  in a_file:
+    if ".txt" in a_file and 'N' not in a_file and 'Esther' not in a_file:# and "נחו"  in a_file:
         
         megilah_object = megilah(a_file)
         if posting_text:
+            print 'posting '+megilah_object.megilah_name_en+' text...'
             megilah_object.post_text_mes()
         links.append(SEFARIA_SERVER+"/admin/reset/"+'Rashi on '+megilah_object.megilah_name_en)
         reg_links.append(SEFARIA_SERVER+"/"+'Rashi on '+megilah_object.megilah_name_en)
