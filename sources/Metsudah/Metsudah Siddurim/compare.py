@@ -191,6 +191,6 @@ if __name__ == "__main__":
     parser = Metsudah_Parser("Weekday Siddur Ashkenaz", u"מצודה אשכנז", cats, orig_text)
     parser.parse_into_en_and_he_lists()
     print parser.lengths_off
-    #parser.create_schema()
+    parser.create_schema()
     post_index(parser.index, server="http://ste.sefaria.org")
     parser.post_text("http://ste.sefaria.org")

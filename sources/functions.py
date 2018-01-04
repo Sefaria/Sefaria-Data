@@ -180,12 +180,15 @@ def find_almost_identical(str1, array_of_strings, ratio=0.7):
     '''
     best_str = None
     best_match = 0
+    matches = []
     for str2 in array_of_strings:
         temp_ratio = Levenshtein.ratio(str1, str2)
-        if temp_ratio >= ratio and temp_ratio > best_match:
-            best_str = str2
-            best_match = temp_ratio
-    return best_str
+        if temp_ratio >= ratio:
+            matches.append(str2)
+    if len(matches) == 1:
+        return matches[0]
+    else:
+        return matches
 
 
 def perek_to_number(perek_num):

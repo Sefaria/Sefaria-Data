@@ -32,11 +32,26 @@ def parse_until_chukat(lines, allowed):
             if line in allowed:
                 aderet_text[current_parsha].append(line)
             else:
+                if u"שפטים" == line:
+                    line = u"שופטים"
+                if u"תשא" == line:
+                    line = u"כי תשא"
+                if u"אחרי" == line:
+                    line = u"אחרי מות"
+                if u'בחקתי' == line:
+                    line = u'בחוקתי'
+                if u'הברכה' == line:
+                    line = u'וזאת הברכה'
                 term = Term().load({"titles.text": line})
                 if not term:
-                    this_parsha_he = find_almost_identical(line, parshiot_poss, ratio=0.6)
+                    this_parsha_he = find_almost_identical(line, parshiot_poss, ratio=0.7)
                     term = Term().load({"titles.text": this_parsha_he})
-                this_parsha = term.get_primary_title('en')
+                else:
+                    print
+                try:
+                    this_parsha = term.get_primary_title('en')
+                except:
+                    print line
             if this_parsha:
                 aderet_text[this_parsha] = []
                 current_parsha = this_parsha
