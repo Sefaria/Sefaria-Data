@@ -16,6 +16,7 @@ def get_poss_parsha(line):
 
 def parse_until_chukat(lines, allowed):
     current_parsha = "intro"
+    parsha_order = []
     aderet_text["intro"] = []
 
     for line_n, line in enumerate(lines):
@@ -46,18 +47,17 @@ def parse_until_chukat(lines, allowed):
                 if not term:
                     this_parsha_he = find_almost_identical(line, parshiot_poss, ratio=0.7)
                     term = Term().load({"titles.text": this_parsha_he})
-                else:
-                    print
                 try:
                     this_parsha = term.get_primary_title('en')
                 except:
                     print line
             if this_parsha:
                 aderet_text[this_parsha] = []
+                parsha_order.append(this_parsha)
                 current_parsha = this_parsha
             #else:
             #    aderet_text[current_parsha].append(line)
-    return aderet_text
+    return aderet_text, parsha_order
 
 def divide_lines(line):
     line = line.replace("@44", "\n").replace("@11", "").replace("@55", "@33").replace(":", ":\n")
@@ -66,102 +66,98 @@ def divide_lines(line):
     return lines
 
 def dh_extract_method(str):
-    end = str.find("@33")
+    str = " ".join(str.split(" ")[0:15])
+    end = str.find(".")
     if end >= 0:
         return str[0:end]
     elif end == -1:
-        str = " ".join(str.split()[0:15])
-        end = str.find(".")
-        if end:
-            return str[0:end]
-        elif end == -1:
-            return str
+        return str
 
 def base_tokenizer(str):
     str = str.replace(u"־", u" ").replace(u"  ", u" ")
     return [word for word in str.split(" ") if word]
 
-def get_pasukim(aderet_text):
+def get_pasukim(aderet_text, parsha_order):
     overall = 0.0
     overall_good = 0.0
     found_this_ref = {}
-    for parsha, comments in aderet_text.iteritems():
-        #with open("{}.csv".format(parsha), 'w') as f:
-        #parsha_csv = UnicodeWriter(f)
-        #parsha_csv.writerow(["Aderet Eliyahu Ref", "Aderet Eliyah Text", "Torah Ref"])
-        gaps = Counter()
-        total = 0.0
-        good = 0.0
-        biggest_gap = 0
-        prev_good = True # whether or not the previous ref had a match
-        curr_gap = 0
-        curr_gap_started_ref = None
-        if parsha == "intro":
-            continue
-        print "\n"
-        print(parsha)
-        full_parsha = "Parashat "+parsha
-        # refs = Ref(full_parsha).split_spanning_ref()
-        # base_text = [TextChunk(ref, vtitle="Tanach with Text Only", lang='he') for ref in refs]
-        # for ref, tc in zip(refs, base_text):
-        base_text = TextChunk(Ref(full_parsha), vtitle="Tanach with Text Only", lang='he')
-        results = match_ref(base_text, comments, base_tokenizer, dh_extract_method=dh_extract_method)
-        for this_ref, base_ref in enumerate(results["matches"]):
-            this_ref = "Aderet Eliyahu, {} {}".format(parsha, this_ref + 1)
-            if base_ref:
-                good += 1
-                prev_good = True
-            else:
-                if prev_good:
-                    curr_gap_started_ref = this_ref
-                gaps[curr_gap_started_ref] += 1
-                prev_good = False
-            total += 1
-            base_ref = "" if base_ref is None else base_ref.normal()
-            #comment = comments[this_ref]
-            #parsha_csv.writerow([this_ref, dh_extract_method(comment), base_ref])
+    found_refs = Counter()
+    with open("Aderet_Eliyahu.csv", 'w') as f:
+        parsha_csv = UnicodeWriter(f)
+        parsha_csv.writerow(["Aderet Eliyahu Text", "Aderet Eliyah Ref"])
+        parshiot = aderet_text.keys()
+        for parsha in parsha_order:
+            comments = aderet_text[parsha]
+            gaps = Counter()
+            total = 0.0
+            good = 0.0
+            biggest_gap = 0
+            prev_good = True # whether or not the previous ref had a match
+            curr_gap = 0
+            curr_gap_started_ref = None
+            if parsha == "intro":
+                continue
+            print(parsha)
+            full_parsha = "Parashat "+parsha
+            # refs = Ref(full_parsha).split_spanning_ref()
+            # base_text = [TextChunk(ref, vtitle="Tanach with Text Only", lang='he') for ref in refs]
+            # for ref, tc in zip(refs, base_text):
+            base_text = TextChunk(Ref(full_parsha), vtitle="Tanach with Text Only", lang='he')
+            results = match_ref(base_text, comments, base_tokenizer, dh_extract_method=dh_extract_method)
+            assert len(comments) == len(results["matches"])
+            for i, base_ref in enumerate(results["matches"]):
+                if base_ref and base_ref.is_range():
+                    base_ref = base_ref.starting_ref()
+                comment = comments[i]
+                base_ref = "" if base_ref is None else base_ref.normal()
+                if base_ref:
+                    found_refs[base_ref] += 1
+                    this_ref = "Aderet Eliyahu, {}:{}".format(base_ref, found_refs[base_ref])
+                    good += 1
+                    prev_good = True
+                else:
+                    if prev_good:
+                        curr_gap_started_ref = this_ref
+                    gaps[curr_gap_started_ref] += 1
+                    prev_good = False
+                    this_ref = ""
 
-        print "{0:.2f}%".format(good*100.0/total)
-        if good*100/total < 100:
-            most_common_ref, num = gaps.most_common()[0]
-            print "Biggest gap: {} starting at {}".format(num, most_common_ref)
-        #except ValueError as e:
-        #    print "PROBLEM WITH THIS PARSHA"
+                parsha_csv.writerow([comment, this_ref])
+                post_line(comment, this_ref)
+                total += 1
 
-    #     results = match_text(base_text, comments, dh_extract_method)["matches"]
-    #     total = len(results)
-    #     for tuple in results:
-    #         if tuple != (-1, -1):
-    #             good += 1
-    #     percent = good*100.0/total
-    #     print "{0:.2f}%\n".format(percent)
-    #     overall += total
-    #     overall_good += good
-    # overall_percent = overall_good*100.0/overall
-    # print "{0:.2f}%\n".format(overall_percent)
+
+def post_line(comment, this_ref):
+    if this_ref:
+        send_text = {
+            "text": comment,
+            "versionTitle": "asdf",
+            "versionSource": "http://ste.sefaria.org",
+            "language": "he"
+        }
+        post_text(this_ref, send_text, server=server)
 
 
 def create_index(text):
     root = SchemaNode()
     root.add_primary_titles("Aderet Eliyahu", u"אדרת אליהו")
-    for parsha in text.keys():
-        if parsha == "intro":
-            continue
-        term = Term().load({"name": parsha})
+    for book in library.get_indexes_in_category("Torah"):
         node = JaggedArrayNode()
-        node.add_primary_titles(parsha, term.get_primary_title("he"))
-        node.add_structure(["Paragraph"])
+        node.add_primary_titles(book, term.get_primary_title("he"))
+        node.add_structure(["Perek", "Pasuk", "Paragraph"])
         root.append(node)
     root.validate()
     index = {
         "schema": root.serialize(),
         "title": "Aderet Eliyahu",
-        "categories": ["Other"]
+        "categories": ["Tanakh", "Commentary", "Aderet Eliyahu"]
     }
     post_index(index, server=server)
 
-def post_fake_text(text):
-    for parsha, comments in text.iteritems():
+def restruct_text(text, parsha_order):
+    for parsha in parsha_order:
+        book = Ref(parsha).index.title
+        comments = text[parsha]
         new_comments = []
         for comment in comments:
             dh = dh_extract_method(comment)
@@ -169,13 +165,8 @@ def post_fake_text(text):
             comment = u"<b>{}</b>{}".format(dh, comment)
             assert type(comment) is str or type(comment) is unicode
             new_comments.append(comment)
-        new_comments = {
-            "text": new_comments,
-            "language": "he",
-            "versionTitle": "s",
-            "versionSource": server
-        }
-        post_text("Aderet Eliyahu, {}".format(parsha), new_comments, server=server)
+        text[parsha] = new_comments
+    return text
 
 
 if __name__ == "__main__":
@@ -196,10 +187,10 @@ if __name__ == "__main__":
     with open("aderet_eliyahu.txt") as f:
         lines = list(f)
         lines = [line for line in lines if line]
-        aderet_text = parse_until_chukat(lines, allowed)
-    #create_index(aderet_text)
-    #post_fake_text(aderet_text)
-    get_pasukim(aderet_text)
+        aderet_text, parsha_order = parse_until_chukat(lines, allowed)
+    create_index(aderet_text)
+    aderet_text = restruct_text(aderet_text, parsha_order)
+    get_pasukim(aderet_text, parsha_order)
 
 
 
