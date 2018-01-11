@@ -21,6 +21,36 @@ Chelkat Mechokek   @77(.)
 Ba'er Hetev        @82.)
 """
 
+def move_special_section(book, en_title, he_title, special_name=None):
+    """
+    :param Record book:
+    :param en_title:
+    :param he_title:
+    :param special_name:
+    :return: Siman
+    """
+    if not special_name:
+        special_name = en_title
+    if isinstance(book, BaseText):
+        all_commentaries = book.get_parent().get_commentaries()
+    else:
+        all_commentaries = book.get_parent()
+
+    special_book = all_commentaries.get_commentary_by_title(en_title)
+    if special_book is None:
+        special_book = all_commentaries.add_commentary(en_title, he_title)
+    special_book.remove_volume(1)
+
+    special_element = root.get_base_text().Tag.find(special_name).extract()
+    special_element.name = u'siman'
+    special_element['num'] = 1
+
+    special_vol = BeautifulSoup('', 'xml').new_tag('volume')
+    special_vol['num'] = 1
+    special_vol.append(special_element)
+    special_book.Tag.append(special_vol)
+
+    return Siman(special_element)
 
 if __name__ == "__main__":
     root_dir = loc(loc(loc(os.path.abspath(__file__))))
@@ -72,3 +102,16 @@ if __name__ == "__main__":
             volume.validate_references(pattern, code)
 
     # correct_marks_in_file(filenames[2], u'@22', ur'@44([\u05d0-\u05ea])', overwrite=False, error_finder=out_of_order_he_letters)
+
+    # To handle the special "Get" and "Halitza" sections, just treat them as independant works.
+    get_sec = move_special_section(base, 'Seder HaGet', u'סדר הגט', u'Get')
+    get_sec.mark_seifim(u'@11([\u05d0-\u05ea]{1,3})', enforce_order=True)
+    get_sec.validate_seifim()
+    get_sec.format_text('@33', '@88', 'ramah')
+
+    halitza_sec = move_special_section(base, 'Seder Halitzah', u'סדר חליצה', u'Halitza')
+    halitza_sec.mark_seifim(u'@11([\u05d0-\u05ea]{1,3})', enforce_order=True)
+    halitza_sec.validate_seifim()
+    halitza_sec.format_text('@33', '@88', 'ramah')
+
+    root.export()
