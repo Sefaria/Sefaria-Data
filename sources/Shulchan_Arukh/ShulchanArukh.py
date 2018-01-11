@@ -278,9 +278,12 @@ class Root(Element):
     child = None  # No default child is defined, call to BaseText or Commentaries explicitly
 
     def __init__(self, filename):
-        self.filename = filename
-        self.soup = self._load()
-        super(Root, self).__init__(self.soup.root)
+        if isinstance(filename, basestring):
+            self.filename = filename
+            self.soup = self._load()
+            super(Root, self).__init__(self.soup.root)
+        else:
+            super(Root, self).__init__(filename)
 
     def _load(self):
         with open(self.filename) as infile:
@@ -439,7 +442,7 @@ class Record(Element):
 
 class BaseText(Record):
     name = 'base_text'
-    parent = Root
+    parent = 'Root'
 
     def load_comments_to_commentstore(self, *args, **kwargs):
         raise NotImplementedError("Comments in base text not included in commentstore")
