@@ -40,8 +40,8 @@ if __name__ == "__main__":
     allowed_attributes = ["id"]
     p = re.compile("\d+a?\.")
 
-    post_info["versionTitle"] = "Maimonides' Mishneh Torah, edited by Philip Birnbaum, New York, 1967"
-    post_info["versionSource"] = "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002108864"
+    post_info["versionTitle"] = "Rashi on Nach"
+    post_info["versionSource"] = "http://ste.sefaria.org"
     title = "Mishneh Torah"
     file_name = "BenSira.xml"
 

@@ -21,11 +21,10 @@ def parse_until_chukat(lines, allowed):
 
     for line_n, line in enumerate(lines):
         line = line.decode('utf-8')
-        if current_parsha == u"חקת":
+        if line.startswith(u"@00חקת"):
             break
         if line.startswith(u"@11"):
             for line in divide_lines(line):
-                line = line.replace("@33", "")
                 aderet_text[current_parsha].append(line)
         elif line.startswith(u"@00"):
             this_parsha = None
@@ -66,12 +65,16 @@ def divide_lines(line):
     return lines
 
 def dh_extract_method(str):
-    str = " ".join(str.split(" ")[0:15])
-    end = str.find(".")
+    end = str.find("@33")
     if end >= 0:
         return str[0:end]
-    elif end == -1:
-        return str
+    else:
+        str = " ".join(str.split(" ")[0:15])
+        end = str.find(".")
+        if end >= 0:
+            return str[0:end]
+        elif end == -1:
+            return str
 
 def base_tokenizer(str):
     str = str.replace(u"־", u" ").replace(u"  ", u" ")
@@ -161,7 +164,7 @@ def restruct_text(text, parsha_order):
         new_comments = []
         for comment in comments:
             dh = dh_extract_method(comment)
-            comment = comment.replace(dh, "")
+            comment = comment.replace(dh, "").replace("@33", "")
             comment = u"<b>{}</b>{}".format(dh, comment)
             assert type(comment) is str or type(comment) is unicode
             new_comments.append(comment)

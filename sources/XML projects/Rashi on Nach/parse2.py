@@ -43,7 +43,7 @@ if __name__ == "__main__":
     post_info["versionTitle"] = "Maimonides' Mishneh Torah, edited by Philip Birnbaum, New York, 1967"
     post_info["versionSource"] = "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002108864"
     title = "Mishneh Torah"
-    file_name = "BenSira.xml"
+    file_name = "Judges/Metsudah-Shoftim.xml"
 
 
     parser = XML_to_JaggedArray(title, file_name, allowed_tags, allowed_attributes, post_info, change_name=True, image_dir="./images",
