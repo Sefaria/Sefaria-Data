@@ -322,7 +322,7 @@ def raph_alignment_report(ja_smk, letter_ja):
     page = 21
     prob = 0
     i = 0
-    for raph, smk_l in zip(letter_ja, lst_raph): # zip(raph_11, lst_raph):
+    for raph, smk_l in zip(letter_ja, lst_raph):  # zip(raph_11, lst_raph):
 
         # print re.search(u'@11([\u05d0-\u05ea]{1,3})', raph['data']).group(1), smk_l[0], numToHeb(smk_l[2])
         csv_dict = {u'smk letter': smk_l[0],  u'raph': raph[i], u'siman': numToHeb(smk_l[2]), u'aprx page in scan': smk_pages[numToHeb(smk_l[2])]}
@@ -340,7 +340,7 @@ def raph_alignment_report(ja_smk, letter_ja):
     print 'prob', prob
     print 'done'
     toCSV(u'testcsvreport', csv_lst, [u'smk letter', u'raph',
-                                 u'siman', u'aprx page in scan']) #, u'problem', u'smk words',u'raph line',
+                                 u'siman', u'aprx page in scan'])  #, u'problem', u'smk words',u'raph line',
     return csv_lst
 
 
@@ -376,7 +376,8 @@ def hagahot_alignment(ja_smk, ja_raph, ja_hagahot):
         dict = {u'siman': [], u'smk': [], u'raph': []}
     return dict_lst
 
-def link_hg(hg_ja, hagahot_dict_lst):
+
+def link_hg(hg_ja, hagahot_dict_lst, ja_raph):
 
     def link_hg_smk_or_raph(siman, smk_seg, hg, place_smk_hg, base_text):
         link = (
@@ -410,14 +411,19 @@ def link_hg(hg_ja, hagahot_dict_lst):
         # link all the haghot in a siman to the correct Semak segment
         pts_0 = 0
         ptr_0 = 0
-        print getGematria(dict["siman"])
-        for j, hgha in enumerate(hg_ja[getGematria(dict["siman"])-1]):
-            if pts < len(smks) and re.search(u"@11\({}\)".format(smks[pts][0]),hgha):
-                link = link_hg_smk_or_raph(getGematria(dict["siman"]), smks[pts][1], j+1, pts_0+1, "Sefer Mitzvot Katan")
+        sim = getGematria(dict["siman"])
+        # print sim
+        for j, hgha in enumerate(hg_ja[sim-1]):
+            smk_first = True
+            if ptr < len(raphs) and smks[pts][0] == raphs[ptr][0]:
+                if dict["raph"] and any([re.search(raphs[ptr][0], letter[0]) for letter in dict["raph"]]):
+                    smk_first = False
+            if smk_first and re.search(u"@11\({}\)".format(smks[pts][0]), hgha):  # pts < len(smks)
+                link = link_hg_smk_or_raph(sim, smks[pts][1], j+1, pts_0+1, "Sefer Mitzvot Katan")
                 pts += 1
                 pts_0 += 1
-            elif ptr < len(raphs) and re.search(u"@11\({}\)".format(raphs[ptr][0]),hgha):
-                link = link_hg_smk_or_raph(getGematria(dict["siman"]), raphs[ptr][1], j+1, ptr_0+1, 'Hagahot Rabbenu Peretz')
+            elif ptr < len(raphs) and re.search(u"@11\({}\)".format(raphs[ptr][0]), hgha):
+                link = link_hg_smk_or_raph(sim, raphs[ptr][1], j+1, ptr_0+1, 'Hagahot Rabbenu Peretz')
                 ptr += 1
                 ptr_0 += 1
             else:
@@ -426,8 +432,6 @@ def link_hg(hg_ja, hagahot_dict_lst):
             if link:
                 links.append(link)
     return links
-
-
 
 
 def hagahot_parse(ja_hagahot, hagahot_dict_lst):
@@ -439,10 +443,10 @@ def hagahot_parse(ja_hagahot, hagahot_dict_lst):
     ja_hagahot = ja_hagahot.flatten_to_array()
     hg_ja = []
     siman = []
-    p_hg = 1
+    p_hg = 0
     for dict in hagahot_dict_lst:
-        # if re.search(u"@00", ja_hagahot[p_hg]):
-        #     p_hg += 1
+        if re.search(u"^@[^1]", ja_hagahot[p_hg]):
+            p_hg += 1
         p_hg_end = p_hg + num_haghot_in_siman(dict)
         hg_ja.append(ja_hagahot[p_hg:p_hg_end])
         p_hg = p_hg_end
@@ -451,22 +455,28 @@ def hagahot_parse(ja_hagahot, hagahot_dict_lst):
     return hg_ja
 
 
-
 def inlinereferencehtml(ja_smk):
-    x = [0]
-    def f(matchObj):
-        x[0] += 1
-        return u'<i data-commentator= "Hagahot Rabbenu Peretz" data-order={}></i>'.format(x[0])
+    raphs = [0]
+    hags = [0]
+    def f_raph(matchObj):
+        raphs[0] += 1
+        return u'<i data-commentator= "Hagahot Rabbenu Peretz" data-order={}></i>'.format(raphs[0])
+    def f_hag(matchObj):
+        hags[0] += 1
+        return u'<i data-commentator= "Hagahot Hadashot" data-order={}></i>'.format(hags[0])
 
     new_ja = []
     for siman in ja_smk:
-        x[0] = 0
+        raphs[0] = 0
         new_siman = []
         for seg in siman:
-            seg = re.sub(u'@55[\u05d0-\u05ea]{0,3}', f, seg)
+            seg = re.sub(u'@55[\u05d0-\u05ea]{0,3}', f_raph, seg)
+            seg = re.sub(u'@88\([\u05d0-\u05ea]{0,3}\)', f_hag, seg)
+            seg = re.sub(u'@77', u'', seg)
             new_siman.append(seg)
         new_ja.append(new_siman)
     return new_ja
+
 
 def smk_schema():
     record_root = SchemaNode()
@@ -513,6 +523,7 @@ def post_smk(ja_smk):
 
 
 def post_raph(ja_raph):
+    ja_raph = inlinereferencehtml(ja_raph)
     text_version = {
         'versionTitle': 'Sefer Mitzvot Katan, Kopys, 1820',
         'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001771677',
@@ -540,6 +551,7 @@ def post_raph(ja_raph):
     post_index(index_dict)
 
     post_text('Hagahot Rabbenu Peretz', text_version)
+
 
 def post_hagahot(ja_hg):
     text_version = {
@@ -569,6 +581,7 @@ def post_hagahot(ja_hg):
     post_index(index_dict)
 
     post_text('Hagahot Hadashot', text_version)
+
 
 def link_raph(ja_smk, ja_raph_simanim):  # look how to get this information where it is coming from.
     # ja_raph_simanim = siman, letter
@@ -608,23 +621,21 @@ def link_raph(ja_smk, ja_raph_simanim):  # look how to get this information wher
 
 if __name__ == "__main__":
     ja_smk = parse_semak('Semak.txt')
-    # # # siman_page = map_semak_page_siman(ja_smk, to_print=False)
+    # siman_page = map_semak_page_siman(ja_smk, to_print=True)
     letter_ja = parse_Raph_by_letter(u'Raph_on_Semak.txt')
     raph_smk_alignment = raph_alignment_report(ja_smk, letter_ja)
     ja_raph = parse_Raph_simanim(raph_smk_alignment)
-    # post_smk(ja_smk)
     # # # post_raph(ja_raph)
     # # # link_raph(ja_raph)  # try to find where this is coming from
     # raph = parse_Raph_by_letter('Raph_on_Semak.txt')
-    # post_raph(ja_raph)
-    # raph_links = link_raph(ja_smk, ja_raph)
-    # post_link(raph_links)
-
+    raph_links = link_raph(ja_smk, ja_raph)
     ja_hagahot = parse_hagahot_by_letter(u'Semak_hagahot_chadashot.txt')
     hgh_align = hagahot_alignment(ja_smk, ja_raph, ja_hagahot)
     ja_hagahot = hagahot_parse(ja_hagahot, hgh_align)
+    hg_links = link_hg(ja_hagahot, hgh_align, ja_raph)
 
-    # post_hagahot(ja_hagahot)
-    hg_links = link_hg(ja_hagahot, hgh_align)
-    # post_link(hg_links)
-
+    post_smk(ja_smk)
+    post_raph(ja_raph)
+    post_link(raph_links)
+    post_hagahot(ja_hagahot)
+    post_link(hg_links)
