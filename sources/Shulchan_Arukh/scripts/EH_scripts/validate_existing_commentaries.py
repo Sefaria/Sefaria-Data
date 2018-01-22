@@ -1,8 +1,11 @@
 # coding=utf-8
 
+import regex
 import requests
+from fuzzywuzzy import fuzz
 from sefaria.model import *
-from collections import defaultdict
+from collections import defaultdict, Counter
+from sources.functions import getGematria
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
 
@@ -92,14 +95,72 @@ def check_links_on_seifim(xml_book, commentary_name, marker_pattern, server='htt
     return issues
 
 
+u"""
+Large discrepancies were found between the existing link data and what is described in our files. It was then decided to
+discard the links that were up on the site and to just go with the ones described in the files.
+
+To account for possible bad data, it is necessary to attempt a match of the dh to the text which appears after the appropriate
+mark.
+
+Algorithm:
+1) Go to siman of מחבר
+2) Go to seif
+3) Search for inline refs to commentary  -- a single regex should do for this
+4) For each inline ref:
+    determine commentary ref and retrieve text   -- requires name of commentary
+    fuzzy match of dh to word/phrase after inline ref marker
+"""
+def search_for_matches(seif_text, basic_pattern):
+    full_pattern = u'{} (?>[@!/][^ ]* )*(?P<dh>[^ ]+)'.format(basic_pattern)
+    return re.finditer(full_pattern, seif_text)
+
+
+def determine_match(commentary_name, commentary_regex):
+    issues = 0
+    full_pattern = u'{} (?>[@!/*][^ ]* )*(?P<dh>[^ ]+)'.format(commentary_regex)
+    full_mechaber = Root('../../Even_HaEzer.xml').get_base_text()
+    error_counter = Counter()
+
+    for siman_num, siman in enumerate(full_mechaber.get_simanim()):
+        for seif_num, seif in enumerate(siman.get_child()):
+            matches = regex.finditer(full_pattern, unicode(seif))
+
+            for regex_match in matches:
+                c_ref = Ref(u'{} {}:{}'.format(commentary_name, siman_num+1, getGematria(regex_match.group('ref'))))
+                try:
+                    c_text = c_ref.text('he').text.split()[0]
+                except IndexError:
+                    continue
+                c_text = re.sub(u'[^\u05d0-\u05ea]', u'', c_text)
+                dh_text = re.sub(u'[^\u05d0-\u05ea]', u'',regex_match.group('dh'))
+
+                ratio = fuzz.ratio(dh_text, c_text)
+
+                if ratio < 75.0:
+                    issues += 1
+                    print u"Potential mismatch:"
+                    print u"Shulchan Arukh, Even HaEzer {}:{}   {}".format(siman_num+1, seif_num+1, dh_text)
+                    print u"{}   {}".format(c_ref.normal(), c_text)
+                    print u"Score: {}".format(ratio)
+                    error_counter[(dh_text, c_text)] += 1
+    print u"Total issues: {}".format(issues)
+    return error_counter
+
+
 base_text = Root("../../Even_HaEzer.xml").get_base_text()
 params = [
-    (u'Beit Shmuel', ur'@55([\u05d0-\u05ea]{1,3})'),
-    (u"Ba'er Hetev on Shulchan Arukh, Even HaEzer", ur'@82([\u05d0-\u05ea]{1,3})\)'),
-    (u'Chelkat Mechokek', ur'@77\(([\u05d0-\u05ea]{1,3})\)')
+    (u'Beit Shmuel', ur'@55(?P<ref>[\u05d0-\u05ea]{1,3})'),
+    (u"Ba'er Hetev on Shulchan Arukh, Even HaEzer", ur'@82(?P<ref>[\u05d0-\u05ea]{1,3})\)'),
+    (u'Chelkat Mechokek', ur'@77\((?P<ref>[\u05d0-\u05ea]{1,3})\)')
 ]
 
-for param_set in params:
+for param_set in params[1:]:
+    # counts = determine_match(*param_set)
+    # for i,j in counts.most_common(7):
+    #     print u'{};{}   {}'.format(i[0], i[1], j)
+    # print sum([j for i,j in counts.most_common(7)])
+
+
     # thingy = compare_num_comments(base_text, *param_set)
     probs =  check_links_on_seifim(base_text, *param_set)
     print u'{} issues for {}'.format(probs, param_set[0])
