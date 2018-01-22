@@ -90,7 +90,7 @@ def any_hebrew_in_str(line):
     return False
 
 def any_english_in_str(line):
-    return re.findall("[a-zA-Z]{1}", line) != []
+    return re.findall("[a-zA-Z0-9]{1}", line) != []
 
 def is_english_word(line):
     if any_english_in_str(line):
