@@ -21,7 +21,9 @@ def map_semak_days(ja_smk):# https://github.com/Sefaria/Sefaria-Project/wiki/Ind
 def parse_semak(filename):
 
     def cleaner(my_text):
-        replace_dict = {u'@11(.*?)@12': ur'<b>\1</b>', u'@33(.*?)@34': ur'<b>\1</b>', u'@66(.*?)@67': ur'\1'}#, u'@55[\u05d0-\u05ea]{1,3}' : u'<i-tags = >'}
+        replace_dict = {u'@11(.*?)@12': ur'<b>\1</b>', u'@33(.*?)@34': ur'<b>\1</b>', u'@66(.*?)@67': ur'\1',
+                        u"@02":u""}
+
         new = []
         for line in my_text:
             line = multiple_replace(line, replace_dict, using_regex=True)
@@ -177,7 +179,7 @@ def parse_Raph_simanim(alinged_list):
 
 def parse_hagahot_by_letter(filename):
     def cleaner(my_text):
-        replace_dict = {u'@11\([\u05d0-\u05ea]{0,3}\)': u'', u'@77' : u''}
+        replace_dict = {u'@11\([\u05d0-\u05ea]{0,3}\)': u'', u'@77': u''}
         new = []
         for line in my_text:
             line = multiple_replace(line, replace_dict, using_regex=True)
@@ -442,7 +444,6 @@ def hagahot_parse(ja_hagahot, hagahot_dict_lst):
     ja_hagahot = JaggedArray(ja_hagahot)
     ja_hagahot = ja_hagahot.flatten_to_array()
     hg_ja = []
-    siman = []
     p_hg = 0
     for dict in hagahot_dict_lst:
         if re.search(u"^@[^1]", ja_hagahot[p_hg]):
@@ -468,6 +469,7 @@ def inlinereferencehtml(ja_smk):
     new_ja = []
     for siman in ja_smk:
         raphs[0] = 0
+        hags[0] = 0
         new_siman = []
         for seg in siman:
             seg = re.sub(u'@55[\u05d0-\u05ea]{0,3}', f_raph, seg)
@@ -493,7 +495,9 @@ def smk_schema():
 
 
 def post_smk(ja_smk):
+    replace_dict = {u"@23(.*)" : ur"<small>\1</small>"}
     ja_smk = inlinereferencehtml(ja_smk)
+    ja_smk = before_post_cleaner(ja_smk, replace_dict)
     text_version = {
         'versionTitle': 'Sefer Mitzvot Katan, Kopys, 1820',
         'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001771677',
@@ -552,8 +556,24 @@ def post_raph(ja_raph):
 
     post_text('Hagahot Rabbenu Peretz', text_version)
 
+def before_post_cleaner(ja, replace_dict):
+    new_ja = []
+    new_siman = []
+    for i, siman in enumerate(ja):
+        for seg in siman:
+            seg = multiple_replace(seg, replace_dict, using_regex=True)
+            if re.search(u'<small></small>', seg):
+                continue
+            new_siman.append(seg)
+        new_ja.append(new_siman)
+        new_siman = []
+    return new_ja
 
 def post_hagahot(ja_hg):
+    replace_dict = {u"@11\([\u05d0-\u05ea]{1,3}\)\s?@33": u"",
+                    u"@77": u"", u"@(01|44|99)": u"<br>", u"@55": u"<b>", u"@66": u"<\b>"}
+    ja_hg = before_post_cleaner(ja_hg, replace_dict)
+
     text_version = {
         'versionTitle': 'Sefer Mitzvot Katan, Kopys, 1820',
         'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001771677',
@@ -636,6 +656,6 @@ if __name__ == "__main__":
 
     post_smk(ja_smk)
     post_raph(ja_raph)
-    post_link(raph_links)
+    # post_link(raph_links)
     post_hagahot(ja_hagahot)
-    post_link(hg_links)
+    # post_link(hg_links)
