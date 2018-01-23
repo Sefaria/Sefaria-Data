@@ -29,6 +29,7 @@ class Metsudah_Parser:
         self.notes = []
         self.chapters_with_ftnotes = []
         self.instruction_tags = ["<M in>", "<M ex>", "@ex", "@in"]#, "<M t2>", "<M t1>"]
+        self.lines_starting_sections = []
 
 
 
@@ -102,6 +103,7 @@ class Metsudah_Parser:
     def parse_into_en_and_he_lists(self):
         curr_depth = 0
         curr_ref = self.en_title
+        curr_ftnote = prev_ftnote = 0
         self.schema = self.curr_schema = self.create_new_node(self.en_title, self.en_title, self.he_title)
         self.prev_line_instruction = False
         for line_n, line in enumerate(self.input_text):
@@ -118,8 +120,16 @@ class Metsudah_Parser:
             if not self.current_en_ja_node:
                 # haven't gotten to the first header, so nothing to parse
                 continue
-            if "@n1" in line and self.current_en_ja_node not in self.chapters_with_ftnotes:
-                self.chapters_with_ftnotes.append(self.current_en_ja_node)
+            ftnote_match = re.findall("@n1.*?(\d+)@n2", line)
+            if ftnote_match:
+                curr_ftnote = int(ftnote_match[0])
+                if curr_ftnote < prev_ftnote or prev_ftnote == 0:
+                    #starting over a new section...
+                    self.lines_starting_sections.append(line)
+                prev_ftnote = curr_ftnote
+                if self.current_en_ja_node not in self.chapters_with_ftnotes:
+                    #store order of chapters that have footnotes
+                    self.chapters_with_ftnotes.append(self.current_en_ja_node)
             instruction, line = self.is_instruction(line)
             temp_line = self.replace_tags(line)  # temp_line needs to be tagless
             has_english = any_english_in_str(temp_line)
@@ -145,10 +155,10 @@ class Metsudah_Parser:
             num_chapters = 1
             ftnotes_by_chapter[1] = []
             prev_match = None
-            for note in notes:
-                match = re.findall("<*(\d)>(\d)", note)
+            for i, note in enumerate(notes):
+                match = re.findall("<*(\d+)>(\d+)", note)
                 if not match:
-                    ftnotes_by_chapter[num_chapters].append(note)
+                    ftnotes_by_chapter[num_chapters][-1] += " "+note
                     prev_match = match
                     continue
                 num1, num2 = match[0]
@@ -158,35 +168,74 @@ class Metsudah_Parser:
                     # new chapter
                     num_chapters += 1
                     ftnotes_by_chapter[num_chapters] = []
-                else:
-                    ftnotes_by_chapter[num_chapters].append(note)
+                ftnotes_by_chapter[num_chapters].append(note)
                 prev_num1 = num1
                 prev_match = match
-        # we have chapters with footnotes and we have all the footnotes in numerical order
-        curr_note = 0
-        # first go through all notes and break them up into chapter, also making sure that number of chapters in chapters_with_ftnotes makes sense
+
+        def determine_start_of_note(line):
+            note_begins_with = None
+            full_match = re.findall("@n1<\*(\d+)>.*?(\d+)@n2", line)
+            partial_match = re.findall("@n1(\d+)@n2", line)
+            if full_match:
+                full_match = full_match[0]
+                note_begins_with = "<*{}>{}".format(full_match[0], full_match[1])
+            elif partial_match:
+                partial_match = partial_match[0]
+                note_begins_with = "<*{}>".format(partial_match[0])
+            return note_begins_with
+
+
+        def reset_curr_note(curr_note, which_ch):
+            # excess footnotes in footnote file than in main text file
+            if curr_note == 51 and which_ch == 4:
+                return (1, 5)
+            #elif curr_note == 28 and which_ch == 13:
+            #    return (1, 14)
+            else:
+                return (curr_note, which_ch)
+
+        def no_footnote(which_ch, curr_note):
+            if which_ch == 7 and curr_note == 41:
+                return True
+            else:
+                return False
+
+
+        def get_footnotes_from_chapter(chapter):
+            return [line for line in self.text["en"][chapter] if "@n1" in line]
+
         ftnotes_by_chapter = {}
         break_up_ftnotes(notes, ftnotes_by_chapter)
-        assert len(ftnotes_by_chapter.keys()) == len(self.chapters_with_ftnotes)
+        curr_note = 0
+        which_ch = 0 # this tells us where we are in ftnotes_by_chapter determined according to self.lines_starting_section
         for chapter in self.chapters_with_ftnotes:
-            for line in self.text["en"][chapter]:
-                if "@n1" in line:
-                    full_match = re.findall("@n1<\*(\d+)>.*?(\d+)@n2", line)
-                    partial_match = re.findall("@n1(\d+)@n2", line)
-                    if full_match:
-                        full_match = full_match[0]
-                        note_begins_with = "<*{}>{}".format(full_match[0], full_match[1])
-                    elif partial_match:
-                        partial_match = partial_match[0]
-                        note_begins_with = "<*{}>".format(partial_match[0])
-                    else:
-                        print "UH OH"
+            for line in get_footnotes_from_chapter(chapter):
+                #curr_note, which_ch = reset_curr_note(curr_note, which_ch) #reset at certain places where footnotes missing
+                if line in self.lines_starting_sections:
+                    which_ch += 1
+                    curr_note = 0
+                note_begins_with = determine_start_of_note(line)  # which_ch 7 and curr_note 41 just continue
+                #if no_footnote(which_ch, curr_note):
+                #    continue
 
-                    # orig_value = curr_note
-                    # while not notes[orig_value].startswith(note_begins_with) and orig_value - curr_note < 10:
-                    #     orig_value += 1
-                    # curr_note = orig_value
-        pass
+                if ftnotes_by_chapter[which_ch][curr_note].startswith(note_begins_with):
+                    curr_note += 1
+                else:
+                    #keep track of matches so as not to get false positives
+                    note_matches = []
+                    found = False
+                    #create a range usually between 5 before and 5 after but limit it by the bounds of the array
+                    max_note = min(len(ftnotes_by_chapter[which_ch]), curr_note+5)
+                    min_note = max(0, curr_note-5)
+                    for i in range(min_note, max_note):
+                        if ftnotes_by_chapter[which_ch][i].startswith(note_begins_with):
+                            note_matches.append(ftnotes_by_chapter[which_ch][i])
+                            curr_note += 1
+                            found = True
+                            break
+                    if not found:
+                        print ftnotes_by_chapter[which_ch][curr_note]
+                        curr_note += 1
 
 
 

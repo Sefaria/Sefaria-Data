@@ -6,7 +6,7 @@ import os
 from collections import Counter
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 
-server = "http://ste.sefaria.org"
+server = "http://draft.sefaria.org"
 
 def get_poss_parsha(line):
     line = line.replace(u"@00", u"")[0:-1]
@@ -134,8 +134,8 @@ def post_line(comment, this_ref):
     if this_ref:
         send_text = {
             "text": comment,
-            "versionTitle": "asdf",
-            "versionSource": "http://ste.sefaria.org",
+            "versionTitle": "Aderet Eliyahu",
+            "versionSource": server,
             "language": "he"
         }
         post_text(this_ref, send_text, server=server)
@@ -146,7 +146,7 @@ def create_index(text):
     root.add_primary_titles("Aderet Eliyahu", u"אדרת אליהו")
     for book in library.get_indexes_in_category("Torah"):
         node = JaggedArrayNode()
-        node.add_primary_titles(book, term.get_primary_title("he"))
+        node.add_primary_titles(book, library.get_index(book).get_title('he'))
         node.add_structure(["Perek", "Pasuk", "Paragraph"])
         root.append(node)
     root.validate()
@@ -164,7 +164,7 @@ def restruct_text(text, parsha_order):
         new_comments = []
         for comment in comments:
             dh = dh_extract_method(comment)
-            comment = comment.replace(dh, "").replace("@33", "")
+            comment = comment.replace(dh, "", 1).replace("@33", "")
             comment = u"<b>{}</b>{}".format(dh, comment)
             assert type(comment) is str or type(comment) is unicode
             new_comments.append(comment)
