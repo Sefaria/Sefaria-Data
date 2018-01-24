@@ -8,7 +8,7 @@ from data_utilities.util import getGematria, numToHeb
 from data_utilities.util import ja_to_xml, multiple_replace, traverse_ja, file_to_ja_g, file_to_ja
 from sefaria.datatype.jagged_array import JaggedArray
 from sefaria.model import *
-from sources.functions import post_text, post_index, post_link, add_category, post_text_weak_connection
+from sources.functions import  post_text, post_index, add_term, post_link, add_category, post_text_weak_connection
 
 
 def map_semak_days(ja_smk):# https://github.com/Sefaria/Sefaria-Project/wiki/Index-Records-for-Simple-%26-Complex-Texts
@@ -386,11 +386,11 @@ def link_hg(hg_ja, hagahot_dict_lst, ja_raph):
             {
                 "refs": [
                     u"{} {}:{}".format(base_text, siman, smk_seg),
-                    "Hagahot Hadashot {}:{}".format(siman, hg),  # really should be a ref link to the whole raph
+                    "Haggahot Chadashot on Sefer Mitzvot Katan {}:{}".format(siman, hg),  # really should be a ref link to the whole raph
                 ],
                 "type": "commentary",
                 'inline_reference': {
-                    'data-commentator': 'Hagahot Hadashot',
+                    'data-commentator': 'Haggahot Chadashot on Sefer Mitzvot Katan',
                     'data-order': place_smk_hg
                 },
                 "auto": True,
@@ -425,7 +425,7 @@ def link_hg(hg_ja, hagahot_dict_lst, ja_raph):
                 pts += 1
                 pts_0 += 1
             elif ptr < len(raphs) and re.search(u"@11\({}\)".format(raphs[ptr][0]), hgha):
-                link = link_hg_smk_or_raph(sim, raphs[ptr][1], j+1, ptr_0+1, 'Hagahot Rabbenu Peretz')
+                link = link_hg_smk_or_raph(sim, raphs[ptr][1], j+1, ptr_0+1, 'Haggahot Rabbeinu Peretz on Sefer Mitzvot Katan')
                 ptr += 1
                 ptr_0 += 1
             else:
@@ -461,10 +461,10 @@ def inlinereferencehtml(ja_smk):
     hags = [0]
     def f_raph(matchObj):
         raphs[0] += 1
-        return u'<i data-commentator= "Hagahot Rabbenu Peretz" data-order={}></i>'.format(raphs[0])
+        return u'<i data-commentator= "Haggahot Rabbeinu Peretz on Sefer Mitzvot Katan" data-order={}></i>'.format(raphs[0])
     def f_hag(matchObj):
         hags[0] += 1
-        return u'<i data-commentator= "Hagahot Hadashot" data-order={}></i>'.format(hags[0])
+        return u'<i data-commentator= "Haggahot Chadashot on Sefer Mitzvot Katan" data-order={}></i>'.format(hags[0])
 
     new_ja = []
     for siman in ja_smk:
@@ -480,49 +480,105 @@ def inlinereferencehtml(ja_smk):
     return new_ja
 
 
-def smk_schema():
-    record_root = SchemaNode()
-    # record_root.add_title('Semak', 'en', True)
-    # record_root.add_title(u'ספר מצוות קטן', 'he', True)
-    # record_root.key = 'Semak'
-    # intro_node = JaggedArrayNode()
-    # intro_node.depth = 1
-    # intro_node.add_primary_titles(u'Introduction', u'הקדמה')
-    # intro_node.add_structure(['Paragraph'])
-    # record_root.validate()
-
-    return record_root
+# def smk_schema():
+#     record_root = SchemaNode()
+#     # record_root.add_title('Semak', 'en', True)
+#     # record_root.add_title(u'ספר מצוות קטן', 'he', True)
+#     # record_root.key = 'Semak'
+#     # intro_node = JaggedArrayNode()
+#     # intro_node.depth = 1
+#     # intro_node.add_primary_titles(u'Introduction', u'הקדמה')
+#     # intro_node.add_structure(['Paragraph'])
+#     # record_root.validate()
+#
+#     return record_root
 
 
 def post_smk(ja_smk):
-    replace_dict = {u"@23(.*)" : ur"<small>\1</small>"}
+    # replace_dict = {u"@(?:23|99)(.*)" : ur"<small>\1</small>", u"@(01|44)": u"<br>"}
+    replace_dict = {u"@23(.*)": ur"<small>\1</small>", u"@99(.*?)\n": ur"<small>\1</small>",u"@(01|44)": u"<br>"}
     ja_smk = inlinereferencehtml(ja_smk)
     ja_smk = before_post_cleaner(ja_smk, replace_dict)
-    text_version = {
+
+    text_version_smk = {
         'versionTitle': 'Sefer Mitzvot Katan, Kopys, 1820',
         'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001771677',
         'language': 'he',
         'text': ja_smk
     }
 
+
+    text_version_intro = {
+        'versionTitle': 'Sefer Mitzvot Katan, Kopys, 1820',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001771677',
+        'language': 'he',
+        'text': [u"הקדמה"]
+    }
+
+    smk_root = SchemaNode()
+    smk_root.add_title('Sefer Mitzvot Katan', 'en', True)
+    smk_root.add_title(u'ספר מצוות קטן', 'he', True)
+    smk_root.key = 'Sefer Mitzvot Katan'
+    # smk_schema = JaggedArrayNode()
+    # smk_schema.add_title('Sefer Mitzvot Katan', 'en', True)
+    # smk_schema.add_title(u'ספר מצוות קטן', 'he', True)
+    # smk_schema.key = 'Sefer Mitzvot Katan'
+    # smk_schema.depth = 2
+    # smk_schema.addressTypes = ['Integer', 'Integer']
+    # smk_schema.sectionNames = ['Siman', 'Segment']
+    # smk_schema.validate()
+
+    # create index record for the introduction
+    smk_intro = JaggedArrayNode()
+    smk_intro.add_title('Introduction', 'en', primary=True, )
+    smk_intro.add_title(u'הקדמה', 'he', primary=True, )
+    smk_intro.key = 'Introduction'
+    smk_intro.depth = 1
+    smk_intro.sectionNames = ['Paragraph']
+    smk_intro.addressTypes = ['Integer']
+
+    smk_root.append(smk_intro)
+
     smk_schema = JaggedArrayNode()
-    smk_schema.add_title('Sefer Mitzvot Katan', 'en', True)
-    smk_schema.add_title(u'ספר מצוות קטן', 'he', True)
-    smk_schema.key = 'Sefer Mitzvot Katan'
+    smk_schema.key = "default"
+    smk_schema.default = True
     smk_schema.depth = 2
     smk_schema.addressTypes = ['Integer', 'Integer']
     smk_schema.sectionNames = ['Siman', 'Segment']
-    smk_schema.validate()
 
+    smk_root.append(smk_schema)
+    smk_root.validate()
+
+    days = [['day1',u'1-36', u'יום ראשון'], ['day2',u'37-101', u'יום שני'], ['day3',u'102-151', u'יום שלישי'],
+            ['day4',u'152-196', u'יום רביעי'], ['day5',u'197-238', u'יום חמישי'], ['day6', u'239-279', u'יום שישי'],
+            ['day7',u'280-294', u'שבת']]
+    nodes = []
+    for day in days:
+        node = ArrayMapNode()
+        node.depth = 0
+        node.wholeRef = "Sefer Mitzvot Katan {}".format(day[1])
+        node.add_primary_titles(day[0], day[2])
+        nodes.append(node.serialize())
+
+    # add_term("Days", u'ימים')
     index_dict = {
         'title': 'Sefer Mitzvot Katan',
         'categories': ['Halakhah'],
-        'schema': smk_schema.serialize()  # This line converts the schema into json
+        'alt_structs': {"Days": {"nodes": nodes}},
+        "author": [u'Isaac ben Joseph of Corbeil'],
+        'schema': smk_root.serialize(),  # This line converts the schema into json
+
     }
+
+
+
     # add_category('Sefer Mitzvot Katan', ['Halakhah'], u'ספר מצוות קטן')
     post_index(index_dict)
 
-    post_text('Sefer Mitzvot Katan', text_version)
+    post_text('Sefer Mitzvot Katan', text_version_smk)
+    post_text('Sefer Mitzvot Katan, Introduction', text_version_intro)
+
+
     # post_text_weak_connection('Sefer Mitzvot Katan', text_version)
 
 
@@ -536,25 +592,25 @@ def post_raph(ja_raph):
     }
 
     schema = JaggedArrayNode()
-    schema.add_title('Hagahot Rabbenu Peretz', 'en', True)
-    schema.add_title(u'הגהות רבנו פרץ', 'he', True)
-    schema.key = 'Hagahot Rabbenu Peretz'
+    schema.add_title('Haggahot Rabbeinu Peretz on Sefer Mitzvot Katan', 'en', True)
+    schema.add_title(u'הגהות רבנו פרץ על ספר מצוות קטן', 'he', True)
+    schema.key = 'Haggahot Rabbeinu Peretz on Sefer Mitzvot Katan'
     schema.depth = 2
     schema.addressTypes = ['Integer', 'Integer']
     schema.sectionNames = ['Siman', 'Segment']
     schema.validate()
 
     index_dict = {
-        'title': 'Hagahot Rabbenu Peretz',
+        'title': 'Haggahot Rabbeinu Peretz on Sefer Mitzvot Katan',
         'dependence': "Commentary",
         'base_text_titles': ["Sefer Mitzvot Katan"],
         "categories": ["Halakhah", "Commentary"],
         'schema': schema.serialize(),# This line converts the schema into json
-        'collective_title' : 'Hagahot Rabbenu Peretz',
+        'collective_title': 'Haggahot Rabbeinu Peretz on Sefer Mitzvot Katan',
     }
     post_index(index_dict)
 
-    post_text('Hagahot Rabbenu Peretz', text_version)
+    post_text('Haggahot Rabbeinu Peretz on Sefer Mitzvot Katan', text_version)
 
 def before_post_cleaner(ja, replace_dict):
     new_ja = []
@@ -580,27 +636,26 @@ def post_hagahot(ja_hg):
         'language': 'he',
         'text': ja_hg
     }
-
     schema = JaggedArrayNode()
-    schema.add_title('Hagahot Hadashot', 'en', True)
+    schema.add_title('Haggahot Chadashot on Sefer Mitzvot Katan', 'en', True)
     schema.add_title(u'הגהות חדשות', 'he', True)
-    schema.key = 'Hagahot Hadashot'
+    schema.key = 'Haggahot Chadashot on Sefer Mitzvot Katan'
     schema.depth = 2
     schema.addressTypes = ['Integer', 'Integer']
     schema.sectionNames = ['Siman', 'Segment']
     schema.validate()
 
     index_dict = {
-        'title': 'Hagahot Hadashot',
+        'title': 'Haggahot Chadashot on Sefer Mitzvot Katan',
         'dependence': "Commentary",
-        'base_text_titles': ["Sefer Mitzvot Katan", 'Hagahot Rabbenu Peretz'],
+        'base_text_titles': ["Sefer Mitzvot Katan", 'Haggahot Rabbeinu Peretz on Sefer Mitzvot Katan'],
         "categories": ["Halakhah", "Commentary"],
         'schema': schema.serialize(),  # This line converts the schema into json
-        'collective_title': 'Hagahot Hadashot',
+        'collective_title': 'Haggahot Chadashot on Sefer Mitzvot Katan',
     }
     post_index(index_dict)
 
-    post_text('Hagahot Hadashot', text_version)
+    post_text('Haggahot Chadashot on Sefer Mitzvot Katan', text_version)
 
 
 def link_raph(ja_smk, ja_raph_simanim):  # look how to get this information where it is coming from.
@@ -622,11 +677,11 @@ def link_raph(ja_smk, ja_raph_simanim):  # look how to get this information wher
                 {
                     "refs": [
                         "Sefer Mitzvot Katan {}:{}".format(siman, segment),
-                        "Hagahot Rabbenu Peretz {}:{}".format(siman, i),  # really should be a ref link to the whole raph
+                        "Haggahot Rabbeinu Peretz on Sefer Mitzvot Katan {}:{}".format(siman, i),  # really should be a ref link to the whole raph
                     ],
                     "type": "commentary",
                     'inline_reference': {
-                        'data-commentator': 'Hagahot Rabbenu Peretz',
+                        'data-commentator': 'Haggahot Rabbeinu Peretz on Sefer Mitzvot Katan',
                         'data-order': i
                     },
                     "auto": True,
@@ -642,20 +697,20 @@ def link_raph(ja_smk, ja_raph_simanim):  # look how to get this information wher
 if __name__ == "__main__":
     ja_smk = parse_semak('Semak.txt')
     # siman_page = map_semak_page_siman(ja_smk, to_print=True)
-    letter_ja = parse_Raph_by_letter(u'Raph_on_Semak.txt')
-    raph_smk_alignment = raph_alignment_report(ja_smk, letter_ja)
-    ja_raph = parse_Raph_simanim(raph_smk_alignment)
+    # letter_ja = parse_Raph_by_letter(u'Raph_on_Semak.txt')
+    # raph_smk_alignment = raph_alignment_report(ja_smk, letter_ja)
+    # ja_raph = parse_Raph_simanim(raph_smk_alignment)
     # # # post_raph(ja_raph)
     # # # link_raph(ja_raph)  # try to find where this is coming from
     # raph = parse_Raph_by_letter('Raph_on_Semak.txt')
-    raph_links = link_raph(ja_smk, ja_raph)
-    ja_hagahot = parse_hagahot_by_letter(u'Semak_hagahot_chadashot.txt')
-    hgh_align = hagahot_alignment(ja_smk, ja_raph, ja_hagahot)
-    ja_hagahot = hagahot_parse(ja_hagahot, hgh_align)
-    hg_links = link_hg(ja_hagahot, hgh_align, ja_raph)
+    # raph_links = link_raph(ja_smk, ja_raph)
+    # ja_hagahot = parse_hagahot_by_letter(u'Semak_hagahot_chadashot.txt')
+    # hgh_align = hagahot_alignment(ja_smk, ja_raph, ja_hagahot)
+    # ja_hagahot = hagahot_parse(ja_hagahot, hgh_align)
+    # hg_links = link_hg(ja_hagahot, hgh_align, ja_raph)
 
     post_smk(ja_smk)
-    post_raph(ja_raph)
+    # post_raph(ja_raph)
     # post_link(raph_links)
-    post_hagahot(ja_hagahot)
+    # post_hagahot(ja_hagahot)
     # post_link(hg_links)
