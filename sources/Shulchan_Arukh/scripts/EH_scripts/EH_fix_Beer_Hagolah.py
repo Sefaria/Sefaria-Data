@@ -1,5 +1,6 @@
 #encoding=utf-8
 
+import time
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
 filenames = {
@@ -64,10 +65,6 @@ class SimanLocater(object):
         return abs(b-a) <= pad
 
     def locate_merge(self, max_diff=2):
-        if len(self.commentary_simanim) == len(self.base_simanim):
-            print "No merges found"
-            return None
-
         for siman_index, com_siman in enumerate(self.commentary_simanim):
             if not self.almost_equals(com_siman['total'], self.base_simanim[siman_index]['total_refs'], max_diff):
                 combined = self.base_simanim[siman_index]['total_refs']
@@ -85,7 +82,16 @@ class SimanLocater(object):
                     print "Major conflict found at lines {}-{}. Should match siman {} (index {}). {} in base while {} in commentary"\
                         .format(com_siman['start']+1, com_siman['end']+1, self.base_simanim[siman_index]['num'],
                                 siman_index,self.base_simanim[siman_index]['total_refs'], com_siman['total'])
-                    raise AssertionError
+
+                    # time.sleep(0.1)  # helps keep error messages from getting jumbled
+                    # raise AssertionError
+                    print 'Attempting to split'
+                    self.resolve_split(siman_index, max_diff)
+                    return self.locate_merge(max_diff)
+
+        if len(self.commentary_simanim) == len(self.base_simanim):
+            print "No merges found"
+            return None
         raise AssertionError("Could not locate merge")
 
     def resolve_merge(self, merge_index, num_combined_simanim, max_diff=3):
@@ -119,7 +125,9 @@ class SimanLocater(object):
             diff_b = abs(expected_refs[1] - (count - location['count']))
             location['diff'] = diff_a + diff_b
         best_location = min(split_locations, key=lambda x: x['diff'])
-        assert best_location['diff'] < max_diff
+        if not best_location['diff'] < max_diff:
+            time.sleep(0.1)
+            raise AssertionError()
 
         self.commentary_simanim.insert(merge_index, {
             'start': merged_siman['start'],
@@ -179,10 +187,10 @@ up all subsequent merges. Or I could tell resolve to re-run itself on the next i
 higher than 2.  
 """
 
-# si = SimanLocater(1)
-# si.resolve_split(15)
-# my_merge = si.locate_merge(3)
-# while my_merge is not None:
-#     si.resolve_merge(*my_merge, max_diff=3)
-#     my_merge = si.locate_merge(3)
-# si.output()
+si = SimanLocater(1)
+my_merge = si.locate_merge(3)
+while my_merge is not None:
+    si.resolve_merge(*my_merge, max_diff=3)
+    my_merge = si.locate_merge(3)
+
+si.output()
