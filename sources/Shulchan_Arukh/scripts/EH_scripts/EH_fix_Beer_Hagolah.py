@@ -8,6 +8,26 @@ filenames = {
     'part_2': u'../../txt_files/Even_Haezer/part_2/שולחן ערוך אבן האזל חלק ב באר הגולה.txt'
 }
 
+
+def add_numbers_to_comments(filename, test_mode=True):
+    with codecs.open(filename, 'r', 'utf-8') as infile:
+        lines = infile.readlines()
+    count = 1
+
+    for line_num, line in enumerate(lines):
+        if re.match(u'@12', line):
+            count = 1
+        elif re.match(u'^@11[\u05d0-\u05ea]$', line):
+            lines[line_num] = u'{}  ({})\n'.format(line.rstrip(), count)
+            count += 1
+        else: continue
+
+    if test_mode:
+        filename = re.sub(u'\.txt', u'_test.txt', filename)
+    with codecs.open(filename, 'w', 'utf-8') as outfile:
+        outfile.writelines(lines)
+
+
 class SimanLocater(object):
 
     def __init__(self, volume):
@@ -194,3 +214,7 @@ while my_merge is not None:
     my_merge = si.locate_merge(3)
 
 si.output()
+
+# for i in [1,2]:
+#     add_numbers_to_comments(filenames['part_{}'.format(i)])
+
