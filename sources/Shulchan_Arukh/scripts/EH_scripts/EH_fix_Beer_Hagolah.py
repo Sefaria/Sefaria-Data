@@ -17,8 +17,8 @@ def add_numbers_to_comments(filename, test_mode=True):
     for line_num, line in enumerate(lines):
         if re.match(u'@12', line):
             count = 1
-        elif re.match(u'^@11[\u05d0-\u05ea]$', line):
-            lines[line_num] = u'{}  ({})\n'.format(line.rstrip(), count)
+        elif re.match(u'^@11[\u05d0-\u05ea]($| )', line):
+            lines[line_num] = u'{}  ({})\n'.format(line[:4], count)
             count += 1
         else: continue
 
