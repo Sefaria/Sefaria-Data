@@ -3,7 +3,7 @@ import codecs
 import csv
 from collections import Counter
 import os
-from sources.Metsudah.Metsudah_Siddurim.metsudah_parser import Metsudah_Parser
+from sources.Metsudah.Metsudah_Siddurim.metsudah_parser import Metsudah_Parser, Footnotes
 
 from sources.functions import *
 import re
@@ -232,10 +232,13 @@ if __name__ == "__main__":
                              vsource="http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002211687",
                              input_text="Notes.txt", node_separator="|")
     parser.pre_parse()
+    notes need to be parsed differently
+    @b1 ... @b2 is where footnote is
     notes.pre_parse()
     parser.combine_titles()
     parser.parse_into_en_and_he_lists()
-    parser.insert_ftnotes(notes.input_text)
+    ftnotes = Footnotes(notes.input_text, parser)
+    ftnotes.missing_ftnotes_report()
     parser.create_schema()
     server = "http://ste.sefaria.org"
     post_index(parser.index, server=server)

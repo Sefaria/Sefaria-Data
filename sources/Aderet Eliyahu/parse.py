@@ -126,7 +126,7 @@ def get_pasukim(aderet_text, parsha_order):
                     this_ref = ""
 
                 parsha_csv.writerow([comment, this_ref])
-                post_line(comment, this_ref)
+                #post_line(comment, this_ref)
                 total += 1
 
 
@@ -191,7 +191,7 @@ if __name__ == "__main__":
         lines = list(f)
         lines = [line for line in lines if line]
         aderet_text, parsha_order = parse_until_chukat(lines, allowed)
-    create_index(aderet_text)
+    #create_index(aderet_text)
     aderet_text = restruct_text(aderet_text, parsha_order)
     get_pasukim(aderet_text, parsha_order)
 
