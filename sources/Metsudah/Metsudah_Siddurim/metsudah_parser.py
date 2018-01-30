@@ -30,6 +30,9 @@ class Metsudah_Parser:
         self.chapters_with_ftnotes = []
         self.instruction_tags = ["<M in>", "<M ex>", "@ex", "@in"]#, "<M t2>", "<M t1>"]
         self.lines_starting_sections = []
+        self.ftnote_tags = ["@n1", "@n2", "@b1", "@b2"]
+        self.html_tags = ["<i>", "<b>", "</i>", "</b>", "<br>", "<small>"]
+        self.language_tags = ["<ENG>", "<EN>", "<HE>", "<HEB>"]
 
 
 
@@ -160,22 +163,19 @@ class Metsudah_Parser:
         return False, line
 
     def replace_tags(self, line, skip_html=False, skip_ftnotes=False, skip_header=False, skip_language=False):
-        html = ["<i>", "<b>", "</i>", "</b>", "<br>", "<small>"]
-        language = ["<ENG>", "<EN>", "<HE>", "<HEB>"]
-        ftnotes = ["@n1", "@n2"]
         ftnote_pattern = "<\*\d+>"
         headers = self.instruction_tags + self.headers
 
         tags_in_line = re.findall("<.*?>|@[a-zA-Z0-9]{1,2}", line)
         for tag in tags_in_line:
             remove = True
-            if skip_ftnotes and (tag in ftnotes or re.findall(ftnote_pattern, tag)):
+            if skip_ftnotes and (tag in self.ftnote_tags or re.findall(ftnote_pattern, tag)):
                 remove = False
-            if skip_html and tag in html:
+            if skip_html and tag in self.html_tags:
                 remove = False
             if skip_header and tag in headers:
                 remove = False
-            if skip_language and tag in language:
+            if skip_language and tag in self.language_tags:
                 remove = False
             if remove:
                 line = line.replace(tag, "")
@@ -349,63 +349,41 @@ class Footnotes:
         #ftnotes_by_chapter has all of the footnotes according to footnotes file whereas text_by_chapter has all the footnotes as they are used in main text file
         self.ftnotes_by_chapter = {}
         self.text_by_chapter = {}
+        self.complaints = {"notes": [], "main": []}
 
-
-    def determine_start_of_note(self, line):
-        note_begins_with = None
-        full_match = re.findall("@n1<\*(\d+)>.*?(\d+)@n2", line)
-        partial_match = re.findall("@n1(\d+)@n2", line)
-        if full_match:
-            full_match = full_match[0]
-            note_begins_with = "<*{}>{}".format(full_match[0], full_match[1])
-        elif partial_match:
-            partial_match = partial_match[0]
-            note_begins_with = "<*{}>".format(partial_match)
-        return note_begins_with
-
-
-    def reset_curr_note(curr_note, which_ch):
-        # excess footnotes in footnote file than in main text file
-        if curr_note == 51 and which_ch == 4:
-            return (1, 5)
-        #elif curr_note == 28 and which_ch == 13:
-        #    return (1, 14)
-        else:
-            return (curr_note, which_ch)
-
-    def no_footnote(which_ch, curr_note):
-        if which_ch == 7 and curr_note == 41:
-            return True
-        else:
-            return False
-
-    def increment_curr_note(self):
-        self.curr_note += 1
-        # perform check to make sure curr_note is within bounds of ftnotes_by_chapter[which_ch]
-        if self.curr_note >= len(self.ftnotes_by_chapter[self.which_ch]):
-            print "Went beyond the bounds of chapter {}".format(self.which_ch)
-            self.which_ch += 1
 
     def break_up_text(self):
+        '''
+        both break_up_text and break_up_footnotes do about the same thing, both dividing up either footnotes or text into corresponding
+        equal number of sections
+        :return:
+        '''
+
         #first just move any line with footnotes from main text into variable all_lines_with_ftnotes
         self.text_by_chapter = [[]]
         all_lines_with_ftnotes = []
         for i, chapter in enumerate(self.parser.chapters_with_ftnotes):
             all_lines_with_ftnotes += [line for line in self.parser.text["en"][chapter] if "@n1" in line]
 
-        #now the logic is basically the same as break_up_ftnotes() above, just organize into a dict when numbers re-start at a lower number indicating new chapter
+        #now the logic is basically the same as break_up_ftnotes() above,
+        #just organize into a dict when numbers re-start at a lower number indicating new chapter
+        #main difference is that there can be more than one footnote per line
         prev_num1 = 0
-        for line in all_lines_with_ftnotes:
-            note = self.determine_start_of_note(line)
-            match = re.findall("<*(\d+)>", note)
-            assert match
-            num1 = match[0]
-            num1 = int(num1)
-            if num1 < prev_num1:
-                # new chapter
-                self.text_by_chapter.append([])
-            self.text_by_chapter[-1].append([note, line])
-            prev_num1 = num1
+        for line_n, line in enumerate(all_lines_with_ftnotes):
+            line = self.parser.replace_tags(line, skip_header=True, skip_ftnotes=True)
+            notes = re.findall("@n1(.*?)@n2", line)
+            for note in notes:
+                note = note.strip()
+                if note.isdigit():
+                    num1 = int(note)
+                else:
+                    match = re.findall("<*(\d+)>", note)
+                    num1 = int(match[0])
+                if num1 < prev_num1:
+                    # new chapter
+                    self.text_by_chapter.append([])
+                self.text_by_chapter[-1].append([note, line])
+                prev_num1 = num1
 
 
     def break_up_ftnotes(self):
@@ -413,9 +391,7 @@ class Footnotes:
         self.ftnotes_by_chapter = [[]]
         prev_match = None
         for i, line in enumerate(self.notes):
-            intentional_unmatch = line.startswith("!*?")  # I intentionally modified the file with these characters so that content workers would know where to place missing footnotes
-            if intentional_unmatch:
-                continue
+            line = self.parser.replace_tags(line, skip_header=True, skip_ftnotes=True)  #just need to remove language markers here
             match = re.findall("(<\*(\d+)>(\d+))", line)
             if not match:
                 self.ftnotes_by_chapter[-1][-1][1] += " "+line
@@ -425,39 +401,42 @@ class Footnotes:
             num1 = int(num1)
             num2 = int(num2)
             if num1 < prev_num1:
-                # new chapter
-                self.ftnotes_by_chapter.append([])
+                self.ftnotes_by_chapter.append([])    # new chapter
+            for tag in self.parser.ftnote_tags:
+                line = line.replace(tag, "")
             self.ftnotes_by_chapter[-1].append([note, line])
             prev_num1 = num1
             prev_match = match
 
+
     def missing_ftnotes_report(self):
-        def complain_if_any_missing(missing, relevant_text, complaint):
+        def add_complaint_if_any_missing(missing, relevant_text, complaint):
             if missing:
-                print complaint
                 for ftnote_symbol in missing:
                     for ftnote in relevant_text:
-                        if ftnote.startswith(ftnote_symbol):
-                            print ftnote
+                        if ftnote_symbol in ftnote:
+                            self.complaints[complaint].append(ftnote)
 
         self.break_up_ftnotes()
         self.break_up_text()
+        chapter = 0
         for ftnotes, text in zip(self.ftnotes_by_chapter, self.text_by_chapter):
+            chapter += 1
             ftnotes_symbols, ftnotes_text = zip(*ftnotes)
             text_symbols, text_text = zip(*text)
             ftnotes_symbols = set(ftnotes_symbols)
             text_symbols = set(text_symbols)
 
             relevant_text = ftnotes_text
-            complaint = "Footnotes missing in Notes.txt:"
+            complaint = "notes"
             missing = ftnotes_symbols - text_symbols
-            complain_if_any_missing(missing, relevant_text, complaint)
+            add_complaint_if_any_missing(missing, relevant_text, complaint)
 
 
             relevant_text = text_text
-            complaint = "Footnotes missing in main text file:"
+            complaint = "main"
             missing = text_symbols - ftnotes_symbols
-            complain_if_any_missing(missing, relevant_text, complaint)
+            add_complaint_if_any_missing(missing, relevant_text, complaint)
 
 
 

@@ -232,8 +232,6 @@ if __name__ == "__main__":
                              vsource="http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002211687",
                              input_text="Notes.txt", node_separator="|")
     parser.pre_parse()
-    notes need to be parsed differently
-    @b1 ... @b2 is where footnote is
     notes.pre_parse()
     parser.combine_titles()
     parser.parse_into_en_and_he_lists()
