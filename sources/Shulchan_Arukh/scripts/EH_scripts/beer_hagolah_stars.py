@@ -7,9 +7,9 @@ Map out stars in Mechaber text to Beer HaGolah
 {
     siman_num,
     star_count: number of stars appearing one after the next,
-    preceding_index: number of preceding (lettered) beer hagolah comment,  0 if star appears at the beginning of a siman
+    preceding_index: number of preceding (lettered) beer hagolah comment,  -1 if star appears at the beginning of a siman
     preceding_letter: letter of preceding beer hagolah comment,  None if star appears at the beginning of a siman
-    following_index: 0 if star appears at the end of a siman
+    following_index: -1 if star appears at the end of a siman
     following_letter: None if star pears at the en of a siman
 }
 
@@ -21,11 +21,13 @@ at the desired location
 
 import re
 import codecs
-from data_utilities.util import getGematria
+from data_utilities.util import getGematria, StructuredDocument
 
 filenames = {
-    'part_1': u'/home/jonathan/sefaria/Sefaria-Data/sources/Shulchan_Arukh/txt_files/Even_Haezer/part_1/באר הגולה אבן העזר חלק א.txt',
-    'part_2': u'/home/jonathan/sefaria/Sefaria-Data/sources/Shulchan_Arukh/txt_files/Even_Haezer/part_2/שולחן ערוך אבן האזל חלק ב באר הגולה.txt'
+    'beer_part_1': u'/home/jonathan/sefaria/Sefaria-Data/sources/Shulchan_Arukh/txt_files/Even_Haezer/part_1/באר הגולה אבן העזר חלק א.txt',
+    'beer_part_2': u'/home/jonathan/sefaria/Sefaria-Data/sources/Shulchan_Arukh/txt_files/Even_Haezer/part_2/שולחן ערוך אבן האזל חלק ב באר הגולה.txt',
+    'mechaber_part_1': u'/home/jonathan/sefaria/Sefaria-Data/sources/Shulchan_Arukh/txt_files/Even_Haezer/part_1/אבן העזר חלק א מחבר.txt',
+    'mechaber_part_2': u'/home/jonathan/sefaria/Sefaria-Data/sources/Shulchan_Arukh/txt_files/Even_Haezer/part_2/שולחן ערוך אבן האזל חלק ב מחבר.txt'
 }
 
 
@@ -39,7 +41,7 @@ def identify_star_locations(filename):
     with codecs.open(filename, 'r', 'utf-8') as infile:
         lines = infile.readlines()
 
-    siman, seif_index, seif_letter, num_stars = -1, 0, None, 0
+    siman, seif_index, seif_letter, num_stars = -1, -1, None, 0
     star_locations, current_star = [], {}
     line_regex = get_regex()
 
@@ -63,7 +65,7 @@ def identify_star_locations(filename):
 
             elif line_data.lastgroup == u'siman':
                 siman = getGematria(line_data.group(line_data.lastindex+1))
-                seif_index = 0
+                seif_index = -1
                 seif_letter = None
 
             else: raise LookupError(u"Expecting seif or siman, got {}".format(line_data.lastgroup))
@@ -82,3 +84,59 @@ def identify_star_locations(filename):
             star_locations.append(current_star)
 
     return star_locations
+
+
+def fix_stars(siman_text, star_loc):
+    siman_char_list = list(siman_text)  # we will use this to make an in-place substitution of the stars
+    beer_marks = list(re.finditer(u'@44([\u05d0-\u05ea])', siman_text))
+
+    # we want to limit our search the just the space between the preceding and following beer hagolah markers
+    if star_loc['preceding_letter']:
+        # check that letters and indices match up between mechaber and beer hagolah
+        preceding_letter = beer_marks[star_loc['preceding_index']]
+        assert preceding_letter.group(1) == star_loc['preceding_letter']
+        start_pos = preceding_letter.end()  # stars must be located after this position
+    else:
+        start_pos = 0
+
+    if star_loc['following_letter']:
+        # same as above, check that letters and indices match up between both files
+        following_letter = beer_marks[star_loc['following_index']]
+        assert following_letter.group(1) == star_loc['following_letter']
+        end_pos = following_letter.start()
+    else:
+        end_pos = len(siman_text)
+
+    search_space = siman_text[start_pos:end_pos]
+    star_matches = list(re.finditer(u'\*', search_space))
+    assert len(star_matches) == star_loc['star_count']
+
+    for match in star_matches:
+        star_pos = match.start() + start_pos
+        assert siman_char_list[star_pos] == u'*'
+        siman_char_list[star_pos] = u'@44\u2022'
+    return u''.join(siman_char_list)
+
+
+def correct_stars_in_file(part, test_mode=True):
+    file_obj = StructuredDocument(filenames['mechaber_part_{}'.format(part)], u'@22([\u05d0-\u05ea]{1,3})')
+    star_locs = identify_star_locations(filenames['beer_part_{}'.format(part)])
+    bad_locs = []
+
+    for star_loc in star_locs:
+        try:
+            file_obj.edit_section(star_loc['siman_num'], fix_stars, star_loc)
+        except AssertionError:
+            bad_locs.append(star_loc)
+    if test_mode:
+        file_obj.write_to_file(filenames['mechaber_part_{}'.format(part)].replace(u'.txt', u'_test.txt'))
+    else:
+        file_obj.write_to_file(filenames['mechaber_part_{}'.format(part)])
+
+    keys = [u'siman_num', u'star_count', u'preceding_letter', u'preceding_index', u'following_letter', u'following_index']
+    for b in bad_locs:
+        for key in keys:
+            print u'{}: {}'.format(key, b[key]),
+        print u''
+
+correct_stars_in_file(1)
