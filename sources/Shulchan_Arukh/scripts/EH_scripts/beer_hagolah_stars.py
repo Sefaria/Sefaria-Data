@@ -108,13 +108,18 @@ def fix_stars(siman_text, star_loc):
         end_pos = len(siman_text)
 
     search_space = siman_text[start_pos:end_pos]
-    star_matches = list(re.finditer(u'\*', search_space))
+    star_matches = list(re.finditer(u'[*|\u2022]', search_space))
     assert len(star_matches) == star_loc['star_count']
 
     for match in star_matches:
         star_pos = match.start() + start_pos
-        assert siman_char_list[star_pos] == u'*'
-        siman_char_list[star_pos] = u'@44\u2022'
+
+        if siman_char_list[star_pos] == u'*':
+            siman_char_list[star_pos] = u'@44\u2022'
+        elif siman_char_list[star_pos] == u'\u2022':
+            continue
+        else: raise AssertionError
+
     return u''.join(siman_char_list)
 
 
