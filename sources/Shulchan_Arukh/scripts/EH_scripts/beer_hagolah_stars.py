@@ -94,7 +94,9 @@ def fix_stars(siman_text, star_loc):
     if star_loc['preceding_letter']:
         # check that letters and indices match up between mechaber and beer hagolah
         preceding_letter = beer_marks[star_loc['preceding_index']]
-        assert preceding_letter.group(1) == star_loc['preceding_letter']
+        if preceding_letter.group(1) != star_loc['preceding_letter']:
+            star_loc[u'Problem'] = u'Previous letters did not match up ({} at this index in Mechaber)'.format(preceding_letter.group(1))
+            raise AssertionError
         start_pos = preceding_letter.end()  # stars must be located after this position
     else:
         start_pos = 0
@@ -102,14 +104,18 @@ def fix_stars(siman_text, star_loc):
     if star_loc['following_letter']:
         # same as above, check that letters and indices match up between both files
         following_letter = beer_marks[star_loc['following_index']]
-        assert following_letter.group(1) == star_loc['following_letter']
+        if following_letter.group(1) != star_loc['following_letter']:
+            star_loc[u'Problem'] = u'Following letters did not match up ({} at this index in Mechaber)'.format(following_letter.group(1))
+            raise AssertionError
         end_pos = following_letter.start()
     else:
         end_pos = len(siman_text)
 
     search_space = siman_text[start_pos:end_pos]
     star_matches = list(re.finditer(u'[*|\u2022]', search_space))
-    assert len(star_matches) == star_loc['star_count']
+    if len(star_matches) != star_loc['star_count']:
+        star_loc[u'Problem'] = u'Incorrect number of stars found in Mechaber({})'.format(len(star_matches))
+        raise AssertionError
 
     for match in star_matches:
         star_pos = match.start() + start_pos
@@ -118,7 +124,9 @@ def fix_stars(siman_text, star_loc):
             siman_char_list[star_pos] = u'@44\u2022'
         elif siman_char_list[star_pos] == u'\u2022':
             continue
-        else: raise AssertionError
+        else:
+            star_loc[u'Problem'] = u'Replacement index did not contain star'
+            raise AssertionError
 
     return u''.join(siman_char_list)
 
@@ -138,10 +146,11 @@ def correct_stars_in_file(part, test_mode=True):
     else:
         file_obj.write_to_file(filenames['mechaber_part_{}'.format(part)])
 
-    keys = [u'siman_num', u'star_count', u'preceding_letter', u'preceding_index', u'following_letter', u'following_index']
+    keys = [u'siman_num', u'star_count', u'preceding_letter', u'preceding_index', u'following_letter', u'following_index', u'Problem']
     for b in bad_locs:
         for key in keys:
             print u'{}: {}'.format(key, b[key]),
         print u''
 
 correct_stars_in_file(1)
+correct_stars_in_file(2)
