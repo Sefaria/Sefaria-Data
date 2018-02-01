@@ -237,6 +237,7 @@ if __name__ == "__main__":
     parser.parse_into_en_and_he_lists()
     ftnotes = Footnotes(notes.input_text, parser)
     ftnotes.missing_ftnotes_report()
+    ftnotes.insert_ftnotes_into_text()
     parser.create_schema()
     server = "http://ste.sefaria.org"
     post_index(parser.index, server=server)

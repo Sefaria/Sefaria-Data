@@ -33,6 +33,7 @@ class Metsudah_Parser:
         self.ftnote_tags = ["@n1", "@n2", "@b1", "@b2"]
         self.html_tags = ["<i>", "<b>", "</i>", "</b>", "<br>", "<small>"]
         self.language_tags = ["<ENG>", "<EN>", "<HE>", "<HEB>"]
+        self.chapters = []
 
 
 
@@ -124,6 +125,8 @@ class Metsudah_Parser:
                 # haven't gotten to the first header, so nothing to parse
                 continue
             ftnote_match = re.findall("@n1.*?(\d+)@n2", line)
+            if self.current_en_ja_node not in self.chapters:
+                self.chapters.append(self.current_en_ja_node)
             if ftnote_match:
                 curr_ftnote = int(ftnote_match[0])
                 if curr_ftnote < prev_ftnote or prev_ftnote == 0:
@@ -349,132 +352,133 @@ class Footnotes:
         #ftnotes_by_chapter has all of the footnotes according to footnotes file whereas text_by_chapter has all the footnotes as they are used in main text file
         self.ftnotes_by_chapter = {}
         self.text_by_chapter = {}
-        self.complaints = {"notes": [], "main": []}
+        self.complaints = {"notes": [], "main": [], "duplicates": []}
+        self.map_full_text_to_text_by_chapter = {}
+        self.all_lines = [] #all lines in main text
 
-
-    def break_up_text(self):
         '''
         both break_up_text and break_up_footnotes do about the same thing, both dividing up either footnotes or text into corresponding
         equal number of sections
-        :return:
         '''
+        self.break_up_ftnotes()
+        self.break_up_text()
+
+
+    def break_up_text(self):
 
         #first just move any line with footnotes from main text into variable all_lines_with_ftnotes
-        self.text_by_chapter = [[]]
-        all_lines_with_ftnotes = []
-        for i, chapter in enumerate(self.parser.chapters_with_ftnotes):
-            all_lines_with_ftnotes += [line for line in self.parser.text["en"][chapter] if "@n1" in line]
+        self.text_by_chapter = [{}]
+        total_line_n = 0
+        for i, chapter in enumerate(self.parser.chapters):
+            for line in self.parser.text["en"][chapter]:
+                self.all_lines += [line.replace("\r\n", "")]
 
         #now the logic is basically the same as break_up_ftnotes() above,
         #just organize into a dict when numbers re-start at a lower number indicating new chapter
         #main difference is that there can be more than one footnote per line
         prev_num1 = 0
-        for line_n, line in enumerate(all_lines_with_ftnotes):
+        for line_n, line in enumerate(self.all_lines):
+            if "@n1" not in line:
+                continue
             line = self.parser.replace_tags(line, skip_header=True, skip_ftnotes=True)
             notes = re.findall("@n1(.*?)@n2", line)
             for note in notes:
                 note = note.strip()
                 if note.isdigit():
                     num1 = int(note)
+                    note = "<*{}>{}".format(note, note)
                 else:
                     match = re.findall("<*(\d+)>", note)
                     num1 = int(match[0])
                 if num1 < prev_num1:
                     # new chapter
-                    self.text_by_chapter.append([])
-                self.text_by_chapter[-1].append([note, line])
+                    self.text_by_chapter.append({})
+                if note in self.text_by_chapter[-1]:
+                    duplicate = self.text_by_chapter[-1][note]
+                    self.complaints["duplicates"].append(line)
+                    self.complaints["duplicates"].append(duplicate)
+                self.text_by_chapter[-1][note] = line
+                self.map_full_text_to_text_by_chapter[line_n] = (len(self.text_by_chapter)-1, note)
                 prev_num1 = num1
 
 
     def break_up_ftnotes(self):
         prev_num1 = 0
-        self.ftnotes_by_chapter = [[]]
+        self.ftnotes_by_chapter = [{}]
         prev_match = None
         for i, line in enumerate(self.notes):
             line = self.parser.replace_tags(line, skip_header=True, skip_ftnotes=True)  #just need to remove language markers here
-            match = re.findall("(<\*(\d+)>(\d+))", line)
-            if not match:
-                self.ftnotes_by_chapter[-1][-1][1] += " "+line
-                prev_match = match
+            note = re.findall("@b1(.*?)@b2", line)
+            if not note or note[0] == "":
+                self.ftnotes_by_chapter[-1][prev_note] += " "+line
                 continue
-            note, num1, num2 = match[0]
-            num1 = int(num1)
-            num2 = int(num2)
+
+            full_note = re.findall("(<\*(\d+)>(\d+))", line)
+            if full_note:
+                note, num1, num2 = full_note[0]
+                num1 = int(num1)
+            else:
+                num1 = int(note)
+                note = "<*{}>{}".format(note, note)
+
             if num1 < prev_num1:
-                self.ftnotes_by_chapter.append([])    # new chapter
+                self.ftnotes_by_chapter.append({})    # new chapter
             for tag in self.parser.ftnote_tags:
                 line = line.replace(tag, "")
-            self.ftnotes_by_chapter[-1].append([note, line])
+            self.ftnotes_by_chapter[-1][note] = line
             prev_num1 = num1
-            prev_match = match
+            prev_note = note
 
+
+    def add_complaint_if_any_missing(self, missing, relevant_text, complaint):
+        if missing:
+            for ftnote_symbol in missing:
+                for ftnote in relevant_text:
+                    if ftnote_symbol in ftnote:
+                        self.complaints[complaint].append(ftnote)
 
     def missing_ftnotes_report(self):
-        def add_complaint_if_any_missing(missing, relevant_text, complaint):
-            if missing:
-                for ftnote_symbol in missing:
-                    for ftnote in relevant_text:
-                        if ftnote_symbol in ftnote:
-                            self.complaints[complaint].append(ftnote)
-
-        self.break_up_ftnotes()
-        self.break_up_text()
-        chapter = 0
+        #checks both ftnotes and main text to see if either ftnotes are missing in main text or ftnotes file
         for ftnotes, text in zip(self.ftnotes_by_chapter, self.text_by_chapter):
-            chapter += 1
-            ftnotes_symbols, ftnotes_text = zip(*ftnotes)
-            text_symbols, text_text = zip(*text)
+            ftnotes_symbols, ftnotes_arr = ftnotes.keys(), ftnotes.values()
+            text_symbols, text_arr = text.keys(), text.values()
             ftnotes_symbols = set(ftnotes_symbols)
             text_symbols = set(text_symbols)
 
-            relevant_text = ftnotes_text
+            relevant_text = ftnotes_arr
             complaint = "notes"
             missing = ftnotes_symbols - text_symbols
-            add_complaint_if_any_missing(missing, relevant_text, complaint)
+            self.add_complaint_if_any_missing(missing, relevant_text, complaint)
 
-
-            relevant_text = text_text
+            relevant_text = text_arr
             complaint = "main"
             missing = text_symbols - ftnotes_symbols
-            add_complaint_if_any_missing(missing, relevant_text, complaint)
+            self.add_complaint_if_any_missing(missing, relevant_text, complaint)
 
 
+    def insert_ftnotes_into_text(self):
+        #text_by_chapter contains text roughly as it appears in main text file,
+        #now each key (<*1>1) will point to the line with ftnote replaced by text from Notes.txt if there are no self.complaints
+        for key in self.complaints:
+            if self.complaints[key]:
+                return
 
-
-
-
-        #go through each chapter, zip the ftnotes and text together and figure out which ones are missing and report
-
-        # for comment_ch_n, comments in self.text_by_chapter.items():
-        #     for comment in comments:
-        #         if comment in self.parser.lines_starting_sections:
-        #             self.notes_found += self.curr_note
-        #             self.curr_note = 0
-        #         note_begins_with = self.determine_start_of_note(comment)  # which_ch 7 and curr_note 41 just continue
-        #         #if no_footnote(which_ch, curr_note):
-        #         #    continue
-        #
-        #         if ftnotes_this_ch[self.curr_note].startswith(note_begins_with):
-        #             self.increment_curr_note()
-        #             ftnotes_this_ch = self.ftnotes_by_chapter[self.which_ch]
-        #         else:
-        #             #keep track of matches so as not to get false positives
-        #             note_matches = []
-        #             found = False
-        #             #create a range usually between 5 before and 5 after but limit it by the bounds of the array
-        #             max_note = min(len(ftnotes_this_ch), self.curr_note+5)
-        #             min_note = max(0, self.curr_note-5)
-        #             for i in range(min_note, max_note):
-        #                 if ftnotes_this_ch[i].startswith(note_begins_with):
-        #                     note_matches.append(ftnotes_this_ch[i])
-        #                     self.increment_curr_note()
-        #                     ftnotes_this_ch = self.ftnotes_by_chapter[self.which_ch]
-        #                     found = True
-        #                     break
-        #             if not found:
-        #                 print ftnotes_this_ch[self.curr_note]
-        #                 self.increment_curr_note()
-        #                 ftnotes_this_ch = self.ftnotes_by_chapter[self.which_ch]
+        for line_n, line in enumerate(self.all_lines):
+            if "@n1" in line:
+                line = self.parser.replace_tags(line, skip_ftnotes=True, skip_header=True)
+                ch_num, ftnote_symbol = self.map_full_text_to_text_by_chapter[line_n]
+                curr_str = self.text_by_chapter[ch_num][ftnote_symbol]
+                ftnotes = self.ftnotes_by_chapter[ch_num]
+                if ftnote_symbol not in ftnotes.keys():
+                    print "PROBLEM with {}".format(line)
+                else:
+                    insert_text = "<i class='footnote'>{}</i>".format(ftnotes[ftnote_symbol].replace(ftnote_symbol, ""))
+                    symbol_re = re.findall("@n1.{{0,2}}{}.{{0,2}}@n2".format(ftnote_symbol), curr_str)[0]
+                    start_ftnote = curr_str.find(symbol_re)
+                    end_ftnote = curr_str.find(symbol_re) + len(symbol_re)
+                    assert end_ftnote > start_ftnote >= 0  # assert we found it
+                    curr_str = curr_str[0:start_ftnote] + insert_text + curr_str[end_ftnote:]
+                    self.all_lines[line_n] = curr_str
 
 
 
