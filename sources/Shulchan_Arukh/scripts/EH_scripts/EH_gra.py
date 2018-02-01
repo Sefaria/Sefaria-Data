@@ -13,6 +13,8 @@ if gra is None:
     gra = commentaries.add_commentary("Beur HaGra", u'ביאור הגר"א')
 
 for piece in [1,2]:
+    # correct_marks_in_file(filenames['part_{}'.format(piece)], u'@22([\u05d0-\u05ea]{1,3})',
+    #                       u'@11([\u05d0-\u05ea]{1,3})\)', overwrite=False)
     gra.remove_volume(piece)
     with codecs.open(filenames['part_{}'.format(piece)], 'r', 'utf-8') as infile:
         volume = gra.add_volume(infile.read(), piece)
