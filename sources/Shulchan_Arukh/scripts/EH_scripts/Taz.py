@@ -7,12 +7,8 @@ def convert_11s(filename):
     new = []
     with open(filename) as f:
         for line in f:
-            if len(line) > 15 and not line.startswith("@11") and "@33" in line and not "@22" in line:
-                line = "@11" + line
-            if len(line) > 15 and line.startswith("@11") and "@33" not in line:
-                line = line.replace("@11 ", "").replace("@11", "")
-            new.append(line)
-    with open(filename, 'w') as f:
+            
+    with open("new_"+filename, 'w') as f:
         for line in new:
             f.write(line)
 
