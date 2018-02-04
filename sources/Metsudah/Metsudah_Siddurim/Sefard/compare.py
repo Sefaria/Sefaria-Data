@@ -239,6 +239,6 @@ if __name__ == "__main__":
     ftnotes.missing_ftnotes_report()
     ftnotes.insert_ftnotes_into_text()
     parser.create_schema()
-    server = "http://ste.sefaria.org"
+    server = "http://draft.sefaria.org"
     post_index(parser.index, server=server)
     parser.post_text(server)

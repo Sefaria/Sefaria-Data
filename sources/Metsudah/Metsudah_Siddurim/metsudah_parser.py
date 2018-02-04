@@ -31,7 +31,7 @@ class Metsudah_Parser:
         self.instruction_tags = ["<M in>", "<M ex>", "@ex", "@in"]#, "<M t2>", "<M t1>"]
         self.lines_starting_sections = []
         self.ftnote_tags = ["@n1", "@n2", "@b1", "@b2"]
-        self.html_tags = ["<i>", "<b>", "</i>", "</b>", "<br>", "<small>"]
+        self.html_tags = ["<i>", "<b>", "</i>", "</b>", "<br>", "<small>", "</small>"]
         self.language_tags = ["<ENG>", "<EN>", "<HE>", "<HEB>"]
         self.chapters = []
 
@@ -60,6 +60,7 @@ class Metsudah_Parser:
             #for hebrew text, do he_replacements only in hebrew lines and in hebrew lines, only in hebrew words
             if not any_hebrew_in_str(orig_text[line_n]):
                 continue
+            orig_text[line_n] = orig_text[line_n].replace(">", "> ") #this is just so that tags will become their own words
             words = orig_text[line_n].split(" ")
             new_words = []
             for word_n, word in enumerate(words):
@@ -174,7 +175,7 @@ class Metsudah_Parser:
             remove = True
             if skip_ftnotes and (tag in self.ftnote_tags or re.findall(ftnote_pattern, tag)):
                 remove = False
-            if skip_html and tag in self.html_tags:
+            if skip_html and (tag in self.html_tags or re.findall("<i class='footnote'>", tag)):
                 remove = False
             if skip_header and tag in headers:
                 remove = False
@@ -183,9 +184,9 @@ class Metsudah_Parser:
             if remove:
                 line = line.replace(tag, "")
 
-        forbidden_in_node_titles = ["."]
-        for char in forbidden_in_node_titles:
-            line = line.replace(char, "")
+        # forbidden_in_node_titles = ["."]
+        # for char in forbidden_in_node_titles:
+        #     line = line.replace(char, "")
         return line
 
     def is_header(self, line):
@@ -353,7 +354,8 @@ class Footnotes:
         self.ftnotes_by_chapter = {}
         self.text_by_chapter = {}
         self.complaints = {"notes": [], "main": [], "duplicates": []}
-        self.map_full_text_to_text_by_chapter = {}
+        self.map_sefaria_chapters_to_ftnote_chapters = {} #by ftnote chapters, I mean 1...n groups of footnotes that do not neatly
+                                                          #correspond to nodes being used in Index
         self.all_lines = [] #all lines in main text
 
         '''
@@ -365,41 +367,37 @@ class Footnotes:
 
 
     def break_up_text(self):
-
-        #first just move any line with footnotes from main text into variable all_lines_with_ftnotes
-        self.text_by_chapter = [{}]
-        total_line_n = 0
-        for i, chapter in enumerate(self.parser.chapters):
-            for line in self.parser.text["en"][chapter]:
-                self.all_lines += [line.replace("\r\n", "")]
-
-        #now the logic is basically the same as break_up_ftnotes() above,
+        #the logic is basically the same as break_up_ftnotes() above,
         #just organize into a dict when numbers re-start at a lower number indicating new chapter
         #main difference is that there can be more than one footnote per line
+        self.text_by_chapter = [{}]
         prev_num1 = 0
-        for line_n, line in enumerate(self.all_lines):
-            if "@n1" not in line:
-                continue
-            line = self.parser.replace_tags(line, skip_header=True, skip_ftnotes=True)
-            notes = re.findall("@n1(.*?)@n2", line)
-            for note in notes:
-                note = note.strip()
-                if note.isdigit():
-                    num1 = int(note)
-                    note = "<*{}>{}".format(note, note)
-                else:
-                    match = re.findall("<*(\d+)>", note)
-                    num1 = int(match[0])
-                if num1 < prev_num1:
-                    # new chapter
-                    self.text_by_chapter.append({})
-                if note in self.text_by_chapter[-1]:
-                    duplicate = self.text_by_chapter[-1][note]
-                    self.complaints["duplicates"].append(line)
-                    self.complaints["duplicates"].append(duplicate)
-                self.text_by_chapter[-1][note] = line
-                self.map_full_text_to_text_by_chapter[line_n] = (len(self.text_by_chapter)-1, note)
-                prev_num1 = num1
+        for i, chapter in enumerate(self.parser.chapters):
+            for line_n, line in enumerate(self.parser.text["en"][chapter]):
+                if "@n1" not in line:
+                    continue
+                line = self.parser.replace_tags(line, skip_header=True, skip_ftnotes=True)
+                notes = re.findall("@n1(.*?)@n2", line)
+                for note in notes:
+                    note = note.strip()
+                    if note.isdigit():
+                        num1 = int(note)
+                        note = "<*{}>{}".format(note, note)
+                    else:
+                        match = re.findall("<*(\d+)>", note)
+                        num1 = int(match[0])
+                    if num1 <= prev_num1:
+                        # new chapter
+                        self.text_by_chapter.append({})
+                    if note in self.text_by_chapter[-1]:
+                        duplicate = self.text_by_chapter[-1][note]
+                        self.complaints["duplicates"].append(line)
+                        self.complaints["duplicates"].append(duplicate)
+                    self.text_by_chapter[-1][note] = line
+                    if chapter not in self.map_sefaria_chapters_to_ftnote_chapters:
+                        self.map_sefaria_chapters_to_ftnote_chapters[chapter] = {}
+                    self.map_sefaria_chapters_to_ftnote_chapters[chapter][line_n] = (len(self.text_by_chapter)-1, note)
+                    prev_num1 = num1
 
 
     def break_up_ftnotes(self):
@@ -421,10 +419,17 @@ class Footnotes:
                 num1 = int(note)
                 note = "<*{}>{}".format(note, note)
 
-            if num1 < prev_num1:
+            if num1 <= prev_num1:
                 self.ftnotes_by_chapter.append({})    # new chapter
             for tag in self.parser.ftnote_tags:
                 line = line.replace(tag, "")
+
+            if note in self.ftnotes_by_chapter[-1]:
+                #flag it
+                duplicate = self.ftnotes_by_chapter[-1][note]
+                self.complaints["duplicates"].append(line)
+                self.complaints["duplicates"].append(duplicate)
+
             self.ftnotes_by_chapter[-1][note] = line
             prev_num1 = num1
             prev_note = note
@@ -439,7 +444,9 @@ class Footnotes:
 
     def missing_ftnotes_report(self):
         #checks both ftnotes and main text to see if either ftnotes are missing in main text or ftnotes file
+        chapter = 0
         for ftnotes, text in zip(self.ftnotes_by_chapter, self.text_by_chapter):
+            chapter += 1
             ftnotes_symbols, ftnotes_arr = ftnotes.keys(), ftnotes.values()
             text_symbols, text_arr = text.keys(), text.values()
             ftnotes_symbols = set(ftnotes_symbols)
@@ -463,22 +470,25 @@ class Footnotes:
             if self.complaints[key]:
                 return
 
-        for line_n, line in enumerate(self.all_lines):
-            if "@n1" in line:
-                line = self.parser.replace_tags(line, skip_ftnotes=True, skip_header=True)
-                ch_num, ftnote_symbol = self.map_full_text_to_text_by_chapter[line_n]
-                curr_str = self.text_by_chapter[ch_num][ftnote_symbol]
-                ftnotes = self.ftnotes_by_chapter[ch_num]
-                if ftnote_symbol not in ftnotes.keys():
-                    print "PROBLEM with {}".format(line)
-                else:
-                    insert_text = "<i class='footnote'>{}</i>".format(ftnotes[ftnote_symbol].replace(ftnote_symbol, ""))
-                    symbol_re = re.findall("@n1.{{0,2}}{}.{{0,2}}@n2".format(ftnote_symbol), curr_str)[0]
-                    start_ftnote = curr_str.find(symbol_re)
-                    end_ftnote = curr_str.find(symbol_re) + len(symbol_re)
-                    assert end_ftnote > start_ftnote >= 0  # assert we found it
-                    curr_str = curr_str[0:start_ftnote] + insert_text + curr_str[end_ftnote:]
-                    self.all_lines[line_n] = curr_str
+        for i, chapter in enumerate(self.parser.chapters):
+
+            for line_n, line in enumerate(self.parser.text["en"][chapter]):
+                if "@n1" in line:
+                    line = self.parser.replace_tags(line, skip_ftnotes=True, skip_header=True)
+                    ch_num, ftnote_symbol = self.map_sefaria_chapters_to_ftnote_chapters[chapter][line_n]
+                    curr_str = self.text_by_chapter[ch_num][ftnote_symbol]
+                    ftnotes = self.ftnotes_by_chapter[ch_num]
+                    if ftnote_symbol not in ftnotes.keys():
+                        print "PROBLEM with {}".format(line)
+                    else:
+                        insert_text = "<i class='footnote'>{}</i>".format(ftnotes[ftnote_symbol].replace(ftnote_symbol, ""))
+                        symbol_re = re.findall("@n1.{{0,2}}{}.{{0,2}}@n2".format(ftnote_symbol), curr_str)[0]
+                        start_ftnote = curr_str.find(symbol_re)
+                        end_ftnote = curr_str.find(symbol_re) + len(symbol_re)
+                        assert end_ftnote > start_ftnote >= 0  # assert we found it
+                        curr_str = curr_str[0:start_ftnote] + insert_text + curr_str[end_ftnote:]
+                        line = curr_str
+                self.parser.text["en"][chapter][line_n] = self.parser.replace_tags(line, skip_html=True)
 
 
 
