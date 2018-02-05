@@ -31,8 +31,8 @@ class Metsudah_Parser:
         self.instruction_tags = ["<M in>", "<M ex>", "@ex", "@in"]#, "<M t2>", "<M t1>"]
         self.lines_starting_sections = []
         self.ftnote_tags = ["@n1", "@n2", "@b1", "@b2"]
-        self.html_tags = ["<i>", "<b>", "</i>", "</b>", "<br>", "<small>", "</small>"]
-        self.language_tags = ["<ENG>", "<EN>", "<HE>", "<HEB>"]
+        self.html_tags = ["<i>", "<b>", "</i>", "</b>", "<br>", "<small>", "</small>", "<sup>", "</sup>"]
+        self.language_tags = ["<ENG>", "<EN>", "<HE>", "<HEB>", "<heb>", "<eng>", "<en>", "<he>", "<heb>"]
         self.chapters = []
 
 
@@ -148,6 +148,7 @@ class Metsudah_Parser:
                 self.add_line(line, 'en')
                 assert instruction is False
             elif any_hebrew_in_str(line):
+                line = self.replace_tags(line)
                 self.add_line(line, 'he')
                 assert instruction is False
             self.prev_line_instruction = instruction
@@ -411,10 +412,11 @@ class Footnotes:
                 self.ftnotes_by_chapter[-1][prev_note] += " "+line
                 continue
 
-            full_note = re.findall("(<\*(\d+)>(\d+))", line)
+            full_note = re.findall("<\*(\d+)>\s?(\d+)", line)
             if full_note:
-                note, num1, num2 = full_note[0]
+                num1, num2 = full_note[0]
                 num1 = int(num1)
+                note = "<*{}>{}".format(num1, num2)
             else:
                 num1 = int(note)
                 note = "<*{}>{}".format(note, note)
@@ -471,7 +473,6 @@ class Footnotes:
                 return
 
         for i, chapter in enumerate(self.parser.chapters):
-
             for line_n, line in enumerate(self.parser.text["en"][chapter]):
                 if "@n1" in line:
                     line = self.parser.replace_tags(line, skip_ftnotes=True, skip_header=True)
@@ -481,7 +482,8 @@ class Footnotes:
                     if ftnote_symbol not in ftnotes.keys():
                         print "PROBLEM with {}".format(line)
                     else:
-                        insert_text = "<i class='footnote'>{}</i>".format(ftnotes[ftnote_symbol].replace(ftnote_symbol, ""))
+                        sup_num = re.findall("<\*(\d+)>", ftnote_symbol)[0]
+                        insert_text = "<sup>{}</sup><i class='footnote'>{}</i>".format(sup_num, ftnotes[ftnote_symbol].replace(ftnote_symbol, ""))
                         symbol_re = re.findall("@n1.{{0,2}}{}.{{0,2}}@n2".format(ftnote_symbol), curr_str)[0]
                         start_ftnote = curr_str.find(symbol_re)
                         end_ftnote = curr_str.find(symbol_re) + len(symbol_re)
