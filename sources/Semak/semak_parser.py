@@ -8,7 +8,10 @@ from data_utilities.util import getGematria, numToHeb
 from data_utilities.util import ja_to_xml, multiple_replace, traverse_ja, file_to_ja_g, file_to_ja
 from sefaria.datatype.jagged_array import JaggedArray
 from sefaria.model import *
-from sources.functions import  post_text, post_index, add_term, post_link, add_category, post_text_weak_connection
+from sources.functions import post_text, post_index, add_term, post_link, add_category, post_text_weak_connection
+from sources.EinMishpat.ein_parser import *
+from data_utilities.ibid import *
+from sefaria.helper.schema import *
 
 
 def parse_semak(filename):
@@ -347,6 +350,29 @@ def toCSV(filename, list_rows, column_names):
         writer.writerows(list_rows)
 
 
+def get_citations(ja_smk, filenametxt):
+    cittxt = codecs.open(u'{}.txt'.format(filenametxt), 'w', encoding='utf-8')
+    citations = []
+    regs = {u'rambam' :re.compile(u'\u05e8\u05de\u05d1"\u05dd(.*?)(?:\.|\u05d5?\u05d8\u05d5\u05e8|\u05d5?\u05e1\u05de"?\u05d2|\n)'),
+    u'smg' : re.compile(u'(\u05e1\u05de"?\u05d2.*?)(?:\.|\u05d5?\u05d8\u05d5\u05e8|\u05d5?\u05e8\u05de\u05d1"\u05dd|\n)'),
+    u'tur' : re.compile(u'\u05d8\u05d5\u05e8(.*?)(?:\.|:|\n|@)')}
+    for i, siman in enumerate(ja_smk):
+        for  j,line in enumerate(siman):
+            if re.search(u'@23', line):
+                cittxt.write(u"{} ".format(i+1))
+                cittxt.write(u"{} ".format(j + 1))
+                cittxt.write(re.search(u'@23(.*)', line).group(1))
+                cittxt.write(u'\n')
+                cit_dict = {"siman": i+1, "full":re.search(u'@23(.*)', line).group(1)}
+                for comm, reg in regs.items():
+                    if reg.search(line):
+                        cit_dict[comm] = reg.search(line).group(1)
+                citations.append(cit_dict)
+    toCSV("citations", citations, ['siman','rambam', 'smg', 'tur', 'full'])
+
+    return citations
+
+
 def hagahot_alignment(ja_smk, ja_raph, ja_hagahot):
     ja_smk = JaggedArray(ja_smk)
     ja_raph = JaggedArray(ja_raph)
@@ -556,6 +582,27 @@ def post_smk(ja_smk):
 
     # post_text_weak_connection('Sefer Mitzvot Katan', text_version)
 
+def add_remazim_node():
+
+    smk_remazim = JaggedArrayNode()
+    smk_remazim.add_title(u'Remazim', 'en', primary=True, )
+    smk_remazim.add_title(u'רמזים', 'he', primary=True, )
+    smk_remazim.key = u'Remazim'
+    smk_remazim.depth = 1
+    smk_remazim.sectionNames = ['Paragraph']
+    smk_remazim.addressTypes = ['Integer']
+
+    library.get_schema_node("Sefer Mitzvot Katan")
+    smk_schema = Ref("Sefer Mitzvot Katan").index_node
+    attach_branch(smk_remazim, smk_schema, place=1)
+    text_version_remazim = {
+        'versionTitle': 'Sefer Mitzvot Katan, Kopys, 1820',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001771677',
+        'language': 'he',
+        'text': [u"א", u"ב"]
+    }
+    # add_term(u"Remazim", u"רמזים")
+    # post_text(u'Sefer Mitzvot Katan, Remazim', text_version_remazim)
 
 def post_raph(ja_raph):
     replace_dict = {u"@22": u"<br>"}
@@ -594,7 +641,7 @@ def before_post_cleaner(ja, replace_dict):
     new_ja = []
     new_siman = []
     for i, siman in enumerate(ja):
-        for seg in siman:
+        for seg_number, seg in enumerate(siman):
             seg = multiple_replace(seg, replace_dict, using_regex=True)
             if re.search(u'<small></small>', seg):
                 continue
@@ -674,24 +721,67 @@ def link_raph(ja_smk, ja_raph_simanim):  # look how to get this information wher
             links.append(link)
     return links
 
+def link_smg(ja_smk, filenametxt):
+    get_citations(ja_smk, filenametxt)
+    run1(filenametxt, EM=False)
+
+    links = []
+    i = 0
+    with open(u'{}.csv'.format(filenametxt), 'r') as csvfile:
+        seg_reader = csv.DictReader(csvfile)
+        for row in seg_reader:
+            i += 1
+            siman = row[u"Perek running counter"]
+            seg = row[u"page running counter"]
+            smg = row[u'Semag']
+            simanlen = len(Ref(u'Sefer Mitzvot Katan {}'.format(siman)).all_segment_refs())
+            if smg:
+                smg = eval(row[u'Semag'])
+                for smgi in smg:
+                    # and to the next segment but not to all segments of the siman
+                    link = ({"refs":[
+                                u'Sefer Mitzvot Katan {}.{}-{}'.format(siman, 1, simanlen),
+                                u'{}'.format(smgi)
+                    ],
+                    "type": "Sifrei Mitzvot",
+                    "auto":True,
+                    "generated_by" : "semak_parser_sfm_linker"  #_sfm_linker what is this parametor intended to be?
+                    })
+                    links.append(link)
+
+    return links
+
+def link_rambam(ja_smk):
+    yad_list = library.get_indexes_in_category(u"Mishneh Torah")
+    schema_yad_dict = {}
+    for title in yad_list:
+        schema_yad_dict[title] = library.get_schema_node(title)
+    CF = CitationFinder()
+    regex = CF.get_ultimate_title_regex(yad_list, schema_yad_dict, 'he')
+    rambam_tracker = BookIbidTracker()
+    rambam_tracker.resolve()
+    return
 
 if __name__ == "__main__":
     ja_smk = parse_semak('Semak.txt')
-    # siman_page = map_semak_page_siman(ja_smk, to_print=True)
-    letter_ja = parse_Raph_by_letter(u'Raph_on_Semak.txt')
-    raph_smk_alignment = raph_alignment_report(ja_smk, letter_ja)
-    ja_raph = parse_Raph_simanim(raph_smk_alignment)
-    # # post_raph(ja_raph)
-    # # link_raph(ja_raph)  # try to find where this is coming from
-    raph = parse_Raph_by_letter('Raph_on_Semak.txt')
-    raph_links = link_raph(ja_smk, ja_raph)
-    ja_hagahot = parse_hagahot_by_letter(u'Semak_hagahot_chadashot.txt')
-    hgh_align = hagahot_alignment(ja_smk, ja_raph, ja_hagahot)
-    ja_hagahot = hagahot_parse(ja_hagahot, hgh_align)
-    hg_links = link_hg(ja_hagahot, hgh_align, ja_raph)
+    # # siman_page = map_semak_page_siman(ja_smk, to_print=True)
+    # letter_ja = parse_Raph_by_letter(u'Raph_on_Semak.txt')
+    # raph_smk_alignment = raph_alignment_report(ja_smk, letter_ja)
+    # ja_raph = parse_Raph_simanim(raph_smk_alignment)
+    # # # post_raph(ja_raph)
+    # # # link_raph(ja_raph)  # try to find where this is coming from
+    # raph = parse_Raph_by_letter('Raph_on_Semak.txt')
+    # raph_links = link_raph(ja_smk, ja_raph)
+    # ja_hagahot = parse_hagahot_by_letter(u'Semak_hagahot_chadashot.txt')
+    # hgh_align = hagahot_alignment(ja_smk, ja_raph, ja_hagahot)
+    # ja_hagahot = hagahot_parse(ja_hagahot, hgh_align)
+    # hg_links = link_hg(ja_hagahot, hgh_align, ja_raph)
+    #
+    # post_smk(ja_smk)
+    # post_raph(ja_raph)
+    # post_link(raph_links)
+    # post_hagahot(ja_hagahot)
+    # post_link(hg_links)
+    post_link(link_smg(ja_smk, u'smg_smk_test'))
+    # add_remazim_node()
 
-    post_smk(ja_smk)
-    post_raph(ja_raph)
-    post_link(raph_links)
-    post_hagahot(ja_hagahot)
-    post_link(hg_links)
