@@ -70,13 +70,14 @@ b_hagolah = commentaries.get_commentary_by_title("Be'er HaGolah")
 if b_hagolah is None:
     b_hagolah = commentaries.add_commentary("Be'er HaGolah", u"באר הגולה")
 
-for i in range (1,3):
+for i in [1,2]:
     print '\nVolume {}'.format(i)
     filename = filenames['part_{}'.format(i)]
     b_hagolah.remove_volume(i)
     with codecs.open(filename, 'r', 'utf-8') as infile:
         volume = b_hagolah.add_volume(infile.read(), i)
 
+    assert isinstance(volume, Volume)
     volume.mark_simanim(u'@12([\u05d0-\u05ea]{1,3})', specials={
         u'@13': {'name': u'Halitza', 'end': u'!end!'},
         u'@14': {'name': u'Get', 'end': u'!end!'}
@@ -94,13 +95,25 @@ for i in range (1,3):
     for base_siman in base_volume.get_child():
         beer_siman = beer_simanim.get(base_siman.num, None)
 
-        total_footnotes = len(re.findall(u'@44[\u05d0-\u05ea]', unicode(base_siman)))
+        total_footnotes = len(re.findall(u'@44[\u05d0-\u05ea\u2022]', unicode(base_siman)))
         if beer_siman:
             total_comments = len(beer_siman.get_child())
         else:
             total_comments = 0
         if total_footnotes != total_comments:
             print "mismatch in siman {}. {} footnotes and {} comments".format(base_siman.num, total_footnotes, total_comments)
-            diagnose_mismatch(base_siman, beer_siman)
+            # diagnose_mismatch(base_siman, beer_siman)
             issues += 1
-    print '{} issues'.format(issues)
+    # print '{} issues'.format(issues)
+    errors = volume.format_text(u'$^', u'$^', u'dh')
+    for e in errors:
+        print e
+    volume.set_rid_on_seifim(cyclical=True)
+    root.populate_comment_store()
+
+    base = root.get_base_text()
+    b_vol = base.get_volume(i)
+    errors = b_vol.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'@44', x.text) is not None)
+    for e in errors:
+        print e
+root.export()

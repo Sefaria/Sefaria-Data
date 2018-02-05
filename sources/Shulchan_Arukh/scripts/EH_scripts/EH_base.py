@@ -21,6 +21,23 @@ Chelkat Mechokek   @77(.)
 Ba'er Hetev        @82.)
 """
 
+
+def markup(vol, xml_root):
+    """
+    Mark up ref markers in Shulchan Arukh to itag or xref as needed.
+    :param Volume vol:
+    :param Root xml_root:
+    :return:
+    """
+    commentaries = xml_root.get_commentaries()
+    vol.mark_references(commentaries.commentary_ids["Beur HaGra"], u'!([\u05d0-\u05ea]{1,3})\)', group=1)
+    vol.mark_references(commentaries.commentary_ids["Be'er HaGolah"], u'@44([\u05d0-\u05ea\u2022])', group=1, cyclical=True)
+
+    vol.convert_pattern_to_itag(u"Beit Shmuel", u"@55([\u05d0-\u05ea]{1,3})")
+    vol.convert_pattern_to_itag(u"Chelkat Mechokek", u"@77\(([\u05d0-\u05ea]{1,3})\)")
+    vol.convert_pattern_to_itag(u"Ba'er Hetev", u"@82([\u05d0-\u05ea]{1,3})\)")
+
+
 def move_special_section(book, en_title, he_title, special_name=None):
     """
     :param Record book:
@@ -99,6 +116,7 @@ if __name__ == "__main__":
         volume.validate_references(ur'@44([\u05d0-\u05ea])', u'@44 -Be\'er HaGolah', key_callback=he_ord)
         for pattern, code in zip(patterns, codes):
             volume.validate_references(pattern, code)
+        markup(volume, root)
 
     # correct_marks_in_file(filenames[2], u'@22', ur'@44([\u05d0-\u05ea])', overwrite=False, error_finder=out_of_order_he_letters)
 

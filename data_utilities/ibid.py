@@ -28,7 +28,7 @@ class CitationFinder():
         returns regex to find either `(title address)` or `title (address)`
         title can be Sham
         :param title_list: str or list
-        :param title_node_dict: dict or SchemaNode
+        :param title_node_dict: SchemaNode or dict (key: title value: SchemaNode
         :return: regex
         """
 
