@@ -32,3 +32,10 @@ for piece in [1,2]:
     for i in errors:
         print i
     volume.validate_seifim()
+
+    if piece == 1:
+        errors = volume.format_text(u'@77', u'@33', u'dh')
+    else:
+        errors = volume.format_text(u'@44', u'@33', u'dh')
+    for i in errors:
+        print i
