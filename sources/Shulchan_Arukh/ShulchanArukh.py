@@ -1246,15 +1246,18 @@ class Xref(Element):
         return hash(self.id)
 
     def load_xrefs_to_commentstore(self, title, siman, seif, *args, **kwargs):
+        print_warnings = kwargs.get('verbose', False)
         comment_store = CommentStore()
         if comment_store.get(self.id) is not None:
             if seif in comment_store[self.id]['seif']:
-                print "Warning: {} {} {} has duplicate reference (id: {}). " \
-                      "Appeared twice in same Seif".format(title, siman, seif, self.id)
+                if print_warnings:
+                    print "Warning: {} {} {} has duplicate reference (id: {}). " \
+                          "Appeared twice in same Seif".format(title, siman, seif, self.id)
             else:
                 comment_store[self.id]['seif'].append(seif)
-                print "Warning: {} {} {} has duplicate reference (id: {}). " \
-                      "Appeared different Seif.".format(title, siman, seif, self.id)
+                if print_warnings:
+                    print "Warning: {} {} {} has duplicate reference (id: {}). " \
+                          "Appeared different Seif.".format(title, siman, seif, self.id)
         else:
             comment_store[self.id] = {
                 'base_title': title,
