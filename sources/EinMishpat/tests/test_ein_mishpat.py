@@ -9,7 +9,7 @@ import unicodecsv as csv
 def test_dict_dict():
     new_file = "avodah_zarah_little_letters.csv"
     ein_parser.run2("az_collapsed", "avodah_zarah")
-    comp_file = "../done/Ein Mishpat_ Avodah Zarah - avodah_zarah_little_letters.csv"
+    comp_file = "avodah_zarah_done_jan18.csv"
     new = []
     comp = []
     new_has_segments = False
