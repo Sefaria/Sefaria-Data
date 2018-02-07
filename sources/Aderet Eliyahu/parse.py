@@ -14,48 +14,37 @@ def get_poss_parsha(line):
         line = line[0:-1]
     return line
 
-def parse_until_chukat(lines, allowed):
+def parse_after_chukat(lines, allowed):
     current_parsha = "intro"
     parsha_order = []
-    aderet_text["intro"] = []
+    current_ch = 19
+    aderet_text["Bamidbar"] = {19: {}}
+    aderet_text["Devarim"] = {1: {}}
+    num_ch_bamidbar = 36
+    current_book = "Bamidbar"
+    current_segment = 0
+    num = 0
 
     for line_n, line in enumerate(lines):
         line = line.decode('utf-8')
-        if line.startswith(u"@00חקת"):
-            break
-        if line.startswith(u"@11"):
+        if line.startswith(u"@22"):
+            num = getGematria(line)
+            if prev_num >= num:
+                if num not in [1, 2, 3, 4, 5]:
+                    print "ERROR"
+                current_ch += 1
+                if current_ch > num_ch_bamidbar:
+                    current_ch = 1
+                    current_book = "Devarim"
+            if current_ch not in aderet_text[current_book]:
+                aderet_text[current_book][current_ch] = {}
+            aderet_text[current_book][current_ch][num] = []
+            current_segment = num
+        elif line.startswith(u"@11"):
             for line in divide_lines(line):
-                aderet_text[current_parsha].append(line)
-        elif line.startswith(u"@00"):
-            this_parsha = None
-            line = get_poss_parsha(line)
-            if line in allowed:
-                aderet_text[current_parsha].append(line)
-            else:
-                if u"שפטים" == line:
-                    line = u"שופטים"
-                if u"תשא" == line:
-                    line = u"כי תשא"
-                if u"אחרי" == line:
-                    line = u"אחרי מות"
-                if u'בחקתי' == line:
-                    line = u'בחוקתי'
-                if u'הברכה' == line:
-                    line = u'וזאת הברכה'
-                term = Term().load({"titles.text": line})
-                if not term:
-                    this_parsha_he = find_almost_identical(line, parshiot_poss, ratio=0.7)
-                    term = Term().load({"titles.text": this_parsha_he})
-                try:
-                    this_parsha = term.get_primary_title('en')
-                except:
-                    print line
-            if this_parsha:
-                aderet_text[this_parsha] = []
-                parsha_order.append(this_parsha)
-                current_parsha = this_parsha
-            #else:
-            #    aderet_text[current_parsha].append(line)
+                aderet_text[current_book][current_ch][current_segment].append(line)
+        prev_num = num
+
     return aderet_text, parsha_order
 
 def divide_lines(line):
@@ -190,7 +179,7 @@ if __name__ == "__main__":
     with open("aderet_eliyahu.txt") as f:
         lines = list(f)
         lines = [line for line in lines if line]
-        aderet_text, parsha_order = parse_until_chukat(lines, allowed)
+        aderet_text, parsha_order = parse_after_chukat(lines, allowed)
     #create_index(aderet_text)
     aderet_text = restruct_text(aderet_text, parsha_order)
     get_pasukim(aderet_text, parsha_order)
