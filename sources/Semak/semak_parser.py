@@ -721,10 +721,28 @@ def link_raph(ja_smk, ja_raph_simanim):  # look how to get this information wher
             links.append(link)
     return links
 
+def link_remazim():
+    links = []
+    remazim = Ref("Sefer Mitzvot Katan, Remazim").all_segment_refs()
+
+    for siman, remez in enumerate(remazim):
+        siman += 1
+        simanlen = len(Ref(u'Sefer Mitzvot Katan {}'.format(siman)).all_segment_refs())
+        link = ({"refs": [
+            u'Sefer Mitzvot Katan {}.{}-{}'.format(siman, 1, simanlen),
+            remez.normal()
+        ],
+            "type": "Sifrei Mitzvot",
+            "auto": True,
+            "generated_by": "semak_parser_sfm_linker"  # _sfm_linker what is this parametor intended to be?
+        })
+        links.append(link)
+    return links
+
+
 def link_smg(ja_smk, filenametxt):
     get_citations(ja_smk, filenametxt)
     run1(filenametxt, EM=False)
-
     links = []
     i = 0
     with open(u'{}.csv'.format(filenametxt), 'r') as csvfile:
@@ -763,7 +781,7 @@ def link_rambam(ja_smk):
     return
 
 if __name__ == "__main__":
-    ja_smk = parse_semak('Semak.txt')
+    # ja_smk = parse_semak('Semak.txt')
     # # siman_page = map_semak_page_siman(ja_smk, to_print=True)
     # letter_ja = parse_Raph_by_letter(u'Raph_on_Semak.txt')
     # raph_smk_alignment = raph_alignment_report(ja_smk, letter_ja)
@@ -782,6 +800,8 @@ if __name__ == "__main__":
     # post_link(raph_links)
     # post_hagahot(ja_hagahot)
     # post_link(hg_links)
-    post_link(link_smg(ja_smk, u'smg_smk_test'))
+    # post_link(link_smg(ja_smk, u'smg_smk_test'))
     # add_remazim_node()
+    post_link(link_remazim())
+
 
