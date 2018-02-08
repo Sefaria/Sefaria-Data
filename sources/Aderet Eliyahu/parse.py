@@ -1,9 +1,15 @@
 #encoding=utf=8
+import sys
+from sources.local_settings import *
+
+sys.path.insert(0, "/home/steve/Sefaria/Sefaria-Data")
+sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from sefaria.model import *
 from data_utilities.dibur_hamatchil_matcher import match_text
 from sources.functions import *
 import os
 from collections import Counter
+
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 
 server = "http://draft.sefaria.org"
@@ -20,22 +26,21 @@ def parse_after_chukat(lines, allowed):
     current_ch = 19
     aderet_text["Bamidbar"] = {19: {}}
     aderet_text["Devarim"] = {1: {}}
-    num_ch_bamidbar = 36
     current_book = "Bamidbar"
     current_segment = 0
     num = 0
 
     for line_n, line in enumerate(lines):
         line = line.decode('utf-8')
+        if u"@00דברים" in line:
+            current_ch = 0
+            current_book = "Devarim"
         if line.startswith(u"@22"):
             num = getGematria(line)
             if prev_num >= num:
                 if num not in [1, 2, 3, 4, 5]:
                     print "ERROR"
                 current_ch += 1
-                if current_ch > num_ch_bamidbar:
-                    current_ch = 1
-                    current_book = "Devarim"
             if current_ch not in aderet_text[current_book]:
                 aderet_text[current_book][current_ch] = {}
             aderet_text[current_book][current_ch][num] = []
@@ -46,6 +51,8 @@ def parse_after_chukat(lines, allowed):
         prev_num = num
 
     return aderet_text, parsha_order
+
+
 
 def divide_lines(line):
     line = line.replace("@44", "\n").replace("@11", "").replace("@55", "@33").replace(":", ":\n")
@@ -161,6 +168,17 @@ def restruct_text(text, parsha_order):
     return text
 
 
+def post_line(comment, this_ref):
+    if this_ref:
+        send_text = {
+            "text": comment,
+            "versionTitle": "Aderet Eliyahu",
+            "versionSource": server,
+            "language": "he"
+        }
+        post_text(this_ref, send_text, server=server)
+
+
 if __name__ == "__main__":
     others = set()
     parshiot = []
@@ -180,10 +198,30 @@ if __name__ == "__main__":
         lines = list(f)
         lines = [line for line in lines if line]
         aderet_text, parsha_order = parse_after_chukat(lines, allowed)
+
+    for book, book_dict in aderet_text.items():
+        for perek, perek_dict in book_dict.items():
+            perek_dict = convertDictToArray(perek_dict)
+            aderet_text[book][perek] = perek_dict
+        aderet_text[book] = convertDictToArray(aderet_text[book])
+
+    send_text = {
+        "text": aderet_text["Bamidbar"],
+        "language": "he",
+        "versionTitle": "Aderet Eliyahu",
+        "versionSource": "http://draft.sefaria.org"
+    }
+
+    post_text("Aderet Eliyahu, Numbers", send_text, server="http://draft.sefaria.org")
+
+    send_text = {
+        "text": aderet_text["Devarim"],
+        "language": "he",
+        "versionTitle": "Aderet Eliyahu",
+        "versionSource": "http://draft.sefaria.org"
+    }
+    post_text("Aderet Eliyahu, Deuteronomy", send_text, server="http://draft.sefaria.org")
+
     #create_index(aderet_text)
-    aderet_text = restruct_text(aderet_text, parsha_order)
-    get_pasukim(aderet_text, parsha_order)
-
-
-
-
+    # aderet_text = restruct_text(aderet_text, parsha_order)
+    # get_pasukim(aderet_text, parsha_order)
