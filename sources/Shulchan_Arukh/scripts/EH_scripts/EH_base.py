@@ -58,7 +58,7 @@ def move_special_section(book, en_title, he_title, special_name=None):
         special_book = all_commentaries.add_commentary(en_title, he_title)
     special_book.remove_volume(1)
 
-    special_element = root.get_base_text().Tag.find(special_name).extract()
+    special_element = book.Tag.find(special_name).extract()
     special_element.name = u'siman'
     special_element['num'] = 1
 
