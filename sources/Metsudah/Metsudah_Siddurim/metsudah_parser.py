@@ -41,8 +41,8 @@ class Metsudah_Parser:
         orig_text = list(open(self.input_text))
         bad_chars = Counter()
         replacements = [("׀", "—"), ("_", "-"), ("±", "-"), ("<TIE>", " "), ("<IT>", "<i>"),
-                        ("<ITC>", "</i>")]
-        he_replacements = [("r", "ע"), ("H", "לֹּ"), ("G", "לֹ"), ("x", "רֹּ"), ("§", "ךָ")]
+                        ("<ITC>", "</i>"), ("@ss", "<small>"), ("@sr", "</small>"), ("@eb", "<b>"), ("@hb", "<b>")]
+        he_replacements = [("r", "ע"), ("H", "לֹּ"), ("G", "לֹ"), ("x", "רֹּ"), ("§", "ךָ"), ("-", "־"), ("<HEB>קּ<SZ14>", "❖")]
         it_only = []
         itc_only = []
         for line_n, line in enumerate(orig_text):
@@ -56,6 +56,9 @@ class Metsudah_Parser:
                 orig_text[line_n] = orig_text[line_n].replace("<i>", "")
             elif "</i>" in orig_text[line_n] and not "<i>" in orig_text[line_n]:
                 orig_text[line_n] = orig_text[line_n].replace("</i>", "")
+            if "<b>" in orig_text[line_n] and not "</b>" in orig_text[line_n]:
+                orig_text[line_n] = orig_text[line_n] + "</b>"
+
 
             #for hebrew text, do he_replacements only in hebrew lines and in hebrew lines, only in hebrew words
             if not any_hebrew_in_str(orig_text[line_n]):

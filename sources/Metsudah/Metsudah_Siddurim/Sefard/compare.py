@@ -196,6 +196,33 @@ def check_word_with_he_and_en(word):
             return char
 
 
+def shir_hashirim(parser):
+    en_text = parser.text["en"]["Sefard Siddur Shabbat| Song of Songs"]
+    he_text = parser.text["he"]["Sefard Siddur Shabbat| Song of Songs"]
+    en_chapters = {}
+    he_chapters = {}
+    chapters = [en_chapters, he_chapters]
+    chapter_lambda = lambda x: x.startswith("Chapter") or x.startswith("CHAPTER") or x.startswith("פרק") or x.startswith("פרק ")
+    curr_ch = 0
+    for i, text in enumerate([en_text, he_text]):
+        for line in text:
+            if len(line.split(" ")) == 2 and chapter_lambda(line):
+                curr_ch += 1
+                chapters[i][curr_ch] = []
+            else:
+                chapters[i][curr_ch].append(line)
+
+        chapters[i] = convertDictToArray(chapters[i])
+
+    node = JaggedArrayNode()
+    node.add_shared_term("Song of Songs")
+    node.add_structure(["Chapter", "Paragraph"])
+    pass
+
+
+
+
+
 
 if __name__ == "__main__":
     # with open('metsudah code.csv') as f:
@@ -239,6 +266,8 @@ if __name__ == "__main__":
     ftnotes.missing_ftnotes_report()
     ftnotes.insert_ftnotes_into_text()
     parser.create_schema()
+    shir_hashirim(parser)
     server = "http://draft.sefaria.org"
     post_index(parser.index, server=server)
     parser.post_text(server)
+
