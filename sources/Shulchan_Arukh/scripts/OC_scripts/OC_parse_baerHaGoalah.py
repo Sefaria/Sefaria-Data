@@ -29,7 +29,7 @@ for i in range(1, 4):
     volume.validate_simanim()
     errors = []
 
-    errors += volume.mark_seifim(u'@11([\u05d0-\u05ea#])', cyclical=True)
+    errors += volume.mark_seifim(u'@11([\u05d0-\u05ea\u2022])', cyclical=True)
     print errors
 
     # base_volume = base_text.get_volume(i)

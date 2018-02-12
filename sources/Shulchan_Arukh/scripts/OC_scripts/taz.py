@@ -1,7 +1,7 @@
 #encoding=utf-8
 import sys
 from sources.Shulchan_Arukh.ShulchanArukh import *
-from check_marks import check_marks
+
 
 def convert_11s(filename):
     new = []
@@ -18,9 +18,9 @@ def convert_11s(filename):
 
 root = Root('../../Orach_Chaim.xml')
 commentaries = root.get_commentaries()
-taz = commentaries.get_commentary_by_title("Taz")
+taz = commentaries.get_commentary_by_title("Turei Zahav")
 if taz is None:
-    taz = commentaries.add_commentary("Taz", u"טז")
+    taz = commentaries.add_commentary("Turei Zahav", u"טורי זהב")
 
 a = {}
 
@@ -37,23 +37,24 @@ for i, filename in enumerate(filenames):
     assert isinstance(volume, Volume)
 
     base = root.get_base_text()
-    base.add_titles("Orach Chaim", u"אורח חיים")
     b_vol = base.get_volume(i+1)
     #b_vol.mark_references(volume.get_book_id(), u'@77\(([\u05d0-\u05ea]{1,3})\)', group=1)
 
-    errors += volume.mark_simanim(u'@00([\u05d0-\u05ea]{1,4})') if i == 0 else volume.mark_simanim(u'@22([\u05d0-\u05ea]{1,4})')
+    volume.mark_simanim(u'@00([\u05d0-\u05ea]{1,4})') if i == 0 else volume.mark_simanim(u'@22([\u05d0-\u05ea]{1,4})')
     volume.validate_simanim(complete=False)
 
     errors += volume.mark_seifim(u'@22\(([\u05d0-\u05ea]{1,3})\)') if i == 0 else volume.mark_seifim(u'@11\(([\u05d0-\u05ea]{1,3})\)')
     volume.validate_seifim()
 
-    errors += volume.format_text('@11', '@33', 'dh')
+    errors += volume.format_text('@11|@44', '@33|@55', 'dh')
+
+    volume.render()
 
     assert isinstance(b_vol, Volume)
     volume.set_rid_on_seifim()
     if len(sys.argv) == 2 and sys.argv[1] == "--run":
         errors += root.populate_comment_store()
-        errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u'@77', x.text) is not None, base="Orach Chaim", commentary="Taz", simanim_only=True)
+        errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u'@77', x.text) is not None, base="Orach Chaim", commentary="Turei Zahav", simanim_only=True)
 
 
 for i in errors:

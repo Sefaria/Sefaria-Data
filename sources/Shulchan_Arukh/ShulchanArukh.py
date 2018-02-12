@@ -278,9 +278,12 @@ class Root(Element):
     child = None  # No default child is defined, call to BaseText or Commentaries explicitly
 
     def __init__(self, filename):
-        self.filename = filename
-        self.soup = self._load()
-        super(Root, self).__init__(self.soup.root)
+        if isinstance(filename, basestring):
+            self.filename = filename
+            self.soup = self._load()
+            super(Root, self).__init__(self.soup.root)
+        else:
+            super(Root, self).__init__(filename)
 
     def _load(self):
         with open(self.filename) as infile:
@@ -416,8 +419,13 @@ class Record(Element):
 
     def load_xrefs_to_commentstore(self, *args, **kwargs):
         errors = []
+        title = getattr(self, 'titles', None)
+        if title:
+            title = title['en']
+        else:
+            title = 'Base'
         for child in self.get_child():
-            errors += child.load_xrefs_to_commentstore(self.titles['en'])
+            errors += child.load_xrefs_to_commentstore(title)
         return errors
 
     def render(self):
@@ -434,7 +442,7 @@ class Record(Element):
 
 class BaseText(Record):
     name = 'base_text'
-    parent = Root
+    parent = 'Root'
 
     def load_comments_to_commentstore(self, *args, **kwargs):
         raise NotImplementedError("Comments in base text not included in commentstore")
@@ -894,7 +902,7 @@ class Siman(OrderedElement):
                     siman_errors[self.num] = 0
                 siman_errors[self.num] += 1
                 if verbose:
-                    print e
+                    print unicode(e.message)
 
         msg = u"{}, Siman {}: found {} comment(s) not found in base text."
         errors_report = [msg.format(title, siman, num_probs) for siman, num_probs in siman_errors.iteritems()]
@@ -921,6 +929,14 @@ class Siman(OrderedElement):
 
     def collect_links(self):
         return [link for seif in self.get_child() for link in seif.collect_links()]
+
+    def render(self):
+        rendered_seifim = []
+        for seif in self.get_child():
+            while seif.num - len(rendered_seifim) > 1:
+                rendered_seifim.append(u'')
+            rendered_seifim.append(seif.render())
+        return rendered_seifim
 
 
 
@@ -1077,7 +1093,7 @@ class Seif(OrderedElement):
             return
 
         if comment_store.get(self.rid) is None:
-            raise MissingCommentError("Missing comment in {}, {} (rid: {})".format(title, siman, self.rid))
+            raise MissingCommentError(u"Missing comment in {}, {} (rid: {})".format(title, siman, self.rid))
 
         this_ref = comment_store[self.rid]
         if this_ref.get('commentator_title') is not None:
@@ -1088,9 +1104,9 @@ class Seif(OrderedElement):
         if self.Tag.has_attr('label'):
             this_ref['data-label'] = self.Tag['label']
 
-    def render(self):
+    def render(self, suppress_warning=False):
         seif_text = u' '.join(child.render() for child in self.get_child())
-        if re.search(u'@', seif_text):
+        if not suppress_warning and re.search(u'@', seif_text):
             # raise AssertionError("found @ marker in xml at {}:{}".format(self.Tag.parent['num'], self.num))
             print "found @ marker in xml at {}:{}".format(self.Tag.parent['num'], self.num)
         seif_text = re.sub(u'(<i data-commentator.*?></i>) +', ur'\1', seif_text)  # Remove space between text and itag
@@ -1101,6 +1117,9 @@ class Seif(OrderedElement):
         seif_text = re.sub(u' +(</[^\u05d0-\u05ea ]*>:?)$', ur'\g<1>', seif_text)  # clean up spaces before the final html closing tag
         seif_text = re.sub(u' {2,}', u' ', seif_text)
         seif_text = re.sub(u'~br~', u'<br>', seif_text)
+        seif_text = re.sub(u'~b~', u'<b>', seif_text)
+        seif_text = re.sub(ur"~(/|\\)b~", u"</b>", seif_text)
+        seif_text = re.sub(u'!br!', u'<br>', seif_text)
         return unescape(seif_text)
 
     def collect_links(self):
@@ -1227,15 +1246,18 @@ class Xref(Element):
         return hash(self.id)
 
     def load_xrefs_to_commentstore(self, title, siman, seif, *args, **kwargs):
+        print_warnings = kwargs.get('verbose', False)
         comment_store = CommentStore()
         if comment_store.get(self.id) is not None:
             if seif in comment_store[self.id]['seif']:
-                print "Warning: {} {} {} has duplicate reference (id: {}). " \
-                      "Appeared twice in same Seif".format(title, siman, seif, self.id)
+                if print_warnings:
+                    print "Warning: {} {} {} has duplicate reference (id: {}). " \
+                          "Appeared twice in same Seif".format(title, siman, seif, self.id)
             else:
                 comment_store[self.id]['seif'].append(seif)
-                print "Warning: {} {} {} has duplicate reference (id: {}). " \
-                      "Appeared different Seif.".format(title, siman, seif, self.id)
+                if print_warnings:
+                    print "Warning: {} {} {} has duplicate reference (id: {}). " \
+                          "Appeared different Seif.".format(title, siman, seif, self.id)
         else:
             comment_store[self.id] = {
                 'base_title': title,

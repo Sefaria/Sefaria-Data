@@ -20,6 +20,7 @@ from sefaria.model.schema import AddressTalmud
 from data_utilities.dibur_hamatchil_matcher import match_ref
 from sefaria.utils.util import replace_using_regex as reg_replace
 import base64
+import enchant
 import Levenshtein
 
 gematria = {}
@@ -66,6 +67,36 @@ eng_parshiot = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Tol
 "Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo", "Nitzavim", "Vayeilech", "Ha'Azinu",
 "V'Zot HaBerachah"]
 
+
+def any_hebrew_in_str(line):
+    '''
+    Returns true if there is one Hebrew character in line.
+    Useful for when a bad encoding yields nonsense amidst Hebrew text
+    or when a segment has both English and Hebrew words.
+    :param line:
+    :return:
+    '''
+    is_hebrew = False
+    for i in range(len(line)):
+        char = line[i: i + 2]
+        try:
+            char = char.decode('utf-8')
+            any_hebrew = re.findall(u"[\u0591-\u05EA]", char)
+            is_hebrew = any_hebrew != []
+            if is_hebrew:
+                return True
+        except UnicodeDecodeError:
+            pass
+    return False
+
+def any_english_in_str(line):
+    return re.findall("[a-zA-Z0-9]{1}", line) != []
+
+def is_english_word(line):
+    if any_english_in_str(line):
+        eng_dictionary = enchant.Dict("en_US")
+        return eng_dictionary.check(line)
+    return False
 
 def create_simple_index_commentary(en_title, he_title, base_title, categories, type="many_to_one", server=SEFARIA_SERVER):
     '''
@@ -149,12 +180,15 @@ def find_almost_identical(str1, array_of_strings, ratio=0.7):
     '''
     best_str = None
     best_match = 0
+    matches = []
     for str2 in array_of_strings:
         temp_ratio = Levenshtein.ratio(str1, str2)
-        if temp_ratio >= ratio and temp_ratio > best_match:
-            best_str = str2
-            best_match = temp_ratio
-    return best_str
+        if temp_ratio >= ratio:
+            matches.append(str2)
+    if len(matches) == 1:
+        return matches[0]
+    else:
+        return matches
 
 
 def perek_to_number(perek_num):
@@ -550,10 +584,7 @@ def make_title(text):
     :return:
     '''
     #first clean up text
-    if text[0] == " ":
-        text = text[:]
-    if text[-1] == " ":
-        text = text[:-1]
+    text = text.strip()
 
     #just make sure there aren't double spaces in the name or code below fails
     text = text.replace("  ", " ")
@@ -578,8 +609,7 @@ def make_title(text):
         else:
             new_text += word + " "
 
-    if new_text[-1] == " ":  #remove last space
-        new_text = new_text[0:-1]
+    new_text = new_text.strip()
 
     return new_text
 

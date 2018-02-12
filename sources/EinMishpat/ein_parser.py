@@ -10,6 +10,7 @@ from data_utilities.ibid import BookIbidTracker, IbidKeyNotFoundException, IbidR
 from sefaria.utils.hebrew import strip_nikkud
 import unicodecsv as csv
 import os
+import pickle
 
 class Massekhet(object):
 
@@ -113,7 +114,7 @@ class EM_Citation(object):
             return vars(self)[variable]
 
 
-def parse_em(filename, passing, errorfilename):
+def parse_em(filename, passing, errorfilename, EM = True):
     mass = Massekhet(errorfilename)
     i = 0
     perek = 0
@@ -124,7 +125,8 @@ def parse_em(filename, passing, errorfilename):
     cit_dictionary = []
     with codecs.open(filename, 'r', 'utf-8') as fp:
         lines = fp.readlines()
-    pattern = ur'''(ו?שו?["\u05f4]ע|ו?ב?מיי['\u05f3]|ו?ב?סמג|ו?ב?טוש["\u05f4]ע|ו?ב?טור)'''
+    # pattern = ur'''(ו?שו?["\u05f4]ע|ו?ב?מיי['\u05f3]|ו?ב?סמ"?ג|ו?ב?טוש["\u05f4]ע|ו?ב?טור)'''
+    pattern = ur'''(ו?שו?["\u05f4]ע|ו?ב?מיי['\u05f3]|ו?ב?סמ"?ג|ו?ב?טוש["\u05f4]ע|ו?ב?טור|ו?רמב"ם)'''
 
     for line in lines:
         mass.error_flag = False
@@ -138,35 +140,40 @@ def parse_em(filename, passing, errorfilename):
         cit = EM_Citation(filename, i, line)
         # flags
         split = re.split(pattern, line)
-        sub_s = re.split('\s',split[0].strip())
-        # set the counters
-        cit._perek_counter = sub_s[0]
-        cit._page_counter = sub_s[1:]  # since the page counters can be a list of letters
-        try:
-            perek_c = getGematria(cit._perek_counter)
-            # check_continues
-            if perek_c == 1:
-                perek += 1
-                page = 0
-            elif perek_c-1 != getGematria(cit_dictionary[-1][u'Perek running counter']) and cit_dictionary[-1]['problem'] != u'error, cit with the perek/page counters':
+        if EM:
+            sub_s = re.split('\s', split[0].strip())
+            # set the counters
+            cit._perek_counter = sub_s[0]
+            cit._page_counter = sub_s[1:]  # since the page counters can be a list of letters
+            try:
+                perek_c = getGematria(cit._perek_counter)
+                # check_continues
+                if perek_c == 1:
+                    perek += 1
+                    page = 0
+                elif perek_c-1 != getGematria(cit_dictionary[-1][u'Perek running counter']) and cit_dictionary[-1]['problem'] != u'error, cit with the perek/page counters':
+                    mass.write_shgia(u'error, cit with the perek/page counters')
+
+                cit._perek = perek
+                if (not cit._page_counter) or (cit._page_counter[0] == u'א'):
+                    page += 1
+                cit._page = page
+                if filter(lambda x: len(x) > 3 or re.search(u'שם',x), cit._page_counter):
+                    mass.write_shgia(u'error, missing an indicator')
+
+            except:
                 mass.write_shgia(u'error, cit with the perek/page counters')
-
-            cit._perek = perek
-            if (not cit._page_counter) or (cit._page_counter[0] == u'א'):
-                page += 1
-            cit._page = page
-            if filter(lambda x: len(x) > 3 or re.search(u'שם',x), cit._page_counter):
-                mass.write_shgia(u'error, missing an indicator')
-
-        except:
-            mass.write_shgia(u'error, cit with the perek/page counters')
-        # start the parsing
+            # start the parsing
+        else:
+            counters_split = re.split(u'\s', split[0])
+            cit._perek_counter = counters_split[0]
+            cit._page_counter = counters_split[1]
         split_it = iter(split)
         for part in split_it:
-            if part == ur"מיי'":
+            if re.search(ur'''(מיי'|ו?רמב"ם)''', part):
                 rambam_cit = split_it.next()
                 cit.check_double(u'_mimon', mishneh.parse_rambam(rambam_cit, mass)) #cit._mimon = mishneh.parse_rambam(rambam_cit)
-            elif re.search(u'ו?סמג',part):
+            elif re.search(u'ו?סמ"?ג',part):
                 semag_cit = split_it.next()
                 cit.check_double(u'_semag', smg.parse_semag(semag_cit, mass))  # cit._semag = smg.parse_semag(semag_cit)
             elif re.search(u'ו?טוש"ע|ש"ע|שו"ע', part):
@@ -200,13 +207,24 @@ class Semag(object):
             u'לאוין': u'Sefer Mitzvot Gadol, Negative Commandments',
             u'לאין': u'Sefer Mitzvot Gadol, Negative Commandments',
             u'עשין': u'Sefer Mitzvot Gadol, Positive Commandments',
-            u'א':u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Eruvin',
-            u'ב': u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Mourning',
-            u'ג': u"Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Tisha B'Av",
-            u'ד': u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Megillah',
-            u'ה': u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Chanukah'
+            u'א':u'Sefer Mitzvot Gadol, Positive Commandments, Laws of Eruvin',
+            u'ב': u'Sefer Mitzvot Gadol, Positive Commandments, Laws of Mourning',
+            u'ג': u"Sefer Mitzvot Gadol, Positive Commandments, Laws of Tisha B'Av",
+            u'ד': u'Sefer Mitzvot Gadol, Positive Commandments, Laws of Megillah',
+            u'ה': u'Sefer Mitzvot Gadol, Positive Commandments, Laws of Chanukah'
                        }
 
+        # self._table = {
+        #     u'שם': None,
+        #     u'לאוין': u'Sefer Mitzvot Gadol, Volume One ',
+        #     u'לאין': u'Sefer Mitzvot Gadol, Volume One ',
+        #     u'עשין': u'Sefer Mitzvot Gadol, Volume Two ',
+        #     u'א': u'Sefer Mitzvot Gadol, Volume Two, Laws of Eruvin ',
+        #     u'ב': u'Sefer Mitzvot Gadol, Volume Two, Laws of Mourning ',
+        #     u'ג': u"Sefer Mitzvot Gadol, Volume Two, Laws of Tisha B'Av ",
+        #     u'ד': u'Sefer Mitzvot Gadol, Volume Two, Laws of Megillah ',
+        #     u'ה': u'Sefer Mitzvot Gadol, Volume Two, Laws of Chanukah '
+        #                }
 
 
     def parse_semag(self, str, mass):
@@ -246,7 +264,7 @@ class Semag(object):
                 for m in mitzva:
                     if re.search(reg_vav, m) and not book:
                         # resolved = self._tracker.resolve(book, [None])
-                        resolved = resolveExceptin(self._tracker,book, [None])
+                        resolved = resolveExceptin(self._tracker, book, [None])
                         resolveds.append(resolved)
 
                     if m == u'ו?שם':
@@ -595,6 +613,7 @@ def rambam_name_table():
     # name_dict[u"שכני'"] = name_dict[u'שכנים']
     # name_dict[u"שכני"] = name_dict[u'שכנים']
     name_dict[u'ס"ת'] = name_dict[u'תפילין ומזוזה וספר תורה']
+    # name_dict[u'ציצית'] = name_dict[u'תפילין ומזוזה וספר תורה']
     name_dict[u'ס"ת ומזוזה'] = name_dict[u'תפילין ומזוזה וספר תורה']
     name_dict[u'ספר תורה'] = name_dict[u'תפילין ומזוזה וספר תורה']
     name_dict[u'מזוזה'] = name_dict[u'תפילין ומזוזה וספר תורה']
@@ -694,7 +713,7 @@ def rambam_name_table():
 
 def clean_line(line):
     line = strip_nikkud(line)
-    replace_dict = {u'[:\?]': u'', u'[”״]': u'"', u'[’׳]': u"'"}
+    replace_dict = {u'[.:\?]': u'', u'[”״]': u'"', u'[’׳]': u"'"} #note put \. in the file/ how can i check if it is right?
     line = multiple_replace(line, replace_dict, using_regex=True)
     # line = re.sub(u'[:\?]', '', line)
     # line = re.sub(u'”', u'"', line)
@@ -791,8 +810,8 @@ def fromCSV(fromcsv, newfile):
 
 
 #  run to create csv from txt file for QA
-def run1(massechet_he = None, massechet_en = None):
-    parse1 = parse_em(u'{}.txt'.format(massechet_he), 1, u'{}_error'.format(massechet_en))
+def run1(massechet_he = None, massechet_en = None, EM = True):
+    parse1 = parse_em(u'{}.txt'.format(massechet_he), 1, u'{}_error'.format(massechet_en), EM = EM)
     toCSV(massechet_he, parse1)
     return parse1
 
@@ -807,7 +826,7 @@ def run2(massechet_he=None, massechet_en=None):
 
 def run15(massechet_he=None, massechet_en=None):
     fromCSV(u'{}.csv'.format(massechet_he), u'{}.txt'.format(massechet_he))  # reads from fixed ביצה.csv to egg.txt
-    parse1 = parse_em(u'{}.txt'.format(massechet_he),1, u'{}_error'.format(massechet_en))  # egg.txt to screen output
+    parse1 = parse_em(u'{}.txt'.format(massechet_he), 1, u'{}_error'.format(massechet_en))  # egg.txt to screen output
     toCSV(u'{}'.format(massechet_en), parse1)
     return parse1
 
@@ -846,7 +865,7 @@ def reverse_collapse(fromcsv, collapsed_file):
             if prev != (row[u'original'].strip() + u'\n'):
                 f.write(row[u'original'].strip() + u'\n')
             prev = (row[u'original'].strip() + u'\n')
-    run1(u'{}'.format(collapsed_file),u'{}'.format(collapsed_file))
+    run1(u'{}'.format(collapsed_file), u'{}'.format(collapsed_file))
 
 
 def segment_column(segmentfile, reffile, massekhet, wikitext=False):
@@ -1008,4 +1027,8 @@ if __name__ == "__main__":
     # clllapse_kidd = reverse_collapse('small_letters/kidushin_little_letters.csv', 'small_letters/collapsed_kidushin')
     # parsed = run2('csvQA/collapsed_megillah', 'csvQA/collapsed_megillah_little')
     # reverse_collapse('csvQA/megillah_little_letters.csv', 'csvQA/collapsed_megillah')
-    run1(u"csvQA/bava_kamma", u"csvQA/bava_kamma")
+    # run1(u'collapsed/lost_lines', u'collapsed/lost_lines') #avodah_zarah
+    # run1('/home/shanee/www/sefaria/Sefaria-Data/sources/Semak/citations', EM = False)
+    run2("tests/az_collapsed", "tests/avodah_zarah")
+
+

@@ -7,16 +7,16 @@ from sources.Shulchan_Arukh.ShulchanArukh import *
 
 def markup(volume, root, i=1):
     commentaries = root.get_commentaries()
-    volume.mark_references(commentaries.commentary_ids["Taz"], u'@77\(([\u05d0-\u05ea]{1,3})\)', group=1)
+    volume.mark_references(commentaries.commentary_ids["Turei Zahav"], u'@77\(([\u05d0-\u05ea]{1,3})\)', group=1)
     eshel_mark = u"@88" if i < 3 else u"@99"
-    volume.mark_references(commentaries.commentary_ids["Eshel Avraham on Orach Chayim"], eshel_mark + u'([\u05d0-\u05ea]{1,3})', group=1, cyclical=True)
-    volume.mark_references(commentaries.commentary_ids["Ateret Zekenim on Orach Chayim"], u"(\*)", group=1, cyclical=True)
-    volume.mark_references(commentaries.commentary_ids["Be'er HaGolah"], u'@44([\u05d0-\u05ea#])', group=1, cyclical=True)
-
-    volume.mark_references(commentaries.commentary_ids["Eshel Avraham"], eshel_mark + u'([\u05d0-\u05ea]{1,3})', group=1, cyclical=True)
-    volume.mark_references(commentaries.commentary_ids["Ateret Zekenim"], u"(\*)(?!\))", group=1, cyclical=True)
+    volume.mark_references(commentaries.commentary_ids["Be'er HaGolah"], u'@44([\u05d0-\u05ea\u2022])', group=1, cyclical=True)
+    volume.mark_references(commentaries.commentary_ids["Eshel Avraham"], eshel_mark + u'([\u05d0-\u05ea]{1,3})\]', group=1, cyclical=True)
+    volume.mark_references(commentaries.commentary_ids["Ateret Zekenim"], u"(\u2666)(?!\))", group=1, cyclical=True)
     if i == 3:
-        volume.mark_references(commentaries.commentary_ids["Chok Yaakov"], u"(\[[\u05d0-\u05ea]{1,2}\])", group=1)
+        volume.mark_references(commentaries.commentary_ids["Chok Yaakov"], u"@14(\[[\u05d0-\u05ea]{1,2}\])", group=1)
+    volume.mark_references(commentaries.commentary_ids["Sha'arei Teshuvah"], u"@62\(([\u05d0-\u05ea\u2022]{1,3})\)", group=1)
+    volume.convert_pattern_to_itag(u"Magen Avraham", u"@55([\u05d0-\u05ea]{1,3})")
+    volume.convert_pattern_to_itag(u"Ba'er Hetev", u"@66\(([\u05d0-\u05ea]{1,3})\)")
 
 if __name__ == "__main__":
     root_dir = loc(loc(loc(os.path.abspath(__file__))))

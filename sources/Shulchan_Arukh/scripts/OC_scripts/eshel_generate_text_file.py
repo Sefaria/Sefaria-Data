@@ -100,7 +100,6 @@ def gather_content(base):
 def get_volumes():
     root = Root('../../Orach_Chaim.xml')
     base = root.get_base_text()
-    base.add_titles("Orach Chaim", u"אורח חיים")
     return base
 
 

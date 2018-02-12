@@ -25,7 +25,7 @@ for filename in filenames:
         elif line.startswith("@11") or len(line) > 15:
             assert "@11" in line
             line = line.replace("@11", "").replace("@33", "")
-            new_lines[filename].append(u"@22*\n")
+            new_lines[filename].append(u"@22\u2666\n")
             if prev_line_44:
                 new_lines[filename][-1] = new_lines[filename][-1]+"!br!"+line
                 prev_line_44 = None
@@ -40,10 +40,9 @@ root = Root('../../Orach_Chaim.xml')
 commentaries = root.get_commentaries()
 commentary = commentaries.get_commentary_by_title("Ateret Zekenim")
 if commentary is None:
-    commentary = commentaries.add_commentary("Ateret Zekenim", u"עטרת אברהם")
+    commentary = commentaries.add_commentary("Ateret Zekenim", u"עטרת זקנים")
 
 base = root.get_base_text()
-base.add_titles("Orach Chaim", u"אורח חיים")
 errors = []
 for i, filename in enumerate(filenames):
     commentary.remove_volume(i + 1)
@@ -51,7 +50,7 @@ for i, filename in enumerate(filenames):
     volume = commentary.add_volume(text, i + 1)
     assert isinstance(volume, Volume)
 
-    errors += volume.mark_simanim(u'@00(.{1,6})')
+    volume.mark_simanim(u'@00(.{1,6})')
     volume.validate_simanim(complete=False)
 
     errors += volume.mark_seifim(u'@22(.{1,6})', cyclical=True)
@@ -59,13 +58,14 @@ for i, filename in enumerate(filenames):
 
     errors += volume.format_text(start_special='', end_special='', name=u"reg-text")
 
+
     b_vol = base.get_volume(i + 1)
 
     assert isinstance(b_vol, Volume)
     volume.set_rid_on_seifim(cyclical=True)
     if len(sys.argv) == 2 and sys.argv[1] == "--run":
         errors += root.populate_comment_store()
-        errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search("\*", x.text) is not None, base="Orach Chaim", commentary="Ateret Zekenim", simanim_only=True)
+        errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u"(\u2666)(?!\))", x.text) is not None, base="Orach Chaim", commentary="Ateret Zekenim", simanim_only=True)
 
 errors = set(errors)
 #sort_func = lambda x: int(x.split("Orach Chaim, Siman ")[1].split(":")[0])
