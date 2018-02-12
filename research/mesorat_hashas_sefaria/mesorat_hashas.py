@@ -360,6 +360,8 @@ class ParallelMatcher:
         :param max_words_between: max words between consecutive ngrams
         :param min_words_in_match: min words for a match to be considered valid
         :param min_distance_between_matches: min distance between matches. If matches are closer than this, the first one will be chosen (i think)
+        :param bool all_to_all: if True, make between everything either in index_list or ref_list. False means results get filtered to only match inter-ref matches
+        :param bool parallelize: Do you want this to run in parallel? WARNING: this uses up way more RAM. and this is already pretty RAM-hungry
         """
         self.tokenizer = tokenizer
         self.dh_extract_method = dh_extract_method
@@ -398,12 +400,9 @@ class ParallelMatcher:
     def match(self, index_list=None, tc_list=None, comment_index_list=None, use_william=False, output_root="", return_obj=False):
         """
 
-        :param tokenize_words: f(str) -> list[str] exactly what it sounds like
         :param list[str] index_list: list of index names to match against
         :param list[TextChunk] tc_list: alternatively, you can give a list of TextChunks to match to
         :param list[int] comment_index_list: list of indexes which correspond to either `index_list` or `tc_list` (whichever is not None). each index in this list indicates that the corresponding element should be treated as a `comment` meaning `self.dh_extract_method()` will be used on it.
-        :param bool all_to_all: if True, make between everything either in index_list or ref_list. False means results get filtered to only match inter-ref matches
-        :param bool parallelize: Do you want this to run in parallel? WARNING: this uses up way more RAM. and this is already pretty RAM-hungry
         :param bool use_william: True if you want to use William Davidson version for Talmud refs
         :return: mesorat_hashas, mesorat_hashas_indexes
         """
@@ -423,7 +422,7 @@ class ParallelMatcher:
             using_indexes = False
 
         talmud_titles = library.get_indexes_in_category('Bavli')
-        talmud_titles = talmud_titles[:talmud_titles.index('Bava Batra') + 1]
+        talmud_titles = talmud_titles[:talmud_titles.index('Horayot') + 1]
         text_index_map_data = [None for yo in xrange(len(unit_list))]
         for iunit, unit in enumerate(unit_list):
             if comment_index_list is not None and iunit in comment_index_list:
@@ -444,11 +443,17 @@ class ParallelMatcher:
                     lambda n, _: TextChunk(n.ref(), "he", vtitle=vtitle).ja().flatten_to_array() if not n.children else [])
                 unit_wl = [w for seg in unit_list_temp for w in unit_tokenizer(seg)]
                 unit_str = unit
-            else:
+            elif isinstance(unit, TextChunk):
                 assert isinstance(unit, TextChunk)
                 unit_il, unit_rl, total_len = unit.text_index_map(unit_tokenizer)
                 unit_wl = [w for seg in unit.ja().flatten_to_array() for w in unit_tokenizer(seg)]
                 unit_str = unit._oref.normal()
+            else:
+                # otherwise, format is a tuple with (str, textname)
+                assert isinstance(unit, tuple)
+                unit_il, unit_rl = [0], [Ref("Berakhot 58a")]  # random ref, doesn't actually matter
+                unit_wl = unit_tokenizer(unit[0])
+                unit_str = u"{}".format(unit[1])
             text_index_map_data[iunit] = (unit_wl, unit_il, unit_rl, unit_str)
             total_len = len(unit_wl)
             if not return_obj:
@@ -1171,6 +1176,3 @@ def bulk_delete(id_file_name):
             print response.read()
         except urllib2.HTTPError:
             print "{} error".format(id)
-
-
-
