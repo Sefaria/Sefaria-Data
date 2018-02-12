@@ -632,6 +632,7 @@ def rambam_name_table():
     name_dict[u'שאר אבות הטומאה'] = name_dict[u'שאר אבות הטומאות']
     name_dict[u'מעשה קרבנות'] = name_dict[u'מעשה הקרבנות']
     name_dict[u'מעשה קרבן'] = name_dict[u'מעשה הקרבנות']
+    name_dict[u'מעה"ק'] = name_dict[u'מעשה הקרבנות'] # notice when there isn't the word "הלכה" the 'ה"' seems like an indication to halachah "ק"
     name_dict[u'תענית'] = name_dict[u'תעניות']
     name_dict[u'מקוואות'] = name_dict[u'מקואות']
     name_dict[u'ערכין וחרמין'] = name_dict[u'ערכים וחרמין']
@@ -1029,6 +1030,6 @@ if __name__ == "__main__":
     # reverse_collapse('csvQA/megillah_little_letters.csv', 'csvQA/collapsed_megillah')
     # run1(u'collapsed/lost_lines', u'collapsed/lost_lines') #avodah_zarah
     # run1('/home/shanee/www/sefaria/Sefaria-Data/sources/Semak/citations', EM = False)
-    run2("tests/az_collapsed", "tests/avodah_zarah")
+    run2("done/zevachim", "done/zevachim")
 
 
