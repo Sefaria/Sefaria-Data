@@ -66,6 +66,21 @@ halitza_sec.set_rid_on_seifim(root.get_commentary_id(u"Seder Halitzah"), halitza
 base_halitza = commentaries.get_commentary_by_title(u"Seder Halitzah")
 base_halitza_vol = base_halitza.get_volume(1)
 
+
+def unmark_halitzah(hal_vol):
+    def range1(a,b):
+        return range(a,b+1)
+    numbers = [8, 10, '13-23', '25-28', 31, '34-41', '43-88']
+    unrolled_nums = []
+    for n in numbers:
+        if isinstance(n, int):
+            unrolled_nums.append(n)
+        else:
+            unrolled_nums.extend(range1(*map(int, n.split('-'))))
+    rid_list = [hal_vol.Tag.find(lambda x: x.name=='seif' and x['num'] == n)['rid'] for n in map(str, unrolled_nums)]
+    hal_vol.unlink_seifim(rid_list)
+
+unmark_halitzah(halitza_sec.get_parent())
 root.populate_comment_store()
 errors = base_get_vol.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'!([\u05d0-\u05ea]{1,3})\)', x.text) is not None)
 errors += base_halitza_vol.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'!([\u05d0-\u05ea]{1,3})\)', x.text) is not None)
