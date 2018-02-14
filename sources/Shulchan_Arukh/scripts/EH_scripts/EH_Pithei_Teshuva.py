@@ -30,3 +30,21 @@ for piece in [1,2]:
     for e in errors:
         print e
     volume.validate_seifim()
+
+    errors = volume.format_text(u'@11', u'@33', u'dh')
+    for e in errors:
+        print e
+
+    volume.set_rid_on_seifim()
+    
+root.populate_comment_store(verbose=True)
+for piece in [1,2]:
+    base = root.get_base_text()
+    b_vol = base.get_volume(piece)
+    assert isinstance(b_vol, Volume)
+    errors = b_vol.validate_all_xrefs_matched(
+        lambda x: x.name == 'xref' and re.search(ur'@66\(([\u05d0-\u05ea]{1,3})\)', x.text) is not None)
+    for e in errors:
+        print e
+
+root.export()
