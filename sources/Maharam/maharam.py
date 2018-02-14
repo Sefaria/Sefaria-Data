@@ -15,7 +15,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 from local_settings import *
 sys.path.append(p+"/data_utilities")
 from data_utilities.dibur_hamatchil_matcher import *
-from functions import *
+from sources.functions import *
 
 
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
@@ -215,10 +215,10 @@ class Maharam:
 
                 comments = self.actual_text.split(":")
                 for count, comment in enumerate(comments):
-                    if comment[0] == ' ':
-                        comment = comment[1:]
                     if len(comment) < 5:
                         continue
+                    if comment[0] == ' ':
+                        comment = comment[1:]
                     self.determineCategory(count, comment)
                     self.parseDH(comment, self.category)
             else:
@@ -260,7 +260,12 @@ class Maharam:
                 "auto": True,
                 "generated_by": "Maharam on "+masechet+" linker"
             })
-            in_order = in_order.replace("Tosafot on", "").replace("Rashi on", "")
+            sections = Ref(in_order).sections
+            toSections = Ref(in_order).toSections
+            if sections == toSections:
+                in_order = Ref(in_order
+
+            in_order = in_order.replace("Tosafot on ", "").replace("Rashi on ", "")
             ref = Ref(in_order)
             assert len(ref.sections) in [2, 3]
             if len(ref.sections) == 3:
@@ -344,7 +349,7 @@ class Maharam:
                 #    self.Mishnah(daf, mishnah_in_order)
                 elif category == 'paragraph' and self.maharam_line == 0:
                     self.maharam_line+=1
-        post_link(self.links_to_post)
+        post_link(self.links_to_post, server=SERVER)
 
 
 def create_index(tractate):
@@ -360,19 +365,24 @@ def create_index(tractate):
     root.validate()
 
     index = {
+        "dependence": "Commentary",
+        "collective_title": "Maharam",
+        "base_text_titles": [tractate]
         "title": "Maharam on "+tractate.replace("_"," "),
-        "categories": ["Commentary2", "Talmud", "Maharam"],
+        "categories": ["Talmud", "Bavli", "Commentary", "Maharam", library.get_index(tractate).categories[-1]],
         "schema": root.serialize()
     }
-    post_index(index)
+    post_index(index, server=SERVER)
     return tractate
 
 
 if __name__ == "__main__":
-    titles = ["Bava Batra"]
+    SERVER = "http://proto.sefaria.org"
+    titles = ["Avodah Zarah"]
     '''
         ["Bava Batra", "Bava Kamma","Bava Metzia"]
-    , "Chullin", "Eruvin", "Gittin", "Ketubot", "Kiddushin", "Makkot",
+    , "Chullin", "Eruvin", "Gittin", "Ketubot",
+    "Kiddushin", "Makkot",
               "Niddah", "Sanhedrin", "Shabbat", "Sukkah", "Yevamot"
               ]
         '''
@@ -383,7 +393,7 @@ if __name__ == "__main__":
 
         print masechet
 
-        #create_index(masechet)
+        create_index(masechet)
         file = open(masechet+"2.txt", 'r')
 
         maharam = Maharam()
@@ -396,7 +406,7 @@ if __name__ == "__main__":
                         "language": "he",
                         "text": text_to_post,
                     }
-        #post_text("Maharam on "+masechet, send_text, "on")
+        post_text("Maharam on "+masechet, send_text, "on", server=SERVER)
         print 'posted'
 
         maharam.postLinks()

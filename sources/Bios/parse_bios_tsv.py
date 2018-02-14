@@ -60,12 +60,16 @@ with open("Torah Commentators - Bios - People.tsv") as tsv:
         print "{}\n".format(key)
         p = Person().load({"key": key}) or Person()
         p.key = key
-        p.name_group.add_title(l[1], "en", primary=True, replace_primary=True)
-        p.name_group.add_title(l[3], "he", primary=True, replace_primary=True)
+        p.name_group.add_title(l[1].strip(), "en", primary=True, replace_primary=True)
+        p.name_group.add_title(l[3].strip(), "he", primary=True, replace_primary=True)
         for x in l[2].split(","):
-            p.name_group.add_title(x, "en")
+            x = x.strip()
+            if len(x):
+                p.name_group.add_title(x, "en")
         for x in l[4].split(","):
-            p.name_group.add_title(x, "he")
+            x = x.strip()
+            if len(x):
+                p.name_group.add_title(x, "he")
         if len(l[5]) > 0:
             if "c" in l[5]:
                 p.birthYearIsApprox = True

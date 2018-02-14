@@ -3,6 +3,8 @@
 from optparse import OptionParser
 import unicodecsv as csv
 from ein_parser import segment_column
+from sources.functions import post_link
+
 
 def validity_and_cluster(dict_list):
     clean = True
@@ -34,17 +36,30 @@ def validity_and_cluster(dict_list):
     return (clean, all_clusters)
 
 # c - a list of refs all to be interconnected
-def create_cluster(c):
+def create_cluster(c, massekhet):
     return create_link_cluster(c, 30044, "Ein Mishpat / Ner Mitsvah",
-                        attrs={"generated_by": "Ein Mishpat Cluster"},
+                        attrs={"generated_by": "Ein Mishpat Cluster {}".format(massekhet)},
                         exception_pairs=[("Tur", "Shulchan Arukh")])
 #
-def post(dict_list):
+def save_links_local(dict_list, massekhet):
     v_and_c = validity_and_cluster(dict_list)
     if not v_and_c[0]:
         return
     for cluster in v_and_c[1]:
-        create_cluster(cluster)
+        create_cluster(cluster, massekhet)
+
+def post_ein_mishpat(massekhet):
+    query = {"generated_by":"Ein Mishpat Cluster {}".format(massekhet)}
+    # query_talmud = {''' "generated_by": "Ein Mishpat Cluster {}", $and: [ {{ "refs.0": /.*{}.*/i }} ] '''.format(massekhet,massekhet)}
+    # query_tush = {''' "generated_by": "Ein Mishpat Cluster {}", $and: [ {{ "refs.0": /.*{}.*/i }} ] '''.format(massekhet)}
+    # query_rambam = {''' "generated_by": "Ein Mishpat Cluster {}", $and: [ {{ "refs.0": /.*{}.*/i }} ] '''.format(massekhet)}
+    # query_semag = {''' "generated_by": "Ein Mishpat Cluster {}", $and: [ {{ "refs.0": /.*{}.*/i }} ] '''.format(massekhet)}
+    linkset = LinkSet(query)
+    links = [l.contents() for l in linkset]
+    # for l in links:
+    #     l["generated_by"] = "Ein Mishpat Cluster"
+    post_link(links)
+    return links
 
 # usage = "\n%prog [options] inputfile\n  inputfile is a TSV, with references in columns Q-U"
 # parser = OptionParser(usage=usage)
@@ -246,7 +261,10 @@ from sefaria.helper.link import create_link_cluster
 #     print total
 
 if __name__ == "__main__":
-    final_list = segment_column('Ein Mishpat - Moed Katan.csv', 'mk_test_done.csv', 'Moed_Katan')
-    validation = validity_and_cluster(final_list)
-    post = post(final_list)
+    massekhet = 'Avodah Zarah'
+    # final_list = segment_column(u'done/Ein Mishpat_ Horayot - horayot_little_letters.csv.csv', u'done/Ein Mishpat_ Horayot - horayot_little_letters.csv.csv', massekhet, wikitext=False)
+    # print final_list
+    # validation = validity_and_cluster(final_list)
+    # save_links_local(final_list, massekhet)
+    # links = post_ein_mishpat(massekhet)
     print 'done'

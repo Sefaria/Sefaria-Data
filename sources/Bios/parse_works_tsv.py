@@ -64,7 +64,10 @@ with open("Torah Commentators - Bios - Works.tsv") as tsv:
         except Exception as e:
             print u"Count not load {}. {}".format(l[0], e)
             continue
-        current_authors = set(getattr(i, "authors", []) or [])
+        try:
+            current_authors = set(getattr(i, "authors", []) or [])
+        except TypeError:
+            current_authors = set()
         sheet_authors = set([a.strip() for a in l[1].split(",") if Person().load({"key": a.strip()})])
         needs_save = current_authors != sheet_authors
         sheet_authors = list(sheet_authors)

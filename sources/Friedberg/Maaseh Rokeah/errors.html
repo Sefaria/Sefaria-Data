@@ -1,0 +1,4093 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="robots" content="NONE,NOARCHIVE">
+  <title>IndexError at /api/category</title>
+  <style type="text/css">
+    html * { padding:0; margin:0; }
+    body * { padding:10px 20px; }
+    body * * { padding:0; }
+    body { font:small sans-serif; }
+    body>div { border-bottom:1px solid #ddd; }
+    h1 { font-weight:normal; }
+    h2 { margin-bottom:.8em; }
+    h2 span { font-size:80%; color:#666; font-weight:normal; }
+    h3 { margin:1em 0 .5em 0; }
+    h4 { margin:0 0 .5em 0; font-weight: normal; }
+    code, pre { font-size: 100%; white-space: pre-wrap; }
+    table { border:1px solid #ccc; border-collapse: collapse; width:100%; background:white; }
+    tbody td, tbody th { vertical-align:top; padding:2px 3px; }
+    thead th { padding:1px 6px 1px 3px; background:#fefefe; text-align:left; font-weight:normal; font-size:11px; border:1px solid #ddd; }
+    tbody th { width:12em; text-align:right; color:#666; padding-right:.5em; }
+    table.vars { margin:5px 0 2px 40px; }
+    table.vars td, table.req td { font-family:monospace; }
+    table td.code { width:100%; }
+    table td.code pre { overflow:hidden; }
+    table.source th { color:#666; }
+    table.source td { font-family:monospace; white-space:pre; border-bottom:1px solid #eee; }
+    ul.traceback { list-style-type:none; color: #222; }
+    ul.traceback li.frame { padding-bottom:1em; color:#666; }
+    ul.traceback li.user { background-color:#e0e0e0; color:#000 }
+    div.context { padding:10px 0; overflow:hidden; }
+    div.context ol { padding-left:30px; margin:0 10px; list-style-position: inside; }
+    div.context ol li { font-family:monospace; white-space:pre; color:#777; cursor:pointer; }
+    div.context ol li pre { display:inline; }
+    div.context ol.context-line li { color:#505050; background-color:#dfdfdf; }
+    div.context ol.context-line li span { position:absolute; right:32px; }
+    .user div.context ol.context-line li { background-color:#bbb; color:#000; }
+    .user div.context ol li { color:#666; }
+    div.commands { margin-left: 40px; }
+    div.commands a { color:#555; text-decoration:none; }
+    .user div.commands a { color: black; }
+    #summary { background: #ffc; }
+    #summary h2 { font-weight: normal; color: #666; }
+    #explanation { background:#eee; }
+    #template, #template-not-exist { background:#f6f6f6; }
+    #template-not-exist ul { margin: 0 0 0 20px; }
+    #unicode-hint { background:#eee; }
+    #traceback { background:#eee; }
+    #requestinfo { background:#f6f6f6; padding-left:120px; }
+    #summary table { border:none; background:transparent; }
+    #requestinfo h2, #requestinfo h3 { position:relative; margin-left:-100px; }
+    #requestinfo h3 { margin-bottom:-1em; }
+    .error { background: #ffc; }
+    .specific { color:#cc3300; font-weight:bold; }
+    h2 span.commands { font-size:.7em;}
+    span.commands a:link {color:#5E5694;}
+    pre.exception_value { font-family: sans-serif; color: #666; font-size: 1.5em; margin: 10px 0 10px 0; }
+  </style>
+  
+  <script type="text/javascript">
+  //<!--
+    function getElementsByClassName(oElm, strTagName, strClassName){
+        // Written by Jonathan Snook, http://www.snook.ca/jon; Add-ons by Robert Nyman, http://www.robertnyman.com
+        var arrElements = (strTagName == "*" && document.all)? document.all :
+        oElm.getElementsByTagName(strTagName);
+        var arrReturnElements = new Array();
+        strClassName = strClassName.replace(/\-/g, "\-");
+        var oRegExp = new RegExp("(^|\s)" + strClassName + "(\s|$)");
+        var oElement;
+        for(var i=0; i<arrElements.length; i++){
+            oElement = arrElements[i];
+            if(oRegExp.test(oElement.className)){
+                arrReturnElements.push(oElement);
+            }
+        }
+        return (arrReturnElements)
+    }
+    function hideAll(elems) {
+      for (var e = 0; e < elems.length; e++) {
+        elems[e].style.display = 'none';
+      }
+    }
+    window.onload = function() {
+      hideAll(getElementsByClassName(document, 'table', 'vars'));
+      hideAll(getElementsByClassName(document, 'ol', 'pre-context'));
+      hideAll(getElementsByClassName(document, 'ol', 'post-context'));
+      hideAll(getElementsByClassName(document, 'div', 'pastebin'));
+    }
+    function toggle() {
+      for (var i = 0; i < arguments.length; i++) {
+        var e = document.getElementById(arguments[i]);
+        if (e) {
+          e.style.display = e.style.display == 'none' ? 'block' : 'none';
+        }
+      }
+      return false;
+    }
+    function varToggle(link, id) {
+      toggle('v' + id);
+      var s = link.getElementsByTagName('span')[0];
+      var uarr = String.fromCharCode(0x25b6);
+      var darr = String.fromCharCode(0x25bc);
+      s.innerHTML = s.innerHTML == uarr ? darr : uarr;
+      return false;
+    }
+    function switchPastebinFriendly(link) {
+      s1 = "Switch to copy-and-paste view";
+      s2 = "Switch back to interactive view";
+      link.innerHTML = link.innerHTML == s1 ? s2 : s1;
+      toggle('browserTraceback', 'pastebinTraceback');
+      return false;
+    }
+    //-->
+  </script>
+  
+</head>
+<body>
+<div id="summary">
+  <h1>IndexError at /api/category</h1>
+  <pre class="exception_value">Failed to load term named Maaseh Rokeah. &#39;NoneType&#39; object has no attribute &#39;title_group&#39;</pre>
+  <table class="meta">
+
+    <tr>
+      <th>Request Method:</th>
+      <td>POST</td>
+    </tr>
+    <tr>
+      <th>Request URL:</th>
+      <td>http://draft.sefaria.org/api/category</td>
+    </tr>
+
+    <tr>
+      <th>Django Version:</th>
+      <td>1.4.5</td>
+    </tr>
+
+    <tr>
+      <th>Exception Type:</th>
+      <td>IndexError</td>
+    </tr>
+
+
+    <tr>
+      <th>Exception Value:</th>
+      <td><pre>Failed to load term named Maaseh Rokeah. &#39;NoneType&#39; object has no attribute &#39;title_group&#39;</pre></td>
+    </tr>
+
+
+    <tr>
+      <th>Exception Location:</th>
+      <td>/var/www/draft/sefaria/model/schema.py in _process_terms, line 194</td>
+    </tr>
+
+    <tr>
+      <th>Python Executable:</th>
+      <td>/usr/local/bin/python</td>
+    </tr>
+    <tr>
+      <th>Python Version:</th>
+      <td>2.7.9</td>
+    </tr>
+    <tr>
+      <th>Python Path:</th>
+      <td><pre>[&#39;/var/www/draft&#39;,
+ &#39;/usr/local/lib/python2.7/site-packages/mod_wsgi-4.4.21-py2.7-linux-x86_64.egg&#39;,
+ &#39;/usr/local/lib/python2.7/site-packages/num2words-0.5.4-py2.7.egg&#39;,
+ &#39;/usr/local/lib/python2.7/site-packages/num2words-0.5.4-py2.7.egg&#39;,
+ &#39;/usr/local/lib/python27.zip&#39;,
+ &#39;/usr/local/lib/python2.7&#39;,
+ &#39;/usr/local/lib/python2.7/plat-linux2&#39;,
+ &#39;/usr/local/lib/python2.7/lib-tk&#39;,
+ &#39;/usr/local/lib/python2.7/lib-old&#39;,
+ &#39;/usr/local/lib/python2.7/lib-dynload&#39;,
+ &#39;/usr/local/lib/python2.7/site-packages&#39;]</pre></td>
+    </tr>
+    <tr>
+      <th>Server time:</th>
+      <td>Wed, 18 Oct 2017 19:44:26 -0700</td>
+    </tr>
+  </table>
+</div>
+
+
+
+
+<div id="traceback">
+  <h2>Traceback <span class="commands"><a href="#" onclick="return switchPastebinFriendly(this);">Switch to copy-and-paste view</a></span></h2>
+  
+  <div id="browserTraceback">
+    <ul class="traceback">
+      
+        <li class="frame django">
+          <code>/usr/local/lib/python2.7/site-packages/django/core/handlers/base.py</code> in <code>get_response</code>
+
+          
+            <div class="context" id="c140275430190112">
+              
+                <ol start="82" class="pre-context" id="pre140275430190112"><li onclick="toggle('pre140275430190112', 'post140275430190112')"><pre>            urlconf = settings.ROOT_URLCONF</pre></li><li onclick="toggle('pre140275430190112', 'post140275430190112')"><pre>            urlresolvers.set_urlconf(urlconf)</pre></li><li onclick="toggle('pre140275430190112', 'post140275430190112')"><pre>            resolver = urlresolvers.RegexURLResolver(r&#39;^/&#39;, urlconf)</pre></li><li onclick="toggle('pre140275430190112', 'post140275430190112')"><pre>            try:</pre></li><li onclick="toggle('pre140275430190112', 'post140275430190112')"><pre>                response = None</pre></li><li onclick="toggle('pre140275430190112', 'post140275430190112')"><pre>                # Apply request middleware</pre></li><li onclick="toggle('pre140275430190112', 'post140275430190112')"><pre>                for middleware_method in self._request_middleware:</pre></li></ol>
+              
+              <ol start="89" class="context-line"><li onclick="toggle('pre140275430190112', 'post140275430190112')"><pre>                    response = middleware_method(request)</pre> <span>...</span></li></ol>
+              
+                <ol start='90' class="post-context" id="post140275430190112"><li onclick="toggle('pre140275430190112', 'post140275430190112')"><pre>                    if response:</pre></li><li onclick="toggle('pre140275430190112', 'post140275430190112')"><pre>                        break</pre></li><li onclick="toggle('pre140275430190112', 'post140275430190112')"><pre></pre></li><li onclick="toggle('pre140275430190112', 'post140275430190112')"><pre>                if response is None:</pre></li><li onclick="toggle('pre140275430190112', 'post140275430190112')"><pre>                    if hasattr(request, &quot;urlconf&quot;):</pre></li><li onclick="toggle('pre140275430190112', 'post140275430190112')"><pre>                        # Reset url resolver with a custom urlconf.</pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '140275430190112')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v140275430190112">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>settings</td>
+                    <td class="code"><pre>&lt;django.conf.LazySettings object at 0x7f947db95a90&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>middleware_method</td>
+                    <td class="code"><pre>&lt;bound method CommonMiddleware.process_request of &lt;django.middleware.common.CommonMiddleware object at 0x7f9477755310&gt;&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>&lt;django.core.handlers.wsgi.WSGIHandler object at 0x7f947c164990&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>request</td>
+                    <td class="code"><pre>&#39;&lt;WSGIRequest\npath:/api/category,\nGET:&lt;QueryDict: {}&gt;,\nPOST:&lt;QueryDict: {u\&#39;json\&#39;: [u\&#39;{&quot;sharedTitle&quot;: &quot;Sefer Taharah&quot;, &quot;path&quot;: [&quot;Halakhah&quot;, &quot;Mishneh Torah&quot;, &quot;Commentary&quot;, &quot;Maaseh Rokeach&quot;, &quot;Sefer Taharah&quot;]}\&#39;], u\&#39;apikey\&#39;: [u\&#39;sIBpXlqJ0jQ8ShpCfp0Id0VA4M4HVYU0ySRTT90KKTg\&#39;]}&gt;,\nCOOKIES:{},\nMETA:{\&#39;CONTENT_LENGTH\&#39;: \&#39;230\&#39;,\n \&#39;CONTENT_TYPE\&#39;: \&#39;application/x-www-form-urlencoded\&#39;,\n \&#39;CONTEXT_DOCUMENT_ROOT\&#39;: \&#39;/var/www/draft/static/\&#39;,\n \&#39;CONTEXT_PREFIX\&#39;: \&#39;\&#39;,\n \&#39;DOCUMENT_ROOT\&#39;: \&#39;/var/www/draft/static/\&#39;,\n \&#39;GATEWAY_INTERFACE\&#39;: \&#39;CGI/1.1\&#39;,\n \&#39;HTTP_ACCEPT\&#39;: \&#39;*/*\&#39;,\n \&#39;HTTP_ACCEPT_ENCODING\&#39;: \&#39;gzip\&#39;,\n \&#39;HTTP_CF_CONNECTING_IP\&#39;: \&#39;47.17.217.7\&#39;,\n \&#39;HTTP_CF_IPCOUNTRY\&#39;: \&#39;US\&#39;,\n \&#39;HTTP_CF_RAY\&#39;: \&#39;3b00654126291840-EWR\&#39;,\n \&#39;HTTP_CF_VISITOR\&#39;: \&#39;{&quot;scheme&quot;:&quot;http&quot;}\&#39;,\n \&#39;HTTP_HOST\&#39;: \&#39;draft.sefaria.org\&#39;,\n \&#39;HTTP_USER_AGENT\&#39;: \&#39;python-requests/2.18.4\&#39;,\n \&#39;HTTP_X_FORWARDED_FOR\&#39;: \&#39;47.17.217.7, 108.162.219.40\&#39;,\n \&#39;HTTP_X_FORWARDED_PROTO\&#39;: \&#39;http\&#39;,\n \&#39;HTTP_X_VARNISH\&#39;: \&#39;7712377\&#39;,\n \&#39;PATH_INFO\&#39;: u\&#39;/api/category\&#39;,\n \&#39;PATH_TRANSLATED\&#39;: \&#39;/var/www/draft/sefaria/wsgi.py/api/category\&#39;,\n \&#39;QUERY_STRING\&#39;: \&#39;\&#39;,\n \&#39;REMOTE_ADDR\&#39;: \&#39;127.0.0.1\&#39;,\n \&#39;REMOTE_PORT\&#39;: \&#39;49072\&#39;,\n \&#39;REQUEST_METHOD\&#39;: \&#39;POST\&#39;,\n \&#39;REQUEST_SCHEME\&#39;: \&#39;http\&#39;,\n \&#39;REQUEST_URI\&#39;: \&#39;/api/category\&#39;,\n \&#39;SCRIPT_FILENAME\&#39;: \&#39;/var/www/draft/sefaria/wsgi.py\&#39;,\n \&#39;SCRIPT_NAME\&#39;: u\&#39;\&#39;,\n \&#39;SERVER_ADDR\&#39;: \&#39;127.0.0.1\&#39;,\n \&#39;SERVER_ADMIN\&#39;: \&#39;<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="452120330536202324372c246b2a3722">[email&#160;protected]</a>\&#39;,\n \&#39;SERVER_NAME\&#39;: \&#39;draft.sefaria.org\&#39;,\n \&#39;SERVER_PORT\&#39;: \&#39;80\&#39;,\n \&#39;SERVER_PROTOCOL\&#39;: \&#39;HTTP/1.1\&#39;,\n \&#39;SERVER_SIGNATURE\&#39;: \&#39;&lt;address&gt;Apache/2.4.7 (Ubuntu) Server at draft.sefaria.org Port 80&lt;/address&gt;\\n\&#39;,\n \&#39;SERVER_SOFTWARE\&#39;: \&#39;Apache/2.4.7 (Ubuntu)\&#39;,\n \&#39;apache.version\&#39;: (2, 4, 7),\n \&#39;mod_wsgi.application_group\&#39;: \&#39;draft.sefaria.org|\&#39;,\n \&#39;mod_wsgi.callable_object\&#39;: \&#39;application\&#39;,\n \&#39;mod_wsgi.daemon_connects\&#39;: \&#39;1\&#39;,\n \&#39;mod_wsgi.daemon_restarts\&#39;: \&#39;0\&#39;,\n \&#39;mod_wsgi.daemon_start\&#39;: \&#39;1508381066430132\&#39;,\n \&#39;mod_wsgi.enable_sendfile\&#39;: \&#39;0\&#39;,\n \&#39;mod_wsgi.handler_script\&#39;: \&#39;\&#39;,\n \&#39;mod_wsgi.listener_host\&#39;: \&#39;\&#39;,\n \&#39;mod_wsgi.listener_port\&#39;: \&#39;8080\&#39;,\n \&#39;mod_wsgi.path_info\&#39;: \&#39;/api/category\&#39;,\n \&#39;mod_wsgi.process_group\&#39;: \&#39;draft.sefaria.org\&#39;,\n \&#39;mod_wsgi.queue_start\&#39;: \&#39;1508381066429899\&#39;,\n \&#39;mod_wsgi.request_handler\&#39;: \&#39;wsgi-script\&#39;,\n \&#39;mod_wsgi.request_start\&#39;: \&#39;1508381066429556\&#39;,\n \&#39;mod_wsgi.script_name\&#39;: \&#39;\&#39;,\n \&#39;mod_wsgi.script_reloading\&#39;: \&#39;1\&#39;,\n \&#39;mod_wsgi.script_start\&#39;: \&#39;1508381066430214\&#39;,\n \&#39;mod_wsgi.version\&#39;: (4, 4, 21),\n \&#39;wsgi.errors\&#39;: &lt;mod_wsgi.Log object at 0x7f947f989978&gt;,\n \&#39;wsgi.file_wrapper\&#39;: &lt;type \&#39;mod_wsgi.FileWrapper\&#39;&gt;,\n \&#39;wsgi.input\&#39;: &lt;mod_wsgi.Input object at 0x7f947c2f60d0&gt;,\n \&#39;wsgi.multiprocess\&#39;: False,\n \&#39;wsgi.multithread\&#39;: True,\n \&#39;wsgi.run_once\&#39;: False,\n \&#39;wsgi.url_scheme\&#39;: \&#39;http\&#39;,\n \&#39;wsgi.version\&#39;: (1, 0)}&gt;&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>exceptions</td>
+                    <td class="code"><pre>&lt;module &#39;django.core.exceptions&#39; from &#39;/usr/local/lib/python2.7/site-packages/django/core/exceptions.pyc&#39;&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>resolver</td>
+                    <td class="code"><pre>&lt;RegexURLResolver sefaria.urls (None:None) ^/&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>urlresolvers</td>
+                    <td class="code"><pre>&lt;module &#39;django.core.urlresolvers&#39; from &#39;/usr/local/lib/python2.7/site-packages/django/core/urlresolvers.pyc&#39;&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>response</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>urlconf</td>
+                    <td class="code"><pre>&#39;sefaria.urls&#39;</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame django">
+          <code>/usr/local/lib/python2.7/site-packages/django/middleware/common.py</code> in <code>process_request</code>
+
+          
+            <div class="context" id="c140275430190040">
+              
+                <ol start="60" class="pre-context" id="pre140275430190040"><li onclick="toggle('pre140275430190040', 'post140275430190040')"><pre>                not old_url[0].startswith(&#39;www.&#39;)):</pre></li><li onclick="toggle('pre140275430190040', 'post140275430190040')"><pre>            new_url[0] = &#39;www.&#39; + old_url[0]</pre></li><li onclick="toggle('pre140275430190040', 'post140275430190040')"><pre></pre></li><li onclick="toggle('pre140275430190040', 'post140275430190040')"><pre>        # Append a slash if APPEND_SLASH is set and the URL doesn&#39;t have a</pre></li><li onclick="toggle('pre140275430190040', 'post140275430190040')"><pre>        # trailing slash and there is no pattern for the current path</pre></li><li onclick="toggle('pre140275430190040', 'post140275430190040')"><pre>        if settings.APPEND_SLASH and (not old_url[1].endswith(&#39;/&#39;)):</pre></li><li onclick="toggle('pre140275430190040', 'post140275430190040')"><pre>            urlconf = getattr(request, &#39;urlconf&#39;, None)</pre></li></ol>
+              
+              <ol start="67" class="context-line"><li onclick="toggle('pre140275430190040', 'post140275430190040')"><pre>            if (not urlresolvers.is_valid_path(request.path_info, urlconf) and</pre> <span>...</span></li></ol>
+              
+                <ol start='68' class="post-context" id="post140275430190040"><li onclick="toggle('pre140275430190040', 'post140275430190040')"><pre>                    urlresolvers.is_valid_path(&quot;%s/&quot; % request.path_info, urlconf)):</pre></li><li onclick="toggle('pre140275430190040', 'post140275430190040')"><pre>                new_url[1] = new_url[1] + &#39;/&#39;</pre></li><li onclick="toggle('pre140275430190040', 'post140275430190040')"><pre>                if settings.DEBUG and request.method == &#39;POST&#39;:</pre></li><li onclick="toggle('pre140275430190040', 'post140275430190040')"><pre>                    raise RuntimeError((&quot;&quot;</pre></li><li onclick="toggle('pre140275430190040', 'post140275430190040')"><pre>                    &quot;You called this URL via POST, but the URL doesn&#39;t end &quot;</pre></li><li onclick="toggle('pre140275430190040', 'post140275430190040')"><pre>                    &quot;in a slash and you have APPEND_SLASH set. Django can&#39;t &quot;</pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '140275430190040')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v140275430190040">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>&lt;django.middleware.common.CommonMiddleware object at 0x7f9477755310&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>new_url</td>
+                    <td class="code"><pre>[&#39;draft.sefaria.org&#39;, u&#39;/api/category&#39;]</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>request</td>
+                    <td class="code"><pre>&#39;&lt;WSGIRequest\npath:/api/category,\nGET:&lt;QueryDict: {}&gt;,\nPOST:&lt;QueryDict: {u\&#39;json\&#39;: [u\&#39;{&quot;sharedTitle&quot;: &quot;Sefer Taharah&quot;, &quot;path&quot;: [&quot;Halakhah&quot;, &quot;Mishneh Torah&quot;, &quot;Commentary&quot;, &quot;Maaseh Rokeach&quot;, &quot;Sefer Taharah&quot;]}\&#39;], u\&#39;apikey\&#39;: [u\&#39;sIBpXlqJ0jQ8ShpCfp0Id0VA4M4HVYU0ySRTT90KKTg\&#39;]}&gt;,\nCOOKIES:{},\nMETA:{\&#39;CONTENT_LENGTH\&#39;: \&#39;230\&#39;,\n \&#39;CONTENT_TYPE\&#39;: \&#39;application/x-www-form-urlencoded\&#39;,\n \&#39;CONTEXT_DOCUMENT_ROOT\&#39;: \&#39;/var/www/draft/static/\&#39;,\n \&#39;CONTEXT_PREFIX\&#39;: \&#39;\&#39;,\n \&#39;DOCUMENT_ROOT\&#39;: \&#39;/var/www/draft/static/\&#39;,\n \&#39;GATEWAY_INTERFACE\&#39;: \&#39;CGI/1.1\&#39;,\n \&#39;HTTP_ACCEPT\&#39;: \&#39;*/*\&#39;,\n \&#39;HTTP_ACCEPT_ENCODING\&#39;: \&#39;gzip\&#39;,\n \&#39;HTTP_CF_CONNECTING_IP\&#39;: \&#39;47.17.217.7\&#39;,\n \&#39;HTTP_CF_IPCOUNTRY\&#39;: \&#39;US\&#39;,\n \&#39;HTTP_CF_RAY\&#39;: \&#39;3b00654126291840-EWR\&#39;,\n \&#39;HTTP_CF_VISITOR\&#39;: \&#39;{&quot;scheme&quot;:&quot;http&quot;}\&#39;,\n \&#39;HTTP_HOST\&#39;: \&#39;draft.sefaria.org\&#39;,\n \&#39;HTTP_USER_AGENT\&#39;: \&#39;python-requests/2.18.4\&#39;,\n \&#39;HTTP_X_FORWARDED_FOR\&#39;: \&#39;47.17.217.7, 108.162.219.40\&#39;,\n \&#39;HTTP_X_FORWARDED_PROTO\&#39;: \&#39;http\&#39;,\n \&#39;HTTP_X_VARNISH\&#39;: \&#39;7712377\&#39;,\n \&#39;PATH_INFO\&#39;: u\&#39;/api/category\&#39;,\n \&#39;PATH_TRANSLATED\&#39;: \&#39;/var/www/draft/sefaria/wsgi.py/api/category\&#39;,\n \&#39;QUERY_STRING\&#39;: \&#39;\&#39;,\n \&#39;REMOTE_ADDR\&#39;: \&#39;127.0.0.1\&#39;,\n \&#39;REMOTE_PORT\&#39;: \&#39;49072\&#39;,\n \&#39;REQUEST_METHOD\&#39;: \&#39;POST\&#39;,\n \&#39;REQUEST_SCHEME\&#39;: \&#39;http\&#39;,\n \&#39;REQUEST_URI\&#39;: \&#39;/api/category\&#39;,\n \&#39;SCRIPT_FILENAME\&#39;: \&#39;/var/www/draft/sefaria/wsgi.py\&#39;,\n \&#39;SCRIPT_NAME\&#39;: u\&#39;\&#39;,\n \&#39;SERVER_ADDR\&#39;: \&#39;127.0.0.1\&#39;,\n \&#39;SERVER_ADMIN\&#39;: \&#39;<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d4b0b1a294a7b1b2b5a6bdb5fabba6b3">[email&#160;protected]</a>\&#39;,\n \&#39;SERVER_NAME\&#39;: \&#39;draft.sefaria.org\&#39;,\n \&#39;SERVER_PORT\&#39;: \&#39;80\&#39;,\n \&#39;SERVER_PROTOCOL\&#39;: \&#39;HTTP/1.1\&#39;,\n \&#39;SERVER_SIGNATURE\&#39;: \&#39;&lt;address&gt;Apache/2.4.7 (Ubuntu) Server at draft.sefaria.org Port 80&lt;/address&gt;\\n\&#39;,\n \&#39;SERVER_SOFTWARE\&#39;: \&#39;Apache/2.4.7 (Ubuntu)\&#39;,\n \&#39;apache.version\&#39;: (2, 4, 7),\n \&#39;mod_wsgi.application_group\&#39;: \&#39;draft.sefaria.org|\&#39;,\n \&#39;mod_wsgi.callable_object\&#39;: \&#39;application\&#39;,\n \&#39;mod_wsgi.daemon_connects\&#39;: \&#39;1\&#39;,\n \&#39;mod_wsgi.daemon_restarts\&#39;: \&#39;0\&#39;,\n \&#39;mod_wsgi.daemon_start\&#39;: \&#39;1508381066430132\&#39;,\n \&#39;mod_wsgi.enable_sendfile\&#39;: \&#39;0\&#39;,\n \&#39;mod_wsgi.handler_script\&#39;: \&#39;\&#39;,\n \&#39;mod_wsgi.listener_host\&#39;: \&#39;\&#39;,\n \&#39;mod_wsgi.listener_port\&#39;: \&#39;8080\&#39;,\n \&#39;mod_wsgi.path_info\&#39;: \&#39;/api/category\&#39;,\n \&#39;mod_wsgi.process_group\&#39;: \&#39;draft.sefaria.org\&#39;,\n \&#39;mod_wsgi.queue_start\&#39;: \&#39;1508381066429899\&#39;,\n \&#39;mod_wsgi.request_handler\&#39;: \&#39;wsgi-script\&#39;,\n \&#39;mod_wsgi.request_start\&#39;: \&#39;1508381066429556\&#39;,\n \&#39;mod_wsgi.script_name\&#39;: \&#39;\&#39;,\n \&#39;mod_wsgi.script_reloading\&#39;: \&#39;1\&#39;,\n \&#39;mod_wsgi.script_start\&#39;: \&#39;1508381066430214\&#39;,\n \&#39;mod_wsgi.version\&#39;: (4, 4, 21),\n \&#39;wsgi.errors\&#39;: &lt;mod_wsgi.Log object at 0x7f947f989978&gt;,\n \&#39;wsgi.file_wrapper\&#39;: &lt;type \&#39;mod_wsgi.FileWrapper\&#39;&gt;,\n \&#39;wsgi.input\&#39;: &lt;mod_wsgi.Input object at 0x7f947c2f60d0&gt;,\n \&#39;wsgi.multiprocess\&#39;: False,\n \&#39;wsgi.multithread\&#39;: True,\n \&#39;wsgi.run_once\&#39;: False,\n \&#39;wsgi.url_scheme\&#39;: \&#39;http\&#39;,\n \&#39;wsgi.version\&#39;: (1, 0)}&gt;&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>host</td>
+                    <td class="code"><pre>&#39;draft.sefaria.org&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>old_url</td>
+                    <td class="code"><pre>[&#39;draft.sefaria.org&#39;, u&#39;/api/category&#39;]</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>urlconf</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame django">
+          <code>/usr/local/lib/python2.7/site-packages/django/core/urlresolvers.py</code> in <code>is_valid_path</code>
+
+          
+            <div class="context" id="c140275430189968">
+              
+                <ol start="524" class="pre-context" id="pre140275430189968"><li onclick="toggle('pre140275430189968', 'post140275430189968')"><pre>    Returns True if the given path resolves against the default URL resolver,</pre></li><li onclick="toggle('pre140275430189968', 'post140275430189968')"><pre>    False otherwise.</pre></li><li onclick="toggle('pre140275430189968', 'post140275430189968')"><pre></pre></li><li onclick="toggle('pre140275430189968', 'post140275430189968')"><pre>    This is a convenience method to make working with &quot;is this a match?&quot; cases</pre></li><li onclick="toggle('pre140275430189968', 'post140275430189968')"><pre>    easier, avoiding unnecessarily indented try...except blocks.</pre></li><li onclick="toggle('pre140275430189968', 'post140275430189968')"><pre>    &quot;&quot;&quot;</pre></li><li onclick="toggle('pre140275430189968', 'post140275430189968')"><pre>    try:</pre></li></ol>
+              
+              <ol start="531" class="context-line"><li onclick="toggle('pre140275430189968', 'post140275430189968')"><pre>        resolve(path, urlconf)</pre> <span>...</span></li></ol>
+              
+                <ol start='532' class="post-context" id="post140275430189968"><li onclick="toggle('pre140275430189968', 'post140275430189968')"><pre>        return True</pre></li><li onclick="toggle('pre140275430189968', 'post140275430189968')"><pre>    except Resolver404:</pre></li><li onclick="toggle('pre140275430189968', 'post140275430189968')"><pre>        return False</pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '140275430189968')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v140275430189968">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>path</td>
+                    <td class="code"><pre>u&#39;/api/category&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>urlconf</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame django">
+          <code>/usr/local/lib/python2.7/site-packages/django/core/urlresolvers.py</code> in <code>resolve</code>
+
+          
+            <div class="context" id="c140275430189896">
+              
+                <ol start="413" class="pre-context" id="pre140275430189896"><li onclick="toggle('pre140275430189896', 'post140275430189896')"><pre>            regex_compiled = re.compile(&#39;^%s/&#39; % language_code, re.UNICODE)</pre></li><li onclick="toggle('pre140275430189896', 'post140275430189896')"><pre>            self._regex_dict[language_code] = regex_compiled</pre></li><li onclick="toggle('pre140275430189896', 'post140275430189896')"><pre>        return self._regex_dict[language_code]</pre></li><li onclick="toggle('pre140275430189896', 'post140275430189896')"><pre></pre></li><li onclick="toggle('pre140275430189896', 'post140275430189896')"><pre>def resolve(path, urlconf=None):</pre></li><li onclick="toggle('pre140275430189896', 'post140275430189896')"><pre>    if urlconf is None:</pre></li><li onclick="toggle('pre140275430189896', 'post140275430189896')"><pre>        urlconf = get_urlconf()</pre></li></ol>
+              
+              <ol start="420" class="context-line"><li onclick="toggle('pre140275430189896', 'post140275430189896')"><pre>    return get_resolver(urlconf).resolve(path)</pre> <span>...</span></li></ol>
+              
+                <ol start='421' class="post-context" id="post140275430189896"><li onclick="toggle('pre140275430189896', 'post140275430189896')"><pre></pre></li><li onclick="toggle('pre140275430189896', 'post140275430189896')"><pre>def reverse(viewname, urlconf=None, args=None, kwargs=None, prefix=None, current_app=None):</pre></li><li onclick="toggle('pre140275430189896', 'post140275430189896')"><pre>    if urlconf is None:</pre></li><li onclick="toggle('pre140275430189896', 'post140275430189896')"><pre>        urlconf = get_urlconf()</pre></li><li onclick="toggle('pre140275430189896', 'post140275430189896')"><pre>    resolver = get_resolver(urlconf)</pre></li><li onclick="toggle('pre140275430189896', 'post140275430189896')"><pre>    args = args or []</pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '140275430189896')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v140275430189896">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>path</td>
+                    <td class="code"><pre>u&#39;/api/category&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>urlconf</td>
+                    <td class="code"><pre>&#39;sefaria.urls&#39;</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame django">
+          <code>/usr/local/lib/python2.7/site-packages/django/core/urlresolvers.py</code> in <code>resolve</code>
+
+          
+            <div class="context" id="c140275430189824">
+              
+                <ol start="293" class="pre-context" id="pre140275430189824"><li onclick="toggle('pre140275430189824', 'post140275430189824')"><pre>    def resolve(self, path):</pre></li><li onclick="toggle('pre140275430189824', 'post140275430189824')"><pre>        tried = []</pre></li><li onclick="toggle('pre140275430189824', 'post140275430189824')"><pre>        match = self.regex.search(path)</pre></li><li onclick="toggle('pre140275430189824', 'post140275430189824')"><pre>        if match:</pre></li><li onclick="toggle('pre140275430189824', 'post140275430189824')"><pre>            new_path = path[match.end():]</pre></li><li onclick="toggle('pre140275430189824', 'post140275430189824')"><pre>            for pattern in self.url_patterns:</pre></li><li onclick="toggle('pre140275430189824', 'post140275430189824')"><pre>                try:</pre></li></ol>
+              
+              <ol start="300" class="context-line"><li onclick="toggle('pre140275430189824', 'post140275430189824')"><pre>                    sub_match = pattern.resolve(new_path)</pre> <span>...</span></li></ol>
+              
+                <ol start='301' class="post-context" id="post140275430189824"><li onclick="toggle('pre140275430189824', 'post140275430189824')"><pre>                except Resolver404, e:</pre></li><li onclick="toggle('pre140275430189824', 'post140275430189824')"><pre>                    sub_tried = e.args[0].get(&#39;tried&#39;)</pre></li><li onclick="toggle('pre140275430189824', 'post140275430189824')"><pre>                    if sub_tried is not None:</pre></li><li onclick="toggle('pre140275430189824', 'post140275430189824')"><pre>                        tried.extend([[pattern] + t for t in sub_tried])</pre></li><li onclick="toggle('pre140275430189824', 'post140275430189824')"><pre>                    else:</pre></li><li onclick="toggle('pre140275430189824', 'post140275430189824')"><pre>                        tried.append([pattern])</pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '140275430189824')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v140275430189824">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>new_path</td>
+                    <td class="code"><pre>u&#39;api/category&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>tried</td>
+                    <td class="code"><pre>[[&lt;RegexURLPattern None ^api/texts/versions/(?P&lt;tref&gt;.+)$&gt;],
+ [&lt;RegexURLPattern None ^api/texts/version-status/tree/?(?P&lt;lang&gt;.*)?/?$&gt;],
+ [&lt;RegexURLPattern None ^api/texts/version-status/?$&gt;],
+ [&lt;RegexURLPattern None ^api/texts/parashat_hashavua$&gt;],
+ [&lt;RegexURLPattern None ^api/texts/random?$&gt;],
+ [&lt;RegexURLPattern None ^api/texts/(?P&lt;tref&gt;.+)/(?P&lt;lang&gt;\w\w)/(?P&lt;version&gt;.+)$&gt;],
+ [&lt;RegexURLPattern None ^api/texts/(?P&lt;tref&gt;.+)$&gt;],
+ [&lt;RegexURLPattern None ^api/index/?$&gt;],
+ [&lt;RegexURLPattern None ^api/search-filter-index/?$&gt;],
+ [&lt;RegexURLPattern None ^api/index/titles/?$&gt;],
+ [&lt;RegexURLPattern None ^api/v2/raw/index/(?P&lt;title&gt;.+)$&gt;],
+ [&lt;RegexURLPattern None ^api/v2/index/(?P&lt;title&gt;.+)$&gt;],
+ [&lt;RegexURLPattern None ^api/index/(?P&lt;title&gt;.+)$&gt;],
+ [&lt;RegexURLPattern None ^api/links/bare/(?P&lt;book&gt;.+)/(?P&lt;cat&gt;.+)$&gt;],
+ [&lt;RegexURLPattern None ^api/links/(?P&lt;link_id_or_ref&gt;.*)$&gt;],
+ [&lt;RegexURLPattern None ^api/link-summary/(?P&lt;ref&gt;.+)$&gt;],
+ [&lt;RegexURLPattern None ^api/notes/all$&gt;],
+ [&lt;RegexURLPattern None ^api/notes/(?P&lt;note_id_or_ref&gt;.*)$&gt;],
+ [&lt;RegexURLPattern None ^api/related/(?P&lt;tref&gt;.*)$&gt;],
+ [&lt;RegexURLPattern None ^api/counts/links/(?P&lt;cat1&gt;.+)/(?P&lt;cat2&gt;.+)$&gt;],
+ [&lt;RegexURLPattern None ^api/counts/words/(?P&lt;title&gt;.+)/(?P&lt;version&gt;.+)/(?P&lt;language&gt;.+)$&gt;],
+ [&lt;RegexURLPattern None ^api/counts/(?P&lt;title&gt;.+)$&gt;],
+ [&lt;RegexURLPattern None ^api/preview/(?P&lt;title&gt;.+)$&gt;],
+ [&lt;RegexURLPattern None ^api/terms/(?P&lt;name&gt;.+)$&gt;],
+ [&lt;RegexURLPattern None ^api/name/(?P&lt;name&gt;.+)$&gt;]]</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>sub_match</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>&lt;RegexURLResolver sefaria.urls (None:None) ^/&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>pattern</td>
+                    <td class="code"><pre>&lt;RegexURLPattern None ^api/category/?(?P&lt;path&gt;.+)?$&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>path</td>
+                    <td class="code"><pre>u&#39;/api/category&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>match</td>
+                    <td class="code"><pre>&lt;_sre.SRE_Match object at 0x7f946bd694a8&gt;</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame django">
+          <code>/usr/local/lib/python2.7/site-packages/django/core/urlresolvers.py</code> in <code>resolve</code>
+
+          
+            <div class="context" id="c140275430189752">
+              
+                <ol start="202" class="pre-context" id="pre140275430189752"><li onclick="toggle('pre140275430189752', 'post140275430189752')"><pre>            if kwargs:</pre></li><li onclick="toggle('pre140275430189752', 'post140275430189752')"><pre>                args = ()</pre></li><li onclick="toggle('pre140275430189752', 'post140275430189752')"><pre>            else:</pre></li><li onclick="toggle('pre140275430189752', 'post140275430189752')"><pre>                args = match.groups()</pre></li><li onclick="toggle('pre140275430189752', 'post140275430189752')"><pre>            # In both cases, pass any extra_kwargs as **kwargs.</pre></li><li onclick="toggle('pre140275430189752', 'post140275430189752')"><pre>            kwargs.update(self.default_args)</pre></li><li onclick="toggle('pre140275430189752', 'post140275430189752')"><pre></pre></li></ol>
+              
+              <ol start="209" class="context-line"><li onclick="toggle('pre140275430189752', 'post140275430189752')"><pre>            return ResolverMatch(self.callback, args, kwargs, self.name)</pre> <span>...</span></li></ol>
+              
+                <ol start='210' class="post-context" id="post140275430189752"><li onclick="toggle('pre140275430189752', 'post140275430189752')"><pre></pre></li><li onclick="toggle('pre140275430189752', 'post140275430189752')"><pre>    @property</pre></li><li onclick="toggle('pre140275430189752', 'post140275430189752')"><pre>    def callback(self):</pre></li><li onclick="toggle('pre140275430189752', 'post140275430189752')"><pre>        if self._callback is not None:</pre></li><li onclick="toggle('pre140275430189752', 'post140275430189752')"><pre>            return self._callback</pre></li><li onclick="toggle('pre140275430189752', 'post140275430189752')"><pre></pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '140275430189752')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v140275430189752">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>path</td>
+                    <td class="code"><pre>u&#39;api/category&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>&lt;RegexURLPattern None ^api/category/?(?P&lt;path&gt;.+)?$&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>args</td>
+                    <td class="code"><pre>()</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>match</td>
+                    <td class="code"><pre>&lt;_sre.SRE_Match object at 0x7f946b993990&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>kwargs</td>
+                    <td class="code"><pre>{&#39;path&#39;: None}</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame django">
+          <code>/usr/local/lib/python2.7/site-packages/django/core/urlresolvers.py</code> in <code>callback</code>
+
+          
+            <div class="context" id="c140275430189608">
+              
+                <ol start="209" class="pre-context" id="pre140275430189608"><li onclick="toggle('pre140275430189608', 'post140275430189608')"><pre>            return ResolverMatch(self.callback, args, kwargs, self.name)</pre></li><li onclick="toggle('pre140275430189608', 'post140275430189608')"><pre></pre></li><li onclick="toggle('pre140275430189608', 'post140275430189608')"><pre>    @property</pre></li><li onclick="toggle('pre140275430189608', 'post140275430189608')"><pre>    def callback(self):</pre></li><li onclick="toggle('pre140275430189608', 'post140275430189608')"><pre>        if self._callback is not None:</pre></li><li onclick="toggle('pre140275430189608', 'post140275430189608')"><pre>            return self._callback</pre></li><li onclick="toggle('pre140275430189608', 'post140275430189608')"><pre></pre></li></ol>
+              
+              <ol start="216" class="context-line"><li onclick="toggle('pre140275430189608', 'post140275430189608')"><pre>        self._callback = get_callable(self._callback_str)</pre> <span>...</span></li></ol>
+              
+                <ol start='217' class="post-context" id="post140275430189608"><li onclick="toggle('pre140275430189608', 'post140275430189608')"><pre>        return self._callback</pre></li><li onclick="toggle('pre140275430189608', 'post140275430189608')"><pre></pre></li><li onclick="toggle('pre140275430189608', 'post140275430189608')"><pre>class RegexURLResolver(LocaleRegexProvider):</pre></li><li onclick="toggle('pre140275430189608', 'post140275430189608')"><pre>    def __init__(self, regex, urlconf_name, default_kwargs=None, app_name=None, namespace=None):</pre></li><li onclick="toggle('pre140275430189608', 'post140275430189608')"><pre>        LocaleRegexProvider.__init__(self, regex)</pre></li><li onclick="toggle('pre140275430189608', 'post140275430189608')"><pre>        # urlconf_name is a string representing the module containing URLconfs.</pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '140275430189608')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v140275430189608">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>&lt;RegexURLPattern None ^api/category/?(?P&lt;path&gt;.+)?$&gt;</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame django">
+          <code>/usr/local/lib/python2.7/site-packages/django/utils/functional.py</code> in <code>wrapper</code>
+
+          
+            <div class="context" id="c140275430189464">
+              
+                <ol start="20" class="pre-context" id="pre140275430189464"><li onclick="toggle('pre140275430189464', 'post140275430189464')"><pre>    Only the first num_args are considered when creating the key.</pre></li><li onclick="toggle('pre140275430189464', 'post140275430189464')"><pre>    &quot;&quot;&quot;</pre></li><li onclick="toggle('pre140275430189464', 'post140275430189464')"><pre>    @wraps(func)</pre></li><li onclick="toggle('pre140275430189464', 'post140275430189464')"><pre>    def wrapper(*args):</pre></li><li onclick="toggle('pre140275430189464', 'post140275430189464')"><pre>        mem_args = args[:num_args]</pre></li><li onclick="toggle('pre140275430189464', 'post140275430189464')"><pre>        if mem_args in cache:</pre></li><li onclick="toggle('pre140275430189464', 'post140275430189464')"><pre>            return cache[mem_args]</pre></li></ol>
+              
+              <ol start="27" class="context-line"><li onclick="toggle('pre140275430189464', 'post140275430189464')"><pre>        result = func(*args)</pre> <span>...</span></li></ol>
+              
+                <ol start='28' class="post-context" id="post140275430189464"><li onclick="toggle('pre140275430189464', 'post140275430189464')"><pre>        cache[mem_args] = result</pre></li><li onclick="toggle('pre140275430189464', 'post140275430189464')"><pre>        return result</pre></li><li onclick="toggle('pre140275430189464', 'post140275430189464')"><pre>    return wrapper</pre></li><li onclick="toggle('pre140275430189464', 'post140275430189464')"><pre></pre></li><li onclick="toggle('pre140275430189464', 'post140275430189464')"><pre>class cached_property(object):</pre></li><li onclick="toggle('pre140275430189464', 'post140275430189464')"><pre>    &quot;&quot;&quot;</pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '140275430189464')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v140275430189464">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>mem_args</td>
+                    <td class="code"><pre>(&#39;reader.views.category_api&#39;,)</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>args</td>
+                    <td class="code"><pre>(&#39;reader.views.category_api&#39;,)</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>num_args</td>
+                    <td class="code"><pre>1</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>cache</td>
+                    <td class="code"><pre>{}</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>func</td>
+                    <td class="code"><pre>&lt;function get_callable at 0x7f947c1606e0&gt;</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame django">
+          <code>/usr/local/lib/python2.7/site-packages/django/core/urlresolvers.py</code> in <code>get_callable</code>
+
+          
+            <div class="context" id="c140275430189392">
+              
+                <ol start="85" class="pre-context" id="pre140275430189392"><li onclick="toggle('pre140275430189392', 'post140275430189392')"><pre>    If can_fail is True, lookup_view might be a URL pattern label, so errors</pre></li><li onclick="toggle('pre140275430189392', 'post140275430189392')"><pre>    during the import fail and the string is returned.</pre></li><li onclick="toggle('pre140275430189392', 'post140275430189392')"><pre>    &quot;&quot;&quot;</pre></li><li onclick="toggle('pre140275430189392', 'post140275430189392')"><pre>    if not callable(lookup_view):</pre></li><li onclick="toggle('pre140275430189392', 'post140275430189392')"><pre>        mod_name, func_name = get_mod_func(lookup_view)</pre></li><li onclick="toggle('pre140275430189392', 'post140275430189392')"><pre>        try:</pre></li><li onclick="toggle('pre140275430189392', 'post140275430189392')"><pre>            if func_name != &#39;&#39;:</pre></li></ol>
+              
+              <ol start="92" class="context-line"><li onclick="toggle('pre140275430189392', 'post140275430189392')"><pre>                lookup_view = getattr(import_module(mod_name), func_name)</pre> <span>...</span></li></ol>
+              
+                <ol start='93' class="post-context" id="post140275430189392"><li onclick="toggle('pre140275430189392', 'post140275430189392')"><pre>                if not callable(lookup_view):</pre></li><li onclick="toggle('pre140275430189392', 'post140275430189392')"><pre>                    raise ViewDoesNotExist(</pre></li><li onclick="toggle('pre140275430189392', 'post140275430189392')"><pre>                        &quot;Could not import %s.%s. View is not callable.&quot; %</pre></li><li onclick="toggle('pre140275430189392', 'post140275430189392')"><pre>                        (mod_name, func_name))</pre></li><li onclick="toggle('pre140275430189392', 'post140275430189392')"><pre>        except AttributeError:</pre></li><li onclick="toggle('pre140275430189392', 'post140275430189392')"><pre>            if not can_fail:</pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '140275430189392')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v140275430189392">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>func_name</td>
+                    <td class="code"><pre>&#39;category_api&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>lookup_view</td>
+                    <td class="code"><pre>&#39;reader.views.category_api&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>mod_name</td>
+                    <td class="code"><pre>&#39;reader.views&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>can_fail</td>
+                    <td class="code"><pre>False</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame django">
+          <code>/usr/local/lib/python2.7/site-packages/django/utils/importlib.py</code> in <code>import_module</code>
+
+          
+            <div class="context" id="c140275437203184">
+              
+                <ol start="28" class="pre-context" id="pre140275437203184"><li onclick="toggle('pre140275437203184', 'post140275437203184')"><pre>            raise TypeError(&quot;relative imports require the &#39;package&#39; argument&quot;)</pre></li><li onclick="toggle('pre140275437203184', 'post140275437203184')"><pre>        level = 0</pre></li><li onclick="toggle('pre140275437203184', 'post140275437203184')"><pre>        for character in name:</pre></li><li onclick="toggle('pre140275437203184', 'post140275437203184')"><pre>            if character != &#39;.&#39;:</pre></li><li onclick="toggle('pre140275437203184', 'post140275437203184')"><pre>                break</pre></li><li onclick="toggle('pre140275437203184', 'post140275437203184')"><pre>            level += 1</pre></li><li onclick="toggle('pre140275437203184', 'post140275437203184')"><pre>        name = _resolve_name(name[level:], package, level)</pre></li></ol>
+              
+              <ol start="35" class="context-line"><li onclick="toggle('pre140275437203184', 'post140275437203184')"><pre>    __import__(name)</pre> <span>...</span></li></ol>
+              
+                <ol start='36' class="post-context" id="post140275437203184"><li onclick="toggle('pre140275437203184', 'post140275437203184')"><pre>    return sys.modules[name]</pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '140275437203184')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v140275437203184">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>name</td>
+                    <td class="code"><pre>&#39;reader.views&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>package</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame user">
+          <code>/var/www/draft/reader/views.py</code> in <code>&lt;module&gt;</code>
+
+          
+            <div class="context" id="c140275430189320">
+              
+                <ol start="58" class="pre-context" id="pre140275430189320"><li onclick="toggle('pre140275430189320', 'post140275430189320')"><pre></pre></li><li onclick="toggle('pre140275430189320', 'post140275430189320')"><pre>import logging</pre></li><li onclick="toggle('pre140275430189320', 'post140275430189320')"><pre>logger = logging.getLogger(__name__)</pre></li><li onclick="toggle('pre140275430189320', 'post140275430189320')"><pre></pre></li><li onclick="toggle('pre140275430189320', 'post140275430189320')"><pre>#    #    #</pre></li><li onclick="toggle('pre140275430189320', 'post140275430189320')"><pre># Initialized cache library objects that depend on sefaria.model being completely loaded.</pre></li><li onclick="toggle('pre140275430189320', 'post140275430189320')"><pre>logger.warn(&quot;Initializing library objects.&quot;)</pre></li></ol>
+              
+              <ol start="65" class="context-line"><li onclick="toggle('pre140275430189320', 'post140275430189320')"><pre>library.get_toc_tree()</pre> <span>...</span></li></ol>
+              
+                <ol start='66' class="post-context" id="post140275430189320"><li onclick="toggle('pre140275430189320', 'post140275430189320')"><pre>library.build_full_auto_completer()</pre></li><li onclick="toggle('pre140275430189320', 'post140275430189320')"><pre>library.build_ref_auto_completer()</pre></li><li onclick="toggle('pre140275430189320', 'post140275430189320')"><pre>#    #    #</pre></li><li onclick="toggle('pre140275430189320', 'post140275430189320')"><pre></pre></li><li onclick="toggle('pre140275430189320', 'post140275430189320')"><pre>@ensure_csrf_cookie</pre></li><li onclick="toggle('pre140275430189320', 'post140275430189320')"><pre>def reader(request, tref, lang=None, version=None):</pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '140275430189320')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v140275430189320">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>TermSchemeSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>flatten_jagged_array</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>version_state</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>record_version_deletion</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>recent_public_tags</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>text</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>bleach</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>user_tags</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>datetime</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>requires_csrf_token</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>lexicon</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>unread_notifications_count_for_user</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>log_text</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>shuffle</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>TitledTreeNode</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>summaries</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_maximal_collapsed_activity</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_sheets_for_ref</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>redirect</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>hebrew_term</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>django_cache_decorator</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>find_zero</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>group</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>encode_hebrew_numeral</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>next_untranslated_text_in_category</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>base64</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>section_to_daf</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>TimePeriod</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_or_make_summary_node</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>FollowersSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>garden</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>ObjectId</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>titlecase</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>PersonSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>__file__</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>NoteSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>db</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>HistorySet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>choice</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>format_object_for_client</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>user_started_text</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>JaggedArrayNode</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>Http404</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>text_preview</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>GardenStop</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>csrf_protect</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>IndexQueue</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>GardenStopRelationSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>string_overlap</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>Layer</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_object_or_404</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>record_index_deletion</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>list_chunks</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>PersonRelationship</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>is_text_empty</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>dumps</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>urlquote</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>is_hebrew</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>IndexQueueSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>DictionaryEntry</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>log_update</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_link_counts</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>Dictionary</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>REDIRECTABLE_DOMAIN_LANGUAGES</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>format_note_object_for_client</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>Index</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>zlib</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>RequestContext</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>NODE_HOST</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_topics</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>GlobalNotification</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_notes</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>TextChunk</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>library</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>Version</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>HTMLParser</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>ArrayMapNode</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>list_depth</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>user_sheets</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>Ref</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>mark_locked</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>category</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>random_untranslated_text_in_category</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>RashiDictionaryEntry</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>TranslationRequest</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>notification</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>jsonResponse</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>BookNameError</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>urllib</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>in_directory</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>re</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_all_subclass_attribute</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>tracker</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>Link</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>TimePeriodSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>next_untranslated_ref_in_text</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>LinkSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>random_untranslated_ref_in_text</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>public_sheets</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>GlobalNotificationSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>InterruptingMessage</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>login_required</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>Term</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>sheet_to_dict</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>VersionSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>user_profile</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>__builtins__</td>
+                    <td class="code"><pre>{&#39;ArithmeticError&#39;: &lt;type &#39;exceptions.ArithmeticError&#39;&gt;,
+ &#39;AssertionError&#39;: &lt;type &#39;exceptions.AssertionError&#39;&gt;,
+ &#39;AttributeError&#39;: &lt;type &#39;exceptions.AttributeError&#39;&gt;,
+ &#39;BaseException&#39;: &lt;type &#39;exceptions.BaseException&#39;&gt;,
+ &#39;BufferError&#39;: &lt;type &#39;exceptions.BufferError&#39;&gt;,
+ &#39;BytesWarning&#39;: &lt;type &#39;exceptions.BytesWarning&#39;&gt;,
+ &#39;DeprecationWarning&#39;: &lt;type &#39;exceptions.DeprecationWarning&#39;&gt;,
+ &#39;EOFError&#39;: &lt;type &#39;exceptions.EOFError&#39;&gt;,
+ &#39;Ellipsis&#39;: Ellipsis,
+ &#39;EnvironmentError&#39;: &lt;type &#39;exceptions.EnvironmentError&#39;&gt;,
+ &#39;Exception&#39;: &lt;type &#39;exceptions.Exception&#39;&gt;,
+ &#39;False&#39;: False,
+ &#39;FloatingPointError&#39;: &lt;type &#39;exceptions.FloatingPointError&#39;&gt;,
+ &#39;FutureWarning&#39;: &lt;type &#39;exceptions.FutureWarning&#39;&gt;,
+ &#39;GeneratorExit&#39;: &lt;type &#39;exceptions.GeneratorExit&#39;&gt;,
+ &#39;IOError&#39;: &lt;type &#39;exceptions.IOError&#39;&gt;,
+ &#39;ImportError&#39;: &lt;type &#39;exceptions.ImportError&#39;&gt;,
+ &#39;ImportWarning&#39;: &lt;type &#39;exceptions.ImportWarning&#39;&gt;,
+ &#39;IndentationError&#39;: &lt;type &#39;exceptions.IndentationError&#39;&gt;,
+ &#39;IndexError&#39;: &lt;type &#39;exceptions.IndexError&#39;&gt;,
+ &#39;KeyError&#39;: &lt;type &#39;exceptions.KeyError&#39;&gt;,
+ &#39;KeyboardInterrupt&#39;: &lt;type &#39;exceptions.KeyboardInterrupt&#39;&gt;,
+ &#39;LookupError&#39;: &lt;type &#39;exceptions.LookupError&#39;&gt;,
+ &#39;MemoryError&#39;: &lt;type &#39;exceptions.MemoryError&#39;&gt;,
+ &#39;NameError&#39;: &lt;type &#39;exceptions.NameError&#39;&gt;,
+ &#39;None&#39;: None,
+ &#39;NotImplemented&#39;: NotImplemented,
+ &#39;NotImplementedError&#39;: &lt;type &#39;exceptions.NotImplementedError&#39;&gt;,
+ &#39;OSError&#39;: &lt;type &#39;exceptions.OSError&#39;&gt;,
+ &#39;OverflowError&#39;: &lt;type &#39;exceptions.OverflowError&#39;&gt;,
+ &#39;PendingDeprecationWarning&#39;: &lt;type &#39;exceptions.PendingDeprecationWarning&#39;&gt;,
+ &#39;ReferenceError&#39;: &lt;type &#39;exceptions.ReferenceError&#39;&gt;,
+ &#39;RuntimeError&#39;: &lt;type &#39;exceptions.RuntimeError&#39;&gt;,
+ &#39;RuntimeWarning&#39;: &lt;type &#39;exceptions.RuntimeWarning&#39;&gt;,
+ &#39;StandardError&#39;: &lt;type &#39;exceptions.StandardError&#39;&gt;,
+ &#39;StopIteration&#39;: &lt;type &#39;exceptions.StopIteration&#39;&gt;,
+ &#39;SyntaxError&#39;: &lt;type &#39;exceptions.SyntaxError&#39;&gt;,
+ &#39;SyntaxWarning&#39;: &lt;type &#39;exceptions.SyntaxWarning&#39;&gt;,
+ &#39;SystemError&#39;: &lt;type &#39;exceptions.SystemError&#39;&gt;,
+ &#39;SystemExit&#39;: &lt;type &#39;exceptions.SystemExit&#39;&gt;,
+ &#39;TabError&#39;: &lt;type &#39;exceptions.TabError&#39;&gt;,
+ &#39;True&#39;: True,
+ &#39;TypeError&#39;: &lt;type &#39;exceptions.TypeError&#39;&gt;,
+ &#39;UnboundLocalError&#39;: &lt;type &#39;exceptions.UnboundLocalError&#39;&gt;,
+ &#39;UnicodeDecodeError&#39;: &lt;type &#39;exceptions.UnicodeDecodeError&#39;&gt;,
+ &#39;UnicodeEncodeError&#39;: &lt;type &#39;exceptions.UnicodeEncodeError&#39;&gt;,
+ &#39;UnicodeError&#39;: &lt;type &#39;exceptions.UnicodeError&#39;&gt;,
+ &#39;UnicodeTranslateError&#39;: &lt;type &#39;exceptions.UnicodeTranslateError&#39;&gt;,
+ &#39;UnicodeWarning&#39;: &lt;type &#39;exceptions.UnicodeWarning&#39;&gt;,
+ &#39;UserWarning&#39;: &lt;type &#39;exceptions.UserWarning&#39;&gt;,
+ &#39;ValueError&#39;: &lt;type &#39;exceptions.ValueError&#39;&gt;,
+ &#39;Warning&#39;: &lt;type &#39;exceptions.Warning&#39;&gt;,
+ &#39;ZeroDivisionError&#39;: &lt;type &#39;exceptions.ZeroDivisionError&#39;&gt;,
+ &#39;__debug__&#39;: True,
+ &#39;__doc__&#39;: &quot;Built-in functions, exceptions, and other objects.\n\nNoteworthy: None is the `nil&#39; object; Ellipsis represents `...&#39; in slices.&quot;,
+ &#39;__import__&#39;: &lt;built-in function __import__&gt;,
+ &#39;__name__&#39;: &#39;__builtin__&#39;,
+ &#39;__package__&#39;: None,
+ &#39;abs&#39;: &lt;built-in function abs&gt;,
+ &#39;all&#39;: &lt;built-in function all&gt;,
+ &#39;any&#39;: &lt;built-in function any&gt;,
+ &#39;apply&#39;: &lt;built-in function apply&gt;,
+ &#39;basestring&#39;: &lt;type &#39;basestring&#39;&gt;,
+ &#39;bin&#39;: &lt;built-in function bin&gt;,
+ &#39;bool&#39;: &lt;type &#39;bool&#39;&gt;,
+ &#39;buffer&#39;: &lt;type &#39;buffer&#39;&gt;,
+ &#39;bytearray&#39;: &lt;type &#39;bytearray&#39;&gt;,
+ &#39;bytes&#39;: &lt;type &#39;str&#39;&gt;,
+ &#39;callable&#39;: &lt;built-in function callable&gt;,
+ &#39;chr&#39;: &lt;built-in function chr&gt;,
+ &#39;classmethod&#39;: &lt;type &#39;classmethod&#39;&gt;,
+ &#39;cmp&#39;: &lt;built-in function cmp&gt;,
+ &#39;coerce&#39;: &lt;built-in function coerce&gt;,
+ &#39;compile&#39;: &lt;built-in function compile&gt;,
+ &#39;complex&#39;: &lt;type &#39;complex&#39;&gt;,
+ &#39;copyright&#39;: Copyright (c) 2001-2014 Python Software Foundation.
+All Rights Reserved.
+
+Copyright (c) 2000 BeOpen.com.
+All Rights Reserved.
+
+Copyright (c) 1995-2001 Corporation for National Research Initiatives.
+All Rights Reserved.
+
+Copyright (c) 1991-1995 Stichting Mathematisch Centrum, Amsterdam.
+All Rights Reserved.,
+ &#39;credits&#39;:     Thanks to CWI, CNRI, BeOpen.com, Zope Corporation and a cast of thousands
+    for supporting Python development.  See www.python.org for more information.,
+ &#39;delattr&#39;: &lt;built-in function delattr&gt;,
+ &#39;dict&#39;: &lt;type &#39;dict&#39;&gt;,
+ &#39;dir&#39;: &lt;built-in function dir&gt;,
+ &#39;divmod&#39;: &lt;built-in function divmod&gt;,
+ &#39;enumerate&#39;: &lt;type &#39;enumerate&#39;&gt;,
+ &#39;eval&#39;: &lt;built-in function eval&gt;,
+ &#39;execfile&#39;: &lt;built-in function execfile&gt;,
+ &#39;exit&#39;: Use exit() or Ctrl-D (i.e. EOF) to exit,
+ &#39;file&#39;: &lt;type &#39;file&#39;&gt;,
+ &#39;filter&#39;: &lt;built-in function filter&gt;,
+ &#39;float&#39;: &lt;type &#39;float&#39;&gt;,
+ &#39;format&#39;: &lt;built-in function format&gt;,
+ &#39;frozenset&#39;: &lt;type &#39;frozenset&#39;&gt;,
+ &#39;getattr&#39;: &lt;built-in function getattr&gt;,
+ &#39;globals&#39;: &lt;built-in function globals&gt;,
+ &#39;hasattr&#39;: &lt;built-in function hasattr&gt;,
+ &#39;hash&#39;: &lt;built-in function hash&gt;,
+ &#39;help&#39;: Type help() for interactive help, or help(object) for help about object.,
+ &#39;hex&#39;: &lt;built-in function hex&gt;,
+ &#39;id&#39;: &lt;built-in function id&gt;,
+ &#39;input&#39;: &lt;built-in function input&gt;,
+ &#39;int&#39;: &lt;type &#39;int&#39;&gt;,
+ &#39;intern&#39;: &lt;built-in function intern&gt;,
+ &#39;isinstance&#39;: &lt;built-in function isinstance&gt;,
+ &#39;issubclass&#39;: &lt;built-in function issubclass&gt;,
+ &#39;iter&#39;: &lt;built-in function iter&gt;,
+ &#39;len&#39;: &lt;built-in function len&gt;,
+ &#39;license&#39;: Type license() to see the full license text,
+ &#39;list&#39;: &lt;type &#39;list&#39;&gt;,
+ &#39;locals&#39;: &lt;built-in function locals&gt;,
+ &#39;long&#39;: &lt;type &#39;long&#39;&gt;,
+ &#39;map&#39;: &lt;built-in function map&gt;,
+ &#39;max&#39;: &lt;built-in function max&gt;,
+ &#39;memoryview&#39;: &lt;type &#39;memoryview&#39;&gt;,
+ &#39;min&#39;: &lt;built-in function min&gt;,
+ &#39;next&#39;: &lt;built-in function next&gt;,
+ &#39;object&#39;: &lt;type &#39;object&#39;&gt;,
+ &#39;oct&#39;: &lt;built-in function oct&gt;,
+ &#39;open&#39;: &lt;built-in function open&gt;,
+ &#39;ord&#39;: &lt;built-in function ord&gt;,
+ &#39;pow&#39;: &lt;built-in function pow&gt;,
+ &#39;print&#39;: &lt;built-in function print&gt;,
+ &#39;property&#39;: &lt;type &#39;property&#39;&gt;,
+ &#39;quit&#39;: Use quit() or Ctrl-D (i.e. EOF) to exit,
+ &#39;range&#39;: &lt;built-in function range&gt;,
+ &#39;raw_input&#39;: &lt;built-in function raw_input&gt;,
+ &#39;reduce&#39;: &lt;built-in function reduce&gt;,
+ &#39;reload&#39;: &lt;built-in function reload&gt;,
+ &#39;repr&#39;: &lt;built-in function repr&gt;,
+ &#39;reversed&#39;: &lt;type &#39;reversed&#39;&gt;,
+ &#39;round&#39;: &lt;built-in function round&gt;,
+ &#39;set&#39;: &lt;type &#39;set&#39;&gt;,
+ &#39;setattr&#39;: &lt;built-in function setattr&gt;,
+ &#39;slice&#39;: &lt;type &#39;slice&#39;&gt;,
+ &#39;sorted&#39;: &lt;built-in function sorted&gt;,
+ &#39;staticmethod&#39;: &lt;type &#39;staticmethod&#39;&gt;,
+ &#39;str&#39;: &lt;type &#39;str&#39;&gt;,
+ &#39;sum&#39;: &lt;built-in function sum&gt;,
+ &#39;super&#39;: &lt;type &#39;super&#39;&gt;,
+ &#39;tuple&#39;: &lt;type &#39;tuple&#39;&gt;,
+ &#39;type&#39;: &lt;type &#39;type&#39;&gt;,
+ &#39;unichr&#39;: &lt;built-in function unichr&gt;,
+ &#39;unicode&#39;: &lt;type &#39;unicode&#39;&gt;,
+ &#39;vars&#39;: &lt;built-in function vars&gt;,
+ &#39;xrange&#39;: &lt;type &#39;xrange&#39;&gt;,
+ &#39;zip&#39;: &lt;built-in function zip&gt;}</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_review_score_since_last_edit</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>MLStripper</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>LockSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>VersionStateSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>dependencies</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>IndexSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>annotate_user_list</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>has_cantillation</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>__name__</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>_</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>PersonRelationshipTypeSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>Lexicon</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>logging</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>socket</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>JaggedArray</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>interrupting_message</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>text_history</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>USE_VARNISH</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>TextFamily</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>queue</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>DOMAIN_LANGUAGES</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>place</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>release_lock</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>expire_locks</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>Place</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>Category</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>TermSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_last_edit_date</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>pprint</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>Group</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>sefaria</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>Notification</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_all_subclasses</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>daf_to_section</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>loader</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>Note</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>group_sheets</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_current_review</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_top_sheets</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>replace_using_regex</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>UserProfile</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>log_add</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>merge_texts</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_last_edit</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>p929</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_directory_content</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>union</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>NumberedTitledTreeNode</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_size</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>json</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>CategorySet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>User</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>TranslationRequestSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>check_lock</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>__doc__</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>schema</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>GroupSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>StateNode</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>translation_request</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>encode_hebrew_daf</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>rtrim_jagged_string_array</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>DuplicateRecordError</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>deserialize_tree</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>Person</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>link</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>make_leaderboard</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>iri_to_uri</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>logger</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>History</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>FolloweesSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>sample</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>Set</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>count_by_regex</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>short_to_long_lang_code</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>WordForm</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>csrf_exempt</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>LexiconEntrySet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>FollowRelationship</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>user_link</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_links</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>following</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>LayerSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>delete_review</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>history</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>save_review</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>layer</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>hebrew_plural</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>PersonRelationshipSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>PartialRefInputError</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>lock</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>abstract</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>VersionState</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>LexiconEntry</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_reviews</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>topic</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>WordFormSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>make_leaderboard_condition</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>catch_error_as_json</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>LexiconLookupAggregator</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>USE_NODE</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>HttpResponse</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>refresh_all_states</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>strip_tags</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>SchemaNode</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>Garden</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>cache_page</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>person</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>GardenStopSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>GardenSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>__package__</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>note</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>make_tag_list</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>StrongsDictionaryEntry</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>validate_review</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>dateutil</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_book_link_collection</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_book_category_linkset</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>http</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>timedelta</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>PersonRelationshipType</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>InputError</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>urllib2</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>strip_cantillation</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>NoVersionFoundError</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>td_format</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>date</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>text_at_revision</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>TermScheme</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>set_lock</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>log_delete</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>Lock</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_sheets_by_tag</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>urlparse</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>NotificationSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>PlaceSet</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>render_to_response</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>ensure_csrf_cookie</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>time</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>model</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>render_to_string</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>GardenStopRelation</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>top_contributors</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame user">
+          <code>/var/www/draft/sefaria/model/text.py</code> in <code>get_toc_tree</code>
+
+          
+            <div class="context" id="c140275430189248">
+              
+                <ol start="3867" class="pre-context" id="pre140275430189248"><li onclick="toggle('pre140275430189248', 'post140275430189248')"><pre>                self._toc_json = json.dumps(self.get_toc())</pre></li><li onclick="toggle('pre140275430189248', 'post140275430189248')"><pre>                scache.set_cache_elem(&#39;toc_json_cache&#39;, self._toc_json)</pre></li><li onclick="toggle('pre140275430189248', 'post140275430189248')"><pre>        return self._toc_json</pre></li><li onclick="toggle('pre140275430189248', 'post140275430189248')"><pre></pre></li><li onclick="toggle('pre140275430189248', 'post140275430189248')"><pre>    def get_toc_tree(self, rebuild=False):</pre></li><li onclick="toggle('pre140275430189248', 'post140275430189248')"><pre>        if rebuild or not self._toc_tree:</pre></li><li onclick="toggle('pre140275430189248', 'post140275430189248')"><pre>            from sefaria.model.category import TocTree</pre></li></ol>
+              
+              <ol start="3874" class="context-line"><li onclick="toggle('pre140275430189248', 'post140275430189248')"><pre>            self._toc_tree = TocTree(self)</pre> <span>...</span></li></ol>
+              
+                <ol start='3875' class="post-context" id="post140275430189248"><li onclick="toggle('pre140275430189248', 'post140275430189248')"><pre>        return self._toc_tree</pre></li><li onclick="toggle('pre140275430189248', 'post140275430189248')"><pre></pre></li><li onclick="toggle('pre140275430189248', 'post140275430189248')"><pre>    def get_search_filter_toc(self, rebuild=False):</pre></li><li onclick="toggle('pre140275430189248', 'post140275430189248')"><pre>        &quot;&quot;&quot;</pre></li><li onclick="toggle('pre140275430189248', 'post140275430189248')"><pre>        Returns table of contents object from cache,</pre></li><li onclick="toggle('pre140275430189248', 'post140275430189248')"><pre>        DB or by generating it, as needed.</pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '140275430189248')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v140275430189248">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>TocTree</td>
+                    <td class="code"><pre>&lt;class &#39;sefaria.model.category.TocTree&#39;&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>rebuild</td>
+                    <td class="code"><pre>False</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>&lt;sefaria.model.text.Library object at 0x7f9475835890&gt;</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame user">
+          <code>/var/www/draft/sefaria/model/category.py</code> in <code>__init__</code>
+
+          
+            <div class="context" id="c140275430189104">
+              
+                <ol start="164" class="pre-context" id="pre140275430189104"><li onclick="toggle('pre140275430189104', 'post140275430189104')"><pre>        # Store first section ref.</pre></li><li onclick="toggle('pre140275430189104', 'post140275430189104')"><pre>        vss = db.vstate.find({}, {&quot;title&quot;: 1, &quot;first_section_ref&quot;: 1})</pre></li><li onclick="toggle('pre140275430189104', 'post140275430189104')"><pre>        self._vs_lookup = {vs[&quot;title&quot;]: {</pre></li><li onclick="toggle('pre140275430189104', 'post140275430189104')"><pre>            &quot;first_section_ref&quot;: vs.get(&quot;first_section_ref&quot;)</pre></li><li onclick="toggle('pre140275430189104', 'post140275430189104')"><pre>        } for vs in vss}</pre></li><li onclick="toggle('pre140275430189104', 'post140275430189104')"><pre></pre></li><li onclick="toggle('pre140275430189104', 'post140275430189104')"><pre>        # Build Category object tree from stored Category objects</pre></li></ol>
+              
+              <ol start="171" class="context-line"><li onclick="toggle('pre140275430189104', 'post140275430189104')"><pre>        for c in CategorySet(sort=[(&quot;depth&quot;, 1)]):</pre> <span>...</span></li></ol>
+              
+                <ol start='172' class="post-context" id="post140275430189104"><li onclick="toggle('pre140275430189104', 'post140275430189104')"><pre>            self._add_category(c)</pre></li><li onclick="toggle('pre140275430189104', 'post140275430189104')"><pre></pre></li><li onclick="toggle('pre140275430189104', 'post140275430189104')"><pre>        # Get all of the first comment links</pre></li><li onclick="toggle('pre140275430189104', 'post140275430189104')"><pre>        ls = db.links.find({&quot;is_first_comment&quot;: True}, {&quot;first_comment_indexes&quot;:1, &quot;first_comment_section_ref&quot;:1})</pre></li><li onclick="toggle('pre140275430189104', 'post140275430189104')"><pre>        self._first_comment_lookup = {frozenset(l[&quot;first_comment_indexes&quot;]): l[&quot;first_comment_section_ref&quot;] for l in ls}</pre></li><li onclick="toggle('pre140275430189104', 'post140275430189104')"><pre></pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '140275430189104')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v140275430189104">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>&lt;sefaria.model.category.TocTree object at 0x7f946b2b13d0&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>vss</td>
+                    <td class="code"><pre>&lt;pymongo.cursor.Cursor object at 0x7f945fe42f90&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>lib</td>
+                    <td class="code"><pre>&lt;sefaria.model.text.Library object at 0x7f9475835890&gt;</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame user">
+          <code>/var/www/draft/sefaria/model/abstract.py</code> in <code>__iter__</code>
+
+          
+            <div class="context" id="c140275430189032">
+              
+                <ol start="263" class="pre-context" id="pre140275430189032"><li onclick="toggle('pre140275430189032', 'post140275430189032')"><pre>        self.has_more = limit != 0 and self.raw_records.count() == limit</pre></li><li onclick="toggle('pre140275430189032', 'post140275430189032')"><pre>        self.records = None</pre></li><li onclick="toggle('pre140275430189032', 'post140275430189032')"><pre>        self.current = 0</pre></li><li onclick="toggle('pre140275430189032', 'post140275430189032')"><pre>        self.max = None</pre></li><li onclick="toggle('pre140275430189032', 'post140275430189032')"><pre>        self._local_iter = None</pre></li><li onclick="toggle('pre140275430189032', 'post140275430189032')"><pre></pre></li><li onclick="toggle('pre140275430189032', 'post140275430189032')"><pre>    def __iter__(self):</pre></li></ol>
+              
+              <ol start="270" class="context-line"><li onclick="toggle('pre140275430189032', 'post140275430189032')"><pre>        self._read_records()</pre> <span>...</span></li></ol>
+              
+                <ol start='271' class="post-context" id="post140275430189032"><li onclick="toggle('pre140275430189032', 'post140275430189032')"><pre>        return iter(self.records)</pre></li><li onclick="toggle('pre140275430189032', 'post140275430189032')"><pre></pre></li><li onclick="toggle('pre140275430189032', 'post140275430189032')"><pre>    def __getitem__(self, item):</pre></li><li onclick="toggle('pre140275430189032', 'post140275430189032')"><pre>        self._read_records()</pre></li><li onclick="toggle('pre140275430189032', 'post140275430189032')"><pre>        return self.records[item]</pre></li><li onclick="toggle('pre140275430189032', 'post140275430189032')"><pre></pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '140275430189032')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v140275430189032">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>&lt;sefaria.model.category.CategorySet object at 0x7f945ff016d0&gt;</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame user">
+          <code>/var/www/draft/sefaria/model/abstract.py</code> in <code>_read_records</code>
+
+          
+            <div class="context" id="c140275430188888">
+              
+                <ol start="274" class="pre-context" id="pre140275430188888"><li onclick="toggle('pre140275430188888', 'post140275430188888')"><pre>        self._read_records()</pre></li><li onclick="toggle('pre140275430188888', 'post140275430188888')"><pre>        return self.records[item]</pre></li><li onclick="toggle('pre140275430188888', 'post140275430188888')"><pre></pre></li><li onclick="toggle('pre140275430188888', 'post140275430188888')"><pre>    def _read_records(self):</pre></li><li onclick="toggle('pre140275430188888', 'post140275430188888')"><pre>        if self.records is None:</pre></li><li onclick="toggle('pre140275430188888', 'post140275430188888')"><pre>            self.records = []</pre></li><li onclick="toggle('pre140275430188888', 'post140275430188888')"><pre>            for rec in self.raw_records:</pre></li></ol>
+              
+              <ol start="281" class="context-line"><li onclick="toggle('pre140275430188888', 'post140275430188888')"><pre>                self.records.append(self.recordClass(attrs=rec))</pre> <span>...</span></li></ol>
+              
+                <ol start='282' class="post-context" id="post140275430188888"><li onclick="toggle('pre140275430188888', 'post140275430188888')"><pre>            self.max = len(self.records)</pre></li><li onclick="toggle('pre140275430188888', 'post140275430188888')"><pre></pre></li><li onclick="toggle('pre140275430188888', 'post140275430188888')"><pre>    def __len__(self):</pre></li><li onclick="toggle('pre140275430188888', 'post140275430188888')"><pre>        if self.max:</pre></li><li onclick="toggle('pre140275430188888', 'post140275430188888')"><pre>            return self.max</pre></li><li onclick="toggle('pre140275430188888', 'post140275430188888')"><pre>        else:</pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '140275430188888')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v140275430188888">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>rec</td>
+                    <td class="code"><pre>{u&#39;_id&#39;: ObjectId(&#39;59a554cce779891638a96985&#39;),
+ u&#39;depth&#39;: 4,
+ u&#39;lastPath&#39;: u&#39;Maaseh Rokeah&#39;,
+ u&#39;path&#39;: [u&#39;Halakhah&#39;, u&#39;Mishneh Torah&#39;, u&#39;Commentary&#39;, u&#39;Maaseh Rokeah&#39;],
+ u&#39;sharedTitle&#39;: u&#39;Maaseh Rokeah&#39;}</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>&lt;sefaria.model.category.CategorySet object at 0x7f945ff016d0&gt;</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame user">
+          <code>/var/www/draft/sefaria/model/abstract.py</code> in <code>__init__</code>
+
+          
+            <div class="context" id="c140275430188816">
+              
+                <ol start="36" class="pre-context" id="pre140275430188816"><li onclick="toggle('pre140275430188816', 'post140275430188816')"><pre>    history_noun = None  # Label for history records</pre></li><li onclick="toggle('pre140275430188816', 'post140275430188816')"><pre></pre></li><li onclick="toggle('pre140275430188816', 'post140275430188816')"><pre>    def __init__(self, attrs=None):</pre></li><li onclick="toggle('pre140275430188816', 'post140275430188816')"><pre>        if attrs is None:</pre></li><li onclick="toggle('pre140275430188816', 'post140275430188816')"><pre>            attrs = {}</pre></li><li onclick="toggle('pre140275430188816', 'post140275430188816')"><pre>        self._init_defaults()</pre></li><li onclick="toggle('pre140275430188816', 'post140275430188816')"><pre>        self.pkeys_orig_values = {}</pre></li></ol>
+              
+              <ol start="43" class="context-line"><li onclick="toggle('pre140275430188816', 'post140275430188816')"><pre>        self.load_from_dict(attrs, True)</pre> <span>...</span></li></ol>
+              
+                <ol start='44' class="post-context" id="post140275430188816"><li onclick="toggle('pre140275430188816', 'post140275430188816')"><pre>            </pre></li><li onclick="toggle('pre140275430188816', 'post140275430188816')"><pre>    def load_by_id(self, _id=None):</pre></li><li onclick="toggle('pre140275430188816', 'post140275430188816')"><pre>        if _id is None:</pre></li><li onclick="toggle('pre140275430188816', 'post140275430188816')"><pre>            raise Exception(type(self).__name__ + &quot;.load() expects an _id as an arguemnt. None provided.&quot;)</pre></li><li onclick="toggle('pre140275430188816', 'post140275430188816')"><pre></pre></li><li onclick="toggle('pre140275430188816', 'post140275430188816')"><pre>        if isinstance(_id, basestring):</pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '140275430188816')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v140275430188816">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>Category().load({&#39;path&#39;: [&quot;Halakhah&quot;, &quot;Mishneh Torah&quot;, &quot;Commentary&quot;, &quot;Maaseh Rokeah&quot;]})</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>attrs</td>
+                    <td class="code"><pre>{u&#39;_id&#39;: ObjectId(&#39;59a554cce779891638a96985&#39;),
+ u&#39;depth&#39;: 4,
+ u&#39;lastPath&#39;: u&#39;Maaseh Rokeah&#39;,
+ u&#39;path&#39;: [u&#39;Halakhah&#39;, u&#39;Mishneh Torah&#39;, u&#39;Commentary&#39;, u&#39;Maaseh Rokeah&#39;],
+ u&#39;sharedTitle&#39;: u&#39;Maaseh Rokeah&#39;}</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame user">
+          <code>/var/www/draft/sefaria/model/abstract.py</code> in <code>load_from_dict</code>
+
+          
+            <div class="context" id="c140275430188672">
+              
+                <ol start="78" class="pre-context" id="pre140275430188672"><li onclick="toggle('pre140275430188672', 'post140275430188672')"><pre>        :param bool is_init: Indicates whether this dictionary is initializing (as opposed to updating) an object.  If this is true, the primary keys are tracked from this load, and any change will trigger an &#39;attributeChange&#39; notification.</pre></li><li onclick="toggle('pre140275430188672', 'post140275430188672')"><pre>        :return: the object</pre></li><li onclick="toggle('pre140275430188672', 'post140275430188672')"><pre>        &quot;&quot;&quot;</pre></li><li onclick="toggle('pre140275430188672', 'post140275430188672')"><pre>        for key, value in d.items():</pre></li><li onclick="toggle('pre140275430188672', 'post140275430188672')"><pre>            setattr(self, key, value)</pre></li><li onclick="toggle('pre140275430188672', 'post140275430188672')"><pre>        if is_init and not self.is_new():</pre></li><li onclick="toggle('pre140275430188672', 'post140275430188672')"><pre>            self._set_pkeys()</pre></li></ol>
+              
+              <ol start="85" class="context-line"><li onclick="toggle('pre140275430188672', 'post140275430188672')"><pre>        self._set_derived_attributes()</pre> <span>...</span></li></ol>
+              
+                <ol start='86' class="post-context" id="post140275430188672"><li onclick="toggle('pre140275430188672', 'post140275430188672')"><pre>        return self</pre></li><li onclick="toggle('pre140275430188672', 'post140275430188672')"><pre></pre></li><li onclick="toggle('pre140275430188672', 'post140275430188672')"><pre>    def update(self, query, attrs):</pre></li><li onclick="toggle('pre140275430188672', 'post140275430188672')"><pre>        &quot;&quot;&quot;</pre></li><li onclick="toggle('pre140275430188672', 'post140275430188672')"><pre>        :param query: Query to find existing object to update.</pre></li><li onclick="toggle('pre140275430188672', 'post140275430188672')"><pre>        :param attrs: Dictionary of attributes to update.</pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '140275430188672')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v140275430188672">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>is_init</td>
+                    <td class="code"><pre>True</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>Category().load({&#39;path&#39;: [&quot;Halakhah&quot;, &quot;Mishneh Torah&quot;, &quot;Commentary&quot;, &quot;Maaseh Rokeah&quot;]})</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>key</td>
+                    <td class="code"><pre>u&#39;lastPath&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>value</td>
+                    <td class="code"><pre>u&#39;Maaseh Rokeah&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>d</td>
+                    <td class="code"><pre>{u&#39;_id&#39;: ObjectId(&#39;59a554cce779891638a96985&#39;),
+ u&#39;depth&#39;: 4,
+ u&#39;lastPath&#39;: u&#39;Maaseh Rokeah&#39;,
+ u&#39;path&#39;: [u&#39;Halakhah&#39;, u&#39;Mishneh Torah&#39;, u&#39;Commentary&#39;, u&#39;Maaseh Rokeah&#39;],
+ u&#39;sharedTitle&#39;: u&#39;Maaseh Rokeah&#39;}</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame user">
+          <code>/var/www/draft/sefaria/model/category.py</code> in <code>_set_derived_attributes</code>
+
+          
+            <div class="context" id="c140275430188528">
+              
+                <ol start="31" class="pre-context" id="pre140275430188528"><li onclick="toggle('pre140275430188528', 'post140275430188528')"><pre>        return u&quot;{}().load({{&#39;path&#39;: [{}]}})&quot;.format(self.__class__.__name__, u&quot;, &quot;.join(map(lambda x: u&#39;&quot;{}&quot;&#39;.format(x), self.path)))</pre></li><li onclick="toggle('pre140275430188528', 'post140275430188528')"><pre></pre></li><li onclick="toggle('pre140275430188528', 'post140275430188528')"><pre>    def _init_defaults(self):</pre></li><li onclick="toggle('pre140275430188528', 'post140275430188528')"><pre>        self._init_title_defaults()</pre></li><li onclick="toggle('pre140275430188528', 'post140275430188528')"><pre>        self.sharedTitle = None</pre></li><li onclick="toggle('pre140275430188528', 'post140275430188528')"><pre></pre></li><li onclick="toggle('pre140275430188528', 'post140275430188528')"><pre>    def _set_derived_attributes(self):</pre></li></ol>
+              
+              <ol start="38" class="context-line"><li onclick="toggle('pre140275430188528', 'post140275430188528')"><pre>        self._load_title_group()</pre> <span>...</span></li></ol>
+              
+                <ol start='39' class="post-context" id="post140275430188528"><li onclick="toggle('pre140275430188528', 'post140275430188528')"><pre></pre></li><li onclick="toggle('pre140275430188528', 'post140275430188528')"><pre>    def change_key_name(self, name):</pre></li><li onclick="toggle('pre140275430188528', 'post140275430188528')"><pre>        # Doesn&#39;t yet support going from shared term to local or vise-versa.</pre></li><li onclick="toggle('pre140275430188528', 'post140275430188528')"><pre>        if self.sharedTitle and schema.Term().load({&quot;name&quot;: name}):</pre></li><li onclick="toggle('pre140275430188528', 'post140275430188528')"><pre>            self.sharedTitle = name</pre></li><li onclick="toggle('pre140275430188528', 'post140275430188528')"><pre>            self._process_terms()</pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '140275430188528')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v140275430188528">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>Category().load({&#39;path&#39;: [&quot;Halakhah&quot;, &quot;Mishneh Torah&quot;, &quot;Commentary&quot;, &quot;Maaseh Rokeah&quot;]})</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame user">
+          <code>/var/www/draft/sefaria/model/schema.py</code> in <code>_load_title_group</code>
+
+          
+            <div class="context" id="c140275430188456">
+              
+                <ol start="178" class="pre-context" id="pre140275430188456"><li onclick="toggle('pre140275430188456', 'post140275430188456')"><pre>        self.title_group = TitleGroup()</pre></li><li onclick="toggle('pre140275430188456', 'post140275430188456')"><pre></pre></li><li onclick="toggle('pre140275430188456', 'post140275430188456')"><pre>    def _load_title_group(self):</pre></li><li onclick="toggle('pre140275430188456', 'post140275430188456')"><pre>        if getattr(self, &quot;titles&quot;, None):</pre></li><li onclick="toggle('pre140275430188456', 'post140275430188456')"><pre>            self.title_group.load(serial=self.titles)</pre></li><li onclick="toggle('pre140275430188456', 'post140275430188456')"><pre>            del self.__dict__[&quot;titles&quot;]</pre></li><li onclick="toggle('pre140275430188456', 'post140275430188456')"><pre></pre></li></ol>
+              
+              <ol start="185" class="context-line"><li onclick="toggle('pre140275430188456', 'post140275430188456')"><pre>        self._process_terms()</pre> <span>...</span></li></ol>
+              
+                <ol start='186' class="post-context" id="post140275430188456"><li onclick="toggle('pre140275430188456', 'post140275430188456')"><pre></pre></li><li onclick="toggle('pre140275430188456', 'post140275430188456')"><pre>    def _process_terms(self):</pre></li><li onclick="toggle('pre140275430188456', 'post140275430188456')"><pre>        # To be called after raw data load</pre></li><li onclick="toggle('pre140275430188456', 'post140275430188456')"><pre>        if self.sharedTitle:</pre></li><li onclick="toggle('pre140275430188456', 'post140275430188456')"><pre>            try:</pre></li><li onclick="toggle('pre140275430188456', 'post140275430188456')"><pre>                term = Term().load({&quot;name&quot;: self.sharedTitle})</pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '140275430188456')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v140275430188456">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>Category().load({&#39;path&#39;: [&quot;Halakhah&quot;, &quot;Mishneh Torah&quot;, &quot;Commentary&quot;, &quot;Maaseh Rokeah&quot;]})</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame user">
+          <code>/var/www/draft/sefaria/model/schema.py</code> in <code>_process_terms</code>
+
+          
+            <div class="context" id="c140275430188600">
+              
+                <ol start="187" class="pre-context" id="pre140275430188600"><li onclick="toggle('pre140275430188600', 'post140275430188600')"><pre>    def _process_terms(self):</pre></li><li onclick="toggle('pre140275430188600', 'post140275430188600')"><pre>        # To be called after raw data load</pre></li><li onclick="toggle('pre140275430188600', 'post140275430188600')"><pre>        if self.sharedTitle:</pre></li><li onclick="toggle('pre140275430188600', 'post140275430188600')"><pre>            try:</pre></li><li onclick="toggle('pre140275430188600', 'post140275430188600')"><pre>                term = Term().load({&quot;name&quot;: self.sharedTitle})</pre></li><li onclick="toggle('pre140275430188600', 'post140275430188600')"><pre>                self.title_group = term.title_group</pre></li><li onclick="toggle('pre140275430188600', 'post140275430188600')"><pre>            except Exception, e:</pre></li></ol>
+              
+              <ol start="194" class="context-line"><li onclick="toggle('pre140275430188600', 'post140275430188600')"><pre>                raise IndexError(&quot;Failed to load term named {}. {}&quot;.format(self.sharedTitle, e))</pre> <span>...</span></li></ol>
+              
+                <ol start='195' class="post-context" id="post140275430188600"><li onclick="toggle('pre140275430188600', 'post140275430188600')"><pre></pre></li><li onclick="toggle('pre140275430188600', 'post140275430188600')"><pre>    def add_shared_term(self, term):</pre></li><li onclick="toggle('pre140275430188600', 'post140275430188600')"><pre>        self.sharedTitle = term</pre></li><li onclick="toggle('pre140275430188600', 'post140275430188600')"><pre>        self._process_terms()</pre></li><li onclick="toggle('pre140275430188600', 'post140275430188600')"><pre></pre></li><li onclick="toggle('pre140275430188600', 'post140275430188600')"><pre></pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '140275430188600')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v140275430188600">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>term</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>e</td>
+                    <td class="code"><pre>AttributeError(&quot;&#39;NoneType&#39; object has no attribute &#39;title_group&#39;&quot;,)</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>Category().load({&#39;path&#39;: [&quot;Halakhah&quot;, &quot;Mishneh Torah&quot;, &quot;Commentary&quot;, &quot;Maaseh Rokeah&quot;]})</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+    </ul>
+  </div>
+  
+  <form action="http://dpaste.com/" name="pasteform" id="pasteform" method="post">
+
+  <div id="pastebinTraceback" class="pastebin">
+    <input type="hidden" name="language" value="PythonConsole">
+    <input type="hidden" name="title" value="IndexError at /api/category">
+    <input type="hidden" name="source" value="Django Dpaste Agent">
+    <input type="hidden" name="poster" value="Django">
+    <textarea name="content" id="traceback_area" cols="140" rows="25">
+Environment:
+
+
+Request Method: POST
+Request URL: http://draft.sefaria.org/api/category
+
+Django Version: 1.4.5
+Python Version: 2.7.9
+Installed Applications:
+(&#39;django.contrib.auth&#39;,
+ &#39;django.contrib.contenttypes&#39;,
+ &#39;django.contrib.sessions&#39;,
+ &#39;django.contrib.sites&#39;,
+ &#39;django.contrib.messages&#39;,
+ &#39;django.contrib.staticfiles&#39;,
+ &#39;django.contrib.humanize&#39;,
+ &#39;emailusernames&#39;,
+ &#39;reader&#39;,
+ &#39;sheets&#39;,
+ &#39;sefaria.gauth&#39;,
+ &#39;captcha&#39;,
+ &#39;django_mobile&#39;,
+ &#39;django.contrib.admin&#39;,
+ &#39;anymail&#39;,
+ &#39;webpack_loader&#39;)
+Installed Middleware:
+(&#39;django.contrib.sessions.middleware.SessionMiddleware&#39;,
+ &#39;django.middleware.locale.LocaleMiddleware&#39;,
+ &#39;django.middleware.common.CommonMiddleware&#39;,
+ &#39;django.middleware.csrf.CsrfViewMiddleware&#39;,
+ &#39;django.contrib.auth.middleware.AuthenticationMiddleware&#39;,
+ &#39;django.contrib.messages.middleware.MessageMiddleware&#39;,
+ &#39;django_mobile.middleware.MobileDetectionMiddleware&#39;,
+ &#39;django_mobile.middleware.SetFlavourMiddleware&#39;,
+ &#39;sefaria.system.middleware.LanguageSettingsMiddleware&#39;,
+ &#39;sefaria.system.middleware.ProfileMiddleware&#39;)
+
+
+Traceback:
+File "/usr/local/lib/python2.7/site-packages/django/core/handlers/base.py" in get_response
+  89.                     response = middleware_method(request)
+File "/usr/local/lib/python2.7/site-packages/django/middleware/common.py" in process_request
+  67.             if (not urlresolvers.is_valid_path(request.path_info, urlconf) and
+File "/usr/local/lib/python2.7/site-packages/django/core/urlresolvers.py" in is_valid_path
+  531.         resolve(path, urlconf)
+File "/usr/local/lib/python2.7/site-packages/django/core/urlresolvers.py" in resolve
+  420.     return get_resolver(urlconf).resolve(path)
+File "/usr/local/lib/python2.7/site-packages/django/core/urlresolvers.py" in resolve
+  300.                     sub_match = pattern.resolve(new_path)
+File "/usr/local/lib/python2.7/site-packages/django/core/urlresolvers.py" in resolve
+  209.             return ResolverMatch(self.callback, args, kwargs, self.name)
+File "/usr/local/lib/python2.7/site-packages/django/core/urlresolvers.py" in callback
+  216.         self._callback = get_callable(self._callback_str)
+File "/usr/local/lib/python2.7/site-packages/django/utils/functional.py" in wrapper
+  27.         result = func(*args)
+File "/usr/local/lib/python2.7/site-packages/django/core/urlresolvers.py" in get_callable
+  92.                 lookup_view = getattr(import_module(mod_name), func_name)
+File "/usr/local/lib/python2.7/site-packages/django/utils/importlib.py" in import_module
+  35.     __import__(name)
+File "/var/www/draft/reader/views.py" in &lt;module&gt;
+  65. library.get_toc_tree()
+File "/var/www/draft/sefaria/model/text.py" in get_toc_tree
+  3874.             self._toc_tree = TocTree(self)
+File "/var/www/draft/sefaria/model/category.py" in __init__
+  171.         for c in CategorySet(sort=[(&quot;depth&quot;, 1)]):
+File "/var/www/draft/sefaria/model/abstract.py" in __iter__
+  270.         self._read_records()
+File "/var/www/draft/sefaria/model/abstract.py" in _read_records
+  281.                 self.records.append(self.recordClass(attrs=rec))
+File "/var/www/draft/sefaria/model/abstract.py" in __init__
+  43.         self.load_from_dict(attrs, True)
+File "/var/www/draft/sefaria/model/abstract.py" in load_from_dict
+  85.         self._set_derived_attributes()
+File "/var/www/draft/sefaria/model/category.py" in _set_derived_attributes
+  38.         self._load_title_group()
+File "/var/www/draft/sefaria/model/schema.py" in _load_title_group
+  185.         self._process_terms()
+File "/var/www/draft/sefaria/model/schema.py" in _process_terms
+  194.                 raise IndexError(&quot;Failed to load term named {}. {}&quot;.format(self.sharedTitle, e))
+
+Exception Type: IndexError at /api/category
+Exception Value: Failed to load term named Maaseh Rokeah. &#39;NoneType&#39; object has no attribute &#39;title_group&#39;
+</textarea>
+  <br><br>
+  <input type="submit" value="Share this traceback on a public Web site">
+  </div>
+</form>
+</div>
+
+
+
+<div id="requestinfo">
+  <h2>Request information</h2>
+
+
+  <h3 id="get-info">GET</h3>
+  
+    <p>No GET data</p>
+  
+
+  <h3 id="post-info">POST</h3>
+  
+    <table class="req">
+      <thead>
+        <tr>
+          <th>Variable</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+          <tr>
+            <td>json</td>
+            <td class="code"><pre>u&#39;{&quot;sharedTitle&quot;: &quot;Sefer Taharah&quot;, &quot;path&quot;: [&quot;Halakhah&quot;, &quot;Mishneh Torah&quot;, &quot;Commentary&quot;, &quot;Maaseh Rokeach&quot;, &quot;Sefer Taharah&quot;]}&#39;</pre></td>
+          </tr>
+        
+          <tr>
+            <td>apikey</td>
+            <td class="code"><pre>u&#39;sIBpXlqJ0jQ8ShpCfp0Id0VA4M4HVYU0ySRTT90KKTg&#39;</pre></td>
+          </tr>
+        
+      </tbody>
+    </table>
+  
+  <h3 id="files-info">FILES</h3>
+  
+    <p>No FILES data</p>
+  
+
+
+  <h3 id="cookie-info">COOKIES</h3>
+  
+    <p>No cookie data</p>
+  
+
+  <h3 id="meta-info">META</h3>
+  <table class="req">
+    <thead>
+      <tr>
+        <th>Variable</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+        <tr>
+          <td>mod_wsgi.listener_port</td>
+          <td class="code"><pre>&#39;8080&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HTTP_CF_IPCOUNTRY</td>
+          <td class="code"><pre>&#39;US&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CONTEXT_DOCUMENT_ROOT</td>
+          <td class="code"><pre>&#39;/var/www/draft/static/&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SERVER_SOFTWARE</td>
+          <td class="code"><pre>&#39;Apache/2.4.7 (Ubuntu)&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SCRIPT_NAME</td>
+          <td class="code"><pre>u&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>mod_wsgi.enable_sendfile</td>
+          <td class="code"><pre>&#39;0&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>mod_wsgi.handler_script</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SERVER_SIGNATURE</td>
+          <td class="code"><pre>&#39;&lt;address&gt;Apache/2.4.7 (Ubuntu) Server at draft.sefaria.org Port 80&lt;/address&gt;\n&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>REQUEST_METHOD</td>
+          <td class="code"><pre>&#39;POST&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PATH_INFO</td>
+          <td class="code"><pre>u&#39;/api/category&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SERVER_PROTOCOL</td>
+          <td class="code"><pre>&#39;HTTP/1.1&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>QUERY_STRING</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HTTP_CF_RAY</td>
+          <td class="code"><pre>&#39;3b00654126291840-EWR&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>wsgi.errors</td>
+          <td class="code"><pre>&lt;mod_wsgi.Log object at 0x7f947f989978&gt;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CONTENT_LENGTH</td>
+          <td class="code"><pre>&#39;230&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HTTP_USER_AGENT</td>
+          <td class="code"><pre>&#39;python-requests/2.18.4&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SERVER_NAME</td>
+          <td class="code"><pre>&#39;draft.sefaria.org&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>REMOTE_ADDR</td>
+          <td class="code"><pre>&#39;127.0.0.1&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>mod_wsgi.queue_start</td>
+          <td class="code"><pre>&#39;1508381066429899&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>mod_wsgi.request_handler</td>
+          <td class="code"><pre>&#39;wsgi-script&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>apache.version</td>
+          <td class="code"><pre>(2, 4, 7)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>wsgi.url_scheme</td>
+          <td class="code"><pre>&#39;http&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PATH_TRANSLATED</td>
+          <td class="code"><pre>&#39;/var/www/draft/sefaria/wsgi.py/api/category&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SERVER_PORT</td>
+          <td class="code"><pre>&#39;80&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>mod_wsgi.daemon_connects</td>
+          <td class="code"><pre>&#39;1&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>wsgi.multiprocess</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SERVER_ADDR</td>
+          <td class="code"><pre>&#39;127.0.0.1&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DOCUMENT_ROOT</td>
+          <td class="code"><pre>&#39;/var/www/draft/static/&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HTTP_CF_VISITOR</td>
+          <td class="code"><pre>&#39;{&quot;scheme&quot;:&quot;http&quot;}&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>mod_wsgi.process_group</td>
+          <td class="code"><pre>&#39;draft.sefaria.org&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HTTP_X_FORWARDED_PROTO</td>
+          <td class="code"><pre>&#39;http&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SCRIPT_FILENAME</td>
+          <td class="code"><pre>&#39;/var/www/draft/sefaria/wsgi.py&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SERVER_ADMIN</td>
+          <td class="code"><pre>&#39;<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a0c4c5d6e0d3c5c6c1d2c9c18ecfd2c7">[email&#160;protected]</a>&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>wsgi.input</td>
+          <td class="code"><pre>&lt;mod_wsgi.Input object at 0x7f947c2f60d0&gt;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HTTP_HOST</td>
+          <td class="code"><pre>&#39;draft.sefaria.org&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CONTEXT_PREFIX</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>wsgi.multithread</td>
+          <td class="code"><pre>True</pre></td>
+        </tr>
+      
+        <tr>
+          <td>mod_wsgi.callable_object</td>
+          <td class="code"><pre>&#39;application&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HTTP_CF_CONNECTING_IP</td>
+          <td class="code"><pre>&#39;47.17.217.7&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HTTP_X_VARNISH</td>
+          <td class="code"><pre>&#39;7712377&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>mod_wsgi.daemon_restarts</td>
+          <td class="code"><pre>&#39;0&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>REQUEST_URI</td>
+          <td class="code"><pre>&#39;/api/category&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HTTP_ACCEPT</td>
+          <td class="code"><pre>&#39;*/*&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>mod_wsgi.path_info</td>
+          <td class="code"><pre>&#39;/api/category&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>wsgi.file_wrapper</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>wsgi.version</td>
+          <td class="code"><pre>(1, 0)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>GATEWAY_INTERFACE</td>
+          <td class="code"><pre>&#39;CGI/1.1&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HTTP_X_FORWARDED_FOR</td>
+          <td class="code"><pre>&#39;47.17.217.7, 108.162.219.40&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>mod_wsgi.script_name</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>REMOTE_PORT</td>
+          <td class="code"><pre>&#39;49072&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>mod_wsgi.listener_host</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>REQUEST_SCHEME</td>
+          <td class="code"><pre>&#39;http&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>mod_wsgi.version</td>
+          <td class="code"><pre>(4, 4, 21)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>wsgi.run_once</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>mod_wsgi.script_start</td>
+          <td class="code"><pre>&#39;1508381066430214&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CONTENT_TYPE</td>
+          <td class="code"><pre>&#39;application/x-www-form-urlencoded&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>mod_wsgi.application_group</td>
+          <td class="code"><pre>&#39;draft.sefaria.org|&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>mod_wsgi.script_reloading</td>
+          <td class="code"><pre>&#39;1&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>mod_wsgi.request_start</td>
+          <td class="code"><pre>&#39;1508381066429556&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HTTP_ACCEPT_ENCODING</td>
+          <td class="code"><pre>&#39;gzip&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>mod_wsgi.daemon_start</td>
+          <td class="code"><pre>&#39;1508381066430132&#39;</pre></td>
+        </tr>
+      
+    </tbody>
+  </table>
+
+
+  <h3 id="settings-info">Settings</h3>
+  <h4>Using settings module <code>sefaria.settings</code></h4>
+  <table class="req">
+    <thead>
+      <tr>
+        <th>Setting</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+        <tr>
+          <td>SEARCH_INDEX_ON_SAVE</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CLOUDFLARE_TOKEN</td>
+          <td class="code"><pre>u&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USE_THOUSAND_SEPARATOR</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CSRF_COOKIE_SECURE</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LANGUAGE_CODE</td>
+          <td class="code"><pre>&#39;en&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>ROOT_URLCONF</td>
+          <td class="code"><pre>&#39;sefaria.urls&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MANAGERS</td>
+          <td class="code"><pre>((&#39;Sefaria Developers&#39;, &#39;<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="7f1b1a093f0c1a191e0d161e51100d18">[email&#160;protected]</a>&#39;),)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DEFAULT_CHARSET</td>
+          <td class="code"><pre>&#39;utf-8&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>STATIC_ROOT</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>ALLOWED_HOSTS</td>
+          <td class="code"><pre>[&#39;*&#39;]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MESSAGE_STORAGE</td>
+          <td class="code"><pre>&#39;django.contrib.messages.storage.fallback.FallbackStorage&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>RECAPTCHA_PRIVATE_KEY</td>
+          <td class="code"><pre>u&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>EMAIL_SUBJECT_PREFIX</td>
+          <td class="code"><pre>&#39;[Django] &#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SEND_BROKEN_LINK_EMAILS</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SEARCH_INDEX_NAME</td>
+          <td class="code"><pre>&#39;sefaria&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SEFARIA_DATA_PATH</td>
+          <td class="code"><pre>&#39;/data/sefaria/&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>URL_VALIDATOR_USER_AGENT</td>
+          <td class="code"><pre>&#39;Django/1.4.5 (https://www.djangoproject.com)&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>STATICFILES_FINDERS</td>
+          <td class="code"><pre>(&#39;django.contrib.staticfiles.finders.FileSystemFinder&#39;,
+ &#39;django.contrib.staticfiles.finders.AppDirectoriesFinder&#39;)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_COOKIE_DOMAIN</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_COOKIE_NAME</td>
+          <td class="code"><pre>&#39;sessionid&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>ADMIN_FOR</td>
+          <td class="code"><pre>()</pre></td>
+        </tr>
+      
+        <tr>
+          <td>TIME_INPUT_FORMATS</td>
+          <td class="code"><pre>(&#39;%H:%M:%S&#39;, &#39;%H:%M&#39;)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MAINTENANCE_MESSAGE</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DATABASES</td>
+          <td class="code"><pre>{&#39;default&#39;: {&#39;ENGINE&#39;: &#39;django.db.backends.sqlite3&#39;,
+             &#39;HOST&#39;: &#39;&#39;,
+             &#39;NAME&#39;: &#39;/var/www/draft/data/db.sqlite&#39;,
+             &#39;OPTIONS&#39;: {},
+             &#39;PASSWORD&#39;: u&#39;********************&#39;,
+             &#39;PORT&#39;: &#39;&#39;,
+             &#39;TEST_CHARSET&#39;: None,
+             &#39;TEST_COLLATION&#39;: None,
+             &#39;TEST_MIRROR&#39;: None,
+             &#39;TEST_NAME&#39;: None,
+             &#39;TIME_ZONE&#39;: &#39;UTC&#39;,
+             &#39;USER&#39;: &#39;&#39;}}</pre></td>
+        </tr>
+      
+        <tr>
+          <td>RECAPTCHA_PUBLIC_KEY</td>
+          <td class="code"><pre>u&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FILE_UPLOAD_PERMISSIONS</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FILE_UPLOAD_HANDLERS</td>
+          <td class="code"><pre>(&#39;django.core.files.uploadhandler.MemoryFileUploadHandler&#39;,
+ &#39;django.core.files.uploadhandler.TemporaryFileUploadHandler&#39;)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DEFAULT_CONTENT_TYPE</td>
+          <td class="code"><pre>&#39;text/html&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>APPEND_SLASH</td>
+          <td class="code"><pre>True</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FIRST_DAY_OF_WEEK</td>
+          <td class="code"><pre>0</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DATABASE_ROUTERS</td>
+          <td class="code"><pre>[]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SEFARIA_BOT_API_KEY</td>
+          <td class="code"><pre>u&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>YEAR_MONTH_FORMAT</td>
+          <td class="code"><pre>&#39;F Y&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>REDIRECTABLE_DOMAIN_LANGUAGES</td>
+          <td class="code"><pre>{}</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CACHES</td>
+          <td class="code"><pre>{&#39;default&#39;: {&#39;BACKEND&#39;: &#39;redis_cache.cache.RedisCache&#39;,
+             &#39;LOCATION&#39;: &#39;127.0.0.1:6379:3&#39;,
+             &#39;OPTIONS&#39;: {&#39;CLIENT_CLASS&#39;: &#39;redis_cache.client.DefaultClient&#39;,
+                         u&#39;COMPRESS_COMPRESSOR&#39;: &lt;built-in function compress&gt;,
+                         u&#39;COMPRESS_DECOMPRESSOR&#39;: &lt;built-in function decompress&gt;,
+                         u&#39;COMPRESS_DECOMPRESSOR_ERROR&#39;: &lt;class &#39;zlib.error&#39;&gt;},
+             &#39;TIMEOUT&#39;: 2592000}}</pre></td>
+        </tr>
+      
+        <tr>
+          <td>NODE_HOST</td>
+          <td class="code"><pre>&#39;http://localhost:4040&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SERVER_EMAIL</td>
+          <td class="code"><pre>&#39;<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a9dbc6c6dde9c5c6cac8c5c1c6dadd">[email&#160;protected]</a>&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_COOKIE_PATH</td>
+          <td class="code"><pre>&#39;/&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MIDDLEWARE_CLASSES</td>
+          <td class="code"><pre>(&#39;django.contrib.sessions.middleware.SessionMiddleware&#39;,
+ &#39;django.middleware.locale.LocaleMiddleware&#39;,
+ &#39;django.middleware.common.CommonMiddleware&#39;,
+ &#39;django.middleware.csrf.CsrfViewMiddleware&#39;,
+ &#39;django.contrib.auth.middleware.AuthenticationMiddleware&#39;,
+ &#39;django.contrib.messages.middleware.MessageMiddleware&#39;,
+ &#39;django_mobile.middleware.MobileDetectionMiddleware&#39;,
+ &#39;django_mobile.middleware.SetFlavourMiddleware&#39;,
+ &#39;sefaria.system.middleware.LanguageSettingsMiddleware&#39;,
+ &#39;sefaria.system.middleware.ProfileMiddleware&#39;)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USE_I18N</td>
+          <td class="code"><pre>True</pre></td>
+        </tr>
+      
+        <tr>
+          <td>THOUSAND_SEPARATOR</td>
+          <td class="code"><pre>&#39;,&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>OFFLINE</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LANGUAGE_COOKIE_NAME</td>
+          <td class="code"><pre>&#39;django_language&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DEFAULT_INDEX_TABLESPACE</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MIXPANEL_CODE</td>
+          <td class="code"><pre>&#39;you mixpanel code here&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>TRANSACTIONS_MANAGED</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LOGGING_CONFIG</td>
+          <td class="code"><pre>&#39;django.utils.log.dictConfig&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>TEMPLATE_LOADERS</td>
+          <td class="code"><pre>(&#39;django_mobile.loader.Loader&#39;,
+ &#39;django.template.loaders.filesystem.Loader&#39;,
+ &#39;django.template.loaders.app_directories.Loader&#39;)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>WSGI_APPLICATION</td>
+          <td class="code"><pre>&#39;sefaria.wsgi.application&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SETTINGS_MODULE</td>
+          <td class="code"><pre>&#39;sefaria.settings&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>TEMPLATE_DEBUG</td>
+          <td class="code"><pre>True</pre></td>
+        </tr>
+      
+        <tr>
+          <td>X_FRAME_OPTIONS</td>
+          <td class="code"><pre>&#39;SAMEORIGIN&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>AUTHENTICATION_BACKENDS</td>
+          <td class="code"><pre>(&#39;emailusernames.backends.EmailAuthBackend&#39;,)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>EMAIL_HOST_PASSWORD</td>
+          <td class="code"><pre>u&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USE_X_FORWARDED_HOST</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USE_ETAGS</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USE_L10N</td>
+          <td class="code"><pre>True</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SIGNING_BACKEND</td>
+          <td class="code"><pre>&#39;django.core.signing.TimestampSigner&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_COOKIE_SECURE</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SEFARIA_DB_USER</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USE_VARNISH</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CSRF_COOKIE_DOMAIN</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FILE_CHARSET</td>
+          <td class="code"><pre>&#39;utf-8&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DEBUG</td>
+          <td class="code"><pre>True</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_FILE_PATH</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DEFAULT_FILE_STORAGE</td>
+          <td class="code"><pre>&#39;django.core.files.storage.FileSystemStorage&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>INSTALLED_APPS</td>
+          <td class="code"><pre>(&#39;django.contrib.auth&#39;,
+ &#39;django.contrib.contenttypes&#39;,
+ &#39;django.contrib.sessions&#39;,
+ &#39;django.contrib.sites&#39;,
+ &#39;django.contrib.messages&#39;,
+ &#39;django.contrib.staticfiles&#39;,
+ &#39;django.contrib.humanize&#39;,
+ &#39;emailusernames&#39;,
+ &#39;reader&#39;,
+ &#39;sheets&#39;,
+ &#39;sefaria.gauth&#39;,
+ &#39;captcha&#39;,
+ &#39;django_mobile&#39;,
+ &#39;django.contrib.admin&#39;,
+ &#39;anymail&#39;,
+ &#39;webpack_loader&#39;)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LANGUAGES</td>
+          <td class="code"><pre>((&#39;en&#39;, &lt;django.utils.functional.__proxy__ object at 0x7f947c172810&gt;),
+ (&#39;he&#39;, &lt;django.utils.functional.__proxy__ object at 0x7f947c172850&gt;))</pre></td>
+        </tr>
+      
+        <tr>
+          <td>GLOBAL_WARNING</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>COMMENTS_ALLOW_PROFANITIES</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>STATICFILES_DIRS</td>
+          <td class="code"><pre>(&#39;/var/www/draft/static/&#39;,)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PREPEND_WWW</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SECURE_PROXY_SSL_HEADER</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>NATIONBUILDER_SLUG</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_COOKIE_HTTPONLY</td>
+          <td class="code"><pre>True</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DEBUG_PROPAGATE_EXCEPTIONS</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>GOOGLE_ANALYTICS_CODE</td>
+          <td class="code"><pre>&#39;UA-24447636-5&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MONTH_DAY_FORMAT</td>
+          <td class="code"><pre>&#39;F j&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LOGIN_URL</td>
+          <td class="code"><pre>&#39;/login&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_EXPIRE_AT_BROWSER_CLOSE</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>NATIONBUILDER_CLIENT_ID</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>TIME_FORMAT</td>
+          <td class="code"><pre>&#39;P&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DOWN_FOR_MAINTENANCE</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DATE_INPUT_FORMATS</td>
+          <td class="code"><pre>(&#39;%Y-%m-%d&#39;,
+ &#39;%m/%d/%Y&#39;,
+ &#39;%m/%d/%y&#39;,
+ &#39;%b %d %Y&#39;,
+ &#39;%b %d, %Y&#39;,
+ &#39;%d %b %Y&#39;,
+ &#39;%d %b, %Y&#39;,
+ &#39;%B %d %Y&#39;,
+ &#39;%B %d, %Y&#39;,
+ &#39;%d %B %Y&#39;,
+ &#39;%d %B, %Y&#39;)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CSRF_COOKIE_NAME</td>
+          <td class="code"><pre>&#39;csrftoken&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FORCE_SCRIPT_NAME</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PASSWORD_RESET_TIMEOUT_DAYS</td>
+          <td class="code"><pre>u&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CACHE_MIDDLEWARE_ALIAS</td>
+          <td class="code"><pre>&#39;default&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_SAVE_EVERY_REQUEST</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>STATICFILES_STORAGE</td>
+          <td class="code"><pre>&#39;django.contrib.staticfiles.storage.StaticFilesStorage&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>NUMBER_GROUPING</td>
+          <td class="code"><pre>0</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_ENGINE</td>
+          <td class="code"><pre>&#39;django.contrib.sessions.backends.db&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CSRF_FAILURE_VIEW</td>
+          <td class="code"><pre>&#39;django.views.csrf.csrf_failure&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CSRF_COOKIE_PATH</td>
+          <td class="code"><pre>&#39;/&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LOGIN_REDIRECT_URL</td>
+          <td class="code"><pre>&#39;/&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SEFARIA_DB_PASSWORD</td>
+          <td class="code"><pre>u&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LOGGING</td>
+          <td class="code"><pre>{&#39;disable_existing_loggers&#39;: False,
+ &#39;filters&#39;: {&#39;exclude_errors&#39;: {&#39;()&#39;: &#39;sefaria.utils.log.ErrorTypeFilter&#39;,
+                                &#39;error_types&#39;: [&#39;BookNameError&#39;],
+                                &#39;exclude&#39;: True},
+             &#39;filter_book_name_errors&#39;: {&#39;()&#39;: &#39;sefaria.utils.log.ErrorTypeFilter&#39;,
+                                         &#39;error_types&#39;: [&#39;BookNameError&#39;,
+                                                         &#39;InputError&#39;],
+                                         &#39;exclude&#39;: False},
+             &#39;require_debug_false&#39;: {&#39;()&#39;: &#39;django.utils.log.RequireDebugFalse&#39;},
+             &#39;require_debug_true&#39;: {&#39;()&#39;: &#39;sefaria.utils.log.RequireDebugTrue&#39;}},
+ &#39;formatters&#39;: {&#39;simple&#39;: {&#39;format&#39;: &#39;%(levelname)s %(message)s&#39;},
+                &#39;standard&#39;: {&#39;format&#39;: &#39;%(asctime)s - %(levelname)s %(name)s: %(message)s&#39;},
+                &#39;verbose&#39;: {&#39;format&#39;: &#39;%(asctime)s - %(levelname)s: [%(name)s] %(process)d %(thread)d %(message)s&#39;}},
+ &#39;handlers&#39;: {&#39;book_name_errors&#39;: {&#39;backupCount&#39;: 20,
+                                   &#39;class&#39;: &#39;logging.handlers.RotatingFileHandler&#39;,
+                                   &#39;filename&#39;: &#39;/var/www/draft/sefaria/../log/sefaria_book_errors.log&#39;,
+                                   &#39;filters&#39;: [&#39;filter_book_name_errors&#39;],
+                                   &#39;formatter&#39;: &#39;verbose&#39;,
+                                   &#39;level&#39;: &#39;ERROR&#39;,
+                                   &#39;maxBytes&#39;: 5242880},
+              &#39;cloudflare_response_handler&#39;: {&#39;backupCount&#39;: 20,
+                                              &#39;class&#39;: &#39;logging.handlers.RotatingFileHandler&#39;,
+                                              &#39;filename&#39;: &#39;/var/www/draft/sefaria/../log/cloudflare.log&#39;,
+                                              &#39;formatter&#39;: &#39;standard&#39;,
+                                              &#39;level&#39;: &#39;INFO&#39;,
+                                              &#39;maxBytes&#39;: 5242880},
+              &#39;default&#39;: {&#39;backupCount&#39;: 20,
+                          &#39;class&#39;: &#39;logging.handlers.RotatingFileHandler&#39;,
+                          &#39;filename&#39;: &#39;/var/www/draft/sefaria/../log/sefaria.log&#39;,
+                          &#39;filters&#39;: [&#39;exclude_errors&#39;],
+                          &#39;formatter&#39;: &#39;verbose&#39;,
+                          &#39;level&#39;: &#39;WARNING&#39;,
+                          &#39;maxBytes&#39;: 5242880},
+              &#39;mail_admins&#39;: {&#39;class&#39;: &#39;django.utils.log.AdminEmailHandler&#39;,
+                              &#39;filters&#39;: [&#39;require_debug_false&#39;],
+                              &#39;level&#39;: &#39;ERROR&#39;},
+              &#39;null&#39;: {&#39;class&#39;: &#39;django.utils.log.NullHandler&#39;,
+                       &#39;level&#39;: &#39;INFO&#39;},
+              &#39;request_handler&#39;: {&#39;backupCount&#39;: 20,
+                                  &#39;class&#39;: &#39;logging.handlers.RotatingFileHandler&#39;,
+                                  &#39;filename&#39;: &#39;/var/www/draft/sefaria/../log/django_request.log&#39;,
+                                  &#39;formatter&#39;: &#39;standard&#39;,
+                                  &#39;level&#39;: &#39;WARNING&#39;,
+                                  &#39;maxBytes&#39;: 5242880}},
+ &#39;loggers&#39;: {&#39;&#39;: {&#39;handlers&#39;: [&#39;default&#39;, &#39;book_name_errors&#39;],
+                  &#39;level&#39;: &#39;INFO&#39;,
+                  &#39;propagate&#39;: True},
+             &#39;cloudflare&#39;: {&#39;handlers&#39;: [&#39;cloudflare_response_handler&#39;],
+                            &#39;level&#39;: &#39;INFO&#39;,
+                            &#39;propagate&#39;: True},
+             &#39;django&#39;: {&#39;handlers&#39;: [&#39;null&#39;],
+                        &#39;level&#39;: &#39;INFO&#39;,
+                        &#39;propagate&#39;: False},
+             &#39;django.request&#39;: {&#39;handlers&#39;: [&#39;mail_admins&#39;,
+                                             &#39;request_handler&#39;],
+                                &#39;level&#39;: &#39;INFO&#39;,
+                                &#39;propagate&#39;: True}},
+ &#39;version&#39;: 1}</pre></td>
+        </tr>
+      
+        <tr>
+          <td>IGNORABLE_404_URLS</td>
+          <td class="code"><pre>()</pre></td>
+        </tr>
+      
+        <tr>
+          <td>S3_BUCKET</td>
+          <td class="code"><pre>&#39;sefaria-user-content-test&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LOCALE_PATHS</td>
+          <td class="code"><pre>(&#39;/var/www/draft/sefaria/../locale&#39;,)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>GLOBAL_INTERRUPTING_MESSAGE</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PASSWORD_HASHERS</td>
+          <td class="code"><pre>u&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>TEMPLATE_STRING_IF_INVALID</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LOGOUT_URL</td>
+          <td class="code"><pre>&#39;/accounts/logout/&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>EMAIL_USE_TLS</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>TEMPLATE_DIRS</td>
+          <td class="code"><pre>(&#39;/var/www/draft/templates/&#39;,)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USE_CLOUDFLARE</td>
+          <td class="code"><pre>True</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FIXTURE_DIRS</td>
+          <td class="code"><pre>()</pre></td>
+        </tr>
+      
+        <tr>
+          <td>EMAIL_HOST</td>
+          <td class="code"><pre>&#39;localhost&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DATE_FORMAT</td>
+          <td class="code"><pre>&#39;N j, Y&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>NATIONBUILDER_CLIENT_SECRET</td>
+          <td class="code"><pre>u&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MEDIA_ROOT</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DISABLE_INDEX_SAVE</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DEFAULT_EXCEPTION_REPORTER_FILTER</td>
+          <td class="code"><pre>&#39;django.views.debug.SafeExceptionReporterFilter&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>ADMINS</td>
+          <td class="code"><pre>((&#39;Sefaria Developers&#39;, &#39;<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="4024253600332526213229216e2f3227">[email&#160;protected]</a>&#39;),)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FORMAT_MODULE_PATH</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DEFAULT_FROM_EMAIL</td>
+          <td class="code"><pre>&#39;<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c9beacaba4a8babdacbb89a5a6aaa8a5a1a6babd">[email&#160;protected]</a>&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SEARCH_ADMIN</td>
+          <td class="code"><pre>&#39;http://localhost:9200&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>GLOBAL_WARNING_MESSAGE</td>
+          <td class="code"><pre>&#39;Sefaria is currently in &lt;b&gt;Read Only&lt;/b&gt; mode for scheduled maintaince. Edits will &lt;b&gt;NOT&lt;/b&gt; currently be saved. We expect to be back to normal within 1 hour.&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MEDIA_URL</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DATETIME_FORMAT</td>
+          <td class="code"><pre>&#39;N j, Y, P&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>NODE_TIMEOUT</td>
+          <td class="code"><pre>10</pre></td>
+        </tr>
+      
+        <tr>
+          <td>NODE_TIMEOUT_MONITOR</td>
+          <td class="code"><pre>&#39;/var/www/draft/sefaria/../log/forever/timeout/timeouts&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SITE_ID</td>
+          <td class="code"><pre>1</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DISALLOWED_USER_AGENTS</td>
+          <td class="code"><pre>()</pre></td>
+        </tr>
+      
+        <tr>
+          <td>ALLOWED_INCLUDE_ROOTS</td>
+          <td class="code"><pre>()</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USE_NODE</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DECIMAL_SEPARATOR</td>
+          <td class="code"><pre>&#39;.&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>NATIONBUILDER_TOKEN</td>
+          <td class="code"><pre>u&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SHORT_DATE_FORMAT</td>
+          <td class="code"><pre>&#39;m/d/Y&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SECRET_KEY</td>
+          <td class="code"><pre>u&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>AWS_SECRET_KEY</td>
+          <td class="code"><pre>u&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>NATIONBUILDER</td>
+          <td class="code"><pre>True</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CLOUDFLARE_EMAIL</td>
+          <td class="code"><pre>&#39;<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="2a48584f5e5e6a594f4c4b58434b0445584d">[email&#160;protected]</a>&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>TEST_RUNNER</td>
+          <td class="code"><pre>&#39;django.test.simple.DjangoTestSuiteRunner&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CACHE_MIDDLEWARE_KEY_PREFIX</td>
+          <td class="code"><pre>u&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>TIME_ZONE</td>
+          <td class="code"><pre>&#39;America/Vancouver&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FILE_UPLOAD_MAX_MEMORY_SIZE</td>
+          <td class="code"><pre>2621440</pre></td>
+        </tr>
+      
+        <tr>
+          <td>EMAIL_BACKEND</td>
+          <td class="code"><pre>&#39;django.core.mail.backends.smtp.EmailBackend&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DEFAULT_TABLESPACE</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>TEMPLATE_CONTEXT_PROCESSORS</td>
+          <td class="code"><pre>(&#39;django.contrib.auth.context_processors.auth&#39;,
+ &#39;django.core.context_processors.debug&#39;,
+ &#39;django.core.context_processors.i18n&#39;,
+ &#39;django.core.context_processors.media&#39;,
+ &#39;django.core.context_processors.static&#39;,
+ &#39;django.core.context_processors.tz&#39;,
+ &#39;django.contrib.messages.context_processors.messages&#39;,
+ &#39;django.core.context_processors.request&#39;,
+ &#39;django_mobile.context_processors.flavour&#39;,
+ &#39;sefaria.system.context_processors.global_settings&#39;,
+ &#39;sefaria.system.context_processors.titles_json&#39;,
+ &#39;sefaria.system.context_processors.toc&#39;,
+ &#39;sefaria.system.context_processors.terms&#39;,
+ &#39;sefaria.system.context_processors.embed_page&#39;,
+ &#39;sefaria.system.context_processors.user_and_notifications&#39;,
+ &#39;sefaria.system.context_processors.calendar_links&#39;,
+ &#39;sefaria.system.context_processors.header_html&#39;,
+ &#39;sefaria.system.context_processors.footer_html&#39;)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_COOKIE_AGE</td>
+          <td class="code"><pre>1209600</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DOMAIN_LANGUAGES</td>
+          <td class="code"><pre>{}</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SEFARIA_EXPORT_PATH</td>
+          <td class="code"><pre>&#39;/var/www/draft/data/export&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LANGUAGES_BIDI</td>
+          <td class="code"><pre>(&#39;he&#39;, &#39;ar&#39;, &#39;fa&#39;)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FILE_UPLOAD_TEMP_DIR</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>INTERNAL_IPS</td>
+          <td class="code"><pre>()</pre></td>
+        </tr>
+      
+        <tr>
+          <td>STATIC_URL</td>
+          <td class="code"><pre>&#39;/static/&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CLOUDFLARE_ZONE</td>
+          <td class="code"><pre>&#39;8eb325b542dbbf57ea1e4ef2d7f11b30&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>EMAIL_PORT</td>
+          <td class="code"><pre>1025</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USE_TZ</td>
+          <td class="code"><pre>True</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SHORT_DATETIME_FORMAT</td>
+          <td class="code"><pre>&#39;m/d/Y P&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>AWS_ACCESS_KEY</td>
+          <td class="code"><pre>u&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>ABSOLUTE_URL_OVERRIDES</td>
+          <td class="code"><pre>{}</pre></td>
+        </tr>
+      
+        <tr>
+          <td>WEBPACK_LOADER</td>
+          <td class="code"><pre>{&#39;DEFAULT&#39;: {&#39;BUNDLE_DIR_NAME&#39;: &#39;bundles/client/&#39;,
+             &#39;CACHE&#39;: False,
+             &#39;POLL_INTERVAL&#39;: 0.1,
+             &#39;STATS_FILE&#39;: &#39;/var/www/draft/sefaria/../node/webpack-stats.client.json&#39;,
+             &#39;TIMEOUT&#39;: None}}</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CACHE_MIDDLEWARE_SECONDS</td>
+          <td class="code"><pre>600</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SEFARIA_DB</td>
+          <td class="code"><pre>&#39;sefaria_draft&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DATETIME_INPUT_FORMATS</td>
+          <td class="code"><pre>(&#39;%Y-%m-%d %H:%M:%S&#39;,
+ &#39;%Y-%m-%d %H:%M:%S.%f&#39;,
+ &#39;%Y-%m-%d %H:%M&#39;,
+ &#39;%Y-%m-%d&#39;,
+ &#39;%m/%d/%Y %H:%M:%S&#39;,
+ &#39;%m/%d/%Y %H:%M:%S.%f&#39;,
+ &#39;%m/%d/%Y %H:%M&#39;,
+ &#39;%m/%d/%Y&#39;,
+ &#39;%m/%d/%y %H:%M:%S&#39;,
+ &#39;%m/%d/%y %H:%M:%S.%f&#39;,
+ &#39;%m/%d/%y %H:%M&#39;,
+ &#39;%m/%d/%y&#39;)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MONGO_HOST</td>
+          <td class="code"><pre>&#39;localhost&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SEARCH_HOST</td>
+          <td class="code"><pre>&#39;http://search.sefaria.org:788&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>EMAIL_HOST_USER</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PROFANITIES_LIST</td>
+          <td class="code"><pre>u&#39;********************&#39;</pre></td>
+        </tr>
+      
+    </tbody>
+  </table>
+
+</div>
+
+  <div id="explanation">
+    <p>
+      You're seeing this error because you have <code>DEBUG = True</code> in your
+      Django settings file. Change that to <code>False</code>, and Django will
+      display a standard 500 page.
+    </p>
+  </div>
+
+<script src="https://ajax.cloudflare.com/cdn-cgi/scripts/78d64697/cloudflare-static/email-decode.min.js"></script></body>
+</html>

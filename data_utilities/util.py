@@ -52,6 +52,60 @@ wordToNumber[u'שמיני'] = 8
 wordToNumber[u'תשיעי'] = 9
 wordToNumber[u'עשירי'] = 10
 
+he_char_ord = {
+    u'א': 1,
+    u'ב': 2,
+    u'ג': 3,
+    u'ד': 4,
+    u'ה': 5,
+    u'ו': 6,
+    u'ז': 7,
+    u'ח': 8,
+    u'ט': 9,
+    u'י': 10,
+    u'כ': 11,
+    u'ך': 11,
+    u'ל': 12,
+    u'מ': 13,
+    u'ם': 13,
+    u'נ': 14,
+    u'ן': 14,
+    u'ס': 15,
+    u'ע': 16,
+    u'פ': 17,
+    u'ף': 17,
+    u'צ': 18,
+    u'ץ': 18,
+    u'ק': 19,
+    u'ר': 20,
+    u'ש': 21,
+    u'ת': 22
+}
+
+num_to_char_dict = {1: u"א",
+2: u"ב",
+3: u"ג",
+4: u"ד",
+5: u"ה",
+6: u"ו",
+7: u"ז",
+8: u"ח",
+9: u"ט",
+10: u"י",
+11: u"כ",
+12: u"ל",
+13: u"מ",
+14: u"נ",
+15: u"ס",
+16: u"ע",
+17: u"פ",
+18: u"צ",
+19: u"ק",
+20: u"ר",
+21: u"ש",
+22: u"ת",
+}
+
 class Util:
     def __init__(self, output_file, fail):
         self.output_file = output_file
@@ -150,6 +204,26 @@ class Util:
 
 
 
+    def strip_nekud(word):
+        data = word.replace(u"\u05B0", "")
+        data = data.replace(u"\u05B1", "")
+        data = data.replace(u"\u05B2", "")
+        data = data.replace(u"\u05B3", "")
+        data = data.replace(u"\u05B4", "")
+        data = data.replace(u"\u05B5", "")
+        data = data.replace(u"\u05B6", "")
+        data = data.replace(u"\u05B7", "")
+        data = data.replace(u"\u05B8", "")
+        data = data.replace(u"\u05B9", "")
+        data = data.replace(u"\u05BB", "")
+        data = data.replace(u"\u05BC", "")
+        data = data.replace(u"\u05BD", "")
+        data = data.replace(u"\u05BF", "")
+        data = data.replace(u"\u05C1", "")
+        data = data.replace(u"\u05C2", "")
+        data = data.replace(u"\u05C3", "")
+        data = data.replace(u"\u05C4", "")
+        return data
 
     def wordHasNekudot(word):
         data = word.decode('utf-8')
@@ -264,6 +338,62 @@ def isGematria(txt):
         return True
 
 
+class StructuredDocument:
+    """
+    class for extracting specific parts (i.e. chapters) of a text file. Pieces that exist outside the structure (an intro
+    for example) will be included, but they will not be as easily accessible as the chapters.
+    """
+
+    def __init__(self, filepath, regex):
+        with codecs.open(filepath, 'r', 'utf-8') as infile:
+            lines = infile.readlines()
+
+        sections, section_mapping = [], {}
+        current_section, section_num, section_index = [], None, 0
+
+        for line in lines:
+            match = re.search(regex, line)
+            if match:
+                if len(current_section) > 0:
+                    sections.append(u''.join(current_section))
+                    if section_num:
+                        section_mapping[section_num] = section_index
+                    section_index += 1
+                    current_section = []
+                section_num = getGematria(match.group(1))
+
+            current_section.append(line)
+        else:
+            sections.append(u''.join(current_section))
+            section_mapping[section_num] = section_index
+
+        self._sections = sections
+        self._section_mapping = section_mapping
+
+    def get_section(self, section_number):
+        section_index = self._section_mapping[section_number]
+        return self._sections[section_index]
+
+    def _set_section(self, section_number, new_section):
+        section_index = self._section_mapping[section_number]
+        self._sections[section_index] = new_section
+
+    def edit_section(self, section_number, callback, *args, **kwargs):
+        old_section = self.get_section(section_number)
+        new_section = callback(old_section, *args, **kwargs)
+        self._set_section(section_number, new_section)
+
+    def get_whole_text(self):
+        return u''.join(self._sections)
+
+    def write_to_file(self, filename):
+        with codecs.open(filename, 'w', 'utf-8') as outfile:
+            outfile.write(self.get_whole_text())
+
+    def get_chapter_values(self):
+        return sorted(self._section_mapping.keys())
+
+
 def getGematria(txt):
         if not isinstance(txt, unicode):
             txt = txt.decode('utf-8')
@@ -275,6 +405,25 @@ def getGematria(txt):
 
             index+=1
         return sum
+
+
+def he_ord(he_char):
+    """
+    Get the order number for a hebrew character (א becomes 1, ת becomes 22). Sofi letters (i.e ך), return the same value
+    as their regular
+    :param he_char:
+    :return:
+    """
+    if len(he_char) != 1:
+        raise AssertionError('Can only evaluate a single character')
+    if re.search(u'[\u05d0-\u05ea]', he_char) is None:
+        raise AssertionError(u'{} is not a Hebrew Character!'.format(he_char))
+    return he_char_ord[he_char]
+
+
+def he_num_to_char(num):
+    assert 1 <= num <= 22
+    return num_to_char_dict[num]
 
 
 
@@ -507,6 +656,73 @@ def file_to_ja(depth, infile, expressions, cleaner, grab_all=False):
     return ja
 
 
+def file_to_ja_g(depth, infile, expressions, cleaner, gimatria=False, group_name='gim', grab_all=None):
+    """
+    like file to ja but with changing the numbers to Gimatria
+    Designed to be the first stage of a reusable parsing tool. Adds lines of text to the Jagged
+    Array in the desired structure (Chapter, verse, etc.)
+    :param depth: depth of the JaggedArray.
+    :param infile: Text file to read from
+    :param expressions: A list of regular expressions with which to identify section (chapter) level. Do
+    not include an expression with which to break up the segment levels.
+    :param cleaner: A function that takes a list of strings and returns an array with the text parsed
+    correctly. Should also break up and remove unnecessary tagging data.
+    :param grab_all: a boolean list according to the regexs, if True then grab all of that if False erase line
+            the 5 is just above the 3 which is the deepest length we use for now.
+    :param gimatria: if the text is presented with gimatria in it.
+    :param group_name: a name given to the group of letters for the gimatria to actually use
+    :return: A jagged_array with the text properly structured.
+    """
+
+    if grab_all is None:
+        grab_all = [False] * len(expressions)
+
+    # instantiate ja
+    structure = reduce(lambda x, y: [x], range(depth - 1), [])
+    ja = jagged_array.JaggedArray(structure)
+
+    # ensure there is a regex for every level except the lowest
+    if depth - len(expressions) != 1:
+        raise AttributeError('Not enough data to parse. Need {} expressions, '
+                             'received {}'.format(depth - 1, len(expressions)))
+
+    # compile regexes, instantiate index list
+    regexes, indices = [re.compile(ex) for ex in expressions], [-1] * len(expressions)
+    temp = []
+
+    # loop through file
+    for line in infile:
+
+        # check for matches to the regexes
+        for i, reg in enumerate(regexes):
+            found = reg.search(line)
+            if found:
+
+                if indices.count(-1) == 0:
+                    ja.set_element(indices, cleaner(temp), [])
+                    temp = []
+                if grab_all[i]:
+                    temp.append(line)
+                    # increment index that's been hit, reset all subsequent indices
+                if gimatria:  # note: if you uncomment the top must make this elif
+                    gimt = getGematria(found.group('{}'.format(group_name)))
+                    if gimt != 0:  # increment index that's been hit, reset all subsequent indices
+                        indices[i] = gimt - 1
+                    else:
+                        indices[i] += 1
+                else:
+                    indices[i] += 1
+                indices[i + 1:] = [-1 if x >= 0 else x for x in indices[i + 1:]]
+                break
+
+        else:
+            if indices.count(-1) == 0:
+                temp.append(line)
+    else:
+        ja.set_element(indices, cleaner(temp), [])
+
+    return ja
+
 def he_array_to_int(he_array):
     """
     Takes an array of hebrew numbers (א,ב, י"א...) and returns array of integers.
@@ -599,7 +815,7 @@ def traverse_ja(ja, indices=None, bottom=unicode):
             else:
                 indices[-1] = index
             if data:
-                for thing in traverse_ja(data, indices, bottom):
+                for thing in traverse_ja(data, indices[:], bottom):
                     yield thing
         indices.pop()
 
@@ -908,8 +1124,8 @@ class WeightedLevenshtein:
             s1_len = len(s1)
             s2_len = len(s2)
 
-            if s1_len == 0 and s2_len == 0:
-                raise LevenshteinError
+            if s1_len == 0 and s2_len == 0 and normalize:
+                raise LevensheinError("both strings can't be empty with normalize=True. leads to divide by zero")
 
             if s1 == s2:
                 score = 0
@@ -972,3 +1188,48 @@ class Singleton(type):
         if cls._instances.get(cls) is None:
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
+
+
+def set_ranges_between_refs(refs, section_ref):
+    '''
+    :refs: an unsorted list of segments such as [Ref(Rashi on Genesis 2:11), Ref(Rashi on Genesis 2:4), Ref(Rashi on Genesis 2:10)]
+    where all refs have the same section
+    :section_ref: the section reference for the list of refs, in this case Ref(Rashi on Genesis 2)
+    :return: sorted list of ranged refs where the i-th element is a range from itself to the i+1-th element.
+    The last ref in the list is a range from itself to the final segment in the section, which for Rashi on Genesis 2 is 25.
+    In this case:
+    [Ref(Rashi on Genesis 2:4-9), Ref(Rashi on Genesis 2:10), Ref(Rashi on Genesis 2:11-25)]
+    If an empty list is passed as refs, we simply return a list with one range over the entire section, such as:
+    [Ref(Rashi on Genesis 2:1-25)]
+    '''
+    if refs == []:
+        first_ref = section_ref.subref(1)
+        return [first_ref.to(section_ref.all_segment_refs()[-1])]
+
+
+    ranged_refs = []
+    len_list = len(refs)
+    refs = sorted(refs, key=lambda x: x.order_id())
+    last_ref = section_ref.all_segment_refs()[-1]
+    #print "Refs: {}".format(refs)
+    #print "Section: {}".format(section_ref)
+    #print "Last ref: {}".format(last_ref)
+    for i, ref in enumerate(refs):
+        if ref.is_range():
+            ranged_refs.append(ref)
+            continue
+        assert ref.section_ref() is section_ref
+        if i + 1 == len_list:
+            new_range = ref.to(last_ref)
+        else:
+            next_ref = refs[i+1]
+            if next_ref.sections[-1] == ref.sections[-1]:
+                ranged_refs.append(ref)
+                continue
+            else:
+                d = next_ref._core_dict()
+                d['sections'][-1] -= 1
+                d['toSections'][-1] -= 1
+                new_range = ref.to(Ref(_obj=d))
+        ranged_refs.append(new_range)
+    return ranged_refs
