@@ -126,7 +126,7 @@ def parse_em(filename, passing, errorfilename, EM = True):
     with codecs.open(filename, 'r', 'utf-8') as fp:
         lines = fp.readlines()
     # pattern = ur'''(ו?שו?["\u05f4]ע|ו?ב?מיי['\u05f3]|ו?ב?סמ"?ג|ו?ב?טוש["\u05f4]ע|ו?ב?טור)'''
-    pattern = ur'''(ו?שו?["\u05f4]ע|ו?ב?מיי['\u05f3]|ו?ב?סמ"?ג|ו?ב?טוש["\u05f4]ע|ו?ב?טור|ו?רמב"ם)'''
+    pattern = ur'''(ו?שו?["\u05f4]ע|ו?ב?מיי['\u05f3]|ו?ב?סמ"?ג|ו?ב?טוש["\u05f4]ע|ו?ב?טור|ו?ה?רמב"ם)'''
 
     for line in lines:
         mass.error_flag = False
@@ -168,6 +168,7 @@ def parse_em(filename, passing, errorfilename, EM = True):
             counters_split = re.split(u'\s', split[0])
             cit._perek_counter = counters_split[0]
             cit._page_counter = counters_split[1]
+            pattern += u'(אך)?לא מנ'
         split_it = iter(split)
         for part in split_it:
             if re.search(ur'''(מיי'|ו?רמב"ם)''', part):
@@ -228,7 +229,7 @@ class Semag(object):
 
 
     def parse_semag(self, str, mass):
-        reg_book = re.compile(u'ו?(עשין|שם|לאוין|לאין)')
+        reg_book = re.compile(u'ו?ב?(עשין|שם|לאוין|לאין)')
         split = re.split(reg_book, str.strip())
         str_list = filter(None, [item.strip() for item in split])
         resolveds = []

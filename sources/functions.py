@@ -524,20 +524,22 @@ def checkLengthsDicts(x_dict, y_dict):
 
 def weak_connection(func):
     def post_weak_connection(*args, **kwargs):
+        result = None
         success = False
         weak_network = kwargs.pop('weak_network', False)
         num_tries = kwargs.pop('num_tries', 3)
         if weak_network:
             for i in range(num_tries-1):
                 try:
-                    func(*args, **kwargs)
+                    result = func(*args, **kwargs)
                 except (HTTPError, URLError) as e:
                     print 'handling weak network'
                 else:
                     success = True
                     break
         if not success:
-            func(*args, **kwargs)
+            result = func(*args, **kwargs)
+        return result
     return post_weak_connection
 
 
@@ -701,25 +703,12 @@ def add_category(en_title, path, he_title=None, server=SEFARIA_SERVER):
 
 
 @weak_connection
-def post_link(info, server=SEFARIA_SERVER):
+def post_link(info, server=SEFARIA_SERVER, VERBOSE = False):
     url = server+'/api/links/'
-    return http_request(url, body={'apikey': API_KEY} ,json_payload=info, method="POST")
-    # infoJSON = json.dumps(info)
-    # values = {
-    #     'json': infoJSON,
-    #     'apikey': API_KEY
-    # }
-    # data = urllib.urlencode(values)
-    # req = urllib2.Request(url, data)
-    # try:
-    #     response = urllib2.urlopen(req)
-    #     x= response.read()
-    #     print x
-    #     if x.find("error")>=0 and x.find("Daf")>=0 and x.find("0")>=0:
-    #         return "error"
-    #
-    # except HTTPError, e:
-    #     print 'Error code: ', e.code
+    result = http_request(url, body={'apikey': API_KEY}, json_payload=info, method="POST")
+    if VERBOSE:
+        print result
+    return result
 
 
 def post_link_weak_connection(info, repeat=10):
