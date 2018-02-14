@@ -10,7 +10,8 @@ commentary_list = [
     ("Be'er HaGolah, Seder Halitzah", u"באר הגולה, סדר חליצה"),
     ("Beur HaGra", u'ביאור הגר"א'),
     ("Beur HaGra, Seder HaGet", u'ביאור הגר"א, סדר הגט'),
-    ("Beur HaGra, Seder Halitzah", u'ביאור הגר"א, סדר חליצה')
+    ("Beur HaGra, Seder Halitzah", u'ביאור הגר"א, סדר חליצה'),
+    ('Pithei Teshuva', u'פתחי תשובה'),
 ]
 commentary_list = [dict(zip(('en_title', 'he_title'), c)) for c in commentary_list]
 
