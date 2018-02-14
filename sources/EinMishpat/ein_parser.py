@@ -168,7 +168,6 @@ def parse_em(filename, passing, errorfilename, EM = True):
             counters_split = re.split(u'\s', split[0])
             cit._perek_counter = counters_split[0]
             cit._page_counter = counters_split[1]
-            pattern += u'(אך)?לא מנ'
         split_it = iter(split)
         for part in split_it:
             if re.search(ur'''(מיי'|ו?רמב"ם)''', part):
@@ -724,13 +723,16 @@ def clean_line(line):
     in_per = reg_parentheses.search(line)
     in_bra = reg_brackets.search(line)
     reg_ayyen_tur = re.compile(u'''ו?(עיין|עי'|ע"ש) בטור''')
+    reg_lo_manu = re.compile(u'''((אך )?לא מנ.*?)(סמ"?ג|רמב"?ם|טור|\n)''')
     line = re.sub(u'\[.*?אלפס.*?\]', u'', line)
     line = re.sub(u'טור ו?שו"ע', u'טוש"ע', line)
-    pos = re.search(reg_ayyen_tur, line)
+    f_ayyen = re.search(reg_ayyen_tur, line)
+    f_lo_manu = re.search(reg_lo_manu, line)
 
-    if pos:
-        line = line[:pos.start()]
-
+    if f_ayyen:
+        line = line[:f_ayyen.start()]
+    if f_lo_manu:
+        line = re.sub(reg_lo_manu, "", line)
     if in_per:
         if in_bra:
             clean = re.sub(reg_brackets, ur'\1', line)  # brackets are always correct
