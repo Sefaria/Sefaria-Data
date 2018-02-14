@@ -36,7 +36,7 @@ for piece in [1,2]:
         print e
 
     volume.set_rid_on_seifim()
-    
+
 root.populate_comment_store(verbose=True)
 for piece in [1,2]:
     base = root.get_base_text()
