@@ -133,6 +133,7 @@ if __name__ == "__main__":
         get_sec.validate_references(pattern, code)
     get_volume = get_sec.get_parent()
     get_volume.mark_references(commentaries.commentary_ids[u"Beur HaGra, Seder HaGet"], u'!([\u05d0-\u05ea]{1,3})\)', group=1)
+    get_volume.mark_references(commentaries.commentary_ids[u"Pithei Teshuva, Seder HaGet"], ur'@66\(([\u05d0-\u05ea]{1,3})\)', group=1)
     get_volume.mark_references(commentaries.commentary_ids[u"Be'er HaGolah, Seder HaGet"], u'@44([\u05d0-\u05ea\u2022])', group=1, cyclical=True)
 
     for seif in get_sec.get_child():
@@ -148,6 +149,7 @@ if __name__ == "__main__":
         halitza_sec.validate_references(pattern, code)
     halitza_vol = halitza_sec.get_parent()
     halitza_vol.mark_references(commentaries.commentary_ids[u"Beur HaGra, Seder Halitzah"], u'!([\u05d0-\u05ea]{1,3})\)', group=1)
+    halitza_vol.mark_references(commentaries.commentary_ids[u"Pithei Teshuva, Seder Halitzah"], ur'@66\(([\u05d0-\u05ea]{1,3})\)', group=1)
     halitza_vol.mark_references(commentaries.commentary_ids[u"Be'er HaGolah, Seder Halitzah"], u'@44([\u05d0-\u05ea\u2022])', group=1, cyclical=True)
 
     for seif in halitza_sec.get_child():
