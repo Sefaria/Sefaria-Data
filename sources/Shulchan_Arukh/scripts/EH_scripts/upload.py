@@ -7,6 +7,7 @@ Taz seems not to have Seder Halitzah
 Even HaEzer needs to be made complex on prod.
 """
 
+import unicodecsv
 from sefaria.model import *
 
 def get_schema(en_title, he_title):
@@ -24,10 +25,32 @@ def get_schema(en_title, he_title):
     get_node.add_structure(["Seif"])
     root_node.append(get_node)
 
-    if en_title != u"Turei Zahav":
+    if en_title != u"Turei Zahav":  # Taz does not have commentary on Seder Halitzah
         halitzah_node = JaggedArrayNode()
         halitzah_node.add_primary_titles("Seder Halitzah", u"סדר חליצה")
         halitzah_node.add_structure(["Seif"])
         root_node.append(halitzah_node)
     root_node.validate()
     return root_node.serialize()
+
+
+def get_alt_struct(book_title):
+    with open('Even_HaEzer_Topics.csv') as infile:
+        reader = unicodecsv.DictReader(infile)
+        rows = [row for row in reader]
+
+    s_node = SchemaNode()
+    s_node.add_primary_titles('Topic', u'נושא', key_as_title=False)
+    for row in rows:
+        node = ArrayMapNode()
+        node.add_primary_titles(row['en'], row['he'])
+        node.depth = 0
+        node.includeSections = True
+        start, end = row['start'], row['end']
+        if start == end:
+            node.wholeRef = u'{} {}'.format(book_title, start)
+        else:
+            node.wholeRef = u'{} {}-{}'.format(book_title, start, end)
+        node.validate()
+        s_node.append(node)
+    return s_node.serialize()
