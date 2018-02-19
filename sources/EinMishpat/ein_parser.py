@@ -126,7 +126,7 @@ def parse_em(filename, passing, errorfilename, EM = True):
     with codecs.open(filename, 'r', 'utf-8') as fp:
         lines = fp.readlines()
     # pattern = ur'''(ו?שו?["\u05f4]ע|ו?ב?מיי['\u05f3]|ו?ב?סמ"?ג|ו?ב?טוש["\u05f4]ע|ו?ב?טור)'''
-    pattern = ur'''(ו?שו?["\u05f4]ע|ו?ב?מיי['\u05f3]|ו?ב?סמ"?ג|ו?ב?טוש["\u05f4]ע|ו?ב?טור|ו?רמב"ם)'''
+    pattern = ur'''(ו?שו?["\u05f4]ע|ו?ב?מיי['\u05f3]|ו?ב?סמ"?ג|ו?ב?טוש["\u05f4]ע|ו?ב?טור|ו?ה?רמב"ם)'''
 
     for line in lines:
         mass.error_flag = False
@@ -228,7 +228,7 @@ class Semag(object):
 
 
     def parse_semag(self, str, mass):
-        reg_book = re.compile(u'ו?(עשין|שם|לאוין|לאין)')
+        reg_book = re.compile(u'ו?ב?(עשין|שם|לאוין|לאין)')
         split = re.split(reg_book, str.strip())
         str_list = filter(None, [item.strip() for item in split])
         resolveds = []
@@ -632,6 +632,7 @@ def rambam_name_table():
     name_dict[u'שאר אבות הטומאה'] = name_dict[u'שאר אבות הטומאות']
     name_dict[u'מעשה קרבנות'] = name_dict[u'מעשה הקרבנות']
     name_dict[u'מעשה קרבן'] = name_dict[u'מעשה הקרבנות']
+    name_dict[u'מעה"ק'] = name_dict[u'מעשה הקרבנות'] # notice when there isn't the word "הלכה" the 'ה"' seems like an indication to halachah "ק"
     name_dict[u'תענית'] = name_dict[u'תעניות']
     name_dict[u'מקוואות'] = name_dict[u'מקואות']
     name_dict[u'ערכין וחרמין'] = name_dict[u'ערכים וחרמין']
@@ -722,13 +723,16 @@ def clean_line(line):
     in_per = reg_parentheses.search(line)
     in_bra = reg_brackets.search(line)
     reg_ayyen_tur = re.compile(u'''ו?(עיין|עי'|ע"ש) בטור''')
+    reg_lo_manu = re.compile(u'''((אך )?לא מנ.*?)(סמ"?ג|רמב"?ם|טור|\n)''')
     line = re.sub(u'\[.*?אלפס.*?\]', u'', line)
     line = re.sub(u'טור ו?שו"ע', u'טוש"ע', line)
-    pos = re.search(reg_ayyen_tur, line)
+    f_ayyen = re.search(reg_ayyen_tur, line)
+    f_lo_manu = re.search(reg_lo_manu, line)
 
-    if pos:
-        line = line[:pos.start()]
-
+    if f_ayyen:
+        line = line[:f_ayyen.start()]
+    if f_lo_manu:
+        line = re.sub(reg_lo_manu, "", line)
     if in_per:
         if in_bra:
             clean = re.sub(reg_brackets, ur'\1', line)  # brackets are always correct
@@ -1029,6 +1033,6 @@ if __name__ == "__main__":
     # reverse_collapse('csvQA/megillah_little_letters.csv', 'csvQA/collapsed_megillah')
     # run1(u'collapsed/lost_lines', u'collapsed/lost_lines') #avodah_zarah
     # run1('/home/shanee/www/sefaria/Sefaria-Data/sources/Semak/citations', EM = False)
-    run2("tests/az_collapsed", "tests/avodah_zarah")
+    run2("done/zevachim", "done/zevachim")
 
 

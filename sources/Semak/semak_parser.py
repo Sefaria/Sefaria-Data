@@ -521,6 +521,13 @@ def post_smk(ja_smk):
         'text': [u"הקדמה"]
     }
 
+    text_version_remazim = {
+        'versionTitle': 'Sefer Mitzvot Katan, Kopys, 1820',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001771677',
+        'language': 'he',
+        'text': [u"א", u"ב"]
+    }
+
     smk_root = SchemaNode()
     smk_root.add_title(u'Sefer Mitzvot Katan', 'en', True)
     smk_root.add_title(u'ספר מצוות קטן', 'he', True)
@@ -538,12 +545,23 @@ def post_smk(ja_smk):
 
     smk_root.append(smk_intro)
 
+    add_term(u"Remazim", u"רמזים")
+    smk_remazim = JaggedArrayNode()
+    smk_remazim.add_title(u'Remazim', 'en', primary=True, )
+    smk_remazim.add_title(u'רמזים', 'he', primary=True, )
+    smk_remazim.key = u'Remazim'
+    smk_remazim.depth = 1
+    smk_remazim.sectionNames = ['Paragraph']
+    smk_remazim.addressTypes = ['Integer']
+    smk_root.append(smk_remazim)
+
     smk_schema = JaggedArrayNode()
     smk_schema.key = u"default"
     smk_schema.default = True
     smk_schema.depth = 2
     smk_schema.addressTypes = ['Integer', 'Integer']
     smk_schema.sectionNames = ['Siman', 'Segment']
+
 
     smk_root.append(smk_schema)
     smk_root.validate()
@@ -562,6 +580,7 @@ def post_smk(ja_smk):
         nodes.append(node.serialize())
 
     add_term("Pillars", u"עמודים")
+
     index_dict = {
         'title': 'Sefer Mitzvot Katan',
         'categories': ['Halakhah'],
@@ -577,12 +596,11 @@ def post_smk(ja_smk):
     post_index(index_dict)
 
     post_text(u'Sefer Mitzvot Katan', text_version_smk)
-    post_text(u'Sefer Mitzvot Katan, Introduction', text_version_intro)
+    # post_text(u'Sefer Mitzvot Katan, Introduction', text_version_intro)
 
-
-    # post_text_weak_connection('Sefer Mitzvot Katan', text_version)
 
 def add_remazim_node():
+    add_term(u"Remazim", u"רמזים")
 
     smk_remazim = JaggedArrayNode()
     smk_remazim.add_title(u'Remazim', 'en', primary=True, )
@@ -592,7 +610,7 @@ def add_remazim_node():
     smk_remazim.sectionNames = ['Paragraph']
     smk_remazim.addressTypes = ['Integer']
 
-    library.get_schema_node("Sefer Mitzvot Katan")
+    # library.get_schema_node("Sefer Mitzvot Katan")
     smk_schema = Ref("Sefer Mitzvot Katan").index_node
     attach_branch(smk_remazim, smk_schema, place=1)
     text_version_remazim = {
@@ -601,7 +619,7 @@ def add_remazim_node():
         'language': 'he',
         'text': [u"א", u"ב"]
     }
-    # add_term(u"Remazim", u"רמזים")
+
     # post_text(u'Sefer Mitzvot Katan, Remazim', text_version_remazim)
 
 def post_raph(ja_raph):
@@ -686,6 +704,14 @@ def post_hagahot(ja_hg):
     post_text('Haggahot Chadashot on Sefer Mitzvot Katan', text_version)
 
 
+def post_all_smk(ja_smk, ja_raph, ja_hagahot, raph_links, hg_links):
+    post_smk(ja_smk)
+    post_raph(ja_raph)
+    post_link(raph_links)
+    post_hagahot(ja_hagahot)
+    post_link(hg_links)
+
+
 def link_raph(ja_smk, ja_raph_simanim):  # look how to get this information where it is coming from.
     # ja_raph_simanim = siman, letter
     links = []
@@ -721,6 +747,7 @@ def link_raph(ja_smk, ja_raph_simanim):  # look how to get this information wher
             links.append(link)
     return links
 
+
 def link_remazim():
     links = []
     remazim = Ref("Sefer Mitzvot Katan, Remazim").all_segment_refs()
@@ -734,7 +761,7 @@ def link_remazim():
         ],
             "type": "Sifrei Mitzvot",
             "auto": True,
-            "generated_by": "semak_parser_sfm_linker"  # _sfm_linker what is this parametor intended to be?
+            "generated_by": "semak_parser"  # _sfm_linker what is this parametor intended to be?
         })
         links.append(link)
     return links
@@ -769,6 +796,7 @@ def link_smg(ja_smk, filenametxt):
 
     return links
 
+
 def link_rambam(ja_smk):
     yad_list = library.get_indexes_in_category(u"Mishneh Torah")
     schema_yad_dict = {}
@@ -780,8 +808,36 @@ def link_rambam(ja_smk):
     rambam_tracker.resolve()
     return
 
+
+def link_smk_remazim_to_smg_remazim(smg_smk_links):
+    # op1:
+    # smk_remazim = Ref("Sefer Mitzvot Katan, Remazim").all_segment_refs()
+    # for k_r_ref in smk_remazim:
+    #     for l_k_r in k_r_ref.linkset():
+    #         #take the ref that is to Semag if there is one
+    #         # put it in a method that findes its linkset and looks for the link to the Semag remazim
+    #         # take that method
+    # op2:
+    links = []
+    for old_l in smg_smk_links:
+        siman_smk = re.search(u'Sefer Mitzvot Katan (\d{1,3})', old_l['refs'][0]).group(1)
+        ref_smg = re.search(u'Sefer Mitzvot Gadol,(.*?)\s(\d{1,3})', old_l['refs'][1])
+        part_smg = ref_smg.group(1)
+        siman_smg = ref_smg.group(2)
+        link = ({"refs":[
+                                u'Sefer Mitzvot Katan, Remazim.{}'.format(siman_smk),
+                                u'Sefer Mitzvot Gadol,{}, Remazim.{}'.format(part_smg, siman_smg)
+                    ],
+                    "type": "Sifrei Mitzvot",
+                    "auto":True,
+                    "generated_by": "semak_parser_remazim_sfm_linker"  #_sfm_linker what is this parametor intended to be?
+                    })
+        links.append(link)
+    return links
+
+
 if __name__ == "__main__":
-    # ja_smk = parse_semak('Semak.txt')
+    ja_smk = parse_semak('Semak.txt')
     # # siman_page = map_semak_page_siman(ja_smk, to_print=True)
     # letter_ja = parse_Raph_by_letter(u'Raph_on_Semak.txt')
     # raph_smk_alignment = raph_alignment_report(ja_smk, letter_ja)
@@ -794,14 +850,11 @@ if __name__ == "__main__":
     # hgh_align = hagahot_alignment(ja_smk, ja_raph, ja_hagahot)
     # ja_hagahot = hagahot_parse(ja_hagahot, hgh_align)
     # hg_links = link_hg(ja_hagahot, hgh_align, ja_raph)
-    #
-    # post_smk(ja_smk)
-    # post_raph(ja_raph)
-    # post_link(raph_links)
-    # post_hagahot(ja_hagahot)
-    # post_link(hg_links)
-    # post_link(link_smg(ja_smk, u'smg_smk_test'))
-    # add_remazim_node()
-    post_link(link_remazim())
-
-
+    # #
+    # post_all_smk(ja_smk, ja_raph, ja_hagahot, raph_links, hg_links)
+    smg_links = link_smg(ja_smk, u'smg_smk_test')
+    # post_link(smg_links, VERBOSE=True)
+    # # # add_remazim_node()
+    # post_link(link_remazim(), VERBOSE=True)
+    # remazim_sm_g_k = link_smk_remazim_to_smg_remazim(smg_links)
+    # post_link(remazim_sm_g_k, VERBOSE=True)

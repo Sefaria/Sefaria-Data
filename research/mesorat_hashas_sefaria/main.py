@@ -15,4 +15,5 @@ print '-----FILTERING CLOSE MATCHES'
 
 #sort_n_save('all/mesorat_hashas_mishnah_filtered.json')
 #count_cats('all/mesorat_hashas_mishnah_filtered.json')
-daf_with_most_links('all/mesorat_hashas_mishnah_filtered.json')
+#daf_with_most_links('all/mesorat_hashas_mishnah_filtered.json')
+pm.init_hashtable_for_full_library()

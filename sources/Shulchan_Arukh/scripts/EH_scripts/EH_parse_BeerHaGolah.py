@@ -1,6 +1,7 @@
 # coding=utf-8
 
 from data_utilities.util import he_ord
+from EH_base import move_special_section
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
 
@@ -116,4 +117,25 @@ for i in [1,2]:
     errors = b_vol.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'@44', x.text) is not None)
     for e in errors:
         print e
+
+get_sec = move_special_section(b_hagolah, u"Be'er HaGolah, Seder HaGet", u"באר הגולה, סדר הגט", u"Get")
+get_sec.mark_cyclical_seifim(u'@11([\u05d0-\u05ea\u2022])')
+get_sec.format_text(u'$^', u'$^', u'dh')
+get_sec.set_rid_on_seifim(root.get_commentary_id(u"Seder HaGet"), get_sec.get_parent().get_book_id(), cyclical=True)
+base_get_sec = commentaries.get_commentary_by_title(u"Seder HaGet")
+base_get_vol = base_get_sec.get_volume(1)
+
+halitza_sec = move_special_section(b_hagolah, u"Be'er HaGolah, Seder Halitzah", u"באר הגולה, סדר חליצה", u"Halitza")
+halitza_sec.mark_cyclical_seifim(u'@11([\u05d0-\u05ea\u2022])')
+halitza_sec.format_text(u'$^', u'$^', u'dh')
+halitza_sec.set_rid_on_seifim(root.get_commentary_id(u"Seder Halitzah"), halitza_sec.get_parent().get_book_id(), cyclical=True)
+base_halitza_sec = commentaries.get_commentary_by_title(u"Seder Halitzah")
+base_haliza_vol = base_halitza_sec.get_volume(1)
+
+root.populate_comment_store()
+errors = base_get_vol.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'@44', x.text) is not None)
+errors += base_haliza_vol.validate_all_xrefs_matched(lambda x: x.name=='xref' and re.search(u'@44', x.text) is not None)
+for e in errors:
+    print e
+
 root.export()

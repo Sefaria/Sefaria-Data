@@ -31,6 +31,7 @@ def markup(vol, xml_root):
     """
     commentaries = xml_root.get_commentaries()
     vol.mark_references(commentaries.commentary_ids["Beur HaGra"], u'!([\u05d0-\u05ea]{1,3})\)', group=1)
+    vol.mark_references(commentaries.commentary_ids["Pithei Teshuva"], ur'@66\(([\u05d0-\u05ea]{1,3})\)', group=1)
     vol.mark_references(commentaries.commentary_ids["Be'er HaGolah"], u'@44([\u05d0-\u05ea\u2022])', group=1, cyclical=True)
     vol.mark_references(commentaries.commentary_ids["Turei Zahav"], u"@91(\[[\u05d0-\u05ea]{1,3}\])", group=1)
     vol.convert_pattern_to_itag(u"Beit Shmuel", u"@55([\u05d0-\u05ea]{1,3})")
@@ -119,6 +120,7 @@ if __name__ == "__main__":
         markup(volume, root)
 
     # correct_marks_in_file(filenames[2], u'@22', ur'@44([\u05d0-\u05ea])', overwrite=False, error_finder=out_of_order_he_letters)
+    commentaries = root.get_commentaries()
 
     # To handle the special "Get" and "Halitza" sections, just treat them as independant works.
     print u"Validating Seder HaGet"
@@ -129,6 +131,13 @@ if __name__ == "__main__":
     get_sec.validate_references(ur'@44([\u05d0-\u05ea])', u'@44 -Be\'er HaGolah', key_callback=he_ord)
     for pattern, code in zip(patterns, codes):
         get_sec.validate_references(pattern, code)
+    get_volume = get_sec.get_parent()
+    get_volume.mark_references(commentaries.commentary_ids[u"Beur HaGra, Seder HaGet"], u'!([\u05d0-\u05ea]{1,3})\)', group=1)
+    get_volume.mark_references(commentaries.commentary_ids[u"Pithei Teshuva, Seder HaGet"], ur'@66\(([\u05d0-\u05ea]{1,3})\)', group=1)
+    get_volume.mark_references(commentaries.commentary_ids[u"Be'er HaGolah, Seder HaGet"], u'@44([\u05d0-\u05ea\u2022])', group=1, cyclical=True)
+
+    for seif in get_sec.get_child():
+        seif.Tag['rid'] = 'no-link'
 
     print u"Validating Seder Halitzah"
     halitza_sec = move_special_section(base, 'Seder Halitzah', u'סדר חליצה', u'Halitza')
@@ -138,5 +147,12 @@ if __name__ == "__main__":
     halitza_sec.validate_references(ur'@44([\u05d0-\u05ea])', u'@44 -Be\'er HaGolah', key_callback=he_ord)
     for pattern, code in zip(patterns, codes):
         halitza_sec.validate_references(pattern, code)
+    halitza_vol = halitza_sec.get_parent()
+    halitza_vol.mark_references(commentaries.commentary_ids[u"Beur HaGra, Seder Halitzah"], u'!([\u05d0-\u05ea]{1,3})\)', group=1)
+    halitza_vol.mark_references(commentaries.commentary_ids[u"Pithei Teshuva, Seder Halitzah"], ur'@66\(([\u05d0-\u05ea]{1,3})\)', group=1)
+    halitza_vol.mark_references(commentaries.commentary_ids[u"Be'er HaGolah, Seder Halitzah"], u'@44([\u05d0-\u05ea\u2022])', group=1, cyclical=True)
+
+    for seif in halitza_sec.get_child():
+        seif.Tag['rid'] = 'no-link'
 
     root.export()
