@@ -987,6 +987,7 @@ class Seif(OrderedElement):
         for word in text_array:
             if re.search(start_special, word):
                 if is_special:  # Two consecutive special patterns have been found
+                    print " ".join(text_array)
                     raise AssertionError('Seif {}: Two consecutive formatting patterns ({}) found'.format(self.num, start_special))
                 else:
                     split_by_pattern = re.split(start_special, word)

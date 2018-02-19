@@ -33,7 +33,7 @@ def get_text(files):
     #                 temp_line = temp_line.replace(paragraph_end, "")
     #                 text.append(temp_line)
     #                 temp_line = ""
-    onefile = open("Shabbos Siddur Sfard.txt")
+    onefile = open("Shabbos Siddur Sfard new.txt")
     text = list(onefile)
     return text
 
@@ -202,22 +202,43 @@ def shir_hashirim(parser):
     en_chapters = {}
     he_chapters = {}
     chapters = [en_chapters, he_chapters]
-    chapter_lambda = lambda x: x.startswith("Chapter") or x.startswith("CHAPTER") or x.startswith("פרק") or x.startswith("פרק ")
+    perek = "פרק"
+
+    chapter_lambda = lambda x: x.startswith("Chapter") or x.startswith("CHAPTER") or x.startswith(perek) or x[1:].startswith(perek)
     curr_ch = 0
+    curr_i = -1
+    curr_pasuk = 0
     for i, text in enumerate([en_text, he_text]):
-        for line in text:
-            if len(line.split(" ")) == 2 and chapter_lambda(line):
+        curr_ch = 0
+        for line_n, line in enumerate(text):
+            if len(line.split(" ")) in [2, 3] and chapter_lambda(line):
                 curr_ch += 1
-                chapters[i][curr_ch] = []
+                curr_pasuk = 0
+                chapters[i][curr_ch] = {}
             else:
-                chapters[i][curr_ch].append(line)
+                line_begins_pasuk = re.compile("^(.{1,5})\.\s+")
+                match = line_begins_pasuk.match(line)
+                if match:
+                    line = line.replace(match.group(0), "")
+                    curr_pasuk += 1
+                    chapters[i][curr_ch][curr_pasuk] = line
+                else:
+                    chapters[i][curr_ch][curr_pasuk] += " " + line
 
+    for i, chapter in enumerate(
+            chapters):
+        for j, subch in chapter.items():
+            chapters[i][j] = convertDictToArray(chapters[i][j])
         chapters[i] = convertDictToArray(chapters[i])
-
+    en_chapters = chapters[0]
+    he_chapters = chapters[1]
+    parser.text["en"]["Sefard Siddur Shabbat| Song of Songs"] = en_chapters
+    parser.text["he"]["Sefard Siddur Shabbat| Song of Songs"] = he_chapters
     node = JaggedArrayNode()
     node.add_shared_term("Song of Songs")
     node.add_structure(["Chapter", "Paragraph"])
-    pass
+    parser.schema.children[6] = node
+    return parser
 
 
 
@@ -254,7 +275,7 @@ if __name__ == "__main__":
     cats = ["Liturgy"]
     parser = Metsudah_Parser("Sefard Siddur Shabbat", u"סידור ספרד שבתי", cats=cats, vtitle="The Metsudah Siddur...",
                 vsource="http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002211687",
-                input_text="Shabbos Siddur Sfard.txt", node_separator="|")
+                input_text="Shabbos Siddur Sfard new.txt", node_separator="|")
     notes = Metsudah_Parser("Sefard Siddur Shabbat Notes", u"סידור ספרד שבתי", cats=cats, vtitle="The Metsudah Siddur...",
                              vsource="http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002211687",
                              input_text="Notes.txt", node_separator="|")
@@ -266,7 +287,7 @@ if __name__ == "__main__":
     ftnotes.missing_ftnotes_report()
     ftnotes.insert_ftnotes_into_text()
     parser.create_schema()
-    shir_hashirim(parser)
+    parser = shir_hashirim(parser)
     server = "http://draft.sefaria.org"
     post_index(parser.index, server=server)
     parser.post_text(server)

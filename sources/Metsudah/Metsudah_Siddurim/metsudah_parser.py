@@ -40,18 +40,18 @@ class Metsudah_Parser:
     def pre_parse(self):
         orig_text = list(open(self.input_text))
         bad_chars = Counter()
-        replacements = [("׀", "—"), ("_", "-"), ("±", "-"), ("<TIE>", " "), ("<IT>", "<i>"),
+        replacements = [("׀", "—"), ("_", "-"), ("±", "-"), ("<TIE>", " "), ("<IT>", "<i>"), ("<HEB>קּ<SZ14>", "❖"),
                         ("<ITC>", "</i>"), ("@ss", "<small>"), ("@sr", "</small>"), ("@eb", "<b>"), ("@hb", "<b>")]
-        he_replacements = [("r", "ע"), ("H", "לֹּ"), ("G", "לֹ"), ("x", "רֹּ"), ("§", "ךָ"), ("-", "־"), ("<HEB>קּ<SZ14>", "❖")]
+        he_replacements = [("r", "ע"), ("H", "לֹּ"), ("G", "לֹ"), ("x", "רֹּ"), ("§", "ךָ"), ("-", "־")]
         it_only = []
         itc_only = []
         for line_n, line in enumerate(orig_text):
-            #first remove non-html and non-ftnote related tags
-            orig_text[line_n] = self.replace_tags(line, skip_html=True, skip_ftnotes=True, skip_header=True, skip_language=True)
-
-            #now remove extra <i>s and replace replacements
+            #first make replacements and then remove non-html and non-ftnote related tags
             for replacement in replacements:
                 orig_text[line_n] = orig_text[line_n].replace(replacement[0], replacement[1])
+            orig_text[line_n] = self.replace_tags(orig_text[line_n], skip_html=True, skip_ftnotes=True, skip_header=True, skip_language=True)
+
+            #now remove extra <i>s and replace replacements
             if "<i>" in orig_text[line_n] and not "</i>" in orig_text[line_n]:
                 orig_text[line_n] = orig_text[line_n].replace("<i>", "")
             elif "</i>" in orig_text[line_n] and not "<i>" in orig_text[line_n]:
