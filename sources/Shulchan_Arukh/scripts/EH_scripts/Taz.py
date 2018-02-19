@@ -96,7 +96,8 @@ for i, filename in enumerate(filenames):
     #b_vol.mark_references(volume.get_book_id(), u'@77\(([\u05d0-\u05ea]{1,3})\)', group=1)
 
     volume.mark_simanim(u'@22([\u05d0-\u05ea]{1,4})', specials={u'@00': {'name': u'topic'},
-                                                                u'@14': {'name': u'Get', 'end': u'!end!'}})
+                                                                u'@14': {'name': u'Get', 'end': u'!end!'},
+                                                                u'@15': {'name': u'ShmotAnashim', 'end': u'!end!'}})
     volume.validate_simanim(complete=False)
     errors = []
     errors += volume.mark_seifim(u'@11([\u05d0-\u05ea]{1,3})')
@@ -110,10 +111,10 @@ for i, filename in enumerate(filenames):
     volume.set_rid_on_seifim()
     if len(sys.argv) == 2 and sys.argv[1] == "--run":
         errors += root.populate_comment_store()
-        errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u'@91', x.text) is not None, base="Orach Chaim", commentary="Turei Zahav", simanim_only=True)
+        errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u'@91', x.text) is not None, base="Even HaEzer", commentary="Turei Zahav", simanim_only=True)
 
 
-    for i in errors:
-        print i
+    for e in errors:
+        print e
 
 root.export()
