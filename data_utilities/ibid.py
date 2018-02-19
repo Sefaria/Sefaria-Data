@@ -22,7 +22,7 @@ class CitationFinder():
     AFTER_TITLE_DELIMETER_RE = ur"[,.: \r\n]+"
 
     @staticmethod
-    def get_ultimate_title_regex(title_list, title_node_dict, lang, compiled=True):
+    def get_ultimate_title_regex(title_list, title_node_dict, lang, compiled=True, dropParenthesis = False):
        #todo: consider situations that it is obvious it is a ref although there are no () ex: ברכות פרק ג משנה ה
         """
         returns regex to find either `(title address)` or `title (address)`
@@ -69,6 +69,13 @@ class CitationFinder():
                 reg = u'(?:{})|(?:{})|(?:{})'.format(inner_paren_sham_reg, outer_paren_sham_reg, stam_sham_reg)
             else:
                reg = u'(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_reg)
+
+            # Note! dropParenthesis doesn't work with Shams!!!
+            if dropParenthesis:
+                # no_paren_reg = u"(?P<Title>" + re.escape(
+                #     title) + u")" + after_title_delimiter_re + ur'(?:' + address_regex + ur')'
+                no_paren_reg = u"(?P<Title>" + re.escape(title) + u")" + u"(?:"+address_regex+u")"
+                reg = u'(?:{})'.format(no_paren_reg)
 
             title_reg_list += [reg]
 
@@ -211,7 +218,7 @@ class CitationFinder():
         raise InputError
 
     @staticmethod
-    def get_potential_refs(st, lang='he'):
+    def get_potential_refs(st, lang='he', dropParenthesis = False):
         REF_SCOPE = 7
         title_sham = u'שם'
         non_ref_titles = [u'לעיל', u'להלן', u'דף']
@@ -232,9 +239,11 @@ class CitationFinder():
                 node = None
             title_node_dict[title] = node
 
-        full_crazy_ultimate_title_reg = CitationFinder.get_ultimate_title_regex(unique_titles.keys(), title_node_dict, lang, compiled=True)
+        full_crazy_ultimate_title_reg = CitationFinder.get_ultimate_title_regex(unique_titles.keys(), title_node_dict, lang, compiled=True, dropParenthesis = dropParenthesis)
         ref_span_set = set()
         for m in re.finditer(full_crazy_ultimate_title_reg, st):
+            if not m:
+                continue
             ref_span_set = ref_span_set.union(range(m.start(), m.end()))
             title = m.groupdict().get('Title')
             node = title_node_dict[title]
@@ -267,7 +276,7 @@ class CitationFinder():
 
         for title in non_ref_titles:
             node = None
-            title_reg = CitationFinder.get_ultimate_title_regex(title, node, lang, compiled=True)
+            title_reg = CitationFinder.get_ultimate_title_regex(title, node, lang, compiled=True, dropParenthesis = dropParenthesis)
             for m in re.finditer(title_reg, st):
                 if set(range(m.start(), m.end())).intersection(ref_span_set):
                     continue
@@ -296,6 +305,7 @@ class CitationFinder():
             title = u'I ' + book
             return library.get_schema_node(title)
         return library.get_schema_node(u'II ' + book)
+
 
 class IndexIbidFinder(object):
 
