@@ -21,7 +21,8 @@ for piece in [1,2]:
 
     volume.mark_simanim(u'@00([\u05d0-\u05ea]{1,3})', specials={
         u'@13': {'name': u'Halitza', 'end': u'!end!'},
-        u'@14': {'name': u'Get', 'end': u'!end!'}
+        u'@14': {'name': u'Get', 'end': u'!end!'},
+        u'@15': {'name': u'Names', 'end': u'!end!'}
     })
     print "Validating Simanim"
     volume.validate_simanim(complete=False)
@@ -47,6 +48,11 @@ for piece in [1,2]:
         lambda x: x.name == 'xref' and re.search(ur'@66\(([\u05d0-\u05ea]{1,3})\)', x.text) is not None)
     for e in errors:
         print e
+
+name_sec = move_special_section(pithei, u"Pithei Teshuva, Shemot Anashim V'Nashim", u'פתחי תשובה, שמות אנשים ונשים', u'Names')
+name_sec.mark_seifim(u'@22\(([\u05d0-\u05ea]{1,3})\)', enforce_order=True)
+name_sec.validate_seifim()
+name_sec.format_text(u'@11', u'@33', u'dh')
 
 get_sec = move_special_section(pithei, u'Pithei Teshuva, Seder HaGet', u'פתחי תשובה, סדר הגט', u'Get')
 get_sec.mark_seifim(u'@22\(([\u05d0-\u05ea]{1,3})\)', enforce_order=True)
