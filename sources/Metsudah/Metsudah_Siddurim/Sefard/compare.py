@@ -225,8 +225,7 @@ def shir_hashirim(parser):
                 else:
                     chapters[i][curr_ch][curr_pasuk] += " " + line
 
-    for i, chapter in enumerate(
-            chapters):
+    for i, chapter in enumerate(chapters):
         for j, subch in chapter.items():
             chapters[i][j] = convertDictToArray(chapters[i][j])
         chapters[i] = convertDictToArray(chapters[i])
@@ -238,6 +237,7 @@ def shir_hashirim(parser):
     node.add_shared_term("Song of Songs")
     node.add_structure(["Chapter", "Paragraph"])
     parser.schema.children[6] = node
+    parser.index['schema']['nodes'][6] = node.serialize()
     return parser
 
 
@@ -288,7 +288,7 @@ if __name__ == "__main__":
     ftnotes.insert_ftnotes_into_text()
     parser.create_schema()
     parser = shir_hashirim(parser)
-    server = "http://draft.sefaria.org"
+    server = "http://localhost:8000"
     post_index(parser.index, server=server)
     parser.post_text(server)
 

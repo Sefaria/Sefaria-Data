@@ -276,7 +276,10 @@ class Metsudah_Parser:
             for ref, text in self.text[lang].items():
                 ref = ref.replace(self.node_separator, ",")
                 send_text = {"text": text, "versionTitle": self.vtitle, "versionSource": self.vsource, "language": lang}
-                post_text(ref, send_text, server=server)
+                result = post_text(ref, send_text, server=server)
+                if "error" in result:
+                    if text != []:
+                        print "Problem with {}".format(ref)
 
 
     def create_schema(self):

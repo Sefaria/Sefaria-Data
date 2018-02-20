@@ -1,7 +1,7 @@
 #encoding=utf-8
 import sys
 from sources.Shulchan_Arukh.ShulchanArukh import *
-
+from EH_base import move_special_section
 
 def convert(filename):
     new = []
@@ -116,5 +116,17 @@ for i, filename in enumerate(filenames):
 
     for e in errors:
         print e
+
+
+get_sec = move_special_section(taz, u'Turei Zahav, Seder HaGet', u'טורי זהב, סדר הגט', u'Get')
+get_sec.mark_seifim(u'@11([\u05d0-\u05ea]{1,3})', enforce_order=True)
+get_sec.validate_seifim()
+get_sec.format_text(u'', u'', u'reg-text')
+get_sec.set_rid_on_seifim(root.get_commentary_id(u"Seder HaGet"), get_sec.get_parent().get_book_id())
+
+names_sec = move_special_section(taz, u'Turei Zahav, Shmot Anashim', u'טורי זהב, שמונת אנשים ', u'ShmotAnashim')
+names_sec.mark_seifim(u'@11([\u05d0-\u05ea]{1,3})', enforce_order=True)
+names_sec.validate_seifim()
+names_sec.format_text(u'', u'', u'reg-text')
 
 root.export()
