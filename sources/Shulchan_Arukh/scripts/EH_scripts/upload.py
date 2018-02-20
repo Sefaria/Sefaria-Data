@@ -7,8 +7,10 @@ Taz seems not to have Seder Halitzah
 Even HaEzer needs to be made complex on prod.
 """
 
+import argparse
 import unicodecsv
 from sefaria.model import *
+from sources import functions
 
 def get_schema(en_title, he_title):
     root_node = SchemaNode()
@@ -54,3 +56,30 @@ def get_alt_struct(book_title):
         node.validate()
         s_node.append(node)
     return s_node.serialize()
+
+
+def shulchan_arukh_index(server='http://localhost:8000', *args, **kwargs):
+    original_index = functions.get_index_api("Shulchan Arukh, Even HaEzer", server=server)
+    original_index['alt_structs'] = {'Topic': get_alt_struct("Shulchan Arukh, Even HaEzer")}
+    return original_index
+
+
+def commentary_index(en_title, he_title, commentator):
+    return {
+        "title": en_title,
+        "categories": ["Halakhah", "Shulchan Arukh", "Commentary", commentator],
+        "dependence": "Commentary",
+        "collective_title": commentator,
+        "alt_structs": {"Topic": get_alt_struct(en_title)},
+        "schema": get_schema(en_title, he_title),
+        "base_text_titles": ["Shulchan Arukh, Even HaEzer"]
+    }
+
+
+def generic_cleaner(ja, clean_callback):
+    for i, siman in enumerate(ja):
+        for j, seif in enumerate(siman):
+            ja[i][j] = clean_callback(seif)
+
+
+
