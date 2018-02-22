@@ -23,32 +23,32 @@ def get_poss_parsha(line):
 def parse_after_chukat(lines, allowed):
     current_parsha = "intro"
     parsha_order = []
-    current_ch = 19
-    aderet_text["Bamidbar"] = {19: {}}
-    aderet_text["Devarim"] = {1: {}}
-    current_book = "Bamidbar"
-    current_segment = 0
-    num = 0
+    aderet_text = {}
+    prev_22 = False
 
     for line_n, line in enumerate(lines):
         line = line.decode('utf-8')
-        if u"@00דברים" in line:
-            current_ch = 0
-            current_book = "Devarim"
-        if line.startswith(u"@22"):
-            num = getGematria(line)
-            if prev_num >= num:
-                if num not in [1, 2, 3, 4, 5]:
-                    print "ERROR"
-                current_ch += 1
-            if current_ch not in aderet_text[current_book]:
-                aderet_text[current_book][current_ch] = {}
-            aderet_text[current_book][current_ch][num] = []
-            current_segment = num
-        elif line.startswith(u"@11"):
-            for line in divide_lines(line):
-                aderet_text[current_book][current_ch][current_segment].append(line)
-        prev_num = num
+        if line.startswith("@00"):
+            current_parsha = removeAllTags(line).replace("\n", "").strip()
+            parsha_order.append(current_parsha)
+            aderet_text[current_parsha] = []
+        elif line.startswith("@11") or aderet_text[current_parsha] == []:
+            if prev_22:
+                aderet_text[current_parsha][0] += "<br>"+line
+            line = line.replace("@44", "@11").replace("@55", "@33")
+            aderet_text[current_parsha].append(line)
+        elif line.startswith("@22"):
+            if aderet_text[current_parsha] == []:
+                aderet_text[current_parsha].append(line[3:])
+            else:
+                aderet_text[current_parsha][0] += "<br>"+line[3:]
+        else:
+            if "@44" not in line:
+                line = removeAllTags(line)
+            aderet_text[current_parsha].append(line)
+
+        prev_22 = line.startswith("@22")
+
 
     return aderet_text, parsha_order
 
@@ -60,17 +60,13 @@ def divide_lines(line):
     lines = [line for line in lines if line.replace(" ", "") != ""]
     return lines
 
-def dh_extract_method(str):
-    end = str.find("@33")
-    if end >= 0:
-        return str[0:end]
+def dh_extract_method(line):
+    if "@11" in line and "@44" not in line:
+        start = line.find("@11")
+        end = line.find("@33")
+        return line[start + 3:end]
     else:
-        str = " ".join(str.split(" ")[0:15])
-        end = str.find(".")
-        if end >= 0:
-            return str[0:end]
-        elif end == -1:
-            return str
+        return ""
 
 def base_tokenizer(str):
     str = str.replace(u"־", u" ").replace(u"  ", u" ")
@@ -80,24 +76,42 @@ def get_pasukim(aderet_text, parsha_order):
     overall = 0.0
     overall_good = 0.0
     found_this_ref = {}
+    he_books = [library.get_index(book).get_title('he') for book in library.get_indexes_in_category("Torah")]
     found_refs = Counter()
-    with open("Aderet_Eliyahu.csv", 'w') as f:
+    actual_parshiot = [term.get_titles('he')[-1] for term in TermSet({'scheme': 'Parasha'})]
+    print actual_parshiot
+    with open("Tzror HaMor.csv", 'w') as f:
         parsha_csv = UnicodeWriter(f)
-        parsha_csv.writerow(["Aderet Eliyahu Text", "Aderet Eliyah Ref"])
+        parsha_csv.writerow(["Tzror HaMor Text", "Tzror HaMor Ref", "Torah Ref"])
         parshiot = aderet_text.keys()
+        rows = []
         for parsha in parsha_order:
+            print parsha
             comments = aderet_text[parsha]
             gaps = Counter()
+            prev_base_ref = ""
             total = 0.0
             good = 0.0
             biggest_gap = 0
             prev_good = True # whether or not the previous ref had a match
             curr_gap = 0
+            this_ref = ""
             curr_gap_started_ref = None
             if parsha == "intro":
                 continue
-            print(parsha)
-            full_parsha = "Parashat "+parsha
+
+            # check if parsha is also name of a book
+            if parsha in he_books:
+                book = library.get_indexes_in_category("Torah")[he_books.index(parsha)]
+                full_parsha = "Parashat "+book
+            else:
+                term = Term().load({"titles.text": parsha})
+                if not term or "ref" not in term.contents():
+                    print parsha
+                    corrected_parsha = find_almost_identical(parsha, actual_parshiot, 0.8)
+                    continue
+                full_parsha = parsha
+
             # refs = Ref(full_parsha).split_spanning_ref()
             # base_text = [TextChunk(ref, vtitle="Tanach with Text Only", lang='he') for ref in refs]
             # for ref, tc in zip(refs, base_text):
@@ -111,20 +125,59 @@ def get_pasukim(aderet_text, parsha_order):
                 base_ref = "" if base_ref is None else base_ref.normal()
                 if base_ref:
                     found_refs[base_ref] += 1
-                    this_ref = "Aderet Eliyahu, {}:{}".format(base_ref, found_refs[base_ref])
+                    this_ref = "Tzror HaMor, {}:{}".format(base_ref, found_refs[base_ref])
                     good += 1
                     prev_good = True
+                    rows.append([comment, this_ref, base_ref])
+                    prev_base_ref = base_ref
                 else:
+                    if comment.startswith("@44") and prev_base_ref != "":
+                        found_refs[prev_base_ref] += 1
+                        this_ref = "Tzror HaMor, {}:{}".format(prev_base_ref, found_refs[prev_base_ref])
+                        rows.append([comment, this_ref, prev_base_ref])
+                    else:
+                        rows.append([comment, "", ""])
+                        prev_base_ref = ""
+
                     if prev_good:
                         curr_gap_started_ref = this_ref
                     gaps[curr_gap_started_ref] += 1
                     prev_good = False
-                    this_ref = ""
 
-                parsha_csv.writerow([comment, this_ref])
                 #post_line(comment, this_ref)
                 total += 1
 
+        parsha_csv.writerows(rows)
+
+def interpret_csv():
+    with open("Tzror HaMor.csv") as f:
+        parsha_csv = UnicodeReader(f)
+        prev_row = ""
+        links = []
+        range_starts_at_row = ""
+        how_many_in_current_range = 0
+        for row in parsha_csv:
+            comment, tzror_ref, base_ref = row
+            if comment.startswith("@44"):
+                if prev_row[0].startswith("@11"):
+                    range_starts_at_row = prev_row
+                how_many_in_current_range += 1
+            else:
+                if prev_row and prev_row[0].startswith("@44"):
+                    assert range_starts_at_row != "" and how_many_in_current_range > 0
+                    base_ref = range_starts_at_row[2]
+                    tzror_start_ref = range_starts_at_row[1]
+                    tzror_start_sec = int(tzror_start_ref.split(":")[-1])
+                    tzror_end_sec = str(tzror_start_sec + how_many_in_current_range)
+                    assert tzror_start_ref.split(":")[-2] == prev_row[1].split(":")[-2] #assert section level is the same
+                    tzror_ref = tzror_start_ref + "-" + tzror_end_sec
+                    how_many_in_current_range = 0
+                    range_starts_at_row = ""
+                links.append({'refs': [tzror_ref, base_ref], 'type': 'commentary', 'auto': 'True',
+                              'generated_by': "tzrorhamor"})
+            prev_row = row
+
+    pass
 
 def post_line(comment, this_ref):
     if this_ref:
@@ -139,7 +192,7 @@ def post_line(comment, this_ref):
 
 def create_index(text):
     root = SchemaNode()
-    root.add_primary_titles("Aderet Eliyahu", u"אדרת אליהו")
+    root.add_primary_titles("Tzror HaMor", u"צרור המור")
     for book in library.get_indexes_in_category("Torah"):
         node = JaggedArrayNode()
         node.add_primary_titles(book, library.get_index(book).get_title('he'))
@@ -148,19 +201,19 @@ def create_index(text):
     root.validate()
     index = {
         "schema": root.serialize(),
-        "title": "Aderet Eliyahu",
-        "categories": ["Tanakh", "Commentary", "Aderet Eliyahu"]
+        "title": "Tzror HaMor",
+        "categories": ["Tanakh", "Commentary", "Tzror HaMor"]
     }
     post_index(index, server=server)
 
 def restruct_text(text, parsha_order):
     for parsha in parsha_order:
-        book = Ref(parsha).index.title
         comments = text[parsha]
         new_comments = []
         for comment in comments:
             dh = dh_extract_method(comment)
-            comment = comment.replace(dh, "", 1).replace("@33", "")
+            comment = comment.replace(dh, "", 1)
+            comment = removeAllTags(comment)
             comment = u"<b>{}</b>{}".format(dh, comment)
             assert type(comment) is str or type(comment) is unicode
             new_comments.append(comment)
@@ -194,34 +247,37 @@ if __name__ == "__main__":
     allowed.append(u"""מהדורא חמישאה""")
     allowed.append(u"""מהדורא שתיתאה""")
     allowed.append(u"""אופן שני""")
-    with open("aderet_eliyahu.txt") as f:
+    with open("tzror hamor.txt") as f:
         lines = list(f)
         lines = [line for line in lines if line]
         aderet_text, parsha_order = parse_after_chukat(lines, allowed)
 
-    for book, book_dict in aderet_text.items():
-        for perek, perek_dict in book_dict.items():
-            perek_dict = convertDictToArray(perek_dict)
-            aderet_text[book][perek] = perek_dict
-        aderet_text[book] = convertDictToArray(aderet_text[book])
-
-    send_text = {
-        "text": aderet_text["Bamidbar"],
-        "language": "he",
-        "versionTitle": "Aderet Eliyahu",
-        "versionSource": "http://draft.sefaria.org"
-    }
-
-    post_text("Aderet Eliyahu, Numbers", send_text, server="http://draft.sefaria.org")
-
-    send_text = {
-        "text": aderet_text["Devarim"],
-        "language": "he",
-        "versionTitle": "Aderet Eliyahu",
-        "versionSource": "http://draft.sefaria.org"
-    }
-    post_text("Aderet Eliyahu, Deuteronomy", send_text, server="http://draft.sefaria.org")
+    # for book, book_dict in aderet_text.items():
+    #     for perek, perek_dict in book_dict.items():
+    #         perek_dict = convertDictToArray(perek_dict)
+    #         aderet_text[book][perek] = perek_dict
+    #     aderet_text[book] = convertDictToArray(aderet_text[book])
 
     #create_index(aderet_text)
-    # aderet_text = restruct_text(aderet_text, parsha_order)
-    # get_pasukim(aderet_text, parsha_order)
+    #aderet_text = restruct_text(aderet_text, parsha_order)
+    #get_pasukim(aderet_text, parsha_order)
+    interpret_csv()
+
+
+    # send_text = {
+    #     "text": aderet_text["Bamidbar"],
+    #     "language": "he",
+    #     "versionTitle": "Aderet Eliyahu",
+    #     "versionSource": "http://draft.sefaria.org"
+    # }
+    #
+    # post_text("Aderet Eliyahu, Numbers", send_text, server="http://draft.sefaria.org")
+    #
+    # send_text = {
+    #     "text": aderet_text["Devarim"],
+    #     "language": "he",
+    #     "versionTitle": "Aderet Eliyahu",
+    #     "versionSource": "http://draft.sefaria.org"
+    # }
+    # post_text("Aderet Eliyahu, Deuteronomy", send_text, server="http://draft.sefaria.org")
+

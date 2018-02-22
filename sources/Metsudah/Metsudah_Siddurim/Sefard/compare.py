@@ -234,10 +234,11 @@ def shir_hashirim(parser):
     parser.text["en"]["Sefard Siddur Shabbat| Song of Songs"] = en_chapters
     parser.text["he"]["Sefard Siddur Shabbat| Song of Songs"] = he_chapters
     node = JaggedArrayNode()
-    node.add_shared_term("Song of Songs")
+    node.add_primary_titles("Song of Songs", library.get_index("Song of Songs").get_title('he'))
     node.add_structure(["Chapter", "Paragraph"])
-    parser.schema.children[6] = node
-    parser.index['schema']['nodes'][6] = node.serialize()
+    node.key = "song_of_songs"
+    parser.schema.children[4] = node
+    parser.index['schema']['nodes'][4] = node.serialize()
     return parser
 
 
@@ -288,7 +289,7 @@ if __name__ == "__main__":
     ftnotes.insert_ftnotes_into_text()
     parser.create_schema()
     parser = shir_hashirim(parser)
-    server = "http://localhost:8000"
+    server = "http://draft.sefaria.org"
     post_index(parser.index, server=server)
     parser.post_text(server)
 
