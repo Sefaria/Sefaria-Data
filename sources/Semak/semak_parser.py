@@ -803,7 +803,7 @@ def link_rambam(filename):
     for title in yad_list:
         schema_yad_dict[title] = library.get_schema_node(title)
 
-    # changes addressTypes of all Mishneh Torah indexs to ['Perek' , 'Halkhah']
+    ## changes addressTypes of all Mishneh Torah indexs to ['Perek' , 'Halkhah']
     # for node in schema_yad_dict.values():
     #     if len(node.sectionNames) != 2:
     #         continue
@@ -831,10 +831,10 @@ def link_rambam(filename):
                 #     # rambam_tracker.resolve()
                 #     refs = [rambam_cit]
             print i+1
-            if len(refs)>1:
-                print '****'+len(refs)
+
             for ref in refs:
                 if isinstance(ref[0], Ref):
+                    continue
                     print ref
                 else:
                     print ref[0].group()
