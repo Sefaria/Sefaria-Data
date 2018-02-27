@@ -132,6 +132,7 @@ def rambam_alt_names():
     name_dict[u'נ"כ'] = name_dict[u'תפילה וברכת כהנים']
     name_dict[u'נשיאות כפים'] = name_dict[u'תפילה וברכת כהנים']
     name_dict[u'נשיאת כפים'] = name_dict[u'תפילה וברכת כהנים']
+    name_dict[u'תפלה וברכת כהנים'] = name_dict[u'תפילה וברכת כהנים']
     name_dict[u'חנוכה'] = name_dict[u'מגילה וחנוכה']
     name_dict[u'מצה'] = name_dict[u'חמץ ומצה']
     name_dict[u'חמץ'] = name_dict[u'חמץ ומצה']
@@ -142,16 +143,17 @@ def rambam_alt_names():
     name_dict[u'פסולי המוקדשים'] = name_dict[u'פסולי המוקדשין']
     name_dict[u'ק"פ'] = name_dict[u'קרבן פסח']
     name_dict[u'רוצח וש"נ'] = name_dict[u'רוצח ושמירת נפש']
+    name_dict[u'רוצח'] = name_dict[u'רוצח ושמירת נפש']
     name_dict[u'שמירת הנפש'] = name_dict[u'רוצח ושמירת נפש']
     name_dict[u'יבום'] = name_dict[u'יבום וחליצה']
     name_dict[u'חליצה'] = name_dict[u'יבום וחליצה']
 
-    # for name in name_dict.keys():
-    #     first = re.split('\s', name)
-    #     if len(first) > 1:
-    #         name_dict[first[0]] = name_dict[name]
-    # del name_dict[u'איסורי']
-    # del name_dict[u'טומאת']
+    for name in name_dict.keys():
+        first = re.split('\s', name)
+        if len(first) > 1:
+            name_dict[first[0]] = name_dict[name]
+    del name_dict[u'איסורי']
+    del name_dict[u'טומאת']
 
     idxset = IndexSet({'title': {'$regex': '^Mishneh Torah,'}})
     rambam_alt = defaultdict(lambda: [])
