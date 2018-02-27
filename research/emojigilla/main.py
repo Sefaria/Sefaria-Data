@@ -19,6 +19,17 @@ emoji_map = {
 bigtan_vteresh_str = u"בִּגְתָ֨ן וָתֶ֜רֶשׁ"
 bigtan_vteresh_emoji = u"👬"
 
+def lookup_shoresh(w, ref):
+    # in both - cant
+    # only second - cant
+    # only first - nikud
+    #remove all non-Hebrew non-nikud characters (including cantillation and sof-pasuk)
+    w = strip_cantillation(w, strip_vowels=False)
+    w = re.sub(ur"[A-Za-z׃׀־]", u"", w)
+    lexicon = "BDB Augmented Strong"
+    wf = WordForm().load({"form": w, "refs": re.compile("^" + ref + "$")})
+    if wf:
+        return map(lambda x: x["headword"], filter(lambda x: x["lexicon"] == lexicon, wf.lookups))
 
 def tokenizer(base_str, clean=False):
     base_str = base_str.strip()
@@ -65,8 +76,14 @@ for iperek, perek in enumerate(ja):
     print "Emojifying Perek {}".format(iperek)
     for ipasuk, pasuk in enumerate(perek):
         ja[iperek][ipasuk] = replace_names(pasuk, u"{}:{}".format(iperek+1,ipasuk+1))
+        # THE FOLLOWING IS JUST A TEST TO SHOW HOW lookup_shoresh() WORKS
+        words = tokenizer(pasuk, False)
+        for w in words:
+            segment_ref = "{} {}:{}".format(ref, iperek+1, ipasuk+1)
+            print lookup_shoresh(w, segment_ref)
 
-post = True
+
+post = False
 if post:
     resp = post_text(ref, {
         "versionTitle": versionTitle,
