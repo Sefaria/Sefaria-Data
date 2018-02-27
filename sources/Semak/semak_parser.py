@@ -797,16 +797,52 @@ def link_smg(ja_smk, filenametxt):
     return links
 
 
-def link_rambam(ja_smk):
+def link_rambam(filename):
     yad_list = library.get_indexes_in_category(u"Mishneh Torah")
     schema_yad_dict = {}
     for title in yad_list:
         schema_yad_dict[title] = library.get_schema_node(title)
+
+    ## changes addressTypes of all Mishneh Torah indexs to ['Perek' , 'Halkhah']
+    # for node in schema_yad_dict.values():
+    #     if len(node.sectionNames) != 2:
+    #         continue
+    #     change_node_structure(node, node.sectionNames, address_types=['Perek','Halakhah'])
+
     CF = CitationFinder()
-    regex = CF.get_ultimate_title_regex(yad_list, schema_yad_dict, 'he')
-    rambam_tracker = BookIbidTracker()
-    rambam_tracker.resolve()
-    return
+    # regex = CF.get_ultimate_title_regex(yad_list, schema_yad_dict, 'he')
+    # rambam_tracker = BookIbidTracker()
+    all_refs = []
+    with codecs.open(filename, 'r', 'utf-8') as fp:
+        lines = fp.readlines()
+        bad_cnt = 0
+        for i, line in enumerate(lines):
+            split = re.split(u'ו?ה?(רמב"?ם|סמ"?ג|טור)', line)
+            refs = CF.get_potential_refs(u'({})'.format(line), title_rambam=[u'רמב"ם']) #), dropParenthesis=True)
+            # split_it = iter(split)
+            # for part in split_it:
+                # if re.search(ur'''(מיי'|רמב"?ם)''', part):
+                #     rambam_cit = split_it.next()
+                #     doubles = re.search(u'(?P<first>\u05d4\u05dc\u05db\u05d5\u05ea.*?\u05e4.*?)(?P<second>\u05d5[\u05d0-\u05ea]{1}.*|\n)', rambam_cit)
+                #     if doubles:
+                #         if re.search(doubles.group(''))
+                #     else:
+                #         index_name = u'רמב"ם {}'.format(rambam_cit)
+                #     # rambam_tracker.resolve()
+                #     refs = [rambam_cit]
+            print i+1
+
+            for ref in refs:
+                if isinstance(ref[0], Ref):
+                    # continue
+                    print ref
+                else:
+                    print ref[0].group()
+                    bad_cnt +=1
+
+    print bad_cnt
+    all_refs += refs
+    return all_refs
 
 
 def link_smk_remazim_to_smg_remazim(smg_smk_links):
@@ -850,11 +886,11 @@ if __name__ == "__main__":
     # hgh_align = hagahot_alignment(ja_smk, ja_raph, ja_hagahot)
     # ja_hagahot = hagahot_parse(ja_hagahot, hgh_align)
     # hg_links = link_hg(ja_hagahot, hgh_align, ja_raph)
-    # #
+    #
     # post_all_smk(ja_smk, ja_raph, ja_hagahot, raph_links, hg_links)
-    smg_links = link_smg(ja_smk, u'smg_smk_test')
+    # smg_links = link_smg(ja_smk, u'smg_smk_test')
     # post_link(smg_links, VERBOSE=True)
-    # # # add_remazim_node()
     # post_link(link_remazim(), VERBOSE=True)
     # remazim_sm_g_k = link_smk_remazim_to_smg_remazim(smg_links)
     # post_link(remazim_sm_g_k, VERBOSE=True)
+    # link_rambam("testrambamibid.txt")

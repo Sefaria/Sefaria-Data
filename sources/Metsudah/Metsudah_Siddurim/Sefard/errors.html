@@ -4,7 +4,7 @@
 <head>
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
   <meta name="robots" content="NONE,NOARCHIVE">
-  <title>TypeError at /api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod</title>
+  <title>KeyError at /api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95</title>
   <style type="text/css">
     html * { padding:0; margin:0; }
     body * { padding:10px 20px; }
@@ -118,8 +118,8 @@
 </head>
 <body>
 <div id="summary">
-  <h1>TypeError at /api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod</h1>
-  <pre class="exception_value">list indices must be integers, not unicode</pre>
+  <h1>KeyError at /api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95</h1>
+  <pre class="exception_value">u&#39;Birchas Hamazon&#39;</pre>
   <table class="meta">
 
     <tr>
@@ -128,7 +128,7 @@
     </tr>
     <tr>
       <th>Request URL:</th>
-      <td>http://ste.sefaria.org/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod</td>
+      <td>http://draft.sefaria.org/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95</td>
     </tr>
 
     <tr>
@@ -138,19 +138,19 @@
 
     <tr>
       <th>Exception Type:</th>
-      <td>TypeError</td>
+      <td>KeyError</td>
     </tr>
 
 
     <tr>
       <th>Exception Value:</th>
-      <td><pre>list indices must be integers, not unicode</pre></td>
+      <td><pre>u&#39;Birchas Hamazon&#39;</pre></td>
     </tr>
 
 
     <tr>
       <th>Exception Location:</th>
-      <td>/var/www/ste/sefaria/model/text.py in &lt;lambda&gt;, line 843</td>
+      <td>/var/www/draft/sefaria/model/text.py in &lt;lambda&gt;, line 843</td>
     </tr>
 
     <tr>
@@ -163,7 +163,7 @@
     </tr>
     <tr>
       <th>Python Path:</th>
-      <td><pre>[&#39;/var/www/ste&#39;,
+      <td><pre>[&#39;/var/www/draft&#39;,
  &#39;/usr/local/lib/python2.7/site-packages/mod_wsgi-4.4.21-py2.7-linux-x86_64.egg&#39;,
  &#39;/usr/local/lib/python2.7/site-packages/num2words-0.5.4-py2.7.egg&#39;,
  &#39;/usr/local/lib/python2.7/site-packages/num2words-0.5.4-py2.7.egg&#39;,
@@ -177,7 +177,7 @@
     </tr>
     <tr>
       <th>Server time:</th>
-      <td>Sun, 4 Feb 2018 04:41:06 -0800</td>
+      <td>Wed, 21 Feb 2018 05:09:34 -0800</td>
     </tr>
   </table>
 </div>
@@ -195,13 +195,13 @@
           <code>/usr/local/lib/python2.7/site-packages/django/core/handlers/base.py</code> in <code>get_response</code>
 
           
-            <div class="context" id="c139956491275872">
+            <div class="context" id="c139708336236520">
               
-                <ol start="104" class="pre-context" id="pre139956491275872"><li onclick="toggle('pre139956491275872', 'post139956491275872')"><pre>                    for middleware_method in self._view_middleware:</pre></li><li onclick="toggle('pre139956491275872', 'post139956491275872')"><pre>                        response = middleware_method(request, callback, callback_args, callback_kwargs)</pre></li><li onclick="toggle('pre139956491275872', 'post139956491275872')"><pre>                        if response:</pre></li><li onclick="toggle('pre139956491275872', 'post139956491275872')"><pre>                            break</pre></li><li onclick="toggle('pre139956491275872', 'post139956491275872')"><pre></pre></li><li onclick="toggle('pre139956491275872', 'post139956491275872')"><pre>                if response is None:</pre></li><li onclick="toggle('pre139956491275872', 'post139956491275872')"><pre>                    try:</pre></li></ol>
+                <ol start="104" class="pre-context" id="pre139708336236520"><li onclick="toggle('pre139708336236520', 'post139708336236520')"><pre>                    for middleware_method in self._view_middleware:</pre></li><li onclick="toggle('pre139708336236520', 'post139708336236520')"><pre>                        response = middleware_method(request, callback, callback_args, callback_kwargs)</pre></li><li onclick="toggle('pre139708336236520', 'post139708336236520')"><pre>                        if response:</pre></li><li onclick="toggle('pre139708336236520', 'post139708336236520')"><pre>                            break</pre></li><li onclick="toggle('pre139708336236520', 'post139708336236520')"><pre></pre></li><li onclick="toggle('pre139708336236520', 'post139708336236520')"><pre>                if response is None:</pre></li><li onclick="toggle('pre139708336236520', 'post139708336236520')"><pre>                    try:</pre></li></ol>
               
-              <ol start="111" class="context-line"><li onclick="toggle('pre139956491275872', 'post139956491275872')"><pre>                        response = callback(request, *callback_args, **callback_kwargs)</pre> <span>...</span></li></ol>
+              <ol start="111" class="context-line"><li onclick="toggle('pre139708336236520', 'post139708336236520')"><pre>                        response = callback(request, *callback_args, **callback_kwargs)</pre> <span>...</span></li></ol>
               
-                <ol start='112' class="post-context" id="post139956491275872"><li onclick="toggle('pre139956491275872', 'post139956491275872')"><pre>                    except Exception, e:</pre></li><li onclick="toggle('pre139956491275872', 'post139956491275872')"><pre>                        # If the view raised an exception, run it through exception</pre></li><li onclick="toggle('pre139956491275872', 'post139956491275872')"><pre>                        # middleware, and if the exception middleware returns a</pre></li><li onclick="toggle('pre139956491275872', 'post139956491275872')"><pre>                        # response, use that. Otherwise, reraise the exception.</pre></li><li onclick="toggle('pre139956491275872', 'post139956491275872')"><pre>                        for middleware_method in self._exception_middleware:</pre></li><li onclick="toggle('pre139956491275872', 'post139956491275872')"><pre>                            response = middleware_method(request, e)</pre></li></ol>
+                <ol start='112' class="post-context" id="post139708336236520"><li onclick="toggle('pre139708336236520', 'post139708336236520')"><pre>                    except Exception, e:</pre></li><li onclick="toggle('pre139708336236520', 'post139708336236520')"><pre>                        # If the view raised an exception, run it through exception</pre></li><li onclick="toggle('pre139708336236520', 'post139708336236520')"><pre>                        # middleware, and if the exception middleware returns a</pre></li><li onclick="toggle('pre139708336236520', 'post139708336236520')"><pre>                        # response, use that. Otherwise, reraise the exception.</pre></li><li onclick="toggle('pre139708336236520', 'post139708336236520')"><pre>                        for middleware_method in self._exception_middleware:</pre></li><li onclick="toggle('pre139708336236520', 'post139708336236520')"><pre>                            response = middleware_method(request, e)</pre></li></ol>
               
             </div>
           
@@ -209,10 +209,10 @@
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139956491275872')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139708336236520')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139956491275872">
+            <table class="vars" id="v139708336236520">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -228,7 +228,7 @@
                 
                   <tr>
                     <td>e</td>
-                    <td class="code"><pre>TypeError(&#39;list indices must be integers, not unicode&#39;,)</pre></td>
+                    <td class="code"><pre>KeyError(u&#39;Birchas Hamazon&#39;,)</pre></td>
                   </tr>
                 
                   <tr>
@@ -238,27 +238,27 @@
                 
                   <tr>
                     <td>settings</td>
-                    <td class="code"><pre>&lt;django.conf.LazySettings object at 0x7f4a3a441a10&gt;</pre></td>
+                    <td class="code"><pre>&lt;django.conf.LazySettings object at 0x7f1078865a10&gt;</pre></td>
                   </tr>
                 
                   <tr>
                     <td>middleware_method</td>
-                    <td class="code"><pre>&lt;bound method ProfileMiddleware.process_view of &lt;sefaria.system.middleware.ProfileMiddleware object at 0x7f4a2c525a10&gt;&gt;</pre></td>
+                    <td class="code"><pre>&lt;bound method ProfileMiddleware.process_view of &lt;sefaria.system.middleware.ProfileMiddleware object at 0x7f1066ea1cd0&gt;&gt;</pre></td>
                   </tr>
                 
                   <tr>
                     <td>self</td>
-                    <td class="code"><pre>&lt;django.core.handlers.wsgi.WSGIHandler object at 0x7f4a38812910&gt;</pre></td>
+                    <td class="code"><pre>&lt;django.core.handlers.wsgi.WSGIHandler object at 0x7f1072c33a90&gt;</pre></td>
                   </tr>
                 
                   <tr>
                     <td>request</td>
-                    <td class="code"><pre>&#39;&lt;WSGIRequest\npath:/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod,\nGET:&lt;QueryDict: {}&gt;,\nPOST:&lt;QueryDict: {u\&#39;json\&#39;: [u\&#39;{&quot;text&quot;: [&quot;This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&lt;i class=\\\&#39;footnote\\\&#39;&gt;You may do your work all week but not on Shabbos\\\\r\\\\n&lt;/i&gt;&quot;, &quot;\\\\u201cSix days do your work\\\\u201d&quot;, &quot;but the seventh day is your God\\\&#39;s\\\\u2014&quot;, &quot;the Sabbath\\\\u2014do no work on it&quot;, &quot;for He did everything in six days&lt;i class=\\\&#39;footnote\\\&#39;&gt;He created the world in six days\\\\r\\\\n&lt;/i&gt;&quot;, &quot;Refrain:&quot;, &quot;This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;It is the first of the holy convocations,&lt;i class=\\\&#39;footnote\\\&#39;&gt;It is mentioned first in the chapter dealing with festivals (Leviticus 23)\\\\r\\\\n&lt;/i&gt;&quot;, &quot;a day of rest, the holy Sabbath day&quot;, &quot;Therefore, let every man&quot;, &quot;recite kiddush with his wine,&quot;, &quot;over two complete loaves&quot;, &quot;let him break bread&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;Eat rich foods, drink sweet drinks,&quot;, &quot;for the Almighty will give&quot;, &quot;to all who cling to Him\\\\u2014&quot;, &quot;garments to wear, bread as needed,&quot;, &quot;meat and fish and all delicacies&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;You will lack nothing on it,&quot;, &quot;and will eat and be satisfied,&quot;, &quot;and will bless Adonoy, your God,&quot;, &quot;whom you love;&quot;, &quot;\\\\u2014for He has blessed you above all peoples&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;The heavens recount His glory&quot;, &quot;and the earth, too, is filled with His kindliness&quot;, &quot;[Behold] see that all these, His hand made,&quot;, &quot;for He is the Former, His work is perfect&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;], &quot;versionTitle&quot;: &quot;The Metsudah Siddur...&quot;, &quot;language&quot;: &quot;en&quot;, &quot;versionSource&quot;: &quot;http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&amp;docId=NNL_ALEPH002211687&quot;}\&#39;], u\&#39;apikey\&#39;: [u\&#39;kAEw7OKw5IjZIG4lFbrYxpSdu78Jsza67HgR0gRBOdg\&#39;]}&gt;,\nCOOKIES:{},\nMETA:{\&#39;CONTENT_LENGTH\&#39;: \&#39;2548\&#39;,\n \&#39;CONTENT_TYPE\&#39;: \&#39;application/x-www-form-urlencoded\&#39;,\n \&#39;CONTEXT_DOCUMENT_ROOT\&#39;: \&#39;/var/www/ste/static/\&#39;,\n \&#39;CONTEXT_PREFIX\&#39;: \&#39;\&#39;,\n \&#39;CSRF_COOKIE\&#39;: \&#39;m2o000todt1nbHcbTg7UVGVBFDAnkMxZ\&#39;,\n \&#39;DOCUMENT_ROOT\&#39;: \&#39;/var/www/ste/static/\&#39;,\n \&#39;GATEWAY_INTERFACE\&#39;: \&#39;CGI/1.1\&#39;,\n \&#39;HTTP_ACCEPT\&#39;: \&#39;*/*\&#39;,\n \&#39;HTTP_ACCEPT_ENCODING\&#39;: \&#39;gzip, deflate\&#39;,\n \&#39;HTTP_HOST\&#39;: \&#39;ste.sefaria.org\&#39;,\n \&#39;HTTP_USER_AGENT\&#39;: \&#39;python-requests/2.18.4\&#39;,\n \&#39;HTTP_X_FORWARDED_FOR\&#39;: \&#39;109.67.33.31\&#39;,\n \&#39;HTTP_X_VARNISH\&#39;: \&#39;3922702\&#39;,\n \&#39;PATH_INFO\&#39;: u\&#39;/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod\&#39;,\n \&#39;PATH_TRANSLATED\&#39;: \&#39;/var/www/ste/sefaria/wsgi.py/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod\&#39;,\n \&#39;QUERY_STRING\&#39;: \&#39;\&#39;,\n \&#39;REMOTE_ADDR\&#39;: \&#39;127.0.0.1\&#39;,\n \&#39;REMOTE_PORT\&#39;: \&#39;47344\&#39;,\n \&#39;REQUEST_METHOD\&#39;: \&#39;POST\&#39;,\n \&#39;REQUEST_SCHEME\&#39;: \&#39;http\&#39;,\n \&#39;REQUEST_URI\&#39;: \&#39;/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod\&#39;,\n \&#39;SCRIPT_FILENAME\&#39;: \&#39;/var/www/ste/sefaria/wsgi.py\&#39;,\n \&#39;SCRIPT_NAME\&#39;: u\&#39;\&#39;,\n \&#39;SERVER_ADDR\&#39;: \&#39;127.0.0.1\&#39;,\n \&#39;SERVER_ADMIN\&#39;: \&#39;dev@sefaria.org\&#39;,\n \&#39;SERVER_NAME\&#39;: \&#39;ste.sefaria.org\&#39;,\n \&#39;SERVER_PORT\&#39;: \&#39;80\&#39;,\n \&#39;SERVER_PROTOCOL\&#39;: \&#39;HTTP/1.1\&#39;,\n \&#39;SERVER_SIGNATURE\&#39;: \&#39;&lt;address&gt;Apache/2.4.29 (Ubuntu) Server at ste.sefaria.org Port 80&lt;/address&gt;\\n\&#39;,\n \&#39;SERVER_SOFTWARE\&#39;: \&#39;Apache/2.4.29 (Ubuntu)\&#39;,\n \&#39;apache.version\&#39;: (2, 4, 7),\n \&#39;mod_wsgi.application_group\&#39;: \&#39;ste.sefaria.org|\&#39;,\n \&#39;mod_wsgi.callable_object\&#39;: \&#39;application\&#39;,\n \&#39;mod_wsgi.daemon_connects\&#39;: \&#39;1\&#39;,\n \&#39;mod_wsgi.daemon_restarts\&#39;: \&#39;0\&#39;,\n \&#39;mod_wsgi.daemon_start\&#39;: \&#39;1517748066916081\&#39;,\n \&#39;mod_wsgi.enable_sendfile\&#39;: \&#39;0\&#39;,\n \&#39;mod_wsgi.handler_script\&#39;: \&#39;\&#39;,\n \&#39;mod_wsgi.ignore_activity\&#39;: \&#39;0\&#39;,\n \&#39;mod_wsgi.listener_host\&#39;: \&#39;\&#39;,\n \&#39;mod_wsgi.listener_port\&#39;: \&#39;8080\&#39;,\n \&#39;mod_wsgi.path_info\&#39;: \&#39;/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod\&#39;,\n \&#39;mod_wsgi.process_group\&#39;: \&#39;ste.sefaria.org\&#39;,\n \&#39;mod_wsgi.queue_start\&#39;: \&#39;1517748066915939\&#39;,\n \&#39;mod_wsgi.request_handler\&#39;: \&#39;wsgi-script\&#39;,\n \&#39;mod_wsgi.request_id\&#39;: \&#39;bBVjQkrSpVM\&#39;,\n \&#39;mod_wsgi.request_start\&#39;: \&#39;1517748066915692\&#39;,\n \&#39;mod_wsgi.script_name\&#39;: \&#39;\&#39;,\n \&#39;mod_wsgi.script_reloading\&#39;: \&#39;1\&#39;,\n \&#39;mod_wsgi.script_start\&#39;: \&#39;1517748066916118\&#39;,\n \&#39;mod_wsgi.thread_id\&#39;: 2,\n \&#39;mod_wsgi.thread_requests\&#39;: 1L,\n \&#39;mod_wsgi.total_requests\&#39;: 3L,\n \&#39;mod_wsgi.version\&#39;: (4, 5, 24),\n \&#39;wsgi.errors\&#39;: &lt;mod_wsgi.Log object at 0x7f4a2902af80&gt;,\n \&#39;wsgi.file_wrapper\&#39;: &lt;type \&#39;mod_wsgi.FileWrapper\&#39;&gt;,\n \&#39;wsgi.input\&#39;: &lt;mod_wsgi.Input object at 0x7f4a28d04f10&gt;,\n \&#39;wsgi.input_terminated\&#39;: True,\n \&#39;wsgi.multiprocess\&#39;: False,\n \&#39;wsgi.multithread\&#39;: True,\n \&#39;wsgi.run_once\&#39;: False,\n \&#39;wsgi.url_scheme\&#39;: \&#39;http\&#39;,\n \&#39;wsgi.version\&#39;: (1, 0)}&gt;&#39;</pre></td>
+                    <td class="code"><pre>&#39;&lt;WSGIRequest\npath:/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95,\nGET:&lt;QueryDict: {}&gt;,\nPOST:&lt;QueryDict: {u\&#39;json\&#39;: [u\&#39;{&quot;text&quot;: [&quot;Come, let us sing to Adonoy;&quot;, &quot;let us sound the shofar&quot;, &quot;to the Rock of our deliverance.&lt;sup&gt;1&lt;/sup&gt;&lt;i class=\\\&#39;footnote\\\&#39;&gt;Israel will say these words in the days of the Messiah, when Jews will inspire each other to sing to Almighty God Who delivered them.\\\\u2014Radak&lt;/i&gt;&quot;, &quot;Let us greet His Presence&quot;, &quot;with thanksgiving,&lt;sup&gt;2&lt;/sup&gt;&lt;i class=\\\&#39;footnote\\\&#39;&gt;Expressions of thanksgiving are considered of the highest virtue, as it is said, \\\\u2018As for myself, with expressions of thanksgiving I sacrifice to you.\\\\u2019\\\\u2014Jonah 2&lt;/i&gt;&quot;, &quot;with hymns let us raise our voices unto Him.&quot;, &quot;For a great Almighty is Adonoy&quot;, &quot;and a great King over all gods.&lt;sup&gt;3&lt;/sup&gt;&lt;i class=\\\&#39;footnote\\\&#39;&gt;\\\\u2018Are there any other gods?\\\\u2019 asks the Midrash, and answers by citing verse 5 of the next Psalm, \\\\u2018All the gods of the nations are idols.\\\\u2019&lt;/i&gt;&quot;, &quot;For in His hands are the depths&lt;sup&gt;4&lt;/sup&gt;&lt;i class=\\\&#39;footnote\\\&#39;&gt;Metsudas Dovid offers another translation: \\\\u2018In His hands are the hidden things of the earth,\\\\u2019 referring to things which require much study and thought in order to be understood.&lt;/i&gt; of the earth,&quot;, &quot;and the heights of the mountains are His;&quot;, &quot;For the sea is His, and He made it,&quot;, &quot;and the dry land, His hands formed.&quot;, &quot;Come, let us prostrate ourselves and bow;&quot;, &quot;let us kneel&quot;, &quot;before Adonoy, our Maker.&quot;, &quot;For He is our God&quot;, &quot;and we are the people of His pasture,&quot;, &quot;and the flock of His hand,&quot;, &quot;[even] today&lt;sup&gt;5&lt;/sup&gt;&lt;i class=\\\&#39;footnote\\\&#39;&gt;It is possible for us to reach this high level and to be accepted as His flock even this very day, if we would hearken to His voice.\\\\u2014Dover Sholom&lt;/i&gt; if you will heed His voice.&quot;, &quot;Do not harden your heart as at Merivah,&quot;, &quot;as on the day of Massah&lt;sup&gt;6&lt;/sup&gt;&lt;i class=\\\&#39;footnote\\\&#39;&gt;The Jews complained and murmured at the lack of water during their wanderings in the wilderness (Exodus 17:1-17; Numbers 20:1-13).&lt;/i&gt; in the desert.&quot;, &quot;When your fathers tested Me,&lt;sup&gt;7&lt;/sup&gt;&lt;i class=\\\&#39;footnote\\\&#39;&gt;  7 The words from here till the end of the Psalm, are the actual words of the Divine Presence that emanated from the throat of Moses,  \\\\u05e9\\\\u05c1\\\\u05b0\\\\u05db\\\\u05b4\\\\u05d9\\\\u05e0\\\\u05b8\\\\u05d4 \\\\u05de\\\\u05b0\\\\u05d3\\\\u05b7\\\\u05d1\\\\u05bc\\\\u05b6\\\\u05e8\\\\u05b6\\\\u05ea \\\\u05de\\\\u05b4\\\\u05ea\\\\u05bc\\\\u05d5\\\\u05b9\\\\u05da\\\\u05b0 \\\\u05d2\\\\u05b0\\\\u05e8\\\\u05d5\\\\u05b9\\\\u05e0\\\\u05d5\\\\u05b9 \\\\u05e9\\\\u05c1\\\\u05b6\\\\u05dc \\\\u05de\\\\u05e9\\\\u05c1\\\\u05b6\\\\u05d4 \\\\u2014 Eyun Tfiloh &lt;/i&gt;&quot;, &quot;they tried Me,&quot;, &quot;though they had seen My work.&quot;, &quot;Forty years I quarreled with that generation;&quot;, &quot;and I said,&quot;, &quot;\\\\u201cThey are a people of erring hearts,&quot;, &quot;and they did not know my ways.\\\\u201d&quot;, &quot;Therefore I swore in My anger,&quot;, &quot;\\\\u201cThey shall not enter My resting place.\\\\u201d&lt;sup&gt;8&lt;/sup&gt;&lt;i class=\\\&#39;footnote\\\&#39;&gt;The Holy Land is described as the land of rest (Deuteronomy 12:9).&lt;/i&gt;&quot;], &quot;versionTitle&quot;: &quot;The Metsudah Siddur...&quot;, &quot;language&quot;: &quot;en&quot;, &quot;versionSource&quot;: &quot;http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&amp;docId=NNL_ALEPH002211687&quot;}\&#39;], u\&#39;apikey\&#39;: [u\&#39;kAEw7OKw5IjZIG4lFbrYxpSdu78Jsza67HgR0gRBOdg\&#39;]}&gt;,\nCOOKIES:{},\nMETA:{\&#39;CONTENT_LENGTH\&#39;: \&#39;3689\&#39;,\n \&#39;CONTENT_TYPE\&#39;: \&#39;application/x-www-form-urlencoded\&#39;,\n \&#39;CONTEXT_DOCUMENT_ROOT\&#39;: \&#39;/var/www/draft/static/\&#39;,\n \&#39;CONTEXT_PREFIX\&#39;: \&#39;\&#39;,\n \&#39;CSRF_COOKIE\&#39;: \&#39;QEwNRWDe5yZcbOGy1xv05yo3xRWOa4VN\&#39;,\n \&#39;DOCUMENT_ROOT\&#39;: \&#39;/var/www/draft/static/\&#39;,\n \&#39;GATEWAY_INTERFACE\&#39;: \&#39;CGI/1.1\&#39;,\n \&#39;HTTP_ACCEPT\&#39;: \&#39;*/*\&#39;,\n \&#39;HTTP_ACCEPT_ENCODING\&#39;: \&#39;gzip\&#39;,\n \&#39;HTTP_CF_CONNECTING_IP\&#39;: \&#39;79.178.92.190\&#39;,\n \&#39;HTTP_CF_IPCOUNTRY\&#39;: \&#39;IL\&#39;,\n \&#39;HTTP_CF_RAY\&#39;: \&#39;3f09f0d7a1e96a61-LHR\&#39;,\n \&#39;HTTP_CF_VISITOR\&#39;: \&#39;{&quot;scheme&quot;:&quot;http&quot;}\&#39;,\n \&#39;HTTP_HOST\&#39;: \&#39;draft.sefaria.org\&#39;,\n \&#39;HTTP_USER_AGENT\&#39;: \&#39;python-requests/2.18.4\&#39;,\n \&#39;HTTP_X_FORWARDED_FOR\&#39;: \&#39;79.178.92.190, 141.101.107.36\&#39;,\n \&#39;HTTP_X_FORWARDED_PROTO\&#39;: \&#39;http\&#39;,\n \&#39;HTTP_X_VARNISH\&#39;: \&#39;7074601\&#39;,\n \&#39;PATH_INFO\&#39;: u\&#39;/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95\&#39;,\n \&#39;PATH_TRANSLATED\&#39;: \&#39;/var/www/draft/sefaria/wsgi.py/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95\&#39;,\n \&#39;QUERY_STRING\&#39;: \&#39;\&#39;,\n \&#39;REMOTE_ADDR\&#39;: \&#39;127.0.0.1\&#39;,\n \&#39;REMOTE_PORT\&#39;: \&#39;38574\&#39;,\n \&#39;REQUEST_METHOD\&#39;: \&#39;POST\&#39;,\n \&#39;REQUEST_SCHEME\&#39;: \&#39;http\&#39;,\n \&#39;REQUEST_URI\&#39;: \&#39;/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95\&#39;,\n \&#39;SCRIPT_FILENAME\&#39;: \&#39;/var/www/draft/sefaria/wsgi.py\&#39;,\n \&#39;SCRIPT_NAME\&#39;: u\&#39;\&#39;,\n \&#39;SERVER_ADDR\&#39;: \&#39;127.0.0.1\&#39;,\n \&#39;SERVER_ADMIN\&#39;: \&#39;<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a7c3c2d1e7d4c2c1c6d5cec689c8d5c0">[email&#160;protected]</a>\&#39;,\n \&#39;SERVER_NAME\&#39;: \&#39;draft.sefaria.org\&#39;,\n \&#39;SERVER_PORT\&#39;: \&#39;80\&#39;,\n \&#39;SERVER_PROTOCOL\&#39;: \&#39;HTTP/1.1\&#39;,\n \&#39;SERVER_SIGNATURE\&#39;: \&#39;&lt;address&gt;Apache/2.4.29 (Ubuntu) Server at draft.sefaria.org Port 80&lt;/address&gt;\\n\&#39;,\n \&#39;SERVER_SOFTWARE\&#39;: \&#39;Apache/2.4.29 (Ubuntu)\&#39;,\n \&#39;apache.version\&#39;: (2, 4, 7),\n \&#39;mod_wsgi.application_group\&#39;: \&#39;draft.sefaria.org|\&#39;,\n \&#39;mod_wsgi.callable_object\&#39;: \&#39;application\&#39;,\n \&#39;mod_wsgi.daemon_connects\&#39;: \&#39;1\&#39;,\n \&#39;mod_wsgi.daemon_restarts\&#39;: \&#39;0\&#39;,\n \&#39;mod_wsgi.daemon_start\&#39;: \&#39;1519218574073311\&#39;,\n \&#39;mod_wsgi.enable_sendfile\&#39;: \&#39;0\&#39;,\n \&#39;mod_wsgi.handler_script\&#39;: \&#39;\&#39;,\n \&#39;mod_wsgi.ignore_activity\&#39;: \&#39;0\&#39;,\n \&#39;mod_wsgi.listener_host\&#39;: \&#39;\&#39;,\n \&#39;mod_wsgi.listener_port\&#39;: \&#39;8080\&#39;,\n \&#39;mod_wsgi.path_info\&#39;: \&#39;/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95\&#39;,\n \&#39;mod_wsgi.process_group\&#39;: \&#39;draft.sefaria.org\&#39;,\n \&#39;mod_wsgi.queue_start\&#39;: \&#39;1519218574073146\&#39;,\n \&#39;mod_wsgi.request_handler\&#39;: \&#39;wsgi-script\&#39;,\n \&#39;mod_wsgi.request_id\&#39;: \&#39;WpxxozAwg40\&#39;,\n \&#39;mod_wsgi.request_start\&#39;: \&#39;1519218574072922\&#39;,\n \&#39;mod_wsgi.script_name\&#39;: \&#39;\&#39;,\n \&#39;mod_wsgi.script_reloading\&#39;: \&#39;1\&#39;,\n \&#39;mod_wsgi.script_start\&#39;: \&#39;1519218574073357\&#39;,\n \&#39;mod_wsgi.thread_id\&#39;: 2,\n \&#39;mod_wsgi.thread_requests\&#39;: 921L,\n \&#39;mod_wsgi.total_requests\&#39;: 7256L,\n \&#39;mod_wsgi.version\&#39;: (4, 5, 24),\n \&#39;wsgi.errors\&#39;: &lt;mod_wsgi.Log object at 0x7f1041a58e90&gt;,\n \&#39;wsgi.file_wrapper\&#39;: &lt;type \&#39;mod_wsgi.FileWrapper\&#39;&gt;,\n \&#39;wsgi.input\&#39;: &lt;mod_wsgi.Input object at 0x7f1063b7c180&gt;,\n \&#39;wsgi.input_terminated\&#39;: True,\n \&#39;wsgi.multiprocess\&#39;: False,\n \&#39;wsgi.multithread\&#39;: True,\n \&#39;wsgi.run_once\&#39;: False,\n \&#39;wsgi.url_scheme\&#39;: \&#39;http\&#39;,\n \&#39;wsgi.version\&#39;: (1, 0)}&gt;&#39;</pre></td>
                   </tr>
                 
                   <tr>
                     <td>callback</td>
-                    <td class="code"><pre>&lt;function texts_api at 0x7f4a2a1d01b8&gt;</pre></td>
+                    <td class="code"><pre>&lt;function texts_api at 0x7f10669ba500&gt;</pre></td>
                   </tr>
                 
                   <tr>
@@ -273,7 +273,7 @@
                 
                   <tr>
                     <td>callback_kwargs</td>
-                    <td class="code"><pre>{&#39;tref&#39;: u&#39;Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod&#39;}</pre></td>
+                    <td class="code"><pre>{&#39;tref&#39;: u&#39;Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95&#39;}</pre></td>
                   </tr>
                 
                   <tr>
@@ -292,16 +292,16 @@
         </li>
       
         <li class="frame user">
-          <code>/var/www/ste/sefaria/system/decorators.py</code> in <code>wrapper</code>
+          <code>/var/www/draft/sefaria/system/decorators.py</code> in <code>wrapper</code>
 
           
-            <div class="context" id="c139956491272776">
+            <div class="context" id="c139708336236160">
               
-                <ol start="15" class="pre-context" id="pre139956491272776"><li onclick="toggle('pre139956491272776', 'post139956491272776')"><pre>def catch_error_as_json(func):</pre></li><li onclick="toggle('pre139956491272776', 'post139956491272776')"><pre>    &quot;&quot;&quot;</pre></li><li onclick="toggle('pre139956491272776', 'post139956491272776')"><pre>    Decorator that catches InputErrors and translates them into JSON &#39;error&#39; dicts for front end consumption.</pre></li><li onclick="toggle('pre139956491272776', 'post139956491272776')"><pre>    &quot;&quot;&quot;</pre></li><li onclick="toggle('pre139956491272776', 'post139956491272776')"><pre>    @wraps(func)</pre></li><li onclick="toggle('pre139956491272776', 'post139956491272776')"><pre>    def wrapper(*args, **kwargs):</pre></li><li onclick="toggle('pre139956491272776', 'post139956491272776')"><pre>        try:</pre></li></ol>
+                <ol start="15" class="pre-context" id="pre139708336236160"><li onclick="toggle('pre139708336236160', 'post139708336236160')"><pre>def catch_error_as_json(func):</pre></li><li onclick="toggle('pre139708336236160', 'post139708336236160')"><pre>    &quot;&quot;&quot;</pre></li><li onclick="toggle('pre139708336236160', 'post139708336236160')"><pre>    Decorator that catches InputErrors and translates them into JSON &#39;error&#39; dicts for front end consumption.</pre></li><li onclick="toggle('pre139708336236160', 'post139708336236160')"><pre>    &quot;&quot;&quot;</pre></li><li onclick="toggle('pre139708336236160', 'post139708336236160')"><pre>    @wraps(func)</pre></li><li onclick="toggle('pre139708336236160', 'post139708336236160')"><pre>    def wrapper(*args, **kwargs):</pre></li><li onclick="toggle('pre139708336236160', 'post139708336236160')"><pre>        try:</pre></li></ol>
               
-              <ol start="22" class="context-line"><li onclick="toggle('pre139956491272776', 'post139956491272776')"><pre>            result = func(*args, **kwargs)</pre> <span>...</span></li></ol>
+              <ol start="22" class="context-line"><li onclick="toggle('pre139708336236160', 'post139708336236160')"><pre>            result = func(*args, **kwargs)</pre> <span>...</span></li></ol>
               
-                <ol start='23' class="post-context" id="post139956491272776"><li onclick="toggle('pre139956491272776', 'post139956491272776')"><pre>        except exps.InputError as e:</pre></li><li onclick="toggle('pre139956491272776', 'post139956491272776')"><pre>            logger.warning(u&quot;An exception occurred processing request for &#39;{}&#39; while running {}. Caught as JSON&quot;.format(args[0].path, func.__name__), exc_info=True)</pre></li><li onclick="toggle('pre139956491272776', 'post139956491272776')"><pre>            request = args[0]</pre></li><li onclick="toggle('pre139956491272776', 'post139956491272776')"><pre>            return jsonResponse({&quot;error&quot;: unicode(e)}, callback=request.GET.get(&quot;callback&quot;, None))</pre></li><li onclick="toggle('pre139956491272776', 'post139956491272776')"><pre>        return result</pre></li><li onclick="toggle('pre139956491272776', 'post139956491272776')"><pre>    return wrapper</pre></li></ol>
+                <ol start='23' class="post-context" id="post139708336236160"><li onclick="toggle('pre139708336236160', 'post139708336236160')"><pre>        except exps.InputError as e:</pre></li><li onclick="toggle('pre139708336236160', 'post139708336236160')"><pre>            logger.warning(u&quot;An exception occurred processing request for &#39;{}&#39; while running {}. Caught as JSON&quot;.format(args[0].path, func.__name__), exc_info=True)</pre></li><li onclick="toggle('pre139708336236160', 'post139708336236160')"><pre>            request = args[0]</pre></li><li onclick="toggle('pre139708336236160', 'post139708336236160')"><pre>            return jsonResponse({&quot;error&quot;: unicode(e)}, callback=request.GET.get(&quot;callback&quot;, None))</pre></li><li onclick="toggle('pre139708336236160', 'post139708336236160')"><pre>        return result</pre></li><li onclick="toggle('pre139708336236160', 'post139708336236160')"><pre>    return wrapper</pre></li></ol>
               
             </div>
           
@@ -309,10 +309,10 @@
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139956491272776')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139708336236160')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139956491272776">
+            <table class="vars" id="v139708336236160">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -324,67 +324,72 @@
                   <tr>
                     <td>args</td>
                     <td class="code"><pre>(&lt;WSGIRequest
-path:/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod,
+path:/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95,
 GET:&lt;QueryDict: {}&gt;,
-POST:&lt;QueryDict: {u&#39;json&#39;: [u&#39;{&quot;text&quot;: [&quot;This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&lt;i class=\&#39;footnote\&#39;&gt;You may do your work all week but not on Shabbos\\r\\n&lt;/i&gt;&quot;, &quot;\\u201cSix days do your work\\u201d&quot;, &quot;but the seventh day is your God\&#39;s\\u2014&quot;, &quot;the Sabbath\\u2014do no work on it&quot;, &quot;for He did everything in six days&lt;i class=\&#39;footnote\&#39;&gt;He created the world in six days\\r\\n&lt;/i&gt;&quot;, &quot;Refrain:&quot;, &quot;This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;It is the first of the holy convocations,&lt;i class=\&#39;footnote\&#39;&gt;It is mentioned first in the chapter dealing with festivals (Leviticus 23)\\r\\n&lt;/i&gt;&quot;, &quot;a day of rest, the holy Sabbath day&quot;, &quot;Therefore, let every man&quot;, &quot;recite kiddush with his wine,&quot;, &quot;over two complete loaves&quot;, &quot;let him break bread&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;Eat rich foods, drink sweet drinks,&quot;, &quot;for the Almighty will give&quot;, &quot;to all who cling to Him\\u2014&quot;, &quot;garments to wear, bread as needed,&quot;, &quot;meat and fish and all delicacies&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;You will lack nothing on it,&quot;, &quot;and will eat and be satisfied,&quot;, &quot;and will bless Adonoy, your God,&quot;, &quot;whom you love;&quot;, &quot;\\u2014for He has blessed you above all peoples&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;The heavens recount His glory&quot;, &quot;and the earth, too, is filled with His kindliness&quot;, &quot;[Behold] see that all these, His hand made,&quot;, &quot;for He is the Former, His work is perfect&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;], &quot;versionTitle&quot;: &quot;The Metsudah Siddur...&quot;, &quot;language&quot;: &quot;en&quot;, &quot;versionSource&quot;: &quot;http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&amp;docId=NNL_ALEPH002211687&quot;}&#39;], u&#39;apikey&#39;: [u&#39;kAEw7OKw5IjZIG4lFbrYxpSdu78Jsza67HgR0gRBOdg&#39;]}&gt;,
+POST:&lt;QueryDict: {u&#39;json&#39;: [u&#39;{&quot;text&quot;: [&quot;Come, let us sing to Adonoy;&quot;, &quot;let us sound the shofar&quot;, &quot;to the Rock of our deliverance.&lt;sup&gt;1&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;Israel will say these words in the days of the Messiah, when Jews will inspire each other to sing to Almighty God Who delivered them.\\u2014Radak&lt;/i&gt;&quot;, &quot;Let us greet His Presence&quot;, &quot;with thanksgiving,&lt;sup&gt;2&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;Expressions of thanksgiving are considered of the highest virtue, as it is said, \\u2018As for myself, with expressions of thanksgiving I sacrifice to you.\\u2019\\u2014Jonah 2&lt;/i&gt;&quot;, &quot;with hymns let us raise our voices unto Him.&quot;, &quot;For a great Almighty is Adonoy&quot;, &quot;and a great King over all gods.&lt;sup&gt;3&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;\\u2018Are there any other gods?\\u2019 asks the Midrash, and answers by citing verse 5 of the next Psalm, \\u2018All the gods of the nations are idols.\\u2019&lt;/i&gt;&quot;, &quot;For in His hands are the depths&lt;sup&gt;4&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;Metsudas Dovid offers another translation: \\u2018In His hands are the hidden things of the earth,\\u2019 referring to things which require much study and thought in order to be understood.&lt;/i&gt; of the earth,&quot;, &quot;and the heights of the mountains are His;&quot;, &quot;For the sea is His, and He made it,&quot;, &quot;and the dry land, His hands formed.&quot;, &quot;Come, let us prostrate ourselves and bow;&quot;, &quot;let us kneel&quot;, &quot;before Adonoy, our Maker.&quot;, &quot;For He is our God&quot;, &quot;and we are the people of His pasture,&quot;, &quot;and the flock of His hand,&quot;, &quot;[even] today&lt;sup&gt;5&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;It is possible for us to reach this high level and to be accepted as His flock even this very day, if we would hearken to His voice.\\u2014Dover Sholom&lt;/i&gt; if you will heed His voice.&quot;, &quot;Do not harden your heart as at Merivah,&quot;, &quot;as on the day of Massah&lt;sup&gt;6&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;The Jews complained and murmured at the lack of water during their wanderings in the wilderness (Exodus 17:1-17; Numbers 20:1-13).&lt;/i&gt; in the desert.&quot;, &quot;When your fathers tested Me,&lt;sup&gt;7&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;  7 The words from here till the end of the Psalm, are the actual words of the Divine Presence that emanated from the throat of Moses,  \\u05e9\\u05c1\\u05b0\\u05db\\u05b4\\u05d9\\u05e0\\u05b8\\u05d4 \\u05de\\u05b0\\u05d3\\u05b7\\u05d1\\u05bc\\u05b6\\u05e8\\u05b6\\u05ea \\u05de\\u05b4\\u05ea\\u05bc\\u05d5\\u05b9\\u05da\\u05b0 \\u05d2\\u05b0\\u05e8\\u05d5\\u05b9\\u05e0\\u05d5\\u05b9 \\u05e9\\u05c1\\u05b6\\u05dc \\u05de\\u05e9\\u05c1\\u05b6\\u05d4 \\u2014 Eyun Tfiloh &lt;/i&gt;&quot;, &quot;they tried Me,&quot;, &quot;though they had seen My work.&quot;, &quot;Forty years I quarreled with that generation;&quot;, &quot;and I said,&quot;, &quot;\\u201cThey are a people of erring hearts,&quot;, &quot;and they did not know my ways.\\u201d&quot;, &quot;Therefore I swore in My anger,&quot;, &quot;\\u201cThey shall not enter My resting place.\\u201d&lt;sup&gt;8&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;The Holy Land is described as the land of rest (Deuteronomy 12:9).&lt;/i&gt;&quot;], &quot;versionTitle&quot;: &quot;The Metsudah Siddur...&quot;, &quot;language&quot;: &quot;en&quot;, &quot;versionSource&quot;: &quot;http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&amp;docId=NNL_ALEPH002211687&quot;}&#39;], u&#39;apikey&#39;: [u&#39;kAEw7OKw5IjZIG4lFbrYxpSdu78Jsza67HgR0gRBOdg&#39;]}&gt;,
 COOKIES:{},
-META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
+META:{&#39;CONTENT_LENGTH&#39;: &#39;3689&#39;,
  &#39;CONTENT_TYPE&#39;: &#39;application/x-www-form-urlencoded&#39;,
- &#39;CONTEXT_DOCUMENT_ROOT&#39;: &#39;/var/www/ste/static/&#39;,
+ &#39;CONTEXT_DOCUMENT_ROOT&#39;: &#39;/var/www/draft/static/&#39;,
  &#39;CONTEXT_PREFIX&#39;: &#39;&#39;,
- &#39;CSRF_COOKIE&#39;: &#39;m2o000todt1nbHcbTg7UVGVBFDAnkMxZ&#39;,
- &#39;DOCUMENT_ROOT&#39;: &#39;/var/www/ste/static/&#39;,
+ &#39;CSRF_COOKIE&#39;: &#39;QEwNRWDe5yZcbOGy1xv05yo3xRWOa4VN&#39;,
+ &#39;DOCUMENT_ROOT&#39;: &#39;/var/www/draft/static/&#39;,
  &#39;GATEWAY_INTERFACE&#39;: &#39;CGI/1.1&#39;,
  &#39;HTTP_ACCEPT&#39;: &#39;*/*&#39;,
- &#39;HTTP_ACCEPT_ENCODING&#39;: &#39;gzip, deflate&#39;,
- &#39;HTTP_HOST&#39;: &#39;ste.sefaria.org&#39;,
+ &#39;HTTP_ACCEPT_ENCODING&#39;: &#39;gzip&#39;,
+ &#39;HTTP_CF_CONNECTING_IP&#39;: &#39;79.178.92.190&#39;,
+ &#39;HTTP_CF_IPCOUNTRY&#39;: &#39;IL&#39;,
+ &#39;HTTP_CF_RAY&#39;: &#39;3f09f0d7a1e96a61-LHR&#39;,
+ &#39;HTTP_CF_VISITOR&#39;: &#39;{&quot;scheme&quot;:&quot;http&quot;}&#39;,
+ &#39;HTTP_HOST&#39;: &#39;draft.sefaria.org&#39;,
  &#39;HTTP_USER_AGENT&#39;: &#39;python-requests/2.18.4&#39;,
- &#39;HTTP_X_FORWARDED_FOR&#39;: &#39;109.67.33.31&#39;,
- &#39;HTTP_X_VARNISH&#39;: &#39;3922702&#39;,
- &#39;PATH_INFO&#39;: u&#39;/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod&#39;,
- &#39;PATH_TRANSLATED&#39;: &#39;/var/www/ste/sefaria/wsgi.py/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod&#39;,
+ &#39;HTTP_X_FORWARDED_FOR&#39;: &#39;79.178.92.190, 141.101.107.36&#39;,
+ &#39;HTTP_X_FORWARDED_PROTO&#39;: &#39;http&#39;,
+ &#39;HTTP_X_VARNISH&#39;: &#39;7074601&#39;,
+ &#39;PATH_INFO&#39;: u&#39;/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95&#39;,
+ &#39;PATH_TRANSLATED&#39;: &#39;/var/www/draft/sefaria/wsgi.py/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95&#39;,
  &#39;QUERY_STRING&#39;: &#39;&#39;,
  &#39;REMOTE_ADDR&#39;: &#39;127.0.0.1&#39;,
- &#39;REMOTE_PORT&#39;: &#39;47344&#39;,
+ &#39;REMOTE_PORT&#39;: &#39;38574&#39;,
  &#39;REQUEST_METHOD&#39;: &#39;POST&#39;,
  &#39;REQUEST_SCHEME&#39;: &#39;http&#39;,
- &#39;REQUEST_URI&#39;: &#39;/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod&#39;,
- &#39;SCRIPT_FILENAME&#39;: &#39;/var/www/ste/sefaria/wsgi.py&#39;,
+ &#39;REQUEST_URI&#39;: &#39;/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95&#39;,
+ &#39;SCRIPT_FILENAME&#39;: &#39;/var/www/draft/sefaria/wsgi.py&#39;,
  &#39;SCRIPT_NAME&#39;: u&#39;&#39;,
  &#39;SERVER_ADDR&#39;: &#39;127.0.0.1&#39;,
- &#39;SERVER_ADMIN&#39;: &#39;dev@sefaria.org&#39;,
- &#39;SERVER_NAME&#39;: &#39;ste.sefaria.org&#39;,
+ &#39;SERVER_ADMIN&#39;: &#39;<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="056160734576606364776c642b6a7762">[email&#160;protected]</a>&#39;,
+ &#39;SERVER_NAME&#39;: &#39;draft.sefaria.org&#39;,
  &#39;SERVER_PORT&#39;: &#39;80&#39;,
  &#39;SERVER_PROTOCOL&#39;: &#39;HTTP/1.1&#39;,
- &#39;SERVER_SIGNATURE&#39;: &#39;&lt;address&gt;Apache/2.4.29 (Ubuntu) Server at ste.sefaria.org Port 80&lt;/address&gt;\n&#39;,
+ &#39;SERVER_SIGNATURE&#39;: &#39;&lt;address&gt;Apache/2.4.29 (Ubuntu) Server at draft.sefaria.org Port 80&lt;/address&gt;\n&#39;,
  &#39;SERVER_SOFTWARE&#39;: &#39;Apache/2.4.29 (Ubuntu)&#39;,
  &#39;apache.version&#39;: (2, 4, 7),
- &#39;mod_wsgi.application_group&#39;: &#39;ste.sefaria.org|&#39;,
+ &#39;mod_wsgi.application_group&#39;: &#39;draft.sefaria.org|&#39;,
  &#39;mod_wsgi.callable_object&#39;: &#39;application&#39;,
  &#39;mod_wsgi.daemon_connects&#39;: &#39;1&#39;,
  &#39;mod_wsgi.daemon_restarts&#39;: &#39;0&#39;,
- &#39;mod_wsgi.daemon_start&#39;: &#39;1517748066916081&#39;,
+ &#39;mod_wsgi.daemon_start&#39;: &#39;1519218574073311&#39;,
  &#39;mod_wsgi.enable_sendfile&#39;: &#39;0&#39;,
  &#39;mod_wsgi.handler_script&#39;: &#39;&#39;,
  &#39;mod_wsgi.ignore_activity&#39;: &#39;0&#39;,
  &#39;mod_wsgi.listener_host&#39;: &#39;&#39;,
  &#39;mod_wsgi.listener_port&#39;: &#39;8080&#39;,
- &#39;mod_wsgi.path_info&#39;: &#39;/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod&#39;,
- &#39;mod_wsgi.process_group&#39;: &#39;ste.sefaria.org&#39;,
- &#39;mod_wsgi.queue_start&#39;: &#39;1517748066915939&#39;,
+ &#39;mod_wsgi.path_info&#39;: &#39;/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95&#39;,
+ &#39;mod_wsgi.process_group&#39;: &#39;draft.sefaria.org&#39;,
+ &#39;mod_wsgi.queue_start&#39;: &#39;1519218574073146&#39;,
  &#39;mod_wsgi.request_handler&#39;: &#39;wsgi-script&#39;,
- &#39;mod_wsgi.request_id&#39;: &#39;bBVjQkrSpVM&#39;,
- &#39;mod_wsgi.request_start&#39;: &#39;1517748066915692&#39;,
+ &#39;mod_wsgi.request_id&#39;: &#39;WpxxozAwg40&#39;,
+ &#39;mod_wsgi.request_start&#39;: &#39;1519218574072922&#39;,
  &#39;mod_wsgi.script_name&#39;: &#39;&#39;,
  &#39;mod_wsgi.script_reloading&#39;: &#39;1&#39;,
- &#39;mod_wsgi.script_start&#39;: &#39;1517748066916118&#39;,
+ &#39;mod_wsgi.script_start&#39;: &#39;1519218574073357&#39;,
  &#39;mod_wsgi.thread_id&#39;: 2,
- &#39;mod_wsgi.thread_requests&#39;: 1L,
- &#39;mod_wsgi.total_requests&#39;: 3L,
+ &#39;mod_wsgi.thread_requests&#39;: 921L,
+ &#39;mod_wsgi.total_requests&#39;: 7256L,
  &#39;mod_wsgi.version&#39;: (4, 5, 24),
- &#39;wsgi.errors&#39;: &lt;mod_wsgi.Log object at 0x7f4a2902af80&gt;,
+ &#39;wsgi.errors&#39;: &lt;mod_wsgi.Log object at 0x7f1041a58e90&gt;,
  &#39;wsgi.file_wrapper&#39;: &lt;type &#39;mod_wsgi.FileWrapper&#39;&gt;,
- &#39;wsgi.input&#39;: &lt;mod_wsgi.Input object at 0x7f4a28d04f10&gt;,
+ &#39;wsgi.input&#39;: &lt;mod_wsgi.Input object at 0x7f1063b7c180&gt;,
  &#39;wsgi.input_terminated&#39;: True,
  &#39;wsgi.multiprocess&#39;: False,
  &#39;wsgi.multithread&#39;: True,
@@ -395,12 +400,12 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
                 
                   <tr>
                     <td>func</td>
-                    <td class="code"><pre>&lt;function texts_api at 0x7f4a2a1d0140&gt;</pre></td>
+                    <td class="code"><pre>&lt;function texts_api at 0x7f10669ba488&gt;</pre></td>
                   </tr>
                 
                   <tr>
                     <td>kwargs</td>
-                    <td class="code"><pre>{&#39;tref&#39;: u&#39;Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod&#39;}</pre></td>
+                    <td class="code"><pre>{&#39;tref&#39;: u&#39;Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95&#39;}</pre></td>
                   </tr>
                 
               </tbody>
@@ -412,13 +417,13 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
           <code>/usr/local/lib/python2.7/site-packages/django/views/decorators/csrf.py</code> in <code>wrapped_view</code>
 
           
-            <div class="context" id="c139956491275080">
+            <div class="context" id="c139708336237816">
               
-                <ol start="70" class="pre-context" id="pre139956491275080"><li onclick="toggle('pre139956491275080', 'post139956491275080')"><pre>    &quot;&quot;&quot;</pre></li><li onclick="toggle('pre139956491275080', 'post139956491275080')"><pre>    Marks a view function as being exempt from the CSRF view protection.</pre></li><li onclick="toggle('pre139956491275080', 'post139956491275080')"><pre>    &quot;&quot;&quot;</pre></li><li onclick="toggle('pre139956491275080', 'post139956491275080')"><pre>    # We could just do view_func.csrf_exempt = True, but decorators</pre></li><li onclick="toggle('pre139956491275080', 'post139956491275080')"><pre>    # are nicer if they don&#39;t have side-effects, so we return a new</pre></li><li onclick="toggle('pre139956491275080', 'post139956491275080')"><pre>    # function.</pre></li><li onclick="toggle('pre139956491275080', 'post139956491275080')"><pre>    def wrapped_view(*args, **kwargs):</pre></li></ol>
+                <ol start="70" class="pre-context" id="pre139708336237816"><li onclick="toggle('pre139708336237816', 'post139708336237816')"><pre>    &quot;&quot;&quot;</pre></li><li onclick="toggle('pre139708336237816', 'post139708336237816')"><pre>    Marks a view function as being exempt from the CSRF view protection.</pre></li><li onclick="toggle('pre139708336237816', 'post139708336237816')"><pre>    &quot;&quot;&quot;</pre></li><li onclick="toggle('pre139708336237816', 'post139708336237816')"><pre>    # We could just do view_func.csrf_exempt = True, but decorators</pre></li><li onclick="toggle('pre139708336237816', 'post139708336237816')"><pre>    # are nicer if they don&#39;t have side-effects, so we return a new</pre></li><li onclick="toggle('pre139708336237816', 'post139708336237816')"><pre>    # function.</pre></li><li onclick="toggle('pre139708336237816', 'post139708336237816')"><pre>    def wrapped_view(*args, **kwargs):</pre></li></ol>
               
-              <ol start="77" class="context-line"><li onclick="toggle('pre139956491275080', 'post139956491275080')"><pre>        return view_func(*args, **kwargs)</pre> <span>...</span></li></ol>
+              <ol start="77" class="context-line"><li onclick="toggle('pre139708336237816', 'post139708336237816')"><pre>        return view_func(*args, **kwargs)</pre> <span>...</span></li></ol>
               
-                <ol start='78' class="post-context" id="post139956491275080"><li onclick="toggle('pre139956491275080', 'post139956491275080')"><pre>    wrapped_view.csrf_exempt = True</pre></li><li onclick="toggle('pre139956491275080', 'post139956491275080')"><pre>    return wraps(view_func, assigned=available_attrs(view_func))(wrapped_view)</pre></li></ol>
+                <ol start='78' class="post-context" id="post139708336237816"><li onclick="toggle('pre139708336237816', 'post139708336237816')"><pre>    wrapped_view.csrf_exempt = True</pre></li><li onclick="toggle('pre139708336237816', 'post139708336237816')"><pre>    return wraps(view_func, assigned=available_attrs(view_func))(wrapped_view)</pre></li></ol>
               
             </div>
           
@@ -426,10 +431,10 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139956491275080')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139708336237816')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139956491275080">
+            <table class="vars" id="v139708336237816">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -441,67 +446,72 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
                   <tr>
                     <td>args</td>
                     <td class="code"><pre>(&lt;WSGIRequest
-path:/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod,
+path:/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95,
 GET:&lt;QueryDict: {}&gt;,
-POST:&lt;QueryDict: {u&#39;json&#39;: [u&#39;{&quot;text&quot;: [&quot;This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&lt;i class=\&#39;footnote\&#39;&gt;You may do your work all week but not on Shabbos\\r\\n&lt;/i&gt;&quot;, &quot;\\u201cSix days do your work\\u201d&quot;, &quot;but the seventh day is your God\&#39;s\\u2014&quot;, &quot;the Sabbath\\u2014do no work on it&quot;, &quot;for He did everything in six days&lt;i class=\&#39;footnote\&#39;&gt;He created the world in six days\\r\\n&lt;/i&gt;&quot;, &quot;Refrain:&quot;, &quot;This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;It is the first of the holy convocations,&lt;i class=\&#39;footnote\&#39;&gt;It is mentioned first in the chapter dealing with festivals (Leviticus 23)\\r\\n&lt;/i&gt;&quot;, &quot;a day of rest, the holy Sabbath day&quot;, &quot;Therefore, let every man&quot;, &quot;recite kiddush with his wine,&quot;, &quot;over two complete loaves&quot;, &quot;let him break bread&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;Eat rich foods, drink sweet drinks,&quot;, &quot;for the Almighty will give&quot;, &quot;to all who cling to Him\\u2014&quot;, &quot;garments to wear, bread as needed,&quot;, &quot;meat and fish and all delicacies&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;You will lack nothing on it,&quot;, &quot;and will eat and be satisfied,&quot;, &quot;and will bless Adonoy, your God,&quot;, &quot;whom you love;&quot;, &quot;\\u2014for He has blessed you above all peoples&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;The heavens recount His glory&quot;, &quot;and the earth, too, is filled with His kindliness&quot;, &quot;[Behold] see that all these, His hand made,&quot;, &quot;for He is the Former, His work is perfect&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;], &quot;versionTitle&quot;: &quot;The Metsudah Siddur...&quot;, &quot;language&quot;: &quot;en&quot;, &quot;versionSource&quot;: &quot;http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&amp;docId=NNL_ALEPH002211687&quot;}&#39;], u&#39;apikey&#39;: [u&#39;kAEw7OKw5IjZIG4lFbrYxpSdu78Jsza67HgR0gRBOdg&#39;]}&gt;,
+POST:&lt;QueryDict: {u&#39;json&#39;: [u&#39;{&quot;text&quot;: [&quot;Come, let us sing to Adonoy;&quot;, &quot;let us sound the shofar&quot;, &quot;to the Rock of our deliverance.&lt;sup&gt;1&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;Israel will say these words in the days of the Messiah, when Jews will inspire each other to sing to Almighty God Who delivered them.\\u2014Radak&lt;/i&gt;&quot;, &quot;Let us greet His Presence&quot;, &quot;with thanksgiving,&lt;sup&gt;2&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;Expressions of thanksgiving are considered of the highest virtue, as it is said, \\u2018As for myself, with expressions of thanksgiving I sacrifice to you.\\u2019\\u2014Jonah 2&lt;/i&gt;&quot;, &quot;with hymns let us raise our voices unto Him.&quot;, &quot;For a great Almighty is Adonoy&quot;, &quot;and a great King over all gods.&lt;sup&gt;3&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;\\u2018Are there any other gods?\\u2019 asks the Midrash, and answers by citing verse 5 of the next Psalm, \\u2018All the gods of the nations are idols.\\u2019&lt;/i&gt;&quot;, &quot;For in His hands are the depths&lt;sup&gt;4&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;Metsudas Dovid offers another translation: \\u2018In His hands are the hidden things of the earth,\\u2019 referring to things which require much study and thought in order to be understood.&lt;/i&gt; of the earth,&quot;, &quot;and the heights of the mountains are His;&quot;, &quot;For the sea is His, and He made it,&quot;, &quot;and the dry land, His hands formed.&quot;, &quot;Come, let us prostrate ourselves and bow;&quot;, &quot;let us kneel&quot;, &quot;before Adonoy, our Maker.&quot;, &quot;For He is our God&quot;, &quot;and we are the people of His pasture,&quot;, &quot;and the flock of His hand,&quot;, &quot;[even] today&lt;sup&gt;5&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;It is possible for us to reach this high level and to be accepted as His flock even this very day, if we would hearken to His voice.\\u2014Dover Sholom&lt;/i&gt; if you will heed His voice.&quot;, &quot;Do not harden your heart as at Merivah,&quot;, &quot;as on the day of Massah&lt;sup&gt;6&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;The Jews complained and murmured at the lack of water during their wanderings in the wilderness (Exodus 17:1-17; Numbers 20:1-13).&lt;/i&gt; in the desert.&quot;, &quot;When your fathers tested Me,&lt;sup&gt;7&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;  7 The words from here till the end of the Psalm, are the actual words of the Divine Presence that emanated from the throat of Moses,  \\u05e9\\u05c1\\u05b0\\u05db\\u05b4\\u05d9\\u05e0\\u05b8\\u05d4 \\u05de\\u05b0\\u05d3\\u05b7\\u05d1\\u05bc\\u05b6\\u05e8\\u05b6\\u05ea \\u05de\\u05b4\\u05ea\\u05bc\\u05d5\\u05b9\\u05da\\u05b0 \\u05d2\\u05b0\\u05e8\\u05d5\\u05b9\\u05e0\\u05d5\\u05b9 \\u05e9\\u05c1\\u05b6\\u05dc \\u05de\\u05e9\\u05c1\\u05b6\\u05d4 \\u2014 Eyun Tfiloh &lt;/i&gt;&quot;, &quot;they tried Me,&quot;, &quot;though they had seen My work.&quot;, &quot;Forty years I quarreled with that generation;&quot;, &quot;and I said,&quot;, &quot;\\u201cThey are a people of erring hearts,&quot;, &quot;and they did not know my ways.\\u201d&quot;, &quot;Therefore I swore in My anger,&quot;, &quot;\\u201cThey shall not enter My resting place.\\u201d&lt;sup&gt;8&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;The Holy Land is described as the land of rest (Deuteronomy 12:9).&lt;/i&gt;&quot;], &quot;versionTitle&quot;: &quot;The Metsudah Siddur...&quot;, &quot;language&quot;: &quot;en&quot;, &quot;versionSource&quot;: &quot;http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&amp;docId=NNL_ALEPH002211687&quot;}&#39;], u&#39;apikey&#39;: [u&#39;kAEw7OKw5IjZIG4lFbrYxpSdu78Jsza67HgR0gRBOdg&#39;]}&gt;,
 COOKIES:{},
-META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
+META:{&#39;CONTENT_LENGTH&#39;: &#39;3689&#39;,
  &#39;CONTENT_TYPE&#39;: &#39;application/x-www-form-urlencoded&#39;,
- &#39;CONTEXT_DOCUMENT_ROOT&#39;: &#39;/var/www/ste/static/&#39;,
+ &#39;CONTEXT_DOCUMENT_ROOT&#39;: &#39;/var/www/draft/static/&#39;,
  &#39;CONTEXT_PREFIX&#39;: &#39;&#39;,
- &#39;CSRF_COOKIE&#39;: &#39;m2o000todt1nbHcbTg7UVGVBFDAnkMxZ&#39;,
- &#39;DOCUMENT_ROOT&#39;: &#39;/var/www/ste/static/&#39;,
+ &#39;CSRF_COOKIE&#39;: &#39;QEwNRWDe5yZcbOGy1xv05yo3xRWOa4VN&#39;,
+ &#39;DOCUMENT_ROOT&#39;: &#39;/var/www/draft/static/&#39;,
  &#39;GATEWAY_INTERFACE&#39;: &#39;CGI/1.1&#39;,
  &#39;HTTP_ACCEPT&#39;: &#39;*/*&#39;,
- &#39;HTTP_ACCEPT_ENCODING&#39;: &#39;gzip, deflate&#39;,
- &#39;HTTP_HOST&#39;: &#39;ste.sefaria.org&#39;,
+ &#39;HTTP_ACCEPT_ENCODING&#39;: &#39;gzip&#39;,
+ &#39;HTTP_CF_CONNECTING_IP&#39;: &#39;79.178.92.190&#39;,
+ &#39;HTTP_CF_IPCOUNTRY&#39;: &#39;IL&#39;,
+ &#39;HTTP_CF_RAY&#39;: &#39;3f09f0d7a1e96a61-LHR&#39;,
+ &#39;HTTP_CF_VISITOR&#39;: &#39;{&quot;scheme&quot;:&quot;http&quot;}&#39;,
+ &#39;HTTP_HOST&#39;: &#39;draft.sefaria.org&#39;,
  &#39;HTTP_USER_AGENT&#39;: &#39;python-requests/2.18.4&#39;,
- &#39;HTTP_X_FORWARDED_FOR&#39;: &#39;109.67.33.31&#39;,
- &#39;HTTP_X_VARNISH&#39;: &#39;3922702&#39;,
- &#39;PATH_INFO&#39;: u&#39;/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod&#39;,
- &#39;PATH_TRANSLATED&#39;: &#39;/var/www/ste/sefaria/wsgi.py/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod&#39;,
+ &#39;HTTP_X_FORWARDED_FOR&#39;: &#39;79.178.92.190, 141.101.107.36&#39;,
+ &#39;HTTP_X_FORWARDED_PROTO&#39;: &#39;http&#39;,
+ &#39;HTTP_X_VARNISH&#39;: &#39;7074601&#39;,
+ &#39;PATH_INFO&#39;: u&#39;/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95&#39;,
+ &#39;PATH_TRANSLATED&#39;: &#39;/var/www/draft/sefaria/wsgi.py/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95&#39;,
  &#39;QUERY_STRING&#39;: &#39;&#39;,
  &#39;REMOTE_ADDR&#39;: &#39;127.0.0.1&#39;,
- &#39;REMOTE_PORT&#39;: &#39;47344&#39;,
+ &#39;REMOTE_PORT&#39;: &#39;38574&#39;,
  &#39;REQUEST_METHOD&#39;: &#39;POST&#39;,
  &#39;REQUEST_SCHEME&#39;: &#39;http&#39;,
- &#39;REQUEST_URI&#39;: &#39;/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod&#39;,
- &#39;SCRIPT_FILENAME&#39;: &#39;/var/www/ste/sefaria/wsgi.py&#39;,
+ &#39;REQUEST_URI&#39;: &#39;/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95&#39;,
+ &#39;SCRIPT_FILENAME&#39;: &#39;/var/www/draft/sefaria/wsgi.py&#39;,
  &#39;SCRIPT_NAME&#39;: u&#39;&#39;,
  &#39;SERVER_ADDR&#39;: &#39;127.0.0.1&#39;,
- &#39;SERVER_ADMIN&#39;: &#39;dev@sefaria.org&#39;,
- &#39;SERVER_NAME&#39;: &#39;ste.sefaria.org&#39;,
+ &#39;SERVER_ADMIN&#39;: &#39;<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a2c6c7d4e2d1c7c4c3d0cbc38ccdd0c5">[email&#160;protected]</a>&#39;,
+ &#39;SERVER_NAME&#39;: &#39;draft.sefaria.org&#39;,
  &#39;SERVER_PORT&#39;: &#39;80&#39;,
  &#39;SERVER_PROTOCOL&#39;: &#39;HTTP/1.1&#39;,
- &#39;SERVER_SIGNATURE&#39;: &#39;&lt;address&gt;Apache/2.4.29 (Ubuntu) Server at ste.sefaria.org Port 80&lt;/address&gt;\n&#39;,
+ &#39;SERVER_SIGNATURE&#39;: &#39;&lt;address&gt;Apache/2.4.29 (Ubuntu) Server at draft.sefaria.org Port 80&lt;/address&gt;\n&#39;,
  &#39;SERVER_SOFTWARE&#39;: &#39;Apache/2.4.29 (Ubuntu)&#39;,
  &#39;apache.version&#39;: (2, 4, 7),
- &#39;mod_wsgi.application_group&#39;: &#39;ste.sefaria.org|&#39;,
+ &#39;mod_wsgi.application_group&#39;: &#39;draft.sefaria.org|&#39;,
  &#39;mod_wsgi.callable_object&#39;: &#39;application&#39;,
  &#39;mod_wsgi.daemon_connects&#39;: &#39;1&#39;,
  &#39;mod_wsgi.daemon_restarts&#39;: &#39;0&#39;,
- &#39;mod_wsgi.daemon_start&#39;: &#39;1517748066916081&#39;,
+ &#39;mod_wsgi.daemon_start&#39;: &#39;1519218574073311&#39;,
  &#39;mod_wsgi.enable_sendfile&#39;: &#39;0&#39;,
  &#39;mod_wsgi.handler_script&#39;: &#39;&#39;,
  &#39;mod_wsgi.ignore_activity&#39;: &#39;0&#39;,
  &#39;mod_wsgi.listener_host&#39;: &#39;&#39;,
  &#39;mod_wsgi.listener_port&#39;: &#39;8080&#39;,
- &#39;mod_wsgi.path_info&#39;: &#39;/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod&#39;,
- &#39;mod_wsgi.process_group&#39;: &#39;ste.sefaria.org&#39;,
- &#39;mod_wsgi.queue_start&#39;: &#39;1517748066915939&#39;,
+ &#39;mod_wsgi.path_info&#39;: &#39;/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95&#39;,
+ &#39;mod_wsgi.process_group&#39;: &#39;draft.sefaria.org&#39;,
+ &#39;mod_wsgi.queue_start&#39;: &#39;1519218574073146&#39;,
  &#39;mod_wsgi.request_handler&#39;: &#39;wsgi-script&#39;,
- &#39;mod_wsgi.request_id&#39;: &#39;bBVjQkrSpVM&#39;,
- &#39;mod_wsgi.request_start&#39;: &#39;1517748066915692&#39;,
+ &#39;mod_wsgi.request_id&#39;: &#39;WpxxozAwg40&#39;,
+ &#39;mod_wsgi.request_start&#39;: &#39;1519218574072922&#39;,
  &#39;mod_wsgi.script_name&#39;: &#39;&#39;,
  &#39;mod_wsgi.script_reloading&#39;: &#39;1&#39;,
- &#39;mod_wsgi.script_start&#39;: &#39;1517748066916118&#39;,
+ &#39;mod_wsgi.script_start&#39;: &#39;1519218574073357&#39;,
  &#39;mod_wsgi.thread_id&#39;: 2,
- &#39;mod_wsgi.thread_requests&#39;: 1L,
- &#39;mod_wsgi.total_requests&#39;: 3L,
+ &#39;mod_wsgi.thread_requests&#39;: 921L,
+ &#39;mod_wsgi.total_requests&#39;: 7256L,
  &#39;mod_wsgi.version&#39;: (4, 5, 24),
- &#39;wsgi.errors&#39;: &lt;mod_wsgi.Log object at 0x7f4a2902af80&gt;,
+ &#39;wsgi.errors&#39;: &lt;mod_wsgi.Log object at 0x7f1041a58e90&gt;,
  &#39;wsgi.file_wrapper&#39;: &lt;type &#39;mod_wsgi.FileWrapper&#39;&gt;,
- &#39;wsgi.input&#39;: &lt;mod_wsgi.Input object at 0x7f4a28d04f10&gt;,
+ &#39;wsgi.input&#39;: &lt;mod_wsgi.Input object at 0x7f1063b7c180&gt;,
  &#39;wsgi.input_terminated&#39;: True,
  &#39;wsgi.multiprocess&#39;: False,
  &#39;wsgi.multithread&#39;: True,
@@ -512,12 +522,12 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
                 
                   <tr>
                     <td>view_func</td>
-                    <td class="code"><pre>&lt;function texts_api at 0x7f4a2a1d00c8&gt;</pre></td>
+                    <td class="code"><pre>&lt;function texts_api at 0x7f10669ba5f0&gt;</pre></td>
                   </tr>
                 
                   <tr>
                     <td>kwargs</td>
-                    <td class="code"><pre>{&#39;tref&#39;: u&#39;Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod&#39;}</pre></td>
+                    <td class="code"><pre>{&#39;tref&#39;: u&#39;Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95&#39;}</pre></td>
                   </tr>
                 
               </tbody>
@@ -526,16 +536,16 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
         </li>
       
         <li class="frame user">
-          <code>/var/www/ste/reader/views.py</code> in <code>texts_api</code>
+          <code>/var/www/draft/reader/views.py</code> in <code>texts_api</code>
 
           
-            <div class="context" id="c139956491274720">
+            <div class="context" id="c139708345412136">
               
-                <ol start="1550" class="pre-context" id="pre139956491274720"><li onclick="toggle('pre139956491274720', 'post139956491274720')"><pre>            key = request.POST.get(&quot;apikey&quot;)</pre></li><li onclick="toggle('pre139956491274720', 'post139956491274720')"><pre>            if not key:</pre></li><li onclick="toggle('pre139956491274720', 'post139956491274720')"><pre>                return jsonResponse({&quot;error&quot;: &quot;You must be logged in or use an API key to save texts.&quot;})</pre></li><li onclick="toggle('pre139956491274720', 'post139956491274720')"><pre>            apikey = db.apikeys.find_one({&quot;key&quot;: key})</pre></li><li onclick="toggle('pre139956491274720', 'post139956491274720')"><pre>            if not apikey:</pre></li><li onclick="toggle('pre139956491274720', 'post139956491274720')"><pre>                return jsonResponse({&quot;error&quot;: &quot;Unrecognized API key.&quot;})</pre></li><li onclick="toggle('pre139956491274720', 'post139956491274720')"><pre>            t = json.loads(j)</pre></li></ol>
+                <ol start="1108" class="pre-context" id="pre139708345412136"><li onclick="toggle('pre139708345412136', 'post139708345412136')"><pre>            key = request.POST.get(&quot;apikey&quot;)</pre></li><li onclick="toggle('pre139708345412136', 'post139708345412136')"><pre>            if not key:</pre></li><li onclick="toggle('pre139708345412136', 'post139708345412136')"><pre>                return jsonResponse({&quot;error&quot;: &quot;You must be logged in or use an API key to save texts.&quot;})</pre></li><li onclick="toggle('pre139708345412136', 'post139708345412136')"><pre>            apikey = db.apikeys.find_one({&quot;key&quot;: key})</pre></li><li onclick="toggle('pre139708345412136', 'post139708345412136')"><pre>            if not apikey:</pre></li><li onclick="toggle('pre139708345412136', 'post139708345412136')"><pre>                return jsonResponse({&quot;error&quot;: &quot;Unrecognized API key.&quot;})</pre></li><li onclick="toggle('pre139708345412136', 'post139708345412136')"><pre>            t = json.loads(j)</pre></li></ol>
               
-              <ol start="1557" class="context-line"><li onclick="toggle('pre139956491274720', 'post139956491274720')"><pre>            chunk = tracker.modify_text(apikey[&quot;uid&quot;], oref, t[&quot;versionTitle&quot;], t[&quot;language&quot;], t[&quot;text&quot;], t[&quot;versionSource&quot;], method=&quot;API&quot;, skip_links=skip_links)</pre> <span>...</span></li></ol>
+              <ol start="1115" class="context-line"><li onclick="toggle('pre139708345412136', 'post139708345412136')"><pre>            chunk = tracker.modify_text(apikey[&quot;uid&quot;], oref, t[&quot;versionTitle&quot;], t[&quot;language&quot;], t[&quot;text&quot;], t[&quot;versionSource&quot;], method=&quot;API&quot;, skip_links=skip_links)</pre> <span>...</span></li></ol>
               
-                <ol start='1558' class="post-context" id="post139956491274720"><li onclick="toggle('pre139956491274720', 'post139956491274720')"><pre>            count_after = int(request.GET.get(&quot;count_after&quot;, 0))</pre></li><li onclick="toggle('pre139956491274720', 'post139956491274720')"><pre>            count_and_index(oref, chunk.lang, chunk.vtitle, count_after)</pre></li><li onclick="toggle('pre139956491274720', 'post139956491274720')"><pre>            return jsonResponse({&quot;status&quot;: &quot;ok&quot;})</pre></li><li onclick="toggle('pre139956491274720', 'post139956491274720')"><pre>        else:</pre></li><li onclick="toggle('pre139956491274720', 'post139956491274720')"><pre>            @csrf_protect</pre></li><li onclick="toggle('pre139956491274720', 'post139956491274720')"><pre>            def protected_post(request):</pre></li></ol>
+                <ol start='1116' class="post-context" id="post139708345412136"><li onclick="toggle('pre139708345412136', 'post139708345412136')"><pre>            count_after = int(request.GET.get(&quot;count_after&quot;, 0))</pre></li><li onclick="toggle('pre139708345412136', 'post139708345412136')"><pre>            count_and_index(oref, chunk.lang, chunk.vtitle, count_after)</pre></li><li onclick="toggle('pre139708345412136', 'post139708345412136')"><pre>            return jsonResponse({&quot;status&quot;: &quot;ok&quot;})</pre></li><li onclick="toggle('pre139708345412136', 'post139708345412136')"><pre>        else:</pre></li><li onclick="toggle('pre139708345412136', 'post139708345412136')"><pre>            @csrf_protect</pre></li><li onclick="toggle('pre139708345412136', 'post139708345412136')"><pre>            def protected_post(request):</pre></li></ol>
               
             </div>
           
@@ -543,10 +553,10 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139956491274720')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139708345412136')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139956491274720">
+            <table class="vars" id="v139708345412136">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -569,86 +579,57 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
                 
                   <tr>
                     <td>oref</td>
-                    <td class="code"><pre>Ref(&#39;Sefard Siddur Shabbat, Songs for Shabbos Morning, Yom Zeh Mechubod&#39;)</pre></td>
+                    <td class="code"><pre>Ref(&#39;Sefard Siddur Shabbat, Kabbalas Shabbos, Psalm 95&#39;)</pre></td>
                   </tr>
                 
                   <tr>
                     <td>j</td>
-                    <td class="code"><pre>u&#39;{&quot;text&quot;: [&quot;This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&lt;i class=\&#39;footnote\&#39;&gt;You may do your work all week but not on Shabbos\\r\\n&lt;/i&gt;&quot;, &quot;\\u201cSix days do your work\\u201d&quot;, &quot;but the seventh day is your God\&#39;s\\u2014&quot;, &quot;the Sabbath\\u2014do no work on it&quot;, &quot;for He did everything in six days&lt;i class=\&#39;footnote\&#39;&gt;He created the world in six days\\r\\n&lt;/i&gt;&quot;, &quot;Refrain:&quot;, &quot;This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;It is the first of the holy convocations,&lt;i class=\&#39;footnote\&#39;&gt;It is mentioned first in the chapter dealing with festivals (Leviticus 23)\\r\\n&lt;/i&gt;&quot;, &quot;a day of rest, the holy Sabbath day&quot;, &quot;Therefore, let every man&quot;, &quot;recite kiddush with his wine,&quot;, &quot;over two complete loaves&quot;, &quot;let him break bread&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;Eat rich foods, drink sweet drinks,&quot;, &quot;for the Almighty will give&quot;, &quot;to all who cling to Him\\u2014&quot;, &quot;garments to wear, bread as needed,&quot;, &quot;meat and fish and all delicacies&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;You will lack nothing on it,&quot;, &quot;and will eat and be satisfied,&quot;, &quot;and will bless Adonoy, your God,&quot;, &quot;whom you love;&quot;, &quot;\\u2014for He has blessed you above all peoples&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;The heavens recount His glory&quot;, &quot;and the earth, too, is filled with His kindliness&quot;, &quot;[Behold] see that all these, His hand made,&quot;, &quot;for He is the Former, His work is perfect&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;], &quot;versionTitle&quot;: &quot;The Metsudah Siddur...&quot;, &quot;language&quot;: &quot;en&quot;, &quot;versionSource&quot;: &quot;http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&amp;docId=NNL_ALEPH002211687&quot;}&#39;</pre></td>
+                    <td class="code"><pre>u&#39;{&quot;text&quot;: [&quot;Come, let us sing to Adonoy;&quot;, &quot;let us sound the shofar&quot;, &quot;to the Rock of our deliverance.&lt;sup&gt;1&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;Israel will say these words in the days of the Messiah, when Jews will inspire each other to sing to Almighty God Who delivered them.\\u2014Radak&lt;/i&gt;&quot;, &quot;Let us greet His Presence&quot;, &quot;with thanksgiving,&lt;sup&gt;2&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;Expressions of thanksgiving are considered of the highest virtue, as it is said, \\u2018As for myself, with expressions of thanksgiving I sacrifice to you.\\u2019\\u2014Jonah 2&lt;/i&gt;&quot;, &quot;with hymns let us raise our voices unto Him.&quot;, &quot;For a great Almighty is Adonoy&quot;, &quot;and a great King over all gods.&lt;sup&gt;3&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;\\u2018Are there any other gods?\\u2019 asks the Midrash, and answers by citing verse 5 of the next Psalm, \\u2018All the gods of the nations are idols.\\u2019&lt;/i&gt;&quot;, &quot;For in His hands are the depths&lt;sup&gt;4&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;Metsudas Dovid offers another translation: \\u2018In His hands are the hidden things of the earth,\\u2019 referring to things which require much study and thought in order to be understood.&lt;/i&gt; of the earth,&quot;, &quot;and the heights of the mountains are His;&quot;, &quot;For the sea is His, and He made it,&quot;, &quot;and the dry land, His hands formed.&quot;, &quot;Come, let us prostrate ourselves and bow;&quot;, &quot;let us kneel&quot;, &quot;before Adonoy, our Maker.&quot;, &quot;For He is our God&quot;, &quot;and we are the people of His pasture,&quot;, &quot;and the flock of His hand,&quot;, &quot;[even] today&lt;sup&gt;5&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;It is possible for us to reach this high level and to be accepted as His flock even this very day, if we would hearken to His voice.\\u2014Dover Sholom&lt;/i&gt; if you will heed His voice.&quot;, &quot;Do not harden your heart as at Merivah,&quot;, &quot;as on the day of Massah&lt;sup&gt;6&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;The Jews complained and murmured at the lack of water during their wanderings in the wilderness (Exodus 17:1-17; Numbers 20:1-13).&lt;/i&gt; in the desert.&quot;, &quot;When your fathers tested Me,&lt;sup&gt;7&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;  7 The words from here till the end of the Psalm, are the actual words of the Divine Presence that emanated from the throat of Moses,  \\u05e9\\u05c1\\u05b0\\u05db\\u05b4\\u05d9\\u05e0\\u05b8\\u05d4 \\u05de\\u05b0\\u05d3\\u05b7\\u05d1\\u05bc\\u05b6\\u05e8\\u05b6\\u05ea \\u05de\\u05b4\\u05ea\\u05bc\\u05d5\\u05b9\\u05da\\u05b0 \\u05d2\\u05b0\\u05e8\\u05d5\\u05b9\\u05e0\\u05d5\\u05b9 \\u05e9\\u05c1\\u05b6\\u05dc \\u05de\\u05e9\\u05c1\\u05b6\\u05d4 \\u2014 Eyun Tfiloh &lt;/i&gt;&quot;, &quot;they tried Me,&quot;, &quot;though they had seen My work.&quot;, &quot;Forty years I quarreled with that generation;&quot;, &quot;and I said,&quot;, &quot;\\u201cThey are a people of erring hearts,&quot;, &quot;and they did not know my ways.\\u201d&quot;, &quot;Therefore I swore in My anger,&quot;, &quot;\\u201cThey shall not enter My resting place.\\u201d&lt;sup&gt;8&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;The Holy Land is described as the land of rest (Deuteronomy 12:9).&lt;/i&gt;&quot;], &quot;versionTitle&quot;: &quot;The Metsudah Siddur...&quot;, &quot;language&quot;: &quot;en&quot;, &quot;versionSource&quot;: &quot;http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&amp;docId=NNL_ALEPH002211687&quot;}&#39;</pre></td>
                   </tr>
                 
                   <tr>
                     <td>request</td>
-                    <td class="code"><pre>&#39;&lt;WSGIRequest\npath:/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod,\nGET:&lt;QueryDict: {}&gt;,\nPOST:&lt;QueryDict: {u\&#39;json\&#39;: [u\&#39;{&quot;text&quot;: [&quot;This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&lt;i class=\\\&#39;footnote\\\&#39;&gt;You may do your work all week but not on Shabbos\\\\r\\\\n&lt;/i&gt;&quot;, &quot;\\\\u201cSix days do your work\\\\u201d&quot;, &quot;but the seventh day is your God\\\&#39;s\\\\u2014&quot;, &quot;the Sabbath\\\\u2014do no work on it&quot;, &quot;for He did everything in six days&lt;i class=\\\&#39;footnote\\\&#39;&gt;He created the world in six days\\\\r\\\\n&lt;/i&gt;&quot;, &quot;Refrain:&quot;, &quot;This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;It is the first of the holy convocations,&lt;i class=\\\&#39;footnote\\\&#39;&gt;It is mentioned first in the chapter dealing with festivals (Leviticus 23)\\\\r\\\\n&lt;/i&gt;&quot;, &quot;a day of rest, the holy Sabbath day&quot;, &quot;Therefore, let every man&quot;, &quot;recite kiddush with his wine,&quot;, &quot;over two complete loaves&quot;, &quot;let him break bread&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;Eat rich foods, drink sweet drinks,&quot;, &quot;for the Almighty will give&quot;, &quot;to all who cling to Him\\\\u2014&quot;, &quot;garments to wear, bread as needed,&quot;, &quot;meat and fish and all delicacies&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;You will lack nothing on it,&quot;, &quot;and will eat and be satisfied,&quot;, &quot;and will bless Adonoy, your God,&quot;, &quot;whom you love;&quot;, &quot;\\\\u2014for He has blessed you above all peoples&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;The heavens recount His glory&quot;, &quot;and the earth, too, is filled with His kindliness&quot;, &quot;[Behold] see that all these, His hand made,&quot;, &quot;for He is the Former, His work is perfect&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;], &quot;versionTitle&quot;: &quot;The Metsudah Siddur...&quot;, &quot;language&quot;: &quot;en&quot;, &quot;versionSource&quot;: &quot;http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&amp;docId=NNL_ALEPH002211687&quot;}\&#39;], u\&#39;apikey\&#39;: [u\&#39;kAEw7OKw5IjZIG4lFbrYxpSdu78Jsza67HgR0gRBOdg\&#39;]}&gt;,\nCOOKIES:{},\nMETA:{\&#39;CONTENT_LENGTH\&#39;: \&#39;2548\&#39;,\n \&#39;CONTENT_TYPE\&#39;: \&#39;application/x-www-form-urlencoded\&#39;,\n \&#39;CONTEXT_DOCUMENT_ROOT\&#39;: \&#39;/var/www/ste/static/\&#39;,\n \&#39;CONTEXT_PREFIX\&#39;: \&#39;\&#39;,\n \&#39;CSRF_COOKIE\&#39;: \&#39;m2o000todt1nbHcbTg7UVGVBFDAnkMxZ\&#39;,\n \&#39;DOCUMENT_ROOT\&#39;: \&#39;/var/www/ste/static/\&#39;,\n \&#39;GATEWAY_INTERFACE\&#39;: \&#39;CGI/1.1\&#39;,\n \&#39;HTTP_ACCEPT\&#39;: \&#39;*/*\&#39;,\n \&#39;HTTP_ACCEPT_ENCODING\&#39;: \&#39;gzip, deflate\&#39;,\n \&#39;HTTP_HOST\&#39;: \&#39;ste.sefaria.org\&#39;,\n \&#39;HTTP_USER_AGENT\&#39;: \&#39;python-requests/2.18.4\&#39;,\n \&#39;HTTP_X_FORWARDED_FOR\&#39;: \&#39;109.67.33.31\&#39;,\n \&#39;HTTP_X_VARNISH\&#39;: \&#39;3922702\&#39;,\n \&#39;PATH_INFO\&#39;: u\&#39;/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod\&#39;,\n \&#39;PATH_TRANSLATED\&#39;: \&#39;/var/www/ste/sefaria/wsgi.py/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod\&#39;,\n \&#39;QUERY_STRING\&#39;: \&#39;\&#39;,\n \&#39;REMOTE_ADDR\&#39;: \&#39;127.0.0.1\&#39;,\n \&#39;REMOTE_PORT\&#39;: \&#39;47344\&#39;,\n \&#39;REQUEST_METHOD\&#39;: \&#39;POST\&#39;,\n \&#39;REQUEST_SCHEME\&#39;: \&#39;http\&#39;,\n \&#39;REQUEST_URI\&#39;: \&#39;/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod\&#39;,\n \&#39;SCRIPT_FILENAME\&#39;: \&#39;/var/www/ste/sefaria/wsgi.py\&#39;,\n \&#39;SCRIPT_NAME\&#39;: u\&#39;\&#39;,\n \&#39;SERVER_ADDR\&#39;: \&#39;127.0.0.1\&#39;,\n \&#39;SERVER_ADMIN\&#39;: \&#39;dev@sefaria.org\&#39;,\n \&#39;SERVER_NAME\&#39;: \&#39;ste.sefaria.org\&#39;,\n \&#39;SERVER_PORT\&#39;: \&#39;80\&#39;,\n \&#39;SERVER_PROTOCOL\&#39;: \&#39;HTTP/1.1\&#39;,\n \&#39;SERVER_SIGNATURE\&#39;: \&#39;&lt;address&gt;Apache/2.4.29 (Ubuntu) Server at ste.sefaria.org Port 80&lt;/address&gt;\\n\&#39;,\n \&#39;SERVER_SOFTWARE\&#39;: \&#39;Apache/2.4.29 (Ubuntu)\&#39;,\n \&#39;apache.version\&#39;: (2, 4, 7),\n \&#39;mod_wsgi.application_group\&#39;: \&#39;ste.sefaria.org|\&#39;,\n \&#39;mod_wsgi.callable_object\&#39;: \&#39;application\&#39;,\n \&#39;mod_wsgi.daemon_connects\&#39;: \&#39;1\&#39;,\n \&#39;mod_wsgi.daemon_restarts\&#39;: \&#39;0\&#39;,\n \&#39;mod_wsgi.daemon_start\&#39;: \&#39;1517748066916081\&#39;,\n \&#39;mod_wsgi.enable_sendfile\&#39;: \&#39;0\&#39;,\n \&#39;mod_wsgi.handler_script\&#39;: \&#39;\&#39;,\n \&#39;mod_wsgi.ignore_activity\&#39;: \&#39;0\&#39;,\n \&#39;mod_wsgi.listener_host\&#39;: \&#39;\&#39;,\n \&#39;mod_wsgi.listener_port\&#39;: \&#39;8080\&#39;,\n \&#39;mod_wsgi.path_info\&#39;: \&#39;/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod\&#39;,\n \&#39;mod_wsgi.process_group\&#39;: \&#39;ste.sefaria.org\&#39;,\n \&#39;mod_wsgi.queue_start\&#39;: \&#39;1517748066915939\&#39;,\n \&#39;mod_wsgi.request_handler\&#39;: \&#39;wsgi-script\&#39;,\n \&#39;mod_wsgi.request_id\&#39;: \&#39;bBVjQkrSpVM\&#39;,\n \&#39;mod_wsgi.request_start\&#39;: \&#39;1517748066915692\&#39;,\n \&#39;mod_wsgi.script_name\&#39;: \&#39;\&#39;,\n \&#39;mod_wsgi.script_reloading\&#39;: \&#39;1\&#39;,\n \&#39;mod_wsgi.script_start\&#39;: \&#39;1517748066916118\&#39;,\n \&#39;mod_wsgi.thread_id\&#39;: 2,\n \&#39;mod_wsgi.thread_requests\&#39;: 1L,\n \&#39;mod_wsgi.total_requests\&#39;: 3L,\n \&#39;mod_wsgi.version\&#39;: (4, 5, 24),\n \&#39;wsgi.errors\&#39;: &lt;mod_wsgi.Log object at 0x7f4a2902af80&gt;,\n \&#39;wsgi.file_wrapper\&#39;: &lt;type \&#39;mod_wsgi.FileWrapper\&#39;&gt;,\n \&#39;wsgi.input\&#39;: &lt;mod_wsgi.Input object at 0x7f4a28d04f10&gt;,\n \&#39;wsgi.input_terminated\&#39;: True,\n \&#39;wsgi.multiprocess\&#39;: False,\n \&#39;wsgi.multithread\&#39;: True,\n \&#39;wsgi.run_once\&#39;: False,\n \&#39;wsgi.url_scheme\&#39;: \&#39;http\&#39;,\n \&#39;wsgi.version\&#39;: (1, 0)}&gt;&#39;</pre></td>
+                    <td class="code"><pre>&#39;&lt;WSGIRequest\npath:/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95,\nGET:&lt;QueryDict: {}&gt;,\nPOST:&lt;QueryDict: {u\&#39;json\&#39;: [u\&#39;{&quot;text&quot;: [&quot;Come, let us sing to Adonoy;&quot;, &quot;let us sound the shofar&quot;, &quot;to the Rock of our deliverance.&lt;sup&gt;1&lt;/sup&gt;&lt;i class=\\\&#39;footnote\\\&#39;&gt;Israel will say these words in the days of the Messiah, when Jews will inspire each other to sing to Almighty God Who delivered them.\\\\u2014Radak&lt;/i&gt;&quot;, &quot;Let us greet His Presence&quot;, &quot;with thanksgiving,&lt;sup&gt;2&lt;/sup&gt;&lt;i class=\\\&#39;footnote\\\&#39;&gt;Expressions of thanksgiving are considered of the highest virtue, as it is said, \\\\u2018As for myself, with expressions of thanksgiving I sacrifice to you.\\\\u2019\\\\u2014Jonah 2&lt;/i&gt;&quot;, &quot;with hymns let us raise our voices unto Him.&quot;, &quot;For a great Almighty is Adonoy&quot;, &quot;and a great King over all gods.&lt;sup&gt;3&lt;/sup&gt;&lt;i class=\\\&#39;footnote\\\&#39;&gt;\\\\u2018Are there any other gods?\\\\u2019 asks the Midrash, and answers by citing verse 5 of the next Psalm, \\\\u2018All the gods of the nations are idols.\\\\u2019&lt;/i&gt;&quot;, &quot;For in His hands are the depths&lt;sup&gt;4&lt;/sup&gt;&lt;i class=\\\&#39;footnote\\\&#39;&gt;Metsudas Dovid offers another translation: \\\\u2018In His hands are the hidden things of the earth,\\\\u2019 referring to things which require much study and thought in order to be understood.&lt;/i&gt; of the earth,&quot;, &quot;and the heights of the mountains are His;&quot;, &quot;For the sea is His, and He made it,&quot;, &quot;and the dry land, His hands formed.&quot;, &quot;Come, let us prostrate ourselves and bow;&quot;, &quot;let us kneel&quot;, &quot;before Adonoy, our Maker.&quot;, &quot;For He is our God&quot;, &quot;and we are the people of His pasture,&quot;, &quot;and the flock of His hand,&quot;, &quot;[even] today&lt;sup&gt;5&lt;/sup&gt;&lt;i class=\\\&#39;footnote\\\&#39;&gt;It is possible for us to reach this high level and to be accepted as His flock even this very day, if we would hearken to His voice.\\\\u2014Dover Sholom&lt;/i&gt; if you will heed His voice.&quot;, &quot;Do not harden your heart as at Merivah,&quot;, &quot;as on the day of Massah&lt;sup&gt;6&lt;/sup&gt;&lt;i class=\\\&#39;footnote\\\&#39;&gt;The Jews complained and murmured at the lack of water during their wanderings in the wilderness (Exodus 17:1-17; Numbers 20:1-13).&lt;/i&gt; in the desert.&quot;, &quot;When your fathers tested Me,&lt;sup&gt;7&lt;/sup&gt;&lt;i class=\\\&#39;footnote\\\&#39;&gt;  7 The words from here till the end of the Psalm, are the actual words of the Divine Presence that emanated from the throat of Moses,  \\\\u05e9\\\\u05c1\\\\u05b0\\\\u05db\\\\u05b4\\\\u05d9\\\\u05e0\\\\u05b8\\\\u05d4 \\\\u05de\\\\u05b0\\\\u05d3\\\\u05b7\\\\u05d1\\\\u05bc\\\\u05b6\\\\u05e8\\\\u05b6\\\\u05ea \\\\u05de\\\\u05b4\\\\u05ea\\\\u05bc\\\\u05d5\\\\u05b9\\\\u05da\\\\u05b0 \\\\u05d2\\\\u05b0\\\\u05e8\\\\u05d5\\\\u05b9\\\\u05e0\\\\u05d5\\\\u05b9 \\\\u05e9\\\\u05c1\\\\u05b6\\\\u05dc \\\\u05de\\\\u05e9\\\\u05c1\\\\u05b6\\\\u05d4 \\\\u2014 Eyun Tfiloh &lt;/i&gt;&quot;, &quot;they tried Me,&quot;, &quot;though they had seen My work.&quot;, &quot;Forty years I quarreled with that generation;&quot;, &quot;and I said,&quot;, &quot;\\\\u201cThey are a people of erring hearts,&quot;, &quot;and they did not know my ways.\\\\u201d&quot;, &quot;Therefore I swore in My anger,&quot;, &quot;\\\\u201cThey shall not enter My resting place.\\\\u201d&lt;sup&gt;8&lt;/sup&gt;&lt;i class=\\\&#39;footnote\\\&#39;&gt;The Holy Land is described as the land of rest (Deuteronomy 12:9).&lt;/i&gt;&quot;], &quot;versionTitle&quot;: &quot;The Metsudah Siddur...&quot;, &quot;language&quot;: &quot;en&quot;, &quot;versionSource&quot;: &quot;http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&amp;docId=NNL_ALEPH002211687&quot;}\&#39;], u\&#39;apikey\&#39;: [u\&#39;kAEw7OKw5IjZIG4lFbrYxpSdu78Jsza67HgR0gRBOdg\&#39;]}&gt;,\nCOOKIES:{},\nMETA:{\&#39;CONTENT_LENGTH\&#39;: \&#39;3689\&#39;,\n \&#39;CONTENT_TYPE\&#39;: \&#39;application/x-www-form-urlencoded\&#39;,\n \&#39;CONTEXT_DOCUMENT_ROOT\&#39;: \&#39;/var/www/draft/static/\&#39;,\n \&#39;CONTEXT_PREFIX\&#39;: \&#39;\&#39;,\n \&#39;CSRF_COOKIE\&#39;: \&#39;QEwNRWDe5yZcbOGy1xv05yo3xRWOa4VN\&#39;,\n \&#39;DOCUMENT_ROOT\&#39;: \&#39;/var/www/draft/static/\&#39;,\n \&#39;GATEWAY_INTERFACE\&#39;: \&#39;CGI/1.1\&#39;,\n \&#39;HTTP_ACCEPT\&#39;: \&#39;*/*\&#39;,\n \&#39;HTTP_ACCEPT_ENCODING\&#39;: \&#39;gzip\&#39;,\n \&#39;HTTP_CF_CONNECTING_IP\&#39;: \&#39;79.178.92.190\&#39;,\n \&#39;HTTP_CF_IPCOUNTRY\&#39;: \&#39;IL\&#39;,\n \&#39;HTTP_CF_RAY\&#39;: \&#39;3f09f0d7a1e96a61-LHR\&#39;,\n \&#39;HTTP_CF_VISITOR\&#39;: \&#39;{&quot;scheme&quot;:&quot;http&quot;}\&#39;,\n \&#39;HTTP_HOST\&#39;: \&#39;draft.sefaria.org\&#39;,\n \&#39;HTTP_USER_AGENT\&#39;: \&#39;python-requests/2.18.4\&#39;,\n \&#39;HTTP_X_FORWARDED_FOR\&#39;: \&#39;79.178.92.190, 141.101.107.36\&#39;,\n \&#39;HTTP_X_FORWARDED_PROTO\&#39;: \&#39;http\&#39;,\n \&#39;HTTP_X_VARNISH\&#39;: \&#39;7074601\&#39;,\n \&#39;PATH_INFO\&#39;: u\&#39;/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95\&#39;,\n \&#39;PATH_TRANSLATED\&#39;: \&#39;/var/www/draft/sefaria/wsgi.py/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95\&#39;,\n \&#39;QUERY_STRING\&#39;: \&#39;\&#39;,\n \&#39;REMOTE_ADDR\&#39;: \&#39;127.0.0.1\&#39;,\n \&#39;REMOTE_PORT\&#39;: \&#39;38574\&#39;,\n \&#39;REQUEST_METHOD\&#39;: \&#39;POST\&#39;,\n \&#39;REQUEST_SCHEME\&#39;: \&#39;http\&#39;,\n \&#39;REQUEST_URI\&#39;: \&#39;/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95\&#39;,\n \&#39;SCRIPT_FILENAME\&#39;: \&#39;/var/www/draft/sefaria/wsgi.py\&#39;,\n \&#39;SCRIPT_NAME\&#39;: u\&#39;\&#39;,\n \&#39;SERVER_ADDR\&#39;: \&#39;127.0.0.1\&#39;,\n \&#39;SERVER_ADMIN\&#39;: \&#39;<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f4909182b487919295869d95da9b8693">[email&#160;protected]</a>\&#39;,\n \&#39;SERVER_NAME\&#39;: \&#39;draft.sefaria.org\&#39;,\n \&#39;SERVER_PORT\&#39;: \&#39;80\&#39;,\n \&#39;SERVER_PROTOCOL\&#39;: \&#39;HTTP/1.1\&#39;,\n \&#39;SERVER_SIGNATURE\&#39;: \&#39;&lt;address&gt;Apache/2.4.29 (Ubuntu) Server at draft.sefaria.org Port 80&lt;/address&gt;\\n\&#39;,\n \&#39;SERVER_SOFTWARE\&#39;: \&#39;Apache/2.4.29 (Ubuntu)\&#39;,\n \&#39;apache.version\&#39;: (2, 4, 7),\n \&#39;mod_wsgi.application_group\&#39;: \&#39;draft.sefaria.org|\&#39;,\n \&#39;mod_wsgi.callable_object\&#39;: \&#39;application\&#39;,\n \&#39;mod_wsgi.daemon_connects\&#39;: \&#39;1\&#39;,\n \&#39;mod_wsgi.daemon_restarts\&#39;: \&#39;0\&#39;,\n \&#39;mod_wsgi.daemon_start\&#39;: \&#39;1519218574073311\&#39;,\n \&#39;mod_wsgi.enable_sendfile\&#39;: \&#39;0\&#39;,\n \&#39;mod_wsgi.handler_script\&#39;: \&#39;\&#39;,\n \&#39;mod_wsgi.ignore_activity\&#39;: \&#39;0\&#39;,\n \&#39;mod_wsgi.listener_host\&#39;: \&#39;\&#39;,\n \&#39;mod_wsgi.listener_port\&#39;: \&#39;8080\&#39;,\n \&#39;mod_wsgi.path_info\&#39;: \&#39;/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95\&#39;,\n \&#39;mod_wsgi.process_group\&#39;: \&#39;draft.sefaria.org\&#39;,\n \&#39;mod_wsgi.queue_start\&#39;: \&#39;1519218574073146\&#39;,\n \&#39;mod_wsgi.request_handler\&#39;: \&#39;wsgi-script\&#39;,\n \&#39;mod_wsgi.request_id\&#39;: \&#39;WpxxozAwg40\&#39;,\n \&#39;mod_wsgi.request_start\&#39;: \&#39;1519218574072922\&#39;,\n \&#39;mod_wsgi.script_name\&#39;: \&#39;\&#39;,\n \&#39;mod_wsgi.script_reloading\&#39;: \&#39;1\&#39;,\n \&#39;mod_wsgi.script_start\&#39;: \&#39;1519218574073357\&#39;,\n \&#39;mod_wsgi.thread_id\&#39;: 2,\n \&#39;mod_wsgi.thread_requests\&#39;: 921L,\n \&#39;mod_wsgi.total_requests\&#39;: 7256L,\n \&#39;mod_wsgi.version\&#39;: (4, 5, 24),\n \&#39;wsgi.errors\&#39;: &lt;mod_wsgi.Log object at 0x7f1041a58e90&gt;,\n \&#39;wsgi.file_wrapper\&#39;: &lt;type \&#39;mod_wsgi.FileWrapper\&#39;&gt;,\n \&#39;wsgi.input\&#39;: &lt;mod_wsgi.Input object at 0x7f1063b7c180&gt;,\n \&#39;wsgi.input_terminated\&#39;: True,\n \&#39;wsgi.multiprocess\&#39;: False,\n \&#39;wsgi.multithread\&#39;: True,\n \&#39;wsgi.run_once\&#39;: False,\n \&#39;wsgi.url_scheme\&#39;: \&#39;http\&#39;,\n \&#39;wsgi.version\&#39;: (1, 0)}&gt;&#39;</pre></td>
                   </tr>
                 
                   <tr>
                     <td>tref</td>
-                    <td class="code"><pre>u&#39;Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod&#39;</pre></td>
+                    <td class="code"><pre>u&#39;Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95&#39;</pre></td>
                   </tr>
                 
                   <tr>
                     <td>t</td>
                     <td class="code"><pre>{u&#39;language&#39;: u&#39;en&#39;,
- u&#39;text&#39;: [u&#39;This day is honored above all days,&#39;,
-           u&quot;for on it rested the Rock of the Worlds&lt;i class=&#39;footnote&#39;&gt;You may do your work all week but not on Shabbos\r\n&lt;/i&gt;&quot;,
-           u&#39;\u201cSix days do your work\u201d&#39;,
-           u&quot;but the seventh day is your God&#39;s\u2014&quot;,
-           u&#39;the Sabbath\u2014do no work on it&#39;,
-           u&quot;for He did everything in six days&lt;i class=&#39;footnote&#39;&gt;He created the world in six days\r\n&lt;/i&gt;&quot;,
-           u&#39;Refrain:&#39;,
-           u&#39;This day is honored above all days,&#39;,
-           u&#39;for on it rested the Rock of the Worlds&#39;,
-           u&quot;It is the first of the holy convocations,&lt;i class=&#39;footnote&#39;&gt;It is mentioned first in the chapter dealing with festivals (Leviticus 23)\r\n&lt;/i&gt;&quot;,
-           u&#39;a day of rest, the holy Sabbath day&#39;,
-           u&#39;Therefore, let every man&#39;,
-           u&#39;recite kiddush with his wine,&#39;,
-           u&#39;over two complete loaves&#39;,
-           u&#39;let him break bread&#39;,
-           u&#39;Refrain:&#39;,
-           u&#39;-This day is honored above all days,&#39;,
-           u&#39;for on it rested the Rock of the Worlds&#39;,
-           u&#39;Eat rich foods, drink sweet drinks,&#39;,
-           u&#39;for the Almighty will give&#39;,
-           u&#39;to all who cling to Him\u2014&#39;,
-           u&#39;garments to wear, bread as needed,&#39;,
-           u&#39;meat and fish and all delicacies&#39;,
-           u&#39;Refrain:&#39;,
-           u&#39;-This day is honored above all days,&#39;,
-           u&#39;for on it rested the Rock of the Worlds&#39;,
-           u&#39;You will lack nothing on it,&#39;,
-           u&#39;and will eat and be satisfied,&#39;,
-           u&#39;and will bless Adonoy, your God,&#39;,
-           u&#39;whom you love;&#39;,
-           u&#39;\u2014for He has blessed you above all peoples&#39;,
-           u&#39;Refrain:&#39;,
-           u&#39;-This day is honored above all days,&#39;,
-           u&#39;for on it rested the Rock of the Worlds&#39;,
-           u&#39;The heavens recount His glory&#39;,
-           u&#39;and the earth, too, is filled with His kindliness&#39;,
-           u&#39;[Behold] see that all these, His hand made,&#39;,
-           u&#39;for He is the Former, His work is perfect&#39;,
-           u&#39;Refrain:&#39;,
-           u&#39;-This day is honored above all days,&#39;,
-           u&#39;for on it rested the Rock of the Worlds&#39;,
-           u&#39;&#39;,
-           u&#39;&#39;,
-           u&#39;&#39;,
-           u&#39;&#39;,
-           u&#39;&#39;,
-           u&#39;&#39;,
-           u&#39;&#39;,
-           u&#39;&#39;,
-           u&#39;&#39;,
-           u&#39;&#39;,
-           u&#39;&#39;,
-           u&#39;&#39;,
-           u&#39;&#39;,
-           u&#39;&#39;,
-           u&#39;&#39;,
-           u&#39;&#39;,
-           u&#39;&#39;,
-           u&#39;&#39;],
+ u&#39;text&#39;: [u&#39;Come, let us sing to Adonoy;&#39;,
+           u&#39;let us sound the shofar&#39;,
+           u&#39;to the Rock of our deliverance.&lt;sup&gt;1&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;Israel will say these words in the days of the Messiah, when Jews will inspire each other to sing to Almighty God Who delivered them.\u2014Radak&lt;/i&gt;&#39;,
+           u&#39;Let us greet His Presence&#39;,
+           u&#39;with thanksgiving,&lt;sup&gt;2&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;Expressions of thanksgiving are considered of the highest virtue, as it is said, \u2018As for myself, with expressions of thanksgiving I sacrifice to you.\u2019\u2014Jonah 2&lt;/i&gt;&#39;,
+           u&#39;with hymns let us raise our voices unto Him.&#39;,
+           u&#39;For a great Almighty is Adonoy&#39;,
+           u&#39;and a great King over all gods.&lt;sup&gt;3&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;\u2018Are there any other gods?\u2019 asks the Midrash, and answers by citing verse 5 of the next Psalm, \u2018All the gods of the nations are idols.\u2019&lt;/i&gt;&#39;,
+           u&#39;For in His hands are the depths&lt;sup&gt;4&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;Metsudas Dovid offers another translation: \u2018In His hands are the hidden things of the earth,\u2019 referring to things which require much study and thought in order to be understood.&lt;/i&gt; of the earth,&#39;,
+           u&#39;and the heights of the mountains are His;&#39;,
+           u&#39;For the sea is His, and He made it,&#39;,
+           u&#39;and the dry land, His hands formed.&#39;,
+           u&#39;Come, let us prostrate ourselves and bow;&#39;,
+           u&#39;let us kneel&#39;,
+           u&#39;before Adonoy, our Maker.&#39;,
+           u&#39;For He is our God&#39;,
+           u&#39;and we are the people of His pasture,&#39;,
+           u&#39;and the flock of His hand,&#39;,
+           u&#39;[even] today&lt;sup&gt;5&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;It is possible for us to reach this high level and to be accepted as His flock even this very day, if we would hearken to His voice.\u2014Dover Sholom&lt;/i&gt; if you will heed His voice.&#39;,
+           u&#39;Do not harden your heart as at Merivah,&#39;,
+           u&#39;as on the day of Massah&lt;sup&gt;6&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;The Jews complained and murmured at the lack of water during their wanderings in the wilderness (Exodus 17:1-17; Numbers 20:1-13).&lt;/i&gt; in the desert.&#39;,
+           u&#39;When your fathers tested Me,&lt;sup&gt;7&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;  7 The words from here till the end of the Psalm, are the actual words of the Divine Presence that emanated from the throat of Moses,  \u05e9\u05c1\u05b0\u05db\u05b4\u05d9\u05e0\u05b8\u05d4 \u05de\u05b0\u05d3\u05b7\u05d1\u05bc\u05b6\u05e8\u05b6\u05ea \u05de\u05b4\u05ea\u05bc\u05d5\u05b9\u05da\u05b0 \u05d2\u05b0\u05e8\u05d5\u05b9\u05e0\u05d5\u05b9 \u05e9\u05c1\u05b6\u05dc \u05de\u05e9\u05c1\u05b6\u05d4 \u2014 Eyun Tfiloh &lt;/i&gt;&#39;,
+           u&#39;they tried Me,&#39;,
+           u&#39;though they had seen My work.&#39;,
+           u&#39;Forty years I quarreled with that generation;&#39;,
+           u&#39;and I said,&#39;,
+           u&#39;\u201cThey are a people of erring hearts,&#39;,
+           u&#39;and they did not know my ways.\u201d&#39;,
+           u&#39;Therefore I swore in My anger,&#39;,
+           u&#39;\u201cThey shall not enter My resting place.\u201d&lt;sup&gt;8&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;The Holy Land is described as the land of rest (Deuteronomy 12:9).&lt;/i&gt;&#39;],
  u&#39;versionSource&#39;: u&#39;http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&amp;docId=NNL_ALEPH002211687&#39;,
  u&#39;versionTitle&#39;: u&#39;The Metsudah Siddur...&#39;}</pre></td>
                   </tr>
@@ -664,16 +645,16 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
         </li>
       
         <li class="frame user">
-          <code>/var/www/ste/sefaria/tracker.py</code> in <code>modify_text</code>
+          <code>/var/www/draft/sefaria/tracker.py</code> in <code>modify_text</code>
 
           
-            <div class="context" id="c139956491273568">
+            <div class="context" id="c139708345412064">
               
-                <ol start="23" class="pre-context" id="pre139956491273568"><li onclick="toggle('pre139956491273568', 'post139956491273568')"><pre>    :param oref:</pre></li><li onclick="toggle('pre139956491273568', 'post139956491273568')"><pre>    :param vtitle:</pre></li><li onclick="toggle('pre139956491273568', 'post139956491273568')"><pre>    :param lang:</pre></li><li onclick="toggle('pre139956491273568', 'post139956491273568')"><pre>    :param text:</pre></li><li onclick="toggle('pre139956491273568', 'post139956491273568')"><pre>    :param vsource:</pre></li><li onclick="toggle('pre139956491273568', 'post139956491273568')"><pre>    :return:</pre></li><li onclick="toggle('pre139956491273568', 'post139956491273568')"><pre>    &quot;&quot;&quot;</pre></li></ol>
+                <ol start="31" class="pre-context" id="pre139708345412064"><li onclick="toggle('pre139708345412064', 'post139708345412064')"><pre>    if getattr(chunk.version(), &quot;status&quot;, &quot;&quot;) == &quot;locked&quot; and not model.user_profile.is_user_staff(user):</pre></li><li onclick="toggle('pre139708345412064', 'post139708345412064')"><pre>        raise InputError(&quot;This text has been locked against further edits.&quot;)</pre></li><li onclick="toggle('pre139708345412064', 'post139708345412064')"><pre>    action = kwargs.get(&quot;type&quot;) or &quot;edit&quot; if chunk.text else &quot;add&quot;</pre></li><li onclick="toggle('pre139708345412064', 'post139708345412064')"><pre>    old_text = chunk.text</pre></li><li onclick="toggle('pre139708345412064', 'post139708345412064')"><pre>    chunk.text = text</pre></li><li onclick="toggle('pre139708345412064', 'post139708345412064')"><pre>    if vsource:</pre></li><li onclick="toggle('pre139708345412064', 'post139708345412064')"><pre>        chunk.versionSource = vsource  # todo: log this change</pre></li></ol>
               
-              <ol start="30" class="context-line"><li onclick="toggle('pre139956491273568', 'post139956491273568')"><pre>    chunk = model.TextChunk(oref, lang, vtitle)</pre> <span>...</span></li></ol>
+              <ol start="38" class="context-line"><li onclick="toggle('pre139708345412064', 'post139708345412064')"><pre>    if chunk.save():</pre> <span>...</span></li></ol>
               
-                <ol start='31' class="post-context" id="post139956491273568"><li onclick="toggle('pre139956491273568', 'post139956491273568')"><pre>    if getattr(chunk.version(), &quot;status&quot;, &quot;&quot;) == &quot;locked&quot; and not model.user_profile.is_user_staff(user):</pre></li><li onclick="toggle('pre139956491273568', 'post139956491273568')"><pre>        raise InputError(&quot;This text has been locked against further edits.&quot;)</pre></li><li onclick="toggle('pre139956491273568', 'post139956491273568')"><pre>    action = kwargs.get(&quot;type&quot;) or &quot;edit&quot; if chunk.text else &quot;add&quot;</pre></li><li onclick="toggle('pre139956491273568', 'post139956491273568')"><pre>    old_text = chunk.text</pre></li><li onclick="toggle('pre139956491273568', 'post139956491273568')"><pre>    chunk.text = text</pre></li><li onclick="toggle('pre139956491273568', 'post139956491273568')"><pre>    if vsource:</pre></li></ol>
+                <ol start='39' class="post-context" id="post139708345412064"><li onclick="toggle('pre139708345412064', 'post139708345412064')"><pre>        model.log_text(user, action, oref, lang, vtitle, old_text, text, **kwargs)</pre></li><li onclick="toggle('pre139708345412064', 'post139708345412064')"><pre>        if USE_VARNISH:</pre></li><li onclick="toggle('pre139708345412064', 'post139708345412064')"><pre>            invalidate_ref(oref, lang=lang, version=vtitle, purge=True)</pre></li><li onclick="toggle('pre139708345412064', 'post139708345412064')"><pre>            if oref.next_section_ref():</pre></li><li onclick="toggle('pre139708345412064', 'post139708345412064')"><pre>                invalidate_ref(oref.next_section_ref(), lang=lang, version=vtitle, purge=True)</pre></li><li onclick="toggle('pre139708345412064', 'post139708345412064')"><pre>            if oref.prev_section_ref():</pre></li></ol>
               
             </div>
           
@@ -681,10 +662,10 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139956491273568')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139708345412064')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139956491273568">
+            <table class="vars" id="v139708345412064">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -699,71 +680,76 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
                   </tr>
                 
                   <tr>
-                    <td>text</td>
-                    <td class="code"><pre>[u&#39;This day is honored above all days,&#39;,
- u&quot;for on it rested the Rock of the Worlds&lt;i class=&#39;footnote&#39;&gt;You may do your work all week but not on Shabbos\r\n&lt;/i&gt;&quot;,
- u&#39;\u201cSix days do your work\u201d&#39;,
- u&quot;but the seventh day is your God&#39;s\u2014&quot;,
- u&#39;the Sabbath\u2014do no work on it&#39;,
- u&quot;for He did everything in six days&lt;i class=&#39;footnote&#39;&gt;He created the world in six days\r\n&lt;/i&gt;&quot;,
- u&#39;Refrain:&#39;,
- u&#39;This day is honored above all days,&#39;,
- u&#39;for on it rested the Rock of the Worlds&#39;,
- u&quot;It is the first of the holy convocations,&lt;i class=&#39;footnote&#39;&gt;It is mentioned first in the chapter dealing with festivals (Leviticus 23)\r\n&lt;/i&gt;&quot;,
- u&#39;a day of rest, the holy Sabbath day&#39;,
- u&#39;Therefore, let every man&#39;,
- u&#39;recite kiddush with his wine,&#39;,
- u&#39;over two complete loaves&#39;,
- u&#39;let him break bread&#39;,
- u&#39;Refrain:&#39;,
- u&#39;-This day is honored above all days,&#39;,
- u&#39;for on it rested the Rock of the Worlds&#39;,
- u&#39;Eat rich foods, drink sweet drinks,&#39;,
- u&#39;for the Almighty will give&#39;,
- u&#39;to all who cling to Him\u2014&#39;,
- u&#39;garments to wear, bread as needed,&#39;,
- u&#39;meat and fish and all delicacies&#39;,
- u&#39;Refrain:&#39;,
- u&#39;-This day is honored above all days,&#39;,
- u&#39;for on it rested the Rock of the Worlds&#39;,
- u&#39;You will lack nothing on it,&#39;,
- u&#39;and will eat and be satisfied,&#39;,
- u&#39;and will bless Adonoy, your God,&#39;,
- u&#39;whom you love;&#39;,
- u&#39;\u2014for He has blessed you above all peoples&#39;,
- u&#39;Refrain:&#39;,
- u&#39;-This day is honored above all days,&#39;,
- u&#39;for on it rested the Rock of the Worlds&#39;,
- u&#39;The heavens recount His glory&#39;,
- u&#39;and the earth, too, is filled with His kindliness&#39;,
- u&#39;[Behold] see that all these, His hand made,&#39;,
- u&#39;for He is the Former, His work is perfect&#39;,
- u&#39;Refrain:&#39;,
- u&#39;-This day is honored above all days,&#39;,
- u&#39;for on it rested the Rock of the Worlds&#39;,
- u&#39;&#39;,
- u&#39;&#39;,
- u&#39;&#39;,
- u&#39;&#39;,
- u&#39;&#39;,
- u&#39;&#39;,
- u&#39;&#39;,
- u&#39;&#39;,
- u&#39;&#39;,
- u&#39;&#39;,
- u&#39;&#39;,
- u&#39;&#39;,
- u&#39;&#39;,
- u&#39;&#39;,
- u&#39;&#39;,
- u&#39;&#39;,
- u&#39;&#39;,
- u&#39;&#39;]</pre></td>
+                    <td>old_text</td>
+                    <td class="code"><pre>[u&#39;Come, let us sing to Adonoy;&#39;,
+ u&#39;let us sound the shofar&#39;,
+ u&#39;to the Rock of our deliverance.&lt;sup&gt;1&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;Israel will say these words in the days of the Messiah, when Jews will inspire each other to sing to Almighty God Who delivered them.\u2014Radak&lt;/i&gt;&#39;,
+ u&#39;Let us greet His Presence&#39;,
+ u&#39;with thanksgiving,&lt;sup&gt;2&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;Expressions of thanksgiving are considered of the highest virtue, as it is said, \u2018As for myself, with expressions of thanksgiving I sacrifice to you.\u2019\u2014Jonah 2&lt;/i&gt;&#39;,
+ u&#39;with hymns let us raise our voices unto Him.&#39;,
+ u&#39;For a great Almighty is Adonoy&#39;,
+ u&#39;and a great King over all gods.&lt;sup&gt;3&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;\u2018Are there any other gods?\u2019 asks the Midrash, and answers by citing verse 5 of the next Psalm, \u2018All the gods of the nations are idols.\u2019&lt;/i&gt;&#39;,
+ u&#39;For in His hands are the depths&lt;sup&gt;4&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;Metsudas Dovid offers another translation: \u2018In His hands are the hidden things of the earth,\u2019 referring to things which require much study and thought in order to be understood.&lt;/i&gt; of the earth,&#39;,
+ u&#39;and the heights of the mountains are His;&#39;,
+ u&#39;For the sea is His, and He made it,&#39;,
+ u&#39;and the dry land, His hands formed.&#39;,
+ u&#39;Come, let us prostrate ourselves and bow;&#39;,
+ u&#39;let us kneel&#39;,
+ u&#39;before Adonoy, our Maker.&#39;,
+ u&#39;For He is our God&#39;,
+ u&#39;and we are the people of His pasture,&#39;,
+ u&#39;and the flock of His hand,&#39;,
+ u&#39;[even] today&lt;sup&gt;5&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;It is possible for us to reach this high level and to be accepted as His flock even this very day, if we would hearken to His voice.\u2014Dover Sholom&lt;/i&gt; if you will heed His voice.&#39;,
+ u&#39;Do not harden your heart as at Merivah,&#39;,
+ u&#39;as on the day of Massah&lt;sup&gt;6&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;The Jews complained and murmured at the lack of water during their wanderings in the wilderness (Exodus 17:1-17; Numbers 20:1-13).&lt;/i&gt; in the desert.&#39;,
+ u&#39;When your fathers tested Me,&lt;sup&gt;7&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;  7 The words from here till the end of the Psalm, are the actual words of the Divine Presence that emanated from the throat of Moses,  \u05e9\u05c1\u05b0\u05db\u05b4\u05d9\u05e0\u05b8\u05d4 \u05de\u05b0\u05d3\u05b7\u05d1\u05bc\u05b6\u05e8\u05b6\u05ea \u05de\u05b4\u05ea\u05bc\u05d5\u05b9\u05da\u05b0 \u05d2\u05b0\u05e8\u05d5\u05b9\u05e0\u05d5\u05b9 \u05e9\u05c1\u05b6\u05dc \u05de\u05e9\u05c1\u05b6\u05d4 \u2014 Eyun Tfiloh &lt;/i&gt;&#39;,
+ u&#39;they tried Me,&#39;,
+ u&#39;though they had seen My work.&#39;,
+ u&#39;Forty years I quarreled with that generation;&#39;,
+ u&#39;and I said,&#39;,
+ u&#39;\u201cThey are a people of erring hearts,&#39;,
+ u&#39;and they did not know my ways.\u201d&#39;,
+ u&#39;Therefore I swore in My anger,&#39;,
+ u&#39;\u201cThey shall not enter My resting place.\u201d&lt;sup&gt;8&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;The Holy Land is described as the land of rest (Deuteronomy 12:9).&lt;/i&gt;&#39;]</pre></td>
                   </tr>
                 
                   <tr>
-                    <td>oref</td>
-                    <td class="code"><pre>Ref(&#39;Sefard Siddur Shabbat, Songs for Shabbos Morning, Yom Zeh Mechubod&#39;)</pre></td>
+                    <td>text</td>
+                    <td class="code"><pre>[u&#39;Come, let us sing to Adonoy;&#39;,
+ u&#39;let us sound the shofar&#39;,
+ u&#39;to the Rock of our deliverance.&lt;sup&gt;1&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;Israel will say these words in the days of the Messiah, when Jews will inspire each other to sing to Almighty God Who delivered them.\u2014Radak&lt;/i&gt;&#39;,
+ u&#39;Let us greet His Presence&#39;,
+ u&#39;with thanksgiving,&lt;sup&gt;2&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;Expressions of thanksgiving are considered of the highest virtue, as it is said, \u2018As for myself, with expressions of thanksgiving I sacrifice to you.\u2019\u2014Jonah 2&lt;/i&gt;&#39;,
+ u&#39;with hymns let us raise our voices unto Him.&#39;,
+ u&#39;For a great Almighty is Adonoy&#39;,
+ u&#39;and a great King over all gods.&lt;sup&gt;3&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;\u2018Are there any other gods?\u2019 asks the Midrash, and answers by citing verse 5 of the next Psalm, \u2018All the gods of the nations are idols.\u2019&lt;/i&gt;&#39;,
+ u&#39;For in His hands are the depths&lt;sup&gt;4&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;Metsudas Dovid offers another translation: \u2018In His hands are the hidden things of the earth,\u2019 referring to things which require much study and thought in order to be understood.&lt;/i&gt; of the earth,&#39;,
+ u&#39;and the heights of the mountains are His;&#39;,
+ u&#39;For the sea is His, and He made it,&#39;,
+ u&#39;and the dry land, His hands formed.&#39;,
+ u&#39;Come, let us prostrate ourselves and bow;&#39;,
+ u&#39;let us kneel&#39;,
+ u&#39;before Adonoy, our Maker.&#39;,
+ u&#39;For He is our God&#39;,
+ u&#39;and we are the people of His pasture,&#39;,
+ u&#39;and the flock of His hand,&#39;,
+ u&#39;[even] today&lt;sup&gt;5&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;It is possible for us to reach this high level and to be accepted as His flock even this very day, if we would hearken to His voice.\u2014Dover Sholom&lt;/i&gt; if you will heed His voice.&#39;,
+ u&#39;Do not harden your heart as at Merivah,&#39;,
+ u&#39;as on the day of Massah&lt;sup&gt;6&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;The Jews complained and murmured at the lack of water during their wanderings in the wilderness (Exodus 17:1-17; Numbers 20:1-13).&lt;/i&gt; in the desert.&#39;,
+ u&#39;When your fathers tested Me,&lt;sup&gt;7&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;  7 The words from here till the end of the Psalm, are the actual words of the Divine Presence that emanated from the throat of Moses,  \u05e9\u05c1\u05b0\u05db\u05b4\u05d9\u05e0\u05b8\u05d4 \u05de\u05b0\u05d3\u05b7\u05d1\u05bc\u05b6\u05e8\u05b6\u05ea \u05de\u05b4\u05ea\u05bc\u05d5\u05b9\u05da\u05b0 \u05d2\u05b0\u05e8\u05d5\u05b9\u05e0\u05d5\u05b9 \u05e9\u05c1\u05b6\u05dc \u05de\u05e9\u05c1\u05b6\u05d4 \u2014 Eyun Tfiloh &lt;/i&gt;&#39;,
+ u&#39;they tried Me,&#39;,
+ u&#39;though they had seen My work.&#39;,
+ u&#39;Forty years I quarreled with that generation;&#39;,
+ u&#39;and I said,&#39;,
+ u&#39;\u201cThey are a people of erring hearts,&#39;,
+ u&#39;and they did not know my ways.\u201d&#39;,
+ u&#39;Therefore I swore in My anger,&#39;,
+ u&#39;\u201cThey shall not enter My resting place.\u201d&lt;sup&gt;8&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;The Holy Land is described as the land of rest (Deuteronomy 12:9).&lt;/i&gt;&#39;]</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>chunk</td>
+                    <td class="code"><pre>TextChunk(Sefard Siddur Shabbat, Kabbalas Shabbos, Psalm 95, en, The Metsudah Siddur...)</pre></td>
                   </tr>
                 
                   <tr>
@@ -782,73 +768,18 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
                   </tr>
                 
                   <tr>
-                    <td>vtitle</td>
-                    <td class="code"><pre>u&#39;The Metsudah Siddur...&#39;</pre></td>
+                    <td>action</td>
+                    <td class="code"><pre>&#39;edit&#39;</pre></td>
                   </tr>
                 
-              </tbody>
-            </table>
-          
-        </li>
-      
-        <li class="frame user">
-          <code>/var/www/ste/sefaria/model/text.py</code> in <code>__init__</code>
-
-          
-            <div class="context" id="c139956491274432">
-              
-                <ol start="1172" class="pre-context" id="pre139956491274432"><li onclick="toggle('pre139956491274432', 'post139956491274432')"><pre>        if lang and vtitle:</pre></li><li onclick="toggle('pre139956491274432', 'post139956491274432')"><pre>            self._saveable = True</pre></li><li onclick="toggle('pre139956491274432', 'post139956491274432')"><pre>            v = Version().load({&quot;title&quot;: self._oref.index.title, &quot;language&quot;: lang, &quot;versionTitle&quot;: vtitle}, self._oref.part_projection())</pre></li><li onclick="toggle('pre139956491274432', 'post139956491274432')"><pre>            if exclude_copyrighted and v.is_copyrighted():</pre></li><li onclick="toggle('pre139956491274432', 'post139956491274432')"><pre>                raise InputError(&quot;Can not provision copyrighted text. {} ({}/{})&quot;.format(oref.normal(), vtitle, lang))</pre></li><li onclick="toggle('pre139956491274432', 'post139956491274432')"><pre>            if v:</pre></li><li onclick="toggle('pre139956491274432', 'post139956491274432')"><pre>                self._versions += [v]</pre></li></ol>
-              
-              <ol start="1179" class="context-line"><li onclick="toggle('pre139956491274432', 'post139956491274432')"><pre>                self.text = self._original_text = self.trim_text(v.content_node(self._oref.index_node))</pre> <span>...</span></li></ol>
-              
-                <ol start='1180' class="post-context" id="post139956491274432"><li onclick="toggle('pre139956491274432', 'post139956491274432')"><pre>        elif lang:</pre></li><li onclick="toggle('pre139956491274432', 'post139956491274432')"><pre>            vset = VersionSet(self._oref.condition_query(lang), proj=self._oref.part_projection())</pre></li><li onclick="toggle('pre139956491274432', 'post139956491274432')"><pre></pre></li><li onclick="toggle('pre139956491274432', 'post139956491274432')"><pre>            if vset.count() == 0:</pre></li><li onclick="toggle('pre139956491274432', 'post139956491274432')"><pre>                if VersionSet({&quot;title&quot;: self._oref.index.title}).count() == 0:</pre></li><li onclick="toggle('pre139956491274432', 'post139956491274432')"><pre>                    raise NoVersionFoundError(&quot;No text record found for &#39;{}&#39;&quot;.format(self._oref.index.title))</pre></li></ol>
-              
-            </div>
-          
-
-          
-            <div class="commands">
-                
-                    <a href="#" onclick="return varToggle(this, '139956491274432')"><span>&#x25b6;</span> Local vars</a>
-                
-            </div>
-            <table class="vars" id="v139956491274432">
-              <thead>
-                <tr>
-                  <th>Variable</th>
-                  <th>Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                
                   <tr>
-                    <td>lang</td>
-                    <td class="code"><pre>u&#39;en&#39;</pre></td>
+                    <td>vtitle</td>
+                    <td class="code"><pre>u&#39;The Metsudah Siddur...&#39;</pre></td>
                   </tr>
                 
                   <tr>
                     <td>oref</td>
-                    <td class="code"><pre>Ref(&#39;Sefard Siddur Shabbat, Songs for Shabbos Morning, Yom Zeh Mechubod&#39;)</pre></td>
-                  </tr>
-                
-                  <tr>
-                    <td>exclude_copyrighted</td>
-                    <td class="code"><pre>False</pre></td>
-                  </tr>
-                
-                  <tr>
-                    <td>v</td>
-                    <td class="code"><pre>Version().load({&#39;title&#39;: &#39;Sefard Siddur Shabbat&#39;, &#39;versionTitle&#39;: &#39;The Metsudah Siddur...&#39;})</pre></td>
-                  </tr>
-                
-                  <tr>
-                    <td>vtitle</td>
-                    <td class="code"><pre>u&#39;The Metsudah Siddur...&#39;</pre></td>
-                  </tr>
-                
-                  <tr>
-                    <td>self</td>
-                    <td class="code"><pre>TextChunk(Sefard Siddur Shabbat, Songs for Shabbos Morning, Yom Zeh Mechubod, en, The Metsudah Siddur...)</pre></td>
+                    <td class="code"><pre>Ref(&#39;Sefard Siddur Shabbat, Kabbalas Shabbos, Psalm 95&#39;)</pre></td>
                   </tr>
                 
               </tbody>
@@ -857,16 +788,16 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
         </li>
       
         <li class="frame user">
-          <code>/var/www/ste/sefaria/model/text.py</code> in <code>content_node</code>
+          <code>/var/www/draft/sefaria/model/text.py</code> in <code>save</code>
 
           
-            <div class="context" id="c139956491272272">
+            <div class="context" id="c139708345410264">
               
-                <ol start="813" class="pre-context" id="pre139956491272272"><li onclick="toggle('pre139956491272272', 'post139956491272272')"><pre></pre></li><li onclick="toggle('pre139956491272272', 'post139956491272272')"><pre>    def content_node(self, snode):</pre></li><li onclick="toggle('pre139956491272272', 'post139956491272272')"><pre>        &quot;&quot;&quot;</pre></li><li onclick="toggle('pre139956491272272', 'post139956491272272')"><pre>        :param snode:</pre></li><li onclick="toggle('pre139956491272272', 'post139956491272272')"><pre>        :type snode SchemaContentNode:</pre></li><li onclick="toggle('pre139956491272272', 'post139956491272272')"><pre>        :return:</pre></li><li onclick="toggle('pre139956491272272', 'post139956491272272')"><pre>        &quot;&quot;&quot;</pre></li></ol>
+                <ol start="1282" class="pre-context" id="pre139708345410264"><li onclick="toggle('pre139708345410264', 'post139708345410264')"><pre>                self.full_version.versionSource = self.versionSource  # hack</pre></li><li onclick="toggle('pre139708345410264', 'post139708345410264')"><pre></pre></li><li onclick="toggle('pre139708345410264', 'post139708345410264')"><pre>        content = self.full_version.sub_content(self._oref.index_node.version_address())</pre></li><li onclick="toggle('pre139708345410264', 'post139708345410264')"><pre>        self._pad(content)</pre></li><li onclick="toggle('pre139708345410264', 'post139708345410264')"><pre>        self.full_version.sub_content(self._oref.index_node.version_address(), [i - 1 for i in self._oref.sections], self.text)</pre></li><li onclick="toggle('pre139708345410264', 'post139708345410264')"><pre></pre></li><li onclick="toggle('pre139708345410264', 'post139708345410264')"><pre>        self.full_version.save()</pre></li></ol>
               
-              <ol start="820" class="context-line"><li onclick="toggle('pre139956491272272', 'post139956491272272')"><pre>        return self.sub_content(snode.version_address())</pre> <span>...</span></li></ol>
+              <ol start="1289" class="context-line"><li onclick="toggle('pre139708345410264', 'post139708345410264')"><pre>        self._oref.recalibrate_next_prev_refs(len(self.text))</pre> <span>...</span></li></ol>
               
-                <ol start='821' class="post-context" id="post139956491272272"><li onclick="toggle('pre139956491272272', 'post139956491272272')"><pre></pre></li><li onclick="toggle('pre139956491272272', 'post139956491272272')"><pre>    def sub_content_with_ref(self, ref=None, value=None):</pre></li><li onclick="toggle('pre139956491272272', 'post139956491272272')"><pre>        assert isinstance(ref, Ref)</pre></li><li onclick="toggle('pre139956491272272', 'post139956491272272')"><pre>        assert not ref.is_range()</pre></li><li onclick="toggle('pre139956491272272', 'post139956491272272')"><pre>        return self.sub_content(ref.index_node.version_address(), [i - 1 for i in ref.sections], value)</pre></li><li onclick="toggle('pre139956491272272', 'post139956491272272')"><pre></pre></li></ol>
+                <ol start='1290' class="post-context" id="post139708345410264"><li onclick="toggle('pre139708345410264', 'post139708345410264')"><pre></pre></li><li onclick="toggle('pre139708345410264', 'post139708345410264')"><pre>        return self</pre></li><li onclick="toggle('pre139708345410264', 'post139708345410264')"><pre></pre></li><li onclick="toggle('pre139708345410264', 'post139708345410264')"><pre>    def _pad(self, content):</pre></li><li onclick="toggle('pre139708345410264', 'post139708345410264')"><pre>        &quot;&quot;&quot;</pre></li><li onclick="toggle('pre139708345410264', 'post139708345410264')"><pre>        Pads the passed content to the dimension of self._oref.</pre></li></ol>
               
             </div>
           
@@ -874,10 +805,249 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139956491272272')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139708345410264')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139956491272272">
+            <table class="vars" id="v139708345410264">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>content</td>
+                    <td class="code"><pre>[u&#39;Come, let us sing to Adonoy;&#39;,
+ u&#39;let us sound the shofar&#39;,
+ u&#39;to the Rock of our deliverance.&lt;sup&gt;1&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;Israel will say these words in the days of the Messiah, when Jews will inspire each other to sing to Almighty God Who delivered them.\u2014Radak&lt;/i&gt;&#39;,
+ u&#39;Let us greet His Presence&#39;,
+ u&#39;with thanksgiving,&lt;sup&gt;2&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;Expressions of thanksgiving are considered of the highest virtue, as it is said, \u2018As for myself, with expressions of thanksgiving I sacrifice to you.\u2019\u2014Jonah 2&lt;/i&gt;&#39;,
+ u&#39;with hymns let us raise our voices unto Him.&#39;,
+ u&#39;For a great Almighty is Adonoy&#39;,
+ u&#39;and a great King over all gods.&lt;sup&gt;3&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;\u2018Are there any other gods?\u2019 asks the Midrash, and answers by citing verse 5 of the next Psalm, \u2018All the gods of the nations are idols.\u2019&lt;/i&gt;&#39;,
+ u&#39;For in His hands are the depths&lt;sup&gt;4&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;Metsudas Dovid offers another translation: \u2018In His hands are the hidden things of the earth,\u2019 referring to things which require much study and thought in order to be understood.&lt;/i&gt; of the earth,&#39;,
+ u&#39;and the heights of the mountains are His;&#39;,
+ u&#39;For the sea is His, and He made it,&#39;,
+ u&#39;and the dry land, His hands formed.&#39;,
+ u&#39;Come, let us prostrate ourselves and bow;&#39;,
+ u&#39;let us kneel&#39;,
+ u&#39;before Adonoy, our Maker.&#39;,
+ u&#39;For He is our God&#39;,
+ u&#39;and we are the people of His pasture,&#39;,
+ u&#39;and the flock of His hand,&#39;,
+ u&#39;[even] today&lt;sup&gt;5&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;It is possible for us to reach this high level and to be accepted as His flock even this very day, if we would hearken to His voice.\u2014Dover Sholom&lt;/i&gt; if you will heed His voice.&#39;,
+ u&#39;Do not harden your heart as at Merivah,&#39;,
+ u&#39;as on the day of Massah&lt;sup&gt;6&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;The Jews complained and murmured at the lack of water during their wanderings in the wilderness (Exodus 17:1-17; Numbers 20:1-13).&lt;/i&gt; in the desert.&#39;,
+ u&#39;When your fathers tested Me,&lt;sup&gt;7&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;  7 The words from here till the end of the Psalm, are the actual words of the Divine Presence that emanated from the throat of Moses,  \u05e9\u05c1\u05b0\u05db\u05b4\u05d9\u05e0\u05b8\u05d4 \u05de\u05b0\u05d3\u05b7\u05d1\u05bc\u05b6\u05e8\u05b6\u05ea \u05de\u05b4\u05ea\u05bc\u05d5\u05b9\u05da\u05b0 \u05d2\u05b0\u05e8\u05d5\u05b9\u05e0\u05d5\u05b9 \u05e9\u05c1\u05b6\u05dc \u05de\u05e9\u05c1\u05b6\u05d4 \u2014 Eyun Tfiloh &lt;/i&gt;&#39;,
+ u&#39;they tried Me,&#39;,
+ u&#39;though they had seen My work.&#39;,
+ u&#39;Forty years I quarreled with that generation;&#39;,
+ u&#39;and I said,&#39;,
+ u&#39;\u201cThey are a people of erring hearts,&#39;,
+ u&#39;and they did not know my ways.\u201d&#39;,
+ u&#39;Therefore I swore in My anger,&#39;,
+ u&#39;\u201cThey shall not enter My resting place.\u201d&lt;sup&gt;8&lt;/sup&gt;&lt;i class=&quot;footnote&quot;&gt;The Holy Land is described as the land of rest (Deuteronomy 12:9).&lt;/i&gt;&#39;]</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>force_save</td>
+                    <td class="code"><pre>False</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>TextChunk(Sefard Siddur Shabbat, Kabbalas Shabbos, Psalm 95, en, The Metsudah Siddur...)</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame user">
+          <code>/var/www/draft/sefaria/model/text.py</code> in <code>recalibrate_next_prev_refs</code>
+
+          
+            <div class="context" id="c139708345410048">
+              
+                <ol start="2764" class="pre-context" id="pre139708345410048"><li onclick="toggle('pre139708345410048', 'post139708345410048')"><pre>    def recalibrate_next_prev_refs(self, add_self=True):</pre></li><li onclick="toggle('pre139708345410048', 'post139708345410048')"><pre>        &quot;&quot;&quot;</pre></li><li onclick="toggle('pre139708345410048', 'post139708345410048')"><pre>        Internal. Called when a section is inserted or deleted.</pre></li><li onclick="toggle('pre139708345410048', 'post139708345410048')"><pre></pre></li><li onclick="toggle('pre139708345410048', 'post139708345410048')"><pre>        :param add_self:</pre></li><li onclick="toggle('pre139708345410048', 'post139708345410048')"><pre>        :return: None</pre></li><li onclick="toggle('pre139708345410048', 'post139708345410048')"><pre>        &quot;&quot;&quot;</pre></li></ol>
+              
+              <ol start="2771" class="context-line"><li onclick="toggle('pre139708345410048', 'post139708345410048')"><pre>        next_ref = self.next_section_ref()</pre> <span>...</span></li></ol>
+              
+                <ol start='2772' class="post-context" id="post139708345410048"><li onclick="toggle('pre139708345410048', 'post139708345410048')"><pre>        prev_ref = self.prev_section_ref()</pre></li><li onclick="toggle('pre139708345410048', 'post139708345410048')"><pre>        if next_ref:</pre></li><li onclick="toggle('pre139708345410048', 'post139708345410048')"><pre>            next_ref._prev = self if add_self else prev_ref</pre></li><li onclick="toggle('pre139708345410048', 'post139708345410048')"><pre>        if prev_ref:</pre></li><li onclick="toggle('pre139708345410048', 'post139708345410048')"><pre>            prev_ref._next = self if add_self else next_ref</pre></li><li onclick="toggle('pre139708345410048', 'post139708345410048')"><pre></pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '139708345410048')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v139708345410048">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>add_self</td>
+                    <td class="code"><pre>30</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>Ref(&#39;Sefard Siddur Shabbat, Kabbalas Shabbos, Psalm 95&#39;)</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame user">
+          <code>/var/www/draft/sefaria/model/text.py</code> in <code>next_section_ref</code>
+
+          
+            <div class="context" id="c139708345411992">
+              
+                <ol start="2720" class="pre-context" id="pre139708345411992"><li onclick="toggle('pre139708345411992', 'post139708345411992')"><pre>            if self._next is None and not self.index_node.children:</pre></li><li onclick="toggle('pre139708345411992', 'post139708345411992')"><pre>                current_leaf = self.index_node</pre></li><li onclick="toggle('pre139708345411992', 'post139708345411992')"><pre>                #we now need to iterate over the next leaves, finding the first available section</pre></li><li onclick="toggle('pre139708345411992', 'post139708345411992')"><pre>                while True:</pre></li><li onclick="toggle('pre139708345411992', 'post139708345411992')"><pre>                    next_leaf = current_leaf.next_leaf() #next schema/JANode</pre></li><li onclick="toggle('pre139708345411992', 'post139708345411992')"><pre>                    if next_leaf:</pre></li><li onclick="toggle('pre139708345411992', 'post139708345411992')"><pre>                        next_node_ref = next_leaf.ref() #get a ref so we can do the next lines</pre></li></ol>
+              
+              <ol start="2727" class="context-line"><li onclick="toggle('pre139708345411992', 'post139708345411992')"><pre>                        potential_next = next_node_ref._iter_text_section(depth_up=0 if next_leaf.depth == 1 else 1)</pre> <span>...</span></li></ol>
+              
+                <ol start='2728' class="post-context" id="post139708345411992"><li onclick="toggle('pre139708345411992', 'post139708345411992')"><pre>                        if potential_next:</pre></li><li onclick="toggle('pre139708345411992', 'post139708345411992')"><pre>                            self._next = potential_next</pre></li><li onclick="toggle('pre139708345411992', 'post139708345411992')"><pre>                            break</pre></li><li onclick="toggle('pre139708345411992', 'post139708345411992')"><pre>                        current_leaf = next_leaf</pre></li><li onclick="toggle('pre139708345411992', 'post139708345411992')"><pre>                    else:</pre></li><li onclick="toggle('pre139708345411992', 'post139708345411992')"><pre>                        self._next = None</pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '139708345411992')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v139708345411992">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>potential_next</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>next_node_ref</td>
+                    <td class="code"><pre>Ref(&#39;Sefard Siddur Shabbat, Birchas Hamazon, Birchas Hamazon&#39;)</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>current_leaf</td>
+                    <td class="code"><pre>JaggedArrayNode(&#39;Sefard Siddur Shabbat, Songs for Shabbos Eve, Tzur Mishelo&#39;)</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>next_leaf</td>
+                    <td class="code"><pre>JaggedArrayNode(&#39;Sefard Siddur Shabbat, Birchas Hamazon, Birchas Hamazon&#39;)</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>Ref(&#39;Sefard Siddur Shabbat, Kabbalas Shabbos, Psalm 95&#39;)</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame user">
+          <code>/var/www/draft/sefaria/model/text.py</code> in <code>_iter_text_section</code>
+
+          
+            <div class="context" id="c139708345410768">
+              
+                <ol start="2925" class="pre-context" id="pre139708345410768"><li onclick="toggle('pre139708345410768', 'post139708345410768')"><pre></pre></li><li onclick="toggle('pre139708345410768', 'post139708345410768')"><pre></pre></li><li onclick="toggle('pre139708345410768', 'post139708345410768')"><pre>        #start from the next one</pre></li><li onclick="toggle('pre139708345410768', 'post139708345410768')"><pre>        if len(starting_points) &gt; 0:</pre></li><li onclick="toggle('pre139708345410768', 'post139708345410768')"><pre>            starting_points[-1] += 1 if forward else -1</pre></li><li onclick="toggle('pre139708345410768', 'post139708345410768')"><pre></pre></li><li onclick="toggle('pre139708345410768', 'post139708345410768')"><pre>        #let the counts obj calculate the correct place to go.</pre></li></ol>
+              
+              <ol start="2932" class="context-line"><li onclick="toggle('pre139708345410768', 'post139708345410768')"><pre>        c = self.get_state_node(hint=[(&quot;all&quot;,&quot;availableTexts&quot;)]).ja(&quot;all&quot;, &quot;availableTexts&quot;)</pre> <span>...</span></li></ol>
+              
+                <ol start='2933' class="post-context" id="post139708345410768"><li onclick="toggle('pre139708345410768', 'post139708345410768')"><pre>        new_section = c.next_index(starting_points) if forward else c.prev_index(starting_points)</pre></li><li onclick="toggle('pre139708345410768', 'post139708345410768')"><pre></pre></li><li onclick="toggle('pre139708345410768', 'post139708345410768')"><pre>        # we are also scaling back the sections to the level ABOVE the lowest section type (eg, for bible we want chapter, not verse)</pre></li><li onclick="toggle('pre139708345410768', 'post139708345410768')"><pre>        if new_section:</pre></li><li onclick="toggle('pre139708345410768', 'post139708345410768')"><pre>            d = self._core_dict()</pre></li><li onclick="toggle('pre139708345410768', 'post139708345410768')"><pre>            d[&quot;toSections&quot;] = d[&quot;sections&quot;] = [(s + 1) for s in new_section[:-depth_up]]</pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '139708345410768')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v139708345410768">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>forward</td>
+                    <td class="code"><pre>True</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>starting_points</td>
+                    <td class="code"><pre>[]</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>Ref(&#39;Sefard Siddur Shabbat, Birchas Hamazon, Birchas Hamazon&#39;)</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>depth_up</td>
+                    <td class="code"><pre>0</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame user">
+          <code>/var/www/draft/sefaria/model/text.py</code> in <code>get_state_node</code>
+
+          
+            <div class="context" id="c139708345410912">
+              
+                <ol start="2858" class="pre-context" id="pre139708345410912"><li onclick="toggle('pre139708345410912', 'post139708345410912')"><pre></pre></li><li onclick="toggle('pre139708345410912', 'post139708345410912')"><pre>    #Don&#39;t store results on Ref cache - state objects change, and don&#39;t yet propogate to this Cache</pre></li><li onclick="toggle('pre139708345410912', 'post139708345410912')"><pre>    def get_state_node(self, meta=None, hint=None):</pre></li><li onclick="toggle('pre139708345410912', 'post139708345410912')"><pre>        &quot;&quot;&quot;</pre></li><li onclick="toggle('pre139708345410912', 'post139708345410912')"><pre>        :return: :class:`sefaria.model.version_state.StateNode`</pre></li><li onclick="toggle('pre139708345410912', 'post139708345410912')"><pre>        &quot;&quot;&quot;</pre></li><li onclick="toggle('pre139708345410912', 'post139708345410912')"><pre>        from . import version_state</pre></li></ol>
+              
+              <ol start="2865" class="context-line"><li onclick="toggle('pre139708345410912', 'post139708345410912')"><pre>        return version_state.StateNode(snode=self.index_node, meta=meta, hint=hint)</pre> <span>...</span></li></ol>
+              
+                <ol start='2866' class="post-context" id="post139708345410912"><li onclick="toggle('pre139708345410912', 'post139708345410912')"><pre></pre></li><li onclick="toggle('pre139708345410912', 'post139708345410912')"><pre>    def get_state_ja(self, lang=&quot;all&quot;):</pre></li><li onclick="toggle('pre139708345410912', 'post139708345410912')"><pre>        &quot;&quot;&quot;</pre></li><li onclick="toggle('pre139708345410912', 'post139708345410912')"><pre>        :param lang: &quot;all&quot;, &quot;he&quot;, or &quot;en&quot;</pre></li><li onclick="toggle('pre139708345410912', 'post139708345410912')"><pre>        :return: :class:`sefaria.datatype.jagged_array`</pre></li><li onclick="toggle('pre139708345410912', 'post139708345410912')"><pre>        &quot;&quot;&quot;</pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '139708345410912')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v139708345410912">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -888,12 +1058,22 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
                 
                   <tr>
                     <td>self</td>
-                    <td class="code"><pre>Version().load({&#39;title&#39;: &#39;Sefard Siddur Shabbat&#39;, &#39;versionTitle&#39;: &#39;The Metsudah Siddur...&#39;})</pre></td>
+                    <td class="code"><pre>Ref(&#39;Sefard Siddur Shabbat, Birchas Hamazon, Birchas Hamazon&#39;)</pre></td>
                   </tr>
                 
                   <tr>
-                    <td>snode</td>
-                    <td class="code"><pre>JaggedArrayNode(&#39;Sefard Siddur Shabbat, Songs for Shabbos Morning, Yom Zeh Mechubod&#39;)</pre></td>
+                    <td>version_state</td>
+                    <td class="code"><pre>&lt;module &#39;sefaria.model.version_state&#39; from &#39;/var/www/draft/sefaria/model/version_state.pyc&#39;&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>meta</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>hint</td>
+                    <td class="code"><pre>[(&#39;all&#39;, &#39;availableTexts&#39;)]</pre></td>
                   </tr>
                 
               </tbody>
@@ -902,16 +1082,16 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
         </li>
       
         <li class="frame user">
-          <code>/var/www/ste/sefaria/model/text.py</code> in <code>sub_content</code>
+          <code>/var/www/draft/sefaria/model/version_state.py</code> in <code>__init__</code>
 
           
-            <div class="context" id="c139956491274360">
+            <div class="context" id="c139708345413000">
               
-                <ol start="836" class="pre-context" id="pre139956491274360"><li onclick="toggle('pre139956491274360', 'post139956491274360')"><pre>        &quot;&quot;&quot;</pre></li><li onclick="toggle('pre139956491274360', 'post139956491274360')"><pre>        # todo check that the shape of value matches the shape of the piece being set</pre></li><li onclick="toggle('pre139956491274360', 'post139956491274360')"><pre></pre></li><li onclick="toggle('pre139956491274360', 'post139956491274360')"><pre>        if not key_list:</pre></li><li onclick="toggle('pre139956491274360', 'post139956491274360')"><pre>            key_list = []</pre></li><li onclick="toggle('pre139956491274360', 'post139956491274360')"><pre>        if not indx_list:</pre></li><li onclick="toggle('pre139956491274360', 'post139956491274360')"><pre>            indx_list = []</pre></li></ol>
+                <ol start="393" class="pre-context" id="pre139708345413000"><li onclick="toggle('pre139708345413000', 'post139708345413000')"><pre>                    hint_proj[&quot;.&quot;.join(base + [self.lang_map[l]] + [k])] = 1</pre></li><li onclick="toggle('pre139708345413000', 'post139708345413000')"><pre>                if proj:</pre></li><li onclick="toggle('pre139708345413000', 'post139708345413000')"><pre>                    proj.update(hint_proj)</pre></li><li onclick="toggle('pre139708345413000', 'post139708345413000')"><pre>                else:</pre></li><li onclick="toggle('pre139708345413000', 'post139708345413000')"><pre>                    proj = hint_proj</pre></li><li onclick="toggle('pre139708345413000', 'post139708345413000')"><pre>            self.snode = snode</pre></li><li onclick="toggle('pre139708345413000', 'post139708345413000')"><pre>            self.versionState = VersionState(snode.index.title, proj=proj)</pre></li></ol>
               
-              <ol start="843" class="context-line"><li onclick="toggle('pre139956491274360', 'post139956491274360')"><pre>        ja = reduce(lambda d, k: d[k], key_list, self.get_content())</pre> <span>...</span></li></ol>
+              <ol start="400" class="context-line"><li onclick="toggle('pre139708345413000', 'post139708345413000')"><pre>            self.d = self.versionState.content_node(snode)</pre> <span>...</span></li></ol>
               
-                <ol start='844' class="post-context" id="post139956491274360"><li onclick="toggle('pre139956491274360', 'post139956491274360')"><pre>        if indx_list:</pre></li><li onclick="toggle('pre139956491274360', 'post139956491274360')"><pre>            sa = reduce(lambda a, i: a[i], indx_list[:-1], ja)</pre></li><li onclick="toggle('pre139956491274360', 'post139956491274360')"><pre>            #</pre></li><li onclick="toggle('pre139956491274360', 'post139956491274360')"><pre>            # todo: If the existing array has smaller dimension than the value being set, then it needs to be padded.</pre></li><li onclick="toggle('pre139956491274360', 'post139956491274360')"><pre>            if value is not None:</pre></li><li onclick="toggle('pre139956491274360', 'post139956491274360')"><pre>                # only works at lowest level</pre></li></ol>
+                <ol start='401' class="post-context" id="post139708345413000"><li onclick="toggle('pre139708345413000', 'post139708345413000')"><pre>        elif _obj:</pre></li><li onclick="toggle('pre139708345413000', 'post139708345413000')"><pre>            self.d = _obj</pre></li><li onclick="toggle('pre139708345413000', 'post139708345413000')"><pre></pre></li><li onclick="toggle('pre139708345413000', 'post139708345413000')"><pre>    def get_percent_available(self, lang):</pre></li><li onclick="toggle('pre139708345413000', 'post139708345413000')"><pre>        return self.var(lang, &quot;percentAvailable&quot;)</pre></li><li onclick="toggle('pre139708345413000', 'post139708345413000')"><pre></pre></li></ol>
               
             </div>
           
@@ -919,10 +1099,145 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139956491274360')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139708345413000')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139956491274360">
+            <table class="vars" id="v139708345413000">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>hint</td>
+                    <td class="code"><pre>[(&#39;all&#39;, &#39;availableTexts&#39;)]</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>hint_proj</td>
+                    <td class="code"><pre>{u&#39;content.Birchas Hamazon.Birchas Hamazon._all.availableTexts&#39;: 1}</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>title</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>l</td>
+                    <td class="code"><pre>&#39;all&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>snode</td>
+                    <td class="code"><pre>JaggedArrayNode(&#39;Sefard Siddur Shabbat, Birchas Hamazon, Birchas Hamazon&#39;)</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>&lt;sefaria.model.version_state.StateNode object at 0x7f1041857910&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>_obj</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>base</td>
+                    <td class="code"><pre>[&#39;content&#39;, u&#39;Birchas Hamazon&#39;, u&#39;Birchas Hamazon&#39;]</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>meta</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>proj</td>
+                    <td class="code"><pre>{u&#39;content.Birchas Hamazon.Birchas Hamazon._all.availableTexts&#39;: 1}</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>k</td>
+                    <td class="code"><pre>&#39;availableTexts&#39;</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame user">
+          <code>/var/www/draft/sefaria/model/text.py</code> in <code>content_node</code>
+
+          
+            <div class="context" id="c139708345411200">
+              
+                <ol start="813" class="pre-context" id="pre139708345411200"><li onclick="toggle('pre139708345411200', 'post139708345411200')"><pre></pre></li><li onclick="toggle('pre139708345411200', 'post139708345411200')"><pre>    def content_node(self, snode):</pre></li><li onclick="toggle('pre139708345411200', 'post139708345411200')"><pre>        &quot;&quot;&quot;</pre></li><li onclick="toggle('pre139708345411200', 'post139708345411200')"><pre>        :param snode:</pre></li><li onclick="toggle('pre139708345411200', 'post139708345411200')"><pre>        :type snode SchemaContentNode:</pre></li><li onclick="toggle('pre139708345411200', 'post139708345411200')"><pre>        :return:</pre></li><li onclick="toggle('pre139708345411200', 'post139708345411200')"><pre>        &quot;&quot;&quot;</pre></li></ol>
+              
+              <ol start="820" class="context-line"><li onclick="toggle('pre139708345411200', 'post139708345411200')"><pre>        return self.sub_content(snode.version_address())</pre> <span>...</span></li></ol>
+              
+                <ol start='821' class="post-context" id="post139708345411200"><li onclick="toggle('pre139708345411200', 'post139708345411200')"><pre></pre></li><li onclick="toggle('pre139708345411200', 'post139708345411200')"><pre>    def sub_content_with_ref(self, ref=None, value=None):</pre></li><li onclick="toggle('pre139708345411200', 'post139708345411200')"><pre>        assert isinstance(ref, Ref)</pre></li><li onclick="toggle('pre139708345411200', 'post139708345411200')"><pre>        assert not ref.is_range()</pre></li><li onclick="toggle('pre139708345411200', 'post139708345411200')"><pre>        return self.sub_content(ref.index_node.version_address(), [i - 1 for i in ref.sections], value)</pre></li><li onclick="toggle('pre139708345411200', 'post139708345411200')"><pre></pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '139708345411200')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v139708345411200">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>&lt;sefaria.model.version_state.VersionState object at 0x7f1041857a90&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>snode</td>
+                    <td class="code"><pre>JaggedArrayNode(&#39;Sefard Siddur Shabbat, Birchas Hamazon, Birchas Hamazon&#39;)</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        <li class="frame user">
+          <code>/var/www/draft/sefaria/model/text.py</code> in <code>sub_content</code>
+
+          
+            <div class="context" id="c139708345412712">
+              
+                <ol start="836" class="pre-context" id="pre139708345412712"><li onclick="toggle('pre139708345412712', 'post139708345412712')"><pre>        &quot;&quot;&quot;</pre></li><li onclick="toggle('pre139708345412712', 'post139708345412712')"><pre>        # todo check that the shape of value matches the shape of the piece being set</pre></li><li onclick="toggle('pre139708345412712', 'post139708345412712')"><pre></pre></li><li onclick="toggle('pre139708345412712', 'post139708345412712')"><pre>        if not key_list:</pre></li><li onclick="toggle('pre139708345412712', 'post139708345412712')"><pre>            key_list = []</pre></li><li onclick="toggle('pre139708345412712', 'post139708345412712')"><pre>        if not indx_list:</pre></li><li onclick="toggle('pre139708345412712', 'post139708345412712')"><pre>            indx_list = []</pre></li></ol>
+              
+              <ol start="843" class="context-line"><li onclick="toggle('pre139708345412712', 'post139708345412712')"><pre>        ja = reduce(lambda d, k: d[k], key_list, self.get_content())</pre> <span>...</span></li></ol>
+              
+                <ol start='844' class="post-context" id="post139708345412712"><li onclick="toggle('pre139708345412712', 'post139708345412712')"><pre>        if indx_list:</pre></li><li onclick="toggle('pre139708345412712', 'post139708345412712')"><pre>            sa = reduce(lambda a, i: a[i], indx_list[:-1], ja)</pre></li><li onclick="toggle('pre139708345412712', 'post139708345412712')"><pre>            #</pre></li><li onclick="toggle('pre139708345412712', 'post139708345412712')"><pre>            # todo: If the existing array has smaller dimension than the value being set, then it needs to be padded.</pre></li><li onclick="toggle('pre139708345412712', 'post139708345412712')"><pre>            if value is not None:</pre></li><li onclick="toggle('pre139708345412712', 'post139708345412712')"><pre>                # only works at lowest level</pre></li></ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '139708345412712')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v139708345412712">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -933,12 +1248,12 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
                 
                   <tr>
                     <td>key_list</td>
-                    <td class="code"><pre>[u&#39;Songs for Shabbos Morning&#39;, u&#39;Yom Zeh Mechubod&#39;]</pre></td>
+                    <td class="code"><pre>[u&#39;Birchas Hamazon&#39;, u&#39;Birchas Hamazon&#39;]</pre></td>
                   </tr>
                 
                   <tr>
                     <td>self</td>
-                    <td class="code"><pre>Version().load({&#39;title&#39;: &#39;Sefard Siddur Shabbat&#39;, &#39;versionTitle&#39;: &#39;The Metsudah Siddur...&#39;})</pre></td>
+                    <td class="code"><pre>&lt;sefaria.model.version_state.VersionState object at 0x7f1041857a90&gt;</pre></td>
                   </tr>
                 
                   <tr>
@@ -957,16 +1272,16 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
         </li>
       
         <li class="frame user">
-          <code>/var/www/ste/sefaria/model/text.py</code> in <code>&lt;lambda&gt;</code>
+          <code>/var/www/draft/sefaria/model/text.py</code> in <code>&lt;lambda&gt;</code>
 
           
-            <div class="context" id="c139956491274288">
+            <div class="context" id="c139708345409760">
               
-                <ol start="836" class="pre-context" id="pre139956491274288"><li onclick="toggle('pre139956491274288', 'post139956491274288')"><pre>        &quot;&quot;&quot;</pre></li><li onclick="toggle('pre139956491274288', 'post139956491274288')"><pre>        # todo check that the shape of value matches the shape of the piece being set</pre></li><li onclick="toggle('pre139956491274288', 'post139956491274288')"><pre></pre></li><li onclick="toggle('pre139956491274288', 'post139956491274288')"><pre>        if not key_list:</pre></li><li onclick="toggle('pre139956491274288', 'post139956491274288')"><pre>            key_list = []</pre></li><li onclick="toggle('pre139956491274288', 'post139956491274288')"><pre>        if not indx_list:</pre></li><li onclick="toggle('pre139956491274288', 'post139956491274288')"><pre>            indx_list = []</pre></li></ol>
+                <ol start="836" class="pre-context" id="pre139708345409760"><li onclick="toggle('pre139708345409760', 'post139708345409760')"><pre>        &quot;&quot;&quot;</pre></li><li onclick="toggle('pre139708345409760', 'post139708345409760')"><pre>        # todo check that the shape of value matches the shape of the piece being set</pre></li><li onclick="toggle('pre139708345409760', 'post139708345409760')"><pre></pre></li><li onclick="toggle('pre139708345409760', 'post139708345409760')"><pre>        if not key_list:</pre></li><li onclick="toggle('pre139708345409760', 'post139708345409760')"><pre>            key_list = []</pre></li><li onclick="toggle('pre139708345409760', 'post139708345409760')"><pre>        if not indx_list:</pre></li><li onclick="toggle('pre139708345409760', 'post139708345409760')"><pre>            indx_list = []</pre></li></ol>
               
-              <ol start="843" class="context-line"><li onclick="toggle('pre139956491274288', 'post139956491274288')"><pre>        ja = reduce(lambda d, k: d[k], key_list, self.get_content())</pre> <span>...</span></li></ol>
+              <ol start="843" class="context-line"><li onclick="toggle('pre139708345409760', 'post139708345409760')"><pre>        ja = reduce(lambda d, k: d[k], key_list, self.get_content())</pre> <span>...</span></li></ol>
               
-                <ol start='844' class="post-context" id="post139956491274288"><li onclick="toggle('pre139956491274288', 'post139956491274288')"><pre>        if indx_list:</pre></li><li onclick="toggle('pre139956491274288', 'post139956491274288')"><pre>            sa = reduce(lambda a, i: a[i], indx_list[:-1], ja)</pre></li><li onclick="toggle('pre139956491274288', 'post139956491274288')"><pre>            #</pre></li><li onclick="toggle('pre139956491274288', 'post139956491274288')"><pre>            # todo: If the existing array has smaller dimension than the value being set, then it needs to be padded.</pre></li><li onclick="toggle('pre139956491274288', 'post139956491274288')"><pre>            if value is not None:</pre></li><li onclick="toggle('pre139956491274288', 'post139956491274288')"><pre>                # only works at lowest level</pre></li></ol>
+                <ol start='844' class="post-context" id="post139708345409760"><li onclick="toggle('pre139708345409760', 'post139708345409760')"><pre>        if indx_list:</pre></li><li onclick="toggle('pre139708345409760', 'post139708345409760')"><pre>            sa = reduce(lambda a, i: a[i], indx_list[:-1], ja)</pre></li><li onclick="toggle('pre139708345409760', 'post139708345409760')"><pre>            #</pre></li><li onclick="toggle('pre139708345409760', 'post139708345409760')"><pre>            # todo: If the existing array has smaller dimension than the value being set, then it needs to be padded.</pre></li><li onclick="toggle('pre139708345409760', 'post139708345409760')"><pre>            if value is not None:</pre></li><li onclick="toggle('pre139708345409760', 'post139708345409760')"><pre>                # only works at lowest level</pre></li></ol>
               
             </div>
           
@@ -974,10 +1289,10 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139956491274288')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139708345409760')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139956491274288">
+            <table class="vars" id="v139708345409760">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -988,12 +1303,12 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
                 
                   <tr>
                     <td>k</td>
-                    <td class="code"><pre>u&#39;Yom Zeh Mechubod&#39;</pre></td>
+                    <td class="code"><pre>u&#39;Birchas Hamazon&#39;</pre></td>
                   </tr>
                 
                   <tr>
                     <td>d</td>
-                    <td class="code"><pre>[]</pre></td>
+                    <td class="code"><pre>{}</pre></td>
                   </tr>
                 
               </tbody>
@@ -1008,7 +1323,7 @@ META:{&#39;CONTENT_LENGTH&#39;: &#39;2548&#39;,
 
   <div id="pastebinTraceback" class="pastebin">
     <input type="hidden" name="language" value="PythonConsole">
-    <input type="hidden" name="title" value="TypeError at /api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod">
+    <input type="hidden" name="title" value="KeyError at /api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95">
     <input type="hidden" name="source" value="Django Dpaste Agent">
     <input type="hidden" name="poster" value="Django">
     <textarea name="content" id="traceback_area" cols="140" rows="25">
@@ -1016,7 +1331,7 @@ Environment:
 
 
 Request Method: POST
-Request URL: http://ste.sefaria.org/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod
+Request URL: http://draft.sefaria.org/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95
 
 Django Version: 1.4.5
 Python Version: 2.7.9
@@ -1054,25 +1369,35 @@ Installed Middleware:
 Traceback:
 File "/usr/local/lib/python2.7/site-packages/django/core/handlers/base.py" in get_response
   111.                         response = callback(request, *callback_args, **callback_kwargs)
-File "/var/www/ste/sefaria/system/decorators.py" in wrapper
+File "/var/www/draft/sefaria/system/decorators.py" in wrapper
   22.             result = func(*args, **kwargs)
 File "/usr/local/lib/python2.7/site-packages/django/views/decorators/csrf.py" in wrapped_view
   77.         return view_func(*args, **kwargs)
-File "/var/www/ste/reader/views.py" in texts_api
-  1557.             chunk = tracker.modify_text(apikey[&quot;uid&quot;], oref, t[&quot;versionTitle&quot;], t[&quot;language&quot;], t[&quot;text&quot;], t[&quot;versionSource&quot;], method=&quot;API&quot;, skip_links=skip_links)
-File "/var/www/ste/sefaria/tracker.py" in modify_text
-  30.     chunk = model.TextChunk(oref, lang, vtitle)
-File "/var/www/ste/sefaria/model/text.py" in __init__
-  1179.                 self.text = self._original_text = self.trim_text(v.content_node(self._oref.index_node))
-File "/var/www/ste/sefaria/model/text.py" in content_node
+File "/var/www/draft/reader/views.py" in texts_api
+  1115.             chunk = tracker.modify_text(apikey[&quot;uid&quot;], oref, t[&quot;versionTitle&quot;], t[&quot;language&quot;], t[&quot;text&quot;], t[&quot;versionSource&quot;], method=&quot;API&quot;, skip_links=skip_links)
+File "/var/www/draft/sefaria/tracker.py" in modify_text
+  38.     if chunk.save():
+File "/var/www/draft/sefaria/model/text.py" in save
+  1289.         self._oref.recalibrate_next_prev_refs(len(self.text))
+File "/var/www/draft/sefaria/model/text.py" in recalibrate_next_prev_refs
+  2771.         next_ref = self.next_section_ref()
+File "/var/www/draft/sefaria/model/text.py" in next_section_ref
+  2727.                         potential_next = next_node_ref._iter_text_section(depth_up=0 if next_leaf.depth == 1 else 1)
+File "/var/www/draft/sefaria/model/text.py" in _iter_text_section
+  2932.         c = self.get_state_node(hint=[(&quot;all&quot;,&quot;availableTexts&quot;)]).ja(&quot;all&quot;, &quot;availableTexts&quot;)
+File "/var/www/draft/sefaria/model/text.py" in get_state_node
+  2865.         return version_state.StateNode(snode=self.index_node, meta=meta, hint=hint)
+File "/var/www/draft/sefaria/model/version_state.py" in __init__
+  400.             self.d = self.versionState.content_node(snode)
+File "/var/www/draft/sefaria/model/text.py" in content_node
   820.         return self.sub_content(snode.version_address())
-File "/var/www/ste/sefaria/model/text.py" in sub_content
+File "/var/www/draft/sefaria/model/text.py" in sub_content
   843.         ja = reduce(lambda d, k: d[k], key_list, self.get_content())
-File "/var/www/ste/sefaria/model/text.py" in &lt;lambda&gt;
+File "/var/www/draft/sefaria/model/text.py" in &lt;lambda&gt;
   843.         ja = reduce(lambda d, k: d[k], key_list, self.get_content())
 
-Exception Type: TypeError at /api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod
-Exception Value: list indices must be integers, not unicode
+Exception Type: KeyError at /api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95
+Exception Value: u&#39;Birchas Hamazon&#39;
 </textarea>
   <br><br>
   <input type="submit" value="Share this traceback on a public Web site">
@@ -1104,7 +1429,7 @@ Exception Value: list indices must be integers, not unicode
         
           <tr>
             <td>json</td>
-            <td class="code"><pre>u&#39;{&quot;text&quot;: [&quot;This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&lt;i class=\&#39;footnote\&#39;&gt;You may do your work all week but not on Shabbos\\r\\n&lt;/i&gt;&quot;, &quot;\\u201cSix days do your work\\u201d&quot;, &quot;but the seventh day is your God\&#39;s\\u2014&quot;, &quot;the Sabbath\\u2014do no work on it&quot;, &quot;for He did everything in six days&lt;i class=\&#39;footnote\&#39;&gt;He created the world in six days\\r\\n&lt;/i&gt;&quot;, &quot;Refrain:&quot;, &quot;This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;It is the first of the holy convocations,&lt;i class=\&#39;footnote\&#39;&gt;It is mentioned first in the chapter dealing with festivals (Leviticus 23)\\r\\n&lt;/i&gt;&quot;, &quot;a day of rest, the holy Sabbath day&quot;, &quot;Therefore, let every man&quot;, &quot;recite kiddush with his wine,&quot;, &quot;over two complete loaves&quot;, &quot;let him break bread&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;Eat rich foods, drink sweet drinks,&quot;, &quot;for the Almighty will give&quot;, &quot;to all who cling to Him\\u2014&quot;, &quot;garments to wear, bread as needed,&quot;, &quot;meat and fish and all delicacies&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;You will lack nothing on it,&quot;, &quot;and will eat and be satisfied,&quot;, &quot;and will bless Adonoy, your God,&quot;, &quot;whom you love;&quot;, &quot;\\u2014for He has blessed you above all peoples&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;The heavens recount His glory&quot;, &quot;and the earth, too, is filled with His kindliness&quot;, &quot;[Behold] see that all these, His hand made,&quot;, &quot;for He is the Former, His work is perfect&quot;, &quot;Refrain:&quot;, &quot;-This day is honored above all days,&quot;, &quot;for on it rested the Rock of the Worlds&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;], &quot;versionTitle&quot;: &quot;The Metsudah Siddur...&quot;, &quot;language&quot;: &quot;en&quot;, &quot;versionSource&quot;: &quot;http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&amp;docId=NNL_ALEPH002211687&quot;}&#39;</pre></td>
+            <td class="code"><pre>u&#39;{&quot;text&quot;: [&quot;Come, let us sing to Adonoy;&quot;, &quot;let us sound the shofar&quot;, &quot;to the Rock of our deliverance.&lt;sup&gt;1&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;Israel will say these words in the days of the Messiah, when Jews will inspire each other to sing to Almighty God Who delivered them.\\u2014Radak&lt;/i&gt;&quot;, &quot;Let us greet His Presence&quot;, &quot;with thanksgiving,&lt;sup&gt;2&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;Expressions of thanksgiving are considered of the highest virtue, as it is said, \\u2018As for myself, with expressions of thanksgiving I sacrifice to you.\\u2019\\u2014Jonah 2&lt;/i&gt;&quot;, &quot;with hymns let us raise our voices unto Him.&quot;, &quot;For a great Almighty is Adonoy&quot;, &quot;and a great King over all gods.&lt;sup&gt;3&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;\\u2018Are there any other gods?\\u2019 asks the Midrash, and answers by citing verse 5 of the next Psalm, \\u2018All the gods of the nations are idols.\\u2019&lt;/i&gt;&quot;, &quot;For in His hands are the depths&lt;sup&gt;4&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;Metsudas Dovid offers another translation: \\u2018In His hands are the hidden things of the earth,\\u2019 referring to things which require much study and thought in order to be understood.&lt;/i&gt; of the earth,&quot;, &quot;and the heights of the mountains are His;&quot;, &quot;For the sea is His, and He made it,&quot;, &quot;and the dry land, His hands formed.&quot;, &quot;Come, let us prostrate ourselves and bow;&quot;, &quot;let us kneel&quot;, &quot;before Adonoy, our Maker.&quot;, &quot;For He is our God&quot;, &quot;and we are the people of His pasture,&quot;, &quot;and the flock of His hand,&quot;, &quot;[even] today&lt;sup&gt;5&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;It is possible for us to reach this high level and to be accepted as His flock even this very day, if we would hearken to His voice.\\u2014Dover Sholom&lt;/i&gt; if you will heed His voice.&quot;, &quot;Do not harden your heart as at Merivah,&quot;, &quot;as on the day of Massah&lt;sup&gt;6&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;The Jews complained and murmured at the lack of water during their wanderings in the wilderness (Exodus 17:1-17; Numbers 20:1-13).&lt;/i&gt; in the desert.&quot;, &quot;When your fathers tested Me,&lt;sup&gt;7&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;  7 The words from here till the end of the Psalm, are the actual words of the Divine Presence that emanated from the throat of Moses,  \\u05e9\\u05c1\\u05b0\\u05db\\u05b4\\u05d9\\u05e0\\u05b8\\u05d4 \\u05de\\u05b0\\u05d3\\u05b7\\u05d1\\u05bc\\u05b6\\u05e8\\u05b6\\u05ea \\u05de\\u05b4\\u05ea\\u05bc\\u05d5\\u05b9\\u05da\\u05b0 \\u05d2\\u05b0\\u05e8\\u05d5\\u05b9\\u05e0\\u05d5\\u05b9 \\u05e9\\u05c1\\u05b6\\u05dc \\u05de\\u05e9\\u05c1\\u05b6\\u05d4 \\u2014 Eyun Tfiloh &lt;/i&gt;&quot;, &quot;they tried Me,&quot;, &quot;though they had seen My work.&quot;, &quot;Forty years I quarreled with that generation;&quot;, &quot;and I said,&quot;, &quot;\\u201cThey are a people of erring hearts,&quot;, &quot;and they did not know my ways.\\u201d&quot;, &quot;Therefore I swore in My anger,&quot;, &quot;\\u201cThey shall not enter My resting place.\\u201d&lt;sup&gt;8&lt;/sup&gt;&lt;i class=\&#39;footnote\&#39;&gt;The Holy Land is described as the land of rest (Deuteronomy 12:9).&lt;/i&gt;&quot;], &quot;versionTitle&quot;: &quot;The Metsudah Siddur...&quot;, &quot;language&quot;: &quot;en&quot;, &quot;versionSource&quot;: &quot;http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&amp;docId=NNL_ALEPH002211687&quot;}&#39;</pre></td>
           </tr>
         
           <tr>
@@ -1142,8 +1467,13 @@ Exception Value: list indices must be integers, not unicode
         </tr>
       
         <tr>
+          <td>HTTP_CF_IPCOUNTRY</td>
+          <td class="code"><pre>&#39;IL&#39;</pre></td>
+        </tr>
+      
+        <tr>
           <td>CONTEXT_DOCUMENT_ROOT</td>
-          <td class="code"><pre>&#39;/var/www/ste/static/&#39;</pre></td>
+          <td class="code"><pre>&#39;/var/www/draft/static/&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1168,7 +1498,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>SERVER_SIGNATURE</td>
-          <td class="code"><pre>&#39;&lt;address&gt;Apache/2.4.29 (Ubuntu) Server at ste.sefaria.org Port 80&lt;/address&gt;\n&#39;</pre></td>
+          <td class="code"><pre>&#39;&lt;address&gt;Apache/2.4.29 (Ubuntu) Server at draft.sefaria.org Port 80&lt;/address&gt;\n&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1178,7 +1508,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>PATH_INFO</td>
-          <td class="code"><pre>u&#39;/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod&#39;</pre></td>
+          <td class="code"><pre>u&#39;/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1192,13 +1522,23 @@ Exception Value: list indices must be integers, not unicode
         </tr>
       
         <tr>
+          <td>HTTP_CF_RAY</td>
+          <td class="code"><pre>&#39;3f09f0d7a1e96a61-LHR&#39;</pre></td>
+        </tr>
+      
+        <tr>
           <td>wsgi.errors</td>
-          <td class="code"><pre>&lt;mod_wsgi.Log object at 0x7f4a2902af80&gt;</pre></td>
+          <td class="code"><pre>&lt;mod_wsgi.Log object at 0x7f1041a58e90&gt;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>mod_wsgi.total_requests</td>
+          <td class="code"><pre>7256L</pre></td>
         </tr>
       
         <tr>
           <td>CONTENT_LENGTH</td>
-          <td class="code"><pre>&#39;2548&#39;</pre></td>
+          <td class="code"><pre>&#39;3689&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1208,7 +1548,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>SERVER_NAME</td>
-          <td class="code"><pre>&#39;ste.sefaria.org&#39;</pre></td>
+          <td class="code"><pre>&#39;draft.sefaria.org&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1218,7 +1558,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>mod_wsgi.queue_start</td>
-          <td class="code"><pre>&#39;1517748066915939&#39;</pre></td>
+          <td class="code"><pre>&#39;1519218574073146&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1243,7 +1583,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>PATH_TRANSLATED</td>
-          <td class="code"><pre>&#39;/var/www/ste/sefaria/wsgi.py/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod&#39;</pre></td>
+          <td class="code"><pre>&#39;/var/www/draft/sefaria/wsgi.py/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1252,8 +1592,8 @@ Exception Value: list indices must be integers, not unicode
         </tr>
       
         <tr>
-          <td>mod_wsgi.total_requests</td>
-          <td class="code"><pre>3L</pre></td>
+          <td>mod_wsgi.daemon_connects</td>
+          <td class="code"><pre>&#39;1&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1268,37 +1608,42 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>DOCUMENT_ROOT</td>
-          <td class="code"><pre>&#39;/var/www/ste/static/&#39;</pre></td>
+          <td class="code"><pre>&#39;/var/www/draft/static/&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HTTP_CF_VISITOR</td>
+          <td class="code"><pre>&#39;{&quot;scheme&quot;:&quot;http&quot;}&#39;</pre></td>
         </tr>
       
         <tr>
           <td>mod_wsgi.process_group</td>
-          <td class="code"><pre>&#39;ste.sefaria.org&#39;</pre></td>
+          <td class="code"><pre>&#39;draft.sefaria.org&#39;</pre></td>
         </tr>
       
         <tr>
           <td>mod_wsgi.thread_requests</td>
-          <td class="code"><pre>1L</pre></td>
+          <td class="code"><pre>921L</pre></td>
         </tr>
       
         <tr>
-          <td>mod_wsgi.daemon_connects</td>
-          <td class="code"><pre>&#39;1&#39;</pre></td>
+          <td>HTTP_X_FORWARDED_PROTO</td>
+          <td class="code"><pre>&#39;http&#39;</pre></td>
         </tr>
       
         <tr>
           <td>mod_wsgi.request_id</td>
-          <td class="code"><pre>&#39;bBVjQkrSpVM&#39;</pre></td>
+          <td class="code"><pre>&#39;WpxxozAwg40&#39;</pre></td>
         </tr>
       
         <tr>
           <td>SCRIPT_FILENAME</td>
-          <td class="code"><pre>&#39;/var/www/ste/sefaria/wsgi.py&#39;</pre></td>
+          <td class="code"><pre>&#39;/var/www/draft/sefaria/wsgi.py&#39;</pre></td>
         </tr>
       
         <tr>
           <td>SERVER_ADMIN</td>
-          <td class="code"><pre>&#39;dev@sefaria.org&#39;</pre></td>
+          <td class="code"><pre>&#39;<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5034352610233536312239317e3f2237">[email&#160;protected]</a>&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1308,12 +1653,12 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>wsgi.input</td>
-          <td class="code"><pre>&lt;mod_wsgi.Input object at 0x7f4a28d04f10&gt;</pre></td>
+          <td class="code"><pre>&lt;mod_wsgi.Input object at 0x7f1063b7c180&gt;</pre></td>
         </tr>
       
         <tr>
           <td>HTTP_HOST</td>
-          <td class="code"><pre>&#39;ste.sefaria.org&#39;</pre></td>
+          <td class="code"><pre>&#39;draft.sefaria.org&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1332,8 +1677,13 @@ Exception Value: list indices must be integers, not unicode
         </tr>
       
         <tr>
+          <td>HTTP_CF_CONNECTING_IP</td>
+          <td class="code"><pre>&#39;79.178.92.190&#39;</pre></td>
+        </tr>
+      
+        <tr>
           <td>HTTP_X_VARNISH</td>
-          <td class="code"><pre>&#39;3922702&#39;</pre></td>
+          <td class="code"><pre>&#39;7074601&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1343,7 +1693,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>REQUEST_URI</td>
-          <td class="code"><pre>&#39;/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod&#39;</pre></td>
+          <td class="code"><pre>&#39;/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1353,7 +1703,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>mod_wsgi.path_info</td>
-          <td class="code"><pre>&#39;/api/texts/Sefard_Siddur_Shabbat,_Songs_for_Shabbos_Morning,_Yom_Zeh_Mechubod&#39;</pre></td>
+          <td class="code"><pre>&#39;/api/texts/Sefard_Siddur_Shabbat,_Kabbalas_Shabbos,_Psalm_95&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1373,7 +1723,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>HTTP_X_FORWARDED_FOR</td>
-          <td class="code"><pre>&#39;109.67.33.31&#39;</pre></td>
+          <td class="code"><pre>&#39;79.178.92.190, 141.101.107.36&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1383,7 +1733,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>REMOTE_PORT</td>
-          <td class="code"><pre>&#39;47344&#39;</pre></td>
+          <td class="code"><pre>&#39;38574&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1413,7 +1763,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>mod_wsgi.script_start</td>
-          <td class="code"><pre>&#39;1517748066916118&#39;</pre></td>
+          <td class="code"><pre>&#39;1519218574073357&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1423,7 +1773,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>mod_wsgi.application_group</td>
-          <td class="code"><pre>&#39;ste.sefaria.org|&#39;</pre></td>
+          <td class="code"><pre>&#39;draft.sefaria.org|&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1433,22 +1783,22 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>mod_wsgi.request_start</td>
-          <td class="code"><pre>&#39;1517748066915692&#39;</pre></td>
+          <td class="code"><pre>&#39;1519218574072922&#39;</pre></td>
         </tr>
       
         <tr>
           <td>CSRF_COOKIE</td>
-          <td class="code"><pre>&#39;m2o000todt1nbHcbTg7UVGVBFDAnkMxZ&#39;</pre></td>
+          <td class="code"><pre>&#39;QEwNRWDe5yZcbOGy1xv05yo3xRWOa4VN&#39;</pre></td>
         </tr>
       
         <tr>
           <td>HTTP_ACCEPT_ENCODING</td>
-          <td class="code"><pre>&#39;gzip, deflate&#39;</pre></td>
+          <td class="code"><pre>&#39;gzip&#39;</pre></td>
         </tr>
       
         <tr>
           <td>mod_wsgi.daemon_start</td>
-          <td class="code"><pre>&#39;1517748066916081&#39;</pre></td>
+          <td class="code"><pre>&#39;1519218574073311&#39;</pre></td>
         </tr>
       
     </tbody>
@@ -1498,7 +1848,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>MANAGERS</td>
-          <td class="code"><pre>((&#39;Sefaria Developers&#39;, &#39;dev@sefaria.org&#39;),)</pre></td>
+          <td class="code"><pre>((&#39;Sefaria Developers&#39;, &#39;<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="422627340231272423302b236c2d3025">[email&#160;protected]</a>&#39;),)</pre></td>
         </tr>
       
         <tr>
@@ -1586,7 +1936,7 @@ Exception Value: list indices must be integers, not unicode
           <td>DATABASES</td>
           <td class="code"><pre>{&#39;default&#39;: {&#39;ENGINE&#39;: &#39;django.db.backends.sqlite3&#39;,
              &#39;HOST&#39;: &#39;&#39;,
-             &#39;NAME&#39;: &#39;/var/www/ste/data/db.sqlite&#39;,
+             &#39;NAME&#39;: &#39;/var/www/draft/data/db.sqlite&#39;,
              &#39;OPTIONS&#39;: {},
              &#39;PASSWORD&#39;: u&#39;********************&#39;,
              &#39;PORT&#39;: &#39;&#39;,
@@ -1652,7 +2002,7 @@ Exception Value: list indices must be integers, not unicode
         <tr>
           <td>CACHES</td>
           <td class="code"><pre>{&#39;default&#39;: {&#39;BACKEND&#39;: &#39;redis_cache.cache.RedisCache&#39;,
-             &#39;LOCATION&#39;: &#39;127.0.0.1:6379:4&#39;,
+             &#39;LOCATION&#39;: &#39;127.0.0.1:6379:3&#39;,
              &#39;OPTIONS&#39;: {&#39;CLIENT_CLASS&#39;: &#39;redis_cache.client.DefaultClient&#39;,
                          u&#39;COMPRESS_COMPRESSOR&#39;: &lt;built-in function compress&gt;,
                          u&#39;COMPRESS_DECOMPRESSOR&#39;: &lt;built-in function decompress&gt;,
@@ -1667,7 +2017,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>SERVER_EMAIL</td>
-          <td class="code"><pre>&#39;root@localhost&#39;</pre></td>
+          <td class="code"><pre>&#39;<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="daa8b5b5ae9ab6b5b9bbb6b2b5a9ae">[email&#160;protected]</a>&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1849,8 +2199,8 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>LANGUAGES</td>
-          <td class="code"><pre>((&#39;en&#39;, &lt;django.utils.functional.__proxy__ object at 0x7f4a3881d6d0&gt;),
- (&#39;he&#39;, &lt;django.utils.functional.__proxy__ object at 0x7f4a3881d710&gt;))</pre></td>
+          <td class="code"><pre>((&#39;en&#39;, &lt;django.utils.functional.__proxy__ object at 0x7f1072c3fa10&gt;),
+ (&#39;he&#39;, &lt;django.utils.functional.__proxy__ object at 0x7f1072c3fa50&gt;))</pre></td>
         </tr>
       
         <tr>
@@ -1865,7 +2215,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>STATICFILES_DIRS</td>
-          <td class="code"><pre>(&#39;/var/www/ste/static/&#39;,)</pre></td>
+          <td class="code"><pre>(&#39;/var/www/draft/static/&#39;,)</pre></td>
         </tr>
       
         <tr>
@@ -2020,20 +2370,20 @@ Exception Value: list indices must be integers, not unicode
                 &#39;verbose&#39;: {&#39;format&#39;: &#39;%(asctime)s - %(levelname)s: [%(name)s] %(process)d %(thread)d %(message)s&#39;}},
  &#39;handlers&#39;: {&#39;book_name_errors&#39;: {&#39;backupCount&#39;: 20,
                                    &#39;class&#39;: &#39;logging.handlers.RotatingFileHandler&#39;,
-                                   &#39;filename&#39;: &#39;/var/www/ste/sefaria/../log/sefaria_book_errors.log&#39;,
+                                   &#39;filename&#39;: &#39;/var/www/draft/sefaria/../log/sefaria_book_errors.log&#39;,
                                    &#39;filters&#39;: [&#39;filter_book_name_errors&#39;],
                                    &#39;formatter&#39;: &#39;verbose&#39;,
                                    &#39;level&#39;: &#39;ERROR&#39;,
                                    &#39;maxBytes&#39;: 5242880},
               &#39;cloudflare_response_handler&#39;: {&#39;backupCount&#39;: 20,
                                               &#39;class&#39;: &#39;logging.handlers.RotatingFileHandler&#39;,
-                                              &#39;filename&#39;: &#39;/var/www/ste/sefaria/../log/cloudflare.log&#39;,
+                                              &#39;filename&#39;: &#39;/var/www/draft/sefaria/../log/cloudflare.log&#39;,
                                               &#39;formatter&#39;: &#39;standard&#39;,
                                               &#39;level&#39;: &#39;INFO&#39;,
                                               &#39;maxBytes&#39;: 5242880},
               &#39;default&#39;: {&#39;backupCount&#39;: 20,
                           &#39;class&#39;: &#39;logging.handlers.RotatingFileHandler&#39;,
-                          &#39;filename&#39;: &#39;/var/www/ste/sefaria/../log/sefaria.log&#39;,
+                          &#39;filename&#39;: &#39;/var/www/draft/sefaria/../log/sefaria.log&#39;,
                           &#39;filters&#39;: [&#39;exclude_errors&#39;],
                           &#39;formatter&#39;: &#39;verbose&#39;,
                           &#39;level&#39;: &#39;WARNING&#39;,
@@ -2045,7 +2395,7 @@ Exception Value: list indices must be integers, not unicode
                        &#39;level&#39;: &#39;INFO&#39;},
               &#39;request_handler&#39;: {&#39;backupCount&#39;: 20,
                                   &#39;class&#39;: &#39;logging.handlers.RotatingFileHandler&#39;,
-                                  &#39;filename&#39;: &#39;/var/www/ste/sefaria/../log/django_request.log&#39;,
+                                  &#39;filename&#39;: &#39;/var/www/draft/sefaria/../log/django_request.log&#39;,
                                   &#39;formatter&#39;: &#39;standard&#39;,
                                   &#39;level&#39;: &#39;WARNING&#39;,
                                   &#39;maxBytes&#39;: 5242880}},
@@ -2077,7 +2427,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>LOCALE_PATHS</td>
-          <td class="code"><pre>(&#39;/var/www/ste/sefaria/../locale&#39;,)</pre></td>
+          <td class="code"><pre>(&#39;/var/www/draft/sefaria/../locale&#39;,)</pre></td>
         </tr>
       
         <tr>
@@ -2107,7 +2457,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>TEMPLATE_DIRS</td>
-          <td class="code"><pre>(&#39;/var/www/ste/templates/&#39;,)</pre></td>
+          <td class="code"><pre>(&#39;/var/www/draft/templates/&#39;,)</pre></td>
         </tr>
       
         <tr>
@@ -2152,7 +2502,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>ADMINS</td>
-          <td class="code"><pre>((&#39;Sefaria Developers&#39;, &#39;dev@sefaria.org&#39;),)</pre></td>
+          <td class="code"><pre>((&#39;Sefaria Developers&#39;, &#39;<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d5b1b0a395a6b0b3b4a7bcb4fbbaa7b2">[email&#160;protected]</a>&#39;),)</pre></td>
         </tr>
       
         <tr>
@@ -2162,7 +2512,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>DEFAULT_FROM_EMAIL</td>
-          <td class="code"><pre>&#39;webmaster@localhost&#39;</pre></td>
+          <td class="code"><pre>&#39;<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="7a0d1f18171b090e1f083a1615191b161215090e">[email&#160;protected]</a>&#39;</pre></td>
         </tr>
       
         <tr>
@@ -2192,7 +2542,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>NODE_TIMEOUT_MONITOR</td>
-          <td class="code"><pre>&#39;/var/www/ste/sefaria/../log/forever/timeout/timeouts&#39;</pre></td>
+          <td class="code"><pre>&#39;/var/www/draft/sefaria/../log/forever/timeout/timeouts&#39;</pre></td>
         </tr>
       
         <tr>
@@ -2247,7 +2597,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>CLOUDFLARE_EMAIL</td>
-          <td class="code"><pre>&#39;brett@sefaria.org&#39;</pre></td>
+          <td class="code"><pre>&#39;<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="91f3e3f4e5e5d1e2f4f7f0e3f8f0bffee3f6">[email&#160;protected]</a>&#39;</pre></td>
         </tr>
       
         <tr>
@@ -2314,7 +2664,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>SEFARIA_EXPORT_PATH</td>
-          <td class="code"><pre>&#39;/var/www/ste/data/export&#39;</pre></td>
+          <td class="code"><pre>&#39;/var/www/draft/data/export&#39;</pre></td>
         </tr>
       
         <tr>
@@ -2372,12 +2722,12 @@ Exception Value: list indices must be integers, not unicode
           <td class="code"><pre>{&#39;DEFAULT&#39;: {&#39;BUNDLE_DIR_NAME&#39;: &#39;bundles/client/&#39;,
              &#39;CACHE&#39;: False,
              &#39;POLL_INTERVAL&#39;: 0.1,
-             &#39;STATS_FILE&#39;: &#39;/var/www/ste/sefaria/../node/webpack-stats.client.json&#39;,
+             &#39;STATS_FILE&#39;: &#39;/var/www/draft/sefaria/../node/webpack-stats.client.json&#39;,
              &#39;TIMEOUT&#39;: None},
  &#39;SEFARIA_JS&#39;: {&#39;BUNDLE_DIR_NAME&#39;: &#39;bundles/sefaria/&#39;,
                 &#39;CACHE&#39;: False,
                 &#39;POLL_INTERVAL&#39;: 0.1,
-                &#39;STATS_FILE&#39;: &#39;/var/www/ste/sefaria/../node/webpack-stats.sefaria.json&#39;,
+                &#39;STATS_FILE&#39;: &#39;/var/www/draft/sefaria/../node/webpack-stats.sefaria.json&#39;,
                 &#39;TIMEOUT&#39;: None}}</pre></td>
         </tr>
       
@@ -2388,7 +2738,7 @@ Exception Value: list indices must be integers, not unicode
       
         <tr>
           <td>SEFARIA_DB</td>
-          <td class="code"><pre>&#39;sefaria_ste&#39;</pre></td>
+          <td class="code"><pre>&#39;sefaria_draft&#39;</pre></td>
         </tr>
       
         <tr>
@@ -2440,5 +2790,5 @@ Exception Value: list indices must be integers, not unicode
     </p>
   </div>
 
-</body>
+<script data-cfasync="false" src="/cdn-cgi/scripts/d07b1474/cloudflare-static/email-decode.min.js"></script></body>
 </html>

@@ -179,7 +179,7 @@ def get_all_tags(text):
 if __name__ == "__main__":
     # with open('metsudah code.csv') as f:
     #     char_map = get_map(f)
-    orig_text = get_text("weekday tagged.txt")
+    orig_text = get_text("weekday_tagged_updated.txt")
     # heb_subset = get_heb_indices(orig_text)
     # decoded_text, bad_char_and_line, cantillation_indices = replace_chars(orig_text, char_map, heb_subset)
     # with open("Weekday Siddur Ashkenaz/weekday.txt", 'w') as f:

@@ -33,7 +33,7 @@ def markup(vol, xml_root):
     vol.mark_references(commentaries.commentary_ids["Beur HaGra"], u'!([\u05d0-\u05ea]{1,3})\)', group=1)
     vol.mark_references(commentaries.commentary_ids["Pithei Teshuva"], ur'@66\(([\u05d0-\u05ea]{1,3})\)', group=1)
     vol.mark_references(commentaries.commentary_ids["Be'er HaGolah"], u'@44([\u05d0-\u05ea\u2022])', group=1, cyclical=True)
-
+    vol.mark_references(commentaries.commentary_ids["Turei Zahav"], u"@91(\[[\u05d0-\u05ea]{1,3}\])", group=1)
     vol.convert_pattern_to_itag(u"Beit Shmuel", u"@55([\u05d0-\u05ea]{1,3})")
     vol.convert_pattern_to_itag(u"Chelkat Mechokek", u"@77\(([\u05d0-\u05ea]{1,3})\)")
     vol.convert_pattern_to_itag(u"Ba'er Hetev", u"@82([\u05d0-\u05ea]{1,3})\)")

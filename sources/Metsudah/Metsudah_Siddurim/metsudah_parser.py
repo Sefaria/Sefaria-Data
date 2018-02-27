@@ -40,24 +40,40 @@ class Metsudah_Parser:
     def pre_parse(self):
         orig_text = list(open(self.input_text))
         bad_chars = Counter()
-        replacements = [("׀", "—"), ("_", "-"), ("±", "-"), ("<TIE>", " "), ("<IT>", "<i>"),
-                        ("<ITC>", "</i>"), ("@ss", "<small>"), ("@sr", "</small>"), ("@eb", "<b>"), ("@hb", "<b>")]
-        he_replacements = [("r", "ע"), ("H", "לֹּ"), ("G", "לֹ"), ("x", "רֹּ"), ("§", "ךָ"), ("-", "־"), ("<HEB>קּ<SZ14>", "❖")]
+        replacements = [("׀", "—"), ("_", "-"), ("±", "-"), ("<TIE>", " "), ("<IT>", "<i>"), ("<HEB>קּ<SZ14>", "❖"),
+                        ("<ITC>", "</i>"), ("@ss", "<small>"), ("@sr", "</small>"), ("@eb", "<b>"), ("@hb", "<b>"),
+                        ("@hi", "<small>"), ("@vs", "<small>"), ("@y1", "<small>"), ("@ei", "<small>")]
+        he_replacements = [("r", "ע"), ("H", "לֹּ"), ("G", "לֹ"), ("x", "רֹּ"), ("§", "ךָ"), ("-", "־")]
         it_only = []
         itc_only = []
         for line_n, line in enumerate(orig_text):
-            #first remove non-html and non-ftnote related tags
-            orig_text[line_n] = self.replace_tags(line, skip_html=True, skip_ftnotes=True, skip_header=True, skip_language=True)
+            orig_text[line_n] = orig_text[line_n].replace("\r\n", "")
 
-            #now remove extra <i>s and replace replacements
+            #first make replacements and then remove non-html and non-ftnote related tags
+            if "@vs" in line:
+                pos = line.find("@vs")
+                next_tag_pos = line[pos+3:].find("@") + pos + 3
+                next_tag = line[next_tag_pos:next_tag_pos+3]
+                line = line[0:pos] + line[pos:].replace(next_tag, "</small>", 1)
+                orig_text[line_n] = line
             for replacement in replacements:
                 orig_text[line_n] = orig_text[line_n].replace(replacement[0], replacement[1])
+            orig_text[line_n] = self.replace_tags(orig_text[line_n], skip_html=True, skip_ftnotes=True, skip_header=True, skip_language=True)
+
+            #now remove extra <i>s and replace replacements
             if "<i>" in orig_text[line_n] and not "</i>" in orig_text[line_n]:
                 orig_text[line_n] = orig_text[line_n].replace("<i>", "")
             elif "</i>" in orig_text[line_n] and not "<i>" in orig_text[line_n]:
                 orig_text[line_n] = orig_text[line_n].replace("</i>", "")
             if "<b>" in orig_text[line_n] and not "</b>" in orig_text[line_n]:
                 orig_text[line_n] = orig_text[line_n] + "</b>"
+
+            if "<small>" in orig_text[line_n] and not "</small>" in orig_text[line_n]:
+                orig_text[line_n] = orig_text[line_n] + "</small>"
+
+            orig_text[line_n] = orig_text[line_n].replace("<b><b>", "<b>").replace("<i><i>", "<i>").replace("<small><small>", "<small>")
+
+
 
 
             #for hebrew text, do he_replacements only in hebrew lines and in hebrew lines, only in hebrew words
@@ -276,7 +292,10 @@ class Metsudah_Parser:
             for ref, text in self.text[lang].items():
                 ref = ref.replace(self.node_separator, ",")
                 send_text = {"text": text, "versionTitle": self.vtitle, "versionSource": self.vsource, "language": lang}
-                post_text(ref, send_text, server=server)
+                result = post_text(ref, send_text, server=server)
+                if "error" in result:
+                    if text != []:
+                        print "Problem with {}".format(ref)
 
 
     def create_schema(self):

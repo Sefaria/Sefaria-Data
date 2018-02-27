@@ -701,6 +701,8 @@ def rambam_name_table():
     name_dict[u'ק"פ'] = name_dict[u'קרבן פסח']
     name_dict[u'רוצח וש"נ'] = name_dict[u'רוצח ושמירת נפש']
     name_dict[u'שמירת הנפש'] = name_dict[u'רוצח ושמירת נפש']
+    name_dict[u'יבום'] = name_dict[u'יבום וחליצה']
+    name_dict[u'חליצה'] = name_dict[u'יבום וחליצה']
 
     # for name in name_dict.keys():
     #     first = re.split('\s', name)
@@ -723,7 +725,7 @@ def clean_line(line):
     in_per = reg_parentheses.search(line)
     in_bra = reg_brackets.search(line)
     reg_ayyen_tur = re.compile(u'''ו?(עיין|עי'|ע"ש) בטור''')
-    reg_lo_manu = re.compile(u'''((אך )?לא מנ.*?)(סמ"?ג|רמב"?ם|טור|\n)''')
+    reg_lo_manu = re.compile(u'''(?P<a>(\u05d0\u05da )?\u05dc\u05d0 \u05de\u05e0(.*?))(\u05e1\u05de"?\u05d2|\u05e8\u05de\u05d1"?\u05dd|\u05d8\u05d5\u05e8|\n)''')
     line = re.sub(u'\[.*?אלפס.*?\]', u'', line)
     line = re.sub(u'טור ו?שו"ע', u'טוש"ע', line)
     f_ayyen = re.search(reg_ayyen_tur, line)
@@ -732,7 +734,7 @@ def clean_line(line):
     if f_ayyen:
         line = line[:f_ayyen.start()]
     if f_lo_manu:
-        line = re.sub(reg_lo_manu, "", line)
+        line = re.sub(f_lo_manu.group('a'), u"", line)
     if in_per:
         if in_bra:
             clean = re.sub(reg_brackets, ur'\1', line)  # brackets are always correct
@@ -1034,5 +1036,4 @@ if __name__ == "__main__":
     # run1(u'collapsed/lost_lines', u'collapsed/lost_lines') #avodah_zarah
     # run1('/home/shanee/www/sefaria/Sefaria-Data/sources/Semak/citations', EM = False)
     run2("done/zevachim", "done/zevachim")
-
 

@@ -427,22 +427,22 @@ def he_num_to_char(num):
 
 
 
-def numToHeb(engnum=""):
+def numToHeb(engnum=u""):
         engnum = str(engnum)
         numdig = len(engnum)
-        hebnum = ""
-        letters = [["" for i in range(3)] for j in range(10)]
-        letters[0]=["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט"]
-        letters[1]=["", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ"]
-        letters[2]=["", "ק", "ר", "ש", "ת", "תק", "תר", "תש", "תת", "תתק"]
+        hebnum = u""
+        letters = [[u"" for i in range(3)] for j in range(10)]
+        letters[0]=[u"", u"א", u"ב", u"ג", u"ד", u"ה", u"ו", u"ז", u"ח", u"ט"]
+        letters[1]=[u"", u"י", u"כ", u"ל", u"מ", u"נ", u"ס", u"ע", u"פ", u"צ"]
+        letters[2]=[u"", u"ק", u"ר", u"ש", u"ת", u"תק", u"תר", u"תש", u"תת", u"תתק"]
         if (numdig > 3):
             print "We currently can't handle numbers larger than 999"
             exit()
         for count in range(numdig):
             hebnum += letters[numdig-count-1][int(engnum[count])]
-        hebnum = re.sub('יה', 'טו', hebnum)
-        hebnum = re.sub('יו', 'טז', hebnum)
-        hebnum = hebnum.decode('utf-8')
+        hebnum = re.sub(u'יה', u'טו', hebnum)
+        hebnum = re.sub(u'יו', u'טז', hebnum)
+        # hebnum = hebnum.decode('utf-8')
         return hebnum
 
 
