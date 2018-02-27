@@ -818,7 +818,7 @@ def link_rambam(filename):
         bad_cnt = 0
         for i, line in enumerate(lines):
             split = re.split(u'ו?ה?(רמב"?ם|סמ"?ג|טור)', line)
-            refs = CF.get_potential_refs(u'({})'.format(line)) #), dropParenthesis=True)
+            refs = CF.get_potential_refs(u'({})'.format(line), title_rambam=[u'רמב"ם']) #), dropParenthesis=True)
             # split_it = iter(split)
             # for part in split_it:
                 # if re.search(ur'''(מיי'|רמב"?ם)''', part):
@@ -834,7 +834,7 @@ def link_rambam(filename):
 
             for ref in refs:
                 if isinstance(ref[0], Ref):
-                    continue
+                    # continue
                     print ref
                 else:
                     print ref[0].group()
@@ -893,4 +893,4 @@ if __name__ == "__main__":
     # post_link(link_remazim(), VERBOSE=True)
     # remazim_sm_g_k = link_smk_remazim_to_smg_remazim(smg_links)
     # post_link(remazim_sm_g_k, VERBOSE=True)
-    link_rambam("citations.txt")
+    # link_rambam("testrambamibid.txt")
