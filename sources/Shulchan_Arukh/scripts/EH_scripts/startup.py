@@ -14,6 +14,10 @@ commentary_list = [
     ("Pithei Teshuva", u"פתחי תשובה"),
     ("Pithei Teshuva, Seder HaGet", u"פתחי תשובה, סדר הגט"),
     ("Pithei Teshuva, Seder Halitzah", u"פתחי תשובה, סדר חליצה"),
+    ("Pithei Teshuva, Shemot Anashim V'Nashim", u"פתחי תשובה, שמות אנשים ונשים"),
+    ("Turei Zahav", u"טורי זהב"),
+    ("Turei Zahav, Seder HaGet", u"טורי זהב, סדר הגט"),
+    ("Turei Zahav", "Shemot Anashim V'Nashim", u"טורי זהב, שמות אנשים ונשים"),
 ]
 commentary_list = [dict(zip(('en_title', 'he_title'), c)) for c in commentary_list]
 
