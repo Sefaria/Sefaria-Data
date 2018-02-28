@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import urllib2, csv, urllib
 from sefaria.model import *
 from sefaria.utils.hebrew import strip_cantillation
-import re
+import re, codecs
 
 def make_soup(url):
     req = urllib2.Request(url, headers={'User-Agent' : "Magic Browser"}) 
@@ -28,7 +28,7 @@ def lookup_shoresh(w, ref):
         return map(lambda x: x["headword"], filter(lambda x: x["lexicon"] == lexicon, wf.lookups))
 
 
-with open("EmojiGilla Dictionary.csv", 'rb') as csvfile:
+with codecs.open("EmojiGilla Dictionary.csv", 'rb') as csvfile:
     csv_reader = csv.reader(csvfile, delimiter=',')
     for line in csv_reader:
         hebrew_word = line[0].strip()
