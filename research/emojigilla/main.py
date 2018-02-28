@@ -33,7 +33,10 @@ def lookup_shoresh(w, ref):
     w = strip_cantillation(w, strip_vowels=False)
     w = re.sub(ur"[A-Za-z׃׀־]", u"", w)
     lexicon = "BDB Augmented Strong"
-    wf = WordForm().load({"form": w, "refs": re.compile("^" + ref + "$")})
+    try:
+        wf = WordForm().load({"form": w, "refs": re.compile("^" + ref + "$")})
+    except Exception:
+        return None
     if wf:
         return map(lambda x: x["headword"], filter(lambda x: x["lexicon"] == lexicon, wf.lookups))
 
@@ -80,9 +83,9 @@ def replace_with_base64(s, ref):
     for to_replace in words_to_replace:
         p = to_replace["prefix"]
         tokenized_pasuk[to_replace[
-            "word_num"]] = u'{}<img class="purim-emoji" alt="{}" style="height: 25px;" src="data:image/png;base64,{}">'.format(
-            u"{}-".format(p) if len(p) > 0 else u"", to_replace["name"],
-            emoji_map[to_replace["shoresh"]])  # u"[[{}]]".format(to_replace["form"])
+            "word_num"]] = u'<span class="purim-emoji">' \
+                           u'{}<img  src="data:image/png;base64,{}" /> </span>'.format(
+            u"{}-".format(p) if len(p) > 0 else u"", emoji_map[to_replace["shoresh"]])
     new_pasuk = rebuild_tokenized_text(tokenized_pasuk)
     return new_pasuk
 
@@ -113,12 +116,13 @@ for iperek, perek in enumerate(ja):
     for ipasuk, pasuk in enumerate(perek):
         ja[iperek][ipasuk] = replace_with_base64(pasuk, u"Esther {}:{}".format(iperek + 1, ipasuk + 1))
 
-post = False
+post = True
 if post:
+    print "Posting"
     resp = post_text(ref, {
         "versionTitle": versionTitle,
         "versionSource": versionSource,
         "language": language,
         "text": ja,
-    })
+    }, server='https://www.sefaria.org', weak_network=True)
     print resp

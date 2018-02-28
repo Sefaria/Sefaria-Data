@@ -149,32 +149,74 @@ def get_pasukim(aderet_text, parsha_order):
 
         parsha_csv.writerows(rows)
 
+def derive_tzror_from_base(tzror, base, prev_row):
+    if not tzror: #nothing here so derive it solely from base
+        prev_tzror = ""
+        if len(prev_row) > 0:
+            prev_tzror = prev_row[1]
+
+        if base in prev_tzror:
+            # derive it from prev_tzror so that if prev_tzror was
+            # Tzror HaMor, Genesis 1:2:3 the new one should be Tzror HaMor, Genesis 1:2:4
+            segment = int(prev_tzror.split(":")[-1]) + 1
+            assert segment >= 1
+            tzror = ":".join(prev_tzror.split(":")[0:-1]) + ":" + str(segment)
+        else:
+            #if base not in prev_tzror then this is the first one
+            tzror = "Tzror HaMor, {}:1".format(base)
+
+    if base not in tzror: #if base doesn't fit inside tzror, they are not connected properly
+        print base
+    return tzror
+
 def interpret_csv():
+    #Everytime there's an 11, add it to comment with current ref
+    #but when there's a first 44, remove previous one and make that beginning of running_comment
+    text_and_ref = [] #tuples
     with open("Tzror HaMor.csv") as f:
         parsha_csv = UnicodeReader(f)
-        prev_row = ""
+        prev_row = []
         links = []
         range_starts_at_row = ""
         how_many_in_current_range = 0
-        for row in parsha_csv:
-            comment, tzror_ref, base_ref = row
-            if comment.startswith("@44"):
-                if prev_row[0].startswith("@11"):
+        running_comment = ""
+        for row_n, row in enumerate(parsha_csv):
+            if row_n == 0:
+                continue
+            comment, tzror_ref, base_ref, other = row
+            if tzror_ref == "" and base_ref:
+                row[1] = tzror_ref = derive_tzror_from_base(tzror_ref, base_ref, prev_row)
+            if "@44" in comment and "@11" not in comment:
+                if "@11" in prev_row[0] and "@44" not in prev_row[0]:
+                    del links[-1]
+                    running_comment += text_and_ref.pop()[0]
                     range_starts_at_row = prev_row
+                else:
+                    running_comment += comment
                 how_many_in_current_range += 1
-            else:
-                if prev_row and prev_row[0].startswith("@44"):
+            elif "@44" not in comment and "@11" in comment:
+                if prev_row and "@44" in prev_row[0] and "@11" not in prev_row[0]:
+                    #before creating link for this row, create a link for previous rows that are a range
                     assert range_starts_at_row != "" and how_many_in_current_range > 0
-                    base_ref = range_starts_at_row[2]
-                    tzror_start_ref = range_starts_at_row[1]
-                    tzror_start_sec = int(tzror_start_ref.split(":")[-1])
-                    tzror_end_sec = str(tzror_start_sec + how_many_in_current_range)
-                    assert tzror_start_ref.split(":")[-2] == prev_row[1].split(":")[-2] #assert section level is the same
-                    tzror_ref = tzror_start_ref + "-" + tzror_end_sec
+                    prev_base_ref = range_starts_at_row[2]
+                    prev_tzror_start_ref = range_starts_at_row[1]
+                    start_sec = int(prev_tzror_start_ref.split(":")[-1])
+                    end_sec = str(start_sec + how_many_in_current_range)
+                    prev_tzror_ref = prev_tzror_start_ref + "-" + end_sec
                     how_many_in_current_range = 0
                     range_starts_at_row = ""
+                    assert prev_base_ref in prev_tzror_ref
+                    text_and_ref.append((running_comment, prev_tzror_ref))
+                    running_comment = ""
+                    links.append({'refs': [prev_tzror_ref, prev_base_ref], 'type': 'commentary', 'auto': 'True',
+                              'generated_by': "tzrorhamor"})
+
+                text_and_ref.append((comment, tzror_ref))
                 links.append({'refs': [tzror_ref, base_ref], 'type': 'commentary', 'auto': 'True',
                               'generated_by': "tzrorhamor"})
+            else:
+                raise AssertionError, 'Shouldnt be here'
+
             prev_row = row
 
     pass

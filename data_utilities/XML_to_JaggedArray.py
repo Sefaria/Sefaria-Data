@@ -99,6 +99,7 @@ class XML_to_JaggedArray:
     def record_results_to_file(self):
         if "Glazer" in self.title:
             f = open("Raavad.csv", 'w')
+
             writer = UnicodeWriter(f, encoding='utf-8')
             for chapter in self.footnotes_within_footnotes.keys():
                 for comment in self.footnotes_within_footnotes[chapter]:
@@ -423,12 +424,13 @@ class XML_to_JaggedArray:
             child = self.fix_ol(child)
         if child.tag == "table":
             self.print_table_info(element, index)
-        if child.tag in ["chapter"] and "CHAPTER " in child.text.upper() and len(child.text.split(" ")) <= 3:
+        if child.tag in ["chapter"] and "CHAPTER " in child.text.upper():# and len(child.text.split(" ")) <= 3:
             tags = re.findall("<sup>.*?</sup>", child.text)
             for tag in tags:
                 child.text = child.text.replace(tag, "")
-            child.text = str(roman_to_int(child.text.split(" ")[-1]))
-            # child.text = str(self.word_to_num.parse(child.text.split(" ")[-1]))
+            child.text = str(child.text.split(" ")[1])
+            #child.text = str(roman_to_int(child.text.split(" ")[-1])) # Chapter II => 2
+            #child.text = str(self.word_to_num.parse(child.text.split(" ")[-1])) #  Chapter Two => 2
 
     def go_down_to_text(self, element, parent):
         text = {}
@@ -567,7 +569,7 @@ class XML_to_JaggedArray:
     def interpret_and_post(self, node, running_ref, prev="string"):
         if self.assertions:
             assert Ref(running_ref), running_ref
-        sorted_keys = sorted(node.keys(), key=self.sort_by_book_order)
+        sorted_keys = sorted(node.keys())#, key=self.sort_by_book_order)
         last_key = sorted_keys[len(sorted_keys) - 1]
         not_last_key = True
         for i, key in enumerate(sorted_keys):

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 from bs4 import BeautifulSoup
 import urllib2, csv, urllib
 from sefaria.model import *
@@ -9,7 +10,7 @@ def make_soup(url):
     req = urllib2.Request(url, headers={'User-Agent' : "Magic Browser"}) 
     con = urllib2.urlopen(req)
     html = con.read()
-    return BeautifulSoup(html, "html")
+    return BeautifulSoup(html, "html5lib")
 
 def get_image(url):
     soup = make_soup(url)
@@ -32,12 +33,16 @@ with codecs.open("EmojiGilla Dictionary.csv", 'rb') as csvfile:
     csv_reader = csv.reader(csvfile, delimiter=',')
     for line in csv_reader:
         hebrew_word = line[0].strip()
+        print hebrew_word
         emoji_link = line[2].strip()
-        image = get_image(emoji_link)
         perek = line[3].strip()
         pasuk = line[4].strip()
         ref = "Esther {}:{}".format(perek, pasuk)
         shoresh = lookup_shoresh(hebrew_word, ref)
+        if os.path.exists(u"./emojis/{}.png".format(shoresh[0])):
+            print u"Already have {}; skipping".format(shoresh[0])
+            continue
+        image = get_image(emoji_link)
         if shoresh:
             urllib.urlretrieve(image, "./emojis/" + shoresh[0] + ".png")
         else:
