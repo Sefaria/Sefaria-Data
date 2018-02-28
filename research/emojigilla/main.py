@@ -30,7 +30,6 @@ def lookup_shoresh(w, ref):
     # only second - cant
     # only first - nikud
     #remove all non-Hebrew non-nikud characters (including cantillation and sof-pasuk)
-    w = strip_cantillation(w, strip_vowels=False)
     w = re.sub(ur"[A-Za-z׃׀־]", u"", w)
     lexicon = "BDB Augmented Strong"
     try:
@@ -69,15 +68,15 @@ def replace_with_base64(s, ref):
         else:
             print(word)
         if any(word_to_emoji == shoresh for word_to_emoji in words_to_emojis):
-            nikudless_word = strip_cantillation(word, True)
-            prefix_index = nikudless_word.find(strip_cantillation(shoresh, True))
-            if prefix_index > 0:
-                if any(p == nikudless_word[:prefix_index] for p in prefixes):
+            nikudless_word = strip_cantillation(word, True)[:-1]
+            nikudless_shoresh = strip_cantillation(shoresh, True)[:-1]
+            if len(nikudless_shoresh) > len(nikudless_word):
+                nikudless_shoresh = nikudless_shoresh[:len(nikudless_word)]
+            if nikudless_word != nikudless_shoresh:
+                prefix_index = nikudless_word.find(nikudless_shoresh)
+                if prefix_index != -1 and any(p == nikudless_word[:prefix_index] for p in prefixes):
                     nikud_prefix_index = word.find(shoresh[0], prefix_index)
-                    if nikud_prefix_index < 0:
-                        print "didn't find prefix for " + word
-                    else:
-                        prefix = word[:nikud_prefix_index]
+                    prefix = word[:nikud_prefix_index]
             words_to_replace += [{"name": word, "shoresh": shoresh, "prefix": prefix, "word_num": iw}]
     tokenized_pasuk = tokenizer(s, False)
     for to_replace in words_to_replace:
