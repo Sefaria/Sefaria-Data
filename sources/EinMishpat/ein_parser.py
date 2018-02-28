@@ -701,6 +701,8 @@ def rambam_name_table():
     name_dict[u'ק"פ'] = name_dict[u'קרבן פסח']
     name_dict[u'רוצח וש"נ'] = name_dict[u'רוצח ושמירת נפש']
     name_dict[u'שמירת הנפש'] = name_dict[u'רוצח ושמירת נפש']
+    name_dict[u'יבום'] = name_dict[u'יבום וחליצה']
+    name_dict[u'חליצה'] = name_dict[u'יבום וחליצה']
 
     # for name in name_dict.keys():
     #     first = re.split('\s', name)
@@ -1034,5 +1036,4 @@ if __name__ == "__main__":
     # run1(u'collapsed/lost_lines', u'collapsed/lost_lines') #avodah_zarah
     # run1('/home/shanee/www/sefaria/Sefaria-Data/sources/Semak/citations', EM = False)
     run2("done/zevachim", "done/zevachim")
-
 
