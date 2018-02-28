@@ -30,7 +30,6 @@ def lookup_shoresh(w, ref):
     # only second - cant
     # only first - nikud
     #remove all non-Hebrew non-nikud characters (including cantillation and sof-pasuk)
-    w = strip_cantillation(w, strip_vowels=False)
     w = re.sub(ur"[A-Za-z׃׀־]", u"", w)
     lexicon = "BDB Augmented Strong"
     try:
