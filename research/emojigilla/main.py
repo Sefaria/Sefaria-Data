@@ -18,7 +18,6 @@ def lookup_shoresh(w, ref):
     # only second - cant
     # only first - nikud
     # remove all non-Hebrew non-nikud characters (including cantillation and sof-pasuk)
-    w = strip_cantillation(w, strip_vowels=False)
     w = re.sub(ur"[A-Za-z׃׀־]", u"", w)
     lexicon = "BDB Augmented Strong"
     wf = WordForm().load({"form": w, "refs": re.compile("^" + ref + "$")})
@@ -30,6 +29,7 @@ def lookup_shoresh(w, ref):
     # only second - cant
     # only first - nikud
     #remove all non-Hebrew non-nikud characters (including cantillation and sof-pasuk)
+    w = strip_cantillation(w, strip_vowels=False)
     w = re.sub(ur"[A-Za-z׃׀־]", u"", w)
     lexicon = "BDB Augmented Strong"
     try:
@@ -86,6 +86,8 @@ def replace_with_base64(s, ref):
                            u'{}<img  src="data:image/png;base64,{}" /> </span>'.format(
             u"{}-".format(p) if len(p) > 0 else u"", emoji_map[to_replace["shoresh"]])
     new_pasuk = rebuild_tokenized_text(tokenized_pasuk)
+    if new_pasuk[-1] != u'׃':
+        new_pasuk += u'׃'
     return new_pasuk
 
 
