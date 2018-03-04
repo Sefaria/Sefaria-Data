@@ -135,6 +135,7 @@ if __name__ == "__main__":
     get_volume.mark_references(commentaries.commentary_ids[u"Beur HaGra, Seder HaGet"], u'!([\u05d0-\u05ea]{1,3})\)', group=1)
     get_volume.mark_references(commentaries.commentary_ids[u"Pithei Teshuva, Seder HaGet"], ur'@66\(([\u05d0-\u05ea]{1,3})\)', group=1)
     get_volume.mark_references(commentaries.commentary_ids[u"Be'er HaGolah, Seder HaGet"], u'@44([\u05d0-\u05ea\u2022])', group=1, cyclical=True)
+    get_volume.mark_references(commentaries.commentary_ids[u"Turei Zahav, Seder HaGet"], u"@91(\[[\u05d0-\u05ea]{1,3}\])", group=1)
 
     for seif in get_sec.get_child():
         seif.Tag['rid'] = 'no-link'
