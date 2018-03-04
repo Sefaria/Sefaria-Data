@@ -53,6 +53,8 @@ name_sec = move_special_section(pithei, u"Pithei Teshuva, Shemot Anashim V'Nashi
 name_sec.mark_seifim(u'@22\(([\u05d0-\u05ea]{1,3})\)', enforce_order=True)
 name_sec.validate_seifim()
 name_sec.format_text(u'@11', u'@33', u'dh')
+for seif in name_sec.get_child():
+    seif.Tag['rid'] = 'no-link'
 
 get_sec = move_special_section(pithei, u'Pithei Teshuva, Seder HaGet', u'פתחי תשובה, סדר הגט', u'Get')
 get_sec.mark_seifim(u'@22\(([\u05d0-\u05ea]{1,3})\)', enforce_order=True)
