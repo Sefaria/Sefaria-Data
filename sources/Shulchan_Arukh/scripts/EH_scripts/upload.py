@@ -153,7 +153,10 @@ if __name__ == "__main__":
     }
     num_parts = len(book_data.items())
     for part_name, part_ja in book_data.items():
-        version["text"] = part_ja
+        if len(part_ja) == 1:
+            version["text"] = part_ja[0]
+        else:
+            version["text"] = part_ja
         if num_parts == 1:    # We'll build the versionState at the last post
             print "building versionState"
             functions.post_text(part_name, version, index_count="on", server=user_args.server)
