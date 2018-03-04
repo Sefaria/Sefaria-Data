@@ -7,11 +7,14 @@ Taz seems not to have Seder Halitzah
 Even HaEzer needs to be made complex on prod.
 """
 
+import os
 import argparse
+import requests
 import unicodecsv
 from sefaria.model import *
 from sources import functions
 from sources.Shulchan_Arukh.ShulchanArukh import *
+
 
 def get_schema(en_title, he_title):
     root_node = SchemaNode()
@@ -103,37 +106,69 @@ if __name__ == "__main__":
 
     base_text_title = u"Shulchan Arukh, Even HaEzer"
     he_base_title = u"שולחן ערוך אבן העזר"
+    links = []
 
     """
     Instead of getting a book ja, we'll get a dict mapping nodes to jagged arrays. We'll then feed each ja through the
     uploader. 
     """
 
-    # if base text:
-        # {'book_name', 'he_book_name',
-        # <book_name>: root.get_base_text().render(),
-        # <Seder HaGet>: commentaries.get_commentary_by_title("Seder HaGet")
-        # ...<Seder Halitzah>: ...
-    #     }
     if user_args.title is None:
+        book_name, he_book_name = base_text_title, he_base_title
         book_data = {
-            'book_name': base_text_title,
-            'he_book_name': he_base_title,
             base_text_title: root.get_base_text().render(),
             u'{}, {}'.format(base_text_title, u'Seder HaGet'):
                 commentaries.get_commentary_by_title('Seder HaGet').render(),
             u'{}, {}'.format(base_text_title, u'Seder Halitzah'):
                 commentaries.get_commentary_by_title('Seder Halitzah').render(),
         }
+        book_index = shulchan_arukh_index(user_args.server)
 
     else:
-        book_data = {
-            'book_name': u'{} on {}'.format(user_args.title, base_text_title)
-        }
+        book_xml = commentaries.get_commentary_by_title(user_args.title)
+        book_name = u'{} on {}'.format(user_args.title, base_text_title)
+        he_book_name = u'{} על {}'.format(book_xml.titles['he'], he_base_title)
+        book_data = {}
+        book_parts = [i for i in commentaries.commentary_ids.keys() if re.search(u'{}.*'.format(user_args.title), i)]
+        for part in book_parts:
+            part_xml = commentaries.get_commentary_by_title(part)
+            part_name = part.replace(user_args.title, u'{} on {}'.format(user_args.title, base_text_title))
+            book_data[part_name] = part_xml.render()
+            links += part_xml.collect_links()
+        book_index = commentary_index(book_name, he_book_name, user_args.title)
 
-# else:
-    # {
-    #   'book_name', 'he_book_name',
-    #    <get_relevant_xmls>,
-    #    <render them>
-    # }
+        if user_args.add_term:
+            functions.add_term(user_args.title, book_xml.titles['he'], server=user_args.server)
+
+        functions.add_category(user_args.title, book_index['categories'], server=user_args.server)
+
+    if user_args.verbose:
+        print book_index
+    functions.post_index(book_index, server=user_args.server)
+    version = {
+        "versionTitle": "Something Something Lemberg Something",
+        "versionSource": "fie fi fo fum",
+        "language": "he",
+        "text": None
+    }
+    num_parts = len(book_data.items())
+    for part_name, part_ja in book_data.items():
+        version["text"] = part_ja
+        if num_parts == 1:    # We'll build the versionState at the last post
+            print "building versionState"
+            functions.post_text(part_name, version, index_count="on", server=user_args.server)
+        else:
+            print "not building versionState"
+            functions.post_text(part_name, version, server=user_args.server)
+        num_parts -= 1
+    if links:
+        functions.post_link(links, server=user_args.server)
+    functions.post_flags({'ref': book_name, 'lang': 'he', 'vtitle': version['versionTitle']},
+                         {'versionTitleInHebrew': u"""פי פיי פו פאם"""}, user_args.server)
+
+    try:
+        requests.post(os.environ['SLACK_URL'], json={'text': '{} uploaded successfully'.format(book_name)})
+    except KeyError:
+        pass
+
+
