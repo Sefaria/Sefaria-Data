@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
-from bs4 import BeautifulSoup
-import urllib2, csv, urllib
+import re
+import csv
+import codecs
+import urllib
+import urllib2
 from sefaria.model import *
+from bs4 import BeautifulSoup
 from sefaria.utils.hebrew import strip_cantillation
-import re, codecs
 
 def make_soup(url):
     req = urllib2.Request(url, headers={'User-Agent' : "Magic Browser"}) 
