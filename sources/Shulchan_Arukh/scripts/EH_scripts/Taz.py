@@ -76,7 +76,7 @@ a = {}
 
 filenames = [u"../../txt_files/Even_Haezer/part_1/Taz_vol1.txt",
              u"../../txt_files/Even_Haezer/part_2/Taz 2_with_12s.txt"]
-errors = []
+errors, volume = [], None
 for i, filename in enumerate(filenames):
     taz.remove_volume(i+1)
     if i == 0:
@@ -99,20 +99,21 @@ for i, filename in enumerate(filenames):
                                                                 u'@14': {'name': u'Get', 'end': u'!end!'},
                                                                 u'@15': {'name': u'ShmotAnashim', 'end': u'!end!'}})
     volume.validate_simanim(complete=False)
-    errors = []
-    errors += volume.mark_seifim(u'@11([\u05d0-\u05ea]{1,3})')
+    errors = volume.mark_seifim(u'@11([\u05d0-\u05ea]{1,3})')
     volume.validate_seifim()
+    for e in errors:
+        print e
 
-    errors += volume.format_text('@12', '@33', 'dh')
+    errors = volume.format_text('@12', '@33', 'dh')
+    for e in errors:
+        print e
 
     volume.render()
 
     assert isinstance(b_vol, Volume)
     volume.set_rid_on_seifim()
-    if len(sys.argv) == 2 and sys.argv[1] == "--run":
-        errors += root.populate_comment_store()
-        errors += b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u'@91', x.text) is not None, base="Even HaEzer", commentary="Turei Zahav", simanim_only=True)
-
+    root.populate_comment_store(verbose=True)
+    errors = b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u'@91', x.text) is not None)
 
     for e in errors:
         print e
@@ -128,5 +129,8 @@ names_sec = move_special_section(taz, u'Turei Zahav, Shmot Anashim', u'טורי 
 names_sec.mark_seifim(u'@11([\u05d0-\u05ea]{1,3})', enforce_order=True)
 names_sec.validate_seifim()
 names_sec.format_text(u'', u'', u'reg-text')
+for seif in names_sec.get_child():
+    assert isinstance(seif, Seif)
+    seif.Tag['rid'] = 'no-link'
 
 root.export()
