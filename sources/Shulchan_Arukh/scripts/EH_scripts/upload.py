@@ -25,8 +25,9 @@ def get_schema(en_title, he_title):
     default_node.key = 'default'
     default_node.add_structure(["Siman", "Seif"])
     root_node.append(default_node)
+    title_suffix = u" on Shulchan Arukh, Even HaEzer"
 
-    if en_title == u"Turei Zahav" or en_title == u"Pithei Teshuva":
+    if en_title == u"Turei Zahav{}".format(title_suffix) or en_title == u"Pithei Teshuva{}".format(title_suffix):
         name_node = JaggedArrayNode()
         name_node.add_primary_titles(u"Shemot Anashim V'Nashim", u"שמות אנשים ונשים")
         name_node.add_structure(["Seif"])
@@ -37,7 +38,7 @@ def get_schema(en_title, he_title):
     get_node.add_structure(["Seif"])
     root_node.append(get_node)
 
-    if en_title != u"Turei Zahav":  # Taz does not have commentary on Seder Halitzah
+    if en_title != u"Turei Zahav{}".format(title_suffix):  # Taz does not have commentary on Seder Halitzah
         halitzah_node = JaggedArrayNode()
         halitzah_node.add_primary_titles("Seder Halitzah", u"סדר חליצה")
         halitzah_node.add_structure(["Seif"])
