@@ -86,9 +86,9 @@ for i, filename in enumerate(filenames):
 
     volume.validate_simanim(complete=False)
     errors = volume.mark_seifim(u'@11([\u05d0-\u05ea]{1,3})')
-    volume.validate_seifim()
     for e in errors:
         print e
+    volume.validate_seifim()
     errors = volume.format_text('@12', '@33', 'dh')
     for e in errors:
         print e
