@@ -4,6 +4,7 @@ import requests, codecs, json
 import unicodecsv as csv
 from bs4 import BeautifulSoup
 from sefaria.model import *
+from sefaria.system.exceptions import InputError
 import regex as re
 from sources.functions import post_link
 from data_utilities.util import getGematria, numToHeb,isGematria
@@ -60,29 +61,34 @@ def scrape_links(csvfilename):
     links = []
     cnt_long = 0
     for i, row in enumerate(rows):
-        row_link = {}
-        if not i:
-            continue
-        citation_column = rows[i].select("td")
-        if re.search(u"\u05e8\u05d1\u05d9 \u05d9\u05e6\u05d7\u05e7 \u05de\u05e7\u05d5\u05e8\u05d1\u05d9\u05dc",citation_column[-1].text):
-            smk_lst = re.findall(u'''\u05e8\u05d1\u05d9 \u05d9\u05e6\u05d7\u05e7 \u05de\u05e7\u05d5\u05e8\u05d1\u05d9\u05dc, \u05e1\u05e4\u05e8 \u05de\u05e6\u05d5\u05d5\u05ea \u05e7\u05d8\u05df(.*)''',citation_column[-1].text)
-        row_link['chinukh'] = i
-        row_link['smk'] = re.findall(u'''\u05e8\u05d1\u05d9 \u05d9\u05e6\u05d7\u05e7 \u05de\u05e7\u05d5\u05e8\u05d1\u05d9\u05dc, \u05e1\u05e4\u05e8 \u05de\u05e6\u05d5\u05d5\u05ea \u05e7\u05d8\u05df(.*)''',citation_column[-1].text)
-        row_link['rambam'] = re.findall(u'''רמב"ם, ספר המצוות(.*?);''',citation_column[-1].text)
-        row_link['smg'] = re.findall(u'''רבי משה מקוצי, ספר מצוות גדול(.*?)[;,:.]''',citation_column[-1].text)
-        row_link['mishneh'] = re.findall(u'רמב"ם הלכות(.*?)(?:[;,:.]|ע"ש)',citation_column[-1].text)
-        row_link['shulchanArukh'] = re.findall(u'שו"ע(.*?)[;,:.]', citation_column[-1].text)
-        for column in ['smk','rambam', 'smg', 'mishneh', 'shulchanArukh']:
-            if len(row_link[column]) > 1:
-                print i, column
-                cnt_long+=1
-                # siman_exctractor(row_link[column], column)
-            elif row_link[column]:
-                # row_link[column] = siman_exctractor(row_link[column][0], column)
-                row_link[column] = row_link[column][0]
-        links.append(row_link)
+        for rnd in [1, 2]:
+            row_link = {}
+            if not i:
+                continue
+            citation_column = rows[i].select("td")
+            if re.search(u"\u05e8\u05d1\u05d9 \u05d9\u05e6\u05d7\u05e7 \u05de\u05e7\u05d5\u05e8\u05d1\u05d9\u05dc",citation_column[-1].text):
+                smk_lst = re.findall(u'''\u05e8\u05d1\u05d9 \u05d9\u05e6\u05d7\u05e7 \u05de\u05e7\u05d5\u05e8\u05d1\u05d9\u05dc, \u05e1\u05e4\u05e8 \u05de\u05e6\u05d5\u05d5\u05ea \u05e7\u05d8\u05df(.*)''',citation_column[-1].text)
+            row_link['chinukh'] = i
+            row_link['smk'] = re.findall(u'''\u05e8\u05d1\u05d9 \u05d9\u05e6\u05d7\u05e7 \u05de\u05e7\u05d5\u05e8\u05d1\u05d9\u05dc, \u05e1\u05e4\u05e8 \u05de\u05e6\u05d5\u05d5\u05ea \u05e7\u05d8\u05df(.*)''',citation_column[-1].text)
+            row_link['rambam'] = re.findall(u'''רמב"ם, ספר המצוות(.*?);''',citation_column[-1].text)
+            row_link['smg'] = re.findall(u'''רבי משה מקוצי, ספר מצוות גדול(.*?)[;,:.]''',citation_column[-1].text)
+            row_link['mishneh'] = re.findall(u'(רמב"ם הלכות.*?)(?:[;,:.]|ע"ש)',citation_column[-1].text)
+            row_link['shulchanArukh'] = re.findall(u'שו"ע(.*?)[;:.]', citation_column[-1].text)
+            for column in ['smk', 'rambam', 'smg', 'mishneh', 'shulchanArukh']:
+                if len(row_link[column]) > 1:
+                    if rnd == 1:
+                        row_link[column] = u" |".join(row_link[column])
+                    else:
+                        row_link[column] = siman_exctractor(row_link[column], column)
+                elif row_link[column]:
+                    if rnd == 1:
+                        row_link[column] = row_link[column][0]
+                    else:
+                        row_link[column] = siman_exctractor(row_link[column][0], column)
+                    # row_link[column] = row_link[column][0]
+            links.append(row_link)
 
-        chinukh_smk.append((i, smk_lst[-1]))
+        # chinukh_smk.append((i, smk_lst[-1]))
     print cnt_long
     with open(u'{}.csv'.format(csvfilename), 'w') as csv_file:
         writer = csv.DictWriter(csv_file, ['chinukh', 'smk', 'rambam', 'smg', 'mishneh', 'shulchanArukh']) #fieldnames = obj_list[0].keys())
@@ -161,13 +167,41 @@ def siman_exctractor(text, header):
         for t in text:
             return siman_exctractor(t, header)
     simanim = []
-    split = re.split(u'\s', text)
-    lte = {'smk':[u'סימן', u'סעיף'], 'rambam':[u'מצוות', u'וע"ש'], 'smg':[], 'mishneh':[], 'shulchanArukh':[u'', u'']}
-    list_to_egnore  = lte[header]
+    lte = {'smk': [u'סימן', u'סעיף'], 'rambam':[u'מצוות', u'וע"ש'], 'smg':[], 'mishneh':[], 'shulchanArukh':[u'', u'']}
+    list_to_egnore = lte[header]
+    full_siman = []
+    split = iter(re.split(u'\s', text))
     for word in split:
+        word = re.sub(u"[;.,']", u"", word)
         if not word or (word in list_to_egnore):
             continue
-        word = re.sub(u"[;.,']", u"", word)
+        if header == 'rambam':
+            if word == u'עשה':
+                full_siman.append(u'Positive Mitzvot')
+                continue
+            elif word == u"לא" and split.next() == u"תעשה":
+                full_siman.append(u'Negative Mitzvot')
+                continue
+        if header == 'smg':
+            if word == u'עשין':
+                full_siman.append(u'Positive Commandments')
+                continue
+            elif word == u"לאוין":
+                full_siman.append(u'Negative Commandments')
+                continue
+        if header == 'mishneh':
+            text = re.sub(u"'", u"", text)
+            while True:
+                if not text:
+                    return
+                print text
+                try:
+                    ref = Ref(text)
+                    print ref
+                    return ref
+                except InputError:
+                    split_text = re.split(u'\s', text)
+                    text = u' '.join(split_text[:-1])
         if re.search(u'-', word):
             borders = re.search(u"(.*?)-(.*)", word)
             start = getGematria(borders.group(1))
@@ -179,10 +213,11 @@ def siman_exctractor(text, header):
                 # print smk_text, simanim
                 return simanim
             else:
-                simanim.append(check_vav(word))
+                full_siman.append(check_vav(word))
+                simanim.append(full_siman)
         else:
-            smk_siman = getGematria(word)
-            simanim.append(smk_siman)
+            full_siman.append(getGematria(word))
+            simanim.append(full_siman)
     # print smk_text, simanim
     return simanim
 
@@ -258,7 +293,7 @@ def hebrew_number_regex():
 if __name__ == "__main__":
     # rambam_chinukh_lnks = scrape_wiki()
     # post_link(rambam_chinukh_lnks, VERBOSE=True)
-    scrape_links(u"Links")
+    scrape_links(u"siman_numbers")
     # links_ch_smk = links_chinukh_smk(u"smk_chinukh.csv")
     # post_link(links_ch_smk, VERBOSE=True)
     # chinukh_smg()
