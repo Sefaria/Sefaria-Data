@@ -147,14 +147,16 @@ def rambam_alt_names():
     name_dict[u'שמירת הנפש'] = name_dict[u'רוצח ושמירת נפש']
     name_dict[u'יבום'] = name_dict[u'יבום וחליצה']
     name_dict[u'חליצה'] = name_dict[u'יבום וחליצה']
+    name_dict[u'מלכים'] = name_dict[u'מלכים ומלחמות']
 
-    for name in name_dict.keys():
-        first = re.split('\s', name)
-        if len(first) > 1:
-            name_dict[first[0]] = name_dict[name]
-    del name_dict[u'איסורי']
-    del name_dict[u'טומאת']
-
+    # name_dict[u'מלכים'] = name_dict[u'מלכים ומלחמות']
+    # for name in name_dict.keys():
+    #     first = re.split('\s', name)
+    #     if len(first) > 1:
+    #         name_dict[first[0]] = name_dict[name]
+    # del name_dict[u'איסורי']
+    # del name_dict[u'טומאת']
+    # name_dict[u'כלי המקדש'] = name_dict[u'כלי המקדש והעובדין בו']
     idxset = IndexSet({'title': {'$regex': '^Mishneh Torah,'}})
     rambam_alt = defaultdict(lambda: [])
 
@@ -163,7 +165,7 @@ def rambam_alt_names():
     reishaot = []
     for r in rambam_reisha:
         for m in rambam_metziata:
-            reishaot.append(u'''{} {}'''.format(r,m))
+            reishaot.append(u'''{} {}'''.format(r, m))
 
     for reisha in reishaot:
         for alt, en_title in name_dict.items():
@@ -172,7 +174,7 @@ def rambam_alt_names():
 
     for idx in idxset:
         for newtitle in rambam_alt[idx.get_title('en')]:
-            print newtitle
+            print idx, newtitle
             idx.nodes.add_title(newtitle, "he")
             idx.save(override_dependencies=True)
 
