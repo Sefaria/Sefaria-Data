@@ -65,53 +65,38 @@ def insert_dh(contents):
     return "\n".join(new)
 
 
-
 root = Root('../../Even_HaEzer.xml')
 commentaries = root.get_commentaries()
 taz = commentaries.get_commentary_by_title("Turei Zahav")
 if taz is None:
     taz = commentaries.add_commentary("Turei Zahav", u"טורי זהב")
 
-a = {}
 
-filenames = [u"../../txt_files/Even_Haezer/part_1/Taz_vol1.txt",
+filenames = [u"../../txt_files/Even_Haezer/part_1/Taz_1_new.txt",
              u"../../txt_files/Even_Haezer/part_2/Taz 2_with_12s.txt"]
-errors, volume = [], None
+errors = []
 for i, filename in enumerate(filenames):
     taz.remove_volume(i+1)
-    if i == 0:
-        contents = convert(filename)
-        contents = insert_dh(contents)
-        volume = taz.add_volume(contents, i+1)
-    elif i == 1:
-        # correct_marks_in_file(filename, u'@00([\u05d0-\u05ea]{1,2})', u'@22([\u05d0-\u05ea]{1,3})')
-        with codecs.open(filename, 'r', 'utf-8') as infile:
-            contents = infile.read()
-            contents = insert_dh(contents.splitlines())
-        volume = taz.add_volume(contents, i+1)
+    with codecs.open(filename, 'r', 'utf-8') as infile:
+        volume = taz.add_volume(infile.read(), i+1)
     assert isinstance(volume, Volume)
-
-    base = root.get_base_text()
-    b_vol = base.get_volume(i+1)
-    #b_vol.mark_references(volume.get_book_id(), u'@77\(([\u05d0-\u05ea]{1,3})\)', group=1)
-
     volume.mark_simanim(u'@22([\u05d0-\u05ea]{1,4})', specials={u'@00': {'name': u'topic'},
                                                                 u'@14': {'name': u'Get', 'end': u'!end!'},
                                                                 u'@15': {'name': u'ShmotAnashim', 'end': u'!end!'}})
+
     volume.validate_simanim(complete=False)
     errors = volume.mark_seifim(u'@11([\u05d0-\u05ea]{1,3})')
     volume.validate_seifim()
     for e in errors:
         print e
-
     errors = volume.format_text('@12', '@33', 'dh')
     for e in errors:
         print e
 
-    volume.render()
-
-    assert isinstance(b_vol, Volume)
     volume.set_rid_on_seifim()
+    base = root.get_base_text()
+    b_vol = base.get_volume(i+1)
+    assert isinstance(b_vol, Volume)
     root.populate_comment_store(verbose=False)
     errors = b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u'@91', x.text) is not None)
 
