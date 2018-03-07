@@ -107,7 +107,7 @@ for i, filename in enumerate(filenames):
 get_sec = move_special_section(taz, u'Turei Zahav, Seder HaGet', u'טורי זהב, סדר הגט', u'Get')
 get_sec.mark_seifim(u'@11([\u05d0-\u05ea]{1,3})', enforce_order=True)
 get_sec.validate_seifim()
-get_sec.format_text(u'', u'', u'reg-text')
+get_sec.format_text(u'@12', u'@33', u'dh')
 get_sec.set_rid_on_seifim(root.get_commentary_id(u"Seder HaGet"), get_sec.get_parent().get_book_id())
 
 names_sec = move_special_section(taz, u"Turei Zahav, Shemot Anashim V'Nashim", u'טורי זהב, שמות אנשים ונשים ', u'ShmotAnashim')
