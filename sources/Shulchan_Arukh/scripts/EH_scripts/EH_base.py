@@ -152,6 +152,8 @@ if __name__ == "__main__":
     halitza_vol.mark_references(commentaries.commentary_ids[u"Beur HaGra, Seder Halitzah"], u'!([\u05d0-\u05ea]{1,3})\)', group=1)
     halitza_vol.mark_references(commentaries.commentary_ids[u"Pithei Teshuva, Seder Halitzah"], ur'@66\(([\u05d0-\u05ea]{1,3})\)', group=1)
     halitza_vol.mark_references(commentaries.commentary_ids[u"Be'er HaGolah, Seder Halitzah"], u'@44([\u05d0-\u05ea\u2022])', group=1, cyclical=True)
+    halitza_vol.convert_pattern_to_itag(u"Beit Shmuel", u"@55([\u05d0-\u05ea]{1,3})")
+    halitza_vol.convert_pattern_to_itag(u"Ba'er Hetev", u"@82([\u05d0-\u05ea]{1,3})\)")
 
     for seif in halitza_sec.get_child():
         seif.Tag['rid'] = 'no-link'
