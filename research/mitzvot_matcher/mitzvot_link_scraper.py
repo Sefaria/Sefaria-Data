@@ -167,7 +167,7 @@ def siman_exctractor(text, header):
         for t in text:
             return siman_exctractor(t, header)
     simanim = []
-    lte = {'smk': [u'סימן', u'סעיף'], 'rambam':[u'מצוות', u'וע"ש'], 'smg':[], 'mishneh':[], 'shulchanArukh':[u'', u'']}
+    lte = {'smk': [u'סימן', u'סעיף'], 'rambam':[u'מצוות', u'וע"ש'], 'smg':[], 'mishneh':[], 'shulchanArukh':[]}
     list_to_egnore = lte[header]
     full_siman = []
     split = iter(re.split(u'\s', text))
@@ -189,8 +189,8 @@ def siman_exctractor(text, header):
             elif word == u"לאוין":
                 full_siman.append(u'Negative Commandments')
                 continue
-        if header == 'mishneh':
-            text = re.sub(u"'", u"", text)
+        if header in ['mishneh', 'shulchanArukh']:
+            text = re.sub(u"'|,", u"", text)
             while True:
                 if not text:
                     return
