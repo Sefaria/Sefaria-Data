@@ -80,33 +80,44 @@ for folder in folders_in_order:
                     sheiltot[current_sheilta].append(line)
             #add index for last parsha
             parsha_range_table[-1]["End Index"]=current_sheilta
-sheiltot=sheiltot[1:]
+            
 def fix_markers_sheiltot(sheilta):
     #we have to fix markers by sheilta, to properly address the i tags
+    global shalom_current_order_number
     i_tag_table=[]
     return_array = []
     eimek_current_order_number = 1
-    shalom_current_order_number = 1
     for p in sheilta:
         p = p.replace(u"@11",u"<b>").replace(u"@33",u"</b>")
-        for eimek_match in re.findall(ur'@44\(.*?\)',p):
+        for eimek_match in re.findall(ur'@44(\*|\(.*?\))',p):
+            #print eimek_match
             if getGematria(eimek_match)>0:
                 eimek_current_order_number=getGematria(eimek_match)
             if u'*' in eimek_match:
                 p=p.replace(eimek_match,u"<i data-commentator=\"Haamek Sheilah\" data-label=\"*\" data-order=\""+str(eimek_current_order_number)+"\"></i>")
             else:
                 p=p.replace(eimek_match,u"<i data-commentator=\"Haamek Sheilah\" data-order=\""+str(eimek_current_order_number)+"\"></i>")
-        for shalom_match in re.findall(ur'@55\S*?',p):
-            if getGematria(shalom_match)>0:
+        for shalom_match in re.findall(ur'@55\S* ',p):
+            #print shalom_match, getGematria(shalom_match)
+            #print repr(shalom_match)
+            if getGematria(shalom_match)>1:
                 shalom_current_order_number=getGematria(shalom_match)
             if u'*' in shalom_match:
-                p=p.replace(shalom_match,u"<i data-commentator=\"Sheilat Shalom\" data-label=\"*\" data-order=\""+str(shalom_current_order_number)+"\"></i>")
+                p=p.replace(shalom_match,u"<i data-commentator=\"Sheilat Shalom\" data-label=\"*\" data-order=\""+str(shalom_current_order_number)+"\"></i> ")
             else:
-                p=p.replace(shalom_match,u"<i data-commentator=\"Sheilat Shalom\" data-order=\""+str(shalom_current_order_number)+"\"></i>")
+                p=p.replace(shalom_match,u"<i data-commentator=\"Sheilat Shalom\" data-order=\""+str(shalom_current_order_number)+"\"></i> ")
         return_array.append(re.sub(ur"@\d{1,4}",u"",p))
     return return_array
+    
+sheiltot=sheiltot[1:]
+shalom_current_order_number = 1
+fixed_sheiltot=[]
+for sheilta in sheiltot:
+    fixed_sheiltot.append(fix_markers_sheiltot(sheilta))
+
+
 """
-for sindex, sheilta in enumerate(sheiltot):
+for sindex, sheilta in enumerate(fixed_sheiltot):
     for pindex, paragraph in enumerate(sheilta):
         print sindex, pindex, paragraph
 """
@@ -147,22 +158,33 @@ def post_eimek_index():
     record.add_title(u'העמק שאלה', 'he', primary=True, )
     record.key = 'Haamek Sheilah'
 
-    #add node for introduction
+    #add nodes for introductions
     intro_node = JaggedArrayNode()
-    intro_node.add_title("Introduction", 'en', primary = True)
-    intro_node.add_title("הקדמה", 'he', primary = True)
-    intro_node.key = "Introduction"
+    intro_node.add_title("Kidmat HaEmek", 'en', primary = True)
+    intro_node.add_title(u'קדמת העמק', 'he', primary = True)
+    intro_node.key = "Kidmat HaEmek"
     intro_node.depth = 2
     intro_node.addressTypes = ['Integer','Integer']
-    intro_node.sectionNames = ['Section','Paragraph']
+    intro_node.sectionNames = ['Chapter','Paragraph']
+    record.append(intro_node)
+    
+    intro_node = JaggedArrayNode()
+    intro_node.add_title("Petach HaEmek", 'en', primary = True)
+    intro_node.add_title(u'פתח העמק', 'he', primary = True)
+    intro_node.key = "Petach HaEmek"
+    intro_node.depth = 2
+    intro_node.addressTypes = ['Integer','Integer']
+    intro_node.sectionNames = ['Chapter','Paragraph']
     record.append(intro_node)
     
     shetila_nodes = JaggedArrayNode()
     shetila_nodes.key = "default"
     shetila_nodes.default = True
-    shetila_nodes.depth = 2
-    shetila_nodes.addressTypes = ['Integer', 'Integer']
-    shetila_nodes.sectionNames = ['Sheilta','Comment']
+    shetila_nodes.depth = 3
+    shetila_nodes.addressTypes = ['Integer', 'Integer','Integer']
+    shetila_nodes.sectionNames = ['Sheilta','Comment','Paragraph']
+    shetila_nodes.toc_zoom=2
+
     record.append(shetila_nodes)
     
     record.validate()
@@ -171,6 +193,7 @@ def post_eimek_index():
         "title": 'Haamek Sheilah',
         "categories": ["Halakhah","Commentary"],
         "dependence": "Commentary",
+        "collective_title": "Haamek Sheilah",
         "schema": record.serialize()
     }
     post_index(index,weak_network=True)
@@ -204,19 +227,22 @@ def get_eimek_paragraph_table():
     """
     return_array=[[] for x in range(172)]
     return return_array
-get_shalom_paragraph_table():
+def get_shalom_paragraph_table():
     #to properly link the i-tags we need to make a table
-    #linking requires the sheilta-paragraph ref for the shelta side, and the sheilta-comment ref for the shalom side.
-    #for this text, the index order will always be the same as the paragraph in the shalom side.
-    #the sheilta will correspond to the first list position.
-    #so each position will be a dictionary containing order-number and text-paragraph.
-    return_array=[[] for x in range(172)]
+    #linking requires the sheilta-paragraph ref for the shelta side, and the comment ref for the shalom side.
+    #there are a few '*' refs, and for those we tack onto the last order-number (or next, for the first ones)
+    #the index position in the return array corresponds to the sheilta.
+    #the array contains dictionaries, whose title is the pargraph number and contents are the order-numbers to be linked.
+    #The order numbers correspond to the index position in the sheilat shalom as well.
+    return_array=[{} for x in range(172)]
     for sindex, sheilta in enumerate(sheiltot):
-        last_order_number=0
+        last_order_number=1
         for pindex, paragraph in enumerate(sheilta):
             for shalom_match in re.findall(ur'@55\S*?',paragraph):
-                return_array[sindex].append({})
-                return_array[sindex][-1]['sheilta_paragraph']=pindex
+                if getGematria(shalom_match)>0:
+                    if pindex in return_array[sindex-1]:
+                        return_array[sindex-1][pindex].append(getGematria(shalom_match))
+                    return_array[sindex][-1]['sheilta_paragraph']=pindex
                 if getGematria(shalom_match)>0:
                     return_array[sindex][-1]["order-number"]= getGematria(shalom_match)
                     last_order_number=getGematria(shalom_match)
@@ -225,12 +251,23 @@ get_shalom_paragraph_table():
     return return_array
 def fix_comment_markers(s):
     return re.sub(ur"@\d{1,4}",u"",s.replace(u"@11",u"<b>").replace(u"@33",u"</b>").replace(u'ADDTONEXT',u''))
-def post_eimek_text():    
-    final_text = [[] for x in range(172)]
-    add_to_next=[]
+def post_eimek_text():
+    #some test runs
+    no_eimek = [x for x in range(171)]
+    highest_eimek = [0 for x in range(171)]
+    for sindex, sheilta, in enumerate(fixed_sheiltot):
+        for pindex, paragraph in enumerate(sheilta):
+            for match in re.findall(ur'<.*?>',paragraph):
+                if u'Haamek' in match:
+                    if sindex in no_eimek:
+                        no_eimek.remove(sindex)
+                    #make sure eimek refs match by checking highest of each one
+                    if int(re.search(ur'(?<=order=\")\d*',match).group())>highest_eimek[sindex]:
+                        highest_eimek[sindex]=int(re.search(ur'(?<=order=\")\d*',match).group())
+    final_text = [[] for x in range(171)]
     for folder in folders_in_order:
         for _file in os.listdir('files/'+folder.decode('utf8')):
-            if u'העמק' in _file:
+            if u'עמק' in _file:
                 if u'הקדמת' in _file:
                     pass
                 #different sefarim are marked differently...
@@ -239,39 +276,69 @@ def post_eimek_text():
                     with open('files/'+folder+'/'+_file) as myfile:
                         lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
                     current_sheilta=-1
+                    ref_box = []
                     for line in lines:
-                        if u'@88' in line:
+                        if u'(א)' in line:
+                            if len(ref_box)>0:
+                                final_text[current_sheilta].append(ref_box)
+                                ref_box=[]
                             current_sheilta+=1
-                        #we added a tag to handle this exception
-                        elif u"ADDTONEXT" in line:
-                            add_to_next.append(line)
-                        if u'@22' not in line and u"@00" not in line and u"@88" not in line and not_blank(line):
-                            while len(add_to_next)>0:
-                                line = add_to_next.pop()+u'<br>'+line
-                            final_text[current_sheilta].append(fix_comment_markers(line))
+                        elif u'@22' in line and len(ref_box)>0:
+                            final_text[current_sheilta].append(ref_box)
+                            ref_box=[]
+                        elif u"@00" not in line and not_blank(line) and u'@22' not in line and u'@88' not in line:
+                            ref_box.append(fix_comment_markers(line))
+                    if len(ref_box)>0:
+                        final_text[current_sheilta].append(ref_box)
                 elif u"דברים" in _file:
                     _file=_file.encode('utf8')
                     with open('files/'+folder+'/'+_file) as myfile:
                         lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
                     #139 is last sheilta in Bamidbar, so we start from 140 (minus one for the 0th index and one for first label)
                     current_sheilta=138
+                    ref_box = []
                     for line in lines:
-                        if u"@22" in line and getGematria(line)==1:
-                            current_sheilta+=1
-                        elif u"@22" not in line and u"@00" not in line and not_blank(line):
-                            final_text[current_sheilta].append(fix_comment_markers(line))
+                        if not_blank(line):
+                            if u"@22" in line:
+                                if len(ref_box)>0:
+                                    final_text[current_sheilta].append(ref_box)
+                                    ref_box=[]
+                                if getGematria(line)==1:
+                                    current_sheilta+=1
+                                    while current_sheilta in no_eimek:
+                                        current_sheilta+=1
+                            elif u"@00" not in line:
+                                ref_box.append(fix_comment_markers(line))
+                    if len(ref_box)>0:
+                        final_text[current_sheilta].append(ref_box)
                 else:
+                    _file=_file.encode('utf8')
                     with open('files/'+folder+'/'+_file) as myfile:
                         lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
                     past_start=False
+                    ref_box = []
                     for line in lines:
-                        if u"@88" in line:
-                            past_start=True
-                        if past_start:
+                        if not_blank(line):
                             if u"@88" in line:
-                                current_sheilta=getGematria(line)
-                            elif u"@00" not in line and not_blank(line):
-                                final_text[current_sheilta].append(line)
+                                past_start=True
+                            if past_start:
+                                if u'00השמטות' in line or 'BREAK' in line:
+                                    break
+                                if u"@88" in line:
+                                    if len(ref_box)>0:
+                                        final_text[current_sheilta-1].append(ref_box)
+                                        ref_box=[]
+                                    current_sheilta=getGematria(line)
+                                elif u'@22' in line and u'@22(א)' not in line:
+                                    if len(ref_box)>0:
+                                        final_text[current_sheilta-1].append(ref_box)
+                                        ref_box=[]
+                                elif u"@00" not in line and u"@22" not in line:
+                                    ref_box.append(fix_comment_markers(line))
+                    if len(ref_box)>0:
+                        final_text[current_sheilta-1].append(ref_box)
+    final_text[170]=final_text[170][1:]
+    """
     #now check numbers:
     copy_paragraph_array = [row[:] for row in get_eimek_paragraph_table()]
     for sindex, sheilta in enumerate(final_text):
@@ -282,9 +349,124 @@ def post_eimek_text():
             copy_paragraph_array[sindex].pop()
         if len(copy_paragraph_array[sindex])>0:
             print "There's too many notes!"
+    """
+    
+    for sindex, sheilta in enumerate(final_text):
+        for rindex, ref in enumerate(sheilta):
+            for pindex, paragraph in enumerate(ref):
+                print sindex, rindex, pindex, paragraph
+    for sindex, sheilta in enumerate(final_text):
+        if len(sheilta)!=highest_eimek[sindex]:
+            print "Sheilta", sindex+1, "Highest Ref:",highest_eimek[sindex],"Actual Eimek Notes:", len(sheilta) 
+    
+    version = {
+        'versionTitle': 'Sheiltot d\'Rav Achai Gaon; Vilna, 1861',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001166995',
+        'language': 'he',
+        'text': final_text
+    }
+    post_text('Haamek Sheilah', version,weak_network=True, skip_links=True, index_count="on")
+    #post_text_weak_connection('Haamek Sheilah', version)#,weak_network=True)#, skip_links=True,
+def post_eimek_intros():
+    with open('files/במדבר/שאילתות עמק השאלה במדבר.txt') as myfile:
+        lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
+    in_kidmat=False
+    in_petach=False
+    next_is_same=False
+    kidmat_box=[]
+    petach_box=[]
+    for line in lines:
+        if not_blank(line):
+            in_kidmat=True
+        if u'@00להכנס בדברים של גאון בעל השאלתות והביאורים בעזרת הנותן כח לאין אונים לחבר חבורים' in line:
+            in_petach=True
+        if u'@00פרשת במדבר' in line:
+            break
+        if in_petach:
+            if next_is_same and len(petach_box)>0:
+                petach_box[-1].append(clean_intro_line(line))
+                next_is_same=False
+            else:
+                petach_box.append([clean_intro_line(line)])
+        elif in_kidmat and u"@00פתח" not in line:
+            if next_is_same and len(kidmat_box)>0:
+                kidmat_box[-1].append(clean_intro_line(line))
+                next_is_same=False
+            else:
+                kidmat_box.append([clean_intro_line(line)])
+        if u'@00' in line:
+            next_is_same=True
+    """
+    for cindex, chapter in enumerate(kidmat_box):
+        for pindex, paragraph in enumerate(chapter):
+            print "Kid",cindex, pindex, paragraph
+    for cindex, chapter in enumerate(petach_box):
+        for pindex, paragraph in enumerate(chapter):
+            print "Pet",cindex, pindex, paragraph
+    """
 
-                            
-def post_eimek_index():
+    version = {
+        'versionTitle': 'Sheiltot d\'Rav Achai Gaon; Vilna, 1861',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001166995',
+        'language': 'he',
+        'text': kidmat_box
+    }
+    post_text('Haamek Sheilah, Kidmat HaEmek', version,weak_network=True)#, skip_links=True, index_count="on")
+    #post_text_weak_connection('Haamek Sheilah', version)#,weak_network=True)#, skip_links=True,
+    
+    version = {
+        'versionTitle': 'Sheiltot d\'Rav Achai Gaon; Vilna, 1861',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001166995',
+        'language': 'he',
+        'text': petach_box
+    }
+    #post_text('Haamek Sheilah, Petach HaEmek', version,weak_network=True)#, skip_links=True, index_count="on")
+    #post_text_weak_connection('Haamek Sheilah, Petach HaEmek', version)#,weak_network=True)#, skip_links=True,
+def clean_intro_line(s):
+    s = re.sub(ur'\s@11',u'',s)
+    if u"@33" in s:
+        s = ' '.join(s.split()[1:])
+    return re.sub(ur"@\d{1,4}",u"",s)
+def link_eimek_text():
+    for sindex, sheilta in enumerate(fixed_sheiltot):
+        for pindex, paragraph in enumerate(sheilta):
+            #print paragraph
+            for match in re.findall(ur'<.*?>',paragraph):
+                if 'Haamek' in match:
+                    data_order = re.search(ur'data-order=\"\d*',match).group().split(u'"')[1]
+                    if 'data-label' in match:
+                        link = (
+                                {
+                                "refs": [
+                                         'Haamek Sheilah, {}:{}'.format(sindex+1,data_order),
+                                         'Sheiltot d\'Rav Achai Gaon {}:{}'.format(sindex+1, pindex+1),
+                                         ],
+                                "type": "commentary",
+                                'inline_reference': {
+                                    'data-commentator': "Haamek Sheilah",
+                                    'data-order': data_order,
+                                    'data-label': '*'
+                                    },
+                                "auto": True,
+                                "generated_by": "sterling_Haamek_Sheilah_linker"
+                                })
+                    else:
+                        link = (
+                                {
+                                "refs": [
+                                         'Haamek Sheilah, {}:{}'.format(sindex+1,data_order),
+                                         'Sheiltot d\'Rav Achai Gaon {}:{}'.format(sindex+1, pindex+1),
+                                         ],
+                                "type": "commentary",
+                                'inline_reference': {
+                                    'data-commentator': "Haamek Sheilah",
+                                    'data-order': data_order
+                                    },
+                                "auto": True,
+                                "generated_by": "sterling_Haamek_Sheilah_linker"
+                                })
+                    post_link(link, weak_network=True)
+def post_shalom_index():
     # create index record
     record = SchemaNode()
     record.add_title('Sheilat Shalom', 'en', primary=True, )
@@ -296,18 +478,18 @@ def post_eimek_index():
     intro_node.add_title("Introduction", 'en', primary = True)
     intro_node.add_title("הקדמה", 'he', primary = True)
     intro_node.key = "Introduction"
-    intro_node.depth = 2
-    intro_node.addressTypes = ['Integer','Integer']
-    intro_node.sectionNames = ['Section','Paragraph']
+    intro_node.depth = 1
+    intro_node.addressTypes = ['Integer']
+    intro_node.sectionNames = ['Paragraph']
     record.append(intro_node)
     
-    shetila_nodes = JaggedArrayNode()
-    shetila_nodes.key = "default"
-    shetila_nodes.default = True
-    shetila_nodes.depth = 2
-    shetila_nodes.addressTypes = ['Integer', 'Integer']
-    shetila_nodes.sectionNames = ['Sheilta','Comment']
-    record.append(shetila_nodes)
+    comment_nodes = JaggedArrayNode()
+    comment_nodes.key = "default"
+    comment_nodes.default = True
+    comment_nodes.depth = 2
+    comment_nodes.addressTypes = ['Integer','Integer']
+    comment_nodes.sectionNames = ['Comment','Paragraph']
+    record.append(comment_nodes)
     
     record.validate()
 
@@ -315,12 +497,23 @@ def post_eimek_index():
         "title": 'Sheilat Shalom',
         "categories": ["Halakhah","Commentary"],
         "dependence": "Commentary",
+        "collective_title": "Sheilat Shalom",
         "schema": record.serialize()
     }
     post_index(index,weak_network=True)
 def post_shalom_text():
-    final_text = [[] for x in range(172)]
+    #first post intro
+    with open('files/'+'בראשית'+'/'+'שאלתות בראשית שאילת שלום.txt') as myfile:
+        lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
+    intro_box = []
+    for line in lines:
+        if u"@22" in line:
+            break
+        intro_box.append(re.sub(ur"@\d{1,4}",u"",line))
+    final_text = [[] for x in range(153)]
     add_to_next=[]
+    current_sheilta=1
+    next_one_is_added=True
     for folder in folders_in_order:
         for _file in os.listdir('files/'+folder.decode('utf8')):
             if u'שלום' in _file:
@@ -332,24 +525,149 @@ def post_shalom_text():
                     if u'@22' in line:
                         past_start=True
                     if past_start:
-                        
-def post_sra_text():
-    to_post=[]
-    for sheilta in sheiltot:
-        to_post.append(fix_markers_sheiltot(sheilta))
-    for sindex, sheilta in enumerate(to_post):
-        for pindex, paragraph in enumerate(sheilta):
-            print sindex, pindex, paragraph
+                        if u'@22' in line:
+                            if u'*' not in line:
+                                current_sheilta=getGematria(line)
+                        elif not_blank(line):
+                            #print current_sheilta, final_text[current_sheilta-1]
+                            #if len(final_text[current_sheilta-1][-1])>0:
+                            #    final_text[current_sheilta-1][-1]+=u'<br>'
+                            final_text[current_sheilta-1].append(shalom_clean_line(line))
+    """
+    for cindex, comment in enumerate(final_text):
+        for pindex, paragraph in enumerate(comment):
+            print cindex, pindex, paragraph
+    """
     version = {
         'versionTitle': 'Sheiltot d\'Rav Achai Gaon; Vilna, 1861',
         'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001166995',
         'language': 'he',
-        'text': sheiltot[1:]
+        'text': intro_box
+    }
+    #post_text('Sheilat Shalom, Introduction', version,weak_network=True, skip_links=True, index_count="on")
+    post_text_weak_connection('Sheilat Shalom, Introduction', version)#,weak_network=True)#, skip_links=True,    
+    version = {
+        'versionTitle': 'Sheiltot d\'Rav Achai Gaon; Vilna, 1861',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001166995',
+        'language': 'he',
+        'text': final_text
+    }
+    post_text_weak_connection('Sheilat Shalom', version)#,weak_network=True)#, skip_links=True,
+
+def post_shalom_term():
+    term_obj = {
+        "name": "Sheilat Shalom",
+        "scheme": "commentary_works",
+        "titles": [
+            {
+                "lang": "en",
+                "text": "Sheilat Shalom",
+                "primary": True
+            },
+            {
+                "lang": "he",
+                "text": u'שאילת שלום',
+                "primary": True
+            }
+        ]
+    }
+    post_term(term_obj)
+    
+def post_eimek_term():
+    term_obj = {
+        "name": "Haamek Sheilah",
+        "scheme": "commentary_works",
+        "titles": [
+            {
+                "lang": "en",
+                "text": "Haamek Sheilah",
+                "primary": True
+            },
+            {
+                "lang": "he",
+                "text": u'העמק שאלה',
+                "primary": True
+            }
+        ]
+    }
+    post_term(term_obj)                      
+def shalom_link():
+    #for linking we just link each ref (that isn't a *) to the first ref in that index location
+    #except for the first one, where we link it to the third.
+    #keeps track of how many matches we have for each shalom index
+    shalom_index_array = [[] for x in range(153)]
+
+    for sindex, sheilta in enumerate(fixed_sheiltot):
+        for pindex, paragraph in enumerate(sheilta):
+            #print paragraph
+            for match in re.findall(ur'<.*?>',paragraph):
+                if 'Sheilat' in match:
+                    print match
+                    data_order = re.search(ur'data-order=\"\d*',match).group().split(u'"')[1]
+                    shalom_index_array[int(data_order)-1].append([])
+                    #lenlen = len(shalom_index_array[int(data_order)-1])
+                    if 'data-label' in match:
+                        link = (
+                                {
+                                "refs": [
+                                         'Sheilat Shalom, {}:{}'.format(data_order, len(shalom_index_array[int(data_order)-1])),
+                                         'Sheiltot d\'Rav Achai Gaon {}:{}'.format(sindex+1, pindex+1),
+                                         ],
+                                "type": "commentary",
+                                'inline_reference': {
+                                    'data-commentator': "Sheilat Shalom",
+                                    'data-order': data_order,
+                                    'data-label': '*'
+                                    },
+                                "auto": True,
+                                "generated_by": "sterling_sheilat_shalom_linker"
+                                })
+                    else:
+                        link = (
+                                {
+                                "refs": [
+                                         'Sheilat Shalom, {}:{}'.format(data_order, len(shalom_index_array[int(data_order)-1])),
+                                         'Sheiltot d\'Rav Achai Gaon {}:{}'.format(sindex+1, pindex+1),
+                                         ],
+                                "type": "commentary",
+                                'inline_reference': {
+                                    'data-commentator': "Sheilat Shalom",
+                                    'data-order': data_order
+                                    },
+                                "auto": True,
+                                "generated_by": "sterling_sheilat_shalom_linker"
+                                })
+                    post_link(link, weak_network=True)
+def shalom_clean_line(s):
+    s = s.replace(u"@11",u"<b>").replace(u"@33",u"</b>")
+    return re.sub(ur"@\d{1,4}",u"",s)          
+def post_sra_text():
+    """
+    for sindex, sheilta in enumerate(fixed_sheiltot):
+        for pindex, paragraph in enumerate(sheilta):
+            print sindex, pindex, paragraph
+    """
+    version = {
+        'versionTitle': 'Sheiltot d\'Rav Achai Gaon; Vilna, 1861',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001166995',
+        'language': 'he',
+        'text': fixed_sheiltot
     }
     #post_text('Sheiltot d\'Rav Achai Gaon', version,weak_network=True, skip_links=True, index_count="on")
-    ##post_text_weak_connection('Sheiltot d\'Rav Achai Gaon', version)#,weak_network=True)#, skip_links=True, index_count="on")
+    post_text_weak_connection('Sheiltot d\'Rav Achai Gaon', version)#,weak_network=True)#, skip_links=True, index_count="on")
 #post_sra_index()
-post_eimek_text()
+#post_sra_text()
+
+#post_eimek_term()
+#post_eimek_index()
+#post_eimek_intros()
+#post_eimek_text()
+link_eimek_text()
+
+#post_shalom_term()
+#post_shalom_index()
+#post_shalom_text()
+#shalom_link()
 """
 keys:
 Base Text:
@@ -360,7 +678,13 @@ Base Text:
 Eimek = 
 @88- new sheilta
 @22- new note
+and 'order=\"1' in match
+
+Intro names:
+Kidmat HaEmek / קדמת העמק [Chapter, Paragrpah]
+Petach HaEmek / פתח העמק [Chapter, Paragrpah]
 """
+
                 
 
 
