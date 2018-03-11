@@ -353,22 +353,36 @@ def toCSV(filename, list_rows, column_names):
 def get_citations(ja_smk, filenametxt):
     cittxt = codecs.open(u'{}.txt'.format(filenametxt), 'w', encoding='utf-8')
     citations = []
-    regs = {u'rambam' :re.compile(u'\u05e8\u05de\u05d1"\u05dd(.*?)(?:\.|\u05d5?\u05d8\u05d5\u05e8|\u05d5?\u05e1\u05de"?\u05d2|\n)'),
+    regs = {u'rambam': re.compile(u'(\u05e8\u05de\u05d1"\u05dd.*?)(?:\.|\u05d5?\u05d8\u05d5\u05e8|\u05d5?\u05e1\u05de"?\u05d2|\n)'),
     u'smg' : re.compile(u'(\u05e1\u05de"?\u05d2.*?)(?:\.|\u05d5?\u05d8\u05d5\u05e8|\u05d5?\u05e8\u05de\u05d1"\u05dd|\n)'),
     u'tur' : re.compile(u'\u05d8\u05d5\u05e8(.*?)(?:\.|:|\n|@)')}
     for i, siman in enumerate(ja_smk):
-        for  j,line in enumerate(siman):
+        for j, line in enumerate(siman):
             if re.search(u'@23', line):
                 cittxt.write(u"{} ".format(i+1))
                 cittxt.write(u"{} ".format(j + 1))
                 cittxt.write(re.search(u'@23(.*)', line).group(1))
                 cittxt.write(u'\n')
-                cit_dict = {"siman": i+1, "full":re.search(u'@23(.*)', line).group(1)}
+                cit_dict = {"siman": i+1, "full": re.search(u'@23(.*)', line).group(1)}
                 for comm, reg in regs.items():
+                    if comm == 'smg':
+                        continue
                     if reg.search(line):
                         cit_dict[comm] = reg.search(line).group(1)
+                        if comm == u'tur':
+                            cit_dict[comm] = u'טור, ' + reg.search(line).group(1).strip()
+                        text = cit_dict[comm]
+                        while True:
+                            if not text:
+                                break
+                            try:
+                                cit_dict[comm] = Ref(text)
+                                break
+                            except InputError:
+                                split_ref = re.split(u'\s', text)
+                                text = u' '.join(split_ref[:-1])
                 citations.append(cit_dict)
-    toCSV("citations", citations, ['siman','rambam', 'smg', 'tur', 'full'])
+    toCSV("exctract_citations", citations, ['siman', 'rambam', 'smg', 'tur', 'full'])
 
     return citations
 
@@ -836,12 +850,13 @@ def link_rambam(filename):
                 if isinstance(ref[0], Ref):
                     # continue
                     print ref
+                    all_refs +=ref
                 else:
                     print ref[0].group()
                     bad_cnt +=1
 
     print bad_cnt
-    all_refs += refs
+    # all_refs += refs
     return all_refs
 
 
@@ -887,10 +902,11 @@ if __name__ == "__main__":
     # ja_hagahot = hagahot_parse(ja_hagahot, hgh_align)
     # hg_links = link_hg(ja_hagahot, hgh_align, ja_raph)
     #
-    # post_all_smk(ja_smk, ja_raph, ja_hagahot, raph_links, hg_links)
+    # # post_all_smk(ja_smk, ja_raph, ja_hagahot, raph_links, hg_links)
     # smg_links = link_smg(ja_smk, u'smg_smk_test')
     # post_link(smg_links, VERBOSE=True)
     # post_link(link_remazim(), VERBOSE=True)
     # remazim_sm_g_k = link_smk_remazim_to_smg_remazim(smg_links)
     # post_link(remazim_sm_g_k, VERBOSE=True)
     # link_rambam("testrambamibid.txt")
+    get_citations(ja_smk, "exctract_cit.txt")
