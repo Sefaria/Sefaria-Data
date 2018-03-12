@@ -7,11 +7,14 @@ Taz seems not to have Seder Halitzah
 Even HaEzer needs to be made complex on prod.
 """
 
+import os
 import argparse
+import requests
 import unicodecsv
 from sefaria.model import *
 from sources import functions
 from sources.Shulchan_Arukh.ShulchanArukh import *
+
 
 def get_schema(en_title, he_title):
     root_node = SchemaNode()
@@ -22,8 +25,9 @@ def get_schema(en_title, he_title):
     default_node.key = 'default'
     default_node.add_structure(["Siman", "Seif"])
     root_node.append(default_node)
+    title_suffix = u" on Shulchan Arukh, Even HaEzer"
 
-    if en_title == u"Turei Zahav" or en_title == u"Pithei Teshuva":
+    if en_title == u"Turei Zahav{}".format(title_suffix) or en_title == u"Pithei Teshuva{}".format(title_suffix):
         name_node = JaggedArrayNode()
         name_node.add_primary_titles(u"Shemot Anashim V'Nashim", u"שמות אנשים ונשים")
         name_node.add_structure(["Seif"])
@@ -34,7 +38,7 @@ def get_schema(en_title, he_title):
     get_node.add_structure(["Seif"])
     root_node.append(get_node)
 
-    if en_title != u"Turei Zahav":  # Taz does not have commentary on Seder Halitzah
+    if en_title != u"Turei Zahav{}".format(title_suffix):  # Taz does not have commentary on Seder Halitzah
         halitzah_node = JaggedArrayNode()
         halitzah_node.add_primary_titles("Seder Halitzah", u"סדר חליצה")
         halitzah_node.add_structure(["Seif"])
@@ -89,6 +93,40 @@ def generic_cleaner(ja, clean_callback):
             ja[i][j] = clean_callback(seif)
 
 
+def even_haezer_clean(ja):
+    def clean(strn):
+        strn = re.sub(ur'\(?%\)', u'', strn)
+        strn = re.sub(u'/[\u05d0-\u05ea]{1,3}\]', u'', strn)
+        strn = re.sub(u'(\s){2,}', u'\g<1>', strn)
+        strn = re.sub(u' +$', u'', strn)
+        return strn
+
+    generic_cleaner(ja, clean)
+
+
+def gra_clean(ja):
+    def clean(strn):
+        strn = re.sub(ur'\+44[)\]]', u'', strn)
+        strn = re.sub(u'(\s){2,}', u'\g<1>', strn)
+        strn = re.sub(u' +$', u'', strn)
+        return strn
+    generic_cleaner(ja, clean)
+
+
+def do_nothing(ja):
+    pass
+
+
+cleaning_methods = {
+    u"Beur HaGra": gra_clean,
+    u"Pithei Teshuva": do_nothing,
+    u"Turei Zahav": do_nothing,
+    u"Be'er HaGolah": do_nothing
+
+
+}
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-t", "--title", default=None)
@@ -103,37 +141,80 @@ if __name__ == "__main__":
 
     base_text_title = u"Shulchan Arukh, Even HaEzer"
     he_base_title = u"שולחן ערוך אבן העזר"
+    links = []
 
     """
     Instead of getting a book ja, we'll get a dict mapping nodes to jagged arrays. We'll then feed each ja through the
     uploader. 
     """
 
-    # if base text:
-        # {'book_name', 'he_book_name',
-        # <book_name>: root.get_base_text().render(),
-        # <Seder HaGet>: commentaries.get_commentary_by_title("Seder HaGet")
-        # ...<Seder Halitzah>: ...
-    #     }
     if user_args.title is None:
+        book_name, he_book_name = base_text_title, he_base_title
         book_data = {
-            'book_name': base_text_title,
-            'he_book_name': he_base_title,
             base_text_title: root.get_base_text().render(),
             u'{}, {}'.format(base_text_title, u'Seder HaGet'):
                 commentaries.get_commentary_by_title('Seder HaGet').render(),
             u'{}, {}'.format(base_text_title, u'Seder Halitzah'):
                 commentaries.get_commentary_by_title('Seder Halitzah').render(),
         }
+        book_index = shulchan_arukh_index(user_args.server)
+        cleaner_method = even_haezer_clean
+        # even_haezer_clean(book_data[base_text_title])
 
     else:
-        book_data = {
-            'book_name': u'{} on {}'.format(user_args.title, base_text_title)
-        }
+        book_xml = commentaries.get_commentary_by_title(user_args.title)
+        book_name = u'{} on {}'.format(user_args.title, base_text_title)
+        he_book_name = u'{} על {}'.format(book_xml.titles['he'], he_base_title)
+        book_data = {}
+        book_parts = [i for i in commentaries.commentary_ids.keys() if re.search(u'{}.*'.format(user_args.title), i)]
+        for part in book_parts:
+            part_xml = commentaries.get_commentary_by_title(part)
+            part_name = part.replace(user_args.title, u'{} on {}'.format(user_args.title, base_text_title))
+            book_data[part_name] = part_xml.render()
+            links += part_xml.collect_links()
+        book_index = commentary_index(book_name, he_book_name, user_args.title)
+        cleaner_method = cleaning_methods[user_args.title]
 
-# else:
-    # {
-    #   'book_name', 'he_book_name',
-    #    <get_relevant_xmls>,
-    #    <render them>
-    # }
+        if user_args.add_term:
+            functions.add_term(user_args.title, book_xml.titles['he'], server=user_args.server)
+
+        functions.add_category(user_args.title, book_index['categories'], server=user_args.server)
+    for piece in book_data.values():
+        cleaner_method(piece)
+
+    if user_args.verbose:
+        print book_index
+    functions.post_index(book_index, server=user_args.server)
+    version = {
+        "versionTitle": "Apei Ravrevei: Shulchan Aruch Even HaEzer, Lemberg, 1886",
+        "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002097680",
+        "language": "he",
+        "text": None
+    }
+    num_parts = len(book_data.items())
+    for part_name, part_ja in book_data.items():
+        if len(part_ja) == 1:
+            version["text"] = part_ja[0]
+        else:
+            version["text"] = part_ja
+        if num_parts == 1:    # We'll build the versionState at the last post
+            print "building versionState"
+            functions.post_text(part_name, version, index_count="on", server=user_args.server)
+        else:
+            print "not building versionState"
+            functions.post_text(part_name, version, server=user_args.server)
+        num_parts -= 1
+    if links:
+        functions.post_link(links, server=user_args.server)
+
+    flags = {'versionTitleInHebrew': u"""אפי רברבי: שלחן ערוך אבן העזר, למברג תרמ"ו"""}
+    if user_args.title is None:
+        flags['priority'] = 2
+    functions.post_flags({'ref': book_name, 'lang': 'he', 'vtitle': version['versionTitle']}, flags, user_args.server)
+
+    try:
+        requests.post(os.environ['SLACK_URL'], json={'text': '{} uploaded successfully'.format(book_name)})
+    except KeyError:
+        pass
+
+
