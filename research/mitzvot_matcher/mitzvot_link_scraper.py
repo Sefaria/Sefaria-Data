@@ -290,12 +290,45 @@ def hebrew_number_regex():
     return re.compile(rx, re.VERBOSE)
 
 
+def link_sfrMitzvot_shortCounting():
+    links = []
+    # Positive Mitzvot
+    pos_sefer_mitzvot = Ref(u'Sefer HaMitzvot, Positive Commandments').all_segment_refs()
+    for m, sefer_ref in enumerate(pos_sefer_mitzvot):
+        mitzva_len =len(sefer_ref.all_segment_refs())
+        link = ({"refs": [
+            u'Mishneh Torah, Positive Mitzvot.{}'.format(m+1),
+            u'Sefer HaMitzvot, Positive Commandments.{}.1-{}'.format(m+1, mitzva_len)
+        ],
+            "type": "Sifrei Mitzvot",
+            "auto": True,
+            "generated_by": "sfrrambam_shortcount_sfm_linker"
+        })
+        links.append(link)
+
+    # Positive Mitzvot
+    neg_sefer_mitzvot = Ref(u'Sefer HaMitzvot, Negative Commandments').all_segment_refs()
+    for m, sefer_ref in enumerate(neg_sefer_mitzvot):
+        mitzva_len =len(sefer_ref.all_segment_refs())
+        link = ({"refs": [
+            u'Mishneh Torah, Negative Mitzvot.{}'.format(m+1),
+            u'Sefer HaMitzvot, Negative Commandments.{}.1-{}'.format(m+1, mitzva_len)
+        ],
+            "type": "Sifrei Mitzvot",
+            "auto": True,
+            "generated_by": "sfrrambam_shortcount_sfm_linker"
+        })
+        links.append(link)
+
+    return links
+
 if __name__ == "__main__":
     # rambam_chinukh_lnks = scrape_wiki()
     # post_link(rambam_chinukh_lnks, VERBOSE=True)
-    scrape_links(u"siman_numbers")
+    # scrape_links(u"siman_numbers")
     # links_ch_smk = links_chinukh_smk(u"smk_chinukh.csv")
     # post_link(links_ch_smk, VERBOSE=True)
     # chinukh_smg()
+    post_link(link_sfrMitzvot_shortCounting(), VERBOSE=True)
 
 
