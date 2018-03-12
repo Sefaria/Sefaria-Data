@@ -371,6 +371,11 @@ def get_citations(ja_smk, filenametxt):
                         cit_dict[comm] = reg.search(line).group(1)
                         if comm == u'tur':
                             cit_dict[comm] = u'טור, ' + reg.search(line).group(1).strip()
+                        if comm == u'rambam':
+                            testing = cit_dict[comm]
+                            cit_dict[comm] = sarsehu(cit_dict[comm])
+                            if testing != cit_dict[comm]:
+                                print cit_dict[comm]
                         text = cit_dict[comm]
                         while True:
                             if not text:
@@ -811,7 +816,18 @@ def link_smg(ja_smk, filenametxt):
     return links
 
 
+def sarsehu(line):
+    if re.search(u'''(מ|ד)(הלכו'|הלכות|ה"ל|הל')''', line):
+        line = re.sub(u"[:;,.']", u'', line)
+        line = re.sub(u'רמב"ם (.*?) (?:מ|ד)(?:הלכות?|ה"ל|הל)(.*)', u'רמב"ם הלכות \g<2> \g<1>', line)
+        line = re.sub(u'\s+', u' ', line)
+    return line
+
 def link_rambam(filename):
+
+
+    # according to the new method Ref is catching the rambam refs, now we need to read from the CSV,
+    # write code to make itrations on the csv after it gets qa correction, and then create the linking from it.
     yad_list = library.get_indexes_in_category(u"Mishneh Torah")
     schema_yad_dict = {}
     for title in yad_list:
