@@ -519,7 +519,7 @@ class XML_to_JaggedArray:
                 array.append(x)
 
         if len(array) > 0 and type(array[0]) is not list: #not list in other words string or unicode
-            array = self.pre_parse(array)
+            array = self.pre_parse(array, node_name)
             array = self.parse(array, self.footnotes, node_name)
             self.any_problems(array, node_name)
         return array
@@ -533,29 +533,55 @@ class XML_to_JaggedArray:
             print "PROBLEM IN"
             print node_name
 
-    def pre_parse(self, text_arr):
-        p = re.compile(u"(\d+)[\.|\s+\.]+")
-        content = {}
+    def pre_parse(self, text_arr, node_name):
+        p = re.compile(u"(\d+)[\)|\s+\)]+")
+        content = []
         prev = 1
-        '''
+        found_blockquote = 0
+        multiple_numbering = 0
+        lines_with_no_small_or_numbers = 0 #dont fit into either scheme
+        found = []
+        prev_had_number = False
+        # If number already exists, don't remove it and append it to prev number
+        intro_text = ""
         for count, line in enumerate(text_arr):
-            match = p.match(line)
-            if match:
-                num = int(match.group(1))
-                if num not in content:
-                    content[num] = line.replace(match.group(0),"")
+            matches = re.findall(u"^\d+[\)|\s+\)]+", line)
+            if len(matches) >= 1:
+                assert not "<small>" in line
+                if matches[0] not in found:
+                    match = matches[0]
+                    found.append(match)
+                    content.append(line.replace(match, "", 1))
                 else:
-                    content[num] += "<br>" + line.replace(match.group(0),"")
-                prev = num
-            else:
-                if prev in content:
-                    content[prev] += "<br>" + line
+                    #this is not an actual numbered comment since the number already appeared, we can assume
+                    content.append(line)
+                    multiple_numbering += 1
+                if intro_text:
+                    content[-1] = intro_text + "<br>" + content[-1]
+                    intro_text = ""
+            elif len(matches) == 0:
+                found_blockquote += 1
+                if "<small>" not in line and not line.startswith("Preface"):
+                    lines_with_no_small_or_numbers += 1
+                if len(content) > 0:
+                    #this is when an intro to a segment occurs in the middle of a chapter
+                    if intro_text:
+                        intro_text += "<br>"
+                    intro_text += line
                 else:
-                    content[prev] = line
+                    #this is when intro is first paragraph of chapter
+                    intro_text += line
+        still_has_intro_text = intro_text != "" # intro_text should have been inserted into a comment
 
-        content = convertDictToArray(content, empty="")
-        '''
-        return text_arr
+        if still_has_intro_text:
+            print "{} still has intro text.".format(node_name)
+        if multiple_numbering:
+            print "{} now has {} paragraphs that have multiple numbers".format(node_name, multiple_numbering)
+        if found_blockquote:
+            print "{} now has {} paragraphs that are small".format(node_name, found_blockquote)
+        if lines_with_no_small_or_numbers:
+            print "{} now has {} paragraphs that are not small or numbered".format(node_name, lines_with_no_small_or_numbers)
+        return content
 
     def sort_by_book_order(self, key):
         if key == "text":

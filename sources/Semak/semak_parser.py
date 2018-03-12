@@ -353,22 +353,45 @@ def toCSV(filename, list_rows, column_names):
 def get_citations(ja_smk, filenametxt):
     cittxt = codecs.open(u'{}.txt'.format(filenametxt), 'w', encoding='utf-8')
     citations = []
-    regs = {u'rambam' :re.compile(u'\u05e8\u05de\u05d1"\u05dd(.*?)(?:\.|\u05d5?\u05d8\u05d5\u05e8|\u05d5?\u05e1\u05de"?\u05d2|\n)'),
+    regs = {u'rambam': re.compile(u'(\u05e8\u05de\u05d1"\u05dd.*?)(?:\.|\u05d5?\u05d8\u05d5\u05e8|\u05d5?\u05e1\u05de"?\u05d2|\n)'),
     u'smg' : re.compile(u'(\u05e1\u05de"?\u05d2.*?)(?:\.|\u05d5?\u05d8\u05d5\u05e8|\u05d5?\u05e8\u05de\u05d1"\u05dd|\n)'),
     u'tur' : re.compile(u'\u05d8\u05d5\u05e8(.*?)(?:\.|:|\n|@)')}
     for i, siman in enumerate(ja_smk):
-        for  j,line in enumerate(siman):
+        for j, line in enumerate(siman):
             if re.search(u'@23', line):
                 cittxt.write(u"{} ".format(i+1))
                 cittxt.write(u"{} ".format(j + 1))
                 cittxt.write(re.search(u'@23(.*)', line).group(1))
                 cittxt.write(u'\n')
-                cit_dict = {"siman": i+1, "full":re.search(u'@23(.*)', line).group(1)}
+                cit_dict = {"siman": i+1, "full": re.search(u'@23(.*)', line).group(1)}
                 for comm, reg in regs.items():
+                    if comm == 'smg':
+                        continue
                     if reg.search(line):
                         cit_dict[comm] = reg.search(line).group(1)
+                        if comm == u'tur':
+                            cit_dict[comm] = u'טור, ' + reg.search(line).group(1).strip()
+                        if comm == u'rambam':
+                            testing = cit_dict[comm]
+                            cit_dict[comm] = sarsehu(cit_dict[comm])
+                            if testing != cit_dict[comm]:
+                                print cit_dict[comm]
+                        text = cit_dict[comm]
+                        while True:
+                            if not text:
+                                break
+                            try:
+                                cit_dict[comm] = Ref(text)
+                                break
+                            except InputError:
+                                split_ref = re.split(u'\s', text)
+                                text = u' '.join(split_ref[:-1])
                 citations.append(cit_dict)
-    toCSV("citations", citations, ['siman','rambam', 'smg', 'tur', 'full'])
+    links, smgs = link_smg(filenametxt)
+    for (smk_siman, smg) in smgs:
+        citations[int(smk_siman)-1][u'smg'] = eval(smg)
+
+    toCSV(filenametxt, citations, ['siman', 'rambam', 'smg', 'tur', 'full'])
 
     return citations
 
@@ -767,10 +790,17 @@ def link_remazim():
     return links
 
 
-def link_smg(ja_smk, filenametxt):
-    get_citations(ja_smk, filenametxt)
+def link_smg(filenametxt):
+    '''
+
+    :param ja_smk:
+    :param filenametxt: a txt file where the lines may have a smg citation, get_citations creates it. note that get_citations calls this method
+    :return: links = links smk-smg, smgis = list of tupules (smk_siman, smg) use smgies for csv of the full @23line in smk
+    '''
+    # get_citations(ja_smk, filenametxt)
     run1(filenametxt, EM=False)
     links = []
+    smgis = []
     i = 0
     with open(u'{}.csv'.format(filenametxt), 'r') as csvfile:
         seg_reader = csv.DictReader(csvfile)
@@ -781,6 +811,7 @@ def link_smg(ja_smk, filenametxt):
             smg = row[u'Semag']
             simanlen = len(Ref(u'Sefer Mitzvot Katan {}'.format(siman)).all_segment_refs())
             if smg:
+                smgis.append((siman, smg))
                 smg = eval(row[u'Semag'])
                 for smgi in smg:
                     # and to the next segment but not to all segments of the siman
@@ -794,10 +825,22 @@ def link_smg(ja_smk, filenametxt):
                     })
                     links.append(link)
 
-    return links
+    return links, smgis
+
+
+def sarsehu(line):
+    if re.search(u'''(מ|ד)(הלכו'|הלכות|ה"ל|הל')''', line):
+        line = re.sub(u"[:;,.']", u'', line)
+        line = re.sub(u'רמב"ם (.*?) (?:מ|ד)(?:הלכות?|ה"ל|הל)(.*)', u'רמב"ם הלכות \g<2> \g<1>', line)
+        line = re.sub(u'\s+', u' ', line)
+    return line
 
 
 def link_rambam(filename):
+
+
+    # according to the new method Ref is catching the rambam refs, now we need to read from the CSV,
+    # write code to make itrations on the csv after it gets qa correction, and then create the linking from it.
     yad_list = library.get_indexes_in_category(u"Mishneh Torah")
     schema_yad_dict = {}
     for title in yad_list:
@@ -836,12 +879,13 @@ def link_rambam(filename):
                 if isinstance(ref[0], Ref):
                     # continue
                     print ref
+                    all_refs +=ref
                 else:
                     print ref[0].group()
                     bad_cnt +=1
 
     print bad_cnt
-    all_refs += refs
+    # all_refs += refs
     return all_refs
 
 
@@ -887,10 +931,11 @@ if __name__ == "__main__":
     # ja_hagahot = hagahot_parse(ja_hagahot, hgh_align)
     # hg_links = link_hg(ja_hagahot, hgh_align, ja_raph)
     #
-    # post_all_smk(ja_smk, ja_raph, ja_hagahot, raph_links, hg_links)
+    # # post_all_smk(ja_smk, ja_raph, ja_hagahot, raph_links, hg_links)
     # smg_links = link_smg(ja_smk, u'smg_smk_test')
     # post_link(smg_links, VERBOSE=True)
     # post_link(link_remazim(), VERBOSE=True)
     # remazim_sm_g_k = link_smk_remazim_to_smg_remazim(smg_links)
     # post_link(remazim_sm_g_k, VERBOSE=True)
     # link_rambam("testrambamibid.txt")
+    get_citations(ja_smk, "exctract")

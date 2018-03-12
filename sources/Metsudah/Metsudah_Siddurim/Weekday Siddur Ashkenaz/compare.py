@@ -177,20 +177,21 @@ def get_all_tags(text):
 
 
 if __name__ == "__main__":
-    # with open('metsudah code.csv') as f:
-    #     char_map = get_map(f)
+    with open('metsudah code.csv') as f:
+         char_map = get_map(f)
     orig_text = get_text("weekday_tagged_updated.txt")
-    # heb_subset = get_heb_indices(orig_text)
-    # decoded_text, bad_char_and_line, cantillation_indices = replace_chars(orig_text, char_map, heb_subset)
-    # with open("Weekday Siddur Ashkenaz/weekday.txt", 'w') as f:
-    #     for line in decoded_text:
-    #         f.write(line)
-    #cantillation_indices = sort_indexes(cantillation_indices) #places where cantillation marks appear
-    #text = correct_hebrew_in_tags(text, char_map)
+    heb_subset = get_heb_indices(orig_text)
+    decoded_text, bad_char_and_line, cantillation_indices = replace_chars(orig_text, char_map, heb_subset)
+    with open("./weekday_tagged_updated_converted.txt", 'w') as f:
+        for line in decoded_text:
+            f.write(line)
+    cantillation_indices = sort_indexes(cantillation_indices) #places where cantillation marks appear
+    text = correct_hebrew_in_tags(decoded_text, char_map)
     cats = ["Liturgy"]
     parser = Metsudah_Parser("Siddur Sefard Linear", u"סידור ספרד דו לשוני", cats=cats, vtitle="The Metsudah Siddur...",
-                vsource="http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002211687", input_text=orig_text, node_separator="|")
+                vsource="http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002211687", input_text=text, node_separator="|")
     parser.parse_into_en_and_he_lists()
+    parser.replace_tags_in_all_lines()
     parser.create_schema()
     post_index(parser.index, server="http://draft.sefaria.org")
     parser.post_text("http://draft.sefaria.org")

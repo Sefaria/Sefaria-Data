@@ -209,6 +209,13 @@ class Metsudah_Parser:
         #     line = line.replace(char, "")
         return line
 
+    def replace_tags_in_all_lines(self):
+        for lang in ["en", "he"]:
+            for chapter in self.text[lang]:
+                for line_n, line in enumerate(self.text[lang][chapter]):
+                    self.text[lang][chapter][line_n] = self.replace_tags(line, skip_html=True)
+
+
     def is_header(self, line):
         # if header, return depth; otherwise 0
         for h in self.headers:

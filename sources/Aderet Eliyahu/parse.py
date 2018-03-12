@@ -12,7 +12,7 @@ from collections import Counter
 
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 
-server = "http://draft.sefaria.org"
+SERVER = "http://draft.sefaria.org"
 
 def get_poss_parsha(line):
     line = line.replace(u"@00", u"")[0:-1]
@@ -163,15 +163,34 @@ def derive_tzror_from_base(tzror, base, prev_row):
             tzror = ":".join(prev_tzror.split(":")[0:-1]) + ":" + str(segment)
         else:
             #if base not in prev_tzror then this is the first one
-            tzror = "Tzror HaMor, {}:1".format(base)
+            tzror = "Tzror HaMor on Torah, {}:1".format(base)
 
     if base not in tzror: #if base doesn't fit inside tzror, they are not connected properly
         print base
     return tzror
 
+
 def interpret_csv():
+    def add_prev_text_and_ref(range_starts_at_row, how_many_in_current_range, running_comment, text_and_ref):
+        assert range_starts_at_row != "" and how_many_in_current_range > 0
+        prev_base_ref = range_starts_at_row[2]
+        prev_tzror_start_ref = range_starts_at_row[1]
+        prev_tzror_section_ref = ":".join(prev_tzror_start_ref.split(":")[:-1])
+        start_sec = int(prev_tzror_start_ref.split(":")[-1])
+        end_sec = start_sec + how_many_in_current_range
+        for i in range(start_sec, end_sec+1):
+            curr_ref = prev_tzror_section_ref + ":" + str(i)
+            curr_comment = running_comment[i - start_sec]
+            curr_comment = curr_comment.replace("@11", "<b>").replace("@33", "</b>")
+            curr_comment = curr_comment.replace("@44", "<b>").replace("@55", "</b>")
+            assert len(curr_comment.split("<b>")) == len(curr_comment.split("</b>"))
+            text_and_ref.append((curr_comment, curr_ref))
+        prev_tzror_ref = prev_tzror_start_ref + "-" + str(end_sec)
+        return prev_tzror_ref, prev_base_ref
+
+
     #Everytime there's an 11, add it to comment with current ref
-    #but when there's a first 44, remove previous one and make that beginning of running_comment
+    #but when there's a first 44, remove previous one and make that beginning   of running_comment
     text_and_ref = [] #tuples
     with open("Tzror HaMor.csv") as f:
         parsha_csv = UnicodeReader(f)
@@ -179,7 +198,7 @@ def interpret_csv():
         links = []
         range_starts_at_row = ""
         how_many_in_current_range = 0
-        running_comment = ""
+        running_comment = []
         for row_n, row in enumerate(parsha_csv):
             if row_n == 0:
                 continue
@@ -189,64 +208,73 @@ def interpret_csv():
             if "@44" in comment and "@11" not in comment:
                 if "@11" in prev_row[0] and "@44" not in prev_row[0]:
                     del links[-1]
-                    running_comment += text_and_ref.pop()[0]
+                    running_comment.append(text_and_ref.pop()[0])
                     range_starts_at_row = prev_row
-                else:
-                    running_comment += comment
+                running_comment.append(comment)
                 how_many_in_current_range += 1
             elif "@44" not in comment and "@11" in comment:
                 if prev_row and "@44" in prev_row[0] and "@11" not in prev_row[0]:
                     #before creating link for this row, create a link for previous rows that are a range
-                    assert range_starts_at_row != "" and how_many_in_current_range > 0
-                    prev_base_ref = range_starts_at_row[2]
-                    prev_tzror_start_ref = range_starts_at_row[1]
-                    start_sec = int(prev_tzror_start_ref.split(":")[-1])
-                    end_sec = str(start_sec + how_many_in_current_range)
-                    prev_tzror_ref = prev_tzror_start_ref + "-" + end_sec
+                    #link creation is fine, but need to add individual text and ref
+                    prev_tzror_ref, prev_base_ref = add_prev_text_and_ref(range_starts_at_row, how_many_in_current_range, running_comment, text_and_ref)
                     how_many_in_current_range = 0
                     range_starts_at_row = ""
+                    running_comment = []
                     assert prev_base_ref in prev_tzror_ref
-                    text_and_ref.append((running_comment, prev_tzror_ref))
-                    running_comment = ""
                     links.append({'refs': [prev_tzror_ref, prev_base_ref], 'type': 'commentary', 'auto': 'True',
-                              'generated_by': "tzrorhamor"})
-
+                                  'generated_by': "tzrorhamor"})
+                comment = comment.replace("@11", "<b>").replace("@33", "</b>")
+                assert len(comment.split("<b>")) == len(comment.split("</b>"))
                 text_and_ref.append((comment, tzror_ref))
                 links.append({'refs': [tzror_ref, base_ref], 'type': 'commentary', 'auto': 'True',
                               'generated_by': "tzrorhamor"})
             else:
-                raise AssertionError, 'Shouldnt be here'
+                print row[1]
+                print row[0]
 
             prev_row = row
 
-    pass
+    post_text_and_ref(text_and_ref, "Tzror HaMor on Torah", SERVER, 'he')
+    post_link(links, server=SERVER)
 
-def post_line(comment, this_ref):
-    if this_ref:
-        send_text = {
-            "text": comment,
-            "versionTitle": "Aderet Eliyahu",
-            "versionSource": server,
-            "language": "he"
-        }
-        post_text(this_ref, send_text, server=server)
+
+
+def post_text_and_ref(text_and_ref, vtitle, SERVER, lang):
+    def post_line(comment, this_ref):
+        if this_ref:
+            comment = comment
+            send_text = {
+                "text": comment,
+                "versionTitle": vtitle,
+                "versionSource": SERVER,
+                "language": lang
+            }
+            post_text(this_ref, send_text, server=SERVER)
+
+    for text, ref in text_and_ref:
+        post_line(text, ref)
+
 
 
 def create_index(text):
     root = SchemaNode()
-    root.add_primary_titles("Tzror HaMor", u"צרור המור")
+    root.add_primary_titles("Tzror HaMor on Torah", u"צרור המור על תורה")
     for book in library.get_indexes_in_category("Torah"):
         node = JaggedArrayNode()
         node.add_primary_titles(book, library.get_index(book).get_title('he'))
-        node.add_structure(["Perek", "Pasuk", "Paragraph"])
+        node.add_structure(["Chapter", "Verse", "Paragraph"])
+        node.toc_zoom = 2
         root.append(node)
     root.validate()
     index = {
+        "dependence": "Commentary",
+        "collective_title": "Tzror HaMor",
+        "base_text_titles": ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"],
         "schema": root.serialize(),
-        "title": "Tzror HaMor",
-        "categories": ["Tanakh", "Commentary", "Tzror HaMor"]
+        "title": "Tzror HaMor on Torah",
+        "categories": ["Tanakh", "Commentary"]
     }
-    post_index(index, server=server)
+    post_index(index, server="http://draft.sefaria.org")
 
 def restruct_text(text, parsha_order):
     for parsha in parsha_order:
@@ -300,7 +328,9 @@ if __name__ == "__main__":
     #         aderet_text[book][perek] = perek_dict
     #     aderet_text[book] = convertDictToArray(aderet_text[book])
 
-    #create_index(aderet_text)
+    #add_term("Aderet Eliyahu", u"אדרת אליהו", server="https://www.sefaria.org")
+    #add_category("Aderet Eliyahu", ["Tanakh", "Commentary", "Aderet Eliyahu"], "https://www.sefaria.org")
+    create_index(aderet_text)
     #aderet_text = restruct_text(aderet_text, parsha_order)
     #get_pasukim(aderet_text, parsha_order)
     interpret_csv()
