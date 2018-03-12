@@ -387,7 +387,11 @@ def get_citations(ja_smk, filenametxt):
                                 split_ref = re.split(u'\s', text)
                                 text = u' '.join(split_ref[:-1])
                 citations.append(cit_dict)
-    toCSV("exctract_citations", citations, ['siman', 'rambam', 'smg', 'tur', 'full'])
+    links, smgs = link_smg(filenametxt)
+    for (smk_siman, smg) in smgs:
+        citations[int(smk_siman)-1][u'smg'] = eval(smg)
+
+    toCSV(filenametxt, citations, ['siman', 'rambam', 'smg', 'tur', 'full'])
 
     return citations
 
@@ -786,10 +790,17 @@ def link_remazim():
     return links
 
 
-def link_smg(ja_smk, filenametxt):
-    get_citations(ja_smk, filenametxt)
+def link_smg(filenametxt):
+    '''
+
+    :param ja_smk:
+    :param filenametxt: a txt file where the lines may have a smg citation, get_citations creates it. note that get_citations calls this method
+    :return: links = links smk-smg, smgis = list of tupules (smk_siman, smg) use smgies for csv of the full @23line in smk
+    '''
+    # get_citations(ja_smk, filenametxt)
     run1(filenametxt, EM=False)
     links = []
+    smgis = []
     i = 0
     with open(u'{}.csv'.format(filenametxt), 'r') as csvfile:
         seg_reader = csv.DictReader(csvfile)
@@ -800,6 +811,7 @@ def link_smg(ja_smk, filenametxt):
             smg = row[u'Semag']
             simanlen = len(Ref(u'Sefer Mitzvot Katan {}'.format(siman)).all_segment_refs())
             if smg:
+                smgis.append((siman, smg))
                 smg = eval(row[u'Semag'])
                 for smgi in smg:
                     # and to the next segment but not to all segments of the siman
@@ -813,7 +825,7 @@ def link_smg(ja_smk, filenametxt):
                     })
                     links.append(link)
 
-    return links
+    return links, smgis
 
 
 def sarsehu(line):
@@ -822,6 +834,7 @@ def sarsehu(line):
         line = re.sub(u'רמב"ם (.*?) (?:מ|ד)(?:הלכות?|ה"ל|הל)(.*)', u'רמב"ם הלכות \g<2> \g<1>', line)
         line = re.sub(u'\s+', u' ', line)
     return line
+
 
 def link_rambam(filename):
 
@@ -925,4 +938,4 @@ if __name__ == "__main__":
     # remazim_sm_g_k = link_smk_remazim_to_smg_remazim(smg_links)
     # post_link(remazim_sm_g_k, VERBOSE=True)
     # link_rambam("testrambamibid.txt")
-    get_citations(ja_smk, "exctract_cit.txt")
+    get_citations(ja_smk, "exctract")
