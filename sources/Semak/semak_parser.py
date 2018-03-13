@@ -396,6 +396,83 @@ def get_citations(ja_smk, filenametxt):
     return citations
 
 
+def fromCSV(fromcsv, newfile, header):
+
+    '''
+
+    :param fromcsv: csv file to read the QAed lines from
+    :param newfile: txt file name to write the fixed lines into for the sake of creating a new (fixed) csv file
+    :param header: str of header to write into the txt file
+    :return: fieldnames, lines. fieldnames = list of the headers from the csv, lines = list of rows from header column
+    '''
+
+    f = codecs.open(u'{}.txt'.format(newfile), 'w', encoding='utf-8')
+    with open(fromcsv, 'r') as csvfile:
+        file_reader = csv.DictReader(csvfile)
+        lines = []
+        for i, row in enumerate(file_reader):
+            if not row:
+                continue
+            f.write(u'{} {} '.format(row[u'siman'], row[u'siman']))
+            f.write(row[header].strip() + u'\n')
+            lines.append({u'siman': row['siman'], u'full': row[header].strip()})
+        return file_reader.fieldnames, lines
+
+
+def rewrtie_csv(fromcsv, newcsv, readColumnHeader, toWriteHeaders=None):
+    headerNames, lines = fromCSV(fromcsv, u'fixed_{}'.format(readColumnHeader), readColumnHeader)
+    if not toWriteHeaders:
+        toWriteHeaders = headerNames
+    regs = {u'rambam': re.compile(
+        u'(\u05e8\u05de\u05d1"\u05dd.*?)(?:\.|\u05d5?\u05d8\u05d5\u05e8|\u05d5?\u05e1\u05de"?\u05d2|\n)'),
+            u'smg': re.compile(
+                u'(\u05e1\u05de"?\u05d2.*?)(?:\.|\u05d5?\u05d8\u05d5\u05e8|\u05d5?\u05e8\u05de\u05d1"\u05dd|\n)'),
+            u'tur': re.compile(u'\u05d8\u05d5\u05e8(.*?)(?:\.|:|\n|@)')}
+    rows = []
+    for line_dict in lines:
+        line = line_dict[u'full']
+        row_dict = {u'siman': line_dict[u'siman'], u'full': line}
+        rambam = re.search(regs[u'rambam'], line)
+        if rambam:
+            rambam = sarsehu(rambam.group(1).strip())
+            rambam = get_a_Ref_from_chopped_txt(rambam, VERBOSE=False)
+            row_dict[u'rambam'] = rambam
+        tur = re.search(regs[u'tur'], line)
+        if tur:
+            tur = tur.group(1).strip()
+            tur = get_a_Ref_from_chopped_txt(u'טור, {}'.format(tur))
+            row_dict[u'tur'] = tur
+        rows.append(row_dict)
+
+    links, smgs = link_smg(u'fixed_{}'.format(readColumnHeader))
+    for (smk_siman, smg) in smgs:
+        rows[int(smk_siman)-1][u'smg'] = eval(smg)
+    toCSV(newcsv, rows, toWriteHeaders)
+
+def get_a_Ref_from_chopped_txt(st, VERBOSE = False):
+    '''
+
+    :param st: text that we assume has a readable Ref in it
+    :return: Ref
+    '''
+    if type(st)!= unicode:
+        return st
+    # st = re.sub()
+    ref = u'no ref found'
+    while True:
+        if not st:
+            break
+        try:
+            if VERBOSE:
+                print st
+            ref = Ref(st)
+            break
+        except InputError:
+            split_ref = re.split(u'\s', st)
+            st = u' '.join(split_ref[:-1])
+    return ref
+
+
 def hagahot_alignment(ja_smk, ja_raph, ja_hagahot):
     ja_smk = JaggedArray(ja_smk)
     ja_raph = JaggedArray(ja_raph)
@@ -644,6 +721,7 @@ def add_remazim_node():
     }
 
     # post_text(u'Sefer Mitzvot Katan, Remazim', text_version_remazim)
+
 
 def post_raph(ja_raph):
     replace_dict = {u"@22": u"<br>"}
@@ -938,4 +1016,6 @@ if __name__ == "__main__":
     # remazim_sm_g_k = link_smk_remazim_to_smg_remazim(smg_links)
     # post_link(remazim_sm_g_k, VERBOSE=True)
     # link_rambam("testrambamibid.txt")
-    get_citations(ja_smk, "exctract")
+    # get_citations(ja_smk, "exctract")
+    # fromCSV(u'exctract.csv', u'newfile', u'full')
+    rewrtie_csv(u'exctracted_2.csv', u'exctracted_3', u'full', toWriteHeaders=None)
