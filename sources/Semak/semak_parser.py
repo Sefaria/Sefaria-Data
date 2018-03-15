@@ -967,6 +967,60 @@ def link_rambam(filename):
     return all_refs
 
 
+def link_rambam_smg_tur(csvlinkfile):
+    links = []
+    with open(u'{}'.format(csvlinkfile), 'r') as csvfile:
+        seg_reader = csv.DictReader(csvfile)
+        for row in seg_reader:
+            siman = row[u'siman']
+            simanlen = len(Ref(u'Sefer Mitzvot Katan {}'.format(siman)).all_segment_refs())
+            # Rambam Mishneh Torah
+            if row[u'rambam']:
+                # rambam = eval(row[u'rambam'])
+                if re.search(u'\d*', row[u'rambam']):
+                    link = ({"refs": [
+                        u'Sefer Mitzvot Katan {}.{}-{}'.format(siman, 1, simanlen),
+                        u'{}'.format(row[u'rambam'])
+                    ],
+                        "type": "Sifrei Mitzvot",
+                        "auto": True,
+                        "generated_by": "semak_rambam_viasmk_sfm_linker"  # viasmk
+                    })
+                    links.append(link)
+                else:
+                    print u'rambam {} no_number'.format(row[u'rambam'])
+            if row[u'tur']:
+                # tur = eval(row[u'tur'])
+                if re.search(u'\d*', row[u'rambam']):
+                    link = ({"refs": [
+                        u'Sefer Mitzvot Katan {}.{}-{}'.format(siman, 1, simanlen),
+                        u'{}'.format(row[u'tur'])
+                    ],
+                        "type": "Sifrei Mitzvot",
+                        "auto": True,
+                        "generated_by": "semak_tur_viasmk_sfm_linker"  # viasmk
+                    })
+                    links.append(link)
+                else:
+                    print u'tur {} no_number'.format(row[u'tur'])
+
+            if row[u'smg']:
+                smg = eval(row[u'smg'])
+                for smgi in smg:
+                    # and to the next segment but not to all segments of the siman
+                    link = ({"refs":[
+                                u'Sefer Mitzvot Katan {}.{}-{}'.format(siman, 1, simanlen),
+                                u'{}'.format(smgi)
+                    ],
+                    "type": "Sifrei Mitzvot",
+                    "auto":True,
+                    "generated_by" : "semak_smg_viasmk_sfm_linker"  #_sfm_linker what is this parametor intended to be?
+                    })
+                    links.append(link)
+        return links
+
+
+
 def link_smk_remazim_to_smg_remazim(smg_smk_links):
     # op1:
     # smk_remazim = Ref("Sefer Mitzvot Katan, Remazim").all_segment_refs()
@@ -995,7 +1049,7 @@ def link_smk_remazim_to_smg_remazim(smg_smk_links):
 
 
 if __name__ == "__main__":
-    ja_smk = parse_semak('Semak.txt')
+    # ja_smk = parse_semak('Semak.txt')
     # # siman_page = map_semak_page_siman(ja_smk, to_print=True)
     # letter_ja = parse_Raph_by_letter(u'Raph_on_Semak.txt')
     # raph_smk_alignment = raph_alignment_report(ja_smk, letter_ja)
@@ -1018,4 +1072,6 @@ if __name__ == "__main__":
     # link_rambam("testrambamibid.txt")
     # get_citations(ja_smk, "exctract")
     # fromCSV(u'exctract.csv', u'newfile', u'full')
-    rewrtie_csv(u'exctracted_2.csv', u'exctracted_3', u'full', toWriteHeaders=None)
+    # rewrtie_csv(u'exctracted_2.csv', u'exctracted_3', u'full', toWriteHeaders=None)
+    smkDerivenLinks = link_rambam_smg_tur(u'exctracted_3.csv')
+    post_link(smkDerivenLinks, VERBOSE=True)
