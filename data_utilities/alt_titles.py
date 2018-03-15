@@ -267,13 +267,29 @@ def save_alt_titles(alt_tit_dict):
             idx.save(override_dependencies=True)
 
 def change_gershayim():
+    ''''
+    an outline of how to change this:
+    # indxs = library.all_index_records()
+    # library.get_index('bereshit')
+    # Index().load({'title': 'Genesis'})
+    # indx = library.get_index('bereshit')
+    # indx.all_segment_refs()[0]
+    # Ref('Genesis 1:1')
+    # indx.all_segment_refs()[0].text('he')
+    # TextChunk(Genesis
+    # 1:1, he)
+    # r = indx.all_segment_refs()[0]
+    # r.versionset('he')
+    # TextChunk(r, 'he', r.versionset('he')[0].versionTitle).text
+    # u'\u05d1\u05bc\u05b0\u05e8\u05b5\u05d0\u05e9\u05c1\u05b4\u0596\u05d9\u05ea \u05d1\u05bc\u05b8\u05e8\u05b8\u05a3\u05d0 \u05d0\u05b1\u05dc\u05b9\u05d4\u05b4\u0591\u05d9\u05dd \u05d0\u05b5\u05a5\u05ea \u05d4\u05b7\u05e9\u05c1\u05bc\u05b8\u05de\u05b7\u0596\u05d9\u05b4\u05dd \u05d5\u05b0\u05d0\u05b5\u05a5\u05ea \u05d4\u05b8\u05d0\u05b8\u05bd\u05e8\u05b6\u05e5\u05c3'
+    '''
     # title, vtitle, lang - can come from the vtitle.
     # replace_dict = OrderedDict({u"\u05f3": u"'", u"(?:''|\u05f4|\u201d)": u'"'})
     replace_dict = OrderedDict({u"\u05f3": u"'", u"''": u'"', u"\u05f4": u'"', u"\u201d": u'"'})
     uid = 30044
-    versions = VersionSet({"language":"he"})
-    versions = VersionSet({'$and': [{"title":"Rashi on Genesis"}, {"language":"he"}]})
-    titles = IndexSet({"categories":"Tanakh"})
+    versions = VersionSet({"language": "he"})
+    versions = VersionSet({'$and': [{"title": "Rashi on Genesis"}, {"language":"he"}]})
+    titles = IndexSet({"categories": "Tanakh"})
     missing_inds = []
     for ver in versions:
         title = ver.title
