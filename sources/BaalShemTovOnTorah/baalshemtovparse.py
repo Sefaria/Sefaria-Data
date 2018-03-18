@@ -27,21 +27,24 @@ eng_parshiot = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Tol
 "Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo", "Nitzavim", "Vayeilech","Rosh Hashana and Yom Kippur","Ha'Azinu","Succot","V'Zot HaBerachah",
 "Esther","Song of Songs","Ruth","Lamentations","Ecclesiastes"]
 not_new_sections= [u'התעוררות לבעל תפלה',u'התעוררות לתקיעת שופר',u'התעוררות לתשובה']
-empty_bmc=["Channukah"]
+empty_mmc=["Channukah"]
 
-en_bmc_sections= eng_parshiot[:]
-en_bmc_sections.insert(0,"Kuntres Meirat Einayim")
-en_bmc_sections.remove("Channukah")
+en_mmc_sections= eng_parshiot[:]
+en_mmc_sections.insert(0,"Kuntres Meirat Einayim")
+en_mmc_sections.remove("Channukah")
 
-he_bmc_sections = heb_parshiot[:]
-he_bmc_sections.insert(0,u'קונטרס מאירת עינים')
-he_bmc_sections.remove(u'לחנוכה')
+he_mmc_sections = heb_parshiot[:]
+he_mmc_sections.insert(0,u'קונטרס מאירת עינים')
+he_mmc_sections.remove(u'לחנוכה')
 match_dict = heb_parshiot[:]
 
 for section in not_new_sections:
     match_dict.append(section)
 
 ref_dic={parsha:0 for parsha in eng_parshiot}
+
+source_kidmat_box=[]
+
 def post_index_bst():
     # create index record
     record = SchemaNode()
@@ -57,6 +60,15 @@ def post_index_bst():
     intro_node.depth = 1
     intro_node.addressTypes = ['Integer']
     intro_node.sectionNames = ['Paragraph']
+    record.append(intro_node)
+        
+    intro_node = JaggedArrayNode()
+    intro_node.add_title('Kuntres Meirat Einayim', 'en', primary = True)
+    intro_node.add_title(u'קונטרס מאירת עינים', 'he',  primary =True)
+    intro_node.key = 'Kuntres Meirat Einayim'
+    intro_node.depth = 2
+    intro_node.addressTypes = ['Integer','Integer']
+    intro_node.sectionNames = ['Section','Paragraph']
     record.append(intro_node)
 
     #now for sefer nodes:
@@ -81,28 +93,58 @@ def post_index_bst():
         "schema": record.serialize()
     }
     post_index(index)
-def parse_bst():
+def parse_bst(posting=True):
     with open('בעל שם ראשי מוכן.txt') as myfile:
         lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
-    """
+    #"""
     #first intros
-    past_start=False
     bst_intro=[]
+    intro_section_box=[]
+    global source_kidmat_box
+    past_start=False
+    in_kidmat=False
     for line in lines:
-        if u'הקדמה לספר הקדוש בעל שם טוב זי"ע' in line:
-            past_start=True
-        if past_start:
-            bst_intro.append(re.sub(ur"@\d{1,4}",u"",line))
-        if u'@11הקדמה' in line:
-            break
+        if not_blank(line):
+            if u'הקדמה לספר הקדוש בעל שם טוב זי"ע' in line:
+                past_start=True
+            elif u'@11הקדמה' in line:
+                in_kidmat=True
+            elif u'@65פרשת בראשית' in line:
+                break
+            elif in_kidmat:
+                if u'@00' in line and len(intro_section_box)>0:
+                    source_kidmat_box.append(intro_section_box)
+                    intro_section_box=[]
+                intro_section_box.append(clean_line(line))
+            elif past_start:
+                bst_intro.append(re.sub(ur"@\d{1,4}",u"",line))
+    source_kidmat_box.append(intro_section_box)
+    source_kidmat_box=insert_inline_tags(source_kidmat_box[1:])
+    
+    #"""
+    #print test
+    for sindex, section in enumerate(source_kidmat_box):
+        for pindex, paragraph in enumerate(section):
+            print "Intro",sindex, pindex, paragraph
+    #"""
+    1/0
     version = {
-        'versionTitle': 'VERSION TITLE',
-        'versionSource': 'VERSION SOURCE',
+        'versionTitle': 'Sefer Baal Shem Tov. Lodz, 1938',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001944944',
         'language': 'he',
         'text': bst_intro
     }
-    post_text_weak_connection('Baal Shem Tov on Torah, Introduction', version)
-    """
+    #post_text_weak_connection('Baal Shem Tov on Torah, Introduction', version)
+    
+    version = {
+        'versionTitle': 'Sefer Baal Shem Tov. Lodz, 1938',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001944944',
+        'language': 'he',
+        'text': source_kidmat_box
+    }
+    #post_text_weak_connection('Baal Shem Tov on Torah, Kuntres Meirat Einayim', version)
+    
+    #"""
     past_start = False
     parsha_dict = {}
     section_box = []
@@ -116,8 +158,8 @@ def parse_bst():
                     section_box=[]
                 current_parsha= highest_fuzz(heb_parshiot, line.replace(u'פרשת',u''))
                 parsha_dict[current_parsha]=[]
-                print current_parsha
-                print line
+                #print current_parsha
+                #print line
             elif u'@00' in line:
                 if len(section_box)>0:
                     parsha_dict[current_parsha].append(section_box)
@@ -129,8 +171,10 @@ def parse_bst():
     #now fix inline refs
     for key in heb_parshiot:
         if key in parsha_dict.keys():
-            parsha_dict[key]=insert_inline_tags(parsha_dict[key], key)
+            parsha_dict[key]=insert_inline_tags(parsha_dict[key])#, key)
     
+    """
+    #test alignment
     offset=0
     for kindex, key in enumerate(heb_parshiot):
         if kindex+1-offset>=len(counts):
@@ -142,35 +186,39 @@ def parse_bst():
             print eng_parshiot[heb_parshiot.index(key)],"BST: ",ref_dic[key]," BMC: ", counts[kindex+1-offset]
         else:
             print "!!",eng_parshiot[heb_parshiot.index(key)],"BST: ",ref_dic[key]," BMC: ", counts[kindex+1-offset]
-            
-    1/0
-       
+    """       
+    
+    """
+    #print output   
     for key in parsha_dict:
         for sindex, section in enumerate(parsha_dict[key]):
             for pindex, paragraph in enumerate(section):
                 print key, sindex, pindex, paragraph
-     
-
-    for key in parsha_dict.keys():
-        version = {
-            'versionTitle': 'VERSION TITLE',
-            'versionSource': 'VERSION SOURCE',
-            'language': 'he',
-            'text': parsha_dict[key]
-        }
-        post_text_weak_connection('Baal Shem Tov on Torah, '+eng_parshiot[heb_parshiot.index(key)], version)
-        #post_text('Baal Shem Tov on Torah, '+eng_parshiot[heb_parshiot.index(key)], version, weak_network=True)
+    """
+    if posting:
+        for key in parsha_dict.keys():
+            version = {
+                'versionTitle': 'Sefer Baal Shem Tov. Lodz, 1938',
+                'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001944944',
+                'language': 'he',
+                'text': parsha_dict[key]
+            }
+            post_text_weak_connection('Baal Shem Tov on Torah, '+eng_parshiot[heb_parshiot.index(key)], version)
+            #post_text('Baal Shem Tov on Torah, '+eng_parshiot[heb_parshiot.index(key)], version, weak_network=True)
+    return parsha_dict
         
 def clean_line(s):
     s= re.sub(ur'@00\S*\.? *',u'',s)
     s = s.replace(u'@11',u'<b>').replace(u'@22',u'</b>').replace(u'@88',u'<b>').replace(u"@99",u'</b>')
     s = re.sub(ur"@\d{1,4}",u"",s)
-    for match in re.findall(ur'(?<=:)\s*\(.*?\)$',s):
-        s = s.replace(match, u'<br><small>'+match+u'</small>')
+    #for match in re.findall(ur'(?<=[:\.])\s*\(.*?\)$',s):
+    #for match in re.findall(ur'(?<=[\.:])\s*\(.*?\)\.$',s):
+    for match in re.findall(ur'\.\s*\(.*?\)\.\s*$',s):
+        s = s.replace(match, u'<br><small>'+match.strip()+u'</small>')
     return s
-def insert_inline_tags(parsha_array, parsha):
+#commented out portions can be used to track alignment
+def insert_inline_tags(parsha_array):#, parsha):
     footnote_count=1
-    found=False
     new_array=[]
     section_box=[]
     for section in parsha_array:
@@ -178,15 +226,15 @@ def insert_inline_tags(parsha_array, parsha):
             while u'&{*}' in paragraph:
                 paragraph=paragraph[:paragraph.index(u'&{*}')]+u"<i data-commentator=\"Mekor Mayim Chayim\" data-order=\""+str(footnote_count)+"\"></i>"+paragraph[paragraph.index(u'&{*}')+4:]
                 footnote_count+=1
-                found=True
             section_box.append(paragraph)
-            section_box=[]
         new_array.append(section_box)
-    print parsha,footnote_count-1
-    ref_dic[parsha]=footnote_count-1
+        section_box=[]
+        
+    #print parsha,footnote_count-1
+    #ref_dic[parsha]=footnote_count-1
     return new_array
 counts=[]
-def post_bmc_term():
+def post_mmc_term():
     term_obj = {
         "name": "Mekor Mayim Chayim",
         "scheme": "commentary_works",
@@ -204,7 +252,7 @@ def post_bmc_term():
         ]
     }
     post_term(term_obj)
-def bmc_index_post():
+def mmc_index_post():
     # create index record
     record = SchemaNode()
     record.add_title('Mekor Mayim Chayim on Baal Shem Tov', 'en', primary =True, )
@@ -212,13 +260,13 @@ def bmc_index_post():
     record.key = 'Mekor Mayim Chayim on Baal Shem Tov'
 
     #now for sefer nodes:
-    for parsha in en_bmc_sections:
+    for parsha in en_mmc_sections:
         parsha_node = JaggedArrayNode()
         if Term().load({"name":parsha}) and parsha not in term_exceptions:
             parsha_node.add_shared_term(parsha)
         else:
             parsha_node.add_title(parsha, 'en', primary = True)
-            parsha_node.add_title(he_bmc_sections[en_bmc_sections.index(parsha)], 'he',  primary =True)
+            parsha_node.add_title(he_mmc_sections[en_mmc_sections.index(parsha)], 'he',  primary =True)
         parsha_node.key = parsha
         parsha_node.depth = 2
         parsha_node.addressTypes = ['Integer', 'Integer']
@@ -235,7 +283,7 @@ def bmc_index_post():
         "schema": record.serialize()
     }
     post_index(index)
-def mmc_parse():
+def mmc_parse(posting=True):
     with open('מקור חיים הכל מוכן.txt') as myfile:
         lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
     """
@@ -261,40 +309,101 @@ def mmc_parse():
                 parsha_box.append(comment_box)
                 comment_box=[]
             if u"&{*}א)" in line and len(parsha_box)>0:
-                if parsha_index>=len(en_bmc_sections):
+                if parsha_index>=len(en_mmc_sections):
                     break
 
-                final_parsha_dict[en_bmc_sections[parsha_index]]=parsha_box
+                final_parsha_dict[en_mmc_sections[parsha_index]]=parsha_box
                 parsha_box=[]
                 parsha_index+=1
-                while en_bmc_sections[parsha_index] in empty_bmc:
+                while en_mmc_sections[parsha_index] in empty_mmc:
                     parsha_index+=1
-            comment_box.append(bmc_clean_line(line))
+            comment_box.append(mmc_clean_line(line))
     """
     #finish last box
     parsha_box.append(comment_box)
-    final_parsha_dict[en_bmc_sections[parsha_index]]=parsha_box
+    final_parsha_dict[en_mmc_sections[parsha_index]]=parsha_box
     """
     
-    """
+    
     #print test
     for parsha in final_parsha_dict.keys():
         for sindex, section in enumerate(final_parsha_dict[parsha]):
             for pindex, paragraph in enumerate(section):
                 print parsha, sindex, pindex, paragraph
+    
     """
-    for parsha in final_parsha_dict.keys():
-        version = {
-            'versionTitle': 'Sefer Baal Shem Tov. Lodz, 1938',
-            'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001944944',
-            'language': 'he',
-            'text': final_parsha_dict[parsha]
-        }
-        post_text_weak_connection('Mekor Mayim Chayim on Baal Shem Tov", '+parsha, version)
-        #post_text('Baal Shem Tov on Torah, '+eng_parshiot[heb_parshiot.index(key)], version, weak_network=True)
-def bmc_clean_line(s):
+    for sindex, section in enumerate(final_parsha_dict["Kuntres Meirat Einayim"]):
+        for pindex, paragraph in enumerate(section):
+            print "KME:" sindex, pindex, paragraph
+    1/0
+    """
+    if posting:
+        for parsha in final_parsha_dict.keys():
+        
+            version = {
+                'versionTitle': 'Sefer Baal Shem Tov. Lodz, 1938',
+                'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001944944',
+                'language': 'he',
+                'text': final_parsha_dict[parsha]
+            }
+            post_text_weak_connection('Mekor Mayim Chayim on Baal Shem Tov, '+parsha, version)
+            #post_text('Mekor Mayim Chayim on Baal Shem Tov, '+parsha, version, weak_network=True)
+    return final_parsha_dict
+def mmc_clean_line(s):
     s = re.sub(ur'&\{\*\}\S*\)',u'',s)
     return re.sub(ur"@\d{1,4}",u"",s)
+
+def link_mmc():
+    #first do intro:
+    global source_kidmat_box
+    print len(source_kidmat_box)
+    for sindex, section in enumerate(source_kidmat_box):
+        for pindex, paragraph in enumerate(section):
+            for match in re.findall(ur'<.*?>',paragraph):
+                if 'Mekor' in match:
+                    data_order = re.search(ur'data-order=\"\d*',match).group().split(u'"')[1]
+                    link = (
+                            {
+                            "refs": [
+                                     'Mekor Mayim Chayim on Baal Shem Tov, Kuntres Meirat Einayim, {}'.format(data_order),
+                                     'Baal Shem Tov on Torah, Kuntres Meirat Einayim, {}:{}'.format(sindex+1, pindex+1),
+                                     ],
+                            "type": "commentary",
+                            'inline_reference': {
+                                'data-commentator': "Mekor Mayim Chayim",
+                                'data-order': data_order
+                                },
+                            "auto": True,
+                            "generated_by": "sterling_Mekor_Mayim_Chayim_linker"
+                            })
+                    post_link(link, weak_network=True)
+    1/0
+    print "PAST INTRO"
+    p_dict = parse_bst(False)
+    for key in p_dict.keys():
+        for cindex, comment in enumerate(p_dict[key]):
+            for pindex, paragraph in enumerate(comment):
+                #print paragraph
+                for match in re.findall(ur'<.*?>',paragraph):
+                    if 'Mekor' in match:
+                        data_order = re.search(ur'data-order=\"\d*',match).group().split(u'"')[1]
+                        #print data_order
+                        e_parsha = eng_parshiot[heb_parshiot.index(key)]
+                        link = (
+                                {
+                                "refs": [
+                                         'Mekor Mayim Chayim on Baal Shem Tov, {} {}'.format(e_parsha, data_order),
+                                         'Baal Shem Tov on Torah, {}, {}:{}'.format(e_parsha, cindex+1, pindex+1),
+                                         ],
+                                "type": "commentary",
+                                'inline_reference': {
+                                    'data-commentator': "Mekor Mayim Chayim",
+                                    'data-order': data_order
+                                    },
+                                "auto": True,
+                                "generated_by": "sterling_Mekor_Mayim_Chayim_linker"
+                                })
+                        post_link(link, weak_network=True)
 
                 
     
@@ -311,10 +420,11 @@ def highest_fuzz(input_list, input_item):
             highest_ratio=fuzz.ratio(input_item,item)
     return best_match
 #post_index_bst()
-#post_bmc_term()
-bmc_index_post()
+#parse_bst(False)
+#post_mmc_term()
+#mmc_index_post()
 mmc_parse()
-#parse_bst()
+link_mmc()
 """
 "Inspiration for the Prayer Leader","Inspiration for the Shofar Blower","Inspiration for Repentence"
 """
