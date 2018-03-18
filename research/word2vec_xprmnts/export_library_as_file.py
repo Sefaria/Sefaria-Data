@@ -20,7 +20,10 @@ def str2addressType(atype, num):
 
 def tokenizer(s, as_str=False, tref=None, vtitle=None):
     s = re.sub(ur'־', u' ', s)
+    s = re.sub(ur'\([^)]+\)', u'', s)
+    s = re.sub(ur'\[[^\]]+\]', u'', s)
     s = re.sub(ur'[^ א-ת]', u'', s)
+    # remove are parenthetical text
     if as_str:
         return [(s.split(), tref, vtitle)]
     return s.split()
@@ -34,11 +37,14 @@ def walk_thru_contents(item, all_words=None, doc2vec=False, tref=u'', vtitle=Non
     assert(isinstance(all_words, list))
     if type(item) is dict:
         for n in schema[u"nodes"]:
-            node_title = u"" if n.get(u"default", False) else filter(lambda x: x.get(u"primary", False) and x.get(u"lang", u"") == u"en", n[u"titles"])[0][u"text"]
+            node_title = u"" if n.get(u"default", False) or not n.get(u"titles", None) else filter(lambda x: x.get(u"primary", False) and x.get(u"lang", u"") == u"en", n[u"titles"])[0][u"text"]
             walk_thru_contents(item[n[u"key"]], all_words, doc2vec, tref + u", {}".format(node_title), vtitle, n, addressTypes)
     elif type(item) is list:
         for ii, i in enumerate(item):
-            walk_thru_contents(i, all_words, doc2vec, tref + u"{}{}".format(u" " if schema else u":", str2addressType(addressTypes[0], ii+1)), vtitle, addressTypes=addressTypes[1:])
+            try:
+                walk_thru_contents(i, all_words, doc2vec, tref + u"{}{}".format(u" " if schema else u":", str2addressType(addressTypes[0], ii+1)), vtitle, addressTypes=addressTypes[1:])
+            except IndexError:
+                print u"index error for addressTypes {} ref {}".format(addressTypes, tref, vtitle)
     elif isinstance(item, basestring):
         all_words += tokenizer(item, doc2vec, tref, vtitle)
 
@@ -51,11 +57,15 @@ def export_library_as_file(filename):
     count = vs.count()
     for i, v in enumerate(vs):
         print "{}/{}".format(i+1, count)
-        version_words = walk_thru_contents(v.chapter, tref=v.title, vtitle=v.versionTitle, schema=v.get_index().schema)
-        all_words += version_words
+        try:
+            version_words = walk_thru_contents(v.chapter, tref=v.title, vtitle=v.versionTitle, schema=v.get_index().schema)
+            all_words += version_words
+        except BookNameError:
+            print u"No such book for version {}".format(v)
 
     with codecs.open(filename, 'wb', encoding='utf8') as fout:
         fout.write(u" ".join(all_words))
+
 
 def pad_hex(i, n):
     h = hex(i)

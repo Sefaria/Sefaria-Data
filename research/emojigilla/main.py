@@ -95,7 +95,6 @@ with codecs.open("EmojiGilla Dictionary.csv", 'rb') as csvfile:
     csv_reader = csv.reader(csvfile, delimiter=',')
     for line in csv_reader:
         hebrew_word = line[0].strip()
-        print hebrew_word
         perek = line[3].strip()
         pasuk = line[4].strip()
         ref = "Esther {}:{}".format(perek, pasuk)
