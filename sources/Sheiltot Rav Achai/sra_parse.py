@@ -147,7 +147,7 @@ def post_sra_index():
     index = {
         "title": "Sheiltot d'Rav Achai Gaon",
         "categories": ["Halakhah"],
-        "alt_structs": {"Parshas": parsha_nodes.serialize()},
+        "alt_structs": {"Parasha": parsha_nodes.serialize()},
         "schema": record.serialize()
     }
     post_index(index,weak_network=True)
@@ -411,7 +411,7 @@ def post_eimek_intros():
         'language': 'he',
         'text': kidmat_box
     }
-    post_text('Haamek Sheilah, Kidmat HaEmek', version,weak_network=True)#, skip_links=True, index_count="on")
+    #post_text('Haamek Sheilah, Kidmat HaEmek', version,weak_network=True)#, skip_links=True, index_count="on")
     #post_text_weak_connection('Haamek Sheilah', version)#,weak_network=True)#, skip_links=True,
     
     version = {
@@ -422,6 +422,84 @@ def post_eimek_intros():
     }
     #post_text('Haamek Sheilah, Petach HaEmek', version,weak_network=True)#, skip_links=True, index_count="on")
     #post_text_weak_connection('Haamek Sheilah, Petach HaEmek', version)#,weak_network=True)#, skip_links=True,
+def post_bereshit_eimek_intro():
+    with open('files/בראשית/שאילתות הקדמת העמק שאלה.txt') as myfile:
+        lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
+    chapter_box=[]
+    hakdama_box = []
+    for line in lines:
+        if not_blank(line) and u'קדמת העמק' not in line:
+            if u'@22' in line:
+                if u'@22א' not in line:
+                    hakdama_box.append(chapter_box)
+                    chapter_box=[]
+            else:
+                chapter_box.append(re.sub(ur"@\d{1,4}",u"",line))
+    hakdama_box.append(chapter_box)
+    
+    """
+    #print test
+    for cindex, chapter in enumerate(hakdama_box):
+        for pindex, paragraph in enumerate(chapter):
+            print cindex, pindex, paragraph
+    """
+    
+    version = {
+        'versionTitle': 'Sheiltot d\'Rav Achai Gaon, Kidmat HaEmek, volume I, 1861-1867',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001166995',
+        'language': 'he',
+        'text': hakdama_box
+    }
+    post_text_weak_connection('Haamek Sheilah, Kidmat HaEmek', version)#,weak_network=True)#, skip_links=True,
+
+def post_vayikra_eimek_intro():    
+    with open('files/ויקרא/שאילתות עמק השאלה ויקרא.txt') as myfile:
+        lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
+    chapter_box = []
+    kidmat_box=[]
+    petach_box=[]
+    in_kidmat=False
+    in_petach=False
+    for line in lines:
+        if u'@00השמטות' in line:
+            petach_box.append(chapter_box)
+            break
+        if not_blank(line):
+            if u'@00פתח העמק' in line:
+                in_petach=True
+                kidmat_box.append(chapter_box)
+                chapter_box=[]
+            elif u'ספרים ראשונים להגבה מעלה. שהם חביון עוז כל דבר סגלה' in line:
+                in_kidmat=True
+            elif in_petach:
+                if re.search(ur'@44[^@]*?\s',line):
+                    petach_box.append(chapter_box)
+                    chapter_box=[]
+                    #print re.search(ur'@44[^@]*?\s',line).group()
+                chapter_box.append(clean_intro_line(line))
+            elif in_kidmat:
+                if u'@11' in line:
+                    kidmat_box.append(chapter_box)
+                    chapter_box=[]
+                chapter_box.append(clean_intro_line(line))
+    version = {
+        'versionTitle': 'Sheiltot d\'Rav Achai Gaon, Kidmat HaEmek, volume II, 1861-1867',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001166995',
+        'language': 'he',
+        'text': kidmat_box
+    }
+    post_text_weak_connection('Haamek Sheilah, Kidmat HaEmek', version)
+    
+    version = {
+        'versionTitle': 'Sheiltot d\'Rav Achai Gaon, Kidmat HaEmek, volume II, 1861-1867',
+        'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001166995',
+        'language': 'he',
+        'text': petach_box
+    }
+    post_text_weak_connection('Haamek Sheilah, Petach HaEmek', version)
+    
+            
+
 def clean_intro_line(s):
     s = re.sub(ur'\s@11',u'',s)
     if u"@33" in s:
@@ -590,7 +668,25 @@ def post_eimek_term():
             }
         ]
     }
-    post_term(term_obj)                      
+    post_term(term_obj)
+def post_sheilta_term():
+    term_obj = {
+        "name": "Sheilta",
+        "scheme": "commentary_works",
+        "titles": [
+            {
+                "lang": "en",
+                "text": "Sheilta",
+                "primary": True
+            },
+            {
+                "lang": "he",
+                "text": u'שאילתא',
+                "primary": True
+            }
+        ]
+    }
+    post_term(term_obj)                         
 def shalom_link():
     #for linking we just link each ref (that isn't a *) to the first ref in that index location
     #except for the first one, where we link it to the third.
@@ -655,14 +751,19 @@ def post_sra_text():
     }
     #post_text('Sheiltot d\'Rav Achai Gaon', version,weak_network=True, skip_links=True, index_count="on")
     post_text_weak_connection('Sheiltot d\'Rav Achai Gaon', version)#,weak_network=True)#, skip_links=True, index_count="on")
+
+post_sheilta_term()
+
 #post_sra_index()
 #post_sra_text()
 
 #post_eimek_term()
+#post_bereshit_eimek_intro()
+#post_vayikra_eimek_intro()
 #post_eimek_index()
 #post_eimek_intros()
 #post_eimek_text()
-link_eimek_text()
+#link_eimek_text()
 
 #post_shalom_term()
 #post_shalom_index()
