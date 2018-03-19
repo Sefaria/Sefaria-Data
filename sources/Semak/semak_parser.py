@@ -428,10 +428,19 @@ def rewrtie_csv(fromcsv, newcsv, readColumnHeader, toWriteHeaders=None):
             u'smg': re.compile(
                 u'(\u05e1\u05de"?\u05d2.*?)(?:\.|\u05d5?\u05d8\u05d5\u05e8|\u05d5?\u05e8\u05de\u05d1"\u05dd|\n)'),
             u'tur': re.compile(u'\u05d8\u05d5\u05e8(.*?)(?:\.|:|\n|@)')}
+    # rows = OrderedDict()
     rows = []
+    siman_cit_lines = 1
+    prv_siman = 1
     for line_dict in lines:
-        line = line_dict[u'full']
-        row_dict = {u'siman': line_dict[u'siman'], u'full': line}
+        repdict = {u'טוא"ח': u'טור אורח חיים', u'טא"ח': u'טור אורח חיים',u'טי"ד':u'טור יורה דעה', u'טוי"ד':u'טור יורה דעה',u'טח"מ': u'טור חושן משפט',u'טוח"מ': u'טור חושן משפט'}
+        line = multiple_replace(line_dict[u'full'], repdict)
+        # line = line_dict[u'full']
+        row_dict = {u'siman': line_dict[u'siman'], u'full': line}# +u'.'}
+        if line_dict[u'siman'] == prv_siman:
+            siman_cit_lines += 1
+        else:
+            siman_cit_lines = 1
         rambam = re.search(regs[u'rambam'], line)
         if rambam:
             rambam = sarsehu(rambam.group(1).strip())
@@ -443,10 +452,14 @@ def rewrtie_csv(fromcsv, newcsv, readColumnHeader, toWriteHeaders=None):
             tur = get_a_Ref_from_chopped_txt(u'טור, {}'.format(tur))
             row_dict[u'tur'] = tur
         rows.append(row_dict)
+        # rows[(row_dict[u'siman'], siman_cit_lines)] = row_dict
+        prv_siman = line_dict[u'siman']
+    links, smgs = link_smg(u'fixed_{}'.format(readColumnHeader)) #link_smg(u'smg_smk_test')
 
-    links, smgs = link_smg(u'fixed_{}'.format(readColumnHeader))
-    for (smk_siman, smg) in smgs:
-        rows[int(smk_siman)-1][u'smg'] = eval(smg)
+    for i, (smk_siman, seg, smg) in enumerate(smgs):
+        if smg:
+            rows[i][u'smg'] = eval(smg)
+            rows[i][u'smk_segment'] = seg #int(smk_siman)-1
     toCSV(newcsv, rows, toWriteHeaders)
 
 def get_a_Ref_from_chopped_txt(st, VERBOSE = False):
@@ -888,8 +901,9 @@ def link_smg(filenametxt):
             seg = row[u"page running counter"]
             smg = row[u'Semag']
             simanlen = len(Ref(u'Sefer Mitzvot Katan {}'.format(siman)).all_segment_refs())
+            smgis.append((siman, seg, smg))
             if smg:
-                smgis.append((siman, smg))
+                # smgis.append((siman, seg, smg))
                 smg = eval(row[u'Semag'])
                 for smgi in smg:
                     # and to the next segment but not to all segments of the siman
@@ -907,9 +921,9 @@ def link_smg(filenametxt):
 
 
 def sarsehu(line):
-    if re.search(u'''(מ|ד)(הלכו'|הלכות|ה"ל|הל')''', line):
-        line = re.sub(u"[:;,.']", u'', line)
-        line = re.sub(u'רמב"ם (.*?) (?:מ|ד)(?:הלכות?|ה"ל|הל)(.*)', u'רמב"ם הלכות \g<2> \g<1>', line)
+    line = re.sub(u"[:;,.]", u'', line)  # maybe re.sub '
+    if re.search(u'''(מ|ד)(הלכו'|הלכות|ה"ל|הל'?')''', line):
+        line = re.sub(u'''רמב"ם (.*?) (?:מ|ד)(?:הלכו(?:'|ת)?|ה"ל|הל'?)(.*)''', u'רמב"ם הלכות \g<2> \g<1>', line)
         line = re.sub(u'\s+', u' ', line)
     return line
 
@@ -969,6 +983,9 @@ def link_rambam(filename):
 
 def link_rambam_smg_tur(csvlinkfile):
     links = []
+    links_rambam = []
+    links_tur = []
+    links_smg = []
     with open(u'{}'.format(csvlinkfile), 'r') as csvfile:
         seg_reader = csv.DictReader(csvfile)
         for row in seg_reader:
@@ -977,7 +994,7 @@ def link_rambam_smg_tur(csvlinkfile):
             # Rambam Mishneh Torah
             if row[u'rambam']:
                 # rambam = eval(row[u'rambam'])
-                if re.search(u'\d*', row[u'rambam']):
+                if re.search(u'\d+', row[u'rambam']):
                     link = ({"refs": [
                         u'Sefer Mitzvot Katan {}.{}-{}'.format(siman, 1, simanlen),
                         u'{}'.format(row[u'rambam'])
@@ -986,12 +1003,12 @@ def link_rambam_smg_tur(csvlinkfile):
                         "auto": True,
                         "generated_by": "semak_rambam_viasmk_sfm_linker"  # viasmk
                     })
-                    links.append(link)
+                    links_rambam.append(link)
                 else:
                     print u'rambam {} no_number'.format(row[u'rambam'])
             if row[u'tur']:
                 # tur = eval(row[u'tur'])
-                if re.search(u'\d*', row[u'rambam']):
+                if re.search(u'\d+', row[u'tur']):
                     link = ({"refs": [
                         u'Sefer Mitzvot Katan {}.{}-{}'.format(siman, 1, simanlen),
                         u'{}'.format(row[u'tur'])
@@ -1000,7 +1017,7 @@ def link_rambam_smg_tur(csvlinkfile):
                         "auto": True,
                         "generated_by": "semak_tur_viasmk_sfm_linker"  # viasmk
                     })
-                    links.append(link)
+                    links_tur.append(link)
                 else:
                     print u'tur {} no_number'.format(row[u'tur'])
 
@@ -1016,8 +1033,9 @@ def link_rambam_smg_tur(csvlinkfile):
                     "auto":True,
                     "generated_by" : "semak_smg_viasmk_sfm_linker"  #_sfm_linker what is this parametor intended to be?
                     })
-                    links.append(link)
-        return links
+                    links_smg.append(link)
+            links = links_rambam + links_tur + links_smg
+        return links, links_smg
 
 
 
@@ -1027,8 +1045,7 @@ def link_smk_remazim_to_smg_remazim(smg_smk_links):
     # for k_r_ref in smk_remazim:
     #     for l_k_r in k_r_ref.linkset():
     #         #take the ref that is to Semag if there is one
-    #         # put it in a method that findes its linkset and looks for the link to the Semag remazim
-    #         # take that method
+    #         # put it in a method that finds its linkset and looks for the link to the Semag remazim
     # op2:
     links = []
     for old_l in smg_smk_links:
@@ -1072,6 +1089,10 @@ if __name__ == "__main__":
     # link_rambam("testrambamibid.txt")
     # get_citations(ja_smk, "exctract")
     # fromCSV(u'exctract.csv', u'newfile', u'full')
-    # rewrtie_csv(u'exctracted_2.csv', u'exctracted_3', u'full', toWriteHeaders=None)
-    smkDerivenLinks = link_rambam_smg_tur(u'exctracted_3.csv')
-    post_link(smkDerivenLinks, VERBOSE=True)
+    old = 22
+    new = 23
+    rewrtie_csv(u'fixed{}.csv'.format(old), u'fixed{}'.format(new), u'full', toWriteHeaders=[u'siman', u'smk_segment', u'rambam', u'smg', u'tur', u'full'])
+    # smkDerivenLinks, links_smg = link_rambam_smg_tur(u'fixed{}.csv'.format(new))
+    # post_link(smkDerivenLinks, VERBOSE=True)
+    # remazim_sm_g_k = link_smk_remazim_to_smg_remazim(links_smg)
+    # post_link(remazim_sm_g_k, VERBOSE=True)
