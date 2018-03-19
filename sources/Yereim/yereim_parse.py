@@ -495,11 +495,11 @@ def not_blank(s):
     return (len(s.replace(u"\n",u"").replace(u"\r",u"").replace(u"\t",u""))!=0);
 #parse_ty_text()
 #post_ty_index()
-#post_intros()
+post_intros()
 #post_y_index()
 #post_y_text()
 #post_ty_text()
-link_ty()
+#link_ty()
 #link_ty()
 """
 method we ended up not using;
