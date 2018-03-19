@@ -36,7 +36,9 @@ def rambam_alt_names(newtitle = u'נדרים', primetitle =u'נדרים', all_ta
         name_dict[u'יסודי תורה'] = name_dict[u'יסודי התורה']
         name_dict[u'תפלה'] = name_dict[u'תפילה וברכת כהנים']
         name_dict[u'יו"ט'] = name_dict[u'שביתת יום טוב']
+        name_dict[u'שביתת יו"ט'] = name_dict[u'שביתת יום טוב']
         name_dict[u'י"ט'] = name_dict[u'שביתת יום טוב']
+        name_dict[u'שביתת י"ט'] = name_dict[u'שביתת יום טוב']
         name_dict[u'יום טוב'] = name_dict[u'שביתת יום טוב']
         name_dict[u'ת"ת'] = name_dict[u'תלמוד תורה']
         name_dict[u'ע"ז']  = name_dict[u'עבודה זרה וחוקות הגויים']
@@ -126,7 +128,7 @@ def rambam_alt_names(newtitle = u'נדרים', primetitle =u'נדרים', all_ta
         name_dict[u'שלוחים ושותפין'] = name_dict[u'שלוחין ושותפין']
         name_dict[u'שותפין'] = name_dict[u'שלוחין ושותפין']
         name_dict[u'כלי מקדש'] = name_dict[u'כלי המקדש והעובדין בו']
-        # name_dict[u'כלי המקדש'] = name_dict[u'כלי המקדש והעובדין בו']
+        name_dict[u'כלי המקדש'] = name_dict[u'כלי המקדש והעובדין בו']
         name_dict[u'ביאת המקדש'] = name_dict[u'ביאת מקדש']
         name_dict[u'מ"א'] = name_dict[u'מאכלות אסורות']
         name_dict[u'מאכלות'] = name_dict[u'מאכלות אסורות']
@@ -165,6 +167,8 @@ def rambam_alt_names(newtitle = u'נדרים', primetitle =u'נדרים', all_ta
                 name_dict[first[0]] = name_dict[name]
         del name_dict[u'איסורי']
         del name_dict[u'טומאת']
+        del name_dict[u'כלי']
+        del name_dict[u'שביתת']
     name_dict[newtitle] = name_dict[primetitle]
     idxset = IndexSet({'title': {'$regex': '^Mishneh Torah,'}})
     rambam_alt = defaultdict(lambda: [])
@@ -318,11 +322,11 @@ def tur_alt_titles():
     nodes[0].add_title(u'או"ח', 'he')
     nodes[1].add_title(u'י"ד', 'he')
     nodes[1].add_title(u'יו"ד', 'he')
-    nodes[2].add_title(u'ח"מ', 'he')
-    nodes[2].add_title(u'חו"מ', 'he')
-    nodes[3].add_title(u'א"ה', 'he')
-    nodes[3].add_title(u'א"ע', 'he')
-    nodes[3].add_title(u'אה"ע', 'he')
+    nodes[2].add_title(u'א"ה', 'he')
+    nodes[2].add_title(u'א"ע', 'he')
+    nodes[2].add_title(u'אה"ע', 'he')
+    nodes[3].add_title(u'ח"מ', 'he')
+    nodes[3].add_title(u'חו"מ', 'he')
     tur_ind.save()
 
 def change_gershayim_in_titles():
@@ -330,8 +334,8 @@ def change_gershayim_in_titles():
 
 
 if __name__ == "__main__":
-    rambam_alt = rambam_alt_names(u'ערובין', u'עירובין')
-    # tur_alt_titles()
+    # rambam_alt = rambam_alt_names(u'שביתת י"ט', u'שביתת יום טוב')
+    tur_alt_titles()
     # more_titles = alt_name_dict()
     # save_alt_titles(more_titles)
     # change_gershayim()
