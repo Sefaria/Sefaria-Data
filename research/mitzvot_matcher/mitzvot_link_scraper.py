@@ -46,7 +46,13 @@ def scrape_wiki():
     return links
 
 
-def scrape_links(csvfilename):
+def scrape_links(csvfilename, times=1):
+    '''
+
+    :param csvfilename:
+    :param times: times = 1 csv will present only the resolved refs, times = 2, will present also the orignol as a row before the resolved
+    :return:
+    '''
 
     url = u"http://www.daat.ac.il/daat/mitsvot/tavla.asp"
 
@@ -61,7 +67,7 @@ def scrape_links(csvfilename):
     links = []
     cnt_long = 0
     for i, row in enumerate(rows):
-        for rnd in [1, 2]:
+        for rnd in range(times)[::-1]:
             row_link = {}
             if not i:
                 continue
@@ -329,6 +335,5 @@ if __name__ == "__main__":
     # links_ch_smk = links_chinukh_smk(u"smk_chinukh.csv")
     # post_link(links_ch_smk, VERBOSE=True)
     # chinukh_smg()
-    post_link(link_sfrMitzvot_shortCounting(), VERBOSE=True)
-
-
+    # post_link(link_sfrMitzvot_shortCounting(), VERBOSE=True)
+    scrape_links(u'only_orig_siman', times=1)
