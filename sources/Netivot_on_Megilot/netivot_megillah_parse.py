@@ -15,7 +15,7 @@ title_dict = {u"אמרי יושר":{"english_book_name":"Ruth","hebrew_book_name
 u"מגילת סתרים":{"english_book_name":"Esther","hebrew_book_name":u"אסתר","english_comment_name":"Megillat Setarim"},
 u"פלגי מים":{"english_book_name":"Lamentations","hebrew_book_name":u"איכה","english_comment_name":"Palgei Mayim"},
 u"צרור המור":{"english_book_name":"Song of Songs","hebrew_book_name":u"שיר השירים","english_comment_name":"Tzror HaMor"},
-u"תעלומות חכמה":{"english_book_name":"Ecclesiastes","hebrew_book_name":u"קהלת","english_comment_name":"Ta'alumot Chokmah"}}
+u"תעלומות חכמה":{"english_book_name":"Ecclesiastes","hebrew_book_name":u"קהלת","english_comment_name":"Ta'alumot Chokhmah"}}
 class megilah:
     def __init__(self, file_name):
         self.file_name = file_name
@@ -76,6 +76,10 @@ class megilah:
                     in_forward=True
                 elif in_forward:
                     self.forward.append(line)
+        if 'alumot' in self.en_commentary_name:
+            with open("files/Intro_to_Taalumot_Chokhmah.txt") as myfile:
+                lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
+            self.introduction.append(lines[0])
         """
         for pindex, perek in enumerate(self.text):
             for paindex, pasuk in enumerate(perek):
@@ -92,17 +96,17 @@ class megilah:
             if len(self.introduction)>0:
                 intro_node = JaggedArrayNode()
                 intro_node.add_title("Introduction", 'en', primary = True)
-                intro_node.add_title("הקדמת", 'he', primary = True)
+                intro_node.add_title("הקדמה", 'he', primary = True)
                 intro_node.key = "Introduction"
                 intro_node.depth = 1
                 intro_node.addressTypes = ['Integer']
                 intro_node.sectionNames = ['Paragraph']
                 record.append(intro_node)
-            if len(self.forward)>0:
+            if 'Megilat' in self.en_commentary_name or 'Tzror' in self.en_commentary_name:
                 forward_node = JaggedArrayNode()
-                forward_node.add_title("Forward", 'en', primary = True)
+                forward_node.add_title("Foreword", 'en', primary = True)
                 forward_node.add_title(u"פתיחה", 'he', primary = True)
-                forward_node.key = "Forward"
+                forward_node.key = "Foreword"
                 forward_node.depth = 1
                 forward_node.addressTypes = ['Integer']
                 forward_node.sectionNames = ['Paragraph']
@@ -204,13 +208,13 @@ def not_blank(s):
     return (len(s.replace(u"\n",u"").replace(u"\r",u"").replace(u"\t",u""))!=0);
 admin_links = []
 site_links = []
-posting_term=False
-posting_category=False
-posting_index = False
-posting_text = False
-linking = False
+posting_term=True
+posting_category=True
+posting_index = True
+posting_text = True
+linking = True
 for n_file in os.listdir("files"):
-    if ".txt" in n_file and "אמרי" not in n_file:# and "צרור" not in n_file:
+    if ".txt" in n_file and "אמרי" not in n_file and "תעלומות" in n_file:
         current_megilah = megilah(n_file)
         admin_links.append(SEFARIA_SERVER+"/admin/reset/"+current_megilah.en_commentary_name+' on '+current_megilah.megilah_name_en)
         site_links.append(SEFARIA_SERVER+"/"+current_megilah.en_commentary_name+' on '+current_megilah.megilah_name_en)
@@ -295,11 +299,11 @@ def is_post_text():
         'text': text
     }
     post_text_weak_connection(IS_dictionary["english_comment_name"]+' on '+IS_dictionary["english_book_name"], version)
-is_post_term()
-is_post_category()
-is_index_post()
-is_post_text()
+#is_post_term()
+#is_post_category()
+#is_index_post()
+#is_post_text()
 
-print SEFARIA_SERVER+"/admin/reset/"+IS_dictionary["english_comment_name"]+' on '+IS_dictionary["english_book_name"]
-print SEFARIA_SERVER+"/"+IS_dictionary["english_comment_name"]+' on '+IS_dictionary["english_book_name"]
+#print SEFARIA_SERVER+"/admin/reset/"+IS_dictionary["english_comment_name"]+' on '+IS_dictionary["english_book_name"]
+#print SEFARIA_SERVER+"/"+IS_dictionary["english_comment_name"]+' on '+IS_dictionary["english_book_name"]
 
