@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 import re
 import os
-from sources.functions import *
+from sources.functions import convertDictToArray
 
 def parse_into_chapters(contents):
     # remove \n
@@ -78,4 +78,4 @@ if __name__ == "__main__":
         versionTitle = "Bible du Rabbinat 1899 [fr]"
         versionSource = "https://fr.wikisource.org/wiki/Bible_du_Rabbinat_1899"
         text = {"text": chapters, "versionTitle": versionTitle, "versionSource": versionSource, "language": "en"}
-        post_text(book, text, server="http://draft.sefaria.org")
+        #post_text(book, text, server="http://draft.sefaria.org")
