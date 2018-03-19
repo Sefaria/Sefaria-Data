@@ -43,9 +43,9 @@ NumPregeneratedValues = 20
 kForWordHash = 41
 kForMultiWordHash = 39
 
-weighted_levenshtein = WeightedLevenshtein()
 
-lettersInOrderOfFrequency = [ u'ו', u'י', u'א', u'מ', u'ה', u'ל', u'ר', u'נ', u'ב', u'ש', u'ת', u'ד', u'כ', u'ע', u'ח', u'ק', u'פ', u'ס', u'ז', u'ט', u'ג', u'צ' ]
+weighted_levenshtein = WeightedLevenshtein("hebrew")
+
 
 class MatchMatrix(object):
     def __init__(self, daf_hashes, comment_hashes, jump_coordinates, word_threshold, comment_word_skip_threshold = 1, base_word_skip_threshold = 2, overall_word_skip_threshold = 2):
@@ -460,7 +460,7 @@ class RashiUnit:
 
 
         # // now remove all non-letters, allowing just quotes
-        normalizedCV = re.sub(ur"[^א-ת \"״]", u"", normalizedCV).strip()
+        normalizedCV = re.sub(ur"[^ \"״]".format(weighted_levenshtein['re_chars']), u"", normalizedCV).strip()
 
         self.startingTextNormalized = normalizedCV
         self.fullText = fullText
@@ -1217,7 +1217,7 @@ def GetAbbrevs(dafwords, rashiwords, char_threshold, startBound, endBound, with_
         if id < startBound or id > endBound:
             continue
 
-        if re.search(ur"(?:[א-ת][\"״][א-ת]|[\'׳]$)", dword):
+        if re.search(ur"(?:[{}][\"״][{}]|[\'׳]$)".format(weighted_levenshtein['re_chars'], weighted_levenshtein['re_chars']), dword):
             abbrev_range = None
             for ir, rword in enumerate(rashiwords):
                 if abbrev_range and ir in abbrev_range:
@@ -1233,7 +1233,7 @@ def GetAbbrevs(dafwords, rashiwords, char_threshold, startBound, endBound, with_
                     allabbrevinds.append(((ir,id),(ir+offset,id)))
                     abbrev_range = range(ir,ir+offset+1)
     for ir, rword in enumerate(rashiwords):
-        if re.search(ur"(?:[א-ת][\"״][א-ת]|[\'׳]$)", rword):
+        if re.search(ur"(?:[{}][\"״][{}]|[\'׳]$)".format(weighted_levenshtein['re_chars'], weighted_levenshtein['re_chars']), rword):
             abbrev_range = None
             for id, dword in enumerate(dafwords):
                 if abbrev_range and id in abbrev_range:
@@ -1619,7 +1619,7 @@ def IsStringMatch(orig, target, threshold):  # string,string,double,out double
 
 def cleanAbbrev(str):
     str = re.sub(ur'[\"״\'׳]',u'',str)
-    str = re.sub(ur"[^א-ת]", u"", str).strip()
+    str = re.sub(ur"[^{}]".format(weighted_levenshtein.re_chars), u"", str).strip()
     str = u"".join([weighted_levenshtein.sofit_map.get(c,c) for c in str])
     return str
 
@@ -1782,17 +1782,15 @@ def CalculateHashes(allwords):  # input list
     return [GetWordSignature(w) for w in allwords]
 
 
-alefint = ord(u"א")
-
 def GetWordSignature(word):
     # make sure there is nothing but letters
-    word = re.sub(ur"[^א-ת]", u"", word)
+    word = re.sub(ur"[^{}]".format(weighted_levenshtein.re_chars), u"", word)
     word = Get2LetterForm(word)
 
     hash = 0
     for i, char in enumerate(word):
         chval = ord(char)
-        chval = chval - alefint + 1
+        chval = chval - weighted_levenshtein.first_letter + 1
         hash += (chval * GetPolynomialKWordValue(i))
 
     return hash
@@ -1819,15 +1817,6 @@ def GetPolynomialKValueReal(pos, k):
     return k ** pos
 
 
-# Merge into util.py?
-_sofit_transx_table = {
-    1498: u'\u05db',
-    1501: u'\u05de',
-    1503: u'\u05e0',
-    1507: u'\u05e4',
-    1509: u'\u05e6'
-}
-
 def Get2LetterForm(stringy):
     if stringy == u"ר":
         return u"רב"
@@ -1836,8 +1825,8 @@ def Get2LetterForm(stringy):
         return stringy
 
     # take a word, and keep only the two most infrequent letters
-    stringy = stringy.translate(_sofit_transx_table)
-    freqchart = [(lettersInOrderOfFrequency.index(tempchar), i) for i, tempchar in enumerate(stringy)]
+    stringy = stringy.translate(weighted_levenshtein._sofit_transx_table)
+    freqchart = [(weighted_levenshtein.letters_in_order_of_frequency.index(tempchar), i) for i, tempchar in enumerate(stringy)]
 
     # sort it descending, so the higher they are the more rare they are
     freqchart.sort(key=lambda freq: -freq[0])
