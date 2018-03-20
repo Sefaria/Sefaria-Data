@@ -65,6 +65,7 @@ def rambam_alt_names(newtitle = u'נדרים', primetitle =u'נדרים', all_ta
         name_dict[u'ספר תורה'] = name_dict[u'תפילין ומזוזה וספר תורה']
         name_dict[u'מזוזה'] = name_dict[u'תפילין ומזוזה וספר תורה']
         name_dict[u'תפלין'] = name_dict[u'תפילין ומזוזה וספר תורה']
+        name_dict[u'תפילין ומזוזות וספר תורה'] = name_dict[u'תפילין ומזוזה וספר תורה']
         name_dict[u'אבידה'] = name_dict[u'גזילה ואבידה']
         name_dict[u'גנבה'] = name_dict[u'גניבה']
         # name_dict[u'שמיטין'] = name_dict[u'שמיטה ויובל']
@@ -318,7 +319,6 @@ def tur_alt_titles():
     tur_ind = library.get_index("Tur")
     nodes = tur_ind.nodes.children
     nodes[0].add_title(u'א"ח', 'he')
-    nodes[0].add_title(u'טא"ח', 'he')
     nodes[0].add_title(u'או"ח', 'he')
     nodes[1].add_title(u'י"ד', 'he')
     nodes[1].add_title(u'יו"ד', 'he')
@@ -334,8 +334,8 @@ def change_gershayim_in_titles():
 
 
 if __name__ == "__main__":
-    # rambam_alt = rambam_alt_names(u'שביתת י"ט', u'שביתת יום טוב')
-    tur_alt_titles()
+    rambam_alt = rambam_alt_names(u'תפילין ומזוזות וספר תורה', u'תפילין ומזוזה וספר תורה')
+    # tur_alt_titles()
     # more_titles = alt_name_dict()
     # save_alt_titles(more_titles)
     # change_gershayim()
