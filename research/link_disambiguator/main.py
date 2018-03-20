@@ -10,7 +10,7 @@ from data_utilities.util import WeightedLevenshtein
 class Link_Disambiguator:
     def __init__(self):
         self.stop_words = []
-        self.levenshtein = WeightedLevenshtein()
+        self.levenshtein = WeightedLevenshtein("hebrew")
 
 
     def tokenize_words(self, base_str):

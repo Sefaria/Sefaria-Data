@@ -308,9 +308,10 @@ def record_not_found():
 if __name__ == "__main__":
     text1 = pre_parse(open("chomat anakh1.txt"))
     text3 = pre_parse(open("chomat anakh3.txt"))
-    post_books(text3)
+    find_verses(text1, text1.keys()[1][0], text1.keys()[1][1])
+    #post_books(text3)
     text2 = pre_parse(open("chomat anakh2.txt"), verses_indicated=False)
-    post_books(text2, verses_indicated=False)
+    #post_books(text2, verses_indicated=False)
     #record_not_found()
     post_books(text1)
     print sham_verses_indicated_set

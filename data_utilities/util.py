@@ -1010,17 +1010,62 @@ class LevenshteinError(Exception):
     pass
 
 
-class WeightedLevenshtein:
-    """
-    Use this class to calculate the Weighted Levenshtein between strings. The default letter frequencies defined here
-    are based off of the Talmud. The default min_cost value is recommended, and should only be changed by engineers with
-    a proficient understanding of the weighted Levenshtein algorithm.
-    """
+def normalizeLetterFrequency(letter_freq_by_percent):
+    # given a dictionary mapping each character to its percentage use in a language,
+    # results in a normalized value where the most frequent letter is 0.0 and the least frequent letter is 1.0
+    min_freq = min(letter_freq_by_percent.values())
+    max_freq = max(letter_freq_by_percent.values())
+    normalize = lambda x: abs((1.0 * x - max_freq) / (min_freq - max_freq))
+    letter_freq_normalized = {char: normalize(value) for (char, value) in letter_freq_by_percent}
+    return letter_freq_normalized
 
-    def __init__(self, letter_freqs=None, min_cost=None):
 
-        if letter_freqs is None:
-            self.letter_freqs = {
+def lettersInOrderOfFrequency(letter_freq_by_percent):
+    dict_reversed = {v: k for k, v in letter_freq_by_percent.items()}
+    percents = sorted(dict_reversed.keys(), reverse=True)
+    letters = []
+    for percent in percents:
+        letters.append(dict_reversed[percent])
+    return letters
+
+
+languages = {}
+# languages['english'] = {}
+# letter_freqs_english = {u"a": 8.167,
+#                         u"b": 1.492,
+#                         u"c": 2.782,
+#                         u"d": 4.253,
+#                         u"e": 12.702,
+#                         u"f": 2.228,
+#                         u"g": 2.015,
+#                         u"h": 6.094,
+#                         u"i": 6.966,
+#                         u"j": 0.153,
+#                         u"k": 0.772,
+#                         u"l": 4.025,
+#                         u"m": 2.406,
+#                         u"n": 6.749,
+#                         u"o": 7.507,
+#                         u"p": 1.929,
+#                         u"q": 0.095,
+#                         u"r": 5.987,
+#                         u"s": 6.327,
+#                         u"t": 9.056,
+#                         u"u": 2.758,
+#                         u"v": 0.978,
+#                         u"w": 2.360,
+#                         u"x": 0.150,
+#                         u"y": 1.974,
+#                         u"z": 0.074}
+#
+# languages['english']['letters_in_order_of_frequency'] = lettersInOrderOfFrequency(letter_freqs_english)
+# languages['english']['letter_freqs'] = normalizeLetterFrequency(letter_freqs_english)
+# languages['english']['sofit_map'] = {chr(ord(letter) - 32).decode('utf-8'): letter for letter in letter_freqs_english} #dictionary mapping capital letters to lowercase letters
+# languages['english']['sofit_transx_table'] = {ord(letter) - 33: chr(ord(letter) - 32).decode('utf-8') for letter in letter_freqs_english}
+# languages['english']['re_chars'] = ur"a-zA-Z"
+# languages['english']['first_letter'] = ord('a')
+
+languages['hebrew'] = {'letter_freqs': {
                 u'י': 0.0,
                 u'ו': 0.2145,
                 u'א': 0.2176,
@@ -1043,17 +1088,41 @@ class WeightedLevenshtein:
                 u'ז': 0.9948,
                 u'ג': 0.9988,
                 u'צ': 1.0
-            }
-        else:
-            self.letter_freqs = letter_freqs
-
-        self.sofit_map = {
+            },
+        'sofit_map': {
             u'ך': u'כ',
             u'ם': u'מ',
             u'ן': u'נ',
             u'ף': u'פ',
             u'ץ': u'צ',
+        },
+        'letters_in_order_of_frequency': [ u'ו', u'י', u'א', u'מ', u'ה', u'ל', u'ר', u'נ', u'ב', u'ש', u'ת', u'ד', u'כ', u'ע', u'ח', u'ק', u'פ', u'ס', u'ז', u'ט', u'ג', u'צ' ],
+        'sofit_transx_table': {
+            1498: u'\u05db',
+            1501: u'\u05de',
+            1503: u'\u05e0',
+            1507: u'\u05e4',
+            1509: u'\u05e6'
+        },
+        're_chars': ur"א-ת",  #string to be used in regular expressions to look for characters in this language
+        'first_letter': ord(u"א")
         }
+
+class WeightedLevenshtein:
+    """
+    Use this class to calculate the Weighted Levenshtein between strings. The default letter frequencies defined here
+    are based off of the Talmud. The default min_cost value is recommended, and should only be changed by engineers with
+    a proficient understanding of the weighted Levenshtein algorithm.
+    """
+
+    def __init__(self, language, min_cost=None):
+        dh_language = languages[language]
+        self.letter_freqs = dh_language['letter_freqs']
+        self.letters_in_order_of_frequency = dh_language['letters_in_order_of_frequency']
+        self.re_chars = dh_language['re_chars']
+        self.sofit_map = dh_language['sofit_map']
+        self._sofit_transx_table = dh_language['sofit_transx_table']
+        self.first_letter = dh_language['first_letter']
 
         if min_cost is None:
             self.min_cost = 1.0
@@ -1070,14 +1139,6 @@ class WeightedLevenshtein:
         self._most_expensive = max(self.letter_freqs.values())
 
         # dict((ord(char), sofit_map[char]) for char in self.sofit_map.keys())
-        self._sofit_transx_table = {
-            1498: u'\u05db',
-            1501: u'\u05de',
-            1503: u'\u05e0',
-            1507: u'\u05e4',
-            1509: u'\u05e6'
-        }
-    #Cost of calling this isn't worth the syntax benefit
     """
     def sofit_swap(self, c):
         return self.sofit_map.get(c, c)

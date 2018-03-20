@@ -10,7 +10,7 @@ from data_utilities.util import WeightedLevenshtein
 class Link_Disambiguator:
     def __init__(self):
         self.stop_words = []
-        self.levenshtein = WeightedLevenshtein()
+        self.levenshtein = WeightedLevenshtein("hebrew")
 
 
     def tokenize_words(self, base_str):
@@ -82,7 +82,7 @@ class Link_Disambiguator:
         matcher = ParallelMatcher(self.tokenize_words,max_words_between=1, min_words_in_match=3, ngram_size=3,
                                        parallelize=False, calculate_score=self.get_score, all_to_all=False, verbose=False)
         try:
-            match_list = matcher.match(tc_list=[main_tc] + tc_list, return_obj=True)
+            match_list = matcher.match(tc_list=[main_tc] + tc_list, return_obj=True, lang='en')
         except ValueError:
             print "Skipping {}".format(main_tc)
             return [], [] #[[main_tc._oref.normal(), tc_list[i]._oref.normal()] for i in range(len(tc_list))]
