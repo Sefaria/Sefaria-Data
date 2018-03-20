@@ -76,10 +76,10 @@ def scrape_links(csvfilename, times=1):
                 smk_lst = re.findall(u'''\u05e8\u05d1\u05d9 \u05d9\u05e6\u05d7\u05e7 \u05de\u05e7\u05d5\u05e8\u05d1\u05d9\u05dc, \u05e1\u05e4\u05e8 \u05de\u05e6\u05d5\u05d5\u05ea \u05e7\u05d8\u05df(.*)''',citation_column[-1].text)
             row_link['chinukh'] = i
             row_link['smk'] = re.findall(u'''\u05e8\u05d1\u05d9 \u05d9\u05e6\u05d7\u05e7 \u05de\u05e7\u05d5\u05e8\u05d1\u05d9\u05dc, \u05e1\u05e4\u05e8 \u05de\u05e6\u05d5\u05d5\u05ea \u05e7\u05d8\u05df(.*)''',citation_column[-1].text)
-            row_link['rambam'] = re.findall(u'''רמב"ם, ספר המצוות(.*?);''',citation_column[-1].text)
-            row_link['smg'] = re.findall(u'''רבי משה מקוצי, ספר מצוות גדול(.*?)[;,:.]''',citation_column[-1].text)
-            row_link['mishneh'] = re.findall(u'(רמב"ם הלכות.*?)(?:[;,:.]|ע"ש)',citation_column[-1].text)
-            row_link['shulchanArukh'] = re.findall(u'שו"ע(.*?)[;:.]', citation_column[-1].text)
+            row_link['rambam'] = re.findall(u'''רמב"ם, ספר המצווו?ת(.*?)[;:.\n]''',citation_column[-1].text)
+            row_link['smg'] = re.findall(u'''רבי משה מקוצי, ספר מצוות גדול(.*?)[;,:.\n]''',citation_column[-1].text)
+            row_link['mishneh'] = re.findall(u'(רמב"ם הלכות.*?)(?:[;,:.\n]|ע"ש)',citation_column[-1].text)
+            row_link['shulchanArukh'] = re.findall(u'שו"ע(.*?)[;:.\n]', citation_column[-1].text)
             for column in ['smk', 'rambam', 'smg', 'mishneh', 'shulchanArukh']:
                 if len(row_link[column]) > 1:
                     if rnd == 1:
@@ -159,6 +159,7 @@ def chinukh_smg():
     print cnt
     toCsv('chinukh_smg', ['chimukh','smk','smg'], dictList)
 
+
 def toCsv(csvfilename, headers, dictList):
     with open(u'{}.csv'.format(csvfilename), 'w') as csv_file:
         writer = csv.DictWriter(csv_file, headers) #fieldnames = obj_list[0].keys())
@@ -170,33 +171,34 @@ def siman_exctractor(text, header):
     if not text:
         return
     if isinstance(text, list):
+        double = []
         for t in text:
-            return siman_exctractor(t, header)
-    simanim = []
+            double.append(siman_exctractor(t, header))
+        return double
+    text = re.sub(u"[;.,']", u"", text)
     lte = {'smk': [u'סימן', u'סעיף'], 'rambam':[u'מצוות', u'וע"ש'], 'smg':[], 'mishneh':[], 'shulchanArukh':[]}
     list_to_egnore = lte[header]
-    full_siman = []
+    simanim = []
     split = iter(re.split(u'\s', text))
     for word in split:
-        word = re.sub(u"[;.,']", u"", word)
         if not word or (word in list_to_egnore):
             continue
         if header == 'rambam':
             if word == u'עשה':
-                full_siman.append(u'Positive Mitzvot')
+                simanim.append(u'Positive Mitzvot')
                 continue
             elif word == u"לא" and split.next() == u"תעשה":
-                full_siman.append(u'Negative Mitzvot')
+                simanim.append(u'Negative Mitzvot')
                 continue
         if header == 'smg':
             if word == u'עשין':
-                full_siman.append(u'Positive Commandments')
+                simanim.append(u'Positive Commandments')
                 continue
-            elif word == u"לאוין":
-                full_siman.append(u'Negative Commandments')
+            elif re.search(u"לאוו?ין", word):
+                simanim.append(u'Negative Commandments')
                 continue
         if header in ['mishneh', 'shulchanArukh']:
-            text = re.sub(u"'|,", u"", text)
+            text = re.sub(u"'|,", u"", text.strip())
             while True:
                 if not text:
                     return
@@ -204,10 +206,11 @@ def siman_exctractor(text, header):
                 try:
                     ref = Ref(text)
                     print ref
-                    return ref
+                    return ref.normal()
                 except InputError:
                     split_text = re.split(u'\s', text)
                     text = u' '.join(split_text[:-1])
+                    print '***'
         if re.search(u'-', word):
             borders = re.search(u"(.*?)-(.*)", word)
             start = getGematria(borders.group(1))
@@ -219,11 +222,14 @@ def siman_exctractor(text, header):
                 # print smk_text, simanim
                 return simanim
             else:
-                full_siman.append(check_vav(word))
-                simanim.append(full_siman)
+                simanim.append(check_vav(word))
+                simanim.append(simanim)
         else:
-            full_siman.append(getGematria(word))
-            simanim.append(full_siman)
+            # if header == u'rambam':
+            #     simanim.append(getGematria(word))
+            #     simanim.append(simanim)
+            # else:
+            simanim.append(getGematria(word))
     # print smk_text, simanim
     return simanim
 
@@ -295,6 +301,56 @@ def hebrew_number_regex():
 
     return re.compile(rx, re.VERBOSE)
 
+def refs_csv(csvlinkfile):
+    sets_by_chinukh = []
+    link_node_cnt = 0
+    with open(u'{}'.format(csvlinkfile), 'r') as csvfile:
+        seg_reader = csv.DictReader(csvfile)
+        for row in seg_reader:
+            set_cnt = 0
+            mitzvah_set = set()
+            mitzvah_set.add(Ref(u'Sefer HaChinukh.{}'.format(row[u'chinukh'])))
+            if eval(row[u'smk']):
+                for smki in eval(row[u'smk']):
+                    mitzvah_set.add(Ref(u'Sefer Mitzvot Katan, Remazim.{}'.format(smki)))
+            rambam = eval(row[u'rambam'])
+            if rambam:
+                if not isinstance(rambam[0], list):
+                    mitzvah_set.add(Ref(u'Sefer HaMitzvot, {}.{}'.format(rambam[0], rambam[1])))
+                else:
+                    for ram in rambam:
+                        if ram:
+                            mitzvah_set.add(Ref(u'Sefer HaMitzvot, {}.{}'.format(ram[0], ram[1])))
+            smg = eval(row[u'smg'])
+            if smg:
+                if not isinstance(smg[0], list):
+                    mitzvah_set.add(Ref(u'Sefer Mitzvot Gadol, {}, Remazim.{}'.format(smg[0], rambam[1])))
+                else:
+                    for smgi in smg:
+                        if smgi:
+                            mitzvah_set.add(Ref(u'Sefer Mitzvot Gadol, {}, Remazim.{}'.format(smgi[0], smgi[1])))
+            mishneh = row[u'mishneh']
+            # Note! some are plain text and some are lists... how to recognize???
+            if mishneh:
+                if not isinstance(eval(mishneh), list):
+                    mitzvah_set.add(Ref(mishneh))
+                else:
+                    for halachot in mishneh:
+                        if halachot:
+                            mitzvah_set.add(Ref(u'Sefer Mitzvot Gadol, {}, Remazim.{}'.format(halachot[0], halachot[1])))
+
+
+def links_from_csv(csvlinkfile):
+    # with open(u'{}'.format(csvlinkfile), 'r') as csvfile:
+    #     seg_reader = csv.DictReader(csvfile)
+    #     headers = seg_reader.fieldnames
+    #     for row in seg_reader:
+    #         for column in headers:
+    #             if isinstance(row[column], list):
+    #                 for r in
+
+
+    return
 
 def link_sfrMitzvot_shortCounting():
     links = []
@@ -331,9 +387,10 @@ def link_sfrMitzvot_shortCounting():
 if __name__ == "__main__":
     # rambam_chinukh_lnks = scrape_wiki()
     # post_link(rambam_chinukh_lnks, VERBOSE=True)
-    # scrape_links(u"siman_numbers")
+    # # scrape_links(u"siman_numbers")
     # links_ch_smk = links_chinukh_smk(u"smk_chinukh.csv")
     # post_link(links_ch_smk, VERBOSE=True)
     # chinukh_smg()
     # post_link(link_sfrMitzvot_shortCounting(), VERBOSE=True)
-    scrape_links(u'only_orig_siman', times=1)
+    scrape_links(u'mitzvot_H_data_only_links', times=1)
+
