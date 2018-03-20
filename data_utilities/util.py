@@ -1030,6 +1030,7 @@ def lettersInOrderOfFrequency(letter_freq_by_percent):
 
 
 languages = {}
+
 # languages['english'] = {}
 # letter_freqs_english = {u"a": 8.167,
 #                         u"b": 1.492,
