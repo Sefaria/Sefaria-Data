@@ -5,6 +5,7 @@ import unicodecsv as csv
 from bs4 import BeautifulSoup
 from sefaria.model import *
 from sefaria.system.exceptions import InputError
+from sefaria.helper.link import create_link_cluster
 import regex as re
 from sources.functions import post_link
 from data_utilities.util import getGematria, numToHeb,isGematria
@@ -27,7 +28,7 @@ def scrape_wiki():
     for pair in pairs:
         if re.search(u'ספר|מספר', pair[0]):
             continue
-        neg_pos = u"Negative Mitzvot" if re.search(u"לאו", pair[1]) else u'Positive Mitzvot'
+        neg_pos = u"Negative Commandments" if re.search(u"לאו", pair[1]) else u'Positive Commandments'
         rambam = getGematria(re.sub(u'עשה|לאו', u'', pair[1]).strip())
         chinukh = getGematria(pair[0])
         print chinukh, rambam
@@ -185,10 +186,10 @@ def siman_exctractor(text, header):
             continue
         if header == 'rambam':
             if word == u'עשה':
-                simanim.append(u'Positive Mitzvot')
+                simanim.append(u'Positive Commandments')
                 continue
             elif word == u"לא" and split.next() == u"תעשה":
-                simanim.append(u'Negative Mitzvot')
+                simanim.append(u'Negative Commandments')
                 continue
         if header == 'smg':
             if word == u'עשין':
@@ -206,7 +207,7 @@ def siman_exctractor(text, header):
                 try:
                     ref = Ref(text)
                     print ref
-                    return ref.normal()
+                    return [ref.normal()]  # notice that this iterative logic doesn't catch refs with Vav
                 except InputError:
                     split_text = re.split(u'\s', text)
                     text = u' '.join(split_text[:-1])
@@ -303,42 +304,63 @@ def hebrew_number_regex():
 
 def refs_csv(csvlinkfile):
     sets_by_chinukh = []
+    clusters = []
     link_node_cnt = 0
     with open(u'{}'.format(csvlinkfile), 'r') as csvfile:
         seg_reader = csv.DictReader(csvfile)
         for row in seg_reader:
             set_cnt = 0
-            mitzvah_set = set()
-            mitzvah_set.add(Ref(u'Sefer HaChinukh.{}'.format(row[u'chinukh'])))
+            mitzvah_set = []
+            mitzvah_set.append(Ref(u'Sefer HaChinukh.{}'.format(row[u'chinukh'])))
             if eval(row[u'smk']):
                 for smki in eval(row[u'smk']):
-                    mitzvah_set.add(Ref(u'Sefer Mitzvot Katan, Remazim.{}'.format(smki)))
+                    if smki:
+                        mitzvah_set.append(Ref(u'Sefer Mitzvot Katan, Remazim.{}'.format(smki)))
             rambam = eval(row[u'rambam'])
             if rambam:
                 if not isinstance(rambam[0], list):
-                    mitzvah_set.add(Ref(u'Sefer HaMitzvot, {}.{}'.format(rambam[0], rambam[1])))
+                    try:
+                        mitzvah_set.append(Ref(u'Sefer HaMitzvot, {}.{}'.format(rambam[0].strip(), rambam[1])))
+                    except IndexError:
+                        print u'*problem {} in siman {} *'.format(rambam, row[u'chinukh'])
                 else:
                     for ram in rambam:
                         if ram:
-                            mitzvah_set.add(Ref(u'Sefer HaMitzvot, {}.{}'.format(ram[0], ram[1])))
+                            mitzvah_set.append(Ref(u'Sefer HaMitzvot, {}.{}'.format(ram[0].strip(), ram[1])))
             smg = eval(row[u'smg'])
             if smg:
-                if not isinstance(smg[0], list):
-                    mitzvah_set.add(Ref(u'Sefer Mitzvot Gadol, {}, Remazim.{}'.format(smg[0], rambam[1])))
-                else:
+                if isinstance(smg[0], list):
                     for smgi in smg:
                         if smgi:
-                            mitzvah_set.add(Ref(u'Sefer Mitzvot Gadol, {}, Remazim.{}'.format(smgi[0], smgi[1])))
+                            mitzvah_set.append(Ref(u'Sefer Mitzvot Gadol, {}, Remazim.{}'.format(smgi[0], smgi[1])))
+                elif isinstance(smg[0], unicode):
+                    try:
+                        mitzvah_set.append(Ref(u'Sefer Mitzvot Gadol, {}, Remazim.{}'.format(smg[0].strip(), smg[1])))
+                    except IndexError:
+                        print u'*problem {} in siman {} *'.format(smg, row[u'chinukh'])
             mishneh = row[u'mishneh']
-            # Note! some are plain text and some are lists... how to recognize???
             if mishneh:
-                if not isinstance(eval(mishneh), list):
-                    mitzvah_set.add(Ref(mishneh))
+                mishneh = eval(row[u'mishneh'])
+                if len(mishneh) == 1:
+                    mitzvah_set.append(Ref(mishneh[0]))
                 else:
-                    for halachot in mishneh:
-                        if halachot:
-                            mitzvah_set.add(Ref(u'Sefer Mitzvot Gadol, {}, Remazim.{}'.format(halachot[0], halachot[1])))
+                    for mish in mishneh:
+                        if mish:
+                            mitzvah_set.append(Ref(mish[0]))
+            sa = row[u'shulchanArukh']
+            if sa:
+                sa = eval(row[u'shulchanArukh'])
+                if len(sa) == 1:
+                    mitzvah_set.append(Ref(sa[0]))
+                else:
+                    for sai in sa:
+                        if sai:
+                            mitzvah_set.append(Ref(sai[0]))
+            sets_by_chinukh.append(mitzvah_set)
+            mitzvah_cluster = create_link_cluster(mitzvah_set, 30044, link_type="Sifrei Mitzvot", attrs={"generated_by": "viascraped_chinukh_sfm_linker", "auto": True})
+            clusters.append(mitzvah_cluster)
 
+    return sets_by_chinukh, clusters
 
 def links_from_csv(csvlinkfile):
     # with open(u'{}'.format(csvlinkfile), 'r') as csvfile:
@@ -354,12 +376,12 @@ def links_from_csv(csvlinkfile):
 
 def link_sfrMitzvot_shortCounting():
     links = []
-    # Positive Mitzvot
+    # Negative Commandments
     pos_sefer_mitzvot = Ref(u'Sefer HaMitzvot, Positive Commandments').all_segment_refs()
     for m, sefer_ref in enumerate(pos_sefer_mitzvot):
         mitzva_len =len(sefer_ref.all_segment_refs())
         link = ({"refs": [
-            u'Mishneh Torah, Positive Mitzvot.{}'.format(m+1),
+            u'Mishneh Torah, Positive Commandments.{}'.format(m+1),
             u'Sefer HaMitzvot, Positive Commandments.{}.1-{}'.format(m+1, mitzva_len)
         ],
             "type": "Sifrei Mitzvot",
@@ -368,12 +390,12 @@ def link_sfrMitzvot_shortCounting():
         })
         links.append(link)
 
-    # Positive Mitzvot
+    # Negative Mitzvot
     neg_sefer_mitzvot = Ref(u'Sefer HaMitzvot, Negative Commandments').all_segment_refs()
     for m, sefer_ref in enumerate(neg_sefer_mitzvot):
         mitzva_len =len(sefer_ref.all_segment_refs())
         link = ({"refs": [
-            u'Mishneh Torah, Negative Mitzvot.{}'.format(m+1),
+            u'Mishneh Torah, Negative Commandments.{}'.format(m+1),
             u'Sefer HaMitzvot, Negative Commandments.{}.1-{}'.format(m+1, mitzva_len)
         ],
             "type": "Sifrei Mitzvot",
@@ -392,5 +414,6 @@ if __name__ == "__main__":
     # post_link(links_ch_smk, VERBOSE=True)
     # chinukh_smg()
     # post_link(link_sfrMitzvot_shortCounting(), VERBOSE=True)
-    scrape_links(u'mitzvot_H_data_only_links', times=1)
+    # scrape_links(u'mitzvot_H_data_only_links', times=1)
+    refs_csv(u'mitzvot_H_data_only_links.csv')
 
