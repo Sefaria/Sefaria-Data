@@ -48,9 +48,9 @@ source_kidmat_box=[]
 def post_index_bst():
     # create index record
     record = SchemaNode()
-    record.add_title('Baal Shem Tov on Torah', 'en', primary =True, )
-    record.add_title(u'בעל שם טוב על תורה', 'he',primary= True, )
-    record.key = 'Baal Shem Tov on Torah'
+    record.add_title('Baal Shem Tov', 'en', primary =True, )
+    record.add_title(u'בעל שם טוב', 'he',primary= True, )
+    record.key = 'Baal Shem Tov'
     
     #add node for introduction
     intro_node = JaggedArrayNode()
@@ -88,7 +88,7 @@ def post_index_bst():
     record.validate()
 
     index = {
-        "title": "Baal Shem Tov on Torah",
+        "title": "Baal Shem Tov",
         "categories": ["Chasidut"],
         "schema": record.serialize()
     }
@@ -127,14 +127,14 @@ def parse_bst(posting=True):
         for pindex, paragraph in enumerate(section):
             print "Intro",sindex, pindex, paragraph
     #"""
-    1/0
+    
     version = {
         'versionTitle': 'Sefer Baal Shem Tov. Lodz, 1938',
         'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001944944',
         'language': 'he',
         'text': bst_intro
     }
-    #post_text_weak_connection('Baal Shem Tov on Torah, Introduction', version)
+    post_text_weak_connection('Baal Shem Tov, Introduction', version)
     
     version = {
         'versionTitle': 'Sefer Baal Shem Tov. Lodz, 1938',
@@ -142,8 +142,8 @@ def parse_bst(posting=True):
         'language': 'he',
         'text': source_kidmat_box
     }
-    #post_text_weak_connection('Baal Shem Tov on Torah, Kuntres Meirat Einayim', version)
-    
+    post_text_weak_connection('Baal Shem Tov, Kuntres Meirat Einayim', version)
+    #1/0
     #"""
     past_start = False
     parsha_dict = {}
@@ -203,8 +203,8 @@ def parse_bst(posting=True):
                 'language': 'he',
                 'text': parsha_dict[key]
             }
-            post_text_weak_connection('Baal Shem Tov on Torah, '+eng_parshiot[heb_parshiot.index(key)], version)
-            #post_text('Baal Shem Tov on Torah, '+eng_parshiot[heb_parshiot.index(key)], version, weak_network=True)
+            post_text_weak_connection('Baal Shem Tov, '+eng_parshiot[heb_parshiot.index(key)], version)
+            #post_text('Baal Shem Tov, '+eng_parshiot[heb_parshiot.index(key)], version, weak_network=True)
     return parsha_dict
         
 def clean_line(s):
@@ -213,7 +213,7 @@ def clean_line(s):
     s = re.sub(ur"@\d{1,4}",u"",s)
     #for match in re.findall(ur'(?<=[:\.])\s*\(.*?\)$',s):
     #for match in re.findall(ur'(?<=[\.:])\s*\(.*?\)\.$',s):
-    for match in re.findall(ur'\.\s*\(.*?\)\.\s*$',s):
+    for match in re.findall(ur'(?<=\.)\s*\(.*?\)\.\s*$',s):
         s = s.replace(match, u'<br><small>'+match.strip()+u'</small>')
     return s
 #commented out portions can be used to track alignment
@@ -277,7 +277,7 @@ def mmc_index_post():
 
     index = {
         "title": "Mekor Mayim Chayim on Baal Shem Tov",
-        "categories": ["Chasidut"],
+        "categories": ["Chasidut","Commentary"],
         "dependence": "Commentary",
         "collective_title": "Mekor Mayim Chayim",
         "schema": record.serialize()
@@ -365,8 +365,8 @@ def link_mmc():
                     link = (
                             {
                             "refs": [
-                                     'Mekor Mayim Chayim on Baal Shem Tov, Kuntres Meirat Einayim, {}'.format(data_order),
-                                     'Baal Shem Tov on Torah, Kuntres Meirat Einayim, {}:{}'.format(sindex+1, pindex+1),
+                                     Ref('Mekor Mayim Chayim on Baal Shem Tov, Kuntres Meirat Einayim, {}'.format(data_order)).as_ranged_segment_ref().normal(),
+                                     'Baal Shem Tov, Kuntres Meirat Einayim, {}:{}'.format(sindex+1, pindex+1),
                                      ],
                             "type": "commentary",
                             'inline_reference': {
@@ -377,8 +377,6 @@ def link_mmc():
                             "generated_by": "sterling_Mekor_Mayim_Chayim_linker"
                             })
                     post_link(link, weak_network=True)
-    1/0
-    print "PAST INTRO"
     p_dict = parse_bst(False)
     for key in p_dict.keys():
         for cindex, comment in enumerate(p_dict[key]):
@@ -392,8 +390,8 @@ def link_mmc():
                         link = (
                                 {
                                 "refs": [
-                                         'Mekor Mayim Chayim on Baal Shem Tov, {} {}'.format(e_parsha, data_order),
-                                         'Baal Shem Tov on Torah, {}, {}:{}'.format(e_parsha, cindex+1, pindex+1),
+                                         Ref('Mekor Mayim Chayim on Baal Shem Tov, {} {}'.format(e_parsha, data_order)).as_ranged_segment_ref().normal(),
+                                         'Baal Shem Tov, {}, {}:{}'.format(e_parsha, cindex+1, pindex+1),
                                          ],
                                 "type": "commentary",
                                 'inline_reference': {
@@ -419,11 +417,13 @@ def highest_fuzz(input_list, input_item):
             best_match=item
             highest_ratio=fuzz.ratio(input_item,item)
     return best_match
+    
+#add_category('Commentary', ["Chasidut","Commentary"],u'מפרשים')
 #post_index_bst()
-#parse_bst(False)
+#parse_bst()
 #post_mmc_term()
 #mmc_index_post()
-mmc_parse()
+#mmc_parse()
 link_mmc()
 """
 "Inspiration for the Prayer Leader","Inspiration for the Shofar Blower","Inspiration for Repentence"
