@@ -94,18 +94,18 @@ def fix_markers_sheiltot(sheilta):
             if getGematria(eimek_match)>0:
                 eimek_current_order_number=getGematria(eimek_match)
             if u'*' in eimek_match:
-                p=p.replace(eimek_match,u"<i data-commentator=\"Haamek Sheilah\" data-label=\"*\" data-order=\""+str(eimek_current_order_number)+"\"></i>")
+                p=p.replace(eimek_match,u"<i data-commentator=\"Haamek Sheilah on Sheiltot d\'Rav Achai Gaon\" data-label=\"*\" data-order=\""+str(eimek_current_order_number)+"\"></i>")
             else:
-                p=p.replace(eimek_match,u"<i data-commentator=\"Haamek Sheilah\" data-order=\""+str(eimek_current_order_number)+"\"></i>")
+                p=p.replace(eimek_match,u"<i data-commentator=\"Haamek Sheilah on Sheiltot d\'Rav Achai Gaon\" data-order=\""+str(eimek_current_order_number)+"\"></i>")
         for shalom_match in re.findall(ur'@55\S* ',p):
             #print shalom_match, getGematria(shalom_match)
             #print repr(shalom_match)
             if getGematria(shalom_match)>1:
                 shalom_current_order_number=getGematria(shalom_match)
             if u'*' in shalom_match:
-                p=p.replace(shalom_match,u"<i data-commentator=\"Sheilat Shalom\" data-label=\"*\" data-order=\""+str(shalom_current_order_number)+"\"></i> ")
+                p=p.replace(shalom_match,u"<i data-commentator=\"Sheilat Shalom on Sheiltot d\'Rav Achai Gaon\" data-label=\"*\" data-order=\""+str(shalom_current_order_number)+"\"></i> ")
             else:
-                p=p.replace(shalom_match,u"<i data-commentator=\"Sheilat Shalom\" data-order=\""+str(shalom_current_order_number)+"\"></i> ")
+                p=p.replace(shalom_match,u"<i data-commentator=\"Sheilat Shalom on Sheiltot d\'Rav Achai Gaon\" data-order=\""+str(shalom_current_order_number)+"\"></i> ")
         return_array.append(re.sub(ur"@\d{1,4}",u"",p))
     return return_array
     
@@ -154,9 +154,9 @@ def post_sra_index():
 def post_eimek_index():
     # create index record
     record = SchemaNode()
-    record.add_title('Haamek Sheilah', 'en', primary=True, )
-    record.add_title(u'העמק שאלה', 'he', primary=True, )
-    record.key = 'Haamek Sheilah'
+    record.add_title('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon', 'en', primary=True, )
+    record.add_title(u'העמק שאלה על שאילתות דרב אחאי גאון', 'he', primary=True, )
+    record.key = 'Haamek Sheilah on Sheiltot d\'Rav Achai Gaon'
 
     #add nodes for introductions
     intro_node = JaggedArrayNode()
@@ -190,7 +190,7 @@ def post_eimek_index():
     record.validate()
 
     index = {
-        "title": 'Haamek Sheilah',
+        "title": 'Haamek Sheilah on Sheiltot d\'Rav Achai Gaon',
         "categories": ["Halakhah","Commentary"],
         "dependence": "Commentary",
         "collective_title": "Haamek Sheilah",
@@ -365,8 +365,8 @@ def post_eimek_text():
         'language': 'he',
         'text': final_text
     }
-    post_text('Haamek Sheilah', version,weak_network=True, skip_links=True, index_count="on")
-    #post_text_weak_connection('Haamek Sheilah', version)#,weak_network=True)#, skip_links=True,
+    post_text('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon', version,weak_network=True, skip_links=True, index_count="on")
+    #post_text_weak_connection('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon', version)#,weak_network=True)#, skip_links=True,
 def post_eimek_intros():
     with open('files/במדבר/שאילתות עמק השאלה במדבר.txt') as myfile:
         lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
@@ -411,8 +411,8 @@ def post_eimek_intros():
         'language': 'he',
         'text': kidmat_box
     }
-    #post_text('Haamek Sheilah, Kidmat HaEmek', version,weak_network=True)#, skip_links=True, index_count="on")
-    #post_text_weak_connection('Haamek Sheilah', version)#,weak_network=True)#, skip_links=True,
+    #post_text('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon, Kidmat HaEmek', version,weak_network=True)#, skip_links=True, index_count="on")
+    #post_text_weak_connection('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon', version)#,weak_network=True)#, skip_links=True,
     
     version = {
         'versionTitle': 'Sheiltot d\'Rav Achai Gaon; Vilna, 1861',
@@ -420,8 +420,8 @@ def post_eimek_intros():
         'language': 'he',
         'text': petach_box
     }
-    #post_text('Haamek Sheilah, Petach HaEmek', version,weak_network=True)#, skip_links=True, index_count="on")
-    #post_text_weak_connection('Haamek Sheilah, Petach HaEmek', version)#,weak_network=True)#, skip_links=True,
+    #post_text('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon, Petach HaEmek', version,weak_network=True)#, skip_links=True, index_count="on")
+    #post_text_weak_connection('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon, Petach HaEmek', version)#,weak_network=True)#, skip_links=True,
 def post_bereshit_eimek_intro():
     with open('files/בראשית/שאילתות הקדמת העמק שאלה.txt') as myfile:
         lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
@@ -450,7 +450,7 @@ def post_bereshit_eimek_intro():
         'language': 'he',
         'text': hakdama_box
     }
-    post_text_weak_connection('Haamek Sheilah, Kidmat HaEmek', version)#,weak_network=True)#, skip_links=True,
+    post_text_weak_connection('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon, Kidmat HaEmek', version)#,weak_network=True)#, skip_links=True,
 
 def post_vayikra_eimek_intro():    
     with open('files/ויקרא/שאילתות עמק השאלה ויקרא.txt') as myfile:
@@ -488,7 +488,7 @@ def post_vayikra_eimek_intro():
         'language': 'he',
         'text': kidmat_box
     }
-    post_text_weak_connection('Haamek Sheilah, Kidmat HaEmek', version)
+    post_text_weak_connection('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon, Kidmat HaEmek', version)
     
     version = {
         'versionTitle': 'Sheiltot d\'Rav Achai Gaon, Kidmat HaEmek, volume II, 1861-1867',
@@ -496,7 +496,7 @@ def post_vayikra_eimek_intro():
         'language': 'he',
         'text': petach_box
     }
-    post_text_weak_connection('Haamek Sheilah, Petach HaEmek', version)
+    post_text_weak_connection('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon, Petach HaEmek', version)
     
             
 
@@ -516,12 +516,12 @@ def link_eimek_text():
                         link = (
                                 {
                                 "refs": [
-                                         'Haamek Sheilah, {}:{}'.format(sindex+1,data_order),
+                                         Ref('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon, {}:{}'.format(sindex+1,data_order)).as_ranged_segment_ref().normal(),
                                          'Sheiltot d\'Rav Achai Gaon {}:{}'.format(sindex+1, pindex+1),
                                          ],
                                 "type": "commentary",
                                 'inline_reference': {
-                                    'data-commentator': "Haamek Sheilah",
+                                    'data-commentator': "Haamek Sheilah on Sheiltot d\'Rav Achai Gaon",
                                     'data-order': data_order,
                                     'data-label': '*'
                                     },
@@ -532,12 +532,12 @@ def link_eimek_text():
                         link = (
                                 {
                                 "refs": [
-                                         'Haamek Sheilah, {}:{}'.format(sindex+1,data_order),
+                                         Ref('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon, {}:{}'.format(sindex+1,data_order)).as_ranged_segment_ref().normal(),
                                          'Sheiltot d\'Rav Achai Gaon {}:{}'.format(sindex+1, pindex+1),
                                          ],
                                 "type": "commentary",
                                 'inline_reference': {
-                                    'data-commentator': "Haamek Sheilah",
+                                    'data-commentator': "Haamek Sheilah on Sheiltot d\'Rav Achai Gaon",
                                     'data-order': data_order
                                     },
                                 "auto": True,
@@ -547,9 +547,9 @@ def link_eimek_text():
 def post_shalom_index():
     # create index record
     record = SchemaNode()
-    record.add_title('Sheilat Shalom', 'en', primary=True, )
-    record.add_title(u'שאילת שלום', 'he', primary=True, )
-    record.key = 'Sheilat Shalom'
+    record.add_title('Sheilat Shalom on Sheiltot d\'Rav Achai Gaon', 'en', primary=True, )
+    record.add_title(u'שאילת שלום על שאילתות דרב אחאי גאון', 'he', primary=True, )
+    record.key = 'Sheilat Shalom on Sheiltot d\'Rav Achai Gaon'
 
     #add node for introduction
     intro_node = JaggedArrayNode()
@@ -572,7 +572,7 @@ def post_shalom_index():
     record.validate()
 
     index = {
-        "title": 'Sheilat Shalom',
+        "title": 'Sheilat Shalom on Sheiltot d\'Rav Achai Gaon',
         "categories": ["Halakhah","Commentary"],
         "dependence": "Commentary",
         "collective_title": "Sheilat Shalom",
@@ -622,15 +622,15 @@ def post_shalom_text():
         'language': 'he',
         'text': intro_box
     }
-    #post_text('Sheilat Shalom, Introduction', version,weak_network=True, skip_links=True, index_count="on")
-    post_text_weak_connection('Sheilat Shalom, Introduction', version)#,weak_network=True)#, skip_links=True,    
+    #post_text('Sheilat Shalom on Sheiltot d\'Rav Achai Gaon, Introduction', version,weak_network=True, skip_links=True, index_count="on")
+    post_text_weak_connection('Sheilat Shalom on Sheiltot d\'Rav Achai Gaon, Introduction', version)#,weak_network=True)#, skip_links=True,    
     version = {
         'versionTitle': 'Sheiltot d\'Rav Achai Gaon; Vilna, 1861',
         'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001166995',
         'language': 'he',
         'text': final_text
     }
-    post_text_weak_connection('Sheilat Shalom', version)#,weak_network=True)#, skip_links=True,
+    post_text_weak_connection('Sheilat Shalom on Sheiltot d\'Rav Achai Gaon', version)#,weak_network=True)#, skip_links=True,
 
 def post_shalom_term():
     term_obj = {
@@ -663,7 +663,7 @@ def post_eimek_term():
             },
             {
                 "lang": "he",
-                "text": u'העמק שאלה',
+                "text": u'העמק שאלה ב',
                 "primary": True
             }
         ]
@@ -706,12 +706,12 @@ def shalom_link():
                         link = (
                                 {
                                 "refs": [
-                                         'Sheilat Shalom, {}:{}'.format(data_order, len(shalom_index_array[int(data_order)-1])),
+                                         'Sheilat Shalom on Sheiltot d\'Rav Achai Gaon, {}:{}'.format(data_order, len(shalom_index_array[int(data_order)-1])),
                                          'Sheiltot d\'Rav Achai Gaon {}:{}'.format(sindex+1, pindex+1),
                                          ],
                                 "type": "commentary",
                                 'inline_reference': {
-                                    'data-commentator': "Sheilat Shalom",
+                                    'data-commentator': "Sheilat Shalom on Sheiltot d\'Rav Achai Gaon",
                                     'data-order': data_order,
                                     'data-label': '*'
                                     },
@@ -722,12 +722,12 @@ def shalom_link():
                         link = (
                                 {
                                 "refs": [
-                                         'Sheilat Shalom, {}:{}'.format(data_order, len(shalom_index_array[int(data_order)-1])),
+                                         'Sheilat Shalom on Sheiltot d\'Rav Achai Gaon, {}:{}'.format(data_order, len(shalom_index_array[int(data_order)-1])),
                                          'Sheiltot d\'Rav Achai Gaon {}:{}'.format(sindex+1, pindex+1),
                                          ],
                                 "type": "commentary",
                                 'inline_reference': {
-                                    'data-commentator': "Sheilat Shalom",
+                                    'data-commentator': "Sheilat Shalom on Sheiltot d\'Rav Achai Gaon",
                                     'data-order': data_order
                                     },
                                 "auto": True,
@@ -752,23 +752,23 @@ def post_sra_text():
     #post_text('Sheiltot d\'Rav Achai Gaon', version,weak_network=True, skip_links=True, index_count="on")
     post_text_weak_connection('Sheiltot d\'Rav Achai Gaon', version)#,weak_network=True)#, skip_links=True, index_count="on")
 
-post_sheilta_term()
+#post_sheilta_term()
 
 #post_sra_index()
 #post_sra_text()
 
 #post_eimek_term()
-#post_bereshit_eimek_intro()
-#post_vayikra_eimek_intro()
-#post_eimek_index()
-#post_eimek_intros()
-#post_eimek_text()
-#link_eimek_text()
+post_eimek_index()
+post_bereshit_eimek_intro()
+post_vayikra_eimek_intro()
+post_eimek_intros()
+post_eimek_text()
+link_eimek_text()
 
 #post_shalom_term()
-#post_shalom_index()
-#post_shalom_text()
-#shalom_link()
+post_shalom_index()
+post_shalom_text()
+shalom_link()
 """
 keys:
 Base Text:
