@@ -28,7 +28,7 @@ def scrape_wiki():
     for pair in pairs:
         if re.search(u'ספר|מספר', pair[0]):
             continue
-        neg_pos = u"Negative Commandments" if re.search(u"לאו", pair[1]) else u'Positive Commandments'
+        neg_pos = u"Negative Mitzvot" if re.search(u"לאו", pair[1]) else u'Positive Mitzvot'
         rambam = getGematria(re.sub(u'עשה|לאו', u'', pair[1]).strip())
         chinukh = getGematria(pair[0])
         print chinukh, rambam
@@ -206,12 +206,12 @@ def siman_exctractor(text, header):
                 print text
                 try:
                     ref = Ref(text)
+                    assert not ref.is_empty()
                     print ref
                     return [ref.normal()]  # notice that this iterative logic doesn't catch refs with Vav
-                except InputError:
+                except (AssertionError, InputError):
                     split_text = re.split(u'\s', text)
                     text = u' '.join(split_text[:-1])
-                    print '***'
         if re.search(u'-', word):
             borders = re.search(u"(.*?)-(.*)", word)
             start = getGematria(borders.group(1))
@@ -308,71 +308,71 @@ def refs_csv(csvlinkfile):
     link_node_cnt = 0
     with open(u'{}'.format(csvlinkfile), 'r') as csvfile:
         seg_reader = csv.DictReader(csvfile)
+
         for row in seg_reader:
-            set_cnt = 0
-            mitzvah_set = []
-            mitzvah_set.append(Ref(u'Sefer HaChinukh.{}'.format(row[u'chinukh'])))
-            if eval(row[u'smk']):
-                for smki in eval(row[u'smk']):
-                    if smki:
-                        mitzvah_set.append(Ref(u'Sefer Mitzvot Katan, Remazim.{}'.format(smki)))
-            rambam = eval(row[u'rambam'])
-            if rambam:
-                if not isinstance(rambam[0], list):
-                    try:
-                        mitzvah_set.append(Ref(u'Sefer HaMitzvot, {}.{}'.format(rambam[0].strip(), rambam[1])))
-                    except IndexError:
-                        print u'*problem {} in siman {} *'.format(rambam, row[u'chinukh'])
-                else:
-                    for ram in rambam:
-                        if ram:
-                            mitzvah_set.append(Ref(u'Sefer HaMitzvot, {}.{}'.format(ram[0].strip(), ram[1])))
-            smg = eval(row[u'smg'])
-            if smg:
-                if isinstance(smg[0], list):
-                    for smgi in smg:
-                        if smgi:
-                            mitzvah_set.append(Ref(u'Sefer Mitzvot Gadol, {}, Remazim.{}'.format(smgi[0], smgi[1])))
-                elif isinstance(smg[0], unicode):
-                    try:
-                        mitzvah_set.append(Ref(u'Sefer Mitzvot Gadol, {}, Remazim.{}'.format(smg[0].strip(), smg[1])))
-                    except IndexError:
-                        print u'*problem {} in siman {} *'.format(smg, row[u'chinukh'])
-            mishneh = row[u'mishneh']
-            if mishneh:
-                mishneh = eval(row[u'mishneh'])
-                if len(mishneh) == 1:
-                    mitzvah_set.append(Ref(mishneh[0]))
-                else:
-                    for mish in mishneh:
-                        if mish:
-                            mitzvah_set.append(Ref(mish[0]))
-            sa = row[u'shulchanArukh']
-            if sa:
-                sa = eval(row[u'shulchanArukh'])
-                if len(sa) == 1:
-                    mitzvah_set.append(Ref(sa[0]))
-                else:
-                    for sai in sa:
-                        if sai:
-                            mitzvah_set.append(Ref(sai[0]))
-            sets_by_chinukh.append(mitzvah_set)
+            try:
+                mitzvah_set = []
+                if int(row[u'chinukh']) <= 613:
+                    mitzvah_set.append(range_ref(Ref(u'Sefer HaChinukh.{}'.format(row[u'chinukh']))))
+                if eval(row[u'smk']):
+                    for smki in eval(row[u'smk']):
+                        if smki:
+                            mitzvah_set.append(Ref(u'Sefer Mitzvot Katan, Remazim.{}'.format(smki)))
+                            mitzvah_set.append(range_ref(Ref(u'Sefer Mitzvot Katan.{}'.format(smki))))
+                rambam = eval(row[u'rambam'])
+                if rambam:
+                    if not isinstance(rambam[0], list):
+                        try:
+                            mitzvah_set.append(range_ref(Ref(u'Sefer HaMitzvot, {}.{}'.format(rambam[0].strip(), rambam[1]))))
+                        except IndexError:
+                            print u'*problem {} in siman {} *'.format(rambam, row[u'chinukh'])
+                    else:
+                        for ram in rambam:
+                            if ram:
+                                mitzvah_set.append(range_ref(Ref(u'Sefer HaMitzvot, {}.{}'.format(ram[0].strip(), ram[1]))))
+                smg = eval(row[u'smg'])
+                if smg:
+                    if isinstance(smg[0], list):
+                        for smgi in smg:
+                            if smgi:
+                                mitzvah_set.append(Ref(u'Sefer Mitzvot Gadol, {}, Remazim.{}'.format(smgi[0], smgi[1])))
+                                mitzvah_set.append(range_ref(Ref(u'Sefer Mitzvot Gadol, {}.{}'.format(smgi[0], smgi[1]))))
+                    elif isinstance(smg[0], unicode):
+                        try:
+                            mitzvah_set.append(Ref(u'Sefer Mitzvot Gadol, {}, Remazim.{}'.format(smg[0].strip(), smg[1])))
+                            mitzvah_set.append(range_ref(Ref(u'Sefer Mitzvot Gadol, {}.{}'.format(smg[0].strip(), smg[1]))))
+                        except IndexError:
+                            print u'*problem {} in siman {} *'.format(smg, row[u'chinukh'])
+                mishneh = row[u'mishneh']
+                if mishneh:
+                    mishneh = eval(row[u'mishneh'])
+                    if len(mishneh) == 1:
+                        mitzvah_set.append(Ref(mishneh[0]))
+                    else:
+                        for mish in mishneh:
+                            if mish:
+                                mitzvah_set.append(Ref(mish[0]))
+                sa = row[u'shulchanArukh']
+                if sa:
+                    sa = eval(row[u'shulchanArukh'])
+                    if len(sa) == 1:
+                        mitzvah_set.append(Ref(sa[0]))
+                    else:
+                        for sai in sa:
+                            if sai:
+                                mitzvah_set.append(Ref(sai[0]))
+
+                sets_by_chinukh.append(mitzvah_set)
+            except NameError as detail:
+                print u"chinukh {} ref is empty:".format(row[u'chinukh']), detail
             mitzvah_cluster = create_link_cluster(mitzvah_set, 30044, link_type="Sifrei Mitzvot", attrs={"generated_by": "viascraped_chinukh_sfm_linker", "auto": True})
             clusters.append(mitzvah_cluster)
 
+
+    print clusters
+    print sum(clusters)
     return sets_by_chinukh, clusters
 
-def links_from_csv(csvlinkfile):
-    # with open(u'{}'.format(csvlinkfile), 'r') as csvfile:
-    #     seg_reader = csv.DictReader(csvfile)
-    #     headers = seg_reader.fieldnames
-    #     for row in seg_reader:
-    #         for column in headers:
-    #             if isinstance(row[column], list):
-    #                 for r in
-
-
-    return
 
 def link_sfrMitzvot_shortCounting():
     links = []
@@ -381,7 +381,7 @@ def link_sfrMitzvot_shortCounting():
     for m, sefer_ref in enumerate(pos_sefer_mitzvot):
         mitzva_len =len(sefer_ref.all_segment_refs())
         link = ({"refs": [
-            u'Mishneh Torah, Positive Commandments.{}'.format(m+1),
+            u'Mishneh Torah, Positive Mitzvot.{}'.format(m+1),
             u'Sefer HaMitzvot, Positive Commandments.{}.1-{}'.format(m+1, mitzva_len)
         ],
             "type": "Sifrei Mitzvot",
@@ -395,7 +395,7 @@ def link_sfrMitzvot_shortCounting():
     for m, sefer_ref in enumerate(neg_sefer_mitzvot):
         mitzva_len =len(sefer_ref.all_segment_refs())
         link = ({"refs": [
-            u'Mishneh Torah, Negative Commandments.{}'.format(m+1),
+            u'Mishneh Torah, Negative Mitzvot.{}'.format(m+1),
             u'Sefer HaMitzvot, Negative Commandments.{}.1-{}'.format(m+1, mitzva_len)
         ],
             "type": "Sifrei Mitzvot",
@@ -406,6 +406,24 @@ def link_sfrMitzvot_shortCounting():
 
     return links
 
+
+def range_ref(ref):
+    #this shoulkd be a RASE
+    if ref.is_empty():
+        raise NameError(u'Empty Ref {}'.format(ref))
+        # RAISE should be a raise so we know that it is right
+        # return ref
+    ref_length = len(ref.all_segment_refs())
+    r = Ref(u"{}.1-{}".format(ref.normal(), ref_length))
+    return r
+
+def copy_from_local():
+    query = {"type": "sifrei mitzvot"}
+    linkset = LinkSet(query)
+    links = [l.contents() for l in linkset]
+    post_link(links, VERBOSE=True)
+    return links
+
 if __name__ == "__main__":
     # rambam_chinukh_lnks = scrape_wiki()
     # post_link(rambam_chinukh_lnks, VERBOSE=True)
@@ -414,6 +432,6 @@ if __name__ == "__main__":
     # post_link(links_ch_smk, VERBOSE=True)
     # chinukh_smg()
     # post_link(link_sfrMitzvot_shortCounting(), VERBOSE=True)
-    # scrape_links(u'mitzvot_H_data_only_links', times=1)
-    refs_csv(u'mitzvot_H_data_only_links.csv')
-
+    # scrape_links(u'mitzvot_H_data', times=2)
+    # refs_csv(u'mitzvot_H_data_only_links.csv')
+    copy_from_local()
