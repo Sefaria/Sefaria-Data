@@ -873,7 +873,7 @@ def link_remazim():
             u'Sefer Mitzvot Katan {}.{}-{}'.format(siman, 1, simanlen),
             remez.normal()
         ],
-            "type": "Sifrei Mitzvot",
+            "type": "commentary",
             "auto": True,
             "generated_by": "semak_parser"  # _sfm_linker what is this parametor intended to be?
         })
@@ -1003,7 +1003,11 @@ def link_rambam_smg_tur(csvlinkfile):
                         "auto": True,
                         "generated_by": "semak_rambam_viasmk_sfm_linker"  # viasmk
                     })
-                    links_rambam.append(link)
+                    try:
+                        link = is_ref_empty(link)
+                        links_rambam.append(link)
+                    except NameError as detail:
+                        print u"ref is empty for siman {} of smk:".format(siman), detail
                 else:
                     print u'rambam {} no_number'.format(row[u'rambam'])
             if row[u'tur']:
@@ -1017,7 +1021,11 @@ def link_rambam_smg_tur(csvlinkfile):
                         "auto": True,
                         "generated_by": "semak_tur_viasmk_sfm_linker"  # viasmk
                     })
-                    links_tur.append(link)
+                    try:
+                        is_ref_empty(link)
+                        links_tur.append(link)
+                    except NameError as detail:
+                        print u"ref is empty for siman {} of smk:".format(siman), detail
                 else:
                     print u'tur {} no_number'.format(row[u'tur'])
 
@@ -1025,28 +1033,26 @@ def link_rambam_smg_tur(csvlinkfile):
                 smg = eval(row[u'smg'])
                 for smgi in smg:
                     # and to the next segment but not to all segments of the siman
+                    smgi_len = len(Ref(smgi).all_segment_refs())
                     link = ({"refs":[
                                 u'Sefer Mitzvot Katan {}.{}-{}'.format(siman, 1, simanlen),
-                                u'{}'.format(smgi)
+                                u'{}.1-{}'.format(smgi, smgi_len)
                     ],
                     "type": "Sifrei Mitzvot",
                     "auto":True,
                     "generated_by" : "semak_smg_viasmk_sfm_linker"  #_sfm_linker what is this parametor intended to be?
                     })
-                    links_smg.append(link)
+                    try:
+                        is_ref_empty(link)
+                        links_smg.append(link)
+                    except NameError as detail:
+                        print u"ref is empty for siman {} of smk:".format(siman), detail
             links = links_rambam + links_tur + links_smg
         return links, links_smg
 
 
 
 def link_smk_remazim_to_smg_remazim(smg_smk_links):
-    # op1:
-    # smk_remazim = Ref("Sefer Mitzvot Katan, Remazim").all_segment_refs()
-    # for k_r_ref in smk_remazim:
-    #     for l_k_r in k_r_ref.linkset():
-    #         #take the ref that is to Semag if there is one
-    #         # put it in a method that finds its linkset and looks for the link to the Semag remazim
-    # op2:
     links = []
     for old_l in smg_smk_links:
         siman_smk = re.search(u'Sefer Mitzvot Katan (\d{1,3})', old_l['refs'][0]).group(1)
@@ -1065,8 +1071,21 @@ def link_smk_remazim_to_smg_remazim(smg_smk_links):
     return links
 
 
+def is_ref_empty(link):
+    refs = link["refs"]
+    for i, ref in enumerate(refs):
+        if Ref(ref).is_empty():
+            if re.search(u':', ref):
+                ref = re.search(u'(.*?):', ref).group(1)
+                if not Ref(ref).is_empty():
+                    link["refs"][i] = ref
+                    print 'fixed{}'.format(link["refs"])
+                    return link
+            raise NameError(u'Empty Ref {}'.format(ref))
+    return link
+
 if __name__ == "__main__":
-    # ja_smk = parse_semak('Semak.txt')
+    ja_smk = parse_semak('Semak.txt')
     # # siman_page = map_semak_page_siman(ja_smk, to_print=True)
     # letter_ja = parse_Raph_by_letter(u'Raph_on_Semak.txt')
     # raph_smk_alignment = raph_alignment_report(ja_smk, letter_ja)
@@ -1091,8 +1110,8 @@ if __name__ == "__main__":
     # fromCSV(u'exctract.csv', u'newfile', u'full')
     old = 22
     new = 23
-    rewrtie_csv(u'fixed{}.csv'.format(old), u'fixed{}'.format(new), u'full', toWriteHeaders=[u'siman', u'smk_segment', u'rambam', u'smg', u'tur', u'full'])
-    # smkDerivenLinks, links_smg = link_rambam_smg_tur(u'fixed{}.csv'.format(new))
-    # post_link(smkDerivenLinks, VERBOSE=True)
-    # remazim_sm_g_k = link_smk_remazim_to_smg_remazim(links_smg)
-    # post_link(remazim_sm_g_k, VERBOSE=True)
+    # rewrtie_csv(u'fixed{}.csv'.format(old), u'fixed{}'.format(new), u'full', toWriteHeaders=[u'siman', u'smk_segment', u'rambam', u'smg', u'tur', u'full'])
+    smkDerivenLinks, links_smg = link_rambam_smg_tur(u'fixed{}.csv'.format(new))
+    post_link(smkDerivenLinks, VERBOSE=True)
+    remazim_sm_g_k = link_smk_remazim_to_smg_remazim(links_smg)
+    post_link(remazim_sm_g_k, VERBOSE=True)
