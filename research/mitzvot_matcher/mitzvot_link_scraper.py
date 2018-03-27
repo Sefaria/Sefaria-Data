@@ -2,6 +2,7 @@
 
 import requests, codecs, json
 import unicodecsv as csv
+import pickle
 from bs4 import BeautifulSoup
 from sefaria.model import *
 from sefaria.system.exceptions import InputError
@@ -47,7 +48,7 @@ def scrape_wiki():
     return links
 
 
-def scrape_links(csvfilename, times=1):
+def get_link_data():
     '''
 
     :param csvfilename:
@@ -63,7 +64,15 @@ def scrape_links(csvfilename, times=1):
     tables = soup_body.select("table")  # ("div > p")#("tr td > h2")
 
     rows = tables[1].find_all(border="1")[0].select("tr") # 616 first is the headers and two last aren't in Chinukh
+    # pickling and dumping scraped rows into mitzvotHashem file
+    with open('mitzvotHashem', 'wb') as fi:
+        pickle.dump(rows, fi)
+    return rows
 
+def text_to_csv_links(csvfilename, rows = False, times=1):
+    if not rows:
+        with open('mitzvotHashem', 'rb') as fi:
+            rows = pickle.load(fi)
     chinukh_smk = []
     links = []
     cnt_long = 0
@@ -73,15 +82,16 @@ def scrape_links(csvfilename, times=1):
             if not i:
                 continue
             citation_column = rows[i].select("td")
-            if re.search(u"\u05e8\u05d1\u05d9 \u05d9\u05e6\u05d7\u05e7 \u05de\u05e7\u05d5\u05e8\u05d1\u05d9\u05dc",citation_column[-1].text):
-                smk_lst = re.findall(u'''\u05e8\u05d1\u05d9 \u05d9\u05e6\u05d7\u05e7 \u05de\u05e7\u05d5\u05e8\u05d1\u05d9\u05dc, \u05e1\u05e4\u05e8 \u05de\u05e6\u05d5\u05d5\u05ea \u05e7\u05d8\u05df(.*)''',citation_column[-1].text)
+            # if re.search(u"\u05e8\u05d1\u05d9 \u05d9\u05e6\u05d7\u05e7 \u05de\u05e7\u05d5\u05e8\u05d1\u05d9\u05dc",citation_column[-1].text):
+            #     smk_lst = re.findall(u'''\u05e8\u05d1\u05d9 \u05d9\u05e6\u05d7\u05e7 \u05de\u05e7\u05d5\u05e8\u05d1\u05d9\u05dc, \u05e1\u05e4\u05e8 \u05de\u05e6\u05d5\u05d5\u05ea \u05e7\u05d8\u05df(.*)''',citation_column[-1].text)
             row_link['chinukh'] = i
             row_link['smk'] = re.findall(u'''\u05e8\u05d1\u05d9 \u05d9\u05e6\u05d7\u05e7 \u05de\u05e7\u05d5\u05e8\u05d1\u05d9\u05dc, \u05e1\u05e4\u05e8 \u05de\u05e6\u05d5\u05d5\u05ea \u05e7\u05d8\u05df(.*)''',citation_column[-1].text)
             row_link['rambam'] = re.findall(u'''רמב"ם, ספר המצווו?ת(.*?)[;:.\n]''',citation_column[-1].text)
             row_link['smg'] = re.findall(u'''רבי משה מקוצי, ספר מצוות גדול(.*?)[;,:.\n]''',citation_column[-1].text)
             row_link['mishneh'] = re.findall(u'(רמב"ם הלכות.*?)(?:[;,:.\n]|ע"ש)',citation_column[-1].text)
             row_link['shulchanArukh'] = re.findall(u'שו"ע(.*?)[;:.\n]', citation_column[-1].text)
-            for column in ['smk', 'rambam', 'smg', 'mishneh', 'shulchanArukh']:
+            row_link['pasuk'] = re.findall(u"((?:בראשית|שמות|ויקרא|במדבר|דברים).*?)\n", citation_column[-1].text)
+            for column in ['smk', 'rambam', 'smg', 'mishneh', 'shulchanArukh', 'pasuk']:
                 if len(row_link[column]) > 1:
                     if rnd == 1:
                         row_link[column] = u" |".join(row_link[column])
@@ -98,7 +108,7 @@ def scrape_links(csvfilename, times=1):
         # chinukh_smk.append((i, smk_lst[-1]))
     print cnt_long
     with open(u'{}.csv'.format(csvfilename), 'w') as csv_file:
-        writer = csv.DictWriter(csv_file, ['chinukh', 'smk', 'rambam', 'smg', 'mishneh', 'shulchanArukh']) #fieldnames = obj_list[0].keys())
+        writer = csv.DictWriter(csv_file, ['chinukh', 'smk', 'rambam', 'smg', 'mishneh', 'shulchanArukh', 'pasuk']) #fieldnames = obj_list[0].keys())
         writer.writeheader()
         writer.writerows(links)
 
@@ -177,7 +187,7 @@ def siman_exctractor(text, header):
             double.append(siman_exctractor(t, header))
         return double
     text = re.sub(u"[;.,']", u"", text)
-    lte = {'smk': [u'סימן', u'סעיף'], 'rambam':[u'מצוות', u'וע"ש'], 'smg':[], 'mishneh':[], 'shulchanArukh':[]}
+    lte = {'smk': [u'סימן', u'סעיף'], 'rambam':[u'מצוות', u'וע"ש'], 'smg':[], 'mishneh':[], 'shulchanArukh':[], 'pasuk':[]}
     list_to_egnore = lte[header]
     simanim = []
     split = iter(re.split(u'\s', text))
@@ -198,7 +208,7 @@ def siman_exctractor(text, header):
             elif re.search(u"לאוו?ין", word):
                 simanim.append(u'Negative Commandments')
                 continue
-        if header in ['mishneh', 'shulchanArukh']:
+        if header in ['mishneh', 'shulchanArukh','pasuk']:
             text = re.sub(u"'|,", u"", text.strip())
             while True:
                 if not text:
@@ -226,10 +236,6 @@ def siman_exctractor(text, header):
                 simanim.append(check_vav(word))
                 simanim.append(simanim)
         else:
-            # if header == u'rambam':
-            #     simanim.append(getGematria(word))
-            #     simanim.append(simanim)
-            # else:
             simanim.append(getGematria(word))
     # print smk_text, simanim
     return simanim
@@ -319,6 +325,9 @@ def refs_csv(csvlinkfile):
                         if smki:
                             mitzvah_set.append(Ref(u'Sefer Mitzvot Katan, Remazim.{}'.format(smki)))
                             mitzvah_set.append(range_ref(Ref(u'Sefer Mitzvot Katan.{}'.format(smki))))
+            except NameError as detail:
+                print u"chinukh {} ref is empty:".format(row[u'chinukh']), detail
+            try:
                 rambam = eval(row[u'rambam'])
                 if rambam:
                     if not isinstance(rambam[0], list):
@@ -330,6 +339,9 @@ def refs_csv(csvlinkfile):
                         for ram in rambam:
                             if ram:
                                 mitzvah_set.append(range_ref(Ref(u'Sefer HaMitzvot, {}.{}'.format(ram[0].strip(), ram[1]))))
+            except NameError as detail:
+                print u"chinukh {} ref is empty:".format(row[u'chinukh']), detail
+            try:
                 smg = eval(row[u'smg'])
                 if smg:
                     if isinstance(smg[0], list):
@@ -343,6 +355,9 @@ def refs_csv(csvlinkfile):
                             mitzvah_set.append(range_ref(Ref(u'Sefer Mitzvot Gadol, {}.{}'.format(smg[0].strip(), smg[1]))))
                         except IndexError:
                             print u'*problem {} in siman {} *'.format(smg, row[u'chinukh'])
+            except NameError as detail:
+                print u"chinukh {} ref is empty:".format(row[u'chinukh']), detail
+            try:
                 mishneh = row[u'mishneh']
                 if mishneh:
                     mishneh = eval(row[u'mishneh'])
@@ -352,6 +367,9 @@ def refs_csv(csvlinkfile):
                         for mish in mishneh:
                             if mish:
                                 mitzvah_set.append(Ref(mish[0]))
+            except NameError as detail:
+                print u"chinukh {} ref is empty:".format(row[u'chinukh']), detail
+            try:
                 sa = row[u'shulchanArukh']
                 if sa:
                     sa = eval(row[u'shulchanArukh'])
@@ -365,9 +383,18 @@ def refs_csv(csvlinkfile):
                 sets_by_chinukh.append(mitzvah_set)
             except NameError as detail:
                 print u"chinukh {} ref is empty:".format(row[u'chinukh']), detail
+            pasuk = eval(row[u'pasuk'])
+            if pasuk:
+                if not isinstance(pasuk[0], list):
+                    if pasuk[0] and re.search(u'\d', pasuk[0]):
+                        mitzvah_set.append(Ref(pasuk[0]))
+                else:
+                    for pas in pasuk:
+                        if pas:
+                            if re.search(u'\d', pas[0]):
+                                mitzvah_set.append(Ref(pas[0]))
             mitzvah_cluster = create_link_cluster(mitzvah_set, 30044, link_type="Sifrei Mitzvot", attrs={"generated_by": "viascraped_chinukh_sfm_linker", "auto": True})
             clusters.append(mitzvah_cluster)
-
 
     print clusters
     print sum(clusters)
@@ -411,11 +438,10 @@ def range_ref(ref):
     #this shoulkd be a RASE
     if ref.is_empty():
         raise NameError(u'Empty Ref {}'.format(ref))
-        # RAISE should be a raise so we know that it is right
-        # return ref
     ref_length = len(ref.all_segment_refs())
     r = Ref(u"{}.1-{}".format(ref.normal(), ref_length))
     return r
+
 
 def copy_from_local():
     query = {"type": "sifrei mitzvot"}
@@ -427,11 +453,8 @@ def copy_from_local():
 if __name__ == "__main__":
     # rambam_chinukh_lnks = scrape_wiki()
     # post_link(rambam_chinukh_lnks, VERBOSE=True)
-    # # scrape_links(u"siman_numbers")
-    # links_ch_smk = links_chinukh_smk(u"smk_chinukh.csv")
-    # post_link(links_ch_smk, VERBOSE=True)
-    # chinukh_smg()
     # post_link(link_sfrMitzvot_shortCounting(), VERBOSE=True)
-    # scrape_links(u'mitzvot_H_data', times=2)
+    # rows = get_link_data()
+    # text_to_csv_links(rows, u'mitzvot_H_data_only_links', times=1)
     # refs_csv(u'mitzvot_H_data_only_links.csv')
     copy_from_local()
