@@ -38,8 +38,10 @@ from sources.functions import post_link
 from sefaria.system.exceptions import DuplicateRecordError
 from sefaria.system.exceptions import InputError
 from data_utilities.dibur_hamatchil_matcher import get_maximum_subset_dh
+from data_utilities.lang_info import languages
 import logging
 import multiprocessing
+
 
 from sefaria.profiling import *
 
@@ -104,27 +106,24 @@ def tokenize_words(base_str):
     word_list = [w for w in word_list if len(w.strip()) > 0 and w not in stop_words]
     return word_list
 
+# letter_freqs, letters_in_order_of_frequency, sofit_map, sofit_transx_table,
+# re_chars, first_letter
+
 class Gemara_Hashtable:
 
-    def __init__(self, skip_gram_size, lang):
-        self.letter_freqs_list = [u'י', u'ו', u'א', u'מ', u'ה', u'ל', u'ר', u'נ', u'ב', u'ש', u'ת', u'ד', u'כ', u'ע', u'ח', u'ק',
-                         u'פ', u'ס', u'ט', u'ז', u'ג', u'צ']
+    def __init__(self, skip_gram_size, lang, word_trimmer):
+        language = languages[lang]
+        self.letter_freqs_list = language['letters_in_order_of_frequency']
 
-        self.sofit_map = {
-        u'ך': u'כ',
-        u'ם': u'מ',
-        u'ן': u'נ',
-        u'ף': u'פ',
-        u'ץ': u'צ',
-        }
+        self.sofit_map = language['sofit_map']
 
-        self.letters = [u'א', u'ב', u'ג', u'ד', u'ה',
-                        u'ו', u'ז', u'ח', u'ט', u'י',
-                        u'כ', u'ל', u'מ', u'נ', u'ס',
-                        u'ע', u'פ', u'צ', u'ק', u'ר',
-                        u'ש', u'ת', unichr(ord(u'ת')+1)]
+        self.letters = language['letters']
 
         self._hash_table = defaultdict(set)
+
+        # word_trimmer specifies how a string can be stripped of unuseful characters -- "Where?" -> "where"
+        self.word_trimmer = self.get_two_letter_word if word_trimmer is None else word_trimmer
+
         self._already_matched_start_items = defaultdict(bool)
         self.loaded = False
         self.skip_gram_size = skip_gram_size
@@ -142,7 +141,7 @@ class Gemara_Hashtable:
 
     def __getitem__(self,five_gram):
 
-        skip_gram_list = self.get_skip_grams(five_gram)
+        skip_gram_list = self.get_skip_grams(five_gram, self.word_trimmer)
         #ht = self.ht_list[self.w2i(skip_gram_list[0][0])]  # should be the same for all four skip grams
         results = set()
         for skip_gram in skip_gram_list:
@@ -152,15 +151,15 @@ class Gemara_Hashtable:
         return results
 
 
-    def get_skip_grams(self,five_gram):
+    def get_skip_grams(self, five_gram, trim_word=lambda x: x):
         """
 
         :param five_gram: list of 5 consecutive words
+        :param trim_word: lambda to trim word to get most information out of it. trim_word in Hebrew should be self.get_two_letter_word(w)
         :return: list of the 4 skip grams (in 2 letter form)
         """
-
-        two_letter_five_gram = [self.get_two_letter_word(w) for w in five_gram]
-        skip_gram_list = [u''.join(temp_skip) for temp_skip in itertools.combinations(two_letter_five_gram, self.skip_gram_size)]
+        two_letter_five_gram = [trim_word(self.sofit_swap(w)) for w in five_gram]
+        skip_gram_list = [u"".join(temp_skip) for temp_skip in itertools.combinations(two_letter_five_gram, self.skip_gram_size)]
         del skip_gram_list[-1] # last one is the one that skips the first element
         return skip_gram_list
 
@@ -172,18 +171,17 @@ class Gemara_Hashtable:
         """
         i = 0
         for ic,c in enumerate(reversed(w)):
-            i += 23**ic * self.letters.index(c)
+            i += len(self.letters)**ic * self.letters.index(c)
 
         return i
 
-    def sofit_swap(self,C):
-        return self.sofit_map[C] if C in self.sofit_map else C
-
-    def get_two_letter_word(self,word):
-        temp_word = u''
+    def sofit_swap(self, word):
+        temp = u""
         for i, C in enumerate(word):
-            temp_word += self.sofit_swap(C)
+            temp += self.sofit_map[C] if C in self.sofit_map else C
+        return temp
 
+    def get_two_letter_word(self,temp_word):
         temp_word = re.sub(ur'[^א-ת]+',u'',temp_word)
         if len(temp_word) < 2:
             if len(temp_word) == 1:
@@ -350,8 +348,8 @@ class PartialMesorahMatch:
 
 class ParallelMatcher:
 
-    def __init__(self, tokenizer, dh_extract_method=None, ngram_size=5, max_words_between=4, min_words_in_match=9,
-                 min_distance_between_matches=1000, all_to_all=True, parallelize=False, verbose=True, calculate_score=None):
+    def __init__(self, tokenizer, lang, dh_extract_method=None, ngram_size=5, max_words_between=4, min_words_in_match=9,
+                 min_distance_between_matches=1000, all_to_all=True, parallelize=False, verbose=True, calculate_score=None, word_trimmer=lambda x: x):
         """
 
         :param tokenizer: returns list of words
@@ -362,12 +360,15 @@ class ParallelMatcher:
         :param min_distance_between_matches: min distance between matches. If matches are closer than this, the first one will be chosen (i think)
         :param bool all_to_all: if True, make between everything either in index_list or ref_list. False means results get filtered to only match inter-ref matches
         :param bool parallelize: Do you want this to run in parallel? WARNING: this uses up way more RAM. and this is already pretty RAM-hungry
+        :param word_trimmer: lambda that trims word of unuseful characters so that "Where?" becomes "where"
         """
         self.tokenizer = tokenizer
+        self.lang = lang
         self.dh_extract_method = dh_extract_method
         self.ngram_size = ngram_size
         self.skip_gram_size = self.ngram_size - 1
-        self.ght = Gemara_Hashtable(self.skip_gram_size)
+        self.ght = Gemara_Hashtable(self.skip_gram_size, self.lang, word_trimmer)
+        self.word_trimmer = self.ght.word_trimmer # save it locally for reset() below
         self.max_words_between = max_words_between
         self.min_words_in_match = min_words_in_match
         self.min_distance_between_matches = min_distance_between_matches
@@ -380,7 +381,7 @@ class ParallelMatcher:
 
 
     def reset(self):
-        self.ght = Gemara_Hashtable(self.skip_gram_size)
+        self.ght = Gemara_Hashtable(self.skip_gram_size, self.lang, self.word_trimmer)
 
     def filter_matches_by_score_and_duplicates(self, matches, min_score=30):
         '''
@@ -397,7 +398,7 @@ class ParallelMatcher:
             match_set.add(match)
         return list(match_set)
 
-    def match(self, index_list=None, tc_list=None, comment_index_list=None, vtitle=None, lang='he', output_root="", return_obj=False):
+    def match(self, index_list=None, tc_list=None, comment_index_list=None, vtitle=None, output_root="", return_obj=False):
         """
 
         :param list[str] index_list: list of index names to match against
@@ -422,6 +423,7 @@ class ParallelMatcher:
 
         text_index_map_data = [None for yo in xrange(len(unit_list))]
         for iunit, unit in enumerate(unit_list):
+            print unit
             if comment_index_list is not None and iunit in comment_index_list:
                 # this unit is a comment. modify tokenizer so that it applies dh_extract_method first
                 unit_tokenizer = lambda x: self.tokenizer(self.dh_extract_method(x))
@@ -431,9 +433,9 @@ class ParallelMatcher:
             if self.verbose: print "Hashing {}".format(unit)
             if using_indexes:
                 index = library.get_index(unit)
-                unit_il, unit_rl = index.text_index_map(unit_tokenizer, lang=lang, vtitle=vtitle, strict=False)
+                unit_il, unit_rl = index.text_index_map(unit_tokenizer, lang=self.lang, vtitle=vtitle, strict=False)
                 unit_list_temp = index.nodes.traverse_to_list(
-                    lambda n, _: TextChunk(n.ref(), lang, vtitle=vtitle).ja().flatten_to_array() if not n.children else [])
+                    lambda n, _: TextChunk(n.ref(), self.lang, vtitle=vtitle).ja().flatten_to_array() if not n.children else [])
                 unit_wl = [w for seg in unit_list_temp for w in unit_tokenizer(seg)]
                 unit_str = unit
             elif isinstance(unit, TextChunk):
@@ -453,7 +455,7 @@ class ParallelMatcher:
                 pickle.dump((unit_il, unit_rl, total_len), open('{}text_index_map/{}.pkl'.format(output_root, unit), 'wb'))
 
             for i_word in xrange(len(unit_wl) - self.skip_gram_size):
-                skip_gram_list = self.ght.get_skip_grams(unit_wl[i_word:i_word + self.skip_gram_size + 1])
+                skip_gram_list = self.ght.get_skip_grams(unit_wl[i_word:i_word + self.skip_gram_size + 1], self.ght.word_trimmer)
                 # ht = self.ht_list[self.w2i(skip_gram_list[0])] #should be the same for all four skip grams
                 for skip_gram in skip_gram_list:
                     start_index = i_word
@@ -471,7 +473,7 @@ class ParallelMatcher:
 
                     self.ght[skip_gram] = Mesorah_Item(unit_str, iunit, (start_index, end_index), matched_ref, self.min_distance_between_matches)
 
-
+        print 'here'
         if self.parallelize:
             pool = multiprocessing.Pool()
             mesorat_hashas = reduce(lambda a,b: a + b, pool.map(self.get_matches_in_unit, enumerate(text_index_map_data)), [])
@@ -481,6 +483,7 @@ class ParallelMatcher:
             for input in enumerate(text_index_map_data):
                 mesorat_hashas += self.get_matches_in_unit(input)
 
+        print 'and here'
 
         # deal with one-off error at end of matches
         for mm in mesorat_hashas:
@@ -503,7 +506,7 @@ class ParallelMatcher:
                 mm.score = self.calculate_score(mes_wl_a[mm.a.location[0]:mm.a.location[1]+1], mes_wl_b[mm.b.location[0]:mm.b.location[1]+1])
 
 
-
+        print 'finally here'
         if self.verbose: print "...{}s".format(round(pytime.time() - start_time, 2))
         if return_obj:
             return mesorat_hashas
@@ -575,6 +578,7 @@ class ParallelMatcher:
             # if i_word % 4000 == 0:
             #    print "{}\t{}%\tNum Found: {}".format(mes, round(100.0 * global_i_word / total_num_words, 2),len(mesorat_hashas))
             # global_i_word += 1
+            print "another i_word"
             start_ref = mes_rl[bisect.bisect_right(mes_il, i_word) - 1]
             end_ref = mes_rl[bisect.bisect_right(mes_il, i_word + self.skip_gram_size) - 1]
 
@@ -606,6 +610,7 @@ class ParallelMatcher:
             partial_match_list = [PartialMesorahMatch(a, a, b, b, self.min_words_in_match) for b in skip_matches]
 
             for j_word in xrange(i_word + 1, len(mes_wl) - self.skip_gram_size):
+                print "j_word"
                 if len(partial_match_list) == 0:
                     break
                 temp_start_ref = mes_rl[bisect.bisect_right(mes_il, j_word) - 1]
@@ -627,6 +632,7 @@ class ParallelMatcher:
                                                                                          temp_skip_matches, temp_a)
 
                 for dead in dead_matches_possibly:
+                    print "dead dead_matches_possibly"
                     distance_from_last_match = j_word - dead.last_a_word_matched()
                     if distance_from_last_match > self.max_words_between:
                         if len(dead) > self.min_words_in_match:
@@ -642,9 +648,11 @@ class ParallelMatcher:
                         new_partial_match_list += [dead]
 
                 partial_match_list = new_partial_match_list
+                print "Length of new_partial_match_list is {}".format(len(new_partial_match_list))
 
             # account for matches at end of book
             for dead in partial_match_list:
+                print "dead partial_match_list"
                 distance_from_last_match = (len(mes_wl)-self.skip_gram_size) - dead.last_a_word_matched()
                 if distance_from_last_match > self.max_words_between:
                     if len(dead) > self.min_words_in_match:

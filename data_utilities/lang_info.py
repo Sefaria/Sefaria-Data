@@ -1,3 +1,12 @@
+#encoding=utf-8
+
+# This file builds a dictionary that records information about a language
+# that is relevant to dibur_hamatchil matcher and parallel matcher.
+# In the file now are 'he' and 'en'
+# Required keys of languages[lang]:
+# letters, letter_freqs, letters_in_order_of_frequency,
+# sofit_map, sofit_transx_table,
+# re_chars, first_letter
 
 def normalizeLetterFrequency(letter_freq_by_percent):
     # given a dictionary mapping each character to its percentage use in a language,
@@ -5,11 +14,13 @@ def normalizeLetterFrequency(letter_freq_by_percent):
     min_freq = min(letter_freq_by_percent.values())
     max_freq = max(letter_freq_by_percent.values())
     normalize = lambda x: abs((1.0 * x - max_freq) / (min_freq - max_freq))
-    letter_freq_normalized = {char: normalize(value) for (char, value) in letter_freq_by_percent}
+    letter_freq_normalized = {char: normalize(value) for (char, value) in letter_freq_by_percent.items()}
     return letter_freq_normalized
 
 
 def lettersInOrderOfFrequency(letter_freq_by_percent):
+    # creates letters_in_order_of_frequency given a dictionary mapping a letter to its
+    # frequency
     dict_reversed = {v: k for k, v in letter_freq_by_percent.items()}
     percents = sorted(dict_reversed.keys(), reverse=True)
     letters = []
@@ -20,6 +31,8 @@ def lettersInOrderOfFrequency(letter_freq_by_percent):
 languages = {}
 
 languages['en'] = {}
+#all lowercase letters and letter after 'z'
+languages['en']['letters'] = [unichr(x) for x in range(ord('a'), ord('z')+2)]
 letter_freqs_english = {u"a": 8.167,
                         u"b": 1.492,
                         u"c": 2.782,
@@ -49,12 +62,21 @@ letter_freqs_english = {u"a": 8.167,
 
 languages['en']['letters_in_order_of_frequency'] = lettersInOrderOfFrequency(letter_freqs_english)
 languages['en']['letter_freqs'] = normalizeLetterFrequency(letter_freqs_english)
-languages['en']['sofit_map'] = {chr(ord(letter) - 32).decode('utf-8'): letter for letter in letter_freqs_english} #dictionary mapping capital letters to lowercase letters
-languages['en']['sofit_transx_table'] = {ord(letter) - 33: chr(ord(letter) - 32).decode('utf-8') for letter in letter_freqs_english}
-languages['en']['re_chars'] = ur"a-zA-Z"
+
+#dictionary mapping capital letters to lowercase letters
+languages['en']['sofit_map'] = {unichr(ord(letter) - 32).decode('utf-8'): letter for letter in letter_freqs_english}
+#dictionary mapping capital letters to their numeric equivalent minus 1
+languages['en']['sofit_transx_table'] = {ord(letter) - 33: unichr(ord(letter) - 32).decode('utf-8') for letter in letter_freqs_english}
 languages['en']['first_letter'] = ord('a')
 
-languages['he'] = {'letter_freqs': {
+languages['he'] = {
+                'letters':
+                [u'א', u'ב', u'ג', u'ד', u'ה',
+                        u'ו', u'ז', u'ח', u'ט', u'י',
+                        u'כ', u'ל', u'מ', u'נ', u'ס',
+                        u'ע', u'פ', u'צ', u'ק', u'ר',
+                        u'ש', u'ת', unichr(ord(u'ת')+1)],
+                'letter_freqs': {
                 u'י': 0.0,
                 u'ו': 0.2145,
                 u'א': 0.2176,

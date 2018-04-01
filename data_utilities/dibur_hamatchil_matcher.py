@@ -43,7 +43,7 @@ NumPregeneratedValues = 20
 kForWordHash = 41
 kForMultiWordHash = 39
 
-weighted_levenshtein = WeightedLevenshtein()
+weighted_levenshtein = WeightedLevenshtein('he')
 
 lettersInOrderOfFrequency = [ u'ו', u'י', u'א', u'מ', u'ה', u'ל', u'ר', u'נ', u'ב', u'ש', u'ת', u'ד', u'כ', u'ע', u'ח', u'ק', u'פ', u'ס', u'ז', u'ט', u'ג', u'צ' ]
 

@@ -249,18 +249,23 @@ def find_verses(text_dict, en, he):
     if en not in verse_find_results.keys():
         verse_find_results[en] = {}
     ld = Link_Disambiguator()
+    good_arr = []
+    bad_arr = []
     for ch in text_dict[(en, he)].keys():
         if ch not in verse_find_results[en].keys():
             verse_find_results[en][ch] = []
-        chomat_refs = Ref("Chomat Anakh on {} {}".format(en, ch)).all_segment_refs()
-        tanakh_refs = Ref("{} {}".format(en, ch)).all_segment_refs()
-        tanakh_tc = TextChunk(Ref("{} {}".format(en, ch)), lang='he')
-        chomat_tc = TextChunk(Ref("Chomat Anakh on {} {}".format(en, ch)), lang='he')
-        chomat_tc_list = [TextChunk(ref, lang='he') for ref in chomat_refs]
-        tanakh_tc_list = [TextChunk(ref, lang='he') for ref in tanakh_refs]
+        lang = 'he'
+        chomat_refs = Ref("Rashi on {} {}".format(en, ch)).all_segment_refs()
+        tanakh_tc = TextChunk(Ref("{} {}".format(en, ch)), lang=lang)
+        chomat_tc_list = [TextChunk(ref, lang=lang) for ref in chomat_refs]
         for chomat_tc in chomat_tc_list:
-            verse_find_results[en][ch].append(ld.disambiguate_segment(chomat_tc, [tanakh_tc]))
+            print chomat_tc
+            print tanakh_tc
+            good, bad = verse_find_results[en][ch].append(ld.disambiguate_segment(chomat_tc, [tanakh_tc], lang))
+            good_arr.append(good)
+            bad_arr.append(bad)
             pass
+    print good_arr
 
 
 def post_books(text_dict, verses_indicated=True):
@@ -306,12 +311,39 @@ def record_not_found():
 
 
 if __name__ == "__main__":
-    text1 = pre_parse(open("chomat anakh1.txt"))
-    text3 = pre_parse(open("chomat anakh3.txt"))
-    find_verses(text1, text1.keys()[1][0], text1.keys()[1][1])
+    #text1 = pre_parse(open("chomat anakh1.txt"))
+    #text3 = pre_parse(open("chomat anakh3.txt"))
+    #find_verses(text1, text1.keys()[1][0], text1.keys()[1][1])
     #post_books(text3)
-    text2 = pre_parse(open("chomat anakh2.txt"), verses_indicated=False)
+    #text2 = pre_parse(open("chomat anakh2.txt"), verses_indicated=False)
     #post_books(text2, verses_indicated=False)
     #record_not_found()
-    post_books(text1)
-    print sham_verses_indicated_set
+    #post_books(text1)
+    #print sham_verses_indicated_set
+    # if en not in verse_find_results.keys():
+    #     verse_find_results[en] = {}
+    ld = Link_Disambiguator()
+    good_arr = []
+    bad_arr = []
+    title = "Lamentations"
+    ght = []
+    # the ght._hash_table was 1334 for english and 700 for hebrew
+    for ch, sec_ref in enumerate(library.get_index(title).all_section_refs()):
+        lang = 'en'
+        #joiner = u" " if lang == 'en' else u""
+        word_trimmer = None if lang == 'he' else lambda x: re.sub(ur'[^a-z]+',u'',x)
+        chomat_refs = Ref("Rashi on {} {}".format(title, ch+1)).all_segment_refs()
+        tanakh_tc = TextChunk(sec_ref, lang=lang)
+        chomat_tc_list = [TextChunk(ref, lang=lang) for ref in chomat_refs]
+        for chomat_tc in chomat_tc_list:
+            print chomat_tc
+            print tanakh_tc
+            good, bad, new_ght = ld.disambiguate_segment(chomat_tc, [tanakh_tc], lang, word_trimmer)
+            if good:
+                good_arr.append(good)
+            if bad:
+                bad_arr.append(bad)
+            ght.append(new_ght._hash_table.keys())
+            pass
+    for good in good_arr:
+        print good

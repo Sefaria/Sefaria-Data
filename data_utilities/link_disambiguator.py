@@ -6,11 +6,12 @@ from collections import defaultdict
 from sefaria.system.exceptions import PartialRefInputError, InputError
 from sefaria.utils.hebrew import strip_cantillation
 from data_utilities.util import WeightedLevenshtein
+from bs4 import BeautifulSoup
 
 class Link_Disambiguator:
     def __init__(self):
         self.stop_words = []
-        self.levenshtein = WeightedLevenshtein("hebrew")
+        self.levenshtein = WeightedLevenshtein("he")
 
 
     def tokenize_words(self, base_str):
@@ -23,6 +24,25 @@ class Link_Disambiguator:
                 # base_str = re.sub(ur"(?:\(.*?\)|<.*?>)", u"", base_str)
         base_str = re.sub(ur'־', u' ', base_str)
         base_str = re.sub(ur'[A-Za-z.]', u'', base_str)
+        word_list = re.split(ur"\s+", base_str)
+        word_list = [w for w in word_list if len(w.strip()) > 0 and w not in self.stop_words]
+        return word_list
+
+    def tokenize_english_words(self, base_str):
+        base_str = base_str.strip()
+        base_soup = BeautifulSoup(base_str, "lxml")
+        all_i_tags = base_soup.findAll("i", {"class": "footnote"})
+        all_sup_tags = base_soup.findAll("sup")
+        assert len(all_i_tags) == len(all_sup_tags)
+        for i_tag, sup_tag in zip(all_i_tags, all_sup_tags):
+            i_tag.decompose()
+            sup_tag.decompose()
+        base_str = bleach.clean(base_soup.text, tags=[], strip=True)
+        for match in re.finditer(ur'\(.*?\)', base_str):
+            if library.get_titles_in_string(match.group()) and len(match.group().split()) <= 5:
+                base_str = base_str.replace(match.group(), u"")
+                # base_str = re.sub(ur"(?:\(.*?\)|<.*?>)", u"", base_str)
+        base_str = re.sub(ur'־', u' ', base_str)
         word_list = re.split(ur"\s+", base_str)
         word_list = [w for w in word_list if len(w.strip()) > 0 and w not in self.stop_words]
         return word_list
@@ -78,14 +98,16 @@ class Link_Disambiguator:
             f.write(objStr.encode('utf-8'))
 
 
-    def disambiguate_segment(self, main_tc, tc_list):
-        matcher = ParallelMatcher(self.tokenize_words,max_words_between=1, min_words_in_match=3, ngram_size=3,
-                                       parallelize=False, calculate_score=self.get_score, all_to_all=False, verbose=False)
-        try:
-            match_list = matcher.match(tc_list=[main_tc] + tc_list, return_obj=True, lang='en')
-        except ValueError:
-            print "Skipping {}".format(main_tc)
-            return [], [] #[[main_tc._oref.normal(), tc_list[i]._oref.normal()] for i in range(len(tc_list))]
+
+    def disambiguate_segment(self, main_tc, tc_list, lang, word_trimmer=None):
+        tokenizer = self.tokenize_english_words if lang == 'en' else self.tokenize_words
+        matcher = ParallelMatcher(self.tokenize_english_words, lang, max_words_between=1, min_words_in_match=3, ngram_size=3,
+                                       parallelize=False, calculate_score=self.get_score, all_to_all=False, verbose=False, word_trimmer=word_trimmer)
+        match_list = matcher.match(tc_list=[main_tc] + tc_list, return_obj=True)
+        print 'got match list'
+        # except ValueError:
+        #     print "Skipping {}".format(main_tc)
+        #     return [], [] #[[main_tc._oref.normal(), tc_list[i]._oref.normal()] for i in range(len(tc_list))]
         best_list = []
         for tc in tc_list:
             best = None
@@ -101,4 +123,4 @@ class Link_Disambiguator:
         good = [[mm.a.ref.normal(), mm.b.ref.normal()] for mm in best_list if not mm is None]
         bad = [[main_tc._oref.normal(), tc_list[i]._oref.normal()] for i, mm in enumerate(best_list) if mm is None]
         #print good
-        return good, bad
+        return good, bad, matcher.ght
