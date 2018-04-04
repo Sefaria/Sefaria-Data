@@ -232,31 +232,33 @@ class WLCStrongWordFormBookParser(object):
 
 
 
-class StrongHebrewGLexiconXMLParser(object):
-    data_dir = 'data/tmp'
-    filename = 'StrongHebrewG.xml'
-    heb_stems = ["qal","niphal","piel","pual","hiphil","hophal","hithpael","polel","polal","hithpolel","poel","poal","palel","pulal","qal passive","pilpel","polpal","hithpalpel","nithpael","pealal","pilel","hothpaal","tiphil","hishtaphel","nithpalel","nithpoel","hithpoel"]
-    arc_stems = ["P'al","peal","peil","hithpeel","pael","ithpaal","hithpaal","aphel","haphel","saphel","shaphel","hophal","ithpeel","hishtaphel","ishtaphel","hithaphel","polel","","ithpoel","hithpolel","hithpalpel","hephal","tiphel","poel","palpel","ithpalpel","ithpolel","ittaphal"]
+class JastrowParser(object):
+    data_dir = '/Users/kevinwolf/Documents/Sefaria/data.Sefaria/dictionaries/Jastrow/data/01-Merged XML'
+    filename = 'Jastrow-full.xml'
+    # heb_stems = ["qal","niphal","piel","pual","hiphil","hophal","hithpael","polel","polal","hithpolel","poel","poal","palel","pulal","qal passive","pilpel","polpal","hithpalpel","nithpael","pealal","pilel","hothpaal","tiphil","hishtaphel","nithpalel","nithpoel","hithpoel"]
+    # arc_stems = ["P'al","peal","peil","hithpeel","pael","ithpaal","hithpaal","aphel","haphel","saphel","shaphel","hophal","ithpeel","hishtaphel","ishtaphel","hithaphel","polel","","ithpoel","hithpolel","hithpalpel","hephal","tiphel","poel","palpel","ithpalpel","ithpolel","ittaphal"]
 
     def __init__(self):
-        self.heb_stem_regex = re.compile(ur'^\(('+"|".join(self.heb_stems)+')\)', re.IGNORECASE)
-        self.arc_stem_regex = re.compile(ur'^\(('+"|".join(self.arc_stems)+')\)', re.IGNORECASE)
+        # self.heb_stem_regex = re.compile(ur'^\(('+"|".join(self.heb_stems)+')\)', re.IGNORECASE)
+        # self.arc_stem_regex = re.compile(ur'^\(('+"|".join(self.arc_stems)+')\)', re.IGNORECASE)
         self.dictionary_xml = ET.parse('%s/%s' % (self.data_dir, self.filename))
-        self.namespace = {'strong': 'http://www.bibletechnologies.net/2003/OSIS/namespace', 'lang':'http://www.w3.org/XML/1998/namespace'}
-        self.entries_xml = self.dictionary_xml.getroot().findall(".//*[@type='entry']", self.namespace)
+        self.namespace = {'Jastrow': 'https://drive.google.com/drive/u/0/folders/0B3wxbTyZwMZPdWpTYzVDeE1TTjA', 'lang':'http://www.w3.org/XML/1998/namespace'} #TODO: possibly change namespace
+        # self.entries_xml = self.dictionary_xml.getroot().findall(".//*[@type='entry']", self.namespace)
+        self.chapters = self.dictionary_xml.find('body').findall('chapter')
         self.entries = []
 
     def parse_contents(self):
         print "BEGIN PARSING"
         self._make_lexicon_obj()
-        for entry in self.entries_xml:
-            le = self._make_dictionary_entry(entry)
-            self.entries.append(le)
-            StrongsDictionaryEntry(le).save()
+        for chapter in self.chapters:
+            for entry in chapter.findall('entry'):
+                le = self._make_dictionary_entry(entry)
+                self.entries.append(le)
+                JastrowDictionaryEntry(le).save()
 
     def _make_lexicon_obj(self):
-        strongs = Lexicon({'name': 'BDB Augmented Strong', 'language': 'heb.biblical', 'to_language': 'eng' })
-        strongs.save()
+        jastrow = Lexicon({'name': 'Jastrow Dictionary', 'language': 'heb.talmudic', 'to_language': 'eng'})
+        jastrow.save()
 
 
     def _make_dictionary_entry(self, entry):
@@ -266,9 +268,12 @@ class StrongHebrewGLexiconXMLParser(object):
         #get <list> items
         #parse each list item via its index into senses and definitions.
         self._current_entry = {}
-        self._current_entry['parent_lexicon'] = 'BDB Augmented Strong'
-        self._current_entry['strong_number'] = entry.get('n')
-        headword_xml = entry.find('strong:w', self.namespace)
+        self._current_entry['parent_lexicon'] = 'Jastrow Dictionary'
+        self._current_entry['rid'] = entry.get('id')
+        self._current_entry['headword'] = []
+        for headword in entry.findall('head-word'):
+            self._current_entry['headword'].append(headword.text)
+            # TODO: could be more to text word
         self._current_entry['headword'] = headword_xml.get('lemma')
         self._current_entry['pronunciation'] = headword_xml.get('POS')
         self._current_entry['transliteration'] = headword_xml.get('xlit')
@@ -342,9 +347,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
 
-    if args.lexicon:
+    if True:
         print "parse lexicon"
-        strongparser = StrongHebrewGLexiconXMLParser()
+        strongparser = JastrowParser()
         strongparser.parse_contents()
     if args.wordform:
         print 'parsing word forms from wlc'
