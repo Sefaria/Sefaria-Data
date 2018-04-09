@@ -227,9 +227,10 @@ class WLCStrongWordFormBookParser(object):
         pass
 
 
-
-
-
+tag_map = {"bold": "b",
+           "italic": "i",
+           "underline": "u"
+           }
 
 
 class JastrowParser(object):
@@ -259,7 +260,55 @@ class JastrowParser(object):
     def _make_lexicon_obj(self):
         jastrow = Lexicon({'name': 'Jastrow Dictionary', 'language': 'heb.talmudic', 'to_language': 'eng'})
         jastrow.save()
+        
+    def get_text(self, items):
+        text = u''
+        for item in items:        
+            tag = item.tag
+            if tag == 'xref':
+                text += u'<a class="xref" href="#{}">{}</a>'.format(item.attrib["rid"], item.text)
+                self._current_entry['refs'].append(item.attrib["rid"])
+            else:
+                if tag in tag_map:
+                    tag = tag_map[item.tag]
+                if item.text:
+                    text += u'<{}>{}</{}>'.format(tag, item.text.strip(), tag)
+                else:
+                    continue
+                if item.tail:
+                    text += item.tail.strip()
+                else:
+                    continue
+        return text
 
+    def get_senses(self, child):
+        senses = []
+        for sense in list(child):
+            cur_sense = {}
+            for subsense in list(sense):
+                # empty = True
+                # for item in subsense.iter():
+                #     if empty:
+                #         if item.text:
+                #             text = item.text.strip()
+                #         empty = False
+                #     else:
+                #         tag = item.tag
+                #         if tag == 'xref':
+                #             text += u'<a class="xref" href="#{}">{}</a>'.format(item.attrib["rid"], item.text)
+                #             self._current_entry['refs'].append(item.attrib["rid"])
+                #         else:
+                #             if tag in tag_map:
+                #                 tag = tag_map[item.tag]
+                #             text += u'<{}>{}</{}>{}'.format(tag, item.text.strip(), tag, item.tail.strip())                           
+                try:
+                    cur_sense[subsense.tag] = subsense.text.strip() + self.get_text(list(subsense))
+                except AttributeError:
+                    continue
+                print subsense.tag, text
+            
+            senses.append(cur_sense)
+        return senses
 
     def _make_dictionary_entry(self, entry):
         #get all div with type "Entry" and the n attr
@@ -271,19 +320,55 @@ class JastrowParser(object):
         self._current_entry['parent_lexicon'] = 'Jastrow Dictionary'
         self._current_entry['rid'] = entry.get('id')
         self._current_entry['headword'] = []
-        for headword in entry.findall('head-word'):
-            self._current_entry['headword'].append(headword.text)
-            # TODO: could be more to text word
-        self._current_entry['headword'] = headword_xml.get('lemma')
-        self._current_entry['pronunciation'] = headword_xml.get('POS')
-        self._current_entry['transliteration'] = headword_xml.get('xlit')
-        self._current_entry['language_code'] = headword_xml.get('{http://www.w3.org/XML/1998/namespace}lang')
-        defs = [x.text for x in entry.findall('strong:list/strong:item', self.namespace)]
-        odefs = [self._parse_item_depth(x) for x in defs]
-        self._current_entry['content'] = {}
-        self._current_entry['content']['morphology'] = headword_xml.get('morph')
-        self._current_entry['content']['senses'] = []
-        self._make_senses_dict(odefs, self._current_entry['content']['senses'])
+        self._current_entry['refs'] = []
+        self._current_entry['content'] = []
+        try:
+            for child in list(entry):
+                if child.tag == 'head-word':
+                    self._current_entry['headword'].append(child.text.strip())
+                elif child.tag == 'hw-number':
+                    self._current_entry['headword'][-1] += child.text.strip()
+                elif child.tag == 'senses':
+                    self._current_entry['content'].extend(self.get_senses(child))
+            
+                # elif list(child) == []:
+                #     self._current_entry[child.tag] = child.text.strip()
+                else:
+                    try:
+                        self._current_entry[child.tag] = child.text.strip()
+                    except AttributeError:
+                        continue
+                    if len(list(child)) > 0:
+                        if child.tag == 'binyan':
+                            binyan = {}
+                            for item in list(child):
+                                if item.tag == 'senses':
+                                    binyan['senses'] = self.get_senses(item)
+                                else:
+                                    if item.text:
+                                        binyan[item.tag] = item.text.strip()
+                                    else:
+                                        continue
+                            self._current_entry['content'].append(binyan)
+                        else:
+                            if child.tag != 'language-reference':
+                                continue
+                            self._current_entry[child.tag] += self.get_text(list(child))
+        except AttributeError:
+            print "poop"
+        #         
+        #     self._current_entry['headword'].append(child.text)
+        #     # TODO: could be more to text word
+        # self._current_entry['headword'] = headword_xml.get('lemma')
+        # self._current_entry['pronunciation'] = headword_xml.get('POS')
+        # self._current_entry['transliteration'] = headword_xml.get('xlit')
+        # self._current_entry['language_code'] = headword_xml.get('{http://www.w3.org/XML/1998/namespace}lang')
+        # defs = [x.text for x in entry.findall('strong:list/strong:item', self.namespace)]
+        # odefs = [self._parse_item_depth(x) for x in defs]
+        # self._current_entry['content'] = {}
+        # self._current_entry['content']['morphology'] = headword_xml.get('morph')
+        # self._current_entry['content']['senses'] = []
+        # self._make_senses_dict(odefs, self._current_entry['content']['senses'])
         return self._current_entry
 
 
