@@ -308,6 +308,7 @@ def hebrew_number_regex():
 
     return re.compile(rx, re.VERBOSE)
 
+
 def refs_csv(csvlinkfile):
     sets_by_chinukh = []
     clusters = []
@@ -393,7 +394,7 @@ def refs_csv(csvlinkfile):
                         if pas:
                             if re.search(u'\d', pas[0]):
                                 mitzvah_set.append(Ref(pas[0]))
-            mitzvah_cluster = create_link_cluster(mitzvah_set, 30044, link_type="Sifrei Mitzvot", attrs={"generated_by": "viascraped_chinukh_sfm_linker", "auto": True})
+            mitzvah_cluster = create_link_cluster(mitzvah_set, 30044, link_type="Sifrei Mitzvot", attrs={"generated_by":"viascraped_chinukh_sfm_linker", "auto": True})
             clusters.append(mitzvah_cluster)
 
     print clusters
@@ -447,8 +448,137 @@ def copy_from_local():
     query = {"type": "sifrei mitzvot"}
     linkset = LinkSet(query)
     links = [l.contents() for l in linkset]
+    # for link in links:
+    #     ref_strings = link["refs"]
+    #     for k, ref in enumerate(ref_strings):
+    #         if text.Ref(ref).primary_category == u'Tanakh':  ## carfull Tanakh catagory refers also to Tanakh commentarys!
+    #             newrefs = ref_strings[:]
+    #             newrefs[k] = text.Ref(ref_strings[k]).section_ref().normal()
+    #             broadLink = Link().load({'refs': [newrefs[k], newrefs[(k + 1) % 2]]})
+    #             if broadLink:
+    #                 # raise DuplicateRecordError(u"more than one broader link exists: {} - {}".format(broadLink[0].refs[0], broadLink[0].refs[1])
+    #                 #
+    #                 # tracker.delete(user, broadLink,)
+    #                 broadLink.delete()
+    #                 print 'deleting Link {} {}'.format(broadLink.refs[0], broadLink.refs[1])
     post_link(links, VERBOSE=True)
     return links
+
+def seferHamitzvot_from_rasag_comm(rasagCsvName, with_orig = False):
+        # ind_rasag_comm = library.get_index("Commentary on Sefer Hamitzvot of Rasag")
+        segments = Ref('Commentary_on_Sefer_Hamitzvot_of_Rasag,_Positive_Commandments').all_segment_refs()
+        segments.extend(Ref('Commentary_on_Sefer_Hamitzvot_of_Rasag,_Negative_Commandments').all_segment_refs())
+        segments.extend(Ref('Commentary_on_Sefer_Hamitzvot_of_Rasag,_Laws_of_the_Courts').all_segment_refs())
+        segments.extend(Ref('Commentary_on_Sefer_Hamitzvot_of_Rasag,_Communal_Laws').all_segment_refs())
+
+        cnt = {"Rasag":0, "Sefer HaMitzvot":0, "Semag":0, "Semak":0}
+        dict_list = []
+        for seg in segments:
+            # sfHmtzvot = re.search(u'(?:ספר המצו?ות|סה"מ).{1,4}(עשין|לאוין|עשה|לא תעשה).{0,20}', seg.text('he').text)
+            sfHmtzvot = re.search(u'(?:ספר המצוות|סה"מ)\s{1,4}\((.*?)\)', seg.text('he').text)
+            smg = re.search(u'סמ"ג \((.*?)\)', seg.text('he').text)
+            smk = re.search(u'סמ"ק (\(.*?\))', seg.text('he').text)
+            row_dict = {}
+            row_orig = {}
+            if sfHmtzvot:
+                # row_dict["Rasag"] = re.search("(Sefer.*?\d*?):", seg.normal()).group(1)
+                # row_orig["Rasag"] = re.search("(Sefer.*?\d*?):", seg.normal()).group(1)
+                kind, simanim = rasag_exctractor(sfHmtzvot.group(1))
+                # row_dict["Sefer HaMitzvot"] = ['Sefer HaMitzvot, {}.{}'.format(kind, siman) for siman in simanim]
+                if kind:
+                    row_dict["Sefer HaMitzvot"] = 'Sefer HaMitzvot, {}.{}'.format(kind, simanim[0])
+                else:
+                    print "no kind", sfHmtzvot.group(1)
+                row_orig["Sefer HaMitzvot"] = sfHmtzvot.group()
+                cnt["Sefer HaMitzvot"] += 1
+            if smg:
+                # row_dict["Rasag"] = re.search("(Sefer.*?\d*?):", seg.normal()).group(1)
+                kind, simanim = rasag_exctractor(smg.group(1))
+                # row_dict["Semag"] = ['Sefer Mitzvot Gadol, {}.{}'.format(kind, siman) for siman in simanim]
+                if kind:
+                    row_dict["Semag"] = 'Sefer Mitzvot Gadol, {}.{}'.format(kind, simanim[0])
+                else:
+                    print "no kind", smg.group(1)
+                row_orig["Semag"] = smg.group()
+                cnt["Semag"] += 1
+            if smk:
+                # row_dict["Rasag"] = re.search("(Sefer.*?\d*?):", seg.normal()).group(1)
+                # simanim = siman_smk_exctractor(smk.group(1))
+                smki = re.search(u"ב?סי'\s+(.*?)(?:\s*\))", smk.group(1))
+                if smki:
+                    siman = getGematria(smki.group(1))
+                    row_dict["Semak"] = "Sefer Mitzvot Katan.{}".format(siman)
+                    row_orig["Semak"] = smk.group()
+                    cnt["Semak"] += 1
+                else:
+                    print u'***siman***' + smk.group()
+
+            if row_dict:
+                cnt["Rasag"] += 1
+                row_dict["Rasag"] = re.search("(Sefer.*?\d*?):", seg.normal()).group(1)
+                row_orig["Rasag"] = seg.normal()
+                if with_orig:
+                    dict_list.append(row_orig)
+                dict_list.append(row_dict)
+        toCsv(rasagCsvName, ["Rasag", "Sefer HaMitzvot", "Semag", "Semak"], dict_list)
+        print cnt
+
+def rasag_exctractor(text):
+    split = re.split(u"\s", text)
+    simanim = []
+    kind = None
+    if re.search(u"(:?לאוין|לא תעשה)", split[0]):
+            kind = u'Negative Commandments'
+    elif re.search(u"(:?עשין|עשה)", split[0]):
+            kind = u'Positive Commandments'
+    for word in split[1:]:
+        siman = getGematria(word)
+        simanim.append(siman)
+    return kind, simanim
+
+
+def rasag_linking(csvlinkfile):
+    links_rsg_shmtz = []
+    links_rsg_smg = []
+    links_rsg_smk = []
+
+    with open(u'{}'.format(csvlinkfile), 'r') as csvfile:
+        seg_reader = csv.DictReader(csvfile)
+        for row in seg_reader:
+            if row["Sefer HaMitzvot"]:
+                link = ({"refs": [
+                    row["Rasag"],
+                    row["Sefer HaMitzvot"]
+                ],
+                    "type": "Sifrei Mitzvot",
+                    "auto": True,
+                    "generated_by": "sfrrambam_rsg_sfm_linker"
+                })
+                links_rsg_shmtz.append(link)
+            if row["Semag"]:
+                link = ({"refs": [
+                    row["Rasag"],
+                    row["Semag"]
+                ],
+                    "type": "Sifrei Mitzvot",
+                    "auto": True,
+                    "generated_by": "smg_rsg_sfm_linker"
+                })
+                links_rsg_smg.append(link)
+            if row["Semak"]:
+                link = ({"refs": [
+                    row["Rasag"],
+                    row["Semak"]
+                ],
+                    "type": "Sifrei Mitzvot",
+                    "auto": True,
+                    "generated_by": "smk_rsg_sfm_linker"
+                })
+                links_rsg_smk.append(link)
+        links = links_rsg_shmtz + links_rsg_smg + links_rsg_smk
+        return links
+
+
 
 if __name__ == "__main__":
     # rambam_chinukh_lnks = scrape_wiki()
@@ -457,4 +587,7 @@ if __name__ == "__main__":
     # rows = get_link_data()
     # text_to_csv_links(rows, u'mitzvot_H_data_only_links', times=1)
     # refs_csv(u'mitzvot_H_data_only_links.csv')
-    copy_from_local()
+    # copy_from_local()
+    seferHamitzvot_from_rasag_comm(u"rasag_all_refs", with_orig = True)
+    # links = rasag_linking(u'almostRefs.csv')
+    # post_link(links, VERBOSE=True)
