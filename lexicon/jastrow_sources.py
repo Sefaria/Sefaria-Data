@@ -37,7 +37,7 @@ if get_titles:
 
 add_titles = True
 if add_titles:
-    filepath = '/Users/kevinwolf/Documents/Sefaria/data.Sefaria/lexicon/jastrow_titles_final.txt' 
+    filepath = './jastrow_titles_final.txt' 
     with codecs.open(filepath, 'r', encoding='utf-8') as fr:
         for line in fr:
             values = line.split('=')
