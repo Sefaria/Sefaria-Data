@@ -8,6 +8,7 @@ import re
 import os, errno
 import os.path
 import requests
+
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
@@ -27,6 +28,7 @@ tag_map = {"bold": "b",
 class JastrowParser(object):
     data_dir = '/Users/kevinwolf/Documents/Sefaria/data.Sefaria/dictionaries/Jastrow/data/01-Merged XML'
     filename = 'Jastrow-full.xml'
+
     # heb_stems = ["qal","niphal","piel","pual","hiphil","hophal","hithpael","polel","polal","hithpolel","poel","poal","palel","pulal","qal passive","pilpel","polpal","hithpalpel","nithpael","pealal","pilel","hothpaal","tiphil","hishtaphel","nithpalel","nithpoel","hithpoel"]
     # arc_stems = ["P'al","peal","peil","hithpeel","pael","ithpaal","hithpaal","aphel","haphel","saphel","shaphel","hophal","ithpeel","hishtaphel","ishtaphel","hithaphel","polel","","ithpoel","hithpolel","hithpalpel","hephal","tiphel","poel","palpel","ithpalpel","ithpolel","ittaphal"]
 
@@ -47,9 +49,12 @@ class JastrowParser(object):
         self._make_lexicon_obj()
         for chapter in self.chapters:
             for entry in chapter.findall('entry'):
+                if entry.get('id') == 'A00080':
+                    break
                 le = self._make_dictionary_entry(entry)
                 self.entries.append(le)
                 JastrowDictionaryEntry(le).save()
+            break
 
     def _make_lexicon_obj(self):
         jastrow = Lexicon({'name': 'Jastrow Dictionary',
@@ -61,10 +66,10 @@ class JastrowParser(object):
                            ]
                            })
         jastrow.save()
-        
+
     def get_text(self, items):
         text = u''
-        for item in items:        
+        for item in items:
             tag = item.tag
             if tag == 'xref':
                 text += u'<a class="xref" href="#{}">{}</a>'.format(item.attrib["rid"], item.text)
@@ -82,6 +87,12 @@ class JastrowParser(object):
                     continue
         return text
 
+    # def find_refs(self, text):
+    #     for i, text in enumerate(text):
+    #         print i, text
+    # 
+    #     return True
+
     def get_senses(self, child):
         senses = []
         for sense in list(child):
@@ -91,41 +102,46 @@ class JastrowParser(object):
                     cur_sense[subsense.tag] = subsense.text.strip() + self.get_text(list(subsense))
                 except AttributeError:
                     continue
-                print subsense.tag, text
-            
+                print subsense.tag, cur_sense[subsense.tag]
+                self.find_refs(cur_sense[subsense.tag])
+
             senses.append(cur_sense)
         return senses
 
     def _make_dictionary_entry(self, entry):
-        #get all div with type "Entry" and the n attr
-        #get w lemma= + morph=
-        #get strong's def and lexical notes from notes "exegesis" and "explanation"
-        #get <list> items
-        #parse each list item via its index into senses and definitions.
+        # get all div with type "Entry" and the n attr
+        # get w lemma= + morph=
+        # get strong's def and lexical notes from notes "exegesis" and "explanation"
+        # get <list> items
+        # parse each list item via its index into senses and definitions.
         self._current_entry = {}
         self._current_entry['parent_lexicon'] = 'Jastrow Dictionary'
         self._current_entry['rid'] = entry.get('id')
         self._current_entry['headword'] = []
         self._current_entry['refs'] = []
         self._current_entry['content'] = []
-        try:
-            for child in list(entry):
+
+        for child in list(entry):
+            tag = child.tag
+            if tag in tag_map:
+                tag = tag_map[child.tag]
+            try:
                 if child.tag == 'head-word':
                     self._current_entry['headword'].append(child.text.strip())
                 elif child.tag == 'hw-number':
                     self._current_entry['headword'][-1] += child.text.strip()
                 elif child.tag == 'senses':
                     self._current_entry['content'].extend(self.get_senses(child))
-            
+
                 # elif list(child) == []:
                 #     self._current_entry[child.tag] = child.text.strip()
                 else:
                     try:
-                        self._current_entry[child.tag] = child.text.strip()
+                        self._current_entry[tag] = child.text.strip()
                     except AttributeError:
                         continue
                     if len(list(child)) > 0:
-                        if child.tag == 'binyan':
+                        if tag == 'binyan':
                             binyan = {}
                             for item in list(child):
                                 if item.tag == 'senses':
@@ -137,10 +153,13 @@ class JastrowParser(object):
                                         continue
                             self._current_entry['content'].append(binyan)
                         else:
-                            if child.tag != 'language-reference':
+                            if tag != 'language_reference':
                                 continue
                             self._current_entry[tag] += self.get_text(list(child))
 
+            except AttributeError:
+                continue
+        return self._current_entry
 
 
 
