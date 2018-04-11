@@ -86,22 +86,7 @@ class JastrowParser(object):
         senses = []
         for sense in list(child):
             cur_sense = {}
-            for subsense in list(sense):
-                # empty = True
-                # for item in subsense.iter():
-                #     if empty:
-                #         if item.text:
-                #             text = item.text.strip()
-                #         empty = False
-                #     else:
-                #         tag = item.tag
-                #         if tag == 'xref':
-                #             text += u'<a class="xref" href="#{}">{}</a>'.format(item.attrib["rid"], item.text)
-                #             self._current_entry['refs'].append(item.attrib["rid"])
-                #         else:
-                #             if tag in tag_map:
-                #                 tag = tag_map[item.tag]
-                #             text += u'<{}>{}</{}>{}'.format(tag, item.text.strip(), tag, item.tail.strip())                           
+            for subsense in list(sense):                          
                 try:
                     cur_sense[subsense.tag] = subsense.text.strip() + self.get_text(list(subsense))
                 except AttributeError:
