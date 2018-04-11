@@ -18,7 +18,9 @@ from sefaria.model import *
 
 tag_map = {"bold": "b",
            "italic": "i",
-           "underline": "u"
+           "underline": "u",
+           'language-reference': 'language_reference',
+           'language-key': 'language_code'
            }
 
 
