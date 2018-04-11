@@ -54,7 +54,7 @@ class JastrowParser(object):
                 le = self._make_dictionary_entry(entry)
                 self.entries.append(le)
                 JastrowDictionaryEntry(le).save()
-            # break
+            break
 
     def _make_lexicon_obj(self):
         jastrow = Lexicon({'name': 'Jastrow Dictionary',
@@ -102,8 +102,8 @@ class JastrowParser(object):
                     cur_sense[subsense.tag] = subsense.text.strip() + self.get_text(list(subsense))
                 except AttributeError:
                     continue
-                print subsense.tag, cur_sense[subsense.tag]
-                self.find_refs(cur_sense[subsense.tag])
+                # print subsense.tag, cur_sense[subsense.tag]
+                # self.find_refs(cur_sense[subsense.tag])
 
             senses.append(cur_sense)
         return senses
