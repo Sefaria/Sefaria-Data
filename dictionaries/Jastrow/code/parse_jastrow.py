@@ -154,69 +154,7 @@ class JastrowParser(object):
                         else:
                             if child.tag != 'language-reference':
                                 continue
-                            self._current_entry[child.tag] += self.get_text(list(child))
-        except AttributeError:
-            print "poop"
-        #         
-        #     self._current_entry['headword'].append(child.text)
-        #     # TODO: could be more to text word
-        # self._current_entry['headword'] = headword_xml.get('lemma')
-        # self._current_entry['pronunciation'] = headword_xml.get('POS')
-        # self._current_entry['transliteration'] = headword_xml.get('xlit')
-        # self._current_entry['language_code'] = headword_xml.get('{http://www.w3.org/XML/1998/namespace}lang')
-        # defs = [x.text for x in entry.findall('strong:list/strong:item', self.namespace)]
-        # odefs = [self._parse_item_depth(x) for x in defs]
-        # self._current_entry['content'] = {}
-        # self._current_entry['content']['morphology'] = headword_xml.get('morph')
-        # self._current_entry['content']['senses'] = []
-        # self._make_senses_dict(odefs, self._current_entry['content']['senses'])
-        return self._current_entry
-
-
-    def _make_senses_dict(self, definitions, senses, depth=1):
-        while True:
-            try:
-                defobj = definitions[0]
-                text = defobj['value'].strip()
-                def_depth = defobj['depth']
-
-                if def_depth == depth:
-                    senses.append(self._detect_stem_information_in_definition(text))
-                    #senses.append({'definition': text})
-                    definitions.pop(0)
-                elif def_depth > depth:
-                    current_senses = senses[-1]['senses'] = []
-                    self._make_senses_dict(definitions, current_senses, def_depth)
-                else:
-                    return
-            except IndexError:
-                break
-
-    def _parse_item_depth(self, def_item):
-        depth_re = re.compile(ur"^([^)]+?)\)", re.UNICODE)
-        match = depth_re.search(def_item)
-        depth = len(match.group())-1 if match else 1
-        return {'depth': depth, 'value': depth_re.sub('', def_item,1).strip()}
-
-    def _detect_stem_information_in_definition(self, def_item):
-        heb_stem = self.heb_stem_regex.search(def_item)
-        if heb_stem:
-            return self._assemble_sense_def(heb_stem.group(1), self.heb_stem_regex.sub('',def_item))
-        arc_stem = self.arc_stem_regex.search(def_item)
-        if arc_stem:
-            return self._assemble_sense_def(arc_stem.group(1), self.arc_stem_regex.sub('',def_item))
-        return {'definition': def_item}
-
-            #{'definition': text}
-
-    def _assemble_sense_def(self, stem, defn):
-        res = {'grammar': {'verbal_stem': stem}}
-        if len(defn):
-            res['definition'] = defn
-        return res
-
-
-
+                            self._current_entry[tag] += self.get_text(list(child))
 
 
 
@@ -224,21 +162,8 @@ class JastrowParser(object):
 """ The main function, runs when called from the CLI"""
 if __name__ == '__main__':
     print "INIT LEXICON"
-    #os.chdir(os.path.dirname(sys.argv[0]))
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-l", "--lexicon", help="Parse lexicon",
-                    action="store_true")
-    parser.add_argument("-w", "--wordform", help="Parse word forms",
-                    action="store_true")
-    args = parser.parse_args()
-
 
     if True:
         print "parse lexicon"
         strongparser = JastrowParser()
         strongparser.parse_contents()
-    if args.wordform:
-        print 'parsing word forms from wlc'
-        wordformparser = WLCStrongParser()
-        wordformparser.parse_forms_in_books()
-
