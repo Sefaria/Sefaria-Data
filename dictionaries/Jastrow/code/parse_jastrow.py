@@ -34,13 +34,16 @@ class JastrowParser(object):
         # self.heb_stem_regex = re.compile(ur'^\(('+"|".join(self.heb_stems)+')\)', re.IGNORECASE)
         # self.arc_stem_regex = re.compile(ur'^\(('+"|".join(self.arc_stems)+')\)', re.IGNORECASE)
         self.dictionary_xml = ET.parse('%s/%s' % (self.data_dir, self.filename))
-        self.namespace = {'Jastrow': 'https://drive.google.com/drive/u/0/folders/0B3wxbTyZwMZPdWpTYzVDeE1TTjA', 'lang':'http://www.w3.org/XML/1998/namespace'} #TODO: possibly change namespace
+        self.namespace = {'Jastrow': 'https://drive.google.com/drive/u/0/folders/0B3wxbTyZwMZPdWpTYzVDeE1TTjA',
+                          'lang': 'http://www.w3.org/XML/1998/namespace'}  # TODO: possibly change namespace
         # self.entries_xml = self.dictionary_xml.getroot().findall(".//*[@type='entry']", self.namespace)
         self.chapters = self.dictionary_xml.find('body').findall('chapter')
         self.entries = []
 
     def parse_contents(self):
         print "BEGIN PARSING"
+        Lexicon().delete_by_query({'name': 'Jastrow Dictionary'})
+        LexiconEntry().delete_by_query({'parent_lexicon': 'Jastrow Dictionary'})
         self._make_lexicon_obj()
         for chapter in self.chapters:
             for entry in chapter.findall('entry'):
@@ -49,7 +52,14 @@ class JastrowParser(object):
                 JastrowDictionaryEntry(le).save()
 
     def _make_lexicon_obj(self):
-        jastrow = Lexicon({'name': 'Jastrow Dictionary', 'language': 'heb.talmudic', 'to_language': 'eng'})
+        jastrow = Lexicon({'name': 'Jastrow Dictionary',
+                           'language': 'heb.talmudic',
+                           'to_language': 'eng',
+                           'text_categories': [
+                               "Tanakh, Targum, Onkelos",
+                               "Talmud"
+                           ]
+                           })
         jastrow.save()
         
     def get_text(self, items):
