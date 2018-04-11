@@ -1,24 +1,22 @@
 #encoding=utf-8
-'''
-also
-Footnotes on Orot
-in Philosophy Commentary
-'''
 from sefaria.model import *
 if __name__ == "__main__":
-    result = library.get_toc(True)
+
+    library.get_toc(rebuild=True)
+
+    print "Creating categories: Rav Kook and Rav Kook/Commentary"
     c = Category()
-    c.path = ["Philosophy", "Rav Kook"]
-    c.add_primary_titles("Rav Kook", u"רב קוק")
+    c.path = ["Philosophy", "Rav Kook Works"]
+    c.add_primary_titles("Rav Kook Works", u"כתבי הרב קוק")
     c.save()
 
     c2 = Category()
-    c2.path = ["Philosophy", "Rav Kook", "Commentary"]
+    c2.path = ["Philosophy", "Rav Kook Works", "Commentary"]
     c2.add_shared_term("Commentary")
     c2.save()
 
+    print "Moving books from old categories to new ones"
     books = list(IndexSet({"authors": {"$regex": "Kook"}}))
-    books.append(library.get_index("Midbar Shur"))
     commentaries = [library.get_index("Footnotes on Orot")]
     for book in books:
         book.categories = c.path
@@ -27,6 +25,15 @@ if __name__ == "__main__":
     for book in commentaries:
         book.categories = c2.path
         book.save()
+
+    print "Deleting empty category Philosophy/Commentary/Footnotes"
+    library.rebuild_toc() #reset it here because otherwise it's impossible to delete the category
+    c = Category().load({"path": ["Philosophy", "Commentary", "Footnotes"]})
+    c.delete()
+
+    print "Resetting cache and toc"
+    library.rebuild()
+    library.rebuild_toc()
 
 
 

@@ -113,27 +113,34 @@ if __name__ == "__main__":
     change_all_node_titles("Hasagot HaRamban on Sefer HaMitzvot", new_structure)
 
 
-    # Make Hasagot HaRamban commentary
+    # Make Hasagot HaRamban into a commentary
     index = library.get_index("Hasagot HaRamban on Sefer HaMitzvot")
     index.dependence = "Commentary"
     index.base_text_titles = ["Sefer HaMitzvot"]
+    index.collective_title = "Hasagot HaRamban"
     index.save()
 
-    # Change commentaries' categories and refresh version states
-    print "Changing categories..."
+    # Change commentaries' categories
+    print "Moving texts out of Hasagot HaRamban category..."
     for title in titles:
         title = title.replace(" al ", " on ").replace("Hamitzvot", "HaMitzvot")
         index = library.get_index(title)
         index.categories = ["Halakhah", "Commentary"]
         index.save()
 
-    print "Refreshing version states..."
+    print "Refreshing version states, cache, TOC, and deleting empty category Hasagot HaRamban..."
     for title in titles:
         title = title.replace(" al ", " on ").replace("Hamitzvot", "HaMitzvot")
         refresh_version_state(title)
     refresh_version_state("Sefer HaMitzvot")
+    library.rebuild_toc()
 
-    # RUN THIS AFTER admin/reset/*
-    # c = Category().load({"lastPath": "Hasagot HaRamban al Sefer HaMitzvot"})
-    # c.delete()
+    c = Category().load({"lastPath": "Hasagot HaRamban al Sefer HaMitzvot"})
+    c.delete()
+
+    library.rebuild_toc()
+    library.rebuild()
+
+
+
 
