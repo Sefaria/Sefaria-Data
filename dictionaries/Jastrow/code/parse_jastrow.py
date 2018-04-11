@@ -49,12 +49,12 @@ class JastrowParser(object):
         self._make_lexicon_obj()
         for chapter in self.chapters:
             for entry in chapter.findall('entry'):
-                if entry.get('id') == 'A00080':
-                    break
+                # if entry.get('id') == 'A00080':
+                #     break
                 le = self._make_dictionary_entry(entry)
                 self.entries.append(le)
                 JastrowDictionaryEntry(le).save()
-            break
+            # break
 
     def _make_lexicon_obj(self):
         jastrow = Lexicon({'name': 'Jastrow Dictionary',
