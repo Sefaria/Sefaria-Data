@@ -83,11 +83,19 @@ class JastrowParser(object):
                     continue
         return text
 
-    # def find_refs(self, text):
-    #     for i, text in enumerate(text):
-    #         print i, text
-    # 
-    #     return True
+    def find_refs(self, text):
+        begin = -1
+        end = -1
+        for i, letter in enumerate(text):
+            if begin == -1 and is_hebrew(letter):
+                begin = i
+            if begin != -1 and not is_hebrew(letter):
+                end = i
+                print text[begin:end]
+                begin = -1
+                end = -1
+
+        return True
 
     def get_senses(self, child):
         senses = []
