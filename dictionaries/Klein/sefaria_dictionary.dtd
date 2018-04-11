@@ -1,0 +1,132 @@
+<?xml encoding="UTF-8"?>
+
+<!ELEMENT book (front,body,back)>
+<!ATTLIST book
+  xmlns CDATA #FIXED ''
+  id ID #REQUIRED>
+
+<!ELEMENT front (chapter)*>
+<!ATTLIST front
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT body (chapter)*>
+<!ATTLIST body
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT back (chapter)*>
+<!ATTLIST back
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT chapter (title? ,(p|entry|pgbrk)*)>
+<!ATTLIST chapter
+  xmlns CDATA #FIXED ''
+  num CDATA #IMPLIED>
+
+<!ELEMENT title (#PCDATA)>
+<!ATTLIST title
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT p (#PCDATA|bold|italic|sub|sup|underline|xref|pgbrk)*>
+<!ATTLIST p
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT entry ((head-word*,hw-number?,pos?,plural-form?,language-key?,language-reference?)*,plural-form?,alternative?,
+                 senses?,pgbrk?,notes?,plural-form?,derivatives?,binyan*,derivatives?)>
+<!ATTLIST entry
+  xmlns CDATA #FIXED ''
+  indent CDATA #IMPLIED 
+  id ID #REQUIRED>
+
+<!ELEMENT pgbrk EMPTY>
+<!ATTLIST pgbrk
+  xmlns CDATA #FIXED ''
+  id ID #REQUIRED>
+
+<!ELEMENT head-word (#PCDATA)>
+<!ATTLIST head-word
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT hw-number (#PCDATA|sup)*>
+<!ATTLIST hw-number
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT plural-form (#PCDATA|xref)*>
+<!ATTLIST plural-form
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT binyan ((language-key|binyan-form|binyan-name|pos|alternative)*,senses)>
+<!ATTLIST binyan
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT derivatives (#PCDATA|bold|italic|sub|sup|underline|xref|pgbrk)*>
+<!ATTLIST derivatives
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT binyan-form (#PCDATA)>
+<!ATTLIST binyan-form
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT binyan-name (#PCDATA)>
+<!ATTLIST binyan-name
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT bold (#PCDATA)>
+<!ATTLIST bold
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT sub (#PCDATA)>
+<!ATTLIST sub
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT underline (#PCDATA)>
+<!ATTLIST underline
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT italic (#PCDATA|sup)*>
+<!ATTLIST italic
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT sup (#PCDATA)>
+<!ATTLIST sup
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT pos (#PCDATA|xref|pgbrk)*>
+<!ATTLIST pos
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT xref (#PCDATA)>
+<!ATTLIST xref
+  xmlns CDATA #FIXED ''
+  rid IDREF #REQUIRED>
+
+<!ELEMENT language-key (#PCDATA)>
+<!ATTLIST language-key
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT language-reference (#PCDATA|xref|italic|bold)*>
+<!ATTLIST language-reference
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT senses (sense)*>
+<!ATTLIST senses
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT sense (number?,pos?,plural-form?,language-key?,definition,notes?)>
+<!ATTLIST sense
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT number (#PCDATA)>
+<!ATTLIST number
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT alternative (#PCDATA|bold|italic|sub|sup|underline|xref|pgbrk)*>
+<!ATTLIST alternative
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT definition (#PCDATA|bold|italic|sub|sup|underline|xref|pgbrk|alternative|pos|language-key|language-reference|plural-form)*>
+<!ATTLIST definition
+  xmlns CDATA #FIXED ''>
+
+<!ELEMENT notes (#PCDATA|bold|italic|sub|sup|underline|xref|pgbrk|plural-form)*>
+<!ATTLIST notes
+  xmlns CDATA #FIXED ''>
