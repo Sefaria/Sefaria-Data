@@ -15,6 +15,7 @@ except ImportError:
     import xml.etree.ElementTree as ET
 
 from sefaria.model import *
+from sefaria.utils.hebrew import is_hebrew
 
 
 tag_map = {"bold": "b",
@@ -26,16 +27,11 @@ tag_map = {"bold": "b",
 
 
 class JastrowParser(object):
-    data_dir = '/Users/kevinwolf/Documents/Sefaria/data.Sefaria/dictionaries/Jastrow/data/01-Merged XML'
+    data_dir = os.path.dirname(__file__) + '/../data/01-Merged XML'
     filename = 'Jastrow-full.xml'
-
-    # heb_stems = ["qal","niphal","piel","pual","hiphil","hophal","hithpael","polel","polal","hithpolel","poel","poal","palel","pulal","qal passive","pilpel","polpal","hithpalpel","nithpael","pealal","pilel","hothpaal","tiphil","hishtaphel","nithpalel","nithpoel","hithpoel"]
-    # arc_stems = ["P'al","peal","peil","hithpeel","pael","ithpaal","hithpaal","aphel","haphel","saphel","shaphel","hophal","ithpeel","hishtaphel","ishtaphel","hithaphel","polel","","ithpoel","hithpolel","hithpalpel","hephal","tiphel","poel","palpel","ithpalpel","ithpolel","ittaphal"]
-
+    
     def __init__(self):
-        # self.heb_stem_regex = re.compile(ur'^\(('+"|".join(self.heb_stems)+')\)', re.IGNORECASE)
-        # self.arc_stem_regex = re.compile(ur'^\(('+"|".join(self.arc_stems)+')\)', re.IGNORECASE)
-        self.dictionary_xml = ET.parse('%s/%s' % (self.data_dir, self.filename))
+        self.dictionary_xml = ET.parse('{}/{}'.format(self.data_dir, self.filename))
         self.namespace = {'Jastrow': 'https://drive.google.com/drive/u/0/folders/0B3wxbTyZwMZPdWpTYzVDeE1TTjA',
                           'lang': 'http://www.w3.org/XML/1998/namespace'}  # TODO: possibly change namespace
         # self.entries_xml = self.dictionary_xml.getroot().findall(".//*[@type='entry']", self.namespace)
@@ -87,11 +83,19 @@ class JastrowParser(object):
                     continue
         return text
 
-    # def find_refs(self, text):
-    #     for i, text in enumerate(text):
-    #         print i, text
-    # 
-    #     return True
+    def find_refs(self, text):
+        begin = -1
+        end = -1
+        for i, letter in enumerate(text):
+            if begin == -1 and is_hebrew(letter):
+                begin = i
+            if begin != -1 and not is_hebrew(letter):
+                end = i
+                print text[begin:end]
+                begin = -1
+                end = -1
+
+        return True
 
     def get_senses(self, child):
         senses = []
