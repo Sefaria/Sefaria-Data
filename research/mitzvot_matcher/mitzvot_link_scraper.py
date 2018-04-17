@@ -108,7 +108,7 @@ def text_to_csv_links(csvfilename, rows = False, times=1):
                         row_link[column] = siman_exctractor(row_link[column][0], column)
             links.append(row_link)
             if not rnd ==1:
-                ref_row, url_row = row_to_Refs(row_link)
+                ref_row, url_row = row_to_Refs(row_link, fixing=False)
                 links.append(url_row)
                 links.append(ref_row)
 
@@ -205,10 +205,10 @@ def siman_exctractor(text, header):
             continue
         if header == 'rambam':
             if word == u'עשה':
-                simanim.append(u'Positive Commandments')
+                simanim.append(u'Positive')
                 continue
             elif word == u"לא" and split.next() == u"תעשה":
-                simanim.append(u'Negative Commandments')
+                simanim.append(u'Negative')
                 continue
         if header == 'smg':
             if word == u'עשין':
@@ -466,6 +466,8 @@ def range_ref(ref):
     if ref.is_empty():
         raise NameError(u'Empty Ref {}'.format(ref))
     ref_length = len(ref.all_segment_refs())
+    if ref_length <=1:
+        return ref
     r = Ref(u"{}.1-{}".format(ref.normal(), ref_length))
     return r
 
@@ -612,7 +614,14 @@ def rasag_linking(csvlinkfile):
         return links
 
 
-def row_to_Refs(row):
+def row_to_Refs(row, fixing=True):
+    if fixing:
+        for k in row.keys():
+            try:
+                if k not in ['mitzvah Title chinukh', 'mitzvah Title Rambam']:
+                    row[k] = eval(row[k])
+            except SyntaxError:
+                continue
     try:
         mitzvah_set = []
         mitzvah_set_small = []
@@ -640,19 +649,19 @@ def row_to_Refs(row):
             if not isinstance(rambam[0], list):
                 try:
                     mitzvah_set_small.append(
-                        range_ref(Ref(u'Mishneh Torah, {}.{}'.format(rambam[0].strip(), rambam[1]))))
-                    mitzvah_set_large.append(range_ref(Ref(u'Sefer HaMitzvot, {}.{}'.format(rambam[0].strip(), rambam[1]))))
+                        range_ref(Ref(u'Mishneh Torah, {} Mitzvot.{}'.format(rambam[0].strip(), rambam[1]))))
+                    mitzvah_set_large.append(range_ref(Ref(u'Sefer HaMitzvot, {} Commandments.{}'.format(rambam[0].strip(), rambam[1]))))
                     mitzvah_dict[u'rambam'].append(range_ref(
-                        Ref(u'Sefer HaMitzvot, {}.{}'.format(rambam[0].strip(), rambam[1]))))
+                        Ref(u'Sefer HaMitzvot, {} Commandments.{}'.format(rambam[0].strip(), rambam[1]))))
                 except IndexError:
                     print u'*problem {} in siman {} *'.format(rambam, row[u'chinukh'])
             else:
                 for ram in rambam:
                     if ram:
-                        mitzvah_set_small.append(range_ref(Ref(u'Mishneh Torah, {}.{}'.format(ram[0].strip(), ram[1]))))
-                        mitzvah_set_large.append(range_ref(Ref(u'Sefer HaMitzvot, {}.{}'.format(ram[0].strip(), ram[1]))))
+                        mitzvah_set_small.append(range_ref(Ref(u'Mishneh Torah, {} Mitzvot.{}'.format(ram[0].strip(), ram[1]))))
+                        mitzvah_set_large.append(range_ref(Ref(u'Sefer HaMitzvot, {} Commandments.{}'.format(ram[0].strip(), ram[1]))))
                         mitzvah_dict[u'rambam'].append(range_ref(
-                            Ref(u'Sefer HaMitzvot, {}.{}'.format(ram[0].strip(), ram[1]))))
+                            Ref(u'Sefer HaMitzvot, {} Commandments.{}'.format(ram[0].strip(), ram[1]))))
     except NameError as detail:
         print u"chinukh {} ref is empty:".format(row[u'chinukh']), detail
     try:
@@ -718,8 +727,9 @@ def row_to_Refs(row):
 
     mitzvah_set_small.extend(mitzvah_set)
     mitzvah_set_large.extend(mitzvah_set)
-    return seg_from_refs(mitzvah_dict), mitzvah_set_small, mitzvah_set_large
-
+    if fixing:
+        return seg_from_refs(mitzvah_dict), mitzvah_set_small, mitzvah_set_large
+    return seg_from_refs(mitzvah_dict)
 def seg_from_refs(ref_dict):
     seg_dict = {'chinukh':u'', 'smk':u'', 'rambam':u'', 'smg':u'', 'mishneh':u'', 'pasuk':u'', 'shulchanArukh':u''}
     seg_urls = {'chinukh':u'', 'smk':u'', 'rambam':u'', 'smg':u'', 'mishneh':u'', 'pasuk':u'', 'shulchanArukh':u''}
@@ -745,10 +755,10 @@ def cluster_lines(fixedFileName):
     with open(u'{}'.format(fixedFileName), 'r') as csvfile:
         seg_reader = csv.DictReader(csvfile)
 
-        for i, row in enumerate(seg_from_refs()):
-            if not divmod(i, 2):
+        for i, row in enumerate(seg_reader):
+            if not divmod(i, 4)[1] == 1:
                 continue
-            _, mitzvah_set_small, mitzvah_set_large = row_to_Refs(row)
+            _, mitzvah_set_small, mitzvah_set_large = row_to_Refs(row, fixing=True)
             mitzvah_cluster_small = create_link_cluster(mitzvah_set_small, 30044, link_type="Sifrei Mitzvot",
                                                   attrs={"generated_by": "viascraped_chinukh_sfm_linker_small", "auto": True})
             mitzvah_cluster_large = create_link_cluster(mitzvah_set_large, 30044, link_type="Sifrei Mitzvot",
@@ -766,10 +776,11 @@ if __name__ == "__main__":
     # rambam_chinukh_lnks = scrape_wiki()
     # post_link(rambam_chinukh_lnks, VERBOSE=True)
     # post_link(link_sfrMitzvot_shortCounting(), VERBOSE=True)
-    rows = get_link_data()
+    # rows = get_link_data()
     # origns = text_to_csv_links(u'full_mitzvot', rows,  times=2)
     # sets, clusters, mitzvah_dicts = refs_csv(u'mitzvot_test.csv')
     # copy_from_local()
     # seferHamitzvot_from_rasag_comm(u"rasag_all_refs", with_orig = True)
     # links = rasag_linking(u'almostRefs.csv')
     # post_link(links, VERBOSE=True)
+    cluster_lines("full_mitzvot.csv")
