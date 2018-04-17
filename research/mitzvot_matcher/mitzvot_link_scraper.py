@@ -20,7 +20,7 @@ def scrape_wiki():
 
     pairs = []
     links = []
-
+    chinukh_rambam  = {}
     for table in tables:
         table_tr = table.select("tr")
         for col in table_tr:
@@ -29,7 +29,7 @@ def scrape_wiki():
     for pair in pairs:
         if re.search(u'ספר|מספר', pair[0]):
             continue
-        neg_pos = u"Negative Mitzvot" if re.search(u"לאו", pair[1]) else u'Positive Mitzvot'
+        neg_pos = u"Negative" if re.search(u"לאו", pair[1]) else u'Positive'
         rambam = getGematria(re.sub(u'עשה|לאו', u'', pair[1]).strip())
         chinukh = getGematria(pair[0])
         print chinukh, rambam
@@ -37,15 +37,17 @@ def scrape_wiki():
         print neg_pos
         link = ({"refs": [
             u'Sefer HaChinukh.{}.{}-{}'.format(chinukh, 1, chinukh_simanlen),
-            u'Mishneh Torah, {}.{}'.format(neg_pos, rambam)
+            u'Mishneh Torah, {} Mitzvot.{}'.format(neg_pos, rambam)
         ],
             "type": "Sifrei Mitzvot",
             "auto": True,
             "generated_by": "chinukh_rambam_sfm_linker"  # _sfm_linker what is this parametor intended to be?
         })
+        chinukh_rambam[chinukh]= {"rambam_wiki": [neg_pos, rambam], "rambam_url": "https://www.sefaria.org/Mishneh_Torah,_{}_Mitzvot.{}".format(neg_pos, rambam)}
         print link['refs']
         links.append(link)
-    return links
+
+    return links, chinukh_rambam
 
 def get_link_data():
     '''
@@ -75,6 +77,7 @@ def text_to_csv_links(csvfilename, rows = False, times=1):
         with codecs.open('mitzvotHashem', 'rb', encoding='utf-8') as fi:
             rows = fi.read()
             # the saving html page and rereading it is not quit working yet.
+    _, wiki_chinukh_rambam = scrape_wiki()
     links = []
     cnt_long = 0
     for i, row in enumerate(rows):
@@ -106,29 +109,27 @@ def text_to_csv_links(csvfilename, rows = False, times=1):
                         row_link[column] = row_link[column][0]
                     else:
                         row_link[column] = siman_exctractor(row_link[column][0], column)
+            if row_link["chinukh"] <= 613 and not rnd ==1:
+                row_link["wiki_rambam"] = wiki_chinukh_rambam[row_link["chinukh"]]["rambam_wiki"]
+                row_link["wiki_table"] = row_link["wiki_rambam"] == row_link["rambam"]
             links.append(row_link)
-            if not rnd ==1:
+
+            if not rnd == 1:
                 ref_row, url_row = row_to_Refs(row_link, fixing=False)
+                if row_link["chinukh"] <= 613:
+                    url_row["wiki_rambam"] = wiki_chinukh_rambam[row_link["chinukh"]]["rambam_url"]
+
                 links.append(url_row)
                 links.append(ref_row)
 
     print cnt_long
     with open(u'{}.csv'.format(csvfilename), 'w') as csv_file:
-        writer = csv.DictWriter(csv_file, [ 'mitzvah Title chinukh', 'mitzvah Title Rambam', 'chinukh', 'smk', 'rambam', 'smg', 'mishneh', 'shulchanArukh', 'pasuk']) #fieldnames = obj_list[0].keys())
+        writer = csv.DictWriter(csv_file, ['mitzvah Title chinukh', 'mitzvah Title Rambam', 'chinukh', 'smk', 'rambam', "wiki_rambam", "wiki_table", 'smg', 'mishneh', 'shulchanArukh', 'pasuk']) #fieldnames = obj_list[0].keys())
         writer.writeheader()
         writer.writerows(links)
 
     return
 
-        # for pair in chinukh_smk:
-        #     row_dict = {}
-        #     siman_chinukh = pair[0]
-        #     siman_smk = pair[1]
-        #     simanai_smk = siman_smk_exctractor(siman_smk)
-        #     print siman_chinukh, simanai_smk
-        #     row_dict[u"chinukh"] = siman_chinukh
-        #     row_dict[u"smk"] = simanai_smk
-        #     writer.writerow(row_dict)
 
 def links_chinukh_smk(filename):
         links = []
@@ -174,7 +175,7 @@ def chinukh_smg():
         #     print link.refs
         #     cnt += 1
     print cnt
-    toCsv('chinukh_smg', ['chimukh','smk','smg'], dictList)
+    toCsv('chinukh_smg', ['chimukh', 'smk', 'smg'], dictList)
 
 def toCsv(csvfilename, headers, dictList):
     with open(u'{}.csv'.format(csvfilename), 'w') as csv_file:
@@ -476,11 +477,12 @@ def copy_from_local():
     query = {"type": "sifrei mitzvot"}
     linkset = LinkSet(query)
     links = [l.contents() for l in linkset]
-    for link in links:
-        for i,ref in enumerate(link["refs"]):
-            if re.search("Sefer HaMitzvot", ref):
-                link["refs"][i] = "Sefer HaMitzvot LaRambam"
-                break
+    # for link in links:
+    #     for i, ref in enumerate(link["refs"]):
+    #         if re.search("Sefer HaMitzvot", ref):
+    #             link["refs"][i] = "Sefer HaMitzvot LaRambam"
+    #             break
+
     # for link in links:
     #     ref_strings = link["refs"]
     #     for k, ref in enumerate(ref_strings):
@@ -618,7 +620,7 @@ def row_to_Refs(row, fixing=True):
     if fixing:
         for k in row.keys():
             try:
-                if k not in ['mitzvah Title chinukh', 'mitzvah Title Rambam']:
+                if k not in ['mitzvah Title chinukh', 'mitzvah Title Rambam', "wiki_rambam", "wiki_table"]:
                     row[k] = eval(row[k])
             except SyntaxError:
                 continue
@@ -730,6 +732,8 @@ def row_to_Refs(row, fixing=True):
     if fixing:
         return seg_from_refs(mitzvah_dict), mitzvah_set_small, mitzvah_set_large
     return seg_from_refs(mitzvah_dict)
+
+
 def seg_from_refs(ref_dict):
     seg_dict = {'chinukh':u'', 'smk':u'', 'rambam':u'', 'smg':u'', 'mishneh':u'', 'pasuk':u'', 'shulchanArukh':u''}
     seg_urls = {'chinukh':u'', 'smk':u'', 'rambam':u'', 'smg':u'', 'mishneh':u'', 'pasuk':u'', 'shulchanArukh':u''}
@@ -739,13 +743,16 @@ def seg_from_refs(ref_dict):
         for ref in refs:
             if ref:
                 seg_dict[column] += ref.all_segment_refs()[0].text('he').text
-                seg_dict[column] += u'\n\n'
-                seg_urls[column] += u'https://www.sefaria.org/{}\n'.format(ref)
+                seg_dict[column] += u'\n'
+                url_format = re.sub(u" ", u"_", ref.normal())
+                url_format = re.sub(u"_(\d)", ur".\1", url_format)
+                seg_urls[column] += u'https://www.sefaria.org/{}\n'.format(url_format)
                 # if isinstance(ref.text('he').text, list):
                 #     seg_dict[column] += (ref.text('he').text[0])
                 # else:
                 #     seg_dict[column] += (ref.text('he').text)
     return seg_dict, seg_urls
+
 
 def cluster_lines(fixedFileName):
     sets_by_chinukh = []
@@ -762,7 +769,7 @@ def cluster_lines(fixedFileName):
             mitzvah_cluster_small = create_link_cluster(mitzvah_set_small, 30044, link_type="Sifrei Mitzvot",
                                                   attrs={"generated_by": "viascraped_chinukh_sfm_linker_small", "auto": True})
             mitzvah_cluster_large = create_link_cluster(mitzvah_set_large, 30044, link_type="Sifrei Mitzvot",
-                                                  attrs={"generated_by": "viascraped_chinukh_sfm_linker_small",
+                                                  attrs={"generated_by": "viascraped_chinukh_sfm_linker_large",
                                                          "auto": True})
             clusters.append(mitzvah_cluster_small)
             clusters.append(mitzvah_cluster_large)
@@ -777,10 +784,10 @@ if __name__ == "__main__":
     # post_link(rambam_chinukh_lnks, VERBOSE=True)
     # post_link(link_sfrMitzvot_shortCounting(), VERBOSE=True)
     # rows = get_link_data()
-    # origns = text_to_csv_links(u'full_mitzvot', rows,  times=2)
+    # origns = text_to_csv_links(u'table_w_wiki', rows,  times=2)
     # sets, clusters, mitzvah_dicts = refs_csv(u'mitzvot_test.csv')
-    # copy_from_local()
+    copy_from_local()
     # seferHamitzvot_from_rasag_comm(u"rasag_all_refs", with_orig = True)
     # links = rasag_linking(u'almostRefs.csv')
     # post_link(links, VERBOSE=True)
-    cluster_lines("full_mitzvot.csv")
+    # cluster_lines("table_w_wiki.csv")
