@@ -1017,8 +1017,10 @@ class WeightedLevenshtein:
     a proficient understanding of the weighted Levenshtein algorithm.
     """
 
-    def __init__(self, letter_freqs=None, min_cost=None):
-
+    def __init__(self, letter_freqs=None, min_cost=None, swap_costs=None):
+        """
+        :param swap_costs: dict of form `{(c1, c2): cost}` where `c1` and `c2` are two characters and `cost` is the cost for swapping them. overides costs listed in `letter_freqs`
+        """
         if letter_freqs is None:
             self.letter_freqs = {
                 u'י': 0.0,
@@ -1066,7 +1068,9 @@ class WeightedLevenshtein:
         self._cost = defaultdict(lambda: self.min_cost)
         self._cost.update({c: self._build_cost(c) for c in all_letters})  # single letters
         self._cost.update({(c1, c2): self._build_cost(c1, c2) for c1 in all_letters for c2 in all_letters}) # tuples
-
+        if swap_costs is not None:
+            self._cost.update(swap_costs)
+            
         self._most_expensive = max(self.letter_freqs.values())
 
         # dict((ord(char), sofit_map[char]) for char in self.sofit_map.keys())
