@@ -68,6 +68,14 @@ eng_parshiot = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Tol
 "V'Zot HaBerachah"]
 
 
+def create_intro():
+    intro = JaggedArrayNode()
+    intro.add_structure(["Paragraph"])
+    intro.add_shared_term("Introduction")
+    intro.key = "intro"
+    intro.validate()
+    return intro
+
 def any_hebrew_in_str(line):
     '''
     Returns true if there is one Hebrew character in line.
