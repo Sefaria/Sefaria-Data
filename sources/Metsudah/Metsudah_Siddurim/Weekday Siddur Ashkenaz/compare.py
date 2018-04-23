@@ -193,5 +193,5 @@ if __name__ == "__main__":
     parser.parse_into_en_and_he_lists()
     parser.replace_tags_in_all_lines()
     parser.create_schema()
-    post_index(parser.index, server="http://draft.sefaria.org")
-    parser.post_text("http://draft.sefaria.org")
+    post_index(parser.index, server="http://localhost:8000")
+    #parser.post_text("http://draft.sefaria.org")

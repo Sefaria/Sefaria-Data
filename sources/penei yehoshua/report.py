@@ -6,7 +6,10 @@ import csv
 import os
 
 class MaharshaLite:
-    def __init__(self):
+    def __init__(self, book):
+        self.book = book
+        self.len_masechet = len(book.all_section_refs()) #how many sections in book
+        self.current_daf = 3
         self.category = "gemara"
         self.rashi ='רש"י'
         self.rashbam = 'פרשב"ם'
@@ -19,7 +22,9 @@ class MaharshaLite:
         self.amud_bet = 'ע"ב'
         self.mishnah = ['במשנה', 'מתני']
         self.categories = ['rashi', 'tosafot', 'gemara', 'ran', 'rosh', 'rashbam']
-        self.dh_by_cat = {cat: {} for cat in self.categories}
+        self.dh_by_cat = {cat: {self.current_daf: []} for cat in self.categories}
+        self.comm_dict = {self.current_daf: []}
+        self.list_of_dafs = []
 
     def determineCategory(self, comment):
         word = comment.split(" ")[0] if comment.split(" ")[0] != " " else comment.split(" ")[1]
@@ -57,18 +62,66 @@ class MaharshaLite:
             dh += u" "+chulay
 
     def parseDH(self, comment, category, same_dh):
+        orig_comment = comment
         if same_dh is None:
-            chulay = comment.find("כו'")
+            first_15_words = " ".join(comment.split(" ")[0:15])
+            chulay = first_15_words.find("כו'")
+            first_period = first_15_words.find(".")
             if chulay > 0:
-                dh, comment = comment[0:chulay+5], comment[chulay+5:]
+                dh, comment = comment[0:chulay+5], comment[chulay+6:]
+            elif first_period:
+                dh, comment = comment[0:first_period+1], comment[first_period+1:]
+                comment = comment[1:] if comment[0] == " " else comment
             else:
-                firs
-                comment = ""
+                print "Segment has no DH"
             self.prev_dh = dh
             self.addDHComment(dh, comment, category, same_dh)
         else:
             self.addDHComment(self.prev_dh, comment, category, same_dh)
 
+    def getDaf(self, line, len_masechet):
+        prev_num = self.current_daf
+        orig_line = line
+        line = line.replace("@11 ", "@11")
+        if line.split(" ")[0].find('דף')>=0:
+            daf_value = getGematria(line.split(" ")[1].replace('"', '').replace("'", ''))
+            if line.split(" ")[2].find(self.amud_bet)>=0:
+                self.current_daf = 2*daf_value
+            else:
+                self.current_daf = 2*daf_value - 1
+            actual_text = ""
+            start_at = 3
+            if line.split(" ")[2] not in ['ע"ב', 'ע"א']:
+                start_at = 2
+            for count, word in enumerate(line.split(" ")):
+                if count >= start_at:
+                    actual_text += word + " "
+        else:
+            self.current_daf += 1
+            actual_text = line[3:]
+
+        if self.current_daf <= prev_num:
+            he_current = AddressTalmud.toStr("he", self.current_daf)
+            he_prev = AddressTalmud.toStr("he", prev_num)
+            #prev_line = " ".join(prev_line.split(" ")[0:5])
+            #orig_line = " ".join(orig_line.split(" ")[0:5])
+            print u"{} before {}\n".format(he_prev, he_current)
+            self.dont_post = True
+            #print u"The line starting: {} is {}\n".format(prev_line, he_prev)
+            #print u"It came before the line starting {}, which is {}\n\n".format(orig_line, he_current)
+
+
+        self.actual_text = actual_text
+        if self.current_daf > len_masechet:
+            print "DAF EXTRA {} > {} in {} {}".format(self.current_daf, len_masechet, self.title, self.masechet)
+            pass
+        self.list_of_dafs.append(self.current_daf)
+
+        if not self.current_daf in self.comm_dict:
+            self.comm_dict[self.current_daf] = []
+            self.dh_by_cat[self.category][self.current_daf] = []
+
+        return self.current_daf
 
     def addDHComment(self, dh, comment, category, same_dh):
         dh = removeAllTags(dh)
@@ -84,16 +137,14 @@ class MaharshaLite:
         post_comment = post_comment.strip()
         first_word = post_comment.split(" ")[0]
         post_comment = u"<b>{}</b> {}".format(first_word, " ".join(post_comment.split(" ")[1:]))
-        #self.comm_dict[self.current_daf].append(post_comment)
-        #self.dh_by_cat[category][self.current_daf].append(dh)
+        self.comm_dict[self.current_daf].append(post_comment)
+        self.dh_by_cat[category][self.current_daf].append(dh)
+
 
     def parse(self, lines):
-        text = {}
-        current_daf = 3
-        text[current_daf] = []
         for line in lines:
             if line.startswith("@11") and " " in line: #second check to make sure this isn't a perek header
-                text[current_daf].append(line)
+                self.getDaf(line, self.len_masechet)
                 aleph = "@11דף@22"
                 bet = '@11ע"ב'
 
@@ -104,12 +155,12 @@ class MaharshaLite:
 
 
 if __name__ == "__main__":
-    parser = MaharshaLite()
     files = [f for f in os.listdir(".") if f.endswith(".txt")]
     for file in files:
         title = file[0:-4]
-        try:
-            library.get_index(title) #just to test that book exists and isn't one of the commentaries that we don't want in directory
+        try: #the try except clause allows us to test that book exists and isn't one of the commentaries that we don't want in director
+            book = library.get_index(title)
+            parser = MaharshaLite(book)
             with open(file) as f:
                 parser.parse(list(f))
         except system.exceptions.BookNameError as e:
