@@ -25,15 +25,14 @@ def add_JAs_to_schema_from_text(schemaNode, str, title_group_separator=u", ", en
     if schemaNode.index:
         schemaNode.index.save()
 
-VersionState("Weekday Siddur Sefard Linear")
 book = library.get_index("Siddur Sefard Linear")
 nodes = book.nodes.children
 mincha = [node for node in nodes if node.primary_title('en') == "Mincha"][0]
 maariv = [node for node in nodes if node.primary_title('en') == "Maariv"][0]
 selichot = SchemaNode()
 selichot.add_primary_titles("Selichos", u"סליחות")
-#convert_jagged_array_to_schema_with_default(mincha)
-#convert_jagged_array_to_schema_with_default(maariv)
+convert_jagged_array_to_schema_with_default(mincha)
+convert_jagged_array_to_schema_with_default(maariv)
 library.rebuild() #rebuild index mapping after conversion
 
 add_to_mincha = u"Ashrei / אשרי, Shemoneh Esrei / שמונה עשרה, Tachanun / תחנון, Aleinu / עלינו"
@@ -48,8 +47,5 @@ for parent in [maariv, mincha]:
     assert parent.children[0].default
     remove_branch(parent.children[0])
 
-nodes.append(selichot)
-book.save()
-library.rebuild(include_toc=True)
-refresh_version_state(book.title)
+insert_last_child(selichot, nodes)
 
