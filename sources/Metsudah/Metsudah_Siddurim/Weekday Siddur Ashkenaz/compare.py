@@ -2,6 +2,8 @@
 import codecs
 import csv
 import os
+import django
+django.setup()
 from sources.Metsudah.Metsudah_Siddurim.metsudah_parser import Metsudah_Parser
 
 from sources.functions import *
@@ -194,5 +196,5 @@ if __name__ == "__main__":
     parser.replace_tags_in_all_lines()
     parser.create_schema()
     #modify schema mincha maariv and selichot and change name
-    post_index(parser.index, server="http://draft.sefaria.org")
+    post_index(parser.index, server="http://localhost:8000")
     #parser.post_text("http://draft.sefaria.org")
