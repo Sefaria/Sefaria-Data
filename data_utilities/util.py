@@ -1144,13 +1144,15 @@ class WeightedLevenshtein:
                 s2 = s2.translate(self._sofit_transx_table)
                 s1_cost = [self._cost[c] for c in s1]
                 s2_cost = [self._cost[c] for c in s2]
+                total_delete_cost = 0
                 v0 = [0]
                 for j in xrange(s2_len):
                     v0 += [s2_cost[j] + v0[j]]
                 v1 = [0] * (s2_len + 1)
 
                 for i in xrange(s1_len):
-                    cost_del = v1[0] = s1_cost[i]  # Set to the cost of inserting the first char of s1 into s2
+                    cost_del = s1_cost[i]
+                    v1[0] = total_delete_cost = cost_del + total_delete_cost  # Set to cost of deleting char from s1
                     for j in xrange(s2_len):
                         cost_ins = s2_cost[j]
                         cost_sub = 0.0 if s1[i] == s2[j] else self._cost.get(
