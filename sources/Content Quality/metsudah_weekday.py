@@ -1,8 +1,10 @@
 #encoding=utf-8
 
-
+import django
+django.setup()
 from sefaria.helper.schema import *
 from sefaria.model import *
+from sources.functions import *
 
 def add_JAs_to_schema_from_text(schemaNode, str, title_group_separator=u", ", en_he_separator=" / ", structure=["Paragraph"]):
     """
@@ -22,34 +24,42 @@ def add_JAs_to_schema_from_text(schemaNode, str, title_group_separator=u", ", en
         ja.add_primary_titles(en_title, he_title)
         ja.add_structure(structure)
         schemaNode.append(ja)
-    if schemaNode.index:
-        schemaNode.index.save()
 
-VersionState("Weekday Siddur Sefard Linear")
-book = library.get_index("Siddur Sefard Linear")
+local = get_index_api("Weekday Siddur Sefard Linear", "http://localhost:8000")
+
+book = library.get_index("Weekday Siddur Sefard Linear")
 nodes = book.nodes.children
 mincha = [node for node in nodes if node.primary_title('en') == "Mincha"][0]
 maariv = [node for node in nodes if node.primary_title('en') == "Maariv"][0]
 selichot = SchemaNode()
 selichot.add_primary_titles("Selichos", u"סליחות")
-#convert_jagged_array_to_schema_with_default(mincha)
-#convert_jagged_array_to_schema_with_default(maariv)
-library.rebuild() #rebuild index mapping after conversion
+# convert_jagged_array_to_schema_with_default(mincha)
+# convert_jagged_array_to_schema_with_default(maariv)
+maariv_pos = nodes.index(maariv)
+mincha_pos = nodes.index(mincha)
+new_mincha = SchemaNode()
+new_mincha.add_primary_titles(mincha.primary_title('en'), mincha.primary_title('he'))
+new_maariv = SchemaNode()
+new_maariv.add_primary_titles(maariv.primary_title('en'), maariv.primary_title('he'))
+
 
 add_to_mincha = u"Ashrei / אשרי, Shemoneh Esrei / שמונה עשרה, Tachanun / תחנון, Aleinu / עלינו"
 add_to_maariv = u"Berachos Preceding Shema / ברכות לפני שמע, Shema / שמע, Berachos Following Shema / ברכות אחרי שמע, Shemoneh Esrei / שמונה עשרה, Motzei Shabbos Prayers / למוצאי שבת, Aleinu / עלינו"
 add_to_selichot = u"Monday (1) / לשני קמא, Thursday / לחמישי, Monday (2) / לשני בתרא, Tenth of Teves / לעשרה בטבת, Fast of Esther / לתענית אסתר, Seventeenth of Tamuz / לשבעה עשר בתמוז"
 
 add_JAs_to_schema_from_text(selichot, add_to_selichot)
-add_JAs_to_schema_from_text(mincha, add_to_mincha)
-add_JAs_to_schema_from_text(maariv, add_to_maariv)
+add_JAs_to_schema_from_text(new_mincha, add_to_mincha)
+add_JAs_to_schema_from_text(new_maariv, add_to_maariv)
 
-for parent in [maariv, mincha]:
-    assert parent.children[0].default
-    remove_branch(parent.children[0])
+remove_branch(mincha)
+remove_branch(maariv)
+library.rebuild()
 
-nodes.append(selichot)
-book.save()
-library.rebuild(include_toc=True)
-refresh_version_state(book.title)
+book = library.get_index("Weekday Siddur Sefard Linear")
+attach_branch(new_maariv, book.nodes, mincha_pos)
+attach_branch(new_mincha, book.nodes, mincha_pos)
+insert_last_child(selichot, book.nodes)
+library.rebuild()
 
+local = get_index_api("Weekday Siddur Sefard Linear", "http://localhost:8000")
+post_index(local, server="http://draft.sefaria.org")
