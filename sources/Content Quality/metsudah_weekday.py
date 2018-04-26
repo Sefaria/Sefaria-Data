@@ -62,4 +62,4 @@ insert_last_child(selichot, book.nodes)
 library.rebuild()
 
 local = get_index_api("Weekday Siddur Sefard Linear", "http://localhost:8000")
-post_index(local, server="http://draft.sefaria.org")
+#post_index(local, server="http://draft.sefaria.org")
