@@ -1017,8 +1017,10 @@ class WeightedLevenshtein:
     a proficient understanding of the weighted Levenshtein algorithm.
     """
 
-    def __init__(self, letter_freqs=None, min_cost=None):
-
+    def __init__(self, letter_freqs=None, min_cost=None, swap_costs=None):
+        """
+        :param swap_costs: dict of form `{(c1, c2): cost}` where `c1` and `c2` are two characters and `cost` is the cost for swapping them. overides costs listed in `letter_freqs`
+        """
         if letter_freqs is None:
             self.letter_freqs = {
                 u'י': 0.0,
@@ -1066,7 +1068,9 @@ class WeightedLevenshtein:
         self._cost = defaultdict(lambda: self.min_cost)
         self._cost.update({c: self._build_cost(c) for c in all_letters})  # single letters
         self._cost.update({(c1, c2): self._build_cost(c1, c2) for c1 in all_letters for c2 in all_letters}) # tuples
-
+        if swap_costs is not None:
+            self._cost.update(swap_costs)
+            
         self._most_expensive = max(self.letter_freqs.values())
 
         # dict((ord(char), sofit_map[char]) for char in self.sofit_map.keys())
@@ -1140,13 +1144,15 @@ class WeightedLevenshtein:
                 s2 = s2.translate(self._sofit_transx_table)
                 s1_cost = [self._cost[c] for c in s1]
                 s2_cost = [self._cost[c] for c in s2]
+                total_delete_cost = 0
                 v0 = [0]
                 for j in xrange(s2_len):
                     v0 += [s2_cost[j] + v0[j]]
                 v1 = [0] * (s2_len + 1)
 
                 for i in xrange(s1_len):
-                    cost_del = v1[0] = s1_cost[i]  # Set to the cost of inserting the first char of s1 into s2
+                    cost_del = s1_cost[i]
+                    v1[0] = total_delete_cost = cost_del + total_delete_cost  # Set to cost of deleting char from s1
                     for j in xrange(s2_len):
                         cost_ins = s2_cost[j]
                         cost_sub = 0.0 if s1[i] == s2[j] else self._cost.get(

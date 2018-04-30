@@ -2,6 +2,8 @@
 import codecs
 import csv
 import os
+import django
+django.setup()
 from sources.Metsudah.Metsudah_Siddurim.metsudah_parser import Metsudah_Parser
 
 from sources.functions import *
@@ -188,10 +190,11 @@ if __name__ == "__main__":
     cantillation_indices = sort_indexes(cantillation_indices) #places where cantillation marks appear
     text = correct_hebrew_in_tags(decoded_text, char_map)
     cats = ["Liturgy"]
-    parser = Metsudah_Parser("Siddur Sefard Linear", u"סידור ספרד דו לשוני", cats=cats, vtitle="The Metsudah Siddur...",
+    parser = Metsudah_Parser("Weekday Siddur Sefard Linear", u"סידור ספרד לימות החול", cats=cats, vtitle="The Metsudah Siddur...",
                 vsource="http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002211687", input_text=text, node_separator="|")
     parser.parse_into_en_and_he_lists()
     parser.replace_tags_in_all_lines()
     parser.create_schema()
-    post_index(parser.index, server="http://draft.sefaria.org")
-    parser.post_text("http://draft.sefaria.org")
+    #modify schema mincha maariv and selichot and change name
+    post_index(parser.index, server="http://localhost:8000")
+    #parser.post_text("http://draft.sefaria.org")

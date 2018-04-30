@@ -46,10 +46,10 @@ def get_k_similar(model, word, k=10):
 
 #export_library_as_file("all_of_sefaria.txt")
 #export_library_as_docs("all_of_sefaria_docs.txt")
-# train_word2phrase()
-# train_word2vec()
+#train_word2phrase()
+#train_word2vec()
 #train_clusters()
-train_doc2vec()
-#model = get_model("doc2vec.bin")
-
-#print get_k_similar(model, model.vocab[400], 100)
+#train_doc2vec()
+model = get_model("word2vec.bin")
+for w in model.vocab[:1000]:
+    print u"{}: {}".format(w, u', '.join(get_k_similar(model, w).tolist()))

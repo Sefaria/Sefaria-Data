@@ -11,8 +11,8 @@ import os
 import argparse
 import requests
 import unicodecsv
-from sefaria.model import *
 from sources import functions
+from sefaria.model import *
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
 
@@ -106,7 +106,7 @@ def even_haezer_clean(ja):
 
 def gra_clean(ja):
     def clean(strn):
-        strn = re.sub(ur'\+44[)\]]', u'', strn)
+        strn = re.sub(ur'\+44[\u05d0-\u05ea]{1,2}[)\]]', u'', strn)
         strn = re.sub(u'(\s){2,}', u'\g<1>', strn)
         strn = re.sub(u' +$', u'', strn)
         return strn
@@ -115,6 +115,18 @@ def gra_clean(ja):
 
 def do_nothing(ja):
     pass
+
+
+def add_siman_headers(ja):
+    xml_simanim = root.get_base_text().get_simanim()
+    assert len(ja) == len(xml_simanim)
+    for siman, xml_siman in zip(ja, xml_simanim):
+        title_text = re.sub(u' *\n *', u'', xml_siman.Tag.contents[0].text)
+        if title_text == u'':
+            continue
+        if re.search(u'@', title_text) is not None:
+            print u'Weird mark at Siman {}'.format(xml_siman.num)
+        siman[0] = u'<b>{}</b><br>{}'.format(title_text, siman[0])
 
 
 cleaning_methods = {
@@ -158,6 +170,7 @@ if __name__ == "__main__":
                 commentaries.get_commentary_by_title('Seder Halitzah').render(),
         }
         book_index = shulchan_arukh_index(user_args.server)
+        add_siman_headers(book_data[base_text_title])
         cleaner_method = even_haezer_clean
         # even_haezer_clean(book_data[base_text_title])
 

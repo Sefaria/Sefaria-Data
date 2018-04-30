@@ -14,6 +14,8 @@ p = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, p)
 sys.path.insert(0, "../")
 from local_settings import *
+import django
+django.setup()
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
@@ -67,6 +69,14 @@ eng_parshiot = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Tol
 "Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo", "Nitzavim", "Vayeilech", "Ha'Azinu",
 "V'Zot HaBerachah"]
 
+
+def create_intro():
+    intro = JaggedArrayNode()
+    intro.add_structure(["Paragraph"])
+    intro.add_shared_term("Introduction")
+    intro.key = "intro"
+    intro.validate()
+    return intro
 
 def any_hebrew_in_str(line):
     '''

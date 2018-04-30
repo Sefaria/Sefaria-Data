@@ -396,6 +396,96 @@ def get_citations(ja_smk, filenametxt):
     return citations
 
 
+def fromCSV(fromcsv, newfile, header):
+
+    '''
+
+    :param fromcsv: csv file to read the QAed lines from
+    :param newfile: txt file name to write the fixed lines into for the sake of creating a new (fixed) csv file
+    :param header: str of header to write into the txt file
+    :return: fieldnames, lines. fieldnames = list of the headers from the csv, lines = list of rows from header column
+    '''
+
+    f = codecs.open(u'{}.txt'.format(newfile), 'w', encoding='utf-8')
+    with open(fromcsv, 'r') as csvfile:
+        file_reader = csv.DictReader(csvfile)
+        lines = []
+        for i, row in enumerate(file_reader):
+            if not row:
+                continue
+            f.write(u'{} {} '.format(row[u'siman'], row[u'siman']))
+            f.write(row[header].strip() + u'\n')
+            lines.append({u'siman': row['siman'], u'full': row[header].strip()})
+        return file_reader.fieldnames, lines
+
+
+def rewrtie_csv(fromcsv, newcsv, readColumnHeader, toWriteHeaders=None):
+    headerNames, lines = fromCSV(fromcsv, u'fixed_{}'.format(readColumnHeader), readColumnHeader)
+    if not toWriteHeaders:
+        toWriteHeaders = headerNames
+    regs = {u'rambam': re.compile(
+        u'(\u05e8\u05de\u05d1"\u05dd.*?)(?:\.|\u05d5?\u05d8\u05d5\u05e8|\u05d5?\u05e1\u05de"?\u05d2|\n)'),
+            u'smg': re.compile(
+                u'(\u05e1\u05de"?\u05d2.*?)(?:\.|\u05d5?\u05d8\u05d5\u05e8|\u05d5?\u05e8\u05de\u05d1"\u05dd|\n)'),
+            u'tur': re.compile(u'\u05d8\u05d5\u05e8(.*?)(?:\.|:|\n|@)')}
+    # rows = OrderedDict()
+    rows = []
+    siman_cit_lines = 1
+    prv_siman = 1
+    for line_dict in lines:
+        repdict = {u'טוא"ח': u'טור אורח חיים', u'טא"ח': u'טור אורח חיים',u'טי"ד':u'טור יורה דעה', u'טוי"ד':u'טור יורה דעה',u'טח"מ': u'טור חושן משפט',u'טוח"מ': u'טור חושן משפט'}
+        line = multiple_replace(line_dict[u'full'], repdict)
+        # line = line_dict[u'full']
+        row_dict = {u'siman': line_dict[u'siman'], u'full': line}# +u'.'}
+        if line_dict[u'siman'] == prv_siman:
+            siman_cit_lines += 1
+        else:
+            siman_cit_lines = 1
+        rambam = re.search(regs[u'rambam'], line)
+        if rambam:
+            rambam = sarsehu(rambam.group(1).strip())
+            rambam = get_a_Ref_from_chopped_txt(rambam, VERBOSE=False)
+            row_dict[u'rambam'] = rambam
+        tur = re.search(regs[u'tur'], line)
+        if tur:
+            tur = tur.group(1).strip()
+            tur = get_a_Ref_from_chopped_txt(u'טור, {}'.format(tur))
+            row_dict[u'tur'] = tur
+        rows.append(row_dict)
+        # rows[(row_dict[u'siman'], siman_cit_lines)] = row_dict
+        prv_siman = line_dict[u'siman']
+    links, smgs = link_smg(u'fixed_{}'.format(readColumnHeader)) #link_smg(u'smg_smk_test')
+
+    for i, (smk_siman, seg, smg) in enumerate(smgs):
+        if smg:
+            rows[i][u'smg'] = eval(smg)
+            rows[i][u'smk_segment'] = seg #int(smk_siman)-1
+    toCSV(newcsv, rows, toWriteHeaders)
+
+def get_a_Ref_from_chopped_txt(st, VERBOSE = False):
+    '''
+
+    :param st: text that we assume has a readable Ref in it
+    :return: Ref
+    '''
+    if type(st)!= unicode:
+        return st
+    # st = re.sub()
+    ref = u'no ref found'
+    while True:
+        if not st:
+            break
+        try:
+            if VERBOSE:
+                print st
+            ref = Ref(st)
+            break
+        except InputError:
+            split_ref = re.split(u'\s', st)
+            st = u' '.join(split_ref[:-1])
+    return ref
+
+
 def hagahot_alignment(ja_smk, ja_raph, ja_hagahot):
     ja_smk = JaggedArray(ja_smk)
     ja_raph = JaggedArray(ja_raph)
@@ -645,6 +735,7 @@ def add_remazim_node():
 
     # post_text(u'Sefer Mitzvot Katan, Remazim', text_version_remazim)
 
+
 def post_raph(ja_raph):
     replace_dict = {u"@22": u"<br>"}
     ja_raph = inlinereferencehtml(ja_raph)
@@ -782,7 +873,7 @@ def link_remazim():
             u'Sefer Mitzvot Katan {}.{}-{}'.format(siman, 1, simanlen),
             remez.normal()
         ],
-            "type": "Sifrei Mitzvot",
+            "type": "commentary",
             "auto": True,
             "generated_by": "semak_parser"  # _sfm_linker what is this parametor intended to be?
         })
@@ -810,8 +901,9 @@ def link_smg(filenametxt):
             seg = row[u"page running counter"]
             smg = row[u'Semag']
             simanlen = len(Ref(u'Sefer Mitzvot Katan {}'.format(siman)).all_segment_refs())
+            smgis.append((siman, seg, smg))
             if smg:
-                smgis.append((siman, smg))
+                # smgis.append((siman, seg, smg))
                 smg = eval(row[u'Semag'])
                 for smgi in smg:
                     # and to the next segment but not to all segments of the siman
@@ -829,9 +921,9 @@ def link_smg(filenametxt):
 
 
 def sarsehu(line):
-    if re.search(u'''(מ|ד)(הלכו'|הלכות|ה"ל|הל')''', line):
-        line = re.sub(u"[:;,.']", u'', line)
-        line = re.sub(u'רמב"ם (.*?) (?:מ|ד)(?:הלכות?|ה"ל|הל)(.*)', u'רמב"ם הלכות \g<2> \g<1>', line)
+    line = re.sub(u"[:;,.]", u'', line)  # maybe re.sub '
+    if re.search(u'''(מ|ד)(הלכו'|הלכות|ה"ל|הל'?')''', line):
+        line = re.sub(u'''רמב"ם (.*?) (?:מ|ד)(?:הלכו(?:'|ת)?|ה"ל|הל'?)(.*)''', u'רמב"ם הלכות \g<2> \g<1>', line)
         line = re.sub(u'\s+', u' ', line)
     return line
 
@@ -889,15 +981,78 @@ def link_rambam(filename):
     return all_refs
 
 
+def link_rambam_smg_tur(csvlinkfile):
+    links = []
+    links_rambam = []
+    links_tur = []
+    links_smg = []
+    with open(u'{}'.format(csvlinkfile), 'r') as csvfile:
+        seg_reader = csv.DictReader(csvfile)
+        for row in seg_reader:
+            siman = row[u'siman']
+            simanlen = len(Ref(u'Sefer Mitzvot Katan {}'.format(siman)).all_segment_refs())
+            # Rambam Mishneh Torah
+            if row[u'rambam']:
+                # rambam = eval(row[u'rambam'])
+                if re.search(u'\d+', row[u'rambam']):
+                    link = ({"refs": [
+                        u'Sefer Mitzvot Katan {}.{}-{}'.format(siman, 1, simanlen),
+                        u'{}'.format(row[u'rambam'])
+                    ],
+                        "type": "Sifrei Mitzvot",
+                        "auto": True,
+                        "generated_by": "semak_rambam_viasmk_sfm_linker"  # viasmk
+                    })
+                    try:
+                        link = is_ref_empty(link)
+                        links_rambam.append(link)
+                    except NameError as detail:
+                        print u"ref is empty for siman {} of smk:".format(siman), detail
+                else:
+                    print u'rambam {} no_number'.format(row[u'rambam'])
+            if row[u'tur']:
+                # tur = eval(row[u'tur'])
+                if re.search(u'\d+', row[u'tur']):
+                    link = ({"refs": [
+                        u'Sefer Mitzvot Katan {}.{}-{}'.format(siman, 1, simanlen),
+                        u'{}'.format(row[u'tur'])
+                    ],
+                        "type": "Sifrei Mitzvot",
+                        "auto": True,
+                        "generated_by": "semak_tur_viasmk_sfm_linker"  # viasmk
+                    })
+                    try:
+                        is_ref_empty(link)
+                        links_tur.append(link)
+                    except NameError as detail:
+                        print u"ref is empty for siman {} of smk:".format(siman), detail
+                else:
+                    print u'tur {} no_number'.format(row[u'tur'])
+
+            if row[u'smg']:
+                smg = eval(row[u'smg'])
+                for smgi in smg:
+                    # and to the next segment but not to all segments of the siman
+                    smgi_len = len(Ref(smgi).all_segment_refs())
+                    link = ({"refs":[
+                                u'Sefer Mitzvot Katan {}.{}-{}'.format(siman, 1, simanlen),
+                                u'{}.1-{}'.format(smgi, smgi_len)
+                    ],
+                    "type": "Sifrei Mitzvot",
+                    "auto":True,
+                    "generated_by" : "semak_smg_viasmk_sfm_linker"  #_sfm_linker what is this parametor intended to be?
+                    })
+                    try:
+                        is_ref_empty(link)
+                        links_smg.append(link)
+                    except NameError as detail:
+                        print u"ref is empty for siman {} of smk:".format(siman), detail
+            links = links_rambam + links_tur + links_smg
+        return links, links_smg
+
+
+
 def link_smk_remazim_to_smg_remazim(smg_smk_links):
-    # op1:
-    # smk_remazim = Ref("Sefer Mitzvot Katan, Remazim").all_segment_refs()
-    # for k_r_ref in smk_remazim:
-    #     for l_k_r in k_r_ref.linkset():
-    #         #take the ref that is to Semag if there is one
-    #         # put it in a method that findes its linkset and looks for the link to the Semag remazim
-    #         # take that method
-    # op2:
     links = []
     for old_l in smg_smk_links:
         siman_smk = re.search(u'Sefer Mitzvot Katan (\d{1,3})', old_l['refs'][0]).group(1)
@@ -915,6 +1070,19 @@ def link_smk_remazim_to_smg_remazim(smg_smk_links):
         links.append(link)
     return links
 
+
+def is_ref_empty(link):
+    refs = link["refs"]
+    for i, ref in enumerate(refs):
+        if Ref(ref).is_empty():
+            if re.search(u':', ref):
+                ref = re.search(u'(.*?):', ref).group(1)
+                if not Ref(ref).is_empty():
+                    link["refs"][i] = ref
+                    print 'fixed{}'.format(link["refs"])
+                    return link
+            raise NameError(u'Empty Ref {}'.format(ref))
+    return link
 
 if __name__ == "__main__":
     ja_smk = parse_semak('Semak.txt')
@@ -938,4 +1106,12 @@ if __name__ == "__main__":
     # remazim_sm_g_k = link_smk_remazim_to_smg_remazim(smg_links)
     # post_link(remazim_sm_g_k, VERBOSE=True)
     # link_rambam("testrambamibid.txt")
-    get_citations(ja_smk, "exctract")
+    # get_citations(ja_smk, "exctract")
+    # fromCSV(u'exctract.csv', u'newfile', u'full')
+    old = 22
+    new = 23
+    # rewrtie_csv(u'fixed{}.csv'.format(old), u'fixed{}'.format(new), u'full', toWriteHeaders=[u'siman', u'smk_segment', u'rambam', u'smg', u'tur', u'full'])
+    smkDerivenLinks, links_smg = link_rambam_smg_tur(u'fixed{}.csv'.format(new))
+    post_link(smkDerivenLinks, VERBOSE=True)
+    remazim_sm_g_k = link_smk_remazim_to_smg_remazim(links_smg)
+    post_link(remazim_sm_g_k, VERBOSE=True)
