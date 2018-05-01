@@ -88,9 +88,14 @@ def commentary_index(en_title, he_title, commentator):
 
 
 def generic_cleaner(ja, clean_callback):
-    for i, siman in enumerate(ja):
-        for j, seif in enumerate(siman):
-            ja[i][j] = clean_callback(seif)
+    assert isinstance(ja, list)
+    for j, item in enumerate(ja):
+        if isinstance(item, list):
+            generic_cleaner(item, clean_callback)
+        elif isinstance(item, basestring):
+            ja[j] = clean_callback(item)
+        else:
+            raise TypeError
 
 
 def even_haezer_clean(ja):
@@ -99,6 +104,7 @@ def even_haezer_clean(ja):
         strn = re.sub(u'/[\u05d0-\u05ea]{1,3}\]', u'', strn)
         strn = re.sub(u'(\s){2,}', u'\g<1>', strn)
         strn = re.sub(u' +$', u'', strn)
+        strn = re.sub(u'(?P<name><i data-commentator="[^,]+), Seder (Halitzah|HaGet)"', ur'\g<name>"', strn)
         return strn
 
     generic_cleaner(ja, clean)
