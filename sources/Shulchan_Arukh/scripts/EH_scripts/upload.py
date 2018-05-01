@@ -185,6 +185,14 @@ if __name__ == "__main__":
             part_name = part.replace(user_args.title, u'{} on {}'.format(user_args.title, base_text_title))
             book_data[part_name] = part_xml.render()
             links += part_xml.collect_links()
+            if re.search(u', Seder (Halitzah|HaGet)$', part):
+                for l in links:
+                    l['refs'][0] = re.sub(ur'^(Seder (Halitzah|HaGet)) 1:(?P<segment>\d{1,3}$)',
+                                          u'{}, \g<1> \g<segment>'.format(base_text_title), l['refs'][0])
+                    l['refs'][1] = re.sub(ur', (Seder (Halitzah|HaGet)) on \1 1:(?P<segment>\d{1,3}$)',
+                                          ur' on {}, \g<1> \g<segment>'.format(base_text_title), l['refs'][1])
+                    l['inline_reference']['data-commentator'] = user_args.title
+
         book_index = commentary_index(book_name, he_book_name, user_args.title)
         cleaner_method = cleaning_methods[user_args.title]
 
