@@ -179,8 +179,11 @@ class SegmentSplicer(AbstractSplicer):
         self.section_ref = self.first_ref.section_ref()
         self.book_ref = self.first_ref.context_ref(self.first_ref.index_node.depth)
         self.index = self.book_ref.index
-        self.commentary_titles = library.get_commentary_version_titles_on_book(self.index.title)
-        self.commentary_versions = library.get_commentary_versions_on_book(self.index.title)
+        # self.commentary_titles = library.get_commentary_version_titles_on_book(self.index.title)
+        self.commentary_titles = library.get_dependant_indices(self.index.title, structure_match=True)
+        # self.commentary_versions = library.get_commentary_versions_on_book(self.index.title)
+        self.commentary_versions = [v for i in library.get_dependant_indices(self.index.title, structure_match=True,
+                                                                             full_records=True) for v in i.versionSet()]
         self.versionSet = VersionSet({"title": self.index.title})
         self.last_segment_number = len(self.section_ref.get_state_ja().subarray_with_ref(self.section_ref))
         self.last_segment_ref = self.section_ref.subref(self.last_segment_number)
@@ -196,7 +199,7 @@ class SegmentSplicer(AbstractSplicer):
         # todo: merge into _setup_refs_for_join?
         # How many comments are there for each commenter on the base text?
         ret = {}
-        for vtitle in library.get_commentary_version_titles_on_book(ref.index.title):
+        for vtitle in library.get_dependant_indices(ref.index.title, structure_match=True):
             commentator_book_ref = Ref(vtitle)
             commentator_segment_ref = commentator_book_ref.subref(ref.sections)
             ret[vtitle] = len(commentator_segment_ref.get_state_ja().subarray_with_ref(commentator_segment_ref))
@@ -481,11 +484,12 @@ class SegmentSplicer(AbstractSplicer):
                 if self._needs_rewrite(wr, wr.is_commentary()):
                     needs_save = True
                     map_node.wholeRef = self._rewrite(wr, wr.is_commentary()).normal()
-                for i, r in enumerate(map_node.refs):
-                    ref = Ref(r)
-                    if self._needs_rewrite(ref, ref.is_commentary()):
-                        needs_save = True
-                        map_node.refs[i] = self._rewrite(ref, ref.is_commentary()).normal()
+                if hasattr(map_node, 'refs'):
+                    for i, r in enumerate(map_node.refs):
+                        ref = Ref(r)
+                        if self._needs_rewrite(ref, ref.is_commentary()):
+                            needs_save = True
+                            map_node.refs[i] = self._rewrite(ref, ref.is_commentary()).normal()
         if needs_save:
             if self._report:
                 print "Saving {} alt structs".format(self.index.title)
