@@ -52,6 +52,8 @@ class Sheets:
                 segments = self.classify_segments(segments)
 
                 sheet_sections.append(segments)
+        assert len(self.quotation_stack) == 1
+        self.quotation_stack = []
         return sheet_sections
 
 
@@ -128,16 +130,17 @@ class Sheets:
                 if "class" in segments[i+1].attrs.keys():
                     #first set what this line is... either something that should be combined with next line like "Rashi"
                     #or it is legitimately a comment of its own;
-                    if len(segment.text.split()) > 10:
+                    if len(segment.text.split()) > 12:
                         segments[i] = ('nechama', segment.text, self.quotation_stack[0])
                     else:
                         segments[i] = ("combined_with_next_line", segment.text, "")
 
                     next_segment_class = segments[i+1].attrs["class"][0]
-                    if next_segment_class == "bible":
-                        self.set_current_perek_pasuk(segment.text)
-                    elif next_segment_class in ["parshan", "midrash", "talmud"]:
+                    is_parsha_ref = self.set_current_perek_pasuk(segment.text)
+                    if not is_parsha_ref:
                         self.set_current_parshan(segment)
+                    elif next_segment_class != "bible":
+                        print 'weird case'
                 else:
                     #case where this is probably introduction a bunch of comments
                     if segments[i-1][0] == "combined_with_next_line": #several in a row
@@ -255,16 +258,20 @@ class Sheets:
 
 
     def set_current_perek_pasuk(self, text):
-        if u"פרק" in text:
-            perek_pos = text.split().index(u"פרק")
-            self.current_perek = getGematria(text.split()[perek_pos+1])
-        if u"פסוק" in text:
+        perek_pasuk = re.compile(u"(פרק .{1,8})?.{0,3}פסוק .{1,8}")
+        match = perek_pasuk.match(text)
+        if match:
+            second_group = match.group(1) # should be Perek
+            if second_group:
+                perek_pos = text.split().index(u"פרק")
+                self.current_perek = getGematria(text.split()[perek_pos+1])
             pasuk_pos = text.split().index(u"פסוק")
             assert pasuk_pos != -1, "Assumed that pasuk info was here but there isn't any."
             self.current_pasuk = getGematria(text.split()[pasuk_pos+1])
             self.quotation_stack.append(u"{} {}:{}".format(self.current_sefer, self.current_perek, self.current_pasuk))
+            return True
         else:
-            self._get_refs_in_string(text)
+            return False
 
 
 
@@ -318,7 +325,9 @@ class Sheets:
             if int(i) <= start_after:
                 continue
             print "downloading {}".format(i)
-            response = requests.get("http://www.nechama.org.il/pages/{}.html".format(i))
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
+            response = requests.get("http://www.nechama.org.il/pages/{}.html".format(i), headers=headers)
             print "sleeping"
             time.sleep(1)
             with open("{}.html".format(i), 'w') as f:
