@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import django
+django.setup()
+
 import pymongo
 import geojson
 from sefaria.system.database import db
