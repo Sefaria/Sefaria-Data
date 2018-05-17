@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import django
+django.setup()
+
 import requests, codecs, json
 import unicodecsv as csv
 import pickle
@@ -467,9 +470,12 @@ def range_ref(ref):
     if ref.is_empty():
         raise NameError(u'Empty Ref {}'.format(ref))
     ref_length = len(ref.all_segment_refs())
-    if ref_length <=1:
-        return ref
-    r = Ref(u"{}.1-{}".format(ref.normal(), ref_length))
+    if ref_length <1 or not ref.is_section_level():
+        r= ref
+    elif ref_length==1:
+        r=Ref(u"{}.1".format(ref.normal()))
+    else:
+        r = Ref(u"{}.1-{}".format(ref.normal(), ref_length))
     return r
 
 
@@ -501,7 +507,7 @@ def copy_from_local():
 
 
 def seferHamitzvot_from_rasag_comm(rasagCsvName, with_orig = False):
-        # ind_rasag_comm = library.get_index("Commentary on Sefer Hamitzvot of Rasag")
+        # ind_rasag_comm = library.get_index("Commentary on Sefer HaMitzvot of Rasag")
         segments = Ref('Commentary_on_Sefer_Hamitzvot_of_Rasag,_Positive_Commandments').all_segment_refs()
         segments.extend(Ref('Commentary_on_Sefer_Hamitzvot_of_Rasag,_Negative_Commandments').all_segment_refs())
         segments.extend(Ref('Commentary_on_Sefer_Hamitzvot_of_Rasag,_Laws_of_the_Courts').all_segment_refs())
@@ -654,7 +660,7 @@ def row_to_Refs(row, fixing=True):
                         range_ref(Ref(u'Mishneh Torah, {} Mitzvot.{}'.format(rambam[0].strip(), rambam[1]))))
                     mitzvah_set_large.append(range_ref(Ref(u'Sefer HaMitzvot, {} Commandments.{}'.format(rambam[0].strip(), rambam[1]))))
                     mitzvah_dict[u'rambam'].append(range_ref(
-                        Ref(u'Sefer HaMitzvot, {} Commandments.{}'.format(rambam[0].strip(), rambam[1]))))
+                        Ref(u'Mishneh Torah, {} Mitzvot.{}'.format(rambam[0].strip(), rambam[1]))))
                 except IndexError:
                     print u'*problem {} in siman {} *'.format(rambam, row[u'chinukh'])
             else:
@@ -663,7 +669,7 @@ def row_to_Refs(row, fixing=True):
                         mitzvah_set_small.append(range_ref(Ref(u'Mishneh Torah, {} Mitzvot.{}'.format(ram[0].strip(), ram[1]))))
                         mitzvah_set_large.append(range_ref(Ref(u'Sefer HaMitzvot, {} Commandments.{}'.format(ram[0].strip(), ram[1]))))
                         mitzvah_dict[u'rambam'].append(range_ref(
-                            Ref(u'Sefer HaMitzvot, {} Commandments.{}'.format(ram[0].strip(), ram[1]))))
+                            Ref(u'Mishneh Torah, {} Mitzvot.{}'.format(ram[0].strip(), ram[1]))))
     except NameError as detail:
         print u"chinukh {} ref is empty:".format(row[u'chinukh']), detail
     try:
@@ -778,16 +784,70 @@ def cluster_lines(fixedFileName):
     print sum(clusters)
     return sets_by_chinukh, clusters, dicts_by_chinukh
 
+def find_missing_links(base_title_book, regex_title_book, level = 1):
+    """
+
+    :param base_title_book: book title of the book to go through it's ref. title that can to get the Index obj
+    :param regex_title_book: regex consisting of titles of books to be found in the refs.
+    :param level: 0 - sections 1 - segments.
+    :return: a list of segments that don't have any links with the regex in the books name
+    """
+    cnt_all = 0
+    missing = []
+    indb1 = library.get_index(base_title_book)
+    if level == 0:
+        segments = indb1.all_section_refs()
+    else:
+        segments = indb1.all_segment_refs()
+    for seg in segments:
+        cnt = 0
+        refs = [r for i in range(len(seg.linkset())) for r in seg.linkset()[i].refs]
+        for r in refs:
+            if re.search(regex_title_book, r):
+                cnt += 1
+        if cnt == 0:
+            cnt_all += 1
+            missing.append(seg)
+            print seg  # , cnt_all
+    return missing
+
+
+def link_tanakh_pesukim_via_Halakah(base_title_book, category="Tanakh", nodes_to_jump_from = []):
+    ind = library.get_index(base_title_book)
+    segments = ind.all_segment_refs()
+    tanakh_books = library.get_indexes_in_category(category)
+    for seg in segments:
+        tanakh_set = []
+        cnt = 0
+        refs = [r for i in range(len(seg.linkset())) for r in seg.linkset()[i].refs]
+        for r in refs:
+            rr = Ref(r)
+            if rr.index.title in tanakh_books:
+                tanakh_set.append(r)
+            # elif re.search(rr.index.title, ' '.join(nodes_to_jump_from)):
+
+        if len(tanakh_set) >1:
+
+            print '**********************'
+            print seg.text('he').text
+            for p in tanakh_set:
+                print p
+                print Ref(p).text('he').text
+
 
 if __name__ == "__main__":
     # rambam_chinukh_lnks = scrape_wiki()
     # post_link(rambam_chinukh_lnks, VERBOSE=True)
     # post_link(link_sfrMitzvot_shortCounting(), VERBOSE=True)
     # rows = get_link_data()
-    # origns = text_to_csv_links(u'table_w_wiki', rows,  times=2)
+    # origns = text_to_csv_links(u'mitzvot_fixed_smg', rows,  times=2)
     # sets, clusters, mitzvah_dicts = refs_csv(u'mitzvot_test.csv')
-    copy_from_local()
+    # copy_from_local()
     # seferHamitzvot_from_rasag_comm(u"rasag_all_refs", with_orig = True)
     # links = rasag_linking(u'almostRefs.csv')
     # post_link(links, VERBOSE=True)
-    # cluster_lines("table_w_wiki.csv")
+    # sets_by_chinukh, clusters, dicts_by_chinukh = cluster_lines("mitzvot_chart_fixed_smg.csv")
+    # copy_from_local()
+    # link_tanakh_pesukim_via_Halakah("Mishneh Torah, Negative Mitzvot")
+    # find_missing_links("Mishneh Torah, Positive Mitzvot", "Sefer HaChinukh", level=1)
+    pass
