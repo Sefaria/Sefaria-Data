@@ -7,8 +7,9 @@ import logging
 logger = logging.getLogger(__name__)
 import django
 django.setup()
+import urllib2, urllib
 from sefaria.model import *
-from sources.functions import convertDictToArray, post_index, post_text, post_link
+from sources.functions import convertDictToArray, post_index, post_text, post_link, post_sheet
 import difflib
 from collections import Counter
 import time
@@ -22,7 +23,7 @@ class Sheets:
         self.versionTitle = "asdf"
         self.versionSource = "http://nechama.org.il"
         self.table_classes = {}
-        self.server = "http://ste.sefaria.org"
+        self.server = "http://localhost:8000"
         self.bereshit_parshiot = ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
         self.sheets = {}
         self.current_pos_in_quotation_stack = -1
@@ -47,7 +48,7 @@ class Sheets:
         self.found = set() #found holds all titles of books we found in the library
         self.index_not_found = Counter() #indexes not found in library
         self.intro_to_many_comment_finds = Counter() #2.html 5th section Shadal
-        self.significant_class = lambda class_: class_ in ["header", "parshan", "question"] or "question" in class_
+        self.significant_class = lambda class_: True #class_ in ["header", "question"] or "question" in class_
 
 
 
@@ -124,7 +125,7 @@ class Sheets:
 
     def check_for_blockquote_and_table(self, segments, level=2):
         new_segments = []
-        tables = ["table", "tr", "td"]
+        tables = ["table", "tr"]
         for i, segment in enumerate(segments):
             if isinstance(segment, element.Tag):
                 class_ = segment.attrs.get("class", [""])[0]
@@ -133,17 +134,12 @@ class Sheets:
             #     continue
             if segment.name == "blockquote": #this is really many children so add them to list
                 new_segments += self.get_children_with_content(segment)
-            elif segment.name in tables:
-                if segment.name == "table":
-                    if class_ not in self.table_classes:
-                        self.table_classes[class_] = set()
-                    ste_url = nechama_url = None
-                    self.table_classes[class_].add(self.current_url)
-
-                if self.significant_class(class_):
-                    extra_segments = self.unwrap_HTML_tables(segment)
-                else:
-                    extra_segments = self.unwrap_real_tables(segment)
+            elif segment.name == "tr" or (self.significant_class(class_) and segment.name == "table"):
+                    # if class_ not in self.table_classes:
+                    #     self.table_classes[class_] = set()
+                    # ste_url = nechama_url = None
+                    # self.table_classes[class_].add(self.current_url)
+                extra_segments = self.unwrap_HTML_tables(segment)
                 new_segments += extra_segments
             else:
                 #no significant class and not blockquote or table
@@ -157,23 +153,32 @@ class Sheets:
 
     def unwrap_HTML_tables(self, segments):
         leaves = []
+        number = None
         for segment in self.get_children_with_content(segments):
             class_ = "" if isinstance(segment, element.NavigableString) or "class" not in segment.attrs.keys() else segment.attrs["class"][0]
             # go all the way down to the leaves unless we find a signifcant class
-            if segment.name in ["table", "td", "tr"] and not self.significant_class(class_):
+            if class_ == "number" and segment.name == "td":
+                number = segment.text
+            elif segment.name in ["tr"] or (segment.name == "table" and self.significant_class(class_)):
                 leaves += self.unwrap_HTML_tables(segment)
             else:
+                if number:
+                    segment.string = number + segment.string
+                    number = None
                 leaves.append(segment)
         return leaves
 
-    def unwrap_real_tables(self, segments):
-        leaves = []
-        for segment in self.get_children_with_content(segments):
-            if segment.name in ["table", "tr"]:
-                leaves += self.unwrap_real_tables(segment)
-            elif segment.name in ["td"]:
-                leaves += segment.contents
-        return leaves
+    # def unwrap_real_tables(self, segments):
+    #     leaves = []
+    #     for segment in self.get_children_with_content(segments):
+    #         if segment.name in ["table", "tr"]:
+    #             class_ = segment.attrs.get("class", [""])[0]
+    #             leaves += self.unwrap_real_tables(segment)
+    #         elif segment.name in ["td"]:
+    #             leaves += segment.contents
+    #         else:
+    #             raise InputError
+    #     return leaves
 
     def get_children_with_content(self, segment):
         # determine if the text of segment is blank or practically blank (i.e. just a \n or :\n\r) or is just empty space less than 3 chars
@@ -250,7 +255,7 @@ class Sheets:
                     segments[i] = (segment_class, text, ref)
                 else:
                     # must be either header, parshan, bible, or question
-                    raise InputError, segment.text
+                    print "Found other class...{}".format(segment_class)
             else:
                 # if there is no class, then...
                 # it is either setting perek/pasuk info
@@ -573,15 +578,39 @@ class Sheets:
             pass
 
 
-    def get_text_and_links(self, text_list, parsha, year):
+    def get_text_links_and_sources(self, text_list, parsha, year):
+        """
+                               segments[i] = "combined and linked"
+                    elif a_tag_is_entire_comment:
+                        combined_with_prev_line = relevant_text
+                        segments[i] = relevant_text
+        :param text_list:
+        :param parsha:
+        :param year:
+        :return:
+        """
         links = []
+        sources = []
+        important_clases = ["parshan", "midrash", "talmud", "bible", "commentary"]
         for i, section in enumerate(text_list):
             section = [el for el in text_list[i] if isinstance(el, tuple)]
             for j, segment in enumerate(section):
                 type, comment, comm_ref = segment
+                if type == "nechama":
+                    source = {"outsideText": comment, "node": j+1}
+                elif type in important_clases:
+                    heRef = Ref(comm_ref).he_normal()
+                    source = {"node": j+1, "ref": comm_ref, "heRef": heRef,
+                              "text": {
+                                         "en": "", "he": comment
+                                      }
+                              }
+                else:
+                    raise InputError
+                sources.append(source)
                 term = Term().load({"titles.text": parsha})
                 assert term, u"{} doesn't have term".format(parsha)
-                nechama_ref = u"{}, {} {}:{}:{}".format(self.en_title_project, term.name, year, i+1, j+1)
+                nechama_ref = u"{}, {} {}".format(self.en_title_project, term.name, year)
                 link = {"refs": [
                             nechama_ref,
                             comm_ref
@@ -594,7 +623,7 @@ class Sheets:
                 section[j] = comment
             text_list[i] = section
 
-        return text_list, links
+        return text_list, links, sources
 
 
     def create_index(self):
@@ -607,6 +636,8 @@ class Sheets:
             assert len(term.get_titles('he')[0].split()) == 1
             parsha_node.add_primary_titles(term.name, term.get_titles('he')[0])
             parsha_node.add_structure(["Year", "Section", "Paragraph"])
+            parsha_node.addressTypes = ["Year", "Integer", "Integer"]
+            parsha_node.validate()
             root.append(parsha_node)
         index = {
             "title": self.en_title_project,
@@ -616,20 +647,24 @@ class Sheets:
         post_index(index, server=self.server)
 
 
-    def post_sheets(self):
+    def post_index(self):
         self.create_index()
         nechama_text = {}
+        nechama_sheet = {}
         all_links = []
+        important_classes = ["parshan", "midrash", "talmud", "bible", "commentary"]
         for parsha, sheets_by_year in self.sheets.items():
             term = Term().load({"titles.text": parsha})
             assert term, u"{} doesn't have term".format(parsha)
             parsha = term.name
             nechama_text[parsha] = {}
+            nechama_sheet[parsha] = {}
             for en_year, sheet in sheets_by_year.items():
                 url, he_year, sefer, perakim, text_tuples = sheet
-                text, links = self.get_text_and_links(text_tuples, parsha, en_year)
+                text, links, sources = self.get_text_links_and_sources(text_tuples, parsha, en_year)
                 all_links += links
-                nechama_text[parsha][en_year] = text
+                nechama_text[parsha][he_year] = text
+                self.prepare_sheet("{} {} {}".format(self.en_title_project, parsha, en_year), sources)
             nechama_text[parsha] = convertDictToArray(nechama_text[parsha])
             send_text = {
                 "text": nechama_text[parsha],
@@ -646,14 +681,20 @@ class Sheets:
         #         post_text(u"{}, {} {}:{}".format(self.en_title_project, parsha, year+1, section_n+1), section, server=self.server)
 
 
-
-
+    def prepare_sheet(self, title, sources):
+       print title
+       sheet_json = {}
+       sheet_json["status"] = "public"
+       sheet_json["title"] = title
+       sheet_json["sources"] = [sources]
+       sheet_json["options"] = {"numbered": 0,"assignable": 0,"layout": "sideBySide","boxed": 0,"language": "bilingual","divineNames": "noSub","collaboration": "none", "highlightMode": 0, "bsd": 0,"langLayout": "heRight"}
+       post_sheet(sheet_json, server="http://ste.sefaria.org")
 
 if __name__ == "__main__":
     sheets = Sheets()
     #sheets.download_sheets()
     sheets.load_sheets()
-    sheets.post_sheets()
+    sheets.post_index()
     pass
 
 

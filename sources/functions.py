@@ -627,6 +627,11 @@ def make_title(text):
     return new_text
 
 @weak_connection
+def post_sheet(sheet, server=SEFARIA_SERVER):
+    url = server + "/api/sheets"
+    return http_request(url, body={"apikey": API_KEY}, json_payload=sheet, method="POST")
+
+@weak_connection
 def post_index(index, server=SEFARIA_SERVER):
     url = server+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
     return http_request(url, body={'apikey': API_KEY}, json_payload=index, method="POST")
