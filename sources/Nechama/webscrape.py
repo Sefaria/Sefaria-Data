@@ -27,6 +27,7 @@ class Sheets:
         self.server = "http://ste.sefaria.org"
         self.bereshit_parshiot = ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
         self.sheets = {}
+        self.links = []
         self.current_pos_in_quotation_stack = -1
         self.current_section = 0
         self.current_url = ""
@@ -37,6 +38,8 @@ class Sheets:
         self.current_parsha_ref = None
         self.current_sefer = ""
         self._term_cache = {} # used so we don't have to look up "Rashi" in database over and over
+        self.current_parsha = ""
+        self.current_en_year = ""
 
         #these two variables keep track of layers of quotations Nechama references...quotations is a list of all quotations
         #and quotation_stack is a stack that we pop when we find a quotation in quotations
@@ -57,15 +60,24 @@ class Sheets:
 
     def get_links_to_other_sheets(self, div):
         a_tags = div.find_all("a")
-        refs = []
         for link in [el.text for el in a_tags]:
             #create URL based on link_text: Currently it's Hebrew equivalent of "Bereshit 1942"
-            parsha, year = link.split()
+            if len(link.split()) == 2:
+                parsha, year = link.split()
+            elif len(link.split()) == 1:
+                parsha = self.current_parsha
+                year = link
             he_year_as_num = AddressYear.toNumber("he", year)
             en_year = AddressYear.toStr("en", he_year_as_num)
-            ref = "{} {} {}".format(self.en_title_project, parsha, en_year)
-            refs.append(ref)
-        return refs
+            other_source_sheet = u"{} {} {}".format(self.en_title_project, parsha, en_year)
+            this_source_sheet = u"{} {} {}:1".format(self.en_title_project, self.current_parsha, self.current_en_year)
+            link = {
+                    "refs": [other_source_sheet, this_source_sheet],
+                    "type": "commentary",
+                    "auto": True,
+                    "generated_by": "nechama_linker"
+                  }
+            self.links.append(link)
 
 
     def parse_as_sheets(self, text):
@@ -74,11 +86,12 @@ class Sheets:
 
     def parse_as_text(self, text):
         sheet_sections = []
-        intro_segment = None
+        intro_segment = intro_tuple = None
         for div in text.find_all("div"):
             if div['id'] == "sheetRemark" and div.text.replace(" ", "") != "": # comment of hers that appears at beginning of section
                 refs_to_other_sheets = self.get_links_to_other_sheets(div)
                 intro_segment = div
+                intro_tuple = ("nechama", "<b>" + intro_segment.text + "</b>", "")
             elif "ContentSection" in div['id']: #sections within source sheets
                 self.current_section += 1
                 assert str(self.current_section) in div['id']
@@ -97,8 +110,7 @@ class Sheets:
 
                 segments = self.classify_segments(segments)
                 if intro_segment:
-                    tuple = ("nechama", "<b>"+intro_segment.text+"</b>", refs_to_other_sheets)
-                    segments.insert(0, tuple)
+                    segments.insert(0, intro_tuple)
 
                 #assert len(self.quotations) == self.current_pos_in_quotation_stack+1
                 #assert 3 > len(self.quotation_stack) > 0
@@ -297,7 +309,7 @@ class Sheets:
                     next_comment_parshan_or_bible = "class" in segments[i+1].attrs.keys() and segments[i+1].attrs["class"][0] in important_classes
                 relevant_text = self.relevant_text(segment)
                 if not next_comment_parshan_or_bible:
-                    segments[i] = ('nechama', relevant_text, self.current_parsha_ref[1]) #was self.quotations[0][1]
+                    segments[i] = ('nechama', relevant_text, [self.current_parsha_ref[1]]) #was self.quotations[0][1]
                 else:
                     a_tag_is_entire_comment = False #this means there is supposed to be a match if True because comment is clearly a reference to a commentator and not just about the commentator
                     next_segment_class = segments[i+1].attrs["class"][0]
@@ -312,7 +324,7 @@ class Sheets:
                         combined_with_prev_line = relevant_text
                         segments[i] = relevant_text
                     elif not is_parshan_ref and not is_torah_ref:
-                        segments[i] = ('nechama', relevant_text, self.current_parsha_ref[1])
+                        segments[i] = ('nechama', relevant_text, [self.current_parsha_ref[1]])
         return segments
 
 
@@ -594,7 +606,9 @@ class Sheets:
                 continue
             hebrew_year = content.find("div", {"id": "year"}).text.replace(u"שנת", u"")
             roman_year = getGematria(hebrew_year) + 1240
+            self.current_en_year = roman_year
             parsha = content.find("div", {"id": "paging"}).text
+            self.current_parsha = parsha
             self.current_sefer, self.current_perakim = self.extract_perek_info(content)
             self.current_sefer = library.get_index(self.current_sefer)
             self.current_alt_titles = self.current_sefer.nodes.get_titles('en')
@@ -713,9 +727,9 @@ class Sheets:
                 url, he_year, sefer, perakim, text_tuples = sheet
                 he_year = getGematria(he_year)
                 text, links, sources = self.get_text_links_and_sources(text_tuples, parsha, en_year)
-                all_links += links
+                self.links += links
                 nechama_text[parsha][he_year] = text
-                #self.prepare_sheet("{} {} {}".format(self.en_title_project, parsha, en_year), sources)
+                self.prepare_sheet("{} {} {}".format(self.en_title_project, parsha, en_year), sources)
             nechama_text[parsha] = convertDictToArray(nechama_text[parsha])
             send_text = {
                 "text": nechama_text[parsha],
@@ -724,7 +738,7 @@ class Sheets:
                 "versionSource": self.versionSource
             }
             post_text(u"{}, {}".format(self.en_title_project, parsha), send_text, server=self.server)
-        post_link(all_links, server=self.server)
+        post_link(self.links, server=self.server)
         # for year, sheet in enumerate(nechama_text[parsha]):
         #     if year < 1941:
         #         continue
