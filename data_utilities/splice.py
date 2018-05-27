@@ -370,7 +370,10 @@ class SegmentSplicer(AbstractSplicer):
             return False
         if (not commentary) and (old_ref.index != self.first_ref.index):
             return False
-        if commentary and old_ref.index.b_index != self.first_ref.index:
+        try:
+            if commentary and old_ref.index.base_text_titles[0] != self.first_ref.index:
+                return False
+        except (AttributeError, IndexError):
             return False
 
         if old_ref.is_range():
