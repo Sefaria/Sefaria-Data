@@ -1,6 +1,6 @@
 import csv
 import difflib
-from sources.functions import *
+from sefaria.system.database import db
 def create_ref_map(refs_map, file):
     with open(file) as f:
         reader = csv.reader(f)
@@ -53,8 +53,24 @@ def get_text_for_source_refs(ref_map, draft_text, prod_text):
                     match = draft_section_ref
             if not match:
                 match = draft_section_ref
+            replace_source(orig_ref.replace("\n", ""), match)
             match_writer.writerow([orig_ref, match])
     match_csv.close()
+
+
+def replace_source(orig_ref, new_ref):
+    sheets = db.sheets.find({"sources.ref": orig_ref})
+    sheets = list(sheets)
+    if len(sheets) == 0:
+        return
+    for sheet in sheets:
+        for source_n, source in enumerate(sheet['sources']):
+            if 'ref' in source.keys() and source['ref'] == orig_ref:
+                print "Changing sheet...{}".format(sheet["id"])
+                print "{}".format(new_ref)
+                sheet["sources"][source_n]['ref'] = new_ref
+        db.sheets.save(sheet)
+
 
 
 def find_prod_in_draft(prod_segment, draft_section):

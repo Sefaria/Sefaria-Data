@@ -89,7 +89,7 @@ class Sheets:
         intro_segment = intro_tuple = None
         for div in text.find_all("div"):
             if div['id'] == "sheetRemark" and div.text.replace(" ", "") != "": # comment of hers that appears at beginning of section
-                refs_to_other_sheets = self.get_links_to_other_sheets(div)
+                #refs_to_other_sheets = self.get_links_to_other_sheets(div)
                 intro_segment = div
                 intro_tuple = ("nechama", "<b>" + intro_segment.text + "</b>", "")
             elif "ContentSection" in div['id']: #sections within source sheets
@@ -705,8 +705,7 @@ class Sheets:
             "title": self.en_title_project,
             "schema": root.serialize(),
             "categories": ["Tanakh", "Commentary"],
-            "dependence": "Commentary",
-            "collective_title": "Nechama Leibowitz"
+            "dependence": "Commentary"
         }
         post_index(index, server=self.server)
 
@@ -729,7 +728,7 @@ class Sheets:
                 text, links, sources = self.get_text_links_and_sources(text_tuples, parsha, en_year)
                 self.links += links
                 nechama_text[parsha][he_year] = text
-                self.prepare_sheet("{} {} {}".format(self.en_title_project, parsha, en_year), sources)
+                #self.prepare_sheet("{} {} {}".format(self.en_title_project, parsha, en_year), sources)
             nechama_text[parsha] = convertDictToArray(nechama_text[parsha])
             send_text = {
                 "text": nechama_text[parsha],
