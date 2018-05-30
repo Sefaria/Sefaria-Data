@@ -88,9 +88,14 @@ def commentary_index(en_title, he_title, commentator):
 
 
 def generic_cleaner(ja, clean_callback):
-    for i, siman in enumerate(ja):
-        for j, seif in enumerate(siman):
-            ja[i][j] = clean_callback(seif)
+    assert isinstance(ja, list)
+    for j, item in enumerate(ja):
+        if isinstance(item, list):
+            generic_cleaner(item, clean_callback)
+        elif isinstance(item, basestring):
+            ja[j] = clean_callback(item)
+        else:
+            raise TypeError
 
 
 def even_haezer_clean(ja):
@@ -99,6 +104,7 @@ def even_haezer_clean(ja):
         strn = re.sub(u'/[\u05d0-\u05ea]{1,3}\]', u'', strn)
         strn = re.sub(u'(\s){2,}', u'\g<1>', strn)
         strn = re.sub(u' +$', u'', strn)
+        strn = re.sub(u'(?P<name><i data-commentator="[^,]+), Seder (Halitzah|HaGet)"', ur'\g<name>"', strn)
         return strn
 
     generic_cleaner(ja, clean)
@@ -185,6 +191,14 @@ if __name__ == "__main__":
             part_name = part.replace(user_args.title, u'{} on {}'.format(user_args.title, base_text_title))
             book_data[part_name] = part_xml.render()
             links += part_xml.collect_links()
+            if re.search(u', Seder (Halitzah|HaGet)$', part):
+                for l in links:
+                    l['refs'][0] = re.sub(ur'^(Seder (Halitzah|HaGet)) 1:(?P<segment>\d{1,3}$)',
+                                          u'{}, \g<1> \g<segment>'.format(base_text_title), l['refs'][0])
+                    l['refs'][1] = re.sub(ur', (Seder (Halitzah|HaGet)) on \1 1:(?P<segment>\d{1,3}$)',
+                                          ur' on {}, \g<1> \g<segment>'.format(base_text_title), l['refs'][1])
+                    l['inline_reference']['data-commentator'] = user_args.title
+
         book_index = commentary_index(book_name, he_book_name, user_args.title)
         cleaner_method = cleaning_methods[user_args.title]
 

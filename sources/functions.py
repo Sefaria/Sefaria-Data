@@ -69,6 +69,7 @@ eng_parshiot = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Tol
 "Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo", "Nitzavim", "Vayeilech", "Ha'Azinu",
 "V'Zot HaBerachah"]
 
+from lxml.html import fromstring
 
 def create_intro():
     intro = JaggedArrayNode()
@@ -624,6 +625,11 @@ def make_title(text):
     new_text = new_text.strip()
 
     return new_text
+
+@weak_connection
+def post_sheet(sheet, server=SEFARIA_SERVER):
+    url = server + "/api/sheets"
+    return http_request(url, body={"apikey": API_KEY}, json_payload=sheet, method="POST")
 
 @weak_connection
 def post_index(index, server=SEFARIA_SERVER):

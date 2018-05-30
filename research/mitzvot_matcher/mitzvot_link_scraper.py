@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import django
+django.setup()
+
 import requests, codecs, json
 import unicodecsv as csv
 import pickle
@@ -467,9 +470,12 @@ def range_ref(ref):
     if ref.is_empty():
         raise NameError(u'Empty Ref {}'.format(ref))
     ref_length = len(ref.all_segment_refs())
-    if ref_length <=1:
-        return ref
-    r = Ref(u"{}.1-{}".format(ref.normal(), ref_length))
+    if ref_length <1 or not ref.is_section_level():
+        r= ref
+    elif ref_length==1:
+        r=Ref(u"{}.1".format(ref.normal()))
+    else:
+        r = Ref(u"{}.1-{}".format(ref.normal(), ref_length))
     return r
 
 
@@ -501,7 +507,7 @@ def copy_from_local():
 
 
 def seferHamitzvot_from_rasag_comm(rasagCsvName, with_orig = False):
-        # ind_rasag_comm = library.get_index("Commentary on Sefer Hamitzvot of Rasag")
+        # ind_rasag_comm = library.get_index("Commentary on Sefer HaMitzvot of Rasag")
         segments = Ref('Commentary_on_Sefer_Hamitzvot_of_Rasag,_Positive_Commandments').all_segment_refs()
         segments.extend(Ref('Commentary_on_Sefer_Hamitzvot_of_Rasag,_Negative_Commandments').all_segment_refs())
         segments.extend(Ref('Commentary_on_Sefer_Hamitzvot_of_Rasag,_Laws_of_the_Courts').all_segment_refs())
@@ -628,7 +634,7 @@ def row_to_Refs(row, fixing=True):
         mitzvah_set = []
         mitzvah_set_small = []
         mitzvah_set_large = []
-        mitzvah_dict = {'chinukh':[], 'smk':[], 'rambam':[], 'smg':[], 'mishneh':[], 'shulchanArukh':[], 'pasuk':[]}
+        mitzvah_dict = {'chinukh':[], 'smk':[], 'rambam':[], 'smg':[], 'mishneh':[], 'shulchanArukh':[], 'pasuk':[], 'rasag':[]}
         if int(row[u'chinukh']) <= 613:
             mitzvah_set.append(range_ref(Ref(u'Sefer HaChinukh.{}'.format(row[u'chinukh']))))
             mitzvah_dict[u'chinukh'].append(Ref(u'Sefer HaChinukh.{}'.format(row[u'chinukh'])))
@@ -654,7 +660,7 @@ def row_to_Refs(row, fixing=True):
                         range_ref(Ref(u'Mishneh Torah, {} Mitzvot.{}'.format(rambam[0].strip(), rambam[1]))))
                     mitzvah_set_large.append(range_ref(Ref(u'Sefer HaMitzvot, {} Commandments.{}'.format(rambam[0].strip(), rambam[1]))))
                     mitzvah_dict[u'rambam'].append(range_ref(
-                        Ref(u'Sefer HaMitzvot, {} Commandments.{}'.format(rambam[0].strip(), rambam[1]))))
+                        Ref(u'Mishneh Torah, {} Mitzvot.{}'.format(rambam[0].strip(), rambam[1]))))
                 except IndexError:
                     print u'*problem {} in siman {} *'.format(rambam, row[u'chinukh'])
             else:
@@ -663,7 +669,7 @@ def row_to_Refs(row, fixing=True):
                         mitzvah_set_small.append(range_ref(Ref(u'Mishneh Torah, {} Mitzvot.{}'.format(ram[0].strip(), ram[1]))))
                         mitzvah_set_large.append(range_ref(Ref(u'Sefer HaMitzvot, {} Commandments.{}'.format(ram[0].strip(), ram[1]))))
                         mitzvah_dict[u'rambam'].append(range_ref(
-                            Ref(u'Sefer HaMitzvot, {} Commandments.{}'.format(ram[0].strip(), ram[1]))))
+                            Ref(u'Mishneh Torah, {} Mitzvot.{}'.format(ram[0].strip(), ram[1]))))
     except NameError as detail:
         print u"chinukh {} ref is empty:".format(row[u'chinukh']), detail
     try:
@@ -726,6 +732,24 @@ def row_to_Refs(row, fixing=True):
                     if re.search(u'\d', pas[0]):
                         mitzvah_set.append(Ref(pas[0]))
                         mitzvah_dict[u'pasuk'].append(Ref(pas[0]))
+    try:
+        rsg = (row[u'rasag'])
+        if rsg:
+            for rsgi in rsg:
+                # if rsgi:
+                mitzvah_set_small.append(Ref(rsgi))
+                # mitzvah_set_large.append(rsgi)
+                mitzvah_dict[u"rasag"].append(Ref(rsgi))
+            # elif isinstance(rsg[0], unicode):
+            #     try:
+            #         mitzvah_set_small.append(Ref(rsg[0]))
+            #         # mitzvah_set_large.append(rsg)
+            #         mitzvah_dict[u"rasag"].append(Ref(rsg[0]))
+            #     except IndexError:
+            #         print u'*problem {} in siman {} *'.format(rsg, row[u'chinukh'])
+    except NameError as detail:
+        print u"rsg {} ref is empty:".format(row[u'chinukh'])#, detail
+
 
     mitzvah_set_small.extend(mitzvah_set)
     mitzvah_set_large.extend(mitzvah_set)
@@ -735,8 +759,8 @@ def row_to_Refs(row, fixing=True):
 
 
 def seg_from_refs(ref_dict):
-    seg_dict = {'chinukh':u'', 'smk':u'', 'rambam':u'', 'smg':u'', 'mishneh':u'', 'pasuk':u'', 'shulchanArukh':u''}
-    seg_urls = {'chinukh':u'', 'smk':u'', 'rambam':u'', 'smg':u'', 'mishneh':u'', 'pasuk':u'', 'shulchanArukh':u''}
+    seg_dict = {'chinukh':u'', 'smk':u'', 'rambam':u'', 'smg':u'', 'mishneh':u'', 'pasuk':u'', 'shulchanArukh':u'', 'rasag':u''}
+    seg_urls = {'chinukh':u'', 'smk':u'', 'rambam':u'', 'smg':u'', 'mishneh':u'', 'pasuk':u'', 'shulchanArukh':u'', 'rasag':u''}
     for column, refs in ref_dict.items():
         # if column == 'shulchanArukh':
         #     continue
@@ -779,15 +803,224 @@ def cluster_lines(fixedFileName):
     return sets_by_chinukh, clusters, dicts_by_chinukh
 
 
+def add_rasag_to_chart(readFrom, writeTo):
+    ls_rsg_psukim = LinkSet({"$and": [{"refs": {"$regex": "^Sefer Hamitzvot of Rasag.*"}}, {"refs": {"$regex":"^(Genesis|Exodus|Leviticus|Numbers|Deuteronomy).*" }}]})
+    mitzvah_title = u''
+    with open(writeTo, 'w') as writetocsv:
+        writer = csv.DictWriter(writetocsv, ['mitzvah Title chinukh', 'mitzvah Title Rambam', 'chinukh', 'smk', 'rambam', "wiki_rambam", "wiki_table", 'smg', 'mishneh', 'shulchanArukh', 'pasuk', 'rasag'])
+        writer.writeheader()
+        with open(u'{}'.format(readFrom)) as csvfile:
+            seg_reader = csv.DictReader(csvfile)
+            for i, row in enumerate(seg_reader):
+                if not divmod(i, 4)[1] == 1:
+                    row['rasag']= []
+                    writer.writerow(row)
+                    mitzvah_title = row['mitzvah Title chinukh'] if row['mitzvah Title chinukh'] else mitzvah_title
+                    continue
+                row_dict = row
+                row_dict['rasag'] = []
+                pesukim = eval(row['pasuk'])
+                for p in pesukim:
+                    if not p:
+                        row_dict['rasag'] += []
+                        continue
+                    pr = Ref(p) if isinstance(p, unicode) else Ref(p[0])
+                    if not pr.is_segment_level():
+                        row_dict['rasag'] += []
+                        continue
+                    rsg_mitzvah = ls_rsg_psukim.refs_from(pr)
+                    print "rsg_mitzvot: ", rsg_mitzvah
+                    print pr
+                    row_dict['rasag'] += [r.normal() for r in rsg_mitzvah]
+                writer.writerow(row_dict)
+
+
+
+
+
+
+
+def find_missing_links(base_title_book, regex_title_book, level = 1):
+    """
+
+    :param base_title_book: book title of the book to go through it's ref. title that can to get the Index obj
+    :param regex_title_book: regex consisting of titles of books to be found in the refs.
+    :param level: 0 - sections 1 - segments.
+    :return: a list of segments that don't have any links with the regex in the books name
+    """
+    cnt_all = 0
+    missing = []
+    indb1 = library.get_index(base_title_book)
+    if level == 0:
+        segments = indb1.all_section_refs()
+    else:
+        segments = indb1.all_segment_refs()
+    for seg in segments:
+        cnt = 0
+        refs = [r for i in range(len(seg.linkset())) for r in seg.linkset()[i].refs]
+        for r in refs:
+            if re.search(regex_title_book, r):
+                cnt += 1
+        if cnt == 0:
+            cnt_all += 1
+            missing.append(seg)
+            print seg  # , cnt_all
+    return missing
+
+
+def link_tanakh_pesukim_via_Halakah(base_title_book, category="Tanakh", nodes_to_jump_from = []):
+    ind = library.get_index(base_title_book)
+    segments = ind.all_segment_refs()
+    category_books = library.get_indexes_in_category(category)
+    for seg in segments:
+        category_set = []
+        cnt = 0
+        refs = [r for i in range(len(seg.linkset())) for r in seg.linkset()[i].refs]
+        for r in refs:
+            rr = Ref(r)
+            if rr.index.title in category_books:
+                category_set.append(r)
+            # elif re.search(rr.index.title, ' '.join(nodes_to_jump_from)):
+
+        if len(category_set) > 1:
+
+            print '**********************'
+            print seg.text('he').text
+            for p in category_set:
+                print p
+                print Ref(p).text('he').text
+
+
+def rasag_clustered_via_Torah_and(books_list = None, without_query = {}, clique_query = {}):
+    """
+    :param: books_list: list of books to be the party to connect to (onn the other side of the tanakh)
+    :param without_qurey: without counting live links.
+    :return:
+    """
+    links = []
+    woLS = LinkSet(without_query)
+    clique_ls = LinkSet(clique_query)
+    if not books_list:
+        books_list = ["Mishneh Torah, Positive Mitzvot", "Mishneh Torah, Negative Mitzvot"]
+                          #"Sefer Mitzvot Gadol", "Sefer Mitzvot Katan",
+                          # "Mishneh Torah, Positive Mitzvot", "Mishneh Torah, Negative Mitzvot",
+                          # "Sefer Yereim"]
+    cat_tanakh = library.get_indexes_in_category("Tanakh")
+    segments = library.get_index("Sefer Hamitzvot of Rasag").all_segment_refs()
+    for seg in segments:
+        ls = seg.linkset()
+        if without_query and len(woLS.refs_from(seg)):
+            continue
+        ts = [r for r in ls.refs_from(seg, as_tuple=False, as_link=False) if r.index.title in cat_tanakh]  # ts= tanakh set => pesukim connected to this Rasag seg/mitzva
+        if not ts:
+            # print "error file: is this a mitzvah? is it missing a pasuk? {}".format(seg)
+            continue
+
+        for p in ts:
+            #### ls1: pasuk and sefrei mitzvot and maybe not siefreimitzvot typed ####
+            # ls1 = p.linkset() # linkset of the pasuk
+            # ls1 = LinkSet({"$and":[{"refs":"{}".format(seg)}, {"type":{"$ne":"sifrei mitzvot"}}]})
+            ls1 = LinkSet({"$and": [{"refs": "{}".format(p)},{"type":{"$ne":"sifrei mitzvot"}}]})#{"refs": {"$regex":"^({})".format("|".join(books_list))}},
+            sfm_pasuk_set = [r for r in ls1.refs_from(p) if r.index.title in books_list] # using refs_from to get the refs asa list and not link objects
+            for mitzvah_ref in sfm_pasuk_set:
+                clique_ref_list = clique_ls.refs_from(mitzvah_ref)
+                clique_links = cliqueLinks(seg, clique_ref_list, type = "rsg_sfm_clique") #, exclude = ""
+                links.extend(clique_links)
+                if re.search("(Katan|Gadol)", mitzvah_ref.normal()) and not re.search("Remazim", mitzvah_ref.normal()):
+                    continue
+                link = ({"refs": [mitzvah_ref.normal(), seg.normal()],
+                         "type": "Sifrei Mitzvot",
+                         "auto": True,
+                         "generated_by": "rasag_sfm_linker"
+                    })
+                # print mitzvah_ref.normal(), "?&p2=", seg.normal()
+                links.append(link)
+    for l in links:
+        print l["refs"][0], "?p2=", l["refs"][1]
+    print len(links)
+    return links
+
+
+def cliqueLinks(ref, rl, type='clique'):
+    links = []
+    for qr in rl:
+        link = ({"refs": [ref.normal(), qr.normal()],
+                 "type": type,
+                 "auto": True,
+                 "generated_by": "rasag_sfm_linker"
+                 })
+        links.append(link)
+    return links
+
+
+def pesukim_with_mto_mitzvah(fromindex="Sefer Hamitzvot of Rasag"):
+    """
+    prints out a report of pesukim that are connected to more then one segment (mitzvah) in the fromindex text
+    :param fromindex: base text to check the linking to the pesukim per segment
+    :return: a list of tupels with the pasuk and a tuple with the segs -  (pasuk, (seg1, seg2...))
+    """
+    cnt = 0
+    psukim_segments = []
+    rsg_ind = library.get_index(fromindex)
+    segments = rsg_ind.all_segment_refs()
+    cat_tanakh = library.get_indexes_in_category("Tanakh")
+    for seg in segments:
+        ls = seg.linkset()
+        ts = [r for r in ls.refs_from(seg, as_tuple=False, as_link=False) if r.index.title in cat_tanakh]
+        for p in ts:
+            linksegs = []
+            lsp = p.linkset()
+            prs = [r for r in lsp.refs_from(p, as_tuple=False, as_link=False) if r.index.title == rsg_ind.title]
+            if len(prs) > 1:
+                ptext = p.text('he').text
+                if type(ptext) == list:
+                    ptext = ptext[0]
+                print p.normal()
+                print ptext + '\n'
+                for r in prs:
+                    print r.text('he').text
+                    linksegs.append(r)
+                print '***************'
+                psukim_segments.append((p.normal(), linksegs))
+                cnt += 1
+    print cnt
+    return psukim_segments
+
+
+def report_rsg_not_cnnected(fromindex):
+    cnt = 0
+    psukim_segments = []
+    rsg_ind = library.get_index(fromindex)
+    segments = rsg_ind.all_segment_refs()
+    cat_tanakh = library.get_indexes_in_category("Tanakh")
+    lstanakh = LinkSet({"$and":[{"refs":{"$regex": "^(Genesis|Exodus|Leviticus|Numbers|Deuteronomy)"}}, {"refs":{"$regex": "^(Sefer Hamitzvot of Rasag)"}}]})
+    ls = LinkSet({"type": "sifrei mitzvot"})#, {"refs": ""}]})
+    for seg in segments:
+        if lstanakh.refs_from(seg) and not ls.refs_from(seg):
+        # if len(lstanakh.refs_from(seg)) >1:
+            print seg # len(lstanakh.refs_from(seg))
+            cnt+=1
+    print cnt
+
 if __name__ == "__main__":
     # rambam_chinukh_lnks = scrape_wiki()
     # post_link(rambam_chinukh_lnks, VERBOSE=True)
     # post_link(link_sfrMitzvot_shortCounting(), VERBOSE=True)
     # rows = get_link_data()
-    # origns = text_to_csv_links(u'table_w_wiki', rows,  times=2)
+    # origns = text_to_csv_links(u'mitzvot_fixed_smg', rows,  times=2)
     # sets, clusters, mitzvah_dicts = refs_csv(u'mitzvot_test.csv')
-    copy_from_local()
+    # copy_from_local()
     # seferHamitzvot_from_rasag_comm(u"rasag_all_refs", with_orig = True)
     # links = rasag_linking(u'almostRefs.csv')
     # post_link(links, VERBOSE=True)
-    # cluster_lines("table_w_wiki.csv")
+    # sets_by_chinukh, clusters, dicts_by_chinukh = cluster_lines("rsg.csv")
+    # copy_from_local()
+    # link_tanakh_pesukim_via_Halakah("Mishneh Torah, Negative Mitzvot")
+    # find_missing_links("Mishneh Torah, Positive Mitzvot", "Sefer HaChinukh", level=1)
+    rasag_links = rasag_clustered_via_Torah_and(without_query={"type": "sifrei mitzvot"}, clique_query={"type": "sifrei mitzvot"})
+    # post_link(rasag_links)
+    # pesukim_with_mto_mitzvah()
+    # add_rasag_to_chart("mitzvot_chart.csv", "rsg.csv")
+    # sets_by_chinukh, clusters, dicts_by_chinukh = cluster_lines("rsg.csv")
+    # report_rsg_not_cnnected("Sefer Hamitzvot of Rasag")
+    pass

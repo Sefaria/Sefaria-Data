@@ -8,10 +8,13 @@ from xml.etree import ElementTree as ET
 from urllib2 import HTTPError, URLError
 import json
 import urllib2
-p = os.path.dirname(os.path.abspath(__file__))+"/sources"
-from sources.local_settings import *
-sys.path.insert(0, p)
-sys.path.insert(0, SEFARIA_PROJECT_PATH)
+try:
+    p = os.path.dirname(os.path.abspath(__file__))+"/sources"
+    from sources.local_settings import *
+    sys.path.insert(0, p)
+    sys.path.insert(0, SEFARIA_PROJECT_PATH)
+except ImportError:
+    pass
 from sefaria.datatype import jagged_array
 from sefaria.model import *
 
