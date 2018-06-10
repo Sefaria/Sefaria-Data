@@ -39,6 +39,7 @@ def parse(file, sefer, chapter, mishnah):
     mishnah_text = []
     commentary_text = []
     found_mishnah = found_explanation = False # must find both, whereas intro is unnecessary
+    section_num = 0
     with open(file) as f:
         lines = [line.replace("\n", "") for line in list(f) if line != "\n"]
         first_line = lines[0]
@@ -62,8 +63,8 @@ def parse(file, sefer, chapter, mishnah):
                     if section:
                         line = line.replace(section.group(0), "")
                         line_n = w2n.word_to_num(section.group(1))
-                        if line_n-1 > len(mishnah_text):
-                            print "PROBLEM with {} {}".format(sefer, chapter)
+                        if line_n-1 >= len(mishnah_text):
+                            print "Section problem with {} {}:{}".format(sefer, chapter, mishnah)
                             return (commentary_text, mishnah_text)
                         first_sentence = get_first_sentence(mishnah_text[line_n-1])
                         line = "<b>{}</b>{}".format(first_sentence, line)
@@ -113,7 +114,7 @@ def check_all_mishnayot_present_and_post(text, sefer, file_path):
             "versionTitle": "Mishnah Yomit",
             "versionSource": "http://learn.conservativeyeshiva.org/mishnah/"
         }
-        post_text(path, send_text, server=SERVER)
+        #post_text(path, send_text, server=SERVER)
     #first check that all chapters present
     index = library.get_index("Mishnah " + sefer)
     en_title = "Mishnah Yomit on {}".format(index.title)
@@ -185,7 +186,7 @@ if __name__ == "__main__":
                         parsed_text[sefer][chapter][mishnah] = parse(file_path, sefer, chapter, mishnah)
                     except InputError as e:
                         print file_path
-                        print "problem with {}".format(file)
+                        print "FIle problem with {}".format(file)
 
             most_common_value = found_ref.most_common(1)[0]
             assert most_common_value[1] == 1, "{} has {}".format(most_common_value[0], most_common_value[1])
