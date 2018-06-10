@@ -412,7 +412,7 @@ def getHebrewTitle(sefer, SEFARIA_SERVER='http://www.sefaria.org/'):
    return data['heTitle']
 
 
-def removeAllTags(orig_string, array = ['@', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0']):
+def removeAllTags(orig_string, array = ['@', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], replace_with=""):
     for unwanted_string in array:
         orig_string = orig_string.replace(unwanted_string, "")
     return orig_string

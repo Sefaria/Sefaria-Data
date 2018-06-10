@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
 __author__ = 'stevenkaplan'
+import django
+django.setup()
 import sys
 from sefaria.system.exceptions import *
 from sefaria.model import *
 from sefaria.model.schema import TitleGroup
 import csv
-from sources.functions import *
 '''
 Take an index, serialize schema, travel through schema replacing every instance of old_title with new_title
 and then load new index with this schema

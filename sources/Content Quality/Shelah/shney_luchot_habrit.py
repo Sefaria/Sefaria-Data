@@ -1,6 +1,10 @@
 import csv
 import difflib
 from sefaria.system.database import db
+import django
+django.setup()
+from sefaria.model import *
+
 def create_ref_map(refs_map, file):
     with open(file) as f:
         reader = csv.reader(f)
@@ -53,23 +57,11 @@ def get_text_for_source_refs(ref_map, draft_text, prod_text):
                     match = draft_section_ref
             if not match:
                 match = draft_section_ref
-            replace_source(orig_ref.replace("\n", ""), match)
+            #replace_source(orig_ref.replace("\n", ""), match)
             match_writer.writerow([orig_ref, match])
     match_csv.close()
 
 
-def replace_source(orig_ref, new_ref):
-    sheets = db.sheets.find({"sources.ref": orig_ref})
-    sheets = list(sheets)
-    if len(sheets) == 0:
-        return
-    for sheet in sheets:
-        for source_n, source in enumerate(sheet['sources']):
-            if 'ref' in source.keys() and source['ref'] == orig_ref:
-                print "Changing sheet...{}".format(sheet["id"])
-                print "{}".format(new_ref)
-                sheet["sources"][source_n]['ref'] = new_ref
-        db.sheets.save(sheet)
 
 
 
@@ -104,18 +96,37 @@ def load_csv(dict_refs_to_text, file):
                 dict_refs_to_text[section] = []
             dict_refs_to_text[section].append(row[1])
 
-if __name__ == "__main__":
-    #for each key ref get production text, for value ref, get draft text
-    ref_map = {}
-    prod_ref_to_text = {}
-    draft_ref_to_text = {}
-    info = {}
-    info["versionTitle"] = "Shney Luchot Habrit by Rabbi Eliyahu Munk"
-    info["lang"] = "en"
-    create_ref_map(ref_map, "shney_luchot_habrit - mapping.csv")
-    load_csv(prod_ref_to_text, "production.csv")
-    load_csv(draft_ref_to_text, "draft.csv")
-    matches = get_text_for_source_refs(ref_map, draft_ref_to_text, prod_ref_to_text)
-    #draft_ref_to_text[row[1]] = get_text(row[1], text_info["lang"], text_info["versionTitle"], "http://draft.sefaria.org")["text"]
-    pass
 
+def replace_source(orig_ref, new_ref):
+    sheets = db.sheets.find({"sources.ref": orig_ref})
+    sheets = list(sheets)
+    if len(sheets) == 0:
+        return
+    for sheet in sheets:
+        for source_n, source in enumerate(sheet['sources']):
+            if 'ref' in source.keys() and source['ref'] == orig_ref:
+                print "Changing sheet...{}".format(sheet["id"])
+                print "{}".format(new_ref)
+                sheet["sources"][source_n]['ref'] = new_ref
+                sheet["sources"][source_n]['heRef'] = Ref(new_ref).he_normal()
+        db.sheets.save(sheet)
+
+
+if __name__ == "__main__":
+    # #for each key ref get production text, for value ref, get draft text
+    # ref_map = {}
+    # prod_ref_to_text = {}
+    # draft_ref_to_text = {}
+    # info = {}
+    # info["versionTitle"] = "Shney Luchot Habrit by Rabbi Eliyahu Munk"
+    # info["lang"] = "en"
+    # create_ref_map(ref_map, "shney_luchot_habrit - mapping.csv")
+    # load_csv(prod_ref_to_text, "production.csv")
+    # load_csv(draft_ref_to_text, "draft.csv")
+    # matches = get_text_for_source_refs(ref_map, draft_ref_to_text, prod_ref_to_text)
+    #draft_ref_to_text[row[1]] = get_text(row[1], text_info["lang"], text_info["versionTitle"], "http://draft.sefaria.org")["text"]
+    with open("match.csv") as file:
+        reader = csv.reader(file)
+        for row in reader:
+            orig, new = row
+            replace_source(orig.replace("\n", ""), new)
