@@ -24,7 +24,8 @@ skip_matches = ht[a]
 
 
 """
-
+import django
+django.setup()
 import regex as re
 import time as pytime
 import numpy as np
@@ -61,13 +62,13 @@ def get_texts_from_category(category):
         elif cat == "Mishnah" or cat == "Tosefta" or cat == "Tanakh" or cat == "Midrash":
             text_names += library.get_indexes_in_category(cat)
         elif cat == "All":
-            cats = ['Bavli','Mishnah', 'Tosefta','Midrash Rabbah']
-            text_names += ["Mekhilta d'Rabbi Yishmael", 'Seder Olam Rabbah','Sifra' ,'Mekhilta DeRabbi Shimon Bar Yochai','Sifrei Bamidbar','Megillat Taanit','Otzar Midrashim','Pirkei DeRabbi Eliezer','Pesikta D\'Rav Kahanna','Tanna Debei Eliyahu Rabbah','Tanna debei Eliyahu Zuta','Pesikta Rabbati']
+            cats = ['Bavli','Mishnah', 'Tosefta','Midrash Rabbah', 'Minor Tractates']
+            text_names += ["Avot D'Rabbi Natan", "Mekhilta d'Rabbi Yishmael", 'Seder Olam Rabbah','Sifra' ,'Mekhilta DeRabbi Shimon Bar Yochai','Sifrei Bamidbar','Megillat Taanit','Otzar Midrashim','Pirkei DeRabbi Eliezer','Pesikta D\'Rav Kahanna','Tanna Debei Eliyahu Rabbah','Tanna debei Eliyahu Zuta','Pesikta Rabbati']
             for c in cats:
                 text_names += library.get_indexes_in_category(c)
 
         elif cat == "Debug":
-            text_names += ["Berakhot","Taanit"]
+            text_names += []
 
         else:
             text_names += []
@@ -203,7 +204,9 @@ class Gemara_Hashtable:
 
 
     def save(self):
-        pickle.dump(self._hash_table, open('gemara_chamutz.pkl','wb'))
+        # see here for why we're using -1 protocol
+        # https://stackoverflow.com/questions/2204155/why-am-i-getting-an-error-about-my-class-defining-slots-when-trying-to-pickl
+        pickle.dump(self._hash_table, open('gemara_chamutz.pkl','wb'), -1)
 
     def put_already_started(self, mesorah_tuple):
         self._already_matched_start_items[mesorah_tuple] = True
@@ -457,7 +460,8 @@ class ParallelMatcher:
             text_index_map_data[iunit] = (unit_wl, unit_il, unit_rl, unit_str)
             total_len = len(unit_wl)
             if not return_obj:
-                pickle.dump((unit_il, unit_rl, total_len), open('{}text_index_map/{}.pkl'.format(output_root, unit), 'wb'))
+                with open('{}text_index_map/{}.pkl'.format(output_root, unit), 'wb') as my_pickle:
+                    pickle.dump((unit_il, unit_rl, total_len), my_pickle, -1)
 
             for i_word in xrange(len(unit_wl) - self.skip_gram_size):
                 skip_gram_list = self.ght.get_skip_grams(unit_wl[i_word:i_word + self.skip_gram_size + 1])
