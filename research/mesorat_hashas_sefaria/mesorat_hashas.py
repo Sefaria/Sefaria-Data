@@ -425,7 +425,7 @@ class ParallelMatcher:
             using_indexes = False
 
         talmud_titles = library.get_indexes_in_category('Bavli')
-        talmud_titles = talmud_titles[:talmud_titles.index('Horayot') + 1]
+        talmud_titles = talmud_titles[:talmud_titles.index('Menachot') + 1]
         text_index_map_data = [None for yo in xrange(len(unit_list))]
         for iunit, unit in enumerate(unit_list):
             if comment_index_list is not None and iunit in comment_index_list:
