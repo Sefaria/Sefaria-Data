@@ -35,11 +35,44 @@ def parse(file, sefer, chapter, mishnah):
         if end != -1:
             return line[0:end]+". "
         return line+" "
+
+    def deal_with_sections(line, text):
+        section = ""
+        if line.startswith("Section"):
+            section = " ".join(line.split()[0:2])
+            section_num_as_word = " ".join(line.split()[1:2]).split(":", 1)[0]
+            if section_num_as_word.find("-") in [1, 2]: #either 10-14 or 2-7 will be matched
+                 #this is a range
+                section_num_as_word = section_num_as_word.split("-")[0]
+        if section:
+            line = line.replace(section, "")
+            try:
+                section_num = w2n.word_to_num(section_num_as_word)
+            except ValueError:
+                print section_num_as_word
+                return False
+            if section_num - 1 in range(len(text)):
+                first_sentence = get_first_sentence(mishnah_text[section_num - 1])
+                line = "<b>{}</b>{}".format(first_sentence, line)
+                if text[section_num - 1]:
+                    text[section_num - 1] += "\n" + line
+                else:
+                    text[section_num - 1] = line
+            else:
+                return False
+        elif text:
+            text[-1] += " " + line
+        else:
+            text.append(line)
+        return True
+
     currently_parsing = ""
     mishnah_text = []
     commentary_text = []
+    questions_text = []
     found_mishnah = found_explanation = False # must find both, whereas intro is unnecessary
-    section_num = 0
+    explanation_sections_text = [] #After parsing "Section One: ...", this array will contain the line in position 0 of the array
+    questions_sections_text = []
     with open(file) as f:
         lines = [line.replace("\n", "") for line in list(f) if line != "\n"]
         first_line = lines[0]
@@ -50,7 +83,21 @@ def parse(file, sefer, chapter, mishnah):
         #     return (commentary_text, mishnah_text)
         lines = lines[1:]
         for line_n, line in enumerate(lines):
-            if "Mishnah {}".format(mishnah_as_word) == line:
+            line = line.strip()
+            if len(line.split()) < 10:
+                line = line.split(", Part")[0]
+            if "Questions for Further Thought" in line:
+                currently_parsing = "QUESTIONS"
+                questions_text.append(line)
+            elif len(line.split()) < 7 and ("Mishna" in line or sefer == line):
+                if "Mishnah {}".format(mishnah_as_word) != line and "Mishna" in line:
+                    word = line.split()[-1] #Mishnah Five, Part One -> Five
+                    try:
+                        mishnah_inside_file = w2n.word_to_num(word)
+                        complaint = "Mishnah word different than number: {} {}:{}".format(sefer, chapter, mishnah)
+                        #print complaint
+                    except ValueError:
+                        pass
                 currently_parsing = "MISHNAH"
             elif "Explanation" == line or "Introduction" == line:
                 commentary_text.append("<b>"+line+"</b>")
@@ -58,21 +105,27 @@ def parse(file, sefer, chapter, mishnah):
             else:
                 if currently_parsing == "INTRODUCTION":
                     commentary_text[-1] += "\n" + line
+                elif currently_parsing == "QUESTIONS":
+                    if questions_sections_text == []:
+                        questions_sections_text = ["" for k in range(len(mishnah_text))]
+                    section_num = deal_with_sections(line, questions_sections_text)
+                    if section_num == False:  # there was just an error
+                        print file
+                        return (commentary_text + questions_text, mishnah_text)
                 elif currently_parsing == "EXPLANATION":
-                    section = re.compile("Section (.{1,10}):\s").match(line)
-                    if section:
-                        line = line.replace(section.group(0), "")
-                        line_n = w2n.word_to_num(section.group(1))
-                        if line_n-1 >= len(mishnah_text):
-                            print "Section problem with {} {}:{}".format(sefer, chapter, mishnah)
-                            return (commentary_text, mishnah_text)
-                        first_sentence = get_first_sentence(mishnah_text[line_n-1])
-                        line = "<b>{}</b>{}".format(first_sentence, line)
-                    commentary_text.append(line)
+                    if explanation_sections_text == []:
+                        explanation_sections_text = ["" for k in range(len(mishnah_text))]
+                    section_num = deal_with_sections(line, explanation_sections_text)
+                    if section_num == False:  # there was just an error
+                        print file
+                        return (commentary_text + questions_text, mishnah_text)
                 elif currently_parsing == "MISHNAH":
                     mishnah_text.append(line)
 
-        return (commentary_text, mishnah_text)
+        assert commentary_text != mishnah_text != []
+        return (commentary_text+questions_text, mishnah_text)
+
+
 
 def create_index(text, sefer):
     index = library.get_index("Mishnah " + sefer)
@@ -103,7 +156,7 @@ def create_index(text, sefer):
         "collective_title": "Mishnah Yomit",
         "base_text_mapping": "many_to_one"
     }
-    post_index(index, server=SERVER)
+    #post_index(index, server=SERVER)
 
 
 def check_all_mishnayot_present_and_post(text, sefer, file_path):
@@ -132,11 +185,11 @@ def check_all_mishnayot_present_and_post(text, sefer, file_path):
             our_mishnayot = set(our_mishnayot)
             missing = actual_mishnayot - our_mishnayot
             wrong = our_mishnayot - actual_mishnayot
-            print file_path
-            print "Sefer: {}, Chapter: {}".format(sefer, ch)
-            print "Missing: {}".format(missing)
-            print "Wrong: {}".format(wrong)
-            print
+            # print file_path
+            # print "Sefer: {}, Chapter: {}".format(sefer, ch)
+            # print "Missing: {}".format(missing)
+            # print "Wrong: {}".format(wrong)
+            # print
         text[ch] = zip(*convertDictToArray(text[ch], empty=("", "")))
         translation[ch] = list(text[ch][1])
         text[ch] = list(text[ch][0])
