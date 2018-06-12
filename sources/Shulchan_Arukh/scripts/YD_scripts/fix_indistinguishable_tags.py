@@ -45,8 +45,10 @@ commentary and an unknown.
 
 """
 
+import os
 import re
-import codecs
+import time
+from collections import defaultdict
 from data_utilities.util import StructuredDocument, getGematria
 
 
@@ -55,7 +57,7 @@ class Commentary:
     def __init__(self, name, tag_pattern):
         self.name = name
         self.tag_pattern = tag_pattern
-        self.comments_per_section = {}
+        self.comments_per_section = defaultdict(lambda: 0)
 
     def load_comments_per_section(self, filename, section_regex, comment_regex):
         document = StructuredDocument(filename, section_regex)
@@ -117,7 +119,7 @@ class TagResolver:
         comments_per_section = (self.commentary_a.comments_per_section[section], self.commentary_b.comments_per_section[section])
         if comments_per_section[0] != comments_per_section[1]:
             last_chains = chain_list[0]
-            num_tags = [getGematria(i.group(1)) for i in last_chains]
+            num_tags = tuple([getGematria(i[-1].group(1)) if i else 0 for i in last_chains])
 
             if num_tags == comments_per_section:
                 resolution[self.commentary_a.name].extend(last_chains[0])
@@ -133,8 +135,8 @@ class TagResolver:
         for chain_pair in chain_list:
             # test against each commentary's unique regex
             # check each chain for any appearance of unique tags
-            com_a_test = (any(re.search(self.commentary_a.tag_pattern, i.group()) for i in c) for c in chain_pair)
-            com_b_test = (any(re.search(self.commentary_b.tag_pattern, i.group()) for i in c) for c in chain_pair)
+            com_a_test = tuple(any(re.search(self.commentary_a.tag_pattern, i.group()) for i in c) for c in chain_pair)
+            com_b_test = tuple(any(re.search(self.commentary_b.tag_pattern, i.group()) for i in c) for c in chain_pair)
 
             # ensure that we don't have cases where both chains have been positively marked for both commentaries
             if all(com_a_test) or all(com_b_test):
@@ -144,7 +146,7 @@ class TagResolver:
         self.resolution_mapping[section] = resolution
 
     @staticmethod
-    def build_chains(text, pattern, group=1):
+    def build_chains(text, pattern, section, group=1):
         def digitify(x):
             return getGematria(x)
 
@@ -177,7 +179,9 @@ class TagResolver:
                 elif digitify(tag.group(group)) - digitify(current_chain[1][-1].group(group)) == 1:
                     current_chain[1].append(tag)
                 else:
-                    raise AssertionError("Tag does not match either chain")
+                    print u"section {}; tag {} does not match either chain".format(section, tag.group())
+                    time.sleep(0.1)
+                    raise AssertionError
         chains.append(current_chain)
         return chains
 
@@ -187,8 +191,11 @@ class TagResolver:
         self.commentary_b = commentary_b
         sections = self.document.get_chapter_values()
         for section in sections:
-            chain_list = self.build_chains(self.document.get_section(section), self.unknown_pattern, group)
-            self._resolve_chains(chain_list, section)
+            try:
+                chain_list = self.build_chains(self.document.get_section(section), self.unknown_pattern, section, group)
+                self._resolve_chains(chain_list, section)
+            except AssertionError:
+                continue
 
     @staticmethod
     def fix_tag(text, match_obj_list, repl):
@@ -219,7 +226,29 @@ class TagResolver:
             self.document.write_to_file(filename)
 
 
+filenames = {
+    'vol.2': {
+        'base': u'שולחן ערוך יורה דעה חלק ב מחבר.txt',
+        'Taz': u'טז יורה דעה ב.txt',
+        'Pithei': u'שולחן ערוך יורה דעה חלק ב 1 פתחי תשובה.txt',
 
+    },
+    'vol.4': {
+        'base': u'שולחן ערוך יורה דעה חלק ד מחבר.txt',
+        'Taz': u"‏‏‏‏‏‏שולחן ערוך יורה דעה חלק ד הגהות הט''ז.txt",
+        'Pithei': u'שולחן ערוך יורה דעה חלק ד פתחי תשובה.txt',
+    }
+}
 
+v2 = '/home/jonathan/sefaria/Sefaria-Data/sources/Shulchan_Arukh/txt_files/Yoreh_Deah/part_2'
+map(lambda x: filenames['vol.2'].update({x[0]: os.path.join(v2, x[1])}), filenames['vol.2'].items())
+v4 = '/home/jonathan/sefaria/Sefaria-Data/sources/Shulchan_Arukh/txt_files/Yoreh_Deah/part_4'
+map(lambda x: filenames['vol.4'].update({x[0]: os.path.join(v2, x[1])}), filenames['vol.4'].items())
 
-
+taz, pithei = Commentary(u'Taz', u'71'), Commentary(u'Pithei', u'74')
+taz.load_comments_per_section(filenames['vol.2']['Taz'],
+                              u'@22([\u05d0-\u05ea]{1,3})', ur'@11\([\u05d0-\u05ea]{1,2}\)')
+pithei.load_comments_per_section(filenames['vol.2']['Pithei'],
+                                 u'@22([\u05d0-\u05ea]{1,3})', ur'@11\([\u05d0-\u05ea]{1,2}\)')
+resolver = TagResolver(filenames['vol.2']['base'], u'@22([\u05d0-\u05ea]{1,3})', ur'@7\d\(([\u05d0-\u05ea]{1,3})\)')
+resolver.resolve_sections(taz, pithei)
