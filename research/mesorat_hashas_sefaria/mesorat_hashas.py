@@ -68,7 +68,7 @@ def get_texts_from_category(category):
                 text_names += library.get_indexes_in_category(c)
 
         elif cat == "Debug":
-            text_names += []
+            text_names += ["Avot D'Rabbi Natan","Berakhot", "Taanit"]
 
         else:
             text_names += []
@@ -377,9 +377,12 @@ class ParallelMatcher:
         self.all_to_all = all_to_all
         self.parallelize = parallelize
         self.verbose = verbose
+        self.with_scoring = False
+        self.calculate_score = None
         if calculate_score:
             self.with_scoring = True
             self.calculate_score = calculate_score
+
 
 
     def reset(self):
@@ -538,7 +541,7 @@ class ParallelMatcher:
         """
 
         :param list[PartialMesorahMatch] old_partials:
-        :param list[Mesorah_Item] new_a_skips:
+        :param list[Mesorah_Item] new_b_skips:
         :return tuple[list[PartialMesorahMatch],list[PartialMesorahMatch]]
         """
         good = []
@@ -552,15 +555,18 @@ class ParallelMatcher:
 
             while up_to < len(new_b_skips):
                 n = new_b_skips[up_to]
+                if o.b_end.mesechta_index != n.mesechta_index:
+                    up_to += 1
+                    continue
                 dist = o.b_end - n
                 mes_dist = o.b_end.mesechta_diff(n)
-                if dist:
+                if dist is not None:
                     new_is_ahead = dist > 0
                 else:
                     new_is_ahead = mes_dist < 0
 
                 if new_is_ahead:
-                    if dist and 0 < dist <= self.max_words_between + self.skip_gram_size:  # plus the length of a single skip-gram
+                    if dist is not None and 0 < dist <= self.max_words_between + self.skip_gram_size:  # plus the length of a single skip-gram
                         # extend o until n
                         o.a_end = current_a
                         o.b_end = n
@@ -835,7 +841,7 @@ def filter_close_matches(mesorat_hashas_name, max_cluster_dist=20, filter_only_t
         clustered_indexes = set()
         for i in range(n):
             for j in range(i+1,n):
-                if dist_mat[i,j] <= max_cluster_dist and dist_mat[i,j] != -1 and (rray[i][1].type == 'Talmud' or not filter_only_talmud):
+                if dist_mat[i,j] <= max_cluster_dist and dist_mat[i,j] != -1 and (rray[i][1].primary_category == 'Talmud' or not filter_only_talmud):
                     #we've found an element in a cluster!
                     #figure out if a cluster already exists containing one of these guys
                     found = False
@@ -881,7 +887,7 @@ def filter_close_matches(mesorat_hashas_name, max_cluster_dist=20, filter_only_t
             try:
                 ref_obj1 = Ref(temp_link[0])
                 ref_obj2 = Ref(temp_link[1])
-                if (ref_obj1.type == 'Talmud' and ref_obj2.type == 'Talmud') or not filter_only_talmud:
+                if (ref_obj1.primary_category == 'Talmud' and ref_obj2.primary_category == 'Talmud') or not filter_only_talmud:
                     temp_dist = ref_obj1.distance(ref_obj2,max_cluster_dist)
                 else:
                     temp_dist = -1
@@ -897,7 +903,7 @@ def filter_close_matches(mesorat_hashas_name, max_cluster_dist=20, filter_only_t
             try:
                 ref_obj1 = Ref(temp_link[0])
                 ref_obj2 = Ref(temp_link[1])
-                if (ref_obj1.type == 'Talmud' and ref_obj2.type == 'Talmud') or not filter_only_talmud:
+                if (ref_obj1.primary_category == 'Talmud' and ref_obj2.primary_category == 'Talmud') or not filter_only_talmud:
                     temp_dist = ref_obj1.distance(ref_obj2,max_cluster_dist)
                 else:
                     temp_dist = -1
@@ -937,7 +943,7 @@ def remove_mishnah_talmud_dups(mesorat_hashas_name):
             continue
         if lr[0] is None or lr[1] is None:
             continue
-        if lr[0].type == 'Mishnah' and lr[1].type == 'Talmud':
+        if lr[0].primary_category == 'Mishnah' and lr[1].primary_category == 'Talmud':
             for mish_link in mishnah_set:
                 if lr[0].overlaps(mish_link[0]) and lr[1].overlaps(mish_link[1]):
                     is_bad_link = True
