@@ -148,11 +148,14 @@ if __name__ == "__main__":
                         print line
                         print
 
+                    bold = lambda x: "<b>"+x+"</b>"
                     en_continuous_segment = en_dh = en_match.group(2)
                     he_continuous_segment = he_dh = he_match.group(2)
+                    en_continuous_segment = bold(en_continuous_segment)
+                    he_continuous_segment = bold(he_continuous_segment)
 
                 else:
                     en_continuous_segment += " " + en
                     he_continuous_segment += " " + he
 
-            post_rashi(text, he_text, base_file, "http://ste.sefaria.org")
+            post_rashi(text, he_text, base_file, "http://proto.sefaria.org")
