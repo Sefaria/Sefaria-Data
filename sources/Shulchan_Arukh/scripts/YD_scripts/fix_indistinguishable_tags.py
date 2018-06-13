@@ -43,6 +43,10 @@ this commentaries tag.
 Run over the chains in reverse. Easiest to detect the last chains. I can have three lists of chains: one for each
 commentary and an unknown.
 
+Some double marks popped up (where a single commentary uses the same mark twice). To avoid dealing with this in code
+Taz: %71
+Pithei &74
+
 """
 
 import os
@@ -130,7 +134,8 @@ class TagResolver:
                 resolution[self.commentary_a.name].extend(last_chains[1])
                 chain_list = chain_list[1:]
             else:
-                print u"Comment number mismatch in section {}".format(section)
+                # print u"Broken chains prevent identification at section {}\n".format(section)
+                pass
 
         for chain_pair in chain_list:
             # test against each commentary's unique regex
@@ -191,8 +196,20 @@ class TagResolver:
         self.commentary_b = commentary_b
         sections = self.document.get_chapter_values()
         for section in sections:
+            base_section = self.document.get_section(section)
+            total_marks = len(re.findall(self.unknown_pattern, base_section))
+            total_comments = commentary_a.comments_per_section[section] + commentary_b.comments_per_section[section]
+            if total_marks != total_comments:
+                pass
+                # print u"Comment number mismatch in section {}".format(section)
+                # print u"{} found in Base text".format(total_marks),
+                # print u"{} in {} and {} in {}\n".format(
+                #     self.commentary_a.comments_per_section[section], self.commentary_a.name,
+                #     self.commentary_b.comments_per_section[section], self.commentary_b.name
+                # )
+
             try:
-                chain_list = self.build_chains(self.document.get_section(section), self.unknown_pattern, section, group)
+                chain_list = self.build_chains(base_section, self.unknown_pattern, section, group)
                 self._resolve_chains(chain_list, section)
             except AssertionError:
                 continue
@@ -201,19 +218,23 @@ class TagResolver:
     def fix_tag(text, match_obj_list, repl):
         char_list = list(text)
         for match_obj in match_obj_list:
-            char_list[match_obj.start()+1] = repl
-            char_list[match_obj.start()+2] = repl
+            for i, c in enumerate(repl):
+                char_list[match_obj.start()+i] = c
         fixed = u''.join(char_list)
         assert len(fixed) == len(text)
         return fixed
 
     def fix_all_tags(self, test_mode=True):
+        to_mark = 0
         if not self.resolution_mapping:
             raise AssertionError("Please run TagResolver.resolve_sections")
         for section in self.document.get_chapter_values():
             resolution = self.resolution_mapping[section]
             if resolution['tbd']:
                 print u"unresolved chains at section {}".format(section)
+                for chain_pair in reversed(resolution['tbd']):
+                    print u'mark {}'.format(chain_pair[0][0].group())
+                    to_mark += 1
                 continue
             self.document.edit_section(section, self.fix_tag,
                                        resolution[self.commentary_a.name], self.commentary_a.tag_pattern)
@@ -224,6 +245,7 @@ class TagResolver:
             else:
                 filename = self.filename
             self.document.write_to_file(filename)
+        print u"Need to mark {} tags".format(to_mark)
 
 
 filenames = {
@@ -235,7 +257,7 @@ filenames = {
     },
     'vol.4': {
         'base': u'שולחן ערוך יורה דעה חלק ד מחבר.txt',
-        'Taz': u"‏‏‏‏‏‏שולחן ערוך יורה דעה חלק ד הגהות הט''ז.txt",
+        'Taz': u"שולחן ערוך יורה דעה ד טז.txt",
         'Pithei': u'שולחן ערוך יורה דעה חלק ד פתחי תשובה.txt',
     }
 }
@@ -243,12 +265,13 @@ filenames = {
 v2 = '/home/jonathan/sefaria/Sefaria-Data/sources/Shulchan_Arukh/txt_files/Yoreh_Deah/part_2'
 map(lambda x: filenames['vol.2'].update({x[0]: os.path.join(v2, x[1])}), filenames['vol.2'].items())
 v4 = '/home/jonathan/sefaria/Sefaria-Data/sources/Shulchan_Arukh/txt_files/Yoreh_Deah/part_4'
-map(lambda x: filenames['vol.4'].update({x[0]: os.path.join(v2, x[1])}), filenames['vol.4'].items())
+map(lambda x: filenames['vol.4'].update({x[0]: os.path.join(v4, x[1])}), filenames['vol.4'].items())
 
-taz, pithei = Commentary(u'Taz', u'71'), Commentary(u'Pithei', u'74')
-taz.load_comments_per_section(filenames['vol.2']['Taz'],
-                              u'@22([\u05d0-\u05ea]{1,3})', ur'@11\([\u05d0-\u05ea]{1,2}\)')
-pithei.load_comments_per_section(filenames['vol.2']['Pithei'],
-                                 u'@22([\u05d0-\u05ea]{1,3})', ur'@11\([\u05d0-\u05ea]{1,2}\)')
-resolver = TagResolver(filenames['vol.2']['base'], u'@22([\u05d0-\u05ea]{1,3})', ur'@7\d\(([\u05d0-\u05ea]{1,3})\)')
+taz, pithei = Commentary(u'Taz', u'@71'), Commentary(u'Pithei', u'@74')
+taz.load_comments_per_section(filenames['vol.4']['Taz'],
+                              u'@00([\u05d0-\u05ea]{1,3})', ur'@22\([\u05d0-\u05ea]{1,2}\)')
+pithei.load_comments_per_section(filenames['vol.4']['Pithei'],
+                                 u'@00([\u05d0-\u05ea]{1,3})', ur'@22\([\u05d0-\u05ea]{1,2}\)')
+resolver = TagResolver(filenames['vol.4']['base'], u'@22([\u05d0-\u05ea]{1,3})', ur'@7\d\(([\u05d0-\u05ea]{1,3})\)')
 resolver.resolve_sections(taz, pithei)
+# resolver.fix_all_tags()
