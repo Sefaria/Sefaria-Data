@@ -63,7 +63,7 @@ def get_texts_from_category(category):
             text_names += library.get_indexes_in_category(cat)
         elif cat == "All":
             cats = ['Bavli','Mishnah', 'Tosefta','Midrash Rabbah', 'Minor Tractates']
-            text_names += ["Avot D'Rabbi Natan", "Mekhilta d'Rabbi Yishmael", 'Seder Olam Rabbah','Sifra' ,'Mekhilta DeRabbi Shimon Bar Yochai','Sifrei Bamidbar','Megillat Taanit','Otzar Midrashim','Pirkei DeRabbi Eliezer','Pesikta D\'Rav Kahanna','Tanna Debei Eliyahu Rabbah','Tanna debei Eliyahu Zuta','Pesikta Rabbati']
+            text_names += ["Mekhilta d'Rabbi Yishmael", 'Seder Olam Rabbah','Sifra' ,'Mekhilta DeRabbi Shimon Bar Yochai','Sifrei Bamidbar','Megillat Taanit','Otzar Midrashim','Pirkei DeRabbi Eliezer','Pesikta D\'Rav Kahanna','Tanna Debei Eliyahu Rabbah','Tanna debei Eliyahu Zuta','Pesikta Rabbati']
             for c in cats:
                 text_names += library.get_indexes_in_category(c)
 
