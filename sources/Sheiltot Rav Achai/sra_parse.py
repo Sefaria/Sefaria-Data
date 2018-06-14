@@ -6,7 +6,9 @@ p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
 from sources.local_settings import *
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
-os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
+os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
+import django
+django.setup()
 from sources.functions import *
 import re
 import codecs
@@ -15,9 +17,9 @@ import os
 
 heb_parshiot = [u"בראשית",u"נח", u"לך לך", u"וירא", u"חיי שרה", u"תולדות", u"ויצא", u"וישלח", u"וישב", u"מקץ",
 u"ויגש", u"ויחי", u"שמות", u"וארא", u"בא", u"בשלח", u"יתרו", u"משפטים", u"תרומה", u"תצוה", u"כי תשא",
-u"ויקהל", u"פקודי", u"ויקרא", u"צו", u"שמיני", u"תזריע", u"מצרע", u"אחרי מות", u"קדשים", u"אמר", u"בהר",
-u"בחקתי", u"במדבר", u"נשא", u"בהעלתך", u"שלח לך", u"קרח", u"חקת", u"בלק", u"פינחס", u"מטות",
-u"מסעי", u"דברים", u"ואתחנן", u"עקב", u"ראה", u"שפטים", u"כי תצא", u"כי תבוא", u"נצבים",
+u"ויקהל", u"פקודי", u"ויקרא", u"צו", u"שמיני", u"תזריע", u"מצורע", u"אחרי מות", u"קדושים", u"אמור", u"בהר",
+u"בחוקתי", u"במדבר", u"נשא", u"בהעלותך", u"שלח לך", u"קרח", u"חקת", u"בלק", u"פינחס", u"מטות",
+u"מסעי", u"דברים", u"ואתחנן", u"עקב", u"ראה", u"שופטים", u"כי תצא", u"כי תבוא", u"נצבים",
 u"וילך", u"האזינו", u"וזאת הברכה"]
 
 eng_parshiot = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", "Vayetzei", "Vayishlach",
@@ -53,6 +55,7 @@ parsha_range_table=[]
 folder_names=[x[0]for x in os.walk("files")][1:]
 last_parsha_index=999
 current_sheilta = 0
+last_line_was_parsha_name=False
 for folder in folders_in_order:
     for _file in os.listdir('files/'+folder.decode('utf8')):
         if _file in base_text_files:
@@ -60,24 +63,32 @@ for folder in folders_in_order:
             with open('files/'+folder+'/'+_file) as myfile:
                 lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
             for line in lines:
-                if u"@00" in line:
-                    heb_parsha=line.replace(u"@00",u'').replace(u'פרשת',u'').strip()
-                    if heb_parsha in heb_parshiot:
-                        parsha_index = heb_parshiot.index(heb_parsha)
-                        if len(parsha_range_table)>0:
-                            parsha_range_table[-1]["End Index"]=current_sheilta
-                        eng_parsha = eng_parshiot[parsha_index]
-                        #print "TEST ",eng_parsha,"LPI ",last_parsha_index,"CS ",current_sheilta
-                        #print eng_parsha, parsha_index
-                        parsha_range_table.append({"Hebrew Parsha": heb_parsha,"English Parsha": eng_parsha, "Start Index": current_sheilta+1})
-                        last_parsha_index=parsha_index
-                        first_index=False
+                if not_blank(line):
+                    if u"@00" in line:
+                        heb_parsha=line.encode('unicode_escape').decode('unicode_escape').replace(u"@00",u'').replace(u'פרשת',u'').replace(u'פרשה',u'').strip()
+                        if heb_parsha in heb_parshiot:
+                            parsha_index = heb_parshiot.index(heb_parsha)
+                            if len(parsha_range_table)>0:
+                                parsha_range_table[-1]["End Index"]=current_sheilta
+                            eng_parsha = eng_parshiot[parsha_index]
+                            #print "TEST ",eng_parsha,"LPI ",last_parsha_index,"CS ",current_sheilta
+                            #print eng_parsha, parsha_index
+                            parsha_range_table.append({"Hebrew Parsha": heb_parsha,"English Parsha": eng_parsha, "Start Index": current_sheilta+1})
+                            last_parsha_index=parsha_index
+                            last_line_was_parsha_name=True
+                        else:
+                            #print "NOT IN THERE", line, heb_parsha
+                            #print repr(heb_parsha)
+                            #sheiltot[current_sheilta].append(u'<b>'+line+u'</b>')
+                            last_line_was_parsha_name=True
+                    elif u'@22' in line:
+                        current_sheilta = getGematria(line)
                     else:
-                        sheiltot[current_sheilta].append(u'<b>'+line+u'</b>')
-                elif u'@22' in line:
-                    current_sheilta = getGematria(line)
-                elif not_blank(line):
-                    sheiltot[current_sheilta].append(line)
+                        if last_line_was_parsha_name:
+                            sheiltot[current_sheilta].append(u'<b>'+heb_parsha+u'</b><br>'+line)
+                            last_line_was_parsha_name=False
+                        else:        
+                            sheiltot[current_sheilta].append(line)
             #add index for last parsha
             parsha_range_table[-1]["End Index"]=current_sheilta
             
@@ -94,18 +105,18 @@ def fix_markers_sheiltot(sheilta):
             if getGematria(eimek_match)>0:
                 eimek_current_order_number=getGematria(eimek_match)
             if u'*' in eimek_match:
-                p=p.replace(eimek_match,u"<i data-commentator=\"Haamek Sheilah on Sheiltot d\'Rav Achai Gaon\" data-label=\"*\" data-order=\""+str(eimek_current_order_number)+"\"></i>")
+                p=p.replace(eimek_match,u"""<i data-commentator="Haamek Sheilah" data-label="*" data-order="{}"></i>""".format(eimek_current_order_number))
             else:
-                p=p.replace(eimek_match,u"<i data-commentator=\"Haamek Sheilah on Sheiltot d\'Rav Achai Gaon\" data-order=\""+str(eimek_current_order_number)+"\"></i>")
+                p=p.replace(eimek_match,u"""<i data-commentator="Haamek Sheilah" data-order="{}"></i>""".format(eimek_current_order_number))
         for shalom_match in re.findall(ur'@55\S* ',p):
             #print shalom_match, getGematria(shalom_match)
             #print repr(shalom_match)
             if getGematria(shalom_match)>1:
                 shalom_current_order_number=getGematria(shalom_match)
             if u'*' in shalom_match:
-                p=p.replace(shalom_match,u"<i data-commentator=\"Sheilat Shalom on Sheiltot d\'Rav Achai Gaon\" data-label=\"*\" data-order=\""+str(shalom_current_order_number)+"\"></i> ")
+                p=p.replace(shalom_match,u"""<i data-commentator="Sheilat Shalom" data-label="*" data-order="{}"></i>""".format(shalom_current_order_number))
             else:
-                p=p.replace(shalom_match,u"<i data-commentator=\"Sheilat Shalom on Sheiltot d\'Rav Achai Gaon\" data-order=\""+str(shalom_current_order_number)+"\"></i> ")
+                p=p.replace(shalom_match,u"""<i data-commentator="Sheilat Shalom" data-order="{}"></i>""".format(shalom_current_order_number))
         return_array.append(re.sub(ur"@\d{1,4}",u"",p))
     return return_array
     
@@ -116,11 +127,11 @@ for sheilta in sheiltot:
     fixed_sheiltot.append(fix_markers_sheiltot(sheilta))
 
 
-"""
+
 for sindex, sheilta in enumerate(fixed_sheiltot):
     for pindex, paragraph in enumerate(sheilta):
         print sindex, pindex, paragraph
-"""
+
 def post_sra_index():
     # create index record
     record = JaggedArrayNode()
@@ -134,6 +145,7 @@ def post_sra_index():
     #now we make alt structs
     parsha_nodes =SchemaNode()
     for parsha in parsha_range_table:
+        print parsha['English Parsha']
         parsha_node = ArrayMapNode()
         parsha_node.includeSections = True
         parsha_node.depth = 0
@@ -141,7 +153,6 @@ def post_sra_index():
         parsha_node.key = parsha['English Parsha']
         parsha_node.add_shared_term(parsha['English Parsha'])
         parsha_nodes.append(parsha_node)
-        
     record.validate()
 
     index = {
@@ -191,6 +202,7 @@ def post_eimek_index():
 
     index = {
         "title": 'Haamek Sheilah on Sheiltot d\'Rav Achai Gaon',
+        "base_text_titles": [u"Sheiltot d'Rav Achai Gaon"],
         "categories": ["Halakhah","Commentary"],
         "dependence": "Commentary",
         "collective_title": "Haamek Sheilah",
@@ -365,7 +377,7 @@ def post_eimek_text():
         'language': 'he',
         'text': final_text
     }
-    post_text('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon', version,weak_network=True, skip_links=True, index_count="on")
+    post_text('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon', version,weak_network=True)#, skip_links=True, index_count="on")
     #post_text_weak_connection('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon', version)#,weak_network=True)#, skip_links=True,
 def post_eimek_intros():
     with open('files/במדבר/שאילתות עמק השאלה במדבר.txt') as myfile:
@@ -521,7 +533,7 @@ def link_eimek_text():
                                          ],
                                 "type": "commentary",
                                 'inline_reference': {
-                                    'data-commentator': "Haamek Sheilah on Sheiltot d\'Rav Achai Gaon",
+                                    'data-commentator': "Haamek Sheilah",
                                     'data-order': data_order,
                                     'data-label': '*'
                                     },
@@ -537,7 +549,7 @@ def link_eimek_text():
                                          ],
                                 "type": "commentary",
                                 'inline_reference': {
-                                    'data-commentator': "Haamek Sheilah on Sheiltot d\'Rav Achai Gaon",
+                                    'data-commentator': "Haamek Sheilah",
                                     'data-order': data_order
                                     },
                                 "auto": True,
@@ -573,6 +585,7 @@ def post_shalom_index():
 
     index = {
         "title": 'Sheilat Shalom on Sheiltot d\'Rav Achai Gaon',
+        "base_text_titles": [u"Sheiltot d'Rav Achai Gaon"],
         "categories": ["Halakhah","Commentary"],
         "dependence": "Commentary",
         "collective_title": "Sheilat Shalom",
@@ -663,7 +676,7 @@ def post_eimek_term():
             },
             {
                 "lang": "he",
-                "text": u'העמק שאלה ב',
+                "text": u'העמק שאלה',
                 "primary": True
             }
         ]
@@ -711,7 +724,7 @@ def shalom_link():
                                          ],
                                 "type": "commentary",
                                 'inline_reference': {
-                                    'data-commentator': "Sheilat Shalom on Sheiltot d\'Rav Achai Gaon",
+                                    'data-commentator': "Sheilat Shalom",
                                     'data-order': data_order,
                                     'data-label': '*'
                                     },
@@ -727,7 +740,7 @@ def shalom_link():
                                          ],
                                 "type": "commentary",
                                 'inline_reference': {
-                                    'data-commentator': "Sheilat Shalom on Sheiltot d\'Rav Achai Gaon",
+                                    'data-commentator': "Sheilat Shalom",
                                     'data-order': data_order
                                     },
                                 "auto": True,
@@ -755,20 +768,20 @@ def post_sra_text():
 #post_sheilta_term()
 
 #post_sra_index()
-#post_sra_text()
+post_sra_text()
 
 #post_eimek_term()
-post_eimek_index()
-post_bereshit_eimek_intro()
-post_vayikra_eimek_intro()
-post_eimek_intros()
-post_eimek_text()
-link_eimek_text()
+#post_eimek_index()
+#post_bereshit_eimek_intro()
+#post_vayikra_eimek_intro()
+#post_eimek_intros()
+#post_eimek_text()
+#link_eimek_text()
 
 #post_shalom_term()
-post_shalom_index()
-post_shalom_text()
-shalom_link()
+#post_shalom_index()
+#post_shalom_text()
+#shalom_link()
 """
 keys:
 Base Text:
