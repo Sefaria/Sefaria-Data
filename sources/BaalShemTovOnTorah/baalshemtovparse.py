@@ -213,7 +213,7 @@ def clean_line(s):
     s = re.sub(ur"@\d{1,4}",u"",s)
     #for match in re.findall(ur'(?<=[:\.])\s*\(.*?\)$',s):
     #for match in re.findall(ur'(?<=[\.:])\s*\(.*?\)\.$',s):
-    for match in re.findall(ur'(?<=\.)\s*\(.*?\)\.\s*$',s):
+    for match in re.findall(ur'(?<=[\.:])\s*\(.*?\)\.?\s*$',s):
         s = s.replace(match, u'<br><small>'+match.strip()+u'</small>')
     return s
 #commented out portions can be used to track alignment
@@ -324,13 +324,13 @@ def mmc_parse(posting=True):
     final_parsha_dict[en_mmc_sections[parsha_index]]=parsha_box
     """
     
-    
+    """
     #print test
     for parsha in final_parsha_dict.keys():
         for sindex, section in enumerate(final_parsha_dict[parsha]):
             for pindex, paragraph in enumerate(section):
                 print parsha, sindex, pindex, paragraph
-    
+    """
     """
     for sindex, section in enumerate(final_parsha_dict["Kuntres Meirat Einayim"]):
         for pindex, paragraph in enumerate(section):
@@ -422,8 +422,8 @@ def highest_fuzz(input_list, input_item):
 #post_index_bst()
 #parse_bst()
 #post_mmc_term()
-#mmc_index_post()
-#mmc_parse()
+mmc_index_post()
+mmc_parse()
 link_mmc()
 """
 "Inspiration for the Prayer Leader","Inspiration for the Shofar Blower","Inspiration for Repentence"
