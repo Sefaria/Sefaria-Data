@@ -25,7 +25,7 @@ class Sheets:
         self.versionSource = "http://nechama.org.il"
         self.table_classes = {}
         self.server = "http://ste.sefaria.org"
-        self.bereshit_parshiot = ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
+        self.bereshit_parshiot = ["148", "212"]#["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
         self.sheets = {}
         self.links = []
         self.current_pos_in_quotation_stack = -1
@@ -643,8 +643,6 @@ class Sheets:
         links_set = set() #because there will be many duplicates
         important_clases = ["parshan", "midrash", "talmud", "bible", "commentary"]
 
-
-
         #now that we have the correct size of the lists, we can generate the ranged_ref nechama_ref
         term = Term().load({"titles.text": parsha})
         assert term, u"{} doesn't have term".format(parsha)
@@ -671,7 +669,7 @@ class Sheets:
                     source = {"ref": ref, "heRef": heRef,
                               "text":
                                     {
-                                         "en": "",
+                                         "en": "asdxfasdf",
                                          "he": comment
                                     }
                               }
@@ -728,7 +726,7 @@ class Sheets:
                 text, links, sources = self.get_text_links_and_sources(text_tuples, parsha, en_year)
                 self.links += links
                 nechama_text[parsha][he_year] = text
-                #self.prepare_sheet("{} {} {}".format(self.en_title_project, parsha, en_year), sources)
+                self.prepare_sheet("{} {} {}".format(self.en_title_project, parsha, en_year), sources)
             nechama_text[parsha] = convertDictToArray(nechama_text[parsha])
             send_text = {
                 "text": nechama_text[parsha],
@@ -736,8 +734,8 @@ class Sheets:
                 "versionTitle": self.versionTitle,
                 "versionSource": self.versionSource
             }
-            post_text(u"{}, {}".format(self.en_title_project, parsha), send_text, server=self.server)
-        post_link(self.links, server=self.server)
+            #post_text(u"{}, {}".format(self.en_title_project, parsha), send_text, server=self.server)
+        #post_link(self.links, server=self.server)
         # for year, sheet in enumerate(nechama_text[parsha]):
         #     if year < 1941:
         #         continue

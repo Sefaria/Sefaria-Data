@@ -10,7 +10,7 @@ import re
 
 def create_index():
     root = SchemaNode()
-    root.add_primary_titles("War of the Jews", u"מלחמת יהודים")
+    root.add_primary_titles("The War of the Jews", u"מלחמת היהודים")
     preface = JaggedArrayNode()
     preface.add_structure(["Paragraph"])
     preface.add_shared_term("Preface")
@@ -23,11 +23,11 @@ def create_index():
     root.append(content)
     root.validate()
     index = {
-        "title": "War of the Jews",
+        "title": "The War of the Jews",
         "schema": root.serialize(),
         "categories": ["Other"]
     }
-    post_index(index, "http://ste.sefaria.org")
+    post_index(index, "http://proto.sefaria.org")
 
 
 def check_for_footnote(text, footnotes):
@@ -37,9 +37,13 @@ def check_for_footnote(text, footnotes):
             if type(line) is element.NavigableString:
                 new_line += line + " "
             else:
+                new_line = new_line.strip()
                 num_in_footnote = re.compile("\[(\d+)\]").match(line.text).group(1)
                 num_in_footnote = int(num_in_footnote)
-                new_line += u"<sup>{}</sup><i class='footnote'>{}</i>".format(num_in_footnote, footnotes[num_in_footnote-1]) + " "
+                ftnote = footnotes[num_in_footnote-1].replace(u"↑", u"").replace(u"^", u"").strip()
+                ftnote = u"<sup>{}</sup><i class='footnote'>{}</i>".format(num_in_footnote, ftnote)
+                new_line += ftnote
+
         new_line = new_line.strip()
         return new_line
     else:
@@ -95,7 +99,7 @@ if __name__ == "__main__":
                     lines = [check_for_footnote(line, footnotes[book_n]) for line in chapter.contents if line != "\n"]
                     text[book_n][roman_num] = lines
                     first_line = text[book_n][roman_num][0]
-                    text[book_n][roman_num][0] = u"<b>"+chapter_header+u"</b><br/>"+first_line
+                    text[book_n][roman_num][0] = u"<b>"+chapter_header+u"</b><br/><br/>"+first_line
             text[book_n] = convertDictToArray(text[book_n])
 
     create_index()
@@ -104,17 +108,7 @@ if __name__ == "__main__":
     body_text = {
         "text": text,
         "language": "en",
-        "versionTitle": "Wikisource",
-        "versionSource": "https://en.wikisource.org/wiki/The_War_of_the_Jew"
+        "versionTitle": "The Wars of the Jews, translated by William Whiston",
+        "versionSource": "https://en.wikisource.org/wiki/The_War_of_the_Jews"
     }
-    post_text("War of the Jews", body_text, server="http://ste.sefaria.org")
-
-    body_text = {
-        "text": text[0][0],
-        "language": "en",
-        "versionTitle": "Wikisource",
-        "versionSource": "https://en.wikisource.org/wiki/The_War_of_the_Jew"
-    }
-    post_text("War of the Jews, Preface", body_text, server="http://ste.sefaria.org")
-
-
+    post_text("The War of the Jews", body_text, server="http://proto.sefaria.org")

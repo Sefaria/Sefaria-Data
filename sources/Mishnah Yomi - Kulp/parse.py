@@ -165,7 +165,7 @@ def create_index(text, sefer):
         "categories": ["Mishnah", "Commentary", "Mishnah Yomit"],
         "dependence": "Commentary",
         "base_text_titles": [index.title],
-        "collective_title": "Mishnah Yomit",
+        "collective_title": "Joshua Kulp",
     }
     post_index(index, server=SERVER)
 
