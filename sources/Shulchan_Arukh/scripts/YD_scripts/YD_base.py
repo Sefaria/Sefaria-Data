@@ -21,6 +21,14 @@ if __name__ == "__main__":
     ]
     filenames = dict(zip(range(1, 5), [os.path.join(root_dir, f) for f in filenames]))
 
+    codes = [
+        u'[.] -Gra'
+    ]
+    patterns = [
+        ur'\[{}\]'
+    ]
+    patterns = [pattern.format(ur'([\u05d0-\u05ea]{1,3})') for pattern in patterns]
+
     for vol_num in range(1, 5):
         print u"Working on vol. {}".format(vol_num)
         filename = filenames[vol_num]
@@ -44,3 +52,6 @@ if __name__ == "__main__":
         for e in errors:
             print e
         volume.validate_seifim()
+        if vol_num == 1:
+            for pattern, code in zip(patterns, codes):
+                volume.validate_references(pattern, code)
