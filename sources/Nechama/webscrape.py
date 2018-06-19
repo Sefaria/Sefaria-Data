@@ -24,8 +24,8 @@ class Sheets:
         self.versionTitle = "asdf"
         self.versionSource = "http://nechama.org.il"
         self.table_classes = {}
-        self.server = "http://ste.sefaria.org"
-        self.bereshit_parshiot = ["148", "212"]#["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
+        self.server = "http://draft.sefaria.org"
+        self.bereshit_parshiot = ["1", "2", "30", "62", "84"]#, "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
         self.sheets = {}
         self.links = []
         self.current_pos_in_quotation_stack = -1
@@ -669,7 +669,7 @@ class Sheets:
                     source = {"ref": ref, "heRef": heRef,
                               "text":
                                     {
-                                         "en": "asdxfasdf",
+                                         "en": "",
                                          "he": comment
                                     }
                               }
@@ -748,7 +748,7 @@ class Sheets:
        sheet_json = {}
        sheet_json["status"] = "public"
        sheet_json["title"] = title
-       sheet_json["sources"] = [sources]
+       sheet_json["sources"] = sources
        sheet_json["options"] = {"numbered": 0,"assignable": 0,"layout": "sideBySide","boxed": 0,"language": "bilingual","divineNames": "noSub","collaboration": "none", "highlightMode": 0, "bsd": 0,"langLayout": "heRight"}
        post_sheet(sheet_json, server=self.server)
 

@@ -89,10 +89,14 @@ def replace_ftnotes(curr_chapter, line, ftnotes_dict):
     if "@nt" not in line:
         return line
     notes_in_line = re.findall("(@nt(\d+))", line)
+
+    prev_ftnote = int(notes_in_line[0][1])
     for note in notes_in_line:
         note_text = note[0]
         digit = note[1]
-
+        if int(digit) < prev_ftnote:
+            pass
+        prev_ftnote = int(digit)
         if note_text not in ftnotes_dict.keys():
             print "Chapter {} in main text, Footnote problem: {}".format(curr_chapter, note_text)
             return line
@@ -167,7 +171,7 @@ if __name__ == "__main__":
         he_text = {1: {1: []}}
         curr_pasuk = curr_chapter = 1
         dh_pattern = re.compile(".*?(@[D|d]1.*?@d2)")  # only applies to second third fourth DHs in pasuk
-        same_en_dh_next_line = re.compile(".*?(@ld.*?@d2)")
+        same_en_dh_next_line = re.compile(".*?@ld(.*)(?:@d2)?") #re.compile(".*?(@ld.*?@d2)")
         same_he_dh_next_line = re.compile(".*?(@dl.*?@d2)")
         with open(base_file) as f:
             lines = list(f)
@@ -187,6 +191,7 @@ if __name__ == "__main__":
                         en_continuous_segment += " " + en_wout_tags
                         he_continuous_segment += " " + he_wout_tags
                     if same_he_match: #same DH from previous line such as "The cat drank\n the milk"
+
                         same_en_match = same_en_dh_next_line.match(en)
                         same_he, same_en = validate(same_en_match, same_he_match, en, he)
                         same_he = remove_tags(same_he)
