@@ -6,6 +6,7 @@ from sources.functions import getGematria
 import logging
 logger = logging.getLogger(__name__)
 import django
+import os
 django.setup()
 import urllib2, urllib
 from sefaria.model import *
@@ -16,7 +17,7 @@ import time
 from sefaria.model.schema import AddressYear, AddressInteger
 from data_utilities.util import WeightedLevenshtein
 from sefaria.system.exceptions import *
-from sources.functions import UnicodeWriter
+from sources.functions import UnicodeWriter, UnicodeReader
 class Sheets:
     def __init__(self):
         self.he_title_project = u"גיליונות נחמה"
@@ -24,8 +25,8 @@ class Sheets:
         self.versionTitle = "asdf"
         self.versionSource = "http://nechama.org.il"
         self.table_classes = {}
-        self.server = "http://draft.sefaria.org"
-        self.bereshit_parshiot = ["1", "2", "30", "62", "84"]#, "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
+        self.server = "http://proto.sefaria.org"
+        self.bereshit_parshiot = ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
         self.sheets = {}
         self.links = []
         self.current_pos_in_quotation_stack = -1
@@ -50,10 +51,13 @@ class Sheets:
         self.relevant_text = lambda segment: segment if isinstance(segment, element.NavigableString) else segment.text
 
         self.found = set() #found holds all titles of books we found in the library
-        self.index_not_found = Counter() #indexes not found in library
         self.ref_not_found = Counter()
         self.last_comm_index_not_found = False
-        self.index_not_found_csv = UnicodeWriter(open("index_not_found.csv", 'w'))
+        reader = UnicodeReader(open("index_not_found.csv"))
+        self.index_not_found = Counter() #indexes not found in library
+        for row in reader:
+            self.index_not_found[row[0]] += 1
+        self.index_not_found_csv = UnicodeWriter(open("index_not_found.csv", 'a'))
         self.intro_to_many_comment_finds = Counter() #2.html 5th section Shadal
         self.significant_class = lambda class_: "question" in class_ #class_ in ["header", "question"] or "question" in class_
 
@@ -329,10 +333,30 @@ class Sheets:
 
 
     def get_term(self, poss_title):
+        term_mapping = {
+                                u"בעל גור אריה": u"Gur Aryeh on Genesis",
+                                u"""ראב"ע""": u"Ibn Ezra on Genesis",
+                                u"עקדת יצחק": u"Akeidat Yitzchak",
+                                u"תרגום אונקלוס": u"Onkelos Genesis",
+                                u"""רלב"ג""": u"Ralbag Beur HaMilot on Torah, Genesis",
+                                u"""רמב"ם""": u"Guide for the Perplexed",
+                                u"ר' אליהו מזרחי": u"Mizrachi, Genesis",
+                                u"""ר' יוסף בכור שור""": u"Bekhor Shor, Genesis",
+                                u"אברבנאל": u"Abarbanel on Torah, Genesis",
+                                u"""המלבי"ם""": u"Malbim on Genesis"
+
+                        }
         #return the english index name corresponding to poss_title or None
         poss_title = poss_title.strip().replace(":", "")
+
+        # already found it
         if poss_title in self._term_cache:
             return self._term_cache[poss_title]
+        # this title is unusual so look in term_mapping for it
+        if poss_title in term_mapping:
+            self._term_cache[poss_title] = term_mapping[poss_title]
+            return self._term_cache[poss_title]
+
         term = Term().load({"titles.text": poss_title})
         if poss_title in library.full_title_list('he'):
             self._term_cache[poss_title] = library.get_index(poss_title).title
@@ -428,11 +452,11 @@ class Sheets:
         if not a_tag:
             # looking for a ref...
             # b/c there's no a_tag at all
-            return (self._get_refs_in_string([segment.text], next_segment_class, add_if_not_found=True), a_tag_is_entire_comment)
+            return (self._get_refs_in_string([segment.text], next_segment_class, add_if_not_found=False), a_tag_is_entire_comment)
         elif not (a_tag_is_entire_comment or a_tag_occurs_in_long_comment):
             # there is an a_tag but it is only part of the comment and it's not a long comment so it MIGHT be a ref like (<a>Rashi</a>, Perek B)
             likely_title = u" ".join(segment.text.split(",", 1))
-            return (self._get_refs_in_string([segment.text], next_segment_class, add_if_not_found=True), a_tag_is_entire_comment)
+            return (self._get_refs_in_string([segment.text], next_segment_class, add_if_not_found=False), a_tag_is_entire_comment)
         else:
             #no ref...
             # this case is when we know there's no ref being mentioned so try to examine the a_tag
@@ -479,9 +503,10 @@ class Sheets:
                 return True
             else:
                 not_found.append(orig)
-        if len(not_found) == len(strings) and add_if_not_found: # nothing found
-            #self.add_to_quotation_stack([next_segment_class, strings[-1]], in_sefaria=False)
-            self.add_to_quotation_stack(self.current_parsha_ref)
+        if len(not_found) == len(strings):
+            if add_if_not_found: # nothing found
+                #self.add_to_quotation_stack([next_segment_class, strings[-1]], in_sefaria=False)
+                self.add_to_quotation_stack(self.current_parsha_ref)
             self.ref_not_found[strings[-1]] += 1
         return False
 
@@ -583,24 +608,29 @@ class Sheets:
 
 
     def download_sheets(self):
-        start_after = 274
-        for i in self.bereshit_parshiot:
-            if int(i) <= start_after:
+        start_after = 19
+        for i in range(300):#self.bereshit_parshiot:
+            if i <= start_after or str(i) in self.bereshit_parshiot:
                 continue
             print "downloading {}".format(i)
+            time.sleep(2)
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
             response = requests.get("http://www.nechama.org.il/pages/{}.html".format(i), headers=headers)
-            print "sleeping"
-            time.sleep(1)
-            with open("{}.html".format(i), 'w') as f:
-                f.write(response.content)
+            if response.status_code == 200:
+                with open("{}.html".format(i), 'w') as f:
+                    f.write(response.content)
+            else:
+                print "No page at {}.html".format(i)
 
 
     def load_sheets(self):
         page_missing = u'דף שגיאות'
-        for i in self.bereshit_parshiot:
-            content = BeautifulSoup(open("{}.html".format(i)), "lxml")
+        for i in os.listdir("."):
+            if not i.endswith(".html"):
+                continue
+
+            content = BeautifulSoup(open("{}".format(i)), "lxml")
             header = content.find('div', {'id': 'contentTop'})
             if page_missing in header.text:
                 continue
@@ -705,7 +735,7 @@ class Sheets:
             "categories": ["Tanakh", "Commentary"],
             "dependence": "Commentary"
         }
-        post_index(index, server=self.server)
+        #post_index(index, server=self.server)
 
 
     def post_index(self):
@@ -750,7 +780,7 @@ class Sheets:
        sheet_json["title"] = title
        sheet_json["sources"] = sources
        sheet_json["options"] = {"numbered": 0,"assignable": 0,"layout": "sideBySide","boxed": 0,"language": "bilingual","divineNames": "noSub","collaboration": "none", "highlightMode": 0, "bsd": 0,"langLayout": "heRight"}
-       post_sheet(sheet_json, server=self.server)
+       #post_sheet(sheet_json, server=self.server)
 
 if __name__ == "__main__":
     sheets = Sheets()
