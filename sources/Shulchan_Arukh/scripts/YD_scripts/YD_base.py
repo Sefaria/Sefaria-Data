@@ -22,10 +22,22 @@ if __name__ == "__main__":
     filenames = dict(zip(range(1, 5), [os.path.join(root_dir, f) for f in filenames]))
 
     codes = [
-        u'[.] -Gra'
+        u'@55 -Shach',
+        u"@66 -Ba'er Hetev",
+        u'@71 -Turei Zahav',
+        u'@74 -Pithei Teshuva',
+        u'@99 -Gra',
+        u"@44 -Be'er HaGolah",
+        u"&   -Torat HaShlamim"
     ]
     patterns = [
-        ur'\[{}\]'
+        ur'@55{}',
+        ur'@66\({}\)',
+        ur'@71\({}\)',
+        ur'@74\({}\)',
+        ur'@99\[{}\]',
+        ur'@44{}',
+        ur'\&\[{}\]'
     ]
     patterns = [pattern.format(ur'([\u05d0-\u05ea]{1,3})') for pattern in patterns]
 
@@ -52,6 +64,9 @@ if __name__ == "__main__":
         for e in errors:
             print e
         volume.validate_seifim()
-        if vol_num == 1:
-            for pattern, code in zip(patterns, codes):
-                volume.validate_references(pattern, code)
+
+        errors = volume.format_text(u'@33', u'@88', u'ramah')
+        for e in errors:
+            print e
+        for pattern, code in zip(patterns, codes):
+            volume.validate_references(pattern, code)
