@@ -6,6 +6,7 @@ from sources.functions import getGematria
 import logging
 logger = logging.getLogger(__name__)
 import django
+import bleach
 import os
 django.setup()
 import urllib2, urllib
@@ -166,13 +167,6 @@ class Sheets:
             #     continue
             if segment.name == "blockquote": #this is really many children so add them to list
                 new_segments += self.get_children_with_content(segment)
-            elif segment.name == "tr" or (self.significant_class(class_) and segment.name == "table"):
-                    # if class_ not in self.table_classes:
-                    #     self.table_classes[class_] = set()
-                    # ste_url = nechama_url = None
-                    # self.table_classes[class_].add(self.current_url)
-                extra_segments = self.unwrap_HTML_tables(segment)
-                new_segments += extra_segments
             else:
                 #no significant class and not blockquote or table
                 new_segments.append(segment)
@@ -270,7 +264,14 @@ class Sheets:
         combined_with_prev_line = None
         important_classes = ["parshan", "midrash", "talmud", "bible", "commentary"]
         for i, segment in enumerate(segments):
-            if isinstance(segment, element.Tag) and segment.has_attr("class"):
+            if isinstance(segment, element.Tag) and segment.name == "table":
+                table_html = str(segment)
+                all_a_links = re.findall("(<a href.*?>(.*?)</a>)", table_html)
+                for a_link_and_text in all_a_links:
+                    a_link, text = a_link_and_text
+                    table_html = table_html.replace(a_link, text)
+                segments[i] = ("nechama", table_html, "")
+            elif isinstance(segment, element.Tag) and segment.has_attr("class"):
                 segment_class = segment.attrs["class"][0]
                 text = segment.text.replace("\n", "").replace("\r", "")
                 if combined_with_prev_line: #i.e.: "Pasuk 5" is the previous line which gets combined with the current line that has Pasuk 5's content
@@ -347,6 +348,7 @@ class Sheets:
         term_mapping = {
                                 u"בעל גור אריה": u"Gur Aryeh on Bereishit",
                                 u"""ראב"ע""": u"Ibn Ezra on Genesis",
+                                u"""וראב"ע""": u"Ibn Ezra on Genesis",
                                 u"עקדת יצחק": u"Akeidat Yitzchak",
                                 u"תרגום אונקלוס": u"Onkelos Genesis",
                                 u"""רלב"ג""": u"Ralbag Beur HaMilot on Torah, Genesis",
@@ -737,9 +739,11 @@ class Sheets:
                     source = {"ref": ref, "heRef": heRef,
                               "text":
                                     {
-                                         "en": "",
                                          "he": comment
-                                    }
+                                    },
+                              "options": {
+                                  "indented": "indented-1"
+                              }
                               }
                 else:
                     raise InputError
