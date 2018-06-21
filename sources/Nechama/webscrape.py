@@ -10,6 +10,7 @@ import os
 django.setup()
 import urllib2, urllib
 from sefaria.model import *
+from sefaria.system.exceptions import *
 from sources.functions import convertDictToArray, post_index, post_text, post_link, post_sheet
 import difflib
 from collections import Counter
@@ -23,9 +24,9 @@ class Sheets:
         self.he_title_project = u"גיליונות נחמה"
         self.en_title_project = "Nechama Leibowitz Source Sheets"
         self.versionTitle = "asdf"
-        self.versionSource = "http://nechama.org.il"
+        self.versionSource = "http://nechama.sandbox.sefaria.org"
         self.table_classes = {}
-        self.server = "http://proto.sefaria.org"
+        self.server = "http://nechama.sandbox.sefaria.org"
         self.bereshit_parshiot = ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
         self.sheets = {}
         self.links = []
@@ -59,7 +60,7 @@ class Sheets:
             self.index_not_found[row[0]] += 1
         self.index_not_found_csv = UnicodeWriter(open("index_not_found.csv", 'a'))
         self.intro_to_many_comment_finds = Counter() #2.html 5th section Shadal
-        self.significant_class = lambda class_: "question" in class_ #class_ in ["header", "question"] or "question" in class_
+        self.significant_class = lambda class_: False#"question" in class_ #class_ in ["header", "question"] or "question" in class_
 
 
     def get_links_to_other_sheets(self, div):
@@ -115,6 +116,7 @@ class Sheets:
                 segments = self.classify_segments(segments)
                 if intro_segment:
                     segments.insert(0, intro_tuple)
+                    intro_segment = None
 
                 #assert len(self.quotations) == self.current_pos_in_quotation_stack+1
                 #assert 3 > len(self.quotation_stack) > 0
@@ -123,11 +125,6 @@ class Sheets:
                 self.quotation_stack = [u"{} {}".format(self.current_sefer, self.current_perek)]
                 self.quotations = [["bible", self.quotation_stack[0]]]
                 sheet_sections.append(segments)
-
-        self.quotations = []
-        self.quotation_stack = []
-        self.current_pos_in_quotation_stack = 0
-        self.current_section = 0
         return sheet_sections
 
 
@@ -232,12 +229,12 @@ class Sheets:
             return nechama_ref
         if type(sefaria_text[0]) is list: # it's 2-deep
             print "Found 2-deep"
-            print sefaria_ref
-            return nechama_ref
+            return sefaria_ref
 
 
         wl = WeightedLevenshtein()
-        nechama_text = "\n".join(nechama_text.splitlines()[1:]) # get rid of first line because it just says "Rashi:" for example
+        if "\n" in nechama_text:
+            nechama_text = "\n".join(nechama_text.splitlines()[1:]) # get rid of first line because it just says "Rashi:" for example
         if type(sefaria_text) is unicode:
             max_ratio = wl.calculate(nechama_text, sefaria_text)
             found_ref = sefaria_ref
@@ -250,7 +247,7 @@ class Sheets:
                     max_ratio = ratio
                     found_ref = u"{}:{}".format(sefaria_ref, i+1)
         if max_ratio < 35:
-            print self.current_url+".html"+": "+nechama_ref
+            print "No Match\n" + self.current_url+".html"+": "+nechama_ref
         else:
             return found_ref
 
@@ -277,7 +274,7 @@ class Sheets:
                 segment_class = segment.attrs["class"][0]
                 text = segment.text.replace("\n", "").replace("\r", "")
                 if combined_with_prev_line: #i.e.: "Pasuk 5" is the previous line which gets combined with the current line that has Pasuk 5's content
-                    text = combined_with_prev_line + "\n" + text
+                    text = combined_with_prev_line + "<br/>" + text
                     combined_with_prev_line = None
                 if self.last_comm_index_not_found:
                     self.index_not_found_csv.writerow([self.last_comm_index_not_found, text])
@@ -315,26 +312,40 @@ class Sheets:
                 if not next_comment_parshan_or_bible:
                     segments[i] = ('nechama', relevant_text, [self.current_parsha_ref[1]]) #was self.quotations[0][1]
                 else:
-                    a_tag_is_entire_comment = False #this means there is supposed to be a match if True because comment is clearly a reference to a commentator and not just about the commentator
-                    next_segment_class = segments[i+1].attrs["class"][0]
+                    next_segment_class = segments[i + 1].attrs["class"][0]
+                    real_title, found_a_tag, a_tag_is_entire_comment, a_tag_in_long_comment = self.get_a_tag_from_ref(segment)
+                    found_ref_in_string = ""
+
+                    #check if it's in Perek X, Pasuk Y format and set perek and pasuk accordingly
                     is_torah_ref = self.set_current_perek_pasuk(relevant_text, next_segment_class)
-                    is_parshan_ref = False
-                    if not is_torah_ref:
-                        is_parshan_ref, a_tag_is_entire_comment = self.set_current_parshan(segment, relevant_text,  next_segment_class)
-                    if is_parshan_ref or is_torah_ref:
-                        combined_with_prev_line = relevant_text
-                        segments[i] = "combined and linked"
-                    elif a_tag_is_entire_comment:
-                        combined_with_prev_line = relevant_text
-                        segments[i] = relevant_text
-                    elif not is_parshan_ref and not is_torah_ref:
+
+                    #now add to quotation stack either based on real_title or based on self.current_parsha_ref
+                    if real_title: # a ref to a commentator that we have in our system
+                        if self.current_pasuk:
+                            self.add_to_quotation_stack([next_segment_class, u"{} {}:{}".format(real_title, self.current_perek, self.current_pasuk)])
+                        else:
+                            self.add_to_quotation_stack([next_segment_class, u"{} {}".format(real_title, self.current_perek)])
+                    elif not real_title and is_torah_ref: # not a commentator, but instead a ref to the parsha
+                        self.add_to_quotation_stack(self.current_parsha_ref)
+                    else: # not found yet, look it up in library.get_refs_in_string
+                        found_ref_in_string = self._get_refs_in_string([relevant_text], next_segment_class,
+                                                             add_if_not_found=False)
+
+                    if (is_torah_ref or real_title or found_ref_in_string):
+                        if not a_tag_is_entire_comment:
+                            combined_with_prev_line = relevant_text
+                            segments[i] = "combined and linked"
+                    else:
                         segments[i] = ('nechama', relevant_text, [self.current_parsha_ref[1]])
+                        if found_a_tag:
+                            self.index_not_found[u"{}".format(found_a_tag.text)] += 1
+                            self.last_comm_index_not_found = found_a_tag.text
         return segments
 
 
     def get_term(self, poss_title):
         term_mapping = {
-                                u"בעל גור אריה": u"Gur Aryeh on Genesis",
+                                u"בעל גור אריה": u"Gur Aryeh on Bereishit",
                                 u"""ראב"ע""": u"Ibn Ezra on Genesis",
                                 u"עקדת יצחק": u"Akeidat Yitzchak",
                                 u"תרגום אונקלוס": u"Onkelos Genesis",
@@ -343,7 +354,10 @@ class Sheets:
                                 u"ר' אליהו מזרחי": u"Mizrachi, Genesis",
                                 u"""ר' יוסף בכור שור""": u"Bekhor Shor, Genesis",
                                 u"אברבנאל": u"Abarbanel on Torah, Genesis",
-                                u"""המלבי"ם""": u"Malbim on Genesis"
+                                u"""המלבי"ם""": u"Malbim on Genesis",
+                                u"משך חכמה": u"Meshech Hochma, Bereshit",
+                                u"רבנו בחיי": u"Rabbeinu Bahya, Bereshit",
+                                u'רב סעדיה גאון': u"Saadia Gaon on Genesis"
 
                         }
         #return the english index name corresponding to poss_title or None
@@ -375,8 +389,10 @@ class Sheets:
     def add_to_quotation_stack(self, category_and_ref, in_sefaria=True, try_alt_titles=True):
         ref = category_and_ref[1]
         if in_sefaria:
+            section_ref = None
             #first see that the Ref exists
             try:
+                section_ref = Ref(ref.split(":", 1)[0])
                 category_and_ref[1] = Ref(ref)
                 #at this point we know we have a real Ref so get text
                 sefaria_text = category_and_ref[1].text('he').text
@@ -385,21 +401,29 @@ class Sheets:
             except InputError as e:
                 #try iterating over current_alt_titles and seeing if any allow us to create a Ref that exists so each time we call the function with try_alt_titles of False
                 #so that it does not generate an infinite loop
-                if not try_alt_titles:
-                    return False
-                if not hasattr(e, "matched_part"):
-                    print e.message
-                    return False
-                else: #something was matched and try_alt_titles is True
-                    for title in self.current_alt_titles:
-                        temp_ref = ref.replace(e.matched_part, "{}, {}".format(e.matched_part, title))
-                        category_and_ref[1] = temp_ref
-                        found = self.add_to_quotation_stack(category_and_ref, in_sefaria, try_alt_titles=False)
-                        if found:
-                            break
-                    if not found:
+                if section_ref:
+                    category_and_ref[1] = section_ref.normal()
+                    self.current_ref_in_sefaria = ("section found, segment not found", category_and_ref[1])
+                    self.quotations.append(category_and_ref)
+                    self.quotation_stack.append(category_and_ref[1])
+                    self.current_pos_in_quotation_stack += 1
+                    return category_and_ref
+                else:
+                    if not try_alt_titles:
+                        return False
+                    if not hasattr(e, "matched_part"):
                         print e.message
                         return False
+                    else: #something was matched and try_alt_titles is True
+                        for title in self.current_alt_titles:
+                            temp_ref = ref.replace(e.matched_part, "{}, {}".format(e.matched_part, title))
+                            category_and_ref[1] = temp_ref
+                            found = self.add_to_quotation_stack(category_and_ref, in_sefaria, try_alt_titles=False)
+                            if found:
+                                break
+                        if not found:
+                            print e.message
+                            return False
         else:
             print u"{} not found".format(ref)
 
@@ -419,15 +443,7 @@ class Sheets:
     if not make sure it's less than a certain number of words, take the whole thing AND assert it is an index in library
     """
 
-    def set_current_parshan(self, segment, relevant_text, next_segment_class):
-        ##return tuple of boolean values -- first one whether we found anything, second one whether we found a tag or u tag indicating there IS a commentator
-        #first just see if segment.text is a ref -- if it is, _get_refs_in_string adds it
-        #then exit set_current_parshan
-        a_tag_occurs_in_long_comment = a_tag_is_entire_comment = False
-        if self._get_refs_in_string([relevant_text], next_segment_class, add_if_not_found=False):
-            return (True, a_tag_is_entire_comment)
-
-        #segment.text isn't a Ref, so now look for a title in a_tag.text
+    def get_a_tag_from_ref(self, segment):
         if segment.name == "a":
             a_tag = segment
         else:
@@ -438,50 +454,59 @@ class Sheets:
         # if not a_tag:
         #     a_tag = segment.find("u")
 
-        real_title = False
+        real_title = ""
 
-        #if a_tag and segment.find("u") and a_tag.text != segment.find("u").text: #case where
+        # if a_tag and segment.find("u") and a_tag.text != segment.find("u").text: #case where
+        a_tag_is_entire_comment = a_tag_occurs_in_long_comment = False
         if a_tag:
             a_tag_is_entire_comment = len(a_tag.text.split()) == len(segment.text.split())
             a_tag_occurs_in_long_comment = len(segment.text.split()) > 15
             real_title = self.get_term(a_tag.text)
-            if not real_title:
-                self.index_not_found[u"{}".format(a_tag.text)] += 1
-                self.last_comm_index_not_found = a_tag.text
+        return (real_title, a_tag, a_tag_is_entire_comment, a_tag_occurs_in_long_comment)
 
-        if not a_tag:
-            # looking for a ref...
-            # b/c there's no a_tag at all
-            return (self._get_refs_in_string([segment.text], next_segment_class, add_if_not_found=False), a_tag_is_entire_comment)
-        elif not (a_tag_is_entire_comment or a_tag_occurs_in_long_comment):
-            # there is an a_tag but it is only part of the comment and it's not a long comment so it MIGHT be a ref like (<a>Rashi</a>, Perek B)
-            likely_title = u" ".join(segment.text.split(",", 1))
-            return (self._get_refs_in_string([segment.text], next_segment_class, add_if_not_found=False), a_tag_is_entire_comment)
-        else:
-            #no ref...
-            # this case is when we know there's no ref being mentioned so try to examine the a_tag
-            # special case is when there is a link and the entirety of the text is a link (check the number of words because there could be a ":" after the link)
-            # OR the link occurs in the middle of a long comment where we assume no perek or pasuk is mentioned
 
-            if not real_title:
-                self.add_to_quotation_stack(self.current_parsha_ref)
-                #self.add_to_quotation_stack([next_segment_class, u"{} {}".format(a_tag.text, self.current_perek)], in_sefaria=False)
-            else:
-                if self.current_pasuk:
-                    self.add_to_quotation_stack([next_segment_class, u"{} {}:{}".format(real_title, self.current_perek, self.current_pasuk)])
-                else:
-                    self.add_to_quotation_stack([next_segment_class, u"{} {}".format(real_title, self.current_perek)])
-            # last_quotation_ref = self.quotations[-1][1]
-            # last_quotation_ref_just_index = last_quotation_ref.split()[0] # i.e. trim "3:17" off ref
-            # if self.current_pasuk and last_quotation_ref_just_index not in self.current_alt_titles: #second check is there b/c when we can't find quotation, we fall back on current_parsha_ref like Genesis 3:2
-            #     self.quotations[-1][1] += ":{}".format(self.current_pasuk)
-            #     self.quotation_stack[-1] += ":{}".format(self.current_pasuk)
-            return (real_title, a_tag_is_entire_comment)
-            # else:
-            #     # there is a link at the beginning followed by a short string which may be a ref
-            #     num_words_a_tag = len(a_tag.text.split())
-            #     ref_text = " ".join(segment.text.split()[num_words_a_tag:])
-            #     self._get_refs_in_string([ref_text, segment.text], next_segment_class, add_if_not_found=True)
+    # def set_current_parshan(self, segment, relevant_text, next_segment_class):
+    #     ##return tuple of boolean values -- first one whether we found anything, second one whether we found a tag or u tag indicating there IS a commentator
+    #     #first just see if segment.text is a ref -- if it is, _get_refs_in_string adds it
+    #     #then exit set_current_parshan
+    #     a_tag_occurs_in_long_comment = a_tag_is_entire_comment = False
+    #
+    #
+    #     #segment.text isn't a Ref, so now look for a title in a_tag.text
+    #
+    #     if not a_tag:
+    #         # looking for a ref...
+    #         # b/c there's no a_tag at all
+    #         return (self._get_refs_in_string([segment.text], next_segment_class, add_if_not_found=False), a_tag_is_entire_comment)
+    #     elif not (a_tag_is_entire_comment or a_tag_occurs_in_long_comment):
+    #         # there is an a_tag but it is only part of the comment and it's not a long comment so it MIGHT be a ref like (<a>Rashi</a>, Perek B)
+    #         likely_title = u" ".join(segment.text.split(",", 1))
+    #         return (self._get_refs_in_string([segment.text], next_segment_class, add_if_not_found=False), a_tag_is_entire_comment)
+    #     else:
+    #         #no ref...
+    #         # this case is when we know there's no ref being mentioned so try to examine the a_tag
+    #         # special case is when there is a link and the entirety of the text is a link (check the number of words because there could be a ":" after the link)
+    #         # OR the link occurs in the middle of a long comment where we assume no perek or pasuk is mentioned
+    #
+    #         if not real_title:
+    #             self.add_to_quotation_stack(self.current_parsha_ref)
+    #             #self.add_to_quotation_stack([next_segment_class, u"{} {}".format(a_tag.text, self.current_perek)], in_sefaria=False)
+    #         else:
+    #             if self.current_pasuk:
+    #                 self.add_to_quotation_stack([next_segment_class, u"{} {}:{}".format(real_title, self.current_perek, self.current_pasuk)])
+    #             else:
+    #                 self.add_to_quotation_stack([next_segment_class, u"{} {}".format(real_title, self.current_perek)])
+    #         # last_quotation_ref = self.quotations[-1][1]
+    #         # last_quotation_ref_just_index = last_quotation_ref.split()[0] # i.e. trim "3:17" off ref
+    #         # if self.current_pasuk and last_quotation_ref_just_index not in self.current_alt_titles: #second check is there b/c when we can't find quotation, we fall back on current_parsha_ref like Genesis 3:2
+    #         #     self.quotations[-1][1] += ":{}".format(self.current_pasuk)
+    #         #     self.quotation_stack[-1] += ":{}".format(self.current_pasuk)
+    #         return (real_title, a_tag_is_entire_comment)
+    #         # else:
+    #         #     # there is a link at the beginning followed by a short string which may be a ref
+    #         #     num_words_a_tag = len(a_tag.text.split())
+    #         #     ref_text = " ".join(segment.text.split()[num_words_a_tag:])
+    #         #     self._get_refs_in_string([ref_text, segment.text], next_segment_class, add_if_not_found=True)
 
 
 
@@ -500,7 +525,7 @@ class Sheets:
             if refs:
                 self.add_to_quotation_stack([next_segment_class, refs[0].normal()])
                 assert len(refs) <= 1 or u"השווה" in orig
-                return True
+                return string[1:-1] #remove ( )
             else:
                 not_found.append(orig)
         if len(not_found) == len(strings):
@@ -508,7 +533,7 @@ class Sheets:
                 #self.add_to_quotation_stack([next_segment_class, strings[-1]], in_sefaria=False)
                 self.add_to_quotation_stack(self.current_parsha_ref)
             self.ref_not_found[strings[-1]] += 1
-        return False
+        return ""
 
 
     def set_current_perek_pasuk(self, text, next_segment_class):
@@ -521,11 +546,11 @@ class Sheets:
 
         if digit:
             text = text.replace(digit.group(0), "").strip()
-        text += " " #this is hack so that reg ex work
+        text += " " #this is hack so that reg ex works
 
         perek_comma_pasuk = re.findall("Perek (.{1,8}), (.{1,8})", text)
-        perek = re.findall("Perek (.{1,8}\s)", text)
-        pasuk = re.findall("Pasuk (.{1,8}\s)", text)
+        perek = re.findall("Perek (.{1,5}\s)", text)
+        pasuk = re.findall("Pasuk (.{1,5}\s)", text)
         assert len(perek) in [0, 1]
         assert len(pasuk) in [0, 1]
         assert len(perek_comma_pasuk) in [0, 1]
@@ -541,22 +566,27 @@ class Sheets:
             if pasuk:
                 pasuk = pasuk[0]
 
+        #if perek and getGematria(perek) not in self.current_perakim: # We dont want to set the parsha's perek based off Guide for the Perplexed's perek and they are likely not the same
+        #    return False                          # so this test should be right almost all the time
+
+
         if perek and pasuk:
+            text = text.replace(pasuk, "")
+            text = text.replace(perek, "")
             self.current_perek = getGematria(perek)
             self.current_pasuk = getGematria(pasuk)
             self.current_parsha_ref = [next_segment_class, u"{} {}:{}".format(sefer, self.current_perek, self.current_pasuk)]
-            self.add_to_quotation_stack(self.current_parsha_ref)
             return True
         elif perek and text.startswith("Perek"): #second check to prevent things like "Midrash Tadshe Perek Zion" from passing
+            text = text.replace("Perek", "").replace(perek, "")
             self.current_perek = getGematria(perek)
             self.current_pasuk = None
             self.current_parsha_ref = [next_segment_class, u"{} {}".format(sefer, self.current_perek)]
-            self.add_to_quotation_stack(self.current_parsha_ref)
             return True
         elif pasuk:
+            text = text.replace(pasuk, "")
             self.current_pasuk = getGematria(pasuk)
             self.current_parsha_ref = [next_segment_class, u"{} {}:{}".format(sefer, self.current_perek, self.current_pasuk)]
-            self.add_to_quotation_stack(self.current_parsha_ref)
             return True
         return False
 
@@ -602,9 +632,8 @@ class Sheets:
         perek_info = content.find("p", {"id": "pasuk"}).text
         perek_info = perek_info.replace(u"פרקים", u"Perek").replace(u"פרק", u"Perek").replace(u"פסוקים", u"Pasuk").replace(u"פסוק", u"Pasuk").strip()
         sefer = perek_info.split()[0]
-        pereks = re.findall(u"Perek\s+(.)\s?", perek_info)
+        pereks = re.findall(u"Perek\s+(.{1,3})\s?", perek_info)
         return (sefer, [getGematria(perek) for perek in pereks])
-
 
 
     def download_sheets(self):
@@ -626,10 +655,11 @@ class Sheets:
 
     def load_sheets(self):
         page_missing = u'דף שגיאות'
-        for i in os.listdir("."):
-            if not i.endswith(".html"):
-                continue
-
+        files = [f for f in os.listdir(".") if f.endswith(".html") and not f.startswith("errors")]
+        files = sorted(files, key=lambda x: int(x.replace(".html", "")))
+        count = 0
+        for i in self.bereshit_parshiot:
+            i += ".html"
             content = BeautifulSoup(open("{}".format(i)), "lxml")
             header = content.find('div', {'id': 'contentTop'})
             if page_missing in header.text:
@@ -655,10 +685,18 @@ class Sheets:
             self.quotations = []
             self.current_pos_in_quotation_stack = 0
             self.quotation_stack = []
+            self.current_section = 0
+            self.quotation_stack = []
             self.current_parsha_ref = ["bible", u"{} {}".format(self.current_sefer, self.current_perek)]
             self.add_to_quotation_stack(self.current_parsha_ref)
-            self.sheets[parsha][roman_year] = (self.current_url, hebrew_year, self.current_sefer, self.current_perakim, self.parse_as_text(text))
-            pass
+            try:
+                self.sheets[parsha][roman_year] = (self.current_url, hebrew_year, self.current_sefer, self.current_perakim, self.parse_as_text(text))
+            # except AssertionError:
+            #     print "ASSERTION ERROR WITH {}".format(i)
+            except InputError:
+                print "INPUT ERROR WITH {}".format(i)
+
+
 
 
     def get_text_links_and_sources(self, text_list, parsha, year):
@@ -735,7 +773,7 @@ class Sheets:
             "categories": ["Tanakh", "Commentary"],
             "dependence": "Commentary"
         }
-        #post_index(index, server=self.server)
+        post_index(index, server=self.server)
 
 
     def post_index(self):
@@ -764,14 +802,13 @@ class Sheets:
                 "versionTitle": self.versionTitle,
                 "versionSource": self.versionSource
             }
-            #post_text(u"{}, {}".format(self.en_title_project, parsha), send_text, server=self.server)
-        #post_link(self.links, server=self.server)
+            post_text(u"{}, {}".format(self.en_title_project, parsha), send_text, server=self.server)
+        post_link(self.links, server=self.server)
         # for year, sheet in enumerate(nechama_text[parsha]):
         #     if year < 1941:
         #         continue
         #     for section_n, section in enumerate(sheet):
         #         post_text(u"{}, {} {}:{}".format(self.en_title_project, parsha, year+1, section_n+1), section, server=self.server)
-
 
     def prepare_sheet(self, title, sources):
        print title
@@ -779,12 +816,13 @@ class Sheets:
        sheet_json["status"] = "public"
        sheet_json["title"] = title
        sheet_json["sources"] = sources
-       sheet_json["options"] = {"numbered": 0,"assignable": 0,"layout": "sideBySide","boxed": 0,"language": "bilingual","divineNames": "noSub","collaboration": "none", "highlightMode": 0, "bsd": 0,"langLayout": "heRight"}
-       #post_sheet(sheet_json, server=self.server)
+       sheet_json["options"] = {"numbered": 0,"assignable": 0,"layout": "sideBySide","boxed": 0,"language": "hebrew","divineNames": "noSub","collaboration": "none", "highlightMode": 0, "bsd": 0,"langLayout": "heRight"}
+       post_sheet(sheet_json, server=self.server)
 
 if __name__ == "__main__":
     sheets = Sheets()
     #sheets.download_sheets()
     sheets.load_sheets()
+    print set(sheets.index_not_found.keys())
     sheets.post_index()
     pass
