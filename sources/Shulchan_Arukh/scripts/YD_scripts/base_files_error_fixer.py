@@ -1,0 +1,114 @@
+# encoding=utf-8
+
+import re
+from collections import defaultdict
+from YD_base import filenames, patterns
+from data_utilities.util import StructuredDocument, getGematria
+from sources.Shulchan_Arukh.ShulchanArukh import correct_marks_in_file
+
+u"""
+Get all errors in a siman.
+several types:
+1) mislabled - ח instead of ה 
+2) out of place - 1,7,2
+3) missing - 1,3,4
+4) double tag - 1,2,2,3
+
+We already know how to fix a mislabeled comment. We want to see if it's possible to identify "out of place" comments as
+the missing comment in a different sequence.
+
+For this, we should have an error dict:
+{
+    "type": <out of place or missing>,
+    "from_sequence": <which sequence this error came from>,
+    "value": <numeric value of tag>,
+}
+Then we can check all the "out of place" errors against the "missing" errors.
+"out_of_place" errors should have a "loc" parameter -> the character position of said tag.
+"missing" errors should have a "range" parameter -> the range of characters where said correction must appear.
+"out_of_place" error should also have the full matched tag text
+
+Important - we need to ensure that there isn't more that each missing error matches against 1 and only 1 misplaced error
+Also, we need to check that each out of place error matches with only 1 missing error.
+
+Error identification:
+missing: current - previous == 2; following - current == 1
+out of place: following - previous == 1
+
+Error correction:
+Construct a regex for the specific tag to be replaced. Catch the numeric part as group 1.
+Ensure that there is 1 and only 1 match for said regex.
+Use re.sub with a function. The function will then use a code to construct the correct tag. Example:
+If @55יג needs to be changed to @44(יג), the function will use the code @44({}) with a .format. 
+"""
+
+codes = [
+ u'@55{}',
+ u'@66({})',
+ u'@71({})',
+ u'@74({})',
+ u'@99[{}]',
+ u'@44{}',
+ u'&[{}]'
+]
+
+
+def identify_errors(siman, pattern, sequence_code):
+    errors = []
+    matches = list(re.finditer(pattern, siman))
+    previous = 0
+    jump_ahead = False
+    for i, match in enumerate(matches):
+        if jump_ahead:
+            jump_ahead = False
+            continue
+        try:
+            current, following = getGematria(match.group(1)), getGematria(matches[i+1].group(1))
+        except IndexError:
+            break
+        if current - previous == 0:  # double tag
+            previous = current
+            continue
+
+        elif current - previous == 2 and following - current == 1:  # missing tag
+            error = {
+                u'type': u'missing',
+                u'from_sequence': sequence_code,
+                u'value': current-1,
+            }
+            if i == 0:
+                error[u'range'] = (0, match.start())
+            else:
+                error[u'range'] = (matches[i-1].end(), match.start())
+            errors.append(error)
+            previous = current
+            continue
+
+        elif following - previous == 1:  # out of place
+            errors.append({
+                u'type': u'out_of_place',
+                u'from_sequence': sequence_code,
+                u'value': current,
+                u'tag': match.group(),
+                u'loc': match.start()
+            })
+            previous = following
+            jump_ahead = True
+        else:
+            previous = current
+    return errors
+
+
+def find_correctable(error_list):
+    errors = defaultdict(list)
+    map(lambda x: errors[x[u'type']].append(x), error_list)
+    return errors
+
+
+s = StructuredDocument(filenames[1], u'@22([\u05d0-\u05ea]{1,3})')
+problems = []
+for pattern, code in zip(patterns, codes):
+    problems.extend(identify_errors(s.get_section(4), pattern, code))
+stuff = find_correctable(problems)
+for k,v in stuff.items():
+    print k, v
