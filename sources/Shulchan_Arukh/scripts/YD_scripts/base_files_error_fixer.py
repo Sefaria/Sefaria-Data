@@ -1,8 +1,9 @@
 # encoding=utf-8
 
 import re
-from collections import defaultdict
+import os
 from YD_base import filenames, patterns
+from collections import defaultdict, Counter
 from data_utilities.util import StructuredDocument, getGematria
 from sources.Shulchan_Arukh.ShulchanArukh import correct_marks_in_file
 
@@ -84,7 +85,7 @@ def identify_errors(siman, pattern, sequence_code):
             previous = current
             continue
 
-        elif following - previous == 1:  # out of place
+        elif following - previous == 1 and current - previous != 1:  # out of place
             errors.append({
                 u'type': u'out_of_place',
                 u'from_sequence': sequence_code,
@@ -100,15 +101,71 @@ def identify_errors(siman, pattern, sequence_code):
 
 
 def find_correctable(error_list):
-    errors = defaultdict(list)
-    map(lambda x: errors[x[u'type']].append(x), error_list)
-    return errors
+    def between(location, acceptable_range):
+        return acceptable_range[0] < location < acceptable_range[1]
+
+    missing, out_of_place = defaultdict(list), []
+    for error in error_list:
+        if error[u'type'] == u'missing':
+            missing[error['value']].append(error)
+        elif error[u'type'] == u'out_of_place':
+            out_of_place.append(error)
+        else:
+            raise KeyError
+
+    for out_error in out_of_place:
+        matches = 0
+        for missing_error in missing[out_error['value']]:
+            if between(out_error[u'loc'], missing_error[u'range']):
+                matches += 1
+                out_error[u'correction'] = missing_error[u'from_sequence']
+        if matches > 1:  # more than one correction possibility -> we don't know how to correct
+            del out_error[u'correction']
+    correctable = [out_error for out_error in out_of_place if out_error.has_key(u'correction')]
+
+    # scan through correctable errors and look for possible errors that would resolve to the same place
+    correction_counts = Counter([(c[u'value'], c[u'correction']) for c in correctable])
+    correctable = [c for c in correctable if correction_counts[(c[u'value'], c[u'correction'])] == 1]
+    return correctable
 
 
-s = StructuredDocument(filenames[1], u'@22([\u05d0-\u05ea]{1,3})')
-problems = []
-for pattern, code in zip(patterns, codes):
-    problems.extend(identify_errors(s.get_section(4), pattern, code))
-stuff = find_correctable(problems)
-for k,v in stuff.items():
-    print k, v
+def fix_errors(my_text, fixable_error_list):
+    # mark fixable tags so that they will not be confused with regular tags
+    my_text = list(my_text)
+    for error_dict in fixable_error_list:
+        my_text[error_dict['loc']] = u'%'
+    my_text = u''.join(my_text)
+
+    for error_dict in fixable_error_list:
+        pattern_base = re.sub(ur'[()\[\]]', ur'\\\g<0>', error_dict[u'from_sequence'])
+        tag_pattern = pattern_base.format(u'({})'.format(
+            re.search(ur'[\u05d0-\u05ea]{1,3}', error_dict[u'tag']).group(0))
+        )
+        tag_pattern = tag_pattern.replace(u'@', u'%')
+        total_matches = len(re.findall(tag_pattern, my_text))
+        if total_matches != 1:
+            print "Found {} copies - cannot fix".format(total_matches)
+            continue
+        my_text = re.sub(tag_pattern, lambda x: error_dict[u'correction'].format(x.group(1)), my_text)
+    return my_text
+
+
+for vol in range(1, 5):
+    s = StructuredDocument(filenames[vol], u'@22([\u05d0-\u05ea]{1,3})')
+    for siman in s.get_chapter_values():
+        if siman == 297:
+            continue
+        print "\n Siman {}".format(siman)
+        problems = []
+        for pattern, code in zip(patterns, codes):
+            problems.extend(identify_errors(s.get_section(siman), pattern, code))
+        for p in problems:
+            print p
+        stuff = find_correctable(problems)
+        print "fixable:"
+        for i in stuff:
+            print i
+        s.edit_section(siman, fix_errors, stuff)
+    s.write_to_file(filenames[vol])
+    for pattern in patterns:
+        correct_marks_in_file(filenames[vol], u'@22', pattern)
