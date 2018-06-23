@@ -270,6 +270,8 @@ class Sheets:
                 for a_link_and_text in all_a_links:
                     a_link, text = a_link_and_text
                     table_html = table_html.replace(a_link, text)
+                if segment.attrs['class'] in [["question2"],["question"]]:
+                    table_html = self.format(table_html)
                 segments[i] = ("nechama", table_html, "")
             elif isinstance(segment, element.Tag) and segment.has_attr("class"):
                 segment_class = segment.attrs["class"][0]
@@ -348,7 +350,7 @@ class Sheets:
         term_mapping = {
                                 u"בעל גור אריה": u"Gur Aryeh on Bereishit",
                                 u"""ראב"ע""": u"Ibn Ezra on Genesis",
-                                u"""וראב"ע""": u"Ibn Ezra on Genesis",
+                                u"""וראב"ע:""": u"Ibn Ezra on Genesis",
                                 u"עקדת יצחק": u"Akeidat Yitzchak",
                                 u"תרגום אונקלוס": u"Onkelos Genesis",
                                 u"""רלב"ג""": u"Ralbag Beur HaMilot on Torah, Genesis",
@@ -698,7 +700,18 @@ class Sheets:
             except InputError:
                 print "INPUT ERROR WITH {}".format(i)
 
-
+    def format(self, comment):
+        digits = re.findall("\d+\.", comment)
+        for digit in set(digits):
+            comment = comment.replace(digit, "<b>"+digit + " </b>")
+        comment = comment.replace("""<img src="pages/images/hard.gif"/>""", "<b><strong>*</strong></b>")
+        comment = comment.replace("""<img src="pages/images/harder.gif"/>""", "<b><strong>*</strong></b>")
+        assert "pages/images" not in comment
+        text = BeautifulSoup(comment).text
+        while "\n\n" in text:
+            text = text.replace("\n\n", "\n")
+        text = text.replace("\n", "<br/>")
+        return text
 
 
     def get_text_links_and_sources(self, text_list, parsha, year):
@@ -739,7 +752,8 @@ class Sheets:
                     source = {"ref": ref, "heRef": heRef,
                               "text":
                                     {
-                                         "he": comment
+                                         "he": comment,
+                                         "en": ""
                                     },
                               "options": {
                                   "indented": "indented-1"
