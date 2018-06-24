@@ -22,7 +22,7 @@ codes = [
     u'@74 -Pithei Teshuva',
     u'@99 -Gra',
     u"@44 -Be'er HaGolah",
-    u"&   -Torat HaShlamim"
+    u"%   -Torat HaShlamim"
 ]
 patterns = [
     ur'@55{}',
@@ -31,7 +31,7 @@ patterns = [
     ur'@74\({}\)',
     ur'@99\[{}\]',
     ur'@44{}',
-    ur'\&\[{}\]'
+    ur'%\[{}\]'
 ]
 patterns = [pattern.format(ur'([\u05d0-\u05ea]{1,3})') for pattern in patterns]
 
