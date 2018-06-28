@@ -72,3 +72,5 @@ if __name__ == "__main__":
             print e
         for pattern, code in zip(patterns, codes):
             volume.validate_references(pattern, code)
+
+    root.export()
