@@ -4,11 +4,13 @@ import re
 from bs4 import BeautifulSoup, element
 from sources.functions import getGematria
 import logging
+import csv
 logger = logging.getLogger(__name__)
 import django
 import bleach
 import os
 django.setup()
+from sources.functions import UnicodeWriter
 import urllib2, urllib
 from sefaria.model import *
 from sefaria.system.exceptions import *
@@ -62,7 +64,7 @@ class Sheets:
             self.index_not_found[row[0]] += 1
         self.index_not_found_csv = UnicodeWriter(open("index_not_found.csv", 'a'))
         self.intro_to_many_comment_finds = Counter() #2.html 5th section Shadal
-        self.significant_class = lambda class_: False#"question" in class_ #class_ in ["header", "question"] or "question" in class_
+        self.significant_class = lambda class_: True#"question" in class_ #class_ in ["header", "question"] or "question" in class_
 
 
     def relevant_text(self, segment):
@@ -160,7 +162,7 @@ class Sheets:
         self.intro_to_many_comment_finds = Counter()
         return segments
 
-
+#logic is if it's a header don't even count it; if it's not question or header, count it; if it's a question with tables below it, don't count it
 
     def check_for_blockquote_and_table(self, segments, level=2):
         new_segments = []
@@ -168,18 +170,40 @@ class Sheets:
         for i, segment in enumerate(segments):
             if isinstance(segment, element.Tag):
                 class_ = segment.attrs.get("class", [""])[0]
+            else:
+                new_segments.append(segment)
+                continue
             # if self.significant_class(class_):
             #     new_segments.append(segment)
             #     continue
-            if segment.name == "blockquote": #this is really many children so add them to list
+            if segment.name == "blockquote":  # this is really many children so add them to list
                 new_segments += self.get_children_with_content(segment)
+            elif segment.name == "tr" or (self.significant_class(class_) and segment.name == "table"):
+                if segment.name == "table":
+                    if class_ == "header":
+                        new_segments.append(segment)
+                        continue
+
+                    #if it is a question and has tables underneath it, we want to count that; count_this_one will become empty array if it's a question we can ignore
+                    count_this_one = True
+                    if class_ in ["question", "question2"]:
+                        count_this_one = [child for child in segment.descendants if child.name == "table"]# and child.attrs["class"][0] in ["question", "question2"]]
+                    if not count_this_one:
+                        new_segments.append(segment)
+                        continue
+
+                    if class_ not in self.table_classes:
+                        self.table_classes[class_] = []
+                    sheet_title = self.year_to_sheet[self.current_en_year]
+                    self.table_classes[class_].append((sheet_title, self.current_url + ", section " + str(self.current_section)))
+                extra_segments = self.unwrap_HTML_tables(segment)
+                new_segments += extra_segments
             else:
-                #no significant class and not blockquote or table
+                # no significant class and not blockquote or table
                 new_segments.append(segment)
 
-
         level -= 1
-        if level > -1: #go level deeper unless level isn't > 0
+        if level > -1:  # go level deeper unless level isn't > 0
             new_segments = self.check_for_blockquote_and_table(new_segments, level)
         return new_segments
 
@@ -193,6 +217,11 @@ class Sheets:
                 number = segment.text
             elif segment.name in ["tr"] or (segment.name == "table" and self.significant_class(class_)):
                 leaves += self.unwrap_HTML_tables(segment)
+                if segment.name == "table":
+                    if class_ not in self.table_classes:
+                        self.table_classes[class_] = []
+                    sheet_title = self.year_to_sheet[self.current_en_year]
+                    self.table_classes[class_].append((sheet_title, self.current_url + ", section " + str(self.current_section)))
             else:
                 if number:
                     segment.string = number + segment.string
@@ -251,7 +280,17 @@ class Sheets:
         else:
             return found_ref
 
-
+    #was part of classify segments
+    # table_html = str(segment)
+    # # first remove all questions in it which will be columns
+    # for td in segment.find_all("td", {"class": "number"}):
+    #     td_text = td.text
+    #     next_sibling = td.next_sibling
+    #     while type(next_sibling) is element.NavigableString and next_sibling == "\n":
+    #         next_sibling = next_sibling.next_sibling
+    #     next_sibling.string = td.text + next_sibling.text
+    #     td.decompose()
+    #     table_html = str(segment)
     def classify_segments(self, segments):
         """
         Classifies each segments based on its role such as "question", "header", or quote from "bible"
@@ -272,35 +311,23 @@ class Sheets:
         for i, segment in enumerate(segments):
             if isinstance(segment, element.Tag) and segment.name == "table":
                 table_html = str(segment)
-                # first remove all questions in it which will be columns
-                for td in segment.find_all("td", {"class": "number"}):
-                    td_text = td.text
-                    next_sibling = td.next_sibling
-                    while type(next_sibling) is element.NavigableString and next_sibling == "\n":
-                        next_sibling = next_sibling.next_sibling
-                    next_sibling.string = td.text + next_sibling.text
-                    td.decompose()
-                    table_html = str(segment)
                 all_a_links = re.findall("(<a href.*?>(.*?)</a>)", table_html)
                 for a_link_and_text in all_a_links:
                     a_link, text = a_link_and_text
                     table_html = table_html.replace(a_link, text)
                 if segment.attrs['class'] in [["question2"],["question"]]:
                     table_html = self.format(table_html)
-                segments[i] = ("nechama", table_html, "")
+                segments[i] = ("nechama", self.format(BeautifulSoup(table_html).text), "")
             elif isinstance(segment, element.Tag) and segment.has_attr("class"):
                 segment_class = segment.attrs["class"][0]
                 text = segment.text.replace("\n", "").replace("\r", "")
                 if combined_with_prev_line: #i.e.: "Pasuk 5" is the previous line which gets combined with the current line that has Pasuk 5's content
-                    text = combined_with_prev_line + "<br/>" + text
+                    text = "<b>" + combined_with_prev_line + "</b><br/><small>" + text + "</small>"
                     combined_with_prev_line = None
                 if self.last_comm_index_not_found:
                     self.index_not_found_csv.writerow([self.last_comm_index_not_found, text])
                     self.last_comm_index_not_found = None
-                if segment_class == "header" or "question" in segment_class:
-                    ref = self.current_parsha_ref[1] #was self.quotations[0][1]
-                    assert Ref(ref)
-                    segments[i] = ("nechama", "<b>"+text+"</b>", ref)
+                    segments[i] = (segment_class, text, "")
                 elif segment_class in important_classes:
                     quote = self.quotations[-1]
                     #self.quotation_stack.pop()
@@ -308,10 +335,7 @@ class Sheets:
                     #assert category == segment_class or category == "bible"
                     #if segments[i-1] == "combined and linked":
                     #   self.check_ref_text_in_sefaria(text, ref)
-                    segments[i] = (segment_class, "<small>"+text+"</small>", ref)
-                else:
-                    # must be either header, parshan, bible, or question
-                    print "Found other class...{}".format(segment_class)
+                    segments[i] = (segment_class, text, ref)
             else:
                 # if there is no class, then...
                 # it is either setting perek/pasuk info
@@ -326,9 +350,9 @@ class Sheets:
                 this_comment_could_be_ref = i < len(segments) - 1 and isinstance(segments[i+1], element.Tag) and isinstance(segments[i], element.Tag)
                 if this_comment_could_be_ref:
                     next_comment_parshan_or_bible = "class" in segments[i+1].attrs.keys() and segments[i+1].attrs["class"][0] in important_classes
-                relevant_text = self.relevant_text(segment)
+                relevant_text = self.format(self.relevant_text(segment))
                 if not next_comment_parshan_or_bible:
-                    segments[i] = ('nechama', relevant_text, [self.current_parsha_ref[1]]) #was self.quotations[0][1]
+                    segments[i] = ('nechama', relevant_text, self.current_parsha_ref[1]) #was self.quotations[0][1]
                 else:
                     next_segment_class = segments[i + 1].attrs["class"][0]
                     real_title, found_a_tag, a_tag_is_entire_comment, a_tag_in_long_comment = self.get_a_tag_from_ref(segment)
@@ -345,19 +369,32 @@ class Sheets:
                             self.add_to_quotation_stack([next_segment_class, u"{} {}".format(real_title, self.current_perek)])
                     elif not real_title and is_torah_ref: # not a commentator, but instead a ref to the parsha
                         self.add_to_quotation_stack(self.current_parsha_ref)
-                    else: # not found yet, look it up in library.get_refs_in_string
+                    elif len(relevant_text.split()) < 5 and not a_tag_is_entire_comment: # not found yet, look it up in library.get_refs_in_string
+                        print "get refs in string"
                         found_ref_in_string = self._get_refs_in_string([relevant_text], next_segment_class,
                                                              add_if_not_found=False)
 
+                    #if you found something in our library, we only want to preserve it in combined_with_prev_line
+                    #if there's more to it than the index: if not a_tag_is_entire_comment
                     if (is_torah_ref or real_title or found_ref_in_string):
                         if not a_tag_is_entire_comment:
                             combined_with_prev_line = relevant_text
+                        segments[i] = "combined and linked"
+                        # else:
+                        #     segments[i] = ("bible", relevant_text, self.quotations[-1][1])
+
+                    #however, if we didn't find anything but we did find an a_tag, we only preserve the comment
+                    #if a_tag_is_entire_comment so that we don't include huge comments together
+                    elif found_a_tag:
+                        if a_tag_is_entire_comment:
+                            combined_with_prev_line = relevant_text
                             segments[i] = "combined and linked"
+                        else:
+                            segments[i] = ("nechama", relevant_text, "")
+                        self.index_not_found[u"{}".format(found_a_tag.text)] += 1
+                        self.last_comm_index_not_found = found_a_tag.text
                     else:
-                        segments[i] = ('nechama', relevant_text, [self.current_parsha_ref[1]])
-                        if found_a_tag:
-                            self.index_not_found[u"{}".format(found_a_tag.text)] += 1
-                            self.last_comm_index_not_found = found_a_tag.text
+                        segments[i] = ("nechama", relevant_text, "")
         return segments
 
 
@@ -677,22 +714,30 @@ class Sheets:
                 print "INPUT ERROR WITH {}".format(i)
 
     def format(self, comment):
-        digits = re.findall("\d+\.", comment)
-        for digit in set(digits):
-            comment = comment.replace(digit, "<b>"+digit + " </b>")
-        comment = comment.replace("""<img src="pages/images/hard.gif"/>""", "<b><strong>*</strong></b>")
-        comment = comment.replace("""<img src="pages/images/harder.gif"/>""", "<b><strong>*</strong></b>")
-        assert "pages/images" not in comment
+        found_difficult = ""
+        # digits = re.findall("\d+\.", comment)
+        # for digit in set(digits):
+        #     comment = comment.replace(digit, "<b>"+digit + " </b>")
+        if "pages/images/hard.gif" in comment:
+            found_difficult += "*"
+        if "pages/images/harder.gif" in comment:
+            found_difficult += "*"
+
+        #we need to specifically keep these tags because the "text" property will remove them so we "hide" them with nosense characters
         tags_to_keep = ["u", "b"]
         comment = comment.replace("<u>", "$!u$").replace("</u>", "$/!u$")
         comment = comment.replace("<b>", "$!b$").replace("</b>", "$/!b$")
         text = BeautifulSoup(comment).text
-        while "\n\n" in text:
-            text = text.replace("\n\n", "\n")
-        text = text.replace("\n", "<br/>")
+
+        text = text.replace("\n", " ") #just getting rid of excessive line breaks
+        while "  " in text:
+            text = text.replace("  ", " ")
+
+        # now get the tags back and remove nonsense chars
         text = text.replace("$!u$", "<u>").replace("$/!u$", "</u>")
         text = text.replace("$!b$", "<b>").replace("$/!b$", "</b>")
-        return text
+
+        return found_difficult + text
 
 
     def get_text_links_and_sources(self, text_list, parsha, year):
@@ -718,17 +763,18 @@ class Sheets:
             nechama_sec_range_ref = u"{}:{}:1-{}".format(nechama_ref, i+1, len(section))
             for j, segment in enumerate(section):
                 type, comment, ref = segment
-
-                link = {"refs": [nechama_sec_range_ref,
-                                 ref],
-                        "type": "commentary",
-                        "auto": True,
-                        "generated_by": "nechama_linker"
-                        }
-                links_set.add(str(link))
                 if type == "nechama":
                     source = {"outsideText": comment}
-                elif type in important_clases:
+                elif not ref:
+                    source = {"outsideText": comment,
+                              "options": {
+                                  "indented": "indented-1",
+                                  "sourceLayout": "",
+                                  "sourceLanguage": "hebrew",
+                                  "sourceLangLayout": ""
+                              }
+                            }
+                elif ref and type in important_clases:
                     heRef = Ref(ref).he_normal()
                     source = {"ref": ref, "heRef": heRef,
                               "text":
@@ -739,10 +785,17 @@ class Sheets:
                               "options": {
                                   "indented": "indented-1",
                                   "sourceLayout": "",
-                                  "sourceLanguage": "",
+                                  "sourceLanguage": "hebrew",
                                   "sourceLangLayout": ""
                               }
                               }
+                    link = {"refs": [nechama_sec_range_ref,
+                                     ref],
+                            "type": "commentary",
+                            "auto": True,
+                            "generated_by": "nechama_linker"
+                            }
+                    links_set.add(str(link))
                 else:
                     raise InputError
                 sources.append(source)
@@ -829,6 +882,20 @@ if __name__ == "__main__":
     sheets = Sheets()
     #sheets.download_sheets()
     sheets.load_sheets()
+    f = open("tables.csv", 'w')
+    writer = UnicodeWriter(f)
+    rows = []
+    for type, site_set in sheets.table_classes.items():
+        for site in site_set:
+            he_title, nechama_site = site
+            rows.append([type, he_title, "http://nechama.org.il/pages/"+nechama_site])
+
+    rows = sorted(rows, key=lambda x: x[0])
+    writer.writerows(rows)
+
+    f.close()
+
+
     print set(sheets.index_not_found.keys())
     sheets.post_index()
     pass
