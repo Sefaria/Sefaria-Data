@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import re, bleach, json, codecs, unicodecsv
+import django
+django.setup()
 from sefaria.model import *
 from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
 from collections import defaultdict, OrderedDict
@@ -60,10 +62,12 @@ class Link_Disambiguator:
 
     def get_ambiguous_segments(self):
         tanakh_books = library.get_indexes_in_category("Tanakh")
+        talmud_books = library.get_indexes_in_category("Bavli")
         query = {
-            "refs": re.compile(ur'^({}) \d+$'.format(u'|'.join(tanakh_books)))
+            "refs": re.compile(ur'^({}) \d+[ab]?$'.format(u'|'.join(tanakh_books + talmud_books)))
         }
         linkset = LinkSet(query)
+        print "Num ambiguous {}".format(linkset.count())
         segment_map = defaultdict(list)
         for l in linkset:
             try:
@@ -150,7 +154,7 @@ def disambiguate_all():
     ambig_dict = json.load(open("ambiguous_segments.json",'rb'))
     good = []
     bad = []
-    for iambig, (main_str, tref_list) in enumerate(ambig_dict.items()[:100]):
+    for iambig, (main_str, tref_list) in enumerate(ambig_dict.items()):
         if iambig % 50 == 0:
             print "{}/{}".format(iambig, len(ambig_dict))
         main_tc = Ref(main_str).text("he")
@@ -167,8 +171,11 @@ def disambiguate_all():
     with open('still_ambiguous_links.json', "w") as f:
         f.write(objStr.encode('utf-8'))
 
-ld = Link_Disambiguator()
-ld.disambiguate_gra()
+# ld = Link_Disambiguator()
+# ld.get_ambiguous_segments()
+disambiguate_all()
+# ld = Link_Disambiguator()
+# ld.disambiguate_gra()
 
 #tc_list = [Ref("Zohar 1:70b:7").text("he"), Ref("Song of Songs 1").text("he")] #{'match_index': [[5, 7], [11, 13]], 'score': 81, 'match': [u'Zohar 1:70b:7', u'Song of Songs 1:3']}
 #tc_list = [Ref("Zohar 1:70b:9").text("he"), Ref("Genesis 1").text("he")] #{'match_index': [[27, 32], [106, 111]], 'score': 96, 'match': [u'Genesis 1:4', u'Zohar 1:70b:9']}
