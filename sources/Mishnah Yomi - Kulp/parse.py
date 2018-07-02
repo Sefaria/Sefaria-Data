@@ -11,7 +11,7 @@ import re
 from collections import Counter
 from sources.functions import post_index, post_text, convertDictToArray, add_category
 
-SERVER = "http://proto.sefaria.org"
+SERVER = "http://ste.sefaria.org"
 
 # def download_sheets(self):
 #     indexes = library.get_indexes_in_category("Mishnah")
@@ -94,14 +94,15 @@ def parse(file, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
         section_num = 0
         for line_n, line in enumerate(lines):
             line = line.strip()
-            if len(line.split()) < 10:
-                line = line.split(", Part")[0]
+            if "Part" in line and len(line.split()) < 10:
+                print "{}\n{}\n\n".format(file, line)
+                return (commentary_text + questions_text, mishnah_text)
             if "Questions for Further Thought" in line:
                 currently_parsing = "QUESTIONS"
                 questions_text.append(line)
             elif len(line.split()) < 7 and ("Mishna" in line or sefer == line):
                 if "Mishnah {}".format(mishnah_as_word) != line and "Mishna" in line:
-                    word = line.split()[-1] #Mishnah Five, Part One -> Five
+                    word = line.split()[-1] #Mishnah Five -> Five
                     try:
                         mishnah_inside_file = w2n.word_to_num(word)
                         complaint = "Mishnah word different than number: {} {}:{}".format(sefer, chapter, mishnah)
@@ -124,7 +125,7 @@ def parse(file, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
                             relevant_sections_text.append("")
                     result = deal_with_sections(line, relevant_sections_text, section_num)
                     if result == -1:  # there was just an error
-                        print file
+                        print "{} - Problem with explanation sections corresponding to mishnayot\n".format(file)
                         return (commentary_text + questions_text, mishnah_text)
                     else:
                         section_num = result # dont want to set -1 to section_num since it must be >= 0
@@ -139,7 +140,7 @@ def parse(file, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
 
 
 def create_index(text, sefer):
-    add_category("Mishnah Yomit", ["Mishnah", "Commentary", "Mishnah Yomit"], server=SERVER)
+    #add_category("Mishnah Yomit", ["Mishnah", "Commentary", "Mishnah Yomit"], server=SERVER)
     index = library.get_index("Mishnah " + sefer)
     root = SchemaNode()
     en_title = "Mishnah Yomit on {}".format(index.title)
@@ -165,9 +166,9 @@ def create_index(text, sefer):
         "categories": ["Mishnah", "Commentary", "Mishnah Yomit"],
         "dependence": "Commentary",
         "base_text_titles": [index.title],
-        "collective_title": "Mishnah Yomit",
+        "collective_title": "Joshua Kulp",
     }
-    post_index(index, server=SERVER)
+    #post_index(index, server=SERVER)
 
 
 def check_all_mishnayot_present_and_post(text, sefer, file_path):
@@ -178,7 +179,7 @@ def check_all_mishnayot_present_and_post(text, sefer, file_path):
             "versionTitle": "Mishnah Yomit",
             "versionSource": "http://learn.conservativeyeshiva.org/mishnah/"
         }
-        post_text(path, send_text, server=SERVER)
+        #post_text(path, send_text, server=SERVER)
     #first check that all chapters present
     index = library.get_index("Mishnah " + sefer)
     en_title = "Mishnah Yomit on {}".format(index.title)
@@ -198,8 +199,7 @@ def check_all_mishnayot_present_and_post(text, sefer, file_path):
             wrong = our_mishnayot - actual_mishnayot
             print file_path
             print "Sefer: {}, Chapter: {}".format(sefer, ch)
-            print "Missing: {}".format(missing)
-            print "Wrong: {}".format(wrong)
+            print "Mishnayot to check: {}".format(list(missing.union(wrong)))
             print
         text[ch] = zip(*convertDictToArray(text[ch], empty=("", "")))
         translation[ch] = list(text[ch][1])
@@ -234,7 +234,7 @@ if __name__ == "__main__":
             found_ref = Counter()
             for file in files:
                 file_path = current_path + "/" + file
-                if "Copy" in file or "part" in file or len(file.split("-")) > 2 or not file.endswith(".txt"): #Ignore copies, and files with multiple parts or mishnayot
+                if "Copy" in file or "part" in file or "Part" in file or len(file.split("-")) > 2 or not file.endswith(".txt"): #Ignore copies, and files with multiple parts or mishnayot
                     continue
                 if file.startswith("Introduction"):
                     f = open(file_path)

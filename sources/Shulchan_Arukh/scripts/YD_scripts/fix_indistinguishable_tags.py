@@ -88,6 +88,8 @@ class TagResolver:
         :param section
         :return:
         """
+        if not chain_list:
+            return
         resolution = {
             self.commentary_a.name: [],
             self.commentary_b.name: [],
@@ -134,8 +136,7 @@ class TagResolver:
                 resolution[self.commentary_a.name].extend(last_chains[1])
                 chain_list = chain_list[1:]
             else:
-                # print u"Broken chains prevent identification at section {}\n".format(section)
-                pass
+                print u"Broken chains prevent identification at section {}\n".format(section)
 
         for chain_pair in chain_list:
             # test against each commentary's unique regex
@@ -158,7 +159,9 @@ class TagResolver:
         chains = []
         current_chain = ([], [])
 
-        all_tags = re.finditer(pattern, text)
+        all_tags = list(re.finditer(pattern, text))
+        if len(all_tags) == 0:
+            return
         for tag in all_tags:
 
             # both chains are empty
@@ -196,17 +199,18 @@ class TagResolver:
         self.commentary_b = commentary_b
         sections = self.document.get_chapter_values()
         for section in sections:
+            if section == 297:  # the double seif - just fix manually
+                continue
             base_section = self.document.get_section(section)
             total_marks = len(re.findall(self.unknown_pattern, base_section))
             total_comments = commentary_a.comments_per_section[section] + commentary_b.comments_per_section[section]
             if total_marks != total_comments:
-                pass
-                # print u"Comment number mismatch in section {}".format(section)
-                # print u"{} found in Base text".format(total_marks),
-                # print u"{} in {} and {} in {}\n".format(
-                #     self.commentary_a.comments_per_section[section], self.commentary_a.name,
-                #     self.commentary_b.comments_per_section[section], self.commentary_b.name
-                # )
+                print u"Comment number mismatch in section {}".format(section)
+                print u"{} found in Base text".format(total_marks),
+                print u"{} in {} and {} in {}\n".format(
+                    self.commentary_a.comments_per_section[section], self.commentary_a.name,
+                    self.commentary_b.comments_per_section[section], self.commentary_b.name
+                )
 
             try:
                 chain_list = self.build_chains(base_section, self.unknown_pattern, section, group)
@@ -229,7 +233,10 @@ class TagResolver:
         if not self.resolution_mapping:
             raise AssertionError("Please run TagResolver.resolve_sections")
         for section in self.document.get_chapter_values():
-            resolution = self.resolution_mapping[section]
+            try:
+                resolution = self.resolution_mapping[section]
+            except KeyError:
+                continue
             if resolution['tbd']:
                 print u"unresolved chains at section {}".format(section)
                 for chain_pair in reversed(resolution['tbd']):
@@ -274,4 +281,4 @@ pithei.load_comments_per_section(filenames['vol.4']['Pithei'],
                                  u'@00([\u05d0-\u05ea]{1,3})', ur'@22\([\u05d0-\u05ea]{1,2}\)')
 resolver = TagResolver(filenames['vol.4']['base'], u'@22([\u05d0-\u05ea]{1,3})', ur'@7\d\(([\u05d0-\u05ea]{1,3})\)')
 resolver.resolve_sections(taz, pithei)
-# resolver.fix_all_tags()
+resolver.fix_all_tags()

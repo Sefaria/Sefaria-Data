@@ -6,10 +6,11 @@ from sources.functions import convertDictToArray, post_text, post_index
 from bs4 import BeautifulSoup, element
 from sefaria.model import *
 from data_utilities.XML_to_JaggedArray import roman_to_int
+import re
 
 def create_index():
     root = SchemaNode()
-    root.add_primary_titles("War of the Jews", u"מלחמת יהודים")
+    root.add_primary_titles("The War of the Jews", u"מלחמת היהודים")
     preface = JaggedArrayNode()
     preface.add_structure(["Paragraph"])
     preface.add_shared_term("Preface")
@@ -22,19 +23,31 @@ def create_index():
     root.append(content)
     root.validate()
     index = {
-        "title": "War of the Jews",
+        "title": "The War of the Jews",
         "schema": root.serialize(),
         "categories": ["Other"]
     }
-    post_index(index, "http://ste.sefaria.org")
+    post_index(index, "http://proto.sefaria.org")
 
 
-def replace_footnotes(text, footnotes):
-    for book_n, book in text.items():
-        for ch_n, chapter in enumerate(book):
-            ch_n += 1
-            for line_n, line in enumerate(chapter):
-                pass
+def check_for_footnote(text, footnotes):
+    if len(text.contents) > 1:
+        new_line = ""
+        for line in text.contents:
+            if type(line) is element.NavigableString:
+                new_line += line + " "
+            else:
+                new_line = new_line.strip()
+                num_in_footnote = re.compile("\[(\d+)\]").match(line.text).group(1)
+                num_in_footnote = int(num_in_footnote)
+                ftnote = footnotes[num_in_footnote-1].replace(u"↑", u"").replace(u"^", u"").strip()
+                ftnote = u"<sup>{}</sup><i class='footnote'>{}</i>".format(num_in_footnote, ftnote)
+                new_line += ftnote
+
+        new_line = new_line.strip()
+        return new_line
+    else:
+        return text.text
 
 
 if __name__ == "__main__":
@@ -83,23 +96,19 @@ if __name__ == "__main__":
                         text[book_n] = "Error at Chapter {}".format(roman_num)
                         continue
 
-                    text[book_n][roman_num] = []
-                    [text[book_n][roman_num].append(line.text) for line in chapter.contents if line != "\n"]
-                    [check_for_footnote(line) for line in chapter.contents if line != "\n"]
+                    lines = [check_for_footnote(line, footnotes[book_n]) for line in chapter.contents if line != "\n"]
+                    text[book_n][roman_num] = lines
                     first_line = text[book_n][roman_num][0]
-                    text[book_n][roman_num][0] = "<b>"+chapter_header+"</b><br>"+first_line
+                    text[book_n][roman_num][0] = u"<b>"+chapter_header+u"</b><br/><br/>"+first_line
             text[book_n] = convertDictToArray(text[book_n])
 
     create_index()
-    replace_footnotes(text, footnotes)
     text = convertDictToArray(text)
 
     body_text = {
         "text": text,
         "language": "en",
-        "versionTitle": "Wikisource",
-        "versionSource": "https://en.wikisource.org/wiki/The_War_of_the_Jew"
+        "versionTitle": "The Wars of the Jews, translated by William Whiston",
+        "versionSource": "https://en.wikisource.org/wiki/The_War_of_the_Jews"
     }
-    post_text("War of the Jews", body_text, server="http://ste.sefaria.org")
-
-
+    post_text("The War of the Jews", body_text, server="http://proto.sefaria.org")
