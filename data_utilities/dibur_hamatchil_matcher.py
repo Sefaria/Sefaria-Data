@@ -500,8 +500,8 @@ def get_maximum_subset_dh(base_text, comment_text, threshold=90):
     """
     wl_tuple_list = [weighted_levenshtein.calculate_best(tword,comment_text,normalize=True) for tword in base_text]
     dist_list = [temp_tup[1]-threshold for temp_tup in wl_tuple_list]
-    start,end,cost = max_sesquence_sum(dist_list)
-    return start,end
+    start,end,cost = max_sequence_sum(dist_list)
+    return start,end-1  # account for the fact that end is + 1 (see max_sequence_sum())
 
 
 def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(ur'\s+',x), max_dh_len=None, word_threshold=0.27, char_threshold=0.2):
@@ -1876,7 +1876,9 @@ def hebrew_number_regex():
 
     return regex.compile(rx, regex.VERBOSE)
 
-def max_sesquence_sum(l):
+def max_sequence_sum(l):
+    # see https://stackoverflow.com/questions/15062844/maximum-sum-sublist
+    # NOTE: returns start, end, sum of best sequence. end is + 1 such that l[start:end] == sum
     best = cur = 0
     curi = starti = besti = 0
     for ind, i in enumerate(l):

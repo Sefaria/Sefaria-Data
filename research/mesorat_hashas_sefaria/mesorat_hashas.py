@@ -105,6 +105,74 @@ def tokenize_words(base_str):
     word_list = [w for w in word_list if len(w.strip()) > 0 and w not in stop_words]
     return word_list
 
+
+def tokinzer_removed_indices(str, segNum):
+    #TODO this function is not completely parallel to `tokenize_words()`. notably, it doesn't account for adding words by splitting on maqaf.
+    #TODO i needed this function just for talmud which doesn't have maqaf so i didn't worry about it
+    filter_reg_html = u"<.*?>"
+    filter_reg_paren = u"[:\(\[]*\(.*?\)[:\)\]]*"
+    filter_reg_eng = u"[A-Za-z]+"
+    filter_reg_stop_phrases = u"|".join(stop_phrases)
+    filter_reg_stop_words = u"|".join(stop_words)
+    regs = [filter_reg_html, filter_reg_paren, filter_reg_eng, filter_reg_stop_phrases,filter_reg_stop_words]
+    match_spans = []
+    match_text = []
+    match_word_counts = []
+    prev_removed_citations = []
+    for ireg, reg in enumerate(regs):
+        if ireg == 3:
+            full_reg = u"(?<=\s)[משדהוכלב]?(?:{}):?(?=\s|$)|^[משדהוכלב]?(?:{}):?(?=\s|$)".format(reg, reg)
+        else:
+            full_reg = u"(?<=\s)(?:{})(?=\s|$)|^(?:{})(?=\s|$)".format(reg, reg)
+        for m in re.finditer(full_reg, str):
+            if ireg == 0:
+                cleaned_match = bleach.clean(m.group(), tags=[], strip=True)
+                len_removed = len(m.group().split()) - len(cleaned_match.split())
+                removes_words = len_removed > 0
+                if not removes_words:
+                    # make sure HTML doesn't prevent other matches
+                    str = str.replace(m.group(), cleaned_match)
+            elif ireg == 1:
+                removes_words = library.get_titles_in_string(m.group()) and len(m.group().split()) <= 5
+                prev_removed_citations += [m.group()]
+                whats_left = m.group()
+                for prev_removed in prev_removed_citations:
+                    actually_removed = re.findall(ur"\(.*?\)", prev_removed)[0]
+                    whats_left = whats_left.replace(actually_removed, u"")
+                len_removed = len(m.group().split()) - len(whats_left.strip().split())
+            elif ireg == 3:
+                whats_left = m.group()
+                for phrase in stop_phrases:
+                    whats_left = whats_left.replace(phrase, u"")
+                len_removed = len(m.group().split()) - len(whats_left.split())
+                removes_words = len_removed > 0
+            else:
+                removes_words = True
+                len_removed = len(re.split(ur'\s+', m.group()))
+
+            if removes_words:
+                match_text.append(m.group())
+                match_spans.append(m.span(0))
+                match_word_counts.append(len_removed)
+
+    sort_unzip = zip(*sorted(zip(match_spans, match_text, match_word_counts), key=lambda x: x[0][0]))
+    match_spans, match_text, match_word_counts = ([], [], []) if len(sort_unzip) == 0 else sort_unzip
+    word_iter = re.finditer(ur"\s+", str)
+    word_spans = [m.start(0) for m in word_iter]
+    word_removed_indices = [bisect.bisect_right(word_spans, span[0]) for span in match_spans]
+    word_removed_indices = reduce(lambda a, b: a + [b - len(a)], word_removed_indices, [])
+
+    #add multiples for multiple words removed in a row
+    real_word_removed_indices = []
+    for iwri,wri in enumerate(word_removed_indices):
+        num_skipped_words_passed = sum(match_word_counts[:iwri]) - iwri
+        real_word_removed_indices += ([wri - num_skipped_words_passed]*match_word_counts[iwri])
+
+    if len(re.split(ur"\s+", str.strip())) - len(real_word_removed_indices) != len(tokenize_words(str)):
+        print "Badness {}".format(segNum)
+
+    return real_word_removed_indices
+
 class Gemara_Hashtable:
 
     def __init__(self, skip_gram_size):
@@ -967,7 +1035,7 @@ def save_links_local(category, mesorat_hashas_name):
         for i,l in enumerate(link):
             link[i] = l.replace(u'<d>',u'')
         link_obj = {"auto": True, "refs": link, "anchorText": "", "generated_by": "mesorat_hashas.py {}".format(category),
-                    "type": "Automatic Mesorat HaShas"}
+                    "type": "mesorat hashas"}
         try:
             Link(link_obj).save()
         except DuplicateRecordError:
@@ -980,15 +1048,14 @@ def save_links_local(category, mesorat_hashas_name):
 
 def save_links_post_request(category):
     query = {"generated_by": "mesorat_hashas.py {}".format(category), "auto": True,
-             "type": "Automatic Mesorat HaShas"}
+             "type": "mesorat hashas"}
     ls = LinkSet(query)
     links = [l.contents() for l in ls]
     i = 0
     while i < len(links):
-        print "Posting [{}:{}]".format(i, i+4999)
-        post_link(links[i:i+5000])
-        i += 5000
-        pytime.sleep(10)
+        print "Posting [{}:{}]".format(i, i+499)
+        print post_link(links[i:i+500])
+        i += 500
 class Mesorah_Match_Ref:
 
     def __init__(self,a,b, id=None):
@@ -1186,3 +1253,124 @@ def bulk_delete(id_file_name):
             print response.read()
         except urllib2.HTTPError:
             print "{} error".format(id)
+
+
+def filter_index_file(filtered_mesorat_hashas, index_mesorat_hashas):
+    fmh = json.load(open(filtered_mesorat_hashas, 'rb'))
+    imh = json.load(open(index_mesorat_hashas, 'rb'))
+    link_set = set()
+    for link in fmh:
+        link_set.add((link[0], link[1]))
+    new_index_mesorat_hashas = filter(lambda x: (x["match"][0], x["match"][1]) in link_set, imh)
+    print "{}".format(len(fmh))
+    print "Old {} New {}".format(len(imh), len(new_index_mesorat_hashas))
+    objStr = json.dumps(new_index_mesorat_hashas, indent=4, ensure_ascii=False)
+    with open('mesorat_hashas_indexed_mishnah_filtered_2018_06_14.json', "wb") as f:
+        f.write(objStr.encode('utf-8'))
+
+
+def test_tokenize_words_remove_indexes(index_mesorat_hashas):
+    aramaic_books = ["Pesikta D'Rav Kahanna", "Bereishit Rabbah", "Vayikra Rabbah", "Eichah Rabbah"]
+    imh = json.load(open(index_mesorat_hashas, 'rb'))
+    talmud_indexes = library.get_indexes_in_category("Bavli", full_records=True)
+    talmud_titles = library.get_indexes_in_category("Bavli")
+    willy_titles = talmud_titles[:talmud_titles.index('Menachot') + 1]
+    talmud_words_dict = {}
+    for iindex, index in enumerate(talmud_indexes):
+        print "Tokenizing {} ({}/{})".format(index.title, iindex, len(talmud_indexes))
+        vtitle = 'William Davidson Edition - Aramaic' if index.title in willy_titles else None
+        seg_list = index.nodes.traverse_to_list(
+                lambda n, _: TextChunk(n.ref(), "he", vtitle=vtitle).ja().flatten_to_array())
+        seg_list_tokenized = [tokenize_words(seg) for seg in seg_list]
+        seg_list_cumul_len = reduce(lambda a, b: a + [len(b) + a[-1]], seg_list_tokenized, [0])
+        word_list = [w for seg in seg_list_tokenized for w in seg]
+        word_list_space = [w for seg in seg_list for w in re.split(ur"\s+", seg.strip())]
+        index_list, ref_list = index.text_index_map(vtitle=vtitle)
+        word_list_removed = [w + seg_list_cumul_len[iseg] for iseg, seg in enumerate(seg_list) for w in tokinzer_removed_indices(seg, iseg)]
+        talmud_words_dict[index.title] = {
+            "orig": word_list,
+            "space": word_list_space,
+            "removed": word_list_removed,
+            "index_list": index_list,
+            "ref_list": [r.normal() for r in ref_list],
+            "total_len": len(word_list_space),
+            "linked": set()
+        }
+    for ilink, link in enumerate(imh):
+        if ilink % 1000 == 0:
+            print "{}/{}".format(ilink, len(imh))
+        ref_link = [Ref(r) for r in link["match"]]
+        for il, l in enumerate(ref_link):
+            other_l = ref_link[int(il == 0)]
+            if l.primary_category == "Talmud" and other_l.primary_category != "Talmud" and other_l.index.title not in aramaic_books:
+                title = l.index.title
+                orig_start = link["match_index"][il][0]
+                orig_end = link["match_index"][il][1]
+                orig_str = talmud_words_dict[title]["orig"][orig_start:orig_end+1]
+                space_start = bisect.bisect_right(talmud_words_dict[title]["removed"], orig_start)
+                space_end = bisect.bisect_right(talmud_words_dict[title]["removed"], orig_end)
+                space_str = talmud_words_dict[title]["space"][orig_start + space_start : orig_end + space_end + 1]
+
+                for i in range(orig_start + space_start, orig_end + space_end+1):
+                    talmud_words_dict[title]["linked"].add(i)
+                if len(space_str) == 0 and len(orig_str) != 0:
+                    "One is len 0"
+                    continue
+                if len(space_str) == 0:
+                    continue
+                first_space = tokenize_words(space_str[0])
+                last_space = tokenize_words(space_str[-1])
+                if len(first_space) == 0 or len(last_space) == 0:
+                    print "Zero length word"
+                    continue
+                if orig_str[0] != first_space[0]:
+                    print "Not the same First"
+                if orig_str[-1] != last_space[0]:
+                    print "Not the same last"
+    mishnah_map = LinkSet({"type": "mishnah in talmud"})
+    for link in mishnah_map:
+        link_refs = [Ref(r) for r in link.refs]
+        for r in link_refs:
+            if r.primary_category == "Talmud":
+                start_index = talmud_words_dict[r.index.title]["index_list"][
+                    talmud_words_dict[r.index.title]["ref_list"].index(r.starting_ref().normal())]
+                try:
+                    end_index = talmud_words_dict[r.index.title]["index_list"][
+                        talmud_words_dict[r.index.title]["ref_list"].index(r.ending_ref().normal())+1] - 1
+                except IndexError as e:
+                    end_index = talmud_words_dict[r.index.title]["total_len"] - 1
+                for i in range(start_index + 1, end_index):  # offsets are to remove mishna and gemara tags
+                    talmud_words_dict[r.index.title]["linked"].add(i)
+
+    num_linked = 0
+    num_words = 0
+    talmud_range_dict = {}
+    for index in talmud_indexes:
+        linked = talmud_words_dict[index.title]["linked"]
+        linked_list = sorted(list(linked))
+
+        num_linked += len(linked)
+        num_words += talmud_words_dict[index.title]["total_len"]
+        ranges = []
+        begin_range = None
+        prev_link_index = None
+        talmud_range_dict[index.title] = {
+            "linked_words": len(linked),
+            "num_words": talmud_words_dict[index.title]["total_len"]
+        }
+        for link_index in linked_list:
+            if begin_range is None:
+                begin_range = link_index
+            elif link_index - prev_link_index > 1:
+                end_range = prev_link_index
+                ranges += [[begin_range, end_range]]
+                begin_range = link_index
+            prev_link_index = link_index
+        talmud_range_dict[index.title]["ranges"] = ranges
+    objStr = json.dumps(talmud_range_dict, indent=4, ensure_ascii=False)
+    print "{}/{} {}".format(num_linked, num_words, 1.0*num_linked/num_words)
+    with open('talmud_ranges.json', "wb") as fout:
+        fout.write(objStr.encode('utf-8'))
+
+
+
