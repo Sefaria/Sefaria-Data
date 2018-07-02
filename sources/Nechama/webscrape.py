@@ -414,11 +414,8 @@ class Sheets:
                     #however, if we didn't find anything but we did find an a_tag, we only preserve the comment
                     #if a_tag_is_entire_comment so that we don't include huge comments together
                     elif found_a_tag:
-                        if a_tag_is_entire_comment:
-                            combined_with_prev_line = relevant_text
-                            segments[i] = "combined but not reference"
-                        else:
-                            segments[i] = ("nechama", relevant_text, "")
+                        combined_with_prev_line = relevant_text
+                        segments[i] = "combined but not reference"
                         self.index_not_found[u"{}".format(found_a_tag.text)] += 1
                         self.last_comm_index_not_found = found_a_tag.text
                     else:
@@ -533,6 +530,8 @@ class Sheets:
             real_title = self.get_term(a_tag.text)
         elif relevant_text in self.term_mapping:
             real_title = self.term_mapping[relevant_text]
+        if real_title == "Guide for the Perplexed":
+            pass
         return (real_title, a_tag, a_tag_is_entire_comment, a_tag_occurs_in_long_comment)
 
 
