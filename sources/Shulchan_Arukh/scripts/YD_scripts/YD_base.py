@@ -13,6 +13,7 @@ def markup(vol, xml_root):
     :return:
     """
     commentaries = xml_root.get_commentaries()
+    vol.mark_references(commentaries.commentary_ids[u"Siftei Kohen"], u'@55([\u05d0-\u05ea]{1,3})', group=1)
     vol.convert_pattern_to_itag(u"Ba'er Hetev", ur"@66\(([\u05d0-\u05ea]{1,3})\)")
 
 
