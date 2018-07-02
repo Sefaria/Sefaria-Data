@@ -88,6 +88,7 @@ def get_ftnotes(note_file):
 def replace_ftnotes(curr_chapter, line, ftnotes_dict):
     if "@nt" not in line:
         return line
+    line = line.replace("@c3", "")
     notes_in_line = re.findall("(@nt(\d+))", line)
 
     prev_ftnote = int(notes_in_line[0][1])
@@ -98,7 +99,7 @@ def replace_ftnotes(curr_chapter, line, ftnotes_dict):
             pass
         prev_ftnote = int(digit)
         if note_text not in ftnotes_dict.keys():
-            print "Chapter {} in main text, Footnote problem: {}".format(curr_chapter, note_text)
+            print "Chapter {} footnote {}".format(curr_chapter, note_text)
             return line
         prev = ftnotes_dict[note_text]
         ftnotes_dict[note_text] = ftnotes_dict[note_text].replace("\n", "")
@@ -208,4 +209,4 @@ if __name__ == "__main__":
                         he_continuous_segment = bold(remove_tags(new_he))
 
 
-            post_rashi(text, he_text, base_file, "http://localhost:8000")
+            post_rashi(text, he_text, base_file, "http://draft.sefaria.org")
