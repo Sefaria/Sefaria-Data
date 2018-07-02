@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+import sys
+import os
+SEFARIA_PROJECT_PATH = "/var/www/readonly"
+sys.path.insert(0, SEFARIA_PROJECT_PATH)
+os.environ['DJANGO_SETTINGS_MODULE'] = "settings"
+
+
 import re, bleach, json, codecs, unicodecsv
 import django
 django.setup()
