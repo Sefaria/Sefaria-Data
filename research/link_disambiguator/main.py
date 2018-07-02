@@ -14,7 +14,7 @@ django.setup()
 from sefaria.model import *
 from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
 from collections import defaultdict, OrderedDict
-from sefaria.system.exceptions import PartialRefInputError, InputError
+from sefaria.system.exceptions import PartialRefInputError, InputError, NoVersionFoundError
 from sefaria.utils.hebrew import strip_cantillation
 from data_utilities.util import WeightedLevenshtein
 
@@ -166,11 +166,18 @@ def disambiguate_all():
     for iambig, (main_str, tref_list) in enumerate(ambig_dict.items()):
         if iambig % 50 == 0:
             print "{}/{}".format(iambig, len(ambig_dict))
-        main_tc = Ref(main_str).text("he")
-        tc_list = [Ref(tref).text("he") for tref in tref_list]
-        temp_good, temp_bad = ld.disambiguate_segment(main_tc, tc_list)
-        good += temp_good
-        bad += temp_bad
+        try:
+            main_tc = Ref(main_str).text("he")
+            tc_list = [Ref(tref).text("he") for tref in tref_list]
+            temp_good, temp_bad = ld.disambiguate_segment(main_tc, tc_list)
+            good += temp_good
+            bad += temp_bad
+        except PartialRefInputError:
+            pass
+        except InputError:
+            pass
+        except NoVersionFoundError:
+            pass
 
     objStr = json.dumps(good, indent=4, ensure_ascii=False)
     with open('unambiguous_links.json', "w") as f:
