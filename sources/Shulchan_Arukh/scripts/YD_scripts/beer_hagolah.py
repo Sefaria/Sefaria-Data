@@ -39,7 +39,24 @@ def fix_file(filepath, start_siman, test_mode=False):
 # fix_file(filenames[2], start_simanim[3])
 # fix_file(filenames[3], start_simanim[4])
 
+def increment_from(filename, increment_start, test_mode=False):
+    def repl(m):
+        siman = getGematria(m.group(1))
+        if siman >= increment_start:
+            siman -= 1
+        return u'@00{}'.format(numToHeb(siman))
+    with codecs.open(filename, 'r', 'utf-8') as fp:
+        my_text = fp.read()
+    my_text = re.sub(u'@00([\u05d0-\u05ea]{1,3})', repl, my_text)
+    if test_mode:
+        filename = re.sub(u'\.txt', u'_test.txt', filename)
+    with codecs.open(filename, 'w', 'utf-8') as fp:
+        fp.write(my_text)
+
+
 filenames = dict(zip(range(1, 5), filenames))
+# increment_from(filenames[4], 299)
+
 root = Root(xml_loc)
 commentaries = root.get_commentaries()
 beer = commentaries.get_commentary_by_title(u"Be'er HaGolah")
@@ -61,3 +78,13 @@ for vol_num in range(1, 5):
     errors = volume.format_text(u'$^', u'.^', u'dh')
     for e in errors:
         print e
+
+    volume.set_rid_on_seifim()
+    base = root.get_base_text()
+    b_vol = base.get_volume(vol_num)
+    assert isinstance(b_vol, Volume)
+    root.populate_comment_store(verbose=True)
+    errors = b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u'@44', x.text) is not None)
+    for e in errors:
+        print e
+root.export()
