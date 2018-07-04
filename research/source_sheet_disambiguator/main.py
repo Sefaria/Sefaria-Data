@@ -7,19 +7,16 @@ import bleach
 import django
 django.setup()
 from sefaria.model import *
-from data_utilities.util import WeightedLevenshtein, LevenshteinError
-
+from data_utilities.dibur_hamatchil_matcher import match_ref
 from sefaria.system.database import db
-from sefaria.system.exceptions import InputError
+from sefaria.system.exceptions import InputError, BookNameError
 from sefaria.utils.hebrew import strip_cantillation
 
-wl = WeightedLevenshtein()
-
+MAX_SHEET_LEN = 100
 
 def tokenizer(s):
     s = strip_cantillation(s, strip_vowels=True)
-    s = s.replace(u"...", u" ")
-    s = re.sub(ur"[.,'\"־״׳]", u" ", s)
+    s = re.sub(ur"[,'\"־״׳]", u" ", s)
     s = re.sub(ur"\((?:\d{1,3}|[\u05d0-\u05ea]{1,3})\)", u" ", s)  # sefaria automatically adds pasuk markers. remove them
     s = bleach.clean(s, strip=True, tags=()).strip()
     return s.split()
@@ -42,17 +39,19 @@ def mutation(ref, en, he):
         return None
     if abs(len(sheet_text) - len(actual_text)) < 20:
         return None
-    if len(sheet_text) > 100:
-        start_sheet_text = sheet_text[:sheet_text.find(u" ", min(len(sheet_text)/2, 100))]
-        end_sheet_text = sheet_text[sheet_text.find(u" ", max(len(sheet_text)/2, len(sheet_text)-100))+1:]
-        start_ref, start_score, end_pos = find_subref(start_sheet_text, actual_text, word_index_list, ref_list, ref_index_list)
-        end_ref, end_score, end_pos = find_subref(end_sheet_text, actual_text, word_index_list, ref_list, ref_index_list)
-        new_ref = start_ref.to(end_ref)
-        score = min(start_score, end_score)
+    if len(sheet_text) > MAX_SHEET_LEN:
+        start_sheet_text = sheet_text[:sheet_text.find(u" ", min(len(sheet_text)/2, MAX_SHEET_LEN))]
+        end_sheet_text = sheet_text[sheet_text.find(u" ", max(len(sheet_text)/2, len(sheet_text)-MAX_SHEET_LEN))+1:]
+        start_ref = find_subref(start_sheet_text, ref, dominant_lang)
+        end_ref = find_subref(end_sheet_text, ref, dominant_lang)
+        if start_ref is not None and end_ref is not None:
+            new_ref = start_ref.to(end_ref)
+        else:
+            new_ref = None
     else:
-        new_ref, score, end_pos = find_subref(sheet_text, actual_text, word_index_list, ref_list, ref_index_list)
+        new_ref = find_subref(sheet_text, ref, dominant_lang)
 
-    if (score < 75) and ref.is_segment_level():
+    if new_ref is None and ref.is_segment_level():
         #print "Trying section ref"
         return mutation(ref.section_ref(), en, he)
     #print u"Original:", ref
@@ -60,37 +59,33 @@ def mutation(ref, en, he):
     return new_ref
 
 
-def find_subref(sheet_text, actual_text, word_index_list, ref_list, ref_index_list):
-
-        max_score = 0
-        max_start = 0
-        max_end = 0
-        max_start_word = 0
-        max_end_word = 0
-        final_end_word = bisect.bisect_right(word_index_list, word_index_list[-1]-len(sheet_text)) - 1
-        for start_word, start in enumerate(word_index_list[:final_end_word]):
-            end_word = bisect.bisect_right(word_index_list, start+len(sheet_text) + 1) - 1
-            end = word_index_list[end_word if end_word < len(word_index_list) else -1]
-            actual_slice = actual_text[start:end-1]
-            try:
-                score = wl.calculate(sheet_text, actual_slice)
-            except LevenshteinError as e:
-                continue
-            if score > max_score:
-                max_score = score
-                max_start = start
-                max_end = end
-                max_start_word = start_word
-                max_end_word = end_word
-        start_ref = ref_list[bisect.bisect_right(ref_index_list, max_start_word) - 1]
-        end_ref = ref_list[bisect.bisect_right(ref_index_list, max_end_word - 1) - 1]
-
-        # print "Original", ref
-        # print "New     ", ranged_ref.normal()
-        #print "Score   ", max_score
-        #print sheet_text
-        #print actual_text[max_start:max_end-1]
-        return start_ref.to(end_ref), max_score, max_end
+def find_subref(sheet_text, ref, lang, vtitle=None, tried_adding_refs_at_end_of_section=False):
+    tc = TextChunk(ref, lang, vtitle=vtitle)
+    matches = match_ref(tc, [sheet_text], tokenizer, with_num_abbrevs=False, lang=lang, dh_split=lambda dh: re.split(ur"\s*\.\.\.\s*", dh))
+    found_ref = None
+    for r in matches["matches"]:
+        if r is not None:
+            found_ref = r
+            break
+    if found_ref is None:
+        if ref.primary_category == "Tanakh" and lang == "en" and vtitle is None:
+            return find_subref(sheet_text, ref, lang, "The Holy Scriptures: A New Translation (JPS 1917)")
+        elif ref.primary_category == "Talmud" and vtitle is None:
+            if lang == "he":
+                return find_subref(sheet_text, ref, lang, "Wikisource Talmud Bavli")
+            else:
+                return find_subref(sheet_text, ref, lang, "Sefaria Community Translation")
+        elif ref.primary_category == "Talmud" and ref.is_section_level() and not tried_adding_refs_at_end_of_section:
+            # you tried wiki and it didn't work
+            # you're running out of options, what do you do?
+            # add first and last seg from prev and next daf!!!
+            prev_daf = ref.prev_section_ref()
+            next_daf = ref.next_section_ref()
+            start_ref = prev_daf.all_segment_refs()[-1] if prev_daf is not None else ref
+            end_ref = next_daf.all_segment_refs()[0] if next_daf is not None else ref
+            new_ref = start_ref.to(end_ref)
+            return find_subref(sheet_text, new_ref, lang, tried_adding_refs_at_end_of_section=True)
+    return found_ref
 
 
 def mutate_sheet(sheet, action):
@@ -109,28 +104,31 @@ def mutate_subsources(id, source, action):
     if not ref:
         return
     try:
-        new_ref = action(Ref(ref), en, he)
+        ref_obj = Ref(ref)
+        new_ref = action(ref_obj, en, he)
     except InputError as e:
         return
+
     if new_ref:
         new_ref = new_ref.normal()
-        if new_ref != ref:
-            global out_rows
-            out_rows += [{"Old Ref": ref, "New Ref": new_ref, "Id": id, "Url": "https://www.sefaria.org/sheets/{}".format(id)}]
+        old_ref = ref_obj.normal()
+        if new_ref != old_ref:
+            pass
+            # deal with updated ref
+
     if "subsources" in source:
         print "subsources"
         for s in source["subsources"]:
             mutate_subsources(id, s, action)
 
-out_rows = []
+
 ids = db.sheets.find({"status": "public"}).distinct("id")
-for i, id in enumerate(ids[::200]):
-    print u"{}/{}".format(i, len(ids))
+for i, id in enumerate(ids):
+    if i % 50 == 0:
+        print "{}/{}".format(i, len(ids))
     sheet = db.sheets.find_one({"id": id})
-    if not sheet: continue
+    if not sheet:
+        print "continue"
+        continue
     mutate_sheet(sheet, mutation)
 
-with open("Fixed Source Sheets.csv", "wb") as fout:
-    csv = unicodecsv.DictWriter(fout, ["Id", "Url", "Old Ref", "New Ref"])
-    csv.writeheader()
-    csv.writerows(out_rows)

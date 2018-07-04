@@ -8,7 +8,7 @@ sys.path.insert(0, SEFARIA_PROJECT_PATH)
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 
 
-import re, bleach, json, codecs, unicodecsv
+import re, bleach, json, codecs, unicodecsv, heapq
 import django
 django.setup()
 from sefaria.model import *
@@ -18,9 +18,19 @@ from sefaria.system.exceptions import PartialRefInputError, InputError, NoVersio
 from sefaria.utils.hebrew import strip_cantillation
 from data_utilities.util import WeightedLevenshtein
 
+def argmax(iterable, n=1):
+    if n==1:
+        return [max(enumerate(iterable), key=lambda x: x[1])[0]]
+    else:
+        return heapq.nlargest(n, xrange(len(iterable)), iterable.__getitem__)
+
+
 class Link_Disambiguator:
     def __init__(self):
-        self.stop_words = []
+        self.stop_words = [u"ר'",u'רב',u'רבי',u'בן',u'בר',u'בריה',u'אמר',u'כאמר',u'וכאמר',u'דאמר',u'ודאמר',u'כדאמר',u'וכדאמר',u'ואמר',u'כרב',
+              u'ורב',u'כדרב',u'דרב',u'ודרב',u'וכדרב',u'כרבי',u'ורבי',u'כדרבי',u'דרבי',u'ודרבי',u'וכדרבי',u"כר'",u"ור'",u"כדר'",
+              u"דר'",u"ודר'",u"וכדר'",u'א״ר',u'וא״ר',u'כא״ר',u'דא״ר',u'דאמרי',u'משמיה',u'קאמר',u'קאמרי',u'לרב',u'לרבי',
+              u"לר'",u'ברב',u'ברבי',u"בר'",u'הא',u'בהא',u'הך',u'בהך',u'ליה',u'צריכי',u'צריכא',u'וצריכי',u'וצריכא',u'הלל',u'שמאי', u"וגו'",u'וגו׳']
         self.levenshtein = WeightedLevenshtein()
 
 
@@ -33,7 +43,8 @@ class Link_Disambiguator:
                 base_str = base_str.replace(match.group(), u"")
                 # base_str = re.sub(ur"(?:\(.*?\)|<.*?>)", u"", base_str)
         base_str = re.sub(ur'־', u' ', base_str)
-        base_str = re.sub(ur'[A-Za-z."]', u'', base_str)
+        base_str = re.sub(ur'\[[^\[\]]{1,7}\]', u'', base_str)  # remove kri but dont remove too much to avoid messing with brackets in talmud
+        base_str = re.sub(ur'[A-Za-z.,"?!״:׃]', u'', base_str)
         word_list = re.split(ur"\s+", base_str)
         word_list = [w for w in word_list if len(w.strip()) > 0 and w not in self.stop_words]
         return word_list
@@ -42,9 +53,10 @@ class Link_Disambiguator:
         normalizingFactor = 100
         smoothingFactor = 1
         ImaginaryContenderPerWord = 22
-
-        dist = self.levenshtein.calculate(u" ".join(words_a), u" ".join(words_b),normalize=False)
-        score = 1.0 * (dist + smoothingFactor) / (len(words_a) + smoothingFactor) * normalizingFactor
+        str_a = u" ".join(words_a)
+        str_b = u" ".join(words_b)
+        dist = self.levenshtein.calculate(str_a, str_b,normalize=False)
+        score = 1.0 * (dist + smoothingFactor) / (len(str_a) + smoothingFactor) * normalizingFactor
 
         dumb_score = (ImaginaryContenderPerWord * len(words_a)) - score
         return dumb_score
@@ -91,9 +103,19 @@ class Link_Disambiguator:
             f.write(objStr.encode('utf-8'))
 
 
-    def disambiguate_segment(self, main_tc, tc_list):
+    def disambiguate_segment(self, main_tc, tc_list, multiple_ref_map=None):
+        """
+
+        :param main_tc: TextChunk that has ambiguous refs
+        :param tc_list: list(TextChunk) where each TC is ambiguous
+        :param multiple_ref_map: In case two equal ambiguous refs appear in main_tc, dict where keys are normalized refs and values are number of times they appear
+        :return: (list, list). first list is good matches. second list is matches that couldn't be disambiguated
+        """
+        if multiple_ref_map is None:
+            multiple_ref_map = {}
         matcher = ParallelMatcher(self.tokenize_words,max_words_between=1, min_words_in_match=3, ngram_size=3,
-                                       parallelize=False, calculate_score=self.get_score, all_to_all=False, verbose=False)
+                                  parallelize=False, calculate_score=self.get_score, all_to_all=False,
+                                  verbose=False, min_distance_between_matches=1)
         try:
             match_list = matcher.match(tc_list=[main_tc] + tc_list, return_obj=True)
         except ValueError:
@@ -102,17 +124,16 @@ class Link_Disambiguator:
         best_list = []
         for tc in tc_list:
             best = None
-            best_score = 0
-            for match in match_list:
-                #print match
-                if match.score > best_score and match.b.ref == main_tc._oref and match.a.ref.section_ref() == tc._oref:
-                    best = match
-                    best_score = match.score
 
-            best_list += [best]
+            filtered_match_list = filter(lambda x: x.b.ref == main_tc._oref and x.a.ref.section_ref() == tc._oref, match_list)
+            score_list = [x.score for x in filtered_match_list]
+            if len(score_list) == 0:
+                continue
+            max_scores = argmax(score_list, n=multiple_ref_map.get(tc._oref.normal(), 1))
+            best_list += [filtered_match_list[i] for i in max_scores]
 
-        good = [[mm.a.ref.normal(), mm.b.ref.normal()] for mm in best_list if not mm is None]
-        bad = [[main_tc._oref.normal(), tc_list[i]._oref.normal()] for i, mm in enumerate(best_list) if mm is None]
+        good = [[mm.a.ref.normal(), mm.b.ref.normal(), mm.score] for mm in best_list if not mm is None and mm.score > 0]
+        bad = [[main_tc._oref.normal(), tc_list[i]._oref.normal()] for i, mm in enumerate(best_list) if mm is None or mm.score <= 0]
         #print good
         return good, bad
 
@@ -187,11 +208,14 @@ def disambiguate_all():
     with open('still_ambiguous_links.json', "w") as f:
         f.write(objStr.encode('utf-8'))
 
-# ld = Link_Disambiguator()
+ld = Link_Disambiguator()
 # ld.get_ambiguous_segments()
-disambiguate_all()
+#disambiguate_all()
 # ld = Link_Disambiguator()
 # ld.disambiguate_gra()
 
+main_tc = TextChunk(Ref("Tosafot on Eruvin 92a:1:1"), "he")
+other_tc = TextChunk(Ref("Yevamot 42b"), "he")
+print ld.disambiguate_segment(main_tc, [other_tc])
 #tc_list = [Ref("Zohar 1:70b:7").text("he"), Ref("Song of Songs 1").text("he")] #{'match_index': [[5, 7], [11, 13]], 'score': 81, 'match': [u'Zohar 1:70b:7', u'Song of Songs 1:3']}
 #tc_list = [Ref("Zohar 1:70b:9").text("he"), Ref("Genesis 1").text("he")] #{'match_index': [[27, 32], [106, 111]], 'score': 96, 'match': [u'Genesis 1:4', u'Zohar 1:70b:9']}
