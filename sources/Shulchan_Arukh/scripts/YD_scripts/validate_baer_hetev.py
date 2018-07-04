@@ -10,7 +10,7 @@ from sefaria.model import *
 
 
 def compile_linkset(book_name, server='https://www.sefaria.org'):
-    raw_set = requests.get(u'{}/api/links/Shulchan_Arukh,_Yoreh_Deah?with_text=0'.format(server)).json()
+    raw_set = requests.get(u"{}/api/links/Shulchan_Arukh,_Yoreh_De'ah?with_text=0".format(server)).json()
     commentary_reg = re.compile(Ref(book_name).regex())
     filtered_set = [l for l in raw_set if commentary_reg.match(l['ref']) is not None]
 
@@ -57,7 +57,8 @@ def check_links_on_seifim(xml_book, commentary_name, marker_pattern, server='htt
 
 
 base_text = Root(u'../../Yoreh_Deah.xml').get_base_text()
-hetev_pattern = ur'@66\(([\u05d0-\u05ea]{1,3})\)'
+# hetev_pattern = ur'@66\(([\u05d0-\u05ea]{1,3})\)'
+hetev_pattern = u'''data-commentator="Ba'er Hetev"'''
 problems = check_links_on_seifim(base_text, u"Ba'er Hetev on Shulchan Arukh, Yoreh De'ah", hetev_pattern)
 with open('/home/jonathan/sefaria/error-logs/baer-hetev.txt', 'w') as fp:
     fp.write('\n\n'.join(problems))
