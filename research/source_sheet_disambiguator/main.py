@@ -31,7 +31,14 @@ def get_token_info_for_ref(r, lang):
     return ref_index_list, ref_list, word_index_list, actual_text
 
 
-def mutation(ref, en, he):
+def refine_ref_by_text(ref, en, he):
+    """
+    Given a ref, determine if the text associated with it matches the text of the ref
+    :param ref: Ref
+    :param en: english text of source sheet. can be empty string
+    :param he: hebrew text of source sheet. can be empty string
+    :return: either None if text matches ref or a refined ref
+    """
     dominant_lang = "en" if len(he) == 0 or ((1.0*len(en)) / len(he) > 7.0) else "he"  # only choose english if its way longer
     sheet_text = en if len(he) == 0 or ((1.0*len(en)) / len(he) > 7.0) else he
     ref_index_list, ref_list, word_index_list, actual_text = get_token_info_for_ref(ref, dominant_lang)
@@ -53,7 +60,7 @@ def mutation(ref, en, he):
 
     if new_ref is None and ref.is_segment_level():
         #print "Trying section ref"
-        return mutation(ref.section_ref(), en, he)
+        return refine_ref_by_text(ref.section_ref(), en, he)
     #print u"Original:", ref
     #print u"New:", new_ref
     return new_ref
@@ -114,7 +121,6 @@ def mutate_subsources(id, source, action):
         old_ref = ref_obj.normal()
         if new_ref != old_ref:
             pass
-            # deal with updated ref
 
     if "subsources" in source:
         print "subsources"
@@ -130,5 +136,5 @@ for i, id in enumerate(ids):
     if not sheet:
         print "continue"
         continue
-    mutate_sheet(sheet, mutation)
+    mutate_sheet(sheet, refine_ref_by_text)
 
