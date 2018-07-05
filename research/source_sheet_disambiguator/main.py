@@ -37,7 +37,7 @@ def refine_ref_by_text(ref, en, he):
     :param ref: Ref
     :param en: english text of source sheet. can be empty string
     :param he: hebrew text of source sheet. can be empty string
-    :return: either None if text matches ref or a refined ref
+    :return: either True if text matches ref, None if you couldn't find a better ref or a refined ref
     """
     dominant_lang = "en" if len(he) == 0 or ((1.0*len(en)) / len(he) > 7.0) else "he"  # only choose english if its way longer
     sheet_text = en if len(he) == 0 or ((1.0*len(en)) / len(he) > 7.0) else he
@@ -45,7 +45,7 @@ def refine_ref_by_text(ref, en, he):
     if len(word_index_list) == 0 or len(ref_list) == 0:
         return None
     if abs(len(sheet_text) - len(actual_text)) < 20:
-        return None
+        return True
     if len(sheet_text) > MAX_SHEET_LEN:
         start_sheet_text = sheet_text[:sheet_text.find(u" ", min(len(sheet_text)/2, MAX_SHEET_LEN))]
         end_sheet_text = sheet_text[sheet_text.find(u" ", max(len(sheet_text)/2, len(sheet_text)-MAX_SHEET_LEN))+1:]
