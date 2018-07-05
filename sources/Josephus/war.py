@@ -31,7 +31,7 @@ def create_index():
 
 
 def check_for_footnote(text, footnotes):
-    if len(text.contents) > 1:
+    if len(text.contents) > 1: #has footnote
         new_line = ""
         for line in text.contents:
             if type(line) is element.NavigableString:
@@ -45,9 +45,10 @@ def check_for_footnote(text, footnotes):
                 new_line += ftnote
 
         new_line = new_line.strip()
-        return new_line
+        return_text = new_line
     else:
-        return text.text
+        return_text = text.text
+    return return_text
 
 
 if __name__ == "__main__":
@@ -96,7 +97,8 @@ if __name__ == "__main__":
                         text[book_n] = "Error at Chapter {}".format(roman_num)
                         continue
 
-                    lines = [check_for_footnote(line, footnotes[book_n]) for line in chapter.contents if line != "\n"]
+                    lines = [check_for_footnote(line, footnotes[book_n]) for line_n, line in enumerate(chapter.contents) if line != "\n"]
+                    lines = [(str(i+1) + ". " + line) for i, line in enumerate(lines)]
                     text[book_n][roman_num] = lines
                     first_line = text[book_n][roman_num][0]
                     text[book_n][roman_num][0] = u"<b>"+chapter_header+u"</b><br/><br/>"+first_line
@@ -108,7 +110,7 @@ if __name__ == "__main__":
     body_text = {
         "text": text,
         "language": "en",
-        "versionTitle": "The Wars of the Jews, translated by William Whiston",
+        "versionTitle": "The War of the Jews, translated by William Whiston",
         "versionSource": "https://en.wikisource.org/wiki/The_War_of_the_Jews"
     }
     post_text("The War of the Jews", body_text, server="http://proto.sefaria.org")

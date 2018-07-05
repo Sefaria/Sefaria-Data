@@ -4,6 +4,20 @@ import os
 from os.path import dirname as loc
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
+
+def markup(vol, xml_root):
+    """
+    Mark up ref markers in Shulchan Arukh to itag or xref as needed.
+    :param Volume vol:
+    :param Root xml_root:
+    :return:
+    """
+    commentaries = xml_root.get_commentaries()
+    vol.mark_references(commentaries.commentary_ids[u"Siftei Kohen"], u'@55([\u05d0-\u05ea]{1,3})', group=1)
+    vol.mark_references(commentaries.commentary_ids[u"Be'er HaGolah"], u'@44([\u05d0-\u05ea]{1,3})', group=1)
+    vol.convert_pattern_to_itag(u"Ba'er Hetev", ur"@66\(([\u05d0-\u05ea]{1,3})\)")
+
+
 root_dir = loc(loc(loc(os.path.abspath(__file__))))
 xml_loc = os.path.join(root_dir, 'Yoreh_Deah.xml')
 
@@ -72,3 +86,6 @@ if __name__ == "__main__":
             print e
         for pattern, code in zip(patterns, codes):
             volume.validate_references(pattern, code)
+        markup(volume, root)
+
+    root.export()
