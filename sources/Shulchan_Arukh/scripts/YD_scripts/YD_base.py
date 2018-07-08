@@ -16,6 +16,7 @@ def markup(vol, xml_root):
     vol.mark_references(commentaries.commentary_ids[u"Siftei Kohen"], u'@55([\u05d0-\u05ea]{1,3})', group=1)
     vol.mark_references(commentaries.commentary_ids[u"Be'er HaGolah"], u'@44([\u05d0-\u05ea]{1,3})', group=1)
     vol.convert_pattern_to_itag(u"Ba'er Hetev", ur"@66\(([\u05d0-\u05ea]{1,3})\)")
+    vol.convert_pattern_to_label_itag(u"Be'er HaGolah", u'@44\(([\u05d0-\u05ea]{1,3})\)\((°)\)')
 
 
 root_dir = loc(loc(loc(os.path.abspath(__file__))))
