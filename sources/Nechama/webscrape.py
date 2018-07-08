@@ -9,6 +9,9 @@ logger = logging.getLogger(__name__)
 import django
 import bleach
 import os
+from sefaria.system.database import db
+from research.source_sheet_disambiguator.main import refine_ref_by_text
+
 django.setup()
 from sources.functions import UnicodeWriter
 import urllib2, urllib
@@ -22,6 +25,7 @@ from sefaria.model.schema import AddressYear, AddressInteger
 from data_utilities.util import WeightedLevenshtein
 from sefaria.system.exceptions import *
 from sources.functions import UnicodeWriter, UnicodeReader
+
 class Sheets:
     def __init__(self):
         self.he_title_project = u"גיליונות נחמה"
@@ -31,7 +35,7 @@ class Sheets:
         self.table_classes = {}
         self.server = self.versionSource
         self.important_classes = ["parshan", "midrash", "talmud", "bible", "commentary"]
-        self.bereshit_parshiot = ["1", "2", "30", "62", "84"]#, "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
+        self.bereshit_parshiot = ["488"]#["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
         self.sheets = {}
         self.links = []
         self.current_pos_in_quotation_stack = -1
@@ -259,19 +263,22 @@ class Sheets:
                     if class_ == "header" or class_ == "RTBorder" or class_ == "RT":
                         new_segments.append(segment)
                         #if class_ != "header":
-                        self.add_to_table_classes(class_)
                         continue
                     elif class_ == "RT_RASHI":
                         new_segments += find_all_p(segment)
-                        self.add_to_table_classes(class_)
                         self.RT_Rashi = True
                         continue
                     elif class_ in ["question", "question2"]:
-                        count_this_one = [child for child in segment.descendants if
-                                          child.name == "table"]  # and child.attrs["class"][0] in ["question", "question2"]]
-                        if count_this_one:
+                        question_in_question = [child for child in segment.descendants if
+                                          child.name == "table" and child.attrs["class"][0] in ["question", "question2"]]
+                        RT_in_question = [child for child in segment.descendants if
+                                          child.name == "table" and child.attrs["class"][0] in ["RT", "RTBorder"]]
+                        if RT_in_question:
+                            new_segments.append(segment)
+                            continue
+                            #new_segments += find_all_p(segment)
+                        elif question_in_question:
                             new_segments += find_all_p(segment)
-                            self.add_to_table_classes(class_)
                         else:
                             new_segments.append(segment)
                         continue
@@ -366,14 +373,19 @@ class Sheets:
     #     td.decompose()
     #     table_html = str(segment)
 
+    def remove_hyper_links(self, html):
+        all_a_links = re.findall("(<a href.*?>(.*?)</a>)", html)
+        for a_link_and_text in all_a_links:
+            a_link, text = a_link_and_text
+            html = html.replace(a_link, text)
+        return html
+
     def process_table(self, segments, i):
         formatted_text = ""
         segment = segments[i]
         table_html = str(segment)
-        all_a_links = re.findall("(<a href.*?>(.*?)</a>)", table_html)
-        for a_link_and_text in all_a_links:
-            a_link, text = a_link_and_text
-            table_html = table_html.replace(a_link, text)
+        table_html = self.remove_hyper_links(table_html)
+
         if segment.attrs['class'] in [["question2"], ["question"]]:
             table_html = self.format(table_html)
             formatted_text = self.format(BeautifulSoup(table_html, "lxml").text)
@@ -398,7 +410,7 @@ class Sheets:
 
     def add_to_table_classes(self, segment_class):
         current_table = self.table_classes.get(segment_class, set())
-        our_site = "http://nechama.sandbox.sefaria.org/sheets/{}".format(self.sheet_num)
+        our_site = self.year_to_sheet[self.current_en_year]
         her_site = "http://nechama.org.il/pages/" + self.current_url + " in section " + str(self.current_section)
         current_table.add((our_site, her_site))
         self.table_classes[segment_class] = current_table
@@ -432,10 +444,10 @@ class Sheets:
         prev_was_quote = None
         for i, segment in enumerate(segments):
             if isinstance(segment, element.Tag) and segment.name == "table" and segment.attrs["class"][0] in ["question", "question2", "header"]:
-                formatted_text = self.process_table(segments, i)
-                segments[i] = ("nechama", formatted_text, "")
+                self.process_table(segments, i)
             elif isinstance(segment, element.Tag) and segment.name == "table" and segment.attrs["class"] in [["RT"], ["RTBorder"]]:
-                segments[i] = ("nechama", str(segment), self.current_parsha_ref)
+                self.add_to_table_classes(segment.attrs["class"][0])
+                segments[i] = ("nechama", self.remove_hyper_links(str(segment)), self.current_parsha_ref)
             elif isinstance(segment, element.Tag) and segment.has_attr("class"):
                 segment_class = segment.attrs["class"][0]
                 if prev_was_quote and prev_was_quote != segment_class and self.RT_Rashi == False:
@@ -797,8 +809,8 @@ class Sheets:
             self.current_parsha_ref = ["bible", u"{} {}".format(self.current_sefer, self.current_perek)]
             self.add_to_quotation_stack(self.current_parsha_ref)
             try:
-                self.sheets[parsha][roman_year] = (self.current_url, hebrew_year, self.current_sefer, self.current_perakim, self.parse_as_text(text))
-                self.post_text(parsha, self.sheets[parsha])
+                self.sheets[parsha][self.current_en_year] = (self.current_url, hebrew_year, self.current_sefer, self.current_perakim, self.parse_as_text(text))
+                self.post_text(parsha, self.current_en_year, self.sheets[parsha][self.current_en_year])
             # except AssertionError:
             #     print "ASSERTION ERROR WITH {}".format(i)
             except InputError:
@@ -921,7 +933,7 @@ class Sheets:
         post_index(index, server=self.server)
 
 
-    def post_text(self, parsha, sheets_by_year):
+    def post_text(self, parsha, en_year, sheet):
         #self.create_index()
         nechama_text = {}
         nechama_sheet = {}
@@ -932,21 +944,20 @@ class Sheets:
         parsha = term.name
         nechama_text[parsha] = {}
         nechama_sheet[parsha] = {}
-        for en_year, sheet in sheets_by_year.items():
-            url, he_year, sefer, perakim, text_tuples = sheet
-            sheet_title = self.year_to_sheet[en_year]
-            he_year_num = getGematria(he_year)
-            text, links, sources = self.get_text_links_and_sources(text_tuples, parsha, en_year)
-            self.links += links
-            nechama_text[parsha][he_year_num] = text
-            self.prepare_sheet(u"{}: {}".format(self.current_parsha, sheet_title), (en_year, he_year), sources)
-        nechama_text[parsha] = convertDictToArray(nechama_text[parsha])
-        send_text = {
-            "text": nechama_text[parsha],
-            "language": "he",
-            "versionTitle": self.versionTitle,
-            "versionSource": self.versionSource
-        }
+        url, he_year, sefer, perakim, text_tuples = sheet
+        sheet_title = self.year_to_sheet[en_year]
+        he_year_num = getGematria(he_year)
+        text, links, sources = self.get_text_links_and_sources(text_tuples, parsha, en_year)
+        self.links += links
+        nechama_text[parsha][he_year_num] = text
+        self.prepare_sheet(u"{}: {}".format(self.current_parsha, sheet_title), (en_year, he_year), sources)
+        # nechama_text[parsha] = convertDictToArray(nechama_text[parsha])
+        # send_text = {
+        #     "text": nechama_text[parsha],
+        #     "language": "he",
+        #     "versionTitle": self.versionTitle,
+        #     "versionSource": self.versionSource
+        # }
         #post_text(u"{}, {}".format(self.en_title_project, parsha), send_text, server=self.server)
     #post_link(self.links, server=self.server)
         # for year, sheet in enumerate(nechama_text[parsha]):
@@ -966,6 +977,30 @@ class Sheets:
        # sheet_json["dateCreated"] = 2012
        sheet_json["options"] = {"numbered": 0,"assignable": 0,"layout": "sideBySide","boxed": 0,"language": "hebrew","divineNames": "noSub","collaboration": "none", "highlightMode": 0, "bsd": 0,"langLayout": "heRight"}
        post_sheet(sheet_json, server=self.server)
+
+"""
+from research.source_sheet_disambiguator.main import refine_ref_by_text
+en = ""  #  let's assume no English in Nechama
+he = u"some hebrew text"  # hebrew text associated with a ref in a Nechama source sheet
+ref = Ref("Genesis 1:1")
+new_ref = refine_ref_by_text(ref, en, he)
+if new_ref is not None:
+    print "refined the ref!"
+else:
+    print "ref was fine"
+"""
+
+def fix_refs_in_source_sheets():
+    sheets = db.sheets().find({"owner": 15399}) # get all of my source sheets, which are Nechama Leibowitz
+    for sheet in sheets:
+        for source in sheet["sources"]
+            if getattr(source, "ref", None):  # this has a ref...
+                ref = source["ref"]
+                old_ref = ref
+                text = source["text"]["he"]
+                found_ref = refine_ref_by_text(ref, "", text)
+
+
 
 if __name__ == "__main__":
     sheets = Sheets()
