@@ -13,7 +13,8 @@ HaGolah markers. A "special" mark found in segment i would then correspond to Be
 before the first mark. A mark here can be attached to the first Be'er comment.
 """
 import os
-import re
+import regex
+import beer_hagolah
 from os.path import dirname as loc
 from data_utilities.util import StructuredDocument
 from collections import defaultdict
@@ -86,8 +87,34 @@ for vol_num in range(1, 5):
     print u"Checking vol {}".format(vol_num)
     my_file = filenames[vol_num]
     beer_marks = marks_in_beer(root, u'(°)', vol_num)
-    base_marks = marks_to_beer_in_base(my_file, u'(#)')
+    base_marks = marks_to_beer_in_base(my_file, u'(°)')
     all_locations = list(set(beer_marks.keys() + base_marks.keys()))
     for location in sorted(all_locations):
         if beer_marks[location] != base_marks[location]:
             print u'Problem at Siman {} Seif {}'.format(*location)
+
+
+def mark_file(filename, test_mode=False):
+    """
+    File corrections:
+    The following regex should help identify the mainline comment preceding a (#) mark
+    @44([\u05d0-\u05ea]{1,3})(?>[^74]+(7\d)?)+(?<=@)44\(#\)
+
+    I'll need named capture groups here. Ultimately I want to generate:
+    @44(°)<hebrew letters>
+    Use a named capture group for the hebrew letters (Be'er HaGolah comment number)
+    Wrap everything up to the final 44 in capture group 1.
+    I can than sub \g<1>(°)\g<seg>
+    :param filename: name of file to be corrected
+    :param test_mode: to avoid overwriting file, will append _test to the end of filename and write to there
+    :return:
+    """
+    pattern = regex.compile(u'(@44(?P<seg>[\u05d0-\u05ea]{1,3})(?>[^74]+(7\d)?)+(?<=@)44)\(#\)')
+    with codecs.open(filename, 'r', 'utf-8') as fp:
+        my_text = fp.read()
+
+    fixed_text = pattern.sub(u'\g<1>(\g<seg>)(°)', my_text)
+    if test_mode:
+        filename = regex.sub(u'\.txt', u'_test.txt', filename)
+    with codecs.open(filename, 'w', 'utf-8') as fp:
+        fp.write(fixed_text)
