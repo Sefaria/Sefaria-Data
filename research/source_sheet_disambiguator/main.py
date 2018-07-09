@@ -131,13 +131,4 @@ def mutate_subsources(id, source, action):
             mutate_subsources(id, s, action)
 
 
-ids = db.sheets.find({"status": "public"}).distinct("id")
-for i, id in enumerate(ids):
-    if i % 50 == 0:
-        print "{}/{}".format(i, len(ids))
-    sheet = db.sheets.find_one({"id": id})
-    if not sheet:
-        print "continue"
-        continue
-    mutate_sheet(sheet, refine_ref_by_text)
 
