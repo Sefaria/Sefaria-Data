@@ -34,3 +34,16 @@ for vol_num in range(1, 5):
     for e in errors:
         print e
     volume.validate_seifim()
+    errors = volume.format_text(u'@32', u'@33', u'dh')
+    for e in errors:
+        print e
+
+    volume.set_rid_on_seifim()
+    base = root.get_base_text()
+    b_vol = base.get_volume(vol_num)
+    assert isinstance(b_vol, Volume)
+    root.populate_comment_store(verbose=True)
+    errors = b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u'@99', x.text) is not None)
+    for e in errors:
+        print e
+root.export()
