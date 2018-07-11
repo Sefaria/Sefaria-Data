@@ -208,14 +208,37 @@ def disambiguate_all():
     with open('still_ambiguous_links.json', "w") as f:
         f.write(objStr.encode('utf-8'))
 
-# ld = Link_Disambiguator()
-# ld.get_ambiguous_segments()
-disambiguate_all()
-# ld = Link_Disambiguator()
-# ld.disambiguate_gra()
 
-# main_tc = TextChunk(Ref("Tosafot on Eruvin 92a:1:1"), "he")
-# other_tc = TextChunk(Ref("Yevamot 42b"), "he")
-# print ld.disambiguate_segment(main_tc, [other_tc])
-#tc_list = [Ref("Zohar 1:70b:7").text("he"), Ref("Song of Songs 1").text("he")] #{'match_index': [[5, 7], [11, 13]], 'score': 81, 'match': [u'Zohar 1:70b:7', u'Song of Songs 1:3']}
-#tc_list = [Ref("Zohar 1:70b:9").text("he"), Ref("Genesis 1").text("he")] #{'match_index': [[27, 32], [106, 111]], 'score': 96, 'match': [u'Genesis 1:4', u'Zohar 1:70b:9']}
+def find_low_confidence_talmud():
+    with open("unambiguous_links.json", "rb") as fin:
+        jin = json.load(fin)
+    low_conf = []
+    med_conf = []
+    for r1, r2, conf in jin:
+        is_talmud = Ref(r1).primary_category == "Talmud"
+        if conf < 40 and is_talmud:
+            low_conf += [[r1, r2, conf]]
+        elif (40 <= conf < 55 and is_talmud) or conf < 40:
+            med_conf += [[r1,r2, conf]]
+
+    print len(low_conf)
+    print len(med_conf)
+    with open("low_conf_links.json", "wb") as fout:
+        json.dump(low_conf, fout, indent=2)
+    with open("med_conf_links.json", "wb") as fout:
+        json.dump(med_conf, fout, indent=2)
+
+
+if __name__ == '__main__':
+    ld = Link_Disambiguator()
+    # ld.get_ambiguous_segments()
+    # disambiguate_all()
+    #find_low_confidence_talmud()
+    # ld = Link_Disambiguator()
+    # ld.disambiguate_gra()
+
+    main_tc = TextChunk(Ref("Tosafot on Eruvin 92a:1:1"), "he")
+    other_tc = TextChunk(Ref("Yevamot 42b"), "he")
+    print ld.disambiguate_segment(main_tc, [other_tc])
+    # tc_list = [Ref("Zohar 1:70b:7").text("he"), Ref("Song of Songs 1").text("he")] #{'match_index': [[5, 7], [11, 13]], 'score': 81, 'match': [u'Zohar 1:70b:7', u'Song of Songs 1:3']}
+    # tc_list = [Ref("Zohar 1:70b:9").text("he"), Ref("Genesis 1").text("he")] #{'match_index': [[27, 32], [106, 111]], 'score': 96, 'match': [u'Genesis 1:4', u'Zohar 1:70b:9']}
