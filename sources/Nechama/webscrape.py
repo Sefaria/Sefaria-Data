@@ -477,7 +477,7 @@ class Sheets:
                     next_comment_parshan_or_bible = "class" in segments[i+1].attrs.keys() and segments[i+1].attrs["class"][0] in self.important_classes
                 relevant_text = self.format(self.relevant_text(segment))
                 if not next_comment_parshan_or_bible:
-                    segments[i] = ('nechama', relevant_text, self.current_parsha_ref[1]) #was self.quotations[0][1]
+                    segments[i] = ('nechama', relevant_text, "") #was self.quotations[0][1]
                 else:
                     next_segment_class = segments[i + 1].attrs["class"][0]
                     real_title, found_a_tag, a_tag_is_entire_comment, a_tag_in_long_comment \
@@ -487,7 +487,6 @@ class Sheets:
                         = self.check_ref_and_add_to_quotation_stack(next_segment_class, relevant_text, real_title, a_tag_is_entire_comment)
 
                     combined_with_prev_line = set_segment(combined_with_prev_line)
-                    #set_segment(segments, i, is_perek_pasuk_ref, real_title, found_ref_in_string, relevant_text, a_tag_is_entire_comment, found_a_tag)
                 prev_was_quote = ""
         return segments
 
@@ -868,27 +867,31 @@ class Sheets:
             text = ref_obj.text('he').text
 
         #try to get segment level from section
-        new_ref = refine_ref_by_text(ref_obj, "", comment)  # can be None, same ref as str or Ref
+        new_ref = refine_ref_by_text(ref_obj, "", comment, 35)  # can be None, same ref as str or Ref
         if new_ref is None:
-            self.doesnt_match[ref] = comment
+            if ref.startswith("Genesis"):
+                return ""
+            else:
+                self.doesnt_match[ref_obj.normal()] = comment
+                return ref_obj.normal()
         elif new_ref == True:
             self.good_match += 1
         else:
             orig_ref = ref
             ref = new_ref if isinstance(new_ref, str) else new_ref.normal()
-            if orig_ref == ref:
+            if orig_ref == ref: #compares them as strings
                 self.good_match += 1
             else:
                 self.fixed_match += 1
 
         #if it is still a top section level set it as a range
-        if Ref(ref).top_section_ref() == Ref(ref):
-            ref = Ref(ref).as_ranged_segment_ref().normal()
+        # if Ref(ref).top_section_ref() == Ref(ref):
+        #     ref_obj = Ref(ref).as_ranged_segment_ref()
 
         #if still no text, set to ""
-        if not Ref(ref).text('he').text:
-            return ""
-        return ref
+        if not ref_obj.text('he').text:
+            return ref_obj.normal()
+        return ref_obj
 
     def get_text_links_and_sources(self, text_list, parsha, year):
         """
@@ -926,11 +929,20 @@ class Sheets:
                                   "sourceLangLayout": ""
                               }
                             }
+                elif ref and not isinstance(ref, Ref): #this happens when we pick up a reference that we can't be sure is accurate
+                    heRef = Ref(ref).he_normal()
+                    comment = "<b>" + heRef + "</b><br/>" + comment
+                    source = {"outsideText": comment,
+                              "options": {
+                                  "indented": "indented-1",
+                                  "sourceLayout": "",
+                                  "sourceLanguage": "hebrew",
+                                  "sourceLangLayout": ""
+                              }
+                              }
                 elif ref and type in self.important_classes:
-                    if isinstance(ref, Ref):
-                        heRef = ref.he_normal()
-                    else:
-                        heRef = Ref(ref).he_normal()
+                    heRef = ref.he_normal()
+                    ref = ref.normal()
                     source = {"ref": ref, "heRef": heRef,
                               "text":
                                     {
@@ -1029,19 +1041,8 @@ class Sheets:
        sheet_json["sources"] = sources
        # sheet_json["dateC  eated"] = 2012
        sheet_json["options"] = {"numbered": 0,"assignable": 0,"layout": "sideBySide","boxed": 0,"language": "hebrew","divineNames": "noSub","collaboration": "none", "highlightMode": 0, "bsd": 0,"langLayout": "heRight"}
-       #post_sheet(sheet_json, server=self.server)
+       post_sheet(sheet_json, server=self.server)
 
-"""
-from research.source_sheet_disambiguator.main import refine_ref_by_text
-en = ""  #  let's assume no English in Nechama
-he = u"some hebrew text"  # hebrew text associated with a ref in a Nechama source sheet
-ref = Ref("Genesis 1:1")
-new_ref = refine_ref_by_text(ref, en, he)
-if new_ref is not None:
-    print "refined the ref!"
-else:
-    print "ref was fine"
-# """
 #
 # def fix_refs_in_source_sheets():
 #     sheets = db.sheets().find({"owner": 15399}) # get all of my source sheets, which are Nechama Leibowitz
@@ -1066,9 +1067,20 @@ if __name__ == "__main__":
     print len(sheets.doesnt_match)
     print sheets.good_match
     print sheets.fixed_match
-    for ref, site in sheets.refs_to_nowhere.items():
-        rows.append([ref, site])
+    for ref, text in sheets.doesnt_match.items():
+        site_text = Ref(ref).text('he').text
+        if not site_text:
+            print "Found problem with ref {}".format(ref)
+        if isinstance(site_text, list):
+            if len(site_text) > 0 and isinstance(site_text[0], list):
+                print "Found 2-d list with ref {}".format(ref)
+            else:
+                site_text = "\n".join(site_text)
+                rows.append([ref, text, site_text])
+        else:
+            rows.append([ref, text, site_text])
     rows = sorted(rows, key=lambda x: x[0].split()[0])
+    writer.writerow(["Nechama Ref", "Nechama Text", "Sefaria Ref" "Sefaria Text"])
     writer.writerows(rows)
 
 
