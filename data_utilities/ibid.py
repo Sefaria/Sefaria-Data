@@ -337,8 +337,6 @@ class CitationFinder():
         rambam_name = re.search(u'''?,(רמב"ם|משנה תורה)''', st)
 
 
-        
-
 class IndexIbidFinder(object):
 
     def __init__(self, index, assert_simple = True):
