@@ -261,6 +261,24 @@ class Element(object):
         for child in self.get_child():
             child.convert_pattern_to_itag(commentator, pattern, group, order_callback)
 
+    def convert_pattern_to_label_itag(self, commentator, pattern,
+                                      order_group=1, label_group=2, order_callback=getGematria):
+        """
+        Finds patterns and renders them as itags with a data-label field. This is helpful for references where the
+        text is already on production or if extra itags are needed but would not be part of the xref linking structure.
+        :param commentator: Title of Commentator
+        :param pattern: regex to substitute
+        :param order_group: group to use to set the data order.
+        :param label_group: group that will determine the data-label field
+        :param order_callback: Callback method used to decode the data order
+        :return:
+        """
+        if not self.multiple_children:
+            raise NotImplementedError
+
+        for child in self.get_child():
+            child.convert_pattern_to_label_itag(commentator, pattern, order_group, label_group, order_callback)
+
     def render(self):
         return [child.render() for child in self.get_child()]
 
@@ -1202,6 +1220,24 @@ class TextElement(Element):
         def repl(s):
             data_order = order_callback(s.group(group))
             return escape(u'<i data-commentator="{}" data-order="{}"></i>'.format(commentator, data_order))
+
+        # Make sure pattern will not touch the existing xrefs
+        for xref in self.Tag.find_all('xref'):
+            if re.search(pattern, xref.text):
+                raise AssertionError('Pattern matches previously marked reference')
+
+        tagged = re.sub(pattern, repl, unicode(self))
+        new_tag = BeautifulSoup(tagged, 'xml').find(self.Tag.name)
+        self.Tag.replace_with(new_tag)
+        self.Tag = new_tag
+
+    def convert_pattern_to_label_itag(self, commentator, pattern,
+                                      order_group=1, label_group=2, order_callback=getGematria):
+        def repl(s):
+            data_order = order_callback(s.group(order_group))
+            data_label = s.group(label_group)
+            return escape(u'<i data-commentator="{}" data-order="{}" data-label="{}"</i>'.
+                          format(commentator, data_order, data_label))
 
         # Make sure pattern will not touch the existing xrefs
         for xref in self.Tag.find_all('xref'):
