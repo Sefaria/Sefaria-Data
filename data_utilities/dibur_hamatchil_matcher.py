@@ -46,6 +46,8 @@ kForMultiWordHash = 39
 weighted_levenshtein = WeightedLevenshtein()
 
 lettersInOrderOfFrequency = [ u'ו', u'י', u'א', u'מ', u'ה', u'ל', u'ר', u'נ', u'ב', u'ש', u'ת', u'ד', u'כ', u'ע', u'ח', u'ק', u'פ', u'ס', u'ז', u'ט', u'ג', u'צ' ]
+lettersInOrderOfFrequencyEn = [u'e', u't', u'a', u'i', u'o', u's', u'h', u'n', u'r', u'd', u'l', u'b', u'm', u'u', u'f', u'c', u'w', u'p', u'g', u'y', u'v', u'k', u'x', u'j', u'z', u'q']
+
 
 class MatchMatrix(object):
     def __init__(self, daf_hashes, comment_hashes, jump_coordinates, word_threshold, comment_word_skip_threshold = 1, base_word_skip_threshold = 2, overall_word_skip_threshold = 2):
@@ -359,14 +361,15 @@ class AbbrevMatch:
 
 
 class GemaraDaf:
-    def __init__(self,word_list,comments,dh_extraction_method=lambda x: x,prev_matched_results=None,dh_split=None):
+    def __init__(self,word_list,comments,dh_extraction_method=lambda x: x,prev_matched_results=None,dh_split=None, lang="he"):
         self.allWords = word_list
         self.matched_words = [False for _ in xrange(len(self.allWords))]
         self.gemaraText = " ".join(self.allWords)
-        self.wordhashes = CalculateHashes(self.allWords)
+        self.wordhashes = CalculateHashes(self.allWords, lang)
         self.allRashi = []
         self.did_dh_split = not dh_split is None
         self.dh_map = []
+        self.lang = lang
         # dh split
         dh_list = []
         if dh_split:
@@ -389,7 +392,7 @@ class GemaraDaf:
         count = 0
         for i,comm in enumerate(comments):
             prev_result = prev_matched_results[i] if prev_matched_results else (-1,-1)
-            self.allRashi.append(RashiUnit(dh_list[i],comm,count,prev_result))
+            self.allRashi.append(RashiUnit(dh_list[i],comm,count,prev_result, lang=lang))
             count+=1
 
 
@@ -420,7 +423,7 @@ class GemaraDaf:
                         if sub_ru.endWord > new_end_word:
                             new_end_word = sub_ru.endWord
 
-                    new_ru = RashiUnit(old_dh,sub_rashis[0].fullText,sub_rashis[0].place)
+                    new_ru = RashiUnit(old_dh,sub_rashis[0].fullText,sub_rashis[0].place, self.lang)
                     new_ru.startWord = new_start_word
                     new_ru.endWord = new_end_word
                     new_ru.matchedGemaraText = new_matching_text
@@ -435,7 +438,7 @@ class GemaraDaf:
 
 
 class RashiUnit:
-    def __init__(self,startingText,fullText,place,prev_result=(-1,-1)):
+    def __init__(self,startingText,fullText,place,prev_result=(-1,-1),lang="he"):
         self.place = place
         self.disambiguationScore = 0
         self.rashimatches = []  # list of TextMatch
@@ -460,7 +463,7 @@ class RashiUnit:
 
 
         # // now remove all non-letters, allowing just quotes
-        normalizedCV = re.sub(ur"[^א-ת \"״]", u"", normalizedCV).strip()
+        normalizedCV = re.sub(ur"[^א-ת \"״]", u"", normalizedCV).strip() if lang == "he" else re.sub(ur"[^״\" a-zA-Z]", u"", normalizedCV).strip().lower()
 
         self.startingTextNormalized = normalizedCV
         self.fullText = fullText
@@ -470,7 +473,7 @@ class RashiUnit:
         self.matchedGemaraText = ""
 
         self.words = re.split(ur"\s+", self.startingTextNormalized)
-        self.cvhashes = CalculateHashes(self.words)
+        self.cvhashes = CalculateHashes(self.words, lang)
 
     def __str__(self):
         return u"\n\t{}\n\t{}\n[{}-{}] place: {}, type: {}, skipped gemara: {}, skipped rashi: {}\nabbrevs:\n\t\t{}".format(
@@ -500,8 +503,8 @@ def get_maximum_subset_dh(base_text, comment_text, threshold=90):
     """
     wl_tuple_list = [weighted_levenshtein.calculate_best(tword,comment_text,normalize=True) for tword in base_text]
     dist_list = [temp_tup[1]-threshold for temp_tup in wl_tuple_list]
-    start,end,cost = max_sesquence_sum(dist_list)
-    return start,end
+    start,end,cost = max_sequence_sum(dist_list)
+    return start,end-1  # account for the fact that end is + 1 (see max_sequence_sum())
 
 
 def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(ur'\s+',x), max_dh_len=None, word_threshold=0.27, char_threshold=0.2):
@@ -539,7 +542,7 @@ def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(ur'\s+',x), 
 
 def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh_extract_method=lambda x: x,verbose=False, word_threshold=0.27,char_threshold=0.2,
               with_abbrev_matches=False,with_num_abbrevs=True,boundaryFlexibility=0,dh_split=None, rashi_filter=None, strict_boundaries=None, place_all=False,
-              create_ranges=False, place_consecutively=False, daf_skips=2, rashi_skips=1, overall=2):
+              create_ranges=False, place_consecutively=False, daf_skips=2, rashi_skips=1, overall=2, lang="he"):
     """
     base_text: TextChunk
     comments: TextChunk or list of comment strings
@@ -560,6 +563,7 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
     daf_skips: int, max number of words to skip in base text
     rashi_skips: int, max number of words to skip in commentary
     overall: int, max number of overall skips, in both base and commentary
+    lang: language of text you are matching. either "he" or "en"
 
     :returns: dict
     {"matches": list of base_refs. each element corresponds to each comment in comments,
@@ -598,7 +602,7 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
     matched = match_text(bas_word_list,comment_list,dh_extract_method,verbose,word_threshold,char_threshold,prev_matched_results=prev_matched_results,
                          with_abbrev_matches=with_abbrev_matches,with_num_abbrevs=with_num_abbrevs,boundaryFlexibility=boundaryFlexibility,
                          dh_split=dh_split,rashi_filter=rashi_filter,strict_boundaries=strict_boundaries,
-                         place_all=place_all, place_consecutively=place_consecutively, daf_skips=daf_skips, rashi_skips=rashi_skips, overall=overall)
+                         place_all=place_all, place_consecutively=place_consecutively, daf_skips=daf_skips, rashi_skips=rashi_skips, overall=overall, lang=lang)
     start_end_map = matched['matches']
     text_matches = matched['match_text']
     if with_abbrev_matches:
@@ -671,7 +675,7 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
 def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,word_threshold=0.27,char_threshold=0.2,
                prev_matched_results=None,with_abbrev_matches=False,with_num_abbrevs=True,
                boundaryFlexibility=0,dh_split=None,rashi_filter=None,
-               strict_boundaries=None, place_all=False, place_consecutively=False, daf_skips=2, rashi_skips=1, overall=2):
+               strict_boundaries=None, place_all=False, place_consecutively=False, daf_skips=2, rashi_skips=1, overall=2, lang="he"):
     """
     base_text: list - list of words
     comments: list - list of comment strings
@@ -705,7 +709,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
 
     InitializeHashTables()
 
-    curDaf = GemaraDaf(base_text, comments, dh_extract_method, prev_matched_results, dh_split)
+    curDaf = GemaraDaf(base_text, comments, dh_extract_method, prev_matched_results, dh_split, lang=lang)
     # now we go through each rashi, and find all potential matches for each, with a rating
     for irashi,ru in enumerate(curDaf.allRashi):
         if ru.startWord != -1:
@@ -715,7 +719,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
         startword,endword = (0,len(curDaf.allWords)-1) if prev_matched_results == None else GetRashiBoundaries(curDaf.allRashi,ru.place,len(curDaf.allWords),boundaryFlexibility)[0:2]
         # TODO implement startword endword in GetAllMatches()
         ru.rashimatches = GetAllMatches(curDaf, ru, startword, endword, word_threshold, char_threshold,
-                                        with_num_abbrevs=with_num_abbrevs, daf_skips=daf_skips, rashi_skips=rashi_skips, overall=overall)
+                                        with_num_abbrevs=with_num_abbrevs, daf_skips=daf_skips, rashi_skips=rashi_skips, overall=overall, lang=lang)
         # sort the rashis by score
         ru.rashimatches.sort(key=lambda x: x.score) #note: check this works
 
@@ -1253,7 +1257,7 @@ def GetAbbrevs(dafwords, rashiwords, char_threshold, startBound, endBound, with_
 
 
 def GetAllMatches(curDaf, curRashi, startBound, endBound,
-                             word_threshold, char_threshold, daf_skips=2, rashi_skips=1, overall=2,with_num_abbrevs=True):
+                             word_threshold, char_threshold, daf_skips=2, rashi_skips=1, overall=2,with_num_abbrevs=True, lang="he"):
     allMatches = []
     startText = curRashi.startingTextNormalized
     global normalizingFactor
@@ -1261,7 +1265,7 @@ def GetAllMatches(curDaf, curRashi, startBound, endBound,
     dafwords = curDaf.allWords[startBound:endBound+1]
     dafhashes = curDaf.wordhashes[startBound:endBound+1]
 
-    allabbrevinds, allabbrevs = GetAbbrevs(dafwords, curRashi.words, char_threshold, startBound, endBound, with_num_abbrevs=with_num_abbrevs)
+    allabbrevinds, allabbrevs = GetAbbrevs(dafwords, curRashi.words, char_threshold, startBound, endBound, with_num_abbrevs=with_num_abbrevs) if lang == "he" else ([], [])  # abbrev matcher is designed for Hebrew
 
     daf_skips = int(min(daf_skips, mathy.floor((curRashi.cvWordcount-1)/2)))
     rashi_skips = int(min(rashi_skips, mathy.floor((curRashi.cvWordcount-1)/2)))
@@ -1778,17 +1782,17 @@ def InitializeHashTables():
     pregeneratedKMultiwordValues = [GetPolynomialKValueReal(3 - i, kForMultiWordHash) for i in xrange(4)]
 
 
-def CalculateHashes(allwords):  # input list
-    return [GetWordSignature(w) for w in allwords]
+def CalculateHashes(allwords, lang="he"):  # input list
+    return [GetWordSignature(w, lang=lang) for w in allwords]
 
 
-alefint = ord(u"א")
 
-def GetWordSignature(word):
+
+def GetWordSignature(word, lang="he"):
     # make sure there is nothing but letters
-    word = re.sub(ur"[^א-ת]", u"", word)
-    word = Get2LetterForm(word)
-
+    word = re.sub(ur"[^א-ת]", u"", word) if lang == "he" else re.sub(ur"[^a-zA-Z]", u"", word).lower()
+    word = Get2LetterForm(word, lang=lang)
+    alefint = ord(u"א") if lang == "he" else ord(u"a")
     hash = 0
     for i, char in enumerate(word):
         chval = ord(char)
@@ -1828,16 +1832,17 @@ _sofit_transx_table = {
     1509: u'\u05e6'
 }
 
-def Get2LetterForm(stringy):
+def Get2LetterForm(stringy, lang="he"):
     if stringy == u"ר":
         return u"רב"
 
     if len(stringy) < 3:
         return stringy
 
+    freqlist = lettersInOrderOfFrequency if lang == "he" else lettersInOrderOfFrequencyEn
     # take a word, and keep only the two most infrequent letters
-    stringy = stringy.translate(_sofit_transx_table)
-    freqchart = [(lettersInOrderOfFrequency.index(tempchar), i) for i, tempchar in enumerate(stringy)]
+    stringy = stringy.translate(_sofit_transx_table).lower()
+    freqchart = [(freqlist.index(tempchar), i) for i, tempchar in enumerate(stringy)]
 
     # sort it descending, so the higher they are the more rare they are
     freqchart.sort(key=lambda freq: -freq[0])
@@ -1876,7 +1881,9 @@ def hebrew_number_regex():
 
     return regex.compile(rx, regex.VERBOSE)
 
-def max_sesquence_sum(l):
+def max_sequence_sum(l):
+    # see https://stackoverflow.com/questions/15062844/maximum-sum-sublist
+    # NOTE: returns start, end, sum of best sequence. end is + 1 such that l[start:end] == sum
     best = cur = 0
     curi = starti = besti = 0
     for ind, i in enumerate(l):
