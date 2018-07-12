@@ -8,23 +8,23 @@ root_dir = loc(loc(loc(os.path.abspath(__file__))))
 xml_loc = os.path.join(root_dir, 'Yoreh_Deah.xml')
 
 filenames = [
-    u"txt_files/Yoreh_Deah/part_1/שולחן ערוך יורה דעה חלק א טז.txt",
-    u"txt_files/Yoreh_Deah/part_2/טז יורה דעה ב.txt",
-    u"txt_files/Yoreh_Deah/part_3/טז יורה דעה חלק ג.txt",
-    u"txt_files/Yoreh_Deah/part_4/שולחן ערוך יורה דעה ד טז.txt"
+    u"txt_files/Yoreh_Deah/part_1/שולחן ערוך יורה דעה חלק  א פתחי תשובה.txt",
+    u"txt_files/Yoreh_Deah/part_2/שולחן ערוך יורה דעה חלק ב 1 פתחי תשובה.txt",
+    u"txt_files/Yoreh_Deah/part_3/פתחי תשובה שולחן ערוך יורה דעה חלק ג.txt",
+    u"txt_files/Yoreh_Deah/part_4/שולחן ערוך יורה דעה חלק ד פתחי תשובה.txt"
 ]
 filenames = dict(zip(range(1, 5), [os.path.join(root_dir, f) for f in filenames]))
 
 root = Root(xml_loc)
 commentaries = root.get_commentaries()
-taz = commentaries.get_commentary_by_title(u"Turei Zahav")
-assert isinstance(taz, Commentary)
+pithei = commentaries.get_commentary_by_title(u"Pithei Teshuva")
+assert isinstance(pithei, Commentary)
 
 for vol_num in range(1, 5):
     print 'vol {}'.format(vol_num)
-    taz.remove_volume(vol_num)
+    pithei.remove_volume(vol_num)
     with codecs.open(filenames[vol_num], 'r', 'utf-8') as fp:
-        volume = taz.add_volume(fp.read(), vol_num)
+        volume = pithei.add_volume(fp.read(), vol_num)
     assert isinstance(volume, Volume)
 
     volume.mark_simanim(u'@22([\u05d0-\u05ea]{1,3})')
