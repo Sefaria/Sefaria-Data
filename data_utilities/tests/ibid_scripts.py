@@ -1,4 +1,6 @@
 # encoding=utf-8
+import django
+django.setup()
 
 
 import unicodecsv, random, bleach
@@ -125,7 +127,7 @@ def make_csv(sham_items, example_num, filename='sham_examples_full_cats.csv'):
     f.close()
 
 
-def run_shaminator(titles=None, with_real_refs=False):
+def run_shaminator(titles=None, with_real_refs=False, SEG_DIST = 5, create_ref_dict = True):
     base_url = u"https://www.sefaria.org/"
 
     title_list = []
@@ -156,11 +158,13 @@ def run_shaminator(titles=None, with_real_refs=False):
 
         index = library.get_index(title)
         inst = IndexIbidFinder(index)
-        try:
-            ref_dict = inst.find_in_index()
-        except AssertionError:
-            print "Skipping {}".format(title)
-            continue # problem with Ein Ayah
+        if create_ref_dict:
+            try:
+                ref_dict = inst.find_in_index()
+                # ref_dict - OrderedDict. keys: segments. values: dict {'refs': [Refs obj found in this seg], 'locations': [], 'types': []}
+            except AssertionError:
+                print "Skipping {}".format(title)
+                continue # problem with Ein Ayah
 
         last_index_ref_seen = {}
         row_num = 1
@@ -169,7 +173,7 @@ def run_shaminator(titles=None, with_real_refs=False):
                                "I Chronicles": "Chronicles", "II Chronicles": "Chronicles"}
         for k, v in ref_dict.items():
             curr_ref = Ref(k)
-            for r, l, t in izip(v['refs'], v['locations'], v['types']):
+            for i, (r, l, t) in enumerate(izip(v['refs'], v['locations'], v['types'])):
                 sham_ref_key = r.index.title if r.index.title not in double_tanakh_books else double_tanakh_books[
                     r.index.title]
                 if t == CitationFinder.SHAM_INT and last_index_ref_seen[sham_ref_key] is not None:
@@ -178,13 +182,15 @@ def run_shaminator(titles=None, with_real_refs=False):
                     last_index_ref_seen[sham_ref_key] = (curr_ref, l, r)
                     if not with_real_refs:
                         continue
+                    dist = curr_ref.distance(last_ref_with_citation)
                     last_ref_with_citation = curr_ref
                     last_location_with_citation = l
                     last_ref_seen = r
                     r = u"N/A"
 
 
-                dist = curr_ref.distance(last_ref_with_citation)
+                # dist = curr_ref.distance(last_ref_with_citation)
+                print dist
                 if dist == 0:
                     text = strip_nikkud(curr_ref.text('he').text)
 
@@ -205,7 +211,9 @@ def run_shaminator(titles=None, with_real_refs=False):
                     # start_text = strip_nikkud(start_text)[last_location_with_citation[0]:]
                     end_text = strip_nikkud(curr_ref.text('he').text)
                     # end_text = strip_nikkud(end_text)[:l[1]+1]
-                    if dist > 1:
+                    if dist > SEG_DIST:
+                        continue
+                    elif dist > 1 and  dist <= SEG_DIST:
                         print u"{} {} {}".format(curr_ref, last_ref_with_citation.next_segment_ref(),
                                                  curr_ref.prev_segment_ref())
                         mid_text = last_ref_with_citation.next_segment_ref().to(curr_ref.prev_segment_ref()).text(
@@ -250,7 +258,7 @@ def run_shaminator(titles=None, with_real_refs=False):
         </html>
         """
 
-        with codecs.open('ibid_output/ibid_{}.html'.format(title), 'wb',encoding='utf8') as f:
+        with codecs.open('ibid_output/ibid_{}.html'.format(title), 'wb', encoding='utf8') as f:
             f.write(html)
 
 
@@ -323,6 +331,9 @@ def check_apperence_alt_titles(alt_titles):
     cl_title = re.sub(u'''["']''', u'', title)
     make_csv(sham_items, example_num, filename=u'''ibid_output/alt_titles_output/{}.csv'''.format(cl_title))
 
+def reurl(st):
+    return re.sub('_', ' ', st)
+
 
 if __name__ == "__main__":
     # inst = CitationFinder()
@@ -352,11 +363,12 @@ if __name__ == "__main__":
     #         tosfot_yt.append(index_title)
     #         # run_shaminator(index_title)
     # run_shaminator(tosfot_yt)
-    run_shaminator([u'Ramban on Genesis'], with_real_refs = True)
+    # run_shaminator([u'Ramban on Genesis'], with_real_refs = True)
     # for humash in library.get_indexes_in_category(u'Torah'):
-    #     run_shaminator([u'Ramban on {}'.format(humash)])
+    #     run_shaminator([u'Ramban on {}'.format(humash)],  with_real_refs=True)
     # segment_ibid_finder(u'Ramban on Genesis 4:32:1')
     # validate_alt_titles()
+    run_shaminator([reurl(u"Ramban on Deuteronomy")], with_real_refs=True, SEG_DIST=2)
 
 
 

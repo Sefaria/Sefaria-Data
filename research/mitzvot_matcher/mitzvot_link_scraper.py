@@ -479,9 +479,9 @@ def range_ref(ref):
     return r
 
 
-def copy_from_local():
-    query = {"type": "sifrei mitzvot"}
-    linkset = LinkSet(query)
+def copy_from_local(linkset = LinkSet({"type": "sifrei mitzvot"})):
+    # query = {"type": "sifrei mitzvot"}
+    # linkset = LinkSet(query)
     links = [l.contents() for l in linkset]
     # for link in links:
     #     for i, ref in enumerate(link["refs"]):
@@ -783,12 +783,15 @@ def cluster_lines(fixedFileName):
     dicts_by_chinukh = []
     clusters = []
     link_node_cnt = 0
+    only_cluster_lines = []
     with open(u'{}'.format(fixedFileName), 'r') as csvfile:
         seg_reader = csv.DictReader(csvfile)
 
         for i, row in enumerate(seg_reader):
             if not divmod(i, 4)[1] == 1:
                 continue
+
+            only_cluster_lines.append(row)
             _, mitzvah_set_small, mitzvah_set_large = row_to_Refs(row, fixing=True)
             mitzvah_cluster_small = create_link_cluster(mitzvah_set_small, 30044, link_type="Sifrei Mitzvot",
                                                   attrs={"generated_by": "viascraped_chinukh_sfm_linker_small", "auto": True})
@@ -798,13 +801,18 @@ def cluster_lines(fixedFileName):
             clusters.append(mitzvah_cluster_small)
             clusters.append(mitzvah_cluster_large)
 
+    with open('only_cluster_lines.csv', 'w') as writetocsv:
+        row_writer = csv.DictWriter(writetocsv, ['mitzvah Title chinukh', 'mitzvah Title Rambam', 'chinukh', 'smk', 'rambam', "wiki_rambam", "wiki_table", 'smg', 'mishneh', 'shulchanArukh', 'pasuk', 'rasag'])
+        row_writer.writeheader()
+        row_writer.writerows(only_cluster_lines)
+
     print clusters
     print sum(clusters)
     return sets_by_chinukh, clusters, dicts_by_chinukh
 
 
 def add_rasag_to_chart(readFrom, writeTo):
-    ls_rsg_psukim = LinkSet({"$and": [{"refs": {"$regex": "^Sefer Hamitzvot of Rasag.*"}}, {"refs": {"$regex":"^(Genesis|Exodus|Leviticus|Numbers|Deuteronomy).*" }}]})
+    ls_rsg_psukim = LinkSet({"$and": [{"refs": {"$regex": "^(Sefer Hamitzvot of Rasag).*"}}, {"refs": {"$regex":"^(Genesis|Exodus|Leviticus|Numbers|Deuteronomy).*" }}]})
     mitzvah_title = u''
     with open(writeTo, 'w') as writetocsv:
         writer = csv.DictWriter(writetocsv, ['mitzvah Title chinukh', 'mitzvah Title Rambam', 'chinukh', 'smk', 'rambam', "wiki_rambam", "wiki_table", 'smg', 'mishneh', 'shulchanArukh', 'pasuk', 'rasag'])
@@ -891,11 +899,11 @@ def link_tanakh_pesukim_via_Halakah(base_title_book, category="Tanakh", nodes_to
                 print Ref(p).text('he').text
 
 
-def rasag_clustered_via_Torah_and(books_list = None, without_query = {}, clique_query = {}):
+def rasag_clustered_via_Torah_and(books_list = None, without_query = {}, clique_query = {}, exclude_clique = ""):
     """
     :param: books_list: list of books to be the party to connect to (onn the other side of the tanakh)
     :param without_qurey: without counting live links.
-    :return:
+    :return: list of links starting in rasag throw torah to book_list, without links from without_query, and then clustered with all clique query
     """
     links = []
     woLS = LinkSet(without_query)
@@ -909,7 +917,7 @@ def rasag_clustered_via_Torah_and(books_list = None, without_query = {}, clique_
     segments = library.get_index("Sefer Hamitzvot of Rasag").all_segment_refs()
     for seg in segments:
         ls = seg.linkset()
-        if without_query and len(woLS.refs_from(seg)):
+        if without_query and len(woLS.refs_from(seg)): # so not to look for connecting rsg via Rambam when rsg is connected already
             continue
         ts = [r for r in ls.refs_from(seg, as_tuple=False, as_link=False) if r.index.title in cat_tanakh]  # ts= tanakh set => pesukim connected to this Rasag seg/mitzva
         if not ts:
@@ -924,7 +932,7 @@ def rasag_clustered_via_Torah_and(books_list = None, without_query = {}, clique_
             sfm_pasuk_set = [r for r in ls1.refs_from(p) if r.index.title in books_list] # using refs_from to get the refs asa list and not link objects
             for mitzvah_ref in sfm_pasuk_set:
                 clique_ref_list = clique_ls.refs_from(mitzvah_ref)
-                clique_links = cliqueLinks(seg, clique_ref_list, type = "rsg_sfm_clique") #, exclude = ""
+                clique_links = cliqueLinks(seg, clique_ref_list, type = "rsg_sfm_clique", exclude=exclude_clique)
                 links.extend(clique_links)
                 if re.search("(Katan|Gadol)", mitzvah_ref.normal()) and not re.search("Remazim", mitzvah_ref.normal()):
                     continue
@@ -941,9 +949,19 @@ def rasag_clustered_via_Torah_and(books_list = None, without_query = {}, clique_
     return links
 
 
-def cliqueLinks(ref, rl, type='clique'):
+def cliqueLinks(ref, rl, type='clique', exclude = ""):
+    """
+
+    :param ref: a ref to connect each ref in rl to.
+    :param rl: ref list that you want to connect ref to each function in rl.
+    :param type: the typr these links are going to receive
+    :param exclude: regex that refs containing this regex will be excluded for the link creation
+    :return:
+    """
     links = []
     for qr in rl:
+        if exclude and re.search(exclude, qr):
+            continue
         link = ({"refs": [ref.normal(), qr.normal()],
                  "type": type,
                  "auto": True,
@@ -1013,14 +1031,47 @@ if __name__ == "__main__":
     # seferHamitzvot_from_rasag_comm(u"rasag_all_refs", with_orig = True)
     # links = rasag_linking(u'almostRefs.csv')
     # post_link(links, VERBOSE=True)
-    # sets_by_chinukh, clusters, dicts_by_chinukh = cluster_lines("rsg.csv")
-    # copy_from_local()
+    sets_by_chinukh, clusters, dicts_by_chinukh = cluster_lines("rsg.csv")
     # link_tanakh_pesukim_via_Halakah("Mishneh Torah, Negative Mitzvot")
     # find_missing_links("Mishneh Torah, Positive Mitzvot", "Sefer HaChinukh", level=1)
-    rasag_links = rasag_clustered_via_Torah_and(without_query={"type": "sifrei mitzvot"}, clique_query={"type": "sifrei mitzvot"})
+    # short_rambam = ["Mishneh Torah, Positive Mitzvot", "Mishneh Torah, Negative Mitzvot"]
+    # rasag_links = rasag_clustered_via_Torah_and(books_list=short_rambam, without_query={"type": "sifrei mitzvot"}, clique_query={"type": "None"}, exclude_clique="")
     # post_link(rasag_links)
     # pesukim_with_mto_mitzvah()
     # add_rasag_to_chart("mitzvot_chart.csv", "rsg.csv")
     # sets_by_chinukh, clusters, dicts_by_chinukh = cluster_lines("rsg.csv")
     # report_rsg_not_cnnected("Sefer Hamitzvot of Rasag")
+
+    # cnt = 0
+    # ls = LinkSet({"$and": [{"refs": {"$regex": "^(Sefer Hamitzvot of Rasag).*"}}, {"refs": {"$regex": "^(Mishneh Torah, (Negative|Positive))"}}]}) #|Positive
+    # ls_rsg_psukim = LinkSet({"$and": [{"refs": {"$regex": "^(Sefer Hamitzvot of Rasag).*"}},
+    #                                   {"refs": {"$regex": "^(Genesis|Exodus|Leviticus|Numbers|Deuteronomy).*"}}]})
+    # # for l in ls:
+    # #     print l.refs
+    # #     cnt +=1
+    # # print cnt
+    #
+    # cnt = 0
+    # cnt_rsg = 0
+    # cnt_no_ramabm = 0
+    # cnt_w_rambam = 0
+    # cnt_pesukim = 0
+    # for seg in library.get_index("Sefer Hamitzvot of Rasag").all_segment_refs():
+    #     cnt_rsg+=1
+    #     if ls_rsg_psukim.refs_from(seg):
+    #         cnt_pesukim +=1
+    #     if not ls.refs_from(seg):
+    #         cnt_no_ramabm +=1
+    #         if ls_rsg_psukim.refs_from(seg):
+    #             print seg
+    #             cnt+=1
+    #     else:
+    #         cnt_w_rambam +=1
+    #
+    # print "# segs with no rambam: ", cnt_no_ramabm
+    # print "# segs of rsg that are conected to torah and not conected to rambam:", cnt
+    # print "# segs w rambam", cnt_w_rambam
+    # print "# seges with pesukim", cnt_pesukim
+    # print "# rsg segments: ", cnt_rsg
+
     pass

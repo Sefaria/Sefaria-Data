@@ -4,7 +4,13 @@ import os
 from os.path import dirname as loc
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
-commentary_list = []
+commentary_list = [
+    (u"Siftei Kohen", u"שפתי כהן"),
+    (u"Be'er HaGolah", u"באר הגולה"),
+    (u"Beur HaGra", u'ביאור הגר"א'),
+    (u"Turei Zahav", u"טורי זהב"),
+    (u"Pithei Teshuva", u"פתחי תשובה")
+]
 
 commentary_list = [dict(zip(('en_title', 'he_title'), c)) for c in commentary_list]
 

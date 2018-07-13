@@ -663,14 +663,18 @@ def post_category(category_dict, server=SEFARIA_SERVER):
     
 def add_category(en_title, path, he_title=None, server=SEFARIA_SERVER):
     """
+    Familiarize yourself with Categories as First Class Objects before using this method:
+    https://github.com/Sefaria/Sefaria-Project/wiki/Categories-as-first-class-objects
+
     Post a category to the desired server. If a hebrew title is not supplied, this method will attempt to post a category
     using a sharedTerm. This can only work if the corresponding term is present in the local Sefaria.
     This method will attempt to upload parent categories if they are missing on destination server.
     IMPORTANT: It is not assumed that parents exist locally, therefore this method can only post parents that use a
     sharedTerm. All necessary terms must exist locally for this to work.
+    Note, en_title needs to be identical to last item in path
 
     :param en_title: Primary English title or sharedTitle
-    :param path: path to this category
+    :param list path: path to this category,
     :param he_title: Primary Hebrew title. Do not supply if a sharedTerm is to be used.
     :param server: destination server.
     :return:

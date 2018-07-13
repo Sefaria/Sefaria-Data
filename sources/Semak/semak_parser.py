@@ -1,4 +1,6 @@
 # encoding=utf-8
+import django
+django.setup()
 
 import codecs
 import re
@@ -1102,7 +1104,7 @@ if __name__ == "__main__":
     # # post_all_smk(ja_smk, ja_raph, ja_hagahot, raph_links, hg_links)
     # smg_links = link_smg(ja_smk, u'smg_smk_test')
     # post_link(smg_links, VERBOSE=True)
-    # post_link(link_remazim(), VERBOSE=True)
+    post_link(link_remazim(), VERBOSE=True)
     # remazim_sm_g_k = link_smk_remazim_to_smg_remazim(smg_links)
     # post_link(remazim_sm_g_k, VERBOSE=True)
     # link_rambam("testrambamibid.txt")
@@ -1111,7 +1113,8 @@ if __name__ == "__main__":
     old = 22
     new = 23
     # rewrtie_csv(u'fixed{}.csv'.format(old), u'fixed{}'.format(new), u'full', toWriteHeaders=[u'siman', u'smk_segment', u'rambam', u'smg', u'tur', u'full'])
-    smkDerivenLinks, links_smg = link_rambam_smg_tur(u'fixed{}.csv'.format(new))
-    post_link(smkDerivenLinks, VERBOSE=True)
-    remazim_sm_g_k = link_smk_remazim_to_smg_remazim(links_smg)
-    post_link(remazim_sm_g_k, VERBOSE=True)
+    # rewrtie_csv(u'fixed{}.csv'.format(old), u'smk_links', u'full', toWriteHeaders=[u'siman', u'smk_segment', u'rambam', u'smg', u'tur', u'full'])
+    # smkDerivenLinks, links_smg = link_rambam_smg_tur(u'fixed{}.csv'.format(new))
+    # post_link(smkDerivenLinks, VERBOSE=True)
+    # remazim_sm_g_k = link_smk_remazim_to_smg_remazim(links_smg)
+    # post_link(remazim_sm_g_k, VERBOSE=True)
