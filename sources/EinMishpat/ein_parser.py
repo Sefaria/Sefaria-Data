@@ -188,7 +188,7 @@ def parse_em(filename, passing, errorfilename, EM = True):
                 #     tsh_cit = next
                 #     cit.check_double('_tsh', tursh.parse_tsh(tsh_cit, mass, only_tur = True))#cit._tsh = tursh.parse_tsh(tsh_cit, only_tur = True)
                 tsh_cit = next
-                cit.check_double('_tsh', tursh.parse_tsh(tsh_cit, mass,only_tur=True))  # cit._tsh = tursh.parse_tsh(tsh_cit, only_tur = True)
+                cit.check_double('_tsh', tursh.parse_tsh(tsh_cit, mass, only_tur=True))  # cit._tsh = tursh.parse_tsh(tsh_cit, only_tur = True)
         cit_dictionary.extend(cit.obj2dict(passing))
         if cit_dictionary[-1][u'problem'] != u'error missing little or big letter' and cit_dictionary[-1][u'problem'] != u'error, cit with the perek/page counters':
             cit_dictionary[-1][u'problem'] = mass.error_flag
@@ -618,6 +618,7 @@ def rambam_name_table():
     name_dict[u'ספר תורה'] = name_dict[u'תפילין ומזוזה וספר תורה']
     name_dict[u'מזוזה'] = name_dict[u'תפילין ומזוזה וספר תורה']
     name_dict[u'תפלין'] = name_dict[u'תפילין ומזוזה וספר תורה']
+    name_dict[u'תפילין וס"ת'] = name_dict[u'תפילין ומזוזה וספר תורה']
     name_dict[u'אבידה'] = name_dict[u'גזילה ואבידה']
     name_dict[u'גנבה'] = name_dict[u'גניבה']
     # name_dict[u'שמיטין'] = name_dict[u'שמיטה ויובל']
@@ -1035,5 +1036,5 @@ if __name__ == "__main__":
     # reverse_collapse('csvQA/megillah_little_letters.csv', 'csvQA/collapsed_megillah')
     # run1(u'collapsed/lost_lines', u'collapsed/lost_lines') #avodah_zarah
     # run1('/home/shanee/www/sefaria/Sefaria-Data/sources/Semak/citations', EM = False)
-    run2("done/zevachim", "done/zevachim")
+    run2("txtFiles/menachot", "txtFiles/menachot")
 

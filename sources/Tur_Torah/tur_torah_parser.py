@@ -69,7 +69,7 @@ def parse_en(filename):
     indices = [0]*3
     for line in lines:
         pasuk_dh = re.match(placing, line)
-        reg_dh = re.search(ur'@([\u05d0-\u05ea|\\s]*)',line) #  reg_dh = re.search(ur'([\u05d0-\u05ea]+, *“.*?”)',line)
+        reg_dh = re.search(ur'@([\u05d0-\u05ea|\\s]*)', line)  # reg_dh = re.search(ur'([\u05d0-\u05ea]+, *“.*?”)',line)
         line = multiple_replace(line, replace_dict, using_regex=True)
         if pasuk_dh or reg_dh:
             temp = ' '.join(temp)
