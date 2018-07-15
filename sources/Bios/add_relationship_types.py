@@ -37,7 +37,7 @@ prt.save()
 prt = PersonRelationshipType({"key": "member"})
 prt.set_forward_name(u"From the School of", "en")
 prt.set_forward_name(u"שייך לחוגו של", "he")
-prt.set_reverse_name(u"Members", "en")
+prt.set_reverse_name(u"Influenced", "en")
 prt.set_reverse_name(u"חברים", "he")
 prt.save()
 
