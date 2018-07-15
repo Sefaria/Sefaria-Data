@@ -9,7 +9,8 @@ commentary_list = [
     (u"Be'er HaGolah", u"באר הגולה"),
     (u"Beur HaGra", u'ביאור הגר"א'),
     (u"Turei Zahav", u"טורי זהב"),
-    (u"Pithei Teshuva", u"פתחי תשובה")
+    (u"Pithei Teshuva", u"פתחי תשובה"),
+    (u"Torat HaShalmim", u"תורת השלמים")
 ]
 
 commentary_list = [dict(zip(('en_title', 'he_title'), c)) for c in commentary_list]
