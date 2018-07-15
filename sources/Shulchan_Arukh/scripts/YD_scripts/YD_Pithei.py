@@ -39,6 +39,8 @@ for vol_num in range(1, 5):
         print e
 
     volume.set_rid_on_seifim()
+    if vol_num == 2:
+        volume.unlink_seifim([u'b0-c5-si110-ord{}'.format(i) for i in range(13, 18)])
     base = root.get_base_text()
     b_vol = base.get_volume(vol_num)
     assert isinstance(b_vol, Volume)
