@@ -452,7 +452,23 @@ class Sheets:
         combined_with_prev_line = None
         prev_was_quote = None
         for i, segment in enumerate(segments):
-            if isinstance(segment, element.Tag) and segment.name == "table":
+            # sanity check:
+            # determine if it's worth looking to see what this ref is:
+            # if it's the last one, it's not a ref because a comment needs to come after it
+            # if the next one isn't a Tag, this can't be a ref because comments are always Tags with classes
+            # indicating parshan, bible, etc.
+            # also make sure the next one has a class in self.important_classes
+            # if it doesn't meet all the criteria, then it's just a comment by Nechama
+            relevant_text = self.format(self.relevant_text(segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
+            next_comment_parshan_or_bible = ""
+            this_comment_could_be_ref = i < len(segments) - 1 and isinstance(segments[i + 1], element.Tag) and isinstance(segments[i], element.Tag)
+            if this_comment_could_be_ref:
+                next_comment_parshan_or_bible = "class" in segments[i + 1].attrs.keys() and \
+                                                segments[i + 1].attrs["class"][0] in self.important_classes
+
+            if not next_comment_parshan_or_bible or not this_comment_could_be_ref:  # above criteria not met, just an ordinary comment
+                segments[i] = ('nechama', relevant_text, "")
+            elif isinstance(segment, element.Tag) and segment.name == "table":
                 if segment.attrs["class"][0] in ["question", "question2", "header"]:
                     self.process_table(segments, i)
                 elif segment.attrs["class"] in [["RT"], ["RTBorder"]]:  #these tables we want as they are so just str(segment)
@@ -473,33 +489,15 @@ class Sheets:
                 self.process_comment_specific_class(segments, i, text, segment_class)
                 #prev_was_quote = segment_class
                 continue
-            else:
-                relevant_text = self.format(self.relevant_text(segment)) #if it's Tag, tag.text; if it's NavigableString, just the string
-                #sanity check:
-                #determine if it's worth looking to see what this ref is:
-                #if it's the last one, it's not a ref because a comment needs to come after it
-                #if the next one isn't a Tag, this can't be a ref because comments are always Tags with classes
-                #indicating parshan, bible, etc.
-                #also make sure the next one has a class in self.important_classes
-                #if it doesn't meet all the criteria, then it's just a comment by Nechama
-                next_comment_parshan_or_bible = ""
-                this_comment_could_be_ref = i < len(segments) - 1 and isinstance(segments[i+1], element.Tag) and isinstance(segments[i], element.Tag)
-                if this_comment_could_be_ref:
-                    next_comment_parshan_or_bible = "class" in segments[i+1].attrs.keys() and segments[i+1].attrs["class"][0] in self.important_classes
-                else:
-                    raise AssertionError, "this_comment_could_be_ref issue"
+            else: #must be a Comment
+                next_segment_class = segments[i + 1].attrs["class"][0] #get the class of this ref and it's comment
+                real_title, found_a_tag, a_tag_is_entire_comment, a_tag_in_long_comment \
+                    = self.get_a_tag_from_ref(segment, relevant_text)
 
-                if not next_comment_parshan_or_bible: #above criteria not met, just an ordinary comment
-                    segments[i] = ('nechama', relevant_text, "")
-                else:
-                    next_segment_class = segments[i + 1].attrs["class"][0] #get the class of this ref and it's comment
-                    real_title, found_a_tag, a_tag_is_entire_comment, a_tag_in_long_comment \
-                        = self.get_a_tag_from_ref(segment, relevant_text)
+                is_perek_pasuk_ref, real_title, found_ref_in_string \
+                    = self.check_ref_and_add_to_quotation_stack(next_segment_class, relevant_text, real_title)
 
-                    is_perek_pasuk_ref, real_title, found_ref_in_string \
-                        = self.check_ref_and_add_to_quotation_stack(next_segment_class, relevant_text, real_title)
-
-                    combined_with_prev_line = set_ref_segment(combined_with_prev_line)
+                combined_with_prev_line = set_ref_segment(combined_with_prev_line)
                 prev_was_quote = ""
         return segments
 
@@ -508,13 +506,13 @@ class Sheets:
         found_ref_in_string = ""
 
         # check if it's in Perek X, Pasuk Y format and set perek and pasuk accordingly
-        is_perek_pasuk_ref, new_perek = self.set_current_perek_pasuk(relevant_text, next_segment_class)
+        is_perek_pasuk_ref, new_perek, new_pasuk = self.set_current_perek_pasuk(relevant_text, next_segment_class)
 
         # now add to quotation stack either based on real_title or based on self.current_parsha_ref
         if real_title:  # a ref to a commentator that we have in our system
             if self.current_pasuk:
                 self.add_to_quotation_stack(
-                    [next_segment_class, u"{} {}:{}".format(real_title, new_perek, self.current_pasuk)])
+                    [next_segment_class, u"{} {}:{}".format(real_title, new_perek, new_pasuk)])
             else:
                 self.add_to_quotation_stack([next_segment_class, u"{} {}".format(real_title, new_perek)])
         elif not real_title and is_perek_pasuk_ref:  # not a commentator, but instead a ref to the parsha
@@ -662,6 +660,14 @@ class Sheets:
         return ""
 
 
+    def pasuk_in_parsha_pasukim(self, new_pasuk):
+        for perek in self.current_perakim:
+            possible_ref = perek + ":" + new_pasuk
+            if possible_ref in self.current_pasukim:
+                return True
+        return False
+
+
     def set_current_perek_pasuk(self, text, next_segment_class):
         text = text.replace(u"פרקים", u"Perek").replace(u"פרק ", u"Perek ").replace(u"פסוקים", u"Pasuk").replace(u"פסוק ", u"Pasuk ").strip()
         digit = re.compile(u"^.{1,2}[\)|\.]").match(text)
@@ -706,19 +712,27 @@ class Sheets:
             else: # there is a pasuk but is not ranged
                 new_pasuk = getGematria(pasuk)
                 text = text.replace(pasuk, "")
-            #_validate_new_pasuk(new_pasuk, self.current_pasukim)
+            new_pasuk = str(new_pasuk)
+            pasuk_in_parsha = self.pasuk_in_parsha_pasukim(new_pasuk)
+            if pasuk_in_parsha:
+                self.current_pasuk = new_pasuk
 
+        new_perek = self.current_perek
+        new_pasuk = self.current_pasuk
         if perek and text.startswith("Perek"): #second check to prevent things like "Midrash Tadshe Perek Zion" from passing
             text = text.replace(perek, "")
             new_perek = getGematria(perek)
             if new_perek in self.current_perakim:
                 self.current_perek = new_perek
-            self.current_parsha_ref = [next_segment_class, u"{} {}".format(sefer, new_perek)]
-            return True, new_perek
+            if not pasuk:
+                self.current_parsha_ref = [next_segment_class, u"{} {}".format(sefer, new_perek)]
         if pasuk:
-            self.current_parsha_ref = [next_segment_class, u"{} {}:{}".format(sefer, self.current_perek, self.current_pasuk)]
-            return True, self.current_perek
-        return False, self.current_perek
+            self.current_parsha_ref = [next_segment_class, u"{} {}:{}".format(sefer, new_perek, new_pasuk)]
+
+        if perek or pasuk:
+            return True, new_perek, new_pasuk
+        else:
+            return False, self.current_perek, self.current_pasuk
 
 
 
