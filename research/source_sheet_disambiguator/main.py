@@ -31,13 +31,15 @@ def get_token_info_for_ref(r, lang):
     return ref_index_list, ref_list, word_index_list, actual_text
 
 
-def refine_ref_by_text(ref, en, he, lenDiff=20):
+def refine_ref_by_text(ref, en, he, lenDiff=20, alwaysCheck=False, truncateSheet=True):
     """
     Given a ref, determine if the text associated with it matches the text of the ref
     :param ref: Ref
     :param en: english text of source sheet. can be empty string
     :param he: hebrew text of source sheet. can be empty string
     :param lenDiff: len diff b/w sheet text and ref text above which we dont consider them equal
+    :param alwaysCheck: bool, True to ignore `lenDiff` and instead always check if the sheet matches the ref
+    :param truncateSheet: bool, True if you want to truncate long sheets. a good optimization if you know the sheet text matches the ref very exactly
     :return: either True if text matches ref, None if you couldn't find a better ref or a refined ref
     """
     dominant_lang = "en" if len(he) == 0 or ((1.0*len(en)) / len(he) > 7.0) else "he"  # only choose english if its way longer
@@ -45,11 +47,11 @@ def refine_ref_by_text(ref, en, he, lenDiff=20):
     ref_index_list, ref_list, word_index_list, actual_text = get_token_info_for_ref(ref, dominant_lang)
     if len(word_index_list) == 0 or len(ref_list) == 0:
         return None
-    if abs(len(sheet_text) - len(actual_text)) < lenDiff:
+    if abs(len(sheet_text) - len(actual_text)) < lenDiff and not alwaysCheck:
         if len(ref_list) == 1 and ref_list[0].normal() != ref.normal():
             return ref_list[0]  # if there's only ref in the section, return it
         return True
-    if len(sheet_text) > MAX_SHEET_LEN:
+    if len(sheet_text) > MAX_SHEET_LEN and truncateSheet:
         start_sheet_text = sheet_text[:sheet_text.find(u" ", min(len(sheet_text)/2, MAX_SHEET_LEN))]
         end_sheet_text = sheet_text[sheet_text.find(u" ", max(len(sheet_text)/2, len(sheet_text)-MAX_SHEET_LEN))+1:]
         start_ref = find_subref(start_sheet_text, ref, dominant_lang)
