@@ -36,7 +36,7 @@ class Sheets:
         self.table_classes = {}
         self.server = self.versionSource
         self.important_classes = ["parshan", "midrash", "talmud", "bible", "commentary"]
-        self.bereshit_parshiot = ['844']#["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
+        self.bereshit_parshiot = ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
         self.sheets = {}
         self.links = []
         self.current_pos_in_quotation_stack = -1
@@ -656,10 +656,10 @@ class Sheets:
         if perek:
             text = text.replace(perek, "")
             new_perek = getGematria(perek)
+            if not pasuk:
+                self.current_parsha_ref = [next_segment_class, u"{} {}".format(sefer, new_perek)]
             if new_perek in self.current_perakim and text.startswith("Perek"):
                 self.current_perek = new_perek
-                if not pasuk:
-                    self.current_parsha_ref = [next_segment_class, u"{} {}".format(sefer, new_perek)]
             else:
                 perek_is_valid = False
 
@@ -676,7 +676,7 @@ class Sheets:
             new_pasuk = str(new_pasuk)
             if perek_is_valid and self.pasuk_in_parsha_pasukim(new_pasuk): #only reset pasuk if perek is OK as well in ref
                 self.current_pasuk = new_pasuk
-                self.current_parsha_ref = [next_segment_class, u"{} {}:{}".format(sefer, new_perek, new_pasuk)]
+            self.current_parsha_ref = [next_segment_class, u"{} {}:{}".format(sefer, new_perek, new_pasuk)]
 
         if perek or pasuk:
             return True, new_perek, new_pasuk #new_perek and new_pasuk can be old values or new values
@@ -814,7 +814,6 @@ class Sheets:
             self.current_sefer = library.get_index(self.current_sefer)
             self.current_alt_titles = self.current_sefer.nodes.get_titles('en')
             self.current_sefer = self.current_sefer.title
-            print "Sheet {}".format(i)
             text = content.find("div", {"id": "contentBody"})
             if parsha not in self.sheets:
                 self.sheets[parsha] = {}
@@ -863,7 +862,7 @@ class Sheets:
 
 
     def fix_ref(self, ref, comment):
-        comment = bleach.clean(comment, strip=True)
+        comment = comment.replace('"', '')
 
         # ld = Link_Disambiguator()
         # main_tc = TextChunk(Ref("Tosafot on Eruvin 92a:1:1"), "he")
@@ -895,7 +894,8 @@ class Sheets:
             text = ref_obj.text('he').text
 
         #try to get segment level from section
-        new_ref = refine_ref_by_text(ref_obj, "", comment, 35)  # can be None, same ref as str or Ref
+
+        new_ref = refine_ref_by_text(ref_obj, "", comment, 20)  # can be None, same ref as str or Ref
         if new_ref is None:
             if ref.startswith("Genesis"):
                 return ""
@@ -1108,7 +1108,7 @@ if __name__ == "__main__":
     writer.writerow(["Nechama Ref", "Nechama Text", "Sefaria Ref" "Sefaria Text"])
     writer.writerows(rows)
 
-    i = open("index_not_found.csv")
+    i = open("index_not_found.csv", 'w')
     writer = UnicodeWriter(i)
     writer.writerow(["Index", "Ref", "Text"])
     for index, ref_text in sheets.index_not_found.items():
