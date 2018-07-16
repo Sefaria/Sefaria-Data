@@ -18,6 +18,7 @@ def markup(vol, xml_root):
     vol.mark_references(commentaries.commentary_ids[u"Beur HaGra"], u'@99\[([\u05d0-\u05ea]{1,3})\]', group=1)
     vol.mark_references(commentaries.commentary_ids[u"Turei Zahav"], u'@71\(([\u05d0-\u05ea]{1,3})\)', group=1)
     vol.mark_references(commentaries.commentary_ids[u"Pithei Teshuva"], u'@74\(([\u05d0-\u05ea]{1,3})\)', group=1)
+    vol.mark_references(commentaries.commentary_ids[u"Torat HaShalmim"], u'%\[([\u05d0-\u05ea]{1,3})\]', group=1)
     vol.convert_pattern_to_itag(u"Ba'er Hetev", ur"@66\(([\u05d0-\u05ea]{1,3})\)")
     vol.convert_pattern_to_label_itag(u"Be'er HaGolah", u'@44\(([\u05d0-\u05ea]{1,3})\)\((°)\)')
 
