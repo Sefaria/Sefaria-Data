@@ -1060,8 +1060,7 @@ class Seif(OrderedElement):
             else:
                 add_formatted_text(element_words, element_name=u'reg-text')
 
-
-    def set_rid(self, base_id, com_id, siman_num, cyclical=False):
+    def set_rid(self, base_id, com_id, siman_num, cyclical=False, order=None):
         """
         Set the rid key on the Seif to be matched to it's equivalent footnote in the base text
         :param base_id: Id of base text
@@ -1071,16 +1070,18 @@ class Seif(OrderedElement):
         point (i.e. ת resolves as 22). This is necessary for commentaries that cycle through the hebrew alphabet to mark
         comments without using the letters as a numerical representation (באר הגולה on חושן משפט is an example of this
         markup format - view source files for details).
+        :param order: Use to set the order value explicitly
         :return:
         """
         if com_id == 0:  # 0 is reserved to reference the base text
             raise AssertionError("Base text seifim do not have an rid")
 
-        if cyclical:
-            assert self.Tag.get('label') is not None
-            order = u'{};{}'.format(self.Tag['label'], self.num)
-        else:
-            order = self.num
+        if order is not None:
+            if cyclical:
+                assert self.Tag.get('label') is not None
+                order = u'{};{}'.format(self.Tag['label'], self.num)
+            else:
+                order = self.num
 
         self.rid = u'b{}-c{}-si{}-ord{}'.format(base_id, com_id, siman_num, order)
         self.Tag['rid'] = self.rid
