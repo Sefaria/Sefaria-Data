@@ -19,6 +19,7 @@ MAX_SHEET_LEN = 100
 def clean(s):
     s = unicodedata.normalize("NFD", s)
     s = strip_cantillation(s, strip_vowels=True)
+    s = re.sub(u"(^|\s)(?:\u05d4['\u05f3])($|\s)", u"\1יהוה\2", s)
     s = re.sub(ur"[,'\":?.!;־״׳]", u" ", s)
     s = re.sub(ur"\([^)]+\)", u" ", s)
     #s = re.sub(ur"\((?:\d{1,3}|[\u05d0-\u05ea]{1,3})\)", u" ", s)  # sefaria automatically adds pasuk markers. remove them
@@ -40,7 +41,7 @@ def get_token_info_for_ref(r, lang):
     return ref_index_list, ref_list, word_index_list, actual_text
 
 
-def refine_ref_by_text(ref, en, he, lenDiff=20, alwaysCheck=False, truncateSheet=True):
+def refine_ref_by_text(ref, en, he, lenDiff=20, alwaysCheck=False, truncateSheet=True, **kwargs):
     """
     Given a ref, determine if the text associated with it matches the text of the ref
     :param ref: Ref
@@ -63,14 +64,14 @@ def refine_ref_by_text(ref, en, he, lenDiff=20, alwaysCheck=False, truncateSheet
     if len(sheet_text) > MAX_SHEET_LEN and truncateSheet:
         start_sheet_text = sheet_text[:sheet_text.find(u" ", min(len(sheet_text)/2, MAX_SHEET_LEN))]
         end_sheet_text = sheet_text[sheet_text.find(u" ", max(len(sheet_text)/2, len(sheet_text)-MAX_SHEET_LEN))+1:]
-        start_ref = find_subref(start_sheet_text, ref, dominant_lang)
-        end_ref = find_subref(end_sheet_text, ref, dominant_lang)
+        start_ref = find_subref(start_sheet_text, ref, dominant_lang, **kwargs)
+        end_ref = find_subref(end_sheet_text, ref, dominant_lang, **kwargs)
         if start_ref is not None and end_ref is not None:
             new_ref = start_ref.to(end_ref)
         else:
             new_ref = None
     else:
-        new_ref = find_subref(sheet_text, ref, dominant_lang)
+        new_ref = find_subref(sheet_text, ref, dominant_lang, **kwargs)
 
     if new_ref is None and ref.is_segment_level():
         #print "Trying section ref"
@@ -80,9 +81,9 @@ def refine_ref_by_text(ref, en, he, lenDiff=20, alwaysCheck=False, truncateSheet
     return new_ref
 
 
-def find_subref(sheet_text, ref, lang, vtitle=None, tried_adding_refs_at_end_of_section=False):
+def find_subref(sheet_text, ref, lang, vtitle=None, tried_adding_refs_at_end_of_section=False, **kwargs):
     tc = TextChunk(ref, lang, vtitle=vtitle)
-    matches = match_ref(tc, [sheet_text], tokenizer, dh_extract_method=clean, with_num_abbrevs=False, lang=lang, dh_split=lambda dh: re.split(ur"\s*\.\.\.\s*", dh))
+    matches = match_ref(tc, [sheet_text], tokenizer, dh_extract_method=clean, with_num_abbrevs=False, lang=lang, dh_split=lambda dh: re.split(ur"\s*\.\.\.\s*", dh), **kwargs)
     found_ref = None
     for r in matches["matches"]:
         if r is not None:
