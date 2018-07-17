@@ -11,15 +11,24 @@ from data_utilities.dibur_hamatchil_matcher import match_ref
 from sefaria.system.database import db
 from sefaria.system.exceptions import InputError, BookNameError
 from sefaria.utils.hebrew import strip_cantillation
+import unicodedata
 
 MAX_SHEET_LEN = 100
 
-def tokenizer(s):
+
+def clean(s):
+    s = unicodedata.normalize("NFD", s)
     s = strip_cantillation(s, strip_vowels=True)
-    s = re.sub(ur"[,'\"־״׳]", u" ", s)
-    s = re.sub(ur"\((?:\d{1,3}|[\u05d0-\u05ea]{1,3})\)", u" ", s)  # sefaria automatically adds pasuk markers. remove them
+    s = re.sub(ur"[,'\":?.!;־״׳]", u" ", s)
+    s = re.sub(ur"\([^)]+\)", u" ", s)
+    #s = re.sub(ur"\((?:\d{1,3}|[\u05d0-\u05ea]{1,3})\)", u" ", s)  # sefaria automatically adds pasuk markers. remove them
     s = bleach.clean(s, strip=True, tags=()).strip()
-    return s.split()
+    s = u" ".join(s.split())
+    return s
+
+
+def tokenizer(s):
+    return clean(s).split()
 
 
 def get_token_info_for_ref(r, lang):
@@ -73,7 +82,7 @@ def refine_ref_by_text(ref, en, he, lenDiff=20, alwaysCheck=False, truncateSheet
 
 def find_subref(sheet_text, ref, lang, vtitle=None, tried_adding_refs_at_end_of_section=False):
     tc = TextChunk(ref, lang, vtitle=vtitle)
-    matches = match_ref(tc, [sheet_text], tokenizer, with_num_abbrevs=False, lang=lang, dh_split=lambda dh: re.split(ur"\s*\.\.\.\s*", dh))
+    matches = match_ref(tc, [sheet_text], tokenizer, dh_extract_method=clean, with_num_abbrevs=False, lang=lang, dh_split=lambda dh: re.split(ur"\s*\.\.\.\s*", dh))
     found_ref = None
     for r in matches["matches"]:
         if r is not None:

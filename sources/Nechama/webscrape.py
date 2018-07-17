@@ -862,7 +862,6 @@ class Sheets:
 
 
     def fix_ref(self, ref, comment):
-        comment = comment.replace('"', '')
 
         # ld = Link_Disambiguator()
         # main_tc = TextChunk(Ref("Tosafot on Eruvin 92a:1:1"), "he")
@@ -894,8 +893,11 @@ class Sheets:
             text = ref_obj.text('he').text
 
         #try to get segment level from section
-
-        new_ref = refine_ref_by_text(ref_obj, "", comment, 20)  # can be None, same ref as str or Ref
+        try:
+            comment = re.sub(u'ד"ה .+?:', u"", comment)
+            new_ref = refine_ref_by_text(ref_obj, "", comment, 20, alwaysCheck=True, truncateSheet=False)  # can be None, same ref as str or Ref
+        except InputError as e:
+            new_ref = None
         if new_ref is None:
             if ref.startswith("Genesis"):
                 return ""
@@ -1111,9 +1113,10 @@ if __name__ == "__main__":
     i = open("index_not_found.csv", 'w')
     writer = UnicodeWriter(i)
     writer.writerow(["Index", "Ref", "Text"])
-    for index, ref_text in sheets.index_not_found.items():
-        ref, text = ref_text
-        writer.writerow([index, ref, text])
+    for index, ref_texts in sheets.index_not_found.items():
+        for ref_text in ref_texts:
+            ref, text = ref_text
+            writer.writerow([index, ref, text])
 
     i.close()
 
