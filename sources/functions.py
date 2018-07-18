@@ -1170,7 +1170,7 @@ def isGematria(txt):
 def getGematria(txt):
     if not isinstance(txt, unicode):
         txt = txt.decode('utf-8')
-    txt = txt.replace(u"ך", u"כ").replace(u"ץ", u"צ")
+    txt = txt.replace(u"ך", u"כ").replace(u"ם", u"מ").replace(u"ן", u"נ").replace(u"ף", u"פ").replace(u"ץ", u"צ")
     index=0
     sum=0
     while index <= len(txt)-1:
