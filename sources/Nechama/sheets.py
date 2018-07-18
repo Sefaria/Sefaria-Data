@@ -5,22 +5,40 @@ django.setup()
 
 import requests
 import re
+import os
 from bs4 import BeautifulSoup, element
 from sources.functions import getGematria
 from sefaria.model import *
 from sefaria.model.text import *
+from collections import OrderedDict
 
 
 class Sheet(object):
 
-    def __init__(self, title, year, ref=None):
+    def __init__(self, html, parasha, title, year, ref=None):
+        self.html = html
         self.title = title
-        self.he_year = year
-        self.year = getGematria(year)+1240
+        self.parasha = parasha
+        self.he_year = re.sub(u"שנת", u"", year).strip()
+        self.year = getGematria(self.he_year)+5000  # +1240, jewish year is more accurate
         self.sections = []
-        self.pesukim = Ref(ref)
-        self.header_text = u""
+        self.pesukim = self.get_ref(ref)  # (re.sub(u"(פרק(ים)?|פסוק(ים)?)", u"", ref).strip())
+        self.sheet_remark = u""
         self.header_links = None  # this will link to other  nechama sheets (if referred).
+
+    def get_ref(self, he_ref):
+        # he_ref = re.sub(u"(פרק(ים)?|פסוק(ים)?)", u"", he_ref).strip()
+        # split = re.split()
+        try:
+            r = Ref(he_ref)
+            print r.normal()
+        except InputError:
+            print 'InputError'
+            return None
+        return r
+
+
+
 
 
 class Section(object):
@@ -87,18 +105,26 @@ class Nechama_comment(object):
         self.text = text
 
 
-def bs4_reader(file_list):
+def bs4_reader(file_list_names):
     """
     The main BeautifulSoup reader function, that etrates on all sheets and creates the obj, probably should be in it's own file
     :param self:
     :return:
     """
-
-    for html_sheet in file_list:
+    sheets = OrderedDict()
+    for html_sheet in file_list_names:
         content = BeautifulSoup(open("{}".format(html_sheet)), "lxml")
-        sheet = Sheet(content.find('div', {'id': 'contentTop'}).find("h1").text, content.find("div", {"id": "year"}).text.replace(u"שנת", u""))
+        print html_sheet
+        top_dict = dict_from_html_attrs(content.find('div', {'id': "contentTop"}).contents)
+        # print 'len_content type ', len(top_dict.keys())
+        sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text)
+        sheets[html_sheet] = sheet
+        body_dict = dict_from_html_attrs(content.find('div', {'id': "contentBody"}))
+        sheet.sections.extend([v for k, v in body_dict.items() if re.search(u'ContentSection_\d', k)]) # check that these come in in the right order
+        sheet.sheet_remark = body_dict['sheetRemark'].text
 
         pass
+    return sheets
 
     # for which_sheet, i in enumerate(self.bereshit_parshiot):
     #     i += ".html"
@@ -139,7 +165,20 @@ def bs4_reader(file_list):
     #     self.current_url, hebrew_year, self.current_sefer, self.current_perakim, self.parse_as_text(text))
     #     self.post_text(parsha, self.current_en_year, self.sheets[parsha][self.current_en_year])
 
-if __name__ == "__main__":
-    bs4_reader(['html_sheets/{}.html'.format(x) for x in ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]])
+def dict_from_html_attrs(contents):
+    d = OrderedDict()
+    for e in [e for e in contents if isinstance(e, element.Tag)]:
+        if "id" in e.attrs.keys():
+            d[e.attrs['id']] = e
+        else:
+            d[e.name] = e
+    return d
 
+
+if __name__ == "__main__":
+    # Ref(u"בראשית פרק ג פסוק ד - פרק ה פסוק י")
+    # Ref(u"u'דברים פרק ט, ז-כט - פרק י, א-י'")
+    # sheets = bs4_reader(['html_sheets/{}.html'.format(x) for x in ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]])
+    sheets = bs4_reader(["html_sheets/{}".format(fn) for fn in os.listdir("html_sheets") if fn != 'errors.html'])
+    pass
 
