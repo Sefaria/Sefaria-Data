@@ -98,10 +98,7 @@ class Sheets:
         self.orig_bad_count = 0
 
 
-    def relevant_text(self, segment):
-        if isinstance(segment, element.Tag):
-            return segment.text
-        return segment
+
 
     def get_links_to_other_sheets(self, div):
         a_tags = div.find_all("a")
@@ -124,160 +121,6 @@ class Sheets:
                   }
             self.links.append(link)
 
-
-    def parse_as_text(self, text):
-        sheet_sections = []
-        intro_segment = intro_tuple = None
-        for div in text.find_all("div"):
-            if div['id'] == "sheetRemark" and div.text.replace(" ", "") != "": # comment of hers that appears at beginning of section
-                #refs_to_other_sheets = self.get_links_to_other_sheets(div)
-                intro_segment = div
-                intro_tuple = ("nechama", "<b>" + intro_segment.text + "</b>", "")
-            elif "ContentSection" in div['id']: #sections within source sheets
-                self.current_section += 1
-                assert str(self.current_section) in div['id']
-
-                if div.text.replace(" ", "") == "":
-                    continue
-
-                # removes nodes with no content
-                segments = self.get_children_with_content(div)
-
-                # blockquote is really just its children so get replace it with them
-                # and tables  need to be handled recursively
-                segments = self.check_for_blockquote_and_table(segments, level=2)
-
-                # here is the main logic of parsing
-
-                segments = self.classify_segments(segments)
-                self.RT_Rashi = False
-                if intro_segment:
-                    segments.insert(0, intro_tuple)
-                    intro_segment = None
-
-                #assert len(self.quotations) == self.current_pos_in_quotation_stack+1
-                #assert 3 > len(self.quotation_stack) > 0
-                #if len(self.quotation_stack) >= 2:
-                #    segments = self.add_links_from_intro_to_many_comments(segments)
-                self.quotation_stack = [u"{} {}".format(self.current_sefer, self.current_perek)]
-                self.quotations = [["bible", self.quotation_stack[0]]]
-                sheet_sections.append(segments)
-        return sheet_sections
-
-    def find_all_p(self, segment):
-        def skip_p(p):
-            text_is_unicode_space = lambda x: len(x) <= 2 and (chr(194) in x or chr(160) in x)
-            no_text = p.text == "" or p.text == "\n" or p.text.replace(" ", "") == "" or text_is_unicode_space(
-                p.text.encode('utf-8'))
-            return no_text and not p.find("img")
-
-        ps = segment.find_all("p")
-        new_ps = []
-        temp_p = ""
-        for p_n, p in enumerate(ps):
-            if skip_p(p):
-                continue
-            elif len(p.text.split()) == 1 and re.compile(u"^.{1,2}[\)|\.]").match(
-                    p.text):  # make sure it's in form 1. or ש.
-                temp_p += p.text
-            elif p.find("img"):
-                img = p.find("img")
-                if "pages/images/hard.gif" == img.attrs["src"]:
-                    temp_p += "*"
-                elif "pages/images/harder.gif" == img.attrs["src"]:
-                    temp_p += "**"
-            else:
-                if temp_p:
-                    temp_tag = BeautifulSoup("<p></p>", "lxml")
-                    temp_tag = temp_tag.new_tag("p")
-                    temp_tag.string = temp_p
-                    temp_p = ""
-                    p.insert(0, temp_tag)
-                new_ps.append(p)
-
-        return new_ps
-
-#logic is if it's a header don't even count it; if it's not question or header, count it; if it's a question with tables below it, don't count it
-
-    def check_for_blockquote_and_table(self, segments, level=2):
-        new_segments = []
-        tables = ["table", "tr"]
-        for i, segment in enumerate(segments):
-            if isinstance(segment, element.Tag):
-                class_ = segment.attrs.get("class", [""])[0]
-            else:
-                new_segments.append(segment)
-                continue
-            # if self.significant_class(class_):
-            #     new_segments.append(segment)
-            #     continue
-            if segment.name == "blockquote":  # this is really many children so add them to list
-                new_segments += self.get_children_with_content(segment)
-            elif segment.name == "table":
-                if segment.name == "table":
-                    if class_ == "header" or class_ == "RTBorder" or class_ == "RT":
-                        new_segments.append(segment)
-                    elif class_ == "RT_RASHI":
-                        new_segments += self.find_all_p(segment)
-                        self.RT_Rashi = True
-                    elif class_ in ["question", "question2"]:
-                        # question_in_question = [child for child in segment.descendants if
-                        #                   child.name == "table" and child.attrs["class"][0] in ["question", "question2"]]
-                        # RT_in_question = [child for child in segment.descendants if
-                        #                   child.name == "table" and child.attrs["class"][0] in ["RT", "RTBorder"]]
-                        new_segments.append(segment)
-            else:
-                # no significant class and not blockquote or table
-                new_segments.append(segment)
-
-        level -= 1
-        if level > -1:  # go level deeper unless level isn't > 0
-            new_segments = self.check_for_blockquote_and_table(new_segments, level)
-        return new_segments
-
-
-    def get_children_with_content(self, segment):
-        # determine if the text of segment is blank or practically blank (i.e. just a \n or :\n\r) or is just empty space less than 3 chars
-        children_w_contents = [el for el in segment.contents if self.relevant_text(el).replace("\n", "").replace("\r", "").replace(": ", "").replace(":", "") != "" and len(self.relevant_text(el)) > 2]
-        return children_w_contents
-
-    def remove_hyper_links(self, html):
-        all_a_links = re.findall("(<a href.*?>(.*?)</a>)", html)
-        for a_link_and_text in all_a_links:
-            a_link, text = a_link_and_text
-            html = html.replace(a_link, text)
-        return html
-
-    def process_table(self, segments, i):
-        formatted_text = ""
-        segment = segments[i]
-        table_html = str(segment)
-        table_html = self.remove_hyper_links(table_html)
-
-        if segment.attrs['class'] in [["question2"], ["question"]]:
-            table_html = self.format(table_html)
-            formatted_text = self.format(BeautifulSoup(table_html, "lxml").text)
-        elif segment.attrs['class'] in [["header"]]:
-            formatted_text = self.format(BeautifulSoup(table_html, "lxml").text)
-            formatted_text = u"<table><tr><td><big>{}</big></td></tr></table>".format(formatted_text)
-        segments[i] = ("nechama", formatted_text, "")
-
-
-    def process_comment_specific_class(self, segments, i, formatted, orig, segment_class):
-        if self.last_comm_index_not_found:
-            if type(self.last_comm_index_not_found) is not bool:  # set to True when couldn't find anything but don't even have a_tag
-                if self.last_comm_index_not_found not in self.index_not_found.keys():
-                    self.index_not_found[self.last_comm_index_not_found] = []
-                self.index_not_found[self.last_comm_index_not_found].append((self.current_parsha_ref, orig))
-            self.last_comm_index_not_found = None
-            segments[i] = (segment_class, orig, formatted, "")
-        elif segment_class in self.important_classes:
-            quote = self.quotations[-1]
-            category, ref = quote
-            segments[i] = (segment_class, orig, formatted, ref)
-        else:
-            self.add_to_table_classes(segment_class)
-
     def add_to_table_classes(self, segment_class):
         current_table = self.table_classes.get(segment_class, set())
         our_site = self.year_to_sheet[self.current_en_year]
@@ -285,90 +128,17 @@ class Sheets:
         current_table.add((our_site, her_site))
         self.table_classes[segment_class] = current_table
 
-    def classify_segments(self, segments):
-        """
-        Classifies each segments based on its role such as "question", "header", or quote from "bible"
-        and then sets each segment to be a tuple that tells us in order:
-        who says it, what do they say, where does it link to
-        If Nechama makes a comment:
-        ("Nechama", text, "")
-        If Rashi:
-        ("Rashi", text, ref_to_rashi)
-        :param segments:
-        :return:
-        """
-        def set_ref_segment(combined_with_prev_line):
-            #when she is quoting a reference to a text, this function sets segments[i]
-            if (is_perek_pasuk_ref or real_title or found_ref_in_string):
-                if not a_tag_is_entire_comment and found_ref_in_string == "" and len(relevant_text.split()) >= 6:
-                    #edge case where you found the ref but Nechama said something else in addition to the ref
-                    #so we want to keep the text
-                    combined_with_prev_line = relevant_text
-                    #could be Comment.about = relevant_text; Comment.ref = ref; Comment.ref_in_library = True;
 
-                segments[i] = "reference"
-            elif found_a_tag:
-                #found no reference but did find an a_tag so this is a ref so keep the text
-                combined_with_prev_line = relevant_text
-                #could be Comment.ref = relevant_text; Comment.about = ""; Comment.ref_in_library = False;
-                segments[i] = "combined but not reference"
-                self.last_comm_index_not_found = found_a_tag.text
-            else:
-                self.last_comm_index_not_found = True
-                segments[i] = ("nechama", relevant_text, "")
-            return combined_with_prev_line
 
-        combined_with_prev_line = None
-        prev_was_quote = None
-        for i, segment in enumerate(segments):
-            # sanity check:
-            # determine if it's worth looking to see what this ref is:
-            # if it's the last one, it's not a ref because a comment needs to come after it
-            # if the next one isn't a Tag, this can't be a ref because comments are always Tags with classes
-            # indicating parshan, bible, etc.
-            # also make sure the next one has a class in self.important_classes
-            # if it doesn't meet all the criteria, then it's just a comment by Nechama
-            relevant_text = self.format(self.relevant_text(segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
-            next_comment_parshan_or_bible = ""
-            this_comment_could_be_ref = i < len(segments) - 1 and isinstance(segments[i + 1], element.Tag) and isinstance(segments[i], element.Tag)
-            if this_comment_could_be_ref:
-                next_comment_parshan_or_bible = "class" in segments[i + 1].attrs.keys() and \
-                                                segments[i + 1].attrs["class"][0] in self.important_classes
 
-            if isinstance(segment, element.Tag) and segment.name == "table":
-                if segment.attrs["class"][0] in ["question", "question2", "header"]:
-                    self.process_table(segments, i)
-                elif segment.attrs["class"] in [["RT"], ["RTBorder"]]:  #these tables we want as they are so just str(segment)
-                    self.add_to_table_classes(segment.attrs["class"][0])
-                    segments[i] = ("nechama", str(segment), "")
-            elif isinstance(segment, element.Tag) and segment.has_attr("class"):
-                #this is a comment by a commentary, bible, or midrash
-                segment_class = segment.attrs["class"][0] #is it parshan, bible, or midrash?
-                assert len(segment.attrs["class"]) == 1, "More than one class"
-                # if prev_was_quote and prev_was_quote != segment_class and self.RT_Rashi == False:
-                #     pass
-                orig_text = segment.text.replace("\n", "").replace("\r", "")
-                if combined_with_prev_line: #i.e.: "Pasuk 5" is the previous line which gets combined with the current line that has Pasuk 5's content
-                    formatted_text = "<b><small>" + combined_with_prev_line + "</b><br/>" + orig_text + "</small>"
-                    combined_with_prev_line = None
-                else:
-                    formatted_text = "<small>" + orig_text + "</small>"
-                self.process_comment_specific_class(segments, i, formatted_text, orig_text, segment_class)
-                #prev_was_quote = segment_class
-                continue
-            elif not next_comment_parshan_or_bible or not this_comment_could_be_ref:  # above criteria not met, just an ordinary comment
-                segments[i] = ('nechama', relevant_text, "")
-            else: #must be a Comment
-                next_segment_class = segments[i + 1].attrs["class"][0] #get the class of this ref and it's comment
-                real_title, found_a_tag, a_tag_is_entire_comment, a_tag_in_long_comment \
-                    = self.get_a_tag_from_ref(segment, relevant_text)
+    def get_children_with_content(self, segment):
+        # determine if the text of segment is blank or practically blank (i.e. just a \n or :\n\r) or is just empty space less than 3 chars
+        children_w_contents = [el for el in segment.contents if self.relevant_text(el).replace("\n", "").replace("\r", "").replace(": ", "").replace(":", "") != "" and len(self.relevant_text(el)) > 2]
+        return children_w_contents
 
-                is_perek_pasuk_ref, real_title, found_ref_in_string \
-                    = self.check_ref_and_add_to_quotation_stack(next_segment_class, relevant_text, real_title)
 
-                combined_with_prev_line = set_ref_segment(combined_with_prev_line)
-                prev_was_quote = ""
-        return segments
+
+
 
 
     def check_ref_and_add_to_quotation_stack(self, next_segment_class, relevant_text, real_title):
@@ -712,7 +482,7 @@ class Sheets:
         i += ".html"
         page_missing = u'דף שגיאות'
         self.sheet_num = which_sheet + 1
-        content = BeautifulSoup(open("./html_sheets/{}".format(i)), "lxml")
+        content = BeautifulSoup(open("{}".format(i)), "lxml")
         header = content.find('div', {'id': 'contentTop'})
         if page_missing in header.text:
             return
@@ -994,14 +764,12 @@ class Sheets:
        sheet_json["sources"] = sources
        # sheet_json["dateC  eated"] = 2012
        sheet_json["options"] = {"numbered": 0,"assignable": 0,"layout": "sideBySide","boxed": 0,"language": "hebrew","divineNames": "noSub","collaboration": "none", "highlightMode": 0, "bsd": 0,"langLayout": "heRight"}
-       #post_sheet(sheet_json, server=self.server)
+       post_sheet(sheet_json, server=self.server)
 
 
 """
 Ideas:
-Revisit ref.startswith(“Genesis”) returning “”
-
-30.html section 4 
+30.html section 4 First ref in a section should be used for matching
 """
 if __name__ == "__main__":
     sheets = Sheets()
