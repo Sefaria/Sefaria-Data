@@ -1076,7 +1076,7 @@ class Seif(OrderedElement):
         if com_id == 0:  # 0 is reserved to reference the base text
             raise AssertionError("Base text seifim do not have an rid")
 
-        if order is not None:
+        if order is None:
             if cyclical:
                 assert self.Tag.get('label') is not None
                 order = u'{};{}'.format(self.Tag['label'], self.num)
