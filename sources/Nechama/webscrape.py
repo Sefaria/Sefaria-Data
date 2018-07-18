@@ -255,8 +255,7 @@ class Sheets:
         table_html = self.remove_hyper_links(table_html)
 
         if segment.attrs['class'] in [["question2"], ["question"]]:
-            table_html = self.format(table_html)
-            formatted_text = self.format(BeautifulSoup(table_html, "lxml").text)
+            formatted_text = self.format(table_html)
         elif segment.attrs['class'] in [["header"]]:
             formatted_text = self.format(BeautifulSoup(table_html, "lxml").text)
             formatted_text = u"<table><tr><td><big>{}</big></td></tr></table>".format(formatted_text)
@@ -386,12 +385,15 @@ class Sheets:
             else:
                 added_ref = self.add_to_quotation_stack([next_segment_class, u"{} {}".format(real_title, new_perek)])
             if not added_ref:
-                self.quotations.append(["parshan", ""])
+                self.quotations.append([next_segment_class, ""])
                 self.quotation_stack.append("")
         elif not real_title and is_tanakh:  # not a commentator, but instead a ref to the parsha
             self.add_to_quotation_stack(["bible", "{} {}:{}".format(self.current_sefer, new_perek, new_pasuk)])
         elif len(relevant_text.split()) < 8:  # not found yet, look it up in library.get_refs_in_string
             found_ref_in_string = self._get_refs_in_string([relevant_text], next_segment_class, add_if_not_found=False)
+            if not found_ref_in_string:
+                self.quotations.append([next_segment_class, ""])
+                self.quotation_stack.append("")
         return is_perek_pasuk_ref, real_title, found_ref_in_string
 
     def get_term(self, poss_title):
@@ -772,13 +774,21 @@ class Sheets:
         comment = comment.replace("<b>", "$!b$").replace("</b>", "$/!b$")
         text = BeautifulSoup(comment, "lxml").text
 
-        text = text.replace("\n", " ") #just getting rid of excessive line breaks
+        text = text.strip()
         while "  " in text:
             text = text.replace("  ", " ")
+
+        #following code makes sure "3.\nhello" becomes "3. hello"
+        digit = re.match(u"^.{1,2}[\)|\.]", text)
+        if digit:
+            text = text.replace(digit.group(0), u"")
+            text = text.strip()
+            text = digit.group(0) + u" " + text
 
         # now get the tags back and remove nonsense chars
         text = text.replace("$!u$", "<u>").replace("$/!u$", "</u>")
         text = text.replace("$!b$", "<b>").replace("$/!b$", "</b>")
+        text = text.replace("\n", "<br/>")
 
         return (found_difficult + text).strip()
 
