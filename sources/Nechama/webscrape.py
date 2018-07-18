@@ -814,10 +814,6 @@ class Sheets:
         try:
             comment = re.sub(u'\u05d3"\u05d4:? .+?:', u"", comment)
             new_ref = refine_ref_by_text(ref_obj, "", comment, 20, alwaysCheck=True, truncateSheet=False, daf_skips=2, rashi_skips=2, overall=2)  # can be None, same ref as str or Ref
-            if orig_didnt_find_text and new_ref:
-                self.orig_good_count += 1
-            elif orig_didnt_find_text and not new_ref:
-                self.orig_bad_count += 1
         except InputError as e:
             new_ref = None
 
@@ -836,6 +832,7 @@ class Sheets:
                 self.good_match += 1
             else:
                 self.fixed_match += 1
+                ref_obj = Ref(ref)
 
         #if it is still a top section level set it as a range
         # if Ref(ref).top_section_ref() == Ref(ref):
@@ -994,7 +991,7 @@ class Sheets:
        sheet_json["sources"] = sources
        # sheet_json["dateC  eated"] = 2012
        sheet_json["options"] = {"numbered": 0,"assignable": 0,"layout": "sideBySide","boxed": 0,"language": "hebrew","divineNames": "noSub","collaboration": "none", "highlightMode": 0, "bsd": 0,"langLayout": "heRight"}
-       #post_sheet(sheet_json, server=self.server)
+       post_sheet(sheet_json, server=self.server)
 
 
 """
