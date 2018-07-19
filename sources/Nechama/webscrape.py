@@ -70,6 +70,9 @@ class Sheets:
         self.significant_class = lambda class_: True#"question" in class_ #class_ in ["header", "question"] or "question" in class_
         self.RT_Rashi = False
         self.term_mapping = {
+            u"""הנצי"ב מוולוז'ין""": u"Haamek Davar on Genesis",
+            u"אונקלוס": u"Onkelos Genesis",
+            u"שמואל דוד לוצטו": u"Shadal on Genesis",
             u"מורה נבוכים א'": u"Guide for the Perplexed, Part 1",
             u"מורה נבוכים ב'": u"Guide for the Perplexed, Part 2",
             u"מורה נבוכים ג'": u"Guide for the Perplexed, Part 3",

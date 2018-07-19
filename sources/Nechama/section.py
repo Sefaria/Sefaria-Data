@@ -1,4 +1,4 @@
-from sheets import *
+from sheets_steve import *
 
 class Section(object):
 
@@ -63,12 +63,11 @@ class Section(object):
                 next_comment_parshan_or_bible = "class" in segments[i + 1].attrs.keys() and \
                                                 segments[i + 1].attrs["class"][0] in self.important_classes
 
-            if isinstance(segment, element.Tag) and segment.name == "table":
-                if segment.attrs["class"][0] in ["question", "question2"]:
-                    segments[i] = Question(segment)
-                elif segment.attrs["class"][0] in ["header"]:
-                    segments[i] = Header(segment)
-                elif segment.attrs["class"] in [["RT"],["RTBorder"]]:  # these tables we want as they are so just str(segment)
+            if Question.is_question(segment):
+                segments[i] = Question(segment)
+            elif Header.is_header(segment)
+                segments[i] = Header(segment)
+            elif :  # these tables we want as they are so just str(segment)
                     segments[i] = ("nechama", str(segment), "")
             elif isinstance(segment, element.Tag) and segment.has_attr("class"):
                 # this is a comment by a commentary, bible, or midrash

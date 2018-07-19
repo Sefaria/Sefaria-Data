@@ -136,6 +136,11 @@ class Header(object):
         self.text = u"<table><tr><td><big>{}</big></td></tr></table>".format(formatted_text)
         self.section = section
 
+    @staticmethod
+    def is_header(self, segment):
+        return isinstance(segment, element.Tag) and segment.name == "table" and \
+               segment.attrs["class"][0] in ["header"]
+
     def format(self, comment):
         found_difficult = ""
         # digits = re.findall("\d+\.", comment)
@@ -179,6 +184,11 @@ class Question(object):
         table_html = str(segment)
         table_html = self.section.remove_hyper_links(table_html)
         self.text = self.format(table_html)
+
+    @staticmethod
+    def is_question(self, segment):
+        return isinstance(segment, element.Tag) and segment.name == "table" and\
+               segment.attrs["class"][0] in ["question", "question2"]
 
     def format(self, comment):
         found_difficult = ""
