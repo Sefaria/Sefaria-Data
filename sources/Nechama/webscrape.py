@@ -136,6 +136,7 @@ class Sheets:
             elif "ContentSection" in div['id']: #sections within source sheets
                 self.current_section += 1
                 assert str(self.current_section) in div['id']
+                print self.current_section
 
                 if div.text.replace(" ", "") == "":
                     continue
@@ -746,8 +747,7 @@ class Sheets:
         self.quotation_stack = []
         self.current_parsha_ref = ["bible", u"{} {}".format(self.current_sefer, self.current_perek)]
         self.add_to_quotation_stack(self.current_parsha_ref)
-        self.sheets[parsha][self.current_en_year] = (
-        self.current_url, hebrew_year, self.current_sefer, self.current_perakim, self.parse_as_text(text))
+        self.sheets[parsha][self.current_en_year] = (self.current_url, hebrew_year, self.current_sefer, self.current_perakim, self.parse_as_text(text))
         self.post_text(parsha, self.current_en_year, self.sheets[parsha][self.current_en_year])
 
     def load_sheets(self):
@@ -829,7 +829,8 @@ class Sheets:
 
         if new_ref is None:
             if ref.startswith("Genesis"):
-                return ""
+                self.doesnt_match[ref_obj.normal()] = comment
+                return ref_obj.normal()
             else:
                 self.doesnt_match[ref_obj.normal()] = comment
                 return ref_obj.normal()
@@ -1003,7 +1004,7 @@ class Sheets:
        sheet_json["sources"] = sources
        # sheet_json["dateC  eated"] = 2012
        sheet_json["options"] = {"numbered": 0,"assignable": 0,"layout": "sideBySide","boxed": 0,"language": "hebrew","divineNames": "noSub","collaboration": "none", "highlightMode": 0, "bsd": 0,"langLayout": "heRight"}
-       post_sheet(sheet_json, server=self.server)
+       #post_sheet(sheet_json, server=self.server)
 
 
 """
