@@ -874,15 +874,17 @@ class Sheets:
             section = [el for el in text_list[i] if isinstance(el, tuple)]
             nechama_sec_range_ref = u"{}:{}:1-{}".format(nechama_ref, i+1, len(section))
             for j, segment in enumerate(section):
+                formatted_comment = ""
                 if len(segment) == 3:
                     type, comment, ref = segment
                 elif len(segment) == 4:
-                    type, orig_comment, comment, ref = segment #difference between them is second one is formatted
+                    type, comment, formatted_comment, ref = segment #difference between them is second one is formatted
                 if ref:
                     orig_ref = ref
                     ref = self.fix_ref(ref, comment)
                     if not ref:
                         comment = "<b>"+Ref(orig_ref).he_normal()+"</b><br/>"+comment
+                comment = formatted_comment if formatted_comment else comment
                 comment = self.remove_hyper_links(comment)
                 if type == "nechama":
                     source = {"outsideText": comment}
