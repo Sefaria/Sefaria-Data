@@ -39,23 +39,13 @@ class Parshan(object):
     #
     # combined_with_prev_line = set_ref_segment(combined_with_prev_line)
 
-    def add_text(self, orig_text, segment_class, pre_text=""):
+    def add_text(self, orig_text, segment_class):
         self.text = orig_text
-        self.pre_text = pre_text
         self.parshan_name = segment_class
         if self.section.last_comm_index_not_found_bool:
-            if self.last_comm_index_not_found not in self.section.sheet.index_not_found.keys():
-                self.section.sheet.index_not_found[self.last_comm_index_not_found] = []
-            self.section.sheet.index_not_found[self.last_comm_index_not_found].append(
-                (self.section.current_parsha_ref, orig))
-            self.last_comm_index_not_found = None
-            self.last_comm_index_not_found_bool = False
-        elif segment_class in self.section.sheet.important_classes:
-            quote = self.section.quotations[-1]
-            category, ref = quote
-            self.ref = ref
-        else:
-            self.section.sheet.add_to_table_classes(segment_class)
+            if self.about_parshan_ref not in self.section.sheet.index_not_found.keys():
+                self.section.sheet.index_not_found[self.about_parshan_ref] = []
+            self.section.sheet.index_not_found[self.about_parshan_ref].append((self.section.current_parsha_ref, self.text))
 
 
 class Bible(object):

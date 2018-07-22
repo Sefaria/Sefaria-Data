@@ -85,7 +85,9 @@ class Sheets:
             u"""רלב"ג""": u"Ralbag Beur HaMilot on Torah, Genesis",
             u"""רמב"ם""": u"Guide for the Perplexed",
             u"ר' אליהו מזרחי": u"Mizrachi, Genesis",
+            u"""הרא"ם""": u"Mizrachi, Genesis",
             u"""ר' יוסף בכור שור""": u"Bekhor Shor, Genesis",
+            u"בכור שור": u"Bekhor Shor, Genesis",
             u"אברבנאל": u"Abarbanel on Torah, Genesis",
             u"""המלבי"ם""": u"Malbim on Genesis",
             u"משך חכמה": u"Meshech Hochma, Bereshit",
@@ -97,9 +99,95 @@ class Sheets:
         self.good_match = 0
         self.fixed_match = 0
         self.refs_to_nowhere = {}
-        self.orig_good_count = 0
-        self.orig_bad_count = 0
+        self.needs_review = Counter()
 
+
+    def set_current_perek(self, perek, is_tanakh, sefer):
+        new_perek = str(getGematria(perek))
+        if is_tanakh:
+            if new_perek in self.current_perakim:
+                self.current_perek = str(new_perek)
+                self.current_parsha_ref = ["bible", u"{} {}".format(sefer, new_perek)]
+            else:
+                print
+        return True, new_perek, None
+
+    def set_current_pasuk(self, pasuk, is_tanakh):
+        if "-" in pasuk:  # is a range, correct it
+            start = pasuk.split("-")[0]
+            end = pasuk.split("-")[1]
+            start = getGematria(start)
+            end = getGematria(end)
+            new_pasuk = u"{}-{}".format(start, end)
+        else:  # there is a pasuk but is not ranged
+            new_pasuk = str(getGematria(pasuk))
+
+        if is_tanakh:
+            poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+            if poss_ref:
+                self.current_perek = poss_ref.sections[0]
+                self.current_pasuk = poss_ref.sections[1]
+            else:
+                print
+                self.current_parsha_ref = ["bible", u"{} {}".format(self.current_sefer, self.current_perek)]
+        return True, self.current_perek, new_pasuk
+
+    def set_current_perek_pasuk(self, text, next_segment_class, is_tanakh=True):
+        text = text.replace(u"פרקים", u"Perek").replace(u"פרק ", u"Perek ").replace(u"פסוקים", u"Pasuk").replace(
+            u"פסוק ", u"Pasuk ").strip()
+        digit = re.compile(u"^.{1,2}[\)|\.]").match(text)
+        # if next_segment_class == "parshan":
+        #     sefer = u"Parshan on {}".format(self.current_sefer)
+        # elif next_segment_class == "bible":
+        sefer = self.current_sefer
+
+        if digit:
+            text = text.replace(digit.group(0), "").strip()
+        text += " "  # this is hack so that reg ex works
+
+        perek_comma_pasuk = re.findall("Perek (.{1,5}), (.{1,5})", text)
+        if not perek_comma_pasuk:
+            perek_comma_pasuk = re.findall("Perek (.{1,5}),? Pasuk (.{1,5})", text)
+        perek = re.findall("Perek (.{1,5}\s)", text)
+        pasuk = re.findall("Pasuk (.{1,5}(?:-.{1,5})?)", text)
+        assert len(perek) in [0, 1]
+        assert len(pasuk) in [0, 1]
+        assert len(perek_comma_pasuk) in [0, 1]
+        if len(perek) == len(pasuk) == len(perek_comma_pasuk) == 0 and ("Pasuk" in text or "Perek" in text):
+            pass
+
+        if not perek_comma_pasuk:
+            if perek:
+                perek = perek[0]
+                return self.set_current_perek(perek, is_tanakh, sefer)
+            if pasuk:
+                pasuk = pasuk[0]
+                return self.set_current_pasuk(pasuk, is_tanakh)
+        else:
+            perek = perek_comma_pasuk[0][0]
+            pasuk = perek_comma_pasuk[0][1]
+            new_perek = str(getGematria(perek))
+            if "-" in pasuk:  # is a range, correct it
+                start = pasuk.split("-")[0]
+                end = pasuk.split("-")[1]
+                start = getGematria(start)
+                end = getGematria(end)
+                new_pasuk = u"{}-{}".format(start, end)
+            else:  # there is a pasuk but is not ranged
+                new_pasuk = str(getGematria(pasuk))
+
+            if is_tanakh:
+                poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk, perakim=[new_perek])
+                if poss_ref:
+                    self.current_perek = poss_ref.sections[0]
+                    self.current_pasuk = poss_ref.sections[1]
+                    assert str(poss_ref.sections[0]) == new_perek
+                    assert str(poss_ref.sections[1]) == new_pasuk
+                    self.current_parsha_ref = ["bible", u"{} {}".format(self.current_sefer, self.current_perek)]
+                else:
+                    print
+            return True, new_perek, new_pasuk
+        return False, self.current_perek, self.current_pasuk
 
     def relevant_text(self, segment):
         if isinstance(segment, element.Tag):
@@ -357,7 +445,6 @@ class Sheets:
                 else:
                     formatted_text = "<small>" + orig_text + "</small>"
                 self.process_comment_specific_class(segments, i, formatted_text, orig_text, segment_class)
-                #prev_was_quote = segment_class
                 continue
             elif not next_comment_parshan_or_bible or not this_comment_could_be_ref:  # above criteria not met, just an ordinary comment
                 segments[i] = ('nechama', relevant_text, "")
@@ -470,7 +557,6 @@ class Sheets:
             print u"{} not found".format(ref)
 
         self.quotations.append(category_and_ref)
-        self.quotation_stack.append(category_and_ref[1])
         self.current_pos_in_quotation_stack += 1
         return category_and_ref[1]
 
@@ -487,11 +573,6 @@ class Sheets:
             a_tag = segment
         else:
             a_tag = segment.find('a')
-
-        u_tag = segment.find('u')
-
-        # if not a_tag:
-        #     a_tag = segment.find("u")
 
         real_title = ""
 
@@ -549,93 +630,7 @@ class Sheets:
         pass
 
 
-    def set_current_perek(self, perek, is_tanakh, sefer):
-        new_perek = str(getGematria(perek))
-        if is_tanakh:
-            if new_perek in self.current_perakim:
-                self.current_perek = str(new_perek)
-                self.current_parsha_ref = ["bible", u"{} {}".format(sefer, new_perek)]
-            else:
-                print
-        return True, new_perek, None
 
-
-    def set_current_pasuk(self, pasuk, is_tanakh):
-        if "-" in pasuk:  # is a range, correct it
-            start = pasuk.split("-")[0]
-            end = pasuk.split("-")[1]
-            start = getGematria(start)
-            end = getGematria(end)
-            new_pasuk = u"{}-{}".format(start, end)
-        else:  # there is a pasuk but is not ranged
-            new_pasuk = str(getGematria(pasuk))
-
-        if is_tanakh:
-            poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
-            if poss_ref:
-                self.current_perek = poss_ref.sections[0]
-                self.current_pasuk = poss_ref.sections[1]
-            else:
-                print
-                self.current_parsha_ref = ["bible", u"{} {}".format(self.current_sefer, self.current_perek)]
-        return True, self.current_perek, new_pasuk
-
-
-    def set_current_perek_pasuk(self, text, next_segment_class, is_tanakh=True):
-        text = text.replace(u"פרקים", u"Perek").replace(u"פרק ", u"Perek ").replace(u"פסוקים", u"Pasuk").replace(u"פסוק ", u"Pasuk ").strip()
-        digit = re.compile(u"^.{1,2}[\)|\.]").match(text)
-        # if next_segment_class == "parshan":
-        #     sefer = u"Parshan on {}".format(self.current_sefer)
-        # elif next_segment_class == "bible":
-        sefer = self.current_sefer
-
-        if digit:
-            text = text.replace(digit.group(0), "").strip()
-        text += " " #this is hack so that reg ex works
-
-        perek_comma_pasuk = re.findall("Perek (.{1,5}), (.{1,5})", text)
-        if not perek_comma_pasuk:
-            perek_comma_pasuk = re.findall("Perek (.{1,5}),? Pasuk (.{1,5})", text)
-        perek = re.findall("Perek (.{1,5}\s)", text)
-        pasuk = re.findall("Pasuk (.{1,5}(?:-.{1,5})?)", text)
-        assert len(perek) in [0, 1]
-        assert len(pasuk) in [0, 1]
-        assert len(perek_comma_pasuk) in [0, 1]
-        if len(perek) == len(pasuk) == len(perek_comma_pasuk) == 0 and ("Pasuk" in text or "Perek" in text):
-            pass
-
-        if not perek_comma_pasuk:
-            if perek:
-                perek = perek[0]
-                return self.set_current_perek(perek, is_tanakh, sefer)
-            if pasuk:
-                pasuk = pasuk[0]
-                return self.set_current_pasuk(pasuk, is_tanakh)
-        else:
-            perek = perek_comma_pasuk[0][0]
-            pasuk = perek_comma_pasuk[0][1]
-            new_perek = str(getGematria(perek))
-            if "-" in pasuk:  # is a range, correct it
-                start = pasuk.split("-")[0]
-                end = pasuk.split("-")[1]
-                start = getGematria(start)
-                end = getGematria(end)
-                new_pasuk = u"{}-{}".format(start, end)
-            else:  # there is a pasuk but is not ranged
-                new_pasuk = str(getGematria(pasuk))
-
-            if is_tanakh:
-                poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk, perakim=[new_perek])
-                if poss_ref:
-                    self.current_perek = poss_ref.sections[0]
-                    self.current_pasuk = poss_ref.sections[1]
-                    assert str(poss_ref.sections[0]) == new_perek
-                    assert str(poss_ref.sections[1]) == new_pasuk
-                    self.current_parsha_ref = ["bible", u"{} {}".format(self.current_sefer, self.current_perek)]
-                else:
-                    print
-            return True, new_perek, new_pasuk
-        return False, self.current_perek, self.current_pasuk
 
 
 
@@ -810,18 +805,11 @@ class Sheets:
         # tc = TextChunk(Ref(ref), lang='he')
         # match_list = matcher.match(tc_list=[(comment, "Nechama"), tc], return_obj=True)
         # match_list = matcher.match(tc_list=[(comment, "Nechama"), (tc.text, "Base"), tc], return_obj=True)
-
-
-
-        #first remove HTML from comment
         ref_obj = Ref(ref)
 
-        #if it has no text, generates error, so get its section level ref that has text
         text = ref_obj.text('he').text
         if not text:
             return ""
-        orig_didnt_find_text = False
-
 
         #try to get segment level from section
         try:
@@ -829,6 +817,10 @@ class Sheets:
             new_ref = refine_ref_by_text(ref_obj, "", comment, 20, alwaysCheck=True, truncateSheet=False, daf_skips=2, rashi_skips=2, overall=2)  # can be None, same ref as str or Ref
         except InputError as e:
             new_ref = None
+
+        if new_ref is None and ref_obj.is_segment_level():
+            self.needs_review[ref_obj.normal()] += 1
+            return ref_obj.normal()
 
         if new_ref is None:
             if ref.startswith("Genesis"):
@@ -1023,13 +1015,11 @@ if __name__ == "__main__":
     f = open("tables.csv", 'w')
     writer = UnicodeWriter(f)
     rows = []
-    print "Doesnt match, Unchanged Match, More specific Match"
+    print "Doesnt match, Unchanged Match, More specific Match, Matched but needs review"
     print len(sheets.doesnt_match)
     print sheets.good_match
     print sheets.fixed_match
-    print "original text was not found:"
-    print sheets.orig_good_count
-    print sheets.orig_bad_count
+    print sum(sheets.needs_review.values())
     for ref, text in sheets.doesnt_match.items():
         site_text = Ref(ref).text('he').text
         if not site_text:

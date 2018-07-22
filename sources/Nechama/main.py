@@ -19,7 +19,9 @@ class Sheet(object):
         self.html = html
         self.title = title
         self.parasha = parasha
+        self.en_parasha = Term().load({"titles.text": parasha}).name
         self.sefer, self.perakim, self.pasukim = self.extract_perek_info()
+        self.en_sefer = library.get_index(sefer).title
         self.he_year = re.sub(u"שנת", u"", year).strip()
         self.year = getGematria(self.he_year) + 5000  # +1240, jewish year is more accurate
         self.sections = []
@@ -33,29 +35,28 @@ class Sheet(object):
         self.sections = []
         self.important_classes = ["parshan", "midrash", "talmud", "bible", "commentary"]
         self.term_mapping = {
-            u"""הנצי"ב מוולוז'ין""": u"Haamek Davar on Genesis",
-            u"אונקלוס": u"Onkelos Genesis",
-            u"שמואל דוד לוצטו": u"Shadal on Genesis",
+            u"""הנצי"ב מוולוז'ין""": u"Haamek Davar on {}".format(self.en_sefer),
+            u"אונקלוס": u"Onkelos {}".format(self.en_sefer),
+            u"שמואל דוד לוצטו": u"Shadal on {}".format(self.en_sefer),
             u"מורה נבוכים א'": u"Guide for the Perplexed, Part 1",
             u"מורה נבוכים ב'": u"Guide for the Perplexed, Part 2",
             u"מורה נבוכים ג'": u"Guide for the Perplexed, Part 3",
             u"תנחומא": u"Midrash Tanchuma, Bereshit",
             u"בעל גור אריה": u"Gur Aryeh on Bereishit",
-            u"""ראב"ע""": u"Ibn Ezra on Genesis",
-            u"""וראב"ע:""": u"Ibn Ezra on Genesis",
+            u"""ראב"ע""": u"Ibn Ezra on {}".format(self.en_sefer),
+            u"""וראב"ע:""": u"Ibn Ezra on {}".format(self.en_sefer),
             u"עקדת יצחק": u"Akeidat Yitzchak",
-            u"תרגום אונקלוס": u"Onkelos Genesis",
-            u"""רלב"ג""": u"Ralbag Beur HaMilot on Torah, Genesis",
-            u"""רמב"ם""": u"Guide for the Perplexed",
-            u"ר' אליהו מזרחי": u"Mizrachi, Genesis",
-            u"""הרא"ם""": u"Mizrachi, Genesis",
-            u"""ר' יוסף בכור שור""": u"Bekhor Shor, Genesis",
-            u"בכור שור": u"Bekhor Shor, Genesis",
-            u"אברבנאל": u"Abarbanel on Torah, Genesis",
-            u"""המלבי"ם""": u"Malbim on Genesis",
-            u"משך חכמה": u"Meshech Hochma, Bereshit",
-            u"רבנו בחיי": u"Rabbeinu Bahya, Bereshit",
-            u'רב סעדיה גאון': u"Saadia Gaon on Genesis"
+            u"תרגום אונקלוס": u"Onkelos {}".format(self.en_sefer),
+            u"""רלב"ג""": u"Ralbag Beur HaMilot on Torah, {}".format(self.en_sefer),
+            u"ר' אליהו מזרחי": u"Mizrachi, {}".format(self.en_sefer),
+            u"""הרא"ם""": u"Mizrachi, {}".format(self.en_sefer),
+            u"""ר' יוסף בכור שור""": u"Bekhor Shor, {}".format(self.en_sefer),
+            u"בכור שור": u"Bekhor Shor, {}".format(self.en_sefer),
+            u"אברבנאל": u"Abarbanel on Torah, {}".format(self.en_sefer),
+            u"""המלבי"ם""": u"Malbim on {}".format(self.en_sefer),
+            u"משך חכמה": u"Meshech Hochma, {}".format(self.en_parasha),
+            u"רבנו בחיי": u"Rabbeinu Bahya, {}".format(self.en_sefer),
+            u'רב סעדיה גאון': u"Saadia Gaon on {}".format(self.en_sefer)
 
         }
 
@@ -249,6 +250,7 @@ class SectionParser(object):
         """
         combined_with_prev_line = None
         prev_was_quote = None
+        new_parshan = None
         for i, segment in enumerate(segments):
             relevant_text = self.format(
                 self.relevant_text(segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
@@ -263,19 +265,14 @@ class SectionParser(object):
                 segment_class = segment.attrs["class"][0]  # is it parshan, bible, or midrash?
                 assert len(segment.attrs["class"]) == 1, "More than one class"
                 orig_text = segment.text.replace("\n", "").replace("\r", "")
-                if combined_with_prev_line:  # i.e.: "Pasuk 5" is the previous line which gets combined with the current line that has Pasuk 5's content
-                    formatted_text = "<b><small>" + combined_with_prev_line + "</b><br/>" + orig_text + "</small>"
-                    combined_with_prev_line = None
-                else:
-                    formatted_text = "<small>" + orig_text + "</small>"
-                segments[i] = Parshan().add_text(orig_text, segment_class, pre_text=combined_with_prev_line)
+                segments[i] = new_parshan.add_text(orig_text, segment_class)
                 continue
             elif Nechama_Comment.is_comment(segments, i,
                                             self.sheet.important_classes):  # above criteria not met, just an ordinary comment
                 segments[i] = Nechama_Comment(relevant_text)
             else:  # must be a Comment
                 next_segment_class = segments[i + 1].attrs["class"][0]  # get the class of this ref and it's comment
-                self.parse_ref(segment, relevant_text, next_segment_class)
+                new_parshan = self.parse_ref(segment, relevant_text, next_segment_class)
         return segments
 
     def get_a_tag_from_ref(self, segment, relevant_text):
@@ -309,9 +306,10 @@ class SectionParser(object):
         elif found_a_tag:
             # found no reference but did find an a_tag so this is a ref so keep the text
             new_parshan.about_parshan_ref = relevant_text
-            self.last_comm_index_not_found = found_a_tag.text
         else:
-            self.last_comm_index_not_found_bool = True
+            new_parshan.ref = ""
+
+        return new_parshan
 
     def _get_refs_in_string(self, strings, next_segment_class, add_if_not_found=True):
         not_found = []
