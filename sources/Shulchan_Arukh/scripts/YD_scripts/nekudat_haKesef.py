@@ -3,8 +3,9 @@
 import re
 import os
 import codecs
+from collections import defaultdict
 from os.path import dirname as loc
-from data_utilities.util import getGematria
+from data_utilities.util import getGematria, Singleton
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
 root_dir = loc(loc(loc(os.path.abspath(__file__))))
@@ -112,7 +113,8 @@ class ReferenceSuite:
                 self.record_list.append(reference)
 
 
-class BookStore:
+class BookStore(object):
+    __metaclass__ = Singleton
 
     def __init__(self):
         base = root.get_base_text()
@@ -125,25 +127,75 @@ class BookStore:
             u'Siftei Kohen': shach
         }
 
-    def check_reference(self, reference_object):
-        if reference_object[u'remote-seif'] is None:
-            return
-        book = self.lookup[reference_object[u'comments-on']]
+
+def check_reference(reference_object, reference_records):
+    if reference_object[u'remote-seif'] is None:
+        return
+    storage = BookStore()
+    book = storage.lookup[reference_object[u'comments-on']]
+    ref_key = (reference_object[u'comments-on'], reference_object[u'siman'], reference_object[u'remote-seif'])
+    if ref_key in reference_records:
+        reference_records[ref_key][u'times-referenced'] += 1
+    else:
         siman = next(s for s in book.get_simanim() if s.num == reference_object[u'siman'])
         try:
             seif = next(s for s in siman.get_child() if s.num == reference_object[u'remote-seif'])
         except StopIteration:
+            print u'{} {}:{} does not exist'.format(*ref_key)
             return
         num_refs = len(seif.grab_references(u'\*\)?'))
-        reference_object[u'counts'] = num_refs
+        reference_records[ref_key][u'star-counts'] = num_refs
+        reference_records[ref_key][u'times-referenced'] = 1
+    reference_object.update(reference_records[ref_key])
 
 
 suite = ReferenceSuite()
-store = BookStore()
+store = defaultdict(dict)
 for i in range(1, 5):
+    print u'vol {}'.format(i)
     suite.walk_through_file(filenames[i])
 for r in suite.record_list:
-    store.check_reference(r)
+    check_reference(r, store)
+for r in suite.record_list:
+    my_key = (r[u'comments-on'], r[u'siman'], r[u'remote-seif'])
+    try:
+        r.update(store[my_key])
+    except KeyError:
+        continue
+map(lambda x: x[1].update({'key': x[0]}), store.items())
+store_list = sorted(store.values(), key=lambda x: (x['key'][1], x['key'][2], x['key'][0]))
+problems = filter(lambda x: x if u'times-referenced' not in x
+                  else (x if x[u'times-referenced'] != x[u'star-counts'] else None), suite.record_list)
+print len(suite.record_list)
+print len(problems)
 import json
 with codecs.open('nekudat_refs.json', 'wb', 'utf-8') as fp:
-    json.dump(suite.record_list, fp)
+    json.dump(problems, fp)
+
+"""
+For each reference I now know how many possible references point to said reference in the base text. I need to determine
+if each base text reference has the correct number of marks.
+
+A remote ref can be identified by (<book>, <siman>, <remote-seif>). For each remote ref we want:
+a) number of times each ref is referenced
+b) number of * marks in said remote ref
+
+The problem I have now is mapping remote-refs to the nekudat haKesef locations that referenced them.
+I can walk through my reference suite and derive the appropriate key for my reference-store. I can then update each
+reference with the contents of each ref-store.
+
+Multiple stars may not be errors. Filter down to those problems that have 0 stars of a bad seif number
+"""
+commentaries = root.get_commentaries()
+nek = commentaries.get_commentary_by_title(u"Nekudat HaKesef")
+if nek is None:
+    nek = commentaries.add_commentary(u"Nekudat HaKesef", u"נקודת הכסף")
+for vol_num in range(1, 5):
+    print 'vol {}'.format(vol_num)
+    nek.remove_volume(vol_num)
+    with codecs.open(filenames[vol_num], 'r', 'utf-8') as fp:
+        volume = nek.add_volume(fp.read(), vol_num)
+    assert isinstance(volume, Volume)
+    volume.mark_simanim(u'@22([\u05d0-\u05ea]{1,3})')
+    volume.validate_simanim(complete=False)
+
