@@ -32,7 +32,6 @@ class Section(object):
                     # so we want to keep the text
                     combined_with_prev_line = relevant_text
                     # could be Comment.about = relevant_text; Comment.ref = ref; Comment.ref_in_library = True;
-
                 segments[i] = "reference"
             elif found_a_tag:
                 # found no reference but did find an a_tag so this is a ref so keep the text
@@ -44,30 +43,15 @@ class Section(object):
                 self.last_comm_index_not_found_bool = True
                 segments[i] = ("nechama", relevant_text, "")
             return combined_with_prev_line
-
         combined_with_prev_line = None
         prev_was_quote = None
         for i, segment in enumerate(segments):
-            # sanity check:
-            # determine if it's worth looking to see what this ref is:
-            # if it's the last one, it's not a ref because a comment needs to come after it
-            # if the next one isn't a Tag, this can't be a ref because comments are always Tags with classes
-            # indicating parshan, bible, etc.
-            # also make sure the next one has a class in self.important_classes
-            # if it doesn't meet all the criteria, then it's just a comment by Nechama
             relevant_text = self.format(self.relevant_text(segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
-            next_comment_parshan_or_bible = ""
-            this_comment_could_be_ref = i < len(segments) - 1 and isinstance(segments[i + 1], element.Tag) and isinstance(
-                segments[i], element.Tag)
-            if this_comment_could_be_ref:
-                next_comment_parshan_or_bible = "class" in segments[i + 1].attrs.keys() and \
-                                                segments[i + 1].attrs["class"][0] in self.important_classes
-
             if Question.is_question(segment):
                 segments[i] = Question(segment)
             elif Header.is_header(segment)
                 segments[i] = Header(segment)
-            elif :  # these tables we want as they are so just str(segment)
+            elif segment.attrs["class"] in [["RT"],["RTBorder"]]:  # these tables we want as they are so just str(segment)
                     segments[i] = ("nechama", str(segment), "")
             elif isinstance(segment, element.Tag) and segment.has_attr("class"):
                 # this is a comment by a commentary, bible, or midrash
@@ -81,8 +65,8 @@ class Section(object):
                     formatted_text = "<small>" + orig_text + "</small>"
                 segments[i] = Parshan().add_text(orig_text, segment_class, pre_text=combined_with_prev_line)
                 continue
-            elif not next_comment_parshan_or_bible or not this_comment_could_be_ref:  # above criteria not met, just an ordinary comment
-                segments[i] = ('nechama', relevant_text, "")
+            elif Nechama_Comment.is_comment(segments, i, self.sheet):  # above criteria not met, just an ordinary comment
+                segments[i] = Nechama_Comment(relevant_text)
             else:  # must be a Comment
                 next_segment_class = segments[i + 1].attrs["class"][0]  # get the class of this ref and it's comment
                 real_title, found_a_tag, a_tag_is_entire_comment, a_tag_in_long_comment \
