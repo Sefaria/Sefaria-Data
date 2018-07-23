@@ -7,7 +7,8 @@ from sheets import *
 from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
 import unicodedata
 from sefaria.utils.hebrew import strip_cantillation
-
+from collections import OrderedDict
+from segments import *
 
 
 class Nechama_parser(object):

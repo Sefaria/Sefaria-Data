@@ -3,7 +3,7 @@
 from bs4 import BeautifulSoup, element
 from sources.functions import getGematria
 from sefaria.model.text import *
-
+from main import Nechama_Parser
 
 
 class Segments(object):
@@ -24,6 +24,7 @@ class Parshan(object):
         self.nechama_q = []  # list of Qustion objs about this Parshan seg
         self.section = section  # which section I belong to
         self.segment_class = segment_class
+        self.text = []
 
     def get_ref(self):
         return self.ref
@@ -40,13 +41,13 @@ class Parshan(object):
     # combined_with_prev_line = set_ref_segment(combined_with_prev_line)
 
     def add_text(self, segment, segment_class):
-        orig_text = segment.text.replace("\n", "").replace("\r", "")
-        self.text = orig_text
+        segment_text = segment.text.replace("\n", "").replace("\r", "")
+        self.text.append(segment_text)
         self.parshan_name = segment_class
-        if self.section.last_comm_index_not_found_bool:
-            if self.about_parshan_ref not in self.section.sheet.index_not_found.keys():
-                self.section.sheet.index_not_found[self.about_parshan_ref] = []
-            self.section.sheet.index_not_found[self.about_parshan_ref].append((self.section.current_parsha_ref, self.text))
+
+
+    def index_not_found(self):
+        return not self.get_ref() and self.about_parshan_ref #not found a ref, but have info on what it is
 
 
 class Bible(object):
@@ -127,7 +128,7 @@ class Question(object):
         if "pages/images/hard.gif" in comment:
             found_difficult += "*"
         if "pages/images/harder.gif" in comment:
-            found_difficult += "*"
+            found_difficult += "**"
 
         # we need to specifically keep these tags because the "text" property will remove them so we "hide" them with nosense characters
         tags_to_keep = ["u", "b"]
@@ -176,7 +177,7 @@ class Nechama_Comment(object):
         self.text = text
 
     @staticmethod
-    def is_comment(segments, i, important_classes):
+    def is_comment(segments, i, parser):
         # determine if it's worth looking to see what this ref is:
         # if it's the last one, it's not a ref because a comment needs to come after it
         # if the next one isn't a Tag, this can't be a ref because comments are always Tags with classes
@@ -189,6 +190,6 @@ class Nechama_Comment(object):
             segments[i], element.Tag)
         if this_comment_could_be_ref:
             next_comment_parshan_or_bible = "class" in segments[i + 1].attrs.keys() and \
-                                            segments[i + 1].attrs["class"][0] in important_classes
+                                            segments[i + 1].attrs["class"][0] in parser.important_classes
         return not next_comment_parshan_or_bible or not this_comment_could_be_ref
 
