@@ -475,7 +475,7 @@ class ParallelMatcher:
         """
 
         :param list[str] index_list: list of index names to match against
-        :param list[TextChunk] tc_list: alternatively, you can give a list of TextChunks to match to
+        :param list[TextChunk] tc_list: alternatively, you can give a list of TextChunks to match to. Hack: you can also include tuples in this list where the tuples look like (content, unique_id) where `content` is the text to match and `unique_id` is a unique id.
         :param list[int] comment_index_list: list of indexes which correspond to either `index_list` or `tc_list` (whichever is not None). each index in this list indicates that the corresponding element should be treated as a `comment` meaning `self.dh_extract_method()` will be used on it.
         :param bool use_william: True if you want to use William Davidson version for Talmud refs
         :return: mesorat_hashas, mesorat_hashas_indexes
