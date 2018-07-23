@@ -39,7 +39,8 @@ class Parshan(object):
     #
     # combined_with_prev_line = set_ref_segment(combined_with_prev_line)
 
-    def add_text(self, orig_text, segment_class):
+    def add_text(self, segment, segment_class):
+        orig_text = segment.text.replace("\n", "").replace("\r", "")
         self.text = orig_text
         self.parshan_name = segment_class
         if self.section.last_comm_index_not_found_bool:

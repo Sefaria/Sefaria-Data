@@ -15,12 +15,12 @@ from segments import *
 
 class Sheet(object):
 
-    def __init__(self, html, parasha, title, year, ref, sefer):
+    def __init__(self, html, parasha, title, year, ref, sefer, perek_info):
         self.html = html
         self.title = title
         self.parasha = parasha
         self.en_parasha = Term().load({"titles.text": parasha}).name
-        self.sefer, self.perakim, self.pasukim = self.extract_perek_info()
+        self.sefer, self.perakim, self.pasukim = self.extract_perek_info(perek_info)
         self.en_sefer = library.get_index(sefer).title
         self.he_year = re.sub(u"שנת", u"", year).strip()
         self.year = getGematria(self.he_year) + 5000  # +1240, jewish year is more accurate
@@ -60,12 +60,12 @@ class Sheet(object):
 
         }
 
-    def extract_perek_info(self, content):
+    def extract_perek_info(self, perek_info):
         def get_pasukim_for_perek(sefer, perek):
             en_sefer = library.get_index(sefer).title
             return str(len(Ref(u"{} {}".format(en_sefer, perek)).all_segment_refs()))
-        #three formats: Perek 2; Perek 2, Pasuk 3-9; Perek 2, 4 - Perek 3, 2 (last one may lose pasuk info as well)
-        perek_info = content.find("p", {"id": "pasuk"}).text
+
+        #three formats: Perek 2; Perek 2, Pasuk 3-9; Perek 2, 4 - Perek 3, 2 (last one may lose pasuk info as well
         print perek_info
         sefer = perek_info.split()[0]
         en_sefer = library.get_index(sefer).title
@@ -104,21 +104,14 @@ class Sheet(object):
             last_pasuk = get_pasukim_for_perek(sefer, pereks[0])
             pasuks = Ref(en_sefer+" "+pereks[0]+":1-"+last_pasuk)
 
-        #pasuks = re.findall(u"Pasuk\s+(.{1,8})\s?", perek_info)[0].split(" - ")
-        #pasuks = [getGematria(pasuk) for pasuk in pasuks]
-        #pasuks = pasuks[0] if len(pasuks) == 1 else range(pasuks[0], pasuks[1])
-        print pereks
-        print pasuks
-        self.sefer = sefer
-        self.current_perakim = pereks
-        self.current_pasukim = pasuks
+        return (sefer, pereks, pasuks)
 
     def pasuk_in_parsha_pasukim(self, new_pasuk, perakim=None):
         if perakim is None:
-            perakim = self.current_perakim
+            perakim = self.perakim
         for perek in perakim:
             possible_ref = Ref("Genesis " + perek + ":" + new_pasuk)
-            if self.current_pasukim.contains(possible_ref):
+            if self.pasukim.contains(possible_ref):
                 return possible_ref
         return None
 
@@ -214,7 +207,6 @@ class Sheet(object):
                 # assert 3 > len(self.quotation_stack) > 0
                 # if len(self.quotation_stack) >= 2:
                 #    segments = self.add_links_from_intro_to_many_comments(segments)
-                self.quotations = [["bible", self.quotation_stack[0]]]
                 self.sections.append(segments)
 
 
@@ -264,8 +256,7 @@ class SectionParser(object):
                 # this is a comment by a commentary, bible, or midrash
                 segment_class = segment.attrs["class"][0]  # is it parshan, bible, or midrash?
                 assert len(segment.attrs["class"]) == 1, "More than one class"
-                orig_text = segment.text.replace("\n", "").replace("\r", "")
-                segments[i] = new_parshan.add_text(orig_text, segment_class)
+                segments[i] = new_parshan.add_text(segment, segment_class)
                 continue
             elif Nechama_Comment.is_comment(segments, i,
                                             self.sheet.important_classes):  # above criteria not met, just an ordinary comment
@@ -360,16 +351,13 @@ class SectionParser(object):
                 self.current_pasuk = poss_ref.sections[1]
             else:
                 print
-                self.current_parsha_ref = ["bible", u"{} {}".format(self.current_sefer, self.current_perek)]
+                self.current_parsha_ref = ["bible", u"{} {}".format(self.sheet.sefer, self.current_perek)]
         return True, self.current_perek, new_pasuk
 
     def set_current_perek_pasuk(self, text, next_segment_class, is_tanakh=True):
         text = text.replace(u"פרקים", u"Perek").replace(u"פרק ", u"Perek ").replace(u"פסוקים", u"Pasuk").replace(
             u"פסוק ", u"Pasuk ").strip()
         digit = re.compile(u"^.{1,2}[\)|\.]").match(text)
-        # if next_segment_class == "parshan":
-        #     sefer = u"Parshan on {}".format(self.current_sefer)
-        # elif next_segment_class == "bible":
         sefer = self.sheet.sefer
 
         if digit:
@@ -408,13 +396,13 @@ class SectionParser(object):
                 new_pasuk = str(getGematria(pasuk))
 
             if is_tanakh:
-                poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk, perakim=[new_perek])
+                poss_ref = self.sheet.pasuk_in_parsha_pasukim(new_pasuk, perakim=[new_perek])
                 if poss_ref:
                     self.current_perek = poss_ref.sections[0]
                     self.current_pasuk = poss_ref.sections[1]
                     assert str(poss_ref.sections[0]) == new_perek
                     assert str(poss_ref.sections[1]) == new_pasuk
-                    self.current_parsha_ref = ["bible", u"{} {}".format(self.current_sefer, self.current_perek)]
+                    self.current_parsha_ref = ["bible", u"{} {}".format(self.sefer, self.current_perek)]
                 else:
                     print
             return True, new_perek, new_pasuk
@@ -437,7 +425,7 @@ class SectionParser(object):
             else:
                 new_parshan = Parshan(self, next_segment_class, u"{} {}".format(real_title, new_perek))
         elif not real_title and is_tanakh:  # not a commentator, but instead a ref to the parsha
-            new_parshan = Parshan(self, "bible", u"{} {}:{}".format(self.current_sefer, new_perek, new_pasuk))
+            new_parshan = Parshan(self, "bible", u"{} {}:{}".format(self.sheet.sefer, new_perek, new_pasuk))
         elif len(relevant_text.split()) < 8:  # not found yet, look it up in library.get_refs_in_string
             found_ref_in_string = self._get_refs_in_string([relevant_text], next_segment_class,
                                                            add_if_not_found=False)
@@ -575,9 +563,10 @@ def bs4_reader(file_list_names):
     for html_sheet in file_list_names:
         content = BeautifulSoup(open("{}".format(html_sheet)), "lxml")
         print html_sheet
+        perek_info = content.find("p", {"id": "pasuk"}).text
         top_dict = dict_from_html_attrs(content.find('div', {'id': "contentTop"}).contents)
         # print 'len_content type ', len(top_dict.keys())
-        sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, u"Genesis")
+        sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, u"Genesis", perek_info)
         sheets[html_sheet] = sheet
         body_dict = dict_from_html_attrs(content.find('div', {'id': "contentBody"}))
         sheet.sections.extend([v for k, v in body_dict.items() if re.search(u'ContentSection_\d', k)]) # check that these come in in the right order
@@ -602,10 +591,10 @@ def bs4_reader(file_list_names):
     #     parsha = content.find("div", {"id": "paging"}).text
     #     self.current_parsha = parsha
     #     print i
-    #     self.current_sefer, self.current_perakim, self.current_pasukim = self.extract_perek_info(content)
-    #     self.current_sefer = library.get_index(self.current_sefer)
-    #     self.current_alt_titles = self.current_sefer.nodes.get_titles('en')
-    #     self.current_sefer = self.current_sefer.title
+    #     self.sefer, self.current_perakim, self.current_pasukim = self.extract_perek_info(content)
+    #     self.sefer = library.get_index(self.sefer)
+    #     self.current_alt_titles = self.sefer.nodes.get_titles('en')
+    #     self.sefer = self.sefer.title
     #     text = content.find("div", {"id": "contentBody"})
     #     if parsha not in self.sheets:
     #         self.sheets[parsha] = {}
@@ -620,10 +609,10 @@ def bs4_reader(file_list_names):
     #     self.quotation_stack = []
     #     self.current_section = 0
     #     self.quotation_stack = []
-    #     self.current_parsha_ref = ["bible", u"{} {}".format(self.current_sefer, self.current_perek)]
+    #     self.current_parsha_ref = ["bible", u"{} {}".format(self.sefer, self.current_perek)]
     #     self.add_to_quotation_stack(self.current_parsha_ref)
     #     self.sheets[parsha][self.current_en_year] = (
-    #     self.current_url, hebrew_year, self.current_sefer, self.current_perakim, self.parse_as_text(text))
+    #     self.current_url, hebrew_year, self.sefer, self.current_perakim, self.parse_as_text(text))
     #     self.post_text(parsha, self.current_en_year, self.sheets[parsha][self.current_en_year])
 
 def dict_from_html_attrs(contents):
