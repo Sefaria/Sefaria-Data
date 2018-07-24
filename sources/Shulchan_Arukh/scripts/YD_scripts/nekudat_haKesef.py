@@ -135,7 +135,7 @@ def check_reference(reference_object, reference_records):
     book = storage.lookup[reference_object[u'comments-on']]
     ref_key = (reference_object[u'comments-on'], reference_object[u'siman'], reference_object[u'remote-seif'])
     if ref_key in reference_records:
-        reference_records[ref_key][u'times-referenced'] += 1
+        reference_records[ref_key][u'places-referenced'].append(reference_object[u'local-seif'])
     else:
         siman = next(s for s in book.get_simanim() if s.num == reference_object[u'siman'])
         try:
@@ -143,9 +143,11 @@ def check_reference(reference_object, reference_records):
         except StopIteration:
             print u'{} {}:{} does not exist'.format(*ref_key)
             return
-        num_refs = len(seif.grab_references(u'\*\)?'))
+        num_refs = len(seif.grab_references(u'@58\*\)?'))
+        if num_refs == 0:
+            num_refs = len(seif.grab_references(u'\*\)?'))
         reference_records[ref_key][u'star-counts'] = num_refs
-        reference_records[ref_key][u'times-referenced'] = 1
+        reference_records[ref_key][u'places-referenced'] = [reference_object[u'local-seif']]
     reference_object.update(reference_records[ref_key])
 
 
@@ -164,13 +166,13 @@ for r in suite.record_list:
         continue
 map(lambda x: x[1].update({'key': x[0]}), store.items())
 store_list = sorted(store.values(), key=lambda x: (x['key'][1], x['key'][2], x['key'][0]))
-problems = filter(lambda x: x if u'times-referenced' not in x
-                  else (x if x[u'times-referenced'] != x[u'star-counts'] else None), suite.record_list)
+problems = filter(lambda x: x if u'places-referenced' not in x
+                  else (x if len(x[u'places-referenced']) != x[u'star-counts'] else None), suite.record_list)
 print len(suite.record_list)
 print len(problems)
 import json
 with codecs.open('nekudat_refs.json', 'wb', 'utf-8') as fp:
-    json.dump(problems, fp)
+    json.dump(store_list, fp)
 
 """
 For each reference I now know how many possible references point to said reference in the base text. I need to determine
@@ -198,4 +200,50 @@ for vol_num in range(1, 5):
     assert isinstance(volume, Volume)
     volume.mark_simanim(u'@22([\u05d0-\u05ea]{1,3})')
     volume.validate_simanim(complete=False)
+
+u"""
+I need to be able to mark certain stars as Kesef unique. What I'll do is scan a targeted remote-seif and look for the
+unique identifier. If it's found, then only the advanced regex will be used, otherwise, we'll just look for "regular"
+stars.
+The unique mark will be @58*. Any seif with that mark will only be able to identify stars preceded by an @58
+
+Properly marking itags:
+I need to be able to hand a list of local-seif values, and mark xrefs accordingly. I can't assume that two marks in a
+remote-seif necessarily get mapped to two consecutive seifim  *worth checking*.
+Start by compiling the list of local-seifim for each remote-seif. If there are no jumps, I can call seif.mark_references
+and set the found parameter to 1 less than the first local-seif.
+If there are jumps, I'll need to implement a new `mark_references` method that accepts a list.
+Also, I'll need to make sure to unwrap all nekudat xrefs before running this method.
+"""
+
+
+def mark_remote_xref(reference):
+    book_name, siman_num, remote_seif_num = reference['key']
+    book = BookStore().lookup[book_name]
+    siman = next(s for s in book.get_simanim() if s.num == siman_num)
+    seif = next(s for s in siman.get_child() if s.num == remote_seif_num)
+    print unicode(seif)
+    print u'\n'
+    if len(seif.grab_references(u'@58\*\)?')) >= 1:
+        mark_regex = u'@58\*\)?'
+    else:
+        mark_regex = u'\*\)?'
+    local_seifim = iter(reference['places-referenced'])
+
+    def repl(s):
+        if re.match(u'^@', s.group()):
+            mark = s.group()
+        else:
+            mark = u'@58{}'.format(s.group())
+        return u'<xref id="b{}-c{}-si{}-ord{}">{}</xref>'.format(
+            getattr(book, 'id', 0), nek.id, siman_num, next(local_seifim), mark)
+
+    for text_element in seif.get_child():
+        for xref in text_element.Tag.find_all(lambda x: x.name == 'xref' and re.search(mark_regex, x.text) is not None):
+            xref.unwrap()
+        tagged = re.sub(mark_regex, repl, unicode(text_element))
+        new_tag = BeautifulSoup(tagged, 'xml').find(text_element.Tag.name)
+        text_element.Tag.replace_with(new_tag)
+        text_element.Tag = new_tag
+    print unicode(seif)
 
