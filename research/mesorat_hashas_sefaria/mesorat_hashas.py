@@ -731,13 +731,12 @@ class ParallelMatcher:
             # account for matches at end of book
             for dead in partial_match_list:
                 distance_from_last_match = (len(mes_wl)-self.skip_gram_size) - dead.last_a_word_matched()
-                if distance_from_last_match > self.max_words_between:
-                    if len(dead) > self.min_words_in_match:
-                        self.ght.put_already_started((dead.b_start, dead.a_start))
-                        try:
-                            matches += [dead.finalize()]
-                        except AssertionError:
-                            pass
+                if len(dead) > self.min_words_in_match:
+                    self.ght.put_already_started((dead.b_start, dead.a_start))
+                    try:
+                        matches += [dead.finalize()]
+                    except AssertionError:
+                        pass
 
         return matches
 
