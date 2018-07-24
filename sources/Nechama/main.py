@@ -12,6 +12,7 @@ from sefaria.system.exceptions import InputError
 from collections import OrderedDict
 from bs4 import BeautifulSoup, element
 from segments import *
+from sources.functions import *
 
 
 class Sheet(object):
@@ -25,13 +26,32 @@ class Sheet(object):
         self.en_sefer = library.get_index(sefer).title
         self.he_year = re.sub(u"שנת", u"", year).strip()
         self.year = getGematria(self.he_year) + 5000  # +1240, jewish year is more accurate
-        self.pesukim = self.get_ref(ref)  # (re.sub(u"(פרק(ים)?|פסוק(ים)?)", u"", ref).strip())
-        parser_remark = u""
+        self.en_year = getGematria(self.he_year) + 1240
+        self.pasukim = self.get_ref(ref)  # (re.sub(u"(פרק(ים)?|פסוק(ים)?)", u"", ref).strip())
+        self.sheet_remark = u""
         self.header_links = None  # this will link to other  nechama sheets (if referred).
         self.quotations = []  # last one in this list is the current ref
-        parser.term_cache = {}
         self.current_section = 0
+        self.div_sections = [] #BeautifulSoup objects that will eventually become converted into Section objects stored in self.sections
         self.sections = []
+        self.sources = []
+
+
+    def create_sources_from_segments(self):
+        for section in self.sections:
+            for segment in section.segment_objects:
+                self.sources.append(segment.create_source())
+
+
+    def prepare_sheet(self):
+       sheet_json = {}
+       sheet_json["status"] = "public"
+       sheet_json["title"] = self.title
+       sheet_json["summary"] = u"{} ({})".format(self.en_year, self.year)
+       sheet_json["sources"] = self.sources
+       sheet_json["options"] = {"numbered": 0,"assignable": 0,"layout": "sideBySide","boxed": 0,"language": "hebrew","divineNames": "noSub","collaboration": "none", "highlightMode": 0, "bsd": 0,"langLayout": "heRight"}
+       post_sheet(sheet_json, server=parser.server)
+
 
 
     def extract_perek_info(self, perek_info):
@@ -93,36 +113,25 @@ class Sheet(object):
 
     def parse_as_text(self):
         intro_segment = intro_tuple = None
-        for div in self.sections:
+        for div in self.div_sections:
             self.current_section += 1
             new_section = Section(self.current_section, self.perakim, self.pasukim)
-            self.sections.append(new_section)
             assert str(self.current_section) in div['id']
 
             if div.text.replace(" ", "") == "":
                 continue
 
             # removes nodes with no content
-            segments = new_section.get_children_with_content(div)
+            soup_segments = new_section.get_children_with_content(div)
 
             # blockquote is really just its children so get replace it with them
             # and tables  need to be handled recursively
-            segments = new_section.check_for_blockquote_and_table(segments, level=2)
+            soup_segments = new_section.check_for_blockquote_and_table(soup_segments, level=2)
 
-            # here is the main logic of parsing
+            #create Segment objects out of the BeautifulSoup objects
+            new_section.classify_segments(soup_segments)
 
-            segments = new_section.classify_segments(segments)
-            self.RT_Rashi = False
-            if intro_segment:
-                segments.insert(0, intro_tuple)
-                intro_segment = None
-
-            # assert len(self.quotations) == self.current_pos_in_quotation_stack+1
-            # assert 3 > len(self.quotation_stack) > 0
-            # if len(self.quotation_stack) >= 2:
-            #    segments = self.add_links_from_intro_to_many_comments(segments)
-            self.sections.append(segments)
-
+            self.sections.append(new_section)
 
 
 
@@ -133,17 +142,17 @@ class Section(object):
     def __init__(self, number, perakim, pasukim):
         self.number = number  # which number section am I
         self.possible_perakim = perakim # list of perakim: the assumption is that any perek referenced will be in this list
-        self.possible_pasukim = pasukim # Ref: the assumption is that any pasuk referenced will be
+        self.possible_pasukim = pasukim # Ref range: the assumption is that any pasuk referenced will be inside the range
         self.letter = ""
         self.title = ""
-        self.segments = []  # list of Segment objs
+        self.segment_objects = []  # list of Segment objs
         self.RT_Rashi = False
         self.current_parsha_ref = ""
-        self.current_perek = 0
-        self.current_pasuk = 0
+        self.current_perek = self.possible_perakim[0]
+        self.current_pasuk = self.possible_pasukim.sections[-1] #the lowest pasuk in the range
 
 
-    def classify_segments(self, segments):
+    def classify_segments(self, soup_segments):
         """
         Classifies each segments based on its role such as "question", "header", or quote from "bible"
         and then sets each segment to be a tuple that tells us in order:
@@ -158,30 +167,32 @@ class Section(object):
         combined_with_prev_line = None
         prev_was_quote = None
         new_parshan = None
-        for i, segment in enumerate(segments):
+        for i, segment in enumerate(soup_segments):
             relevant_text = self.format(self.relevant_text(segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
+            if i == 0:
+                self.segment_objects.append(Header(segment))
+                assert Header.is_header(segment), "Header should be first."
+                continue
             if Question.is_question(segment):
-                segments[i] = Question(self, segment)
-            elif Header.is_header(segment):
-                segments[i] = Header(self, segment)
+                self.segment_objects.append(Question(segment))
             elif Table.is_table(segment):  # these tables we want as they are so just str(segment)
-                segments[i] = Table(self, segment)
-            elif isinstance(segment, element.Tag) and segment.has_attr("class"):
+                self.segment_objects.append(Table(segment))
+            elif Source.is_source_text(segment, parser.important_classes):
                 # this is a comment by a commentary, bible, or midrash
                 segment_class = segment.attrs["class"][0]  # is it parshan, bible, or midrash?
                 assert len(segment.attrs["class"]) == 1, "More than one class"
-                segments[i] = new_parshan.add_text(segment, segment_class)
+                new_parshan.add_text(segment, segment_class)
+                self.segment_objects.append(new_parshan)
                 if new_parshan.index_not_found():
                     if new_parshan.about_parshan_ref not in parser.index_not_found.keys():
                         parser.index_not_found[new_parshan.about_parshan_ref] = []
                     parser.index_not_found[new_parshan.about_parshan_ref].append((self.current_parsha_ref, new_parshan.about_parshan_ref))
                 continue
-            elif Nechama_Comment.is_comment(segments, i, parser):  # above criteria not met, just an ordinary comment
-                segments[i] = Nechama_Comment(relevant_text)
-            else:  # must be a Comment
-                next_segment_class = segments[i + 1].attrs["class"][0]  # get the class of this ref and it's comment
+            elif Nechama_Comment.is_comment(soup_segments, i, parser.important_classes):  # above criteria not met, just an ordinary comment
+                self.segment_objects.append(Nechama_Comment(relevant_text))
+            else:  # must be a Source Ref, so parse it
+                next_segment_class = soup_segments[i + 1].attrs["class"][0]  # get the class of this ref and it's comment
                 new_parshan = self.parse_ref(segment, relevant_text, next_segment_class)
-        return segments
 
     def get_term(self, poss_title):
         # return the english index name corresponding to poss_title or None
@@ -193,19 +204,19 @@ class Section(object):
         # this title is unusual so look in term_mapping for it
         if poss_title in parser.term_mapping:
             parser._term_cache[poss_title] = parser.term_mapping[poss_title]
-            return parser.term_cache[poss_title]
+            return parser._term_cache[poss_title]
 
         term = Term().load({"titles.text": poss_title})
         if poss_title in library.full_title_list('he'):
-            parser.term_cache[poss_title] = library.get_index(poss_title).title
-            return parser.term_cache[poss_title]
+            parser._term_cache[poss_title] = library.get_index(poss_title).title
+            return parser._term_cache[poss_title]
         elif term:
             term_name = term.name
-            likely_index_title = u"{} on {}".format(term_name, self.en_sefer)
+            likely_index_title = u"{} on {}".format(term_name, parser.en_sefer)
             if likely_index_title in library.full_title_list('en'):
-                parser.term_cache[poss_title] = likely_index_title
-                return parser.term_cache[poss_title]
-        parser.term_cache[poss_title] = None
+                parser._term_cache[poss_title] = likely_index_title
+                return parser._term_cache[poss_title]
+        parser._term_cache[poss_title] = None
         return None
 
     def get_a_tag_from_ref(self, segment, relevant_text):
@@ -244,8 +255,7 @@ class Section(object):
             parser.index_not_found[new_parshan.about_parshan_ref].append((self.current_parsha_ref, new_parshan.about_parshan_ref))
 
         else:
-            new_parshan.about_parshan_ref = ""
-            new_parshan.ref = ""
+            new_parshan.about_parshan_ref = relevant_text
 
         return new_parshan
 
@@ -262,12 +272,14 @@ class Section(object):
             string = string.strip()
             refs = library.get_refs_in_string(string)
             if refs:
-                new_parshan = Parshan(self, next_segment_class, refs[0].normal())
+                new_parshan = Source(next_segment_class, refs[0].normal())
                 assert len(refs) <= 1 or u"השווה" in orig
                 return string[1:-1]  # remove ( )
             else:
                 not_found.append(orig)
         if len(not_found) == len(strings):
+            if strings[-1] not in parser.ref_not_found.keys():
+                parser.ref_not_found[strings[-1]] = 0
             parser.ref_not_found[strings[-1]] += 1
         return ""
 
@@ -344,7 +356,7 @@ class Section(object):
                 new_pasuk = str(getGematria(pasuk))
 
             if is_tanakh:
-                poss_ref = parser.pasuk_in_parsha_pasukim(new_pasuk, perakim=[new_perek])
+                poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk, perakim=[new_perek])
                 if poss_ref:
                     self.current_perek = poss_ref.sections[0]
                     self.current_pasuk = poss_ref.sections[1]
@@ -368,18 +380,18 @@ class Section(object):
         # now add to quotation stack either based on real_title or based on self.current_parsha_ref
         if real_title:  # a ref to a commentator that we have in our system
             if new_pasuk:
-                new_parshan = Parshan(self, next_segment_class,
+                new_parshan = Source(next_segment_class,
                                       u"{} {}:{}".format(real_title, new_perek, new_pasuk))
             else:
-                new_parshan = Parshan(self, next_segment_class, u"{} {}".format(real_title, new_perek))
+                new_parshan = Source(next_segment_class, u"{} {}".format(real_title, new_perek))
         elif not real_title and is_tanakh:  # not a commentator, but instead a ref to the parsha
-            new_parshan = Parshan(self, "bible", u"{} {}:{}".format(parser.en_sefer, new_perek, new_pasuk))
+            new_parshan = Source("bible", u"{} {}:{}".format(parser.en_sefer, new_perek, new_pasuk))
         elif len(relevant_text.split()) < 8:  # not found yet, look it up in library.get_refs_in_string
             found_ref_in_string = self._get_refs_in_string([relevant_text], next_segment_class,
                                                            add_if_not_found=False)
-            new_parshan = Parshan(self, next_segment_class, found_ref_in_string)
+            new_parshan = Source(next_segment_class, found_ref_in_string)
         else:
-            new_parshan = Parshan(self, next_segment_class, "")
+            new_parshan = Source(next_segment_class, "")
         return new_parshan, found_ref_in_string
 
     def relevant_text(self, segment):
@@ -422,10 +434,10 @@ class Section(object):
 
     def pasuk_in_parsha_pasukim(self, new_pasuk, perakim=None):
         if perakim is None:
-            perakim = self.perakim
+            perakim = self.possible_perakim
         for perek in perakim:
             possible_ref = Ref("Genesis " + perek + ":" + new_pasuk)
-            if self.pasukim.contains(possible_ref):
+            if self.possible_pasukim.contains(possible_ref):
                 return possible_ref
         return None
 
@@ -462,13 +474,6 @@ class Section(object):
         if level > -1:  # go level deeper unless level isn't > 0
             new_segments = self.check_for_blockquote_and_table(new_segments, level)
         return new_segments
-
-    def remove_hyper_links(self, html):
-        all_a_links = re.findall("(<a href.*?>(.*?)</a>)", html)
-        for a_link_and_text in all_a_links:
-            a_link, text = a_link_and_text
-            html = html.replace(a_link, text)
-        return html
 
     def format(self, comment):
         found_difficult = ""
@@ -512,6 +517,7 @@ class Nechama_Parser:
         self.important_classes = ["parshan", "midrash", "talmud", "bible", "commentary"]
         self.index_not_found = {}
         self.ref_not_found = {}
+        self.server = "http://nechama.sandbox.sefaria.org/"
         self.term_mapping = {
             u"""הנצי"ב מוולוז'ין""": u"Haamek Davar on {}".format(self.en_sefer),
             u"אונקלוס": u"Onkelos {}".format(self.en_sefer),
@@ -556,12 +562,13 @@ class Nechama_Parser:
             sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, sefer, perek_info)
             sheets[html_sheet] = sheet
             body_dict = dict_from_html_attrs(content.find('div', {'id': "contentBody"}))
-            sheet.sections.extend([v for k, v in body_dict.items() if re.search(u'ContentSection_\d', k)]) # check that these come in in the right order
+            sheet.div_sections.extend([v for k, v in body_dict.items() if re.search(u'ContentSection_\d', k)]) # check that these come in in the right order
             sheet.sheet_remark = body_dict['sheetRemark'].text
             sheet.parse_as_text()
-
-            pass
+            sheet.create_sources_from_segments()
+            sheet.prepare_sheet()
         return sheets
+
 
 
 def dict_from_html_attrs(contents):
@@ -578,7 +585,8 @@ if __name__ == "__main__":
     # Ref(u"בראשית פרק ג פסוק ד - פרק ה פסוק י")
     # Ref(u"u'דברים פרק ט, ז-כט - פרק י, א-י'")
     # sheets = bs4_reader(['html_sheets/{}.html'.format(x) for x in ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]])
-    #sheets = bs4_reader(["html_sheets/{}".format(fn) for fn in os.listdir("html_sheets") if fn != 'errors.html'])
     parser = Nechama_Parser(u"Genesis", u"Genesis")
-    sheets = parser.bs4_reader(["html_sheets/1.html"])
-    pass
+    parshat_bereishit = ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
+
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["2"]])
+    #sheets = parser.bs4_reader(["html_sheets/{}".format(fn) for fn in os.listdir("html_sheets") if fn != 'errors.html'])

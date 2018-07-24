@@ -3,18 +3,25 @@
 from bs4 import BeautifulSoup, element
 from sources.functions import getGematria
 from sefaria.model.text import *
-from main import Nechama_Parser
+from main import *
 
 
-class Segments(object):
+class Segment(object):
 
     def __init__(self, type):
         self.type = type
+        self.text = ""
+
+    def create_source(self):
+        #create source for sourcesheet out of myself
+        source = {"outsideText": self.text}
+        return source
 
 
-class Parshan(object):
 
-    def __init__(self, section, segment_class, ref):
+class Source(object):
+
+    def __init__(self, segment_class, ref):
         self.parshan_name = u""
         self.about_parshan_ref = u""  # words of nechama in regards to the parshan or this specific book, that we will lose since it is not part of our "ref" system see 8.html sec 1. "shadal"
         self.perek = u""
@@ -22,9 +29,72 @@ class Parshan(object):
         self.ref = ref  # this can be blank indicating our parser couldn't figure out what the ref is
         self.nechama_comments = u""
         self.nechama_q = []  # list of Qustion objs about this Parshan seg
-        self.section = section  # which section I belong to
         self.segment_class = segment_class
         self.text = []
+
+
+    @staticmethod
+    def is_source_text(segment, important_classes):
+        return isinstance(segment, element.Tag) and "class" in segment.attrs.keys() and segment.attrs["class"][0] in important_classes
+
+    def is_sefaria_ref(self, ref):
+        try:
+            Ref(ref)
+            return True
+        except InputError:
+            return False
+
+    def glue_ref_and_text(self, ref, text):
+        return u"<small><b>{}</b><br/>{}</small>".format(ref, text)
+
+    def create_source(self):
+        #create source for sourcesheet out of myself
+        comment = " ".join(self.text)
+        if self.ref and self.is_sefaria_ref(self.ref):
+            if self.about_parshan_ref:
+                comment = self.glue_ref_and_text(self.about_parshan_ref, comment)
+            enRef = Ref(self.ref).normal()
+            heRef = Ref(self.ref).he_normal()
+            source = {"ref": enRef, "heRef": heRef,
+                      "text":
+                          {
+                              "he": comment,
+                              "en": ""
+                          },
+                      "options": {
+                          "indented": "indented-1",
+                          "sourceLayout": "",
+                          "sourceLanguage": "hebrew",
+                          "sourceLangLayout": ""
+                      }
+                      }
+        elif self.ref: #thought we found a ref but it's not an actual ref in sefaria library
+            assert self.about_parshan_ref or self.ref, "Didn't anticipate this"
+            if self.about_parshan_ref:
+                comment = self.glue_ref_and_text(self.about_parshan_ref, comment) #use actual text if we can
+            else:
+                comment = self.glue_ref_and_text(self.ref, comment) #otherwise, use the ref we thought it was
+            source = {"outsideText": comment,
+                      "options": {
+                          "indented": "indented-1",
+                          "sourceLayout": "",
+                          "sourceLanguage": "hebrew",
+                          "sourceLangLayout": ""
+                      }
+                      }
+        elif not self.ref and self.about_parshan_ref:
+            comment = self.glue_ref_and_text(self.about_parshan_ref, comment)
+            source = {"outsideText": comment,
+                      "options": {
+                          "indented": "indented-1",
+                          "sourceLayout": "",
+                          "sourceLanguage": "hebrew",
+                          "sourceLangLayout": ""
+                        }
+                      }
+        else:
+            raise InputError, "Didn't anticipate this case"
+        return source
 
     def get_ref(self):
         return self.ref
@@ -50,17 +120,9 @@ class Parshan(object):
         return not self.get_ref() and self.about_parshan_ref #not found a ref, but have info on what it is
 
 
-class Bible(object):
-
-    def __init__(self, pasuk_ref):
-        self.ref = Ref(pasuk_ref)
-
-
 class Header(object):
-    def __init__(self, section, segment):
-        self.section = section
+    def __init__(self, segment):
         table_html = str(segment)
-        table_html = self.section.remove_hyper_links(table_html)
         formatted_text = self.format(BeautifulSoup(table_html, "lxml").text)
         self.text = u"<table><tr><td><big>{}</big></td></tr></table>".format(formatted_text)
 
@@ -69,11 +131,22 @@ class Header(object):
         return isinstance(segment, element.Tag) and segment.name == "table" and \
                segment.attrs["class"][0] in ["header"]
 
+    def create_source(self):
+        #create source for sourcesheet out of myself
+        source = {"outsideText": self.text}
+        return source
+
     def format(self, comment):
         found_difficult = ""
         # digits = re.findall("\d+\.", comment)
         # for digit in set(digits):
         #     comment = comment.replace(digit, "<b>"+digit + " </b>")
+
+        all_a_links = re.findall("(<a href.*?>(.*?)</a>)", comment)
+        for a_link_and_text in all_a_links:
+            a_link, text = a_link_and_text
+            comment = comment.replace(a_link, text)
+
         if "pages/images/hard.gif" in comment:
             found_difficult += "*"
         if "pages/images/harder.gif" in comment:
@@ -106,13 +179,11 @@ class Header(object):
 
 class Question(object):
 
-    def __init__(self, section, segment):
+    def __init__(self, segment):
         self.number = None
         self.letter = None
         self.difficulty = 0
-        self.section = section
         table_html = str(segment)
-        table_html = self.section.remove_hyper_links(table_html)
         self.text = self.format(table_html)
 
     @staticmethod
@@ -120,11 +191,21 @@ class Question(object):
         return isinstance(segment, element.Tag) and segment.name == "table" and \
                segment.attrs["class"][0] in ["question", "question2"]
 
+    def create_source(self):
+        #create source for sourcesheet out of myself
+        source = {"outsideText": self.text}
+        return source
+
     def format(self, comment):
         found_difficult = ""
         # digits = re.findall("\d+\.", comment)
         # for digit in set(digits):
         #     comment = comment.replace(digit, "<b>"+digit + " </b>")
+        all_a_links = re.findall("(<a href.*?>(.*?)</a>)", comment)
+        for a_link_and_text in all_a_links:
+            a_link, text = a_link_and_text
+            comment = comment.replace(a_link, text)
+
         if "pages/images/hard.gif" in comment:
             found_difficult += "*"
         if "pages/images/harder.gif" in comment:
@@ -158,13 +239,17 @@ class Question(object):
 class Table(object):
     ## specifically for tables in HTML that end up staying as HTML in source sheet such class="RT" or "RTBorder"
 
-    def __init__(self, section, segment):
-        self.section = section
+    def __init__(self, segment):
         self.text = str(segment)
 
     @staticmethod
     def is_table(segment):
-        return segment.attrs.get("class", "") in [["RT"], ["RTBorder"]]
+        return isinstance(segment, element.Tag) and segment.attrs.get("class", "") in [["RT"], ["RTBorder"]]
+
+    def create_source(self):
+        #create source for sourcesheet out of myself
+        source = {"outsideText": self.text}
+        return source
 
 
 class RT_Rashi(object):
@@ -177,7 +262,7 @@ class Nechama_Comment(object):
         self.text = text
 
     @staticmethod
-    def is_comment(segments, i, parser):
+    def is_comment(segments, i, important_classes):
         # determine if it's worth looking to see what this ref is:
         # if it's the last one, it's not a ref because a comment needs to come after it
         # if the next one isn't a Tag, this can't be a ref because comments are always Tags with classes
@@ -190,6 +275,12 @@ class Nechama_Comment(object):
             segments[i], element.Tag)
         if this_comment_could_be_ref:
             next_comment_parshan_or_bible = "class" in segments[i + 1].attrs.keys() and \
-                                            segments[i + 1].attrs["class"][0] in parser.important_classes
+                                            segments[i + 1].attrs["class"][0] in important_classes
         return not next_comment_parshan_or_bible or not this_comment_could_be_ref
 
+
+
+    def create_source(self):
+        #create source for sourcesheet out of myself
+        source = {"outsideText": self.text}
+        return source
