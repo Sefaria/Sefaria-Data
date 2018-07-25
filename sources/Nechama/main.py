@@ -13,6 +13,10 @@ from collections import OrderedDict
 from bs4 import BeautifulSoup, element
 from segments import *
 from sources.functions import *
+import unicodedata
+from sefaria.utils.hebrew import strip_cantillation
+from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
+from data_utilities.util import WeightedLevenshtein
 
 
 class Sheet(object):
@@ -132,7 +136,7 @@ class Sheet(object):
             new_section.classify_segments(soup_segments)
 
             self.sections.append(new_section)
-
+            print "appended {}".format(new_section.title)
 
 
 
@@ -183,10 +187,24 @@ class Section(object):
                 assert len(segment.attrs["class"]) == 1, "More than one class"
                 new_source.add_text(segment, segment_class)
                 self.segment_objects.append(new_source)
+                try:
+                    new_source.ref = re.sub(u":$", u" ", new_source.ref)  # shouldnt need this line
+                    ref2check = Ref(new_source.ref)
+                    matched = parser.check_reduce_sources(new_source.text[0], ref2check)  # todo: deal with a list of more than one text, call it from a specific Source class method
+                    new_source.new_ref = matched[0].a.ref
+                    if ref2check.all_subrefs():
+                        print '** section level ref: '.format(ref2check.normal())
+                    print ref2check.normal(), new_source.new_ref.normal()
+                except AttributeError:
+                    print u'AttributeError: {}'.format(re.sub(u":$", u"", new_source.about_parshan_ref))
+                    parser.missing_index.add(new_source.about_parshan_ref) #todo: would like to add just the <a> tag
+                except IndexError:
+                    print u'IndexError: {}'.format(re.sub(u":$", u"", ref2check.normal()))
+
                 if new_source.index_not_found():
-                    if new_source.about_source_ref not in parser.index_not_found.keys():
-                        parser.index_not_found[new_source.about_source_ref] = []
-                    parser.index_not_found[new_source.about_source_ref].append((self.current_parsha_ref, new_source.about_source_ref))
+                    if new_source.about_parshan_ref not in parser.index_not_found.keys():
+                        parser.index_not_found[new_source.about_parshan_ref] = []
+                    parser.index_not_found[new_source.about_parshan_ref].append((self.current_parsha_ref, new_source.about_parshan_ref))
                 continue
             elif Nechama_Comment.is_comment(soup_segments, i, parser.important_classes):  # above criteria not met, just an ordinary comment
                 self.segment_objects.append(Nechama_Comment(relevant_text))
@@ -272,10 +290,10 @@ class Section(object):
                 new_source.about_source_ref = relevant_text
         elif found_a_tag:
             # found no reference but did find an a_tag so this is a ref so keep the text
-            new_source.about_source_ref = relevant_text
-            if new_source.about_source_ref not in parser.index_not_found.keys():
-                parser.index_not_found[new_source.about_source_ref] = []
-            parser.index_not_found[new_source.about_source_ref].append((self.current_parsha_ref, new_source.about_source_ref))
+            new_source.about_parshan_ref = found_a_tag.text # note: check if this change is good and where else can we use this more precise data
+            if new_source.about_parshan_ref not in parser.index_not_found.keys():
+                parser.index_not_found[new_source.about_parshan_ref] = []
+            parser.index_not_found[new_source.about_parshan_ref].append((self.current_parsha_ref, new_source.about_parshan_ref))
 
         else:
             new_source.about_source_ref = relevant_text
@@ -522,8 +540,9 @@ class Nechama_Parser:
             u"מורה נבוכים א'": u"Guide for the Perplexed, Part 1",
             u"מורה נבוכים ב'": u"Guide for the Perplexed, Part 2",
             u"מורה נבוכים ג'": u"Guide for the Perplexed, Part 3",
-            u"תנחומא": u"Midrash Tanchuma, Bereshit",
+            u"תנחומא": u"Midrash Tanchuma, Bereshit", # todo: put in Genesis as alt titles.
             u"בעל גור אריה": u"Gur Aryeh on Bereishit",
+            u"גור אריה": u"Gur Aryeh on Bereishit", #todo: how does this ,apping work? this name is the prime title
             u"""ראב"ע""": u"Ibn Ezra on {}".format(self.en_sefer),
             u"""וראב"ע:""": u"Ibn Ezra on {}".format(self.en_sefer),
             u"עקדת יצחק": u"Akeidat Yitzchak",
@@ -537,10 +556,64 @@ class Nechama_Parser:
             u"""המלבי"ם""": u"Malbim on {}".format(self.en_sefer),
             u"משך חכמה": u"Meshech Hochma, {}".format(self.en_parasha),
             u"רבנו בחיי": u"Rabbeinu Bahya, {}".format(self.en_sefer),
-            u'רב סעדיה גאון': u"Saadia Gaon on {}".format(self.en_sefer)
-
+            # u'רב סעדיה גאון': u"Saadia Gaon on {}".format(self.en_sefer) # todo: there is no Saadia Gaon on Genesis how does this term mapping work?
         }
+        self.levenshtein = WeightedLevenshtein()
+        self.missing_index = set()
 
+    def dict_from_html_attrs(self, contents):
+        d = OrderedDict()
+        for e in [e for e in contents if isinstance(e, element.Tag)]:
+            if "id" in e.attrs.keys():
+                d[e.attrs['id']] = e
+            else:
+                d[e.name] = e
+        return d
+
+    def get_score(self, words_a, words_b):
+        normalizingFactor = 100
+        smoothingFactor = 1
+        ImaginaryContenderPerWord = 22
+        str_a = u" ".join(words_a)
+        str_b = u" ".join(words_b)
+        dist = self.levenshtein.calculate(str_a, str_b,normalize=False)
+        score = 1.0 * (dist + smoothingFactor) / (len(str_a) + smoothingFactor) * normalizingFactor
+
+        dumb_score = (ImaginaryContenderPerWord * len(words_a)) - score
+        return dumb_score
+
+    def clean(self, s):
+        s = unicodedata.normalize("NFD", s)
+        s = strip_cantillation(s, strip_vowels=True)
+        s = re.sub(u"(^|\s)(?:\u05d4['\u05f3])($|\s)", u"\1יהוה\2", s)
+        s = re.sub(ur"[,'\":?.!;־״׳]", u" ", s)
+        s = re.sub(ur"\([^)]+\)", u" ", s)
+        # s = re.sub(ur"\((?:\d{1,3}|[\u05d0-\u05ea]{1,3})\)", u" ", s)  # sefaria automatically adds pasuk markers. remove them
+        s = bleach.clean(s, strip=True, tags=()).strip()
+        s = u" ".join(s.split())
+        return s
+
+    def tokenizer(self, s):
+        return self.clean(s).split()
+
+    def get_score(self, words_a, words_b):
+        normalizingFactor = 100
+        smoothingFactor = 1
+        ImaginaryContenderPerWord = 22
+        str_a = u" ".join(words_a)
+        str_b = u" ".join(words_b)
+        dist = self.levenshtein.calculate(str_a, str_b,normalize=False)
+        score = 1.0 * (dist + smoothingFactor) / (len(str_a) + smoothingFactor) * normalizingFactor
+
+        dumb_score = (ImaginaryContenderPerWord * len(words_a)) - score
+        return dumb_score
+
+    def check_reduce_sources(self, comment, ref):
+        n = len(re.split(u'\s+', comment))
+        pm = ParallelMatcher(self.tokenizer, dh_extract_method = None, ngram_size=3, max_words_between=4, min_words_in_match =int(round(n*0.5)),
+        min_distance_between_matches=0, all_to_all=False, parallelize = False, verbose = False, calculate_score = self.get_score)
+        new_ref = pm.match(tc_list=[ref.text('he'), (comment, 1)], return_obj=True)
+        return new_ref
 
     def bs4_reader(self, file_list_names):
         """
@@ -562,8 +635,11 @@ class Nechama_Parser:
             sheet.div_sections.extend([v for k, v in body_dict.items() if re.search(u'ContentSection_\d', k)]) # check that these come in in the right order
             sheet.sheet_remark = body_dict['sheetRemark'].text
             sheet.parse_as_text()
-            sheet.create_sources_from_segments()
-            sheet.prepare_sheet()
+            # sheet.create_sources_from_segments()
+            # sheet.prepare_sheet()
+            print "index_not_found"
+            for parshan_name in parser.index_not_found:
+                print parshan_name
         return sheets
 
 
@@ -584,6 +660,5 @@ if __name__ == "__main__":
     # sheets = bs4_reader(['html_sheets/{}.html'.format(x) for x in ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]])
     parser = Nechama_Parser(u"Genesis", u"Genesis")
     parshat_bereishit = ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
-
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["2"]])
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["1", "2", "30"]])
     #sheets = parser.bs4_reader(["html_sheets/{}".format(fn) for fn in os.listdir("html_sheets") if fn != 'errors.html'])

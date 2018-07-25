@@ -90,8 +90,8 @@ class Nechama_parser(object):
 
     def check_reduce_sources(self, comment, ref):
         n = len(re.split(u'\s+', comment))
-        pm = ParallelMatcher(self.tokenizer, dh_extract_method = None, ngram_size=3, max_words_between=4, min_words_in_match =int(round(n*0.9)),
-        min_distance_between_matches=0, all_to_all=False, parallelize = False, verbose = True, calculate_score = self.get_score)
+        pm = ParallelMatcher(self.tokenizer, dh_extract_method = None, ngram_size=3, max_words_between=4, min_words_in_match =int(round(n*0.8)),
+        min_distance_between_matches=0, all_to_all=False, parallelize = False, verbose = False, calculate_score = self.get_score)
         new_ref = pm.match(tc_list=[ref.text('he'), (comment, 1)], return_obj=True)
         return new_ref
 
