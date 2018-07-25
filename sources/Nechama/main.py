@@ -166,7 +166,7 @@ class Section(object):
         """
         combined_with_prev_line = None
         prev_was_quote = None
-        new_parshan = None
+        new_source = None
         for i, segment in enumerate(soup_segments):
             relevant_text = self.format(self.relevant_text(segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
             if i == 0:
@@ -179,20 +179,20 @@ class Section(object):
                 self.segment_objects.append(Table(segment))
             elif Source.is_source_text(segment, parser.important_classes):
                 # this is a comment by a commentary, bible, or midrash
-                segment_class = segment.attrs["class"][0]  # is it parshan, bible, or midrash?
+                segment_class = segment.attrs["class"][0]  # is it source, bible, or midrash?
                 assert len(segment.attrs["class"]) == 1, "More than one class"
-                new_parshan.add_text(segment, segment_class)
-                self.segment_objects.append(new_parshan)
-                if new_parshan.index_not_found():
-                    if new_parshan.about_parshan_ref not in parser.index_not_found.keys():
-                        parser.index_not_found[new_parshan.about_parshan_ref] = []
-                    parser.index_not_found[new_parshan.about_parshan_ref].append((self.current_parsha_ref, new_parshan.about_parshan_ref))
+                new_source.add_text(segment, segment_class)
+                self.segment_objects.append(new_source)
+                if new_source.index_not_found():
+                    if new_source.about_source_ref not in parser.index_not_found.keys():
+                        parser.index_not_found[new_source.about_source_ref] = []
+                    parser.index_not_found[new_source.about_source_ref].append((self.current_parsha_ref, new_source.about_source_ref))
                 continue
             elif Nechama_Comment.is_comment(soup_segments, i, parser.important_classes):  # above criteria not met, just an ordinary comment
                 self.segment_objects.append(Nechama_Comment(relevant_text))
             else:  # must be a Source Ref, so parse it
                 next_segment_class = soup_segments[i + 1].attrs["class"][0]  # get the class of this ref and it's comment
-                new_parshan = self.parse_ref(segment, relevant_text, next_segment_class)
+                new_source = self.parse_ref(segment, relevant_text, next_segment_class)
 
     def get_term(self, poss_title):
         # return the english index name corresponding to poss_title or None
@@ -240,24 +240,47 @@ class Section(object):
 
     def parse_ref(self, segment, relevant_text, next_segment_class):
         real_title, found_a_tag, a_tag_is_entire_comment = self.get_a_tag_from_ref(segment, relevant_text)
-        new_parshan, found_ref_in_string = self.create_new_parshan(next_segment_class, relevant_text,
-                                                                                 real_title)
-        if new_parshan.get_ref():
+        found_ref_in_string = ""
+
+        # check if it's in Perek X, Pasuk Y format and set perek and pasuk accordingly
+        is_tanakh = (relevant_text.startswith(u"פרק ") or relevant_text.startswith(u"פסוק ") or
+                     relevant_text.startswith(u"פרקים ") or relevant_text.startswith(u"פסוקים "))
+        is_perek_pasuk_ref, new_perek, new_pasuk = self.set_current_perek_pasuk(relevant_text, next_segment_class,
+                                                                                is_tanakh)
+
+        # now create new_source based on real_title or based on self.current_parsha_ref
+        if real_title:  # a ref to a commentator that we have in our system
+            if new_pasuk:
+                new_source = Source(next_segment_class,
+                                     u"{} {}:{}".format(real_title, new_perek, new_pasuk))
+            else:
+                new_source = Source(next_segment_class, u"{} {}".format(real_title, new_perek))
+        elif not real_title and is_tanakh:  # not a commentator, but instead a ref to the parsha
+            new_source = Source("bible", u"{} {}:{}".format(parser.en_sefer, new_perek, new_pasuk))
+        elif len(relevant_text.split()) < 8:  # not found yet, look it up in library.get_refs_in_string
+            found_ref_in_string = self._get_refs_in_string([relevant_text], next_segment_class,
+                                                           add_if_not_found=False)
+            new_source = Source(next_segment_class, found_ref_in_string)
+        else:
+            new_source = Source(next_segment_class, "")
+        
+        #finally set about_source_ref
+        if new_source.get_ref():
             if not a_tag_is_entire_comment and found_ref_in_string == "" and len(relevant_text.split()) >= 6:
                 # edge case where you found the ref but Nechama said something else in addition to the ref
                 # so we want to keep the text
-                new_parshan.about_parshan_ref = relevant_text
+                new_source.about_source_ref = relevant_text
         elif found_a_tag:
             # found no reference but did find an a_tag so this is a ref so keep the text
-            new_parshan.about_parshan_ref = relevant_text
-            if new_parshan.about_parshan_ref not in parser.index_not_found.keys():
-                parser.index_not_found[new_parshan.about_parshan_ref] = []
-            parser.index_not_found[new_parshan.about_parshan_ref].append((self.current_parsha_ref, new_parshan.about_parshan_ref))
+            new_source.about_source_ref = relevant_text
+            if new_source.about_source_ref not in parser.index_not_found.keys():
+                parser.index_not_found[new_source.about_source_ref] = []
+            parser.index_not_found[new_source.about_source_ref].append((self.current_parsha_ref, new_source.about_source_ref))
 
         else:
-            new_parshan.about_parshan_ref = relevant_text
+            new_source.about_source_ref = relevant_text
 
-        return new_parshan
+        return new_source
 
     def _get_refs_in_string(self, strings, next_segment_class, add_if_not_found=True):
         not_found = []
@@ -272,9 +295,8 @@ class Section(object):
             string = string.strip()
             refs = library.get_refs_in_string(string)
             if refs:
-                new_parshan = Source(next_segment_class, refs[0].normal())
                 assert len(refs) <= 1 or u"השווה" in orig
-                return string[1:-1]  # remove ( )
+                return refs[0].normal()
             else:
                 not_found.append(orig)
         if len(not_found) == len(strings):
@@ -368,31 +390,6 @@ class Section(object):
             return True, new_perek, new_pasuk
         return False, self.current_perek, self.current_pasuk
 
-    def create_new_parshan(self, next_segment_class, relevant_text, real_title):
-        found_ref_in_string = ""
-
-        # check if it's in Perek X, Pasuk Y format and set perek and pasuk accordingly
-        is_tanakh = (relevant_text.startswith(u"פרק ") or relevant_text.startswith(u"פסוק ") or
-                     relevant_text.startswith(u"פרקים ") or relevant_text.startswith(u"פסוקים "))
-        is_perek_pasuk_ref, new_perek, new_pasuk = self.set_current_perek_pasuk(relevant_text, next_segment_class,
-                                                                                is_tanakh)
-
-        # now add to quotation stack either based on real_title or based on self.current_parsha_ref
-        if real_title:  # a ref to a commentator that we have in our system
-            if new_pasuk:
-                new_parshan = Source(next_segment_class,
-                                      u"{} {}:{}".format(real_title, new_perek, new_pasuk))
-            else:
-                new_parshan = Source(next_segment_class, u"{} {}".format(real_title, new_perek))
-        elif not real_title and is_tanakh:  # not a commentator, but instead a ref to the parsha
-            new_parshan = Source("bible", u"{} {}:{}".format(parser.en_sefer, new_perek, new_pasuk))
-        elif len(relevant_text.split()) < 8:  # not found yet, look it up in library.get_refs_in_string
-            found_ref_in_string = self._get_refs_in_string([relevant_text], next_segment_class,
-                                                           add_if_not_found=False)
-            new_parshan = Source(next_segment_class, found_ref_in_string)
-        else:
-            new_parshan = Source(next_segment_class, "")
-        return new_parshan, found_ref_in_string
 
     def relevant_text(self, segment):
         if isinstance(segment, element.Tag):
