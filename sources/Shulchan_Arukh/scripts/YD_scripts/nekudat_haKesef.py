@@ -6,6 +6,7 @@ import codecs
 from collections import defaultdict
 from os.path import dirname as loc
 from data_utilities.util import getGematria, Singleton
+from itertools import count
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
 root_dir = loc(loc(loc(os.path.abspath(__file__))))
@@ -170,9 +171,10 @@ problems = filter(lambda x: x if u'places-referenced' not in x
                   else (x if len(x[u'places-referenced']) != x[u'star-counts'] else None), suite.record_list)
 print len(suite.record_list)
 print len(problems)
+book_mapping = {(r['siman'], r['local-seif']): r['comments-on'] for r in suite.record_list}
 import json
 with codecs.open('nekudat_refs.json', 'wb', 'utf-8') as fp:
-    json.dump(store_list, fp)
+    json.dump(suite.record_list, fp)
 
 """
 For each reference I now know how many possible references point to said reference in the base text. I need to determine
@@ -192,14 +194,7 @@ commentaries = root.get_commentaries()
 nek = commentaries.get_commentary_by_title(u"Nekudat HaKesef")
 if nek is None:
     nek = commentaries.add_commentary(u"Nekudat HaKesef", u"נקודת הכסף")
-for vol_num in range(1, 5):
-    print 'vol {}'.format(vol_num)
-    nek.remove_volume(vol_num)
-    with codecs.open(filenames[vol_num], 'r', 'utf-8') as fp:
-        volume = nek.add_volume(fp.read(), vol_num)
-    assert isinstance(volume, Volume)
-    volume.mark_simanim(u'@22([\u05d0-\u05ea]{1,3})')
-    volume.validate_simanim(complete=False)
+
 
 u"""
 I need to be able to mark certain stars as Kesef unique. What I'll do is scan a targeted remote-seif and look for the
@@ -222,8 +217,6 @@ def mark_remote_xref(reference):
     book = BookStore().lookup[book_name]
     siman = next(s for s in book.get_simanim() if s.num == siman_num)
     seif = next(s for s in siman.get_child() if s.num == remote_seif_num)
-    print unicode(seif)
-    print u'\n'
     if len(seif.grab_references(u'@58\*\)?')) >= 1:
         mark_regex = u'@58\*\)?'
     else:
@@ -245,5 +238,54 @@ def mark_remote_xref(reference):
         new_tag = BeautifulSoup(tagged, 'xml').find(text_element.Tag.name)
         text_element.Tag.replace_with(new_tag)
         text_element.Tag = new_tag
-    print unicode(seif)
+
+
+for reference in store_list:
+    mark_remote_xref(reference)
+
+u"""
+As far a marking rids for Seifim, I just need to know which book it's going out to. 
+For giving numbers to seifim, I need to just count. The mark_seifim method expects to pass group 1 of a regex match
+to a method. For this, create an infinte iterator and a function that calls `next` on that iterator. Said function
+should accept any number of parameters and chuck 'em. 
+Maybe I can just make this a "cyclical" seif, with some random label
+"""
+
+my_book_store = BookStore()
+for vol_num in range(1, 5):
+    print 'vol {}'.format(vol_num)
+    nek.remove_volume(vol_num)
+    with codecs.open(filenames[vol_num], 'r', 'utf-8') as fp:
+        volume = nek.add_volume(fp.read(), vol_num)
+    assert isinstance(volume, Volume)
+    volume.mark_simanim(u'@22([\u05d0-\u05ea]{1,3})')
+    volume.validate_simanim(complete=False)
+    print "Validating Seifim"
+    errors = volume.mark_seifim(u'^@00\(()', cyclical=True)
+    for e in errors:
+        print e
+    volume.validate_seifim()
+    errors = volume.format_text(u'@11', u'@33', u'dh')
+    for e in errors:
+        print e
+    for siman in volume.get_child():
+        for seif in siman.get_child():
+            try:
+                base_id = getattr(my_book_store.lookup[book_mapping[(siman.num, seif.num)]], u'id', 0)
+                seif.set_rid(base_id, nek.id, siman.num)
+            except KeyError:
+                seif.Tag[u'rid'] = 'no-link'
+
+root.populate_comment_store(verbose=True)
+for book in my_book_store.lookup.values():
+    for vol_num in range(1, 5):
+        volume = book.get_volume(vol_num)
+        assert isinstance(volume, Volume)
+        errors = volume.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u'@58', x.text) is not None)
+        for e in errors:
+            print e
+
+seifim = [seif for siman in nek.get_simanim() for seif in siman.get_child()]
+map(lambda x: x.Tag.attrs.update({u'label': u'\u266f'}), seifim)
+root.export()
 
