@@ -134,8 +134,9 @@ class Sheet(object):
 
             #create Segment objects out of the BeautifulSoup objects
             new_section.classify_segments(soup_segments)
-
+            new_section.title = re.sub(u"<.*?>", u"", new_section.segment_objects[0].text)
             self.sections.append(new_section)
+            print u"appended {}".format(new_section.title)
 
 
 
@@ -620,7 +621,6 @@ class Nechama_Parser:
         dumb_score = (ImaginaryContenderPerWord * len(words_a)) - score
         return dumb_score
 
-
     def check_reduce_sources(self, comment, ref):
         n = len(re.split(u'\s+', comment))
         pm = ParallelMatcher(self.tokenizer, dh_extract_method = None, ngram_size=3, max_words_between=4, min_words_in_match =int(round(n*0.5)),
@@ -651,10 +651,9 @@ class Nechama_Parser:
             sheet.parse_as_text()
             sheet.create_sources_from_segments()
             sheet.prepare_sheet()
-
-        print "index_not_found"
-        for parshan_name in parser.index_not_found:
-            print parshan_name
+            print "index_not_found"
+            for parshan_name in parser.index_not_found:
+                print parshan_name
         return sheets
 
 
