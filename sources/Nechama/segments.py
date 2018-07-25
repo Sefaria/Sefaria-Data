@@ -50,7 +50,7 @@ class Source(object):
     def create_source(self):
         #create source for sourcesheet out of myself
         comment = " ".join(self.text)
-        if self.ref and self.is_sefaria_ref(self.ref):
+        if self.ref:#and self.is_sefaria_ref(self.ref):
             if self.about_source_ref:
                 comment = self.glue_ref_and_text(self.about_source_ref, comment)
             enRef = Ref(self.ref).normal()
@@ -68,20 +68,20 @@ class Source(object):
                           "sourceLangLayout": ""
                       }
                       }
-        elif self.ref: #thought we found a ref but it's not an actual ref in sefaria library
-            assert self.about_source_ref or self.ref, "Didn't anticipate this"
-            if self.about_source_ref:
-                comment = self.glue_ref_and_text(self.about_source_ref, comment) #use actual text if we can
-            else:
-                comment = self.glue_ref_and_text(self.ref, comment) #otherwise, use the ref we thought it was
-            source = {"outsideText": comment,
-                      "options": {
-                          "indented": "indented-1",
-                          "sourceLayout": "",
-                          "sourceLanguage": "hebrew",
-                          "sourceLangLayout": ""
-                      }
-                      }
+        # elif self.ref: #thought we found a ref but it's not an actual ref in sefaria library
+        #     assert self.about_source_ref or self.ref, "Didn't anticipate this"
+        #     if self.about_source_ref:
+        #         comment = self.glue_ref_and_text(self.about_source_ref, comment) #use actual text if we can
+        #     else:
+        #         comment = self.glue_ref_and_text(self.ref, comment) #otherwise, use the ref we thought it was
+        #     source = {"outsideText": comment,
+        #               "options": {
+        #                   "indented": "indented-1",
+        #                   "sourceLayout": "",
+        #                   "sourceLanguage": "hebrew",
+        #                   "sourceLangLayout": ""
+        #               }
+        #               }
         elif not self.ref and self.about_source_ref:
             comment = self.glue_ref_and_text(self.about_source_ref, comment)
             source = {"outsideText": comment,
@@ -96,19 +96,11 @@ class Source(object):
             raise InputError, "Didn't anticipate this case"
         return source
 
+
+
     def get_ref(self):
         return self.ref
 
-    # def get_ref(self, segment, relevant_text):
-    #     """uses the info we have from parshan segment to either get the most precise Sefaria Ref or conclude it isn't in the library"""
-    #     pass
-    # real_title, found_a_tag, a_tag_is_entire_comment, a_tag_in_long_comment \
-    #     = self.get_a_tag_from_ref(segment, relevant_text)
-    #
-    # is_perek_pasuk_ref, real_title, found_ref_in_string \
-    #     = self.check_ref_and_add_to_quotation_stack(next_segment_class, relevant_text, real_title)
-    #
-    # combined_with_prev_line = set_ref_segment(combined_with_prev_line)
 
     def add_text(self, segment, segment_class):
         segment_text = segment.text.replace("\n", "").replace("\r", "")

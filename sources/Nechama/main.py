@@ -136,7 +136,6 @@ class Sheet(object):
             new_section.classify_segments(soup_segments)
 
             self.sections.append(new_section)
-            print "appended {}".format(new_section.title)
 
 
 
@@ -187,20 +186,15 @@ class Section(object):
                 assert len(segment.attrs["class"]) == 1, "More than one class"
                 new_source.add_text(segment, segment_class)
                 self.segment_objects.append(new_source)
-                try:
-                    new_source.ref = re.sub(u":$", u" ", new_source.ref)  # shouldnt need this line
-                    ref2check = Ref(new_source.ref)
-                    matched = parser.check_reduce_sources(new_source.text[0], ref2check)  # todo: deal with a list of more than one text, call it from a specific Source class method
-                    new_source.new_ref = matched[0].a.ref
-                    if ref2check.all_subrefs():
-                        print '** section level ref: '.format(ref2check.normal())
-                    print ref2check.normal(), new_source.new_ref.normal()
-                except AttributeError:
-                    print u'AttributeError: {}'.format(re.sub(u":$", u"", new_source.about_source_ref))
-                    parser.missing_index.add(new_source.about_source_ref) #todo: would like to add just the <a> tag
-                except IndexError:
-                    print u'IndexError: {}'.format(re.sub(u":$", u"", ref2check.normal()))
-
+                if not new_source.ref or not new_source.text:
+                    continue
+                new_source.ref = re.sub(u":$", u" ", new_source.ref)  # shouldnt need this line
+                ref2check = Ref(new_source.ref)
+                if not ref2check.text('he').text: # if it has no text, the ref is wrong so store the ref information as about_parshan_ref instead of ref
+                    new_source.about_source_ref = new_source.ref
+                    new_source.ref = ""
+                    continue
+                self.try_parallel_matcher(new_source, ref2check, new_source.text[0]) # todo: deal with a list of more than one text, call it from a specific Source class method
                 if new_source.index_not_found():
                     if new_source.about_source_ref not in parser.index_not_found.keys():
                         parser.index_not_found[new_source.about_source_ref] = []
@@ -211,6 +205,23 @@ class Section(object):
             else:  # must be a Source Ref, so parse it
                 next_segment_class = soup_segments[i + 1].attrs["class"][0]  # get the class of this ref and it's comment
                 new_source = self.parse_ref(segment, relevant_text, next_segment_class)
+
+
+    def try_parallel_matcher(self, new_source, ref2check, text):
+        try:
+            matched = parser.check_reduce_sources(text,
+                                                  ref2check)
+            new_source.ref = matched[0].a.ref.normal()
+            if ref2check.is_section_level():
+                print '** section level ref: '.format(ref2check.normal())
+            print ref2check.normal(), new_source.ref.normal()
+        except AttributeError as e:
+            print u'AttributeError: {}'.format(re.sub(u":$", u"", new_source.about_source_ref))
+            parser.missing_index.add(new_source.about_source_ref)  # todo: would like to add just the <a> tag
+        except IndexError as e:
+            parser.missing_index.add(u'IndexError: {}'.format(re.sub(u":$", u"", ref2check.normal())))
+        except InputError as e:
+            parser.missing_index.add(e)  # happens for Meshech Hochma, Bereshit 1:26
 
     def get_term(self, poss_title):
         # return the english index name corresponding to poss_title or None
@@ -534,6 +545,7 @@ class Nechama_Parser:
         self.ref_not_found = {}
         self.server = "http://nechama.sandbox.sefaria.org/"
         self.term_mapping = {
+            u"חזקוני": u"Chizkuni, Genesis",
             u"""הנצי"ב מוולוז'ין""": u"Haamek Davar on {}".format(self.en_sefer),
             u"אונקלוס": u"Onkelos {}".format(self.en_sefer),
             u"שמואל דוד לוצטו": u"Shadal on {}".format(self.en_sefer),
@@ -608,6 +620,7 @@ class Nechama_Parser:
         dumb_score = (ImaginaryContenderPerWord * len(words_a)) - score
         return dumb_score
 
+
     def check_reduce_sources(self, comment, ref):
         n = len(re.split(u'\s+', comment))
         pm = ParallelMatcher(self.tokenizer, dh_extract_method = None, ngram_size=3, max_words_between=4, min_words_in_match =int(round(n*0.5)),
@@ -624,6 +637,7 @@ class Nechama_Parser:
         sheets = OrderedDict()
         for html_sheet in file_list_names:
             content = BeautifulSoup(open("{}".format(html_sheet)), "lxml")
+            print "\n\n"
             print html_sheet
             perek_info = content.find("p", {"id": "pasuk"}).text
             top_dict = dict_from_html_attrs(content.find('div', {'id': "contentTop"}).contents)
@@ -637,9 +651,10 @@ class Nechama_Parser:
             sheet.parse_as_text()
             sheet.create_sources_from_segments()
             sheet.prepare_sheet()
-            print "index_not_found"
-            for parshan_name in parser.index_not_found:
-                print parshan_name
+
+        print "index_not_found"
+        for parshan_name in parser.index_not_found:
+            print parshan_name
         return sheets
 
 
@@ -658,7 +673,9 @@ if __name__ == "__main__":
     # Ref(u"בראשית פרק ג פסוק ד - פרק ה פסוק י")
     # Ref(u"u'דברים פרק ט, ז-כט - פרק י, א-י'")
     # sheets = bs4_reader(['html_sheets/{}.html'.format(x) for x in ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]])
-    parser = Nechama_Parser(u"Genesis", u"Genesis")
+    parser = Nechama_Parser(u"Genesis", u"Bereshit")
     parshat_bereishit = ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
+    start_at = 1
+    parshat_bereishit = [x for x in parshat_bereishit if int(x) >= start_at]
     sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in parshat_bereishit])
     #sheets = parser.bs4_reader(["html_sheets/{}".format(fn) for fn in os.listdir("html_sheets") if fn != 'errors.html'])
