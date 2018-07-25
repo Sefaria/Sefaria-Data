@@ -24,6 +24,7 @@ from sefaria.utils.util import replace_using_regex as reg_replace
 import base64
 import enchant
 import Levenshtein
+from functools import wraps
 
 gematria = {}
 gematria[u'א'] = 1
@@ -534,6 +535,7 @@ def checkLengthsDicts(x_dict, y_dict):
 
 
 def weak_connection(func):
+    @wraps(func)
     def post_weak_connection(*args, **kwargs):
         result = None
         success = False
@@ -841,6 +843,14 @@ def first_word_with_period(str):
 
 @weak_connection
 def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SERVER):
+    """
+    :param ref:
+    :param text:
+    :param index_count:
+    :param skip_links:
+    :param server:
+    :return:
+    """
     # textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
     url = server+'/api/texts/'+ref
