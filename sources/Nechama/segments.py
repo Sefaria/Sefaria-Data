@@ -23,7 +23,7 @@ class Source(object):
 
     def __init__(self, segment_class, ref):
         self.parshan_name = u""
-        self.about_parshan_ref = u""  # words of nechama in regards to the parshan or this specific book, that we will lose since it is not part of our "ref" system see 8.html sec 1. "shadal"
+        self.about_source_ref = u""  # words of nechama in regards to the parshan or this specific book, that we will lose since it is not part of our "ref" system see 8.html sec 1. "shadal"
         self.perek = u""
         self.pasuk = u""
         self.ref = ref  # this can be blank indicating our parser couldn't figure out what the ref is
@@ -51,8 +51,8 @@ class Source(object):
         #create source for sourcesheet out of myself
         comment = " ".join(self.text)
         if self.ref and self.is_sefaria_ref(self.ref):
-            if self.about_parshan_ref:
-                comment = self.glue_ref_and_text(self.about_parshan_ref, comment)
+            if self.about_source_ref:
+                comment = self.glue_ref_and_text(self.about_source_ref, comment)
             enRef = Ref(self.ref).normal()
             heRef = Ref(self.ref).he_normal()
             source = {"ref": enRef, "heRef": heRef,
@@ -69,9 +69,9 @@ class Source(object):
                       }
                       }
         elif self.ref: #thought we found a ref but it's not an actual ref in sefaria library
-            assert self.about_parshan_ref or self.ref, "Didn't anticipate this"
-            if self.about_parshan_ref:
-                comment = self.glue_ref_and_text(self.about_parshan_ref, comment) #use actual text if we can
+            assert self.about_source_ref or self.ref, "Didn't anticipate this"
+            if self.about_source_ref:
+                comment = self.glue_ref_and_text(self.about_source_ref, comment) #use actual text if we can
             else:
                 comment = self.glue_ref_and_text(self.ref, comment) #otherwise, use the ref we thought it was
             source = {"outsideText": comment,
@@ -82,8 +82,8 @@ class Source(object):
                           "sourceLangLayout": ""
                       }
                       }
-        elif not self.ref and self.about_parshan_ref:
-            comment = self.glue_ref_and_text(self.about_parshan_ref, comment)
+        elif not self.ref and self.about_source_ref:
+            comment = self.glue_ref_and_text(self.about_source_ref, comment)
             source = {"outsideText": comment,
                       "options": {
                           "indented": "indented-1",
@@ -117,7 +117,7 @@ class Source(object):
 
 
     def index_not_found(self):
-        return not self.get_ref() and self.about_parshan_ref #not found a ref, but have info on what it is
+        return not self.get_ref() and self.about_source_ref #not found a ref, but have info on what it is
 
 
 class Header(object):

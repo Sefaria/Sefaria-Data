@@ -196,15 +196,15 @@ class Section(object):
                         print '** section level ref: '.format(ref2check.normal())
                     print ref2check.normal(), new_source.new_ref.normal()
                 except AttributeError:
-                    print u'AttributeError: {}'.format(re.sub(u":$", u"", new_source.about_parshan_ref))
-                    parser.missing_index.add(new_source.about_parshan_ref) #todo: would like to add just the <a> tag
+                    print u'AttributeError: {}'.format(re.sub(u":$", u"", new_source.about_source_ref))
+                    parser.missing_index.add(new_source.about_source_ref) #todo: would like to add just the <a> tag
                 except IndexError:
                     print u'IndexError: {}'.format(re.sub(u":$", u"", ref2check.normal()))
 
                 if new_source.index_not_found():
-                    if new_source.about_parshan_ref not in parser.index_not_found.keys():
-                        parser.index_not_found[new_source.about_parshan_ref] = []
-                    parser.index_not_found[new_source.about_parshan_ref].append((self.current_parsha_ref, new_source.about_parshan_ref))
+                    if new_source.about_source_ref not in parser.index_not_found.keys():
+                        parser.index_not_found[new_source.about_source_ref] = []
+                    parser.index_not_found[new_source.about_source_ref].append((self.current_parsha_ref, new_source.about_source_ref))
                 continue
             elif Nechama_Comment.is_comment(soup_segments, i, parser.important_classes):  # above criteria not met, just an ordinary comment
                 self.segment_objects.append(Nechama_Comment(relevant_text))
@@ -290,10 +290,10 @@ class Section(object):
                 new_source.about_source_ref = relevant_text
         elif found_a_tag:
             # found no reference but did find an a_tag so this is a ref so keep the text
-            new_source.about_parshan_ref = found_a_tag.text # note: check if this change is good and where else can we use this more precise data
-            if new_source.about_parshan_ref not in parser.index_not_found.keys():
-                parser.index_not_found[new_source.about_parshan_ref] = []
-            parser.index_not_found[new_source.about_parshan_ref].append((self.current_parsha_ref, new_source.about_parshan_ref))
+            new_source.about_source_ref = found_a_tag.text # note: check if this change is good and where else can we use this more precise data
+            if new_source.about_source_ref not in parser.index_not_found.keys():
+                parser.index_not_found[new_source.about_source_ref] = []
+            parser.index_not_found[new_source.about_source_ref].append((self.current_parsha_ref, new_source.about_source_ref))
 
         else:
             new_source.about_source_ref = relevant_text
@@ -635,8 +635,8 @@ class Nechama_Parser:
             sheet.div_sections.extend([v for k, v in body_dict.items() if re.search(u'ContentSection_\d', k)]) # check that these come in in the right order
             sheet.sheet_remark = body_dict['sheetRemark'].text
             sheet.parse_as_text()
-            # sheet.create_sources_from_segments()
-            # sheet.prepare_sheet()
+            sheet.create_sources_from_segments()
+            sheet.prepare_sheet()
             print "index_not_found"
             for parshan_name in parser.index_not_found:
                 print parshan_name
@@ -660,5 +660,5 @@ if __name__ == "__main__":
     # sheets = bs4_reader(['html_sheets/{}.html'.format(x) for x in ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]])
     parser = Nechama_Parser(u"Genesis", u"Genesis")
     parshat_bereishit = ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["1", "2", "30"]])
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in parshat_bereishit])
     #sheets = parser.bs4_reader(["html_sheets/{}".format(fn) for fn in os.listdir("html_sheets") if fn != 'errors.html'])
