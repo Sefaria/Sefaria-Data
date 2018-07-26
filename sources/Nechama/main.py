@@ -189,13 +189,7 @@ class Section(object):
                 self.segment_objects.append(new_source)
                 if not new_source.ref or not new_source.text:
                     continue
-                new_source.ref = re.sub(u":$", u" ", new_source.ref)  # shouldnt need this line
-                ref2check = Ref(new_source.ref)
-                if not ref2check.text('he').text: # if it has no text, the ref is wrong so store the ref information as about_parshan_ref instead of ref
-                    new_source.about_source_ref = new_source.ref
-                    new_source.ref = ""
-                    continue
-                self.try_parallel_matcher(new_source, ref2check, new_source.text[0]) # todo: deal with a list of more than one text, call it from a specific Source class method
+                parser.try_parallel_matcher(new_source) # todo: deal with a list of more than one text, call it from a specific Source class method
                 if new_source.index_not_found():
                     if new_source.about_source_ref not in parser.index_not_found.keys():
                         parser.index_not_found[new_source.about_source_ref] = []
@@ -208,20 +202,8 @@ class Section(object):
                 new_source = self.parse_ref(segment, relevant_text, next_segment_class)
 
 
-    def try_parallel_matcher(self, new_source, ref2check, text):
-        try:
-            matched = parser.check_reduce_sources(text, ref2check)
-            new_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[0].b.ref.normal() # because the sides change
-            if ref2check.is_section_level():
-                print '** section level ref: '.format(ref2check.normal())
-            print ref2check.normal(), new_source.ref
-        except AttributeError as e:
-            print u'AttributeError: {}'.format(re.sub(u":$", u"", new_source.about_source_ref))
-            parser.missing_index.add(new_source.about_source_ref)  # todo: would like to add just the <a> tag
-        except IndexError as e:
-            parser.missing_index.add(u'IndexError: {}'.format(re.sub(u":$", u"", ref2check.normal())))
-        except InputError as e:
-            parser.missing_index.add(e)  # happens for Meshech Hochma, Bereshit 1:26
+
+
 
     def get_term(self, poss_title):
         # return the english index name corresponding to poss_title or None
@@ -604,17 +586,6 @@ class Nechama_Parser:
     def tokenizer(self, s):
         return self.clean(s).split()
 
-    def get_score(self, words_a, words_b):
-        normalizingFactor = 100
-        smoothingFactor = 1
-        ImaginaryContenderPerWord = 22
-        str_a = u" ".join(words_a)
-        str_b = u" ".join(words_b)
-        dist = self.levenshtein.calculate(str_a, str_b,normalize=False)
-        score = 1.0 * (dist + smoothingFactor) / (len(str_a) + smoothingFactor) * normalizingFactor
-
-        dumb_score = (ImaginaryContenderPerWord * len(words_a)) - score
-        return dumb_score
 
     def check_reduce_sources(self, comment, ref):
         n = len(re.split(u'\s+', comment))
@@ -623,7 +594,27 @@ class Nechama_Parser:
         new_ref = pm.match(tc_list=[ref.text('he'), (comment, 1)], return_obj=True)
         return new_ref
 
-    def bs4_reader(self, file_list_names):
+    def try_parallel_matcher(self, new_source):
+        ref2check = Ref(new_source.ref)
+        try:
+            # todo: one Source obj for different Sefaria refs. how do we deal with this?
+            matched = self.check_reduce_sources(new_source.text[0], ref2check)  # returns a list ordered by scores of mesorat hashas objs that were found
+            if not matched:  # no match found
+                self.no_pm_match_found = new_source  # an Source obj, so we can see exactly what was not matched
+                print "NO MATCH"
+                return
+            new_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[
+                0].b.ref.normal()  # because the sides change
+            if ref2check.is_section_level():
+                print '** section level ref: '.format(ref2check.normal())
+            print ref2check.normal(), new_source.ref
+        except AttributeError as e:
+            print u'AttributeError: {}'.format(re.sub(u":$", u"", new_source.about_source_ref))
+            parser.missing_index.add(new_source.about_source_ref)  # todo: would like to add just the <a> tag
+        except IndexError as e:
+            parser.missing_index.add(u'IndexError: {}'.format(re.sub(u":$", u"", ref2check.normal())))
+
+    def bs4_reader(self, file_list_names, post = True):
         """
         The main BeautifulSoup reader function, that etrates on all sheets and creates the obj, probably should be in it's own file
         :param self:
@@ -645,7 +636,8 @@ class Nechama_Parser:
             sheet.sheet_remark = body_dict['sheetRemark'].text
             sheet.parse_as_text()
             sheet.create_sources_from_segments()
-            sheet.prepare_sheet()
+            if post:
+                sheet.prepare_sheet()
         print "index_not_found"
         for parshan_name in parser.index_not_found:
             print parshan_name
@@ -671,5 +663,5 @@ if __name__ == "__main__":
     parshat_bereishit = ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
     start_at = 1
     parshat_bereishit = [x for x in parshat_bereishit if int(x) >= start_at]
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["1", "2", "30"]])
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["1"]], post=False)
     #sheets = parser.bs4_reader(["html_sheets/{}".format(fn) for fn in os.listdir("html_sheets") if fn != 'errors.html'])

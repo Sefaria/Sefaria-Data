@@ -39,9 +39,10 @@ class Source(object):
 
     def is_sefaria_ref(self, ref):
         try:
-            Ref(ref)
+            r = Ref(ref)
+            assert r.text('he').text
             return True
-        except InputError:
+        except (InputError,  AssertionError) as e:
             return False
 
     def glue_ref_and_text(self, ref, text):
@@ -50,7 +51,8 @@ class Source(object):
     def create_source(self):
         #create source for sourcesheet out of myself
         comment = " ".join(self.text)
-        if self.ref != u"" and self.is_sefaria_ref(self.ref):
+        # is Sefaria ref
+        if self.is_sefaria_ref(self.ref):
             if self.about_source_ref:
                 comment = self.glue_ref_and_text(self.about_source_ref, comment)
             enRef = Ref(self.ref).normal()
@@ -68,20 +70,20 @@ class Source(object):
                           "sourceLangLayout": ""
                       }
                       }
-        # elif self.ref: #thought we found a ref but it's not an actual ref in sefaria library
-        #     assert self.about_source_ref or self.ref, "Didn't anticipate this"
-        #     if self.about_source_ref:
-        #         comment = self.glue_ref_and_text(self.about_source_ref, comment) #use actual text if we can
-        #     else:
-        #         comment = self.glue_ref_and_text(self.ref, comment) #otherwise, use the ref we thought it was
-        #     source = {"outsideText": comment,
-        #               "options": {
-        #                   "indented": "indented-1",
-        #                   "sourceLayout": "",
-        #                   "sourceLanguage": "hebrew",
-        #                   "sourceLangLayout": ""
-        #               }
-        #               }
+        elif self.ref:  # thought we found a ref but it's not an actual ref in sefaria library
+            if self.about_source_ref:
+                comment = self.glue_ref_and_text(self.about_source_ref, comment) #use actual text if we can
+            else:
+                comment = self.glue_ref_and_text(self.ref, comment) # otherwise, use the ref we thought it was
+
+            source = {"outsideText": comment,
+                      "options": {
+                          "indented": "indented-1",
+                          "sourceLayout": "",
+                          "sourceLanguage": "hebrew",
+                          "sourceLangLayout": ""
+                      }
+                      }
         elif not self.ref and self.about_source_ref:
             comment = self.glue_ref_and_text(self.about_source_ref, comment)
             source = {"outsideText": comment,
@@ -93,7 +95,7 @@ class Source(object):
                         }
                       }
         else:
-            raise InputError, "Didn't anticipate this case"
+            raise InputError, "Didn't anticipate this case in the casses of ref on Source obj"
         return source
 
 
