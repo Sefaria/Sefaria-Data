@@ -6,7 +6,9 @@ p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
 from sources.local_settings import *
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
-os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
+os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
+import django
+django.setup()
 from sources.functions import *
 import re
 import codecs
@@ -171,13 +173,20 @@ class Talmud_Tractate:
                     #print "CURRENT DAF: ",current_daf
                     #print "CURRENT AMUD", current_amud
                     #print "THEY SAY", get_page(current_daf,current_amud)+2
-                    final_list[get_page(current_daf,current_amud)+1].append(fix_talmud_markers(line, self.version).strip())
+                    if self.version==2:
+                        #for version 2 (file 2), we combine not-dh lines with previous:
+                        if u'@23' not in line and len(final_list[get_page(current_daf,current_amud)+1])>0:
+                            final_list[get_page(current_daf,current_amud)+1][-1]+=u'<br>'+fix_talmud_markers(line, self.version).strip()
+                        else:
+                            final_list[get_page(current_daf,current_amud)+1].append(fix_talmud_markers(line, self.version).strip())
+                    else:   
+                        final_list[get_page(current_daf,current_amud)+1].append(fix_talmud_markers(line, self.version).strip())
         #final_list.insert(0,[])
-        
+        """
         for aindex, amud in enumerate(final_list):
             for cindex, comment in enumerate(amud):
                 print self.en_title, len(final_list), aindex, cindex, comment
-        
+        """
         version = {
             'versionTitle': 'Petach Einayim, Jerusalem 1959',
             'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001157028',
@@ -185,129 +194,130 @@ class Talmud_Tractate:
             'text': final_list
         }
         post_text_weak_connection('Petach Einayim on '+self.en_title, version)
-        
+    def link_tos(self):
+
+        for amud_index in range(1,len(TextChunk(Ref(self.en_title)).text)-1):
+            try:
+                tos_chunk = TextChunk(Ref('Tosafot_on_'+self.en_title+"."+get_daf_en(amud_index)),"he")
+                pe_chunk = TextChunk(Ref("Petach Einayim on "+self.en_title+"."+get_daf_en(amud_index)),"he")
+            except:
+                break
+            """
+            for line in tos_chunk.text:
+                for comment in line:
+                    print comment
+            """
+            """
+            for comment in pe_chunk.text:
+                if tos_filter(comment):
+                    print re.split(ur'(\.|</b>|'+vechu+ur'|'+cosvu+ur')',re.sub(ur'^\s*\.',u'',comment))[0].replace(u'ד"ה ',u'').replace(u'תוס\' ',u'').replace(u'<b>',u'')
+            """
+            #"""
+            matches = match_ref(tos_chunk,pe_chunk,
+                tos_base_tokenizer,dh_extract_method=pe_tos_dh_extract,rashi_filter=tos_filter,verbose=True)
+            if "comment_refs" in matches:
+                for link_index, (base, comment) in enumerate(zip(matches["matches"],matches["comment_refs"])):
+                    print "B",base,"C", comment
+                    if base:
+                        link = (
+                                {
+                                "refs": [
+                                         base.normal(),
+                                         comment.normal(),
+                                         ],
+                                "type": "commentary",
+                                "auto": True,
+                                "generated_by": "sterling_petach_einayim_"+self.en_title.replace(" ","_")+"_linker"
+                                })
+                        #post_link(link, weak_network=True)    
+            #"""
     def pe_link(self):
-        matched_count = 0.00
+        print "Linking "+self.en_title
+        matched = 0.00
         total = 0.00
-        not_matched=[]
+        last_not_matched=[]
         for amud_index in range(1,len(TextChunk(Ref(self.en_title)).text)-1):
             tractate_chunk = TextChunk(Ref(self.en_title+"."+get_daf_en(amud_index)),"he")
-            #sometimes, there is no Rif on a Daf:
+            last_matched = Ref(self.en_title+'.'+get_daf_en(amud_index)+'.1')
             if amud_index>0:
                 try:
                     pe_chunk = TextChunk(Ref("Petach Einayim on "+self.en_title+"."+get_daf_en(amud_index)),"he")
                 except:
-                    pe_chunk = None
-                if len(tractate_chunk.text)>0 and pe_chunk:
-                    matches = match_ref(tractate_chunk,pe_chunk,
-                        base_tokenizer,dh_extract_method=dh_extract_method,rashi_filter=pe_filter,verbose=True)
-                    if "comment_refs" in matches:
-                        last_ref = Ref("Genesis").normal()
-                        for base, comment in zip(matches["matches"],matches["comment_refs"]):
-                            print base,comment
-                            if base:
+                    continue
+                if len(pe_chunk.text)<1:
+                    continue
+                matches = match_ref(tractate_chunk,pe_chunk,
+                    base_tokenizer,dh_extract_method=dh_extract_method,rashi_filter=pe_filter,verbose=True)
+                if "comment_refs" in matches:
+                    for link_index, (base, comment) in enumerate(zip(matches["matches"],matches["comment_refs"])):
+                        total+=1
+                        print "B",base,"C", comment
+                        if base:
+                            link = (
+                                    {
+                                    "refs": [
+                                             base.normal(),
+                                             comment.normal(),
+                                             ],
+                                    "type": "commentary",
+                                    "auto": True,
+                                    "generated_by": "sterling_petach_einayim_"+self.en_title.replace(" ","_")+"_linker"
+                                    })
+                            post_link(link, weak_network=True)    
+                            matched+=1
+            
+                            while len(last_not_matched)>0:
+                                print "we had ", last_matched.normal()
+                                print "we have ", base.normal()
+                                print "so, we'll do ",last_matched.normal()+"-"+base.ending_ref().normal_last_section()
                                 link = (
                                         {
                                         "refs": [
-                                                 base.normal(),
-                                                 comment.normal(),
+                                                 last_matched.normal()+"-"+base.ending_ref().normal_last_section(),
+                                                 last_not_matched.pop().normal(),
                                                  ],
                                         "type": "commentary",
                                         "auto": True,
-                                        "generated_by": "sterling_Petach_Einayim_linker"
+                                        "generated_by": "sterling_petach_einayim_"+self.en_title.replace(" ","_")+"_linker"
                                         })
-                                last_ref = base.normal()
                                 post_link(link, weak_network=True)
-                                matched_count+=1
-                            else:
-                                not_matched.append(comment)
-                                if last_ref!=u'Genesis':
-                                #we link to last comment, assuming it's a continuation
+                                matched+=1
+                
+                            last_matched=base
+               
+                        else:
+                            last_not_matched.append(comment.starting_ref())
+                            if link_index==len(matches["matches"])-1:
+                                print "NO LINKS LEFT!"
+                                start_ref = last_matched.normal().split('-')[0] if '-' in last_matched.normal() else last_matched.normal()
+                                print "we had ", last_matched.normal()
+                                print "so, we'll do ",start_ref+"-"+str(len(tractate_chunk.text))
+                                while len(last_not_matched)>0:
                                     link = (
                                             {
                                             "refs": [
-                                                     last_ref,
-                                                     comment.normal(),
+                                                     start_ref+"-"+str(len(tractate_chunk.text)),
+                                                     last_not_matched.pop().normal(),
                                                      ],
                                             "type": "commentary",
                                             "auto": True,
-                                            "generated_by": "sterling_Petach_Einayim_linker"
+                                            "generated_by": "sterling_petach_einayim_"+self.en_title.replace(" ","_")+"_linker"
                                             })
-                                    #post_link(link, weak_network=True)
-                            total+=1
-                    else:
-                        not_matched.append(get_daf_en(amud_index))
-                        total+=1
-        results[self.en_title]=matched_count/total if total!=0 else 0
-        """
-        if total!=0:
-            print "Ratio: "+str(matched_count/total)
-        else:
-            print "Ratio: No Matches..."
-        print "Not Matched:"
-        for nm in not_matched:
-            print nm
-        """
-        """"
-        for amud_index in range(1,len(TextChunk(Ref(self.en_title)).text)-1):
-            if amud_index>0:
-                #not every amud has a comment...
-                try:
-                    pe_ref=Ref('Petach Einayim on '+self.en_title+"."+get_daf_en(amud_index))
-                    pe_chunk = TextChunk(pe_ref,"he")
-                except:
-                    continue
-                #for Rav Channanel, each "comment" contains comments on several passages.
-                #therefore, link each comment to the whole amud
-                print get_daf_en(amud_index)
-                tractate_ref=Ref(self.en_title+"."+get_daf_en(amud_index))
-                tractate_chunk = TextChunk(tractate_ref,"he")
-                matches = match_ref(tractate_chunk,pe_chunk,base_tokenizer,dh_extract_method=dh_extract_method,rashi_filter=pe_filter,verbose=True)
-                if "comment_refs" in matches:
-                    for link_index, (base, comment) in enumerate(zip(matches["matches"],matches["comment_refs"])):
-                        if base:
-                            if "-" in base.normal():
-                                base=Ref(base.normal().split("-")[0])
-                            print "MATCHED BC:",base,comment,base.normal()+"-"+tractate_ref.as_ranged_segment_ref().normal().split("-")[-1]
-                            link = (
-                                    {
-                                    "refs": [
-                                             base.normal()+"-"+tractate_ref.as_ranged_segment_ref().normal().split("-")[-1],
-                                             comment.normal(),
-                                             ],
-                                    "type": "commentary",
-                                    "auto": True,
-                                    "generated_by": "sterling_Petach_Einayim_"+self.en_title+"_linker"
-                                    })
-                            post_link(link, weak_network=True)
-                            
-                        else:
-                            print "UNMATCHED REF: ",comment
-                            link = (
-                                    {
-                                    "refs": [
-                                             tractate_ref.as_ranged_segment_ref().normal(),
-                                             comment.normal(),
-                                             ],
-                                    "type": "commentary",
-                                    "auto": True,
-                                    "generated_by": "sterling_Petach_Einayim_"+self.en_title+"_linker"
-                                    })
-                            post_link(link, weak_network=True)
-                else:
-                    print "UNMATCHED REF: ",pe_ref
+                                    post_link(link, weak_network=True)
+                                    matched+=1                                   
+                elif len(pe_chunk.text)>0:
                     link = (
                             {
                             "refs": [
-                                     tractate_ref.as_ranged_segment_ref().normal(),
-                                     pe_ref.normal(),
+                                     Ref(self.en_title+"."+get_daf_en(amud_index)).as_ranged_segment_ref().normal(),
+                                     Ref("Petach Einayim on "+self.en_title+"."+get_daf_en(amud_index)).normal(),
                                      ],
                             "type": "commentary",
                             "auto": True,
-                            "generated_by": "sterling_Petach_Einayim_"+self.en_title+"_linker"
+                            "generated_by": "sterling_petach_einayim_"+self.en_title.replace(" ","_")+"_linker"
                             })
-                    #post_link(link, weak_network=True)
-            """
+                    post_link(link, weak_network=True)
+
 def get_tractate_texts():
     return_list = {"Mishnah":{},"Talmud":{}}
     for pe_file in os.listdir('files'):
@@ -353,9 +363,12 @@ def post_mishnah_categories():
     for seder in seders.keys():
         add_category(seder, ["Mishnah","Commentary",'Petach Einayim',seder], seders[seder])
 def post_talmud_categories():
+    print "Added PE"
+    #def add_category(en_title, path, he_title=None, server=SEFARIA_SERVER):
     add_category('Petach Einayim', ["Talmud","Bavli","Commentary",'Petach Einayim'], u'פתח עינים')
     for seder in seders.keys():
         add_category(seder, ["Talmud","Bavli","Commentary",'Petach Einayim',seder], seders[seder])
+        print "ADDED ",seder
 def post_pe_term():
     term_obj = {
         "name": 'Petach Einayim',
@@ -375,15 +388,28 @@ def post_pe_term():
     }
     post_term(term_obj)
 def base_tokenizer(some_string):
-    print "STRING: ",some_string
+    #print "STRING: ",some_string
+    print 'some_string',some_string
     some_string = remove_extra_space(some_string)#.replace("<b>","").replace("</b>","").replace(":","")
     return filter(not_blank,some_string.split(" "))
+def tos_base_tokenizer(some_string):
+    if u'.' in some_string:
+        some_string= some_string.split(u'.')[0].replace(u'כו\'',u'')
+    elif u'-' in some_string:
+        some_string= some_string.split(u'-')[0].replace(u'כו\'',u'')
+    #else:
+    #    print "NO PERIOD OR -:",some_string
+    some_string = remove_extra_space(some_string)#.replace("<b>","").replace("</b>","").replace(":","")
+    print "THIS WAS THE STRING:", filter(not_blank,some_string.split(" ")), some_string
+    return filter(not_blank,some_string.split(" "))
 def dh_extract_method(some_string):
-    print some_string
+    print some_string, 'this gets dh'
     return re.search(ur"(?<=<b>).*?(?=</b>)",some_string).group()
 def pe_filter(some_string):
     #asssume every piece of text has a DH
     return re.match(ur"<b>.*</b>",some_string)
+def tos_filter(some_string):
+    return u'תוס' in re.match(ur"<b>.*?</b>",some_string).group()
 def fix_mishnah_markers(s, version):
     if version==2:
         s=re.sub(ur"@99.*?"+ur"משנה"+ur".*?@11",u'',s)
@@ -425,6 +451,8 @@ def fix_talmud_markers(s, version):
     if version==2:
         if u"@23" in s:
             s = s.replace(u"@11",u"<b>").replace(u"@23",u"</b>")
+        if u'<b>' not in s:
+            s = u'<b>'+s[:s.index(u' ')]+u'</b>'+s[s.index(u' '):]
         return re.sub(ur"@\d{1,3}",u"",s)
     else: 
         if re.match(ur".*?\.",s):
@@ -449,6 +477,10 @@ def fix_talmud_markers(s, version):
     threethree_split = s.split(u"@33")
     
     return re.sub(ur"@\d{1,3}",u"",s)
+def pe_tos_dh_extract(s):
+    vechu = u'וכו'
+    cosvu = u'כתבו'
+    return re.split(ur'(\.|</b>|'+vechu+ur'|'+cosvu+ur')',re.sub(ur'^\s*\.',u'',s))[0].replace(u'ד"ה ',u'').replace(u'תוס\' ',u'').replace(u'<b>',u'')
 def highest_fuzz(input_list, input_item):
     highest_ratio = 0
     best_match = u''
@@ -507,7 +539,7 @@ tractate_texts=get_tractate_texts()
 posting_term = False
 if posting_term:
     post_pe_term()
-
+"""
 #for Mishna:
 posting_categories = True
 posting_indices = True
@@ -539,24 +571,33 @@ for link in site_links:
 """
 #for Talmud
 posting_categories = False
-posting_indices = False
+posting_indices = True
 posting_texts = True
 linking = True
+linking_tos=False
 if posting_categories:
     post_talmud_categories()
 admin_links = []
 site_links = []
 results={}
+did_one = False
+past_last=False
 for key in tractate_texts["Talmud"]:
     t_o = Talmud_Tractate(key, tractate_texts["Talmud"][key])
-    admin_links.append(SEFARIA_SERVER+"/admin/reset/Petach_Einayim_on_"+t_o.en_title.replace(u" ",u"_"))
-    site_links.append(SEFARIA_SERVER+"/Petach_Einayim_on_"+t_o.en_title.replace(u" ",u"_"))
-    if posting_indices:
-        t_o.pe_post_index()
-    if posting_texts:
-        t_o.pe_post_text()
-    if linking:
-        t_o.pe_link()
+    if "Tamid" in t_o.en_title:
+        past_last=True
+    if t_o.version==2 and not did_one:# and past_last:# and not did_one:
+        admin_links.append(SEFARIA_SERVER+"/admin/reset/Petach_Einayim_on_"+t_o.en_title.replace(u" ",u"_"))
+        site_links.append(SEFARIA_SERVER+"/Petach_Einayim_on_"+t_o.en_title.replace(u" ",u"_"))
+        if posting_indices:
+            t_o.pe_post_index()
+        if posting_texts:
+            t_o.pe_post_text()
+        if linking:
+            t_o.pe_link()
+        if linking_tos:
+            t_o.link_tos()
+        #did_one=True
 print "Admin Links:"
 for link in admin_links:
     print link
@@ -565,4 +606,3 @@ for link in site_links:
     print link
 for key in results.keys():
     print key, results[key]
-"""
