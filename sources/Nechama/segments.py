@@ -37,15 +37,21 @@ class Source(object):
     def is_source_text(segment, important_classes):
         return isinstance(segment, element.Tag) and "class" in segment.attrs.keys() and segment.attrs["class"][0] in important_classes
 
-    def get_sefaria_ref(self):
+    def get_sefaria_ref(self, ref):
+        if ref == "":
+            return None
         try:
-            r = Ref(self.ref)
+            r = Ref(ref)
             assert r.text('he').text
             return r
         except (InputError,  AssertionError) as e:
-            ref_node = " ".join(self.ref.split(" ")[0:-1])
-            return self.get_sefaria_ref(ref_node)
-        return None
+            #try to see if all that is wrong is the segment part of the ref, say, for Ralbag Beur HaMilot on Torah, Genesis 4:17
+            last_part = self.ref.split()[-1]
+            if last_part[0].isdigit(): # in format, Ralbag Beur HaMilot on Torah, Genesis 4:17 and last_part is "4:17", now get the node "Ralbag Beur HaMilot on Torah, Genesis"
+                ref_node = " ".join(self.ref.split(" ")[0:-1])
+                return self.get_sefaria_ref(ref_node) #returns Ralbag Beur HaMilot on Torah, Genesis
+            else:
+                return None
 
     def glue_ref_and_text(self, ref, text):
         return u"<small><b>{}</b><br/>{}</small>".format(ref, text)
@@ -54,7 +60,7 @@ class Source(object):
         #create source for sourcesheet out of myself
         comment = " ".join(self.text)
         # is Sefaria ref
-        if self.is_sefaria_ref(self.ref):
+        if self.get_sefaria_ref(self.ref):
             if self.about_source_ref:
                 comment = self.glue_ref_and_text(self.about_source_ref, comment)
             enRef = Ref(self.ref).normal()

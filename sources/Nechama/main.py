@@ -310,10 +310,10 @@ class Section(object):
                 return refs[0].normal()
             else:
                 not_found.append(orig)
-        if len(not_found) == len(strings):
-            if strings[-1] not in parser.ref_not_found.keys():
-                parser.ref_not_found[strings[-1]] = 0
-            parser.ref_not_found[strings[-1]] += 1
+        # if len(not_found) == len(strings):
+        #     if strings[-1] not in parser.ref_not_found.keys():
+        #         parser.ref_not_found[strings[-1]] = 0
+        #     parser.ref_not_found[strings[-1]] += 1
         return ""
 
     def set_current_perek(self, perek, is_tanakh, sefer):
@@ -524,7 +524,7 @@ class Nechama_Parser:
         self._term_cache = {}
         self.important_classes = ["parshan", "midrash", "talmud", "bible", "commentary"]
         self.index_not_found = {}
-        self.ref_not_found = {}
+        self.ref_not_found = []
         self.server = "http://nechama.sandbox.sefaria.org/"
         self.term_mapping = {
             u"חזקוני": u"Chizkuni, Genesis",
@@ -595,12 +595,12 @@ class Nechama_Parser:
         return new_ref
 
     def try_parallel_matcher(self, new_source):
-        ref2check = Ref(new_source.ref)
         try:
+            ref2check = new_source.get_sefaria_ref(new_source.ref)
             # todo: one Source obj for different Sefaria refs. how do we deal with this?
             matched = self.check_reduce_sources(new_source.text[0], ref2check)  # returns a list ordered by scores of mesorat hashas objs that were found
             if not matched:  # no match found
-                self.no_pm_match_found = new_source  # an Source obj, so we can see exactly what was not matched
+                self.ref_not_found.append(new_source)  # an Source obj, so we can see exactly what was not matched
                 print "NO MATCH"
                 return
             new_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[
@@ -641,6 +641,9 @@ class Nechama_Parser:
         print "index_not_found"
         for parshan_name in parser.index_not_found:
             print parshan_name
+        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        for ref in parser.ref_not_found:
+            print ref
         return sheets
 
 
@@ -663,5 +666,5 @@ if __name__ == "__main__":
     parshat_bereishit = ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
     start_at = 1
     parshat_bereishit = [x for x in parshat_bereishit if int(x) >= start_at]
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["1"]], post=False)
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in parshat_bereishit], post=False)
     #sheets = parser.bs4_reader(["html_sheets/{}".format(fn) for fn in os.listdir("html_sheets") if fn != 'errors.html'])
