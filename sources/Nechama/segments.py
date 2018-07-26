@@ -37,13 +37,15 @@ class Source(object):
     def is_source_text(segment, important_classes):
         return isinstance(segment, element.Tag) and "class" in segment.attrs.keys() and segment.attrs["class"][0] in important_classes
 
-    def is_sefaria_ref(self, ref):
+    def get_sefaria_ref(self):
         try:
-            r = Ref(ref)
+            r = Ref(self.ref)
             assert r.text('he').text
-            return True
+            return r
         except (InputError,  AssertionError) as e:
-            return False
+            ref_node = " ".join(self.ref.split(" ")[0:-1])
+            return get_sefaria_ref(ref_node)
+        return None
 
     def glue_ref_and_text(self, ref, text):
         return u"<small><b>{}</b><br/>{}</small>".format(ref, text)
