@@ -44,7 +44,7 @@ class Source(object):
             return r
         except (InputError,  AssertionError) as e:
             ref_node = " ".join(self.ref.split(" ")[0:-1])
-            return get_sefaria_ref(ref_node)
+            return self.get_sefaria_ref(ref_node)
         return None
 
     def glue_ref_and_text(self, ref, text):
