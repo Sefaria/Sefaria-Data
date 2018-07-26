@@ -210,12 +210,11 @@ class Section(object):
 
     def try_parallel_matcher(self, new_source, ref2check, text):
         try:
-            matched = parser.check_reduce_sources(text,
-                                                  ref2check)
-            new_source.ref = matched[0].a.ref.normal()
+            matched = parser.check_reduce_sources(text, ref2check)
+            new_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[0].b.ref.normal() # because the sides change
             if ref2check.is_section_level():
                 print '** section level ref: '.format(ref2check.normal())
-            print ref2check.normal(), new_source.ref.normal()
+            print ref2check.normal(), new_source.ref
         except AttributeError as e:
             print u'AttributeError: {}'.format(re.sub(u":$", u"", new_source.about_source_ref))
             parser.missing_index.add(new_source.about_source_ref)  # todo: would like to add just the <a> tag
@@ -584,16 +583,12 @@ class Nechama_Parser:
         return d
 
     def get_score(self, words_a, words_b):
-        normalizingFactor = 100
-        smoothingFactor = 1
-        ImaginaryContenderPerWord = 22
+
         str_a = u" ".join(words_a)
         str_b = u" ".join(words_b)
-        dist = self.levenshtein.calculate(str_a, str_b,normalize=False)
-        score = 1.0 * (dist + smoothingFactor) / (len(str_a) + smoothingFactor) * normalizingFactor
+        dist = self.levenshtein.calculate(str_a, str_b, normalize=True)
 
-        dumb_score = (ImaginaryContenderPerWord * len(words_a)) - score
-        return dumb_score
+        return dist
 
     def clean(self, s):
         s = unicodedata.normalize("NFD", s)
@@ -651,9 +646,9 @@ class Nechama_Parser:
             sheet.parse_as_text()
             sheet.create_sources_from_segments()
             sheet.prepare_sheet()
-            print "index_not_found"
-            for parshan_name in parser.index_not_found:
-                print parshan_name
+        print "index_not_found"
+        for parshan_name in parser.index_not_found:
+            print parshan_name
         return sheets
 
 
@@ -676,5 +671,5 @@ if __name__ == "__main__":
     parshat_bereishit = ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
     start_at = 1
     parshat_bereishit = [x for x in parshat_bereishit if int(x) >= start_at]
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in parshat_bereishit])
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["1", "2", "30"]])
     #sheets = parser.bs4_reader(["html_sheets/{}".format(fn) for fn in os.listdir("html_sheets") if fn != 'errors.html'])

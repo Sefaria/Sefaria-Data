@@ -50,7 +50,7 @@ class Source(object):
     def create_source(self):
         #create source for sourcesheet out of myself
         comment = " ".join(self.text)
-        if self.ref:#and self.is_sefaria_ref(self.ref):
+        if self.ref != u"" and self.is_sefaria_ref(self.ref):
             if self.about_source_ref:
                 comment = self.glue_ref_and_text(self.about_source_ref, comment)
             enRef = Ref(self.ref).normal()
