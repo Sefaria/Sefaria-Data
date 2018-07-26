@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
-import sys
 import os
-# for a script located two directories below this file
+import re
+import sys
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
 from sources.local_settings import *
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
-os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
+os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
+import django
+django.setup()
 from sources.functions import *
 import re
 import codecs
@@ -159,54 +161,36 @@ def parse_tractate_k(file_tractate_name):
                         final_list[get_page(current_daf_ref["daf"],current_daf_ref["amud"])].append(remove_tags(split))
     next_daf_has_previous_daf_comment = False
     super_final_list = [[] for x in range(len(TextChunk(Ref(tractate_name),"he").text)-1)]
+    super_final_list.insert(0,[])
+    
+    anchor_index=None
+    to_insert=[]
     #add blank to offset beggening:
     #box for adding to amud what is removed during transfer
-    add_after = []
-    final_list.insert(0,[])
-    for previous_amud_index, amud in enumerate(final_list[1:]):
-        if len(amud)>0 and len(final_list[previous_amud_index])>0 and len(final_list[previous_amud_index][-1])>0:
-            if final_list[previous_amud_index][-1][-1]!=u"." and final_list[previous_amud_index][-1][-1]!=u":":
-                amud_split = re.findall(ur".*?[\.:]",amud[0])
-                previous_amud_dangler = re.split(ur"[\.:]",final_list[previous_amud_index][-1])[-1]
-                if len(amud_split)>0:
-                    if len(previous_amud_dangler)>len(amud_split[0]):
-                        #print previous_amud_index
-                        #print "Pulled Back!"
-                        if amud[0][-1]!=u"." and amud[0][-1]!=u":":
-                            add_after.append(re.split(ur"[\.:]",amud[0])[-1])
-                        #print amud_split[0]
-                        final_list[previous_amud_index][-1]+=u" "+amud_split[0]
-                        final_list[previous_amud_index+1][0]=None if len(amud_split)<1 else ''.join(amud_split[1:])
-                        while len(add_after)>0:
-                            final_list[previous_amud_index+1][0]+=add_after.pop()
+    for amud_index, amud in enumerate(final_list):
+        for cindex, comment in enumerate(amud):
+            if re.search(ur'[א-ת]',comment) and u'$' not in comment:
+                if not re.search(ur'[\.:]\s*$\s*',comment):
+                    to_insert.append(comment)
+                    if not anchor_index:
+                        anchor_index=amud_index
+                else:
+                    new_comment=''
+                    while len(to_insert)>0:
+                        new_comment+=to_insert.pop(0)+u' '
+                    new_comment+=comment
+                    if bold_dh(new_comment)[-1]!=u'>':
+                        new_comment=bold_dh(new_comment)
+                    if anchor_index:
+                        super_final_list[anchor_index+1].append(remove_extra_space(new_comment))
                     else:
-                        #print previous_amud_index
-                        #print "Pushed Forward!"
-                        final_list[previous_amud_index][-1]=''.join(re.findall(ur".*?[\.|:]",final_list[previous_amud_index][-1]))
-                        final_list[previous_amud_index+1][0]=previous_amud_dangler+u" "+final_list[previous_amud_index+1][0]
-    """
-    add_after=[]
-    for previous_amud_index, amud in enumerate(final_list[1:]):
-        if len(amud)>0 and len(final_list[previous_amud_index])>0:
-            if final_list[previous_amud_index][-1][-1]!=u":":
-                amud_split = re.findall(ur".*?:",amud[0])
-                if len(amud_split)>1:
-                    #print "Pulled Back!"
-                    if amud[0][-1]!=u"." and amud[0][-1]!=u":":
-                        add_after.append(re.split(ur"[\.:]",amud[0])[-1])
-                    final_list[previous_amud_index][-1]+=u" "+amud_split[0]
-                    final_list[previous_amud_index+1][0]=''.join(amud_split[1:])
-                    while len(add_after)>0:
-                        final_list[previous_amud_index+1][0]+=add_after.pop()
-    """
-    super_final_list = [[] for x in range(len(TextChunk(Ref(tractate_name),"he").text)-1)]
-    super_final_list.insert(0,[])
-    for dindex, daf in enumerate(final_list):
-        super_final_list[dindex]=filter(lambda(x): not_blank(x),final_list[dindex])
-    for dindex, daf in enumerate(super_final_list):
-        for cindex, comment in enumerate(daf):
-            super_final_list[dindex][cindex]=bold_dh(comment)
-            #print dindex,cindex,repr(comment),comment
+                        super_final_list[amud_index+1].append(remove_extra_space(new_comment))
+                    anchor_index=None
+    for amud_index, amud in enumerate(super_final_list):
+        for cindex, comment in enumerate(amud):
+            print amud_index, cindex, comment
+
+
     return super_final_list
 def no_marker_parse(tractate_name, rid_text_input):
     #first, make masechet dapim array
@@ -227,7 +211,7 @@ def fix_markers(s):
     return re.sub(ur"\([א-ת]"+ur"{1,3}\)","",s.replace("@1","<small>(").replace("@3",")</small>"))
 def bold_dh(some_string):
     splits = {
-        "pi_split":some_string.split(u"פי"+u"'"),
+        "pi_split":some_string.split(u' '+u"פי"+u"'"),
         "pirush_split": some_string.split(u"פירוש"),
         "i_kashiya_split": some_string.split(u"אי קשיא"),
         "kashiya_li_split": some_string.split(u"קשיא לי"),
@@ -372,7 +356,7 @@ def remove_extra_space(s):
 def dh_extract_method(some_string):
     some_string = remove_extra_space(some_string).replace(u"<b>","").replace(u"</b>","")
     splits = {
-        "pi_split":some_string.split(u"פי"+u"'"),
+        "pi_split":some_string.split(u' '+u"פי"+u"'"),
         "pirush_split": some_string.split(u"פירוש"),
         "period_split": some_string.split(u"."),
         "chulei_split": some_string.split(u"כו"+"'")
@@ -404,9 +388,9 @@ def print_text(file_name):
         print line
         print ''
 
-posting_term=True
-posting_index=True
-posting_text=True
+posting_term=False
+posting_index=False
+posting_text=False
 linking=True
 admin_links = []
 page_links = []
@@ -452,3 +436,52 @@ for link in page_links:
                         final_list[previous_amud_index+1][0]=''.join(amud_split[1:])
 """
 
+"""
+add_after = []
+final_list.insert(0,[])
+for previous_amud_index, amud in enumerate(final_list[1:]):
+    if len(amud)>0 and len(final_list[previous_amud_index])>0 and len(final_list[previous_amud_index][-1])>0:
+        if final_list[previous_amud_index][-1][-1]!=u"." and final_list[previous_amud_index][-1][-1]!=u":":
+            amud_split = re.findall(ur".*?[\.:]",amud[0])
+            previous_amud_dangler = re.split(ur"[\.:]",final_list[previous_amud_index][-1])[-1]
+            if len(amud_split)>0:
+                if len(previous_amud_dangler)>len(amud_split[0]):
+                    #print previous_amud_index
+                    #print "Pulled Back!"
+                    if amud[0][-1]!=u"." and amud[0][-1]!=u":":
+                        add_after.append(re.split(ur"[\.:]",amud[0])[-1])
+                    #print amud_split[0]
+                    final_list[previous_amud_index][-1]+=u" "+amud_split[0]
+                    final_list[previous_amud_index+1][0]=None if len(amud_split)<1 else ''.join(amud_split[1:])
+                    while len(add_after)>0:
+                        final_list[previous_amud_index+1][0]+=add_after.pop()
+                else:
+                    #print previous_amud_index
+                    #print "Pushed Forward!"
+                    final_list[previous_amud_index][-1]=''.join(re.findall(ur".*?[\.|:]",final_list[previous_amud_index][-1]))
+                    final_list[previous_amud_index+1][0]=previous_amud_dangler+u" "+final_list[previous_amud_index+1][0]
+"""
+"""
+add_after=[]
+for previous_amud_index, amud in enumerate(final_list[1:]):
+    if len(amud)>0 and len(final_list[previous_amud_index])>0:
+        if final_list[previous_amud_index][-1][-1]!=u":":
+            amud_split = re.findall(ur".*?:",amud[0])
+            if len(amud_split)>1:
+                #print "Pulled Back!"
+                if amud[0][-1]!=u"." and amud[0][-1]!=u":":
+                    add_after.append(re.split(ur"[\.:]",amud[0])[-1])
+                final_list[previous_amud_index][-1]+=u" "+amud_split[0]
+                final_list[previous_amud_index+1][0]=''.join(amud_split[1:])
+                while len(add_after)>0:
+                    final_list[previous_amud_index+1][0]+=add_after.pop()
+
+super_final_list = [[] for x in range(len(TextChunk(Ref(tractate_name),"he").text)-1)]
+super_final_list.insert(0,[])
+for dindex, daf in enumerate(final_list):
+    super_final_list[dindex]=filter(lambda(x): not_blank(x),final_list[dindex])
+for dindex, daf in enumerate(super_final_list):
+    for cindex, comment in enumerate(daf):
+        super_final_list[dindex][cindex]=bold_dh(comment)
+        #print dindex,cindex,repr(comment),comment
+"""
