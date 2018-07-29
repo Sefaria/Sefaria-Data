@@ -45,7 +45,7 @@ for vol_num in range(1, 5):
     b_vol = base.get_volume(vol_num)
     assert isinstance(b_vol, Volume)
     root.populate_comment_store(verbose=True)
-    errors = b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u'@71', x.text) is not None)
+    errors = b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u'@74', x.text) is not None)
     for e in errors:
         print e
 root.export()

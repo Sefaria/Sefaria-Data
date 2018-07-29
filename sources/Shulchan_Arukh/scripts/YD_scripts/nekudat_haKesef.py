@@ -172,9 +172,9 @@ problems = filter(lambda x: x if u'places-referenced' not in x
 print len(suite.record_list)
 print len(problems)
 book_mapping = {(r['siman'], r['local-seif']): r['comments-on'] for r in suite.record_list}
-import json
-with codecs.open('nekudat_refs.json', 'wb', 'utf-8') as fp:
-    json.dump(suite.record_list, fp)
+# import json
+# with codecs.open('nekudat_refs.json', 'wb', 'utf-8') as fp:
+#     json.dump(suite.record_list, fp)
 
 """
 For each reference I now know how many possible references point to said reference in the base text. I need to determine
