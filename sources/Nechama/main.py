@@ -17,7 +17,7 @@ import unicodedata
 from sefaria.utils.hebrew import strip_cantillation
 from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
 from data_utilities.util import WeightedLevenshtein
-
+import datetime
 
 class Sheet(object):
 
@@ -31,7 +31,7 @@ class Sheet(object):
         self.he_year = re.sub(u"שנת", u"", year).strip()
         self.year = getGematria(self.he_year) + 5000  # +1240, jewish year is more accurate
         self.en_year = getGematria(self.he_year) + 1240
-        self.pasukim = self.get_ref(ref)  # (re.sub(u"(פרק(ים)?|פסוק(ים)?)", u"", ref).strip())
+        #self.pasukim = self.get_ref(ref)  # (re.sub(u"(פרק(ים)?|פסוק(ים)?)", u"", ref).strip())
         self.sheet_remark = u""
         self.header_links = None  # this will link to other  nechama sheets (if referred).
         self.quotations = []  # last one in this list is the current ref
@@ -50,11 +50,12 @@ class Sheet(object):
     def prepare_sheet(self):
        sheet_json = {}
        sheet_json["status"] = "public"
+       sheet_json["group"] = "Nechama Leibowitz' Source Sheets"
        sheet_json["title"] = self.title
        sheet_json["summary"] = u"{} ({})".format(self.en_year, self.year)
        sheet_json["sources"] = self.sources
        sheet_json["options"] = {"numbered": 0,"assignable": 0,"layout": "sideBySide","boxed": 0,"language": "hebrew","divineNames": "noSub","collaboration": "none", "highlightMode": 0, "bsd": 0,"langLayout": "heRight"}
-       post_sheet(sheet_json, server=parser.server)
+       #post_sheet(sheet_json, server=parser.server)
 
 
 
@@ -116,14 +117,10 @@ class Sheet(object):
         return r
 
     def parse_as_text(self):
-        intro_segment = intro_tuple = None
         for div in self.div_sections:
             self.current_section += 1
             new_section = Section(self.current_section, self.perakim, self.pasukim)
             assert str(self.current_section) in div['id']
-
-            if div.text.replace(" ", "") == "":
-                continue
 
             # removes nodes with no content
             soup_segments = new_section.get_children_with_content(div)
@@ -525,8 +522,11 @@ class Nechama_Parser:
         self.important_classes = ["parshan", "midrash", "talmud", "bible", "commentary"]
         self.index_not_found = {}
         self.ref_not_found = []
-        self.server = "http://nechama.sandbox.sefaria.org/"
+        self.server = "http://ste.sefaria.org"
+        self.segment_report = UnicodeWriter(open("segment_report.csv", 'a'))
+        self.section_report = UnicodeWriter(open("section_report.csv", 'a'))
         self.term_mapping = {
+            u"הכתב והקבלה": u"HaKtav VeHaKabalah, Genesis",
             u"חזקוני": u"Chizkuni, Genesis",
             u"""הנצי"ב מוולוז'ין""": u"Haamek Davar on {}".format(self.en_sefer),
             u"אונקלוס": u"Onkelos {}".format(self.en_sefer),
@@ -554,6 +554,9 @@ class Nechama_Parser:
         }
         self.levenshtein = WeightedLevenshtein()
         self.missing_index = set()
+        self.sec_ref_not_found = {}
+        self.seg_ref_not_found = {}
+        self.current_url = ""
 
     def dict_from_html_attrs(self, contents):
         d = OrderedDict()
@@ -597,14 +600,16 @@ class Nechama_Parser:
     def try_parallel_matcher(self, new_source):
         try:
             ref2check = new_source.get_sefaria_ref(new_source.ref)
+            first_20_words = new_source.text[0].split()[0:20]
             # todo: one Source obj for different Sefaria refs. how do we deal with this?
-            matched = self.check_reduce_sources(new_source.text[0], ref2check)  # returns a list ordered by scores of mesorat hashas objs that were found
+            matched = self.check_reduce_sources(new_source.text[0], ref2check) if ref2check else [] # returns a list ordered by scores of mesorat hashas objs that were found
             if not matched:  # no match found
-                self.ref_not_found.append(new_source)  # an Source obj, so we can see exactly what was not matched
-                print "NO MATCH"
-                return
-            new_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[
-                0].b.ref.normal()  # because the sides change
+                if ref2check.is_segment_level():
+                    self.seg_ref_not_found[self.current_url].append(new_source)
+                else:
+                    self.sec_ref_not_found[self.current_url].append(new_source)
+
+            new_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[0].b.ref.normal()  # because the sides change
             if ref2check.is_section_level():
                 print '** section level ref: '.format(ref2check.normal())
             print ref2check.normal(), new_source.ref
@@ -622,8 +627,12 @@ class Nechama_Parser:
         """
         sheets = OrderedDict()
         for html_sheet in file_list_names:
+            parser.current_url = html_sheet
+            parser.seg_ref_not_found[parser.current_url] = []
+            parser.sec_ref_not_found[parser.current_url] = []
             content = BeautifulSoup(open("{}".format(html_sheet)), "lxml")
             print "\n\n"
+            print datetime.datetime.now()
             print html_sheet
             perek_info = content.find("p", {"id": "pasuk"}).text
             top_dict = dict_from_html_attrs(content.find('div', {'id': "contentTop"}).contents)
@@ -636,15 +645,26 @@ class Nechama_Parser:
             sheet.sheet_remark = body_dict['sheetRemark'].text
             sheet.parse_as_text()
             sheet.create_sources_from_segments()
-            if post:
-                sheet.prepare_sheet()
+            sheet.prepare_sheet()
+        parser.record_report()
         print "index_not_found"
         for parshan_name in parser.index_not_found:
             print parshan_name
-        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-        for ref in parser.ref_not_found:
-            print ref
         return sheets
+
+
+    def record_report(self):
+        for url, sources in self.sec_ref_not_found.items():
+            url = url.replace("html_sheets/", "")
+            for source in sources:
+                self.section_report.writerow([url, source.ref, source.text[0]])
+        for url, sources in self.seg_ref_not_found.items():
+            url = url.replace("html_sheets/", "")
+            for source in sources:
+                self.segment_report.writerow([url, source.ref, source.text[0]])
+
+
+            
 
 
 
@@ -663,8 +683,9 @@ if __name__ == "__main__":
     # Ref(u"u'דברים פרק ט, ז-כט - פרק י, א-י'")
     # sheets = bs4_reader(['html_sheets/{}.html'.format(x) for x in ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]])
     parser = Nechama_Parser(u"Genesis", u"Bereshit")
-    parshat_bereishit = ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
+    parshat_bereishit = ["1" , "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
     start_at = 1
     parshat_bereishit = [x for x in parshat_bereishit if int(x) >= start_at]
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in parshat_bereishit], post=False)
+    except_for = [x for x in parshat_bereishit if x not in ["212", "750", "1291"]]
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["212", "750", "1291"]], post=False)
     #sheets = parser.bs4_reader(["html_sheets/{}".format(fn) for fn in os.listdir("html_sheets") if fn != 'errors.html'])
