@@ -17,3 +17,4 @@ echo "Beer HaGolah"
 python ./beer_hagolah.py
 echo "Nekudat HaKesef"
 python ./nekudat_haKesef.py
+curl -X POST --data-urlencode 'payload={"text": "Finished Parsing Yoreh Deah"}' ${SLACK_URL}
