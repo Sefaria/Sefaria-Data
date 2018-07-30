@@ -6,6 +6,7 @@ import requests
 import unicodecsv
 from sources import functions
 from sefaria.model import *
+from collections import Counter
 from os.path import dirname as loc
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
@@ -45,7 +46,7 @@ def add_siman_headers(ja):
     xml_simanim = root.get_base_text().get_simanim()
     text_simanim = iter(ja)
     for xml_siman in xml_simanim:
-        text_siman = text_simanim.next()
+        text_siman = next(t for t in text_simanim if len(t) > 0)
         for title in xml_siman.Tag.find_all('title'):
             title_text = re.sub(u'\s*$', u'', title.text)
             if title_text == u'':
@@ -65,3 +66,58 @@ def generic_cleaner(ja, clean_callback):
             ja[i] = clean_callback(item)
         else:
             raise TypeError
+
+
+def traverse(ja):
+    assert isinstance(ja, list)
+    for sub_ja in ja:
+        if isinstance(sub_ja, basestring):
+            yield sub_ja
+        else:
+            for traversal in traverse(sub_ja):
+                yield traversal
+
+
+def clean_spaces(func):
+    def new_func(s):
+        s = func(s)
+        s = re.sub(u'(\s){2,}', u'\g<1>', s)
+        s = re.sub(u'\s+$', u'', s)
+        s = re.sub(u'^\s+', u'', s)
+        s = re.sub(u'\s+([^\u05d0-\u05ea])$', u'\g<1>', s)
+        return s
+    return new_func
+
+
+def base_post_parse(ja):
+    @clean_spaces
+    def clean(s):
+        return re.sub(u'[*?]', u'', s)
+
+    add_siman_headers(ja)
+    generic_cleaner(ja, clean)
+
+
+def clean_taz(ja):
+    @clean_spaces
+    def clean(s):
+        return re.sub(u'(~77 ?\(?\)?)|(#\))|(\?)', u'', s)
+    generic_cleaner(ja, clean)
+
+
+root.populate_comment_store()
+commentaries = root.get_commentaries()
+taz = commentaries.get_commentary_by_title('Turei Zahav')
+my_text = taz.render()
+clean_taz(my_text)
+import bleach
+my_weird_chars = Counter()
+for sec_num, section in enumerate(my_text):
+    for seg_num, segment in enumerate(section):
+        stuff = re.findall(u'''[^\u05d0-\u05ea\s()\[\],:."'\-]''', bleach.clean(segment, tags=[], strip=True))
+        if len(stuff) > 0:
+            print sec_num+1, seg_num+1
+        my_weird_chars.update(stuff)
+for i, j in my_weird_chars.items():
+    print i, j
+print my_text[334][3]
