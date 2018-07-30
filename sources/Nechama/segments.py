@@ -30,7 +30,7 @@ class Source(object):
         self.nechama_comments = u""
         self.nechama_q = []  # list of Qustion objs about this Parshan seg
         self.segment_class = segment_class
-        self.text = []
+        self.text = u""
 
 
     @staticmethod
@@ -114,13 +114,30 @@ class Source(object):
 
     def add_text(self, segment, segment_class):
         segment_text = segment.text.replace("\n", "").replace("\r", "")
-        self.text.append(segment_text)
         self.parshan_name = segment_class
+        if not self.text:
+            self.text = segment_text
+            return self
+        else:
+            new_source = self.copy()
+            new_source.text = segment_text
+            return new_source
+
 
 
     def index_not_found(self):
         return not self.get_ref() and self.about_source_ref #not found a ref, but have info on what it is
 
+
+    def copy(self):
+        # ref_copy = Ref(self.ref.normal())
+        ref_copy = self.ref
+        new_source = Source(self.segment_class, ref_copy)
+        new_source.parshan_name = self.parshan_name
+        # new_source.pasuk = self.pasuk
+        # new_source.perek = self..perek
+
+        return new_source
 
 class Header(object):
     def __init__(self, segment):

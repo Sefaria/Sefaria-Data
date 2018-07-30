@@ -36,3 +36,12 @@ class Test_prallel_matcher():
         ref = u'Genesis.1.7'
         matched = np.check_reduce_sources(comment, Ref(ref))
         assert matched == []
+
+class Test_parse_he_Data_Types(object):
+
+    def test_perek_pasuk(self):
+        assert Ref(u'בראשית פרק א פסוק ג') == Ref('Genesis 1:3')
+        assert Ref(u'שמות ד פסוקים ג-ו') == Ref('Exodus 4:3-6')
+        assert Ref(u'שמות ד פסוק ג - פרק ו') == Ref('Exodus 4:3-6:30')
+        assert Ref(u'שמות ד פסוק ג - פסוק ו') == Ref('Exodus 4:3-6')
+        assert Ref(u'שמות פרק ד - פרק ה פסוק ו') == Ref('Exodus 4:1-5:6')

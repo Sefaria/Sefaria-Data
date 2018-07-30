@@ -31,7 +31,7 @@ class Sheet(object):
         self.he_year = re.sub(u"שנת", u"", year).strip()
         self.year = getGematria(self.he_year) + 5000  # +1240, jewish year is more accurate
         self.en_year = getGematria(self.he_year) + 1240
-        #self.pasukim = self.get_ref(ref)  # (re.sub(u"(פרק(ים)?|פסוק(ים)?)", u"", ref).strip())
+        self.pasukim = self.get_ref(ref)  # (re.sub(u"(פרק(ים)?|פסוק(ים)?)", u"", ref).strip())
         self.sheet_remark = u""
         self.header_links = None  # this will link to other  nechama sheets (if referred).
         self.quotations = []  # last one in this list is the current ref
@@ -50,12 +50,12 @@ class Sheet(object):
     def prepare_sheet(self):
        sheet_json = {}
        sheet_json["status"] = "public"
-       sheet_json["group"] = "Nechama Leibowitz' Source Sheets"
+       # sheet_json["group"] = "Nechama Leibowitz' Source Sheets"
        sheet_json["title"] = self.title
        sheet_json["summary"] = u"{} ({})".format(self.en_year, self.year)
        sheet_json["sources"] = self.sources
        sheet_json["options"] = {"numbered": 0,"assignable": 0,"layout": "sideBySide","boxed": 0,"language": "hebrew","divineNames": "noSub","collaboration": "none", "highlightMode": 0, "bsd": 0,"langLayout": "heRight"}
-       #post_sheet(sheet_json, server=parser.server)
+       post_sheet(sheet_json, server=parser.server)
 
 
 
@@ -117,10 +117,14 @@ class Sheet(object):
         return r
 
     def parse_as_text(self):
+        intro_segment = intro_tuple = None
         for div in self.div_sections:
             self.current_section += 1
             new_section = Section(self.current_section, self.perakim, self.pasukim)
             assert str(self.current_section) in div['id']
+
+            if div.text.replace(" ", "") == "":
+                continue
 
             # removes nodes with no content
             soup_segments = new_section.get_children_with_content(div)
@@ -167,7 +171,7 @@ class Section(object):
         """
         combined_with_prev_line = None
         prev_was_quote = None
-        new_source = None
+        current_source = None
         for i, segment in enumerate(soup_segments):
             relevant_text = self.format(self.relevant_text(segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
             if i == 0:
@@ -182,21 +186,22 @@ class Section(object):
                 # this is a comment by a commentary, bible, or midrash
                 segment_class = segment.attrs["class"][0]  # is it source, bible, or midrash?
                 assert len(segment.attrs["class"]) == 1, "More than one class"
-                new_source.add_text(segment, segment_class)
-                self.segment_objects.append(new_source)
-                if not new_source.ref or not new_source.text:
+                current_source = current_source.add_text(segment, segment_class) #returns current_source if there's no text, OR returns a new Source object if current_source already has text
+                                                                                #the latter case occurs when for example it says "Rashi" followed by multiple comments
+                self.segment_objects.append(current_source)
+                if not current_source.ref or not current_source.text:
                     continue
-                parser.try_parallel_matcher(new_source) # todo: deal with a list of more than one text, call it from a specific Source class method
-                if new_source.index_not_found():
-                    if new_source.about_source_ref not in parser.index_not_found.keys():
-                        parser.index_not_found[new_source.about_source_ref] = []
-                    parser.index_not_found[new_source.about_source_ref].append((self.current_parsha_ref, new_source.about_source_ref))
+                parser.try_parallel_matcher(current_source) # todo: deal with a list of more than one text, call it from a specific Source class method
+                if current_source.index_not_found():
+                    if current_source.about_source_ref not in parser.index_not_found.keys():
+                        parser.index_not_found[current_source.about_source_ref] = []
+                    parser.index_not_found[current_source.about_source_ref].append((self.current_parsha_ref, current_source.about_source_ref))
                 continue
             elif Nechama_Comment.is_comment(soup_segments, i, parser.important_classes):  # above criteria not met, just an ordinary comment
                 self.segment_objects.append(Nechama_Comment(relevant_text))
             else:  # must be a Source Ref, so parse it
                 next_segment_class = soup_segments[i + 1].attrs["class"][0]  # get the class of this ref and it's comment
-                new_source = self.parse_ref(segment, relevant_text, next_segment_class)
+                current_source = self.parse_ref(segment, relevant_text, next_segment_class)
 
 
 
@@ -236,7 +241,7 @@ class Section(object):
         real_title = ""
 
         # if a_tag and segment.find("u") and a_tag.text != segment.find("u").text: #case where
-        a_tag_is_entire_comment = a_tag_occurs_in_long_comment = False
+        a_tag_is_entire_comment = False
         if a_tag:
             a_tag_is_entire_comment = len(a_tag.text.split()) == len(segment.text.split())
             real_title = self.get_term(a_tag.text)
@@ -256,39 +261,39 @@ class Section(object):
         is_perek_pasuk_ref, new_perek, new_pasuk = self.set_current_perek_pasuk(relevant_text, next_segment_class,
                                                                                 is_tanakh)
 
-        # now create new_source based on real_title or based on self.current_parsha_ref
+        # now create current_source based on real_title or based on self.current_parsha_ref
         if real_title:  # a ref to a commentator that we have in our system
             if new_pasuk:
-                new_source = Source(next_segment_class,
+                current_source = Source(next_segment_class,
                                      u"{} {}:{}".format(real_title, new_perek, new_pasuk))
             else:
-                new_source = Source(next_segment_class, u"{} {}".format(real_title, new_perek))
+                current_source = Source(next_segment_class, u"{} {}".format(real_title, new_perek))
         elif not real_title and is_tanakh:  # not a commentator, but instead a ref to the parsha
-            new_source = Source("bible", u"{} {}:{}".format(parser.en_sefer, new_perek, new_pasuk))
+            current_source = Source("bible", u"{} {}:{}".format(parser.en_sefer, new_perek, new_pasuk))
         elif len(relevant_text.split()) < 8:  # not found yet, look it up in library.get_refs_in_string
             found_ref_in_string = self._get_refs_in_string([relevant_text], next_segment_class,
                                                            add_if_not_found=False)
-            new_source = Source(next_segment_class, found_ref_in_string)
+            current_source = Source(next_segment_class, found_ref_in_string)
         else:
-            new_source = Source(next_segment_class, "")
+            current_source = Source(next_segment_class, "")
         
         #finally set about_source_ref
-        if new_source.get_ref():
+        if current_source.get_ref():
             if not a_tag_is_entire_comment and found_ref_in_string == "" and len(relevant_text.split()) >= 6:
                 # edge case where you found the ref but Nechama said something else in addition to the ref
                 # so we want to keep the text
-                new_source.about_source_ref = relevant_text
+                current_source.about_source_ref = relevant_text
         elif found_a_tag:
             # found no reference but did find an a_tag so this is a ref so keep the text
-            new_source.about_source_ref = found_a_tag.text # note: check if this change is good and where else can we use this more precise data
-            if new_source.about_source_ref not in parser.index_not_found.keys():
-                parser.index_not_found[new_source.about_source_ref] = []
-            parser.index_not_found[new_source.about_source_ref].append((self.current_parsha_ref, new_source.about_source_ref))
+            current_source.about_source_ref = found_a_tag.text # note: check if this change is good and where else can we use this more precise data
+            if current_source.about_source_ref not in parser.index_not_found.keys():
+                parser.index_not_found[current_source.about_source_ref] = []
+            parser.index_not_found[current_source.about_source_ref].append((self.current_parsha_ref, current_source.about_source_ref))
 
         else:
-            new_source.about_source_ref = relevant_text
+            current_source.about_source_ref = relevant_text
 
-        return new_source
+        return current_source
 
     def _get_refs_in_string(self, strings, next_segment_class, add_if_not_found=True):
         not_found = []
@@ -522,7 +527,7 @@ class Nechama_Parser:
         self.important_classes = ["parshan", "midrash", "talmud", "bible", "commentary"]
         self.index_not_found = {}
         self.ref_not_found = []
-        self.server = "http://ste.sefaria.org"
+        self.server = SEFARIA_SERVER
         self.segment_report = UnicodeWriter(open("segment_report.csv", 'a'))
         self.section_report = UnicodeWriter(open("section_report.csv", 'a'))
         self.term_mapping = {
@@ -597,25 +602,31 @@ class Nechama_Parser:
         new_ref = pm.match(tc_list=[ref.text('he'), (comment, 1)], return_obj=True)
         return new_ref
 
-    def try_parallel_matcher(self, new_source):
+    def try_parallel_matcher(self, current_source):
         try:
-            ref2check = new_source.get_sefaria_ref(new_source.ref)
-            first_20_words = new_source.text[0].split()[0:20]
+            ref2check = current_source.get_sefaria_ref(current_source.ref)
+            ref2check = current_source.get_sefaria_ref(current_source.ref)
+            # first_20_words = current_source.text[0].split()[0:20]
             # todo: one Source obj for different Sefaria refs. how do we deal with this?
-            matched = self.check_reduce_sources(new_source.text[0], ref2check) if ref2check else [] # returns a list ordered by scores of mesorat hashas objs that were found
+            matched = self.check_reduce_sources(current_source.text, ref2check)  # returns a list ordered by scores of mesorat hashas objs that were found
+            matched = self.check_reduce_sources(current_source.text, ref2check) if ref2check else [] # returns a list ordered by scores of mesorat hashas objs that were found
             if not matched:  # no match found
                 if ref2check.is_segment_level():
-                    self.seg_ref_not_found[self.current_url].append(new_source)
+                    self.seg_ref_not_found[self.current_url].append(current_source)
                 else:
-                    self.sec_ref_not_found[self.current_url].append(new_source)
+                    self.sec_ref_not_found[self.current_url].append(current_source)
+                print "NO MATCH"
+                return
+            current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[
+                0].b.ref.normal()  # because the sides change
 
-            new_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[0].b.ref.normal()  # because the sides change
+            current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[0].b.ref.normal()  # because the sides change
             if ref2check.is_section_level():
                 print '** section level ref: '.format(ref2check.normal())
-            print ref2check.normal(), new_source.ref
+            print ref2check.normal(), current_source.ref
         except AttributeError as e:
-            print u'AttributeError: {}'.format(re.sub(u":$", u"", new_source.about_source_ref))
-            parser.missing_index.add(new_source.about_source_ref)  # todo: would like to add just the <a> tag
+            print u'AttributeError: {}'.format(re.sub(u":$", u"", current_source.about_source_ref))
+            parser.missing_index.add(current_source.about_source_ref)  # todo: would like to add just the <a> tag
         except IndexError as e:
             parser.missing_index.add(u'IndexError: {}'.format(re.sub(u":$", u"", ref2check.normal())))
 
@@ -645,11 +656,15 @@ class Nechama_Parser:
             sheet.sheet_remark = body_dict['sheetRemark'].text
             sheet.parse_as_text()
             sheet.create_sources_from_segments()
-            sheet.prepare_sheet()
-        parser.record_report()
+            if post:
+                sheet.prepare_sheet()
+            parser.record_report()
         print "index_not_found"
         for parshan_name in parser.index_not_found:
             print parshan_name
+        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        for ref in parser.ref_not_found:
+            print ref.ref
         return sheets
 
 
@@ -657,14 +672,14 @@ class Nechama_Parser:
         for url, sources in self.sec_ref_not_found.items():
             url = url.replace("html_sheets/", "")
             for source in sources:
-                self.section_report.writerow([url, source.ref, source.text[0]])
+                self.section_report.writerow([url, source.ref, source.text])
         for url, sources in self.seg_ref_not_found.items():
             url = url.replace("html_sheets/", "")
             for source in sources:
-                self.segment_report.writerow([url, source.ref, source.text[0]])
+                self.segment_report.writerow([url, source.ref, source.text])
 
 
-            
+
 
 
 
@@ -683,9 +698,9 @@ if __name__ == "__main__":
     # Ref(u"u'דברים פרק ט, ז-כט - פרק י, א-י'")
     # sheets = bs4_reader(['html_sheets/{}.html'.format(x) for x in ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]])
     parser = Nechama_Parser(u"Genesis", u"Bereshit")
-    parshat_bereishit = ["1" , "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
+    parshat_bereishit = ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
     start_at = 1
     parshat_bereishit = [x for x in parshat_bereishit if int(x) >= start_at]
     except_for = [x for x in parshat_bereishit if x not in ["212", "750", "1291"]]
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["212", "750", "1291"]], post=False)
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["929"]], post=True)
     #sheets = parser.bs4_reader(["html_sheets/{}".format(fn) for fn in os.listdir("html_sheets") if fn != 'errors.html'])
