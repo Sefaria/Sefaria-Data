@@ -58,7 +58,7 @@ class Source(object):
 
     def create_source(self):
         #create source for sourcesheet out of myself
-        comment = " ".join(self.text)
+        comment = self.text
         # is Sefaria ref
         if self.get_sefaria_ref(self.ref):
             if self.about_source_ref:

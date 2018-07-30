@@ -36,14 +36,16 @@ class Sheet(object):
         self.header_links = None  # this will link to other  nechama sheets (if referred).
         self.quotations = []  # last one in this list is the current ref
         self.current_section = 0
-        self.div_sections = [] #BeautifulSoup objects that will eventually become converted into Section objects stored in self.sections
+        self.div_sections = [] # BeautifulSoup objects that will eventually become converted into Section objects stored in self.sections
         self.sections = []
         self.sources = []
 
 
-    def create_sources_from_segments(self):
-        for section in self.sections:
-            for segment in section.segment_objects:
+    def create_sheetsources_from_objsource(self):
+        for isection, section in enumerate(self.sections):
+            for isegment, segment in enumerate(section.segment_objects):
+                if isinstance(segment, Source):
+                    parser.try_parallel_matcher(segment)
                 self.sources.append(segment.create_source())
 
 
@@ -51,7 +53,7 @@ class Sheet(object):
        sheet_json = {}
        sheet_json["status"] = "public"
        # sheet_json["group"] = "Nechama Leibowitz' Source Sheets"
-       sheet_json["title"] = self.title
+       sheet_json["title"] = u"{} - {}".format(self.title, re.search("(\d+)",self.html).group(0))
        sheet_json["summary"] = u"{} ({})".format(self.en_year, self.year)
        sheet_json["sources"] = self.sources
        sheet_json["options"] = {"numbered": 0,"assignable": 0,"layout": "sideBySide","boxed": 0,"language": "hebrew","divineNames": "noSub","collaboration": "none", "highlightMode": 0, "bsd": 0,"langLayout": "heRight"}
@@ -191,7 +193,6 @@ class Section(object):
                 self.segment_objects.append(current_source)
                 if not current_source.ref or not current_source.text:
                     continue
-                parser.try_parallel_matcher(current_source) # todo: deal with a list of more than one text, call it from a specific Source class method
                 if current_source.index_not_found():
                     if current_source.about_source_ref not in parser.index_not_found.keys():
                         parser.index_not_found[current_source.about_source_ref] = []
@@ -597,18 +598,25 @@ class Nechama_Parser:
 
     def check_reduce_sources(self, comment, ref):
         n = len(re.split(u'\s+', comment))
-        pm = ParallelMatcher(self.tokenizer, dh_extract_method = None, ngram_size=3, max_words_between=4, min_words_in_match =int(round(n*0.5)),
-        min_distance_between_matches=0, all_to_all=False, parallelize = False, verbose = False, calculate_score = self.get_score)
+        if n<=5:
+            ngram_size = n
+            max_words_between = 1
+            min_words_in_match = n
+        else:
+            ngram_size = 3
+            max_words_between = 4
+            min_words_in_match = int(round(n*0.5))
+
+        pm = ParallelMatcher(self.tokenizer, dh_extract_method=None, ngram_size=ngram_size, max_words_between=max_words_between, min_words_in_match=min_words_in_match,
+        min_distance_between_matches=0, all_to_all=False, parallelize=False, verbose=False, calculate_score=self.get_score)
         new_ref = pm.match(tc_list=[ref.text('he'), (comment, 1)], return_obj=True)
         return new_ref
 
     def try_parallel_matcher(self, current_source):
         try:
             ref2check = current_source.get_sefaria_ref(current_source.ref)
-            ref2check = current_source.get_sefaria_ref(current_source.ref)
             # first_20_words = current_source.text[0].split()[0:20]
             # todo: one Source obj for different Sefaria refs. how do we deal with this?
-            matched = self.check_reduce_sources(current_source.text, ref2check)  # returns a list ordered by scores of mesorat hashas objs that were found
             matched = self.check_reduce_sources(current_source.text, ref2check) if ref2check else [] # returns a list ordered by scores of mesorat hashas objs that were found
             if not matched:  # no match found
                 if ref2check.is_segment_level():
@@ -655,7 +663,7 @@ class Nechama_Parser:
             sheet.div_sections.extend([v for k, v in body_dict.items() if re.search(u'ContentSection_\d', k)]) # check that these come in in the right order
             sheet.sheet_remark = body_dict['sheetRemark'].text
             sheet.parse_as_text()
-            sheet.create_sources_from_segments()
+            sheet.create_sheetsources_from_objsource()
             if post:
                 sheet.prepare_sheet()
             parser.record_report()
@@ -702,5 +710,5 @@ if __name__ == "__main__":
     start_at = 1
     parshat_bereishit = [x for x in parshat_bereishit if int(x) >= start_at]
     except_for = [x for x in parshat_bereishit if x not in ["212", "750", "1291"]]
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["929"]], post=True)
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["1"]], post=True)
     #sheets = parser.bs4_reader(["html_sheets/{}".format(fn) for fn in os.listdir("html_sheets") if fn != 'errors.html'])
