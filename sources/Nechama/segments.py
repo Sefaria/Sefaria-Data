@@ -33,6 +33,7 @@ class Source(object):
         self.text = u""
 
 
+
     @staticmethod
     def is_source_text(segment, important_classes):
         return isinstance(segment, element.Tag) and "class" in segment.attrs.keys() and segment.attrs["class"][0] in important_classes
@@ -58,7 +59,7 @@ class Source(object):
 
     def create_source(self):
         #create source for sourcesheet out of myself
-        comment = " ".join(self.text)
+        comment = self.text
         # is Sefaria ref
         if self.get_sefaria_ref(self.ref):
             if self.about_source_ref:

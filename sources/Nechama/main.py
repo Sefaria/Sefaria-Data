@@ -44,6 +44,8 @@ class Sheet(object):
     def create_sources_from_segments(self):
         for section in self.sections:
             for segment in section.segment_objects:
+                if isinstance(segment, Source):
+                    parser.try_parallel_matcher(segment)
                 self.sources.append(segment.create_source())
 
 
@@ -169,8 +171,6 @@ class Section(object):
         :param segments:
         :return:
         """
-        combined_with_prev_line = None
-        prev_was_quote = None
         current_source = None
         for i, segment in enumerate(soup_segments):
             relevant_text = self.format(self.relevant_text(segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
@@ -191,7 +191,6 @@ class Section(object):
                 self.segment_objects.append(current_source)
                 if not current_source.ref or not current_source.text:
                     continue
-                parser.try_parallel_matcher(current_source) # todo: deal with a list of more than one text, call it from a specific Source class method
                 if current_source.index_not_found():
                     if current_source.about_source_ref not in parser.index_not_found.keys():
                         parser.index_not_found[current_source.about_source_ref] = []
@@ -285,7 +284,7 @@ class Section(object):
                 current_source.about_source_ref = relevant_text
         elif found_a_tag:
             # found no reference but did find an a_tag so this is a ref so keep the text
-            current_source.about_source_ref = found_a_tag.text # note: check if this change is good and where else can we use this more precise data
+            current_source.about_source_ref = relevant_text
             if current_source.about_source_ref not in parser.index_not_found.keys():
                 parser.index_not_found[current_source.about_source_ref] = []
             parser.index_not_found[current_source.about_source_ref].append((self.current_parsha_ref, current_source.about_source_ref))
@@ -330,14 +329,14 @@ class Section(object):
     
 
     def set_current_pasuk(self, pasuk, is_tanakh):
-        if "-" in pasuk:  # is a range, correct it
-            start = pasuk.split("-")[0]
-            end = pasuk.split("-")[1]
-            start = getGematria(start)
-            end = getGematria(end)
-            new_pasuk = u"{}-{}".format(start, end)
-        else:  # there is a pasuk but is not ranged
-            new_pasuk = str(getGematria(pasuk))
+        # if "-" in pasuk:  # is a range, correct it
+        #     start = pasuk.split("-")[0]
+        #     end = pasuk.split("-")[1]
+        #     start = getGematria(start)
+        #     end = getGematria(end)
+        #     new_pasuk = u"{}-{}".format(start, end)
+        # else:  # there is a pasuk but is not ranged
+        new_pasuk = str(getGematria(pasuk))
 
         if is_tanakh:
             poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
@@ -358,6 +357,8 @@ class Section(object):
         if digit:
             text = text.replace(digit.group(0), "").strip()
         text += " "  # this is hack so that reg ex works
+
+        text = text.replace(u'\u2013', "-").replace(u"\u2011", "-")
 
         perek_comma_pasuk = re.findall("Perek (.{1,5}), (.{1,5})", text)
         if not perek_comma_pasuk:
@@ -605,10 +606,8 @@ class Nechama_Parser:
     def try_parallel_matcher(self, current_source):
         try:
             ref2check = current_source.get_sefaria_ref(current_source.ref)
-            ref2check = current_source.get_sefaria_ref(current_source.ref)
             # first_20_words = current_source.text[0].split()[0:20]
             # todo: one Source obj for different Sefaria refs. how do we deal with this?
-            matched = self.check_reduce_sources(current_source.text, ref2check)  # returns a list ordered by scores of mesorat hashas objs that were found
             matched = self.check_reduce_sources(current_source.text, ref2check) if ref2check else [] # returns a list ordered by scores of mesorat hashas objs that were found
             if not matched:  # no match found
                 if ref2check.is_segment_level():
@@ -616,6 +615,10 @@ class Nechama_Parser:
                 else:
                     self.sec_ref_not_found[self.current_url].append(current_source)
                 print "NO MATCH"
+
+                # we dont want to link it since there's no match found so set the ref to empty and record the fixed ref ref2check in about_source_ref
+                current_source.about_source_ref = ref2check.normal()
+                current_source.ref = ""
                 return
             current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[
                 0].b.ref.normal()  # because the sides change
@@ -682,7 +685,6 @@ class Nechama_Parser:
 
 
 
-
 def dict_from_html_attrs(contents):
     d = OrderedDict()
     for e in [e for e in contents if isinstance(e, element.Tag)]:
@@ -702,5 +704,5 @@ if __name__ == "__main__":
     start_at = 1
     parshat_bereishit = [x for x in parshat_bereishit if int(x) >= start_at]
     except_for = [x for x in parshat_bereishit if x not in ["212", "750", "1291"]]
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["929"]], post=True)
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=True)
     #sheets = parser.bs4_reader(["html_sheets/{}".format(fn) for fn in os.listdir("html_sheets") if fn != 'errors.html'])
