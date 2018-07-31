@@ -31,7 +31,7 @@ class Sheet(object):
         self.he_year = re.sub(u"שנת", u"", year).strip()
         self.year = getGematria(self.he_year) + 5000  # +1240, jewish year is more accurate
         self.en_year = getGematria(self.he_year) + 1240
-        self.pasukim = self.get_ref(ref)  # (re.sub(u"(פרק(ים)?|פסוק(ים)?)", u"", ref).strip())
+        #self.pasukim = self.get_ref(ref)  # (re.sub(u"(פרק(ים)?|פסוק(ים)?)", u"", ref).strip())
         self.sheet_remark = u""
         self.header_links = None  # this will link to other  nechama sheets (if referred).
         self.quotations = []  # last one in this list is the current ref
@@ -45,14 +45,14 @@ class Sheet(object):
         for section in self.sections:
             for segment in section.segment_objects:
                 if isinstance(segment, Source):
-                    parser.try_parallel_matcher(segment)
+                   parser.try_parallel_matcher(segment)
                 self.sources.append(segment.create_source())
 
 
     def prepare_sheet(self):
        sheet_json = {}
        sheet_json["status"] = "public"
-       # sheet_json["group"] = "Nechama Leibowitz' Source Sheets"
+       sheet_json["group"] = "Nechama Leibowitz' Source Sheets"
        sheet_json["title"] = self.title
        sheet_json["summary"] = u"{} ({})".format(self.en_year, self.year)
        sheet_json["sources"] = self.sources
@@ -189,7 +189,7 @@ class Section(object):
                 current_source = current_source.add_text(segment, segment_class) #returns current_source if there's no text, OR returns a new Source object if current_source already has text
                                                                                 #the latter case occurs when for example it says "Rashi" followed by multiple comments
                 self.segment_objects.append(current_source)
-                if not current_source.ref or not current_source.text:
+                if not current_source.ref:
                     continue
                 if current_source.index_not_found():
                     if current_source.about_source_ref not in parser.index_not_found.keys():
@@ -338,7 +338,7 @@ class Section(object):
         # else:  # there is a pasuk but is not ranged
         new_pasuk = str(getGematria(pasuk))
 
-        if is_tanakh:
+        if is_tanakh or self.RT_Rashi:
             poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
             if poss_ref:
                 self.current_perek = poss_ref.sections[0]
@@ -391,7 +391,7 @@ class Section(object):
             else:  # there is a pasuk but is not ranged
                 new_pasuk = str(getGematria(pasuk))
 
-            if is_tanakh:
+            if is_tanakh or self.RT_Rashi:
                 poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk, perakim=[new_perek])
                 if poss_ref:
                     self.current_perek = poss_ref.sections[0]
@@ -521,7 +521,10 @@ class Section(object):
         return (found_difficult + text).strip()
 
 class Nechama_Parser:
-    def __init__(self, en_sefer, en_parasha):
+    def __init__(self, en_sefer, en_parasha, mode):
+        self.matches = 0
+        self.non_matches = 0
+        self.mode = mode # fast or accurate
         self.en_sefer = en_sefer
         self.en_parasha = en_parasha
         self._term_cache = {}
@@ -606,20 +609,26 @@ class Nechama_Parser:
     def try_parallel_matcher(self, current_source):
         try:
             ref2check = current_source.get_sefaria_ref(current_source.ref)
-            # first_20_words = current_source.text[0].split()[0:20]
+            text_to_use = u""
+            if self.mode == "fast":
+                text_to_use = u" ".join(current_source.text.split()[0:15])
+            elif self.mode == "accurate":
+                text_to_use = current_source.text
             # todo: one Source obj for different Sefaria refs. how do we deal with this?
-            matched = self.check_reduce_sources(current_source.text, ref2check) if ref2check else [] # returns a list ordered by scores of mesorat hashas objs that were found
+            matched = self.check_reduce_sources(text_to_use, ref2check) if ref2check else [] # returns a list ordered by scores of mesorat hashas objs that were found
             if not matched:  # no match found
                 if ref2check.is_segment_level():
                     self.seg_ref_not_found[self.current_url].append(current_source)
                 else:
                     self.sec_ref_not_found[self.current_url].append(current_source)
                 print "NO MATCH"
+                self.non_matches += 1
 
                 # we dont want to link it since there's no match found so set the ref to empty and record the fixed ref ref2check in about_source_ref
-                current_source.about_source_ref = ref2check.normal()
+                current_source.about_source_ref = ref2check.he_normal()
                 current_source.ref = ""
                 return
+            self.matches += 1 
             current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[
                 0].b.ref.normal()  # because the sides change
 
@@ -661,13 +670,9 @@ class Nechama_Parser:
             sheet.create_sources_from_segments()
             if post:
                 sheet.prepare_sheet()
-            parser.record_report()
         print "index_not_found"
         for parshan_name in parser.index_not_found:
             print parshan_name
-        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-        for ref in parser.ref_not_found:
-            print ref.ref
         return sheets
 
 
@@ -675,11 +680,11 @@ class Nechama_Parser:
         for url, sources in self.sec_ref_not_found.items():
             url = url.replace("html_sheets/", "")
             for source in sources:
-                self.section_report.writerow([url, source.ref, source.text])
+                self.section_report.writerow([url, source.about_source_ref, source.text])
         for url, sources in self.seg_ref_not_found.items():
             url = url.replace("html_sheets/", "")
             for source in sources:
-                self.segment_report.writerow([url, source.ref, source.text])
+                self.segment_report.writerow([url, source.about_source_ref, source.text])
 
 
 
@@ -699,10 +704,20 @@ if __name__ == "__main__":
     # Ref(u"בראשית פרק ג פסוק ד - פרק ה פסוק י")
     # Ref(u"u'דברים פרק ט, ז-כט - פרק י, א-י'")
     # sheets = bs4_reader(['html_sheets/{}.html'.format(x) for x in ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]])
-    parser = Nechama_Parser(u"Genesis", u"Bereshit")
+    parser = Nechama_Parser(u"Genesis", u"Bereshit", "accurate")
     parshat_bereishit = ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
     start_at = 1
+    print SEFARIA_SERVER
     parshat_bereishit = [x for x in parshat_bereishit if int(x) >= start_at]
     except_for = [x for x in parshat_bereishit if x not in ["212", "750", "1291"]]
     sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=True)
+    parser.mode = "fast"
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["212", "750", "1291"]], post=True)
+    parser.record_report()
+    print "MATCHED"
+    print parser.matches
+    print "NOT-MATCHED"
+    print parser.non_matches 
+
+
     #sheets = parser.bs4_reader(["html_sheets/{}".format(fn) for fn in os.listdir("html_sheets") if fn != 'errors.html'])
