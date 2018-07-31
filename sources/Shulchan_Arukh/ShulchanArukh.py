@@ -4,7 +4,7 @@ import re
 import codecs
 from bs4 import BeautifulSoup, Tag
 from xml.sax.saxutils import escape, unescape
-from data_utilities.util import Singleton, getGematria, numToHeb, he_ord, he_num_to_char
+from data_utilities.util import Singleton, getGematria, numToHeb, he_ord, he_num_to_char, PlaceHolder
 
 """
 This module describes an object module for parsing the Shulchan Arukh and it's associated commentaries. The classes
@@ -957,7 +957,6 @@ class Siman(OrderedElement):
         return rendered_seifim
 
 
-
 class Seif(OrderedElement):
     name = 'seif'
     parent = 'Siman'
@@ -970,7 +969,6 @@ class Seif(OrderedElement):
 
     def get_child(self):
         return [TextElement(c) for c in self.Tag.children]
-
 
     def format_text(self, start_special, end_special, name):
         """
@@ -1059,6 +1057,79 @@ class Seif(OrderedElement):
                 add_formatted_text(element_words, element_name=name)
             else:
                 add_formatted_text(element_words, element_name=u'reg-text')
+
+    # todo combine this method and format_text into one
+    def format_text_multiple(self, pattern_list):
+        """
+        Use for multiple text formats within a single seif.
+        :param pattern_list: list of dictionaries with keys:
+        {
+          "name": format tag name to be associated with this pattern,
+          "start": regex pattern to identify start,
+          "end": " regex pattern to identify end
+        }
+        :return:
+        """
+        def add_formatted_text(words, element_name):
+            if len(words) == 0:
+                return
+            else:
+                self.add_special(u' '.join(words), element_name)
+
+        assert self.Tag.string is not None
+        text_array = self.Tag.string.extract().split()
+        holder = PlaceHolder()
+        start_pattern = u'|'.join([u'(?P<{}>{})'.format(p['name'], p['start']) for p in pattern_list])
+        end_pattern = u'|'.join([u'(?P<{}>{})'.format(p['name'], p['end']) for p in pattern_list])
+
+        is_special, current_name = False, u'reg-text'
+        element_words = []
+        for word in text_array:
+            if holder(re.search(start_pattern, word)):
+                if is_special:
+                    print u" ".join(text_array)
+                    raise AssertionError(u'Seif {}: Two consecutive formatting patterns found'.format(self.num))
+                else:
+                    split_by_pattern = re.split(holder.group(), word)  # split on the characters that match the regex
+                    assert len(split_by_pattern) == 2
+
+                if split_by_pattern[0] != u'':
+                    element_words.append(split_by_pattern[0])
+
+                if len(element_words) > 0:
+                    if u'' in split_by_pattern:
+                        element_words.append(u'')
+                    self.add_special(u' '.join(element_words), name=current_name)
+
+                if split_by_pattern[1] != u'':
+                    element_words = [split_by_pattern[1]]
+                else:
+                    element_words = []
+                is_special = True
+                current_name = holder.lastgroup
+
+            elif holder(re.search(end_pattern, word)):
+                assert is_special and holder.lastgroup == current_name
+                split_by_pattern = re.split(holder.group(), word)
+                assert len(split_by_pattern) == 2
+                if split_by_pattern[0] != u'':
+                    element_words.append(split_by_pattern[0])
+
+                assert len(element_words) > 0
+                if u'' in split_by_pattern:
+                    element_words.append(u'')
+                self.add_special(u' '.join(element_words), name=current_name)
+                is_special, current_name = False, u'reg-text'
+
+                if split_by_pattern[1] != u'':
+                    element_words = [split_by_pattern[1]]
+                else:
+                    element_words = []
+
+            else:
+                element_words.append(word)
+        else:
+            add_formatted_text(element_words, current_name)
 
     def set_rid(self, base_id, com_id, siman_num, cyclical=False, order=None):
         """
