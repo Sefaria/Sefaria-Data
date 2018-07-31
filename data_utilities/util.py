@@ -1242,3 +1242,32 @@ def set_ranges_between_refs(refs, section_ref):
                 new_range = ref.to(Ref(_obj=d))
         ranged_refs.append(new_range)
     return ranged_refs
+
+
+class PlaceHolder(object):
+    """
+    Useful for holding on to a variable without having to declare a name for them. Particulalrly useful for running a
+    method and then using the result only if the method was successful.
+
+    Example (uses re module)
+    my_search = re.search(some_pattern, some_string)
+    if my_search:
+        print my_search.group()
+    Becomes:
+    holder = PlaceHolder()
+    if holder(re.search(some_pattern, some_string)):
+        print holder.group()
+
+    """
+    def __init__(self):
+        self._obj_store = None
+
+    def __call__(self, _obj):
+        self._obj_store = _obj
+        return _obj
+
+    def __getattr__(self, item):
+        return getattr(self._obj_store, item)
+
+    def get_stored_item(self):
+        return self._obj_store

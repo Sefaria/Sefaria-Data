@@ -36,16 +36,16 @@ class Sheet(object):
         self.header_links = None  # this will link to other  nechama sheets (if referred).
         self.quotations = []  # last one in this list is the current ref
         self.current_section = 0
-        self.div_sections = [] #BeautifulSoup objects that will eventually become converted into Section objects stored in self.sections
+        self.div_sections = [] # BeautifulSoup objects that will eventually become converted into Section objects stored in self.sections
         self.sections = []
         self.sources = []
 
 
-    def create_sources_from_segments(self):
-        for section in self.sections:
-            for segment in section.segment_objects:
+    def create_sheetsources_from_objsource(self):
+        for isection, section in enumerate(self.sections):
+            for isegment, segment in enumerate(section.segment_objects):
                 if isinstance(segment, Source):
-                   parser.try_parallel_matcher(segment)
+                    parser.try_parallel_matcher(segment)
                 self.sources.append(segment.create_source())
 
 
@@ -601,8 +601,17 @@ class Nechama_Parser:
 
     def check_reduce_sources(self, comment, ref):
         n = len(re.split(u'\s+', comment))
-        pm = ParallelMatcher(self.tokenizer, dh_extract_method = None, ngram_size=3, max_words_between=4, min_words_in_match =int(round(n*0.5)),
-        min_distance_between_matches=0, all_to_all=False, parallelize = False, verbose = False, calculate_score = self.get_score)
+        if n<=5:
+            ngram_size = n
+            max_words_between = 1
+            min_words_in_match = n
+        else:
+            ngram_size = 3
+            max_words_between = 4
+            min_words_in_match = int(round(n*0.5))
+
+        pm = ParallelMatcher(self.tokenizer, dh_extract_method=None, ngram_size=ngram_size, max_words_between=max_words_between, min_words_in_match=min_words_in_match,
+        min_distance_between_matches=0, all_to_all=False, parallelize=False, verbose=False, calculate_score=self.get_score)
         new_ref = pm.match(tc_list=[ref.text('he'), (comment, 1)], return_obj=True)
         return new_ref
 
@@ -667,7 +676,7 @@ class Nechama_Parser:
             sheet.div_sections.extend([v for k, v in body_dict.items() if re.search(u'ContentSection_\d', k)]) # check that these come in in the right order
             sheet.sheet_remark = body_dict['sheetRemark'].text
             sheet.parse_as_text()
-            sheet.create_sources_from_segments()
+            sheet.create_sheetsources_from_objsource()
             if post:
                 sheet.prepare_sheet()
         print "index_not_found"
