@@ -34,7 +34,20 @@ for vol_num in range(1, 5):
     for e in errors:
         print e
     volume.validate_seifim()
-    errors = volume.format_text(u'@32', u'@33', u'dh')
+    pattern_list = [
+        {
+            u'name': u'dh',
+            u'start': u'@32',
+            u'end': u'@33'
+        },
+        {
+            u'name': u'small',
+            u'start': u'@77',
+            u'end': u'@55'
+        }
+    ]
+    # errors = volume.format_text(u'@32', u'@33', u'dh')
+    errors = volume.format_text_multiple(pattern_list)
     for e in errors:
         print e
 

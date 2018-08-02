@@ -665,6 +665,16 @@ class Volume(OrderedElement):
                 errors.append(e.message)
         return errors
 
+    def format_text_multiple(self, pattern_list):
+        errors = []
+        for siman in self.get_child():
+            assert isinstance(siman, Siman)
+            try:
+                siman.format_text_multiple(pattern_list)
+            except AssertionError as e:
+                errors.append(e.message)
+        return errors
+
     def mark_references(self, commentary_id, pattern, group=None, cyclical=False):
         for child in self.get_child():
             child.mark_references(self.get_book_id(), commentary_id, pattern, group=group, cyclical=cyclical)
@@ -857,6 +867,14 @@ class Siman(OrderedElement):
             assert isinstance(seif, Seif)
             try:
                 seif.format_text(start_special, end_special, name)
+            except AssertionError as e:
+                raise AssertionError('Siman {}, {}'.format(self.num, e.message))
+
+    def format_text_multiple(self, pattern_list):
+        for seif in self.get_child():
+            assert isinstance(seif, Seif)
+            try:
+                seif.format_text_multiple(pattern_list)
             except AssertionError as e:
                 raise AssertionError('Siman {}, {}'.format(self.num, e.message))
 
@@ -1203,7 +1221,7 @@ class Seif(OrderedElement):
         seif_text = re.sub(u'(<i data-commentator.*?></i>) +', ur'\1', seif_text)  # Remove space between text and itag
         seif_text = seif_text.replace(u'\n', u' ')
         seif_text = seif_text.replace(u'*', u'')
-        seif_text = re.sub(ur'([^ ](?=\())|(\)(?=[^ ]))', ur'\g<0> ', seif_text)  # Parenthesis have spaces before and after
+        seif_text = re.sub(ur'([^> ](?=\())|(\)(?=[^ ]))', ur'\g<0> ', seif_text)  # Parenthesis have spaces before and after (skip if at beginning of html element)
         seif_text = re.sub(ur'\( | +[:)]', lambda x: x.group(0).replace(u' ', u''), seif_text)  # No spaces padding parenthesis or colon
         seif_text = re.sub(u' +(</[^\u05d0-\u05ea ]*>:?)$', ur'\g<1>', seif_text)  # clean up spaces before the final html closing tag
         seif_text = re.sub(u' {2,}', u' ', seif_text)
@@ -1334,8 +1352,10 @@ class TextElement(Element):
             return u'<small>{}</small>'.format(u''.join(text_list))
         elif self.Tag.name == u'dh':
             return u'<b>{}</b>'.format(u''.join(text_list))
-        else:
+        elif self.Tag.name == u'reg-text':
             return u''.join(text_list)
+        else:
+            return u'<{}>{}</{}>'.format(self.Tag.name, u''.join(text_list), self.Tag.name)
 
 
 class Xref(Element):

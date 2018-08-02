@@ -85,6 +85,7 @@ def clean_spaces(func):
         s = re.sub(u'\s+$', u'', s)
         s = re.sub(u'^\s+', u'', s)
         s = re.sub(u'\s+([^\u05d0-\u05ea])$', u'\g<1>', s)
+        s = re.sub(u'>\s', u'>', s)
         return s
     return new_func
 
@@ -105,19 +106,34 @@ def clean_taz(ja):
     generic_cleaner(ja, clean)
 
 
+def clean_beer(ja):
+    @clean_spaces
+    def clean(s):
+        return re.sub(u'\?', u'', s)
+    generic_cleaner(ja, clean)
+
+
+def clean_gra(ja):
+    generic_cleaner(ja, clean_spaces(lambda x: x))
+
+
 root.populate_comment_store()
 commentaries = root.get_commentaries()
-taz = commentaries.get_commentary_by_title('Turei Zahav')
-my_text = taz.render()
-clean_taz(my_text)
+gra = commentaries.get_commentary_by_title("Beur HaGra")
+my_text = gra.render()
+clean_beer(my_text)
+problems = []
 import bleach
 my_weird_chars = Counter()
 for sec_num, section in enumerate(my_text):
     for seg_num, segment in enumerate(section):
         stuff = re.findall(u'''[^\u05d0-\u05ea\s()\[\],:."'\-]''', bleach.clean(segment, tags=[], strip=True))
         if len(stuff) > 0:
-            print sec_num+1, seg_num+1
+            problems.append((sec_num+1, seg_num+1))
         my_weird_chars.update(stuff)
 for i, j in my_weird_chars.items():
     print i, j
-print my_text[334][3]
+for i, j in problems:
+    print i, j
+clean_gra(my_text)
+print my_text[339][24]
