@@ -12,7 +12,6 @@ from sources.Shulchan_Arukh.ShulchanArukh import *
 
 root_dir = loc(loc(loc(os.path.abspath(__file__))))
 xml_loc = os.path.join(root_dir, 'Yoreh_Deah.xml')
-root = Root(xml_loc)
 
 
 def get_alt_struct(book_title):
@@ -29,13 +28,14 @@ def get_alt_struct(book_title):
         node.add_primary_titles(row['en'], row['he'])
         node.wholeRef = re.sub(u"Shulchan Arukh, Yoreh De'ah", book_title, row['reference'])
         node.includeSections = True
+        node.depth = 0
         root_node.append(node)
     return root_node.serialize()
 
 
 def shulchan_arukh_index(server='http://localhost:8000', *args, **kwargs):
     original_index = functions.get_index_api(u"Shulchan Arukh, Yoreh De'ah", server=server)
-    alt_struct = get_alt_struct(u"Shulchan Arukh, Yorhe De'ah")
+    alt_struct = get_alt_struct(u"Shulchan Arukh, Yoreh De'ah")
     if 'alt_structs' not in original_index:
         original_index['alt_structs'] = {}
     original_index['alt_structs']['Topic'] = alt_struct
@@ -156,10 +156,13 @@ def shach_index(en_title, he_title, commentator):
     safek_alt = ArrayMapNode()
     safek_alt.add_primary_titles(u"S'fek S'feka", u"דיני ספק ספקא")
     safek_alt.wholeRef = u"{} 110".format(en_title)
+    safek_alt.depth = 0
+    safek_alt.includeSections = True
     alt_root.append(safek_alt)
     summary_alt = ArrayMapNode()
     safek_alt.add_primary_titles(u"S'fek S'feka Summary", u'דיני ספק ספקא בקצרה')
     summary_alt.wholeRef = u"{}, S'fek S'feka Summary".format(en_title)
+    summary_alt.depth = 0
     alt_root.append(safek_alt)
 
     return {
@@ -188,21 +191,71 @@ def commentary_index(en_title, he_title, commentator):
         }
 
 
-root.populate_comment_store()
-commentaries = root.get_commentaries()
-thing = commentaries.get_commentary_by_title("Siftei Kohen")
-my_text = thing.render()
-shach_clean(my_text)
-problems = []
-import bleach
-my_weird_chars = Counter()
-for sec_num, section in enumerate(my_text):
-    for seg_num, segment in enumerate(section):
-        stuff = re.findall(u'''[^\u05d0-\u05ea\s()\[\],:."'\-]''', bleach.clean(u'\n'.join(segment), tags=[], strip=True))
-        if len(stuff) > 0:
-            problems.append((sec_num, seg_num))
-        my_weird_chars.update(stuff)
-print len(problems)
-for i, j in my_weird_chars.items():
-    print i, j
+def shach_sfek_sefeka():
+    return
 
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-t", "--title", default=None)
+    parser.add_argument("-s", "--server", default="http://localhost:8000")
+    parser.add_argument("-a", "--add_term", action="store_true", default=False)
+    parser.add_argument("-v", "--verbose", action="store_true", default=False)
+    user_args = parser.parse_args()
+
+    base_text = u"Shulchan Arukh, Yoreh Deah"
+    he_base_text = u"שולחן ערוך יורה דעה"
+
+    root = Root(xml_loc)
+    root.populate_comment_store()
+
+    if user_args.title is None:  # This is the Shulchan Arukh
+        book_name, he_book_name = base_text, he_base_text
+        book_ja = root.get_base_text().render()
+        base_post_parse(book_ja)
+        index = shulchan_arukh_index(user_args.server)
+        links = []
+
+    else:
+        book_name = u"{} on {}".format(user_args.title, base_text)
+        book_xml = root.get_commentaries().get_commentary_by_title(user_args.title)
+        book_ja = book_xml.render()
+        he_book_name = u"{} על {}".format(book_xml.titles['he'], he_base_text)
+        links = book_xml.collect_links()
+        index = commentary_index(book_name, he_book_name, user_args.title)
+        if user_args.title == u'Siftei Kohen':
+            shach_clean(book_ja)
+        elif user_args.title == u'Turei Zahav':
+            clean_taz(book_ja)
+        else:
+            remove_question_marks(book_ja)
+
+        if user_args.add_term:
+            functions.add_term(user_args.title, book_xml.titles['he'], server=user_args.server)
+        functions.add_category(user_args.title, index['categories'], server=user_args.server)
+
+    if user_args.verbose:
+        print index
+    functions.post_index(index, server=user_args.server)
+
+    version = {
+        "versionTitle": "Shulchan Arukh, Yoreh Deah Lemberg PlaceHolder VersionTitle",
+        "versionSource": "Change Me!!!!",
+        "language": "he",
+        "text": book_ja
+    }
+    if user_args.title == u'Siftei Kohen':
+        pass
+    else:
+        functions.post_text(book_name, version, index_count="on", server=user_args.server)
+
+    flags = dict(versionTitleInHebrew=u"למברג יורה דעה אבל צריך לעדכן את הכותרת הזאת")
+    if user_args.title is None:
+        flags['priority'] = 2
+    functions.post_flags(dict(ref=book_name, lang='he', vtitle=version['versionTitle']), flags, user_args.server)
+
+    if links:
+        functions.post_link(links, server=user_args.server)
+
+    requests.post(os.environ["SLACK_URL"], json={"text": "{} Upload Complete".format(
+        user_args.title if user_args.title else "Shulchan Arukh, Yoreh Deah")})
