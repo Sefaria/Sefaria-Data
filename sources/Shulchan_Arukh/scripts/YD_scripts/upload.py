@@ -42,6 +42,13 @@ def shulchan_arukh_index(server='http://localhost:8000', *args, **kwargs):
     return original_index
 
 
+def commentary_schema(en_title, he_title):
+    jnode = JaggedArrayNode()
+    jnode.add_primary_titles(en_title, he_title)
+    jnode.add_structure([u"Siman", u"Seif"])
+    return jnode.serialize()
+
+
 def add_siman_headers(ja):
     xml_simanim = root.get_base_text().get_simanim()
     text_simanim = iter(ja)
@@ -106,34 +113,96 @@ def clean_taz(ja):
     generic_cleaner(ja, clean)
 
 
-def clean_beer(ja):
+def remove_question_marks(ja):
+    """
+    Used for:
+    Be'er HaGolah
+    Beur HaGrah
+    Pithei Teshuva
+    Torat HaShalmim
+    Nekudat HaKesef
+    """
     @clean_spaces
     def clean(s):
         return re.sub(u'\?', u'', s)
     generic_cleaner(ja, clean)
 
 
-def clean_gra(ja):
-    generic_cleaner(ja, clean_spaces(lambda x: x))
+def shach_clean(ja):
+    @clean_spaces
+    def clean(s):
+        s = re.sub(u'\?', u'', s)
+        s = re.sub(u'\u05f4', u'"', s)
+        return s
+    generic_cleaner(ja, clean)
+    generic_cleaner(ja, lambda x: re.split(u'~seg~', x))
+
+
+def shach_index(en_title, he_title, commentator):
+    root_node = SchemaNode()
+    root_node.add_primary_titles(en_title, he_title)
+    d_node = JaggedArrayNode()
+    d_node.key = 'default'
+    d_node.default = True
+    d_node.add_structure(["Siman", "Seif", "Paragraph"])
+    root_node.append(d_node)
+
+    safek_node = JaggedArrayNode()
+    safek_node.add_primary_titles(u"S'fek S'feka Summary", u'דיני ספק ספקא בקצרה')
+    safek_node.add_structure([u'Seif'])
+    root_node.append(safek_node)
+
+    alt_root = SchemaNode(get_alt_struct(en_title))
+    safek_alt = ArrayMapNode()
+    safek_alt.add_primary_titles(u"S'fek S'feka", u"דיני ספק ספקא")
+    safek_alt.wholeRef = u"{} 110".format(en_title)
+    alt_root.append(safek_alt)
+    summary_alt = ArrayMapNode()
+    safek_alt.add_primary_titles(u"S'fek S'feka Summary", u'דיני ספק ספקא בקצרה')
+    summary_alt.wholeRef = u"{}, S'fek S'feka Summary".format(en_title)
+    alt_root.append(safek_alt)
+
+    return {
+        u"title": en_title,
+        u"categories": [u"Halakhah", u"Shulchan Arukh", u"Commentary", commentator],
+        u"dependence": u"Commentary",
+        u"collective_title": commentator,
+        u"alt_structs": {u"Topic": alt_root.serialize()},
+        u"schema": root_node.serialize(),
+        u"base_text_titles": [u"Shulchan Arukh, Yoreh Deah"]
+    }
+
+
+def commentary_index(en_title, he_title, commentator):
+    if commentator == u'Siftei Kohen':
+        return shach_index(en_title, he_title, commentator)
+    else:
+        return {
+            u"title": en_title,
+            u"categories": [u"Halakhah", u"Shulchan Arukh", u"Commentary", commentator],
+            u"dependence": u"Commentary",
+            u"collective_title": commentator,
+            u"alt_structs": {u"Topic": get_alt_struct(en_title)},
+            u"schema": commentary_schema(en_title, he_title),
+            u"base_text_titles": [u"Shulchan Arukh, Yoreh Deah"]
+        }
 
 
 root.populate_comment_store()
 commentaries = root.get_commentaries()
-gra = commentaries.get_commentary_by_title("Beur HaGra")
-my_text = gra.render()
-clean_beer(my_text)
+thing = commentaries.get_commentary_by_title("Siftei Kohen")
+my_text = thing.render()
+shach_clean(my_text)
 problems = []
 import bleach
 my_weird_chars = Counter()
 for sec_num, section in enumerate(my_text):
     for seg_num, segment in enumerate(section):
-        stuff = re.findall(u'''[^\u05d0-\u05ea\s()\[\],:."'\-]''', bleach.clean(segment, tags=[], strip=True))
+        stuff = re.findall(u'''[^\u05d0-\u05ea\s()\[\],:."'\-]''', bleach.clean(u'\n'.join(segment), tags=[], strip=True))
         if len(stuff) > 0:
-            problems.append((sec_num+1, seg_num+1))
+            problems.append((sec_num, seg_num))
         my_weird_chars.update(stuff)
+print len(problems)
 for i, j in my_weird_chars.items():
     print i, j
-for i, j in problems:
-    print i, j
-clean_gra(my_text)
-print my_text[339][24]
+
