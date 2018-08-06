@@ -1326,7 +1326,7 @@ class TextElement(Element):
         def repl(s):
             data_order = order_callback(s.group(order_group))
             data_label = s.group(label_group)
-            return escape(u'<i data-commentator="{}" data-order="{}" data-label="{}"</i>'.
+            return escape(u'<i data-commentator="{}" data-order="{}" data-label="{}"></i>'.
                           format(commentator, data_order, data_label))
 
         # Make sure pattern will not touch the existing xrefs
