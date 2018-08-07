@@ -119,7 +119,7 @@ def remove_question_marks(ja):
     Be'er HaGolah
     Beur HaGrah
     Pithei Teshuva
-    Torat HaShalmim
+    Torat HaShlamim
     Nekudat HaKesef
     """
     @clean_spaces
@@ -145,6 +145,7 @@ def shach_index(en_title, he_title, commentator):
     d_node.key = 'default'
     d_node.default = True
     d_node.add_structure(["Siman", "Seif", "Paragraph"])
+    d_node.toc_zoom = 2
     root_node.append(d_node)
 
     safek_node = JaggedArrayNode()
@@ -160,10 +161,10 @@ def shach_index(en_title, he_title, commentator):
     safek_alt.includeSections = True
     alt_root.append(safek_alt)
     summary_alt = ArrayMapNode()
-    safek_alt.add_primary_titles(u"S'fek S'feka Summary", u'דיני ספק ספקא בקצרה')
+    summary_alt.add_primary_titles(u"S'fek S'feka Summary", u'דיני ספק ספקא בקצרה')
     summary_alt.wholeRef = u"{}, S'fek S'feka Summary".format(en_title)
     summary_alt.depth = 0
-    alt_root.append(safek_alt)
+    alt_root.append(summary_alt)
 
     return {
         u"title": en_title,
@@ -172,7 +173,7 @@ def shach_index(en_title, he_title, commentator):
         u"collective_title": commentator,
         u"alt_structs": {u"Topic": alt_root.serialize()},
         u"schema": root_node.serialize(),
-        u"base_text_titles": [u"Shulchan Arukh, Yoreh Deah"]
+        u"base_text_titles": [u"Shulchan Arukh, Yoreh De'ah"]
     }
 
 
@@ -187,12 +188,20 @@ def commentary_index(en_title, he_title, commentator):
             u"collective_title": commentator,
             u"alt_structs": {u"Topic": get_alt_struct(en_title)},
             u"schema": commentary_schema(en_title, he_title),
-            u"base_text_titles": [u"Shulchan Arukh, Yoreh Deah"]
+            u"base_text_titles": [u"Shulchan Arukh, Yoreh De'ah"]
         }
 
 
 def shach_sfek_sefeka():
-    return
+    commentaries = root.get_commentaries()
+    shach = commentaries.get_commentary_by_title(u"Siftei Kohen")
+    sfek_tag = shach.Tag.find("Sfek_Sfeka_Summary")
+    sfek_tag['num'] = 1
+    sfek_siman = Siman(sfek_tag)
+    sfek_siman.mark_seifim(u'@11([\u05d0-\u05ea]{1,3})')
+    sfek_siman.validate_seifim()
+    sfek_siman.format_text(u'@32', u'@33', u'dh')
+    return sfek_siman.render()
 
 
 if __name__ == '__main__':
@@ -201,9 +210,10 @@ if __name__ == '__main__':
     parser.add_argument("-s", "--server", default="http://localhost:8000")
     parser.add_argument("-a", "--add_term", action="store_true", default=False)
     parser.add_argument("-v", "--verbose", action="store_true", default=False)
+    parser.add_argument("-n", "--no_slack", action="store_true", default=False)
     user_args = parser.parse_args()
 
-    base_text = u"Shulchan Arukh, Yoreh Deah"
+    base_text = u"Shulchan Arukh, Yoreh De'ah"
     he_base_text = u"שולחן ערוך יורה דעה"
 
     root = Root(xml_loc)
@@ -222,6 +232,12 @@ if __name__ == '__main__':
         book_ja = book_xml.render()
         he_book_name = u"{} על {}".format(book_xml.titles['he'], he_base_text)
         links = book_xml.collect_links()
+        if user_args.title == u'Nekudat HaKesef':
+            for link in links:
+                link['refs'][0] = re.sub(u'Turei Zahav|Siftei Kohen', u'\g<0> on {}'.format(base_text), link['refs'][0])
+                link['refs'][1] = re.sub(u'Turei Zahav|Siftei Kohen', base_text, link['refs'][1])
+            print links[0]['refs']
+
         index = commentary_index(book_name, he_book_name, user_args.title)
         if user_args.title == u'Siftei Kohen':
             shach_clean(book_ja)
@@ -239,13 +255,15 @@ if __name__ == '__main__':
     functions.post_index(index, server=user_args.server)
 
     version = {
-        "versionTitle": "Shulchan Arukh, Yoreh Deah Lemberg PlaceHolder VersionTitle",
+        "versionTitle": "Shulchan Arukh, Yoreh De'ah Lemberg PlaceHolder VersionTitle",
         "versionSource": "Change Me!!!!",
         "language": "he",
         "text": book_ja
     }
     if user_args.title == u'Siftei Kohen':
-        pass
+        functions.post_text(book_name, version, server=user_args.server)
+        version["text"] = shach_sfek_sefeka()
+        functions.post_text(u"{}, {}".format(book_name, u"S'fek S'feka Summary"), version, index_count="on", server=user_args.server)
     else:
         functions.post_text(book_name, version, index_count="on", server=user_args.server)
 
@@ -257,5 +275,8 @@ if __name__ == '__main__':
     if links:
         functions.post_link(links, server=user_args.server)
 
-    requests.post(os.environ["SLACK_URL"], json={"text": "{} Upload Complete".format(
-        user_args.title if user_args.title else "Shulchan Arukh, Yoreh Deah")})
+    if user_args.no_slack:
+        pass
+    else:
+        requests.post(os.environ["SLACK_URL"], json={"text": u"{} Upload Complete".format(
+            user_args.title if user_args.title else u"Shulchan Arukh, Yoreh De'ah")})

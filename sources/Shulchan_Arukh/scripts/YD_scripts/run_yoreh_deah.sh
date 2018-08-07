@@ -11,7 +11,7 @@ echo "Pithei Teshuva"
 python ./YD_Pithei.py
 echo "Beur HaGra"
 python ./YD_gra.py
-echo "Torat HaShalmim"
+echo "Torat HaShlamim"
 python ./YD_torat_hashalmim.py
 echo "Beer HaGolah"
 python ./beer_hagolah.py

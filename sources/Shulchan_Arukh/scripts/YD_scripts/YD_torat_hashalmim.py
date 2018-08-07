@@ -11,7 +11,7 @@ filename = os.path.join(root_dir, u"txt_files/Yoreh_Deah/part_3/תורת השל�
 
 root = Root(xml_loc)
 commentaries = root.get_commentaries()
-torat = commentaries.get_commentary_by_title(u"Torat HaShalmim")
+torat = commentaries.get_commentary_by_title(u"Torat HaShlamim")
 assert isinstance(torat, Commentary)
 torat.remove_volume(3)
 with codecs.open(filename, 'r', 'utf-8') as fp:
