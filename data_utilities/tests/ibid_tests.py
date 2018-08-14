@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import django
+django.setup()
 
 from sefaria.model import *
 from data_utilities.ibid import *
@@ -14,8 +16,8 @@ def setup_module(module):
 def test_smag_sham():
     tracker = em_tracker
 
-    line1 = Ref('Sefer Mitzvot Gadol, Volume One 290')
-    index1 = 'Sefer Mitzvot Gadol, Volume One'
+    line1 = Ref('Sefer Mitzvot Gadol, Negative Commandments 290')
+    index1 = 'Sefer Mitzvot Gadol, Negative Commandments'
     sections1 = line1.sections
 
     index2 = None
@@ -24,7 +26,7 @@ def test_smag_sham():
     tracker.resolve(index1, sections1)
     resolved2 = tracker.resolve(index2, sections2)
 
-    assert resolved2 == Ref('Sefer Mitzvot Gadol, Volume One 290')
+    assert resolved2 == Ref('Sefer Mitzvot Gadol, Negative Commandments 290')
 
 
 def test_shulchan_arukh():
@@ -349,6 +351,14 @@ def test_ibid_alttitle_br():
     string = u''' ובבראשית רבה (לט ז) ואשר אמרו עוד (בב"ר שם) בתחילה'''
     refs, _, _ = inst.find_in_segment(string)
     assert refs == [Ref('Bereishit Rabbah 39:7'), Ref('Bereishit Rabbah 39:7')]
+
+    string = u''' מדרש רבה בראשית (לט ז) ואשר אמרו עוד (בב"ר שם) בתחילה'''
+    refs, _, _ = inst.find_in_segment(string)
+    assert refs == [Ref('Bereishit Rabbah 39:7'), Ref('Bereishit Rabbah 39:7')]
+
+    string = u'''רש"י על בראשית כ א'''
+    refs, _, _ = inst.find_in_segment(string)
+    assert refs == [Ref('Rashi on Genesis 20:1')]
 
 class TestIndexIbidFinder:
 

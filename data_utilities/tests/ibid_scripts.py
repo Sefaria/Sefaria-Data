@@ -334,6 +334,41 @@ def check_apperence_alt_titles(alt_titles):
 def reurl(st):
     return re.sub('_', ' ', st)
 
+def run_shaminator_for_outsidetext(chaimjasonfile):
+    """
+    this code was written specificaly to read and write to Chaim's json files of Topics from Aspaclaria's db parsing
+    :param chaimjasonfile: Chaim intern 2018
+    :return:
+    """
+    inst = CitationFinder()
+    dead_ind = library.get_index("Genesis")
+    resolver = IndexIbidFinder(dead_ind)
+    l = 0
+
+    with codecs.open(chaimjasonfile, encoding="utf8") as rfp:
+        cnt = 0
+        # data = json.loads(rfp.read())
+        alldata = json.loads(rfp.read())
+        keys = alldata.keys()[0:3]
+        data = {}
+        for k in keys:
+            data[k] = alldata[k]
+        for k, topic in data.items():
+            cnt +=1
+            if cnt > 3:
+                break
+            citations = topic["RelatedSources"]
+            l += len(citations)
+            for i, cit in enumerate(citations):
+                cit = re.sub(u'פרק', u'', cit)
+                cit = u"("+cit+u")"
+                refs, locations, types = resolver.find_in_segment(cit)
+                print cit, refs[0].normal() if refs else []
+                topic["RelatedSources"][i] = (topic["RelatedSources"][i], refs[0].normal() if refs else [])
+
+    with codecs.open('resolved_asp.json', mode='w', encoding="utf8") as wfp:
+        json.dump(data, wfp)
+    print l
 
 if __name__ == "__main__":
     # inst = CitationFinder()
@@ -341,7 +376,7 @@ if __name__ == "__main__":
     # title = u'ר"ה'
     # node = library.get_schema_node(title, 'he')
     # sham_items = count_regex_in_all_db(inst.get_ultimate_title_regex(title, None, 'he'), text = 'all', example_num=example_num) #, text = 'Ramban on Genesis')
-    #sham_items = count_regex_in_all_db(example_num=example_num)
+    # sham_items = count_regex_in_all_db(example_num=example_num)
     # make_csv(sham_items, example_num, filename='alt_title_{}.csv'.format(title))
     # alt_titles_lst = [item for lst in rambam_alt_names().values() for item in lst]
     # check_apperence_alt_titles(u'ד"ה')
@@ -368,8 +403,8 @@ if __name__ == "__main__":
     #     run_shaminator([u'Ramban on {}'.format(humash)],  with_real_refs=True)
     # segment_ibid_finder(u'Ramban on Genesis 4:32:1')
     # validate_alt_titles()
-    run_shaminator([reurl(u"Ramban on Deuteronomy")], with_real_refs=True, SEG_DIST=2)
-
+    # run_shaminator([reurl(u"Rashi on Deuteronomy")], with_real_refs=True, SEG_DIST=2)
+    run_shaminator_for_outsidetext("aspakdictbook5.json")
 
 
 

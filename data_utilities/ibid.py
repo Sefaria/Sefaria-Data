@@ -241,7 +241,7 @@ class CitationFinder():
         REF_SCOPE = 7
         title_sham = u'שם'
         non_ref_titles = [u'לעיל', u'להלן', u'דף']
-        ignore_titles = [u'משנה', u'ירושלמי', u'תוספתא'] #, u'רש"י'] # see Ramban on Genesis 40:16:1
+        ignore_titles = [u'משנה', u'ירושלמי', u'תוספתא'] #, u'רש"י'] # see Ramban on Genesis 40:16:1 todo: put this as an optional paramter, for parsing texts that are not complicated and don't need these precautions
         # titles = list(reversed(library.get_titles_in_string(st, lang)))
         # if title_rambam:
         #     rambam_opt = [re.findall(u'{}'.format(ram_name), st) for ram_name in title_rambam]
