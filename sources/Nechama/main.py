@@ -49,14 +49,15 @@ class Sheet(object):
                 self.sources.append(segment.create_source())
 
 
-    def prepare_sheet(self):
+    def prepare_sheet(self, add_to_title=""):
        sheet_json = {}
-       sheet_json["status"] = "public"
-       sheet_json["group"] = "Nechama Leibowitz' Source Sheets"
-       sheet_json["title"] = self.title
+       sheet_json["status"] = "public" #"private"
+       # sheet_json["group"] = "Nechama Leibowitz' Source Sheets"
+       sheet_json["title"] = u'{} - {} {}'.format(self.title, re.search('(\d+)\.', self.html).group(1), add_to_title)
        sheet_json["summary"] = u"{} ({})".format(self.en_year, self.year)
        sheet_json["sources"] = self.sources
-       sheet_json["options"] = {"numbered": 0,"assignable": 0,"layout": "sideBySide","boxed": 0,"language": "hebrew","divineNames": "noSub","collaboration": "none", "highlightMode": 0, "bsd": 0,"langLayout": "heRight"}
+       sheet_json["options"] = {"numbered": 0, "assignable": 0, "layout": "sideBySide", "boxed": 0, "language": "hebrew", "divineNames": "noSub", "collaboration": "none", "highlightMode": 0, "bsd": 0, "langLayout": "heRight"}
+       sheet_json["tags"] = []
        post_sheet(sheet_json, server=parser.server)
 
 
@@ -119,37 +120,52 @@ class Sheet(object):
         return r
 
     def parse_as_text(self):
-        intro_segment = intro_tuple = None
+        """
+        this method loops over the bs tag obj of the sections and creates Section() objs from them
+        and then loops over Section objs crerated to init the list of Segment() objs
+        :return:
+        """
+
+        # intro_segment = intro_tuple = None
+
+        # init
         for div in self.div_sections:
             self.current_section += 1
-            new_section = Section(self.current_section, self.perakim, self.pasukim)
+            new_section = Section(self.current_section, self.perakim, self.pasukim, soupObj=div)
             assert str(self.current_section) in div['id']
-
-            if div.text.replace(" ", "") == "":
-                continue
-
-            # removes nodes with no content
-            soup_segments = new_section.get_children_with_content(div)
-
-            # blockquote is really just its children so get replace it with them
-            # and tables  need to be handled recursively
-            soup_segments = new_section.check_for_blockquote_and_table(soup_segments, level=2)
-
-            #create Segment objects out of the BeautifulSoup objects
-            new_section.classify_segments(soup_segments)
-            new_section.title = re.sub(u"<.*?>", u"", new_section.segment_objects[0].text)
             self.sections.append(new_section)
-            print u"appended {}".format(new_section.title)
+            # if div.text.replace(" ", "") == "":
+            #     continue
+
+            # # removes nodes with no content
+            # soup_segments = new_section.get_children_with_content(div)
+            #
+            # # blockquote is really just its children so get replace it with them
+            # # and tables  need to be handled recursively
+            # soup_segments = new_section.check_for_blockquote_and_table(soup_segments, level=2)
+            #
+            # #create Segment objects out of the BeautifulSoup objects
+            # new_section.classify_segments(soup_segments)
+            # new_section.title = re.sub(u"<.*?>", u"", new_section.segment_objects[0].text)
+            # new_section.letter = re.search(u"(.{1,2})\.\s", new_section.title).group(1)
+            # self.sections.append(new_section)
+            # print u"appended {}".format(new_section.title)
+
+        # init Segment() obj from bs_objs in each section
+        for section in self.sections:
+            section.add_segments(section.soupObj)
+            print u"appended {}".format(section.title)
 
 
 
 
 class Section(object):
 
-    def __init__(self, number, perakim, pasukim):
+    def __init__(self, number, perakim, pasukim, soupObj):
+        self.soupObj = soupObj
         self.number = number  # which number section am I
-        self.possible_perakim = perakim # list of perakim: the assumption is that any perek referenced will be in this list
-        self.possible_pasukim = pasukim # Ref range: the assumption is that any pasuk referenced will be inside the range
+        self.possible_perakim = perakim  # list of perakim: the assumption is that any perek referenced will be in this list
+        self.possible_pasukim = pasukim  # Ref range: the assumption is that any pasuk referenced will be inside the range
         self.letter = ""
         self.title = ""
         self.segment_objects = []  # list of Segment objs
@@ -158,6 +174,21 @@ class Section(object):
         self.current_perek = self.possible_perakim[0]
         self.current_pasuk = self.possible_pasukim.sections[-1] #the lowest pasuk in the range
 
+
+
+    def add_segments(self, div):
+
+
+        # removes nodes with no content
+        soup_segments = self.get_children_with_content(div)
+        # blockquote is really just its children so get replace it with them
+        # and tables  need to be handled recursively
+        soup_segments = self.check_for_blockquote_and_table(soup_segments, level=2)
+
+        # create Segment objects out of the BeautifulSoup objects
+        self.classify_segments(soup_segments)
+        self.title = re.sub(u"<.*?>", u"", self.segment_objects[0].text)
+        self.letter = re.search(u"(.{1,2})\.\s", self.title).group(1)
 
     def classify_segments(self, soup_segments):
         """
@@ -168,18 +199,22 @@ class Section(object):
         ("Nechama", text, "")
         If Rashi:
         ("Rashi", text, ref_to_rashi)
-        :param segments:
+        :param soup_segments:
         :return:
         """
         current_source = None
         for i, segment in enumerate(soup_segments):
             relevant_text = self.format(self.relevant_text(segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
-            if i == 0:
+            if i == 0 and not self.segment_objects:
                 self.segment_objects.append(Header(segment))
-                assert Header.is_header(segment), "Header should be first."
+                # assert Header.is_header(segment), "Header should be first."
                 continue
             if Question.is_question(segment):
-                self.segment_objects.append(Question(segment))
+                nested_seg = Question.nested(segment)
+                if nested_seg:
+                    self.add_segments(nested_seg)
+                else:  # not nested q so should append this q, otherwise it is a nested q. so it shouldn't be appended cause the children will be appended
+                    self.segment_objects.append(Question(segment))
             elif Table.is_table(segment):  # these tables we want as they are so just str(segment)
                 self.segment_objects.append(Table(segment))
             elif Source.is_source_text(segment, parser.important_classes):
@@ -217,7 +252,8 @@ class Section(object):
         if poss_title in parser.term_mapping:
             parser._term_cache[poss_title] = parser.term_mapping[poss_title]
             return parser._term_cache[poss_title]
-
+        if [re.search(title, poss_title) for title in parser.has_parasha] != [None]:
+            poss_title = self.ignore_parasha_name(poss_title)
         term = Term().load({"titles.text": poss_title})
         if poss_title in library.full_title_list('he'):
             parser._term_cache[poss_title] = library.get_index(poss_title).title
@@ -230,6 +266,12 @@ class Section(object):
                 return parser._term_cache[poss_title]
         parser._term_cache[poss_title] = None
         return None
+
+    def ignore_parasha_name(self, string):
+        parasha_found = [x in string for x in library.get_term_dict('he').keys()]
+        if parasha_found:
+            return re.sub(parasha_found[0], u"", string)
+        return string
 
     def get_a_tag_from_ref(self, segment, relevant_text):
         if segment.name == "a":
@@ -315,6 +357,7 @@ class Section(object):
         #     if strings[-1] not in parser.ref_not_found.keys():
         #         parser.ref_not_found[strings[-1]] = 0
         #     parser.ref_not_found[strings[-1]] += 1
+        parser.ref_not_found.extend(not_found)
         return ""
 
     def set_current_perek(self, perek, is_tanakh, sefer):
@@ -524,7 +567,7 @@ class Nechama_Parser:
     def __init__(self, en_sefer, en_parasha, mode):
         self.matches = 0
         self.non_matches = 0
-        self.mode = mode # fast or accurate
+        self.mode = mode  # fast or accurate
         self.en_sefer = en_sefer
         self.en_parasha = en_parasha
         self._term_cache = {}
@@ -534,6 +577,7 @@ class Nechama_Parser:
         self.server = SEFARIA_SERVER
         self.segment_report = UnicodeWriter(open("segment_report.csv", 'a'))
         self.section_report = UnicodeWriter(open("section_report.csv", 'a'))
+        self.has_parasha = [u"מכילתא"]
         self.term_mapping = {
             u"הכתב והקבלה": u"HaKtav VeHaKabalah, Genesis",
             u"חזקוני": u"Chizkuni, Genesis",
@@ -545,7 +589,7 @@ class Nechama_Parser:
             u"מורה נבוכים ג'": u"Guide for the Perplexed, Part 3",
             u"תנחומא": u"Midrash Tanchuma, Bereshit", # todo: put in Genesis as alt titles.
             u"בעל גור אריה": u"Gur Aryeh on Bereishit",
-            u"גור אריה": u"Gur Aryeh on Bereishit", #todo: how does this ,apping work? this name is the prime title
+            u"גור אריה": u"Gur Aryeh on Bereishit", #todo: how does this mapping work? this name is the prime title
             u"""ראב"ע""": u"Ibn Ezra on {}".format(self.en_sefer),
             u"""וראב"ע:""": u"Ibn Ezra on {}".format(self.en_sefer),
             u"עקדת יצחק": u"Akeidat Yitzchak",
@@ -559,6 +603,7 @@ class Nechama_Parser:
             u"""המלבי"ם""": u"Malbim on {}".format(self.en_sefer),
             u"משך חכמה": u"Meshech Hochma, {}".format(self.en_parasha),
             u"רבנו בחיי": u"Rabbeinu Bahya, {}".format(self.en_sefer),
+            # u"מכילתא":u""
             # u'רב סעדיה גאון': u"Saadia Gaon on {}".format(self.en_sefer) # todo: there is no Saadia Gaon on Genesis how does this term mapping work?
         }
         self.levenshtein = WeightedLevenshtein()
@@ -624,34 +669,47 @@ class Nechama_Parser:
             elif self.mode == "accurate":
                 text_to_use = current_source.text
             # todo: one Source obj for different Sefaria refs. how do we deal with this?
-            matched = self.check_reduce_sources(text_to_use, ref2check) if ref2check else [] # returns a list ordered by scores of mesorat hashas objs that were found
-            if not matched:  # no match found
-                if ref2check.is_segment_level():
-                    self.seg_ref_not_found[self.current_url].append(current_source)
+            if ref2check:
+                # print ref2check.normal(), text_to_use
+                text_to_use = text_to_use.replace('"', '').replace("'", "")
+                if len(text_to_use.split()) == 1:
+                    if strip_cantillation(text_to_use, strip_vowels=True) in strip_cantillation(ref2check.text('he').text, strip_vowels=True).split():
+                        current_source.ref = ref2check.normal()
+                        # print current_source.ref
+                    else:
+                        print "it is only one word and this is the wrong ref"
+                        return
                 else:
-                    self.sec_ref_not_found[self.current_url].append(current_source)
-                print "NO MATCH"
-                self.non_matches += 1
+                    matched = self.check_reduce_sources(text_to_use, ref2check) # returns a list ordered by scores of mesorat hashas objs that were found
+                    if not matched:  # no match found
+                        if ref2check.is_segment_level():
+                            self.seg_ref_not_found[self.current_url].append(current_source)
+                        else:
+                            self.sec_ref_not_found[self.current_url].append(current_source)
+                        print u"NO MATCH : {}".format(text_to_use)
+                        self.non_matches += 1
 
-                # we dont want to link it since there's no match found so set the ref to empty and record the fixed ref ref2check in about_source_ref
-                current_source.about_source_ref = ref2check.he_normal()
-                current_source.ref = ""
-                return
-            self.matches += 1 
-            current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[
-                0].b.ref.normal()  # because the sides change
+                        # we dont want to link it since there's no match found so set the ref to empty and record the fixed ref ref2check in about_source_ref
+                        current_source.about_source_ref = ref2check.he_normal()
+                        current_source.ref = ""
+                        return
+                    self.matches += 1
+                    current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[
+                        0].b.ref.normal()  # because the sides change
 
-            current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[0].b.ref.normal()  # because the sides change
-            if ref2check.is_section_level():
-                print '** section level ref: '.format(ref2check.normal())
-            print ref2check.normal(), current_source.ref
+                    current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[0].b.ref.normal()  # because the sides change
+                    if ref2check.is_section_level():
+                        print '** section level ref: '.format(ref2check.normal())
+                    # print ref2check.normal(), current_source.ref
+            else:
+                print u"NO ref2check {}".format(current_source.parshan_name)
         except AttributeError as e:
             print u'AttributeError: {}'.format(re.sub(u":$", u"", current_source.about_source_ref))
             parser.missing_index.add(current_source.about_source_ref)  # todo: would like to add just the <a> tag
         except IndexError as e:
             parser.missing_index.add(u'IndexError: {}'.format(re.sub(u":$", u"", ref2check.normal())))
 
-    def bs4_reader(self, file_list_names, post = True):
+    def bs4_reader(self, file_list_names, post = True, add_to_title = ""):
         """
         The main BeautifulSoup reader function, that etrates on all sheets and creates the obj, probably should be in it's own file
         :param self:
@@ -678,7 +736,7 @@ class Nechama_Parser:
             sheet.parse_as_text()
             sheet.create_sheetsources_from_objsource()
             if post:
-                sheet.prepare_sheet()
+                sheet.prepare_sheet(add_to_title)
         print "index_not_found"
         for parshan_name in parser.index_not_found:
             print parshan_name
@@ -719,14 +777,15 @@ if __name__ == "__main__":
     print SEFARIA_SERVER
     parshat_bereishit = [x for x in parshat_bereishit if int(x) >= start_at]
     except_for = [x for x in parshat_bereishit if x not in ["212", "750", "1291"]]
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=True)
+    # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=False)
     parser.mode = "fast"
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["212", "750", "1291"]], post=True)
+    # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["212", "750", "1291"]], post=True)
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["62"]], post=False, add_to_title="")
     parser.record_report()
     print "MATCHED"
     print parser.matches
     print "NOT-MATCHED"
-    print parser.non_matches 
+    print parser.non_matches
 
 
     #sheets = parser.bs4_reader(["html_sheets/{}".format(fn) for fn in os.listdir("html_sheets") if fn != 'errors.html'])

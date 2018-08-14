@@ -116,6 +116,7 @@ class Source(object):
     def add_text(self, segment, segment_class):
         segment_text = segment.text.replace("\n", "").replace("\r", "")
         self.parshan_name = segment_class
+        # print self.parshan_name
         if not self.text:
             self.text = segment_text
             return self
@@ -200,11 +201,33 @@ class Header(object):
 class Question(object):
 
     def __init__(self, segment):
-        self.number = None
-        self.letter = None
-        self.difficulty = 0
-        table_html = str(segment)
-        self.text = self.format(table_html)
+        self.number, bullet = [(t.parent.parent.select(".number")[0].text, t.find('img')) for t in segment.select(".bullet > p")][0]
+        if not bullet:
+            self.difficulty = 0
+        elif bullet.attrs['src'] == 'pages/images/hard.gif':
+            self.difficulty = 1
+        elif bullet.attrs['src'] == 'pages/images/harder.gif':
+            self.difficulty = 2
+
+        table_html = str(segment)  # todo: fix this line, why are we losing so much data here?
+        self.q_text = u"".join([s.text.strip() for s in segment.find_all('p') if not s.parent.has_attr('class')])
+        self.text = self.format()
+
+    @staticmethod
+    def nested(segment):
+        # check if nested. if so, return the data to Source to create new ones.
+        imp_contents = segment.contents[1]
+
+        q = [tag for tag in imp_contents.contents if isinstance(tag, element.Tag) and not tag.attrs][0]
+        is_nested = False
+        for e in q:
+            if isinstance(e, element.Tag) and e.find('td'):
+                is_nested = True
+                break
+
+        if is_nested:
+            return q
+        return None
 
     @staticmethod
     def is_question(segment):
@@ -216,45 +239,22 @@ class Question(object):
         source = {"outsideText": self.text}
         return source
 
-    def format(self, comment):
-        found_difficult = ""
-        # digits = re.findall("\d+\.", comment)
-        # for digit in set(digits):
-        #     comment = comment.replace(digit, "<b>"+digit + " </b>")
-        all_a_links = re.findall("(<a href.*?>(.*?)</a>)", comment)
-        for a_link_and_text in all_a_links:
-            a_link, text = a_link_and_text
-            comment = comment.replace(a_link, text)
+    def format(self, without_params=[], difficulty_symbol = [u"", u"*", u"**"]):
+        """
 
-        if "pages/images/hard.gif" in comment:
-            found_difficult += "*"
-        if "pages/images/harder.gif" in comment:
-            found_difficult += "**"
+        :param without_params: list. ex: ["difficulty", "number"]
+        :return: the text of the q the way it is presented in source sheets with/without (but for now the only way
+        to present outside sources in source sheets) the number and difficulty
+        """
+        text = self.q_text
 
-        # we need to specifically keep these tags because the "text" property will remove them so we "hide" them with nosense characters
-        tags_to_keep = ["u", "b"]
-        comment = comment.replace("<u>", "$!u$").replace("</u>", "$/!u$")
-        comment = comment.replace("<b>", "$!b$").replace("</b>", "$/!b$")
-        text = BeautifulSoup(comment, "lxml").text
+        if "number" not in without_params:
+            text= self.number + u' ' + text
+        # difficulty is first in the order
+        if "difficulty" not in without_params:
+            text = difficulty_symbol[self.difficulty] + u' ' + text
 
-        text = text.strip()
-        while "  " in text:
-            text = text.replace("  ", " ")
-
-        # following code makes sure "3.\nhello" becomes "3. hello"
-        digit = re.match(u"^.{1,2}[\)|\.]", text)
-        if digit:
-            text = text.replace(digit.group(0), u"")
-            text = text.strip()
-            text = digit.group(0) + u" " + text
-
-        # now get the tags back and remove nonsense chars
-        text = text.replace("$!u$", "<u>").replace("$/!u$", "</u>")
-        text = text.replace("$!b$", "<b>").replace("$/!b$", "</b>")
-        text = text.replace("\n", "<br/>")
-
-        return (found_difficult + text).strip()
-
+        return text
 
 class Table(object):
     ## specifically for tables in HTML that end up staying as HTML in source sheet such class="RT" or "RTBorder"
@@ -267,7 +267,7 @@ class Table(object):
         return isinstance(segment, element.Tag) and segment.attrs.get("class", "") in [["RT"], ["RTBorder"]]
 
     def create_source(self):
-        #create source for sourcesheet out of myself
+        #create source for sourcesheet out of myselfwithout_params=["number"]
         source = {"outsideText": self.text}
         return source
 
