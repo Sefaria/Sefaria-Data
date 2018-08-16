@@ -216,23 +216,30 @@ class Question(object):
             self.difficulty = 2
 
         table_html = str(segment)  # todo: fix this line, why are we losing so much data here?
+        segs = [s for s in segment.find_all('p') if not s.parent.has_attr('class')]
+        any([s.attrs for s in segs])
         self.q_text = u" ".join([s.text.strip() for s in segment.find_all('p') if not s.parent.has_attr('class')])
         self.text = self.format()
 
     @staticmethod
     def nested(segment):
-        # check if nested. if so, return the data to Source to create new ones.
-        imp_contents = segment.contents[1]
+        # check if nested. if so, return the data to Source to create new segments from the nested parts.
+        assert len(Section.get_Tags(segment)) == 1
+        imp_contents = Section.get_Tags(segment)[0]
 
         q = [tag for tag in imp_contents.contents if isinstance(tag, element.Tag) and not tag.attrs][0] #todo: can we make this line more reliable, write tests for this line
+        print '******'+str(len(q))
+        classes = ["parshan", "midrash", "talmud", "bible", "commentary","question2", "question", "table"]  # todo: probbaly should be a list of classes of our Obj somewhere
         is_nested = False
-        for e in q:
-            if isinstance(e, element.Tag) and e.find('td'):
+        for e in Section.get_Tags(q):
+            if e.find('td') or (e.attrs and [c in e.attrs['class'] for c in classes]):
                 is_nested = True
                 break
 
         if is_nested:
+            print "**NESTED**"
             return q
+        print "****Print Q not nested"
         return None
 
     @staticmethod
