@@ -174,10 +174,11 @@ class Section(object):
         self.current_perek = self.possible_perakim[0]
         self.current_pasuk = self.possible_pasukim.sections[-1] #the lowest pasuk in the range
 
-
+    @staticmethod
+    def get_Tags(segment):
+        return [t for t in segment.contents if isinstance(t, element.Tag)]
 
     def add_segments(self, div):
-
 
         # removes nodes with no content
         soup_segments = self.get_children_with_content(div)
@@ -209,7 +210,7 @@ class Section(object):
                 self.segment_objects.append(Header(segment))
                 # assert Header.is_header(segment), "Header should be first."
                 continue
-            if Question.is_question(segment):
+            elif Question.is_question(segment):
                 nested_seg = Question.nested(segment)
                 if nested_seg:
                     self.add_segments(nested_seg)
@@ -453,7 +454,14 @@ class Section(object):
             return segment.text
         return segment
 
+    def rt_rashi_out(self, segment):
+        classes = parser.important_classes[:] #todo: probbaly should be a list of classes of our Obj somewhere
+        classes.extend(["question2", "question", "table"])
+        bs_segs = segment.find_all(attrs={"class": classes})
+        return bs_segs
+
     def find_all_p(self, segment):
+        return self.rt_rashi_out(segment)
         def skip_p(p):
             text_is_unicode_space = lambda x: len(x) <= 2 and (chr(194) in x or chr(160) in x)
             no_text = p.text == "" or p.text == "\n" or p.text.replace(" ", "") == "" or text_is_unicode_space(
@@ -709,7 +717,7 @@ class Nechama_Parser:
         except IndexError as e:
             parser.missing_index.add(u'IndexError: {}'.format(re.sub(u":$", u"", ref2check.normal())))
 
-    def bs4_reader(self, file_list_names, post = True, add_to_title = ""):
+    def bs4_reader(self, file_list_names, post = False, add_to_title = "rt_rashi"):
         """
         The main BeautifulSoup reader function, that etrates on all sheets and creates the obj, probably should be in it's own file
         :param self:
@@ -780,7 +788,7 @@ if __name__ == "__main__":
     # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=False)
     parser.mode = "fast"
     # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["212", "750", "1291"]], post=True)
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["62"]], post=False, add_to_title="")
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["1291"]], post=True, add_to_title="rt_rashi")
     parser.record_report()
     print "MATCHED"
     print parser.matches

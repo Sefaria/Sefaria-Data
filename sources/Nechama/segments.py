@@ -143,6 +143,7 @@ class Source(object):
 
 class Header(object):
     def __init__(self, segment):
+        self.letter = u''
         table_html = str(segment)
         formatted_text = self.format(BeautifulSoup(table_html, "lxml").text)
         self.text = u"<table><tr><td><big>{}</big></td></tr></table>".format(formatted_text)
@@ -201,7 +202,9 @@ class Header(object):
 class Question(object):
 
     def __init__(self, segment):
-        self.number, bullet = [(t.parent.parent.select(".number")[0].text, t.find('img')) for t in segment.select(".bullet > p")][0]
+
+        bullet = [t.find('img') for t in segment.select(".bullet > p")][0]
+        self.number = bullet.parent.parent.select(".number")[0].text if bullet.parent.parent.select(".number") else u""
         if not bullet:
             self.difficulty = 0
         elif bullet.attrs['src'] == 'pages/images/hard.gif':
@@ -218,7 +221,7 @@ class Question(object):
         # check if nested. if so, return the data to Source to create new ones.
         imp_contents = segment.contents[1]
 
-        q = [tag for tag in imp_contents.contents if isinstance(tag, element.Tag) and not tag.attrs][0]
+        q = [tag for tag in imp_contents.contents if isinstance(tag, element.Tag) and not tag.attrs][0] #todo: can we make this line more reliable, write tests for this line
         is_nested = False
         for e in q:
             if isinstance(e, element.Tag) and e.find('td'):
@@ -274,6 +277,13 @@ class Table(object):
 
 class RT_Rashi(object):
     """an object representing an RT_Rashi table for parsing purposes"""
+
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def order_the_table(self, segment):
+        tags = Section.get_Tags(segment)
 
 
 class Nechama_Comment(object):
