@@ -176,7 +176,13 @@ class Section(object):
 
     @staticmethod
     def get_Tags(segment):
-        return [t for t in segment.contents if isinstance(t, element.Tag)]
+
+        if isinstance(segment,element.Tag):
+            return [t for t in segment.contents if isinstance(t, element.Tag)]
+        elif isinstance(segment,list):
+            return [t for t in segment if isinstance(t, element.Tag)]
+        else:
+            return None
 
     def add_segments(self, div):
 
@@ -461,7 +467,7 @@ class Section(object):
         return bs_segs
 
     def find_all_p(self, segment):
-        return self.rt_rashi_out(segment)
+        # return self.rt_rashi_out(segment)
         def skip_p(p):
             text_is_unicode_space = lambda x: len(x) <= 2 and (chr(194) in x or chr(160) in x)
             no_text = p.text == "" or p.text == "\n" or p.text.replace(" ", "") == "" or text_is_unicode_space(
@@ -788,7 +794,7 @@ if __name__ == "__main__":
     # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=False)
     parser.mode = "fast"
     # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["212", "750", "1291"]], post=True)
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["1291"]], post=True, add_to_title="rt_rashi")
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["1291"]], post=True, add_to_title="question model")
     parser.record_report()
     print "MATCHED"
     print parser.matches

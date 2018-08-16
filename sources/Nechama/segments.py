@@ -203,8 +203,11 @@ class Question(object):
 
     def __init__(self, segment):
 
-        bullet = [t.find('img') for t in segment.select(".bullet > p")][0]
-        self.number = bullet.parent.parent.select(".number")[0].text if bullet.parent.parent.select(".number") else u""
+        number, bullet = [(t.parent.parent.select(".number"), t.find('img')) for t in segment.select(".bullet > p")][0]
+
+        self.number = number[0].text if number else u""
+        # bullet = [t.find('img') for t in segment.select(".bullet > p")][0]
+        # self.number = bullet.parent.parent.select(".number")[0].text if bullet.parent.parent.select(".number") else u""
         if not bullet:
             self.difficulty = 0
         elif bullet.attrs['src'] == 'pages/images/hard.gif':
@@ -213,7 +216,7 @@ class Question(object):
             self.difficulty = 2
 
         table_html = str(segment)  # todo: fix this line, why are we losing so much data here?
-        self.q_text = u"".join([s.text.strip() for s in segment.find_all('p') if not s.parent.has_attr('class')])
+        self.q_text = u" ".join([s.text.strip() for s in segment.find_all('p') if not s.parent.has_attr('class')])
         self.text = self.format()
 
     @staticmethod
