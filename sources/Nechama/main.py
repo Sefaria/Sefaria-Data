@@ -212,7 +212,7 @@ class Section(object):
         current_source = None
         for i, segment in enumerate(soup_segments):
             relevant_text = self.format(self.relevant_text(segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
-            if i == 0 and not self.segment_objects:
+            if i == 0 and not self.segment_objects: #there isn't a header yet. should not use place in the list... :(
                 self.segment_objects.append(Header(segment))
                 # assert Header.is_header(segment), "Header should be first."
                 continue
@@ -241,7 +241,7 @@ class Section(object):
             elif Nechama_Comment.is_comment(soup_segments, i, parser.important_classes):  # above criteria not met, just an ordinary comment
                 self.segment_objects.append(Nechama_Comment(relevant_text))
             else:  # must be a Source Ref, so parse it
-                next_segment_class = soup_segments[i + 1].attrs["class"][0]  # get the class of this ref and it's comment
+                next_segment_class = (soup_segments[i + 1].attrs["class"][0], None if "id" not in soup_segments[i + 1].attrs.keys() else soup_segments[i + 1].attrs["id"]) # get the class of this ref and it's comment
                 current_source = self.parse_ref(segment, relevant_text, next_segment_class)
 
 
@@ -313,7 +313,7 @@ class Section(object):
         if real_title:  # a ref to a commentator that we have in our system
             if new_pasuk:
                 current_source = Source(next_segment_class,
-                                     u"{} {}:{}".format(real_title, new_perek, new_pasuk))
+                                        u"{} {}:{}".format(real_title, new_perek, new_pasuk))
             else:
                 current_source = Source(next_segment_class, u"{} {}".format(real_title, new_perek))
         elif not real_title and is_tanakh:  # not a commentator, but instead a ref to the parsha
@@ -324,7 +324,70 @@ class Section(object):
             current_source = Source(next_segment_class, found_ref_in_string)
         else:
             current_source = Source(next_segment_class, "")
-        
+
+        # finally set about_source_ref
+        if current_source.get_ref():
+            if not a_tag_is_entire_comment and found_ref_in_string == "" and len(relevant_text.split()) >= 6:
+                # edge case where you found the ref but Nechama said something else in addition to the ref
+                # so we want to keep the text
+                current_source.about_source_ref = relevant_text
+        elif found_a_tag:
+            # found no reference but did find an a_tag so this is a ref so keep the text
+            current_source.about_source_ref = relevant_text
+            if current_source.about_source_ref not in parser.index_not_found.keys():
+                parser.index_not_found[current_source.about_source_ref] = []
+            parser.index_not_found[current_source.about_source_ref].append(
+                (self.current_parsha_ref, current_source.about_source_ref))
+
+        else:
+            current_source.about_source_ref = relevant_text
+
+        return current_source
+
+    def parse_ref_new(self, segment, relevant_text, next_segment_info): #bad try to put in parshan_id_table to read the parshan from the class number it has
+        next_segment_class = next_segment_info[0]
+        next_segment_class_id = None if len(next_segment_info)<2 else next_segment_info[1]
+        real_title, found_a_tag, a_tag_is_entire_comment = self.get_a_tag_from_ref(segment, relevant_text)
+        found_ref_in_string = ""
+
+        # check if it's in Perek X, Pasuk Y format and set perek and pasuk accordingly
+        is_tanakh = (relevant_text.startswith(u"פרק ") or relevant_text.startswith(u"פסוק ") or
+                     relevant_text.startswith(u"פרקים ") or relevant_text.startswith(u"פסוקים "))
+        is_perek_pasuk_ref, new_perek, new_pasuk = self.set_current_perek_pasuk(relevant_text, next_segment_class,
+                                                                                is_tanakh)
+        # now create current_source based on real_title or based on self.current_parsha_ref
+        if next_segment_class == "parshan":
+            try:
+                parshan = parser.parshan_id_table[next_segment_class_id]
+                current_source = Source(next_segment_class,
+                                        u"{} on {} {}:{}".format(parshan, parser.en_sefer, new_perek, new_pasuk))
+                current_source.parshan_name = parshan
+            except KeyError:
+                print "PARSHAN not in table", next_segment_class_id, relevant_text
+                if real_title:  # a ref to a commentator that we have in our system
+                    if new_pasuk:
+                        current_source = Source(next_segment_class,
+                                                u"{} {}:{}".format(real_title, new_perek, new_pasuk))
+        if real_title and not next_segment_class == "parshan":  # a ref to a commentator that we have in our system
+            if new_pasuk:
+                current_source = Source(next_segment_class,
+                                     u"{} {}:{}".format(real_title, new_perek, new_pasuk))
+            else:
+                current_source = Source(next_segment_class, u"{} {}".format(real_title, new_perek))
+        elif not real_title and is_tanakh:  # not a commentator, but instead a ref to the parsha
+            # if next_segment_class == "parshan":
+            #     parshan = parser.parshan_id_table[next_segment_class_id]
+            #     print "PARSHAN", parshan, next_segment_class_id
+            #     current_source = Source(next_segment_class, u"{} on {} {}:{}".format(parshan, parser.en_sefer, new_perek, new_pasuk))
+            #     current_source.parshan_name = parshan
+            current_source = Source("bible", u"{} {}:{}".format(parser.en_sefer, new_perek, new_pasuk))
+        elif len(relevant_text.split()) < 8:  # not found yet, look it up in library.get_refs_in_string
+            found_ref_in_string = self._get_refs_in_string([relevant_text], next_segment_class,
+                                                           add_if_not_found=False)
+            current_source = Source(next_segment_class, found_ref_in_string)
+        else:
+            current_source = Source(next_segment_class, "")
+
         #finally set about_source_ref
         if current_source.get_ref():
             if not a_tag_is_entire_comment and found_ref_in_string == "" and len(relevant_text.split()) >= 6:
@@ -625,6 +688,14 @@ class Nechama_Parser:
         self.sec_ref_not_found = {}
         self.seg_ref_not_found = {}
         self.current_url = ""
+        self.parshan_id_table = {
+            '162': u"Rashi",
+            '6': u"Abarbanel on Torah, {}".format(self.en_sefer),  # Abarbanel_on_Torah,_Genesis
+            '41': u'Or HaChaim on {}'.format(self.en_sefer),  # Or_HaChaim_on_Genesis
+            '101': u'Mizrachi, {}'.format(self.en_sefer),
+            '91' : u"גור אריה"
+
+        }
 
     def dict_from_html_attrs(self, contents):
         d = OrderedDict()
@@ -723,7 +794,7 @@ class Nechama_Parser:
         except IndexError as e:
             parser.missing_index.add(u'IndexError: {}'.format(re.sub(u":$", u"", ref2check.normal())))
 
-    def bs4_reader(self, file_list_names, post = False, add_to_title = "rt_rashi"):
+    def bs4_reader(self, file_list_names, post = False, add_to_title = ""):
         """
         The main BeautifulSoup reader function, that etrates on all sheets and creates the obj, probably should be in it's own file
         :param self:
@@ -794,7 +865,7 @@ if __name__ == "__main__":
     # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=False)
     parser.mode = "fast"
     # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["212", "750", "1291"]], post=True)
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["1291"]], post=True, add_to_title="question model")
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["62"]], post=False, add_to_title = "Rashi questions")
     parser.record_report()
     print "MATCHED"
     print parser.matches

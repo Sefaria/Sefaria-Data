@@ -252,7 +252,7 @@ class Question(object):
         source = {"outsideText": self.text}
         return source
 
-    def format(self, without_params=[], difficulty_symbol = [u"", u"*", u"**"]):
+    def format(self, without_params=[], difficulty_symbol = [u'''<sup class="nechama"></sup>''', u'''<sup class="nechama">*</sup>''', u'''<sup class="nechama">**</sup>''']):
         """
 
         :param without_params: list. ex: ["difficulty", "number"]
