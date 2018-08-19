@@ -299,7 +299,9 @@ class Section(object):
             real_title = "Rashi on {}".format(parser.en_sefer)
         return (real_title, a_tag, a_tag_is_entire_comment)
 
-    def parse_ref(self, segment, relevant_text, next_segment_class):
+    def parse_ref(self, segment, relevant_text, next_segment_info):
+        next_segment_class = next_segment_info[0]
+
         real_title, found_a_tag, a_tag_is_entire_comment = self.get_a_tag_from_ref(segment, relevant_text)
         found_ref_in_string = ""
 
@@ -342,6 +344,7 @@ class Section(object):
         else:
             current_source.about_source_ref = relevant_text
 
+        current_source.parshan_id = 0 if len(next_segment_info)<2 else next_segment_info[1]
         return current_source
 
     def parse_ref_new(self, segment, relevant_text, next_segment_info): #bad try to put in parshan_id_table to read the parshan from the class number it has
@@ -689,11 +692,12 @@ class Nechama_Parser:
         self.seg_ref_not_found = {}
         self.current_url = ""
         self.parshan_id_table = {
-            '162': u"Rashi",
+            '162': u"Rashi on {}".format(self.en_sefer),
             '6': u"Abarbanel on Torah, {}".format(self.en_sefer),  # Abarbanel_on_Torah,_Genesis
             '41': u'Or HaChaim on {}'.format(self.en_sefer),  # Or_HaChaim_on_Genesis
             '101': u'Mizrachi, {}'.format(self.en_sefer),
-            '91' : u"גור אריה"
+            '91' : u"גור אריה",
+            '32':u'''רלב"ג'''
 
         }
 
@@ -767,7 +771,18 @@ class Nechama_Parser:
                 else:
                     matched = self.check_reduce_sources(text_to_use, ref2check) # returns a list ordered by scores of mesorat hashas objs that were found
                     if not matched:  # no match found
-                        if ref2check.is_segment_level():
+                        if current_source.parshan_id:
+                            try:
+                                parshan = parser.parshan_id_table[current_source.parshan_id]
+                                chenged_ref = Ref(u'{} {}'.format(parshan, u'{}:{}'.format(ref2check.sections[0], ref2check.sections[1]) if len(ref2check.sections)>1 else u'{}'.format(ref2check[0])))
+                                matched = self.check_reduce_sources(text_to_use, chenged_ref)
+                            except KeyError:
+                                chenged_ref = ref2check
+                                print u"parshan_id_table is missing a key and value for {}, in {}, \n text {}".format(current_source.parshan_id, self.current_url, current_source.text)
+                        chenged_ref = ref2check
+
+                    if not matched: #still not matched...
+                        if chenged_ref.is_segment_level():
                             self.seg_ref_not_found[self.current_url].append(current_source)
                         else:
                             self.sec_ref_not_found[self.current_url].append(current_source)
@@ -862,10 +877,10 @@ if __name__ == "__main__":
     print SEFARIA_SERVER
     parshat_bereishit = [x for x in parshat_bereishit if int(x) >= start_at]
     except_for = [x for x in parshat_bereishit if x not in ["212", "750", "1291"]]
-    # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=False)
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=False)
     parser.mode = "fast"
     # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["212", "750", "1291"]], post=True)
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["62"]], post=False, add_to_title = "Rashi questions")
+    # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["1291"]], post=False, add_to_title = "Rashi questions")
     parser.record_report()
     print "MATCHED"
     print parser.matches
