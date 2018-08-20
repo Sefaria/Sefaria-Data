@@ -526,20 +526,14 @@ class Section(object):
             return segment.text
         return segment
 
-    def get_rt_rashi_contents(self, segment):
+    def rt_rashi_out(self, segment):
         classes = parser.important_classes[:] #todo: probbaly should be a list of classes of our Obj somewhere
         classes.extend(["question2", "question", "table"])
         bs_segs = segment.find_all(attrs={"class": classes})
-        new_contents = []
-        text_is_unicode_space = lambda x: len(x) <= 2 and (chr(194) in x or chr(160) in x)
-        for bs_seg in bs_segs:
-            contents = [el for el in bs_seg.parent.contents if isinstance(el, element.Tag)
-                        and el.text != "\n" and len(el.text) > 0 and not text_is_unicode_space(el.text.encode('utf-8'))]
-            if len(contents) > 0 and contents[0] not in new_contents and bs_seg.parent not in new_contents:
-                new_contents += contents
-        return new_contents
+        return bs_segs
 
     def find_all_p(self, segment):
+        # return self.rt_rashi_out(segment)
         def skip_p(p):
             text_is_unicode_space = lambda x: len(x) <= 2 and (chr(194) in x or chr(160) in x)
             no_text = p.text == "" or p.text == "\n" or p.text.replace(" ", "") == "" or text_is_unicode_space(
@@ -600,7 +594,7 @@ class Section(object):
             if segment.name == "blockquote":  # this is really many children so add them to list
                 new_segments += self.get_children_with_content(segment)
             elif segment.name == "table" and class_ == "RT_RASHI":
-                    new_segments += self.get_rt_rashi_contents(segment)
+                    new_segments += self.find_all_p(segment)
                     self.RT_Rashi = True
                         # question_in_question = [child for child in segment.descendants if
                         #                   child.name == "table" and child.attrs["class"][0] in ["question", "question2"]]
@@ -715,7 +709,10 @@ class Nechama_Parser:
             # '43': u'''בעל ספר הזיכרון''',
             '111': u"Akeidat Yitzchak", # u'''עקדת יצחק''',
             '28': u"Rabbeinu Bahya, {}".format(self.en_sefer),#u'''רבנו בחיי''',
-
+            # '118':u'קסוטו',
+            # '152':u'בנו יעקב',
+            # '3':u'אבן כספי',
+            '46':u"Haamek Davar on {}".format(self.en_sefer),
 
         }
 
@@ -769,15 +766,16 @@ class Nechama_Parser:
 
     def change_ref_to_commentary(self, ref, comment_ind):
         ls = LinkSet(ref)
-        commentators_on_ref = [x.refs[0] if x.refs[0] != ref.normal() else x.refs[1] for x in ls if Ref(x.refs[0]).is_commentary()]
+        commentators_on_ref = [x.refs[0] if x.refs[0] != ref.normal() else x.refs[1] for x in ls if Ref(x.refs[0]).is_commentary() or Ref(x.refs[1]).is_commentary()]
         for comm in commentators_on_ref:
             if comment_ind == Ref(comm).index.title:
                 return Ref(comm).section_ref()
-        return None
+        return ref
 
     def try_parallel_matcher(self, current_source):
         try:
-            ref2check = current_source.get_sefaria_ref(current_source.ref)
+            # ref2check = current_source.get_sefaria_ref(current_source.ref)
+            ref2check = Ref(current_source.ref)
             text_to_use = u""
             if self.mode == "fast":
                 text_to_use = u" ".join(current_source.text.split()[0:15])
@@ -796,17 +794,17 @@ class Nechama_Parser:
                         return
                 else:
                     matched = self.check_reduce_sources(text_to_use, ref2check) # returns a list ordered by scores of mesorat hashas objs that were found
+                    changed_ref = ref2check  # ref2chcek might get a better ref but also might not...
                     if not matched:  # no match found
                         if current_source.parshan_id:
                             try:
                                 parshan = parser.parshan_id_table[current_source.parshan_id]
                                 # chenged_ref = Ref(u'{} {}'.format(parshan, u'{}:{}'.format(ref2check.sections[0], ref2check.sections[1]) if len(ref2check.sections)>1 else u'{}'.format(ref2check[0])))
                                 changed_ref = self.change_ref_to_commentary(ref2check, parshan)
-                                matched = self.check_reduce_sources(text_to_use, changed_ref)
+                                if changed_ref !=ref2check:
+                                    matched = self.check_reduce_sources(text_to_use, changed_ref)
                             except KeyError:
-                                # changed_ref = ref2check
                                 print u"parshan_id_table is missing a key and value for {}, in {}, \n text {}".format(current_source.parshan_id, self.current_url, current_source.text)
-                        changed_ref = ref2check
 
                     if not matched: #still not matched...
                         if changed_ref.is_segment_level():
@@ -905,10 +903,9 @@ if __name__ == "__main__":
     parshat_bereishit = [x for x in parshat_bereishit if int(x) >= start_at]
     except_for = [x for x in parshat_bereishit if x not in ["212", "750", "1291"]]
     # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=False,add_to_title = "")
-    parser.mode = "fast"
+    parser.mode = "accurate"  # accurate / fast
     # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["212", "750", "1291"]], post=True)
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["62"]], post=True, add_to_title="RT Rashi contents")
-
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["1291"]], post=True, add_to_title = "id parshan based")
     parser.record_report()
     print "MATCHED"
     print parser.matches
