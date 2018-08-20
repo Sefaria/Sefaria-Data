@@ -696,8 +696,20 @@ class Nechama_Parser:
             '6': u"Abarbanel on Torah, {}".format(self.en_sefer),  # Abarbanel_on_Torah,_Genesis
             '41': u'Or HaChaim on {}'.format(self.en_sefer),  # Or_HaChaim_on_Genesis
             '101': u'Mizrachi, {}'.format(self.en_sefer),
-            '91' : u"גור אריה",
-            '32':u'''רלב"ג'''
+            '91': u"Gur Aryeh on Bereishit", #u"גור אריה",
+            '32':u"Ralbag on {}".format(self.en_sefer), #u'''רלב"ג''', #todo, figure out how to do Beur HaMilot and reguler, maybe needs to be a re.search in the changed_ref method
+            '29': u"Bekhor Shor, {}".format(self.en_sefer),#u"בכור שור",
+            '238':u"Onkelos {}".format(self.en_sefer),#u"אונקלוס",
+            '39': u'Ramban on {}'.format(self.en_sefer),# u'''רמב"ן''',
+            '94': u"Shadal on {}".format(self.en_sefer),#u'''שד"ל''',
+            '4': u"Ibn Ezra on {}".format(self.en_sefer),#u'''ראב"ע''',
+            '198': u"HaKtav VeHaKabalah, {}".format(self.en_sefer),#u'''הכתב והקבלה''',
+            '127': u"Radak on {}".format(self.en_sefer),#u'''רד"ק''',
+            '37': u"Malbim on {}".format(self.en_sefer),#u'''מלבי"ם''',
+            # '43': u'''בעל ספר הזיכרון''',
+            '111': u"Akeidat Yitzchak", # u'''עקדת יצחק''',
+            '28': u"Rabbeinu Bahya, {}".format(self.en_sefer),#u'''רבנו בחיי''',
+
 
         }
 
@@ -749,6 +761,14 @@ class Nechama_Parser:
         new_ref = pm.match(tc_list=[ref.text('he'), (comment, 1)], return_obj=True)
         return new_ref
 
+    def change_ref_to_commentary(self, ref, comment_ind):
+        ls = LinkSet(ref)
+        commentators_on_ref = [x.refs[0] if x.refs[0] != ref.normal() else x.refs[1] for x in ls if Ref(x.refs[0]).is_commentary()]
+        for comm in commentators_on_ref:
+            if comment_ind == Ref(comm).index.title:
+                return Ref(comm).section_ref()
+        return None
+
     def try_parallel_matcher(self, current_source):
         try:
             ref2check = current_source.get_sefaria_ref(current_source.ref)
@@ -774,15 +794,16 @@ class Nechama_Parser:
                         if current_source.parshan_id:
                             try:
                                 parshan = parser.parshan_id_table[current_source.parshan_id]
-                                chenged_ref = Ref(u'{} {}'.format(parshan, u'{}:{}'.format(ref2check.sections[0], ref2check.sections[1]) if len(ref2check.sections)>1 else u'{}'.format(ref2check[0])))
-                                matched = self.check_reduce_sources(text_to_use, chenged_ref)
+                                # chenged_ref = Ref(u'{} {}'.format(parshan, u'{}:{}'.format(ref2check.sections[0], ref2check.sections[1]) if len(ref2check.sections)>1 else u'{}'.format(ref2check[0])))
+                                changed_ref = self.change_ref_to_commentary(ref2check, parshan)
+                                matched = self.check_reduce_sources(text_to_use, changed_ref)
                             except KeyError:
-                                chenged_ref = ref2check
+                                # changed_ref = ref2check
                                 print u"parshan_id_table is missing a key and value for {}, in {}, \n text {}".format(current_source.parshan_id, self.current_url, current_source.text)
-                        chenged_ref = ref2check
+                        changed_ref = ref2check
 
                     if not matched: #still not matched...
-                        if chenged_ref.is_segment_level():
+                        if changed_ref.is_segment_level():
                             self.seg_ref_not_found[self.current_url].append(current_source)
                         else:
                             self.sec_ref_not_found[self.current_url].append(current_source)
@@ -877,10 +898,10 @@ if __name__ == "__main__":
     print SEFARIA_SERVER
     parshat_bereishit = [x for x in parshat_bereishit if int(x) >= start_at]
     except_for = [x for x in parshat_bereishit if x not in ["212", "750", "1291"]]
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=False)
+    # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=False,add_to_title = "")
     parser.mode = "fast"
     # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["212", "750", "1291"]], post=True)
-    # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["1291"]], post=False, add_to_title = "Rashi questions")
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["1"]], post=True, add_to_title = "id parshan catching")
     parser.record_report()
     print "MATCHED"
     print parser.matches
