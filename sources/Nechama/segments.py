@@ -23,6 +23,7 @@ class Source(object):
 
     def __init__(self, segment_class, ref):
         self.parshan_name = u""
+        self.parshan_id = 0
         self.about_source_ref = u""  # words of nechama in regards to the parshan or this specific book, that we will lose since it is not part of our "ref" system see 8.html sec 1. "shadal"
         self.perek = u""
         self.pasuk = u""
@@ -252,7 +253,7 @@ class Question(object):
         source = {"outsideText": self.text}
         return source
 
-    def format(self, without_params=[], difficulty_symbol = [u"", u"*", u"**"]):
+    def format(self, without_params=[], difficulty_symbol = [u'''<sup class="nechama"></sup>''', u'''<sup class="nechama">*</sup>''', u'''<sup class="nechama">**</sup>''']):
         """
 
         :param without_params: list. ex: ["difficulty", "number"]
