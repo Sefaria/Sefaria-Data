@@ -460,14 +460,20 @@ class Section(object):
             return segment.text
         return segment
 
-    def rt_rashi_out(self, segment):
+    def get_rt_rashi_contents(self, segment):
         classes = parser.important_classes[:] #todo: probbaly should be a list of classes of our Obj somewhere
         classes.extend(["question2", "question", "table"])
         bs_segs = segment.find_all(attrs={"class": classes})
-        return bs_segs
+        new_contents = []
+        text_is_unicode_space = lambda x: len(x) <= 2 and (chr(194) in x or chr(160) in x)
+        for bs_seg in bs_segs:
+            contents = [el for el in bs_seg.parent.contents if isinstance(el, element.Tag)
+                        and el.text != "\n" and len(el.text) > 0 and not text_is_unicode_space(el.text.encode('utf-8'))]
+            if len(contents) > 0 and contents[0] not in new_contents and bs_seg.parent not in new_contents:
+                new_contents += contents
+        return new_contents
 
     def find_all_p(self, segment):
-        # return self.rt_rashi_out(segment)
         def skip_p(p):
             text_is_unicode_space = lambda x: len(x) <= 2 and (chr(194) in x or chr(160) in x)
             no_text = p.text == "" or p.text == "\n" or p.text.replace(" ", "") == "" or text_is_unicode_space(
@@ -528,7 +534,7 @@ class Section(object):
             if segment.name == "blockquote":  # this is really many children so add them to list
                 new_segments += self.get_children_with_content(segment)
             elif segment.name == "table" and class_ == "RT_RASHI":
-                    new_segments += self.find_all_p(segment)
+                    new_segments += self.get_rt_rashi_contents(segment)
                     self.RT_Rashi = True
                         # question_in_question = [child for child in segment.descendants if
                         #                   child.name == "table" and child.attrs["class"][0] in ["question", "question2"]]
@@ -794,7 +800,7 @@ if __name__ == "__main__":
     # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=False)
     parser.mode = "fast"
     # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["212", "750", "1291"]], post=True)
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["1291"]], post=True, add_to_title="question model")
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["62"]], post=True, add_to_title="RT Rashi contents")
     parser.record_report()
     print "MATCHED"
     print parser.matches
