@@ -255,8 +255,8 @@ if __name__ == '__main__':
     functions.post_index(index, server=user_args.server)
 
     version = {
-        "versionTitle": "Shulchan Arukh, Yoreh De'ah Lemberg PlaceHolder VersionTitle",
-        "versionSource": "Change Me!!!!",
+        "versionTitle": "Ashlei Ravrevei: Shulchan Aruch Yoreh Deah, Lemberg, 1888",
+        "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002097765",
         "language": "he",
         "text": book_ja
     }
@@ -267,7 +267,7 @@ if __name__ == '__main__':
     else:
         functions.post_text(book_name, version, index_count="on", server=user_args.server)
 
-    flags = dict(versionTitleInHebrew=u"למברג יורה דעה אבל צריך לעדכן את הכותרת הזאת")
+    flags = dict(versionTitleInHebrew=u'אשלי רברבי: שלחן ערוך יורה דעה, למברג תרמ"ח')
     if user_args.title is None:
         flags['priority'] = 2
     functions.post_flags(dict(ref=book_name, lang='he', vtitle=version['versionTitle']), flags, user_args.server)
