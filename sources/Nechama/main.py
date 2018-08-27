@@ -42,6 +42,16 @@ class Sheet(object):
 
 
     def create_sheetsources_from_objsource(self):
+        # first source in the sheet is the sheet remark
+        if self.sheet_remark:
+            self.sources.append({"outsideText": self.sheet_remark,
+             "options": {
+                 "indented": "indented-1",
+                 "sourceLayout": "",
+                 "sourceLanguage": "hebrew",
+                 "sourceLangLayout": ""
+             }
+             })
         for isection, section in enumerate(self.sections):
             for isegment, segment in enumerate(section.segment_objects):
                 if isinstance(segment, Source):
@@ -51,8 +61,8 @@ class Sheet(object):
 
     def prepare_sheet(self, add_to_title=""):
        sheet_json = {}
-       sheet_json["status"] = "public" #"private"
-       # sheet_json["group"] = "Nechama Leibowitz' Source Sheets"
+       sheet_json["status"] = "public" #"private" #
+       sheet_json["group"] ="Nechama-Leibowitz'-Source-Sheets"#"Nechama Leibowitz' Source Sheets"
        sheet_json["title"] = u'{} - {} {}'.format(self.title, re.search('(\d+)\.', self.html).group(1), add_to_title)
        sheet_json["summary"] = u"{} ({})".format(self.en_year, self.year)
        sheet_json["sources"] = self.sources
@@ -91,7 +101,7 @@ class Sheet(object):
             pereks = re.findall(u"Perek\s+(.{1,3})\s?", perek_info)
             assert len(pereks) is 1
             pereks = [str(getGematria(pereks[0]))]
-            pasuks = re.findall(u"Pasuk\s+(.{1,8})\s?", perek_info)[0].split(" - ")
+            pasuks = re.findall(u"Pasuk\s+(.{1,18})\s?", perek_info)[0].split(" - ")
             assert len(pasuks) is 2
             for p, pasuk in enumerate(pasuks):
                 pasuks[p] = getGematria(pasuk)
@@ -194,8 +204,9 @@ class Section(object):
 
         # create Segment objects out of the BeautifulSoup objects
         self.classify_segments(soup_segments)
-        self.title = re.sub(u"<.*?>", u"", self.segment_objects[0].text)
-        self.letter = re.search(u"(.{1,2})\.\s", self.title).group(1)
+        header = filter(lambda x: isinstance(x, Header), self.segment_objects)[0]
+        self.title = header.header_text
+        self.letter = header.letter
 
     def classify_segments(self, soup_segments):
         """
@@ -212,10 +223,12 @@ class Section(object):
         current_source = None
         for i, segment in enumerate(soup_segments):
             relevant_text = self.format(self.relevant_text(segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
-            if i == 0 and not self.segment_objects: #there isn't a header yet. should not use place in the list... :(
+            if Header.is_header(segment):
                 self.segment_objects.append(Header(segment))
-                # assert Header.is_header(segment), "Header should be first."
-                continue
+            # if i == 0 and not self.segment_objects: #there isn't a header yet. should not use place in the list... :(
+            #     self.segment_objects.append(Header(segment))
+            #     # assert Header.is_header(segment), "Header should be first."
+            #     continue
             elif Question.is_question(segment):
                 nested_seg = Question.nested(segment)
                 if nested_seg:
@@ -228,6 +241,8 @@ class Section(object):
                 # this is a comment by a commentary, bible, or midrash
                 segment_class = segment.attrs["class"][0]  # is it source, bible, or midrash?
                 assert len(segment.attrs["class"]) == 1, "More than one class"
+                if not current_source:
+                    current_source = [x for x in self.segment_objects if isinstance(x, Source)][-1]
                 current_source = current_source.add_text(segment, segment_class) #returns current_source if there's no text, OR returns a new Source object if current_source already has text
                                                                                 #the latter case occurs when for example it says "Rashi" followed by multiple comments
                 self.segment_objects.append(current_source)
@@ -320,10 +335,17 @@ class Section(object):
                 current_source = Source(next_segment_class, u"{} {}".format(real_title, new_perek))
         elif not real_title and is_tanakh:  # not a commentator, but instead a ref to the parsha
             current_source = Source("bible", u"{} {}:{}".format(parser.en_sefer, new_perek, new_pasuk))
+        # elif current_source.parshan_name != "bible":
+        #     pass # look for mechilta? look for other books so not to get only Tanakh?
         elif len(relevant_text.split()) < 8:  # not found yet, look it up in library.get_refs_in_string
             found_ref_in_string = self._get_refs_in_string([relevant_text], next_segment_class,
                                                            add_if_not_found=False)
-            current_source = Source(next_segment_class, found_ref_in_string)
+            #todo: I don't love the special casing for Mekhilta here... :(
+            if re.search(u"מכילתא", relevant_text):
+                r = u"Mekhilta d'Rabbi Yishmael {}".format(re.search(u"Exodus(.*)", found_ref_in_string).group(1).strip())
+                current_source = Source(next_segment_class, r)
+            else:
+                current_source = Source(next_segment_class, found_ref_in_string)
         else:
             current_source = Source(next_segment_class, "")
 
@@ -465,6 +487,8 @@ class Section(object):
         return True, self.current_perek, new_pasuk
 
     def set_current_perek_pasuk(self, text, next_segment_class, is_tanakh=True):
+
+        # text = re.search(u"(פרק(ים))",text)
         text = text.replace(u"פרקים", u"Perek").replace(u"פרק ", u"Perek ").replace(u"פסוקים", u"Pasuk").replace(
             u"פסוק ", u"Pasuk ").strip()
         digit = re.compile(u"^.{1,2}[\)|\.]").match(text)
@@ -476,16 +500,16 @@ class Section(object):
 
         text = text.replace(u'\u2013', "-").replace(u"\u2011", "-")
 
-        perek_comma_pasuk = re.findall("Perek (.{1,5}), (.{1,5})", text)
+        perek_comma_pasuk = re.findall("Perek (.{1,5}), (.{1,9})", text)
         if not perek_comma_pasuk:
-            perek_comma_pasuk = re.findall("Perek (.{1,5}),? Pasuk (.{1,5})", text)
+            perek_comma_pasuk = re.findall("Perek (.{1,5}),? Pasuk (.{1,9})", text)
         perek = re.findall("Perek (.{1,5}\s)", text)
         pasuk = re.findall("Pasuk (.{1,5}(?:-.{1,5})?)", text)
         assert len(perek) in [0, 1]
         assert len(pasuk) in [0, 1]
         assert len(perek_comma_pasuk) in [0, 1]
-        if len(perek) == len(pasuk) == len(perek_comma_pasuk) == 0 and ("Pasuk" in text or "Perek" in text):
-            pass
+        # if len(perek) == len(pasuk) == len(perek_comma_pasuk) == 0 and ("Pasuk" in text or "Perek" in text):
+        #     pass
 
         if not perek_comma_pasuk:
             if perek:
@@ -512,8 +536,8 @@ class Section(object):
                 if poss_ref:
                     self.current_perek = poss_ref.sections[0]
                     self.current_pasuk = poss_ref.sections[1]
-                    assert str(poss_ref.sections[0]) == new_perek
-                    assert str(poss_ref.sections[1]) == new_pasuk
+                    # assert str(poss_ref.sections[0]) == new_perek or str(poss_ref.toSections[0]) == new_perek
+                    # assert str(poss_ref.sections[1]) == new_pasuk or str(poss_ref.toSections[1]) == new_pasuk
                     self.current_parsha_ref = ["bible", u"{} {}".format(parser.en_sefer, self.current_perek)]
                 else:
                     print
@@ -584,6 +608,13 @@ class Section(object):
 
     def check_for_blockquote_and_table(self, segments, level=2):
         new_segments = []
+        # for i, segment in enumerate(segments):
+        #     if segment.name == "blockquote" or (
+        #             segment.name == "table" and segment.find_all(atrrs={"class": "RT_RASHI"})):
+        #         test = segment
+        #         while Section.get_Tags(test) == 1:
+        #             test = Section.get_Tags(test)
+        #         new_segments += test
         tables = ["table", "tr"]
         for i, segment in enumerate(segments):
             if isinstance(segment, element.Tag):
@@ -683,7 +714,7 @@ class Nechama_Parser:
             u"""המלבי"ם""": u"Malbim on {}".format(self.en_sefer),
             u"משך חכמה": u"Meshech Hochma, {}".format(self.en_parasha),
             u"רבנו בחיי": u"Rabbeinu Bahya, {}".format(self.en_sefer),
-            # u"מכילתא":u""
+            u"מכילתא":u"Mekhilta d'Rabbi Yishmael"
             # u'רב סעדיה גאון': u"Saadia Gaon on {}".format(self.en_sefer) # todo: there is no Saadia Gaon on Genesis how does this term mapping work?
         }
         self.levenshtein = WeightedLevenshtein()
@@ -713,6 +744,8 @@ class Nechama_Parser:
             # '152':u'בנו יעקב',
             # '3':u'אבן כספי',
             '46':u"Haamek Davar on {}".format(self.en_sefer),
+            # '104':u'''רמבמ"ן''',
+            # '196':u'''בעל הלבוש אורה''',
 
         }
 
@@ -737,7 +770,9 @@ class Nechama_Parser:
         s = unicodedata.normalize("NFD", s)
         s = strip_cantillation(s, strip_vowels=True)
         s = re.sub(u"(^|\s)(?:\u05d4['\u05f3])($|\s)", u"\1יהוה\2", s)
-        s = re.sub(ur"[,'\":?.!;־״׳]", u" ", s)
+        s = re.sub(ur"[,'\":?.!;־״׳-]", u" ", s)
+        s = re.sub(u'((?:^|\s)[\u05d0-\u05ea])\s+([\u05d0-\u05ea])', ur"\1\2", s)
+        # s = re.sub(ur"-", u"", s)
         s = re.sub(ur"\([^)]+\)", u" ", s)
         # s = re.sub(ur"\((?:\d{1,3}|[\u05d0-\u05ea]{1,3})\)", u" ", s)  # sefaria automatically adds pasuk markers. remove them
         s = bleach.clean(s, strip=True, tags=()).strip()
@@ -749,11 +784,11 @@ class Nechama_Parser:
 
 
     def check_reduce_sources(self, comment, ref):
-        n = len(re.split(u'\s+', comment))
+        n = len(comment.split())
         if n<=5:
             ngram_size = n
             max_words_between = 1
-            min_words_in_match = n
+            min_words_in_match = n-1
         else:
             ngram_size = 3
             max_words_between = 4
@@ -768,8 +803,13 @@ class Nechama_Parser:
         ls = LinkSet(ref)
         commentators_on_ref = [x.refs[0] if x.refs[0] != ref.normal() else x.refs[1] for x in ls if Ref(x.refs[0]).is_commentary() or Ref(x.refs[1]).is_commentary()]
         for comm in commentators_on_ref:
-            if comment_ind == Ref(comm).index.title:
+            if comment_ind in Ref(comm).index.title:
                 return Ref(comm).section_ref()
+        if self.en_sefer in comment_ind:
+            comment_ind = re.search(u'(.*?) on {}'.format(self.en_sefer), comment_ind).group(1)
+            for comm in commentators_on_ref:
+                if comment_ind in Ref(comm).index.title:
+                    return Ref(comm).section_ref()
         return ref
 
     def try_parallel_matcher(self, current_source):
@@ -784,7 +824,7 @@ class Nechama_Parser:
             # todo: one Source obj for different Sefaria refs. how do we deal with this?
             if ref2check:
                 # print ref2check.normal(), text_to_use
-                text_to_use = text_to_use.replace('"', '').replace("'", "")
+                text_to_use = self.clean(text_to_use) # .replace('"', '').replace("'", "")
                 if len(text_to_use.split()) == 1:
                     if strip_cantillation(text_to_use, strip_vowels=True) in strip_cantillation(ref2check.text('he').text, strip_vowels=True).split():
                         current_source.ref = ref2check.normal()
@@ -806,7 +846,7 @@ class Nechama_Parser:
                             except KeyError:
                                 print u"parshan_id_table is missing a key and value for {}, in {}, \n text {}".format(current_source.parshan_id, self.current_url, current_source.text)
 
-                    if not matched: #still not matched...
+                    if not matched: # still not matched...
                         if changed_ref.is_segment_level():
                             self.seg_ref_not_found[self.current_url].append(current_source)
                         else:
@@ -902,10 +942,10 @@ if __name__ == "__main__":
     print SEFARIA_SERVER
     parshat_bereishit = [x for x in parshat_bereishit if int(x) >= start_at]
     except_for = [x for x in parshat_bereishit if x not in ["212", "750", "1291"]]
-    # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=False,add_to_title = "")
+    # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=True, add_to_title="better ref catching")
     parser.mode = "accurate"  # accurate / fast
     # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["212", "750", "1291"]], post=True)
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["1291"]], post=True, add_to_title = "id parshan based")
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["2"]], post=True, add_to_title="better ref catching") #1531
     parser.record_report()
     print "MATCHED"
     print parser.matches

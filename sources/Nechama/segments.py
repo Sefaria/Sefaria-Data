@@ -144,7 +144,8 @@ class Source(object):
 
 class Header(object):
     def __init__(self, segment):
-        self.letter = u''
+        self.letter = segment.find(attrs = {"class":"number"}).text.replace(".", "").strip()
+        self.header_text =[x for x in segment.find_all("td") if x.attrs == {}][0].text.strip()
         table_html = str(segment)
         formatted_text = self.format(BeautifulSoup(table_html, "lxml").text)
         self.text = u"<table><tr><td><big>{}</big></td></tr></table>".format(formatted_text)
@@ -228,8 +229,9 @@ class Question(object):
         assert len(Section.get_Tags(segment)) == 1
         imp_contents = Section.get_Tags(segment)[0]
 
-        q = [tag for tag in imp_contents.contents if isinstance(tag, element.Tag) and not tag.attrs][0] #todo: can we make this line more reliable, write tests for this line
+        q = [tag for tag in imp_contents.contents if isinstance(tag, element.Tag) and not tag.attrs] #todo: can we make this line more reliable, write tests for this line
         print '******'+str(len(q))
+        q = q[0]
         classes = ["parshan", "midrash", "talmud", "bible", "commentary","question2", "question", "table"]  # todo: probbaly should be a list of classes of our Obj somewhere
         is_nested = False
         for e in Section.get_Tags(q):
