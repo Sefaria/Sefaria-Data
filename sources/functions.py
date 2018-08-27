@@ -631,7 +631,13 @@ def make_title(text):
 @weak_connection
 def post_sheet(sheet, server=SEFARIA_SERVER):
     url = server + "/api/sheets"
-    return http_request(url, body={"apikey": API_KEY}, json_payload=sheet, method="POST")
+    response = http_request(url, body={"apikey": API_KEY}, json_payload=sheet, method="POST")
+    if isinstance(response, dict):
+        return response
+    else:
+        with open("errors.html", 'w') as f:
+            f.write(response)
+        return response
 
 @weak_connection
 def post_index(index, server=SEFARIA_SERVER):
