@@ -423,8 +423,8 @@ class XML_to_JaggedArray:
             child = self.fix_ol(child)
         if child.tag == "table":
             self.print_table_info(element, index)
-        if child.tag == "h1" and self.title == "Teshuvot Maharam Rotenburg":
-            child.text = child.text.replace(" (D)", "")
+        if child.tag == "h1" and self.title == "Teshuvot Maharam":
+            child.text = re.sub(" \(D.*?\)", "", child.text)
         if child.tag in ["chapter"] and "CHAPTER " in child.text.upper():# and len(child.text.split(" ")) <= 3:
             tags = re.findall("<sup>.*?</sup>", child.text)
             for tag in tags:

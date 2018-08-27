@@ -5,6 +5,7 @@ SERVER = "http://proto.sefaria.org"
 import re
 import bleach
 import csv
+from sources.functions import post_text
 
 def reorder_modify(text):
     return bleach.clean(text, strip=True)
@@ -57,16 +58,16 @@ if __name__ == "__main__":
     # prague = make_map("prague.csv")
 
 
-    parser = XML_to_JaggedArray(title, file_name, allowed_tags, allowed_attributes, post_info, change_name=True, image_dir="./images",
-                                titled=True, print_bool=True)
-    parser.set_funcs(reorder_test=lambda x: x.tag == "h1", reorder_modify=reorder_modify)
-    parser.run()
+    # parser = XML_to_JaggedArray(title, file_name, allowed_tags, allowed_attributes, post_info, change_name=True, image_dir="./images",
+    #                             titled=True, print_bool=True)
+    # parser.set_funcs(reorder_test=lambda x: x.tag == "h1", reorder_modify=reorder_modify)
+    # parser.run()
 
     #Instead of creating dictionaries above, what about doing it below?  Make a map of the text instead of refs to array of text
     #In Prague, when we encounter 66 -> 82, 89; we make sure they are in order, then combine all of the text of 82 and 89
     #and put it inside 66
     siman_to_text = {}
-    with open("RMeirOfRotenberg.csv") as csv_f:
+    with open("RMeirOfRotenberg1&2.csv") as csv_f:
         reader = csv.reader(csv_f)
         for row in reader:
             old_ref, text = row
@@ -75,8 +76,14 @@ if __name__ == "__main__":
                 siman_to_text[current_siman] = []
             siman_to_text[current_siman].append(text)
 
-    for title, file in zip(["Lemberg", "Prague", "Cremona"], ["lemberg.csv", "prague.csv", "cremona.csv"]):
+    titles = ["Lemberg", "Prague", "Cremona"]
+    titles = ["Berlin Edition, Part I", "Berlin Edition, Part II, Issur VeHeter",
+              "Berlin Edition, Part II", "Berlin Edition, Part III"]
+    csv_files = ["lemberg.csv", "prague.csv", "cremona.csv"]
+    csv_files = ["parma.csv", "AM. I.csv", "AM. II.csv", "berlin.csv"]
+    for title, file in zip(titles, csv_files):
         with open(file) as f:
+            text_dict = {title: []}
             reader = csv.reader(f)
             for row in reader:
                 he = row[1]
@@ -84,7 +91,23 @@ if __name__ == "__main__":
                 en_simanim = sorted([el.replace(" ", "") for el in en.split(",")])
                 combined_text = []
                 for en_siman in en_simanim:
+                    if en_siman not in siman_to_text.keys():
+                        print "Problem: {0} {1} -> {2}, but {2} is not in CSV".format(title, he, en)
+                        continue
                     combined_text += siman_to_text[en_siman]
+
+                add_word = "Edition" if "Edition" not in title else ""
+                ref_on_prod = "Teshuvot Maharam, {} {} {}".format(title, add_word, he)
+
+                send_text = {
+                    "versionTitle": "Teshuvot Maharam Rotenburg",
+                    "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002393721 ",
+                    "language": "en",
+                    "text": combined_text,
+                }
+                post_text(ref_on_prod, send_text, server="http://ste.sefaria.org")
+
+
 
 
     # make_new_csv_from_map("RMeirOfRotenberg-Vol1.csv", lemberg, "Lemberg", "Teshuvot Maharam")
