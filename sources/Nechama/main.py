@@ -62,7 +62,7 @@ class Sheet(object):
     def prepare_sheet(self, add_to_title=""):
        sheet_json = {}
        sheet_json["status"] = "public" #"private" #
-       sheet_json["group"] ="Nechama-Leibowitz'-Source-Sheets"#"Nechama Leibowitz' Source Sheets"
+       sheet_json["group"] ="Nechama Leibowitz' Source Sheets"#"Nechama Leibowitz' Source Sheets"
        sheet_json["title"] = u'{} - {} {}'.format(self.title, re.search('(\d+)\.', self.html).group(1), add_to_title)
        sheet_json["summary"] = u"{} ({})".format(self.en_year, self.year)
        sheet_json["sources"] = self.sources
@@ -341,7 +341,7 @@ class Section(object):
             found_ref_in_string = self._get_refs_in_string([relevant_text], next_segment_class,
                                                            add_if_not_found=False)
             #todo: I don't love the special casing for Mekhilta here... :(
-            if re.search(u"מכילתא", relevant_text):
+            if re.search(u"מכילתא", relevant_text) and re.search(u"Exodus(.*)", found_ref_in_string):
                 r = u"Mekhilta d'Rabbi Yishmael {}".format(re.search(u"Exodus(.*)", found_ref_in_string).group(1).strip())
                 current_source = Source(next_segment_class, r)
             else:
@@ -480,9 +480,9 @@ class Section(object):
             poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
             if poss_ref:
                 self.current_perek = poss_ref.sections[0]
-                self.current_pasuk = poss_ref.sections[1]
+                self.current_pasuk = poss_ref.sections[1]# if not poss_ref.is_range() else u"{}-{}".format(poss_ref.sections[1], poss_ref.toSections[1])
             else:
-                print
+
                 self.current_parsha_ref = ["bible", u"{} {}".format(parser.en_sefer, self.current_perek)]
         return True, self.current_perek, new_pasuk
 
@@ -535,7 +535,7 @@ class Section(object):
                 poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk, perakim=[new_perek])
                 if poss_ref:
                     self.current_perek = poss_ref.sections[0]
-                    self.current_pasuk = poss_ref.sections[1]
+                    self.current_pasuk = poss_ref.sections[1] #if not poss_ref.is_range() else u"{}-{}".format(poss_ref.sections[1], poss_ref.toSections[1])
                     # assert str(poss_ref.sections[0]) == new_perek or str(poss_ref.toSections[0]) == new_perek
                     # assert str(poss_ref.sections[1]) == new_pasuk or str(poss_ref.toSections[1]) == new_pasuk
                     self.current_parsha_ref = ["bible", u"{} {}".format(parser.en_sefer, self.current_perek)]
@@ -746,6 +746,7 @@ class Nechama_Parser:
             '46':u"Haamek Davar on {}".format(self.en_sefer),
             # '104':u'''רמבמ"ן''',
             # '196':u'''בעל הלבוש אורה''',
+            '66': u"Meshech Hochma, {}".format(self.en_parasha)
 
         }
 
@@ -788,7 +789,7 @@ class Nechama_Parser:
         if n<=5:
             ngram_size = n
             max_words_between = 1
-            min_words_in_match = n-1
+            min_words_in_match = n-2
         else:
             ngram_size = 3
             max_words_between = 4
@@ -797,6 +798,7 @@ class Nechama_Parser:
         pm = ParallelMatcher(self.tokenizer, dh_extract_method=None, ngram_size=ngram_size, max_words_between=max_words_between, min_words_in_match=min_words_in_match,
         min_distance_between_matches=0, all_to_all=False, parallelize=False, verbose=False, calculate_score=self.get_score)
         new_ref = pm.match(tc_list=[ref.text('he'), (comment, 1)], return_obj=True)
+        new_ref = [x for x in new_ref if x.score > 80]
         return new_ref
 
     def change_ref_to_commentary(self, ref, comment_ind):
@@ -814,8 +816,14 @@ class Nechama_Parser:
 
     def try_parallel_matcher(self, current_source):
         try:
-            # ref2check = current_source.get_sefaria_ref(current_source.ref)
-            ref2check = Ref(current_source.ref)
+            try:
+                if not current_source.get_sefaria_ref(current_source.ref):
+                    ref2check = None
+                else:
+                    ref2check = Ref(current_source.ref)
+            except InputError:
+                if u"Meshech Hochma" in current_source.ref:
+                    ref2check = Ref(u"Meshech Hochma, {}".format(self.en_parasha))
             text_to_use = u""
             if self.mode == "fast":
                 text_to_use = u" ".join(current_source.text.split()[0:15])
@@ -938,14 +946,14 @@ if __name__ == "__main__":
     # sheets = bs4_reader(['html_sheets/{}.html'.format(x) for x in ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]])
     parser = Nechama_Parser(u"Genesis", u"Bereshit", "accurate")
     parshat_bereishit = ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
-    start_at = 1
+    start_at = 1021
     print SEFARIA_SERVER
     parshat_bereishit = [x for x in parshat_bereishit if int(x) >= start_at]
     except_for = [x for x in parshat_bereishit if x not in ["212", "750", "1291"]]
-    # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=True, add_to_title="better ref catching")
+    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=True, add_to_title="better ref catching")
     parser.mode = "accurate"  # accurate / fast
     # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["212", "750", "1291"]], post=True)
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["2"]], post=True, add_to_title="better ref catching") #1531
+    # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["787"]], post=False, add_to_title="pesukim ranges") #1531
     parser.record_report()
     print "MATCHED"
     print parser.matches

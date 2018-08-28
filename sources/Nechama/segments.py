@@ -45,15 +45,23 @@ class Source(object):
         try:
             r = Ref(ref)
             assert r.text('he').text
-            return r
-        except (InputError,  AssertionError) as e:
-            #try to see if all that is wrong is the segment part of the ref, say, for Ralbag Beur HaMilot on Torah, Genesis 4:17
-            last_part = self.ref.split()[-1]
-            if last_part[0].isdigit(): # in format, Ralbag Beur HaMilot on Torah, Genesis 4:17 and last_part is "4:17", now get the node "Ralbag Beur HaMilot on Torah, Genesis"
-                ref_node = " ".join(self.ref.split(" ")[0:-1])
-                return self.get_sefaria_ref(ref_node) #returns Ralbag Beur HaMilot on Torah, Genesis
+            if r.is_commentary():
+                if re.search(u".*(?:on|,)\s((?:[^:]*?):(?:[^:]*)):?", r.normal()):
+                    r_base = Ref(re.search(u".*(?:on|,)\s((?:[^:]*?):(?:[^:]*)):?", r.normal()).group(1))
+                else:
+                    return None
+            else:
+                r_base = r
+            if r_base.is_section_level() or r_base.is_segment_level():
+                return r
             else:
                 return None
+        except (InputError,  AssertionError) as e:
+            # try to see if all that is wrong is the segment part of the ref, say, for Ralbag Beur HaMilot on Torah, Genesis 4:17
+            last_part = self.ref.split()[-1]
+            if last_part[0].isdigit(): # in format, Ralbag Beur HaMilot on Torah, Genesis 4:17 and last_part is "4:17", now get the node "Ralbag Beur HaMilot on Torah, Genesis"
+                ref_node = " ".join(self.ref.split()[0:-1])
+                return self.get_sefaria_ref(ref_node) #returns Ralbag Beur HaMilot on Torah, Genesis
 
     def glue_ref_and_text(self, ref, text):
         return u"<small><b>{}</b><br/>{}</small>".format(ref, text)
