@@ -774,7 +774,9 @@ class Nechama_Parser:
         s = re.sub(ur"[,'\":?.!;־״׳-]", u" ", s)
         s = re.sub(u'((?:^|\s)[\u05d0-\u05ea])\s+([\u05d0-\u05ea])', ur"\1\2", s)
         # s = re.sub(ur"-", u"", s)
-        s = re.sub(ur"\([^)]+\)", u" ", s)
+        if not re.search(u'^\([^()]*(?:\)\s*)$', s):
+            s = re.sub(ur"\([^)]+\)", u" ", s)
+        # s = re.sub(ur"\([^)]+\)", u" ", s)
         # s = re.sub(ur"\((?:\d{1,3}|[\u05d0-\u05ea]{1,3})\)", u" ", s)  # sefaria automatically adds pasuk markers. remove them
         s = bleach.clean(s, strip=True, tags=()).strip()
         s = u" ".join(s.split())
@@ -784,7 +786,7 @@ class Nechama_Parser:
         return self.clean(s).split()
 
 
-    def check_reduce_sources(self, comment, ref):
+    def check_reduce_sources(self, comment, ref, ):
         n = len(comment.split())
         if n<=5:
             ngram_size = n
@@ -833,12 +835,13 @@ class Nechama_Parser:
             if ref2check:
                 # print ref2check.normal(), text_to_use
                 text_to_use = self.clean(text_to_use) # .replace('"', '').replace("'", "")
-                if len(text_to_use.split()) == 1:
-                    if strip_cantillation(text_to_use, strip_vowels=True) in strip_cantillation(ref2check.text('he').text, strip_vowels=True).split():
+                if len(text_to_use.split()) <= 1:
+                    tc = ref2check.text('he').text if not isinstance(ref2check.text('he').text,list) else strip_cantillation(" ".join(ref2check.text('he').text))
+                    if strip_cantillation(text_to_use, strip_vowels=True) in strip_cantillation(tc, strip_vowels=True).split():
                         current_source.ref = ref2check.normal()
                         # print current_source.ref
                     else:
-                        print "it is only one word and this is the wrong ref"
+                        print "it is one or less words and this is the wrong ref..."
                         return
                 else:
                     matched = self.check_reduce_sources(text_to_use, ref2check) # returns a list ordered by scores of mesorat hashas objs that were found
@@ -946,14 +949,14 @@ if __name__ == "__main__":
     # sheets = bs4_reader(['html_sheets/{}.html'.format(x) for x in ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]])
     parser = Nechama_Parser(u"Genesis", u"Bereshit", "accurate")
     parshat_bereishit = ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
-    start_at = 1021
+    start_at = 1229
     print SEFARIA_SERVER
     parshat_bereishit = [x for x in parshat_bereishit if int(x) >= start_at]
     except_for = [x for x in parshat_bereishit if x not in ["212", "750", "1291"]]
     sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=True, add_to_title="better ref catching")
     parser.mode = "accurate"  # accurate / fast
     # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["212", "750", "1291"]], post=True)
-    # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["787"]], post=False, add_to_title="pesukim ranges") #1531
+    # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["1229"]], post=False, add_to_title="pesukim ranges") #1531
     parser.record_report()
     print "MATCHED"
     print parser.matches

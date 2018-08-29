@@ -243,7 +243,7 @@ class Question(object):
         classes = ["parshan", "midrash", "talmud", "bible", "commentary","question2", "question", "table"]  # todo: probbaly should be a list of classes of our Obj somewhere
         is_nested = False
         for e in Section.get_Tags(q):
-            if e.find('td') or (e.attrs and [c in e.attrs['class'] for c in classes]):
+            if e.find('td') or (e.attrs and 'class' in e.attrs and [c in e.attrs['class'] for c in classes]):
                 is_nested = True
                 break
 
