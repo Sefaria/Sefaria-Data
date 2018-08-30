@@ -11,6 +11,8 @@ from sefaria.model import *
 from sefaria.system.exceptions import InputError
 from collections import OrderedDict
 from bs4 import BeautifulSoup, element
+from time import sleep
+import shutil
 from segments import *
 from sources.functions import *
 import unicodedata
@@ -467,14 +469,14 @@ class Section(object):
     
 
     def set_current_pasuk(self, pasuk, is_tanakh):
-        # if "-" in pasuk:  # is a range, correct it
-        #     start = pasuk.split("-")[0]
-        #     end = pasuk.split("-")[1]
-        #     start = getGematria(start)
-        #     end = getGematria(end)
-        #     new_pasuk = u"{}-{}".format(start, end)
-        # else:  # there is a pasuk but is not ranged
-        new_pasuk = str(getGematria(pasuk))
+        if "-" in pasuk:  # is a range, correct it
+            start = pasuk.split("-")[0]
+            end = pasuk.split("-")[1]
+            start = getGematria(start)
+            end = getGematria(end)
+            new_pasuk = u"{}-{}".format(start, end)
+        else:  # there is a pasuk but is not ranged
+            new_pasuk = str(getGematria(pasuk))
 
         if is_tanakh or self.RT_Rashi:
             poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
@@ -750,6 +752,26 @@ class Nechama_Parser:
 
         }
 
+
+    def download_sheets(self):
+        parshat_bereshit = ["1", "2", "30", "62", "84", "148", "212", "274", "302", "378", "451", "488", "527",
+                            "563", "570", "581", "750", "787", "820", "844", "894", "929", "1021", "1034", "1125",
+                            "1183", "1229", "1291", "1351", "1420"]
+        start_after = 35
+        for i in range(1500):
+            if i <= start_after or str(i) in parshat_bereshit:
+                continue
+            print "downloading {}".format(i)
+            sleep(3)
+            headers = {
+                'User-Agent': 'Mozilla/4.0 (Macintosh; Intel Mac OS X 11_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
+            response = requests.get("http://www.nechama.org.il/pages/{}.html".format(i), headers=headers)
+            if response.status_code == 200:
+                with open("{}.html".format(i), 'w') as f:
+                    f.write(response.content)
+            else:
+                print "No page at {}.html".format(i)
+
     def dict_from_html_attrs(self, contents):
         d = OrderedDict()
         for e in [e for e in contents if isinstance(e, element.Tag)]:
@@ -885,6 +907,25 @@ class Nechama_Parser:
         except IndexError as e:
             parser.missing_index.add(u'IndexError: {}'.format(re.sub(u":$", u"", ref2check.normal())))
 
+
+    def organize_by_parsha(self, file_list_names):
+        """
+        The main BeautifulSoup reader function, that etrates on all sheets and creates the obj, probably should be in it's own file
+        :param self:
+        :return:
+        """
+        sheets = OrderedDict()
+        for html_sheet in file_list_names:
+            content = BeautifulSoup(open("{}".format(html_sheet)), "lxml")
+            top_dict = dict_from_html_attrs(content.find('div', {'id': "contentTop"}).contents)
+            parsha = top_dict["paging"].text
+            if not os.path.isdir("html_sheets/"+parsha):
+                os.mkdir("html_sheets/"+parsha)
+            shutil.move(html_sheet, "html_sheets/" + parsha)
+
+
+        return sheets
+
     def bs4_reader(self, file_list_names, post = False, add_to_title = ""):
         """
         The main BeautifulSoup reader function, that etrates on all sheets and creates the obj, probably should be in it's own file
@@ -948,12 +989,14 @@ if __name__ == "__main__":
     # Ref(u"u'דברים פרק ט, ז-כט - פרק י, א-י'")
     # sheets = bs4_reader(['html_sheets/{}.html'.format(x) for x in ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]])
     parser = Nechama_Parser(u"Genesis", u"Bereshit", "accurate")
-    parshat_bereishit = ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]
+    #parser.download_sheets()
+    files = [file for file in os.listdir(".") if file.endswith(".html") and file != "errors.html"]
+    parser.organize_by_parsha(files)
     start_at = 1229
     print SEFARIA_SERVER
     parshat_bereishit = [x for x in parshat_bereishit if int(x) >= start_at]
     except_for = [x for x in parshat_bereishit if x not in ["212", "750", "1291"]]
-    sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=True, add_to_title="better ref catching")
+    #sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=True, add_to_title="better ref catching")
     parser.mode = "accurate"  # accurate / fast
     # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["212", "750", "1291"]], post=True)
     # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["1229"]], post=False, add_to_title="pesukim ranges") #1531
