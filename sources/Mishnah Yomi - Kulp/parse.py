@@ -11,7 +11,7 @@ import re
 from collections import Counter
 from sources.functions import post_index, post_text, convertDictToArray, add_category
 
-SERVER = "http://draft.sefaria.org"
+SERVER = "http://ste.sefaria.org"
 
 # def download_sheets(self):
 #     indexes = library.get_indexes_in_category("Mishnah")
@@ -28,50 +28,53 @@ SERVER = "http://draft.sefaria.org"
 #                 with open("{}.html".format(i), 'w') as f:
 #                     f.write(response.content)
 
-def get_first_sentence(line):
-    line = line.strip()
-    end = line.find(". ")
-    if end != -1:
-        return line[0:end] + ". "
-    return line + " "
-
-
-def deal_with_sections(line, text, prev_section_num, mishnah_text):
-    section = ""
-    if line.startswith("Section"):
-        section = " ".join(line.split()[0:2])
-        section_num_as_word = " ".join(line.split()[1:2]).split(":", 1)[0]
-        if section_num_as_word.find("-") in [1, 2]:  # either 10-14 or 2-7 will be matched
-            # this is a range
-            section_num_as_word = section_num_as_word.split("-")[0]
-    if section:
-        line = line.replace(section, "")
-        # if "this section" in " ".join(line.lower().split()[0:6]): #looking for how many comments themselves mention sections
-        #
-        #     print line
-        try:
-            section_num = w2n.word_to_num(section_num_as_word)
-        except ValueError:
-            return -1
-        if section_num - 1 in range(len(text)):
-            first_sentence = get_first_sentence(mishnah_text[section_num - 1])
-            line = "<b>{}</b>{}".format(first_sentence, line)
-            if text[section_num - 1]:
-                text[section_num - 1] += "\n" + line
-            else:
-                text[section_num - 1] = line
-        else:
-            return -1
-    elif prev_section_num > 0:
-        text[prev_section_num - 1] += "\n" + line
-        return prev_section_num
-    else:
-        text[0] = line
-        return prev_section_num
-
-    return section_num
 
 def parse(file, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
+    def get_first_sentence(line):
+        line = line.strip()
+        end = line.find(". ")
+        if end != -1:
+            return line[0:end]+". "
+        return line+" "
+
+
+    def deal_with_sections(line, text, prev_section_num):
+        section = ""
+        if line.startswith("Section"):
+            section = " ".join(line.split()[0:2])
+            section_num_as_word = " ".join(line.split()[1:2]).split(":", 1)[0]
+            if section_num_as_word.find("-") in [1, 2]: #either 10-14 or 2-7 will be matched
+                 #this is a range
+                section_num_as_word = section_num_as_word.split("-")[0]
+        if section:
+            line = line.replace(section, "")
+            # if "this section" in " ".join(line.lower().split()[0:6]): #looking for how many comments themselves mention sections
+            #
+            #     print line
+            try:
+                section_num = w2n.word_to_num(section_num_as_word)
+            except ValueError:
+                print section_num_as_word
+                return False
+            if section_num - 1 in range(len(text)):
+                first_sentence = get_first_sentence(mishnah_text[section_num - 1])
+                line = "<b>{}</b>{}".format(first_sentence, line)
+                if text[section_num - 1]:
+                    text[section_num - 1] += "\n" + line
+                else:
+                    text[section_num - 1] = line
+            else:
+                return -1
+        elif prev_section_num > 0:
+            text[prev_section_num - 1] += "\n"+line
+            return prev_section_num
+        else:
+            text[0] = line
+            return prev_section_num
+
+
+        return section_num
+
     currently_parsing = ""
     mishnah_text = []
     commentary_text = []
@@ -80,7 +83,7 @@ def parse(file, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
     explanation_sections_text = [] #After parsing "Section One: ...", this array will contain the line in position 0 of the array
     questions_sections_text = []
     with open(file) as f:
-        lines = [line.replace("\n", "") for line in list(f) if line != "\n"]
+        lines = [line.replace("\n", "") for line in list(f) if len(line) > 2]
         first_line = lines[0]
         # chapter_as_word = num2words(chapter).capitalize()
         mishnah_as_word = num2words(mishnah).capitalize()
@@ -91,7 +94,6 @@ def parse(file, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
         for line_n, line in enumerate(lines):
             line = line.strip()
             if "Part" in line and len(line.split()) < 10:
-                prob_files.append(file)
                 print "{}\n{}\n\n".format(file, line)
                 return (commentary_text + questions_text, mishnah_text)
             if "Questions for Further Thought" in line:
@@ -103,29 +105,31 @@ def parse(file, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
                     try:
                         mishnah_inside_file = w2n.word_to_num(word)
                         complaint = "Mishnah word different than number: {} {}:{}".format(sefer, chapter, mishnah)
+                        #print complaint
                     except ValueError:
                         pass
                 currently_parsing = "MISHNAH"
             elif "Introduction" == line:
                 commentary_text.append("<b>"+line+"</b>")
                 currently_parsing = line.upper()
-            elif "Explanation" == line or line.startswith("Explanation-"):
-                currently_parsing = "EXPLANATION"
+            elif "Explanation" == line:
+                currently_parsing = line.upper()
             else:
                 if currently_parsing == "INTRODUCTION":
                     commentary_text[-1] += "\n" + line
-                elif currently_parsing == "QUESTIONS" or currently_parsing == "EXPLANATION":
-                    relevant_sections_text, relevant_text = (questions_sections_text, questions_text) if currently_parsing == "QUESTIONS" else (explanation_sections_text, commentary_text)
+                elif currently_parsing == "EXPLANATION":
+                    relevant_sections_text, relevant_text = explanation_sections_text, commentary_text
                     if relevant_sections_text == []:
                         for k in range(len(mishnah_text)):
                             relevant_sections_text.append("")
-                    result = deal_with_sections(line, relevant_sections_text, section_num, mishnah_text)
+                    result = deal_with_sections(line, relevant_sections_text, section_num)
                     if result == -1:  # there was just an error
-                        prob_files.append(file)
                         print "{} - Problem with explanation sections corresponding to mishnayot\n".format(file)
                         return (commentary_text + questions_text, mishnah_text)
                     else:
                         section_num = result # dont want to set -1 to section_num since it must be >= 0
+                elif currently_parsing == "QUESTIONS":
+                    questions_sections_text.append(line)
                 elif currently_parsing == "MISHNAH":
                     mishnah_text.append(line)
 
@@ -194,7 +198,6 @@ def check_all_mishnayot_present_and_post(text, sefer, file_path):
             our_mishnayot = set(our_mishnayot)
             missing = actual_mishnayot - our_mishnayot
             wrong = our_mishnayot - actual_mishnayot
-            prob_files.append(file_path)
             print file_path
             print "Sefer: {}, Chapter: {}".format(sefer, ch)
             print "Mishnayot to check: {}".format(list(missing.union(wrong)))
@@ -216,15 +219,14 @@ def check_all_mishnayot_present_and_post(text, sefer, file_path):
 
 
 if __name__ == "__main__":
-    prob_files = []
     HOW_MANY_REFER_TO_SECTIONS = 0
     parsed_text = {}
     for category in os.listdir("."):
-        #category = "Nezikin"
+        category = "Nezikin"
         if not os.path.isdir(category):
-             continue
+            continue
         sefarim = os.listdir(category)
-        for sefer in sefarim:# ["Bava Kamma", "Bava Metzia"]:
+        for sefer in ["Bava Kamma", "Bava Metzia"]:
             current_path = "./{}/{}".format(category, sefer)
             if not os.path.isdir(current_path):
                 continue
@@ -257,6 +259,3 @@ if __name__ == "__main__":
             assert most_common_value[1] == 1, "{} has {}".format(most_common_value[0], most_common_value[1])
             create_index(parsed_text[sefer], sefer)
             check_all_mishnayot_present_and_post(parsed_text[sefer], sefer, current_path)
-
-
-    pass

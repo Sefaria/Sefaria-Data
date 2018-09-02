@@ -695,7 +695,7 @@ class Sheets:
 
     def download_sheets(self):
         start_after = 19
-        for i in range(300):#self.bereshit_parshiot:
+        for i in range(2000):#self.bereshit_parshiot:
             if i <= start_after or str(i) in self.bereshit_parshiot:
                 continue
             print "downloading {}".format(i)
