@@ -57,7 +57,10 @@ class Sheet(object):
         for isection, section in enumerate(self.sections):
             for isegment, segment in enumerate(section.segment_objects):
                 if isinstance(segment, Source):
-                    parser.try_parallel_matcher(segment)
+                    if segment.ref and Ref(segment.ref).text('he').text:
+                        parser.try_parallel_matcher(segment)
+                    else:
+                        parser.ref_not_found[parser.current_file_path].append(segment.ref)
                 self.sources.append(segment.create_source())
 
 
@@ -360,11 +363,7 @@ class Section(object):
         elif found_a_tag:
             # found no reference but did find an a_tag so this is a ref so keep the text
             current_source.about_source_ref = relevant_text
-            if current_source.about_source_ref not in parser.index_not_found.keys():
-                parser.index_not_found[current_source.about_source_ref] = []
-            parser.index_not_found[current_source.about_source_ref].append(
-                (self.current_parsha_ref, current_source.about_source_ref))
-
+            parser.index_not_found[parser.current_file_path].append(current_source.about_source_ref)
         else:
             current_source.about_source_ref = relevant_text
 
@@ -424,10 +423,7 @@ class Section(object):
         elif found_a_tag:
             # found no reference but did find an a_tag so this is a ref so keep the text
             current_source.about_source_ref = relevant_text
-            if current_source.about_source_ref not in parser.index_not_found.keys():
-                parser.index_not_found[current_source.about_source_ref] = []
-            parser.index_not_found[current_source.about_source_ref].append((self.current_parsha_ref, current_source.about_source_ref))
-
+            parser.index_not_found[parser.current_file_path].append(current_source.about_source_ref)
         else:
             current_source.about_source_ref = relevant_text
 
@@ -454,7 +450,6 @@ class Section(object):
         #     if strings[-1] not in parser.ref_not_found.keys():
         #         parser.ref_not_found[strings[-1]] = 0
         #     parser.ref_not_found[strings[-1]] += 1
-        parser.ref_not_found.extend(not_found)
         return ""
 
     def set_current_perek(self, perek, is_tanakh, sefer):
@@ -678,15 +673,18 @@ class Section(object):
 
 class Nechama_Parser:
     def __init__(self, en_sefer, en_parasha, mode):
-        self.matches = 0
-        self.non_matches = 0
+        #matches, non_matches, index_not_found, and ref_not_found are all dict with keys being file path and values being list
+        #of refs/indexes
+        self.matches = {}
+        self.non_matches = {}
+        self.index_not_found = {}
+        self.ref_not_found = {}
+
         self.mode = mode  # fast or accurate
         self.en_sefer = en_sefer
         self.en_parasha = en_parasha
         self._term_cache = {}
         self.important_classes = ["parshan", "midrash", "talmud", "bible", "commentary"]
-        self.index_not_found = {}
-        self.ref_not_found = []
         self.server = SEFARIA_SERVER
         self.segment_report = UnicodeWriter(open("segment_report.csv", 'a'))
         self.section_report = UnicodeWriter(open("section_report.csv", 'a'))
@@ -723,7 +721,7 @@ class Nechama_Parser:
         self.missing_index = set()
         self.sec_ref_not_found = {}
         self.seg_ref_not_found = {}
-        self.current_url = ""
+        self.current_file_path = ""
         self.parshan_id_table = {
             '162': u"Rashi on {}".format(self.en_sefer),
             '6': u"Abarbanel on Torah, {}".format(self.en_sefer),  # Abarbanel_on_Torah,_Genesis
@@ -874,24 +872,25 @@ class Nechama_Parser:
                                 parshan = parser.parshan_id_table[current_source.parshan_id]
                                 # chenged_ref = Ref(u'{} {}'.format(parshan, u'{}:{}'.format(ref2check.sections[0], ref2check.sections[1]) if len(ref2check.sections)>1 else u'{}'.format(ref2check[0])))
                                 changed_ref = self.change_ref_to_commentary(ref2check, parshan)
-                                if changed_ref !=ref2check:
+                                if changed_ref != ref2check:
                                     matched = self.check_reduce_sources(text_to_use, changed_ref)
                             except KeyError:
-                                print u"parshan_id_table is missing a key and value for {}, in {}, \n text {}".format(current_source.parshan_id, self.current_url, current_source.text)
+                                print u"parshan_id_table is missing a key and value for {}, in {}, \n text {}".format(current_source.parshan_id, self.current_file_path, current_source.text)
 
                     if not matched: # still not matched...
                         if changed_ref.is_segment_level():
-                            self.seg_ref_not_found[self.current_url].append(current_source)
+                            self.seg_ref_not_found[self.current_file_path].append(current_source)
                         else:
-                            self.sec_ref_not_found[self.current_url].append(current_source)
+                            self.sec_ref_not_found[self.current_file_path].append(current_source)
                         print u"NO MATCH : {}".format(text_to_use)
-                        self.non_matches += 1
+                        self.non_matches.append(ref2check.normal())
 
                         # we dont want to link it since there's no match found so set the ref to empty and record the fixed ref ref2check in about_source_ref
                         current_source.about_source_ref = ref2check.he_normal()
                         current_source.ref = ""
                         return
-                    self.matches += 1
+                    self.matches[self.current_file_path].append(ref2check.normal())
+                    self.matches[self.current_file_path].append(ref2check.normal())
                     current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[
                         0].b.ref.normal()  # because the sides change
 
@@ -903,9 +902,9 @@ class Nechama_Parser:
                 print u"NO ref2check {}".format(current_source.parshan_name)
         except AttributeError as e:
             print u'AttributeError: {}'.format(re.sub(u":$", u"", current_source.about_source_ref))
-            parser.missing_index.add(current_source.about_source_ref)  # todo: would like to add just the <a> tag
+            parser.index_not_found[parser.current_file_path].append(current_source.about_source_ref)  # todo: would like to add just the <a> tag
         except IndexError as e:
-            parser.missing_index.add(u'IndexError: {}'.format(re.sub(u":$", u"", ref2check.normal())))
+            parser.index_not_found[parser.current_file_path].append(ref2check.normal())
 
 
     def organize_by_parsha(self, file_list_names):
@@ -922,8 +921,6 @@ class Nechama_Parser:
             if not os.path.isdir("html_sheets/"+parsha):
                 os.mkdir("html_sheets/"+parsha)
             shutil.move(html_sheet, "html_sheets/" + parsha)
-
-
         return sheets
 
     def bs4_reader(self, file_list_names, post = False, add_to_title = ""):
@@ -934,9 +931,13 @@ class Nechama_Parser:
         """
         sheets = OrderedDict()
         for html_sheet in file_list_names:
-            parser.current_url = html_sheet
-            parser.seg_ref_not_found[parser.current_url] = []
-            parser.sec_ref_not_found[parser.current_url] = []
+            parser.current_file_path = html_sheet
+            parser.matches[parser.current_file_path] = []
+            parser.non_matches[parser.current_file_path] = []
+            parser.index_not_found[parser.current_file_path] = []
+            parser.ref_not_found[parser.current_file_path] = []
+            parser.seg_ref_not_found[parser.current_file_path] = []
+            parser.sec_ref_not_found[parser.current_file_path] = []
             content = BeautifulSoup(open("{}".format(html_sheet)), "lxml")
             print "\n\n"
             print datetime.datetime.now()
@@ -953,9 +954,6 @@ class Nechama_Parser:
             sheet.create_sheetsources_from_objsource()
             if post:
                 sheet.prepare_sheet(add_to_title)
-        print "index_not_found"
-        for parshan_name in parser.index_not_found:
-            print parshan_name
         return sheets
 
 
@@ -971,6 +969,7 @@ class Nechama_Parser:
 
 
     def prepare_term_mapping(self):
+        #growing collection of commands to run so that term_mapping can solely use en_sefer name instead of being hardcoded with things like "Bereshit" and "Bereishit"
         i = library.get_index("Midrash Tanchuma")
         node = i.nodes.children[2]
         node.add_title("Midrash Tanchuma, Genesis", 'en')
@@ -993,15 +992,13 @@ def dict_from_html_attrs(contents):
 if __name__ == "__main__":
     # Ref(u"בראשית פרק ג פסוק ד - פרק ה פסוק י")
     # Ref(u"u'דברים פרק ט, ז-כט - פרק י, א-י'")
-    parser = Nechama_Parser(u"Genesis", u"Bereshit", "accurate")
-    parser.prepare_term_mapping()
-    dir = "Bereshit"
+    parsha = "Bereshit"
+    book = u'Genesis'
+    parser = Nechama_Parser(book, parsha, "accurate")
+    parser.prepare_term_mapping() # must be run locally and on sandbox
     parser.mode = "accurate"  # accurate / fast
     parser.record_report()
-    sheets = parser.bs4_reader(["html_sheets/{}/{}".format(dir, sheet) for sheet in os.listdir("html_sheets/{}".format(dir))], post=True, add_to_title="format refs")
-    print "MATCHED"
-    print parser.matches
-    print "NOT-MATCHED"
-    print parser.non_matches
+    #parser.bs4_reader(["html_sheets/Bereshit/1.html"])
+    sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in os.listdir("html_sheets/{}".format(parsha))], post=True, add_to_title="format refs and english ralbag problem")
 
 
