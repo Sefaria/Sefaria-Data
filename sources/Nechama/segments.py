@@ -64,7 +64,7 @@ class Source(object):
                 return self.get_sefaria_ref(ref_node) #returns Ralbag Beur HaMilot on Torah, Genesis
 
     def glue_ref_and_text(self, ref, text):
-        return u"<small><b>{}</b><br/>{}</small>".format(ref, text)
+        return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(ref, text)
 
     def create_source(self):
         #create source for sourcesheet out of myself

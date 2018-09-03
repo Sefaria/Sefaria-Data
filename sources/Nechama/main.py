@@ -596,7 +596,7 @@ class Section(object):
         if perakim is None:
             perakim = self.possible_perakim
         for perek in perakim:
-            possible_ref = Ref("Genesis " + perek + ":" + new_pasuk)
+            possible_ref = Ref("{} ".format(parser.en_sefer) + perek + ":" + new_pasuk)
             if self.possible_pasukim.contains(possible_ref):
                 return possible_ref
         return None
@@ -692,17 +692,17 @@ class Nechama_Parser:
         self.section_report = UnicodeWriter(open("section_report.csv", 'a'))
         self.has_parasha = [u"מכילתא"]
         self.term_mapping = {
-            u"הכתב והקבלה": u"HaKtav VeHaKabalah, Genesis",
-            u"חזקוני": u"Chizkuni, Genesis",
+            u"הכתב והקבלה": u"HaKtav VeHaKabalah, {}".format(self.en_sefer),
+            u"חזקוני": u"Chizkuni, {}".format(self.en_sefer),
             u"""הנצי"ב מוולוז'ין""": u"Haamek Davar on {}".format(self.en_sefer),
             u"אונקלוס": u"Onkelos {}".format(self.en_sefer),
             u"שמואל דוד לוצטו": u"Shadal on {}".format(self.en_sefer),
             u"מורה נבוכים א'": u"Guide for the Perplexed, Part 1",
             u"מורה נבוכים ב'": u"Guide for the Perplexed, Part 2",
             u"מורה נבוכים ג'": u"Guide for the Perplexed, Part 3",
-            u"תנחומא": u"Midrash Tanchuma, Bereshit", # todo: put in Genesis as alt titles.
-            u"בעל גור אריה": u"Gur Aryeh on Bereishit",
-            u"גור אריה": u"Gur Aryeh on Bereishit", #todo: how does this mapping work? this name is the prime title
+            u"תנחומא": u"Midrash Tanchuma, {}".format(self.en_sefer),
+            u"בעל גור אריה": u"Gur Aryeh on {}".format(self.en_sefer),
+            u"גור אריה": u"Gur Aryeh on {}".format(self.en_sefer), #todo: how does this mapping work? this name is the prime title
             u"""ראב"ע""": u"Ibn Ezra on {}".format(self.en_sefer),
             u"""וראב"ע:""": u"Ibn Ezra on {}".format(self.en_sefer),
             u"עקדת יצחק": u"Akeidat Yitzchak",
@@ -729,7 +729,7 @@ class Nechama_Parser:
             '6': u"Abarbanel on Torah, {}".format(self.en_sefer),  # Abarbanel_on_Torah,_Genesis
             '41': u'Or HaChaim on {}'.format(self.en_sefer),  # Or_HaChaim_on_Genesis
             '101': u'Mizrachi, {}'.format(self.en_sefer),
-            '91': u"Gur Aryeh on Bereishit", #u"גור אריה",
+            '91': u"Gur Aryeh on ".format(self.en_sefer), #u"גור אריה",
             '32':u"Ralbag on {}".format(self.en_sefer), #u'''רלב"ג''', #todo, figure out how to do Beur HaMilot and reguler, maybe needs to be a re.search in the changed_ref method
             '29': u"Bekhor Shor, {}".format(self.en_sefer),#u"בכור שור",
             '238':u"Onkelos {}".format(self.en_sefer),#u"אונקלוס",
@@ -944,8 +944,7 @@ class Nechama_Parser:
             perek_info = content.find("p", {"id": "pasuk"}).text
             top_dict = dict_from_html_attrs(content.find('div', {'id': "contentTop"}).contents)
             # print 'len_content type ', len(top_dict.keys())
-            sefer = u"Genesis"
-            sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, sefer, perek_info)
+            sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
             sheets[html_sheet] = sheet
             body_dict = dict_from_html_attrs(content.find('div', {'id': "contentBody"}))
             sheet.div_sections.extend([v for k, v in body_dict.items() if re.search(u'ContentSection_\d', k)]) # check that these come in in the right order
@@ -971,7 +970,14 @@ class Nechama_Parser:
                 self.segment_report.writerow([url, source.about_source_ref, source.text])
 
 
-
+    def prepare_term_mapping(self):
+        i = library.get_index("Midrash Tanchuma")
+        node = i.nodes.children[2]
+        node.add_title("Midrash Tanchuma, Genesis", 'en')
+        i.save()
+        i = library.get_index("Gur Aryeh on Bereishit")
+        i.nodes.add_title("Gur Aryeh on Genesis", 'en')
+        i.save()
 
 
 def dict_from_html_attrs(contents):
@@ -987,24 +993,15 @@ def dict_from_html_attrs(contents):
 if __name__ == "__main__":
     # Ref(u"בראשית פרק ג פסוק ד - פרק ה פסוק י")
     # Ref(u"u'דברים פרק ט, ז-כט - פרק י, א-י'")
-    # sheets = bs4_reader(['html_sheets/{}.html'.format(x) for x in ["1", "2", "30", "62", "84", "148","212","274","302","378","451","488","527","563","570","581","750","787","820","844","894","929","1021","1034","1125","1183","1229","1291","1351","1420"]])
     parser = Nechama_Parser(u"Genesis", u"Bereshit", "accurate")
-    #parser.download_sheets()
-    files = [file for file in os.listdir(".") if file.endswith(".html") and file != "errors.html"]
-    parser.organize_by_parsha(files)
-    start_at = 1229
-    print SEFARIA_SERVER
-    parshat_bereishit = [x for x in parshat_bereishit if int(x) >= start_at]
-    except_for = [x for x in parshat_bereishit if x not in ["212", "750", "1291"]]
-    #sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in except_for], post=True, add_to_title="better ref catching")
+    parser.prepare_term_mapping()
+    dir = "Bereshit"
     parser.mode = "accurate"  # accurate / fast
-    # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["212", "750", "1291"]], post=True)
-    # sheets = parser.bs4_reader(["html_sheets/{}.html".format(x) for x in ["1229"]], post=False, add_to_title="pesukim ranges") #1531
     parser.record_report()
+    sheets = parser.bs4_reader(["html_sheets/{}/{}".format(dir, sheet) for sheet in os.listdir("html_sheets/{}".format(dir))], post=True, add_to_title="format refs")
     print "MATCHED"
     print parser.matches
     print "NOT-MATCHED"
     print parser.non_matches
 
 
-    #sheets = parser.bs4_reader(["html_sheets/{}".format(fn) for fn in os.listdir("html_sheets") if fn != 'errors.html'])
