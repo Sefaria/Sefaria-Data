@@ -57,10 +57,7 @@ class Sheet(object):
         for isection, section in enumerate(self.sections):
             for isegment, segment in enumerate(section.segment_objects):
                 if isinstance(segment, Source):
-                    if segment.ref and Ref(segment.ref).text('he').text:
-                        parser.try_parallel_matcher(segment)
-                    else:
-                        parser.ref_not_found[parser.current_file_path].append(segment.ref)
+                    parser.try_parallel_matcher(segment)
                 self.sources.append(segment.create_source())
 
 
@@ -672,7 +669,7 @@ class Section(object):
         return (found_difficult + text).strip()
 
 class Nechama_Parser:
-    def __init__(self, en_sefer, en_parasha, mode):
+    def __init__(self, en_sefer, en_parasha, mode, add_to_title):
         #matches, non_matches, index_not_found, and ref_not_found are all dict with keys being file path and values being list
         #of refs/indexes
         self.matches = {}
@@ -680,6 +677,7 @@ class Nechama_Parser:
         self.index_not_found = {}
         self.ref_not_found = {}
 
+        self.add_to_title = add_to_title
         self.mode = mode  # fast or accurate
         self.en_sefer = en_sefer
         self.en_parasha = en_parasha
@@ -900,6 +898,8 @@ class Nechama_Parser:
                     # print ref2check.normal(), current_source.ref
             else:
                 print u"NO ref2check {}".format(current_source.parshan_name)
+                if current_source.ref:
+                    parser.ref_not_found[parser.current_file_path].append(current_source.ref)
         except AttributeError as e:
             print u'AttributeError: {}'.format(re.sub(u":$", u"", current_source.about_source_ref))
             parser.index_not_found[parser.current_file_path].append(current_source.about_source_ref)  # todo: would like to add just the <a> tag
@@ -923,7 +923,7 @@ class Nechama_Parser:
             shutil.move(html_sheet, "html_sheets/" + parsha)
         return sheets
 
-    def bs4_reader(self, file_list_names, post = False, add_to_title = ""):
+    def bs4_reader(self, file_list_names, post = False):
         """
         The main BeautifulSoup reader function, that etrates on all sheets and creates the obj, probably should be in it's own file
         :param self:
@@ -953,19 +953,42 @@ class Nechama_Parser:
             sheet.parse_as_text()
             sheet.create_sheetsources_from_objsource()
             if post:
-                sheet.prepare_sheet(add_to_title)
+                sheet.prepare_sheet(self.add_to_title)
         return sheets
 
 
     def record_report(self):
-        for url, sources in self.sec_ref_not_found.items():
-            url = url.replace("html_sheets/", "")
-            for source in sources:
-                self.section_report.writerow([url, source.about_source_ref, source.text])
-        for url, sources in self.seg_ref_not_found.items():
-            url = url.replace("html_sheets/", "")
-            for source in sources:
-                self.segment_report.writerow([url, source.about_source_ref, source.text])
+        if not os.path.isdir("reports/{}".format(self.en_parasha)):
+            os.mkdir("reports/{}".format(self.en_parasha))
+        new_file = codecs.open("reports/{}/{} {}.txt".format(self.en_parasha, self.add_to_title, datetime.datetime.now()), 'w')
+        matches = 0
+        non_matches = 0
+        for file_path, sources in self.matches.items():
+            new_file.write("Matches\n")
+            new_file.write(u", ".join(sources))
+            matches += len(sources)
+
+        for file_path, sources in self.non_matches.items():
+            new_file.write("\nNon-matches\n")
+            new_file.write(u", ".join(sources).encode('utf-8'))
+            non_matches += len(sources)
+
+        for file_path, sources in self.ref_not_found.items():
+            new_file.write("\nRefs not found\n")
+            new_file.write(u", ".join(sources).encode('utf-8'))
+            non_matches += len(sources)
+
+        for file_path, sources in self.index_not_found.items():
+            new_file.write("\nIndexes not found\n")
+            new_file.write(u", ".join(sources).encode('utf-8'))
+            non_matches += len(sources)
+
+        total = matches + non_matches
+        percent = 100.0*float(matches)/total
+        new_file.write("\nTotal: {}".format(total))
+        new_file.write("\nPercent matches: {}%".format(percent))
+
+        new_file.close()
 
 
     def prepare_term_mapping(self):
@@ -994,11 +1017,12 @@ if __name__ == "__main__":
     # Ref(u"u'דברים פרק ט, ז-כט - פרק י, א-י'")
     parsha = "Bereshit"
     book = u'Genesis'
-    parser = Nechama_Parser(book, parsha, "accurate")
-    parser.prepare_term_mapping() # must be run locally and on sandbox
+    parser = Nechama_Parser(book, parsha, "accurate", "formatting refs")
+    #parser.prepare_term_mapping() # must be run once locally and on sandbox
     parser.mode = "accurate"  # accurate / fast
+    parser.bs4_reader(["html_sheets/Bereshit/1.html"])
+    #sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in os.listdir("html_sheets/{}".format(parsha))], post=True)
     parser.record_report()
-    #parser.bs4_reader(["html_sheets/Bereshit/1.html"])
-    sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in os.listdir("html_sheets/{}".format(parsha))], post=True, add_to_title="format refs and english ralbag problem")
+
 
 
