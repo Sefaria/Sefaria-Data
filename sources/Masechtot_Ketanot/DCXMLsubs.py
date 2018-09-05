@@ -163,7 +163,11 @@ class bookSub(supermod.book):
                 'refs': [base_ref, comment_ref],
                 'type': 'commentary',
                 'auto': True,
-                'genrated_by': 'Masechtot Ketanot Parser'
+                'genrated_by': 'Masechtot Ketanot Parser',
+                'inline_reference': {
+                    'data-commentator': comment['commentator'],
+                    'data-order': comment['order']
+                }
             })
         return links
 
