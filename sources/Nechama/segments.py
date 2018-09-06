@@ -39,10 +39,30 @@ class Source(object):
     def is_source_text(segment, important_classes):
         return isinstance(segment, element.Tag) and "class" in segment.attrs.keys() and segment.attrs["class"][0] in important_classes
 
+    def get_sefaria_ref_trimmed(self, ref):
+        if ref == "":
+            return None
+        try:
+            r = Ref(ref)
+            assert r.text('he').text
+            if not r.is_book_level():
+                return r
+            else:
+                return None
+        except (InputError,  AssertionError) as e:
+            # try to see if all that is wrong is the segment part of the ref, say, for Ralbag Beur HaMilot on Torah, Genesis 4:17
+            last_part = self.ref.split()[-1]
+            if last_part[0].isdigit(): # in format, Ralbag Beur HaMilot on Torah, Genesis 4:17 and last_part is "4:17", now get the node "Ralbag Beur HaMilot on Torah, Genesis"
+                ref_node = " ".join(self.ref.split()[0:-1])
+                return self.get_sefaria_ref_trimmed(ref_node) #returns Ralbag Beur HaMilot on Torah, Genesis
+
+
     def get_sefaria_ref(self, ref):
         if ref == "":
             return None
         try:
+            print "REF!!!!!!!!!"
+            print ref
             r = Ref(ref)
             assert r.text('he').text
             if r.is_commentary():
@@ -52,7 +72,7 @@ class Source(object):
                     return None
             else:
                 r_base = r
-            if r_base.is_section_level() or r_base.is_segment_level():
+            if not r.is_book_level():
                 return r
             else:
                 return None
@@ -91,13 +111,20 @@ class Source(object):
                           "sourceLangLayout": ""
                       }
                       }
-        elif self.ref:  # thought we found a ref but it's not an actual ref in sefaria library
-            self.ref = Ref(self.ref).he_normal()
+        elif self.ref:
+            # thought we found a ref but it's not an actual ref in sefaria library
+            # get the he_normal() of ref or if it's invalid ref, try modifying and then running he_normal()
+            try:
+                self.ref = Ref(self.ref).he_normal()
+            except InputError:
+                last_part = self.ref.split()[-1]
+                assert last_part[0].isdigit()  # in format, Ralbag Beur HaMilot on Torah, Genesis 4:17 and last_part is "4:17", now get the node "Ralbag Beur HaMilot on Torah, Genesis"
+                self.ref = Ref(" ".join(self.ref.split()[0:-1])).he_normal()
+
             if self.about_source_ref:
                 comment = self.glue_ref_and_text(self.about_source_ref, comment, bold=True) #use actual text if we can
             else:
                 comment = self.glue_ref_and_text(self.ref, comment, bold=False) # otherwise, use the ref we thought it was
-
             source = {"outsideText": comment,
                       "options": {
                           "indented": "indented-1",
@@ -149,6 +176,7 @@ class Source(object):
         ref_copy = self.ref
         new_source = Source(self.segment_class, ref_copy)
         new_source.parshan_name = self.parshan_name
+        new_source.about_source_ref = self.about_source_ref
         # new_source.pasuk = self.pasuk
         # new_source.perek = self..perek
 
