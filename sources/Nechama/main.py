@@ -450,7 +450,7 @@ class Section(object):
     def set_current_perek(self, perek, is_tanakh, sefer):
         new_perek = str(getGematria(perek))
         if is_tanakh:
-            if new_perek in self.perakim:
+            if new_perek in self.possible_perakim:
                 self.current_perek = str(new_perek)
                 self.current_parsha_ref = ["bible", u"{} {}".format(sefer, new_perek)]
             else:
@@ -497,9 +497,9 @@ class Section(object):
             perek_comma_pasuk = re.findall("Perek (.{1,5}),? Pasuk (.*)", text)
         perek = re.findall("Perek (.{1,5}\s)", text)
         pasuk = re.findall("Pasuk (.*)", text)
-        assert len(perek) in [0, 1]
-        assert len(pasuk) in [0, 1]
-        assert len(perek_comma_pasuk) in [0, 1]
+        assert len(perek) in [0, 1], "Perakim not len 0 or 1"
+        assert len(pasuk) in [0, 1], "Pasukim not len 0 or 1"
+        assert len(perek_comma_pasuk) in [0, 1], "Perek Pasuk not len 0 or 1"
         # if len(perek) == len(pasuk) == len(perek_comma_pasuk) == 0 and ("Pasuk" in text or "Perek" in text):
         #     pass
 
@@ -667,7 +667,7 @@ class Section(object):
         return (found_difficult + text).strip()
 
 class Nechama_Parser:
-    def __init__(self, en_sefer, en_parasha, mode, add_to_title):
+    def __init__(self, en_sefer, en_parasha, mode, add_to_title, catch_errors=False):
         #matches, non_matches, index_not_found, and ref_not_found are all dict with keys being file path and values being list
         #of refs/indexes
         self.matches = {}
@@ -676,6 +676,7 @@ class Nechama_Parser:
         self.ref_not_found = {}
 
         self.add_to_title = add_to_title
+        self.catch_errors = catch_errors #crash upon error if False; if True, make report of each error
         self.mode = mode  # fast or accurate
         self.en_sefer = en_sefer
         self.en_parasha = en_parasha
@@ -956,9 +957,12 @@ class Nechama_Parser:
                 if post:
                     sheet.prepare_sheet(self.add_to_title)
             except:
-                self.error_report.write(html_sheet+": ")
-                self.error_report.write(str(sys.exc_info()))
-                self.error_report.write("\n")
+                if parser.catch_errors:
+                    self.error_report.write(html_sheet+": ")
+                    self.error_report.write(str(sys.exc_info()))
+                    self.error_report.write("\n")
+                else:
+                    raise
         return sheets
 
 
@@ -1038,10 +1042,10 @@ def dict_from_html_attrs(contents):
 if __name__ == "__main__":
     # Ref(u"בראשית פרק ג פסוק ד - פרק ה פסוק י")
     # Ref(u"u'דברים פרק ט, ז-כט - פרק י, א-י'")
-    parshiot = ["Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", 'Vayetzei', "Vayishlach", "Vayeshev", "Miketz", "Vayigash", "Vayechi"]
+    parshiot = ["Bereshit"]#, "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", 'Vayetzei', "Vayishlach", "Vayeshev", "Miketz", "Vayigash", "Vayechi"]
     for parsha in parshiot:
         book = u'Genesis'
-        parser = Nechama_Parser(book, parsha, "fast", "formatting refs")
+        parser = Nechama_Parser(book, parsha, "fast", "formatting refs", catch_errors=True)
         parser.prepare_term_mapping() # must be run once locally and on sandbox
         #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
         sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha))]
