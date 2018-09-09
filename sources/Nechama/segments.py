@@ -39,24 +39,6 @@ class Source(object):
     def is_source_text(segment, important_classes):
         return isinstance(segment, element.Tag) and "class" in segment.attrs.keys() and segment.attrs["class"][0] in important_classes
 
-    def get_sefaria_ref_trimmed(self, ref):
-        if ref == "":
-            return None
-        try:
-            r = Ref(ref)
-            assert r.text('he').text
-            if not r.is_book_level():
-                return r
-            else:
-                return None
-        except (InputError,  AssertionError) as e:
-            # try to see if all that is wrong is the segment part of the ref, say, for Ralbag Beur HaMilot on Torah, Genesis 4:17
-            last_part = self.ref.split()[-1]
-            if last_part[0].isdigit(): # in format, Ralbag Beur HaMilot on Torah, Genesis 4:17 and last_part is "4:17", now get the node "Ralbag Beur HaMilot on Torah, Genesis"
-                ref_node = " ".join(self.ref.split()[0:-1])
-                return self.get_sefaria_ref_trimmed(ref_node) #returns Ralbag Beur HaMilot on Torah, Genesis
-
-
     def get_sefaria_ref(self, ref):
         if ref == "":
             return None
@@ -78,9 +60,9 @@ class Source(object):
                 return None
         except (InputError,  AssertionError) as e:
             # try to see if all that is wrong is the segment part of the ref, say, for Ralbag Beur HaMilot on Torah, Genesis 4:17
-            last_part = self.ref.split()[-1]
+            last_part = ref.split()[-1]
             if last_part[0].isdigit(): # in format, Ralbag Beur HaMilot on Torah, Genesis 4:17 and last_part is "4:17", now get the node "Ralbag Beur HaMilot on Torah, Genesis"
-                ref_node = " ".join(self.ref.split()[0:-1])
+                ref_node = " ".join(ref.split()[0:-1])
                 return self.get_sefaria_ref(ref_node) #returns Ralbag Beur HaMilot on Torah, Genesis
 
     def glue_ref_and_text(self, ref, text, bold=True):
@@ -244,8 +226,12 @@ class Header(object):
 class Question(object):
 
     def __init__(self, segment):
-
-        number, bullet = [(t.parent.parent.select(".number"), t.find('img')) for t in segment.select(".bullet > p")][0]
+        bullet_tag = segment.select(".bullet > p")
+        number = []
+        bullet = []
+        if bullet_tag:
+            bullet_tag = bullet_tag[0]
+            number, bullet = (bullet_tag.parent.parent.select(".number"), bullet_tag.find('img'))
 
         self.number = number[0].text if number else u""
         # bullet = [t.find('img') for t in segment.select(".bullet > p")][0]

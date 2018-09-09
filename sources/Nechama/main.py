@@ -20,6 +20,7 @@ from sefaria.utils.hebrew import strip_cantillation
 from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
 from data_utilities.util import WeightedLevenshtein
 import datetime
+import traceback
 
 class Sheet(object):
 
@@ -82,7 +83,11 @@ class Sheet(object):
         #three formats: Perek 2; Perek 2, Pasuk 3-9; Perek 2, 4 - Perek 3, 2 (last one may lose pasuk info as well
         print perek_info
         sefer = perek_info.split()[0]
-        en_sefer = library.get_index(sefer).title
+        try:
+            en_sefer = library.get_index(sefer).title
+        except BookNameError:
+            sefer = " ".join(perek_info.split()[0:2]) # For Melachim Bet
+            en_sefer = library.get_index(sefer).title
         perek_info = perek_info.replace(u"פרקים", u"Perek").replace(u"פרק", u"Perek").replace(u"פסוקים", u"Pasuk").replace(u"פסוק", u"Pasuk").strip()
         perek_info = " ".join(perek_info.split()[1:])
         if len(perek_info.split("Perek")) - 1 == 2: #we know it's the third case
@@ -323,7 +328,7 @@ class Section(object):
         # check if it's in Perek X, Pasuk Y format and set perek and pasuk accordingly
         is_tanakh = (relevant_text.startswith(u"פרק ") or relevant_text.startswith(u"פסוק ") or
                      relevant_text.startswith(u"פרקים ") or relevant_text.startswith(u"פסוקים "))
-        is_perek_pasuk_ref, new_perek, new_pasuk = self.set_current_perek_pasuk(relevant_text, next_segment_class,
+        is_perek_pasuk_ref, new_perek, new_pasuk = self.set_current_perek_pasuk(found_a_tag, relevant_text, next_segment_class,
                                                                                 is_tanakh)
 
         # now create current_source based on real_title or based on self.current_parsha_ref
@@ -437,7 +442,6 @@ class Section(object):
             string = string.strip()
             refs = library.get_refs_in_string(string)
             if refs:
-                assert len(refs) <= 1 or u"השווה" in orig
                 return refs[0].normal()
             else:
                 not_found.append(orig)
@@ -459,7 +463,8 @@ class Section(object):
     
 
     def set_current_pasuk(self, pasuk, is_tanakh):
-        if "-" in pasuk:  # is a range, correct it
+        pasuk = pasuk.strip()
+        if len(pasuk)-1 > pasuk.find("-") > 0:  # is a range, correct it
             start = pasuk.split("-")[0]
             end = pasuk.split("-")[1]
             start = getGematria(start)
@@ -478,9 +483,10 @@ class Section(object):
                 self.current_parsha_ref = ["bible", u"{} {}".format(parser.en_sefer, self.current_perek)]
         return True, self.current_perek, new_pasuk
 
-    def set_current_perek_pasuk(self, text, next_segment_class, is_tanakh=True):
+    def set_current_perek_pasuk(self, a_tag, text, next_segment_class, is_tanakh=True):
 
         # text = re.search(u"(פרק(ים))",text)
+        text = text if not a_tag else a_tag.text #this is useful for cases when pattern "Perek X Pasuk Y" occurs twice and one is inside a tag
         text = text.replace(u"פרקים", u"Perek").replace(u"פרק ", u"Perek ").replace(u"פסוקים", u"Pasuk").replace(
             u"פסוק ", u"Pasuk ").strip()
         digit = re.compile(u"^.{1,2}[\)|\.]").match(text)
@@ -513,8 +519,9 @@ class Section(object):
         else:
             perek = perek_comma_pasuk[0][0]
             pasuk = perek_comma_pasuk[0][1]
+            pasuk = pasuk.strip()
             new_perek = str(getGematria(perek))
-            if "-" in pasuk:  # is a range, correct it
+            if len(pasuk)-1 > pasuk.find("-") > 0:  # is a range, correct it
                 start = pasuk.split("-")[0]
                 end = pasuk.split("-")[1]
                 start = getGematria(start)
@@ -668,6 +675,9 @@ class Section(object):
 
 class Nechama_Parser:
     def __init__(self, en_sefer, en_parasha, mode, add_to_title, catch_errors=False):
+        if not os.path.isdir("reports/" + parsha):
+            os.mkdir("reports/" + parsha)
+
         #matches, non_matches, index_not_found, and ref_not_found are all dict with keys being file path and values being list
         #of refs/indexes
         self.matches = {}
@@ -919,8 +929,6 @@ class Nechama_Parser:
             content = BeautifulSoup(open("{}".format(html_sheet)), "lxml")
             top_dict = dict_from_html_attrs(content.find('div', {'id': "contentTop"}).contents)
             parsha = top_dict["paging"].text
-            if not os.path.isdir("html_sheets/"+parsha):
-                os.mkdir("html_sheets/"+parsha)
             shutil.move(html_sheet, "html_sheets/" + parsha)
         return sheets
 
@@ -956,17 +964,22 @@ class Nechama_Parser:
                 sheet.create_sheetsources_from_objsource()
                 if post:
                     sheet.prepare_sheet(self.add_to_title)
-            except:
+            except Exception, e:
                 if parser.catch_errors:
                     self.error_report.write(html_sheet+": ")
-                    self.error_report.write(str(sys.exc_info()))
+                    self.error_report.write(str(sys.exc_info()[0:2]))
                     self.error_report.write("\n")
+                    self.error_report.write(traceback.format_exc())
+                    self.error_report.write("\n\n")
                 else:
                     raise
         return sheets
 
 
     def record_report(self):
+        if not self.catch_errors:
+            return
+
         now = datetime.datetime.now()
         now = now.strftime("%c")
         if not os.path.isdir("reports/{}".format(self.en_parasha)):
@@ -1026,6 +1039,8 @@ class Nechama_Parser:
         i = library.get_index("Meshech Hochma")
         node = library.get_index("Meshech Hochma").nodes.children[4]
         node.add_title("Chayei Sara", 'en')
+        node = library.get_index("Meshech Hochma").nodes.children[6]
+        node.add_title("Vayetzei", "en")
         i.save()
 
 
@@ -1042,16 +1057,19 @@ def dict_from_html_attrs(contents):
 if __name__ == "__main__":
     # Ref(u"בראשית פרק ג פסוק ד - פרק ה פסוק י")
     # Ref(u"u'דברים פרק ט, ז-כט - פרק י, א-י'")
-    parshiot = ["Bereshit"]#, "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", 'Vayetzei', "Vayishlach", "Vayeshev", "Miketz", "Vayigash", "Vayechi"]
+    parshiot = ["Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", 'Vayetzei', "Vayishlach", "Vayeshev", "Miketz", "Vayigash", "Vayechi"]
+    parshiot = ["Vayishlach", "Vayeshev", "Miketz", "Vayigash", "Vayechi"]
+    parshiot = ["Miketz"]
     for parsha in parshiot:
         book = u'Genesis'
-        parser = Nechama_Parser(book, parsha, "fast", "formatting refs", catch_errors=True)
+        parser = Nechama_Parser(book, parsha, "fast", "formatting refs", catch_errors=False)
         parser.prepare_term_mapping() # must be run once locally and on sandbox
         #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
         sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha))]
         # anything_before = "7.html"
         # pos_anything_before = sheets.index(anything_before)
         # sheets = sheets[pos_anything_before:]
+        sheets = ["1429.html"]
         sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=False)
         parser.record_report()
 
