@@ -38,42 +38,35 @@ def parse(file, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
         return line+" "
 
 
-    def deal_with_sections(line, text, prev_section_num):
-        section = ""
-        if line.startswith("Section"):
-            section = " ".join(line.split()[0:2])
-            section_num_as_word = " ".join(line.split()[1:2]).split(":", 1)[0]
-            if section_num_as_word.find("-") in [1, 2]: #either 10-14 or 2-7 will be matched
-                 #this is a range
-                section_num_as_word = section_num_as_word.split("-")[0]
-        if section:
-            line = line.replace(section, "")
-            # if "this section" in " ".join(line.lower().split()[0:6]): #looking for how many comments themselves mention sections
-            #
-            #     print line
-            try:
-                section_num = w2n.word_to_num(section_num_as_word)
-            except ValueError:
-                print section_num_as_word
-                return False
-            if section_num - 1 in range(len(text)):
-                first_sentence = get_first_sentence(mishnah_text[section_num - 1])
-                line = "<b>{}</b>{}".format(first_sentence, line)
-                if text[section_num - 1]:
-                    text[section_num - 1] += "\n" + line
-                else:
-                    text[section_num - 1] = line
-            else:
-                return -1
-        elif prev_section_num > 0:
-            text[prev_section_num - 1] += "\n"+line
-            return prev_section_num
+    def deal_with_sections(line, text, len_mishnah):
+        line = line.replace(" -", ":", 1)
+        section = re.search("^Section (\S+) ", line)
+        if not section:
+            text.append(line)
+            return 0
+
+        section_num_as_word = section.group(1)
+
+        if section_num_as_word.endswith(":"): # if there is a colon at the end, we want to replace the words "Section one: ", but if it's part of the sentence like "Section one is ...", then we want to keep it
+            line = line.replace(section.group(0), "")
+            section_num_as_word = section_num_as_word[0:-1]
+
+        if section_num_as_word.find("-") in [1, 2]: #either 10-14 or 2-7 will be matched, this is a range
+            section_num_as_word = section_num_as_word.split("-")[0]
+
+
+        try:
+            section_num = w2n.word_to_num(section_num_as_word)
+        except ValueError:
+            assert type(section_num_as_word) is int
+            section_num = section_num_as_word
+        if section_num - 1 < len_mishnah:
+            first_sentence = get_first_sentence(mishnah_text[section_num - 1])
+            line = "<b>{}</b>{}".format(first_sentence, line)
+            text.append(line)
         else:
-            text[0] = line
-            return prev_section_num
-
-
-        return section_num
+            text.append(line)
+            return -1
 
     currently_parsing = ""
     mishnah_text = []
@@ -91,6 +84,7 @@ def parse(file, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
         #     print "Problem in file {} in first line {}".format(file, first_line)
         #     return (commentary_text, mishnah_text)
         section_num = 0
+
         for line_n, line in enumerate(lines):
             line = line.strip()
             if "Part" in line and len(line.split()) < 10:
@@ -98,7 +92,7 @@ def parse(file, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
                 return (commentary_text + questions_text, mishnah_text)
             if "Questions for Further Thought" in line:
                 currently_parsing = "QUESTIONS"
-                questions_text.append(line)
+                questions_text.append("<b>"+line+"</b>")
             elif len(line.split()) < 7 and ("Mishna" in line or sefer == line):
                 if "Mishnah {}".format(mishnah_as_word) != line and "Mishna" in line:
                     word = line.split()[-1] #Mishnah Five -> Five
@@ -118,16 +112,10 @@ def parse(file, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
                 if currently_parsing == "INTRODUCTION":
                     commentary_text[-1] += "\n" + line
                 elif currently_parsing == "EXPLANATION":
-                    relevant_sections_text, relevant_text = explanation_sections_text, commentary_text
-                    if relevant_sections_text == []:
-                        for k in range(len(mishnah_text)):
-                            relevant_sections_text.append("")
-                    result = deal_with_sections(line, relevant_sections_text, section_num)
+                    result = deal_with_sections(line, explanation_sections_text, len(mishnah_text))
                     if result == -1:  # there was just an error
                         print "{} - Problem with explanation sections corresponding to mishnayot\n".format(file)
                         return (commentary_text + questions_text, mishnah_text)
-                    else:
-                        section_num = result # dont want to set -1 to section_num since it must be >= 0
                 elif currently_parsing == "QUESTIONS":
                     questions_sections_text.append(line)
                 elif currently_parsing == "MISHNAH":
@@ -136,6 +124,8 @@ def parse(file, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
         assert commentary_text != mishnah_text != []
         commentary_text += explanation_sections_text
         questions_text += questions_sections_text
+        commentary_text = [el for el in commentary_text if el]
+        questions_text = [el for el in questions_text if el]
         return (commentary_text+questions_text, mishnah_text)
 
 
@@ -169,7 +159,7 @@ def create_index(text, sefer):
         "base_text_titles": [index.title],
         "collective_title": "Joshua Kulp",
     }
-    #post_index(index, server=SERVER)
+    post_index(index, server=SERVER)
 
 
 def check_all_mishnayot_present_and_post(text, sefer, file_path):
@@ -180,7 +170,7 @@ def check_all_mishnayot_present_and_post(text, sefer, file_path):
             "versionTitle": "Mishnah Yomit",
             "versionSource": "http://learn.conservativeyeshiva.org/mishnah/"
         }
-        #post_text(path, send_text, server=SERVER)
+        post_text(path, send_text, server=SERVER)
     #first check that all chapters present
     index = library.get_index("Mishnah " + sefer)
     en_title = "Mishnah Yomit on {}".format(index.title)
@@ -222,11 +212,10 @@ if __name__ == "__main__":
     HOW_MANY_REFER_TO_SECTIONS = 0
     parsed_text = {}
     for category in os.listdir("."):
-        category = "Nezikin"
         if not os.path.isdir(category):
             continue
         sefarim = os.listdir(category)
-        for sefer in ["Bava Kamma", "Bava Metzia"]:
+        for sefer in sefarim:
             current_path = "./{}/{}".format(category, sefer)
             if not os.path.isdir(current_path):
                 continue
@@ -234,7 +223,7 @@ if __name__ == "__main__":
                 parsed_text[sefer] = {}
             files = os.listdir(current_path)
             found_ref = Counter()
-            for file in files:
+            for file_n, file in enumerate(files):
                 file_path = current_path + "/" + file
                 if "Copy" in file or "part" in file or "Part" in file or len(file.split("-")) > 2 or not file.endswith(".txt"): #Ignore copies, and files with multiple parts or mishnayot
                     continue
@@ -244,16 +233,13 @@ if __name__ == "__main__":
                     parsed_text[sefer]["Introduction"] = [line.replace("\n", "") for line in lines if line != "\n"]
                     f.close()
                 elif file.startswith(sefer):
-                    try:
-                        ref_form = Ref("Mishnah " + file.replace("-", ":").replace(".txt", "")) #Berakhot 3-13.txt --> Mishnah Berakhot 3:13
-                        found_ref[ref_form.normal()] += 1
-                        chapter, mishnah = ref_form.sections[0], ref_form.sections[1]
-                        if chapter not in parsed_text[sefer].keys():
-                            parsed_text[sefer][chapter] = {}
-                        parsed_text[sefer][chapter][mishnah] = parse(file_path, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS)
-                    except InputError as e:
-                        print file_path
-                        print "FIle problem with {}".format(file)
+                    ref_form = Ref("Mishnah " + file.replace("-", ":").replace(".txt", "")) #Berakhot 3-13.txt --> Mishnah Berakhot 3:13
+                    found_ref[ref_form.normal()] += 1
+                    chapter, mishnah = ref_form.sections[0], ref_form.sections[1]
+                    if chapter not in parsed_text[sefer].keys():
+                        parsed_text[sefer][chapter] = {}
+                    parsed_text[sefer][chapter][mishnah] = parse(file_path, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS)
+
 
             most_common_value = found_ref.most_common(1)[0]
             assert most_common_value[1] == 1, "{} has {}".format(most_common_value[0], most_common_value[1])
