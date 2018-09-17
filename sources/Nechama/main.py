@@ -58,7 +58,8 @@ class Sheet(object):
             for isegment, segment in enumerate(section.segment_objects):
                 if isinstance(segment, Source):
                     parser.try_parallel_matcher(segment)
-                self.sources.append(segment.create_source())
+                seg_sheet_source = segment.create_source()
+                self.sources.extend(seg_sheet_source if isinstance(seg_sheet_source, list) else [seg_sheet_source]) # todo: problem with nested it doesn't it doesn't go through the PM...
 
 
     def prepare_sheet(self, add_to_title=""):
@@ -169,8 +170,6 @@ class Sheet(object):
             print u"appended {}".format(section.title)
 
 
-
-
 class Section(object):
 
     def __init__(self, number, perakim, pasukim, soupObj):
@@ -185,6 +184,7 @@ class Section(object):
         self.current_parsha_ref = ""
         self.current_perek = self.possible_perakim[0]
         self.current_pasuk = self.possible_pasukim.sections[-1] #the lowest pasuk in the range
+        self.has_nested = []
 
     @staticmethod
     def get_Tags(segment):
@@ -202,13 +202,14 @@ class Section(object):
         soup_segments = self.get_children_with_content(div)
         # blockquote is really just its children so get replace it with them
         # and tables  need to be handled recursively
-        soup_segments = self.check_for_blockquote_and_table(soup_segments, level=2)
+        soup_segments = self.check_for_blockquote_and_table(soup_segments)
 
         # create Segment objects out of the BeautifulSoup objects
-        self.classify_segments(soup_segments)
+        self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
         header = filter(lambda x: isinstance(x, Header), self.segment_objects)[0]
         self.title = header.header_text
         self.letter = header.letter
+        return
 
     def classify_segments(self, soup_segments):
         """
@@ -222,48 +223,100 @@ class Section(object):
         :param soup_segments:
         :return:
         """
+        segment_objects = []
         current_source = None
-        for i, segment in enumerate(soup_segments):
-            relevant_text = self.format(self.relevant_text(segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
-            if Header.is_header(segment):
-                self.segment_objects.append(Header(segment))
-            # if i == 0 and not self.segment_objects: #there isn't a header yet. should not use place in the list... :(
-            #     self.segment_objects.append(Header(segment))
-            #     # assert Header.is_header(segment), "Header should be first."
-            #     continue
-            elif Question.is_question(segment):
-                nested_seg = Question.nested(segment)
-                if nested_seg:
-                    self.add_segments(nested_seg)
-                else:  # not nested q so should append this q, otherwise it is a nested q. so it shouldn't be appended cause the children will be appended
-                    self.segment_objects.append(Question(segment))
-            elif Table.is_table(segment):  # these tables we want as they are so just str(segment)
-                self.segment_objects.append(Table(segment))
-            elif Source.is_source_text(segment, parser.important_classes):
-                # this is a comment by a commentary, bible, or midrash
-                segment_class = segment.attrs["class"][0]  # is it source, bible, or midrash?
-                assert len(segment.attrs["class"]) == 1, "More than one class"
-                if not current_source:
-                    current_source = [x for x in self.segment_objects if isinstance(x, Source)][-1]
-                current_source = current_source.add_text(segment, segment_class) #returns current_source if there's no text, OR returns a new Source object if current_source already has text
-                                                                                #the latter case occurs when for example it says "Rashi" followed by multiple comments
-                self.segment_objects.append(current_source)
-                if not current_source.ref:
+        nested_candidates = {} # OrderedDict() # this is a Dict of nested obj, and the q will be do we wan't them as nested or as originals.
+
+        if parser.old:
+            for i, segment in enumerate(soup_segments):
+                relevant_text = self.format(self.relevant_text(segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
+                if Header.is_header(segment):
+                    segment_objects.append(Header(segment)) #self.segment_objects.append(Header(segment))
+                # if i == 0 and not self.segment_objects: #there isn't a header yet. should not use place in the list... :(
+                #     self.segment_objects.append(Header(segment))
+                #     # assert Header.is_header(segment), "Header should be first."
+                #     continue
+                elif Question.is_question(segment):
+                    nested_seg = Question.nested(segment)
+                    if nested_seg:
+                        self.has_nested += [i]
+                        nested_candidates[i] = Nested([Question(segment), self.classify_segments(Section.get_Tags(nested_seg))], self.segment_objects)
+                        segment_objects.append(nested_candidates[i]) #the idea here is that we have a hybrid Question/other smaller obj, and we will need to chose whitch is better fit for this segment in this Section
+                        # self.add_segments(nested_seg)
+                    else:  # not nested q so should append this q, otherwise it is a nested q. so it shouldn't be appended cause the children will be appended
+                        segment_objects.append(Question(segment)) #self.segment_objects.append(Question(segment))
+                elif Table.is_table(segment):  # these tables we want as they are so just str(segment)
+                    segment_objects.append(Table(segment)) #self.segment_objects.append(Table(segment))
+                elif Source.is_source_text(segment, parser.important_classes):
+                    # this is a comment by a commentary, bible, or midrash
+                    segment_class = segment.attrs["class"][0]  # is it source, bible, or midrash?
+                    assert len(segment.attrs["class"]) == 1, "More than one class"
+                    if not current_source:
+                        current_source = [x for x in segment_objects if isinstance(x, Source)][-1] #[x for x in self.segment_objects if isinstance(x, Source)][-1]
+                    current_source = current_source.add_text(segment, segment_class) #returns current_source if there's no text, OR returns a new Source object if current_source already has text
+                                                                                    #the latter case occurs when for example it says "Rashi" followed by multiple comments
+                    segment_objects.append(current_source) #self.segment_objects.append(current_source)
+                    if not current_source.ref:
+                        continue
+                    if current_source.index_not_found():
+                        if current_source.about_source_ref not in parser.index_not_found.keys():
+                            parser.index_not_found[current_source.about_source_ref] = []
+                        parser.index_not_found[current_source.about_source_ref].append((self.current_parsha_ref, current_source.about_source_ref))
                     continue
-                if current_source.index_not_found():
-                    if current_source.about_source_ref not in parser.index_not_found.keys():
-                        parser.index_not_found[current_source.about_source_ref] = []
-                    parser.index_not_found[current_source.about_source_ref].append((self.current_parsha_ref, current_source.about_source_ref))
-                continue
-            elif Nechama_Comment.is_comment(soup_segments, i, parser.important_classes):  # above criteria not met, just an ordinary comment
-                self.segment_objects.append(Nechama_Comment(relevant_text))
-            else:  # must be a Source Ref, so parse it
-                next_segment_class = (soup_segments[i + 1].attrs["class"][0], None if "id" not in soup_segments[i + 1].attrs.keys() else soup_segments[i + 1].attrs["id"]) # get the class of this ref and it's comment
-                current_source = self.parse_ref(segment, relevant_text, next_segment_class)
+                elif Nechama_Comment.is_comment(soup_segments, i, parser.important_classes):  # above criteria not met, just an ordinary comment
+                    segment_objects.append(Nechama_Comment(relevant_text)) # self.segment_objects.append(Nechama_Comment(relevant_text))
+                else:  # must be a Source Ref, so parse it
+                    next_segment_class = (soup_segments[i + 1].attrs["class"][0], None if "id" not in soup_segments[i + 1].attrs.keys() else soup_segments[i + 1].attrs["id"]) # get the class of this ref and it's comment
+                    current_source = self.parse_ref(segment, relevant_text, next_segment_class)
+        else:
+            for i, segment in enumerate(soup_segments):
+                sheet_segment = self.classify(segment, i, soup_segments)
+                if sheet_segment:
+                    self.segment_objects.append(sheet_segment)
+        return  # self.segment_objects
 
+    def classify(self, sp_segment, i, soup_segments):
+        """
 
+        :param sp_segment: beuitiful soup <tag> to classify into our obj and Nested
+        :return: our obj (or Nested)
+        """
 
+        relevant_text = self.format(self.relevant_text(sp_segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
+        if Header.is_header(sp_segment):
+            return Header(sp_segment)  # self.segment_objects.append(Header(segment))
+        elif Question.is_question(sp_segment):
+            nested_seg = Question.nested(sp_segment)
+            if nested_seg:
+                return Nested(Question(sp_segment))
+            else:
+                return Question(sp_segment)
+        elif Table.is_table(sp_segment):  # these tables we want as they are so just str(segment)
+            return Table(sp_segment)
+        elif Source.is_source_text(sp_segment, parser.important_classes):
+        # this is a comment by a commentary, bible, or midrash that should be added as text to a Source created previously already.
+            segment_class = sp_segment.attrs["class"][0]  # is it source, bible, or midrash?
 
+            current_source = [x for x in self.segment_objects if (isinstance(x, Source) and x.current)][-1]
+            current_source.add_text(sp_segment, segment_class)
+            # return current_source
+    #     elif Source.is_source_text(sp_segment, parser.important_classes):
+    #         # what is in this segment we need to learn it and parse it. is this the element of the ref or the source or the comment after?
+    #         # and whitch parts of it do we want to be in the source obj?
+    #         return Source(r)
+    #     elif Nechama_Comment.is_comment(self.soup_segments, 0, parser.important_classes):  # above criteria not met, just an ordinary comment
+    #         return Nechama_Comment(relevant_text)  # self.segment_objects.append(Nechama_Comment(relevant_text))
+        else:  # must be a Source Ref, so parse it
+            next_segment_class = (soup_segments[i + 1].attrs["class"][0],
+                                  None if "id" not in soup_segments[i + 1].attrs.keys() else soup_segments[i + 1].attrs[
+                                      "id"])  # get the class of this ref and it's comment
+            # next_segment_class = ["parshan"]
+            current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+            current_source.current = True
+            return current_source
+
+    def look_at_next_segment(self):
+        pass
 
     def get_term(self, poss_title):
         # return the english index name corresponding to poss_title or None
@@ -331,12 +384,11 @@ class Section(object):
         # now create current_source based on real_title or based on self.current_parsha_ref
         if real_title:  # a ref to a commentator that we have in our system
             if new_pasuk:
-                current_source = Source(next_segment_class,
-                                        u"{} {}:{}".format(real_title, new_perek, new_pasuk))
+                current_source = Source(u"{} {}:{}".format(real_title, new_perek, new_pasuk), next_segment_class)
             else:
-                current_source = Source(next_segment_class, u"{} {}".format(real_title, new_perek))
+                current_source = Source(u"{} {}".format(real_title, new_perek), next_segment_class)
         elif not real_title and is_tanakh:  # not a commentator, but instead a ref to the parsha
-            current_source = Source("bible", u"{} {}:{}".format(parser.en_sefer, new_perek, new_pasuk))
+            current_source = Source(u"{} {}:{}".format(parser.en_sefer, new_perek, new_pasuk), "bible")
         # elif current_source.parshan_name != "bible":
         #     pass # look for mechilta? look for other books so not to get only Tanakh?
         elif len(relevant_text.split()) < 8:  # not found yet, look it up in library.get_refs_in_string
@@ -345,11 +397,11 @@ class Section(object):
             #todo: I don't love the special casing for Mekhilta here... :(
             if re.search(u"מכילתא", relevant_text) and re.search(u"Exodus(.*)", found_ref_in_string):
                 r = u"Mekhilta d'Rabbi Yishmael {}".format(re.search(u"Exodus(.*)", found_ref_in_string).group(1).strip())
-                current_source = Source(next_segment_class, r)
+                current_source = Source(r, next_segment_class)
             else:
-                current_source = Source(next_segment_class, found_ref_in_string)
+                current_source = Source(found_ref_in_string, next_segment_class)
         else:
-            current_source = Source(next_segment_class, "")
+            current_source = Source("", next_segment_class)
 
         # finally set about_source_ref
         if current_source.get_ref():
@@ -389,27 +441,25 @@ class Section(object):
                 print "PARSHAN not in table", next_segment_class_id, relevant_text
                 if real_title:  # a ref to a commentator that we have in our system
                     if new_pasuk:
-                        current_source = Source(next_segment_class,
-                                                u"{} {}:{}".format(real_title, new_perek, new_pasuk))
+                        current_source = Source(u"{} {}:{}".format(real_title, new_perek, new_pasuk), next_segment_class)
         if real_title and not next_segment_class == "parshan":  # a ref to a commentator that we have in our system
             if new_pasuk:
-                current_source = Source(next_segment_class,
-                                     u"{} {}:{}".format(real_title, new_perek, new_pasuk))
+                current_source = Source(u"{} {}:{}".format(real_title, new_perek, new_pasuk), next_segment_class)
             else:
-                current_source = Source(next_segment_class, u"{} {}".format(real_title, new_perek))
+                current_source = Source(u"{} {}".format(real_title, new_perek), next_segment_class)
         elif not real_title and is_tanakh:  # not a commentator, but instead a ref to the parsha
             # if next_segment_class == "parshan":
             #     parshan = parser.parshan_id_table[next_segment_class_id]
             #     print "PARSHAN", parshan, next_segment_class_id
             #     current_source = Source(next_segment_class, u"{} on {} {}:{}".format(parshan, parser.en_sefer, new_perek, new_pasuk))
             #     current_source.parshan_name = parshan
-            current_source = Source("bible", u"{} {}:{}".format(parser.en_sefer, new_perek, new_pasuk))
+            current_source = Source(u"{} {}:{}".format(parser.en_sefer, new_perek, new_pasuk), "bible")
         elif len(relevant_text.split()) < 8:  # not found yet, look it up in library.get_refs_in_string
             found_ref_in_string = self._get_refs_in_string([relevant_text], next_segment_class,
                                                            add_if_not_found=False)
             current_source = Source(next_segment_class, found_ref_in_string)
         else:
-            current_source = Source(next_segment_class, "")
+            current_source = Source("", next_segment_class)
 
         #finally set about_source_ref
         if current_source.get_ref():
@@ -744,8 +794,8 @@ class Nechama_Parser:
             '46':u"Haamek Davar on {}".format(self.en_sefer),
             # '104':u'''רמבמ"ן''',
             # '196':u'''בעל הלבוש אורה''',
-            '66': u"Meshech Hochma, {}".format(self.en_parasha)
-
+            '66': u"Meshech Hochma, {}".format(self.en_parasha),
+            # '51': u"ביאור - ר' שלמה דובנא"
         }
 
 
@@ -804,7 +854,8 @@ class Nechama_Parser:
         return self.clean(s).split()
 
 
-    def check_reduce_sources(self, comment, ref, ):
+    def check_reduce_sources(self, comment, ref):
+        new_ref = []
         n = len(comment.split())
         if n<=5:
             ngram_size = n
@@ -813,12 +864,13 @@ class Nechama_Parser:
         else:
             ngram_size = 3
             max_words_between = 4
-            min_words_in_match = int(round(n*0.5))
+            min_words_in_match = int(round(n*0.3))
 
         pm = ParallelMatcher(self.tokenizer, dh_extract_method=None, ngram_size=ngram_size, max_words_between=max_words_between, min_words_in_match=min_words_in_match,
         min_distance_between_matches=0, all_to_all=False, parallelize=False, verbose=False, calculate_score=self.get_score)
-        new_ref = pm.match(tc_list=[ref.text('he'), (comment, 1)], return_obj=True)
-        new_ref = [x for x in new_ref if x.score > 80]
+        if self.to_match:
+            new_ref = pm.match(tc_list=[ref.text('he'), (comment, 1)], return_obj=True)
+            new_ref = [x for x in new_ref if x.score > 80]
         return new_ref
 
     def change_ref_to_commentary(self, ref, comment_ind):
@@ -854,7 +906,7 @@ class Nechama_Parser:
                 # print ref2check.normal(), text_to_use
                 text_to_use = self.clean(text_to_use) # .replace('"', '').replace("'", "")
                 if len(text_to_use.split()) <= 1:
-                    tc = ref2check.text('he').text if not isinstance(ref2check.text('he').text,list) else strip_cantillation(" ".join(ref2check.text('he').text))
+                    tc = ref2check.text('he').text if not isinstance(ref2check.text('he').text, list) else strip_cantillation(" ".join(ref2check.text('he').text))
                     if strip_cantillation(text_to_use, strip_vowels=True) in strip_cantillation(tc, strip_vowels=True).split():
                         current_source.ref = ref2check.normal()
                         # print current_source.ref
@@ -870,7 +922,7 @@ class Nechama_Parser:
                                 parshan = parser.parshan_id_table[current_source.parshan_id]
                                 # chenged_ref = Ref(u'{} {}'.format(parshan, u'{}:{}'.format(ref2check.sections[0], ref2check.sections[1]) if len(ref2check.sections)>1 else u'{}'.format(ref2check[0])))
                                 changed_ref = self.change_ref_to_commentary(ref2check, parshan)
-                                if changed_ref != ref2check:
+                                if changed_ref !=ref2check:
                                     matched = self.check_reduce_sources(text_to_use, changed_ref)
                             except KeyError:
                                 print u"parshan_id_table is missing a key and value for {}, in {}, \n text {}".format(current_source.parshan_id, self.current_file_path, current_source.text)
@@ -923,7 +975,7 @@ class Nechama_Parser:
             shutil.move(html_sheet, "html_sheets/" + parsha)
         return sheets
 
-    def bs4_reader(self, file_list_names, post = False):
+    def bs4_reader(self, file_list_names, post = False, add_to_title = ""):
         """
         The main BeautifulSoup reader function, that etrates on all sheets and creates the obj, probably should be in it's own file
         :param self:
@@ -1017,11 +1069,12 @@ if __name__ == "__main__":
     # Ref(u"u'דברים פרק ט, ז-כט - פרק י, א-י'")
     parsha = "Bereshit"
     book = u'Genesis'
-    parser = Nechama_Parser(book, parsha, "accurate", "formatting refs")
+    parser = Nechama_Parser(book, parsha, "accurate")
+    parser.old = False
     #parser.prepare_term_mapping() # must be run once locally and on sandbox
     parser.mode = "accurate"  # accurate / fast
-    parser.bs4_reader(["html_sheets/Bereshit/1.html"])
-    #sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in os.listdir("html_sheets/{}".format(parsha))], post=True)
+    parser.bs4_reader(["html_sheets/Bereshit/1.html"], post=True, add_to_title="merged")
+    # sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in os.listdir("html_sheets/{}".format(parsha))], post=True)
     parser.record_report()
 
 

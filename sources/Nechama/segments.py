@@ -21,8 +21,9 @@ class Segment(object):
 
 class Source(object):
 
-    def __init__(self, segment_class, ref):
-        self.parshan_name = u""
+    # def __init__(self, segment_class, ref):
+    def __init__(self, ref, segment_class=None):
+        # self.parshan_name = u""
         self.parshan_id = 0
         self.about_source_ref = u""  # words of nechama in regards to the parshan or this specific book, that we will lose since it is not part of our "ref" system see 8.html sec 1. "shadal"
         self.perek = u""
@@ -128,7 +129,7 @@ class Source(object):
 
     def add_text(self, segment, segment_class):
         segment_text = segment.text.replace("\n", "").replace("\r", "")
-        self.parshan_name = segment_class
+        # self.parshan_name = segment_class
         # print self.parshan_name
         if not self.text:
             self.text = segment_text
@@ -148,7 +149,7 @@ class Source(object):
         # ref_copy = Ref(self.ref.normal())
         ref_copy = self.ref
         new_source = Source(self.segment_class, ref_copy)
-        new_source.parshan_name = self.parshan_name
+        # new_source.parshan_name = self.parshan_name
         # new_source.pasuk = self.pasuk
         # new_source.perek = self..perek
 
@@ -234,6 +235,7 @@ class Question(object):
         any([s.attrs for s in segs])
         self.q_text = u" ".join([s.text.strip() for s in segment.find_all('p') if not s.parent.has_attr('class')])
         self.text = self.format()
+        self.q_source = None
 
     @staticmethod
     def nested(segment):
@@ -339,3 +341,32 @@ class Nechama_Comment(object):
         #create source for sourcesheet out of myself
         source = {"outsideText": self.text}
         return source
+
+class Nested(object):
+    """
+    class for Hybrid obj classes that we must chose btw to egt the Obj that will be the actual source in the sheet_segment
+    """
+
+    def __init__(self, obj):
+        self.obj = obj
+
+    # def __init__(self, options, section):
+    #     self.whole_segments_of_section = section
+    #     self.options = options
+
+
+    def choose(self):
+        # smart chosing algorithm to get the right obj option for this segment in this section. todo: write the algo not(!!!) self.options[0]
+        not_nested = self.options[0]
+        nested = self.options[1]
+        return nested
+
+    def create_source(self):
+        return_sheet_obj = []
+        # for option in self.options:
+        #     return_sheet_obj.extend([obj.create_source() for obj in option] if isinstance(option, list) else [option.create_source()])
+
+        # source = self.choose().create_source()
+        # return source
+        # return return_sheet_obj
+        return self.obj.create_source()
