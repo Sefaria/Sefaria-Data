@@ -30,7 +30,7 @@ def clean(s):
 
     s = re.sub(ur"[,'\":?!;־״׳]", u" ", s)  # purposefully leave out period so we can replace ... later on
     s = re.sub(ur"\([^)]+\)", u" ", s)
-    s = re.sub(ur"<[^>]+>", u" ", s)
+    s = re.sub(ur"<[^>]+>", u"", s)
     s = u" ".join(s.split())
     return s
 
