@@ -361,7 +361,7 @@ class AbbrevMatch:
 
 
 class GemaraDaf:
-    def __init__(self,word_list,comments,dh_extraction_method=lambda x: x,prev_matched_results=None,dh_split=None, lang="he"):
+    def __init__(self,word_list,comments,dh_extraction_method=lambda x: x,prev_matched_results=None,dh_split=None, daf_skips=2, rashi_skips=1, overall_skips=2, lang="he"):
         self.allWords = word_list
         self.matched_words = [False for _ in xrange(len(self.allWords))]
         self.gemaraText = " ".join(self.allWords)
@@ -369,6 +369,9 @@ class GemaraDaf:
         self.allRashi = []
         self.did_dh_split = not dh_split is None
         self.dh_map = []
+        self.daf_skips = daf_skips
+        self.rashi_skips = rashi_skips
+        self.overall_skips = overall_skips
         self.lang = lang
         # dh split
         dh_list = []
@@ -405,23 +408,37 @@ class GemaraDaf:
                 old_dh = self.dh_map[i]
                 sub_rashis = []
                 start_i = i
+
+                skipped_daf, skipped_rashi = 0, 0
                 while i < len(self.allRashi) and self.dh_map[i] == old_dh:
+                    temp_rash = self.allRashi[i]
                     if self.allRashi[i].startWord != -1:
                         sub_rashis.append(self.allRashi[i])
+                        skipped_daf += len(temp_rash.skippedDafWords)
+                        skipped_rashi += len(temp_rash.skippedRashiWords)
+                    else:
+                        skipped_rashi += len(temp_rash.words)
                     i += 1
                 if len(sub_rashis) == 0:
                     new_all_rashi.append(self.allRashi[start_i]) #just append the first one
                 else:
-                    new_start_word = len(self.gemaraText)
-                    new_end_word = -1
-                    new_matching_text = u'חדש:'
-                    for sub_ru in sub_rashis:
-                        #print u"Old {}".format(sub_ru)
-                        new_matching_text += u" " + sub_ru.matchedGemaraText
-                        if sub_ru.startWord < new_start_word:
-                            new_start_word = sub_ru.startWord
-                        if sub_ru.endWord > new_end_word:
-                            new_end_word = sub_ru.endWord
+                    if skipped_rashi > self.rashi_skips or skipped_daf > self.daf_skips or (
+                        skipped_daf + skipped_rashi) > self.overall_skips:
+                        # count it as a mismatch
+                        new_start_word = -1
+                        new_end_word = -1
+                        new_matching_text = u""
+                    else:
+                        new_start_word = len(self.gemaraText)
+                        new_end_word = -1
+                        new_matching_text = u'חדש:'
+                        for sub_ru in sub_rashis:
+                            #print u"Old {}".format(sub_ru)
+                            new_matching_text += u" " + sub_ru.matchedGemaraText
+                            if sub_ru.startWord < new_start_word:
+                                new_start_word = sub_ru.startWord
+                            if sub_ru.endWord > new_end_word:
+                                new_end_word = sub_ru.endWord
 
                     new_ru = RashiUnit(old_dh,sub_rashis[0].fullText,sub_rashis[0].place, self.lang)
                     new_ru.startWord = new_start_word
@@ -709,7 +726,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
 
     InitializeHashTables()
 
-    curDaf = GemaraDaf(base_text, comments, dh_extract_method, prev_matched_results, dh_split, lang=lang)
+    curDaf = GemaraDaf(base_text, comments, dh_extract_method, prev_matched_results, dh_split, daf_skips, rashi_skips, overall, lang=lang)
     # now we go through each rashi, and find all potential matches for each, with a rating
     for irashi,ru in enumerate(curDaf.allRashi):
         if ru.startWord != -1:

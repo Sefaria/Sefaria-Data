@@ -38,6 +38,7 @@ from sefaria.model import *
 from sources.functions import post_link
 from sefaria.system.exceptions import DuplicateRecordError
 from sefaria.system.exceptions import InputError
+from sefaria.system.exceptions import PartialRefInputError
 from data_utilities.dibur_hamatchil_matcher import get_maximum_subset_dh
 import logging
 import multiprocessing
@@ -1271,9 +1272,9 @@ def filter_index_file(filtered_mesorat_hashas, index_mesorat_hashas):
 def test_tokenize_words_remove_indexes(index_mesorat_hashas):
     aramaic_books = ["Pesikta D'Rav Kahanna", "Bereishit Rabbah", "Vayikra Rabbah", "Eichah Rabbah"]
     imh = json.load(open(index_mesorat_hashas, 'rb'))
-    talmud_indexes = library.get_indexes_in_category("Bavli", full_records=True)
-    talmud_titles = library.get_indexes_in_category("Bavli")
-    willy_titles = talmud_titles[:talmud_titles.index('Menachot') + 1]
+    talmud_indexes = [library.get_index("Megillah")] #library.get_indexes_in_category("Bavli", full_records=True)
+    talmud_titles = ["Megillah"] #library.get_indexes_in_category("Bavli")
+    willy_titles = talmud_titles[:talmud_titles.index('Megillah') + 1]
     talmud_words_dict = {}
     for iindex, index in enumerate(talmud_indexes):
         print "Tokenizing {} ({}/{})".format(index.title, iindex, len(talmud_indexes))
@@ -1298,10 +1299,15 @@ def test_tokenize_words_remove_indexes(index_mesorat_hashas):
     for ilink, link in enumerate(imh):
         if ilink % 1000 == 0:
             print "{}/{}".format(ilink, len(imh))
-        ref_link = [Ref(r) for r in link["match"]]
+        try:
+            ref_link = [Ref(r) for r in link["match"]]
+        except PartialRefInputError as e:
+            print link["match"]
+        except InputError as e:
+            print link["match"]
         for il, l in enumerate(ref_link):
             other_l = ref_link[int(il == 0)]
-            if l.primary_category == "Talmud" and other_l.primary_category != "Talmud" and other_l.index.title not in aramaic_books:
+            if l.primary_category == "Talmud" and l.index.title == "Megillah" and other_l.primary_category != "Talmud" and other_l.index.title not in aramaic_books:
                 title = l.index.title
                 orig_start = link["match_index"][il][0]
                 orig_end = link["match_index"][il][1]
@@ -1311,6 +1317,8 @@ def test_tokenize_words_remove_indexes(index_mesorat_hashas):
                 space_str = talmud_words_dict[title]["space"][orig_start + space_start : orig_end + space_end + 1]
 
                 for i in range(orig_start + space_start, orig_end + space_end+1):
+                    if i == 400425:
+                        print "oh no"
                     talmud_words_dict[title]["linked"].add(i)
                 if len(space_str) == 0 and len(orig_str) != 0:
                     "One is len 0"
@@ -1330,7 +1338,7 @@ def test_tokenize_words_remove_indexes(index_mesorat_hashas):
     for link in mishnah_map:
         link_refs = [Ref(r) for r in link.refs]
         for r in link_refs:
-            if r.primary_category == "Talmud":
+            if r.primary_category == "Talmud" and r.index.title == "Megillah":
                 start_index = talmud_words_dict[r.index.title]["index_list"][
                     talmud_words_dict[r.index.title]["ref_list"].index(r.starting_ref().normal())]
                 try:
@@ -1338,7 +1346,10 @@ def test_tokenize_words_remove_indexes(index_mesorat_hashas):
                         talmud_words_dict[r.index.title]["ref_list"].index(r.ending_ref().normal())+1] - 1
                 except IndexError as e:
                     end_index = talmud_words_dict[r.index.title]["total_len"] - 1
-                for i in range(start_index + 1, end_index):  # offsets are to remove mishna and gemara tags
+                for i in range(start_index, end_index + 1):
+                    if i == 400425:
+
+                        print 'oh no mishnah'
                     talmud_words_dict[r.index.title]["linked"].add(i)
 
     num_linked = 0
@@ -1368,8 +1379,5 @@ def test_tokenize_words_remove_indexes(index_mesorat_hashas):
         talmud_range_dict[index.title]["ranges"] = ranges
     objStr = json.dumps(talmud_range_dict, indent=4, ensure_ascii=False)
     print "{}/{} {}".format(num_linked, num_words, 1.0*num_linked/num_words)
-    with open('talmud_ranges.json', "wb") as fout:
+    with open('talmud_hebrew_ranges.json', "wb") as fout:
         fout.write(objStr.encode('utf-8'))
-
-
-

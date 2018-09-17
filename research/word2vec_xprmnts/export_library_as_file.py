@@ -22,7 +22,7 @@ def tokenizer(s, as_str=False, tref=None, vtitle=None):
     s = re.sub(ur'־', u' ', s)
     s = re.sub(ur'\([^)]+\)', u'', s)
     s = re.sub(ur'\[[^\]]+\]', u'', s)
-    s = re.sub(ur'[^ א-ת]', u'', s)
+    s = re.sub(ur'[^ \u05d0-\u05ea"\'״׳]', u'', s)
     # remove are parenthetical text
     if as_str:
         return [(s.split(), tref, vtitle)]
@@ -116,4 +116,3 @@ def export_library_as_docs(filename):
             fout.write("{} {}\n".format(doc_id, input_doc))
     with codecs.open("doc_ids.json", "wb", encoding="utf8") as fout_ids:
         json.dump(doc_id_map, fout_ids, ensure_ascii=False)
-

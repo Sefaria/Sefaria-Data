@@ -8,7 +8,7 @@ sys.path.insert(0, SEFARIA_PROJECT_PATH)
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 
 
-import re, bleach, json, codecs, unicodecsv, heapq
+import re, bleach, json, codecs, unicodecsv, heapq, random, regex
 import django
 django.setup()
 from sefaria.model import *
@@ -17,6 +17,7 @@ from collections import defaultdict, OrderedDict
 from sefaria.system.exceptions import PartialRefInputError, InputError, NoVersionFoundError
 from sefaria.utils.hebrew import strip_cantillation
 from data_utilities.util import WeightedLevenshtein
+
 
 def argmax(iterable, n=1):
     if n==1:
@@ -209,36 +210,88 @@ def disambiguate_all():
         f.write(objStr.encode('utf-8'))
 
 
+def get_snippet_by_seg_ref(source, found):
+    """
+    based off of library.get_wrapped_refs_string
+    :param source:
+    :param found:
+    :return:
+    """
+    found_title = found.index.get_title("he")
+    found_node = library.get_schema_node(found_title, "he")
+    title_nodes = {t: found_node for t in found.index.all_titles("he")}
+    all_reg = library.get_multi_title_regex_string(set(found.index.all_titles("he")), "he")
+    reg = regex.compile(all_reg, regex.VERBOSE)
+    source_text = strip_cantillation(source.text("he").text, strip_vowels=True)
+
+    linkified = library._wrap_all_refs_in_string(title_nodes, reg, source_text, "he")
+
+    snippets = []
+    for match in re.finditer(u"(<a [^>]+>)([^<]+)(</a>)", linkified):
+        ref = Ref(match.group(2))
+        if ref.normal() == found.section_ref().normal() or ref.normal() == found.normal():
+            start_snip_naive = match.start(2) - 100 if match.start(0) >= 100 else 0
+            start_snip = linkified.rfind(u" ", 0, start_snip_naive)
+            if start_snip == -1:
+                start_snip = start_snip_naive
+            end_snip_naive = match.end(2) + 100 if match.end(0) + 100 <= len(linkified) else len(linkified)
+            end_snip = linkified.find(u" ", end_snip_naive)
+            if end_snip == -1:
+                end_snip = end_snip_naive
+            snippets += [bleach.clean(linkified[start_snip:end_snip], tags=[], strip=True)]
+
+    if len(snippets) == 0:
+        print "zero"
+        print found
+        linkified = library._wrap_all_refs_in_string(title_nodes, reg, source_text, "he")
+
+    if len(snippets) == 0:
+        return [source_text]
+    return snippets
+
+
 def find_low_confidence_talmud():
     with open("unambiguous_links.json", "rb") as fin:
         jin = json.load(fin)
     low_conf = []
-    med_conf = []
+    high_conf = []
     for r1, r2, conf in jin:
         is_talmud = Ref(r1).primary_category == "Talmud"
         if conf < 40 and is_talmud:
             low_conf += [[r1, r2, conf]]
-        elif (40 <= conf < 55 and is_talmud) or conf < 40:
-            med_conf += [[r1,r2, conf]]
+        else:
+            high_conf += [[r1, r2, conf]]
+
+    tanakh = random.sample(filter(lambda x: Ref(x[0]).primary_category == "Tanakh", high_conf), 250)
+    talmud = random.sample(filter(lambda x: Ref(x[0]).primary_category == "Talmud", high_conf), 250)
+    qa_rows = [
+        {
+            u"Found Text": Ref(x[0]).text("he").ja().flatten_to_string(),
+            u"Source Text": u"...".join(get_snippet_by_seg_ref(Ref(x[1]), Ref(x[0]))),
+            u"Source Ref URL": u"https://sefaria.org/{}".format(Ref(x[1]).url()),
+            u"Found Ref URL": u"https://sefaria.org/{}".format(Ref(x[0]).url()),
+            u"Wrong segment (seg) / Wrong link (link)": u""
+        }
+        for x in (tanakh + talmud)]
 
     print len(low_conf)
-    print len(med_conf)
+    print len(high_conf)
     with open("low_conf_links.json", "wb") as fout:
         json.dump(low_conf, fout, indent=2)
-    with open("med_conf_links.json", "wb") as fout:
-        json.dump(med_conf, fout, indent=2)
-
+    with open("high_conf_links.json", "wb") as fout:
+        json.dump(high_conf, fout, indent=2)
+    with open("QA Section Links.csv", "wb") as fout:
+        csv = unicodecsv.DictWriter(fout, [u"Source Text", u"Found Text", u"Source Ref URL", u"Found Ref URL", u"Wrong segment (seg) / Wrong link (link)"])
+        csv.writeheader()
+        csv.writerows(qa_rows)
 
 if __name__ == '__main__':
     ld = Link_Disambiguator()
     # ld.get_ambiguous_segments()
     # disambiguate_all()
-    #find_low_confidence_talmud()
+    find_low_confidence_talmud()
     # ld = Link_Disambiguator()
     # ld.disambiguate_gra()
 
-    main_tc = TextChunk(Ref("Tosafot on Eruvin 92a:1:1"), "he")
-    other_tc = TextChunk(Ref("Yevamot 42b"), "he")
-    print ld.disambiguate_segment(main_tc, [other_tc])
     # tc_list = [Ref("Zohar 1:70b:7").text("he"), Ref("Song of Songs 1").text("he")] #{'match_index': [[5, 7], [11, 13]], 'score': 81, 'match': [u'Zohar 1:70b:7', u'Song of Songs 1:3']}
     # tc_list = [Ref("Zohar 1:70b:9").text("he"), Ref("Genesis 1").text("he")] #{'match_index': [[27, 32], [106, 111]], 'score': 96, 'match': [u'Genesis 1:4', u'Zohar 1:70b:9']}
