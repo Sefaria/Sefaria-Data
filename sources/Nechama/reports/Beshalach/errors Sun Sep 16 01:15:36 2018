@@ -1,0 +1,13 @@
+html_sheets/Beshalach/1245.html: (<type 'exceptions.IndexError'>, IndexError('list index out of range',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 964, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 173, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 213, in add_segments
+    self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 252, in classify_segments
+    current_source = [x for x in self.segment_objects if isinstance(x, Source)][-1]
+IndexError: list index out of range
+
+

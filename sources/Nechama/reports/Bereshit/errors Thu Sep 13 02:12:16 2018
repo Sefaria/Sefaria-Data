@@ -1,0 +1,25 @@
+html_sheets/Bereshit/929.html: (<class 'requests.exceptions.ConnectionError'>, ConnectionError(ProtocolError('Connection aborted.', BadStatusLine("''",)),))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 966, in bs4_reader
+    sheet.prepare_sheet(self.add_to_title)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 74, in prepare_sheet
+    post_sheet(sheet_json, server=parser.server)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/functions.py", line 554, in post_weak_connection
+    result = func(*args, **kwargs)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/functions.py", line 634, in post_sheet
+    response = http_request(url, body={"apikey": API_KEY}, json_payload=sheet, method="POST")
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/functions.py", line 570, in http_request
+    response = requests.post(url, params=params, data=body)
+  File "/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/requests/api.py", line 112, in post
+    return request('post', url, data=data, json=json, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/requests/api.py", line 58, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/requests/sessions.py", line 508, in request
+    resp = self.send(prep, **send_kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/requests/sessions.py", line 618, in send
+    r = adapter.send(request, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/requests/adapters.py", line 490, in send
+    raise ConnectionError(err, request=request)
+ConnectionError: ('Connection aborted.', BadStatusLine("''",))
+
+

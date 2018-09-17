@@ -65,9 +65,9 @@ class Source(object):
                 ref_node = " ".join(ref.split()[0:-1])
                 return self.get_sefaria_ref(ref_node) #returns Ralbag Beur HaMilot on Torah, Genesis
 
-    def glue_ref_and_text(self, ref, text, bold=True):
-        if bold:
-            return u"<b>{}</b><br/>{}".format(ref, text)
+    def glue_ref_and_text(self, ref, text, gray=True):
+        if not gray:
+            return u"{}<br/>{}".format(ref, text)
         else:
             return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(ref, text)
 
@@ -77,7 +77,7 @@ class Source(object):
         # is Sefaria ref
         if self.get_sefaria_ref(self.ref):
             if self.about_source_ref:
-                comment = self.glue_ref_and_text(self.about_source_ref, comment, bold=True)
+                comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False)
             enRef = Ref(self.ref).normal()
             heRef = Ref(self.ref).he_normal()
             source = {"ref": enRef, "heRef": heRef,
@@ -104,9 +104,9 @@ class Source(object):
                 self.ref = Ref(" ".join(self.ref.split()[0:-1])).he_normal()
 
             if self.about_source_ref:
-                comment = self.glue_ref_and_text(self.about_source_ref, comment, bold=True) #use actual text if we can
+                comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=True) #use actual text if we can
             else:
-                comment = self.glue_ref_and_text(self.ref, comment, bold=False) # otherwise, use the ref we thought it was
+                comment = self.glue_ref_and_text(self.ref, comment, gray=True) # otherwise, use the ref we thought it was
             source = {"outsideText": comment,
                       "options": {
                           "indented": "indented-1",
@@ -115,8 +115,9 @@ class Source(object):
                           "sourceLangLayout": ""
                       }
                       }
-        elif not self.ref and self.about_source_ref:
-            comment = self.glue_ref_and_text(self.about_source_ref, comment, bold=False)
+        elif not self.ref:
+            if self.about_source_ref:
+                comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=True)
             source = {"outsideText": comment,
                       "options": {
                           "indented": "indented-1",
@@ -125,8 +126,6 @@ class Source(object):
                           "sourceLangLayout": ""
                         }
                       }
-        else:
-            raise InputError, "Didn't anticipate this case in the casses of ref on Source obj"
         return source
 
 

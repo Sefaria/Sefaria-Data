@@ -28,7 +28,7 @@ class Sheet(object):
         self.html = html
         self.title = title
         self.parasha = parasha
-        self.en_parasha = Term().load({"titles.text": parasha}).name
+        self.en_parasha = Term().load({"titles.text": parasha}).name if " - " not in parasha else parasha
         self.sefer, self.perakim, self.pasukim = self.extract_perek_info(perek_info)
         self.en_sefer = library.get_index(sefer).title
         self.he_year = re.sub(u"שנת", u"", year).strip()
@@ -70,7 +70,7 @@ class Sheet(object):
        sheet_json["summary"] = u"{} ({})".format(self.en_year, self.year)
        sheet_json["sources"] = self.sources
        sheet_json["options"] = {"numbered": 0, "assignable": 0, "layout": "sideBySide", "boxed": 0, "language": "hebrew", "divineNames": "noSub", "collaboration": "none", "highlightMode": 0, "bsd": 0, "langLayout": "heRight"}
-       sheet_json["tags"] = []
+       sheet_json["tags"] = [unicode(self.en_year), unicode(self.en_parasha)]
        post_sheet(sheet_json, server=parser.server)
 
 
@@ -89,7 +89,7 @@ class Sheet(object):
             sefer = " ".join(perek_info.split()[0:2]) # For Melachim Bet
             en_sefer = library.get_index(sefer).title
         perek_info = perek_info.replace(u"פרקים", u"Perek").replace(u"פרק", u"Perek").replace(u"פסוקים", u"Pasuk").replace(u"פסוק", u"Pasuk").strip()
-        perek_info = " ".join(perek_info.split()[1:])
+        perek_info = perek_info.replace(sefer, u"")
         if len(perek_info.split("Perek")) - 1 == 2: #we know it's the third case
             pereks = [perek_info.split(" - ")[0], perek_info.split(" - ")[1]]
             pasuks = [-1, -1]
@@ -109,12 +109,14 @@ class Sheet(object):
             assert len(pereks) is 1
             pereks = [str(getGematria(pereks[0]))]
             pasuks = re.findall(u"Pasuk\s+(.{1,18})\s?", perek_info)[0].split(" - ")
-            assert len(pasuks) is 2
             for p, pasuk in enumerate(pasuks):
                 pasuks[p] = getGematria(pasuk)
-            pasuks = range(pasuks[0], pasuks[1]+1)
-            pasuks = Ref(en_sefer+" "+pereks[0]+":"+str(pasuks[0])+"-"+str(pasuks[-1]))
-            #pasuks.insert("multiple perakim", 0)
+            if len(pasuks) is 2:
+                pasuks = range(pasuks[0], pasuks[1]+1)
+                pasuks = Ref(en_sefer+" "+pereks[0]+":"+str(pasuks[0])+"-"+str(pasuks[-1]))
+            else:
+                assert len(pasuks) is 1
+                pasuks = Ref(en_sefer + " " + pereks[0] + ":" + str(pasuks[0]))
         else: #first case
             pereks = re.findall(u"Perek\s+(.{1,3})\s?", perek_info)
             assert len(pereks) is 1
@@ -301,6 +303,9 @@ class Section(object):
         return string
 
     def get_a_tag_from_ref(self, segment, relevant_text):
+        starts_perek_or_pasuk = lambda x: (x.startswith(u"פרק ") or x.startswith(u"פסוק ") or
+                                x.startswith(u"פרקים ") or x.startswith(u"פסוקים "))
+
         if segment.name == "a":
             a_tag = segment
         else:
@@ -315,21 +320,22 @@ class Section(object):
             real_title = self.get_term(a_tag.text)
         elif relevant_text in parser.term_mapping:
             real_title = parser.term_mapping[relevant_text]
-        if not real_title and self.RT_Rashi:  # every ref in RT_Rashi is really to Rashi
+        if not real_title and (self.RT_Rashi and starts_perek_or_pasuk(segment.text)):  # every ref starting with Perek or Pasuk in RT_Rashi is really to Rashi
             real_title = "Rashi on {}".format(parser.en_sefer)
         return (real_title, a_tag, a_tag_is_entire_comment)
 
     def parse_ref(self, segment, relevant_text, next_segment_info):
         next_segment_class = next_segment_info[0]
 
+        # check if it's in Perek X, Pasuk Y format
+        is_tanakh = (relevant_text.startswith(u"פרק ") or relevant_text.startswith(u"פסוק ") or
+                     relevant_text.startswith(u"פרקים ") or relevant_text.startswith(u"פסוקים "))
+
         real_title, found_a_tag, a_tag_is_entire_comment = self.get_a_tag_from_ref(segment, relevant_text)
         found_ref_in_string = ""
 
-        # check if it's in Perek X, Pasuk Y format and set perek and pasuk accordingly
-        is_tanakh = (relevant_text.startswith(u"פרק ") or relevant_text.startswith(u"פסוק ") or
-                     relevant_text.startswith(u"פרקים ") or relevant_text.startswith(u"פסוקים "))
-        is_perek_pasuk_ref, new_perek, new_pasuk = self.set_current_perek_pasuk(found_a_tag, relevant_text, next_segment_class,
-                                                                                is_tanakh)
+        is_perek_pasuk_ref, new_perek, new_pasuk = self.set_current_perek_pasuk(found_a_tag, relevant_text,
+                                                                                next_segment_class, is_tanakh)
 
         # now create current_source based on real_title or based on self.current_parsha_ref
         if real_title:  # a ref to a commentator that we have in our system
@@ -438,7 +444,7 @@ class Section(object):
             for word in words_to_replace:
                 string = string.replace(u"ל" + word, u"")
                 string = string.replace(word, u"")
-            string = string.replace(u"  ", u" ")
+            string = string.replace(u"  ", u" ").replace(u"\xa0", u" ")
             string = string.strip()
             refs = library.get_refs_in_string(string)
             if refs:
@@ -530,7 +536,7 @@ class Section(object):
             else:  # there is a pasuk but is not ranged
                 new_pasuk = str(getGematria(pasuk))
 
-            if is_tanakh or self.RT_Rashi:
+            if is_tanakh:
                 poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk, perakim=[new_perek])
                 if poss_ref:
                     self.current_perek = poss_ref.sections[0]
@@ -852,7 +858,7 @@ class Nechama_Parser:
                 if not current_source.get_sefaria_ref(current_source.ref):
                     ref2check = None
                 else:
-                    ref2check = Ref(current_source.ref)
+                    ref2check = current_source.get_sefaria_ref(current_source.ref) # used to be Ref(current_source.ref)
             except InputError:
                 if u"Meshech Hochma" in current_source.ref:
                     ref2check = Ref(u"Meshech Hochma, {}".format(self.en_parasha))
@@ -896,7 +902,7 @@ class Nechama_Parser:
                         self.non_matches[self.current_file_path].append(ref2check.normal())
 
                         # we dont want to link it since there's no match found so set the ref to empty and record the fixed ref ref2check in about_source_ref
-                        current_source.about_source_ref = ref2check.he_normal()
+                        #current_source.about_source_ref = ref2check.he_normal()
                         current_source.ref = ""
                         return
                     self.matches[self.current_file_path].append(ref2check.normal())
@@ -911,6 +917,7 @@ class Nechama_Parser:
                 print u"NO ref2check {}".format(current_source.parshan_name)
                 if current_source.ref:
                     parser.ref_not_found[parser.current_file_path].append(current_source.ref)
+                    current_source.ref = ""
         except AttributeError as e:
             print u'AttributeError: {}'.format(re.sub(u":$", u"", current_source.about_source_ref))
             parser.index_not_found[parser.current_file_path].append(current_source.about_source_ref)  # todo: would like to add just the <a> tag
@@ -1042,6 +1049,18 @@ class Nechama_Parser:
         node = library.get_index("Meshech Hochma").nodes.children[6]
         node.add_title("Vayetzei", "en")
         i.save()
+        t = Term().load({"titles.text": "Ki Tisa"})
+        t.add_title(u'פרשת כי-תשא', 'he')
+        t.save()
+        t = Term().load({'titles.text': "Bechukotai"})
+        t.add_title(u'פרשת בחקותי', 'he')
+        t.save()
+        t = Term().load({"titles.text": "Sh'lach"})
+        t.add_title(u'פרשת שלח לך', 'he')
+        t.save()
+        t = Term().load({"titles.text": "Pinchas"})
+        t.add_title(u'פרשת פינחס', 'he')
+        t.save()
 
 
 def dict_from_html_attrs(contents):
@@ -1057,21 +1076,29 @@ def dict_from_html_attrs(contents):
 if __name__ == "__main__":
     # Ref(u"בראשית פרק ג פסוק ד - פרק ה פסוק י")
     # Ref(u"u'דברים פרק ט, ז-כט - פרק י, א-י'")
-    parshiot = ["Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", 'Vayetzei', "Vayishlach", "Vayeshev", "Miketz", "Vayigash", "Vayechi"]
-    parshiot = ["Vayishlach", "Vayeshev", "Miketz", "Vayigash", "Vayechi"]
-    parshiot = ["Miketz"]
-    for parsha in parshiot:
-        book = u'Genesis'
-        parser = Nechama_Parser(book, parsha, "fast", "formatting refs", catch_errors=False)
+    genesis_parshiot = (u"Genesis", ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", 'Vayetzei', "Vayishlach", "Vayeshev", "Miketz", "Vayigash", "Vayechi"])
+    exodus_parshiot = (u"Exodus", ["Shemot", "Vaera", "Bo", "Beshalach", "Yitro", "Mishpatim", "Terumah", "Tetzaveh", "Vayakhel", "Ki Tisa", "Pekudei"])
+    leviticus_parshiot = (u"Leviticus", ["Vayikra", "Tzav", "Shmini", "Tazria", "Metzora", "Achrei Mot",
+                        "Kedoshim", "Emor", "Behar", "Bechukotai"])
+    numbers_parshiot = (u"Numbers", ["Bamidbar", "Nasso", "Beha'alotcha", "Sh'lach Lach", "Korach", "Chukat",
+                        "Balak", "Pinchas", "Matot", "Masei"])
+    devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
+                        "Nitzavim", "Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
+    combined_parshiot = ["Achrei Mot - Kedoshim", "Behar - Bechukotai", "Matot - Masei", "Nitzavim - Vayeilech", "Tazria - Metzora", "Vayakhel - Pekudei"]
+    catch_errors = True
+    which_parshiot = numbers_parshiot
+    for parsha in which_parshiot[1]:
+        book = which_parshiot[0]
+        parser = Nechama_Parser(book, parsha, "fast", "grayed out error", catch_errors=catch_errors)
         parser.prepare_term_mapping() # must be run once locally and on sandbox
         #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
-        sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha))]
+        sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
         # anything_before = "7.html"
         # pos_anything_before = sheets.index(anything_before)
         # sheets = sheets[pos_anything_before:]
-        sheets = ["1429.html"]
         sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=False)
-        parser.record_report()
+        if catch_errors:
+            parser.record_report()
 
 
 

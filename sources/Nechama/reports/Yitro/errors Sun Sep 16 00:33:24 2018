@@ -1,0 +1,39 @@
+html_sheets/Yitro/113.html: (<type 'exceptions.AssertionError'>, AssertionError())
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 32, in __init__
+    self.sefer, self.perakim, self.pasukim = self.extract_perek_info(perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 112, in extract_perek_info
+    assert len(pasuks) is 2
+AssertionError
+
+
+html_sheets/Yitro/323.html: (<type 'exceptions.AssertionError'>, AssertionError())
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 32, in __init__
+    self.sefer, self.perakim, self.pasukim = self.extract_perek_info(perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 112, in extract_perek_info
+    assert len(pasuks) is 2
+AssertionError
+
+
+html_sheets/Yitro/945.html: (<class 'sefaria.system.exceptions.InputError'>, InputError(u'Failed to parse sections for ref Malbim on Exodus',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 964, in bs4_reader
+    sheet.create_sheetsources_from_objsource()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 62, in create_sheetsources_from_objsource
+    self.sources.append(segment.create_source())
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/segments.py", line 104, in create_source
+    self.ref = Ref(" ".join(self.ref.split()[0:-1])).he_normal()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 1954, in __call__
+    result = super(RefCacheType, cls).__call__(*args, **kwargs)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2033, in __init__
+    self.__init_tref()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2267, in __init_tref
+    raise InputError(u"Failed to parse sections for ref {}".format(self.orig_tref))
+InputError: Failed to parse sections for ref Malbim on Exodus
+
+
