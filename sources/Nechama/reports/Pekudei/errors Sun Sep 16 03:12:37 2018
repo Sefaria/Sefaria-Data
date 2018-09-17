@@ -1,0 +1,7 @@
+html_sheets/Pekudei/.DS_Store: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'text'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    perek_info = content.find("p", {"id": "pasuk"}).text
+AttributeError: 'NoneType' object has no attribute 'text'
+
+

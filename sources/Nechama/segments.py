@@ -23,7 +23,7 @@ class Source(object):
 
     # def __init__(self, segment_class, ref):
     def __init__(self, ref, segment_class=None):
-        # self.parshan_name = u""
+        self.parshan_name = u""
         self.parshan_id = 0
         self.about_source_ref = u""  # words of nechama in regards to the parshan or this specific book, that we will lose since it is not part of our "ref" system see 8.html sec 1. "shadal"
         self.perek = u""
@@ -44,6 +44,8 @@ class Source(object):
         if ref == "":
             return None
         try:
+            print "REF!!!!!!!!!"
+            print ref
             r = Ref(ref)
             assert r.text('he').text
             if r.is_commentary():
@@ -53,20 +55,20 @@ class Source(object):
                     return None
             else:
                 r_base = r
-            if r_base.is_section_level() or r_base.is_segment_level():
+            if not r.is_book_level():
                 return r
             else:
                 return None
         except (InputError,  AssertionError) as e:
             # try to see if all that is wrong is the segment part of the ref, say, for Ralbag Beur HaMilot on Torah, Genesis 4:17
-            last_part = self.ref.split()[-1]
+            last_part = ref.split()[-1]
             if last_part[0].isdigit(): # in format, Ralbag Beur HaMilot on Torah, Genesis 4:17 and last_part is "4:17", now get the node "Ralbag Beur HaMilot on Torah, Genesis"
-                ref_node = " ".join(self.ref.split()[0:-1])
+                ref_node = " ".join(ref.split()[0:-1])
                 return self.get_sefaria_ref(ref_node) #returns Ralbag Beur HaMilot on Torah, Genesis
 
-    def glue_ref_and_text(self, ref, text, bold=True):
-        if bold:
-            return u"<b>{}</b><br/>{}".format(ref, text)
+    def glue_ref_and_text(self, ref, text, gray=True):
+        if not gray:
+            return u"{}<br/>{}".format(ref, text)
         else:
             return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(ref, text)
 
@@ -76,7 +78,7 @@ class Source(object):
         # is Sefaria ref
         if self.get_sefaria_ref(self.ref):
             if self.about_source_ref:
-                comment = self.glue_ref_and_text(self.about_source_ref, comment, bold=True)
+                comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False)
             enRef = Ref(self.ref).normal()
             heRef = Ref(self.ref).he_normal()
             source = {"ref": enRef, "heRef": heRef,
@@ -92,13 +94,20 @@ class Source(object):
                           "sourceLangLayout": ""
                       }
                       }
-        elif self.ref:  # thought we found a ref but it's not an actual ref in sefaria library
-            self.ref = Ref(self.ref).he_normal()
-            if self.about_source_ref:
-                comment = self.glue_ref_and_text(self.about_source_ref, comment, bold=True) #use actual text if we can
-            else:
-                comment = self.glue_ref_and_text(self.ref, comment, bold=False) # otherwise, use the ref we thought it was
+        elif self.ref:
+            # thought we found a ref but it's not an actual ref in sefaria library
+            # get the he_normal() of ref or if it's invalid ref, try modifying and then running he_normal()
+            try:
+                self.ref = Ref(self.ref).he_normal()
+            except InputError:
+                last_part = self.ref.split()[-1]
+                assert last_part[0].isdigit()  # in format, Ralbag Beur HaMilot on Torah, Genesis 4:17 and last_part is "4:17", now get the node "Ralbag Beur HaMilot on Torah, Genesis"
+                self.ref = Ref(" ".join(self.ref.split()[0:-1])).he_normal()
 
+            if self.about_source_ref:
+                comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=True) #use actual text if we can
+            else:
+                comment = self.glue_ref_and_text(self.ref, comment, gray=True) # otherwise, use the ref we thought it was
             source = {"outsideText": comment,
                       "options": {
                           "indented": "indented-1",
@@ -107,8 +116,9 @@ class Source(object):
                           "sourceLangLayout": ""
                       }
                       }
-        elif not self.ref and self.about_source_ref:
-            comment = self.glue_ref_and_text(self.about_source_ref, comment, bold=False)
+        elif not self.ref:
+            if self.about_source_ref:
+                comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=True)
             source = {"outsideText": comment,
                       "options": {
                           "indented": "indented-1",
@@ -117,8 +127,6 @@ class Source(object):
                           "sourceLangLayout": ""
                         }
                       }
-        else:
-            raise InputError, "Didn't anticipate this case in the casses of ref on Source obj"
         return source
 
 
@@ -149,7 +157,8 @@ class Source(object):
         # ref_copy = Ref(self.ref.normal())
         ref_copy = self.ref
         new_source = Source(self.segment_class, ref_copy)
-        # new_source.parshan_name = self.parshan_name
+        new_source.parshan_id = self.parshan_id
+        new_source.about_source_ref = self.about_source_ref
         # new_source.pasuk = self.pasuk
         # new_source.perek = self..perek
 
@@ -217,8 +226,12 @@ class Header(object):
 class Question(object):
 
     def __init__(self, segment):
-
-        number, bullet = [(t.parent.parent.select(".number"), t.find('img')) for t in segment.select(".bullet > p")][0]
+        bullet_tag = segment.select(".bullet > p")
+        number = []
+        bullet = []
+        if bullet_tag:
+            bullet_tag = bullet_tag[0]
+            number, bullet = (bullet_tag.parent.parent.select(".number"), bullet_tag.find('img'))
 
         self.number = number[0].text if number else u""
         # bullet = [t.find('img') for t in segment.select(".bullet > p")][0]
