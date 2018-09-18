@@ -8,6 +8,7 @@ import re
 import os
 from sources.functions import getGematria
 from sefaria.model import *
+from sefaria.system.database import db
 from sefaria.system.exceptions import InputError
 from collections import OrderedDict
 from bs4 import BeautifulSoup, element
@@ -24,13 +25,14 @@ import traceback
 
 class Sheet(object):
 
-    def __init__(self, html, parasha, title, year, ref, sefer, perek_info):
+    def __init__(self, html, parasha, title, year, perek_info):
         self.html = html
         self.title = title
         self.parasha = parasha
         self.en_parasha = Term().load({"titles.text": parasha}).name if " - " not in parasha else parasha
+        self.haftarot = parser.get_haftarot(self.en_parasha)
         self.sefer, self.perakim, self.pasukim = self.extract_perek_info(perek_info)
-        self.en_sefer = library.get_index(sefer).title
+        self.en_sefer = library.get_index(self.sefer).title
         self.he_year = re.sub(u"שנת", u"", year).strip()
         self.year = getGematria(self.he_year) + 5000  # +1240, jewish year is more accurate
         self.en_year = getGematria(self.he_year) + 1240
@@ -42,6 +44,16 @@ class Sheet(object):
         self.div_sections = [] # BeautifulSoup objects that will eventually become converted into Section objects stored in self.sections
         self.sections = []
         self.sources = []
+
+
+    def flip_ref_parasha_to_haftarah(self, segment, haftarah):
+        haftarah_index = Ref(haftarah).index
+        try:
+            assert Ref(segment.ref)
+            
+            parser.try_parallel_matcher(segment)
+        except AssertionError:
+            return
 
 
     def create_sheetsources_from_objsource(self):
@@ -58,7 +70,10 @@ class Sheet(object):
         for isection, section in enumerate(self.sections):
             for isegment, segment in enumerate(section.segment_objects):
                 if isinstance(segment, Source):
-                    parser.try_parallel_matcher(segment)
+                    success = parser.try_parallel_matcher()
+                    if not success and segment.ref and parser.source_is_tanakh() and parser.haftarah_mode:
+                        for haftarah in self.haftarot:
+                            self.flip_ref_parasha_to_haftarah(segment, haftarah)
                 seg_sheet_source = segment.create_source()
                 self.sources.extend(seg_sheet_source if isinstance(seg_sheet_source, list) else [seg_sheet_source]) # todo: problem with nested it doesn't it doesn't go through the PM...
 
@@ -829,6 +844,23 @@ class Nechama_Parser:
             '66': u"Meshech Hochma, {}".format(self.en_parasha),
             # '51': u"ביאור - ר' שלמה דובנא"
         }
+        self.haftarah_mode = False
+
+
+
+    def source_is_tanakh(self, ref):
+        try:
+            assert Ref(ref)
+            r = Ref(ref)
+            return r.index.categories[0] == "Tanakh"
+        except AssertionError:
+            return False
+
+    def get_haftarot(self, parasha_to_find):
+        parshiot = db.parshiot.find()
+        for parasha in parshiot:
+            if parasha["parasha"] == parasha_to_find:
+                return parasha["haftarot"]
 
 
     def download_sheets(self):
@@ -1005,6 +1037,8 @@ class Nechama_Parser:
             shutil.move(html_sheet, "html_sheets/" + parsha)
         return sheets
 
+
+
     def bs4_reader(self, file_list_names, post = False, add_to_title = ""):
         """
         The main BeautifulSoup reader function, that etrates on all sheets and creates the obj, probably should be in it's own file
@@ -1022,13 +1056,14 @@ class Nechama_Parser:
                 parser.seg_ref_not_found[parser.current_file_path] = []
                 parser.sec_ref_not_found[parser.current_file_path] = []
                 content = BeautifulSoup(open("{}".format(html_sheet)), "lxml")
+                parser.haftarah_mode = u"הפטרה" in content.text or u"הפטרת" in content.text
                 print "\n\n"
                 print datetime.datetime.now()
                 print html_sheet
                 perek_info = content.find("p", {"id": "pasuk"}).text
                 top_dict = dict_from_html_attrs(content.find('div', {'id': "contentTop"}).contents)
                 # print 'len_content type ', len(top_dict.keys())
-                sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+                sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, perek_info)
                 sheets[html_sheet] = sheet
                 body_dict = dict_from_html_attrs(content.find('div', {'id': "contentBody"}))
                 sheet.div_sections.extend([v for k, v in body_dict.items() if re.search(u'ContentSection_\d', k)]) # check that these come in in the right order
@@ -1156,10 +1191,10 @@ if __name__ == "__main__":
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     combined_parshiot = ["Achrei Mot - Kedoshim", "Behar - Bechukotai", "Matot - Masei", "Nitzavim - Vayeilech", "Tazria - Metzora", "Vayakhel - Pekudei"]
-    catch_errors = True
+    catch_errors = False
 
-    which_parshiot = devarim_parshiot
-    for parsha in which_parshiot[1]:
+    which_parshiot = exodus_parshiot
+    for parsha in ["Vaera"]:
         book = which_parshiot[0]
         parser = Nechama_Parser(book, parsha, "fast", "trying to merge first time", catch_errors=catch_errors)
         parser.old = False
@@ -1169,6 +1204,7 @@ if __name__ == "__main__":
         # anything_before = "7.html"
         # pos_anything_before = sheets.index(anything_before)
         # sheets = sheets[pos_anything_before:]
+        sheets = ["676.html"]
         sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=False)
         if catch_errors:
             parser.record_report()
