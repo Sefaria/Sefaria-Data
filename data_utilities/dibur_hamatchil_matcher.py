@@ -1357,18 +1357,9 @@ def GetAllMatches(curDaf, curRashi, startBound, endBound,
 
         if fIsMatch:
 
-            dist = ComputeLevenshteinDistanceByWord(alternateStartText, targetPhrase)
+            dist = ComputeLevenshteinDistanceByWord(alternateStartText, targetPhrase, len(path["daf_indexes_skipped"]) + len(path["comment_indexes_skipped"]), len(abbrevs) > 0)
 
-            # add penalty for skipped words
-            dist += fullWordValue * len(path["daf_indexes_skipped"]) #weighted_levenshtein.cost_str(curDaf.allWords[gemaraWordToIgnore])
-            dist += fullWordValue * len(path["comment_indexes_skipped"]) #weighted_levenshtein.cost_str(curDaf.allWords[gemaraSecondWordToIgnore])
-
-            if len(abbrevs) > 0:
-                dist += abbreviationPenalty
-
-
-            normalizedDistance = 1.0 * (dist + smoothingFactor) / (len(startText) + smoothingFactor) * normalizingFactor
-            curMatch.score = normalizedDistance
+            curMatch.score = dist
             curMatch.textToMatch = curRashi.startingText
             curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iGemaraWord , len_matched)
             curMatch.startWord = iGemaraWord
@@ -1432,8 +1423,7 @@ def GetAllApproximateMatches(curDaf, curRashi, startBound, endBound,
 
             # calculate the score - how distant is it
             dist = ComputeLevenshteinDistanceByWord(startText, curMatch.textMatched)
-            normalizedDistance = 1.0*(dist + smoothingFactor) / (len(startText) + smoothingFactor) * normalizingFactor
-            curMatch.score = normalizedDistance
+            curMatch.score = dist
 
             allMatches.append(curMatch)
         iWord += 1
@@ -1759,12 +1749,12 @@ def CleanText(curLine):  # string
     return re.sub(ur"</?[^>]+>", u"", curLine).strip()
 
 
-def ComputeLevenshteinDistanceByWord(s, t):  # s and t are strings
+def ComputeLevenshteinDistanceByWord(s, t, num_skipped = 0, abbrev_penalty = False):  # s and t are strings
     global fullWordValue
     # we take it word by word, each word can be, at most, the value of a full word
 
-    words1 = s.split(' ')
-    words2 = t.split(' ')
+    words1 = s.split()
+    words2 = t.split()
 
     totaldistance = 0
 
@@ -1783,7 +1773,10 @@ def ComputeLevenshteinDistanceByWord(s, t):  # s and t are strings
 
             totaldistance += min(ComputeLevenshteinDistance(words1[i], words2[i]), fullWordValue)
 
-    return totaldistance
+    totaldistance += fullWordValue * num_skipped
+    totaldistance += abbreviationPenalty if abbrev_penalty else 0
+    norm_dist = 1.0 * (totaldistance + smoothingFactor) / (len(s) + smoothingFactor) * normalizingFactor
+    return norm_dist
 
 def ComputeLevenshteinDistance(s, t):
     return weighted_levenshtein.calculate(s, t, normalize=False)
