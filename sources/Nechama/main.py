@@ -1238,26 +1238,24 @@ if __name__ == "__main__":
                         "Balak", "Pinchas", "Matot", "Masei"])
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
-    catch_errors = False
+    catch_errors = True
     posting = True
 
     for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
         print "NEW BOOK"
-    which_parshiot = devarim_parshiot
-    for parsha in ["Nitzavim-Vayeilech"]:
-        book = which_parshiot[0]
-        parser = Nechama_Parser(book, parsha, "fast", "", catch_errors=catch_errors)
-        parser.old = False
-        parser.prepare_term_mapping() # must be run once locally and on sandbox
-        #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
-        sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
-        # anything_before = "7.html"
-        # pos_anything_before = sheets.index(anything_before)
-        # sheets = sheets[pos_anything_before:]
-        sheets = ["747.html"]
-        sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=False)
-        if catch_errors:
-            parser.record_report()
+        for parsha in which_parshiot[1]:
+            book = which_parshiot[0]
+            parser = Nechama_Parser(book, parsha, "fast", "", catch_errors=catch_errors)
+            parser.old = False
+            parser.prepare_term_mapping() # must be run once locally and on sandbox
+            #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
+            sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
+            # anything_before = "7.html"
+            # pos_anything_before = sheets.index(anything_before)
+            # sheets = sheets[pos_anything_before:]
+            sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=True)
+            if catch_errors:
+                parser.record_report()
 
 
 
