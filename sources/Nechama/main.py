@@ -29,10 +29,12 @@ class Sheet(object):
         self.html = html
         self.title = title
         self.parasha = parasha
-        self.en_parasha = Term().load({"titles.text": parasha}).name if " - " not in parasha else parasha
-        self.haftarot = parser.get_haftarot(self.en_parasha)
+        self.en_parasha = parser.en_parasha
         self.sefer, self.perakim, self.pasukim = self.extract_perek_info(perek_info)
         self.en_sefer = library.get_index(self.sefer).title
+        if self.en_sefer != parser.en_sefer:
+            parser.en_sefer = self.en_sefer
+            parser.populate_term_mapping_and_id_table()
         self.he_year = re.sub(u"שנת", u"", year).strip()
         self.year = getGematria(self.he_year) + 5000  # +1240, jewish year is more accurate
         self.en_year = getGematria(self.he_year) + 1240
@@ -46,14 +48,16 @@ class Sheet(object):
         self.sources = []
 
 
-    def flip_ref_parasha_to_haftarah(self, segment, haftarah):
-        haftarah_index = Ref(haftarah).index
+    def flip_ref_parasha_to_haftarah(self, ref, haftarah):
+        haftarah_index = Ref(haftarah).index.title
         try:
-            assert Ref(segment.ref)
-            
-            parser.try_parallel_matcher(segment)
-        except AssertionError:
-            return
+            base_ref = ref.split(" on ")[1] if " on " in ref else ref #strip "Rashi on Genesis 2" to "Genesis 2"
+            orig_index = library.get_index(" ".join(base_ref.split()[0:-1])) # now strip "Genesis 2" to "Genesis"
+        except BookNameError:
+            return ref
+        orig_index = orig_index.title
+        ref = ref.replace(orig_index, haftarah_index)
+        return ref
 
 
     def create_sheetsources_from_objsource(self):
@@ -70,13 +74,26 @@ class Sheet(object):
         for isection, section in enumerate(self.sections):
             for isegment, segment in enumerate(section.segment_objects):
                 if isinstance(segment, Source):
-                    success = parser.try_parallel_matcher()
-                    if not success and segment.ref and parser.source_is_tanakh() and parser.haftarah_mode:
-                        for haftarah in self.haftarot:
-                            self.flip_ref_parasha_to_haftarah(segment, haftarah)
+                    success = parser.try_parallel_matcher(segment)
+                    if not success and segment.ref and parser.source_maybe_tanakh(segment.ref) and parser.haftarah_mode:
+                        self.check_haftarot(segment)
+
                 seg_sheet_source = segment.create_source()
                 self.sources.extend(seg_sheet_source if isinstance(seg_sheet_source, list) else [seg_sheet_source]) # todo: problem with nested it doesn't it doesn't go through the PM...
 
+
+    def check_haftarot(self, segment):
+        orig_ref = segment.ref
+        for section in parser.parasha_and_haftarot:
+            new_ref = self.flip_ref_parasha_to_haftarah(segment.ref, section)
+            if new_ref != segment.ref:
+                segment.ref = new_ref
+                success = parser.try_parallel_matcher(segment)
+                if success:
+                    print "Found a match through Haftara/Parasha swapping"
+                    break
+                else:
+                    segment.ref = orig_ref
 
     def prepare_sheet(self, add_to_title=""):
        sheet_json = {}
@@ -86,7 +103,7 @@ class Sheet(object):
        sheet_json["summary"] = u"{} ({})".format(self.en_year, self.year)
        sheet_json["sources"] = self.sources
        sheet_json["options"] = {"numbered": 0, "assignable": 0, "layout": "sideBySide", "boxed": 0, "language": "hebrew", "divineNames": "noSub", "collaboration": "none", "highlightMode": 0, "bsd": 0, "langLayout": "heRight"}
-       sheet_json["tags"] = [unicode(self.en_year), unicode(self.en_parasha)]
+       sheet_json["tags"] = [unicode(self.en_parasha)]
        post_sheet(sheet_json, server=parser.server)
 
 
@@ -677,9 +694,13 @@ class Section(object):
         if perakim is None:
             perakim = self.possible_perakim
         for perek in perakim:
-            possible_ref = Ref("{} ".format(parser.en_sefer) + perek + ":" + new_pasuk)
-            if self.possible_pasukim.contains(possible_ref):
-                return possible_ref
+            for sefer in parser.parasha_and_haftarot:
+                try:
+                    possible_ref = Ref("{} ".format(sefer) + perek + ":" + new_pasuk)
+                    if self.possible_pasukim.contains(possible_ref):
+                        return possible_ref
+                except InputError:
+                    pass
         return None
 
     def get_children_with_content(self, segment):
@@ -784,6 +805,19 @@ class Nechama_Parser:
         now = now.strftime("%c")
         self.error_report = open("reports/{}/errors {}".format(en_parasha, now), 'w')
         self.has_parasha = [u"מכילתא"]
+        self.term_mapping = {}
+        self.parshan_id_table = {}
+        self.populate_term_mapping_and_id_table()
+        self.levenshtein = WeightedLevenshtein()
+        self.missing_index = set()
+        self.sec_ref_not_found = {}
+        self.seg_ref_not_found = {}
+        self.current_file_path = ""
+        self.haftarah_mode = False
+        self.parasha_and_haftarot = self.get_parasha_and_haftarot(self.en_parasha)
+
+
+    def populate_term_mapping_and_id_table(self):
         self.term_mapping = {
             u"הכתב והקבלה": u"HaKtav VeHaKabalah, {}".format(self.en_sefer),
             u"חזקוני": u"Chizkuni, {}".format(self.en_sefer),
@@ -795,7 +829,8 @@ class Nechama_Parser:
             u"מורה נבוכים ג'": u"Guide for the Perplexed, Part 3",
             u"תנחומא": u"Midrash Tanchuma, {}".format(self.en_sefer),
             u"בעל גור אריה": u"Gur Aryeh on {}".format(self.en_sefer),
-            u"גור אריה": u"Gur Aryeh on {}".format(self.en_sefer), #todo: how does this mapping work? this name is the prime title
+            u"גור אריה": u"Gur Aryeh on {}".format(self.en_sefer),
+        # todo: how does this mapping work? this name is the prime title
             u"""ראב"ע""": u"Ibn Ezra on {}".format(self.en_sefer),
             u"""וראב"ע:""": u"Ibn Ezra on {}".format(self.en_sefer),
             u"עקדת יצחק": u"Akeidat Yitzchak",
@@ -809,59 +844,60 @@ class Nechama_Parser:
             u"""המלבי"ם""": u"Malbim on {}".format(self.en_sefer),
             u"משך חכמה": u"Meshech Hochma, {}".format(self.en_parasha),
             u"רבנו בחיי": u"Rabbeinu Bahya, {}".format(self.en_sefer),
-            u"מכילתא":u"Mekhilta d'Rabbi Yishmael"
+            u"מכילתא": u"Mekhilta d'Rabbi Yishmael"
             # u'רב סעדיה גאון': u"Saadia Gaon on {}".format(self.en_sefer) # todo: there is no Saadia Gaon on Genesis how does this term mapping work?
         }
-        self.levenshtein = WeightedLevenshtein()
-        self.missing_index = set()
-        self.sec_ref_not_found = {}
-        self.seg_ref_not_found = {}
-        self.current_file_path = ""
         self.parshan_id_table = {
             '162': u"Rashi on {}".format(self.en_sefer),
             '6': u"Abarbanel on Torah, {}".format(self.en_sefer),  # Abarbanel_on_Torah,_Genesis
             '41': u'Or HaChaim on {}'.format(self.en_sefer),  # Or_HaChaim_on_Genesis
             '101': u'Mizrachi, {}'.format(self.en_sefer),
-            '91': u"Gur Aryeh on ".format(self.en_sefer), #u"גור אריה",
-            '32':u"Ralbag on {}".format(self.en_sefer), #u'''רלב"ג''', #todo, figure out how to do Beur HaMilot and reguler, maybe needs to be a re.search in the changed_ref method
-            '29': u"Bekhor Shor, {}".format(self.en_sefer),#u"בכור שור",
-            '238':u"Onkelos {}".format(self.en_sefer),#u"אונקלוס",
-            '39': u'Ramban on {}'.format(self.en_sefer),# u'''רמב"ן''',
-            '94': u"Shadal on {}".format(self.en_sefer),#u'''שד"ל''',
-            '4': u"Ibn Ezra on {}".format(self.en_sefer),#u'''ראב"ע''',
-            '198': u"HaKtav VeHaKabalah, {}".format(self.en_sefer),#u'''הכתב והקבלה''',
-            '127': u"Radak on {}".format(self.en_sefer),#u'''רד"ק''',
-            '37': u"Malbim on {}".format(self.en_sefer),#u'''מלבי"ם''',
+            '91': u"Gur Aryeh on ".format(self.en_sefer),  # u"גור אריה",
+            '32': u"Ralbag on {}".format(self.en_sefer),
+        # u'''רלב"ג''', #todo, figure out how to do Beur HaMilot and reguler, maybe needs to be a re.search in the changed_ref method
+            '29': u"Bekhor Shor, {}".format(self.en_sefer),  # u"בכור שור",
+            '238': u"Onkelos {}".format(self.en_sefer),  # u"אונקלוס",
+            '39': u'Ramban on {}'.format(self.en_sefer),  # u'''רמב"ן''',
+            '94': u"Shadal on {}".format(self.en_sefer),  # u'''שד"ל''',
+            '4': u"Ibn Ezra on {}".format(self.en_sefer),  # u'''ראב"ע''',
+            '198': u"HaKtav VeHaKabalah, {}".format(self.en_sefer),  # u'''הכתב והקבלה''',
+            '127': u"Radak on {}".format(self.en_sefer),  # u'''רד"ק''',
+            '37': u"Malbim on {}".format(self.en_sefer),  # u'''מלבי"ם''',
             # '43': u'''בעל ספר הזיכרון''',
-            '111': u"Akeidat Yitzchak", # u'''עקדת יצחק''',
-            '28': u"Rabbeinu Bahya, {}".format(self.en_sefer),#u'''רבנו בחיי''',
+            '111': u"Akeidat Yitzchak",  # u'''עקדת יצחק''',
+            '28': u"Rabbeinu Bahya, {}".format(self.en_sefer),  # u'''רבנו בחיי''',
             # '118':u'קסוטו',
             # '152':u'בנו יעקב',
             # '3':u'אבן כספי',
-            '46':u"Haamek Davar on {}".format(self.en_sefer),
+            '46': u"Haamek Davar on {}".format(self.en_sefer),
             # '104':u'''רמבמ"ן''',
             # '196':u'''בעל הלבוש אורה''',
             '66': u"Meshech Hochma, {}".format(self.en_parasha),
             # '51': u"ביאור - ר' שלמה דובנא"
         }
-        self.haftarah_mode = False
 
 
 
-    def source_is_tanakh(self, ref):
+
+    def source_maybe_tanakh(self, ref):
         try:
-            assert Ref(ref)
-            r = Ref(ref)
-            return r.index.categories[0] == "Tanakh"
-        except AssertionError:
-            return False
+            i = library.get_index(" ".join(ref.split()[0:-1]))
+        except BookNameError:
+            book_name = " ".join(ref.split()[0:-1])
+            book_name = book_name.split(" on ")[-1]
+            try:
+                i = library.get_index(book_name)
+            except BookNameError:
+                return True # returning True because at this stage we have things like "Meshech Hochma, Ki Teitzei"
+                            # and "Onkelos Leviticus" and there's no clear test for these cases even though they are Tanakh
+        return i.categories[0] == "Tanakh"
 
-    def get_haftarot(self, parasha_to_find):
-        parshiot = db.parshiot.find()
-        for parasha in parshiot:
-            if parasha["parasha"] == parasha_to_find:
-                return parasha["haftarot"]
 
+    def get_parasha_and_haftarot(self, parasha_to_find):
+        parshiot = list(db.parshiot.find({"parasha": parasha_to_find}))
+        if parshiot:
+            return parshiot[0]["haftara"]+[parshiot[0]["ref"]]
+        return []
 
     def download_sheets(self):
         parshat_bereshit = ["1", "2", "30", "62", "84", "148", "212", "274", "302", "378", "451", "488", "527",
@@ -973,10 +1009,11 @@ class Nechama_Parser:
                     tc = ref2check.text('he').text if not isinstance(ref2check.text('he').text, list) else strip_cantillation(" ".join(ref2check.text('he').text))
                     if strip_cantillation(text_to_use, strip_vowels=True) in strip_cantillation(tc, strip_vowels=True).split():
                         current_source.ref = ref2check.normal()
+                        return True
                         # print current_source.ref
                     else:
                         print "it is one or less words and this is the wrong ref..."
-                        return
+                        return False
                 else:
                     matched = self.check_reduce_sources(text_to_use, ref2check) # returns a list ordered by scores of mesorat hashas objs that were found
                     changed_ref = ref2check  # ref2chcek might get a better ref but also might not...
@@ -1000,27 +1037,31 @@ class Nechama_Parser:
                         self.non_matches[self.current_file_path].append(ref2check.normal())
 
                         # we dont want to link it since there's no match found so set the ref to empty and record the fixed ref ref2check in about_source_ref
-                        current_source.about_source_ref = ref2check.he_normal()
-                        current_source.ref = ""
-                        return
-                    self.matches[self.current_file_path].append(ref2check.normal())
-                    current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[
-                        0].b.ref.normal()  # because the sides change
+                        # current_source.about_source_ref = ref2check.he_normal()
+                        # current_source.ref = ""
+                        return False
+                    else:
+                        self.matches[self.current_file_path].append(ref2check.normal())
+                        current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[
+                            0].b.ref.normal()  # because the sides change
 
-                    current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[0].b.ref.normal()  # because the sides change
-                    if ref2check.is_section_level():
-                        print '** section level ref: '.format(ref2check.normal())
+                        current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[0].b.ref.normal()  # because the sides change
+                        if ref2check.is_section_level():
+                            print '** section level ref: '.format(ref2check.normal())
+                        return True
                     # print ref2check.normal(), current_source.ref
             else:
                 print u"NO ref2check {}".format(current_source.parshan_name)
                 if current_source.ref:
                     parser.ref_not_found[parser.current_file_path].append(current_source.ref)
-                    current_source.ref = ""
+                return False
         except AttributeError as e:
             print u'AttributeError: {}'.format(re.sub(u":$", u"", current_source.about_source_ref))
             parser.index_not_found[parser.current_file_path].append(current_source.about_source_ref)  # todo: would like to add just the <a> tag
+            return False
         except IndexError as e:
             parser.index_not_found[parser.current_file_path].append(ref2check.normal())
+            return False
 
 
     def organize_by_parsha(self, file_list_names):
@@ -1057,6 +1098,8 @@ class Nechama_Parser:
                 parser.sec_ref_not_found[parser.current_file_path] = []
                 content = BeautifulSoup(open("{}".format(html_sheet)), "lxml")
                 parser.haftarah_mode = u"הפטרה" in content.text or u"הפטרת" in content.text
+                # if not parser.haftarah_mode:
+                #     continue
                 print "\n\n"
                 print datetime.datetime.now()
                 print html_sheet
@@ -1147,6 +1190,9 @@ class Nechama_Parser:
         i = library.get_index("Gur Aryeh on Bamidbar")
         i.nodes.add_title("Gur Aryeh on Numbers", 'en')
         i.save()
+        i = library.get_index("Gur Aryeh on Devarim")
+        i.nodes.add_title("Gur Aryeh on Deuteronomy", 'en')
+        i.save()
         i = library.get_index("Meshech Hochma")
         node = library.get_index("Meshech Hochma").nodes.children[4]
         node.add_title("Chayei Sara", 'en')
@@ -1182,21 +1228,25 @@ def dict_from_html_attrs(contents):
 if __name__ == "__main__":
     # Ref(u"בראשית פרק ג פסוק ד - פרק ה פסוק י")
     # Ref(u"u'דברים פרק ט, ז-כט - פרק י, א-י'")
-    genesis_parshiot = (u"Genesis", ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", 'Vayetzei', "Vayishlach", "Vayeshev", "Miketz", "Vayigash", "Vayechi"])
-    exodus_parshiot = (u"Exodus", ["Shemot", "Vaera", "Bo", "Beshalach", "Yitro", "Mishpatim", "Terumah", "Tetzaveh", "Vayakhel", "Ki Tisa", "Pekudei"])
-    leviticus_parshiot = (u"Leviticus", ["Vayikra", "Tzav", "Shmini", "Tazria", "Metzora", "Achrei Mot",
-                        "Kedoshim", "Emor", "Behar", "Bechukotai"])
-    numbers_parshiot = (u"Numbers", ["Bamidbar", "Nasso", "Beha'alotcha", "Sh'lach Lach", "Korach", "Chukat",
+    genesis_parshiot = (u"Genesis", ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", 'Vayetzei',
+                                     "Vayishlach", "Vayeshev", "Miketz", "Vayigash", "Vayechi"])
+    exodus_parshiot = (u"Exodus", ["Vayakhel-Pekudei", "Shemot", "Vaera", "Bo", "Beshalach", "Yitro", "Mishpatim",
+                                   "Terumah", "Tetzaveh", "Vayakhel", "Ki Tisa", "Pekudei"])
+    leviticus_parshiot = (u"Leviticus", ["Vayikra", "Tzav", "Shmini", "Tazria", "Metzora", "Tazria-Metzora", "Achrei Mot",
+                        "Kedoshim", "Achrei Mot-Kedoshim", "Emor", "Behar", "Bechukotai", "Behar-Bechukotai"])
+    numbers_parshiot = (u"Numbers", ["Matot-Masei", "Bamidbar", "Nasso", "Beha'alotcha", "Sh'lach Lach", "Korach", "Chukat",
                         "Balak", "Pinchas", "Matot", "Masei"])
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
-                        "Nitzavim", "Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
-    combined_parshiot = ["Achrei Mot - Kedoshim", "Behar - Bechukotai", "Matot - Masei", "Nitzavim - Vayeilech", "Tazria - Metzora", "Vayakhel - Pekudei"]
+                        "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
+    posting = True
 
-    which_parshiot = exodus_parshiot
-    for parsha in ["Vaera"]:
+    for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
+        print "NEW BOOK"
+    which_parshiot = devarim_parshiot
+    for parsha in ["Nitzavim-Vayeilech"]:
         book = which_parshiot[0]
-        parser = Nechama_Parser(book, parsha, "fast", "trying to merge first time", catch_errors=catch_errors)
+        parser = Nechama_Parser(book, parsha, "fast", "", catch_errors=catch_errors)
         parser.old = False
         parser.prepare_term_mapping() # must be run once locally and on sandbox
         #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
@@ -1204,7 +1254,7 @@ if __name__ == "__main__":
         # anything_before = "7.html"
         # pos_anything_before = sheets.index(anything_before)
         # sheets = sheets[pos_anything_before:]
-        sheets = ["676.html"]
+        sheets = ["747.html"]
         sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=False)
         if catch_errors:
             parser.record_report()

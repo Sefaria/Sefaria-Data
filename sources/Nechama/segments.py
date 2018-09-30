@@ -102,7 +102,18 @@ class Source(object):
             except InputError:
                 last_part = self.ref.split()[-1]
                 assert last_part[0].isdigit()  # in format, Ralbag Beur HaMilot on Torah, Genesis 4:17 and last_part is "4:17", now get the node "Ralbag Beur HaMilot on Torah, Genesis"
-                self.ref = Ref(" ".join(self.ref.split()[0:-1])).he_normal()
+                try:
+                    self.ref = Ref(" ".join(self.ref.split()[0:-1])).he_normal()
+                except InputError:
+                    if " on " in self.ref: #Rashi on Genesis
+                        term = " ".join(self.ref.split()[0:-1]).split(" on ")[0] # this should get just "Rashi" or "Abarbanel"
+                        titles = Term().load({"titles.text": term}).titles
+                        self.ref = [title['text'] for title in titles if title['lang'] == 'he'][0]
+                    elif ", " in self.ref: #HaKtav VeKabbalah, Hosea
+                        word_list = " ".join(self.ref.split()[0:-1]).rsplit(", ")[0:-1]
+                        self.ref = library.get_index(" ".join(word_list))
+                    else: #Onkelos Isaiah
+                        self.ref = Term().load({"titles.text": self.ref.split()[0]})
 
             if self.about_source_ref:
                 comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=True) #use actual text if we can

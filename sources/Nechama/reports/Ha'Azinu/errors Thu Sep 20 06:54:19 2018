@@ -1,0 +1,11 @@
+html_sheets/Ha'Azinu/748.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'titles'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1107, in bs4_reader
+    sheet.create_sheetsources_from_objsource()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 90, in create_sheetsources_from_objsource
+    seg_sheet_source = segment.create_source()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/segments.py", line 109, in create_source
+    titles = Term().load({"titles.text": term}).titles
+AttributeError: 'NoneType' object has no attribute 'titles'
+
+

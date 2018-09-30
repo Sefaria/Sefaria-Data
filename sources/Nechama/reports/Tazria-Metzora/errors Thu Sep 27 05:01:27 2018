@@ -1,0 +1,10 @@
+html_sheets/Tazria-Metzora/813.html: (<type 'exceptions.IndexError'>, IndexError('list index out of range',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1114, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 208, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 248, in add_segments
+    header = filter(lambda x: isinstance(x, Header), self.segment_objects)[0]
+IndexError: list index out of range
+

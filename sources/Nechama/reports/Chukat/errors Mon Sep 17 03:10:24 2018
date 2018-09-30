@@ -1,0 +1,46 @@
+html_sheets/Chukat/129.html: (<class 'sefaria.system.exceptions.InputError'>, InputError(u'Numbers ends at Chapter 36.',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1033, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 176, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 215, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 280, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 330, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 402, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 585, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 544, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 663, in pasuk_in_parsha_pasukim
+    possible_ref = Ref("{} ".format(parser.en_sefer) + perek + ":" + new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 1954, in __call__
+    result = super(RefCacheType, cls).__call__(*args, **kwargs)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2034, in __init__
+    self._validate()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2066, in _validate
+    raise InputError(u"{} ends at {} {}.".format(self.book, self.index_node.sectionNames[0], display_size))
+InputError: Numbers ends at Chapter 36.
+
+
+html_sheets/Chukat/495.html: (<class 'sefaria.system.exceptions.InputError'>, InputError(u'Could not find title in reference: Gur Aryeh on Numbers',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1034, in bs4_reader
+    sheet.create_sheetsources_from_objsource()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 62, in create_sheetsources_from_objsource
+    seg_sheet_source = segment.create_source()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/segments.py", line 105, in create_source
+    self.ref = Ref(" ".join(self.ref.split()[0:-1])).he_normal()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 1954, in __call__
+    result = super(RefCacheType, cls).__call__(*args, **kwargs)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2033, in __init__
+    self.__init_tref()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2170, in __init_tref
+    raise InputError(u"Could not find title in reference: {}".format(self.tref))
+InputError: Could not find title in reference: Gur Aryeh on Numbers
+
+

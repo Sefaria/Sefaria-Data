@@ -1,0 +1,19 @@
+html_sheets/Vayetzei/288.html: (<type 'exceptions.AssertionError'>, AssertionError('Perakim not len 0 or 1',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1033, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 176, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 215, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 280, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 330, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 402, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 573, in set_current_perek_pasuk
+    assert len(perek) in [0, 1], "Perakim not len 0 or 1"
+AssertionError: Perakim not len 0 or 1
+
+

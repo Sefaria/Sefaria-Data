@@ -1,0 +1,172 @@
+html_sheets/Korach/190.html: (<class 'sefaria.system.exceptions.PartialRefInputError'>, PartialRefInputError(u"Partial reference match for 'Meshech Hochma, Korach' - failed to find continuation for 'Meshech Hochma'.\nValid continuations are:\nBereshit,\nNoakh,\nLekh Lekha,\nVayera,\nKhayei Sarah,\nMeshech Hochma, Chayei Sara,\nChayei Sara,\nToldot,\nVayetze,\nVayetzei,\nVayishlakh,\nVayeshev,\nMiketz,\nVayigash,\nVayekhi,\nShemot,\nVaera,\nBo,\nBeshalakh,\nYitro,\nMishpatim,\nTerumah,\nTetzaveh,\nKi Tisa,\nVayakhel,\nPekudei,\nHaftarat Shekalim,\nHaftarat Zakhor,\nHaftarat Hakhodesh,\nHaftarat Shabbat Hagadol,\nHaftarat First Day Pesakh,\nHaftarat Last Day Pesakh,\nHafatarat Shabbat Rosh Khodesh,\nMegillat Esther,\nVayikra,\nTzav,\nShemini,\nTazria,\nMetzora,\nAkharei Mot,\nKedoshim,\nEmor,\nBehar,\nBekhukotai,\nBamidbar,\nNaso,\nBehaalotkha,\nShelakh,\nKorakh,\nKhukkat,\nBalak ,\nPinekhas,\nMattot,\nMasei,\nRuth,\nDevarim,\nVa'etkhanan,\nEkev,\nRe'eh,\nShoftim,\nKi Tetze,\nKi Tavo,\nNitzavim,\nVayelekh,\nHaazinu,\nVezot Haberakha,\nEikhah,\nDerush",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1037, in bs4_reader
+    sheet.create_sheetsources_from_objsource()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 62, in create_sheetsources_from_objsource
+    seg_sheet_source = segment.create_source()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/segments.py", line 105, in create_source
+    self.ref = Ref(" ".join(self.ref.split()[0:-1])).he_normal()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 1954, in __call__
+    result = super(RefCacheType, cls).__call__(*args, **kwargs)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2033, in __init__
+    self.__init_tref()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2194, in __init_tref
+    raise PartialRefInputError(msg, matched, continuations)
+PartialRefInputError: Partial reference match for 'Meshech Hochma, Korach' - failed to find continuation for 'Meshech Hochma'.
+Valid continuations are:
+Bereshit,
+Noakh,
+Lekh Lekha,
+Vayera,
+Khayei Sarah,
+Meshech Hochma, Chayei Sara,
+Chayei Sara,
+Toldot,
+Vayetze,
+Vayetzei,
+Vayishlakh,
+Vayeshev,
+Miketz,
+Vayigash,
+Vayekhi,
+Shemot,
+Vaera,
+Bo,
+Beshalakh,
+Yitro,
+Mishpatim,
+Terumah,
+Tetzaveh,
+Ki Tisa,
+Vayakhel,
+Pekudei,
+Haftarat Shekalim,
+Haftarat Zakhor,
+Haftarat Hakhodesh,
+Haftarat Shabbat Hagadol,
+Haftarat First Day Pesakh,
+Haftarat Last Day Pesakh,
+Hafatarat Shabbat Rosh Khodesh,
+Megillat Esther,
+Vayikra,
+Tzav,
+Shemini,
+Tazria,
+Metzora,
+Akharei Mot,
+Kedoshim,
+Emor,
+Behar,
+Bekhukotai,
+Bamidbar,
+Naso,
+Behaalotkha,
+Shelakh,
+Korakh,
+Khukkat,
+Balak ,
+Pinekhas,
+Mattot,
+Masei,
+Ruth,
+Devarim,
+Va'etkhanan,
+Ekev,
+Re'eh,
+Shoftim,
+Ki Tetze,
+Ki Tavo,
+Nitzavim,
+Vayelekh,
+Haazinu,
+Vezot Haberakha,
+Eikhah,
+Derush
+
+
+html_sheets/Korach/335.html: (<class 'sefaria.system.exceptions.PartialRefInputError'>, PartialRefInputError(u"Partial reference match for 'Meshech Hochma, Korach' - failed to find continuation for 'Meshech Hochma'.\nValid continuations are:\nBereshit,\nNoakh,\nLekh Lekha,\nVayera,\nKhayei Sarah,\nMeshech Hochma, Chayei Sara,\nChayei Sara,\nToldot,\nVayetze,\nVayetzei,\nVayishlakh,\nVayeshev,\nMiketz,\nVayigash,\nVayekhi,\nShemot,\nVaera,\nBo,\nBeshalakh,\nYitro,\nMishpatim,\nTerumah,\nTetzaveh,\nKi Tisa,\nVayakhel,\nPekudei,\nHaftarat Shekalim,\nHaftarat Zakhor,\nHaftarat Hakhodesh,\nHaftarat Shabbat Hagadol,\nHaftarat First Day Pesakh,\nHaftarat Last Day Pesakh,\nHafatarat Shabbat Rosh Khodesh,\nMegillat Esther,\nVayikra,\nTzav,\nShemini,\nTazria,\nMetzora,\nAkharei Mot,\nKedoshim,\nEmor,\nBehar,\nBekhukotai,\nBamidbar,\nNaso,\nBehaalotkha,\nShelakh,\nKorakh,\nKhukkat,\nBalak ,\nPinekhas,\nMattot,\nMasei,\nRuth,\nDevarim,\nVa'etkhanan,\nEkev,\nRe'eh,\nShoftim,\nKi Tetze,\nKi Tavo,\nNitzavim,\nVayelekh,\nHaazinu,\nVezot Haberakha,\nEikhah,\nDerush",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1037, in bs4_reader
+    sheet.create_sheetsources_from_objsource()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 62, in create_sheetsources_from_objsource
+    seg_sheet_source = segment.create_source()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/segments.py", line 105, in create_source
+    self.ref = Ref(" ".join(self.ref.split()[0:-1])).he_normal()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 1954, in __call__
+    result = super(RefCacheType, cls).__call__(*args, **kwargs)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2033, in __init__
+    self.__init_tref()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2194, in __init_tref
+    raise PartialRefInputError(msg, matched, continuations)
+PartialRefInputError: Partial reference match for 'Meshech Hochma, Korach' - failed to find continuation for 'Meshech Hochma'.
+Valid continuations are:
+Bereshit,
+Noakh,
+Lekh Lekha,
+Vayera,
+Khayei Sarah,
+Meshech Hochma, Chayei Sara,
+Chayei Sara,
+Toldot,
+Vayetze,
+Vayetzei,
+Vayishlakh,
+Vayeshev,
+Miketz,
+Vayigash,
+Vayekhi,
+Shemot,
+Vaera,
+Bo,
+Beshalakh,
+Yitro,
+Mishpatim,
+Terumah,
+Tetzaveh,
+Ki Tisa,
+Vayakhel,
+Pekudei,
+Haftarat Shekalim,
+Haftarat Zakhor,
+Haftarat Hakhodesh,
+Haftarat Shabbat Hagadol,
+Haftarat First Day Pesakh,
+Haftarat Last Day Pesakh,
+Hafatarat Shabbat Rosh Khodesh,
+Megillat Esther,
+Vayikra,
+Tzav,
+Shemini,
+Tazria,
+Metzora,
+Akharei Mot,
+Kedoshim,
+Emor,
+Behar,
+Bekhukotai,
+Bamidbar,
+Naso,
+Behaalotkha,
+Shelakh,
+Korakh,
+Khukkat,
+Balak ,
+Pinekhas,
+Mattot,
+Masei,
+Ruth,
+Devarim,
+Va'etkhanan,
+Ekev,
+Re'eh,
+Shoftim,
+Ki Tetze,
+Ki Tavo,
+Nitzavim,
+Vayelekh,
+Haazinu,
+Vezot Haberakha,
+Eikhah,
+Derush
+
+
