@@ -76,10 +76,9 @@ if __name__ == "__main__":
                 siman_to_text[current_siman] = []
             siman_to_text[current_siman].append(text)
 
-    titles = ["Lemberg", "Prague", "Cremona"]
-    titles = ["Berlin Edition, Part I", "Berlin Edition, Part II, Issur VeHeter",
-              "Berlin Edition, Part II", "Berlin Edition, Part III"]
-    csv_files = ["lemberg.csv", "prague.csv", "cremona.csv"]
+    #titles = ["Lemberg", "Prague", "Cremona"]
+    titles = ["Berlin Edition, Part I", "Berlin Edition, Part II, Issur VeHeter","Berlin Edition, Part II", "Berlin Edition, Part III"]
+    #csv_files = ["lemberg.csv", "prague.csv", "cremona.csv"]
     csv_files = ["parma.csv", "AM. I.csv", "AM. II.csv", "berlin.csv"]
     for title, file in zip(titles, csv_files):
         with open(file) as f:
@@ -90,6 +89,10 @@ if __name__ == "__main__":
                 en = row[2]
                 en_simanim = sorted([el.replace(" ", "") for el in en.split(",")])
                 combined_text = []
+                if len(en.split(",")) > 1 or len(he.split(",")) > 1:
+                    if file == "berlin.csv":
+                        he = he[he.find("no. ")+4:]
+                    print "{}: {} has contents of {}".format(file[0:-4], he, en)
                 for en_siman in en_simanim:
                     if en_siman not in siman_to_text.keys():
                         print "Problem: {0} {1} -> {2}, but {2} is not in CSV".format(title, he, en)
@@ -105,7 +108,7 @@ if __name__ == "__main__":
                     "language": "en",
                     "text": combined_text,
                 }
-                post_text(ref_on_prod, send_text, server="http://ste.sefaria.org")
+                #post_text(ref_on_prod, send_text, server="http://ste.sefaria.org")
 
 
 
