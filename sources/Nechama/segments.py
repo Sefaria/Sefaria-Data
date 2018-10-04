@@ -460,3 +460,12 @@ class Text(object):
         self.sp_segment = sp_segment
         self.segment_class=segment_class
         self.ref_guess = ref_guess
+
+    def create_source(self):
+        """
+        Text should never get to a create_source place, because Text is only one part of Source that "got lost"
+        this function is only for the sake of test runes. it reality it is code that should never be run! todo: right a test to see that it is not run.
+        :return: a sheet obj
+        """
+        source = {"outsideText": self.sp_segment.text}
+        return source
