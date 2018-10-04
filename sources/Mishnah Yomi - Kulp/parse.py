@@ -29,25 +29,39 @@ SERVER = "http://ste.sefaria.org"
 #                 with open("{}.html".format(i), 'w') as f:
 #                     f.write(response.content)
 
-def get_lines_from_web(name):
-    replace_with = {"Chullin": "Hullin"}
+def get_lines_from_web(name, download_mode=True):
+    replace_with = {"Chullin": "Hullin", "Challah": "Hallah", "Yevamot": "Yevamoth", "Ketubot": "Ketuboth",
+                     "Makhshirin": "Makshirin", "Tahorot": "Toharot"}
     for word_to_replace, new_word in replace_with.items():
         name = name.replace(word_to_replace, new_word)
-    book = name.split()[0].lower()
+    book = " ".join(name.split()[0:-1])
+    book = book.lower().replace(" ", "-")
     ch, mishnah = name.split()[-1].split("-")
     ch = num2words(int(ch))
     mishnah = num2words(int(mishnah[0:-4]))
     new_name = "{}-chapter-{}-mishnah-{}".format(book, ch, mishnah)
     print new_name
-    headers = {
-        'User-Agent': 'Mozilla/4.0 (Macintosh; Intel Mac OS X 11_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
-    response = requests.get("http://learn.conservativeyeshiva.org/{}".format(new_name), headers=headers)
-    if response.status_code != 200:
-        return False
-    else:
-        soup = BeautifulSoup(response.content)
+    if download_mode:
+        headers = {
+            'User-Agent': 'Mozilla/4.0 (Macintosh; Intel Mac OS X 11_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
+        response = requests.get("http://learn.conservativeyeshiva.org/{}".format(new_name), headers=headers)
+        if response.status_code != 200:
+            other_name = name.replace(".txt", "") + "-htm"
+            other_name = other_name.replace(" ", "-")
+            other_name = other_name[0].lower() + other_name[1:]
+            response = requests.get("http://learn.conservativeyeshiva.org/{}".format(other_name), headers=headers)
+            if response.status_code != 200:
+                return False
+        f = open(new_name, 'w')
+        f.write(response.content)
+        f.close()
+        return response.content
+    elif not download_mode:
+        f = str(open(new_name))
+        soup = BeautifulSoup(f)
         text = soup.find_all("div", {"class": "post-content"})
         return text[0].text.splitlines()
+
 
 
 
@@ -113,7 +127,7 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
     section_num = 0
 
     for line_n, line in enumerate(lines):
-        line = line.strip()
+        line = line.strip().replace(unichr(151), u"").replace(unichr(146), u"")
         if "Part" in line and len(line.split()) < 10:
             print "{}\n{}\n\n".format(file, line)
             return (commentary_text + questions_text, mishnah_text)
@@ -152,7 +166,7 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
                 if digit:
                     mishnah_text.append(line.replace(digit.group(0), u"").strip())
                 elif char:
-                    mishnah_text[-1] += "<br/>"+line.replace(char.group(0), u"").strip()
+                    mishnah_text[-1] += " "+line.replace(char.group(0), u"").strip()
                 else:
                     mishnah_text.append(line)
 
@@ -207,7 +221,7 @@ def check_all_mishnayot_present_and_post(text, sefer, file_path):
             "versionTitle": "Mishnah Yomit",
             "versionSource": "http://learn.conservativeyeshiva.org/mishnah/"
         }
-        post_text(path, send_text, server=SERVER)
+        #post_text(path, send_text, server=SERVER)
     #first check that all chapters present
     index = library.get_index("Mishnah " + sefer)
     en_title = "Mishnah Yomit on {}".format(index.title)
@@ -248,11 +262,19 @@ def check_all_mishnayot_present_and_post(text, sefer, file_path):
 if __name__ == "__main__":
     HOW_MANY_REFER_TO_SECTIONS = 0
     parsed_text = {}
-    for category in os.listdir("."):
-        if not os.path.isdir(category):
-            continue
+    download_mode = True
+    dont_start = True
+    start_at = "Tevul Yom"#tevul-chapter-three-mishnah-four
+    categories = [category for category in os.listdir(".") if os.path.isdir(category)]
+    for category in categories:
+        print "CATEGORY:"
+        print category
         sefarim = os.listdir(category)
         for sefer in sefarim:
+            if dont_start and sefer != start_at:
+                continue
+            if dont_start and sefer == start_at:
+                dont_start = False
             current_path = "./{}/{}".format(category, sefer)
             if not os.path.isdir(current_path):
                 continue
@@ -275,15 +297,18 @@ if __name__ == "__main__":
                     chapter, mishnah = ref_form.sections[0], ref_form.sections[1]
                     if chapter not in parsed_text[sefer].keys():
                         parsed_text[sefer][chapter] = {}
-
-                    lines = get_lines_from_web(file.rsplit("/")[-1])
+                    lines = get_lines_from_web(file.rsplit("/")[-1], download_mode=download_mode)
                     if not lines:
+                        if not download_mode:
+                            assert os._exists(file), "File exists on hard drive in text format but not in HTML format"
+                        print "NOT FOUND"
                         continue
-                    lines = [line.replace(u"\xa0", u"") for line in lines if line.replace(u" ", u"").replace(u"\xa0", u"")]
-                    parsed_text[sefer][chapter][mishnah] = parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS)
+                    if not download_mode:
+                        lines = [line.replace(u"\xa0", u"") for line in lines if line.replace(u" ", u"").replace(u"\xa0", u"")]
+                        parsed_text[sefer][chapter][mishnah] = parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS)
 
-
-            most_common_value = found_ref.most_common(1)[0]
-            assert most_common_value[1] == 1, "{} has {}".format(most_common_value[0], most_common_value[1])
-            create_index(parsed_text[sefer], sefer)
-            check_all_mishnayot_present_and_post(parsed_text[sefer], sefer, current_path)
+            if not download_mode:
+                most_common_value = found_ref.most_common(1)[0]
+                assert most_common_value[1] == 1, "{} has {}".format(most_common_value[0], most_common_value[1])
+                create_index(parsed_text[sefer], sefer)
+                check_all_mishnayot_present_and_post(parsed_text[sefer], sefer, current_path)
