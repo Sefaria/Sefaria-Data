@@ -28,10 +28,77 @@ SERVER = "http://ste.sefaria.org"
 #                 print "sleeping"
 #                 with open("{}.html".format(i), 'w') as f:
 #                     f.write(response.content)
+def get_response(new_name, headers):
+    not_found = True
+    while not_found:
+        try:
+            response = requests.get("http://learn.conservativeyeshiva.org/{}".format(new_name), headers=headers)
+            not_found = False
+        except requests.exceptions.ConnectionError, requests.exceptions.ChunkedEncodingError:
+            print "trying again.."
+        return response
+
+
+
+def get_mishnah_on_multiple_lines(category, sefer, file, page=1):
+    replace_with = {"Chullin": "Hullin", "Challah": "Hallah", "Yevamot": "Yevamoth", "Ketubot": "Ketuboth",
+                    "Makhshirin": "Makshirin", "Tahorot": "Toharot", "Oholot": "Ohalot", "Oktzin": "Oktzim",
+                    "Zevachim": "Zevahim", "Menachot": "Menahot", "Kinnim": "Kinim", "Chagigah": "Hagigah",
+                    "Beitzah": "Betzah", "Pesachim": "Pesahim", "Avot": "Avoth",
+                    "Horayot": "Horayoth", "Eduyot": "Eduyoth", "Shevuot": "Shevuoth"}
+    modified_sefer = sefer
+    for our_sp, their_sp in replace_with.items():
+        modified_sefer = modified_sefer.replace(our_sp, their_sp)
+    headers = {
+        'User-Agent': 'Mozilla/4.0 (Macintosh; Intel Mac OS X 11_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
+    not_found = True
+    url = "http://learn.conservativeyeshiva.org/topic/rabbinic-texts/mishnah/my-seder-{}/{}/".format(category.lower(), modified_sefer.lower())
+    if page > 1:
+        url += "page/{}".format(page)
+    response = None
+    while not_found:
+        try:
+            response = requests.get(url, headers=headers)
+            not_found = False
+        except requests.exceptions.ConnectionError, requests.exceptions.ChunkedEncodingError:
+            print "trying again.."
+    if response.status_code == 200:
+        content = response.content
+        soup = BeautifulSoup(content)
+        a_tag_dict = {a_tag.text: a_tag.attrs.get("href", "") for a_tag in soup.find_all("a")}
+        ch_mishnah = file.split(" ")[-1]
+        chapter, mishnah = ch_mishnah.split("-")
+        chapter = "Chapter " + chapter
+        mishnah = "Mishnah " + mishnah.replace(".txt", "")
+        new_name = "{}, {}, {}".format(sefer, chapter, mishnah)
+        if new_name not in a_tag_dict.keys():
+            print "Trying {}".format(page+1)
+            return get_mishnah_on_multiple_lines(category, sefer, file, page+1)
+        href = a_tag_dict[new_name]
+        not_found = True
+        response = None
+        while not_found:
+            try:
+                response = requests.get(href, headers=headers)
+                not_found = False
+            except requests.exceptions.ConnectionError, requests.exceptions.ChunkedEncodingError:
+                print "trying again.."
+        soup = BeautifulSoup(response.content)
+        text = soup.find_all("div", {"class": "post-content"})
+        lines = text[0].text.splitlines()
+        any_line_has_marker = any([True if line.startswith("a)") else False for line in lines])
+        if any_line_has_marker:
+            print "FOUND {}".format(file)
+
+
+
 
 def get_lines_from_web(name, download_mode=True):
     replace_with = {"Chullin": "Hullin", "Challah": "Hallah", "Yevamot": "Yevamoth", "Ketubot": "Ketuboth",
-                     "Makhshirin": "Makshirin", "Tahorot": "Toharot"}
+                     "Makhshirin": "Makshirin", "Tahorot": "Toharot", "Oholot": "Ohalot", "Oktzin": "Oktzim",
+                    "Zevachim": "Zevahim", "Menachot": "Menahot", "Kinnim": "Kinim", "Chagigah": "Hagigah",
+                    "Beitzah": "Betzah", "Pesachim": "Pesahim", "Avot": "Avoth",
+                    "Horayot": "Horayoth", "Eduyot": "Eduyoth", "Shevuot": "Shevuoth"}
     for word_to_replace, new_word in replace_with.items():
         name = name.replace(word_to_replace, new_word)
     book = " ".join(name.split()[0:-1])
@@ -44,12 +111,13 @@ def get_lines_from_web(name, download_mode=True):
     if download_mode:
         headers = {
             'User-Agent': 'Mozilla/4.0 (Macintosh; Intel Mac OS X 11_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
-        response = requests.get("http://learn.conservativeyeshiva.org/{}".format(new_name), headers=headers)
+        not_found = True
+        response = get_response(new_name, headers)
         if response.status_code != 200:
             other_name = name.replace(".txt", "") + "-htm"
             other_name = other_name.replace(" ", "-")
             other_name = other_name[0].lower() + other_name[1:]
-            response = requests.get("http://learn.conservativeyeshiva.org/{}".format(other_name), headers=headers)
+            response = get_response(other_name, headers)
             if response.status_code != 200:
                 return False
         f = open(new_name, 'w')
@@ -257,24 +325,18 @@ def check_all_mishnayot_present_and_post(text, sefer, file_path):
             translation[ch][m] = " ".join(mishnah)
     post_(translation, index.title)
 
-
-
 if __name__ == "__main__":
     HOW_MANY_REFER_TO_SECTIONS = 0
     parsed_text = {}
     download_mode = True
     dont_start = True
-    start_at = "Tevul Yom"#tevul-chapter-three-mishnah-four
+    start_at = "Shevuot 4-8.txt"#parah-chapter-five-mishnah-nine
     categories = [category for category in os.listdir(".") if os.path.isdir(category)]
     for category in categories:
         print "CATEGORY:"
         print category
         sefarim = os.listdir(category)
         for sefer in sefarim:
-            if dont_start and sefer != start_at:
-                continue
-            if dont_start and sefer == start_at:
-                dont_start = False
             current_path = "./{}/{}".format(category, sefer)
             if not os.path.isdir(current_path):
                 continue
@@ -283,6 +345,10 @@ if __name__ == "__main__":
             files = os.listdir(current_path)
             found_ref = Counter()
             for file_n, file in enumerate(files):
+                if dont_start and file != start_at:
+                    continue
+                if dont_start and file == start_at:
+                    dont_start = False
                 file_path = current_path + "/" + file
                 if "Copy" in file or "part" in file or "Part" in file or len(file.split("-")) > 2 or not file.endswith(".txt"): #Ignore copies, and files with multiple parts or mishnayot
                     continue
@@ -292,20 +358,22 @@ if __name__ == "__main__":
                     parsed_text[sefer]["Introduction"] = [line.replace("\n", "") for line in lines if line != "\n"]
                     f.close()
                 elif file.startswith(sefer):
-                    ref_form = Ref("Mishnah " + file.replace("-", ":").replace(".txt", "")) #Berakhot 3-13.txt --> Mishnah Berakhot 3:13
-                    found_ref[ref_form.normal()] += 1
-                    chapter, mishnah = ref_form.sections[0], ref_form.sections[1]
-                    if chapter not in parsed_text[sefer].keys():
-                        parsed_text[sefer][chapter] = {}
-                    lines = get_lines_from_web(file.rsplit("/")[-1], download_mode=download_mode)
-                    if not lines:
-                        if not download_mode:
-                            assert os._exists(file), "File exists on hard drive in text format but not in HTML format"
-                        print "NOT FOUND"
-                        continue
-                    if not download_mode:
-                        lines = [line.replace(u"\xa0", u"") for line in lines if line.replace(u" ", u"").replace(u"\xa0", u"")]
-                        parsed_text[sefer][chapter][mishnah] = parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS)
+                    get_mishnah_on_multiple_lines(category, sefer, file)
+                    # ref_form = Ref("Mishnah " + file.replace("-", ":").replace(".txt", "")) #Berakhot 3-13.txt --> Mishnah Berakhot 3:13
+                    # found_ref[ref_form.normal()] += 1
+                    # chapter, mishnah = ref_form.sections[0], ref_form.sections[1]
+                    # if chapter not in parsed_text[sefer].keys():
+                    #     parsed_text[sefer][chapter] = {}
+                    # lines = None
+                    # lines = get_lines_from_web(file.rsplit("/")[-1], download_mode=download_mode)
+                    # if not lines:
+                    #     if not download_mode:
+                    #         assert os._exists(file), "File exists on hard drive in text format but not in HTML format"
+                    #     print "NOT FOUND"
+                    #     continue
+                    # if not download_mode:
+                    #     lines = [line.replace(u"\xa0", u"") for line in lines if line.replace(u" ", u"").replace(u"\xa0", u"")]
+                    #     parsed_text[sefer][chapter][mishnah] = parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS)
 
             if not download_mode:
                 most_common_value = found_ref.most_common(1)[0]
