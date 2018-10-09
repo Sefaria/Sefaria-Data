@@ -18,7 +18,6 @@ class Segment(object):
         return source
 
 
-
 class Source(object):
 
     # def __init__(self, segment_class, ref):
@@ -66,7 +65,8 @@ class Source(object):
         if not gray:
             return u"{}<br/>{}".format(ref, text)
         else:
-            return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(ref, text)
+            #really should be 153,153,153 but changed it to yellow
+            return u"<span style='color:rgb(253,253,0);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(ref, text)
 
     def create_source(self):
         #create source for sourcesheet out of myself
@@ -112,7 +112,7 @@ class Source(object):
                         self.ref = Term().load({"titles.text": self.ref.split()[0]})
 
             if self.about_source_ref:
-                comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=True) #use actual text if we can
+                comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False) #use actual text if we can
             else:
                 comment = self.glue_ref_and_text(self.ref, comment, gray=True) # otherwise, use the ref we thought it was
             source = {"outsideText": comment,
@@ -171,6 +171,7 @@ class Source(object):
         # new_source.perek = self.perek
 
         return new_source
+
 
 class Header(object):
     def __init__(self, segment):
@@ -307,6 +308,7 @@ class Question(object):
 
         return text
 
+
 class Table(object):
     ## specifically for tables in HTML that end up staying as HTML in source sheet such class="RT" or "RTBorder"
 
@@ -363,6 +365,7 @@ class Nechama_Comment(object):
         source = {"outsideText": self.text}
         return source
 
+
 class Nested(object):
     """
     class for Hybrid obj classes that we must chose btw to egt the Obj that will be the actual source in the sheet_segment
@@ -383,8 +386,16 @@ class Nested(object):
         classed_tags = []
         classes = ["parshan", "midrash", "talmud", "bible", "commentary", "question2", "question", "table"]
         for e in segment.findAll():
-            if (e.attrs and 'class' in e.attrs and any([c in e.attrs['class'] for c in classes])): #e.find('td') or
+            if (e.attrs and 'class' in e.attrs and any([c in e.attrs['class'] for c in classes])):  # e.find('td') or
                 classed_tags.append(e)
+            elif (e in segment.findAll('p')) and not e.parent.has_attr('class') and e.text.strip()\
+                    and not (re.search('mypopup', e.parent.attrs.get('href')) if e.parent.attrs.get('href') else None):
+                classed_tags.append(e)
+        # Test: testing if we get all the text from the html to ourObjs
+        extract_text = ' '.join([e.text for e in classed_tags]) #text that was taken out of the segment after cleaning
+        exctract_set =set(extract_text.split())
+        seg_set = set(segment.text.split())
+        seg_set.difference(exctract_set)
         return classed_tags
 
         # check if nested. if so, return the data to Source to create new segments from the nested parts.
@@ -431,6 +442,7 @@ class Nested(object):
                         self.segment_objs[i].parshan_id = obj.sp_segment.attrs.get("id")
 
     def choose(self):
+
         return self.segment_objs
 
     def create_source(self):
@@ -445,6 +457,8 @@ class Nested(object):
         if self.segment_objs:
             created_obj = []
             for seg in self.segment_objs:
+                if not seg:
+                    continue
                 created_obj.append(seg.create_source())
             return created_obj
             # return create_sheetsources_from_sections(self.segment_objs)
@@ -460,3 +474,14 @@ class Text(object):
         self.sp_segment = sp_segment
         self.segment_class = segment_class
         self.ref_guess = ref_guess
+
+
+    def create_source(self):
+        """
+        Text should never get to a create_source place, because Text is only one part of Source that "got lost"
+        this function is only for the sake of test runes. it reality it is code that should never be run! todo: right a test to see that it is not run.
+        :return: a sheet obj
+        """
+        source = {"outsideText": self.sp_segment.text}
+        return source
+
