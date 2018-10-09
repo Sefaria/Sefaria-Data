@@ -1,3 +1,5 @@
+#encoding=utf-8
+
 import os
 import django
 django.setup()
@@ -27,10 +29,22 @@ if __name__ == "__main__":
     index['alt_structs'] = {"Subject": {"nodes": nodes}}
     # post_index(index, server="http://draft.sefaria.org")
     mapping = {
-        "Arukh HaShulchan 1": "Arukh HaShulchan, Orach Chaim",
-        "Arukh HaShulchan 2": "Arukh HaShulchan, Yoreh Deah",
-        "Arukh HaShulchan 3": "Arukh HaShulchan, Even HaEzer",
-        "Arukh HaShulchan 4": "Arukh HaShulchan, Choshen Mishpat"
+        "Aruch HaShulchan 1": "Arukh HaShulchan, Orach Chaim",
+        "Aruch HaShulchan 2": "Arukh HaShulchan, Yoreh Deah",
+        "Aruch HaShulchan 3": "Arukh HaShulchan, Even HaEzer",
+        "Aruch HaShulchan 4": "Arukh HaShulchan, Choshen Mishpat"
     }
+    root = SchemaNode()
+    root.add_primary_titles("Arukh HaShulchan", u"ערוך השולחן")
+    nodes = [("Orach Chaim", u"אורח חיים"), ("Yoreh De'ah", u"יורה דעה"), ("Even HaEzer", u"אבן העזר"), ("Choshen Mishpat", u"חושן משפט")]
+    for node in nodes:
+        ja_node = JaggedArrayNode()
+        ja_node.add_primary_titles(node[0], node[1])
+        ja_node.key = node[0]
+        ja_node.add_structure(["Siman", "Paragraph"])
+        ja_node.depth = 2
+        root.append(ja_node)
+    schema = root.serialize()
+    index = {"title": "Arukh HaShulchan", "schema": schema, "categories": ["Halakhah"]}
 
-    migrate_to_complex_structure("Arukh HaShulchan", mapping)
+    migrate_to_complex_structure("Aruch HaShulchan", schema, mapping)

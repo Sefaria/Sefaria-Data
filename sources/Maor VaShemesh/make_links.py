@@ -6,9 +6,17 @@ from sefaria.system.database import db
 from sources.functions import post_link
 if __name__ == "__main__":
     def get_dh(x):
-        x = x[x.find("<b>")+3:x.find("</b>")].replace(u"אלקים", u"אלהים")
-        x = x.split(u"וכו'", 1)[0]
-        return x
+        first_2_words = " ".join(x.split()[0:2])
+        if u"</b>" in first_2_words:
+            return u" ".join(x.split(u" ")[0:10]).strip()
+        elif u"</b>" in x:
+            first_b = x.find("<b>")
+            second_b = x.find("</b>")
+            x = x[first_b+3:second_b]
+        x = x.replace(u"<b>", u"").replace(u"</b>", u"").replace(u"אלקים", u"אלהים")
+        if u"וכו'" in x:
+            x = x.split(u"וכו'", 1)[0]
+        return u" ".join(x.split(u" ")[0:10]).strip()
     base_tokenizer = lambda x: [x for x in x.split()]
     index = library.get_index("Maor VaShemesh")
     section_refs = index.all_section_refs()

@@ -458,5 +458,5 @@ class Text(object):
 
     def __init__(self, sp_segment, segment_class, ref_guess=None):
         self.sp_segment = sp_segment
-        self.segment_class=segment_class
+        self.segment_class = segment_class
         self.ref_guess = ref_guess

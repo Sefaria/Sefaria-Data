@@ -11,6 +11,9 @@ import re
 from collections import Counter
 from sources.functions import post_index, post_text, convertDictToArray, add_category
 from bs4 import BeautifulSoup
+import textract
+import traceback
+import sys
 
 SERVER = "http://ste.sefaria.org"
 
@@ -144,8 +147,8 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
 
 
     def deal_with_sections(line, text, len_mishnah):
-        line = line.replace(" -", ":", 1)
-        section = re.search("^Section (\S+) ", line)
+        line = line.replace(" -", ":", 1).replace("—", ": ", 1).replace("â", ": ", 1)
+        section = re.search("^Section (\d+|[a-zA-Z]+) ", line)
         if not section:
             if len(text) > 0:
                 text[-1] += "<br/>"+line
@@ -166,13 +169,18 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
         try:
             if type(section_num_as_word) is unicode:
                 section_num_as_word = section_num_as_word.encode('utf-8')
-            section_num = w2n.word_to_num(section_num_as_word)
+            if len(section_num_as_word) > 1:
+                section_num = w2n.word_to_num(section_num_as_word)
+            elif section_num_as_word.isdigit():
+                section_num = int(section_num_as_word)
+            elif len(section_num_as_word) == 1: #just a letter
+                section_num = ord(section_num_as_word) - 64
         except ValueError:
-            assert type(section_num_as_word) is int
+            assert type(section_num_as_word) is int, "Problem with {}".format(section_num_as_word)
             section_num = section_num_as_word
         if section_num - 1 < len_mishnah:
             first_sentence = get_first_sentence(mishnah_text[section_num - 1])
-            line = u"<b>{}</b>{}".format(first_sentence, line)
+            line = "<b>{}</b>{}".format(first_sentence, line)
             text.append(line)
         else:
             text.append(line)
@@ -195,7 +203,7 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
     section_num = 0
 
     for line_n, line in enumerate(lines):
-        line = line.strip().replace(unichr(151), u"").replace(unichr(146), u"")
+        #line = line.strip().replace(unichr(151), u"").replace(unichr(146), u"")
         if "Part" in line and len(line.split()) < 10:
             print "{}\n{}\n\n".format(file, line)
             return (commentary_text + questions_text, mishnah_text)
@@ -229,16 +237,11 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
             elif currently_parsing == "QUESTIONS":
                 questions_sections_text.append(line)
             elif currently_parsing == "MISHNAH":
-                digit = re.search(u"^\d+\)", line)
-                char = re.search(u"^[a-zA-Z]+\)", line)
-                if digit:
-                    mishnah_text.append(line.replace(digit.group(0), u"").strip())
-                elif char:
-                    mishnah_text[-1] += " "+line.replace(char.group(0), u"").strip()
-                else:
-                    mishnah_text.append(line)
+                mishnah_text.append(line)
+
 
     assert commentary_text != mishnah_text != []
+    mishnah_text = restructure_mishnah_text(mishnah_text)
     if len(explanation_sections_text) > len(mishnah_text):
          print "Length of mishnah less than length of explanations {}".format(file)
     commentary_text += explanation_sections_text
@@ -248,6 +251,30 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
     return (commentary_text+questions_text, mishnah_text)
 
 
+def restructure_mishnah_text(old_mishnah_text):
+    mishnah_text = []
+    found_digit_or_char = False
+    for line in old_mishnah_text:
+        digit = re.search("^\d+\)", line)
+        char = re.search("^[a-zA-Z]+\)", line)
+        if digit or char:
+            found_digit_or_char = True
+
+    if not found_digit_or_char:
+        return old_mishnah_text
+
+    for line in old_mishnah_text:
+        digit = re.search("^\d+\)", line)
+        char = re.search("^[a-zA-Z]+\)", line)
+        if digit:
+            mishnah_text.append(line.replace(digit.group(0), "").strip())
+        elif char:
+            mishnah_text.append(line.replace(char.group(0), "").strip())
+        elif len(mishnah_text) > 0:
+            mishnah_text[-1] += " " + line.strip()
+        else:
+            mishnah_text.append(line.strip())
+    return mishnah_text
 
 def create_index(text, sefer):
     #add_category("Mishnah Yomit", ["Mishnah", "Commentary", "Mishnah Yomit"], server=SERVER)
@@ -291,6 +318,7 @@ def check_all_mishnayot_present_and_post(text, sefer, file_path):
         }
         #post_text(path, send_text, server=SERVER)
     #first check that all chapters present
+    sefer = convert_spellings(sefer)
     index = library.get_index("Mishnah " + sefer)
     en_title = "Mishnah Yomit on {}".format(index.title)
     translation = dict(text)
@@ -325,19 +353,33 @@ def check_all_mishnayot_present_and_post(text, sefer, file_path):
             translation[ch][m] = " ".join(mishnah)
     post_(translation, index.title)
 
+
+def convert_spellings(sefer):
+    replace_with = {"Chullin": "Hullin", "Challah": "Hallah", "Yevamot": "Yevamoth", "Ketubot": "Ketuboth",
+                    "Makhshirin": "Makshirin", "Tahorot": "Toharot", "Oholot": "Ohalot", "Oktzin": "Oktzim",
+                    "Zevachim": "Zevahim", "Menachot": "Menahot", "Kinnim": "Kinim", "Chagigah": "Hagigah",
+                    "Beitzah": "Betzah", "Pesachim": "Pesahim", "Avot": "Avoth",
+                    "Horayot": "Horayoth", "Eduyot": "Eduyoth", "Shevuot": "Shevuoth", "Makkot": "Makkoth",
+                    "Bava Metzia": "Bava Metziah"}
+    for k, v in replace_with.items():
+        if v in sefer:
+            sefer = sefer.replace(v, k)
+            break
+    return sefer
+
 if __name__ == "__main__":
+
     HOW_MANY_REFER_TO_SECTIONS = 0
     parsed_text = {}
     download_mode = True
     dont_start = True
-    start_at = "Shevuot 4-8.txt"#parah-chapter-five-mishnah-nine
-    categories = [category for category in os.listdir(".") if os.path.isdir(category)]
+    categories = [category for category in os.listdir("./orig_contents") if os.path.isdir(category)]
     for category in categories:
         print "CATEGORY:"
         print category
-        sefarim = os.listdir(category)
+        sefarim = os.listdir("./orig_contents/{}".format(category))
         for sefer in sefarim:
-            current_path = "./{}/{}".format(category, sefer)
+            current_path = "./orig_contents/{}/{}".format(category, sefer)
             if not os.path.isdir(current_path):
                 continue
             if sefer not in parsed_text.keys():
@@ -345,38 +387,30 @@ if __name__ == "__main__":
             files = os.listdir(current_path)
             found_ref = Counter()
             for file_n, file in enumerate(files):
-                if dont_start and file != start_at:
-                    continue
-                if dont_start and file == start_at:
-                    dont_start = False
                 file_path = current_path + "/" + file
-                if "Copy" in file or "part" in file or "Part" in file or len(file.split("-")) > 2 or not file.endswith(".txt"): #Ignore copies, and files with multiple parts or mishnayot
+                print file_path
+                if "Copy" in file or "part" in file or "Part" in file \
+                        or len(file.split("-")) > 2 or not ".doc" in file or not " " in file: #Ignore copies, and files with multiple parts or mishnayot
                     continue
                 if file.startswith("Introduction"):
-                    f = open(file_path)
-                    lines = list(f)[1:]
+                    lines = textract.process(file_path).splitlines()
                     parsed_text[sefer]["Introduction"] = [line.replace("\n", "") for line in lines if line != "\n"]
-                    f.close()
                 elif file.startswith(sefer):
-                    get_mishnah_on_multiple_lines(category, sefer, file)
-                    # ref_form = Ref("Mishnah " + file.replace("-", ":").replace(".txt", "")) #Berakhot 3-13.txt --> Mishnah Berakhot 3:13
-                    # found_ref[ref_form.normal()] += 1
-                    # chapter, mishnah = ref_form.sections[0], ref_form.sections[1]
-                    # if chapter not in parsed_text[sefer].keys():
-                    #     parsed_text[sefer][chapter] = {}
-                    # lines = None
-                    # lines = get_lines_from_web(file.rsplit("/")[-1], download_mode=download_mode)
-                    # if not lines:
-                    #     if not download_mode:
-                    #         assert os._exists(file), "File exists on hard drive in text format but not in HTML format"
-                    #     print "NOT FOUND"
-                    #     continue
-                    # if not download_mode:
-                    #     lines = [line.replace(u"\xa0", u"") for line in lines if line.replace(u" ", u"").replace(u"\xa0", u"")]
-                    #     parsed_text[sefer][chapter][mishnah] = parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS)
+                    #get_mishnah_on_multiple_lines(category, sefer, file)
+                    file = file.replace("-", ":").replace(".docx", "").replace(".doc", "") #Berakhot 3-13.doc --> Mishnah Berakhot 3:13
+                    file = convert_spellings(file)
+                    ref_form = Ref("Mishnah " + file)
+                    found_ref[ref_form.normal()] += 1
+                    chapter, mishnah = ref_form.sections[0], ref_form.sections[1]
+                    if chapter not in parsed_text[sefer].keys():
+                        parsed_text[sefer][chapter] = {}
+                    #lines = get_lines_from_web(file.rsplit("/")[-1], download_mode=download_mode)
+                    lines = textract.process(file_path).splitlines()
+                    lines = [line.replace("\xa0", "") for line in lines if line.replace(" ", "").replace("\xa0", "")]
+                    parsed_text[sefer][chapter][mishnah] = parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS)
 
-            if not download_mode:
-                most_common_value = found_ref.most_common(1)[0]
-                assert most_common_value[1] == 1, "{} has {}".format(most_common_value[0], most_common_value[1])
-                create_index(parsed_text[sefer], sefer)
-                check_all_mishnayot_present_and_post(parsed_text[sefer], sefer, current_path)
+
+            # most_common_value = found_ref.most_common(1)[0]
+            # assert most_common_value[1] == 1, "{} has {}".format(most_common_value[0], most_common_value[1])
+            # create_index(parsed_text[sefer], sefer)
+            check_all_mishnayot_present_and_post(parsed_text[sefer], sefer, current_path)
