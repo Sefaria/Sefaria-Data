@@ -1,0 +1,72 @@
+html_sheets/Terumah/166.html: (<class 'sefaria.system.exceptions.InputError'>, InputError(u'I Kings 6:26-13 is an invalid range.  Ranges must end later than they begin.',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 959, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 32, in __init__
+    self.sefer, self.perakim, self.pasukim = self.extract_perek_info(perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 106, in extract_perek_info
+    pasuks = Ref("{} {}-{}".format(en_sefer, pasuks[0], pasuks[1]))
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 1954, in __call__
+    result = super(RefCacheType, cls).__call__(*args, **kwargs)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2034, in __init__
+    self._validate()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2075, in _validate
+    raise InputError(u"{} is an invalid range.  Ranges must end later than they begin.".format(self.normal()))
+InputError: I Kings 6:26-13 is an invalid range.  Ranges must end later than they begin.
+
+
+html_sheets/Terumah/82.html: (<class 'sefaria.system.exceptions.InputError'>, InputError(u'Exodus ends at Chapter 40.',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 964, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 173, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 213, in add_segments
+    self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 265, in classify_segments
+    current_source = self.parse_ref(segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 332, in parse_ref
+    is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 518, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 477, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 596, in pasuk_in_parsha_pasukim
+    possible_ref = Ref("{} ".format(parser.en_sefer) + perek + ":" + new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 1954, in __call__
+    result = super(RefCacheType, cls).__call__(*args, **kwargs)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2034, in __init__
+    self._validate()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2066, in _validate
+    raise InputError(u"{} ends at {} {}.".format(self.book, self.index_node.sectionNames[0], display_size))
+InputError: Exodus ends at Chapter 40.
+
+
+html_sheets/Terumah/343.html: (<class 'sefaria.system.exceptions.InputError'>, InputError(u'I Kings 6:26-13 is an invalid range.  Ranges must end later than they begin.',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 959, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 32, in __init__
+    self.sefer, self.perakim, self.pasukim = self.extract_perek_info(perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 106, in extract_perek_info
+    pasuks = Ref("{} {}-{}".format(en_sefer, pasuks[0], pasuks[1]))
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 1954, in __call__
+    result = super(RefCacheType, cls).__call__(*args, **kwargs)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2034, in __init__
+    self._validate()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2075, in _validate
+    raise InputError(u"{} is an invalid range.  Ranges must end later than they begin.".format(self.normal()))
+InputError: I Kings 6:26-13 is an invalid range.  Ranges must end later than they begin.
+
+
+html_sheets/Terumah/115.html: (<type 'exceptions.AssertionError'>, AssertionError())
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 959, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 32, in __init__
+    self.sefer, self.perakim, self.pasukim = self.extract_perek_info(perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 112, in extract_perek_info
+    assert len(pasuks) is 2
+AssertionError
+
+

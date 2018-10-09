@@ -18,12 +18,11 @@ class Segment(object):
         return source
 
 
-
 class Source(object):
 
     # def __init__(self, segment_class, ref):
     def __init__(self, ref, segment_class=None):
-        # self.parshan_name = u""
+        self.parshan_name = u""
         self.parshan_id = 0
         self.about_source_ref = u""  # words of nechama in regards to the parshan or this specific book, that we will lose since it is not part of our "ref" system see 8.html sec 1. "shadal"
         self.perek = u""
@@ -33,8 +32,6 @@ class Source(object):
         self.nechama_q = []  # list of Qustion objs about this Parshan seg
         self.segment_class = segment_class
         self.text = u""
-
-
 
     @staticmethod
     def is_source_text(segment, important_classes):
@@ -53,22 +50,23 @@ class Source(object):
                     return None
             else:
                 r_base = r
-            if r_base.is_section_level() or r_base.is_segment_level():
+            if not r.is_book_level():
                 return r
             else:
                 return None
         except (InputError,  AssertionError) as e:
             # try to see if all that is wrong is the segment part of the ref, say, for Ralbag Beur HaMilot on Torah, Genesis 4:17
-            last_part = self.ref.split()[-1]
+            last_part = ref.split()[-1]
             if last_part[0].isdigit(): # in format, Ralbag Beur HaMilot on Torah, Genesis 4:17 and last_part is "4:17", now get the node "Ralbag Beur HaMilot on Torah, Genesis"
-                ref_node = " ".join(self.ref.split()[0:-1])
+                ref_node = " ".join(ref.split()[0:-1])
                 return self.get_sefaria_ref(ref_node) #returns Ralbag Beur HaMilot on Torah, Genesis
 
-    def glue_ref_and_text(self, ref, text, bold=True):
-        if bold:
-            return u"<b>{}</b><br/>{}".format(ref, text)
+    def glue_ref_and_text(self, ref, text, gray=True):
+        if not gray:
+            return u"{}<br/>{}".format(ref, text)
         else:
-            return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(ref, text)
+            #really should be 153,153,153 but changed it to yellow
+            return u"<span style='color:rgb(253,253,0);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(ref, text)
 
     def create_source(self):
         #create source for sourcesheet out of myself
@@ -76,7 +74,7 @@ class Source(object):
         # is Sefaria ref
         if self.get_sefaria_ref(self.ref):
             if self.about_source_ref:
-                comment = self.glue_ref_and_text(self.about_source_ref, comment, bold=True)
+                comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False)
             enRef = Ref(self.ref).normal()
             heRef = Ref(self.ref).he_normal()
             source = {"ref": enRef, "heRef": heRef,
@@ -92,13 +90,31 @@ class Source(object):
                           "sourceLangLayout": ""
                       }
                       }
-        elif self.ref:  # thought we found a ref but it's not an actual ref in sefaria library
-            self.ref = Ref(self.ref).he_normal()
-            if self.about_source_ref:
-                comment = self.glue_ref_and_text(self.about_source_ref, comment, bold=True) #use actual text if we can
-            else:
-                comment = self.glue_ref_and_text(self.ref, comment, bold=False) # otherwise, use the ref we thought it was
+        elif self.ref:
+            # thought we found a ref but it's not an actual ref in sefaria library
+            # get the he_normal() of ref or if it's invalid ref, try modifying and then running he_normal()
+            try:
+                self.ref = Ref(self.ref).he_normal()
+            except InputError:
+                last_part = self.ref.split()[-1]
+                assert last_part[0].isdigit()  # in format, Ralbag Beur HaMilot on Torah, Genesis 4:17 and last_part is "4:17", now get the node "Ralbag Beur HaMilot on Torah, Genesis"
+                try:
+                    self.ref = Ref(" ".join(self.ref.split()[0:-1])).he_normal()
+                except InputError:
+                    if " on " in self.ref: #Rashi on Genesis
+                        term = " ".join(self.ref.split()[0:-1]).split(" on ")[0] # this should get just "Rashi" or "Abarbanel"
+                        titles = Term().load({"titles.text": term}).titles
+                        self.ref = [title['text'] for title in titles if title['lang'] == 'he'][0]
+                    elif ", " in self.ref: #HaKtav VeKabbalah, Hosea
+                        word_list = " ".join(self.ref.split()[0:-1]).rsplit(", ")[0:-1]
+                        self.ref = library.get_index(" ".join(word_list))
+                    else: #Onkelos Isaiah
+                        self.ref = Term().load({"titles.text": self.ref.split()[0]})
 
+            if self.about_source_ref:
+                comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False) #use actual text if we can
+            else:
+                comment = self.glue_ref_and_text(self.ref, comment, gray=True) # otherwise, use the ref we thought it was
             source = {"outsideText": comment,
                       "options": {
                           "indented": "indented-1",
@@ -108,7 +124,7 @@ class Source(object):
                       }
                       }
         elif not self.ref and self.about_source_ref:
-            comment = self.glue_ref_and_text(self.about_source_ref, comment, bold=False)
+            comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=True)
             source = {"outsideText": comment,
                       "options": {
                           "indented": "indented-1",
@@ -121,22 +137,21 @@ class Source(object):
             raise InputError, "Didn't anticipate this case in the casses of ref on Source obj"
         return source
 
-
-
     def get_ref(self):
         return self.ref
 
-
-    def add_text(self, segment, segment_class):
+    def add_text(self, segment, segment_class=None):
         segment_text = segment.text.replace("\n", "").replace("\r", "")
         # self.parshan_name = segment_class
         # print self.parshan_name
         if not self.text:
             self.text = segment_text
-            return self
+            return #self
         else:
             new_source = self.copy()
             new_source.text = segment_text
+            if segment.attrs.get("id"):
+                new_source.parshan_id = segment.attrs.get("id")
             return new_source
 
 
@@ -148,12 +163,15 @@ class Source(object):
     def copy(self):
         # ref_copy = Ref(self.ref.normal())
         ref_copy = self.ref
-        new_source = Source(self.segment_class, ref_copy)
+        new_source = Source(ref_copy, self.segment_class)
         # new_source.parshan_name = self.parshan_name
+        new_source.parshan_id = self.parshan_id
+        new_source.about_source_ref = self.about_source_ref
         # new_source.pasuk = self.pasuk
-        # new_source.perek = self..perek
+        # new_source.perek = self.perek
 
         return new_source
+
 
 class Header(object):
     def __init__(self, segment):
@@ -217,8 +235,12 @@ class Header(object):
 class Question(object):
 
     def __init__(self, segment):
-
-        number, bullet = [(t.parent.parent.select(".number"), t.find('img')) for t in segment.select(".bullet > p")][0]
+        bullet_tag = segment.select(".bullet > p")
+        number = []
+        bullet = []
+        if bullet_tag:
+            bullet_tag = bullet_tag[0]
+            number, bullet = (bullet_tag.parent.parent.select(".number"), bullet_tag.find('img'))
 
         self.number = number[0].text if number else u""
         # bullet = [t.find('img') for t in segment.select(".bullet > p")][0]
@@ -240,15 +262,15 @@ class Question(object):
     @staticmethod
     def nested(segment):
         # check if nested. if so, return the data to Source to create new segments from the nested parts.
-        assert len(Section.get_Tags(segment)) == 1
-        imp_contents = Section.get_Tags(segment)[0]
+        assert len(Section.get_tags(segment)) == 1
+        imp_contents = Section.get_tags(segment)[0]
 
         q = [tag for tag in imp_contents.contents if isinstance(tag, element.Tag) and not tag.attrs] #todo: can we make this line more reliable, write tests for this line
         print '******'+str(len(q))
         q = q[0]
         classes = ["parshan", "midrash", "talmud", "bible", "commentary","question2", "question", "table"]  # todo: probbaly should be a list of classes of our Obj somewhere
         is_nested = False
-        for e in Section.get_Tags(q):
+        for e in Section.get_tags(q):
             if e.find('td') or (e.attrs and 'class' in e.attrs and [c in e.attrs['class'] for c in classes]):
                 is_nested = True
                 break
@@ -286,6 +308,7 @@ class Question(object):
 
         return text
 
+
 class Table(object):
     ## specifically for tables in HTML that end up staying as HTML in source sheet such class="RT" or "RTBorder"
 
@@ -310,7 +333,7 @@ class RT_Rashi(object):
 
     @staticmethod
     def order_the_table(self, segment):
-        tags = Section.get_Tags(segment)
+        tags = Section.get_tags(segment)
 
 
 class Nechama_Comment(object):
@@ -342,24 +365,85 @@ class Nechama_Comment(object):
         source = {"outsideText": self.text}
         return source
 
+
 class Nested(object):
     """
     class for Hybrid obj classes that we must chose btw to egt the Obj that will be the actual source in the sheet_segment
     """
 
-    def __init__(self, obj):
+    def __init__(self, obj, section, question=False):
         self.obj = obj
-
+        self.question = question
+        self.segment_objs = []
+        self.add_segments(section)
     # def __init__(self, options, section):
     #     self.whole_segments_of_section = section
     #     self.options = options
 
 
+    @staticmethod
+    def is_nested(segment):
+        classed_tags = []
+        classes = ["parshan", "midrash", "talmud", "bible", "commentary", "question2", "question", "table"]
+        for e in segment.findAll():
+            if (e.attrs and 'class' in e.attrs and any([c in e.attrs['class'] for c in classes])):  # e.find('td') or
+                classed_tags.append(e)
+            elif (e in segment.findAll('p')) and not e.parent.has_attr('class') and e.text.strip()\
+                    and not (re.search('mypopup', e.parent.attrs.get('href')) if e.parent.attrs.get('href') else None):
+                classed_tags.append(e)
+        # Test: testing if we get all the text from the html to ourObjs
+        extract_text = ' '.join([e.text for e in classed_tags]) #text that was taken out of the segment after cleaning
+        exctract_set =set(extract_text.split())
+        seg_set = set(segment.text.split())
+        seg_set.difference(exctract_set)
+        return classed_tags
+
+        # check if nested. if so, return the data to Source to create new segments from the nested parts.
+        imp_contents = Section.get_tags(segment)
+        q = []
+        classed_tages = segment.findAll(class_="question2")
+        tags_with_text = [t for t in segment.findAll(text=True) if t != '\n'] #assumeing that only tags with text => seen will be of value to us while scrapping
+        leaves = [tag for tag in segment.findAll(class_ = "question2") if tag.text in tags_with_text]
+        nleaves = [leaf for leaf in leaves if not any([leaf in l for l in leaves])]
+        for cont in imp_contents:
+            q += [tag for tag in cont.contents if isinstance(tag,element.Tag) and not tag.attrs]  # todo: can we make this line more reliable, write tests for this line
+
+        print '******' + str(len(q))
+        q = q[0]
+        classes = ["parshan", "midrash", "talmud", "bible", "commentary", "question2", "question",
+                   "table"]  # todo: probbaly should be a list of classes of our Obj somewhere
+        is_nested = False
+        for e in Section.get_tags(q):
+            if e.find('td') or (e.attrs and 'class' in e.attrs and [c in e.attrs['class'] for c in classes]):
+                is_nested = True
+                break
+
+        if is_nested:
+            print "**NESTED**"
+            return q
+        print "****Print Q not nested"
+        return None
+
+    def add_segments(self, section):
+        # section.add_segments(self.obj)
+        for i, sp_obj in enumerate(self.obj):
+            self.segment_objs.append(section.classify(sp_obj, i, self.obj))
+
+        for i, obj in enumerate(self.segment_objs):
+            if isinstance(obj, Text): #and isinstance(self.segment_objects[i-1], Source):
+                if isinstance(self.segment_objs[i-1], Source):
+                    self.segment_objs[i] = self.segment_objs[i - 1].add_text(obj.sp_segment, obj.segment_class)
+                    if isinstance(self.segment_objs[i], Text):
+                        self.segment_objs.pop(i)
+                else:
+                    if obj.ref_guess:
+                        self.segment_objs[i] = Source(obj.ref_guess)
+                        self.segment_objs[i].add_text(obj.sp_segment)
+                        self.segment_objs[i].parshan_id = obj.sp_segment.attrs.get("id")
+
     def choose(self):
-        # smart chosing algorithm to get the right obj option for this segment in this section. todo: write the algo not(!!!) self.options[0]
-        not_nested = self.options[0]
-        nested = self.options[1]
-        return nested
+
+        return self.segment_objs
 
     def create_source(self):
         return_sheet_obj = []
@@ -369,4 +453,35 @@ class Nested(object):
         # source = self.choose().create_source()
         # return source
         # return return_sheet_obj
-        return self.obj.create_source()
+
+        if self.segment_objs:
+            created_obj = []
+            for seg in self.segment_objs:
+                if not seg:
+                    continue
+                created_obj.append(seg.create_source())
+            return created_obj
+            # return create_sheetsources_from_sections(self.segment_objs)
+        # if isinstance(self.obj, list):
+        #     pass # place holder till Nested is resolved
+        else:
+            return self.obj.create_source()
+
+
+class Text(object):
+
+    def __init__(self, sp_segment, segment_class, ref_guess=None):
+        self.sp_segment = sp_segment
+        self.segment_class = segment_class
+        self.ref_guess = ref_guess
+
+
+    def create_source(self):
+        """
+        Text should never get to a create_source place, because Text is only one part of Source that "got lost"
+        this function is only for the sake of test runes. it reality it is code that should never be run! todo: right a test to see that it is not run.
+        :return: a sheet obj
+        """
+        source = {"outsideText": self.sp_segment.text}
+        return source
+

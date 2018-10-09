@@ -1,0 +1,58 @@
+html_sheets/Ki Teitzei/444.html: (<class 'sefaria.system.exceptions.InputError'>, InputError(u'Deuteronomy ends at Chapter 34.',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1036, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 176, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 215, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 282, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 332, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 404, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 587, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 546, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 665, in pasuk_in_parsha_pasukim
+    possible_ref = Ref("{} ".format(parser.en_sefer) + perek + ":" + new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 1954, in __call__
+    result = super(RefCacheType, cls).__call__(*args, **kwargs)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2034, in __init__
+    self._validate()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2066, in _validate
+    raise InputError(u"{} ends at {} {}.".format(self.book, self.index_node.sectionNames[0], display_size))
+InputError: Deuteronomy ends at Chapter 34.
+
+
+html_sheets/Ki Teitzei/1466.html: (<class 'sefaria.system.exceptions.InputError'>, InputError(u'Deuteronomy ends at Chapter 34.',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1036, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 176, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 215, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 282, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 332, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 404, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 587, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 546, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 665, in pasuk_in_parsha_pasukim
+    possible_ref = Ref("{} ".format(parser.en_sefer) + perek + ":" + new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 1954, in __call__
+    result = super(RefCacheType, cls).__call__(*args, **kwargs)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2034, in __init__
+    self._validate()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2066, in _validate
+    raise InputError(u"{} ends at {} {}.".format(self.book, self.index_node.sectionNames[0], display_size))
+InputError: Deuteronomy ends at Chapter 34.
+
+

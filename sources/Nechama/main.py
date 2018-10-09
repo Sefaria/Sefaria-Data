@@ -8,28 +8,33 @@ import re
 import os
 from sources.functions import getGematria
 from sefaria.model import *
+from segments import *
+from sefaria.system.database import db
 from sefaria.system.exceptions import InputError
 from collections import OrderedDict
 from bs4 import BeautifulSoup, element
 from time import sleep
 import shutil
-from segments import *
 from sources.functions import *
 import unicodedata
 from sefaria.utils.hebrew import strip_cantillation
 from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
 from data_utilities.util import WeightedLevenshtein
 import datetime
+import traceback
 
 class Sheet(object):
 
-    def __init__(self, html, parasha, title, year, ref, sefer, perek_info):
+    def __init__(self, html, parasha, title, year, perek_info):
         self.html = html
         self.title = title
         self.parasha = parasha
-        self.en_parasha = Term().load({"titles.text": parasha}).name
+        self.en_parasha = parser.en_parasha
         self.sefer, self.perakim, self.pasukim = self.extract_perek_info(perek_info)
-        self.en_sefer = library.get_index(sefer).title
+        self.en_sefer = library.get_index(self.sefer).title
+        if self.en_sefer != parser.en_sefer:
+            parser.en_sefer = self.en_sefer
+            parser.populate_term_mapping_and_id_table()
         self.he_year = re.sub(u"שנת", u"", year).strip()
         self.year = getGematria(self.he_year) + 5000  # +1240, jewish year is more accurate
         self.en_year = getGematria(self.he_year) + 1240
@@ -41,6 +46,18 @@ class Sheet(object):
         self.div_sections = [] # BeautifulSoup objects that will eventually become converted into Section objects stored in self.sections
         self.sections = []
         self.sources = []
+
+
+    def flip_ref_parasha_to_haftarah(self, ref, haftarah):
+        haftarah_index = Ref(haftarah).index.title
+        try:
+            base_ref = ref.split(" on ")[1] if " on " in ref else ref #strip "Rashi on Genesis 2" to "Genesis 2"
+            orig_index = library.get_index(" ".join(base_ref.split()[0:-1])) # now strip "Genesis 2" to "Genesis"
+        except BookNameError:
+            return ref
+        orig_index = orig_index.title
+        ref = ref.replace(orig_index, haftarah_index)
+        return ref
 
 
     def create_sheetsources_from_objsource(self):
@@ -55,12 +72,40 @@ class Sheet(object):
              }
              })
         for isection, section in enumerate(self.sections):
-            for isegment, segment in enumerate(section.segment_objects):
-                if isinstance(segment, Source):
-                    parser.try_parallel_matcher(segment)
-                seg_sheet_source = segment.create_source()
-                self.sources.extend(seg_sheet_source if isinstance(seg_sheet_source, list) else [seg_sheet_source]) # todo: problem with nested it doesn't it doesn't go through the PM...
+            self.sources.extend(self.create_sheetsources_from_sections(section.segment_objects)) #vs section and than getting the section.segment_objects latter in create_sheetsources_from_sections function
+            # for isegment, segment in enumerate(section.segment_objects):
+            #     if isinstance(segment, Source): # or isinstance(segment, Nested):
+            #         parser.try_parallel_matcher(segment)
+            #     seg_sheet_source = segment.create_source()
+                # self.sources.extend(seg_sheet_source if isinstance(seg_sheet_source, list) else [seg_sheet_source]) # todo: problem with nested it doesn't it doesn't go through the PM...
 
+    def create_sheetsources_from_sections(self, segment_objects):
+        sheets_sources = []
+        for isegment, segment in enumerate(segment_objects):
+            if not segment:
+                continue
+            if isinstance(segment, Source):  # or isinstance(segment, Nested):
+                success = parser.try_parallel_matcher(segment)
+                if not success and segment.ref and parser.source_maybe_tanakh(segment.ref) and parser.haftarah_mode:
+                    self.check_haftarot(segment)
+            seg_sheet_source = segment.create_source()
+            sheets_sources.extend(seg_sheet_source if isinstance(seg_sheet_source, list) else [seg_sheet_source])
+        return sheets_sources
+
+
+
+    def check_haftarot(self, segment):
+        orig_ref = segment.ref
+        for section in parser.parasha_and_haftarot:
+            new_ref = self.flip_ref_parasha_to_haftarah(segment.ref, section)
+            if new_ref != segment.ref:
+                segment.ref = new_ref
+                success = parser.try_parallel_matcher(segment)
+                if success:
+                    print "Found a match through Haftara/Parasha swapping"
+                    break
+                else:
+                    segment.ref = orig_ref
 
     def prepare_sheet(self, add_to_title=""):
        sheet_json = {}
@@ -70,7 +115,7 @@ class Sheet(object):
        sheet_json["summary"] = u"{} ({})".format(self.en_year, self.year)
        sheet_json["sources"] = self.sources
        sheet_json["options"] = {"numbered": 0, "assignable": 0, "layout": "sideBySide", "boxed": 0, "language": "hebrew", "divineNames": "noSub", "collaboration": "none", "highlightMode": 0, "bsd": 0, "langLayout": "heRight"}
-       sheet_json["tags"] = []
+       sheet_json["tags"] = [unicode(self.en_parasha)]
        post_sheet(sheet_json, server=parser.server)
 
 
@@ -83,9 +128,13 @@ class Sheet(object):
         #three formats: Perek 2; Perek 2, Pasuk 3-9; Perek 2, 4 - Perek 3, 2 (last one may lose pasuk info as well
         print perek_info
         sefer = perek_info.split()[0]
-        en_sefer = library.get_index(sefer).title
+        try:
+            en_sefer = library.get_index(sefer).title
+        except BookNameError:
+            sefer = " ".join(perek_info.split()[0:2]) # For Melachim Bet
+            en_sefer = library.get_index(sefer).title
         perek_info = perek_info.replace(u"פרקים", u"Perek").replace(u"פרק", u"Perek").replace(u"פסוקים", u"Pasuk").replace(u"פסוק", u"Pasuk").strip()
-        perek_info = " ".join(perek_info.split()[1:])
+        perek_info = perek_info.replace(sefer, u"")
         if len(perek_info.split("Perek")) - 1 == 2: #we know it's the third case
             pereks = [perek_info.split(" - ")[0], perek_info.split(" - ")[1]]
             pasuks = [-1, -1]
@@ -105,12 +154,14 @@ class Sheet(object):
             assert len(pereks) is 1
             pereks = [str(getGematria(pereks[0]))]
             pasuks = re.findall(u"Pasuk\s+(.{1,18})\s?", perek_info)[0].split(" - ")
-            assert len(pasuks) is 2
             for p, pasuk in enumerate(pasuks):
                 pasuks[p] = getGematria(pasuk)
-            pasuks = range(pasuks[0], pasuks[1]+1)
-            pasuks = Ref(en_sefer+" "+pereks[0]+":"+str(pasuks[0])+"-"+str(pasuks[-1]))
-            #pasuks.insert("multiple perakim", 0)
+            if len(pasuks) is 2:
+                pasuks = range(pasuks[0], pasuks[1]+1)
+                pasuks = Ref(en_sefer+" "+pereks[0]+":"+str(pasuks[0])+"-"+str(pasuks[-1]))
+            else:
+                assert len(pasuks) is 1
+                pasuks = Ref(en_sefer + " " + pereks[0] + ":" + str(pasuks[0]))
         else: #first case
             pereks = re.findall(u"Perek\s+(.{1,3})\s?", perek_info)
             assert len(pereks) is 1
@@ -187,7 +238,7 @@ class Section(object):
         self.has_nested = []
 
     @staticmethod
-    def get_Tags(segment):
+    def get_tags(segment):
 
         if isinstance(segment,element.Tag):
             return [t for t in segment.contents if isinstance(t, element.Tag)]
@@ -202,13 +253,34 @@ class Section(object):
         soup_segments = self.get_children_with_content(div)
         # blockquote is really just its children so get replace it with them
         # and tables  need to be handled recursively
-        soup_segments = self.check_for_blockquote_and_table(soup_segments)
+        # soup_segments = self.check_for_blockquote_and_table(soup_segments)
 
         # create Segment objects out of the BeautifulSoup objects
         self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+        # if (any([isinstance(seg, Nested) for seg in self.segment_objects])): # maybe this should be "while" but let's start with one round
+        #     for i, obj in enumerate(self.segment_objects):
+        #         if isinstance(obj, Nested):
+        #             obj.add_segments(self)
+                    # output_nested = self.classify_segments(obj)
+                    # if output_nested:
+                    #     self.segment_objects = self.segment_objects[:i]+output_nested+self.segment_objects[i+1:]
+                    # self.segment_objects.pop(i)
+        # self.segment_objects.reverse()
+        for i, obj in enumerate(self.segment_objects):
+            if isinstance(obj, Text): # and isinstance(self.segment_objects[i-1], Source):
+                if isinstance(self.segment_objects[i-1], Source):
+                    self.segment_objects[i - 1].add_text(obj.sp_segment, obj.segment_class)
+                    self.segment_objects.pop(i)
+                else:
+                    if obj.ref_guess:
+                        self.segment_objects[i] = Source(obj.ref_guess)
+                        self.segment_objects[i].add_text(obj.sp_segment)
+                    else:
+                        pass  # todo: when if at all is this case be reached and how do we deal with it?
         header = filter(lambda x: isinstance(x, Header), self.segment_objects)[0]
         self.title = header.header_text
         self.letter = header.letter
+        self.segment_objects = self.flatten_our_section()
         return
 
     def classify_segments(self, soup_segments):
@@ -223,62 +295,26 @@ class Section(object):
         :param soup_segments:
         :return:
         """
-        segment_objects = []
+        xxx = []
         current_source = None
         nested_candidates = {} # OrderedDict() # this is a Dict of nested obj, and the q will be do we wan't them as nested or as originals.
-
-        if parser.old:
-            for i, segment in enumerate(soup_segments):
-                relevant_text = self.format(self.relevant_text(segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
-                if Header.is_header(segment):
-                    segment_objects.append(Header(segment)) #self.segment_objects.append(Header(segment))
-                # if i == 0 and not self.segment_objects: #there isn't a header yet. should not use place in the list... :(
-                #     self.segment_objects.append(Header(segment))
-                #     # assert Header.is_header(segment), "Header should be first."
-                #     continue
-                elif Question.is_question(segment):
-                    nested_seg = Question.nested(segment)
-                    if nested_seg:
-                        self.has_nested += [i]
-                        nested_candidates[i] = Nested([Question(segment), self.classify_segments(Section.get_Tags(nested_seg))], self.segment_objects)
-                        segment_objects.append(nested_candidates[i]) #the idea here is that we have a hybrid Question/other smaller obj, and we will need to chose whitch is better fit for this segment in this Section
-                        # self.add_segments(nested_seg)
-                    else:  # not nested q so should append this q, otherwise it is a nested q. so it shouldn't be appended cause the children will be appended
-                        segment_objects.append(Question(segment)) #self.segment_objects.append(Question(segment))
-                elif Table.is_table(segment):  # these tables we want as they are so just str(segment)
-                    segment_objects.append(Table(segment)) #self.segment_objects.append(Table(segment))
-                elif Source.is_source_text(segment, parser.important_classes):
-                    # this is a comment by a commentary, bible, or midrash
-                    segment_class = segment.attrs["class"][0]  # is it source, bible, or midrash?
-                    assert len(segment.attrs["class"]) == 1, "More than one class"
-                    if not current_source:
-                        current_source = [x for x in segment_objects if isinstance(x, Source)][-1] #[x for x in self.segment_objects if isinstance(x, Source)][-1]
-                    current_source = current_source.add_text(segment, segment_class) #returns current_source if there's no text, OR returns a new Source object if current_source already has text
-                                                                                    #the latter case occurs when for example it says "Rashi" followed by multiple comments
-                    segment_objects.append(current_source) #self.segment_objects.append(current_source)
-                    if not current_source.ref:
-                        continue
-                    if current_source.index_not_found():
-                        if current_source.about_source_ref not in parser.index_not_found.keys():
-                            parser.index_not_found[current_source.about_source_ref] = []
-                        parser.index_not_found[current_source.about_source_ref].append((self.current_parsha_ref, current_source.about_source_ref))
-                    continue
-                elif Nechama_Comment.is_comment(soup_segments, i, parser.important_classes):  # above criteria not met, just an ordinary comment
-                    segment_objects.append(Nechama_Comment(relevant_text)) # self.segment_objects.append(Nechama_Comment(relevant_text))
-                else:  # must be a Source Ref, so parse it
-                    next_segment_class = (soup_segments[i + 1].attrs["class"][0], None if "id" not in soup_segments[i + 1].attrs.keys() else soup_segments[i + 1].attrs["id"]) # get the class of this ref and it's comment
-                    current_source = self.parse_ref(segment, relevant_text, next_segment_class)
-        else:
+        if isinstance(soup_segments, list):
             for i, segment in enumerate(soup_segments):
                 sheet_segment = self.classify(segment, i, soup_segments)
                 if sheet_segment:
                     self.segment_objects.append(sheet_segment)
-        return  # self.segment_objects
+            return  # self.segment_objects
+        elif isinstance(soup_segments, Nested): #should be the only other possible answer maybe just "else:" here?
+            for i, segment in enumerate(soup_segments.obj):
+                sheet_segment = self.classify(segment, i, soup_segments.obj)
+                if sheet_segment:
+                    xxx.append(sheet_segment)
+            return xxx
 
     def classify(self, sp_segment, i, soup_segments):
         """
 
-        :param sp_segment: beuitiful soup <tag> to classify into our obj and Nested
+        :param sp_segment: beutiful soup <tag> to classify into our obj and Nested
         :return: our obj (or Nested)
         """
 
@@ -287,33 +323,47 @@ class Section(object):
             return Header(sp_segment)  # self.segment_objects.append(Header(segment))
         elif Question.is_question(sp_segment):
             nested_seg = Question.nested(sp_segment)
-            if nested_seg:
-                return Nested(Question(sp_segment))
+            if nested_seg:  # todo: so we know that this is a Nested Question! what to do with this info?
+                return Nested(Nested.is_nested(sp_segment), section=self, question=True)
             else:
                 return Question(sp_segment)
         elif Table.is_table(sp_segment):  # these tables we want as they are so just str(segment)
             return Table(sp_segment)
         elif Source.is_source_text(sp_segment, parser.important_classes):
-        # this is a comment by a commentary, bible, or midrash that should be added as text to a Source created previously already.
+        # this is a comment by a commentary, bible, or midrash that should be added as text to a Source created previously already or we can derive it's Source
             segment_class = sp_segment.attrs["class"][0]  # is it source, bible, or midrash?
-
-            current_source = [x for x in self.segment_objects if (isinstance(x, Source) and x.current)][-1]
-            current_source.add_text(sp_segment, segment_class)
+            try:
+                source_guess = [x for x in self.segment_objects if (isinstance(x, Source) and x.current)][-1]
+                source_guess_ref = source_guess.ref
+            except Exception:
+                source_guess_ref = None
+            # current_source = [x for x in self.segment_objects if (isinstance(x, Source) and x.current)][-1]
+            # current_source.add_text(sp_segment, segment_class)
             # return current_source
-    #     elif Source.is_source_text(sp_segment, parser.important_classes):
-    #         # what is in this segment we need to learn it and parse it. is this the element of the ref or the source or the comment after?
-    #         # and whitch parts of it do we want to be in the source obj?
-    #         return Source(r)
-    #     elif Nechama_Comment.is_comment(self.soup_segments, 0, parser.important_classes):  # above criteria not met, just an ordinary comment
-    #         return Nechama_Comment(relevant_text)  # self.segment_objects.append(Nechama_Comment(relevant_text))
-        else:  # must be a Source Ref, so parse it
-            next_segment_class = (soup_segments[i + 1].attrs["class"][0],
+            return Text(sp_segment, segment_class, ref_guess=source_guess_ref)
+        elif Nested.is_nested(sp_segment):
+            return Nested(Nested.is_nested(sp_segment), section=self)
+        elif Nechama_Comment.is_comment(soup_segments, i, parser.important_classes):  # above criteria not met, just an ordinary comment
+            return Nechama_Comment(relevant_text)  # self.segment_objects.append(Nechama_Comment(relevant_text))
+        else:  # maybe a Source Ref - so parse it or maybe is a nested blockqute or table - so return it's important children
+            # next_segment_class = (soup_segments[i + 1].attrs["class"][0],None if "id" not in soup_segments[i + 1].attrs.keys() else soup_segments[i + 1].attrs["id"])  # get the class of this ref and it's comment
+            # next_segment_class = ["parshan"]
+            # current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+            # current_source.current = True
+            # return current_source
+            try:
+                next_segment_class = (soup_segments[i + 1].attrs["class"][0],
                                   None if "id" not in soup_segments[i + 1].attrs.keys() else soup_segments[i + 1].attrs[
                                       "id"])  # get the class of this ref and it's comment
-            # next_segment_class = ["parshan"]
-            current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
-            current_source.current = True
-            return current_source
+                # next_segment_class = ["parshan"]
+                # creates a Source() obj
+                current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+                current_source.current = True
+                return current_source
+            except (KeyError, IndexError):
+                nested_list = Nested.is_nested(sp_segment)
+                if nested_list:
+                    return Nested(nested_list)
 
     def look_at_next_segment(self):
         pass
@@ -351,6 +401,9 @@ class Section(object):
         return string
 
     def get_a_tag_from_ref(self, segment, relevant_text):
+        starts_perek_or_pasuk = lambda x: (x.startswith(u"פרק ") or x.startswith(u"פסוק ") or
+                                x.startswith(u"פרקים ") or x.startswith(u"פסוקים "))
+
         if segment.name == "a":
             a_tag = segment
         else:
@@ -378,8 +431,8 @@ class Section(object):
         # check if it's in Perek X, Pasuk Y format and set perek and pasuk accordingly
         is_tanakh = (relevant_text.startswith(u"פרק ") or relevant_text.startswith(u"פסוק ") or
                      relevant_text.startswith(u"פרקים ") or relevant_text.startswith(u"פסוקים "))
-        is_perek_pasuk_ref, new_perek, new_pasuk = self.set_current_perek_pasuk(relevant_text, next_segment_class,
-                                                                                is_tanakh)
+
+        is_perek_pasuk_ref, new_perek, new_pasuk = self.set_current_perek_pasuk(found_a_tag, relevant_text, next_segment_class, is_tanakh)
 
         # now create current_source based on real_title or based on self.current_parsha_ref
         if real_title:  # a ref to a commentator that we have in our system
@@ -485,11 +538,10 @@ class Section(object):
             for word in words_to_replace:
                 string = string.replace(u"ל" + word, u"")
                 string = string.replace(word, u"")
-            string = string.replace(u"  ", u" ")
+            string = string.replace(u"  ", u" ").replace(u"\xa0", u" ")
             string = string.strip()
             refs = library.get_refs_in_string(string)
             if refs:
-                assert len(refs) <= 1 or u"השווה" in orig
                 return refs[0].normal()
             else:
                 not_found.append(orig)
@@ -502,7 +554,7 @@ class Section(object):
     def set_current_perek(self, perek, is_tanakh, sefer):
         new_perek = str(getGematria(perek))
         if is_tanakh:
-            if new_perek in self.perakim:
+            if new_perek in self.possible_perakim:
                 self.current_perek = str(new_perek)
                 self.current_parsha_ref = ["bible", u"{} {}".format(sefer, new_perek)]
             else:
@@ -511,7 +563,8 @@ class Section(object):
     
 
     def set_current_pasuk(self, pasuk, is_tanakh):
-        if "-" in pasuk:  # is a range, correct it
+        pasuk = pasuk.strip()
+        if len(pasuk)-1 > pasuk.find("-") > 0:  # is a range, correct it
             start = pasuk.split("-")[0]
             end = pasuk.split("-")[1]
             start = getGematria(start)
@@ -530,9 +583,9 @@ class Section(object):
                 self.current_parsha_ref = ["bible", u"{} {}".format(parser.en_sefer, self.current_perek)]
         return True, self.current_perek, new_pasuk
 
-    def set_current_perek_pasuk(self, text, next_segment_class, is_tanakh=True):
-
+    def set_current_perek_pasuk(self, a_tag, text, next_segment_class, is_tanakh=True):
         # text = re.search(u"(פרק(ים))",text)
+        text = text if not a_tag else a_tag.text #this is useful for cases when pattern "Perek X Pasuk Y" occurs twice and one is inside a tag
         text = text.replace(u"פרקים", u"Perek").replace(u"פרק ", u"Perek ").replace(u"פסוקים", u"Pasuk").replace(
             u"פסוק ", u"Pasuk ").strip()
         digit = re.compile(u"^.{1,2}[\)|\.]").match(text)
@@ -565,6 +618,7 @@ class Section(object):
         else:
             perek = perek_comma_pasuk[0][0]
             pasuk = perek_comma_pasuk[0][1]
+            pasuk = pasuk.strip()
             new_perek = str(getGematria(perek))
             if "-" in pasuk:  # is a range, correct it
                 start = pasuk.split("-")[0]
@@ -656,8 +710,8 @@ class Section(object):
         #     if segment.name == "blockquote" or (
         #             segment.name == "table" and segment.find_all(atrrs={"class": "RT_RASHI"})):
         #         test = segment
-        #         while Section.get_Tags(test) == 1:
-        #             test = Section.get_Tags(test)
+        #         while Section.get_tags(test) == 1:
+        #             test = Section.get_tags(test)
         #         new_segments += test
         tables = ["table", "tr"]
         for i, segment in enumerate(segments):
@@ -718,16 +772,33 @@ class Section(object):
 
         return (found_difficult + text).strip()
 
+    def flatten_our_section(self):
+        new_section_list = []
+        for isegment, segment in enumerate(self.segment_objects):
+            if isinstance(segment, Nested):
+                new_section_list.extend(segment.choose())
+            elif isinstance(segment, Text):
+                segment.choose()
+            else:
+                new_section_list.append(segment)
+        return new_section_list
+
+
 class Nechama_Parser:
-    def __init__(self, en_sefer, en_parasha, mode, add_to_title):
+    def __init__(self, en_sefer, en_parasha, mode, add_to_title, catch_errors=False):
+        if not os.path.isdir("reports/" + parsha):
+            os.mkdir("reports/" + parsha)
+
         #matches, non_matches, index_not_found, and ref_not_found are all dict with keys being file path and values being list
         #of refs/indexes
         self.matches = {}
         self.non_matches = {}
         self.index_not_found = {}
         self.ref_not_found = {}
+        self.to_match = True
 
         self.add_to_title = add_to_title
+        self.catch_errors = catch_errors #crash upon error if False; if True, make report of each error
         self.mode = mode  # fast or accurate
         self.en_sefer = en_sefer
         self.en_parasha = en_parasha
@@ -736,7 +807,23 @@ class Nechama_Parser:
         self.server = SEFARIA_SERVER
         self.segment_report = UnicodeWriter(open("segment_report.csv", 'a'))
         self.section_report = UnicodeWriter(open("section_report.csv", 'a'))
+        now = datetime.datetime.now()
+        now = now.strftime("%c")
+        self.error_report = open("reports/{}/errors {}".format(en_parasha, now), 'w')
         self.has_parasha = [u"מכילתא"]
+        self.term_mapping = {}
+        self.parshan_id_table = {}
+        self.populate_term_mapping_and_id_table()
+        self.levenshtein = WeightedLevenshtein()
+        self.missing_index = set()
+        self.sec_ref_not_found = {}
+        self.seg_ref_not_found = {}
+        self.current_file_path = ""
+        self.haftarah_mode = False
+        self.parasha_and_haftarot = self.get_parasha_and_haftarot(self.en_parasha)
+
+
+    def populate_term_mapping_and_id_table(self):
         self.term_mapping = {
             u"הכתב והקבלה": u"HaKtav VeHaKabalah, {}".format(self.en_sefer),
             u"חזקוני": u"Chizkuni, {}".format(self.en_sefer),
@@ -762,7 +849,7 @@ class Nechama_Parser:
             u"""המלבי"ם""": u"Malbim on {}".format(self.en_sefer),
             u"משך חכמה": u"Meshech Hochma, {}".format(self.en_parasha),
             u"רבנו בחיי": u"Rabbeinu Bahya, {}".format(self.en_sefer),
-            u"מכילתא":u"Mekhilta d'Rabbi Yishmael"
+            u"מכילתא": u"Mekhilta d'Rabbi Yishmael"
             # u'רב סעדיה גאון': u"Saadia Gaon on {}".format(self.en_sefer) # todo: there is no Saadia Gaon on Genesis how does this term mapping work?
         }
         self.levenshtein = WeightedLevenshtein()
@@ -775,29 +862,52 @@ class Nechama_Parser:
             '6': u"Abarbanel on Torah, {}".format(self.en_sefer),  # Abarbanel_on_Torah,_Genesis
             '41': u'Or HaChaim on {}'.format(self.en_sefer),  # Or_HaChaim_on_Genesis
             '101': u'Mizrachi, {}'.format(self.en_sefer),
-            '91': u"Gur Aryeh on ".format(self.en_sefer), #u"גור אריה",
-            '32':u"Ralbag on {}".format(self.en_sefer), #u'''רלב"ג''', #todo, figure out how to do Beur HaMilot and reguler, maybe needs to be a re.search in the changed_ref method
-            '29': u"Bekhor Shor, {}".format(self.en_sefer),#u"בכור שור",
-            '238':u"Onkelos {}".format(self.en_sefer),#u"אונקלוס",
-            '39': u'Ramban on {}'.format(self.en_sefer),# u'''רמב"ן''',
-            '94': u"Shadal on {}".format(self.en_sefer),#u'''שד"ל''',
-            '4': u"Ibn Ezra on {}".format(self.en_sefer),#u'''ראב"ע''',
-            '198': u"HaKtav VeHaKabalah, {}".format(self.en_sefer),#u'''הכתב והקבלה''',
-            '127': u"Radak on {}".format(self.en_sefer),#u'''רד"ק''',
-            '37': u"Malbim on {}".format(self.en_sefer),#u'''מלבי"ם''',
+            '91': u"Gur Aryeh on ".format(self.en_sefer),  # u"גור אריה",
+            '32': u"Ralbag on {}".format(self.en_sefer),
+        # u'''רלב"ג''', #todo, figure out how to do Beur HaMilot and reguler, maybe needs to be a re.search in the changed_ref method
+            '29': u"Bekhor Shor, {}".format(self.en_sefer),  # u"בכור שור",
+            '238': u"Onkelos {}".format(self.en_sefer),  # u"אונקלוס",
+            '39': u'Ramban on {}'.format(self.en_sefer),  # u'''רמב"ן''',
+            '94': u"Shadal on {}".format(self.en_sefer),  # u'''שד"ל''',
+            '4': u"Ibn Ezra on {}".format(self.en_sefer),  # u'''ראב"ע''',
+            '198': u"HaKtav VeHaKabalah, {}".format(self.en_sefer),  # u'''הכתב והקבלה''',
+            '127': u"Radak on {}".format(self.en_sefer),  # u'''רד"ק''',
+            '37': u"Malbim on {}".format(self.en_sefer),  # u'''מלבי"ם''',
             # '43': u'''בעל ספר הזיכרון''',
-            '111': u"Akeidat Yitzchak", # u'''עקדת יצחק''',
-            '28': u"Rabbeinu Bahya, {}".format(self.en_sefer),#u'''רבנו בחיי''',
+            '111': u"Akeidat Yitzchak",  # u'''עקדת יצחק''',
+            '28': u"Rabbeinu Bahya, {}".format(self.en_sefer),  # u'''רבנו בחיי''',
             # '118':u'קסוטו',
             # '152':u'בנו יעקב',
             # '3':u'אבן כספי',
-            '46':u"Haamek Davar on {}".format(self.en_sefer),
+            '46': u"Haamek Davar on {}".format(self.en_sefer),
             # '104':u'''רמבמ"ן''',
             # '196':u'''בעל הלבוש אורה''',
             '66': u"Meshech Hochma, {}".format(self.en_parasha),
             # '51': u"ביאור - ר' שלמה דובנא"
         }
 
+
+
+
+    def source_maybe_tanakh(self, ref):
+        try:
+            i = library.get_index(" ".join(ref.split()[0:-1]))
+        except BookNameError:
+            book_name = " ".join(ref.split()[0:-1])
+            book_name = book_name.split(" on ")[-1]
+            try:
+                i = library.get_index(book_name)
+            except BookNameError:
+                return True # returning True because at this stage we have things like "Meshech Hochma, Ki Teitzei"
+                            # and "Onkelos Leviticus" and there's no clear test for these cases even though they are Tanakh
+        return i.categories[0] == "Tanakh"
+
+
+    def get_parasha_and_haftarot(self, parasha_to_find):
+        parshiot = list(db.parshiot.find({"parasha": parasha_to_find}))
+        if parshiot:
+            return parshiot[0]["haftara"]+[parshiot[0]["ref"]]
+        return []
 
     def download_sheets(self):
         parshat_bereshit = ["1", "2", "30", "62", "84", "148", "212", "274", "302", "378", "451", "488", "527",
@@ -909,10 +1019,11 @@ class Nechama_Parser:
                     tc = ref2check.text('he').text if not isinstance(ref2check.text('he').text, list) else strip_cantillation(" ".join(ref2check.text('he').text))
                     if strip_cantillation(text_to_use, strip_vowels=True) in strip_cantillation(tc, strip_vowels=True).split():
                         current_source.ref = ref2check.normal()
+                        return True
                         # print current_source.ref
                     else:
                         print "it is one or less words and this is the wrong ref..."
-                        return
+                        return False
                 else:
                     matched = self.check_reduce_sources(text_to_use, ref2check) # returns a list ordered by scores of mesorat hashas objs that were found
                     changed_ref = ref2check  # ref2chcek might get a better ref but also might not...
@@ -936,28 +1047,32 @@ class Nechama_Parser:
                         self.non_matches.append(ref2check.normal())
 
                         # we dont want to link it since there's no match found so set the ref to empty and record the fixed ref ref2check in about_source_ref
-                        current_source.about_source_ref = ref2check.he_normal()
-                        current_source.ref = ""
-                        return
-                    self.matches[self.current_file_path].append(ref2check.normal())
-                    self.matches[self.current_file_path].append(ref2check.normal())
-                    current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[
-                        0].b.ref.normal()  # because the sides change
+                        # current_source.about_source_ref = ref2check.he_normal()
+                        # current_source.ref = ""
+                        return False
+                    else:
+                        self.matches[self.current_file_path].append(ref2check.normal())
+                        self.matches[self.current_file_path].append(ref2check.normal())
+                        current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[
+                            0].b.ref.normal()  # because the sides change
 
-                    current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[0].b.ref.normal()  # because the sides change
-                    if ref2check.is_section_level():
-                        print '** section level ref: '.format(ref2check.normal())
-                    # print ref2check.normal(), current_source.ref
+                        current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[0].b.ref.normal()  # because the sides change
+                        if ref2check.is_section_level():
+                            print '** section level ref: '.format(ref2check.normal())
+                        return True
+                        # print ref2check.normal(), current_source.ref
             else:
                 print u"NO ref2check {}".format(current_source.parshan_name)
                 if current_source.ref:
                     parser.ref_not_found[parser.current_file_path].append(current_source.ref)
+                return False
         except AttributeError as e:
-            print u'AttributeError: {}'.format(re.sub(u":$", u"", current_source.about_source_ref))
+            print u'AttributeError: {}'.format(re.sub(u":$", u"", current_source.text))#.about_source_ref))
             parser.index_not_found[parser.current_file_path].append(current_source.about_source_ref)  # todo: would like to add just the <a> tag
+            return False
         except IndexError as e:
             parser.index_not_found[parser.current_file_path].append(ref2check.normal())
-
+            return False
 
     def organize_by_parsha(self, file_list_names):
         """
@@ -970,8 +1085,6 @@ class Nechama_Parser:
             content = BeautifulSoup(open("{}".format(html_sheet)), "lxml")
             top_dict = dict_from_html_attrs(content.find('div', {'id': "contentTop"}).contents)
             parsha = top_dict["paging"].text
-            if not os.path.isdir("html_sheets/"+parsha):
-                os.mkdir("html_sheets/"+parsha)
             shutil.move(html_sheet, "html_sheets/" + parsha)
         return sheets
 
@@ -983,62 +1096,91 @@ class Nechama_Parser:
         """
         sheets = OrderedDict()
         for html_sheet in file_list_names:
-            parser.current_file_path = html_sheet
-            parser.matches[parser.current_file_path] = []
-            parser.non_matches[parser.current_file_path] = []
-            parser.index_not_found[parser.current_file_path] = []
-            parser.ref_not_found[parser.current_file_path] = []
-            parser.seg_ref_not_found[parser.current_file_path] = []
-            parser.sec_ref_not_found[parser.current_file_path] = []
-            content = BeautifulSoup(open("{}".format(html_sheet)), "lxml")
-            print "\n\n"
-            print datetime.datetime.now()
-            print html_sheet
-            perek_info = content.find("p", {"id": "pasuk"}).text
-            top_dict = dict_from_html_attrs(content.find('div', {'id': "contentTop"}).contents)
-            # print 'len_content type ', len(top_dict.keys())
-            sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
-            sheets[html_sheet] = sheet
-            body_dict = dict_from_html_attrs(content.find('div', {'id': "contentBody"}))
-            sheet.div_sections.extend([v for k, v in body_dict.items() if re.search(u'ContentSection_\d', k)]) # check that these come in in the right order
-            sheet.sheet_remark = body_dict['sheetRemark'].text
-            sheet.parse_as_text()
-            sheet.create_sheetsources_from_objsource()
-            if post:
-                sheet.prepare_sheet(self.add_to_title)
+            try:
+                parser.current_file_path = html_sheet
+                parser.matches[parser.current_file_path] = []
+                parser.non_matches[parser.current_file_path] = []
+                parser.index_not_found[parser.current_file_path] = []
+                parser.ref_not_found[parser.current_file_path] = []
+                parser.seg_ref_not_found[parser.current_file_path] = []
+                parser.sec_ref_not_found[parser.current_file_path] = []
+                content = BeautifulSoup(open("{}".format(html_sheet)), "lxml")
+                parser.haftarah_mode = u"הפטרה" in content.text or u"הפטרת" in content.text
+                # if not parser.haftarah_mode:
+                #     continue
+                print "\n\n"
+                print datetime.datetime.now()
+                print html_sheet
+                perek_info = content.find("p", {"id": "pasuk"}).text
+                top_dict = dict_from_html_attrs(content.find('div', {'id': "contentTop"}).contents)
+                # print 'len_content type ', len(top_dict.keys())
+                sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, perek_info)
+                sheets[html_sheet] = sheet
+                body_dict = dict_from_html_attrs(content.find('div', {'id': "contentBody"}))
+                sheet.div_sections.extend([v for k, v in body_dict.items() if re.search(u'ContentSection_\d', k)]) # check that these come in in the right order
+                sheet.sheet_remark = body_dict['sheetRemark'].text
+                sheet.parse_as_text()
+                sheet.create_sheetsources_from_objsource()
+                if post:
+                    sheet.prepare_sheet(self.add_to_title)
+            except Exception, e:
+                if parser.catch_errors:
+                    self.error_report.write(html_sheet+": ")
+                    self.error_report.write(str(sys.exc_info()[0:2]))
+                    self.error_report.write("\n")
+                    self.error_report.write(traceback.format_exc())
+                    self.error_report.write("\n\n")
+                else:
+                    raise
         return sheets
 
-
     def record_report(self):
+        if not self.catch_errors:
+            return
+
+        now = datetime.datetime.now()
+        now = now.strftime("%c")
         if not os.path.isdir("reports/{}".format(self.en_parasha)):
             os.mkdir("reports/{}".format(self.en_parasha))
-        new_file = codecs.open("reports/{}/{} {}.txt".format(self.en_parasha, self.add_to_title, datetime.datetime.now()), 'w')
-        matches = 0
-        non_matches = 0
-        for file_path, sources in self.matches.items():
-            new_file.write("Matches\n")
-            new_file.write(u", ".join(sources))
-            matches += len(sources)
+        new_file = codecs.open("reports/{}/{} {}.txt".format(self.en_parasha, self.add_to_title, now), 'w', encoding='utf-8')
+        parasha_matches = parasha_non_matches = parasha_total = parasha_ref_not_found = parasha_index_not_found = 0
+        metadata_tuples = [(self.non_matches, "Non-matches", parasha_non_matches),
+                           (self.ref_not_found, "Refs not found", parasha_ref_not_found),
+                           (self.index_not_found, "Indexes not found", parasha_index_not_found)]
+        for curr_file_path in self.matches.keys():
+            sheet_matches = sheet_non_matches = sheet_total = 0
+            new_file.write("\n\n"+curr_file_path)
 
-        for file_path, sources in self.non_matches.items():
-            new_file.write("\nNon-matches\n")
-            new_file.write(u", ".join(sources).encode('utf-8'))
-            non_matches += len(sources)
+            sources = self.matches[curr_file_path]
+            if sources:
+                new_file.write("\n{} - {}\n".format("Matches", len(sources)))
+                new_file.write(u", ".join(sources))
+                sheet_matches += len(sources)
 
-        for file_path, sources in self.ref_not_found.items():
-            new_file.write("\nRefs not found\n")
-            new_file.write(u", ".join(sources).encode('utf-8'))
-            non_matches += len(sources)
+            for tuple in metadata_tuples:
+                metadata_dict, title, count = tuple
+                sources = metadata_dict[curr_file_path]
+                if sources:
+                    new_file.write("\n{} - {}\n".format(title, len(sources)))
+                    new_file.write(u", ".join(sources))
+                    sheet_non_matches += len(sources)
+                    count += len(sources)
 
-        for file_path, sources in self.index_not_found.items():
-            new_file.write("\nIndexes not found\n")
-            new_file.write(u", ".join(sources).encode('utf-8'))
-            non_matches += len(sources)
 
-        total = matches + non_matches
-        percent = 100.0*float(matches)/total
-        new_file.write("\nTotal: {}".format(total))
-        new_file.write("\nPercent matches: {}%".format(percent))
+            sheet_total = sheet_matches + sheet_non_matches
+            if sheet_total: #something it's 0, why? Noach/5.html
+                percent = 100.0*float(sheet_matches)/sheet_total
+                new_file.write("\nSheet Total: {}".format(sheet_total))
+                new_file.write("\nSheet Matches: {}".format(sheet_matches))
+                new_file.write("\nSheet Percent Matched: {0:.2f}%".format(percent))
+                parasha_matches += sheet_matches
+                parasha_total += sheet_total
+                parasha_non_matches += sheet_non_matches
+
+        percent = 100.0*float(parasha_matches)/parasha_total
+        new_file.write("\n\n\nParasha Total: {}".format(parasha_total))
+        new_file.write("\nParasha Matches: {}".format(parasha_matches))
+        new_file.write("\nParasha Percent Matched: {0:.2f}%".format(percent))
 
         new_file.close()
 
@@ -1052,6 +1194,32 @@ class Nechama_Parser:
         i = library.get_index("Gur Aryeh on Bereishit")
         i.nodes.add_title("Gur Aryeh on Genesis", 'en')
         i.save()
+        i = library.get_index("Gur Aryeh on Bamidbar")
+        i.nodes.add_title("Gur Aryeh on Numbers", 'en')
+        i.save()
+        i = library.get_index("Gur Aryeh on Devarim")
+        i.nodes.add_title("Gur Aryeh on Deuteronomy", 'en')
+        i.save()
+        i = library.get_index("Meshech Hochma")
+        node = library.get_index("Meshech Hochma").nodes.children[4]
+        node.add_title("Chayei Sara", 'en')
+        node = library.get_index("Meshech Hochma").nodes.children[6]
+        node.add_title("Vayetzei", "en")
+        node = library.get_index("Meshech Hochma").nodes.children[45]
+        node.add_title("Korach", "en")
+        i.save()
+        t = Term().load({"titles.text": "Ki Tisa"})
+        t.add_title(u'פרשת כי-תשא', 'he')
+        t.save()
+        t = Term().load({'titles.text': "Bechukotai"})
+        t.add_title(u'פרשת בחקותי', 'he')
+        t.save()
+        t = Term().load({"titles.text": "Sh'lach"})
+        t.add_title(u'פרשת שלח לך', 'he')
+        t.save()
+        t = Term().load({"titles.text": "Pinchas"})
+        t.add_title(u'פרשת פינחס', 'he')
+        t.save()
 
 
 def dict_from_html_attrs(contents):
@@ -1067,15 +1235,38 @@ def dict_from_html_attrs(contents):
 if __name__ == "__main__":
     # Ref(u"בראשית פרק ג פסוק ד - פרק ה פסוק י")
     # Ref(u"u'דברים פרק ט, ז-כט - פרק י, א-י'")
-    parsha = "Bereshit"
-    book = u'Genesis'
-    parser = Nechama_Parser(book, parsha, "accurate")
-    parser.old = False
-    #parser.prepare_term_mapping() # must be run once locally and on sandbox
-    parser.mode = "accurate"  # accurate / fast
-    parser.bs4_reader(["html_sheets/Bereshit/1.html"], post=True, add_to_title="merged")
-    # sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in os.listdir("html_sheets/{}".format(parsha))], post=True)
-    parser.record_report()
+    genesis_parshiot = (u"Genesis", ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", 'Vayetzei',
+                                     "Vayishlach", "Vayeshev", "Miketz", "Vayigash", "Vayechi"])
+    exodus_parshiot = (u"Exodus", ["Vayakhel-Pekudei", "Shemot", "Vaera", "Bo", "Beshalach", "Yitro", "Mishpatim",
+                                   "Terumah", "Tetzaveh", "Vayakhel", "Ki Tisa", "Pekudei"])
+    leviticus_parshiot = (u"Leviticus", ["Vayikra", "Tzav", "Shmini", "Tazria", "Metzora", "Tazria-Metzora", "Achrei Mot",
+                        "Kedoshim", "Achrei Mot-Kedoshim", "Emor", "Behar", "Bechukotai", "Behar-Bechukotai"])
+    numbers_parshiot = (u"Numbers", ["Matot-Masei", "Bamidbar", "Nasso", "Beha'alotcha", "Sh'lach Lach", "Korach", "Chukat",
+                        "Balak", "Pinchas", "Matot", "Masei"])
+    devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
+                        "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
+
+    catch_errors = False  # True  #
+    posting = True  # False  #
+
+
+    for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
+        print "NEW BOOK"
+        for parsha in which_parshiot[1]:
+            book = which_parshiot[0]
+            parser = Nechama_Parser(book, parsha, "fast", "catch all text correctly", catch_errors=catch_errors)
+            parser.prepare_term_mapping()  # must be run once locally and on sandbox
+            #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
+            sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
+            # anything_before = "7.html"
+            # pos_anything_before = sheets.index(anything_before)
+            # sheets = sheets[pos_anything_before:]
+            sheets = ['62.html']
+            sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=True)
+            if catch_errors:
+                parser.record_report()
+            break
+        break
 
 
 

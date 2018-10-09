@@ -1,0 +1,30 @@
+html_sheets/Ha'Azinu/1349.html: (<class 'sefaria.system.exceptions.InputError'>, InputError(u'Failed to parse sections for ref Malbim on Deuteronomy',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1103, in bs4_reader
+    sheet.create_sheetsources_from_objsource()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 90, in create_sheetsources_from_objsource
+    seg_sheet_source = segment.create_source()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/segments.py", line 105, in create_source
+    self.ref = Ref(" ".join(self.ref.split()[0:-1])).he_normal()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 1954, in __call__
+    result = super(RefCacheType, cls).__call__(*args, **kwargs)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2033, in __init__
+    self.__init_tref()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2267, in __init_tref
+    raise InputError(u"Failed to parse sections for ref {}".format(self.orig_tref))
+InputError: Failed to parse sections for ref Malbim on Deuteronomy
+
+
+html_sheets/Ha'Azinu/748.html: (<class 'sefaria.system.exceptions.BookNameError'>, BookNameError(u"No book named 'HaKtav VeHaKabalah, Hosea'.",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1103, in bs4_reader
+    sheet.create_sheetsources_from_objsource()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 78, in create_sheetsources_from_objsource
+    if not success and segment.ref and parser.source_is_tanakh(segment.ref) and parser.haftarah_mode:
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 882, in source_is_tanakh
+    i = library.get_index(i)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 4175, in get_index
+    raise BookNameError(u"No book named '{}'.".format(bookname))
+BookNameError: No book named 'HaKtav VeHaKabalah, Hosea'.
+
+
