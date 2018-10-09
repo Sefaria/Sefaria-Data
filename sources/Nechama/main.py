@@ -82,6 +82,8 @@ class Sheet(object):
     def create_sheetsources_from_sections(self, segment_objects):
         sheets_sources = []
         for isegment, segment in enumerate(segment_objects):
+            if not segment:
+                continue
             if isinstance(segment, Source):  # or isinstance(segment, Nested):
                 success = parser.try_parallel_matcher(segment)
                 if not success and segment.ref and parser.source_maybe_tanakh(segment.ref) and parser.haftarah_mode:
@@ -296,10 +298,7 @@ class Section(object):
         xxx = []
         current_source = None
         nested_candidates = {} # OrderedDict() # this is a Dict of nested obj, and the q will be do we wan't them as nested or as originals.
-
-        if parser.old:
-            pass
-        elif isinstance(soup_segments, list):
+        if isinstance(soup_segments, list):
             for i, segment in enumerate(soup_segments):
                 sheet_segment = self.classify(segment, i, soup_segments)
                 if sheet_segment:
@@ -324,7 +323,7 @@ class Section(object):
             return Header(sp_segment)  # self.segment_objects.append(Header(segment))
         elif Question.is_question(sp_segment):
             nested_seg = Question.nested(sp_segment)
-            if nested_seg:
+            if nested_seg:  # todo: so we know that this is a Nested Question! what to do with this info?
                 return Nested(Nested.is_nested(sp_segment), section=self, question=True)
             else:
                 return Question(sp_segment)
@@ -1246,25 +1245,26 @@ if __name__ == "__main__":
                         "Balak", "Pinchas", "Matot", "Masei"])
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
-    catch_errors = True  # False  #
+    catch_errors = False  # True  #
     posting = True  # False  #
 
     for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "", catch_errors=catch_errors)
-            parser.old = False
-            parser.prepare_term_mapping() # must be run once locally and on sandbox
+            parser = Nechama_Parser(book, parsha, "fast", "catch all text correctly", catch_errors=catch_errors)
+            parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
             # anything_before = "7.html"
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
-            sheets = ['1.html']
-            sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=False)
+            sheets = ['62.html']
+            sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=True)
             if catch_errors:
                 parser.record_report()
+            break
+        break
 
 
 

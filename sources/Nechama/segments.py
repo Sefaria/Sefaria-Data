@@ -18,7 +18,6 @@ class Segment(object):
         return source
 
 
-
 class Source(object):
 
     # def __init__(self, segment_class, ref):
@@ -172,6 +171,7 @@ class Source(object):
 
         return new_source
 
+
 class Header(object):
     def __init__(self, segment):
         self.letter = segment.find(attrs = {"class":"number"}).text.replace(".", "").strip()
@@ -307,6 +307,7 @@ class Question(object):
 
         return text
 
+
 class Table(object):
     ## specifically for tables in HTML that end up staying as HTML in source sheet such class="RT" or "RTBorder"
 
@@ -363,6 +364,7 @@ class Nechama_Comment(object):
         source = {"outsideText": self.text}
         return source
 
+
 class Nested(object):
     """
     class for Hybrid obj classes that we must chose btw to egt the Obj that will be the actual source in the sheet_segment
@@ -383,8 +385,16 @@ class Nested(object):
         classed_tags = []
         classes = ["parshan", "midrash", "talmud", "bible", "commentary", "question2", "question", "table"]
         for e in segment.findAll():
-            if (e.attrs and 'class' in e.attrs and any([c in e.attrs['class'] for c in classes])): #e.find('td') or
+            if (e.attrs and 'class' in e.attrs and any([c in e.attrs['class'] for c in classes])):  # e.find('td') or
                 classed_tags.append(e)
+            elif (e in segment.findAll('p')) and not e.parent.has_attr('class') and e.text.strip()\
+                    and not (re.search('mypopup', e.parent.attrs.get('href')) if e.parent.attrs.get('href') else None):
+                classed_tags.append(e)
+        # Test: testing if we get all the text from the html to ourObjs
+        extract_text = ' '.join([e.text for e in classed_tags]) #text that was taken out of the segment after cleaning
+        exctract_set =set(extract_text.split())
+        seg_set = set(segment.text.split())
+        seg_set.difference(exctract_set)
         return classed_tags
 
         # check if nested. if so, return the data to Source to create new segments from the nested parts.
@@ -431,6 +441,7 @@ class Nested(object):
                         self.segment_objs[i].parshan_id = obj.sp_segment.attrs.get("id")
 
     def choose(self):
+
         return self.segment_objs
 
     def create_source(self):
@@ -445,6 +456,8 @@ class Nested(object):
         if self.segment_objs:
             created_obj = []
             for seg in self.segment_objs:
+                if not seg:
+                    continue
                 created_obj.append(seg.create_source())
             return created_obj
             # return create_sheetsources_from_sections(self.segment_objs)
