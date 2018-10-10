@@ -390,19 +390,31 @@ class Nested(object):
     @staticmethod
     def is_nested(segment):
         classed_tags = []
+        tags_with_p = []
         classes = ["parshan", "midrash", "talmud", "bible", "commentary", "question2", "question", "table"]
-        for e in segment.findAll():
-            if (e.attrs and 'class' in e.attrs and any([c in e.attrs['class'] for c in classes])):  # e.find('td') or
-                classed_tags.append(e)
+        for i, e in enumerate(segment.findAll()):
+            if (e.attrs and 'class' in e.attrs and set(e.attrs['class']).intersection(
+                    classes)):  # any([c in e.attrs['class'] for c in classes])):  # e.find('td') or
+                classed_tags.append((i, e))
             elif (e in segment.findAll('p')) and not e.parent.has_attr('class') and e.text.strip()\
-                    and not (re.search('mypopup', e.parent.attrs.get('href')) if e.parent.attrs.get('href') else None):
-                classed_tags.append(e)
-        # Test: testing if we get all the text from the html to ourObjs
-        extract_text = ' '.join([e.text for e in classed_tags]) #text that was taken out of the segment after cleaning
-        exctract_set =set(extract_text.split())
-        seg_set = set(segment.text.split())
-        seg_set.difference(exctract_set)
-        return classed_tags
+                and not (re.search('mypopup', e.parent.attrs.get('href')) if e.parent.attrs.get('href') else None):
+                tags_with_p.append((i, e))
+        objs = set()
+        for p in tags_with_p:
+            if p[1].text.strip() not in set([item[1].text.strip() for item in classed_tags]):
+                objs.add(p)
+        objs = objs.union(set(classed_tags))
+        objs = sorted(objs, key=lambda x: x[0])
+        objs = [o[1] for o in objs]
+        return objs
+        # # Test: testing if we get all the text from the html to ourObjs
+        # extract_text = ' '.join([e.text for e in classed_tags]) #text that was taken out of the segment after cleaning
+        # exctract_set = set(extract_text.split())
+        # seg_set = set(segment.text.split())
+        # diff = seg_set.difference(exctract_set)
+        # if diff:
+        #     pass
+        # return classed_tags
 
         # check if nested. if so, return the data to Source to create new segments from the nested parts.
         imp_contents = Section.get_tags(segment)

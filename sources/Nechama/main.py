@@ -295,7 +295,7 @@ class Section(object):
         :param soup_segments:
         :return:
         """
-        xxx = []
+        nesnested_lst= []
         current_source = None
         nested_candidates = {} # OrderedDict() # this is a Dict of nested obj, and the q will be do we wan't them as nested or as originals.
         if isinstance(soup_segments, list):
@@ -308,8 +308,8 @@ class Section(object):
             for i, segment in enumerate(soup_segments.obj):
                 sheet_segment = self.classify(segment, i, soup_segments.obj)
                 if sheet_segment:
-                    xxx.append(sheet_segment)
-            return xxx
+                    nesnested_lst.append(sheet_segment)
+            return nesnested_lst
 
     def classify(self, sp_segment, i, soup_segments):
         """
@@ -431,7 +431,6 @@ class Section(object):
         # check if it's in Perek X, Pasuk Y format and set perek and pasuk accordingly
         is_tanakh = (relevant_text.startswith(u"פרק ") or relevant_text.startswith(u"פסוק ") or
                      relevant_text.startswith(u"פרקים ") or relevant_text.startswith(u"פסוקים "))
-
         is_perek_pasuk_ref, new_perek, new_pasuk = self.set_current_perek_pasuk(found_a_tag, relevant_text, next_segment_class, is_tanakh)
 
         # now create current_source based on real_title or based on self.current_parsha_ref
@@ -1249,23 +1248,21 @@ if __name__ == "__main__":
                         "Balak", "Pinchas", "Matot", "Masei"])
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
-
     catch_errors = False  # True  #
     posting = True  # False  #
-
 
     for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "format correctly", catch_errors=catch_errors)
+            parser = Nechama_Parser(book, parsha, "fast", "nice nested", catch_errors=catch_errors)
             parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
             # anything_before = "7.html"
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
-            sheets = ["1.html"]
+            # sheets = ['1.html']
             sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=True)
             if catch_errors:
                 parser.record_report()
