@@ -464,7 +464,11 @@ class Section(object):
                 current_source.about_source_ref = relevant_text
         elif found_a_tag:
             # found no reference but did find an a_tag so this is a ref so keep the text
-            current_source.about_source_ref = relevant_text
+            # this test below helps distinguish between "Ibn Caspi" and a long comment
+            if len(relevant_text.split()) > len(found_a_tag.text.split()) * 4:
+                current_source.about_source_ref = relevant_text
+            else:
+                current_source.ref = relevant_text
             parser.index_not_found[parser.current_file_path].append(current_source.about_source_ref)
         else:
             current_source.about_source_ref = relevant_text
@@ -1254,14 +1258,14 @@ if __name__ == "__main__":
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "catch all text correctly", catch_errors=catch_errors)
+            parser = Nechama_Parser(book, parsha, "fast", "format correctly", catch_errors=catch_errors)
             parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
             # anything_before = "7.html"
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
-            sheets = ['62.html']
+            sheets = ["1.html"]
             sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=True)
             if catch_errors:
                 parser.record_report()
