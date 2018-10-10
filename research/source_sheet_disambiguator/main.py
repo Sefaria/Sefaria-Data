@@ -5,8 +5,12 @@ import cProfile
 import pstats
 import unicodedata
 import sys
+import os
 import unicodecsv
 import django
+p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, p)
+from sources import local_settings
 django.setup()
 from sefaria.model import *
 from data_utilities.dibur_hamatchil_matcher import match_ref
@@ -15,7 +19,6 @@ from sefaria.system.exceptions import InputError
 from sefaria.utils.hebrew import strip_cantillation
 
 MAX_SHEET_LEN = 100
-
 
 def clean(s):
     if len(s) == 0:
@@ -109,18 +112,23 @@ def find_subref(sheet_text, ref, lang, vtitle=None, tried_adding_refs_at_end_of_
 def mutate_sheet(sheet, action):
     rows = []
     for s in sheet["sources"]:
-        rows += mutate_subsources(sheet["id"], s, action)
+        rows += mutate_subsources(sheet["id"], s, action, sheet.get("dateModified", ""), sheet.get("views", 0))
 
     return rows
 
 
-def mutate_subsources(id, source, action):
+def mutate_subsources(id, source, action, dateModified, views):
+    new_ref_list = []
+
     ref = source.get("ref", u"")
     he = source.get("text", {}).get("he", u"")
+    if he is None:
+        he = u""
     he = u" ".join(tokenizer(he))
     en = source.get("text", {}).get("en", u"")
+    if en is None:
+        en = u""
     en = u" ".join(tokenizer(en))
-    new_ref_list = []
     if not ref:
         return new_ref_list
     try:
@@ -133,12 +141,12 @@ def mutate_subsources(id, source, action):
         new_ref = new_ref.normal()
         old_ref = ref_obj.normal()
         if new_ref != old_ref:
-            new_ref_list += [{"Id": str(id), "Old Ref": old_ref, "New Ref": new_ref, "Url": "https://www.sefaria.org/sheets/{}".format(id)}]
+            new_ref_list += [{"Id": str(id), "Old Ref": old_ref, "New Ref": new_ref, "Source Num": source.get("node", 61300), "Date Modified": dateModified, "Views": views}]
 
     if "subsources" in source:
         print "subsources"
         for s in source["subsources"]:
-            new_ref_list += mutate_subsources(id, s, action)
+            new_ref_list += mutate_subsources(id, s, action, dateModified, views)
 
     return new_ref_list
 
@@ -146,7 +154,7 @@ def mutate_subsources(id, source, action):
 def run():
     # ids = [1697, 2636, 8689, 11419, 13255, 16085, 18838, 26981, 27226, 31603, 31844, 35830, 49364, 50853, 57106, 65498,
     #        85003, 90289, 92571, 101667, 105718]
-    ids = db.sheets.find({"status": "public"}).distinct("id")
+    ids = db.sheets.find().distinct("id")
     rows = []
     for i, id in enumerate(ids):
         if i % 50 == 0:
@@ -157,7 +165,7 @@ def run():
             continue
         rows += mutate_sheet(sheet, refine_ref_by_text)
     with open("yoyo.csv", "wb") as fout:
-        csv = unicodecsv.DictWriter(fout, ["Id", "Url", "Old Ref", "New Ref"])
+        csv = unicodecsv.DictWriter(fout, ["Id", "Source Num", "Old Ref", "New Ref", "Date Modified", "Views"])
         csv.writeheader()
         csv.writerows(rows)
 
