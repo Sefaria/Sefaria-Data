@@ -324,7 +324,7 @@ class Section(object):
         elif Question.is_question(sp_segment):
             nested_seg = Question.nested(sp_segment)
             if nested_seg:  # todo: so we know that this is a Nested Question! what to do with this info?
-                return Nested(Nested.is_nested(sp_segment), section=self, question=True)
+                return Nested(Nested.is_nested(sp_segment), section=self, question=Question(sp_segment))
             else:
                 return Question(sp_segment)
         elif Table.is_table(sp_segment):  # these tables we want as they are so just str(segment)
@@ -781,7 +781,7 @@ class Section(object):
             if isinstance(segment, Nested):
                 new_section_list.extend(segment.choose())
             elif isinstance(segment, Text):
-                segment.choose()
+                new_section_list.append(segment.choose())
             else:
                 new_section_list.append(segment)
         return new_section_list
@@ -887,6 +887,7 @@ class Nechama_Parser:
             # '196':u'''בעל הלבוש אורה''',
             '66': u"Meshech Hochma, {}".format(self.en_parasha),
             # '51': u"ביאור - ר' שלמה דובנא"
+            '107': u'רס"ג'
         }
 
 
@@ -1006,6 +1007,7 @@ class Nechama_Parser:
                     ref2check = None
                 else:
                     ref2check = Ref(current_source.ref)
+                    # ref2check = current_source.get_sefaria_ref(current_source.ref)
             except InputError:
                 if u"Meshech Hochma" in current_source.ref:
                     ref2check = Ref(u"Meshech Hochma, {}".format(self.en_parasha))
@@ -1255,19 +1257,19 @@ if __name__ == "__main__":
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "nice nested", catch_errors=catch_errors)
+            parser = Nechama_Parser(book, parsha, "fast", "pretty nested without doubles", catch_errors=catch_errors)
             parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
             # anything_before = "7.html"
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
-            # sheets = ['1.html']
+            sheets = ['2.html']
             sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=True)
             if catch_errors:
                 parser.record_report()
-            break
-        break
+        #     break
+        # break
 
 
 
