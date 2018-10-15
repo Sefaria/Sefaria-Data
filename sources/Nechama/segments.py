@@ -240,7 +240,12 @@ class Header(object):
 
 class Question(object):
 
-    def __init__(self, segment):
+    def __init__(self, segment=None, question=None):
+        if question:
+            self.number = question.number
+            self.difficulty= question.difficulty
+            return
+
         bullet_tag = segment.select(".bullet > p")
         number = []
         bullet = []
@@ -263,7 +268,7 @@ class Question(object):
         any([s.attrs for s in segs])
         self.q_text = u" ".join([s.text.strip() for s in segment.find_all('p') if not s.parent.has_attr('class')])
         self.text = self.format()
-        self.q_source = None
+        self.q_source = segment
 
     @staticmethod
     def nested(segment):
@@ -390,19 +395,34 @@ class Nested(object):
     @staticmethod
     def is_nested(segment):
         classed_tags = []
+        tags_with_p = []
         classes = ["parshan", "midrash", "talmud", "bible", "commentary", "question2", "question", "table"]
-        for e in segment.findAll():
-            if (e.attrs and 'class' in e.attrs and any([c in e.attrs['class'] for c in classes])):  # e.find('td') or
-                classed_tags.append(e)
+        for i, e in enumerate(segment.findAll()):
+            if (e.attrs and 'class' in e.attrs and set(e.attrs['class']).intersection(
+                    classes)):  # any([c in e.attrs['class'] for c in classes])):  # e.find('td') or
+                if not e.text in ' '.join([item[1].text.strip() for item in classed_tags]): #todo: write better. can be in the same line but i want to test that it right first. it is to deal with cases like q 2 in section 3 in 62.html
+                    classed_tags.append((i, e))
             elif (e in segment.findAll('p')) and not e.parent.has_attr('class') and e.text.strip()\
-                    and not (re.search('mypopup', e.parent.attrs.get('href')) if e.parent.attrs.get('href') else None):
-                classed_tags.append(e)
-        # Test: testing if we get all the text from the html to ourObjs
-        extract_text = ' '.join([e.text for e in classed_tags]) #text that was taken out of the segment after cleaning
-        exctract_set =set(extract_text.split())
-        seg_set = set(segment.text.split())
-        seg_set.difference(exctract_set)
-        return classed_tags
+                and not (re.search('mypopup', e.parent.attrs.get('href')) if e.parent.attrs.get('href') else None):
+                tags_with_p.append((i, e))
+        objs = set()
+        all_text = ur''.join([item[1].text.strip() for item in classed_tags])
+        for p in tags_with_p:
+            if p[1].text.strip() not in all_text: #or not re.search(p[1].text.strip(), all_text)
+                objs.add(p)
+        objs = objs.union(set(classed_tags))
+        testing_doubls = [o for o in objs if re.search(u'וכי סומים היו', o[1].text)]
+        objs = sorted(objs, key=lambda x: x[0])
+        objs = [o[1] for o in objs]
+        return objs
+        # # Test: testing if we get all the text from the html to ourObjs
+        # extract_text = ' '.join([e.text for e in classed_tags]) #text that was taken out of the segment after cleaning
+        # exctract_set = set(extract_text.split())
+        # seg_set = set(segment.text.split())
+        # diff = seg_set.difference(exctract_set)
+        # if diff:
+        #     pass
+        # return classed_tags
 
         # check if nested. if so, return the data to Source to create new segments from the nested parts.
         imp_contents = Section.get_tags(segment)
@@ -448,7 +468,19 @@ class Nested(object):
                         self.segment_objs[i].parshan_id = obj.sp_segment.attrs.get("id")
 
     def choose(self):
-
+        def demi_q(q, text):
+            like_q = Question(question=q)
+            like_q.q_text = text
+            like_q.text = like_q.format()
+            return like_q
+        if self.question:
+            for i, s in enumerate(self.segment_objs):
+                if isinstance(s, Nechama_Comment):
+                    self.segment_objs[i] = demi_q(self.question, s.text)
+                    return self.segment_objs
+                elif isinstance(s, Question):
+                    return self.segment_objs
+            self.segment_objs.insert(0, demi_q(self.question, u''))
         return self.segment_objs
 
     def create_source(self):
@@ -491,3 +523,7 @@ class Text(object):
         source = {"outsideText": self.sp_segment.text}
         return source
 
+    def choose(self):
+        s = Source(self.ref_guess)
+        s.add_text(self.sp_segment)
+        return s
