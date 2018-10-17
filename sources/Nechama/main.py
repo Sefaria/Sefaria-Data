@@ -102,7 +102,6 @@ class Sheet(object):
                 segment.ref = new_ref
                 success = parser.try_parallel_matcher(segment)
                 if success:
-                    print "Found a match through Haftara/Parasha swapping"
                     break
                 else:
                     segment.ref = orig_ref
@@ -126,7 +125,6 @@ class Sheet(object):
             return str(len(Ref(u"{} {}".format(en_sefer, perek)).all_segment_refs()))
 
         #three formats: Perek 2; Perek 2, Pasuk 3-9; Perek 2, 4 - Perek 3, 2 (last one may lose pasuk info as well
-        print perek_info
         sefer = perek_info.split()[0]
         try:
             en_sefer = library.get_index(sefer).title
@@ -177,9 +175,7 @@ class Sheet(object):
         # split = re.split()
         try:
             r = Ref(he_ref)
-            print r.normal()
         except InputError:
-            print 'InputError'
             return None
         return r
 
@@ -218,7 +214,6 @@ class Sheet(object):
         # init Segment() obj from bs_objs in each section
         for section in self.sections:
             section.add_segments(section.soupObj)
-            print u"appended {}".format(section.title)
 
 
 class Section(object):
@@ -494,7 +489,7 @@ class Section(object):
                                         u"{} on {} {}:{}".format(parshan, parser.en_sefer, new_perek, new_pasuk))
                 current_source.parshan_name = parshan
             except KeyError:
-                print "PARSHAN not in table", next_segment_class_id, relevant_text
+                # print "PARSHAN not in table", next_segment_class_id, relevant_text
                 if real_title:  # a ref to a commentator that we have in our system
                     if new_pasuk:
                         current_source = Source(u"{} {}:{}".format(real_title, new_perek, new_pasuk), next_segment_class)
@@ -560,8 +555,6 @@ class Section(object):
             if new_perek in self.possible_perakim:
                 self.current_perek = str(new_perek)
                 self.current_parsha_ref = ["bible", u"{} {}".format(sefer, new_perek)]
-            else:
-                print
         return True, new_perek, None
     
 
@@ -604,7 +597,8 @@ class Section(object):
         if not perek_comma_pasuk:
             perek_comma_pasuk = re.findall("Perek (.{1,5}),? Pasuk (.{1,9})", text)
         perek = re.findall("Perek (.{1,5}\s)", text)
-        pasuk = re.findall("Pasuk (.{1,5}(?:-.{1,5})?)", text)
+        pasuk = re.findall("Pasuk (.*?)\s", text)
+        #pasuk = re.findall("Pasuk (.{1,5}(?:-.{1,5})?)", text)
         assert len(perek) in [0, 1]
         assert len(pasuk) in [0, 1]
         assert len(perek_comma_pasuk) in [0, 1]
@@ -623,7 +617,7 @@ class Section(object):
             pasuk = perek_comma_pasuk[0][1]
             pasuk = pasuk.strip()
             new_perek = str(getGematria(perek))
-            if "-" in pasuk:  # is a range, correct it
+            if len(pasuk)-1 > pasuk.find("-") > 0: # is a range, correct it
                 start = pasuk.split("-")[0]
                 end = pasuk.split("-")[1]
                 start = getGematria(start)
@@ -640,8 +634,6 @@ class Section(object):
                     # assert str(poss_ref.sections[0]) == new_perek or str(poss_ref.toSections[0]) == new_perek
                     # assert str(poss_ref.sections[1]) == new_pasuk or str(poss_ref.toSections[1]) == new_pasuk
                     self.current_parsha_ref = ["bible", u"{} {}".format(parser.en_sefer, self.current_perek)]
-                else:
-                    print
             return True, new_perek, new_pasuk
         return False, self.current_perek, self.current_pasuk
 
@@ -701,10 +693,8 @@ class Section(object):
         return None
 
     def get_children_with_content(self, segment):
-        # determine if the text of segment is blank or practically blank (i.e. just a \n or :\n\r) or is just empty space less than 3 chars
-        children_w_contents = [el for el in segment.contents if
-                               self.relevant_text(el).replace("\n", "").replace("\r", "").replace(": ", "").replace(
-                                   ":", "") != "" and len(self.relevant_text(el)) > 2]
+        # determine if the text of segment has content
+        children_w_contents = [el for el in segment.contents if is_hebrew(self.relevant_text(el)) or any_english_in_str(self.relevant_text(el))]
         return children_w_contents
 
     def check_for_blockquote_and_table(self, segments, level=2):
@@ -819,8 +809,6 @@ class Nechama_Parser:
         self.populate_term_mapping_and_id_table()
         self.levenshtein = WeightedLevenshtein()
         self.missing_index = set()
-        self.sec_ref_not_found = {}
-        self.seg_ref_not_found = {}
         self.current_file_path = ""
         self.haftarah_mode = False
         self.parasha_and_haftarot = self.get_parasha_and_haftarot(self.en_parasha)
@@ -857,9 +845,6 @@ class Nechama_Parser:
         }
         self.levenshtein = WeightedLevenshtein()
         self.missing_index = set()
-        self.sec_ref_not_found = {}
-        self.seg_ref_not_found = {}
-        self.current_file_path = ""
         self.parshan_id_table = {
             '162': u"Rashi on {}".format(self.en_sefer),
             '6': u"Abarbanel on Torah, {}".format(self.en_sefer),  # Abarbanel_on_Torah,_Genesis
@@ -921,7 +906,6 @@ class Nechama_Parser:
         for i in range(1500):
             if i <= start_after or str(i) in parshat_bereshit:
                 continue
-            print "downloading {}".format(i)
             sleep(3)
             headers = {
                 'User-Agent': 'Mozilla/4.0 (Macintosh; Intel Mac OS X 11_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
@@ -1006,8 +990,7 @@ class Nechama_Parser:
                 if not current_source.get_sefaria_ref(current_source.ref):
                     ref2check = None
                 else:
-                    ref2check = Ref(current_source.ref)
-                    # ref2check = current_source.get_sefaria_ref(current_source.ref)
+                    ref2check = current_source.get_sefaria_ref(current_source.ref)
             except InputError:
                 if u"Meshech Hochma" in current_source.ref:
                     ref2check = Ref(u"Meshech Hochma, {}".format(self.en_parasha))
@@ -1018,7 +1001,6 @@ class Nechama_Parser:
                 text_to_use = current_source.text
             # todo: one Source obj for different Sefaria refs. how do we deal with this?
             if ref2check:
-                # print ref2check.normal(), text_to_use
                 text_to_use = self.clean(text_to_use) # .replace('"', '').replace("'", "")
                 if len(text_to_use.split()) <= 1:
                     tc = ref2check.text('he').text if not isinstance(ref2check.text('he').text, list) else strip_cantillation(" ".join(ref2check.text('he').text))
@@ -1027,7 +1009,7 @@ class Nechama_Parser:
                         return True
                         # print current_source.ref
                     else:
-                        print "it is one or less words and this is the wrong ref..."
+                        # print "it is one or less words and this is the wrong ref..."
                         return False
                 else:
                     matched = self.check_reduce_sources(text_to_use, ref2check) # returns a list ordered by scores of mesorat hashas objs that were found
@@ -1041,22 +1023,18 @@ class Nechama_Parser:
                                 if changed_ref !=ref2check:
                                     matched = self.check_reduce_sources(text_to_use, changed_ref)
                             except KeyError:
-                                print u"parshan_id_table is missing a key and value for {}, in {}, \n text {}".format(current_source.parshan_id, self.current_file_path, current_source.text)
+                                pass
+                                # print u"parshan_id_table is missing a key and value for {}, in {}, \n text {}".format(current_source.parshan_id, self.current_file_path, current_source.text)
 
                     if not matched: # still not matched...
-                        if changed_ref.is_segment_level():
-                            self.seg_ref_not_found[self.current_file_path].append(current_source)
-                        else:
-                            self.sec_ref_not_found[self.current_file_path].append(current_source)
-                        print u"NO MATCH : {}".format(text_to_use)
-                        self.non_matches.append(ref2check.normal())
+                        # print u"NO MATCH : {}".format(text_to_use)
+                        self.non_matches[self.current_file_path].append(ref2check.normal())
 
                         # we dont want to link it since there's no match found so set the ref to empty and record the fixed ref ref2check in about_source_ref
                         # current_source.about_source_ref = ref2check.he_normal()
                         # current_source.ref = ""
                         return False
                     else:
-                        self.matches[self.current_file_path].append(ref2check.normal())
                         self.matches[self.current_file_path].append(ref2check.normal())
                         current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[
                             0].b.ref.normal()  # because the sides change
@@ -1065,14 +1043,12 @@ class Nechama_Parser:
                         if ref2check.is_section_level():
                             print '** section level ref: '.format(ref2check.normal())
                         return True
-                        # print ref2check.normal(), current_source.ref
             else:
-                print u"NO ref2check {}".format(current_source.parshan_name)
+                # print u"NO ref2check {}".format(current_source.parshan_name)
                 if current_source.ref:
                     parser.ref_not_found[parser.current_file_path].append(current_source.ref)
                 return False
         except AttributeError as e:
-            print u'AttributeError: {}'.format(re.sub(u":$", u"", current_source.text))#.about_source_ref))
             parser.index_not_found[parser.current_file_path].append(current_source.about_source_ref)  # todo: would like to add just the <a> tag
             return False
         except IndexError as e:
@@ -1107,8 +1083,6 @@ class Nechama_Parser:
                 parser.non_matches[parser.current_file_path] = []
                 parser.index_not_found[parser.current_file_path] = []
                 parser.ref_not_found[parser.current_file_path] = []
-                parser.seg_ref_not_found[parser.current_file_path] = []
-                parser.sec_ref_not_found[parser.current_file_path] = []
                 content = BeautifulSoup(open("{}".format(html_sheet)), "lxml")
                 parser.haftarah_mode = u"הפטרה" in content.text or u"הפטרת" in content.text
                 # if not parser.haftarah_mode:
@@ -1229,7 +1203,7 @@ class Nechama_Parser:
 
 def dict_from_html_attrs(contents):
     d = OrderedDict()
-    for e in [e for e in contents if isinstance(e, element.Tag)]:
+    for e in [e for e in contents if isinstance(e, element.Tag)]: #for e in [e for e in contents if isinstance(e, element.Tag)]:
         if "id" in e.attrs.keys():
             d[e.attrs['id']] = e
         else:
@@ -1250,24 +1224,24 @@ if __name__ == "__main__":
                         "Balak", "Pinchas", "Matot", "Masei"])
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
-    catch_errors = False  # True  #
-    posting = True  # False  #
+    catch_errors = True
+    posting = False
 
     for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
         print "NEW BOOK"
-        for parsha in which_parshiot[1]:
-            book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "pretty nested without doubles", catch_errors=catch_errors)
-            parser.prepare_term_mapping()  # must be run once locally and on sandbox
-            #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
-            sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
-            # anything_before = "7.html"
-            # pos_anything_before = sheets.index(anything_before)
-            # sheets = sheets[pos_anything_before:]
-            sheets = ['2.html']
-            sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=True)
-            if catch_errors:
-                parser.record_report()
+    for parsha in ["Noach"]:
+        book = genesis_parshiot[0]
+        parser = Nechama_Parser(book, parsha, "fast", "NavigableString try 2", catch_errors=catch_errors)
+        parser.prepare_term_mapping()  # must be run once locally and on sandbox
+        #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
+        sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
+        # anything_before = "7.html"
+        # pos_anything_before = sheets.index(anything_before)
+        # sheets = sheets[pos_anything_before:]
+        sheets = ["379.html"]
+        sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=posting)
+        if catch_errors:
+            parser.record_report()
         #     break
         # break
 

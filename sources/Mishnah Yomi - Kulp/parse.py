@@ -276,7 +276,7 @@ def restructure_mishnah_text(old_mishnah_text):
             mishnah_text.append(line.strip())
     return mishnah_text
 
-def create_index(text, sefer):
+def create_index(text, sefer, post=False):
     sefer = convert_spellings(sefer)
     #add_category("Mishnah Yomit", ["Mishnah", "Commentary", "Mishnah Yomit"], server=SERVER)
     index = library.get_index("Mishnah " + sefer)
@@ -307,19 +307,22 @@ def create_index(text, sefer):
         "base_text_mapping": "many_to_one",
         "collective_title": "Joshua Kulp",
     }
-    post_index(index, server=SERVER)
+    if post:
+        post_index(index, server=SERVER)
 
 
-def check_all_mishnayot_present_and_post(text, sefer, file_path):
+def check_all_mishnayot_present_and_post(text, sefer, file_path, post=False):
+    versionTitle = "Mishnah Yomit Oct 15"
     def post_(text, path):
         send_text = {
             "language": "en",
             "text": text,
-            "versionTitle": "Mishnah Yomit 3",
+            "versionTitle": versionTitle,
             "versionSource": "http://learn.conservativeyeshiva.org/mishnah/"
         }
         try:
-            post_text(path, send_text, server=SERVER)
+            if post:
+                post_text(path, send_text, server=SERVER)
         except UnicodeDecodeError:
             for ch_num, chapter in enumerate(text):
                 for mishnah_num, mishnah in enumerate(chapter):
@@ -327,11 +330,12 @@ def check_all_mishnayot_present_and_post(text, sefer, file_path):
                         send_text = {
                             "language": "en",
                             "text": comment,
-                            "versionTitle": "Mishnah Yomit 3",
+                            "versionTitle": versionTitle,
                             "versionSource": "http://learn.conservativeyeshiva.org/mishnah/"
                         }
                         try:
-                            post_text("{} {}:{}:{}".format(path, ch_num+1, mishnah_num+1, comm_num+1), send_text, server=SERVER)
+                            if post:
+                                post_text("{} {}:{}:{}".format(path, ch_num+1, mishnah_num+1, comm_num+1), send_text, server=SERVER)
                         except UnicodeDecodeError:
                             print "Error posting {}".format("{} {}:{}:{}".format(path, ch_num+1, mishnah_num+1, comm_num+1))
 
@@ -342,7 +346,8 @@ def check_all_mishnayot_present_and_post(text, sefer, file_path):
     translation = dict(text)
     for ch in text.keys():
         if ch == "Introduction":
-            post_(text[ch], "{}, Introduction".format(en_title))
+            if post:
+                post_(text[ch], "{}, Introduction".format(en_title))
             text.pop(ch)
             translation.pop(ch)
             continue
@@ -364,11 +369,13 @@ def check_all_mishnayot_present_and_post(text, sefer, file_path):
             text[ch][i] = []
     text = convertDictToArray(text)
     translation = convertDictToArray(translation)
-    post_(text, en_title)
+    if post:
+        post_(text, en_title)
     for ch, chapter in enumerate(translation):
         for m, mishnah in enumerate(chapter):
             translation[ch][m] = " ".join(mishnah)
-    post_(translation, index.title)
+    if post:
+        post_(translation, index.title)
 
 
 def convert_spellings(sefer):
@@ -443,6 +450,6 @@ if __name__ == "__main__":
 
             # most_common_value = found_ref.most_common(1)[0]
             # assert most_common_value[1] == 1, "{} has {}".format(most_common_value[0], most_common_value[1])
-            create_index(parsed_text[sefer], sefer)
-            check_all_mishnayot_present_and_post(parsed_text[sefer], sefer, current_path)
+            create_index(parsed_text[sefer], sefer, post=False)
+            check_all_mishnayot_present_and_post(parsed_text[sefer], sefer, current_path, post=True)
     print needs_checking

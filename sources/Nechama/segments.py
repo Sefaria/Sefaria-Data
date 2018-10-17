@@ -104,18 +104,18 @@ class Source(object):
                 except (InputError, AttributeError), e:
                     if " on " in self.ref: #Rashi on Genesis
                         term = " ".join(self.ref.split()[0:-1]).split(" on ")[0] # this should get just "Rashi" or "Abarbanel"
-                        titles = Term().load({"titles.text": term}).titles
-                        if titles:
-                            self.ref = [title['text'] for title in titles if title['lang'] == 'he'][0]
+                        term = Term().load({"titles.text": term})
+                        if term:
+                            self.ref = [title['text'] for title in term.titles if title['lang'] == 'he'][0]
                     elif ", " in self.ref: #HaKtav VeKabbalah, Hosea
                         title = " ".join(self.ref.split()[0:-1]).rsplit(", ")[0:-1]
                         index = Index().load({"title": title})
                         if index:
                             self.ref = index.get_title('he')
                     else: #Onkelos Isaiah
-                        titles = Term().load({"titles.text": self.ref.split()[0]})
-                        if titles:
-                            self.ref = [title['text'] for title in titles if title['lang'] == 'he'][0]
+                        term = Term().load({"titles.text": self.ref.split()[0]})
+                        if term:
+                            self.ref = [title['text'] for title in term.titles if title['lang'] == 'he'][0]
 
             if self.about_source_ref:
                 comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False) #use actual text if we can
@@ -277,7 +277,7 @@ class Question(object):
         imp_contents = Section.get_tags(segment)[0]
 
         q = [tag for tag in imp_contents.contents if isinstance(tag, element.Tag) and not tag.attrs] #todo: can we make this line more reliable, write tests for this line
-        print '******'+str(len(q))
+        # print '******'+str(len(q))
         q = q[0]
         classes = ["parshan", "midrash", "talmud", "bible", "commentary","question2", "question", "table"]  # todo: probbaly should be a list of classes of our Obj somewhere
         is_nested = False
@@ -287,9 +287,9 @@ class Question(object):
                 break
 
         if is_nested:
-            print "**NESTED**"
+            # print "**NESTED**"
             return q
-        print "****Print Q not nested"
+        # print "****Print Q not nested"
         return None
 
     @staticmethod
@@ -302,7 +302,7 @@ class Question(object):
         source = {"outsideText": self.text}
         return source
 
-    def format(self, without_params=[], difficulty_symbol = [u'''<sup class="nechama"></sup>''', u'''<sup class="nechama">*</sup>''', u'''<sup class="nechama">**</sup>''']):
+    def format(self, without_params=[], difficulty_symbol = [u'', u'''<sup class="nechama">*</sup>''', u'''<sup class="nechama">**</sup>''']):
         """
 
         :param without_params: list. ex: ["difficulty", "number"]
@@ -394,6 +394,8 @@ class Nested(object):
 
     @staticmethod
     def is_nested(segment):
+        if isinstance(segment, element.NavigableString):
+            return False
         classed_tags = []
         tags_with_p = []
         classes = ["parshan", "midrash", "talmud", "bible", "commentary", "question2", "question", "table"]
@@ -405,10 +407,15 @@ class Nested(object):
             elif (e in segment.findAll('p')) and not e.parent.has_attr('class') and e.text.strip()\
                 and not (re.search('mypopup', e.parent.attrs.get('href')) if e.parent.attrs.get('href') else None):
                 tags_with_p.append((i, e))
+
+
+        if not classed_tags: #we don't need to check in this case
+            return False
+
         objs = set()
         all_text = ur''.join([item[1].text.strip() for item in classed_tags])
         for p in tags_with_p:
-            if p[1].text.strip() not in all_text: #or not re.search(p[1].text.strip(), all_text)
+            if p[1].text.strip() not in all_text:
                 objs.add(p)
         objs = objs.union(set(classed_tags))
         testing_doubls = [o for o in objs if re.search(u'וכי סומים היו', o[1].text)]
@@ -434,7 +441,7 @@ class Nested(object):
         for cont in imp_contents:
             q += [tag for tag in cont.contents if isinstance(tag,element.Tag) and not tag.attrs]  # todo: can we make this line more reliable, write tests for this line
 
-        print '******' + str(len(q))
+        # print '******' + str(len(q))
         q = q[0]
         classes = ["parshan", "midrash", "talmud", "bible", "commentary", "question2", "question",
                    "table"]  # todo: probbaly should be a list of classes of our Obj somewhere
@@ -445,9 +452,9 @@ class Nested(object):
                 break
 
         if is_nested:
-            print "**NESTED**"
+            # print "**NESTED**"
             return q
-        print "****Print Q not nested"
+        # print "****Print Q not nested"
         return None
 
     def add_segments(self, section):
