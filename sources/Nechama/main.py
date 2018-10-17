@@ -261,17 +261,24 @@ class Section(object):
                     #     self.segment_objects = self.segment_objects[:i]+output_nested+self.segment_objects[i+1:]
                     # self.segment_objects.pop(i)
         # self.segment_objects.reverse()
+        prev_source = None
+        new_segment_objects = []
         for i, obj in enumerate(self.segment_objects):
-            if isinstance(obj, Text): # and isinstance(self.segment_objects[i-1], Source):
-                if isinstance(self.segment_objects[i-1], Source):
-                    self.segment_objects[i - 1].add_text(obj.sp_segment, obj.segment_class)
-                    self.segment_objects.pop(i)
+            if isinstance(obj, Source):
+                prev_source = obj
+            elif isinstance(obj, Text): # and isinstance(self.segment_objects[i-1], Source):
+                if prev_source:
+                    new_segment_objects.append(prev_source.add_text(obj.sp_segment, obj.segment_class))
                 else:
                     if obj.ref_guess:
-                        self.segment_objects[i] = Source(obj.ref_guess)
-                        self.segment_objects[i].add_text(obj.sp_segment)
+                        new_obj = Source(obj.ref_guess)
+                        new_obj.add_text(obj.sp_segment)
+                        new_segment_objects.append(new_obj)
                     else:
                         pass  # todo: when if at all is this case be reached and how do we deal with it?
+            else:
+                new_segment_objects.append(obj)
+        self.segment_objects = new_segment_objects
         header = filter(lambda x: isinstance(x, Header), self.segment_objects)[0]
         self.title = header.header_text
         self.letter = header.letter
@@ -330,12 +337,14 @@ class Section(object):
             try:
                 source_guess = [x for x in self.segment_objects if (isinstance(x, Source) and x.current)][-1]
                 source_guess_ref = source_guess.ref
-            except Exception:
+                about_source_ref = source_guess.about_source_ref
+            except IndexError: #[-1] into empty list see 379.html third section
                 source_guess_ref = None
+                about_source_ref = None
             # current_source = [x for x in self.segment_objects if (isinstance(x, Source) and x.current)][-1]
             # current_source.add_text(sp_segment, segment_class)
             # return current_source
-            return Text(sp_segment, segment_class, ref_guess=source_guess_ref)
+            return Text(sp_segment, segment_class, ref_guess=source_guess_ref, about_source_ref=about_source_ref)
         elif Nested.is_nested(sp_segment):
             return Nested(Nested.is_nested(sp_segment), section=self)
         elif Nechama_Comment.is_comment(soup_segments, i, parser.important_classes):  # above criteria not met, just an ordinary comment
@@ -597,13 +606,10 @@ class Section(object):
         if not perek_comma_pasuk:
             perek_comma_pasuk = re.findall("Perek (.{1,5}),? Pasuk (.{1,9})", text)
         perek = re.findall("Perek (.{1,5}\s)", text)
-        pasuk = re.findall("Pasuk (.*?)\s", text)
-        #pasuk = re.findall("Pasuk (.{1,5}(?:-.{1,5})?)", text)
-        assert len(perek) in [0, 1]
-        assert len(pasuk) in [0, 1]
-        assert len(perek_comma_pasuk) in [0, 1]
-        # if len(perek) == len(pasuk) == len(perek_comma_pasuk) == 0 and ("Pasuk" in text or "Perek" in text):
-        #     pass
+        pasuk = re.findall("Pasuk (.*?)\s", text) #pasuk = re.findall("Pasuk (.{1,5}(?:-.{1,5})?)", text)
+
+        if len(perek) >= 2 or len(pasuk) >= 2 or len(perek_comma_pasuk) >= 2: #if it's mentioned more than once, it's a comment not a ref
+            return False, self.current_perek, self.current_pasuk
 
         if not perek_comma_pasuk:
             if perek:
@@ -687,9 +693,14 @@ class Section(object):
         if perakim is None:
             perakim = self.possible_perakim
         for perek in perakim:
-            possible_ref = Ref("{} ".format(parser.en_sefer) + perek + ":" + new_pasuk)
-            if self.possible_pasukim.contains(possible_ref):
-                return possible_ref
+            for sefer in parser.parasha_and_haftarot:
+                try:
+                    possible_ref = Ref("{} ".format(sefer) + perek + ":" + new_pasuk)
+                    if self.possible_pasukim.contains(possible_ref):
+                        return possible_ref
+                except InputError:
+                    pass
+
         return None
 
     def get_children_with_content(self, segment):
@@ -1040,8 +1051,8 @@ class Nechama_Parser:
                             0].b.ref.normal()  # because the sides change
 
                         current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[0].b.ref.normal()  # because the sides change
-                        if ref2check.is_section_level():
-                            print '** section level ref: '.format(ref2check.normal())
+                        # if ref2check.is_section_level():
+                            # print '** section level ref: '.format(ref2check.normal())
                         return True
             else:
                 # print u"NO ref2check {}".format(current_source.parshan_name)
@@ -1229,8 +1240,9 @@ if __name__ == "__main__":
 
     for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
         print "NEW BOOK"
-    for parsha in ["Noach"]:
-        book = genesis_parshiot[0]
+    which_parshiot = devarim_parshiot
+    for parsha in which_parshiot[1]:
+        book = which_parshiot[0]
         parser = Nechama_Parser(book, parsha, "fast", "NavigableString try 2", catch_errors=catch_errors)
         parser.prepare_term_mapping()  # must be run once locally and on sandbox
         #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
@@ -1238,7 +1250,6 @@ if __name__ == "__main__":
         # anything_before = "7.html"
         # pos_anything_before = sheets.index(anything_before)
         # sheets = sheets[pos_anything_before:]
-        sheets = ["379.html"]
         sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=posting)
         if catch_errors:
             parser.record_report()

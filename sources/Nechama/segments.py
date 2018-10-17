@@ -35,7 +35,8 @@ class Source(object):
 
     @staticmethod
     def is_source_text(segment, important_classes):
-        return isinstance(segment, element.Tag) and "class" in segment.attrs.keys() and segment.attrs["class"][0] in important_classes
+        return isinstance(segment, element.Tag) and \
+               "class" in segment.attrs.keys() and segment.attrs["class"][0] in important_classes
 
     def get_sefaria_ref(self, ref):
         if ref == "":
@@ -152,7 +153,7 @@ class Source(object):
         # print self.parshan_name
         if not self.text:
             self.text = segment_text
-            return #self
+            return self
         else:
             new_source = self.copy()
             new_source.text = segment_text
@@ -515,9 +516,10 @@ class Nested(object):
 
 class Text(object):
 
-    def __init__(self, sp_segment, segment_class, ref_guess=None):
+    def __init__(self, sp_segment, segment_class, ref_guess=None, about_source_ref=None):
         self.sp_segment = sp_segment
         self.segment_class = segment_class
+        self.about_source_ref = about_source_ref
         self.ref_guess = ref_guess
 
 
