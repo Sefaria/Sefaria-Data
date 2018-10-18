@@ -35,8 +35,7 @@ class Source(object):
 
     @staticmethod
     def is_source_text(segment, important_classes):
-        return isinstance(segment, element.Tag) and \
-               "class" in segment.attrs.keys() and segment.attrs["class"][0] in important_classes
+        return isinstance(segment, element.Tag) and "class" in segment.attrs.keys() and segment.attrs["class"][0] in important_classes
 
     def get_sefaria_ref(self, ref):
         if ref == "":
@@ -92,7 +91,7 @@ class Source(object):
                       }
                       }
         elif self.ref:
-            # thought we found a ref but it's not an actual ref in sefaria library
+            # thought we found a ref but it's not an actual ref in the Sefaria library
             # get the he_normal() of ref or if it's invalid ref, try modifying and then running he_normal()
             try:
                 self.ref = Ref(self.ref).he_normal()
@@ -416,7 +415,7 @@ class Nested(object):
         objs = set()
         all_text = ur''.join([item[1].text.strip() for item in classed_tags])
         for p in tags_with_p:
-            if p[1].text.strip() not in all_text:
+            if p[1].text.strip() not in all_text: #or not re.search(p[1].text.strip(), all_text)
                 objs.add(p)
         objs = objs.union(set(classed_tags))
         testing_doubls = [o for o in objs if re.search(u'וכי סומים היו', o[1].text)]
@@ -516,10 +515,9 @@ class Nested(object):
 
 class Text(object):
 
-    def __init__(self, sp_segment, segment_class, ref_guess=None, about_source_ref=None):
+    def __init__(self, sp_segment, segment_class, ref_guess=None):
         self.sp_segment = sp_segment
         self.segment_class = segment_class
-        self.about_source_ref = about_source_ref
         self.ref_guess = ref_guess
 
 

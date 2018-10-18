@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __builtin__ import enumerate
 
+import django
+django.setup()
 from sefaria.model import *
 import codecs
 import regex as re
@@ -207,11 +209,11 @@ class Semag(object):
             u'לאוין': u'Sefer Mitzvot Gadol, Negative Commandments',
             u'לאין': u'Sefer Mitzvot Gadol, Negative Commandments',
             u'עשין': u'Sefer Mitzvot Gadol, Positive Commandments',
-            u'א':u'Sefer Mitzvot Gadol, Positive Commandments, Laws of Eruvin',
-            u'ב': u'Sefer Mitzvot Gadol, Positive Commandments, Laws of Mourning',
-            u'ג': u"Sefer Mitzvot Gadol, Positive Commandments, Laws of Tisha B'Av",
-            u'ד': u'Sefer Mitzvot Gadol, Positive Commandments, Laws of Megillah',
-            u'ה': u'Sefer Mitzvot Gadol, Positive Commandments, Laws of Chanukah'
+            u'א':u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Eruvin',
+            u'ב': u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Mourning',
+            u'ג': u"Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Tisha B'Av",
+            u'ד': u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Megillah',
+            u'ה': u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Chanukah'
                        }
 
         # self._table = {
@@ -800,7 +802,7 @@ def toCSV(filename, obj_list):
         if row[u'problem'] == u'error missing little or big letter' or row[u'problem'] == u'error, cit with the perek/page counters':
             row[u'problem'] = False
     with open(u'{}.csv'.format(filename), 'w') as csv_file:
-        writer = csv.DictWriter(csv_file, [u'txt file line', u'Perek running counter',u'page running counter',
+        writer = csv.DictWriter(csv_file, [u'txt file line', u'Perek running counter', u'page running counter',
                                 u'Perek aprx', u'Page aprx', u'Rambam', u'Semag', u'Tur Shulchan Arukh', u'original', u'problem']) #fieldnames = obj_list[0].keys())
         writer.writeheader()
         writer.writerows(list_dict)
@@ -1036,5 +1038,5 @@ if __name__ == "__main__":
     # reverse_collapse('csvQA/megillah_little_letters.csv', 'csvQA/collapsed_megillah')
     # run1(u'collapsed/lost_lines', u'collapsed/lost_lines') #avodah_zarah
     # run1('/home/shanee/www/sefaria/Sefaria-Data/sources/Semak/citations', EM = False)
-    run1("txtFiles/chullin", "txtFiles/chullin")
+    run2("txtFiles/chullin", "txtFiles/chullin")
 

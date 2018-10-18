@@ -341,14 +341,12 @@ class Section(object):
             try:
                 source_guess = [x for x in self.segment_objects if (isinstance(x, Source) and x.current)][-1]
                 source_guess_ref = source_guess.ref
-                about_source_ref = source_guess.about_source_ref
-            except IndexError: #[-1] into empty list see 379.html third section
+            except Exception:
                 source_guess_ref = None
-                about_source_ref = None
             # current_source = [x for x in self.segment_objects if (isinstance(x, Source) and x.current)][-1]
             # current_source.add_text(sp_segment, segment_class)
             # return current_source
-            return Text(sp_segment, segment_class, ref_guess=source_guess_ref, about_source_ref=about_source_ref)
+            return Text(sp_segment, segment_class, ref_guess=source_guess_ref)
         elif Nested.is_nested(sp_segment):
             return Nested(Nested.is_nested(sp_segment), section=self)
         elif Nechama_Comment.is_comment(soup_segments, i, parser.important_classes):  # above criteria not met, just an ordinary comment
@@ -474,6 +472,8 @@ class Section(object):
             # this test below helps distinguish between "Ibn Caspi" and a long comment
             if len(relevant_text.split()) > len(found_a_tag.text.split()) * 4:
                 current_source.about_source_ref = relevant_text
+            elif is_perek_pasuk_ref:
+                current_source.ref = u"{} {}:{}".format(parser.en_sefer, new_perek, new_pasuk)
             else:
                 current_source.ref = relevant_text
             parser.index_not_found[parser.current_file_path].append(current_source.about_source_ref)
@@ -887,7 +887,8 @@ class Nechama_Parser:
             # '196':u'''בעל הלבוש אורה''',
             '66': u"Meshech Hochma, {}".format(self.en_parasha),
             # '51': u"ביאור - ר' שלמה דובנא"
-            '107': u'רס"ג'
+            # '107': u'רס"ג'
+            # '88' : u'אברהם כהנא (פירוש מדעי)'
         }
 
 
@@ -1142,7 +1143,7 @@ class Nechama_Parser:
                            (self.ref_not_found, "Refs not found", parasha_ref_not_found),
                            (self.index_not_found, "Indexes not found", parasha_index_not_found)]
         for curr_file_path in self.matches.keys():
-            sheet_matches = sheet_non_matches = sheet_total = 0
+            sheet_matches = sheet_non_matches = sheet_total = 0.1
             new_file.write("\n\n"+curr_file_path)
 
             sources = self.matches[curr_file_path]
@@ -1239,27 +1240,26 @@ if __name__ == "__main__":
                         "Balak", "Pinchas", "Matot", "Masei"])
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
-    catch_errors = False
+    catch_errors = True
     posting = True
 
     for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
         print "NEW BOOK"
-    which_parshiot = genesis_parshiot
-    for parsha in ["Noach"]:
-        book = which_parshiot[0]
-        parser = Nechama_Parser(book, parsha, "fast", "October 18th", catch_errors=catch_errors)
-        parser.prepare_term_mapping()  # must be run once locally and on sandbox
-        #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
-        sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
-        # anything_before = "7.html"
-        # pos_anything_before = sheets.index(anything_before)
-        # sheets = sheets[pos_anything_before:]
-        sheets = ["379.html"]
-        sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=posting)
-        if catch_errors:
-            parser.record_report()
-        #     break
-        # break
-
+        for parsha in which_parshiot[1]:
+            book = which_parshiot[0]
+            parser = Nechama_Parser(book, parsha, "fast", "after merge", catch_errors=catch_errors)
+            parser.prepare_term_mapping()  # must be run once locally and on sandbox
+            #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
+            sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
+            # anything_before = "7.html"
+            # pos_anything_before = sheets.index(anything_before)
+            # sheets = sheets[pos_anything_before:]
+            sheets = ['62.html']
+            sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=posting)
+            if catch_errors:
+                parser.record_report()
+            break
+        break
+    print 'Done'
 
 
