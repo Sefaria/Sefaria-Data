@@ -267,15 +267,19 @@ class Section(object):
             if isinstance(obj, Source):
                 prev_source = obj
             elif isinstance(obj, Text): # and isinstance(self.segment_objects[i-1], Source):
+                poss_new_source = None
                 if prev_source:
-                    new_segment_objects.append(prev_source.add_text(obj.sp_segment, obj.segment_class))
+                    poss_new_source = prev_source.add_text(obj.sp_segment, obj.segment_class)
+                elif obj.ref_guess:
+                    orig_source = Source(obj.ref_guess)
+                    poss_new_source = orig_source.add_text(obj.sp_segment)
                 else:
-                    if obj.ref_guess:
-                        new_obj = Source(obj.ref_guess)
-                        new_obj.add_text(obj.sp_segment)
-                        new_segment_objects.append(new_obj)
-                    else:
-                        pass  # todo: when if at all is this case be reached and how do we deal with it?
+                    pass #todo
+
+                if poss_new_source:
+                    new_segment_objects.append(poss_new_source)
+                else:
+                    new_segment_objects.append(prev_source)
             else:
                 new_segment_objects.append(obj)
         self.segment_objects = new_segment_objects
@@ -1235,21 +1239,22 @@ if __name__ == "__main__":
                         "Balak", "Pinchas", "Matot", "Masei"])
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
-    catch_errors = True
-    posting = False
+    catch_errors = False
+    posting = True
 
     for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
         print "NEW BOOK"
-    which_parshiot = devarim_parshiot
-    for parsha in which_parshiot[1]:
+    which_parshiot = genesis_parshiot
+    for parsha in ["Noach"]:
         book = which_parshiot[0]
-        parser = Nechama_Parser(book, parsha, "fast", "NavigableString try 2", catch_errors=catch_errors)
+        parser = Nechama_Parser(book, parsha, "fast", "October 18th", catch_errors=catch_errors)
         parser.prepare_term_mapping()  # must be run once locally and on sandbox
         #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
         sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
         # anything_before = "7.html"
         # pos_anything_before = sheets.index(anything_before)
         # sheets = sheets[pos_anything_before:]
+        sheets = ["379.html"]
         sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=posting)
         if catch_errors:
             parser.record_report()

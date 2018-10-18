@@ -153,7 +153,7 @@ class Source(object):
         # print self.parshan_name
         if not self.text:
             self.text = segment_text
-            return self
+            return None
         else:
             new_source = self.copy()
             new_source.text = segment_text
