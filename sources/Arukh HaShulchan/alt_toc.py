@@ -26,7 +26,7 @@ if __name__ == "__main__":
         nodes.append(schema.serialize())
 
     index = get_index_api("Arukh HaShulchan", server="http://draft.sefaria.org")
-    index['alt_structs'] = {"Subject": {"nodes": nodes}}
+    index['alt_structs'] = {"Topic": {"nodes": nodes}}
     post_index(index, server="http://draft.sefaria.org")
 
     from sefaria.helper.schema import migrate_to_complex_structure

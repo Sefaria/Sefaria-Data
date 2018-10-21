@@ -697,8 +697,9 @@ class Section(object):
         if perakim is None:
             perakim = self.possible_perakim
         for perek in perakim:
-            for sefer in parser.parasha_and_haftarot:
+            for parsha_range in parser.parasha_and_haftarot:
                 try:
+                    sefer = " ".join(parsha_range.split()[0:-1])
                     possible_ref = Ref("{} ".format(sefer) + perek + ":" + new_pasuk)
                     if self.possible_pasukim.contains(possible_ref):
                         return possible_ref
@@ -1247,14 +1248,14 @@ if __name__ == "__main__":
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "refDisplayPosition", catch_errors=catch_errors)
+            parser = Nechama_Parser(book, parsha, "fast", "Current Perek Bug", catch_errors=catch_errors)
             parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
             # anything_before = "7.html"
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
-            sheets = ['1372.html']
+            sheets = ['62.html']
             try:
                 ["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets]
             except IOError:
