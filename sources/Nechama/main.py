@@ -1240,26 +1240,30 @@ if __name__ == "__main__":
                         "Balak", "Pinchas", "Matot", "Masei"])
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
-    catch_errors = True
+    catch_errors = False
     posting = True
 
-    for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
+    for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "after merge", catch_errors=catch_errors)
+            parser = Nechama_Parser(book, parsha, "fast", "refDisplayPosition", catch_errors=catch_errors)
             parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
             # anything_before = "7.html"
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
-            sheets = ['62.html']
+            sheets = ['1372.html']
+            try:
+                ["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets]
+            except IOError:
+                continue
             sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=posting)
             if catch_errors:
                 parser.record_report()
-            break
-        break
+        #     break
+        # break
     print 'Done'
 
 

@@ -32,6 +32,7 @@ class Source(object):
         self.nechama_q = []  # list of Qustion objs about this Parshan seg
         self.segment_class = segment_class
         self.text = u""
+        self.refDisplayPosition = u"top"
 
     @staticmethod
     def is_source_text(segment, important_classes):
@@ -62,6 +63,8 @@ class Source(object):
                 return self.get_sefaria_ref(ref_node) #returns Ralbag Beur HaMilot on Torah, Genesis
 
     def glue_ref_and_text(self, ref, text, gray=True):
+        if isinstance(text, list):
+            text = u' '.join(text)
         if not gray:
             return u"{}<br/>{}".format(ref, text)
         else:
@@ -71,6 +74,7 @@ class Source(object):
     def create_source(self):
         #create source for sourcesheet out of myself
         comment = self.text
+        nested_source_refDisplayPosition = True if isinstance(comment, list) else False
         # is Sefaria ref
         if self.get_sefaria_ref(self.ref):
             if self.about_source_ref:
@@ -87,9 +91,17 @@ class Source(object):
                           "indented": "indented-1",
                           "sourceLayout": "",
                           "sourceLanguage": "hebrew",
-                          "sourceLangLayout": ""
+                          "sourceLangLayout": "",
+                          "refDisplayPosition": self.refDisplayPosition
                       }
                       }
+            if isinstance(self.text, list):
+                source["text"] = {
+                    "he": u'{} <a href= "/{}">{}</a><br>{}'.format(self.text[0], enRef, heRef, self.text[1]),
+                    "en": ""
+                }
+                source["options"]["indented"] = ""
+
         elif self.ref:
             # thought we found a ref but it's not an actual ref in the Sefaria library
             # get the he_normal() of ref or if it's invalid ref, try modifying and then running he_normal()
@@ -141,6 +153,8 @@ class Source(object):
                       }
         else:
             raise InputError, "Didn't anticipate this case in the casses of ref on Source obj"
+        if nested_source_refDisplayPosition:
+            source["options"]["indented"] = ""
         return source
 
     def get_ref(self):
@@ -475,11 +489,13 @@ class Nested(object):
                         self.segment_objs[i].parshan_id = obj.sp_segment.attrs.get("id")
 
     def choose(self):
+
         def demi_q(q, text):
             like_q = Question(question=q)
             like_q.q_text = text
             like_q.text = like_q.format()
             return like_q
+
         if self.question:
             for i, s in enumerate(self.segment_objs):
                 if isinstance(s, Nechama_Comment):
@@ -487,9 +503,15 @@ class Nested(object):
                     return self.segment_objs
                 elif isinstance(s, Question):
                     return self.segment_objs
-            self.segment_objs.insert(0, demi_q(self.question, u''))
+            self.glue_q_number(self.segment_objs[0])
+            # self.segment_objs.insert(0, demi_q(self.question, u''))
         return self.segment_objs
 
+    def glue_q_number(self, ourObj):
+        number = self.question.number
+        if isinstance(ourObj, Source):
+            ourObj.refDisplayPosition = "none"
+            ourObj.text = [number, ourObj.text]
     def create_source(self):
         return_sheet_obj = []
         # for option in self.options:
