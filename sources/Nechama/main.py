@@ -911,7 +911,7 @@ class Nechama_Parser:
     def get_parasha_and_haftarot(self, parasha_to_find):
         parshiot = list(db.parshiot.find({"parasha": parasha_to_find}))
         if parshiot:
-            return parshiot[0]["haftara"]+[parshiot[0]["ref"]]
+            return parshiot[0]["haftara"]["ashkenazi"]+[parshiot[0]["ref"]]
         return []
 
     def download_sheets(self):

@@ -450,6 +450,6 @@ if __name__ == "__main__":
 
             # most_common_value = found_ref.most_common(1)[0]
             # assert most_common_value[1] == 1, "{} has {}".format(most_common_value[0], most_common_value[1])
-            create_index(parsed_text[sefer], sefer, post=False)
+            create_index(parsed_text[sefer], sefer, post=True)
             check_all_mishnayot_present_and_post(parsed_text[sefer], sefer, current_path, post=True)
     print needs_checking
