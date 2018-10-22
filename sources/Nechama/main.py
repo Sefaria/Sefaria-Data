@@ -1243,7 +1243,7 @@ if __name__ == "__main__":
     catch_errors = False
     posting = True
 
-    for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
+    for which_parshiot in  [exodus_parshiot]: #[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
             book = which_parshiot[0]
@@ -1254,7 +1254,7 @@ if __name__ == "__main__":
             # anything_before = "7.html"
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
-            # sheets = ['274.html']
+            # sheets = ['1372.html']
             sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets if sheet in os.listdir("html_sheets/{}".format(parsha))], post=posting)
             if catch_errors:
                 parser.record_report()
