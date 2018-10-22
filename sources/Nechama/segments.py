@@ -161,7 +161,9 @@ class Source(object):
         return self.ref
 
     def add_text(self, segment, segment_class=None):
-        segment_text = segment.text.replace("\n", "").replace("\r", "")
+        for br in segment.find_all("br"):
+            br.replace_with("\n")
+        segment_text = segment.text.strip()
         # self.parshan_name = segment_class
         # print self.parshan_name
         if not self.text:

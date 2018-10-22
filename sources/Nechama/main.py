@@ -1246,16 +1246,16 @@ if __name__ == "__main__":
 
     for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
         print "NEW BOOK"
-        for parsha in which_parshiot[1]:
+        for parsha in ["Bereshit"]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "Current Perek Bug", catch_errors=catch_errors)
+            parser = Nechama_Parser(book, parsha, "fast", "<br> tag bug", catch_errors=catch_errors)
             parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
             # anything_before = "7.html"
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
-            sheets = ['62.html']
+            sheets = ['527.html']
             try:
                 ["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets]
             except IOError:
