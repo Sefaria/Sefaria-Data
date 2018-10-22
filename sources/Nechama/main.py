@@ -327,14 +327,14 @@ class Section(object):
         relevant_text = self.format(self.relevant_text(sp_segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
         if Header.is_header(sp_segment):
             return Header(sp_segment)  # self.segment_objects.append(Header(segment))
+        elif Table.is_table(sp_segment):  # these tables we want as they are so just str(segment)
+            return Table(sp_segment)
         elif Question.is_question(sp_segment):
             nested_seg = Question.nested(sp_segment)
             if nested_seg:  # todo: so we know that this is a Nested Question! what to do with this info?
                 return Nested(Nested.is_nested(sp_segment), section=self, question=Question(sp_segment))
             else:
                 return Question(sp_segment)
-        elif Table.is_table(sp_segment):  # these tables we want as they are so just str(segment)
-            return Table(sp_segment)
         elif Source.is_source_text(sp_segment, parser.important_classes):
         # this is a comment by a commentary, bible, or midrash that should be added as text to a Source created previously already or we can derive it's Source
             segment_class = sp_segment.attrs["class"][0]  # is it source, bible, or midrash?
@@ -1014,7 +1014,7 @@ class Nechama_Parser:
             if self.mode == "fast":
                 text_to_use = u" ".join(current_source.text.split()[0:15])
             elif self.mode == "accurate":
-                text_to_use = current_source.text
+                text_to_use = u" ".join(current_source.text)
             # todo: one Source obj for different Sefaria refs. how do we deal with this?
             if ref2check:
                 text_to_use = self.clean(text_to_use) # .replace('"', '').replace("'", "")
@@ -1247,19 +1247,15 @@ if __name__ == "__main__":
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "refDisplayPosition", catch_errors=catch_errors)
+            parser = Nechama_Parser(book, parsha, "accurate", "accurate - RTBorder", catch_errors=catch_errors)
             parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
             # anything_before = "7.html"
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
-            sheets = ['1372.html']
-            try:
-                ["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets]
-            except IOError:
-                continue
-            sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=posting)
+            # sheets = ['274.html']
+            sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets if sheet in os.listdir("html_sheets/{}".format(parsha))], post=posting)
             if catch_errors:
                 parser.record_report()
         #     break

@@ -374,7 +374,7 @@ class Nechama_Comment(object):
         # indicating parshan, bible, etc.
         # also make sure the next one has a class in self.important_classes
         # if it doesn't meet all the criteria, then it's just a comment by Nechama
-        segment = segments[i]
+        # segment = segments[i]
         next_comment_parshan_or_bible = ""
         this_comment_could_be_ref = i < len(segments) - 1 and isinstance(segments[i + 1], element.Tag) and isinstance(
             segments[i], element.Tag)
@@ -397,8 +397,11 @@ class Nested(object):
     """
 
     def __init__(self, obj, section, question=False):
-        self.obj = obj
         self.question = question
+        if obj:
+            self.obj = obj
+        else:
+            self.obj = []
         self.segment_objs = []
         self.add_segments(section)
     # def __init__(self, options, section):
@@ -409,14 +412,14 @@ class Nested(object):
     @staticmethod
     def is_nested(segment):
         if isinstance(segment, element.NavigableString):
-            return False
+            return
         classed_tags = []
         tags_with_p = []
-        classes = ["parshan", "midrash", "talmud", "bible", "commentary", "question2", "question", "table"]
+        classes = ["parshan", "midrash", "talmud", "bible", "commentary", "question2", "question", "table", "RTBorder"]#, "RT", "RT_RASHI"]
         for i, e in enumerate(segment.findAll()):
             if (e.attrs and 'class' in e.attrs and set(e.attrs['class']).intersection(
                     classes)):  # any([c in e.attrs['class'] for c in classes])):  # e.find('td') or
-                if not e.text in ' '.join([item[1].text.strip() for item in classed_tags]): #todo: write better. can be in the same line but i want to test that it right first. it is to deal with cases like q 2 in section 3 in 62.html
+                if not e.text.strip() in ' '.join([item[1].text.strip() for item in classed_tags]): #todo: write better. can be in the same line but i want to test that it right first. it is to deal with cases like q 2 in section 3 in 62.html
                     classed_tags.append((i, e))
             elif (e in segment.findAll('p')) and not e.parent.has_attr('class') and e.text.strip()\
                 and not (re.search('mypopup', e.parent.attrs.get('href')) if e.parent.attrs.get('href') else None):
@@ -424,7 +427,7 @@ class Nested(object):
 
 
         if not classed_tags: #we don't need to check in this case
-            return False
+            return
 
         objs = set()
         all_text = ur''.join([item[1].text.strip() for item in classed_tags])
