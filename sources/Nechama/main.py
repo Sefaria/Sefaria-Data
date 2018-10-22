@@ -327,14 +327,14 @@ class Section(object):
         relevant_text = self.format(self.relevant_text(sp_segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
         if Header.is_header(sp_segment):
             return Header(sp_segment)  # self.segment_objects.append(Header(segment))
-        elif Table.is_table(sp_segment):  # these tables we want as they are so just str(segment)
-            return Table(sp_segment)
         elif Question.is_question(sp_segment):
             nested_seg = Question.nested(sp_segment)
             if nested_seg:  # todo: so we know that this is a Nested Question! what to do with this info?
                 return Nested(Nested.is_nested(sp_segment), section=self, question=Question(sp_segment))
             else:
                 return Question(sp_segment)
+        elif Table.is_table(sp_segment):  # these tables we want as they are so just str(segment)
+            return Table(sp_segment)
         elif Source.is_source_text(sp_segment, parser.important_classes):
         # this is a comment by a commentary, bible, or midrash that should be added as text to a Source created previously already or we can derive it's Source
             segment_class = sp_segment.attrs["class"][0]  # is it source, bible, or midrash?
@@ -697,8 +697,9 @@ class Section(object):
         if perakim is None:
             perakim = self.possible_perakim
         for perek in perakim:
-            for sefer in parser.parasha_and_haftarot:
+            for parsha_range in parser.parasha_and_haftarot:
                 try:
+                    sefer = " ".join(parsha_range.split()[0:-1])
                     possible_ref = Ref("{} ".format(sefer) + perek + ":" + new_pasuk)
                     if self.possible_pasukim.contains(possible_ref):
                         return possible_ref
@@ -911,7 +912,7 @@ class Nechama_Parser:
     def get_parasha_and_haftarot(self, parasha_to_find):
         parshiot = list(db.parshiot.find({"parasha": parasha_to_find}))
         if parshiot:
-            return parshiot[0]["haftara"]+[parshiot[0]["ref"]]
+            return parshiot[0]["haftara"]+[parshiot[0]["ref"]] #["ashkenazi"]
         return []
 
     def download_sheets(self):
@@ -1243,11 +1244,11 @@ if __name__ == "__main__":
     catch_errors = False
     posting = True
 
-    for which_parshiot in  [exodus_parshiot]: #[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
+    for which_parshiot in [genesis_parshiot]:#, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "accurate", "accurate - RTBorder", catch_errors=catch_errors)
+            parser = Nechama_Parser(book, parsha, "accurate", "merge testing 22.11", catch_errors=catch_errors)
             parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
