@@ -862,34 +862,36 @@ class Nechama_Parser:
         self.levenshtein = WeightedLevenshtein()
         self.missing_index = set()
         self.parshan_id_table = {
-            '162': u"Rashi on {}".format(self.en_sefer),
-            '6': u"Abarbanel on Torah, {}".format(self.en_sefer),  # Abarbanel_on_Torah,_Genesis
-            '41': u'Or HaChaim on {}'.format(self.en_sefer),  # Or_HaChaim_on_Genesis
-            '101': u'Mizrachi, {}'.format(self.en_sefer),
-            '91': u"Gur Aryeh on ".format(self.en_sefer),  # u"גור אריה",
-            '32': u"Ralbag on {}".format(self.en_sefer),
-        # u'''רלב"ג''', #todo, figure out how to do Beur HaMilot and reguler, maybe needs to be a re.search in the changed_ref method
-            '29': u"Bekhor Shor, {}".format(self.en_sefer),  # u"בכור שור",
-            '238': u"Onkelos {}".format(self.en_sefer),  # u"אונקלוס",
-            '39': u'Ramban on {}'.format(self.en_sefer),  # u'''רמב"ן''',
-            '94': u"Shadal on {}".format(self.en_sefer),  # u'''שד"ל''',
-            '4': u"Ibn Ezra on {}".format(self.en_sefer),  # u'''ראב"ע''',
-            '198': u"HaKtav VeHaKabalah, {}".format(self.en_sefer),  # u'''הכתב והקבלה''',
-            '127': u"Radak on {}".format(self.en_sefer),  # u'''רד"ק''',
-            '37': u"Malbim on {}".format(self.en_sefer),  # u'''מלבי"ם''',
-            # '43': u'''בעל ספר הזיכרון''',
-            '111': u"Akeidat Yitzchak",  # u'''עקדת יצחק''',
-            '28': u"Rabbeinu Bahya, {}".format(self.en_sefer),  # u'''רבנו בחיי''',
-            # '118':u'קסוטו',
-            # '152':u'בנו יעקב',
             # '3':u'אבן כספי',
+            '4': u"Ibn Ezra on {}".format(self.en_sefer),  # u'''ראב"ע''',
+            '6': u"Abarbanel on Torah, {}".format(self.en_sefer),  # Abarbanel_on_Torah,_Genesis
+            # '23': u"רבי אליעזר אשכנזי",
+            '28': u"Rabbeinu Bahya, {}".format(self.en_sefer),  # u'''רבנו בחיי''',
+            '29': u"Bekhor Shor, {}".format(self.en_sefer),  # u"בכור שור",
+            '32': u"Ralbag on {}".format(self.en_sefer),
+            # '33': u'''ר' אברהם בן הרמב"ם''',
+            '37': u"Malbim on {}".format(self.en_sefer),  # u'''מלבי"ם''',
+            '39': u'Ramban on {}'.format(self.en_sefer),  # u'''רמב"ן''',
+            '41': u'Or HaChaim on {}'.format(self.en_sefer),  # Or_HaChaim_on_Genesis
+            # '43': u'''בעל ספר הזיכרון''',
             '46': u"Haamek Davar on {}".format(self.en_sefer),
-            # '104':u'''רמבמ"ן''',
-            # '196':u'''בעל הלבוש אורה''',
-            '66': u"Meshech Hochma, {}".format(self.en_parasha),
             # '51': u"ביאור - ר' שלמה דובנא"
-            # '107': u'רס"ג'
+            '66': u"Meshech Hochma, {}".format(self.en_parasha),
             # '88' : u'אברהם כהנא (פירוש מדעי)'
+            '91': u"Gur Aryeh on ".format(self.en_sefer),  # u"גור אריה",
+            '94': u"Shadal on {}".format(self.en_sefer),  # u'''שד"ל''',
+            '101': u'Mizrachi, {}'.format(self.en_sefer),
+            # '104':u'''רמבמ"ן''',
+            # '107': u'רס"ג'
+            '111': u"Akeidat Yitzchak",  # u'''עקדת יצחק''',
+            # '118':u'קסוטו',
+            '127': u"Radak on {}".format(self.en_sefer),  # u'''רד"ק''',
+            # '152':u'בנו יעקב',
+            '162': u"Rashi on {}".format(self.en_sefer),
+            # '196':u'''בעל הלבוש אורה''',
+            '198': u"HaKtav VeHaKabalah, {}".format(self.en_sefer),  # u'''הכתב והקבלה''',
+            '238': u"Onkelos {}".format(self.en_sefer),  # u"אונקלוס",
+        # u'''רלב"ג''', #todo, figure out how to do Beur HaMilot and reguler, maybe needs to be a re.search in the changed_ref method
         }
 
 
@@ -912,7 +914,7 @@ class Nechama_Parser:
     def get_parasha_and_haftarot(self, parasha_to_find):
         parshiot = list(db.parshiot.find({"parasha": parasha_to_find}))
         if parshiot:
-            return parshiot[0]["haftara"]+[parshiot[0]["ref"]] #["ashkenazi"]
+            return parshiot[0]["haftara"]["ashkenazi"]+[parshiot[0]["ref"]] #["ashkenazi"]
         return []
 
     def download_sheets(self):
@@ -1244,19 +1246,20 @@ if __name__ == "__main__":
     catch_errors = False
     posting = True
 
-    for which_parshiot in [genesis_parshiot]:#, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
+    for which_parshiot in [exodus_parshiot]:#genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "accurate", "merge testing 22.11", catch_errors=catch_errors)
+            parser = Nechama_Parser(book, parsha, "accurate", "bechor shor", catch_errors=catch_errors)
             parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
             # anything_before = "7.html"
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
-            # sheets = ['1372.html']
-            sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets if sheet in os.listdir("html_sheets/{}".format(parsha))], post=posting)
+            # sheets = sheets[sheets.index("163.html")::]
+            sheets = ['1062.html']
+            sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets if sheet in os.listdir("html_sheets/{}".format(parsha)) and sheet != "163.html"], post=posting)
             if catch_errors:
                 parser.record_report()
         #     break
