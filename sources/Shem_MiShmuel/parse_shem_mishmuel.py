@@ -26,7 +26,18 @@ Strange marks: @99, @44, @55.
 
 @44 and @55 are emphasis. Probably can swap with an opening and closing <big> tag for emphasis.
 
-@99 is very rare. Use for an inline <br> (wit
+@99 is very rare. Use for an inline <br>.
+
+Something I need to look out for is the @00 followed immediately by an @22.
+Each Section has a header and segments. If I find two consecutive headers, then just combine them (and report).
+
+Following that, just break up the segments. Bold @66-@77, and mark @11-@33 for dh matcher.
+
+The @88 indicates a new node. We want a hashmap from @88 titles to JaggedArrays.
+
+Two methods:
+1) Break file into dictionary of @88 titles and text
+2) Split text into sections and segments
 """
 
 
@@ -147,4 +158,82 @@ def locate_marks():
         print ""
 
 
-locate_marks()
+def parse_node_text(input_text):
+    full_node, current_section, header = [], [], None
+    for line in input_text:
+        line = re.sub(u'^\s+|\s+$', u'', line)
+        if re.match(u'^(@00|@22)', line):
+
+            # new header, if not first header, check that there are segments in current_section
+            if len(current_section) > 0 and header is not None:
+                current_section.insert(0, header)
+                full_node.append(current_section)
+                current_section = []
+                header = u'<b>{}</b>'.format(re.sub(u'^(@00|@22)', u'', line))
+
+            # first header
+            elif len(current_section) == 0 and header is None:
+                header = u'<b>{}</b>'.format(re.sub(u'^(@00|@22)', u'', line))
+
+            # double header
+            elif header and len(current_section) == 0:
+                header += u'<b>{}</b>'.format(re.sub(u'^(@00|@22)', u'', line))
+                header = re.sub(u'</b><b>', u' ', header)
+
+            # This is the case where text went into the segments without any header
+            else:
+                raise AssertionError(u"Segments added without header")
+
+        else:
+            if not header:
+                raise AssertionError(u"Tried to add segments without header")
+            line = re.sub(u'@66([^@]+)@77', u'<b>\g<1></b>', line)
+            line = re.sub(u'@11([^@]+)@33', u'<link>\g<1></link>', line)
+            line = re.sub(u'@44([^@]+)@55', u'<big>\g<1></big>', line)
+            line = re.sub(u'@99', u'<br>', line)
+            current_section.append(line)
+    else:
+        current_section.insert(0, header)
+        full_node.append(current_section)
+    return full_node
+
+
+def parse_file(filename):
+    nodes, node_name, current_text = {}, None, []
+    with codecs.open(filename, 'r', 'utf-8') as fp:
+        lines = fp.readlines()
+
+    for line in lines:
+        if re.search(u'^@88', line):
+            if current_text:
+                nodes[node_name] = parse_node_text(current_text)
+                current_text = []
+            node_name = re.sub(u'@88(\u05e4\u05e8\u05e9\u05ea\s)?', u'', line)
+            node_name = re.sub(u'^\s+|\s+$', u'', node_name)
+            if node_name in nodes:
+                raise AssertionError(u'{} appears twice in file'.format(node_name))
+        else:
+            current_text.append(line)
+    else:
+        nodes[node_name] = parse_node_text(current_text)
+    return nodes
+
+
+my_text = {}
+for f in os.listdir(u'.'):
+    if re.search(u'\.txt$', f):
+        file_text = parse_file(f)
+        if any([k in my_text for k in file_text.keys()]):
+            raise AssertionError(u"Duplicate")
+        my_text.update(file_text)
+
+for k in my_text.keys():
+    print k
+
+workflowy_names = {j: i for i, j in enumerate(get_node_names())}
+print all([k in workflowy_names for k in my_text.keys()])
+my_text = [{key: value} for key, value in my_text.iteritems()]
+import json
+with codecs.open('test.json', 'w', 'utf-8') as fp:
+    json.dump(sorted(my_text, key=lambda x: workflowy_names[x.keys()[0]])[:5], fp)
+
