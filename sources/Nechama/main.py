@@ -48,16 +48,16 @@ class Sheet(object):
         self.sources = []
 
 
-    def flip_ref_parasha_to_haftarah(self, ref, haftarah):
-        haftarah_index = Ref(haftarah).index.title
-        try:
-            base_ref = ref.split(" on ")[1] if " on " in ref else ref #strip "Rashi on Genesis 2" to "Genesis 2"
-            orig_index = library.get_index(" ".join(base_ref.split()[0:-1])) # now strip "Genesis 2" to "Genesis"
-        except BookNameError:
-            return ref
-        orig_index = orig_index.title
-        ref = ref.replace(orig_index, haftarah_index)
-        return ref
+    # def flip_ref_parasha_to_haftarah(self, ref, haftarah):
+    #     haftarah_index = Ref(haftarah).index.title
+    #     try:
+    #         base_ref = ref.split(" on ")[1] if " on " in ref else ref #strip "Rashi on Genesis 2" to "Genesis 2"
+    #         orig_index = library.get_index(" ".join(base_ref.split()[0:-1])) # now strip "Genesis 2" to "Genesis"
+    #     except BookNameError:
+    #         return ref
+    #     orig_index = orig_index.title
+    #     ref = ref.replace(orig_index, haftarah_index)
+    #     return ref
 
 
     def create_sheetsources_from_objsource(self):
@@ -81,15 +81,33 @@ class Sheet(object):
 
     def create_sheetsources_from_sections(self, segment_objects):
         sheets_sources = []
+        guess_ref = u""
         for isegment, segment in enumerate(segment_objects):
             if not segment:
                 continue
             if isinstance(segment, Source):  # or isinstance(segment, Nested):
-                success = parser.try_parallel_matcher(segment)
-                if not success and segment.ref and parser.source_maybe_tanakh(segment.ref) and parser.haftarah_mode:
-                    self.check_haftarot(segment)
+                orig_ref = segment.ref
+                parser.trying_pm = 0
+                segment.guess_ref = guess_ref
+                success = parser.try_parallel_matcher(segment, guess_ref)
+                if success and not Ref(segment.ref).is_commentary():
+                    guess_ref = segment.ref
+                elif not success:  # not success couldn't find matching text
+                    success2 = False
+                    temp = parser.mode
+                    if segment.ref:
+                        try:
+                            segment.ref = Ref(segment.ref).top_section_ref().normal()
+                            parser.mode = 'fast'
+                            success2 = parser.try_parallel_matcher(segment)
+                        except InputError:
+                            pass
+                    parser.mode = temp
+                    if not success2 and orig_ref:
+                        segment.ref = orig_ref# todo: !! find where to return the lost data about the comentators name info from, maybe about_source_ref?
             seg_sheet_source = segment.create_source()
             sheets_sources.extend(seg_sheet_source if isinstance(seg_sheet_source, list) else [seg_sheet_source])
+            print u"done with seg {}".format(isegment)
         return sheets_sources
 
 
@@ -828,6 +846,7 @@ class Nechama_Parser:
         self.current_file_path = ""
         self.haftarah_mode = False
         self.parasha_and_haftarot = self.get_parasha_and_haftarot(self.en_parasha)
+        self.trying_pm = 0
 
 
     def populate_term_mapping_and_id_table(self):
@@ -876,6 +895,7 @@ class Nechama_Parser:
             # '43': u'''בעל ספר הזיכרון''',
             '46': u"Haamek Davar on {}".format(self.en_sefer),
             # '51': u"ביאור - ר' שלמה דובנא"
+            # '64': u'רש"ר הירש'
             '66': u"Meshech Hochma, {}".format(self.en_parasha),
             # '88' : u'אברהם כהנא (פירוש מדעי)'
             '91': u"Gur Aryeh on ".format(self.en_sefer),  # u"גור אריה",
@@ -888,6 +908,7 @@ class Nechama_Parser:
             '127': u"Radak on {}".format(self.en_sefer),  # u'''רד"ק''',
             # '152':u'בנו יעקב',
             '162': u"Rashi on {}".format(self.en_sefer),
+            '183'
             # '196':u'''בעל הלבוש אורה''',
             '198': u"HaKtav VeHaKabalah, {}".format(self.en_sefer),  # u'''הכתב והקבלה''',
             '238': u"Onkelos {}".format(self.en_sefer),  # u"אונקלוס",
@@ -895,7 +916,16 @@ class Nechama_Parser:
         }
 
 
-
+    def flip_ref_parasha_to_haftarah(self, ref, haftarah):
+        haftarah_index = Ref(haftarah).index.title
+        try:
+            base_ref = ref.split(" on ")[1] if " on " in ref else ref #strip "Rashi on Genesis 2" to "Genesis 2"
+            orig_index = library.get_index(" ".join(base_ref.split()[0:-1])) # now strip "Genesis 2" to "Genesis"
+        except BookNameError:
+            return ref
+        orig_index = orig_index.title
+        ref = ref.replace(orig_index, haftarah_index)
+        return ref
 
     def source_maybe_tanakh(self, ref):
         try:
@@ -1003,11 +1033,18 @@ class Nechama_Parser:
                     return Ref(comm).section_ref()
         return ref
 
-    def try_parallel_matcher(self, current_source):
+    def try_parallel_matcher(self, current_source, guess_ref = None):
         try:
             try:
                 if not current_source.get_sefaria_ref(current_source.ref):
-                    ref2check = None
+                    if guess_ref:
+                        if re.search(u" on ", current_source.ref):
+                            commentator = re.split(u" on ", current_source.ref)[0]
+                            ref2check = current_source.get_sefaria_ref(u"{} on {}".format(commentator, re.split(u" on ", current_source.ref)[1] if re.search(u" on ", guess_ref) else guess_ref))
+                        else:
+                            ref2check = current_source.get_sefaria_ref(guess_ref)
+                    else:
+                        ref2check = None
                 else:
                     ref2check = current_source.get_sefaria_ref(current_source.ref)
             except InputError:
@@ -1017,7 +1054,7 @@ class Nechama_Parser:
             if self.mode == "fast":
                 text_to_use = u" ".join(current_source.text.split()[0:15])
             elif self.mode == "accurate":
-                text_to_use = u" ".join(current_source.text)
+                text_to_use =u" ".join(current_source.text) if isinstance(current_source.text, list)  else current_source.text
             # todo: one Source obj for different Sefaria refs. how do we deal with this?
             if ref2check:
                 text_to_use = self.clean(text_to_use) # .replace('"', '').replace("'", "")
@@ -1042,16 +1079,33 @@ class Nechama_Parser:
                                 if changed_ref !=ref2check:
                                     matched = self.check_reduce_sources(text_to_use, changed_ref)
                             except KeyError:
-                                pass
-                                # print u"parshan_id_table is missing a key and value for {}, in {}, \n text {}".format(current_source.parshan_id, self.current_file_path, current_source.text)
+                                print u"parshan_id_table is missing a key and value for {}, in {}, \n text {}".format(current_source.parshan_id, self.current_file_path, current_source.text)
+                    # look one level up
+                    if not matched:  # and parshan is a running parshan, still not matched! מלבים. אברבנל.העמק דבר רלבג
+                        matched = self.check_reduce_sources(text_to_use, changed_ref.top_section_ref())
+                    # check Haftarah
+                    if not matched and current_source.ref and parser.source_maybe_tanakh(
+                            current_source.ref) and parser.haftarah_mode:
+                        for opt in parser.parasha_and_haftarot:
+                            changed_ref = self.flip_ref_parasha_to_haftarah(current_source.ref, opt)
+                            if current_source.ref == changed_ref:
+                                continue
+                            current_source.ref = changed_ref
+                            self.trying_pm += 1
+                            if self.trying_pm < 2:
+                                pm_output = self.try_parallel_matcher(current_source, current_source.guess_ref)
+                                matched = pm_output[1] if not isinstance(pm_output, bool) else []
+                            else:
+                                self.trying_pm = 0
+                                return False
 
                     if not matched: # still not matched...
                         # print u"NO MATCH : {}".format(text_to_use)
                         self.non_matches[self.current_file_path].append(ref2check.normal())
 
-                        # we dont want to link it since there's no match found so set the ref to empty and record the fixed ref ref2check in about_source_ref
-                        # current_source.about_source_ref = ref2check.he_normal()
-                        # current_source.ref = ""
+                        # we dont want to link it since there's no match found so set the ref to empty.
+                        # current_source.about_source_ref = ref2check.he_normal() # record the fixed ref ref2check in about_source_ref (not sure why this was a good idea...)
+                        current_source.ref = ""
                         return False
                     else:
                         self.matches[self.current_file_path].append(ref2check.normal())
@@ -1061,7 +1115,7 @@ class Nechama_Parser:
                         current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[0].b.ref.normal()  # because the sides change
                         # if ref2check.is_section_level():
                             # print '** section level ref: '.format(ref2check.normal())
-                        return True
+                        return True, matched
             else:
                 # print u"NO ref2check {}".format(current_source.parshan_name)
                 if current_source.ref:
@@ -1245,12 +1299,13 @@ if __name__ == "__main__":
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
     posting = True
-
-    for which_parshiot in [exodus_parshiot]:#genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
+    individual = 1305
+    cnt = 0
+    for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "accurate", "bechor shor", catch_errors=catch_errors)
+            parser = Nechama_Parser(book, parsha, "accurate", "pm level up", catch_errors=catch_errors)
             parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
@@ -1258,12 +1313,19 @@ if __name__ == "__main__":
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
             # sheets = sheets[sheets.index("163.html")::]
-            sheets = ['1062.html']
-            sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets if sheet in os.listdir("html_sheets/{}".format(parsha)) and sheet != "163.html"], post=posting)
+
+            if individual:
+                sheets = parser.bs4_reader(["html_all/{}.html".format(individual)], post=posting)
+            else:
+                sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets if sheet in os.listdir("html_sheets/{}".format(parsha)) and sheet != "163.html"], post=posting)
             if catch_errors:
                 parser.record_report()
-        #     break
-        # break
+            cnt+=1
+            print cnt
+            if individual:
+              break
+        if individual:
+            break
     print 'Done'
 
 

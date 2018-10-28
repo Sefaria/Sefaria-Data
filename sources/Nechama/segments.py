@@ -48,7 +48,7 @@ class Source(object):
                 if re.search(u".*(?:on|,)\s((?:[^:]*?):(?:[^:]*)):?", r.normal()):
                     r_base = Ref(re.search(u".*(?:on|,)\s((?:[^:]*?):(?:[^:]*)):?", r.normal()).group(1))
                 else:
-                    return None
+                    return r #None
             else:
                 r_base = r
             if not r.is_book_level():
@@ -59,7 +59,7 @@ class Source(object):
             # try to see if all that is wrong is the segment part of the ref, say, for Ralbag Beur HaMilot on Torah, Genesis 4:17
             last_part = ref.split()[-1]
             if last_part[0].isdigit(): # in format, Ralbag Beur HaMilot on Torah, Genesis 4:17 and last_part is "4:17", now get the node "Ralbag Beur HaMilot on Torah, Genesis"
-                ref_node = " ".join(ref.split()[0:-1])
+                ref_node = " ".join(re.split(u"[:\s]", ref)[0:-1])
                 return self.get_sefaria_ref(ref_node) #returns Ralbag Beur HaMilot on Torah, Genesis
 
     def glue_ref_and_text(self, ref, text, gray=True):
@@ -141,8 +141,9 @@ class Source(object):
                           "sourceLangLayout": ""
                       }
                       }
-        elif not self.ref and self.about_source_ref:
-            comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False)
+        elif not self.ref:
+            if self.about_source_ref:
+                comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False)
             source = {"outsideText": comment,
                       "options": {
                           "indented": "indented-1",
@@ -289,7 +290,7 @@ class Question(object):
     @staticmethod
     def nested(segment):
         # check if nested. if so, return the data to Source to create new segments from the nested parts.
-        assert len(Section.get_tags(segment)) == 1
+        # assert len(Section.get_tags(segment)) == 1
         imp_contents = Section.get_tags(segment)[0]
 
         q = [tag for tag in imp_contents.contents if isinstance(tag, element.Tag) and not tag.attrs] #todo: can we make this line more reliable, write tests for this line
