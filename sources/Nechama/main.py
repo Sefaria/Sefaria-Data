@@ -104,7 +104,9 @@ class Sheet(object):
                             pass
                     parser.mode = temp
                     if not success2 and orig_ref:
-                        segment.ref = orig_ref# todo: !! find where to return the lost data about the comentators name info from, maybe about_source_ref?
+                        # segment.about_source_ref += orig_ref
+                        # segment.ref = orig_ref # todo: !! find where to return the lost data about the commentators name info from, maybe about_source_ref?
+                        pass
             seg_sheet_source = segment.create_source()
             sheets_sources.extend(seg_sheet_source if isinstance(seg_sheet_source, list) else [seg_sheet_source])
             print u"done with seg {}".format(isegment)
@@ -442,6 +444,10 @@ class Section(object):
             real_title = self.get_term(a_tag.text)
         elif relevant_text in parser.term_mapping:
             real_title = parser.term_mapping[relevant_text]
+        elif [term for term in parser.term_mapping.keys() if re.search(term, relevant_text)]: #try again to use the mapping
+            in_mapping = [term for term in parser.term_mapping.keys() if re.search(term, relevant_text)]
+            found_in_mapping = in_mapping[0] if in_mapping else None
+            real_title = parser.term_mapping[found_in_mapping]
         if not real_title and self.RT_Rashi:  # every ref in RT_Rashi is really to Rashi
             real_title = "Rashi on {}".format(parser.en_sefer)
         return (real_title, a_tag, a_tag_is_entire_comment)
@@ -516,10 +522,11 @@ class Section(object):
         if next_segment_class == "parshan":
             try:
                 parshan = parser.parshan_id_table[next_segment_class_id]
+                assert parshan
                 current_source = Source(next_segment_class,
                                         u"{} on {} {}:{}".format(parshan, parser.en_sefer, new_perek, new_pasuk))
                 current_source.parshan_name = parshan
-            except KeyError:
+            except (KeyError, AssertionError):
                 # print "PARSHAN not in table", next_segment_class_id, relevant_text
                 if real_title:  # a ref to a commentator that we have in our system
                     if new_pasuk:
@@ -812,9 +819,9 @@ class Section(object):
 
 
 class Nechama_Parser:
-    def __init__(self, en_sefer, en_parasha, mode, add_to_title, catch_errors=False):
-        if not os.path.isdir("reports/" + parsha):
-            os.mkdir("reports/" + parsha)
+    def __init__(self, en_sefer, en_parasha, mode, add_to_title='', catch_errors=False):
+        if not os.path.isdir("reports/" + en_parasha): # todo: note! this said parsha instead of en_parasha
+            os.mkdir("reports/" + en_parasha)
 
         #matches, non_matches, index_not_found, and ref_not_found are all dict with keys being file path and values being list
         #of refs/indexes
@@ -875,41 +882,46 @@ class Nechama_Parser:
             u"""המלבי"ם""": u"Malbim on {}".format(self.en_sefer),
             u"משך חכמה": u"Meshech Hochma, {}".format(self.en_parasha),
             u"רבנו בחיי": u"Rabbeinu Bahya, {}".format(self.en_sefer),
-            u"מכילתא": u"Mekhilta d'Rabbi Yishmael"
+            u"מכילתא": u"Mekhilta d'Rabbi Yishmael",
+            u"פרקי דר' אליעזר": u"Pirkei DeRabbi Eliezer" # todo: how to broaden this so it is on פרקי דרבי אליעזר also?
             # u'רב סעדיה גאון': u"Saadia Gaon on {}".format(self.en_sefer) # todo: there is no Saadia Gaon on Genesis how does this term mapping work?
         }
         self.levenshtein = WeightedLevenshtein()
         self.missing_index = set()
         self.parshan_id_table = {
-            # '3':u'אבן כספי',
+            '3': None,  #u'אבן כספי',
             '4': u"Ibn Ezra on {}".format(self.en_sefer),  # u'''ראב"ע''',
             '6': u"Abarbanel on Torah, {}".format(self.en_sefer),  # Abarbanel_on_Torah,_Genesis
-            # '23': u"רבי אליעזר אשכנזי",
+            '23': None,  #u"רבי אליעזר אשכנזי",
             '28': u"Rabbeinu Bahya, {}".format(self.en_sefer),  # u'''רבנו בחיי''',
             '29': u"Bekhor Shor, {}".format(self.en_sefer),  # u"בכור שור",
             '32': u"Ralbag on {}".format(self.en_sefer),
-            # '33': u'''ר' אברהם בן הרמב"ם''',
+            '33': None,  # u'''ר' אברהם בן הרמב"ם''',
             '37': u"Malbim on {}".format(self.en_sefer),  # u'''מלבי"ם''',
             '39': u'Ramban on {}'.format(self.en_sefer),  # u'''רמב"ן''',
             '41': u'Or HaChaim on {}'.format(self.en_sefer),  # Or_HaChaim_on_Genesis
-            # '43': u'''בעל ספר הזיכרון''',
+            '43': None,  # u'''בעל ספר הזיכרון''',
             '46': u"Haamek Davar on {}".format(self.en_sefer),
-            # '51': u"ביאור - ר' שלמה דובנא"
-            # '64': u'רש"ר הירש'
+            '51': None,  # u"ביאור - ר' שלמה דובנא"
+            '64': None,  # u'רש"ר הירש'
             '66': u"Meshech Hochma, {}".format(self.en_parasha),
-            # '88' : u'אברהם כהנא (פירוש מדעי)'
+            '78': u"Chizkuni, {}".format(self.en_sefer),  # u'החזקוני'
+            '88': None,  # u'אברהם כהנא (פירוש מדעי)'
             '91': u"Gur Aryeh on ".format(self.en_sefer),  # u"גור אריה",
             '94': u"Shadal on {}".format(self.en_sefer),  # u'''שד"ל''',
             '101': u'Mizrachi, {}'.format(self.en_sefer),
-            # '104':u'''רמבמ"ן''',
-            # '107': u'רס"ג'
+            '104': None,  # u'''רמבמ"ן''',
+            '107': None,  # u'רס"ג'
             '111': u"Akeidat Yitzchak",  # u'''עקדת יצחק''',
-            # '118':u'קסוטו',
+            '118': None,  # u'קסוטו',
             '127': u"Radak on {}".format(self.en_sefer),  # u'''רד"ק''',
-            # '152':u'בנו יעקב',
+            '152': None,  # u'בנו יעקב',
+            '161': None,  # הרמב"ם דוגמא 4 ב
             '162': u"Rashi on {}".format(self.en_sefer),
-            '183'
-            # '196':u'''בעל הלבוש אורה''',
+            '175': None,  # u"כור הזהב",
+            '177': u'', #השגות הראב"ד
+            # '183':
+            '196': None,  # u'''בעל הלבוש אורה''',
             '198': u"HaKtav VeHaKabalah, {}".format(self.en_sefer),  # u'''הכתב והקבלה''',
             '238': u"Onkelos {}".format(self.en_sefer),  # u"אונקלוס",
         # u'''רלב"ג''', #todo, figure out how to do Beur HaMilot and reguler, maybe needs to be a re.search in the changed_ref method
@@ -989,6 +1001,7 @@ class Nechama_Parser:
         s = re.sub(ur"[,'\":?.!;־״׳-]", u" ", s)
         s = re.sub(u'((?:^|\s)[\u05d0-\u05ea])\s+([\u05d0-\u05ea])', ur"\1\2", s)
         # s = re.sub(ur"-", u"", s)
+        s = re.sub(u''' ד"ה''', u" ", s)
         if not re.search(u'^\([^()]*(?:\)\s*)$', s):
             s = re.sub(ur"\([^)]+\)", u" ", s)
         # s = re.sub(ur"\([^)]+\)", u" ", s)
@@ -1075,11 +1088,14 @@ class Nechama_Parser:
                             try:
                                 parshan = parser.parshan_id_table[current_source.parshan_id]
                                 # chenged_ref = Ref(u'{} {}'.format(parshan, u'{}:{}'.format(ref2check.sections[0], ref2check.sections[1]) if len(ref2check.sections)>1 else u'{}'.format(ref2check[0])))
+                                assert parshan
                                 changed_ref = self.change_ref_to_commentary(ref2check, parshan)
                                 if changed_ref !=ref2check:
                                     matched = self.check_reduce_sources(text_to_use, changed_ref)
                             except KeyError:
                                 print u"parshan_id_table is missing a key and value for {}, in {}, \n text {}".format(current_source.parshan_id, self.current_file_path, current_source.text)
+                            except AssertionError:
+                                pass
                     # look one level up
                     if not matched:  # and parshan is a running parshan, still not matched! מלבים. אברבנל.העמק דבר רלבג
                         matched = self.check_reduce_sources(text_to_use, changed_ref.top_section_ref())
@@ -1299,13 +1315,13 @@ if __name__ == "__main__":
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
     posting = True
-    individual = 1305
+    individual = 102
     cnt = 0
     for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "accurate", "pm level up", catch_errors=catch_errors)
+            parser = Nechama_Parser(book, parsha, "accurate", "orig_ref bug?", catch_errors=catch_errors)
             parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
@@ -1315,16 +1331,16 @@ if __name__ == "__main__":
             # sheets = sheets[sheets.index("163.html")::]
 
             if individual:
-                sheets = parser.bs4_reader(["html_all/{}.html".format(individual)], post=posting)
+                got_sheet = parser.bs4_reader(["html_all/{}.html".format(individual)] if "{}.html".format(individual) in os.listdir("html_sheets/{}".format(parsha)) else [], post=posting)
             else:
                 sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets if sheet in os.listdir("html_sheets/{}".format(parsha)) and sheet != "163.html"], post=posting)
             if catch_errors:
                 parser.record_report()
             cnt+=1
             print cnt
-            if individual:
+            if individual and got_sheet:
               break
-        if individual:
+        if individual and got_sheet:
             break
     print 'Done'
 
