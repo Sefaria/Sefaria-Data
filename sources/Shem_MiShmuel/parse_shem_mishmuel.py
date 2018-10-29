@@ -8,7 +8,11 @@ django.setup()
 from sefaria.model import *
 from functools import partial
 from bs4 import BeautifulSoup
+from multiprocessing import Pool
+from collections import OrderedDict
 from data_utilities.util import PlaceHolder
+from data_utilities.dibur_hamatchil_matcher import match_ref
+from sources.functions import post_text, post_index, post_link
 
 
 """
@@ -49,10 +53,12 @@ def get_node_names():
     leaf_tags = root_tag.find_all('outline')
     title_reg = re.compile(ur"^(?P<he>[\u05d0-\u05ea\s]+) / (?P<en>[a-z A-Z']+)$")
     for leaf in leaf_tags:
-        if not Term().load({'name': title_reg.search(leaf['text']).group('en')}):
+        # if not Term().load({'name': title_reg.search(leaf['text']).group('en')}):
+        if not Term().load_by_title(title_reg.search(leaf['text']).group('he')):
             print unicode(leaf)
 
-    return [title_reg.search(leaf['text']).group('he') for leaf in leaf_tags]
+    return OrderedDict(((title_reg.search(leaf['text']).group('he'), title_reg.search(leaf['text']).group('en'))
+                        for leaf in leaf_tags))
 
 
 def find_parshas_in_files():
@@ -94,7 +100,7 @@ def check_mark_balance(filename):
 
 
 def check_parashot():
-    my_titles = set(get_node_names())
+    my_titles = set(get_node_names().keys())
     # for t in my_titles:
     #     print t
 
@@ -219,6 +225,107 @@ def parse_file(filename):
     return nodes
 
 
+def generate_schema():
+    node_names = get_node_names()
+    root_node = SchemaNode()
+    root_node.add_primary_titles(u"Shem MiShmuel", u"שם משמואל")
+
+    for name in node_names:
+        node = JaggedArrayNode()
+
+        shared_title = Term().load_by_title(name)
+        if shared_title:
+            en_title = shared_title.get_primary_title('en')
+            node.add_shared_term(en_title)
+            node.key = en_title
+        else:
+            node.add_primary_titles(node_names[name], name)
+
+        if name == u'הקדמה':
+            node.add_structure([u"Paragraph"])
+        else:
+            node.add_structure([u"Chapter", u"Paragraph"])
+        node.validate()
+        root_node.append(node)
+    root_node.validate()
+    return root_node
+
+
+def upload_text(text_mapping, node_mapping, node_name, server='http://localhost:8000', remove_links=False):
+    def cleaner(ja):
+        assert isinstance(ja, list)
+        for i, item in enumerate(ja):
+            if isinstance(item, list):
+                cleaner(item)
+            elif isinstance(item, basestring):
+                ja[i] = re.sub(u'link', u'b', ja[i])
+            else:
+                raise TypeError
+    version = {
+        u"versionTitle": u"Sefer Shem Mishmuel, Piotrkow, 1927-1934",
+        u"versionSource": u"http://aleph.nli.org.il/F/?func=direct&doc_number=001875809&local_base=NNL01",
+        u"language": u"he",
+        u"text": text_mapping[node_name]
+    }
+    if node_name == u'הקדמה':
+        version[u'text'] = version[u'text'][0]
+
+    if remove_links:
+        cleaner(version[u'text'])
+    post_text(u"Shem MiShmuel, {}".format(node_mapping[node_name]), version, server=server, weak_network=True)
+
+
+def link_shem():
+    """
+    For this method to work, the text needs to be uploaded to the local database, with escaped <link> tags wrapping
+    text that needs to be linked.
+    :return:
+    """
+    def match_template(base_text, base_tokenizer, comments, **kwargs):
+        return match_ref(base_text, comments, base_tokenizer, **kwargs)
+
+    def tokenizer(t):
+        return re.split(u'[^\u05d0-\u05ea]+', t)
+
+    def extract(t):
+        t = re.match(u'^&lt;link&gt;([^&]+)&lt;/link&gt;', t).group(1)
+        t = re.split(u" \u05d5\u05d2\u05d5'? ", t)[0]
+        t = re.sub(u"\s[\u05d3\u05d4]'\s", u" \u05d9\u05d4\u05d5\u05d4 ", t)
+        return t
+
+    possible_link_list = []
+    database_index = library.get_index(u'Shem MiShmuel')
+    for node in database_index.nodes.children:
+        if not hasattr(node, 'sharedTitle'):
+            continue
+        node_term = Term().load_by_title(node.sharedTitle)
+        if not hasattr(node_term, 'ref'):
+            continue
+
+        parsha_tc = Ref(node_term.ref).text(lang='he', vtitle=u'Tanach with Text Only')
+        matcher = partial(match_template, parsha_tc, tokenizer, dh_extract_method=extract)
+        print node.ref().normal()
+
+        for segment in node.ref().all_segment_refs():
+            comment_tc = segment.text(lang=u'he', vtitle=u'Sefer Shem Mishmuel, Piotrkow, 1927-1934')
+            if re.match(u'^&lt;link&gt;([^&]+)&lt;/link&gt;', comment_tc.text):
+                possible_link = matcher(comment_tc)
+                possible_link['comment_refs'] = [r.normal() for r in possible_link['comment_refs']]
+                possible_link['matches'] = [r.normal() if r else u"None" for r in possible_link['matches']]
+                possible_link_list.append(possible_link)
+    return possible_link_list
+
+
+# import json
+# with codecs.open('test.json', 'w', 'utf-8') as fp:
+#     json.dump(my_links, fp)
+destination = 'http://shem.sandbox.sefaria.org'
+shem_index = {
+    u'title': u'Shem MiShmuel',
+    u'categories': [u'Chasidut'],
+    u'schema': generate_schema().serialize()
+}
+
 my_text = {}
 for f in os.listdir(u'.'):
     if re.search(u'\.txt$', f):
@@ -226,14 +333,25 @@ for f in os.listdir(u'.'):
         if any([k in my_text for k in file_text.keys()]):
             raise AssertionError(u"Duplicate")
         my_text.update(file_text)
+#
+post_index(shem_index, server=destination)
+my_node_names = get_node_names()
+uploader = partial(upload_text, my_text, my_node_names, server='http://localhost:8000', remove_links=False)
+for k in my_node_names.keys():
+    uploader(k)
+my_links = link_shem()
+actual_links = [
+    {
+        'refs': [m['matches'][0], m['comment_refs'][0]],
+        'type': 'allusion',
+        'auto': True,
+        'generated_by': 'Shem MiShmuel Parser'
+    }
+    for m in my_links if m['matches'][0] is not None]
+uploader = partial(upload_text, my_text, my_node_names, server=destination, remove_links=True)
 
-for k in my_text.keys():
-    print k
+pool = Pool(5)
+pool.map(uploader, my_node_names.keys())
+post_link(actual_links, server=destination)
 
-workflowy_names = {j: i for i, j in enumerate(get_node_names())}
-print all([k in workflowy_names for k in my_text.keys()])
-my_text = [{key: value} for key, value in my_text.iteritems()]
-import json
-with codecs.open('test.json', 'w', 'utf-8') as fp:
-    json.dump(sorted(my_text, key=lambda x: workflowy_names[x.keys()[0]])[:5], fp)
 
