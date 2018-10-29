@@ -9,13 +9,13 @@ from word2number import w2n
 import os
 import re
 from collections import Counter
-from sources.functions import post_index, post_text, convertDictToArray, add_category
+from sources.functions import post_index, post_text, convertDictToArray, add_category, get_index_api
 from bs4 import BeautifulSoup
 import textract
 import traceback
 import sys
 
-SERVER = "http://ste.sefaria.org"
+SERVER = "http://ste.sandbox.sefaria.org"
 needs_checking = []
 # def download_sheets(self):
 #     indexes = library.get_indexes_in_category("Mishnah")
@@ -135,10 +135,27 @@ def get_lines_from_web(name, download_mode=True):
 
 
 
-
+def get_section_num(mishnah_num):
+    try:
+        if type(mishnah_num) is unicode:
+            mishnah_num = mishnah_num.encode('utf-8')
+        if mishnah_num[0].isdigit() and not mishnah_num[-1].isdigit():  #3a
+            mishnah_num = mishnah_num[0:-1]
+        if len(mishnah_num) > 2:
+            section_num = w2n.word_to_num(mishnah_num)
+        elif mishnah_num.isdigit():
+            section_num = int(mishnah_num)
+        elif len(mishnah_num) == 1:  # just a letter
+            section_num = ord(mishnah_num) - 64
+    except ValueError:
+        print file_path
+        assert type(mishnah_num) is int, "Problem with {}".format(mishnah_num)
+        section_num = mishnah_num
+    return section_num
 
 def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
     def get_first_sentence(line):
+        line = line.replace(". . .", " ")
         line = line.strip()
         end = line.find(". ")
         if end != -1:
@@ -147,43 +164,43 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
 
 
     def deal_with_sections(line, text, len_mishnah):
-        section = re.search("^Section (\d+|[a-zA-Z]+)\S?\s", line)
+        line = line.replace(unichr(8212), u": ")
+        section = re.search(u"^(In sections?|Sections?) (\S+)\s", line)
         if not section:
             if len(text) > 0:
-                text[-1] += " " + line
+                text[-1] += u" " + line
             else:
                 text.append(line)
             return 0
 
-        section_num_as_word = section.group(1).strip()
+        section_num_as_word = section.group(2).strip().replace(u",", u"")
 
         # if there is a colon at the end, we want to replace the words "Section one: ", but if it's part of the sentence like "Section one is ...", then we want to keep it
-        if section.group(0).endswith(": ") or section.group(0).endswith("- "):
+        if section.group(0).endswith(u": ") or section.group(0).endswith(u"- "):
             line = line.replace(section.group(0), "").strip()
+            section_num_as_word = section_num_as_word[0:-1]
 
-        if section_num_as_word.find("-") in [1, 2]: #either 10-14 or 2-7 will be matched, this is a range
-            section_num_as_word = section_num_as_word.split("-")[0]
 
-        try:
-            if type(section_num_as_word) is unicode:
-                section_num_as_word = section_num_as_word.encode('utf-8')
-            if len(section_num_as_word) > 1:
-                section_num = w2n.word_to_num(section_num_as_word)
-            elif section_num_as_word.isdigit():
-                section_num = int(section_num_as_word)
-            elif len(section_num_as_word) == 1: #just a letter
-                section_num = ord(section_num_as_word) - 64
-        except ValueError:
-            print file_path
-            assert type(section_num_as_word) is int, "Problem with {}".format(section_num_as_word)
-            section_num = section_num_as_word
-        if section_num - 1 < len_mishnah:
-            first_sentence = get_first_sentence(mishnah_text[section_num - 1])
-            line = "<b>{}</b>{}".format(first_sentence, line)
-            text.append(line)
+        mishnayot = []
+        if section_num_as_word.find(u"-") in [1, 2]: #either 10-14 or 2-7 will be matched, this is a range
+            start, end = section_num_as_word.split(u"-")
+            start = get_section_num(start)
+            end = get_section_num(end)
+            mishnayot = range(start, end)
         else:
-            text.append(line)
-            return -1
+            mishnayot.append(get_section_num(section_num_as_word))
+
+        for section_num in mishnayot:
+            if section_num - 1 < len_mishnah:
+                first_sentence = get_first_sentence(mishnah_text[section_num - 1])
+                line = u"<b>{}</b>{}".format(first_sentence, line)
+                text.append(line)
+            else:
+                text.append(line)
+                return -1
+
+
+
 
     currently_parsing = ""
     mishnah_text = []
@@ -202,32 +219,33 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
     section_num = 0
 
     for line_n, line in enumerate(lines):
+        line = line.decode('utf-8')
         #line = line.strip().replace(unichr(151), u"").replace(unichr(146), u"")
         if "Part" in line and len(line.split()) < 10:
-            print "{}\n{}\n\n".format(file, line)
+            print u"{}\n{}\n\n".format(file, line)
             return (commentary_text + questions_text, mishnah_text)
         if "Questions for Further Thought" in line:
             currently_parsing = "QUESTIONS"
-            questions_text.append("<b>"+line+"</b>")
+            questions_text.append(u"<b>"+line+u"</b>")
         elif len(line.split()) < 7 and ("Mishna" in line or sefer == line):
-            if "Mishnah {}".format(mishnah_as_word) != line and "Mishna" in line:
+            if u"Mishnah {}".format(mishnah_as_word) != line and "Mishna" in line:
                 word = line.split()[-1] #Mishnah Five -> Five
                 try:
                     mishnah_inside_file = w2n.word_to_num(word)
-                    complaint = "Mishnah word different than number: {} {}:{}".format(sefer, chapter, mishnah)
+                    complaint = u"Mishnah word different than number: {} {}:{}".format(sefer, chapter, mishnah)
                     #print complaint
                 except ValueError:
                     pass
             currently_parsing = "MISHNAH"
         elif "Introduction" == line:
-            commentary_text.append("<b>"+line+"</b>")
+            commentary_text.append(u"<b>"+line+"</b>")
             currently_parsing = line.upper()
         elif "Explanation" == line:
             currently_parsing = line.upper()
             mishnah_text = restructure_mishnah_text(mishnah_text)
         else:
             if currently_parsing == "INTRODUCTION":
-                commentary_text[-1] += "\n" + line
+                commentary_text[-1] += u"\n" + line
             elif currently_parsing == "EXPLANATION":
                 result = deal_with_sections(line, explanation_sections_text, len(mishnah_text))
                 if result == -1:  # there was just an error
@@ -241,8 +259,11 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
 
 
     assert commentary_text != mishnah_text != []
-    if explanation_sections_text == []:
+    if len(explanation_sections_text) == 1: #this means there was no numbering
+        explanation_sections_text[0] = u"<b>{}</b> {}".format(get_first_sentence(mishnah_text[0]), explanation_sections_text[0])
+    elif explanation_sections_text == []:
         mishnah_text = restructure_mishnah_text(mishnah_text)
+
     commentary_text += explanation_sections_text
     questions_text += questions_sections_text
     commentary_text = [el for el in commentary_text if el]
@@ -254,9 +275,12 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
 def restructure_mishnah_text(old_mishnah_text):
     mishnah_text = []
     found_digit_or_char = False
+    found_digit = False
     for line in old_mishnah_text:
         digit = re.search("^\d+\)", line)
         char = re.search("^[a-zA-Z]+\)", line)
+        if digit:
+            found_digit = True
         if digit or char:
             found_digit_or_char = True
 
@@ -268,7 +292,7 @@ def restructure_mishnah_text(old_mishnah_text):
         char = re.search("^[a-zA-Z]+\)", line)
         if digit:
             mishnah_text.append(line.replace(digit.group(0), "").strip())
-        elif char:
+        elif char and not found_digit:
             mishnah_text.append(line.replace(char.group(0), "").strip())
         elif len(mishnah_text) > 0:
             mishnah_text[-1] += " " + line.strip()
@@ -322,6 +346,7 @@ def check_all_mishnayot_present_and_post(text, sefer, file_path, post=False):
         }
         try:
             if post:
+                print SERVER
                 post_text(path, send_text, server=SERVER)
         except UnicodeDecodeError:
             for ch_num, chapter in enumerate(text):
@@ -406,17 +431,24 @@ def parse_intro(lines):
 
 
 if __name__ == "__main__":
-
     HOW_MANY_REFER_TO_SECTIONS = 0
     parsed_text = {}
     download_mode = True
     dont_start = True
     categories = [category for category in os.listdir("./orig_contents") if category != ".DS_Store"]
+    start_at = "Zeraim"
+    dont_start = True
     for category in categories:
         print "CATEGORY:"
+        if category == start_at:
+            dont_start = False
+        if dont_start and category != start_at:
+            continue
+
         print category
         sefarim = os.listdir("./orig_contents/{}".format(category))
         for sefer in sefarim:
+            print sefer
             current_path = "./orig_contents/{}/{}".format(category, sefer)
             if not os.path.isdir(current_path):
                 continue
@@ -450,6 +482,7 @@ if __name__ == "__main__":
 
             # most_common_value = found_ref.most_common(1)[0]
             # assert most_common_value[1] == 1, "{} has {}".format(most_common_value[0], most_common_value[1])
-            create_index(parsed_text[sefer], sefer, post=True)
-            check_all_mishnayot_present_and_post(parsed_text[sefer], sefer, current_path, post=True)
+            post = True
+            create_index(parsed_text[sefer], sefer, post=post)
+            check_all_mishnayot_present_and_post(parsed_text[sefer], sefer, current_path, post=post)
     print needs_checking

@@ -14,6 +14,7 @@ from sefaria.system.exceptions import InputError
 from collections import OrderedDict
 from bs4 import BeautifulSoup, element
 from time import sleep
+import bleach
 import shutil
 from sources.functions import *
 import unicodedata
@@ -22,6 +23,7 @@ from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
 from data_utilities.util import WeightedLevenshtein
 import datetime
 import traceback
+
 
 class Sheet(object):
 
@@ -46,6 +48,7 @@ class Sheet(object):
         self.div_sections = [] # BeautifulSoup objects that will eventually become converted into Section objects stored in self.sections
         self.sections = []
         self.sources = []
+        self.links_to_other_sheets = False
 
 
     # def flip_ref_parasha_to_haftarah(self, ref, haftarah):
@@ -60,9 +63,11 @@ class Sheet(object):
     #     return ref
 
 
+
     def create_sheetsources_from_objsource(self):
         # first source in the sheet is the sheet remark
         if self.sheet_remark:
+            parser.word_count += len(self.sheet_remark)
             self.sources.append({"outsideText": self.sheet_remark,
              "options": {
                  "indented": "indented-1",
@@ -73,11 +78,6 @@ class Sheet(object):
              })
         for isection, section in enumerate(self.sections):
             self.sources.extend(self.create_sheetsources_from_sections(section.segment_objects)) #vs section and than getting the section.segment_objects latter in create_sheetsources_from_sections function
-            # for isegment, segment in enumerate(section.segment_objects):
-            #     if isinstance(segment, Source): # or isinstance(segment, Nested):
-            #         parser.try_parallel_matcher(segment)
-            #     seg_sheet_source = segment.create_source()
-                # self.sources.extend(seg_sheet_source if isinstance(seg_sheet_source, list) else [seg_sheet_source]) # todo: problem with nested it doesn't it doesn't go through the PM...
 
     def create_sheetsources_from_sections(self, segment_objects):
         sheets_sources = []
@@ -108,10 +108,19 @@ class Sheet(object):
                         # segment.ref = orig_ref # todo: !! find where to return the lost data about the commentators name info from, maybe about_source_ref?
                         pass
             seg_sheet_source = segment.create_source()
+            self.add_to_word_count(seg_sheet_source)
             sheets_sources.extend(seg_sheet_source if isinstance(seg_sheet_source, list) else [seg_sheet_source])
             print u"done with seg {}".format(isegment)
         return sheets_sources
 
+
+    def add_to_word_count(self, seg):
+        if isinstance(seg, list):
+            for x in seg:
+                self.add_to_word_count(x)
+        else:
+            seg_text = seg["outsideText"] if "outsideText" in seg.keys() else seg["text"]["he"]
+            parser.word_count += len(seg_text.split(" "))
 
 
     def check_haftarot(self, segment):
@@ -126,16 +135,21 @@ class Sheet(object):
                 else:
                     segment.ref = orig_ref
 
-    def prepare_sheet(self, add_to_title=""):
+
+    def prepare_sheet(self, add_to_title="", post=False):
        sheet_json = {}
        sheet_json["status"] = "public" #"private" #
-       sheet_json["group"] ="Nechama Leibowitz' Source Sheets"#"Nechama Leibowitz' Source Sheets"
-       sheet_json["title"] = u'{} - {} {}'.format(self.title, re.search('(\d+)\.', self.html).group(1), add_to_title)
+       sheet_json["group"] = "Nechama Leibowitz' Source Sheets"#"Nechama Leibowitz' Source Sheets"
+       #sheet_json["title"] = u'{} - {} {}'.format(self.title, re.search('(\d+)\.', self.html).group(1), add_to_title)
+       sheet_json["title"] = self.title
        sheet_json["summary"] = u"{} ({})".format(self.en_year, self.year)
        sheet_json["sources"] = self.sources
        sheet_json["options"] = {"numbered": 0, "assignable": 0, "layout": "sideBySide", "boxed": 0, "language": "hebrew", "divineNames": "noSub", "collaboration": "none", "highlightMode": 0, "bsd": 0, "langLayout": "heRight"}
        sheet_json["tags"] = [unicode(self.en_parasha)]
-       post_sheet(sheet_json, server=parser.server)
+       if self.links_to_other_sheets:
+           parser.sheets_linked_to_sheets.append((sheet_json["title"], sheet_json["summary"], sheet_json["tags"]))
+       if post:
+           post_sheet(sheet_json, server=parser.server)
 
 
 
@@ -214,22 +228,6 @@ class Sheet(object):
             new_section = Section(self.current_section, self.perakim, self.pasukim, soupObj=div)
             assert str(self.current_section) in div['id']
             self.sections.append(new_section)
-            # if div.text.replace(" ", "") == "":
-            #     continue
-
-            # # removes nodes with no content
-            # soup_segments = new_section.get_children_with_content(div)
-            #
-            # # blockquote is really just its children so get replace it with them
-            # # and tables  need to be handled recursively
-            # soup_segments = new_section.check_for_blockquote_and_table(soup_segments, level=2)
-            #
-            # #create Segment objects out of the BeautifulSoup objects
-            # new_section.classify_segments(soup_segments)
-            # new_section.title = re.sub(u"<.*?>", u"", new_section.segment_objects[0].text)
-            # new_section.letter = re.search(u"(.{1,2})\.\s", new_section.title).group(1)
-            # self.sections.append(new_section)
-            # print u"appended {}".format(new_section.title)
 
         # init Segment() obj from bs_objs in each section
         for section in self.sections:
@@ -321,7 +319,7 @@ class Section(object):
         :param soup_segments:
         :return:
         """
-        nesnested_lst= []
+        nesnested_lst = []
         current_source = None
         nested_candidates = {} # OrderedDict() # this is a Dict of nested obj, and the q will be do we wan't them as nested or as originals.
         if isinstance(soup_segments, list):
@@ -823,6 +821,7 @@ class Nechama_Parser:
         if not os.path.isdir("reports/" + en_parasha): # todo: note! this said parsha instead of en_parasha
             os.mkdir("reports/" + en_parasha)
 
+        self.word_count = 0
         #matches, non_matches, index_not_found, and ref_not_found are all dict with keys being file path and values being list
         #of refs/indexes
         self.matches = {}
@@ -830,6 +829,7 @@ class Nechama_Parser:
         self.index_not_found = {}
         self.ref_not_found = {}
         self.to_match = True
+        self.sheets_linked_to_sheets = []
 
         self.add_to_title = add_to_title
         self.catch_errors = catch_errors #crash upon error if False; if True, make report of each error
@@ -1144,6 +1144,8 @@ class Nechama_Parser:
             parser.index_not_found[parser.current_file_path].append(ref2check.normal())
             return False
 
+
+
     def organize_by_parsha(self, file_list_names):
         """
         The main BeautifulSoup reader function, that etrates on all sheets and creates the obj, probably should be in it's own file
@@ -1180,17 +1182,19 @@ class Nechama_Parser:
                 print datetime.datetime.now()
                 print html_sheet
                 perek_info = content.find("p", {"id": "pasuk"}).text
+
                 top_dict = dict_from_html_attrs(content.find('div', {'id': "contentTop"}).contents)
                 # print 'len_content type ', len(top_dict.keys())
                 sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, perek_info)
+                sheet.links_to_other_sheets = bool(content.find_all("a", {"href": re.compile("^http.*?nechama.org.il/pages/")}))
                 sheets[html_sheet] = sheet
                 body_dict = dict_from_html_attrs(content.find('div', {'id': "contentBody"}))
                 sheet.div_sections.extend([v for k, v in body_dict.items() if re.search(u'ContentSection_\d', k)]) # check that these come in in the right order
-                sheet.sheet_remark = body_dict['sheetRemark'].text
+                sheet.sheet_remark = str(body_dict['sheetRemark'])
+                sheet.sheet_remark = bleach.clean(sheet.sheet_remark, tags=["a"], strip=True)
                 sheet.parse_as_text()
                 sheet.create_sheetsources_from_objsource()
-                if post:
-                    sheet.prepare_sheet(self.add_to_title)
+                sheet.prepare_sheet(self.add_to_title, post=post)
             except Exception, e:
                 if parser.catch_errors:
                     self.error_report.write(html_sheet+": ")
@@ -1254,10 +1258,9 @@ class Nechama_Parser:
 
 
     def prepare_term_mapping(self):
-        #growing collection of commands to run so that term_mapping can solely use en_sefer name instead of being hardcoded with things like "Bereshit" and "Bereishit"
         i = library.get_index("Midrash Tanchuma")
         node = i.nodes.children[2]
-        node.add_title("Midrash Tanchuma, Genesis", 'en')
+        node.add_title("Genesis", 'en')
         i.save()
         i = library.get_index("Gur Aryeh on Bereishit")
         i.nodes.add_title("Gur Aryeh on Genesis", 'en')
@@ -1343,5 +1346,9 @@ if __name__ == "__main__":
         if individual and got_sheet:
             break
     print 'Done'
+    # print word_count
+    # with open("sheets_linked_to_sheets.csv", 'w') as f:
+    #     writer = UnicodeWriter(f)
+    #     writer.writerows(sheets_linked_to_sheets)
 
 

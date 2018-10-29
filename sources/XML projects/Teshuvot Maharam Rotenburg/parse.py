@@ -53,9 +53,9 @@ if __name__ == "__main__":
     file_name = "RMeirOfRotenberg.xml"
 
     #open csv files containing english to hebrew mapping
-    # lemberg = make_map("lemberg.csv")
-    # cremona = make_map("cremona.csv")
-    # prague = make_map("prague.csv")
+    lemberg = make_map("lemberg.csv")
+    cremona = make_map("cremona.csv")
+    prague = make_map("prague.csv")
 
 
     # parser = XML_to_JaggedArray(title, file_name, allowed_tags, allowed_attributes, post_info, change_name=True, image_dir="./images",
@@ -73,13 +73,13 @@ if __name__ == "__main__":
             old_ref, text = row
             current_siman = old_ref.split(".")[1]
             if not current_siman in siman_to_text.keys():
-                siman_to_text[current_siman] = []
-            siman_to_text[current_siman].append(text)
+                siman_to_text[current_siman] = ""
+            siman_to_text[current_siman] += text+"<br/>"
 
-    #titles = ["Lemberg", "Prague", "Cremona"]
-    titles = ["Berlin Edition, Part I", "Berlin Edition, Part II, Issur VeHeter","Berlin Edition, Part II", "Berlin Edition, Part III"]
-    #csv_files = ["lemberg.csv", "prague.csv", "cremona.csv"]
-    csv_files = ["parma.csv", "AM. I.csv", "AM. II.csv", "berlin.csv"]
+    titles = ["Lemberg", "Prague", "Cremona"]
+    titles += ["Berlin Edition, Part I", "Berlin Edition, Part II, Issur VeHeter","Berlin Edition, Part II", "Berlin Edition, Part III"]
+    csv_files = ["lemberg.csv", "prague.csv", "cremona.csv"]
+    csv_files += ["parma.csv", "AM. I.csv", "AM. II.csv", "berlin.csv"]
     for title, file in zip(titles, csv_files):
         with open(file) as f:
             text_dict = {title: []}
@@ -88,7 +88,7 @@ if __name__ == "__main__":
                 he = row[1]
                 en = row[2]
                 en_simanim = sorted([el.replace(" ", "") for el in en.split(",")])
-                combined_text = []
+                combined_text = ""
                 if len(en.split(",")) > 1 or len(he.split(",")) > 1:
                     if file == "berlin.csv":
                         he = he[he.find("no. ")+4:]
@@ -97,7 +97,7 @@ if __name__ == "__main__":
                     if en_siman not in siman_to_text.keys():
                         print "Problem: {0} {1} -> {2}, but {2} is not in CSV".format(title, he, en)
                         continue
-                    combined_text += siman_to_text[en_siman]
+                    combined_text = siman_to_text[en_siman]+"<br/>"
 
                 add_word = "Edition" if "Edition" not in title else ""
                 ref_on_prod = "Teshuvot Maharam, {} {} {}".format(title, add_word, he)
@@ -106,9 +106,9 @@ if __name__ == "__main__":
                     "versionTitle": "Teshuvot Maharam Rotenburg",
                     "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002393721 ",
                     "language": "en",
-                    "text": combined_text,
+                    "text": [combined_text],
                 }
-                #post_text(ref_on_prod, send_text, server="http://ste.sefaria.org")
+                post_text(ref_on_prod, send_text, server="http://proto.sefaria.org")
 
 
 

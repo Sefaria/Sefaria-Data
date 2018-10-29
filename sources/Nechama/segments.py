@@ -138,7 +138,8 @@ class Source(object):
                           "indented": "indented-1",
                           "sourceLayout": "",
                           "sourceLanguage": "hebrew",
-                          "sourceLangLayout": ""
+                          "sourceLangLayout": "",
+                          "refDisplayPosition": self.refDisplayPosition
                       }
                       }
         elif not self.ref:
@@ -149,7 +150,8 @@ class Source(object):
                           "indented": "indented-1",
                           "sourceLayout": "",
                           "sourceLanguage": "hebrew",
-                          "sourceLangLayout": ""
+                          "sourceLangLayout": "",
+                          "refDisplayPosition": self.refDisplayPosition
                         }
                       }
         else:
