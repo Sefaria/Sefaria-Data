@@ -68,8 +68,7 @@ class Source(object):
         if not gray:
             return u"{}<br/>{}".format(ref, text)
         else:
-            #really should be 153,153,153 but changed it to blue
-            return u"<span style='color:rgb(0,0,250);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(ref, text)
+            return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(ref, text)
 
     def create_source(self):
         #create source for sourcesheet out of myself

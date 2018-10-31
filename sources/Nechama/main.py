@@ -79,6 +79,10 @@ class Sheet(object):
         for isection, section in enumerate(self.sections):
             self.sources.extend(self.create_sheetsources_from_sections(section.segment_objects)) #vs section and than getting the section.segment_objects latter in create_sheetsources_from_sections function
 
+
+
+
+
     def create_sheetsources_from_sections(self, segment_objects):
         sheets_sources = []
         guess_ref = u""
@@ -108,9 +112,11 @@ class Sheet(object):
                         # segment.ref = orig_ref # todo: !! find where to return the lost data about the commentators name info from, maybe about_source_ref?
                         pass
             seg_sheet_source = segment.create_source()
+            text = seg_sheet_source["text"]["he"] if "text" in seg_sheet_source.keys() else seg_sheet_source["outsideText"]
+            return bleach.clean(text, tags=["a"])
             self.add_to_word_count(seg_sheet_source)
             sheets_sources.extend(seg_sheet_source if isinstance(seg_sheet_source, list) else [seg_sheet_source])
-            print u"done with seg {}".format(isegment)
+            # print u"done with seg {}".format(isegment)
         return sheets_sources
 
 
@@ -145,7 +151,10 @@ class Sheet(object):
        sheet_json["summary"] = u"{} ({})".format(self.en_year, self.year)
        sheet_json["sources"] = self.sources
        sheet_json["options"] = {"numbered": 0, "assignable": 0, "layout": "sideBySide", "boxed": 0, "language": "hebrew", "divineNames": "noSub", "collaboration": "none", "highlightMode": 0, "bsd": 0, "langLayout": "heRight"}
-       sheet_json["tags"] = [unicode(self.en_parasha)]
+       if "-" in self.en_parasha:
+           sheet_json["tags"] = [unicode(self.en_parasha.split("-")[0]), unicode(self.en_parasha.split("-")[-1])]
+       else:
+           sheet_json["tags"] = [unicode(self.en_parasha)]
        if self.links_to_other_sheets:
            parser.sheets_linked_to_sheets.append((sheet_json["title"], sheet_json["summary"], sheet_json["tags"]))
        if post:
@@ -673,8 +682,16 @@ class Section(object):
 
     def relevant_text(self, segment):
         if isinstance(segment, element.Tag):
+            # html_tags_and_replacements = [("u", "$!u$", "$/!u$"), ("b", "$!b$", "$/!b$")]
+            # for each_tuple in html_tags_and_replacements:
+            #     tag, new_start, new_end = each_tuple
+            #     for BS_tag in segment.find_all(tag):
+            #         new_fake_tag = new_start + segment.text + new_end
+            #         BS_tag.replace_with(new_fake_tag)
             return segment.text
-        return segment
+        else:
+            return segment
+
 
     def rt_rashi_out(self, segment):
         classes = parser.important_classes[:] #todo: probbaly should be a list of classes of our Obj somewhere
@@ -782,8 +799,6 @@ class Section(object):
 
         # we need to specifically keep these tags because the "text" property will remove them so we "hide" them with nosense characters
         tags_to_keep = ["u", "b"]
-        comment = comment.replace("<u>", "$!u$").replace("</u>", "$/!u$")
-        comment = comment.replace("<b>", "$!b$").replace("</b>", "$/!b$")
         text = BeautifulSoup(comment, "lxml").text
 
         text = text.strip()
@@ -1303,6 +1318,8 @@ def dict_from_html_attrs(contents):
     return d
 
 
+
+
 if __name__ == "__main__":
     # Ref(u"בראשית פרק ג פסוק ד - פרק ה פסוק י")
     # Ref(u"u'דברים פרק ט, ז-כט - פרק י, א-י'")
@@ -1318,29 +1335,29 @@ if __name__ == "__main__":
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
     posting = True
-    individual = 102
+    individual = None
     cnt = 0
     for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
         print "NEW BOOK"
-        for parsha in which_parshiot[1]:
-            book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "accurate", "orig_ref bug?", catch_errors=catch_errors)
-            parser.prepare_term_mapping()  # must be run once locally and on sandbox
+        for parsha in ["Bereshit"]:
+            book = "Genesis"
+            parser = Nechama_Parser(book, parsha, "fast", "lima ben", catch_errors=catch_errors)
+            #parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
-            sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
+            sheets = ["html_sheets/{}/{}".format(parsha, sheet) for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
             # anything_before = "7.html"
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
             # sheets = sheets[sheets.index("163.html")::]
+            sheets = ["html_sheets/Bereshit/1.html"]
 
             if individual:
                 got_sheet = parser.bs4_reader(["html_all/{}.html".format(individual)] if "{}.html".format(individual) in os.listdir("html_sheets/{}".format(parsha)) else [], post=posting)
             else:
-                sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets if sheet in os.listdir("html_sheets/{}".format(parsha)) and sheet != "163.html"], post=posting)
+                sheets = parser.bs4_reader(sheets, post=posting)
             if catch_errors:
                 parser.record_report()
             cnt+=1
-            print cnt
             if individual and got_sheet:
               break
         if individual and got_sheet:
