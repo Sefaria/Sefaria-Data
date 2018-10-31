@@ -145,9 +145,8 @@ class Sheet(object):
     def prepare_sheet(self, add_to_title="", post=False):
        sheet_json = {}
        sheet_json["status"] = "public" #"private" #
-       sheet_json["group"] = "Nechama Leibowitz' Source Sheets"#"Nechama Leibowitz' Source Sheets"
-       #sheet_json["title"] = u'{} - {} {}'.format(self.title, re.search('(\d+)\.', self.html).group(1), add_to_title)
-       sheet_json["title"] = self.title
+       sheet_json["group"] ="Nechama Leibowitz' Source Sheets"#"Nechama Leibowitz' Source Sheets"
+       sheet_json["title"] = u'{} - {} {}'.format(self.title, re.search('(\d+)\.', self.html).group(1), add_to_title)
        sheet_json["summary"] = u"{} ({})".format(self.en_year, self.year)
        sheet_json["sources"] = self.sources
        sheet_json["options"] = {"numbered": 0, "assignable": 0, "layout": "sideBySide", "boxed": 0, "language": "hebrew", "divineNames": "noSub", "collaboration": "none", "highlightMode": 0, "bsd": 0, "langLayout": "heRight"}
@@ -446,7 +445,10 @@ class Section(object):
 
         # if a_tag and segment.find("u") and a_tag.text != segment.find("u").text: #case where
         a_tag_is_entire_comment = False
-        if a_tag:
+        if a_tag and a_tag.attrs and 'href' in a_tag.attrs and re.match('javascript:mypopup\((\d*)\)', a_tag["href"]):
+            parshan_id = re.match('javascript:mypopup\((\d*)\)', a_tag["href"]).group(1)
+            real_title = parser.parshan_id_table[parshan_id]
+        elif a_tag:
             a_tag_is_entire_comment = len(a_tag.text.split()) == len(segment.text.split())
             real_title = self.get_term(a_tag.text)
         elif relevant_text in parser.term_mapping:
@@ -898,7 +900,8 @@ class Nechama_Parser:
             u"משך חכמה": u"Meshech Hochma, {}".format(self.en_parasha),
             u"רבנו בחיי": u"Rabbeinu Bahya, {}".format(self.en_sefer),
             u"מכילתא": u"Mekhilta d'Rabbi Yishmael",
-            u"פרקי דר' אליעזר": u"Pirkei DeRabbi Eliezer" # todo: how to broaden this so it is on פרקי דרבי אליעזר also?
+            u"פרקי דר' אליעזר": u"Pirkei DeRabbi Eliezer", # todo: how to broaden this so it is on פרקי דרבי אליעזר also?
+            u"בראשית רבה": u"Bereishit Rabbah", # but maybe this is supposed to be caught via ref catching?
             # u'רב סעדיה גאון': u"Saadia Gaon on {}".format(self.en_sefer) # todo: there is no Saadia Gaon on Genesis how does this term mapping work?
         }
         self.levenshtein = WeightedLevenshtein()
@@ -908,6 +911,7 @@ class Nechama_Parser:
             '4': u"Ibn Ezra on {}".format(self.en_sefer),  # u'''ראב"ע''',
             '6': u"Abarbanel on Torah, {}".format(self.en_sefer),  # Abarbanel_on_Torah,_Genesis
             '23': None,  #u"רבי אליעזר אשכנזי",
+            '27': None, #u"בובר"
             '28': u"Rabbeinu Bahya, {}".format(self.en_sefer),  # u'''רבנו בחיי''',
             '29': u"Bekhor Shor, {}".format(self.en_sefer),  # u"בכור שור",
             '32': u"Ralbag on {}".format(self.en_sefer),
@@ -931,10 +935,11 @@ class Nechama_Parser:
             '118': None,  # u'קסוטו',
             '127': u"Radak on {}".format(self.en_sefer),  # u'''רד"ק''',
             '152': None,  # u'בנו יעקב',
+            '158': None,  # רוזנצוויג
             '161': None,  # הרמב"ם דוגמא 4 ב
             '162': u"Rashi on {}".format(self.en_sefer),
             '175': None,  # u"כור הזהב",
-            '177': u'', #השגות הראב"ד
+            '177': u'',  #השגות הראב"ד
             # '183':
             '196': None,  # u'''בעל הלבוש אורה''',
             '198': u"HaKtav VeHaKabalah, {}".format(self.en_sefer),  # u'''הכתב והקבלה''',
@@ -1205,8 +1210,9 @@ class Nechama_Parser:
                 sheets[html_sheet] = sheet
                 body_dict = dict_from_html_attrs(content.find('div', {'id': "contentBody"}))
                 sheet.div_sections.extend([v for k, v in body_dict.items() if re.search(u'ContentSection_\d', k)]) # check that these come in in the right order
-                sheet.sheet_remark = str(body_dict['sheetRemark'])
-                sheet.sheet_remark = bleach.clean(sheet.sheet_remark, tags=["a"], strip=True)
+                sheet.sheet_remark = body_dict['sheetRemark'].text
+                # sheet.sheet_remark = str(body_dict['sheetRemark'])
+                # sheet.sheet_remark = bleach.clean(sheet.sheet_remark, tags=["a"], strip=True)
                 sheet.parse_as_text()
                 sheet.create_sheetsources_from_objsource()
                 sheet.prepare_sheet(self.add_to_title, post=post)
@@ -1263,6 +1269,9 @@ class Nechama_Parser:
                 parasha_matches += sheet_matches
                 parasha_total += sheet_total
                 parasha_non_matches += sheet_non_matches
+
+        if not parasha_total:
+            parasha_total = 0.01
 
         percent = 100.0*float(parasha_matches)/parasha_total
         new_file.write("\n\n\nParasha Total: {}".format(parasha_total))
@@ -1333,31 +1342,31 @@ if __name__ == "__main__":
                         "Balak", "Pinchas", "Matot", "Masei"])
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
-    catch_errors = False
+    catch_errors = True
     posting = True
-    individual = None
+    individual = 1229
     cnt = 0
     for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
         print "NEW BOOK"
-        for parsha in ["Bereshit"]:
-            book = "Genesis"
-            parser = Nechama_Parser(book, parsha, "fast", "lima ben", catch_errors=catch_errors)
-            #parser.prepare_term_mapping()  # must be run once locally and on sandbox
+        for parsha in which_parshiot[1]:
+            book = which_parshiot[0]
+            parser = Nechama_Parser(book, parsha, "accurate", "try accurate", catch_errors=catch_errors)
+            parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
-            sheets = ["html_sheets/{}/{}".format(parsha, sheet) for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
+            sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
             # anything_before = "7.html"
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
             # sheets = sheets[sheets.index("163.html")::]
-            sheets = ["html_sheets/Bereshit/1.html"]
 
             if individual:
                 got_sheet = parser.bs4_reader(["html_all/{}.html".format(individual)] if "{}.html".format(individual) in os.listdir("html_sheets/{}".format(parsha)) else [], post=posting)
             else:
-                sheets = parser.bs4_reader(sheets, post=posting)
+                sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets if sheet in os.listdir("html_sheets/{}".format(parsha)) and sheet != "163.html"], post=posting)
             if catch_errors:
                 parser.record_report()
             cnt+=1
+            print cnt
             if individual and got_sheet:
               break
         if individual and got_sheet:
