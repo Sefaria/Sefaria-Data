@@ -6,6 +6,7 @@ import django
 django.setup()
 import unicodecsv
 from sefaria.model import *
+from bs4 import BeautifulSoup
 from collections import Counter, defaultdict
 from sefaria.datatype.jagged_array import JaggedArray
 
@@ -170,15 +171,36 @@ with open("Friedberg_Texts.csv") as fp:
 #     titles = {row['id']: {'en_name': row['en_name'], 'he_name': row['he_name']} for row in unicodecsv.DictReader(fp)}
 
 storage = CommentStore()
+my_refs = [storage.resolve_row(row) for row in rows]
+
+for ref, row in zip(my_refs, rows):
+    if re.search(u'<span class="Z Z S Z">', row[u'text']):
+        print ref
+        print row[u'text']
+        print u''
+
+
+all_tags, all_attrs, all_classes = set(), set(), Counter()
 for row in rows:
-    storage.resolve_row(row)
+    raw_xml = u'<root>{}</root>'.format(row[u'text'])
+    soup = BeautifulSoup(raw_xml, 'xml')
+    root = soup.root
+    for n in root.find_all(True):
+        all_tags.add(n.name)
+        all_attrs.update(n.attrs.keys())
+        all_classes[n.get(u'class', None)] += 1
 
-all_titles = sorted(storage.get_index_titles())
-for t in all_titles:
-    print t
-
-print len(all_titles)
-import json
-with codecs.open('test.json', 'w', 'utf-8') as fp:
-    json.dump(storage.get_text_array_for_index(all_titles[1]), fp)
-
+print len(all_tags)
+if len(all_tags) < 50:
+    for n in all_tags:
+        print n
+print u''
+print len(all_attrs)
+if len(all_attrs) < 50:
+    for n in all_attrs:
+        print n
+print u''
+print len(all_classes)
+if len(all_classes) < 50:
+    for n in all_classes.items():
+        print n
