@@ -109,11 +109,9 @@ class Sheet(object):
                     parser.mode = temp
                     if not success2 and orig_ref:
                         # segment.about_source_ref += orig_ref
-                        # segment.ref = orig_ref # todo: !! find where to return the lost data about the commentators name info from, maybe about_source_ref?
+                        segment.ref = orig_ref # todo: !! find where to return the lost data about the commentators name info from, maybe about_source_ref?
                         pass
             seg_sheet_source = segment.create_source()
-            text = seg_sheet_source["text"]["he"] if "text" in seg_sheet_source.keys() else seg_sheet_source["outsideText"]
-            return bleach.clean(text, tags=["a"])
             self.add_to_word_count(seg_sheet_source)
             sheets_sources.extend(seg_sheet_source if isinstance(seg_sheet_source, list) else [seg_sheet_source])
             # print u"done with seg {}".format(isegment)
@@ -482,7 +480,7 @@ class Section(object):
             current_source = Source(u"{} {}:{}".format(parser.en_sefer, new_perek, new_pasuk), "bible")
         # elif current_source.parshan_name != "bible":
         #     pass # look for mechilta? look for other books so not to get only Tanakh?
-        elif len(relevant_text.split()) < 8:  # not found yet, look it up in library.get_refs_in_string
+        elif len(relevant_text.split()) < 12:  # not found yet, look it up in library.get_refs_in_string
             found_ref_in_string = self._get_refs_in_string([relevant_text], next_segment_class,
                                                            add_if_not_found=False)
             #todo: I don't love the special casing for Mekhilta here... :(
@@ -496,10 +494,13 @@ class Section(object):
 
         # finally set about_source_ref
         if current_source.get_ref():
-            if not a_tag_is_entire_comment and found_ref_in_string == "" and len(relevant_text.split()) >= 6:
-                # edge case where you found the ref but Nechama said something else in addition to the ref
+            if not a_tag_is_entire_comment and found_ref_in_string == "": # and len(relevant_text.split()) >= 6:
+                # case where you found the ref but Nechama said something else in addition to the ref
                 # so we want to keep the text
-                current_source.about_source_ref = relevant_text
+                if len(relevant_text.strip(":").split()) <= 1: # in Ref(current_source.ref).index.all_titles('he'):
+                    print relevant_text.strip(":")
+                else:
+                    current_source.about_source_ref = relevant_text
         elif found_a_tag:
             # found no reference but did find an a_tag so this is a ref so keep the text
             # this test below helps distinguish between "Ibn Caspi" and a long comment
@@ -931,6 +932,7 @@ class Nechama_Parser:
             '101': u'Mizrachi, {}'.format(self.en_sefer),
             '104': None,  # u'''רמבמ"ן''',
             '107': None,  # u'רס"ג'
+            '109': u'Sforno on {}'.format(self.en_sefer),
             '111': u"Akeidat Yitzchak",  # u'''עקדת יצחק''',
             '118': None,  # u'קסוטו',
             '127': u"Radak on {}".format(self.en_sefer),  # u'''רד"ק''',
@@ -1135,7 +1137,7 @@ class Nechama_Parser:
                                 self.trying_pm = 0
                                 return False
 
-                    if not matched: # still not matched...
+                    if not matched:  # still not matched...
                         # print u"NO MATCH : {}".format(text_to_use)
                         self.non_matches[self.current_file_path].append(ref2check.normal())
 
@@ -1215,7 +1217,7 @@ class Nechama_Parser:
                 # sheet.sheet_remark = bleach.clean(sheet.sheet_remark, tags=["a"], strip=True)
                 sheet.parse_as_text()
                 sheet.create_sheetsources_from_objsource()
-                sheet.prepare_sheet(self.add_to_title, post=post)
+                sheet.prepare_sheet(add_to_title, post=post)
             except Exception, e:
                 if parser.catch_errors:
                     self.error_report.write(html_sheet+": ")
@@ -1342,15 +1344,15 @@ if __name__ == "__main__":
                         "Balak", "Pinchas", "Matot", "Masei"])
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
-    catch_errors = True
+    catch_errors = False
     posting = True
-    individual = 1229
+    individual = False
     cnt = 0
-    for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
+    for which_parshiot in [leviticus_parshiot]: #[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "accurate", "try accurate", catch_errors=catch_errors)
+            parser = Nechama_Parser(book, parsha, "fast", "Leviticus - runing ", catch_errors=catch_errors)
             parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]

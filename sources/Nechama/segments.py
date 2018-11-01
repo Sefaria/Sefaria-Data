@@ -78,8 +78,8 @@ class Source(object):
         if self.get_sefaria_ref(self.ref):
             if self.about_source_ref:
                 comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False)
-            enRef = Ref(self.ref).normal()
-            heRef = Ref(self.ref).he_normal()
+            enRef = self.get_sefaria_ref(self.ref).normal()
+            heRef = self.get_sefaria_ref(self.ref).he_normal()
             source = {"ref": enRef, "heRef": heRef,
                       "text":
                           {
