@@ -95,10 +95,13 @@ class Sheet(object):
                 parser.trying_pm = 0
                 segment.guess_ref = guess_ref
                 success = parser.try_parallel_matcher(segment, guess_ref)
+                if not success and segment.snunit_ref:  # take 2
+                    success = parser.try_parallel_matcher(segment, segment.snunit_ref.normal())
                 if success and not Ref(segment.ref).is_commentary():
-                    guess_ref = segment.ref
+                    guess_ref = segment.ref # if base text keep for the next source segment
                 elif not success:  # not success couldn't find matching text
                     success2 = False
+                    # try a level up
                     temp = parser.mode
                     if segment.ref:
                         try:
@@ -351,9 +354,7 @@ class Section(object):
         :param sp_segment: beutiful soup <tag> to classify into our obj and Nested
         :return: our obj (or Nested)
         """
-        if isinstance(sp_segment, element.Tag):
-            for a in sp_segment.findAll('a'): # get all a tags and remove them
-                a.replaceWithChildren()
+
         relevant_text = self.format(self.relevant_text(sp_segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
         if Header.is_header(sp_segment):
             return Header(sp_segment)  # self.segment_objects.append(Header(segment))
@@ -442,8 +443,17 @@ class Section(object):
 
         if segment.name == "a":
             a_tag = segment
+            snunit_ref = self.exctract_pasuk_from_snunit(a_tag)
         else:
-            a_tag = segment.find('a')
+            all_a_tag = segment.findAll('a')
+            a_tag = all_a_tag[0]
+            snunit_ref = self.exctract_pasuk_from_snunit(a_tag)
+            if len(all_a_tag)>1:
+                print "len all_a_tags = {}, a_tag = {}, next = {}".format(len(all_a_tag),all_a_tag[0], all_a_tag[1])
+                for a in all_a_tag:
+                    snr = self.exctract_pasuk_from_snunit(a)
+                    if snr:
+                        snunit_ref = self.exctract_pasuk_from_snunit(a)
 
         real_title = ""
 
@@ -463,12 +473,12 @@ class Section(object):
             real_title = parser.term_mapping[found_in_mapping]
         if not real_title and self.RT_Rashi:  # every ref in RT_Rashi is really to Rashi
             real_title = "Rashi on {}".format(parser.en_sefer)
-        return (real_title, a_tag, a_tag_is_entire_comment)
+        return (real_title, a_tag, a_tag_is_entire_comment, snunit_ref)
 
     def parse_ref(self, segment, relevant_text, next_segment_info):
         next_segment_class = next_segment_info[0]
 
-        real_title, found_a_tag, a_tag_is_entire_comment = self.get_a_tag_from_ref(segment, relevant_text)
+        real_title, found_a_tag, a_tag_is_entire_comment, snunit_ref = self.get_a_tag_from_ref(segment, relevant_text)
         found_ref_in_string = ""
 
         # check if it's in Perek X, Pasuk Y format and set perek and pasuk accordingly
@@ -521,12 +531,42 @@ class Section(object):
             current_source.about_source_ref = relevant_text
 
         current_source.parshan_id = 0 if len(next_segment_info)<2 else next_segment_info[1]
+        current_source.snunit_ref = snunit_ref
         return current_source
+
+    def exctract_pasuk_from_snunit(self, a_tag):
+        book_table = {1: u'Genesis', 2: u'Exodus', 3: u'Leviticus', 4: u'Numbers', 5: u'Deuteronomy',
+                      6: u'Joshua',
+                      7: u'Judges',
+                      11:  u'Jeremiah',
+                      12: u'Ezekiel',
+                      14: u'Joel',
+                      26: u'Psalms',}
+            #8: u'I Samuel', 9: u'II Samuel', 10: u'I Kings', 11: u'II Kings', 12: u'Isaiah', 13: u'Jeremiah', 14: u'Ezekiel', 15: u'Hosea', 16: u'Joel', 17: u'Amos', 18: u'Obadiah', 19: u'Jonah', 20: u'Micah', 21: u'Nahum', 22: u'Habakkuk', 23: u'Zephaniah', 24: u'Haggai', 25: u'Zechariah', 26: u'Malachi', 27: u'Psalms', 28: u'Proverbs', 29: u'Job', 30: u'Song of Songs', 31: u'Ruth', 32: u'Lamentations', 33: u'Ecclesiastes', 34: u'Esther', 35: u'Daniel', 36: u'Ezra', 37: u'Nehemiah', 38: u'I Chronicles', 39: u'II Chronicles'}
+        match = re.search(u"""kodesh\.snunit\.k12\.il/i/t/t(.{2})(.{2})\.htm#(\d*$)""", a_tag['href'])
+        r = None
+        if match:
+            book_num = match.group(1)
+            chapter = match.group(2)
+            # a4 = קד בתהילים, e5 קמה
+            verse = match.group(3) if match.group(3) else u""
+            if int(book_num) not in book_table.keys():
+                print u"********* book {}, {} \n {}, {}".format(book_num, a_tag['href'], a_tag.text)
+                return None
+            if int(book_num) == 26:
+                psalms_ch_table = {'0': 0, 'a': 100, 'b': 110, 'c': 120, 'd': 130, 'e': 140, 'f': 150}
+                psalms_ch = lambda x: psalms_ch_table[x[0]]+int(x[1])
+                chapter = psalms_ch(chapter)
+            book = book_table[int(book_num)]
+            ref_st = u'{} {} {}'.format(book, chapter, verse).strip()
+            r = Ref(ref_st)
+            print a_tag['href'], a_tag.text, r.normal()
+        return r
 
     def parse_ref_new(self, segment, relevant_text, next_segment_info): #bad try to put in parshan_id_table to read the parshan from the class number it has
         next_segment_class = next_segment_info[0]
         next_segment_class_id = None if len(next_segment_info)<2 else next_segment_info[1]
-        real_title, found_a_tag, a_tag_is_entire_comment = self.get_a_tag_from_ref(segment, relevant_text)
+        real_title, found_a_tag, a_tag_is_entire_comment, snunit_ref = self.get_a_tag_from_ref(segment, relevant_text)
         found_ref_in_string = ""
 
         # check if it's in Perek X, Pasuk Y format and set perek and pasuk accordingly
@@ -917,13 +957,15 @@ class Nechama_Parser:
             '3': None,  #u'אבן כספי',
             '4': u"Ibn Ezra on {}".format(self.en_sefer),  # u'''ראב"ע''',
             '6': u"Abarbanel on Torah, {}".format(self.en_sefer),  # Abarbanel_on_Torah,_Genesis
+            '15': None,  # רבי יוסף אלבו
             '23': None,  #u"רבי אליעזר אשכנזי",
-            '27': None, #u"בובר"
+            '27': None,  #u"בובר"
             '28': u"Rabbeinu Bahya, {}".format(self.en_sefer),  # u'''רבנו בחיי''',
             '29': u"Bekhor Shor, {}".format(self.en_sefer),  # u"בכור שור",
             '32': u"Ralbag on {}".format(self.en_sefer),
             '33': None,  # u'''ר' אברהם בן הרמב"ם''',
             '37': u"Malbim on {}".format(self.en_sefer),  # u'''מלבי"ם''',
+            '38': u"Rashbam on {}".format(self.en_sefer),  # רשב"ם
             '39': u'Ramban on {}'.format(self.en_sefer),  # u'''רמב"ן''',
             '41': u'Or HaChaim on {}'.format(self.en_sefer),  # Or_HaChaim_on_Genesis
             '43': None,  # u'''בעל ספר הזיכרון''',
@@ -943,12 +985,14 @@ class Nechama_Parser:
             '118': None,  # u'קסוטו',
             '127': u"Radak on {}".format(self.en_sefer),  # u'''רד"ק''',
             '152': None,  # u'בנו יעקב',
+            '157': None, #  volz
             '158': None,  # רוזנצוויג
             '161': None,  # הרמב"ם דוגמא 4 ב
             '162': u"Rashi on {}".format(self.en_sefer),
             '175': None,  # u"כור הזהב",
             '177': u'',  #השגות הראב"ד
             # '183':
+            '187': None,  # ר' יוסף נחמיאש
             '196': None,  # u'''בעל הלבוש אורה''',
             '198': u"HaKtav VeHaKabalah, {}".format(self.en_sefer),  # u'''הכתב והקבלה''',
             '238': u"Onkelos {}".format(self.en_sefer),  # u"אונקלוס",
@@ -1044,6 +1088,8 @@ class Nechama_Parser:
 
     def check_reduce_sources(self, comment, ref):
         new_ref = []
+        if not isinstance(ref.text('he').text[0], unicode):
+            return new_ref
         n = len(comment.split())
         if n<=5:
             ngram_size = n
@@ -1098,7 +1144,7 @@ class Nechama_Parser:
                 text_to_use =u" ".join(current_source.text) if isinstance(current_source.text, list)  else current_source.text
             # todo: one Source obj for different Sefaria refs. how do we deal with this?
             if ref2check:
-                text_to_use = self.clean(text_to_use) # .replace('"', '').replace("'", "")
+                text_to_use = self.clean(text_to_use)  # .replace('"', '').replace("'", "")
                 if len(text_to_use.split()) <= 1:
                     if isinstance(ref2check.text('he').text[0], list): #2d list
                         tc = strip_cantillation(" ".join(numpy.concatenate(ref2check.text('he').text)))
@@ -1114,7 +1160,7 @@ class Nechama_Parser:
                 else:
                     matched = self.check_reduce_sources(text_to_use, ref2check) # returns a list ordered by scores of mesorat hashas objs that were found
                     changed_ref = ref2check  # ref2chcek might get a better ref but also might not...
-                    if not matched:  # no match found
+                    if not matched:  # no match found  - parshan id try
                         if current_source.parshan_id:
                             try:
                                 parshan = parser.parshan_id_table[current_source.parshan_id]
@@ -1355,30 +1401,30 @@ if __name__ == "__main__":
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
     posting = True
-    individual = None
-    cnt = 0
-    for which_parshiot in [numbers_parshiot]:#[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
+    individual = 621
+    for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
-            book = "Numbers"#which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "no errors in Vayikra", catch_errors=catch_errors)
-            #parser.prepare_term_mapping()  # must be run once locally and on sandbox
+            book = which_parshiot[0]
+            parser = Nechama_Parser(book, parsha, "fast", "catching with snunit", catch_errors=catch_errors) #accurate
+            parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
             # anything_before = "7.html"
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
             # sheets = sheets[sheets.index("163.html")::]
+
             if individual:
                 got_sheet = parser.bs4_reader(["html_all/{}.html".format(individual)] if "{}.html".format(individual) in os.listdir("html_sheets/{}".format(parsha)) else [], post=posting)
             else:
-                sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=posting)
+                sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets if sheet in os.listdir("html_sheets/{}".format(parsha)) and sheet != "163.html"], post=posting)
             if catch_errors:
                 parser.record_report()
-            cnt += 1
-            print cnt
             if individual and got_sheet:
               break
+        if individual and got_sheet:
+            break
     print 'Done'
     # print word_count
     # with open("sheets_linked_to_sheets.csv", 'w') as f:

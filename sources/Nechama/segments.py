@@ -33,6 +33,7 @@ class Source(object):
         self.segment_class = segment_class
         self.text = u""
         self.refDisplayPosition = u"top"
+        self.snunit_ref = None
 
     @staticmethod
     def is_source_text(segment, important_classes):
