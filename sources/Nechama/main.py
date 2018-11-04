@@ -13,6 +13,7 @@ from sefaria.system.database import db
 from sefaria.system.exceptions import InputError
 from collections import OrderedDict
 from bs4 import BeautifulSoup, element
+import numpy
 from time import sleep
 import bleach
 import shutil
@@ -116,6 +117,7 @@ class Sheet(object):
             sheets_sources.extend(seg_sheet_source if isinstance(seg_sheet_source, list) else [seg_sheet_source])
             # print u"done with seg {}".format(isegment)
         return sheets_sources
+
 
 
     def add_to_word_count(self, seg):
@@ -313,6 +315,8 @@ class Section(object):
         self.segment_objects = self.flatten_our_section()
         return
 
+
+
     def classify_segments(self, soup_segments):
         """
         Classifies each segments based on its role such as "question", "header", or quote from "bible"
@@ -347,7 +351,9 @@ class Section(object):
         :param sp_segment: beutiful soup <tag> to classify into our obj and Nested
         :return: our obj (or Nested)
         """
-
+        if isinstance(sp_segment, element.Tag):
+            for a in sp_segment.findAll('a'): # get all a tags and remove them
+                a.replaceWithChildren()
         relevant_text = self.format(self.relevant_text(sp_segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
         if Header.is_header(sp_segment):
             return Header(sp_segment)  # self.segment_objects.append(Header(segment))
@@ -1094,7 +1100,10 @@ class Nechama_Parser:
             if ref2check:
                 text_to_use = self.clean(text_to_use) # .replace('"', '').replace("'", "")
                 if len(text_to_use.split()) <= 1:
-                    tc = ref2check.text('he').text if not isinstance(ref2check.text('he').text, list) else strip_cantillation(" ".join(ref2check.text('he').text))
+                    if isinstance(ref2check.text('he').text[0], list): #2d list
+                        tc = strip_cantillation(" ".join(numpy.concatenate(ref2check.text('he').text)))
+                    else: #either string or 1d list
+                        tc = ref2check.text('he').text if not isinstance(ref2check.text('he').text, list) else strip_cantillation(" ".join(ref2check.text('he').text))
                     if strip_cantillation(text_to_use, strip_vowels=True) in strip_cantillation(tc, strip_vowels=True).split():
                         current_source.ref = ref2check.normal()
                         return True
@@ -1346,33 +1355,30 @@ if __name__ == "__main__":
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
     posting = True
-    individual = False
+    individual = None
     cnt = 0
-    for which_parshiot in [numbers_parshiot]: #[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
+    for which_parshiot in [numbers_parshiot]:#[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
-            book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "numbers - runing ", catch_errors=catch_errors) #accurate
-            parser.prepare_term_mapping()  # must be run once locally and on sandbox
+            book = "Numbers"#which_parshiot[0]
+            parser = Nechama_Parser(book, parsha, "fast", "no errors in Vayikra", catch_errors=catch_errors)
+            #parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
             # anything_before = "7.html"
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
             # sheets = sheets[sheets.index("163.html")::]
-
             if individual:
                 got_sheet = parser.bs4_reader(["html_all/{}.html".format(individual)] if "{}.html".format(individual) in os.listdir("html_sheets/{}".format(parsha)) else [], post=posting)
             else:
-                sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets if sheet in os.listdir("html_sheets/{}".format(parsha)) and sheet != "163.html"], post=posting)
+                sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=posting)
             if catch_errors:
                 parser.record_report()
-            cnt+=1
+            cnt += 1
             print cnt
             if individual and got_sheet:
               break
-        if individual and got_sheet:
-            break
     print 'Done'
     # print word_count
     # with open("sheets_linked_to_sheets.csv", 'w') as f:
