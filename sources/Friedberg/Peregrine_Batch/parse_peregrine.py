@@ -1,14 +1,19 @@
 # encoding=utf-8
 
 import re
+import json
 import codecs
 import django
 django.setup()
+import requests
 import unicodecsv
 from sefaria.model import *
 from bs4 import BeautifulSoup
+from functools import partial
+from multiprocessing import Pool
 from collections import Counter, defaultdict
 from sefaria.datatype.jagged_array import JaggedArray
+from sources.functions import add_term, add_category, post_link, post_index, post_text
 
 
 class DeriveRefFromRow(object):
@@ -116,6 +121,28 @@ For a row:
 3) Compile section level Ref for this comment
 4) Obtain segment level index from the comment_tracker
 5) Set the element.
+
+Indices:
+Each index requires:
+- title
+- categories
+- collective_title
+- base_text_title
+- schema
+- dependence: commentary
+
+The titles come in as "<commentator> on <base-text>". The commentator will be the collective title. We should also have
+a lookup table to resolve English title to Hebrew. <base-text> will give the "base_text_title". Can also be use to look
+up categories. Categories will be:
+[
+    "Halakhah",
+    "Mishneh Torah",
+    "Commentary",
+    <commentator>,
+    <Rambam-Sefer>
+    
+]
+Call up the index for the base text. The Index.categories[-1] will be the Rambam-Sefer.
 """
 
 
@@ -128,6 +155,7 @@ class CommentStore(object):
         with open("Friedberg_Texts_Metadata.csv") as fp:
             self.titles = {row['id']: {'en_name': row['en_name'], 'he_name': row['he_name']} for row in
                            unicodecsv.DictReader(fp)}
+        self.commentator_mapping = {t['en_name']: t['he_name'] for t in self.titles.values()}
 
     def resolve_row(self, row_element):
         commentary = self.titles[row_element['bid']]['en_name']
@@ -153,6 +181,55 @@ class CommentStore(object):
 
     @staticmethod
     def format_segment(segment_text):
+        segment_xml = u'<root>{}</root>'.format(segment_text)
+        segment_soup = BeautifulSoup(segment_xml, 'xml')
+        segment_root = segment_soup.root
+
+        # clear out multiple classes - we're only interested in the last letter in the class
+        for span in segment_root.find_all('span'):
+            if span.get('class', u''):
+                span['class'] = span['class'][-1]
+
+        # consolidate duplicate tags and unwrap meaningless tags
+        for span in segment_root.find_all('span'):
+            previous = span.previous_sibling
+            if not previous:
+                continue
+            if span.name == previous.name and span.get('class') == previous.get('class'):
+                previous.append(span)
+                span.unwrap()
+            elif span.get('class', '') == '':
+                span.unwrap()
+
+        # handle footnotes
+        marker = segment_root.find('span', attrs={u'class': u'R'})
+        note_tag = segment_root.find('span', attrs={u'class': u'N'})
+        if marker and note_tag:
+            marker.name = u'sup'
+            del marker['class']
+            note_text = note_tag.text
+            note_text = re.sub(u'^{}\s'.format(re.escape(marker.text)), u'', note_text)
+            new_note = segment_soup.new_tag(u'i')
+            new_note[u'class'] = u'footnote'
+            new_note.string = note_text
+            marker.insert_after(new_note)
+            note_tag.decompose()
+        else:
+            assert not any([marker, note_tag])
+
+        markup = segment_root.find_all('span', class_=re.compile(u'[BZS]'))
+        for b in markup:
+            if b['class'] == 'S':
+                b.name = 'small'
+            else:
+                b.name = u'b'
+            del b['class']
+
+        segment_text = segment_root.decode_contents()
+        segment_text = re.sub(u'^\s+|\s+$', u'', segment_text)
+        segment_text = re.sub(u'\s{2,}', u' ', segment_text)
+        segment_text = re.sub(u'\s*<br/>\s*', u'<br/>', segment_text)
+        segment_text = re.sub(u'\s*(<br/>)+$', u'', segment_text)
         return segment_text
 
     def get_index_titles(self):
@@ -162,6 +239,87 @@ class CommentStore(object):
         if index_title not in self.texts:
             raise KeyError(index_title)
         return self.texts[index_title].array()
+
+    def translate_commentator(self, commentator):
+        return self.commentator_mapping[commentator]
+
+    def get_index_for_title(self, title):
+        commentator, base_title = re.split(u'\son\s', title, maxsplit=1)
+        he_commentator = self.translate_commentator(commentator)
+        rambam_index = library.get_index(base_title)
+        he_title = u'{} על {}'.format(he_commentator, rambam_index.get_title('he'))
+        jnode = JaggedArrayNode()
+        jnode.add_primary_titles(title, he_title)
+        jnode.add_structure(["Chapter", "Halakhah", "Comment"])
+        jnode.validate()
+        categories = [
+            u"Halakhah",
+            u"Mishneh Torah",
+            u"Commentary",
+            commentator,
+            rambam_index.categories[-1]
+        ]
+        return {
+            u'title': title,
+            u'categories': categories,
+            u'dependence': u'Commentary',
+            u'collective_title': commentator,
+            u'schema': jnode.serialize(),
+            u'base_text_titles': [base_title]
+        }
+
+    def get_version_for_title(self, title):
+        if title not in self.texts:
+            raise KeyError(title)
+        return {
+            "versionTitle": "Friedberg Edition",
+            "versionSource": "https://fjms.genizah.org/",
+            "language": "he",
+            "text": self.texts[title].array()
+        }
+
+    def generate_links(self):
+        return [
+            {
+                'refs': [li[0], li[1]],
+                'type': 'commentary',
+                'auto': True,
+                'generated_by': "Peregrine Parser"
+            }
+            for li in self.links
+        ]
+
+
+def add_terms_locally(comment_store):
+    """
+    :param CommentStore comment_store:
+    :return:
+    """
+    for en_name, he_name in comment_store.commentator_mapping.items():
+        if not Term().load_by_title(en_name):
+            add_term(en_name, he_name, server='http://localhost:8000')
+
+
+def upload_index(storage_object, title, destination='http://localhost:8000'):
+    """
+    :param CommentStore storage_object:
+    :param title
+    :param destination:
+    :return:
+    """
+    index = storage_object.get_index_for_title(title)
+    categories = index['categories']
+    response = add_category(categories[-1], categories, server=destination)
+    if isinstance(response, requests.models.Response) and not response.ok:
+        with codecs.open('errors.html', 'w', 'utf-8') as fp:
+            fp.write(response.text)
+        raise AssertionError
+    post_index(index, server=destination)
+
+
+def upload_version(storage_object, title, destination='http://localhost:8000'):
+    version = storage_object.get_version_for_title(title)
+    post_text(title, version, index_count="on", server=destination)
 
 
 with open("Friedberg_Texts.csv") as fp:
@@ -173,34 +331,27 @@ with open("Friedberg_Texts.csv") as fp:
 storage = CommentStore()
 my_refs = [storage.resolve_row(row) for row in rows]
 
-for ref, row in zip(my_refs, rows):
-    if re.search(u'<span class="Z Z S Z">', row[u'text']):
-        print ref
-        print row[u'text']
-        print u''
+server = 'http://localhost:8000'
+num_processes = 1
 
+add_terms_locally(storage)
 
-all_tags, all_attrs, all_classes = set(), set(), Counter()
-for row in rows:
-    raw_xml = u'<root>{}</root>'.format(row[u'text'])
-    soup = BeautifulSoup(raw_xml, 'xml')
-    root = soup.root
-    for n in root.find_all(True):
-        all_tags.add(n.name)
-        all_attrs.update(n.attrs.keys())
-        all_classes[n.get(u'class', None)] += 1
+partial_upload_index = partial(upload_index, storage, destination=server)
+partial_upload_version = partial(upload_version, storage, destination=server)
 
-print len(all_tags)
-if len(all_tags) < 50:
-    for n in all_tags:
-        print n
-print u''
-print len(all_attrs)
-if len(all_attrs) < 50:
-    for n in all_attrs:
-        print n
-print u''
-print len(all_classes)
-if len(all_classes) < 50:
-    for n in all_classes.items():
-        print n
+titles = storage.get_index_titles()
+
+if num_processes > 1:
+    pool = Pool(num_processes)
+    pool.map(partial_upload_index, titles)
+    pool.map(partial_upload_version, titles)
+
+else:
+    for num, t in enumerate(titles):
+        print u'{} / {}'.format(num+1, len(titles))
+        partial_upload_index(t)
+        partial_upload_version(t)
+
+post_link(storage.generate_links(), server=server)
+with codecs.open('All_Peregrine_Titles.json', 'w', 'utf-8') as fp:
+    json.dump(titles, fp)
