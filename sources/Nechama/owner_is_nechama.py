@@ -7,3 +7,4 @@ sheets = db.sheets.find({"group": group})
 for sheet in sheets:
     sheet["owner"] = 32044
     db.sheets.save(sheet)
+

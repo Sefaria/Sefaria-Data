@@ -232,7 +232,7 @@ class Header(object):
         segment = BeautifulSoup(self.text)
         for a in segment.findAll('a'):  # get all a tags and remove them
             a.replaceWithChildren()
-        source = {"outsideText": segment.text}
+        source = {"outsideText": str(segment)}
         return source
 
     def format(self, comment):
@@ -376,7 +376,7 @@ class Table(object):
         segment = BeautifulSoup(self.text)
         for a in segment.findAll('a'):  # get all a tags and remove them
             a.replaceWithChildren()
-        source = {"outsideText": segment.text}
+        source = {"outsideText": str(segment)}
         return source
 
 
