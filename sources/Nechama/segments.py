@@ -145,6 +145,10 @@ class Source(object):
                         if term:
                             self.ref = [title['text'] for title in term.titles if title['lang'] == 'he'][0]
 
+            if self.about_source_ref and self.ref and self.about_source_ref != self.ref:
+                about_words = re.split(u" |:", self.about_source_ref.strip())
+                ref_words = re.split(u" |:", Ref(self.ref).he_normal())
+                set(about_words).difference(set(ref_words))
             if self.about_source_ref:
                 comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False) #use actual text if we can
             else:
