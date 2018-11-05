@@ -111,13 +111,25 @@ class Sheet(object):
                         except InputError:
                             pass
                     parser.mode = temp
-                    if not success2:
-                        if orig_ref:
-                            # segment.about_source_ref += orig_ref
-                            segment.ref = orig_ref # todo: !! find where to return the lost data about the commentators name info from, maybe about_source_ref?
-                            pass
-                        else:
-                            segment.ref = segment.about_source_ref
+                    if success2 and segment.segment_class in [u'midrash', u'parshan'] and Ref(
+                            segment.ref).primary_category == u'Tanakh':
+                        # mustbe a pm mistake go back to orig
+                        segment.ref = segment.about_source_ref
+                    elif not success2:
+                        segment.ref = segment.about_source_ref
+                        # if orig_ref:
+                        #     if segment.segment_class in [u'midrash', u'parshan'] and Ref(orig_ref).primary_category != u'Tanakh':
+                        #         segment.ref = orig_ref
+                        #     # segment.ref = orig_ref # todo: !! find where to return the lost data about the commentators name info from, maybe about_source_ref?
+                        #     else:
+                        #         segment.ref = segment.about_source_ref
+                        #         # segment.about_source_ref += Ref(orig_ref).normal('he')
+                        #     pass
+                        # else:
+                        #     segment.ref = segment.about_source_ref
+                    if success and segment.segment_class in [u'midrash', u'parshan'] and Ref(segment.ref).primary_category == u'Tanakh':
+                        # mustbe a pm mistake go back to orig
+                        segment.ref = segment.about_source_ref
             seg_sheet_source = segment.create_source()
             self.add_to_word_count(seg_sheet_source)
             sheets_sources.extend(seg_sheet_source if isinstance(seg_sheet_source, list) else [seg_sheet_source])
@@ -357,6 +369,7 @@ class Section(object):
         :param sp_segment: beutiful soup <tag> to classify into our obj and Nested
         :return: our obj (or Nested)
         """
+
         relevant_text = self.format(self.relevant_text(sp_segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
         if Header.is_header(sp_segment):
             return Header(sp_segment)  # self.segment_objects.append(Header(segment))
@@ -520,7 +533,7 @@ class Section(object):
             if not a_tag_is_entire_comment and found_ref_in_string == "": # and len(relevant_text.split()) >= 6:
                 # case where you found the ref but Nechama said something else in addition to the ref
                 # so we want to keep the text
-                if len(relevant_text.strip(":").split()) <= 1: # in Ref(current_source.ref).index.all_titles('he'):
+                if len(relevant_text.strip(":").split()) <= 1:  # in Ref(current_source.ref).index.all_titles('he'):
                     print relevant_text.strip(":")
                 else:
                     current_source.about_source_ref = relevant_text
@@ -539,6 +552,7 @@ class Section(object):
 
         current_source.parshan_id = 0 if len(next_segment_info)<2 else next_segment_info[1]
         current_source.snunit_ref = snunit_ref
+        current_source.about_source_ref = relevant_text
         return current_source
 
     def exctract_pasuk_from_snunit(self, a_tag):
@@ -966,6 +980,7 @@ class Nechama_Parser:
             '6': u"Abarbanel on Torah, {}".format(self.en_sefer),  # Abarbanel_on_Torah,_Genesis
             '15': None,  # רבי יוסף אלבו
             '23': None,  #u"רבי אליעזר אשכנזי",
+            '24': None,  # הואיל משה 504.2
             '27': None,  #u"בובר"
             '28': u"Rabbeinu Bahya, {}".format(self.en_sefer),  # u'''רבנו בחיי''',
             '29': u"Bekhor Shor, {}".format(self.en_sefer),  # u"בכור שור",
@@ -1101,7 +1116,8 @@ class Nechama_Parser:
 
     def check_reduce_sources(self, comment, ref):
         new_ref = []
-        if not isinstance(ref.text('he').text[0], unicode):
+        # rashbam on 821
+        if isinstance(ref.text('he').text[0], list) and ref.text('he').text[0] and isinstance(ref.text('he').text[0][0],int):
             return new_ref
         n = len(comment.split())
         if n<=5:
@@ -1413,15 +1429,14 @@ if __name__ == "__main__":
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
-    posting = True
-    individual = None
-    cnt = 0
-    for which_parshiot in [genesis_parshiot]:#[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
+    posting = False
+    individual = False
+    for which_parshiot in [genesis_parshiot]: #[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "no errors in Vayikra", catch_errors=catch_errors)
-            #parser.prepare_term_mapping()  # must be run once locally and on sandbox
+            parser = Nechama_Parser(book, parsha, "fast", "leviticus - running ", catch_errors=catch_errors) #accurate
+            parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
             # anything_before = "7.html"
