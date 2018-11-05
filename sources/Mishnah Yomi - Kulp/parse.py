@@ -155,7 +155,6 @@ def get_section_num(mishnah_num):
 
 def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
     def get_first_sentence(line):
-        line = line.replace(". . .", " ")
         line = line.strip()
         end = line.find(". ")
         if end != -1:
@@ -165,7 +164,8 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
 
     def deal_with_sections(line, text, len_mishnah):
         line = line.replace(unichr(8212), u": ")
-        section = re.search(u"^(In sections?|Sections?) (\S+)\s", line)
+        section = re.search(u"^\s*(In sections?|Sections?) (\S+)\s", line)
+
         if not section:
             if len(text) > 0:
                 text[-1] += u" " + line
@@ -186,18 +186,19 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
             start, end = section_num_as_word.split(u"-")
             start = get_section_num(start)
             end = get_section_num(end)
-            mishnayot = range(start, end)
+            mishnayot = range(start, end+1)
         else:
             mishnayot.append(get_section_num(section_num_as_word))
 
+        dh = ""
         for section_num in mishnayot:
             if section_num - 1 < len_mishnah:
-                first_sentence = get_first_sentence(mishnah_text[section_num - 1])
-                line = u"<b>{}</b>{}".format(first_sentence, line)
-                text.append(line)
+                dh += u"<b>{}</b> ".format(mishnah_text[section_num - 1])
             else:
                 text.append(line)
                 return -1
+
+        text.append(u"{} {}".format(dh, line))
 
 
 
@@ -205,6 +206,8 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
     currently_parsing = ""
     mishnah_text = []
     commentary_text = []
+    orig_mishnah = []
+    orig_explanation = []
     questions_text = []
     found_mishnah = found_explanation = False # must find both, whereas intro is unnecessary
     explanation_sections_text = [] #After parsing "Section One: ...", this array will contain the line in position 0 of the array
@@ -219,7 +222,9 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
     section_num = 0
 
     for line_n, line in enumerate(lines):
+        line = line.replace("\xc3\xa2\xc2\x80\xc2\x99", "'")
         line = line.decode('utf-8')
+        line = line.replace(u". . .",  u"\u2026")
         #line = line.strip().replace(unichr(151), u"").replace(unichr(146), u"")
         if "Part" in line and len(line.split()) < 10:
             print u"{}\n{}\n\n".format(file, line)
@@ -245,24 +250,37 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
             mishnah_text = restructure_mishnah_text(mishnah_text)
         else:
             if currently_parsing == "INTRODUCTION":
+                orig_explanation.append(line)
                 commentary_text[-1] += u"\n" + line
             elif currently_parsing == "EXPLANATION":
+                orig_explanation.append(line)
                 result = deal_with_sections(line, explanation_sections_text, len(mishnah_text))
                 if result == -1:  # there was just an error
-                    needs_checking.append(file)
+                    needs_checking.append(file_path)
                     # result = deal_with_sections(line, explanation_sections_text, len(mishnah_text))
                     #return (commentary_text + questions_text, mishnah_text)
             elif currently_parsing == "QUESTIONS":
                 questions_sections_text.append(line)
             elif currently_parsing == "MISHNAH":
                 mishnah_text.append(line)
+                orig_mishnah.append(line)
 
+    if explanation_sections_text == []:
+        mishnah_text = restructure_mishnah_text(mishnah_text)
 
     assert commentary_text != mishnah_text != []
-    if len(explanation_sections_text) == 1: #this means there was no numbering
-        explanation_sections_text[0] = u"<b>{}</b> {}".format(get_first_sentence(mishnah_text[0]), explanation_sections_text[0])
-    elif explanation_sections_text == []:
-        mishnah_text = restructure_mishnah_text(mishnah_text)
+    if len(mishnah_text) == 1 and len(explanation_sections_text) > 1:
+        print "Mishnah missing numbers that explanation has:"
+        print file_path
+    elif len(mishnah_text) == 1 and len(explanation_sections_text) == 1: #this means there was no numbering
+        print "Mishnah and explanation have no numbering:"
+        print file_path
+        explanation_sections_text[0] = u"<b>{}</b> {}".format(mishnah_text[0], explanation_sections_text[0])
+    elif len(mishnah_text) > len(explanation_sections_text):
+        print "Mishnah sections more than explanation sections"
+        return (orig_explanation, orig_mishnah)
+    else:
+        pass
 
     commentary_text += explanation_sections_text
     questions_text += questions_sections_text
@@ -285,15 +303,13 @@ def restructure_mishnah_text(old_mishnah_text):
             found_digit_or_char = True
 
     if not found_digit_or_char:
-        return old_mishnah_text
+        return [" ".join(old_mishnah_text)]
 
     for line in old_mishnah_text:
         digit = re.search("^\d+\)", line)
-        char = re.search("^[a-zA-Z]+\)", line)
+        line = re.sub("\s+[a-zA-Z]+\)", "", line).strip()
         if digit:
             mishnah_text.append(line.replace(digit.group(0), "").strip())
-        elif char and not found_digit:
-            mishnah_text.append(line.replace(char.group(0), "").strip())
         elif len(mishnah_text) > 0:
             mishnah_text[-1] += " " + line.strip()
         else:
@@ -436,10 +452,11 @@ if __name__ == "__main__":
     download_mode = True
     dont_start = True
     categories = [category for category in os.listdir("./orig_contents") if category != ".DS_Store"]
-    start_at = "Zeraim"
-    dont_start = True
+    start_at = ""
+    dont_start = False
     for category in categories:
         print "CATEGORY:"
+        category = "Nezikin"
         if category == start_at:
             dont_start = False
         if dont_start and category != start_at:
@@ -448,6 +465,7 @@ if __name__ == "__main__":
         print category
         sefarim = os.listdir("./orig_contents/{}".format(category))
         for sefer in sefarim:
+            sefer = "Avodah Zarah"
             print sefer
             current_path = "./orig_contents/{}/{}".format(category, sefer)
             if not os.path.isdir(current_path):

@@ -357,7 +357,6 @@ class Section(object):
         :param sp_segment: beutiful soup <tag> to classify into our obj and Nested
         :return: our obj (or Nested)
         """
-
         relevant_text = self.format(self.relevant_text(sp_segment))  # if it's Tag, tag.text; if it's NavigableString, just the string
         if Header.is_header(sp_segment):
             return Header(sp_segment)  # self.segment_objects.append(Header(segment))
@@ -1415,13 +1414,14 @@ if __name__ == "__main__":
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
     posting = True
-    individual = False
-    for which_parshiot in [leviticus_parshiot]:#[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
+    individual = None
+    cnt = 0
+    for which_parshiot in [genesis_parshiot]:#[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "leviticus - running ", catch_errors=catch_errors) #accurate
-            parser.prepare_term_mapping()  # must be run once locally and on sandbox
+            parser = Nechama_Parser(book, parsha, "fast", "no errors in Vayikra", catch_errors=catch_errors)
+            #parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
             # anything_before = "7.html"

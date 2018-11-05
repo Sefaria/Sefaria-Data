@@ -14,7 +14,10 @@ class Segment(object):
 
     def create_source(self):
         #create source for sourcesheet out of myself
-        source = {"outsideText": self.text}
+        segment = BeautifulSoup(self.text)
+        for a in segment.findAll('a'):  # get all a tags and remove them
+            a.replaceWithChildren()
+        source = {"outsideText": segment.text}
         return source
 
 
@@ -72,8 +75,21 @@ class Source(object):
             return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(ref, text)
 
     def create_source(self):
-        #create source for sourcesheet out of myself
+        # remove snunit tags from text and about_source_ref
+        if isinstance(self.text, list):
+            for i, line in enumerate(self.text):
+                segment = BeautifulSoup(self.text[i])
+                for a in segment.findAll('a'):  # get all a tags and remove them
+                    a.replaceWithChildren()
+                self.text[i] = segment.text
+
         comment = self.text
+
+        segment = BeautifulSoup(self.about_source_ref)
+        for a in segment.findAll('a'):  # get all a tags and remove them
+            a.replaceWithChildren()
+        self.about_source_ref = segment.text
+
         nested_source_refDisplayPosition = True if isinstance(comment, list) else False
         # is Sefaria ref
         if self.get_sefaria_ref(self.ref):
@@ -213,7 +229,10 @@ class Header(object):
 
     def create_source(self):
         #create source for sourcesheet out of myself
-        source = {"outsideText": self.text}
+        segment = BeautifulSoup(self.text)
+        for a in segment.findAll('a'):  # get all a tags and remove them
+            a.replaceWithChildren()
+        source = {"outsideText": segment.text}
         return source
 
     def format(self, comment):
@@ -318,7 +337,10 @@ class Question(object):
 
     def create_source(self):
         #create source for sourcesheet out of myself
-        source = {"outsideText": self.text}
+        segment = BeautifulSoup(self.text)
+        for a in segment.findAll('a'):  # get all a tags and remove them
+            a.replaceWithChildren()
+        source = {"outsideText": segment.text}
         return source
 
     def format(self, without_params=[], difficulty_symbol = [u'', u'''<sup class="nechama">*</sup>''', u'''<sup class="nechama">**</sup>''']):
@@ -351,7 +373,10 @@ class Table(object):
 
     def create_source(self):
         #create source for sourcesheet out of myselfwithout_params=["number"]
-        source = {"outsideText": self.text}
+        segment = BeautifulSoup(self.text)
+        for a in segment.findAll('a'):  # get all a tags and remove them
+            a.replaceWithChildren()
+        source = {"outsideText": segment.text}
         return source
 
 
@@ -391,8 +416,11 @@ class Nechama_Comment(object):
 
 
     def create_source(self):
-        #create source for sourcesheet out of myself
-        source = {"outsideText": self.text}
+        #create source for sourcesheet out of
+        segment = BeautifulSoup(self.text)
+        for a in segment.findAll('a'):  # get all a tags and remove them
+            a.replaceWithChildren()
+        source = {"outsideText": segment.text}
         return source
 
 
@@ -520,6 +548,7 @@ class Nested(object):
         if isinstance(ourObj, Source):
             ourObj.refDisplayPosition = "none"
             ourObj.text = [number, ourObj.text]
+
     def create_source(self):
         return_sheet_obj = []
         # for option in self.options:
@@ -557,6 +586,8 @@ class Text(object):
         this function is only for the sake of test runes. it reality it is code that should never be run! todo: right a test to see that it is not run.
         :return: a sheet obj
         """
+        for a in self.sp_segment.findAll('a'):  # get all a tags and remove them
+            a.replaceWithChildren()
         source = {"outsideText": self.sp_segment.text}
         return source
 
