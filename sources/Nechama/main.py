@@ -111,10 +111,13 @@ class Sheet(object):
                         except InputError:
                             pass
                     parser.mode = temp
-                    if not success2 and orig_ref:
-                        # segment.about_source_ref += orig_ref
-                        segment.ref = orig_ref # todo: !! find where to return the lost data about the commentators name info from, maybe about_source_ref?
-                        pass
+                    if not success2:
+                        if orig_ref:
+                            # segment.about_source_ref += orig_ref
+                            segment.ref = orig_ref # todo: !! find where to return the lost data about the commentators name info from, maybe about_source_ref?
+                            pass
+                        else:
+                            segment.ref = segment.about_source_ref
             seg_sheet_source = segment.create_source()
             self.add_to_word_count(seg_sheet_source)
             sheets_sources.extend(seg_sheet_source if isinstance(seg_sheet_source, list) else [seg_sheet_source])
@@ -446,15 +449,17 @@ class Section(object):
             snunit_ref = self.exctract_pasuk_from_snunit(a_tag)
         else:
             all_a_tag = segment.findAll('a')
-            a_tag = all_a_tag[0]
-            snunit_ref = self.exctract_pasuk_from_snunit(a_tag)
-            if len(all_a_tag)>1:
-                print "len all_a_tags = {}, a_tag = {}, next = {}".format(len(all_a_tag),all_a_tag[0], all_a_tag[1])
-                for a in all_a_tag:
-                    snr = self.exctract_pasuk_from_snunit(a)
-                    if snr:
-                        snunit_ref = self.exctract_pasuk_from_snunit(a)
-
+            if all_a_tag:
+                a_tag = all_a_tag[0]
+                snunit_ref = self.exctract_pasuk_from_snunit(a_tag)
+                if len(all_a_tag)>1:
+                    print "len all_a_tags = {}, a_tag = {}, next = {}".format(len(all_a_tag),all_a_tag[0], all_a_tag[1])
+                    for a in all_a_tag:
+                        snr = self.exctract_pasuk_from_snunit(a)
+                        if snr:
+                            snunit_ref = self.exctract_pasuk_from_snunit(a)
+            else: # there is no a_tag
+                return (False, False, False, False)
         real_title = ""
 
         # if a_tag and segment.find("u") and a_tag.text != segment.find("u").text: #case where
@@ -486,12 +491,15 @@ class Section(object):
                      relevant_text.startswith(u"פרקים ") or relevant_text.startswith(u"פסוקים "))
         is_perek_pasuk_ref, new_perek, new_pasuk = self.set_current_perek_pasuk(found_a_tag, relevant_text, next_segment_class, is_tanakh)
 
+
         # now create current_source based on real_title or based on self.current_parsha_ref
         if real_title:  # a ref to a commentator that we have in our system
             if new_pasuk:
                 current_source = Source(u"{} {}:{}".format(real_title, new_perek, new_pasuk), next_segment_class)
             else:
                 current_source = Source(u"{} {}".format(real_title, new_perek), next_segment_class)
+        elif snunit_ref:
+            current_source = Source(snunit_ref.normal(), next_segment_class)
         elif not real_title and is_tanakh:  # not a commentator, but instead a ref to the parsha
             current_source = Source(u"{} {}:{}".format(parser.en_sefer, new_perek, new_pasuk), "bible")
         # elif current_source.parshan_name != "bible":
@@ -971,8 +979,11 @@ class Nechama_Parser:
             '43': None,  # u'''בעל ספר הזיכרון''',
             '46': u"Haamek Davar on {}".format(self.en_sefer),
             '51': None,  # u"ביאור - ר' שלמה דובנא"
+            '53': None,  # רב דוד הופמן
+            '59': None,  # ר' וולף היידנהיים
             '64': None,  # u'רש"ר הירש'
             '66': u"Meshech Hochma, {}".format(self.en_parasha),
+            '73': None, # ר' נפתלי הירץ ויזל
             '78': u"Chizkuni, {}".format(self.en_sefer),  # u'החזקוני'
             '88': None,  # u'אברהם כהנא (פירוש מדעי)'
             '91': u"Gur Aryeh on ".format(self.en_sefer),  # u"גור אריה",
@@ -989,8 +1000,11 @@ class Nechama_Parser:
             '158': None,  # רוזנצוויג
             '161': None,  # הרמב"ם דוגמא 4 ב
             '162': u"Rashi on {}".format(self.en_sefer),
+            '170': None,  # באור
             '175': None,  # u"כור הזהב",
             '177': u'',  #השגות הראב"ד
+            '178': u"Sefer HaChinukh",
+            '179': None,  # שם עולם 176.6
             # '183':
             '187': None,  # ר' יוסף נחמיאש
             '196': None,  # u'''בעל הלבוש אורה''',
@@ -1401,12 +1415,12 @@ if __name__ == "__main__":
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
     posting = True
-    individual = 621
-    for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
+    individual = False
+    for which_parshiot in [leviticus_parshiot]:#[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "catching with snunit", catch_errors=catch_errors) #accurate
+            parser = Nechama_Parser(book, parsha, "fast", "leviticus - running ", catch_errors=catch_errors) #accurate
             parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
