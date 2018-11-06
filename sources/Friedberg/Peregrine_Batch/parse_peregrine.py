@@ -1,5 +1,6 @@
 # encoding=utf-8
 
+import os
 import re
 import sys
 import json
@@ -166,20 +167,22 @@ class CommentStore(object):
         index_title = u'{} on {}'.format(commentary, rambam_ref.book)
         section_level = u'{} {}:{}'.format(index_title, *rambam_ref.sections)
 
-        self.comment_tracker[section_level] += 1
-        ref_indices = rambam_ref.sections[:] + [self.comment_tracker[section_level]]
-        full_ref = u'{} {}:{}:{}'.format(index_title, *ref_indices)
+        text_segments = self.format_segment(row_element['text'])
+        for segment in text_segments:
 
-        insertion_indices = [i-1 for i in ref_indices]  # 0 index for ja address
-        # check that our section is the correct size
-        segments_in_section = self.texts[index_title].sub_array_length(insertion_indices[:-1])
-        if segments_in_section is None:
-            segments_in_section = 0
-        assert segments_in_section == insertion_indices[-1]
+            self.comment_tracker[section_level] += 1
+            ref_indices = rambam_ref.sections[:] + [self.comment_tracker[section_level]]
+            full_ref = u'{} {}:{}:{}'.format(index_title, *ref_indices)
 
-        self.texts[index_title].set_element(insertion_indices, self.format_segment(row_element['text']), pad=u'')
-        self.links.append((rambam_ref.normal(), full_ref))
-        return full_ref
+            insertion_indices = [i-1 for i in ref_indices]  # 0 index for ja address
+            # check that our section is the correct size
+            segments_in_section = self.texts[index_title].sub_array_length(insertion_indices[:-1])
+            if segments_in_section is None:
+                segments_in_section = 0
+            assert segments_in_section == insertion_indices[-1]
+
+            self.texts[index_title].set_element(insertion_indices, segment, pad=u'')
+            self.links.append((rambam_ref.normal(), full_ref))
 
     @staticmethod
     def format_segment(segment_text):
@@ -229,8 +232,10 @@ class CommentStore(object):
         for b in markup:
             if b['class'] == 'S':
                 b.name = 'small'
+            elif b['class'] == 'Z':
+                b.name = u'quote'
             else:
-                b.name = u'b'
+                b.name = 'b'
             del b['class']
 
         segment_text = segment_root.decode_contents()
@@ -238,7 +243,11 @@ class CommentStore(object):
         segment_text = re.sub(u'\s{2,}', u' ', segment_text)
         segment_text = re.sub(u'\s*<br/>\s*', u'<br/>', segment_text)
         segment_text = re.sub(u'\s*(<br/>)+$', u'', segment_text)
-        return segment_text
+
+        # break on quotes which immediately follow a break
+        broken_segments = re.split(ur'<br/>(?=<quote>)', segment_text)
+        broken_segments = [re.sub(u'quote', u'b', seg) for seg in broken_segments]
+        return broken_segments
 
     def get_index_titles(self):
         return self.texts.keys()
@@ -305,7 +314,8 @@ with open("Friedberg_Texts.csv") as fp:
 #     titles = {row['id']: {'en_name': row['en_name'], 'he_name': row['he_name']} for row in unicodecsv.DictReader(fp)}
 
 storage = CommentStore()
-my_refs = [storage.resolve_row(row) for row in rows]
+for row in rows:
+    storage.resolve_row(row)
 
 titles = storage.get_index_titles()
 
@@ -328,20 +338,12 @@ def upload_index(storage_object, title, destination='http://localhost:8000'):
     :return:
     """
     index = storage_object.get_index_for_title(title)
-    categories = index['categories']
-    # response = add_category(categories[-1], categories, server=destination)
-    # if isinstance(response, requests.models.Response) and not response.ok:
-    #     with codecs.open('errors.html', 'w', 'utf-8') as fp:
-    #         fp.write(response.text)
-    #     raise AssertionError
     post_index(index, server=destination, weak_network=True)
-    # index_tracker.update(1)
 
 
 def upload_version(storage_object, title, destination='http://localhost:8000'):
     version = storage_object.get_version_for_title(title)
     post_text(title, version, index_count="on", server=destination, weak_network=True)
-    # version_tracker.update(1)
 
 
 server = 'http://peregrine.sandbox.sefaria.org'
@@ -365,7 +367,7 @@ def ensure_categories(storage_object, destination):
         add_category(category_list[-1], category_list, server=destination)
 
 
-# ensure_categories(storage, server)
+ensure_categories(storage, server)
 
 if num_processes > 1:
     pool = Pool(num_processes)
@@ -388,3 +390,5 @@ else:
 post_link(storage.generate_links(), server=server, weak_network=True)
 with codecs.open('All_Peregrine_Titles.json', 'w', 'utf-8') as fp:
     json.dump(titles, fp)
+
+requests.post(os.getenv('SLACK_URL'), json={'text': 'Peregrine Complete :owl:'})
