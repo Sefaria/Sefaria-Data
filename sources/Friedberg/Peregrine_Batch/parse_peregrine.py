@@ -1,17 +1,19 @@
 # encoding=utf-8
 
 import re
+import sys
 import json
 import codecs
 import django
 django.setup()
 import requests
 import unicodecsv
+from tqdm import tqdm
 from sefaria.model import *
-from bs4 import BeautifulSoup
 from functools import partial
 from multiprocessing import Pool
 from collections import Counter, defaultdict
+from bs4 import BeautifulSoup, NavigableString
 from sefaria.datatype.jagged_array import JaggedArray
 from sources.functions import add_term, add_category, post_link, post_index, post_text
 
@@ -195,10 +197,16 @@ class CommentStore(object):
             previous = span.previous_sibling
             if not previous:
                 continue
-            if span.name == previous.name and span.get('class') == previous.get('class'):
-                previous.append(span)
+
+            # make sure all text inside spans end with a space, we'll remove duplicates later
+            if span.string:
+                span.string.replace_with(NavigableString(u'{} '.format(span.string)))
+
+            if span.get('class', '') == '':
                 span.unwrap()
-            elif span.get('class', '') == '':
+
+            elif span.name == previous.name and span.get('class') == previous.get('class'):
+                previous.append(span)
                 span.unwrap()
 
         # handle footnotes
@@ -290,6 +298,18 @@ class CommentStore(object):
         ]
 
 
+with open("Friedberg_Texts.csv") as fp:
+    rows = list(unicodecsv.DictReader(fp))
+
+# with open("Friedberg_Texts_Metadata.csv") as fp:
+#     titles = {row['id']: {'en_name': row['en_name'], 'he_name': row['he_name']} for row in unicodecsv.DictReader(fp)}
+
+storage = CommentStore()
+my_refs = [storage.resolve_row(row) for row in rows]
+
+titles = storage.get_index_titles()
+
+
 def add_terms_locally(comment_store):
     """
     :param CommentStore comment_store:
@@ -309,29 +329,22 @@ def upload_index(storage_object, title, destination='http://localhost:8000'):
     """
     index = storage_object.get_index_for_title(title)
     categories = index['categories']
-    response = add_category(categories[-1], categories, server=destination)
-    if isinstance(response, requests.models.Response) and not response.ok:
-        with codecs.open('errors.html', 'w', 'utf-8') as fp:
-            fp.write(response.text)
-        raise AssertionError
-    post_index(index, server=destination)
+    # response = add_category(categories[-1], categories, server=destination)
+    # if isinstance(response, requests.models.Response) and not response.ok:
+    #     with codecs.open('errors.html', 'w', 'utf-8') as fp:
+    #         fp.write(response.text)
+    #     raise AssertionError
+    post_index(index, server=destination, weak_network=True)
+    # index_tracker.update(1)
 
 
 def upload_version(storage_object, title, destination='http://localhost:8000'):
     version = storage_object.get_version_for_title(title)
-    post_text(title, version, index_count="on", server=destination)
+    post_text(title, version, index_count="on", server=destination, weak_network=True)
+    # version_tracker.update(1)
 
 
-with open("Friedberg_Texts.csv") as fp:
-    rows = list(unicodecsv.DictReader(fp))
-
-# with open("Friedberg_Texts_Metadata.csv") as fp:
-#     titles = {row['id']: {'en_name': row['en_name'], 'he_name': row['he_name']} for row in unicodecsv.DictReader(fp)}
-
-storage = CommentStore()
-my_refs = [storage.resolve_row(row) for row in rows]
-
-server = 'http://localhost:8000'
+server = 'http://peregrine.sandbox.sefaria.org'
 num_processes = 1
 
 add_terms_locally(storage)
@@ -339,7 +352,20 @@ add_terms_locally(storage)
 partial_upload_index = partial(upload_index, storage, destination=server)
 partial_upload_version = partial(upload_version, storage, destination=server)
 
-titles = storage.get_index_titles()
+
+def ensure_categories(storage_object, destination):
+    """
+    :param CommentStore storage_object:
+    :param destination:
+    :return:
+    """
+    categories = set([tuple(storage_object.get_index_for_title(title)['categories'])
+                      for title in storage_object.get_index_titles()])
+    for category_list in categories:
+        add_category(category_list[-1], category_list, server=destination)
+
+
+# ensure_categories(storage, server)
 
 if num_processes > 1:
     pool = Pool(num_processes)
@@ -347,11 +373,18 @@ if num_processes > 1:
     pool.map(partial_upload_version, titles)
 
 else:
-    for num, t in enumerate(titles):
-        print u'{} / {}'.format(num+1, len(titles))
+    regular_output = sys.stdout
+    log_file = open('upload_log.log', 'w')
+    progress_bar = tqdm(total=len(titles))
+
+    for t in titles:
+        sys.stdout = log_file
         partial_upload_index(t)
         partial_upload_version(t)
+        sys.stdout = regular_output
+        progress_bar.update(1)
+    log_file.close()
 
-post_link(storage.generate_links(), server=server)
+post_link(storage.generate_links(), server=server, weak_network=True)
 with codecs.open('All_Peregrine_Titles.json', 'w', 'utf-8') as fp:
     json.dump(titles, fp)
