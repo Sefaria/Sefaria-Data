@@ -13,7 +13,7 @@ from sefaria.system.database import db
 from sefaria.system.exceptions import InputError
 from collections import OrderedDict
 from bs4 import BeautifulSoup, element
-import numpy
+# import numpy
 from time import sleep
 import bleach
 import shutil
@@ -97,6 +97,13 @@ class Sheet(object):
                 success = parser.try_parallel_matcher(segment, guess_ref)
                 if not success and segment.snunit_ref:  # take 2
                     success = parser.try_parallel_matcher(segment, segment.snunit_ref.normal())
+                # look at guess ref, maybe it was ignored because there was a Sefaria ref first
+                if not success:
+                    temp =segment.ref
+                    segment.ref = guess_ref
+                    success = parser.try_parallel_matcher(segment, guess_ref)
+                    if not success:
+                        segment.ref = temp
                 if success and not Ref(segment.ref).is_commentary():
                     guess_ref = segment.ref # if base text keep for the next source segment
                 elif not success:  # not success couldn't find matching text
@@ -534,7 +541,8 @@ class Section(object):
                 # case where you found the ref but Nechama said something else in addition to the ref
                 # so we want to keep the text
                 if len(relevant_text.strip(":").split()) <= 1:  # in Ref(current_source.ref).index.all_titles('he'):
-                    print relevant_text.strip(":")
+                    # print relevant_text.strip(":")
+                    pass
                 else:
                     current_source.about_source_ref = relevant_text
         elif found_a_tag:
@@ -978,6 +986,7 @@ class Nechama_Parser:
             '3': None,  #u'אבן כספי',
             '4': u"Ibn Ezra on {}".format(self.en_sefer),  # u'''ראב"ע''',
             '6': u"Abarbanel on Torah, {}".format(self.en_sefer),  # Abarbanel_on_Torah,_Genesis
+            '11': None,  # בעל צידה לדרך 1092.3
             '15': None,  # רבי יוסף אלבו
             '23': None,  #u"רבי אליעזר אשכנזי",
             '24': None,  # הואיל משה 504.2
@@ -994,7 +1003,7 @@ class Nechama_Parser:
             '46': u"Haamek Davar on {}".format(self.en_sefer),
             '51': None,  # u"ביאור - ר' שלמה דובנא"
             '53': None,  # רב דוד הופמן
-            '59': None,  # ר' וולף היידנהיים
+            '59': None,  # ר' וולף היידנהיים 176.9
             '64': None,  # u'רש"ר הירש'
             '66': u"Meshech Hochma, {}".format(self.en_parasha),
             '73': None, # ר' נפתלי הירץ ויזל
@@ -1026,6 +1035,9 @@ class Nechama_Parser:
             '238': u"Onkelos {}".format(self.en_sefer),  # u"אונקלוס",
         # u'''רלב"ג''', #todo, figure out how to do Beur HaMilot and reguler, maybe needs to be a re.search in the changed_ref method
         }
+        for k in range(239):
+            if str(k) not in self.parshan_id_table.keys():
+                self.parshan_id_table[str(k)] = None
 
 
     def flip_ref_parasha_to_haftarah(self, ref, haftarah):
@@ -1097,11 +1109,11 @@ class Nechama_Parser:
     def clean(self, s):
         s = unicodedata.normalize("NFD", s)
         s = strip_cantillation(s, strip_vowels=True)
-        s = re.sub(u"(^|\s)(?:\u05d4['\u05f3])($|\s)", u"\1יהוה\2", s)
+        s = re.sub(u"(^|\s)(?:\u05d4['\u05f3])($|\s)", u" יהוה ", s)
         s = re.sub(ur"[,'\":?.!;־״׳-]", u" ", s)
         s = re.sub(u'((?:^|\s)[\u05d0-\u05ea])\s+([\u05d0-\u05ea])', ur"\1\2", s)
         # s = re.sub(ur"-", u"", s)
-        s = re.sub(u''' ד"ה''', u" ", s)
+        s = re.sub(u'''(^|\s)דה\s''', u" ", s)
         if not re.search(u'^\([^()]*(?:\)\s*)$', s):
             s = re.sub(ur"\([^)]+\)", u" ", s)
         # s = re.sub(ur"\([^)]+\)", u" ", s)
@@ -1200,9 +1212,10 @@ class Nechama_Parser:
                                     matched = self.check_reduce_sources(text_to_use, changed_ref)
                             except KeyError:
                                 print u"parshan_id_table is missing a key and value for {}, in {}, \n text {}".format(current_source.parshan_id, self.current_file_path, current_source.text)
-                            except AssertionError:
+                            except AssertionError as e:
+                                print e
                                 pass
-                    # look one level up
+                    # look one level up - todo: is level up duplicated?
                     if not matched:  # and parshan is a running parshan, still not matched! מלבים. אברבנל.העמק דבר רלבג
                         matched = self.check_reduce_sources(text_to_use, changed_ref.top_section_ref())
                     # check Haftarah
@@ -1430,14 +1443,13 @@ if __name__ == "__main__":
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
     posting = True
-    individual = None
-    cnt = 0
-    for which_parshiot in [leviticus_parshiot]:#[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
+    individual = 1
+    for which_parshiot in [genesis_parshiot]: #[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "accurate", "hope to post today", catch_errors=catch_errors)
-            #parser.prepare_term_mapping()  # must be run once locally and on sandbox
+            parser = Nechama_Parser(book, parsha, "fast", "genesis prefinal", catch_errors=catch_errors) #accurate
+            parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
             # anything_before = "7.html"

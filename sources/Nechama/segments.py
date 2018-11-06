@@ -69,10 +69,38 @@ class Source(object):
     def glue_ref_and_text(self, ref, text, gray=True):
         if isinstance(text, list):
             text = u' '.join(text)
-        if not gray:
-            return u"{}<br/>{}".format(ref, text)
+        if self.about_source_ref and self.ref:
+            if self.about_source_ref != self.ref:
+                try:
+                    about_words = [x.strip(u'''"\u05f3' ,''') for x in re.split(u" |:", self.about_source_ref.strip())]
+                    ref_words = [x.strip(u'''"\u05f3' ,''') for x in re.split(u" |:", Ref(self.ref).he_normal())]
+                    diff = set(about_words).difference(set(ref_words))
+                    diff.discard(u'פרק')
+                    diff.discard(u'פסוק')
+                    diff.discard(u'הלכה')
+                    diff.discard(u'')
+                    print u"diff words: {}".format(len(diff))
+                    for w in diff:
+                        print w
+                    if len(diff) <= 3:
+                        if self.get_sefaria_ref(self.ref):
+                            return text
+                        else:
+                            return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(
+                                self.about_source_ref, text)
+                    else:
+                        return u"{}<br/>{}".format(self.about_source_ref, text)
+                except InputError:
+                    pass
+            else:  # self.about_source_ref == self.ref, they are the same so the self.ref is not a Sefaria Ref it is just the about_source_ref and we make it look nice
+                return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(self.ref, text)
         else:
-            return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(ref, text)
+            return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(
+                self.about_source_ref, text)
+        # if not gray:
+        #     return u"{}<br/>{}".format(ref, text)
+        # else:
+        #     return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(ref, text)
 
     def create_source(self):
         # remove snunit tags from text and about_source_ref
@@ -145,10 +173,6 @@ class Source(object):
                         if term:
                             self.ref = [title['text'] for title in term.titles if title['lang'] == 'he'][0]
 
-            if self.about_source_ref and self.ref and self.about_source_ref != self.ref:
-                about_words = re.split(u" |:", self.about_source_ref.strip())
-                ref_words = re.split(u" |:", Ref(self.ref).he_normal())
-                set(about_words).difference(set(ref_words))
             if self.about_source_ref:
                 comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False) #use actual text if we can
             else:
