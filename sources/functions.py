@@ -545,7 +545,7 @@ def weak_connection(func):
             for i in range(num_tries-1):
                 try:
                     result = func(*args, **kwargs)
-                except (HTTPError, URLError) as e:
+                except (HTTPError, URLError, requests.exceptions.ConnectionError) as e:
                     print 'handling weak network'
                 else:
                     success = True
