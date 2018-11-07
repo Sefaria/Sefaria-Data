@@ -72,26 +72,29 @@ class Source(object):
         if self.about_source_ref and self.ref:
             if self.about_source_ref != self.ref:
                 try:
-                    about_words = [x.strip(u'''"\u05f3' ,''') for x in re.split(u" |:", self.about_source_ref.strip())]
-                    ref_words = [x.strip(u'''"\u05f3' ,''') for x in re.split(u" |:", Ref(self.ref).he_normal())]
-                    diff = set(about_words).difference(set(ref_words))
-                    diff.discard(u'פרק')
-                    diff.discard(u'פסוק')
-                    diff.discard(u'הלכה')
-                    diff.discard(u'')
-                    print u"diff words: {}".format(len(diff))
-                    for w in diff:
-                        print w
-                    if len(diff) <= 3:
-                        if self.get_sefaria_ref(self.ref):
-                            return text
-                        else:
-                            return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(
-                                self.about_source_ref, text)
+                    he_self_ref = Ref(self.ref).he_normal()
+                except InputError as e:
+                    print u"Exception {}".format(e)
+                    assert isinstance(self.ref, unicode)
+                    he_self_ref = self.ref
+                about_words = [x.strip(u'''"\u05f3' ,''') for x in re.split(u" |:", self.about_source_ref.strip())]
+                ref_words = [x.strip(u'''"\u05f3' ,''') for x in re.split(u" |:", he_self_ref)]
+                diff = set(about_words).difference(set(ref_words))
+                diff.discard(u'פרק')
+                diff.discard(u'פסוק')
+                diff.discard(u'הלכה')
+                diff.discard(u'')
+                print u"diff words: {}".format(len(diff))
+                for w in diff:
+                    print w
+                if len(diff) <= 3:
+                    if self.get_sefaria_ref(self.ref):
+                        return text
                     else:
-                        return u"{}<br/>{}".format(self.about_source_ref, text)
-                except InputError:
-                    pass
+                        return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(
+                            self.about_source_ref, text)
+                else:
+                    return u"{}<br/>{}".format(self.about_source_ref, text)
             else:  # self.about_source_ref == self.ref, they are the same so the self.ref is not a Sefaria Ref it is just the about_source_ref and we make it look nice
                 return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(self.ref, text)
         else:

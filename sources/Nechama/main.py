@@ -986,6 +986,7 @@ class Nechama_Parser:
             '3': None,  #u'אבן כספי',
             '4': u"Ibn Ezra on {}".format(self.en_sefer),  # u'''ראב"ע''',
             '6': u"Abarbanel on Torah, {}".format(self.en_sefer),  # Abarbanel_on_Torah,_Genesis
+            '8': None,  # אהרליך, מקרא כפשוטו 400.4
             '11': None,  # בעל צידה לדרך 1092.3
             '15': None,  # רבי יוסף אלבו
             '23': None,  #u"רבי אליעזר אשכנזי",
@@ -1443,7 +1444,7 @@ if __name__ == "__main__":
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
     posting = True
-    individual = 1
+    individual = 750
     for which_parshiot in [genesis_parshiot]: #[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
