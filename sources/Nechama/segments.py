@@ -66,6 +66,9 @@ class Source(object):
                 ref_node = " ".join(re.split(u"[:\s]", ref)[0:-1])
                 return self.get_sefaria_ref(ref_node) #returns Ralbag Beur HaMilot on Torah, Genesis
 
+
+
+
     def glue_ref_and_text(self, ref, text, gray=True):
         if isinstance(text, list):
             text = u' '.join(text)
@@ -91,19 +94,19 @@ class Source(object):
                     if self.get_sefaria_ref(self.ref):
                         return text
                     else:
-                        return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(
-                            self.about_source_ref, text)
+                        return self.gray(self.about_source_ref, text)
                 else:
                     return u"{}<br/>{}".format(self.about_source_ref, text)
             else:  # self.about_source_ref == self.ref, they are the same so the self.ref is not a Sefaria Ref it is just the about_source_ref and we make it look nice
-                return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(self.ref, text)
+                return self.gray(self.ref, text)
         else:
-            return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(
-                self.about_source_ref, text)
-        # if not gray:
-        #     return u"{}<br/>{}".format(ref, text)
-        # else:
-        #     return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(ref, text)
+            return self.gray(self.about_source_ref, text)
+
+    def gray(self, ref, text):
+        if len(text.split()) > 12:
+            return u"{}<br/>{}".format(ref, text)
+        else:
+            return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(ref, text)
 
     def create_source(self):
         # remove snunit tags from text and about_source_ref
