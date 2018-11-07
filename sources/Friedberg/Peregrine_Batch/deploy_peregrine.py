@@ -11,6 +11,7 @@ hint: for the peregrine sandbox, the container name is web-peregrine
 The APIKEY is obtained as an environment variable. Also, a SLACK_URL can be supplied, which will notify on slack when
 deploy is completed
 """
+import re
 import os
 import sys
 import json
@@ -38,6 +39,10 @@ apikey = os.getenv('APIKEY')
 assert apikey is not None
 
 for i, title in enumerate(title_list):
+    # there's a copyright issue with Shekel HaKodesh, so we'll skip that for now
+    if re.search(u'Shekel HaKodesh', title):
+        print u"skipping {}".format(title)
+        continue
     print u'{} / {}'.format(i+1, len(title_list))
     copier = ServerTextCopier(destination, apikey, title, post_index=True, versions='all', post_links=2)
     copier.do_copy()
