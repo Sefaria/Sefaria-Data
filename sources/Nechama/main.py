@@ -1457,7 +1457,7 @@ if __name__ == "__main__":
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
             # sheets = sheets[sheets.index("163.html")::]
-
+            sheets = ["1092.html"]
             if individual:
                 got_sheet = parser.bs4_reader(["html_all/{}.html".format(individual)] if "{}.html".format(individual) in os.listdir("html_sheets/{}".format(parsha)) else [], post=posting)
             else:
