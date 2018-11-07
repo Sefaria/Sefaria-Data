@@ -13,7 +13,7 @@ from sefaria.system.database import db
 from sefaria.system.exceptions import InputError
 from collections import OrderedDict
 from bs4 import BeautifulSoup, element
-# import numpy
+import numpy
 from time import sleep
 import bleach
 import shutil
@@ -78,7 +78,7 @@ class Sheet(object):
              }
              })
         for isection, section in enumerate(self.sections):
-            self.sources.extend(self.create_sheetsources_from_sections(section.segment_objects)) #vs section and than getting the section.segment_objects latter in create_sheetsources_from_sections function
+            self.sources.extend(self.create_sheetsources_from_sections(section.segment_objects)) # vs section and than getting the section.segment_objects latter in create_sheetsources_from_sections function
 
 
 
@@ -519,7 +519,7 @@ class Section(object):
                 current_source = Source(u"{} {}".format(real_title, new_perek), next_segment_class)
         elif snunit_ref:
             current_source = Source(snunit_ref.normal(), next_segment_class)
-        elif not real_title and is_tanakh:  # not a commentator, but instead a ref to the parsha
+        elif not real_title and (is_tanakh or is_perek_pasuk_ref):  # not a commentator, but instead a ref to the parsha
             current_source = Source(u"{} {}:{}".format(parser.en_sefer, new_perek, new_pasuk), "bible")
         # elif current_source.parshan_name != "bible":
         #     pass # look for mechilta? look for other books so not to get only Tanakh?
@@ -1011,7 +1011,7 @@ class Nechama_Parser:
             '73': None,  # ר' נפתלי הירץ ויזל
             '78': u"Chizkuni, {}".format(self.en_sefer),  # u'החזקוני'
             '88': None,  # u'אברהם כהנא (פירוש מדעי)'
-            '91': u"Gur Aryeh on ".format(self.en_sefer),  # u"גור אריה",
+            '91': u"Gur Aryeh on {}".format(self.en_sefer),  # u"גור אריה",
             '94': u"Shadal on {}".format(self.en_sefer),  # u'''שד"ל''',
             '101': u'Mizrachi, {}'.format(self.en_sefer),
             '104': None,  # u'''רמבמ"ן''',
@@ -1445,7 +1445,7 @@ if __name__ == "__main__":
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
     posting = True
-    individual = None
+    individual = 62
     for which_parshiot in [genesis_parshiot]: #[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
@@ -1458,7 +1458,6 @@ if __name__ == "__main__":
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
             # sheets = sheets[sheets.index("163.html")::]
-            sheets = ["62.html"]
             if individual:
                 got_sheet = parser.bs4_reader(["html_all/{}.html".format(individual)] if "{}.html".format(individual) in os.listdir("html_sheets/{}".format(parsha)) else [], post=posting)
             else:
