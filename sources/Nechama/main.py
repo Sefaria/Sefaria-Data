@@ -994,7 +994,7 @@ class Nechama_Parser:
             '27': None,  #u"בובר"
             '28': u"Rabbeinu Bahya, {}".format(self.en_sefer),  # u'''רבנו בחיי''',
             '29': u"Bekhor Shor, {}".format(self.en_sefer),  # u"בכור שור",
-            '32': u"Ralbag on {}".format(self.en_sefer),
+            '32': u"Ralbag on Torah, {}".format(self.en_sefer),
             '33': None,  # u'''ר' אברהם בן הרמב"ם''',
             '37': u"Malbim on {}".format(self.en_sefer),  # u'''מלבי"ם''',
             '38': u"Rashbam on {}".format(self.en_sefer),  # רשב"ם
@@ -1007,7 +1007,7 @@ class Nechama_Parser:
             '59': None,  # ר' וולף היידנהיים 176.9
             '64': None,  # u'רש"ר הירש'
             '66': u"Meshech Hochma, {}".format(self.en_parasha),
-            '73': None, # ר' נפתלי הירץ ויזל
+            '73': None,  # ר' נפתלי הירץ ויזל
             '78': u"Chizkuni, {}".format(self.en_sefer),  # u'החזקוני'
             '88': None,  # u'אברהם כהנא (פירוש מדעי)'
             '91': u"Gur Aryeh on ".format(self.en_sefer),  # u"גור אריה",
@@ -1029,7 +1029,7 @@ class Nechama_Parser:
             '177': u'',  #השגות הראב"ד
             '178': u"Sefer HaChinukh",
             '179': None,  # שם עולם 176.6
-            # '183':
+            '183': None,  #
             '187': None,  # ר' יוסף נחמיאש
             '196': None,  # u'''בעל הלבוש אורה''',
             '198': u"HaKtav VeHaKabalah, {}".format(self.en_sefer),  # u'''הכתב והקבלה''',
@@ -1444,7 +1444,7 @@ if __name__ == "__main__":
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
     posting = True
-    individual = None
+    individual = 1
     for which_parshiot in [genesis_parshiot]: #[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
@@ -1457,7 +1457,6 @@ if __name__ == "__main__":
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
             # sheets = sheets[sheets.index("163.html")::]
-            sheets = ["1.html"]
             if individual:
                 got_sheet = parser.bs4_reader(["html_all/{}.html".format(individual)] if "{}.html".format(individual) in os.listdir("html_sheets/{}".format(parsha)) else [], post=posting)
             else:

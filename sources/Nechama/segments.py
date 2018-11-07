@@ -102,11 +102,17 @@ class Source(object):
         else:
             return self.gray(self.about_source_ref, text)
 
-    def gray(self, ref, text):
-        if len(text.split()) > 12:
-            return u"{}<br/>{}".format(ref, text)
+    def gray(self, source_ref, text):
+        """
+        this is to get the grey as
+        :param source_ref:
+        :param text:
+        :return:
+        """
+        if len(source_ref.split()) > 12:
+            return u"{}<br/>{}".format(source_ref, text)
         else:
-            return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(ref, text)
+            return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(source_ref, text)
 
     def create_source(self):
         # remove snunit tags from text and about_source_ref
