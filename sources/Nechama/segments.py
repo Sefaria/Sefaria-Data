@@ -15,8 +15,7 @@ class Segment(object):
     def create_source(self):
         #create source for sourcesheet out of myself
         segment = BeautifulSoup(self.text)
-        for a in segment.findAll('a'):  # get all a tags and remove them
-            a.replaceWithChildren()
+        segment = remove_a_links(segment)
         source = {"outsideText": segment.text}
         return source
 
@@ -119,8 +118,7 @@ class Source(object):
         if isinstance(self.text, list):
             for i, line in enumerate(self.text):
                 segment = BeautifulSoup(self.text[i])
-                for a in segment.findAll('a'):  # get all a tags and remove them
-                    a.replaceWithChildren()
+                segment = remove_a_links(segment)
                 self.text[i] = segment.text
 
         comment = self.text
@@ -153,7 +151,7 @@ class Source(object):
                       }
             if isinstance(self.text, list):
                 source["text"] = {
-                    "he": u'{} <a href= "/{}">{}</a><br>{}'.format(self.text[0], enRef, heRef, self.text[1]),
+                    "he": u'{} <a class="nested_question_hack" href= "/{}">{}</a><br>{}'.format(self.text[0], enRef, heRef, self.text[1]),
                     "en": ""
                 }
                 source["options"]["indented"] = ""
@@ -270,8 +268,7 @@ class Header(object):
     def create_source(self):
         #create source for sourcesheet out of myself
         segment = BeautifulSoup(self.text)
-        for a in segment.findAll('a'):  # get all a tags and remove them
-            a.replaceWithChildren()
+        segment = remove_a_links(segment)
         source = {"outsideText": str(segment)}
         return source
 
@@ -378,9 +375,8 @@ class Question(object):
     def create_source(self):
         #create source for sourcesheet out of myself
         segment = BeautifulSoup(self.text)
-        for a in segment.findAll('a'):  # get all a tags and remove them
-            a.replaceWithChildren()
-        source = {"outsideText": segment.text}
+        segment = remove_a_links(segment)
+        source = {"outsideText": str(segment)}
         return source
 
     def format(self, without_params=[], difficulty_symbol = [u'', u'''<sup class="nechama">*</sup>''', u'''<sup class="nechama">**</sup>''']):
@@ -414,10 +410,25 @@ class Table(object):
     def create_source(self):
         #create source for sourcesheet out of myselfwithout_params=["number"]
         segment = BeautifulSoup(self.text)
-        for a in segment.findAll('a'):  # get all a tags and remove them
-            a.replaceWithChildren()
+        segment = remove_a_links(segment)
         source = {"outsideText": str(segment)}
         return source
+
+
+
+def remove_a_links(segment):
+    for a in segment.findAll('a'):  # get all a tags and remove them
+        if a.attrs and "class" in a.attrs.keys() and a.attrs["class"] == "nested_question_hack":
+            continue
+        # if a.attrs["href"].find("snunit") > 0:
+        #     ref = Section.exctract_pasuk_from_snunit(a)
+        #     new_a_href = "<a href='/{}'".format(ref)
+        #     segment.replace_with(ref, new_a_href)
+
+
+        a.replaceWithChildren()
+    return segment
+
 
 
 class RT_Rashi(object):
@@ -458,9 +469,8 @@ class Nechama_Comment(object):
     def create_source(self):
         #create source for sourcesheet out of
         segment = BeautifulSoup(self.text)
-        for a in segment.findAll('a'):  # get all a tags and remove them
-            a.replaceWithChildren()
-        source = {"outsideText": segment.text}
+        segment = remove_a_links(segment)
+        source = {"outsideText": str(segment)}
         return source
 
 
@@ -611,7 +621,6 @@ class Nested(object):
         else:
             return self.obj.create_source()
 
-
 class Text(object):
 
     def __init__(self, sp_segment, segment_class, ref_guess=None):
@@ -626,8 +635,7 @@ class Text(object):
         this function is only for the sake of test runes. it reality it is code that should never be run! todo: right a test to see that it is not run.
         :return: a sheet obj
         """
-        for a in self.sp_segment.findAll('a'):  # get all a tags and remove them
-            a.replaceWithChildren()
+        self.sp_segment = remove_a_links(self.sp_segment)
         source = {"outsideText": self.sp_segment.text}
         return source
 

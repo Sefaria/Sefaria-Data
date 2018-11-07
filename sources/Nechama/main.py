@@ -465,18 +465,18 @@ class Section(object):
 
         if segment.name == "a":
             a_tag = segment
-            snunit_ref = self.exctract_pasuk_from_snunit(a_tag)
+            snunit_ref = Section.exctract_pasuk_from_snunit(a_tag)
         else:
             all_a_tag = segment.findAll('a')
             if all_a_tag:
                 a_tag = all_a_tag[0]
-                snunit_ref = self.exctract_pasuk_from_snunit(a_tag)
+                snunit_ref = Section.exctract_pasuk_from_snunit(a_tag)
                 if len(all_a_tag)>1:
                     print "len all_a_tags = {}, a_tag = {}, next = {}".format(len(all_a_tag),all_a_tag[0], all_a_tag[1])
                     for a in all_a_tag:
-                        snr = self.exctract_pasuk_from_snunit(a)
+                        snr = Section.exctract_pasuk_from_snunit(a)
                         if snr:
-                            snunit_ref = self.exctract_pasuk_from_snunit(a)
+                            snunit_ref = Section.exctract_pasuk_from_snunit(a)
             else: # there is no a_tag
                 return (False, False, False, False)
         real_title = ""
@@ -563,7 +563,8 @@ class Section(object):
         current_source.about_source_ref = relevant_text
         return current_source
 
-    def exctract_pasuk_from_snunit(self, a_tag):
+    @staticmethod
+    def exctract_pasuk_from_snunit(a_tag):
         book_table = {1: u'Genesis', 2: u'Exodus', 3: u'Leviticus', 4: u'Numbers', 5: u'Deuteronomy',
                       6: u'Joshua',
                       7: u'Judges',
@@ -1444,12 +1445,12 @@ if __name__ == "__main__":
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
     posting = True
-    individual = 1
+    individual = None
     for which_parshiot in [genesis_parshiot]: #[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "genesis prefinal", catch_errors=catch_errors) #accurate
+            parser = Nechama_Parser(book, parsha, "accurate", "genesis prefinal", catch_errors=catch_errors) #accurate
             parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
@@ -1457,6 +1458,7 @@ if __name__ == "__main__":
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
             # sheets = sheets[sheets.index("163.html")::]
+            sheets = ["62.html"]
             if individual:
                 got_sheet = parser.bs4_reader(["html_all/{}.html".format(individual)] if "{}.html".format(individual) in os.listdir("html_sheets/{}".format(parsha)) else [], post=posting)
             else:
