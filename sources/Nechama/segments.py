@@ -510,7 +510,6 @@ class Nested(object):
             elif (e in segment.findAll('p')) and e.parent.has_attr('class') and e.parent.attrs['class'] == ['RT_RASHI']:
                 tags_with_p.append((i, e))
 
-
         if not classed_tags: #we don't need to check in this case
             return
 

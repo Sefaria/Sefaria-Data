@@ -297,6 +297,12 @@ class Section(object):
 
         # removes nodes with no content
         soup_segments = self.get_children_with_content(div)
+        for segment in soup_segments:
+            class_ = ""
+            if isinstance(segment, element.Tag):
+                class_ = segment.attrs.get("class", [""])[0]
+            if segment.name == "table" and class_ == "RT_RASHI":
+                self.RT_Rashi = True
         # blockquote is really just its children so get replace it with them
         # and tables  need to be handled recursively
         # soup_segments = self.check_for_blockquote_and_table(soup_segments)
