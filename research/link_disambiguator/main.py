@@ -251,8 +251,6 @@ def disambiguate_all():
     for iambig, (main_str, tref_list) in enumerate(ambig_dict.items()):
         if iambig % 50 == 0:
             print "{}/{}".format(iambig, len(ambig_dict))
-        if iambig > 100:
-            break
         try:
             main_ref = Ref(main_str)
             for quoted_tref in tref_list:
