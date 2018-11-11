@@ -85,9 +85,9 @@ class Link_Disambiguator:
         num_stopwords_a = reduce(lambda a, b: a + (1 if self.is_stopword(b) else 0), words_a, 0)
         num_stopwords_b = reduce(lambda a, b: a + (1 if self.is_stopword(b) else 0), words_b, 0)
         if len(words_a) - num_stopwords_a < 2 or len(words_b) - num_stopwords_b < 2:
-            print "stopwords!"
-            print num_stopwords_a, len(words_a)
-            print num_stopwords_b, len(words_b)
+            # print "stopwords!"
+            # print num_stopwords_a, len(words_a)
+            # print num_stopwords_b, len(words_b)
             return -40
         return -ComputeLevenshteinDistanceByWord(u" ".join(words_a), u" ".join(words_b)) + sum([self.word_count_score(w) for w in words_b])
 
@@ -189,9 +189,9 @@ class Link_Disambiguator:
         max_scores = argmax(score_list, n=1)
         best = match_list[max_scores[0]]
         a_match, b_match = (best.a, best.b) if best.a.mesechta == main_tref else (best.b, best.a)
-        print "snippet"
-        print get_snippet_from_mesorah_item(b_match, self.tokenize_words)
-        print best.score
+        # print "snippet"
+        # print get_snippet_from_mesorah_item(b_match, self.tokenize_words)
+        # print best.score
         ret = [[a_match.mesechta, b_match.ref.normal(), best.score, quote_number, main_snippet, get_snippet_from_mesorah_item(b_match, self.tokenize_words)]]
         good, bad = (ret, []) if best.score > -28 else ([], ret)
         return good, bad
@@ -345,7 +345,7 @@ def get_snippet_by_seg_ref(source, found, must_find_snippet=False, snip_size=100
                 after_snippet = linkified[match.end(3):end_snip]
                 if re.search(after_reg, before_snippet) is not None:
                     temp_snip = after_snippet
-                    print before_snippet
+                    # print before_snippet
                 else:
                     temp_snip = linkified[start_snip:end_snip]
             else:
