@@ -421,13 +421,13 @@ def count_words_map(index):
         pass
 
 if __name__ == '__main__':
-    #ld = Link_Disambiguator()
-    # ld.get_ambiguous_segments()
-    #disambiguate_all()
+    ld = Link_Disambiguator()
+    ld.get_ambiguous_segments()
+    disambiguate_all()
     #find_low_confidence_talmud()
     # ld = Link_Disambiguator()
     # ld.disambiguate_gra()
-    count_words()
+    #count_words()
 
     # tc_list = [Ref("Zohar 1:70b:7").text("he"), Ref("Song of Songs 1").text("he")] #{'match_index': [[5, 7], [11, 13]], 'score': 81, 'match': [u'Zohar 1:70b:7', u'Song of Songs 1:3']}
     # tc_list = [Ref("Zohar 1:70b:9").text("he"), Ref("Genesis 1").text("he")] #{'match_index': [[27, 32], [106, 111]], 'score': 96, 'match': [u'Genesis 1:4', u'Zohar 1:70b:9']}
