@@ -8,7 +8,7 @@ sys.path.insert(0, SEFARIA_PROJECT_PATH)
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 
 
-import re, bleach, json, codecs, unicodecsv, heapq, random, regex, math
+import re, json, codecs, unicodecsv, heapq, random, regex, math, cProfile, pstats
 import django
 django.setup()
 from sefaria.model import *
@@ -40,6 +40,7 @@ class Link_Disambiguator:
                   u'וצריכא', u'הלל', u'שמאי', u"וגו'", u'וגו׳', u'וגו']
     def __init__(self):
         self.levenshtein = WeightedLevenshtein()
+        self.matcher = None
         with codecs.open("word_counts.json", "rb", encoding="utf8") as fin:
             self.word_counts = json.load(fin)
 
@@ -174,11 +175,12 @@ class Link_Disambiguator:
         :param quote_number: if the quoted ref appears multiple times in the main ref, this is the index of the quoted ref
         :return: good, bad
         """
-        matcher = ParallelMatcher(self.tokenize_words,max_words_between=1, min_words_in_match=3, ngram_size=3,
+        if not self.matcher:
+            self.matcher = ParallelMatcher(self.tokenize_words,max_words_between=1, min_words_in_match=3, ngram_size=3,
                                   parallelize=False, calculate_score=self.get_score, all_to_all=False,
                                   verbose=False, min_distance_between_matches=1)
         try:
-            match_list = matcher.match(tc_list=[(main_snippet, main_tref), quoted_tc], return_obj=True)
+            match_list = self.matcher.match(tc_list=[(main_snippet, main_tref), quoted_tc], return_obj=True)
         except ValueError:
             print "Skipping {}".format(main_tref)
             return [], []  # [[main_tc._oref.normal(), tc_list[i]._oref.normal()] for i in range(len(tc_list))]
@@ -192,7 +194,7 @@ class Link_Disambiguator:
         # print "snippet"
         # print get_snippet_from_mesorah_item(b_match, self.tokenize_words)
         # print best.score
-        ret = [[a_match.mesechta, b_match.ref.normal(), best.score, quote_number, main_snippet, get_snippet_from_mesorah_item(b_match, self.tokenize_words)]]
+        ret = [[a_match.mesechta, b_match.ref.normal(), best.score, quote_number, main_snippet]]
         good, bad = (ret, []) if best.score > -28 else ([], ret)
         return good, bad
 
@@ -239,7 +241,6 @@ def get_snippet_from_mesorah_item(mesorah_item, tokenizer):
     words = tokenizer(Ref(mesorah_item.mesechta).text("he").ja().flatten_to_string())
     return u" ".join(words[mesorah_item.location[0]:mesorah_item.location[1]+1])
 
-
 def disambiguate_all():
     ld = Link_Disambiguator()
     #ld.find_indexes_with_ambiguous_links()
@@ -248,14 +249,23 @@ def disambiguate_all():
     ambig_dict = json.load(open("ambiguous_segments.json",'rb'))
     good = []
     bad = []
+    _tc_cache = {}
+    def make_tc(tref, oref):
+        tc = oref.text('he')
+        _tc_cache[tref] = tc
+        return tc
     for iambig, (main_str, tref_list) in enumerate(ambig_dict.items()):
         if iambig % 50 == 0:
             print "{}/{}".format(iambig, len(ambig_dict))
+        if iambig >= 400:
+            break
         try:
             main_ref = Ref(main_str)
+            main_tc = _tc_cache.get(main_str, make_tc(main_str, main_ref))
             for quoted_tref in tref_list:
                 quoted_oref = Ref(quoted_tref)
-                temp_good, temp_bad = disambiguate_one(ld, main_ref, quoted_oref)
+                quoted_tc = _tc_cache.get(quoted_tref, make_tc(quoted_tref, quoted_oref))
+                temp_good, temp_bad = disambiguate_one(ld, main_ref, main_tc, quoted_oref, quoted_tc)
                 good += temp_good
                 bad += temp_bad
         except PartialRefInputError:
@@ -277,10 +287,9 @@ def disambiguate_all():
         f.write(objStr.encode('utf-8'))
 
 
-def disambiguate_one(ld, main_oref, quoted_oref):
+def disambiguate_one(ld, main_oref, main_tc, quoted_oref, quoted_tc):
     good, bad = [], []
-    quoted_tc = quoted_oref.text("he")
-    main_snippet_list = get_snippet_by_seg_ref(main_oref, quoted_oref, must_find_snippet=True, snip_size=45, use_indicator_words=True)
+    main_snippet_list = get_snippet_by_seg_ref(main_oref, main_tc, quoted_oref, must_find_snippet=True, snip_size=45, use_indicator_words=True)
     if main_snippet_list:
         for isnip, main_snippet in enumerate(main_snippet_list):
             temp_good, temp_bad = ld.disambiguate_segment_by_snippet(main_snippet, main_oref.normal(), quoted_tc, isnip)
@@ -289,7 +298,7 @@ def disambiguate_one(ld, main_oref, quoted_oref):
     return good, bad
 
 
-def get_snippet_by_seg_ref(source, found, must_find_snippet=False, snip_size=100, use_indicator_words=False):
+def get_snippet_by_seg_ref(source, source_tc, found, must_find_snippet=False, snip_size=100, use_indicator_words=False):
     """
     based off of library.get_wrapped_refs_string
     :param source:
@@ -319,14 +328,16 @@ def get_snippet_by_seg_ref(source, found, must_find_snippet=False, snip_size=100
     title_nodes = {t: found_node for t in found.index.all_titles("he")}
     all_reg = library.get_multi_title_regex_string(set(found.index.all_titles("he")), "he")
     reg = regex.compile(all_reg, regex.VERBOSE)
-    source_text = re.sub(ur"<[^>]+>", u"", strip_cantillation(source.text("he").text, strip_vowels=True))
+    source_text = re.sub(ur"<[^>]+>", u"", strip_cantillation(source_tc.text, strip_vowels=True))
 
     linkified = library._wrap_all_refs_in_string(title_nodes, reg, source_text, "he")
 
     snippets = []
+    found_normal = found.normal()
+    found_section_normal = re.match(ur"^[^:]+", found_normal).group()
     for match in re.finditer(u"(<a [^>]+>)([^<]+)(</a>)", linkified):
         ref = Ref(match.group(2))
-        if ref.normal() == found.section_ref().normal() or ref.normal() == found.normal():
+        if ref.normal() == found_section_normal or ref.normal() == found_normal:
             start_snip_naive = match.start(1) - snip_size if match.start(1) >= snip_size else 0
             start_snip_space = linkified.rfind(u" ", 0, start_snip_naive)
             start_snip_link = linkified.rfind(u"</a>", 0, match.start(1))
@@ -418,14 +429,26 @@ def count_words_map(index):
     except InputError:
         pass
 
-if __name__ == '__main__':
+def run():
     ld = Link_Disambiguator()
-    ld.get_ambiguous_segments()
+    #ld.get_ambiguous_segments()
     disambiguate_all()
     #find_low_confidence_talmud()
     # ld = Link_Disambiguator()
     # ld.disambiguate_gra()
     #count_words()
+
+if __name__ == '__main__':
+    profiling = True
+    if profiling:
+        print "Profiling...\n"
+        cProfile.run("run()", "stats")
+        p = pstats.Stats("stats")
+        sys.stdout = sys.__stdout__
+        p.strip_dirs().sort_stats("cumtime").print_stats()
+    else:
+        run()
+
 
     # tc_list = [Ref("Zohar 1:70b:7").text("he"), Ref("Song of Songs 1").text("he")] #{'match_index': [[5, 7], [11, 13]], 'score': 81, 'match': [u'Zohar 1:70b:7', u'Song of Songs 1:3']}
     # tc_list = [Ref("Zohar 1:70b:9").text("he"), Ref("Genesis 1").text("he")] #{'match_index': [[27, 32], [106, 111]], 'score': 96, 'match': [u'Genesis 1:4', u'Zohar 1:70b:9']}

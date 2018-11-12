@@ -180,19 +180,32 @@ class Gemara_Hashtable:
         self.letter_freqs_list = [u'י', u'ו', u'א', u'מ', u'ה', u'ל', u'ר', u'נ', u'ב', u'ש', u'ת', u'ד', u'כ', u'ע', u'ח', u'ק',
                          u'פ', u'ס', u'ט', u'ז', u'ג', u'צ']
 
-        self.sofit_map = {
-        u'ך': u'כ',
-        u'ם': u'מ',
-        u'ן': u'נ',
-        u'ף': u'פ',
-        u'ץ': u'צ',
+        self.letter_freqs_dict = {
+            k: v for v, k in enumerate(self.letter_freqs_list)
         }
+
+        self._two_letter_cache = {}
+
+        self.sofit_map = {
+            u'ך': u'כ',
+            u'ם': u'מ',
+            u'ן': u'נ',
+            u'ף': u'פ',
+            u'ץ': u'צ',
+        }
+        self.full_heb_map = self.sofit_map
+        for l in self.letter_freqs_dict:
+            self.full_heb_map[l] = l
 
         self.letters = [u'א', u'ב', u'ג', u'ד', u'ה',
                         u'ו', u'ז', u'ח', u'ט', u'י',
                         u'כ', u'ל', u'מ', u'נ', u'ס',
                         u'ע', u'פ', u'צ', u'ק', u'ר',
                         u'ש', u'ת', unichr(ord(u'ת')+1)]
+
+        self.letters_dict = {
+            k: v for v, k in enumerate(self.letters)
+        }
 
         self._hash_table = defaultdict(set)
         self._already_matched_start_items = defaultdict(bool)
@@ -244,42 +257,45 @@ class Gemara_Hashtable:
         del skip_gram_list[-1] # last one is the one that skips the first element
         return skip_gram_list
 
+    def w2i_reducer(self, a, b):
+        return a + (23**b[0] * self.letters_dict[b[1]])
+
     def w2i(self,w):
         """
 
         :param l: hebrew letters
         :return: corresponding integer
         """
-        i = 0
-        for ic,c in enumerate(reversed(w)):
-            i += 23**ic * self.letters.index(c)
-
-        return i
+        return reduce(self.w2i_reducer, enumerate(w), 0)
 
     def sofit_swap(self,C):
         return self.sofit_map[C] if C in self.sofit_map else C
 
     def get_two_letter_word(self,word):
-        temp_word = u''
-        for i, C in enumerate(word):
-            temp_word += self.sofit_swap(C)
+        cache = self._two_letter_cache.get(word, None)
+        if cache:
+            return cache
+        temp_word = u''.join([self.full_heb_map.get(C, u'') for C in word])
 
-        temp_word = re.sub(ur'[^א-ת]+',u'',temp_word)
         if len(temp_word) < 2:
             if len(temp_word) == 1:
-                return u'{}{}'.format(temp_word,self.letters[-1])
-            else: #efes
-                return u'{}{}'.format(self.letters[-1],self.letters[-1])
-
-        indices = map(lambda c: self.letter_freqs_list.index(c), temp_word)
-        first_max,i_first_max = self.letter_freqs_list[max(indices)],indices.index(max(indices))
-        del indices[i_first_max]
-        sec_max,i_sec_max     = self.letter_freqs_list[max(indices)],indices.index(max(indices))
-
-        if i_first_max <= i_sec_max:
-            return u'{}{}'.format(first_max,sec_max)
+                two_letter_word = u'{}{}'.format(temp_word,self.letters[-1])
+            else:  # efes
+                two_letter_word = u'{}{}'.format(self.letters[-1],self.letters[-1])
         else:
-            return u'{}{}'.format(sec_max,first_max)
+            indices = [self.letter_freqs_dict[c] for c in temp_word]
+            current_max = max(indices)
+            first_max, i_first_max = self.letter_freqs_list[current_max], indices.index(current_max)
+            del indices[i_first_max]
+            current_max = max(indices)
+            sec_max, i_sec_max = self.letter_freqs_list[current_max],indices.index(current_max)
+
+            if i_first_max <= i_sec_max:
+                two_letter_word = u'{}{}'.format(first_max,sec_max)
+            else:
+                two_letter_word = u'{}{}'.format(sec_max,first_max)
+        self._two_letter_cache[word] = two_letter_word
+        return two_letter_word
 
 
     def save(self):
@@ -458,6 +474,8 @@ class ParallelMatcher:
         self.verbose = verbose
         self.with_scoring = False
         self.calculate_score = None
+        self.talmud_titles = library.get_indexes_in_category('Bavli')
+        self.talmud_titles = self.talmud_titles[:self.talmud_titles.index('Chullin') + 1]
         if calculate_score:
             self.with_scoring = True
             self.calculate_score = calculate_score
@@ -506,8 +524,6 @@ class ParallelMatcher:
             unit_list = tc_list
             using_indexes = False
 
-        talmud_titles = library.get_indexes_in_category('Bavli')
-        talmud_titles = talmud_titles[:talmud_titles.index('Menachot') + 1]
         text_index_map_data = [None for yo in xrange(len(unit_list))]
         for iunit, unit in enumerate(unit_list):
             if comment_index_list is not None and iunit in comment_index_list:
@@ -519,7 +535,7 @@ class ParallelMatcher:
             if self.verbose: print "Hashing {}".format(unit)
             if using_indexes:
                 index = library.get_index(unit)
-                if unit in talmud_titles and use_william:
+                if unit in self.talmud_titles and use_william:
                     vtitle = 'William Davidson Edition - Aramaic'
                 else:
                     vtitle = None
@@ -529,13 +545,11 @@ class ParallelMatcher:
                 unit_wl = [w for seg in unit_list_temp for w in unit_tokenizer(seg)]
                 unit_str = unit
             elif isinstance(unit, TextChunk):
-                assert isinstance(unit, TextChunk)
-                unit_il, unit_rl, total_len = unit.text_index_map(unit_tokenizer)
-                unit_wl = [w for seg in unit.ja().flatten_to_array() for w in unit_tokenizer(seg)]
+                unit_il, unit_rl, total_len, unit_flattened = unit.text_index_map(unit_tokenizer, ret_ja=True)
+                unit_wl = [w for seg in unit_flattened for w in unit_tokenizer(seg)]
                 unit_str = unit._oref.normal()
             else:
                 # otherwise, format is a tuple with (str, textname)
-                assert isinstance(unit, tuple)
                 unit_il, unit_rl = [0], [Ref("Berakhot 58a")]  # random ref, doesn't actually matter
                 unit_wl = unit_tokenizer(unit[0])
                 unit_str = u"{}".format(unit[1])
