@@ -47,9 +47,9 @@ class Link_Disambiguator:
     def tokenize_words(base_str):
         base_str = base_str.strip()
         base_str = strip_cantillation(base_str, strip_vowels=True)
-        base_str = bleach.clean(base_str, tags=[], strip=True)
+        base_str = re.sub(ur"<[^>]+>", u"", base_str)
         for match in re.finditer(ur'\(.*?\)', base_str):
-            if library.get_titles_in_string(match.group()) and len(match.group().split()) <= 5:
+            if len(match.group().split()) <= 5:
                 base_str = base_str.replace(match.group(), u"")
                 # base_str = re.sub(ur"(?:\(.*?\)|<.*?>)", u"", base_str)
         base_str = re.sub(ur'־', u' ', base_str)
@@ -350,7 +350,7 @@ def get_snippet_by_seg_ref(source, found, must_find_snippet=False, snip_size=100
                     temp_snip = linkified[start_snip:end_snip]
             else:
                 temp_snip = linkified[start_snip:end_snip]
-            snippets += [bleach.clean(temp_snip, tags=[], strip=True)]
+            snippets += [re.sub(ur"<[^>]+>", u"", temp_snip)]
 
     if len(snippets) == 0:
         if must_find_snippet:
