@@ -284,7 +284,13 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
     elif len(mishnah_text) > len(explanation_sections_text):
         mishnah_sections_more_than_explanation_sections.append(file)
         print "Mishnah sections more than explanation sections"
-        return (orig_explanation, orig_mishnah)
+        if len(orig_mishnah) == 0:
+            print "BLANK FILE"
+        else:
+            orig_mishnah = restructure_mishnah_text(orig_mishnah)
+            orig_mishnah = "<b>" + u"<br/>".join(orig_mishnah) + "</b><br/>"
+            orig_explanation = u"<br/>".join(orig_explanation)
+            return ([orig_mishnah+orig_explanation], [orig_mishnah])
 
 
 
@@ -513,7 +519,13 @@ if __name__ == "__main__":
     # most_common_value = found_ref.most_common(1)[0]
     # assert most_common_value[1] == 1, "{} has {}".format(most_common_value[0], most_common_value[1])
     post = True
+    dont_start = True
+    start_at = " "
     for sefer in parsed_text.keys():
+        if start_at in sefer:
+            dont_start = False
+        if dont_start:
+            continue
         if parsed_text[sefer]:
             try:
                 create_index(parsed_text[sefer], sefer, post=post)

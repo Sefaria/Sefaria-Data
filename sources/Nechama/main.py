@@ -171,10 +171,12 @@ class Sheet(object):
        sheet_json = {}
        sheet_json["status"] = "public" #"private" #
        sheet_json["group"] ="Nechama Leibowitz' Source Sheets"#"Nechama Leibowitz' Source Sheets"
-       sheet_json["title"] = u'{} - {} {}'.format(self.title, re.search('(\d+)\.', self.html).group(1), add_to_title)
-       sheet_json["summary"] = u"{} ({})".format(self.en_year, self.year)
+       #sheet_json["title"] = u'{} - {} {}'.format(self.title, re.search('(\d+)\.', self.html).group(1), add_to_title)
+       sheet_json["title"] = u"{} {} - {}".format(self.parasha, self.he_year, self.title)
+       sheet_json["summary"] = u"{} ({})".format(self.en_year, self.he_year)
        sheet_json["sources"] = self.sources
        sheet_json["options"] = {"numbered": 0, "assignable": 0, "layout": "sideBySide", "boxed": 0, "language": "hebrew", "divineNames": "noSub", "collaboration": "none", "highlightMode": 0, "bsd": 0, "langLayout": "heRight"}
+       assert Term().load({"name": self.en_parasha})
        if "-" in self.en_parasha:
            sheet_json["tags"] = [unicode(self.en_parasha.split("-")[0]), unicode(self.en_parasha.split("-")[-1])]
        else:
@@ -1449,14 +1451,15 @@ if __name__ == "__main__":
                         "Balak", "Pinchas", "Matot", "Masei"])
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
-    catch_errors = False
+    catch_errors = True
     posting = True
-    individual = 62
-    for which_parshiot in [genesis_parshiot]: #[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]: #
+    individual = None
+
+    for which_parshiot in [genesis_parshiot, exodus_parshiot]:
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "accurate", "genesis prefinal", catch_errors=catch_errors) #accurate
+            parser = Nechama_Parser(book, parsha, "fast", "", catch_errors=catch_errors) #accurate
             parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
