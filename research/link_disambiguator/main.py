@@ -257,8 +257,6 @@ def disambiguate_all():
     for iambig, (main_str, tref_list) in enumerate(ambig_dict.items()):
         if iambig % 50 == 0:
             print "{}/{}".format(iambig, len(ambig_dict))
-        if iambig >= 400:
-            break
         try:
             main_ref = Ref(main_str)
             main_tc = _tc_cache.get(main_str, make_tc(main_str, main_ref))
@@ -431,7 +429,7 @@ def count_words_map(index):
 
 def run():
     ld = Link_Disambiguator()
-    #ld.get_ambiguous_segments()
+    ld.get_ambiguous_segments()
     disambiguate_all()
     #find_low_confidence_talmud()
     # ld = Link_Disambiguator()
@@ -439,7 +437,7 @@ def run():
     #count_words()
 
 if __name__ == '__main__':
-    profiling = True
+    profiling = False
     if profiling:
         print "Profiling...\n"
         cProfile.run("run()", "stats")
