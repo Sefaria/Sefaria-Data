@@ -221,6 +221,16 @@ class Gemara_Hashtable:
 
         return results
 
+    def get_small_skip_gram_matches(self, small_five_gram):
+        """
+
+        :param small_five_gram: a list of words which is self.skip_gram_size as opposed to self.skip_gram_size + 1. used for looking up last skip gram in book
+        :return:
+        """
+        two_letter_gram = u''.join([self.get_two_letter_word(w) for w in small_five_gram])
+        index = self.w2i(two_letter_gram)
+        return self._hash_table[index]
+
 
     def get_skip_grams(self,five_gram):
         """
@@ -433,7 +443,7 @@ class ParallelMatcher:
         :param min_words_in_match: min words for a match to be considered valid
         :param min_distance_between_matches: min distance between matches. If matches are closer than this, the first one will be chosen (i think)
         :param bool all_to_all: if True, make between everything either in index_list or ref_list. False means results get filtered to only match inter-ref matches
-        :param bool parallelize: Do you want this to run in parallel? WARNING: this uses up way more RAM. and this is already pretty RAM-hungry
+        :param bool parallelize: Do you want this to run in parallel? WARNING: this uses up way more RAM. and this is already pretty RAM-hungry TODO: interesting question on sharing ram: https://stackoverflow.com/questions/14124588/shared-memory-in-multiprocessing
         """
         self.tokenizer = tokenizer
         self.dh_extract_method = dh_extract_method
@@ -561,7 +571,10 @@ class ParallelMatcher:
             pool.close()
         else:
             mesorat_hashas = []
+
             for input in enumerate(text_index_map_data):
+                if input[0] == len(text_index_map_data) - 1 and not self.all_to_all:
+                    break  # dont need to check last item if not all to all
                 mesorat_hashas += self.get_matches_in_unit(input)
 
 
@@ -658,9 +671,6 @@ class ParallelMatcher:
         already_matched_dict = defaultdict(list)  # keys are word indexes that have matched. values are lists of Mesorah_Items that they matched to.
         matches = []
         for i_word in xrange(len(mes_wl) - self.skip_gram_size):
-            # if i_word % 4000 == 0:
-            #    print "{}\t{}%\tNum Found: {}".format(mes, round(100.0 * global_i_word / total_num_words, 2),len(mesorat_hashas))
-            # global_i_word += 1
             start_ref = mes_rl[bisect.bisect_right(mes_il, i_word) - 1]
             end_ref = mes_rl[bisect.bisect_right(mes_il, i_word + self.skip_gram_size) - 1]
 
@@ -691,7 +701,7 @@ class ParallelMatcher:
             skip_matches.sort(lambda x, y: x.compare(y))
             partial_match_list = [PartialMesorahMatch(a, a, b, b, self.min_words_in_match) for b in skip_matches]
 
-            for j_word in xrange(i_word + 1, len(mes_wl) - self.skip_gram_size):
+            for j_word in xrange(i_word + 1, len(mes_wl) - self.skip_gram_size + 1):  # +1 at end of range to get last incomplete skip-gram
                 if len(partial_match_list) == 0:
                     break
                 temp_start_ref = mes_rl[bisect.bisect_right(mes_il, j_word) - 1]
@@ -705,8 +715,11 @@ class ParallelMatcher:
                         continue
 
                 temp_a = Mesorah_Item(mes, imes, (j_word, j_word + self.skip_gram_size), temp_matched_ref, self.min_distance_between_matches)
-                temp_skip_matches = self.ght[mes_wl[j_word:j_word + self.skip_gram_size + 1]]
-                temp_skip_matches.remove(temp_a)
+                if j_word + self.skip_gram_size == len(mes_wl):
+                    temp_skip_matches = self.ght.get_small_skip_gram_matches(mes_wl[j_word:j_word + self.skip_gram_size])
+                else:
+                    temp_skip_matches = self.ght[mes_wl[j_word:j_word + self.skip_gram_size + 1]]
+                    temp_skip_matches.remove(temp_a)  # temp_a wont be in temp_skip_matches if the if path is true
                 temp_skip_matches = filter(lambda x: not x.too_close(temp_a), temp_skip_matches)
                 temp_skip_matches.sort(lambda x, y: x.compare(y))
                 new_partial_match_list, dead_matches_possibly = self.compare_new_skip_matches(partial_match_list,
