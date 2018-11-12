@@ -50,7 +50,7 @@ def get_input_output():
 def test_link_disambiguator(test_items):
 
     ld = Link_Disambiguator()
-    good, bad = disambiguate_one(ld, test_items["in"]["main"], test_items["in"]["quote"])
+    good, bad = disambiguate_one(ld, test_items["in"]["main"], test_items["in"]["main"].text('he'), test_items["in"]["quote"], test_items["in"]["quote"].text('he'))
     print test_items["in"]
     if "quote" not in test_items["out"]:
         # output should be bad
