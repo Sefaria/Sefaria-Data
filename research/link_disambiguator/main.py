@@ -266,8 +266,11 @@ def disambiguate_all():
     bad = []
     _tc_cache = {}
     def make_tc(tref, oref):
+        global _tc_cache
         tc = oref.text('he')
         _tc_cache[tref] = tc
+        if len(_tc_cache) > 5000:
+            _tc_cache = {}
         return tc
     fgood = open('unambiguous_links.json', 'wb')
     fbad = open('still_ambiguous_links.json', 'wb')
@@ -287,7 +290,7 @@ def disambiguate_all():
                 temp_good, temp_bad = disambiguate_one(ld, main_ref, main_tc, quoted_oref, quoted_tc)
                 good += temp_good
                 bad += temp_bad
-                if len(good) + len(bad) > 10:
+                if len(good) + len(bad) > 1000:
                     save_disambiguated_to_file(good, bad, csv_good, csv_bad)
                     good = []
                     bad = []
