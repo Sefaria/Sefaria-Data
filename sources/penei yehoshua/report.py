@@ -10,7 +10,7 @@ import os
 
 class MaharshaLite:
     def __init__(self, book):
-        self.server = "http://proto.sefaria.org"
+        self.server = "http://localhost:8000"
         self.book = book
         self.len_masechet = len(book.all_section_refs()) + 2 #how many sections in book
         self.current_daf = "2a"
@@ -269,20 +269,20 @@ if __name__ == "__main__":
             parser = MaharshaLite(book)
             with open(file) as f:
                 parser.create_index()
-                parser.parse(list(f))
-                parser.create_links()
-                post_link(parser.links, server=parser.server)
-                for daf, text in parser.comm_dict.items():
-                    parser.comm_dict.pop(daf)
-                    parser.comm_dict[AddressTalmud(daf).toNumber("en", daf)] = text
-                text = convertDictToArray(parser.comm_dict)
-                send_text = {
-                    "text": text,
-                    "language": "he",
-                    "versionTitle": "P'nei Yehoshua",
-                    "versionSource": "www.sefaria.org"
-                }
-                post_text("Penei Yehoshua on {}".format(title), send_text, server=parser.server)
+                # parser.parse(list(f))
+                # parser.create_links()
+                # #post_link(parser.links, server=parser.server)
+                # for daf, text in parser.comm_dict.items():
+                #     parser.comm_dict.pop(daf)
+                #     parser.comm_dict[AddressTalmud(daf).toNumber("en", daf)] = text
+                # text = convertDictToArray(parser.comm_dict)
+                # send_text = {
+                #     "text": text,
+                #     "language": "he",
+                #     "versionTitle": "P'nei Yehoshua",
+                #     "versionSource": "www.sefaria.org"
+                # }
+                # #post_text("Penei Yehoshua on {}".format(title), send_text, server=parser.server)
         except system.exceptions.BookNameError as e:
             print e
 

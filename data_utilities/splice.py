@@ -6,7 +6,7 @@ import itertools
 
 from sefaria.model import *
 from sefaria.system.exceptions import InputError
-from sefaria.search import delete_text, index_text, get_new_and_current_index_names
+from sefaria.search import delete_text, TextIndexer, get_new_and_current_index_names
 from sefaria.sheets import get_sheets_for_ref, get_sheet, save_sheet
 from sefaria.system.database import db
 from dibur_hamatchil_matcher import match_text
@@ -556,12 +556,16 @@ class SegmentSplicer(AbstractSplicer):
         if not SEARCH_INDEX_ON_SAVE:
             return
 
-        index_name = get_new_and_current_index_names()['current']
+        index_name = get_new_and_current_index_names('text')['current']
+        index_name_merged = get_new_and_current_index_names('merged')['current']
         for v in self.versionSet:
             if self._report:
                 print "ElasticSearch: Reindexing {} / {} / {}".format(self.section_ref.normal(), v.versionTitle, v.language)
             if self._save:
-                index_text(index_name, self.section_ref, v.versionTitle, v.language)
+                #index_text(index_name, self.section_ref, v.versionTitle, v.language)
+                for segment_ref in self.section_ref.all_segment_refs():
+                    TextIndexer.index_ref(index_name, segment_ref, v.versionTitle, v.language, False)
+                    TextIndexer.index_ref(index_name_merged, segment_ref, v.versionTitle, v.language, True)
 
             # If this is not a Bavli ref, it's been indexed by segment.  Delete the last dangling segment
             if not self.section_ref.is_bavli() and self._mode == "join":
@@ -581,7 +585,10 @@ class SegmentSplicer(AbstractSplicer):
                     if self._report:
                         print "ElasticSearch: Reindexing {} / {} / {}".format(commentor_section_ref.normal(), v.versionTitle, v.language)
                     if self._save:
-                        index_text(index_name, commentor_section_ref, v.versionTitle, v.language)
+                        #index_text(index_name, commentor_section_ref, v.versionTitle, v.language)
+                        for segment_ref in commentor_section_ref.all_segment_refs():
+                            TextIndexer.index_ref(index_name, segment_ref, v.versionTitle, v.language, False)
+                            TextIndexer.index_ref(index_name_merged, segment_ref, v.versionTitle, v.language, True)
 
                 last_segment = len(last_commentator_section_ref.get_state_ja().subarray_with_ref(last_commentator_section_ref))
 

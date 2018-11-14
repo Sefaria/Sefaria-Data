@@ -9,7 +9,8 @@ commentary_list = [
     (u"Be'er HaGolah", u"באר הגולה"),
     (u"Beur HaGra", u'ביאור הגר"א'),
     (u"Turei Zahav", u"טורי זהב"),
-    (u"Pithei Teshuva", u"פתחי תשובה")
+    (u"Pithei Teshuva", u"פתחי תשובה"),
+    (u"Torat HaShlamim", u"תורת השלמים")
 ]
 
 commentary_list = [dict(zip(('en_title', 'he_title'), c)) for c in commentary_list]
@@ -21,7 +22,7 @@ if not os.path.exists(xml_loc):
     Root.create_skeleton(xml_loc)
 root = Root(xml_loc)
 base = root.get_base_text()
-base.add_titles("Shulchan Arukh, Yoreh Deah", u"שולחן ערוך יורה דעה")
+base.add_titles("Shulchan Arukh, Yoreh De'ah", u"שולחן ערוך יורה דעה")
 xml_commentaries = root.get_commentaries()
 for commentary in commentary_list:
     c = xml_commentaries.get_commentary_by_title(commentary['en_title'])

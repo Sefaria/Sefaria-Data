@@ -1,0 +1,667 @@
+html_sheets/V'Zot HaBerachah/301.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/927.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/376.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/273.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/1339.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/1401.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/1227.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/649.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/736.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/1124.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/808.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/776.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/562.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/1166.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/450.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/484.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/144.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/447.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/1472.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/1022.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/1452.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/1350.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/211.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/1013.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/749.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/549.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/1069.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/1182.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+
+html_sheets/V'Zot HaBerachah/61.html: (<type 'exceptions.TypeError'>, TypeError('can only concatenate list (not "NoneType") to list',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1093, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 201, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 240, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 307, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 357, in classify
+    current_source = self.parse_ref(sp_segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 429, in parse_ref
+    next_segment_class, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 612, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 571, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 690, in pasuk_in_parsha_pasukim
+    for sefer in [parser.en_sefer] + parser.get_haftarot(parser.en_parasha):
+TypeError: can only concatenate list (not "NoneType") to list
+
+

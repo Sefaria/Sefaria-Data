@@ -1,0 +1,26 @@
+html_sheets/Ki Tavo/370.html: (<class 'sefaria.system.exceptions.BookNameError'>, BookNameError('No book provided.',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1107, in bs4_reader
+    sheet.create_sheetsources_from_objsource()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 90, in create_sheetsources_from_objsource
+    seg_sheet_source = segment.create_source()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/segments.py", line 114, in create_source
+    self.ref = library.get_index(" ".join(word_list))
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 4162, in get_index
+    raise BookNameError("No book provided.")
+BookNameError: No book provided.
+
+
+html_sheets/Ki Tavo/1224.html: (<class 'sefaria.system.exceptions.BookNameError'>, BookNameError('No book provided.',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1107, in bs4_reader
+    sheet.create_sheetsources_from_objsource()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 90, in create_sheetsources_from_objsource
+    seg_sheet_source = segment.create_source()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/segments.py", line 114, in create_source
+    self.ref = library.get_index(" ".join(word_list))
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 4162, in get_index
+    raise BookNameError("No book provided.")
+BookNameError: No book provided.
+
+

@@ -163,7 +163,11 @@ class bookSub(supermod.book):
                 'refs': [base_ref, comment_ref],
                 'type': 'commentary',
                 'auto': True,
-                'genrated_by': 'Masechtot Ketanot Parser'
+                'genrated_by': 'Masechtot Ketanot Parser',
+                'inline_reference': {
+                    'data-commentator': comment['commentator'],
+                    'data-order': comment['order']
+                }
             })
         return links
 
@@ -176,7 +180,7 @@ class bookSub(supermod.book):
 
         return {
             'title': en_title,
-            'categories': ["Tanaitic", "Masechtot Ketanot"],
+            'categories': ["Tanaitic", "Minor Tractates"],
             'schema': node.serialize()
         }
 
@@ -349,7 +353,7 @@ class commentarySub(supermod.commentary):
         node.validate()
         return {
             'title': '{} on {}'.format(en_author, base_title),
-            'categories': ['Tanaitic', 'Commentary', en_author, "Masechtot Ketanot"],
+            'categories': ['Tanaitic', 'Commentary', en_author, "Minor Tractates"],
             'schema': node.serialize(),
             'collective_title': en_author,
             'dependence': "Commentary",

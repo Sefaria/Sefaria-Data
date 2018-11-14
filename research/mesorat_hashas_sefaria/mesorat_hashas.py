@@ -38,6 +38,7 @@ from sefaria.model import *
 from sources.functions import post_link
 from sefaria.system.exceptions import DuplicateRecordError
 from sefaria.system.exceptions import InputError
+from sefaria.system.exceptions import PartialRefInputError
 from data_utilities.dibur_hamatchil_matcher import get_maximum_subset_dh
 import logging
 import multiprocessing
@@ -179,19 +180,32 @@ class Gemara_Hashtable:
         self.letter_freqs_list = [u'י', u'ו', u'א', u'מ', u'ה', u'ל', u'ר', u'נ', u'ב', u'ש', u'ת', u'ד', u'כ', u'ע', u'ח', u'ק',
                          u'פ', u'ס', u'ט', u'ז', u'ג', u'צ']
 
-        self.sofit_map = {
-        u'ך': u'כ',
-        u'ם': u'מ',
-        u'ן': u'נ',
-        u'ף': u'פ',
-        u'ץ': u'צ',
+        self.letter_freqs_dict = {
+            k: v for v, k in enumerate(self.letter_freqs_list)
         }
+
+        self._two_letter_cache = {}
+
+        self.sofit_map = {
+            u'ך': u'כ',
+            u'ם': u'מ',
+            u'ן': u'נ',
+            u'ף': u'פ',
+            u'ץ': u'צ',
+        }
+        self.full_heb_map = self.sofit_map
+        for l in self.letter_freqs_dict:
+            self.full_heb_map[l] = l
 
         self.letters = [u'א', u'ב', u'ג', u'ד', u'ה',
                         u'ו', u'ז', u'ח', u'ט', u'י',
                         u'כ', u'ל', u'מ', u'נ', u'ס',
                         u'ע', u'פ', u'צ', u'ק', u'ר',
                         u'ש', u'ת', unichr(ord(u'ת')+1)]
+
+        self.letters_dict = {
+            k: v for v, k in enumerate(self.letters)
+        }
 
         self._hash_table = defaultdict(set)
         self._already_matched_start_items = defaultdict(bool)
@@ -220,6 +234,16 @@ class Gemara_Hashtable:
 
         return results
 
+    def get_small_skip_gram_matches(self, small_five_gram):
+        """
+
+        :param small_five_gram: a list of words which is self.skip_gram_size as opposed to self.skip_gram_size + 1. used for looking up last skip gram in book
+        :return:
+        """
+        two_letter_gram = u''.join([self.get_two_letter_word(w) for w in small_five_gram])
+        index = self.w2i(two_letter_gram)
+        return self._hash_table[index]
+
 
     def get_skip_grams(self,five_gram):
         """
@@ -233,42 +257,45 @@ class Gemara_Hashtable:
         del skip_gram_list[-1] # last one is the one that skips the first element
         return skip_gram_list
 
+    def w2i_reducer(self, a, b):
+        return a + (23**b[0] * self.letters_dict[b[1]])
+
     def w2i(self,w):
         """
 
         :param l: hebrew letters
         :return: corresponding integer
         """
-        i = 0
-        for ic,c in enumerate(reversed(w)):
-            i += 23**ic * self.letters.index(c)
-
-        return i
+        return reduce(self.w2i_reducer, enumerate(w), 0)
 
     def sofit_swap(self,C):
         return self.sofit_map[C] if C in self.sofit_map else C
 
     def get_two_letter_word(self,word):
-        temp_word = u''
-        for i, C in enumerate(word):
-            temp_word += self.sofit_swap(C)
+        cache = self._two_letter_cache.get(word, None)
+        if cache:
+            return cache
+        temp_word = u''.join([self.full_heb_map.get(C, u'') for C in word])
 
-        temp_word = re.sub(ur'[^א-ת]+',u'',temp_word)
         if len(temp_word) < 2:
             if len(temp_word) == 1:
-                return u'{}{}'.format(temp_word,self.letters[-1])
-            else: #efes
-                return u'{}{}'.format(self.letters[-1],self.letters[-1])
-
-        indices = map(lambda c: self.letter_freqs_list.index(c), temp_word)
-        first_max,i_first_max = self.letter_freqs_list[max(indices)],indices.index(max(indices))
-        del indices[i_first_max]
-        sec_max,i_sec_max     = self.letter_freqs_list[max(indices)],indices.index(max(indices))
-
-        if i_first_max <= i_sec_max:
-            return u'{}{}'.format(first_max,sec_max)
+                two_letter_word = u'{}{}'.format(temp_word,self.letters[-1])
+            else:  # efes
+                two_letter_word = u'{}{}'.format(self.letters[-1],self.letters[-1])
         else:
-            return u'{}{}'.format(sec_max,first_max)
+            indices = [self.letter_freqs_dict[c] for c in temp_word]
+            current_max = max(indices)
+            first_max, i_first_max = self.letter_freqs_list[current_max], indices.index(current_max)
+            del indices[i_first_max]
+            current_max = max(indices)
+            sec_max, i_sec_max = self.letter_freqs_list[current_max],indices.index(current_max)
+
+            if i_first_max <= i_sec_max:
+                two_letter_word = u'{}{}'.format(first_max,sec_max)
+            else:
+                two_letter_word = u'{}{}'.format(sec_max,first_max)
+        self._two_letter_cache[word] = two_letter_word
+        return two_letter_word
 
 
     def save(self):
@@ -432,7 +459,7 @@ class ParallelMatcher:
         :param min_words_in_match: min words for a match to be considered valid
         :param min_distance_between_matches: min distance between matches. If matches are closer than this, the first one will be chosen (i think)
         :param bool all_to_all: if True, make between everything either in index_list or ref_list. False means results get filtered to only match inter-ref matches
-        :param bool parallelize: Do you want this to run in parallel? WARNING: this uses up way more RAM. and this is already pretty RAM-hungry
+        :param bool parallelize: Do you want this to run in parallel? WARNING: this uses up way more RAM. and this is already pretty RAM-hungry TODO: interesting question on sharing ram: https://stackoverflow.com/questions/14124588/shared-memory-in-multiprocessing
         """
         self.tokenizer = tokenizer
         self.dh_extract_method = dh_extract_method
@@ -447,6 +474,8 @@ class ParallelMatcher:
         self.verbose = verbose
         self.with_scoring = False
         self.calculate_score = None
+        self.talmud_titles = library.get_indexes_in_category('Bavli')
+        self.talmud_titles = self.talmud_titles[:self.talmud_titles.index('Chullin') + 1]
         if calculate_score:
             self.with_scoring = True
             self.calculate_score = calculate_score
@@ -475,7 +504,7 @@ class ParallelMatcher:
         """
 
         :param list[str] index_list: list of index names to match against
-        :param list[TextChunk] tc_list: alternatively, you can give a list of TextChunks to match to
+        :param list[TextChunk] tc_list: alternatively, you can give a list of TextChunks to match to. Hack: you can also include tuples in this list where the tuples look like (content, unique_id) where `content` is the text to match and `unique_id` is a unique id.
         :param list[int] comment_index_list: list of indexes which correspond to either `index_list` or `tc_list` (whichever is not None). each index in this list indicates that the corresponding element should be treated as a `comment` meaning `self.dh_extract_method()` will be used on it.
         :param bool use_william: True if you want to use William Davidson version for Talmud refs
         :return: mesorat_hashas, mesorat_hashas_indexes
@@ -495,8 +524,6 @@ class ParallelMatcher:
             unit_list = tc_list
             using_indexes = False
 
-        talmud_titles = library.get_indexes_in_category('Bavli')
-        talmud_titles = talmud_titles[:talmud_titles.index('Menachot') + 1]
         text_index_map_data = [None for yo in xrange(len(unit_list))]
         for iunit, unit in enumerate(unit_list):
             if comment_index_list is not None and iunit in comment_index_list:
@@ -508,7 +535,7 @@ class ParallelMatcher:
             if self.verbose: print "Hashing {}".format(unit)
             if using_indexes:
                 index = library.get_index(unit)
-                if unit in talmud_titles and use_william:
+                if unit in self.talmud_titles and use_william:
                     vtitle = 'William Davidson Edition - Aramaic'
                 else:
                     vtitle = None
@@ -518,13 +545,11 @@ class ParallelMatcher:
                 unit_wl = [w for seg in unit_list_temp for w in unit_tokenizer(seg)]
                 unit_str = unit
             elif isinstance(unit, TextChunk):
-                assert isinstance(unit, TextChunk)
-                unit_il, unit_rl, total_len = unit.text_index_map(unit_tokenizer)
-                unit_wl = [w for seg in unit.ja().flatten_to_array() for w in unit_tokenizer(seg)]
+                unit_il, unit_rl, total_len, unit_flattened = unit.text_index_map(unit_tokenizer, ret_ja=True)
+                unit_wl = [w for seg in unit_flattened for w in unit_tokenizer(seg)]
                 unit_str = unit._oref.normal()
             else:
                 # otherwise, format is a tuple with (str, textname)
-                assert isinstance(unit, tuple)
                 unit_il, unit_rl = [0], [Ref("Berakhot 58a")]  # random ref, doesn't actually matter
                 unit_wl = unit_tokenizer(unit[0])
                 unit_str = u"{}".format(unit[1])
@@ -560,7 +585,10 @@ class ParallelMatcher:
             pool.close()
         else:
             mesorat_hashas = []
+
             for input in enumerate(text_index_map_data):
+                if input[0] == len(text_index_map_data) - 1 and not self.all_to_all:
+                    break  # dont need to check last item if not all to all
                 mesorat_hashas += self.get_matches_in_unit(input)
 
 
@@ -657,9 +685,6 @@ class ParallelMatcher:
         already_matched_dict = defaultdict(list)  # keys are word indexes that have matched. values are lists of Mesorah_Items that they matched to.
         matches = []
         for i_word in xrange(len(mes_wl) - self.skip_gram_size):
-            # if i_word % 4000 == 0:
-            #    print "{}\t{}%\tNum Found: {}".format(mes, round(100.0 * global_i_word / total_num_words, 2),len(mesorat_hashas))
-            # global_i_word += 1
             start_ref = mes_rl[bisect.bisect_right(mes_il, i_word) - 1]
             end_ref = mes_rl[bisect.bisect_right(mes_il, i_word + self.skip_gram_size) - 1]
 
@@ -690,7 +715,7 @@ class ParallelMatcher:
             skip_matches.sort(lambda x, y: x.compare(y))
             partial_match_list = [PartialMesorahMatch(a, a, b, b, self.min_words_in_match) for b in skip_matches]
 
-            for j_word in xrange(i_word + 1, len(mes_wl) - self.skip_gram_size):
+            for j_word in xrange(i_word + 1, len(mes_wl) - self.skip_gram_size + 1):  # +1 at end of range to get last incomplete skip-gram
                 if len(partial_match_list) == 0:
                     break
                 temp_start_ref = mes_rl[bisect.bisect_right(mes_il, j_word) - 1]
@@ -704,8 +729,11 @@ class ParallelMatcher:
                         continue
 
                 temp_a = Mesorah_Item(mes, imes, (j_word, j_word + self.skip_gram_size), temp_matched_ref, self.min_distance_between_matches)
-                temp_skip_matches = self.ght[mes_wl[j_word:j_word + self.skip_gram_size + 1]]
-                temp_skip_matches.remove(temp_a)
+                if j_word + self.skip_gram_size == len(mes_wl):
+                    temp_skip_matches = self.ght.get_small_skip_gram_matches(mes_wl[j_word:j_word + self.skip_gram_size])
+                else:
+                    temp_skip_matches = self.ght[mes_wl[j_word:j_word + self.skip_gram_size + 1]]
+                    temp_skip_matches.remove(temp_a)  # temp_a wont be in temp_skip_matches if the if path is true
                 temp_skip_matches = filter(lambda x: not x.too_close(temp_a), temp_skip_matches)
                 temp_skip_matches.sort(lambda x, y: x.compare(y))
                 new_partial_match_list, dead_matches_possibly = self.compare_new_skip_matches(partial_match_list,
@@ -731,13 +759,12 @@ class ParallelMatcher:
             # account for matches at end of book
             for dead in partial_match_list:
                 distance_from_last_match = (len(mes_wl)-self.skip_gram_size) - dead.last_a_word_matched()
-                if distance_from_last_match > self.max_words_between:
-                    if len(dead) > self.min_words_in_match:
-                        self.ght.put_already_started((dead.b_start, dead.a_start))
-                        try:
-                            matches += [dead.finalize()]
-                        except AssertionError:
-                            pass
+                if len(dead) > self.min_words_in_match:
+                    self.ght.put_already_started((dead.b_start, dead.a_start))
+                    try:
+                        matches += [dead.finalize()]
+                    except AssertionError:
+                        pass
 
         return matches
 
@@ -1272,9 +1299,9 @@ def filter_index_file(filtered_mesorat_hashas, index_mesorat_hashas):
 def test_tokenize_words_remove_indexes(index_mesorat_hashas):
     aramaic_books = ["Pesikta D'Rav Kahanna", "Bereishit Rabbah", "Vayikra Rabbah", "Eichah Rabbah"]
     imh = json.load(open(index_mesorat_hashas, 'rb'))
-    talmud_indexes = library.get_indexes_in_category("Bavli", full_records=True)
-    talmud_titles = library.get_indexes_in_category("Bavli")
-    willy_titles = talmud_titles[:talmud_titles.index('Menachot') + 1]
+    talmud_indexes = [library.get_index("Megillah")] #library.get_indexes_in_category("Bavli", full_records=True)
+    talmud_titles = ["Megillah"] #library.get_indexes_in_category("Bavli")
+    willy_titles = talmud_titles[:talmud_titles.index('Megillah') + 1]
     talmud_words_dict = {}
     for iindex, index in enumerate(talmud_indexes):
         print "Tokenizing {} ({}/{})".format(index.title, iindex, len(talmud_indexes))
@@ -1299,10 +1326,15 @@ def test_tokenize_words_remove_indexes(index_mesorat_hashas):
     for ilink, link in enumerate(imh):
         if ilink % 1000 == 0:
             print "{}/{}".format(ilink, len(imh))
-        ref_link = [Ref(r) for r in link["match"]]
+        try:
+            ref_link = [Ref(r) for r in link["match"]]
+        except PartialRefInputError as e:
+            print link["match"]
+        except InputError as e:
+            print link["match"]
         for il, l in enumerate(ref_link):
             other_l = ref_link[int(il == 0)]
-            if l.primary_category == "Talmud" and other_l.primary_category != "Talmud" and other_l.index.title not in aramaic_books:
+            if l.primary_category == "Talmud" and l.index.title == "Megillah" and other_l.primary_category != "Talmud" and other_l.index.title not in aramaic_books:
                 title = l.index.title
                 orig_start = link["match_index"][il][0]
                 orig_end = link["match_index"][il][1]
@@ -1312,6 +1344,8 @@ def test_tokenize_words_remove_indexes(index_mesorat_hashas):
                 space_str = talmud_words_dict[title]["space"][orig_start + space_start : orig_end + space_end + 1]
 
                 for i in range(orig_start + space_start, orig_end + space_end+1):
+                    if i == 400425:
+                        print "oh no"
                     talmud_words_dict[title]["linked"].add(i)
                 if len(space_str) == 0 and len(orig_str) != 0:
                     "One is len 0"
@@ -1331,7 +1365,7 @@ def test_tokenize_words_remove_indexes(index_mesorat_hashas):
     for link in mishnah_map:
         link_refs = [Ref(r) for r in link.refs]
         for r in link_refs:
-            if r.primary_category == "Talmud":
+            if r.primary_category == "Talmud" and r.index.title == "Megillah":
                 start_index = talmud_words_dict[r.index.title]["index_list"][
                     talmud_words_dict[r.index.title]["ref_list"].index(r.starting_ref().normal())]
                 try:
@@ -1339,7 +1373,10 @@ def test_tokenize_words_remove_indexes(index_mesorat_hashas):
                         talmud_words_dict[r.index.title]["ref_list"].index(r.ending_ref().normal())+1] - 1
                 except IndexError as e:
                     end_index = talmud_words_dict[r.index.title]["total_len"] - 1
-                for i in range(start_index + 1, end_index):  # offsets are to remove mishna and gemara tags
+                for i in range(start_index, end_index + 1):
+                    if i == 400425:
+
+                        print 'oh no mishnah'
                     talmud_words_dict[r.index.title]["linked"].add(i)
 
     num_linked = 0
@@ -1369,8 +1406,5 @@ def test_tokenize_words_remove_indexes(index_mesorat_hashas):
         talmud_range_dict[index.title]["ranges"] = ranges
     objStr = json.dumps(talmud_range_dict, indent=4, ensure_ascii=False)
     print "{}/{} {}".format(num_linked, num_words, 1.0*num_linked/num_words)
-    with open('talmud_ranges.json', "wb") as fout:
+    with open('talmud_hebrew_ranges.json', "wb") as fout:
         fout.write(objStr.encode('utf-8'))
-
-
-

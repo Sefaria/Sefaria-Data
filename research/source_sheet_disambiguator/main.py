@@ -1,77 +1,88 @@
 # encoding=utf-8
 
 import re
+import cProfile
+import pstats
+import unicodedata
+import sys
+import os
 import unicodecsv
-import bisect
-import bleach
 import django
+p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, p)
+from sources import local_settings
 django.setup()
 from sefaria.model import *
 from data_utilities.dibur_hamatchil_matcher import match_ref
 from sefaria.system.database import db
-from sefaria.system.exceptions import InputError, BookNameError
+from sefaria.system.exceptions import InputError
 from sefaria.utils.hebrew import strip_cantillation
 
 MAX_SHEET_LEN = 100
 
-def tokenizer(s):
+def clean(s):
+    if len(s) == 0:
+        return s
+    s = unicodedata.normalize("NFD", s)
     s = strip_cantillation(s, strip_vowels=True)
-    s = re.sub(ur"[,'\"־״׳]", u" ", s)
-    s = re.sub(ur"\((?:\d{1,3}|[\u05d0-\u05ea]{1,3})\)", u" ", s)  # sefaria automatically adds pasuk markers. remove them
-    s = bleach.clean(s, strip=True, tags=()).strip()
-    return s.split()
+
+    # please forgive me...
+    # replace common hashem replacements with the tetragrammaton
+    s = re.sub(ur"(^|\s)([\u05de\u05e9\u05d5\u05db\u05dc\u05d1]?)(?:\u05d4['\u05f3]|\u05d9\u05d9)($|\s)", ur"\1\2\u05d9\u05d4\u05d5\u05d4\3", s)
 
 
-def get_token_info_for_ref(r, lang):
-    tc = TextChunk(r, lang)
-    ref_index_list, ref_list, total_len = tc.text_index_map(tokenizer)
-    word_list = [w for seg in tc.ja().flatten_to_array() for w in tokenizer(seg)]
-    word_index_list = reduce(lambda a, b: a + [len(b) + a[-1] + 1], word_list, [0])  # last element is extraneous but who cares
-    actual_text = u" ".join(word_list)
-    return ref_index_list, ref_list, word_index_list, actual_text
+    s = re.sub(ur"[,'\":?!;־״׳]", u" ", s)  # purposefully leave out period so we can replace ... later on
+    s = re.sub(ur"\([^)]+\)", u" ", s)
+    s = re.sub(ur"<[^>]+>", u"", s)
+    s = u" ".join(s.split())
+    return s
 
 
-def refine_ref_by_text(ref, en, he, lenDiff=20):
+def tokenizer(s):
+    return clean(s).split()
+
+
+def refine_ref_by_text(ref, en, he, truncate_sheet=True, **kwargs):
     """
     Given a ref, determine if the text associated with it matches the text of the ref
     :param ref: Ref
     :param en: english text of source sheet. can be empty string
     :param he: hebrew text of source sheet. can be empty string
-    :param lenDiff: len diff b/w sheet text and ref text above which we dont consider them equal
-    :return: either True if text matches ref, None if you couldn't find a better ref or a refined ref
+    :param truncate_sheet: bool, True if you want to truncate long sheets. a good optimization if you know the sheet text matches the ref very exactly
+    :return: either None if you couldn't find a better ref or a refined ref
     """
-    dominant_lang = "en" if len(he) == 0 or ((1.0*len(en)) / len(he) > 7.0) else "he"  # only choose english if its way longer
-    sheet_text = en if len(he) == 0 or ((1.0*len(en)) / len(he) > 7.0) else he
-    ref_index_list, ref_list, word_index_list, actual_text = get_token_info_for_ref(ref, dominant_lang)
-    if len(word_index_list) == 0 or len(ref_list) == 0:
-        return None
-    if abs(len(sheet_text) - len(actual_text)) < lenDiff:
-        if len(ref_list) == 1 and ref_list[0].normal() != ref.normal():
-            return ref_list[0]  # if there's only ref in the section, return it
-        return True
-    if len(sheet_text) > MAX_SHEET_LEN:
+    dominant_lang = "en" if (len(he) == 0 and len(en) > 0) or (0 < len(he) <= 10 and ((1.0*len(en)) / len(he) > 10.0)) else "he"  # only choose english if its way longer
+    sheet_text = en if (len(he) == 0 and len(en) > 0) or (0 < len(he) <= 10 and ((1.0*len(en)) / len(he) > 10.0)) else he
+    if len(sheet_text) > MAX_SHEET_LEN and truncate_sheet:
         start_sheet_text = sheet_text[:sheet_text.find(u" ", min(len(sheet_text)/2, MAX_SHEET_LEN))]
         end_sheet_text = sheet_text[sheet_text.find(u" ", max(len(sheet_text)/2, len(sheet_text)-MAX_SHEET_LEN))+1:]
-        start_ref = find_subref(start_sheet_text, ref, dominant_lang)
-        end_ref = find_subref(end_sheet_text, ref, dominant_lang)
-        if start_ref is not None and end_ref is not None:
-            new_ref = start_ref.to(end_ref)
-        else:
+        start_ref = find_subref(start_sheet_text, ref, dominant_lang, **kwargs)
+        if start_ref is None:
             new_ref = None
+        else:
+            end_ref = find_subref(end_sheet_text, ref, dominant_lang, **kwargs)
+            if end_ref is not None:
+                new_ref = start_ref.to(end_ref)
+            else:
+                new_ref = None
     else:
-        new_ref = find_subref(sheet_text, ref, dominant_lang)
+        new_ref = find_subref(sheet_text, ref, dominant_lang, **kwargs)
 
     if new_ref is None and ref.is_segment_level():
-        #print "Trying section ref"
         return refine_ref_by_text(ref.section_ref(), en, he)
-    #print u"Original:", ref
-    #print u"New:", new_ref
+
     return new_ref
 
 
-def find_subref(sheet_text, ref, lang, vtitle=None, tried_adding_refs_at_end_of_section=False):
-    tc = TextChunk(ref, lang, vtitle=vtitle)
-    matches = match_ref(tc, [sheet_text], tokenizer, with_num_abbrevs=False, lang=lang, dh_split=lambda dh: re.split(ur"\s*\.\.\.\s*", dh))
+def find_subref(sheet_text, ref, lang, vtitle=None, tried_adding_refs_at_end_of_section=False, **kwargs):
+    try:
+        tc = TextChunk(ref, lang, vtitle=vtitle)
+        matches = match_ref(tc, [sheet_text], tokenizer, dh_extract_method=clean, with_num_abbrevs=False, lang=lang, rashi_skips=2, dh_split=lambda dh: re.split(ur"\s*\.\.\.\s*", dh), **kwargs)
+    except IndexError:
+        # thrown if base text is empty
+        matches = {"matches": []}
+    except ValueError:
+        matches = {"matches": []}
     found_ref = None
     for r in matches["matches"]:
         if r is not None:
@@ -99,36 +110,72 @@ def find_subref(sheet_text, ref, lang, vtitle=None, tried_adding_refs_at_end_of_
 
 
 def mutate_sheet(sheet, action):
-    #print sheet["title"]
-    #print sheet["id"]
+    rows = []
     for s in sheet["sources"]:
-        mutate_subsources(sheet["id"], s, action)
+        rows += mutate_subsources(sheet["id"], s, action, sheet.get("dateModified", ""), sheet.get("views", 0))
+
+    return rows
 
 
-def mutate_subsources(id, source, action):
-    ref = source.get("ref", "")
-    he = source.get("text", {}).get("he", "")
+def mutate_subsources(id, source, action, dateModified, views):
+    new_ref_list = []
+
+    ref = source.get("ref", u"")
+    he = source.get("text", {}).get("he", u"")
+    if he is None:
+        he = u""
     he = u" ".join(tokenizer(he))
-    en = source.get("text", {}).get("en", "")
+    en = source.get("text", {}).get("en", u"")
+    if en is None:
+        en = u""
     en = u" ".join(tokenizer(en))
     if not ref:
-        return
+        return new_ref_list
     try:
         ref_obj = Ref(ref)
         new_ref = action(ref_obj, en, he)
     except InputError as e:
-        return
+        return new_ref_list
 
-    if new_ref:
+    if new_ref is not None and new_ref is not True:
         new_ref = new_ref.normal()
         old_ref = ref_obj.normal()
         if new_ref != old_ref:
-            pass
+            new_ref_list += [{"Id": str(id), "Old Ref": old_ref, "New Ref": new_ref, "Source Num": source.get("node", 61300), "Date Modified": dateModified, "Views": views}]
 
     if "subsources" in source:
         print "subsources"
         for s in source["subsources"]:
-            mutate_subsources(id, s, action)
+            new_ref_list += mutate_subsources(id, s, action, dateModified, views)
+
+    return new_ref_list
 
 
+def run():
+    # ids = [1697, 2636, 8689, 11419, 13255, 16085, 18838, 26981, 27226, 31603, 31844, 35830, 49364, 50853, 57106, 65498,
+    #        85003, 90289, 92571, 101667, 105718]
+    ids = db.sheets.find().distinct("id")
+    rows = []
+    for i, id in enumerate(ids):
+        if i % 50 == 0:
+            print "{}/{}".format(i, len(ids))
+        sheet = db.sheets.find_one({"id": id})
+        if not sheet:
+            print "continue"
+            continue
+        rows += mutate_sheet(sheet, refine_ref_by_text)
+    with open("yoyo.csv", "wb") as fout:
+        csv = unicodecsv.DictWriter(fout, ["Id", "Source Num", "Old Ref", "New Ref", "Date Modified", "Views"])
+        csv.writeheader()
+        csv.writerows(rows)
 
+if __name__ == '__main__':
+    profiling = False
+    if profiling:
+        print "Profiling...\n"
+        cProfile.run("run()", "stats")
+        p = pstats.Stats("stats")
+        sys.stdout = sys.__stdout__
+        p.strip_dirs().sort_stats("cumulative").print_stats()
+    else:
+        run()

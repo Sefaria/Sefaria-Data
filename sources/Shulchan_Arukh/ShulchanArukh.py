@@ -4,7 +4,7 @@ import re
 import codecs
 from bs4 import BeautifulSoup, Tag
 from xml.sax.saxutils import escape, unescape
-from data_utilities.util import Singleton, getGematria, numToHeb, he_ord, he_num_to_char
+from data_utilities.util import Singleton, getGematria, numToHeb, he_ord, he_num_to_char, PlaceHolder
 
 """
 This module describes an object module for parsing the Shulchan Arukh and it's associated commentaries. The classes
@@ -665,6 +665,16 @@ class Volume(OrderedElement):
                 errors.append(e.message)
         return errors
 
+    def format_text_multiple(self, pattern_list):
+        errors = []
+        for siman in self.get_child():
+            assert isinstance(siman, Siman)
+            try:
+                siman.format_text_multiple(pattern_list)
+            except AssertionError as e:
+                errors.append(e.message)
+        return errors
+
     def mark_references(self, commentary_id, pattern, group=None, cyclical=False):
         for child in self.get_child():
             child.mark_references(self.get_book_id(), commentary_id, pattern, group=group, cyclical=cyclical)
@@ -860,6 +870,14 @@ class Siman(OrderedElement):
             except AssertionError as e:
                 raise AssertionError('Siman {}, {}'.format(self.num, e.message))
 
+    def format_text_multiple(self, pattern_list):
+        for seif in self.get_child():
+            assert isinstance(seif, Seif)
+            try:
+                seif.format_text_multiple(pattern_list)
+            except AssertionError as e:
+                raise AssertionError('Siman {}, {}'.format(self.num, e.message))
+
     def mark_references(self, base_id, com_id, pattern, found=0, group=None, cyclical=False):
         for child in self.get_child():
             found = child.mark_references(base_id, com_id, self.num, pattern, found, group, cyclical)
@@ -957,7 +975,6 @@ class Siman(OrderedElement):
         return rendered_seifim
 
 
-
 class Seif(OrderedElement):
     name = 'seif'
     parent = 'Siman'
@@ -970,7 +987,6 @@ class Seif(OrderedElement):
 
     def get_child(self):
         return [TextElement(c) for c in self.Tag.children]
-
 
     def format_text(self, start_special, end_special, name):
         """
@@ -1060,8 +1076,80 @@ class Seif(OrderedElement):
             else:
                 add_formatted_text(element_words, element_name=u'reg-text')
 
+    # todo combine this method and format_text into one
+    def format_text_multiple(self, pattern_list):
+        """
+        Use for multiple text formats within a single seif.
+        :param pattern_list: list of dictionaries with keys:
+        {
+          "name": format tag name to be associated with this pattern,
+          "start": regex pattern to identify start,
+          "end": " regex pattern to identify end
+        }
+        :return:
+        """
+        def add_formatted_text(words, element_name):
+            if len(words) == 0:
+                return
+            else:
+                self.add_special(u' '.join(words), element_name)
 
-    def set_rid(self, base_id, com_id, siman_num, cyclical=False):
+        assert self.Tag.string is not None
+        text_array = self.Tag.string.extract().split()
+        holder = PlaceHolder()
+        start_pattern = u'|'.join([u'(?P<{}>{})'.format(p['name'], p['start']) for p in pattern_list])
+        end_pattern = u'|'.join([u'(?P<{}>{})'.format(p['name'], p['end']) for p in pattern_list])
+
+        is_special, current_name = False, u'reg-text'
+        element_words = []
+        for word in text_array:
+            if holder(re.search(start_pattern, word)):
+                if is_special:
+                    print u" ".join(text_array)
+                    raise AssertionError(u'Seif {}: Two consecutive formatting patterns found'.format(self.num))
+                else:
+                    split_by_pattern = re.split(holder.group(), word)  # split on the characters that match the regex
+                    assert len(split_by_pattern) == 2
+
+                if split_by_pattern[0] != u'':
+                    element_words.append(split_by_pattern[0])
+
+                if len(element_words) > 0:
+                    if u'' in split_by_pattern:
+                        element_words.append(u'')
+                    self.add_special(u' '.join(element_words), name=current_name)
+
+                if split_by_pattern[1] != u'':
+                    element_words = [split_by_pattern[1]]
+                else:
+                    element_words = []
+                is_special = True
+                current_name = holder.lastgroup
+
+            elif holder(re.search(end_pattern, word)):
+                assert is_special and holder.lastgroup == current_name
+                split_by_pattern = re.split(holder.group(), word)
+                assert len(split_by_pattern) == 2
+                if split_by_pattern[0] != u'':
+                    element_words.append(split_by_pattern[0])
+
+                assert len(element_words) > 0
+                if u'' in split_by_pattern:
+                    element_words.append(u'')
+                self.add_special(u' '.join(element_words), name=current_name)
+                is_special, current_name = False, u'reg-text'
+
+                if split_by_pattern[1] != u'':
+                    element_words = [split_by_pattern[1]]
+                else:
+                    element_words = []
+
+            else:
+                element_words.append(word)
+        else:
+            add_formatted_text(element_words, current_name)
+
+    def set_rid(self, base_id, com_id, siman_num, cyclical=False, order=None):
         """
         Set the rid key on the Seif to be matched to it's equivalent footnote in the base text
         :param base_id: Id of base text
@@ -1071,16 +1159,18 @@ class Seif(OrderedElement):
         point (i.e. ת resolves as 22). This is necessary for commentaries that cycle through the hebrew alphabet to mark
         comments without using the letters as a numerical representation (באר הגולה on חושן משפט is an example of this
         markup format - view source files for details).
+        :param order: Use to set the order value explicitly
         :return:
         """
         if com_id == 0:  # 0 is reserved to reference the base text
             raise AssertionError("Base text seifim do not have an rid")
 
-        if cyclical:
-            assert self.Tag.get('label') is not None
-            order = u'{};{}'.format(self.Tag['label'], self.num)
-        else:
-            order = self.num
+        if order is None:
+            if cyclical:
+                assert self.Tag.get('label') is not None
+                order = u'{};{}'.format(self.Tag['label'], self.num)
+            else:
+                order = self.num
 
         self.rid = u'b{}-c{}-si{}-ord{}'.format(base_id, com_id, siman_num, order)
         self.Tag['rid'] = self.rid
@@ -1131,7 +1221,7 @@ class Seif(OrderedElement):
         seif_text = re.sub(u'(<i data-commentator.*?></i>) +', ur'\1', seif_text)  # Remove space between text and itag
         seif_text = seif_text.replace(u'\n', u' ')
         seif_text = seif_text.replace(u'*', u'')
-        seif_text = re.sub(ur'([^ ](?=\())|(\)(?=[^ ]))', ur'\g<0> ', seif_text)  # Parenthesis have spaces before and after
+        seif_text = re.sub(ur'([^> ](?=\())|(\)(?=[^ ]))', ur'\g<0> ', seif_text)  # Parenthesis have spaces before and after (skip if at beginning of html element)
         seif_text = re.sub(ur'\( | +[:)]', lambda x: x.group(0).replace(u' ', u''), seif_text)  # No spaces padding parenthesis or colon
         seif_text = re.sub(u' +(</[^\u05d0-\u05ea ]*>:?)$', ur'\g<1>', seif_text)  # clean up spaces before the final html closing tag
         seif_text = re.sub(u' {2,}', u' ', seif_text)
@@ -1236,7 +1326,7 @@ class TextElement(Element):
         def repl(s):
             data_order = order_callback(s.group(order_group))
             data_label = s.group(label_group)
-            return escape(u'<i data-commentator="{}" data-order="{}" data-label="{}"</i>'.
+            return escape(u'<i data-commentator="{}" data-order="{}" data-label="{}"></i>'.
                           format(commentator, data_order, data_label))
 
         # Make sure pattern will not touch the existing xrefs
@@ -1262,8 +1352,10 @@ class TextElement(Element):
             return u'<small>{}</small>'.format(u''.join(text_list))
         elif self.Tag.name == u'dh':
             return u'<b>{}</b>'.format(u''.join(text_list))
-        else:
+        elif self.Tag.name == u'reg-text':
             return u''.join(text_list)
+        else:
+            return u'<{}>{}</{}>'.format(self.Tag.name, u''.join(text_list), self.Tag.name)
 
 
 class Xref(Element):

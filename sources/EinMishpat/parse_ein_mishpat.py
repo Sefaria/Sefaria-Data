@@ -1,5 +1,8 @@
 # coding=utf-8
 
+import django
+django.setup()
+
 from optparse import OptionParser
 import unicodecsv as csv
 from ein_parser import segment_column
@@ -261,10 +264,10 @@ from sefaria.helper.link import create_link_cluster
 #     print total
 
 if __name__ == "__main__":
-    massekhet = 'Avodah Zarah'
-    # final_list = segment_column(u'done/Ein Mishpat_ Horayot - horayot_little_letters.csv.csv', u'done/Ein Mishpat_ Horayot - horayot_little_letters.csv.csv', massekhet, wikitext=False)
+    massekhet = 'Menachot'
+    # final_list = segment_column(u'done/menachot_little_letters.csv', u'done/menachot_little_letters.csv', massekhet, wikitext=False)
     # print final_list
     # validation = validity_and_cluster(final_list)
     # save_links_local(final_list, massekhet)
-    # links = post_ein_mishpat(massekhet)
+    links = post_ein_mishpat(massekhet)
     print 'done'

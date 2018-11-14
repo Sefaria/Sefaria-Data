@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
+import django
+django.setup()
 from data_utilities import dibur_hamatchil_matcher as dhm
 from sefaria.model import *
 from sefaria.utils import hebrew
 import regex as re
-import pickle
+import json
+import codecs
 
 
 def sp(string):
@@ -65,12 +68,27 @@ class TestDHMatcher:
             octc = TextChunk(ocRef,"he")
             mbtc = TextChunk(mbRef,"he")
             matched = dhm.match_ref(octc, mbtc, base_tokenizer=mb_base_tokenizer, dh_extract_method=mb_dh_extraction_method, with_abbrev_matches=True)
-            matched['abbrevs'] = [[unicode(am) for am in seg] for seg in matched['abbrevs']]
+            # store dict in json serializable format
+            matched[u'abbrevs'] = [[unicode(am) for am in seg] for seg in matched[u'abbrevs']]
+            matched[u'comment_refs'] = [unicode(r.normal()) if r is not None else r for r in matched[u'comment_refs']]
+            matched[u'matches'] = [r.normal() if r is not None else r for r in matched[u'matches']]
+            matched[u'match_word_indices'] = [list(tup) for tup in matched[u'match_word_indices']]
+            matched[u'match_text'] = [list(tup) for tup in matched[u'match_text']]
             all_matched.append(matched)
-        #pickle.dump(all_matched, open('mb_matched.pkl','wb'))
-        comparison = pickle.load(open('mb_matched.pkl', 'rb'))
-        #comparison = [comparison[1]]
-        assert comparison == all_matched
+        # json.dump(all_matched, codecs.open('mb_matched.json', 'wb', encoding='utf8'))
+        comparison = json.load(codecs.open('mb_matched.json', 'rb', encoding='utf8'))
+        for a_siman, b_siman in zip(all_matched, comparison):
+            for k, v in a_siman.items():
+                assert v == b_siman[k]
+                # DEBUG
+                # if v != b_siman[k]:
+                #     for i, (v1, b1) in enumerate(zip(v, b_siman[k])):
+                #         if v1 != b1:
+                #             print v1
+                #             print b1
+                #             print a_siman[u'comment_refs'][i]
+
+
 
     def test_empty_comment(self):
         daftext = u'אע״ג שאמרו ככה בלה בלה בלה'.split()

@@ -361,7 +361,7 @@ class AbbrevMatch:
 
 
 class GemaraDaf:
-    def __init__(self,word_list,comments,dh_extraction_method=lambda x: x,prev_matched_results=None,dh_split=None, lang="he"):
+    def __init__(self,word_list,comments,dh_extraction_method=lambda x: x,prev_matched_results=None,dh_split=None, daf_skips=2, rashi_skips=1, overall_skips=2, lang="he"):
         self.allWords = word_list
         self.matched_words = [False for _ in xrange(len(self.allWords))]
         self.gemaraText = " ".join(self.allWords)
@@ -369,6 +369,9 @@ class GemaraDaf:
         self.allRashi = []
         self.did_dh_split = not dh_split is None
         self.dh_map = []
+        self.daf_skips = daf_skips
+        self.rashi_skips = rashi_skips
+        self.overall_skips = overall_skips
         self.lang = lang
         # dh split
         dh_list = []
@@ -405,23 +408,37 @@ class GemaraDaf:
                 old_dh = self.dh_map[i]
                 sub_rashis = []
                 start_i = i
+
+                skipped_daf, skipped_rashi = 0, 0
                 while i < len(self.allRashi) and self.dh_map[i] == old_dh:
+                    temp_rash = self.allRashi[i]
                     if self.allRashi[i].startWord != -1:
                         sub_rashis.append(self.allRashi[i])
+                        skipped_daf += len(temp_rash.skippedDafWords)
+                        skipped_rashi += len(temp_rash.skippedRashiWords)
+                    else:
+                        skipped_rashi += len(temp_rash.words)
                     i += 1
                 if len(sub_rashis) == 0:
                     new_all_rashi.append(self.allRashi[start_i]) #just append the first one
                 else:
-                    new_start_word = len(self.gemaraText)
-                    new_end_word = -1
-                    new_matching_text = u'חדש:'
-                    for sub_ru in sub_rashis:
-                        #print u"Old {}".format(sub_ru)
-                        new_matching_text += u" " + sub_ru.matchedGemaraText
-                        if sub_ru.startWord < new_start_word:
-                            new_start_word = sub_ru.startWord
-                        if sub_ru.endWord > new_end_word:
-                            new_end_word = sub_ru.endWord
+                    if skipped_rashi > self.rashi_skips or skipped_daf > self.daf_skips or (
+                        skipped_daf + skipped_rashi) > self.overall_skips:
+                        # count it as a mismatch
+                        new_start_word = -1
+                        new_end_word = -1
+                        new_matching_text = u""
+                    else:
+                        new_start_word = len(self.gemaraText)
+                        new_end_word = -1
+                        new_matching_text = u'חדש:'
+                        for sub_ru in sub_rashis:
+                            #print u"Old {}".format(sub_ru)
+                            new_matching_text += u" " + sub_ru.matchedGemaraText
+                            if sub_ru.startWord < new_start_word:
+                                new_start_word = sub_ru.startWord
+                            if sub_ru.endWord > new_end_word:
+                                new_end_word = sub_ru.endWord
 
                     new_ru = RashiUnit(old_dh,sub_rashis[0].fullText,sub_rashis[0].place, self.lang)
                     new_ru.startWord = new_start_word
@@ -709,7 +726,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
 
     InitializeHashTables()
 
-    curDaf = GemaraDaf(base_text, comments, dh_extract_method, prev_matched_results, dh_split, lang=lang)
+    curDaf = GemaraDaf(base_text, comments, dh_extract_method, prev_matched_results, dh_split, daf_skips, rashi_skips, overall, lang=lang)
     # now we go through each rashi, and find all potential matches for each, with a rating
     for irashi,ru in enumerate(curDaf.allRashi):
         if ru.startWord != -1:
@@ -1340,18 +1357,9 @@ def GetAllMatches(curDaf, curRashi, startBound, endBound,
 
         if fIsMatch:
 
-            dist = ComputeLevenshteinDistanceByWord(alternateStartText, targetPhrase)
+            dist = ComputeLevenshteinDistanceByWord(alternateStartText, targetPhrase, len(path["daf_indexes_skipped"]) + len(path["comment_indexes_skipped"]), len(abbrevs) > 0)
 
-            # add penalty for skipped words
-            dist += fullWordValue * len(path["daf_indexes_skipped"]) #weighted_levenshtein.cost_str(curDaf.allWords[gemaraWordToIgnore])
-            dist += fullWordValue * len(path["comment_indexes_skipped"]) #weighted_levenshtein.cost_str(curDaf.allWords[gemaraSecondWordToIgnore])
-
-            if len(abbrevs) > 0:
-                dist += abbreviationPenalty
-
-
-            normalizedDistance = 1.0 * (dist + smoothingFactor) / (len(startText) + smoothingFactor) * normalizingFactor
-            curMatch.score = normalizedDistance
+            curMatch.score = dist
             curMatch.textToMatch = curRashi.startingText
             curMatch.textMatched = BuildPhraseFromArray(curDaf.allWords, iGemaraWord , len_matched)
             curMatch.startWord = iGemaraWord
@@ -1415,8 +1423,7 @@ def GetAllApproximateMatches(curDaf, curRashi, startBound, endBound,
 
             # calculate the score - how distant is it
             dist = ComputeLevenshteinDistanceByWord(startText, curMatch.textMatched)
-            normalizedDistance = 1.0*(dist + smoothingFactor) / (len(startText) + smoothingFactor) * normalizingFactor
-            curMatch.score = normalizedDistance
+            curMatch.score = dist
 
             allMatches.append(curMatch)
         iWord += 1
@@ -1742,12 +1749,12 @@ def CleanText(curLine):  # string
     return re.sub(ur"</?[^>]+>", u"", curLine).strip()
 
 
-def ComputeLevenshteinDistanceByWord(s, t):  # s and t are strings
+def ComputeLevenshteinDistanceByWord(s, t, num_skipped = 0, abbrev_penalty = False):  # s and t are strings
     global fullWordValue
     # we take it word by word, each word can be, at most, the value of a full word
 
-    words1 = s.split(' ')
-    words2 = t.split(' ')
+    words1 = s.split()
+    words2 = t.split()
 
     totaldistance = 0
 
@@ -1766,7 +1773,10 @@ def ComputeLevenshteinDistanceByWord(s, t):  # s and t are strings
 
             totaldistance += min(ComputeLevenshteinDistance(words1[i], words2[i]), fullWordValue)
 
-    return totaldistance
+    totaldistance += fullWordValue * num_skipped
+    totaldistance += abbreviationPenalty if abbrev_penalty else 0
+    norm_dist = 1.0 * (totaldistance + smoothingFactor) / (len(s) + smoothingFactor) * normalizingFactor
+    return norm_dist
 
 def ComputeLevenshteinDistance(s, t):
     return weighted_levenshtein.calculate(s, t, normalize=False)

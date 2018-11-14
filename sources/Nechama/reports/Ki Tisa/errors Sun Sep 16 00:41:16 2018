@@ -1,0 +1,270 @@
+html_sheets/Ki Tisa/602.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/1050.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/1380.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/399.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/1250.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/770.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/1067.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/117.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/707.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/91.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/916.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/238.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/613.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/347.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/326.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/865.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/473.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/28.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/671.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/1202.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/173.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/169.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/1151.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/1311.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/895.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/1438.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/524.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/836.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/1090.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+
+html_sheets/Ki Tisa/949.html: (<type 'exceptions.AttributeError'>, AttributeError("'NoneType' object has no attribute 'name'",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 958, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 31, in __init__
+    self.en_parasha = Term().load({"titles.text": parasha}).name
+AttributeError: 'NoneType' object has no attribute 'name'
+
+

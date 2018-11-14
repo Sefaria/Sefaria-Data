@@ -1,0 +1,19 @@
+html_sheets/Behar/36.html: (<class 'sefaria.system.exceptions.InputError'>, InputError(u'Leviticus ends at Chapter 27.',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1101, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 34, in __init__
+    self.sefer, self.perakim, self.pasukim = self.extract_perek_info(perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 154, in extract_perek_info
+    last_pasuk = get_pasukim_for_perek(sefer, pereks[0])
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 110, in get_pasukim_for_perek
+    return str(len(Ref(u"{} {}".format(en_sefer, perek)).all_segment_refs()))
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 1954, in __call__
+    result = super(RefCacheType, cls).__call__(*args, **kwargs)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2034, in __init__
+    self._validate()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2066, in _validate
+    raise InputError(u"{} ends at {} {}.".format(self.book, self.index_node.sectionNames[0], display_size))
+InputError: Leviticus ends at Chapter 27.
+
+

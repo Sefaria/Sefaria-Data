@@ -1,0 +1,26 @@
+html_sheets/Re'eh/287.html: (<class 'sefaria.system.exceptions.BookNameError'>, BookNameError(u"No book named 'Malbim on Deuteronomy'.",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1094, in bs4_reader
+    sheet.create_sheetsources_from_objsource()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 75, in create_sheetsources_from_objsource
+    if not success and segment.ref and parser.source_is_tanakh(segment.ref) and parser.haftarah_mode:
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 874, in source_is_tanakh
+    i = library.get_index(" ".join(ref.split()[0:-1]))
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 4175, in get_index
+    raise BookNameError(u"No book named '{}'.".format(bookname))
+BookNameError: No book named 'Malbim on Deuteronomy'.
+
+
+html_sheets/Re'eh/795.html: (<class 'sefaria.system.exceptions.BookNameError'>, BookNameError(u"No book named 'Malbim on Deuteronomy'.",))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1094, in bs4_reader
+    sheet.create_sheetsources_from_objsource()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 75, in create_sheetsources_from_objsource
+    if not success and segment.ref and parser.source_is_tanakh(segment.ref) and parser.haftarah_mode:
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 874, in source_is_tanakh
+    i = library.get_index(" ".join(ref.split()[0:-1]))
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 4175, in get_index
+    raise BookNameError(u"No book named '{}'.".format(bookname))
+BookNameError: No book named 'Malbim on Deuteronomy'.
+
+

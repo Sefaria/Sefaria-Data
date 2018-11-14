@@ -1,0 +1,27 @@
+html_sheets/Terumah/82.html: (<class 'sefaria.system.exceptions.InputError'>, InputError(u'Exodus ends at Chapter 40.',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 966, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 175, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 215, in add_segments
+    self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 267, in classify_segments
+    current_source = self.parse_ref(segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 334, in parse_ref
+    is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 520, in set_current_perek_pasuk
+    return self.set_current_pasuk(pasuk, is_tanakh)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 479, in set_current_pasuk
+    poss_ref = self.pasuk_in_parsha_pasukim(new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 598, in pasuk_in_parsha_pasukim
+    possible_ref = Ref("{} ".format(parser.en_sefer) + perek + ":" + new_pasuk)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 1954, in __call__
+    result = super(RefCacheType, cls).__call__(*args, **kwargs)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2034, in __init__
+    self._validate()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 2066, in _validate
+    raise InputError(u"{} ends at {} {}.".format(self.book, self.index_node.sectionNames[0], display_size))
+InputError: Exodus ends at Chapter 40.
+
+

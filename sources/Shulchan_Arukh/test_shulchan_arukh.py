@@ -215,7 +215,23 @@ class TestMarkChildren(object):
             seif.set_rid(0, 1, 1)
             assert seif.rid == rid
 
+
 class TestTextFormatting(object):
+
+    @staticmethod
+    def get_formatter():
+        return [
+            {
+                'start': '@33',
+                'end': '@34',
+                'name': 'ramah'
+            },
+            {
+                'start': '@55',
+                'end': '@56',
+                'name': 'b'
+            }
+        ]
 
     def test_no_special_formatting(self):
         raw_text = u'<seif num="1">just some text</seif>'
@@ -223,11 +239,23 @@ class TestTextFormatting(object):
         s.format_text('@33', '@34', 'ramah')
         assert unicode(s) == u'<seif num="1"><reg-text>just some text</reg-text></seif>'
 
+    def test_no_special_formatting_multiple(self):
+        raw_text = u'<seif num="1">just some text</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        s.format_text_multiple(self.get_formatter())
+        assert unicode(s) == u'<seif num="1"><reg-text>just some text</reg-text></seif>'
+
     def test_simple_formatting(self):
         raw_text = u'<seif num="1">some @33bold @34text</seif>'
         s = Seif(BeautifulSoup(raw_text, 'xml').seif)
         s.format_text('@33', '@34', 'b')
         assert unicode(s) == u'<seif num="1"><reg-text>some </reg-text><b>bold </b><reg-text>text</reg-text></seif>'
+
+    def test_simple_formatting_multiple(self):
+        raw_text = u'<seif num="1">some @33bold @34text</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        s.format_text_multiple(self.get_formatter())
+        assert unicode(s) == u'<seif num="1"><reg-text>some </reg-text><ramah>bold </ramah><reg-text>text</reg-text></seif>'
 
     def test_start_formatting(self):
         raw_text = u'<seif num="1">@33bold text @34at the beginning</seif>'
@@ -247,17 +275,43 @@ class TestTextFormatting(object):
         s.format_text('@33', '@34', 'b')
         assert unicode(s) == u'<seif num="1"><reg-text>just some text</reg-text></seif>'
 
+    def test_random_end_tag_multiple(self):
+        raw_text = u'<seif num="1">@34just some text</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        with pytest.raises(AssertionError):
+            s.format_text_multiple(self.get_formatter())
+
     def test_double_start_tag(self):
         raw_text = u'<seif num="1">@33just @33some text</seif>'
         s = Seif(BeautifulSoup(raw_text, 'xml').seif)
         with pytest.raises(AssertionError):
             s.format_text('@33', '@34', 'b')
 
+    def test_double_start_tag_multiple(self):
+        raw_text = u'<seif num="1">@33just @55some text</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        with pytest.raises(AssertionError):
+            s.format_text_multiple(self.get_formatter())
+
     def test_interspersed(self):
         raw_text = u'<seif num="1">@33just @34some @33text</seif>'
         s = Seif(BeautifulSoup(raw_text, 'xml').seif)
         s.format_text('@33', '@34', 'b')
         assert unicode(s) == u'<seif num="1"><b>just </b><reg-text>some </reg-text><b>text</b></seif>'
+
+    def test_multiple(self):
+        raw_text = u'<seif num="1">@33just @34some @55random @56text</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        s.format_text_multiple(self.get_formatter())
+        assert unicode(s) == u'<seif num="1"><ramah>just </ramah><reg-text>some </reg-text><b>random </b>' \
+                             u'<reg-text>text</reg-text></seif>'
+
+    def test_mulitple_one_after_another(self):
+        raw_text = u'<seif num="1">@33just @34 @55some random @56text</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        s.format_text_multiple(self.get_formatter())
+        assert unicode(s) == u'<seif num="1"><ramah>just </ramah><b>some random </b><reg-text>text</reg-text></seif>'
+        print unicode(s)
 
     def test_special_after_word(self):
         raw_text = u'<seif num="1">just@33 some @34text</seif>'
@@ -288,6 +342,25 @@ class TestTextFormatting(object):
         s = Seif(BeautifulSoup(raw_text, 'xml').seif)
         s.format_text('@33', '@34', 'b')
         assert unicode(s) == u'<seif num="1"><reg-text>(</reg-text><b>just some</b><reg-text>): text</reg-text></seif>'
+
+    def test_multiple_wrong_end(self):
+        raw_text = u'<seif num="1">@33just @56some text</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        with pytest.raises(AssertionError):
+            s.format_text_multiple(self.get_formatter())
+
+    def test_multiple_dangling_start(self):
+        raw_text = u'<seif num="1">@33just text</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        s.format_text_multiple(self.get_formatter())
+        assert unicode(s) == u'<seif num="1"><ramah>just text</ramah></seif>'
+
+    def test_multiple_dangling_end(self):
+        raw_text = u'<seif num="1">just text@56</seif>'
+        s = Seif(BeautifulSoup(raw_text, 'xml').seif)
+        with pytest.raises(AssertionError):
+            s.format_text_multiple(self.get_formatter())
+
 
 class TestXref(object):
 

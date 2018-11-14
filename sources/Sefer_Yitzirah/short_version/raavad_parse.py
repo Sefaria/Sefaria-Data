@@ -262,7 +262,7 @@ def post_raavad_index():
         "title": "Raavad on Sefer Yetzirah",
         "categories": ["Commentary2", "Kabbalah", "Raavad"],
         "schema": ravaad_schema().serialize(),
-        "author " : [u'Yosef ben Shalom Ashkenazi']
+        "author": [u'Yosef ben Shalom Ashkenazi']
     }
     post_index(index_ravaad)
 
@@ -271,7 +271,7 @@ def post_raavad_text(text_dict):
     # version for all the ja
     for ja in text_dict.keys():
         version = {
-            'versionTitle': 'Sefer Yetzirah, Warsaw 1884',
+            # 'versionTitle': 'Sefer Yetzirah, Warsaw 1884',
             'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001310968',
             'language': 'he',
             'text': text_dict[ja]

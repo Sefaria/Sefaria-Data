@@ -1,0 +1,33 @@
+html_sheets/Mishpatim/324.html: (<type 'exceptions.KeyError'>, KeyError(u'Invalid Hebrew numeral character \xa0',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 966, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 175, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 215, in add_segments
+    self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 267, in classify_segments
+    current_source = self.parse_ref(segment, relevant_text, next_segment_class)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 349, in parse_ref
+    add_if_not_found=False)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 445, in _get_refs_in_string
+    refs = library.get_refs_in_string(string)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 4518, in get_refs_in_string
+    res = self._build_all_refs_from_string(title, st)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 4677, in _build_all_refs_from_string
+    return self._internal_ref_from_string(title, st, lang)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 4700, in _internal_ref_from_string
+    res = (self._get_ref_from_match(ref_match, node, lang), ref_match.span()) if return_locations else self._get_ref_from_match(ref_match, node, lang)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/text.py", line 4638, in _get_ref_from_match
+    sections.append(node._addressTypes[i].toNumber(lang, gs.get(gname)))
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/model/schema.py", line 1527, in toNumber
+    daf = decode_hebrew_numeral(num) * 2
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/utils/hebrew.py", line 118, in decode_hebrew_numeral
+    t = map(heb_string_to_int, split_thousands(n))  # split and convert to numbers
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/utils/hebrew.py", line 107, in heb_string_to_int
+    return sum(map(heb_to_int, n))
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Project/sefaria/utils/hebrew.py", line 67, in heb_to_int
+    raise KeyError, u"Invalid Hebrew numeral character {}".format(unicode_char)
+KeyError: u'Invalid Hebrew numeral character \xa0'
+
+

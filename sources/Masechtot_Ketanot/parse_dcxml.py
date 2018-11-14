@@ -11,7 +11,7 @@ import unicodecsv as csv
 from bs4 import BeautifulSoup, Tag
 from data_utilities.util import ja_to_xml, getGematria
 from data_utilities.dibur_hamatchil_matcher import match_text
-from sources.functions import post_text, post_index, post_link, post_term
+from sources.functions import post_text, post_index, post_link, post_term, add_category
 
 
 class Collection:
@@ -83,19 +83,22 @@ class Collection:
             'language': 'he',
         }
 
-    def post(self):
+    def post(self, server):
         for index in self.base_indices:
-            post_index(index, weak_network=True)
+            post_index(index, weak_network=True, server=server)
         for index in self.commentaryIndices:
-            post_index(index)
+            post_index(index, server=server)
         for version in self.versionList:
             print version['ref']
-            post_text(version['ref'], version['version'], index_count='on', weak_network=True)
-        post_link(self.linkSet)
+            post_text(version['ref'], version['version'], index_count='on', weak_network=True, server=server)
+        post_link(self.linkSet, server=server)
 
-    def post_commentary_terms(self):
+    def post_commentary_terms_and_categories(self, server):
         for term in self.terms:
-            post_term(term)
+            post_term(term, server=server)
+        for index in self.commentaryIndices:
+            category = index['categories']
+            add_category(category[-1], category, server=server)
 
 
 def check_chapters():

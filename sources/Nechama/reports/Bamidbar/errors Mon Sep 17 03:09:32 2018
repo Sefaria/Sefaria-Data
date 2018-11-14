@@ -1,0 +1,26 @@
+html_sheets/Bamidbar/1482.html: (<type 'exceptions.AssertionError'>, AssertionError())
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1028, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 32, in __init__
+    self.sefer, self.perakim, self.pasukim = self.extract_perek_info(perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 123, in extract_perek_info
+    assert len(pereks) is 1
+AssertionError
+
+
+html_sheets/Bamidbar/963.html: (<type 'exceptions.IndexError'>, IndexError('list index out of range',))
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 1033, in bs4_reader
+    sheet.parse_as_text()
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 176, in parse_as_text
+    section.add_segments(section.soupObj)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 215, in add_segments
+    self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 280, in classify_segments
+    sheet_segment = self.classify(segment, i, soup_segments)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 316, in classify
+    current_source = [x for x in self.segment_objects if (isinstance(x, Source) and x.current)][-1]
+IndexError: list index out of range
+
+

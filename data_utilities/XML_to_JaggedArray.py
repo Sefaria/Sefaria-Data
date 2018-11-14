@@ -263,7 +263,6 @@ class XML_to_JaggedArray:
         text = self.modify_before_post(text)
         if self.print_bool:
             self.write_text_to_file(ref, text)
-            self.writer.stream.close()
         elif self.post_info["server"] != "local":
             send_text = {
                     "text": text,
@@ -424,6 +423,8 @@ class XML_to_JaggedArray:
             child = self.fix_ol(child)
         if child.tag == "table":
             self.print_table_info(element, index)
+        if child.tag == "h1" and self.title == "Teshuvot Maharam":
+            child.text = re.sub(" \(D.*?\)", "", child.text)
         if child.tag in ["chapter"] and "CHAPTER " in child.text.upper():# and len(child.text.split(" ")) <= 3:
             tags = re.findall("<sup>.*?</sup>", child.text)
             for tag in tags:
@@ -519,7 +520,7 @@ class XML_to_JaggedArray:
                 array.append(x)
 
         if len(array) > 0 and type(array[0]) is not list: #not list in other words string or unicode
-            array = self.pre_parse(array, node_name)
+            #array = self.pre_parse(array, node_name)
             array = self.parse(array, self.footnotes, node_name)
             self.any_problems(array, node_name)
         return array
@@ -583,13 +584,6 @@ class XML_to_JaggedArray:
             print "{} now has {} paragraphs that are not small or numbered".format(node_name, lines_with_no_small_or_numbers)
         return content
 
-    def sort_by_book_order(self, key):
-        if key == "text":
-            return len(self.array_of_names) + 1
-        if key == "subject":
-            return len(self.array_of_names) + 2
-        index = self.array_of_names.index(key)
-        return index
 
 
     def interpret_and_post(self, node, running_ref, prev="string"):

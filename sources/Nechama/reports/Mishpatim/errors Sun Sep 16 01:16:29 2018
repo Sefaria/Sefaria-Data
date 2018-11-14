@@ -1,0 +1,11 @@
+html_sheets/Mishpatim/324.html: (<type 'exceptions.AssertionError'>, AssertionError())
+Traceback (most recent call last):
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 959, in bs4_reader
+    sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, top_dict["pasuk"].text, parser.en_sefer, perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 32, in __init__
+    self.sefer, self.perakim, self.pasukim = self.extract_perek_info(perek_info)
+  File "/Users/stevenkaplan/Documents/Sefaria/Sefaria-Data/sources/Nechama/main.py", line 112, in extract_perek_info
+    assert len(pasuks) is 2
+AssertionError
+
+

@@ -24,6 +24,7 @@ from sefaria.utils.util import replace_using_regex as reg_replace
 import base64
 import enchant
 import Levenshtein
+from functools import wraps
 
 gematria = {}
 gematria[u'א'] = 1
@@ -534,6 +535,7 @@ def checkLengthsDicts(x_dict, y_dict):
 
 
 def weak_connection(func):
+    @wraps(func)
     def post_weak_connection(*args, **kwargs):
         result = None
         success = False
@@ -543,7 +545,7 @@ def weak_connection(func):
             for i in range(num_tries-1):
                 try:
                     result = func(*args, **kwargs)
-                except (HTTPError, URLError) as e:
+                except (HTTPError, URLError, requests.exceptions.ConnectionError) as e:
                     print 'handling weak network'
                 else:
                     success = True
@@ -629,7 +631,13 @@ def make_title(text):
 @weak_connection
 def post_sheet(sheet, server=SEFARIA_SERVER):
     url = server + "/api/sheets"
-    return http_request(url, body={"apikey": API_KEY}, json_payload=sheet, method="POST")
+    response = http_request(url, body={"apikey": API_KEY}, json_payload=sheet, method="POST")
+    if isinstance(response, dict):
+        return response
+    else:
+        with open("errors.html", 'w') as f:
+            f.write(response)
+        return response
 
 @weak_connection
 def post_index(index, server=SEFARIA_SERVER):
@@ -663,14 +671,18 @@ def post_category(category_dict, server=SEFARIA_SERVER):
     
 def add_category(en_title, path, he_title=None, server=SEFARIA_SERVER):
     """
+    Familiarize yourself with Categories as First Class Objects before using this method:
+    https://github.com/Sefaria/Sefaria-Project/wiki/Categories-as-first-class-objects
+
     Post a category to the desired server. If a hebrew title is not supplied, this method will attempt to post a category
     using a sharedTerm. This can only work if the corresponding term is present in the local Sefaria.
     This method will attempt to upload parent categories if they are missing on destination server.
     IMPORTANT: It is not assumed that parents exist locally, therefore this method can only post parents that use a
     sharedTerm. All necessary terms must exist locally for this to work.
+    Note, en_title needs to be identical to last item in path
 
     :param en_title: Primary English title or sharedTitle
-    :param path: path to this category
+    :param list path: path to this category,
     :param he_title: Primary Hebrew title. Do not supply if a sharedTerm is to be used.
     :param server: destination server.
     :return:
@@ -837,6 +849,14 @@ def first_word_with_period(str):
 
 @weak_connection
 def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SERVER):
+    """
+    :param ref:
+    :param text:
+    :param index_count:
+    :param skip_links:
+    :param server:
+    :return:
+    """
     # textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
     url = server+'/api/texts/'+ref
@@ -1166,7 +1186,7 @@ def isGematria(txt):
 def getGematria(txt):
     if not isinstance(txt, unicode):
         txt = txt.decode('utf-8')
-    txt = txt.replace(u"ך", u"כ").replace(u"ץ", u"צ")
+    txt = txt.replace(u"ך", u"כ").replace(u"ם", u"מ").replace(u"ן", u"נ").replace(u"ף", u"פ").replace(u"ץ", u"צ")
     index=0
     sum=0
     while index <= len(txt)-1:
