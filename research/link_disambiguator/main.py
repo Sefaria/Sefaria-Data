@@ -120,14 +120,17 @@ class Link_Disambiguator:
         linkset = LinkSet(query)
         print "Num ambiguous {}".format(linkset.count())
         segment_map = defaultdict(list)
+        actual_num = 0
         for l in linkset:
             try:
                 segment_map[Ref(l.refs[0]).normal()] += [Ref(l.refs[1]).normal()]
+                actual_num += 1
             except PartialRefInputError:
                 pass
             except InputError:
                 pass
-
+        print "Actual num ambiguous {}".format(actual_num)
+        print "Num keys {}".format(len(segment_map))
         objStr = json.dumps(segment_map, indent=4, ensure_ascii=False)
         with open('ambiguous_segments.json', "w") as f:
             f.write(objStr.encode('utf-8'))
@@ -186,7 +189,7 @@ class Link_Disambiguator:
             return [], []  # [[main_tc._oref.normal(), tc_list[i]._oref.normal()] for i in range(len(tc_list))]
 
         if len(match_list) == 0:
-            return [], [[main_tref, None, -40, 0, main_snippet, u""]]
+            return [], [{u"Quoting Ref": main_tref, u"Quoted Ref": None, u"Score": -40, u"Quote Num": 0, u"Snippet": main_snippet}]
         score_list = [x.score for x in match_list]
         max_scores = argmax(score_list, n=1)
         best = match_list[max_scores[0]]
@@ -194,7 +197,13 @@ class Link_Disambiguator:
         # print "snippet"
         # print get_snippet_from_mesorah_item(b_match, self.tokenize_words)
         # print best.score
-        ret = [[a_match.mesechta, b_match.ref.normal(), best.score, quote_number, main_snippet]]
+        ret = [{
+            u"Quoting Ref": a_match.mesechta,
+            u"Quoted Ref": b_match.ref.normal(),
+            u"Score": best.score,
+            u"Quote Num": quote_number,
+            u"Snippet": main_snippet
+        }]
         good, bad = (ret, []) if best.score > -28 else ([], ret)
         return good, bad
 
@@ -241,6 +250,12 @@ def get_snippet_from_mesorah_item(mesorah_item, tokenizer):
     words = tokenizer(Ref(mesorah_item.mesechta).text("he").ja().flatten_to_string())
     return u" ".join(words[mesorah_item.location[0]:mesorah_item.location[1]+1])
 
+
+def save_disambiguated_to_file(good, bad, csv_good, csv_bad):
+    csv_good.writerows(good)
+    csv_bad.writerows(bad)
+
+
 def disambiguate_all():
     ld = Link_Disambiguator()
     #ld.find_indexes_with_ambiguous_links()
@@ -251,9 +266,18 @@ def disambiguate_all():
     bad = []
     _tc_cache = {}
     def make_tc(tref, oref):
+        global _tc_cache
         tc = oref.text('he')
         _tc_cache[tref] = tc
+        if len(_tc_cache) > 5000:
+            _tc_cache = {}
         return tc
+    fgood = open('unambiguous_links.json', 'wb')
+    fbad = open('still_ambiguous_links.json', 'wb')
+    csv_good = unicodecsv.DictWriter(fgood, [u'Quoting Ref', u'Quoted Ref', u'Score', u'Quote Num', u'Snippet'])
+    csv_good.writeheader()
+    csv_bad = unicodecsv.DictWriter(fbad, [u'Quoting Ref', u'Quoted Ref', u'Score', u'Quote Num', u'Snippet'])
+    csv_bad.writeheader()
     for iambig, (main_str, tref_list) in enumerate(ambig_dict.items()):
         if iambig % 50 == 0:
             print "{}/{}".format(iambig, len(ambig_dict))
@@ -266,6 +290,10 @@ def disambiguate_all():
                 temp_good, temp_bad = disambiguate_one(ld, main_ref, main_tc, quoted_oref, quoted_tc)
                 good += temp_good
                 bad += temp_bad
+                if len(good) + len(bad) > 1000:
+                    save_disambiguated_to_file(good, bad, csv_good, csv_bad)
+                    good = []
+                    bad = []
         except PartialRefInputError:
             pass
         except InputError as e:
@@ -274,20 +302,14 @@ def disambiguate_all():
         except TypeError as e:
             print e
             pass
-
-
-    objStr = json.dumps(good, indent=4, ensure_ascii=False)
-    with open('unambiguous_links2.json', "w") as f:
-        f.write(objStr.encode('utf-8'))
-
-    objStr = json.dumps(bad, indent=4, ensure_ascii=False)
-    with open('still_ambiguous_links2.json', "w") as f:
-        f.write(objStr.encode('utf-8'))
+    save_disambiguated_to_file(good, bad, csv_good, csv_bad)
+    fgood.close()
+    fbad.close()
 
 
 def disambiguate_one(ld, main_oref, main_tc, quoted_oref, quoted_tc):
     good, bad = [], []
-    main_snippet_list = get_snippet_by_seg_ref(main_oref, main_tc, quoted_oref, must_find_snippet=True, snip_size=45, use_indicator_words=True)
+    main_snippet_list = get_snippet_by_seg_ref(main_tc, quoted_oref, must_find_snippet=True, snip_size=45, use_indicator_words=True)
     if main_snippet_list:
         for isnip, main_snippet in enumerate(main_snippet_list):
             temp_good, temp_bad = ld.disambiguate_segment_by_snippet(main_snippet, main_oref.normal(), quoted_tc, isnip)
@@ -296,7 +318,7 @@ def disambiguate_one(ld, main_oref, main_tc, quoted_oref, quoted_tc):
     return good, bad
 
 
-def get_snippet_by_seg_ref(source, source_tc, found, must_find_snippet=False, snip_size=100, use_indicator_words=False):
+def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=100, use_indicator_words=False):
     """
     based off of library.get_wrapped_refs_string
     :param source:
@@ -386,7 +408,7 @@ def find_low_confidence_talmud():
     qa_rows = [
         {
             u"Found Text": Ref(x[0]).text("he").ja().flatten_to_string(),
-            u"Source Text": u"...".join(get_snippet_by_seg_ref(Ref(x[1]), Ref(x[0]))),
+            u"Source Text": u"...".join(get_snippet_by_seg_ref(Ref(x[1]).text('he'), Ref(x[0]))),
             u"Source Ref URL": u"https://sefaria.org/{}".format(Ref(x[1]).url()),
             u"Found Ref URL": u"https://sefaria.org/{}".format(Ref(x[0]).url()),
             u"Wrong segment (seg) / Wrong link (link)": u""
