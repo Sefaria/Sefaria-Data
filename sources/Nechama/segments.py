@@ -120,6 +120,12 @@ class Source(object):
                 segment = BeautifulSoup(self.text[i])
                 segment = remove_a_links(segment)
                 self.text[i] = segment.text
+        else:
+            segment = BeautifulSoup(self.text)
+            for a in segment.findAll('a'):  # get all a tags and remove them
+                a.replaceWithChildren()
+            self.text = segment.text
+
 
         comment = self.text
 
@@ -220,7 +226,7 @@ class Source(object):
     def add_text(self, segment, segment_class=None):
         for br in segment.find_all("br"):
             br.replace_with("\n")
-        segment_text = segment.text.strip()
+        segment_text = bleach.clean(str(segment), tags=["u", "b"], strip=True)
         # self.parshan_name = segment_class
         # print self.parshan_name
         if not self.text:
@@ -255,7 +261,7 @@ class Source(object):
 class Header(object):
     def __init__(self, segment):
         self.letter = segment.find(attrs = {"class":"number"}).text.replace(".", "").strip()
-        self.header_text =[x for x in segment.find_all("td") if x.attrs == {}][0].text.strip()
+        self.header_text = [x for x in segment.find_all("td") if x.attrs == {}][0].text.strip()
         table_html = str(segment)
         formatted_text = self.format(BeautifulSoup(table_html, "lxml").text)
         self.text = u"<table><tr><td><big>{}</big></td></tr></table>".format(formatted_text)
@@ -341,7 +347,7 @@ class Question(object):
         table_html = str(segment)  # todo: fix this line, why are we losing so much data here?
         segs = [s for s in segment.find_all('p') if not s.parent.has_attr('class')]
         any([s.attrs for s in segs])
-        self.q_text = u" ".join([s.text.strip() for s in segment.find_all('p') if not s.parent.has_attr('class')])
+        self.q_text = u" ".join([bleach.clean(str(s), tags=["u", "b"], strip=True).strip() for s in segment.find_all('p') if not s.parent.has_attr('class')])
         self.text = self.format()
         self.q_source = segment
 
@@ -401,7 +407,7 @@ class Table(object):
     ## specifically for tables in HTML that end up staying as HTML in source sheet such class="RT" or "RTBorder"
 
     def __init__(self, segment):
-        self.text = str(segment)
+        self.text = bleach.clean(str(segment), tags=["u", "b"], strip=True)
 
     @staticmethod
     def is_table(segment):

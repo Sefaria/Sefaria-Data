@@ -11,7 +11,7 @@ from sefaria.model import *
 from segments import *
 from sefaria.system.database import db
 from sefaria.system.exceptions import InputError
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 from bs4 import BeautifulSoup, element
 import numpy
 from time import sleep
@@ -176,11 +176,14 @@ class Sheet(object):
        sheet_json["summary"] = u"{} ({})".format(self.en_year, self.he_year)
        sheet_json["sources"] = self.sources
        sheet_json["options"] = {"numbered": 0, "assignable": 0, "layout": "sideBySide", "boxed": 0, "language": "hebrew", "divineNames": "noSub", "collaboration": "none", "highlightMode": 0, "bsd": 0, "langLayout": "heRight"}
-       assert Term().load({"name": self.en_parasha})
+
        if "-" in self.en_parasha:
            sheet_json["tags"] = [unicode(self.en_parasha.split("-")[0]), unicode(self.en_parasha.split("-")[-1])]
+           assert Term().load({"name": self.en_parasha.split("-")[0]})
+           assert Term().load({"name": self.en_parasha.split("-")[-1]})
        else:
            sheet_json["tags"] = [unicode(self.en_parasha)]
+           assert Term().load({"name": self.en_parasha})
        if self.links_to_other_sheets:
            parser.sheets_linked_to_sheets.append((sheet_json["title"], sheet_json["summary"], sheet_json["tags"]))
        if post:
@@ -1436,6 +1439,45 @@ def dict_from_html_attrs(contents):
     return d
 
 
+def get_only_commentary(array):
+    array = [el for el in array if "Commentary" in library.get_index(" ".join(el.split()[0:-1])).categories]
+
+def word_cloud():
+    def get_title(el):
+        index = Ref(el).index
+        collective_title = getattr(index, "collective_title", None)
+        if collective_title:
+            return Term().load({"name": collective_title}).get_titles('he')[0].encode('utf-8')
+        else:
+            return index.get_title('he').split(u" על ")[0].encode('utf-8')
+
+    from collections import Counter
+    from sefaria.system.database import db
+    sheets = db.sheets.find()
+    sheets = list(sheets)
+
+    includedRefs = {}
+    includedRefsTotal = Counter()
+    includedCommentary = Counter()
+    includedIndexes = Counter()
+    includedTanakh = Counter()
+    total = 0
+    word_cloud = ""
+    for sheet in sheets:
+        if not "includedRefs" in sheet.keys():
+            print "No includedRefs in {}".format(sheet["id"])
+        else:
+            total += len(sheet["includedRefs"])
+            word_cloud += " "+" ".join([get_title(el) for el in sheet["includedRefs"] if "Commentary" in Ref(el).index.categories])
+            includedRefs[sheet["title"]] = Counter(sheet["includedRefs"])
+            includedTanakh += Counter([Ref(el).index for el in sheet["includedRefs"]
+                                       if "Commentary" not in Ref(el).index.categories and "Tanakh" in Ref(el).index.categories])
+            includedIndexes += Counter([Ref(el).index for el in sheet["includedRefs"] if "Commentary" not in Ref(el).index.categories and "Tanakh" not in Ref(el).index.categories])
+            includedCommentary += Counter([Ref(el).index for el in sheet["includedRefs"] if "Commentary" in Ref(el).index.categories])
+            includedRefsTotal += includedRefs[sheet["title"]]
+    includedTanakh.most_common(10)
+    file = open('word_cloud', 'w')
+    file.write(word_cloud)
 
 
 if __name__ == "__main__":
@@ -1455,9 +1497,11 @@ if __name__ == "__main__":
     posting = True
     individual = None
 
-    for which_parshiot in [genesis_parshiot, exodus_parshiot]:
+    for which_parshiot in [exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
+            if "-" not in parsha:
+                continue
             book = which_parshiot[0]
             parser = Nechama_Parser(book, parsha, "fast", "", catch_errors=catch_errors) #accurate
             parser.prepare_term_mapping()  # must be run once locally and on sandbox
