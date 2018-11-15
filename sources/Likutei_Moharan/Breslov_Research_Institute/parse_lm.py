@@ -37,11 +37,14 @@ into sections is trivial.
 import re
 import os
 import bleach
-from xml.sax.saxutils import unescape
+from tqdm import tqdm
+from itertools import izip_longest
+from xml.sax.saxutils import unescape, escape
 from bs4 import BeautifulSoup, Tag, NavigableString
 
 import django
 django.setup()
+from sefaria.model import *
 from data_utilities.util import getGematria
 
 
@@ -61,7 +64,8 @@ class LMFile(object):
 
         ul_tags = self.soup.body.find_all('ul')
         if ul_tags:
-            print u"Unordered list found in {}".format(self.filename)
+            # print u"Unordered list found in {}".format(self.filename)
+            pass
 
         for ul_tag in ul_tags:
             previous_p = ul_tag.previous_sibling
@@ -74,7 +78,7 @@ class LMFile(object):
 
         everything = self.soup.body.find_all(True)
         for e in everything:
-            tag_class = e['class']
+            tag_class = e.get(u'class', u'')
             tag_class = re.sub(u'\s?(Para|Char)Override-\d{1,2}', u'', tag_class)
             e['class'] = tag_class
         for span in self.soup.body.find_all('span', attrs={'class': re.compile(u'^LME-FootRef')}):
@@ -130,7 +134,8 @@ class Chapter(object):
 
         for en_p in all_en_ps:
             if en_p['class'] == "LME-title":
-                if en_p.string == "LIKUTEY MOHARAN #{}".format(self.number):
+                # if re.search(u"^LIKUTEY MOHARAN #{}".format(self.number), en_p.text):
+                if en_p.text == "LIKUTEY MOHARAN #{}".format(self.number):
                     started = True
                 else:
                     if started:  # we've moved to the next chapter, stop iterating
@@ -145,13 +150,23 @@ class Chapter(object):
         # handle sources that got their own segment
         bad_indices = []
         for i, segment in enumerate(segments):
-            if segment['class'] == u'LME-verse-opening-source':
+            segment_text = segment.text
+            if (re.search(ur'^\([^)]+\)$', segment_text)
+                    and
+                    library.get_refs_in_string(segment_text, 'en', citing_only=True)) \
+                or \
+                    (re.search(u'^[a-z]', segment_text)
+                     and
+                     re.search(u'[a-z]\s*$', segments[i-1].text)):
                 assert i > 0
                 bad_indices.append(i)
                 for child in segment.find_all(True):
                     child.unwrap()
+                segment.string = u' {}'.format(u' '.join(segment.contents))
                 segments[i-1].append(segment)
                 segment.unwrap()
+            elif not segment_text:
+                bad_indices.append(i)
 
         # popping changes the index of all items to the right of the index which was popped.
         for i in reversed(bad_indices):
@@ -196,7 +211,7 @@ class Chapter(object):
                     except AttributeError:
                         continue
 
-                    if next_segment == 1:
+                    if next_segment == 1 or next_segment == current_segment:
                         pass
                     elif next_segment - current_segment != 1:
                         print "Bad section transition found in chapter {}".format(self.number)
@@ -214,9 +229,6 @@ class Chapter(object):
 
         segments = []
         started = False
-        chapter_reg = re.compile(ur'''\u05dc\u05d9\u05e7\u05d5\u05d8\u05d9 \u05de\u05d5\u05d4\u05e8[\u05f4"]\u05df\s  # ליקוטי מוהר"ן
-                                 \u05e1\u05d9\u05de\u05df\s  # סימן
-                                 (?P<chapter>[\u05d0-\u05ea"]{1,4})''', re.X)
         chapter_reg = re.compile(ur'''\u05dc\u05d9\u05e7\u05d5\u05d8\u05d9 \u05de\u05d5\u05d4\u05e8[\u05f4"]\u05df\s\u05e1\u05d9\u05de\u05df\s(?P<chapter>[\u05d0-\u05ea"]{1,4})''')
 
         for he_p in all_he_ps:
@@ -233,23 +245,58 @@ class Chapter(object):
                         break
 
             elif started:
+                if re.search(u'Rashbam', he_p['class']):
+                    continue
                 segments.append(he_p)
             else:
                 continue
 
         assert len(segments) > 0
-        self.hebrew_segments = segments
+        self.hebrew_segments = [bleach.clean(s, tags=[], attributes={}, strip=True) for s in segments]
 
     def _allocate_to_sections(self):
         if len(self.english_segments) != len(self.hebrew_segments):
-            print u"Segment Mismatch in chapter {}:\n\t{} in English and {} in Hebrew"\
-                .format(self.number, len(self.english_segments), len(self.hebrew_segments))
+            # print u"Segment Mismatch in chapter {}:\n\t{} in English and {} in Hebrew"\
+            #     .format(self.number, len(self.english_segments), len(self.hebrew_segments))
+            pass
 
 
 part_1_files = [f for f in os.listdir(u'.') if re.search(u'^LM(?!II)\d+(-\d+)?\.html$', f)]
-for f in sorted(part_1_files):
-    print f
-    my_file = LMFile(f)
+# for f in sorted(part_1_files):
+#     my_file = LMFile(f)
+
+# chapters = [c for f in tqdm(part_1_files) for c in LMFile(f).chapters]
+# chapters.sort(key=lambda x: x.number)
+# problems = 0
+# for c in chapters:
+#     if len(c.hebrew_segments) != len(c.english_segments):
+#         print u"Chapter {}: {} segments in English and {} segments in Hebrew".format(
+#             c.number, len(c.english_segments), len(c.hebrew_segments))
+#         problems += 1
+# print u"{} mismatched out of {}".format(problems, len(chapters))
+my_file = LMFile("LM03.html")
+c = my_file.chapters[0]
+rows = []
+rows.append(u'<tr><th>English</th><th>Hebrew</th></tr>')
+for en_seg, he_seg in izip_longest(c.english_segments, c.hebrew_segments, fillvalue=u''):
+    print en_seg
+    print he_seg
+
+    en_refs = library.get_refs_in_string(en_seg, 'en', True)
+    he_refs = library.get_refs_in_string(he_seg, 'he', True)
+
+    print en_refs
+    print he_refs
+    print u''
+    rows.append(u'<tr><td>{}</td><td>{}</td></tr>'.format(escape(en_seg), he_seg))
+
+my_doc = u"<!DOCTYPE html><html><head><meta charset='utf-8'><link rel='stylesheet' type='text/css' href='styles.css'>" \
+         u"</head><body><table>{}</table></body</html>".format(u''.join(rows))
+
+import codecs
+with codecs.open('Chapter3_test.html', 'w', 'utf-8') as fp:
+    fp.write(my_doc)
+
 
 
 
