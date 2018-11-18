@@ -114,7 +114,6 @@ def get_lines_from_web(name, download_mode=True):
     ch = num2words(int(ch))
     mishnah = num2words(int(mishnah[0:-4]))
     new_name = "{}-chapter-{}-mishnah-{}".format(book, ch, mishnah)
-    print new_name
     if download_mode:
         headers = {
             'User-Agent': 'Mozilla/4.0 (Macintosh; Intel Mac OS X 11_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
@@ -152,7 +151,6 @@ def get_section_num(mishnah_num):
         elif len(mishnah_num) == 1:  # just a letter
             section_num = ord(mishnah_num) - 64
     except ValueError:
-        print file_path
         assert type(mishnah_num) is int, "Problem with {}".format(mishnah_num)
         section_num = mishnah_num
     return section_num
@@ -232,7 +230,6 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
         line = line.strip()
         #line = line.strip().replace(unichr(151), u"").replace(unichr(146), u"")
         if "Part" in line and len(line.split()) < 10:
-            print u"{}\n{}\n\n".format(file, line)
             return (commentary_text + questions_text, mishnah_text)
         if "Questions for Further Thought" in line:
             currently_parsing = "QUESTIONS"
@@ -275,15 +272,12 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
 
     assert commentary_text != mishnah_text != []
     if len(mishnah_text) == 1 and len(explanation_sections_text) > 1:
-        print "Mishnah missing numbers that explanation has:"
         mishnah_wout_numbers_explanation_has.append(file)
     elif len(mishnah_text) == 1 and len(explanation_sections_text) == 1: #this means there was no numbering
-        print "Mishnah and explanation have no numbering:"
         mishnah_wout_numbers_explanation_wout.append(file)
         explanation_sections_text[0] = u"<b>{}</b> {}".format(mishnah_text[0], explanation_sections_text[0])
     elif len(mishnah_text) > len(explanation_sections_text):
         mishnah_sections_more_than_explanation_sections.append(file)
-        print "Mishnah sections more than explanation sections"
         if len(orig_mishnah) == 0:
             print "BLANK FILE"
         else:
@@ -337,6 +331,7 @@ def create_index(text, sefer, post=False):
     sefer = convert_spellings(sefer)
     #add_category("Mishnah Yomit", ["Mishnah", "Commentary", "Mishnah Yomit"], server=SERVER)
     index = library.get_index("Mishnah " + sefer)
+    seder = index.categories[-1]
     root = SchemaNode()
     en_title = "Mishnah Yomit on {}".format(index.title)
     he_title = u"משנה יומית על {}".format(index.get_title('he'))
@@ -355,14 +350,15 @@ def create_index(text, sefer, post=False):
     default.add_structure(["Perek", "Mishnah", "Comment"])
     root.append(default)
     root.validate()
+    add_category(seder, ["Modern Works", "Mishnah Yomit", seder], server="http://ste.sandbox.sefaria.org")
     index = {
         "title": en_title,
         "schema": root.serialize(),
-        "categories": ["Mishnah", "Commentary", "Mishnah Yomit"],
+        "categories": ["Modern Works", "Mishnah Yomit", seder],
         "dependence": "Commentary",
         "base_text_titles": [index.title],
         "base_text_mapping": "many_to_one",
-        "collective_title": "Joshua Kulp",
+        "collective_title": "Mishnah Yomit",
     }
     if post:
         post_index(index, server=SERVER)
@@ -415,7 +411,6 @@ def check_all_mishnayot_present_and_post(text, sefer, file_path, post=False):
             actual_mishnayot = set(actual_mishnayot)
             our_mishnayot = set(our_mishnayot)
             missing = actual_mishnayot - our_mishnayot
-            print file_path
             print "Sefer: {}, Chapter: {}".format(sefer, ch)
             print "Missing mishnayot: {}".format(list(missing))
             print
@@ -485,7 +480,6 @@ if __name__ == "__main__":
     files = os.listdir("./{}".format(dir))
     for file_n, file in enumerate(files):
         orig_file = file
-        print file
         if len(file) < 4:
             continue
         sefer = " ".join(file.split()[0:-1])
@@ -519,8 +513,9 @@ if __name__ == "__main__":
     # most_common_value = found_ref.most_common(1)[0]
     # assert most_common_value[1] == 1, "{} has {}".format(most_common_value[0], most_common_value[1])
     post = True
-    dont_start = True
+    dont_start = False
     start_at = " "
+    [parsed_text.pop(k) if "Avoth" not in k and "Berakhot" not in k and "Demai" not in k else k for k in parsed_text.keys()]
     for sefer in parsed_text.keys():
         if start_at in sefer:
             dont_start = False

@@ -13,6 +13,8 @@ from sefaria.system.database import db
 from sefaria.system.exceptions import InputError
 from collections import OrderedDict, Counter
 from bs4 import BeautifulSoup, element
+from wordcloud import *
+
 import numpy
 from time import sleep
 import bleach
@@ -1438,51 +1440,66 @@ def dict_from_html_attrs(contents):
             d[e.name] = e
     return d
 
-
-def get_only_commentary(array):
-    array = [el for el in array if "Commentary" in library.get_index(" ".join(el.split()[0:-1])).categories]
-
 def word_cloud():
     def get_title(el):
         index = Ref(el).index
         collective_title = getattr(index, "collective_title", None)
         if collective_title:
-            return Term().load({"name": collective_title}).get_titles('he')[0].encode('utf-8')
+            term = Term().load({"name": collective_title}).get_titles('he')[0].encode('utf-8')
         else:
-            return index.get_title('he').split(u" על ")[0].encode('utf-8')
+            term = index.get_title('he').split(u" על ")[0].encode('utf-8')
+        term = term.replace(" ", "־").replace('"', '״')
+        return term
 
     from collections import Counter
-    from sefaria.system.database import db
-    sheets = db.sheets.find()
-    sheets = list(sheets)
-
-    includedRefs = {}
-    includedRefsTotal = Counter()
-    includedCommentary = Counter()
-    includedIndexes = Counter()
-    includedTanakh = Counter()
-    total = 0
-    word_cloud = ""
-    for sheet in sheets:
-        if not "includedRefs" in sheet.keys():
-            print "No includedRefs in {}".format(sheet["id"])
+from sefaria.system.database import db
+sheets = db.sheets.find()
+sheets = list(sheets)
+wordsByYear = {}
+for sheet in sheets:
+    year = sheet["summary"].split(" ")[0]
+    if year not in wordsByYear:
+        wordsByYear[year] = 0
+    sources = sheet["sources"]
+    text = ""
+    for source in sources:
+        print source
+        if "text" in source.keys():
+            text += source["text"]["he"]
+        elif "outsideText" in source.keys():
+            text += source["outsideText"]
         else:
-            total += len(sheet["includedRefs"])
-            word_cloud += " "+" ".join([get_title(el) for el in sheet["includedRefs"] if "Commentary" in Ref(el).index.categories])
-            includedRefs[sheet["title"]] = Counter(sheet["includedRefs"])
-            includedTanakh += Counter([Ref(el).index for el in sheet["includedRefs"]
-                                       if "Commentary" not in Ref(el).index.categories and "Tanakh" in Ref(el).index.categories])
-            includedIndexes += Counter([Ref(el).index for el in sheet["includedRefs"] if "Commentary" not in Ref(el).index.categories and "Tanakh" not in Ref(el).index.categories])
-            includedCommentary += Counter([Ref(el).index for el in sheet["includedRefs"] if "Commentary" in Ref(el).index.categories])
-            includedRefsTotal += includedRefs[sheet["title"]]
-    includedTanakh.most_common(10)
-    file = open('word_cloud', 'w')
-    file.write(word_cloud)
+            continue
+    num_words = len(text.split())
+    wordsByYear[year] += num_words
+
+
+    # includedRefs = Counter()
+    # includedRefsTotal = Counter()
+    # includedCommentary = Counter()
+    # includedIndexes = Counter()
+    # includedTanakh = Counter()
+    # refsPerSheet = Counter()
+    # total = 0
+    # for sheet in sheets:
+    #     total += len(sheet["includedRefs"])
+    #     refsPerSheet[sheet["id"]] = len(sheet["includedRefs"])
+    #     includedRefs[sheet["title"]] = Counter(sheet["includedRefs"])
+    #     includedTanakh += Counter([Ref(el).index for el in sheet["includedRefs"]
+    #                                if "Commentary" not in Ref(el).index.categories and "Tanakh" in Ref(el).index.categories])
+    #     includedIndexes += Counter([Ref(el).index for el in sheet["includedRefs"] if "Commentary" not in Ref(el).index.categories and "Tanakh" not in Ref(el).index.categories])
+    #     includedCommentary += Counter([Ref(el).index for el in sheet["includedRefs"] if "Commentary" in Ref(el).index.categories])
+    #     includedRefsTotal += includedRefs[sheet["title"]]
+
+
 
 
 if __name__ == "__main__":
     # Ref(u"בראשית פרק ג פסוק ד - פרק ה פסוק י")
     # Ref(u"u'דברים פרק ט, ז-כט - פרק י, א-י'")
+
+    
+
     genesis_parshiot = (u"Genesis", ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", 'Vayetzei',
                                      "Vayishlach", "Vayeshev", "Miketz", "Vayigash", "Vayechi"])
     exodus_parshiot = (u"Exodus", ["Vayakhel-Pekudei", "Shemot", "Vaera", "Bo", "Beshalach", "Yitro", "Mishpatim",
