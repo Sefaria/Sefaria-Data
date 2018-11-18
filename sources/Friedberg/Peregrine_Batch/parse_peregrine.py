@@ -203,7 +203,7 @@ class CommentStore(object):
 
             # make sure all text inside spans end with a space, we'll remove duplicates later
             if span.string:
-                span.string.replace_with(NavigableString(u'{} '.format(span.string)))
+                span.string.replace_with(NavigableString(u' {}'.format(span.string)))
 
             if span.get('class', '') == '':
                 span.unwrap()
