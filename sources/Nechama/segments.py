@@ -58,7 +58,7 @@ class Source(object):
                 return r
             else:
                 return None
-        except (InputError,  AssertionError) as e:
+        except (InputError,  AssertionError, IndexError) as e:
             # try to see if all that is wrong is the segment part of the ref, say, for Ralbag Beur HaMilot on Torah, Genesis 4:17
             last_part = ref.split()[-1]
             if last_part[0].isdigit(): # in format, Ralbag Beur HaMilot on Torah, Genesis 4:17 and last_part is "4:17", now get the node "Ralbag Beur HaMilot on Torah, Genesis"

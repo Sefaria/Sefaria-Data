@@ -13,7 +13,6 @@ from sefaria.system.database import db
 from sefaria.system.exceptions import InputError
 from collections import OrderedDict, Counter
 from bs4 import BeautifulSoup, element
-from wordcloud import *
 
 import numpy
 from time import sleep
@@ -1439,39 +1438,39 @@ def dict_from_html_attrs(contents):
         else:
             d[e.name] = e
     return d
-
-def word_cloud():
-    def get_title(el):
-        index = Ref(el).index
-        collective_title = getattr(index, "collective_title", None)
-        if collective_title:
-            term = Term().load({"name": collective_title}).get_titles('he')[0].encode('utf-8')
-        else:
-            term = index.get_title('he').split(u" על ")[0].encode('utf-8')
-        term = term.replace(" ", "־").replace('"', '״')
-        return term
-
-    from collections import Counter
-from sefaria.system.database import db
-sheets = db.sheets.find()
-sheets = list(sheets)
-wordsByYear = {}
-for sheet in sheets:
-    year = sheet["summary"].split(" ")[0]
-    if year not in wordsByYear:
-        wordsByYear[year] = 0
-    sources = sheet["sources"]
-    text = ""
-    for source in sources:
-        print source
-        if "text" in source.keys():
-            text += source["text"]["he"]
-        elif "outsideText" in source.keys():
-            text += source["outsideText"]
-        else:
-            continue
-    num_words = len(text.split())
-    wordsByYear[year] += num_words
+#
+# def word_cloud():
+#     def get_title(el):
+#         index = Ref(el).index
+#         collective_title = getattr(index, "collective_title", None)
+#         if collective_title:
+#             term = Term().load({"name": collective_title}).get_titles('he')[0].encode('utf-8')
+#         else:
+#             term = index.get_title('he').split(u" על ")[0].encode('utf-8')
+#         term = term.replace(" ", "־").replace('"', '״')
+#         return term
+#
+#     from collections import Counter
+# from sefaria.system.database import db
+# sheets = db.sheets.find()
+# sheets = list(sheets)
+# wordsByYear = {}
+# for sheet in sheets:
+#     year = sheet["summary"].split(" ")[0]
+#     if year not in wordsByYear:
+#         wordsByYear[year] = 0
+#     sources = sheet["sources"]
+#     text = ""
+#     for source in sources:
+#         print source
+#         if "text" in source.keys():
+#             text += source["text"]["he"]
+#         elif "outsideText" in source.keys():
+#             text += source["outsideText"]
+#         else:
+#             continue
+#     num_words = len(text.split())
+#     wordsByYear[year] += num_words
 
 
     # includedRefs = Counter()
@@ -1510,15 +1509,13 @@ if __name__ == "__main__":
                         "Balak", "Pinchas", "Matot", "Masei"])
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
-    catch_errors = True
-    posting = True
+    catch_errors = False
+    posting = False
     individual = None
 
-    for which_parshiot in [exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
+    for which_parshiot in [genesis_parshiot+devarim_parshiot]: #exodus, leviticus, numbers work
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
-            if "-" not in parsha:
-                continue
             book = which_parshiot[0]
             parser = Nechama_Parser(book, parsha, "fast", "", catch_errors=catch_errors) #accurate
             parser.prepare_term_mapping()  # must be run once locally and on sandbox
