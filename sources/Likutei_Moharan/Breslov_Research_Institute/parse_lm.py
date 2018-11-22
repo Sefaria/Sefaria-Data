@@ -37,6 +37,8 @@ into sections is trivial.
 import re
 import os
 import bleach
+import codecs
+import unicodecsv
 from tqdm import tqdm
 from itertools import izip_longest
 from xml.sax.saxutils import unescape, escape
@@ -151,14 +153,19 @@ class Chapter(object):
         bad_indices = []
         for i, segment in enumerate(segments):
             segment_text = segment.text
-            if (re.search(ur'^\([^)]+\)$', segment_text)
-                    and
+            if \
+                    (re.search(ur'^\([^)]+\)$', segment_text)
+                and
                     library.get_refs_in_string(segment_text, 'en', citing_only=True)) \
-                or \
+            or \
                     (re.search(u'^[a-z]', segment_text)
-                     and
-                     re.search(u'[a-z]\s*$', segments[i-1].text)):
-                assert i > 0
+                and
+                    re.search(u'[a-z]\s*$', segments[i-1].text)) \
+            or \
+                re.search(ur'(^\{.*\}$)|(^<.*>$)', segment_text.rstrip()):
+
+                if i == 0:
+                    continue
                 bad_indices.append(i)
                 for child in segment.find_all(True):
                     child.unwrap()
@@ -251,6 +258,25 @@ class Chapter(object):
             else:
                 continue
 
+        # if current segment ends on a Hebrew char, combine with the next segment
+        bad_indices = []
+        for i, (cur_segment, next_segment) in enumerate(zip(segments, segments[1:])):
+
+            segment_text = cur_segment.text
+            stripped_text = re.sub(u"[\u05b0-\u05C7]", u'', segment_text)  # strip nikkud
+            if re.search(u'[\u05d0-\u05ea]\s*$', stripped_text):
+                # merge this segment into this one
+                bad_indices.append(i)
+                for child in cur_segment.find_all(True):
+                    child.unwrap()
+                cur_segment.string = u'{} '.format(u' '.join(cur_segment.contents))
+                next_segment.insert(0, cur_segment)
+                cur_segment.unwrap()
+            elif not segment_text:
+                bad_indices.append(i)
+        for i in reversed(bad_indices):
+            segments.pop(i)
+
         assert len(segments) > 0
         self.hebrew_segments = [bleach.clean(s, tags=[], attributes={}, strip=True) for s in segments]
 
@@ -261,41 +287,64 @@ class Chapter(object):
             pass
 
 
-part_1_files = [f for f in os.listdir(u'.') if re.search(u'^LM(?!II)\d+(-\d+)?\.html$', f)]
-# for f in sorted(part_1_files):
-#     my_file = LMFile(f)
+class CSVChapter(object):
 
-# chapters = [c for f in tqdm(part_1_files) for c in LMFile(f).chapters]
-# chapters.sort(key=lambda x: x.number)
-# problems = 0
-# for c in chapters:
-#     if len(c.hebrew_segments) != len(c.english_segments):
-#         print u"Chapter {}: {} segments in English and {} segments in Hebrew".format(
-#             c.number, len(c.english_segments), len(c.hebrew_segments))
-#         problems += 1
-# print u"{} mismatched out of {}".format(problems, len(chapters))
-my_file = LMFile("LM03.html")
-c = my_file.chapters[0]
-rows = []
-rows.append(u'<tr><th>English</th><th>Hebrew</th></tr>')
-for en_seg, he_seg in izip_longest(c.english_segments, c.hebrew_segments, fillvalue=u''):
-    print en_seg
-    print he_seg
+    def __init__(self, input_data, chap_number):
+        self.number = chap_number
+        if isinstance(input_data, dict):
+            self._load_from_data(input_data)
+        elif isinstance(input_data, file):
+            self._load_from_file(input_data)
 
-    en_refs = library.get_refs_in_string(en_seg, 'en', True)
-    he_refs = library.get_refs_in_string(he_seg, 'he', True)
+    def _load_from_file(self, file_obj):
+        reader = list(unicodecsv.DictReader(file_obj))
+        self.english_segments = [row['English'] for row in reader]
+        self.hebrew_segments = [row['Hebrew'] for row in reader]
 
-    print en_refs
-    print he_refs
-    print u''
-    rows.append(u'<tr><td>{}</td><td>{}</td></tr>'.format(escape(en_seg), he_seg))
+    def _load_from_data(self, segments):
+        self.english_segments = segments['en']
+        self.hebrew_segments = segments['he']
 
-my_doc = u"<!DOCTYPE html><html><head><meta charset='utf-8'><link rel='stylesheet' type='text/css' href='styles.css'>" \
-         u"</head><body><table>{}</table></body</html>".format(u''.join(rows))
+    def generate_html(self):
+        table_rows = [u'<tr><th>English</th><th>Hebrew</th></tr>']
+        for en_seg, he_seg in izip_longest(self.english_segments, self.hebrew_segments, fillvalue=u''):
+            table_rows.append(u'<tr><td>{}</td><td>{}</td></tr>'.format(escape(en_seg), he_seg))
 
-import codecs
-with codecs.open('Chapter3_test.html', 'w', 'utf-8') as fp:
-    fp.write(my_doc)
+        my_doc = u"<!DOCTYPE html><html><head><meta charset='utf-8'>" \
+                 u"<link rel='stylesheet' type='text/css' href='styles.css'></head><body><table>{}</table>" \
+                 u"</body</html>".format(u''.join(table_rows))
+        with codecs.open('QA_files/Chapter{}_view.html'.format(self.number), 'w', 'utf-8') as fp:
+            fp.write(my_doc)
+
+    def dump_csv(self):
+        rows = [
+            {
+                'English': en_seg,
+                'Hebrew': he_seg
+            }
+            for en_seg, he_seg in izip_longest(self.english_segments, self.hebrew_segments, fillvalue=u'')
+        ]
+        with open('QA_files/Chapter{}_data.csv'.format(self.number), 'w') as fp:
+            writer = unicodecsv.DictWriter(fp, ['English', 'Hebrew'])
+            writer.writeheader()
+            writer.writerows(rows)
+
+
+def generate_csv_from_raw():
+    part_1_files = [f for f in os.listdir(u'.') if re.search(u'^LM(?!II)\d+(-\d+)?\.html$', f)]
+
+    chapters = [c for f in tqdm(part_1_files) for c in LMFile(f).chapters]
+    chapters.sort(key=lambda x: x.number)
+
+    for c in chapters:
+        csv_chapter = CSVChapter({'en': c.english_segments, 'he': c.hebrew_segments}, c.number)
+        csv_chapter.generate_html()
+        csv_chapter.dump_csv()
+
+
+
+
+
 
 
 
