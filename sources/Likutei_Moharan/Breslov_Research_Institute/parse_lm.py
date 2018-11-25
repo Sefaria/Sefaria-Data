@@ -36,10 +36,12 @@ into sections is trivial.
 
 import re
 import os
+import numpy
 import bleach
 import codecs
 import unicodecsv
 from tqdm import tqdm
+from matplotlib import pyplot as plt
 from itertools import izip_longest
 from xml.sax.saxutils import unescape, escape
 from bs4 import BeautifulSoup, Tag, NavigableString
@@ -301,6 +303,12 @@ class CSVChapter(object):
         self.english_segments = [row['English'] for row in reader]
         self.hebrew_segments = [row['Hebrew'] for row in reader]
 
+        # clean out blank segments from the end
+        while not self.english_segments[-1]:
+            self.english_segments.pop()
+        while not self.hebrew_segments[-1]:
+            self.hebrew_segments.pop()
+
     def _load_from_data(self, segments):
         self.english_segments = segments['en']
         self.hebrew_segments = segments['he']
@@ -342,10 +350,133 @@ def generate_csv_from_raw():
         csv_chapter.dump_csv()
 
 
+def regenerate_html_for_chapter(chap_num):
+    filename = 'QA_files/Chapter{}_data.csv'.format(chap_num)
+    with open(filename) as fp:
+        chapter = CSVChapter(fp, chap_num)
+    chapter.generate_html()
 
 
+def get_word_stats(chapters, graph=False):
+    en_words, he_words = [], []
+    for chap_num in chapters:
+        with open('QA_files/Chapter{}_data.csv'.format(chap_num)) as fp:
+            chapter = CSVChapter(fp, chap_num)
+        assert len(chapter.english_segments) == len(chapter.hebrew_segments)
+
+        en_words.extend(len(seg.split()) for seg in chapter.english_segments)
+        he_words.extend(len(seg.split()) for seg in chapter.hebrew_segments)
+
+    en_words, he_words = numpy.array(en_words, dtype=float), numpy.array(he_words, dtype=float)
+    ratios = en_words / he_words
+    logged_ratios = numpy.log(ratios)
+
+    if graph:
+        normalized_ratios = logged_ratios - logged_ratios.mean()
+        from matplotlib import pyplot as plt
+        # fig, axs = plt.subplots()
+        # axs.hist(normalized_ratios, 20)
+        plt.scatter(en_words, he_words)
+        plt.show()
+
+    return logged_ratios.mean(), logged_ratios.std()
 
 
+def fit_function(chapters, graph=False):
+    en_words, he_words = [], []
+    for chap_num in chapters:
+        with open('QA_files/Chapter{}_data.csv'.format(chap_num)) as fp:
+            chapter = CSVChapter(fp, chap_num)
+        assert len(chapter.english_segments) == len(chapter.hebrew_segments)
+
+        en_words.extend(len(seg.split()) for seg in chapter.english_segments)
+        he_words.extend(len(seg.split()) for seg in chapter.hebrew_segments)
+
+    en_words, he_words = numpy.array(en_words), numpy.array(he_words)
+    M = numpy.column_stack((en_words,))
+    params = numpy.linalg.lstsq(M, he_words, rcond=None)[0]
+    print params
+    poly = numpy.poly1d([params, 0])
+
+    if graph:
+        _ = plt.plot(en_words, he_words, '.', en_words, poly(en_words))
+        plt.show()
+
+    return poly
 
 
+def calculate_error(english, hebrew, polyfit):
+    return numpy.sqrt(numpy.sum(numpy.power(hebrew - polyfit(english), 2)))
 
+
+def find_merge(english, hebrew, polyfit):
+    def assemble_merges(word_counts):
+        count_list = []
+        for i, count in enumerate(word_counts[1:], 1):
+            temp = list(word_counts[:])
+            temp[i-1] += count
+            temp.pop(i)
+            count_list.append((numpy.array(temp), i))
+        return count_list
+
+    length = min(len(english), len(hebrew))
+    original_error = calculate_error(english[:length], hebrew[:length], polyfit)
+    print original_error
+    en_merges, he_merges = assemble_merges(english), assemble_merges(hebrew)
+
+    length = min(len(english)-1, len(hebrew))
+    en_improvements = [(calculate_error(m[0][:length], hebrew[:length], polyfit), m[1])
+                       for m in en_merges]
+
+    length = min(len(english), len(hebrew)-1)
+    he_improvements = [(calculate_error(english[:length], m[0][:length], polyfit), m[1])
+                       for m in he_merges]
+
+    for e in en_improvements:
+        print e
+
+    best_en = min(en_improvements, key=lambda x: x[0])
+    best_he = min(he_improvements, key=lambda x: x[0])
+
+    return best_en, best_he
+
+
+my_func = fit_function([1, 3, 4], False)
+
+with open('QA_files/Chapter8_data.csv') as fp:
+    chapter6 = CSVChapter(fp, 8)
+
+en6 = numpy.array([len(seg.split()) for seg in chapter6.english_segments])
+he6 = numpy.array([len(seg.split()) for seg in chapter6.hebrew_segments])
+rlength = min(len(en6), len(he6))
+en6, he6 = en6[:rlength], he6[:rlength]
+
+my_error = calculate_error(en6, he6, my_func)
+# _ = plt.plot(numpy.arange(rlength), numpy.cumsum(my_error))
+plt.show()
+
+merge_en, merge_he = find_merge(en6, he6, my_func)
+print merge_en
+print chapter6.english_segments[merge_en[1]]
+
+print merge_he
+print chapter6.hebrew_segments[merge_he[1]]
+
+
+# with open('QA_files/Chapter9_data.csv') as fp:
+#     chapter9 = CSVChapter(fp, 6)
+#
+# en9 = numpy.array([len(seg.split()) for seg in chapter9.english_segments], dtype=float)
+# he9 = numpy.array([len(seg.split()) for seg in chapter9.hebrew_segments], dtype=float)
+# length = min(len(en9), len(he9))
+# en9, he9 = en9[:length], he9[:length]
+# # my_rats = en[:length] / he[:length]
+# # logged_rats9 = numpy.log(my_rats)
+# # print logged_rats9.mean(), logged_rats9.std()
+#
+# fig, axs = plt.subplots(1, 2)
+# # axs[0].plot(range(len(logged_rats6)), abs(logged_rats6))
+# # axs[1].plot(range(len(logged_rats9)), abs(logged_rats9))
+# axs[0].scatter(en6, he6)
+# axs[1].scatter(en9, he9)
+# plt.show()
