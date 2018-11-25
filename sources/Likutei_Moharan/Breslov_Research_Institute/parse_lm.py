@@ -292,28 +292,85 @@ class Chapter(object):
 class CSVChapter(object):
 
     def __init__(self, input_data, chap_number):
+        self._english_segments, self._hebrew_segments = None, None
         self.number = chap_number
         if isinstance(input_data, dict):
             self._load_from_data(input_data)
         elif isinstance(input_data, file):
             self._load_from_file(input_data)
 
+    def _set_en_section_transitions(self):
+        transition_list = []
+        current_segment = 1
+
+        for seg_num, segment in enumerate(self._english_segments):
+            match = re.match(u'^(\d+)', segment)
+            if not match:
+                continue
+            next_segment = int(match.group(1))
+
+            if next_segment == 1 or next_segment == current_segment:
+                pass
+            elif next_segment - current_segment != 1:
+                print "Bad section transition found in chapter {}".format(self.number)
+                raise AssertionError
+            else:
+                transition_list.append(seg_num)
+                current_segment = next_segment
+
+        self._en_section_transitions = tuple(transition_list)
+
+    def get_en_section_transitions(self):
+        return self._en_section_transitions
+
+    def _set_he_section_transitions(self):
+        self._he_section_transitions = None
+
+    def get_english_segments(self):
+        return self._english_segments
+
+    def set_english_segments(self, segments):
+        self._english_segments = tuple(segments)
+        self._set_en_section_transitions()
+
+    def del_english_segments(self):
+        self._english_segments = None
+        del self._en_section_transitions
+
+    english_segments = property(get_english_segments, set_english_segments, del_english_segments)
+
+    def get_hebrew_segments(self):
+        return self._hebrew_segments
+
+    def set_hebrew_segments(self, segments):
+        self._hebrew_segments = tuple(segments)
+        self._set_he_section_transitions()
+
+    def del_hebrew_segments(self):
+        self._hebrew_segments = None
+        del self._he_section_transitions
+
+    hebrew_segments = property(get_hebrew_segments, set_hebrew_segments, del_hebrew_segments)
+
     def _load_from_file(self, file_obj):
         reader = list(unicodecsv.DictReader(file_obj))
-        self.english_segments = [row['English'] for row in reader]
-        self.hebrew_segments = [row['Hebrew'] for row in reader]
+        english_segments = [row['English'] for row in reader]
+        hebrew_segments = [row['Hebrew'] for row in reader]
 
         # clean out blank segments from the end
-        while not self.english_segments[-1]:
-            self.english_segments.pop()
-        while not self.hebrew_segments[-1]:
-            self.hebrew_segments.pop()
+        while not english_segments[-1]:
+            english_segments.pop()
+        self.set_english_segments(english_segments)
+
+        while not hebrew_segments[-1]:
+            hebrew_segments.pop()
+        self.set_hebrew_segments(hebrew_segments)
 
     def _load_from_data(self, segments):
-        self.english_segments = segments['en']
-        self.hebrew_segments = segments['he']
+        self.set_english_segments(segments['en'])
+        self.set_hebrew_segments(segments['he'])
 
-    def generate_html(self):
+    def generate_html(self, test_mode=False):
         table_rows = [u'<tr><th>English</th><th>Hebrew</th></tr>']
         for en_seg, he_seg in izip_longest(self.english_segments, self.hebrew_segments, fillvalue=u''):
             table_rows.append(u'<tr><td>{}</td><td>{}</td></tr>'.format(escape(en_seg), he_seg))
@@ -321,10 +378,16 @@ class CSVChapter(object):
         my_doc = u"<!DOCTYPE html><html><head><meta charset='utf-8'>" \
                  u"<link rel='stylesheet' type='text/css' href='styles.css'></head><body><table>{}</table>" \
                  u"</body</html>".format(u''.join(table_rows))
-        with codecs.open('QA_files/Chapter{}_view.html'.format(self.number), 'w', 'utf-8') as fp:
+
+        if test_mode:
+            filename = 'QA_files/Chapter{}_test_view.html'.format(self.number)
+        else:
+            filename = 'QA_files/Chapter{}_view.html'.format(self.number)
+
+        with codecs.open(filename, 'w', 'utf-8') as fp:
             fp.write(my_doc)
 
-    def dump_csv(self):
+    def dump_csv(self, test_mode=False):
         rows = [
             {
                 'English': en_seg,
@@ -332,7 +395,13 @@ class CSVChapter(object):
             }
             for en_seg, he_seg in izip_longest(self.english_segments, self.hebrew_segments, fillvalue=u'')
         ]
-        with open('QA_files/Chapter{}_data.csv'.format(self.number), 'w') as fp:
+
+        if test_mode:
+            filename = 'QA_files/Chapter{}_data_test.csv'.format(self.number)
+        else:
+            filename = 'QA_files/Chapter{}_data.csv'.format(self.number)
+
+        with open(filename, 'w') as fp:
             writer = unicodecsv.DictWriter(fp, ['English', 'Hebrew'])
             writer.writeheader()
             writer.writerows(rows)
@@ -443,40 +512,44 @@ def find_merge(english, hebrew, polyfit):
 
 my_func = fit_function([1, 3, 4], False)
 
-with open('QA_files/Chapter8_data.csv') as fp:
-    chapter6 = CSVChapter(fp, 8)
 
-en6 = numpy.array([len(seg.split()) for seg in chapter6.english_segments])
-he6 = numpy.array([len(seg.split()) for seg in chapter6.hebrew_segments])
-rlength = min(len(en6), len(he6))
-en6, he6 = en6[:rlength], he6[:rlength]
+def generate_merge(chap_num, compare_method, lang, test_mode=True):
+    with open('QA_files/Chapter{}_data.csv'.format(chap_num)) as fp:
+        chapter = CSVChapter(fp, chap_num)
 
-my_error = calculate_error(en6, he6, my_func)
-# _ = plt.plot(numpy.arange(rlength), numpy.cumsum(my_error))
-plt.show()
+    english_segments = list(chapter.english_segments)
+    hebrew_segments = list(chapter.hebrew_segments)
+    e_counts = numpy.array([len(seg.split()) for seg in english_segments])
+    h_counts = numpy.array([len(seg.split()) for seg in hebrew_segments])
 
-merge_en, merge_he = find_merge(en6, he6, my_func)
-print merge_en
-print chapter6.english_segments[merge_en[1]]
+    best_e, best_h = find_merge(e_counts, h_counts, compare_method)
 
-print merge_he
-print chapter6.hebrew_segments[merge_he[1]]
+    if lang == 'en':
+        print best_e
+        merge_index = best_e[1]
+
+        merged_text = u' '.join(english_segments[merge_index-1:merge_index+1])
+        print merged_text
+        english_segments[merge_index-1] = merged_text
+        english_segments.pop(merge_index)
+        chapter.english_segments = english_segments
+
+    elif lang == 'he':
+        print best_h
+        merge_index = best_h[1]
+        merged_text = u' '.join(hebrew_segments[merge_index-1:merge_index+1])
+        print merged_text
+        hebrew_segments[merge_index-1] = merged_text
+        hebrew_segments.pop(merge_index)
+        chapter.hebrew_segments = hebrew_segments
+
+    else:
+        raise AttributeError("lang parameter must be 'en' or 'he'")
+    chapter.generate_html(test_mode)
 
 
-# with open('QA_files/Chapter9_data.csv') as fp:
-#     chapter9 = CSVChapter(fp, 6)
-#
-# en9 = numpy.array([len(seg.split()) for seg in chapter9.english_segments], dtype=float)
-# he9 = numpy.array([len(seg.split()) for seg in chapter9.hebrew_segments], dtype=float)
-# length = min(len(en9), len(he9))
-# en9, he9 = en9[:length], he9[:length]
-# # my_rats = en[:length] / he[:length]
-# # logged_rats9 = numpy.log(my_rats)
-# # print logged_rats9.mean(), logged_rats9.std()
-#
-# fig, axs = plt.subplots(1, 2)
-# # axs[0].plot(range(len(logged_rats6)), abs(logged_rats6))
-# # axs[1].plot(range(len(logged_rats9)), abs(logged_rats9))
-# axs[0].scatter(en6, he6)
-# axs[1].scatter(en9, he9)
-# plt.show()
+generate_merge(7, my_func, 'en')
+
+
+
+
