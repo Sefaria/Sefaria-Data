@@ -263,7 +263,7 @@ class MatchMatrix(object):
                                                 mismatch_threshold_hit=init_mismatch_threshold_hit)
                 # Return only the best match for each starting word
                 # todo: check the mismatch divisor
-                sorted_paths = sorted(filter(None, word_paths), key=lambda p: len(p["comment_indexes_skipped"]) + len(p["daf_indexes_skipped"]) + (p["mismatches"] / 3))
+                sorted_paths = sorted(filter(None, word_paths), key=lambda p: len(p["comment_indexes_skipped"]) + len(p["daf_indexes_skipped"]) + (1.0 * p["mismatches"] / 3))
                 if len(sorted_paths):
                     paths += sorted_paths[:1]
 
@@ -524,19 +524,25 @@ def get_maximum_subset_dh(base_text, comment_text, threshold=90):
     return start,end-1  # account for the fact that end is + 1 (see max_sequence_sum())
 
 
-def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(ur'\s+',x), max_dh_len=None, word_threshold=0.27, char_threshold=0.2):
-    if type(base_text) == TextChunk:
-        base_text_str = base_text.ja().flatten_to_string()
+def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(ur'\s+',x), min_dh_len=0, max_dh_len=None, word_threshold=0.27, char_threshold=0.2):
+    if isinstance(base_text, list):
+        base_word_list = base_text
     else:
-        base_text_str = base_text
+        if type(base_text) == TextChunk:
+            base_text_str = base_text.ja().flatten_to_string()
+        else:
+            base_text_str = base_text
+        base_word_list = tokenizer(base_text_str)
 
-    if type(comment) == TextChunk:
-        comment_str = comment.ja().flatten_to_string()
+
+    if isinstance(comment, list):
+        comment_word_list = comment
     else:
-        comment_str = comment
-
-    base_word_list = tokenizer(base_text_str)
-    comment_word_list = tokenizer(comment_str)
+        if type(comment) == TextChunk:
+            comment_str = comment.ja().flatten_to_string()
+        else:
+            comment_str = comment
+        comment_word_list = tokenizer(comment_str)
 
     if max_dh_len is None:
         max_dh_len = len(comment_word_list)
@@ -547,15 +553,17 @@ def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(ur'\s+',x), 
 
     best_dh_start = 0
     best_dh_end = 0
-    for i in xrange(max_dh_len):
-        curRashi = RashiUnit(u' '.join(comment_word_list[best_dh_start:best_dh_start+i+1]),comment,0)
+    best_match = None
+    for i in xrange(min_dh_len, max_dh_len+1):
+        curRashi = RashiUnit(u' '.join(comment_word_list[best_dh_start:best_dh_start+i]),comment,0)
         matches = GetAllMatches(curDaf,curRashi,0,len(base_word_list)-1,word_threshold,char_threshold)
         if len(matches) > 0:
             best_dh_end = best_dh_start + i
+            best_match = min(matches, key=lambda x: x.score)
         else:
             break
 
-    return comment_word_list[best_dh_start:best_dh_end+1]
+    return best_match
 
 def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh_extract_method=lambda x: x,verbose=False, word_threshold=0.27,char_threshold=0.2,
               with_abbrev_matches=False,with_num_abbrevs=True,boundaryFlexibility=0,dh_split=None, rashi_filter=None, strict_boundaries=None, place_all=False,
@@ -1276,7 +1284,6 @@ def GetAbbrevs(dafwords, rashiwords, char_threshold, startBound, endBound, with_
 def GetAllMatches(curDaf, curRashi, startBound, endBound,
                              word_threshold, char_threshold, daf_skips=2, rashi_skips=1, overall=2,with_num_abbrevs=True, lang="he"):
     allMatches = []
-    startText = curRashi.startingTextNormalized
     global normalizingFactor
 
     dafwords = curDaf.allWords[startBound:endBound+1]
@@ -1356,8 +1363,8 @@ def GetAllMatches(curDaf, curRashi, startBound, endBound,
             distance, fIsMatch = IsStringMatch(alternateStartText, targetPhrase, char_threshold)
 
         if fIsMatch:
-
-            dist = ComputeLevenshteinDistanceByWord(alternateStartText, targetPhrase, len(path["daf_indexes_skipped"]) + len(path["comment_indexes_skipped"]), len(abbrevs) > 0)
+            num_chars_skipped = sum([len(curRashi.words[iword]) for iword in path["comment_indexes_skipped"]]) + sum([len(curDaf.allWords[iword]) for iword in path["daf_indexes_skipped"]])
+            dist = ComputeLevenshteinDistanceByWord(alternateStartText, targetPhrase, num_chars_skipped, len(abbrevs) > 0)
 
             curMatch.score = dist
             curMatch.textToMatch = curRashi.startingText
@@ -1773,7 +1780,7 @@ def ComputeLevenshteinDistanceByWord(s, t, num_skipped = 0, abbrev_penalty = Fal
 
             totaldistance += min(ComputeLevenshteinDistance(words1[i], words2[i]), fullWordValue)
 
-    totaldistance += fullWordValue * num_skipped
+    totaldistance += num_skipped
     totaldistance += abbreviationPenalty if abbrev_penalty else 0
     norm_dist = 1.0 * (totaldistance + smoothingFactor) / (len(s) + smoothingFactor) * normalizingFactor
     return norm_dist
