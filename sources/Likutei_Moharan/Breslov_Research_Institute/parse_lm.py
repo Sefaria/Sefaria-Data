@@ -139,8 +139,8 @@ class Chapter(object):
 
         for en_p in all_en_ps:
             if en_p['class'] == "LME-title":
-                # if re.search(u"^LIKUTEY MOHARAN #{}".format(self.number), en_p.text):
-                if en_p.text == "LIKUTEY MOHARAN #{}".format(self.number):
+                # if en_p.text == "LIKUTEY MOHARAN #{}".format(self.number):
+                if re.search(u"^LIKUTEY MOHARAN( II)? #{}".format(self.number), en_p.text):
                     started = True
                 else:
                     if started:  # we've moved to the next chapter, stop iterating
@@ -239,7 +239,7 @@ class Chapter(object):
 
         segments = []
         started = False
-        chapter_reg = re.compile(ur'''\u05dc\u05d9\u05e7\u05d5\u05d8\u05d9 \u05de\u05d5\u05d4\u05e8[\u05f4"]\u05df\s\u05e1\u05d9\u05de\u05df\s(?P<chapter>[\u05d0-\u05ea"]{1,4})''')
+        chapter_reg = re.compile(ur'''\u05dc\u05d9\u05e7\u05d5\u05d8\u05d9 \u05de\u05d5\u05d4\u05e8[\u05f4"]\u05df\s(\u05ea\u05e0\u05d9\u05e0\u05d0\s)?\u05e1\u05d9\u05de\u05df\s(?P<chapter>[\u05d0-\u05ea"]{1,4})''')
 
         for he_p in all_he_ps:
             if he_p['class'] == u'LMH-styles_LMH-title':
@@ -532,9 +532,6 @@ def find_merge(english, hebrew, polyfit):
     return best_en, best_he
 
 
-my_func = fit_function([1, 3, 4], False)
-
-
 def generate_merge(chap_num, compare_method, lang, test_mode=True):
     with open('QA_files/Chapter{}_data.csv'.format(chap_num)) as fp:
         chapter = CSVChapter(fp, chap_num)
@@ -680,3 +677,7 @@ def generate_files_for_editing():
                 writer.writerows(rows)
             rows = []
 
+
+filenames = [f for f in os.listdir(u'.') if re.match(u'^LMII\d+(-\d+)?\.html$', f)]
+chapters = [chapter for f in tqdm(filenames) for chapter in LMFile(f).chapters]
+chapters.sort(key=lambda x: x.number)
