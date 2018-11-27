@@ -41,6 +41,7 @@ import bleach
 import codecs
 import unicodecsv
 from tqdm import tqdm
+from collections import OrderedDict
 from matplotlib import pyplot as plt
 from itertools import izip_longest
 from xml.sax.saxutils import unescape, escape
@@ -324,7 +325,28 @@ class CSVChapter(object):
         return self._en_section_transitions
 
     def _set_he_section_transitions(self):
-        self._he_section_transitions = None
+        transition_list = []
+        current_segment = 1
+
+        for seg_num, segment in enumerate(self._hebrew_segments):
+            match = re.match(u'^([\u05d0-\u05d8]|[\u05d9-\u05dc][\u05d0-\u05d8]?|\u05d8[\u05d5\u05d6])\.\s', segment)
+            if not match:
+                continue
+            next_segment = getGematria(match.group(1))
+
+            if next_segment == 1:
+                pass
+            elif next_segment - current_segment != 1:
+                print "Bad hebrew section transition found in chapter {}".format(self.number)
+                raise AssertionError
+            else:
+                transition_list.append(seg_num)
+                current_segment = next_segment
+
+        self._he_section_transitions = tuple(transition_list)
+
+    def get_he_section_transitions(self):
+        return self._he_section_transitions
 
     def get_english_segments(self):
         return self._english_segments
@@ -548,8 +570,113 @@ def generate_merge(chap_num, compare_method, lang, test_mode=True):
     chapter.generate_html(test_mode)
 
 
-generate_merge(7, my_func, 'en')
+def standardize_lists(list_a, list_b):
+    temp_list = []
+    if len(list_a) > len(list_b):
+        for value in list_b:
+            other_value = min(list_a, key=lambda x: abs(value - x))
+            temp_list.append(other_value)
+            list_a.remove(other_value)
+        list_a = temp_list
+
+    elif len(list_b) > len(list_a):
+        for value in list_a:
+            other_value = min(list_b, key=lambda x: abs(value - x))
+            temp_list.append(other_value)
+            list_b.remove(other_value)
+        list_b = temp_list
+
+    return list_a, list_b
 
 
+def get_merge_window(csv_chapter):
+    """
+    compares refs which appear in English and Hebrew to help narrow down the search window
+    :param CSVChapter csv_chapter:
+    :return: window_start, window_end, lang
+    """
+    en_refs, he_refs = OrderedDict(), OrderedDict()
+    en_segments, he_segments = csv_chapter.english_segments, csv_chapter.hebrew_segments
 
+    for seg_num, segment in enumerate(en_segments):
+        refs = [r.normal() for r in library.get_refs_in_string(segment, 'en', citing_only=True)]
+        for ref in refs:
+            en_refs.setdefault(ref, list()).append(seg_num)
+
+    for seg_num, segment in enumerate(he_segments):
+        refs = [r.normal() for r in library.get_refs_in_string(segment, 'he', citing_only=True)]
+        for ref in refs:
+            if ref in en_refs:  # we only want refs that appear in both languages
+                he_refs.setdefault(ref, list()).append(seg_num)
+
+    # clear out en refs that did not show up in hebrew
+    for ref in en_refs.keys():
+        if ref not in he_refs:
+            del en_refs[ref]
+    assert len(en_refs) == len(he_refs)
+
+    # make sure we have the same number of appearances of each ref
+    for ref in en_refs.keys():
+        en_refs[ref], he_refs[ref] = standardize_lists(en_refs[ref], he_refs[ref])
+    en_refs = [(ref, segment) for ref, segs in en_refs.items() for segment in segs]
+    en_refs.sort(key=lambda x: x[1])
+
+    last_good_segment = 0
+    for ref, en_seg in en_refs:
+        he_seg = min(he_refs[ref], key=lambda x: abs(x-en_seg))
+        if en_seg == he_seg:
+            last_good_segment = en_seg
+        elif abs(en_seg - he_seg) == 1:
+            if en_seg > he_seg:
+                window_close, lang = en_seg, 'en'
+            else:
+                window_close, lang = he_seg, 'he'
+            break
+        else:
+            raise AssertionError("Chapter {}: Jump too big".format(csv_chapter.number))
+    else:
+        diff = abs(len(en_segments) - len(he_segments))
+        if diff == 0:
+            print "Chapter {}: No Merge needed".format(csv_chapter.number)
+            last_good_segment, window_close, lang = len(en_segments), len(en_segments), 'en'
+        elif diff > 1:
+            raise AssertionError("Chapter {}: Jump too big".format(csv_chapter.number))
+        else:
+            if len(en_segments) > len(he_segments):
+                window_close = len(en_segments) - 1  # the actual index of the last segment
+                lang = 'en'
+            else:
+                window_close = len(he_segments) - 1
+                lang = 'he'
+    return last_good_segment, window_close, lang
+
+
+def generate_files_for_editing():
+    my_files = [f for f in os.listdir(u'./QA_files') if re.search(u'^Chapter\d+_data\.csv$', f)]
+    chapters = []
+    for f in my_files:
+        cnumber = int(re.search(u'^Chapter(\d+)_data\.csv$', f).group(1))
+        with open(u'./QA_files/{}'.format(f)) as fpointer:
+            cfile = CSVChapter(fpointer, cnumber)
+        chapters.append(cfile)
+    chapters.sort(key=lambda x: x.number)
+    start, end = -1, -1
+    rows = []
+    for chapter in chapters:
+        if chapter.number % 50 == 1:
+            start = chapter.number
+        for num, (en_seg, he_seg) in enumerate(izip_longest(chapter.english_segments, chapter.hebrew_segments, fillvalue=u''), 1):
+            rows.append({
+                u'Chapter': chapter.number,
+                u'Segment #': num,
+                u'English': en_seg,
+                u'Hebrew': he_seg
+            })
+        if chapter.number % 50 == 0 or chapter.number == chapters[-1].number:
+            end = chapter.number
+            with open('./manual_editing/Likutei_Moharan_{}-{}.csv'.format(start, end), 'w') as fp:
+                writer = unicodecsv.DictWriter(fp, [u'Chapter', u'Segment #', u'English', u'Hebrew'])
+                writer.writeheader()
+                writer.writerows(rows)
+            rows = []
 
