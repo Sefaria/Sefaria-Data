@@ -170,9 +170,9 @@ class Chapter(object):
                 if i == 0:
                     continue
                 bad_indices.append(i)
-                for child in segment.find_all(True):
-                    child.unwrap()
-                segment.string = u' {}'.format(u' '.join(segment.contents))
+                # for child in segment.find_all(True):
+                #     child.unwrap()
+                # segment.string = u' {}'.format(u' '.join(segment.contents))
                 segments[i-1].append(segment)
                 segment.unwrap()
             elif not segment_text:
@@ -184,28 +184,93 @@ class Chapter(object):
 
         # self._clean_segments(segments)
         self._get_en_segment_transitions(segments)
-        self.english_segments = [unescape(bleach.clean(unicode(s), tags=[], attributes={}, strip=True)) for s in segments]
+        # self.english_segments = [unescape(bleach.clean(unicode(s), tags=[], attributes={}, strip=True)) for s in segments]
+        self.english_segments = [self.clean_segment(s) for s in segments]
 
-    def _clean_segments(self, raw_segments):
+    @staticmethod
+    def clean_segment(raw_segment):
         """
         Consolidate duplicate segments, simplify html when needed, unwrap when extraneous.
-        :param raw_segments:
+        :param raw_segment:
         :return:
         """
-        for segment in raw_segments:
-            current_tag = segment.contents[0]
-            while True:
-                next_tag = current_tag.next_sibling
-                if not next_tag:
-                    break
-                if (isinstance(current_tag, Tag) and isinstance(next_tag, Tag)) and \
-                        (current_tag.name == next_tag.name and current_tag['class'] == next_tag['class']):
-                    current_tag.append(next_tag)
-                    next_tag.unwrap()
-                    assert all(isinstance(i, NavigableString) for i in current_tag.contents)
-                    current_tag.string = u' '.join(unicode(i) for i in current_tag.contents)
-                else:
-                    current_tag = next_tag
+        # '<' character gets preceded by a space
+        # '>' character is never followed by a space
+        raw_segment = re.sub(u'<', u' <', unicode(raw_segment))
+        raw_segment = re.sub(u'>\s+', u'>', raw_segment)
+        seg_soup = BeautifulSoup(raw_segment, 'xml')
+        ptag = seg_soup.find('p')
+
+        # kill source tags and anything that isn't a span
+        bad_tags = ptag.find_all(lambda x: x.name != 'span')
+        for bad_tag in bad_tags:
+            bad_tag.unwrap()
+        bad_tags = ptag.find_all(attrs={'class': re.compile(u'source', re.I)})
+        for bad_tag in bad_tags:
+            bad_tag.unwrap()
+
+        bi_tags = ptag.find_all(attrs={'class': re.compile(u'LME-Bold-Italics|LME-verse-ital-bold')})
+        for bi_tag in bi_tags:
+            bi_tag['class'] = u'bi'
+        i_tags = ptag.find_all(attrs={'class': re.compile(u'italics', re.I)})
+        for i_tag in i_tags:
+            i_tag.name = u'i'
+            i_tag.attrs.clear()
+        b_tags = ptag.find_all(attrs={'class': re.compile(u'bold', re.I)})
+        for b_tag in b_tags:
+            b_tag.name = u'b'
+            b_tag.attrs.clear()
+        bad_tags = ptag.find_all(lambda x: x.name == u'span' and x.attrs.get(u'class', u'') != u'bi')
+        for bad_tag in bad_tags:
+            bad_tag.unwrap()
+
+        previous_tag = ptag.contents[0]
+        current_tag = previous_tag.next_sibling
+        while current_tag:
+            if isinstance(previous_tag, Tag) and isinstance(current_tag, Tag):
+                if previous_tag.name == current_tag.name:
+                    previous_tag.append(current_tag)
+                    current_tag.unwrap()
+                    current_tag = previous_tag
+
+                elif current_tag.name == u'span' and current_tag.attrs.get(u'class') == u'bi':
+                    if previous_tag.name == u'i':
+                        current_tag.name = u'b'
+                    elif previous_tag.name == u'b':
+                        current_tag.name = u'i'
+                    current_tag.attrs.clear()
+                    previous_tag.append(current_tag)
+
+                    # just make sure there isn't a duplicate sitting inside the tag we just appended to
+                    inner_sibling = current_tag.previous_sibling
+                    if inner_sibling and inner_sibling.name == current_tag.name:
+                        inner_sibling.append(current_tag)
+                        current_tag.unwrap()
+                    current_tag = previous_tag
+
+                elif previous_tag.name == u'span' and previous_tag.attrs.get(u'class') == u'bi':
+                    previous_tag.attrs.clear()
+                    previous_tag.name = current_tag.name
+                    if not previous_tag.string:
+                        previous_tag.string = previous_tag.decode_contents()
+
+                    if current_tag.name == u'i':
+                        previous_tag.string.wrap(seg_soup.new_tag(u'b'))
+                    elif current_tag.name == u'b':
+                        previous_tag.string.wrap(seg_soup.new_tag(u'i'))
+
+                    previous_tag.append(current_tag)
+                    current_tag.unwrap()
+                    current_tag = previous_tag
+
+            previous_tag, current_tag = current_tag, current_tag.next_sibling
+
+        fixed_segment = ptag.decode_contents()
+        fixed_segment = re.sub(u'^\s+|\s+$', u'', fixed_segment)
+        fixed_segment = re.sub(u'\s{2,}', u' ', fixed_segment)
+        fixed_segment = re.sub(u'\s+((<\/[bi]>)+)\s*$', u'\g<1>', fixed_segment)
+
+        return fixed_segment
 
     def _get_en_segment_transitions(self, raw_segments):
         transition_list = []
@@ -678,6 +743,10 @@ def generate_files_for_editing():
             rows = []
 
 
+filenames = [f for f in os.listdir(u'.') if re.match(u'^LM\d+(-\d+)?\.html$', f)]
+p1_chapters = [chapter for f in tqdm(filenames) for chapter in LMFile(f).chapters]
+p1_chapters.sort(key=lambda x: x.number)
+
 filenames = [f for f in os.listdir(u'.') if re.match(u'^LMII\d+(-\d+)?\.html$', f)]
-chapters = [chapter for f in tqdm(filenames) for chapter in LMFile(f).chapters]
-chapters.sort(key=lambda x: x.number)
+p2_chapters = [chapter for f in tqdm(filenames) for chapter in LMFile(f).chapters]
+p2_chapters.sort(key=lambda x: x.number)
