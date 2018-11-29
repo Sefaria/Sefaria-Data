@@ -271,6 +271,14 @@ class Chapter(object):
 
             previous_tag, current_tag = current_tag, current_tag.next_sibling
 
+        bi_tags = ptag.find_all(u'span', attrs={u'class': 'bi'})
+        for bi_tag in bi_tags:
+            if not bi_tag.string:
+                bi_tag.string = bi_tag.decode_contents()
+            bi_tag.string.wrap(seg_soup.new_tag(u'i'))
+            bi_tag.name = u'b'
+            bi_tag.attrs.clear()
+
         fixed_segment = ptag.decode_contents()
         fixed_segment = re.sub(u'^\s+|\s+$', u'', fixed_segment)
         fixed_segment = re.sub(u'\s{2,}', u' ', fixed_segment)
@@ -467,7 +475,7 @@ class CSVChapter(object):
     def generate_html(self, test_mode=False):
         table_rows = [u'<tr><th>English</th><th>Hebrew</th></tr>']
         for en_seg, he_seg in izip_longest(self.english_segments, self.hebrew_segments, fillvalue=u''):
-            table_rows.append(u'<tr><td>{}</td><td>{}</td></tr>'.format(escape(en_seg), he_seg))
+            table_rows.append(u'<tr><td>{}</td><td>{}</td></tr>'.format(en_seg, he_seg))
 
         my_doc = u"<!DOCTYPE html><html><head><meta charset='utf-8'>" \
                  u"<link rel='stylesheet' type='text/css' href='styles.css'></head><body><table>{}</table>" \
@@ -532,10 +540,13 @@ def generate_csv_from_raw():
         csv_chapter.dump_csv()
 
 
-def regenerate_html_for_chapter(chap_num):
-    filename = 'QA_files/Chapter{}_data.csv'.format(chap_num)
+def regenerate_html_for_chapter(chap_num, part_2=False):
+    if part_2:
+        filename = 'QA_files/Part2_Chapter{}_data.csv'.format(chap_num)
+    else:
+        filename = 'QA_files/Chapter{}_data.csv'.format(chap_num)
     with open(filename) as fp:
-        chapter = CSVChapter(fp, chap_num)
+        chapter = CSVChapter(fp, chap_num, part_2)
     chapter.generate_html()
 
 
@@ -798,3 +809,18 @@ def generate_files_for_editing():
             rows = []
 
 
+generate_csv_from_raw()
+generate_files_for_editing()
+
+
+# for ij in range(1, 287):
+#     try:
+#         regenerate_html_for_chapter(ij)
+#     except IOError:
+#         print ij
+# print "Part 2"
+# for ij in range(1, 126):
+#     try:
+#         regenerate_html_for_chapter(ij, part_2=True)
+#     except IOError:
+#         print ij
