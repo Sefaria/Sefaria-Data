@@ -194,6 +194,12 @@ class Chapter(object):
         :param raw_segment:
         :return:
         """
+        # destroy self closing tags
+        seg_soup = BeautifulSoup(unicode(raw_segment), 'xml')
+        for bad_tag in seg_soup.find_all(lambda x: x.isSelfClosing):
+            bad_tag.decompose()
+        raw_segment = unicode(seg_soup.find('p'))
+
         # '<' character gets preceded by a space
         # '>' character is never followed by a space
         raw_segment = re.sub(u'<', u' <', unicode(raw_segment))
@@ -357,8 +363,9 @@ class Chapter(object):
 
 class CSVChapter(object):
 
-    def __init__(self, input_data, chap_number):
+    def __init__(self, input_data, chap_number, part2=False):
         self._english_segments, self._hebrew_segments = None, None
+        self.part2 = bool(part2)
         self.number = chap_number
         if isinstance(input_data, dict):
             self._load_from_data(input_data)
@@ -370,7 +377,7 @@ class CSVChapter(object):
         current_segment = 1
 
         for seg_num, segment in enumerate(self._english_segments):
-            match = re.match(u'^(\d+)', segment)
+            match = re.match(u'^(\d+)', bleach.clean(segment, tags=[], attributes={}, strip=True))
             if not match:
                 continue
             next_segment = int(match.group(1))
@@ -431,7 +438,7 @@ class CSVChapter(object):
 
     def set_hebrew_segments(self, segments):
         self._hebrew_segments = tuple(segments)
-        self._set_he_section_transitions()
+        # self._set_he_section_transitions()
 
     def del_hebrew_segments(self):
         self._hebrew_segments = None
@@ -466,10 +473,15 @@ class CSVChapter(object):
                  u"<link rel='stylesheet' type='text/css' href='styles.css'></head><body><table>{}</table>" \
                  u"</body</html>".format(u''.join(table_rows))
 
-        if test_mode:
-            filename = 'QA_files/Chapter{}_test_view.html'.format(self.number)
+        if self.part2:
+            part = 'Part2_'
         else:
-            filename = 'QA_files/Chapter{}_view.html'.format(self.number)
+            part = ''
+
+        if test_mode:
+            filename = 'QA_files/{}Chapter{}_test_view.html'.format(part, self.number)
+        else:
+            filename = 'QA_files/{}Chapter{}_view.html'.format(part, self.number)
 
         with codecs.open(filename, 'w', 'utf-8') as fp:
             fp.write(my_doc)
@@ -482,11 +494,15 @@ class CSVChapter(object):
             }
             for en_seg, he_seg in izip_longest(self.english_segments, self.hebrew_segments, fillvalue=u'')
         ]
+        if self.part2:
+            part = 'Part2_'
+        else:
+            part = ''
 
         if test_mode:
-            filename = 'QA_files/Chapter{}_data_test.csv'.format(self.number)
+            filename = 'QA_files/{}Chapter{}_data_test.csv'.format(part, self.number)
         else:
-            filename = 'QA_files/Chapter{}_data.csv'.format(self.number)
+            filename = 'QA_files/{}Chapter{}_data.csv'.format(part, self.number)
 
         with open(filename, 'w') as fp:
             writer = unicodecsv.DictWriter(fp, ['English', 'Hebrew'])
@@ -502,6 +518,16 @@ def generate_csv_from_raw():
 
     for c in chapters:
         csv_chapter = CSVChapter({'en': c.english_segments, 'he': c.hebrew_segments}, c.number)
+        csv_chapter.generate_html()
+        csv_chapter.dump_csv()
+
+    part_2_files = [f for f in os.listdir(u'.') if re.search(u'^LMII\d+(-\d+)?\.html$', f)]
+
+    chapters = [c for f in tqdm(part_2_files) for c in LMFile(f).chapters]
+    chapters.sort(key=lambda x: x.number)
+
+    for c in chapters:
+        csv_chapter = CSVChapter({'en': c.english_segments, 'he': c.hebrew_segments}, c.number, part2=True)
         csv_chapter.generate_html()
         csv_chapter.dump_csv()
 
@@ -742,11 +768,33 @@ def generate_files_for_editing():
                 writer.writerows(rows)
             rows = []
 
+    my_files = [f for f in os.listdir(u'./QA_files') if re.search(u'Part2_Chapter\d+_data\.csv$', f)]
+    chapters = []
+    for f in my_files:
+        cnumber = int(re.search(u'^Part2_Chapter(\d+)_data\.csv$', f).group(1))
+        with open(u'./QA_files/{}'.format(f)) as fpointer:
+            cfile = CSVChapter(fpointer, cnumber, part2=True)
+        chapters.append(cfile)
+    chapters.sort(key=lambda x: x.number)
+    start, end = -1, -1
+    rows = []
+    for chapter in chapters:
+        if chapter.number % 50 == 1:
+            start = chapter.number
+        for num, (en_seg, he_seg) in enumerate(
+                izip_longest(chapter.english_segments, chapter.hebrew_segments, fillvalue=u''), 1):
+            rows.append({
+                u'Chapter': chapter.number,
+                u'Segment #': num,
+                u'English': en_seg,
+                u'Hebrew': he_seg
+            })
+        if chapter.number % 50 == 0 or chapter.number == chapters[-1].number:
+            end = chapter.number
+            with open('./manual_editing/Likutei_Moharan_Part2_{}-{}.csv'.format(start, end), 'w') as fp:
+                writer = unicodecsv.DictWriter(fp, [u'Chapter', u'Segment #', u'English', u'Hebrew'])
+                writer.writeheader()
+                writer.writerows(rows)
+            rows = []
 
-filenames = [f for f in os.listdir(u'.') if re.match(u'^LM\d+(-\d+)?\.html$', f)]
-p1_chapters = [chapter for f in tqdm(filenames) for chapter in LMFile(f).chapters]
-p1_chapters.sort(key=lambda x: x.number)
 
-filenames = [f for f in os.listdir(u'.') if re.match(u'^LMII\d+(-\d+)?\.html$', f)]
-p2_chapters = [chapter for f in tqdm(filenames) for chapter in LMFile(f).chapters]
-p2_chapters.sort(key=lambda x: x.number)
