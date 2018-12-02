@@ -1127,12 +1127,14 @@ class WeightedLevenshtein:
         two ompletely different strings with the most expensive swap at every location. Otherwise, the exact weighted
         Levenshtein score will be returned.
         """
-        if not self._calculate_cache.get((s1,s2,normalize), None):
+        original_s1, original_s2 = s1, s2
+        if not self._calculate_cache.get((original_s1, original_s2, normalize), None):
             s1_len = len(s1)
             s2_len = len(s2)
 
+
             if s1_len == 0 and s2_len == 0 and normalize:
-                raise LevensheinError("both strings can't be empty with normalize=True. leads to divide by zero")
+                raise LevenshteinError("both strings can't be empty with normalize=True. leads to divide by zero")
 
             if s1 == s2:
                 score = 0
@@ -1168,12 +1170,12 @@ class WeightedLevenshtein:
             if normalize:
                 length = max(s1_len, s2_len)
                 max_score = length * (self._most_expensive + self.min_cost)
-                self._calculate_cache[(s1, s2, normalize)] = int(100.0 * (1 - (score / max_score)))
+                self._calculate_cache[(original_s1, original_s2, normalize)] = int(100.0 * (1 - (score / max_score)))
 
             else:
-                self._calculate_cache[(s1, s2, normalize)] = score
+                self._calculate_cache[(original_s1, original_s2, normalize)] = score
 
-        return self._calculate_cache[(s1, s2, normalize)]
+        return self._calculate_cache[(original_s1, original_s2, normalize)]
 
     def calculate_best(self, s, words, normalize=True):
         """
