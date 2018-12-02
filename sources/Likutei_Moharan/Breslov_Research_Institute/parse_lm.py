@@ -39,13 +39,16 @@ import os
 import numpy
 import bleach
 import codecs
+import random
 import unicodecsv
 from tqdm import tqdm
+from functools import partial
 from collections import OrderedDict
 from matplotlib import pyplot as plt
 from itertools import izip_longest
 from xml.sax.saxutils import unescape, escape
 from bs4 import BeautifulSoup, Tag, NavigableString
+from data_utilities.util import WeightedLevenshtein
 
 import django
 django.setup()
@@ -809,18 +812,127 @@ def generate_files_for_editing():
             rows = []
 
 
-generate_csv_from_raw()
-generate_files_for_editing()
+class LevenshteinCalc(object):
+
+    def __init__(self):
+        self.wl = WeightedLevenshtein()
+
+    def __call__(self, word_list, segments, indices):
+        score = 0
+        for start, end, segment in zip([0] + indices, indices + [len(word_list)], segments):
+            new_seg = u' '.join(word_list[start:end])
+            # length_penalty = abs(len(segment.split()) - (end - start))
+
+            score += self.wl.calculate(segment, new_seg)
+        return score
 
 
-# for ij in range(1, 287):
-#     try:
-#         regenerate_html_for_chapter(ij)
-#     except IOError:
-#         print ij
-# print "Part 2"
-# for ij in range(1, 126):
-#     try:
-#         regenerate_html_for_chapter(ij, part_2=True)
-#     except IOError:
-#         print ij
+# def calculate_error_levenshtein(word_list, segments, indices):
+#     score = 0
+#     wl = WeightedLevenshtein()
+#     for start, end, segment in zip([0] + indices, indices + [len(word_list)], segments):
+#         new_seg = u' '.join(word_list[start:end])
+#         score += wl.calculate(segment, new_seg)
+#     return score
+calculate_error_levenshtein = LevenshteinCalc()
+
+
+def find_best_indices(word_list, segments, indices=None, num_iterations=10000):
+    if indices is None:
+        indices = sorted(random.sample(range(1, len(word_list)), len(segments) - 1))
+    assert len(segments) - len(indices) == 1
+    score_method = partial(calculate_error_levenshtein, word_list, segments)
+
+    cur_score = score_method(indices)
+    old_score = cur_score
+    cur_iteration = 0
+
+    while cur_iteration < num_iterations:
+        print "Iteration {}: score = {}".format(cur_iteration, cur_score)
+        for i in range(len(indices)):
+            # print '{} / {}'.format(i, len(indices))
+            add, subtract = indices[:], indices[:]
+            add[i] = indices[i] + 1
+            subtract[i] = indices[i] - 1
+            indices = max([subtract, indices, add], key=score_method)
+
+        new_score = score_method(indices)
+
+        if new_score == cur_score:
+            break
+        elif new_score < cur_score:
+            print "Got worse at iteration {}".format(cur_iteration)
+        old_score = cur_score
+        cur_score = new_score
+
+        cur_iteration += 1
+    else:
+        print "Did not converge. Old Score: {}; New Score: {}".format(old_score, cur_score)
+    return indices
+
+
+def initialize_indices(word_list, segments):
+    offset = 0
+    max_index = len(word_list)
+
+    while True:
+        indices = []
+        retry = False
+        for i, segment in enumerate(segments[:-1]):
+            if i == 0:
+                cur_index = len(segment.split()) + offset
+            else:
+                cur_index = indices[-1] + len(segment.split()) + offset
+
+            if cur_index >= max_index:
+                retry = True
+                offset -= 1
+                break
+            indices.append(cur_index)
+
+        if not retry:
+            break
+    return indices
+
+
+def word_lists_with_mapping(input_string):
+    stripped = re.sub(u'\([^()]+\)[^\u05d0-\u05ea\s]?', u'', input_string)
+    stripped = re.sub(u'\s{2,}', u' ', stripped)
+    with_paren, without_paren = input_string.split(), stripped.split()
+    iter_with_paren = enumerate(input_string.split())
+    index_mapping = []
+
+    for word in without_paren:
+        long_index, long_word = iter_with_paren.next()
+        while word != long_word:
+            long_index, long_word = iter_with_paren.next()
+        index_mapping.append(long_index)
+
+    return with_paren, without_paren, index_mapping
+
+
+c1 = Ref("Likutei Moharan 1")
+c1_text = c1.text('he')
+long_form, short_form, mapping = word_lists_with_mapping(u' '.join(c1_text.text))
+with open("QA_files/Chapter1_data.csv") as fp:
+    my_rows = [r['Hebrew'] for r in unicodecsv.DictReader(fp)]
+while not my_rows[-1]:
+    my_rows.pop()
+
+short_rows = [re.sub(u'\([^()]+\)', u'', r) for r in my_rows]
+short_rows = [re.sub(u'\s{2,}', u' ', r) for r in short_rows]
+
+initial_indices = initialize_indices(short_form, short_rows)
+print initial_indices
+my_indices = find_best_indices(short_form, short_rows, indices=initial_indices, num_iterations=100)
+print my_indices
+fixed_indices = [mapping[ind] for ind in my_indices]
+print fixed_indices
+
+output_rows = []
+for s, e, bri in zip([0] + fixed_indices, fixed_indices + [len(long_form)], my_rows):
+    output_rows.append(u'{}\n'.format(u' '.join(long_form[s:e])))
+    output_rows.append(u'\n{}\n\n\n'.format(bri))
+with codecs.open('results.txt', 'w', 'utf-8') as fp:
+    fp.writelines(output_rows)
+# prof("find_best_indices(c1_words, my_rows, num_iterations=1)")
