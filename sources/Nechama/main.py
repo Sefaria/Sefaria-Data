@@ -88,6 +88,7 @@ class Sheet(object):
     def create_sheetsources_from_sections(self, segment_objects):
         sheets_sources = []
         guess_ref = u""
+        guess_parshan = 0
         for isegment, segment in enumerate(segment_objects):
             if not segment:
                 continue
@@ -95,18 +96,25 @@ class Sheet(object):
                 orig_ref = segment.ref
                 parser.trying_pm = 0
                 segment.guess_ref = guess_ref
-                success = parser.try_parallel_matcher(segment, guess_ref)
+                if segment.parshan_id:
+                    guess_parshan = segment.parshan_id
+                success = parser.try_parallel_matcher(segment, guess_ref, guess_parshan)
                 if not success and segment.snunit_ref:  # take 2
-                    success = parser.try_parallel_matcher(segment, segment.snunit_ref.normal())
+                    success = parser.try_parallel_matcher(segment, segment.snunit_ref.normal(), guess_parshan)
                 # look at guess ref, maybe it was ignored because there was a Sefaria ref first
                 if not success:
                     temp =segment.ref
                     segment.ref = guess_ref
-                    success = parser.try_parallel_matcher(segment, guess_ref)
+                    success = parser.try_parallel_matcher(segment, guess_ref, guess_parshan)
                     if not success:
                         segment.ref = temp
-                if success and not Ref(segment.ref).is_commentary():
-                    guess_ref = segment.ref # if base text keep for the next source segment
+                if success:
+                    if Ref(segment.ref).is_commentary():
+                        if re.search(u".*(?:on|,)\s((?:[^:]*?):(?:[^:]*)):?", segment.ref):
+                            r_base = Ref(re.search(u".*(?:on|,)\s((?:[^:]*?):(?:[^:]*)):?", segment.ref).group(1))
+                            guess_ref = r_base.normal()
+                    else:
+                        guess_ref = segment.ref # if base text keep for the next source segment
                 elif not success:  # not success couldn't find matching text
                     success2 = False
                     # try a level up
@@ -171,9 +179,9 @@ class Sheet(object):
     def prepare_sheet(self, add_to_title="", post=False):
        sheet_json = {}
        sheet_json["status"] = "public" #"private" #
-       sheet_json["group"] ="Nechama Leibowitz' Source Sheets"#"Nechama Leibowitz' Source Sheets"
-       #sheet_json["title"] = u'{} - {} {}'.format(self.title, re.search('(\d+)\.', self.html).group(1), add_to_title)
-       sheet_json["title"] = u"{} {} - {}".format(self.parasha, self.he_year, self.title)
+       sheet_json["group"] =u"גיליונות נחמה"#"Nechama Leibowitz' Source Sheets"
+       sheet_json["title"] = u'{} - {} {}'.format(self.title, re.search('(\d+)\.', self.html).group(1), add_to_title)
+       # sheet_json["title"] = u"{} {} - {}".format(self.parasha, self.he_year, self.title)
        sheet_json["summary"] = u"{} ({})".format(self.en_year, self.he_year)
        sheet_json["sources"] = self.sources
        sheet_json["options"] = {"numbered": 0, "assignable": 0, "layout": "sideBySide", "boxed": 0, "language": "hebrew", "divineNames": "noSub", "collaboration": "none", "highlightMode": 0, "bsd": 0, "langLayout": "heRight"}
@@ -1143,7 +1151,8 @@ class Nechama_Parser:
     def check_reduce_sources(self, comment, ref):
         new_ref = []
         # rashbam on 821
-        if isinstance(ref.text('he').text[0], list) and ref.text('he').text[0] and isinstance(ref.text('he').text[0][0],int):
+        if isinstance(ref.text('he').text, list) and all([isinstance(x, list) for x in ref.text('he').text]) and any([isinstance(x, int) for deep1 in ref.text('he').text for x in deep1]):
+            print "OOF"
             return new_ref
         n = len(comment.split())
         if n<=5:
@@ -1175,7 +1184,9 @@ class Nechama_Parser:
                     return Ref(comm).section_ref()
         return ref
 
-    def try_parallel_matcher(self, current_source, guess_ref = None):
+    def try_parallel_matcher(self, current_source, guess_ref = None, guess_parshan = None):
+        # if isinstance(current_source.ref, Ref):
+        #     current_source.ref = current_source.ref.normal()
         try:
             try:
                 if not current_source.get_sefaria_ref(current_source.ref):
@@ -1216,8 +1227,10 @@ class Nechama_Parser:
                     matched = self.check_reduce_sources(text_to_use, ref2check) # returns a list ordered by scores of mesorat hashas objs that were found
                     changed_ref = ref2check  # ref2chcek might get a better ref but also might not...
                     if not matched:  # no match found  - parshan id try
-                        if current_source.parshan_id:
+                        if current_source.parshan_id or guess_parshan:
                             try:
+                                if not current_source.parshan_id:
+                                    current_source.parshan_id = guess_parshan
                                 parshan = parser.parshan_id_table[current_source.parshan_id]
                                 # chenged_ref = Ref(u'{} {}'.format(parshan, u'{}:{}'.format(ref2check.sections[0], ref2check.sections[1]) if len(ref2check.sections)>1 else u'{}'.format(ref2check[0])))
                                 assert parshan
@@ -1229,7 +1242,7 @@ class Nechama_Parser:
                             except AssertionError as e:
                                 print e
                                 pass
-                    # look one level up - todo: is level up duplicated?
+                    # look one level up - todo: is checking level up duplicated?
                     if not matched:  # and parshan is a running parshan, still not matched! מלבים. אברבנל.העמק דבר רלבג
                         matched = self.check_reduce_sources(text_to_use, changed_ref.top_section_ref())
                     # check Haftarah
@@ -1261,7 +1274,6 @@ class Nechama_Parser:
                         current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[
                             0].b.ref.normal()  # because the sides change
 
-                        current_source.ref = matched[0].a.ref.normal() if matched[0].a.ref.normal() != 'Berakhot 58a' else matched[0].b.ref.normal()  # because the sides change
                         # if ref2check.is_section_level():
                             # print '** section level ref: '.format(ref2check.normal())
                         return True, matched
@@ -1510,7 +1522,7 @@ if __name__ == "__main__":
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
-    posting = False
+    posting = True
     individual = None
 
     for which_parshiot in [genesis_parshiot+devarim_parshiot]: #exodus, leviticus, numbers work

@@ -14,7 +14,7 @@ class Segment(object):
 
     def create_source(self):
         #create source for sourcesheet out of myself
-        segment = BeautifulSoup(self.text)
+        segment = BeautifulSoup(self.text, "lxml")
         segment = remove_a_links(segment)
         source = {"outsideText": segment.text}
         return source
@@ -65,9 +65,6 @@ class Source(object):
                 ref_node = " ".join(re.split(u"[:\s]", ref)[0:-1])
                 return self.get_sefaria_ref(ref_node) #returns Ralbag Beur HaMilot on Torah, Genesis
 
-
-
-
     def glue_ref_and_text(self, ref, text, gray=True):
         if isinstance(text, list):
             text = u' '.join(text)
@@ -117,11 +114,11 @@ class Source(object):
         # remove snunit tags from text and about_source_ref
         if isinstance(self.text, list):
             for i, line in enumerate(self.text):
-                segment = BeautifulSoup(self.text[i])
+                segment = BeautifulSoup(self.text[i], "lxml")
                 segment = remove_a_links(segment)
                 self.text[i] = segment.text
         else:
-            segment = BeautifulSoup(self.text)
+            segment = BeautifulSoup(self.text, "lxml")
             for a in segment.findAll('a'):  # get all a tags and remove them
                 a.replaceWithChildren()
             self.text = segment.text
@@ -129,7 +126,7 @@ class Source(object):
 
         comment = self.text
 
-        segment = BeautifulSoup(self.about_source_ref)
+        segment = BeautifulSoup(self.about_source_ref, "lxml")
         for a in segment.findAll('a'):  # get all a tags and remove them
             a.replaceWithChildren()
         self.about_source_ref = segment.text
@@ -273,7 +270,7 @@ class Header(object):
 
     def create_source(self):
         #create source for sourcesheet out of myself
-        segment = BeautifulSoup(self.text)
+        segment = BeautifulSoup(self.text, "lxml")
         segment = remove_a_links(segment)
         source = {"outsideText": str(segment)}
         return source
@@ -380,7 +377,7 @@ class Question(object):
 
     def create_source(self):
         #create source for sourcesheet out of myself
-        segment = BeautifulSoup(self.text)
+        segment = BeautifulSoup(self.text, "lxml")
         segment = remove_a_links(segment)
         source = {"outsideText": str(segment)}
         return source
@@ -415,7 +412,7 @@ class Table(object):
 
     def create_source(self):
         #create source for sourcesheet out of myselfwithout_params=["number"]
-        segment = BeautifulSoup(self.text)
+        segment = BeautifulSoup(self.text, "lxml")
         segment = remove_a_links(segment)
         source = {"outsideText": str(segment)}
         return source
@@ -474,7 +471,7 @@ class Nechama_Comment(object):
 
     def create_source(self):
         #create source for sourcesheet out of
-        segment = BeautifulSoup(self.text)
+        segment = BeautifulSoup(self.text, "lxml")
         segment = remove_a_links(segment)
         source = {"outsideText": str(segment)}
         return source
