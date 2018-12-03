@@ -25,6 +25,7 @@ import base64
 import enchant
 import Levenshtein
 from functools import wraps
+from word2number import w2n
 
 gematria = {}
 gematria[u'א'] = 1
@@ -215,8 +216,8 @@ def perek_to_number(perek_num):
     line = line.split(u" פרק")[1:]
     arr_nums = []
     poss_num = 0
-    line = [el[1:-1] for el in line]
-    result = find_almost_identical(perek_num, line, ratio=0.85)
+    line = [el.strip() for el in line]
+    result = find_almost_identical(perek_num, line, ratio=1)
     if result:
         return line.index(result) + 1
     else:

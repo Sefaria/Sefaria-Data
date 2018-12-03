@@ -16,7 +16,7 @@ import textract
 import traceback
 import sys
 
-SERVER = "http://ste.sandbox.sefaria.org"
+SERVER = "https://www.sefaria.org"
 section_referenced_not_in_mishnah = []
 mishnah_wout_numbers_explanation_has = []
 mishnah_wout_numbers_explanation_wout = []
@@ -279,6 +279,7 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
     elif len(mishnah_text) > len(explanation_sections_text):
         mishnah_sections_more_than_explanation_sections.append(file)
         if len(orig_mishnah) == 0:
+            print file
             print "BLANK FILE"
         else:
             orig_mishnah = restructure_mishnah_text(orig_mishnah)
@@ -294,6 +295,7 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
     commentary_text = [el for el in commentary_text if el]
     questions_text = [el for el in questions_text if el]
     commentary_text = [el for el in commentary_text+questions_text]
+    mishnah_text = [el.replace("<b>", "").replace("</b>", "") for el in mishnah_text]
     return (commentary_text+questions_text, mishnah_text)
 
 
@@ -329,7 +331,6 @@ def restructure_mishnah_text(old_mishnah_text):
 
 def create_index(text, sefer, post=False):
     sefer = convert_spellings(sefer)
-    #add_category("Mishnah Yomit", ["Mishnah", "Commentary", "Mishnah Yomit"], server=SERVER)
     index = library.get_index("Mishnah " + sefer)
     seder = index.categories[-1]
     root = SchemaNode()
@@ -347,10 +348,10 @@ def create_index(text, sefer, post=False):
     default = JaggedArrayNode()
     default.key = "default"
     default.default = True
-    default.add_structure(["Perek", "Mishnah", "Comment"])
+    default.add_structure(["Chapter", "Mishnah", "Comment"])
     root.append(default)
     root.validate()
-    add_category(seder, ["Modern Works", "Mishnah Yomit", seder], server="http://ste.sandbox.sefaria.org")
+    add_category(seder, ["Modern Works", "Mishnah Yomit", seder], server=SERVER)
     index = {
         "title": en_title,
         "schema": root.serialize(),
@@ -365,7 +366,8 @@ def create_index(text, sefer, post=False):
 
 
 def check_all_mishnayot_present_and_post(text, sefer, file_path, post=False):
-    versionTitle = "Mishnah Yomit Oct 15"
+    versionTitle = "Mishnah Yomit"
+    sefer = convert_spellings(sefer)
     def post_(text, path):
         send_text = {
             "language": "en",
@@ -513,9 +515,41 @@ if __name__ == "__main__":
     # most_common_value = found_ref.most_common(1)[0]
     # assert most_common_value[1] == 1, "{} has {}".format(most_common_value[0], most_common_value[1])
     post = True
-    dont_start = False
-    start_at = " "
-    [parsed_text.pop(k) if "Avoth" not in k and "Berakhot" not in k and "Demai" not in k else k for k in parsed_text.keys()]
+    dont_start = True
+    didnt_post = [u'Mishnah Yomit on Pirkei Avot',
+ u'Mishnah Yomit on Mishnah Makhshirin',
+ u'Mishnah Yomit on Mishnah Demai',
+ u'Mishnah Yomit on Mishnah Berakhot',
+ u'Mishnah Yomit on Mishnah Rosh Hashanah',
+ u'Mishnah Yomit on Mishnah Shekalim',
+ u'Mishnah Yomit on Mishnah Parah',
+ u'Mishnah Yomit on Mishnah Megillah',
+ u'Mishnah Yomit on Mishnah Shevuot',
+ u'Mishnah Yomit on Mishnah Bava Batra',
+ u'Mishnah Yomit on Mishnah Bekhorot',
+ u'Mishnah Yomit on Mishnah Negaim',
+ u'Mishnah Yomit on Mishnah Beitzah',
+ u'Mishnah Yomit on Mishnah Yevamot',
+ u'Mishnah Yomit on Mishnah Nazir',
+ u'Mishnah Yomit on Mishnah Kilayim',
+ u'Mishnah Yomit on Mishnah Sotah',
+ u'Mishnah Yomit on Mishnah Zevachim',
+ u'Mishnah Yomit on Mishnah Yoma',
+ u'Mishnah Yomit on Mishnah Meilah',
+ u'Mishnah Yomit on Mishnah Bava Kamma',
+ u'Mishnah Yomit on Mishnah Keritot',
+ u'Mishnah Yomit on Mishnah Terumot',
+ u'Mishnah Yomit on Mishnah Bava Metzia',
+ u'Mishnah Yomit on Mishnah Sanhedrin',
+ u'Mishnah Yomit on Mishnah Kelim',
+ u'Mishnah Yomit on Mishnah Tamid',
+ u'Mishnah Yomit on Mishnah Arakhin',
+ u'Mishnah Yomit on Mishnah Niddah',
+ u'Mishnah Yomit on Mishnah Gittin',
+ u'Mishnah Yomit on Mishnah Middot',
+ u'Mishnah Yomit on Mishnah Pesachim']
+    didnt_post = [u"Mishnah Yomit on Mishnah Makhshirin"]
+    start_at = ""
     for sefer in parsed_text.keys():
         if start_at in sefer:
             dont_start = False
@@ -524,7 +558,7 @@ if __name__ == "__main__":
         if parsed_text[sefer]:
             try:
                 create_index(parsed_text[sefer], sefer, post=post)
-                check_all_mishnayot_present_and_post(parsed_text[sefer], sefer, file, post=post)
+                #check_all_mishnayot_present_and_post(parsed_text[sefer], sefer, file, post=post)
             except BookNameError as e:
                 print e
 
@@ -532,3 +566,4 @@ if __name__ == "__main__":
     print "Mishnah without numbers when explanation does have numbers: {} {}".format(len(mishnah_wout_numbers_explanation_has), mishnah_wout_numbers_explanation_has)
     print "Mishnah without numbers when explanation does NOT have numbers: {} {}".format(len(mishnah_wout_numbers_explanation_wout), mishnah_wout_numbers_explanation_wout)
     print "Found more mishnah sections than explanation sections: {} {}".format(len(mishnah_sections_more_than_explanation_sections), mishnah_sections_more_than_explanation_sections)
+

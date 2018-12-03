@@ -323,15 +323,6 @@ class Section(object):
 
         # create Segment objects out of the BeautifulSoup objects
         self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
-        # if (any([isinstance(seg, Nested) for seg in self.segment_objects])): # maybe this should be "while" but let's start with one round
-        #     for i, obj in enumerate(self.segment_objects):
-        #         if isinstance(obj, Nested):
-        #             obj.add_segments(self)
-                    # output_nested = self.classify_segments(obj)
-                    # if output_nested:
-                    #     self.segment_objects = self.segment_objects[:i]+output_nested+self.segment_objects[i+1:]
-                    # self.segment_objects.pop(i)
-        # self.segment_objects.reverse()
         prev_source = None
         new_segment_objects = []
         for i, obj in enumerate(self.segment_objects):
@@ -1525,18 +1516,19 @@ if __name__ == "__main__":
     posting = True
     individual = None
 
-    for which_parshiot in [genesis_parshiot+devarim_parshiot]: #exodus, leviticus, numbers work
+    for which_parshiot in [genesis_parshiot]: #exodus, leviticus, numbers work
         print "NEW BOOK"
-        for parsha in which_parshiot[1]:
+        for parsha in ["Bereshit"]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "", catch_errors=catch_errors) #accurate
-            parser.prepare_term_mapping()  # must be run once locally and on sandbox
+            parser = Nechama_Parser(book, parsha, "fast", "377.html", catch_errors=catch_errors) #accurate
+            #parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
             # anything_before = "7.html"
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
             # sheets = sheets[sheets.index("163.html")::]
+            sheets = ["527.html"]
             if individual:
                 got_sheet = parser.bs4_reader(["html_all/{}.html".format(individual)] if "{}.html".format(individual) in os.listdir("html_sheets/{}".format(parsha)) else [], post=posting)
             else:

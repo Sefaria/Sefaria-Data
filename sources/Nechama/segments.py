@@ -223,7 +223,7 @@ class Source(object):
     def add_text(self, segment, segment_class=None):
         for br in segment.find_all("br"):
             br.replace_with("\n")
-        segment_text = bleach.clean(str(segment), tags=["u", "b"], strip=True)
+        segment_text = bleach.clean(str(segment), tags=["u", "b", "table", "td", "tr", "p", "br"], strip=True)
         # self.parshan_name = segment_class
         # print self.parshan_name
         if not self.text:
@@ -344,7 +344,7 @@ class Question(object):
         table_html = str(segment)  # todo: fix this line, why are we losing so much data here?
         segs = [s for s in segment.find_all('p') if not s.parent.has_attr('class')]
         any([s.attrs for s in segs])
-        self.q_text = u" ".join([bleach.clean(str(s), tags=["u", "b"], strip=True).strip() for s in segment.find_all('p') if not s.parent.has_attr('class')])
+        self.q_text = u" ".join([bleach.clean(str(s), tags=["u", "b", "table", "td", "tr", "p", "br"], strip=True).strip() for s in segment.find_all('p') if not s.parent.has_attr('class')])
         self.text = self.format()
         self.q_source = segment
 
@@ -404,7 +404,8 @@ class Table(object):
     ## specifically for tables in HTML that end up staying as HTML in source sheet such class="RT" or "RTBorder"
 
     def __init__(self, segment):
-        self.text = bleach.clean(str(segment), tags=["u", "b"], strip=True)
+        self.text = bleach.clean(str(segment), tags=["u", "b", "table", "td", "tr", "p", "br"], strip=True)
+        self.text = re.sub("<p>.{1,2}</p>", "<br/>", self.text) # try to mimic formatting of HTML
 
     @staticmethod
     def is_table(segment):
@@ -501,7 +502,7 @@ class Nested(object):
             return
         classed_tags = []
         tags_with_p = []
-        classes = ["parshan", "midrash", "talmud", "bible", "commentary", "question2", "question", "table", "RTBorder"]#, "RT", "RT_RASHI"]
+        classes = ["parshan", "midrash", "talmud", "bible", "commentary", "question2", "question", "table", "RT", "RTBorder"]#, "RT", "RT_RASHI"]
         for i, e in enumerate(segment.findAll()):
             if (e.attrs and 'class' in e.attrs and set(e.attrs['class']).intersection(
                     classes)):  # any([c in e.attrs['class'] for c in classes])):  # e.find('td') or
