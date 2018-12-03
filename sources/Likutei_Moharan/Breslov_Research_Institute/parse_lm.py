@@ -43,6 +43,7 @@ import random
 import unicodecsv
 from tqdm import tqdm
 from functools import partial
+from bisect import bisect_right
 from collections import OrderedDict
 from matplotlib import pyplot as plt
 from itertools import izip_longest
@@ -910,13 +911,20 @@ def initialize_indices(word_list, segments):
     return indices
 
 
+def repl_for_refs(match_obj):
+    if library.get_refs_in_string(match_obj.group(), citing_only=True):
+        return u''
+    else:
+        return match_obj.group()
+
+
 def word_lists_with_mapping(input_string):
     def clean(word_to_clean):
         return bleach.clean(word_to_clean, tags=[], attributes={}, strip=True)
 
     input_string = re.sub(u'<br>', u' ', input_string)  # We're moving to depth 3 - inline <br> is getting dropped
-    stripped = re.sub(u'\([^()]+\)[^\u05d0-\u05ea<>\s]?', u'', input_string)
-    stripped = re.sub(u'[\u0591-\u05C7]', u'', stripped)
+    stripped = re.sub(u'[\u0591-\u05C7]', u'', input_string)
+    stripped = re.sub(u'\([^()]+\)[^\u05d0-\u05ea<>\s]?', u'', stripped)
     stripped = clean(stripped)
     stripped = re.sub(u'\s{2,}', u' ', stripped)
     with_paren, without_paren = input_string.split(), stripped.split()
@@ -932,7 +940,15 @@ def word_lists_with_mapping(input_string):
     return with_paren, without_paren, index_mapping
 
 
-def generate_new_segmentation(chapter, part_2=False, print_alignment=False):
+def generate_new_segmentation(chapter, part_2=False, print_alignment=False, min_seg=5):
+    """
+    Get an existing Sefaria chapter re-segmented
+    :param chapter:
+    :param part_2:
+    :param print_alignment:
+    :param min_seg: Segments shorter than this value in the new segmentation will be merged up, then aligned separately.
+    :return: list of word indices to break up the chapter and the new segmentation
+    """
     if part_2:
         c_ref = Ref("Likutei Moharan, Part II:{}".format(chapter))
     else:
@@ -952,16 +968,35 @@ def generate_new_segmentation(chapter, part_2=False, print_alignment=False):
     while not my_rows[-1]:
         my_rows.pop()
 
-    short_rows = [re.sub(u'\([^()]+\)', u'', r) for r in my_rows]
-    short_rows = [re.sub(u'[\u0591-\u05C7]', u'', r) for r in short_rows]
+    short_rows = [re.sub(u'[\u0591-\u05C7]', u'', r) for r in my_rows]
+    short_rows = [re.sub(u'\([^()]+\)', u'', r) for r in short_rows]
     short_rows = [re.sub(u'\s{2,}', u' ', r) for r in short_rows]
 
-    initial_indices = initialize_indices(short_form, short_rows)
-    print initial_indices
-    my_indices = find_best_indices(short_form, short_rows, indices=initial_indices, num_iterations=500)
-    print my_indices
-    fixed_indices = [mapping[ind] for ind in my_indices]
-    print fixed_indices
+    # short segments tend to mess with the alignment. combine these with larger segments for the primary alignment
+    compound_rows = []
+    for row in short_rows:
+        if len(row.split()) >= min_seg or len(compound_rows) == 0:
+            compound_rows.append([row])
+        else:
+            compound_rows[-1].append(row)
+    initial_rows = [u' '.join(segs) for segs in compound_rows]
+
+    initial_indices = initialize_indices(short_form, initial_rows)
+    aligned_indices = find_best_indices(short_form, initial_rows, indices=initial_indices, num_iterations=500)
+
+    new_indices = list()
+    for compound_row, start, end in zip(compound_rows, [0]+aligned_indices, aligned_indices+[len(short_form)]):
+        if len(compound_row) == 1:
+            continue
+        word_list = short_form[start:end]
+        initial_indices = initialize_indices(word_list, compound_row)
+        secondary_indices = find_best_indices(word_list, compound_row, indices=initial_indices, num_iterations=80)
+        new_indices.extend([i+start for i in secondary_indices])
+
+    for new_index in new_indices:
+        aligned_indices.insert(bisect_right(aligned_indices, new_index), new_index)
+
+    fixed_indices = [mapping[ind] for ind in aligned_indices]
 
     segments = []
     for start, end in zip([0] + fixed_indices, fixed_indices + [len(long_form)]):
@@ -978,4 +1013,4 @@ def generate_new_segmentation(chapter, part_2=False, print_alignment=False):
     return fixed_indices, segments
 
 
-random_stuff = generate_new_segmentation(4, print_alignment=True)
+random_stuff = generate_new_segmentation(5, print_alignment=True, min_seg=40)
