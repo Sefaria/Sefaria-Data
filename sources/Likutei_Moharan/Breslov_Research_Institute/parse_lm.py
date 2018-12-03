@@ -818,13 +818,12 @@ class LevenshteinCalc(object):
         self.wl = WeightedLevenshtein()
 
     def __call__(self, word_list, segments, indices):
-        score = 0
+        scores = []
         for start, end, segment in zip([0] + indices, indices + [len(word_list)], segments):
             new_seg = u' '.join(word_list[start:end])
             # length_penalty = abs(len(segment.split()) - (end - start))
-
-            score += self.wl.calculate(segment, new_seg)
-        return score
+            scores.append(self.wl.calculate(segment, new_seg, normalize=False))
+        return sum(scores)
 
 
 # def calculate_error_levenshtein(word_list, segments, indices):
@@ -846,6 +845,7 @@ def find_best_indices(word_list, segments, indices=None, num_iterations=10000):
     cur_score = score_method(indices)
     old_score = cur_score
     cur_iteration = 0
+    last_index_ceiling = len(word_list) - 1
 
     while cur_iteration < num_iterations:
         print "Iteration {}: score = {}".format(cur_iteration, cur_score)
@@ -854,13 +854,28 @@ def find_best_indices(word_list, segments, indices=None, num_iterations=10000):
             add, subtract = indices[:], indices[:]
             add[i] = indices[i] + 1
             subtract[i] = indices[i] - 1
-            indices = max([subtract, indices, add], key=score_method)
+
+            if i == 0:
+                if subtract[i] <= 0:
+                    subtract[i] = 1
+            else:
+                if subtract[i] <= subtract[i-1]:
+                    subtract[i] = indices[i]
+
+            if i == len(indices) - 1:
+                if add[i] >= last_index_ceiling:
+                    add[i] = last_index_ceiling - 1
+            else:
+                if add[i] >= add[i+1]:
+                    add[i] = indices[i]
+
+            indices = min([subtract, indices, add], key=score_method)
 
         new_score = score_method(indices)
 
         if new_score == cur_score:
             break
-        elif new_score < cur_score:
+        elif new_score > cur_score:
             print "Got worse at iteration {}".format(cur_iteration)
         old_score = cur_score
         cur_score = new_score
@@ -896,7 +911,13 @@ def initialize_indices(word_list, segments):
 
 
 def word_lists_with_mapping(input_string):
-    stripped = re.sub(u'\([^()]+\)[^\u05d0-\u05ea\s]?', u'', input_string)
+    def clean(word_to_clean):
+        return bleach.clean(word_to_clean, tags=[], attributes={}, strip=True)
+
+    input_string = re.sub(u'<br>', u' ', input_string)  # We're moving to depth 3 - inline <br> is getting dropped
+    stripped = re.sub(u'\([^()]+\)[^\u05d0-\u05ea<>\s]?', u'', input_string)
+    stripped = re.sub(u'[\u0591-\u05C7]', u'', stripped)
+    stripped = clean(stripped)
     stripped = re.sub(u'\s{2,}', u' ', stripped)
     with_paren, without_paren = input_string.split(), stripped.split()
     iter_with_paren = enumerate(input_string.split())
@@ -904,35 +925,57 @@ def word_lists_with_mapping(input_string):
 
     for word in without_paren:
         long_index, long_word = iter_with_paren.next()
-        while word != long_word:
+        while word != re.sub(u'[\u0591-\u05C7]', u'', clean(long_word)):
             long_index, long_word = iter_with_paren.next()
         index_mapping.append(long_index)
 
     return with_paren, without_paren, index_mapping
 
 
-c1 = Ref("Likutei Moharan 1")
-c1_text = c1.text('he')
-long_form, short_form, mapping = word_lists_with_mapping(u' '.join(c1_text.text))
-with open("QA_files/Chapter1_data.csv") as fp:
-    my_rows = [r['Hebrew'] for r in unicodecsv.DictReader(fp)]
-while not my_rows[-1]:
-    my_rows.pop()
+def generate_new_segmentation(chapter, part_2=False, print_alignment=False):
+    if part_2:
+        c_ref = Ref("Likutei Moharan, Part II:{}".format(chapter))
+    else:
+        c_ref = Ref("Likutei Moharan:{}".format(chapter))
 
-short_rows = [re.sub(u'\([^()]+\)', u'', r) for r in my_rows]
-short_rows = [re.sub(u'\s{2,}', u' ', r) for r in short_rows]
+    print "Aligning {}".format(c_ref.normal())
 
-initial_indices = initialize_indices(short_form, short_rows)
-print initial_indices
-my_indices = find_best_indices(short_form, short_rows, indices=initial_indices, num_iterations=100)
-print my_indices
-fixed_indices = [mapping[ind] for ind in my_indices]
-print fixed_indices
+    c_text = c_ref.text('he')
+    long_form, short_form, mapping = word_lists_with_mapping(u' '.join(c_text.text))
 
-output_rows = []
-for s, e, bri in zip([0] + fixed_indices, fixed_indices + [len(long_form)], my_rows):
-    output_rows.append(u'{}\n'.format(u' '.join(long_form[s:e])))
-    output_rows.append(u'\n{}\n\n\n'.format(bri))
-with codecs.open('results.txt', 'w', 'utf-8') as fp:
-    fp.writelines(output_rows)
-# prof("find_best_indices(c1_words, my_rows, num_iterations=1)")
+    if part_2:
+        input_filename = "QA_files/Part2_Chapter{}_data.csv".format(chapter)
+    else:
+        input_filename = "QA_files/Chapter{}_data.csv".format(chapter)
+    with open(input_filename) as fp:
+        my_rows = [r['Hebrew'] for r in unicodecsv.DictReader(fp)]
+    while not my_rows[-1]:
+        my_rows.pop()
+
+    short_rows = [re.sub(u'\([^()]+\)', u'', r) for r in my_rows]
+    short_rows = [re.sub(u'[\u0591-\u05C7]', u'', r) for r in short_rows]
+    short_rows = [re.sub(u'\s{2,}', u' ', r) for r in short_rows]
+
+    initial_indices = initialize_indices(short_form, short_rows)
+    print initial_indices
+    my_indices = find_best_indices(short_form, short_rows, indices=initial_indices, num_iterations=500)
+    print my_indices
+    fixed_indices = [mapping[ind] for ind in my_indices]
+    print fixed_indices
+
+    segments = []
+    for start, end in zip([0] + fixed_indices, fixed_indices + [len(long_form)]):
+        segments.append(u' '.join(long_form[start:end]))
+
+    if print_alignment:
+        output_rows = []
+        for cur_seg, (sef, bri) in enumerate(zip(segments, my_rows)):
+            output_rows.append(u'{}:\n{}\n'.format(cur_seg, sef))
+            output_rows.append(u'\n{}\n\n\n'.format(bri))
+        with codecs.open('results.txt', 'w', 'utf-8') as fp:
+            fp.writelines(output_rows)
+
+    return fixed_indices, segments
+
+
+random_stuff = generate_new_segmentation(4, print_alignment=True)
