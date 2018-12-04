@@ -570,15 +570,28 @@ class Nested(object):
 
         for i, obj in enumerate(self.segment_objs):
             if isinstance(obj, Text): #and isinstance(self.segment_objects[i-1], Source):
-                if isinstance(self.segment_objs[i-1], Source):
+                if isinstance(self.segment_objs[i - 1], Source):
                     self.segment_objs[i] = self.segment_objs[i - 1].add_text(obj.sp_segment, obj.segment_class)
                     if isinstance(self.segment_objs[i], Text):
                         self.segment_objs.pop(i)
+                elif not obj.ref_guess:
+                    try:
+                        source_guess = [x for x in self.segment_objs[0:i+1] if (isinstance(x, Source))][-1]
+                        source_guess_ref = source_guess.ref
+                    except:
+                        source_guess_ref = None
+                    if source_guess_ref:
+                        temp_source = Source(source_guess_ref)
+                        temp_source.text = self.segment_objs[i].sp_segment.text
+                        temp_source.segment_class = self.segment_objs[i].segment_class
+                        self.segment_objs[i] = temp_source
+
                 else:
                     if obj.ref_guess:
                         self.segment_objs[i] = Source(obj.ref_guess)
                         self.segment_objs[i].add_text(obj.sp_segment)
                         self.segment_objs[i].parshan_id = obj.sp_segment.attrs.get("id")
+        pass
 
     def choose(self):
 
