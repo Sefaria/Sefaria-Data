@@ -344,7 +344,8 @@ class Question(object):
         table_html = str(segment)  # todo: fix this line, why are we losing so much data here?
         segs = [s for s in segment.find_all('p') if not s.parent.has_attr('class')]
         any([s.attrs for s in segs])
-        self.q_text = u" ".join([bleach.clean(str(s), tags=["u", "b", "table", "td", "tr", "p", "br"], strip=True).strip() for s in segment.find_all('p') if not s.parent.has_attr('class')])
+        self.q_text = u" ".join([bleach.clean(str(s), tags=["u", "b", "table", "td", "tr", "br"], strip=True).strip() for s in segment.find_all('p') if not s.parent.has_attr('class')])
+        # self.q_text = re.search(u"<p>(.*?)<.?p>", self.q_text).group(1)
         self.text = self.format()
         self.q_source = segment
 
@@ -390,15 +391,12 @@ class Question(object):
         to present outside sources in source sheets) the number and difficulty
         """
         print self.q_text
-        # if re.search(u'>(.*?)<', self.q_text):
-        #     text = re.search(u'>(.*?)<',  self.q_text).group(1)
-        # else:
         text = self.q_text
         if "number" not in without_params:
-            text= str(self.number) + ' ' + text
+            text = self.number + u' ' + text
         # difficulty is first in the order
         if "difficulty" not in without_params:
-            text = str(difficulty_symbol[self.difficulty]) + ' ' + text
+            text = difficulty_symbol[self.difficulty] + u' ' + text
 
         return text
 

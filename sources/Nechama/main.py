@@ -148,14 +148,19 @@ class Sheet(object):
                         segment.ref = segment.about_source_ref
                 seg_sheet_source = segment.create_source()
             elif isinstance(segment, Nested):
-                seg_sheet_source = self.create_sheetsources_from_sections(segment.segment_objs)
                 if segment.question:
                     q_source = Question(question=segment.question)
-                    if 'outsideText' in seg_sheet_source[0].keys():
-                        q_source.q_text = seg_sheet_source[0]["outsideText"]
-                        seg_sheet_source[0]["outsideText"] = q_source.format()
-                    elif 'text' in seg_sheet_source[0]:
-                        print "FOUND ONE!" # {}".format(segment) do this in a higher place.
+                    if isinstance(segment.segment_objs[0], Source):
+                        q_source.q_text = segment.segment_objs[0].ref
+                        segment.segment_objs[0].ref = q_source.format()
+
+                        q_source.q_text = segment.segment_objs[0].about_source_ref
+                        segment.segment_objs[0].about_source_ref = q_source.format()
+                    else:
+                        q_source.q_text = segment.segment_objs[0].text
+                        segment.segment_objs[0].text = q_source.format()
+                seg_sheet_source = self.create_sheetsources_from_sections(segment.segment_objs)
+
             else:
                 seg_sheet_source = segment.create_source()
             self.add_to_word_count(seg_sheet_source)
