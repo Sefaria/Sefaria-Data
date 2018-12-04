@@ -1310,7 +1310,10 @@ class Nechama_Parser:
                 parser.non_matches[parser.current_file_path] = []
                 parser.index_not_found[parser.current_file_path] = []
                 parser.ref_not_found[parser.current_file_path] = []
-                content = BeautifulSoup(open("{}".format(html_sheet)), "lxml")
+                with open("{}".format(html_sheet)) as f:
+                    file_content = f.read()
+                    file_content = file_content.replace("<U>", "<B>").replace("</U>", "</B>").replace("<u>", "<b>").replace("</u>", "</b>")
+                content = BeautifulSoup(file_content, "lxml")
                 parser.haftarah_mode = u"הפטרה" in content.text or u"הפטרת" in content.text
                 # if not parser.haftarah_mode:
                 #     continue
@@ -1516,9 +1519,9 @@ if __name__ == "__main__":
     posting = True
     individual = None
 
-    for which_parshiot in [genesis_parshiot]: #exodus, leviticus, numbers work
+    for which_parshiot in [devarim_parshiot]:
         print "NEW BOOK"
-        for parsha in ["Bereshit"]:
+        for parsha in ["Devarim"]:
             book = which_parshiot[0]
             parser = Nechama_Parser(book, parsha, "fast", "377.html", catch_errors=catch_errors) #accurate
             #parser.prepare_term_mapping()  # must be run once locally and on sandbox
@@ -1528,7 +1531,7 @@ if __name__ == "__main__":
             # pos_anything_before = sheets.index(anything_before)
             # sheets = sheets[pos_anything_before:]
             # sheets = sheets[sheets.index("163.html")::]
-            sheets = ["527.html"]
+            sheets = ["377.html"]
             if individual:
                 got_sheet = parser.bs4_reader(["html_all/{}.html".format(individual)] if "{}.html".format(individual) in os.listdir("html_sheets/{}".format(parsha)) else [], post=posting)
             else:

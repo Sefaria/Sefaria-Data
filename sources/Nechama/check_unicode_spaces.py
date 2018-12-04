@@ -10,7 +10,7 @@ for sheet in sheets:
     for i, source in enumerate(sources):
         text = source["text"]["he"] if "text" in source.keys() else source["outsideText"]
         text = text.replace(unichr(160), " ")
-        if text.rfind("    ") > text.find("    ") > 0:
+        if text.rfind("    ") > 4+text.find("    ") > 0 and len(text) < 200:
             count += 1
             print "{}:{}".format(sheet["id"], i+1)
             print text
