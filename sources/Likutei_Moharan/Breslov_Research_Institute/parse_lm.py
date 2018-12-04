@@ -40,6 +40,7 @@ import numpy
 import bleach
 import codecs
 import random
+import requests
 import unicodecsv
 from tqdm import tqdm
 from functools import partial
@@ -50,6 +51,7 @@ from itertools import izip_longest
 from xml.sax.saxutils import unescape, escape
 from bs4 import BeautifulSoup, Tag, NavigableString
 from data_utilities.util import WeightedLevenshtein
+from Levenshtein import distance
 
 import django
 django.setup()
@@ -816,14 +818,20 @@ def generate_files_for_editing():
 class LevenshteinCalc(object):
 
     def __init__(self):
-        self.wl = WeightedLevenshtein()
+        # self.wl = WeightedLevenshtein()
+        self._cache = {}
 
     def __call__(self, word_list, segments, indices):
         scores = []
         for start, end, segment in zip([0] + indices, indices + [len(word_list)], segments):
             new_seg = u' '.join(word_list[start:end])
-            # length_penalty = abs(len(segment.split()) - (end - start))
-            scores.append(self.wl.calculate(segment, new_seg, normalize=False))
+
+            # scores.append(self.wl.calculate(segment, new_seg, normalize=False))
+            cur_score = self._cache.get((segment, new_seg), None)
+            if cur_score is None:
+                cur_score = distance(segment, new_seg)
+                self._cache[(segment, new_seg)] = cur_score
+            scores.append(cur_score)
         return sum(scores)
 
 
@@ -837,7 +845,7 @@ class LevenshteinCalc(object):
 calculate_error_levenshtein = LevenshteinCalc()
 
 
-def find_best_indices(word_list, segments, indices=None, num_iterations=10000):
+def find_best_indices(word_list, segments, indices=None, num_iterations=10000, verbose=False):
     if indices is None:
         indices = sorted(random.sample(range(1, len(word_list)), len(segments) - 1))
     assert len(segments) - len(indices) == 1
@@ -849,7 +857,8 @@ def find_best_indices(word_list, segments, indices=None, num_iterations=10000):
     last_index_ceiling = len(word_list) - 1
 
     while cur_iteration < num_iterations:
-        print "Iteration {}: score = {}".format(cur_iteration, cur_score)
+        if cur_iteration % 10 == 0 and verbose:
+            print "Epoch {}: score = {}".format(cur_iteration, cur_score)
         for i in range(len(indices)):
             # print '{} / {}'.format(i, len(indices))
             add, subtract = indices[:], indices[:]
@@ -876,7 +885,7 @@ def find_best_indices(word_list, segments, indices=None, num_iterations=10000):
 
         if new_score == cur_score:
             break
-        elif new_score > cur_score:
+        elif new_score > cur_score and verbose:
             print "Got worse at iteration {}".format(cur_iteration)
         old_score = cur_score
         cur_score = new_score
@@ -912,10 +921,13 @@ def initialize_indices(word_list, segments):
 
 
 def repl_for_refs(match_obj):
-    if library.get_refs_in_string(match_obj.group(), citing_only=True):
+    matched_string = match_obj.group()
+    # if library.get_refs_in_string(matched_string, citing_only=True):
+    #     return u''
+    if len(matched_string.split()) <= 8:
         return u''
     else:
-        return match_obj.group()
+        return matched_string
 
 
 def word_lists_with_mapping(input_string):
@@ -924,7 +936,7 @@ def word_lists_with_mapping(input_string):
 
     input_string = re.sub(u'<br>', u' ', input_string)  # We're moving to depth 3 - inline <br> is getting dropped
     stripped = re.sub(u'[\u0591-\u05C7]', u'', input_string)
-    stripped = re.sub(u'\([^()]+\)[^\u05d0-\u05ea<>\s]?', u'', stripped)
+    stripped = re.sub(u'\([^()]+\)[^\u05d0-\u05ea<>\s]*', repl_for_refs, stripped)
     stripped = clean(stripped)
     stripped = re.sub(u'\s{2,}', u' ', stripped)
     with_paren, without_paren = input_string.split(), stripped.split()
@@ -933,8 +945,12 @@ def word_lists_with_mapping(input_string):
 
     for word in without_paren:
         long_index, long_word = iter_with_paren.next()
-        while word != re.sub(u'[\u0591-\u05C7]', u'', clean(long_word)):
+        cleaned_long_word = re.sub(u'[\u0591-\u05C7]', u'', clean(long_word))
+        while word != cleaned_long_word:
+            if len(cleaned_long_word) > 1 and re.search(u'^{}|{}$'.format(re.escape(word), re.escape(word)), cleaned_long_word):
+                break
             long_index, long_word = iter_with_paren.next()
+            cleaned_long_word = re.sub(u'[\u0591-\u05C7]', u'', clean(long_word))
         index_mapping.append(long_index)
 
     return with_paren, without_paren, index_mapping
@@ -969,7 +985,7 @@ def generate_new_segmentation(chapter, part_2=False, print_alignment=False, min_
         my_rows.pop()
 
     short_rows = [re.sub(u'[\u0591-\u05C7]', u'', r) for r in my_rows]
-    short_rows = [re.sub(u'\([^()]+\)', u'', r) for r in short_rows]
+    short_rows = [re.sub(u'\([^()]+\)', repl_for_refs, r) for r in short_rows]
     short_rows = [re.sub(u'\s{2,}', u' ', r) for r in short_rows]
 
     # short segments tend to mess with the alignment. combine these with larger segments for the primary alignment
@@ -982,7 +998,7 @@ def generate_new_segmentation(chapter, part_2=False, print_alignment=False, min_
     initial_rows = [u' '.join(segs) for segs in compound_rows]
 
     initial_indices = initialize_indices(short_form, initial_rows)
-    aligned_indices = find_best_indices(short_form, initial_rows, indices=initial_indices, num_iterations=500)
+    aligned_indices = find_best_indices(short_form, initial_rows, indices=initial_indices, num_iterations=500, verbose=True)
 
     new_indices = list()
     for compound_row, start, end in zip(compound_rows, [0]+aligned_indices, aligned_indices+[len(short_form)]):
@@ -1010,7 +1026,78 @@ def generate_new_segmentation(chapter, part_2=False, print_alignment=False, min_
         with codecs.open('results.txt', 'w', 'utf-8') as fp:
             fp.writelines(output_rows)
 
-    return fixed_indices, segments
+    return segments, my_rows
 
 
-random_stuff = generate_new_segmentation(5, print_alignment=True, min_seg=40)
+def dump_aligned_for_editing(start_from=1, part_2=False, stop_at=None, include_bri=False):
+    if not stop_at:
+        if part_2:
+            stop_at = 125
+        else:
+            stop_at = 286
+
+    for chapter_num in range(start_from, stop_at+1):
+        if part_2:
+            filename = u'./QA_files/Part2_Chapter{}_data.csv'.format(chapter_num)
+        else:
+            filename = u'./QA_files/Chapter{}_data.csv'.format(chapter_num)
+        if not part_2 and chapter_num == 71:  # we're missing chapter 71
+            continue
+
+        with open(filename) as fp:
+            cfile = CSVChapter(fp, chapter_num)
+        english = cfile.english_segments
+        sef_hebrew, bri_hebrew = generate_new_segmentation(chapter_num, part_2=part_2, min_seg=40)
+
+        f_start = chapter_num / 50 * 50
+        if f_start == 0:
+            f_start = 1
+        f_end = chapter_num / 50 * 50 + 50
+        if part_2:
+            if f_end > 125:
+                f_end = 125
+        else:
+            if f_end > 286:
+                f_end = 286
+
+        rows = []
+        headers = [u'Chapter', u'Segment #', u'English', u'Hebrew']
+        for num, (en_seg, he_seg, bri_seg) in enumerate(izip_longest(english, sef_hebrew, bri_hebrew, fillvalue=u''), 1):
+            rows.append({
+                u'Chapter': chapter_num,
+                u'Segment #': num,
+                u'English': en_seg,
+                u'Hebrew': he_seg,
+                u'BRI Hebrew': bri_seg
+            })
+
+        if include_bri:
+            headers.append(u'BRI Hebrew')
+        else:
+            for row in rows:
+                del row[u'BRI Hebrew']
+
+        if part_2:
+            filename = u'./manual_editing/Likutei_Moharan_Part2_{}-{}.csv'.format(f_start, f_end)
+        else:
+            filename = u'./manual_editing/Likutei_Moharan_{}-{}.csv'.format(f_start, f_end)
+        try:
+            with open(filename) as fp:
+                old_rows = list(unicodecsv.DictReader(fp))
+        except IOError:
+            old_rows = []
+
+        old_rows.extend(rows)
+        with open(filename, 'w') as fp:
+            writer = unicodecsv.DictWriter(fp, headers)
+            writer.writeheader()
+            writer. writerows(old_rows)
+
+        # if chapter_num % 10 == 0:
+        #     requests.post(os.environ['SLACK_URL'], json={'text': 'Completed Chapter {}'.format(chapter_num)})
+
+
+# dump_aligned_for_editing(start_from=261)
+# dump_aligned_for_editing(part_2=True)
+
+generate_new_segmentation(8, print_alignment=True, min_seg=40, part_2=False)
