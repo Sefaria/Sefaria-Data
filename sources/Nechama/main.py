@@ -92,7 +92,7 @@ class Sheet(object):
         for isegment, segment in enumerate(segment_objects):
             if not segment:
                 continue
-            if isinstance(segment, Source):  # or isinstance(segment, Nested):
+            if isinstance(segment, Source):# or isinstance(segment, Nested):
                 orig_ref = segment.ref
                 parser.trying_pm = 0
                 segment.guess_ref = guess_ref
@@ -146,7 +146,18 @@ class Sheet(object):
                     if success and segment.segment_class in [u'midrash', u'parshan'] and Ref(segment.ref).primary_category == u'Tanakh':
                         # mustbe a pm mistake go back to orig
                         segment.ref = segment.about_source_ref
-            seg_sheet_source = segment.create_source()
+                seg_sheet_source = segment.create_source()
+            elif isinstance(segment, Nested):
+                seg_sheet_source = self.create_sheetsources_from_sections(segment.segment_objs)
+                if segment.question:
+                    q_source = Question(question=segment.question)
+                    if 'outsideText' in seg_sheet_source[0].keys():
+                        q_source.q_text = seg_sheet_source[0]["outsideText"]
+                        seg_sheet_source[0]["outsideText"] = q_source.format()
+                    elif 'text' in seg_sheet_source[0]:
+                        print "FOUND ONE!" # {}".format(segment) do this in a higher place.
+            else:
+                seg_sheet_source = segment.create_source()
             self.add_to_word_count(seg_sheet_source)
             sheets_sources.extend(seg_sheet_source if isinstance(seg_sheet_source, list) else [seg_sheet_source])
             # print u"done with seg {}".format(isegment)
@@ -1511,27 +1522,28 @@ if __name__ == "__main__":
                                    "Terumah", "Tetzaveh", "Vayakhel", "Ki Tisa", "Pekudei"])
     leviticus_parshiot = (u"Leviticus", ["Vayikra", "Tzav", "Shmini", "Tazria", "Metzora", "Tazria-Metzora", "Achrei Mot",
                         "Kedoshim", "Achrei Mot-Kedoshim", "Emor", "Behar", "Bechukotai", "Behar-Bechukotai"])
-    numbers_parshiot = (u"Numbers", ["Matot-Masei", "Bamidbar", "Nasso", "Beha'alotcha", "Sh'lach Lach", "Korach", "Chukat",
+    numbers_parshiot = (u"Numbers", ["Matot-Masei", "Bamidbar", "Nasso", "Beha'alotcha", "Sh'lach", "Korach", "Chukat",
                         "Balak", "Pinchas", "Matot", "Masei"])
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
     posting = True
-    individual = None
+    individual = 377
 
-    for which_parshiot in [devarim_parshiot]:
+
+    for which_parshiot in [genesis_parshiot, devarim_parshiot]: #genesis_parshiot ,exodus_parshiot,leviticus_parshiot,numbers_parshiot,devarim_parshiot
         print "NEW BOOK"
-        for parsha in ["Devarim"]:
+        for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "377.html", catch_errors=catch_errors) #accurate
-            #parser.prepare_term_mapping()  # must be run once locally and on sandbox
+            parser = Nechama_Parser(book, parsha, "fast", "", catch_errors=catch_errors) #accurate
+            parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
-            sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
-            # anything_before = "7.html"
-            # pos_anything_before = sheets.index(anything_before)
-            # sheets = sheets[pos_anything_before:]
-            # sheets = sheets[sheets.index("163.html")::]
-            sheets = ["377.html"]
+            if not individual:
+                sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
+                # anything_before = "7.html"
+                # pos_anything_before = sheets.index(anything_before)
+                # sheets = sheets[pos_anything_before:]
+                # sheets = sheets[sheets.index("163.html")::]
             if individual:
                 got_sheet = parser.bs4_reader(["html_all/{}.html".format(individual)] if "{}.html".format(individual) in os.listdir("html_sheets/{}".format(parsha)) else [], post=posting)
             else:

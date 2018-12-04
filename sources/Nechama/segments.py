@@ -382,20 +382,23 @@ class Question(object):
         source = {"outsideText": str(segment)}
         return source
 
-    def format(self, without_params=[], difficulty_symbol = [u'', u'''<sup class="nechama">*</sup>''', u'''<sup class="nechama">**</sup>''']):
+    def format(self, without_params=[], difficulty_symbol = [u'<sup class="nechama"></sup>', u'''<sup class="nechama">*</sup>''', u'''<sup class="nechama">**</sup>''']):
         """
 
         :param without_params: list. ex: ["difficulty", "number"]
         :return: the text of the q the way it is presented in source sheets with/without (but for now the only way
         to present outside sources in source sheets) the number and difficulty
         """
+        print self.q_text
+        # if re.search(u'>(.*?)<', self.q_text):
+        #     text = re.search(u'>(.*?)<',  self.q_text).group(1)
+        # else:
         text = self.q_text
-
         if "number" not in without_params:
-            text= self.number + u' ' + text
+            text= str(self.number) + ' ' + text
         # difficulty is first in the order
         if "difficulty" not in without_params:
-            text = difficulty_symbol[self.difficulty] + u' ' + text
+            text = str(difficulty_symbol[self.difficulty]) + ' ' + text
 
         return text
 
