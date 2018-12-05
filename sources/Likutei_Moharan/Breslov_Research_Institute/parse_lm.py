@@ -845,7 +845,7 @@ class LevenshteinCalc(object):
 calculate_error_levenshtein = LevenshteinCalc()
 
 
-def find_best_indices(word_list, segments, indices=None, num_iterations=10000, verbose=False):
+def find_best_indices(word_list, segments, indices=None, num_iterations=1000, verbose=False):
     if indices is None:
         indices = sorted(random.sample(range(1, len(word_list)), len(segments) - 1))
     assert len(segments) - len(indices) == 1
@@ -855,15 +855,18 @@ def find_best_indices(word_list, segments, indices=None, num_iterations=10000, v
     old_score = cur_score
     cur_iteration = 0
     last_index_ceiling = len(word_list) - 1
+    learning_rate = cur_score / 10000 + 1
 
     while cur_iteration < num_iterations:
-        if cur_iteration % 10 == 0 and verbose:
+        if cur_iteration % 5 == 0 and verbose:
             print "Epoch {}: score = {}".format(cur_iteration, cur_score)
         for i in range(len(indices)):
-            # print '{} / {}'.format(i, len(indices))
+            new_learning_rate = cur_score / 5000 + 1
+            if new_learning_rate < learning_rate:
+                learning_rate = new_learning_rate
             add, subtract = indices[:], indices[:]
-            add[i] = indices[i] + 1
-            subtract[i] = indices[i] - 1
+            add[i] = indices[i] + learning_rate
+            subtract[i] = indices[i] - learning_rate
 
             if i == 0:
                 if subtract[i] <= 0:
@@ -884,7 +887,10 @@ def find_best_indices(word_list, segments, indices=None, num_iterations=10000, v
         new_score = score_method(indices)
 
         if new_score == cur_score:
-            break
+            if learning_rate == 1:
+                break
+            else:
+                learning_rate -= 1
         elif new_score > cur_score and verbose:
             print "Got worse at iteration {}".format(cur_iteration)
         old_score = cur_score
@@ -893,7 +899,7 @@ def find_best_indices(word_list, segments, indices=None, num_iterations=10000, v
         cur_iteration += 1
     else:
         print "Did not converge. Old Score: {}; New Score: {}".format(old_score, cur_score)
-    return indices
+    return indices, cur_score
 
 
 def initialize_indices(word_list, segments):
@@ -998,7 +1004,7 @@ def generate_new_segmentation(chapter, part_2=False, print_alignment=False, min_
     initial_rows = [u' '.join(segs) for segs in compound_rows]
 
     initial_indices = initialize_indices(short_form, initial_rows)
-    aligned_indices = find_best_indices(short_form, initial_rows, indices=initial_indices, num_iterations=500, verbose=True)
+    aligned_indices, final_score = find_best_indices(short_form, initial_rows, indices=initial_indices, num_iterations=500, verbose=True)
 
     new_indices = list()
     for compound_row, start, end in zip(compound_rows, [0]+aligned_indices, aligned_indices+[len(short_form)]):
@@ -1006,7 +1012,7 @@ def generate_new_segmentation(chapter, part_2=False, print_alignment=False, min_
             continue
         word_list = short_form[start:end]
         initial_indices = initialize_indices(word_list, compound_row)
-        secondary_indices = find_best_indices(word_list, compound_row, indices=initial_indices, num_iterations=80)
+        secondary_indices, _ = find_best_indices(word_list, compound_row, indices=initial_indices, num_iterations=80)
         new_indices.extend([i+start for i in secondary_indices])
 
     for new_index in new_indices:
@@ -1026,7 +1032,7 @@ def generate_new_segmentation(chapter, part_2=False, print_alignment=False, min_
         with codecs.open('results.txt', 'w', 'utf-8') as fp:
             fp.writelines(output_rows)
 
-    return segments, my_rows
+    return segments, my_rows, final_score
 
 
 def dump_aligned_for_editing(start_from=1, part_2=False, stop_at=None, include_bri=False):
@@ -1047,7 +1053,7 @@ def dump_aligned_for_editing(start_from=1, part_2=False, stop_at=None, include_b
         with open(filename) as fp:
             cfile = CSVChapter(fp, chapter_num)
         english = cfile.english_segments
-        sef_hebrew, bri_hebrew = generate_new_segmentation(chapter_num, part_2=part_2, min_seg=40)
+        sef_hebrew, bri_hebrew, _ = generate_new_segmentation(chapter_num, part_2=part_2, min_seg=40)
 
         f_start = chapter_num / 50 * 50
         if f_start == 0:
@@ -1097,7 +1103,28 @@ def dump_aligned_for_editing(start_from=1, part_2=False, stop_at=None, include_b
         #     requests.post(os.environ['SLACK_URL'], json={'text': 'Completed Chapter {}'.format(chapter_num)})
 
 
-# dump_aligned_for_editing(start_from=261)
-# dump_aligned_for_editing(part_2=True)
+dump_aligned_for_editing(start_from=1)
+dump_aligned_for_editing(part_2=True)
 
-generate_new_segmentation(8, print_alignment=True, min_seg=40, part_2=False)
+# bad_chaps = []
+# for thing in range(1, 287):
+#     if thing == 71:
+#         continue
+#     _, _, my_score = generate_new_segmentation(thing, print_alignment=False, min_seg=40, part_2=False)
+#     if my_score > 1000:
+#         print "\nFinal Score: {}\n".format(my_score)
+#         bad_chaps.append((thing, my_score))
+# bad_chaps2 = []
+# for thing in range(1, 126):
+#     _, _, my_score = generate_new_segmentation(thing, part_2=True, min_seg=40)
+#     if my_score > 1500:
+#         print "\nFinal Score: {}\n".format(my_score)
+#         bad_chaps2.append((thing, my_score))
+#
+# print "\n\n---Bad Scores---\n\n"
+# for bad_chap in bad_chaps:
+#     print "Chapter {}: {}".format(*bad_chap)
+# for bad_chap in bad_chaps2:
+#     print "Part 2 Chapter {}:{}".format(*bad_chap)
+# print "\n\nTotal bad chapters: {}".format(len(bad_chaps) + len(bad_chaps2))
+# generate_new_segmentation(31, print_alignment=True, min_seg=40, part_2=False)
