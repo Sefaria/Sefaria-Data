@@ -86,7 +86,7 @@ class Source(object):
                 print u"diff words: {}".format(len(diff))
                 for w in diff:
                     print w
-                if len(diff) <= 3:
+                if len(diff) <= 2:
                     if self.get_sefaria_ref(self.ref):
                         return text
                     else:

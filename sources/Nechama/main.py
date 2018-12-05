@@ -1221,7 +1221,7 @@ class Nechama_Parser:
                 if len(text_to_use.split()) <= 1:
                     if isinstance(ref2check.text('he').text[0], list): #2d list
                         tc = strip_cantillation(" ".join(numpy.concatenate(ref2check.text('he').text)))
-                    else: #either string or 1d list
+                    else: # either string or 1d list
                         tc = ref2check.text('he').text if not isinstance(ref2check.text('he').text, list) else strip_cantillation(" ".join(ref2check.text('he').text))
                     if strip_cantillation(text_to_use, strip_vowels=True) in strip_cantillation(tc, strip_vowels=True).split():
                         current_source.ref = ref2check.normal()
@@ -1243,7 +1243,7 @@ class Nechama_Parser:
                                 assert parshan
                                 changed_ref = self.change_ref_to_commentary(ref2check, parshan)
                                 if changed_ref !=ref2check:
-                                    matched = self.check_reduce_sources(text_to_use, changed_ref)
+                                    matched1 = self.check_reduce_sources(text_to_use, changed_ref)
                             except KeyError:
                                 print u"parshan_id_table is missing a key and value for {}, in {}, \n text {}".format(current_source.parshan_id, self.current_file_path, current_source.text)
                             except AssertionError as e:
@@ -1533,14 +1533,14 @@ if __name__ == "__main__":
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
     posting = True
-    individual = 62
+    individual = 1
 
 
     for which_parshiot in [genesis_parshiot, devarim_parshiot]: #genesis_parshiot ,exodus_parshiot,leviticus_parshiot,numbers_parshiot,devarim_parshiot
         print "NEW BOOK"
         for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "accurate", "", catch_errors=catch_errors) #accurate
+            parser = Nechama_Parser(book, parsha, "accurate", "he_ref", catch_errors=catch_errors) #accurate
             parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             if not individual:
