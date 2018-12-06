@@ -113,6 +113,8 @@ class Sheet(object):
                         if re.search(u".*(?:on|,)\s((?:[^:]*?):(?:[^:]*)):?", segment.ref):
                             r_base = Ref(re.search(u".*(?:on|,)\s((?:[^:]*?):(?:[^:]*)):?", segment.ref).group(1))
                             guess_ref = r_base.normal()
+                            guess_parshan_name = Ref(segment.ref).index.title
+                            guess_parshan = [k for k,v in parser.parshan_id_table.items() if guess_parshan_name==v][0] if guess_parshan_name in parser.parshan_id_table.values() else guess_parshan
                     else:
                         guess_ref = segment.ref # if base text keep for the next source segment
                 elif not success:  # not success couldn't find matching text
@@ -1536,7 +1538,7 @@ if __name__ == "__main__":
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
     posting = True
-    individual = 1
+    individual = 62
 
 
     for which_parshiot in [genesis_parshiot, devarim_parshiot]: #genesis_parshiot ,exodus_parshiot,leviticus_parshiot,numbers_parshiot,devarim_parshiot

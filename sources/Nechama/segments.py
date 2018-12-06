@@ -390,7 +390,6 @@ class Question(object):
         :return: the text of the q the way it is presented in source sheets with/without (but for now the only way
         to present outside sources in source sheets) the number and difficulty
         """
-        print self.q_text
         text = self.q_text
         if "number" not in without_params:
             text = self.number + u' ' + text
