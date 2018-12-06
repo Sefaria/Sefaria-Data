@@ -865,30 +865,17 @@ def simple_to_complex(segment_names, jagged_text_array):
     return complex_text
 
 
-def convert_dict_to_array(dictionary):
+def convert_dict_to_array(dictionary, default_value=None):
+    assert all([isinstance(item, int) for item in dictionary.keys()])
+    if default_value is None:
+        def default_value(): return None
+    assert callable(default_value)
 
-    array = []
-    count = 1
-    sorted_keys = sorted(dictionary.keys())
-
-    for key in sorted_keys:
-
-        if count == key:
-
-            array.append(dictionary[key])
-            count += 1
-
-        else:
-            diff = key - count
-
-            while diff > 0:
-                array.append([])
-                diff -= 1
-
-            array.append(dictionary[key])
-            count = key+1
-
-    return array
+    output_list = list()
+    dictionary = defaultdict(default_value, **dictionary)
+    for key in range(max(dictionary.keys()) + 1):
+        output_list.append(dictionary[key])
+    return output_list
 
 
 def restructure_file(filename, function, *args):
