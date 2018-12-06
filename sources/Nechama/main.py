@@ -1185,7 +1185,7 @@ class Nechama_Parser:
             if comment_ind in Ref(comm).index.title:
                 return Ref(comm).section_ref()
         if self.en_sefer in comment_ind:
-            comment_ind = re.search(u'(.*?) on {}'.format(self.en_sefer), comment_ind).group(1)
+            comment_ind = re.search(u'(.*?) on (?:.*?){}'.format(self.en_sefer), comment_ind).group(1)
             for comm in commentators_on_ref:
                 if comment_ind in Ref(comm).index.title:
                     return Ref(comm).section_ref()
@@ -1233,22 +1233,25 @@ class Nechama_Parser:
                 else:
                     matched = self.check_reduce_sources(text_to_use, ref2check) # returns a list ordered by scores of mesorat hashas objs that were found
                     changed_ref = ref2check  # ref2chcek might get a better ref but also might not...
-                    if not matched:  # no match found  - parshan id try
-                        if current_source.parshan_id or guess_parshan:
-                            try:
-                                if not current_source.parshan_id:
-                                    current_source.parshan_id = guess_parshan
-                                parshan = parser.parshan_id_table[current_source.parshan_id]
-                                # chenged_ref = Ref(u'{} {}'.format(parshan, u'{}:{}'.format(ref2check.sections[0], ref2check.sections[1]) if len(ref2check.sections)>1 else u'{}'.format(ref2check[0])))
-                                assert parshan
-                                changed_ref = self.change_ref_to_commentary(ref2check, parshan)
-                                if changed_ref !=ref2check:
-                                    matched1 = self.check_reduce_sources(text_to_use, changed_ref)
-                            except KeyError:
-                                print u"parshan_id_table is missing a key and value for {}, in {}, \n text {}".format(current_source.parshan_id, self.current_file_path, current_source.text)
-                            except AssertionError as e:
-                                print e
-                                pass
+                    # if not matched:  # no match found  - parshan id try
+                    if current_source.parshan_id or guess_parshan:
+                        try:
+                            if not current_source.parshan_id:
+                                current_source.parshan_id = guess_parshan
+                            parshan = parser.parshan_id_table[current_source.parshan_id]
+                            # chenged_ref = Ref(u'{} {}'.format(parshan, u'{}:{}'.format(ref2check.sections[0], ref2check.sections[1]) if len(ref2check.sections)>1 else u'{}'.format(ref2check[0])))
+                            assert parshan
+                            changed_ref = self.change_ref_to_commentary(ref2check, parshan)
+                            if changed_ref !=ref2check:
+                                matched1 = self.check_reduce_sources(text_to_use, changed_ref)
+                                matched = matched if len(matched)>=len(matched1) else matched1
+                        except KeyError:
+                            print u"parshan_id_table is missing a key and value for {}, in {}, \n text {}".format(current_source.parshan_id, self.current_file_path, current_source.text)
+                        except AssertionError as e:
+                            print e
+                            pass
+                        except: # this is here because this small try shouldn't fly all the way to the try of all the PM and not use what it might have found. i know it is not good practice
+                            pass
                     # look one level up - todo: is checking level up duplicated?
                     if not matched:  # and parshan is a running parshan, still not matched! מלבים. אברבנל.העמק דבר רלבג
                         matched = self.check_reduce_sources(text_to_use, changed_ref.top_section_ref())
