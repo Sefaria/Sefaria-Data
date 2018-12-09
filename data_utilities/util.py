@@ -865,10 +865,8 @@ def simple_to_complex(segment_names, jagged_text_array):
     return complex_text
 
 
-def convert_dict_to_array(dictionary, default_value=None):
+def convert_dict_to_array(dictionary, default_value=list):
     assert all([isinstance(item, int) for item in dictionary.keys()])
-    if default_value is None:
-        def default_value(): return None
     assert callable(default_value)
 
     output_list = list()
