@@ -83,8 +83,6 @@ class Sheet(object):
 
 
 
-
-
     def create_sheetsources_from_sections(self, segment_objects):
         sheets_sources = []
         guess_ref = u""
@@ -940,7 +938,7 @@ class Section(object):
 
 
 class Nechama_Parser:
-    def __init__(self, en_sefer, en_parasha, mode, add_to_title='', catch_errors=False):
+    def __init__(self, en_sefer, en_parasha, mode, add_to_title='', catch_errors=False, looking_for_matches=True):
         if not os.path.isdir("reports/" + en_parasha): # todo: note! this said parsha instead of en_parasha
             os.mkdir("reports/" + en_parasha)
 
@@ -977,6 +975,7 @@ class Nechama_Parser:
         self.haftarah_mode = False
         self.parasha_and_haftarot = self.get_parasha_and_haftarot(self.en_parasha)
         self.trying_pm = 0
+        self.looking_for_matches = looking_for_matches
 
 
     def populate_term_mapping_and_id_table(self):
@@ -1196,6 +1195,8 @@ class Nechama_Parser:
     def try_parallel_matcher(self, current_source, guess_ref = None, guess_parshan = None):
         # if isinstance(current_source.ref, Ref):
         #     current_source.ref = current_source.ref.normal()
+        if not self.looking_for_matches:
+            return False
         try:
             try:
                 if not current_source.get_sefaria_ref(current_source.ref):
@@ -1323,6 +1324,7 @@ class Nechama_Parser:
         :param self:
         :return:
         """
+        found_tables = set()
         sheets = OrderedDict()
         for html_sheet in file_list_names:
             try:
@@ -1355,7 +1357,10 @@ class Nechama_Parser:
                 # sheet.sheet_remark = bleach.clean(sheet.sheet_remark, tags=["a"], strip=True)
                 sheet.parse_as_text()
                 sheet.create_sheetsources_from_objsource()
+                amt = self.check_tables(sheet.sources, sheet.sections)
                 sheet.prepare_sheet(add_to_title, post=post)
+                if amt > 0:
+                    found_tables.add(html_sheet)
             except Exception, e:
                 if parser.catch_errors:
                     self.error_report.write(html_sheet+": ")
@@ -1365,7 +1370,20 @@ class Nechama_Parser:
                     self.error_report.write("\n\n")
                 else:
                     raise
-        return sheets
+        return found_tables
+
+
+    def check_tables(self, sources, sections):
+        num_sections = len(sections)
+        num_tables = 0
+        for source in sources:
+            text = source["outsideText"] if "outsideText" in source.keys() else source["text"]["he"]
+            if "<table" in text:
+                num_tables += 1
+        assert num_tables >= num_sections, "Not enough header tables."
+        return num_tables - num_sections
+
+
 
     def record_report(self):
         if not self.catch_errors:
@@ -1537,16 +1555,18 @@ if __name__ == "__main__":
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
-    posting = True
-    individual = 62
 
+    posting = False
+    individual = None
 
-    for which_parshiot in [genesis_parshiot, devarim_parshiot]: #genesis_parshiot ,exodus_parshiot,leviticus_parshiot,numbers_parshiot,devarim_parshiot
+    found_tables_num = 0
+    found_tables = set()
+    for which_parshiot in [devarim_parshiot]:#[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
         print "NEW BOOK"
-        for parsha in which_parshiot[1]:
+        for parsha in ["Devarim"]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "accurate", "he_ref", catch_errors=catch_errors) #accurate
-            parser.prepare_term_mapping()  # must be run once locally and on sandbox
+            parser = Nechama_Parser(book, parsha, "fast", "", catch_errors=catch_errors, looking_for_matches=True)
+            #parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             if not individual:
                 sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
@@ -1554,17 +1574,20 @@ if __name__ == "__main__":
                 # pos_anything_before = sheets.index(anything_before)
                 # sheets = sheets[pos_anything_before:]
                 # sheets = sheets[sheets.index("163.html")::]
+            sheets = ["133.html"]
             if individual:
                 got_sheet = parser.bs4_reader(["html_all/{}.html".format(individual)] if "{}.html".format(individual) in os.listdir("html_sheets/{}".format(parsha)) else [], post=posting)
             else:
-                sheets = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets if sheet in os.listdir("html_sheets/{}".format(parsha)) and sheet != "163.html"], post=posting)
+                found_tables_in_parsha = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets])# if sheet in os.listdir("html_sheets/{}".format(parsha)) and sheet != "163.html"], post=posting)
+            found_tables = found_tables.union(found_tables_in_parsha)
+
             if catch_errors:
                 parser.record_report()
             if individual and got_sheet:
               break
         if individual and got_sheet:
             break
-    print 'Done'
+    print found_tables
     # print word_count
     # with open("sheets_linked_to_sheets.csv", 'w') as f:
     #     writer = UnicodeWriter(f)

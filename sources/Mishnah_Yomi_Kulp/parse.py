@@ -16,7 +16,7 @@ import textract
 import traceback
 import sys
 
-SERVER = "https://www.sefaria.org"
+SERVER = "http://localhost:8000"
 section_referenced_not_in_mishnah = []
 mishnah_wout_numbers_explanation_has = []
 mishnah_wout_numbers_explanation_wout = []
@@ -558,7 +558,7 @@ if __name__ == "__main__":
         if parsed_text[sefer]:
             try:
                 create_index(parsed_text[sefer], sefer, post=post)
-                #check_all_mishnayot_present_and_post(parsed_text[sefer], sefer, file, post=post)
+                check_all_mishnayot_present_and_post(parsed_text[sefer], sefer, file, post=post)
             except BookNameError as e:
                 print e
 

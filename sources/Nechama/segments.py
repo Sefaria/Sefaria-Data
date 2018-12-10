@@ -345,7 +345,7 @@ class Question(object):
         segs = [s for s in segment.find_all('p') if not s.parent.has_attr('class')]
         any([s.attrs for s in segs])
         self.q_text = u" ".join([bleach.clean(str(s), tags=["u", "b", "table", "td", "tr", "br"], strip=True).strip() for s in segment.find_all('p') if not s.parent.has_attr('class')])
-        # self.q_text = re.search(u"<p>(.*?)<.?p>", self.q_text).group(1)
+
         self.text = self.format()
         self.q_source = segment
 
@@ -390,12 +390,17 @@ class Question(object):
         :return: the text of the q the way it is presented in source sheets with/without (but for now the only way
         to present outside sources in source sheets) the number and difficulty
         """
-        text = self.q_text
+        print self.q_text
+        # if re.search(u'>(.*?)<', self.q_text):
+        #     text = re.search(u'>(.*?)<',  self.q_text).group(1)
+        # else:
+        text = self.q_text if isinstance(self.q_text, unicode) else self.q_text.decode('utf-8')
+
         if "number" not in without_params:
-            text = self.number + u' ' + text
+            text= unicode(self.number) + u' ' + text
         # difficulty is first in the order
         if "difficulty" not in without_params:
-            text = difficulty_symbol[self.difficulty] + u' ' + text
+            text = unicode(difficulty_symbol[self.difficulty]) + u' ' + text
 
         return text
 
@@ -405,7 +410,8 @@ class Table(object):
 
     def __init__(self, segment):
         self.text = bleach.clean(str(segment), tags=["u", "b", "table", "td", "tr", "p", "br"], strip=True)
-        self.text = re.sub("<p>.{1,2}</p>", "<br/>", self.text) # try to mimic formatting of HTML
+
+        #self.text = re.sub("<p>.{1,2}</p>", "<br/>", self.text) # try to mimic formatting of HTML
 
     @staticmethod
     def is_table(segment):
