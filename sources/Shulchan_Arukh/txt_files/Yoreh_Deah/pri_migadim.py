@@ -6,6 +6,10 @@ import codecs
 from data_utilities.util import ja_to_xml
 from data_utilities.util import getGematria, PlaceHolder, convert_dict_to_array
 
+import django
+django.setup()
+from sefaria.model import *
+
 with codecs.open(u'./part_1/שולחן ערוך יורה דעה חלק א משבצות זהב.txt', 'r', 'utf-8') as fp:
     my_lines = fp.readlines()
 
@@ -112,3 +116,22 @@ for line in my_lines:
 mishbetzot.append(chapter)
 
 ja_to_xml(mishbetzot, ['Siman', 'Seif', 'Paragraph'])
+
+links = []
+tur_chapters = Ref("Turei Zahav on Shulchan Arukh, Yoreh De'ah").all_subrefs()
+for c_num, (t_chap, pri_chap) in enumerate(zip(tur_chapters, mishbetzot), 1):
+    yd_ref = Ref(u"Shulchan Arukh, Yoreh De'ah {}".format(c_num))
+    yd_linkset = yd_ref.linkset()
+    t_seifim = t_chap.all_segment_refs()
+
+    if not 0 <= len(t_seifim) - len(pri_chap) <= 1:
+        print "Seif mismatch at chapter {}: {} in Tur, {} in Mishbetzot".format(c_num, len(t_seifim), len(pri_chap))
+        continue
+
+    for s_num, (t_seif, pri_seif) in enumerate(zip(t_seifim, pri_chap), 1):
+        m_ref = u"Pri Megadim, Mishbezot Zahav on Yoreh De'ah {}:{}".format(c_num, s_num)
+        links.append((t_seif.normal(), m_ref))
+        refs_from = list(set([i.normal() for i in yd_linkset.refs_from(t_seif)]))  # clear duplicates
+        if len(refs_from) > 1:
+            print u'Multiple refs at {}'.format(t_seif.normal())
+        links.append((refs_from[0], m_ref))
