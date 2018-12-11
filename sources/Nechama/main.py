@@ -1561,11 +1561,11 @@ if __name__ == "__main__":
 
     found_tables_num = 0
     found_tables = set()
-    for which_parshiot in [devarim_parshiot]:#[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
+    for which_parshiot in [exodus_parshiot]:#[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
         print "NEW BOOK"
-        for parsha in ["Devarim"]:
+        for parsha in ["Beshalach"]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "", catch_errors=catch_errors, looking_for_matches=True)
+            parser = Nechama_Parser(book, parsha, "fast", "", catch_errors=catch_errors, looking_for_matches=False)
             #parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             if not individual:
@@ -1574,7 +1574,7 @@ if __name__ == "__main__":
                 # pos_anything_before = sheets.index(anything_before)
                 # sheets = sheets[pos_anything_before:]
                 # sheets = sheets[sheets.index("163.html")::]
-            sheets = ["133.html"]
+            sheets = ["163.html"]
             if individual:
                 got_sheet = parser.bs4_reader(["html_all/{}.html".format(individual)] if "{}.html".format(individual) in os.listdir("html_sheets/{}".format(parsha)) else [], post=posting)
             else:

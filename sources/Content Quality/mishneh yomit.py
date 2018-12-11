@@ -2,21 +2,21 @@
 import django
 django.setup()
 from sefaria.model import *
-from sefaria.model.category import TocCategory
+
 #create new terms and categories
 t = Term()
-t.name = u"English Explanation of the Mishnah"
+t.name = u"English Explanation of Mishnah"
 t.add_primary_titles(t.name, u"ביאור אנגלי על המשנה")
 t.save()
 
 c = Category()
-c.path = ["Modern Works", "English Explanation of the Mishnah"]
-c.add_shared_term("English Explanation of the Mishnah")
+c.path = ["Modern Works", "English Explanation of Mishnah"]
+c.add_shared_term("English Explanation of Mishnah")
 c.save()
 mishnayot = ["Seder Moed", "Seder Kodashim", "Seder Zeraim", "Seder Nashim", "Seder Nezikin", "Seder Tahorot"]
 for mishnah in mishnayot:
     c = Category()
-    c.path = ["Modern Works", "English Explanation of the Mishnah", mishnah]
+    c.path = ["Modern Works", "English Explanation of Mishnah", mishnah]
     c.add_shared_term(mishnah)
     c.save()
 
@@ -37,8 +37,10 @@ for i, index in enumerate(indices):
     index.save()
     index.set_title(new_en, "en")
     index.save()
-    index.collective_title = "English Explanation of the Mishnah"
-    index.categories[1] = "English Explanation of the Mishnah"
+    index.collective_title = "English Explanation of Mishnah"
+    new_cat = list(index.categories)
+    new_cat[1] = "English Explanation of Mishnah"
+    index.categories = new_cat
     index.save()
     print "NOW CHANGING VERSION STATE TITLE"
     index = library.get_index(new_en)
@@ -47,11 +49,15 @@ for i, index in enumerate(indices):
     v.versionTitle = "Mishnah Yomit by Dr. Joshua Kulp"
     v.save()
 
-
 #delete old categories
+library.rebuild(include_toc=True)
 from sefaria.model.category import TocCategory
 c = Category().load({"path": ["Modern Works", "Mishnah Yomit"]})
 for toc_obj in c.get_toc_object().all_children():
     if isinstance(toc_obj, TocCategory):
+        print toc_obj, toc_obj.get_category_object().can_delete()
         toc_obj.get_category_object().delete()
+
+library.rebuild(include_toc=True)
+c = Category().load({"path": ["Modern Works", "Mishnah Yomit"]})
 c.delete()
