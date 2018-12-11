@@ -105,7 +105,7 @@ class Source(object):
         :param text:
         :return:
         """
-        if len(source_ref.split()) > 12:
+        if len(source_ref.split()) > 8:
             return u"{}<br/>{}".format(source_ref, text)
         else:
             return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(source_ref, text)
@@ -133,11 +133,20 @@ class Source(object):
 
         nested_source_refDisplayPosition = True if isinstance(comment, list) else False
         # is Sefaria ref
-        if self.get_sefaria_ref(self.ref):
+        if hasattr(self, 'number'):
             if self.about_source_ref:
-                comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False)
-            enRef = self.get_sefaria_ref(self.ref).normal()
+                self.about_source_ref = self.number + u' '+self.about_source_ref
+            else:
+                print 'has number dpesn"t have about to glue the number to'
+                assert True
+        if self.get_sefaria_ref(self.ref):
             heRef = self.get_sefaria_ref(self.ref).he_normal()
+            if self.about_source_ref:
+                if hasattr(self, 'number'):
+                    heRef = self.about_source_ref
+                else:
+                    comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False)
+            enRef = self.get_sefaria_ref(self.ref).normal()
             source = {"ref": enRef, "heRef": heRef,
                       "text":
                           {
@@ -188,6 +197,8 @@ class Source(object):
 
             if self.about_source_ref:
                 comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False) #use actual text if we can
+            elif self:
+                pass
             else:
                 comment = self.glue_ref_and_text(self.ref, comment, gray=True) # otherwise, use the ref we thought it was
             source = {"outsideText": comment,
@@ -213,7 +224,7 @@ class Source(object):
                       }
         else:
             raise InputError, "Didn't anticipate this case in the casses of ref on Source obj"
-        if nested_source_refDisplayPosition:
+        if nested_source_refDisplayPosition or hasattr(self, 'number') or u'<sup class="nechama">' in self.ref:
             source["options"]["indented"] = ""
         return source
 
@@ -619,9 +630,11 @@ class Nested(object):
 
     def glue_q_number(self, ourObj):
         number = self.question.number
+        difficulty = self.question.difficulty
         if isinstance(ourObj, Source):
-            ourObj.refDisplayPosition = "none"
-            ourObj.text = [number, ourObj.text]
+            # ourObj.refDisplayPosition = "none"
+            ourObj.number = number
+            ourObj.difficulty = difficulty
 
     def create_source(self):
         return_sheet_obj = []

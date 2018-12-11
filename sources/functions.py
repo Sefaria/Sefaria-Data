@@ -25,7 +25,7 @@ import base64
 import enchant
 import Levenshtein
 from functools import wraps
-from word2number import w2n
+# from word2number import w2n
 
 gematria = {}
 gematria[u'א'] = 1

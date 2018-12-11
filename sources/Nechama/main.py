@@ -112,7 +112,10 @@ class Sheet(object):
                             r_base = Ref(re.search(u".*(?:on|,)\s((?:[^:]*?):(?:[^:]*)):?", segment.ref).group(1))
                             guess_ref = r_base.normal()
                             guess_parshan_name = Ref(segment.ref).index.title
-                            guess_parshan = [k for k,v in parser.parshan_id_table.items() if guess_parshan_name==v][0] if guess_parshan_name in parser.parshan_id_table.values() else guess_parshan
+                            guess_parshan_opt = filter(lambda x: x[1]==guess_parshan_name, parser.parshan_id_table.items())
+                            if guess_parshan_opt:
+                                guess_parshan = filter(lambda x: x[1] == guess_parshan_name, parser.parshan_id_table.items())[0][0]
+
                     else:
                         guess_ref = segment.ref # if base text keep for the next source segment
                 elif not success:  # not success couldn't find matching text
@@ -151,11 +154,13 @@ class Sheet(object):
                 if segment.question:
                     q_source = Question(question=segment.question)
                     if isinstance(segment.segment_objs[0], Source):
-                        q_source.q_text = segment.segment_objs[0].ref
-                        segment.segment_objs[0].ref = q_source.format()
-
-                        q_source.q_text = segment.segment_objs[0].about_source_ref
-                        segment.segment_objs[0].about_source_ref = q_source.format()
+                        segment.segment_objs[0].number = q_source.number
+                        segment.segment_objs[0].difficulty = q_source.difficulty
+                        # q_source.q_text = segment.segment_objs[0].ref
+                        # segment.segment_objs[0].ref = q_source.format()
+                        #
+                        # q_source.q_text = segment.segment_objs[0].about_source_ref
+                        # segment.segment_objs[0].about_source_ref = q_source.format()
                     else:
                         q_source.q_text = segment.segment_objs[0].text
                         segment.segment_objs[0].text = q_source.format()
@@ -1017,6 +1022,7 @@ class Nechama_Parser:
             '6': u"Abarbanel on Torah, {}".format(self.en_sefer),  # Abarbanel_on_Torah,_Genesis
             '8': None,  # אהרליך, מקרא כפשוטו 400.4
             '11': None,  # בעל צידה לדרך 1092.3
+            '12': None,  # המהרז"ו 125.2
             '15': None,  # רבי יוסף אלבו
             '23': None,  #u"רבי אליעזר אשכנזי",
             '24': None,  # הואיל משה 504.2
@@ -1214,6 +1220,8 @@ class Nechama_Parser:
                 if u"Meshech Hochma" in current_source.ref:
                     ref2check = Ref(u"Meshech Hochma, {}".format(self.en_parasha))
             text_to_use = u""
+            if isinstance(current_source.text, list):
+                current_source.text = current_source.text[-1]
             if self.mode == "fast":
                 text_to_use = u" ".join(current_source.text.split()[0:15])
             elif self.mode == "accurate":
@@ -1556,16 +1564,16 @@ if __name__ == "__main__":
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
 
-    posting = False
-    individual = None
+    posting = True
+    individual = 125
 
     found_tables_num = 0
     found_tables = set()
-    for which_parshiot in [exodus_parshiot]:#[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
+    for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
         print "NEW BOOK"
-        for parsha in ["Beshalach"]:
+        for parsha in which_parshiot[1]:
             book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "", catch_errors=catch_errors, looking_for_matches=False)
+            parser = Nechama_Parser(book, parsha, "fast", "", catch_errors=catch_errors, looking_for_matches=True)
             #parser.prepare_term_mapping()  # must be run once locally and on sandbox
             #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
             if not individual:
@@ -1579,7 +1587,7 @@ if __name__ == "__main__":
                 got_sheet = parser.bs4_reader(["html_all/{}.html".format(individual)] if "{}.html".format(individual) in os.listdir("html_sheets/{}".format(parsha)) else [], post=posting)
             else:
                 found_tables_in_parsha = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets])# if sheet in os.listdir("html_sheets/{}".format(parsha)) and sheet != "163.html"], post=posting)
-            found_tables = found_tables.union(found_tables_in_parsha)
+                found_tables = found_tables.union(found_tables_in_parsha)
 
             if catch_errors:
                 parser.record_report()
