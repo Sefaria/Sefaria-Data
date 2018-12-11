@@ -1258,3 +1258,12 @@ class PlaceHolder(object):
 
     def get_stored_item(self):
         return self._obj_store
+
+
+def clean_whitespace(some_string):
+    """
+    Remove whitespace from beginning and end of string, as well as multiple spaces
+    :param basestring some_string:
+    :return:
+    """
+    return u' '.join(some_string.split())
