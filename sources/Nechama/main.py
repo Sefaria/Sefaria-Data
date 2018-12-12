@@ -413,7 +413,7 @@ class Section(object):
         if Header.is_header(sp_segment):
             return Header(sp_segment)  # self.segment_objects.append(Header(segment))
         elif Question.is_question(sp_segment):
-            nested_seg = Question.nested(sp_segment)
+            nested_seg = Nested.is_nested(sp_segment)  # Question.nested(sp_segment)
             if nested_seg:  # todo: so we know that this is a Nested Question! what to do with this info?
                 return Nested(Nested.is_nested(sp_segment), section=self, question=Question(sp_segment))
             else:
