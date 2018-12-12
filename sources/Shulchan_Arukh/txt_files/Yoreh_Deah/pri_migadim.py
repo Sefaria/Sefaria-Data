@@ -118,18 +118,21 @@ for line in my_lines:
 mishbetzot.append(chapter)
 
 links = []
-tur_chapters = Ref("Turei Zahav on Shulchan Arukh, Yoreh De'ah").all_subrefs()
-for c_num, (t_chap, pri_chap) in enumerate(zip(tur_chapters, mishbetzot), 1):
+taz_chapters = Ref("Turei Zahav on Shulchan Arukh, Yoreh De'ah").all_subrefs()
+for c_num, (t_chap, pri_chap) in enumerate(zip(taz_chapters, mishbetzot), 1):
     yd_ref = Ref(u"Shulchan Arukh, Yoreh De'ah {}".format(c_num))
     yd_linkset = yd_ref.linkset()
     t_seifim = t_chap.all_segment_refs()
 
     if not 0 <= len(t_seifim) - len(pri_chap) <= 1:
-        print "Seif mismatch at chapter {}: {} in Tur, {} in Mishbetzot".format(c_num, len(t_seifim), len(pri_chap))
+        print "Seif mismatch at chapter {}: {} in Taz, {} in Mishbetzot".format(c_num, len(t_seifim), len(pri_chap))
         continue
 
     for s_num, (t_seif, pri_seif) in enumerate(zip(t_seifim, pri_chap), 1):
-        m_ref = u"Pri Megadim, Mishbezot Zahav on Yoreh De'ah {}:{}".format(c_num, s_num)
+        if len(pri_seif) == 1:
+            m_ref = u"Pri Megadim on Yoreh De'ah, Mishbezot Zahav {}:{}:1".format(c_num, s_num)
+        else:
+            m_ref = u"Pri Megadim on Yoreh De'ah, Mishbezot Zahav {}:{}:1-{}".format(c_num, s_num, len(pri_seif))
         links.append((t_seif.normal(), m_ref))
         refs_from = list(set([i.normal() for i in yd_linkset.refs_from(t_seif)]))  # clear duplicates
         if len(refs_from) > 1:
@@ -321,6 +324,26 @@ for line in my_lines:
 chapter[seif_num - 1] = seif
 siftei.append(convert_dict_to_array(chapter))
 
-# ja_to_xml(siftei, ['Siman', 'Seif', 'Paragraph'])
+shach_chapters = Ref("Siftei Kohen on Shulchan Arukh, Yoreh De'ah").default_child_ref().all_subrefs()
+for c_num, (s_chap, pri_chap) in enumerate(zip(shach_chapters, siftei), 1):
+    yd_ref = Ref(u"Shulchan Arukh, Yoreh De'ah {}".format(c_num))
+    yd_linkset = yd_ref.linkset()
+    s_seifim = s_chap.all_subrefs()
+
+    if not 0 <= len(s_seifim) - len(pri_chap) <= 1:
+        print "Seif mismatch at chapter {}: {} in Shach, {} in Pri".format(c_num, len(s_seifim), len(pri_chap))
+        continue
+
+    for s_num, (s_seif, pri_seif) in enumerate(zip(s_seifim, pri_chap), 1):
+        if len(pri_seif) == 1:
+            pri_ref = u"Pri Megadim on Yoreh De'ah, Siftei Da'at {}:{}:1".format(c_num, s_num)
+        else:
+            pri_ref = u"Pri Megadim on Yoreh De'ah, Siftei Da'at {}:{}:1-{}".format(c_num, s_num, len(pri_seif))
+        links.append((s_seif.as_ranged_segment_ref().normal(), pri_ref))
+        refs_from = list(set([i.normal() for i in yd_linkset.refs_from(s_seif)]))
+        if len(refs_from) > 1:
+            print u'Multiple refs at {}'.format(s_seif.normal())
+        links.append((refs_from[0], pri_ref))
+
 for o in opening_list:
     print o['title'], o['type']
