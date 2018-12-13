@@ -3,7 +3,7 @@
 import re
 import os
 import codecs
-from data_utilities.util import ja_to_xml
+from sources.functions import post_text, post_index, post_link, add_category
 from data_utilities.util import getGematria, PlaceHolder, convert_dict_to_array, clean_whitespace
 
 import django
@@ -184,6 +184,7 @@ for line in my_lines:
             assert re.match(u'^@11', line) is not None
             fixed_line = re.sub(u'@11([^@]+)@33', u'<b>\g<1></b>', line)
             fixed_line = re.sub(u'@\d{2}', u'', fixed_line)
+            fixed_line = re.sub(u'\s?\(#\)\s?', u' \u270d', fixed_line)
             fixed_line = clean_whitespace(fixed_line)
             current_opening.append(fixed_line)
 
@@ -263,6 +264,7 @@ for line in my_lines:
             assert re.match(u'^@(11|00)', line) is not None
             fixed_line = re.sub(u'@11([^@]+)@33', u'<b>\g<1></b>', line)
             fixed_line = re.sub(u'@\d{2}', u'', fixed_line)
+            fixed_line = re.sub(u'\s?\(#\)\s?', u' \u270d', fixed_line)
             fixed_line = clean_whitespace(fixed_line)
             current_opening.append(fixed_line)
 
@@ -324,6 +326,22 @@ for line in my_lines:
 chapter[seif_num - 1] = seif
 siftei.append(convert_dict_to_array(chapter))
 
+with codecs.open(u'./part_3/‏‏פרי מגדים שפתי דעת שולחן ערוך יורה דעה חלק ג.txt', 'r', 'utf-8') as fp:
+    my_lines = fp.readlines()
+
+chapter = []
+for line in my_lines:
+    if re.match(u'^@00', line):
+        continue
+    else:
+        assert re.match(u'^@11', line) is not None
+        fixed_line = re.sub(u'^@11[^@]+@33', u'', line)
+        fixed_line = re.sub(u'^[^\s]+(?=\s)', u'<b>\g<0></b>', fixed_line)
+        fixed_line = re.sub(u'@\d{2}', u'', fixed_line)
+        fixed_line = clean_whitespace(fixed_line)
+        chapter.append([fixed_line])
+siftei.append(chapter)
+
 shach_chapters = Ref("Siftei Kohen on Shulchan Arukh, Yoreh De'ah").default_child_ref().all_subrefs()
 for c_num, (s_chap, pri_chap) in enumerate(zip(shach_chapters, siftei), 1):
     yd_ref = Ref(u"Shulchan Arukh, Yoreh De'ah {}".format(c_num))
@@ -345,5 +363,109 @@ for c_num, (s_chap, pri_chap) in enumerate(zip(shach_chapters, siftei), 1):
             print u'Multiple refs at {}'.format(s_seif.normal())
         links.append((refs_from[0], pri_ref))
 
+# for i, o in enumerate(opening_list):
+#     print i, o['title'], o['type']
+#
+# print ''
+# for o in opening_list[7:]:
+#     print o['title']
+
+# todo: Get English Names for special sections and build Index
+# todo: Create Version Objects and upload
+# todo: upload
+
+he_titles = [
+    u'פתיחה להלכות שחיטה',
+    u'פתיחה להלכות טריפות',
+    u'פתיחה להלכות בדיקת הריאה',
+    u'פתיחה לסימן לט',
+    u'פתיחה להלכות מליחה',
+    u'פתיחה להלכות בשר בחלב',
+    u'פתיחה להלכות תערובות',
+    u'כלל סימנים וטביעת עין',
+    u'כלל איסור חל על איסור',
+    u'כלל רובא וחזקה',
+]
+
+en_titles = [
+    u'Introduction to the Laws of Ritual Slaughter',
+    u'Introduction to the Laws of Unslaughterable Animals',
+    u'Introduction to the Laws of Lung Examination',
+    u'Introduction to Siman 39',
+    u'Introduction to the Laws of Salting',
+    u'Introduction to the Laws of Meat with Milk',
+    u'Introduction to the Laws of Admixtures',
+    u"Klal Simanim uT'viat Eyin",
+    u'Klal Isur Chal Al Isur',
+    u'Klal Rov veChazakah'
+]
+title_mapping = dict(zip(he_titles, en_titles))
+
+root_node = SchemaNode()
+root_node.add_primary_titles(u"Pri Megadim on Yoreh De'ah", u"פרי מגדים על יורה דעה")
+z_node = JaggedArrayNode()
+z_node.add_primary_titles(u"Mishbezot Zahav", u"משבצות זהב")
+z_node.add_structure([u'Siman', u'Seif', u'Paragraph'])
+z_node.toc_zoom = 2
+for t_group in z_node.get_titles_object():
+    t_group['presentation'] = 'both'
+root_node.append(z_node)
+s_node = JaggedArrayNode()
+s_node.add_primary_titles(u"Siftei Da'at", u"שפתי דעת")
+s_node.add_structure([u'Siman', u'Seif', u'Paragraph'])
+s_node.toc_zoom = 2
+for t_group in s_node.get_titles_object():
+    t_group['presentation'] = 'both'
+root_node.append(s_node)
+
+# intro_node = SchemaNode()
+# intro_node.add_primary_titles(u"Introductions", u"פתיחות")
+# root_node.append(intro_node)
+
 for o in opening_list:
-    print o['title'], o['type']
+    node = JaggedArrayNode()
+    he_title = o['title']
+    en_title = title_mapping[he_title]
+    node.add_primary_titles(en_title, he_title)
+    node.add_structure([u'Paragraph'])
+    root_node.append(node)
+
+root_node.validate()
+my_index = {
+    u'title': u"Pri Megadim on Yoreh De'ah",
+    u'categories': [u"Halakhah", u"Shulchan Arukh", u"Commentary", u"Pri Megadim"],
+    u'dependence': u'Commentary',
+    u'collective_title': u'Pri Megadim',
+    u'base_text_titles': [u"Shulchan Arukh, Yoreh De'ah", u"Siftei Kohen on Shulchan Arukh, Yoreh De'ah",
+                          u"Turei Zahav on Shulchan Arukh, Yoreh De'ah"],
+    u'schema': root_node.serialize()
+}
+version = {
+    "versionTitle": "Ashlei Ravrevei: Shulchan Aruch Yoreh Deah, Lemberg, 1888",
+    "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002097765",
+    "language": "he",
+}
+
+server = 'http://primegadim.sandbox.sefaria.org'
+add_category(u"Pri Megadim", [u"Halakhah", u"Shulchan Arukh", u"Commentary", u"Pri Megadim"], server=server)
+post_index(my_index, server)
+
+text_list = [mishbetzot, siftei] + [o['text'] for o in opening_list]
+assert len(text_list) == len(root_node.get_leaf_nodes())
+for n, t in zip(root_node.get_leaf_nodes(), text_list):
+    title = n.full_title()
+    if title == "Pri Megadim on Yoreh De'ah, Klal Rov veChazakah":
+        index_count = "on"
+    else:
+        index_count = "off"
+    version['text'] = t
+    post_text(title, version, index_count=index_count, server=server)
+
+links = [{
+    'refs': l,
+    'type': 'commentary',
+    'auto': True,
+    'generated_by': 'Pri Megadim Parser'
+} for l in links]
+
+post_link(links, server)
