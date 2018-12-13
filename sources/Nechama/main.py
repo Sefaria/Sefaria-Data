@@ -86,7 +86,7 @@ class Sheet(object):
     def create_sheetsources_from_sections(self, segment_objects):
         sheets_sources = []
         guess_ref = u""
-        guess_parshan = 0
+        guess_parshan = '162'
         for isegment, segment in enumerate(segment_objects):
             if not segment:
                 continue
@@ -162,7 +162,7 @@ class Sheet(object):
                         # q_source.q_text = segment.segment_objs[0].about_source_ref
                         # segment.segment_objs[0].about_source_ref = q_source.format()
                     else:
-                        q_source.q_text = segment.segment_objs[0].text
+                        q_source.q_text = segment.segment_objs[0].text if hasattr(segment.segment_objs[0], 'text') else segment.segment_objs[0].sp_segment.text
                         segment.segment_objs[0].text = q_source.format()
                 seg_sheet_source = self.create_sheetsources_from_sections(segment.segment_objs)
 
@@ -332,6 +332,7 @@ class Section(object):
 
         # removes nodes with no content
         soup_segments = self.get_children_with_content(div)
+        soup_segments = self.check_for_blockquote_and_table(soup_segments)
         for segment in soup_segments:
             class_ = ""
             if isinstance(segment, element.Tag):
@@ -340,7 +341,6 @@ class Section(object):
                 self.RT_Rashi = True
         # blockquote is really just its children so get replace it with them
         # and tables  need to be handled recursively
-        # soup_segments = self.check_for_blockquote_and_table(soup_segments)
 
         # create Segment objects out of the BeautifulSoup objects
         self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
@@ -455,6 +455,8 @@ class Section(object):
                 nested_list = Nested.is_nested(sp_segment)
                 if nested_list:
                     return Nested(nested_list)
+                # else:
+                #     return Nechama_Comment(relevant_text)
 
     def look_at_next_segment(self):
         pass
@@ -599,6 +601,7 @@ class Section(object):
     def exctract_pasuk_from_snunit(a_tag):
         book_table = {1: u'Genesis', 2: u'Exodus', 3: u'Leviticus', 4: u'Numbers', 5: u'Deuteronomy',
                       6: u'Joshua',
+                      8: u'Samuel', #'8a': u'I Samuel', '8b': u'II Samuel',
                       7: u'Judges',
                       11:  u'Jeremiah',
                       12: u'Ezekiel',
@@ -613,12 +616,14 @@ class Section(object):
             # a4 = קד בתהילים, e5 קמה
             verse = match.group(3) if match.group(3) else u""
             if int(book_num) not in book_table.keys():
-                print u"********* book {}, {} \n {}, {}".format(book_num, a_tag['href'], a_tag.text)
+                print u"********* book {}, {} \n {}".format(book_num, a_tag['href'], a_tag.text)
                 return None
             if int(book_num) == 26:
                 psalms_ch_table = {'0': 0, 'a': 100, 'b': 110, 'c': 120, 'd': 130, 'e': 140, 'f': 150}
                 psalms_ch = lambda x: psalms_ch_table[x[0]]+int(x[1])
                 chapter = psalms_ch(chapter)
+            elif int(book_num) == 8:
+                return None  # todo: put in all the books ex. 1393 1 at the end
             book = book_table[int(book_num)]
             ref_st = u'{} {} {}'.format(book, chapter, verse).strip()
             r = Ref(ref_st)
@@ -882,9 +887,9 @@ class Section(object):
                 continue
             if segment.name == "blockquote":  # this is really many children so add them to list
                 new_segments += self.get_children_with_content(segment)
-            elif segment.name == "table" and class_ == "RT_RASHI":
-                    new_segments += self.find_all_p(segment)
-                    self.RT_Rashi = True
+            # elif segment.name == "table" and class_ == "RT_RASHI":
+            #         new_segments += self.find_all_p(segment)
+            #         self.RT_Rashi = True
                         # question_in_question = [child for child in segment.descendants if
                         #                   child.name == "table" and child.attrs["class"][0] in ["question", "question2"]]
                         # RT_in_question = [child for child in segment.descendants if
@@ -1042,6 +1047,7 @@ class Nechama_Parser:
             '59': None,  # ר' וולף היידנהיים 176.9
             '64': None,  # u'רש"ר הירש'
             '66': u"Meshech Hochma, {}".format(self.en_parasha),
+            '67': None,  # בעל דברי דוד 125.5
             '73': None,  # ר' נפתלי הירץ ויזל
             '78': u"Chizkuni, {}".format(self.en_sefer),  # u'החזקוני'
             '88': None,  # u'אברהם כהנא (פירוש מדעי)'
@@ -1165,7 +1171,7 @@ class Nechama_Parser:
     def check_reduce_sources(self, comment, ref):
         new_ref = []
         # rashbam on 821
-        if isinstance(ref.text('he').text, list) and all([isinstance(x, list) for x in ref.text('he').text]) and any([isinstance(x, int) for deep1 in ref.text('he').text for x in deep1]):
+        if isinstance(ref.text('he').text, list) and all(filter(lambda x: isinstance(x, list), ref.text('he').text)) and any([isinstance(x, int) for deep1 in ref.text('he').text for x in deep1]):
             print "OOF"
             return new_ref
         n = len(comment.split())
@@ -1182,15 +1188,25 @@ class Nechama_Parser:
         min_distance_between_matches=0, all_to_all=False, parallelize=False, verbose=False, calculate_score=self.get_score)
         if self.to_match:
             new_ref = pm.match(tc_list=[ref.text('he'), (comment, 1)], return_obj=True)
-            new_ref = [x for x in new_ref if x.score > 80]
+            new_ref = filter(lambda x: x.score > 80,  new_ref)
         return new_ref
 
     def change_ref_to_commentary(self, ref, comment_ind):
         ls = LinkSet(ref)
         commentators_on_ref = [x.refs[0] if x.refs[0] != ref.normal() else x.refs[1] for x in ls if Ref(x.refs[0]).is_commentary() or Ref(x.refs[1]).is_commentary()]
+        comment_ind = Ref(comment_ind).index.collective_title
+        options = []
+        interLenR = []
         for comm in commentators_on_ref:
             if comment_ind in Ref(comm).index.title:
-                return Ref(comm).section_ref()
+                if ref.index.title in Ref(
+                        comm).index.title:  # for places that we are looking for Rashi on a diffrent book 125.4
+                    options.append(Ref(comm).section_ref())
+        if options:
+            for r in options:
+                interLenR.append((r, len(filter(lambda x: x in ref.normal(), re_split_line(r.normal(), '(\s+|:)')))))
+            foundr = max(interLenR)[0]
+            return foundr.section_ref()
         if self.en_sefer in comment_ind:
             comment_ind = re.search(u'(.*?) on (?:.*?){}'.format(self.en_sefer), comment_ind).group(1)
             for comm in commentators_on_ref:
@@ -1225,7 +1241,10 @@ class Nechama_Parser:
             if self.mode == "fast":
                 text_to_use = u" ".join(current_source.text.split()[0:15])
             elif self.mode == "accurate":
-                text_to_use =u" ".join(current_source.text) if isinstance(current_source.text, list)  else current_source.text
+                if current_source.text.split() < 75:
+                    text_to_use =u" ".join(current_source.text) if isinstance(current_source.text, list) else current_source.text
+                else:
+                    text_to_use = u" ".join(current_source.text.split()[0:74])
             # todo: one Source obj for different Sefaria refs. how do we deal with this?
             if ref2check:
                 text_to_use = self.clean(text_to_use)  # .replace('"', '').replace("'", "")
@@ -1258,6 +1277,7 @@ class Nechama_Parser:
                                 matched = matched if len(matched)>=len(matched1) else matched1
                         except KeyError:
                             print u"parshan_id_table is missing a key and value for {}, in {}, \n text {}".format(current_source.parshan_id, self.current_file_path, current_source.text)
+                            pass
                         except AssertionError as e:
                             print e
                             pass
@@ -1265,6 +1285,11 @@ class Nechama_Parser:
                             pass
                     # look one level up - todo: is checking level up duplicated?
                     if not matched:  # and parshan is a running parshan, still not matched! מלבים. אברבנל.העמק דבר רלבג
+                        if current_source.text.split() < 75:
+                            text_to_use = u" ".join(current_source.text) if isinstance(current_source.text,
+                                                                                       list) else current_source.text
+                        else:
+                            text_to_use = u" ".join(current_source.text.split()[0:74])
                         matched = self.check_reduce_sources(text_to_use, changed_ref.top_section_ref())
                     # check Haftarah
                     if not matched and current_source.ref and parser.source_maybe_tanakh(
@@ -1326,7 +1351,7 @@ class Nechama_Parser:
             shutil.move(html_sheet, "html_sheets/" + parsha)
         return sheets
 
-    def bs4_reader(self, file_list_names, post = False, add_to_title = ""):
+    def bs4_reader(self, file_list_names, post = False, add_to_title = ''):
         """
         The main BeautifulSoup reader function, that etrates on all sheets and creates the obj, probably should be in it's own file
         :param self:
@@ -1378,7 +1403,7 @@ class Nechama_Parser:
                     self.error_report.write("\n\n")
                 else:
                     raise
-        return found_tables
+        return found_tables, sheets
 
 
     def check_tables(self, sources, sections):
@@ -1565,40 +1590,41 @@ if __name__ == "__main__":
     catch_errors = False
 
     posting = True
-    individual = 125
+    individuals = [1393,572,71,46,559,892,427] # 748,452,1073,829,544,277,899,246,490,986,988,717, 1373]
 
     found_tables_num = 0
     found_tables = set()
-    for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
-        print "NEW BOOK"
-        for parsha in which_parshiot[1]:
-            book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "", catch_errors=catch_errors, looking_for_matches=True)
-            #parser.prepare_term_mapping()  # must be run once locally and on sandbox
-            #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
-            if not individual:
-                sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
-                # anything_before = "7.html"
-                # pos_anything_before = sheets.index(anything_before)
-                # sheets = sheets[pos_anything_before:]
-                # sheets = sheets[sheets.index("163.html")::]
-            sheets = ["163.html"]
-            if individual:
-                got_sheet = parser.bs4_reader(["html_all/{}.html".format(individual)] if "{}.html".format(individual) in os.listdir("html_sheets/{}".format(parsha)) else [], post=posting)
-            else:
-                found_tables_in_parsha = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets])# if sheet in os.listdir("html_sheets/{}".format(parsha)) and sheet != "163.html"], post=posting)
-                found_tables = found_tables.union(found_tables_in_parsha)
+    for individual in individuals:
+        for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
+            print "NEW BOOK"
+            for parsha in which_parshiot[1]:
+                book = which_parshiot[0]
+                parser = Nechama_Parser(en_sefer=book, en_parasha=parsha, mode = "accurate", add_to_title="for QA", catch_errors=catch_errors, looking_for_matches=True)
+                #parser.prepare_term_mapping()  # must be run once locally and on sandbox
+                #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
+                if not individual:
+                    sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
+                    # anything_before = "7.html"
+                    # pos_anything_before = sheets.index(anything_before)
+                    # sheets = sheets[pos_anything_before:]
+                    # sheets = sheets[sheets.index("163.html")::]
+                # sheets = ["163.html"]
+                if individual:
+                    got_sheet = parser.bs4_reader(["html_all/{}.html".format(individual)] if "{}.html".format(individual) in os.listdir("html_sheets/{}".format(parsha)) else [], post=posting, add_to_title=parser.add_to_title)
+                else:
+                    found_tables_in_parsha = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets])# if sheet in os.listdir("html_sheets/{}".format(parsha)) and sheet != "163.html"], post=posting)
+                    found_tables = found_tables.union(found_tables_in_parsha)
 
-            if catch_errors:
-                parser.record_report()
-            if individual and got_sheet:
-              break
-        if individual and got_sheet:
-            break
-    print found_tables
-    # print word_count
-    # with open("sheets_linked_to_sheets.csv", 'w') as f:
-    #     writer = UnicodeWriter(f)
-    #     writer.writerows(sheets_linked_to_sheets)
+                if catch_errors:
+                    parser.record_report()
+                if individual and got_sheet[1]:
+                    break
+            if individual and got_sheet[1]:
+                break
+        print found_tables
+        # print word_count
+        # with open("sheets_linked_to_sheets.csv", 'w') as f:
+        #     writer = UnicodeWriter(f)
+        #     writer.writerows(sheets_linked_to_sheets)
 
 
