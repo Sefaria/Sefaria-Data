@@ -256,7 +256,9 @@ class MatchMatrix(object):
             init_comment_threshold_hit = c_skips == self.comment_word_skip_threshold
             # find potential start words in the daf, and explore
             last_possible_daf_word_index = self.daf_len - (self.comment_len - (self.comment_word_skip_threshold - c_skips) - len(self.jump_coordinates))
-            for word_index in self.matrix[c_skips, 0:last_possible_daf_word_index + 1].nonzero()[0]:
+            jumps_in_row = map(lambda x: x[0][1], filter(lambda x: x[0][0] == c_skips, self.jump_coordinates))
+            match_start_indices = list(self.matrix[c_skips, 0:last_possible_daf_word_index + 1].nonzero()[0]) + jumps_in_row
+            for word_index in match_start_indices:
                 word_paths = self._explore_path((c_skips, word_index), word_index, range(c_skips), [], [],
                                                 comment_threshold_hit=init_comment_threshold_hit,
                                                 daf_threshold_hit=init_base_threshold_hit,
@@ -552,14 +554,14 @@ def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(ur'\s+',x), 
     curDaf = GemaraDaf(base_word_list, [])
 
     best_dh_start = 0
-    best_dh_end = 0
     best_match = None
     for i in xrange(min_dh_len, max_dh_len+1):
         curRashi = RashiUnit(u' '.join(comment_word_list[best_dh_start:best_dh_start+i]),comment,0)
         matches = GetAllMatches(curDaf,curRashi,0,len(base_word_list)-1,word_threshold,char_threshold)
         if len(matches) > 0:
-            best_dh_end = best_dh_start + i
-            best_match = min(matches, key=lambda x: x.score)
+            temp_best_match = min(matches, key=lambda x: x.score)
+            if best_match is None or temp_best_match.score < best_match.score:
+                best_match = temp_best_match
         else:
             break
 
@@ -994,11 +996,11 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
             new_match = None
             if s == -1:
                 if prev_match != -1 and next_match != -1:
-                    new_match = (prev_match, next_match)
+                    new_match = (prev_match+1, next_match-1)
                 elif irm == 0 and next_match != -1:
-                    new_match = (0, next_match)
+                    new_match = (0, next_match-1)
                 elif irm == len(curDaf.allRashi) - 1 and prev_match != -1:
-                    new_match = (prev_match, len(curDaf.allWords) - 1)
+                    new_match = (prev_match+1, len(curDaf.allWords) - 1)
 
                 if not new_match is None and new_match[0] < new_match[1]:
                     curDaf.allRashi[irm].matchedGemaraText = u" ".join(curDaf.allWords[new_match[0]:new_match[1]+1])
