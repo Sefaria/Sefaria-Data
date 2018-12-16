@@ -601,29 +601,42 @@ class Section(object):
     def exctract_pasuk_from_snunit(a_tag):
         book_table = {1: u'Genesis', 2: u'Exodus', 3: u'Leviticus', 4: u'Numbers', 5: u'Deuteronomy',
                       6: u'Joshua',
-                      8: u'Samuel', #'8a': u'I Samuel', '8b': u'II Samuel',
                       7: u'Judges',
-                      11:  u'Jeremiah',
+                      81: u'I Samuel',
+                      82: u'II Samuel',
+                      91: u'I Kings',
+                      92: u'II Kings',
+                      10: u'Isaiah',
+                      11: u'Jeremiah',
                       12: u'Ezekiel',
-                      14: u'Joel',
-                      26: u'Psalms',}
-            #8: u'I Samuel', 9: u'II Samuel', 10: u'I Kings', 11: u'II Kings', 12: u'Isaiah', 13: u'Jeremiah', 14: u'Ezekiel', 15: u'Hosea', 16: u'Joel', 17: u'Amos', 18: u'Obadiah', 19: u'Jonah', 20: u'Micah', 21: u'Nahum', 22: u'Habakkuk', 23: u'Zephaniah', 24: u'Haggai', 25: u'Zechariah', 26: u'Malachi', 27: u'Psalms', 28: u'Proverbs', 29: u'Job', 30: u'Song of Songs', 31: u'Ruth', 32: u'Lamentations', 33: u'Ecclesiastes', 34: u'Esther', 35: u'Daniel', 36: u'Ezra', 37: u'Nehemiah', 38: u'I Chronicles', 39: u'II Chronicles'}
-        match = re.search(u"""kodesh\.snunit\.k12\.il/i/t/t(.{2})(.{2})\.htm#(\d*$)""", a_tag['href'])
+                      13: u'Hosea', 14: u'Joel', 15: u'Amos', 16: u'Obadiah', 17: u'Jonah', 18: u'Micah', 19: u'Nahum',
+                      20: u'Habakkuk', 21: u'Zephaniah', 22: u'Haggai', 23: u'Zechariah', 24: u'Malachi',
+                      251: u'I Chronicles',
+                      252: u'II Chronicles',
+                      26: u'Psalms',
+                      27: u'Job',
+                      28: u'Proverbs',
+                      29: u'Ruth', 30: u'Song of Songs', 32: u'Lamentations', 31: u'Ecclesiastes', 33: u'Esther',
+                      34: u'Daniel',
+                      351: u'Ezra',
+                      352: u'Nehemiah'
+                      }
+        match = re.search(u"""kodesh\.snunit\.k12\.il/i/tr?/t(?P<book>\d\d)(?P<onetwo>.?)(?P<ch>.\d)\.htm#?(?P<verse>\d*$)?""", a_tag['href'])
         r = None
         if match:
-            book_num = match.group(1)
-            chapter = match.group(2)
+            book_num = match.group('book')
+            chapter = match.group('ch')
             # a4 = קד בתהילים, e5 קמה
-            verse = match.group(3) if match.group(3) else u""
-            if int(book_num) not in book_table.keys():
-                print u"********* book {}, {} \n {}".format(book_num, a_tag['href'], a_tag.text)
-                return None
-            if int(book_num) == 26:
-                psalms_ch_table = {'0': 0, 'a': 100, 'b': 110, 'c': 120, 'd': 130, 'e': 140, 'f': 150}
+            onetwo = match.group('onetwo')
+            verse = match.group('verse')
+
+            if int(book_num) == 26 and not chapter[0].isdigit():
+                psalms_ch_table = {'a': 100, 'b': 110, 'c': 120, 'd': 130, 'e': 140, 'f': 150}
                 psalms_ch = lambda x: psalms_ch_table[x[0]]+int(x[1])
                 chapter = psalms_ch(chapter)
-            elif int(book_num) == 8:
-                return None  # todo: put in all the books ex. 1393 1 at the end
+            if onetwo:
+                onetwo= 1 if onetwo == 'a' else 2
+                book_num = int('{}{}'.format(book_num,onetwo))
             book = book_table[int(book_num)]
             ref_st = u'{} {} {}'.format(book, chapter, verse).strip()
             r = Ref(ref_st)
@@ -1590,7 +1603,7 @@ if __name__ == "__main__":
     catch_errors = False
 
     posting = True
-    individuals = [1393,572,71,46,559,892,427] # 748,452,1073,829,544,277,899,246,490,986,988,717, 1373]
+    individuals = [748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
 
     found_tables_num = 0
     found_tables = set()
@@ -1599,7 +1612,7 @@ if __name__ == "__main__":
             print "NEW BOOK"
             for parsha in which_parshiot[1]:
                 book = which_parshiot[0]
-                parser = Nechama_Parser(en_sefer=book, en_parasha=parsha, mode = "accurate", add_to_title="for QA", catch_errors=catch_errors, looking_for_matches=True)
+                parser = Nechama_Parser(en_sefer=book, en_parasha=parsha, mode = "accurate", add_to_title="", catch_errors=catch_errors, looking_for_matches=True)
                 #parser.prepare_term_mapping()  # must be run once locally and on sandbox
                 #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
                 if not individual:
