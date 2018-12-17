@@ -6,9 +6,9 @@ django.setup()
 # import urllib.requests
 import os
 import regex as re
-import unicodecsv as csv
 from sefaria.system.database import db
 import unicodedata
+import string
 
 from sefaria.model import *
 from sefaria.system.database import db
@@ -29,6 +29,9 @@ from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
 from data_utilities.util import WeightedLevenshtein
 import datetime
 import traceback
+from sources.functions import *
+import unicodecsv as csv
+
 
 def bs_read(fileName):
     with open(fileName) as f:
@@ -50,15 +53,25 @@ def bs_read(fileName):
         else:
             txt = clean_txt(tag.text)
             b.cit_list.append(txt)
+    t.citationsBb.append(b)
 
+    tanakh = []
     if t.citationsBb[0].bookname == 'before':
         for ic, c in enumerate(t.citationsBb[0].cit_list):
             if c == t.headWord:
-                # t.citationsBb[0].cit_list.pop(ic)
                 pass
-            elif re.search(u'ראה', c):
+            elif re.search(u'ראה', c) and re.search(u':', c):
                 txt_split = c.split(':')
-                t.see = txt_split[1]
+                see = re.sub(u"[\(\)]", u'', txt_split[1]).split(u',')
+                t.see = [re.sub(re.escape(string.punctuation), u'', s) for s in see]
+                # t.see = [re.sub(, u'', s) for s in see]
+            else:
+                tanakh.append(c)
+    t.citationsBb.pop(0)
+    if tanakh and t.citationsBb:
+        t.citationsBb[0] = BookCit(u'Tanakh')
+        t.citationsBb[0].cit_list = tanakh
+
     return t
 
 def clean_txt(text):
@@ -86,10 +99,17 @@ if __name__ == "__main__":
         file_reader = csv.DictReader(csvfile)
         for i, row in enumerate(file_reader):
             pass
-            # topic_le_table[row['']] =
+            fieldnames = file_reader.fieldnames
+            topic_le_table[row[u'he']] = row[u'en']
+    i = 0
     topics = dict()
     for file in os.listdir(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/001_ALEF"):
         if u'_' in file:
             continue
+        if file[:-5].isalpha():
+            continue
         t = bs_read(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/001_ALEF/{}".format(file))
-        topics[t.headWord] = t
+        i+=1
+        topics[i] = t
+        # topics[topic_le_table[clean_txt(t.headWord.replace(u"'", u"").replace(u"-", u""))]] = t
+    pass
