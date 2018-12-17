@@ -117,7 +117,7 @@ for line in my_lines:
         chapter.append([fixed_line])
 mishbetzot.append(chapter)
 
-links = []
+links, super_links = [], []
 taz_chapters = Ref("Turei Zahav on Shulchan Arukh, Yoreh De'ah").all_subrefs()
 for c_num, (t_chap, pri_chap) in enumerate(zip(taz_chapters, mishbetzot), 1):
     yd_ref = Ref(u"Shulchan Arukh, Yoreh De'ah {}".format(c_num))
@@ -137,7 +137,7 @@ for c_num, (t_chap, pri_chap) in enumerate(zip(taz_chapters, mishbetzot), 1):
         refs_from = list(set([i.normal() for i in yd_linkset.refs_from(t_seif)]))  # clear duplicates
         if len(refs_from) > 1:
             print u'Multiple refs at {}'.format(t_seif.normal())
-        links.append((refs_from[0], m_ref))
+        super_links.append((refs_from[0], m_ref))
 
 print "\n\nParsing Siftei Da'at"
 
@@ -361,7 +361,7 @@ for c_num, (s_chap, pri_chap) in enumerate(zip(shach_chapters, siftei), 1):
         refs_from = list(set([i.normal() for i in yd_linkset.refs_from(s_seif)]))
         if len(refs_from) > 1:
             print u'Multiple refs at {}'.format(s_seif.normal())
-        links.append((refs_from[0], pri_ref))
+        super_links.append((refs_from[0], pri_ref))
 
 # for i, o in enumerate(opening_list):
 #     print i, o['title'], o['type']
@@ -447,8 +447,8 @@ version = {
 }
 
 server = 'http://primegadim.sandbox.sefaria.org'
-add_category(u"Pri Megadim", [u"Halakhah", u"Shulchan Arukh", u"Commentary", u"Pri Megadim"], server=server)
-post_index(my_index, server)
+# add_category(u"Pri Megadim", [u"Halakhah", u"Shulchan Arukh", u"Commentary", u"Pri Megadim"], server=server)
+# post_index(my_index, server)
 
 text_list = [mishbetzot, siftei] + [o['text'] for o in opening_list]
 assert len(text_list) == len(root_node.get_leaf_nodes())
@@ -459,7 +459,7 @@ for n, t in zip(root_node.get_leaf_nodes(), text_list):
     else:
         index_count = "off"
     version['text'] = t
-    post_text(title, version, index_count=index_count, server=server)
+    # post_text(title, version, index_count=index_count, server=server)
 
 links = [{
     'refs': l,
@@ -467,5 +467,12 @@ links = [{
     'auto': True,
     'generated_by': 'Pri Megadim Parser'
 } for l in links]
+
+links += [{
+    'refs': l,
+    'type': 'super_commentary',
+    'auto': True,
+    'generated_by': 'Pri Megadim Parser'
+} for l in super_links]
 
 post_link(links, server)
