@@ -101,15 +101,24 @@ if __name__ == "__main__":
             pass
             fieldnames = file_reader.fieldnames
             topic_le_table[row[u'he']] = row[u'en']
-    i = 0
-    topics = dict()
-    for file in os.listdir(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/001_ALEF"):
-        if u'_' in file:
+    all_topics = dict()
+    for letter in os.listdir(u'/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/'):
+        if not os.path.isdir(u'/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/{}'.format(letter)):
             continue
-        if file[:-5].isalpha():
-            continue
-        t = bs_read(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/001_ALEF/{}".format(file))
-        i+=1
-        topics[i] = t
-        # topics[topic_le_table[clean_txt(t.headWord.replace(u"'", u"").replace(u"-", u""))]] = t
-    pass
+        i = 0
+        topics = dict()
+        for file in os.listdir(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/{}".format(letter)):
+            if u'_' in file:
+                continue
+            if file[:-5].isalpha():
+                continue
+            t = bs_read(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/{}/{}".format(letter, file))
+            i+=1
+            topics[i] = t
+            # topics[topic_le_table[clean_txt(t.headWord.replace(u"'", u"").replace(u"-", u""))]] = t
+        letter_name = re.search(u".*_(.*?$)", letter)
+        if letter_name:
+            letter_name = letter_name.group(1)
+            print u'{} headwords in the letter {}'.format(i, letter_name)
+        all_topics[letter_name] = topics
+    print u'done'
