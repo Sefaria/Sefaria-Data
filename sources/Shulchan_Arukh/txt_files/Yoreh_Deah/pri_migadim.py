@@ -447,8 +447,8 @@ version = {
 }
 
 server = 'http://primegadim.sandbox.sefaria.org'
-# add_category(u"Pri Megadim", [u"Halakhah", u"Shulchan Arukh", u"Commentary", u"Pri Megadim"], server=server)
-# post_index(my_index, server)
+add_category(u"Pri Megadim", [u"Halakhah", u"Shulchan Arukh", u"Commentary", u"Pri Megadim"], server=server)
+post_index(my_index, server)
 
 text_list = [mishbetzot, siftei] + [o['text'] for o in opening_list]
 assert len(text_list) == len(root_node.get_leaf_nodes())
@@ -459,7 +459,7 @@ for n, t in zip(root_node.get_leaf_nodes(), text_list):
     else:
         index_count = "off"
     version['text'] = t
-    # post_text(title, version, index_count=index_count, server=server)
+    post_text(title, version, index_count=index_count, server=server)
 
 links = [{
     'refs': l,
