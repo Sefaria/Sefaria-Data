@@ -119,9 +119,23 @@ class Source(object):
             pass
 
     def get_ref_from_api(self):
+
+        def clean_raw(st):
+            he_parashah_array = [u"בראשית", u"נח", u"לך לך", u"וירא", u"חיי שרה", u"תולדות", u"ויצא", u"וישלח", u"וישב", u"מקץ", u"ויגש", u"ויחי", u"שמות", u"וארא", u"בא", u"בשלח", u"יתרו", u"משפטים", u"תרומה", u"תצוה", u"כי תשא", u"ויקהל", u"פקודי", u"ויקרא", u"צו", u"שמיני", u"תזריע", u"מצורע", u"אחרי מות", u"קדושים", u"אמור", u"בהר", u"בחוקתי", u"במדבר", u"נשא", u"בהעלותך", u"שלח", u"קרח", u"חקת", u"בלק", u"פנחס", u"מטות", u"מסעי", u"דברים", u"ואתחנן", u"עקב", u"ראה", u"שופטים", u"כי תצא", u"כי תבוא", u"נצבים", u"וילך", u"האזינו", u"וזאת הברכה"]
+            for s in [u"מאמר", u"פרק"]:
+                st = re.sub(s, u"", st)
+            if self.author == u"משנה תורה":
+                st = u" הלכות" + st
+            elif self.author == u"ספר החינוך":
+                for s in he_parashah_array:
+                    st = re.sub(s, u"", st)
+                    st = re.sub(u"מצוה", u"", st)
+            return st
+
         if self.raw_ref:
-            print self.raw_ref.rawText
-            refs = library.get_refs_in_string(u'{}'.format(self.raw_ref.rawText))
+            new_ref = u"(" + self.author + u", " + re.sub(u"[)(]", u"", self.raw_ref.rawText) + u")"
+            print self.raw_ref.rawText,'\n', new_ref
+            refs = library.get_refs_in_string(new_ref)
             if refs:
                 assert len(refs) == 1
                 self.ref = refs[0]
@@ -130,8 +144,8 @@ class Source(object):
                 if re.search(u"^\(שם", self.raw_ref.rawText):
                     print u"*** is a Sham"
                 else:
-                    new_ref = u"(" + self.author + u" " + re.sub(u"[)(]", u"", self.raw_ref.rawText) + u")"
-                    print u"*** try new ref, new_ref = {}".format(new_ref)
+                    cleaned = clean_raw(new_ref)
+                    print u"*** try new ref, new_ref = {}".format(cleaned)
                     print library.get_refs_in_string(new_ref)
 
 class RawRef(object):
