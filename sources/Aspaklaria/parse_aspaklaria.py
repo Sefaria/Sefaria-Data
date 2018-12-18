@@ -2,39 +2,15 @@
 
 import django
 django.setup()
-# import bs4 as bs
-# import urllib.requests
-import os
-import regex as re
-from sefaria.system.database import db
-import unicodedata
+
+
+from bs4 import BeautifulSoup, element
+from sources.functions import *
 import string
-
-from sefaria.model import *
-from sefaria.system.database import db
-from bs4 import BeautifulSoup, element
-from collections import OrderedDict
-from sefaria.system.exceptions import InputError
-from collections import OrderedDict, Counter
-from bs4 import BeautifulSoup, element
-
-import numpy
-from time import sleep
-import bleach
-import shutil
-from sources.functions import *
-import unicodedata
-from sefaria.utils.hebrew import strip_cantillation
-from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
-from data_utilities.util import WeightedLevenshtein
-import datetime
-import traceback
-from sources.functions import *
 import unicodecsv as csv
 
-
 def bs_read(fileName):
-    with open(fileName) as f:
+    with codecs.open(fileName, encoding='utf-8') as f:
         file_content = f.read()
 
     content = BeautifulSoup(file_content, "lxml")
@@ -56,7 +32,7 @@ def bs_read(fileName):
     t.citationsBb.append(b)
 
     tanakh = []
-    if t.citationsBb[0].bookname == 'before':
+    if t.citationsBb[0].author == 'before':
         for ic, c in enumerate(t.citationsBb[0].cit_list):
             if c == t.headWord:
                 pass
@@ -74,15 +50,46 @@ def bs_read(fileName):
 
     return t
 
+
+def transliterator(hestr):
+    trans_table = {u'א': u'a', u'ב': u'b', u'ג': u'g', u'ד': u'd', u'ה': u'h', u'ו': u'v', u'ז': u'z', u'ח': u'ch', u'ט': u't', u'י': u'y', u'כ': u'kh', u'ל': u'l', u'מ': u'm', u'נ': u'n', u'ס': u's', u'ע': u"a'a", u'פ': u'p', u'צ': u'tz', u'ק': u'k', u'ר': u'r', u'ש': u'sh', u'ת': u't', u'ן': u'n', u'ף': u'f', u'ך': u'kh', u'ם': u'm', u'ץ': u'tz'
+    }
+    enstr = u''
+    for l in hestr:
+        enstr+=trans_table[l] if l in trans_table.keys() else l
+    return enstr
+
+
 def clean_txt(text):
     cleaned = u' '.join(text.split())
+    if cleaned and cleaned[-1] == u':':
+        cleaned = cleaned[:-1]
     return cleaned
+
+def parse_refs(topic):
+
+    if topic.citationsBb:
+        for citbook in topic.citationsBb:
+            citbook.create_sources()
+            pass
+        pass
+
+
 
 class BookCit(object):
 
-    def __init__(self, bookname):
-        self.bookname = bookname
+    def __init__(self, author):
+        self.author = author
         self.cit_list = []
+        self.sources = []
+
+    def create_sources(self):
+        for cit in self.cit_list:
+            s = Source(cit, self.author)
+            s.extract_raw_ref()
+            self.sources.append(s)
+
+
 
 class Topic(object):
 
@@ -92,6 +99,28 @@ class Topic(object):
         self.see = None
         self.altTitles = None
 
+
+class Source(object):
+
+    def __init__(self, text, author):
+        self.text = text
+        self.author = author
+        # self.index = library.get_index(self.author) if library.get_index(self.author) else None # needs to go into a try catch "sefaria.system.exceptions.BookNameError"
+        self.raw_ref = None
+        self.ref = None
+
+    def extract_raw_ref(self):
+        if re.search(u'\(.*?\)$',self.text):
+            self.raw_ref = RawRef(re.search(u'(\(.*?\)$)',self.text).group(1), self.author)
+
+class RawRef(object):
+
+    def __init__(self, st, author):
+        self.rawText = st
+        self.author = author
+        self.book = None
+        self.section_level = None
+        self.segment_level = None
 
 if __name__ == "__main__":
     topic_le_table = dict()
@@ -115,7 +144,9 @@ if __name__ == "__main__":
             t = bs_read(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/{}/{}".format(letter, file))
             i+=1
             topics[i] = t
+            parse_refs(t)
             # topics[topic_le_table[clean_txt(t.headWord.replace(u"'", u"").replace(u"-", u""))]] = t
+            topics[transliterator(t.headWord)] = t
         letter_name = re.search(u".*_(.*?$)", letter)
         if letter_name:
             letter_name = letter_name.group(1)
