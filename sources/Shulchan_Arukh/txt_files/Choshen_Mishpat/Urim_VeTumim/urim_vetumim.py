@@ -87,4 +87,25 @@ for vol_num, txt_file in zip([1, 2], txt_files[2:4]):
     errors = volume.format_text(u'@11', u'@33', u'dh')
     for e in errors:
         print e
+
+tumim = commentaries.get_commentary_by_title(u"Tumim")
+for vol_num, txt_file in zip([1, 2], txt_files[4:]):
+    print u"\nWorking on {}".format(txt_file)
+    tumim.remove_volume(vol_num)
+    with codecs.open(txt_file, 'r' ,'utf-8') as fp:
+        volume = tumim.add_volume(fp.read(), vol_num)
+    assert isinstance(volume, Volume)
+
+    volume.mark_simanim(u'@00([\u05d0-\u05ea]{1,3})')
+    volume.validate_simanim(complete=False)
+    print "Validating Seifim"
+    errors = volume.mark_seifim(u'@22([\u05d0-\u05ea]{1,3})')
+    for e in errors:
+        print e
+    volume.validate_seifim()
+
+    errors = volume.format_text(u'@11', u'@33', u'df')
+    for e in errors:
+        print e
+
 root.export()
