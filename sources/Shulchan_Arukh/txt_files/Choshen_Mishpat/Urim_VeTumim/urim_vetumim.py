@@ -65,8 +65,8 @@ for vol_num, txt_file in zip([1, 2], txt_files[:2]):
     for e in errors:
         print e
 
-    volume.mark_references(commentaries.commentary_ids[u"Urim"], u"@55")
-    volume.mark_references(commentaries.commentary_ids[u"Tumim"], u"@66")
+    volume.mark_references(commentaries.commentary_ids[u"Urim"], u"@55\(([\u05d0-\u05ea]{1,3})\)", group=1)
+    volume.mark_references(commentaries.commentary_ids[u"Tumim"], u"@66\(([\u05d0-\u05ea]{1,3})\)", group=1)
 
 urim = commentaries.get_commentary_by_title(u"Urim")
 for vol_num, txt_file in zip([1, 2], txt_files[2:4]):
@@ -88,6 +88,14 @@ for vol_num, txt_file in zip([1, 2], txt_files[2:4]):
     for e in errors:
         print e
 
+    volume.set_rid_on_seifim()
+    b_vol = base.get_volume(vol_num)
+    assert isinstance(b_vol, Volume)
+    root.populate_comment_store(verbose=True)
+    errors = b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u'@55', x.text) is not None)
+    for e in errors:
+        print e
+
 tumim = commentaries.get_commentary_by_title(u"Tumim")
 for vol_num, txt_file in zip([1, 2], txt_files[4:]):
     print u"\nWorking on {}".format(txt_file)
@@ -105,6 +113,14 @@ for vol_num, txt_file in zip([1, 2], txt_files[4:]):
     volume.validate_seifim()
 
     errors = volume.format_text(u'@11', u'@33', u'df')
+    for e in errors:
+        print e
+
+    volume.set_rid_on_seifim()
+    b_vol = base.get_volume(vol_num)
+    assert isinstance(b_vol, Volume)
+    root.populate_comment_store(verbose=True)
+    errors = b_vol.validate_all_xrefs_matched(lambda x: x.name == 'xref' and re.search(u'@66', x.text) is not None)
     for e in errors:
         print e
 
