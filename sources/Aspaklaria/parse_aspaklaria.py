@@ -3,11 +3,13 @@
 import django
 django.setup()
 
-
+from sefaria.model import *
 from bs4 import BeautifulSoup, element
 from sources.functions import *
 import string
 import unicodecsv as csv
+import json
+import pickle
 
 def bs_read(fileName):
     with codecs.open(fileName, encoding='utf-8') as f:
@@ -86,7 +88,6 @@ class BookCit(object):
     def create_sources(self):
         for cit in self.cit_list:
             s = Source(cit, self.author)
-            s.extract_raw_ref()
             self.sources.append(s)
 
 
@@ -108,10 +109,30 @@ class Source(object):
         # self.index = library.get_index(self.author) if library.get_index(self.author) else None # needs to go into a try catch "sefaria.system.exceptions.BookNameError"
         self.raw_ref = None
         self.ref = None
+        self.extract_raw_ref()
+        self.get_ref_from_api()
 
     def extract_raw_ref(self):
-        if re.search(u'\(.*?\)$',self.text):
-            self.raw_ref = RawRef(re.search(u'(\(.*?\)$)',self.text).group(1), self.author)
+        if re.search(u'\(.*?\)$', self.text):
+            self.raw_ref = RawRef(re.search(u'(\([^)]*?\)$)',self.text).group(1), self.author)
+        else:
+            pass
+
+    def get_ref_from_api(self):
+        if self.raw_ref:
+            print self.raw_ref.rawText
+            refs = library.get_refs_in_string(u'{}'.format(self.raw_ref.rawText))
+            if refs:
+                assert len(refs) == 1
+                self.ref = refs[0]
+                print self.ref
+            else:
+                if re.search(u"^\(שם", self.raw_ref.rawText):
+                    print u"*** is a Sham"
+                else:
+                    new_ref = u"(" + self.author + u" " + re.sub(u"[)(]", u"", self.raw_ref.rawText) + u")"
+                    print u"*** try new ref, new_ref = {}".format(new_ref)
+                    print library.get_refs_in_string(new_ref)
 
 class RawRef(object):
 
@@ -122,7 +143,8 @@ class RawRef(object):
         self.section_level = None
         self.segment_level = None
 
-if __name__ == "__main__":
+
+def parse2pickle():
     topic_le_table = dict()
     with open(u'/home/shanee/www/Sefaria-Data/sources/Aspaklaria/headwords.csv', 'r') as csvfile:
         file_reader = csv.DictReader(csvfile)
@@ -144,12 +166,25 @@ if __name__ == "__main__":
             t = bs_read(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/{}/{}".format(letter, file))
             i+=1
             topics[i] = t
-            parse_refs(t)
             # topics[topic_le_table[clean_txt(t.headWord.replace(u"'", u"").replace(u"-", u""))]] = t
-            topics[transliterator(t.headWord)] = t
+            # topics[transliterator(t.headWord)] = t
         letter_name = re.search(u".*_(.*?$)", letter)
         if letter_name:
             letter_name = letter_name.group(1)
             print u'{} headwords in the letter {}'.format(i, letter_name)
+        with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/{}.pickle".format(letter_name), "w") as fp:
+            # json.dump(topics, fp) #TypeError: <__main__.Topic object at 0x7f5f5bb73790> is not JSON serializable
+            pickle.dump(topics, fp, -1)
         all_topics[letter_name] = topics
+
+
+
+if __name__ == "__main__":
+    # parse2pickle()
+    for file in os.listdir(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/"):
+        with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/{}".format(file), "rb") as fp:
+            topics = pickle.load(fp)
+            for t in topics.values():
+                parse_refs(t)
+                pass
     print u'done'
