@@ -4,12 +4,19 @@ import django
 django.setup()
 
 from sefaria.model import *
+from sefaria.system import exceptions
 from bs4 import BeautifulSoup, element
 from sources.functions import *
 import string
 import unicodecsv as csv
 import json
 import pickle
+
+
+class Parser(object):
+
+    def __init__(self):
+        self.term_dict = he_term_mapping()
 
 def bs_read(fileName):
     with codecs.open(fileName, encoding='utf-8') as f:
@@ -18,7 +25,7 @@ def bs_read(fileName):
     content = BeautifulSoup(file_content, "lxml")
     headWord = clean_txt(content.findAll('h1')[0].text)
     t = Topic(headWord)
-    b = AoutherCit(u'before')
+    b = AuthorCit(u'before')
     wait = True
     for tag in content.findAll():
         if tag.name != 'h1' and wait:
@@ -27,7 +34,7 @@ def bs_read(fileName):
         wait = False
         if tag.name == 'h2':
             t.all_a_citations.append(b)
-            b = AoutherCit(clean_txt(tag.text))
+            b = AuthorCit(clean_txt(tag.text))
         else:
             txt = clean_txt(tag.text)
             b.cit_list.append(txt)
@@ -47,7 +54,7 @@ def bs_read(fileName):
                 tanakh.append(c)
     t.all_a_citations.pop(0)
     if tanakh and t.all_a_citations:
-        t.all_a_citations[0] = AoutherCit(u'תנך')
+        t.all_a_citations[0] = AuthorCit(u'תנך')
         t.all_a_citations[0].cit_list = tanakh
 
     return t
@@ -55,7 +62,7 @@ def bs_read(fileName):
 
 def transliterator(hestr):
     trans_table = {u'א': u'a', u'ב': u'b', u'ג': u'g', u'ד': u'd', u'ה': u'h', u'ו': u'v', u'ז': u'z', u'ח': u'ch', u'ט': u't', u'י': u'y', u'כ': u'kh', u'ל': u'l', u'מ': u'm', u'נ': u'n', u'ס': u's', u'ע': u"a'a", u'פ': u'p', u'צ': u'tz', u'ק': u'k', u'ר': u'r', u'ש': u'sh', u'ת': u't', u'ן': u'n', u'ף': u'f', u'ך': u'kh', u'ם': u'm', u'ץ': u'tz'
-    }
+                   }
     enstr = u''
     for l in hestr:
         enstr+=trans_table[l] if l in trans_table.keys() else l
@@ -78,7 +85,7 @@ def parse_refs(topic):
 
 
 
-class AoutherCit(object):
+class AuthorCit(object):
 
     def __init__(self, author):
         self.author = author
@@ -111,27 +118,42 @@ class Source(object):
         self.text = text
         self.author = author
         self.index = None
+        self.cat = None
         self.raw_ref = None
         self.ref = None
+
         self.extract_raw_ref()
         self.get_ref_from_api()
 
     def extract_raw_ref(self):
-        if re.search(u'\(.*?\)$', self.text):
+        if re.search(u'(\([^)]*?\)$)', self.text):
             self.raw_ref = RawRef(re.search(u'(\([^)]*?\)$)',self.text).group(1), self.author)
         else:
             pass
-    def extract_index(self):
+
+    def extract_cat(self):
         # library.get_index(self.author) if library.get_index(self.author) else None # needs to go into a try catch "sefaria.system.exceptions.BookNameError"
         try:
-            self.index = library.get_index(self.author)
-        except sefaria.system.exceptions.BookNameError as e:
+            self.index = library.get_index(self.author.replace(u"", u""))
+        except exceptions.BookNameError as e: #sefaria.system.exceptions.
             #todo: check if it is part of an index. maybe a category?
-            self.author in library.get_text_categories()
-            library.get_indexes_in_category(self.author, include_dependant=True, full_records=True)
+            # found_term = None
+            try:
+                found_term = parser.term_dict[self.author.replace(u"", u"")]
+                if not found_term:
+                    found_term = parser.term_dict[(re.sub(u'^[משהוכלב]', u'', self.author.replace(u"", u"")))]
+            except KeyError as e:
+                for word in self.author.split():
+                    found_term = parser.term_dict.get(word.replace(u'"', u""))
+                    if not found_term:
+                        found_term = parser.term_dict.get(re.sub(u'(^[משהוכלב]|")', u'', word))
+            if found_term and found_term in library.get_text_categories():
+                self.cat = found_term
+            lookhere = library.get_indexes_in_category(self.cat, include_dependant=True, full_records=True).array()
+            return lookhere
             #might need to use Terms to make lookup the category in english
-            Term().load({"name": self.author})
-            filter(lambda x: x['lang'] == 'he', t.contents()['titles'])[0]['text']
+            # Term().load({"name": self.author})
+            # filter(lambda x: x['lang'] == 'he', t.contents()['titles'])[0]['text']
 
 
     def get_ref_from_api(self):
@@ -153,7 +175,9 @@ class Source(object):
             ref_w_author = u"(" + self.author + u", " + re.sub(u"[)(]", u"", self.raw_ref.rawText) + u")"
             refs = library.get_refs_in_string(ref_w_author)
             if refs:
-                assert len(refs) == 1
+                # assert len(refs) == 1
+                if len(refs) == 0:
+                    print u"how is this possible?", ref_w_author, refs[0], refs[1]
                 self.ref = refs[0]
                 print self.ref
             else:
@@ -182,12 +206,30 @@ class Source(object):
         """
         if self.ref and self.ref.index.title in library.get_indexes_in_category(u'Tanakh'): #  probabaly should be calculated once
             if self.author != u"תנך":
-                self.ref = None
-                print u"deleted wrong {}".format(self.ref)
-                if self.index:
-                    pass
-                    # than try to get the true title from the index
+                look_here = self.extract_cat()
+                if look_here:
+                    # than try to get the true title from the cat from look_here
+                    look_here_shared_title_word = u'({})'.format(
+                        u'|'.join(list(set.intersection(*[set(x.title.split()) for x in look_here]))))
+                    alt_ref_titles = map(lambda x: x['text'], self.ref.index.schema['titles'])
+                    found_index = [ind for ind in look_here for tanakh_book in alt_ref_titles if
+                                   tanakh_book in re.sub(look_here_shared_title_word, u'', ind.title).strip()]
+                    if found_index:
+                        if len(set(found_index)) > 1:  # assert len(found_index) == 0
+                            print "more than one index option" # todo: problem with אלשיך דברים and with books I, II
+                            print found_index[0].title, found_index[-1].title
+                        self.index = found_index[0]
+                        new_ref = Ref(u'{} {}'.format(self.index.title, u' '.join([unicode(x) for x in self.ref.sections])))
+                        print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
+                        self.ref = new_ref
+                # tanakh is wrong but can't find the index ex: רש"ר הירש
+                if not self.index or not new_ref:
+                    print u"deleting wrong: {} couldn't find an index".format(self.ref)
+
+
                 # self.try_from_ls()
+
+
 
     def try_from_ls(self):
         """
@@ -240,6 +282,14 @@ def parse2pickle():
             pickle.dump(topics, fp, -1)
         all_topics[letter_name] = topics
 
+def he_term_mapping():
+    all_terms = TermSet({})
+    he_titles = [[(term.get_primary_title(), x['text']) for x in term.title_group.titles if x['lang'] == 'he'] for term
+                 in all_terms]
+    en, he = zip(*reduce(lambda a,b: a+b, he_titles))
+    he = map(lambda x: re.sub(u'"', u"", x), he)
+    he_key_term_dict = dict(zip(he, en))
+    return he_key_term_dict
 
 
 if __name__ == "__main__":
@@ -248,11 +298,15 @@ if __name__ == "__main__":
     # a = dict()
     # a[u'שלום'] = 1
     # pass
+    parser = Parser() #term_dict = he_term_mapping()
     # for file in os.listdir(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/"):
-    for file in [u'KAF.pickle']:
+    for file in [u'KAF.pickle', u'BET.pickle']:
         with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/{}".format(file), "rb") as fp:
             topics = pickle.load(fp)
             for t in topics.values():
                 parse_refs(t)
-                pass
+            print Source.cnt
+            print Source.cnt_sham
+            print Source.cnt_resolved
+            print Source.cnt_not_found
     print u'done'
