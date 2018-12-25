@@ -85,3 +85,12 @@ def test_missing_character():
     result = u'''Lorem ipsum dolor sit amet, consectetur <i data-commentator="Ba'er Hetev" data-order="9"></i>adipiscing elit. Fusce eleifend interdum mauris, quis tempus dolor. In <i data-commentator="Ketzot HaChoshen" data-order="4"></i><i data-commentator="Me'irat Einayim" data-order="10"></i><i data-commentator="Netivot HaMishpat, Hidushim" data-order="7"></i>eget dolor felis. Praesent vel <i data-commentator="Tumim" data-order="5"/></i>tortor dapibus, bibendum lacus id, ornare lacus. Proin commodo magna at gravida facilisis.'''
 
     assert merge_tags(s1, s2) == result
+
+
+def test_missing_char_mid_word():
+    s1 = u'''Lorem ipsum dolor sit amet, (consectetur<i data-commentator="Ba'er Hetev" data-order="9"></i>) adipiscing elit. Fusce eleifend interdum mauris, quis tempus dolor. In <i data-commentator="Ketzot HaChoshen" data-order="4"></i><i data-commentator="Me'irat Einayim" data-order="10"></i><i data-commentator="Netivot HaMishpat, Hidushim" data-order="7"></i>eget dolor felis. Praesent vel tortor dapibus, bibendum lacus id, ornare lacus. Proin commodo magna at gravida facilisis.'''
+    s2 = u'''Lorem ipsm dolor sit amet, (consectetur) adipiscing elit. Fusce eleifend interdum mauris, quis tempus dolor. In eget dolor felis. Praesent vel <i data-commentator="Tumim" data-order="5"/></i>tortor dapibus, bibendum lacus id, ornare lacus. Proin commodo magna at gravida facilisis.'''
+
+    result = u'''Lorem ipsum dolor sit amet, (consectetur<i data-commentator="Ba'er Hetev" data-order="9"></i>) adipiscing elit. Fusce eleifend interdum mauris, quis tempus dolor. In <i data-commentator="Ketzot HaChoshen" data-order="4"></i><i data-commentator="Me'irat Einayim" data-order="10"></i><i data-commentator="Netivot HaMishpat, Hidushim" data-order="7"></i>eget dolor felis. Praesent vel <i data-commentator="Tumim" data-order="5"/></i>tortor dapibus, bibendum lacus id, ornare lacus. Proin commodo magna at gravida facilisis.'''
+
+    assert merge_tags(s1, s2) == result
