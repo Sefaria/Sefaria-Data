@@ -46,6 +46,7 @@ class HTMLMap(object):
 
     def merge_tags(self, string_to_merge, validate=True):
         other_map = HTMLMap(string_to_merge)
+        assert len(self.word_list) == len(other_map.word_list)
 
         # handle case where some extra characters got added to one of the strings
         index_offsets = [ours - theirs for ours, theirs in zip(self.word_indices, other_map.word_indices)]
