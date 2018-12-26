@@ -75,6 +75,7 @@ def clean_txt(text):
         cleaned = cleaned[:-1]
     return cleaned
 
+
 def parse_refs(topic):
 
     if topic.all_a_citations:
@@ -125,32 +126,45 @@ class Source(object):
         self.extract_raw_ref()
         self.get_ref_from_api()
 
+        if self.raw_ref:
+            Source.cnt+=1
+            if self.raw_ref.is_sham:
+                Source.cnt_sham += 1
+            elif self.ref:  # found ref (presumably a correct ref :) )
+                Source.cnt_resolved += 1
+            else:
+                Source.cnt_not_found += 1
+
     def extract_raw_ref(self):
         if re.search(u'(\([^)]*?\)$)', self.text):
             self.raw_ref = RawRef(re.search(u'(\([^)]*?\)$)',self.text).group(1), self.author)
         else:
             pass
 
-    def extract_cat(self):
+    def extract_cat(self, include_dependant):
         # library.get_index(self.author) if library.get_index(self.author) else None # needs to go into a try catch "sefaria.system.exceptions.BookNameError"
+        author = re.sub(u'[{}]'.format(re.escape(string.punctuation)), u'', self.author)
         try:
-            self.index = library.get_index(self.author.replace(u"", u""))
+            self.index = library.get_index(author)
         except exceptions.BookNameError as e: #sefaria.system.exceptions.
             #todo: check if it is part of an index. maybe a category?
-            # found_term = None
-            try:
-                found_term = parser.term_dict[self.author.replace(u"", u"")]
-                if not found_term:
-                    found_term = parser.term_dict[(re.sub(u'^[משהוכלב]', u'', self.author.replace(u"", u"")))]
-            except KeyError as e:
-                for word in self.author.split():
-                    found_term = parser.term_dict.get(word.replace(u'"', u""))
-                    if not found_term:
-                        found_term = parser.term_dict.get(re.sub(u'(^[משהוכלב]|")', u'', word))
-            if found_term and found_term in library.get_text_categories():
-                self.cat = found_term
-            lookhere = library.get_indexes_in_category(self.cat, include_dependant=True, full_records=True).array()
-            return lookhere
+            found_term = parser.term_dict.get(author, [])
+            if not found_term:
+                found_term = parser.term_dict.get(re.sub(u'^[משהוכלב]', u'', author), [])
+            if not found_term:
+                for word in author.split():
+                    found = parser.term_dict.get(word.replace(u'"', u""), [])
+                    if found:
+                        found_term.append(found)
+                    else:
+                        found_term.append(parser.term_dict.get(re.sub(u'(^[משהוכלב]|")', u'', word), []))
+            if found_term:
+                found_term = [found_term] if not isinstance(found_term, list) else filter(lambda x: x, found_term)
+                cat_terms = filter(lambda term: term in library.get_text_categories(), found_term)
+                self.cat = cat_terms  # found_term
+                if self.cat:
+                    look_here = reduce(lambda a,b: [x for x in b for y in a if x==y], [library.get_indexes_in_category(cat, include_dependant=include_dependant, full_records=True).array() for cat in self.cat])
+                    return look_here
             #might need to use Terms to make lookup the category in english
             # Term().load({"name": self.author})
             # filter(lambda x: x['lang'] == 'he', t.contents()['titles'])[0]['text']
@@ -176,21 +190,20 @@ class Source(object):
             refs = library.get_refs_in_string(ref_w_author)
             if refs:
                 # assert len(refs) == 1
-                if len(refs) == 0:
-                    print u"how is this possible?", ref_w_author, refs[0], refs[1]
                 self.ref = refs[0]
                 print self.ref
-            else:
+            else:  # straight forward didn't find, so might be a sham. Or might need special casing.
                 if re.search(u"^\(שם", self.raw_ref.rawText):
                     self.raw_ref.is_sham = True
-                    Source.cnt_sham +=1
                 else:
                     cleaned = clean_raw(self.raw_ref.rawText)
                     fixed_ref = u"(" + self.author + u", " + re.sub(u"[)(]", u"", cleaned) + u")"
                     print u"*** try new ref, fixed_ref = {}".format(fixed_ref)
-                    print library.get_refs_in_string(fixed_ref)
+                    refs = library.get_refs_in_string(fixed_ref)
+                    if refs:
+                        self.ref = refs[0]
+                        print self.ref
             print self.raw_ref.rawText, u'\n', ref_w_author
-            Source.cnt+=1
         else: # there isn't a self.ref means we couldn't find parenthises at the end, probably a conyinuation of the prev source/ cit (in cit_list
             pass
 
@@ -204,28 +217,49 @@ class Source(object):
         It should discard/change wrongly caught refs, like ones caught bavli instead of Yerushalmi or mishanah instead of Tosefta.
         :return: doesn't return but changes self.ref
         """
-        if self.ref and self.ref.index.title in library.get_indexes_in_category(u'Tanakh'): #  probabaly should be calculated once
-            if self.author != u"תנך":
-                look_here = self.extract_cat()
-                if look_here:
-                    # than try to get the true title from the cat from look_here
-                    look_here_shared_title_word = u'({})'.format(
-                        u'|'.join(list(set.intersection(*[set(x.title.split()) for x in look_here]))))
-                    alt_ref_titles = map(lambda x: x['text'], self.ref.index.schema['titles'])
-                    found_index = [ind for ind in look_here for tanakh_book in alt_ref_titles if
-                                   tanakh_book in re.sub(look_here_shared_title_word, u'', ind.title).strip()]
-                    if found_index:
-                        if len(set(found_index)) > 1:  # assert len(found_index) == 0
-                            print "more than one index option" # todo: problem with אלשיך דברים and with books I, II
-                            print found_index[0].title, found_index[-1].title
-                        self.index = found_index[0]
-                        new_ref = Ref(u'{} {}'.format(self.index.title, u' '.join([unicode(x) for x in self.ref.sections])))
+        wrong_ref = False
+
+        if self.ref:  # probabaly should be calculated once
+            if self.author != u"תנך"  and self.ref.index.title in library.get_indexes_in_category(u'Tanakh'):
+                include_dependant = True
+                wrong_ref = True
+            elif self.author != u"תלמוד בבלי"  and self.ref.index.title in library.get_indexes_in_category(u'Bavli'):
+                include_dependant = False
+                wrong_ref = True
+
+        if (wrong_ref and self.ref): # or (self.raw_ref and not self.ref and not self.raw_ref.is_sham):
+            new_ref = None
+            include_dependant = True
+            look_here = self.extract_cat(include_dependant=include_dependant)
+            if look_here and (self.index or wrong_ref):
+                # than try to get the true title from the cat from look_here
+                look_here_shared_title_word = u'({})'.format(
+                    u'|'.join(list(set.intersection(*[set(x.title.split()) for x in look_here]))))
+                alt_ref_titles = map(lambda x: x['text'], self.ref.index.schema['titles'])
+                found_index = [ind for ind in look_here for tanakh_book in alt_ref_titles if
+                               tanakh_book in re.sub(look_here_shared_title_word, u'', ind.title).strip()]
+                if found_index:
+                    if len(set(found_index)) > 1:  # assert len(found_index) == 0
+                        print "more than one index option"  # todo: problem with אלשיך דברים and with books I, II
+                        print found_index[0].title, found_index[-1].title
+                    self.index = found_index[0]
+                    try:
+                        new_ref = Ref(u'{} {}'.format(self.index.title, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()))
                         print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
                         self.ref = new_ref
-                # tanakh is wrong but can't find the index ex: רש"ר הירש
-                if not self.index or not new_ref:
-                    print u"deleting wrong: {} couldn't find an index".format(self.ref)
+                    except exceptions.InputError as e:
+                        print u"inputError for this string {}, extracted from this rawref {}".format(u'{} {}'.format(self.index.title, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()), self.raw_ref)
+            # tanakh is wrong but can't find the index ex: רש"ר הירש
+            if self.index and not self.ref:
+                ind = self.index
+                #todo: look into the original catching see why it is not catchin kalla. also see how to copy the intresting parts to here
+                self.raw_ref.book = ind.title
+                split_raw_text = re.sub(u'[\(\)]', u'', self.raw_ref.rawText).split()
+                self.raw_ref.section_level = split_raw_text
 
+                pass
+            if not self.index or not new_ref:
+                print u"deleting wrong: {} couldn't find an index".format(self.ref)
 
                 # self.try_from_ls()
 
@@ -300,13 +334,18 @@ if __name__ == "__main__":
     # pass
     parser = Parser() #term_dict = he_term_mapping()
     # for file in os.listdir(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/"):
-    for file in [u'KAF.pickle', u'BET.pickle']:
+    for file in [u'AYIN.pickle']:
+        Source.cnt = 0
+        Source.cnt_sham = 0
+        Source.cnt_resolved = 0
+        Source.cnt_not_found = 0
         with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/{}".format(file), "rb") as fp:
             topics = pickle.load(fp)
             for t in topics.values():
                 parse_refs(t)
-            print Source.cnt
-            print Source.cnt_sham
-            print Source.cnt_resolved
-            print Source.cnt_not_found
+            print u"cnt :", Source.cnt
+            print u"cnt_sham :", Source.cnt_sham, u"precent: ", Source.cnt_sham*100.0/Source.cnt*1.0
+            print u"cnt_resolved :", Source.cnt_resolved, u"precent: ", Source.cnt_resolved*100.0/Source.cnt*1.0
+            print u"cnt_not_found :", Source.cnt_not_found, u"precent: ", Source.cnt_not_found*100.0/Source.cnt*1.0
+
     print u'done'
