@@ -355,7 +355,8 @@ class Question(object):
         table_html = str(segment)  # todo: fix this line, why are we losing so much data here?
         segs = [s for s in segment.find_all('p') if not s.parent.has_attr('class')]
         any([s.attrs for s in segs])
-        self.q_text = u" ".join([bleach.clean(str(s), tags=["u", "b", "table", "td", "tr", "br"], strip=True).strip() for s in segment.find_all('p') if not s.parent.has_attr('class')])
+        text_segments = segment.find_all('p') + [el for el in segment.descendants if isinstance(el, element.NavigableString) and len(el) > 4]
+        self.q_text = u" ".join([bleach.clean(unicode(s), tags=["u", "b", "table", "td", "tr", "br"], strip=True).strip() for s in text_segments if not s.parent.has_attr('class')])
 
         self.text = self.format()
         self.q_source = segment

@@ -2,6 +2,7 @@
 import django
 django.setup()
 from sefaria.model import *
+from sefaria.model.category import TocCategory
 
 #create new terms and categories
 t = Term()
@@ -50,14 +51,11 @@ for i, index in enumerate(indices):
     v.save()
 
 #delete old categories
-library.rebuild(include_toc=True)
-from sefaria.model.category import TocCategory
 c = Category().load({"path": ["Modern Works", "Mishnah Yomit"]})
 for toc_obj in c.get_toc_object().all_children():
     if isinstance(toc_obj, TocCategory):
         print toc_obj, toc_obj.get_category_object().can_delete()
         toc_obj.get_category_object().delete()
 
-library.rebuild(include_toc=True)
 c = Category().load({"path": ["Modern Works", "Mishnah Yomit"]})
 c.delete()
