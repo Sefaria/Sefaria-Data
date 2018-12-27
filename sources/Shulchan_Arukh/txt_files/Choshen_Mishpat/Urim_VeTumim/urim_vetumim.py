@@ -229,12 +229,13 @@ version_json = {
 }
 
 
-def split_version(version_dict, splits):
-    def edges(length, num_splits):
-        ratio = float(length) / float(num_splits)
-        indices = [math.trunc(ratio*i) for i in range(num_splits+1)]
-        return zip(indices[:-1], indices[1:])
+def edges(length, num_splits):
+    ratio = float(length) / float(num_splits)
+    indices = [math.trunc(ratio * i) for i in range(num_splits + 1)]
+    return zip(indices[:-1], indices[1:])
 
+
+def split_version(version_dict, splits):
     volumes = []
     for vol_num, (start, end) in enumerate(edges(len(version_dict['text']), splits), 1):
         new_version = {
@@ -245,6 +246,11 @@ def split_version(version_dict, splits):
         }
         volumes.append(new_version)
     return volumes
+
+
+def split_list(list_to_split, splits):
+    for start, end in edges(len(list_to_split), splits):
+        yield list_to_split[start:end]
 
 
 def upload_commentary(title):
@@ -261,7 +267,8 @@ def upload_commentary(title):
             post_text(u"Urim VeTumim, {}".format(title), v, index_count=u"on", server=server)
     else:
         post_text(u"Urim VeTumim, {}".format(title), version_json, index_count=u"on", server=server)
-    post_link(c_links, weak_network=True)
+    for sub_group in split_list(c_links, 4):
+        post_link(sub_group, server=server)
 
 
 upload_commentary(u"Urim")
