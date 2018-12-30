@@ -178,7 +178,9 @@ for x_seg, sef_seg in zip(base_segments, sef_segments):
     x_text, sef_text = standardize_tag_spacing(x_seg['data']), standardize_tag_spacing(sef_seg['data'])
 
     try:
-        sef_ja.set_element(sef_seg['indices'], merge_tags(sef_text, x_text))
+        merged_text = merge_tags(sef_text, x_text)
+        merged_text = re.sub(u'(?<=\s)((<i[^<>]*></i>)+)(</b><br>)', u'\g<3>\g<1>', merged_text)
+        sef_ja.set_element(sef_seg['indices'], merged_text)
     except AssertionError:
         problems += 1
         print map(lambda x: x+1, x_seg['indices'])
@@ -200,7 +202,7 @@ if problems:
 def build_index(title):
     he_title = {
         u"Urim": u"אורים",
-        u"Tumim": u",תומים"
+        u"Tumim": u"תומים"
     }[title]
     title = u"Urim VeTumim, {}".format(title)
     he_title = u"אורים ותומים, {}".format(he_title)
