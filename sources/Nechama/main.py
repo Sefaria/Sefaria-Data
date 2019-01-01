@@ -288,6 +288,7 @@ class Sheet(object):
         :return:
         """
 
+
         # intro_segment = intro_tuple = None
 
         # init
@@ -1185,7 +1186,6 @@ class Nechama_Parser:
         new_ref = []
         # rashbam on 821
         if isinstance(ref.text('he').text, list) and all(filter(lambda x: isinstance(x, list), ref.text('he').text)) and any([isinstance(x, int) for deep1 in ref.text('he').text for x in deep1]):
-            print "OOF"
             return new_ref
         n = len(comment.split())
         if n<=5:
@@ -1603,41 +1603,41 @@ if __name__ == "__main__":
     catch_errors = False
 
     posting = True
+    individuals = [572]  # [748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
     individual = None
-
     found_tables_num = 0
     found_tables = set()
+    for individual in individuals:
+        for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
+            print "NEW BOOK"
+            for parsha in which_parshiot[1]:
+                book = which_parshiot[0]
+                parser = Nechama_Parser(en_sefer=book, en_parasha=parsha, mode = "accurate", add_to_title="missing text?", catch_errors=catch_errors, looking_for_matches=True)
+                #parser.prepare_term_mapping()  # must be run once locally and on sandbox
+                #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
+                if not individual:
+                    sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
+                    # anything_before = "7.html"
+                    # pos_anything_before = sheets.index(anything_before)
+                    # sheets = sheets[pos_anything_before:]
+                    # sheets = sheets[sheets.index("163.html")::]
+                # sheets = ["163.html"]
+                if individual:
+                    got_sheet = parser.bs4_reader(["html_all/{}.html".format(individual)] if "{}.html".format(individual) in os.listdir("html_sheets/{}".format(parsha)) else [], post=posting, add_to_title=parser.add_to_title)
+                else:
+                    found_tables_in_parsha = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets],post=posting,add_to_title=parser.add_to_title)# if sheet in os.listdir("html_sheets/{}".format(parsha)) and sheet != "163.html"], post=posting)
+                    found_tables = found_tables.union(found_tables_in_parsha)
 
-    for which_parshiot in [exodus_parshiot]:#[genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
-        print "NEW BOOK"
-        for parsha in ["Vaera"]:
-            book = which_parshiot[0]
-            parser = Nechama_Parser(book, parsha, "fast", "MISSING TEXT", catch_errors=catch_errors, looking_for_matches=True)
-            #parser.prepare_term_mapping()  # must be run once locally and on sandbox
-            #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
-            if not individual:
-                sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
-                # anything_before = "7.html"
-                # pos_anything_before = sheets.index(anything_before)
-                # sheets = sheets[pos_anything_before:]
-                # sheets = sheets[sheets.index("163.html")::]
-            sheets = ["572.html"]
-            if individual:
-                got_sheet = parser.bs4_reader(["html_all/{}.html".format(individual)] if "{}.html".format(individual) in os.listdir("html_sheets/{}".format(parsha)) else [], post=posting)
-            else:
-                found_tables_in_parsha = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=posting)# if sheet in os.listdir("html_sheets/{}".format(parsha)) and sheet != "163.html"], post=posting)
-                #found_tables = found_tables.union(found_tables_in_parsha)
-
-            if catch_errors:
-                parser.record_report()
-            if individual and got_sheet:
-              break
-        if individual and got_sheet:
-            break
-    print found_tables
-    # print word_count
-    # with open("sheets_linked_to_sheets.csv", 'w') as f:
-    #     writer = UnicodeWriter(f)
-    #     writer.writerows(sheets_linked_to_sheets)
+                if catch_errors:
+                    parser.record_report()
+                if individual and got_sheet[1]:
+                    break
+            if individual and got_sheet[1]:
+                break
+        print found_tables
+        # print word_count
+        # with open("sheets_linked_to_sheets.csv", 'w') as f:
+        #     writer = UnicodeWriter(f)
+        #     writer.writerows(sheets_linked_to_sheets)
 
 

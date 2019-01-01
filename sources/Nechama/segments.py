@@ -73,7 +73,7 @@ class Source(object):
                 try:
                     he_self_ref = Ref(self.ref).he_normal()
                 except InputError as e:
-                    print u"Exception {}".format(e)
+                    ## print u"Exception {}".format(e)
                     assert isinstance(self.ref, unicode)
                     he_self_ref = self.ref
                 about_words = [x.strip(u'''"\u05f3' ,''') for x in re.split(u" |:", self.about_source_ref.strip())]
@@ -83,9 +83,10 @@ class Source(object):
                 diff.discard(u'פסוק')
                 diff.discard(u'הלכה')
                 diff.discard(u'')
-                print u"diff words: {}".format(len(diff))
+                ## print u"diff words: {}".format(len(diff))
                 for w in diff:
-                    print w
+                    pass
+                    ## print w
                 if len(diff) <= 2:
                     if self.get_sefaria_ref(self.ref):
                         return text
@@ -402,7 +403,7 @@ class Question(object):
         :return: the text of the q the way it is presented in source sheets with/without (but for now the only way
         to present outside sources in source sheets) the number and difficulty
         """
-        print self.q_text
+        # print self.q_text
         # if re.search(u'>(.*?)<', self.q_text):
         #     text = re.search(u'>(.*?)<',  self.q_text).group(1)
         # else:
