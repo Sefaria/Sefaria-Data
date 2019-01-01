@@ -543,9 +543,30 @@ class Nested(object):
                 objs.add(p)
         objs = objs.union(set(classed_tags))
         testing_doubls = [o for o in objs if re.search(u'וכי סומים היו', o[1].text)]
+        objs = Nested.find_missing_objs(objs)
         objs = sorted(objs, key=lambda x: x[0])
+
         objs = [o[1] for o in objs]
         return objs
+
+    @staticmethod
+    def find_missing_objs(objs):
+        # idea is to
+        new_objs = []
+        nums = [el[0] for el in objs]
+        for i, obj in objs:
+            if obj.prev_sibling and isinstance(obj.prev_sibling, element.NavigableString) and len(obj.prev_sibling) > 2:
+                soup = BeautifulSoup("<p></p>", "lxml")
+                soup.append(obj.prev_sibling)
+                new_objs.append((i-1, soup))
+                assert i-1 not in nums
+            if obj.next_sibling and isinstance(obj.next_sibling, element.NavigableString) and len(obj.next_sibling) > 2:
+                soup = BeautifulSoup("<p></p>", "lxml")
+                soup.append(obj.next_sibling)
+                new_objs.append((i+1, soup))
+                assert i+1 not in nums
+            new_objs.append((i, obj))
+        return new_objs
         # # Test: testing if we get all the text from the html to ourObjs
         # extract_text = ' '.join([e.text for e in classed_tags]) #text that was taken out of the segment after cleaning
         # exctract_set = set(extract_text.split())

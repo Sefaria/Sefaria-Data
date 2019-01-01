@@ -5,21 +5,20 @@ from sefaria.model import *
 from sefaria.model.category import TocCategory
 
 #create new terms and categories
-t = Term()
-t.name = u"English Explanation of Mishnah"
-t.add_primary_titles(t.name, u"ביאור אנגלי על המשנה")
-t.save()
+if not Term().load({"name": "English Explanation of Mishnah"}):
+    t = Term()
+    t.name = u"English Explanation of Mishnah"
+    t.add_primary_titles(t.name, u"ביאור אנגלי על המשנה")
+    t.save()
 
-c = Category()
-c.path = ["Modern Works", "English Explanation of Mishnah"]
-c.add_shared_term("English Explanation of Mishnah")
+
+
+c = Category().load({"path": ["Modern Works", "Mishnah Yomit"]})
+for toc_obj in c.get_toc_object().all_children():
+    if isinstance(toc_obj, TocCategory):
+        toc_obj.get_category_object().change_key_name("English Explanation of Mishnah")
+c.change_key_name("English Explanation of Mishnah")
 c.save()
-mishnayot = ["Seder Moed", "Seder Kodashim", "Seder Zeraim", "Seder Nashim", "Seder Nezikin", "Seder Tahorot"]
-for mishnah in mishnayot:
-    c = Category()
-    c.path = ["Modern Works", "English Explanation of Mishnah", mishnah]
-    c.add_shared_term(mishnah)
-    c.save()
 
 
 #change index titles and version titles
@@ -50,12 +49,6 @@ for i, index in enumerate(indices):
     v.versionTitle = "Mishnah Yomit by Dr. Joshua Kulp"
     v.save()
 
-#delete old categories
-c = Category().load({"path": ["Modern Works", "Mishnah Yomit"]})
-for toc_obj in c.get_toc_object().all_children():
-    if isinstance(toc_obj, TocCategory):
-        print toc_obj, toc_obj.get_category_object().can_delete()
-        toc_obj.get_category_object().delete()
 
 c = Category().load({"path": ["Modern Works", "Mishnah Yomit"]})
 c.delete()

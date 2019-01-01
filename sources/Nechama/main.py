@@ -23,6 +23,7 @@ import unicodedata
 from sefaria.utils.hebrew import strip_cantillation
 from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
 from data_utilities.util import WeightedLevenshtein
+from fuzzywuzzy import fuzz
 import datetime
 import traceback
 
@@ -1364,6 +1365,21 @@ class Nechama_Parser:
             shutil.move(html_sheet, "html_sheets/" + parsha)
         return sheets
 
+    def run_words_test(self, content, sources, html_sheet):
+        remove_html = lambda x: bleach.clean(x, strip=True).replace("<b>", "").replace("</b>", "")
+        orig_sources = list(sources)
+        with codecs.open("reports/text_check.txt", 'a', encoding='utf-8') as f:
+            f.write("Checking {}\n".format(html_sheet))
+            content = content.find('div', {"id": 'contentBody'}).get_text().splitlines()
+            sources = [source["outsideText"] if "outsideText" in source.keys() else source["text"]["he"] for source in sources]
+            sources = [remove_html(source.decode('utf-8')) if type(source) is str else remove_html(source) for source in sources]
+            sources = u" ".join(sources)
+            for line_n, line in enumerate(content):
+                if line and line.strip() not in sources:
+                    f.write(line)
+                    f.write("\n\n")
+
+
     def bs4_reader(self, file_list_names, post = False, add_to_title = ''):
         """
         The main BeautifulSoup reader function, that etrates on all sheets and creates the obj, probably should be in it's own file
@@ -1407,6 +1423,7 @@ class Nechama_Parser:
                 sheet.prepare_sheet(add_to_title, post=post)
                 if amt > 0:
                     found_tables.add(html_sheet)
+                self.run_words_test(content, sheet.sources, html_sheet)
             except Exception, e:
                 if parser.catch_errors:
                     self.error_report.write(html_sheet+": ")
@@ -1416,6 +1433,8 @@ class Nechama_Parser:
                     self.error_report.write("\n\n")
                 else:
                     raise
+
+
         return found_tables, sheets
 
 
@@ -1600,8 +1619,7 @@ if __name__ == "__main__":
                         "Balak", "Pinchas", "Matot", "Masei"])
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
-    catch_errors = False
-
+    catch_errors = True
     posting = True
     individuals = [572]  # [748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
     individual = None
@@ -1628,16 +1646,36 @@ if __name__ == "__main__":
                     found_tables_in_parsha = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets],post=posting,add_to_title=parser.add_to_title)# if sheet in os.listdir("html_sheets/{}".format(parsha)) and sheet != "163.html"], post=posting)
                     found_tables = found_tables.union(found_tables_in_parsha)
 
-                if catch_errors:
-                    parser.record_report()
-                if individual and got_sheet[1]:
-                    break
-            if individual and got_sheet[1]:
-                break
-        print found_tables
-        # print word_count
-        # with open("sheets_linked_to_sheets.csv", 'w') as f:
-        #     writer = UnicodeWriter(f)
-        #     writer.writerows(sheets_linked_to_sheets)
+    for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
+        print "NEW BOOK"
+        for parsha in which_parshiot[1]:
+            book = which_parshiot[0]
+            parser = Nechama_Parser(book, parsha, "fast", "", catch_errors=catch_errors, looking_for_matches=False)
+            #parser.prepare_term_mapping()  # must be run once locally and on sandbox
+            #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
+            if not individual:
+                sheets = [sheet for sheet in os.listdir("html_sheets/{}".format(parsha)) if sheet.endswith(".html")]
+                # anything_before = "7.html"
+                # pos_anything_before = sheets.index(anything_before)
+                # sheets = sheets[pos_anything_before:]
+                # sheets = sheets[sheets.index("163.html")::]
+            sheets = ["750.html"]
+            if individual:
+                got_sheet = parser.bs4_reader(["html_all/{}.html".format(individual)] if "{}.html".format(individual) in os.listdir("html_sheets/{}".format(parsha)) else [], post=posting)
+            else:
+                found_tables_in_parsha = parser.bs4_reader(["html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets], post=posting)# if sheet in os.listdir("html_sheets/{}".format(parsha)) and sheet != "163.html"], post=posting)
+                #found_tables = found_tables.union(found_tables_in_parsha)
+
+            if catch_errors:
+                parser.record_report()
+            if individual and got_sheet:
+              break
+        if individual and got_sheet:
+            break
+    print found_tables
+    # print word_count
+    # with open("sheets_linked_to_sheets.csv", 'w') as f:
+    #     writer = UnicodeWriter(f)
+    #     writer.writerows(sheets_linked_to_sheets)
 
 
