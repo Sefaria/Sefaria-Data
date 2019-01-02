@@ -17,6 +17,7 @@ class Parser(object):
 
     def __init__(self):
         self.term_dict, self.he_term_str = he_term_mapping()
+        self.missing_authors = set()
 
 def he_term_mapping():
     all_terms = TermSet({})
@@ -233,6 +234,8 @@ class Source(object):
                         self.indexs = inds_via_cats
                     elif self.author == u'משנה תורה':
                         self.indexs = inds_via_cats
+                    elif self.author == u'ירושלמי':
+                        self.indexs = library.get_indexes_in_category(u'Yerushalmi')
                     else:
                         self.indexs = inds_via_term
                 else:  # both are empty
@@ -279,6 +282,15 @@ class Source(object):
         self.get_ref_step2()
 
 
+    def get_look_here_titles(self, look_here):
+        look_here_titles = [index.title for index in look_here] if isinstance(look_here[0], Index) else look_here
+        shared_word_in_titles = u'({})'.format(u'|'.join(list(set.intersection(*[set(x.split()) for x in look_here_titles]))))
+        if shared_word_in_titles:
+            look_here_titles = map(lambda x: (x, re.sub(shared_word_in_titles, u'', x).strip()), look_here_titles)
+        else:
+            look_here_titles = map(lambda x: tuple(x), look_here_titles)
+        return look_here_titles
+
 
     def get_ref_step2(self):
         """
@@ -296,42 +308,66 @@ class Source(object):
                 include_dependant = False
                 wrong_ref = True
 
-        if (wrong_ref and self.ref): # or (self.raw_ref and not self.ref and not self.raw_ref.is_sham):
-            new_ref = None
-            include_dependant = True
-            # look_here = self.extract_cat(include_dependant=include_dependant)
-            look_here = self.indexs
-            # if look_here and (self.index or wrong_ref):
-            #     # than try to get the true title from the cat from look_here
-            #     look_here_shared_title_word = u'({})'.format(
-            #         u'|'.join(list(set.intersection(*[set(x.title.split()) for x in look_here]))))
-            #     alt_ref_titles = map(lambda x: x['text'], self.ref.index.schema['titles'])
-            #     found_index = [ind for ind in look_here for tanakh_book in alt_ref_titles if
-            #                    tanakh_book in re.sub(look_here_shared_title_word, u'', ind.title).strip()]
-            #     if found_index:
-            #         if len(set(found_index)) > 1:  # assert len(found_index) == 0
-            #             print "more than one index option"  # todo: problem with אלשיך דברים and with books I, II
-            #             print found_index[0].title, found_index[-1].title
-            #         self.index = found_index[0]
-            #         try:
-            #             new_ref = Ref(u'{} {}'.format(self.index.title, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()))
-            #             print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
-            #             self.ref = new_ref
-            #         except exceptions.InputError as e:
-            #             print u"inputError for this string {}, extracted from this rawref {}".format(u'{} {}'.format(self.index.title, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()), self.raw_ref)
-            # tanakh is wrong but can't find the index ex: רש"ר הירש
-            if self.index and not self.ref:
-                ind = self.index
-                #todo: look into the original catching see why it is not catchin kalla. also see how to copy the intresting parts to here
-                self.raw_ref.book = ind.title
-                split_raw_text = re.sub(u'[\(\)]', u'', self.raw_ref.rawText).split()
-                self.raw_ref.section_level = split_raw_text
+        if self.ref:
+            if wrong_ref:  # or (self.raw_ref and not self.ref and not self.raw_ref.is_sham):
+                new_ref = None
+                include_dependant = True
+                # look_here = self.extract_cat(include_dependant=include_dependant)
+                look_here = self.indexs
+                if look_here:
+                    if wrong_ref:
+                        current_title = self.ref.index.title
+                        alt_ref_titles = map(lambda x: x['text'], self.ref.index.schema['titles'])
+                        look_here_titles = self.get_look_here_titles(look_here)
+                        reduced_indexes = [index_t[0] for index_t in look_here_titles if ((index_t[-1] in alt_ref_titles) or any([t for t in alt_ref_titles if t in index_t[-1]]))]
+                        if len(reduced_indexes) == 1:
+                            self.index = reduced_indexes[0]
+                            try:
+                                new_ref = Ref(u'{} {}'.format(self.index, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()))
+                                print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
+                                self.ref = new_ref
+                            except exceptions.InputError as e:
+                                print u"inputError for this string {}, extracted from this rawref {}".format(u'{} {}'.format(self.index.title, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()), self.raw_ref)
+                        elif not reduced_indexes: #  len(reduced_indexes) == 0
+                            # couldn't find the title in the books maybe it is in there nodes
+                            if isinstance(look_here[0], Index):
+                                look_here_nodes = [ind for ind in look_here]
+                        else:
+                            print u"reduced_indexes: {} deleting wrong ref: {}.".format(reduced_indexes, self.ref.normal())
+                            self.ref = None
+                else: #couldn't find a indexs for this author
+                    parser.missing_authors.add(self.author)
+                # if look_here and (self.index or wrong_ref):
+                #     # than try to get the true title from the cat from look_here
+                #     look_here_shared_title_word = u'({})'.format(
+                #         u'|'.join(list(set.intersection(*[set(x.title.split()) for x in look_here]))))
+                #     alt_ref_titles = map(lambda x: x['text'], self.ref.index.schema['titles'])
+                #     found_index = [ind for ind in look_here for tanakh_book in alt_ref_titles if
+                #                    tanakh_book in re.sub(look_here_shared_title_word, u'', ind.title).strip()]
+                #     if found_index:
+                #         if len(set(found_index)) > 1:  # assert len(found_index) == 0
+                #             print "more than one index option"  # todo: problem with אלשיך דברים and with books I, II
+                #             print found_index[0].title, found_index[-1].title
+                #         self.index = found_index[0]
+                #         try:
+                #             new_ref = Ref(u'{} {}'.format(self.index.title, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()))
+                #             print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
+                #             self.ref = new_ref
+                #         except exceptions.InputError as e:
+                #             print u"inputError for this string {}, extracted from this rawref {}".format(u'{} {}'.format(self.index.title, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()), self.raw_ref)
+                # tanakh is wrong but can't find the index ex: רש"ר הירש
+                if self.index and not self.ref:
+                    ind = self.index
+                    #todo: look into the original catching see why it is not catchin kalla. also see how to copy the intresting parts to here
+                    self.raw_ref.book = ind.title
+                    split_raw_text = re.sub(u'[\(\)]', u'', self.raw_ref.rawText).split()
+                    self.raw_ref.section_level = split_raw_text
 
+                    pass
+                if not self.index or not new_ref:
+                    print u"deleting wrong: {} couldn't find an index".format(self.ref)
+            else: # not wrong_ref. and found a ref, might just be a correct ref. todo: how to test it is correct?
                 pass
-            if not self.index or not new_ref:
-                print u"deleting wrong: {} couldn't find an index".format(self.ref)
-
-                # self.try_from_ls()
 
 
 
@@ -411,5 +447,7 @@ if __name__ == "__main__":
             print u"cnt_sham :", Source.cnt_sham, u"precent: ", Source.cnt_sham*100.0/Source.cnt*1.0
             print u"cnt_resolved :", Source.cnt_resolved, u"precent: ", Source.cnt_resolved*100.0/Source.cnt*1.0
             print u"cnt_not_found :", Source.cnt_not_found, u"precent: ", Source.cnt_not_found*100.0/Source.cnt*1.0
+            for missing in parser.missing_authors:
+                print missing
 
     print u'done'
