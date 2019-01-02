@@ -356,7 +356,7 @@ class Question(object):
         table_html = str(segment)  # todo: fix this line, why are we losing so much data here?
         segs = [s for s in segment.find_all('p') if not s.parent.has_attr('class')]
         any([s.attrs for s in segs])
-        text_segments = segment.find_all('p') + [el for el in segment.descendants if isinstance(el, element.NavigableString) and len(el) > 4]
+        text_segments = segment.find_all('p')  # + [el for el in segment.descendants if isinstance(el, element.NavigableString) and len(el) > 4]
         self.q_text = u" ".join([bleach.clean(unicode(s), tags=["u", "b", "table", "td", "tr", "br"], strip=True).strip() for s in text_segments if not s.parent.has_attr('class')])
 
         self.text = self.format()
@@ -543,7 +543,7 @@ class Nested(object):
                 objs.add(p)
         objs = objs.union(set(classed_tags))
         testing_doubls = [o for o in objs if re.search(u'וכי סומים היו', o[1].text)]
-        objs = Nested.find_missing_objs(objs)
+        # objs = Nested.find_missing_objs(objs)
         objs = sorted(objs, key=lambda x: x[0])
 
         objs = [o[1] for o in objs]
