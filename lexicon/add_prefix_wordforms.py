@@ -14,16 +14,28 @@ from sefaria.datatype import jagged_array
 from sefaria.model import *
 from sefaria.system.exceptions import BookNameError
 
-with open('../data/dictionary-wordform-pickles/jastrow_wordforms.pickle', 'rb') as handle:
-    jastrow_wordforms = pickle.load(handle)
+jastrow_clean_wordforms = None
+klein_clean_wordforms = None
 
-with open('../data/dictionary-wordform-pickles/klein_wordforms.pickle', 'rb') as handle:
-    klein_wordforms = pickle.load(handle)
-    
-with open('../data/dictionary-wordform-pickles/new_jastrow_wordforms.pickle', 'rb') as handle:
+# lookups_dict = {
+#                   "headword": self._current_entry['headword'],
+#                   "parent_lexicon": lexicon_name
+#                 }
+#         
+#         word_form_obj = WordForm({
+#             'lookups': [lookups_dict],
+#             "generated_by": generated_by,
+#         })
+#         # maybe add rid "rid": self._current_entry['rid']
+#         if 'language_code' in self._current_entry:
+#             setattr(word_form_obj,'language_code', self._current_entry['language_code'])
+#         if refs:
+#             setattr(word_form_obj, 'refs', refs)
+
+with open('dict/Jastrow/data/jastrow_clean_wordforms.pickle', 'rb') as handle:
     jastrow_clean_wordforms = pickle.load(handle)
 
-with open('../data/dictionary-wordform-pickles/new_klein_wordforms.pickle', 'rb') as handle:
+with open('dict/Klein/pickles/clean_wordforms.pickle', 'rb') as handle:
     # dict of all words to their rids
     klein_clean_wordforms = pickle.load(handle)
 
@@ -32,3 +44,10 @@ with codecs.open('prefix_refs_talmud.txt', 'rb', 'utf-8') as fr:
         if len(line) > 2:
             ref_txt, txt = line.split(u'~~')
             ref = Ref(ref_txt)
+            if u'┉' in txt:
+                for word in txt:
+                    if u'┉' in txt:
+                        prefix, hw = word.split(u'┉')
+                        
+                        
+                # for 
