@@ -2,8 +2,14 @@
 
 import re
 import codecs
-from collections import Counter
-from data_utilities.util import getGematria, numToHeb, StructuredDocument
+import requests
+from collections import Counter, namedtuple
+from sources.functions import post_index, post_text
+from data_utilities.util import getGematria, numToHeb, StructuredDocument, file_to_ja_g, ja_to_xml
+
+import django
+django.setup()
+from sefaria.model import * # noqa
 
 
 def build_gemtaria_regex(specials=None):
@@ -70,10 +76,10 @@ def generate_full_file():
 
 
 def identify_seifim(chapter_lines, lookahead=3, prefixes=None):
-    seifim = []
+    seifim, line_indexes = [], []
     seif_regex = re.compile(gematria_for_range(1, lookahead+1, prefixes))
 
-    for chap_line in chapter_lines:
+    for line_num, chap_line in enumerate(chapter_lines):
         if not chap_line:
             continue
         elif re.match(u'^@22', chap_line):
@@ -81,10 +87,11 @@ def identify_seifim(chapter_lines, lookahead=3, prefixes=None):
         aoi = re.match(u'^@11([^@]+)@33', chap_line).group(1)
         has_seif = seif_regex.search(aoi)
         if has_seif:
-            print aoi
+            # print aoi
             seifim.append(getGematria(has_seif.group(u'gem')))
+            line_indexes.append(line_num)
             seif_regex = re.compile(gematria_for_range(seifim[-1]+1, lookahead+1, prefixes))
-    return seifim
+    return seifim, line_indexes
 
 
 # with codecs.open(u'gra_full.txt', 'r', 'utf-8') as fp:
@@ -102,12 +109,81 @@ def identify_seifim(chapter_lines, lookahead=3, prefixes=None):
 #         issues += 1
 #     previous_chapter = cur_chapter
 # print issues
+
+SeifTracker = namedtuple('SeifTracker', ['seif_number', 'seif_line_index'])
+
 seif_prefixes = [
-    u'ס"'
+    u'ס"',
+    u'ס'
 ]
-my_doc = StructuredDocument(u'gra_full.txt', u'@22([\u05d0-\u05ea]{1,4})')
-chapter_1 = my_doc.get_section(4)
-chap_seifim = chapter_1.split(u'\n')
-seif_values = identify_seifim(chap_seifim, prefixes=seif_prefixes)
-for s in seif_values:
-    print s,
+
+
+def add_seifim_to_chapter(chap_text):
+    chap_lines = chap_text.split(u'\n')
+    seif_values, seif_indexes = identify_seifim(chap_lines, prefixes=seif_prefixes)
+    trackers = [SeifTracker(*s) for s in zip(seif_values, seif_indexes)]
+
+    if not trackers:
+        trackers.append(SeifTracker(1, 1))
+    if trackers[0].seif_line_index != 1:
+        if trackers[0].seif_number > 1:
+            trackers.insert(0, SeifTracker(1, 1))
+        else:
+            trackers[0] = SeifTracker(1, 1)
+
+    for seif_value, seif_index in reversed(trackers):
+        chap_lines.insert(seif_index, u'@44{}'.format(numToHeb(seif_value)))
+    return u'\n'.join(chap_lines)
+
+
+# my_doc = StructuredDocument(u'gra_full.txt', u'@22([\u05d0-\u05ea]{1,4})')
+# for chapter in my_doc.get_chapter_values():
+#     my_doc.edit_section(chapter, add_seifim_to_chapter)
+
+
+def structure_comments(seif):
+    def repl(x):
+        replacements = {
+            u'@11': u'<b>',
+            u'@33': u'</b>'
+        }
+        return replacements[x.group()]
+
+    # comments = seif.split(u'\n')
+    return [re.sub(u'@[13]{2}', repl, c) for c in seif]
+
+
+expressions = [u'@22(?P<gim>[\u05d0-\u05ea]{1,4})', u'@44(?P<gim>[\u05d0-\u05ea]{1,3})']
+with codecs.open('gra_with_seifim.txt', 'r', 'utf-8') as fp:
+    gra_ja = file_to_ja_g(3, fp, expressions, structure_comments, gimatria=True)
+
+# ja_to_xml(gra_ja.array(), [u'Siman', u'Seif', u'Comment'])
+remote_index = requests.get(u'https://www.sefaria.org/api/v2/raw/index/Shulchan_Arukh,_Orach_Chayim').json()
+alts = remote_index['alt_structs']
+for node in alts['Topic']['nodes']:
+    node['wholeRef'] = re.sub(u'Shulchan Arukh', u'Beur HaGra on Shulchan Arukh', node['wholeRef'])
+
+jnode = JaggedArrayNode()
+jnode.add_primary_titles(u'Beur HaGra on Shulchan Arukh, Orach Chayim', u'ביאור הגר"א על שולחן ערוך אורך חיים')
+jnode.add_structure([u'Siman', u'Seif', u'Comment'])
+jnode.toc_zoom = 2
+g_index = {
+    u'title': u'Beur HaGra on Shulchan Arukh, Orach Chayim',
+    u'categories': [u"Halakhah", u"Shulchan Arukh", u"Commentary", u"Beur HaGra"],
+    u'base_text_titles': [u'Shulchan Arukh, Orach Chayim'],
+    u'collective_title': u'Beur HaGra',
+    u'dependence': u'Commentary',
+    u'base_text_mapping': u'many_to_one',
+    u'schema': jnode.serialize(),
+    u'alt_structs': alts
+}
+
+g_version = {
+    u"versionTitle": u"Maginei Eretz: Shulchan Aruch Orach Chaim, Lemberg, 1893",
+    u"versionSource": u"http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002084080",
+    u"language": u"he",
+    u"text": gra_ja.array(),
+}
+server = 'http://graoc.sandbox.sefaria.org'
+post_index(g_index, server)
+post_text(g_index[u'title'], g_version, index_count='on', skip_links=True, server=server)
