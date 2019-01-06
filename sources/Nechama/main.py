@@ -347,7 +347,7 @@ class Section(object):
         # and tables  need to be handled recursively
 
         # create Segment objects out of the BeautifulSoup objects
-        self.classify_segments(soup_segments) #self.segment_objects += self.classify_segments(soup_segments)
+        self.classify_segments(soup_segments)  # self.segment_objects += self.classify_segments(soup_segments)
         prev_source = None
         new_segment_objects = []
         for i, obj in enumerate(self.segment_objects):
@@ -1635,7 +1635,7 @@ if __name__ == "__main__":
     catch_errors = False
 
     posting = True
-    individuals = [1291]  # [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
+    individuals = [62]  # [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
 
     found_tables_num = 0
     found_tables = set()
@@ -1644,7 +1644,7 @@ if __name__ == "__main__":
             # print u"NEW BOOK"
             for parsha in which_parshiot[1]:
                 book = which_parshiot[0]
-                parser = Nechama_Parser(en_sefer=book, en_parasha=parsha, mode = "accurate", add_to_title="missing text test", catch_errors=catch_errors, looking_for_matches=True)
+                parser = Nechama_Parser(en_sefer=book, en_parasha=parsha, mode = "accurate", add_to_title="numbering issue", catch_errors=catch_errors, looking_for_matches=True)
                 #parser.prepare_term_mapping()  # must be run once locally and on sandbox
                 #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
                 if not individual:

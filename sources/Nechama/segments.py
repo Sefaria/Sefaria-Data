@@ -146,7 +146,8 @@ class Source(object):
             heRef = self.get_sefaria_ref(self.ref).he_normal()
             if self.about_source_ref:
                 if hasattr(self, 'number'):
-                    heRef = self.about_source_ref
+                    q = Question(question=self)
+                    heRef = q.format(without_params=[u'difficulty'], new_text=heRef)
                 else:
                     comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False)
             enRef = self.get_sefaria_ref(self.ref).normal()
@@ -646,12 +647,12 @@ class Nested(object):
             return like_q
 
         if self.question:
-            for i, s in enumerate(self.segment_objs):
-                if isinstance(s, Nechama_Comment):
-                    self.segment_objs[i] = demi_q(self.question, s.text)
-                    return self.segment_objs
-                elif isinstance(s, Question):
-                    return self.segment_objs
+            # for i, s in enumerate(self.segment_objs):
+            #     if isinstance(s, Nechama_Comment):
+            #         self.segment_objs[i] = demi_q(self.question, s.text)
+            #         return self.segment_objs
+            #     elif isinstance(s, Question):
+            #         return self.segment_objs
             self.glue_q_number(self.segment_objs[0])
             # self.segment_objs.insert(0, demi_q(self.question, u''))
         return self.segment_objs
