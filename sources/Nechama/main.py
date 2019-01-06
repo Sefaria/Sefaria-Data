@@ -215,7 +215,7 @@ class Sheet(object):
        else:
            sheet_json["tags"] = [unicode(self.en_parasha)]
            assert Term().load({"name": self.en_parasha})
-
+       sheet_json["tags"].append(re.search(u'.*?(\d+)\.', self.html).groups(1)[0])
        if self.links_to_other_sheets:
            parser.sheets_linked_to_sheets.append((sheet_json["title"], sheet_json["summary"], sheet_json["tags"]))
 
@@ -1075,6 +1075,7 @@ class Nechama_Parser:
             '107': None,  # u'רס"ג'
             '109': u'Sforno on {}'.format(self.en_sefer),
             '111': u"Akeidat Yitzchak",  # u'''עקדת יצחק''',
+            '112': None,  # משכיל לדוד 71.2
             '118': None,  # u'קסוטו',
             '127': u"Radak on {}".format(self.en_sefer),  # u'''רד"ק''',
             '152': None,  # u'בנו יעקב',
@@ -1092,7 +1093,8 @@ class Nechama_Parser:
             '196': None,  # u'''בעל הלבוש אורה''',
             '198': u"HaKtav VeHaKabalah, {}".format(self.en_sefer),  # u'''הכתב והקבלה''',
             '238': u"Onkelos {}".format(self.en_sefer),  # u"אונקלוס",
-        # u'''רלב"ג''', #todo, figure out how to do Beur HaMilot and reguler, maybe needs to be a re.search in the changed_ref method
+            'undefined': None,
+            # u'''רלב"ג''', #todo, figure out how to do Beur HaMilot and reguler, maybe needs to be a re.search in the changed_ref method
         }
         for k in range(239):
             if str(k) not in self.parshan_id_table.keys():
@@ -1285,6 +1287,8 @@ class Nechama_Parser:
                             if not current_source.parshan_id:
                                 current_source.parshan_id = guess_parshan
                             parshan = parser.parshan_id_table[current_source.parshan_id]
+                            if current_source.parshan_id == 'undefined':
+                                parshan = ref2check.index.title
                             # chenged_ref = Ref(u'{} {}'.format(parshan, u'{}:{}'.format(ref2check.sections[0], ref2check.sections[1]) if len(ref2check.sections)>1 else u'{}'.format(ref2check[0])))
                             assert parshan
                             changed_ref = self.change_ref_to_commentary(ref2check, parshan)
@@ -1631,7 +1635,7 @@ if __name__ == "__main__":
     catch_errors = False
 
     posting = True
-    individuals = [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
+    individuals = [1291]  # [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
 
     found_tables_num = 0
     found_tables = set()

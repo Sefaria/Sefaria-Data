@@ -134,12 +134,14 @@ class Source(object):
 
         nested_source_refDisplayPosition = True if isinstance(comment, list) else False
         # is Sefaria ref
-        if hasattr(self, 'number'):
+        if hasattr(self, 'number') and hasattr(self, 'difficulty'):
+            q = Question(question=self)
             if self.about_source_ref:
-                self.about_source_ref = self.number + u' '+self.about_source_ref
+                self.about_source_ref = q.format(new_text=self.about_source_ref)
             else:
-                print 'has number dpesn"t have about to glue the number to'
+                print "has number and difficulty doesn't have about to glue the number to"
                 assert True
+
         if self.get_sefaria_ref(self.ref):
             heRef = self.get_sefaria_ref(self.ref).he_normal()
             if self.about_source_ref:
@@ -199,7 +201,7 @@ class Source(object):
             if self.about_source_ref:
                 comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False) #use actual text if we can
             elif self:
-                pass
+                pass  # todo: what is this pass?
             else:
                 comment = self.glue_ref_and_text(self.ref, comment, gray=True) # otherwise, use the ref we thought it was
             source = {"outsideText": comment,
@@ -396,7 +398,7 @@ class Question(object):
         source = {"outsideText": str(segment)}
         return source
 
-    def format(self, without_params=[], difficulty_symbol = [u'<sup class="nechama"></sup>', u'''<sup class="nechama">*</sup>''', u'''<sup class="nechama">**</sup>''']):
+    def format(self, without_params=[], difficulty_symbol = [u'<sup class="nechama"></sup>', u'''<sup class="nechama">*</sup>''', u'''<sup class="nechama">**</sup>'''], new_text = None):
         """
 
         :param without_params: list. ex: ["difficulty", "number"]
@@ -407,7 +409,10 @@ class Question(object):
         # if re.search(u'>(.*?)<', self.q_text):
         #     text = re.search(u'>(.*?)<',  self.q_text).group(1)
         # else:
-        text = self.q_text if isinstance(self.q_text, unicode) else self.q_text.decode('utf-8')
+        if new_text:
+            text = new_text
+        else:
+            text = self.q_text if isinstance(self.q_text, unicode) else self.q_text.decode('utf-8')
 
         if "number" not in without_params:
             text= unicode(self.number) + u' ' + text
