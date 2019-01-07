@@ -1,15 +1,17 @@
 # encoding=utf-8
 
 import re
+import numpy
 import codecs
 import requests
+import unicodecsv
 from collections import Counter, namedtuple
 from sources.functions import post_index, post_text
 from data_utilities.util import getGematria, numToHeb, StructuredDocument, file_to_ja_g, ja_to_xml
 
 import django
 django.setup()
-from sefaria.model import * # noqa
+from sefaria.model import *  # noqa
 
 
 def build_gemtaria_regex(specials=None):
@@ -185,5 +187,62 @@ g_version = {
     u"text": gra_ja.array(),
 }
 server = 'http://graoc.sandbox.sefaria.org'
-post_index(g_index, server)
-post_text(g_index[u'title'], g_version, index_count='on', skip_links=True, server=server)
+# post_index(g_index, server)
+# post_text(g_index[u'title'], g_version, index_count='on', skip_links=True, server=server)
+
+
+def is_good_seif(seif_list, seif_index, base_seifim):
+    """
+    Identify seifim which are not suspect of containing errors. The errors we are looking for is missing the start of
+    the next seif. We can be sure that this is not an issue if the following seif is present (i.e. if "2" is followed
+    by "3").
+    :param list seif_list: list of seifim (chapter
+    :param int seif_index: index of seif in seif_list
+    :return:
+    """
+    if seif_index >= len(seif_list) - 1:  # last seifim are suspect
+        if seif_index == base_seifim - 1:
+            return True
+        return False
+
+    elif len(seif_list[seif_index]) == 0:  # empty seif
+        return False
+
+    elif len(seif_list[seif_index + 1]) == 0:  # following seif is empty
+        return False
+    else:
+        return True
+
+
+SeifLocation = namedtuple('SeifLocation', ['chapter', 'seif', 'length'])
+seif_lengths, probelm_seifim = [], []
+for chap_num, chapter in enumerate(gra_ja.array()):
+    base_ref = Ref(u"Shulchan Arukh, Orach Chayim {}".format(chap_num + 1))
+    base_seifim = len(base_ref.all_subrefs())
+    for index, seif in enumerate(chapter):
+        if is_good_seif(chapter, index, base_seifim):  # or index == base_seifim - 1:
+            seif_lengths.append(len(seif))
+        else:
+            probelm_seifim.append(seif)
+
+print len(seif_lengths), len(probelm_seifim)
+
+max_dev = int(numpy.rint(numpy.mean(seif_lengths) + numpy.std(seif_lengths)))
+
+print max_dev
+
+probelm_seifim = []
+for chap_num, chapter in enumerate(gra_ja.array()):
+    base_ref = Ref(u"Shulchan Arukh, Orach Chayim {}".format(chap_num + 1))
+    base_seifim = len(base_ref.all_subrefs())
+    for index, seif in enumerate(chapter):
+        if not is_good_seif(chapter, index, base_seifim):
+            if len(seif) >= max_dev:
+                probelm_seifim.append(SeifLocation(chap_num+1, index+1, len(seif)))
+
+print len(probelm_seifim)
+rows = [dict(problem._asdict()) for problem in probelm_seifim]  # despite convention, not a protected member
+with open('gra_problem_seifim.csv', 'w') as fp:
+    writer = unicodecsv.DictWriter(fp, SeifLocation._fields)
+    writer.writeheader()
+    writer.writerows(rows)
