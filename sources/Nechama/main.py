@@ -417,7 +417,7 @@ class Section(object):
         if Header.is_header(sp_segment):
             return Header(sp_segment)  # self.segment_objects.append(Header(segment))
         elif Question.is_question(sp_segment):
-            nested_seg = Nested.is_nested(sp_segment)  # Question.nested(sp_segment)
+            nested_seg = Nested.is_nested(sp_segment, just_checking=True)  # Question.nested(sp_segment)
             if nested_seg:  # todo: so we know that this is a Nested Question! what to do with this info?
                 return Nested(Nested.is_nested(sp_segment), section=self, question=Question(sp_segment))
             else:
@@ -1375,15 +1375,30 @@ class Nechama_Parser:
         remove_html = lambda x: bleach.clean(x, strip=True).replace("<b>", "").replace("</b>", "")
         orig_sources = list(sources)
         with codecs.open("reports/text_check.txt", 'a', encoding='utf-8') as f:
-            f.write("Checking {}\n".format(html_sheet))
             content = content.find('div', {"id": 'contentBody'}).get_text().splitlines()
             sources = [source["outsideText"] if "outsideText" in source.keys() else source["text"]["he"] for source in sources]
             sources = [remove_html(source.decode('utf-8')) if type(source) is str else remove_html(source) for source in sources]
             sources = u" ".join(sources)
+            found_lines = []
             for line_n, line in enumerate(content):
-                if line and line.strip() not in sources:
-                    f.write(line)
-                    f.write("\n\n")
+                if not line or not " " in line:
+                    continue
+                if len(line.split()) == 2 and u"פסוק" in line:
+                    continue
+                line = line.strip() #account for get_text errors
+                if line not in sources:
+                    words = line.replace(".", ". ").replace("?", "? ").replace("  ", " ").split()
+                    flag = 0
+                    for word in words:
+                        if word not in sources:
+                            flag += 1
+                        if flag == 2:
+                            found_lines.append(line)
+                            break
+            if found_lines:
+                f.write("Found in {}\n".format(html_sheet))
+                for line in found_lines:
+                    f.write(line+"\n")
 
 
     def bs4_reader(self, file_list_names, post = False, add_to_title = ''):
@@ -1561,67 +1576,9 @@ def dict_from_html_attrs(contents):
         else:
             d[e.name] = e
     return d
-#
-# def word_cloud():
-#     def get_title(el):
-#         index = Ref(el).index
-#         collective_title = getattr(index, "collective_title", None)
-#         if collective_title:
-#             term = Term().load({"name": collective_title}).get_titles('he')[0].encode('utf-8')
-#         else:
-#             term = index.get_title('he').split(u" על ")[0].encode('utf-8')
-#         term = term.replace(" ", "־").replace('"', '״')
-#         return term
-#
-#     from collections import Counter
-# from sefaria.system.database import db
-# sheets = db.sheets.find()
-# sheets = list(sheets)
-# wordsByYear = {}
-# for sheet in sheets:
-#     year = sheet["summary"].split(" ")[0]
-#     if year not in wordsByYear:
-#         wordsByYear[year] = 0
-#     sources = sheet["sources"]
-#     text = ""
-#     for source in sources:
-#         print source
-#         if "text" in source.keys():
-#             text += source["text"]["he"]
-#         elif "outsideText" in source.keys():
-#             text += source["outsideText"]
-#         else:
-#             continue
-#     num_words = len(text.split())
-#     wordsByYear[year] += num_words
-
-
-    # includedRefs = Counter()
-    # includedRefsTotal = Counter()
-    # includedCommentary = Counter()
-    # includedIndexes = Counter()
-    # includedTanakh = Counter()
-    # refsPerSheet = Counter()
-    # total = 0
-    # for sheet in sheets:
-    #     total += len(sheet["includedRefs"])
-    #     refsPerSheet[sheet["id"]] = len(sheet["includedRefs"])
-    #     includedRefs[sheet["title"]] = Counter(sheet["includedRefs"])
-    #     includedTanakh += Counter([Ref(el).index for el in sheet["includedRefs"]
-    #                                if "Commentary" not in Ref(el).index.categories and "Tanakh" in Ref(el).index.categories])
-    #     includedIndexes += Counter([Ref(el).index for el in sheet["includedRefs"] if "Commentary" not in Ref(el).index.categories and "Tanakh" not in Ref(el).index.categories])
-    #     includedCommentary += Counter([Ref(el).index for el in sheet["includedRefs"] if "Commentary" in Ref(el).index.categories])
-    #     includedRefsTotal += includedRefs[sheet["title"]]
-
-
 
 
 if __name__ == "__main__":
-    # Ref(u"בראשית פרק ג פסוק ד - פרק ה פסוק י")
-    # Ref(u"u'דברים פרק ט, ז-כט - פרק י, א-י'")
-
-    
-
     genesis_parshiot = (u"Genesis", ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", 'Vayetzei',
                                      "Vayishlach", "Vayeshev", "Miketz", "Vayigash", "Vayechi"])
     exodus_parshiot = (u"Exodus", ["Vayakhel-Pekudei", "Shemot", "Vaera", "Bo", "Beshalach", "Yitro", "Mishpatim",
@@ -1635,7 +1592,7 @@ if __name__ == "__main__":
     catch_errors = False
 
     posting = True
-    individuals = [62]  # [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
+    individuals = [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,1393,572,71,46,559,892,427]
 
     found_tables_num = 0
     found_tables = set()
@@ -1644,7 +1601,7 @@ if __name__ == "__main__":
             # print u"NEW BOOK"
             for parsha in which_parshiot[1]:
                 book = which_parshiot[0]
-                parser = Nechama_Parser(en_sefer=book, en_parasha=parsha, mode = "accurate", add_to_title="numbering issue", catch_errors=catch_errors, looking_for_matches=True)
+                parser = Nechama_Parser(en_sefer=book, en_parasha=parsha, mode = "accurate", add_to_title="missing text test", catch_errors=catch_errors, looking_for_matches=True)
                 #parser.prepare_term_mapping()  # must be run once locally and on sandbox
                 #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
                 if not individual:
@@ -1671,5 +1628,7 @@ if __name__ == "__main__":
         # with open("sheets_linked_to_sheets.csv", 'w') as f:
         #     writer = UnicodeWriter(f)
         #     writer.writerows(sheets_linked_to_sheets)
+
+
 
 

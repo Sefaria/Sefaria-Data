@@ -360,6 +360,7 @@ class Question(object):
         segs = [s for s in segment.find_all('p') if not s.parent.has_attr('class')]
         any([s.attrs for s in segs])
         text_segments = segment.find_all('p')  # + [el for el in segment.descendants if isinstance(el, element.NavigableString) and len(el) > 4]
+
         self.q_text = u" ".join([bleach.clean(unicode(s), tags=["u", "b", "table", "td", "tr", "br"], strip=True).strip() for s in text_segments if not s.parent.has_attr('class')])
 
         self.text = self.format()
@@ -522,7 +523,7 @@ class Nested(object):
 
 
     @staticmethod
-    def is_nested(segment):
+    def is_nested(segment, just_checking=False):
         if isinstance(segment, element.NavigableString):
             return
         classed_tags = []
@@ -549,28 +550,48 @@ class Nested(object):
                 objs.add(p)
         objs = objs.union(set(classed_tags))
         testing_doubls = [o for o in objs if re.search(u'וכי סומים היו', o[1].text)]
-        # objs = Nested.find_missing_objs(objs)
-        objs = sorted(objs, key=lambda x: x[0])
-
+        if not just_checking:
+            objs = Nested.find_missing_objs(objs)
+            objs = sorted(objs, key=lambda x: x[0])
+            objs = Nested.look_for_missing_next(objs)
         objs = [o[1] for o in objs]
         return objs
 
     @staticmethod
+    def look_for_missing_next(objs):
+        nechama_obj = objs[-1]
+        curr_soup_obj = nechama_obj[1]
+        while curr_soup_obj.next_sibling:
+            next_sibling_text = curr_soup_obj.next_sibling if isinstance(curr_soup_obj.next_sibling, element.NavigableString) else curr_soup_obj.next_sibling.text
+            nechama_obj[1].string += u" " + next_sibling_text
+            curr_soup_obj = curr_soup_obj.next_sibling
+        assert objs[-1] == nechama_obj
+        return objs
+
+
+
+    @staticmethod
     def find_missing_objs(objs):
-        # idea is to
+        # missing text could be prev_siblings or next_siblings, so iterate and check
         new_objs = []
+        text = u" ".join([obj[1].text for obj in objs])
+        text_test = lambda child: ((isinstance(child, element.NavigableString) and child not in text) or (isinstance(child, element.Tag) and child.text not in text))
         nums = [el[0] for el in objs]
         for i, obj in objs:
-            if obj.prev_sibling and isinstance(obj.prev_sibling, element.NavigableString) and len(obj.prev_sibling) > 2:
-                soup = BeautifulSoup("<p></p>", "lxml")
-                soup.append(obj.prev_sibling)
-                new_objs.append((i-1, soup))
-                assert i-1 not in nums
-            if obj.next_sibling and isinstance(obj.next_sibling, element.NavigableString) and len(obj.next_sibling) > 2:
-                soup = BeautifulSoup("<p></p>", "lxml")
-                soup.append(obj.next_sibling)
-                new_objs.append((i+1, soup))
-                assert i+1 not in nums
+            children = [(i-1, obj.prev_sibling), (i+1, obj.next_sibling)]
+            for child_tuple in children:
+                j, child = child_tuple
+                if child and text_test(child):
+                    if isinstance(child, element.NavigableString) and child != "\n":
+                        soup = BeautifulSoup()
+                        new_p = soup.new_tag('p')
+                        new_p.string = child
+                        new_objs.append((j, new_p))
+                        text += u" " + child
+                        assert j not in nums
+                    # elif isinstance(child, element.Tag):
+                    #     obj.string += child.text
+                    #     text += u" " + child.text
             new_objs.append((i, obj))
         return new_objs
         # # Test: testing if we get all the text from the html to ourObjs
