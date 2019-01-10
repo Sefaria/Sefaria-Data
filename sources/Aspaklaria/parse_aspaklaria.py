@@ -11,7 +11,8 @@ import string
 import unicodecsv as csv
 import json
 import pickle
-
+from data_utilities.util import getGematria, numToHeb
+import codecs
 
 class Parser(object):
 
@@ -90,13 +91,10 @@ def clean_txt(text):
 
 
 def parse_refs(topic):
-
     if topic.all_a_citations:
         for citbook in topic.all_a_citations:
             citbook.create_sources()
             pass
-        pass
-
 
 class AuthorCit(object):
 
@@ -127,6 +125,8 @@ class Source(object):
     cnt_not_found = 0
     global parser
     parser = Parser() #term_dict = he_term_mapping()
+    indexSet_dict = dict()
+    found_term_dict = dict()
 
     def __init__(self, text, author):
         self.text = text
@@ -146,14 +146,20 @@ class Source(object):
                 Source.cnt_sham += 1
             elif self.ref:  # found ref (presumably a correct ref :) )
                 Source.cnt_resolved += 1
+                res_text = u'{}, {}\n{}\n\n'.format(self.raw_ref.author, self.raw_ref.rawText, self.ref.normal())
+                write_to_file(res_text)
             else:
                 Source.cnt_not_found += 1
 
     def extract_raw_ref(self):
+        """
+        looks for the ref in the end of the text in parentheses
+        :return: does not return but creates a RawRef obj if the parentheses are found
+        """
         if re.search(u'(\([^)]*?\)$)', self.text):
             self.raw_ref = RawRef(re.search(u'(\([^)]*?\)$)',self.text).group(1), self.author)
-        else:
-            pass
+        # else:
+        #     pass
 
     def extract_cat(self, include_dependant):
         # library.get_index(self.author) if library.get_index(self.author) else None # needs to go into a try catch "sefaria.system.exceptions.BookNameError"
@@ -174,23 +180,32 @@ class Source(object):
             # filter(lambda x: x['lang'] == 'he', t.contents()['titles'])[0]['text']
 
     def extract_term(self):
-        text_categories = library.get_text_categories()
+        # text_categories = library.get_text_categories()
         found_term = []
         author = re.sub(u'[{}]'.format(re.escape(string.punctuation)), u'', self.author)
         def try_to_find(term_string, prefixes = True):
+            #check that the string is not a word that has no meaning. like ה from אור ה
+            if len(term_string) <=1:
+                return []
             # is a known term
-            found_term = parser.term_dict.get(term_string, [])
+            found_term  = Source.found_term_dict.get(term_string, [])
             if found_term:
                 return found_term
-            # else try string of a known Term
-            if re.search(term_string, parser.he_term_str):
-                found_he = re.search(u"\|([^|]*{}[^|]*?)\|".format(term_string), parser.he_term_str).group(1)
-                found_term = parser.term_dict.get(found_he, [])
-                return found_term
-            elif prefixes:
-                return try_to_find(re.sub(u'^[משהוכלב]', u'', term_string), False)
             else:
-                return []
+                found_term = parser.term_dict.get(term_string, [])
+                if found_term:
+                    Source.found_term_dict[term_string] = found_term
+                    return found_term
+                # else try string of a known Term
+                match = re.search(u"\|([^|]*{}(\s[^|]*?\||\|))".format(term_string), parser.he_term_str)
+                if match:
+                    found_term = parser.term_dict.get(match.group(1).replace(u"|", u""), [])
+                    Source.found_term_dict[term_string] = found_term
+                    return found_term
+                elif prefixes:
+                    return try_to_find(re.sub(u'^[משהוכלב]', u'', term_string), False)
+                else:
+                    return []
 
         found = try_to_find(author)
         found_term += found if isinstance(found, list) else [found]
@@ -223,7 +238,14 @@ class Source(object):
         except exceptions.BookNameError as e:
             term_list = self.extract_term()
             if term_list:
-                inds_via_term = reduce(lambda a,b : a+b, [IndexSet({u"title": {u"$regex": u".*{}.*".format(term)}}).array() for term in term_list])
+                # term_list = map(lambda x: unicode.lower(x), term_list)
+                inds_via_term = []
+                for term in term_list:
+                    indexset = Source.indexSet_dict.get(term, None)
+                    if indexset is None:
+                        indexset = IndexSet({u"title": {u"$regex": u".*(?i){}.*".format(term)}}).array()
+                        Source.indexSet_dict[term] = indexset
+                    inds_via_term += indexset
                 # for title in [x['text'] for ind in inds_from_term for x in ind.schema['titles'] if x['lang'] == 'he']:
                 #     print title
                 inds_via_cats = reduce(lambda a,b : a and b, [library.get_indexes_in_category(term) for term in term_list])
@@ -327,11 +349,32 @@ class Source(object):
                                 print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
                                 self.ref = new_ref
                             except exceptions.InputError as e:
+                                new_ref = None # so not to have new_ref that failed scrowing with stuff
                                 print u"inputError for this string {}, extracted from this rawref {}".format(u'{} {}'.format(self.index.title, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()), self.raw_ref)
                         elif not reduced_indexes: #  len(reduced_indexes) == 0
                             # couldn't find the title in the books maybe it is in there nodes
                             if isinstance(look_here[0], Index):
-                                look_here_nodes = [ind for ind in look_here]
+                                look_here_nodes = reduce(lambda a,b: a+b, [ind.alt_titles_dict('he').items() for ind in look_here])
+                                look_here_nodes = filter(lambda x: any(re.search(t, x[0]) for t in alt_ref_titles), look_here_nodes)
+                                if len(look_here_nodes) >= 1:
+                                    node = look_here_nodes[0]
+                                    node_name = node[0]
+                                    depth = re.search(u'.*?(\d+):?(\d+)?.*?', self.ref.normal()).groups()
+                                    for d in depth:
+                                        if not d:
+                                            print "break"
+                                            break
+                                        try:
+                                            new_ref = Ref(u'{} {}'.format(node_name, numToHeb(d)))
+                                            print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
+                                            break
+                                        except exceptions.InputError as e:
+                                            print u"inputError for this string {}, extracted from this rawref {}".format(u'{} {}'.format(node_name, numToHeb(d)), self.raw_ref.rawText)
+                                        except IndexError as e:
+                                            print u'IndexError {} not sure why...'.format(e)
+                                    self.ref = new_ref
+                                if len(look_here_nodes) > 1:  #todo: what if there are more than 2 look_here_nodes?
+                                    print u'look at these i took the first: {}'.format(look_here_nodes[0])
                         else:
                             print u"reduced_indexes: {} deleting wrong ref: {}.".format(reduced_indexes, self.ref.normal())
                             self.ref = None
@@ -358,7 +401,7 @@ class Source(object):
                 # tanakh is wrong but can't find the index ex: רש"ר הירש
                 if self.index and not self.ref:
                     ind = self.index
-                    #todo: look into the original catching see why it is not catchin kalla. also see how to copy the intresting parts to here
+                    #todo: look into the original catching see why it is not catching kalla. also see how to copy the intresting parts to here
                     self.raw_ref.book = ind.title
                     split_raw_text = re.sub(u'[\(\)]', u'', self.raw_ref.rawText).split()
                     self.raw_ref.section_level = split_raw_text
@@ -366,9 +409,9 @@ class Source(object):
                     pass
                 if not self.index or not new_ref:
                     print u"deleting wrong: {} couldn't find an index".format(self.ref)
-            else: # not wrong_ref. and found a ref, might just be a correct ref. todo: how to test it is correct?
+            else:  # not wrong_ref. and found a ref, might just be a correct ref. todo: how to test it is correct?
                 pass
-
+        # where can we look at nodes names when we are not testing giving wrong Ref?
 
 
     def try_from_ls(self):
@@ -388,6 +431,12 @@ class RawRef(object):
         self.section_level = None
         self.segment_level = None
         self.is_sham = False
+
+
+def write_to_file(text, mode='a'):
+    with codecs.open(u'resolved.txt', mode, encoding='utf-8') as f:
+        f.write(text)
+
 
 
 def parse2pickle():
@@ -433,12 +482,14 @@ if __name__ == "__main__":
     # name=u'מיכאל'
     # pass
     # for file in os.listdir(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/"):
+    write_to_file(u'', mode = 'w')
     for file in [u'AYIN.pickle']:
         Source.cnt = 0
         Source.cnt_sham = 0
         Source.cnt_resolved = 0
         Source.cnt_not_found = 0
         with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/{}".format(file), "rb") as fp:
+            write_to_file(u'NEW_Letter: {}\n\n'.format(file.split(u'.')[0]), mode='a')
             topics = pickle.load(fp)
             for i, t in enumerate(topics.values()):
                 parse_refs(t)
