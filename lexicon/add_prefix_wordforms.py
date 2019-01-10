@@ -13,24 +13,32 @@ from data_utilities.util import numToHeb
 from sefaria.datatype import jagged_array
 from sefaria.model import *
 from sefaria.system.exceptions import BookNameError
+from collections import defaultdict
 
 jastrow_clean_wordforms = None
 klein_clean_wordforms = None
+wordforms = defaultdict(list)
 
-# lookups_dict = {
-#                   "headword": self._current_entry['headword'],
-#                   "parent_lexicon": lexicon_name
-#                 }
-#         
-#         word_form_obj = WordForm({
-#             'lookups': [lookups_dict],
-#             "generated_by": generated_by,
-#         })
-#         # maybe add rid "rid": self._current_entry['rid']
-#         if 'language_code' in self._current_entry:
-#             setattr(word_form_obj,'language_code', self._current_entry['language_code'])
-#         if refs:
-#             setattr(word_form_obj, 'refs', refs)
+
+def basic_word_form(self, refs, lexicon_name):
+    
+    lookups_dict = {
+              "headword": self._current_entry['headword'],
+              "parent_lexicon": lexicon_name
+            }
+    
+    word_form_obj = WordForm({
+        'lookups': [lookups_dict],
+        "generated_by": "prefix_adder",
+    })
+    # maybe add rid "rid": self._current_entry['rid']
+    if 'language_code' in self._current_entry:
+        setattr(word_form_obj,'language_code', self._current_entry['language_code'])
+    if refs:
+        setattr(word_form_obj, 'refs', refs)
+    return word_form_obj
+
+
 
 with open('dict/Jastrow/data/jastrow_clean_wordforms.pickle', 'rb') as handle:
     jastrow_clean_wordforms = pickle.load(handle)
@@ -48,6 +56,5 @@ with codecs.open('prefix_refs_talmud.txt', 'rb', 'utf-8') as fr:
                 for word in txt:
                     if u'┉' in txt:
                         prefix, hw = word.split(u'┉')
-                        
-                        
-                # for 
+                        if hw in jastrow_clean_wordforms:       
+                            wordforms[prefix+hw].append(ref)
