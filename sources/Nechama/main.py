@@ -523,7 +523,11 @@ class Section(object):
         a_tag_is_entire_comment = False
         if a_tag and a_tag.attrs and 'href' in a_tag.attrs and re.match('javascript:mypopup\((\d*)\)', a_tag["href"]):
             parshan_id = re.match('javascript:mypopup\((\d*)\)', a_tag["href"]).group(1)
-            real_title = parser.parshan_id_table[parshan_id]
+            real_title = parser.parshan_id_table.get(parshan_id, 0)
+            if real_title==0:
+                with codecs.open(u'reports/parshan_id_table.txt', 'a', encoding='utf-8') as fp:
+                    fp.write(u"{}\n".format(self.number))
+                    fp.write(u"{}:{}\n".format(parshan_id, a_tag.text))
         elif a_tag:
             a_tag_is_entire_comment = len(a_tag.text.split()) == len(segment.text.split())
             real_title = self.get_term(a_tag.text)
@@ -965,7 +969,7 @@ class Section(object):
 
 
 class Nechama_Parser:
-    def __init__(self, en_sefer, en_parasha, mode, add_to_title='', catch_errors=False, looking_for_matches=True):
+    def __init__(self, en_sefer, en_parasha, mode, add_to_title='', catch_errors=False, looking_for_matches=True, english_sheet= False):
         if not os.path.isdir("reports/" + en_parasha): # todo: note! this said parsha instead of en_parasha
             os.mkdir("reports/" + en_parasha)
 
@@ -978,7 +982,7 @@ class Nechama_Parser:
         self.ref_not_found = {}
         self.to_match = True
         self.sheets_linked_to_sheets = []
-
+        self.english_sheet = english_sheet
         self.add_to_title = add_to_title
         self.catch_errors = catch_errors #crash upon error if False; if True, make report of each error
         self.mode = mode  # fast or accurate
@@ -1061,7 +1065,9 @@ class Nechama_Parser:
             '46': u"Haamek Davar on {}".format(self.en_sefer),
             '51': None,  # u"ביאור - ר' שלמה דובנא"
             '53': None,  # רב דוד הופמן
+            '54': None,  # הכורם- ר' הרץ נפתלי הומברג 160.3
             '59': None,  # ר' וולף היידנהיים 176.9
+            '63': None,  # פרופ' היינמן 164.1
             '64': None,  # u'רש"ר הירש'
             '66': u"Meshech Hochma, {}".format(self.en_parasha),
             '67': None,  # בעל דברי דוד 125.5
@@ -1069,6 +1075,7 @@ class Nechama_Parser:
             '78': u"Chizkuni, {}".format(self.en_sefer),  # u'החזקוני'
             '88': None,  # u'אברהם כהנא (פירוש מדעי)'
             '91': u"Gur Aryeh on {}".format(self.en_sefer),  # u"גור אריה",
+            '92': u"Kli Yakar on {}".format(self.en_sefer),  # כלי יקר
             '94': u"Shadal on {}".format(self.en_sefer),  # u'''שד"ל''',
             '101': u'Mizrachi, {}'.format(self.en_sefer),
             '104': None,  # u'''רמבמ"ן''',
@@ -1078,6 +1085,8 @@ class Nechama_Parser:
             '112': None,  # משכיל לדוד 71.2
             '118': None,  # u'קסוטו',
             '127': u"Radak on {}".format(self.en_sefer),  # u'''רד"ק''',
+            '129': None,  #  ר' יעקב קניזל 85.2
+            '145': None,  # בעל מנחת יהודה, 85.3
             '152': None,  # u'בנו יעקב',
             '157': None, #  volz
             '158': None,  # רוזנצוויג
@@ -1091,7 +1100,9 @@ class Nechama_Parser:
             '183': None,  #
             '187': None,  # ר' יוסף נחמיאש
             '196': None,  # u'''בעל הלבוש אורה''',
+            '197': u'Alshich on Torah, {}'.format(self.en_sefer),  #האלשיך
             '198': u"HaKtav VeHaKabalah, {}".format(self.en_sefer),  # u'''הכתב והקבלה''',
+            '209': None,  #פירוש יפה תואר 85.1
             '238': u"Onkelos {}".format(self.en_sefer),  # u"אונקלוס",
             'undefined': None,
             # u'''רלב"ג''', #todo, figure out how to do Beur HaMilot and reguler, maybe needs to be a re.search in the changed_ref method
@@ -1375,6 +1386,7 @@ class Nechama_Parser:
         remove_html = lambda x: bleach.clean(x, strip=True).replace("<b>", "").replace("</b>", "")
         orig_sources = list(sources)
         with codecs.open("reports/text_check.txt", 'a', encoding='utf-8') as f:
+            f.write("Checking {}\n".format(html_sheet))
             content = content.find('div', {"id": 'contentBody'}).get_text().splitlines()
             sources = [source["outsideText"] if "outsideText" in source.keys() else source["text"]["he"] for source in sources]
             sources = [remove_html(source.decode('utf-8')) if type(source) is str else remove_html(source) for source in sources]
@@ -1416,6 +1428,8 @@ class Nechama_Parser:
                 parser.non_matches[parser.current_file_path] = []
                 parser.index_not_found[parser.current_file_path] = []
                 parser.ref_not_found[parser.current_file_path] = []
+                with codecs.open(u'reports/parshan_id_table.txt', 'a', encoding='utf-8') as fp:
+                    fp.write(u"{} \n".format(html_sheet))
                 with codecs.open(u"{}".format(html_sheet), 'r', encoding='utf-8') as f:
                     file_content = f.read()
                     file_content = file_content.replace("<U>", "<B>").replace("</U>", "</B>").replace("<u>","<b>").replace("</u>", "</b>")
@@ -1576,6 +1590,59 @@ def dict_from_html_attrs(contents):
         else:
             d[e.name] = e
     return d
+#
+# def word_cloud():
+#     def get_title(el):
+#         index = Ref(el).index
+#         collective_title = getattr(index, "collective_title", None)
+#         if collective_title:
+#             term = Term().load({"name": collective_title}).get_titles('he')[0].encode('utf-8')
+#         else:
+#             term = index.get_title('he').split(u" על ")[0].encode('utf-8')
+#         term = term.replace(" ", "־").replace('"', '״')
+#         return term
+#
+#     from collections import Counter
+# from sefaria.system.database import db
+# sheets = db.sheets.find()
+# sheets = list(sheets)
+# wordsByYear = {}
+# for sheet in sheets:
+#     year = sheet["summary"].split(" ")[0]
+#     if year not in wordsByYear:
+#         wordsByYear[year] = 0
+#     sources = sheet["sources"]
+#     text = ""
+#     for source in sources:
+#         print source
+#         if "text" in source.keys():
+#             text += source["text"]["he"]
+#         elif "outsideText" in source.keys():
+#             text += source["outsideText"]
+#         else:
+#             continue
+#     num_words = len(text.split())
+#     wordsByYear[year] += num_words
+
+
+    # includedRefs = Counter()
+    # includedRefsTotal = Counter()
+    # includedCommentary = Counter()
+    # includedIndexes = Counter()
+    # includedTanakh = Counter()
+    # refsPerSheet = Counter()
+    # total = 0
+    # for sheet in sheets:
+    #     total += len(sheet["includedRefs"])
+    #     refsPerSheet[sheet["id"]] = len(sheet["includedRefs"])
+    #     includedRefs[sheet["title"]] = Counter(sheet["includedRefs"])
+    #     includedTanakh += Counter([Ref(el).index for el in sheet["includedRefs"]
+    #                                if "Commentary" not in Ref(el).index.categories and "Tanakh" in Ref(el).index.categories])
+    #     includedIndexes += Counter([Ref(el).index for el in sheet["includedRefs"] if "Commentary" not in Ref(el).index.categories and "Tanakh" not in Ref(el).index.categories])
+    #     includedCommentary += Counter([Ref(el).index for el in sheet["includedRefs"] if "Commentary" in Ref(el).index.categories])
+    #     includedRefsTotal += includedRefs[sheet["title"]]
+
+
 
 
 if __name__ == "__main__":
@@ -1590,18 +1657,19 @@ if __name__ == "__main__":
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
+    english_sheet = False
 
     posting = True
-    individuals = [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,1393,572,71,46,559,892,427]
+    individuals = [165]  # [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
 
     found_tables_num = 0
     found_tables = set()
-    for individual in individuals: #range(1,1400):
+    for individual in range(166, 1400): #  failed on look_for_missing_next: [57, 62. 85, 163]
         for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
             # print u"NEW BOOK"
             for parsha in which_parshiot[1]:
                 book = which_parshiot[0]
-                parser = Nechama_Parser(en_sefer=book, en_parasha=parsha, mode = "accurate", add_to_title="missing text test", catch_errors=catch_errors, looking_for_matches=True)
+                parser = Nechama_Parser(en_sefer=book, en_parasha=parsha, mode = "accurate", add_to_title="", catch_errors=catch_errors, looking_for_matches=True)
                 #parser.prepare_term_mapping()  # must be run once locally and on sandbox
                 #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
                 if not individual:
@@ -1628,7 +1696,5 @@ if __name__ == "__main__":
         # with open("sheets_linked_to_sheets.csv", 'w') as f:
         #     writer = UnicodeWriter(f)
         #     writer.writerows(sheets_linked_to_sheets)
-
-
 
 

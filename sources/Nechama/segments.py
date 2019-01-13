@@ -5,6 +5,8 @@ from sources.functions import getGematria
 from sefaria.model.text import *
 from main import *
 
+import codecs
+
 
 class Segment(object):
 
@@ -85,9 +87,8 @@ class Source(object):
                 diff.discard(u'')
                 ## print u"diff words: {}".format(len(diff))
                 for w in diff:
-                    pass
-                    ## print w
-                if len(diff) <= 2:
+                    print w
+                if len(diff) <= 2 and not (u'מקשה' in u' '.join(diff)):
                     if self.get_sefaria_ref(self.ref):
                         return text
                     else:
@@ -111,7 +112,7 @@ class Source(object):
         else:
             return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(source_ref, text)
 
-    def create_source(self):
+    def create_source(self, english_sheet=False):
         # remove snunit tags from text and about_source_ref
         if isinstance(self.text, list):
             for i, line in enumerate(self.text):
@@ -155,7 +156,7 @@ class Source(object):
                       "text":
                           {
                               "he": comment,
-                              "en": ""
+                              "en": self.get_english_options() if english_sheet else ""
                           },
                       "options": {
                           "indented": "indented-1",
@@ -168,7 +169,7 @@ class Source(object):
             if isinstance(self.text, list):
                 source["text"] = {
                     "he": u'{} <a class="nested_question_hack" href= "/{}">{}</a><br>{}'.format(self.text[0], enRef, heRef, self.text[1]),
-                    "en": ""
+                    "en": self.get_english_options() if english_sheet else ""
                 }
                 source["options"]["indented"] = ""
 
@@ -231,6 +232,13 @@ class Source(object):
         if nested_source_refDisplayPosition or hasattr(self, 'number') or u'<sup class="nechama">' in self.ref:
             source["options"]["indented"] = ""
         return source
+
+    def get_english_options(self):
+        try:
+            en_text = Ref(self.ref).text('en').text
+        except AttributeError:
+            en_text = u" "
+        return en_text
 
     def get_ref(self):
         return self.ref
@@ -563,6 +571,11 @@ class Nested(object):
         curr_soup_obj = nechama_obj[1]
         while curr_soup_obj.next_sibling:
             next_sibling_text = curr_soup_obj.next_sibling if isinstance(curr_soup_obj.next_sibling, element.NavigableString) else curr_soup_obj.next_sibling.text
+            if not nechama_obj[1].string:
+                with codecs.open("reports/text_check.txt", 'a', encoding='utf-8') as f:
+                    f.write(nechama_obj[1].text)
+                print u"NO nechama_obj.string for these words {} !!!".format(nechama_obj[1].text)
+                nechama_obj[1].string = nechama_obj[1].text
             nechama_obj[1].string += u" " + next_sibling_text
             curr_soup_obj = curr_soup_obj.next_sibling
         assert objs[-1] == nechama_obj
