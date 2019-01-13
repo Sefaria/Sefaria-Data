@@ -24,6 +24,7 @@ absolute_tcs = []
 vtitle = "Torat Emet Zohar"
 lang = "he"
 skip = []
+until = 3
 save = True
 for row in data:
     ref = Ref("Zohar "+row[0])
@@ -33,6 +34,8 @@ for i, row in enumerate(data):
     print row
     if i in skip:
         continue
+    if i == until:
+        break
     orig, new, move = row
     move = int(move)
     #move text of tc to new

@@ -35,26 +35,30 @@ def parse(line):
         return line
     line = line.replace("67", "<b>").replace("70", "<b>")
     line = line.replace("50", "</b>").replace("90", "<b>").replace("80", "</b>")
+    if "<b>" in line and not "</b>" in line:
+        line = "<b>"+line.split()[0]+"</b>"+" ".join(line.split()[1:])
     return line
 
 
 def dh_extract(str):
+    str = str.replace(u"""בד"ה""", u"").replace(u"""ד"ה""", u"").replace(u"""וכו'""", u"")
     return " ".join(str.split()[0:5])
 
 
 
 def add_line(line, daf, prev, full_text, text_dicts, map_full_text_to_commentary):
     talmud_flag = [u"""מתניתין""", u"""במתניתין""", u"""בגמרא""", u"""גמרא"""]
-    rashi_flag = [u"""פירש"י"""]
-    tosafot_flag = [u"""תוספות""", u"""תוספת""", u"""תוס'"""]
-    pointing_flag = [u"שם", u"""בא"ד"""]
+    rashi_flag = [u"""פירש"י""", u"""רש"י"""]
+    tosafot_flag = [u"""תוספות""", u"""תוספת""", u"""תוס'""", u"""בתוס'"""]
+    pointing_flag = [u"""שם""", u"""בד"ה"""]
 
     full_text[daf].append(line)
+    line_to_check = line.replace("<b>", "").replace("</b>", "")
 
     for flag_tuple in [("rashi", rashi_flag), ("tosafot", tosafot_flag), (prev, pointing_flag), ("gemara", talmud_flag)]:
         type, flags = flag_tuple
         for flag in flags:
-            if flag in u" ".join(line.split()[0:5]):
+            if flag in u" ".join(line_to_check.split()[0:2]):
                 text_dicts[type][daf].append(line)
                 map_full_text_to_commentary[daf].append(type)
                 return type
@@ -188,7 +192,8 @@ def find_matches(gemara, tosafot, rashi):
             results = match_ref(base_text, comments, lambda x: x.split(), dh_extract_method=dh_extract)
             for i, result_comment in enumerate(zip(results["matches"], comments)):
                 result, comment = result_comment
-                if u"""בא"ד""" in u" ".join(comment.split()[0:5]):
+                comment_wout_bold = comment.replace("<b>", "").replace("</b>", "")
+                if u"""שם בא"ד""" or u"""בא"ד""" in u" ".join(comment_wout_bold.split()[0:3]):
                     results["matches"][i] = results["matches"][i - 1]
             which_dict[daf] = results["matches"]
 
@@ -216,6 +221,8 @@ links = []
 #using the daf key and getting segment from the for loop enumeration
 #then keep count rashi_n, tosafot_n, gemara_n = -1.  each time we find in map_full_text_to_commentaries a rashi,
 #we increment rashi_n, say rashi[daf][rashi_n] is the other end of the link.  Yalaa! Link is done!
+second_para_terms = ['"\xd7\xa2\xd7\x95\xd7\x93', '"\xd7\x95\xd7\x90\xd7\x9b\xd7\xaa\xd7\x99',
+                     '"\xd7\x95\xd7\xa0\xd7\x9c\xd7\xa2"\xd7\x93', '"\xd7\xaa\xd7\x95', '"\xd7\x90\xd7\x9a', '"\xd7\x95\xd7\x9c\xd7\x9b\xd7\x90\xd7\x95\xd7\xa8\xd7\x94', '"\xd7\x9e\xd7\x99\xd7\x94\xd7\x95', '"\xd7\x95\xd7\x9e\xd7\x99\xd7\x94\xd7\x95', '"\xd7\x90\xd7\x9e\xd7\xa0\xd7\x9d', '"\xd7\x95\xd7\x9e"\xd7\xa9', '"\xd7\x95\xd7\x99\xd7\xa9', '"\xd7\x95\xd7\x91\xd7\x96\xd7\x94', '"\xd7\x95\xd7\xa2\xd7\x95\xd7\x93', '"\xd7\x95\xd7\x9c\xd7\xa4"\xd7\x96', '"\xd7\x9b\xd7\x9c', '"\xd7\x90\xd7\x9c\xd7\x90', '"\xd7\x92\xd7\x9d', '\xd7\xa2\xd7\x95\xd7\x93', '"\xd7\x95\xd7\x94\xd7\xa0\xd7\x94', '"\xd7\x95\xd7\x9e\xd7\x94']
 
 counts = {}
 for daf, titles in map_full_text_to_commentaries.items():
@@ -228,9 +235,8 @@ for daf, titles in map_full_text_to_commentaries.items():
         counts[title] += 1
         comm_ref = dicts[title][daf][counts[title]]
         if not comm_ref:
-            comm_ref = haflaah_ref.replace("Haflaah on ", "")
-        else:
-            comm_ref = comm_ref.normal()
+            continue
+        comm_ref = comm_ref.normal()
         link = {"refs": [haflaah_ref, comm_ref], "auto": True, "generated_by": "haflaah", "type": "Commentary"}
         links.append(link)
         if title != "gemara": #need to add gemara link as well
