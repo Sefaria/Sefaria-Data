@@ -75,7 +75,6 @@ class Sheet(object):
              "options": {
                  "indented": "indented-1",
                  "sourceLayout": "",
-                 "sourceLanguage": "hebrew",
                  "sourceLangLayout": ""
              }
              })
@@ -206,7 +205,8 @@ class Sheet(object):
        # sheet_json["title"] = u"{} {} - {}".format(self.parasha, self.he_year, self.title)
        sheet_json["summary"] = u"{} ({})".format(self.en_year, self.he_year)
        sheet_json["sources"] = self.sources
-       sheet_json["options"] = {"numbered": 0, "assignable": 0, "layout": "sideBySide", "boxed": 0, "language": "hebrew", "divineNames": "noSub", "collaboration": "none", "highlightMode": 0, "bsd": 0, "langLayout": "heRight"}
+       sheet_lang = 'bilingual' if parser.english_sheet else 'hebrew'
+       sheet_json["options"] = {"numbered": 0, "assignable": 0, "layout": "sideBySide", "boxed": 0, "language": sheet_lang, "divineNames": "noSub", "collaboration": "none", "highlightMode": 0, "bsd": 0, "langLayout": "heRight"}
 
        if "-" in self.en_parasha:
            sheet_json["tags"] = [unicode(self.en_parasha.split("-")[0]), unicode(self.en_parasha.split("-")[-1])]
@@ -220,6 +220,18 @@ class Sheet(object):
            parser.sheets_linked_to_sheets.append((sheet_json["title"], sheet_json["summary"], sheet_json["tags"]))
 
        if post:
+           if parser.english_sheet:
+               for s in sheet_json['sources']:
+                   if 'outsideText' in s.keys():
+                       s['outsideBiText'] = dict()
+                       s['outsideBiText']['he'] = s['outsideText']
+                       s['outsideBiText']['en'] = "english here"
+                       del s['outsideText']
+                   else:  # Text
+                       s['text']['en'] = Ref(s['ref']).text('en').text
+
+
+
            post_sheet(sheet_json, server=parser.server)
 
 
@@ -969,7 +981,7 @@ class Section(object):
 
 
 class Nechama_Parser:
-    def __init__(self, en_sefer, en_parasha, mode, add_to_title='', catch_errors=False, looking_for_matches=True, english_sheet= False):
+    def __init__(self, en_sefer, en_parasha, mode, add_to_title='', catch_errors=False, looking_for_matches=True, english_sheet=False):
         if not os.path.isdir("reports/" + en_parasha): # todo: note! this said parsha instead of en_parasha
             os.mkdir("reports/" + en_parasha)
 
@@ -1067,6 +1079,7 @@ class Nechama_Parser:
             '53': None,  # רב דוד הופמן
             '54': None,  # הכורם- ר' הרץ נפתלי הומברג 160.3
             '59': None,  # ר' וולף היידנהיים 176.9
+            '60': None,  # ר' אליעזר היילפרין, בפירושו לרש"י באורי מוהרא"ל 2.6
             '63': None,  # פרופ' היינמן 164.1
             '64': None,  # u'רש"ר הירש'
             '66': u"Meshech Hochma, {}".format(self.en_parasha),
@@ -1388,7 +1401,11 @@ class Nechama_Parser:
         with codecs.open("reports/text_check.txt", 'a', encoding='utf-8') as f:
             f.write("Checking {}\n".format(html_sheet))
             content = content.find('div', {"id": 'contentBody'}).get_text().splitlines()
-            sources = [source["outsideText"] if "outsideText" in source.keys() else source["text"]["he"] for source in sources]
+            if parser.english_sheet:
+                sources = [source["outsideBiText"] if "outsideBiText" in source.keys() else source["text"]["he"] for source in sources]
+            else:
+                sources = [source["outsideText"] if "outsideText" in source.keys() else source["text"]["he"] for source
+                           in sources]
             sources = [remove_html(source.decode('utf-8')) if type(source) is str else remove_html(source) for source in sources]
             sources = u" ".join(sources)
             found_lines = []
@@ -1660,16 +1677,16 @@ if __name__ == "__main__":
     english_sheet = False
 
     posting = True
-    individuals = [165]  # [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
+    individuals = [371]  # [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
 
     found_tables_num = 0
     found_tables = set()
-    for individual in range(166, 1400): #  failed on look_for_missing_next: [57, 62. 85, 163]
+    for individual in individuals: #range(212, 1400): #  failed on look_for_missing_next: [57, 62. 85, 163]
         for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
             # print u"NEW BOOK"
             for parsha in which_parshiot[1]:
                 book = which_parshiot[0]
-                parser = Nechama_Parser(en_sefer=book, en_parasha=parsha, mode = "accurate", add_to_title="", catch_errors=catch_errors, looking_for_matches=True)
+                parser = Nechama_Parser(en_sefer=book, en_parasha=parsha, mode = "accurate", add_to_title="", catch_errors=catch_errors, looking_for_matches=True, english_sheet=english_sheet)
                 #parser.prepare_term_mapping()  # must be run once locally and on sandbox
                 #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
                 if not individual:
