@@ -5,6 +5,8 @@ from sources.functions import getGematria
 from sefaria.model.text import *
 from main import *
 
+import codecs
+
 
 class Segment(object):
 
@@ -85,9 +87,8 @@ class Source(object):
                 diff.discard(u'')
                 ## print u"diff words: {}".format(len(diff))
                 for w in diff:
-                    pass
-                    ## print w
-                if len(diff) <= 2:
+                    print w
+                if len(diff) <= 2 and not (u'מקשה' in u' '.join(diff)):
                     if self.get_sefaria_ref(self.ref):
                         return text
                     else:
@@ -570,6 +571,11 @@ class Nested(object):
         curr_soup_obj = nechama_obj[1]
         while curr_soup_obj.next_sibling:
             next_sibling_text = curr_soup_obj.next_sibling if isinstance(curr_soup_obj.next_sibling, element.NavigableString) else curr_soup_obj.next_sibling.text
+            if not nechama_obj[1].string:
+                with codecs.open("reports/text_check.txt", 'a', encoding='utf-8') as f:
+                    f.write(nechama_obj[1].text)
+                print u"NO nechama_obj.string for these words {} !!!".format(nechama_obj[1].text)
+                nechama_obj[1].string = nechama_obj[1].text
             nechama_obj[1].string += u" " + next_sibling_text
             curr_soup_obj = curr_soup_obj.next_sibling
         assert objs[-1] == nechama_obj
