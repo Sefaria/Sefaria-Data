@@ -1607,59 +1607,6 @@ def dict_from_html_attrs(contents):
         else:
             d[e.name] = e
     return d
-#
-# def word_cloud():
-#     def get_title(el):
-#         index = Ref(el).index
-#         collective_title = getattr(index, "collective_title", None)
-#         if collective_title:
-#             term = Term().load({"name": collective_title}).get_titles('he')[0].encode('utf-8')
-#         else:
-#             term = index.get_title('he').split(u" על ")[0].encode('utf-8')
-#         term = term.replace(" ", "־").replace('"', '״')
-#         return term
-#
-#     from collections import Counter
-# from sefaria.system.database import db
-# sheets = db.sheets.find()
-# sheets = list(sheets)
-# wordsByYear = {}
-# for sheet in sheets:
-#     year = sheet["summary"].split(" ")[0]
-#     if year not in wordsByYear:
-#         wordsByYear[year] = 0
-#     sources = sheet["sources"]
-#     text = ""
-#     for source in sources:
-#         print source
-#         if "text" in source.keys():
-#             text += source["text"]["he"]
-#         elif "outsideText" in source.keys():
-#             text += source["outsideText"]
-#         else:
-#             continue
-#     num_words = len(text.split())
-#     wordsByYear[year] += num_words
-
-
-    # includedRefs = Counter()
-    # includedRefsTotal = Counter()
-    # includedCommentary = Counter()
-    # includedIndexes = Counter()
-    # includedTanakh = Counter()
-    # refsPerSheet = Counter()
-    # total = 0
-    # for sheet in sheets:
-    #     total += len(sheet["includedRefs"])
-    #     refsPerSheet[sheet["id"]] = len(sheet["includedRefs"])
-    #     includedRefs[sheet["title"]] = Counter(sheet["includedRefs"])
-    #     includedTanakh += Counter([Ref(el).index for el in sheet["includedRefs"]
-    #                                if "Commentary" not in Ref(el).index.categories and "Tanakh" in Ref(el).index.categories])
-    #     includedIndexes += Counter([Ref(el).index for el in sheet["includedRefs"] if "Commentary" not in Ref(el).index.categories and "Tanakh" not in Ref(el).index.categories])
-    #     includedCommentary += Counter([Ref(el).index for el in sheet["includedRefs"] if "Commentary" in Ref(el).index.categories])
-    #     includedRefsTotal += includedRefs[sheet["title"]]
-
-
 
 
 if __name__ == "__main__":
@@ -1677,7 +1624,7 @@ if __name__ == "__main__":
     english_sheet = False
 
     posting = True
-    individuals = [371]  # [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
+    individuals = [369]  # [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
 
     found_tables_num = 0
     found_tables = set()
