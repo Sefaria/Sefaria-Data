@@ -128,7 +128,8 @@ v = {
     'language': u'en',
     'status': u'locked',
     'license': u'CC-BY-NC',
-    'text': lik.parse_content(lambda x: unescape(x['English']))
+    'text': lik.parse_content(lambda x: x['English'])
+    # 'text': lik.parse_content(lambda x: unescape(x['English']))
 }
 post_text("Likutei Moharan", v, server=server)
 
@@ -153,7 +154,8 @@ v = {
     'language': u'en',
     'status': u'locked',
     'license': u'CC-BY-NC',
-    'text': lik.parse_content(lambda x: unescape(x['English']))
+    'text': lik.parse_content(lambda x: x['English'])
+    # 'text': lik.parse_content(lambda x: unescape(x['English']))
 }
 post_text("Likutei Moharan, Part II", v, index_count="on", server=server)
 
