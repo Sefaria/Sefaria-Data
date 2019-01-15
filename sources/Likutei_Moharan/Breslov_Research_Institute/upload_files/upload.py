@@ -109,6 +109,7 @@ class Likutei(DocElement):
 def clean_english(english):
     english = re.sub(u'\.{3,}', u'\u2026', english)
     english = re.sub(u'([.)\u2026}])([a-zA-Z])', u'\g<1> \g<2>', english)
+    english = english.replace(u'i. e', u'i.e')
     english = re.sub(u'(?<!\s)[({]', u' \g<0>', english)
     english = re.sub(u'(^|\s)(</?[a-z]>)(\s)', u'\g<1>\g<2>', english)
     english = re.sub(u'\s(</?[a-z]>)$', u'\g<2>', english)
@@ -174,7 +175,7 @@ filenames2 = [
  u'Likutei_Moharan_Part2_50-125.csv',
 ]
 
-server = 'http://jon.sandbox.sefaria.org'
+server = 'https://www.sefaria.org'
 
 for f in filenames:
     with open(f) as fp:
@@ -207,7 +208,7 @@ v = {
     'text': lik.parse_content(lambda x: clean_english(x['English']))
     # 'text': lik.parse_content(lambda x: unescape(x['English']))
 }
-post_text("Likutei Moharan", v, server=server)
+post_text("Likutei Moharan", v, server=server, skip_links=True)
 
 my_lines = []
 for f in filenames2:
@@ -232,7 +233,7 @@ post_text("Likutei Moharan, Part II", v, server=server)
 
 v = {
     'versionSource': u'http://aleph.nli.org.il/F/?func=direct&doc_number=001105868&local_base=NNL01',
-    'versionTitle': u'Likutey Moharan Volumes 11-15, trans. by Moshe Mykoff. Breslov Research Inst., 1986-2012',
+    'versionTitle': u'Likutey Moharan Volumes 12-15, trans. by Moshe Mykoff. Breslov Research Inst., 1986-2012',
     'language': u'en',
     'status': u'locked',
     'license': u'CC-BY-NC',
