@@ -7,6 +7,7 @@ from sefaria.model import *
 from data_utilities.util import convert_dict_to_array
 from collections import namedtuple
 
+
 class DocElement(object):
 
     @staticmethod
@@ -81,7 +82,10 @@ class ParsedDocument(object):
         self.he_name = he_name
         self._descriptors = descriptors
         self.structure_classes = self._generate_structure_classes()
-        self._RootObj = type(self.name, (DocNode,), {'build_structure': staticmethod(lambda x: x)})
+        self._RootObj = type(self.name, (DocNode,), {
+            'build_structure': staticmethod(lambda x: x),
+            'Child': self.structure_classes[0]
+        })
         self.Root = None
 
     def _generate_structure_classes(self):
@@ -113,12 +117,12 @@ class ParsedDocument(object):
     def __getattr__(self, item):
         if self.Root is None:
             raise AttributeError
-        return self.Root.item
+        return getattr(self.Root, item)
 
 
-def run_on_list(func, include_matches=True):
+def run_on_list(func, include_matches=True, start_method=None):
     """
-    Using a callback, breaks a list up into a list of lists. Can be used as a decorator.
+    Using a callback, breaks a list up into a list of lists.
 
     :param func: callback; returns bool (or None). Tip: `func` can be any object where callable(func) -> True.
     Class methods or callable objects can be passed here if state is needed to be saved from call to call.
@@ -131,9 +135,13 @@ def run_on_list(func, include_matches=True):
     [['@22a', 'hello', 'world'], ['@22b', 'foo', 'bar']]
     >>> run_on_list(func, include_matches=False)
     [['hello', 'world'], ['foo', 'bar']]
+    :param start_method: A method to run at the beginning of a run. Useful when func is the __call__ method of an
+    instance.
     :return: list of lists
     """
-    def wrapped(items):
+    def wrapper(items):
+        if callable(start_method):
+            start_method()
         indices = []
         for item_num, item in enumerate(items):
             if func(item):
@@ -147,25 +155,28 @@ def run_on_list(func, include_matches=True):
         ends = indices[1:]
         return [items[start:end] for start, end in zip(starts, ends)]
 
-    return  wrapped
+    return wrapper
 
 
 class ClashError(Exception):
     pass
 
 
-def directed_run_on_list(func, include_matches=True, one_indexed=False):
+def directed_run_on_list(func, include_matches=True, one_indexed=False, start_method=None):
     """
     Using a callback, breaks a list into a list of lists. The callback must declare where in the list the following
-    items should be placed, or return False / None. Will fail if multiple sections map to the same index. Can be used
-    as a decorator.
+    items should be placed, or return False / None. Will fail if multiple sections map to the same index.
     :param func: callback. Returns an integer, or False / None
     :param include_matches: Set to False to leave the item that signals a break out of the structure. See doc for
     run_on_list.
     :param one_indexed: Set to True if func returns 1-indexed values. I.e. if func returns 1, send to index 0.
+    :param start_method: A method to run at the beginning of a run. Useful when func is the __call__ method of an
+    instance.
     :return: list of lists
     """
-    def wrapped(items):
+    def wrapper(items):
+        if callable(start_method):
+            start_method()
         index_mapping = {}
         for item_num, item in enumerate(items):
             value = func(item)
@@ -195,5 +206,18 @@ def directed_run_on_list(func, include_matches=True, one_indexed=False):
         else:
             return convert_dict_to_array(list_mapping, list)
 
+    return wrapper
 
-    return wrapped
+
+def pre_run(func, bound_method):
+    """
+    Useful for methods that use repeated callbacks. Will run bound_method before a series of calls to the callback is
+    made.
+    :param func:
+    :param bound_method:
+    :return:
+    """
+    def wrapper(*args, **kwargs):
+        bound_method()
+        return func(*args, **kwargs)
+    return wrapper
