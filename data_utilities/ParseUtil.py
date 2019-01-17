@@ -207,17 +207,3 @@ def directed_run_on_list(func, include_matches=True, one_indexed=False, start_me
             return convert_dict_to_array(list_mapping, list)
 
     return wrapper
-
-
-def pre_run(func, bound_method):
-    """
-    Useful for methods that use repeated callbacks. Will run bound_method before a series of calls to the callback is
-    made.
-    :param func:
-    :param bound_method:
-    :return:
-    """
-    def wrapper(*args, **kwargs):
-        bound_method()
-        return func(*args, **kwargs)
-    return wrapper

@@ -124,15 +124,15 @@ chap_builder = ChapBuilder()
 paragraph_builder = ParagraphBuilder()
 
 elements = [
-    Description('Chapter', directed_run_on_list(chap_builder, one_indexed=True)),
+    Description('Chapter', directed_run_on_list(chap_builder, one_indexed=True, start_method=chap_builder.reset)),
     Description('Paragraph',
                 directed_run_on_list(paragraph_builder, one_indexed=True, start_method=paragraph_builder.reset)),
     Description('Line', lambda x: x)
 ]
-parser = ParsedDocument('random', u'סתם', elements)
 
 
 def test_get_ja():
+    parser = ParsedDocument('random', u'סתם', elements)
     parser.parse_document(my_doc)
     assert parser.get_ja() == [
         [[DocRow(1, 1, 'a', 'one'), DocRow(1, 1, 'b', 'two')], [DocRow(1, 2, 'c', 'three')]],
@@ -142,8 +142,32 @@ def test_get_ja():
 
 
 def test_filter_ja():
+    parser = ParsedDocument('random', u'סתם', elements)
     parser.parse_document(my_doc)
     assert parser.filter_ja(lambda x: x.text1) == [
+        [['a', 'b'], ['c']],
+        [['d']],
+        [['e']]
+    ]
+
+
+def test_multiple_parsers():
+    # We want to create a situation where two classes have the same name but different attributes
+    elements2 = elements[:]
+    elements2[-1] = Description('Sentence', lambda x: [i.text1 for i in x])
+    parser1 = ParsedDocument('random', u'סתם', elements)
+    parser2 = ParsedDocument('random', u'סתם', elements2)
+
+    parser1.parse_document(my_doc)
+    parser2.parse_document(my_doc)
+
+    assert parser1.get_ja() == [
+        [[DocRow(1, 1, 'a', 'one'), DocRow(1, 1, 'b', 'two')], [DocRow(1, 2, 'c', 'three')]],
+        [[DocRow(2, 1, 'd', 'four')]],
+        [[DocRow(3, 1, 'e', 'five')]]
+    ]
+
+    assert parser2.get_ja() == [
         [['a', 'b'], ['c']],
         [['d']],
         [['e']]
