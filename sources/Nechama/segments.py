@@ -50,7 +50,7 @@ class Source(object):
         try:
             r = Ref(ref)
             assert r.text('he').text
-            if self.parshan_id and parasha and re.search(parasha, ref) and first_time:
+            if self.parshan_id and parasha and re.search(parasha, ref):
                 assert False
             if r.is_commentary():
                 if re.search(u".*(?:on|,)\s((?:[^:]*?):(?:[^:]*)):?", r.normal()):
@@ -165,13 +165,14 @@ class Source(object):
                               "he": comment,
                               "en": self.get_english_options()  # if english_sheet else ""
                           },
-                      "options": {
-                          "indented": "indented-1",
-                          "sourceLayout": "",
-                          "sourceLanguage": "hebrew",
-                          "sourceLangLayout": "",
-                          "refDisplayPosition": self.refDisplayPosition
-                      }
+                      "options":
+                          {
+                              "indented": "indented-1",
+                              "sourceLayout": "",
+                              "sourceLanguage": "hebrew",
+                              "sourceLangLayout": "",
+                              "refDisplayPosition": self.refDisplayPosition
+                          }
                       }
             if isinstance(self.text, list):
                 source["text"] = {
@@ -243,10 +244,17 @@ class Source(object):
     def get_english_options(self):
         try:
             text = Ref(self.ref).text('en').text
-            en_text = u' '.join(text) if isinstance(text, list) else text # maybe needs to be more robust and have as many itrations as needed till it is unicode?
+            en_text = self.flatten_array(text) #u' '.join(text) if isinstance(text, list) else text # maybe needs to be more robust and have as many itrations as needed till it is unicode? 16
         except AttributeError:
             en_text = u"..."
         return en_text
+
+    def flatten_array(self, text):
+        if isinstance(text, list):
+            if not any([isinstance(t, list) for t in text]):
+                return u' '.join(text)
+            return [self.flatten_array(t) for t in text]
+        return text
 
     def get_ref(self):
         return self.ref

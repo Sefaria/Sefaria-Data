@@ -70,7 +70,7 @@ class Sheet(object):
 
     def create_sheetsources_from_objsource(self):
         # first source in the sheet is the sheet remark
-        if self.sheet_remark:
+        if self.sheet_remark.strip():
             parser.word_count += len(self.sheet_remark)
             self.sources.append({"outsideText": self.sheet_remark,
              "options": {
@@ -202,12 +202,13 @@ class Sheet(object):
        sheet_json = {}
        sheet_json["status"] = "public" #"private" #
        sheet_json["group"] =u"גיליונות נחמה"#"Nechama Leibowitz' Source Sheets"
-       sheet_json["title"] = u'{} - {} {}'.format(self.title, re.search('(\d+)\.', self.html).group(1), add_to_title)
-       # sheet_json["title"] = u"{} {} - {}".format(self.parasha, self.he_year, self.title)
+       # sheet_json["title"] = u'{} - {} {}'.format(self.title, re.search('(\d+)\.', self.html).group(1), add_to_title)
+       sheet_json["title"] = u"{} {} - {}".format(self.parasha, self.he_year, self.title)
        sheet_json["summary"] = u"{} ({})".format(self.en_year, self.he_year)
+       # sheet_json["attribution"] = u"<a href=http://www.nechama.org.il/pages/{}.html>לגליון זה באתר סנונית</a>".format(re.search('(\d+)\.', self.html).group(1))
        sheet_json["sources"] = self.sources
        sheet_lang = 'bilingual' if parser.english_sheet else 'hebrew'
-       sheet_json["options"] = {"numbered": 0, "assignable": 0, "layout": "sideBySide", "boxed": 0, "language": sheet_lang, "divineNames": "noSub", "collaboration": "none", "highlightMode": 0, "bsd": 0, "langLayout": "heRight"}
+       sheet_json["options"] = {"numbered": 0, "assignable": 0, "layout": "sideBySide", "boxed": 0, "language": sheet_lang, "divineNames": "noSub", "collaboration": "group-can-edit", "highlightMode": 0, "bsd": 0, "langLayout": "heRight"}
 
        if "-" in self.en_parasha:
            sheet_json["tags"] = [unicode(self.en_parasha.split("-")[0]), unicode(self.en_parasha.split("-")[-1])]
@@ -217,7 +218,8 @@ class Sheet(object):
            sheet_json["tags"] = [unicode(self.en_parasha)]
            assert Term().load({"name": self.en_parasha})
        sheet_json["tags"].append(re.search(u'.*?(\d+)\.', self.html).groups(1)[0])
-       sheet_json['tags'].append(u'csv')
+       if parser.english_sheet:
+           sheet_json['tags'].append(u'bilingual')
        if self.links_to_other_sheets:
            parser.sheets_linked_to_sheets.append((sheet_json["title"], sheet_json["summary"], sheet_json["tags"]))
 
@@ -227,10 +229,16 @@ class Sheet(object):
                    if 'outsideText' in s.keys():
                        s['outsideBiText'] = dict()
                        s['outsideBiText']['he'] = s['outsideText']
-                       s['outsideBiText']['en'] = ""
+                       s['outsideBiText']['en'] = "translation here"
+                       # get headers in English to look like headers in hebrew
+                       if re.search('<table><tr><td><big>', s['outsideBiText']['he']):
+                           match = re.match('(.*>)[^<]+(<.*)', s['outsideBiText']['he'])
+                           s['outsideBiText']['en'] = '{}translation here{}'.format(match.group(1), match.group(2))
                        del s['outsideText']
                    else:  # Text
-                       s['text']['en'] = Ref(s['ref']).text('en').text
+                       s['options']['sourceLanguage'] = ""
+                       if not s['text']['en']:
+                            s['text']['en'] = "segment translation"
 
 
 
@@ -1101,7 +1109,7 @@ class Nechama_Parser:
             '107': None,  # u'רס"ג'
             '109': u'Sforno on {}'.format(self.en_sefer),
             '110': u'Bartenura on Torah, {}'.format(self.en_sefer),  #ברטנורא על התורה
-            '111': u"Akeidat Yitzchak",  # u'''עקדת יצחק''',
+            '111': u"Akeidat Yitzchak, {}",  # u'''עקדת יצחק''',
             '112': None,  # משכיל לדוד 71.2
             '118': None,  # u'קסוטו',
             '127': u"Radak on {}".format(self.en_sefer),  # u'''רד"ק''',
@@ -1633,17 +1641,17 @@ if __name__ == "__main__":
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
-    english_sheet = False
+    english_sheet = True
 
     posting = True
-    individuals = [369, 1400]  # [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
+    individuals = [16]  # [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
 
     found_tables_num = 0
     found_tables = set()
-    with open(u"reports/text_check.csv", 'w') as fcsv:
+    with open(u"reports/text_check.csv", 'a') as fcsv:
         writer = csv.DictWriter(fcsv, [u'sheet', u'missing text'])
         writer.writeheader()
-    for individual in range(400, 1400): #individuals: #range(212, 1400): #  failed on look_for_missing_next: [57, 62. 85, 163]
+    for individual in range(1, 1400): #individuals: #range(212, 1400): #  failed on look_for_missing_next: [57, 62. 85, 163]
         for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
             # print u"NEW BOOK"
             for parsha in which_parshiot[1]:
