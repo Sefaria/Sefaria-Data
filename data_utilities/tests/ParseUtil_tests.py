@@ -3,7 +3,8 @@
 import re
 import pytest
 from collections import namedtuple
-from data_utilities.ParseUtil import Description, ParsedDocument, run_on_list, directed_run_on_list, ClashError
+# from data_utilities.ParseUtil import Description, ParsedDocument, run_on_list, directed_run_on_list, ClashError
+from data_utilities.ParseUtil import *
 
 
 def test_run_on_list():
@@ -172,3 +173,14 @@ def test_multiple_parsers():
         [['d']],
         [['e']]
     ]
+
+
+def test_get_ja_node():
+    parser = ParsedDocument('random', u'סתם', elements)
+    p_ja_node = parser.get_ja_node()
+
+    m_ja_node = JaggedArrayNode()
+    m_ja_node.add_primary_titles('random', u'סתם')
+    m_ja_node.add_structure(['Chapter', 'Paragraph', 'Line'])
+
+    assert p_ja_node.serialize() == m_ja_node.serialize()
