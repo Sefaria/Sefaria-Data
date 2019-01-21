@@ -15,8 +15,12 @@ class DocElement(object):
         raise NotImplementedError
 
     @classmethod
-    def parse(cls, content, build_structure=False):
+    def parse(cls, content, build_structure=False, state_tracker=None):
         raise NotImplementedError
+
+    @classmethod
+    def _update_state(cls, state, refnum):
+        state.set_ref(cls, refnum)
 
     def get_ja(self):
         raise NotImplementedError
@@ -28,18 +32,25 @@ class DocElement(object):
 class DocNode(DocElement):
     Child = DocElement
 
-    def __init__(self, content, build_structure=False):
-        self._children = self.Child.parse(content, build_structure)
+    def __init__(self, content, build_structure=False, state_tracker=None):
+        self._children = self.Child.parse(content, build_structure=build_structure, state_tracker=state_tracker)
 
     @staticmethod
     def build_structure(*args, **kwargs):
         raise NotImplementedError
 
     @classmethod
-    def parse(cls, content, build_structure=False):
+    def parse(cls, content, build_structure=False, state_tracker=None):
         if build_structure:
             content = cls.build_structure(content)
-        return [cls(c, build_structure) for c in content]
+
+        children = []
+        for num, c in enumerate(content):
+            if state_tracker is not None:
+                cls._update_state(state_tracker, num)
+            children.append(cls(c, build_structure=build_structure, state_tracker=state_tracker))
+
+        return children
 
     def set_child(self, index, content):
         self._children[index] = self.Child(content)
@@ -61,10 +72,16 @@ class DocLeaf(DocElement):
         raise NotImplementedError
 
     @classmethod
-    def parse(cls, content, build_structure=False):
+    def parse(cls, content, build_structure=False, state_tracker=None):
         if build_structure:
             content = cls.build_structure(content)
-        return [cls(c) for c in content]
+
+        children = []
+        for num, c in enumerate(content):
+            if state_tracker is not None:
+                cls._update_state(state_tracker, num)
+            children.append(cls(c))
+        return children
 
     def get_ja(self):
         return self._content
@@ -87,6 +104,7 @@ class ParsedDocument(object):
             'Child': self.structure_classes[0]
         })
         self.Root = None
+        self.state_tracker = None
 
     def _generate_structure_classes(self):
         assert all(isinstance(d, Description) for d in self._descriptors)
@@ -106,7 +124,7 @@ class ParsedDocument(object):
         return list(reversed(structure_classes))
 
     def parse_document(self, content):
-        self.Root = self._RootObj(content, build_structure=True)
+        self.Root = self._RootObj(content, build_structure=True, state_tracker=self.state_tracker)
 
     def get_ja_node(self):
         ja_node = JaggedArrayNode()
@@ -114,10 +132,42 @@ class ParsedDocument(object):
         ja_node.add_structure([d.name for d in self._descriptors])
         return ja_node
 
+    def attach_state_tracker(self, state_tracker):
+        assert isinstance(state_tracker, ParseState)
+        self.state_tracker = state_tracker
+        self.state_tracker.reset()
+
     def __getattr__(self, item):
         if self.Root is None:
             raise AttributeError
         return getattr(self.Root, item)
+
+
+class ParseState(object):
+    def __init__(self):
+        self._state = {}
+
+    def set_ref(self, section_type, refnum):
+        if isinstance(section_type, basestring):
+            self._state[section_type] = refnum
+        else:
+            while not isinstance(section_type, type):
+                section_type = section_type.__class__
+            self._state[section_type.__name__] = refnum
+
+    def get_ref(self, section_type, one_indexed=False):
+        try:
+            refnum = self._state[section_type]
+        except KeyError:
+            raise StateError("Not tracking class {}".format(section_type))
+
+        if one_indexed:
+            return refnum + 1
+        else:
+            return refnum
+
+    def reset(self):
+        self._state.clear()
 
 
 def run_on_list(func, include_matches=True, start_method=None):
@@ -159,6 +209,10 @@ def run_on_list(func, include_matches=True, start_method=None):
 
 
 class ClashError(Exception):
+    pass
+
+
+class StateError(Exception):
     pass
 
 

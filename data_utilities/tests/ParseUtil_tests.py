@@ -121,6 +121,27 @@ class ParagraphBuilder(object):
         self.num = 0
 
 
+class AltParagraphBuilder(object):
+    def __init__(self, tracker):
+        self.tracker = tracker
+        self.num = 0
+        self.cur_chapter = 0
+
+    def __call__(self, row):
+        actual_chap = self.get_chap_number()
+        if actual_chap != self.cur_chapter:
+            self.cur_chapter = actual_chap
+            self.num = 0
+        if row.Paragraph > self.num:
+            self.num = row.Paragraph
+            return self.num
+        else:
+            return False
+
+    def get_chap_number(self):
+        return self.tracker.get_ref('Chapter', one_indexed=True)
+
+
 chap_builder = ChapBuilder()
 paragraph_builder = ParagraphBuilder()
 
@@ -184,3 +205,19 @@ def test_get_ja_node():
     m_ja_node.add_structure(['Chapter', 'Paragraph', 'Line'])
 
     assert p_ja_node.serialize() == m_ja_node.serialize()
+
+
+def test_parse_state():
+    parse_state = ParseState()
+    alt_paragraph_builder = AltParagraphBuilder(parse_state)
+    alt_elements = elements[:]
+    alt_elements[1] = Description('Paragraph', directed_run_on_list(alt_paragraph_builder, one_indexed=True))
+    parser = ParsedDocument('random', u'סתם', alt_elements)
+    parser.attach_state_tracker(parse_state)
+    parser.parse_document(my_doc)
+
+    assert parser.filter_ja(lambda x: x.text1) == [
+        [['a', 'b'], ['c']],
+        [['d']],
+        [['e']]
+    ]
