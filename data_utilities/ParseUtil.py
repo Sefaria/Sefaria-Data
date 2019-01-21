@@ -9,46 +9,47 @@ from collections import namedtuple
 
 
 class DocElement(object):
+    Doc = NotImplemented
 
     @staticmethod
     def build_structure(*args, **kwargs):
         raise NotImplementedError
 
     @classmethod
-    def parse(cls, content, build_structure=False, state_tracker=None):
+    def parse(cls, content, build_structure=False):
         raise NotImplementedError
 
     @classmethod
-    def _update_state(cls, state, refnum):
-        state.set_ref(cls, refnum)
+    def update_state(cls, refnum):
+        cls.Doc.update_state(cls, refnum)
 
     def get_ja(self):
         raise NotImplementedError
 
-    def filter_ja(self, callback, *args, **kwargs):
+    def filter_ja(self, callback, num, state=None, *args, **kwargs):
         raise NotImplementedError
 
 
 class DocNode(DocElement):
     Child = DocElement
+    Doc = NotImplemented
 
-    def __init__(self, content, build_structure=False, state_tracker=None):
-        self._children = self.Child.parse(content, build_structure=build_structure, state_tracker=state_tracker)
+    def __init__(self, content, build_structure=False):
+        self._children = self.Child.parse(content, build_structure=build_structure)
 
     @staticmethod
     def build_structure(*args, **kwargs):
         raise NotImplementedError
 
     @classmethod
-    def parse(cls, content, build_structure=False, state_tracker=None):
+    def parse(cls, content, build_structure=False):
         if build_structure:
             content = cls.build_structure(content)
 
         children = []
         for num, c in enumerate(content):
-            if state_tracker is not None:
-                cls._update_state(state_tracker, num)
-            children.append(cls(c, build_structure=build_structure, state_tracker=state_tracker))
+            cls.update_state(num)
+            children.append(cls(c, build_structure=build_structure))
 
         return children
 
@@ -59,7 +60,11 @@ class DocNode(DocElement):
         return [child.get_ja() for child in self._children]
 
     def filter_ja(self, callback, *args, **kwargs):
-        return [child.filter_ja(callback, *args, **kwargs) for child in self._children]
+        children = []
+        for num, child in enumerate(self._children):
+            child.update_state(num)
+            children.append(child.filter_ja(callback, *args, **kwargs))
+        return children
 
 
 class DocLeaf(DocElement):
@@ -72,14 +77,13 @@ class DocLeaf(DocElement):
         raise NotImplementedError
 
     @classmethod
-    def parse(cls, content, build_structure=False, state_tracker=None):
+    def parse(cls, content, build_structure=False):
         if build_structure:
             content = cls.build_structure(content)
 
         children = []
         for num, c in enumerate(content):
-            if state_tracker is not None:
-                cls._update_state(state_tracker, num)
+            cls.update_state(num)
             children.append(cls(c))
         return children
 
@@ -101,7 +105,8 @@ class ParsedDocument(object):
         self.structure_classes = self._generate_structure_classes()
         self._RootObj = type(self.name, (DocNode,), {
             'build_structure': staticmethod(lambda x: x),
-            'Child': self.structure_classes[0]
+            'Child': self.structure_classes[0],
+            'Doc': self
         })
         self.Root = None
         self.state_tracker = None
@@ -112,19 +117,23 @@ class ParsedDocument(object):
         for d in reversed(self._descriptors):  # Create children before parents
 
             if not structure_classes:  # this is the leaf node
-                current_child = type(d.name, (DocLeaf,), {'build_structure': staticmethod(d.build_structure)})
+                current_child = type(d.name, (DocLeaf,), {
+                    'build_structure': staticmethod(d.build_structure),
+                    'Doc': self
+                })
 
             else:
                 current_child = type(d.name, (DocNode,), {
                     'build_structure': staticmethod(d.build_structure),
-                    'Child': structure_classes[-1]
+                    'Child': structure_classes[-1],
+                    'Doc': self
                 })
             structure_classes.append(current_child)
 
         return list(reversed(structure_classes))
 
     def parse_document(self, content):
-        self.Root = self._RootObj(content, build_structure=True, state_tracker=self.state_tracker)
+        self.Root = self._RootObj(content, build_structure=True)
 
     def get_ja_node(self):
         ja_node = JaggedArrayNode()
@@ -136,6 +145,19 @@ class ParsedDocument(object):
         assert isinstance(state_tracker, ParseState)
         self.state_tracker = state_tracker
         self.state_tracker.reset()
+
+    def update_state(self, structure_class, num=None):
+        if self.state_tracker is None or num is None:
+            pass
+        else:
+            self.state_tracker.set_ref(structure_class, num)
+
+    def filter_ja(self, callback, *args, **kwargs):
+        if self.Root is None:
+            raise AttributeError
+        if self.state_tracker is not None:
+            self.state_tracker.reset()
+        return self.Root.filter_ja(callback, *args, **kwargs)
 
     def __getattr__(self, item):
         if self.Root is None:

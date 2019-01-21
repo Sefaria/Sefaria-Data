@@ -132,6 +132,8 @@ class AltParagraphBuilder(object):
         if actual_chap != self.cur_chapter:
             self.cur_chapter = actual_chap
             self.num = 0
+        if self.cur_chapter == 2:
+            assert row.text1 == 'd'
         if row.Paragraph > self.num:
             self.num = row.Paragraph
             return self.num
@@ -220,4 +222,26 @@ def test_parse_state():
         [['a', 'b'], ['c']],
         [['d']],
         [['e']]
+    ]
+
+
+def test_state_on_filter():
+    def get_and_check(x, state):
+        assert isinstance(state, ParseState)
+        chap = state.get_ref('Chapter', one_indexed=True)
+        par = state.get_ref('Paragraph', one_indexed=True)
+        line = state.get_ref('Line', one_indexed=True)
+        if (chap, par, line) == (2, 1, 1):
+            assert x.text2 == 'four'
+        return x.text2
+
+    parse_state = ParseState()
+    parser = ParsedDocument('random', u'סתם', elements)
+    parser.attach_state_tracker(parse_state)
+    parser.parse_document(my_doc)
+
+    assert parser.filter_ja(get_and_check, parse_state) == [
+        [['one', 'two'], ['three']],
+        [['four']],
+        [['five']]
     ]
