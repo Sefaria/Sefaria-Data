@@ -133,6 +133,8 @@ class ParsedDocument(object):
         return list(reversed(structure_classes))
 
     def parse_document(self, content):
+        if self.state_tracker:
+            self.state_tracker.reset()
         self.Root = self._RootObj(content, build_structure=True)
 
     def get_ja_node(self):
@@ -272,7 +274,10 @@ def directed_run_on_list(func, include_matches=True, one_indexed=False, start_me
             else:
                 list_mapping[start] = items[index_mapping[start]+1:index_mapping[end]]
 
-        last_value, last_index = values[-1], index_mapping[values[-1]]
+        try:
+            last_value, last_index = values[-1], index_mapping[values[-1]]
+        except IndexError:
+            return []
         if not include_matches:
             last_index += 1
         list_mapping[last_value] = items[last_index:]

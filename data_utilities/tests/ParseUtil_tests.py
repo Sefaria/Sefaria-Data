@@ -86,8 +86,8 @@ my_doc = [
     DocRow(1, 1, 'a', 'one'),
     DocRow(1, 1, 'b', 'two'),
     DocRow(1, 2, 'c', 'three'),
-    DocRow(2, 1, 'd', 'four'),
-    DocRow(3, 1, 'e', 'five')
+    DocRow(2, 3, 'd', 'four'),
+    DocRow(4, 1, 'e', 'five')
 ]
 
 
@@ -158,10 +158,12 @@ elements = [
 def test_get_ja():
     parser = ParsedDocument('random', u'סתם', elements)
     parser.parse_document(my_doc)
-    assert parser.get_ja() == [
+    my_ja = parser.get_ja()
+    assert my_ja == [
         [[DocRow(1, 1, 'a', 'one'), DocRow(1, 1, 'b', 'two')], [DocRow(1, 2, 'c', 'three')]],
-        [[DocRow(2, 1, 'd', 'four')]],
-        [[DocRow(3, 1, 'e', 'five')]]
+        [[], [], [DocRow(2, 3, 'd', 'four')]],
+        [],
+        [[DocRow(4, 1, 'e', 'five')]]
     ]
 
 
@@ -170,7 +172,8 @@ def test_filter_ja():
     parser.parse_document(my_doc)
     assert parser.filter_ja(lambda x: x.text1) == [
         [['a', 'b'], ['c']],
-        [['d']],
+        [[], [], ['d']],
+        [],
         [['e']]
     ]
 
@@ -187,13 +190,15 @@ def test_multiple_parsers():
 
     assert parser1.get_ja() == [
         [[DocRow(1, 1, 'a', 'one'), DocRow(1, 1, 'b', 'two')], [DocRow(1, 2, 'c', 'three')]],
-        [[DocRow(2, 1, 'd', 'four')]],
-        [[DocRow(3, 1, 'e', 'five')]]
+        [[], [], [DocRow(2, 3, 'd', 'four')]],
+        [],
+        [[DocRow(4, 1, 'e', 'five')]]
     ]
 
     assert parser2.get_ja() == [
         [['a', 'b'], ['c']],
-        [['d']],
+        [[], [], ['d']],
+        [],
         [['e']]
     ]
 
@@ -220,7 +225,8 @@ def test_parse_state():
 
     assert parser.filter_ja(lambda x: x.text1) == [
         [['a', 'b'], ['c']],
-        [['d']],
+        [[], [], ['d']],
+        [],
         [['e']]
     ]
 
@@ -231,8 +237,10 @@ def test_state_on_filter():
         chap = state.get_ref('Chapter', one_indexed=True)
         par = state.get_ref('Paragraph', one_indexed=True)
         line = state.get_ref('Line', one_indexed=True)
-        if (chap, par, line) == (2, 1, 1):
+        if (chap, par, line) == (2, 3, 1):
             assert x.text2 == 'four'
+        else:
+            assert x.text2 != 'four'
         return x.text2
 
     parse_state = ParseState()
@@ -242,6 +250,7 @@ def test_state_on_filter():
 
     assert parser.filter_ja(get_and_check, parse_state) == [
         [['one', 'two'], ['three']],
-        [['four']],
+        [[], [], ['four']],
+        [],
         [['five']]
     ]
