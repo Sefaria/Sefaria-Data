@@ -320,8 +320,9 @@ for c_form_word, refs in bdb_wordforms.iteritems():
             for wf in wfs:
                 basic_word_form(c_form_word[0], wf.lookups[0]['headword'], refs, "BDB Augmented Strong", generated_by="matching_bdb_pasuk")
             # print u"more than one wf for {} {}".format(c_form_word[1], c_form_word[0])
-        # elif len(wfs) < 1:
-        #     print u"no wf for {} {} from {}".format(c_form_word[1], c_form_word[0], refs)
+        elif len(wfs) < 1:
+            pass
+            # print u"no wf for {} {} from {}".format(c_form_word[1], c_form_word[0], refs)
             
         else:
             basic_word_form(c_form_word[0], wfs[0].lookups[0]['headword'], refs, "BDB Augmented Strong", generated_by="matching_bdb_pasuk")
