@@ -28,9 +28,9 @@ rewrite_pickles = True
 save_wordforms = True
 
 
-jastrow_clean_wordforms = None
-jastrow_clean_wordforms_to_hw = None
-jastrow_hw_ref_list = defaultdict(list)
+jastrow_clean_wordforms = set()
+jastrow_clean_wordforms_to_hw = defaultdict(set)
+jastrow_hw_ref_list = defaultdict(set)
 
 klein_clean_wordforms = None
 klein_clean_wordforms_to_hw = None
@@ -64,25 +64,30 @@ potentially_bad_prefixes_count = defaultdict(int)
 # with open('klein_clean_wordforms_to_hw.pickle', 'wb') as handle:
 #     pickle.dump(klein_clean_wordforms_to_hw, handle, protocol=pickle.HIGHEST_PROTOCOL)
 #     
-jastrow = WordFormSet({"lookups.parent_lexicon": "Jastrow Dictionary"})
-jastrow_clean_wordforms = set()
-jastrow_clean_wordforms_to_hw = defaultdict(list)
-for entry in jastrow:
-    try:
-        jastrow_clean_wordforms.add(entry.c_form)
-        jastrow_clean_wordforms_to_hw[entry.c_form].append(entry.lookups[0]['headword'])
-        jastrow_hw_ref_list[entry.lookups[0]['headword']] += entry.refs
-    except AttributeError:
-        pass
-
-with open('jastrow_clean_wordforms.pickle', 'wb') as handle:
-    pickle.dump(jastrow_clean_wordforms, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-with open('jastrow_clean_wordforms_to_hw.pickle', 'wb') as handle:
-    pickle.dump(jastrow_clean_wordforms_to_hw, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-with open('jastrow_hw_ref_list.pickle', 'wb') as handle:
-    pickle.dump(jastrow_hw_ref_list, handle, protocol=pickle.HIGHEST_PROTOCOL)
+# jastrow = 
+# jastrow_clean_wordforms = set()
+# for entry in WordFormSet({"lookups.parent_lexicon": "Jastrow Dictionary"}):
+#     try:
+#         jastrow_clean_wordforms.add(entry.c_form)
+#         jastrow_clean_wordforms_to_hw[entry.c_form].add(entry.lookups[0]['headword'])
+#     except AttributeError:
+#         pass
+# 
+# for link in LinkSet({"generated_by": "Jastrow_parser"}):
+#     r = Ref(link.refs[1])
+#     if r.is_talmud() and r.is_segment_level():
+#         if u'דָּבָר' == re.sub(ur'(Jastrow, )(.*)( 1)', ur'\2', link.refs[0]):
+#             print "found"
+# #         jastrow_hw_ref_list[re.sub(ur'(Jastrow, )(.*)( 1)', ur'\2', link.refs[0])].add(link.refs[1])
+# 
+# with open('jastrow_clean_wordforms.pickle', 'wb') as handle:
+#     pickle.dump(jastrow_clean_wordforms, handle, protocol=pickle.HIGHEST_PROTOCOL)
+# 
+# with open('jastrow_clean_wordforms_to_hw.pickle', 'wb') as handle:
+#     pickle.dump(jastrow_clean_wordforms_to_hw, handle, protocol=pickle.HIGHEST_PROTOCOL)
+# 
+# with open('jastrow_hw_ref_list.pickle', 'wb') as handle:
+#     pickle.dump(jastrow_hw_ref_list, handle, protocol=pickle.HIGHEST_PROTOCOL)
 # 
 # bdb = WordFormSet({"lookups.lexicon": "BDB Augmented Strong"})
 # bdb_clean_wordforms = set()
@@ -99,7 +104,7 @@ with open('jastrow_hw_ref_list.pickle', 'wb') as handle:
 # 
 # with open('bdb_clean_wordforms_to_hw.pickle', 'wb') as handle:
 #     pickle.dump(bdb_clean_wordforms_to_hw, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
+print "done with pickles"
 
 with open('bdb_clean_wordforms.pickle', 'rb') as handle:
     bdb_clean_wordforms = pickle.load(handle)
@@ -113,18 +118,21 @@ with open('klein_clean_wordforms.pickle', 'rb') as handle:
 with open('klein_clean_wordforms_to_hw.pickle', 'rb') as handle:
     klein_clean_wordforms_to_hw = pickle.load(handle)
 
-with open('dict/Jastrow/data/jastrow_clean_wordforms.pickle', 'rb') as handle:
+with open('jastrow_clean_wordforms.pickle', 'rb') as handle:
     jastrow_clean_wordforms = pickle.load(handle)
 
-with open('dict/Jastrow/data/clean_wordforms_to_hw.pickle', 'rb') as handle:
+with open('jastrow_clean_wordforms_to_hw.pickle', 'rb') as handle:
     jastrow_clean_wordforms_to_hw = pickle.load(handle)
     
-with open('dict/Jastrow/data/hw_ref_list.pickle', 'rb') as handle:
+with open('jastrow_hw_ref_list.pickle', 'rb') as handle:
     jastrow_hw_ref_list = pickle.load(handle)
 
     
 percentage_that_are_ambiguous = 0
 avg_num_results = 0
+
+a = u'דָּבָר'
+b = u'דבר'
 
 old_jastrow_wordforms = None
 old_klein_wordforms = None
@@ -172,10 +180,10 @@ old_words_that_we_miss = None
 #     
 #     linkified = library._wrap_all_refs_in_string(title_nodes, reg, source_text, "he")
 
-def basic_word_form(form, hw, refs, parent_lexicon):
+def basic_word_form(form, hw, refs, parent_lexicon, generated_by="prefix_adder_1"):
     word_form_obj = WordForm({
         'lookups': [{"headword": hw, "parent_lexicon": parent_lexicon}],
-        "generated_by": "prefix_adder_1",
+        "generated_by": generated_by,
         "form": form,
         "c_form": form,
         "refs": refs
@@ -240,10 +248,10 @@ try:
                             in_jastrow = True
                             found_exact = False
                             for hw in jastrow_clean_wordforms_to_hw[word]:
-                                if ref in jastrow_hw_ref_list[hw]:
+                                if ref.normal() in jastrow_hw_ref_list[hw]:
                                     exact_jastrow_wordforms[(prefix+word, hw)].append(ref)
                                     found_exact = True
-                                    print u"exact match for {} {} {}".format(prefix+word, hw, ref)
+                                    # print u"exact match for {} {} {}".format(prefix+word, hw, ref)
 
                             # TODO: how should this be saved
                             if not found_exact:
@@ -286,7 +294,11 @@ for c_form_word, refs in jastrow_wordforms.iteritems():
         print hw
     avg_num_results += len(hws) * len(refs)
     for hw in hws:
-        basic_word_form(c_form_word[0], hw, refs, "Jastrow")
+        basic_word_form(c_form_word[0], hw, refs, "Jastrow Dictionary")
+        
+for c_form_hw, refs in exact_jastrow_wordforms.iteritems():
+    avg_num_results += len(refs)
+    basic_word_form(c_form_hw[0], c_form_hw[1], refs, "Jastrow Dictionary", generated_by="jastrow_jackpot")    
 
 num_of_ambig_in_klein = 0
 for c_form_word, refs in klein_wordforms.iteritems():
@@ -306,20 +318,20 @@ for c_form_word, refs in bdb_wordforms.iteritems():
         avg_num_results += len(wfs) * len(refs)
         if len(wfs) > 1:
             for wf in wfs:
-                basic_word_form(c_form_word[0], wf.lookups[0]['headword'], refs, "BDB Augmented Strong")
-            print u"more than one wf for {} {}".format(c_form_word[1], c_form_word[0])
-        elif len(wfs) < 1:
-            print u"no wf for {} {} from {}".format(c_form_word[1], c_form_word[0], refs)
+                basic_word_form(c_form_word[0], wf.lookups[0]['headword'], refs, "BDB Augmented Strong", generated_by="matching_bdb_pasuk")
+            # print u"more than one wf for {} {}".format(c_form_word[1], c_form_word[0])
+        # elif len(wfs) < 1:
+        #     print u"no wf for {} {} from {}".format(c_form_word[1], c_form_word[0], refs)
             
         else:
-            basic_word_form(c_form_word[0], wfs[0].lookups[0]['headword'], refs, "BDB Augmented Strong")
+            basic_word_form(c_form_word[0], wfs[0].lookups[0]['headword'], refs, "BDB Augmented Strong", generated_by="matching_bdb_pasuk")
     else:    
         hws = set(bdb_clean_wordforms_to_hw[c_form_word[1]])
         avg_num_results += len(hws) * len(refs)
         if len(hws) < 1:
             print c_form_word[0], hw, refs
         for hw in hws:
-            basic_word_form(c_form_word[0], hw, refs, "BDB Augmented Strong")
+            basic_word_form(c_form_word[0], hw, refs, "BDB Augmented Strong", generated_by="only_bdb_match")
         
 print(avg_num_results)
 print(len(potentially_bad_prefixes))
