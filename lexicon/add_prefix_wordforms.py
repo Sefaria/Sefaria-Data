@@ -9,10 +9,12 @@ import pickle
 # import json
 import codecs
 import re
-from sources.functions import post_index, post_text
-from sefaria.utils.hebrew import strip_nikkud, normalize_final_letters_in_str, gematria, has_cantillation
-from data_utilities.util import numToHeb
-from sefaria.datatype import jagged_array
+from sefaria.system.database import db
+# import regex
+# from sources.functions import post_index, post_text
+# from sefaria.utils.hebrew import strip_nikkud, normalize_final_letters_in_str, gematria, has_cantillation
+# from data_utilities.util import numToHeb
+# from sefaria.datatype import jagged_array
 from sefaria.model import *
 # from sefaria.system.exceptions import BookNameError
 from collections import defaultdict
