@@ -75,17 +75,18 @@ class TestDHMatcher:
             matched[u'match_word_indices'] = [list(tup) for tup in matched[u'match_word_indices']]
             matched[u'match_text'] = [list(tup) for tup in matched[u'match_text']]
             all_matched.append(matched)
-        # json.dump(all_matched, codecs.open('mb_matched.json', 'wb', encoding='utf8'))
+        #json.dump(all_matched, codecs.open('mb_matched.json', 'wb', encoding='utf8'))
         comparison = json.load(codecs.open('mb_matched.json', 'rb', encoding='utf8'))
         for a_siman, b_siman in zip(all_matched, comparison):
             for k, v in a_siman.items():
                 assert v == b_siman[k]
                 # DEBUG
+                # print u""
                 # if v != b_siman[k]:
                 #     for i, (v1, b1) in enumerate(zip(v, b_siman[k])):
                 #         if v1 != b1:
-                #             print v1
-                #             print b1
+                #             print u"Me:  {}".format(v1)
+                #             print u"You: {}".format(b1)
                 #             print a_siman[u'comment_refs'][i]
 
 

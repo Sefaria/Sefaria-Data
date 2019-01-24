@@ -9,11 +9,11 @@ import re
 from sources.functions import *
 from sefaria.helper.link import *
 
-SERVER = "http://draft.sefaria.org"
+SERVER = "http://www.sefaria.org"
 class Mishneh_Torah_Commentary:
     def __init__(self, file, segment_marker=None, comment_marker=None):
         self.file = file
-        self.soup = BeautifulSoup(open(file))
+        self.soup = BeautifulSoup(open(file), "lxml")
         self.segment_marker = segment_marker
         self.comment_marker = comment_marker
         self.text = {}
@@ -27,20 +27,16 @@ class Mishneh_Torah_Commentary:
         self.comment_marker = comment_marker
 
 
-    def get_section_and_mishneh(self, segment_for_comment):
+    def get_section_and_mishneh(self, segment_for_comment, prev_perek):
         mishneh_header = segment_for_comment.find_previous("span", attrs={"style": self.segment_marker})
         mishneh = mishneh_header.text
         while mishneh_header.text.find(" - ") == -1:
             mishneh_header = mishneh_header.find_previous("span", attrs={"style": self.segment_marker})
         section, perek = mishneh_header.text.split(u" - ")
         assert section.startswith(u"הלכות")
-        assert perek.startswith(u"פרק")
-        #section = getGematria(section.split(" ")[1])
-        #mishneh = getGematria(mishneh.split(" ")[1])
-        return section, perek_to_number(perek), getGematria(mishneh)
-        #else:
-        #    self.text[section][prev_mishneh][new_segment] = [mishneh]
-        #    return section, prev_mishneh
+        perek = prev_perek if not perek.startswith(u"פרק") else perek_to_number(perek)
+        return section, perek, getGematria(mishneh)
+
 
 
     def remove_i_tags(self, comment):
@@ -83,9 +79,11 @@ class Mishneh_Torah_Commentary:
 
     def parse(self):
         all_comments = self.soup.findAll(attrs={"style": self.comment_marker})
+        prev_perek = 0
         for i, comment in enumerate(all_comments):
             assert self.he_name in comment.parent.text[0:25] or self.he_name.split(" ")[1] in comment.parent.text[0:25]
-            section, perek, mishneh = self.get_section_and_mishneh(comment)
+            section, perek, mishneh = self.get_section_and_mishneh(comment, prev_perek)
+            prev_perek = perek
 
             if section not in self.text:
                 self.text[section] = {}
@@ -146,13 +144,14 @@ def post_commentator(commentator, sections, hebrew_to_english):
             assert he_section_name in hebrew_to_english
         en_section_name = hebrew_to_english[he_section_name]
         section_name = create_schema(en_section_name, he_section_name, commentator)
-        print "./run scripts/move_draft_text.py '{}' -v 'he:ToratEmet' -d 'https://www.sefaria.org' -k 'kAEw7OKw5IjZIG4lFbrYxpSdu78Jsza67HgR0gRBOdg'".format(section_name)
         section_text = {
             "text": section_text,
             "language": "he",
             "versionTitle": "ToratEmet",
             "versionSource": "http://www.toratemetfreeware.com/online/d_root__035_mshnh_torh_lhrmbm.html"
         }
+        print "./run scripts/move_draft_text.py '{}' -v 'he:ToratEmet' -d 'https://www.sefaria.org' -k 'kAEw7OKw5IjZIG4lFbrYxpSdu78Jsza67HgR0gRBOdg'".format(
+                section_name)
         #post_text(section_name, section_text, server=SERVER)
 
 
@@ -205,11 +204,8 @@ if __name__ == "__main__":
     files = filter(lambda x: x.endswith(".htm") and not x.startswith("errors"), os.listdir("."))
     maggid = {"name": "Maggid Mishneh", "segment_marker": 'color:RGB(45,104,176);', "comment_marker": 'color:RGB(122,13,134);', "he_name": u"מגיד משנה", "exclude": "madah.html"}
     lehem = {"name": "Lehem Mishneh", "segment_marker": 'color:RGB(45,104,176);', "comment_marker": "color:RGB(89,45,0);", "he_name": u"לחם משנה", "exclude": None}
-    hasagot = {"name": "Hasagot HaRaavad", "comment_marker": 'color:RGB(15,74,172);', "segment_marker": 'color:RGB(45,104,176);', "he_name": u"""השגות הראב"ד""", "exclude": None}
+    hasagot = {"name": "Hasagot HaRaavad", "comment_marker": 'color:RGB(15,74,172);', "segment_marker": 'color:RGB(45,104,176);', "he_name": u"""ההראב"ד""", "exclude": None}
 
-    terms(maggid)
-    terms(lehem)
-    terms(hasagot)
     results = {}
     results["Maggid Mishneh"] = {}
     results["Lehem Mishneh"] = {}
@@ -231,12 +227,13 @@ if __name__ == "__main__":
     #skip = ["nashim.html"]
 
     #parse the 3 remaining commentaries (not Peirush)
+    files = ["nashim.html"]
     for file in files:
         #if file in skip:
         #    continue
         MTC = Mishneh_Torah_Commentary(file)
 
-        for c in [hasagot, maggid]:
+        for c in [hasagot, maggid, lehem]:
             if c["exclude"] == file:
                 continue
 

@@ -17,7 +17,7 @@ from collections import defaultdict, OrderedDict
 from sefaria.system.exceptions import PartialRefInputError, InputError, NoVersionFoundError
 from sefaria.utils.hebrew import strip_cantillation
 from data_utilities.util import WeightedLevenshtein
-from data_utilities.dibur_hamatchil_matcher import ComputeLevenshteinDistanceByWord
+from data_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord
 
 
 
@@ -90,7 +90,12 @@ class Link_Disambiguator:
             # print num_stopwords_a, len(words_a)
             # print num_stopwords_b, len(words_b)
             return -40
-        return -ComputeLevenshteinDistanceByWord(u" ".join(words_a), u" ".join(words_b)) + sum([self.word_count_score(w) for w in words_b])
+        lazy_tfidf = sum([self.word_count_score(w) for w in words_b])
+        best_match = get_maximum_dh(words_a, words_b,min_dh_len=len(words_b)-1, max_dh_len=len(words_b))
+        if best_match:
+            return -best_match.score + lazy_tfidf
+        else:
+            return -ComputeLevenshteinDistanceByWord(u" ".join(words_a), u" ".join(words_b)) + lazy_tfidf
 
     def find_indexes_with_ambiguous_links(self):
         tanakh_books = library.get_indexes_in_category("Tanakh")
@@ -181,7 +186,7 @@ class Link_Disambiguator:
         if not self.matcher:
             self.matcher = ParallelMatcher(self.tokenize_words,max_words_between=1, min_words_in_match=3, ngram_size=3,
                                   parallelize=False, calculate_score=self.get_score, all_to_all=False,
-                                  verbose=False, min_distance_between_matches=1)
+                                  verbose=False, min_distance_between_matches=0)
         try:
             match_list = self.matcher.match(tc_list=[(main_snippet, main_tref), quoted_tc], return_obj=True)
         except ValueError:
@@ -204,6 +209,7 @@ class Link_Disambiguator:
             u"Quote Num": quote_number,
             u"Snippet": main_snippet
         }]
+        # print u"BEST SCORE: {}".format(best.score)
         good, bad = (ret, []) if best.score > -28 else ([], ret)
         return good, bad
 
@@ -255,7 +261,7 @@ def save_disambiguated_to_file(good, bad, csv_good, csv_bad):
     csv_good.writerows(good)
     csv_bad.writerows(bad)
 
-
+_tc_cache = {}
 def disambiguate_all():
     ld = Link_Disambiguator()
     #ld.find_indexes_with_ambiguous_links()
@@ -264,7 +270,6 @@ def disambiguate_all():
     ambig_dict = json.load(open("ambiguous_segments.json",'rb'))
     good = []
     bad = []
-    _tc_cache = {}
     def make_tc(tref, oref):
         global _tc_cache
         tc = oref.text('he')
@@ -279,6 +284,10 @@ def disambiguate_all():
     csv_bad = unicodecsv.DictWriter(fbad, [u'Quoting Ref', u'Quoted Ref', u'Score', u'Quote Num', u'Snippet'])
     csv_bad.writeheader()
     for iambig, (main_str, tref_list) in enumerate(ambig_dict.items()):
+        if iambig < 5000:
+            continue
+        elif iambig > 6000:
+            break
         if iambig % 50 == 0:
             print "{}/{}".format(iambig, len(ambig_dict))
         try:
@@ -309,7 +318,7 @@ def disambiguate_all():
 
 def disambiguate_one(ld, main_oref, main_tc, quoted_oref, quoted_tc):
     good, bad = [], []
-    main_snippet_list = get_snippet_by_seg_ref(main_tc, quoted_oref, must_find_snippet=True, snip_size=45, use_indicator_words=True)
+    main_snippet_list = get_snippet_by_seg_ref(main_tc, quoted_oref, must_find_snippet=True, snip_size=65, use_indicator_words=True)
     if main_snippet_list:
         for isnip, main_snippet in enumerate(main_snippet_list):
             temp_good, temp_bad = ld.disambiguate_segment_by_snippet(main_snippet, main_oref.normal(), quoted_tc, isnip)
@@ -373,6 +382,9 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
 
             if use_indicator_words:
                 before_snippet = linkified[start_snip:match.start(1)]
+                if u"ירושלמי" in before_snippet[-20:] and (len(ref.index.categories) < 2 or ref.index.categories[1] != u'Yerushalmi'):
+                    # this guys not a yerushalmi but very likely should be
+                    continue
                 after_snippet = linkified[match.end(3):end_snip]
                 if re.search(after_reg, before_snippet) is not None:
                     temp_snip = after_snippet
@@ -391,38 +403,24 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
     return snippets
 
 
-def find_low_confidence_talmud():
+def get_qa_csv():
     with open("unambiguous_links.json", "rb") as fin:
-        jin = json.load(fin)
-    low_conf = []
-    high_conf = []
-    for r1, r2, conf in jin:
-        is_talmud = Ref(r1).primary_category == "Talmud"
-        if conf < 40 and is_talmud:
-            low_conf += [[r1, r2, conf]]
-        else:
-            high_conf += [[r1, r2, conf]]
+        cin = unicodecsv.DictReader(fin)
+        rows = [row for row in cin]
 
-    tanakh = random.sample(filter(lambda x: Ref(x[0]).primary_category == "Tanakh", high_conf), 250)
-    talmud = random.sample(filter(lambda x: Ref(x[0]).primary_category == "Talmud", high_conf), 250)
+    tanakh = random.sample(filter(lambda x: Ref(x['Quoted Ref']).primary_category == "Tanakh", rows), 250)
+    talmud = random.sample(filter(lambda x: Ref(x['Quoted Ref']).primary_category == "Talmud", rows), 250)
     qa_rows = [
         {
-            u"Found Text": Ref(x[0]).text("he").ja().flatten_to_string(),
-            u"Source Text": u"...".join(get_snippet_by_seg_ref(Ref(x[1]).text('he'), Ref(x[0]))),
-            u"Source Ref URL": u"https://sefaria.org/{}".format(Ref(x[1]).url()),
-            u"Found Ref URL": u"https://sefaria.org/{}".format(Ref(x[0]).url()),
+            u"Found Text": Ref(x['Quoted Ref']).text("he").ja().flatten_to_string(),
+            u"Source Text": u"...".join(get_snippet_by_seg_ref(Ref(x['Quoting Ref']).text('he'), Ref(x['Quoted Ref']))),
+            u"URL": u"https://sefaria.org/{}?p2={}".format(Ref(x['Quoting Ref']).url(), Ref(x['Quoted Ref']).url()),
             u"Wrong segment (seg) / Wrong link (link)": u""
         }
         for x in (tanakh + talmud)]
 
-    print len(low_conf)
-    print len(high_conf)
-    with open("low_conf_links.json", "wb") as fout:
-        json.dump(low_conf, fout, indent=2)
-    with open("high_conf_links.json", "wb") as fout:
-        json.dump(high_conf, fout, indent=2)
     with open("QA Section Links.csv", "wb") as fout:
-        csv = unicodecsv.DictWriter(fout, [u"Source Text", u"Found Text", u"Source Ref URL", u"Found Ref URL", u"Wrong segment (seg) / Wrong link (link)"])
+        csv = unicodecsv.DictWriter(fout, [u"Source Text", u"Found Text", u"URL", u"Wrong segment (seg) / Wrong link (link)"])
         csv.writeheader()
         csv.writerows(qa_rows)
 
@@ -450,10 +448,10 @@ def count_words_map(index):
         pass
 
 def run():
-    ld = Link_Disambiguator()
-    ld.get_ambiguous_segments()
+    #ld = Link_Disambiguator()
+    #ld.get_ambiguous_segments()
     disambiguate_all()
-    #find_low_confidence_talmud()
+    #get_qa_csv()
     # ld = Link_Disambiguator()
     # ld.disambiguate_gra()
     #count_words()

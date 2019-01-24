@@ -6,7 +6,7 @@ sheets = db.sheets.find()
 for sheet in sheets:
     sheet["owner"] = 51461
     sheet["status"] = "public"
-    sheet["group"] = "Nechama Leibowitz' Source Sheets"
+    sheet["group"] = u"גיליונות נחמה"
     db.sheets.save(sheet)
 
 

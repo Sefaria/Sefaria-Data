@@ -55,10 +55,10 @@ def test_link_disambiguator(test_items):
     if "quote" not in test_items["out"]:
         # output should be bad
         assert good == []
-        assert bad == [] or bad[0][0] == test_items["out"]["main"].normal()
+        assert bad == [] or bad[0][u'Quoting Ref'] == test_items["out"]["main"].normal()
     else:
         # output is good
-        assert good[0][1] == test_items["out"]["quote"].normal()
+        assert good[0][u'Quoted Ref'] == test_items["out"]["quote"].normal()
         assert bad == []
 
 

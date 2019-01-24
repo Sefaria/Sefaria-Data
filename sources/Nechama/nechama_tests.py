@@ -61,3 +61,11 @@ class Test_ref_term_catching(object):
         # print Section.get_term(u'מכילתא, בשלח י"ד כ"ח')
         assert True
 
+class Test_snunit_catch(object):
+    """
+    know to read a tags like this http://kodesh.snunit.k12.il/i/tr/t2692.htm and parse them correctly to Refs in the
+    Sefaria library
+    """
+    def test_snunit(self):
+        ref = Section.exctract_pasuk_from_snunit('http://kodesh.snunit.k12.il/i/tr/t2692.htm')
+        assert True
