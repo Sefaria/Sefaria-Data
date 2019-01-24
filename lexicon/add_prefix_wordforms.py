@@ -249,7 +249,7 @@ try:
                             found_exact = False
                             for hw in jastrow_clean_wordforms_to_hw[word]:
                                 if ref.normal() in jastrow_hw_ref_list[hw]:
-                                    exact_jastrow_wordforms[(prefix+word, hw)].append(ref)
+                                    exact_jastrow_wordforms[(prefix+word, hw)].append(ref.normal())
                                     found_exact = True
                                     # print u"exact match for {} {} {}".format(prefix+word, hw, ref)
 
