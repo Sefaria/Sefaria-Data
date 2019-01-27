@@ -20,10 +20,16 @@ several words. This heuristic could be an alternative comment parsing strategy f
 """
 
 import re
+import math
 import codecs
 from functools import partial
-from data_utilities.util import getGematria, convert_dict_to_array
+from sources.functions import post_text, post_index, post_link, add_term, add_category
+from data_utilities.util import getGematria, convert_dict_to_array, split_version, split_list
 from data_utilities.ParseUtil import Description, directed_run_on_list, ParsedDocument, ParseState, ClashError
+
+import django
+django.setup()
+from sefaria.model import *
 
 
 chap_regex = re.compile(u"^@22(\u05e1\u05d9\u05de\u05df|\u05e1\u05d9'?)\s(?P<chap>[\u05d0-\u05ea\"]{1,5})$")
@@ -127,6 +133,60 @@ def expanded_split_comments(parse_state, comment_list):
     return comment_list
 
 
+def format_comment(comment):
+    comment = re.sub(u'@\d{2}', u'', comment)
+
+    # dh ends in "." or "כו"
+    dh_reg = re.compile(u"^\u05d5?\u05db\u05d5'?$|\.$")
+
+    # dh can be up to %30 of comment but no longer than 15 words.
+    max_dh_len = min(int(math.ceil(0.3*len(comment.split()))), 15)
+
+    comment_words = comment.split()
+    for i, word in enumerate(comment_words[:max_dh_len], 1):
+        if dh_reg.search(word):
+            break
+    else:
+        i = 0
+
+    # dh_reg = re.compile(u'''^([^\s]+\s){{,{}}}?(\u05d5?\u05db\u05d5'?|\.)(?= )'''.format(max_dh_len))
+    # comment = dh_reg.sub(u'<b>\g<0></b>', comment)
+    if i == 0:
+        return comment
+    else:
+        return u'<b>{}</b>'.format(u' '.join(comment_words[:i])) + u' ' + u' '.join(comment_words[i:])
+
+
+class Linker(object):
+    def __init__(self, state):
+        self.state = state
+        self.link_list = []
+
+    def clear_links(self):
+        self.link_list = []
+
+    def resolve_link(self, comment, base_title, relation):
+        siman = self.state.get_ref('Siman', one_indexed=True)
+        seif = self.state.get_ref('Seif', one_indexed=True)
+        comment_num = self.state.get_ref('Comment', one_indexed=True)
+        self.link_list.append({
+            'refs': [
+                '{} {}:{}'.format(base_title, siman, seif),
+                'Machatzit HaShekel on Orach Chayim {}:{}:{}'.format(siman, seif, comment_num)
+            ],
+            'type': relation,
+            'auto': True,
+            'generated_by': 'Machatzit HaShekel Parser'
+        })
+
+    def test_base(self, comment, base_title, problem_set):
+        siman = self.state.get_ref('Siman', one_indexed=True)
+        seif = self.state.get_ref('Seif', one_indexed=True)
+        my_ref = Ref("{} {}:{}".format(base_title, siman, seif))
+        if my_ref.is_empty():
+            problem_set.add(my_ref.normal())
+
+
 current_state = ParseState()
 split_comments = partial(expanded_split_comments, current_state)
 split_seifim = SplitSeifim(current_state)
@@ -135,7 +195,46 @@ descriptors = [
     Description('Seif', split_seifim),
     Description('Comment', split_comments)
 ]
-parser = ParsedDocument("Mahatzit HaShekel", u"מחצית השקל", descriptors)
+parser = ParsedDocument("Machatzit HaShekel on Orach Chayim", u"מחצית השקל על אורך חיים", descriptors)
 parser.attach_state_tracker(current_state)
 parser.parse_document(lines)
-mahatzit_ja = parser.get_ja()
+mahatzit_ja = parser.filter_ja(format_comment)
+ja_node = parser.get_ja_node()
+ja_node.toc_zoom = 2
+
+my_index = {
+    u'title': u'Machatzit HaShekel on Orach Chayim',
+    u'categories': [u'Halakhah', u'Shulchan Arukh', u'Commentary', u'Machatzit HaShekel'],
+    u'dependence': u'Commentary',
+    u'collective_title': u'Machatzit HaShekel',
+    u'base_text_titles': [u'Shulchan Arukh, Orach Chayim', u'Magen Avraham'],
+    u'schema': ja_node.serialize()
+}
+
+full_version = {
+    u"versionTitle": u"Maginei Eretz: Shulchan Aruch Orach Chaim, Lemberg, 1893",
+    u"versionSource": u"http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002084080",
+    u"language": u"he",
+    u"text": mahatzit_ja,
+}
+version_list = split_version(full_version, 2)
+
+linker = Linker(current_state)
+parser.filter_ja(linker.resolve_link, "Magen Avraham", "commentary")
+parser.filter_ja(linker.resolve_link, "Shulchan Arukh, Orach Chayim", "super_commentary")
+
+server = 'http://mahatzit.sandbox.sefaria.org'
+
+add_term("Machatzit HaShekel", u"מחצית השקל", server=server)
+add_category("Machatzit HaShekel", my_index[u'categories'], server=server)
+post_index(my_index, server=server)
+for v in version_list:
+    post_text("Machatzit HaShekel on Orach Chayim", v, server=server)
+
+for link_group in split_list(linker.link_list, 6):
+    post_link(link_group, server=server)
+
+# missing_magen = set()
+# parser.filter_ja(linker.test_base, "Magen Avraham", missing_magen)
+# for problem in sorted(missing_magen, key=lambda x: Ref(x).sections):
+#     print problem
