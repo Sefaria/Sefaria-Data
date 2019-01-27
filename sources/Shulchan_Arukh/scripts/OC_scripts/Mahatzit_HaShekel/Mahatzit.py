@@ -161,23 +161,45 @@ class Linker(object):
     def __init__(self, state):
         self.state = state
         self.link_list = []
+        self.shulchan_ref = Ref("Shulchan Arukh, Orach Chayim")
 
     def clear_links(self):
         self.link_list = []
 
-    def resolve_link(self, comment, base_title, relation):
+    def resolve_link(self, comment):
         siman = self.state.get_ref('Siman', one_indexed=True)
         seif = self.state.get_ref('Seif', one_indexed=True)
         comment_num = self.state.get_ref('Comment', one_indexed=True)
+
+        ma_ref = Ref('Magen Avraham {}:{}'.format(siman, seif))
+        mahatzit_ref_string = 'Machatzit HaShekel on Orach Chayim {}:{}:{}'.format(siman, seif, comment_num)
         self.link_list.append({
-            'refs': [
-                '{} {}:{}'.format(base_title, siman, seif),
-                'Machatzit HaShekel on Orach Chayim {}:{}:{}'.format(siman, seif, comment_num)
-            ],
-            'type': relation,
+            'refs': [ma_ref.normal(), mahatzit_ref_string],
+            'type': 'commentary',
             'auto': True,
             'generated_by': 'Machatzit HaShekel Parser'
         })
+
+        magen_to_sa_links = ma_ref.linkset().refs_from(self.shulchan_ref, as_tuple=True)
+
+        if len(magen_to_sa_links) > 1:
+            print "Multiple links at {}".format(ma_ref.normal())
+        elif len(magen_to_sa_links) < 1:
+            print "No outgoing link for {}".format(ma_ref.normal())
+
+        for ref_pair in magen_to_sa_links:
+            if self.shulchan_ref.contains(ref_pair[0]):
+                sref = ref_pair[0].normal()
+            else:
+                assert self.shulchan_ref.contains(ref_pair[1])
+                sref = ref_pair[1].normal()
+
+            self.link_list.append({
+                'refs': [sref, mahatzit_ref_string],
+                'type': 'super_commentary',
+                'auto': True,
+                'generated_by': 'Machatzit HaShekel Parser'
+            })
 
     def test_base(self, comment, base_title, problem_set):
         siman = self.state.get_ref('Siman', one_indexed=True)
@@ -195,7 +217,7 @@ descriptors = [
     Description('Seif', split_seifim),
     Description('Comment', split_comments)
 ]
-parser = ParsedDocument("Machatzit HaShekel on Orach Chayim", u"מחצית השקל על אורך חיים", descriptors)
+parser = ParsedDocument("Machatzit HaShekel on Orach Chayim", u"מחצית השקל על אורח חיים", descriptors)
 parser.attach_state_tracker(current_state)
 parser.parse_document(lines)
 mahatzit_ja = parser.filter_ja(format_comment)
@@ -220,8 +242,9 @@ full_version = {
 version_list = split_version(full_version, 2)
 
 linker = Linker(current_state)
-parser.filter_ja(linker.resolve_link, "Magen Avraham", "commentary")
-parser.filter_ja(linker.resolve_link, "Shulchan Arukh, Orach Chayim", "super_commentary")
+parser.filter_ja(linker.resolve_link)
+# parser.filter_ja(linker.resolve_link, "Magen Avraham", "commentary")
+# parser.filter_ja(linker.resolve_link, "Shulchan Arukh, Orach Chayim", "super_commentary")
 
 server = 'http://mahatzit.sandbox.sefaria.org'
 
