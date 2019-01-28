@@ -24,7 +24,7 @@ import math
 import codecs
 from functools import partial
 from sources.functions import post_text, post_index, post_link, add_term, add_category
-from data_utilities.util import getGematria, convert_dict_to_array, split_version, split_list
+from data_utilities.util import getGematria, convert_dict_to_array, split_version, split_list, schema_with_default
 from data_utilities.ParseUtil import Description, directed_run_on_list, ParsedDocument, ParseState, ClashError
 
 import django
@@ -135,6 +135,7 @@ def expanded_split_comments(parse_state, comment_list):
 
 def format_comment(comment):
     comment = re.sub(u'@\d{2}', u'', comment)
+    comment = re.sub(u'!', u'', comment)
 
     # dh ends in "." or "כו"
     dh_reg = re.compile(u"^\u05d5?\u05db\u05d5'?$|\.$")
@@ -173,12 +174,16 @@ class Linker(object):
 
         ma_ref = Ref('Magen Avraham {}:{}'.format(siman, seif))
         mahatzit_ref_string = 'Machatzit HaShekel on Orach Chayim {}:{}:{}'.format(siman, seif, comment_num)
-        self.link_list.append({
-            'refs': [ma_ref.normal(), mahatzit_ref_string],
-            'type': 'commentary',
-            'auto': True,
-            'generated_by': 'Machatzit HaShekel Parser'
-        })
+
+        if ma_ref.is_empty():  # don't make a link if megen avraham has no text
+            pass
+        else:
+            self.link_list.append({
+                'refs': [ma_ref.normal(), mahatzit_ref_string],
+                'type': 'commentary',
+                'auto': True,
+                'generated_by': 'Machatzit HaShekel Parser'
+            })
 
         magen_to_sa_links = ma_ref.linkset().refs_from(self.shulchan_ref, as_tuple=True)
 
@@ -223,6 +228,13 @@ parser.parse_document(lines)
 mahatzit_ja = parser.filter_ja(format_comment)
 ja_node = parser.get_ja_node()
 ja_node.toc_zoom = 2
+schema = schema_with_default(ja_node)
+
+intro_node = JaggedArrayNode()
+intro_node.add_primary_titles(u"Introduction", u"הקדמת המחבר")
+intro_node.add_structure(["Comment"])
+schema.children.insert(0, intro_node)
+schema.validate()
 
 my_index = {
     u'title': u'Machatzit HaShekel on Orach Chayim',
@@ -230,7 +242,7 @@ my_index = {
     u'dependence': u'Commentary',
     u'collective_title': u'Machatzit HaShekel',
     u'base_text_titles': [u'Shulchan Arukh, Orach Chayim', u'Magen Avraham'],
-    u'schema': ja_node.serialize()
+    u'schema': schema.serialize()
 }
 
 full_version = {
