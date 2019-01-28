@@ -18,6 +18,7 @@ except ImportError:
     pass
 from sefaria.datatype import jagged_array
 from sefaria.model import *
+from sefaria.model.schema import TitleGroup
 
 
 gematria = {}
@@ -1301,3 +1302,20 @@ def split_list(list_to_split, num_splits):
     indices = [math.trunc(chunk_length * i) for i in range(num_splits + 1)]
     for start, end in zip(indices[:-1], indices[1:]):
         yield list_to_split[start:end]
+
+
+def schema_with_default(simple_ja):
+    """
+    Take a standard JaggedArrayNode and makes it a default child of a SchemaNode.
+    :param JaggedArrayNode simple_ja:
+    :return: SchemaNode
+    """
+    root_node = SchemaNode()
+    root_node.title_group = simple_ja.title_group
+    root_node.key = simple_ja.key
+    simple_ja.title_group = TitleGroup()
+    simple_ja.key = "default"
+    simple_ja.default = True
+    root_node.append(simple_ja)
+    root_node.validate()
+    return root_node
