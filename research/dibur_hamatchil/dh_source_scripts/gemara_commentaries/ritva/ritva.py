@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import django
+django.setup()
 #dibur hamatchil tokenizer
 #- dh is bolded except when the Perek is the first word. then strip until the first line break.
 # strip out matni and gem
@@ -21,7 +23,10 @@ def dh_extraction_method(s):
 
     bold_list = re.findall(ur'<b>(.+?)</b>',s)
     if len(bold_list) > 0:
-        bold = bold_list[0] if u'פרק' not in bold_list[0] else bold_list[1]
+        try:
+            bold = bold_list[0] if u'פרק' not in bold_list[0] else bold_list[1]
+        except IndexError:
+            return u' '.join(s.split()[:12])
         if u"וכו'" in bold:
             bold = bold[:bold.index(u"וכו'")]
         elif u"כו'" in bold:
@@ -29,16 +34,18 @@ def dh_extraction_method(s):
         bold = re.sub(ur'[\,\.\:\;]',u'',bold)
         return bold
     else:
-        return s
+        return u' '.join(s.split()[:12])
 
 def rashi_filter(text):
     bold_list = re.findall(ur'<b>(.+?)</b>', text)
     return len(bold_list) > 1 or (len(bold_list) == 1 and u'פרק' not in bold_list[0])
 
 def match():
-    mesechtot = ["Berakhot","Eruvin","Rosh Hashanah", "Yoma", "Makkot","Avodah Zarah","Niddah"]
+    # mesechtot = ["Berakhot","Eruvin","Rosh Hashanah", "Yoma", "Makkot","Avodah Zarah","Niddah"]
+    mesechtot = ["Sukkah", "Taanit"]
     gcm = GemaraCommentaryMatcher("Ritva on", mesechtot)
-    gcm.match(dh_extraction_method, tokenize_words, rashi_filter, "out", "not_found")
+    # gcm.match(dh_extraction_method, tokenize_words, rashi_filter, "out", "not_found")
+    gcm.match(dh_extraction_method, tokenize_words, None, "out", "not_found")
 
 match()
 
