@@ -243,18 +243,12 @@ class Source(object):
 
     def get_english_options(self):
         try:
-            text = Ref(self.ref).text('en').text
-            en_text = self.flatten_array(text) #u' '.join(text) if isinstance(text, list) else text # maybe needs to be more robust and have as many itrations as needed till it is unicode? 16
+            tc = Ref(self.ref).text('en')
+            en_text = tc.ja().flatten_to_string()  # u' '.join(text) if isinstance(text, list) else text # maybe needs to be more robust and have as many itrations as needed till it is unicode? 16
         except AttributeError:
             en_text = u"..."
         return en_text
 
-    def flatten_array(self, text):
-        if isinstance(text, list):
-            if not any([isinstance(t, list) for t in text]):
-                return u' '.join(text)
-            return [self.flatten_array(t) for t in text]
-        return text
 
     def get_ref(self):
         return self.ref

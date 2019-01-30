@@ -197,6 +197,9 @@ class Sheet(object):
                 else:
                     segment.ref = orig_ref
 
+    def he_letter_to_en_leter(self, letter):
+        letter = getGematria(letter)
+        return chr(letter + 96)
 
     def prepare_sheet(self, add_to_title="", post=False):
        sheet_json = {}
@@ -209,6 +212,7 @@ class Sheet(object):
        sheet_json["sources"] = self.sources
        sheet_lang = 'bilingual' if parser.english_sheet else 'hebrew'
        sheet_json["options"] = {"numbered": 0, "assignable": 0, "layout": "sideBySide", "boxed": 0, "language": sheet_lang, "divineNames": "noSub", "collaboration": "group-can-edit", "highlightMode": 0, "bsd": 0, "langLayout": "heRight"}
+       sheet_json['owner'] = 51461
 
        if "-" in self.en_parasha:
            sheet_json["tags"] = [unicode(self.en_parasha.split("-")[0]), unicode(self.en_parasha.split("-")[-1])]
@@ -231,20 +235,42 @@ class Sheet(object):
                        s['outsideBiText']['he'] = s['outsideText']
                        s['outsideBiText']['en'] = "translation here"
                        # get headers in English to look like headers in hebrew
-                       if re.search('<table><tr><td><big>', s['outsideBiText']['he']):
+                       if re.match(u'.*?<table><tr><td><big>', s['outsideBiText']['he']):
                            match = re.match('(.*>)[^<]+(<.*)', s['outsideBiText']['he'])
                            s['outsideBiText']['en'] = '{}translation here{}'.format(match.group(1), match.group(2))
+                       elif re.match(u".*?<span style='color:rgb\(153,153,153\);'>", s['outsideBiText']['he']):
+                           s['outsideBiText']['en'] = "<span style='color:rgb(153,153,153);'>source name</span><br/><span style='color:rgb(51,51,51);'>source translation"
+                       elif re.match(u'.*?<sup class="nechama">\*{0,2}</sup>', s['outsideBiText']['he']):
+                           matches = re.match(u'.*?(?:<sup class="nechama">(\*{0,2})</sup>\s*(.{1,2}\.)?)', s['outsideBiText']['he'])
+                           diffculty = matches.group(1)
+                           number = u""
+                           if matches.group(2):
+                                number = matches.group(2) if matches.group(2)[:-1].isdigit() else u'{}.'.format(self.he_letter_to_en_leter(matches.group(2)[:-1]))
+                           s['outsideBiText']['en'] = u'<sup class="en_nechama">{}</sup> {} question here'.format(diffculty, number)
                        del s['outsideText']
                    else:  # Text
                        s['options']['sourceLanguage'] = ""
+                       q_numbering = re.search(u'(.*\.)', s['heRef'])
+                       if re.search(u'(^.{1,2}\.)', s['heRef']):
+                           print q_numbering.group(1)
+                           s['ref'] = u'{} {}'.format(q_numbering.group(1), s['ref'])
                        if not s['text']['en']:
                             s['text']['en'] = "segment translation"
+               self.test_no_lists(sheet_json['sources'])
 
 
 
            post_sheet(sheet_json, server=parser.server)
 
 
+    def test_no_lists(self, sources):
+        for s in sources:
+            if 'outsideBiText' in s.keys():
+                assert not isinstance(s['outsideBiText']['he'], list)
+                assert not isinstance(s['outsideBiText']['en'], list)
+            else:
+                assert not isinstance(s['text']['he'], list)
+                assert not isinstance(s['text']['en'], list)
 
     def extract_perek_info(self, perek_info):
         def get_pasukim_for_perek(sefer, perek):
@@ -1644,19 +1670,19 @@ if __name__ == "__main__":
     english_sheet = True
 
     posting = True
-    individuals = [16]  # [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
+    individuals = [169]  # [1075, 1320]  # [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
 
     found_tables_num = 0
     found_tables = set()
     with open(u"reports/text_check.csv", 'a') as fcsv:
         writer = csv.DictWriter(fcsv, [u'sheet', u'missing text'])
         writer.writeheader()
-    for individual in range(1, 1400): #individuals: #range(212, 1400): #  failed on look_for_missing_next: [57, 62. 85, 163]
+    for individual in individuals: #range(1321, 1479): #individuals: #range(212, 1400): #  failed on look_for_missing_next: [57, 62. 85, 163]
         for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
             # print u"NEW BOOK"
             for parsha in which_parshiot[1]:
                 book = which_parshiot[0]
-                parser = Nechama_Parser(en_sefer=book, en_parasha=parsha, mode="accurate", add_to_title=u"", catch_errors=catch_errors, looking_for_matches=True, english_sheet=english_sheet)
+                parser = Nechama_Parser(en_sefer=book, en_parasha=parsha, mode="accurate", add_to_title=u"english question numbers", catch_errors=catch_errors, looking_for_matches=True, english_sheet=english_sheet)
                 #parser.prepare_term_mapping()  # must be run once locally and on sandbox
                 #parser.bs4_reader(["html_sheets/Bereshit/787.html"], post=False)
                 if not individual:
