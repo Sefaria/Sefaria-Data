@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup, element
 from sources.functions import getGematria
 from sefaria.model.text import *
 from main import *
+import unicodecsv as csv
 
 import codecs
 
@@ -43,12 +44,14 @@ class Source(object):
     def is_source_text(segment, important_classes):
         return isinstance(segment, element.Tag) and "class" in segment.attrs.keys() and segment.attrs["class"][0] in important_classes
 
-    def get_sefaria_ref(self, ref):
+    def get_sefaria_ref(self, ref, parasha=None):
         if ref == "":
             return None
         try:
             r = Ref(ref)
             assert r.text('he').text
+            if self.parshan_id and parasha and re.search(parasha, ref):
+                assert False
             if r.is_commentary():
                 if re.search(u".*(?:on|,)\s((?:[^:]*?):(?:[^:]*)):?", r.normal()):
                     r_base = Ref(re.search(u".*(?:on|,)\s((?:[^:]*?):(?:[^:]*)):?", r.normal()).group(1))
@@ -61,11 +64,15 @@ class Source(object):
             else:
                 return None
         except (InputError,  AssertionError, IndexError) as e:
+            if self.parshan_id and parasha and re.search(parasha, ref):
+                split = re.split(u'({})'.format(parasha), ref)
+                ref_node = ''.join(split[:-1])
+                return self.get_sefaria_ref(ref_node)
             # try to see if all that is wrong is the segment part of the ref, say, for Ralbag Beur HaMilot on Torah, Genesis 4:17
             last_part = ref.split()[-1]
             if last_part[0].isdigit(): # in format, Ralbag Beur HaMilot on Torah, Genesis 4:17 and last_part is "4:17", now get the node "Ralbag Beur HaMilot on Torah, Genesis"
                 ref_node = " ".join(re.split(u"[:\s]", ref)[0:-1])
-                return self.get_sefaria_ref(ref_node) #returns Ralbag Beur HaMilot on Torah, Genesis
+                return self.get_sefaria_ref(ref_node, parasha) #returns Ralbag Beur HaMilot on Torah, Genesis
 
     def glue_ref_and_text(self, ref, text, gray=True):
         if isinstance(text, list):
@@ -88,7 +95,7 @@ class Source(object):
                 ## print u"diff words: {}".format(len(diff))
                 for w in diff:
                     print w
-                if len(diff) <= 2 and not (u'מקשה' in u' '.join(diff)):
+                if len(diff) <= 2 and not (u'קשה' in u' '.join(diff)) and not (u'שווה' in u' '.join(diff)):
                     if self.get_sefaria_ref(self.ref):
                         return text
                     else:
@@ -156,20 +163,21 @@ class Source(object):
                       "text":
                           {
                               "he": comment,
-                              "en": self.get_english_options() if english_sheet else ""
+                              "en": self.get_english_options()  # if english_sheet else ""
                           },
-                      "options": {
-                          "indented": "indented-1",
-                          "sourceLayout": "",
-                          "sourceLanguage": "hebrew",
-                          "sourceLangLayout": "",
-                          "refDisplayPosition": self.refDisplayPosition
-                      }
+                      "options":
+                          {
+                              "indented": "indented-1",
+                              "sourceLayout": "",
+                              "sourceLanguage": "hebrew",
+                              "sourceLangLayout": "",
+                              "refDisplayPosition": self.refDisplayPosition
+                          }
                       }
             if isinstance(self.text, list):
                 source["text"] = {
                     "he": u'{} <a class="nested_question_hack" href= "/{}">{}</a><br>{}'.format(self.text[0], enRef, heRef, self.text[1]),
-                    "en": self.get_english_options() if english_sheet else ""
+                    "en": self.get_english_options()  # if english_sheet else "..."
                 }
                 source["options"]["indented"] = ""
 
@@ -235,10 +243,12 @@ class Source(object):
 
     def get_english_options(self):
         try:
-            en_text = Ref(self.ref).text('en').text
+            tc = Ref(self.ref).text('en')
+            en_text = tc.ja().flatten_to_string()  # u' '.join(text) if isinstance(text, list) else text # maybe needs to be more robust and have as many itrations as needed till it is unicode? 16
         except AttributeError:
-            en_text = u" "
+            en_text = u"..."
         return en_text
+
 
     def get_ref(self):
         return self.ref
@@ -572,8 +582,9 @@ class Nested(object):
         while curr_soup_obj.next_sibling:
             next_sibling_text = curr_soup_obj.next_sibling if isinstance(curr_soup_obj.next_sibling, element.NavigableString) else curr_soup_obj.next_sibling.text
             if not nechama_obj[1].string:
-                with codecs.open("reports/text_check.txt", 'a', encoding='utf-8') as f:
-                    f.write(nechama_obj[1].text)
+                # with open("reports/text_check.csv", 'a') as f:
+                #     writer = csv.DictWriter(f, [u'sheet', u'missing text'])
+                #     writer.writerow({u'missing text': nechama_obj[1].text})
                 print u"NO nechama_obj.string for these words {} !!!".format(nechama_obj[1].text)
                 nechama_obj[1].string = nechama_obj[1].text
             nechama_obj[1].string += u" " + next_sibling_text

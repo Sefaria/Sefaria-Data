@@ -2,6 +2,7 @@
 import os
 import sys
 import re
+import math
 import codecs
 from collections import defaultdict
 from xml.etree import ElementTree as ET
@@ -17,6 +18,7 @@ except ImportError:
     pass
 from sefaria.datatype import jagged_array
 from sefaria.model import *
+from sefaria.model.schema import TitleGroup
 
 
 gematria = {}
@@ -1267,3 +1269,53 @@ def clean_whitespace(some_string):
     :return:
     """
     return u' '.join(some_string.split())
+
+
+def split_version(version_dict, num_splits):
+    """
+    Useful when a single version is larger than the max document size in mongodb (16MB). Breaks a version up, adding
+    `Vol n`, where n = 1,2,3...<num_splits>.
+    :param version_dict: Version dictionary, as would be uploaded to Sefaria without being split
+    :param num_splits: Number of times to break up version (2 will give 2 version objects).
+    :return: list of version objects
+    """
+    def edges(size):
+        chunk_length = float(size) / float(num_splits)
+        chunk_indices = [math.trunc(chunk_length * i) for i in range(num_splits + 1)]
+        return zip(chunk_indices[:-1], chunk_indices[1:])
+
+    volumes = []
+    indices = edges(len(version_dict['text']))
+    for vol_num, (start, end) in enumerate(indices, 1):
+        new_fields = {
+            u'versionTitle': u'{}, Vol {}'.format(version_dict[u'versionTitle'], vol_num),
+            u'text': [t if start <= ind < end else [] for ind, t in enumerate(version_dict[u'text'])]
+        }
+        new_version = version_dict.copy()
+        new_version.update(new_fields)
+        volumes.append(new_version)
+    return volumes
+
+
+def split_list(list_to_split, num_splits):
+    chunk_length = float(len(list_to_split)) / num_splits
+    indices = [math.trunc(chunk_length * i) for i in range(num_splits + 1)]
+    for start, end in zip(indices[:-1], indices[1:]):
+        yield list_to_split[start:end]
+
+
+def schema_with_default(simple_ja):
+    """
+    Take a standard JaggedArrayNode and makes it a default child of a SchemaNode.
+    :param JaggedArrayNode simple_ja:
+    :return: SchemaNode
+    """
+    root_node = SchemaNode()
+    root_node.title_group = simple_ja.title_group
+    root_node.key = simple_ja.key
+    simple_ja.title_group = TitleGroup()
+    simple_ja.key = "default"
+    simple_ja.default = True
+    root_node.append(simple_ja)
+    root_node.validate()
+    return root_node
