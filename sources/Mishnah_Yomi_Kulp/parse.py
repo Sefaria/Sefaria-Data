@@ -16,7 +16,7 @@ import textract
 import traceback
 import sys
 
-SERVER = "http://localhost:8000"
+SERVER = "http://ste.sandbox.sefaria.org"
 section_referenced_not_in_mishnah = []
 mishnah_wout_numbers_explanation_has = []
 mishnah_wout_numbers_explanation_wout = []
@@ -246,7 +246,8 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
                     #print complaint
                 except ValueError:
                     pass
-            currently_parsing = "MISHNAH"
+            if currently_parsing == "INTRODUCTION":
+                currently_parsing = "MISHNAH"
         elif "Introduction" == line:
             commentary_text.append(u"<b>"+line+"</b>")
             currently_parsing = line.upper()
@@ -283,9 +284,9 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
             print "BLANK FILE"
         else:
             orig_mishnah = restructure_mishnah_text(orig_mishnah)
-            orig_mishnah = "<b>" + u"<br/>".join(orig_mishnah) + "</b><br/>"
+            orig_mishnah = "<b>" + u" ".join(orig_mishnah) + "</b><br/>"
             orig_explanation = u"<br/>".join(orig_explanation)
-            return ([orig_mishnah+orig_explanation], [orig_mishnah])
+            return ([orig_mishnah+orig_explanation], [orig_mishnah.replace("<b>", "").replace("<br/>", "").replace("</b>", "")])
 
 
 
@@ -295,7 +296,7 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
     commentary_text = [el for el in commentary_text if el]
     questions_text = [el for el in questions_text if el]
     commentary_text = [el for el in commentary_text+questions_text]
-    mishnah_text = [el.replace("<b>", "").replace("</b>", "") for el in mishnah_text]
+    mishnah_text = [el.replace("<b>", "").replace("</b>", "").replace("<br/>", "") for el in mishnah_text]
     return (commentary_text+questions_text, mishnah_text)
 
 
@@ -316,7 +317,8 @@ def restructure_mishnah_text(old_mishnah_text):
 
     for line in old_mishnah_text:
         digit = re.search("^(\d+)\)", line)
-        line = re.sub("\s*[a-zA-Z]+\)", "", line).strip()
+        line = re.sub("^\([a-zA-Z]{1,3}\)", "", line).strip()
+        line = re.sub("^[a-zA-Z]{1,3}\)", "", line).strip()
         if digit:
             pos = int(digit.group(1)) - 1
             if len(mishnah_text) > pos:
@@ -548,7 +550,6 @@ if __name__ == "__main__":
  u'Mishnah Yomit on Mishnah Gittin',
  u'Mishnah Yomit on Mishnah Middot',
  u'Mishnah Yomit on Mishnah Pesachim']
-    didnt_post = [u"Mishnah Yomit on Mishnah Makhshirin"]
     start_at = ""
     for sefer in parsed_text.keys():
         if start_at in sefer:
