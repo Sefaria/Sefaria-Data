@@ -78,15 +78,15 @@ class Source(object):
         if isinstance(text, list):
             text = u' '.join(text)
         if self.about_source_ref and self.ref:
-            if self.about_source_ref != self.ref:
+            if self.about_source_ref != self.ref or (self.get_sefaria_ref(self.ref) and self.about_source_ref != self.get_sefaria_ref(self.ref).he_normal()):
                 try:
                     he_self_ref = Ref(self.ref).he_normal()
                 except InputError as e:
                     ## print u"Exception {}".format(e)
                     assert isinstance(self.ref, unicode)
                     he_self_ref = self.ref
-                about_words = [x.strip(u'''"\u05f3' ,''') for x in re.split(u" |:", self.about_source_ref.strip())]
-                ref_words = [x.strip(u'''"\u05f3' ,''') for x in re.split(u" |:", he_self_ref)]
+                about_words = [re.sub(u'''["\u05f3\u05f4'\s,]''', u'', x) for x in re.split(u" |:", self.about_source_ref.strip())] #x.strip(u'''"\u05f3\u05f4' ,''')
+                ref_words = [re.sub(u'''["\u05f3\u05f4'\s,]''', u'', x) for x in re.split(u" |:", he_self_ref)] #  x.strip(u'''"\u05f3\u05f4' ,''')
                 diff = set(about_words).difference(set(ref_words))
                 diff.discard(u'פרק')
                 diff.discard(u'פסוק')
@@ -156,6 +156,8 @@ class Source(object):
                 if hasattr(self, 'number'):
                     q = Question(question=self)
                     heRef = q.format(without_params=[u'difficulty'], new_text=heRef)
+                    if not q.number:
+                        comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False)
                 else:
                     comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False)
             enRef = self.get_sefaria_ref(self.ref).normal()
@@ -295,6 +297,7 @@ class Header(object):
         table_html = str(segment)
         formatted_text = self.format(BeautifulSoup(table_html, "lxml").text)
         self.text = u"<table><tr><td><big>{}</big></td></tr></table>".format(formatted_text)
+
 
     @staticmethod
     def is_header(segment):
@@ -468,6 +471,9 @@ def remove_a_links(segment):
     for a in segment.findAll('a'):  # get all a tags and remove them
         if a.attrs and "class" in a.attrs.keys() and a.attrs["class"] == "nested_question_hack":
             continue
+        elif a.attrs and re.search(u'sheet', a.attrs["href"]):
+            continue
+            # <a href="http://www.nechama.org.il/pages/1351.html?1">בראשית תש"ג שאלה <u>א'</u></a>
         # if a.attrs["href"].find("snunit") > 0:
         #     ref = Section.exctract_pasuk_from_snunit(a)
         #     new_a_href = "<a href='/{}'".format(ref)
@@ -493,6 +499,7 @@ class RT_Rashi(object):
 class Nechama_Comment(object):
 
     def __init__(self, text):
+
         self.text = text
 
     @staticmethod
