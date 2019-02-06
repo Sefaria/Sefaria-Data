@@ -9,7 +9,7 @@ import unicodecsv as csv
 import codecs
 
 def get_the_text_with_html(butag):
-    re.sub(u'(^<[^\u05d0-\u05ea]*>)|(<[^\u05d0-\u05ea]*>$)', u'', unicode(butag))
+    return re.sub(u'(^<[^\u05d0-\u05ea]*>)|(<[^\u05d0-\u05ea]*>$)', u'', unicode(butag))
 
 class Segment(object):
 
@@ -21,7 +21,7 @@ class Segment(object):
         #create source for sourcesheet out of myself
         segment = BeautifulSoup(self.text, "lxml")
         segment = remove_a_links(segment)
-        source = {"outsideText": segment.text}
+        source = {"outsideText": get_the_text_with_html(segment)}
         return source
 
 
@@ -127,12 +127,12 @@ class Source(object):
             for i, line in enumerate(self.text):
                 segment = BeautifulSoup(self.text[i], "lxml")
                 segment = remove_a_links(segment)
-                self.text[i] = segment.text
+                self.text[i] = get_the_text_with_html(segment) #self.text[i] = segment.text
         else:
             segment = BeautifulSoup(self.text, "lxml")
             for a in segment.findAll('a'):  # get all a tags and remove them
                 a.replaceWithChildren()
-            self.text = unicode(segment)  # segment.text
+            self.text = get_the_text_with_html(segment)  # segment.text
 
 
         comment = self.text
@@ -140,7 +140,7 @@ class Source(object):
         segment = BeautifulSoup(self.about_source_ref, "lxml")
         for a in segment.findAll('a'):  # get all a tags and remove them
             a.replaceWithChildren()
-        self.about_source_ref = segment.text
+        self.about_source_ref = get_the_text_with_html(segment)  # self.about_source_ref = segment.text
 
         nested_source_refDisplayPosition = True if isinstance(comment, list) else False
         # is Sefaria ref
@@ -420,7 +420,7 @@ class Question(object):
         #create source for sourcesheet out of myself
         segment = BeautifulSoup(self.text, "lxml")
         segment = remove_a_links(segment)
-        source = {"outsideText": str(segment)}
+        source = {"outsideText": get_the_text_with_html(segment)}
         return source
 
     def format(self, without_params=[], difficulty_symbol = [u'<sup class="nechama"></sup>', u'''<sup class="nechama">*</sup>''', u'''<sup class="nechama">**</sup>'''], new_text = None):
@@ -464,7 +464,7 @@ class Table(object):
         #create source for sourcesheet out of myselfwithout_params=["number"]
         segment = BeautifulSoup(self.text, "lxml")
         segment = remove_a_links(segment)
-        source = {"outsideText": str(segment)}
+        source = {"outsideText": get_the_text_with_html(segment)}
         return source
 
 
@@ -527,7 +527,7 @@ class Nechama_Comment(object):
         #create source for sourcesheet out of
         segment = BeautifulSoup(self.text, "lxml")
         segment = remove_a_links(segment)
-        source = {"outsideText": str(segment)}
+        source = {"outsideText": get_the_text_with_html(segment)}
         return source
 
 
@@ -756,7 +756,7 @@ class Text(object):
         :return: a sheet obj
         """
         self.sp_segment = remove_a_links(self.sp_segment)
-        source = {"outsideText": self.sp_segment.text}
+        source = {"outsideText": get_the_text_with_html(self.sp_segment)} # self.sp_segment.text}
         return source
 
     def choose(self):
