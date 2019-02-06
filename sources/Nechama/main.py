@@ -230,10 +230,18 @@ class Sheet(object):
        sheet_json["tags"].append(re.search(u'.*?(\d+)\.', self.html).groups(1)[0])
        if parser.english_sheet:
            sheet_json['tags'].append(u'Bilingual')
+       else:
+           sheet_json['tags'].append(u'Hebrew Sheet')
        if self.links_to_other_sheets:
            sheet_json['tags'].append('Sheet2Sheet')
            parser.sheets_linked_to_sheets.append((sheet_json["title"], sheet_json["summary"], sheet_json["tags"]))
 
+       for i, s in enumerate(sheet_json['sources']):
+           for sheet_link in parser.ssn_dicts:
+               if 'outsideText' in s.keys():
+                   uni_outsidetext = unicode(s['outsideText'], encoding='utf8') if isinstance(s['outsideText'], str) else s['outsideText']
+                   if re.search(sheet_link[u'text'], s['outsideText']):
+                       s['outsideText'] = re.sub(sheet_link[u'text'], sheet_link[u'linked_text'],  uni_outsidetext)
        if post:
            if parser.english_sheet:
                for i, s in enumerate(sheet_json['sources']):
@@ -254,10 +262,10 @@ class Sheet(object):
                            if matches.group(2):
                                 number = matches.group(2) if matches.group(2)[:-1].isdigit() else u'{}.'.format(self.he_letter_to_en_leter(matches.group(2)[:-1]))
                            s['outsideBiText']['en'] = u'<sup class="en_nechama">{}</sup> {} question here'.format(diffculty, number)
-                       for sheet_link in parser.ssn_dicts:
-                            uni_outsidetext = unicode(s['outsideBiText']['he'], encoding='utf8') if isinstance(s['outsideBiText']['he'],str) else s['outsideBiText']['he']
-                            if re.search(sheet_link[u'text'], uni_outsidetext):
-                                s['outsideBiText']['he'] = re.sub(sheet_link[u'text'], sheet_link[u'linked_text'], uni_outsidetext)
+                       # for sheet_link in parser.ssn_dicts:
+                       #      uni_outsidetext = unicode(s['outsideBiText']['he'], encoding='utf8') if isinstance(s['outsideBiText']['he'],str) else s['outsideBiText']['he']
+                       #      if re.search(sheet_link[u'text'], uni_outsidetext):
+                       #          s['outsideBiText']['he'] = re.sub(sheet_link[u'text'], sheet_link[u'linked_text'], uni_outsidetext)
 
                        del s['outsideText']
                    else:  # Text
@@ -1484,7 +1492,7 @@ class Nechama_Parser:
                 for line in found_lines:
                     writer.writerow({u'sheet': html_sheet, u'missing text':line})
 
-    def bs4_reader(self, file_list_names, post = False, add_to_title = u'', sheet_links=False):
+    def bs4_reader(self, file_list_names, post = False, add_to_title = u'', only_sheet_links=False):
         """
         The main BeautifulSoup reader function, that etrates on all sheets and creates the obj, probably should be in it's own file
         :param self:
@@ -1504,22 +1512,22 @@ class Nechama_Parser:
                 with codecs.open(u"{}".format(html_sheet), 'r', encoding='utf-8') as f:
                     file_content = f.read()
                     file_content = file_content.replace("<U>", "<B>").replace("</U>", "</B>").replace("<u>","<b>").replace("</u>", "</b>")
-                    if re.search(u'</P[^>]*?>(\s*[^<\s]+?[^<]*)<', file_content):
+                    if re.search(u'</P[^>]*?>(\s*[^<\s]+?[^<]*)<', file_content, flags=re.IGNORECASE):
                         # for missing in re.findall(u'</P[^>]*?>(\s*[^<\s]+?[^<]*)<', file_content):
                         #     print "missing",  missing
-                        compiled = re.compile(u'(</P[^>]*?>)(\s*[^<\s]+?[^<]*)(<)')
+                        compiled = re.compile(u'(</P[^>]*?>)(\s*[^<\s]+?[^<]*)(<)', flags=re.IGNORECASE)
                         file_content = re.sub(compiled, ur'''\1<p>\2</p>\3''', file_content)
                     def get_ssn(matchObj):
                         ssn = int(matchObj.group(2))
                         text = matchObj.group(3)
                         try:
                             id = parser.map_ssn_url[ssn]
-                            new = u'''<a href="/sheets/{}" class="sheetLink blockLink recentItem" data-ref="Sheet {}" data-position="0">{}</a>'''.format(id, id, text)
+                            new = u'''<a href="/sheets/{}" target="_blank">{}</a>'''.format(id, text)
                         except KeyError:
                             return matchObj.group(0)  # we don't have the sheet it connect to, so return the original.
                         parser.ssn_dicts.append({u"linked_to_id": id, u"text": text, u"linked_text": new})
                         return new
-                    for matchlink in re.finditer(u'(<a href="http://www\.nechama\.org\.il/pages/(\d+?)\.html.*">(.*?)</a>)', file_content, flags=re.IGNORECASE):
+                    for matchlink in re.finditer(u'(<a href="http://www\.nechama\.org\.il/pages/(\d+?)\.html.*?">(.*?)</a>)', file_content, flags=re.IGNORECASE):
                         get_ssn(matchlink)
                     # file_content = re.sub(u'(<a href="http://www\.nechama\.org\.il/pages/(\d+?)\.html.*">(.*?)</a>)', get_ssn, file_content, flags=re.IGNORECASE)
                     print html_sheet
@@ -1538,7 +1546,7 @@ class Nechama_Parser:
                 sheet = Sheet(html_sheet, top_dict["paging"].text, top_dict["h1"].text, top_dict["year"].text, perek_info)
                 sheet.links_to_other_sheets = bool(content.find_all("a", {"href": re.compile("(^http.*?nechama.org.il/pages/)|(/sheets/)")}))
 
-                if sheet_links and not sheet.links_to_other_sheets:
+                if only_sheet_links and not sheet.links_to_other_sheets:
                     return
                 else:
                     print content.find_all("a", {"href": re.compile("^http.*?nechama.org.il/pages/")})
@@ -1697,10 +1705,10 @@ if __name__ == "__main__":
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
-    english_sheet = True
+    english_sheet = False
 
     posting = True
-    individuals = range(1403, 1478, 100) # range(1022, 1478, 10) #[1075, 1320, 1163]  # [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
+    individuals = [259] #976 #range(485, 1479) # range(1022, 1478, 10) #[1075, 1320, 1163]  # [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
 
     found_tables_num = 0
     found_tables = set()
@@ -1723,7 +1731,7 @@ if __name__ == "__main__":
                     # sheets = sheets[sheets.index("163.html")::]
                 # sheets = [u"163.html"]
                 if individual:
-                    got_sheet = parser.bs4_reader([u"html_all/{}.html".format(individual)] if u"{}.html".format(individual) in os.listdir(u"html_sheets/{}".format(parsha)) else [], post=posting, add_to_title=parser.add_to_title, sheet_links=True)
+                    got_sheet = parser.bs4_reader([u"html_all/{}.html".format(individual)] if u"{}.html".format(individual) in os.listdir(u"html_sheets/{}".format(parsha)) else [], post=posting, add_to_title=parser.add_to_title, only_sheet_links=False)
                 else:
                     found_tables_in_parsha = parser.bs4_reader([u"html_sheets/{}/{}".format(parsha, sheet) for sheet in sheets])# if sheet in os.listdir("html_sheets/{}".format(parsha)) and sheet != "163.html"], post=posting)
                     found_tables = found_tables.union(found_tables_in_parsha)

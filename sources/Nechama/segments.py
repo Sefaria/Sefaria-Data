@@ -8,6 +8,8 @@ import unicodecsv as csv
 
 import codecs
 
+def get_the_text_with_html(butag):
+    re.sub(u'(^<[^\u05d0-\u05ea]*>)|(<[^\u05d0-\u05ea]*>$)', u'', unicode(butag))
 
 class Segment(object):
 
@@ -130,7 +132,7 @@ class Source(object):
             segment = BeautifulSoup(self.text, "lxml")
             for a in segment.findAll('a'):  # get all a tags and remove them
                 a.replaceWithChildren()
-            self.text = segment.text
+            self.text = unicode(segment)  # segment.text
 
 
         comment = self.text
