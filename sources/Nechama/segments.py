@@ -9,7 +9,23 @@ import unicodecsv as csv
 import codecs
 
 def get_the_text_with_html(butag):
-    return re.sub(u'(^<[^\u05d0-\u05ea]*>)|(<[^\u05d0-\u05ea]*>$)', u'', unicode(butag))
+    """
+    BeautifulSoup tag in which we want to save the <b> and <nechama> tags but remove other html tags.
+    for example remove extra tags (ex.<html><body> that are automatically glued in there by bs4 when using str(butag)
+    or no tags using butag.text )
+    :param butag: BeautifulSoup tag
+    :return: unicode with the correct html tags
+    """
+    return re.sub(u'</?(html|body|p)>', u'', unicode(butag))
+    # cleand_tag = re.sub(u'(^<[^\u05d0-\u05ea]*>(?P<n><sup.*nechama.*?>|.))', u'\g<n>', unicode(butag))
+    # cleand_tag = re.sub(u'(<[^\u05d0-\u05ea]*>$)', u'', unicode(cleand_tag))
+    # return cleand_tag
+    # return re.sub(u'(^<[^\u05d0-\u05ea]*>)|(<[^\u05d0-\u05ea]*>$)', u'', unicode(butag))
+    # to_keep = u""
+    # if re.search(u'class="nechama"', unicode(butag)):
+    #     to_keep = re.search(u'<sup class="nechama">.*</sup>', unicode(butag)).group()
+    # cleaned = re.sub(u'(^<[^\u05d0-\u05ea]*>)|(<[^\u05d0-\u05ea]*>$)', u'', unicode(butag))
+    # cleaned_tag = u'{}{}'.format(to_keep,cleaned)
 
 class Segment(object):
 

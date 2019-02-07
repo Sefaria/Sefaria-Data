@@ -211,8 +211,8 @@ class Sheet(object):
        sheet_json = {}
        sheet_json["status"] = "public" #"private" #
        sheet_json["group"] =u"גיליונות נחמה"#"Nechama Leibowitz' Source Sheets"
-       sheet_json["title"] = u'{} - {} {}'.format(self.title, re.search('(\d+)\.', self.html).group(1), add_to_title)
-       # sheet_json["title"] = u"{} {} - {}".format(self.parasha, self.he_year, self.title)
+       # sheet_json["title"] = u'{} - {} {}'.format(self.title, re.search('(\d+)\.', self.html).group(1), add_to_title)
+       sheet_json["title"] = u"{} {} - {}".format(self.parasha, self.he_year, self.title)
        sheet_json["summary"] = u"{} ({})".format(self.en_year, self.he_year)
        # sheet_json["attribution"] = u"<a href=http://www.nechama.org.il/pages/{}.html>לגליון זה באתר סנונית</a>".format(re.search('(\d+)\.', self.html).group(1))
        sheet_json["sources"] = self.sources
@@ -1708,7 +1708,7 @@ if __name__ == "__main__":
     english_sheet = False
 
     posting = True
-    individuals = [259] #976 #range(485, 1479) # range(1022, 1478, 10) #[1075, 1320, 1163]  # [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
+    individuals = [169] #976 #range(485, 1479) # range(1022, 1478, 10) #[1075, 1320, 1163]  # [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
 
     found_tables_num = 0
     found_tables = set()
