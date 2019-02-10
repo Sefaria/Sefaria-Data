@@ -138,7 +138,16 @@ Description = namedtuple('Description', ['name', 'build_structure'])
 
 
 class ParsedDocument(object):
+    """
+    Moderator class for parsing. Handles the interactions between the structure classes and the ParseState, if one is
+    attached.
+    """
     def __init__(self, en_name, he_name, descriptors):
+        """
+        :param en_name: English title of this document
+        :param he_name: Hebrew title of this document
+        :param descriptors: list of Description instances
+        """
         self.name = en_name
         self.he_name = he_name
         self._descriptors = descriptors
@@ -178,12 +187,21 @@ class ParsedDocument(object):
         self.Root = self._RootObj(content, build_structure=True)
 
     def get_ja_node(self):
+        """
+        Returns a JaggedArrayNode for use in a Sefaria Index.schema
+        :return:
+        """
         ja_node = JaggedArrayNode()
         ja_node.add_primary_titles(self.name, self.he_name)
         ja_node.add_structure([d.name for d in self._descriptors])
         return ja_node
 
     def attach_state_tracker(self, state_tracker):
+        """
+        Attach a ParseState to this document
+        :param ParseState state_tracker:
+        :return:
+        """
         assert isinstance(state_tracker, ParseState)
         self.state_tracker = state_tracker
         self.state_tracker.reset()
@@ -195,6 +213,15 @@ class ParsedDocument(object):
             self.state_tracker.set_ref(structure_class, num)
 
     def filter_ja(self, callback, *args, **kwargs):
+        """
+        Retrieve data from this document as a nested list (JaggedArray). Leaves will be the return values of the
+        callback method.
+        :param callback: method to run on tree leaves. First argument should be a tree leaf, further arguments can be
+        supplied.
+        :param args:
+        :param kwargs:
+        :return:
+        """
         if self.Root is None:
             raise AttributeError
         if self.state_tracker is not None:
@@ -202,6 +229,10 @@ class ParsedDocument(object):
         return self.Root.filter_ja(callback, *args, **kwargs)
 
     def get_ja(self):
+        """
+        Get the data from this document as a nested list (JaggedArray).
+        :return:
+        """
         if self.Root is None:
             raise AttributeError
         return self.Root.get_ja()
@@ -213,10 +244,21 @@ class ParsedDocument(object):
 
 
 class ParseState(object):
+    """
+    Attach to a ParsedDocument to track the current location in the parsing process. Also gets updated when using
+    ParsedDocument.filter_ja.
+    """
     def __init__(self):
         self._state = {}
 
     def set_ref(self, section_type, refnum):
+        """
+        Used to set the current value of a structural element (e.g. Chapter, Verse etc.). When attached to a
+        ParsedDocument, there is no need to call this method.
+        :param section_type: Name of structural element to update (e.g. Chapter).
+        :param refnum: current value of said structural element. Should be 0-indexed.
+        :return:
+        """
         if isinstance(section_type, basestring):
             self._state[section_type] = refnum
         else:
@@ -225,6 +267,12 @@ class ParseState(object):
             self._state[section_type.__name__] = refnum
 
     def get_ref(self, section_type, one_indexed=False):
+        """
+        Retrieve the current index value for a structural element (e.g. Chapter).
+        :param section_type: Name of structural element to receive.
+        :param one_indexed: When True will return 1 for the first element. Defaults to False.
+        :return:
+        """
         try:
             refnum = self._state[section_type]
         except KeyError:
@@ -236,6 +284,11 @@ class ParseState(object):
             return refnum
 
     def reset(self):
+        """
+        Clear all parsing data. When attached to a ParsedDocument, this method gets called before every parse and every
+        call to filter_ja.
+        :return:
+        """
         self._state.clear()
 
 
