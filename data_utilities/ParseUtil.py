@@ -1,5 +1,45 @@
 # encoding=utf-8
 
+"""
+This framework simplifies parsing data into nested lists (Jagged Arrays). For example, if one wishes to split a document
+into Chapters and Verses, one can write a single method that identifies the chapters and a second method that identifies
+the verses. Each of these methods would not need to be dependent on the other in any way.
+
+Basic Usage:
+Write methods which take a single argument and return a list. Instance methods, partial objects and
+global variables can be used to pass more data to each method. If data regarding location within the JaggedArray is
+needed, use a ParseState (view documentation on ParseState for more information).
+
+For each level of the nested list, instantiate a Description with a name and and a parsing method.
+
+Instantiate a ParsedDocument with the text titles (English and Hebrew) and the list of Description instances. If needed,
+ a ParseState can be attached to the ParsedDocument.
+
+Call ParsedDocument.parse_document with the data to be parsed. The item passed to parse_document will be passed to the
+first parsing method defined in the description list.
+
+The raw JaggedArray can be obtained with ParsedDocument.get_ja(). ParsedDocument.filter_ja can be called with a callback
+method. The callback method will accept leaf items from the raw JaggedArray and will place it's return values as leaves
+in a new JaggedArray.
+
+An example of this framework being used can be found in:
+sources/Shulchan_Arukh/scripts/OC_scripts/Mahatzit_HaShekel/Mahatzit.py
+
+
+Some points on regarding parsing methods:
+
+The parsing methods can accept any data type. They must return a list, but there are no restrictions on what is
+contained inside that list.
+
+Each parsing method will be called once for each item in the list it's parent parsing method returned. So if the first
+parsing method returned a list of dictionaries, the second method should take a dictionary as it's input.
+
+Do not expect the ParseState to have reliable information regarding levels of the document that have not been parsed
+yet. For example, imagine a document that is to be parsed into Chapters and Verses. While parsing Verses, it will be
+possible to obtain the Chapter number but not the Verse number. The full address will be available when calling
+filter_ja.
+"""
+
 import django
 django.setup()
 from sefaria.model import *
@@ -160,6 +200,11 @@ class ParsedDocument(object):
         if self.state_tracker is not None:
             self.state_tracker.reset()
         return self.Root.filter_ja(callback, *args, **kwargs)
+
+    def get_ja(self):
+        if self.Root is None:
+            raise AttributeError
+        return self.Root.get_ja()
 
     def __getattr__(self, item):
         if self.Root is None:
