@@ -77,6 +77,7 @@ class Sheet(object):
                  "indented": "indented-1",
                  "sourceLayout": "",
                  "sourceLangLayout": ""
+
              }
              })
         for isection, section in enumerate(self.sections):
@@ -237,6 +238,13 @@ class Sheet(object):
            parser.sheets_linked_to_sheets.append((sheet_json["title"], sheet_json["summary"], sheet_json["tags"]))
 
        for i, s in enumerate(sheet_json['sources']):
+           if 'outsideText' in s.keys() and 'class="nechama"' in s['outsideText']:
+               compile = re.compile(u'<sup class="nechama">(?P<difficulty>.*?)</sup>')
+               match = re.search(compile, s['outsideText'])
+               if match:
+                    s['outsideText'] = re.sub(compile, u'', s['outsideText'])
+                    s["options"] = dict()
+                    s['options']['sourcePrefix'] = match.group(1)
            for sheet_link in parser.ssn_dicts:
                if 'outsideText' in s.keys():
                    uni_outsidetext = unicode(s['outsideText'], encoding='utf8') if isinstance(s['outsideText'], str) else s['outsideText']
@@ -1708,7 +1716,7 @@ if __name__ == "__main__":
     english_sheet = False
 
     posting = True
-    individuals = [169] #976 #range(485, 1479) # range(1022, 1478, 10) #[1075, 1320, 1163]  # [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
+    individuals = [202] #976 #range(485, 1479) # range(1022, 1478, 10) #[1075, 1320, 1163]  # [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
 
     found_tables_num = 0
     found_tables = set()

@@ -27,6 +27,13 @@ def get_the_text_with_html(butag):
     # cleaned = re.sub(u'(^<[^\u05d0-\u05ea]*>)|(<[^\u05d0-\u05ea]*>$)', u'', unicode(butag))
     # cleaned_tag = u'{}{}'.format(to_keep,cleaned)
 
+
+def difficulty_symbol(n, symbol):
+    y = u''
+    for x in range(n):
+        y += symbol
+    return y
+
 class Segment(object):
 
     def __init__(self, type):
@@ -37,7 +44,13 @@ class Segment(object):
         #create source for sourcesheet out of myself
         segment = BeautifulSoup(self.text, "lxml")
         segment = remove_a_links(segment)
-        source = {"outsideText": get_the_text_with_html(segment)}
+        source = {
+            "outsideText": get_the_text_with_html(segment),
+            "options":
+                {
+                    "sourcePrefix": difficulty_symbol(self.difficulty, u'*') if hasattr(self, 'difficulty') else None,
+                }
+              }
         return source
 
 
@@ -187,6 +200,7 @@ class Source(object):
                           },
                       "options":
                           {
+                              "sourcePrefix": difficulty_symbol(self.difficulty, u'*') if hasattr(self, 'difficulty') else None,
                               "indented": "indented-1",
                               "sourceLayout": "",
                               "sourceLanguage": "hebrew",
@@ -436,16 +450,23 @@ class Question(object):
         #create source for sourcesheet out of myself
         segment = BeautifulSoup(self.text, "lxml")
         segment = remove_a_links(segment)
-        source = {"outsideText": get_the_text_with_html(segment)}
+        source = {"outsideText": get_the_text_with_html(segment),
+                  "options": {
+                      "sourcePrefix": difficulty_symbol(self.difficulty, u'*'),
+                    }
+                  }
         return source
 
-    def format(self, without_params=[], difficulty_symbol = [u'<sup class="nechama"></sup>', u'''<sup class="nechama">*</sup>''', u'''<sup class="nechama">**</sup>'''], new_text = None):
+    def format(self, without_params=[], difficulty_symbol_list = [u'<sup class="nechama"></sup>', u'''<sup class="nechama">*</sup>''', u'''<sup class="nechama">**</sup>'''], new_text = None):
         """
 
         :param without_params: list. ex: ["difficulty", "number"]
         :return: the text of the q the way it is presented in source sheets with/without (but for now the only way
         to present outside sources in source sheets) the number and difficulty
         """
+        # difficulty_symbol_list = [u'<sup class="nechama"></sup>', u'''<sup class="nechama">*</sup>''', u'''<sup class="nechama">**</sup>''']
+        # needed since we put 'sourcePrefix' as a pramter on a source sheet obj. (both Text and outsideText and outsideBiText) but to find them it will take 2 steps, first in text because it was the original and then turn that into a sourcesheet object prameter 'sourcePrefix'. that's the way some hacky refactors gota go. :(
+
         # print self.q_text
         # if re.search(u'>(.*?)<', self.q_text):
         #     text = re.search(u'>(.*?)<',  self.q_text).group(1)
@@ -459,7 +480,7 @@ class Question(object):
             text= unicode(self.number) + u' ' + text
         # difficulty is first in the order
         if "difficulty" not in without_params:
-            text = unicode(difficulty_symbol[self.difficulty]) + u' ' + text
+            text = unicode(difficulty_symbol_list[self.difficulty]) + u' ' + text
 
         return text
 
