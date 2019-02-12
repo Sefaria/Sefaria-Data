@@ -238,13 +238,32 @@ class Sheet(object):
            parser.sheets_linked_to_sheets.append((sheet_json["title"], sheet_json["summary"], sheet_json["tags"]))
 
        for i, s in enumerate(sheet_json['sources']):
-           if 'outsideText' in s.keys() and 'class="nechama"' in s['outsideText']:
-               compile = re.compile(u'<sup class="nechama">(?P<difficulty>.*?)</sup>')
-               match = re.search(compile, s['outsideText'])
-               if match:
-                    s['outsideText'] = re.sub(compile, u'', s['outsideText'])
-                    s["options"] = dict()
-                    s['options']['sourcePrefix'] = match.group(1)
+           compile = re.compile(u'<sup class="nechama">(?P<difficulty>.*?)</sup>\s*(?P<number>.{1,2}\.)?')
+           if 'outsideText' in s.keys():
+               if 'class="nechama"' in s['outsideText']:
+                   match = re.search(compile, s['outsideText'])
+                   if match:
+                        sub_with = u''
+                        if match.group("number"):
+                            sub_with = u'{}'.format(match.group("number"))
+                        s['outsideText'] = re.sub(compile, sub_with, s['outsideText'])
+                        s["options"] = dict()
+                        s['options']['sourcePrefix'] = match.group(1)
+           else: # Text sheet object look for the numbering issue.
+                try:
+                    Ref(s['heRef'])
+                except InputError:
+                    match = re.search(u'(?P<number>.{1,2})\.\s*(?P<extract_ref>.*$)', s['heRef'])
+                    ref = match.group("extract_ref").strip()
+                    assert Ref(ref)
+                    s['heRef'] = ref
+                    s['ref'] = Ref(ref).normal()
+                    s['options']['PrependRefWithHe'] = u'{}. '.format(match.group("number"))
+                    if parser.english_sheet:
+                        en_number = match.group("number") if match.group("number").isdigit() else u'{}'.format(self.he_letter_to_en_leter(match.group("number")))
+                        s['options']['PrependRefWithEn'] = u'{}. '.format(en_number)
+
+
            for sheet_link in parser.ssn_dicts:
                if 'outsideText' in s.keys():
                    uni_outsidetext = unicode(s['outsideText'], encoding='utf8') if isinstance(s['outsideText'], str) else s['outsideText']
@@ -263,13 +282,13 @@ class Sheet(object):
                            s['outsideBiText']['en'] = '{}translation here{}'.format(match.group(1), match.group(2))
                        elif re.match(u".*?<span style='color:rgb\(153,153,153\);'>", s['outsideBiText']['he']):
                            s['outsideBiText']['en'] = "<span style='color:rgb(153,153,153);'>source name</span><br/><span style='color:rgb(51,51,51);'>source translation"
-                       elif re.match(u'.*?<sup class="nechama">\*{0,2}</sup>', s['outsideBiText']['he']):
-                           matches = re.match(u'.*?(?:<sup class="nechama">(\*{0,2})</sup>\s*(.{1,2}\.)?)', s['outsideBiText']['he'])
-                           diffculty = matches.group(1)
-                           number = u""
-                           if matches.group(2):
-                                number = matches.group(2) if matches.group(2)[:-1].isdigit() else u'{}.'.format(self.he_letter_to_en_leter(matches.group(2)[:-1]))
-                           s['outsideBiText']['en'] = u'<sup class="en_nechama">{}</sup> {} question here'.format(diffculty, number)
+                       elif 'options' in s.keys() and 'sourcePrefix' in s['options'].keys(): #re.match(u'.*?<sup class="nechama">\*{0,2}</sup>', s['outsideBiText']['he']):
+                           matches = re.match(u'(^.{1,2})\.', s['outsideBiText']['he'])
+                           # diffculty = matches.group(1)
+                           # number = u""
+                           if matches and matches.group(1):
+                               number = matches.group(1)[0] if matches.group(1)[0].isdigit() else u'{}'.format(self.he_letter_to_en_leter(matches.group(1)[0]))
+                               s['outsideBiText']['en'] = u'{}. question here'.format(number)
                        # for sheet_link in parser.ssn_dicts:
                        #      uni_outsidetext = unicode(s['outsideBiText']['he'], encoding='utf8') if isinstance(s['outsideBiText']['he'],str) else s['outsideBiText']['he']
                        #      if re.search(sheet_link[u'text'], uni_outsidetext):
@@ -285,7 +304,6 @@ class Sheet(object):
                        if not s['text']['en']:
                             s['text']['en'] = "segment translation"
                self.test_no_lists(sheet_json['sources'])
-
 
 
            post_sheet(sheet_json, server=parser.server)

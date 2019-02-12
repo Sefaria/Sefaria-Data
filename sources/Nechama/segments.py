@@ -46,11 +46,12 @@ class Segment(object):
         segment = remove_a_links(segment)
         source = {
             "outsideText": get_the_text_with_html(segment),
-            "options":
-                {
-                    "sourcePrefix": difficulty_symbol(self.difficulty, u'*') if hasattr(self, 'difficulty') else None,
+            }
+        if hasattr(self, 'difficulty'):
+            source["options"] = {
+                    "sourcePrefix": difficulty_symbol(self.difficulty, u'*'),
                 }
-              }
+
         return source
 
 
@@ -200,7 +201,6 @@ class Source(object):
                           },
                       "options":
                           {
-                              "sourcePrefix": difficulty_symbol(self.difficulty, u'*') if hasattr(self, 'difficulty') else None,
                               "indented": "indented-1",
                               "sourceLayout": "",
                               "sourceLanguage": "hebrew",
@@ -208,6 +208,8 @@ class Source(object):
                               "refDisplayPosition": self.refDisplayPosition
                           }
                       }
+            if hasattr(self, 'difficulty'):
+                source["options"]["sourcePrefix"] = difficulty_symbol(self.difficulty, u'*')
             if isinstance(self.text, list):
                 source["text"] = {
                     "he": u'{} <a class="nested_question_hack" href= "/{}">{}</a><br>{}'.format(self.text[0], enRef, heRef, self.text[1]),
