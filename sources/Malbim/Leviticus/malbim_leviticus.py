@@ -32,12 +32,19 @@ Let's implement a builder class. We can feed it a Siman element and let it go fr
 with the responsibility of identifying Simanim within a document.
 
 We'll defer the text formatting to the Siman class
+
+Extracting the Sifra ref is tricky. I'd say get a mapping of all Sifra nodes, and cLevenshtein to find the best one.
 """
 
 import re
 import codecs
 import random
+from data_utilities.util import getGematria as get_gematria
 from bs4 import BeautifulSoup
+
+import django
+django.setup()
+from sefaria.model import *
 
 
 def extract_simanim(filename):
@@ -49,22 +56,56 @@ def extract_simanim(filename):
 class SimanBuilder(object):
 
     def __init__(self, siman_header):
-        pass
+        self.last_element = siman_header
+        self.sifras = set()
+        self.siman_attrs = \
+            {
+                'siman_num': self.get_siman_num(),
+                'base_ref': self.get_base_ref(),
+                'sifra_ref': self.get_sifra_ref(),
+            }
 
     def get_siman_num(self):
-        pass
+        siman_regex = re.compile(u'\u05e1\u05d9\u05de\u05df[_ ]([\u05d0-\u05ea]{1,4})')
+        siman_tag = self.last_element.find(attrs={'id': siman_regex})
+        siman_he_value = siman_regex.search(siman_tag['id']).group(1)
+        return get_gematria(siman_he_value)
 
     def get_base_ref(self):
-        pass
+        # todo might not have base ref -> do not advance element and return None
+        verse_element = self.last_element.find_next_sibling()
+        if not Ref.is_ref(verse_element.a.text):
+            return None
+        base_ref = Ref(verse_element.a.text)
+        self.last_element = verse_element
+        return base_ref
 
     def get_sifra_ref(self):
-        pass
+        ref_element = self.last_element.find_next_sibling()
+        text_element = ref_element.find_next_sibling()
+        self.last_element = ref_element
+        my_text = text_element.text
+
+        he_ref = ref_element.text.replace(u'(מלבי"ם) ', u'')
+        self.sifras.add(he_ref)
+        # print he_ref
+        # print ref_element.text
+        # print my_text
+        sifra_refs = [m.group(1) for m in re.finditer(u'\[([\u05d0-\u05ea]{1,3})]', my_text)]
+
+        # for r in sifra_refs:
+        #     print r
+        # print 'Done'
+        return None
 
     def get_main_text(self):
         pass
 
     def get_footnotes(self):
         pass
+
+    def retrieve_siman(self):
+        return Siman(**self.siman_attrs)
 
 
 class Siman(object):
@@ -78,3 +119,17 @@ class Siman(object):
 
     def _format_text(self):
         return self.main_text_raw
+
+
+things = set()
+for i in range(274):
+    print i
+    my_simanim = extract_simanim('./webpages/{}.html'.format(i))
+    for foo in my_simanim:
+        s = SimanBuilder(foo)
+        things.update(s.sifras)
+
+print 'foo'
+print len(things)
+for t in things:
+    print t
