@@ -5,7 +5,7 @@ from sources.functions import getGematria
 from sefaria.model.text import *
 from main import *
 import unicodecsv as csv
-
+import unicodedata
 import codecs
 
 def get_the_text_with_html(butag):
@@ -103,7 +103,7 @@ class Source(object):
             # try to see if all that is wrong is the segment part of the ref, say, for Ralbag Beur HaMilot on Torah, Genesis 4:17
             last_part = ref.split()[-1]
             if last_part[0].isdigit(): # in format, Ralbag Beur HaMilot on Torah, Genesis 4:17 and last_part is "4:17", now get the node "Ralbag Beur HaMilot on Torah, Genesis"
-                ref_node = " ".join(re.split(u"[:\s]", ref)[0:-1])
+                ref_node = u" ".join(re.split(u"[:\s]", ref)[0:-1])
                 return self.get_sefaria_ref(ref_node, parasha) #returns Ralbag Beur HaMilot on Torah, Genesis
 
     def glue_ref_and_text(self, ref, text, gray=True):
@@ -182,6 +182,7 @@ class Source(object):
                 print "has number and difficulty doesn't have about to glue the number to"
                 assert True
 
+        self.ref = unicodedata.normalize("NFKD", self.ref)
         if self.get_sefaria_ref(self.ref):
             heRef = self.get_sefaria_ref(self.ref).he_normal()
             if self.about_source_ref:
@@ -452,6 +453,9 @@ class Question(object):
         #create source for sourcesheet out of myself
         segment = BeautifulSoup(self.text, "lxml")
         segment = remove_a_links(segment)
+        if hasattr(self, 'double_number'):
+            split = re.split(u'(</sup>)', get_the_text_with_html(segment))
+            segment = u''.join(split[0:-1]) + self.double_number + (split[-1])
         source = {"outsideText": get_the_text_with_html(segment),
                   "options": {
                       "sourcePrefix": difficulty_symbol(self.difficulty, u'*'),
@@ -594,7 +598,7 @@ class Nested(object):
             return
         classed_tags = []
         tags_with_p = []
-        classes = ["parshan", "midrash", "talmud", "bible", "commentary", "question2", "question", "table", "RT", "RTBorder"]#, "RT", "RT_RASHI"]
+        classes = ["parshan", "midrash", "talmud", "bible", "commentary", "question2", "question", "table", "RT", "RTBorder"]# number, "RT", "RT_RASHI"]
         for i, e in enumerate(segment.findAll()):
             if (e.attrs and 'class' in e.attrs and set(e.attrs['class']).intersection(
                     classes)):  # any([c in e.attrs['class'] for c in classes])):  # e.find('td') or
@@ -757,6 +761,9 @@ class Nested(object):
             # ourObj.refDisplayPosition = "none"
             ourObj.number = number
             ourObj.difficulty = difficulty
+        elif isinstance(ourObj, Question) and 'double_number' not in vars(ourObj):
+            ourObj.double_number = number
+            # ourObj.difficulty = str(difficulty) + u'_'
 
     def create_source(self):
         return_sheet_obj = []
