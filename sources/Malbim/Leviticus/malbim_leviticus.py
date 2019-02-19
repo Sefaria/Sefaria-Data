@@ -33,7 +33,9 @@ with the responsibility of identifying Simanim within a document.
 
 We'll defer the text formatting to the Siman class
 
-Extracting the Sifra ref is tricky. I'd say get a mapping of all Sifra nodes, and cLevenshtein to find the best one.
+Extracting the Sifra ref is tricky. We've mapped all the node titles to Sefaria Refs. Some Simanim don't have enough
+data to detect the full Ref though. For this, we can take the data from the previous Siman. This strategy could work for
+missing base refs as well.
 """
 
 import re
@@ -58,13 +60,31 @@ class SimanBuilder(object):
     def __init__(self, siman_header, announcer):
         self.last_element = siman_header
         self.announcer = announcer
-        self.sifras = set()
-        self.siman_attrs = \
-            {
-                'siman_num': self.get_siman_num(),
-                'base_refs': self.get_base_refs(),
-                'sifra_ref': self.get_sifra_ref(),
-            }
+        self.sifra_mapping = self._sifra_mapping()
+        self.siman_attrs = {}
+        self.siman_attrs['siman_num'] = self.get_siman_num()
+        self.siman_attrs['base_refs'] = self.get_base_refs()
+        self.siman_attrs['sifra_ref'] = self.get_sifra_ref()
+
+    @staticmethod
+    def _sifra_mapping():
+        return {
+            u'ספרא פרשת ויקרא נדבה': u'ויקרא דבורא דנדבה',
+            u'ספרא פרשת ויקרא חובה': u'ויקרא דבורא דחובה',
+            u'ספרא פרשת צו': u'צו',
+            u'ספרא פרשת צו מכילתא דמלואים': u'צו, מכילתא דמילואים א',
+            u'ספרא פרשת שמיני': u'שמיני',
+            u'ספרא פרשת שמיני מכילתא דמלואים': u'שמיני, מכילתא דמילואים ב',
+            u'ספרא פרשת תזריע יולדת': u'תזריע פרשת יולדת',
+            u'ספרא פרשת תזריע נגעים': u'תזריע פרשת נגעים',
+            u'ספרא פרשת מצורע מצורע': u'מצורע',
+            u'ספרא פרשת מצורע זבים': u'מצורע פרשת זבים',
+            u'ספרא פרשת אחרי מות': u'אחרי מות',
+            u'ספרא פרשת קדושים': u'קדושים',
+            u'ספרא פרשת אמור': u'אמור',
+            u'ספרא פרשת בהר': u'בהר',
+            u'ספרא פרשת בחקתי': u'בחוקתי',
+        }
 
     def get_siman_num(self):
         siman_regex = re.compile(u'\u05e1\u05d9\u05de\u05df[_ ]([\u05d0-\u05ea]{1,4})')
@@ -102,18 +122,41 @@ class SimanBuilder(object):
         self.last_element = ref_element
         my_text = text_element.text
 
-        he_ref = ref_element.text.replace(u'(מלבי"ם) ', u'')
-        temp_he_ref = re.sub(u'\s?(\u05e4\u05e8\u05e7|\u05e4\u05e8\u05e9\u05d4).*', u'', he_ref)
-        self.sifras.add(temp_he_ref)
+        he_ref = ref_element.text.replace(u'(מלבי"ם) ', u'').rstrip().lstrip()
+        section = re.search(u'\s?((\u05e4\u05e8\u05e7|\u05e4\u05e8\u05e9\u05d4).*)', he_ref)
+        if section is None:
+            print u'No section at Siman {}, file:'.format(self.siman_attrs['siman_num']),
+            self.announcer.announce()
+            return None
+
+        section = section.group(1)
+        core_ref = he_ref.replace(section, u'').rstrip()
+        core_ref = re.sub(u'[^\u05d0-\u05ea ]', u'', core_ref)
+        core_ref = self.sifra_mapping[core_ref]
+        section = re.sub(u'[^\u05d0-\u05ea ]', u'', section)
+        # self.sifras.add(temp_he_ref)
         # print he_ref
         # print ref_element.text
         # print my_text
-        sifra_refs = [m.group(1) for m in re.finditer(u'\[([\u05d0-\u05ea]{1,3})]', my_text)]
+        segments = [m.group(1) for m in re.finditer(u'\[([\u05d0-\u05ea]{1,3})]', my_text)]
+        if len(segments) > 1:
+            segment_part = u'{}-{}'.format(segments[0], segments[-1])
+        elif len(segments) == 1:
+            segment_part = segments[0]
+        else:
+            print u'No segments at Siman {}, file:'.format(self.siman_attrs['siman_num']),
+            self.announcer.announce()
+            return None
 
         # for r in sifra_refs:
         #     print r
         # print 'Done'
-        return None
+        full_ref = u'{}, {}, {}, {}'.format(u'ספרא', core_ref, section, segment_part)
+        if not Ref.is_ref(full_ref):
+            print u'Bad ref at Siman {}, file:'.format(self.siman_attrs['siman_num']),
+            self.announcer.announce()
+            print full_ref
+        return full_ref
 
     def get_main_text(self):
         pass
@@ -153,6 +196,8 @@ things = set()
 my_screamer = Announcer()
 # for i in range(64, 65):
 for i in range(274):
+    # if i % 20 == 0:
+    #     print i,
     my_screamer.set_loc(i)
     if i == 53:
         continue
@@ -161,13 +206,12 @@ for i in range(274):
     my_simanim = extract_simanim('./webpages/{}.html'.format(i))
     for foo in my_simanim:
         s = SimanBuilder(foo, my_screamer)
-        r = s.siman_attrs['base_refs']
-        if not r:
-            print i, s.siman_attrs['siman_num']
-        # things.update({j: i for j in s.sifras})
+        # things.update(s.sifras)
 
-print 'foo'
+print ''
 print len(things)
 # for t, u in things.items():
 #     print t.rstrip(), u
+for t in things:
+    print t.rstrip().lstrip()
 print things
