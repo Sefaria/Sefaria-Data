@@ -55,13 +55,14 @@ def extract_simanim(filename):
 
 class SimanBuilder(object):
 
-    def __init__(self, siman_header):
+    def __init__(self, siman_header, announcer):
         self.last_element = siman_header
+        self.announcer = announcer
         self.sifras = set()
         self.siman_attrs = \
             {
                 'siman_num': self.get_siman_num(),
-                'base_ref': self.get_base_ref(),
+                'base_refs': self.get_base_refs(),
                 'sifra_ref': self.get_sifra_ref(),
             }
 
@@ -71,23 +72,39 @@ class SimanBuilder(object):
         siman_he_value = siman_regex.search(siman_tag['id']).group(1)
         return get_gematria(siman_he_value)
 
-    def get_base_ref(self):
-        # todo might not have base ref -> do not advance element and return None
-        verse_element = self.last_element.find_next_sibling()
-        if not Ref.is_ref(verse_element.a.text):
-            return None
-        base_ref = Ref(verse_element.a.text)
-        self.last_element = verse_element
-        return base_ref
+    def get_base_refs(self):
+        def get_next_base_ref():
+            verse_element = self.last_element.find_next_sibling()
+            try:
+                if not Ref.is_ref(verse_element.a.text):
+                    return None
+            except AttributeError:
+                return None
+            base_ref = Ref(verse_element.a.text)
+            self.last_element = verse_element
+            return base_ref
+
+        # advance beyond the refs in case there are more than 1
+        base_refs = []
+        while True:
+            next_ref = get_next_base_ref()
+            if next_ref is None:
+                break
+            else:
+                base_refs.append(next_ref)
+        return base_refs
 
     def get_sifra_ref(self):
         ref_element = self.last_element.find_next_sibling()
         text_element = ref_element.find_next_sibling()
+        if text_element.name != 'div' and text_element.get('style', '') != "font-weight:bold":
+            self.announcer.announce()
         self.last_element = ref_element
         my_text = text_element.text
 
         he_ref = ref_element.text.replace(u'(מלבי"ם) ', u'')
-        self.sifras.add(he_ref)
+        temp_he_ref = re.sub(u'\s?(\u05e4\u05e8\u05e7|\u05e4\u05e8\u05e9\u05d4).*', u'', he_ref)
+        self.sifras.add(temp_he_ref)
         # print he_ref
         # print ref_element.text
         # print my_text
@@ -121,15 +138,36 @@ class Siman(object):
         return self.main_text_raw
 
 
+class Announcer(object):
+    def __init__(self):
+        self.loc = -1
+
+    def set_loc(self, loc):
+        self.loc = loc
+
+    def announce(self):
+        print self.loc
+
+
 things = set()
+my_screamer = Announcer()
+# for i in range(64, 65):
 for i in range(274):
-    print i
+    my_screamer.set_loc(i)
+    if i == 53:
+        continue
+    # if i % 20 == 0 and i > 0:
+    #     print i,
     my_simanim = extract_simanim('./webpages/{}.html'.format(i))
     for foo in my_simanim:
-        s = SimanBuilder(foo)
-        things.update(s.sifras)
+        s = SimanBuilder(foo, my_screamer)
+        r = s.siman_attrs['base_refs']
+        if not r:
+            print i, s.siman_attrs['siman_num']
+        # things.update({j: i for j in s.sifras})
 
 print 'foo'
 print len(things)
-for t in things:
-    print t
+# for t, u in things.items():
+#     print t.rstrip(), u
+print things
