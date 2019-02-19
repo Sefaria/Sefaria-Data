@@ -12,13 +12,16 @@ from sefaria.sheets import get_sheet
 from sources.functions import post_sheet, http_request
 from sources.local_settings import *
 
-# GET_SERVER = "http://nechama.sandbox.sefaria.org"
-GET_SERVER = "http://qanechama.sandbox.sefaria.org"
+GET_SERVER = "http://nechama.sandbox.sefaria.org"
+# GET_SERVER = "http://qanechama.sandbox.sefaria.org"
 # GET_SERVER = "http://localhost:8000"
+# GET_SERVER = "http://einmishpat.sandbox.sefaria.org"
+
 
 POST_SERVER = "http://nechama.sandbox.sefaria.org"
-# POST_SERVER = "http://qnechama.sandbox.sefaria.org"
+# POST_SERVER = "http://qanechama.sandbox.sefaria.org"
 # POST_SERVER = "http://localhost:8000"
+# POST_SERVER = "http://einmishpat.sandbox.sefaria.org"
 
 get_server = GET_SERVER
 post_server = POST_SERVER
@@ -29,7 +32,7 @@ def change_sheet(this_sheet, del_tags=[], add_tags=[]):
     for tag in this_sheet[u'tags']:
         if isinstance(tag, int) or tag.isdigit():
             # todo: deal with the pdf link
-            # this_sheet['summary'] = this_sheet['summary'] + u" http://www.nechama.org.il/pdf/{}.pdf".format(tag)
+            this_sheet['summary'] = this_sheet['summary'] + u" http://www.nechama.org.il/pdf/{}.pdf".format(tag)
             if "int_tag" in del_tags:
                 this_sheet[u'tags'].remove(tag)
         if (tag in del_tags):
@@ -43,25 +46,40 @@ def change_sheet(this_sheet, del_tags=[], add_tags=[]):
 
 
 
-def post_btween_sandboxes(ssn, map_ssn_url_post, map_ssn_url_get):
-    post_sheet_id = map_ssn_url_post[ssn]  # the latest sheet with that ssn number we want to repost over
-    get_sheet_id = map_ssn_url_get[ssn]  # can also be from a ssn mapping from the correct server the fixed sheet that was created (sometimes from the old sheet itself), need to knkow it
+def post_btween_sandboxes(ssn=None, map_ssn_url_post=None, map_ssn_url_get=None, id=None, id_post=None):
+    if not ssn and not id:
+        print "missing either a ssn or an sheet_id of the sheet to be posted"
+        return
+    if ssn:
+        try:
+            assert map_ssn_url_get and map_ssn_url_post
+        except AssertionError:
+            print "if using ssn you must give the corresponding maps"
+        post_sheet_id = map_ssn_url_post[ssn]  # the latest sheet with that ssn number we want to repost over
+        get_sheet_id = map_ssn_url_get[ssn]  # can also be from a ssn mapping from the correct server the fixed sheet that was created (sometimes from the old sheet itself), need to knkow it
+    else: # id - because if it is neither we returns already :)
+        get_sheet_id = id
+        if id_post:
+            post_sheet_id = id_post
+        else:
+            post_sheet_id = id
 
     url = get_server + "/api/sheets/{}".format(get_sheet_id)
     got = http_request(url, body={"apikey": API_KEY}, method="GET")
 
-    changed = change_sheet(got, add_tags=['ForPost'])
+    changed = change_sheet(got, add_tags=[], del_tags=[])
     del changed['_id']
     changed['id'] = post_sheet_id
 
     # # delete sheet in post sheet number - note: when it is reposting the sheet will only be in this script RAM so always!!! have a backup
-    # delete_url = post_server + "/api/sheets/{}/delete".format(post_sheet_id)
-    # response = http_request(delete_url, body={"apikey": API_KEY})
-    # if re.search("Sheet {} not found.".format(post_sheet_id), response):
-    #     del changed['id']
+    delete_url = post_server + "/api/sheets/{}/delete".format(post_sheet_id)
+    response = http_request(delete_url, body={"apikey": API_KEY})
+    if re.search("Sheet {} not found.".format(post_sheet_id), response):
+        del changed['id']
     #post the copyed sheet in there
-    post_sheet(changed, server=POST_SERVER)
-
+    response = post_sheet(changed, server=POST_SERVER)
+    if isinstance(response, unicode) and re.search('error', response):
+        print response
 ## post them over themself (for the sheet to sheet linking process)
 
 # sheets = [map_ssn_url[x] for x in ssn_sheets]
@@ -262,11 +280,11 @@ if __name__ == "__main__":
         1458: 152643, 1459: 152644, 1461: 152645, 1464: 152646, 1465: 152647, 1466: 152648, 1467: 152649, 1468: 152650,
         1469: 152651, 1472: 152652, 1473: 152653, 1474: 152654, 1478: 152655}
 
-    ssn_sheets = [35, 118, 169, 259, 619, 774, 1402, 1403, 1404, 1405, 1406, 1407]
+    ssn_sheets = [2]
 
-    for sheet_ssn in ssn_sheets:
-        post_btween_sandboxes(sheet_ssn, map_post, map_get)
-
+    for sheet_ssn in [151343, 151204, 151290, 152627, 151289, 151322, 151835]:  # id or ssn_sheet number
+        # post_btween_sandboxes(sheet_ssn, map_post, map_get)
+        post_btween_sandboxes(id=sheet_ssn)
 # Delete duplicates
 # for sheet_id in range(151200, 151843):
 #     sheets = db.sheets.count_documents({'id': sheet_id})
