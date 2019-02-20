@@ -64,7 +64,7 @@ class SimanBuilder(object):
         self.siman_attrs = {}
         self.siman_attrs['siman_num'] = self.get_siman_num()
         self.siman_attrs['base_refs'] = self.get_base_refs()
-        self.siman_attrs['sifra_ref'] = self.get_sifra_ref()
+        self.siman_attrs['sifra_ref'] = self.get_sifra_refs()
 
     @staticmethod
     def _sifra_mapping():
@@ -114,7 +114,7 @@ class SimanBuilder(object):
                 base_refs.append(next_ref)
         return base_refs
 
-    def get_sifra_ref(self):
+    def get_sifra_refs(self):
         ref_element = self.last_element.find_next_sibling()
         text_element = ref_element.find_next_sibling()
         if text_element.name != 'div' and text_element.get('style', '') != "font-weight:bold":
@@ -123,7 +123,13 @@ class SimanBuilder(object):
         my_text = text_element.text
 
         he_ref = ref_element.text.replace(u'(מלבי"ם) ', u'').rstrip().lstrip()
-        section = re.search(u'\s?((\u05e4\u05e8\u05e7|\u05e4\u05e8\u05e9\u05d4).*)', he_ref)
+
+        possible_sections = [
+            u'פרק',
+            u'פרשה',
+            u'מכילתא דמלואים',
+        ]
+        section = re.search(u'\s?(({}).*)'.format(u'|'.join(possible_sections)), he_ref)
         if section is None:
             print u'No section at Siman {}, file:'.format(self.siman_attrs['siman_num']),
             self.announcer.announce()
@@ -134,6 +140,11 @@ class SimanBuilder(object):
         core_ref = re.sub(u'[^\u05d0-\u05ea ]', u'', core_ref)
         core_ref = self.sifra_mapping[core_ref]
         section = re.sub(u'[^\u05d0-\u05ea ]', u'', section)
+
+        if re.search(u'צו', core_ref):
+            section = section.replace(u'דמלואים', u'דמילואים א')
+        elif re.search(u'שמיני', core_ref):
+            section = section.replace(u'דמלואים', u'דמילואים ב')
         # self.sifras.add(temp_he_ref)
         # print he_ref
         # print ref_element.text
@@ -144,19 +155,83 @@ class SimanBuilder(object):
         elif len(segments) == 1:
             segment_part = segments[0]
         else:
-            print u'No segments at Siman {}, file:'.format(self.siman_attrs['siman_num']),
-            self.announcer.announce()
+            # print u'No segments at Siman {}, file:'.format(self.siman_attrs['siman_num']),
+            # self.announcer.announce()
             return None
 
         # for r in sifra_refs:
         #     print r
         # print 'Done'
-        full_ref = u'{}, {}, {}, {}'.format(u'ספרא', core_ref, section, segment_part)
-        if not Ref.is_ref(full_ref):
-            print u'Bad ref at Siman {}, file:'.format(self.siman_attrs['siman_num']),
-            self.announcer.announce()
-            print full_ref
-        return full_ref
+        full_ref = u'{}, {}, {} {}'.format(u'ספרא', core_ref, section, segment_part)
+        ref_list = self.handle_complex_refs(full_ref)
+        for r in ref_list:
+            if not Ref.is_ref(r):
+                print u'Bad ref at Siman {}, file:'.format(self.siman_attrs['siman_num']),
+                self.announcer.announce()
+                print r
+        return ref_list
+
+    def handle_complex_refs(self, cur_ref):
+        cur_ref = u' '.join(cur_ref.split())
+
+        if re.search(u'ספרא, ויקרא דבורא דחובה, פרשה א ופרק א', cur_ref):
+            if 191 <= self.siman_attrs['siman_num'] < 196:
+                ref_list = [cur_ref.replace(u'פרשה א ופרק א', u'פרשה א')]
+            elif self.siman_attrs['siman_num'] > 196:
+                ref_list = [cur_ref.replace(u'פרשה א ופרק א', u'פרק א')]
+            else:
+                ref_list = [
+                    u'ספרא, ויקרא דבורא דחובה, פרשה א ז-יד',
+                    u'ספרא, ויקרא דבורא דחובה, פרק א א-ג'
+                ]
+
+        elif re.search(u'ספרא, ויקרא דבורא דחובה, פרשה ח ופרק יב', cur_ref):
+            if 293 <= self.siman_attrs['siman_num'] < 299:
+                ref_list = [cur_ref.replace(u'פרשה ח ופרק יב', u'פרשה ח')]
+            elif 299 < self.siman_attrs['siman_num'] <= 300:
+                ref_list = [cur_ref.replace(u'פרשה ח ופרק יב', u'פרק יב')]
+            else:
+                ref_list = [
+                    u'ספרא, ויקרא דבורא דחובה, פרשה ח ח',
+                    u'ספרא, ויקרא דבורא דחובה, פרק יב א-ד'
+                ]
+
+        elif re.search(u'ספרא, ויקרא דבורא דנדבה, פרשה יא ופרק יג', cur_ref):
+            if self.siman_attrs['siman_num'] == 128:
+                ref_list = [cur_ref.replace(u'פרשה יא ופרק יג', u'פרשה יא')]
+            elif self.siman_attrs['siman_num'] == 129:
+                ref_list = [
+                    u'ספרא, ויקרא דבורא דנדבה, פרשה יא ו',
+                    u'ספרא, ויקרא דבורא דנדבה, פרק יג א-ה'
+                ]
+            else:
+                ref_list = [cur_ref.replace(u'פרשה יא ופרק יג', u'פרק יג')]
+
+        elif re.search(u'ספרא, תזריע פרשת נגעים, פרקים יגיד', cur_ref):
+            if self.siman_attrs['siman_num'] == 160:
+                ref_list = [
+                    u'ספרא, תזריע פרשת נגעים, פרק יג א-יב',
+                    u'ספרא, תזריע פרשת נגעים, פרק יד א'
+                ]
+            else:
+                ref_list = [cur_ref.replace(u'פרקים יגיד', u'פרק יד')]
+
+        elif cur_ref == u'ספרא, שמיני, פרשה י מ-ג':
+            ref_list = [u'ספרא, שמיני, פרשה י א-ג']
+
+        elif cur_ref == u'ספרא, צו, פרק ז לי-ב':
+            ref_list = [u'ספרא, צו, פרק ז א-ב']
+
+        elif cur_ref == u'ספרא, קדושים, פרשה ג את':
+            ref_list = [u'ספרא, קדושים, פרשה ג ג']
+
+        elif cur_ref == u'ספרא, בחוקתי, פרשה ח א-ט':
+            ref_list = [u'ספרא, בחוקתי, פרשה ה א-ט']
+
+        else:
+            ref_list = [cur_ref]
+
+        return ref_list
 
     def get_main_text(self):
         pass
@@ -184,12 +259,17 @@ class Siman(object):
 class Announcer(object):
     def __init__(self):
         self.loc = -1
+        self.announcements = 0
 
     def set_loc(self, loc):
         self.loc = loc
 
     def announce(self):
         print self.loc
+        self.announcements += 1
+
+    def num_announcements(self):
+        return self.announcements
 
 
 things = set()
@@ -208,10 +288,12 @@ for i in range(274):
         s = SimanBuilder(foo, my_screamer)
         # things.update(s.sifras)
 
-print ''
-print len(things)
+print my_screamer.num_announcements()
+
+# print ''
+# print len(things)
 # for t, u in things.items():
 #     print t.rstrip(), u
-for t in things:
-    print t.rstrip().lstrip()
-print things
+# for t in things:
+#     print t.rstrip().lstrip()
+# print things
