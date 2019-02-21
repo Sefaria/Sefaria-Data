@@ -64,22 +64,22 @@ def link_sheet(sheet_json, post_id=None):
                 to_post_id = get_post_id(ssn)
                 s['outsideText'] = re.sub(match.group("id"), str(to_post_id), s['outsideText'])
                 print s['outsideText']
-            # matched = re.search(compile, s['outsideText'])
-            # if matched:
-            #     ssn = get_ssn(matched.group("id"))  # this is the ssn of the sheet to connect to
-            #     to_post_id = get_post_id(ssn)
-            #     new_link = re.sub(compile, u'/sheets/{}'.format(to_post_id), s['outsideText'])
-            #     s['outsideText'] = re.sub(compile, u'/sheets/\g<id>', new_link)  # todo: check and then test this line
         elif 'outsideBiText' in s.keys():
             uni_outsidetext = unicode(s['outsideBiText']['he'], encoding='utf8') if isinstance(s['outsideBiText']['he'],
                                                                                                str) else \
                 s['outsideBiText']['he']
-            matched = re.search(compile, s['outsideBiText'])
-            if matched:
-                ssn = get_ssn(matched.group("id"))
+            for match in re.finditer(compile, s['outsideBiText']):
+                ssn = get_ssn(match.group("id"))  # this is the ssn of the sheet to connect to
+                print ssn
                 to_post_id = get_post_id(ssn)
-                new_link = re.sub(compile, u'/sheets/{}'.format(to_post_id), s['outsideText'])
-                s['outsideBiText'] = re.sub(compile, u'/sheets/\g<id>', new_link)  # todo: check and then test this line
+                s['outsideBiText'] = re.sub(match.group("id"), str(to_post_id), s['outsideBiText'])
+                print s['outsideBiText']
+            # matched = re.search(compile, s['outsideBiText'])
+            # if matched:
+            #     ssn = get_ssn(matched.group("id"))
+            #     to_post_id = get_post_id(ssn)
+            #     new_link = re.sub(compile, u'/sheets/{}'.format(to_post_id), s['outsideText'])
+            #     s['outsideBiText'] = re.sub(compile, u'/sheets/\g<id>', new_link)  # todo: check and then test this line
     del sheet_json['_id']
     sheet_json['id'] = post_id
     return sheet_json
