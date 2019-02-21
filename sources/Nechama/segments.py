@@ -120,6 +120,11 @@ class Source(object):
                 about_words = [re.sub(u'''["\u05f3\u05f4'\s,]''', u'', x) for x in re.split(u" |:", self.about_source_ref.strip())] #x.strip(u'''"\u05f3\u05f4' ,''')
                 ref_words = [re.sub(u'''["\u05f3\u05f4'\s,]''', u'', x) for x in re.split(u" |:", he_self_ref)] #  x.strip(u'''"\u05f3\u05f4' ,''')
                 diff = set(about_words).difference(set(ref_words))
+                q_number_match = [(diff_word, re.search(u'^(?P<number>\d+?)\)', diff_word)) for diff_word in diff if
+                 re.search(u'^\d+?\)', diff_word)]
+                if q_number_match:
+                    self.question_number = q_number_match[0][1].group('number')
+                    diff.discard(q_number_match[0][0])
                 diff.discard(u'פרק')
                 diff.discard(u'פסוק')
                 diff.discard(u'הלכה')
@@ -217,6 +222,12 @@ class Source(object):
                     "en": self.get_english_options()  # if english_sheet else "..."
                 }
                 source["options"]["indented"] = ""
+            if hasattr(self, 'question_number') and not hasattr(source['options'],'PrependRefWithHe'):
+                source['options']['PrependRefWithHe'] = self.question_number + u') '
+                if str(self.question_number).strip().isdigit():
+                    source['options']['PrependRefWithEn'] = self.question_number + u') '
+                else:
+                    source['options']['PrependRefWithEn'] = Sheet.he_letter_to_en_leter(int(self.question_number)) + u') '
 
         elif self.ref:
             # thought we found a ref but it's not an actual ref in the Sefaria library
@@ -516,7 +527,7 @@ def remove_a_links(segment):
     for a in segment.findAll('a'):  # get all a tags and remove them
         if a.attrs and "class" in a.attrs.keys() and a.attrs["class"] == "nested_question_hack":
             continue
-        elif a.attrs and re.search(u'sheet', a.attrs["href"]):
+        elif a.attrs and re.search(u'(sheet|pages)', a.attrs["href"]):
             continue
             # <a href="http://www.nechama.org.il/pages/1351.html?1">בראשית תש"ג שאלה <u>א'</u></a>
         # if a.attrs["href"].find("snunit") > 0:
