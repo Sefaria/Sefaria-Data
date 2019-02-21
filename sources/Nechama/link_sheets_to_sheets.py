@@ -58,12 +58,18 @@ def link_sheet(sheet_json, post_id=None):
         if 'outsideText' in s.keys():
             uni_outsidetext = unicode(s['outsideText'], encoding='utf8') if isinstance(s['outsideText'], str) else s[
                 'outsideText']
-            matched = re.search(compile, s['outsideText'])
-            if matched:
-                ssn = get_ssn(matched.group("id"))  # this is the ssn of the sheet to connect to
+            for match in re.finditer(compile, s['outsideText']):
+                ssn = get_ssn(match.group("id"))  # this is the ssn of the sheet to connect to
+                print ssn
                 to_post_id = get_post_id(ssn)
-                new_link = re.sub(compile, u'/sheets/{}'.format(to_post_id), s['outsideText'])
-                s['outsideText'] = re.sub(compile, u'/sheets/\g<id>', new_link)  # todo: check and then test this line
+                s['outsideText'] = re.sub(match.group("id"), str(to_post_id), s['outsideText'])
+                print s['outsideText']
+            # matched = re.search(compile, s['outsideText'])
+            # if matched:
+            #     ssn = get_ssn(matched.group("id"))  # this is the ssn of the sheet to connect to
+            #     to_post_id = get_post_id(ssn)
+            #     new_link = re.sub(compile, u'/sheets/{}'.format(to_post_id), s['outsideText'])
+            #     s['outsideText'] = re.sub(compile, u'/sheets/\g<id>', new_link)  # todo: check and then test this line
         elif 'outsideBiText' in s.keys():
             uni_outsidetext = unicode(s['outsideBiText']['he'], encoding='utf8') if isinstance(s['outsideBiText']['he'],
                                                                                                str) else \
@@ -84,19 +90,23 @@ if __name__ == "__main__":
     sheet_data = []
     # sheets = db.sheets.find({"tags": "UI"})
     compile = re.compile(u'/sheets/(?P<id>\d+)')  # (?:\.(?P<node>\d+))?
-    for x in range(21, 1471, 10):
-        sheets = get_sheets_from_get_server(range(x, x+10), GET_SERVER)  # list_get_sheet_ids comes straight from mongo
-        for sheet_json in sheets:
-            link_sheet(sheet_json)
-            post_sheet(sheet_json, POST_SERVER)
-    # for title_year_tags in sheet_data:
-    #     title, year, tags = title_year_tags
-    #     sheet = db.sheets.find({"title": title, "summary": year, "tags": tags})
-    #     assert sheet, u"Couldn't find sheet {}".format(title)
-    #     for segment in sheet["sources"]:
-    #         text = segment["text"]["he"] if "text" in segment.keys() else segment["outsideText"]
-    #         for match in re.findall("^<a href.*?nechama.org.il/pages/.*?</a>", text):
-    #             text = text.replace(match, )
+    sheets = get_sheets_from_get_server([1395], GET_SERVER)  # list_get_sheet_ids comes straight from mongo
+    for sheet_json in sheets:
+        link_sheet(sheet_json)  #, post_id=256)
+        post_sheet(sheet_json, POST_SERVER)
+    # for x in range(21, 1471, 10):
+    #     sheets = get_sheets_from_get_server(range(x, x+10), GET_SERVER)  # list_get_sheet_ids comes straight from mongo
+    #     for sheet_json in sheets:
+    #         link_sheet(sheet_json)
+    #         post_sheet(sheet_json, POST_SERVER)
+    # # for title_year_tags in sheet_data:
+    # #     title, year, tags = title_year_tags
+    # #     sheet = db.sheets.find({"title": title, "summary": year, "tags": tags})
+    # #     assert sheet, u"Couldn't find sheet {}".format(title)
+    # #     for segment in sheet["sources"]:
+    # #         text = segment["text"]["he"] if "text" in segment.keys() else segment["outsideText"]
+    # #         for match in re.findall("^<a href.*?nechama.org.il/pages/.*?</a>", text):
+    # #             text = text.replace(match, )
 
 
 
