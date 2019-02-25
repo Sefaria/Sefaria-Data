@@ -12,16 +12,16 @@ from sefaria.sheets import get_sheet
 from sources.functions import post_sheet, http_request
 from sources.local_settings import *
 
-GET_SERVER = "http://nechama.sandbox.sefaria.org"
+# GET_SERVER = "http://nechama.sandbox.sefaria.org"
 # GET_SERVER = "http://qanechama.sandbox.sefaria.org"
 # GET_SERVER = "http://localhost:8000"
-# GET_SERVER = "http://einmishpat.sandbox.sefaria.org"
+GET_SERVER = "http://einmishpat.sandbox.sefaria.org"
 
 
-POST_SERVER = "http://nechama.sandbox.sefaria.org"
+# POST_SERVER = "http://nechama.sandbox.sefaria.org"
 # POST_SERVER = "http://qanechama.sandbox.sefaria.org"
 # POST_SERVER = "http://localhost:8000"
-# POST_SERVER = "http://einmishpat.sandbox.sefaria.org"
+POST_SERVER = "http://einmishpat.sandbox.sefaria.org"
 
 get_server = GET_SERVER
 post_server = POST_SERVER
@@ -29,17 +29,21 @@ post_server = POST_SERVER
 
 def change_sheet(this_sheet, del_tags=[], add_tags=[]):
     # deal with tags
+    to_delete = []  # the list of tags to delete - so not to change the list while still iterating through it
     for tag in this_sheet[u'tags']:
         if isinstance(tag, int) or tag.isdigit():
+            tag = str(tag).strip()
             # todo: deal with the pdf link
-            this_sheet['summary'] = this_sheet['summary'] + u" http://www.nechama.org.il/pdf/{}.pdf".format(tag)
+            # this_sheet['summary'] = this_sheet['summary'] + u" http://www.nechama.org.il/pdf/{}.pdf".format(tag)
+            this_sheet["ssn"] = int(tag)
             if "int_tag" in del_tags:
-                this_sheet[u'tags'].remove(tag)
-        if (tag in del_tags):
-            this_sheet[u'tags'].remove(tag)
+                to_delete.append(tag)
+        if (tag in del_tags) or re.search(u'[א-ת]', tag):
+            to_delete.append(tag) #this_sheet[u'tags'].remove(tag)
+    for tag in to_delete:
+        this_sheet[u'tags'].remove(tag)
     this_sheet[u'tags'].extend(add_tags)
     # deal with owner todo: make this work also throw the api post
-    this_sheet["owner"] = 51461
     # this_sheet["status"] = "private"
     return this_sheet
 
@@ -56,8 +60,8 @@ def post_btween_sandboxes(ssn=None, map_ssn_url_post=None, map_ssn_url_get=None,
         except AssertionError:
             print "if using ssn you must give the corresponding maps"
         post_sheet_id = map_ssn_url_post[ssn]  # the latest sheet with that ssn number we want to repost over
-        get_sheet_id = map_ssn_url_get[ssn]  # can also be from a ssn mapping from the correct server the fixed sheet that was created (sometimes from the old sheet itself), need to knkow it
-    else: # id - because if it is neither we returns already :)
+        get_sheet_id = map_ssn_url_get[ssn]  # can also be from a ssn mapping from the correct server the fixed sheet that was created (sometimes from the old sheet itself), need to know it
+    else:  # id - because if it is neither we returns already :)
         get_sheet_id = id
         if id_post:
             post_sheet_id = id_post
@@ -67,7 +71,7 @@ def post_btween_sandboxes(ssn=None, map_ssn_url_post=None, map_ssn_url_get=None,
     url = get_server + "/api/sheets/{}".format(get_sheet_id)
     got = http_request(url, body={"apikey": API_KEY}, method="GET")
 
-    changed = change_sheet(got, add_tags=[], del_tags=[])
+    changed = change_sheet(got, add_tags=[], del_tags=["UI"])
     del changed['_id']
     changed['id'] = post_sheet_id
 
@@ -280,11 +284,12 @@ if __name__ == "__main__":
         1458: 152643, 1459: 152644, 1461: 152645, 1464: 152646, 1465: 152647, 1466: 152648, 1467: 152649, 1468: 152650,
         1469: 152651, 1472: 152652, 1473: 152653, 1474: 152654, 1478: 152655}
 
-    ssn_sheets = [2]
-
-    for sheet_ssn in [151343, 151204, 151290, 152627, 151289, 151322, 151835]:  # id or ssn_sheet number
+    # ssn_sheets = [2]
+    sheets = [1479, 1737, 1898, 2175, 2312, 2698, 2814] # why don't i see this in the mongo?
+    for sheet_id in reversed(sheets):  # id or ssn_sheet number
         # post_btween_sandboxes(sheet_ssn, map_post, map_get)
-        post_btween_sandboxes(id=sheet_ssn)
+        post_btween_sandboxes(id=sheet_id)
+
 # Delete duplicates
 # for sheet_id in range(151200, 151843):
 #     sheets = db.sheets.count_documents({'id': sheet_id})
