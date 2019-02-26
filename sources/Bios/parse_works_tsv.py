@@ -91,6 +91,6 @@ with open("Torah Commentators - Bios - Works.tsv") as tsv:
                 needs_save = True
         if needs_save:
             print "o - {}".format(l[0])
-            i.save()
+            i.save(override_dependencies=True)
         else:
             print "."
