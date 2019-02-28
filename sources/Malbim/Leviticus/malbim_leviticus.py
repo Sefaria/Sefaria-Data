@@ -1,5 +1,5 @@
 # encoding=utf-8
-
+from __future__ import unicode_literals
 """
 Run pull_files.py to get the webpages locally.
 
@@ -41,8 +41,11 @@ missing base refs as well.
 import re
 import codecs
 import random
+from itertools import chain
+from collections import Counter
+
 from data_utilities.util import getGematria as get_gematria
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 import django
 django.setup()
@@ -64,7 +67,9 @@ class SimanBuilder(object):
         self.siman_attrs = {}
         self.siman_attrs['siman_num'] = self.get_siman_num()
         self.siman_attrs['base_refs'] = self.get_base_refs()
-        self.siman_attrs['sifra_ref'] = self.get_sifra_refs()
+        self.siman_attrs['sifra_refs'] = self.get_sifra_refs()
+        self.siman_attrs['main_text'] = self.get_main_text()
+        # self.siman_attrs['footnotes'] = self.get_footnotes()
 
     @staticmethod
     def _sifra_mapping():
@@ -119,7 +124,7 @@ class SimanBuilder(object):
         text_element = ref_element.find_next_sibling()
         if text_element.name != 'div' and text_element.get('style', '') != "font-weight:bold":
             self.announcer.announce()
-        self.last_element = ref_element
+        self.last_element = text_element
         my_text = text_element.text
 
         he_ref = ref_element.text.replace(u'(מלבי"ם) ', u'').rstrip().lstrip()
@@ -169,7 +174,9 @@ class SimanBuilder(object):
                 print u'Bad ref at Siman {}, file:'.format(self.siman_attrs['siman_num']),
                 self.announcer.announce()
                 print r
-        return ref_list
+
+        self.last_element = text_element
+        return [Ref(r) for r in ref_list]
 
     def handle_complex_refs(self, cur_ref):
         cur_ref = u' '.join(cur_ref.split())
@@ -234,22 +241,58 @@ class SimanBuilder(object):
         return ref_list
 
     def get_main_text(self):
-        pass
+        valid_text_tags = {'p', 'ul', 'dl', 'small'}
+        skip_tags = {'hr', 'div'}
+        continue_tags = valid_text_tags.union(skip_tags)
+        expected_stop_tags = {'h2', 'h3', 'ol', 'center'}
+
+        text_elements = []
+        current_tag = self.last_element.find_next_sibling()
+        placeholder = None
+
+        while current_tag.name in continue_tags:
+            if current_tag.name in valid_text_tags:
+                text_elements.append(current_tag)
+            placeholder = current_tag.find_next_sibling()
+            if placeholder:
+                current_tag = placeholder
+            else:
+                break
+
+        if current_tag.name not in expected_stop_tags and placeholder:
+            print u'Siman {} ended with {} in file:'.format(self.siman_attrs['siman_num'], current_tag.name),
+            self.announcer.announce()
+
+        self.last_element = current_tag
+        return text_elements
 
     def get_footnotes(self):
-        pass
+        next_element = self.last_element
+        if next_element is None or next_element.name != 'h3':
+            return
+
+        assert isinstance(next_element, Tag)
+        header = next_element.find('span', attrs={'class': 'mw-headline'})
+        if not header:
+            print u'Siman {} needs inspection, file '.format(self.siman_attrs['siman_num']),
+            self.announcer.announce()
+        else:
+            print header['id']
+            print u'Siman {}'.format(self.siman_attrs['siman_num'])
+            self.announcer.announce()
+        return 'foo'
 
     def retrieve_siman(self):
         return Siman(**self.siman_attrs)
 
 
 class Siman(object):
-    def __init__(self, siman_num, base_ref, sifra_ref, main_text, footnotes):
+    def __init__(self, siman_num, base_refs, sifra_refs, main_text):
         self.siman_num = siman_num
-        self.base_ref = base_ref
-        self.sifra_ref = sifra_ref
+        self.base_refs = base_refs if base_refs else []
+        self.sifra_refs = sifra_refs if sifra_refs else []
         self.main_text_raw = main_text
-        self.footnotes = footnotes
+        # self.footnotes = footnotes
         self.formated_text = self._format_text()
 
     def _format_text(self):
@@ -272,28 +315,68 @@ class Announcer(object):
         return self.announcements
 
 
+def add_siman_to_doc(doc, siman):
+    """
+    :param BeautifulSoup doc:
+    :param Siman siman:
+    :return: None
+    """
+    siman_elem = doc.new_tag('Siman', num=siman.siman_num)
+    siman_elem.string = 'Siman {}'.format(siman.siman_num)
+    links = doc.new_tag('links')
+
+    for l in chain(siman.base_refs, siman.sifra_refs):
+        link_elem = doc.new_tag('p')
+        link_elem.string = l.normal()
+        links.append(link_elem)
+    siman_elem.append(links)
+
+    text_elem = doc.new_tag('text', style="direction:rtl;")
+    for t in siman.formated_text:
+        text_elem.append(t)
+    siman_elem.append(text_elem)
+    doc.root.append(siman_elem)
+
+
+def get_parasha_names():
+    leviticus = library.get_index("Leviticus")
+    alt_struct = leviticus.alt_structs['Parasha']['nodes']
+    return [pa['sharedTitle'] for pa in alt_struct]
+
+
 things = set()
 my_screamer = Announcer()
-# for i in range(64, 65):
+num_footnotes = 0
+siman_list = []
 for i in range(274):
-    # if i % 20 == 0:
-    #     print i,
     my_screamer.set_loc(i)
     if i == 53:
         continue
-    # if i % 20 == 0 and i > 0:
-    #     print i,
+
     my_simanim = extract_simanim('./webpages/{}.html'.format(i))
     for foo in my_simanim:
         s = SimanBuilder(foo, my_screamer)
-        # things.update(s.sifras)
+        siman_list.append(s.retrieve_siman())
 
-print my_screamer.num_announcements()
 
-# print ''
-# print len(things)
-# for t, u in things.items():
-#     print t.rstrip(), u
-# for t in things:
-#     print t.rstrip().lstrip()
-# print things
+parashot = 0
+for s in siman_list:
+    if s.siman_num == 1:
+        parashot += 1
+
+parasha_indices = [i for i, s in enumerate(siman_list) if s.siman_num == 1]
+parasha_indices.append(len(siman_list))
+parasha_names = get_parasha_names()
+s_by_p = {
+    parasha: siman_list[start:end] for parasha, start, end in
+    zip(parasha_names, parasha_indices[:-1], parasha_indices[1:])
+}
+
+for parasha, simanim in s_by_p.items():
+
+    soup = BeautifulSoup(u'<root>', 'html.parser')
+    for s in simanim:
+        add_siman_to_doc(soup, s)
+    with codecs.open("{}.html".format(parasha), 'w', 'utf-8') as fp:
+        fp.write(unicode(soup))
+
