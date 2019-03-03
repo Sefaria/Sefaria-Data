@@ -40,7 +40,13 @@ def get_ssn(sheet=None, sheet_id=None):
                 break
     return ssn
 
-def merge(content_sheet, format_sheet):
+def check_for_sheet_linking(format_source, compile, content_source):
+    for match in re.finditer(compile, format_source):
+        content_source = re.sub(match.group('text2'), match.group('aref'), content_source)
+    return content_source
+
+
+def merge(content_sheet, format_sheet, copy_as_is = False):
     """
     Goes over the sources and change only the text but not the options and formatting
     NOTE: Sheets must be of the same format bilingual or Hebrew only!
@@ -48,16 +54,20 @@ def merge(content_sheet, format_sheet):
     :param format_sheet: the newset posted sheet with the correct format
     :return: merged sheet to be reposted
     """
-
+    linking_pattern = re.compile(u'(?P<text1>.*?)(?P<aref><a.*?/sheets/(?P<id>\d+).*?>(?P<text2>.*?)</a>)(?P<text3>.*?)')
     k = 0
+    if copy_as_is:
+        format_sheet['sources'] = content_sheet['sources']
     format_sources = format_sheet['sources'] #sorted(format_sheet['sources'], key=lambda x:x['node'])
     for j, s in enumerate(content_sheet['sources']): #enumerate(sorted(content_sheet['sources'], key=lambda x:x['node'])):
         i = j+k
-        if not s['node']:
+        if i>=len(format_sources):
+            break
+        if not s['node'] or not format_sources[i]['node']:
             k += 1
             continue
         if i < len(format_sources) and format_sources[i]['node'] != s['node']:
-            if abs(format_sources[i]['node'] - s['node']) < 2:
+            if abs(int(format_sources[i]['node'])-int(s['node'])) < 2:
                 k += 1
                 i = j + k
             else:
@@ -66,12 +76,12 @@ def merge(content_sheet, format_sheet):
         if 'outsideBiText' in s.keys():
             if not s['outsideBiText']['he']:
                 continue
-            format_sources[i]['outsideBiText']['he'] = s['outsideBiText']['he']
+            format_sources[i]['outsideBiText']['he'] = check_for_sheet_linking(format_sources[i]['outsideBiText']['he'], linking_pattern, s['outsideBiText']['he'])
             format_sources[i]['outsideBiText']['en'] = s['outsideBiText']['en']
         elif 'outsideText' in s.keys():
-            format_sources[i]['outsideText']['he'] = s['outsideText']['he']
+            format_sources[i]['outsideText']['he'] = check_for_sheet_linking(format_sources[i]['outsideText']['he'], linking_pattern, s['outsideText']['he'])
         elif 'text' in s.keys():
-            format_sources[i]['text']['he'] = s['text']['he']
+            format_sources[i]['text']['he'] = check_for_sheet_linking(format_sources[i]['text']['he'], linking_pattern, s['text']['he'])
             format_sources[i]['text']['en'] = s['text']['en']
             format_sources[i]['ref'] = s['ref']
             format_sources[i]['heRef'] = s['heRef']
@@ -81,14 +91,18 @@ def merge(content_sheet, format_sheet):
     return format_sheet
 
 if __name__ == "__main__":
-
-    content_sheet = get_sheet("http://qanechama.sandbox.sefaria.org", sheet_id=151214)
-    content_ssn = get_ssn(sheet=content_sheet)
-    format_sheet = get_sheet("http://einmishpat.sandbox.sefaria.org", sheet_ssn=content_ssn)  # sheet_ssn=content_ssn)
-    # sanity check
-    assert [int(tag) for tag in content_sheet['tags'] if unicode(tag).isdigit()]== [int(tag) for tag in format_sheet['tags'] if unicode(tag).isdigit()]
-    assert 'Bilingual' in format_sheet['tags']
-    merged_sheet = merge(content_sheet, format_sheet)
-    del merged_sheet['_id']
-    merged_sheet['tags'].append('Edited')
-    post_sheet(merged_sheet, "http://einmishpat.sandbox.sefaria.org")
+    ssns =[]
+    for sheet in [152732]:
+        content_sheet = get_sheet("http://qanechama.sandbox.sefaria.org", sheet_id=sheet)
+        content_ssn = get_ssn(sheet=content_sheet)
+        format_sheet = get_sheet("http://einmishpat.sandbox.sefaria.org", sheet_id=2921)#sheet_ssn=content_ssn)
+        # sanity check
+        assert [int(tag) for tag in content_sheet['tags'] if unicode(tag).isdigit()]== [int(tag) for tag in format_sheet['tags'] if unicode(tag).isdigit()]
+        assert 'Bilingual' in format_sheet['tags']
+        merged_sheet = merge(content_sheet, format_sheet, copy_as_is = False)
+        ssns.append(content_ssn)
+        del merged_sheet['_id']
+        merged_sheet['tags'].append('Edited')
+        post_sheet(merged_sheet, "http://einmishpat.sandbox.sefaria.org")
+print ssns
+    # problem: 151293,151343, 151348,  151378, 151505,151794,151948,152591,152593, 152729, 152732, 152734,152928, 151204, 151290,
