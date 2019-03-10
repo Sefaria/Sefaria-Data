@@ -37,7 +37,16 @@ title_exceptions = {"megila mahadura 1":{"en_title":"Megillah First Recension",
                                         "masechet":"Eruvin"},
                  "eruvin mahadura 3 4":{"en_title":"Eruvin Third & Fourth Recension",
                                       "he_title":u"עירובין מהדורא תליתאה ורביעאה",
-                                      "masechet":"Eruvin"}
+                                      "masechet":"Eruvin"},
+                "avoda zara mahadura 1":{"en_title":"Avodah Zarah First Recension",
+                                      "he_title":u"עבודה זרה מהדורא קמא",
+                                      "masechet":"Avodah Zarah"},
+                "avoda zara mahadura 2":{"en_title":"Avodah Zarah Second Recension",
+                                      "he_title":u"עבודה זרה מהדורא תנינא",
+                                      "masechet":"Avodah Zarah"},
+                "avoda zara mahadura 3":{"en_title":"Avodah Zarah Third Recension",
+                                      "he_title":u"עבודה זרה מהדורא תליתאה",
+                                      "masechet":"Avodah Zarah"},
             }
 def post_rid_term():
     term_obj = {
@@ -93,6 +102,8 @@ def parse_tractate(file_tractate_name):
         tractate_name = process.extractOne(file_tractate_name, en_talmud)[0]
     if "Ketubot" in tractate_name or "Gitt" in tractate_name:
         return parse_tractate_k(file_tractate_name)
+    if "Naz" in tractate_name:
+        return parse_nazir_text()
     with open("tractates/"+file_tractate_name+".txt") as myFile:
         lines = list(map(lambda x: x.decode("utf-8",'replace'), myFile.readlines()))
     #if u"@22" in ''.join(lines):
@@ -105,7 +116,7 @@ def parse_tractate(file_tractate_name):
     #subtract 2 since we start at 0, add one since range's range in non-inclusive
     final_list = [[] for x in range(len(TextChunk(Ref(tractate_name),"he").text)-1)]
     for line in lines:
-        if u"@22" in line:
+        if u"@" in line:
             if "daf" in current_daf_ref:
                 old_daf = current_daf_ref["daf"]
             current_daf_ref = extract_daf(line)
@@ -121,6 +132,49 @@ def parse_tractate(file_tractate_name):
     return final_list
 
 #ketubot and gittin need a seperate parse_text method
+def parse_nazir_text():
+    tractate_name="Nazir"
+    mesechet_array = make_talmud_array(tractate_name)
+    
+    #dict contains daf and amud
+    current_daf_ref = {}
+    #subtract 2 since we start at 0, add one since range's range in non-inclusive
+    final_list = [[] for x in range(len(TextChunk(Ref(tractate_name),"he").text)-1)]
+    with open("tractates/nazir.txt") as myFile:
+        lines = list(map(lambda x: x.decode("utf-8",'replace'), myFile.readlines()))
+    for line in lines:
+        if u"@22" in line:
+            current_daf_ref["daf"]=getGematria(line.split(u',')[0])
+            current_daf_ref["amud"]='a' if u'א' in line.split(u',')[1] else 'b'
+        else:
+            if not_blank(line):
+                final_list[get_page(current_daf_ref["daf"],current_daf_ref["amud"])].append(line)
+    #add blank to offset beggening:
+    final_list.insert(0,[])
+    return final_list
+def parse_az_text():
+    tractate_name="Avodah Zarah"
+    mesechet_array = make_talmud_array(tractate_name)
+    
+    #dict contains daf and amud
+    current_daf_ref = {}
+    #subtract 2 since we start at 0, add one since range's range in non-inclusive
+    final_list = [[] for x in range(len(TextChunk(Ref(tractate_name),"he").text)-1)]
+    with open("tractates/avoda zara.txt") as myFile:
+        lines = list(map(lambda x: x.decode("utf-8",'replace'), myFile.readlines()))
+    for line in lines:
+        if u"@22" in line:
+            current_daf_ref["daf"]=getGematria(line.split(u',')[0])
+            current_daf_ref["amud"]='a' if u'א' in line.split(u',')[1] else 'b'
+        else:
+            if not_blank(line):
+                final_list[get_page(current_daf_ref["daf"],current_daf_ref["amud"])].append(clean_line(line))
+    #add blank to offset beggening:
+    final_list.insert(0,[])
+    return final_list
+def clean_line(s):
+    s = re.sub(ur'^\(.*?\)',u'',s)
+    return s
 def parse_tractate_k(file_tractate_name):
     print "This is ",file_tractate_name
     tractate_name = process.extractOne(file_tractate_name, en_talmud)[0]
@@ -206,10 +260,22 @@ def no_marker_parse(tractate_name, rid_text_input):
     #now, make table of which daf each rid comment goes to
     #match table = def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,word_threshold=0.27,char_threshold=0.2,prev_matched_results=None,with_abbrev_ranges=False):
 def remove_tags(s):
-    return re.sub(ur"<111>.*?<222>",'',s)
+    return re.sub(ur"<\d*?>.*?<\d*?>",'',s)
 def fix_markers(s):
     return re.sub(ur"\([א-ת]"+ur"{1,3}\)","",s.replace("@1","<small>(").replace("@3",")</small>"))
 def bold_dh(some_string):
+    splits = {
+        "pi_split":some_string.split(u' '+u"פי"+u"'"),
+        "pirush_split": some_string.split(u"פירוש"),
+        }
+    #if re.match(ur".*?"+ur"ו?כו"+"\'?",some_string):
+    if re.search(ur".*? כו"+ur"\'?(?=[ \.])",some_string):
+        splits["chulei_split"]= [re.search(ur".*? כו"+ur"\'?(?=[ \.])",some_string).group(),'']
+    split_dh=get_smallest(splits)
+    if len(split_dh.split(" "))<20:
+        return u"<b>"+split_dh+u"</b>"+some_string[len(split_dh):]
+    return some_string
+    """
     splits = {
         "pi_split":some_string.split(u' '+u"פי"+u"'"),
         "pirush_split": some_string.split(u"פירוש"),
@@ -224,6 +290,7 @@ def bold_dh(some_string):
     if len(split_dh.split(" "))<30:
         return u"<b>"+split_dh+u"</b>"+some_string[len(split_dh):]
     return some_string
+    """
 def bold_before_period(s):
     if u"." in s:
         return u"<b>"+s[:s.index(u".")+1]+u"</b>"+s[s.index(u".")+1:]
@@ -259,52 +326,53 @@ def link_tos_rid(file_tractate_name):
             except:
                 print "ERRD"
                 continue
-            matches = match_ref(tractate_chunk,rid_chunk,
-                base_tokenizer,dh_extract_method=dh_extract_method,rashi_filter=rid_filter,verbose=True,char_threshold=0.4)
-            if "comment_refs" in matches:
-                last_ref = Ref("Genesis").normal()
-                for base, comment in zip(matches["matches"],matches["comment_refs"]):
-                    print base,comment
-                    if base:
-                        link = (
-                                {
-                                "refs": [
-                                         base.normal(),
-                                         comment.normal(),
-                                         ],
-                                "type": "commentary",
-                                "auto": True,
-                                "generated_by": "sterling_tos_rid_linker"
-                                })
-                        last_ref = base.normal()
-                        post_link(link, weak_network=True)
-                        matched_count+=1
-                    else:
-                        not_matched.append(comment)
-                        if last_ref!=u'Genesis':
-                        #we link to last comment, assuming it's a continuation
+            if len(rid_chunk.text)>0:
+                matches = match_ref(tractate_chunk,rid_chunk,
+                    base_tokenizer,dh_extract_method=dh_extract_method,rashi_filter=rid_filter,verbose=True,char_threshold=0.4)
+                if "comment_refs" in matches:
+                    last_ref = Ref("Genesis").normal()
+                    for base, comment in zip(matches["matches"],matches["comment_refs"]):
+                        print base,comment
+                        if base:
                             link = (
                                     {
                                     "refs": [
-                                             last_ref,
+                                             base.normal(),
                                              comment.normal(),
                                              ],
                                     "type": "commentary",
                                     "auto": True,
                                     "generated_by": "sterling_tos_rid_linker"
                                     })
+                            last_ref = base.normal()
                             post_link(link, weak_network=True)
+                            matched_count+=1
+                        else:
+                            not_matched.append(comment)
+                            if last_ref!=u'Genesis':
+                            #we link to last comment, assuming it's a continuation
+                                link = (
+                                        {
+                                        "refs": [
+                                                 last_ref,
+                                                 comment.normal(),
+                                                 ],
+                                        "type": "commentary",
+                                        "auto": True,
+                                        "generated_by": "sterling_tos_rid_linker"
+                                        })
+                                post_link(link, weak_network=True)
+                        total+=1
+                else:
+                    not_matched.append(get_daf_en(amud_index))
                     total+=1
-            else:
-                not_matched.append(get_daf_en(amud_index))
-                total+=1
-    if total!=0:
-        print "Ratio: "+str(matched_count/total)
-    else:
-        print "Ratio: No Matches..."
-    print "Not Matched:"
-    for nm in not_matched:
-        print nm
+        if total!=0:
+            print "Ratio: "+str(matched_count/total)
+        else:
+            print "Ratio: No Matches..."
+        print "Not Matched:"
+        for nm in not_matched:
+            print nm
     
 def make_talmud_array(book):
     tc = TextChunk(Ref(book), "he")
@@ -328,7 +396,7 @@ def get_daf_en(num):
 #return daf info given a line with format @22דף ב ע"ב
 def extract_daf(s):
     return_dict = {}
-    return_dict["daf"]= getGematria(s.replace(u"@22","").replace(u"דף",u"").replace(u"ע\"ב",u"").replace(u"ע\"א",u""))    
+    return_dict["daf"]= getGematria(re.sub(ur'\(.*?\)',u'',s.replace(u"@22","").replace(u"דף",u"").replace(u"ע\"ב",u"").replace(u"ע\"א",u"")))    
     return_dict["amud"]= "a" if u"ע\"א" in s else "b"
     return return_dict
 def extract_daf_k(s):
@@ -354,12 +422,13 @@ def remove_extra_space(s):
         s = s.replace("  "," ")
     return s
 def dh_extract_method(some_string):
-    some_string = remove_extra_space(some_string).replace(u"<b>","").replace(u"</b>","")
+    some_string = remove_extra_space(some_string)#.replace(u"<b>","").replace(u"</b>","")
     splits = {
-        "pi_split":some_string.split(u' '+u"פי"+u"'"),
-        "pirush_split": some_string.split(u"פירוש"),
-        "period_split": some_string.split(u"."),
-        "chulei_split": some_string.split(u"כו"+"'")
+        "pi_split":some_string.replace(u"<b>","").replace(u"</b>","").split(u' '+u"פי"+u"'"),
+        "pirush_split": some_string.replace(u"<b>","").replace(u"</b>","").split(u"פירוש"),
+        "period_split": some_string.replace(u"<b>","").replace(u"</b>","").split(u"."),
+        "chulei_split": some_string.replace(u"<b>","").replace(u"</b>","").split(u"כו"+"'"),
+        "b_split": some_string.replace(u"<b>","").split(u"</b>"+"'")
         }
     split_dh=get_smallest(splits)
     if len(split_dh.split(u" "))<10 and len(split_dh.split(u" "))>1:
@@ -378,7 +447,10 @@ def get_smallest(dic):
             keyp=key
     return return_dh
 def base_tokenizer(some_string):
-    some_string = remove_extra_space(some_string).replace("<b>","").replace("</b>","").replace(":","")
+    print "BASE",some_string
+    some_string = remove_extra_space(re.sub(ur'<.*?>',u'',some_string.replace(":","")))
+    print "NEWBASE", some_string
+    print "LEN",len(filter(not_blank,some_string.split(" ")))
     return filter(not_blank,some_string.split(" "))
 def print_text(file_name):
     with open("tractates/"+file_name) as my_file:
@@ -389,8 +461,8 @@ def print_text(file_name):
         print ''
 
 posting_term=False
-posting_index=False
-posting_text=False
+posting_index=True
+posting_text=True
 linking=True
 admin_links = []
 page_links = []
@@ -398,14 +470,14 @@ if posting_term:
     post_rid_term()
 for findex, file in enumerate(os.listdir("tractates")):
     print "This is file: "+str(findex)
-    if ".txt" in file and ("ketu" in file or "gittin" in file):
+    if ".txt" in file and "avoda" in file:
         file_tractate_name = file.replace(".txt","")
         if file_tractate_name in title_exceptions:
             link_name = title_exceptions[file_tractate_name]["en_title"]     
         else:
             link_name = process.extractOne(file_tractate_name, en_talmud)[0]  
-        admin_links.append("localhost:8000/admin/reset/Tosafot Rid on "+link_name)
-        page_links.append("http://proto.sefaria.org/Tosafot_Rid_on_"+link_name)
+        admin_links.append(SEFARIA_SERVER+"/admin/reset/Tosafot_Rid_on_"+link_name.replace(' ','_'))
+        page_links.append(SEFARIA_SERVER+"/Tosafot_Rid_on_"+link_name.replace(' ','_'))
         if posting_index:
             print "Posting "+file_tractate_name+" index..."
             make_tractate_index(file_tractate_name)
