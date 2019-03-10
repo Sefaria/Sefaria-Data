@@ -220,19 +220,18 @@ class Sheet(object):
        sheet_json["sources"] = self.sources
        sheet_lang = 'bilingual' if parser.english_sheet else 'hebrew'
        sheet_json["options"] = {"numbered": 0, "assignable": 0, "layout": "sideBySide", "boxed": 0, "language": sheet_lang, "divineNames": "noSub", "collaboration": "group-can-edit", "highlightMode": 0, "bsd": 0, "langLayout": "heRight"}
-       sheet_json['owner'] = 51461
 
        if "-" in self.en_parasha:
            sheet_json["tags"] = [unicode(self.en_parasha.split("-")[0]), unicode(self.en_parasha.split("-")[-1])]
-           sheet_json['tags'].extend([unicode(self.parasha.split(u"-")[0]), u"פרשת {}".format(unicode(self.parasha.split(u"-")[-1]))])
+           # sheet_json['tags'].extend([unicode(self.parasha.split(u"-")[0]), u"פרשת {}".format(unicode(self.parasha.split(u"-")[-1]))])
            assert Term().load({"name": self.en_parasha.split("-")[0]})
            assert Term().load({"name": self.en_parasha.split("-")[-1]})
        else:
            sheet_json["tags"] = [unicode(self.en_parasha)]
-           sheet_json['tags'].append(self.parasha)
+           # sheet_json['tags'].append(self.parasha)
            assert Term().load({"name": self.en_parasha})
        sheet_json["tags"].append(re.search(u'.*?(\d+)\.', self.html).groups(1)[0])
-       sheet_json["tags"].append(u'UI')
+       sheet_json["tags"].append(u'Linked')
        if parser.english_sheet:
            sheet_json['tags'].append(u'Bilingual')
        else:
@@ -277,8 +276,30 @@ class Sheet(object):
            for sheet_link in parser.ssn_dicts:
                if 'outsideText' in s.keys():
                    uni_outsidetext = unicode(s['outsideText'], encoding='utf8') if isinstance(s['outsideText'], str) else s['outsideText']
-                   if re.search(sheet_link[u'text'], s['outsideText']):
-                       s['outsideText'] = re.sub(sheet_link[u'text'], sheet_link[u'linked_text'],  uni_outsidetext)
+                   if re.search(sheet_link[u'text'], uni_outsidetext, flags=re.IGNORECASE):
+                       s['outsideText'] = re.sub(sheet_link[u'text'], sheet_link[u'linked_text'],  uni_outsidetext, flags=re.IGNORECASE)
+
+           if snunit_links:
+               for snunit_dict in parser.snunit_outside_texts:
+                   if len(snunit_dict[u'words'])<=1:
+                       continue
+                   source_type = None
+                   if 'outsideText' in s.keys():
+                       uni_outsidetext = unicode(s['outsideText'], encoding='utf8') if isinstance(s['outsideText'],str) else s['outsideText']
+                       source_type = 'outsideText'
+                   elif 'text' in s.keys():
+                       uni_outsidetext = unicode(s['text']['he'], encoding='utf8') if isinstance(s['text']['he'],str) else s['text']['he']
+                       source_type = 'text'
+                   else:
+                       continue
+
+                   if re.search(u"""{}""".format(snunit_dict[u'words']).replace(u')', u'').replace(u'(', u''), uni_outsidetext):
+                       new_ref = u'''<a href="/{}" target="_blank" class="refLink">{}</a>'''.replace(u'(', u'').replace(u')', u'').format(snunit_dict['ref'].normal(), snunit_dict[u'words'])
+                       linked_text = re.sub(snunit_dict[u'words'].replace(u')', u'').replace(u'(', u''), new_ref, uni_outsidetext)
+                       if source_type == 'outsideText':
+                           s['outsideText'] = linked_text
+                       elif source_type == 'text':
+                           s['text']['he'] = linked_text
        if post:
            if parser.english_sheet:
                for i, s in enumerate(sheet_json['sources']):
@@ -321,7 +342,8 @@ class Sheet(object):
            # #so create it as a post at the end of the list and pull it over.
            response = post_sheet(sheet_json, server=parser.server)
            if not isinstance(response, dict):
-               print response
+               with open(u"nopost.html", 'a') as f:
+                   writer = f.write(response)
 
     def test_no_lists(self, sources):
         for s in sources:
@@ -735,7 +757,10 @@ class Section(object):
                       351: u'Ezra',
                       352: u'Nehemiah'
                       }
-        match = re.search(u"""kodesh\.snunit\.k12\.il/i/tr?/t(?P<book>\d\d)(?P<onetwo>.?)(?P<ch>.\d)\.htm#?(?P<verse>\d*$)?""", a_tag['href'])
+        if isinstance(a_tag,basestring):
+            match = re.search(u"""kodesh\.snunit\.k12\.il/i/tr?/t(?P<book>\d\d)(?P<onetwo>.?)(?P<ch>.\d)\.htm#?((?P<verse>\d+?)")?""", a_tag)
+        else:
+            match = re.search(u"""kodesh\.snunit\.k12\.il/i/tr?/t(?P<book>\d\d)(?P<onetwo>.?)(?P<ch>.\d)\.htm#?(?P<verse>\d*$)?""", a_tag['href'])
         r = None
         if match:
             book_num = match.group('book')
@@ -750,11 +775,24 @@ class Section(object):
                 chapter = psalms_ch(chapter)
             if onetwo:
                 onetwo= 1 if onetwo == 'a' else 2
-                book_num = int('{}{}'.format(book_num,onetwo))
-            book = book_table[int(book_num)]
-            ref_st = u'{} {} {}'.format(book, chapter, verse).strip()
-            r = Ref(ref_st)
-            print a_tag['href'], a_tag.text, r.normal()
+                book_num = int('{}{}'.format(book_num, onetwo))
+            try:
+                book = book_table[int(book_num)]
+            except KeyError:
+                book = 'no book'
+                print "Book number error {}".format(book_num)
+            ref_st = u'{} {} {}'.format(book, chapter, verse).replace('None', '').strip()
+            try:
+                r = Ref(ref_st)
+                if isinstance(a_tag, basestring):
+                    print a_tag, r.normal()
+                else:
+                    print a_tag['href'], a_tag.text, r.normal()
+            except InputError as e:
+                if isinstance(a_tag, basestring):
+                    print a_tag
+                else:
+                    print a_tag['href'], a_tag.text, e
         return r
 
     def parse_ref_new(self, segment, relevant_text, next_segment_info): #bad try to put in parshan_id_table to read the parshan from the class number it has
@@ -1298,6 +1336,7 @@ class Nechama_Parser:
         # 1458: 152643, 1459: 152644, 1461: 152645, 1464: 152646, 1465: 152647, 1466: 152648, 1467: 152649, 1468: 152650,
         # 1469: 152651, 1472: 152652, 1473: 152653, 1474: 152654, 1478: 152655}
         self.ssn_dicts = []
+        self.snunit_outside_texts = []
 
     def populate_term_mapping_and_id_table(self):
         self.term_mapping = {
@@ -1371,7 +1410,7 @@ class Nechama_Parser:
             '88': None,  # u'אברהם כהנא (פירוש מדעי)'
             '91': u"Gur Aryeh on {}".format(self.en_sefer),  # u"גור אריה",
             '92': u"Kli Yakar on {}".format(self.en_sefer),  # כלי יקר
-            '94': u"Shadal on {}".format(self.en_sefer),  # u'''שד"ל''',
+            '94': u"Shadal on {}".format(self.en_sefer),  # u'''228.4 שד"ל''',
             '101': u'Mizrachi, {}'.format(self.en_sefer),
             '104': None,  # u'''רמבמ"ן''',
             '107': None,  # u'רס"ג'
@@ -1514,8 +1553,12 @@ class Nechama_Parser:
         pm = ParallelMatcher(self.tokenizer, dh_extract_method=None, ngram_size=ngram_size, max_words_between=max_words_between, min_words_in_match=min_words_in_match,
         min_distance_between_matches=0, all_to_all=False, parallelize=False, verbose=False, calculate_score=self.get_score)
         if self.to_match:
-            new_ref = pm.match(tc_list=[ref.text('he'), (comment, 1)], return_obj=True)
-            new_ref = filter(lambda x: x.score > 80,  new_ref)
+            try:
+                new_ref = pm.match(tc_list=[ref.text('he'), (comment, 1)], return_obj=True)
+                new_ref = filter(lambda x: x.score > 80,  new_ref)
+            except ValueError:
+                print u"something wrong with hebrew text of ref: {}".format(ref)
+                new_ref = []
         return new_ref
 
     def change_ref_to_commentary(self, ref, comment_ind):
@@ -1741,16 +1784,26 @@ class Nechama_Parser:
                     def get_ssn(matchObj):
                         ssn = int(matchObj.group(2))
                         text = matchObj.group(3)
-                        try:
-                            # id = parser.map_ssn_url[ssn]
-                            id=ssn
-                            new = u'''<a href="/sheets/{}" target="_blank">{}</a>'''.format(id, text)
-                        except KeyError:
-                            return matchObj.group(0)  # we don't have the sheet it connects to, so return the original.
-                        parser.ssn_dicts.append({u"linked_to_id": id, u"text": text, u"linked_text": new})
-                        return new
+                        texts = [text]
+                        if re.search(u'u', text, flags=re.IGNORECASE):
+                            texts.append(re.sub(u'u', u'b', text, flags=re.IGNORECASE))
+                        for text in texts:
+                            try:
+                                # id = parser.map_ssn_url[ssn]
+                                id=ssn
+                                new = u'''<a href="/sheets/{}" target="_blank" class="refLink">{}</a>'''.format(id, text)
+                            except KeyError:
+                                return matchObj.group(0)  # we don't have the sheet it connects to, so return the original.
+                            parser.ssn_dicts.append({u"linked_to_id": id, u"text": text, u"linked_text": new})
+                        # return new
                     for matchlink in re.finditer(u'(<a href="http://www\.nechama\.org\.il/pages/(\d+?)\.html.*?">(.*?)</a>)', file_content, flags=re.IGNORECASE):
                         get_ssn(matchlink)
+
+                    for snunitlink in re.finditer(u'(<a href="(?P<a_tag>http://kodesh.snunit.k12.il/.*?)>(?P<words>.*?)</a>)', file_content, flags=re.IGNORECASE):
+                        r = Section.exctract_pasuk_from_snunit(snunitlink.group('a_tag'))
+                        print u"new snunit ref: {} on word: {}".format(r,snunitlink.group('words'))
+                        if r:
+                            parser.snunit_outside_texts.append({u"words":snunitlink.group('words'), u"ref":r})
                     # file_content = re.sub(u'(<a href="http://www\.nechama\.org\.il/pages/(\d+?)\.html.*">(.*?)</a>)', get_ssn, file_content, flags=re.IGNORECASE)
                     print html_sheet
 
@@ -1914,6 +1967,7 @@ def dict_from_html_attrs(contents):
             d[e.name] = e
     return d
 
+snunit_links = True
 
 if __name__ == "__main__":
     genesis_parshiot = (u"Genesis", ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", 'Vayetzei',
@@ -1930,7 +1984,12 @@ if __name__ == "__main__":
     english_sheet = True
 
     posting = True
-    individuals = [202]  # reversed(range(1464, 1479)) # [332] range(110, 1479) #[119, 170, 260, 620, 775, 1403, 1404, 1405, 1406, 1407, 1408, 35, 118, 169, 259, 619, 774, 1402, 1403, 1404, 1405, 1406, 1407]
+    individuals = [1403]#[35, 246, 169, 45, 142, 48, 115, 51, 52, 174, 118, 27, 53] #[1409, 259, 246, 774, 327, 172, 332, 142, 619, 115, 273, 210, 147, 46, 661, 1405, 204, 27, 118, 1440, 35, 37, 169, 299, 44, 45, 174, 47, 48, 49, 50, 51, 52, 53, 54, 55, 114, 1403, 1404, 1402, 1406, 1407]
+
+    #range(1, 1478) #[2, 14, 20, 22, 23, 32, 33, 34, 37, 39, 42, 44, 46, 47, 49, 50, 56, 57, 65, 72, 75, 78, 80, 82, 83, 86, 102, 109, 110, 111, 114, 116, 117, 126, 135, 144, 145, 151, 152, 161, 165, 171, 178, 180, 196, 199, 200, 207, 209, 216, 226, 229, 234, 235, 236, 237, 238, 239, 240, 242, 247, 248, 249, 252, 262, 266, 270, 274, 275, 277, 279, 287, 294, 295, 297, 303, 306, 307, 308, 315, 316, 322, 325, 326, 329, 332, 336, 339, 341, 345, 348, 349, 354, 358, 359, 366, 367, 374, 375, 377, 378, 381, 385, 388, 391, 395, 396, 402, 404, 406, 407, 416]
+  #[1409, 259, 774, 44, 142, 147, 174, 27, 1440, 35, 37, 169, 172, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 246, 327, 332, 204, 1407, 619, 114, 115, 118, 1402, 1403, 1404, 1405, 1406, 661]
+#range(1341,1479)
+#range(10,1478,10)  # reversed(range(1464, 1479)) # [332] range(110, 1479) #[119, 170, 260, 620, 775, 1403, 1404, 1405, 1406, 1407, 1408, 35, 118, 169, 259, 619, 774, 1402, 1403, 1404, 1405, 1406, 1407]
  #976 #range(485, 1479) # range(1022, 1478, 10) #[1075, 1320, 1163]  # [3, 748,452,1073,829,544,277,899,246,490,986,988,717, 1373,  1393,572,71,46,559,892,427]
 
     found_tables_num = 0
@@ -1939,6 +1998,7 @@ if __name__ == "__main__":
         writer = csv.DictWriter(fcsv, [u'sheet', u'missing text'])
         writer.writeheader()
     for individual in individuals: #range(1321, 1479): #individuals: #range(212, 1400): #  failed on look_for_missing_next: [57, 62. 85, 163]
+        got_sheet = None
         for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
             # print u"NEW BOOK"
             for parsha in which_parshiot[1]:
