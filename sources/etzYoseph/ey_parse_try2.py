@@ -15,48 +15,7 @@ from sources.functions import *
 en_sefer_names = ["Genesis","Exodus","Leviticus","Numbers","Deuteronomy"]
 he_sefer_names =  [u"בראשית",u"שמות" ,u"ויקרא",u"במדבר",u"דברים"]
 midrash_names= ["Bereishit Rabbah","Shemot Rabbah","Vayikra Rabbah","Bemidbar Rabbah","Devarim Rabbah"]
-def fix_line(s):
-    s = re.sub(ur'.*>דה<',u'<b>',s)
-    
-    if u'>טק<' in s:
-        if u'.' not in s[:s.index(u'>טק<')]:
-            s = s[:s.index(u'>טק<')]+u'.</b> '+s[s.index(u'>טק<')+1:]
-        else:
-            s = s[:s.index(u'>טק<')]+u'</b>'+s[s.index(u'>טק<')+1:]
-    else:
-        print "OOOPS"
-    s=s.replace(u'טק<',u'')
-    
-    news = re.sub(ur'>[א-ת]+?<',u' ',s)
-    if len(news)<10:
-        print "NO NEWS...",s,news
-    s=news
-    s = s.replace(u'<b>',u'STARTBOLD').replace(u'</b>',u'ENDBOLD')
-    s = re.sub(ur'[<>]',u'',s)
-    s = s.replace(u'STARTBOLD',u'<b>').replace(u'ENDBOLD',u'</b>')
-    
-    s = s.replace(u' .', u'.')
-    s = remove_extra_spaces(s)
-    
-    return s+u':'
-def post_ey_term():
-    term_obj = {
-        "name": "Etz Yosef",
-        "scheme": "commentary_works",
-        "titles": [
-            {
-                "lang": "en",
-                "text": "Etz Yosef",
-                "primary": True
-            },
-            {
-                "lang": "he",
-                "text": u'עץ יוסף',
-                "primary": True
-            }
-        ]
-    }
-    post_term(term_obj)
+
 def post_ey_index():
     # create index record
     record = SchemaNode()
@@ -87,45 +46,32 @@ def post_ey_index():
         "schema": record.serialize()
     }
     post_index(index,weak_network=True)
+
+def parse_mlt_csvs():
+    for index, _file in enumerate(os.listdir("csv_files")):
+        if "1" not in _file:
+            sefer = en_sefer_names[index]
+            sefer_list=[]
+            print "parsing", sefer
+            with open('csv_files/'+_file, 'rb') as f:
+                reader = csv.reader(f)
+                box=[]
+                for row in reader:
+                    if 'פרשה' in row[0] and len(box)>0:
+                        sefer_list.append(box)
+                        box=[]
+                    box.append(row[2])
+            sefer_list.append(box)
         
-def post_ey_text():
-    for file in os.listdir("files"):
-        if 'עץ' in file and '1' not in file:
-            with open("files/"+file) as myFile:
-                lines = list(map(lambda x: x.decode("utf-8",'replace'), myFile.readlines()))
-            chapters=[]
-            chapter_box=[]
-            skip_count=0
-            
-            #to track filter....
-            """
-            f = open('etz_yoseph_skipped lines_{}.csv'.format(en_sefer_names[int(re.search(ur'[\d]',file).group())-1]),'w')
-            f.close()
-            """
-            lines = re.split(u':',' '.join(lines).replace(u'\n',u''))
-            for lindex, line in enumerate(lines):
-                if u'פר<' in line and len(chapter_box)>0:
-                    chapters.append(chapter_box)
-                    chapter_box=[]
-                if not_blank(fix_line(line).replace(u':',u'')):
-                    chapter_box.append(fix_line(line))
-            chapters.append(chapter_box)
-            
-            1/0
-            for cindex, chapter, in enumerate(chapters):
-                for pindex, paragraph in enumerate(chapter):
-                    print cindex, pindex, paragraph
-            
             version = {
                 'versionTitle': 'Midrash Rabbah, with Etz Yosef, Warsaw, 1867',
                 'versionSource': 'http://merhav.nli.org.il/primo-explore/fulldisplay?docid=NNL_ALEPH001987082&context=L&vid=NLI&search_scope=Local&tab=default_tab&lang=iw_IL',
                 'language': 'he',
-                'text': chapters
+                'text': sefer_list
             }
             #print "Etz Yosef on Midrash Rabbah, {}".format(en_sefer_names[int(re.search(ur'[\d]',file).group())])
             #post_text_weak_connection("Etz Yosef on Midrash Rabbah, {}".format(en_sefer_names[int(re.search(ur'[\d]',file).group())-1]), version)
-            post_text("Etz Yosef on Midrash Rabbah, {}".format(en_sefer_names[int(re.search(ur'[\d]',file).group())-1]),  version,weak_network=True, skip_links=True, index_count="on")
-            
+            post_text("Etz Yosef on Midrash Rabbah, {}".format(sefer),  version,weak_network=True, skip_links=True, index_count="on")
 def make_links():
     matched=0.00
     total=0.00
@@ -133,17 +79,17 @@ def make_links():
     not_machted = []
     sample_Ref = Ref("Genesis 1")
     for sefer_index, sefer in enumerate(en_sefer_names):
-        if "Gen" not in sefer and "Ex" not in sefer:
+        if "Gen" not in sefer and "Ex" not in sefer and "Lev" not in sefer and "Num" not in sefer:
             if making_link_table:
                 f = open('etz_yoseph_link_table_{}.csv'.format(sefer),'w')
                 f.write('EY comment, EY current paragraph, Matched MR paragraph\n')
                 f.close()
-            with open('mismatched_paragraph_report_{}.txt'.format(en_sefer_names[sefer_index])) as myFile:
+            with open('mismatched_paragraphs_report_{}.txt'.format(en_sefer_names[sefer_index])) as myFile:
                 lines = ''.join(myFile.readlines())
             mismatched_chapters = list(map(lambda(x):int(x),lines.replace('\n','').split()))
             
             for chapter in range(1,len(TextChunk(Ref(midrash_names[sefer_index]),'he').text)+1):
-                if chapter in mismatched_chapters or not making_link_table:
+                if True:#chapter in mismatched_chapters or not making_link_table:
                     last_not_matched = []
 
                     last_matched = Ref('{}, {} 1'.format(midrash_names[sefer_index],chapter))
@@ -287,64 +233,65 @@ def remove_extra_spaces(string):
     while u"  " in string:
         string=string.replace(u"  ",u" ")
     return string
-def not_blank(s):
-    while u" " in s:
-        s = s.replace(u" ",u"")
-    return (len(s.replace(u"\n",u"").replace(u"\r",u"").replace(u"\t",u""))!=0);
-def generate_paragraph_report():
-    for file in os.listdir("files"):
-        if 'עץ' in file and '1' not in file:# and '1' not in file:
-            with open("files/"+file) as myFile:
-                lines = list(map(lambda x: x.decode("utf-8",'replace'), myFile.readlines()))
-            chapters=[]
-            chapter_box=[]
-            chapters = re.split(u'פר<',' '.join(lines).replace(u'\n',u''))[1:]
-            chapter_paragrah_counts=[]
-            for chapter in chapters:
-                chapter_paragrah_counts.append(chapter.count(u'>צי<'))
-            """
-            for lindex, line in enumerate(lines):
-                if u'פר<' in line and len(chapter_box)>0:
-                    chapters.append(chapter_box)
-                    chapter_box=[]
-                if not_blank(fix_line(line).replace(u':',u'')):
-                    chapter_box.append(line)
-            chapters.append(chapter_box)
-            
-            chapter_paragrah_counts=[]
-            for chapter in chapters:
-                chapter_paragrah_counts.append(0)
-                print "appended ", chapters.index(chapter)+1
-                for paragraph in chapter:
-                    chapter_paragrah_counts[-1]+=paragraph.count(u'ח<')
-            """
-            f = open('etz_yoseph_chapter_paragraph_report_{}.csv'.format(en_sefer_names[int(re.search(ur'[\d]',file).group())-1]),'w')
-            f2 = open('mismatched_paragraph_report_{}.txt'.format(en_sefer_names[int(re.search(ur'[\d]',file).group())-1]),'w')
-            f.write('Chapter, Etz Yoseph Paragraphs, Midrash Rabba Paragraphs\n')
-            for chapter in range(1,len(TextChunk(Ref(midrash_names[int(re.search(ur'[\d]',file).group())-1]),'he').text)+1):
-                midrash_length = len(TextChunk(Ref('{}, {}'.format(midrash_names[int(re.search(ur'[\d]',file).group())-1],chapter)),"he").text)
-                print chapter, en_sefer_names[int(re.search(ur'[\d]',file).group())-1]
-                if len(chapter_paragrah_counts)>=chapter:
-                    etz_length = chapter_paragrah_counts[chapter-1]
-                else:
-                    etz_length='NA'
-                #etz_length = len(TextChunk(Ref('Etz Yosef on Midrash Rabbah, {}:{}'.format(sefer, chapter)),"he").text)
-                if etz_length!=midrash_length:
-                    f2.write("{} ".format(chapter))
-                    f.write("*{}, {}, {}\n".format(chapter, etz_length, midrash_length))
-                    
-                else:
-                    f.write("{}, {}, {}\n".format(chapter, etz_length, midrash_length))
-                    
-            f.close()
-            f2.close()
-            
-making_link_table=True
-#generate_paragraph_report()
-#post_ey_term()
-#post_ey_index()
-#post_ey_text()
+def get_parsha_paragraph_index(sef_num):
+    with open('csv_files/Etz Yosef - {}.csv'.format(sef_num), 'rb') as f:
+        gen_table=get_ignore_table_genesis()
+        last_bracket=0
+        after_bracket=False
+        reader = csv.reader(f)
+        para_count=0
+        len_list=[]
+        for row in reader:
+            if len(row[0])>0 and para_count!=0:
+                len_list.append(para_count)
+                para_count=0
+            if len(row[1])>0:
+                if sef_num==1:
 
+                    for match in re.findall(ur'\(.*\)', row[1]):
+                        #print "TEH LIST", gen_table[len(len_list)]
+                        if getGematria(match) in gen_table[len(len_list)] and '[' not in row[1]:
+                            print "we skipped ", match
+                        elif not after_bracket or getGematria(match)==last_bracket+1:
+                            print "we didn't skip", row[1]
+                            para_count+=1
+                            after_bracket=False
+                    for match in re.findall(ur'\[.*\]', row[1]):
+                        last_bracket=getGematria(match)
+                        after_bracket=True
+                else:
+                    print "we didn't skip", row[1]
+                    para_count+=1
+    len_list.append(para_count)
+    return len_list
+def get_ignore_table_genesis():
+    with open('csv_files/Etz Yosef - 1.csv', 'rb') as f:
+        reader = csv.reader(f)
+        ignores=[]
+        ignore_list=[]
+        for index, row in enumerate(reader):
+            if len(row[0])>0 and index!=0:
+                ignore_list.append(ignores)
+                ignores=[]
+            for match in re.findall(ur'\[.*?\]',row[1]):
+                ignores.append(getGematria(match))
+    ignore_list.append(ignores)
+    for pindex, parsha in enumerate(ignore_list):
+        print pindex, parsha
+    return ignore_list
+def generate_paragraph_report():
+    for sefer_index, sefer in enumerate(en_sefer_names):
+        #f2 = open('mismatched_paragraphs_report_{}.txt'.format(sefer),'w')
+        #tc = TextChunk(Ref('Etz Yosef on Midrash Rabbah, '+sefer), 'he').text
+        par_list = get_parsha_paragraph_index(sefer_index+1)
+        for x in range(1, len(par_list)+1):      
+            if par_list[x-1]!=len(TextChunk(Ref('{}, {}'.format(midrash_names[sefer_index], x)), 'he').text):
+                print sefer, x, par_list[x-1], len(TextChunk(Ref('{}, {}'.format(midrash_names[sefer_index], x)), 'he').text)
+                #f2.write("{} ".format(x))
+        
+        #f2.close()
+#parse_mlt_csvs()
+#get_ignore_table_genesis()
+making_link_table=True
 make_links()
-#re.split(ur'<פרשה \S+>'
-#exceptions: 1 4?, 1 74, 4 13
+#generate_paragraph_report()
