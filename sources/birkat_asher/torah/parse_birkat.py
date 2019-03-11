@@ -10,6 +10,7 @@ from data_utilities.ParseUtil import Description, ParsedDocument, directed_run_o
 import django
 django.setup()
 from sefaria.model import *
+from sources.functions import post_index, post_text, add_category, add_term
 
 
 """
@@ -86,6 +87,16 @@ class DocBuilder(object):
             print("Out of order in {}".format(self.book))
             self.check_ascending_on_book(verbose=True)
 
+        descriptors = [
+            Description("Chapter", self.split_to_chapters),
+            Description("Verse", self.split_to_verses),
+            Description("Comment", lambda x: x)
+        ]
+        self.title = "Birkat Asher on {}".format(self.book)
+        self.he_title = "ברכת אשר על {}".format(Ref(self.book).he_normal())
+        self.parsed_doc = ParsedDocument(self.title, self.he_title, descriptors)
+        self.parsed_doc.parse_document(self.rows)
+
         print("")
 
     def check_for_bad_marks(self):
@@ -133,6 +144,38 @@ class DocBuilder(object):
 
         return chaps_ascending and verses_ascending
 
+    def collect_index(self):
+        ja_node = self.parsed_doc.get_ja_node()
+        ja_node.validate()
+        return {
+            "title": self.title,
+            "dependence": "Commentary",
+            "base_text_titles": [self.book],
+            "collective_title": "Birkat Asher",
+            "base_text_mapping": "many_to_one",
+            "categories": [
+                "Tanakh",
+                "Commentary",
+                "Birkat Asher",
+                "Torah"
+            ],
+            "schema": ja_node.serialize()
+        }
 
-[DocBuilder(b) for b in library.get_indexes_in_category("Torah")]
+    def collect_version(self):
+        return {
+            "versionTitle": "Version Title: Birkat Asher, Asher Vasertil, Jerusalem 2013",
+            "versionSource": "http://aleph.nli.org.il/F/?func=direct&doc_number=003424204&local_base=NNL01",
+            "language": "he",
+            "text": self.parsed_doc.filter_ja(lambda x: x[-1])
+        }
 
+
+birkat_docs = [DocBuilder(b) for b in library.get_indexes_in_category("Torah")]
+server = 'http://localhost:8000'
+add_term("Birkat Asher", "ברכת אשר", server=server)
+add_category("Torah", ["Tanakh", "Commentary", "Birkat Asher", "Torah"], server=server)
+
+for thing in birkat_docs:
+    post_index(thing.collect_index(), server=server)
+    post_text(thing.title, thing.collect_version(), index_count='on', server=server)
