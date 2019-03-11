@@ -152,7 +152,7 @@ class ParsedDocument(object):
         self.he_name = he_name
         self._descriptors = descriptors
         self.structure_classes = self._generate_structure_classes()
-        self._RootObj = type(self.name, (DocNode,), {
+        self._RootObj = type(str(self.name), (DocNode,), {
             'build_structure': staticmethod(lambda x: x),
             'Child': self.structure_classes[0],
             'Doc': self
@@ -166,13 +166,13 @@ class ParsedDocument(object):
         for d in reversed(self._descriptors):  # Create children before parents
 
             if not structure_classes:  # this is the leaf node
-                current_child = type(d.name, (DocLeaf,), {
+                current_child = type(str(d.name), (DocLeaf,), {
                     'build_structure': staticmethod(d.build_structure),
                     'Doc': self
                 })
 
             else:
-                current_child = type(d.name, (DocNode,), {
+                current_child = type(str(d.name), (DocNode,), {
                     'build_structure': staticmethod(d.build_structure),
                     'Child': structure_classes[-1],
                     'Doc': self
