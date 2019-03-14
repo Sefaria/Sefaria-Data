@@ -625,6 +625,7 @@ def rambam_name_table():
     name_dict[u'גנבה'] = name_dict[u'גניבה']
     # name_dict[u'שמיטין'] = name_dict[u'שמיטה ויובל']
     name_dict[u'שמיטין ויובל'] = name_dict[u'שמיטה ויובל']
+    name_dict[u'שמיטה ויובלות'] = name_dict[u'שמיטה ויובל']
     name_dict[u'שמיטין ויובלות'] = name_dict[u'שמיטה ויובל']
     name_dict[u'שמטה ויובל'] = name_dict[u'שמיטה ויובל']
     name_dict[u'יובל'] = name_dict[u'שמיטה ויובל']
@@ -1038,5 +1039,5 @@ if __name__ == "__main__":
     # reverse_collapse('csvQA/megillah_little_letters.csv', 'csvQA/collapsed_megillah')
     # run1(u'collapsed/lost_lines', u'collapsed/lost_lines') #avodah_zarah
     # run1('/home/shanee/www/sefaria/Sefaria-Data/sources/Semak/citations', EM = False)
-    run2("txtFiles/chullin", "txtFiles/chullin")
+    run15("txtFiles/arakhin", "txtFiles/arakhin")
 
