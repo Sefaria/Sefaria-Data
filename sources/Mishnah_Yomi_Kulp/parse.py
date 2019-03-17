@@ -16,7 +16,7 @@ import textract
 import traceback
 import sys
 
-SERVER = "http://ste.sandbox.sefaria.org"
+SERVER = "https://www.sefaria.org"
 section_referenced_not_in_mishnah = []
 mishnah_wout_numbers_explanation_has = []
 mishnah_wout_numbers_explanation_wout = []
@@ -222,7 +222,7 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
     #     print "Problem in file {} in first line {}".format(file, first_line)
     #     return (commentary_text, mishnah_text)
     section_num = 0
-
+    has_intro = "Introduction" in lines
     for line_n, line in enumerate(lines):
         line = line.replace("\xc3\xa2\xc2\x80\xc2\x99", "'")
         line = line.decode('utf-8')
@@ -246,7 +246,9 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
                     #print complaint
                 except ValueError:
                     pass
-            if currently_parsing == "INTRODUCTION":
+            if currently_parsing == "INTRODUCTION" and has_intro:
+                currently_parsing = "MISHNAH"
+            else:
                 currently_parsing = "MISHNAH"
         elif "Introduction" == line:
             commentary_text.append(u"<b>"+line+"</b>")
@@ -265,8 +267,11 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
             elif currently_parsing == "QUESTIONS":
                 questions_sections_text.append(line)
             elif currently_parsing == "MISHNAH":
-                mishnah_text.append(line)
-                orig_mishnah.append(line)
+                if len(line.split()) == 1:
+                    print "FOUND LINE OF ONLY ONE: {}".format(line)
+                else:
+                    mishnah_text.append(line)
+                    orig_mishnah.append(line)
 
     if explanation_sections_text == []:
         mishnah_text = restructure_mishnah_text(mishnah_text)
@@ -279,14 +284,10 @@ def parse(lines, sefer, chapter, mishnah, HOW_MANY_REFER_TO_SECTIONS):
         explanation_sections_text[0] = u"<b>{}</b> {}".format(mishnah_text[0], explanation_sections_text[0])
     elif len(mishnah_text) > len(explanation_sections_text):
         mishnah_sections_more_than_explanation_sections.append(file)
-        if len(orig_mishnah) == 0:
-            print file
-            print "BLANK FILE"
-        else:
-            orig_mishnah = restructure_mishnah_text(orig_mishnah)
-            orig_mishnah = "<b>" + u" ".join(orig_mishnah) + "</b><br/>"
-            orig_explanation = u"<br/>".join(orig_explanation)
-            return ([orig_mishnah+orig_explanation], [orig_mishnah.replace("<b>", "").replace("<br/>", "").replace("</b>", "")])
+        orig_mishnah = restructure_mishnah_text(orig_mishnah)
+        orig_mishnah = "<b>" + u" ".join(orig_mishnah) + "</b><br/>"
+        orig_explanation = u"<br/>".join(orig_explanation)
+        return ([orig_mishnah+orig_explanation], [orig_mishnah.replace("<b>", "").replace("<br/>", "").replace("</b>", "")])
 
 
 
@@ -317,8 +318,9 @@ def restructure_mishnah_text(old_mishnah_text):
 
     for line in old_mishnah_text:
         digit = re.search("^(\d+)\)", line)
-        line = re.sub("^\([a-zA-Z]{1,3}\)", "", line).strip()
+        line = re.sub("^\([a-zA-Z\d]{1,3}\)", "", line).strip()
         line = re.sub("^[a-zA-Z]{1,3}\)", "", line).strip()
+        line = re.sub("\s+\(?[a-zA-Z\d]{1,3}\)", "", line).strip()
         if digit:
             pos = int(digit.group(1)) - 1
             if len(mishnah_text) > pos:
@@ -353,7 +355,7 @@ def create_index(text, sefer, post=False):
     default.add_structure(["Chapter", "Mishnah", "Comment"])
     root.append(default)
     root.validate()
-    add_category(seder, ["Modern Works", "Mishnah Yomit", seder], server=SERVER)
+    #add_category(seder, ["Modern Works", "Mishnah Yomit", seder], server=SERVER)
     index = {
         "title": en_title,
         "schema": root.serialize(),
@@ -363,8 +365,8 @@ def create_index(text, sefer, post=False):
         "base_text_mapping": "many_to_one",
         "collective_title": "Mishnah Yomit",
     }
-    if post:
-        post_index(index, server=SERVER)
+    #if post:
+    #    post_index(index, server=SERVER)
 
 
 def check_all_mishnayot_present_and_post(text, sefer, file_path, post=False):
@@ -404,8 +406,8 @@ def check_all_mishnayot_present_and_post(text, sefer, file_path, post=False):
     translation = dict(text)
     for ch in text.keys():
         if ch == "Introduction":
-            if post:
-                post_(text[ch], "{}, Introduction".format(en_title))
+            #if post:
+            #    post_(text[ch], "{}, Introduction".format(en_title))
             text.pop(ch)
             translation.pop(ch)
             continue
@@ -415,9 +417,6 @@ def check_all_mishnayot_present_and_post(text, sefer, file_path, post=False):
             actual_mishnayot = set(actual_mishnayot)
             our_mishnayot = set(our_mishnayot)
             missing = actual_mishnayot - our_mishnayot
-            print "Sefer: {}, Chapter: {}".format(sefer, ch)
-            print "Missing mishnayot: {}".format(list(missing))
-            print
         text[ch] = zip(*convertDictToArray(text[ch], empty=("", "")))
         translation[ch] = list(text[ch][1])
         text[ch] = list(text[ch][0])
@@ -426,8 +425,8 @@ def check_all_mishnayot_present_and_post(text, sefer, file_path, post=False):
             text[ch][i] = []
     text = convertDictToArray(text)
     translation = convertDictToArray(translation)
-    if post:
-        post_(text, en_title)
+    #if post:
+    #    post_(text, en_title)
     for ch, chapter in enumerate(translation):
         for m, mishnah in enumerate(chapter):
             translation[ch][m] = " ".join(mishnah)
@@ -550,11 +549,9 @@ if __name__ == "__main__":
  u'Mishnah Yomit on Mishnah Gittin',
  u'Mishnah Yomit on Mishnah Middot',
  u'Mishnah Yomit on Mishnah Pesachim']
-    start_at = ""
+    only_except = ["Shabbat", "Makshirin", "Shevuoth"]
     for sefer in parsed_text.keys():
-        if start_at in sefer:
-            dont_start = False
-        if dont_start:
+        if sefer not in only_except:
             continue
         if parsed_text[sefer]:
             try:

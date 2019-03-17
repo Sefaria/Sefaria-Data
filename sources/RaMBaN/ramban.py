@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 __author__ = 'stevenkaplan'
+import django
+django.setup()
 import urllib
 import urllib2
 from urllib2 import URLError, HTTPError
@@ -9,16 +11,12 @@ import os
 import sys
 import re
 import glob
-p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, p)
+
 from data_utilities.dibur_hamatchil_matcher import *
 
-os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 from local_settings import *
-from functions import *
-
-
-sys.path.insert(0, SEFARIA_PROJECT_PATH)
+from sources.functions import *
+from sources.Match import match
 from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
 
@@ -37,10 +35,10 @@ def create_index(tractate):
 
     index = {
         "title": "Chiddushei Ramban on "+tractate.replace("_"," "),
-        "categories": ["Commentary2", "Talmud", "Ramban"],
+        "categories": ["Talmud", "Bavli", "Commentary", "Ramban"],
         "schema": root.serialize()
     }
-    post_index(index)
+    post_index(index, server=SEFARIA_SERVER)
     return tractate
 '''
 perek = 5@.*?2@
@@ -142,7 +140,7 @@ def parse(tractate, errors):
      daf = 3
      prev_daf = 3
      dh_dict = {}
-     for line in open(tractate+"_complete.txt"):
+     for line in open("new/"+tractate+".txt"):
          orig_line = line
          line = line.replace("\n", "").replace('\x80\xa8\xe2\x80\xa8', '')
          if len(line.replace(' ',''))==0:
@@ -157,7 +155,11 @@ def parse(tractate, errors):
 
          line = line.replace('@2', '2@').replace('@1', '1@').replace('@4', '4@').replace('@7', '7@').replace('@5', '5@').replace('@3', '3@')
          comment_start = line.rfind("1@") if line.rfind("1@") >= 0 else line.rfind("4@")
-         comment = line[comment_start+2:].replace("3@","<br>")
+         if comment_start < 0:
+             comment_start = 0
+         else:
+             comment_start += 2
+         comment = line[comment_start:].replace("3@","<br>")
          comment = comment.replace(" .", ".")
 
 
@@ -177,19 +179,15 @@ def parse(tractate, errors):
          if type(daf) is int and daf not in text:
              if daf < prev_daf:
                  print 'daf error'
-                 pdb.set_trace()
              text[daf] = []
              dh_dict[daf] = []
              prev_daf = daf
          text[daf].append(before_dh + "<b>" + dh+"</b> "+comment)
          dh_dict[daf].append(dh)
 
-         try:
-             comment.decode('utf-8')
-             dh.decode('utf-8')
-             before_dh.decode('utf-8')
-         except:
-            pdb.set_trace()
+         comment.decode('utf-8')
+         dh.decode('utf-8')
+         before_dh.decode('utf-8')
      return text, dh_dict
 
 
@@ -201,20 +199,32 @@ def post(text, dh_dict, tractate):
          "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001294828",
          "language": "he"
      }
-     post_text("Chiddushei Ramban on "+tractate, send_text)
+     post_text("Chiddushei Ramban on "+tractate, send_text, server=SEFARIA_SERVER)
      links_to_post = []
-
      for daf in sorted(dh_dict.keys()):
-         dh_list = dh_dict[daf]
-         daf_text = Ref(tractate+" "+AddressTalmud.toStr("en", daf)).text('he').text
-         results = match.match_list(dh_list, daf_text, tractate+" "+AddressTalmud.toStr("en", daf))
-         for key, value in results.iteritems():
-             value = value.replace("0:", "")
-             talmud_end = tractate + "." + AddressTalmud.toStr("en", daf) + "." + value
-             talmud_end = tractate + "." + AddressTalmud.toStr("en", daf) + "." + value
-             ramban_end = "Chiddushei_Ramban_on_" + tractate + "." + AddressTalmud.toStr("en", daf) + "." + str(key)
-             links_to_post.append({'refs': [talmud_end, ramban_end], 'type': 'commentary', 'auto': 'True', 'generated_by': "ramban"+tractate})
-     post_link(links_to_post)
+         dh_list = [el.decode('utf-8') for el in dh_dict[daf] if el]
+         daf_text = Ref(tractate + " " + AddressTalmud.toStr("en", daf)).text('he')
+         results = match_ref(daf_text, dh_list, lambda x: x.split())
+         for match_n, match in enumerate(results["matches"]):
+             if match:
+                 talmud_end = tractate + " " + AddressTalmud.toStr("en", daf) + ":" + str(match_n+1)
+                 links_to_post.append({'refs': [talmud_end, match.normal()], 'type': 'commentary', 'auto': 'True',
+                                       'generated_by': "ramban" + tractate})
+     print len(links_to_post)
+     post_link(links_to_post, server=SEFARIA_SERVER)
+     # for daf in sorted(dh_dict.keys()):
+     #     dh_list = [el.decode('utf-8') for el in dh_dict[daf] if el]
+     #     daf_text = TextChunk(Ref(tractate+" "+AddressTalmud.toStr("en", daf)), lang='he')
+     #     results = match_ref(daf_text, dh_list, lambda x: x)
+     #     if not results:
+     #         continue
+     #     for which_n, result in enumerate(results["matches"]):
+     #         if result:
+     #             comm_ref = result.normal()
+     #             base_ref = tractate+" "+AddressTalmud.toStr("en", daf)+":"+str(which_n+1)
+     #             links_to_post.append({'refs': [comm_ref, base_ref], 'type': 'commentary', 'auto': 'True', 'generated_by': "ramban"+tractate})
+     # print links_to_post
+     # post_link(links_to_post)
 
 
 
@@ -224,16 +234,15 @@ if __name__ == "__main__":
     global dh_dict
     global errors
     errors = open("errors", 'w')
-    these = ["Shabbat", "Kiddushin"]
-    for file in glob.glob(u"*.txt"):
+    these = ["Megillah", "Niddah", "Shevuot", "Chullin"]
+    for file in glob.glob(u"new/*.txt"):
         errors.write(file+"\n")
-        if file.find("_complete") >= 0:
-            tractate = file.replace("_complete.txt", "").replace("_", " ").title()
-            print tractate
-            if tractate not in these:
-                continue
-            create_index(tractate)
-            print 'about to parse'
-            text, dh_dict = parse(tractate, errors)
-            print 'about to post'
-            post(text, dh_dict, tractate)
+        tractate = file.replace(".txt", "").replace("new/", "").title()
+        print tractate
+        if tractate not in these:
+            continue
+        create_index(tractate)
+        print 'about to parse'
+        text, dh_dict = parse(tractate, errors)
+        print 'about to post'
+        post(text, dh_dict, tractate)

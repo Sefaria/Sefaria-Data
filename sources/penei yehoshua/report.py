@@ -258,31 +258,212 @@ class MaharshaLite:
         post_index(index, server=self.server)
 
 
+def dh_extract_method(str):
+    if not str:
+        return str
+    orig_str = str
+    first_word = str.split()[0]
+    str = " ".join(str.split()[1:]) #remove the first word since it just indicates category
+    chulay = u"כו'"
+    dibbur_hamatchil = ['בד"ה', 'ד"ה', 'בא"ד', """ד'"ה"""]
+    for el in dibbur_hamatchil:
+        str = str.replace(el.decode('utf-8'), u"")
+    str = str.replace(u"<b>", u"").replace(u"</b>", u"")
+    str = str.split(chulay)[0]
+    str = str.replace('""', '"')
+    if len(str.split()) > 7:
+        return u" ".join(str.split()[0:7])
+    return str
+
+
+def get_comments_and_map(comments, keyword):
+    flags = {"Tosafot": [u"""תוספות""", u"""בתוספות""", u"""תוספת""", u"""תוס'""", u"""בתוס'"""], "Rashi":[u"""פירש"י""", u"""רש"י"""]}
+    relevant_comments = []
+    map_comments_to_relevant_comments = {} #index comment is found in "comments"
+                                          # to index comment is found in "relevant_comments"
+    prev_flag = False
+    same_text_flags = [u"""שם""", u"""בד"ה""", u"""שם בא"ד""", u"""בא"ד"""]
+    for comm_n, comment in enumerate(comments):
+        comment = comment.replace(u'""', u'"')
+        first_word = comment.split()[0].replace("<b>", "").replace("</b>", "")
+        first_two_words = u" ".join(comment.split()[0:2]).replace("<b>", "").replace("</b>", "")
+        if prev_flag and (match_is_second_para(comment) or first_word in same_text_flags or
+                          first_two_words in same_text_flags):
+            relevant_comments.append(comment)
+            map_comments_to_relevant_comments[len(relevant_comments) - 1] = comm_n
+            prev_flag = True
+        else:
+            found = False
+            for flag in flags[keyword]:
+                if (first_word in flag or flag in first_word):
+                    relevant_comments.append(comment)
+                    map_comments_to_relevant_comments[len(relevant_comments) - 1] = comm_n
+                    prev_flag = True
+                    found = True
+                    break
+            if not found:
+                prev_flag = False
+    return relevant_comments, map_comments_to_relevant_comments
+
+second_para_terms = ["ונראה", "ולפי", "ובספר", """לפ"ז""", "אבל", "שוב", "ואפשר",
+    '\xd7\x95\xd7\x9e\xd7\x99\xd7\x94\xd7\x95', '\xd7\x9e\xd7\x99\xd7\x94\xd7\x95', '\xd7\x90\xd7\x9e\xd7\xa0\xd7\x9d', '\xd7\x95\xd7\x99\xd7\xa9', '\xd7\x90\xd7\x9a', '\xd7\x90\xd7\x9c\xd7\x90', '\xd7\x95\xd7\x9c\xd7\x9b\xd7\x90\xd7\x95\xd7\xa8\xd7\x94', '\xd7\x95\xd7\xa0\xd7\x9c\xd7\xa2"\xd7\x93', '\xd7\x95\xd7\xa2\xd7\x95\xd7\x93', '\xd7\x95\xd7\x9c\xd7\xa4"\xd7\x96', '\xd7\x9b\xd7\x9c', '\xd7\x92\xd7\x9d', '\xd7\x95\xd7\x9e\xd7\x94', '\xd7\x95\xd7\x9e"\xd7\xa9', '\xd7\x95\xd7\x94\xd7\xa0\xd7\x94', '\xd7\x95\xd7\x90\xd7\x9b\xd7\xaa\xd7\x99', '\xd7\x95\xd7\x91\xd7\x96\xd7\x94', '\xd7\xaa\xd7\x95', '\xd7\xa2\xd7\x95\xd7\x93']
+second_para_terms = [term.decode('utf-8') for term in second_para_terms]
+
+def match_is_second_para(comment):
+    comment_first_word = comment.replace("<b>", "").replace("</b>", "").split()[0]
+    for term in second_para_terms:
+        if term == comment_first_word or term == u"""בא"ד""" or term == u"""שם בא"ד""":
+            return True
+    return False
+
+def create_ranges(comments, matches):
+    # first_segment = Ref("{} {}".format(title, AddressTalmud.toStr("en", daf))).all_segment_refs()[0]
+    # if matches[0] is None:
+    #     matches[0] = first_segment
+    #what I need to do is to go through the comments and when I find one that is a second paragraph and its previous
+    #comment ISN'T a second paragraph
+    for match_n, match in enumerate(matches):
+      if not match and matches[match_n-1]:
+        next_one = match_n
+        #when a match is a second paragraph, you want to include it but when it isn't, you want to leave it as None
+        while next_one < len(matches) and not matches[next_one] and match_is_second_para(comments[next_one]):
+            next_one += 1
+        #if not matches[next_one] and next_one == len(matches) - 1:
+        #    matches[next_one] = Ref("{} {}".format(title, AddressTalmud.toStr("en", daf))).all_segment_refs()[-1]
+        if next_one != match_n:
+            for i in range(match_n-1, next_one):
+                matches[i] = matches[match_n-1]
+    return matches
+
+def create_ranged_link(links, range_counter):
+    comm_link = links.pop()
+    base_link = links.pop()
+    penei_ref = comm_link["refs"][1]
+    assert penei_ref.startswith("Penei")
+    segment = int(penei_ref.split(":")[-1])
+    new_penei_ref = penei_ref + "-" + str(range_counter + segment)
+    base_link["refs"][1] = new_penei_ref
+    comm_link["refs"][1] = new_penei_ref
+    links.append(base_link)
+    links.append(comm_link)
 
 if __name__ == "__main__":
-    files = [f for f in os.listdir(".") if f.endswith(".txt")]
-    for file in files:
-        title = file[0:-4]
-        try: #the try except clause allows us to test that book exists and isn't one of the commentaries that we don't want in director
-            book = library.get_index(title)
-            print book.title
-            parser = MaharshaLite(book)
-            with open(file) as f:
-                parser.create_index()
-                # parser.parse(list(f))
-                # parser.create_links()
-                # #post_link(parser.links, server=parser.server)
-                # for daf, text in parser.comm_dict.items():
-                #     parser.comm_dict.pop(daf)
-                #     parser.comm_dict[AddressTalmud(daf).toNumber("en", daf)] = text
-                # text = convertDictToArray(parser.comm_dict)
-                # send_text = {
-                #     "text": text,
-                #     "language": "he",
-                #     "versionTitle": "P'nei Yehoshua",
-                #     "versionSource": "www.sefaria.org"
-                # }
-                # #post_text("Penei Yehoshua on {}".format(title), send_text, server=parser.server)
-        except system.exceptions.BookNameError as e:
-            print e
+    files = os.listdir("batch ii")
+    for file_n, file in enumerate(files):
+        print file
+        links = []
+        comments_per_daf = {}
+        index_title = file.split(" - ")[0]
+        prev_daf = "2a"
+        curr_text = []
+        with open("batch ii/{}".format(file)) as open_file:
+            for line in open_file:
+                if not line.startswith(index_title):
+                    continue
+
+                ref, comment = line.split(",", 1)
+                daf = ref.split()[-1].split(":")[0]
+                if daf == prev_daf:
+                    curr_text.append(comment.decode('utf-8'))
+                else:
+                    comments_per_daf[prev_daf] = curr_text
+                    curr_text = [comment.decode('utf-8')]
+                    prev_daf = daf
+            comments_per_daf[daf] = curr_text
+            #strip comments out that start with Rashi and create mapping
+            comm_maps = {"Tosafot": {}, "Rashi": {}}
+            comm_comments = {"Tosafot": {}, "Rashi": {}}
+            for daf, comments in comments_per_daf.items():
+                comments = [c[1:-3] for c in comments if c != "\r\n"]
+                comm_comments["Rashi"], comm_maps["Rashi"] = get_comments_and_map(comments, "Rashi")
+                comm_comments["Tosafot"], comm_maps["Tosafot"] = get_comments_and_map(comments, "Tosafot")
+                ref = index_title.split(" on ")[-1] + " " + daf
+                tosafot_ref = "Tosafot on {}".format(ref)
+                rashi_ref = "Rashi on {}".format(ref)
+                base_text = TextChunk(Ref(ref), lang='he')
+                tosafot_base_text = TextChunk(Ref(tosafot_ref), lang='he')
+                rashi_base_text = TextChunk(Ref(rashi_ref), lang='he')
+                comm_matches = {"Tosafot": [], "Rashi": []}
+                if comm_comments["Tosafot"]:
+                    comm_matches["Tosafot"] = match_ref(tosafot_base_text, comm_comments["Tosafot"], lambda x: x.split(), dh_extract_method=dh_extract_method)
+                if comm_comments["Rashi"]:
+                    comm_matches["Rashi"] = match_ref(rashi_base_text, comm_comments["Rashi"], lambda x: x.split(), dh_extract_method=dh_extract_method)
+
+                for comm_type, matches in comm_matches.items():
+                    comm_map = comm_maps[comm_type]
+                    if not matches:
+                        continue
+                    matches = create_ranges(comm_comments[comm_type], matches["matches"])
+                    prev_comm = None
+                    range_counter = 0
+                    for match_n, comm_ref in enumerate(matches):
+                        if comm_ref and comm_ref == prev_comm:
+                            range_counter += 1
+                            prev_comm = comm_ref
+                        elif comm_ref and range_counter > 0:
+                            create_ranged_link(links, range_counter)
+                            range_counter = 0
+                            prev_comm = None
+                        elif comm_ref and range_counter is 0:
+                            penei_ref = "{} {}:{}".format(index_title, daf, comm_map[match_n]+1)
+                            comm_link = {"refs": [comm_ref.normal(), penei_ref], "type": "Commentary", "auto": True,
+                                    "generated_by": "penei_yehoshua_batch_ii"}
+                            base_ref = ":".join(comm_ref.normal().split(" on ")[-1].split(":")[0:-1]).split(":")[0]
+                            base_link = {"refs": [base_ref, penei_ref], "type": "Commentary", "auto": True,
+                                    "generated_by": "penei_yehoshua_batch_ii"}
+                            links.append(base_link)
+                            links.append(comm_link)
+                            prev_comm = comm_ref
+
+                    if prev_comm and range_counter > 0:
+                        create_ranged_link(links, range_counter)
+                        range_counter = 0
+                        prev_comm = None
+
+
+                matches = match_ref(base_text, comments, lambda x: x.split(), dh_extract_method=dh_extract_method)
+                matches = create_ranges(comments_per_daf[daf], matches["matches"])
+                for match_n, gemara_ref in enumerate(matches):
+                    if gemara_ref:
+                        penei_ref = "{} {}:{}".format(index_title, daf, match_n+1)
+                        link = {"refs": [gemara_ref.normal(), penei_ref], "type": "Commentary", "auto": True, "generated_by": "penei_yehoshua_batch_ii"}
+                        links.append(link)
+            post_link(links, server="http://shmuel.sandbox.sefaria.org")
+
+
+
+
+
+
+
+
+    #1. make sure local database is up-to-date with prod and then maybe get Penei Yehoshua on {} CSVs
+    #2. go over each CSV and gather all comments on each daf, and use base text as the daf itself from Gemara
+    #3.
+
+    # files = [f for f in os.listdir(".") if f.endswith(".txt")]
+    # for file in files:
+    #     title = file[0:-4]
+    #     try: #the try except clause allows us to test that book exists and isn't one of the commentaries that we don't want in director
+    #         book = library.get_index(title)
+    #         print book.title
+    #         parser = MaharshaLite(book)
+    #         with open(file) as f:
+    #             parser.create_index()
+    #             # parser.parse(list(f))
+    #             # parser.create_links()
+    #             # #post_link(parser.links, server=parser.server)
+    #             # for daf, text in parser.comm_dict.items():
+    #             #     parser.comm_dict.pop(daf)
+    #             #     parser.comm_dict[AddressTalmud(daf).toNumber("en", daf)] = text
+    #             # text = convertDictToArray(parser.comm_dict)
+    #             # send_text = {
+    #             #     "text": text,
+    #             #     "language": "he",
+    #             #     "versionTitle": "P'nei Yehoshua",
+    #             #     "versionSource": "www.sefaria.org"
+    #             # }
+    #             # #post_text("Penei Yehoshua on {}".format(title), send_text, server=parser.server)
+    #     except system.exceptions.BookNameError as e:
+    #         print e
 

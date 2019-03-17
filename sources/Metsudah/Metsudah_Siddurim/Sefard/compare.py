@@ -289,7 +289,7 @@ if __name__ == "__main__":
     ftnotes.insert_ftnotes_into_text()
     parser.create_schema()
     parser = shir_hashirim(parser)
-    server = "http://ste.sandbox.sefaria.org"
+    server = "http://shmuel.sandbox.sefaria.org"
     post_index(parser.index, server=server)
     parser.post_text(server)
 
