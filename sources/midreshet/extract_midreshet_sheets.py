@@ -6,6 +6,7 @@ import codecs
 import bleach
 import pyodbc
 from data_utilities.util import Singleton
+from sources.functions import post_sheet
 
 
 class MidreshetCursor(object):
@@ -112,8 +113,35 @@ and look that up in Dictionary
 
 
 For now set all resources as outsideText. Use PrependRefWithHe for the exactLocation.
-Source with an exactLocation can get sourePrefix = u'מקור', otherwise sourcePrefix = u'דיון'
+Source with an exactLocation can get sourcePrefix = u'מקור', otherwise sourcePrefix = u'דיון'
 """
+
+
+def create_sheet_json(page_id):
+    raw_sheet = get_sheet_by_id(page_id)
+    sheet = {
+        'title': raw_sheet['name'],
+        'status': 'public',
+        'tags': ['foo', 'bar', 'spam', 'eggs'],
+        'options': {
+            'language': 'hebrew',
+            'numbered': False,
+        },
+        'sources': []
+    }
+
+    for resource in raw_sheet['resources']:
+        source = {
+            'outsideText': bleach.clean(resource['body'], strip=True, tags=[], attributes={}),
+            'options': {}
+        }
+        if resource['exactLocation']:
+            source['options']['sourcePrefix'] = u'מקור'
+            source['options']['PrependRefWithHe'] = resource['exactLocation']
+        else:
+            source['options']['sourcePrefix'] = u'דיון'
+        sheet['sources'].append(source)
+    return sheet
 
 # my_cursor = MidreshetCursor()
 # my_cursor.execute('SELECT DISTINCT typeTerms FROM ResourcesRelativeTerms')
@@ -135,6 +163,13 @@ Source with an exactLocation can get sourePrefix = u'מקור', otherwise source
 #         print('\n')
 
 
-sheet_indices = [7, 14, 17, 49, 7387]
-for s in sheet_indices:
-    export_sheet_to_file(s)
+# sheet_indices = [7, 14, 17, 49, 7387]
+# for s in sheet_indices:
+#     export_sheet_to_file(s)
+
+foobar = create_sheet_json(7)
+# my_sheet = get_sheet_by_id(7)
+# my_sheet['date'] = my_sheet['date'].ctime()
+# with open('foobar.json', 'w') as fp:
+#     json.dump(my_sheet, fp)
+post_sheet(foobar, server='http://midreshet.sandbox.sefaria.org')
