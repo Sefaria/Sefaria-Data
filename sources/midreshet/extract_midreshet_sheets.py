@@ -5,6 +5,7 @@ import json
 import codecs
 import bleach
 import pyodbc
+import requests
 from data_utilities.util import Singleton
 from sources.functions import post_sheet
 
@@ -143,33 +144,44 @@ def create_sheet_json(page_id):
         sheet['sources'].append(source)
     return sheet
 
-# my_cursor = MidreshetCursor()
-# my_cursor.execute('SELECT DISTINCT typeTerms FROM ResourcesRelativeTerms')
-# term_types = [r.typeTerms for r in my_cursor.fetchall()]
-# for term_type in term_types:
-#     print(term_type)
-#     my_cursor.execute('SELECT TOP 3 * FROM ResourcesRelativeTerms WHERE typeTerms=?', (term_type,))
-#     resource_ids = [r.resourceId for r in my_cursor.fetchall()]
-#     for resource in resource_ids:
-#         my_cursor.execute('SELECT page_id FROM PageResources WHERE resource_id=?', (resource,))
-#         try:
-#             page_id = my_cursor.fetchone().page_id
-#         except AttributeError:
-#             continue
-#         my_cursor.execute('SELECT * FROM Pages WHERE id=?', (page_id,))
-#         result = my_cursor.fetchone()
-#         print(result.name)
-#         print(result.description)
-#         print('\n')
+
+def post_sheet_to_server(page_id, server):
+    """
+    Look up the id of a sheet on the server we're about to post to. If this is the first time the sheet has been posted,
+    save the id so the sheet can be edited later.
+    :param page_id:
+    :param server:
+    :return:
+    """
+    sheet_json = create_sheet_json(page_id)
+    cursor = MidreshetCursor()
+    cursor.execute('SELECT serverIndex FROM ServerMap WHERE pageId=? AND server=?', (page_id, server))
+    result = cursor.fetchone()
+
+    if result:
+        # check that sheet really exists
+        response = requests.get('{}/api/sheets/{}'.format(server, result.serverIndex)).json()
+
+        if 'error' in response:  # update sql database
+            print("Updating serverMap")
+            response = post_sheet(sheet_json, server=server)
+            cursor.execute('UPDATE ServerMap SET serverIndex = ? WHERE pageId=? AND server=?', (response['id'], page_id, server))
+            cursor.commit()
+        else:
+            print("Editing sheet {}".format(result.serverIndex))
+            sheet_json['id'] = result.serverIndex
+            post_sheet(sheet_json, server=server)
+            return
+    else:
+        print("Creating new sheet")
+        response = post_sheet(sheet_json, server=server)
+        sheet_id = response['id']
+        cursor.execute('INSERT INTO ServerMap (pageId, server, serverIndex) VALUES (?, ?, ?)', (page_id, server, sheet_id))
+        cursor.commit()
+    return
 
 
 # sheet_indices = [7, 14, 17, 49, 7387]
 # for s in sheet_indices:
 #     export_sheet_to_file(s)
 
-foobar = create_sheet_json(7)
-# my_sheet = get_sheet_by_id(7)
-# my_sheet['date'] = my_sheet['date'].ctime()
-# with open('foobar.json', 'w') as fp:
-#     json.dump(my_sheet, fp)
-post_sheet(foobar, server='http://midreshet.sandbox.sefaria.org')
