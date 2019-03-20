@@ -235,6 +235,8 @@ class Source(object):
         author = re.sub(u'[{}]'.format(re.escape(string.punctuation)), u'', self.author)
         try:
             self.index = library.get_index(author)
+            if self.index.title == u'Yalkut Shimoni on Torah':
+                raise exceptions.BookNameError
         except exceptions.BookNameError as e:
             term_list = self.extract_term()
             if term_list:
@@ -370,6 +372,12 @@ class Source(object):
                                             break
                                         except exceptions.InputError as e:
                                             print u"inputError for this string {}, extracted from this rawref {}".format(u'{} {}'.format(node_name, numToHeb(d)), self.raw_ref.rawText)
+                                            if u"ילקוט שמעוני" in node_name:
+                                                try:
+                                                    new_ref = Ref(u'{}, {}'.format(ind.title, d))
+                                                except exceptions.InputError:
+                                                    print u"inputError for this string {}, extracted from this rawref {}".format(
+                                                        u'{} {}'.format(node_name, numToHeb(d)), self.raw_ref.rawText)
                                         except IndexError as e:
                                             print u'IndexError {} not sure why...'.format(e)
                                     self.ref = new_ref
@@ -409,6 +417,7 @@ class Source(object):
                     pass
                 if not self.index or not new_ref:
                     print u"deleting wrong: {} couldn't find an index".format(self.ref)
+                    self.ref = None
             else:  # not wrong_ref. and found a ref, might just be a correct ref. todo: how to test it is correct?
                 pass
         # where can we look at nodes names when we are not testing giving wrong Ref?
@@ -483,7 +492,8 @@ if __name__ == "__main__":
     # pass
     # for file in os.listdir(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/"):
     write_to_file(u'', mode = 'w')
-    for file in [u'AYIN.pickle']:
+    for file in [u'BET.pickle']:
+        letter_name = file[0:-7]
         Source.cnt = 0
         Source.cnt_sham = 0
         Source.cnt_resolved = 0
@@ -501,4 +511,8 @@ if __name__ == "__main__":
             for missing in parser.missing_authors:
                 print missing
 
+        with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/with_refs/{}.pickle".format(letter_name),
+                         "w") as fp:
+            # json.dump(topics, fp) #TypeError: <__main__.Topic object at 0x7f5f5bb73790> is not JSON serializable
+            pickle.dump(topics, fp, -1)
     print u'done'

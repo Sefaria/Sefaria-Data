@@ -32,7 +32,7 @@ class Test_Source_methods(object):
         assert source.ref == Ref(u'Bereishit Rabbah 27:3')
         source = Source(u'(רמב"ן, בראשית יח יא)', u'רמב"ן')
         assert source.ref == Ref(u'Ramban on Genesis 18:11')
-        source = Source(u'(משלי פרק א, תתקכט)', u'ילקוט שמועני')
+        source = Source(u'(משלי פרק א, תתקכט)', u'ילקוט שמעוני')
         assert source.ref == Ref(u'Yalkut Shimoni on Nach 929:1-932:6')
         source = Source(u'(דברים טו טז)', u'בעל הטורים')
         assert source.ref == Ref(u'Kitzur Baal Haturim on Deuteronomy 15:16')
@@ -46,7 +46,14 @@ class Test_Source_methods(object):
         assert True
         source = Source(u"(בראשית יז א שער יח)", u"עקדה")
         assert True
-
+        source = Source(u'(מלכים ב פרק יח, רצו)', u'ילקוט שמעוני')
+        assert source.ref == Ref(u'Yalkut Shimoni on Nach 234:8-239:1')
+        source = Source(u'(דניאל תתרסה)', u'ילקוט שמעוני')
+        assert source.ref == Ref(u'Yalkut Shimoni on Nach 1065')
+        source = Source(u"(יהושע ח ל)", u'אברבנאל')
+        assert source.ref == None
+    #     מדרש שמואל, (אבות ה ה, וראה שם עוד)
+    # Pirkei Avot 5:5
     # def test_get_look_here_titles(self):
     #     look_here = [u'Bereishit Rabbah', u'Shemot Rabbah', u'Vayikra Rabbah', u'Bemidbar Rabbah', u'Devarim Rabbah', u'Esther Rabbah', u'Shir HaShirim Rabbah', u'Kohelet Rabbah', u'Ruth Rabbah', u'Eichah Rabbah']
     #     assert source.get_look_here_titles(look_here) == [(u'Bereishit Rabbah', u'Bereishit') ,(u'Shemot Rabbah', u'Shemot'), (u'Vayikra Rabbah', u'Vayikra'), (u'Bemidbar Rabbah', u'Bemidbar'), (u'Devarim Rabbah', u'Devarim'), (u'Esther Rabbah', u'Esther'), (u'Shir HaShirim Rabbah', u'Shir HaShirim'), (u'Kohelet Rabbah', u'Kohelet'), (u'Ruth Rabbah', u'Ruth'), (u'Eichah Rabbah', u'Eichah')]
