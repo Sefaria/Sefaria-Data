@@ -277,7 +277,9 @@ def dh_extract_method(str):
 
 
 def get_comments_and_map(comments, keyword):
-    flags = {"Tosafot": [u"""תוספות""", u"""בתוספות""", u"""תוספת""", u"""תוס'""", u"""בתוס'"""], "Rashi":[u"""פירש"י""", u"""רש"י"""]}
+    flags = {"Tosafot": [u"""תוספות""", u"""בתוספות""", u"""תוספת""", u"""תוס'""", u"""בתוס'"""],
+             "Rashi": [u"""פירש"י""", u"""רש"י"""],
+             "Gemara": [u"""מתניתין""", u"""במתניתין""", u"""בגמרא""", u"""גמרא""", u"""בגמ'"""]}
     relevant_comments = []
     map_comments_to_relevant_comments = {} #index comment is found in "comments"
                                           # to index comment is found in "relevant_comments"
@@ -335,17 +337,48 @@ def create_ranges(comments, matches):
                 matches[i] = matches[match_n-1]
     return matches
 
-def create_ranged_link(links, range_counter):
+def create_ranged_link(links, range_counter, create_base_link):
     comm_link = links.pop()
-    base_link = links.pop()
+    if create_base_link:
+        base_link = links.pop()
     penei_ref = comm_link["refs"][1]
     assert penei_ref.startswith("Penei")
     segment = int(penei_ref.split(":")[-1])
     new_penei_ref = penei_ref + "-" + str(range_counter + segment)
-    base_link["refs"][1] = new_penei_ref
     comm_link["refs"][1] = new_penei_ref
-    links.append(base_link)
     links.append(comm_link)
+    if create_base_link:
+        base_link["refs"][1] = new_penei_ref
+        links.append(base_link)
+
+
+def create_ranged_links(matches, links, index_title, daf, comm_map, create_base_link=False):
+    range_counter = 0
+    prev_comm = None
+    for match_n, comm_ref in enumerate(matches):
+        if comm_ref and comm_ref == prev_comm:
+            range_counter += 1
+            prev_comm = comm_ref
+        elif comm_ref and range_counter > 0:
+            create_ranged_link(links, range_counter, create_base_link)
+            range_counter = 0
+            prev_comm = None
+        if comm_ref and range_counter is 0 and comm_ref != prev_comm:
+            penei_ref = "{} {}:{}".format(index_title, daf, match_n + 1 + comm_map[match_n])
+            comm_link = {"refs": [comm_ref.normal(), penei_ref], "type": "Commentary", "auto": True,
+                         "generated_by": "penei_yehoshua_batch_ii"}
+            links.append(comm_link)
+            if create_base_link:
+                base_ref = ":".join(comm_ref.normal().split(" on ")[-1].split(":")[0:-1])
+                base_link = {"refs": [base_ref, penei_ref], "type": "Commentary", "auto": True,
+                             "generated_by": "penei_yehoshua_batch_ii"}
+                links.append(base_link)
+
+            prev_comm = comm_ref
+
+    if prev_comm and range_counter > 0:
+        create_ranged_link(links, range_counter, create_base_link)
+
 
 if __name__ == "__main__":
     files = os.listdir("batch ii")
@@ -357,11 +390,16 @@ if __name__ == "__main__":
         prev_daf = "2a"
         curr_text = []
         with open("batch ii/{}".format(file)) as open_file:
+            if "Shabbat" not in file:
+                continue
             for line in open_file:
                 if not line.startswith(index_title):
                     continue
-
                 ref, comment = line.split(",", 1)
+                if comment[0] == '"':
+                    comment = comment[1:]
+                if comment[-1] == '"':
+                    comment = comment[:-1]
                 daf = ref.split()[-1].split(":")[0]
                 if daf == prev_daf:
                     curr_text.append(comment.decode('utf-8'))
@@ -371,12 +409,12 @@ if __name__ == "__main__":
                     prev_daf = daf
             comments_per_daf[daf] = curr_text
             #strip comments out that start with Rashi and create mapping
-            comm_maps = {"Tosafot": {}, "Rashi": {}}
-            comm_comments = {"Tosafot": {}, "Rashi": {}}
+            comm_maps = {"Tosafot": {}, "Rashi": {}, "Gemara": {}}
+            comments_by_type = {"Tosafot": {}, "Rashi": {}, "Gemara": {}}
             for daf, comments in comments_per_daf.items():
-                comments = [c[1:-3] for c in comments if c != "\r\n"]
-                comm_comments["Rashi"], comm_maps["Rashi"] = get_comments_and_map(comments, "Rashi")
-                comm_comments["Tosafot"], comm_maps["Tosafot"] = get_comments_and_map(comments, "Tosafot")
+                comments = [c[:-2] for c in comments if c != "\r\n"]
+                for type in ["Tosafot", "Rashi", "Gemara"]:
+                    comments_by_type[type], comm_maps[type] = get_comments_and_map(comments, type)
                 ref = index_title.split(" on ")[-1] + " " + daf
                 tosafot_ref = "Tosafot on {}".format(ref)
                 rashi_ref = "Rashi on {}".format(ref)
@@ -384,50 +422,27 @@ if __name__ == "__main__":
                 tosafot_base_text = TextChunk(Ref(tosafot_ref), lang='he')
                 rashi_base_text = TextChunk(Ref(rashi_ref), lang='he')
                 comm_matches = {"Tosafot": [], "Rashi": []}
-                if comm_comments["Tosafot"]:
-                    comm_matches["Tosafot"] = match_ref(tosafot_base_text, comm_comments["Tosafot"], lambda x: x.split(), dh_extract_method=dh_extract_method)
-                if comm_comments["Rashi"]:
-                    comm_matches["Rashi"] = match_ref(rashi_base_text, comm_comments["Rashi"], lambda x: x.split(), dh_extract_method=dh_extract_method)
+                if comments_by_type["Tosafot"]:
+                    comm_matches["Tosafot"] = match_ref(tosafot_base_text, comments_by_type["Tosafot"], lambda x: x.split(), dh_extract_method=dh_extract_method)
+                if comments_by_type["Rashi"]:
+                    comm_matches["Rashi"] = match_ref(rashi_base_text, comments_by_type["Rashi"], lambda x: x.split(), dh_extract_method=dh_extract_method)
 
                 for comm_type, matches in comm_matches.items():
                     comm_map = comm_maps[comm_type]
-                    if not matches:
+                    if not matches or not comm_map:
                         continue
-                    matches = create_ranges(comm_comments[comm_type], matches["matches"])
-                    prev_comm = None
-                    range_counter = 0
-                    for match_n, comm_ref in enumerate(matches):
-                        if comm_ref and comm_ref == prev_comm:
-                            range_counter += 1
-                            prev_comm = comm_ref
-                        elif comm_ref and range_counter > 0:
-                            create_ranged_link(links, range_counter)
-                            range_counter = 0
-                            prev_comm = None
-                        elif comm_ref and range_counter is 0:
-                            penei_ref = "{} {}:{}".format(index_title, daf, comm_map[match_n]+1)
-                            comm_link = {"refs": [comm_ref.normal(), penei_ref], "type": "Commentary", "auto": True,
-                                    "generated_by": "penei_yehoshua_batch_ii"}
-                            base_ref = ":".join(comm_ref.normal().split(" on ")[-1].split(":")[0:-1]).split(":")[0]
-                            base_link = {"refs": [base_ref, penei_ref], "type": "Commentary", "auto": True,
-                                    "generated_by": "penei_yehoshua_batch_ii"}
-                            links.append(base_link)
-                            links.append(comm_link)
-                            prev_comm = comm_ref
+                    matches = create_ranges(comments_by_type[comm_type], matches["matches"])
+                    create_ranged_links(matches, links, index_title, daf, comm_map, create_base_link=True)
 
-                    if prev_comm and range_counter > 0:
-                        create_ranged_link(links, range_counter)
-                        range_counter = 0
-                        prev_comm = None
-
-
-                matches = match_ref(base_text, comments, lambda x: x.split(), dh_extract_method=dh_extract_method)
-                matches = create_ranges(comments_per_daf[daf], matches["matches"])
-                for match_n, gemara_ref in enumerate(matches):
-                    if gemara_ref:
-                        penei_ref = "{} {}:{}".format(index_title, daf, match_n+1)
-                        link = {"refs": [gemara_ref.normal(), penei_ref], "type": "Commentary", "auto": True, "generated_by": "penei_yehoshua_batch_ii"}
-                        links.append(link)
+                matches = match_ref(base_text, comments_by_type["Gemara"], lambda x: x.split(), dh_extract_method=dh_extract_method)
+                matches = create_ranges(comments_by_type["Gemara"], matches["matches"])
+                if comm_maps["Gemara"]:
+                    create_ranged_links(matches, links, index_title, daf, comm_maps["Gemara"])
+                # for match_n, gemara_ref in enumerate(matches):
+                #     if gemara_ref:
+                #         penei_ref = "{} {}:{}".format(index_title, daf, match_n+1)
+                #         link = {"refs": [gemara_ref.normal(), penei_ref], "type": "Commentary", "auto": True, "generated_by": "penei_yehoshua_batch_ii"}
+                #         links.append(link)
             post_link(links, server="http://shmuel.sandbox.sefaria.org")
 
 

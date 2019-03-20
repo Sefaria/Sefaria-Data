@@ -101,8 +101,11 @@ def getInfo(line, errors):
      return perek_info, daf_info, dh, before_dh
 
 
-def getDaf(daf_info):
-    daf = daf_info.replace("2@", "").replace("1@","").replace("7@","")
+def getDaf(daf_info, daf):
+    if daf_info.find('2@ע"ב') >= 0 or daf_info.find('2@ ע"ב') >= 0:
+        return daf+1
+    daf = daf_info.replace("2@", "").replace("1@","").replace("7@","").strip()
+    daf = " ".join(daf.split()[0:3])
     if daf.find('דף')==-1 and daf.find('ע"')==-1:
          print 'no daf'
          pdb.set_trace()
@@ -129,7 +132,33 @@ def getDaf(daf_info):
         daf = 2*getGematria(daf)
     else:
         daf = 2*getGematria(daf)
+
     return daf
+
+
+def preparse(lines):
+    new_lines = []
+    temp = ""
+    for line in lines:
+        line = line.replace("@3", "3@").replace("@2", "2@").replace("@6", "6@").replace("\n", "")
+        while line.startswith(" "):
+            line = line[1:]
+        if not line:
+            continue
+        if "2@" in line:
+            temp = line + " "
+            pass #starting DH
+        elif "3@" in line:
+            temp += "<br/>" + line
+        elif "6@" in line:
+            temp += line + " "
+            new_lines.append(temp)
+            temp = ""
+        else:
+            temp += line + " "
+    return new_lines
+
+
 
 
 def parse(tractate, errors):
@@ -140,15 +169,17 @@ def parse(tractate, errors):
      daf = 3
      prev_daf = 3
      dh_dict = {}
-     for line in open("new/"+tractate+".txt"):
+     lines = list(open("new/"+tractate+".txt"))
+     lines = preparse(lines)
+     for line in lines:
          orig_line = line
          line = line.replace("\n", "").replace('\x80\xa8\xe2\x80\xa8', '')
-         if len(line.replace(' ',''))==0:
+         if len(line.replace(' ','')) == 0:
              continue
 
          perek_info, daf_info, dh, before_dh = getInfo(line, errors)
          if len(daf_info) > 0:
-            daf = getDaf(daf_info)
+            daf = getDaf(daf_info, daf)
          if perek_info.find('@') >= 0 or dh.find('@') >= 0 or before_dh.find('@') >= 0:
             errors.write(orig_line+"\n\n")
 
@@ -159,7 +190,7 @@ def parse(tractate, errors):
              comment_start = 0
          else:
              comment_start += 2
-         comment = line[comment_start:].replace("3@","<br>")
+         comment = line[comment_start:].replace("3@","")
          comment = comment.replace(" .", ".")
 
 
@@ -182,8 +213,13 @@ def parse(tractate, errors):
              text[daf] = []
              dh_dict[daf] = []
              prev_daf = daf
-         text[daf].append(before_dh + "<b>" + dh+"</b> "+comment)
-         dh_dict[daf].append(dh)
+
+         if dh:
+             text[daf].append(before_dh + "<b>" + dh+"</b> "+comment)
+             dh_dict[daf].append(dh)
+         else:
+            text[daf].append(comment)
+
 
          comment.decode('utf-8')
          dh.decode('utf-8')
@@ -207,7 +243,7 @@ def post(text, dh_dict, tractate):
          results = match_ref(daf_text, dh_list, lambda x: x.split())
          for match_n, match in enumerate(results["matches"]):
              if match:
-                 talmud_end = tractate + " " + AddressTalmud.toStr("en", daf) + ":" + str(match_n+1)
+                 talmud_end = "Chiddushei Ramban on "+tractate + " " + AddressTalmud.toStr("en", daf) + ":" + str(match_n+1)
                  links_to_post.append({'refs': [talmud_end, match.normal()], 'type': 'commentary', 'auto': 'True',
                                        'generated_by': "ramban" + tractate})
      print len(links_to_post)
@@ -234,7 +270,7 @@ if __name__ == "__main__":
     global dh_dict
     global errors
     errors = open("errors", 'w')
-    these = ["Megillah", "Niddah", "Shevuot", "Chullin"]
+    these = ["Shevuot", "Megillah", "Niddah", "Chullin"]
     for file in glob.glob(u"new/*.txt"):
         errors.write(file+"\n")
         tractate = file.replace(".txt", "").replace("new/", "").title()

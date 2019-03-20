@@ -27,29 +27,27 @@ def get_relevant_DHs(ch_name, file_name):
                 relevant_DHs.append(dh)
     return relevant_DHs
 
+
+def getDaf(new_daf, ):
+    daf, amud = new_daf[0:-1], new_daf[-1]
+
+
 if __name__ == "__main__":
-    files = ["nazir.txt", "kiddushin.txt", "sotah.txt", "yevamot.txt"]
-    files = ["yevamot.txt"]
+    files = ["yevamot.csv", "nazir.csv"]
     for file_name in files:
         print file_name
         with open(file_name) as f:
             lines = list(f)
             found_amud_count = 0
             prev_last_word = ""
+            curr_daf = 0
             for line_n, line in enumerate(lines):
-                if line_n == 0:
-                    continue
-                line = line.replace("\n", "")
-                if len(line) is 0:
-                    continue
-                words = line.split()
-                curr_last_word = words[-1].replace(":", "").replace(".", "")
-                curr_first_word = words[0].replace(":", "").replace(".", "")
-                if curr_first_word != prev_last_word and (curr_first_word in prev_last_word or prev_last_word in curr_first_word) and prev_last_word:
-                    pass
-                if curr_first_word == prev_last_word:
-                    found_amud_count += 1
-                prev_last_word = curr_last_word
+                line = line.replace("\n", "").replace("\r", "")
+                new_daf, comment = line.split(",", 1)
+                if new_daf:
+                    curr_daf = getDaf(new_daf, curr_daf)
+
+
         index = library.get_index(file_name.split(".txt")[0])
         amudim = index.all_section_refs()
         actual_amud_count = len(amudim)
