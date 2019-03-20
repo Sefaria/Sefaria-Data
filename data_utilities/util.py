@@ -441,8 +441,10 @@ def numToHeb(engnum=u""):
         letters[1]=[u"", u"י", u"כ", u"ל", u"מ", u"נ", u"ס", u"ע", u"פ", u"צ"]
         letters[2]=[u"", u"ק", u"ר", u"ש", u"ת", u"תק", u"תר", u"תש", u"תת", u"תתק"]
         if (numdig > 3):
-            print "We currently can't handle numbers larger than 999"
-            exit()
+            sub_engnum = int(engnum)-800
+            if sub_engnum>400:
+                raise KeyError
+            return u"תת{}".format(numToHeb(sub_engnum))
         for count in range(numdig):
             hebnum += letters[numdig-count-1][int(engnum[count])]
         hebnum = re.sub(u'יה', u'טו', hebnum)
