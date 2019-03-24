@@ -21,7 +21,7 @@ from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
 
 
-def create_index(tractate):
+def create_index(tractate, moed):
     root=JaggedArrayNode()
     heb_masechet = library.get_index(tractate).toc_contents()['heTitle']
     root.add_title(u"Chiddushei Ramban on "+tractate.replace("_"," "), "en", primary=True)
@@ -35,7 +35,7 @@ def create_index(tractate):
 
     index = {
         "title": "Chiddushei Ramban on "+tractate.replace("_"," "),
-        "categories": ["Talmud", "Bavli", "Commentary", "Ramban"],
+        "categories": ["Talmud", "Bavli", "Commentary", "Ramban", "Seder "+moed],
         "schema": root.serialize()
     }
     post_index(index, server=SEFARIA_SERVER)
@@ -270,14 +270,13 @@ if __name__ == "__main__":
     global dh_dict
     global errors
     errors = open("errors", 'w')
-    these = ["Shevuot", "Megillah", "Niddah", "Chullin"]
+    these = {"Shevuot": "Nezikin", "Megillah": "Moed", "Niddah": "Tahorot",
+             "Chullin": "Kodashim"}
     for file in glob.glob(u"new/*.txt"):
         errors.write(file+"\n")
         tractate = file.replace(".txt", "").replace("new/", "").title()
         print tractate
-        if tractate not in these:
-            continue
-        create_index(tractate)
+        create_index(tractate, these[tractate])
         print 'about to parse'
         text, dh_dict = parse(tractate, errors)
         print 'about to post'
