@@ -13,6 +13,7 @@ import json
 import pickle
 from data_utilities.util import getGematria, numToHeb
 import codecs
+from data_utilities.ibid import *
 
 class Parser(object):
 
@@ -104,7 +105,7 @@ class AuthorCit(object):
         self.sources = []
 
     def create_sources(self):
-        for cit in self.cit_list:
+        for i, cit in enumerate(self.cit_list):
             s = Source(cit, self.author)
             self.sources.append(s)
 
@@ -117,6 +118,62 @@ class Topic(object):
         self.see = None
         self.altTitles = None
 
+    def parse_shams(self):
+        cnt=0
+        BT = BookIbidTracker()
+        topic_table = []
+        tanakh_books =library.get_indexes_in_category(u'Tanakh')
+        comp_tanakh_comm = re.compile(u'(?P<commentator>^.*?(on|,)\s+).*$')
+        for cit in self.all_a_citations:
+            for source in cit.sources:
+                ref_d = self.ref_dict(source)
+                if ref_d:
+                    topic_table.append(self.ref_dict(source))
+                    BT.registerRef(source.ref)
+                if source.ref and u'Tanakh'in source.ref.index.categories and source.ref.index.title not in tanakh_books:
+                    match = re.search(comp_tanakh_comm, source.ref.normal())
+                    tanakh_ref = Ref(re.sub(match.group(u'commentator'), u'', source.ref.normal()))
+                    BT.registerRef(tanakh_ref)
+                if source.raw_ref and source.raw_ref.is_sham:
+                    print u'Sham Ref {}'.format(source.raw_ref.rawText)
+                    if topic_table[-1]['author'] == source.raw_ref.author:
+                        source.ref = BT.resolve(topic_table[-1]['index'].title, match_str= source.author + source.raw_ref.rawText) # assuming the index is definatly the same as the last one is not neccesary. and should check if there is a source.index frist?
+                        print source.ref
+                        BT.registerRef(source.ref)
+                    elif u'Tanakh' in topic_table[-1]['index'].categories:
+                        tanakh_book = tanakh_ref.index.title
+                        # if topic_table[-1]['index'].is_complex():
+                        #     tanakh_book = tanakh_ref.index.title
+                        # else:
+                        #     tanakh_book = topic_table[-1]['index'].base_text_titles[0]
+                        # this_he_title = u'{} על {}'.format(source.raw_ref.author, Ref(tanakh_book).he_normal())
+                        library.get_index(tanakh_book)
+                        match_str = Ref(tanakh_book).he_normal() + re.sub(u'שם ', u'', source.raw_ref.rawText, count=1) #re.sub(u'(\(|\))', u'', this_he_title + re.sub(u'שם', u'', u'(שם שם כג)', count=1))
+                        try:
+                            try_ref = BT.resolve(tanakh_book, match_str=match_str)  # sections=[topic_table[-1]['section'],topic_table[-1]['segment']])
+                            source.ref = Ref(cit.author + u' על ' + try_ref.he_normal())
+                            BT.registerRef(source.ref)
+                            print source.ref
+                        except (InputError, IbidRefException) as e:
+                            source.ref = None
+                            cnt+=1
+                            print cnt
+                            print u'{}'.format(e)
+
+
+                    pass
+
+    def ref_dict(self, source):
+        d = {}
+        if source.ref:
+            if hasattr(source.ref.index.schema, 'addressTypes') and u'Talmud' in source.ref.index.schema['addressTypes']:
+                d['section'] = source.ref.sections[0]%2
+            d['author'] = source.author
+            d['index'] = source.ref.index
+            d['section'] = source.ref.sections[0]
+            d['segment'] = source.ref.sections[1] if len(source.ref.sections) > 1 else None
+        if d:
+            return d
 
 class Source(object):
     cnt = 0
@@ -503,6 +560,7 @@ if __name__ == "__main__":
             topics = pickle.load(fp)
             for i, t in enumerate(topics.values()):
                 parse_refs(t)
+                t.parse_shams()
                 print i
             print u"cnt :", Source.cnt
             print u"cnt_sham :", Source.cnt_sham, u"precent: ", Source.cnt_sham*100.0/Source.cnt*1.0
