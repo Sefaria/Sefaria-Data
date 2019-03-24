@@ -1,13 +1,19 @@
 # encoding=utf-8
 from __future__ import print_function
 
+import re
 import json
 import codecs
 import bleach
 import pyodbc
 import requests
-from data_utilities.util import Singleton
+from data_utilities.util import Singleton, getGematria
 from sources.functions import post_sheet
+
+import django
+django.setup()
+from sefaria.model import *
+from sefaria.system.exceptions import InputError
 
 
 class MidreshetCursor(object):
@@ -184,4 +190,162 @@ def post_sheet_to_server(page_id, server):
 # sheet_indices = [7, 14, 17, 49, 7387]
 # for s in sheet_indices:
 #     export_sheet_to_file(s)
+# s = 'http://localhost:8000'
+# post_sheet_to_server(7, s)
+# post_sheet_to_server(14, s)
+# post_sheet_to_server(14, s)
+
+
+def find_books_and_categories():
+    zero, single, multiple = [], [], []
+    my_cursor = MidreshetCursor()
+    my_cursor.execute('SELECT id, MidreshetRef FROM RefMap WHERE Book IS NULL')
+    rows = my_cursor.fetchall()
+    for row in rows:
+        books = library.get_titles_in_string(row.MidreshetRef, 'he', True)
+        if len(books) == 1:
+            book_index = library.get_index(books[0])
+            book_title = book_index.title
+            book_category = book_index.get_primary_category()
+            single.append((book_title, book_category, row.id))
+        elif len(books) > 1:
+            multiple.append((row.id,))
+        else:
+            zero.append(row)
+
+    print('zero: {}; single: {}; multiple: {}; total: {}'.format(len(zero), len(single), len(multiple), len(rows)))
+
+    my_cursor.executemany('UPDATE RefMap SET Book = ?, Category = ? WHERE id = ?', single)
+    my_cursor.executemany("UPDATE RefMap SET Comment='Multiple' WHERE id = ?", multiple)
+    my_cursor.commit()
+
+
+def disambiguate_simple_tanakh_ref(map_row):
+    # strip all non-hebrew characters, except the dash (maybe the em-dash?)
+    clean_ref = re.sub(u'[^\u05d0-\u05ea\s\-\u2013]', u'', map_row.MidreshetRef)
+    clean_ref = u' '.join(clean_ref.split())
+
+    he_book_title = Ref(map_row.Book).he_book()
+    perek = u'פרק'
+    prefix = u'ספר|מגילת'
+
+    # ^(<book-name>) <perek> (<1-3 letters>) <pasuk(im)> (<chars>-?<chars>?)
+    pattern = ur'^(?:(?:%s) )?(%s) %s ([\u05d0-\u05ea]{1,3}) \u05e4\u05e1\u05d5\u05e7(?:\u05d9\u05dd)? ([\u05d0-\u05ea]{1,3}(-[\u05d0-\u05ea]{1,3})?)' % (prefix, he_book_title, perek)
+    match = re.search(pattern, clean_ref)
+    if match is None:
+        return None
+    else:
+        sefaria_ref = u'{} {} {}'.format(match.group(1), match.group(2), match.group(3))
+        try:
+            return Ref(sefaria_ref).normal()
+        except InputError:
+            print(u'Could not create Ref at id = {}'.format(map_row.id))
+            print(sefaria_ref)
+            return None
+
+
+def disambiguate_simple_talmud_ref(midreshet_ref, expected_book):
+    u"""
+    <Talmud Bavli> Masechet? <Masechet pattern> <Daf Pattern> <Amud Pattern>
+    if range (presence of dash):
+        add amud pattern
+        if that fails, try daf pattern followed by amud pattern
+    """
+    def translate_ammud(daf_letter):
+        if daf_letter == u'א':
+            return u'a'
+        elif daf_letter == u'ב':
+            return u'b'
+        else:
+            raise AssertionError('Daf must be Aleph or Bet')
+
+    cleaned_ref = re.sub(u'\u2013', u'-', midreshet_ref)
+    cleaned_ref = re.sub(u'[^\u05d0-\u05ea\s\-]', u'', cleaned_ref)
+    cleaned_ref = re.sub(u'\s*-\s*', u' - ', cleaned_ref)
+    cleaned_ref = u' '.join(cleaned_ref.split())
+
+    # todo write a function that can give a title with alternate spellings
+    he_book_title = Ref(expected_book).he_book()
+    masechet_pattern = u'{} (?:{} )?(?P<book>{})'.format(u'תלמוד בבלי', u'מסכת', he_book_title)
+
+    start_daf_pattern = u'(?:%s )?(?P<start_daf>[\u05d0-\u05ea]{1,3})' % (u'דף',)
+    end_daf_pattern = start_daf_pattern.replace(u'start_daf', u'end_daf')
+
+    start_amud_pattern = u'(?:%s )?(?P<start_ammud>[\u05d0-\u05d1])(?! (?:%s|%s))' % (u'עמוד', u'דף', u'עמוד')
+    end_amud_pattern = start_amud_pattern.replace(u'start_ammud', u'end_ammud')
+
+    base_pattern = u'{} {} {}(?=\s|$)'.format(masechet_pattern, start_daf_pattern, start_amud_pattern)
+    is_range = bool(re.search(u'{} -'.format(base_pattern), cleaned_ref))
+
+    if is_range:
+        pattern = u'{} - {}'.format(base_pattern, end_amud_pattern)
+        match = re.search(pattern, cleaned_ref)
+
+        if match:
+            raw_ref = u'{} {}{}-{}{}'.format(
+                expected_book, getGematria(match.group('start_daf')), translate_ammud(match.group('start_ammud')),
+                getGematria(match.group('start_daf')), translate_ammud(match.group('end_ammud'))
+            )
+
+        else:
+            pattern = u'{} - {} {}'.format(base_pattern, end_daf_pattern, end_amud_pattern)
+            match = re.search(pattern, cleaned_ref)
+            if not match:
+                return
+            raw_ref = u'{} {}{}-{}{}'.format(
+                expected_book, getGematria(match.group('start_daf')), translate_ammud(match.group('start_ammud')),
+                getGematria(match.group('end_daf')), translate_ammud(match.group('end_ammud'))
+            )
+
+    else:
+        match = re.search(base_pattern, cleaned_ref)
+        if not match:
+            return
+        raw_ref = u'{} {}{}'.format(
+            expected_book, getGematria(match.group('start_daf')), translate_ammud(match.group('start_ammud')))
+
+    return Ref(raw_ref).normal()
+
+
+cu = MidreshetCursor()
+# cu.execute("SELECT id, MidreshetRef, Book FROM RefMap WHERE Category = 'Tanakh' AND SefariaRef IS NULL")
+# things = [(disambiguate_simple_tanakh_ref(q), q.id) for q in cu.fetchall()]
+# cu.executemany("UPDATE RefMap SET SefariaRef = ? WHERE id = ?", things)
+cu.execute("SELECT id, MidreshetRef, Book FROM RefMap WHERE Category = 'Talmud' AND SefariaRef IS NULL")
+# for q in cu.fetchall():
+#     m_ref = re.sub(u'\([^()]+\)', u'', q.MidreshetRef)
+#     m_ref = u' '.join(m_ref.split())
+#     ref_list = library.get_refs_in_string(u'({})'.format(m_ref), 'he', True)
+#     if ref_list:
+#         print(q.MidreshetRef)
+#         print(ref_list[0].normal())
+#     if q.id > 1000:
+#         break
+# cu.commit()
+results, misses = [], []
+q_rows = cu.fetchall()
+for q in q_rows:
+    try:
+        t_ref = disambiguate_simple_talmud_ref(q.MidreshetRef, q.Book)
+    except InputError:
+        t_ref = None
+
+    if t_ref:
+        results.append((q.MidreshetRef, t_ref))
+    else:
+        misses.append(q.MidreshetRef)
+
+print(len(q_rows))
+print(len(results))
+for q in results[:50]:
+    print(q[0])
+    print(q[1])
+    print('')
+
+print('Misses:')
+for q in misses[:50]:
+    print(q)
+# foobar = disambiguate_simple_talmud_ref(u'תלמוד בבלי, מסכת שבת, דף לג עמוד ב – דף לד עמוד א (מתורגם)', 'Shabbat')
+# print(foobar)
+
 
