@@ -28,7 +28,7 @@ class CitationFinder():
         returns regex to find either `(title address)` or `title (address)`
         title can be Sham
         :param title_list: str or list
-        :param title_node_dict: SchemaNode or dict (key: title value: SchemaNode
+        :param title_node_dict: SchemaNode or dict (key: title value: SchemaNode)
         :return: regex
         """
 
@@ -222,6 +222,7 @@ class CitationFinder():
                 return CitationFinder.parse_sham_match(m, lang, node)  # there should be one and only one match
         else:
             title_reg = CitationFinder.get_ultimate_title_regex(title_sham, node, lang, compiled=True)
+            st = re.sub(u'[^\s]\(', u' (', st)
             m = re.search(title_reg, st)
             if m:
                 return CitationFinder.parse_sham_match(m, lang, node)
@@ -507,14 +508,14 @@ class BookIbidTracker(object):
         is_index_sham = index_name is None
         if index_name is None:
             index_name = self._last_cit[0]
-            if index_name is not None:
-                if match_str is not None:
-                    # if index_name in [u'I Samuel', u'II Samuel']: #to disambiguate books that have 2 volumes.
-                    #     re.search('', match_str)
-                    node = library.get_schema_node(index_name)  # assert JaggedArrayNode?
-                    title, sections = CitationFinder.get_sham_ref_with_node(match_str, node, lang='he')
-            else:
-                raise IbidKeyNotFoundException("couldn't find this key")
+        if index_name is not None:
+            if match_str is not None:
+                # if index_name in [u'I Samuel', u'II Samuel']: #to disambiguate books that have 2 volumes.
+                #     re.search('', match_str)
+                node = library.get_schema_node(index_name)  # assert JaggedArrayNode?
+                title, sections = CitationFinder.get_sham_ref_with_node(match_str, node, lang='he')
+        else:
+            raise IbidKeyNotFoundException("couldn't find this key")
 
         if sections is not None:
             last_depth = self.get_last_depth(index_name, sections)
@@ -536,7 +537,7 @@ class BookIbidTracker(object):
         key = []
         found_sham = False
         for i, sect in enumerate(sections):
-            if found_sham:  # we are after the place that we need info from
+            if found_sham: # we are after the place that we need info from
                 key.append(None)
             else:
                 key.append(sections[i])
@@ -563,7 +564,7 @@ class BookIbidTracker(object):
             book_ref = Ref(index_name)
             if self.assert_simple:
                 assert not book_ref.index.is_complex()
-            if self.assert_simple:
+            if self.assert_simple or book_ref.primary_category == u'Talmud':
                 addressTypes = book_ref.index_node.addressTypes
             else:
                 addressTypes = [None]*len(new_sections)

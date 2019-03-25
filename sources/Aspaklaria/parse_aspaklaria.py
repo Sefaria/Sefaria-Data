@@ -124,7 +124,7 @@ class Topic(object):
         topic_table = []
         tanakh_books =library.get_indexes_in_category(u'Tanakh')
         comp_tanakh_comm = re.compile(u'(?P<commentator>^.*?(on|,)\s+).*$')
-        for cit in self.all_a_citations:
+        for i, cit in enumerate(self.all_a_citations):
             for source in cit.sources:
                 ref_d = self.ref_dict(source)
                 if ref_d:
@@ -137,9 +137,17 @@ class Topic(object):
                 if source.raw_ref and source.raw_ref.is_sham:
                     print u'Sham Ref {}'.format(source.raw_ref.rawText)
                     if topic_table[-1]['author'] == source.raw_ref.author:
-                        source.ref = BT.resolve(topic_table[-1]['index'].title, match_str= source.author + source.raw_ref.rawText) # assuming the index is definatly the same as the last one is not neccesary. and should check if there is a source.index frist?
-                        print source.ref
-                        BT.registerRef(source.ref)
+                        if u'Talmud' in topic_table[-1]['index'].categories:
+                            source.ref = BT.resolve(None, match_str=source.author+source.raw_ref.rawText)
+                        else:
+                            try:
+                                source.ref = BT.resolve(topic_table[-1]['index'].title, match_str= source.author + source.raw_ref.rawText) # assuming the index is definatly the same as the last one is not neccesary. and should check if there is a source.index frist?
+                            except AttributeError as e:
+                                print e, source.raw_ref.rawText
+                                source.ref = None
+                        if source.ref:
+                            print source.ref
+                            BT.registerRef(source.ref)
                     elif u'Tanakh' in topic_table[-1]['index'].categories:
                         tanakh_book = tanakh_ref.index.title
                         # if topic_table[-1]['index'].is_complex():
@@ -159,15 +167,17 @@ class Topic(object):
                             cnt+=1
                             print cnt
                             print u'{}'.format(e)
-
-
-                    pass
+                if source.ref and source.raw_ref.is_sham:
+                    Source.cnt_sham -= 1
+                    Source.cnt_resolved +=1
 
     def ref_dict(self, source):
         d = {}
         if source.ref:
-            if hasattr(source.ref.index.schema, 'addressTypes') and u'Talmud' in source.ref.index.schema['addressTypes']:
-                d['section'] = source.ref.sections[0]%2
+            # if source.ref.index.title in library.get_indexes_in_category('Bavli'):
+            #     print 'Bavli'
+            if 'addressTypes' in source.ref.index.schema.keys() and u'Talmud' in source.ref.index.schema['addressTypes']:
+                d['book'] = Ref(source.ref.book).he_normal()
             d['author'] = source.author
             d['index'] = source.ref.index
             d['section'] = source.ref.sections[0]
@@ -538,39 +548,69 @@ def parse2pickle():
             pickle.dump(topics, fp, -1)
         all_topics[letter_name] = topics
 
+def read_with_refs(letter):
+    """
 
+    :param letter:
+    :return:
+    """
+
+    with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/with_refs/{}.pickle".format(letter), "rb") as fp:
+        topics = pickle.load(fp)
+        print u"opend {}".format(letter)
+        cnt_sources = 0
+        cnt_sham = 0
+        cnt_resolved = 0
+        cnt_not_caught = 0
+        for i, t in enumerate(topics.values()):
+            print "*******************"
+            print t.headWord
+            for author in t.all_a_citations:
+                for s in author.sources:
+                    if s.raw_ref:
+                        print s.raw_ref.rawText
+                        if s.ref:
+                            print s.ref.normal()
+                            cnt_resolved += 1
+                        else:
+                            print s.author  # "None... didn't find the Ref"
+                            add_to = "sham" if s.raw_ref.is_sham else "not_caught"
+                            cnt_sham += 1 if add_to == "sham" else 0
+                            cnt_not_caught += 1 if add_to == "not_caught" else 0
+                        print '-----------------'
 
 if __name__ == "__main__":
-    # parse2pickle()
-
-    # a = dict()
-    # a[u'שלום'] = 1
-    # name=u'מיכאל'
-    # pass
     # for file in os.listdir(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/"):
-    write_to_file(u'', mode = 'w')
-    for file in [u'BET.pickle']:
-        letter_name = file[0:-7]
-        Source.cnt = 0
-        Source.cnt_sham = 0
-        Source.cnt_resolved = 0
-        Source.cnt_not_found = 0
-        with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/{}".format(file), "rb") as fp:
-            write_to_file(u'NEW_Letter: {}\n\n'.format(file.split(u'.')[0]), mode='a')
-            topics = pickle.load(fp)
-            for i, t in enumerate(topics.values()):
-                parse_refs(t)
-                t.parse_shams()
-                print i
-            print u"cnt :", Source.cnt
-            print u"cnt_sham :", Source.cnt_sham, u"precent: ", Source.cnt_sham*100.0/Source.cnt*1.0
-            print u"cnt_resolved :", Source.cnt_resolved, u"precent: ", Source.cnt_resolved*100.0/Source.cnt*1.0
-            print u"cnt_not_found :", Source.cnt_not_found, u"precent: ", Source.cnt_not_found*100.0/Source.cnt*1.0
-            for missing in parser.missing_authors:
-                print missing
+    #     # write_to_file(u'', mode = 'w')
+    #     # for file in [u'HE.pickle']:
+    #         letter_name = file[0:-7]
+    #         Source.cnt = 0
+    #         Source.cnt_sham = 0
+    #         Source.cnt_resolved = 0
+    #         Source.cnt_not_found = 0
+    #         with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/{}".format(file), "rb") as fp:
+    #             write_to_file(u'NEW_Letter: {}\n\n'.format(file.split(u'.')[0]), mode='a')
+    #             topics = pickle.load(fp)
+    #             for i, t in enumerate(topics.values()):
+    #                 parse_refs(t)
+    #                 print "Before resolved Shams"+ str(Source.cnt_sham)
+    #                 try:
+    #                     t.parse_shams()
+    #                 except:
+    #                     print "Failed on something"
+    #                 print "After resolved Shams" + str(Source.cnt_sham)
+    #                 print i
+    #             print u"cnt :", Source.cnt
+    #             print u"cnt_sham :", Source.cnt_sham, u"precent: ", Source.cnt_sham*100.0/Source.cnt*1.0
+    #             print u"cnt_resolved :", Source.cnt_resolved, u"precent: ", Source.cnt_resolved*100.0/Source.cnt*1.0
+    #             print u"cnt_not_found :", Source.cnt_not_found, u"precent: ", Source.cnt_not_found*100.0/Source.cnt*1.0
+    #             for missing in parser.missing_authors:
+    #                 print missing
+    #
+    #             with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/with_refs/{}.pickle".format(letter_name),
+    #                              "w") as fp:
+    #                 # json.dump(topics, fp) #TypeError: <__main__.Topic object at 0x7f5f5bb73790> is not JSON serializable
+    #                 pickle.dump(topics, fp, -1)
+    #     # print u'done'
 
-        with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/with_refs/{}.pickle".format(letter_name),
-                         "w") as fp:
-            # json.dump(topics, fp) #TypeError: <__main__.Topic object at 0x7f5f5bb73790> is not JSON serializable
-            pickle.dump(topics, fp, -1)
-    print u'done'
+    read_with_refs(u'YOD')
