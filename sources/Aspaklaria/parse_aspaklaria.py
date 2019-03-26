@@ -123,7 +123,7 @@ class Topic(object):
         BT = BookIbidTracker()
         topic_table = []
         tanakh_books =library.get_indexes_in_category(u'Tanakh')
-        comp_tanakh_comm = re.compile(u'(?P<commentator>^.*?(on|,)\s+).*$')
+        comp_tanakh_comm = re.compile(u'(?P<commentator>^.*?(?P<complex>on|,)\s+).*$')
         for i, cit in enumerate(self.all_a_citations):
             for source in cit.sources:
                 ref_d = self.ref_dict(source)
@@ -148,7 +148,7 @@ class Topic(object):
                         if source.ref:
                             print source.ref
                             BT.registerRef(source.ref)
-                    elif u'Tanakh' in topic_table[-1]['index'].categories:
+                    if u'Tanakh' in topic_table[-1]['index'].categories and not source.ref:
                         tanakh_book = tanakh_ref.index.title
                         # if topic_table[-1]['index'].is_complex():
                         #     tanakh_book = tanakh_ref.index.title
@@ -159,10 +159,19 @@ class Topic(object):
                         match_str = Ref(tanakh_book).he_normal() + re.sub(u'שם ', u'', source.raw_ref.rawText, count=1) #re.sub(u'(\(|\))', u'', this_he_title + re.sub(u'שם', u'', u'(שם שם כג)', count=1))
                         try:
                             try_ref = BT.resolve(tanakh_book, match_str=match_str)  # sections=[topic_table[-1]['section'],topic_table[-1]['segment']])
-                            source.ref = Ref(cit.author + u' על ' + try_ref.he_normal())
+                        except (InputError, IbidRefException) as e:
+                            try:
+                                try_ref = Ref(re.sub(u'([^\s])\(', ur'\1 (', match_str))
+                            except InputError:
+                                try_ref = None
+                        if try_ref:
+                            ref_struct = library.get_index(cit.author).all_segment_refs()[0].he_normal()
+                            match = re.search(comp_tanakh_comm, ref_struct)
+                            complex = match.group(u'complex')
+                            source.ref = Ref(cit.author + complex + u" "+ try_ref.he_normal())
                             BT.registerRef(source.ref)
                             print source.ref
-                        except (InputError, IbidRefException) as e:
+                        else:
                             source.ref = None
                             cnt+=1
                             print cnt
@@ -492,7 +501,7 @@ class Source(object):
 
     def try_from_ls(self):
         """
-        try to look for a link to the pasuk from it's link set, since you have a pasuk that is related and an author's name. the aouthers name need to be exctracted via Term
+        try to look for a link to the pasuk from it's link set, since you have a pasuk that is related and an author's name. the authors name need to be exctracted via Term
         :return: will return the new guess
         """
         return None
@@ -568,6 +577,7 @@ def read_with_refs(letter):
             for author in t.all_a_citations:
                 for s in author.sources:
                     if s.raw_ref:
+                        cnt_sources += 1
                         print s.raw_ref.rawText
                         if s.ref:
                             print s.ref.normal()
@@ -578,39 +588,40 @@ def read_with_refs(letter):
                             cnt_sham += 1 if add_to == "sham" else 0
                             cnt_not_caught += 1 if add_to == "not_caught" else 0
                         print '-----------------'
+        print "done"
 
 if __name__ == "__main__":
     # for file in os.listdir(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/"):
-    #     # write_to_file(u'', mode = 'w')
-    #     # for file in [u'HE.pickle']:
-    #         letter_name = file[0:-7]
-    #         Source.cnt = 0
-    #         Source.cnt_sham = 0
-    #         Source.cnt_resolved = 0
-    #         Source.cnt_not_found = 0
-    #         with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/{}".format(file), "rb") as fp:
-    #             write_to_file(u'NEW_Letter: {}\n\n'.format(file.split(u'.')[0]), mode='a')
-    #             topics = pickle.load(fp)
-    #             for i, t in enumerate(topics.values()):
-    #                 parse_refs(t)
-    #                 print "Before resolved Shams"+ str(Source.cnt_sham)
-    #                 try:
-    #                     t.parse_shams()
-    #                 except:
-    #                     print "Failed on something"
-    #                 print "After resolved Shams" + str(Source.cnt_sham)
-    #                 print i
-    #             print u"cnt :", Source.cnt
-    #             print u"cnt_sham :", Source.cnt_sham, u"precent: ", Source.cnt_sham*100.0/Source.cnt*1.0
-    #             print u"cnt_resolved :", Source.cnt_resolved, u"precent: ", Source.cnt_resolved*100.0/Source.cnt*1.0
-    #             print u"cnt_not_found :", Source.cnt_not_found, u"precent: ", Source.cnt_not_found*100.0/Source.cnt*1.0
-    #             for missing in parser.missing_authors:
-    #                 print missing
-    #
-    #             with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/with_refs/{}.pickle".format(letter_name),
-    #                              "w") as fp:
-    #                 # json.dump(topics, fp) #TypeError: <__main__.Topic object at 0x7f5f5bb73790> is not JSON serializable
-    #                 pickle.dump(topics, fp, -1)
-    #     # print u'done'
+    # write_to_file(u'', mode = 'w')
+    for file in [u'HE.pickle']:
+        letter_name = file[0:-7]
+        Source.cnt = 0
+        Source.cnt_sham = 0
+        Source.cnt_resolved = 0
+        Source.cnt_not_found = 0
+        with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/{}".format(file), "rb") as fp:
+            write_to_file(u'NEW_Letter: {}\n\n'.format(file.split(u'.')[0]), mode='a')
+            topics = pickle.load(fp)
+            for i, t in enumerate(topics.values()):
+                parse_refs(t)
+                print "Before resolved Shams"+ str(Source.cnt_sham)
+                try:
+                    t.parse_shams()
+                except:
+                    print "Failed on something"
+                print "After resolved Shams" + str(Source.cnt_sham)
+                print i
+            print u"cnt :", Source.cnt
+            print u"cnt_sham :", Source.cnt_sham, u"precent: ", Source.cnt_sham*100.0/Source.cnt*1.0
+            print u"cnt_resolved :", Source.cnt_resolved, u"precent: ", Source.cnt_resolved*100.0/Source.cnt*1.0
+            print u"cnt_not_found :", Source.cnt_not_found, u"precent: ", Source.cnt_not_found*100.0/Source.cnt*1.0
+            for missing in parser.missing_authors:
+                print missing
+
+            with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/with_refs/{}.pickle".format(letter_name),
+                             "w") as fp:
+                # json.dump(topics, fp) #TypeError: <__main__.Topic object at 0x7f5f5bb73790> is not JSON serializable
+                pickle.dump(topics, fp, -1)
+        # print u'done'
 
     read_with_refs(u'YOD')

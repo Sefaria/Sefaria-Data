@@ -222,10 +222,15 @@ class CitationFinder():
                 return CitationFinder.parse_sham_match(m, lang, node)  # there should be one and only one match
         else:
             title_reg = CitationFinder.get_ultimate_title_regex(title_sham, node, lang, compiled=True)
-            st = re.sub(u'[^\s]\(', u' (', st)
+            st = re.sub(u'([^\s])\(', ur'\1 (', st)
             m = re.search(title_reg, st)
             if m:
                 return CitationFinder.parse_sham_match(m, lang, node)
+            elif Ref(st):
+                r = Ref(st)
+                title = r.index.title
+                sections = [r.he_normal()]
+                return (title, sections)
         raise InputError
 
     @staticmethod
