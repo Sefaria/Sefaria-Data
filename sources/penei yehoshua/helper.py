@@ -4,6 +4,10 @@ django.setup()
 from sefaria.model import *
 from data_utilities.dibur_hamatchil_matcher import *
 
+#Helper functions to be used for Talmud commentaries such as Penei Yehoshua.
+#The main function to call is get_links()
+
+
 def get_comments_and_map(comments, keyword):
     flags = {"Tosafot": [u"""תוספות""", u"""בתוספות""", u"""תוספת""", u"""תוס'""", u"""בתוס'"""],
              "Rashi": [u"""פירש"י""", u"""רש"י"""],

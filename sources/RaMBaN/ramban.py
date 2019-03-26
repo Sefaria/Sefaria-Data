@@ -29,7 +29,7 @@ def create_index(tractate, moed):
     root.key = 'ramban'
     root.sectionNames = ["Daf", "Comment"]
     root.depth = 2
-    root.addressTypes = ["Talmud","Integer"]
+    root.addressTypes = ["Talmud", "Integer"]
 
     root.validate()
 
@@ -177,6 +177,7 @@ def parse(tractate, errors):
          if len(line.replace(' ','')) == 0:
              continue
 
+         line = line.replace("6@", "")
          perek_info, daf_info, dh, before_dh = getInfo(line, errors)
          if len(daf_info) > 0:
             daf = getDaf(daf_info, daf)

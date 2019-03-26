@@ -289,8 +289,6 @@ if __name__ == "__main__":
         prev_daf = "2a"
         curr_text = []
         with open("batch ii/{}".format(file)) as open_file:
-            if "Shabbat" not in file:
-                continue
             for line in open_file:
                 if not line.startswith(index_title):
                     continue

@@ -38,21 +38,22 @@ if __name__ == "__main__":
     old_en_title = book.title
     old_he_title = book.get_title('he')
 
-
-
-
-
     index = get_index_api(original, server)
     index["key"] = index["title"] = index['schema']['key'] = new
+    good_titles = []
     for i, title in enumerate(index['schema']["titles"]):
         text = index['schema']['titles'][i]['text']
         orig_text = text
         text = text.replace(old_en_title, new_en_title)
         text = text.replace(old_he_title, new_he_title)
-        assert orig_text != text, "{} is different from {}".format(orig_text, text)
-        index['schema']['titles'][i]['text'] = text
+        if orig_text == text:
+            print "WARNING: {} is the same as from {}, not keeping title".format(orig_text, text)
+        else: #keep title
+            index['schema']['titles'][i]['text'] = text
+            good_titles.append(index['schema']['titles'][i])
 
-    post_index(index, "http://proto.sefaria.org")
+    index["schema"]["titles"] = good_titles
+    post_index(index, SEFARIA_SERVER)
 
 
 
