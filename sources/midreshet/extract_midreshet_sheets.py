@@ -244,6 +244,16 @@ def disambiguate_simple_tanakh_ref(map_row):
             return None
 
 
+def get_he_talmud_titles(en_tractate):
+    alts = {
+        u'Niddah': [u'נידה'],
+    }
+
+    standard_title = Ref(en_tractate).he_book()
+    all_titles = [standard_title] + alts.get(en_tractate, [])
+    return u'|'.join(all_titles)
+
+
 def disambiguate_simple_talmud_ref(midreshet_ref, expected_book):
     u"""
     <Talmud Bavli> Masechet? <Masechet pattern> <Daf Pattern> <Amud Pattern>
@@ -264,14 +274,17 @@ def disambiguate_simple_talmud_ref(midreshet_ref, expected_book):
     cleaned_ref = re.sub(u'\s*-\s*', u' - ', cleaned_ref)
     cleaned_ref = u' '.join(cleaned_ref.split())
 
-    # todo write a function that can give a title with alternate spellings
-    he_book_title = Ref(expected_book).he_book()
-    masechet_pattern = u'{} (?:{} )?(?P<book>{})'.format(u'תלמוד בבלי', u'מסכת', he_book_title)
+    if re.search(u'רשי', cleaned_ref):
+        return None
+
+    # he_book_title = Ref(expected_book).he_book()
+    he_book_title = get_he_talmud_titles(expected_book)
+    masechet_pattern = u'{} (?:{} )?(?P<book>{})'.format(u'תלמוד ה?בבלי', u'מסכת', he_book_title)
 
     start_daf_pattern = u'(?:%s )?(?P<start_daf>[\u05d0-\u05ea]{1,3})' % (u'דף',)
     end_daf_pattern = start_daf_pattern.replace(u'start_daf', u'end_daf')
 
-    start_amud_pattern = u'(?:%s )?(?P<start_ammud>[\u05d0-\u05d1])(?! (?:%s|%s))' % (u'עמוד', u'דף', u'עמוד')
+    start_amud_pattern = u'(?:%s)?(?P<start_ammud>[\u05d0-\u05d1])(?! (?:%s|%s))' % (u'עמוד |ע', u'דף', u'עמוד')
     end_amud_pattern = start_amud_pattern.replace(u'start_ammud', u'end_ammud')
 
     base_pattern = u'{} {} {}(?=\s|$)'.format(masechet_pattern, start_daf_pattern, start_amud_pattern)
@@ -307,45 +320,92 @@ def disambiguate_simple_talmud_ref(midreshet_ref, expected_book):
     return Ref(raw_ref).normal()
 
 
+class RefBuilder(object):
+
+    def __init__(self):
+        self._category_maps = {}
+        self._commentary_maps = {}
+
+    def _get_commentary_map_for_book(self, book_title):
+        if book_title in self._category_maps:
+            return self._category_maps[book_title]
+
+        def get_hebrew_commentator(commentator_index):
+            if hasattr(commentator_index, 'collective_title'):
+                return library.get_term(commentator_index.collective_title).get_primary_title('he')
+            else:
+                return commentator_index.get_title('he')
+
+        dependent_books = library.get_dependant_indices(book_title, full_records=True)
+        he_commentators = [get_hebrew_commentator(book) for book in dependent_books]
+        commentary_titles = [book.title for book in dependent_books]
+        mapping = dict(zip(he_commentators, commentary_titles))
+
+        self._commentary_maps[book_title] = mapping
+        return mapping
+
+    def apply_commentator(self, raw_ref, base_ref):
+        """
+        :param raw_ref:
+        :param Ref base_ref:
+        :return:
+        """
+        commentary_map = self._get_commentary_map_for_book(base_ref.book)
+        if not commentary_map:  # Book has no commentaries
+            return base_ref
+
+        commentator_regex = re.compile(u'|'.join(commentary_map.keys()))
+        commentator_match = commentator_regex.search(raw_ref)
+
+        if not commentator_match:
+            return base_ref
+
+        commentator_book = commentary_map[commentator_match.group()]
+        commentator_index = library.get_index(commentator_book)
+
+        if commentator_index.is_complex():
+            # get first leaf that contains our book name
+            leaves = commentator_index.nodes.get_leaf_nodes()
+            for leaf in leaves:
+                if re.search(leaf.get_primary_title('en'), base_ref.book):
+                    commentator_book = leaf.full_title('en')
+                    break
+            else:
+                return base_ref
+
+        commentator_ref = Ref(u"{} {}".format(commentator_book, u':'.join((unicode(i) for i in base_ref.sections))))
+        if base_ref.is_range():
+            range_end = Ref(u"{} {}".format(commentator_book, u':'.join((unicode(i) for i in base_ref.toSections))))
+            commentator_ref = commentator_ref.to(range_end)
+
+        return commentator_ref
+
+
 cu = MidreshetCursor()
-# cu.execute("SELECT id, MidreshetRef, Book FROM RefMap WHERE Category = 'Tanakh' AND SefariaRef IS NULL")
-# things = [(disambiguate_simple_tanakh_ref(q), q.id) for q in cu.fetchall()]
-# cu.executemany("UPDATE RefMap SET SefariaRef = ? WHERE id = ?", things)
-cu.execute("SELECT id, MidreshetRef, Book FROM RefMap WHERE Category = 'Talmud' AND SefariaRef IS NULL")
-# for q in cu.fetchall():
-#     m_ref = re.sub(u'\([^()]+\)', u'', q.MidreshetRef)
-#     m_ref = u' '.join(m_ref.split())
-#     ref_list = library.get_refs_in_string(u'({})'.format(m_ref), 'he', True)
-#     if ref_list:
-#         print(q.MidreshetRef)
-#         print(ref_list[0].normal())
-#     if q.id > 1000:
-#         break
-# cu.commit()
-results, misses = [], []
-q_rows = cu.fetchall()
-for q in q_rows:
-    try:
-        t_ref = disambiguate_simple_talmud_ref(q.MidreshetRef, q.Book)
-    except InputError:
-        t_ref = None
+cu.execute("SELECT id, MidreshetRef, Book FROM RefMap WHERE SefariaRef IS NULL")
+easy, weird = [], []
 
-    if t_ref:
-        results.append((q.MidreshetRef, t_ref))
-    else:
-        misses.append(q.MidreshetRef)
+for q in cu.fetchall():
+    possible_refs = library.get_refs_in_string(u'({})'.format(q.MidreshetRef), 'he', citing_only=True)
+    if len(possible_refs) == 1:
+        easy.append((possible_refs[0], q))
+    elif len(possible_refs) > 1:
+        weird.append(q)
 
-print(len(q_rows))
-print(len(results))
-for q in results[:50]:
-    print(q[0])
-    print(q[1])
+builder = RefBuilder()
+print(len(easy))
+print(len(weird))
+for e in easy[:100]:
+    print(e[0].normal())
+    print(e[1].MidreshetRef)
+    print(builder.apply_commentator(e[1].MidreshetRef, e[0]))
     print('')
 
-print('Misses:')
-for q in misses[:50]:
-    print(q)
-# foobar = disambiguate_simple_talmud_ref(u'תלמוד בבלי, מסכת שבת, דף לג עמוד ב – דף לד עמוד א (מתורגם)', 'Shabbat')
-# print(foobar)
+for q in weird:
+    print(q.MidreshetRef)
+
+# cu.executemany("UPDATE RefMap SET Category = 'Mishnah' WHERE id = ?", mishnah)
+
+
 
 
