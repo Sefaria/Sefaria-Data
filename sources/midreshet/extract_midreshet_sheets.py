@@ -8,6 +8,8 @@ import codecs
 import bleach
 import pyodbc
 import requests
+from functools import partial
+from multiprocessing import Pool
 from sources.functions import post_sheet
 from data_utilities.util import Singleton, getGematria
 from research.source_sheet_disambiguator.main import refine_ref_by_text
@@ -44,182 +46,6 @@ class MidreshetCursor(object):
 def convert_row_to_dict(table_row):
     columns = [i[0] for i in table_row.cursor_description]
     return {column: getattr(table_row, column) for column in columns}
-
-
-def get_terms_for_resource(resource_id, page_id):
-    cursor = MidreshetCursor()
-    cursor.execute('SELECT typeTerms, name, body, termId '
-                   'FROM ResourcesTermsOnPage '
-                   'JOIN Terms ON ResourcesTermsOnPage.termId = Terms.Id '
-                   'WHERE ResourcesTermsOnPage.resourceId=? AND ResourcesTermsOnPage.pageId=?', (resource_id, page_id))
-    return [convert_row_to_dict(r) for r in cursor.fetchall()]
-
-
-def get_dicts_for_resource(resource_id):
-    cursor = MidreshetCursor()
-    cursor.execute('SELECT name, body '
-                  'FROM ResourcesTranslations JOIN Dictionary '
-                  'ON ResourcesTranslations.dicId = Dictionary.id '
-                  'WHERE ResourcesTranslations.resourceId=? AND ResourcesTranslations.isOnPage=?', (resource_id, 1))
-    return [convert_row_to_dict(r) for r in cursor.fetchall()]
-
-
-def get_sheet_by_id(page_id):
-    cursor = MidreshetCursor()
-    cursor.execute('select * from Pages where id=?', (page_id,))
-    rows = list(cursor.fetchall())
-    assert len(rows) == 1
-    sheet = convert_row_to_dict(rows[0])
-
-    cursor.execute('SELECT name, body, exactLocation, resource_id, display_type '
-                   'FROM PageResources JOIN Resources '
-                   'ON PageResources.resource_id = Resources.id '
-                   'WHERE PageResources.page_id=? '
-                   'ORDER BY PageResources.display_order', (page_id,))
-    resources = [convert_row_to_dict(r) for r in cursor.fetchall()]
-
-    for resource in resources:
-        resource['terms'] = get_terms_for_resource(resource['resource_id'], page_id)
-        resource['dictionary'] = get_dicts_for_resource(resource['resource_id'])
-    sheet['resources'] = resources
-    return sheet
-
-
-def export_sheet_to_file(sheet_id):
-    sheet = get_sheet_by_id(sheet_id)
-    my_file = codecs.open('sheet_{}.txt'.format(sheet_id), 'w', 'utf-8')
-    my_file.write(u'{}\n\n'.format(sheet['name']))
-    my_file.write(u'{}\n\n'.format(sheet['description']))
-
-    for resource in sheet['resources']:
-        my_file.write(u'name:\n  {}\n\n'.format(resource['name']))
-        my_file.write(u'{}\n\n'.format(bleach.clean(resource['body'], strip=True, tags=[], attributes={})))
-        for term in resource['terms']:
-            my_file.write(u'typeTerms: {}; Id: {}\n{} - {}\n'.format(term['typeTerms'], term['termId'], term['name'].rstrip(), term['body']))
-        for dict_entry in resource['dictionary']:
-            my_file.write(u'{} - {}\n'.format(dict_entry['name'], dict_entry['body']))
-        my_file.write(u'exactLocation:\n  {}\n\n'.format(resource['exactLocation']))
-        my_file.write(u'display_type: {}'.format(resource['display_type']))
-        my_file.write(u'\n\n\n\n')
-
-    my_file.close()
-
-
-u"""
-מושגים / הסברים:
-For each Resource, look up it's id in ResourceRelativeTerms.resourceId and get it's termId. Look up the term in Terms.
-ResourceRelativeTerms.typeTerms defines the type of term (מושגים / הסברים).
-
-# todo - figure out what the other types of typeTerms are
-type 1,2,3 - מושגים
-type 0 - הסברים
-Seems not to have a name
-For now, best to mark the TermType. Then, once sheets are fully compiled we can compare with the original site.
-
-מילים:
-Use ResourcesTranslations. For each Resource, look up it's id in ResourcesTranslations.resourceId. Then get it's dicId
-and look that up in Dictionary
-
-
-For now set all resources as outsideText. Use PrependRefWithHe for the exactLocation.
-Source with an exactLocation can get sourcePrefix = u'מקור', otherwise sourcePrefix = u'דיון'
-"""
-
-
-def create_sheet_json(page_id):
-    raw_sheet = get_sheet_by_id(page_id)
-    sheet = {
-        'title': raw_sheet['name'],
-        'status': 'public',
-        'tags': ['foo', 'bar', 'spam', 'eggs'],
-        'options': {
-            'language': 'hebrew',
-            'numbered': False,
-        },
-        'sources': []
-    }
-
-    for resource in raw_sheet['resources']:
-        source = {
-            'outsideText': bleach.clean(resource['body'], strip=True, tags=[], attributes={}),
-            'options': {}
-        }
-        if resource['exactLocation']:
-            source['options']['sourcePrefix'] = u'מקור'
-            source['options']['PrependRefWithHe'] = resource['exactLocation']
-        else:
-            source['options']['sourcePrefix'] = u'דיון'
-        sheet['sources'].append(source)
-    return sheet
-
-
-def post_sheet_to_server(page_id, server):
-    """
-    Look up the id of a sheet on the server we're about to post to. If this is the first time the sheet has been posted,
-    save the id so the sheet can be edited later.
-    :param page_id:
-    :param server:
-    :return:
-    """
-    sheet_json = create_sheet_json(page_id)
-    cursor = MidreshetCursor()
-    cursor.execute('SELECT serverIndex FROM ServerMap WHERE pageId=? AND server=?', (page_id, server))
-    result = cursor.fetchone()
-
-    if result:
-        # check that sheet really exists
-        response = requests.get('{}/api/sheets/{}'.format(server, result.serverIndex)).json()
-
-        if 'error' in response:  # update sql database
-            print("Updating serverMap")
-            response = post_sheet(sheet_json, server=server)
-            cursor.execute('UPDATE ServerMap SET serverIndex = ? WHERE pageId=? AND server=?', (response['id'], page_id, server))
-            cursor.commit()
-        else:
-            print("Editing sheet {}".format(result.serverIndex))
-            sheet_json['id'] = result.serverIndex
-            post_sheet(sheet_json, server=server)
-            return
-    else:
-        print("Creating new sheet")
-        response = post_sheet(sheet_json, server=server)
-        sheet_id = response['id']
-        cursor.execute('INSERT INTO ServerMap (pageId, server, serverIndex) VALUES (?, ?, ?)', (page_id, server, sheet_id))
-        cursor.commit()
-    return
-
-
-# sheet_indices = [7, 14, 17, 49, 7387]
-# for s in sheet_indices:
-#     export_sheet_to_file(s)
-# s = 'http://localhost:8000'
-# post_sheet_to_server(7, s)
-# post_sheet_to_server(14, s)
-# post_sheet_to_server(14, s)
-
-
-def find_books_and_categories():
-    zero, single, multiple = [], [], []
-    my_cursor = MidreshetCursor()
-    my_cursor.execute('SELECT id, MidreshetRef FROM RefMap WHERE Book IS NULL')
-    rows = my_cursor.fetchall()
-    for row in rows:
-        books = library.get_titles_in_string(row.MidreshetRef, 'he', True)
-        if len(books) == 1:
-            book_index = library.get_index(books[0])
-            book_title = book_index.title
-            book_category = book_index.get_primary_category()
-            single.append((book_title, book_category, row.id))
-        elif len(books) > 1:
-            multiple.append((row.id,))
-        else:
-            zero.append(row)
-
-    print('zero: {}; single: {}; multiple: {}; total: {}'.format(len(zero), len(single), len(multiple), len(rows)))
-
-    my_cursor.executemany('UPDATE RefMap SET Book = ?, Category = ? WHERE id = ?', single)
-    my_cursor.executemany("UPDATE RefMap SET Comment='Multiple' WHERE id = ?", multiple)
-    my_cursor.commit()
 
 
 def disambiguate_simple_tanakh_ref(raw_ref, book_name):
@@ -449,21 +275,257 @@ class RefBuilder(object):
         return self.apply_commentator(raw_ref, refined_ref)
 
 
-builder = RefBuilder()
-cu = MidreshetCursor()
-cu.execute("SELECT RefMap.id, MidreshetRef, Book, body FROM RefMap JOIN Resources ON RefMap.id = Resources.id WHERE RefMap.SefariaRef IS NULL")
-easy, weird = [], []
+def get_terms_for_resource(resource_id, page_id):
+    cursor = MidreshetCursor()
+    cursor.execute('SELECT typeTerms, name, body, termId '
+                   'FROM ResourcesTermsOnPage '
+                   'JOIN Terms ON ResourcesTermsOnPage.termId = Terms.Id '
+                   'WHERE ResourcesTermsOnPage.resourceId=? AND ResourcesTermsOnPage.pageId=?', (resource_id, page_id))
+    return [convert_row_to_dict(r) for r in cursor.fetchall()]
 
-for q in cu.fetchall():
-    possible_refs = library.get_refs_in_string(u'({})'.format(q.MidreshetRef), 'he', citing_only=True)
+
+def get_dicts_for_resource(resource_id):
+    cursor = MidreshetCursor()
+    cursor.execute('SELECT name, body '
+                  'FROM ResourcesTranslations JOIN Dictionary '
+                  'ON ResourcesTranslations.dicId = Dictionary.id '
+                  'WHERE ResourcesTranslations.resourceId=? AND ResourcesTranslations.isOnPage=?', (resource_id, 1))
+    return [convert_row_to_dict(r) for r in cursor.fetchall()]
+
+
+def get_ref_for_resource(ref_builder, resource_id, exact_location, resource_text):
+    if exact_location is None:
+        return None
+
+    resource_text = bleach_clean(resource_text)
+    cursor = MidreshetCursor()
+    cursor.execute('SELECT SefariaRef FROM RefMap WHERE id = ?', (resource_id,))
+    result = cursor.fetchone()
+
+    if result.SefariaRef:
+        sefaria_ref = Ref(result.SefariaRef)
+        if sefaria_ref.is_talmud() or not sefaria_ref.is_segment_level():
+            try:
+                refined_ref = refine_ref_by_text(sefaria_ref, u'', resource_text)
+            except InputError:
+                return sefaria_ref.normal()
+            if refined_ref:
+                return refined_ref.normal()
+        return sefaria_ref.normal()
+
+    possible_refs = library.get_refs_in_string(u'{}'.format(exact_location), 'he', citing_only=True)
     if len(possible_refs) == 1:
-        better_ref = builder.build_difficult_ref(q.MidreshetRef, possible_refs[0])
-        easy.append((possible_refs[0], q, better_ref))
-    elif len(possible_refs) > 1:
-        weird.append(q)
+        constructed_ref = ref_builder.build_difficult_ref(exact_location, possible_refs[0])
+        try:
+            refined_ref = refine_ref_by_text(constructed_ref, u'', resource_text)
+        except InputError:
+            return constructed_ref.normal()
+        if refined_ref:
+            return refined_ref.normal()
+        else:
+            return constructed_ref.normal()
 
-print(len(easy))
-print(len(weird))
+    else:
+        return None
+
+
+builder = RefBuilder()
+get_ref_for_resource_p = partial(get_ref_for_resource, builder)
+
+
+def get_sheet_by_id(page_id):
+    cursor = MidreshetCursor()
+    cursor.execute('select * from Pages where id=?', (page_id,))
+    rows = list(cursor.fetchall())
+    assert len(rows) == 1
+    sheet = convert_row_to_dict(rows[0])
+
+    cursor.execute('SELECT name, body, exactLocation, resource_id, display_type '
+                   'FROM PageResources JOIN Resources '
+                   'ON PageResources.resource_id = Resources.id '
+                   'WHERE PageResources.page_id=? '
+                   'ORDER BY PageResources.display_order', (page_id,))
+    resources = [convert_row_to_dict(r) for r in cursor.fetchall()]
+
+    for resource in resources:
+        resource['terms'] = get_terms_for_resource(resource['resource_id'], page_id)
+        resource['dictionary'] = get_dicts_for_resource(resource['resource_id'])
+        if resource['exactLocation']:
+            resource['SefariaRef'] = get_ref_for_resource_p(resource['resource_id'], resource['exactLocation'],
+                                                            resource['body'])
+    sheet['resources'] = resources
+    return sheet
+
+
+def export_sheet_to_file(sheet_id):
+    sheet = get_sheet_by_id(sheet_id)
+    my_file = codecs.open('sheet_{}.txt'.format(sheet_id), 'w', 'utf-8')
+    my_file.write(u'{}\n\n'.format(sheet['name']))
+    my_file.write(u'{}\n\n'.format(sheet['description']))
+
+    for resource in sheet['resources']:
+        my_file.write(u'name:\n  {}\n\n'.format(resource['name']))
+        my_file.write(u'{}\n\n'.format(bleach.clean(resource['body'], strip=True, tags=[], attributes={})))
+        for term in resource['terms']:
+            my_file.write(u'typeTerms: {}; Id: {}\n{} - {}\n'.format(term['typeTerms'], term['termId'], term['name'].rstrip(), term['body']))
+        for dict_entry in resource['dictionary']:
+            my_file.write(u'{} - {}\n'.format(dict_entry['name'], dict_entry['body']))
+        my_file.write(u'exactLocation:\n  {}\n\n'.format(resource['exactLocation']))
+        my_file.write(u'display_type: {}'.format(resource['display_type']))
+        my_file.write(u'\n\n\n\n')
+
+    my_file.close()
+
+
+u"""
+מושגים / הסברים:
+For each Resource, look up it's id in ResourceRelativeTerms.resourceId and get it's termId. Look up the term in Terms.
+ResourceRelativeTerms.typeTerms defines the type of term (מושגים / הסברים).
+
+# todo - figure out what the other types of typeTerms are
+type 1,2,3 - מושגים
+type 0 - הסברים
+Seems not to have a name
+For now, best to mark the TermType. Then, once sheets are fully compiled we can compare with the original site.
+
+מילים:
+Use ResourcesTranslations. For each Resource, look up it's id in ResourcesTranslations.resourceId. Then get it's dicId
+and look that up in Dictionary
+
+
+For now set all resources as outsideText. Use PrependRefWithHe for the exactLocation.
+Source with an exactLocation can get sourcePrefix = u'מקור', otherwise sourcePrefix = u'דיון'
+"""
+
+
+def create_sheet_json(page_id):
+    raw_sheet = get_sheet_by_id(page_id)
+    sheet = {
+        'title': raw_sheet['name'],
+        'status': 'public',
+        'tags': ['foo', 'bar', 'spam', 'eggs'],
+        'options': {
+            'language': 'hebrew',
+            'numbered': False,
+        },
+        'sources': []
+    }
+
+    for resource in raw_sheet['resources']:
+        source = {
+            # 'outsideText': bleach.clean(resource['body'], strip=True, tags=[], attributes={}),
+            'options': {}
+        }
+        if resource['exactLocation']:
+            sefaria_ref = resource.get('SefariaRef', None)
+
+            if sefaria_ref:
+                source['ref'] = sefaria_ref
+                source['text'] = {'he': bleach_clean(resource['body']), 'en': ''}
+                # source['options']['sourcePrefix'] = u'מקור'
+                source['options']['PrependRefWithHe'] = resource['exactLocation']
+
+            else:
+                source['outsideText'] = u'<span style="color: #999">{}</span><br>{}'.format(
+                    resource['exactLocation'], bleach_clean(resource['body']))
+
+        else:
+            cleaned_text = bleach_clean(resource['body'])
+            if not cleaned_text:
+                continue
+            source['outsideText'] = u'{}<br>{}'.format(u'דיון:', cleaned_text)
+        sheet['sources'].append(source)
+    return sheet
+
+
+def post_sheet_to_server(page_id, server):
+    """
+    Look up the id of a sheet on the server we're about to post to. If this is the first time the sheet has been posted,
+    save the id so the sheet can be edited later.
+    :param page_id:
+    :param server:
+    :return:
+    """
+    sheet_json = create_sheet_json(page_id)
+    if not sheet_json['sources']:
+        return
+    cursor = MidreshetCursor()
+    cursor.execute('SELECT serverIndex FROM ServerMap WHERE pageId=? AND server=?', (page_id, server))
+    result = cursor.fetchone()
+
+    if result:
+        # check that sheet really exists
+        response = requests.get('{}/api/sheets/{}'.format(server, result.serverIndex)).json()
+
+        if 'error' in response:  # update sql database
+            print("Updating serverMap")
+            response = post_sheet(sheet_json, server=server)
+            cursor.execute('UPDATE ServerMap SET serverIndex = ? WHERE pageId=? AND server=?', (response['id'], page_id, server))
+            cursor.commit()
+        else:
+            print("Editing sheet {}".format(result.serverIndex))
+            sheet_json['id'] = result.serverIndex
+            post_sheet(sheet_json, server=server)
+            return
+    else:
+        print("Creating new sheet")
+        response = post_sheet(sheet_json, server=server)
+        sheet_id = response['id']
+        cursor.execute('INSERT INTO ServerMap (pageId, server, serverIndex) VALUES (?, ?, ?)', (page_id, server, sheet_id))
+        cursor.commit()
+    return
+
+
+# sheet_indices = [7, 14, 17, 49, 7387]
+# for s in sheet_indices:
+#     export_sheet_to_file(s)
+# s = 'http://localhost:8000'
+# post_sheet_to_server(7, s)
+# post_sheet_to_server(14, s)
+# post_sheet_to_server(14, s)
+
+
+def find_books_and_categories():
+    zero, single, multiple = [], [], []
+    my_cursor = MidreshetCursor()
+    my_cursor.execute('SELECT id, MidreshetRef FROM RefMap WHERE Book IS NULL')
+    rows = my_cursor.fetchall()
+    for row in rows:
+        books = library.get_titles_in_string(row.MidreshetRef, 'he', True)
+        if len(books) == 1:
+            book_index = library.get_index(books[0])
+            book_title = book_index.title
+            book_category = book_index.get_primary_category()
+            single.append((book_title, book_category, row.id))
+        elif len(books) > 1:
+            multiple.append((row.id,))
+        else:
+            zero.append(row)
+
+    print('zero: {}; single: {}; multiple: {}; total: {}'.format(len(zero), len(single), len(multiple), len(rows)))
+
+    my_cursor.executemany('UPDATE RefMap SET Book = ?, Category = ? WHERE id = ?', single)
+    my_cursor.executemany("UPDATE RefMap SET Comment='Multiple' WHERE id = ?", multiple)
+    my_cursor.commit()
+
+
+
+
+# builder = RefBuilder()
+# cu = MidreshetCursor()
+# cu.execute("SELECT RefMap.id, MidreshetRef, Book, body FROM RefMap JOIN Resources ON RefMap.id = Resources.id WHERE RefMap.SefariaRef IS NULL")
+# easy, weird = [], []
+#
+# for q in cu.fetchall():
+#     possible_refs = library.get_refs_in_string(u'({})'.format(q.MidreshetRef), 'he', citing_only=True)
+#     if len(possible_refs) == 1:
+#         better_ref = builder.build_difficult_ref(q.MidreshetRef, possible_refs[0])
+#         easy.append((possible_refs[0], q, better_ref))
+#     elif len(possible_refs) > 1:
+#         weird.append(q)
+#
+# print(len(easy))
+# print(len(weird))
 # for e in easy[100:200]:
 #     print(e[0].normal())
 #     print(e[1].MidreshetRef)
@@ -477,26 +539,26 @@ print(len(weird))
 def bleach_clean(some_text):
     return bleach.clean(some_text, tags=[], attributes={}, strip=True)
 
-import unicodecsv
-rows = []
-for e in tqdm(easy):
-    my_row = {
-        'id': e[1].id,
-        'MidreshetRef': e[1].MidreshetRef,
-        'full_text': bleach_clean(e[1].body),
-        'Sefaria Ref': e[0].normal(),
-        "Yoni's attempt": e[2],
-    }
-    try:
-        my_row['Disambiguated'] = refine_ref_by_text(e[2], '', bleach_clean(e[1].body))
-    except InputError:
-        my_row['Disambiguated'] = e[2]
-    rows.append(my_row)
-
-with open('Ref_Report.csv', 'w') as fp:
-    writer = unicodecsv.DictWriter(fp, ['id', 'MidreshetRef', 'Sefaria Ref', "Yoni's attempt", "Disambiguated", 'full_text'])
-    writer.writeheader()
-    writer.writerows(rows)
+# import unicodecsv
+# rows = []
+# for e in tqdm(easy):
+#     my_row = {
+#         'id': e[1].id,
+#         'MidreshetRef': e[1].MidreshetRef,
+#         'full_text': bleach_clean(e[1].body),
+#         'Sefaria Ref': e[0].normal(),
+#         "Yoni's attempt": e[2],
+#     }
+#     try:
+#         my_row['Disambiguated'] = refine_ref_by_text(e[2], '', bleach_clean(e[1].body))
+#     except InputError:
+#         my_row['Disambiguated'] = e[2]
+#     rows.append(my_row)
+#
+# with open('Ref_Report.csv', 'w') as fp:
+#     writer = unicodecsv.DictWriter(fp, ['id', 'MidreshetRef', 'Sefaria Ref', "Yoni's attempt", "Disambiguated", 'full_text'])
+#     writer.writeheader()
+#     writer.writerows(rows)
 
 
 # blork = RefBuilder()
@@ -522,3 +584,20 @@ with open('Ref_Report.csv', 'w') as fp:
 #     print(better_ref.normal())
 #     print(even_better.normal())
 #     print(u'')
+
+def sheet_poster(server, sheet_id):
+    return post_sheet_to_server(sheet_id, server)
+
+
+p_sheet_poster = partial(sheet_poster, 'http://midreshet.sandbox.sefaria.org')
+
+
+my_cursor = MidreshetCursor()
+my_cursor.execute('SELECT id FROM Pages WHERE parent_id = 0')
+page_ids = [m.id for m in my_cursor.fetchall()]
+# poster = sheet_poster('http://localhost:8000')
+for id_num, p_id in enumerate(page_ids):
+    print(id_num)
+    p_sheet_poster(p_id)
+# post_sheet_to_server(page_id, 'http://localhost:8000')
+# post_sheet_to_server(page_ids[394], 'http://localhost:8000')
