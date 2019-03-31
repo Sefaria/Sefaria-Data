@@ -104,6 +104,8 @@ def find_subref(sheet_text, ref, lang, vtitle=None, tried_adding_refs_at_end_of_
             next_daf = ref.next_section_ref()
             start_ref = prev_daf.all_segment_refs()[-1] if prev_daf is not None else ref
             end_ref = next_daf.all_segment_refs()[0] if next_daf is not None else ref
+            if end_ref.is_range():
+                end_ref = end_ref.ending_ref()
             new_ref = start_ref.to(end_ref)
             return find_subref(sheet_text, new_ref, lang, tried_adding_refs_at_end_of_section=True)
     return found_ref
