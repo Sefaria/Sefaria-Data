@@ -5,13 +5,15 @@ import re
 import json
 from tqdm import tqdm
 import codecs
+import pymongo
 import bleach
 import pyodbc
 import requests
 from functools import partial
+from collections import namedtuple
 from multiprocessing import Pool
 from sources.functions import post_sheet
-from data_utilities.util import Singleton, getGematria
+from data_utilities.util import Singleton, getGematria, split_list
 from research.source_sheet_disambiguator.main import refine_ref_by_text
 
 import django
@@ -293,6 +295,21 @@ def get_dicts_for_resource(resource_id):
     return [convert_row_to_dict(r) for r in cursor.fetchall()]
 
 
+def cache_to_mongo(mongo_client, ref_builder):
+    def wrapper(resource_id, exact_location, resource_text):
+        yonis_data = mongo_client.yonis_data
+        saved_ref = yonis_data.RefSources.find_one({'resource_id': resource_id})
+
+        if saved_ref:
+            return saved_ref['SefariaRef']
+
+        else:
+            derived_ref = get_ref_for_resource(ref_builder, resource_id, exact_location, resource_text)
+            yonis_data.RefSources.insert_one({'resource_id': resource_id, 'SefariaRef': derived_ref})
+            return derived_ref
+    return wrapper
+
+
 def get_ref_for_resource(ref_builder, resource_id, exact_location, resource_text):
     if exact_location is None:
         return None
@@ -330,7 +347,9 @@ def get_ref_for_resource(ref_builder, resource_id, exact_location, resource_text
 
 
 builder = RefBuilder()
-get_ref_for_resource_p = partial(get_ref_for_resource, builder)
+my_mongo_client = pymongo.MongoClient()
+get_ref_for_resource_p = cache_to_mongo(my_mongo_client, builder)
+SheetWrapper = namedtuple('SheetWrapper', ('page_id', 'sheet_json'))
 
 
 def get_sheet_by_id(page_id):
@@ -476,6 +495,42 @@ def post_sheet_to_server(page_id, server):
     return
 
 
+def bulk_sheet_post(wrapped_sheet_list, server='http://localhost:8000'):
+    """
+    Posts a list of pre-generated sheets. We can't maintain a single mongo client across forks, so when multiprocessing
+    it is necessary to split our list of sheets into chunks. We instantiate one client for each chunk, then work on all
+    the chunks in parallel
+    :param wrapped_sheet_list: NamedTuple, keys: page_id, sheet_json
+    :param server: server to post to
+    :return:
+    """
+    client = pymongo.MongoClient()
+    server_map = client.yonis_data.server_map
+
+    for wrapped_sheet in wrapped_sheet_list:
+        page_id, sheet_json = wrapped_sheet.page_id, wrapped_sheet.sheet_json
+        if not sheet_json['sources']:
+            continue
+        server_map_data = server_map.find_one({'pageId': page_id, 'server': server})
+
+        if server_map_data:
+            # check that sheet really exists
+            response = requests.get('{}/api/sheets/{}'.format(server, server_map_data['serverIndex'])).json()
+
+            if 'error' in response:
+                response = post_sheet(sheet_json, server=server)
+                server_map.find_one_and_update({'pageId': page_id, 'server': server},
+                                               {'$set': {'serverIndex': response['id']}})
+            else:
+                sheet_json['id'] = response['id']
+                post_sheet(sheet_json, server=server)
+
+        else:
+            response = post_sheet(sheet_json, server=server)
+            server_map.insert_one({'pageId': page_id, 'server': server, 'serverIndex': response['id']})
+    return
+
+
 # sheet_indices = [7, 14, 17, 49, 7387]
 # for s in sheet_indices:
 #     export_sheet_to_file(s)
@@ -509,95 +564,20 @@ def find_books_and_categories():
     my_cursor.commit()
 
 
-
-
-# builder = RefBuilder()
-# cu = MidreshetCursor()
-# cu.execute("SELECT RefMap.id, MidreshetRef, Book, body FROM RefMap JOIN Resources ON RefMap.id = Resources.id WHERE RefMap.SefariaRef IS NULL")
-# easy, weird = [], []
-#
-# for q in cu.fetchall():
-#     possible_refs = library.get_refs_in_string(u'({})'.format(q.MidreshetRef), 'he', citing_only=True)
-#     if len(possible_refs) == 1:
-#         better_ref = builder.build_difficult_ref(q.MidreshetRef, possible_refs[0])
-#         easy.append((possible_refs[0], q, better_ref))
-#     elif len(possible_refs) > 1:
-#         weird.append(q)
-#
-# print(len(easy))
-# print(len(weird))
-# for e in easy[100:200]:
-#     print(e[0].normal())
-#     print(e[1].MidreshetRef)
-#     print(builder.build_difficult_ref(e[1].MidreshetRef, e[0]))
-#     print('')
-
-# for q in weird:
-#     print(q.MidreshetRef)
-
-
 def bleach_clean(some_text):
     return bleach.clean(some_text, tags=[], attributes={}, strip=True)
 
-# import unicodecsv
-# rows = []
-# for e in tqdm(easy):
-#     my_row = {
-#         'id': e[1].id,
-#         'MidreshetRef': e[1].MidreshetRef,
-#         'full_text': bleach_clean(e[1].body),
-#         'Sefaria Ref': e[0].normal(),
-#         "Yoni's attempt": e[2],
-#     }
-#     try:
-#         my_row['Disambiguated'] = refine_ref_by_text(e[2], '', bleach_clean(e[1].body))
-#     except InputError:
-#         my_row['Disambiguated'] = e[2]
-#     rows.append(my_row)
-#
-# with open('Ref_Report.csv', 'w') as fp:
-#     writer = unicodecsv.DictWriter(fp, ['id', 'MidreshetRef', 'Sefaria Ref', "Yoni's attempt", "Disambiguated", 'full_text'])
-#     writer.writeheader()
-#     writer.writerows(rows)
+
+def sheet_poster(server, wrapped_sheet_list):
+    return bulk_sheet_post(wrapped_sheet_list, server)
 
 
-# blork = RefBuilder()
-# blip = u'רש"י על התלמוד הבבלי, בבא בתרא דף ז, עמוד ב'
-# bloop = Ref(u'Bava Batra 7a')
-# porg = blork.build_difficult_ref(blip, bloop)
-# print(porg.normal())
-
-
-# cu.executemany("UPDATE RefMap SET Category = 'Mishnah' WHERE id = ?", mishnah)
-# build_thingy = RefBuilder()
-# my_cursor = MidreshetCursor()
-# my_id_list = [111, 124, 543]
-# for thing in my_id_list:
-#     my_cursor.execute('SELECT exactLocation, body FROM Resources WHERE id = ?', (thing,))
-#     q_row = my_cursor.fetchone()
-#     basic_ref = library.get_refs_in_string(u'({})'.format(q_row.exactLocation), 'he', citing_only=True)[0]
-#     better_ref = build_thingy.build_difficult_ref(q_row.exactLocation, basic_ref)
-#     even_better = refine_ref_by_text(better_ref, '', bleach.clean(q_row.body, tags=[], attributes={}, strip=True))
-#
-#     print(q_row.exactLocation)
-#     print(basic_ref.normal())
-#     print(better_ref.normal())
-#     print(even_better.normal())
-#     print(u'')
-
-def sheet_poster(server, sheet_id):
-    return post_sheet_to_server(sheet_id, server)
-
-
-p_sheet_poster = partial(sheet_poster, 'http://midreshet.sandbox.sefaria.org')
-
-
+p_sheet_poster = partial(sheet_poster, 'http://localhost:8000')
 my_cursor = MidreshetCursor()
 my_cursor.execute('SELECT id FROM Pages WHERE parent_id = 0')
-page_ids = [m.id for m in my_cursor.fetchall()]
-# poster = sheet_poster('http://localhost:8000')
-for id_num, p_id in enumerate(page_ids):
-    print(id_num)
-    p_sheet_poster(p_id)
-# post_sheet_to_server(page_id, 'http://localhost:8000')
-# post_sheet_to_server(page_ids[394], 'http://localhost:8000')
+my_wrapped_sheet_list = [SheetWrapper(m.id, create_sheet_json(m.id)) for m in tqdm(my_cursor.fetchall())]
+print('finished creating sheets')
+sheet_chunks = list(split_list(my_wrapped_sheet_list, 12))
+pool = Pool(12)
+pool.map(p_sheet_poster, sheet_chunks)
+
