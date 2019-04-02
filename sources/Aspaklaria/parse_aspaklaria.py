@@ -14,12 +14,16 @@ import pickle
 from data_utilities.util import getGematria, numToHeb
 import codecs
 from data_utilities.ibid import *
+from aspaklaria_connect import client
+
+db = client.aspaklaria
 
 class Parser(object):
 
     def __init__(self):
         self.term_dict, self.he_term_str = he_term_mapping()
         self.missing_authors = set()
+
 
 def he_term_mapping():
     all_terms = TermSet({})
@@ -32,6 +36,7 @@ def he_term_mapping():
     he_terms_str = u'|'.join(he)
     he_terms_str = re.sub(re.escape(string.punctuation), u'', he_terms_str)
     return he_key_term_dict, he_terms_str
+
 
 def bs_read(fileName):
     with codecs.open(fileName, encoding='utf-8') as f:
@@ -96,6 +101,7 @@ def parse_refs(topic):
         for citbook in topic.all_a_citations:
             citbook.create_sources()
             pass
+
 
 class AuthorCit(object):
 
@@ -180,6 +186,7 @@ class Topic(object):
                     Source.cnt_sham -= 1
                     Source.cnt_resolved +=1
 
+
     def ref_dict(self, source):
         d = {}
         if source.ref:
@@ -193,6 +200,7 @@ class Topic(object):
             d['segment'] = source.ref.sections[1] if len(source.ref.sections) > 1 else None
         if d:
             return d
+
 
 class Source(object):
     cnt = 0
@@ -355,6 +363,8 @@ class Source(object):
                 for s in he_parashah_array:
                     st = re.sub(s, u"", st)
                     st = re.sub(u"מצוה", u"", st)
+            elif self.author == u'מורה נבוכים':
+                st = re.sub(u"פתיחה", u'הקדמה, פתיחת הרמב"ם', st)
             return st
 
         if self.raw_ref:
@@ -523,8 +533,7 @@ def write_to_file(text, mode='a'):
         f.write(text)
 
 
-
-def parse2pickle():
+def parse2pickle(letter=u''):
     topic_le_table = dict()
     with open(u'/home/shanee/www/Sefaria-Data/sources/Aspaklaria/headwords.csv', 'r') as csvfile:
         file_reader = csv.DictReader(csvfile)
@@ -533,7 +542,8 @@ def parse2pickle():
             fieldnames = file_reader.fieldnames
             topic_le_table[row[u'he']] = row[u'en']
     all_topics = dict()
-    for letter in os.listdir(u'/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/'):
+    letters = [letter] if letter else os.listdir(u'/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/')
+    for letter in letters:
         if not os.path.isdir(u'/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/{}'.format(letter)):
             continue
         i = 0
@@ -541,7 +551,8 @@ def parse2pickle():
         for file in os.listdir(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/{}".format(letter)):
             if u'_' in file:
                 continue
-            if file[:-5].isalpha():
+            # don't read the index file ex: for letter YOD don't read the html file '/Aspaklaria/www.aspaklaria.info/010_YOD/YOD.html'
+            if re.search(re.sub(u'.html', u'', file), letter):
                 continue
             t = bs_read(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/{}/{}".format(letter, file))
             i+=1
@@ -556,6 +567,8 @@ def parse2pickle():
             # json.dump(topics, fp) #TypeError: <__main__.Topic object at 0x7f5f5bb73790> is not JSON serializable
             pickle.dump(topics, fp, -1)
         all_topics[letter_name] = topics
+    pass
+
 
 def read_with_refs(letter):
     """
@@ -580,9 +593,15 @@ def read_with_refs(letter):
                         cnt_sources += 1
                         print s.raw_ref.rawText
                         if s.ref:
+                            db.aspaklaria_source.insert_one(
+                                {'topic': t.headWord, 'ref': s.ref.normal(), 'raw_ref': s.text,
+                                 'index': s.ref.index.title, 'is_sham':s.raw_ref.is_sham, 'author':s.author})
                             print s.ref.normal()
                             cnt_resolved += 1
                         else:
+                            db.aspaklaria_source.insert_one(
+                                {'topic': t.headWord, 'raw_ref': s.text,
+                                 'author': s.author, 'is_sham':s.raw_ref.is_sham})
                             print s.author  # "None... didn't find the Ref"
                             add_to = "sham" if s.raw_ref.is_sham else "not_caught"
                             cnt_sham += 1 if add_to == "sham" else 0
@@ -590,10 +609,12 @@ def read_with_refs(letter):
                         print '-----------------'
         print "done"
 
+
 if __name__ == "__main__":
     # for file in os.listdir(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/"):
     # write_to_file(u'', mode = 'w')
-    for file in [u'HE.pickle']:
+    parse2pickle(u'010_YOD')
+    for file in [u'YOD.pickle']:
         letter_name = file[0:-7]
         Source.cnt = 0
         Source.cnt_sham = 0
