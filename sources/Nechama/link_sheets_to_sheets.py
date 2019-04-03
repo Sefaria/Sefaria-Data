@@ -195,6 +195,7 @@ def revers_get_map():
     reversed_map = dict(zip(map_get_id_ssn.values(), map_get_id_ssn.keys()))
     return reversed_map
 
+
 def get_ssn(read_id, reversed_get_map):
     """
     gets a sheet id from a server and maps it to the correct ssn (using tags)
@@ -205,6 +206,7 @@ def get_ssn(read_id, reversed_get_map):
     if not ssn:
         ssn = int(read_id)
     return ssn
+
 
 def get_post_id(ssn):
     """
@@ -222,6 +224,7 @@ def get_post_id(ssn):
         post_id=ssn
     return post_id
 
+
 def get_sheets_from_get_server(list_get_sheet_ids, get_server_address):
     got_sheets = []
     for id in list_get_sheet_ids:
@@ -229,7 +232,12 @@ def get_sheets_from_get_server(list_get_sheet_ids, get_server_address):
         got = http_request(url, body={"apikey": API_KEY}, method="GET")
         got_sheets.append(got)
     return got_sheets
-    
+
+
+def add_ref_link():
+    return
+
+
 def link_sheet(sheet_json, get_ssn_map,post_id=None):
     """
 
@@ -239,11 +247,12 @@ def link_sheet(sheet_json, get_ssn_map,post_id=None):
     """
     if not post_id:
         post_id=sheet_json['id']
-
+    compile_seg2ref = re.compile(u'class="refLink"\s*href="/(?P<ref>.*?)"')
+    compile_has_data_ref = re.compile(u'<a.*?>')
     compile_refmeta = re.compile(u'<(?P<refmeta>a href=)"/sheets/(?P<id2>\d+?")>')
     compile = re.compile(u'/sheets/(?P<id>\d+)')  # (?:\.(?P<node>\d+))? # there is a proble, here. it returns/ or reads only the first see. ssn 911. id 552
     for i, s in enumerate(sheet_json['sources']):
-        if 'outsideText' in s.keys():
+        if 'outsideText' in s.keys():         # outsideText
             uni_outsidetext = unicode(s['outsideText'], encoding='utf8') if isinstance(s['outsideText'], str) else s[
                 'outsideText']
             for match in re.finditer(compile, s['outsideText']):
@@ -252,10 +261,15 @@ def link_sheet(sheet_json, get_ssn_map,post_id=None):
                 to_post_id = get_post_id(ssn)
                 s['outsideText'] = re.sub(match.group("id"), str(to_post_id), s['outsideText'])
                 print s['outsideText']
-        elif 'outsideBiText' in s.keys():
+
+            for match in re.finditer(compile_seg2ref, s['outsideText']):
+                # if - check that this ref doesn't have the data-ref already so not to duplicate the data-ref - check documentation if double fields are taken care of by js?
+                s['outsideText'] = re.sub(match.groups(), match.groups+u' data-ref="{}"'.format(match.group(u'ref')), s['outsideText'])
+        elif 'outsideBiText' in s.keys():        # outsideBiText
             uni_outsidetext = unicode(s['outsideBiText']['he'], encoding='utf8') if isinstance(s['outsideBiText']['he'],
                                                                                                str) else \
                 s['outsideBiText']['he']
+
             # hebrew links
             for match in re.finditer(compile, s['outsideBiText']['he']):
                 ssn = get_ssn(match.group("id"),get_ssn_map)  # this is the ssn of the sheet to connect to
@@ -263,6 +277,7 @@ def link_sheet(sheet_json, get_ssn_map,post_id=None):
                 to_post_id = get_post_id(ssn)
                 s['outsideBiText']['he'] = re.sub(match.group("id"), str(to_post_id), s['outsideBiText']['he'])
                 print s['outsideBiText']['he']
+
             # english links
             for match in re.finditer(compile, s['outsideBiText']['en']):
                 ssn = get_ssn(match.group("id"), get_ssn_map)  # this is the ssn of the sheet to connect to
@@ -292,7 +307,7 @@ if __name__ == "__main__":
     # sheets = db.sheets.find({"tags": "Hebrew Sheet"})
     compile = re.compile(u'/sheets/(?P<id>\d+)')  # (?:\.(?P<node>\d+))?
     get_ssn_map = revers_get_map()
-    ids = [162053]#[160441, 160684, 160631, 161425, 162058, 160600, 160760, 160454, 162331, 160698, 160636, 160576, 161312, 162336, 162051, 162089, 162325, 160475, 162327, 160755, 160482, 162328, 162334, 160484, 161271, 160485, 160486, 162332, 162333, 162337, 162335, 160488, 160546, 162673, 162053, 162054, 162055, 162386]
+    ids = [160441, 160684, 160631, 161425, 162058, 160600, 160760, 160454, 162331, 160698, 160636, 160576, 161312, 162336, 162051, 162089, 162325, 160475, 162327, 160755, 160482, 162328, 162334, 160484, 161271, 160485, 160486, 162332, 162333, 162337, 162335, 160488, 160546, 162673, 162053, 162054, 162055, 162386]
  # MAP_POST.values()
     sheets = get_sheets_from_get_server(ids, GET_SERVER)  # list_get_sheet_ids comes straight from mongo range(155157, 156614)
     progress = 0
@@ -318,6 +333,3 @@ if __name__ == "__main__":
     # #         text = segment["text"]["he"] if "text" in segment.keys() else segment["outsideText"]
     # #         for match in re.findall("^<a href.*?nechama.org.il/pages/.*?</a>", text):
     # #             text = text.replace(match, )
-
-
-
