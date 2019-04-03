@@ -41,13 +41,17 @@ if __name__ == "__main__":
     index = get_index_api(original, server)
     index["key"] = index["title"] = index['schema']['key'] = new
     good_titles = []
+    index["base_text_titles"] = [new_en_title]
+    for bad_attr in ["enDesc", "heDesc", "compDate", "compPlace", "pubDate", "pubPlace"]:
+        if bad_attr in index:
+            del index[bad_attr]
     for i, title in enumerate(index['schema']["titles"]):
         text = index['schema']['titles'][i]['text']
         orig_text = text
         text = text.replace(old_en_title, new_en_title)
         text = text.replace(old_he_title, new_he_title)
         if orig_text == text:
-            print "WARNING: {} is the same as from {}, not keeping title".format(orig_text, text)
+            print u"WARNING: {} is the same as from {}, not keeping title".format(orig_text, text)
         else: #keep title
             index['schema']['titles'][i]['text'] = text
             good_titles.append(index['schema']['titles'][i])

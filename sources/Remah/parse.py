@@ -65,6 +65,11 @@ def parse_default(file):
                 section = new_section
                 lines[section] = []
             else:
+                ftnotes = re.findall("\*\{.*?}", line)
+                for ftnote in ftnotes:
+                    formatted_ftnote = "<sup>*</sup><i class='footnote'>{}</i>".format(removeAllTags(ftnote))
+                    line = line.replace(ftnote, formatted_ftnote)
+                    line = line.replace("*{", "").replace("}", "")
                 line = removeAllTags(line)
                 lines[section].append(line)
     return convertDictToArray(lines)
@@ -83,5 +88,5 @@ if __name__ == "__main__":
             "versionSource": "http://aleph.nli.org.il:80/F/?func=direct&doc_number=000109739&local_base=MBI01"
         }
         print "Responsa of Remah{}".format(ref)
-        post_text("Responsa of Remah{}".format(ref), send_text, SEFARIA_SERVER)
+        print post_text("Responsa of Remah{}".format(ref), send_text, SEFARIA_SERVER)
 

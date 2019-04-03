@@ -36,18 +36,25 @@ if __name__ == "__main__":
     post_info = {}
     post_info["language"] = "en"
     post_info["server"] = SERVER
-    allowed_tags = ["book", "intro", "part", "chapter", "p", "ftnote", "title", "ol", "footnotes", "appendix", "h1"]
+    allowed_tags = ["book", "intro", "bibl", "part", "chapter", "p", "ftnote", "title", "ol", "footnotes", "appendix", "h1"]
     allowed_attributes = ["id"]
     p = re.compile("\d+a?\.")
 
-    post_info["versionTitle"] = "Rashi on Nach"
-    post_info["versionSource"] = "http://ste.sefaria.org"
-    title = "Mishneh Torah"
-    file_name = "BenSira.xml"
+    post_info["versionTitle"] = "Responsa on Contemporary Jewish Women's Issues"
+    post_info["versionSource"] = "http://www.sefaria.org"
+    title = "Responsa on Contemporary Jewish Women's Issues"
+    file_name = "Responsa_on_Contemporary_Jewish_Womens_Issues.xml"
 
+    array_of_names = ['intro', 'part', 'chapter', 'part', 'chapter', 'chapter', 'chapter', 'chapter', 'chapter', 'chapter', 'chapter', 'chapter', 'chapter', 'chapter', 'part', 'chapter', 'chapter', 'chapter', 'chapter', 'part', 'chapter', 'chapter', 'chapter', 'chapter', 'chapter', 'part', 'chapter', 'chapter', 'chapter', 'chapter', 'appendix', 'bibl']
+    chapters = range(1, 25)
+    counter = 0
+    for i, name in enumerate(array_of_names):
+        if name == "chapter":
+            array_of_names[i] = str(chapters[counter])
+            counter += 1
 
     parser = XML_to_JaggedArray(title, file_name, allowed_tags, allowed_attributes, post_info, change_name=True, image_dir="./images",
-                                titled=True, print_bool=True)
+                                titled=True, print_bool=True, remove_chapter=False, array_of_names=array_of_names)
     parser.set_funcs(reorder_test=lambda x: x.tag == "h1", reorder_modify=reorder_modify)
     parser.run()
 

@@ -30,6 +30,8 @@ def get_relevant_DHs(ch_name, file_name):
 
 
 def getDaf(new_daf):
+    if re.match("\d+[ab]", new_daf):
+        return AddressTalmud(0).toNumber("en", new_daf)
     daf, amud = new_daf[0:-1], new_daf[-1]
     daf = getGematria(daf)*2 - 1
     if amud == ":":
@@ -50,7 +52,7 @@ class Commentary:
 
     def create_index(self):
         heMasechet = library.get_index(self.masechet).get_title('he')
-        heTitle = u"{} on {}".format(self.heIndex, heMasechet)
+        heTitle = u"{} על {}".format(self.heIndex, heMasechet)
         seder = library.get_index(self.masechet).categories[-1]
 
         root = JaggedArrayNode()
@@ -62,7 +64,10 @@ class Commentary:
         index = {
             "title": "{} on {}".format(self.index, self.masechet),
             "schema": root.serialize(),
-            "categories": ["Talmud", "Bavli", "Commentary", self.index, seder]
+            "categories": ["Talmud", "Bavli", "Commentary", self.index, seder],
+            "dependence": "Commentary",
+            "collective_title": self.index,
+            "base_text_titles": [self.masechet]
         }
         return index
 

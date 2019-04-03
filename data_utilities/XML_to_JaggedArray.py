@@ -20,7 +20,9 @@ from sefaria.model import *
 class XML_to_JaggedArray:
 
 
-    def __init__(self, title, file, allowedTags, allowedAttributes, post_info=None, dict_of_names={}, print_bool=False, array_of_names=[], deleteTitles=True, change_name=False, assertions=False, image_dir=None, titled=False):
+    def __init__(self, title, file, allowedTags, allowedAttributes, post_info=None,
+                 dict_of_names={}, print_bool=False, array_of_names=[], deleteTitles=True,
+                 change_name=False, assertions=False, image_dir=None, titled=False, remove_chapter=True):
         self.title = title
         self.writer = UnicodeWriter(open("{}.csv".format(file.split(".")[0]), 'w'))
         self.post_info = post_info
@@ -45,6 +47,7 @@ class XML_to_JaggedArray:
         self.print_bool = print_bool #print results to CSV file
         self.footnotes_within_footnotes = {} #used in English Mishneh Torah translations for footnotes with Raavad being quoted
         self.word_to_num = WordsToNumbers()
+        self.remove_chapter_when_cleaning = remove_chapter
 
     def set_title(self, title):
         self.title = title
@@ -183,9 +186,9 @@ class XML_to_JaggedArray:
         return tag_set
 
     def removeChapter(self, text):
-        match = re.search("^(CHAPTER|chapter|Chapter) [a-zA-Z0-9]{1,5}(\.|\,)?", text)
+        match = re.search("^((CHAPTER|chapter|Chapter|Part|PART) [a-zA-Z0-9]+(\.|\,|\:)?).+", text)
         if match:
-            text = text.replace(match.group(0), "").strip()
+            text = text.replace(match.group(1), "").strip()
         return text
 
     def cleanNodeName(self, text):
@@ -421,15 +424,15 @@ class XML_to_JaggedArray:
     def handle_special_tags(self, element, child, index):
         if child.tag == "ol":
             child = self.fix_ol(child)
-        if child.tag == "table":
+        elif child.tag == "table":
             self.print_table_info(element, index)
-        if child.tag == "h1" and self.title == "Teshuvot Maharam":
-            child.text = re.sub(" \(D.*?\)", "", child.text)
-        if child.tag in ["chapter"] and "CHAPTER " in child.text.upper():# and len(child.text.split(" ")) <= 3:
-            tags = re.findall("<sup>.*?</sup>", child.text)
-            for tag in tags:
-                child.text = child.text.replace(tag, "")
-            child.text = str(child.text.split(" ")[1])
+        # if child.tag == "h1" and self.title == "Teshuvot Maharam":
+        #     child.text = re.sub(" \(D.*?\)", "", child.text)
+        # elif child.tag in ["chapter"] and "CHAPTER " in child.text.upper():# and len(child.text.split(" ")) <= 3:
+        #     tags = re.findall("<sup>.*?</sup>", child.text)
+        #     for tag in tags:
+        #         child.text = child.text.replace(tag, "")
+        #     child.text = str(child.text.split(" ")[1])
             #child.text = str(roman_to_int(child.text.split(" ")[-1])) # Chapter II => 2
             #child.text = str(self.word_to_num.parse(child.text.split(" ")[-1])) #  Chapter Two => 2
 
