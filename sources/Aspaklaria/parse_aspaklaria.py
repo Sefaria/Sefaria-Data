@@ -592,15 +592,16 @@ def read_with_refs(letter):
                     if s.raw_ref:
                         cnt_sources += 1
                         print s.raw_ref.rawText
+                        solo_source_text = re.sub(re.escape(s.raw_ref.rawText), u'', s.text)
                         if s.ref:
                             db.aspaklaria_source.insert_one(
-                                {'topic': t.headWord, 'ref': s.ref.normal(), 'raw_ref': s.text,
+                                {'topic': t.headWord, 'ref': s.ref.normal(), 'text': solo_source_text, 'raw_ref':s.raw_ref.rawText,
                                  'index': s.ref.index.title, 'is_sham':s.raw_ref.is_sham, 'author':s.author})
                             print s.ref.normal()
                             cnt_resolved += 1
                         else:
                             db.aspaklaria_source.insert_one(
-                                {'topic': t.headWord, 'raw_ref': s.text,
+                                {'topic': t.headWord, 'text': solo_source_text, 'raw_ref':s.raw_ref.rawText,
                                  'author': s.author, 'is_sham':s.raw_ref.is_sham})
                             print s.author  # "None... didn't find the Ref"
                             add_to = "sham" if s.raw_ref.is_sham else "not_caught"
@@ -609,12 +610,10 @@ def read_with_refs(letter):
                         print '-----------------'
         print "done"
 
-
-if __name__ == "__main__":
+def shamas_per_leter(he_letter):
     # for file in os.listdir(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/"):
     # write_to_file(u'', mode = 'w')
-    parse2pickle(u'010_YOD')
-    for file in [u'YOD.pickle']:
+    for file in [u'{}.pickle'.format(he_letter)]:
         letter_name = file[0:-7]
         Source.cnt = 0
         Source.cnt_sham = 0
@@ -625,7 +624,7 @@ if __name__ == "__main__":
             topics = pickle.load(fp)
             for i, t in enumerate(topics.values()):
                 parse_refs(t)
-                print "Before resolved Shams"+ str(Source.cnt_sham)
+                print "Before resolved Shams" + str(Source.cnt_sham)
                 try:
                     t.parse_shams()
                 except:
@@ -633,16 +632,22 @@ if __name__ == "__main__":
                 print "After resolved Shams" + str(Source.cnt_sham)
                 print i
             print u"cnt :", Source.cnt
-            print u"cnt_sham :", Source.cnt_sham, u"precent: ", Source.cnt_sham*100.0/Source.cnt*1.0
-            print u"cnt_resolved :", Source.cnt_resolved, u"precent: ", Source.cnt_resolved*100.0/Source.cnt*1.0
-            print u"cnt_not_found :", Source.cnt_not_found, u"precent: ", Source.cnt_not_found*100.0/Source.cnt*1.0
+            print u"cnt_sham :", Source.cnt_sham, u"precent: ", Source.cnt_sham * 100.0 / Source.cnt * 1.0
+            print u"cnt_resolved :", Source.cnt_resolved, u"precent: ", Source.cnt_resolved * 100.0 / Source.cnt * 1.0
+            print u"cnt_not_found :", Source.cnt_not_found, u"precent: ", Source.cnt_not_found * 100.0 / Source.cnt * 1.0
             for missing in parser.missing_authors:
                 print missing
 
-            with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/with_refs/{}.pickle".format(letter_name),
-                             "w") as fp:
+            with codecs.open(
+                    u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/with_refs/{}.pickle".format(letter_name),
+                    "w") as fp:
                 # json.dump(topics, fp) #TypeError: <__main__.Topic object at 0x7f5f5bb73790> is not JSON serializable
                 pickle.dump(topics, fp, -1)
         # print u'done'
 
-    read_with_refs(u'YOD')
+if __name__ == "__main__":
+    he_letter = u'TAV'
+    letter_gimatria = 400
+    # parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
+    # shamas_per_leter(he_letter)
+    read_with_refs(u'{}'.format(he_letter))

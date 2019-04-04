@@ -46,14 +46,16 @@ class Test_try_parallel_matcher(object):
         assert got_sheet["html_all/{}.html".format(102)].sources[33]['ref'] == u'Ibn Ezra on Genesis 9:4:1'
 
 
-# class Test_parse_he_Data_Types(object):
-#
-#     def test_perek_pasuk(self):
-#         assert Ref(u'בראשית פרק א פסוק ג') == Ref('Genesis 1:3')
-#         assert Ref(u'שמות ד פסוקים ג-ו') == Ref('Exodus 4:3-6')
-#         # assert Ref(u'שמות ד פסוק ג - פרק ו') == Ref('Exodus 4:3-6:30')
-#         # assert Ref(u'שמות ד פסוק ג - פסוק ו') == Ref('Exodus 4:3-6')
-#         # assert Ref(u'שמות פרק ד - פרק ה פסוק ו') == Ref('Exodus 4:1-5:6')
+class Test_parse_he_Data_Types(object):
+
+    def test_perek_pasuk(self):
+        assert Ref(u'בראשית פרק א פסוק ג') == Ref('Genesis 1:3')
+        assert Ref(u'שמות ד פסוקים ג-ו') == Ref('Exodus 4:3-6')
+        assert Ref(u'תהילים פו') == Ref('Psalms 86')
+        # assert Ref(u'שמות ד פסוק ג - פרק ו פסוק ב') == Ref('Exodus 4:3-6:2')
+        # assert Ref(u'שמות ד פסוק ג - פרק ו') == Ref('Exodus 4:3-6:30')
+        # assert Ref(u'שמות ד פסוק ג - פסוק ו') == Ref('Exodus 4:3-6')
+        # assert Ref(u'שמות פרק ד - פרק ה פסוק ו') == Ref('Exodus 4:1-5:6')
 
 class Test_ref_term_catching(object):
 

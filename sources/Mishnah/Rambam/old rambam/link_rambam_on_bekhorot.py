@@ -166,7 +166,7 @@ guess = 0
 matched = 0
 log = []
 
-f=open('bekhorot.txt', 'r')
+f=open('bekhorot.txt.txt', 'r')
 perek_num = 0
 dh_dict = {}
 curr_dh_count = 0 

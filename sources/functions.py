@@ -630,9 +630,9 @@ def make_title(text):
     return new_text
 
 @weak_connection
-def post_sheet(sheet, server=SEFARIA_SERVER):
-    url = server + "/api/sheets"
-    response = http_request(url, body={"apikey": API_KEY}, json_payload=sheet, method="POST")
+def post_sheet(sheet, server=SEFARIA_SERVER, spec_sheet_id='', api_key = API_KEY):
+    url = server + "/api/sheets{}".format("/{}/add".format(spec_sheet_id) if len(spec_sheet_id) > 0 else '')
+    response = http_request(url, body={"apikey": api_key}, json_payload=sheet, method="POST")
     if isinstance(response, dict):
         return response
     else:
@@ -1038,7 +1038,7 @@ def add_term(en_title, he_title, scheme='toc_categories', server=SEFARIA_SERVER)
     'scheme': scheme,
     'titles': [{'lang': 'en', 'text': en_title, 'primary': True}, {'lang': 'he', 'text': he_title, 'primary': True}]
     }
-    post_term(term_dict, server)
+    res = post_term(term_dict, server)
 
 
 def add_title_existing_term(name, title, lang="en", server=SEFARIA_SERVER):
