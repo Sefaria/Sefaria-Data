@@ -7,7 +7,8 @@ import re
 
 # GET_SERVER = "http://steinsaltz.sandbox.sefaria.org"
 # POST_SERVER = "http://steinsaltz.sandbox.sefaria.org"
-compile_seg2ref = re.compile(u'<.*?(?P<add_to>class="refLink"\s*href="/(?P<ref>.*?)").*?>')
+delete_data_ref_info = True
+compile_seg2ref = re.compile(u'<.*?(?P<add_to>class="refLink"\s*href="/(?P<sheet>sheets/)?(?P<ref>.*?)").*?>')
 
 
 def add_all_ref_link(sheet_sources):
@@ -19,8 +20,8 @@ def add_all_ref_link(sheet_sources):
                 #     continue
                 # s['outsideText'] = add_ref_link(s['outsideText'], match)
         elif 'outsideBiText' in s.keys():
-            s['outsideBiText']['he'] = change_texts(s['outsideText']['he'])
-            s['outsideBiText']['en'] = change_texts(s['outsideText']['en'])
+            s['outsideBiText']['he'] = change_texts(s['outsideBiText']['he'])
+            s['outsideBiText']['en'] = change_texts(s['outsideBiText']['en'])
             # for match in re.finditer(compile_seg2ref, s['outsideBiText']['he']):
             #     if re.search(u'data-ref', match.group()):
             #         continue
@@ -35,22 +36,35 @@ def add_all_ref_link(sheet_sources):
 def change_texts(text):
     for match in re.finditer(compile_seg2ref, text):
         if re.search(u'data-ref', match.group()):
-            continue
-        text = add_ref_link(text, match)
+            if delete_data_ref_info:
+                return delete_ref_link(text)
+        else:
+            text = add_ref_link(text, match)
     return text
 
 
 def add_ref_link(text, match):
-    new_text = re.sub(match.group('add_to'), match.group('add_to') + u' data-ref="{}"'.format(match.group('ref')), text)
+    if match.group(u'sheet'):
+        add = u' data-ref="sheet.{}"'.format(match.group('ref'))
+    else:
+        add = u' data-ref="{}"'.format(match.group('ref'))
+    new_text = re.sub(match.group('add_to'), match.group('add_to') + add, text)
     return new_text
 
 
+def delete_ref_link(text):
+    to_delete = re.compile(u'<.*?(?P<delete>data-ref=[^\s]*?\s).*?>')
+    for match in re.finditer(to_delete, text):
+        if match:
+            text = re.sub(match.group('delete'), u'', text)
+    return text
+
 if __name__ == "__main__":
-    ids = [162071]
+    ids = [160486]  # [162107]
     # sheets = get_sheets_from_get_server(ids, GET_SERVER)
     sheets = db.sheets.find({"id":ids[0]})
     for sheet in sheets:
-        sheet_id= sheet['id']
+        sheet_id = sheet['id']
         print sheet_id
         with_data_ref = add_all_ref_link(sheet['sources'])
         sheet['sources'] = with_data_ref
