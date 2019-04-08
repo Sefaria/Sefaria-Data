@@ -57,6 +57,8 @@ def get_contents(el, found_comment):
         else:
             text += sub_el.text.replace(u"\n", u" ")
     text = u" ".join(text.split())
+    text = re.sub(u"\" (<b>.*?</b>)\"", r"\1", text)
+    text = text.replace(chr(1), u"").replace("( ", "(").replace(" .", ".").replace(" ,", ",")
     return text.strip()
 
 def parse_linked_list(root):
@@ -82,7 +84,7 @@ def parse_linked_list(root):
             if isinstance(el, Tag) and "style" in el.attrs and "display:none" in el.attrs["style"]:
                 continue
             if found_comment:
-                relevant_text = re.sub(u"^\(.*?\)", u"", relevant_text)
+                #relevant_text = re.sub(u"^\(.*?\)", u"", relevant_text)
                 while u"  " in relevant_text:
                     relevant_text = relevant_text.replace(u"  ", u" ")
                 comments[curr_pasuk].append(relevant_text.strip())
@@ -117,7 +119,7 @@ def check_errors(text):
         print url
 
 if __name__ == "__main__":
-    URLs = generate_URLs(["Joshua"])
+    URLs = generate_URLs(["Ezra", "Judges", "Joshua"])
     books = {}
     for n, url_tuple in enumerate(URLs):
         text = []
@@ -144,5 +146,5 @@ if __name__ == "__main__":
             "versionSource": "https://he.wikisource.org/",
             "versionTitle": "Wikisource"
         }
-        post_text("Malbim on {}".format(book), send_text, server=SEFARIA_SERVER)
+        post_text("Malbim on {}".format(book), send_text, server=SEFARIA_SERVER, index_count="on")
 

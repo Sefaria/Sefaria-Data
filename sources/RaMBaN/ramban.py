@@ -36,7 +36,9 @@ def create_index(tractate, moed):
     index = {
         "title": "Chiddushei Ramban on "+tractate.replace("_"," "),
         "categories": ["Talmud", "Bavli", "Commentary", "Ramban", "Seder "+moed],
-        "schema": root.serialize()
+        "schema": root.serialize(),
+        "dependence": "Commentary",
+        "base_text_titles": [tractate],
     }
     post_index(index, server=SEFARIA_SERVER)
     return tractate
@@ -281,4 +283,4 @@ if __name__ == "__main__":
         print 'about to parse'
         text, dh_dict = parse(tractate, errors)
         print 'about to post'
-        post(text, dh_dict, tractate)
+        #post(text, dh_dict, tractate)
