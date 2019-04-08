@@ -14,7 +14,6 @@ mapping = {1409: 21, 259: 22, 774: 23, 44: 24, 142: 25, 147: 26, 174: 27, 27: 28
            }
 
 
-
 def get_sheet(server, api_key, sheet_id = None, sheet_ssn = None):
     try:
         assert sheet_id or sheet_ssn
@@ -27,6 +26,7 @@ def get_sheet(server, api_key, sheet_id = None, sheet_ssn = None):
     url = server + "/api/sheets/{}".format(sheet_id)
     got = http_request(url, body={"apikey": api_key}, method="GET")
     return got
+
 
 def get_ssn(sheet=None, sheet_id=None):
     ssn = None
@@ -47,6 +47,7 @@ def get_ssn(sheet=None, sheet_id=None):
                     break
     return ssn
 
+
 def delete_asterisks(txt):
     """
     deletes asterisks from the text since it is in the margins
@@ -55,12 +56,14 @@ def delete_asterisks(txt):
     """
     return re.sub(u'\*', '', txt)
 
+
 def check_for_sheet_linking(format_source, compile, content_source):
     for match in re.finditer(compile, format_source):
         if not match.group('text2'):
             continue
         content_source = re.sub(re.sub(u'(\(|\))', u'', match.group('text2')), re.sub(u'(\(|\))', u'', match.group('aref')), content_source)
     return content_source
+
 
 def check_for_section_title(source, compile):
     if re.search(u'153', source['en']):
@@ -70,6 +73,7 @@ def check_for_section_title(source, compile):
         new_source = u'<table><tbody><tr><td><big><b>' + strip_html + u'</b></big></tbody></td></tr></table>'
         return new_source
     return source['en']
+
 
 def merge(content_sheet, format_sheet, copy_as_is = False):
     """
@@ -149,6 +153,7 @@ def merge(content_sheet, format_sheet, copy_as_is = False):
             raise KeyError('something went wrong')
     format_sheet['tags'].append('Merged')
     return format_sheet
+
 
 if __name__ == "__main__":
     # ssns = [1409, 259, 246, 774, 327, 172, 332, 142, 619, 115, 273, 210, 147, 46, 661, 1405, 204, 27, 118, 1440, 35, 37, 169, 299, 44, 45, 174, 47, 48, 49, 50, 51, 52, 53, 54, 55, 114, 1403, 1404, 1402, 1406, 1407]

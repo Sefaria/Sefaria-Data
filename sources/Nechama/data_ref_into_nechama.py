@@ -7,7 +7,7 @@ import re
 
 # GET_SERVER = "http://steinsaltz.sandbox.sefaria.org"
 # POST_SERVER = "http://steinsaltz.sandbox.sefaria.org"
-delete_data_ref_info = True
+delete_data_ref_info = False
 compile_seg2ref = re.compile(u'<.*?(?P<add_to>class="refLink"\s*href="/(?P<sheet>sheets/)?(?P<ref>.*?)").*?>')
 
 
@@ -62,9 +62,11 @@ def delete_ref_link(text):
 if __name__ == "__main__":
     ids = [160486]  # [162107]
     # sheets = get_sheets_from_get_server(ids, GET_SERVER)
-    sheets = db.sheets.find({"id":ids[0]})
+    sheets = db.sheets.find({"group": u"גיליונות נחמה"})#({"id":ids[0]})
     for sheet in sheets:
         sheet_id = sheet['id']
+        if sheet_id == 160781:
+            continue
         print sheet_id
         with_data_ref = add_all_ref_link(sheet['sources'])
         sheet['sources'] = with_data_ref

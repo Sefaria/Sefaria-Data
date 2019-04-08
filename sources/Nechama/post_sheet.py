@@ -15,15 +15,15 @@ from sources.local_settings import *
 
 # GET_SERVER = "http://nechama.sandbox.sefaria.org"
 # GET_SERVER = "http://qanechama.sandbox.sefaria.org"
-# GET_SERVER = "http://localhost:8000"
+GET_SERVER = "http://localhost:8000"
 # GET_SERVER = "http://einmishpat.sandbox.sefaria.org"
 # GET_SERVER = "http://shmuel.sandbox.sefaria.org"
-GET_SERVER = "http://ravnataf.sandbox.sefaria.org"
+# GET_SERVER = "http://ravnataf.sandbox.sefaria.org"
 
 # POST_SERVER = "http://nechama.sandbox.sefaria.org"
 # POST_SERVER = "http://qanechama.sandbox.sefaria.org"
-# POST_SERVER = "http://localhost:8000"
-POST_SERVER = "https://www.sefaria.org"
+POST_SERVER = "http://localhost:8000"
+# POST_SERVER = "https://www.sefaria.org"
 # POST_SERVER = "http://shmuel.sandbox.sefaria.org"
 # POST_SERVER = "https://www.sefaria.org"
 
@@ -160,7 +160,7 @@ if __name__ == "__main__":
 
 
 
-    map_get = {1404:152715}#{1: 152685, 259: 152686, 774: 152688, 1409: 152719, 44: 152695, 14: 152689, 273: 152690, 147: 152721, 661: 152722,
+    map_get = {352:165745}#{1: 152685, 259: 152686, 774: 152688, 1409: 152719, 44: 152695, 14: 152689, 273: 152690, 147: 152721, 661: 152722,
      # 27: 152691, 1440: 152723, 35: 152692, 37: 152693, 169: 152724, 172: 152725, 45: 152696, 174: 152726, 47: 152698,
      # 49: 152700, 50: 152701, 51: 152702, 52: 152703, 53: 152704, 55: 152706, 327: 152707, 332: 152708, 204: 152727,
      # 210: 152728, 619: 152709, 114: 152710, 115: 152711, 118: 152712, 1402: 152713, 1403: 152714, 1404: 152715,
@@ -181,7 +181,7 @@ if __name__ == "__main__":
     bi = [1, 259, 204, 774, 1409, 172, 332, 14, 115, 273, 210, 147, 661, 27, 1402, 1440, 35, 37, 169, 327, 44, 45, 174, 47, 619, 49, 50, 51, 52, 53, 118, 55, 114, 1403, 1404, 1405, 1406, 1407]
 
 
-    for sheet_ssn in [1404]: # bi #[35, 246, 169, 45, 142, 48, 115, 51, 52, 174, 118, 27, 53]: #range(418,1478):  # id or ssn_sheet number
+    for sheet_ssn in [352]: # bi #[35, 246, 169, 45, 142, 48, 115, 51, 52, 174, 118, 27, 53]: #range(418,1478):  # id or ssn_sheet number
         post_btween_sandboxes(ssn=sheet_ssn, map_ssn_url_get=map_get, map_ssn_url_post=map_post, pdf_action='add', new_post=False)
     # for sheet_id in sheets:
     #     post_btween_sandboxes(id=sheet_id) #, new_post=True)#map_ssn_url_get=map_get, map_ssn_url_post=map_post, new_post=True)

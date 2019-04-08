@@ -20,7 +20,8 @@ MAP_POST = {1: 160441, 2: 160442, 3: 160443, 4: 160444, 5: 160445, 6: 160446, 7:
             }
 # MAP_POST = {x: x for x in range(1478)}
 
-def revers_get_map():
+
+def reverse_get_map():
     map_get_id_ssn = {x: x for x in range(1478)}
     # map_get_id_ssn = {1: 1461, 2: 1464, 3: 1463, 4: 1470, 5: 1466, 6: 1478, 7: 2907, 8: 1472, 9: 1477, 10: 1479,
     #                   11: 1462, 12: 1468, 13: 1467, 14: 1474, 15: 1471, 16: 1492, 17: 1489, 18: 1485, 19: 1482,
@@ -234,9 +235,6 @@ def get_sheets_from_get_server(list_get_sheet_ids, get_server_address):
     return got_sheets
 
 
-
-
-
 def link_sheet(sheet_json, get_ssn_map,post_id=None):
     """
 
@@ -294,13 +292,14 @@ def link_sheet(sheet_json, get_ssn_map,post_id=None):
     sheet_json['id'] = post_id
     return sheet_json
 
+
 if __name__ == "__main__":
     #use list of which sheets have links which has sheet title and sheet year and tags
     #for each sheet, get each segment and check if it has
     sheet_data = []
     # sheets = db.sheets.find({"tags": "Hebrew Sheet"})
     compile = re.compile(u'/sheets/(?P<id>\d+)')  # (?:\.(?P<node>\d+))?
-    get_ssn_map = revers_get_map()
+    get_ssn_map = reverse_get_map()
     ids = [1507] #[160441, 160684, 160631, 161425, 162058, 160600, 160760, 160454, 162331, 160698, 160636, 160576, 161312, 162336, 162051, 162089, 162325, 160475, 162327, 160755, 160482, 162328, 162334, 160484, 161271, 160485, 160486, 162332, 162333, 162337, 162335, 160488, 160546, 162673, 162053, 162054, 162055, 162386]
  # MAP_POST.values()
     sheets = get_sheets_from_get_server(ids, GET_SERVER)  # list_get_sheet_ids comes straight from mongo range(155157, 156614)
