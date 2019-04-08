@@ -4,7 +4,35 @@ from bs4 import BeautifulSoup, element
 from sources.functions import getGematria
 from sefaria.model.text import *
 from main import *
+import unicodecsv as csv
+import unicodedata
+import codecs
 
+def get_the_text_with_html(butag):
+    """
+    BeautifulSoup tag in which we want to save the <b> and <nechama> tags but remove other html tags.
+    for example remove extra tags (ex.<html><body> that are automatically glued in there by bs4 when using str(butag)
+    or no tags using butag.text )
+    :param butag: BeautifulSoup tag
+    :return: unicode with the correct html tags
+    """
+    return re.sub(u'</?(html|body|p)>', u'', unicode(butag))
+    # cleand_tag = re.sub(u'(^<[^\u05d0-\u05ea]*>(?P<n><sup.*nechama.*?>|.))', u'\g<n>', unicode(butag))
+    # cleand_tag = re.sub(u'(<[^\u05d0-\u05ea]*>$)', u'', unicode(cleand_tag))
+    # return cleand_tag
+    # return re.sub(u'(^<[^\u05d0-\u05ea]*>)|(<[^\u05d0-\u05ea]*>$)', u'', unicode(butag))
+    # to_keep = u""
+    # if re.search(u'class="nechama"', unicode(butag)):
+    #     to_keep = re.search(u'<sup class="nechama">.*</sup>', unicode(butag)).group()
+    # cleaned = re.sub(u'(^<[^\u05d0-\u05ea]*>)|(<[^\u05d0-\u05ea]*>$)', u'', unicode(butag))
+    # cleaned_tag = u'{}{}'.format(to_keep,cleaned)
+
+
+def difficulty_symbol(n, symbol):
+    y = u''
+    for x in range(n):
+        y += symbol
+    return y
 
 class Segment(object):
 
@@ -16,7 +44,14 @@ class Segment(object):
         #create source for sourcesheet out of myself
         segment = BeautifulSoup(self.text, "lxml")
         segment = remove_a_links(segment)
-        source = {"outsideText": segment.text}
+        source = {
+            "outsideText": get_the_text_with_html(segment),
+            }
+        if hasattr(self, 'difficulty'):
+            source["options"] = {
+                    "sourcePrefix": difficulty_symbol(self.difficulty, u'*'),
+                }
+
         return source
 
 
@@ -41,12 +76,14 @@ class Source(object):
     def is_source_text(segment, important_classes):
         return isinstance(segment, element.Tag) and "class" in segment.attrs.keys() and segment.attrs["class"][0] in important_classes
 
-    def get_sefaria_ref(self, ref):
+    def get_sefaria_ref(self, ref, parasha=None):
         if ref == "":
             return None
         try:
             r = Ref(ref)
             assert r.text('he').text
+            if self.parshan_id and parasha and re.search(parasha, ref):
+                assert False
             if r.is_commentary():
                 if re.search(u".*(?:on|,)\s((?:[^:]*?):(?:[^:]*)):?", r.normal()):
                     r_base = Ref(re.search(u".*(?:on|,)\s((?:[^:]*?):(?:[^:]*)):?", r.normal()).group(1))
@@ -59,35 +96,43 @@ class Source(object):
             else:
                 return None
         except (InputError,  AssertionError, IndexError) as e:
+            if self.parshan_id and parasha and re.search(parasha, ref):
+                split = re.split(u'({})'.format(parasha), ref)
+                ref_node = ''.join(split[:-1])
+                return self.get_sefaria_ref(ref_node)
             # try to see if all that is wrong is the segment part of the ref, say, for Ralbag Beur HaMilot on Torah, Genesis 4:17
             last_part = ref.split()[-1]
             if last_part[0].isdigit(): # in format, Ralbag Beur HaMilot on Torah, Genesis 4:17 and last_part is "4:17", now get the node "Ralbag Beur HaMilot on Torah, Genesis"
-                ref_node = " ".join(re.split(u"[:\s]", ref)[0:-1])
-                return self.get_sefaria_ref(ref_node) #returns Ralbag Beur HaMilot on Torah, Genesis
+                ref_node = u" ".join(re.split(u"[:\s]", ref)[0:-1])
+                return self.get_sefaria_ref(ref_node, parasha) #returns Ralbag Beur HaMilot on Torah, Genesis
 
     def glue_ref_and_text(self, ref, text, gray=True):
         if isinstance(text, list):
             text = u' '.join(text)
         if self.about_source_ref and self.ref:
-            if self.about_source_ref != self.ref:
+            if self.about_source_ref != self.ref or (self.get_sefaria_ref(self.ref) and self.about_source_ref != self.get_sefaria_ref(self.ref).he_normal()):
                 try:
                     he_self_ref = Ref(self.ref).he_normal()
                 except InputError as e:
                     ## print u"Exception {}".format(e)
                     assert isinstance(self.ref, unicode)
                     he_self_ref = self.ref
-                about_words = [x.strip(u'''"\u05f3' ,''') for x in re.split(u" |:", self.about_source_ref.strip())]
-                ref_words = [x.strip(u'''"\u05f3' ,''') for x in re.split(u" |:", he_self_ref)]
+                about_words = [re.sub(u'''["\u05f3\u05f4'\s,]''', u'', x) for x in re.split(u" |:", self.about_source_ref.strip())] #x.strip(u'''"\u05f3\u05f4' ,''')
+                ref_words = [re.sub(u'''["\u05f3\u05f4'\s,]''', u'', x) for x in re.split(u" |:", he_self_ref)] #  x.strip(u'''"\u05f3\u05f4' ,''')
                 diff = set(about_words).difference(set(ref_words))
+                q_number_match = [(diff_word, re.search(u'^(?P<number>\d+?)\)', diff_word)) for diff_word in diff if
+                 re.search(u'^\d+?\)', diff_word)]
+                if q_number_match:
+                    self.question_number = q_number_match[0][1].group('number')
+                    diff.discard(q_number_match[0][0])
                 diff.discard(u'פרק')
                 diff.discard(u'פסוק')
                 diff.discard(u'הלכה')
                 diff.discard(u'')
                 ## print u"diff words: {}".format(len(diff))
                 for w in diff:
-                    pass
-                    ## print w
-                if len(diff) <= 2:
+                    print w
+                if len(diff) <= 2 and not (u'קשה' in u' '.join(diff)) and not (u'שווה' in u' '.join(diff)):
                     if self.get_sefaria_ref(self.ref):
                         return text
                     else:
@@ -111,18 +156,18 @@ class Source(object):
         else:
             return u"<span style='color:rgb(153,153,153);'>{}</span><br/><span style='color:rgb(51,51,51);'>{}</span>".format(source_ref, text)
 
-    def create_source(self):
+    def create_source(self, english_sheet=False):
         # remove snunit tags from text and about_source_ref
         if isinstance(self.text, list):
             for i, line in enumerate(self.text):
                 segment = BeautifulSoup(self.text[i], "lxml")
                 segment = remove_a_links(segment)
-                self.text[i] = segment.text
+                self.text[i] = get_the_text_with_html(segment) #self.text[i] = segment.text
         else:
             segment = BeautifulSoup(self.text, "lxml")
             for a in segment.findAll('a'):  # get all a tags and remove them
                 a.replaceWithChildren()
-            self.text = segment.text
+            self.text = get_the_text_with_html(segment)  # segment.text
 
 
         comment = self.text
@@ -130,21 +175,27 @@ class Source(object):
         segment = BeautifulSoup(self.about_source_ref, "lxml")
         for a in segment.findAll('a'):  # get all a tags and remove them
             a.replaceWithChildren()
-        self.about_source_ref = segment.text
+        self.about_source_ref = get_the_text_with_html(segment)  # self.about_source_ref = segment.text
 
         nested_source_refDisplayPosition = True if isinstance(comment, list) else False
         # is Sefaria ref
-        if hasattr(self, 'number'):
+        if hasattr(self, 'number') and hasattr(self, 'difficulty'):
+            q = Question(question=self)
             if self.about_source_ref:
-                self.about_source_ref = self.number + u' '+self.about_source_ref
+                self.about_source_ref = q.format(new_text=self.about_source_ref)
             else:
-                print 'has number dpesn"t have about to glue the number to'
+                print "has number and difficulty doesn't have about to glue the number to"
                 assert True
+
+        self.ref = unicodedata.normalize("NFKD", self.ref)
         if self.get_sefaria_ref(self.ref):
             heRef = self.get_sefaria_ref(self.ref).he_normal()
             if self.about_source_ref:
                 if hasattr(self, 'number'):
-                    heRef = self.about_source_ref
+                    q = Question(question=self)
+                    heRef = q.format(without_params=[u'difficulty'], new_text=heRef)
+                    if not q.number:
+                        comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False)
                 else:
                     comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False)
             enRef = self.get_sefaria_ref(self.ref).normal()
@@ -152,22 +203,31 @@ class Source(object):
                       "text":
                           {
                               "he": comment,
-                              "en": ""
+                              "en": self.get_english_options()  # if english_sheet else ""
                           },
-                      "options": {
-                          "indented": "indented-1",
-                          "sourceLayout": "",
-                          "sourceLanguage": "hebrew",
-                          "sourceLangLayout": "",
-                          "refDisplayPosition": self.refDisplayPosition
+                      "options":
+                          {
+                              "indented": "indented-1",
+                              "sourceLayout": "",
+                              "sourceLanguage": "hebrew",
+                              "sourceLangLayout": "",
+                              "refDisplayPosition": self.refDisplayPosition
+                          }
                       }
-                      }
+            if hasattr(self, 'difficulty'):
+                source["options"]["sourcePrefix"] = difficulty_symbol(self.difficulty, u'*')
             if isinstance(self.text, list):
                 source["text"] = {
                     "he": u'{} <a class="nested_question_hack" href= "/{}">{}</a><br>{}'.format(self.text[0], enRef, heRef, self.text[1]),
-                    "en": ""
+                    "en": self.get_english_options()  # if english_sheet else "..."
                 }
                 source["options"]["indented"] = ""
+            if hasattr(self, 'question_number') and not hasattr(source['options'],'PrependRefWithHe'):
+                source['options']['PrependRefWithHe'] = self.question_number + u') '
+                if str(self.question_number).strip().isdigit():
+                    source['options']['PrependRefWithEn'] = self.question_number + u') '
+                else:
+                    source['options']['PrependRefWithEn'] = Sheet.he_letter_to_en_leter(int(self.question_number)) + u') '
 
         elif self.ref:
             # thought we found a ref but it's not an actual ref in the Sefaria library
@@ -199,7 +259,7 @@ class Source(object):
             if self.about_source_ref:
                 comment = self.glue_ref_and_text(self.about_source_ref, comment, gray=False) #use actual text if we can
             elif self:
-                pass
+                pass  # todo: what is this pass?
             else:
                 comment = self.glue_ref_and_text(self.ref, comment, gray=True) # otherwise, use the ref we thought it was
             source = {"outsideText": comment,
@@ -228,6 +288,15 @@ class Source(object):
         if nested_source_refDisplayPosition or hasattr(self, 'number') or u'<sup class="nechama">' in self.ref:
             source["options"]["indented"] = ""
         return source
+
+    def get_english_options(self):
+        try:
+            tc = Ref(self.ref).text('en')
+            en_text = tc.ja().flatten_to_string()  # u' '.join(text) if isinstance(text, list) else text # maybe needs to be more robust and have as many itrations as needed till it is unicode? 16
+        except AttributeError:
+            en_text = u"..."
+        return en_text
+
 
     def get_ref(self):
         return self.ref
@@ -274,6 +343,7 @@ class Header(object):
         table_html = str(segment)
         formatted_text = self.format(BeautifulSoup(table_html, "lxml").text)
         self.text = u"<table><tr><td><big>{}</big></td></tr></table>".format(formatted_text)
+
 
     @staticmethod
     def is_header(segment):
@@ -394,27 +464,40 @@ class Question(object):
         #create source for sourcesheet out of myself
         segment = BeautifulSoup(self.text, "lxml")
         segment = remove_a_links(segment)
-        source = {"outsideText": str(segment)}
+        if hasattr(self, 'double_number'):
+            split = re.split(u'(</sup>)', get_the_text_with_html(segment))
+            segment = u''.join(split[0:-1]) + self.double_number + (split[-1])
+        source = {"outsideText": get_the_text_with_html(segment),
+                  "options": {
+                      "sourcePrefix": difficulty_symbol(self.difficulty, u'*'),
+                    }
+                  }
         return source
 
-    def format(self, without_params=[], difficulty_symbol = [u'<sup class="nechama"></sup>', u'''<sup class="nechama">*</sup>''', u'''<sup class="nechama">**</sup>''']):
+    def format(self, without_params=[], difficulty_symbol_list = [u'<sup class="nechama"></sup>', u'''<sup class="nechama">*</sup>''', u'''<sup class="nechama">**</sup>'''], new_text = None):
         """
 
         :param without_params: list. ex: ["difficulty", "number"]
         :return: the text of the q the way it is presented in source sheets with/without (but for now the only way
         to present outside sources in source sheets) the number and difficulty
         """
+        # difficulty_symbol_list = [u'<sup class="nechama"></sup>', u'''<sup class="nechama">*</sup>''', u'''<sup class="nechama">**</sup>''']
+        # needed since we put 'sourcePrefix' as a pramter on a source sheet obj. (both Text and outsideText and outsideBiText) but to find them it will take 2 steps, first in text because it was the original and then turn that into a sourcesheet object prameter 'sourcePrefix'. that's the way some hacky refactors gota go. :(
+
         # print self.q_text
         # if re.search(u'>(.*?)<', self.q_text):
         #     text = re.search(u'>(.*?)<',  self.q_text).group(1)
         # else:
-        text = self.q_text if isinstance(self.q_text, unicode) else self.q_text.decode('utf-8')
+        if new_text:
+            text = new_text
+        else:
+            text = self.q_text if isinstance(self.q_text, unicode) else self.q_text.decode('utf-8')
 
         if "number" not in without_params:
             text= unicode(self.number) + u' ' + text
         # difficulty is first in the order
         if "difficulty" not in without_params:
-            text = unicode(difficulty_symbol[self.difficulty]) + u' ' + text
+            text = unicode(difficulty_symbol_list[self.difficulty]) + u' ' + text
 
         return text
 
@@ -435,7 +518,7 @@ class Table(object):
         #create source for sourcesheet out of myselfwithout_params=["number"]
         segment = BeautifulSoup(self.text, "lxml")
         segment = remove_a_links(segment)
-        source = {"outsideText": str(segment)}
+        source = {"outsideText": get_the_text_with_html(segment)}
         return source
 
 
@@ -444,6 +527,9 @@ def remove_a_links(segment):
     for a in segment.findAll('a'):  # get all a tags and remove them
         if a.attrs and "class" in a.attrs.keys() and a.attrs["class"] == "nested_question_hack":
             continue
+        elif a.attrs and re.search(u'(sheet|pages)', a.attrs["href"]):
+            continue
+            # <a href="http://www.nechama.org.il/pages/1351.html?1">בראשית תש"ג שאלה <u>א'</u></a>
         # if a.attrs["href"].find("snunit") > 0:
         #     ref = Section.exctract_pasuk_from_snunit(a)
         #     new_a_href = "<a href='/{}'".format(ref)
@@ -469,6 +555,7 @@ class RT_Rashi(object):
 class Nechama_Comment(object):
 
     def __init__(self, text):
+
         self.text = text
 
     @staticmethod
@@ -494,7 +581,7 @@ class Nechama_Comment(object):
         #create source for sourcesheet out of
         segment = BeautifulSoup(self.text, "lxml")
         segment = remove_a_links(segment)
-        source = {"outsideText": str(segment)}
+        source = {"outsideText": get_the_text_with_html(segment)}
         return source
 
 
@@ -517,12 +604,12 @@ class Nested(object):
 
 
     @staticmethod
-    def is_nested(segment):
+    def is_nested(segment, just_checking=False):
         if isinstance(segment, element.NavigableString):
             return
         classed_tags = []
         tags_with_p = []
-        classes = ["parshan", "midrash", "talmud", "bible", "commentary", "question2", "question", "table", "RT", "RTBorder"]#, "RT", "RT_RASHI"]
+        classes = ["parshan", "midrash", "talmud", "bible", "commentary", "question2", "question", "table", "RT", "RTBorder"]# number, "RT", "RT_RASHI"]
         for i, e in enumerate(segment.findAll()):
             if (e.attrs and 'class' in e.attrs and set(e.attrs['class']).intersection(
                     classes)):  # any([c in e.attrs['class'] for c in classes])):  # e.find('td') or
@@ -544,21 +631,28 @@ class Nested(object):
                 objs.add(p)
         objs = objs.union(set(classed_tags))
         testing_doubls = [o for o in objs if re.search(u'וכי סומים היו', o[1].text)]
-        objs = Nested.find_missing_objs(objs)
-        objs = Nested.look_for_missing_next(objs)
-        objs = sorted(objs, key=lambda x: x[0])
-
+        if not just_checking:
+            objs = Nested.find_missing_objs(objs)
+            objs = sorted(objs, key=lambda x: x[0])
+            objs = Nested.look_for_missing_next(objs)
         objs = [o[1] for o in objs]
         return objs
 
     @staticmethod
     def look_for_missing_next(objs):
-        last_obj = sorted(objs, key=lambda x: x[0])[-1]
-        curr = last_obj[0]
-        while last_obj[1].next_sibling:
-            objs.append((curr+1, last_obj[1].next_sibling))
-            last_obj = (curr+1, last_obj[1].next_sibling)
-            curr += 1
+        nechama_obj = objs[-1]
+        curr_soup_obj = nechama_obj[1]
+        while curr_soup_obj.next_sibling:
+            next_sibling_text = curr_soup_obj.next_sibling if isinstance(curr_soup_obj.next_sibling, element.NavigableString) else curr_soup_obj.next_sibling.text
+            if not nechama_obj[1].string:
+                # with open("reports/text_check.csv", 'a') as f:
+                #     writer = csv.DictWriter(f, [u'sheet', u'missing text'])
+                #     writer.writerow({u'missing text': nechama_obj[1].text})
+                print u"NO nechama_obj.string for these words {} !!!".format(nechama_obj[1].text)
+                nechama_obj[1].string = nechama_obj[1].text
+            nechama_obj[1].string += u" " + next_sibling_text
+            curr_soup_obj = curr_soup_obj.next_sibling
+        assert objs[-1] == nechama_obj
         return objs
 
 
@@ -582,10 +676,9 @@ class Nested(object):
                         new_objs.append((j, new_p))
                         text += u" " + child
                         assert j not in nums
-                    elif isinstance(child, element.Tag):
-                        new_objs.append((j, child))
-                        text += u" " + child.text
-                        assert j not in nums
+                    # elif isinstance(child, element.Tag):
+                    #     obj.string += child.text
+                    #     text += u" " + child.text
             new_objs.append((i, obj))
         return new_objs
         # # Test: testing if we get all the text from the html to ourObjs
@@ -662,12 +755,12 @@ class Nested(object):
             return like_q
 
         if self.question:
-            for i, s in enumerate(self.segment_objs):
-                if isinstance(s, Nechama_Comment):
-                    self.segment_objs[i] = demi_q(self.question, s.text)
-                    return self.segment_objs
-                elif isinstance(s, Question):
-                    return self.segment_objs
+            # for i, s in enumerate(self.segment_objs):
+            #     if isinstance(s, Nechama_Comment):
+            #         self.segment_objs[i] = demi_q(self.question, s.text)
+            #         return self.segment_objs
+            #     elif isinstance(s, Question):
+            #         return self.segment_objs
             self.glue_q_number(self.segment_objs[0])
             # self.segment_objs.insert(0, demi_q(self.question, u''))
         return self.segment_objs
@@ -679,6 +772,9 @@ class Nested(object):
             # ourObj.refDisplayPosition = "none"
             ourObj.number = number
             ourObj.difficulty = difficulty
+        elif isinstance(ourObj, Question) and 'double_number' not in vars(ourObj):
+            ourObj.double_number = number
+            # ourObj.difficulty = str(difficulty) + u'_'
 
     def create_source(self):
         return_sheet_obj = []
@@ -717,7 +813,7 @@ class Text(object):
         :return: a sheet obj
         """
         self.sp_segment = remove_a_links(self.sp_segment)
-        source = {"outsideText": self.sp_segment.text}
+        source = {"outsideText": get_the_text_with_html(self.sp_segment)} # self.sp_segment.text}
         return source
 
     def choose(self):
