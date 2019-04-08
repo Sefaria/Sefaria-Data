@@ -3,6 +3,7 @@
 import django
 django.setup()
 
+from tqdm import *
 from sefaria.model import *
 from sefaria.system import exceptions
 from bs4 import BeautifulSoup, element
@@ -129,7 +130,7 @@ class Topic(object):
         BT = BookIbidTracker()
         topic_table = []
         tanakh_books =library.get_indexes_in_category(u'Tanakh')
-        comp_tanakh_comm = re.compile(u'(?P<commentator>^.*?(?P<complex>on|,)\s+).*$')
+        comp_tanakh_comm = re.compile(u'(?P<commentator>^.*?(?P<complex>\s?על|,)\s+).*$')
         for i, cit in enumerate(self.all_a_citations):
             for source in cit.sources:
                 ref_d = self.ref_dict(source)
@@ -137,8 +138,8 @@ class Topic(object):
                     topic_table.append(self.ref_dict(source))
                     BT.registerRef(source.ref)
                 if source.ref and u'Tanakh'in source.ref.index.categories and source.ref.index.title not in tanakh_books:
-                    match = re.search(comp_tanakh_comm, source.ref.normal())
-                    tanakh_ref = Ref(re.sub(match.group(u'commentator'), u'', source.ref.normal()))
+                    match = re.search(comp_tanakh_comm, source.ref.he_normal())
+                    tanakh_ref = Ref(re.sub(match.group(u'commentator'), u'', source.ref.he_normal()))
                     BT.registerRef(tanakh_ref)
                 if source.raw_ref and source.raw_ref.is_sham:
                     print u'Sham Ref {}'.format(source.raw_ref.rawText)
@@ -171,10 +172,17 @@ class Topic(object):
                             except InputError:
                                 try_ref = None
                         if try_ref:
-                            ref_struct = library.get_index(cit.author).all_segment_refs()[0].he_normal()
+                            try:
+                                ind = library.get_index(cit.author)
+                            except:
+                                ind = [ind for ind in source.indexs if re.search(try_ref.book, ind.title)][0]
+                            ref_struct = ind.all_segment_refs()[0].he_normal()
                             match = re.search(comp_tanakh_comm, ref_struct)
                             complex = match.group(u'complex')
-                            source.ref = Ref(cit.author + complex + u" "+ try_ref.he_normal())
+                            try:
+                                source.ref = Ref(cit.author + complex + u" "+ try_ref.he_normal())
+                            except InputError:
+                                source.ref = Ref(u"{} {} {}".format(ind.title, try_ref.sections[0], try_ref.sections[1]))
                             BT.registerRef(source.ref)
                             print source.ref
                         else:
@@ -208,7 +216,7 @@ class Source(object):
     cnt_resolved = 0
     cnt_not_found = 0
     global parser
-    parser = Parser() #term_dict = he_term_mapping()
+    parser = Parser()  # term_dict = he_term_mapping()
     indexSet_dict = dict()
     found_term_dict = dict()
 
@@ -548,7 +556,7 @@ def parse2pickle(letter=u''):
             continue
         i = 0
         topics = dict()
-        for file in os.listdir(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/{}".format(letter)):
+        for file in tqdm(os.listdir(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/{}".format(letter))):
             if u'_' in file:
                 continue
             # don't read the index file ex: for letter YOD don't read the html file '/Aspaklaria/www.aspaklaria.info/010_YOD/YOD.html'
@@ -584,7 +592,7 @@ def read_with_refs(letter):
         cnt_sham = 0
         cnt_resolved = 0
         cnt_not_caught = 0
-        for i, t in enumerate(topics.values()):
+        for i, t in tqdm(enumerate(topics.values())):
             print "*******************"
             print t.headWord
             for author in t.all_a_citations:
@@ -596,7 +604,7 @@ def read_with_refs(letter):
                         if s.ref:
                             db.aspaklaria_source.insert_one(
                                 {'topic': t.headWord, 'ref': s.ref.normal(), 'text': solo_source_text, 'raw_ref':s.raw_ref.rawText,
-                                 'index': s.ref.index.title, 'is_sham':s.raw_ref.is_sham, 'author':s.author})
+                                 'index': s.ref.index.title, 'is_sham': s.raw_ref.is_sham, 'author':s.author})
                             print s.ref.normal()
                             cnt_resolved += 1
                         else:
@@ -622,7 +630,7 @@ def shamas_per_leter(he_letter):
         with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/{}".format(file), "rb") as fp:
             write_to_file(u'NEW_Letter: {}\n\n'.format(file.split(u'.')[0]), mode='a')
             topics = pickle.load(fp)
-            for i, t in enumerate(topics.values()):
+            for i, t in tqdm(enumerate(topics.values())):
                 parse_refs(t)
                 print "Before resolved Shams" + str(Source.cnt_sham)
                 try:
@@ -646,8 +654,8 @@ def shamas_per_leter(he_letter):
         # print u'done'
 
 if __name__ == "__main__":
-    he_letter = u'TAV'
-    letter_gimatria = 400
+    he_letter = u'ALEF'
+    letter_gimatria = 001
     # parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
-    # shamas_per_leter(he_letter)
+    shamas_per_leter(he_letter)
     read_with_refs(u'{}'.format(he_letter))

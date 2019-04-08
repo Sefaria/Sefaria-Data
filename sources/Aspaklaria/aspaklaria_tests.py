@@ -71,13 +71,38 @@ class Test_Sham_Parsing(object):
 
     def test_sham_complex_comm(self):
         t = Topic(u'מילת ראש')
+        # create Sources
         source1 = Source(u'ושאלה אשה - במתנה גמורה, כלי כסף - לכבוד החג שתחוגו לי במדבר. (שמות ג כב)', u'חזקוני')
         source2 = Source(
             u"וישאלו - ה' עשה דרך שאלה ולא מתנה, כדי שירדפו אחריהם. דבר אחר, וישאלו - לשון מתנה, כמו שאל ממני ואתנה. רעהו - מלמד שאחרי המכות היו המצרים כרעים לישראל. כלי כסף - במקום שהניחו להם ישראל בתיהם ושדותיהם וכליהם שלא יכלו לשאת. (שם יא ב)",
             u'חזקוני')
+        source3 = Source(u'ואנוש - ותקיף. (ירמיה יז ט)', u'תרגום יונתן')
+        source4 = Source(u'ואנוש - לשון חולי. (שם)', u'רש"י')
+        source5 = Source(u'ואנוש - כואב ביגון, או בדאגה או במחשבה. (שם)', u'רד"ק')
+
+        # create AuthorCit objs respectively
         chzkuni = AuthorCit(u'חזקוני')
+        rashi =AuthorCit(u'רש"י')
+        ty = AuthorCit(u'תרגום יונתן')
+        radak = AuthorCit(u'רד"ק')
+
+        # add sources to AuthorCit
         chzkuni.sources.extend([source1, source2])
+        ty.sources.extend([source3])
+        rashi.sources.extend([source4])
+        radak.sources.extend([source5])
+
+        # add AuthorCit to topic
         t.all_a_citations.append(chzkuni)
+        t.all_a_citations.append(ty)
+        t.all_a_citations.append(rashi)
+        t.all_a_citations.append(radak)
+
+        # parse
         parse_refs(t)
         t.parse_shams()
+
+        # assert
         assert t.all_a_citations[0].sources[1].ref == Ref(u"Chizkuni, Exodus 11:2")
+        assert t.all_a_citations[2].sources[0].ref == Ref(u"Rashi on Jeremiah 17:9")
+        assert t.all_a_citations[3].sources[0].ref == Ref(u'Radak on Jeremiah 17:9')

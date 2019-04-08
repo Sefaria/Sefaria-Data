@@ -222,6 +222,10 @@ class CitationFinder():
                 return CitationFinder.parse_sham_match(m, lang, node)  # there should be one and only one match
         else:
             title_reg = CitationFinder.get_ultimate_title_regex(title_sham, node, lang, compiled=True)
+            # try:
+            #     he_title = [x for x in node.title_group.titles if x['lang'] == 'he'][0]['text']
+            # except:
+            #     he_title = None
             st = re.sub(u'([^\s])\(', ur'\1 (', st)
             m = re.search(title_reg, st)
             if m:
@@ -229,7 +233,7 @@ class CitationFinder():
             elif Ref(st):
                 r = Ref(st)
                 title = r.index.title
-                sections = [r.he_normal()]
+                sections = r.sections#[r.he_normal()]
                 return (title, sections)
         raise InputError
 
@@ -578,7 +582,7 @@ class BookIbidTracker(object):
                 if addressType == u'Talmud':
                     section_str_list += [talmud.section_to_daf(section)]
                 else:
-                    section_str_list += [str(section)]
+                    section_str_list += [unicode(section)]
             if title and title != index_name:
                 index_name = title
             resolvedRef = Ref(u'{}.{}'.format(index_name, '.'.join(section_str_list)))
