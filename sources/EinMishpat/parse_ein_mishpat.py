@@ -264,8 +264,8 @@ from sefaria.helper.link import create_link_cluster
 #     print total
 
 if __name__ == "__main__":
-    massekhet = 'Chullin'
-    # final_list = segment_column(u'done/menachot_little_letters.csv', u'done/menachot_little_letters.csv', massekhet, wikitext=False)
+    massekhet = 'Bekhorot'
+    # final_list = segment_column(u'done/bekhorot_little_letters.csv', u'done/bekhorot_little_letters.csv', massekhet, wikitext=False)
     # print final_list
     # validation = validity_and_cluster(final_list)
     # save_links_local(final_list, massekhet)
