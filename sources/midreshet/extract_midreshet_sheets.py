@@ -2,6 +2,9 @@
 from __future__ import print_function
 
 import re
+import sys
+import signal
+import regex
 import json
 from tqdm import tqdm
 import codecs
@@ -10,7 +13,8 @@ import bleach
 import pyodbc
 import requests
 from functools import partial
-from collections import namedtuple
+from itertools import groupby
+from collections import namedtuple, Counter, defaultdict
 from multiprocessing import Pool
 from sources.functions import post_sheet
 from data_utilities.util import Singleton, getGematria, split_list
@@ -43,6 +47,52 @@ class MidreshetCursor(object):
 
     def __getattr__(self, item):
         return getattr(self.cursor, item)
+
+
+class NGramCatcher(object):
+    """
+    Use a mapping of length: counter
+    One method collects grams of length n
+    Another runs the previous method on a series of integers
+    Add an method for catching words
+    """
+    def __init__(self):
+        self.gram_lengths = defaultdict(Counter)
+
+    def find_n_grams(self, n, input_string):
+        pattern = u'.{%s}' % n
+        self.gram_lengths[n].update(regex.findall(pattern, input_string, overlapped=True))
+
+    def find_series_of_grams(self, n_list, input_string):
+        for n in n_list:
+            self.find_n_grams(n, input_string)
+
+    def retrieve_most_common(self, gram_length, num_to_retrieve):
+        return self.gram_lengths[gram_length].most_common(num_to_retrieve)
+
+
+class WordSequenceCatcher(NGramCatcher):
+    def find_n_grams(self, n, input_string):
+        words = input_string.split()
+        self.gram_lengths[n].update([u' '.join(words[i:i+n]) for i in range(len(words) - n + 1)])
+
+
+class SefariaTermsAndTitles(object):
+    def __init__(self):
+        self.titles_and_terms_counter = Counter()
+        self.terms_to_refs_map = defaultdict(set)
+        # all_terms = [term_title for term in TermSet() for term_title in term.get_titles('he')]
+        # everything = sorted(library.citing_title_list('he') + all_terms, key=lambda x: len(x), reverse=True)
+        everything = [re.escape(s) for s in sorted(library.full_title_list('he'), key=lambda x: len(x), reverse=True)]
+        prefixes = u'משהוכלב'
+        pattern = u'(?:^|\s)(?:[{}])?(?P<title>{})(?=\s|$)'.format(prefixes, u'|'.join(everything))
+        self.regex = re.compile(pattern)
+
+    def find_titles_and_terms(self, input_string):
+        titles = [m.group('title') for m in self.regex.finditer(input_string)]
+        self.titles_and_terms_counter.update(titles)
+        for t in titles:
+            self.terms_to_refs_map[t].add(input_string)
 
 
 def convert_row_to_dict(table_row):
@@ -296,16 +346,17 @@ def get_dicts_for_resource(resource_id):
 
 
 def cache_to_mongo(mongo_client, ref_builder):
-    def wrapper(resource_id, exact_location, resource_text):
+    def wrapper(resource_id, exact_location, resource_text, replace=False):
         yonis_data = mongo_client.yonis_data
         saved_ref = yonis_data.RefSources.find_one({'resource_id': resource_id})
 
-        if saved_ref:
+        if saved_ref and not replace:
             return saved_ref['SefariaRef']
 
         else:
             derived_ref = get_ref_for_resource(ref_builder, resource_id, exact_location, resource_text)
-            yonis_data.RefSources.insert_one({'resource_id': resource_id, 'SefariaRef': derived_ref})
+            yonis_data.RefSources.update_one({'resource_id': resource_id},
+                                             {'$set': {'SefariaRef': derived_ref}}, upsert=True)
             return derived_ref
     return wrapper
 
@@ -330,7 +381,7 @@ def get_ref_for_resource(ref_builder, resource_id, exact_location, resource_text
                 return refined_ref.normal()
         return sefaria_ref.normal()
 
-    possible_refs = library.get_refs_in_string(u'{}'.format(exact_location), 'he', citing_only=True)
+    possible_refs = library.get_refs_in_string(u'({})'.format(exact_location), 'he', citing_only=True)
     if len(possible_refs) == 1:
         constructed_ref = ref_builder.build_difficult_ref(exact_location, possible_refs[0])
         try:
@@ -352,14 +403,14 @@ get_ref_for_resource_p = cache_to_mongo(my_mongo_client, builder)
 SheetWrapper = namedtuple('SheetWrapper', ('page_id', 'sheet_json'))
 
 
-def get_sheet_by_id(page_id):
+def get_sheet_by_id(page_id, rebuild_cache=False):
     cursor = MidreshetCursor()
     cursor.execute('select * from Pages where id=?', (page_id,))
     rows = list(cursor.fetchall())
     assert len(rows) == 1
     sheet = convert_row_to_dict(rows[0])
 
-    cursor.execute('SELECT name, body, exactLocation, resource_id, display_type '
+    cursor.execute('SELECT name, body, exactLocation, resource_id, display_type, minorType '
                    'FROM PageResources JOIN Resources '
                    'ON PageResources.resource_id = Resources.id '
                    'WHERE PageResources.page_id=? '
@@ -371,7 +422,7 @@ def get_sheet_by_id(page_id):
         resource['dictionary'] = get_dicts_for_resource(resource['resource_id'])
         if resource['exactLocation']:
             resource['SefariaRef'] = get_ref_for_resource_p(resource['resource_id'], resource['exactLocation'],
-                                                            resource['body'])
+                                                            resource['body'], replace=rebuild_cache)
     sheet['resources'] = resources
     return sheet
 
@@ -417,6 +468,31 @@ Source with an exactLocation can get sourcePrefix = u'מקור', otherwise sourc
 """
 
 
+def format_terms(term_list):
+    term_list.sort(key=lambda x: x['typeTerms'])
+    terms_by_type = {k: list(g) for k, g in groupby(term_list, key=lambda x: u'הסברים' if x['typeTerms'] == 0 else u'מושגים')}
+    formatted_terms = []
+    for term_type in sorted(terms_by_type.keys()):
+        term_text_list = []
+
+        for term_item in terms_by_type[term_type]:
+            term_name = u' '.join(term_item['name'].split())
+            if term_name:
+                term_text_list.append(u'{} - {}'.format(term_name, term_item['body']))
+            else:
+                term_text_list.append(term_item['body'])
+
+        formatted_terms.append(u'<i>{}</i><ul style="margin: 1px;"><li>{}</li></ul>'.
+                               format(term_type, u'</li><li>'.join(term_text_list)))
+    return u'<br>'.join(formatted_terms)
+
+
+def format_dictionaries(word_list):
+    """Consider making this into descriptive lists in the future."""
+    entries = [u'{} - {}'.format(word['name'], word['body']) for word in word_list]
+    return u'<i>{}</i><ul><li>{}</li></ul>'.format(u'מילים', u'</li><li>'.join(entries))
+
+
 def create_sheet_json(page_id):
     raw_sheet = get_sheet_by_id(page_id)
     sheet = {
@@ -440,19 +516,41 @@ def create_sheet_json(page_id):
 
             if sefaria_ref:
                 source['ref'] = sefaria_ref
-                source['text'] = {'he': bleach_clean(resource['body']), 'en': ''}
+                source['text'] = {'he': bleach.clean(resource['body'], tags=['ul', 'li'], attributes={}, strip=True),
+                                  'en': ''}
                 # source['options']['sourcePrefix'] = u'מקור'
                 source['options']['PrependRefWithHe'] = resource['exactLocation']
 
             else:
                 source['outsideText'] = u'<span style="color: #999">{}</span><br>{}'.format(
-                    resource['exactLocation'], bleach_clean(resource['body']))
+                    resource['exactLocation'],
+                    bleach.clean(resource['body'], tags=['ul', 'li'], attributes={}, strip=True))
 
         else:
-            cleaned_text = bleach_clean(resource['body'])
+            cleaned_text = bleach.clean(resource['body'], tags=['ul', 'li'], attributes={}, strip=True)
             if not cleaned_text:
                 continue
-            source['outsideText'] = u'{}<br>{}'.format(u'דיון:', cleaned_text)
+
+            if resource['minorType'] == 2:  # this is a secondary title
+                source['outsideText'] = u'<span style="font-size: 24px; ' \
+                                        u'text-decoration:underline;' \
+                                        u' text-decoration-color:grey;">{}</span>'.format(cleaned_text)
+
+            source['outsideText'] = u'<span style="text-decoration:underline; text-decoration-color:grey">{}</span>' \
+                                    u'<br>{}'.format(u'דיון', cleaned_text)
+
+        if resource['terms']:
+            if 'outsideText' in source:
+                source['outsideText'] = u'{}<br><br>{}'.format(source['outsideText'], format_terms(resource['terms']))
+            else:
+                source['text']['he'] = u'{}<br><br>{}'.format(source['text']['he'], format_terms(resource['terms']))
+
+        if resource['dictionary']:
+            if 'outsideText' in source:
+                source['outsideText'] = u'{}<br><br>{}'.format(source['outsideText'], format_dictionaries(resource['dictionary']))
+            else:
+                source['text']['he'] = u'{}<br><br>{}'.format(source['text']['he'], format_dictionaries(resource['dictionary']))
+
         sheet['sources'].append(source)
     return sheet
 
@@ -517,7 +615,7 @@ def bulk_sheet_post(wrapped_sheet_list, server='http://localhost:8000'):
             # check that sheet really exists
             response = requests.get('{}/api/sheets/{}'.format(server, server_map_data['serverIndex'])).json()
 
-            if 'error' in response:
+            if 'error' in response or response['title'] != sheet_json['title']:
                 response = post_sheet(sheet_json, server=server)
                 server_map.find_one_and_update({'pageId': page_id, 'server': server},
                                                {'$set': {'serverIndex': response['id']}})
@@ -572,12 +670,107 @@ def sheet_poster(server, wrapped_sheet_list):
     return bulk_sheet_post(wrapped_sheet_list, server)
 
 
-p_sheet_poster = partial(sheet_poster, 'http://localhost:8000')
+def try_refs_by_id(id_list):
+    """
+    Now pull out all ids associated with a specific term. Get the associated full strings, and run library.get_refs_in_string
+    :param id_list:
+    :return:
+    """
+    cursor = MidreshetCursor()
+    cursor.execute('SELECT MidreshetRef FROM RefMap WHERE id IN ({})'.format(', '.join([str(i) for i in id_list])))
+    for result_row in cursor.fetchall():
+        possible_refs = library.get_refs_in_string(u'({})'.format(result_row.MidreshetRef), lang='he', citing_only=True)
+        print(result_row.MidreshetRef, *possible_refs, sep=u'\n', end=u'\n\n')
+
+
+def rematch_ref(ref_id):
+    cursor = MidreshetCursor()
+    cursor.execute('SELECT id, exactLocation, body FROM Resources WHERE id = ?', (ref_id,))
+    result = cursor.fetchone()
+    return get_ref_for_resource_p(result.id, result.exactLocation, bleach_clean(result.body), replace=True)
+
+
+p_sheet_poster = partial(sheet_poster, 'http://midreshet.sandbox.sefaria.org')
 my_cursor = MidreshetCursor()
 my_cursor.execute('SELECT id FROM Pages WHERE parent_id = 0')
 my_wrapped_sheet_list = [SheetWrapper(m.id, create_sheet_json(m.id)) for m in tqdm(my_cursor.fetchall())]
 print('finished creating sheets')
-sheet_chunks = list(split_list(my_wrapped_sheet_list, 12))
-pool = Pool(12)
+num_processes = 30
+sheet_chunks = list(split_list(my_wrapped_sheet_list, num_processes))
+pool = Pool(num_processes)
 pool.map(p_sheet_poster, sheet_chunks)
+
+# my_cursor = MidreshetCursor()
+# my_cursor.execute('SELECT id, MidreshetRef FROM RefMap WHERE SefariaRef IS NULL')
+# ref_sources_mongo = my_mongo_client.yonis_data.RefSources
+# valid_ids = [q['resource_id'] for q in ref_sources_mongo.find({"SefariaRef": {"$eq": None}})]
+# valid_id_set = set(valid_ids)
+# q_rows = my_cursor.fetchall()
+# all_sources = [q.MidreshetRef for q in q_rows if q.id in valid_id_set]
+# valid_ids = [q.id for q in q_rows if q.id in valid_id_set]
+# del q_rows
+# id_map = {}
+# sf = SefariaTermsAndTitles()
+# print('sources and ids match?', len(all_sources) == len(valid_ids))
+
+
+# catcher, word_catcher = NGramCatcher(), WordSequenceCatcher()
+# gram_lengths, sequence_lengths = range(12, 30), range(1, 8)
+#
+# for each_source, source_id in zip(all_sources, valid_ids):
+#     simplified = re.sub(u'[^\u05d0-\u05ea ]', u'', each_source)
+#     sf.find_titles_and_terms(simplified)
+#     id_map[simplified] = source_id
+#     # catcher.find_series_of_grams(gram_lengths, simplified)
+#     word_catcher.find_series_of_grams(sequence_lengths, simplified)
+#
+# for length in sequence_lengths:
+#     print('')
+#     print('words of length {}'.format(length))
+#     common = word_catcher.retrieve_most_common(length, 40)
+#     for c in common:
+#         print(u'{}: {}'.format(*c))
+
+# for length in gram_lengths:
+#     print('')
+#     print('length {}'.format(length))
+#     common = catcher.retrieve_most_common(length, 20)
+#     for c in common:
+#         print(u'{}: {}'.format(*c))
+
+# print('\n\n\n')
+# print(len(sf.titles_and_terms_counter.keys()))
+# for foo, bar in sf.titles_and_terms_counter.most_common(30):
+#     print(foo, bar)
+#
+#
+# def handler(signum, frame):
+#     print("No input, exiting")
+#     sys.exit(0)
+#
+#
+# signal.signal(signal.SIGALRM, handler)
+# while True:
+#     signal.alarm(600)
+#     lookup_term = unicode(raw_input(u"Type 'exit' to end program\n").decode('utf-8'))
+#     signal.alarm(0)
+#     if lookup_term == u'exit':
+#         break
+#     elif lookup_term == u'reprint':
+#         for foo, bar in sf.titles_and_terms_counter.most_common(50):
+#             print(foo, bar)
+#     else:
+#         interesting_ids = [id_map[thing] for thing in sf.terms_to_refs_map[lookup_term]]
+#         try_refs_by_id(interesting_ids)
+
+
+# for possible_ref in sf.terms_to_refs_map[u'תהלים']:
+#     interesting_id = id_map[possible_ref]
+#     print(interesting_id, possible_ref)
+#     new_ref = rematch_ref(interesting_id)
+#     if new_ref:
+#         print(new_ref)
+#     else:
+#         print('Found Nothing')
+
 
