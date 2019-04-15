@@ -275,6 +275,7 @@ if __name__ == "__main__":
     errors = open("errors", 'w')
     these = {"Shevuot": "Nezikin", "Megillah": "Moed", "Niddah": "Tahorot",
              "Chullin": "Kodashim"}
+    these = {"Niddah": "Tahorot"}
     for file in glob.glob(u"new/*.txt"):
         errors.write(file+"\n")
         tractate = file.replace(".txt", "").replace("new/", "").title()

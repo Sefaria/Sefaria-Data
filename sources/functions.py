@@ -770,6 +770,26 @@ def post_link_weak_connection(info, repeat=10):
 
 
 
+def match_ref_interface(base_ref, comments, base_tokenizer, dh_extract_method):
+    generated_by = lambda comm: base_ref.index.title + "_" + comm.index.title
+    generated_by_str = ""
+    links = []
+    base = TextChunk(base_ref, lang='he')
+    matches = match_ref(base, comments, base_tokenizer=base_tokenizer, dh_extract_method=dh_extract_method)["matches"]
+    for n, match in enumerate(matches):
+        if match:
+            if not generated_by_str:
+                generated_by_str = generated_by(match)
+            curr_base_ref = "{}:{}".format(base_ref.normal(), n+1)
+            curr_comm_ref = match.normal()
+            new_link = {"refs": [curr_comm_ref, curr_base_ref], "generated_by": generated_by_str,
+                        "type": "Commentary", "auto": True}
+            links.append(new_link)
+
+    return links
+
+
+
 def get_matches_for_dict_and_link(dh_dict, base_text_title, commentary_title, talmud=True, lang='he', word_threshold=0.27, server="", rashi_filter=None, dh_extract_method=lambda x: x):
     def base_tokenizer(str):
         str_list = str.split(" ")
@@ -783,7 +803,6 @@ def get_matches_for_dict_and_link(dh_dict, base_text_title, commentary_title, ta
     total = 0
     for daf in dh_dict:
         print daf
-        dhs = dh_dict[daf]
         if talmud:
             base_text_ref = "{} {}".format(base_text_title, AddressTalmud.toStr("en", daf))
             comm_ref = "{} on {} {}".format(commentary_title, base_text_title, AddressTalmud.toStr("en", daf))
