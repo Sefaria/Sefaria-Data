@@ -424,6 +424,11 @@ def get_sheet_by_id(page_id, rebuild_cache=False):
             resource['SefariaRef'] = get_ref_for_resource_p(resource['resource_id'], resource['exactLocation'],
                                                             resource['body'], replace=rebuild_cache)
     sheet['resources'] = resources
+
+    cursor.execute('SELECT tag '
+                   'FROM PageTags P JOIN Tags T ON P.tag_id = T.id '
+                   'WHERE P.page_id=?', (page_id,))
+    sheet['tags'] = [t.tag for t in cursor.fetchall()]
     return sheet
 
 
@@ -498,7 +503,7 @@ def create_sheet_json(page_id):
     sheet = {
         'title': raw_sheet['name'],
         'status': 'public',
-        'tags': ['foo', 'bar', 'spam', 'eggs'],
+        'tags': raw_sheet['tags'],
         'options': {
             'language': 'hebrew',
             'numbered': False,
@@ -535,8 +540,8 @@ def create_sheet_json(page_id):
                 source['outsideText'] = u'<span style="font-size: 24px; ' \
                                         u'text-decoration:underline;' \
                                         u' text-decoration-color:grey;">{}</span>'.format(cleaned_text)
-
-            source['outsideText'] = u'<span style="text-decoration:underline; text-decoration-color:grey">{}</span>' \
+            else:
+                source['outsideText'] = u'<span style="text-decoration:underline; text-decoration-color:grey">{}</span>' \
                                     u'<br>{}'.format(u'דיון', cleaned_text)
 
         if resource['terms']:
@@ -690,12 +695,12 @@ def rematch_ref(ref_id):
     return get_ref_for_resource_p(result.id, result.exactLocation, bleach_clean(result.body), replace=True)
 
 
-p_sheet_poster = partial(sheet_poster, 'http://midreshet.sandbox.sefaria.org')
+p_sheet_poster = partial(sheet_poster, 'http://localhost:8000')
 my_cursor = MidreshetCursor()
 my_cursor.execute('SELECT id FROM Pages WHERE parent_id = 0')
 my_wrapped_sheet_list = [SheetWrapper(m.id, create_sheet_json(m.id)) for m in tqdm(my_cursor.fetchall())]
 print('finished creating sheets')
-num_processes = 30
+num_processes = 15
 sheet_chunks = list(split_list(my_wrapped_sheet_list, num_processes))
 pool = Pool(num_processes)
 pool.map(p_sheet_poster, sheet_chunks)
