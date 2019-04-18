@@ -80,8 +80,11 @@ def dh_extract_method(str):
         return dh
 
 if __name__ == "__main__":
-    comms = [Commentary("yevamot.csv", "Tosafot Yeshanim", u"תוספות ישנים", "Vilna Edition", "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957"),
-             Commentary("nazir.csv", "Commentary of the Rosh", u"""פירוש הרא"ש""", "Vilna Edition", "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957")]
+    #comms = [Commentary("yevamot.csv", "Tosafot Yeshanim", u"תוספות ישנים", "Vilna Edition", "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957"),
+    #         Commentary("nazir.csv", "Commentary of the Rosh", u"""פירוש הרא"ש""", "Vilna Edition", "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957")]
+    vtitle = "Vilna Edition"
+    vsource = "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957"
+    comms = [Commentary("kiddushin.csv", "Tosafot Ri HaZaken", u"""תוספות ר"י הזקן""", vtitle, vsource)]
     links = []
     for commentary in comms:
         lines_by_daf = {}

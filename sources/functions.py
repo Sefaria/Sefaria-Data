@@ -770,18 +770,15 @@ def post_link_weak_connection(info, repeat=10):
 
 
 
-def match_ref_interface(base_ref, comments, base_tokenizer, dh_extract_method):
-    generated_by = lambda comm: base_ref.index.title + "_" + comm.index.title
-    generated_by_str = ""
+def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract_method):
+    generated_by_str = Ref(base_ref).index.title + "_" + comm_ref.split(",")[0]
     links = []
-    base = TextChunk(base_ref, lang='he')
+    base = TextChunk(Ref(base_ref), lang='he')
     matches = match_ref(base, comments, base_tokenizer=base_tokenizer, dh_extract_method=dh_extract_method)["matches"]
     for n, match in enumerate(matches):
         if match:
-            if not generated_by_str:
-                generated_by_str = generated_by(match)
-            curr_base_ref = "{}:{}".format(base_ref.normal(), n+1)
-            curr_comm_ref = match.normal()
+            curr_comm_ref = "{}:{}".format(comm_ref, n+1)
+            curr_base_ref = match.normal()
             new_link = {"refs": [curr_comm_ref, curr_base_ref], "generated_by": generated_by_str,
                         "type": "Commentary", "auto": True}
             links.append(new_link)
