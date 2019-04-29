@@ -2,7 +2,7 @@
 from __future__ import print_function
 
 import re
-import sys
+import os
 import signal
 import regex
 import json
@@ -17,12 +17,14 @@ from itertools import groupby
 from collections import namedtuple, Counter, defaultdict
 from multiprocessing import Pool
 from sources.functions import post_sheet
+from sources.local_settings import API_KEY
 from data_utilities.util import Singleton, getGematria, split_list
 from research.source_sheet_disambiguator.main import refine_ref_by_text
 
 import django
 django.setup()
 from sefaria.model import *
+from sefaria.s3 import HostedFile
 from sefaria.system.exceptions import InputError
 
 
@@ -403,6 +405,120 @@ get_ref_for_resource_p = cache_to_mongo(my_mongo_client, builder)
 SheetWrapper = namedtuple('SheetWrapper', ('page_id', 'sheet_json'))
 
 
+class GroupManager(object):
+    def __init__(self, server):
+        self.server = server
+        self.group_cache = {}
+        self.mongo_client = pymongo.MongoClient()
+
+    def get_and_register_group_for_sheet(self, sheet_id):
+        """
+        Query data for group in SQL database
+        Lookup group in cache
+        if not in cache:
+            lookup group and add to cache
+        add sheet to group in cache
+        :param sheet_id:
+        :return: name of group
+        """
+        cursor = MidreshetCursor()
+        cursor.execute('SELECT F.name AS filename, F.data, S.name AS name, S.body AS body, F.type, S.logoId '
+                       'FROM Pages P '
+                       'INNER JOIN Seminary S ON P.seminary_id = S.id '
+                       'JOIN Files F ON S.logoId = F.id '
+                       'WHERE P.id = ?', (sheet_id,))
+        result = cursor.fetchone()
+        group_name = result.name
+
+        if group_name not in self.group_cache:
+            self.cache_group_from_server(group_name)
+
+        if self.group_cache[group_name]['need_to_add']:
+            self.add_new_group(convert_row_to_dict(result))
+
+        self.group_cache[group_name]['num_sheets'] += 1
+
+        return group_name
+
+    def change_server(self, server):
+        self.server = server
+        self.group_cache.clear()
+
+    def cache_group_from_server(self, group_name):
+        """
+        Lookup group
+        For each group, track:
+            need_to_add
+            num_sheets
+            public
+        :param group_name:
+        :return:
+        """
+        response = requests.get(u'{}/api/groups/{}'.format(self.server, group_name)).json()
+        if 'error' in response:
+            self.group_cache[group_name] = {
+                'need_to_add': True,
+                'num_sheets': 0,
+                'public': False
+            }
+        else:
+            self.group_cache[group_name] = {
+                'need_to_add': False,
+                'num_sheets': len(response['sheets']),
+                'public': response.get('listed', False)
+            }
+
+    def add_new_group(self, group_data):
+        image_collection = self.mongo_client.yonis_data.images
+        image_data = image_collection.find_one({'name': group_data['name']})
+        if image_data:
+            file_url = image_data['image_url']
+
+        else:
+            filename = group_data['filename'].split(u'\\')[-1]
+            with open(filename, 'wb') as fp:
+                fp.write(group_data['data'])
+
+            hosted_file = HostedFile(filename, group_data['type'])
+            file_url = hosted_file.upload()
+            image_collection.insert_one({'name': group_data['name'], 'image_url': file_url})
+            os.remove(filename)
+
+        group_json = {
+            'name': group_data['name'],
+            'description': bleach_clean(group_data['body']),
+            'headerUrl': file_url,
+            'imageUrl': file_url,
+            'new': True
+        }
+        post_body = {'apikey': API_KEY, 'json': json.dumps(group_json)}
+        post_url = u'{}/api/groups/{}'.format(self.server, group_data['name'])
+
+        response = requests.post(post_url, data=post_body)
+        if response.ok:
+            self.group_cache[group_data['name']]['need_to_add'] = False
+
+        return
+
+    def make_group_public(self, group_name):
+        if self.group_cache[group_name]['num_sheets'] < 3 or self.group_cache[group_name]['public']:
+            return
+
+        url = u'{}/api/groups/{}'.format(self.server, group_name)
+        post_body = {'apikey': API_KEY, 'json': json.dumps({'name': group_name, 'listed': True})}
+        response = requests.post(url, data=post_body).json()
+
+        if 'error' in response:
+            print(group_name, response['error'])
+        else:
+            self.group_cache[group_name]['public'] = True
+
+    def publicize_groups(self):
+        for group_name in self.group_cache.keys():
+            if self.group_cache[group_name]['num_sheets'] >= 3 and not self.group_cache[group_name]['public']:
+                self.make_group_public(group_name)
+
+
 def get_sheet_by_id(page_id, rebuild_cache=False):
     cursor = MidreshetCursor()
     cursor.execute('select * from Pages where id=?', (page_id,))
@@ -695,15 +811,20 @@ def rematch_ref(ref_id):
     return get_ref_for_resource_p(result.id, result.exactLocation, bleach_clean(result.body), replace=True)
 
 
-p_sheet_poster = partial(sheet_poster, 'http://localhost:8000')
-my_cursor = MidreshetCursor()
-my_cursor.execute('SELECT id FROM Pages WHERE parent_id = 0')
-my_wrapped_sheet_list = [SheetWrapper(m.id, create_sheet_json(m.id)) for m in tqdm(my_cursor.fetchall())]
-print('finished creating sheets')
-num_processes = 15
-sheet_chunks = list(split_list(my_wrapped_sheet_list, num_processes))
-pool = Pool(num_processes)
-pool.map(p_sheet_poster, sheet_chunks)
+group_thing = GroupManager('http://localhost:8000')
+the_group = group_thing.get_and_register_group_for_sheet(7)
+print('done')
+
+
+# p_sheet_poster = partial(sheet_poster, 'http://localhost:8000')
+# my_cursor = MidreshetCursor()
+# my_cursor.execute('SELECT id FROM Pages WHERE parent_id = 0')
+# my_wrapped_sheet_list = [SheetWrapper(m.id, create_sheet_json(m.id)) for m in tqdm(my_cursor.fetchall())]
+# print('finished creating sheets')
+# num_processes = 15
+# sheet_chunks = list(split_list(my_wrapped_sheet_list, num_processes))
+# pool = Pool(num_processes)
+# pool.map(p_sheet_poster, sheet_chunks)
 
 # my_cursor = MidreshetCursor()
 # my_cursor.execute('SELECT id, MidreshetRef FROM RefMap WHERE SefariaRef IS NULL')
