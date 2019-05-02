@@ -5,12 +5,12 @@ import re
 import unicodecsv
 from functools import partial
 from data_utilities.util import getGematria
-from data_utilities.ParseUtil import Description, ParsedDocument, directed_run_on_list
+from data_utilities.ParseUtil import Description, ParsedDocument, directed_run_on_list, ParseState
 
 import django
 django.setup()
 from sefaria.model import *
-from sources.functions import post_index, post_text, add_category, add_term
+from sources.functions import post_index, post_text, post_link, add_category, add_term
 
 
 """
@@ -92,8 +92,8 @@ class DocBuilder(object):
             Description("Verse", self.split_to_verses),
             Description("Comment", lambda x: x)
         ]
-        self.title = "Birkat Asher on {}".format(self.book)
-        self.he_title = "ברכת אשר על {}".format(Ref(self.book).he_normal())
+        self.title = self.book
+        self.he_title = Ref(self.book).he_normal()
         self.parsed_doc = ParsedDocument(self.title, self.he_title, descriptors)
         self.parsed_doc.parse_document(self.rows)
 
@@ -144,23 +144,26 @@ class DocBuilder(object):
 
         return chaps_ascending and verses_ascending
 
-    def collect_index(self):
-        ja_node = self.parsed_doc.get_ja_node()
-        ja_node.validate()
-        return {
-            "title": self.title,
-            "dependence": "Commentary",
-            "base_text_titles": [self.book],
-            "collective_title": "Birkat Asher",
-            "base_text_mapping": "many_to_one",
-            "categories": [
-                "Tanakh",
-                "Commentary",
-                "Birkat Asher",
-                "Torah"
-            ],
-            "schema": ja_node.serialize()
-        }
+    # def collect_index(self):
+    #     ja_node = self.parsed_doc.get_ja_node()
+    #     ja_node.validate()
+    #     return {
+    #         "title": self.title,
+    #         "dependence": "Commentary",
+    #         "base_text_titles": [self.book],
+    #         "collective_title": "Birkat Asher",
+    #         "base_text_mapping": "many_to_one",
+    #         "categories": [
+    #             "Tanakh",
+    #             "Commentary",
+    #             "Birkat Asher",
+    #             "Torah"
+    #         ],
+    #         "schema": ja_node.serialize()
+    #     }
+
+    def collect_ja_node(self):
+        return self.parsed_doc.get_ja_node()
 
     def collect_version(self):
         return {
@@ -170,12 +173,70 @@ class DocBuilder(object):
             "text": self.parsed_doc.filter_ja(lambda x: x[-1])
         }
 
+    def collect_links(self):
+        link_list = []
+        tracker = ParseState()
+        self.parsed_doc.attach_state_tracker(tracker)
+
+        def add_link(_):
+            chapter = tracker.get_ref('Chapter', True)
+            verse = tracker.get_ref('Verse', True)
+            comment = tracker.get_ref('Comment', True)
+            link_list.append({
+                'refs': [
+                    '{} {}:{}'.format(self.book, chapter, verse),
+                    'Birkat Asher, {} {}:{}:{}'.format(self.book, chapter, verse, comment)
+                ],
+                'type': 'commentary',
+                'auto': True,
+                'generated_by': 'Birkat Asher Parser'
+            })
+            return
+        self.parsed_doc.filter_ja(add_link)
+        return link_list
+
 
 birkat_docs = [DocBuilder(b) for b in library.get_indexes_in_category("Torah")]
+
+root_node = SchemaNode()
+root_node.add_primary_titles("Birkat Asher", "ברכת אשר")
+for build in birkat_docs:
+    ja_node = build.collect_ja_node()
+    ja_node.toc_zoom = 2
+    root_node.append(ja_node)
+root_node.validate()
+
+birkat_index = {
+    "title": "Birkat Asher",
+    "dependence": "Commentary",
+    "base_text_titles": library.get_indexes_in_category("Torah"),
+    "categories": [
+        "Tanakh",
+        "Commentary",
+        "Birkat Asher",
+        "Torah"
+    ],
+    "schema": root_node.serialize()
+}
+
+
+
 server = 'http://localhost:8000'
 add_term("Birkat Asher", "ברכת אשר", server=server)
 add_category("Torah", ["Tanakh", "Commentary", "Birkat Asher", "Torah"], server=server)
 
-for thing in birkat_docs:
-    post_index(thing.collect_index(), server=server)
-    post_text(thing.title, thing.collect_version(), index_count='on', server=server)
+post_index(birkat_index, server)
+for index, build in enumerate(birkat_docs):
+    if index == len(birkat_docs) - 1:
+        post_text('Birkat Asher, {}'.format(build.title), build.collect_version(), index_count='on', server=server)
+    else:
+        post_text('Birkat Asher, {}'.format(build.title), build.collect_version(), server=server)
+    post_link(build.collect_links(), server)
+
+
+"""
+Things to change:
+Add a link builder to the DocBuilder - Done
+Create the index once finished iterating.
+Then upload the versions and links one by one
+"""
