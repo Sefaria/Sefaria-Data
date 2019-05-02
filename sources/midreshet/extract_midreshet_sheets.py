@@ -428,6 +428,8 @@ class GroupManager(object):
                        'JOIN Files F ON S.logoId = F.id '
                        'WHERE P.id = ?', (sheet_id,))
         result = cursor.fetchone()
+        if result is None:
+            return self.default_group()
         group_name = result.name
 
         if group_name not in self.group_cache:
@@ -517,6 +519,33 @@ class GroupManager(object):
         for group_name in self.group_cache.keys():
             if self.group_cache[group_name]['num_sheets'] >= 3 and not self.group_cache[group_name]['public']:
                 self.make_group_public(group_name)
+
+    def default_group(self):
+        group_name = 'MidreshetSite'
+        if group_name not in self.group_cache:
+            self.cache_group_from_server(group_name)
+
+        if self.group_cache[group_name]['need_to_add']:
+            with open('midreshet_logo.jpg') as fp:
+                logo_data = fp.read()
+
+            self.add_new_group({
+                'filename': 'midreshet_logo2.jpg',
+                'data': logo_data,
+                'name': 'MidreshetSite',
+                'body': '',
+                'type': 'image/pjpeg',
+                'logoId': None
+            })
+
+        self.group_cache[group_name]['num_sheets'] += 1
+        return group_name
+
+
+class MidreshetGroupManager(GroupManager):
+
+    def get_and_register_group_for_sheet(self, sheet_id):
+        return self.default_group()
 
 
 def get_sheet_by_id(page_id, rebuild_cache=False):
@@ -614,7 +643,7 @@ def format_dictionaries(word_list):
     return u'<i>{}</i><ul><li>{}</li></ul>'.format(u'מילים', u'</li><li>'.join(entries))
 
 
-def create_sheet_json(page_id):
+def create_sheet_json(page_id, group_manager):
     raw_sheet = get_sheet_by_id(page_id)
     sheet = {
         'title': raw_sheet['name'],
@@ -673,6 +702,7 @@ def create_sheet_json(page_id):
                 source['text']['he'] = u'{}<br><br>{}'.format(source['text']['he'], format_dictionaries(resource['dictionary']))
 
         sheet['sources'].append(source)
+        sheet['group'] = group_manager.get_and_register_group_for_sheet(page_id)
     return sheet
 
 
@@ -811,20 +841,32 @@ def rematch_ref(ref_id):
     return get_ref_for_resource_p(result.id, result.exactLocation, bleach_clean(result.body), replace=True)
 
 
-group_thing = GroupManager('http://localhost:8000')
-the_group = group_thing.get_and_register_group_for_sheet(7)
-print('done')
+multiple_group_servers = {
+    'http://localhost:8000',
+    'http://midreshetgroups.sandbox.sefaria.org'
+}
+
+single_group_servers = {
+    'http://midreshet.sandbox.sefaria.org'
+}
 
 
-# p_sheet_poster = partial(sheet_poster, 'http://localhost:8000')
-# my_cursor = MidreshetCursor()
-# my_cursor.execute('SELECT id FROM Pages WHERE parent_id = 0')
-# my_wrapped_sheet_list = [SheetWrapper(m.id, create_sheet_json(m.id)) for m in tqdm(my_cursor.fetchall())]
-# print('finished creating sheets')
-# num_processes = 15
-# sheet_chunks = list(split_list(my_wrapped_sheet_list, num_processes))
-# pool = Pool(num_processes)
-# pool.map(p_sheet_poster, sheet_chunks)
+destination_server = 'http://midreshetgroups.sandbox.sefaria.org'
+if destination_server in multiple_group_servers:
+    group_handler = GroupManager(destination_server)
+else:
+    group_handler = MidreshetGroupManager(destination_server)
+
+p_sheet_poster = partial(sheet_poster, destination_server)
+my_cursor = MidreshetCursor()
+my_cursor.execute('SELECT id FROM Pages WHERE parent_id = 0')
+my_wrapped_sheet_list = [SheetWrapper(m.id, create_sheet_json(m.id, group_handler)) for m in tqdm(my_cursor.fetchall())]
+print('finished creating sheets')
+num_processes = 20
+sheet_chunks = list(split_list(my_wrapped_sheet_list, num_processes))
+pool = Pool(num_processes)
+pool.map(p_sheet_poster, sheet_chunks)
+# group_handler.publicize_groups()
 
 # my_cursor = MidreshetCursor()
 # my_cursor.execute('SELECT id, MidreshetRef FROM RefMap WHERE SefariaRef IS NULL')
