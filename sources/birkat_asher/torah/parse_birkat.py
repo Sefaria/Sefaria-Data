@@ -185,7 +185,7 @@ class DocBuilder(object):
             link_list.append({
                 'refs': [
                     '{} {}:{}'.format(self.book, chapter, verse),
-                    'Birkat Asher, {} {}:{}:{}'.format(self.book, chapter, verse, comment)
+                    'Birkat Asher on Torah, {} {}:{}:{}'.format(self.book, chapter, verse, comment)
                 ],
                 'type': 'commentary',
                 'auto': True,
@@ -207,7 +207,7 @@ for build in birkat_docs:
 root_node.validate()
 
 birkat_index = {
-    "title": "Birkat Asher",
+    "title": "Birkat Asher on Torah",
     "dependence": "Commentary",
     "base_text_titles": library.get_indexes_in_category("Torah"),
     "categories": ['Modern Works'],
@@ -221,9 +221,9 @@ add_term("Birkat Asher", "ברכת אשר", server=server)
 post_index(birkat_index, server)
 for index, build in enumerate(birkat_docs):
     if index == len(birkat_docs) - 1:
-        post_text('Birkat Asher, {}'.format(build.title), build.collect_version(), index_count='on', server=server)
+        post_text('Birkat Asher on Torah, {}'.format(build.title), build.collect_version(), index_count='on', server=server)
     else:
-        post_text('Birkat Asher, {}'.format(build.title), build.collect_version(), server=server)
+        post_text('Birkat Asher on Torah, {}'.format(build.title), build.collect_version(), server=server)
     post_link(build.collect_links(), server)
 
 
