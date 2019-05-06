@@ -254,6 +254,7 @@ class Source(object):
         #     pass
 
     def extract_cat(self, include_dependant):
+        look_here = []
         # library.get_index(self.author) if library.get_index(self.author) else None # needs to go into a try catch "sefaria.system.exceptions.BookNameError"
         author = re.sub(u'[{}]'.format(re.escape(string.punctuation)), u'', self.author)
         try:
@@ -269,7 +270,7 @@ class Source(object):
                     look_here = reduce(lambda a,b: [x for x in b for y in a if x==y], [library.get_indexes_in_category(cat, include_dependant=include_dependant, full_records=True).array() for cat in self.cat])
                     return look_here
             else:
-                return []
+                return look_here
             #might need to use Terms to make lookup the category in english
             # Term().load({"name": self.author})
             # filter(lambda x: x['lang'] == 'he', t.contents()['titles'])[0]['text']
@@ -412,13 +413,24 @@ class Source(object):
 
     def get_look_here_titles(self, look_here):
         look_here_titles = [index.title for index in look_here] if isinstance(look_here[0], Index) else look_here
-        shared_word_in_titles = u'({})'.format(u'|'.join(list(set.intersection(*[set(x.split()) for x in look_here_titles]))))
-        if shared_word_in_titles:
+        shared_word_in_titles = []
+        try:
+            shared_word_in_titles = u'({})'.format(u'|'.join(list(set.intersection(*[set(x.split()) for x in look_here_titles]))))
+        except AttributeError:
+            if any(type(book) != unicode for book in look_here_titles):
+                look_here_titles = [book for book in look_here_titles if isinstance(book, unicode)]
+                shared_word_in_titles = u'({})'.format(
+                    u'|'.join(list(set.intersection(*[set(x.split()) for x in look_here_titles]))))
+
+        if re.sub(u"[()]", u"", shared_word_in_titles):
             look_here_titles = map(lambda x: (x, re.sub(shared_word_in_titles, u'', x).strip()), look_here_titles)
         else:
-            look_here_titles = map(lambda x: tuple(x), look_here_titles)
+            look_here_titles = map(lambda x: tuple([x]) if isinstance(x, unicode) else tuple(x), look_here_titles)
         return look_here_titles
 
+        # except AttributeError:
+        #     pass  # todo: check what this is about
+        #     return []
 
     def get_ref_step2(self):
         """
@@ -441,18 +453,27 @@ class Source(object):
                 new_ref = None
                 include_dependant = True
                 look_here = self.extract_cat(include_dependant=include_dependant)
-                look_here.extend(self.indexs)
+                if look_here:
+                    look_here.extend(self.indexs)
                 if look_here:
                     if wrong_ref:
                         current_title = self.ref.index.title
                         alt_ref_titles = map(lambda x: x['text'], self.ref.index.schema['titles'])
                         look_here_titles = self.get_look_here_titles(look_here)
                         nodes = []
+                        # if any(type(book) != Index for book in look_here):
+                        #     print self.raw_ref
+                        #     look_here = [book for book in look_here if isinstance(book, Index)]
                         for a in look_here:
-                            if a.is_complex():
+                            if isinstance(a, Index) and a.is_complex():
                                 nodes+= a.nodes.children
                         look_here_titles_nodes = [(node.key,node.index) for node in nodes]
-                        reduced_indexes = [index_t[0] for index_t in look_here_titles if ((index_t[-1] in alt_ref_titles) or any([t for t in alt_ref_titles if t in index_t[-1]]))]
+                        reduced_indexes = []
+                        if look_here_titles:
+                            try:
+                                reduced_indexes = [index_t[0] for index_t in look_here_titles if ((index_t[-1] in alt_ref_titles) or any([t for t in alt_ref_titles if t in index_t[-1]]))]
+                            except:
+                                reduced_indexes = []
                         reduced_indexes_nodes = [index_t for index_t in look_here_titles_nodes if (index_t[0] in alt_ref_titles)]
                         reduced_indexes.extend(reduced_indexes_nodes)
                         if len(reduced_indexes) == 1 or (reduced_indexes and all([x == reduced_indexes[-1] for x in reduced_indexes])):  # replace with `set()`?
@@ -468,15 +489,18 @@ class Source(object):
                                 self.ref = new_ref
                             except exceptions.InputError as e:
                                 new_ref = None # so not to have new_ref that failed scrowing with stuff
-                                print u"inputError for this string {}, extracted from this rawref {}".format(u'{} {}'.format(self.index.title, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()), self.raw_ref)
+                                print u"inputError for this string {}, extracted from this rawref {}".format(u'{} {}'.format(self.index, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()), self.raw_ref)
                         elif not reduced_indexes: #  len(reduced_indexes) == 0
                             # couldn't find the title in the books maybe it is in there nodes
                             if isinstance(look_here[0], Index):
-                                look_here_nodes = reduce(lambda a,b: a+b, [ind.alt_titles_dict('he').items() for ind in look_here])
-                                look_here_nodes = filter(lambda x: any(re.search(t, x[0]) for t in alt_ref_titles), look_here_nodes)
+                                if any(type(book) != Index for book in look_here):
+                                    print self.raw_ref
+                                    look_here = [book for book in look_here if isinstance(book, Index)]
+                                look_here_nodes = reduce(lambda a,b: a+b, [ind.alt_titles_dict('he').keys()+ind.all_titles('he') for ind in look_here]) # todo: note: this was ind.alt_titles_dict('he').items() a few lines down the code called node_name = node[0]
+                                look_here_nodes = filter(lambda x: any(re.search(t, x[0]) or re.search(t,x) for t in alt_ref_titles), look_here_nodes)
                                 if len(look_here_nodes) >= 1:
-                                    node = look_here_nodes[0]
-                                    node_name = node[0]
+                                    node = look_here_nodes[0] #todo: why take the first one??
+                                    node_name = node#[0]
                                     depth = re.search(u'.*?(\d+):?(\d+)?.*?', self.ref.normal()).groups()
                                     for d in depth:
                                         if not d:
@@ -511,7 +535,7 @@ class Source(object):
                                     ind = None
                                 if ind and not ind.is_dependant_text():
                                     main_indexes.append(ind_title)
-                                elif ind.is_dependant_text():
+                                elif ind and ind.is_dependant_text():
                                     depenent_indexes.append(ind_title)
                             if main_indexes:
                                 self.index = main_indexes[0]
@@ -562,7 +586,7 @@ class Source(object):
                     self.raw_ref.section_level = split_raw_text
 
                     pass
-                if not self.index or not new_ref:
+                if not self.index and not new_ref:# todo: it was an or why? turend into an and lets see if/what it breaks.
                     print u"deleting wrong: {} couldn't find an index".format(self.ref)
                     self.ref = None
             else:  # not wrong_ref. and found a ref, might just be a correct ref. todo: how to test it is correct?
@@ -707,8 +731,8 @@ def shamas_per_leter(he_letter):
         # print u'done'
 
 if __name__ == "__main__":
-    he_letter = u'ALEF'
-    letter_gimatria = 001
+    he_letter = u'TAV'
+    letter_gimatria = 400
     # parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
     shamas_per_leter(he_letter)
     read_with_refs(u'{}'.format(he_letter))

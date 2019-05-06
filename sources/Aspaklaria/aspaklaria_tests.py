@@ -60,6 +60,10 @@ class Test_Source_methods(object):
         assert source.ref == Ref(u'Alshich on Torah, Numbers 1:12')
         source = Source(u"(רות א יב)", u"אלשיך")
         assert source.ref == Ref(u'Enei Moshe on Ruth 1:12')
+        source = Source(u"(ערכין ג טו)",u"משנה תורה")
+        assert source.ref == Ref(u'Mishneh Torah, Appraisals and Devoted Property 3') # Ref(u'Mishneh Torah, Appraisals and Devoted Property 3:15')
+        source = Source(u"(נזקי ממון ב ז, וראה שם עוד)",u"משנה תורה")
+        assert source.ref == Ref(u"Mishneh Torah, Damages to Property 2:7")
 
     #     מדרש שמואל, (אבות ה ה, וראה שם עוד)
     # Pirkei Avot 5:5
