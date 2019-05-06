@@ -210,20 +210,13 @@ birkat_index = {
     "title": "Birkat Asher",
     "dependence": "Commentary",
     "base_text_titles": library.get_indexes_in_category("Torah"),
-    "categories": [
-        "Tanakh",
-        "Commentary",
-        "Birkat Asher",
-        "Torah"
-    ],
+    "categories": ['Modern Works'],
     "schema": root_node.serialize()
 }
 
-
-
-server = 'http://localhost:8000'
+server = 'http://birkat.sandbox.sefaria.org'
 add_term("Birkat Asher", "ברכת אשר", server=server)
-add_category("Torah", ["Tanakh", "Commentary", "Birkat Asher", "Torah"], server=server)
+# add_category("Torah", ["Tanakh", "Commentary", "Birkat Asher", "Torah"], server=server)
 
 post_index(birkat_index, server)
 for index, build in enumerate(birkat_docs):
