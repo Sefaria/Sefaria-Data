@@ -16,6 +16,7 @@ from data_utilities.util import getGematria, numToHeb
 import codecs
 from data_utilities.ibid import *
 from aspaklaria_connect import client
+from index_title_catcher import get_index_via_titles
 
 db = client.aspaklaria
 
@@ -193,7 +194,6 @@ class Topic(object):
                 if source.ref and source.raw_ref.is_sham:
                     Source.cnt_sham -= 1
                     Source.cnt_resolved +=1
-
 
     def ref_dict(self, source):
         d = {}
@@ -410,7 +410,6 @@ class Source(object):
         self.extract_indx()
         self.get_ref_step2()
 
-
     def get_look_here_titles(self, look_here):
         look_here_titles = [index.title for index in look_here] if isinstance(look_here[0], Index) else look_here
         shared_word_in_titles = []
@@ -591,7 +590,38 @@ class Source(object):
                     self.ref = None
             else:  # not wrong_ref. and found a ref, might just be a correct ref. todo: how to test it is correct?
                 pass
-        # where can we look at nodes names when we are not testing giving wrong Ref?
+
+        # try to get the ref from the index via the titles found (without an index - ex. ילקוט שמעוני, דניאל תתרסה)
+        # it is look at nodes names when we are not testing giving wrong Ref?
+        if not self.ref and hasattr(self, "opt_titles") and self.opt_titles:
+            indexs = self.extract_cat(include_dependant=True)
+            if indexs:
+                indexs.extend(self.indexs)
+            node_name = u''
+            for opt_title in self.opt_titles:
+                try:
+                    new_index = library.get_index(opt_title)
+                    if new_index not in indexs:
+                        node_name = get_index_via_titles(self, new_index)
+                except (exceptions.BookNameError, TypeError):
+                    print u"excepted {}".format(opt_title)
+                if node_name:
+                    try:
+                        new_string = re.sub(opt_title, node_name, self.text)
+                        new_string = re.sub(u'[()]', u'', new_string) # because we are going to use Ref rather than library.get_refs_in_string() that needes the parentheses
+                        self.ref = Ref(new_string)
+                    except exceptions.InputError:
+                        # try again without the name of the node, but with the index recognizing that the node is in that index
+                        try:
+                            new_string = re.sub(opt_title, u"", new_string)
+                            self.ref = Ref(new_string)
+                        except exceptions.InputError:
+                            print "we tried"
+                            self.ref = None
+
+            # for ind in self.opt_titles:
+            #     ind.alt_titles_dict('he').keys()
+
 
 
     def try_from_ls(self):
@@ -695,6 +725,7 @@ def read_with_refs(letter):
                         print '-----------------'
         print "done"
 
+
 def shamas_per_leter(he_letter):
     # for file in os.listdir(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/"):
     # write_to_file(u'', mode = 'w')
@@ -730,9 +761,10 @@ def shamas_per_leter(he_letter):
                 pickle.dump(topics, fp, -1)
         # print u'done'
 
+
 if __name__ == "__main__":
-    he_letter = u'TAV'
-    letter_gimatria = 400
+    he_letter = u'ALEF'
+    letter_gimatria = 001
     # parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
     shamas_per_leter(he_letter)
     read_with_refs(u'{}'.format(he_letter))

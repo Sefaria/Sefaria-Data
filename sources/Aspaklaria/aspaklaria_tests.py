@@ -48,10 +48,12 @@ class Test_Source_methods(object):
         assert True
         source = Source(u'(מלכים ב פרק יח, רצו)', u'ילקוט שמעוני')
         assert source.ref == Ref(u'Yalkut Shimoni on Nach 234:8-239:1')
-        # source = Source(u'(דניאל תתרסה)', u'ילקוט שמעוני')
-        # assert source.ref == Ref(u'Yalkut Shimoni on Nach 1065')
+        source = Source(u'(דניאל תתרסה)', u'ילקוט שמעוני')
+        assert source.ref == Ref(u'Yalkut Shimoni on Nach 1065')
         source = Source(u"(יהושע ח ל)", u'אברבנאל')
         assert source.ref == None
+        source = Source(u"(חלק ג)", u"מורה נבוכים")
+        # assert source.ref == Ref(u'Guide for the Perplexed, Part 3')
         # source = Source(u"(חלק ג פרק א)", u"מורה נבוכים")
         # assert source.ref == Ref(u'Guide for the Perplexed, Part 3 1')
         # source = Source(u"(פתיחה)", u"מורה נבוכים")
