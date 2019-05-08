@@ -449,7 +449,8 @@ class PartialMesorahMatch:
 class ParallelMatcher:
 
     def __init__(self, tokenizer, dh_extract_method=None, ngram_size=5, max_words_between=4, min_words_in_match=9,
-                 min_distance_between_matches=1000, all_to_all=True, parallelize=False, verbose=True, calculate_score=None):
+                 min_distance_between_matches=1000, all_to_all=True, parallelize=False, verbose=True,
+                 calculate_score=None, only_match_first=False):
         """
 
         :param tokenizer: returns list of words
@@ -460,6 +461,7 @@ class ParallelMatcher:
         :param min_distance_between_matches: min distance between matches. If matches are closer than this, the first one will be chosen (i think)
         :param bool all_to_all: if True, make between everything either in index_list or ref_list. False means results get filtered to only match inter-ref matches
         :param bool parallelize: Do you want this to run in parallel? WARNING: this uses up way more RAM. and this is already pretty RAM-hungry TODO: interesting question on sharing ram: https://stackoverflow.com/questions/14124588/shared-memory-in-multiprocessing
+        :param bool only_match_first: True if you want to return matches to the first item in the list
         """
         self.tokenizer = tokenizer
         self.dh_extract_method = dh_extract_method
@@ -474,8 +476,7 @@ class ParallelMatcher:
         self.verbose = verbose
         self.with_scoring = False
         self.calculate_score = None
-        self.talmud_titles = library.get_indexes_in_category('Bavli')
-        self.talmud_titles = self.talmud_titles[:self.talmud_titles.index('Chullin') + 1]
+        self.only_match_first = only_match_first
         if calculate_score:
             self.with_scoring = True
             self.calculate_score = calculate_score
@@ -500,11 +501,11 @@ class ParallelMatcher:
             match_set.add(match)
         return list(match_set)
 
-    def match(self, index_list=None, tc_list=None, comment_index_list=None, use_william=False, output_root="", return_obj=False):
+    def match(self, tref_list, lang="he", comment_index_list=None, use_william=False, output_root="",
+              return_obj=False):
         """
 
-        :param list[str] index_list: list of index names to match against
-        :param list[TextChunk] tc_list: alternatively, you can give a list of TextChunks to match to. Hack: you can also include tuples in this list where the tuples look like (content, unique_id) where `content` is the text to match and `unique_id` is a unique id.
+        :param list[str] tref_list: list of index names to match against. Hack: you can also include tuples in this list where the tuples look like (content, unique_id) where `content` is the text to match and `unique_id` is a unique id.
         :param list[int] comment_index_list: list of indexes which correspond to either `index_list` or `tc_list` (whichever is not None). each index in this list indicates that the corresponding element should be treated as a `comment` meaning `self.dh_extract_method()` will be used on it.
         :param bool use_william: True if you want to use William Davidson version for Talmud refs
         :return: mesorat_hashas, mesorat_hashas_indexes
@@ -512,51 +513,37 @@ class ParallelMatcher:
         self.reset()
         start_time = pytime.time()
 
-        if not index_list is None and not tc_list is None:
-            raise Exception("Can only pass one. Choose either index_list or tc_list")
-        if index_list is None and tc_list is None:
-            raise Exception("Either index_list xor tc_list needs to be not None")
-
-        if not index_list is None:
-            unit_list = index_list
-            using_indexes = True
-        else:
-            unit_list = tc_list
-            using_indexes = False
-
-        text_index_map_data = [None for yo in xrange(len(unit_list))]
-        for iunit, unit in enumerate(unit_list):
+        text_index_map_data = [None for yo in xrange(len(tref_list))]
+        for iunit, tref in enumerate(tref_list):
             if comment_index_list is not None and iunit in comment_index_list:
                 # this unit is a comment. modify tokenizer so that it applies dh_extract_method first
                 unit_tokenizer = lambda x: self.tokenizer(self.dh_extract_method(x))
             else:
                 unit_tokenizer = self.tokenizer
 
-            if self.verbose: print "Hashing {}".format(unit)
-            if using_indexes:
-                index = library.get_index(unit)
-                if unit in self.talmud_titles and use_william:
+            if self.verbose: print "Hashing {}".format(tref)
+            if isinstance(tref, tuple):
+                # otherwise, format is a tuple with (str, textname)
+                unit_il, unit_rl = [0], [Ref("Berakhot 58a")]  # random ref, doesn't actually matter
+                unit_wl = unit_tokenizer(tref[0])
+                unit_str = u"{}".format(tref[1])
+            else:
+                oref = Ref(tref)
+                if len(oref.index.categories) >= 2 and oref.index.categories[1] == "Bavli" and use_william:
                     vtitle = 'William Davidson Edition - Aramaic'
                 else:
                     vtitle = None
-                unit_il, unit_rl = index.text_index_map(unit_tokenizer, lang='he', vtitle=vtitle, strict=False)
-                unit_list_temp = index.nodes.traverse_to_list(
-                    lambda n, _: TextChunk(n.ref(), "he", vtitle=vtitle).ja().flatten_to_array() if not n.children else [])
+                schema_node = oref.index_node
+                unit_il, unit_rl = schema_node.text_index_map(unit_tokenizer, lang=lang, vtitle=vtitle, strict=False)
+                unit_list_temp = schema_node.traverse_to_list(
+                    lambda n, _: TextChunk(n.ref(), lang, vtitle=vtitle).ja().flatten_to_array() if not n.children else [])
                 unit_wl = [w for seg in unit_list_temp for w in unit_tokenizer(seg)]
-                unit_str = unit
-            elif isinstance(unit, TextChunk):
-                unit_il, unit_rl, total_len, unit_flattened = unit.text_index_map(unit_tokenizer, ret_ja=True)
-                unit_wl = [w for seg in unit_flattened for w in unit_tokenizer(seg)]
-                unit_str = unit._oref.normal()
-            else:
-                # otherwise, format is a tuple with (str, textname)
-                unit_il, unit_rl = [0], [Ref("Berakhot 58a")]  # random ref, doesn't actually matter
-                unit_wl = unit_tokenizer(unit[0])
-                unit_str = u"{}".format(unit[1])
+                unit_str = tref
+
             text_index_map_data[iunit] = (unit_wl, unit_il, unit_rl, unit_str)
             total_len = len(unit_wl)
             if not return_obj:
-                with open('{}text_index_map/{}.pkl'.format(output_root, unit), 'wb') as my_pickle:
+                with open('{}text_index_map/{}.pkl'.format(output_root, tref), 'wb') as my_pickle:
                     pickle.dump((unit_il, unit_rl, total_len), my_pickle, -1)
 
             for i_word in xrange(len(unit_wl) - self.skip_gram_size):
@@ -589,6 +576,8 @@ class ParallelMatcher:
             for input in enumerate(text_index_map_data):
                 if input[0] == len(text_index_map_data) - 1 and not self.all_to_all:
                     break  # dont need to check last item if not all to all
+                if input[0] == 1 and self.only_match_first:
+                    break  # dont need to check past the first item if `only_match_first`
                 mesorat_hashas += self.get_matches_in_unit(input)
 
 

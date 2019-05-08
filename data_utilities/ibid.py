@@ -20,6 +20,12 @@ class CitationFinder():
     SHAM_INT = 2
     IGNORE_INT = 3
     AFTER_TITLE_DELIMETER_RE = ur"[,.: \r\n]+"
+    _regex_cache = {}
+
+    @staticmethod
+    def get_regex_cache_key(title_list, title_node_dict, lang, compiled, dropParenthesis):
+        t = u'|'.join(title_list) if isinstance(title_list, list) else title_list
+        return u"{}||{}||{}||{}".format(t, lang, compiled, dropParenthesis)
 
     @staticmethod
     def get_ultimate_title_regex(title_list, title_node_dict, lang, compiled=True, dropParenthesis = False):
@@ -31,7 +37,9 @@ class CitationFinder():
         :param title_node_dict: SchemaNode or dict (key: title value: SchemaNode)
         :return: regex
         """
-
+        cache_key = CitationFinder.get_regex_cache_key(title_list, title_node_dict, lang, compiled, dropParenthesis)
+        if cache_key in CitationFinder._regex_cache:
+            return CitationFinder._regex_cache[cache_key]
         if not isinstance(title_list, list) and not isinstance(title_node_dict, dict):
             title_node_dict = {u"{}".format(title_list): title_node_dict}
             title_list = [title_list]
@@ -83,6 +91,7 @@ class CitationFinder():
 
         if compiled:
             full_crazy_ultimate_title_reg = re.compile(full_crazy_ultimate_title_reg, re.VERBOSE)
+        CitationFinder._regex_cache[cache_key] = full_crazy_ultimate_title_reg
         return full_crazy_ultimate_title_reg
 
     @staticmethod
@@ -99,6 +108,7 @@ class CitationFinder():
                 ["Volume"]
             ]
         else:
+            # TODO: @shanee, in what case should this else statement run? These address types look very specific
             address_list_depth1 = [
                 ["Halakhah"], ["Perek"]]
 
@@ -238,7 +248,7 @@ class CitationFinder():
         raise InputError
 
     @staticmethod
-    def get_potential_refs(st, lang='he', dropParenthesis=False, title_rambam=[]):
+    def get_potential_refs(st, lang='he', dropParenthesis=False, title_rambam=[], citing_only=False):
         """
 
         :param st:
@@ -255,7 +265,7 @@ class CitationFinder():
         # titles = list(reversed(library.get_titles_in_string(st, lang)))
         # if title_rambam:
         #     rambam_opt = [re.findall(u'{}'.format(ram_name), st) for ram_name in title_rambam]
-        titles = library.get_titles_in_string(st, lang)
+        titles = library.get_titles_in_string(st, lang, citing_only=citing_only)
         titles.insert(0, title_sham)
         if title_rambam:
             titles.extend(title_rambam)
@@ -402,7 +412,7 @@ class IndexIbidFinder(object):
         # todo: support english
 
         st = strip_nikkud(st)
-        all_refs = self._citationFinder.get_potential_refs(st, lang)
+        all_refs = self._citationFinder.get_potential_refs(st, lang, citing_only=citing_only)
         for item, location, type in all_refs:
             if type == CitationFinder.REF_INT:
                 try:
@@ -432,7 +442,7 @@ class IndexIbidFinder(object):
 
         return refs, locations, types  # , failed_refs, failed_non_refs, failed_shams
 
-    def find_in_index(self, lang='he', citing_only=False, replace=True):
+    def find_in_index(self, lang='he', citing_only=False, replace=True, debug_limit=None):
         """
         Returns an OrderedDict. keys: segments. values: dict {'refs': [Refs obj found in this seg], 'locations': [], 'types': []}
         """
@@ -441,7 +451,8 @@ class IndexIbidFinder(object):
 
         prev_node = None
         for i, r in enumerate(seg_refs):
-
+            if debug_limit and i > debug_limit:
+                break
             if prev_node is None:
                 prev_node = r.index_node
             elif prev_node != r.index_node:

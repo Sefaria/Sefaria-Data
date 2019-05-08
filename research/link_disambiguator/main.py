@@ -14,11 +14,11 @@ django.setup()
 from sefaria.model import *
 from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
 from collections import defaultdict, OrderedDict
-from sefaria.system.exceptions import PartialRefInputError, InputError, NoVersionFoundError
+from sefaria.system.exceptions import PartialRefInputError, InputError, NoVersionFoundError, DuplicateRecordError
 from sefaria.utils.hebrew import strip_cantillation
 from data_utilities.util import WeightedLevenshtein
 from data_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord
-
+from sources.functions import post_text, post_link
 
 
 
@@ -41,8 +41,11 @@ class Link_Disambiguator:
     def __init__(self):
         self.levenshtein = WeightedLevenshtein()
         self.matcher = None
-        with codecs.open("word_counts.json", "rb", encoding="utf8") as fin:
-            self.word_counts = json.load(fin)
+        try:
+            with codecs.open("word_counts.json", "rb", encoding="utf8") as fin:
+                self.word_counts = json.load(fin)
+        except IOError:
+            self.word_counts = {}
 
     @staticmethod
     def tokenize_words(base_str):
@@ -140,77 +143,41 @@ class Link_Disambiguator:
         with open('ambiguous_segments.json', "w") as f:
             f.write(objStr.encode('utf-8'))
 
-    def disambiguate_segment(self, main_tc, tc_list, multiple_ref_map=None):
+    def disambiguate_segment_by_snippet(self, tref_list, lowest_score_threshold=-28):
         """
 
-        :param main_tc: TextChunk that has ambiguous refs
-        :param tc_list: list(TextChunk) where each TC is ambiguous
-        :param multiple_ref_map: In case two equal ambiguous refs appear in main_tc, dict where keys are normalized refs and values are number of times they appear
-        :return: (list, list). first list is good matches. second list is matches that couldn't be disambiguated
-        """
-        if multiple_ref_map is None:
-            multiple_ref_map = {}
-        matcher = ParallelMatcher(self.tokenize_words,max_words_between=1, min_words_in_match=3, ngram_size=3,
-                                  parallelize=False, calculate_score=self.get_score, all_to_all=False,
-                                  verbose=False, min_distance_between_matches=1)
-        try:
-            match_list = matcher.match(tc_list=[main_tc] + tc_list, return_obj=True)
-        except ValueError:
-            print "Skipping {}".format(main_tc)
-            return [], [] #[[main_tc._oref.normal(), tc_list[i]._oref.normal()] for i in range(len(tc_list))]
-        best_list = []
-        for tc in tc_list:
-            best = None
-
-            filtered_match_list = filter(lambda x: x.b.ref == main_tc._oref and x.a.ref.section_ref() == tc._oref, match_list)
-            score_list = [x.score for x in filtered_match_list]
-            if len(score_list) == 0:
-                continue
-            max_scores = argmax(score_list, n=multiple_ref_map.get(tc._oref.normal(), 1))
-            best_list += [filtered_match_list[i] for i in max_scores]
-
-        good = [[mm.a.ref.normal(), mm.b.ref.normal(), mm.score] for mm in best_list if not mm is None and mm.score > 0]
-        bad = [[main_tc._oref.normal(), tc_list[i]._oref.normal()] for i, mm in enumerate(best_list) if mm is None or mm.score <= 0]
-        #print good
-        return good, bad
-
-    def disambiguate_segment_by_snippet(self, main_snippet, main_tref, quoted_tc, quote_number):
-        """
-
-        :param main_snippet: str with quoted tref inside and a bit of padding
-        :param main_tref: tref str for the main_snippet
-        :param quoted_tc: TextChunk for quoted ref
-        :param quote_number: if the quoted ref appears multiple times in the main ref, this is the index of the quoted ref
         :return: good, bad
         """
+        main_tref = tref_list[0][0] if isinstance(tref_list[0], tuple) else tref_list[0]
         if not self.matcher:
             self.matcher = ParallelMatcher(self.tokenize_words,max_words_between=1, min_words_in_match=3, ngram_size=3,
                                   parallelize=False, calculate_score=self.get_score, all_to_all=False,
-                                  verbose=False, min_distance_between_matches=0)
+                                  verbose=False, min_distance_between_matches=0, only_match_first=True)
         try:
-            match_list = self.matcher.match(tc_list=[(main_snippet, main_tref), quoted_tc], return_obj=True)
+            match_list = self.matcher.match(tref_list, return_obj=True)
         except ValueError:
-            print "Skipping {}".format(main_tref)
+            print u"Skipping {}".format(main_tref)
             return [], []  # [[main_tc._oref.normal(), tc_list[i]._oref.normal()] for i in range(len(tc_list))]
 
-        if len(match_list) == 0:
-            return [], [{u"Quoting Ref": main_tref, u"Quoted Ref": None, u"Score": -40, u"Quote Num": 0, u"Snippet": main_snippet}]
-        score_list = [x.score for x in match_list]
-        max_scores = argmax(score_list, n=1)
-        best = match_list[max_scores[0]]
-        a_match, b_match = (best.a, best.b) if best.a.mesechta == main_tref else (best.b, best.a)
-        # print "snippet"
-        # print get_snippet_from_mesorah_item(b_match, self.tokenize_words)
-        # print best.score
-        ret = [{
-            u"Quoting Ref": a_match.mesechta,
-            u"Quoted Ref": b_match.ref.normal(),
-            u"Score": best.score,
-            u"Quote Num": quote_number,
-            u"Snippet": main_snippet
-        }]
-        # print u"BEST SCORE: {}".format(best.score)
-        good, bad = (ret, []) if best.score > -28 else ([], ret)
+        final_result_list = []
+        for other_tref in tref_list[1:]:
+            is_tuple = isinstance(other_tref, tuple)
+            parallel_item_key = other_tref[1] if is_tuple else other_tref
+            parallel_matches = filter(lambda x: x.a.mesechta == parallel_item_key or x.b.mesechta == parallel_item_key, match_list)
+            if len(parallel_matches) == 0:
+                final_result_list += [{u"A Ref": main_tref, u"B Ref": None, u"Score": lowest_score_threshold}]
+                continue
+            score_list = [x.score for x in parallel_matches]
+            max_scores = argmax(score_list, n=1)
+            best = match_list[max_scores[0]]
+            a_match, b_match = (best.a, best.b) if best.a.mesechta == main_tref else (best.b, best.a)
+            final_result_list += [{
+                u"A Ref": a_match.ref.normal(),
+                u"B Ref": b_match.mesechta if is_tuple else b_match.ref.normal(),
+                u"Score": best.score,
+            }]
+        good = filter(lambda x: x[u"Score"] > lowest_score_threshold, final_result_list)
+        bad  = filter(lambda x: x[u"Score"] <= lowest_score_threshold, final_result_list)
         return good, bad
 
     def disambiguate_gra(self):
@@ -284,10 +251,6 @@ def disambiguate_all():
     csv_bad = unicodecsv.DictWriter(fbad, [u'Quoting Ref', u'Quoted Ref', u'Score', u'Quote Num', u'Snippet'])
     csv_bad.writeheader()
     for iambig, (main_str, tref_list) in enumerate(ambig_dict.items()):
-        if iambig < 5000:
-            continue
-        elif iambig > 6000:
-            break
         if iambig % 50 == 0:
             print "{}/{}".format(iambig, len(ambig_dict))
         try:
@@ -321,13 +284,20 @@ def disambiguate_one(ld, main_oref, main_tc, quoted_oref, quoted_tc):
     main_snippet_list = get_snippet_by_seg_ref(main_tc, quoted_oref, must_find_snippet=True, snip_size=65, use_indicator_words=True)
     if main_snippet_list:
         for isnip, main_snippet in enumerate(main_snippet_list):
-            temp_good, temp_bad = ld.disambiguate_segment_by_snippet(main_snippet, main_oref.normal(), quoted_tc, isnip)
+            temp_good, temp_bad = ld.disambiguate_segment_by_snippet(tc_list=[quoted_tc, (main_snippet, main_oref.normal())])
+            for g in temp_good + temp_bad:
+                g[u"Quote Num"] = isnip
+                g[u"Snippet"] = main_snippet
+                g[u"Quoted Ref"] = g[u"A Ref"]
+                g[u"Quoting Ref"] = g[u"B Ref"]
+                del g[u"A Ref"]
+                del g[u"B Ref"]
             good += temp_good
             bad += temp_bad
     return good, bad
 
 
-def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=100, use_indicator_words=False):
+def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=100, use_indicator_words=False, return_matches=False):
     """
     based off of library.get_wrapped_refs_string
     :param source:
@@ -367,33 +337,36 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
     for match in re.finditer(u"(<a [^>]+>)([^<]+)(</a>)", linkified):
         ref = Ref(match.group(2))
         if ref.normal() == found_section_normal or ref.normal() == found_normal:
-            start_snip_naive = match.start(1) - snip_size if match.start(1) >= snip_size else 0
-            start_snip_space = linkified.rfind(u" ", 0, start_snip_naive)
-            start_snip_link = linkified.rfind(u"</a>", 0, match.start(1))
-            start_snip = max(start_snip_space, start_snip_link)
-            if start_snip == -1:
-                start_snip = start_snip_naive
-            end_snip_naive = match.end(3) + snip_size if match.end(3) + snip_size <= len(linkified) else len(linkified)
-            end_snip_space = linkified.find(u" ", end_snip_naive)
-            end_snip_link = linkified.find(u"<a ", match.end(3))
-            end_snip = min(end_snip_space, end_snip_link)
-            if end_snip == -1:
-                end_snip = end_snip_naive
+            if return_matches:
+                snippets += [match]
+            else:
+                start_snip_naive = match.start(1) - snip_size if match.start(1) >= snip_size else 0
+                start_snip_space = linkified.rfind(u" ", 0, start_snip_naive)
+                start_snip_link = linkified.rfind(u"</a>", 0, match.start(1))
+                start_snip = max(start_snip_space, start_snip_link)
+                if start_snip == -1:
+                    start_snip = start_snip_naive
+                end_snip_naive = match.end(3) + snip_size if match.end(3) + snip_size <= len(linkified) else len(linkified)
+                end_snip_space = linkified.find(u" ", end_snip_naive)
+                end_snip_link = linkified.find(u"<a ", match.end(3))
+                end_snip = min(end_snip_space, end_snip_link)
+                if end_snip == -1:
+                    end_snip = end_snip_naive
 
-            if use_indicator_words:
-                before_snippet = linkified[start_snip:match.start(1)]
-                if u"ירושלמי" in before_snippet[-20:] and (len(ref.index.categories) < 2 or ref.index.categories[1] != u'Yerushalmi'):
-                    # this guys not a yerushalmi but very likely should be
-                    continue
-                after_snippet = linkified[match.end(3):end_snip]
-                if re.search(after_reg, before_snippet) is not None:
-                    temp_snip = after_snippet
-                    # print before_snippet
+                if use_indicator_words:
+                    before_snippet = linkified[start_snip:match.start(1)]
+                    if u"ירושלמי" in before_snippet[-20:] and (len(ref.index.categories) < 2 or ref.index.categories[1] != u'Yerushalmi'):
+                        # this guys not a yerushalmi but very likely should be
+                        continue
+                    after_snippet = linkified[match.end(3):end_snip]
+                    if re.search(after_reg, before_snippet) is not None:
+                        temp_snip = after_snippet
+                        # print before_snippet
+                    else:
+                        temp_snip = linkified[start_snip:end_snip]
                 else:
                     temp_snip = linkified[start_snip:end_snip]
-            else:
-                temp_snip = linkified[start_snip:end_snip]
-            snippets += [re.sub(ur"<[^>]+>", u"", temp_snip)]
+                snippets += [re.sub(ur"<[^>]+>", u"", temp_snip)]
 
     if len(snippets) == 0:
         if must_find_snippet:
@@ -424,6 +397,34 @@ def get_qa_csv():
         csv.writeheader()
         csv.writerows(qa_rows)
 
+
+def filter_books_from_output(books, cats):
+    with open("still_ambiguous_links.json", "rb") as fin:
+        cin = unicodecsv.DictReader(fin)
+        out_rows = []
+        for row in cin:
+            r = Ref(row['Quoting Ref'])
+            if r.index.title in books or r.index.get_primary_category() in cats:
+                row[u'Quoting Book'] = r.index.title
+                try:
+                    s = Ref(row['Quoted Ref'])
+                    row[u'Quoted Book'] = s.index.title if s else u''
+                except AttributeError:
+                    row[u'Quoted Book'] = u''
+                row[u'Quoted Ref'] = u''
+                row[u'id'] = r.order_id()
+                del row[u'Quote Num']
+                del row[u'Score']
+                out_rows += [row]
+    out_rows.sort(key=lambda x: x[u'id'])
+    for r in out_rows:
+        del r[u'id']
+    with open("qa_books.csv", "wb") as fout:
+        cout = unicodecsv.DictWriter(fout, [u"Quoting Book", u"Quoting Ref", u"Quoted Book", u"Quoted Ref", u"Snippet"])
+        cout.writeheader()
+        cout.writerows(out_rows)
+
+
 word_counter = defaultdict(int)
 
 def count_words():
@@ -447,14 +448,60 @@ def count_words_map(index):
     except InputError:
         pass
 
+
+def post_unambiguous_links(post=False):
+    links = []
+    with open("unambiguous_links.json", "rb") as fin:
+        cin = unicodecsv.DictReader(fin)
+        for row in cin:
+            link = {"generated_by": "link_disambiguator", "auto": True,
+                     "type": "", "refs": [row["Quoting Ref"], row["Quoted Ref"]]}
+            links += [link]
+    if post:
+        i = 0
+        batch_size = 50
+        while i < len(links):
+            print "Posting [{}:{}]".format(i, i + batch_size - 1)
+            print post_link(links[i:i + batch_size])
+            i += batch_size
+    else:
+        for link_obj in links:
+            try:
+                Link(link_obj).save()
+            except DuplicateRecordError:
+                pass  # poopy
+
+
+def calc_stats():
+    books = defaultdict(int)
+    cats = defaultdict(int)
+    with open("still_ambiguous_links.json", "rb") as fin:
+        cin = unicodecsv.DictReader(fin)
+        for row in cin:
+            try:
+                quoting = Ref(row["Quoting Ref"])
+                key = quoting.index.collective_title if hasattr(quoting.index, "collective_title") else quoting.index.title
+                books[key] += 1
+                cats[quoting.primary_category] += 1
+            except InputError:
+                print row["Quoting Ref"]
+    with codecs.open("still_ambiguous_books.json", "wb") as fout:
+        books = map(lambda x: list(x), sorted(books.items(), key=lambda x: x[1], reverse=True))
+        json.dump({"books": books, "cats": cats}, fout, ensure_ascii=False, indent=2)
+
 def run():
     #ld = Link_Disambiguator()
     #ld.get_ambiguous_segments()
-    disambiguate_all()
+    #disambiguate_all()
     #get_qa_csv()
     # ld = Link_Disambiguator()
     # ld.disambiguate_gra()
     #count_words()
+    #post_unambiguous_links()
+    #calc_stats()
+    #filter_books_from_output({u'Akeidat Yitzchak', u'HaKtav VeHaKabalah'}, {u'Responsa'})
+    filter_books_from_output({u'Alshich on Torah', u'Meshech Hochma', u'Messilat Yesharim', u'Gevurot Hashem', u'Kedushat Levi', u'Mei HaShiloach'}, set())
+
 
 if __name__ == '__main__':
     profiling = False

@@ -366,7 +366,7 @@ def test_ibid_alttitle_br():
     refs, _, _ = inst.find_in_segment(string)
     assert refs == [Ref('Bereishit Rabbah 39:7'), Ref('Bereishit Rabbah 39:7')]
 
-    string = u'''רש"י על בראשית כ א'''
+    string = u'''(רש"י על בראשית כ א)'''
     refs, _, _ = inst.find_in_segment(string)
     assert refs == [Ref('Rashi on Genesis 20:1')]
 
