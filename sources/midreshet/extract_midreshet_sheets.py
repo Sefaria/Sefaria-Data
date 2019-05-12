@@ -556,7 +556,7 @@ def get_sheet_by_id(page_id, rebuild_cache=False):
     assert len(rows) == 1
     sheet = convert_row_to_dict(rows[0])
 
-    cursor.execute('SELECT name, body, exactLocation, resource_id, display_type, minorType '
+    cursor.execute('SELECT name, body, exactLocation, resource_id, display_type, minorType, copyright, copyrightLink '
                    'FROM PageResources JOIN Resources '
                    'ON PageResources.resource_id = Resources.id '
                    'WHERE PageResources.page_id=? '
@@ -690,6 +690,17 @@ def create_sheet_json(page_id, group_manager):
             else:
                 source['outsideText'] = u'<span style="text-decoration:underline; text-decoration-color:grey">{}</span>' \
                                     u'<br>{}'.format(u'דיון', cleaned_text)
+
+        if resource['copyright']:
+            resource_attribution = u'כל הזכויות שמורות ל'
+            resource_attribution = u'{}{}'.format(resource_attribution, resource['copyright'])
+            resource_attribution = u'<small><span style="color: #999">{}</span></small><br><a href={}>{}</a>'.format(
+                resource_attribution, resource['copyrightLink'], resource['copyrightLink']
+            )
+            if 'outsideText' in source:
+                source['outsideText'] = u'{}<br>{}'.format(source['outsideText'], resource_attribution)
+            else:
+                source['text']['he'] = u'{}<br>{}'.format(source['text']['he'], resource_attribution)
 
         if resource['terms']:
             if 'outsideText' in source:
