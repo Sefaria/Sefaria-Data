@@ -508,7 +508,8 @@ class GroupManager(object):
 
         url = u'{}/api/groups/{}'.format(self.server, group_name)
         post_body = {'apikey': API_KEY, 'json': json.dumps({'name': group_name, 'listed': True})}
-        response = requests.post(url, data=post_body).json()
+        response = requests.post(url, data=post_body)
+        response = response.json()
 
         if 'error' in response:
             print(group_name, response['error'])
@@ -521,7 +522,7 @@ class GroupManager(object):
                 self.make_group_public(group_name)
 
     def default_group(self):
-        group_name = 'MidreshetSite'
+        group_name = u'מדרשת'
         if group_name not in self.group_cache:
             self.cache_group_from_server(group_name)
 
@@ -532,7 +533,7 @@ class GroupManager(object):
             self.add_new_group({
                 'filename': 'midreshet_logo2.jpg',
                 'data': logo_data,
-                'name': 'MidreshetSite',
+                'name': u'מדרשת',
                 'body': '',
                 'type': 'image/pjpeg',
                 'logoId': None
@@ -653,7 +654,8 @@ def create_sheet_json(page_id, group_manager):
             'language': 'hebrew',
             'numbered': False,
         },
-        'sources': []
+        'sources': [],
+        'status': 'public'
     }
 
     for resource in raw_sheet['resources']:
@@ -842,16 +844,16 @@ def rematch_ref(ref_id):
 
 
 multiple_group_servers = {
-    'http://localhost:8000',
     'http://midreshetgroups.sandbox.sefaria.org'
 }
 
 single_group_servers = {
-    'http://midreshet.sandbox.sefaria.org'
+    'http://midreshet.sandbox.sefaria.org',
+    'http://localhost:8000'
 }
 
 
-destination_server = 'http://midreshetgroups.sandbox.sefaria.org'
+destination_server = 'http://midreshet.sandbox.sefaria.org'
 if destination_server in multiple_group_servers:
     group_handler = GroupManager(destination_server)
 else:
@@ -866,7 +868,7 @@ num_processes = 20
 sheet_chunks = list(split_list(my_wrapped_sheet_list, num_processes))
 pool = Pool(num_processes)
 pool.map(p_sheet_poster, sheet_chunks)
-# group_handler.publicize_groups()
+group_handler.publicize_groups()
 
 # my_cursor = MidreshetCursor()
 # my_cursor.execute('SELECT id, MidreshetRef FROM RefMap WHERE SefariaRef IS NULL')
