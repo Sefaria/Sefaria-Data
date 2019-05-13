@@ -20,7 +20,7 @@ from data_utilities.util import WeightedLevenshtein
 from data_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord
 from sources.functions import post_text, post_link
 
-
+LOWEST_SCORE = -28
 
 def argmax(iterable, n=1):
     if n==1:
@@ -143,42 +143,42 @@ class Link_Disambiguator:
         with open('ambiguous_segments.json', "w") as f:
             f.write(objStr.encode('utf-8'))
 
-    def disambiguate_segment_by_snippet(self, tref_list, lowest_score_threshold=-28):
+    def disambiguate_segment_by_snippet(self, main_tref, tref_list, lowest_score_threshold=LOWEST_SCORE):
         """
 
-        :return: good, bad
+        :param main_tref: Must be a text ref
+        :param tref_list: List of text refs. Can have tuples of the form (text, tref)
+        :param lowest_score_threshold: matches below this score will be considered 'bad'
+        :return: two lists, `good` and `bad`. Each list has matches
         """
-        main_tref = tref_list[0][0] if isinstance(tref_list[0], tuple) else tref_list[0]
         if not self.matcher:
             self.matcher = ParallelMatcher(self.tokenize_words,max_words_between=1, min_words_in_match=3, ngram_size=3,
                                   parallelize=False, calculate_score=self.get_score, all_to_all=False,
                                   verbose=False, min_distance_between_matches=0, only_match_first=True)
         try:
-            match_list = self.matcher.match(tref_list, return_obj=True)
+            match_list = self.matcher.match([main_tref] + tref_list, return_obj=True)
         except ValueError:
             print u"Skipping {}".format(main_tref)
             return [], []  # [[main_tc._oref.normal(), tc_list[i]._oref.normal()] for i in range(len(tc_list))]
 
-        final_result_list = []
-        for other_tref in tref_list[1:]:
+        final_result_dict = {}
+        for other_tref in tref_list:
             is_tuple = isinstance(other_tref, tuple)
             parallel_item_key = other_tref[1] if is_tuple else other_tref
             parallel_matches = filter(lambda x: x.a.mesechta == parallel_item_key or x.b.mesechta == parallel_item_key, match_list)
             if len(parallel_matches) == 0:
-                final_result_list += [{u"A Ref": main_tref, u"B Ref": None, u"Score": lowest_score_threshold}]
+                final_result_dict[parallel_item_key] = None
                 continue
             score_list = [x.score for x in parallel_matches]
             max_scores = argmax(score_list, n=1)
             best = match_list[max_scores[0]]
             a_match, b_match = (best.a, best.b) if best.a.mesechta == main_tref else (best.b, best.a)
-            final_result_list += [{
+            final_result_dict[parallel_item_key] = {
                 u"A Ref": a_match.ref.normal(),
                 u"B Ref": b_match.mesechta if is_tuple else b_match.ref.normal(),
                 u"Score": best.score,
-            }]
-        good = filter(lambda x: x[u"Score"] > lowest_score_threshold, final_result_list)
-        bad  = filter(lambda x: x[u"Score"] <= lowest_score_threshold, final_result_list)
-        return good, bad
+            } if best.score > lowest_score_threshold else None
+        return final_result_dict
 
     def disambiguate_gra(self):
         gra_segs = OrderedDict()
@@ -201,7 +201,7 @@ class Link_Disambiguator:
             matcher = ParallelMatcher(self.tokenize_words, max_words_between=1, min_words_in_match=4, ngram_size=4,
                                       parallelize=False, calculate_score=self.get_score, all_to_all=False,
                                       verbose=False)
-            match_list = matcher.match(tc_list=[(gtext, gtitle), ber_tc], return_obj=True)
+            match_list = matcher.match(tref_list=[(gtext, gtitle), ber_tc], return_obj=True)
             all_matches += [[mm.a.ref.normal(), mm.b.mesechta, mm.a.location, mm.b.location, mm.score] for mm in match_list if not mm is None]
         for m in all_matches:
             text_a = u" ".join(ber_word_list[m[2][0]:m[2][1]+1])
@@ -284,16 +284,21 @@ def disambiguate_one(ld, main_oref, main_tc, quoted_oref, quoted_tc):
     main_snippet_list = get_snippet_by_seg_ref(main_tc, quoted_oref, must_find_snippet=True, snip_size=65, use_indicator_words=True)
     if main_snippet_list:
         for isnip, main_snippet in enumerate(main_snippet_list):
-            temp_good, temp_bad = ld.disambiguate_segment_by_snippet(tc_list=[quoted_tc, (main_snippet, main_oref.normal())])
-            for g in temp_good + temp_bad:
-                g[u"Quote Num"] = isnip
-                g[u"Snippet"] = main_snippet
-                g[u"Quoted Ref"] = g[u"A Ref"]
-                g[u"Quoting Ref"] = g[u"B Ref"]
-                del g[u"A Ref"]
-                del g[u"B Ref"]
-            good += temp_good
-            bad += temp_bad
+            results = ld.disambiguate_segment_by_snippet(quoted_oref.normal(), [(main_snippet, main_oref.normal())])
+            temp_good, temp_bad = [], []
+            for k, v in results.items():
+                is_bad = v is None
+                temp = {
+                    u"Quote Num": isnip,
+                    u"Snippet": main_snippet,
+                    u"Quoted Ref": v[u"A Ref"] if not is_bad else quoted_oref.normal(),
+                    u"Quoting Ref": v[u"B Ref"] if not is_bad else k,
+                    u"Score": v[u"Score"] if not is_bad else LOWEST_SCORE
+                }
+                if is_bad:
+                    bad += [temp]
+                else:
+                    good += [temp]
     return good, bad
 
 
