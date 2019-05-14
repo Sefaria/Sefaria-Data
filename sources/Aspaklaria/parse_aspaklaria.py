@@ -16,7 +16,7 @@ from data_utilities.util import getGematria, numToHeb
 import codecs
 from data_utilities.ibid import *
 from aspaklaria_connect import client
-from index_title_catcher import get_index_via_titles
+from index_title_catcher import * #get_index_via_titles
 
 db = client.aspaklaria
 
@@ -231,6 +231,9 @@ class Source(object):
 
         self.extract_raw_ref()
         self.get_ref_from_api()
+        # after failing by using the api let's try without.
+        if not self.ref:
+            self.get_ref_clean()
 
         if self.raw_ref:
             Source.cnt+=1
@@ -381,7 +384,7 @@ class Source(object):
                     st = re.sub(s, u"", st)
                     st = re.sub(u"מצוה", u"", st)
             elif self.author == u'מורה נבוכים':
-                st = re.sub(u"פתיחה", u'הקדמה, פתיחת הרמב"ם', st)
+                st = re.sub(u"פתיחה", u'הקדמה, פתיחת הרמב"ם ', st)
             return st
 
         if self.raw_ref:
@@ -398,7 +401,12 @@ class Source(object):
                     cleaned = clean_raw(self.raw_ref.rawText)
                     fixed_ref = u"(" + self.author + u", " + re.sub(u"[)(]", u"", cleaned) + u")"
                     print u"*** try new ref, fixed_ref = {}".format(fixed_ref)
-                    refs = library.get_refs_in_string(fixed_ref)
+                    # put in a new "try" because sometimes it is simpler then it seams :)
+                    try:
+                        refs = [Ref(re.sub(u"[()]", u"",fixed_ref))]
+                    except (exceptions.InputError, IndexError):
+                        refs = library.get_refs_in_string(fixed_ref)
+
                     if refs:
                         self.ref = refs[0]
                         print self.ref
@@ -509,7 +517,7 @@ class Source(object):
                                             new_ref = Ref(u'{} {}'.format(node_name, numToHeb(d)))
                                             print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
                                             break
-                                        except exceptions.InputError as e:
+                                        except (exceptions.InputError, IndexError) as e:
                                             print u"inputError for this string {}, extracted from this rawref {}".format(u'{} {}'.format(node_name, numToHeb(d)), self.raw_ref.rawText)
                                             if u"ילקוט שמעוני" in node_name:
                                                 try:
@@ -593,7 +601,7 @@ class Source(object):
 
         # try to get the ref from the index via the titles found (without an index - ex. ילקוט שמעוני, דניאל תתרסה)
         # it is look at nodes names when we are not testing giving wrong Ref?
-        if not self.ref and hasattr(self, "opt_titles") and self.opt_titles:
+        elif hasattr(self, "opt_titles") and self.opt_titles:
             indexs = self.extract_cat(include_dependant=True)
             if indexs:
                 indexs.extend(self.indexs)
@@ -619,8 +627,17 @@ class Source(object):
                             print "we tried"
                             self.ref = None
 
-            # for ind in self.opt_titles:
-            #     ind.alt_titles_dict('he').keys()
+
+    def get_ref_clean(self):
+        if self.index:
+            try:
+                try_text = u"{}, {}".format(Ref(self.index.title).he_normal(), re.sub(u"[()]", u"", self.text))
+                self.ref = Ref(try_text)
+            except (InputError, AttributeError, IndexError):
+                print u"couldn't find it"
+                self.ref = None
+            return self.ref
+
 
 
 

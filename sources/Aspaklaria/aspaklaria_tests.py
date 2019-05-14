@@ -42,7 +42,7 @@ class Test_Source_methods(object):
         assert source.ref == Ref(u'Devarim Rabbah 8.3')
         source = Source(u"", u'זהר חדש')
         assert source.ref == None
-        # source = Source(u"(מאמר ב כלל ו פרק ב)", u"אור ה'")
+        source = Source(u"(מאמר ב כלל ו פרק ב)", u"אור ה'")
         assert True
         source = Source(u"(בראשית יז א שער יח)", u"עקדה")
         assert True
@@ -50,14 +50,16 @@ class Test_Source_methods(object):
         assert source.ref == Ref(u'Yalkut Shimoni on Nach 234:8-239:1')
         source = Source(u'(דניאל תתרסה)', u'ילקוט שמעוני')
         assert source.ref == Ref(u'Yalkut Shimoni on Nach 1065')
+        source = Source(u'(ויקרא פרק יא, תקלו)', u'ילקוט שמעוני')
+        print source.ref
         source = Source(u"(יהושע ח ל)", u'אברבנאל')
         assert source.ref == None
-        source = Source(u"(חלק ג)", u"מורה נבוכים")
-        # assert source.ref == Ref(u'Guide for the Perplexed, Part 3')
-        # source = Source(u"(חלק ג פרק א)", u"מורה נבוכים")
-        # assert source.ref == Ref(u'Guide for the Perplexed, Part 3 1')
-        # source = Source(u"(פתיחה)", u"מורה נבוכים")
-        # assert source.ref == Ref(u'Guide for the Perplexed, Part 3 1')
+        source = Source(u"(חלק ג )", u"מורה נבוכים")
+        assert source.ref == Ref(u'Guide for the Perplexed, Part 3')
+        source = Source(u"(חלק ג פרק א)", u"מורה נבוכים")
+        assert source.ref == Ref(u'Guide for the Perplexed, Part 3 1')
+        source = Source(u"(פתיחה)", u"מורה נבוכים")
+        assert source.ref == Ref(u'Guide for the Perplexed, Introduction, Prefatory Remarks')
         source = Source(u"(במדבר א יב)", u"אלשיך")
         assert source.ref == Ref(u'Alshich on Torah, Numbers 1:12')
         source = Source(u"(רות א יב)", u"אלשיך")
@@ -72,6 +74,24 @@ class Test_Source_methods(object):
     # def test_get_look_here_titles(self):
     #     look_here = [u'Bereishit Rabbah', u'Shemot Rabbah', u'Vayikra Rabbah', u'Bemidbar Rabbah', u'Devarim Rabbah', u'Esther Rabbah', u'Shir HaShirim Rabbah', u'Kohelet Rabbah', u'Ruth Rabbah', u'Eichah Rabbah']
     #     assert source.get_look_here_titles(look_here) == [(u'Bereishit Rabbah', u'Bereishit') ,(u'Shemot Rabbah', u'Shemot'), (u'Vayikra Rabbah', u'Vayikra'), (u'Bemidbar Rabbah', u'Bemidbar'), (u'Devarim Rabbah', u'Devarim'), (u'Esther Rabbah', u'Esther'), (u'Shir HaShirim Rabbah', u'Shir HaShirim'), (u'Kohelet Rabbah', u'Kohelet'), (u'Ruth Rabbah', u'Ruth'), (u'Eichah Rabbah', u'Eichah')]
+    def test_get_ref_mishneh_torah(self):
+        source = Source(u'(ברכות ב ז)', u'משנה תורה')
+        assert source.ref == Ref(u'Mishneh Torah, Blessings 2')
+        source = Source(u'(עבודת כוכבים פרק א ב והלאה)', u'משנה תורה')
+        assert source.ref == Ref(u'Mishneh Torah, Foreign Worship and Customs of the Nations 1:2')
+        source = Source(u'(נדרים יא ו, וראה שם עוד)', u'משנה תורה')
+        assert source.ref == Ref(u'Mishneh Torah, Vows 11')
+
+        # for these we need to look for parts of the alt titles. and should see where to put the alt_table. 2 parts that should go some where.
+        source = Source(u'(גזלה ו יא)', u'משנה תורה')
+        print source.ref #== Ref(u'Mishneh Torah, Vows 11')
+        source = Source(u'(תפילין פרק יא יג)', u'משנה תורה')
+        print source.ref  # == Ref(u'Mishneh Torah, Vows 11')
+        source = Source(u'(לולב פרק ז כולו)', u'משנה תורה')
+        print source.ref  # == Ref(u'Mishneh Torah, Vows 11')
+        source = Source(u'(אבלות פרק א יא)', u'משנה תורה')
+        print source.ref  # == Ref(u'Mishneh Torah, Vows 11')
+
 
 class Test_Sham_Parsing(object):
 
