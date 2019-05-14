@@ -652,6 +652,34 @@ def format_dictionaries(word_list):
     return u'<i>{}</i><ul><li>{}</li></ul>'.format(u'מילים', u'</li><li>'.join(entries))
 
 
+def wrap_verse_markers(text_to_wrap):
+    """
+    Tanakh segments typically have vowels. We'll identify verse markers by a series of Hebrew characters that have
+    no vowel markers. As a sanity check, we'll make sure that a significant portion of the text contain vowel marks.
+    :param text_to_wrap:
+    :return:
+    """
+    def wrap(word_to_wrap):
+        match = re.match(ur'^\(?([\u05d0-\u05ea]+)\)?$', word_to_wrap)
+        if match:
+            return u'<small>({})</small>'.format(match.group(1))
+        else:
+            return word_to_wrap
+
+    all_he = len(re.findall(ur'[\u0591-\u05f4]', text_to_wrap))
+    just_chars = len(re.findall(ur'[\u05d0-\u05ea]', text_to_wrap))
+    try:
+        marks_to_chars_ratio = float(all_he - just_chars) / float(all_he)
+    except ZeroDivisionError:
+        marks_to_chars_ratio = 0.0
+
+    if marks_to_chars_ratio < 0.3:  # this ratio is a guess, but the cases I checked were over 0.4
+        return text_to_wrap
+
+    as_words = [wrap(word) for word in text_to_wrap.split()]
+    return u' '.join(as_words)
+
+
 def create_sheet_json(page_id, group_manager):
     raw_sheet = get_sheet_by_id(page_id)
     sheet = {
@@ -678,6 +706,11 @@ def create_sheet_json(page_id, group_manager):
                 source['ref'] = sefaria_ref
                 source['text'] = {'he': bleach.clean(resource['body'], tags=['ul', 'li'], attributes={}, strip=True),
                                   'en': ''}
+
+                oref = Ref(sefaria_ref)
+                if 'Tanakh' in oref.index.categories and not oref.is_commentary():
+                    source['text']['he'] = wrap_verse_markers(source['text']['he'])
+
                 # source['options']['sourcePrefix'] = u'מקור'
                 source['options']['PrependRefWithHe'] = resource['exactLocation']
 
