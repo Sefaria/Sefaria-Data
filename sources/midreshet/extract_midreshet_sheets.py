@@ -575,6 +575,14 @@ def get_sheet_by_id(page_id, rebuild_cache=False):
                    'FROM PageTags P JOIN Tags T ON P.tag_id = T.id '
                    'WHERE P.page_id=?', (page_id,))
     sheet['tags'] = [t.tag for t in cursor.fetchall()]
+
+    cursor.execute('SELECT first_name, last_name FROM Users WHERE id=?', (sheet['userId'],))
+    result = cursor.fetchone()
+    if result:
+        sheet['username'] = u'{} {}'.format(result.first_name, result.last_name)
+    else:
+        sheet['username'] = u'אתר מדרשת'
+
     return sheet
 
 
@@ -655,7 +663,7 @@ def create_sheet_json(page_id, group_manager):
             'numbered': False,
         },
         'sources': [],
-        'status': 'public'
+        'attribution': raw_sheet['username']
     }
 
     for resource in raw_sheet['resources']:
