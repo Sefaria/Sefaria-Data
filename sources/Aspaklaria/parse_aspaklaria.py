@@ -16,7 +16,7 @@ from data_utilities.util import getGematria, numToHeb
 import codecs
 from data_utilities.ibid import *
 from aspaklaria_connect import client
-from index_title_catcher import * #get_index_via_titles
+from index_title_catcher import *  # get_index_via_titles
 
 db = client.aspaklaria
 
@@ -419,6 +419,11 @@ class Source(object):
         self.get_ref_step2()
 
     def get_look_here_titles(self, look_here):
+        """
+
+        :param look_here:
+        :return:
+        """
         look_here_titles = [index.title for index in look_here] if isinstance(look_here[0], Index) else look_here
         shared_word_in_titles = []
         try:
@@ -459,33 +464,86 @@ class Source(object):
             if wrong_ref:  # or (self.raw_ref and not self.ref and not self.raw_ref.is_sham):
                 new_ref = None
                 include_dependant = True
-                look_here = self.extract_cat(include_dependant=include_dependant)
+                look_here = self.get_index_options(include_dependant=include_dependant)
                 if look_here:
-                    look_here.extend(self.indexs)
-                if look_here:
-                    if wrong_ref:
-                        current_title = self.ref.index.title
-                        alt_ref_titles = map(lambda x: x['text'], self.ref.index.schema['titles'])
-                        look_here_titles = self.get_look_here_titles(look_here)
-                        nodes = []
-                        # if any(type(book) != Index for book in look_here):
-                        #     print self.raw_ref
-                        #     look_here = [book for book in look_here if isinstance(book, Index)]
-                        for a in look_here:
-                            if isinstance(a, Index) and a.is_complex():
-                                nodes+= a.nodes.children
-                        look_here_titles_nodes = [(node.key,node.index) for node in nodes]
-                        reduced_indexes = []
-                        if look_here_titles:
-                            try:
-                                reduced_indexes = [index_t[0] for index_t in look_here_titles if ((index_t[-1] in alt_ref_titles) or any([t for t in alt_ref_titles if t in index_t[-1]]))]
-                            except:
-                                reduced_indexes = []
-                        reduced_indexes_nodes = [index_t for index_t in look_here_titles_nodes if (index_t[0] in alt_ref_titles)]
-                        reduced_indexes.extend(reduced_indexes_nodes)
-                        if len(reduced_indexes) == 1 or (reduced_indexes and all([x == reduced_indexes[-1] for x in reduced_indexes])):  # replace with `set()`?
-                            reduced_indexes = set(reduced_indexes)
-                            self.index = list(reduced_indexes)[0]
+                    # new_ref = self.get_new_ref_w_look_here(look_here)
+                    alt_ref_titles = map(lambda x: x['text'], self.ref.index.schema['titles'])
+                    look_here_titles = self.get_look_here_titles(look_here)
+                    # if any(type(book) != Index for book in look_here):
+                    #     print self.raw_ref
+                    #     look_here = [book for book in look_here if isinstance(book, Index)]
+                    look_here_titles_nodes = self.get_look_here_nodes(look_here)
+                    reduced_indexes = self.reduce_indexes(look_here_titles=look_here_titles, look_here_titles_nodes = look_here_titles_nodes, alt_ref_titles=alt_ref_titles)
+                    if len(reduced_indexes) == 1 or (reduced_indexes and all([x == reduced_indexes[-1] for x in reduced_indexes])):  # replace with `set()`?
+                        reduced_indexes = set(reduced_indexes)
+                        self.index = list(reduced_indexes)[0]
+                        try:
+                            if isinstance(self.index, tuple):
+                                index_node_name = self.index[1].title + u', ' + self.index[0]
+                            else:
+                                index_node_name = self.index
+                            new_ref = Ref(u'{} {}'.format(index_node_name, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()))
+                            print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
+                            self.ref = new_ref
+                        except exceptions.InputError as e:
+                            new_ref = None  # so not to have new_ref that failed scrowing with stuff
+                            print u"inputError for this string {}, extracted from this rawref {}".format(u'{} {}'.format(self.index, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()), self.raw_ref)
+                    elif not reduced_indexes: #  len(reduced_indexes) == 0
+                        # couldn't find the title in the books maybe it is in there nodes
+                        if isinstance(look_here[0], Index):
+                            if any(type(book) != Index for book in look_here):
+                                print self.raw_ref
+                                look_here = [book for book in look_here if isinstance(book, Index)]
+                            look_here_nodes = reduce(lambda a,b: a+b, [ind.alt_titles_dict('he').keys()+ind.all_titles('he') for ind in look_here]) # todo: note: this was ind.alt_titles_dict('he').items() a few lines down the code called node_name = node[0]
+                            look_here_nodes = filter(lambda x: any(re.search(t, x[0]) or re.search(t,x) for t in alt_ref_titles), look_here_nodes)
+                            if len(look_here_nodes) >= 1:
+                                node = look_here_nodes[0] #todo: why take the first one??
+                                node_name = node#[0]
+                                depth = re.search(u'.*?(\d+):?(\d+)?.*?', self.ref.normal()).groups()
+                                for d in depth:
+                                    if not d:
+                                        print "break"
+                                        break
+                                    try:
+                                        new_ref = Ref(u'{} {}'.format(node_name, numToHeb(d)))
+                                        print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
+                                        break
+                                    except (exceptions.InputError, IndexError) as e:
+                                        print u"inputError for this string {}, extracted from this rawref {}".format(u'{} {}'.format(node_name, numToHeb(d)), self.raw_ref.rawText)
+                                        if u"ילקוט שמעוני" in node_name:
+                                            try:
+                                                new_ref = Ref(u'{}, {}'.format(ind.title, d))
+                                            except exceptions.InputError:
+                                                print u"inputError for this string {}, extracted from this rawref {}".format(
+                                                    u'{} {}'.format(node_name, numToHeb(d)), self.raw_ref.rawText)
+                                    except IndexError as e:
+                                        print u'IndexError {} not sure why...'.format(e)
+                                self.ref = new_ref
+                            if len(look_here_nodes) > 1:  #todo: what if there are more than 2 look_here_nodes?
+                                print u'look at these i took the first: {}'.format(look_here_nodes[0])
+                    else:
+                        depenent_indexes = []
+                        main_indexes = []
+                        for ind_title in list(reduced_indexes):
+                            if isinstance(ind_title, unicode):
+                                ind = library.get_index(ind_title)
+                            elif isinstance(ind_title, Index):
+                                ind = ind_title
+                            else:
+                                ind = None
+                            if ind and not ind.is_dependant_text():
+                                main_indexes.append(ind_title)
+                            elif ind and ind.is_dependant_text():
+                                depenent_indexes.append(ind_title)
+                        if main_indexes:
+                            self.index = main_indexes[0]
+                        elif depenent_indexes:
+                            self.index = depenent_indexes[0]
+                        else:
+                            print u"reduced_indexes: {} deleting wrong ref: {}.".format(reduced_indexes, self.ref.normal())
+                            self.ref = None
+
+                        if self.index:
                             try:
                                 if isinstance(self.index, tuple):
                                     index_node_name = self.index[1].title + u', ' + self.index[0]
@@ -496,75 +554,8 @@ class Source(object):
                                 self.ref = new_ref
                             except exceptions.InputError as e:
                                 new_ref = None # so not to have new_ref that failed scrowing with stuff
-                                print u"inputError for this string {}, extracted from this rawref {}".format(u'{} {}'.format(self.index, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()), self.raw_ref)
-                        elif not reduced_indexes: #  len(reduced_indexes) == 0
-                            # couldn't find the title in the books maybe it is in there nodes
-                            if isinstance(look_here[0], Index):
-                                if any(type(book) != Index for book in look_here):
-                                    print self.raw_ref
-                                    look_here = [book for book in look_here if isinstance(book, Index)]
-                                look_here_nodes = reduce(lambda a,b: a+b, [ind.alt_titles_dict('he').keys()+ind.all_titles('he') for ind in look_here]) # todo: note: this was ind.alt_titles_dict('he').items() a few lines down the code called node_name = node[0]
-                                look_here_nodes = filter(lambda x: any(re.search(t, x[0]) or re.search(t,x) for t in alt_ref_titles), look_here_nodes)
-                                if len(look_here_nodes) >= 1:
-                                    node = look_here_nodes[0] #todo: why take the first one??
-                                    node_name = node#[0]
-                                    depth = re.search(u'.*?(\d+):?(\d+)?.*?', self.ref.normal()).groups()
-                                    for d in depth:
-                                        if not d:
-                                            print "break"
-                                            break
-                                        try:
-                                            new_ref = Ref(u'{} {}'.format(node_name, numToHeb(d)))
-                                            print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
-                                            break
-                                        except (exceptions.InputError, IndexError) as e:
-                                            print u"inputError for this string {}, extracted from this rawref {}".format(u'{} {}'.format(node_name, numToHeb(d)), self.raw_ref.rawText)
-                                            if u"ילקוט שמעוני" in node_name:
-                                                try:
-                                                    new_ref = Ref(u'{}, {}'.format(ind.title, d))
-                                                except exceptions.InputError:
-                                                    print u"inputError for this string {}, extracted from this rawref {}".format(
-                                                        u'{} {}'.format(node_name, numToHeb(d)), self.raw_ref.rawText)
-                                        except IndexError as e:
-                                            print u'IndexError {} not sure why...'.format(e)
-                                    self.ref = new_ref
-                                if len(look_here_nodes) > 1:  #todo: what if there are more than 2 look_here_nodes?
-                                    print u'look at these i took the first: {}'.format(look_here_nodes[0])
-                        else:
-                            depenent_indexes = []
-                            main_indexes = []
-                            for ind_title in list(reduced_indexes):
-                                if isinstance(ind_title, unicode):
-                                    ind = library.get_index(ind_title)
-                                elif isinstance(ind_title, Index):
-                                    ind = ind_title
-                                else:
-                                    ind = None
-                                if ind and not ind.is_dependant_text():
-                                    main_indexes.append(ind_title)
-                                elif ind and ind.is_dependant_text():
-                                    depenent_indexes.append(ind_title)
-                            if main_indexes:
-                                self.index = main_indexes[0]
-                            elif depenent_indexes:
-                                self.index = depenent_indexes[0]
-                            else:
-                                print u"reduced_indexes: {} deleting wrong ref: {}.".format(reduced_indexes, self.ref.normal())
-                                self.ref = None
-
-                            if self.index:
-                                try:
-                                    if isinstance(self.index, tuple):
-                                        index_node_name = self.index[1].title + u', ' + self.index[0]
-                                    else:
-                                        index_node_name = self.index
-                                    new_ref = Ref(u'{} {}'.format(index_node_name, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()))
-                                    print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
-                                    self.ref = new_ref
-                                except exceptions.InputError as e:
-                                    new_ref = None # so not to have new_ref that failed scrowing with stuff
-                                    print u"inputError for this string {}, extracted from this rawref {}".format(u'{} {}'.format(self.index.title, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()), self.raw_ref)
-                else: #couldn't find a indexs for this author
+                                print u"inputError for this string {}, extracted from this rawref {}".format(u'{} {}'.format(self.index.title, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()), self.raw_ref)
+                else:  # couldn't find a indexs for this author
                     parser.missing_authors.add(self.author)
                 # if look_here and (self.index or wrong_ref):
                 #     # than try to get the true title from the cat from look_here
@@ -627,6 +618,168 @@ class Source(object):
                             print "we tried"
                             self.ref = None
 
+    def get_new_ref_w_look_here(self, look_here):
+        alt_ref_titles = map(lambda x: x['text'], self.ref.index.schema['titles'])
+        look_here_titles = self.get_look_here_titles(look_here)
+        # if any(type(book) != Index for book in look_here):
+        #     print self.raw_ref
+        #     look_here = [book for book in look_here if isinstance(book, Index)]
+        look_here_titles_nodes = self.get_look_here_nodes(look_here)
+        reduced_indexes = self.reduce_indexes(look_here_titles=look_here_titles,
+                                              look_here_titles_nodes=look_here_titles_nodes,
+                                              alt_ref_titles=alt_ref_titles)
+        if len(reduced_indexes) == 1 or (
+                reduced_indexes and all([x == reduced_indexes[-1] for x in reduced_indexes])):  # replace with `set()`?
+            reduced_indexes = set(reduced_indexes)
+            self.index = list(reduced_indexes)[0]
+            try:
+                if isinstance(self.index, tuple):
+                    index_node_name = self.index[1].title + u', ' + self.index[0]
+                else:
+                    index_node_name = self.index
+                new_ref = Ref(
+                    u'{} {}'.format(index_node_name, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()))
+                print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
+                self.ref = new_ref
+            except exceptions.InputError as e:
+                new_ref = None  # so not to have new_ref that failed scrowing with stuff
+                print u"inputError for this string {}, extracted from this rawref {}".format(
+                    u'{} {}'.format(self.index, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()),
+                    self.raw_ref)
+        elif not reduced_indexes:  # len(reduced_indexes) == 0
+            # couldn't find the title in the books maybe it is in there nodes
+            if isinstance(look_here[0], Index):
+                if any(type(book) != Index for book in look_here):
+                    print self.raw_ref
+                    look_here = [book for book in look_here if isinstance(book, Index)]
+                look_here_nodes = reduce(lambda a, b: a + b,
+                                         [ind.alt_titles_dict('he').keys() + ind.all_titles('he') for ind in
+                                          look_here])  # todo: note: this was ind.alt_titles_dict('he').items() a few lines down the code called node_name = node[0]
+                look_here_nodes = filter(lambda x: any(re.search(t, x[0]) or re.search(t, x) for t in alt_ref_titles),
+                                         look_here_nodes)
+                if len(look_here_nodes) >= 1:
+                    node = look_here_nodes[0]  # todo: why take the first one??
+                    node_name = node  # [0]
+                    depth = re.search(u'.*?(\d+):?(\d+)?.*?', self.ref.normal()).groups()
+                    for d in depth:
+                        if not d:
+                            print "break"
+                            break
+                        try:
+                            new_ref = Ref(u'{} {}'.format(node_name, numToHeb(d)))
+                            print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index,
+                                                                                               new_ref)
+                            break
+                        except (exceptions.InputError, IndexError) as e:
+                            print u"inputError for this string {}, extracted from this rawref {}".format(
+                                u'{} {}'.format(node_name, numToHeb(d)), self.raw_ref.rawText)
+                            if u"ילקוט שמעוני" in node_name:
+                                try:
+                                    new_ref = Ref(u'{}, {}'.format(ind.title, d))
+                                except exceptions.InputError:
+                                    print u"inputError for this string {}, extracted from this rawref {}".format(
+                                        u'{} {}'.format(node_name, numToHeb(d)), self.raw_ref.rawText)
+                        except IndexError as e:
+                            print u'IndexError {} not sure why...'.format(e)
+                    self.ref = new_ref
+                if len(look_here_nodes) > 1:  # todo: what if there are more than 2 look_here_nodes?
+                    print u'look at these i took the first: {}'.format(look_here_nodes[0])
+        else:
+            depenent_indexes = []
+            main_indexes = []
+            for ind_title in list(reduced_indexes):
+                if isinstance(ind_title, unicode):
+                    ind = library.get_index(ind_title)
+                elif isinstance(ind_title, Index):
+                    ind = ind_title
+                else:
+                    ind = None
+                if ind and not ind.is_dependant_text():
+                    main_indexes.append(ind_title)
+                elif ind and ind.is_dependant_text():
+                    depenent_indexes.append(ind_title)
+            if main_indexes:
+                self.index = main_indexes[0]
+            elif depenent_indexes:
+                self.index = depenent_indexes[0]
+            else:
+                print u"reduced_indexes: {} deleting wrong ref: {}.".format(reduced_indexes, self.ref.normal())
+                self.ref = None
+
+            if self.index:
+                try:
+                    if isinstance(self.index, tuple):
+                        index_node_name = self.index[1].title + u', ' + self.index[0]
+                    else:
+                        index_node_name = self.index
+                    new_ref = Ref(
+                        u'{} {}'.format(index_node_name, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()))
+                    print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
+                    self.ref = new_ref
+                except exceptions.InputError as e:
+                    new_ref = None  # so not to have new_ref that failed scrowing with stuff
+                    print u"inputError for this string {}, extracted from this rawref {}".format(
+                        u'{} {}'.format(self.index.title, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()),
+                        self.raw_ref)
+        return new_ref
+
+    def get_index_options(self, include_dependant=True):
+        """
+        This function returns a list of indexes that the hope is at least one of them will be in the intersection
+        with the original ref catching index (ex. the Tanakh wrong Ref)
+        :param include_dependant: regarding the indexes for a giving category should it also list the dependent ones (ex. commentary)
+        :return: (list) of indexes
+        """
+        look_here = self.extract_cat(include_dependant=include_dependant)
+        if look_here:
+            look_here.extend(self.indexs)
+        return look_here
+
+    def get_look_here_nodes(self, look_here):
+        """
+        nodes (rather then indexes) that there names should be searched
+        :param look_here: a list of indexes (Index or str) that can be complex
+        :return:
+        """
+        nodes = []
+        for a in look_here:
+            if isinstance(a, Index) and a.is_complex():
+                nodes += a.nodes.children
+        look_here_titles_nodes = [(node.key, node.index) for node in nodes]
+        return look_here_titles_nodes
+
+    def reduce_indexes(self, look_here_titles=None, look_here_titles_nodes = [], alt_ref_titles=None):
+        """
+        Looks for the intersection between the wrong Refs index title (and alt titles) with the optional indexes
+        found in "look here", to pin down the correct index and then correct Ref.
+        :param look_here_titles: a list of titles and node titles that can fit for part of the index name
+        :param alt_ref_titles: a list of titles (including alt titles) of the 'wrong Ref'
+        :return: a list of indexes that fall in the intersection of the combination of the lists
+        """
+        reduced_indexes = []
+        if look_here_titles and alt_ref_titles:
+            try:
+                reduced_indexes = [index_t[0] for index_t in look_here_titles if (
+                            (index_t[-1] in alt_ref_titles) or any([t for t in alt_ref_titles if t in index_t[-1]]))]
+            except:
+                reduced_indexes = []
+        reduced_indexes_nodes = [index_t for index_t in look_here_titles_nodes if (index_t[0] in alt_ref_titles)]
+        reduced_indexes.extend(reduced_indexes_nodes)
+
+        # self.change_look_here("author", "category", "new_category")
+
+        return reduced_indexes
+
+    def change_look_here(self, author, category, new_category):
+        if self.author == author and self.ref.index.title in library.get_indexes_in_category(category):
+            self.author = u'תרגום'
+            look_here = self.extract_cat()
+
+        return
+
+
+    def index_exchange(self):
+        return
 
     def get_ref_clean(self):
         if self.index:
@@ -705,8 +858,8 @@ def parse2pickle(letter=u''):
 def read_with_refs(letter):
     """
 
-    :param letter:
-    :return:
+    :param letter: letter to be parsed
+    :return: does not return, but rather inserts the data into mongo
     """
 
     with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/with_refs/{}.pickle".format(letter), "rb") as fp:
@@ -726,19 +879,24 @@ def read_with_refs(letter):
                         print s.raw_ref.rawText
                         solo_source_text = re.sub(re.escape(s.raw_ref.rawText), u'', s.text)
                         if s.ref:
-                            db.aspaklaria_source.insert_one(
-                                {'topic': t.headWord, 'ref': s.ref.normal(), 'text': solo_source_text, 'raw_ref':s.raw_ref.rawText,
-                                 'index': s.ref.index.title, 'is_sham': s.raw_ref.is_sham, 'author':s.author})
+                            document = {'topic': t.headWord, 'ref': s.ref.normal(), 'text': solo_source_text, 'raw_ref':s.raw_ref.rawText,
+                                 'index': s.ref.index.title, 'is_sham': s.raw_ref.is_sham, 'author':s.author}
                             print s.ref.normal()
                             cnt_resolved += 1
                         else:
-                            db.aspaklaria_source.insert_one(
-                                {'topic': t.headWord, 'text': solo_source_text, 'raw_ref':s.raw_ref.rawText,
-                                 'author': s.author, 'is_sham':s.raw_ref.is_sham})
+                            document = {'topic': t.headWord, 'text': solo_source_text, 'raw_ref':s.raw_ref.rawText,
+                                 'author': s.author, 'is_sham':s.raw_ref.is_sham}
                             print s.author  # "None... didn't find the Ref"
                             add_to = "sham" if s.raw_ref.is_sham else "not_caught"
                             cnt_sham += 1 if add_to == "sham" else 0
                             cnt_not_caught += 1 if add_to == "not_caught" else 0
+                        if s.index:
+                            if isinstance(s.index, tuple):
+                                s.index = s.index[1]
+                            document['index_guess'] = s.index.title if isinstance(s.index, Index) else s.index
+                        elif s.indexs:
+                            document['index_guess'] = u' |'.join([ind.title() for ind in s.indexs])
+                        db.aspaklaria_source.insert_one(document)
                         print '-----------------'
         print "done"
 
@@ -783,5 +941,5 @@ if __name__ == "__main__":
     he_letter = u'ALEF'
     letter_gimatria = 001
     # parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
-    shamas_per_leter(he_letter)
+    # shamas_per_leter(he_letter)
     read_with_refs(u'{}'.format(he_letter))
