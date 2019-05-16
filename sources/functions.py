@@ -632,7 +632,7 @@ def make_title(text):
 @weak_connection
 def post_sheet(sheet, server=SEFARIA_SERVER, spec_sheet_id='', api_key = API_KEY):
     url = server + "/api/sheets{}".format("/{}/add".format(spec_sheet_id) if len(spec_sheet_id) > 0 else '')
-    response = http_request(url, body={"apikey": api_key}, json_payload=sheet, method="POST")
+    response = http_request(url, body={"apikey": api_key, "rebuildNodes": True}, json_payload=sheet, method="POST")
     if isinstance(response, dict):
         return response
     else:
