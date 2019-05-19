@@ -79,12 +79,30 @@ def dh_extract_method(str):
     else:
         return dh
 
+def convert_txt_to_csv(f):
+    temp = ""
+    csv_f = f.replace(".txt", ".csv")
+    with open(csv_f, 'w') as csv_file:
+        with open(f) as file:
+            for line in file:
+                line = line.replace("\n", "").replace("\r", "")
+                if line[3] == "@":
+                    line = line[3:]
+                if line.startswith("@"):
+                    temp = line
+                else:
+                    new_line = temp + "," + line
+                    csv_file.write(new_line+"\n")
+                    temp = ""
+
+
 if __name__ == "__main__":
     #comms = [Commentary("yevamot.csv", "Tosafot Yeshanim", u"תוספות ישנים", "Vilna Edition", "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957"),
     #         Commentary("nazir.csv", "Commentary of the Rosh", u"""פירוש הרא"ש""", "Vilna Edition", "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957")]
+    convert_txt_to_csv("sotah.txt")
     vtitle = "Vilna Edition"
     vsource = "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957"
-    comms = [Commentary("kiddushin.csv", "Tosafot Ri HaZaken", u"""תוספות ר"י הזקן""", vtitle, vsource)]
+    comms = [Commentary("sotah.csv", "Tosafot Shantz", u"""תוספות שאנץ""", vtitle, vsource)]
     links = []
     for commentary in comms:
         lines_by_daf = {}

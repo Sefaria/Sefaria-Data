@@ -6,6 +6,7 @@ import requests
 from bs4 import BeautifulSoup, Tag
 from data_utilities.dibur_hamatchil_matcher import *
 from sources.functions import *
+from sefaria.export import *
 
 def dh_extracter(str):
     dh = str.split(".", 1)[0]
@@ -16,7 +17,7 @@ def dh_extracter(str):
 
 
 def remove_apostrophe(str):
-    arr = re.findall(u"\(.*\s.*\s.*?\)", str)
+    arr = re.findall(u"\(\S*\s\S*\s\S*?\)", str)
     if arr:
         for el in arr:
             if len(el.split()) == 3 and el.split(u"'") > 2:
@@ -28,7 +29,16 @@ def remove_apostrophe(str):
 def parsha_name(current_parsha, current_sefer):
     return library.get_index(current_sefer).alt_structs["Parasha"]["nodes"][current_parsha]["sharedTitle"]
 
+
+def get_zohar():
+    zohar = library.get_index("Zohar")
+    zohar_version = Version().load({"title": "Zohar"})
+    data = export_version_csv(zohar, [zohar_version])
+    with open("zohar_as_csv.csv", 'w') as f:
+        f.write(data)
+
 if __name__ == "__main__":
+    get_zohar()
 
     # site = requests.get("http://www.hebrew.grimoar.cz/rekanati_al_ha-torah.html",
     #                     headers={'User-Agent': 'Mozilla/4.0 (Macintosh; Intel Mac OS X 11_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'})

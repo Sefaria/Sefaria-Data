@@ -4,7 +4,7 @@
 <head>
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
   <meta name="robots" content="NONE,NOARCHIVE">
-  <title>AttributeError at /api/v2/raw/index/Tosafot_Ri_HaZaken_on_Kiddushin</title>
+  <title>IOError at /api/v2/raw/index/Tosafot_Shantz_on_Sotah</title>
   <style type="text/css">
     html * { padding:0; margin:0; }
     body * { padding:10px 20px; }
@@ -123,8 +123,8 @@
 </head>
 <body>
 <div id="summary">
-  <h1>AttributeError at /api/v2/raw/index/Tosafot_Ri_HaZaken_on_Kiddushin</h1>
-  <pre class="exception_value">&#39;NoneType&#39; object has no attribute &#39;append&#39;</pre>
+  <h1>IOError at /api/v2/raw/index/Tosafot_Shantz_on_Sotah</h1>
+  <pre class="exception_value">[Errno 13] Permission denied: &#39;/log/django_cache/e70e814f55d260352ee8510061b93685.djcache&#39;</pre>
   <table class="meta">
 
     <tr>
@@ -133,7 +133,7 @@
     </tr>
     <tr>
       <th>Request URL:</th>
-      <td>http://shmuel.sandbox.sefaria.org/api/v2/raw/index/Tosafot_Ri_HaZaken_on_Kiddushin</td>
+      <td>http://shmuel.sandbox.sefaria.org/api/v2/raw/index/Tosafot_Shantz_on_Sotah</td>
     </tr>
 
     <tr>
@@ -143,19 +143,19 @@
 
     <tr>
       <th>Exception Type:</th>
-      <td>AttributeError</td>
+      <td>IOError</td>
     </tr>
 
 
     <tr>
       <th>Exception Value:</th>
-      <td><pre>&#39;NoneType&#39; object has no attribute &#39;append&#39;</pre></td>
+      <td><pre>[Errno 13] Permission denied: &#39;/log/django_cache/e70e814f55d260352ee8510061b93685.djcache&#39;</pre></td>
     </tr>
 
 
     <tr>
       <th>Exception Location:</th>
-      <td>/app/sefaria/model/category.py in update_title, line 338</td>
+      <td>/usr/local/python/lib/python2.7/site-packages/django/core/cache/backends/filebased.py in get, line 39</td>
     </tr>
 
     <tr>
@@ -180,7 +180,7 @@
     </tr>
     <tr>
       <th>Server time:</th>
-      <td>Tue, 16 Apr 2019 07:19:51 -0700</td>
+      <td>Thu, 16 May 2019 02:51:09 -0700</td>
     </tr>
   </table>
 </div>
@@ -200,43 +200,43 @@
           <code>/usr/local/python/lib/python2.7/site-packages/django/core/handlers/exception.py</code> in <code>inner</code>
 
           
-            <div class="context" id="c139734022987288">
+            <div class="context" id="c139735098467536">
               
-                <ol start="34" class="pre-context" id="pre139734022987288">
+                <ol start="34" class="pre-context" id="pre139735098467536">
                 
-                  <li onclick="toggle('pre139734022987288', 'post139734022987288')"><pre>    This decorator is automatically applied to all middleware to ensure that</pre></li>
+                  <li onclick="toggle('pre139735098467536', 'post139735098467536')"><pre>    This decorator is automatically applied to all middleware to ensure that</pre></li>
                 
-                  <li onclick="toggle('pre139734022987288', 'post139734022987288')"><pre>    no middleware leaks an exception and that the next middleware in the stack</pre></li>
+                  <li onclick="toggle('pre139735098467536', 'post139735098467536')"><pre>    no middleware leaks an exception and that the next middleware in the stack</pre></li>
                 
-                  <li onclick="toggle('pre139734022987288', 'post139734022987288')"><pre>    can rely on getting a response instead of an exception.</pre></li>
+                  <li onclick="toggle('pre139735098467536', 'post139735098467536')"><pre>    can rely on getting a response instead of an exception.</pre></li>
                 
-                  <li onclick="toggle('pre139734022987288', 'post139734022987288')"><pre>    &quot;&quot;&quot;</pre></li>
+                  <li onclick="toggle('pre139735098467536', 'post139735098467536')"><pre>    &quot;&quot;&quot;</pre></li>
                 
-                  <li onclick="toggle('pre139734022987288', 'post139734022987288')"><pre>    @wraps(get_response, assigned=available_attrs(get_response))</pre></li>
+                  <li onclick="toggle('pre139735098467536', 'post139735098467536')"><pre>    @wraps(get_response, assigned=available_attrs(get_response))</pre></li>
                 
-                  <li onclick="toggle('pre139734022987288', 'post139734022987288')"><pre>    def inner(request):</pre></li>
+                  <li onclick="toggle('pre139735098467536', 'post139735098467536')"><pre>    def inner(request):</pre></li>
                 
-                  <li onclick="toggle('pre139734022987288', 'post139734022987288')"><pre>        try:</pre></li>
+                  <li onclick="toggle('pre139735098467536', 'post139735098467536')"><pre>        try:</pre></li>
                 
                 </ol>
               
               <ol start="41" class="context-line">
-                <li onclick="toggle('pre139734022987288', 'post139734022987288')"><pre>
+                <li onclick="toggle('pre139735098467536', 'post139735098467536')"><pre>
             response = get_response(request)</pre> <span>...</span></li></ol>
               
-                <ol start='42' class="post-context" id="post139734022987288">
+                <ol start='42' class="post-context" id="post139735098467536">
                   
-                  <li onclick="toggle('pre139734022987288', 'post139734022987288')"><pre>        except Exception as exc:</pre></li>
+                  <li onclick="toggle('pre139735098467536', 'post139735098467536')"><pre>        except Exception as exc:</pre></li>
                   
-                  <li onclick="toggle('pre139734022987288', 'post139734022987288')"><pre>            response = response_for_exception(request, exc)</pre></li>
+                  <li onclick="toggle('pre139735098467536', 'post139735098467536')"><pre>            response = response_for_exception(request, exc)</pre></li>
                   
-                  <li onclick="toggle('pre139734022987288', 'post139734022987288')"><pre>        return response</pre></li>
+                  <li onclick="toggle('pre139735098467536', 'post139735098467536')"><pre>        return response</pre></li>
                   
-                  <li onclick="toggle('pre139734022987288', 'post139734022987288')"><pre>    return inner</pre></li>
+                  <li onclick="toggle('pre139735098467536', 'post139735098467536')"><pre>    return inner</pre></li>
                   
-                  <li onclick="toggle('pre139734022987288', 'post139734022987288')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098467536', 'post139735098467536')"><pre></pre></li>
                   
-                  <li onclick="toggle('pre139734022987288', 'post139734022987288')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098467536', 'post139735098467536')"><pre></pre></li>
                   
               </ol>
               
@@ -246,10 +246,10 @@
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139734022987288')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139735098467536')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139734022987288">
+            <table class="vars" id="v139735098467536">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -260,7 +260,7 @@
                 
                   <tr>
                     <td>exc</td>
-                    <td class="code"><pre>AttributeError(&quot;&#39;NoneType&#39; object has no attribute &#39;append&#39;&quot;,)</pre></td>
+                    <td class="code"><pre>IOError(13, &#39;Permission denied&#39;)</pre></td>
                   </tr>
                 
                   <tr>
@@ -270,7 +270,7 @@
                 
                   <tr>
                     <td>request</td>
-                    <td class="code"><pre>&lt;WSGIRequest: POST &#39;/api/v2/raw/index/Tosafot_Ri_HaZaken_on_Kiddushin&#39;&gt;</pre></td>
+                    <td class="code"><pre>&lt;WSGIRequest: POST &#39;/api/v2/raw/index/Tosafot_Shantz_on_Sotah&#39;&gt;</pre></td>
                   </tr>
                 
               </tbody>
@@ -283,43 +283,43 @@
           <code>/usr/local/python/lib/python2.7/site-packages/django/core/handlers/base.py</code> in <code>_get_response</code>
 
           
-            <div class="context" id="c139734022987576">
+            <div class="context" id="c139735098467392">
               
-                <ol start="180" class="pre-context" id="pre139734022987576">
+                <ol start="180" class="pre-context" id="pre139735098467392">
                 
-                  <li onclick="toggle('pre139734022987576', 'post139734022987576')"><pre>                break</pre></li>
+                  <li onclick="toggle('pre139735098467392', 'post139735098467392')"><pre>                break</pre></li>
                 
-                  <li onclick="toggle('pre139734022987576', 'post139734022987576')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098467392', 'post139735098467392')"><pre></pre></li>
                 
-                  <li onclick="toggle('pre139734022987576', 'post139734022987576')"><pre>        if response is None:</pre></li>
+                  <li onclick="toggle('pre139735098467392', 'post139735098467392')"><pre>        if response is None:</pre></li>
                 
-                  <li onclick="toggle('pre139734022987576', 'post139734022987576')"><pre>            wrapped_callback = self.make_view_atomic(callback)</pre></li>
+                  <li onclick="toggle('pre139735098467392', 'post139735098467392')"><pre>            wrapped_callback = self.make_view_atomic(callback)</pre></li>
                 
-                  <li onclick="toggle('pre139734022987576', 'post139734022987576')"><pre>            try:</pre></li>
+                  <li onclick="toggle('pre139735098467392', 'post139735098467392')"><pre>            try:</pre></li>
                 
-                  <li onclick="toggle('pre139734022987576', 'post139734022987576')"><pre>                response = wrapped_callback(request, *callback_args, **callback_kwargs)</pre></li>
+                  <li onclick="toggle('pre139735098467392', 'post139735098467392')"><pre>                response = wrapped_callback(request, *callback_args, **callback_kwargs)</pre></li>
                 
-                  <li onclick="toggle('pre139734022987576', 'post139734022987576')"><pre>            except Exception as e:</pre></li>
+                  <li onclick="toggle('pre139735098467392', 'post139735098467392')"><pre>            except Exception as e:</pre></li>
                 
                 </ol>
               
               <ol start="187" class="context-line">
-                <li onclick="toggle('pre139734022987576', 'post139734022987576')"><pre>
+                <li onclick="toggle('pre139735098467392', 'post139735098467392')"><pre>
                 response = self.process_exception_by_middleware(e, request)</pre> <span>...</span></li></ol>
               
-                <ol start='188' class="post-context" id="post139734022987576">
+                <ol start='188' class="post-context" id="post139735098467392">
                   
-                  <li onclick="toggle('pre139734022987576', 'post139734022987576')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098467392', 'post139735098467392')"><pre></pre></li>
                   
-                  <li onclick="toggle('pre139734022987576', 'post139734022987576')"><pre>        # Complain if the view returned None (a common error).</pre></li>
+                  <li onclick="toggle('pre139735098467392', 'post139735098467392')"><pre>        # Complain if the view returned None (a common error).</pre></li>
                   
-                  <li onclick="toggle('pre139734022987576', 'post139734022987576')"><pre>        if response is None:</pre></li>
+                  <li onclick="toggle('pre139735098467392', 'post139735098467392')"><pre>        if response is None:</pre></li>
                   
-                  <li onclick="toggle('pre139734022987576', 'post139734022987576')"><pre>            if isinstance(callback, types.FunctionType):    # FBV</pre></li>
+                  <li onclick="toggle('pre139735098467392', 'post139735098467392')"><pre>            if isinstance(callback, types.FunctionType):    # FBV</pre></li>
                   
-                  <li onclick="toggle('pre139734022987576', 'post139734022987576')"><pre>                view_name = callback.__name__</pre></li>
+                  <li onclick="toggle('pre139735098467392', 'post139735098467392')"><pre>                view_name = callback.__name__</pre></li>
                   
-                  <li onclick="toggle('pre139734022987576', 'post139734022987576')"><pre>            else:                                           # CBV</pre></li>
+                  <li onclick="toggle('pre139735098467392', 'post139735098467392')"><pre>            else:                                           # CBV</pre></li>
                   
               </ol>
               
@@ -329,10 +329,10 @@
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139734022987576')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139735098467392')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139734022987576">
+            <table class="vars" id="v139735098467392">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -343,7 +343,7 @@
                 
                   <tr>
                     <td>callback</td>
-                    <td class="code"><pre>&lt;function index_api at 0x7f165dfd7848&gt;</pre></td>
+                    <td class="code"><pre>&lt;function index_api at 0x7f1689f8a500&gt;</pre></td>
                   </tr>
                 
                   <tr>
@@ -353,12 +353,12 @@
                 
                   <tr>
                     <td>callback_kwargs</td>
-                    <td class="code"><pre>{&#39;raw&#39;: True, &#39;title&#39;: u&#39;Tosafot_Ri_HaZaken_on_Kiddushin&#39;, &#39;v2&#39;: True}</pre></td>
+                    <td class="code"><pre>{&#39;raw&#39;: True, &#39;title&#39;: u&#39;Tosafot_Shantz_on_Sotah&#39;, &#39;v2&#39;: True}</pre></td>
                   </tr>
                 
                   <tr>
                     <td>e</td>
-                    <td class="code"><pre>AttributeError(&quot;&#39;NoneType&#39; object has no attribute &#39;append&#39;&quot;,)</pre></td>
+                    <td class="code"><pre>IOError(13, &#39;Permission denied&#39;)</pre></td>
                   </tr>
                 
                   <tr>
@@ -368,7 +368,7 @@
                 
                   <tr>
                     <td>request</td>
-                    <td class="code"><pre>&lt;WSGIRequest: POST &#39;/api/v2/raw/index/Tosafot_Ri_HaZaken_on_Kiddushin&#39;&gt;</pre></td>
+                    <td class="code"><pre>&lt;WSGIRequest: POST &#39;/api/v2/raw/index/Tosafot_Shantz_on_Sotah&#39;&gt;</pre></td>
                   </tr>
                 
                   <tr>
@@ -378,7 +378,7 @@
                 
                   <tr>
                     <td>resolver_match</td>
-                    <td class="code"><pre>ResolverMatch(func=reader.views.index_api, args=(), kwargs={&#39;raw&#39;: True, &#39;v2&#39;: True, &#39;title&#39;: u&#39;Tosafot_Ri_HaZaken_on_Kiddushin&#39;}, url_name=None, app_names=[], namespaces=[])</pre></td>
+                    <td class="code"><pre>ResolverMatch(func=reader.views.index_api, args=(), kwargs={&#39;title&#39;: u&#39;Tosafot_Shantz_on_Sotah&#39;, &#39;v2&#39;: True, &#39;raw&#39;: True}, url_name=None, app_names=[], namespaces=[])</pre></td>
                   </tr>
                 
                   <tr>
@@ -393,7 +393,7 @@
                 
                   <tr>
                     <td>wrapped_callback</td>
-                    <td class="code"><pre>&lt;function index_api at 0x7f165dfd7848&gt;</pre></td>
+                    <td class="code"><pre>&lt;function index_api at 0x7f1689f8a500&gt;</pre></td>
                   </tr>
                 
               </tbody>
@@ -406,43 +406,43 @@
           <code>/usr/local/python/lib/python2.7/site-packages/django/core/handlers/base.py</code> in <code>_get_response</code>
 
           
-            <div class="context" id="c139734022986352">
+            <div class="context" id="c139735098467248">
               
-                <ol start="178" class="pre-context" id="pre139734022986352">
+                <ol start="178" class="pre-context" id="pre139735098467248">
                 
-                  <li onclick="toggle('pre139734022986352', 'post139734022986352')"><pre>            response = middleware_method(request, callback, callback_args, callback_kwargs)</pre></li>
+                  <li onclick="toggle('pre139735098467248', 'post139735098467248')"><pre>            response = middleware_method(request, callback, callback_args, callback_kwargs)</pre></li>
                 
-                  <li onclick="toggle('pre139734022986352', 'post139734022986352')"><pre>            if response:</pre></li>
+                  <li onclick="toggle('pre139735098467248', 'post139735098467248')"><pre>            if response:</pre></li>
                 
-                  <li onclick="toggle('pre139734022986352', 'post139734022986352')"><pre>                break</pre></li>
+                  <li onclick="toggle('pre139735098467248', 'post139735098467248')"><pre>                break</pre></li>
                 
-                  <li onclick="toggle('pre139734022986352', 'post139734022986352')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098467248', 'post139735098467248')"><pre></pre></li>
                 
-                  <li onclick="toggle('pre139734022986352', 'post139734022986352')"><pre>        if response is None:</pre></li>
+                  <li onclick="toggle('pre139735098467248', 'post139735098467248')"><pre>        if response is None:</pre></li>
                 
-                  <li onclick="toggle('pre139734022986352', 'post139734022986352')"><pre>            wrapped_callback = self.make_view_atomic(callback)</pre></li>
+                  <li onclick="toggle('pre139735098467248', 'post139735098467248')"><pre>            wrapped_callback = self.make_view_atomic(callback)</pre></li>
                 
-                  <li onclick="toggle('pre139734022986352', 'post139734022986352')"><pre>            try:</pre></li>
+                  <li onclick="toggle('pre139735098467248', 'post139735098467248')"><pre>            try:</pre></li>
                 
                 </ol>
               
               <ol start="185" class="context-line">
-                <li onclick="toggle('pre139734022986352', 'post139734022986352')"><pre>
+                <li onclick="toggle('pre139735098467248', 'post139735098467248')"><pre>
                 response = wrapped_callback(request, *callback_args, **callback_kwargs)</pre> <span>...</span></li></ol>
               
-                <ol start='186' class="post-context" id="post139734022986352">
+                <ol start='186' class="post-context" id="post139735098467248">
                   
-                  <li onclick="toggle('pre139734022986352', 'post139734022986352')"><pre>            except Exception as e:</pre></li>
+                  <li onclick="toggle('pre139735098467248', 'post139735098467248')"><pre>            except Exception as e:</pre></li>
                   
-                  <li onclick="toggle('pre139734022986352', 'post139734022986352')"><pre>                response = self.process_exception_by_middleware(e, request)</pre></li>
+                  <li onclick="toggle('pre139735098467248', 'post139735098467248')"><pre>                response = self.process_exception_by_middleware(e, request)</pre></li>
                   
-                  <li onclick="toggle('pre139734022986352', 'post139734022986352')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098467248', 'post139735098467248')"><pre></pre></li>
                   
-                  <li onclick="toggle('pre139734022986352', 'post139734022986352')"><pre>        # Complain if the view returned None (a common error).</pre></li>
+                  <li onclick="toggle('pre139735098467248', 'post139735098467248')"><pre>        # Complain if the view returned None (a common error).</pre></li>
                   
-                  <li onclick="toggle('pre139734022986352', 'post139734022986352')"><pre>        if response is None:</pre></li>
+                  <li onclick="toggle('pre139735098467248', 'post139735098467248')"><pre>        if response is None:</pre></li>
                   
-                  <li onclick="toggle('pre139734022986352', 'post139734022986352')"><pre>            if isinstance(callback, types.FunctionType):    # FBV</pre></li>
+                  <li onclick="toggle('pre139735098467248', 'post139735098467248')"><pre>            if isinstance(callback, types.FunctionType):    # FBV</pre></li>
                   
               </ol>
               
@@ -452,10 +452,10 @@
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139734022986352')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139735098467248')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139734022986352">
+            <table class="vars" id="v139735098467248">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -466,7 +466,7 @@
                 
                   <tr>
                     <td>callback</td>
-                    <td class="code"><pre>&lt;function index_api at 0x7f165dfd7848&gt;</pre></td>
+                    <td class="code"><pre>&lt;function index_api at 0x7f1689f8a500&gt;</pre></td>
                   </tr>
                 
                   <tr>
@@ -476,12 +476,12 @@
                 
                   <tr>
                     <td>callback_kwargs</td>
-                    <td class="code"><pre>{&#39;raw&#39;: True, &#39;title&#39;: u&#39;Tosafot_Ri_HaZaken_on_Kiddushin&#39;, &#39;v2&#39;: True}</pre></td>
+                    <td class="code"><pre>{&#39;raw&#39;: True, &#39;title&#39;: u&#39;Tosafot_Shantz_on_Sotah&#39;, &#39;v2&#39;: True}</pre></td>
                   </tr>
                 
                   <tr>
                     <td>e</td>
-                    <td class="code"><pre>AttributeError(&quot;&#39;NoneType&#39; object has no attribute &#39;append&#39;&quot;,)</pre></td>
+                    <td class="code"><pre>IOError(13, &#39;Permission denied&#39;)</pre></td>
                   </tr>
                 
                   <tr>
@@ -491,7 +491,7 @@
                 
                   <tr>
                     <td>request</td>
-                    <td class="code"><pre>&lt;WSGIRequest: POST &#39;/api/v2/raw/index/Tosafot_Ri_HaZaken_on_Kiddushin&#39;&gt;</pre></td>
+                    <td class="code"><pre>&lt;WSGIRequest: POST &#39;/api/v2/raw/index/Tosafot_Shantz_on_Sotah&#39;&gt;</pre></td>
                   </tr>
                 
                   <tr>
@@ -501,7 +501,7 @@
                 
                   <tr>
                     <td>resolver_match</td>
-                    <td class="code"><pre>ResolverMatch(func=reader.views.index_api, args=(), kwargs={&#39;raw&#39;: True, &#39;v2&#39;: True, &#39;title&#39;: u&#39;Tosafot_Ri_HaZaken_on_Kiddushin&#39;}, url_name=None, app_names=[], namespaces=[])</pre></td>
+                    <td class="code"><pre>ResolverMatch(func=reader.views.index_api, args=(), kwargs={&#39;title&#39;: u&#39;Tosafot_Shantz_on_Sotah&#39;, &#39;v2&#39;: True, &#39;raw&#39;: True}, url_name=None, app_names=[], namespaces=[])</pre></td>
                   </tr>
                 
                   <tr>
@@ -516,7 +516,7 @@
                 
                   <tr>
                     <td>wrapped_callback</td>
-                    <td class="code"><pre>&lt;function index_api at 0x7f165dfd7848&gt;</pre></td>
+                    <td class="code"><pre>&lt;function index_api at 0x7f1689f8a500&gt;</pre></td>
                   </tr>
                 
               </tbody>
@@ -529,43 +529,43 @@
           <code>/app/sefaria/system/decorators.py</code> in <code>wrapper</code>
 
           
-            <div class="context" id="c139734022986136">
+            <div class="context" id="c139735098467464">
               
-                <ol start="29" class="pre-context" id="pre139734022986136">
+                <ol start="29" class="pre-context" id="pre139735098467464">
                 
-                  <li onclick="toggle('pre139734022986136', 'post139734022986136')"><pre>def catch_error_as_json(func):</pre></li>
+                  <li onclick="toggle('pre139735098467464', 'post139735098467464')"><pre>def catch_error_as_json(func):</pre></li>
                 
-                  <li onclick="toggle('pre139734022986136', 'post139734022986136')"><pre>    &quot;&quot;&quot;</pre></li>
+                  <li onclick="toggle('pre139735098467464', 'post139735098467464')"><pre>    &quot;&quot;&quot;</pre></li>
                 
-                  <li onclick="toggle('pre139734022986136', 'post139734022986136')"><pre>    Decorator that catches InputErrors and translates them into JSON &#39;error&#39; dicts for front end consumption.</pre></li>
+                  <li onclick="toggle('pre139735098467464', 'post139735098467464')"><pre>    Decorator that catches InputErrors and translates them into JSON &#39;error&#39; dicts for front end consumption.</pre></li>
                 
-                  <li onclick="toggle('pre139734022986136', 'post139734022986136')"><pre>    &quot;&quot;&quot;</pre></li>
+                  <li onclick="toggle('pre139735098467464', 'post139735098467464')"><pre>    &quot;&quot;&quot;</pre></li>
                 
-                  <li onclick="toggle('pre139734022986136', 'post139734022986136')"><pre>    @wraps(func)</pre></li>
+                  <li onclick="toggle('pre139735098467464', 'post139735098467464')"><pre>    @wraps(func)</pre></li>
                 
-                  <li onclick="toggle('pre139734022986136', 'post139734022986136')"><pre>    def wrapper(*args, **kwargs):</pre></li>
+                  <li onclick="toggle('pre139735098467464', 'post139735098467464')"><pre>    def wrapper(*args, **kwargs):</pre></li>
                 
-                  <li onclick="toggle('pre139734022986136', 'post139734022986136')"><pre>        try:</pre></li>
+                  <li onclick="toggle('pre139735098467464', 'post139735098467464')"><pre>        try:</pre></li>
                 
                 </ol>
               
               <ol start="36" class="context-line">
-                <li onclick="toggle('pre139734022986136', 'post139734022986136')"><pre>
+                <li onclick="toggle('pre139735098467464', 'post139735098467464')"><pre>
             result = func(*args, **kwargs)</pre> <span>...</span></li></ol>
               
-                <ol start='37' class="post-context" id="post139734022986136">
+                <ol start='37' class="post-context" id="post139735098467464">
                   
-                  <li onclick="toggle('pre139734022986136', 'post139734022986136')"><pre>        except exps.InputError as e:</pre></li>
+                  <li onclick="toggle('pre139735098467464', 'post139735098467464')"><pre>        except exps.InputError as e:</pre></li>
                   
-                  <li onclick="toggle('pre139734022986136', 'post139734022986136')"><pre>            logger.warning(u&quot;An exception occurred processing request for &#39;{}&#39; while running {}. Caught as JSON&quot;.format(args[0].path, func.__name__), exc_info=True)</pre></li>
+                  <li onclick="toggle('pre139735098467464', 'post139735098467464')"><pre>            logger.warning(u&quot;An exception occurred processing request for &#39;{}&#39; while running {}. Caught as JSON&quot;.format(args[0].path, func.__name__), exc_info=True)</pre></li>
                   
-                  <li onclick="toggle('pre139734022986136', 'post139734022986136')"><pre>            request = args[0]</pre></li>
+                  <li onclick="toggle('pre139735098467464', 'post139735098467464')"><pre>            request = args[0]</pre></li>
                   
-                  <li onclick="toggle('pre139734022986136', 'post139734022986136')"><pre>            return jsonResponse({&quot;error&quot;: unicode(e)}, callback=request.GET.get(&quot;callback&quot;, None))</pre></li>
+                  <li onclick="toggle('pre139735098467464', 'post139735098467464')"><pre>            return jsonResponse({&quot;error&quot;: unicode(e)}, callback=request.GET.get(&quot;callback&quot;, None))</pre></li>
                   
-                  <li onclick="toggle('pre139734022986136', 'post139734022986136')"><pre>        return result</pre></li>
+                  <li onclick="toggle('pre139735098467464', 'post139735098467464')"><pre>        return result</pre></li>
                   
-                  <li onclick="toggle('pre139734022986136', 'post139734022986136')"><pre>    return wrapper</pre></li>
+                  <li onclick="toggle('pre139735098467464', 'post139735098467464')"><pre>    return wrapper</pre></li>
                   
               </ol>
               
@@ -575,10 +575,10 @@
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139734022986136')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139735098467464')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139734022986136">
+            <table class="vars" id="v139735098467464">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -589,17 +589,17 @@
                 
                   <tr>
                     <td>args</td>
-                    <td class="code"><pre>(&lt;WSGIRequest: POST &#39;/api/v2/raw/index/Tosafot_Ri_HaZaken_on_Kiddushin&#39;&gt;,)</pre></td>
+                    <td class="code"><pre>(&lt;WSGIRequest: POST &#39;/api/v2/raw/index/Tosafot_Shantz_on_Sotah&#39;&gt;,)</pre></td>
                   </tr>
                 
                   <tr>
                     <td>func</td>
-                    <td class="code"><pre>&lt;function index_api at 0x7f165dfd77d0&gt;</pre></td>
+                    <td class="code"><pre>&lt;function index_api at 0x7f1689f8a488&gt;</pre></td>
                   </tr>
                 
                   <tr>
                     <td>kwargs</td>
-                    <td class="code"><pre>{&#39;raw&#39;: True, &#39;title&#39;: u&#39;Tosafot_Ri_HaZaken_on_Kiddushin&#39;, &#39;v2&#39;: True}</pre></td>
+                    <td class="code"><pre>{&#39;raw&#39;: True, &#39;title&#39;: u&#39;Tosafot_Shantz_on_Sotah&#39;, &#39;v2&#39;: True}</pre></td>
                   </tr>
                 
               </tbody>
@@ -612,35 +612,35 @@
           <code>/usr/local/python/lib/python2.7/site-packages/django/views/decorators/csrf.py</code> in <code>wrapped_view</code>
 
           
-            <div class="context" id="c139734022986280">
+            <div class="context" id="c139735098467176">
               
-                <ol start="51" class="pre-context" id="pre139734022986280">
+                <ol start="51" class="pre-context" id="pre139735098467176">
                 
-                  <li onclick="toggle('pre139734022986280', 'post139734022986280')"><pre>    &quot;&quot;&quot;</pre></li>
+                  <li onclick="toggle('pre139735098467176', 'post139735098467176')"><pre>    &quot;&quot;&quot;</pre></li>
                 
-                  <li onclick="toggle('pre139734022986280', 'post139734022986280')"><pre>    Marks a view function as being exempt from the CSRF view protection.</pre></li>
+                  <li onclick="toggle('pre139735098467176', 'post139735098467176')"><pre>    Marks a view function as being exempt from the CSRF view protection.</pre></li>
                 
-                  <li onclick="toggle('pre139734022986280', 'post139734022986280')"><pre>    &quot;&quot;&quot;</pre></li>
+                  <li onclick="toggle('pre139735098467176', 'post139735098467176')"><pre>    &quot;&quot;&quot;</pre></li>
                 
-                  <li onclick="toggle('pre139734022986280', 'post139734022986280')"><pre>    # We could just do view_func.csrf_exempt = True, but decorators</pre></li>
+                  <li onclick="toggle('pre139735098467176', 'post139735098467176')"><pre>    # We could just do view_func.csrf_exempt = True, but decorators</pre></li>
                 
-                  <li onclick="toggle('pre139734022986280', 'post139734022986280')"><pre>    # are nicer if they don&#39;t have side-effects, so we return a new</pre></li>
+                  <li onclick="toggle('pre139735098467176', 'post139735098467176')"><pre>    # are nicer if they don&#39;t have side-effects, so we return a new</pre></li>
                 
-                  <li onclick="toggle('pre139734022986280', 'post139734022986280')"><pre>    # function.</pre></li>
+                  <li onclick="toggle('pre139735098467176', 'post139735098467176')"><pre>    # function.</pre></li>
                 
-                  <li onclick="toggle('pre139734022986280', 'post139734022986280')"><pre>    def wrapped_view(*args, **kwargs):</pre></li>
+                  <li onclick="toggle('pre139735098467176', 'post139735098467176')"><pre>    def wrapped_view(*args, **kwargs):</pre></li>
                 
                 </ol>
               
               <ol start="58" class="context-line">
-                <li onclick="toggle('pre139734022986280', 'post139734022986280')"><pre>
+                <li onclick="toggle('pre139735098467176', 'post139735098467176')"><pre>
         return view_func(*args, **kwargs)</pre> <span>...</span></li></ol>
               
-                <ol start='59' class="post-context" id="post139734022986280">
+                <ol start='59' class="post-context" id="post139735098467176">
                   
-                  <li onclick="toggle('pre139734022986280', 'post139734022986280')"><pre>    wrapped_view.csrf_exempt = True</pre></li>
+                  <li onclick="toggle('pre139735098467176', 'post139735098467176')"><pre>    wrapped_view.csrf_exempt = True</pre></li>
                   
-                  <li onclick="toggle('pre139734022986280', 'post139734022986280')"><pre>    return wraps(view_func, assigned=available_attrs(view_func))(wrapped_view)</pre></li>
+                  <li onclick="toggle('pre139735098467176', 'post139735098467176')"><pre>    return wraps(view_func, assigned=available_attrs(view_func))(wrapped_view)</pre></li>
                   
               </ol>
               
@@ -650,10 +650,10 @@
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139734022986280')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139735098467176')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139734022986280">
+            <table class="vars" id="v139735098467176">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -664,17 +664,17 @@
                 
                   <tr>
                     <td>args</td>
-                    <td class="code"><pre>(&lt;WSGIRequest: POST &#39;/api/v2/raw/index/Tosafot_Ri_HaZaken_on_Kiddushin&#39;&gt;,)</pre></td>
+                    <td class="code"><pre>(&lt;WSGIRequest: POST &#39;/api/v2/raw/index/Tosafot_Shantz_on_Sotah&#39;&gt;,)</pre></td>
                   </tr>
                 
                   <tr>
                     <td>kwargs</td>
-                    <td class="code"><pre>{&#39;raw&#39;: True, &#39;title&#39;: u&#39;Tosafot_Ri_HaZaken_on_Kiddushin&#39;, &#39;v2&#39;: True}</pre></td>
+                    <td class="code"><pre>{&#39;raw&#39;: True, &#39;title&#39;: u&#39;Tosafot_Shantz_on_Sotah&#39;, &#39;v2&#39;: True}</pre></td>
                   </tr>
                 
                   <tr>
                     <td>view_func</td>
-                    <td class="code"><pre>&lt;function index_api at 0x7f165dfd7758&gt;</pre></td>
+                    <td class="code"><pre>&lt;function index_api at 0x7f1689f8a410&gt;</pre></td>
                   </tr>
                 
               </tbody>
@@ -687,43 +687,43 @@
           <code>/app/reader/views.py</code> in <code>index_api</code>
 
           
-            <div class="context" id="c139734022985920">
+            <div class="context" id="c139735098467104">
               
-                <ol start="1442" class="pre-context" id="pre139734022985920">
+                <ol start="1442" class="pre-context" id="pre139735098467104">
                 
-                  <li onclick="toggle('pre139734022985920', 'post139734022985920')"><pre>        if not request.user.is_authenticated:</pre></li>
+                  <li onclick="toggle('pre139735098467104', 'post139735098467104')"><pre>        if not request.user.is_authenticated:</pre></li>
                 
-                  <li onclick="toggle('pre139734022985920', 'post139734022985920')"><pre>            key = request.POST.get(&quot;apikey&quot;)</pre></li>
+                  <li onclick="toggle('pre139735098467104', 'post139735098467104')"><pre>            key = request.POST.get(&quot;apikey&quot;)</pre></li>
                 
-                  <li onclick="toggle('pre139734022985920', 'post139734022985920')"><pre>            if not key:</pre></li>
+                  <li onclick="toggle('pre139735098467104', 'post139735098467104')"><pre>            if not key:</pre></li>
                 
-                  <li onclick="toggle('pre139734022985920', 'post139734022985920')"><pre>                return jsonResponse({&quot;error&quot;: &quot;You must be logged in or use an API key to save texts.&quot;})</pre></li>
+                  <li onclick="toggle('pre139735098467104', 'post139735098467104')"><pre>                return jsonResponse({&quot;error&quot;: &quot;You must be logged in or use an API key to save texts.&quot;})</pre></li>
                 
-                  <li onclick="toggle('pre139734022985920', 'post139734022985920')"><pre>            apikey = db.apikeys.find_one({&quot;key&quot;: key})</pre></li>
+                  <li onclick="toggle('pre139735098467104', 'post139735098467104')"><pre>            apikey = db.apikeys.find_one({&quot;key&quot;: key})</pre></li>
                 
-                  <li onclick="toggle('pre139734022985920', 'post139734022985920')"><pre>            if not apikey:</pre></li>
+                  <li onclick="toggle('pre139735098467104', 'post139735098467104')"><pre>            if not apikey:</pre></li>
                 
-                  <li onclick="toggle('pre139734022985920', 'post139734022985920')"><pre>                return jsonResponse({&quot;error&quot;: &quot;Unrecognized API key.&quot;})</pre></li>
+                  <li onclick="toggle('pre139735098467104', 'post139735098467104')"><pre>                return jsonResponse({&quot;error&quot;: &quot;Unrecognized API key.&quot;})</pre></li>
                 
                 </ol>
               
               <ol start="1449" class="context-line">
-                <li onclick="toggle('pre139734022985920', 'post139734022985920')"><pre>
+                <li onclick="toggle('pre139735098467104', 'post139735098467104')"><pre>
             return jsonResponse(func(apikey[&quot;uid&quot;], model.Index, j, method=&quot;API&quot;, v2=v2, raw=raw, force_complex=True).contents(v2=v2, raw=raw, force_complex=True))</pre> <span>...</span></li></ol>
               
-                <ol start='1450' class="post-context" id="post139734022985920">
+                <ol start='1450' class="post-context" id="post139735098467104">
                   
-                  <li onclick="toggle('pre139734022985920', 'post139734022985920')"><pre>        else:</pre></li>
+                  <li onclick="toggle('pre139735098467104', 'post139735098467104')"><pre>        else:</pre></li>
                   
-                  <li onclick="toggle('pre139734022985920', 'post139734022985920')"><pre>            title = j.get(&quot;oldTitle&quot;, j.get(&quot;title&quot;))</pre></li>
+                  <li onclick="toggle('pre139735098467104', 'post139735098467104')"><pre>            title = j.get(&quot;oldTitle&quot;, j.get(&quot;title&quot;))</pre></li>
                   
-                  <li onclick="toggle('pre139734022985920', 'post139734022985920')"><pre>            try:</pre></li>
+                  <li onclick="toggle('pre139735098467104', 'post139735098467104')"><pre>            try:</pre></li>
                   
-                  <li onclick="toggle('pre139734022985920', 'post139734022985920')"><pre>                library.get_index(title)  # getting the index just to tell if it exists</pre></li>
+                  <li onclick="toggle('pre139735098467104', 'post139735098467104')"><pre>                library.get_index(title)  # getting the index just to tell if it exists</pre></li>
                   
-                  <li onclick="toggle('pre139734022985920', 'post139734022985920')"><pre>                # Only allow staff and the person who submitted a text to edit</pre></li>
+                  <li onclick="toggle('pre139735098467104', 'post139735098467104')"><pre>                # Only allow staff and the person who submitted a text to edit</pre></li>
                   
-                  <li onclick="toggle('pre139734022985920', 'post139734022985920')"><pre>                if not request.user.is_staff and not user_started_text(request.user.id, title):</pre></li>
+                  <li onclick="toggle('pre139735098467104', 'post139735098467104')"><pre>                if not request.user.is_staff and not user_started_text(request.user.id, title):</pre></li>
                   
               </ol>
               
@@ -733,10 +733,10 @@
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139734022985920')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139735098467104')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139734022985920">
+            <table class="vars" id="v139735098467104">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -754,31 +754,31 @@
                 
                   <tr>
                     <td>func</td>
-                    <td class="code"><pre>&lt;function add at 0x7f16a568fde8&gt;</pre></td>
+                    <td class="code"><pre>&lt;function add at 0x7f16a566b050&gt;</pre></td>
                   </tr>
                 
                   <tr>
                     <td>j</td>
-                    <td class="code"><pre>{u&#39;base_text_titles&#39;: [u&#39;Kiddushin&#39;],
+                    <td class="code"><pre>{u&#39;base_text_titles&#39;: [u&#39;Sotah&#39;],
  u&#39;categories&#39;: [u&#39;Talmud&#39;,
                  u&#39;Bavli&#39;,
                  u&#39;Commentary&#39;,
-                 u&#39;Tosafot Ri HaZaken&#39;,
+                 u&#39;Tosafot Shantz&#39;,
                  u&#39;Seder Nashim&#39;],
- u&#39;collective_title&#39;: u&#39;Tosafot Ri HaZaken&#39;,
+ u&#39;collective_title&#39;: u&#39;Tosafot Shantz&#39;,
  u&#39;dependence&#39;: u&#39;Commentary&#39;,
  u&#39;schema&#39;: {u&#39;addressTypes&#39;: [u&#39;Talmud&#39;, u&#39;Integer&#39;],
              u&#39;depth&#39;: 2,
-             u&#39;key&#39;: u&#39;Tosafot Ri HaZaken&#39;,
+             u&#39;key&#39;: u&#39;Tosafot Shantz&#39;,
              u&#39;nodeType&#39;: u&#39;JaggedArrayNode&#39;,
              u&#39;sectionNames&#39;: [u&#39;Daf&#39;, u&#39;Comment&#39;],
              u&#39;titles&#39;: [{u&#39;lang&#39;: u&#39;en&#39;,
                           u&#39;primary&#39;: True,
-                          u&#39;text&#39;: u&#39;Tosafot Ri HaZaken on Kiddushin&#39;},
+                          u&#39;text&#39;: u&#39;Tosafot Shantz on Sotah&#39;},
                          {u&#39;lang&#39;: u&#39;he&#39;,
                           u&#39;primary&#39;: True,
-                          u&#39;text&#39;: u&#39;\u05ea\u05d5\u05e1\u05e4\u05d5\u05ea \u05e8&quot;\u05d9 \u05d4\u05d6\u05e7\u05df \u05e2\u05dc \u05e7\u05d9\u05d3\u05d5\u05e9\u05d9\u05df&#39;}]},
- u&#39;title&#39;: u&#39;Tosafot Ri HaZaken on Kiddushin&#39;}</pre></td>
+                          u&#39;text&#39;: u&#39;\u05ea\u05d5\u05e1\u05e4\u05d5\u05ea \u05e9\u05d0\u05e0\u05e5 \u05e2\u05dc \u05e1\u05d5\u05d8\u05d4&#39;}]},
+ u&#39;title&#39;: u&#39;Tosafot Shantz on Sotah&#39;}</pre></td>
                   </tr>
                 
                   <tr>
@@ -793,12 +793,12 @@
                 
                   <tr>
                     <td>request</td>
-                    <td class="code"><pre>&lt;WSGIRequest: POST &#39;/api/v2/raw/index/Tosafot_Ri_HaZaken_on_Kiddushin&#39;&gt;</pre></td>
+                    <td class="code"><pre>&lt;WSGIRequest: POST &#39;/api/v2/raw/index/Tosafot_Shantz_on_Sotah&#39;&gt;</pre></td>
                   </tr>
                 
                   <tr>
                     <td>title</td>
-                    <td class="code"><pre>u&#39;Tosafot_Ri_HaZaken_on_Kiddushin&#39;</pre></td>
+                    <td class="code"><pre>u&#39;Tosafot_Shantz_on_Sotah&#39;</pre></td>
                   </tr>
                 
                   <tr>
@@ -816,43 +816,43 @@
           <code>/app/sefaria/tracker.py</code> in <code>add</code>
 
           
-            <div class="context" id="c139734022986856">
+            <div class="context" id="c139735098467032">
               
-                <ol start="76" class="pre-context" id="pre139734022986856">
+                <ol start="76" class="pre-context" id="pre139735098467032">
                 
-                  <li onclick="toggle('pre139734022986856', 'post139734022986856')"><pre>        else:</pre></li>
+                  <li onclick="toggle('pre139735098467032', 'post139735098467032')"><pre>        else:</pre></li>
                 
-                  <li onclick="toggle('pre139734022986856', 'post139734022986856')"><pre>            obj = klass().load({klass.criteria_field: attrs[klass.criteria_field]})</pre></li>
+                  <li onclick="toggle('pre139735098467032', 'post139735098467032')"><pre>            obj = klass().load({klass.criteria_field: attrs[klass.criteria_field]})</pre></li>
                 
-                  <li onclick="toggle('pre139734022986856', 'post139734022986856')"><pre>    if obj:</pre></li>
+                  <li onclick="toggle('pre139735098467032', 'post139735098467032')"><pre>    if obj:</pre></li>
                 
-                  <li onclick="toggle('pre139734022986856', 'post139734022986856')"><pre>        old_dict = obj.contents(**kwargs)</pre></li>
+                  <li onclick="toggle('pre139735098467032', 'post139735098467032')"><pre>        old_dict = obj.contents(**kwargs)</pre></li>
                 
-                  <li onclick="toggle('pre139734022986856', 'post139734022986856')"><pre>        obj.load_from_dict(attrs).save()</pre></li>
+                  <li onclick="toggle('pre139735098467032', 'post139735098467032')"><pre>        obj.load_from_dict(attrs).save()</pre></li>
                 
-                  <li onclick="toggle('pre139734022986856', 'post139734022986856')"><pre>        model.log_update(user, klass, old_dict, obj.contents(**kwargs), **kwargs)</pre></li>
+                  <li onclick="toggle('pre139735098467032', 'post139735098467032')"><pre>        model.log_update(user, klass, old_dict, obj.contents(**kwargs), **kwargs)</pre></li>
                 
-                  <li onclick="toggle('pre139734022986856', 'post139734022986856')"><pre>        return obj</pre></li>
+                  <li onclick="toggle('pre139735098467032', 'post139735098467032')"><pre>        return obj</pre></li>
                 
                 </ol>
               
               <ol start="83" class="context-line">
-                <li onclick="toggle('pre139734022986856', 'post139734022986856')"><pre>
+                <li onclick="toggle('pre139735098467032', 'post139735098467032')"><pre>
     obj = klass(attrs).save()</pre> <span>...</span></li></ol>
               
-                <ol start='84' class="post-context" id="post139734022986856">
+                <ol start='84' class="post-context" id="post139735098467032">
                   
-                  <li onclick="toggle('pre139734022986856', 'post139734022986856')"><pre>    model.log_add(user, klass, obj.contents(**kwargs), **kwargs)</pre></li>
+                  <li onclick="toggle('pre139735098467032', 'post139735098467032')"><pre>    model.log_add(user, klass, obj.contents(**kwargs), **kwargs)</pre></li>
                   
-                  <li onclick="toggle('pre139734022986856', 'post139734022986856')"><pre>    return obj</pre></li>
+                  <li onclick="toggle('pre139735098467032', 'post139735098467032')"><pre>    return obj</pre></li>
                   
-                  <li onclick="toggle('pre139734022986856', 'post139734022986856')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098467032', 'post139735098467032')"><pre></pre></li>
                   
-                  <li onclick="toggle('pre139734022986856', 'post139734022986856')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098467032', 'post139735098467032')"><pre></pre></li>
                   
-                  <li onclick="toggle('pre139734022986856', 'post139734022986856')"><pre>def update(user, klass, attrs, **kwargs):</pre></li>
+                  <li onclick="toggle('pre139735098467032', 'post139735098467032')"><pre>def update(user, klass, attrs, **kwargs):</pre></li>
                   
-                  <li onclick="toggle('pre139734022986856', 'post139734022986856')"><pre>    assert issubclass(klass, model.abstract.AbstractMongoRecord)</pre></li>
+                  <li onclick="toggle('pre139735098467032', 'post139735098467032')"><pre>    assert issubclass(klass, model.abstract.AbstractMongoRecord)</pre></li>
                   
               </ol>
               
@@ -862,10 +862,10 @@
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139734022986856')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139735098467032')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139734022986856">
+            <table class="vars" id="v139735098467032">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -876,26 +876,26 @@
                 
                   <tr>
                     <td>attrs</td>
-                    <td class="code"><pre>{u&#39;base_text_titles&#39;: [u&#39;Kiddushin&#39;],
+                    <td class="code"><pre>{u&#39;base_text_titles&#39;: [u&#39;Sotah&#39;],
  u&#39;categories&#39;: [u&#39;Talmud&#39;,
                  u&#39;Bavli&#39;,
                  u&#39;Commentary&#39;,
-                 u&#39;Tosafot Ri HaZaken&#39;,
+                 u&#39;Tosafot Shantz&#39;,
                  u&#39;Seder Nashim&#39;],
- u&#39;collective_title&#39;: u&#39;Tosafot Ri HaZaken&#39;,
+ u&#39;collective_title&#39;: u&#39;Tosafot Shantz&#39;,
  u&#39;dependence&#39;: u&#39;Commentary&#39;,
  u&#39;schema&#39;: {u&#39;addressTypes&#39;: [u&#39;Talmud&#39;, u&#39;Integer&#39;],
              u&#39;depth&#39;: 2,
-             u&#39;key&#39;: u&#39;Tosafot Ri HaZaken&#39;,
+             u&#39;key&#39;: u&#39;Tosafot Shantz&#39;,
              u&#39;nodeType&#39;: u&#39;JaggedArrayNode&#39;,
              u&#39;sectionNames&#39;: [u&#39;Daf&#39;, u&#39;Comment&#39;],
              u&#39;titles&#39;: [{u&#39;lang&#39;: u&#39;en&#39;,
                           u&#39;primary&#39;: True,
-                          u&#39;text&#39;: u&#39;Tosafot Ri HaZaken on Kiddushin&#39;},
+                          u&#39;text&#39;: u&#39;Tosafot Shantz on Sotah&#39;},
                          {u&#39;lang&#39;: u&#39;he&#39;,
                           u&#39;primary&#39;: True,
-                          u&#39;text&#39;: u&#39;\u05ea\u05d5\u05e1\u05e4\u05d5\u05ea \u05e8&quot;\u05d9 \u05d4\u05d6\u05e7\u05df \u05e2\u05dc \u05e7\u05d9\u05d3\u05d5\u05e9\u05d9\u05df&#39;}]},
- u&#39;title&#39;: u&#39;Tosafot Ri HaZaken on Kiddushin&#39;}</pre></td>
+                          u&#39;text&#39;: u&#39;\u05ea\u05d5\u05e1\u05e4\u05d5\u05ea \u05e9\u05d0\u05e0\u05e5 \u05e2\u05dc \u05e1\u05d5\u05d8\u05d4&#39;}]},
+ u&#39;title&#39;: u&#39;Tosafot Shantz on Sotah&#39;}</pre></td>
                   </tr>
                 
                   <tr>
@@ -928,43 +928,43 @@
           <code>/app/sefaria/model/text.py</code> in <code>save</code>
 
           
-            <div class="context" id="c139734022984768">
+            <div class="context" id="c139735098466888">
               
-                <ol start="218" class="pre-context" id="pre139734022984768">
+                <ol start="218" class="pre-context" id="pre139735098466888">
                 
-                  <li onclick="toggle('pre139734022984768', 'post139734022984768')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466888', 'post139735098466888')"><pre></pre></li>
                 
-                  <li onclick="toggle('pre139734022984768', 'post139734022984768')"><pre>    def __repr__(self):  # Wanted to use orig_tref, but repr can not include Unicode</pre></li>
+                  <li onclick="toggle('pre139735098466888', 'post139735098466888')"><pre>    def __repr__(self):  # Wanted to use orig_tref, but repr can not include Unicode</pre></li>
                 
-                  <li onclick="toggle('pre139734022984768', 'post139734022984768')"><pre>        return u&quot;{}().load({{&#39;title&#39;: &#39;{}&#39;}})&quot;.format(self.__class__.__name__, self.title)</pre></li>
+                  <li onclick="toggle('pre139735098466888', 'post139735098466888')"><pre>        return u&quot;{}().load({{&#39;title&#39;: &#39;{}&#39;}})&quot;.format(self.__class__.__name__, self.title)</pre></li>
                 
-                  <li onclick="toggle('pre139734022984768', 'post139734022984768')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466888', 'post139735098466888')"><pre></pre></li>
                 
-                  <li onclick="toggle('pre139734022984768', 'post139734022984768')"><pre>    def save(self, override_dependencies=False):</pre></li>
+                  <li onclick="toggle('pre139735098466888', 'post139735098466888')"><pre>    def save(self, override_dependencies=False):</pre></li>
                 
-                  <li onclick="toggle('pre139734022984768', 'post139734022984768')"><pre>        if DISABLE_INDEX_SAVE:</pre></li>
+                  <li onclick="toggle('pre139735098466888', 'post139735098466888')"><pre>        if DISABLE_INDEX_SAVE:</pre></li>
                 
-                  <li onclick="toggle('pre139734022984768', 'post139734022984768')"><pre>            raise InputError(&quot;Index saving has been disabled on this system.&quot;)</pre></li>
+                  <li onclick="toggle('pre139735098466888', 'post139735098466888')"><pre>            raise InputError(&quot;Index saving has been disabled on this system.&quot;)</pre></li>
                 
                 </ol>
               
               <ol start="225" class="context-line">
-                <li onclick="toggle('pre139734022984768', 'post139734022984768')"><pre>
+                <li onclick="toggle('pre139735098466888', 'post139735098466888')"><pre>
         return super(Index, self).save(override_dependencies=override_dependencies)</pre> <span>...</span></li></ol>
               
-                <ol start='226' class="post-context" id="post139734022984768">
+                <ol start='226' class="post-context" id="post139735098466888">
                   
-                  <li onclick="toggle('pre139734022984768', 'post139734022984768')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466888', 'post139735098466888')"><pre></pre></li>
                   
-                  <li onclick="toggle('pre139734022984768', 'post139734022984768')"><pre>    def _set_derived_attributes(self):</pre></li>
+                  <li onclick="toggle('pre139735098466888', 'post139735098466888')"><pre>    def _set_derived_attributes(self):</pre></li>
                   
-                  <li onclick="toggle('pre139734022984768', 'post139734022984768')"><pre>        if getattr(self, &quot;schema&quot;, None):</pre></li>
+                  <li onclick="toggle('pre139735098466888', 'post139735098466888')"><pre>        if getattr(self, &quot;schema&quot;, None):</pre></li>
                   
-                  <li onclick="toggle('pre139734022984768', 'post139734022984768')"><pre>            self.nodes = deserialize_tree(self.schema, index=self)</pre></li>
+                  <li onclick="toggle('pre139735098466888', 'post139735098466888')"><pre>            self.nodes = deserialize_tree(self.schema, index=self)</pre></li>
                   
-                  <li onclick="toggle('pre139734022984768', 'post139734022984768')"><pre>            # Our pattern has been to validate on save, not on load</pre></li>
+                  <li onclick="toggle('pre139735098466888', 'post139735098466888')"><pre>            # Our pattern has been to validate on save, not on load</pre></li>
                   
-                  <li onclick="toggle('pre139734022984768', 'post139734022984768')"><pre>            # self.nodes.validate()</pre></li>
+                  <li onclick="toggle('pre139735098466888', 'post139735098466888')"><pre>            # self.nodes.validate()</pre></li>
                   
               </ol>
               
@@ -974,10 +974,10 @@
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139734022984768')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139735098466888')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139734022984768">
+            <table class="vars" id="v139735098466888">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -993,7 +993,7 @@
                 
                   <tr>
                     <td>self</td>
-                    <td class="code"><pre>Index().load({&#39;title&#39;: &#39;Tosafot Ri HaZaken on Kiddushin&#39;})</pre></td>
+                    <td class="code"><pre>Index().load({&#39;title&#39;: &#39;Tosafot Shantz on Sotah&#39;})</pre></td>
                   </tr>
                 
               </tbody>
@@ -1006,43 +1006,43 @@
           <code>/app/sefaria/model/abstract.py</code> in <code>save</code>
 
           
-            <div class="context" id="c139734022985200">
+            <div class="context" id="c139735098466816">
               
-                <ol start="126" class="pre-context" id="pre139734022985200">
+                <ol start="126" class="pre-context" id="pre139735098466816">
                 
-                  <li onclick="toggle('pre139734022985200', 'post139734022985200')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466816', 'post139735098466816')"><pre></pre></li>
                 
-                  <li onclick="toggle('pre139734022985200', 'post139734022985200')"><pre>        if self.track_pkeys and not is_new_obj and not override_dependencies:</pre></li>
+                  <li onclick="toggle('pre139735098466816', 'post139735098466816')"><pre>        if self.track_pkeys and not is_new_obj and not override_dependencies:</pre></li>
                 
-                  <li onclick="toggle('pre139734022985200', 'post139734022985200')"><pre>            for key, old_value in self.pkeys_orig_values.items():</pre></li>
+                  <li onclick="toggle('pre139735098466816', 'post139735098466816')"><pre>            for key, old_value in self.pkeys_orig_values.items():</pre></li>
                 
-                  <li onclick="toggle('pre139734022985200', 'post139734022985200')"><pre>                if old_value != getattr(self, key, None):</pre></li>
+                  <li onclick="toggle('pre139735098466816', 'post139735098466816')"><pre>                if old_value != getattr(self, key, None):</pre></li>
                 
-                  <li onclick="toggle('pre139734022985200', 'post139734022985200')"><pre>                    notify(self, &quot;attributeChange&quot;, attr=key, old=old_value, new=getattr(self, key))</pre></li>
+                  <li onclick="toggle('pre139735098466816', 'post139735098466816')"><pre>                    notify(self, &quot;attributeChange&quot;, attr=key, old=old_value, new=getattr(self, key))</pre></li>
                 
-                  <li onclick="toggle('pre139734022985200', 'post139734022985200')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466816', 'post139735098466816')"><pre></pre></li>
                 
-                  <li onclick="toggle('pre139734022985200', 'post139734022985200')"><pre>        if not override_dependencies:</pre></li>
+                  <li onclick="toggle('pre139735098466816', 'post139735098466816')"><pre>        if not override_dependencies:</pre></li>
                 
                 </ol>
               
               <ol start="133" class="context-line">
-                <li onclick="toggle('pre139734022985200', 'post139734022985200')"><pre>
+                <li onclick="toggle('pre139735098466816', 'post139735098466816')"><pre>
             notify(self, &quot;save&quot;, orig_vals=self.pkeys_orig_values, is_new=is_new_obj)</pre> <span>...</span></li></ol>
               
-                <ol start='134' class="post-context" id="post139734022985200">
+                <ol start='134' class="post-context" id="post139735098466816">
                   
-                  <li onclick="toggle('pre139734022985200', 'post139734022985200')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466816', 'post139735098466816')"><pre></pre></li>
                   
-                  <li onclick="toggle('pre139734022985200', 'post139734022985200')"><pre>        # Set new values as pkey_orig_values so that future changes will be caught</pre></li>
+                  <li onclick="toggle('pre139735098466816', 'post139735098466816')"><pre>        # Set new values as pkey_orig_values so that future changes will be caught</pre></li>
                   
-                  <li onclick="toggle('pre139734022985200', 'post139734022985200')"><pre>        if self.track_pkeys:</pre></li>
+                  <li onclick="toggle('pre139735098466816', 'post139735098466816')"><pre>        if self.track_pkeys:</pre></li>
                   
-                  <li onclick="toggle('pre139734022985200', 'post139734022985200')"><pre>            for pkey in self.pkeys:</pre></li>
+                  <li onclick="toggle('pre139735098466816', 'post139735098466816')"><pre>            for pkey in self.pkeys:</pre></li>
                   
-                  <li onclick="toggle('pre139734022985200', 'post139734022985200')"><pre>                self.pkeys_orig_values[pkey] = getattr(self, pkey, None)</pre></li>
+                  <li onclick="toggle('pre139735098466816', 'post139735098466816')"><pre>                self.pkeys_orig_values[pkey] = getattr(self, pkey, None)</pre></li>
                   
-                  <li onclick="toggle('pre139734022985200', 'post139734022985200')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466816', 'post139735098466816')"><pre></pre></li>
                   
               </ol>
               
@@ -1052,10 +1052,10 @@
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139734022985200')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139735098466816')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139734022985200">
+            <table class="vars" id="v139735098466816">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -1066,7 +1066,7 @@
                 
                   <tr>
                     <td>_id</td>
-                    <td class="code"><pre>ObjectId(&#39;5cb5e487c1b9020c3d1ad9da&#39;)</pre></td>
+                    <td class="code"><pre>ObjectId(&#39;5cdd328dc1b902434252c425&#39;)</pre></td>
                   </tr>
                 
                   <tr>
@@ -1081,32 +1081,32 @@
                 
                   <tr>
                     <td>props</td>
-                    <td class="code"><pre>{&#39;_id&#39;: ObjectId(&#39;5cb5e487c1b9020c3d1ad9da&#39;),
- &#39;base_text_titles&#39;: [u&#39;Kiddushin&#39;],
+                    <td class="code"><pre>{&#39;_id&#39;: ObjectId(&#39;5cdd328dc1b902434252c425&#39;),
+ &#39;base_text_titles&#39;: [u&#39;Sotah&#39;],
  &#39;categories&#39;: [u&#39;Talmud&#39;,
                 u&#39;Bavli&#39;,
                 u&#39;Commentary&#39;,
-                u&#39;Tosafot Ri HaZaken&#39;,
+                u&#39;Tosafot Shantz&#39;,
                 u&#39;Seder Nashim&#39;],
- &#39;collective_title&#39;: u&#39;Tosafot Ri HaZaken&#39;,
+ &#39;collective_title&#39;: u&#39;Tosafot Shantz&#39;,
  &#39;dependence&#39;: u&#39;Commentary&#39;,
  &#39;schema&#39;: {&#39;addressTypes&#39;: [u&#39;Talmud&#39;, u&#39;Integer&#39;],
             &#39;depth&#39;: 2,
-            &#39;key&#39;: u&#39;Tosafot Ri HaZaken on Kiddushin&#39;,
+            &#39;key&#39;: u&#39;Tosafot Shantz on Sotah&#39;,
             &#39;nodeType&#39;: &#39;JaggedArrayNode&#39;,
             &#39;sectionNames&#39;: [u&#39;Daf&#39;, u&#39;Comment&#39;],
             &#39;titles&#39;: [{u&#39;lang&#39;: u&#39;he&#39;,
                         u&#39;primary&#39;: True,
-                        u&#39;text&#39;: u&#39;\u05ea\u05d5\u05e1\u05e4\u05d5\u05ea \u05e8&quot;\u05d9 \u05d4\u05d6\u05e7\u05df \u05e2\u05dc \u05e7\u05d9\u05d3\u05d5\u05e9\u05d9\u05df&#39;},
+                        u&#39;text&#39;: u&#39;\u05ea\u05d5\u05e1\u05e4\u05d5\u05ea \u05e9\u05d0\u05e0\u05e5 \u05e2\u05dc \u05e1\u05d5\u05d8\u05d4&#39;},
                        {&#39;lang&#39;: &#39;en&#39;,
                         &#39;primary&#39;: True,
-                        &#39;text&#39;: u&#39;Tosafot Ri HaZaken on Kiddushin&#39;}]},
- &#39;title&#39;: u&#39;Tosafot Ri HaZaken on Kiddushin&#39;}</pre></td>
+                        &#39;text&#39;: u&#39;Tosafot Shantz on Sotah&#39;}]},
+ &#39;title&#39;: u&#39;Tosafot Shantz on Sotah&#39;}</pre></td>
                   </tr>
                 
                   <tr>
                     <td>self</td>
-                    <td class="code"><pre>Index().load({&#39;title&#39;: &#39;Tosafot Ri HaZaken on Kiddushin&#39;})</pre></td>
+                    <td class="code"><pre>Index().load({&#39;title&#39;: &#39;Tosafot Shantz on Sotah&#39;})</pre></td>
                   </tr>
                 
               </tbody>
@@ -1119,43 +1119,43 @@
           <code>/app/sefaria/model/abstract.py</code> in <code>notify</code>
 
           
-            <div class="context" id="c139734022985992">
+            <div class="context" id="c139735098466744">
               
-                <ol start="451" class="pre-context" id="pre139734022985992">
+                <ol start="451" class="pre-context" id="pre139735098466744">
                 
-                  <li onclick="toggle('pre139734022985992', 'post139734022985992')"><pre>        callbacks = deps.get((type(inst), action, None), [])</pre></li>
+                  <li onclick="toggle('pre139735098466744', 'post139735098466744')"><pre>        callbacks = deps.get((type(inst), action, None), [])</pre></li>
                 
-                  <li onclick="toggle('pre139734022985992', 'post139734022985992')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466744', 'post139735098466744')"><pre></pre></li>
                 
-                  <li onclick="toggle('pre139734022985992', 'post139734022985992')"><pre>    if not callbacks:</pre></li>
+                  <li onclick="toggle('pre139735098466744', 'post139735098466744')"><pre>    if not callbacks:</pre></li>
                 
-                  <li onclick="toggle('pre139734022985992', 'post139734022985992')"><pre>        return</pre></li>
+                  <li onclick="toggle('pre139735098466744', 'post139735098466744')"><pre>        return</pre></li>
                 
-                  <li onclick="toggle('pre139734022985992', 'post139734022985992')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466744', 'post139735098466744')"><pre></pre></li>
                 
-                  <li onclick="toggle('pre139734022985992', 'post139734022985992')"><pre>    for callback in callbacks:</pre></li>
+                  <li onclick="toggle('pre139735098466744', 'post139735098466744')"><pre>    for callback in callbacks:</pre></li>
                 
-                  <li onclick="toggle('pre139734022985992', 'post139734022985992')"><pre>        logger.debug(u&quot;Notify: Calling &quot; + callback.__name__ + u&quot;() for &quot; + inst.__class__.__name__ + &quot; &quot; + action)</pre></li>
+                  <li onclick="toggle('pre139735098466744', 'post139735098466744')"><pre>        logger.debug(u&quot;Notify: Calling &quot; + callback.__name__ + u&quot;() for &quot; + inst.__class__.__name__ + &quot; &quot; + action)</pre></li>
                 
                 </ol>
               
               <ol start="458" class="context-line">
-                <li onclick="toggle('pre139734022985992', 'post139734022985992')"><pre>
+                <li onclick="toggle('pre139735098466744', 'post139735098466744')"><pre>
         callback(inst, **kwargs)</pre> <span>...</span></li></ol>
               
-                <ol start='459' class="post-context" id="post139734022985992">
+                <ol start='459' class="post-context" id="post139735098466744">
                   
-                  <li onclick="toggle('pre139734022985992', 'post139734022985992')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466744', 'post139735098466744')"><pre></pre></li>
                   
-                  <li onclick="toggle('pre139734022985992', 'post139734022985992')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466744', 'post139735098466744')"><pre></pre></li>
                   
-                  <li onclick="toggle('pre139734022985992', 'post139734022985992')"><pre>def subscribe(callback, klass, action, attr=None):</pre></li>
+                  <li onclick="toggle('pre139735098466744', 'post139735098466744')"><pre>def subscribe(callback, klass, action, attr=None):</pre></li>
                   
-                  <li onclick="toggle('pre139734022985992', 'post139734022985992')"><pre>    if not deps.get((klass, action, attr), None):</pre></li>
+                  <li onclick="toggle('pre139735098466744', 'post139735098466744')"><pre>    if not deps.get((klass, action, attr), None):</pre></li>
                   
-                  <li onclick="toggle('pre139734022985992', 'post139734022985992')"><pre>        deps[(klass, action, attr)] = []</pre></li>
+                  <li onclick="toggle('pre139735098466744', 'post139735098466744')"><pre>        deps[(klass, action, attr)] = []</pre></li>
                   
-                  <li onclick="toggle('pre139734022985992', 'post139734022985992')"><pre>    deps[(klass, action, attr)].append(callback)</pre></li>
+                  <li onclick="toggle('pre139735098466744', 'post139735098466744')"><pre>    deps[(klass, action, attr)].append(callback)</pre></li>
                   
               </ol>
               
@@ -1165,10 +1165,10 @@
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139734022985992')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139735098466744')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139734022985992">
+            <table class="vars" id="v139735098466744">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -1195,13 +1195,13 @@
                   <tr>
                     <td>callbacks</td>
                     <td class="code"><pre>[&lt;function process_index_change_in_core_cache at 0x7f16c14b37d0&gt;,
- &lt;function create_version_state_on_index_creation at 0x7f16c10079b0&gt;,
+ &lt;function create_version_state_on_index_creation at 0x7f16c100b9b0&gt;,
  &lt;function process_index_change_in_toc at 0x7f16c14b3848&gt;]</pre></td>
                   </tr>
                 
                   <tr>
                     <td>inst</td>
-                    <td class="code"><pre>Index().load({&#39;title&#39;: &#39;Tosafot Ri HaZaken on Kiddushin&#39;})</pre></td>
+                    <td class="code"><pre>Index().load({&#39;title&#39;: &#39;Tosafot Shantz on Sotah&#39;})</pre></td>
                   </tr>
                 
                   <tr>
@@ -1219,43 +1219,43 @@
           <code>/app/sefaria/model/text.py</code> in <code>process_index_change_in_toc</code>
 
           
-            <div class="context" id="c139734022985416">
+            <div class="context" id="c139735098466672">
               
-                <ol start="5017" class="pre-context" id="pre139734022985416">
+                <ol start="5017" class="pre-context" id="pre139735098466672">
                 
-                  <li onclick="toggle('pre139734022985416', 'post139734022985416')"><pre>        elif USE_VARNISH:</pre></li>
+                  <li onclick="toggle('pre139735098466672', 'post139735098466672')"><pre>        elif USE_VARNISH:</pre></li>
                 
-                  <li onclick="toggle('pre139734022985416', 'post139734022985416')"><pre>            from sefaria.system.varnish.wrapper import invalidate_title</pre></li>
+                  <li onclick="toggle('pre139735098466672', 'post139735098466672')"><pre>            from sefaria.system.varnish.wrapper import invalidate_title</pre></li>
                 
-                  <li onclick="toggle('pre139734022985416', 'post139734022985416')"><pre>            invalidate_title(indx.title)</pre></li>
+                  <li onclick="toggle('pre139735098466672', 'post139735098466672')"><pre>            invalidate_title(indx.title)</pre></li>
                 
-                  <li onclick="toggle('pre139734022985416', 'post139734022985416')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466672', 'post139735098466672')"><pre></pre></li>
                 
-                  <li onclick="toggle('pre139734022985416', 'post139734022985416')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466672', 'post139735098466672')"><pre></pre></li>
                 
-                  <li onclick="toggle('pre139734022985416', 'post139734022985416')"><pre>def process_index_change_in_toc(indx, **kwargs):</pre></li>
+                  <li onclick="toggle('pre139735098466672', 'post139735098466672')"><pre>def process_index_change_in_toc(indx, **kwargs):</pre></li>
                 
-                  <li onclick="toggle('pre139734022985416', 'post139734022985416')"><pre>    old_ref = kwargs.get(&#39;orig_vals&#39;).get(&#39;title&#39;) if kwargs.get(&#39;orig_vals&#39;) else None</pre></li>
+                  <li onclick="toggle('pre139735098466672', 'post139735098466672')"><pre>    old_ref = kwargs.get(&#39;orig_vals&#39;).get(&#39;title&#39;) if kwargs.get(&#39;orig_vals&#39;) else None</pre></li>
                 
                 </ol>
               
               <ol start="5024" class="context-line">
-                <li onclick="toggle('pre139734022985416', 'post139734022985416')"><pre>
+                <li onclick="toggle('pre139735098466672', 'post139735098466672')"><pre>
     library.update_index_in_toc(indx, old_ref=old_ref)</pre> <span>...</span></li></ol>
               
-                <ol start='5025' class="post-context" id="post139734022985416">
+                <ol start='5025' class="post-context" id="post139735098466672">
                   
-                  <li onclick="toggle('pre139734022985416', 'post139734022985416')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466672', 'post139735098466672')"><pre></pre></li>
                   
-                  <li onclick="toggle('pre139734022985416', 'post139734022985416')"><pre>    if MULTISERVER_ENABLED:</pre></li>
+                  <li onclick="toggle('pre139735098466672', 'post139735098466672')"><pre>    if MULTISERVER_ENABLED:</pre></li>
                   
-                  <li onclick="toggle('pre139734022985416', 'post139734022985416')"><pre>        server_coordinator.publish_event(&quot;library&quot;, &quot;update_index_in_toc&quot;, [indx.title, old_ref])</pre></li>
+                  <li onclick="toggle('pre139735098466672', 'post139735098466672')"><pre>        server_coordinator.publish_event(&quot;library&quot;, &quot;update_index_in_toc&quot;, [indx.title, old_ref])</pre></li>
                   
-                  <li onclick="toggle('pre139734022985416', 'post139734022985416')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466672', 'post139735098466672')"><pre></pre></li>
                   
-                  <li onclick="toggle('pre139734022985416', 'post139734022985416')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466672', 'post139735098466672')"><pre></pre></li>
                   
-                  <li onclick="toggle('pre139734022985416', 'post139734022985416')"><pre>def process_index_delete_in_toc(indx, **kwargs):</pre></li>
+                  <li onclick="toggle('pre139735098466672', 'post139735098466672')"><pre>def process_index_delete_in_toc(indx, **kwargs):</pre></li>
                   
               </ol>
               
@@ -1265,10 +1265,10 @@
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139734022985416')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139735098466672')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139734022985416">
+            <table class="vars" id="v139735098466672">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -1279,7 +1279,7 @@
                 
                   <tr>
                     <td>indx</td>
-                    <td class="code"><pre>Index().load({&#39;title&#39;: &#39;Tosafot Ri HaZaken on Kiddushin&#39;})</pre></td>
+                    <td class="code"><pre>Index().load({&#39;title&#39;: &#39;Tosafot Shantz on Sotah&#39;})</pre></td>
                   </tr>
                 
                   <tr>
@@ -1302,43 +1302,43 @@
           <code>/app/sefaria/model/text.py</code> in <code>update_index_in_toc</code>
 
           
-            <div class="context" id="c139734022987216">
+            <div class="context" id="c139735098466528">
               
-                <ol start="4284" class="pre-context" id="pre139734022987216">
+                <ol start="4287" class="pre-context" id="pre139735098466528">
                 
-                  <li onclick="toggle('pre139734022987216', 'post139734022987216')"><pre>        :return:</pre></li>
+                  <li onclick="toggle('pre139735098466528', 'post139735098466528')"><pre>        # This is used in the case of a remotely triggered multiserver update</pre></li>
                 
-                  <li onclick="toggle('pre139734022987216', 'post139734022987216')"><pre>        &quot;&quot;&quot;</pre></li>
+                  <li onclick="toggle('pre139735098466528', 'post139735098466528')"><pre>        if isinstance(indx, basestring):</pre></li>
                 
-                  <li onclick="toggle('pre139734022987216', 'post139734022987216')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466528', 'post139735098466528')"><pre>            indx = Index().load({&quot;title&quot;: indx})</pre></li>
                 
-                  <li onclick="toggle('pre139734022987216', 'post139734022987216')"><pre>        # This is used in the case of a remotely triggered multiserver update</pre></li>
+                  <li onclick="toggle('pre139735098466528', 'post139735098466528')"><pre></pre></li>
                 
-                  <li onclick="toggle('pre139734022987216', 'post139734022987216')"><pre>        if isinstance(indx, basestring):</pre></li>
+                  <li onclick="toggle('pre139735098466528', 'post139735098466528')"><pre>        self.get_toc_tree().update_title(indx, old_ref=old_ref, recount=False)</pre></li>
                 
-                  <li onclick="toggle('pre139734022987216', 'post139734022987216')"><pre>            indx = Index().load({&quot;title&quot;: indx})</pre></li>
+                  <li onclick="toggle('pre139735098466528', 'post139735098466528')"><pre></pre></li>
                 
-                  <li onclick="toggle('pre139734022987216', 'post139734022987216')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466528', 'post139735098466528')"><pre>        from sefaria.summaries import update_title_in_toc</pre></li>
                 
                 </ol>
               
-              <ol start="4291" class="context-line">
-                <li onclick="toggle('pre139734022987216', 'post139734022987216')"><pre>
-        self.get_toc_tree().update_title(indx, old_ref=old_ref, recount=False)</pre> <span>...</span></li></ol>
+              <ol start="4294" class="context-line">
+                <li onclick="toggle('pre139735098466528', 'post139735098466528')"><pre>
+        self._search_filter_toc = update_title_in_toc(self.get_search_filter_toc(), indx, old_ref=old_ref, recount=False, for_search=True)</pre> <span>...</span></li></ol>
               
-                <ol start='4292' class="post-context" id="post139734022987216">
+                <ol start='4295' class="post-context" id="post139735098466528">
                   
-                  <li onclick="toggle('pre139734022987216', 'post139734022987216')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466528', 'post139735098466528')"><pre></pre></li>
                   
-                  <li onclick="toggle('pre139734022987216', 'post139734022987216')"><pre>        from sefaria.summaries import update_title_in_toc</pre></li>
+                  <li onclick="toggle('pre139735098466528', 'post139735098466528')"><pre>        self.rebuild_toc(skip_toc_tree=True, skip_filter_toc=True)</pre></li>
                   
-                  <li onclick="toggle('pre139734022987216', 'post139734022987216')"><pre>        self._search_filter_toc = update_title_in_toc(self.get_search_filter_toc(), indx, old_ref=old_ref, recount=False, for_search=True)</pre></li>
+                  <li onclick="toggle('pre139735098466528', 'post139735098466528')"><pre></pre></li>
                   
-                  <li onclick="toggle('pre139734022987216', 'post139734022987216')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466528', 'post139735098466528')"><pre>    def get_index(self, bookname):</pre></li>
                   
-                  <li onclick="toggle('pre139734022987216', 'post139734022987216')"><pre>        self.rebuild_toc(skip_toc_tree=True, skip_filter_toc=True)</pre></li>
+                  <li onclick="toggle('pre139735098466528', 'post139735098466528')"><pre>        &quot;&quot;&quot;</pre></li>
                   
-                  <li onclick="toggle('pre139734022987216', 'post139734022987216')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466528', 'post139735098466528')"><pre>        Factory - returns a :class:`Index` object that has the given bookname</pre></li>
                   
               </ol>
               
@@ -1348,10 +1348,10 @@
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139734022987216')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139735098466528')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139734022987216">
+            <table class="vars" id="v139735098466528">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -1362,7 +1362,7 @@
                 
                   <tr>
                     <td>indx</td>
-                    <td class="code"><pre>Index().load({&#39;title&#39;: &#39;Tosafot Ri HaZaken on Kiddushin&#39;})</pre></td>
+                    <td class="code"><pre>Index().load({&#39;title&#39;: &#39;Tosafot Shantz on Sotah&#39;})</pre></td>
                   </tr>
                 
                   <tr>
@@ -1372,7 +1372,12 @@
                 
                   <tr>
                     <td>self</td>
-                    <td class="code"><pre>&lt;sefaria.model.text.Library object at 0x7f16c18fee10&gt;</pre></td>
+                    <td class="code"><pre>&lt;sefaria.model.text.Library object at 0x7f16c18fce10&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>update_title_in_toc</td>
+                    <td class="code"><pre>&lt;function update_title_in_toc at 0x7f16a56a0758&gt;</pre></td>
                   </tr>
                 
               </tbody>
@@ -1382,46 +1387,46 @@
       
         
         <li class="frame user">
-          <code>/app/sefaria/model/category.py</code> in <code>update_title</code>
+          <code>/app/sefaria/model/text.py</code> in <code>get_search_filter_toc</code>
 
           
-            <div class="context" id="c139734022986208">
+            <div class="context" id="c139735098466960">
               
-                <ol start="331" class="pre-context" id="pre139734022986208">
+                <ol start="4162" class="pre-context" id="pre139735098466960">
                 
-                  <li onclick="toggle('pre139734022986208', 'post139734022986208')"><pre>        if node:</pre></li>
+                  <li onclick="toggle('pre139735098466960', 'post139735098466960')"><pre>    def get_search_filter_toc(self, rebuild=False):</pre></li>
                 
-                  <li onclick="toggle('pre139734022986208', 'post139734022986208')"><pre>            node.replace(new_node)</pre></li>
+                  <li onclick="toggle('pre139735098466960', 'post139735098466960')"><pre>        &quot;&quot;&quot;</pre></li>
                 
-                  <li onclick="toggle('pre139734022986208', 'post139734022986208')"><pre>        else:</pre></li>
+                  <li onclick="toggle('pre139735098466960', 'post139735098466960')"><pre>        Returns table of contents object from cache,</pre></li>
                 
-                  <li onclick="toggle('pre139734022986208', 'post139734022986208')"><pre>            logger.info(u&quot;Did not find TOC node to update: {} - adding.&quot;.format(u&quot;/&quot;.join(index.categories + [title])))</pre></li>
+                  <li onclick="toggle('pre139735098466960', 'post139735098466960')"><pre>        DB or by generating it, as needed.</pre></li>
                 
-                  <li onclick="toggle('pre139734022986208', 'post139734022986208')"><pre>            cat = self.lookup(index.categories)</pre></li>
+                  <li onclick="toggle('pre139735098466960', 'post139735098466960')"><pre>        &quot;&quot;&quot;</pre></li>
                 
-                  <li onclick="toggle('pre139734022986208', 'post139734022986208')"><pre>            if not cat:</pre></li>
+                  <li onclick="toggle('pre139735098466960', 'post139735098466960')"><pre>        if rebuild or not self._search_filter_toc:</pre></li>
                 
-                  <li onclick="toggle('pre139734022986208', 'post139734022986208')"><pre>                logger.warning(u&quot;Failed to find category for {}&quot;.format(index.categories))</pre></li>
+                  <li onclick="toggle('pre139735098466960', 'post139735098466960')"><pre>            if not rebuild:</pre></li>
                 
                 </ol>
               
-              <ol start="338" class="context-line">
-                <li onclick="toggle('pre139734022986208', 'post139734022986208')"><pre>
-            cat.append(new_node)</pre> <span>...</span></li></ol>
+              <ol start="4169" class="context-line">
+                <li onclick="toggle('pre139735098466960', 'post139735098466960')"><pre>
+                self._search_filter_toc = scache.get_cache_elem(&#39;search_filter_toc_cache&#39;)</pre> <span>...</span></li></ol>
               
-                <ol start='339' class="post-context" id="post139734022986208">
+                <ol start='4170' class="post-context" id="post139735098466960">
                   
-                  <li onclick="toggle('pre139734022986208', 'post139734022986208')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466960', 'post139735098466960')"><pre>            if rebuild or not self._search_filter_toc:</pre></li>
                   
-                  <li onclick="toggle('pre139734022986208', 'post139734022986208')"><pre>        self._path_hash[tuple(index.categories + [index.title])] = new_node</pre></li>
+                  <li onclick="toggle('pre139735098466960', 'post139735098466960')"><pre>                from sefaria.summaries import update_search_filter_table_of_contents</pre></li>
                   
-                  <li onclick="toggle('pre139734022986208', 'post139734022986208')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466960', 'post139735098466960')"><pre>                self._search_filter_toc = update_search_filter_table_of_contents()</pre></li>
                   
-                  <li onclick="toggle('pre139734022986208', 'post139734022986208')"><pre></pre></li>
+                  <li onclick="toggle('pre139735098466960', 'post139735098466960')"><pre>                scache.set_cache_elem(&#39;search_filter_toc_cache&#39;, self._search_filter_toc)</pre></li>
                   
-                  <li onclick="toggle('pre139734022986208', 'post139734022986208')"><pre>class TocNode(schema.TitledTreeNode):</pre></li>
+                  <li onclick="toggle('pre139735098466960', 'post139735098466960')"><pre>        return self._search_filter_toc</pre></li>
                   
-                  <li onclick="toggle('pre139734022986208', 'post139734022986208')"><pre>    &quot;&quot;&quot;</pre></li>
+                  <li onclick="toggle('pre139735098466960', 'post139735098466960')"><pre></pre></li>
                   
               </ol>
               
@@ -1431,10 +1436,10 @@
           
             <div class="commands">
                 
-                    <a href="#" onclick="return varToggle(this, '139734022986208')"><span>&#x25b6;</span> Local vars</a>
+                    <a href="#" onclick="return varToggle(this, '139735098466960')"><span>&#x25b6;</span> Local vars</a>
                 
             </div>
-            <table class="vars" id="v139734022986208">
+            <table class="vars" id="v139735098466960">
               <thead>
                 <tr>
                   <th>Variable</th>
@@ -1444,58 +1449,194 @@
               <tbody>
                 
                   <tr>
-                    <td>VersionState</td>
-                    <td class="code"><pre>&lt;class &#39;sefaria.model.version_state.VersionState&#39;&gt;</pre></td>
-                  </tr>
-                
-                  <tr>
-                    <td>cat</td>
-                    <td class="code"><pre>None</pre></td>
-                  </tr>
-                
-                  <tr>
-                    <td>index</td>
-                    <td class="code"><pre>Index().load({&#39;title&#39;: &#39;Tosafot Ri HaZaken on Kiddushin&#39;})</pre></td>
-                  </tr>
-                
-                  <tr>
-                    <td>new_node</td>
-                    <td class="code"><pre>TocTextIndex(u&#39;Tosafot Ri HaZaken on Kiddushin&#39;)</pre></td>
-                  </tr>
-                
-                  <tr>
-                    <td>node</td>
-                    <td class="code"><pre>None</pre></td>
-                  </tr>
-                
-                  <tr>
-                    <td>old_ref</td>
-                    <td class="code"><pre>None</pre></td>
-                  </tr>
-                
-                  <tr>
-                    <td>recount</td>
+                    <td>rebuild</td>
                     <td class="code"><pre>False</pre></td>
                   </tr>
                 
                   <tr>
                     <td>self</td>
-                    <td class="code"><pre>&lt;sefaria.model.category.TocTree object at 0x7f164f823810&gt;</pre></td>
+                    <td class="code"><pre>&lt;sefaria.model.text.Library object at 0x7f16c18fce10&gt;</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        
+        <li class="frame user">
+          <code>/app/sefaria/system/cache.py</code> in <code>get_cache_elem</code>
+
+          
+            <div class="context" id="c139735099206544">
+              
+                <ol start="88" class="pre-context" id="pre139735099206544">
+                
+                  <li onclick="toggle('pre139735099206544', 'post139735099206544')"><pre>        return wrapper</pre></li>
+                
+                  <li onclick="toggle('pre139735099206544', 'post139735099206544')"><pre>    return decorator</pre></li>
+                
+                  <li onclick="toggle('pre139735099206544', 'post139735099206544')"><pre>#-------------------------------------------------------------#</pre></li>
+                
+                  <li onclick="toggle('pre139735099206544', 'post139735099206544')"><pre></pre></li>
+                
+                  <li onclick="toggle('pre139735099206544', 'post139735099206544')"><pre></pre></li>
+                
+                  <li onclick="toggle('pre139735099206544', 'post139735099206544')"><pre>def get_cache_elem(key, cache_type=None):</pre></li>
+                
+                  <li onclick="toggle('pre139735099206544', 'post139735099206544')"><pre>    cache_instance = get_cache_factory(cache_type)</pre></li>
+                
+                </ol>
+              
+              <ol start="95" class="context-line">
+                <li onclick="toggle('pre139735099206544', 'post139735099206544')"><pre>
+    return cache_instance.get(key)</pre> <span>...</span></li></ol>
+              
+                <ol start='96' class="post-context" id="post139735099206544">
+                  
+                  <li onclick="toggle('pre139735099206544', 'post139735099206544')"><pre></pre></li>
+                  
+                  <li onclick="toggle('pre139735099206544', 'post139735099206544')"><pre></pre></li>
+                  
+                  <li onclick="toggle('pre139735099206544', 'post139735099206544')"><pre>def set_cache_elem(key, value, timeout = None, cache_type=None):</pre></li>
+                  
+                  <li onclick="toggle('pre139735099206544', 'post139735099206544')"><pre>    cache_instance = get_cache_factory(cache_type)</pre></li>
+                  
+                  <li onclick="toggle('pre139735099206544', 'post139735099206544')"><pre>    return cache_instance.set(key, value, timeout)</pre></li>
+                  
+                  <li onclick="toggle('pre139735099206544', 'post139735099206544')"><pre></pre></li>
+                  
+              </ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '139735099206544')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v139735099206544">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>cache_instance</td>
+                    <td class="code"><pre>&lt;django.core.cache.backends.filebased.FileBasedCache object at 0x7f169da7fad0&gt;</pre></td>
                   </tr>
                 
                   <tr>
-                    <td>sn</td>
-                    <td class="code"><pre>&lt;sefaria.model.version_state.StateNode object at 0x7f166910f050&gt;</pre></td>
+                    <td>cache_type</td>
+                    <td class="code"><pre>None</pre></td>
                   </tr>
                 
                   <tr>
-                    <td>title</td>
-                    <td class="code"><pre>u&#39;Tosafot Ri HaZaken on Kiddushin&#39;</pre></td>
+                    <td>key</td>
+                    <td class="code"><pre>&#39;search_filter_toc_cache&#39;</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        
+        <li class="frame django">
+          <code>/usr/local/python/lib/python2.7/site-packages/django/core/cache/backends/filebased.py</code> in <code>get</code>
+
+          
+            <div class="context" id="c139735099206760">
+              
+                <ol start="32" class="pre-context" id="pre139735099206760">
+                
+                  <li onclick="toggle('pre139735099206760', 'post139735099206760')"><pre>            return False</pre></li>
+                
+                  <li onclick="toggle('pre139735099206760', 'post139735099206760')"><pre>        self.set(key, value, timeout, version)</pre></li>
+                
+                  <li onclick="toggle('pre139735099206760', 'post139735099206760')"><pre>        return True</pre></li>
+                
+                  <li onclick="toggle('pre139735099206760', 'post139735099206760')"><pre></pre></li>
+                
+                  <li onclick="toggle('pre139735099206760', 'post139735099206760')"><pre>    def get(self, key, default=None, version=None):</pre></li>
+                
+                  <li onclick="toggle('pre139735099206760', 'post139735099206760')"><pre>        fname = self._key_to_file(key, version)</pre></li>
+                
+                  <li onclick="toggle('pre139735099206760', 'post139735099206760')"><pre>        try:</pre></li>
+                
+                </ol>
+              
+              <ol start="39" class="context-line">
+                <li onclick="toggle('pre139735099206760', 'post139735099206760')"><pre>
+            with io.open(fname, &#39;rb&#39;) as f:</pre> <span>...</span></li></ol>
+              
+                <ol start='40' class="post-context" id="post139735099206760">
+                  
+                  <li onclick="toggle('pre139735099206760', 'post139735099206760')"><pre>                if not self._is_expired(f):</pre></li>
+                  
+                  <li onclick="toggle('pre139735099206760', 'post139735099206760')"><pre>                    return pickle.loads(zlib.decompress(f.read()))</pre></li>
+                  
+                  <li onclick="toggle('pre139735099206760', 'post139735099206760')"><pre>        except IOError as e:</pre></li>
+                  
+                  <li onclick="toggle('pre139735099206760', 'post139735099206760')"><pre>            if e.errno != errno.ENOENT:</pre></li>
+                  
+                  <li onclick="toggle('pre139735099206760', 'post139735099206760')"><pre>                raise</pre></li>
+                  
+                  <li onclick="toggle('pre139735099206760', 'post139735099206760')"><pre>        return default</pre></li>
+                  
+              </ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '139735099206760')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v139735099206760">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>default</td>
+                    <td class="code"><pre>None</pre></td>
                   </tr>
                 
                   <tr>
-                    <td>vs</td>
-                    <td class="code"><pre>&lt;sefaria.model.version_state.VersionState object at 0x7f166910fbd0&gt;</pre></td>
+                    <td>e</td>
+                    <td class="code"><pre>IOError(13, &#39;Permission denied&#39;)</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>fname</td>
+                    <td class="code"><pre>&#39;/log/django_cache/e70e814f55d260352ee8510061b93685.djcache&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>key</td>
+                    <td class="code"><pre>&#39;search_filter_toc_cache&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>&lt;django.core.cache.backends.filebased.FileBasedCache object at 0x7f169da7fad0&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>version</td>
+                    <td class="code"><pre>None</pre></td>
                   </tr>
                 
               </tbody>
@@ -1510,7 +1651,7 @@
   <div id="pastebinTraceback" class="pastebin">
     <input type="hidden" name="language" value="PythonConsole">
     <input type="hidden" name="title"
-      value="AttributeError at /api/v2/raw/index/Tosafot_Ri_HaZaken_on_Kiddushin">
+      value="IOError at /api/v2/raw/index/Tosafot_Shantz_on_Sotah">
     <input type="hidden" name="source" value="Django Dpaste Agent">
     <input type="hidden" name="poster" value="Django">
     <textarea name="content" id="traceback_area" cols="140" rows="25">
@@ -1518,7 +1659,7 @@ Environment:
 
 
 Request Method: POST
-Request URL: http://shmuel.sandbox.sefaria.org/api/v2/raw/index/Tosafot_Ri_HaZaken_on_Kiddushin
+Request URL: http://shmuel.sandbox.sefaria.org/api/v2/raw/index/Tosafot_Shantz_on_Sotah
 
 Django Version: 1.11.20
 Python Version: 2.7.13
@@ -1591,13 +1732,19 @@ File "/app/sefaria/model/text.py" in process_index_change_in_toc
   5024.     library.update_index_in_toc(indx, old_ref=old_ref)
 
 File "/app/sefaria/model/text.py" in update_index_in_toc
-  4291.         self.get_toc_tree().update_title(indx, old_ref=old_ref, recount=False)
+  4294.         self._search_filter_toc = update_title_in_toc(self.get_search_filter_toc(), indx, old_ref=old_ref, recount=False, for_search=True)
 
-File "/app/sefaria/model/category.py" in update_title
-  338.             cat.append(new_node)
+File "/app/sefaria/model/text.py" in get_search_filter_toc
+  4169.                 self._search_filter_toc = scache.get_cache_elem(&#39;search_filter_toc_cache&#39;)
 
-Exception Type: AttributeError at /api/v2/raw/index/Tosafot_Ri_HaZaken_on_Kiddushin
-Exception Value: &#39;NoneType&#39; object has no attribute &#39;append&#39;
+File "/app/sefaria/system/cache.py" in get_cache_elem
+  95.     return cache_instance.get(key)
+
+File "/usr/local/python/lib/python2.7/site-packages/django/core/cache/backends/filebased.py" in get
+  39.             with io.open(fname, &#39;rb&#39;) as f:
+
+Exception Type: IOError at /api/v2/raw/index/Tosafot_Shantz_on_Sotah
+Exception Value: [Errno 13] Permission denied: &#39;/log/django_cache/e70e814f55d260352ee8510061b93685.djcache&#39;
 </textarea>
   <br><br>
   <input type="submit" value="Share this traceback on a public website">
@@ -1633,13 +1780,13 @@ Exception Value: &#39;NoneType&#39; object has no attribute &#39;append&#39;
       <tbody>
         
           <tr>
-            <td>json</td>
-            <td class="code"><pre>u&#39;{&quot;base_text_titles&quot;: [&quot;Kiddushin&quot;], &quot;title&quot;: &quot;Tosafot Ri HaZaken on Kiddushin&quot;, &quot;collective_title&quot;: &quot;Tosafot Ri HaZaken&quot;, &quot;dependence&quot;: &quot;Commentary&quot;, &quot;categories&quot;: [&quot;Talmud&quot;, &quot;Bavli&quot;, &quot;Commentary&quot;, &quot;Tosafot Ri HaZaken&quot;, &quot;Seder Nashim&quot;], &quot;schema&quot;: {&quot;nodeType&quot;: &quot;JaggedArrayNode&quot;, &quot;addressTypes&quot;: [&quot;Talmud&quot;, &quot;Integer&quot;], &quot;depth&quot;: 2, &quot;titles&quot;: [{&quot;lang&quot;: &quot;en&quot;, &quot;text&quot;: &quot;Tosafot Ri HaZaken on Kiddushin&quot;, &quot;primary&quot;: true}, {&quot;lang&quot;: &quot;he&quot;, &quot;text&quot;: &quot;\\u05ea\\u05d5\\u05e1\\u05e4\\u05d5\\u05ea \\u05e8\\&quot;\\u05d9 \\u05d4\\u05d6\\u05e7\\u05df \\u05e2\\u05dc \\u05e7\\u05d9\\u05d3\\u05d5\\u05e9\\u05d9\\u05df&quot;, &quot;primary&quot;: true}], &quot;key&quot;: &quot;Tosafot Ri HaZaken&quot;, &quot;sectionNames&quot;: [&quot;Daf&quot;, &quot;Comment&quot;]}}&#39;</pre></td>
+            <td>apikey</td>
+            <td class="code"><pre>u&#39;kAEw7OKw5IjZIG4lFbrYxpSdu78Jsza67HgR0gRBOdg&#39;</pre></td>
           </tr>
         
           <tr>
-            <td>apikey</td>
-            <td class="code"><pre>u&#39;kAEw7OKw5IjZIG4lFbrYxpSdu78Jsza67HgR0gRBOdg&#39;</pre></td>
+            <td>json</td>
+            <td class="code"><pre>u&#39;{&quot;base_text_titles&quot;: [&quot;Sotah&quot;], &quot;title&quot;: &quot;Tosafot Shantz on Sotah&quot;, &quot;collective_title&quot;: &quot;Tosafot Shantz&quot;, &quot;dependence&quot;: &quot;Commentary&quot;, &quot;categories&quot;: [&quot;Talmud&quot;, &quot;Bavli&quot;, &quot;Commentary&quot;, &quot;Tosafot Shantz&quot;, &quot;Seder Nashim&quot;], &quot;schema&quot;: {&quot;nodeType&quot;: &quot;JaggedArrayNode&quot;, &quot;addressTypes&quot;: [&quot;Talmud&quot;, &quot;Integer&quot;], &quot;depth&quot;: 2, &quot;titles&quot;: [{&quot;lang&quot;: &quot;en&quot;, &quot;text&quot;: &quot;Tosafot Shantz on Sotah&quot;, &quot;primary&quot;: true}, {&quot;lang&quot;: &quot;he&quot;, &quot;text&quot;: &quot;\\u05ea\\u05d5\\u05e1\\u05e4\\u05d5\\u05ea \\u05e9\\u05d0\\u05e0\\u05e5 \\u05e2\\u05dc \\u05e1\\u05d5\\u05d8\\u05d4&quot;, &quot;primary&quot;: true}], &quot;key&quot;: &quot;Tosafot Shantz&quot;, &quot;sectionNames&quot;: [&quot;Daf&quot;, &quot;Comment&quot;]}}&#39;</pre></td>
           </tr>
         
       </tbody>
@@ -1668,7 +1815,7 @@ Exception Value: &#39;NoneType&#39; object has no attribute &#39;append&#39;
       
         <tr>
           <td>CONTENT_LENGTH</td>
-          <td class="code"><pre>&#39;1024&#39;</pre></td>
+          <td class="code"><pre>&#39;945&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1718,7 +1865,7 @@ Exception Value: &#39;NoneType&#39; object has no attribute &#39;append&#39;
       
         <tr>
           <td>HTTP_USER_AGENT</td>
-          <td class="code"><pre>&#39;python-requests/2.18.4&#39;</pre></td>
+          <td class="code"><pre>&#39;python-requests/2.21.0&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1728,12 +1875,12 @@ Exception Value: &#39;NoneType&#39; object has no attribute &#39;append&#39;
       
         <tr>
           <td>HTTP_X_CLOUD_TRACE_CONTEXT</td>
-          <td class="code"><pre>&#39;905d3b5210f407b5afc6db3ae9a44c05/12449979195977198348&#39;</pre></td>
+          <td class="code"><pre>&#39;99cee2e164502ac7d6c541267bb3cd87/11769246951746120750&#39;</pre></td>
         </tr>
       
         <tr>
           <td>HTTP_X_FORWARDED_FOR</td>
-          <td class="code"><pre>&#39;77.139.142.12, 35.190.72.100&#39;</pre></td>
+          <td class="code"><pre>&#39;87.70.138.207, 35.190.72.100&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1743,12 +1890,12 @@ Exception Value: &#39;NoneType&#39; object has no attribute &#39;append&#39;
       
         <tr>
           <td>PATH_INFO</td>
-          <td class="code"><pre>u&#39;/api/v2/raw/index/Tosafot_Ri_HaZaken_on_Kiddushin&#39;</pre></td>
+          <td class="code"><pre>u&#39;/api/v2/raw/index/Tosafot_Shantz_on_Sotah&#39;</pre></td>
         </tr>
       
         <tr>
           <td>PATH_TRANSLATED</td>
-          <td class="code"><pre>&#39;/tmp/mod_wsgi-localhost:80:0/htdocs/v2/raw/index/Tosafot_Ri_HaZaken_on_Kiddushin&#39;</pre></td>
+          <td class="code"><pre>&#39;/tmp/mod_wsgi-localhost:80:0/htdocs/v2/raw/index/Tosafot_Shantz_on_Sotah&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1758,12 +1905,12 @@ Exception Value: &#39;NoneType&#39; object has no attribute &#39;append&#39;
       
         <tr>
           <td>REMOTE_ADDR</td>
-          <td class="code"><pre>&#39;10.142.0.3&#39;</pre></td>
+          <td class="code"><pre>&#39;10.142.0.6&#39;</pre></td>
         </tr>
       
         <tr>
           <td>REMOTE_PORT</td>
-          <td class="code"><pre>&#39;56303&#39;</pre></td>
+          <td class="code"><pre>&#39;63225&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1778,7 +1925,7 @@ Exception Value: &#39;NoneType&#39; object has no attribute &#39;append&#39;
       
         <tr>
           <td>REQUEST_URI</td>
-          <td class="code"><pre>&#39;/api/v2/raw/index/Tosafot_Ri_HaZaken_on_Kiddushin&#39;</pre></td>
+          <td class="code"><pre>&#39;/api/v2/raw/index/Tosafot_Shantz_on_Sotah&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1853,7 +2000,7 @@ Exception Value: &#39;NoneType&#39; object has no attribute &#39;append&#39;
       
         <tr>
           <td>mod_wsgi.daemon_start</td>
-          <td class="code"><pre>&#39;1555424391564313&#39;</pre></td>
+          <td class="code"><pre>&#39;1558000269641851&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1883,7 +2030,7 @@ Exception Value: &#39;NoneType&#39; object has no attribute &#39;append&#39;
       
         <tr>
           <td>mod_wsgi.path_info</td>
-          <td class="code"><pre>&#39;/v2/raw/index/Tosafot_Ri_HaZaken_on_Kiddushin&#39;</pre></td>
+          <td class="code"><pre>&#39;/v2/raw/index/Tosafot_Shantz_on_Sotah&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1893,7 +2040,7 @@ Exception Value: &#39;NoneType&#39; object has no attribute &#39;append&#39;
       
         <tr>
           <td>mod_wsgi.queue_start</td>
-          <td class="code"><pre>&#39;1555424391564128&#39;</pre></td>
+          <td class="code"><pre>&#39;1558000269641693&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1903,12 +2050,12 @@ Exception Value: &#39;NoneType&#39; object has no attribute &#39;append&#39;
       
         <tr>
           <td>mod_wsgi.request_id</td>
-          <td class="code"><pre>&#39;gopVdtb//wE&#39;</pre></td>
+          <td class="code"><pre>&#39;CsehNM4ZsQE&#39;</pre></td>
         </tr>
       
         <tr>
           <td>mod_wsgi.request_start</td>
-          <td class="code"><pre>&#39;1555424391563906&#39;</pre></td>
+          <td class="code"><pre>&#39;1558000269641482&#39;</pre></td>
         </tr>
       
         <tr>
@@ -1923,22 +2070,22 @@ Exception Value: &#39;NoneType&#39; object has no attribute &#39;append&#39;
       
         <tr>
           <td>mod_wsgi.script_start</td>
-          <td class="code"><pre>&#39;1555424391564473&#39;</pre></td>
+          <td class="code"><pre>&#39;1558000269641964&#39;</pre></td>
         </tr>
       
         <tr>
           <td>mod_wsgi.thread_id</td>
-          <td class="code"><pre>14</pre></td>
+          <td class="code"><pre>2</pre></td>
         </tr>
       
         <tr>
           <td>mod_wsgi.thread_requests</td>
-          <td class="code"><pre>1869L</pre></td>
+          <td class="code"><pre>0L</pre></td>
         </tr>
       
         <tr>
           <td>mod_wsgi.total_requests</td>
-          <td class="code"><pre>16395L</pre></td>
+          <td class="code"><pre>1L</pre></td>
         </tr>
       
         <tr>
@@ -1948,7 +2095,7 @@ Exception Value: &#39;NoneType&#39; object has no attribute &#39;append&#39;
       
         <tr>
           <td>wsgi.errors</td>
-          <td class="code"><pre>&lt;mod_wsgi.Log object at 0x7f166bab4260&gt;</pre></td>
+          <td class="code"><pre>&lt;mod_wsgi.Log object at 0x7f1691329580&gt;</pre></td>
         </tr>
       
         <tr>
@@ -1958,7 +2105,7 @@ Exception Value: &#39;NoneType&#39; object has no attribute &#39;append&#39;
       
         <tr>
           <td>wsgi.input</td>
-          <td class="code"><pre>&lt;mod_wsgi.Input object at 0x7f16b9c3a6c0&gt;</pre></td>
+          <td class="code"><pre>&lt;mod_wsgi.Input object at 0x7f169fee2e30&gt;</pre></td>
         </tr>
       
         <tr>
