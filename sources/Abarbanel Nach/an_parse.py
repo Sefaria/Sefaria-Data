@@ -10,22 +10,24 @@ os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 import django
 django.setup()
 from sources.functions import *
+import difflib
 
+
+start_expressions=[u'הפרשה',u'פרשה',u'נבואה',u'הנבואה',u'פרשת',u'נבואת']
+aleph_beis=ur'אב'
 name_dict={}
 for text in library.get_indexes_in_category('Tanakh'):
     name_dict[library.get_index(text).get_title('he')]=text
 prophet_list=[]
-    for text in library.get_indexes_in_category('Prophets'):
-        prophet_list.append(text)
+for text in library.get_indexes_in_category('Prophets'):
+    prophet_list.append(text)
 
 def file_name_to_sefer(file_name):
     for name in name_dict.keys():
-        if name in file_name.decode('utf8','replace'):
+        if ' '+name in file_name.decode('utf8','replace'):
             return name
-two_sefers=[u'שמואל',u'מלכים']
 class megilah:
     def __init__(self, file_name):
-        print file_name
         self.file_name = 'files/{}'.format(file_name)
         self.he_name = file_name_to_sefer(file_name)
         self.en_name = name_dict[self.he_name]
@@ -40,7 +42,7 @@ class megilah:
                 else:
                     return False
     def post_ab_index(self):
-        if self.has_intro
+        if self.has_intro:
             record = SchemaNode()
             record.add_title("Abarbanel on "+self.en_name, 'en', primary=True)
             record.add_title(u'אברבנאל על'+' '+self.he_name, 'he', primary=True)
@@ -88,36 +90,69 @@ class megilah:
             "schema": record.serialize()
         }
         post_index(index,weak_network=True)
-    def post_ms_text(self, posting=True):
+    def post_ab_text(self, posting=True):
         with open(self.file_name) as myfile:
             lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
         text_array = make_perek_array(self.en_name)
+        intro_box=[]
+        in_intro=False
         current_chapter=1
         current_verse=1
         for line in lines:
             if u'@' in line:
-                current_chapter=getGematria(line)
-            elif u'#' in line:
-                current_verse=getGematria(line)
+                if u'פרק' in line:
+                    current_chapter=getGematria(re.search(ur'(?<=פרק ).*',line).group())
+                    current_verse=1
+                    in_intro=False
+                elif u'הקדמה' in line:
+                    in_intro=True
             elif not_blank(line):
-                try:
+                if in_intro:
+                    intro_box.append(line)
+                else:
+                    if re.search(ur'^\s*\([א-ת- ]{1,15}\)',line):
+                        current_verse=getGematria(re.search(ur'^\([א-ת- ]+\)',line).group().split(u'-')[0])
+                    #try:
+                    if checking:
+                        #print '{} {}:{}:{}\n'.format(self.en_name, current_chapter, current_verse,len(text_array[current_chapter-1][current_verse-1])+1)
+                        #print line
+                        for s in start_expressions:
+                            if re.search(ur'^{} '.format(s),line) and len(text_array[current_chapter-1][current_verse-1])>0:
+                                print "CAUGHT"
+                                with open("Abarbanel_errors.txt", "a") as f:
+                                    f.write('{} {}:{}:{}\n'.format(self.en_name, current_chapter, current_verse,len(text_array[current_chapter-1][current_verse-1])+1)) 
+                                    f.write('{}\n\n'.format(line.encode('utf8','replace')))
                     text_array[current_chapter-1][current_verse-1].append(clean_line(line))
-                except:
-                    print "ERR",self.en_name
-                    print line
-                    0/0
+                    """
+                    except:
+                        print "ERR",self.en_name
+                        print current_chapter, current_verse
+                        print line
+                        0/0
+                    """
         self.text=text_array
-        version = {
-            'versionTitle': "Arba'ah Ve'Esrim im Minhat Shai. Mantua, 1742-1744",
-            'versionSource': 'http://primo.nli.org.il/primo-explore/fulldisplay?vid=NLI&docid=NNL_ALEPH002093602&context=L',
-            'language': 'he',
-            'text': text_array
-        }
+
         if posting:
-            print "postinh {} text...".format(self.en_name)
+            if len(intro_box)>0:
+                version = {
+                    'versionTitle': "Abarbanel, Tel Aviv 1960",
+                    'versionSource': 'http://merhav.nli.org.il/primo-explore/fulldisplay?docid=NNL_ALEPH001080676&context=L&vid=NLI&search_scope=Local&tab=default_tab&lang=iw_IL',
+                    'language': 'he',
+                    'text': intro_box
+                }
+                print "posting {} intro...".format(self.en_name)
+                post_text_weak_connection("Abarbanel on {}, Introduction".format(self.en_name), version)
+            
+            version = {
+                'versionTitle': "Abarbanel, Tel Aviv 1960",
+                'versionSource': 'http://merhav.nli.org.il/primo-explore/fulldisplay?docid=NNL_ALEPH001080676&context=L&vid=NLI&search_scope=Local&tab=default_tab&lang=iw_IL',
+                'language': 'he',
+                'text': text_array
+            }
+            print "posting {} text...".format(self.en_name)
             post_text_weak_connection("Abarbanel on "+self.en_name, version)
-    def ms_link(self):
-        self.post_ms_text(False)
+    def ab_link(self):
+        self.post_ab_text(False)
         for perek_index,perek in enumerate(self.text):
             for pasuk_index, pasuk in enumerate(perek):
                 for comment_index, comment in enumerate(pasuk):
@@ -129,7 +164,7 @@ class megilah:
                                      ],
                             "type": "commentary",
                             "auto": True,
-                            "generated_by": "sterling_Minchat_Shai_linker"
+                            "generated_by": "sterling_Abarbanel_linker"
                             })
                     post_link(link, weak_network=True)
 def not_blank(s):
@@ -137,8 +172,31 @@ def not_blank(s):
         s = s.replace(u" ",u"")
     return (len(s.replace(u"\n",u"").replace(u"\r",u"").replace(u"\t",u""))!=0);
 def clean_line(s):
-    if s.count(u'.')+s.count(u':')>1:
-        s =u'<b>'+s[:s.index(u'.')+1]+u'</b>'+s[s.index('.')+1:]
+    pre=s
+    s=re.sub(ur'\(ד\"ה ([{}]\')'.format(aleph_beis),ur'\(דברי הימים \1',s)
+    s=re.sub(ur'דברי\s*-\s*הימים',u'דברי הימים',s)
+    s=re.sub(ur'[^א-ת .:(),?\'\-"\r\n;\[\]!]',u'',s)
+    """
+    if s!=pre:
+        print pre
+        print s
+    for i,s in enumerate(difflib.ndiff(pre, s)):
+        if s[0]==' ': continue
+        print "CHANGED "+s[-1]
+        print repr(s[-1])
+        \"""
+        elif s[0]=='-':
+            print(u'Delete "{}" from position {}'.format(s[-1],i))
+        elif s[0]=='+':
+            print(u'Add "{}" to position {}'.format(s[-1],i))  
+        \"""
+    """
+    s=re.sub(ur'פ\"\S{1,3} דף ',u'',s)
+    
+    if re.search(ur'[\.,]',s):
+        dot_index=re.search(ur'[\.,]',s).start()
+        if u'וגו\'' in s[:dot_index]:
+            s =u'<b>'+s[:dot_index+1]+u'</b>'+s[dot_index+1:]
     return s
 def make_perek_array(book):
     tc = TextChunk(Ref(book), "he")
@@ -155,13 +213,23 @@ def add_cats():
     add_category('Prophets', ["Tanakh","Commentary","Abarbanel","Prophets"],u'נביאים')
     add_category('Writings', ["Tanakh","Commentary","Abarbanel","Writings"],u'כתובים')
 
-add_cats()
+#add_cats()
 admin_links=[]
 site_links=[]
+postme=False
+checking=True
+if checking:
+    with open("Abarbanel_errors.txt", "w") as f:
+        f.write("")
 for _file in os.listdir("files"):
     if 'txt' in _file:# and "איכ" not in _file:
         meg = megilah(_file)
-        meg.post_ab_index()
+        if "Isai" in meg.en_name:
+            postme=True
+        if True:#postme:
+            #meg.post_ab_index()
+            meg.post_ab_text(False) 
+            #0/0            
         admin_links.append(SEFARIA_SERVER+"/admin/reset/Abarbanel on "+meg.en_name)
         site_links.append(SEFARIA_SERVER+"/Abarbanel on "+meg.en_name)
 for link in admin_links:
