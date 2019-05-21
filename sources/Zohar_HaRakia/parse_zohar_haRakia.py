@@ -5,6 +5,7 @@ import re
 import codecs
 from collections import OrderedDict
 from data_utilities.util import getGematria
+from data_utilities.ParseUtil import run_on_list, Description, ParsedDocument
 
 
 def find_line_with_pattern(pattern, lines):
@@ -103,7 +104,7 @@ class Azharot(object):
 
         mapping = OrderedDict()
         for seg_num, segment in enumerate(segments, 1):
-            map_match = re.search('@44\((.*)\)@55', segment)
+            map_match = re.search(r'@44\((.*)\)@55', segment)
             if not map_match:
                 continue
 
@@ -138,10 +139,68 @@ class Azharot(object):
             raise ValueError("commandment_type must be 'positive' or 'negative'")
 
 
-a = Azharot()
-p = a.get_commandment_map('positive')
-n = a.get_commandment_map('negative')
+# a = Azharot()
+# p = a.get_commandment_map('positive')
+# n = a.get_commandment_map('negative')
+def zohar_sections(possible_line):
+    return bool(re.match(ur'@22\([\u05d0-\u05ea]{1,3}\)', possible_line))
 
 
+def zohar_segments(commandment):
+    commandment = u' '.join(commandment)
+    raw_segments, segments = re.split(ur'@44', commandment), []
+    for seg in raw_segments:
+        new_seg = re.sub(ur'@\d{2}', u' ', seg)
+        segments.append(u' '.join(new_seg.split()))
+
+    return segments
 
 
+zSection = Description('Commandment', run_on_list(zohar_sections, include_matches=False))
+zSegment = Description('Paragraph', zohar_segments)
+
+
+class ZoharHaRakia(object):
+    """
+    Zohar HaRakia can be linked by segment number to the Azharot. The Azharot need the commandment map to link to the
+    commandment index. Zohar HaRakia does not need to be linked to the commandment index.
+    """
+    def __init__(self):
+        self.positive_data, self.negative_data = self._load_data()
+        self.positive_doc, self.negative_doc = self._parse()
+
+    @staticmethod
+    def _load_data():
+        with codecs.open('zohar_haRakia.txt', 'r', 'utf-8') as fp:
+            doc_lines = fp.readlines()
+
+        negative_start = find_line_with_pattern(u'^@00', doc_lines)
+        return doc_lines[:negative_start], doc_lines[negative_start+1:]
+
+    def test_sections(self, commandment_type):
+        success = True
+        if commandment_type == 'positive':
+            data_lines = self.positive_data
+        elif commandment_type == 'negative':
+            data_lines = self.negative_data
+        else:
+            raise ValueError("commandment_type must be 'positive' or 'negative'")
+
+        previous_section = 0
+        for line in data_lines:
+            mark = re.match(ur'^@22\(([\u05d0-\u05ea]{1,3})\)', line)
+            if mark:
+                current_section = getGematria(mark.group(1))
+                if current_section - previous_section != 1:
+                    print(commandment_type, "jump from", previous_section, current_section)
+                    success = False
+                previous_section = current_section
+        return success
+
+    def _parse(self):
+        positive = ParsedDocument('Positive Commandments', 'מצוות עשה', [zSection, zSegment])
+        negative = ParsedDocument('Negative Commandments', 'מצוות לא תעשה', [zSection, zSegment])
+
+        positive.parse_document(self.positive_data)
+        negative.parse_document(self.negative_data)
+        return positive, negative
