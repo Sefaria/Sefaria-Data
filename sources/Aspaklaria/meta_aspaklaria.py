@@ -31,13 +31,17 @@ def stats(sham=None, author=None, caught=None):
 
 
 def percentages(author=None):
-    print u"per {}".format(author)
+    print u"per {}".format(author) if author else u"for all"
     # caught
     caught = stats(author=author, caught=True)*100.0/stats(author=author)*1.0
     print "caught/all: {}%".format(caught)
     # caught without Shams
-    caught_ns = stats(sham=False, author=author, caught=True)*100.0/stats(sham=False, author=author)*1.0
-    print "ignore shams, caught/all: {}%".format(caught_ns)
+    if stats(sham=False, author=author):
+        caught_ns = stats(sham=False, author=author, caught=True)*100.0/stats(sham=False, author=author)*1.0
+        print "ignore shams, caught/all: {}%".format(caught_ns)
+    else:
+        caught_ns = 1.0
+        print "all the refs are Shams"
     # shams = shams/all (per Author)
     shams = stats(sham=True, author=author, caught=None)*100.0/stats(author=author)*1.0
     print "shams/all: {}%".format(shams)
@@ -46,8 +50,10 @@ def percentages(author=None):
     if all_shams:
         caught_shams = stats(sham=True, author=author, caught=True)*100.0/all_shams*1.0
         print "caught_shams/all_shams: {}%".format(caught_shams)
+    else:
+        caught_shams= 0.0
 
-    return
+    return [caught, caught_ns, shams, caught_shams]
 
 
 if __name__ == "__main__":
@@ -55,6 +61,10 @@ if __name__ == "__main__":
     authors = list_authors()
     percentages()
     print '_________________________'
+    empty_authors = []
     for auth in authors:
-        percentages(auth)
-
+        perc = percentages(auth)
+        if not perc[0]:
+            empty_authors.append(auth)
+    for auth in empty_authors:
+        print auth
