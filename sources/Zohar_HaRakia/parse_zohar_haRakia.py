@@ -204,3 +204,31 @@ class ZoharHaRakia(object):
         positive.parse_document(self.positive_data)
         negative.parse_document(self.negative_data)
         return positive, negative
+
+
+def link_azharot_zhr(o_zohar, o_azharot, commandment_type):
+    if commandment_type == 'positive':
+        z_data, a_data = o_zohar.positive_doc.get_ja(), o_azharot.positive_segments
+    elif commandment_type == 'negative':
+        z_data, a_data = o_zohar.negative_doc.get_ja(), o_azharot.negative_segments
+    else:
+        raise ValueError("commandment_type must be 'positive' or 'negative'")
+    assert len(z_data) == len(a_data)
+
+    links = []
+    for sec_num, (z_sec, a_seg) in enumerate(zip(z_data, a_data), 1):
+        for z_seg_num, z_seg in enumerate(z_sec, 1):
+            links.append({
+                'refs': [
+                    'Zohar HaRakia, {} Commandments {}:{}'.format(commandment_type, sec_num, z_seg_num),
+                    'Azharot, {} Commandments {}'.format(commandment_type, sec_num)
+                ],
+                'type': 'commentary',
+                'auto': True,
+                'generated_by': 'Zohar HaRakia Parser'
+            })
+    return links
+
+
+def full_a_z_links(o_zohar, o_azharot):
+    return link_azharot_zhr(o_zohar, o_azharot, 'positive') + link_azharot_zhr(o_zohar, o_azharot, 'negative')
