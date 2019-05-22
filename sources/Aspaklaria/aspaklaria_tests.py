@@ -70,6 +70,8 @@ class Test_Source_methods(object):
         assert source.ref == Ref(u"Mishneh Torah, Damages to Property 2:7")
         source = Source(u" (תהלים כב כא)",u"תרגום יונתן")
         assert source.ref == Ref(u"Aramaic Targum to Psalms 22:21")
+        source = Source(u" (בראשית כב כא)",u'הגר"א')
+        assert source.ref == Ref(u"Aderet Eliyahu, Genesis 22:21")
     #     מדרש שמואל, (אבות ה ה, וראה שם עוד)
     # Pirkei Avot 5:5
     # def test_get_look_here_titles(self):

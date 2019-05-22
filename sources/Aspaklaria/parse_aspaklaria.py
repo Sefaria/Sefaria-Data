@@ -16,9 +16,12 @@ from data_utilities.util import getGematria, numToHeb
 import codecs
 from data_utilities.ibid import *
 from aspaklaria_connect import client
-from index_title_catcher import *  # get_index_via_titles
+import pstats
+import cProfile
+# from index_title_catcher import *  # get_index_via_titles
+from sefaria.system.database import db
 
-db = client.aspaklaria
+db_aspaklaria = client.aspaklaria
 
 class Parser(object):
 
@@ -366,9 +369,14 @@ class Source(object):
                         self.indexs = library.get_indexes_in_category(u'Yerushalmi')
                     else:
                         self.indexs = inds_via_term
-                else:  # both are empty
-                    pass
-                    print "done"
+                # anyway add also books by author name
+                indexs_via_author_name = self.get_indexes_from_author(self.author)
+                if not indexs_via_author_name and re.search(u'^[משהוכלב]', self.author):
+                    indexs_via_author_name = self.get_indexes_from_author(self.author[1::])
+                # if self.indexs:
+                self.indexs.extend(indexs_via_author_name)
+                # else:
+                #     self.indexs = indexs_via_author_name
 
     def get_ref_from_api(self):
 
@@ -827,12 +835,34 @@ class Source(object):
                 self.ref = None
             return self.ref
 
+    def get_author(self, author_name):
+        person = None
+        for x in range(10):
+            query = {"names.{}.text".format(x): u"{}".format(author_name)}
+            # print query
+            author_curser = db.person.find(query)
+            for doc in author_curser:
+                person = doc['key']
+        return person
 
+    def get_indexes_docs(self, author_name):
+        indexes = []
+        person_key = self.get_author(author_name)
+        if person_key:
+            indexes = db.index.find({"authors": "{}".format(person_key)})
+        return indexes
 
+    def get_indexes_from_author(self, author_name):
+        indexes = []
+        curser = self.get_indexes_docs(author_name)
+        for doc in curser:
+            ind = library.get_index(doc['title'])
+            indexes.append(ind)
+        return indexes
 
     def try_from_ls(self):
         """
-        try to look for a link to the pasuk from it's link set, since you have a pasuk that is related and an author's name. the authors name need to be exctracted via Term
+        try to look for a link to the pasuk from it's link set, since you have a pasuk that is related and an author's name. the authors name need to be extracted via Term
         :return: will return the new guess
         """
         return None
@@ -932,7 +962,7 @@ def read_with_refs(letter):
                             document['index_guess'] = s.index.title if isinstance(s.index, Index) else s.index
                         elif s.indexs:
                             document['index_guess'] = u' |'.join([ind.title if isinstance(ind,Index) else ind for ind in s.indexs])
-                        db.aspaklaria_source.insert_one(document)
+                        db_aspaklaria.aspaklaria_source.insert_one(document)
                         print '-----------------'
         print "done"
 
@@ -975,7 +1005,10 @@ def shamas_per_leter(he_letter):
 
 if __name__ == "__main__":
     he_letter = u'ALEF'
-    letter_gimatria = 001
+    letter_gimatria = u'001'
     # parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
     # shamas_per_leter(he_letter)
     read_with_refs(u'{}'.format(he_letter))
+    cProfile.runctx(u"g(x)", {'x': u'{}_{}'.format(letter_gimatria, he_letter), 'g': parse2pickle}, {}, 'stats')
+    p = pstats.Stats("stats")
+    p.strip_dirs().sort_stats("cumulative").print_stats()
