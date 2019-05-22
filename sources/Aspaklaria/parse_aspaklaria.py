@@ -837,12 +837,10 @@ class Source(object):
 
     def get_author(self, author_name):
         person = None
-        for x in range(10):
-            query = {"names.{}.text".format(x): u"{}".format(author_name)}
-            # print query
-            author_curser = db.person.find(query)
-            for doc in author_curser:
-                person = doc['key']
+        query = {"names.text": u"{}".format(author_name)}
+        author_curser = db.person.find(query)
+        for doc in author_curser:
+            person = doc['key']
         return person
 
     def get_indexes_docs(self, author_name):
@@ -1004,11 +1002,11 @@ def shamas_per_leter(he_letter):
 
 
 if __name__ == "__main__":
-    he_letter = u'ALEF'
-    letter_gimatria = u'001'
-    # parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
-    # shamas_per_leter(he_letter)
+    he_letter = u'DALET'
+    letter_gimatria = u'004'
+    parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
+    shamas_per_leter(he_letter)
     read_with_refs(u'{}'.format(he_letter))
-    cProfile.runctx(u"g(x)", {'x': u'{}_{}'.format(letter_gimatria, he_letter), 'g': parse2pickle}, {}, 'stats')
-    p = pstats.Stats("stats")
-    p.strip_dirs().sort_stats("cumulative").print_stats()
+    # cProfile.runctx(u"g(x)", {'x': u'{}_{}'.format(letter_gimatria, he_letter), 'g': parse2pickle}, {}, 'stats')
+    # p = pstats.Stats("stats")
+    # p.strip_dirs().sort_stats("cumulative").print_stats()
