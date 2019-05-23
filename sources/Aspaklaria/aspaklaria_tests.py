@@ -74,11 +74,21 @@ class Test_Source_methods(object):
         assert source.ref == Ref(u"Aderet Eliyahu, Genesis 22:21")
         source = Source(u"(בראשית יג ה)", u"לקח טוב")
         assert source.ref == Ref(u"Midrash Lekach Tov on Torah, Genesis 13:5")
+        source = Source(u"(תורה שבכתב נח, בסופו)", u'של"ה')
+        assert source.ref == Ref(u"Shenei Luchot HaBerit, Torah Shebikhtav, Noach")
+        source = Source(u"(בעשרה מאמרות מאמר ב)", u'של"ה')
+        assert source.ref == Ref(u"Shenei Luchot HaBerit, Asara Maamarot, Sixth Maamar")  #todo: Note this case as a PM case because the two are equally simler to the actual.
     #     מדרש שמואל, (אבות ה ה, וראה שם עוד)
     # Pirkei Avot 5:5
     # def test_get_look_here_titles(self):
     #     look_here = [u'Bereishit Rabbah', u'Shemot Rabbah', u'Vayikra Rabbah', u'Bemidbar Rabbah', u'Devarim Rabbah', u'Esther Rabbah', u'Shir HaShirim Rabbah', u'Kohelet Rabbah', u'Ruth Rabbah', u'Eichah Rabbah']
     #     assert source.get_look_here_titles(look_here) == [(u'Bereishit Rabbah', u'Bereishit') ,(u'Shemot Rabbah', u'Shemot'), (u'Vayikra Rabbah', u'Vayikra'), (u'Bemidbar Rabbah', u'Bemidbar'), (u'Devarim Rabbah', u'Devarim'), (u'Esther Rabbah', u'Esther'), (u'Shir HaShirim Rabbah', u'Shir HaShirim'), (u'Kohelet Rabbah', u'Kohelet'), (u'Ruth Rabbah', u'Ruth'), (u'Eichah Rabbah', u'Eichah')]
+
+    def test_individual_source(self):
+        source = Source(u"(בעשרה מאמרות מאמר ב)", u'של"ה')
+        assert source.ref == Ref(u"Shenei Luchot HaBerit, Asara Maamarot, Sixth Maamar")  #todo: note this case as a PM case because the two are equally simler to the actual.
+        # צריך לשנות את זה שזה יהיה מאמר שני ולא מאמר שישי
+
     def test_get_ref_mishneh_torah(self):
         source = Source(u'(ברכות ב ז)', u'משנה תורה')
         assert source.ref == Ref(u'Mishneh Torah, Blessings 2')
