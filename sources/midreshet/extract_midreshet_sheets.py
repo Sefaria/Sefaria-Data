@@ -12,6 +12,7 @@ import pymongo
 import bleach
 import pyodbc
 import requests
+import unicodecsv
 from functools import partial
 from itertools import groupby
 from collections import namedtuple, Counter, defaultdict
@@ -549,6 +550,78 @@ class MidreshetGroupManager(GroupManager):
         return self.default_group()
 
 
+class SheetRelation(object):
+    def __init__(self, sheet_id, sheet_name):
+        self.sheet_id = sheet_id
+        self.sheet_name = sheet_name
+        self._children = []
+        self._parent = None
+
+    def set_parent(self, parent_sheet):
+        self._parent = parent_sheet
+
+    def add_child(self, child_relation):
+        self._children.append(child_relation)
+
+    def get_children(self):
+        return self._children[:]
+
+    def get_branch(self, sheet_list=None):
+        if sheet_list is None:
+            sheet_list = []
+
+        sheet_list.append(self)
+        for child in self.get_children():
+            child.get_branch(sheet_list)
+        return sheet_list
+
+    def get_names_from_branch(self):
+        return [sheet.sheet_name for sheet in self.get_branch()]
+
+    def render(self):
+        children = u''.join(child.render() for child in self._children)
+
+        return u'<dl><dt>id</dt><dd>{}</dd><dt>name</dt><dd>{}</dd><dt>children</dt><dd>{}</dd></dl>'.\
+            format(self.sheet_id, self.sheet_name, children)
+
+
+class NullSheetRelation(SheetRelation):
+    def __init__(self):
+        super(NullSheetRelation, self).__init__(0, None)
+        self._parent = None
+
+    def set_parent(self, parent_sheet):
+        return
+
+
+class SheetManager(object):
+    def __init__(self):
+        self._store = {
+            0: NullSheetRelation()
+        }
+
+    def set_sheet_relation(self, parent_id, child_id):
+        try:
+            parent = self.get_sheet(parent_id)
+        except KeyError:
+            parent = self.get_sheet(0)
+
+        child = self.get_sheet(child_id)
+        parent.add_child(child)
+        child.set_parent(parent)
+
+    def create_sheet(self, sheet_id, sheet_name, parent_id):
+        new_sheet_relation = SheetRelation(sheet_id, sheet_name)
+        self._store[sheet_id] = new_sheet_relation
+        self.set_sheet_relation(parent_id, sheet_id)
+
+    def get_sheet(self, sheet_id):
+        return self._store[sheet_id]
+
+    def get_root_sheets(self):
+        return self.get_sheet(0).get_children()
+
+
 def get_sheet_by_id(page_id, rebuild_cache=False):
     cursor = MidreshetCursor()
     cursor.execute('select * from Pages where id=?', (page_id,))
@@ -735,8 +808,9 @@ def create_sheet_json(page_id, group_manager):
         if resource['copyright']:
             resource_attribution = u'כל הזכויות שמורות ל'
             resource_attribution = u'{}{}'.format(resource_attribution, resource['copyright'])
-            resource_attribution = u'<small><span style="color: #999">{}</span></small><br><a href={}>{}</a>'.format(
-                resource_attribution, resource['copyrightLink'], resource['copyrightLink']
+            copyright_link = re.sub(ur'/$', u'', resource['copyrightLink'])
+            resource_attribution = u'<small><span style="color: #999">{}</span><br><a href={}>{}</a></small>'.format(
+                resource_attribution, resource['copyrightLink'], copyright_link
             )
             if 'outsideText' in source:
                 source['outsideText'] = u'{}<br>{}'.format(source['outsideText'], resource_attribution)
@@ -904,7 +978,7 @@ single_group_servers = {
     'http://localhost:8000'
 }
 
-
+# destination_server = 'http://localhost:8000'
 destination_server = 'http://midreshet.sandbox.sefaria.org'
 if destination_server in multiple_group_servers:
     group_handler = GroupManager(destination_server)
@@ -913,14 +987,47 @@ else:
 
 p_sheet_poster = partial(sheet_poster, destination_server)
 my_cursor = MidreshetCursor()
-my_cursor.execute('SELECT id FROM Pages WHERE parent_id = 0')
-my_wrapped_sheet_list = [SheetWrapper(m.id, create_sheet_json(m.id, group_handler)) for m in tqdm(my_cursor.fetchall())]
-print('finished creating sheets')
-num_processes = 20
-sheet_chunks = list(split_list(my_wrapped_sheet_list, num_processes))
-pool = Pool(num_processes)
-pool.map(p_sheet_poster, sheet_chunks)
-group_handler.publicize_groups()
+# my_cursor.execute('SELECT id, body, exactLocation FROM Resources WHERE exactLocation IS NOT NULL')
+# to_examine = []
+# for table_row in tqdm(my_cursor.fetchall()):
+#     if not get_ref_for_resource_p(table_row.id, table_row.exactLocation, table_row.body):
+#         to_examine.append({
+#             'id': table_row.id,
+#             'Original Ref': table_row.exactLocation
+#         })
+# print(len(to_examine))
+# with open('unparsed_refs.csv', 'w') as fp:
+#     writer = unicodecsv.DictWriter(fp, fieldnames=['id', 'Original Ref'])
+#     writer.writeheader()
+#     writer.writerows(to_examine)
+
+relation_manager = SheetManager()
+my_cursor.execute('SELECT id, name, parent_id FROM Pages')
+for sheet_data in my_cursor.fetchall():
+    relation_manager.create_sheet(sheet_data.id, sheet_data.name, sheet_data.parent_id)
+
+root_sheets = relation_manager.get_root_sheets()
+print("root sheets:", len(root_sheets))
+
+multiple_title_ids = []
+for sheet_relation in root_sheets:
+    names = sheet_relation.get_names_from_branch()
+    if len(set(names)) > 1:
+        multiple_title_ids.append(sheet_relation)
+print("multiple title branches:", len(multiple_title_ids))
+rendered_relations = [sheet_relation.render() for sheet_relation in multiple_title_ids]
+
+with codecs.open('multiple_title_id_sheets.html', 'w', 'utf-8') as fp:
+    fp.write(u''.join(rendered_relations))
+
+# my_cursor.execute('SELECT id FROM Pages WHERE parent_id = 0')
+# my_wrapped_sheet_list = [SheetWrapper(m.id, create_sheet_json(m.id, group_handler)) for m in tqdm(my_cursor.fetchall())]
+# print('finished creating sheets')
+# num_processes = 20
+# sheet_chunks = list(split_list(my_wrapped_sheet_list, num_processes))
+# pool = Pool(num_processes)
+# pool.map(p_sheet_poster, sheet_chunks)
+# group_handler.publicize_groups()
 
 # my_cursor = MidreshetCursor()
 # my_cursor.execute('SELECT id, MidreshetRef FROM RefMap WHERE SefariaRef IS NULL')
