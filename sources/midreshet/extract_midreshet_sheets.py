@@ -3,6 +3,9 @@ from __future__ import print_function
 
 import re
 import os
+import sys
+import time
+import random
 import signal
 import regex
 import json
@@ -457,7 +460,18 @@ class GroupManager(object):
         :param group_name:
         :return:
         """
-        response = requests.get(u'{}/api/groups/{}'.format(self.server, group_name)).json()
+        while True:
+            raw_response = requests.get(u'{}/api/groups/{}'.format(self.server, group_name))
+            if raw_response.status_code == 200:
+                break
+            elif raw_response.status_code == 502:
+                print("Got 502. will try again")
+                time.sleep(30)
+            else:
+                print("Got bad status code. Exiting")
+                sys.exit(1)
+
+        response = raw_response.json()
         if 'error' in response:
             self.group_cache[group_name] = {
                 'need_to_add': True,
@@ -578,11 +592,22 @@ class SheetRelation(object):
     def get_names_from_branch(self):
         return [sheet.sheet_name for sheet in self.get_branch()]
 
-    def render(self):
-        children = u''.join(child.render() for child in self._children)
+    def render(self, nesting_level=0):
+        nesting_color = {
+            0: 'white',
+            1: 'aqua',
+            2: 'green',
+            3: 'yellow',
+            4: 'red',
+            5: 'orange',
+            6: 'GoldenRod'
+        }
+        background_color = nesting_color[nesting_level]
+        nesting_level += 1
+        children = u''.join(child.render(nesting_level) for child in self._children)
 
-        return u'<dl><dt>id</dt><dd>{}</dd><dt>name</dt><dd>{}</dd><dt>children</dt><dd>{}</dd></dl>'.\
-            format(self.sheet_id, self.sheet_name, children)
+        return u'<dl style="background-color: {};"><dt>id</dt><dd>{}</dd><dt>name</dt><dd>{}</dd><dt>children</dt><dd>{}</dd></dl>'.\
+            format(background_color, self.sheet_id, self.sheet_name, children)
 
 
 class NullSheetRelation(SheetRelation):
@@ -969,6 +994,14 @@ def rematch_ref(ref_id):
     return get_ref_for_resource_p(result.id, result.exactLocation, bleach_clean(result.body), replace=True)
 
 
+def get_url_for_sheet_id(sheet_id, server, server_map=None):
+    if not server_map:
+        server_map = pymongo.MongoClient().yonis_data.server_map
+
+    sheet_server_data = server_map.find_one({'pageId': sheet_id, 'server': server})
+    return u'{}/sheets/{}'.format(server, sheet_server_data['serverIndex'])
+
+
 multiple_group_servers = {
     'http://midreshetgroups.sandbox.sefaria.org'
 }
@@ -1021,13 +1054,28 @@ with codecs.open('multiple_title_id_sheets.html', 'w', 'utf-8') as fp:
     fp.write(u''.join(rendered_relations))
 
 # my_cursor.execute('SELECT id FROM Pages WHERE parent_id = 0')
-# my_wrapped_sheet_list = [SheetWrapper(m.id, create_sheet_json(m.id, group_handler)) for m in tqdm(my_cursor.fetchall())]
-# print('finished creating sheets')
-# num_processes = 20
-# sheet_chunks = list(split_list(my_wrapped_sheet_list, num_processes))
-# pool = Pool(num_processes)
-# pool.map(p_sheet_poster, sheet_chunks)
-# group_handler.publicize_groups()
+my_wrapped_sheet_list = [SheetWrapper(m.sheet_id, create_sheet_json(m.sheet_id, group_handler))
+                         for m in tqdm(root_sheets)]
+print('finished creating sheets')
+num_processes = 29
+sheet_chunks = list(split_list(my_wrapped_sheet_list, num_processes))
+pool = Pool(num_processes)
+pool.map(p_sheet_poster, sheet_chunks)
+group_handler.publicize_groups()
+
+qa_sheets = random.sample([ws for ws in my_wrapped_sheet_list if ws.sheet_json['sources']], 60)
+qa_rows = [
+    {
+        'Sefaria URL': get_url_for_sheet_id(qa_sheet.page_id, destination_server),
+        'Midreshet URL': 'https://midreshet.org.il/PageView.aspx?id={}'.format(qa_sheet.page_id),
+        'Comments': ''
+    }
+    for qa_sheet in qa_sheets
+]
+with open('Midreshet QA.csv', 'w') as fp:
+    writer = unicodecsv.DictWriter(fp, ['Sefaria URL', 'Midreshet URL', 'Comments'])
+    writer.writeheader()
+    writer.writerows(qa_rows)
 
 # my_cursor = MidreshetCursor()
 # my_cursor.execute('SELECT id, MidreshetRef FROM RefMap WHERE SefariaRef IS NULL')
