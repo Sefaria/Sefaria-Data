@@ -36,6 +36,7 @@ def stats(sham=None, author=None, caught=None, letter = None):
 
 def percentages(author=None, letter = None):
     print u"per {}".format(author) if author else u"for all"
+    print u"abs number of refs {}".format(stats(author=author, letter=letter))
     # caught
     caught = stats(author=author, caught=True, letter=letter)*100.0/stats(author=author, letter=letter)*1.0
     print "caught/all: {}%".format(caught)
@@ -62,14 +63,14 @@ def percentages(author=None, letter = None):
 
 if __name__ == "__main__":
     #
-    letter = u'ד'
+    letter = u'ג'
     authors = list_authors(letter=letter)
     percentages(letter=letter)
 
     print '_________________________'
     empty_authors = []
     for auth in authors:
-        perc = percentages(auth)
+        perc = percentages(auth, letter = letter)
         if not perc[0]:
             empty_authors.append(auth)
     for auth in empty_authors:

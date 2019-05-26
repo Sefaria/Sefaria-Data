@@ -194,9 +194,9 @@ class Topic(object):
                             cnt+=1
                             print cnt
                             print u'{}'.format(e)
-                if source.ref and source.raw_ref.is_sham:
-                    Source.cnt_sham -= 1
-                    Source.cnt_resolved +=1
+                # if source.ref and source.raw_ref.is_sham:
+                #     Source.cnt_sham -= 1
+                #     Source.cnt_resolved +=1
 
     def ref_dict(self, source):
         d = {}
@@ -214,10 +214,10 @@ class Topic(object):
 
 
 class Source(object):
-    cnt = 0
-    cnt_sham = 0
-    cnt_resolved = 0
-    cnt_not_found = 0
+    # cnt = 0
+    # cnt_sham = 0
+    # cnt_resolved = 0
+    # cnt_not_found = 0
     global parser
     parser = Parser()  # term_dict = he_term_mapping()
     indexSet_dict = dict()
@@ -383,7 +383,7 @@ class Source(object):
         def clean_raw(st):
             st = re.sub(u'[)(]', u'', st) # incase we put those parantheses on before to try and catch it with get_ref_in_string
             he_parashah_array = [u"בראשית", u"נח", u"לך לך", u"וירא", u"חיי שרה", u"תולדות", u"ויצא", u"וישלח", u"וישב", u"מקץ", u"ויגש", u"ויחי", u"שמות", u"וארא", u"בא", u"בשלח", u"יתרו", u"משפטים", u"תרומה", u"תצוה", u"כי תשא", u"ויקהל", u"פקודי", u"ויקרא", u"צו", u"שמיני", u"תזריע", u"מצורע", u"אחרי מות", u"קדושים", u"אמור", u"בהר", u"בחוקתי", u"במדבר", u"נשא", u"בהעלותך", u"שלח", u"קרח", u"חקת", u"בלק", u"פנחס", u"מטות", u"מסעי", u"דברים", u"ואתחנן", u"עקב", u"ראה", u"שופטים", u"כי תצא", u"כי תבוא", u"נצבים", u"וילך", u"האזינו", u"וזאת הברכה"]
-            for s in [u"מאמר", u"פרק"]:
+            for s in [u"דרוש",u"מאמר", u"פרק"]:
                 st = re.sub(s, u"", st)
             if self.author == u"משנה תורה":
                 st = u"הלכות " + st
@@ -525,8 +525,12 @@ class Source(object):
                         self.index = new_index
                         possible_nodes = new_index.all_titles('he')
                         node_guess = intersect_list_string(possible_nodes, self.raw_ref.rawText)
-                        if not self.ref:
-                            self.ref = Ref(node_guess)
+                        if not self.ref and node_guess:
+                            try:
+                                self.ref = Ref(node_guess)
+                            except InputError:
+                                self.ref = u''
+                                print u'the node guess is not a Ref'
                         elif node_guess:
                             # then we should check witch is the better option
                             # maybe using the length of matching words in regards to the titles
@@ -853,38 +857,43 @@ def read_with_refs(letter):
     with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/with_refs/{}.pickle".format(letter), "rb") as fp:
         topics = pickle.load(fp)
         print u"opend {}".format(letter)
-        cnt_sources = 0
-        cnt_sham = 0
-        cnt_resolved = 0
-        cnt_not_caught = 0
+        # cnt_sources = 0
+        # cnt_sham = 0
+        # cnt_resolved = 0
+        # cnt_not_caught = 0
+        cnt = 0
         for i, t in tqdm(enumerate(topics.values())):
             print "*******************"
             print t.headWord
             for author in t.all_a_citations:
                 for s in author.sources:
                     if s.raw_ref:
-                        cnt_sources += 1
+                        # cnt_sources += 1
                         print s.raw_ref.rawText
                         solo_source_text = re.sub(re.escape(s.raw_ref.rawText), u'', s.text)
                         if s.ref:
+                            # if re.search(u"דרוש ז",s.raw_ref.rawText):
+                            #     continue
                             document = {'topic': t.headWord, 'ref': s.ref.normal(), 'text': solo_source_text, 'raw_ref':s.raw_ref.rawText,
                                  'index': s.ref.index.title, 'is_sham': s.raw_ref.is_sham, 'author':s.author}
                             print s.ref.normal()
-                            cnt_resolved += 1
+                            # cnt_resolved += 1
                         else:
                             document = {'topic': t.headWord, 'text': solo_source_text, 'raw_ref':s.raw_ref.rawText,
                                  'author': s.author, 'is_sham':s.raw_ref.is_sham}
                             print s.author  # "None... didn't find the Ref"
-                            add_to = "sham" if s.raw_ref.is_sham else "not_caught"
-                            cnt_sham += 1 if add_to == "sham" else 0
-                            cnt_not_caught += 1 if add_to == "not_caught" else 0
+                            # add_to = "sham" if s.raw_ref.is_sham else "not_caught"
+                            # cnt_sham += 1 if add_to == "sham" else 0
+                            # cnt_not_caught += 1 if add_to == "not_caught" else 0
                         if s.index:
                             if isinstance(s.index, tuple):
                                 s.index = s.index[1]
                             document['index_guess'] = s.index.title if isinstance(s.index, Index) else s.index
                         elif s.indexs:
                             document['index_guess'] = u' |'.join([ind.title if isinstance(ind,Index) else ind for ind in s.indexs])
+                        document['cnt'] = cnt
                         db_aspaklaria.aspaklaria_source.insert_one(document)
+                        cnt+=1
                         print '-----------------'
         print "done"
 
@@ -894,26 +903,26 @@ def shamas_per_leter(he_letter):
     # write_to_file(u'', mode = 'w')
     for file in [u'{}.pickle'.format(he_letter)]:
         letter_name = file[0:-7]
-        Source.cnt = 0
-        Source.cnt_sham = 0
-        Source.cnt_resolved = 0
-        Source.cnt_not_found = 0
+        # Source.cnt = 0
+        # Source.cnt_sham = 0
+        # Source.cnt_resolved = 0
+        # Source.cnt_not_found = 0
         with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/{}".format(file), "rb") as fp:
             write_to_file(u'NEW_Letter: {}\n\n'.format(file.split(u'.')[0]), mode='a')
             topics = pickle.load(fp)
             for i, t in tqdm(enumerate(topics.values())):
                 parse_refs(t)
-                print "Before resolved Shams" + str(Source.cnt_sham)
+                # print "Before resolved Shams" + str(Source.cnt_sham)
                 try:
                     t.parse_shams()
                 except:
                     print "Failed on something"
-                print "After resolved Shams" + str(Source.cnt_sham)
+                # print "After resolved Shams" + str(Source.cnt_sham)
                 print i
-            print u"cnt :", Source.cnt
-            print u"cnt_sham :", Source.cnt_sham, u"precent: ", Source.cnt_sham * 100.0 / Source.cnt * 1.0
-            print u"cnt_resolved :", Source.cnt_resolved, u"precent: ", Source.cnt_resolved * 100.0 / Source.cnt * 1.0
-            print u"cnt_not_found :", Source.cnt_not_found, u"precent: ", Source.cnt_not_found * 100.0 / Source.cnt * 1.0
+            # print u"cnt :", Source.cnt
+            # print u"cnt_sham :", Source.cnt_sham, u"precent: ", Source.cnt_sham * 100.0 / Source.cnt * 1.0
+            # print u"cnt_resolved :", Source.cnt_resolved, u"precent: ", Source.cnt_resolved * 100.0 / Source.cnt * 1.0
+            # print u"cnt_not_found :", Source.cnt_not_found, u"precent: ", Source.cnt_not_found * 100.0 / Source.cnt * 1.0
             for missing in parser.missing_authors:
                 print missing
 
@@ -927,7 +936,6 @@ def shamas_per_leter(he_letter):
 
 def intersect_list_string(title_list, string):
     best = (u'',0)
-    best_cand = []
     for title in title_list:
         intersection_size = intersect_2_strings(title, string)
         if intersection_size:
@@ -969,8 +977,8 @@ def sublists(a, b):
     return False
 
 if __name__ == "__main__":
-    he_letter = u'DALET'
-    letter_gimatria = u'004'
+    he_letter = u'GIMEL'
+    letter_gimatria = u'003'
     parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
     shamas_per_leter(he_letter)
     read_with_refs(u'{}'.format(he_letter))

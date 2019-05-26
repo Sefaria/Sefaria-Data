@@ -12,7 +12,7 @@ from parse_aspaklaria import *
 
 class Test_Source_methods(object):
 
-    source = Source(u'...והאודם מן האשה שממנו העור והבשר והדם, והרוח והנפש והנשמה משל הקב"ה ושלשתן שותפין בו. (כלאים לט א)', u'לקח טוב')
+    # source = Source(u'...והאודם מן האשה שממנו העור והבשר והדם, והרוח והנפש והנשמה משל הקב"ה ושלשתן שותפין בו. (כלאים לט א)', u'לקח טוב')
 
     # @classmethod
     # def setup_class(cls):
@@ -77,7 +77,12 @@ class Test_Source_methods(object):
         source = Source(u"(תורה שבכתב נח, בסופו)", u'של"ה')
         assert source.ref == Ref(u"Shenei Luchot HaBerit, Torah Shebikhtav, Noach")
         source = Source(u"(בעשרה מאמרות מאמר ב)", u'של"ה')
-        assert source.ref == Ref(u"Shenei Luchot HaBerit, Asara Maamarot, Sixth Maamar")  #todo: Note this case as a PM case because the two are equally simler to the actual.
+        assert source.ref == Ref(u"Shenei Luchot HaBerit, Asara Maamarot, Sixth Maamar")  #todo: Note this case as a PM case because the two are equally simler to the actual.צריך לשנות את זה שזה יהיה מאמר שני ולא מאמר שישי
+        source = Source(u"(מסכת חולין, וראה שם עוד)", u'של"ה')
+        assert source.ref == Ref(u"Shenei Luchot HaBerit, Aseret HaDibrot, Chullin")
+        source = Source(u"(דרוש ז)", u'דרשות הר"ן')
+        assert source.ref == Ref(u"Darashos HaRan 7")
+
     #     מדרש שמואל, (אבות ה ה, וראה שם עוד)
     # Pirkei Avot 5:5
     # def test_get_look_here_titles(self):
@@ -85,9 +90,9 @@ class Test_Source_methods(object):
     #     assert source.get_look_here_titles(look_here) == [(u'Bereishit Rabbah', u'Bereishit') ,(u'Shemot Rabbah', u'Shemot'), (u'Vayikra Rabbah', u'Vayikra'), (u'Bemidbar Rabbah', u'Bemidbar'), (u'Devarim Rabbah', u'Devarim'), (u'Esther Rabbah', u'Esther'), (u'Shir HaShirim Rabbah', u'Shir HaShirim'), (u'Kohelet Rabbah', u'Kohelet'), (u'Ruth Rabbah', u'Ruth'), (u'Eichah Rabbah', u'Eichah')]
 
     def test_individual_source(self):
-        source = Source(u"(בעשרה מאמרות מאמר ב)", u'של"ה')
-        assert source.ref == Ref(u"Shenei Luchot HaBerit, Asara Maamarot, Sixth Maamar")  #todo: note this case as a PM case because the two are equally simler to the actual.
-        # צריך לשנות את זה שזה יהיה מאמר שני ולא מאמר שישי
+        source = Source(u"""(בראשית וישב תרנ"ד)""", u'שפת אמת')
+        print source.ref
+        # assert source.ref == Ref(u"Shenei Luchot HaBerit, Aseret HaDibrot, Chullin")
 
     def test_get_ref_mishneh_torah(self):
         source = Source(u'(ברכות ב ז)', u'משנה תורה')
