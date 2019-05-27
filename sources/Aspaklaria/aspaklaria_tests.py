@@ -37,11 +37,9 @@ class Test_Source_methods(object):
         source = Source(u'(דברים טו טז)', u'בעל הטורים')
         assert source.ref == Ref(u'Kitzur Baal Haturim on Deuteronomy 15:16')
         source = Source(u'(בראשית תו)', u'זהר חדש')
-        assert source.ref == None
+        assert source.ref == Ref(u'Zohar Chadash, Bereshit')
         source = Source(u"(דברים ח ג)", u'מדרש רבה')
         assert source.ref == Ref(u'Devarim Rabbah 8.3')
-        source = Source(u"", u'זהר חדש')
-        assert source.ref == None
         source = Source(u"(מאמר ב כלל ו פרק ב)", u"אור ה'")
         assert True
         source = Source(u"(בראשית יז א שער יח)", u"עקדה")
@@ -53,7 +51,7 @@ class Test_Source_methods(object):
         source = Source(u'(ויקרא פרק יא, תקלו)', u'ילקוט שמעוני')
         print source.ref
         source = Source(u"(יהושע ח ל)", u'אברבנאל')
-        assert source.ref == None
+        assert source.ref == None  # we don't have Abarbanel on Prophets
         source = Source(u"(חלק ג )", u"מורה נבוכים")
         assert source.ref == Ref(u'Guide for the Perplexed, Part 3')
         source = Source(u"(חלק ג פרק א)", u"מורה נבוכים")
@@ -82,7 +80,12 @@ class Test_Source_methods(object):
         assert source.ref == Ref(u"Shenei Luchot HaBerit, Aseret HaDibrot, Chullin")
         source = Source(u"(דרוש ז)", u'דרשות הר"ן')
         assert source.ref == Ref(u"Darashos HaRan 7")
-
+        source = Source(u"""(שמות יתרו תרנ"ב)""", u'''שפת אמת''')
+        assert source.ref == Ref(u"Sefat Emet, Exodus, Yitro")
+        source = Source(u"""(פורים תרל"ד)""", u'''שפת אמת''')
+        assert source.ref == Ref(u"Sefat Emet, Exodus, For Purim")
+        source = Source(u'(דעת תורה במדבר עמוד קסג)', u'''ר' ירוחם''')
+        source.ref = None  # because we don't have rabbi Yrucham as an index at all.
     #     מדרש שמואל, (אבות ה ה, וראה שם עוד)
     # Pirkei Avot 5:5
     # def test_get_look_here_titles(self):
@@ -90,9 +93,10 @@ class Test_Source_methods(object):
     #     assert source.get_look_here_titles(look_here) == [(u'Bereishit Rabbah', u'Bereishit') ,(u'Shemot Rabbah', u'Shemot'), (u'Vayikra Rabbah', u'Vayikra'), (u'Bemidbar Rabbah', u'Bemidbar'), (u'Devarim Rabbah', u'Devarim'), (u'Esther Rabbah', u'Esther'), (u'Shir HaShirim Rabbah', u'Shir HaShirim'), (u'Kohelet Rabbah', u'Kohelet'), (u'Ruth Rabbah', u'Ruth'), (u'Eichah Rabbah', u'Eichah')]
 
     def test_individual_source(self):
-        source = Source(u"""(בראשית וישב תרנ"ד)""", u'שפת אמת')
+        source = Source(u"(מאמר ב כלל ו פרק ב)", u"אור ה'")
+        source = Source(u"(מסכת חולין, וראה שם עוד)", u'של"ה')
         print source.ref
-        # assert source.ref == Ref(u"Shenei Luchot HaBerit, Aseret HaDibrot, Chullin")
+        # assert source.ref == Ref(u"Sefat Emet, Exodus, For Purim")
 
     def test_get_ref_mishneh_torah(self):
         source = Source(u'(ברכות ב ז)', u'משנה תורה')

@@ -63,7 +63,7 @@ def percentages(author=None, letter = None):
 
 if __name__ == "__main__":
     #
-    letter = u'ג'
+    letter = u'פ'
     authors = list_authors(letter=letter)
     percentages(letter=letter)
 

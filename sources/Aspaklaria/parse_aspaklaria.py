@@ -152,7 +152,7 @@ class Topic(object):
                             source.ref = BT.resolve(None, match_str=source.author+source.raw_ref.rawText)
                         else:
                             try:
-                                source.ref = BT.resolve(topic_table[-1]['index'].title, match_str= source.author + source.raw_ref.rawText) # assuming the index is definatly the same as the last one is not neccesary. and should check if there is a source.index frist?
+                                source.ref = BT.resolve(topic_table[-1]['index'].title, match_str= source.author + source.raw_ref.rawText) # assuming the index is definatly the same as the last one is not neccesary. and should check if there is a source.index first?
                             except AttributeError as e:
                                 print e, source.raw_ref.rawText
                                 source.ref = None
@@ -383,7 +383,7 @@ class Source(object):
         def clean_raw(st):
             st = re.sub(u'[)(]', u'', st) # incase we put those parantheses on before to try and catch it with get_ref_in_string
             he_parashah_array = [u"בראשית", u"נח", u"לך לך", u"וירא", u"חיי שרה", u"תולדות", u"ויצא", u"וישלח", u"וישב", u"מקץ", u"ויגש", u"ויחי", u"שמות", u"וארא", u"בא", u"בשלח", u"יתרו", u"משפטים", u"תרומה", u"תצוה", u"כי תשא", u"ויקהל", u"פקודי", u"ויקרא", u"צו", u"שמיני", u"תזריע", u"מצורע", u"אחרי מות", u"קדושים", u"אמור", u"בהר", u"בחוקתי", u"במדבר", u"נשא", u"בהעלותך", u"שלח", u"קרח", u"חקת", u"בלק", u"פנחס", u"מטות", u"מסעי", u"דברים", u"ואתחנן", u"עקב", u"ראה", u"שופטים", u"כי תצא", u"כי תבוא", u"נצבים", u"וילך", u"האזינו", u"וזאת הברכה"]
-            for s in [u"דרוש",u"מאמר", u"פרק"]:
+            for s in [u"דרוש", u"פרק"]: # u"מאמר",
                 st = re.sub(s, u"", st)
             if self.author == u"משנה תורה":
                 st = u"הלכות " + st
@@ -458,15 +458,15 @@ class Source(object):
         It should discard/change wrongly caught refs, like ones caught bavli instead of Yerushalmi or mishanah instead of Tosefta.
         :return: doesn't return but changes self.ref
         """
-        wrong_ref = False
+        wrong_ref = self.check_for_wrong_ref()
 
-        if self.ref:  # probabaly should be calculated once
-            if self.author != u"תנך"  and self.ref.index.title in library.get_indexes_in_category(u'Tanakh'):
-                include_dependant = True
-                wrong_ref = True
-            elif self.author != u"תלמוד בבלי"  and self.ref.index.title in library.get_indexes_in_category(u'Bavli'):
-                include_dependant = False
-                wrong_ref = True
+        # if self.ref:  # probabaly should be calculated once
+        #     if self.author != u"תנך"  and self.ref.index.title in library.get_indexes_in_category(u'Tanakh'):
+        #         include_dependant = True
+        #         wrong_ref = True
+        #     elif self.author != u"תלמוד בבלי"  and self.ref.index.title in library.get_indexes_in_category(u'Bavli'):
+        #         include_dependant = False
+        #         wrong_ref = True
 
         if self.ref:
             if wrong_ref:  # or (self.raw_ref and not self.ref and not self.raw_ref.is_sham):
@@ -521,13 +521,15 @@ class Source(object):
             for opt_title in self.opt_titles:
                 try:
                     new_index = library.get_index(opt_title)
-                    if not indexs:
+                    if not indexs or new_index.is_complex():  # or library.get_title_node_dict('he')[opt_title] != library.get_title_node_dict('en')[new_index.title]
                         self.index = new_index
                         possible_nodes = new_index.all_titles('he')
                         node_guess = intersect_list_string(possible_nodes, self.raw_ref.rawText)
                         if not self.ref and node_guess:
                             try:
-                                self.ref = Ref(node_guess)
+                                r = Ref(node_guess)
+                                if not self.check_for_wrong_ref(r):
+                                    self.ref = r
                             except InputError:
                                 self.ref = u''
                                 print u'the node guess is not a Ref'
@@ -558,6 +560,19 @@ class Source(object):
                         except exceptions.InputError:
                                 print "we tried"
                                 self.ref = None
+
+    def check_for_wrong_ref(self, r=None):
+        wrong_ref = False
+        if not r:
+            if self.ref:
+                r = self.ref
+            else:
+                return False  # witch is the same as wrong_ref at this point
+        if self.author != u"תנך"  and r.index.title in library.get_indexes_in_category(u'Tanakh'):
+            wrong_ref = True
+        elif self.author != u"תלמוד בבלי"  and r.index.title in library.get_indexes_in_category(u'Bavli'):
+            wrong_ref = True
+        return wrong_ref
 
     def get_new_ref_w_look_here(self, look_here, ):
         """
@@ -891,6 +906,12 @@ def read_with_refs(letter):
                             document['index_guess'] = s.index.title if isinstance(s.index, Index) else s.index
                         elif s.indexs:
                             document['index_guess'] = u' |'.join([ind.title if isinstance(ind,Index) else ind for ind in s.indexs])
+
+                        if s.ref:
+                            if s.ref.is_segment_level():
+                                document['segment_level'] = True
+                            else:
+                                document['segment_level'] = False
                         document['cnt'] = cnt
                         db_aspaklaria.aspaklaria_source.insert_one(document)
                         cnt+=1
@@ -977,8 +998,8 @@ def sublists(a, b):
     return False
 
 if __name__ == "__main__":
-    he_letter = u'GIMEL'
-    letter_gimatria = u'003'
+    he_letter = u'PE'
+    letter_gimatria = u'080'
     parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
     shamas_per_leter(he_letter)
     read_with_refs(u'{}'.format(he_letter))
