@@ -79,9 +79,8 @@ def dh_extract_method(str):
     else:
         return dh
 
-def convert_txt_to_csv(f):
+def convert_txt_to_csv(f, csv_f):
     temp = ""
-    csv_f = f.replace(".txt", ".csv")
     with open(csv_f, 'w') as csv_file:
         with open(f) as file:
             for line in file:
@@ -99,7 +98,7 @@ def convert_txt_to_csv(f):
 if __name__ == "__main__":
     #comms = [Commentary("yevamot.csv", "Tosafot Yeshanim", u"תוספות ישנים", "Vilna Edition", "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957"),
     #         Commentary("nazir.csv", "Commentary of the Rosh", u"""פירוש הרא"ש""", "Vilna Edition", "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957")]
-    convert_txt_to_csv("tosafot shantz.txt")
+    convert_txt_to_csv("tosafot shantz.txt", "sotah.csv")
     vtitle = "Vilna Edition"
     vsource = "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957"
     comms = [Commentary("sotah.csv", "Tosafot Shantz", u"""תוספות שאנץ""", vtitle, vsource)]

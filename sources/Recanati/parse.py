@@ -38,7 +38,7 @@ def get_zohar():
         f.write(data)
 
 if __name__ == "__main__":
-    get_zohar()
+    #get_zohar()
 
     # site = requests.get("http://www.hebrew.grimoar.cz/rekanati_al_ha-torah.html",
     #                     headers={'User-Agent': 'Mozilla/4.0 (Macintosh; Intel Mac OS X 11_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'})
@@ -67,12 +67,22 @@ if __name__ == "__main__":
     root = SchemaNode()
     root.add_primary_titles("Recanati on the Torah", u"רקנאטי על התורה")
     root.key = "recanati"
-    for parsha in parshiot:
+    for parsha in TermSet({"scheme": "Parasha"})[0:-1]:
         parsha_node = JaggedArrayNode()
-        parsha_node.add_primary_titles(parsha, Term().load({"name": parsha}).get_primary_title("he"))
+        parsha_node.add_shared_term(parsha.get_primary_title('en'))
+        parsha_node.key = parsha.get_primary_title('en')
         parsha_node.add_structure(["Paragraph"])
         root.append(parsha_node)
 
+    end = SchemaNode()
+    end.add_primary_titles("Index", u"סימני סודות הספר")
+    for parsha in TermSet({"scheme": "Parasha"})[0:-1]:
+        parsha_node = JaggedArrayNode()
+        parsha_node.add_shared_term(parsha.get_primary_title('en'))
+        parsha_node.key = parsha.get_primary_title('en')
+        parsha_node.add_structure(["Paragraph"])
+        end.append(parsha_node)
+    root.append(end)
     root.validate()
 
     index = {
@@ -81,7 +91,7 @@ if __name__ == "__main__":
         "categories": ["Kabbalah"],
         "dependence": "Commentary",
     }
-    post_index(index, server=SEFARIA_SERVER)
+    #post_index(index, server="http://shmuel.sandbox.sefaria.org")
 
     links = []
     for sefer, parshiot in text.items():
