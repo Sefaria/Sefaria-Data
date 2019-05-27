@@ -409,6 +409,30 @@ get_ref_for_resource_p = cache_to_mongo(my_mongo_client, builder)
 SheetWrapper = namedtuple('SheetWrapper', ('page_id', 'sheet_json'))
 
 
+class ImageAdapter(object):
+    """
+    Adapts an image from the format used in midreshet to that which is used on Sefaria.
+    """
+    def __init__(self):
+        self.image_collection = pymongo.MongoClient().yois_data.images
+
+    def adapt_image(self, name, filename, image_bytestring, image_type):
+        image_data = self.image_collection.find_one({'name': name})
+        if image_data:
+            return image_data['image_url']
+
+        else:
+            filename = filename.split(u'\\')[-1]
+            with open(filename, 'wb') as fp:
+                fp.write(image_bytestring)
+
+            hosted_file = HostedFile(filename, image_type)
+            file_url = hosted_file.upload()
+            self.image_collection.insert_one({'name': name, 'image_url': file_url})
+            os.remove(filename)
+            return file_url
+
+
 class GroupManager(object):
     def __init__(self, server):
         self.server = server
