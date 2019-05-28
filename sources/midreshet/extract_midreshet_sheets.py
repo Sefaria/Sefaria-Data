@@ -437,7 +437,7 @@ class GroupManager(object):
     def __init__(self, server):
         self.server = server
         self.group_cache = {}
-        self.mongo_client = pymongo.MongoClient()
+        self.image_adapter = ImageAdapter()
 
     def get_and_register_group_for_sheet(self, sheet_id):
         """
@@ -510,21 +510,23 @@ class GroupManager(object):
             }
 
     def add_new_group(self, group_data):
-        image_collection = self.mongo_client.yonis_data.images
-        image_data = image_collection.find_one({'name': group_data['name']})
-        if image_data:
-            file_url = image_data['image_url']
+        # image_collection = self.mongo_client.yonis_data.images
+        # image_data = image_collection.find_one({'name': group_data['name']})
+        # if image_data:
+        #     file_url = image_data['image_url']
+        #
+        # else:
+        #     filename = group_data['filename'].split(u'\\')[-1]
+        #     with open(filename, 'wb') as fp:
+        #         fp.write(group_data['data'])
+        #
+        #     hosted_file = HostedFile(filename, group_data['type'])
+        #     file_url = hosted_file.upload()
+        #     image_collection.insert_one({'name': group_data['name'], 'image_url': file_url})
+        #     os.remove(filename)
 
-        else:
-            filename = group_data['filename'].split(u'\\')[-1]
-            with open(filename, 'wb') as fp:
-                fp.write(group_data['data'])
-
-            hosted_file = HostedFile(filename, group_data['type'])
-            file_url = hosted_file.upload()
-            image_collection.insert_one({'name': group_data['name'], 'image_url': file_url})
-            os.remove(filename)
-
+        file_url = self.image_adapter.adapt_image(group_data['name'], group_data['filename'],
+                                                  group_data['data'], group_data['type'])
         group_json = {
             'name': group_data['name'],
             'description': bleach_clean(group_data['body']),
@@ -1026,152 +1028,153 @@ def get_url_for_sheet_id(sheet_id, server, server_map=None):
     return u'{}/sheets/{}'.format(server, sheet_server_data['serverIndex'])
 
 
-multiple_group_servers = {
-    'http://midreshetgroups.sandbox.sefaria.org'
-}
-
-single_group_servers = {
-    'http://midreshet.sandbox.sefaria.org',
-    'http://localhost:8000'
-}
-
-# destination_server = 'http://localhost:8000'
-destination_server = 'http://midreshet.sandbox.sefaria.org'
-if destination_server in multiple_group_servers:
-    group_handler = GroupManager(destination_server)
-else:
-    group_handler = MidreshetGroupManager(destination_server)
-
-p_sheet_poster = partial(sheet_poster, destination_server)
-my_cursor = MidreshetCursor()
-# my_cursor.execute('SELECT id, body, exactLocation FROM Resources WHERE exactLocation IS NOT NULL')
-# to_examine = []
-# for table_row in tqdm(my_cursor.fetchall()):
-#     if not get_ref_for_resource_p(table_row.id, table_row.exactLocation, table_row.body):
-#         to_examine.append({
-#             'id': table_row.id,
-#             'Original Ref': table_row.exactLocation
-#         })
-# print(len(to_examine))
-# with open('unparsed_refs.csv', 'w') as fp:
-#     writer = unicodecsv.DictWriter(fp, fieldnames=['id', 'Original Ref'])
-#     writer.writeheader()
-#     writer.writerows(to_examine)
-
-relation_manager = SheetManager()
-my_cursor.execute('SELECT id, name, parent_id FROM Pages')
-for sheet_data in my_cursor.fetchall():
-    relation_manager.create_sheet(sheet_data.id, sheet_data.name, sheet_data.parent_id)
-
-root_sheets = relation_manager.get_root_sheets()
-print("root sheets:", len(root_sheets))
-
-multiple_title_ids = []
-for sheet_relation in root_sheets:
-    names = sheet_relation.get_names_from_branch()
-    if len(set(names)) > 1:
-        multiple_title_ids.append(sheet_relation)
-print("multiple title branches:", len(multiple_title_ids))
-rendered_relations = [sheet_relation.render() for sheet_relation in multiple_title_ids]
-
-with codecs.open('multiple_title_id_sheets.html', 'w', 'utf-8') as fp:
-    fp.write(u''.join(rendered_relations))
-
-# my_cursor.execute('SELECT id FROM Pages WHERE parent_id = 0')
-my_wrapped_sheet_list = [SheetWrapper(m.sheet_id, create_sheet_json(m.sheet_id, group_handler))
-                         for m in tqdm(root_sheets)]
-print('finished creating sheets')
-num_processes = 29
-sheet_chunks = list(split_list(my_wrapped_sheet_list, num_processes))
-pool = Pool(num_processes)
-pool.map(p_sheet_poster, sheet_chunks)
-group_handler.publicize_groups()
-
-qa_sheets = random.sample([ws for ws in my_wrapped_sheet_list if ws.sheet_json['sources']], 60)
-qa_rows = [
-    {
-        'Sefaria URL': get_url_for_sheet_id(qa_sheet.page_id, destination_server),
-        'Midreshet URL': 'https://midreshet.org.il/PageView.aspx?id={}'.format(qa_sheet.page_id),
-        'Comments': ''
+if __name__ == '__main__':
+    multiple_group_servers = {
+        'http://midreshetgroups.sandbox.sefaria.org'
     }
-    for qa_sheet in qa_sheets
-]
-with open('Midreshet QA.csv', 'w') as fp:
-    writer = unicodecsv.DictWriter(fp, ['Sefaria URL', 'Midreshet URL', 'Comments'])
-    writer.writeheader()
-    writer.writerows(qa_rows)
 
-# my_cursor = MidreshetCursor()
-# my_cursor.execute('SELECT id, MidreshetRef FROM RefMap WHERE SefariaRef IS NULL')
-# ref_sources_mongo = my_mongo_client.yonis_data.RefSources
-# valid_ids = [q['resource_id'] for q in ref_sources_mongo.find({"SefariaRef": {"$eq": None}})]
-# valid_id_set = set(valid_ids)
-# q_rows = my_cursor.fetchall()
-# all_sources = [q.MidreshetRef for q in q_rows if q.id in valid_id_set]
-# valid_ids = [q.id for q in q_rows if q.id in valid_id_set]
-# del q_rows
-# id_map = {}
-# sf = SefariaTermsAndTitles()
-# print('sources and ids match?', len(all_sources) == len(valid_ids))
+    single_group_servers = {
+        'http://midreshet.sandbox.sefaria.org',
+        'http://localhost:8000'
+    }
+
+    # destination_server = 'http://localhost:8000'
+    destination_server = 'http://midreshet.sandbox.sefaria.org'
+    if destination_server in multiple_group_servers:
+        group_handler = GroupManager(destination_server)
+    else:
+        group_handler = MidreshetGroupManager(destination_server)
+
+    p_sheet_poster = partial(sheet_poster, destination_server)
+    my_cursor = MidreshetCursor()
+    # my_cursor.execute('SELECT id, body, exactLocation FROM Resources WHERE exactLocation IS NOT NULL')
+    # to_examine = []
+    # for table_row in tqdm(my_cursor.fetchall()):
+    #     if not get_ref_for_resource_p(table_row.id, table_row.exactLocation, table_row.body):
+    #         to_examine.append({
+    #             'id': table_row.id,
+    #             'Original Ref': table_row.exactLocation
+    #         })
+    # print(len(to_examine))
+    # with open('unparsed_refs.csv', 'w') as fp:
+    #     writer = unicodecsv.DictWriter(fp, fieldnames=['id', 'Original Ref'])
+    #     writer.writeheader()
+    #     writer.writerows(to_examine)
+
+    relation_manager = SheetManager()
+    my_cursor.execute('SELECT id, name, parent_id FROM Pages')
+    for sheet_data in my_cursor.fetchall():
+        relation_manager.create_sheet(sheet_data.id, sheet_data.name, sheet_data.parent_id)
+
+    root_sheets = relation_manager.get_root_sheets()
+    print("root sheets:", len(root_sheets))
+
+    multiple_title_ids = []
+    for sheet_relation in root_sheets:
+        names = sheet_relation.get_names_from_branch()
+        if len(set(names)) > 1:
+            multiple_title_ids.append(sheet_relation)
+    print("multiple title branches:", len(multiple_title_ids))
+    rendered_relations = [sheet_relation.render() for sheet_relation in multiple_title_ids]
+
+    with codecs.open('multiple_title_id_sheets.html', 'w', 'utf-8') as fp:
+        fp.write(u''.join(rendered_relations))
+
+    # my_cursor.execute('SELECT id FROM Pages WHERE parent_id = 0')
+    my_wrapped_sheet_list = [SheetWrapper(m.sheet_id, create_sheet_json(m.sheet_id, group_handler))
+                             for m in tqdm(root_sheets)]
+    print('finished creating sheets')
+    num_processes = 29
+    sheet_chunks = list(split_list(my_wrapped_sheet_list, num_processes))
+    pool = Pool(num_processes)
+    pool.map(p_sheet_poster, sheet_chunks)
+    group_handler.publicize_groups()
+
+    # qa_sheets = random.sample([ws for ws in my_wrapped_sheet_list if ws.sheet_json['sources']], 60)
+    # qa_rows = [
+    #     {
+    #         'Sefaria URL': get_url_for_sheet_id(qa_sheet.page_id, destination_server),
+    #         'Midreshet URL': 'https://midreshet.org.il/PageView.aspx?id={}'.format(qa_sheet.page_id),
+    #         'Comments': ''
+    #     }
+    #     for qa_sheet in qa_sheets
+    # ]
+    # with open('Midreshet QA.csv', 'w') as fp:
+    #     writer = unicodecsv.DictWriter(fp, ['Sefaria URL', 'Midreshet URL', 'Comments'])
+    #     writer.writeheader()
+    #     writer.writerows(qa_rows)
+
+    # my_cursor = MidreshetCursor()
+    # my_cursor.execute('SELECT id, MidreshetRef FROM RefMap WHERE SefariaRef IS NULL')
+    # ref_sources_mongo = my_mongo_client.yonis_data.RefSources
+    # valid_ids = [q['resource_id'] for q in ref_sources_mongo.find({"SefariaRef": {"$eq": None}})]
+    # valid_id_set = set(valid_ids)
+    # q_rows = my_cursor.fetchall()
+    # all_sources = [q.MidreshetRef for q in q_rows if q.id in valid_id_set]
+    # valid_ids = [q.id for q in q_rows if q.id in valid_id_set]
+    # del q_rows
+    # id_map = {}
+    # sf = SefariaTermsAndTitles()
+    # print('sources and ids match?', len(all_sources) == len(valid_ids))
 
 
-# catcher, word_catcher = NGramCatcher(), WordSequenceCatcher()
-# gram_lengths, sequence_lengths = range(12, 30), range(1, 8)
-#
-# for each_source, source_id in zip(all_sources, valid_ids):
-#     simplified = re.sub(u'[^\u05d0-\u05ea ]', u'', each_source)
-#     sf.find_titles_and_terms(simplified)
-#     id_map[simplified] = source_id
-#     # catcher.find_series_of_grams(gram_lengths, simplified)
-#     word_catcher.find_series_of_grams(sequence_lengths, simplified)
-#
-# for length in sequence_lengths:
-#     print('')
-#     print('words of length {}'.format(length))
-#     common = word_catcher.retrieve_most_common(length, 40)
-#     for c in common:
-#         print(u'{}: {}'.format(*c))
+    # catcher, word_catcher = NGramCatcher(), WordSequenceCatcher()
+    # gram_lengths, sequence_lengths = range(12, 30), range(1, 8)
+    #
+    # for each_source, source_id in zip(all_sources, valid_ids):
+    #     simplified = re.sub(u'[^\u05d0-\u05ea ]', u'', each_source)
+    #     sf.find_titles_and_terms(simplified)
+    #     id_map[simplified] = source_id
+    #     # catcher.find_series_of_grams(gram_lengths, simplified)
+    #     word_catcher.find_series_of_grams(sequence_lengths, simplified)
+    #
+    # for length in sequence_lengths:
+    #     print('')
+    #     print('words of length {}'.format(length))
+    #     common = word_catcher.retrieve_most_common(length, 40)
+    #     for c in common:
+    #         print(u'{}: {}'.format(*c))
 
-# for length in gram_lengths:
-#     print('')
-#     print('length {}'.format(length))
-#     common = catcher.retrieve_most_common(length, 20)
-#     for c in common:
-#         print(u'{}: {}'.format(*c))
+    # for length in gram_lengths:
+    #     print('')
+    #     print('length {}'.format(length))
+    #     common = catcher.retrieve_most_common(length, 20)
+    #     for c in common:
+    #         print(u'{}: {}'.format(*c))
 
-# print('\n\n\n')
-# print(len(sf.titles_and_terms_counter.keys()))
-# for foo, bar in sf.titles_and_terms_counter.most_common(30):
-#     print(foo, bar)
-#
-#
-# def handler(signum, frame):
-#     print("No input, exiting")
-#     sys.exit(0)
-#
-#
-# signal.signal(signal.SIGALRM, handler)
-# while True:
-#     signal.alarm(600)
-#     lookup_term = unicode(raw_input(u"Type 'exit' to end program\n").decode('utf-8'))
-#     signal.alarm(0)
-#     if lookup_term == u'exit':
-#         break
-#     elif lookup_term == u'reprint':
-#         for foo, bar in sf.titles_and_terms_counter.most_common(50):
-#             print(foo, bar)
-#     else:
-#         interesting_ids = [id_map[thing] for thing in sf.terms_to_refs_map[lookup_term]]
-#         try_refs_by_id(interesting_ids)
+    # print('\n\n\n')
+    # print(len(sf.titles_and_terms_counter.keys()))
+    # for foo, bar in sf.titles_and_terms_counter.most_common(30):
+    #     print(foo, bar)
+    #
+    #
+    # def handler(signum, frame):
+    #     print("No input, exiting")
+    #     sys.exit(0)
+    #
+    #
+    # signal.signal(signal.SIGALRM, handler)
+    # while True:
+    #     signal.alarm(600)
+    #     lookup_term = unicode(raw_input(u"Type 'exit' to end program\n").decode('utf-8'))
+    #     signal.alarm(0)
+    #     if lookup_term == u'exit':
+    #         break
+    #     elif lookup_term == u'reprint':
+    #         for foo, bar in sf.titles_and_terms_counter.most_common(50):
+    #             print(foo, bar)
+    #     else:
+    #         interesting_ids = [id_map[thing] for thing in sf.terms_to_refs_map[lookup_term]]
+    #         try_refs_by_id(interesting_ids)
 
 
-# for possible_ref in sf.terms_to_refs_map[u'תהלים']:
-#     interesting_id = id_map[possible_ref]
-#     print(interesting_id, possible_ref)
-#     new_ref = rematch_ref(interesting_id)
-#     if new_ref:
-#         print(new_ref)
-#     else:
-#         print('Found Nothing')
+    # for possible_ref in sf.terms_to_refs_map[u'תהלים']:
+    #     interesting_id = id_map[possible_ref]
+    #     print(interesting_id, possible_ref)
+    #     new_ref = rematch_ref(interesting_id)
+    #     if new_ref:
+    #         print(new_ref)
+    #     else:
+    #         print('Found Nothing')
 
 
