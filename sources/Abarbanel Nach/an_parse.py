@@ -222,13 +222,14 @@ if checking:
     with open("Abarbanel_errors.txt", "w") as f:
         f.write("")
 for _file in os.listdir("files"):
-    if 'txt' in _file:# and "איכ" not in _file:
+    if 'txt' in _file and "שופ" not in _file:
         meg = megilah(_file)
         if "Isai" in meg.en_name:
             postme=True
-        if True:#postme:
+        #if True:#postme:
             #meg.post_ab_index()
-            meg.post_ab_text(False) 
+            #meg.post_ab_text(True)
+            #meg.ab_link() 
             #0/0            
         admin_links.append(SEFARIA_SERVER+"/admin/reset/Abarbanel on "+meg.en_name)
         site_links.append(SEFARIA_SERVER+"/Abarbanel on "+meg.en_name)
