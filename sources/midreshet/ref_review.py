@@ -1,6 +1,7 @@
 # encoding=utf-8
 
 from __future__ import print_function
+import argparse
 import unicodecsv
 from extract_midreshet_sheets import MidreshetCursor, get_ref_for_resource_p, bleach_clean
 
@@ -8,8 +9,13 @@ import django
 django.setup()
 from sefaria.model import *
 
+parser = argparse.ArgumentParser()
+parser.add_argument("filename", help="file to parse refs from")
+cmd_args = parser.parse_args()
+input_filename = cmd_args.filename
+print(input_filename)
 
-with open('Midrash Refs Fixed.csv', 'r') as fp:
+with open(input_filename, 'r') as fp:
     entries = list(unicodecsv.DictReader(fp))
 
 valid_refs = [entry for entry in entries if Ref.is_ref(entry['New Ref'])]
