@@ -14,8 +14,8 @@ import json
 import pickle
 from data_utilities.util import getGematria, numToHeb
 import codecs
-from data_utilities.ibid import *
 from aspaklaria_connect import client
+from data_utilities.ibid import *
 import pstats
 import cProfile
 # from index_title_catcher import *  # get_index_via_titles
@@ -880,6 +880,7 @@ def read_with_refs(letter):
         for i, t in tqdm(enumerate(topics.values())):
             print "*******************"
             print t.headWord
+            topic_key = post_topic(t)
             for author in t.all_a_citations:
                 for s in author.sources:
                     if s.raw_ref:
@@ -913,6 +914,7 @@ def read_with_refs(letter):
                             else:
                                 document['segment_level'] = False
                         document['cnt'] = cnt
+                        document['topic_key'] = topic_key
                         db_aspaklaria.aspaklaria_source.insert_one(document)
                         cnt+=1
                         print '-----------------'
@@ -989,6 +991,7 @@ def intersect_2_strings(title, raw):
          return len(intersection)
     return
 
+
 def sublists(a, b):
     upper = max(len(a), len(b)) + 1
     for i in range(upper):
@@ -997,9 +1000,35 @@ def sublists(a, b):
                 return True
     return False
 
+def post_topic(t):
+    topic_doc = {}
+    topic_doc['topic'] = t.headWord
+    if t.see:
+        topic_doc['see'] = t.see
+        for see in t.see:
+            see = see.strip()
+            doc = {'topic': t.headWord, 'see': see}
+            found = db_aspaklaria.aspaklaria_source.find({'topic':see})
+            if found:
+                for f in found:
+                    doc['found'] = f['_id']
+            db_aspaklaria.pairing.insert_one(doc)
+    if t.altTitles:
+        topic_doc['alt_title'] = t.altTitles
+    author_list = [a_cit.author for a_cit in t.all_a_citations]
+    number_per_author = [len(a_cit.sources) for a_cit in t.all_a_citations]
+    number_sources = sum(number_per_author)
+    if author_list:
+        topic_doc['authors'] = author_list
+    topic_doc['sources#'] = number_sources
+
+    res = db_aspaklaria.aspaklaria_topics.insert_one(topic_doc)
+    return res.inserted_id  # does insert return the doc in the mongo (let's say with the '_id')?
+
+
 if __name__ == "__main__":
-    he_letter = u'PE'
-    letter_gimatria = u'080'
+    he_letter = u'QOF'
+    letter_gimatria = u'100'
     parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
     shamas_per_leter(he_letter)
     read_with_refs(u'{}'.format(he_letter))
