@@ -16,6 +16,7 @@ import bleach
 import pyodbc
 import requests
 import unicodecsv
+from bs4 import BeautifulSoup
 from functools import partial
 from itertools import groupby
 from collections import namedtuple, Counter, defaultdict
@@ -804,6 +805,59 @@ def wrap_verse_markers(text_to_wrap):
     return u' '.join(as_words)
 
 
+def format_source_text(source_text):
+    def not_double(html_tag):
+        before = getattr(html_tag.previous, 'name', 'thingamabob') == html_tag.name
+        after = getattr(html_tag.next, 'name', 'thingamabob') == html_tag.name
+        return not before and not after
+
+    tag_map = {
+        'B': 'strong',
+        'STRONG': 'strong',
+        'b': 'strong',
+        'BR': 'br',
+        'A': 'a'
+    }
+    soup = BeautifulSoup(u'<root>{}</root>'.format(source_text), 'xml')
+    for tag in soup.root.find_all(True):
+        if tag.name in tag_map:
+            tag.name = tag_map[tag.name]
+
+        tag_style = tag.get('style', '')
+        if re.search(u'font-weight: ?bold|text-decoration: ?underline', tag_style):
+            tag.name = 'strong'
+
+        # if tag.name == 'br' and not_double(tag):
+        #     tag.insert_before(soup.new_tag('br'))
+
+    source_text = unicode(soup.root)
+    source_text = re.sub(ur'http(?!s):', u'https:', source_text)
+    bad_chars = [
+        u'\x83',
+        u'\uf0a7',
+        u'\u202d',
+        u'\u202c',
+        u'\uf0b7',
+        u'\u200b',
+        u'\u200f',
+        u'\uf0d8',
+        u'\u202a',
+        u'\u200e',
+        u'\uf0a9',
+        u'\u202e',
+        u'\u200d',
+        u'\u202b'
+    ]
+    source_text = re.sub(u'|'.join(bad_chars), u' ', source_text)
+    source_text = u' '.join(source_text.split())
+    return bleach.clean(
+        source_text,
+        tags=['ul', 'li', 'strong', 'i', 'br', 'a'],
+        attributes={'a': ['href']},
+        strip=True
+    )
+
+
 def create_sheet_json(page_id, group_manager):
     raw_sheet = get_sheet_by_id(page_id)
     sheet = {
@@ -828,7 +882,7 @@ def create_sheet_json(page_id, group_manager):
 
             if sefaria_ref:
                 source['ref'] = sefaria_ref
-                source['text'] = {'he': bleach.clean(resource['body'], tags=['ul', 'li'], attributes={}, strip=True),
+                source['text'] = {'he': format_source_text(resource['body']),
                                   'en': ''}
 
                 oref = Ref(sefaria_ref)
@@ -841,10 +895,10 @@ def create_sheet_json(page_id, group_manager):
             else:
                 source['outsideText'] = u'<span style="color: #999">{}</span><br>{}'.format(
                     resource['exactLocation'],
-                    bleach.clean(resource['body'], tags=['ul', 'li'], attributes={}, strip=True))
+                    format_source_text(resource['body']))
 
         else:
-            cleaned_text = bleach.clean(resource['body'], tags=['ul', 'li'], attributes={}, strip=True)
+            cleaned_text = format_source_text(resource['body'])
             if not cleaned_text:
                 continue
 
@@ -860,7 +914,7 @@ def create_sheet_json(page_id, group_manager):
             resource_attribution = u'כל הזכויות שמורות ל'
             resource_attribution = u'{}{}'.format(resource_attribution, resource['copyright'])
             copyright_link = re.sub(ur'/$', u'', resource['copyrightLink'])
-            resource_attribution = u'<small><span style="color: #999">{}</span><br><a href={}>{}</a></small>'.format(
+            resource_attribution = u'<small><span style="color: #999">\u00a9 {}</span><br><a href={}>{}</a></small>'.format(
                 resource_attribution, resource['copyrightLink'], copyright_link
             )
             if 'outsideText' in source:
