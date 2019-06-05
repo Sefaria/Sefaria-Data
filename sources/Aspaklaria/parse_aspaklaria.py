@@ -880,7 +880,8 @@ def read_with_refs(letter):
         for i, t in tqdm(enumerate(topics.values())):
             print "*******************"
             print t.headWord
-            topic_key = post_topic(t)
+            # topic_key = post_topic(t)
+            sources = []
             for author in t.all_a_citations:
                 for s in author.sources:
                     if s.raw_ref:
@@ -914,10 +915,13 @@ def read_with_refs(letter):
                             else:
                                 document['segment_level'] = False
                         document['cnt'] = cnt
-                        document['topic_key'] = topic_key
+                        # document['topic_key'] = topic_key
                         db_aspaklaria.aspaklaria_source.insert_one(document)
+                        if 'ref' in document.keys():
+                            sources.append(document['ref'])
                         cnt+=1
                         print '-----------------'
+            topic_key = post_topic(t, sources)
         print "done"
 
 
@@ -1000,19 +1004,36 @@ def sublists(a, b):
                 return True
     return False
 
-def post_topic(t):
+def clean_see(st):
+    """
+
+    :param st:
+    :return:
+    """
+    st = re.sub(u'(-|\.)', u' ', st)
+    st = st.strip()
+
+    return st
+
+def post_topic(t, sources=None):
+    """
+    postes to collection pairing for the topic words and the appropriate 'see'
+    :param t: topic
+    :param sources: a list of sources with Refs in Sefaria library as far as we can tell
+    :return: posts to collection 'aspaklaria_topics' and returns the mongo obj
+    """
     topic_doc = {}
     topic_doc['topic'] = t.headWord
     if t.see:
-        topic_doc['see'] = t.see
-        for see in t.see:
-            see = see.strip()
+        topic_doc['see'] = [clean_see(see) for see in t.see]
+        found_see = find_see_topics(topic_doc['see'])
+        for i, see in enumerate(topic_doc['see']):
             doc = {'topic': t.headWord, 'see': see}
-            found = db_aspaklaria.aspaklaria_source.find({'topic':see})
-            if found:
-                for f in found:
-                    doc['found'] = f['_id']
+            if see and found_see and found_see[i]:
+                doc['found'] = found_see[i]
             db_aspaklaria.pairing.insert_one(doc)
+        if found_see:
+            topic_doc['found'] = found_see
     if t.altTitles:
         topic_doc['alt_title'] = t.altTitles
     author_list = [a_cit.author for a_cit in t.all_a_citations]
@@ -1021,17 +1042,54 @@ def post_topic(t):
     if author_list:
         topic_doc['authors'] = author_list
     topic_doc['sources#'] = number_sources
+    topic_doc['sources'] = sources
 
     res = db_aspaklaria.aspaklaria_topics.insert_one(topic_doc)
-    return res.inserted_id  # does insert return the doc in the mongo (let's say with the '_id')?
+    return res
+
+
+def find_see_topics(see_list):
+    """
+    gets a document representing a topic and returns a list of matching documents for the 'see' field
+    :param row: either a doc to be inserted or a doc read from mongo
+    :return: list of found topics (as document mongo objects)
+    """
+    found_see = []
+    if see_list:
+        for see in see_list:
+            see = clean_see(see)
+            found = db_aspaklaria.aspaklaria_topics.count_documents({'topic': see})
+            if found:
+                # for f in found:
+                found_see.append(1)
+            else:
+                found_see.append(0)
+    return found_see if any(found_see) else []
+
+def add_found_to_topics():
+    """
+    goes over collection 'aspaklaria_topics' and adds a list see topic objects respectively
+    :return: nothing, just updates the docs in the collection
+    """
+    topics = db_aspaklaria.aspaklaria_topics.find({})
+    for t in topics:
+        if 'see' in t.keys():
+            found_see = find_see_topics(t['see'])
+            if found_see:
+                oldid = t['_id']
+                t['found'] = found_see
+                del t['_id']
+                # db_aspaklaria.aspaklaria_topics.update_one({'_id': '{}'.format(oldid)}, {'$set':{'found':found_see}})
+                db_aspaklaria.aspaklaria_topics.update({'_id': oldid}, t)
 
 
 if __name__ == "__main__":
-    he_letter = u'QOF'
-    letter_gimatria = u'100'
-    parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
-    shamas_per_leter(he_letter)
+    he_letter = u'ALEF'
+    letter_gimatria = u'001'
+    # parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
+    # shamas_per_leter(he_letter)
     read_with_refs(u'{}'.format(he_letter))
+    add_found_to_topics()
     # cProfile.runctx(u"g(x)", {'x': u'{}_{}'.format(letter_gimatria, he_letter), 'g': parse2pickle}, {}, 'stats')
     # p = pstats.Stats("stats")
     # p.strip_dirs().sort_stats("cumulative").print_stats()
