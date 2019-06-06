@@ -862,14 +862,14 @@ def parse2pickle(letter=u''):
     pass
 
 
-def read_with_refs(letter):
+def read_sources(letter, with_refs='pickle_files'):
     """
 
     :param letter: letter to be parsed
     :return: does not return, but rather inserts the data into mongo
     """
 
-    with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/with_refs/{}.pickle".format(letter), "rb") as fp:
+    with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/{}/{}.pickle".format(with_refs,letter), "rb") as fp:
         topics = pickle.load(fp)
         print u"opend {}".format(letter)
         # cnt_sources = 0
@@ -1026,7 +1026,7 @@ def post_topic(t, sources=None):
     topic_doc['topic'] = t.headWord
     if t.see:
         topic_doc['see'] = [clean_see(see) for see in t.see]
-        found_see = find_see_topics(topic_doc['see'])
+        found_see = find_see_topics(topic_doc['see'], collection='topics')
         for i, see in enumerate(topic_doc['see']):
             doc = {'topic': t.headWord, 'see': see}
             if see and found_see and found_see[i]:
@@ -1048,7 +1048,7 @@ def post_topic(t, sources=None):
     return res
 
 
-def find_see_topics(see_list):
+def find_see_topics(see_list, collection): #='topics'
     """
     gets a document representing a topic and returns a list of matching documents for the 'see' field
     :param row: either a doc to be inserted or a doc read from mongo
@@ -1056,40 +1056,55 @@ def find_see_topics(see_list):
     """
     found_see = []
     if see_list:
+        if isinstance(see_list, unicode):
+            see_list = [see_list]
         for see in see_list:
             see = clean_see(see)
             found = db_aspaklaria.aspaklaria_topics.count_documents({'topic': see})
             if found:
                 # for f in found:
-                found_see.append(1)
+                found_see.append(see)
             else:
-                found_see.append(0)
+                found_see.append(None)
     return found_see if any(found_see) else []
 
-def add_found_to_topics():
+def add_found_to_topics(collection): #  = 'topics'
     """
     goes over collection 'aspaklaria_topics' and adds a list see topic objects respectively
     :return: nothing, just updates the docs in the collection
     """
-    topics = db_aspaklaria.aspaklaria_topics.find({})
+    # topics = db_aspaklaria.aspaklaria_topics.find({})
+    topics = db_aspaklaria['{}'.format(collection)].find({})
     for t in topics:
         if 'see' in t.keys():
-            found_see = find_see_topics(t['see'])
+            found_see = find_see_topics(t['see'], collection)
             if found_see:
                 oldid = t['_id']
-                t['found'] = found_see
-                del t['_id']
-                # db_aspaklaria.aspaklaria_topics.update_one({'_id': '{}'.format(oldid)}, {'$set':{'found':found_see}})
-                db_aspaklaria.aspaklaria_topics.update({'_id': oldid}, t)
+                new = t.copy()
+                new['found'] = found_see[0] if (len(found_see)==1 and collection == 'pairing') else found_see
+                del new['_id']
+                # db_aspaklaria['{}'.format(collection)].update_one({'_id': '{}'.format(oldid)}, {'$set':{'found':found_see}})
+                # db_aspaklaria.aspaklaria_topics.update({'_id': oldid}, t)
+                db_aspaklaria['{}'.format(collection)].update({'_id': oldid}, new)
 
 
 if __name__ == "__main__":
-    he_letter = u'ALEF'
-    letter_gimatria = u'001'
-    # parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
-    # shamas_per_leter(he_letter)
-    read_with_refs(u'{}'.format(he_letter))
-    add_found_to_topics()
+    # he_letter = u'010_ALEF'
+    # letter = '009_TET'
+    letter = ''
+    letters = [letter] if letter else os.listdir(
+        u'/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/')
+    for letter in letters:
+        if not os.path.isdir(u'/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/{}'.format(letter)):
+            continue
+        match = re.search(u'(\d*)_(.*)', letter)
+        he_letter= match.group(2)
+        letter_gimatria = match.group(1)
+        # parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
+        # shamas_per_leter(he_letter)
+        read_sources(u'{}'.format(he_letter))#, with_refs='with_refs')
+    add_found_to_topics(collection='aspaklaria_topics')
+    add_found_to_topics(collection='pairing')
     # cProfile.runctx(u"g(x)", {'x': u'{}_{}'.format(letter_gimatria, he_letter), 'g': parse2pickle}, {}, 'stats')
     # p = pstats.Stats("stats")
     # p.strip_dirs().sort_stats("cumulative").print_stats()
