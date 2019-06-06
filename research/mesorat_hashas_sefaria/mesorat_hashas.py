@@ -533,12 +533,21 @@ class ParallelMatcher:
                     vtitle = 'William Davidson Edition - Aramaic'
                 else:
                     vtitle = None
-                schema_node = oref.index_node
-                unit_il, unit_rl = schema_node.text_index_map(unit_tokenizer, lang=lang, vtitle=vtitle, strict=False)
-                unit_list_temp = schema_node.traverse_to_list(
-                    lambda n, _: TextChunk(n.ref(), lang, vtitle=vtitle).ja().flatten_to_array() if not n.children else [])
-                unit_wl = [w for seg in unit_list_temp for w in unit_tokenizer(seg)]
-                unit_str = tref
+                try:
+                    # jagged array, can be instantiated as TextChunk
+                    text_chunk = oref.text(lang, vtitle)
+                    unit_il, unit_rl, total_len, unit_flattened = text_chunk.text_index_map(unit_tokenizer, ret_ja=True)
+                    unit_wl = [w for seg in unit_flattened for w in unit_tokenizer(seg)]
+                    unit_str = oref.normal()
+                except InputError:
+                    # schema node
+                    schema_node = oref.index_node
+                    assert schema_node.ref() == oref, u"Schema Node {} isn't equal to original ref {}".format(schema_node.ref().normal(), oref.normal())
+                    unit_il, unit_rl = schema_node.text_index_map(unit_tokenizer, lang=lang, vtitle=vtitle, strict=False)
+                    unit_list_temp = schema_node.traverse_to_list(
+                        lambda n, _: TextChunk(n.ref(), lang, vtitle=vtitle).ja().flatten_to_array() if not n.children else [])
+                    unit_wl = [w for seg in unit_list_temp for w in unit_tokenizer(seg)]
+                    unit_str = tref
 
             text_index_map_data[iunit] = (unit_wl, unit_il, unit_rl, unit_str)
             total_len = len(unit_wl)
