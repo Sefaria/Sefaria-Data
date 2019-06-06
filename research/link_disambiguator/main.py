@@ -282,7 +282,12 @@ def disambiguate_all():
 
 def disambiguate_one(ld, main_oref, main_tc, quoted_oref, quoted_tc):
     good, bad = [], []
-    main_snippet_list, is_talmud_ref_to_daf_list = get_snippet_by_seg_ref(main_tc, quoted_oref, must_find_snippet=True, snip_size=65, use_indicator_words=True)
+    try:
+        main_snippet_list, is_talmud_ref_to_daf_list = get_snippet_by_seg_ref(main_tc, quoted_oref, must_find_snippet=True, snip_size=65, use_indicator_words=True)
+    except InputError:
+        return good, bad
+    except UnicodeEncodeError:
+        return good, bad
     if main_snippet_list:
         for isnip, (main_snippet, is_ref_to_daf) in enumerate(zip(main_snippet_list, is_talmud_ref_to_daf_list)):
             quoted_tref = quoted_oref.normal()
@@ -299,8 +304,9 @@ def disambiguate_one(ld, main_oref, main_tc, quoted_oref, quoted_tc):
                     u"Quoting Ref": v[u"B Ref"] if not is_bad else k,
                     u"Score": v[u"Score"] if not is_bad else LOWEST_SCORE
                 }
-                print u"ref to daf!"
-                print temp
+                if is_ref_to_daf:
+                    print u"ref to daf!"
+                    print temp
                 if is_bad:
                     bad += [temp]
                 else:
@@ -339,7 +345,6 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
     all_reg = library.get_multi_title_regex_string(set(found.index.all_titles("he")), "he")
     reg = regex.compile(all_reg, regex.VERBOSE)
     source_text = re.sub(ur"<[^>]+>", u"", strip_cantillation(source_tc.text, strip_vowels=True))
-
     linkified = library._wrap_all_refs_in_string(title_nodes, reg, source_text, "he")
 
     snippets = []
