@@ -356,7 +356,7 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
         temp_is_talmud_ref_to_daf = False
         if ref.primary_category == "Talmud":
             temp_match = regex.search(TALMUD_ADDRESS_REG, match.group(2))
-            if temp_match and temp_match.groups[-1] is None:
+            if temp_match is not None and temp_match.groups()[-1] is None:
                 # last group corresponds to amud. if amud isn't in ref, assume ref is to full daf
                 temp_is_talmud_ref_to_daf = True
         if ref.normal() == found_section_normal or ref.normal() == found_normal:
