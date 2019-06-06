@@ -17,11 +17,12 @@ from collections import defaultdict, OrderedDict
 from sefaria.system.exceptions import PartialRefInputError, InputError, NoVersionFoundError, DuplicateRecordError
 from sefaria.utils.hebrew import strip_cantillation
 from data_utilities.util import WeightedLevenshtein
+from data_utilities.ibid import CitationFinder
 from data_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord
 from sources.functions import post_text, post_link
 
 LOWEST_SCORE = -28
-
+TALMUD_ADDRESS_REG = regex.compile(CitationFinder.create_jan_for_address_type(["Talmud"]).address_regex("he") + u"$", regex.VERBOSE)
 def argmax(iterable, n=1):
     if n==1:
         return [max(enumerate(iterable), key=lambda x: x[1])[0]]
@@ -281,10 +282,13 @@ def disambiguate_all():
 
 def disambiguate_one(ld, main_oref, main_tc, quoted_oref, quoted_tc):
     good, bad = [], []
-    main_snippet_list = get_snippet_by_seg_ref(main_tc, quoted_oref, must_find_snippet=True, snip_size=65, use_indicator_words=True)
+    main_snippet_list, is_talmud_ref_to_daf_list = get_snippet_by_seg_ref(main_tc, quoted_oref, must_find_snippet=True, snip_size=65, use_indicator_words=True)
     if main_snippet_list:
-        for isnip, main_snippet in enumerate(main_snippet_list):
-            results = ld.disambiguate_segment_by_snippet(quoted_oref.normal(), [(main_snippet, main_oref.normal())])
+        for isnip, (main_snippet, is_ref_to_daf) in enumerate(zip(main_snippet_list, is_talmud_ref_to_daf_list)):
+            quoted_tref = quoted_oref.normal()
+            if is_ref_to_daf and quoted_tref[-1] == u"a":
+                quoted_tref += u"-b"  # make ref to full daf
+            results = ld.disambiguate_segment_by_snippet(quoted_tref, [(main_snippet, main_oref.normal())])
             temp_good, temp_bad = [], []
             for k, v in results.items():
                 is_bad = v is None
@@ -295,6 +299,8 @@ def disambiguate_one(ld, main_oref, main_tc, quoted_oref, quoted_tc):
                     u"Quoting Ref": v[u"B Ref"] if not is_bad else k,
                     u"Score": v[u"Score"] if not is_bad else LOWEST_SCORE
                 }
+                print u"ref to daf!"
+                print temp
                 if is_bad:
                     bad += [temp]
                 else:
@@ -337,13 +343,21 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
     linkified = library._wrap_all_refs_in_string(title_nodes, reg, source_text, "he")
 
     snippets = []
+    is_talmud_ref_to_daf = []
     found_normal = found.normal()
     found_section_normal = re.match(ur"^[^:]+", found_normal).group()
     for match in re.finditer(u"(<a [^>]+>)([^<]+)(</a>)", linkified):
         ref = Ref(match.group(2))
+        temp_is_talmud_ref_to_daf = False
+        if ref.primary_category == "Talmud":
+            temp_match = regex.search(TALMUD_ADDRESS_REG, match.group(2))
+            if temp_match and temp_match.groups[-1] is None:
+                # last group corresponds to amud. if amud isn't in ref, assume ref is to full daf
+                temp_is_talmud_ref_to_daf = True
         if ref.normal() == found_section_normal or ref.normal() == found_normal:
             if return_matches:
                 snippets += [match]
+                is_talmud_ref_to_daf += [temp_is_talmud_ref_to_daf]
             else:
                 start_snip_naive = match.start(1) - snip_size if match.start(1) >= snip_size else 0
                 start_snip_space = linkified.rfind(u" ", 0, start_snip_naive)
@@ -372,6 +386,7 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
                 else:
                     temp_snip = linkified[start_snip:end_snip]
                 snippets += [re.sub(ur"<[^>]+>", u"", temp_snip)]
+                is_talmud_ref_to_daf += [temp_is_talmud_ref_to_daf]
 
     if len(snippets) == 0:
         if must_find_snippet:
@@ -438,7 +453,7 @@ def count_words():
     for ii, i in enumerate(index_set):
         print u"{}/{}".format(ii, len(index_set))
         count_words_map(i)
-    with codecs.open('word_counts.json', 'wb', encoding='utf8') as fout:
+    with codecs.open('word_counts2.json', 'wb', encoding='utf8') as fout:
         json.dump(word_counter, fout)
 
 
@@ -451,6 +466,8 @@ def count_words_map(index):
             for w in Link_Disambiguator.tokenize_words(seg):
                 word_counter[w] += 1
     except InputError:
+        pass
+    except AttributeError:
         pass
 
 
@@ -495,9 +512,9 @@ def calc_stats():
         json.dump({"books": books, "cats": cats}, fout, ensure_ascii=False, indent=2)
 
 def run():
-    #ld = Link_Disambiguator()
-    #ld.get_ambiguous_segments()
-    #disambiguate_all()
+    ld = Link_Disambiguator()
+    ld.get_ambiguous_segments()
+    disambiguate_all()
     #get_qa_csv()
     # ld = Link_Disambiguator()
     # ld.disambiguate_gra()
@@ -505,7 +522,7 @@ def run():
     #post_unambiguous_links()
     #calc_stats()
     #filter_books_from_output({u'Akeidat Yitzchak', u'HaKtav VeHaKabalah'}, {u'Responsa'})
-    filter_books_from_output({u'Alshich on Torah', u'Meshech Hochma', u'Messilat Yesharim', u'Gevurot Hashem', u'Kedushat Levi', u'Mei HaShiloach'}, set())
+    #filter_books_from_output({u'Alshich on Torah', u'Meshech Hochma', u'Messilat Yesharim', u'Gevurot Hashem', u'Kedushat Levi', u'Mei HaShiloach'}, set())
 
 
 if __name__ == '__main__':
