@@ -393,7 +393,7 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
             return None
         return [source_text]
 
-    return snippets
+    return snippets, is_talmud_ref_to_daf
 
 
 def get_qa_csv():
@@ -406,7 +406,7 @@ def get_qa_csv():
     qa_rows = [
         {
             u"Found Text": Ref(x['Quoted Ref']).text("he").ja().flatten_to_string(),
-            u"Source Text": u"...".join(get_snippet_by_seg_ref(Ref(x['Quoting Ref']).text('he'), Ref(x['Quoted Ref']))),
+            u"Source Text": u"...".join(get_snippet_by_seg_ref(Ref(x['Quoting Ref']).text('he'), Ref(x['Quoted Ref']))[0]),
             u"URL": u"https://sefaria.org/{}?p2={}".format(Ref(x['Quoting Ref']).url(), Ref(x['Quoted Ref']).url()),
             u"Wrong segment (seg) / Wrong link (link)": u""
         }
