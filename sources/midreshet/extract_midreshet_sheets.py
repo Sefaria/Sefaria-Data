@@ -681,7 +681,7 @@ def get_sheet_by_id(page_id, rebuild_cache=False):
     assert len(rows) == 1
     sheet = convert_row_to_dict(rows[0])
 
-    cursor.execute('SELECT name, body, exactLocation, resource_id, display_type, minorType, copyright, copyrightLink '
+    cursor.execute('SELECT name, body, exactLocation, resource_id, display_type, minorType, copyright, copyrightLink, fullResourceLink '
                    'FROM PageResources JOIN Resources '
                    'ON PageResources.resource_id = Resources.id '
                    'WHERE PageResources.page_id=? '
@@ -850,12 +850,13 @@ def format_source_text(source_text):
     ]
     source_text = re.sub(u'|'.join(bad_chars), u' ', source_text)
     source_text = u' '.join(source_text.split())
-    return bleach.clean(
+    source_text = bleach.clean(
         source_text,
         tags=['ul', 'li', 'strong', 'i', 'br', 'a'],
         attributes={'a': ['href']},
         strip=True
     )
+    return re.sub(ur'(<br>)+\s*$', u'', source_text)
 
 
 def create_sheet_json(page_id, group_manager):
@@ -913,9 +914,18 @@ def create_sheet_json(page_id, group_manager):
         if resource['copyright']:
             resource_attribution = u'כל הזכויות שמורות ל'
             resource_attribution = u'{}{}'.format(resource_attribution, resource['copyright'])
-            copyright_link = re.sub(ur'/$', u'', resource['copyrightLink'])
+            truncated_copyright = re.sub(ur'https?://', u'', resource['copyrightLink'])
+            if not truncated_copyright:
+                if resource['fullResourceLink']:
+                    copyright_link = resource['fullResourceLink']
+                else:
+                    copyright_link = u''
+            else:
+                copyright_link = resource['copyrightLink']
+            copyright_link = re.sub(ur'http(?!s):', u'https:', copyright_link)
+            copyright_link = re.sub(ur'/$', u'', copyright_link)
             resource_attribution = u'<small><span style="color: #999">\u00a9 {}</span><br><a href={}>{}</a></small>'.format(
-                resource_attribution, resource['copyrightLink'], copyright_link
+                resource_attribution, copyright_link, copyright_link
             )
             if 'outsideText' in source:
                 source['outsideText'] = u'{}<br>{}'.format(source['outsideText'], resource_attribution)
