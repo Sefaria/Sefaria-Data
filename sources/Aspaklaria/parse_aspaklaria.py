@@ -571,10 +571,10 @@ class Source(object):
                     ns=[]
                     ns_titles_and_refs = dict()
                     [ns.extend(alt['nodes']) for alt in new_index.alt_structs.values()]
-                    if hasattr(ns[0], 'titles'):
+                    if 'titles' in ns[0].keys():
                         ns_titles_and_refs = dict([(x['titles'][1]['text'], x['wholeRef']) for x
                              in ns])
-                    elif hasattr(ns[0], 'sharedTitle'):
+                    elif 'sharedTitle' in ns[0].keys():
                         ns_titles_and_refs = dict([(Term().load_by_title(x['sharedTitle']).get_primary_title('he')
 , x['wholeRef']) for x in ns])
                     possible_nodes.extend(ns_titles_and_refs.keys())
