@@ -233,6 +233,7 @@ class Source(object):
         self.ref = None
 
         self.extract_raw_ref()
+        # if hasattr(self.raw_ref, 'is_sham') and not self.raw_ref.is_sham:
         self.get_ref_from_api()
         # after failing by using the api let's try without.
         if not self.ref:
@@ -560,6 +561,44 @@ class Source(object):
                         except exceptions.InputError:
                                 print "we tried"
                                 self.ref = None
+        elif self.indexs and self.raw_ref and not self.raw_ref.is_sham:
+            for ind in self.indexs:
+                new_index = ind if isinstance(ind, Index) else library.get_index(ind)
+                self.index = new_index
+                possible_nodes = new_index.all_titles('he')
+                ns_titles_and_refs = []
+                if hasattr(new_index, 'alt_structs'):
+                    ns=[]
+                    ns_titles_and_refs = dict()
+                    [ns.extend(alt['nodes']) for alt in new_index.alt_structs.values()]
+                    if hasattr(ns[0], 'titles'):
+                        ns_titles_and_refs = dict([(x['titles'][1]['text'], x['wholeRef']) for x
+                             in ns])
+                    elif hasattr(ns[0], 'sharedTitle'):
+                        ns_titles_and_refs = dict([(Term().load_by_title(x['sharedTitle']).get_primary_title('he')
+, x['wholeRef']) for x in ns])
+                    possible_nodes.extend(ns_titles_and_refs.keys())
+                node_guess = intersect_list_string(possible_nodes, self.raw_ref.rawText)
+                if not self.ref and node_guess:
+                    try:
+                        if ns_titles_and_refs:
+                            r = Ref(ns_titles_and_refs[node_guess])
+                        else:
+                            r = Ref(node_guess)
+                        if not self.check_for_wrong_ref(r):
+                            self.ref = r
+                    except InputError:
+                        self.ref = u''
+                        print u'the node guess is not a Ref'
+                # elif node_guess:
+                #     # then we should check witch is the better option
+                #     # maybe using the length of matching words in regards to the titles
+                #     ref_opt1 = self.ref.he_normal()
+                #     ref_opt2 = node_guess
+                #     # sets = strings2sets(ref_opt1, ref_opt2, self.raw_ref.rawText)
+                #     if abs(len(set[1]) - len(set[2])) < abs(len(set[0]) - len(set[2])):
+                #         self.ref = Ref(node_guess)
+
 
     def check_for_wrong_ref(self, r=None):
         wrong_ref = False
@@ -654,6 +693,8 @@ class Source(object):
                     ind = library.get_index(ind_title)
                 elif isinstance(ind_title, Index):
                     ind = ind_title
+                elif isinstance(ind_title, tuple):
+                    ind = ind_title[1]
                 else:
                     ind = None
                 if ind and not ind.is_dependant_text():
@@ -817,7 +858,9 @@ class RawRef(object):
         self.book = None
         self.section_level = None
         self.segment_level = None
-        self.is_sham = False
+        self.is_sham = None
+        if re.search(u"^\(שם", self.rawText):
+            self.is_sham = True
 
 
 def write_to_file(text, mode='a'):
@@ -855,7 +898,7 @@ def parse2pickle(letter=u''):
         if letter_name:
             letter_name = letter_name.group(1)
             print u'{} headwords in the letter {}'.format(i, letter_name)
-        with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/{}.pickle".format(letter_name), "w") as fp:
+        with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/{}.pickle".format(letter_name),"w") as fp:
             # json.dump(topics, fp) #TypeError: <__main__.Topic object at 0x7f5f5bb73790> is not JSON serializable
             pickle.dump(topics, fp, -1)
         all_topics[letter_name] = topics
@@ -919,7 +962,7 @@ def read_sources(letter, with_refs='pickle_files'):
                         db_aspaklaria.aspaklaria_source.insert_one(document)
                         if 'ref' in document.keys():
                             sources.append(document['ref'])
-                        cnt+=1
+                        cnt += 1
                         print '-----------------'
             topic_key = post_topic(t, sources)
         print "done"
@@ -1091,7 +1134,7 @@ def add_found_to_topics(collection): #  = 'topics'
 if __name__ == "__main__":
     # he_letter = u'010_ALEF'
     # letter = '009_TET'
-    letter = ''
+    letter = '004_DALET'
     letters = [letter] if letter else os.listdir(
         u'/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/')
     for letter in letters:
@@ -1101,10 +1144,10 @@ if __name__ == "__main__":
         he_letter= match.group(2)
         letter_gimatria = match.group(1)
         # parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
-        # shamas_per_leter(he_letter)
-        read_sources(u'{}'.format(he_letter))#, with_refs='with_refs')
-    add_found_to_topics(collection='aspaklaria_topics')
-    add_found_to_topics(collection='pairing')
+        shamas_per_leter(he_letter)
+        read_sources(u'{}'.format(he_letter), with_refs='with_refs')
+    # add_found_to_topics(collection='aspaklaria_topics')
+    # add_found_to_topics(collection='pairing')
     # cProfile.runctx(u"g(x)", {'x': u'{}_{}'.format(letter_gimatria, he_letter), 'g': parse2pickle}, {}, 'stats')
     # p = pstats.Stats("stats")
     # p.strip_dirs().sort_stats("cumulative").print_stats()

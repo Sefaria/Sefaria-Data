@@ -71,7 +71,7 @@ class Test_Source_methods(object):
         source = Source(u" (בראשית כב כא)",u'הגר"א')
         assert source.ref == Ref(u"Aderet Eliyahu, Genesis 22:21")
         source = Source(u"(בראשית יג ה)", u"לקח טוב")
-        assert source.ref == Ref(u"Midrash Lekach Tov on Torah, Genesis 13:5")
+        assert source.ref == Ref(u"Midrash Lekach Tov, Genesis 13:5")
         source = Source(u"(תורה שבכתב נח, בסופו)", u'של"ה')
         assert source.ref == Ref(u"Shenei Luchot HaBerit, Torah Shebikhtav, Noach")
         source = Source(u"(בעשרה מאמרות מאמר ב)", u'של"ה')
@@ -86,6 +86,8 @@ class Test_Source_methods(object):
         assert source.ref == Ref(u"Sefat Emet, Exodus, For Purim")
         source = Source(u'(דעת תורה במדבר עמוד קסג)', u'''ר' ירוחם''')
         source.ref = None  # because we don't have rabbi Yrucham as an index at all.
+        source = Source(u"(האזינו שיג)", u"ספרי")
+        assert source.ref == Ref(u"Sifrei Devarim 306-341") #note: this is not שיג we will use the PM for this as well. the resoen is this ref is a mash of 2 diffrent alt structures.
     #     מדרש שמואל, (אבות ה ה, וראה שם עוד)
     # Pirkei Avot 5:5
     # def test_get_look_here_titles(self):
@@ -93,10 +95,10 @@ class Test_Source_methods(object):
     #     assert source.get_look_here_titles(look_here) == [(u'Bereishit Rabbah', u'Bereishit') ,(u'Shemot Rabbah', u'Shemot'), (u'Vayikra Rabbah', u'Vayikra'), (u'Bemidbar Rabbah', u'Bemidbar'), (u'Devarim Rabbah', u'Devarim'), (u'Esther Rabbah', u'Esther'), (u'Shir HaShirim Rabbah', u'Shir HaShirim'), (u'Kohelet Rabbah', u'Kohelet'), (u'Ruth Rabbah', u'Ruth'), (u'Eichah Rabbah', u'Eichah')]
 
     def test_individual_source(self):
-        source = Source(u"(מאמר ב כלל ו פרק ב)", u"אור ה'")
-        source = Source(u"(מסכת חולין, וראה שם עוד)", u'של"ה')
+        source = Source(u"(ויחי, ועיין שם עוד וערך תפלת הדרך)", u"ילקוט ראובני")
+        # assert source.ref == Ref(u"Midrash Lekach Tov, Genesis 13:5")
         print source.ref
-        # assert source.ref == Ref(u"Sefat Emet, Exodus, For Purim")
+        # assert source.ref == Ref(u"Sifrei Devarim 306-341") note: this is not שיג we will use the PM for this as well. the resoen is this ref is a mash of 2 diffrent alt structures.
 
     def test_get_ref_mishneh_torah(self):
         source = Source(u'(ברכות ב ז)', u'משנה תורה')
