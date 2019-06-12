@@ -878,12 +878,18 @@ def create_sheet_json(page_id, group_manager):
             # 'outsideText': bleach.clean(resource['body'], strip=True, tags=[], attributes={}),
             'options': {}
         }
+        resource_title = re.sub(u'^\s+$', u'', resource['name'])
+        if resource_title:
+            resource_body = u'<strong>{}</strong><br>{}'.format(resource_title, resource['body'])
+        else:
+            resource_body = resource['body']
+
         if resource['exactLocation']:
             sefaria_ref = resource.get('SefariaRef', None)
 
             if sefaria_ref:
                 source['ref'] = sefaria_ref
-                source['text'] = {'he': format_source_text(resource['body']),
+                source['text'] = {'he': format_source_text(resource_body),
                                   'en': ''}
 
                 oref = Ref(sefaria_ref)
@@ -896,10 +902,10 @@ def create_sheet_json(page_id, group_manager):
             else:
                 source['outsideText'] = u'<span style="color: #999">{}</span><br>{}'.format(
                     resource['exactLocation'],
-                    format_source_text(resource['body']))
+                    format_source_text(resource_body))
 
         else:
-            cleaned_text = format_source_text(resource['body'])
+            cleaned_text = format_source_text(resource_body)
             if not cleaned_text:
                 continue
 
