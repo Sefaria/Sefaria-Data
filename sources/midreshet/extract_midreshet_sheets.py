@@ -762,9 +762,9 @@ def format_terms(term_list):
         for term_item in terms_by_type[term_type]:
             term_name = u' '.join(term_item['name'].split())
             if term_name:
-                term_text_list.append(u'{} - {}'.format(term_name, term_item['body']))
+                term_text_list.append(u'{} - {}'.format(term_name, format_source_text(term_item['body'])))
             else:
-                term_text_list.append(term_item['body'])
+                term_text_list.append(format_source_text(term_item['body']))
 
         formatted_terms.append(u'<i>{}</i><ul style="margin: 1px;"><li>{}</li></ul>'.
                                format(term_type, u'</li><li>'.join(term_text_list)))
@@ -773,7 +773,7 @@ def format_terms(term_list):
 
 def format_dictionaries(word_list):
     """Consider making this into descriptive lists in the future."""
-    entries = [u'{} - {}'.format(word['name'], word['body']) for word in word_list]
+    entries = [u'{} - {}'.format(word['name'], format_source_text(word['body'])) for word in word_list]
     return u'<i>{}</i><ul><li>{}</li></ul>'.format(u'מילים', u'</li><li>'.join(entries))
 
 
@@ -931,6 +931,14 @@ def create_sheet_json(page_id, group_manager):
                 source['outsideText'] = u'{}<br>{}'.format(source['outsideText'], resource_attribution)
             else:
                 source['text']['he'] = u'{}<br>{}'.format(source['text']['he'], resource_attribution)
+
+        elif resource['fullResourceLink']:  # some sources have a source link but no copyright
+            full_source_link = re.sub(ur'http(?!s):', u'https:', resource['fullResourceLink'])
+            full_source_link = u'<a href="{}">{}</a>'.format(full_source_link, u'למקור השלם')
+            if 'outsideText' in source:
+                source['outsideText'] = u'{}<br>{}'.format(source['outsideText'], full_source_link)
+            else:
+                source['text']['he'] = u'{}<br>{}'.format(source['text']['he'], full_source_link)
 
         if resource['terms']:
             if 'outsideText' in source:
@@ -1240,5 +1248,6 @@ if __name__ == '__main__':
     #         print(new_ref)
     #     else:
     #         print('Found Nothing')
+    requests.post(os.environ['SLACK_URL'], json={'text': 'upload complete'})
 
 
