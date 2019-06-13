@@ -23,7 +23,7 @@ from collections import namedtuple, Counter, defaultdict
 from multiprocessing import Pool
 from sources.functions import post_sheet
 from sources.local_settings import API_KEY
-from data_utilities.util import Singleton, getGematria, split_list
+from data_utilities.util import Singleton, getGematria, split_list, numToHeb
 from research.source_sheet_disambiguator.main import refine_ref_by_text
 
 import django
@@ -777,32 +777,68 @@ def format_dictionaries(word_list):
     return u'<i>{}</i><ul><li>{}</li></ul>'.format(u'מילים', u'</li><li>'.join(entries))
 
 
-def wrap_verse_markers(text_to_wrap):
+class VerseMarkWrapper(object):
     """
     Tanakh segments typically have vowels. We'll identify verse markers by a series of Hebrew characters that have
     no vowel markers. As a sanity check, we'll make sure that a significant portion of the text contain vowel marks.
-    :param text_to_wrap:
-    :return:
+
+    We'll also calculate the exact Gematria presentations of the values 1-199.
     """
-    def wrap(word_to_wrap):
-        match = re.match(ur'^\(?([\u05d0-\u05ea]+)\)?$', word_to_wrap)
-        if match:
-            return u'<small>({})</small>'.format(match.group(1))
-        else:
-            return word_to_wrap
+    def __init__(self):
+        gematrias = sorted([numToHeb(num) for num in xrange(1, 200)], key=lambda x: len(x), reverse=True)
+        self.verse_pattern = u'|'.join(gematrias)
 
-    all_he = len(re.findall(ur'[\u0591-\u05f4]', text_to_wrap))
-    just_chars = len(re.findall(ur'[\u05d0-\u05ea]', text_to_wrap))
-    try:
-        marks_to_chars_ratio = float(all_he - just_chars) / float(all_he)
-    except ZeroDivisionError:
-        marks_to_chars_ratio = 0.0
+    def wrap(self, word_to_wrap):
+        # match = re.match(ur'^({})$'.format(self.verse_pattern), word_to_wrap)
+        # if match:
+        #     return u'<small>({})</small>'.format(match.group(1))
+        # else:
+        #     return word_to_wrap
+        return re.sub(ur'(^|>)({})($|<)(?!br)'.format(self.verse_pattern),
+                      ur'\g<1><small>(\g<2>)</small>\g<3>', word_to_wrap)
 
-    if marks_to_chars_ratio < 0.3:  # this ratio is a guess, but the cases I checked were over 0.4
-        return text_to_wrap
+    def __call__(self, text_to_wrap):
+        all_he = len(re.findall(ur'[\u0591-\u05f4]', text_to_wrap))
+        just_chars = len(re.findall(ur'[\u05d0-\u05ea]', text_to_wrap))
+        try:
+            marks_to_chars_ratio = float(all_he - just_chars) / float(all_he)
+        except ZeroDivisionError:
+            marks_to_chars_ratio = 0.0
 
-    as_words = [wrap(word) for word in text_to_wrap.split()]
-    return u' '.join(as_words)
+        if marks_to_chars_ratio < 0.3:  # this ratio is a guess, but the cases I checked were over 0.4
+            return text_to_wrap
+
+        as_words = [self.wrap(word) for word in text_to_wrap.split()]
+        return u' '.join(as_words)
+
+
+wrap_verse_markers = VerseMarkWrapper()
+# def wrap_verse_markers(text_to_wrap):
+#     """
+#     Tanakh segments typically have vowels. We'll identify verse markers by a series of Hebrew characters that have
+#     no vowel markers. As a sanity check, we'll make sure that a significant portion of the text contain vowel marks.
+#     :param text_to_wrap:
+#     :return:
+#     """
+#     def wrap(word_to_wrap):
+#         match = re.match(ur'^\(?([\u05d0-\u05ea]+)\)?$', word_to_wrap)
+#         if match:
+#             return u'<small>({})</small>'.format(match.group(1))
+#         else:
+#             return word_to_wrap
+#
+#     all_he = len(re.findall(ur'[\u0591-\u05f4]', text_to_wrap))
+#     just_chars = len(re.findall(ur'[\u05d0-\u05ea]', text_to_wrap))
+#     try:
+#         marks_to_chars_ratio = float(all_he - just_chars) / float(all_he)
+#     except ZeroDivisionError:
+#         marks_to_chars_ratio = 0.0
+#
+#     if marks_to_chars_ratio < 0.3:  # this ratio is a guess, but the cases I checked were over 0.4
+#         return text_to_wrap
+#
+#     as_words = [wrap(word) for word in text_to_wrap.split()]
+#     return u' '.join(as_words)
 
 
 def format_source_text(source_text):
@@ -856,6 +892,7 @@ def format_source_text(source_text):
         attributes={'a': ['href']},
         strip=True
     )
+    source_text = re.sub(ur'\s+<br>\s*', u'<br> ', source_text)
     return re.sub(ur'(<br>)+\s*$', u'', source_text)
 
 
