@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import os
+import traceback
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
 SEFARIA_PROJECT_PATH = "/var/www/readonly"
@@ -270,10 +271,10 @@ def disambiguate_all():
         except PartialRefInputError:
             pass
         except InputError as e:
-            print e
+            traceback.print_exc(file=sys.stdout)
             pass
         except TypeError as e:
-            print e
+            traceback.print_exc(file=sys.stdout)
             pass
     save_disambiguated_to_file(good, bad, csv_good, csv_bad)
     fgood.close()
@@ -293,6 +294,7 @@ def disambiguate_one(ld, main_oref, main_tc, quoted_oref, quoted_tc):
             quoted_tref = quoted_oref.normal()
             if is_ref_to_daf and quoted_tref[-1] == u"a":
                 quoted_tref += u"-b"  # make ref to full daf
+                quoted_tref = Ref(quoted_tref).normal()  # renormalize
             results = ld.disambiguate_segment_by_snippet(quoted_tref, [(main_snippet, main_oref.normal())])
             temp_good, temp_bad = [], []
             for k, v in results.items():
@@ -344,6 +346,8 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
     title_nodes = {t: found_node for t in found.index.all_titles("he")}
     all_reg = library.get_multi_title_regex_string(set(found.index.all_titles("he")), "he")
     reg = regex.compile(all_reg, regex.VERBOSE)
+    if len(source_tc.text) == 0 or not isinstance(source_tc.text, basestring):
+        print source_tc._oref
     source_text = re.sub(ur"<[^>]+>", u"", strip_cantillation(source_tc.text, strip_vowels=True))
     linkified = library._wrap_all_refs_in_string(title_nodes, reg, source_text, "he")
 
@@ -395,19 +399,19 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
 
     if len(snippets) == 0:
         if must_find_snippet:
-            return None
-        return [source_text]
+            return None, [False]
+        return [source_text], [False]
 
     return snippets, is_talmud_ref_to_daf
 
 
 def get_qa_csv():
-    with open("unambiguous_links.json", "rb") as fin:
+    with open("research/link_disambiguator/unambiguous_links.json", "rb") as fin:
         cin = unicodecsv.DictReader(fin)
         rows = [row for row in cin]
 
-    tanakh = random.sample(filter(lambda x: Ref(x['Quoted Ref']).primary_category == "Tanakh", rows), 250)
-    talmud = random.sample(filter(lambda x: Ref(x['Quoted Ref']).primary_category == "Talmud", rows), 250)
+    tanakh = random.sample(filter(lambda x: Ref(x['Quoted Ref']).primary_category == "Tanakh" and Ref(x['Quoting Ref']).is_segment_level(), rows), 250)
+    talmud = random.sample(filter(lambda x: Ref(x['Quoted Ref']).primary_category == "Talmud" and Ref(x['Quoting Ref']).is_segment_level(), rows), 250)
     qa_rows = [
         {
             u"Found Text": Ref(x['Quoted Ref']).text("he").ja().flatten_to_string(),
@@ -417,7 +421,7 @@ def get_qa_csv():
         }
         for x in (tanakh + talmud)]
 
-    with open("QA Section Links.csv", "wb") as fout:
+    with open("research/link_disambiguator/QA Section Links.csv", "wb") as fout:
         csv = unicodecsv.DictWriter(fout, [u"Source Text", u"Found Text", u"URL", u"Wrong segment (seg) / Wrong link (link)"])
         csv.writeheader()
         csv.writerows(qa_rows)
