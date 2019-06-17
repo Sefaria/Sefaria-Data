@@ -25,6 +25,86 @@ class Test_Source_methods(object):
         # source.extract_indx() # it is called inside the Source init
         assert True
 
+    dict_input = [
+                    { 'author':u'מהר"ל', 'raw_text':u'טקסט (דרך חיים א ה)', 'ref':Ref('Derech Chaim 1:5') },
+                    { 'author':u'מדרש רבה', 'raw_text':u'טקסט (בראשית כז ג)', 'ref':Ref('Bereishit Rabbah 27:3') },
+                    { 'author':u'רמב"ן', 'raw_text':u'(רמב"ן, בראשית יח יא)', 'ref':Ref('Ramban on Genesis 18:11') },
+                    { 'author':u'ילקוט שמעוני', 'raw_text':u'(משלי פרק א, תתקכט)', 'ref':Ref('Yalkut Shimoni on Nach 929:1-932:6') },
+                    { 'author':u'בעל הטורים', 'raw_text':u'(דברים טו טז)', 'ref':Ref('Kitzur Baal Haturim on Deuteronomy 15:16') },
+                    { 'author':u'זהר חדש', 'raw_text':u'(בראשית תו)', 'ref':Ref('Zohar Chadash, Bereshit') },
+                    { 'author':u'מדרש רבה', 'raw_text':u'(דברים ח ג)', 'ref':Ref('Devarim Rabbah 8:3') },
+                    { 'author':u'ילקוט שמעוני', 'raw_text':u'(מלכים ב פרק יח, רצו)', 'ref':Ref('Yalkut Shimoni on Nach 234:8-239:1') },
+                    { 'author':u'ילקוט שמעוני', 'raw_text':u'(דניאל תתרסה)', 'ref':Ref('Yalkut Shimoni on Nach 1065') },
+                    { 'author':u'מורה נבוכים', 'raw_text':u'(חלק ג )', 'ref':Ref('Guide for the Perplexed, Part 3') },
+                    { 'author':u'מורה נבוכים', 'raw_text':u'(חלק ג פרק א)', 'ref':Ref('Guide for the Perplexed, Part 3 1') },
+                    { 'author':u'מורה נבוכים', 'raw_text':u'(פתיחה)', 'ref':Ref('Guide for the Perplexed, Introduction, Prefatory Remarks') },
+                    { 'author':u'אלשיך', 'raw_text':u'(במדבר א יב)', 'ref':Ref('Alshich on Torah, Numbers 1:12') },
+                    { 'author':u'אלשיך', 'raw_text':u'(רות א יב)', 'ref':Ref('Enei Moshe on Ruth 1:12') },
+                    { 'author':u'משנה תורה', 'raw_text':u'(ערכין ג טו)', 'ref':Ref('Mishneh Torah, Appraisals and Devoted Property 3') },
+                    { 'author':u'משנה תורה', 'raw_text':u'(נזקי ממון ב ז, וראה שם עוד)', 'ref':Ref('Mishneh Torah, Damages to Property 2:7') },
+                    { 'author':u'תרגום יונתן', 'raw_text':u' (תהלים כב כא)', 'ref':Ref('Aramaic Targum to Psalms 22:21') },
+                    { 'author':u'הגר"א', 'raw_text':u' (בראשית כב כא)', 'ref':Ref('Aderet Eliyahu, Genesis 22:21') },
+                    { 'author':u'לקח טוב', 'raw_text':u'(בראשית יג ה)', 'ref':Ref('Midrash Lekach Tov, Genesis 13:5') },
+                    { 'author':u'של"ה', 'raw_text':u'(תורה שבכתב נח, בסופו)', 'ref':Ref('Shenei Luchot HaBerit, Torah Shebikhtav, Noach') },
+                    { 'author':u'של"ה', 'raw_text':u'(בעשרה מאמרות מאמר ב)', 'ref':Ref('Shenei Luchot HaBerit, Asara Maamarot, Sixth Maamar') },
+                    { 'author':u'של"ה', 'raw_text':u'(מסכת חולין, וראה שם עוד)', 'ref':Ref('Shenei Luchot HaBerit, Aseret HaDibrot, Chullin') },
+                    { 'author':u'דרשות הר"ן', 'raw_text':u'(דרוש ז)', 'ref':Ref('Darashos HaRan 7') },
+                    { 'author':u'שפת אמת', 'raw_text':u'(שמות יתרו תרנ"ב)', 'ref':Ref('Sefat Emet, Exodus, Yitro') },
+                    { 'author':u'שפת אמת', 'raw_text':u'(פורים תרל"ד)', 'ref':Ref('Sefat Emet, Exodus, For Purim') },
+                    { 'author':u"ר' ירוחם", 'raw_text':u'(דעת תורה במדבר עמוד קסג)', 'ref':None },
+                    { 'author':u'אברבנאל', 'raw_text':u'(יהושע ח ל)', 'ref':None },
+                    { 'author':u'ספרי', 'raw_text':u'(האזינו שיג)', 'ref':Ref('Sifrei Devarim 306-341') },
+                    { 'author':u'ילקוט שמעוני', 'raw_text':u'(ויקרא פרק יא, תקלו)', 'ref':Ref('Yalkut Shimoni on Torah 536') },
+                ]
+
+    def organize_test_input_list(self, dict_input, firsts=None, print_ref=None):
+        input_list = []
+        if firsts or print_ref:
+            if isinstance(firsts, unicode):
+                firsts = [firsts]
+            if isinstance(print_ref, unicode):
+                print_ref = [print_ref]
+            dict_dict_input = dict([(e['raw_text'], e) for e in dict_input])
+            start = []
+            end = []
+            for k,v in dict_dict_input.items():
+                if print_ref and [pr for pr in print_ref if re.search(pr, v['raw_text'])]:
+                    dict_dict_input[k]['assert_ref'] = False
+                if v['author'] in firsts:
+                    start.append(dict_dict_input[k])
+                else:
+                    end.append(dict_dict_input[k])
+            dict_input = start+end
+        for e in dict_input:
+            if 'assert_ref' not in e.keys():
+                e['assert_ref'] = True
+            input_list.append((e['raw_text'],e['author'], e['ref'], e['assert_ref']))
+        return input_list
+
+    @pytest.mark.parametrize('raw_text, author, sefaria_ref, assert_ref', organize_test_input_list(dict_input, dict_input, u'ילקוט שמעוני', u'ויקרא פרק יא, תקל'))
+    def test_all(self, raw_text, author, sefaria_ref, assert_ref):
+        r = Source(raw_text, author).ref
+        if assert_ref:
+            assert r == sefaria_ref
+        else:
+            print u'Ref algo returns:', r
+
+    def get_input(text):
+        refs = []
+        p3 = re.compile(u'(Ref\(.*?\))')
+        for match in re.finditer(p3, text):
+            tuple = (match.group(1))
+            refs.append(tuple)
+        all = []
+        p3 = re.compile(u'.*?Source\((.*?\).+?u.*?)\)')
+        for match in re.finditer(p3, text):
+            tuple = (match.group(1))
+            all.append(tuple)
+        input = zip(all, refs)
+        for x in input:
+            print u'(', x[0], u',', x[1], u'),'
+        return
+
     def test_get_ref_step2(self):
         source = Source(u'טקסט (דרך חיים א ה)', u'מהר"ל')
         assert source.ref == Ref(u'Derech Chaim 1.5')
@@ -40,18 +120,10 @@ class Test_Source_methods(object):
         assert source.ref == Ref(u'Zohar Chadash, Bereshit')
         source = Source(u"(דברים ח ג)", u'מדרש רבה')
         assert source.ref == Ref(u'Devarim Rabbah 8.3')
-        source = Source(u"(מאמר ב כלל ו פרק ב)", u"אור ה'")
-        assert True
-        source = Source(u"(בראשית יז א שער יח)", u"עקדה")
-        assert True
         source = Source(u'(מלכים ב פרק יח, רצו)', u'ילקוט שמעוני')
         assert source.ref == Ref(u'Yalkut Shimoni on Nach 234:8-239:1')
         source = Source(u'(דניאל תתרסה)', u'ילקוט שמעוני')
         assert source.ref == Ref(u'Yalkut Shimoni on Nach 1065')
-        source = Source(u'(ויקרא פרק יא, תקלו)', u'ילקוט שמעוני')
-        print source.ref
-        source = Source(u"(יהושע ח ל)", u'אברבנאל')
-        assert source.ref == None  # we don't have Abarbanel on Prophets
         source = Source(u"(חלק ג )", u"מורה נבוכים")
         assert source.ref == Ref(u'Guide for the Perplexed, Part 3')
         source = Source(u"(חלק ג פרק א)", u"מורה נבוכים")
@@ -88,6 +160,15 @@ class Test_Source_methods(object):
         source.ref = None  # because we don't have rabbi Yrucham as an index at all.
         source = Source(u"(האזינו שיג)", u"ספרי")
         assert source.ref == Ref(u"Sifrei Devarim 306-341") #note: this is not שיג we will use the PM for this as well. the resoen is this ref is a mash of 2 diffrent alt structures.
+        source = Source(u"(מאמר ב כלל ו פרק ב)", u"אור ה'")
+        assert True
+        source = Source(u"(בראשית יז א שער יח)", u"עקדה")
+        assert True
+        source = Source(u"(יהושע ח ל)", u'אברבנאל')
+        assert source.ref == None  # we don't have Abarbanel on Prophets
+        source = Source(u'(ויקרא פרק יא, תקלו)', u'ילקוט שמעוני')
+        print source.ref
+
     #     מדרש שמואל, (אבות ה ה, וראה שם עוד)
     # Pirkei Avot 5:5
     # def test_get_look_here_titles(self):
@@ -95,9 +176,10 @@ class Test_Source_methods(object):
     #     assert source.get_look_here_titles(look_here) == [(u'Bereishit Rabbah', u'Bereishit') ,(u'Shemot Rabbah', u'Shemot'), (u'Vayikra Rabbah', u'Vayikra'), (u'Bemidbar Rabbah', u'Bemidbar'), (u'Devarim Rabbah', u'Devarim'), (u'Esther Rabbah', u'Esther'), (u'Shir HaShirim Rabbah', u'Shir HaShirim'), (u'Kohelet Rabbah', u'Kohelet'), (u'Ruth Rabbah', u'Ruth'), (u'Eichah Rabbah', u'Eichah')]
 
     def test_individual_source(self):
-        source = Source(u"(ויחי, ועיין שם עוד וערך תפלת הדרך)", u"ילקוט ראובני")
+        source = Source(u'(ויקרא פרק יא, תקלו)', u'ילקוט שמעוני')
+        #note: Sifrei parashot titles need to change and be sharedTitle
         # assert source.ref == Ref(u"Midrash Lekach Tov, Genesis 13:5")
-        print source.ref
+        print "&&&&&&&", source.ref
         # assert source.ref == Ref(u"Sifrei Devarim 306-341") note: this is not שיג we will use the PM for this as well. the resoen is this ref is a mash of 2 diffrent alt structures.
 
     def test_get_ref_mishneh_torah(self):
