@@ -20,6 +20,7 @@ import pstats
 import cProfile
 # from index_title_catcher import *  # get_index_via_titles
 from sefaria.system.database import db
+import matplotlib.pyplot as plt  # %matplotlib
 
 db_aspaklaria = client.aspaklaria
 
@@ -1080,7 +1081,7 @@ def post_topic(t, sources=None):
     if t.altTitles:
         topic_doc['alt_title'] = t.altTitles
     author_list = [a_cit.author for a_cit in t.all_a_citations]
-    number_per_author = [len(a_cit.sources) for a_cit in t.all_a_citations]
+    number_per_author = [len(a_cit.cit_list) for a_cit in t.all_a_citations]
     number_sources = sum(number_per_author)
     if author_list:
         topic_doc['authors'] = author_list
@@ -1134,7 +1135,7 @@ def add_found_to_topics(collection): #  = 'topics'
 if __name__ == "__main__":
     # he_letter = u'010_ALEF'
     # letter = '009_TET'
-    letter = '004_DALET'
+    letter = ''
     letters = [letter] if letter else os.listdir(
         u'/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/')
     for letter in letters:
@@ -1144,8 +1145,8 @@ if __name__ == "__main__":
         he_letter= match.group(2)
         letter_gimatria = match.group(1)
         # parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
-        shamas_per_leter(he_letter)
-        read_sources(u'{}'.format(he_letter), with_refs='with_refs')
+        # shamas_per_leter(he_letter)
+        read_sources(u'{}'.format(he_letter)) #, with_refs='with_refs')
     # add_found_to_topics(collection='aspaklaria_topics')
     # add_found_to_topics(collection='pairing')
     # cProfile.runctx(u"g(x)", {'x': u'{}_{}'.format(letter_gimatria, he_letter), 'g': parse2pickle}, {}, 'stats')
