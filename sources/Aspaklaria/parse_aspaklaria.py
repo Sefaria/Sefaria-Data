@@ -574,7 +574,7 @@ class Source(object):
                     [ns.extend(alt['nodes']) for alt in new_index.alt_structs.values()]
                     if 'titles' in ns[0].keys():
                         ns_titles_and_refs = dict([(x['titles'][1]['text'], x['wholeRef']) for x
-                             in ns])
+                             in ns if 'wholeRef' in x.keys()])
                     elif 'sharedTitle' in ns[0].keys():
                         ns_titles_and_refs = dict([(Term().load_by_title(x['sharedTitle']).get_primary_title('he')
 , x['wholeRef']) for x in ns])
@@ -583,7 +583,11 @@ class Source(object):
                 if not self.ref and node_guess:
                     try:
                         if ns_titles_and_refs:
-                            r = Ref(ns_titles_and_refs[node_guess])
+                            try:
+                                r = Ref(ns_titles_and_refs.get(node_guess, u''))
+                                r.normal()
+                            except (InputError, AttributeError):
+                                r = Ref(node_guess)
                         else:
                             r = Ref(node_guess)
                         if not self.check_for_wrong_ref(r):
@@ -722,9 +726,13 @@ class Source(object):
                     self.ref = new_ref
                 except exceptions.InputError as e:
                     new_ref = None  # so not to have new_ref that failed scrowing with stuff
-                    print u"inputError for this string {}, extracted from this rawref {}".format(
+                    try:
+                        print u"inputError for this string {}, extracted from this rawref {}".format(
                         u'{} {}'.format(self.index.title, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()),
                         self.raw_ref)
+                    except AttributeError:
+                        print u"inputError for this string {}, extracted from this rawref"
+
         return new_ref
 
     def get_index_options(self, include_dependant=True):
@@ -820,7 +828,7 @@ class Source(object):
                 self.ref = None
             return self.ref
 
-    def get_author(self, author_name):
+    def get_author_person(self, author_name):
         person = None
         query = {"names.text": u"{}".format(author_name)}
         author_curser = db.person.find(query)
@@ -830,7 +838,7 @@ class Source(object):
 
     def get_indexes_docs(self, author_name):
         indexes = []
-        person_key = self.get_author(author_name)
+        person_key = self.get_author_person(author_name)
         if person_key:
             indexes = db.index.find({"authors": "{}".format(person_key)})
         return indexes
@@ -859,7 +867,7 @@ class RawRef(object):
         self.book = None
         self.section_level = None
         self.segment_level = None
-        self.is_sham = None
+        self.is_sham = False
         if re.search(u"^\(שם", self.rawText):
             self.is_sham = True
 
@@ -1136,17 +1144,22 @@ if __name__ == "__main__":
     # he_letter = u'010_ALEF'
     # letter = '009_TET'
     letter = ''
+    skip_letters = [] # ['009_TET','050_NUN']
     letters = [letter] if letter else os.listdir(
         u'/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/')
     for letter in letters:
         if not os.path.isdir(u'/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/{}'.format(letter)):
             continue
+        if letter in skip_letters:
+            print u'skipped {}'.format(letter)
+            continue
         match = re.search(u'(\d*)_(.*)', letter)
         he_letter= match.group(2)
         letter_gimatria = match.group(1)
+        print u'**HE_LETTER** {}'.format(he_letter)
         # parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
-        # shamas_per_leter(he_letter)
-        read_sources(u'{}'.format(he_letter)) #, with_refs='with_refs')
+        shamas_per_leter(he_letter)
+        read_sources(u'{}'.format(he_letter), with_refs='with_refs')
     # add_found_to_topics(collection='aspaklaria_topics')
     # add_found_to_topics(collection='pairing')
     # cProfile.runctx(u"g(x)", {'x': u'{}_{}'.format(letter_gimatria, he_letter), 'g': parse2pickle}, {}, 'stats')
