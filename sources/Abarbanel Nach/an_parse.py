@@ -14,6 +14,7 @@ import difflib
 
 
 start_expressions=[u'הפרשה',u'פרשה',u'נבואה',u'הנבואה',u'פרשת',u'נבואת']
+
 aleph_beis=ur'אב'
 name_dict={}
 for text in library.get_indexes_in_category('Tanakh'):
@@ -95,12 +96,16 @@ class megilah:
             lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
         text_array = make_perek_array(self.en_name)
         intro_box=[]
+        goes_into_next=[]
         in_intro=False
+        just_trailed=False
         current_chapter=1
         current_verse=1
         for line in lines:
             if u'@' in line:
                 if u'פרק' in line:
+                    if just_trailed:
+                        print "ERR",'{} {}:{}:{}\n'.format(self.en_name, current_chapter, current_verse,len(text_array[current_chapter-1][current_verse-1])+1)
                     current_chapter=getGematria(re.search(ur'(?<=פרק ).*',line).group())
                     current_verse=1
                     in_intro=False
@@ -110,26 +115,30 @@ class megilah:
                 if in_intro:
                     intro_box.append(line)
                 else:
-                    if re.search(ur'^\s*\([א-ת- ]{1,15}\)',line):
-                        current_verse=getGematria(re.search(ur'^\([א-ת- ]+\)',line).group().split(u'-')[0])
-                    #try:
-                    if checking:
-                        #print '{} {}:{}:{}\n'.format(self.en_name, current_chapter, current_verse,len(text_array[current_chapter-1][current_verse-1])+1)
-                        #print line
-                        for s in start_expressions:
-                            if re.search(ur'^{} '.format(s),line) and len(text_array[current_chapter-1][current_verse-1])>0:
-                                print "CAUGHT"
-                                with open("Abarbanel_errors.txt", "a") as f:
-                                    f.write('{} {}:{}:{}\n'.format(self.en_name, current_chapter, current_verse,len(text_array[current_chapter-1][current_verse-1])+1)) 
-                                    f.write('{}\n\n'.format(line.encode('utf8','replace')))
-                    text_array[current_chapter-1][current_verse-1].append(clean_line(line))
-                    """
-                    except:
-                        print "ERR",self.en_name
-                        print current_chapter, current_verse
-                        print line
-                        0/0
-                    """
+                    line = re.sub(ur'(?<=[\.:])\s*(\(\S{1,2}\))',ur'@@@\1',line)
+                    for sec in line.split(u'@@@'):
+                        if not_blank(sec):
+                            posted_this_line=False
+                            cleaned_sec=clean_sec(sec)
+                            if len(goes_into_next)>0:
+                                cleaned_sec=goes_into_next.pop()+u' '+cleaned_sec
+                            placement='{} {}:{}:{}'.format(self.en_name, current_chapter, current_verse,len(text_array[current_chapter-1][current_verse-1])+1)
+                            if not re.search(ur'[\.:]$',cleaned_sec) and len(re.split(ur'[:\.]',cleaned_sec)[-1].split(u' '))<7 and self.en_name not in 'Ezekiel':
+                                moving=re.split(ur'[/.:]',cleaned_sec)[-1]
+                                goes_into_next.append(moving)
+                                cleaned_sec=cleaned_sec.replace(moving, u'')
+                            if just_trailed:
+                                text_array[last_position[0]][last_position[1]][last_position[2]]=text_array[last_position[0]][last_position[1]][last_position[2]]+u' '+cleaned_sec
+                                posted_this_line=True
+                                just_trailed=False
+                            if not re.search(ur'[\.:]$',cleaned_sec) and not (len(re.split(ur'[:\.]',cleaned_sec)[-1].split(u' '))<7 and self.en_name not in 'Ezekiel'):
+                                just_trailed=True  
+                            if not posted_this_line:
+                                if re.search(ur'^\s*\([א-ת- ]{1,15}\)',sec):
+                                    current_verse=getGematria(re.search(ur'^\([א-ת- ]+\)',sec).group().split(u'-')[0])
+                                last_position=[current_chapter-1,current_verse-1,len(text_array[current_chapter-1][current_verse-1])]
+                                text_array[current_chapter-1][current_verse-1].append(cleaned_sec)
+
         self.text=text_array
 
         if posting:
@@ -141,8 +150,9 @@ class megilah:
                     'text': intro_box
                 }
                 print "posting {} intro...".format(self.en_name)
+                #post_text("Abarbanel on {}, Introduction".format(self.en_name), version, weak_network=True)
                 post_text_weak_connection("Abarbanel on {}, Introduction".format(self.en_name), version)
-            
+                
             version = {
                 'versionTitle': "Abarbanel, Tel Aviv 1960",
                 'versionSource': 'http://merhav.nli.org.il/primo-explore/fulldisplay?docid=NNL_ALEPH001080676&context=L&vid=NLI&search_scope=Local&tab=default_tab&lang=iw_IL',
@@ -150,6 +160,7 @@ class megilah:
                 'text': text_array
             }
             print "posting {} text...".format(self.en_name)
+            #post_text("Abarbanel on "+self.en_name, version, weak_network=True)
             post_text_weak_connection("Abarbanel on "+self.en_name, version)
     def ab_link(self):
         self.post_ab_text(False)
@@ -171,11 +182,10 @@ def not_blank(s):
     while " " in s:
         s = s.replace(u" ",u"")
     return (len(s.replace(u"\n",u"").replace(u"\r",u"").replace(u"\t",u""))!=0);
-def clean_line(s):
+def clean_sec(s):
     pre=s
     s=re.sub(ur'\(ד\"ה ([{}]\')'.format(aleph_beis),ur'\(דברי הימים \1',s)
     s=re.sub(ur'דברי\s*-\s*הימים',u'דברי הימים',s)
-    s=re.sub(ur'[^א-ת .:(),?\'\-"\r\n;\[\]!]',u'',s)
     """
     if s!=pre:
         print pre
@@ -195,8 +205,10 @@ def clean_line(s):
     
     if re.search(ur'[\.,]',s):
         dot_index=re.search(ur'[\.,]',s).start()
-        if u'וגו\'' in s[:dot_index]:
+        if u'וגו\'' in s[:dot_index] and len(s[:dot_index+1].split(u' '))<16:
             s =u'<b>'+s[:dot_index+1]+u'</b>'+s[dot_index+1:]
+    #s=re.sub(ur'[^א-ת .:(),?\'\-"\r\n;\[\]!<>b]',u'',s)
+    s=s.rstrip()
     return s
 def make_perek_array(book):
     tc = TextChunk(Ref(book), "he")
@@ -221,15 +233,17 @@ checking=True
 if checking:
     with open("Abarbanel_errors.txt", "w") as f:
         f.write("")
+    with open("Abarbanel_ends_with_6_or_less.txt", "w") as f:
+        f.write("")
 for _file in os.listdir("files"):
-    if 'txt' in _file and "שופ" not in _file:
+    if 'txt' in _file:
         meg = megilah(_file)
         if "Isai" in meg.en_name:
             postme=True
-        #if True:#postme:
+        if True:#'Jud' in meg.en_name:#postme:
             #meg.post_ab_index()
-            #meg.post_ab_text(True)
-            #meg.ab_link() 
+            meg.post_ab_text(True)
+            meg.ab_link() 
             #0/0            
         admin_links.append(SEFARIA_SERVER+"/admin/reset/Abarbanel on "+meg.en_name)
         site_links.append(SEFARIA_SERVER+"/Abarbanel on "+meg.en_name)
@@ -238,4 +252,39 @@ for link in admin_links:
 print
 for link in site_links:
     print link
-        
+"""
+for reporting:
+    if checking:
+        #print '{} {}:{}:{}\n'.format(self.en_name, current_chapter, current_verse,len(text_array[current_chapter-1][current_verse-1])+1)
+        #print sec
+        for s in start_expressions:
+            if re.search(ur'^{} '.format(s),sec) and len(text_array[current_chapter-1][current_verse-1])>0:
+                print "CAUGHT"
+                with open("Abarbanel_errors.txt", "a") as f:
+                    f.write('{} {}:{}:{}\n'.format(self.en_name, current_chapter, current_verse,len(text_array[current_chapter-1][current_verse-1])+1)) 
+                    f.write('{}\n\n'.format(sec.encode('utf8','replace')))
+code to track trailers:
+    if just_trailed:
+        with open("Abarbanel_ends_with_6_or_less.txt", "a") as f:
+            f.write('{} {}:{}:{}\n'.format(self.en_name, current_chapter, current_verse,len(text_array[current_chapter-1][current_verse-1])+1)) 
+            f.write('{}\n\n'.format(cleaned_sec.encode('utf8','replace')))
+            just_trailed=False
+    if not re.search(ur'[\.:]$',cleaned_sec):
+        if len(re.split(ur'[:\.]',cleaned_sec)[-1].split(u' '))<7:
+            with open("Abarbanel_ends_with_6_or_less.txt", "a") as f:
+                f.write('___________________________________________________________\n')
+                f.write('{} {}:{}:{}\n'.format(self.en_name, current_chapter, current_verse,len(text_array[current_chapter-1][current_verse-1])+1)) 
+                f.write('{}\n\n'.format(cleaned_sec.encode('utf8','replace')))
+                just_trailed=True
+    
+not Ezekiel
+    merge_exceptions=[u'Isaiah 9:18:2',u'I Kings 8:17:1',u'Joshua 5:13:1',u'Judges 1:2:1',
+        u'Judges 1:4:1',u'Judges 1:8:1',u'Judges 1:27:1',u'Judges 1:28:1',u'Judges 1:29:1',u'Judges 1:30:1',
+        u'Judges 1:32:1',u'Judges 1:35:1',u'Judges 2:12:1',u'Judges 2:13:1',u'Judges 2:22:1',u'Judges 2:23:1',u'Judges 3:1:1',
+        u'Judges 3:27:1',u'Judges 4:14:1',u'Judges 5:1:1',u'Judges 5:9:1',u'Judges 5:10:1',u'Judges 5:14:1',u'Judges 5:25:1',
+        u'Judges 5:26:1',u'Judges 5:28:1',u'Judges 6:7:1',u'Judges 6:18:1',u'Judges 8:6:1',u'Judges 8:19:1',u'Judges 9:7:1',
+        u'Judges 9:18:1',u'Judges 11:3:2',u'Judges 11:5:1',u'Judges 11:7:1',u'Judges 11:12:1',u'Judges 11:13:1',u'Judges 11:27:1',
+        u'Judges 13:3:1',u'Judges 13:6:1',u'Judges 13:15:1',u'Judges 13:19:1',u'Judges 13:22:1',u'Judges 14:6:1',u'Judges 15:19:1',
+        u'Judges 18:4:1',u'Judges 20:38:1',u'I Samuel 1:15:1',u'I Samuel 1:17:1',u'I Samuel 2:20:1',u'I Samuel 3:2:1',
+        u'I Samuel 15:22:1',u'I Samuel 16:5:1']
+"""
