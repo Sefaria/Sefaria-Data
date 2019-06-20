@@ -681,7 +681,7 @@ def get_sheet_by_id(page_id, rebuild_cache=False):
     assert len(rows) == 1
     sheet = convert_row_to_dict(rows[0])
 
-    cursor.execute('SELECT name, body, exactLocation, resource_id, display_type, minorType, copyright, copyrightLink, fullResourceLink '
+    cursor.execute('SELECT id, name, body, exactLocation, resource_id, display_type, minorType, copyright, copyrightLink, fullResourceLink, attachId '
                    'FROM PageResources JOIN Resources '
                    'ON PageResources.resource_id = Resources.id '
                    'WHERE PageResources.page_id=? '
@@ -854,6 +854,9 @@ def format_source_text(source_text):
         'BR': 'br',
         'A': 'a'
     }
+    if not source_text:
+        source_text = u''
+    source_text = re.sub(u'&nbsp;', u' ', source_text)
     soup = BeautifulSoup(u'<root>{}</root>'.format(source_text), 'xml')
     for tag in soup.root.find_all(True):
         if tag.name in tag_map:
@@ -865,7 +868,8 @@ def format_source_text(source_text):
 
         # if tag.name == 'br' and not_double(tag):
         #     tag.insert_before(soup.new_tag('br'))
-
+    for tag in soup.root.find_all('p'):
+        tag.insert_after(soup.new_tag('br'))
     source_text = unicode(soup.root)
     source_text = re.sub(ur'http(?!s):', u'https:', source_text)
     bad_chars = [
@@ -896,6 +900,22 @@ def format_source_text(source_text):
     return re.sub(ur'(<br>)+\s*$', u'', source_text)
 
 
+class AddImage(object):
+    def __init__(self):
+        self.image_adapter = ImageAdapter()
+        self.cursor = MidreshetCursor()
+
+    def __call__(self, image_id, name):
+        image_data = self.cursor.execute('SELECT name, data, type FROM Files WHERE id=?', (image_id,)).fetchone()
+        if not image_data:
+            return None
+        image_url = self.image_adapter.adapt_image(name, image_data.name, image_data.data, image_data.type)
+        return image_url
+
+
+add_image = AddImage()
+
+
 def create_sheet_json(page_id, group_manager):
     raw_sheet = get_sheet_by_id(page_id)
     sheet = {
@@ -915,7 +935,8 @@ def create_sheet_json(page_id, group_manager):
             # 'outsideText': bleach.clean(resource['body'], strip=True, tags=[], attributes={}),
             'options': {}
         }
-        resource_title = re.sub(u'^\s+$', u'', resource['name'])
+
+        resource_title = re.sub(ur'^\s+$', u'', resource['name'])
         if resource_title:
             resource_body = u'<strong>{}</strong><br>{}'.format(resource_title, resource['body'])
         else:
@@ -994,6 +1015,23 @@ def create_sheet_json(page_id, group_manager):
                 source['outsideText'] = u'{}<br><br>{}'.format(source['outsideText'], format_dictionaries(resource['dictionary']))
             else:
                 source['text']['he'] = u'{}<br><br>{}'.format(source['text']['he'], format_dictionaries(resource['dictionary']))
+
+        if resource['attachId'] > 0:
+            image_url = add_image(resource['attachId'], resource['name'])
+            if image_url:
+                source['media'] = image_url
+                if 'outsideText' in source:
+                    source['caption'] = {
+                        'he': source['outsideText'],
+                        'en': ''
+                    }
+                    del source['outsideText']
+                else:
+                    source['caption'] = {
+                        'he': source['text']['he'],
+                        'en': ''
+                    }
+                    del source['text']
 
         sheet['sources'].append(source)
         sheet['group'] = group_manager.get_and_register_group_for_sheet(page_id)
@@ -1199,7 +1237,7 @@ if __name__ == '__main__':
     my_wrapped_sheet_list = [SheetWrapper(m.sheet_id, create_sheet_json(m.sheet_id, group_handler))
                              for m in tqdm(root_sheets)]
     print('finished creating sheets')
-    num_processes = 29
+    num_processes = 20
     sheet_chunks = list(split_list(my_wrapped_sheet_list, num_processes))
     pool = Pool(num_processes)
     pool.map(p_sheet_poster, sheet_chunks)
