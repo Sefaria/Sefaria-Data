@@ -415,7 +415,7 @@ class ImageAdapter(object):
     Adapts an image from the format used in midreshet to that which is used on Sefaria.
     """
     def __init__(self):
-        self.image_collection = pymongo.MongoClient().yois_data.images
+        self.image_collection = pymongo.MongoClient().yonis_data.images
 
     def adapt_image(self, name, filename, image_bytestring, image_type):
         image_data = self.image_collection.find_one({'name': name})
@@ -424,6 +424,8 @@ class ImageAdapter(object):
 
         else:
             filename = filename.split(u'\\')[-1]
+            extension = filename[-3:].lower()
+            filename = re.sub(ur'.{3}$', extension, filename)
             with open(filename, 'wb') as fp:
                 fp.write(image_bytestring)
 
@@ -868,8 +870,11 @@ def format_source_text(source_text):
 
         # if tag.name == 'br' and not_double(tag):
         #     tag.insert_before(soup.new_tag('br'))
-    for tag in soup.root.find_all('p'):
+    for tag in soup.root.find_all(['p', 'div']):
+        if tag.name == 'div' and getattr(tag.next, 'name', '') == 'p':
+            continue  # don't add a break in a div directly followed by a p
         tag.insert_after(soup.new_tag('br'))
+
     source_text = unicode(soup.root)
     source_text = re.sub(ur'http(?!s):', u'https:', source_text)
     bad_chars = [
@@ -968,17 +973,19 @@ def create_sheet_json(page_id, group_manager):
                 continue
 
             if resource['minorType'] == 2:  # this is a secondary title
-                source['outsideText'] = u'<span style="font-size: 24px; ' \
-                                        u'text-decoration:underline;' \
-                                        u' text-decoration-color:grey;">{}</span>'.format(cleaned_text)
+                # source['outsideText'] = u'<span style="font-size: 24px; ' \
+                #                         u'text-decoration:underline;' \
+                #                         u' text-decoration-color:grey;">{}</span>'.format(cleaned_text)
+                source['outsideText'] = u'<strong>{}</strong>'.format(cleaned_text)
             else:
                 source['outsideText'] = u'<span style="text-decoration:underline; text-decoration-color:grey">{}</span>' \
                                     u'<br>{}'.format(u'דיון', cleaned_text)
 
-        if resource['copyright']:
+        truncated_copyright = re.sub(ur'https?://', u'', resource['copyrightLink'] if resource['copyrightLink'] else u'')
+        if resource['copyright'] or truncated_copyright:
             resource_attribution = u'כל הזכויות שמורות ל'
-            resource_attribution = u'{}{}'.format(resource_attribution, resource['copyright'])
-            truncated_copyright = re.sub(ur'https?://', u'', resource['copyrightLink'])
+            resource_attribution = u'{}{}'.format(resource_attribution, resource.get('copyright', u''))
+
             if not truncated_copyright:
                 if resource['fullResourceLink']:
                     copyright_link = resource['fullResourceLink']
@@ -986,8 +993,12 @@ def create_sheet_json(page_id, group_manager):
                     copyright_link = u''
             else:
                 copyright_link = resource['copyrightLink']
+
             copyright_link = re.sub(ur'http(?!s):', u'https:', copyright_link)
+            if not re.match(ur'^https://', copyright_link):
+                copyright_link = u'https://{}'.format(copyright_link)
             copyright_link = re.sub(ur'/$', u'', copyright_link)
+
             resource_attribution = u'<small><span style="color: #999">\u00a9 {}</span><br><a href={}>{}</a></small>'.format(
                 resource_attribution, copyright_link, copyright_link
             )
