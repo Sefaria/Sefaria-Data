@@ -871,8 +871,9 @@ def format_source_text(source_text):
         # if tag.name == 'br' and not_double(tag):
         #     tag.insert_before(soup.new_tag('br'))
     for tag in soup.root.find_all(['p', 'div']):
-        if tag.name == 'div' and getattr(tag.next, 'name', '') == 'p':
-            continue  # don't add a break in a div directly followed by a p
+        next_tag = getattr(tag.next, 'name', '')
+        if next_tag in {'div', 'p', 'br'}:
+            continue  # try to avoid double break tags
         tag.insert_after(soup.new_tag('br'))
 
     source_text = unicode(soup.root)
@@ -921,6 +922,12 @@ class AddImage(object):
 add_image = AddImage()
 
 
+def get_iframe_url(text_with_iframe):
+    soup = BeautifulSoup(u'<root>{}</root>'.format(text_with_iframe), 'xml')
+    iframe = soup.iframe
+    return iframe['src']
+
+
 def create_sheet_json(page_id, group_manager):
     raw_sheet = get_sheet_by_id(page_id)
     sheet = {
@@ -942,10 +949,17 @@ def create_sheet_json(page_id, group_manager):
         }
 
         resource_title = re.sub(ur'^\s+$', u'', resource['name'])
-        if resource_title:
-            resource_body = u'<strong>{}</strong><br>{}'.format(resource_title, resource['body'])
+        resource_body = resource['body'] if resource['body'] else u''
+        if re.search(u'<iframe', resource_body):
+            is_video, video_url = True, get_iframe_url(resource_body)
         else:
-            resource_body = resource['body']
+            is_video, video_url = False, u''
+
+        if resource_title:
+            if resource_body:
+                resource_body = u'<strong>{}</strong><br>{}'.format(resource_title, resource_body)
+            else:
+                resource_body = u'<strong>{}</strong>'.format(resource_title)
 
         if resource['exactLocation']:
             sefaria_ref = resource.get('SefariaRef', None)
@@ -978,8 +992,14 @@ def create_sheet_json(page_id, group_manager):
                 #                         u' text-decoration-color:grey;">{}</span>'.format(cleaned_text)
                 source['outsideText'] = u'<strong>{}</strong>'.format(cleaned_text)
             else:
-                source['outsideText'] = u'<span style="text-decoration:underline; text-decoration-color:grey">{}</span>' \
-                                    u'<br>{}'.format(u'דיון', cleaned_text)
+                diyun = u'<span style="text-decoration:underline; text-decoration-color:grey">{}</span>'.format(u'דיון')
+
+                if re.match(u'^<ul>', cleaned_text):
+                    source['outsideText'] = u'{}{}'.format(diyun, cleaned_text)
+                else:
+                    source['outsideText'] = u'{}<br>{}'.format(diyun, cleaned_text)
+                # source['outsideText'] = u'<span style="text-decoration:underline; text-decoration-color:grey">{}</span>' \
+                #                     u'<br>{}'.format(u'דיון', cleaned_text)
 
         truncated_copyright = re.sub(ur'https?://', u'', resource['copyrightLink'] if resource['copyrightLink'] else u'')
         if resource['copyright'] or truncated_copyright:
@@ -994,9 +1014,9 @@ def create_sheet_json(page_id, group_manager):
             else:
                 copyright_link = resource['copyrightLink']
 
-            copyright_link = re.sub(ur'http(?!s):', u'https:', copyright_link)
-            if not re.match(ur'^https://', copyright_link):
-                copyright_link = u'https://{}'.format(copyright_link)
+            copyright_link = re.sub(ur'^http(?!s):', u'https:', copyright_link)
+            # if not re.match(ur'^https://', copyright_link):
+            #     copyright_link = u'https://{}'.format(copyright_link)
             copyright_link = re.sub(ur'/$', u'', copyright_link)
 
             resource_attribution = u'<small><span style="color: #999">\u00a9 {}</span><br><a href={}>{}</a></small>'.format(
@@ -1027,10 +1047,13 @@ def create_sheet_json(page_id, group_manager):
             else:
                 source['text']['he'] = u'{}<br><br>{}'.format(source['text']['he'], format_dictionaries(resource['dictionary']))
 
-        if resource['attachId'] > 0:
-            image_url = add_image(resource['attachId'], resource['name'])
-            if image_url:
-                source['media'] = image_url
+        if resource['attachId'] > 0 or is_video:
+            if is_video:
+                media_url = video_url
+            else:
+                media_url = add_image(resource['attachId'], resource['name'])
+            if media_url:
+                source['media'] = media_url
                 if 'outsideText' in source:
                     source['caption'] = {
                         'he': source['outsideText'],
