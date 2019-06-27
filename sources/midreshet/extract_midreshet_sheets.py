@@ -16,6 +16,7 @@ import bleach
 import pyodbc
 import requests
 import unicodecsv
+from urlparse import urlparse
 from bs4 import BeautifulSoup
 from functools import partial
 from itertools import groupby
@@ -872,9 +873,17 @@ def format_source_text(source_text):
         #     tag.insert_before(soup.new_tag('br'))
     for tag in soup.root.find_all(['p', 'div']):
         next_tag = getattr(tag.next, 'name', '')
-        if next_tag in {'div', 'p', 'br'}:
-            continue  # try to avoid double break tags
+
+        # if tag.name == 'div' and next_tag in {'div', 'p', 'br'}:
+        #     continue  # <div> tags should only have one <br> after them, no need for <br> before <p>
+
         tag.insert_after(soup.new_tag('br'))
+        if tag.name == 'p':  # add a double tag after <p> tags
+            tag.insert_after(soup.new_tag('br'))
+
+    for ul in soup.root.find_all('ul'):
+        for br in ul.find_all('br'):
+            br.unwrap()
 
     source_text = unicode(soup.root)
     source_text = re.sub(ur'http(?!s):', u'https:', source_text)
@@ -904,6 +913,14 @@ def format_source_text(source_text):
     )
     source_text = re.sub(ur'\s+<br>\s*', u'<br> ', source_text)
     return re.sub(ur'(<br>)+\s*$', u'', source_text)
+
+
+def final_source_clean(final_source_text):
+    final_source_text = re.sub(ur'(<br>\s*)+<ul>', u'<ul>', final_source_text)
+    final_source_text = re.sub(ur'(<br>\s*){3,}', u'<br><br>', final_source_text)
+    final_source_text = re.sub(ur'^\s*<br>|<br>\s*$', u'', final_source_text)
+
+    return final_source_text
 
 
 class AddImage(object):
@@ -1014,13 +1031,18 @@ def create_sheet_json(page_id, group_manager):
             else:
                 copyright_link = resource['copyrightLink']
 
-            copyright_link = re.sub(ur'^http(?!s):', u'https:', copyright_link)
+            copyright_link = re.sub(ur'^(https?://)+', u'https://', copyright_link)
             # if not re.match(ur'^https://', copyright_link):
             #     copyright_link = u'https://{}'.format(copyright_link)
             copyright_link = re.sub(ur'/$', u'', copyright_link)
+            copyright_link = u' '.join(copyright_link.split())
+            parsed = urlparse(copyright_link)
+            shortened_link = parsed.netloc
+            if copyright_link and not shortened_link:
+                shortened_link = parsed.path
 
             resource_attribution = u'<small><span style="color: #999">\u00a9 {}</span><br><a href={}>{}</a></small>'.format(
-                resource_attribution, copyright_link, copyright_link
+                resource_attribution, copyright_link, shortened_link
             )
             if 'outsideText' in source:
                 source['outsideText'] = u'{}<br>{}'.format(source['outsideText'], resource_attribution)
@@ -1028,7 +1050,7 @@ def create_sheet_json(page_id, group_manager):
                 source['text']['he'] = u'{}<br>{}'.format(source['text']['he'], resource_attribution)
 
         elif resource['fullResourceLink']:  # some sources have a source link but no copyright
-            full_source_link = re.sub(ur'http(?!s):', u'https:', resource['fullResourceLink'])
+            full_source_link = re.sub(ur'^(https?://)+', u'https://', resource['fullResourceLink'])
             full_source_link = u'<a href="{}">{}</a>'.format(full_source_link, u'למקור השלם')
             if 'outsideText' in source:
                 source['outsideText'] = u'{}<br>{}'.format(source['outsideText'], full_source_link)
@@ -1066,6 +1088,14 @@ def create_sheet_json(page_id, group_manager):
                         'en': ''
                     }
                     del source['text']
+
+        # final source cleanup
+        if 'outsideText' in source:
+            source['outsideText'] = final_source_clean(source['outsideText'])
+        elif 'caption' in source:
+            source['caption']['he'] = final_source_clean(source['caption']['he'])
+        else:
+            source['text']['he'] = final_source_clean(source['text']['he'])
 
         sheet['sources'].append(source)
         sheet['group'] = group_manager.get_and_register_group_for_sheet(page_id)
