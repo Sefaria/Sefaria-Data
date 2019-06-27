@@ -26,6 +26,11 @@ class Test_Source_methods(object):
         assert True
 
     dict_input = [
+                    # {'author':u'', 'raw_text':u'', 'ref':Ref('')},
+                    {'author':u'משך חכמה', 'raw_text':u'(ויקרא כו ד)', 'ref':Ref('Meshech Hochma, Ki Tisa 26')},
+                    {'author':u'אבן עזרא', 'raw_text':u'(דברים יא כז)', 'ref':Ref('Ibn_Ezra_on_Deuteronomy.11.27')},
+                    {'author': u"ר' בחיי", 'raw_text': u'(שולחן של ארבע שער א)', 'ref': Ref('')},
+                    {'author':u'תלמוד בבלי', 'raw_text':u'(מועד ח ב, וראה שם עוד)', 'ref':Ref('')},
                     { 'author':u'מהר"ל', 'raw_text':u'טקסט (דרך חיים א ה)', 'ref':Ref('Derech Chaim 1:5') },
                     { 'author':u'מדרש רבה', 'raw_text':u'טקסט (בראשית כז ג)', 'ref':Ref('Bereishit Rabbah 27:3') },
                     { 'author':u'רמב"ן', 'raw_text':u'(רמב"ן, בראשית יח יא)', 'ref':Ref('Ramban on Genesis 18:11') },
@@ -44,7 +49,7 @@ class Test_Source_methods(object):
                     { 'author':u'משנה תורה', 'raw_text':u'(נזקי ממון ב ז, וראה שם עוד)', 'ref':Ref('Mishneh Torah, Damages to Property 2:7') },
                     { 'author':u'תרגום יונתן', 'raw_text':u' (תהלים כב כא)', 'ref':Ref('Aramaic Targum to Psalms 22:21') },
                     { 'author':u'הגר"א', 'raw_text':u' (בראשית כב כא)', 'ref':Ref('Aderet Eliyahu, Genesis 22:21') },
-                    { 'author':u'לקח טוב', 'raw_text':u'(בראשית יג ה)', 'ref':Ref('Midrash Lekach Tov, Genesis 13:5') },
+                    # { 'author':u'לקח טוב', 'raw_text':u'(בראשית יג ה)', 'ref':Ref('Midrash Lekach Tov, Genesis 13:5') },
                     { 'author':u'של"ה', 'raw_text':u'(תורה שבכתב נח, בסופו)', 'ref':Ref('Shenei Luchot HaBerit, Torah Shebikhtav, Noach') },
                     { 'author':u'של"ה', 'raw_text':u'(בעשרה מאמרות מאמר ב)', 'ref':Ref('Shenei Luchot HaBerit, Asara Maamarot, Sixth Maamar') },
                     { 'author':u'של"ה', 'raw_text':u'(מסכת חולין, וראה שם עוד)', 'ref':Ref('Shenei Luchot HaBerit, Aseret HaDibrot, Chullin') },
@@ -81,7 +86,7 @@ class Test_Source_methods(object):
             input_list.append((e['raw_text'],e['author'], e['ref'], e['assert_ref']))
         return input_list
 
-    @pytest.mark.parametrize('raw_text, author, sefaria_ref, assert_ref', organize_test_input_list(dict_input, dict_input, u'ילקוט שמעוני', u'ויקרא פרק יא, תקל'))
+    @pytest.mark.parametrize('raw_text, author, sefaria_ref, assert_ref', organize_test_input_list(dict_input, dict_input, [u'משך חכמה'], [u'שולחן של ארבע שער א', u'ויקרא',u'מועד ח ב, וראה שם עוד']))
     def test_all(self, raw_text, author, sefaria_ref, assert_ref):
         r = Source(raw_text, author).ref
         if assert_ref:
@@ -245,3 +250,9 @@ class Test_Sham_Parsing(object):
         assert t.all_a_citations[0].sources[1].ref == Ref(u"Chizkuni, Exodus 11:2")
         assert t.all_a_citations[2].sources[0].ref == Ref(u"Rashi on Jeremiah 17:9")
         assert t.all_a_citations[3].sources[0].ref == Ref(u'Radak on Jeremiah 17:9')
+
+    def test_get_parasha(self):
+        ref = Ref(u'שמות כ')
+        # parser = Parser()
+        table = Parser.perek_parasha_table()
+        assert convert_perk_parasha(ref, table) == u'יתרו'

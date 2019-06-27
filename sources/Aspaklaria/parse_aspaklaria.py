@@ -29,7 +29,47 @@ class Parser(object):
     def __init__(self):
         self.term_dict, self.he_term_str = he_term_mapping()
         self.missing_authors = set()
+        self.pp_table = Parser.perek_parasha_table()
 
+    @staticmethod
+    def perek_parasha_table(): #chumash, perek, pasuk=u''):
+        # create a dictionary of parashot names to refs in them
+        def refs2parashah(parashah_name, t):
+            """
+
+            :param parashah_name: parashah_name (ex. noah)
+            :param t: a copy of the table created already so if there is a perek devided btween two parashot it will get a list of the two
+            :return: new_table: a new dict. keys: Refs of all the Pesukim and Perakim contained (also partially) in the Parashah
+            """
+            new_table = dict()
+            prev_perk_key = Ref(u'שמואל א')  # this is just for a default Ref that is a Ref obj but not in Torah
+            for ref in table[parashah_name].all_segment_refs():
+                new_table[ref] = parashah_name
+                perek_key = Ref(u'{} {}'.format(ref.index.title, ref.sections[0]))
+                if perek_key.normal() != prev_perk_key.normal():
+                    prev_perk_key = perek_key
+                    if perek_key not in t.keys():
+                        new_table[perek_key] = parashah_name
+                    elif t[perek_key] != parashah_name:
+                        new_table[perek_key]=[t[perek_key]]+[parashah_name]
+            return new_table
+        table = dict()
+        for book in library.get_indexes_in_category('Torah'):
+            ind = library.get_index(book)
+            struct = ind.get_alt_structure('Parasha')
+            parashot = struct.all_children()
+            for x in parashot[1::]:
+                parashah_name = x.primary_title('he')
+                table[parashah_name] = Ref(parashah_name)  # .all_segment_refs()
+                extend_table = refs2parashah(parashah_name, table.copy())
+                # table.update(refs2parashah(parashah_name, table))
+                table.update(extend_table)
+            fposp = table[parashot[1].primary_title('he')]  # [0]  # first_pasuk_of_secoend_parashah
+            table[parashot[0].primary_title('he')] = Ref('{} 1:1-{}:{}'.format(book, fposp.sections[0], fposp.sections[1])) # .all_segment_refs()
+            extend_table = refs2parashah(parashot[0].primary_title('he'), table.copy())
+            table.update(extend_table)
+            # table.update(refs2parashah(parashot[0].primary_title('he'), table))
+        return table
 
 def he_term_mapping():
     all_terms = TermSet({})
@@ -405,7 +445,7 @@ class Source(object):
                 self.ref = refs[0]
                 print self.ref
             else:  # straight forward didn't find, so might be a sham. Or might need special casing.
-                if re.search(u"^\(שם", self.raw_ref.rawText):
+                if re.search(u"^\(\s*שם", self.raw_ref.rawText):
                     self.raw_ref.is_sham = True
                 else:
                     cleaned = clean_raw(self.raw_ref.rawText)
@@ -423,7 +463,7 @@ class Source(object):
                     else:
                         self.opt_titles = library.get_titles_in_string(ref_w_author)
             print self.raw_ref.rawText, u'\n', ref_w_author
-        else: # there isn't a self.ref means we couldn't find parenthises at the end, probably a conyinuation of the prev source/ cit (in cit_list
+        else: # there isn't a self.ref means we couldn't find parenthises at the end, probably a continuation of the prev source/ cit (in cit_list)
             pass
         self.extract_indx()
         self.get_ref_step2()
@@ -460,7 +500,7 @@ class Source(object):
         It should discard/change wrongly caught refs, like ones caught bavli instead of Yerushalmi or mishanah instead of Tosefta.
         :return: doesn't return but changes self.ref
         """
-        wrong_ref = self.check_for_wrong_ref()
+        wrong_ref = self.check_for_wrong_ref() or self.wrong_ref_pp()
 
         # if self.ref:  # probabaly should be calculated once
         #     if self.author != u"תנך"  and self.ref.index.title in library.get_indexes_in_category(u'Tanakh'):
@@ -604,7 +644,6 @@ class Source(object):
                 #     if abs(len(set[1]) - len(set[2])) < abs(len(set[0]) - len(set[2])):
                 #         self.ref = Ref(node_guess)
 
-
     def check_for_wrong_ref(self, r=None):
         wrong_ref = False
         if not r:
@@ -617,6 +656,20 @@ class Source(object):
         elif self.author != u"תלמוד בבלי"  and r.index.title in library.get_indexes_in_category(u'Bavli'):
             wrong_ref = True
         return wrong_ref
+
+    def wrong_ref_pp(self):
+        """
+        check for wrong ref parashah perk (pp)
+        :return:
+        """
+        if self.author == u'משך חכמה':
+            rs = library.get_refs_in_string(self.raw_ref.rawText)
+            parashah_str = convert_perk_parasha(rs[0], parser.pp_table)
+            self.raw_ref.rawText_old = self.raw_ref.rawText[:]
+            self.raw_ref.rawText = Ref(parashah_str).he_normal()
+
+            return True  # go thorough the wrongRef path with the new rawRef
+        return False
 
     def get_new_ref_w_look_here(self, look_here, ):
         """
@@ -858,7 +911,6 @@ class Source(object):
         """
         return None
 
-
 class RawRef(object):
 
     def __init__(self, st, author):
@@ -1056,6 +1108,7 @@ def sublists(a, b):
                 return True
     return False
 
+
 def clean_see(st):
     """
 
@@ -1066,6 +1119,7 @@ def clean_see(st):
     st = st.strip()
 
     return st
+
 
 def post_topic(t, sources=None):
     """
@@ -1120,6 +1174,7 @@ def find_see_topics(see_list, collection): #='topics'
                 found_see.append(None)
     return found_see if any(found_see) else []
 
+
 def add_found_to_topics(collection): #  = 'topics'
     """
     goes over collection 'aspaklaria_topics' and adds a list see topic objects respectively
@@ -1140,9 +1195,18 @@ def add_found_to_topics(collection): #  = 'topics'
                 db_aspaklaria['{}'.format(collection)].update({'_id': oldid}, new)
 
 
+
+
+# table = perek_parasha_table()
+
+def convert_perk_parasha(ref, table):
+    return table[ref]
+
+
 if __name__ == "__main__":
     # he_letter = u'010_ALEF'
     # letter = '009_TET'
+
     letter = ''
     skip_letters = [] # ['009_TET','050_NUN']
     letters = [letter] if letter else os.listdir(

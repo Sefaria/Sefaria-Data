@@ -73,7 +73,7 @@ def percentages(author=None, letter = None):
         perc_doc['caught_shams/all_shams'] = caught_shams
     else:
         caught_shams = 0.0
-    query_no_ref = { "author": u"{}".format(author), "ref": { "$exists": False }, "is_sham": False}
+    query_no_ref = { "author": u"{}".format(author), "ref": { "$exists": False}, "is_sham": False}
     curser = db_aspaklaria.aspaklaria_source.find(query_no_ref)
     for doc in curser:
         perc_doc['ex nr topic'] = doc['topic']
@@ -81,11 +81,12 @@ def percentages(author=None, letter = None):
         if 'index_guess' in doc.keys():
             perc_doc['ex nr index_guess'] = doc['index_guess']
         break
-    query_ref = { "author": u"{}".format(author), "ref": { "$exists": True }, "is_sham": False }
+    query_ref = { "author": u"{}".format(author), "ref": { "$exists": True }, "is_sham": False}
     curser = db_aspaklaria.aspaklaria_source.find(query_ref)
     for doc in curser:
         perc_doc['ex topic'] = doc['topic']
         perc_doc['ex raw_ref'] = doc['raw_ref']
+        perc_doc['ex ref'] = doc['ref']
         if 'index_guess' in doc.keys():
             perc_doc['ex index_guess'] = doc['index_guess']
         break
@@ -104,12 +105,12 @@ if __name__ == "__main__":
     for auth in authors:
         perc = percentages(auth, letter = letter)
         rows.append(perc)
-        if not 'caught' not in perc.keys():
+        if not perc['caught/all']:
             empty_authors.append(auth)
             rows.append({'author': auth})
     for auth in empty_authors:
         print auth
-    with codecs.open(u'aspaklariaStats_{}.csv'.format(1), 'w') as csv_file:
-        writer = csv.DictWriter(csv_file, ['author', 'abs', 'caught/all', 'ignore shams, caught/all', 'shams/all', 'caught_shams/all_shams', 'ex nr topic', 'ex nr raw_ref', 'ex nr index_guess','ex topic', 'ex raw_ref', 'ex index_guess'])
+    with codecs.open(u'aspaklariaStats_{}.csv'.format(2), 'w') as csv_file:
+        writer = csv.DictWriter(csv_file, ['author', 'abs', 'caught/all', 'ignore shams, caught/all', 'shams/all', 'caught_shams/all_shams', 'ex nr topic', 'ex nr raw_ref', 'ex nr index_guess','ex topic', 'ex raw_ref', 'ex ref', 'ex index_guess'])
         writer.writeheader()
         writer.writerows(rows)
