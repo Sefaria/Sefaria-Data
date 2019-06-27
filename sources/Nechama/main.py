@@ -1559,7 +1559,7 @@ class Nechama_Parser:
         min_distance_between_matches=0, all_to_all=False, parallelize=False, verbose=False, calculate_score=self.get_score)
         if self.to_match:
             try:
-                new_ref = pm.match(tc_list=[ref.text('he'), (comment, 1)], return_obj=True)
+                new_ref = pm.match(tref_list=[ref.normal(), (comment, 1)], return_obj=True)
                 new_ref = filter(lambda x: x.score > 80,  new_ref)
             except ValueError:
                 print u"something wrong with hebrew text of ref: {}".format(ref)
@@ -1986,10 +1986,10 @@ if __name__ == "__main__":
     devarim_parshiot = (u"Deuteronomy", ["Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo",
                         "Nitzavim", "Vayeilech", "Nitzavim-Vayeilech", "Ha'Azinu", "V'Zot HaBerachah"])
     catch_errors = False
-    english_sheet = False
+    english_sheet = True
 
     posting = True
-    individuals = [352] #[112, 113, 105, 106, 75, 109, 13, 110, 15, 16, 17, 85, 86, 111]
+    individuals = [271] #[112, 113, 105, 106, 75, 109, 13, 110, 15, 16, 17, 85, 86, 111]
   # [1, 259, 5, 774, 14, 273, 27, 35, 37, 299, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 327, 332, 619, 114, 115, 118, 1402, 1403, 1404, 1405, 1406, 1407, 1409, 142, 147, 661, 1440, 169, 172, 174, 204, 210, 246]
 #[35, 246, 169, 45, 142, 48, 115, 51, 52, 174, 118, 27, 53] #[1409, 259, 246, 774, 327, 172, 332, 142, 619, 115, 273, 210, 147, 46, 661, 1405, 204, 27, 118, 1440, 35, 37, 169, 299, 44, 45, 174, 47, 48, 49, 50, 51, 52, 53, 54, 55, 114, 1403, 1404, 1402, 1406, 1407]
 
