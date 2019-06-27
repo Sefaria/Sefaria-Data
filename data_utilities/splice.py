@@ -243,6 +243,14 @@ class SegmentSplicer(AbstractSplicer):
             print u"\n*** Rewriting Translation Request Refs"
             self._generic_set_rewrite(TranslationRequestSet({"ref": {"$regex": self.section_ref.regex()}}))
 
+            # User History
+            print u"\n*** Rewriting Translation Request Refs"
+            self._generic_set_rewrite(UserHistorySet({"ref": {"$regex": self.section_ref.regex()}}))
+
+            # Ref Data
+            print u"\n*** Rewriting Translation Request Refs"
+            self._generic_set_rewrite(RefDataSet({"ref": {"$regex": self.section_ref.regex()}}))
+
             # History
             # these can be made faster by splitting up the regex
             print u"\n*** Rewriting History Refs"
@@ -263,6 +271,10 @@ class SegmentSplicer(AbstractSplicer):
                 self._generic_set_rewrite(NoteSet({"ref": {"$regex": commentator_chapter_ref.regex()}}), commentary=True)
                 print u"\n*** Rewriting Translation Request Refs"
                 self._generic_set_rewrite(TranslationRequestSet({"ref": {"$regex": commentator_chapter_ref.regex()}}), commentary=True)
+                print u"\n*** Rewriting Translation Request Refs"
+                self._generic_set_rewrite(UserHistorySet({"ref": {"$regex": commentator_chapter_ref.regex()}}), commentary=True)
+                print u"\n*** Rewriting Translation Request Refs"
+                self._generic_set_rewrite(RefDataSet({"ref": {"$regex": commentator_chapter_ref.regex()}}), commentary=True)
 
                 # History?
                 # these can be made faster by splitting up the regex
