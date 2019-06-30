@@ -615,9 +615,9 @@ class Source(object):
                     if 'titles' in ns[0].keys():
                         ns_titles_and_refs = dict([(x['titles'][1]['text'], x['wholeRef']) for x
                              in ns if 'wholeRef' in x.keys()])
-                    elif 'sharedTitle' in ns[0].keys():
+                    elif any('sharedTitle' in nsone.keys() for nsone in ns): # todo: old code: 'sharedTitle' in ns[0].keys():
                         ns_titles_and_refs = dict([(Term().load_by_title(x['sharedTitle']).get_primary_title('he')
-, x['wholeRef']) for x in ns])
+, x['wholeRef']) for x in ns if 'sharedTitle' in x.keys()])
                     possible_nodes.extend(ns_titles_and_refs.keys())
                 node_guess = intersect_list_string(possible_nodes, self.raw_ref.rawText)
                 if not self.ref and node_guess:
@@ -666,7 +666,7 @@ class Source(object):
             rs = library.get_refs_in_string(self.raw_ref.rawText)
             parashah_str = convert_perk_parasha(rs[0], parser.pp_table)
             self.raw_ref.rawText_old = self.raw_ref.rawText[:]
-            self.raw_ref.rawText = Ref(parashah_str).he_normal()
+            self.raw_ref.rawText = parashah_str #Ref(parashah_str).he_normal()
 
             return True  # go thorough the wrongRef path with the new rawRef
         return False
@@ -716,8 +716,8 @@ class Source(object):
                                           look_here])  # todo: note: this was ind.alt_titles_dict('he').items() a few lines down the code called node_name = node[0]
                 look_here_nodes = filter(lambda x: any(re.search(t, x[0]) or re.search(t, x) for t in alt_ref_titles),
                                          look_here_nodes)
-                if len(look_here_nodes) >= 1:
-                    node = look_here_nodes[0]  # todo: why take the first one??
+                if len(look_here_nodes) == 1:
+                    node = look_here_nodes[0]  # todo: why take the first one?? or move it to be taking the only one
                     node_name = node  # [0]
                     depth = re.search(u'.*?(\d+):?(\d+)?.*?', self.ref.normal()).groups()
                     for d in depth:
@@ -742,7 +742,18 @@ class Source(object):
                             print u'IndexError {} not sure why...'.format(e)
                     self.ref = new_ref
                 if len(look_here_nodes) > 1:  # todo: what if there are more than 2 look_here_nodes?
-                    print u'look at these i took the first: {}'.format(look_here_nodes[0])
+                    # set(look_here_nodes).intersection(self.raw_ref.rawText)
+                    # node_ref = self.reduce_indexes(look_here_titles=None, look_here_titles_nodes=look_here_nodes,
+                    #                     alt_ref_titles=self.raw_ref.rawText.replace(u'ו', u''))
+
+                    # [index_t for index_t in look_here_titles_nodes if (set(index_t.split()).intersection(set(alt_ref_titles.split())))]
+                    node_ref = intersect_list_string(look_here_nodes, self.raw_ref.rawText)
+                    # print u'look at these i took the first: {}'.format(look_here_nodes[0])
+                    try:
+                        r = Ref(node_ref)
+                        self.ref = r
+                    except InputError:
+                        print u"couldn't find ref for {}".format(node_ref)
         else:
             depenent_indexes = []
             main_indexes = []
