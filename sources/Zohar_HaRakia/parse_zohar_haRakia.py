@@ -221,7 +221,7 @@ def link_azharot_zhr(o_zohar, o_azharot, commandment_type):
             links.append({
                 'refs': [
                     'Zohar HaRakia, {} Commandments {}:{}'.format(commandment_type, sec_num, z_seg_num),
-                    'Azharot, {} Commandments {}'.format(commandment_type, sec_num)
+                    'Azharot of Solomon ibn Gabirol, {} Commandments {}'.format(commandment_type, sec_num)
                 ],
                 'type': 'commentary',
                 'auto': True,
@@ -232,3 +232,34 @@ def link_azharot_zhr(o_zohar, o_azharot, commandment_type):
 
 def full_a_z_links(o_zohar, o_azharot):
     return link_azharot_zhr(o_zohar, o_azharot, 'positive') + link_azharot_zhr(o_zohar, o_azharot, 'negative')
+
+
+class ZhIndex(object):
+    def __init__(self):
+        pass
+
+    def _initial_parse(self):
+        with codecs.open('zohar_haRakia_index.txt', 'r', 'utf-8') as fp:
+            pass
+
+    def test_sections(self, commandment_type):
+        success = True
+        if commandment_type == 'positive':
+            data_lines = self.positive_data
+        elif commandment_type == 'negative':
+            data_lines = self.negative_data
+        else:
+            raise ValueError("commandment_type must be 'positive' or 'negative'")
+
+        previous_section = 0
+        for line in data_lines:
+            mark = re.match(ur'^@22\(([\u05d0-\u05ea]{1,3})\)', line)
+            if mark:
+                current_section = getGematria(mark.group(1))
+                if current_section - previous_section != 1:
+                    print(commandment_type, "jump from", previous_section, current_section)
+                    success = False
+                previous_section = current_section
+        return success
+
+

@@ -33,11 +33,11 @@ for my_ref in valid_refs:
     cursor.execute('UPDATE RefMap SET SefariaRef = ? WHERE id = ?', (sefaria_ref, my_ref['id']))
     cursor.commit()
 
-with open('interesting_unparsed_refs.csv') as fp:
-    interesting_rows = [row for row in unicodecsv.DictReader(fp) if row['id'] not in valid_ref_ids]
-
-with open('interesting_unparsed_refs.csv', 'w') as fp:
-    writer = unicodecsv.DictWriter(fp, fieldnames=['id', 'Original Ref'])
-    writer.writeheader()
-    writer.writerows(interesting_rows)
+# with open('interesting_unparsed_refs.csv') as fp:
+#     interesting_rows = [row for row in unicodecsv.DictReader(fp) if row['id'] not in valid_ref_ids]
+#
+# with open('interesting_unparsed_refs.csv', 'w') as fp:
+#     writer = unicodecsv.DictWriter(fp, fieldnames=['id', 'Original Ref'])
+#     writer.writeheader()
+#     writer.writerows(interesting_rows)
 
