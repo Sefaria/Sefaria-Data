@@ -36,7 +36,7 @@ class Test_Source_methods(object):
                     { 'author':u'רמב"ן', 'raw_text':u'(רמב"ן, בראשית יח יא)', 'ref':Ref('Ramban on Genesis 18:11') },
                     { 'author':u'ילקוט שמעוני', 'raw_text':u'(משלי פרק א, תתקכט)', 'ref':Ref('Yalkut Shimoni on Nach 929:1-932:6') },
                     { 'author':u'בעל הטורים', 'raw_text':u'(דברים טו טז)', 'ref':Ref('Kitzur Baal Haturim on Deuteronomy 15:16') },
-                    # { 'author':u'זהר חדש', 'raw_text':u'(בראשית תו)', 'ref':Ref('Zohar Chadash, Bereshit') },
+                    { 'author':u'זהר חדש', 'raw_text':u'(בראשית תו)', 'ref':Ref('Zohar Chadash, Bereshit') },
                     { 'author':u'מדרש רבה', 'raw_text':u'(דברים ח ג)', 'ref':Ref('Devarim Rabbah 8:3') },
                     { 'author':u'ילקוט שמעוני', 'raw_text':u'(מלכים ב פרק יח, רצו)', 'ref':Ref('Yalkut Shimoni on Nach 234:8-239:1') },
                     { 'author':u'ילקוט שמעוני', 'raw_text':u'(דניאל תתרסה)', 'ref':Ref('Yalkut Shimoni on Nach 1065') },
@@ -52,7 +52,7 @@ class Test_Source_methods(object):
                     # { 'author':u'לקח טוב', 'raw_text':u'(בראשית יג ה)', 'ref':Ref('Midrash Lekach Tov, Genesis 13:5') },
                     { 'author':u'של"ה', 'raw_text':u'(תורה שבכתב נח, בסופו)', 'ref':Ref('Shenei Luchot HaBerit, Torah Shebikhtav, Noach') },
                     { 'author':u'של"ה', 'raw_text':u'(בעשרה מאמרות מאמר ב)', 'ref':Ref('Shenei Luchot HaBerit, Asara Maamarot, Sixth Maamar') },
-                    # { 'author':u'של"ה', 'raw_text':u'(מסכת חולין, וראה שם עוד)', 'ref':Ref('Shenei Luchot HaBerit, Aseret HaDibrot, Chullin') },
+                    { 'author':u'של"ה', 'raw_text':u'(מסכת חולין, וראה שם עוד)', 'ref':Ref('Shenei Luchot HaBerit, Aseret HaDibrot, Chullin') },
                     { 'author':u'דרשות הר"ן', 'raw_text':u'(דרוש ז)', 'ref':Ref('Darashos HaRan 7') },
                     { 'author':u'שפת אמת', 'raw_text':u'(שמות יתרו תרנ"ב)', 'ref':Ref('Sefat Emet, Exodus, Yitro') },
                     # { 'author':u'שפת אמת', 'raw_text':u'(פורים תרל"ד)', 'ref':Ref('Sefat Emet, Exodus, For Purim') },
@@ -86,7 +86,7 @@ class Test_Source_methods(object):
             input_list.append((e['raw_text'],e['author'], e['ref'], e['assert_ref']))
         return input_list
 
-    @pytest.mark.parametrize('raw_text, author, sefaria_ref, assert_ref', organize_test_input_list(dict_input, dict_input, [u'ילקוט שמעוני'], [u'שולחן של ארבע שער א', u'ויקרא',u'מועד ח ב, וראה שם עוד']))
+    @pytest.mark.parametrize('raw_text, author, sefaria_ref, assert_ref', organize_test_input_list(dict_input, dict_input, [u'רמב"ן'], [u'שולחן של ארבע שער א', u'ויקרא',u'מועד ח ב, וראה שם עוד']))
     def test_all(self, raw_text, author, sefaria_ref, assert_ref):
         r = Source(raw_text, author).ref
         if assert_ref:

@@ -395,6 +395,9 @@ class Source(object):
                 # for title in [x['text'] for ind in inds_from_term for x in ind.schema['titles'] if x['lang'] == 'he']:
                 #     print title
                 inds_via_cats = reduce(lambda a, b: a and b, [library.get_indexes_in_category(term) for term in term_list])
+                if Term().load_by_title(author):
+                    inds_via_collective_title = library.get_indices_by_collective_title(author)
+                    inds_via_cats+=inds_via_collective_title
                 if bool(inds_via_cats) != bool(inds_via_term):  # only one of the index groups was filled
                     indexs = inds_via_term if inds_via_term else inds_via_cats
                     for ind in indexs:
@@ -612,9 +615,9 @@ class Source(object):
                     ns=[]
                     ns_titles_and_refs = dict()
                     [ns.extend(alt['nodes']) for alt in new_index.alt_structs.values()]
-                    if 'titles' in ns[0].keys():
+                    if any('titles' in nsone.keys() for nsone in ns): # 'titles' in ns[0].keys():
                         ns_titles_and_refs = dict([(x['titles'][1]['text'], x['wholeRef']) for x
-                             in ns if 'wholeRef' in x.keys()])
+                             in ns if ('wholeRef' in x.keys() and 'titles' in x.keys())])
                     elif any('sharedTitle' in nsone.keys() for nsone in ns): # todo: old code: 'sharedTitle' in ns[0].keys():
                         ns_titles_and_refs = dict([(Term().load_by_title(x['sharedTitle']).get_primary_title('he')
 , x['wholeRef']) for x in ns if 'sharedTitle' in x.keys()])
@@ -922,6 +925,7 @@ class Source(object):
         """
         return None
 
+
 class RawRef(object):
 
     def __init__(self, st, author):
@@ -1205,10 +1209,6 @@ def add_found_to_topics(collection): #  = 'topics'
                 # db_aspaklaria.aspaklaria_topics.update({'_id': oldid}, t)
                 db_aspaklaria['{}'.format(collection)].update({'_id': oldid}, new)
 
-
-
-
-# table = perek_parasha_table()
 
 def convert_perk_parasha(ref, table):
     return table[ref]
