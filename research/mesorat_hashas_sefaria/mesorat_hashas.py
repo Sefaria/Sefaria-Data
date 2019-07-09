@@ -176,7 +176,13 @@ def tokinzer_removed_indices(str, segNum):
 
 class Gemara_Hashtable:
 
-    def __init__(self, skip_gram_size):
+    def __init__(self, skip_gram_size, lemmatizer=None, lemma2index=None):
+        """
+        :param lemmatizer: function that takes a word and returns the lemma of the word. Default is `self.get_two_letter_word` which is useful for Hebrew
+        :param lemma2index: function that takes a string of concatenated lemmas (from self.lemmatizer) and produces a key to store those lemmas in the hashtable
+        """
+        self.lemmatizer = self.get_two_letter_word if lemmatizer is None else lemmatizer
+        self.lemma2index = self.w2i if lemma2index is None else lemma2index
         self.letter_freqs_list = [u'י', u'ו', u'א', u'מ', u'ה', u'ל', u'ר', u'נ', u'ב', u'ש', u'ת', u'ד', u'כ', u'ע', u'ח', u'ק',
                          u'פ', u'ס', u'ט', u'ז', u'ג', u'צ']
 
@@ -218,7 +224,7 @@ class Gemara_Hashtable:
         :param skip_gram: string of 8 consecutive characters
         :param Mesorah_Item value:
         """
-        index = self.w2i(skip_gram)
+        index = self.lemma2index(skip_gram)
         temp_set = self._hash_table[index]
         temp_set.add(value)
 
@@ -226,10 +232,9 @@ class Gemara_Hashtable:
     def __getitem__(self,five_gram):
 
         skip_gram_list = self.get_skip_grams(five_gram)
-        #ht = self.ht_list[self.w2i(skip_gram_list[0][0])]  # should be the same for all four skip grams
         results = set()
         for skip_gram in skip_gram_list:
-            index = self.w2i(skip_gram)
+            index = self.lemma2index(skip_gram)
             results |= self._hash_table[index]
 
         return results
@@ -240,8 +245,8 @@ class Gemara_Hashtable:
         :param small_five_gram: a list of words which is self.skip_gram_size as opposed to self.skip_gram_size + 1. used for looking up last skip gram in book
         :return:
         """
-        two_letter_gram = u''.join([self.get_two_letter_word(w) for w in small_five_gram])
-        index = self.w2i(two_letter_gram)
+        lemmas = u''.join([self.lemmatizer(w) for w in small_five_gram])
+        index = self.lemma2index(lemmas)
         return self._hash_table[index]
 
 
@@ -252,8 +257,8 @@ class Gemara_Hashtable:
         :return: list of the 4 skip grams (in 2 letter form)
         """
 
-        two_letter_five_gram = [self.get_two_letter_word(w) for w in five_gram]
-        skip_gram_list = [u''.join(temp_skip) for temp_skip in itertools.combinations(two_letter_five_gram, self.skip_gram_size)]
+        lemmas = [self.lemmatizer(w) for w in five_gram]
+        skip_gram_list = [u''.join(temp_skip) for temp_skip in itertools.combinations(lemmas, self.skip_gram_size)]
         del skip_gram_list[-1] # last one is the one that skips the first element
         return skip_gram_list
 
@@ -450,7 +455,7 @@ class ParallelMatcher:
 
     def __init__(self, tokenizer, dh_extract_method=None, ngram_size=5, max_words_between=4, min_words_in_match=9,
                  min_distance_between_matches=1000, all_to_all=True, parallelize=False, verbose=True,
-                 calculate_score=None, only_match_first=False):
+                 calculate_score=None, only_match_first=False, lemmatizer=None, lemma2index=None):
         """
 
         :param tokenizer: returns list of words
@@ -462,12 +467,15 @@ class ParallelMatcher:
         :param bool all_to_all: if True, make between everything either in index_list or ref_list. False means results get filtered to only match inter-ref matches
         :param bool parallelize: Do you want this to run in parallel? WARNING: this uses up way more RAM. and this is already pretty RAM-hungry TODO: interesting question on sharing ram: https://stackoverflow.com/questions/14124588/shared-memory-in-multiprocessing
         :param bool only_match_first: True if you want to return matches to the first item in the list
+        :param f(str) -> str lemmatizer: function that takes a word and returns the lemma of the word. Default is `self.get_two_letter_word` which is useful for Hebrew
+        :param f(str) -> hashable lemma2index: function that takes a string of concatenated lemmas (from self.lemmatizer) and produces a key to store those lemmas in the hashtable
+
         """
         self.tokenizer = tokenizer
         self.dh_extract_method = dh_extract_method
         self.ngram_size = ngram_size
         self.skip_gram_size = self.ngram_size - 1
-        self.ght = Gemara_Hashtable(self.skip_gram_size)
+        self.ght = Gemara_Hashtable(self.skip_gram_size, lemmatizer, lemma2index)
         self.max_words_between = max_words_between
         self.min_words_in_match = min_words_in_match
         self.min_distance_between_matches = min_distance_between_matches
@@ -484,7 +492,7 @@ class ParallelMatcher:
 
 
     def reset(self):
-        self.ght = Gemara_Hashtable(self.skip_gram_size)
+        self.ght = Gemara_Hashtable(self.skip_gram_size, self.ght.lemmatizer, self.ght.lemma2index)
 
     def filter_matches_by_score_and_duplicates(self, matches, min_score=30):
         '''
@@ -557,7 +565,6 @@ class ParallelMatcher:
 
             for i_word in xrange(len(unit_wl) - self.skip_gram_size):
                 skip_gram_list = self.ght.get_skip_grams(unit_wl[i_word:i_word + self.skip_gram_size + 1])
-                # ht = self.ht_list[self.w2i(skip_gram_list[0])] #should be the same for all four skip grams
                 for skip_gram in skip_gram_list:
                     start_index = i_word
                     end_index = i_word + self.skip_gram_size
