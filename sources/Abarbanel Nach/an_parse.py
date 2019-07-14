@@ -121,14 +121,13 @@ class megilah:
                             posted_this_line=False
                             cleaned_sec=clean_sec(sec)
                             if len(goes_into_next)>0:
-                                cleaned_sec=goes_into_next.pop()+u' '+cleaned_sec
-                            placement='{} {}:{}:{}'.format(self.en_name, current_chapter, current_verse,len(text_array[current_chapter-1][current_verse-1])+1)
+                                cleaned_sec=goes_into_next.pop()+u' '+remove_html(cleaned_sec)
                             if not re.search(ur'[\.:]$',cleaned_sec) and len(re.split(ur'[:\.]',cleaned_sec)[-1].split(u' '))<7 and self.en_name not in 'Ezekiel':
                                 moving=re.split(ur'[/.:]',cleaned_sec)[-1]
                                 goes_into_next.append(moving)
                                 cleaned_sec=cleaned_sec.replace(moving, u'')
                             if just_trailed:
-                                text_array[last_position[0]][last_position[1]][last_position[2]]=text_array[last_position[0]][last_position[1]][last_position[2]]+u' '+cleaned_sec
+                                text_array[last_position[0]][last_position[1]][last_position[2]]=text_array[last_position[0]][last_position[1]][last_position[2]]+u' '+remove_html(cleaned_sec)
                                 posted_this_line=True
                                 just_trailed=False
                             if not re.search(ur'[\.:]$',cleaned_sec) and not (len(re.split(ur'[:\.]',cleaned_sec)[-1].split(u' '))<7 and self.en_name not in 'Ezekiel'):
@@ -138,7 +137,18 @@ class megilah:
                                     current_verse=getGematria(re.search(ur'^\([א-ת- ]+\)',sec).group().split(u'-')[0])
                                 last_position=[current_chapter-1,current_verse-1,len(text_array[current_chapter-1][current_verse-1])]
                                 text_array[current_chapter-1][current_verse-1].append(cleaned_sec)
-
+        copied=text_array[:]
+        for chindex, chapter in enumerate(copied):
+            for vindex, verse in enumerate(chapter):
+                for cindex, comment in enumerate(verse):
+                    text_array[chindex][vindex][cindex]=final_fix(comment)
+        """ 
+        for chindex, chapter in enumerate(text_array):
+            for vindex, verse in enumerate(chapter):
+                for cindex, comment in enumerate(verse):
+                    print self.en_name, chindex, vindex, cindex, comment
+        0/0
+        """
         self.text=text_array
 
         if posting:
@@ -182,9 +192,11 @@ def not_blank(s):
     while " " in s:
         s = s.replace(u" ",u"")
     return (len(s.replace(u"\n",u"").replace(u"\r",u"").replace(u"\t",u""))!=0);
+def remove_html(s):
+    return re.sub(ur'<.*?>',u'',s)
 def clean_sec(s):
     pre=s
-    s=re.sub(ur'\(ד\"ה ([{}]\')'.format(aleph_beis),ur'\(דברי הימים \1',s)
+    s=re.sub(ur'\(ד\"ה ([{}]\')'.format(aleph_beis),ur'(דברי הימים \1',s)
     s=re.sub(ur'דברי\s*-\s*הימים',u'דברי הימים',s)
     """
     if s!=pre:
@@ -202,14 +214,31 @@ def clean_sec(s):
         \"""
     """
     s=re.sub(ur'פ\"\S{1,3} דף ',u'',s)
-    
     if re.search(ur'[\.,]',s):
-        dot_index=re.search(ur'[\.,]',s).start()
-        if u'וגו\'' in s[:dot_index] and len(s[:dot_index+1].split(u' '))<16:
-            s =u'<b>'+s[:dot_index+1]+u'</b>'+s[dot_index+1:]
+        #dot_index=re.search(ur'[\.,]',s).start()
+        dot_indexes=[m.start() for m in re.finditer(ur'[\.,]', s)]
+        last_index=0
+        while u'וגו\'' in s[last_index:dot_indexes[0]]:
+            last_index=dot_indexes.pop(0)
+            if len(dot_indexes)<1:
+                break
+        if u'וגו\'' in s[:last_index+1] and len(s[:last_index+1].split(u' '))<16 and u'השאלה' not in s[:last_index+1]:
+            s =u'<b>'+s[:last_index+1]+u'</b>'+s[last_index+1:]
     #s=re.sub(ur'[^א-ת .:(),?\'\-"\r\n;\[\]!<>b]',u'',s)
+    s=re.sub(ur'\(\s*([א-ת]+)\s*-\s*([א-ת]+)\s*\)',ur'(\1-\2)',s)
     s=s.rstrip()
     return s
+def final_fix(s):
+    bolded=False
+    if u'<b>' in s:
+        bolded=True
+        s=s.replace(u'<b>',u'')
+    s=re.sub(ur'^\([א-ת]*\)\s*',u'',s)
+    s=re.sub(ur'\s*([\.:,])',ur'\1',s)
+    if bolded:
+        return u'<b>'+s
+    else:
+        return s
 def make_perek_array(book):
     tc = TextChunk(Ref(book), "he")
     return_array = []
@@ -226,6 +255,8 @@ def add_cats():
     add_category('Writings', ["Tanakh","Commentary","Abarbanel","Writings"],u'כתובים')
 
 #add_cats()
+
+
 admin_links=[]
 site_links=[]
 postme=False
@@ -240,10 +271,10 @@ for _file in os.listdir("files"):
         meg = megilah(_file)
         if "Isai" in meg.en_name:
             postme=True
-        if True:#'Jud' in meg.en_name:#postme:
+        if "II Sam" not in meg.en_name:
             #meg.post_ab_index()
             meg.post_ab_text(True)
-            meg.ab_link() 
+            #meg.ab_link() 
             #0/0            
         admin_links.append(SEFARIA_SERVER+"/admin/reset/Abarbanel on "+meg.en_name)
         site_links.append(SEFARIA_SERVER+"/Abarbanel on "+meg.en_name)
