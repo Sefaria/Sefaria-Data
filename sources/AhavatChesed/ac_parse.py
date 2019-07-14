@@ -24,15 +24,17 @@ sections=[
 
 nc_sections=[
     [u'Introduction',u'פתיחה לעניני מדת החסד'],
-    [u'Part I',u'חלק ראשון'],
-    [u'Part II',u'חלק שני'],
-    [u'Part III',u'חלק שלישי'],
+    [u'Laws of Loans',u'דיני מצות הלואה'],
+    [u'Laws of Pledges',u'דין ענייני העבוט'],
+    [u'Laws of Wages',u'דיני תשלומי שכר שכיר']
 ]
 part_i_sections=[[u'Laws of Loans',u'דיני מצות הלואה'],
     [u'Laws of Pledges',u'דין ענייני העבוט'],
     [u'Laws of Wages',u'דיני תשלומי שכר שכיר']]
 go_with_next=[u'דין עניני העבוט',u'דיני מצות הלואה'u'דיני תשלומי שכר שכיר בזמנו']
 ur'^(דיני מצות הלואה|דין עניני העבוט|דיני תשלומי שכר שכיר בזמנו)'
+_remove=u'םן \.\"\''
+
 def not_blank(s):
     while " " in s:
         s = s.replace(" ","")
@@ -49,7 +51,7 @@ def parse_text():
     all_nc_sections={}
     nc_chapter_box=[]
     nc_section_box=[]
-    
+    next_goes_back=False
     goes_in_next=[]
     for line in lines:
         if not_blank(line):
@@ -59,7 +61,7 @@ def parse_text():
                     nc_section_box.append(nc_chapter_box)
                 if len(ac_section_box)>0:
                     all_ac_sections[sections[current_section_index][0]]=ac_section_box
-                    if "Part" in sections[current_section_index][0] or "Introduction" in sections[current_section_index][0]:
+                    if "Part I" == sections[current_section_index][0] or "Introduction" in sections[current_section_index][0]:
                         all_nc_sections[sections[current_section_index][0]]=nc_section_box
                 current_section_index+=1
                 ac_chapter_box=[]
@@ -74,49 +76,92 @@ def parse_text():
                     nc_chapter_box=[]
                 if re.search(ur'^(דיני מצות הלואה|דין עניני העבוט|דיני תשלומי שכר שכיר בזמנו)',line):
                     goes_in_next.append(u'<b>'+clean_ac_line(line)+u'</b>')
+                    next_goes_back=True
                 elif re.search(ur'^\(\S{1,3}\)',line):
-                    nc_chapter_box.append(clean_nc_line(line))
+                    #print "THIS IS NC"
+                    for section in re.findall(ur'\([^'+_remove+ur']+\).*?(?=\([^'+_remove+ur']+\)|$)',line):
+                        #print "SEC", section
+                        if not_blank(section):
+                            if u'(***)' in section:
+                                ac_chapter_box[-1]=ac_chapter_box[-1].replace(u'(***)',u"<sup>(@@@)</sup><i class=\"footnote\">{}</i>".format(clean_nc_line(line[line.index(')')+1:])),1)
+                            elif u'(**)' in section:
+                                ac_chapter_box[-1]=ac_chapter_box[-1].replace(u'(**)',u"<sup>(@@)</sup><i class=\"footnote\">{}</i>".format(clean_nc_line(line[line.index(')')+1:])),1)
+                            elif u'(*)' in section:
+                                ac_chapter_box[-1]=ac_chapter_box[-1].replace(u'(*)',u"<sup>(@)</sup><i class=\"footnote\">{}</i>".format(clean_nc_line(line[line.index(')')+1:])),1)
+                            else:
+                                nc_chapter_box.append(clean_nc_line(section))
                 elif re.search(ur'^ובו ',line):
                     ac_chapter_box[-1]=ac_chapter_box[-1]+u' '+clean_ac_line(line)
+                    next_goes_back=True
                 else:
                     if len(goes_in_next)>0:
                         ac_chapter_box.append(goes_in_next.pop()+u'<br>'+clean_ac_line(line))
+                    elif next_goes_back:
+                        ac_chapter_box[-1]=ac_chapter_box[-1]+u'<br>'+clean_ac_line(line)
+                        next_goes_back=False
                     else:
                         ac_chapter_box.append(clean_ac_line(line))
             else:
                 if re.search(ur'^\(\S{1,3}\)',line):
-                    nc_section_box.append(clean_nc_line(line))
+                    #print "think is nc",line
+                    for section in re.findall(ur'\([^'+_remove+ur']+\).*?(?=\([^'+_remove+ur']+\)|$)',line):
+                        #print "SEC",section
+                        if not_blank(section):
+                            if u'(**)' in section:
+                                #print "DID DS"
+                                ac_section_box[-1]=ac_section_box[-1].replace(u'(**)',u"<sup>(@@)</sup><i class=\"footnote\">{}</i>".format(clean_nc_line(line[line.index(')')+1:])),1)
+                            elif u'(*)' in section:
+                                #print "DID SS"
+                                ac_section_box[-1]=ac_section_box[-1].replace(u'(*)',u"<sup>(@)</sup><i class=\"footnote\">{}</i>".format(clean_nc_line(line[line.index(')')+1:])),1)
+                            else:
+                                nc_section_box.append(clean_nc_line(section))
+                    #nc_section_box.append(clean_nc_line(line))
                 elif re.search(ur'^ובו ',line):
                     ac_section_box[-1]=ac_section_box[-1]+u' '+clean_ac_line(line)
                 else:
                     ac_section_box.append(clean_ac_line(line))
     all_ac_sections[sections[current_section_index][0]]=ac_section_box
     all_nc_sections[sections[current_section_index][0]]=nc_section_box
-    
+    #all_nc_sections["Part I"].pop(8)
     #fix error
-    all_nc_sections[sections[2][0]]=all_nc_sections[sections[2][0]][1:]
-    _remove=u'םן \.'
+    #all_nc_sections[sections[2][0]]=all_nc_sections[sections[2][0]][1:]
     for key in all_ac_sections.keys():
         if "Part" in key:
             clone=all_ac_sections[key][:]
             for cindex, chapter in enumerate(clone):
                 for pindex, paragraph in enumerate(chapter):
-                    for match in re.findall(ur'\(([^'+_remove+ur']{1,2})\)',paragraph):
-                        print match
-                    print re.sub(ur'\(([^'+_remove+ur']{1,2})\)',ur'<i data-commentator=\"Netiv Chesed\" data-order=\"\1\"></i>',paragraph)
+                    new_p=paragraph
+                    #new_p=new_p.replace(u"DS",u"@@").replace(u'SS',u'@')
+                    if key=="Part I":
+                        for match in re.findall(ur' \([^'+_remove+ur']{1,2}\) ',paragraph):
+                            if u'@' not in match:
+                                new_p=new_p.replace(match,u'<i data-commentator=\"Netiv Chesed\" data-order=\"{}\"></i>'.format(getGematria(match)))
+                    all_ac_sections[key][cindex][pindex]= new_p.replace(u'+!+',u'<br>')
+        if "Introduction" in key:
+            clone=all_ac_sections[key][:]
+            for pindex, paragraph in enumerate(clone):
+                new_p=paragraph                
+                for match in re.findall(ur'\([^'+_remove+ur']{1,2}\)',paragraph):
+                    if u'@' not in match:
+                        new_p=new_p.replace(match,u'<i data-commentator=\"Netiv Chesed\" data-order=\"{}\"></i>'.format(getGematria(match)))
+                all_ac_sections[key][pindex]= new_p.replace(u'+!+',u'<br>')
     """
-    if "Part" in key:
-        for cindex, chapter in enumerate(all_ac_sections[key]):
-            for pindex, paragraph in enumerate(chapter):
-                print key,cindex, pindex, paragraph
-    else:
-        for pindex, paragraph in enumerate(all_ac_sections[key]):
-            print key, pindex, paragraph
+    for key in all_ac_sections.keys():
+        if "Part" in key:
+            for cindex, chapter in enumerate(all_ac_sections[key]):
+                for pindex, paragraph in enumerate(chapter):
+                    print key,cindex, pindex, paragraph
+        else:
+            for pindex, paragraph in enumerate(all_ac_sections[key]):
+                print key, pindex, paragraph
     0/0
     """
-    0/0
+    #0/0
+    #for posting ahavat
     if False:
         for key in all_ac_sections.keys():
+            if key=="Introduction":
+                continue
             if key=='Part I':
                 sects=[['Laws of Loans',0,6],
                     ['Laws of Pledges ',6,8],
@@ -129,9 +174,11 @@ def parse_text():
                     if 'Wages' in sect[0]:
                         sect_list.pop(0)
                     #"""
+                    """
                     for cindex, chapter in enumerate(sect_list):
                         for pindex, paragraph in enumerate(chapter):
                             print sect[0],cindex, pindex, paragraph
+                    """
                     version = {
                         'versionTitle': "Ahavat Chesed --  Torat Emet",
                         'versionSource': 'http://toratemetfreeware.com/online/f_01815.html',
@@ -140,7 +187,7 @@ def parse_text():
                     }
                     print "posting ","Ahavat Chesed, {}, {}...".format(key,sect[0])
                     #post_text("Ahavat Chesed, {}, {}".format(key,sect[0]), version, weak_network=True)
-                    #post_text("Ahavat Chesed, {}, {}".format(key,sect[0]), version, index_count="off", skip_links=True)
+                    post_text("Ahavat Chesed, {}, {}".format(key,sect[0]), version, index_count="off", skip_links=True)
                     #post_text_weak_connection("Ahavat Chesed, {},{}".format(key,sect[0]), version)
                     
                 #now post intro to wages...
@@ -163,25 +210,32 @@ def parse_text():
                     'text': all_ac_sections[key]
                 }
                 print "posting {} Ahavat Chesed text...".format(key)
-                #post_text("Ahavat Chesed, "+key, version, weak_network=True)
-                post_text_weak_connection("Ahavat Chesed, "+key, version)
+                post_text("Ahavat Chesed, "+key, version, weak_network=True)
+                #post_text_weak_connection("Ahavat Chesed, "+key, version)
                 #"""
+    #for posting Netiv
     if True:
         for key in all_nc_sections.keys():
+            if "Part" not in key:
+                1/1
+                #continue
             """
             if "Part" in key:
-                for cindex, chapter in enumerate(all_ac_sections[key]):
+                for cindex, chapter in enumerate(all_nc_sections[key]):
                     for pindex, paragraph in enumerate(chapter):
-                        print key,cindex, pindex, paragraph
+                        print "NC",key,cindex, pindex, paragraph
             else:
-                for pindex, paragraph in enumerate(all_ac_sections[key]):
-                    print key, pindex, paragraph
+                for pindex, paragraph in enumerate(all_nc_sections[key]):
+                    print "NC",key, pindex, paragraph
             """
             if key=='Part I':
                 sects=[['Laws of Loans',0,6],
                     ['Laws of Pledges ',6,8],
                     ['Laws of Wages',9,11]]
                 for sect in sects:
+                    if "Wages" not in sect[0]:
+                        continue
+                        1/1
                     sect_list=all_nc_sections[key][sect[1]:sect[2]]
                     #"""
                     for x in range(sect[1]):
@@ -189,31 +243,27 @@ def parse_text():
                     if 'Wages' in sect[0]:
                         sect_list.pop(0)
                     #"""
+                    """
                     for cindex, chapter in enumerate(sect_list):
                         for pindex, paragraph in enumerate(chapter):
                             print "NC",sect[0],cindex, pindex, paragraph
+                    """
                     version = {
                         'versionTitle': "Ahavat Chesed --  Torat Emet",
                         'versionSource': 'http://toratemetfreeware.com/online/f_01815.html',
                         'language': 'he',
                         'text': sect_list
                     }
-                    print "posting ","Netiv Chesed on Ahavat Chesed, {}, {}...".format(key,sect[0])
-                    #post_text("Ahavat Chesed, {}, {}".format(key,sect[0]), version, weak_network=True)
-                    #post_text("Netiv Chesed on Ahavat Chesed, {}, {}".format(key,sect[0]), version, index_count="off", skip_links=True)
-                    post_text_weak_connection("Ahavat Chesed, {},{}".format(key,sect[0]), version)
+                    print "posting ","Netiv Chesed on Ahavat Chesed, {}...".format(sect[0])
+                    #post_text("Netiv Chesed on Ahavat Chesed, {}, {}".format(key,sect[0]), version, weak_network=True)
+                    #post_text_weak_connection("Netiv Chesed on Ahavat Chesed, {},{}".format(key,sect[0]), version)
                     
-                #now post intro to wages...
-                version = {
-                    'versionTitle': "Ahavat Chesed --  Torat Emet",
-                    'versionSource': 'http://toratemetfreeware.com/online/f_01815.html',
-                    'language': 'he',
-                    'text': all_nc_sections[key][8]
-                }
-                print "posting {} \"Netiv Chesed on Ahavat Chesed, Laws of Wages, Introduction\" text...".format(key)
-                #post_text("Ahavat Chesed, Part I, Laws of Wages, Introduction", version, weak_network=True)
-                post_text_weak_connection("Netiv Chesed on Ahavat Chesed, Part I, Laws of Wages, Introduction", version)
+                    post_text("Netiv Chesed on Ahavat Chesed, {}".format(sect[0]), version, index_count="off", skip_links=True)
+                    #post_text_weak_connection("Netiv Chesed on Ahavat Chesed, {},{}".format(key,sect[0]), version)
             else:
+                for pindex, paragraph in enumerate(all_nc_sections[key]):
+                    print key, pindex, paragraph
+                print key, all_nc_sections[key]
                 version = {
                     'versionTitle': "Ahavat Chesed --  Torat Emet",
                     'versionSource': 'http://toratemetfreeware.com/online/f_01815.html',
@@ -223,6 +273,59 @@ def parse_text():
                 print "posting {} Netiv Chesed text...".format(key)
                 #post_text("Ahavat Chesed, "+key, version, weak_network=True)
                 post_text_weak_connection("Netiv Chesed on Ahavat Chesed, "+key, version)
+    #for linking
+    if False:
+        for key in all_ac_sections.keys():
+            if key=='Part I':
+                #continue
+                for cindex, chapter in enumerate(all_ac_sections[key]):
+                    for pindex, paragraph in enumerate(chapter):
+                        for match in re.findall(ur'<.*?>',paragraph):
+                            if 'Netiv' in match:
+                                print match
+                                print key, cindex, pindex
+                                data_order = re.search(ur'data-order=\"\d*',match).group().split(u'"')[1]
+                                extended_part=get_part_1_sec(cindex+1)
+                                link = (
+                                        {
+                                        "refs": [
+                                                 'Netiv Chesed on Ahavat Chesed, {}, {}:{}'.format(extended_part, cindex+1,data_order),
+                                                 'Ahavat Chesed, {}, {}, {}:{}'.format(key, extended_part, cindex+1, pindex+1),
+                                                 ],
+                                        "type": "commentary",
+                                        'inline_reference': {
+                                            'data-commentator': "Netiv Chesed",
+                                            'data-order': data_order
+                                            },
+                                        "auto": True,
+                                        "generated_by": "sterling_Netiv_Chesed_linker"
+                                        })
+                                post_link(link, weak_network=True)
+                                    
+            elif "Intro" in key:
+                for pindex, paragraph in enumerate(all_ac_sections[key]):
+                    for match in re.findall(ur'<.*?>',paragraph):
+                        if 'Netiv' in match:
+                            print match
+                            print key, pindex
+                            data_order = re.search(ur'data-order=\"\d*',match).group().split(u'"')[1]
+                            link = (
+                                    {
+                                    "refs": [
+                                             'Netiv Chesed on Ahavat Chesed, {} {}'.format(key, data_order),
+                                             'Ahavat Chesed, {} {}'.format(key, pindex+1),
+                                             ],
+                                    "type": "commentary",
+                                    'inline_reference': {
+                                        'data-commentator': "Netiv Chesed",
+                                        'data-order': data_order
+                                        },
+                                    "auto": True,
+                                    "generated_by": "sterling_Netiv_Chesed_linker"
+                                    })
+                            post_link(link, weak_network=True)
+                
+        
 def post_ac_index():
     record = SchemaNode()
     record.add_title("Ahavat Chesed", 'en', primary=True)
@@ -317,12 +420,68 @@ def post_nc_index():
     record.key = "Netiv Chesed on Ahavat Chesed"
     
     for section in nc_sections:
-        if section[0]=='Part I':
-            section_node=SchemaNode()
-            section_node.add_title(section[0], 'en', primary = True)
-            section_node.add_title(section[1], 'he', primary = True)
-            section_node.key = section[0]
-            for segment in part_i_sections:
+        section_node=JaggedArrayNode()
+        section_node.add_title(section[0], 'en', primary = True)
+        section_node.add_title(section[1], 'he', primary = True)
+        section_node.key = section[0]
+        if "Intro" in section[0]:
+            section_node.depth = 1
+            section_node.addressTypes = ['Integer']
+            section_node.sectionNames = ['Comment']
+            record.append(section_node)
+        else:
+            section_node.depth = 2
+            section_node.addressTypes = ['Integer','Integer']
+            section_node.sectionNames = ['Chapter','Comment']
+            record.append(section_node)
+                
+    record.validate()
+        
+    index = {
+        "title":"Netiv Chesed on Ahavat Chesed",
+        "base_text_titles": [
+          'Ahavat Chesed'
+        ],
+        "dependence": "Commentary",
+        "collective_title":"Netiv Chesed",
+        "categories":["Halakhah","Commentary"],
+        "schema": record.serialize()
+    }
+    post_index(index,weak_network=True)
+def get_part_1_sec(chapter_num):
+    if chapter_num>=10:
+        return "Laws of Wages"
+    if chapter_num==9:
+        return "Laws of Wages, Introduction"
+    if chapter_num>=7:
+        return "Laws of Pledges"
+    return "Laws of Loans"
+def is_new_chapter(line):
+    if re.search(ur'^\s*פרק',line):
+        return True
+    if u'פתיחה לתשלומי שכר שכיר' in line:
+        return True
+def clean_ac_line(line):
+    line = re.sub(ur'[A-Za-z]',u'',line)
+    if re.search(ur'^\s*פרק',line):
+        line = u'<b>'+line+u'</b>'
+    line=re.sub(ur'\s+\?',u'?',line)
+    return line
+def clean_nc_line(line):
+    line = re.sub(ur'[A-Za-z]',u'',line).replace(u'\n','')
+    line=line.replace(u'+!+',u'<br>')
+    line=re.sub(ur'^\([א-ת]+\)\s*',u'',line)
+    line=re.sub(ur'\s+\?',u'?',line)
+    return line
+
+#post_ac_index()
+#parse_text()
+
+#post_nc_term()
+#post_nc_index()
+parse_text()
+
+"""
                 if 'Wages' in segment[0]:
                     segment_node = SchemaNode()
                     segment_node.add_title(segment[0], 'en', primary = True)
@@ -346,61 +505,18 @@ def post_nc_index():
                     text_node.sectionNames = ['Chapter','Paragraph']
                     segment_node.append(text_node)
                 else:
-                    segment_node = JaggedArrayNode()
-                    segment_node.add_title(segment[0], 'en', primary = True)
-                    segment_node.add_title(segment[1], 'he', primary = True)
-                    segment_node.key = segment[0]
-                    segment_node.depth = 2
-                    segment_node.addressTypes = ['Integer','Integer']
-                    segment_node.sectionNames = ['Chapter','Paragraph']
-                section_node.append(segment_node)
-            record.append(section_node)
-        else:
-            section_node = JaggedArrayNode()
-            section_node.add_title(section[0], 'en', primary = True)
-            section_node.add_title(section[1], 'he', primary = True)
-            section_node.key = section[0]
-            if "Part" in section[0]:
-                section_node.depth = 2
-                section_node.addressTypes = ['Integer','Integer']
-                section_node.sectionNames = ['Chapter','Paragraph']
-                record.append(section_node)
-            else:
-                section_node.depth = 1
-                section_node.addressTypes = ['Integer']
-                section_node.sectionNames = ['Paragraph']
-                record.append(section_node)
-    record.validate()
-        
-    index = {
-        "title":"Netiv Chesed on Ahavat Chesed",
-        "base_text_titles": [
-          'Ahavat Chesed'
-        ],
-        "dependence": "Commentary",
-        "collective_title":"Netiv Chesed",
-        "categories":["Halakhah","Commentary"],
-        "schema": record.serialize()
-    }
-    post_index(index,weak_network=True)
-def is_new_chapter(line):
-    if re.search(ur'^\s*פרק',line):
-        return True
-    if u'פתיחה לתשלומי שכר שכיר' in line:
-        return True
-def clean_ac_line(line):
-    line = re.sub(ur'[A-Za-z]',u'',line)
-    if re.search(ur'^\s*פרק',line):
-        line = u'<b>'+line+u'</b>'
-    """<i data-commentator="Sheilat Shalom" data-label="*" data-order="{}"></i>"""
-    return line
-def clean_nc_line(line):
-    line = re.sub(ur'[A-Za-z]',u'',line)
-    return line
 
-#post_ac_index()
-#parse_text()
+                version = {
+                    'versionTitle': "Ahavat Chesed --  Torat Emet",
+                    'versionSource': 'http://toratemetfreeware.com/online/f_01815.html',
+                    'language': 'he',
+                    'text': all_nc_sections[key][8]
+                }
+                print "posting {} \"Netiv Chesed on Ahavat Chesed, Laws of Wages, Introduction\" text...".format(key)
+                #post_text("Ahavat Chesed, Part I, Laws of Wages, Introduction", version, weak_network=True)
+                post_text_weak_connection("Netiv Chesed on Ahavat Chesed, Part I, Laws of Wages, Introduction", version)
 
-#post_nc_term()
-#post_nc_index()
-parse_text()
+
+                    for section in re.split(ur'\((?=[^'+_remove+ur']{1,2}\))',line):
+
+"""
