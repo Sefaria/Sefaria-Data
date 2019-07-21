@@ -250,16 +250,18 @@ class Gemara_Hashtable:
         return self._hash_table[index]
 
 
-    def get_skip_grams(self,five_gram):
+    def get_skip_grams(self,five_gram, is_end=False):
         """
 
         :param five_gram: list of 5 consecutive words
+        :param is_end: bool, True if five_gram is last five_gram in unit
         :return: list of the 4 skip grams (in 2 letter form)
         """
 
         lemmas = [self.lemmatizer(w) for w in five_gram]
         skip_gram_list = [u''.join(temp_skip) for temp_skip in itertools.combinations(lemmas, self.skip_gram_size)]
-        del skip_gram_list[-1] # last one is the one that skips the first element
+        if not is_end:
+            del skip_gram_list[-1] # last one is the one that skips the first element
         return skip_gram_list
 
     def w2i_reducer(self, a, b):
@@ -564,7 +566,7 @@ class ParallelMatcher:
                     pickle.dump((unit_il, unit_rl, total_len), my_pickle, -1)
 
             for i_word in xrange(len(unit_wl) - self.skip_gram_size):
-                skip_gram_list = self.ght.get_skip_grams(unit_wl[i_word:i_word + self.skip_gram_size + 1])
+                skip_gram_list = self.ght.get_skip_grams(unit_wl[i_word:i_word + self.skip_gram_size + 1], is_end=i_word == (len(unit_wl) - self.skip_gram_size - 1))
                 for skip_gram in skip_gram_list:
                     start_index = i_word
                     end_index = i_word + self.skip_gram_size
