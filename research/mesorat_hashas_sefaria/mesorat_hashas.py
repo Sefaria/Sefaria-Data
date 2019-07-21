@@ -570,8 +570,8 @@ class ParallelMatcher:
                 skip_gram_list = self.ght.get_skip_grams(unit_wl[i_word:i_word + self.skip_gram_size + 1], is_end=is_unit_end)
                 for iskip_gram, skip_gram in enumerate(skip_gram_list):
                     # if you're at the last skip gram in the unit, you skipped the first word of the skip gram
-                    start_index = i_word - 1 if is_unit_end and iskip_gram == len(skip_gram_list) - 1 else i_word
-                    end_index = i_word + self.skip_gram_size
+                    start_index = i_word + 1 if is_unit_end and iskip_gram == len(skip_gram_list) - 1 else i_word
+                    end_index = i_word + self.skip_gram_size + 1 if is_unit_end and iskip_gram == len(skip_gram_list) - 1 else i_word + self.skip_gram_size
 
                     start_ref = unit_rl[bisect.bisect_right(unit_il, start_index) - 1]
                     end_ref = unit_rl[bisect.bisect_right(unit_il, end_index) - 1]
