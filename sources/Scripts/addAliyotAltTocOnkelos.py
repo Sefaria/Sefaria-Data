@@ -2,7 +2,6 @@
 import django
 django.setup()
 from sefaria.model import *
-from sources.functions import *
 
 def addAliyotOnkelos(index_name):
     index = library.get_index(index_name)
