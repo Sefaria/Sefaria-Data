@@ -21,6 +21,7 @@ import cProfile
 # from index_title_catcher import *  # get_index_via_titles
 from sefaria.system.database import db
 import matplotlib.pyplot as plt  # %matplotlib
+import itertools
 
 db_aspaklaria = client.aspaklaria
 
@@ -477,7 +478,10 @@ class Source(object):
         :param look_here:
         :return:
         """
-        look_here_titles = [index.title for index in look_here] if isinstance(look_here[0], Index) else look_here
+        look_here_titles_he = [index.all_titles('he') for index in look_here if isinstance(index, Index)] #[index.all_titles('he') for index in look_here if isinstance(index, Index)] if all(isinstance(look_here_i, Index) for look_here_i in look_here) else look_here
+        look_here_titles_he = list(itertools.chain(*look_here_titles_he))
+        look_here_titles_en = [index.get_title('en') for index in look_here] if all(isinstance(look_here_i, Index) for look_here_i in look_here) else look_here
+        look_here_titles = look_here_titles_en+look_here_titles_he
         shared_word_in_titles = []
         try:
             shared_word_in_titles = u'({})'.format(u'|'.join(list(set.intersection(*[set(x.split()) for x in look_here_titles]))))
@@ -517,6 +521,8 @@ class Source(object):
             if wrong_ref:  # or (self.raw_ref and not self.ref and not self.raw_ref.is_sham):
                 new_ref = None
                 include_dependant = True
+                if self.author == u"משנה תורה":
+                    include_dependant = False
                 look_here = self.get_index_options(include_dependant=include_dependant)
                 if look_here:
                     new_ref = self.get_new_ref_w_look_here(look_here)
@@ -606,6 +612,7 @@ class Source(object):
                                 print "we tried"
                                 self.ref = None
         elif self.indexs and self.raw_ref and not self.raw_ref.is_sham:
+            self.ref_opt = []
             for ind in self.indexs:
                 new_index = ind if isinstance(ind, Index) else library.get_index(ind)
                 self.index = new_index
@@ -634,10 +641,22 @@ class Source(object):
                         else:
                             r = Ref(node_guess)
                         if not self.check_for_wrong_ref(r):
-                            self.ref = r
+                            self.ref_opt.append(r)
                     except InputError:
-                        self.ref = u''
+                        # self.ref_opt.append(u'')
                         print u'the node guess is not a Ref'
+            if self.ref_opt:
+                if len(self.ref_opt)==1:
+                    r = self.ref_opt[0]
+                    self.ref = r
+                    # if not r.sections:
+                    #     sections = [x for x in re.sub(u'[()]', u'', self.raw_ref.rawText).split() if getGematria(x)<500 and isGematria(x)] #todo: bad huristic probably should not do this at all and stay on the index level than use PM
+                    #     # sections = filter(lambda x: isGematria(x), re.sub(u'[()]', u'', self.raw_ref.rawText).split())
+                    #     if sections:
+                    #         self.ref = Ref(r.he_normal() + u' ' + u' '.join(sections))
+                else:  # more than one option, we need to choose the better one.
+                    pass
+
                 # elif node_guess:
                 #     # then we should check witch is the better option
                 #     # maybe using the length of matching words in regards to the titles
@@ -674,6 +693,14 @@ class Source(object):
             return True  # go thorough the wrongRef path with the new rawRef
         return False
 
+    def set_reduce_indexes(self, reduced_indexes):
+        reduced_indexes = filter(lambda x: type(x)==unicode, reduced_indexes)
+        return len(reduced_indexes) == 1 or (
+                reduced_indexes and all(
+            [x == reduced_indexes[-1] or library.get_index(x) == library.get_index(reduced_indexes[-1]) for x in
+             reduced_indexes]))
+
+
     def get_new_ref_w_look_here(self, look_here, ):
         """
 
@@ -690,17 +717,24 @@ class Source(object):
         reduced_indexes = self.reduce_indexes(look_here_titles=look_here_titles,
                                               look_here_titles_nodes=look_here_titles_nodes,
                                               alt_ref_titles=alt_ref_titles)
-        if len(reduced_indexes) == 1 or (
-                reduced_indexes and all([x == reduced_indexes[-1] for x in reduced_indexes])):  # replace with `set()`?
+        if self.set_reduce_indexes(reduced_indexes):
             reduced_indexes = set(reduced_indexes)
-            self.index = list(reduced_indexes)[0]
+            if filter(lambda x: type(x) == tuple, reduced_indexes):
+                self.index = filter(lambda x: type(x) == tuple, reduced_indexes)[0]
+            else:
+                self.index = library.get_index(filter(lambda x: type(x) == unicode, list(reduced_indexes))[0]).title
             try:
                 if isinstance(self.index, tuple):
                     index_node_name = self.index[1].title + u', ' + self.index[0]
+                    index_node_name = Ref(index_node_name).normal()
                 else:
                     index_node_name = self.index
-                new_ref = Ref(
-                    u'{} {}'.format(index_node_name, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()))
+                sections = self.get_sections_from_ref()
+                new_refs = library.get_refs_in_string(u'({} {})'.format(Ref(index_node_name).he_normal(), sections))
+                if new_refs:
+                    new_ref = new_refs[0]
+                else:
+                    new_ref = Ref(u'{} {}'.format(index_node_name, sections)) #re.sub(self.ref.index.title, u'', self.ref.normal()).strip()))
                 print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
                 self.ref = new_ref
             except exceptions.InputError as e:
@@ -786,9 +820,9 @@ class Source(object):
                     if isinstance(self.index, tuple):
                         index_node_name = self.index[1].title + u', ' + self.index[0]
                     else:
-                        index_node_name = self.index
-                    new_ref = Ref(
-                        u'{} {}'.format(index_node_name, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()))
+                        index_node_name = Ref(self.index).normal()
+                    sections = self.get_sections_from_ref()
+                    new_ref = Ref(u'{} {}'.format(index_node_name, sections))
                     print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
                     self.ref = new_ref
                 except exceptions.InputError as e:
@@ -801,6 +835,14 @@ class Source(object):
                         print u"inputError for this string {}, extracted from this rawref"
 
         return new_ref
+
+    def get_sections_from_ref(self):
+        if 'Talmud' in self.ref.index.categories:
+            he_massechet_title = Ref(self.ref.index.title).he_normal()
+            sections = re.sub(u'(\(|\)|{})'.format(he_massechet_title), u'', self.raw_ref.rawText)
+        else:
+            sections = re.sub(self.ref.index.title, u'', self.ref.normal()).strip()
+        return sections
 
     def get_index_options(self, include_dependant=True):
         """
@@ -846,6 +888,7 @@ class Source(object):
         reduced_indexes.extend(reduced_indexes_nodes)
 
         # self.change_look_here("author", "category", "new_category")
+        # reduced_indexes = [Ref(title).index for title in reduced_indexes]
 
         return reduced_indexes
 

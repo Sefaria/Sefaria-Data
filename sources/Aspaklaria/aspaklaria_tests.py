@@ -40,16 +40,16 @@ class Test_Source_methods(object):
                     { 'author':u'מדרש רבה', 'raw_text':u'(דברים ח ג)', 'ref':Ref('Devarim Rabbah 8:3') },
                     { 'author':u'ילקוט שמעוני', 'raw_text':u'(מלכים ב פרק יח, רצו)', 'ref':Ref('Yalkut Shimoni on Nach 234:8-239:1') },
                     { 'author':u'ילקוט שמעוני', 'raw_text':u'(דניאל תתרסה)', 'ref':Ref('Yalkut Shimoni on Nach 1065') },
-                    # { 'author':u'מורה נבוכים', 'raw_text':u'(חלק ג )', 'ref':Ref('Guide for the Perplexed, Part 3') },
+                    # { 'author':u'מורה נבוכים', 'raw_text':u'(חלק ג)', 'ref':Ref('Guide for the Perplexed, Part 3') },
                     # { 'author':u'מורה נבוכים', 'raw_text':u'(חלק ג פרק א)', 'ref':Ref('Guide for the Perplexed, Part 3 1') },
                     { 'author':u'מורה נבוכים', 'raw_text':u'(פתיחה)', 'ref':Ref('Guide for the Perplexed, Introduction, Prefatory Remarks') },
-                    { 'author':u'אלשיך', 'raw_text':u'(במדבר א יב)', 'ref':Ref('Alshich on Torah, Numbers 1:12') },
-                    { 'author':u'אלשיך', 'raw_text':u'(רות א יב)', 'ref':Ref('Enei Moshe on Ruth 1:12') },
-                    # { 'author':u'משנה תורה', 'raw_text':u'(ערכין ג טו)', 'ref':Ref('Mishneh Torah, Appraisals and Devoted Property 3') },
+                    { 'author':u'אלשיך', 'raw_text':u'(במדבר א ג)', 'ref':Ref('Alshich on Torah, Numbers 1:3') },
+                    { 'author':u'אלשיך', 'raw_text':u'(רות א יד)', 'ref':Ref('Enei Moshe on Ruth 1:14') },
+                    { 'author':u'משנה תורה', 'raw_text':u'(ערכין ג טו)', 'ref':Ref('Mishneh Torah, Appraisals and Devoted Property 3:15') },
                     { 'author':u'משנה תורה', 'raw_text':u'(נזקי ממון ב ז, וראה שם עוד)', 'ref':Ref('Mishneh Torah, Damages to Property 2:7') },
                     { 'author':u'תרגום יונתן', 'raw_text':u' (תהלים כב כא)', 'ref':Ref('Aramaic Targum to Psalms 22:21') },
                     { 'author':u'הגר"א', 'raw_text':u' (בראשית כב כא)', 'ref':Ref('Aderet Eliyahu, Genesis 22:21') },
-                    # { 'author':u'לקח טוב', 'raw_text':u'(בראשית יג ה)', 'ref':Ref('Midrash Lekach Tov, Genesis 13:5') },
+                    { 'author':u'לקח טוב', 'raw_text':u'(בראשית יג ה)', 'ref':Ref('Midrash Lekach Tov, Genesis 13:5') },
                     { 'author':u'של"ה', 'raw_text':u'(תורה שבכתב נח, בסופו)', 'ref':Ref('Shenei Luchot HaBerit, Torah Shebikhtav, Noach') },
                     { 'author':u'של"ה', 'raw_text':u'(בעשרה מאמרות מאמר ב)', 'ref':Ref('Shenei Luchot HaBerit, Asara Maamarot, Sixth Maamar') },
                     { 'author':u'של"ה', 'raw_text':u'(מסכת חולין, וראה שם עוד)', 'ref':Ref('Shenei Luchot HaBerit, Aseret HaDibrot, Chullin') },
@@ -86,7 +86,7 @@ class Test_Source_methods(object):
             input_list.append((e['raw_text'],e['author'], e['ref'], e['assert_ref']))
         return input_list
 
-    @pytest.mark.parametrize('raw_text, author, sefaria_ref, assert_ref', organize_test_input_list(dict_input, dict_input, [u'רמב"ן'], [u'שולחן של ארבע שער א', u'ויקרא',u'מועד ח ב, וראה שם עוד']))
+    @pytest.mark.parametrize('raw_text, author, sefaria_ref, assert_ref', organize_test_input_list(dict_input, dict_input, [u'מדרש רבה'], [u'שולחן של ארבע שער א', u'ויקרא',u'מועד ח ב, וראה שם עוד']))
     def test_all(self, raw_text, author, sefaria_ref, assert_ref):
         r = Source(raw_text, author).ref
         if assert_ref:
@@ -189,21 +189,21 @@ class Test_Source_methods(object):
 
     def test_get_ref_mishneh_torah(self):
         source = Source(u'(ברכות ב ז)', u'משנה תורה')
-        assert source.ref == Ref(u'Mishneh Torah, Blessings 2')
+        assert source.ref == Ref(u'Mishneh Torah, Blessings 2:7')
         source = Source(u'(עבודת כוכבים פרק א ב והלאה)', u'משנה תורה')
         assert source.ref == Ref(u'Mishneh Torah, Foreign Worship and Customs of the Nations 1:2')
         source = Source(u'(נדרים יא ו, וראה שם עוד)', u'משנה תורה')
-        assert source.ref == Ref(u'Mishneh Torah, Vows 11')
+        assert source.ref == Ref(u'Mishneh Torah, Vows 11:6')
 
         # for these we need to look for parts of the alt titles. and should see where to put the alt_table. 2 parts that should go some where.
-        source = Source(u'(גזלה ו יא)', u'משנה תורה')
-        print source.ref #== Ref(u'Mishneh Torah, Vows 11')
-        source = Source(u'(תפילין פרק יא יג)', u'משנה תורה')
-        print source.ref  # == Ref(u'Mishneh Torah, Vows 11')
+        source = Source(u'(גזילה ו יא)', u'משנה תורה')
+        assert source.ref == Ref(u'Mishneh Torah, Robbery and Lost Property')# 6:11')
+        source = Source(u'(תפילין פרק א יג)', u'משנה תורה')
+        assert source.ref == Ref(u'Mishneh Torah, Tefillin, Mezuzah and the Torah Scroll 1:13')
         source = Source(u'(לולב פרק ז כולו)', u'משנה תורה')
-        print source.ref  # == Ref(u'Mishneh Torah, Vows 11')
+        assert source.ref == Ref(u'Mishneh Torah, Shofar, Sukkah and Lulav 7')
         source = Source(u'(אבלות פרק א יא)', u'משנה תורה')
-        print source.ref  # == Ref(u'Mishneh Torah, Vows 11')
+        assert source.ref == Ref(u'Mishneh Torah, Mourning')# 1:11')
 
 
 class Test_Sham_Parsing(object):
