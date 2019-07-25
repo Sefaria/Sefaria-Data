@@ -22,6 +22,7 @@ import cProfile
 from sefaria.system.database import db
 import matplotlib.pyplot as plt  # %matplotlib
 import itertools
+from sources.EinMishpat.ein_parser import is_hebrew_number, hebrew_number_regex
 
 db_aspaklaria = client.aspaklaria
 
@@ -646,14 +647,15 @@ class Source(object):
                         # self.ref_opt.append(u'')
                         print u'the node guess is not a Ref'
             if self.ref_opt:
-                if len(self.ref_opt)==1:
+                if len(self.ref_opt) == 1:
                     r = self.ref_opt[0]
+                    #self.ref = r
+                    if not r.sections:
+                        sections = u' '.join([sect for sect in re.sub(u'[(,)]', u' ', self.raw_ref.rawText).split() if is_hebrew_number(sect)]) #todo: maybe bad huristic and should wait to do this on the PM level?
+                        if sections:
+                            self.ref = Ref(r.he_normal() + u' ' + sections)
+                            return
                     self.ref = r
-                    # if not r.sections:
-                    #     sections = [x for x in re.sub(u'[()]', u'', self.raw_ref.rawText).split() if getGematria(x)<500 and isGematria(x)] #todo: bad huristic probably should not do this at all and stay on the index level than use PM
-                    #     # sections = filter(lambda x: isGematria(x), re.sub(u'[()]', u'', self.raw_ref.rawText).split())
-                    #     if sections:
-                    #         self.ref = Ref(r.he_normal() + u' ' + u' '.join(sections))
                 else:  # more than one option, we need to choose the better one.
                     pass
 

@@ -30,7 +30,7 @@ class Test_Source_methods(object):
                     {'author':u'משך חכמה', 'raw_text':u'(ויקרא כו א)', 'ref':Ref(u'משך חכמה, בהר')},
                     {'author':u'אבן עזרא', 'raw_text':u'(דברים יא כז)', 'ref':Ref('Ibn_Ezra_on_Deuteronomy.11.27')},
                     {'author': u"ר' בחיי", 'raw_text': u'(שולחן של ארבע שער א)', 'ref': Ref('')},
-                    {'author':u'תלמוד בבלי', 'raw_text':u'(מועד ח ב, וראה שם עוד)', 'ref':Ref('')},
+                    {'author':u'תלמוד בבלי', 'raw_text':u'(מועד ח ב, וראה שם עוד)', 'ref':Ref('Moed Katan 8b')},
                     { 'author':u'מהר"ל', 'raw_text':u'טקסט (דרך חיים א ה)', 'ref':Ref('Derech Chaim 1:5') },
                     { 'author':u'מדרש רבה', 'raw_text':u'טקסט (בראשית כז ג)', 'ref':Ref('Bereishit Rabbah 27:3') },
                     { 'author':u'רמב"ן', 'raw_text':u'(רמב"ן, בראשית יח יא)', 'ref':Ref('Ramban on Genesis 18:11') },
@@ -86,7 +86,7 @@ class Test_Source_methods(object):
             input_list.append((e['raw_text'],e['author'], e['ref'], e['assert_ref']))
         return input_list
 
-    @pytest.mark.parametrize('raw_text, author, sefaria_ref, assert_ref', organize_test_input_list(dict_input, dict_input, [u'מדרש רבה'], [u'שולחן של ארבע שער א', u'ויקרא',u'מועד ח ב, וראה שם עוד']))
+    @pytest.mark.parametrize('raw_text, author, sefaria_ref, assert_ref', organize_test_input_list(dict_input, dict_input, [u'תלמוד בבלי'], [u'שולחן של ארבע שער א', u'ויקרא',u'מועד ח ב, וראה שם עוד']))
     def test_all(self, raw_text, author, sefaria_ref, assert_ref):
         r = Source(raw_text, author).ref
         if assert_ref:
@@ -197,13 +197,13 @@ class Test_Source_methods(object):
 
         # for these we need to look for parts of the alt titles. and should see where to put the alt_table. 2 parts that should go some where.
         source = Source(u'(גזילה ו יא)', u'משנה תורה')
-        assert source.ref == Ref(u'Mishneh Torah, Robbery and Lost Property')# 6:11')
+        assert source.ref == Ref(u'Mishneh Torah, Robbery and Lost Property 6:11')
         source = Source(u'(תפילין פרק א יג)', u'משנה תורה')
         assert source.ref == Ref(u'Mishneh Torah, Tefillin, Mezuzah and the Torah Scroll 1:13')
         source = Source(u'(לולב פרק ז כולו)', u'משנה תורה')
         assert source.ref == Ref(u'Mishneh Torah, Shofar, Sukkah and Lulav 7')
         source = Source(u'(אבלות פרק א יא)', u'משנה תורה')
-        assert source.ref == Ref(u'Mishneh Torah, Mourning')# 1:11')
+        assert source.ref == Ref(u'Mishneh Torah, Mourning 1:11')
 
 
 class Test_Sham_Parsing(object):
