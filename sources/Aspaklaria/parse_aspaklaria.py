@@ -657,7 +657,21 @@ class Source(object):
                             return
                     self.ref = r
                 else:  # more than one option, we need to choose the better one.
-                    pass
+                    he_options = [r.he_normal().replace(u"ן", u"ם") for r in self.ref_opt]
+                    try:
+                        r = Ref(intersect_list_string(he_options, re.sub(u'[()]', u'', self.raw_ref.rawText)))
+                        if not r.sections:
+                            sections = u' '.join(
+                                [sect for sect in re.sub(u'[(,)]', u' ', self.raw_ref.rawText).split() if
+                                 is_hebrew_number(
+                                     sect)])  # todo: maybe bad huristic and should wait to do this on the PM level?
+                            if sections:
+                                self.ref = Ref(r.he_normal() + u' ' + sections)
+                                return
+                        self.ref = r
+                    except InputError:
+                        print "more than one option to guess from"
+
 
                 # elif node_guess:
                 #     # then we should check witch is the better option
@@ -701,7 +715,6 @@ class Source(object):
                 reduced_indexes and all(
             [x == reduced_indexes[-1] or library.get_index(x) == library.get_index(reduced_indexes[-1]) for x in
              reduced_indexes]))
-
 
     def get_new_ref_w_look_here(self, look_here, ):
         """
@@ -970,6 +983,13 @@ class Source(object):
         """
         return None
 
+    def pm_match_text(self):
+        """
+        Use the ParallelMatcher to test and possibly change or precise to segment level the "source.ref"
+        :return: the pm_ref (maybe untouched) source.ref
+        """
+        self.pm_ref = self.ref
+        return self.pm_ref
 
 class RawRef(object):
 
