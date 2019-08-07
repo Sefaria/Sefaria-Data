@@ -950,7 +950,7 @@ def create_sheet_json(page_id, group_manager):
     raw_sheet = get_sheet_by_id(page_id)
     sheet = {
         'title': raw_sheet['name'],
-        'status': 'public',
+        'status': 'public' if raw_sheet['status'] in [3, 4] else 'unlisted',
         'tags': raw_sheet['tags'],
         'options': {
             'language': 'hebrew',
