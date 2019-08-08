@@ -23,6 +23,8 @@ from sefaria.system.database import db
 import matplotlib.pyplot as plt  # %matplotlib
 import itertools
 from sources.EinMishpat.ein_parser import is_hebrew_number, hebrew_number_regex
+from research.knowledge_graph.sefer_haagada.main import disambiguate_ref_list
+from sefaria.utils.hebrew import is_hebrew
 
 db_aspaklaria = client.aspaklaria
 
@@ -281,6 +283,9 @@ class Source(object):
         # after failing by using the api let's try without.
         if not self.ref:
             self.get_ref_clean()
+        else:  # there is a ref but it might be wrong so we are using the PM.
+            self.pm_match_text()
+
 
         # if self.raw_ref:
         #     Source.cnt+=1
@@ -832,11 +837,11 @@ class Source(object):
 
             if self.index:
                 try:
+                    sections = self.get_sections_from_ref()
                     if isinstance(self.index, tuple):
                         index_node_name = self.index[1].title + u', ' + self.index[0]
                     else:
-                        index_node_name = Ref(self.index).normal()
-                    sections = self.get_sections_from_ref()
+                        index_node_name = Ref(self.index).he_normal() if is_hebrew(sections) else Ref(self.index).normal()
                     new_ref = Ref(u'{} {}'.format(index_node_name, sections))
                     print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
                     self.ref = new_ref
@@ -988,7 +993,10 @@ class Source(object):
         Use the ParallelMatcher to test and possibly change or precise to segment level the "source.ref"
         :return: the pm_ref (maybe untouched) source.ref
         """
-        self.pm_ref = self.ref
+        text_to_match = re.sub(u'\(.*?\)', u'', self.text)
+        results = disambiguate_ref_list(self.ref.normal(), [(text_to_match, '0')])
+        self.pm_ref = results['0']['A Ref'] if results['0'] else results['0']
+        print u"text: {} \n ref: {} \n pm_ref: {}".format(text_to_match, self.ref, self.pm_ref)
         return self.pm_ref
 
 class RawRef(object):
@@ -1283,7 +1291,7 @@ if __name__ == "__main__":
     # he_letter = u'010_ALEF'
     # letter = '009_TET'
 
-    letter = ''
+    letter = '009_TET'
     skip_letters = [] # ['009_TET','050_NUN']
     letters = [letter] if letter else os.listdir(
         u'/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/')
