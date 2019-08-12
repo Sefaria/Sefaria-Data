@@ -960,6 +960,14 @@ def create_sheet_json(page_id, group_manager):
         'attribution': raw_sheet['username']
     }
 
+    sheet['sources'].append(
+        {
+            'options': {},
+            'outsideText': u'<strong>{} / {}</strong>'.format(raw_sheet['username'], raw_sheet['author'])
+            if raw_sheet['username'] != raw_sheet['author'] else u'<strong>{}</strong>'.format(raw_sheet['username'])
+        }
+    )
+
     for resource in raw_sheet['resources']:
         source = {
             # 'outsideText': bleach.clean(resource['body'], strip=True, tags=[], attributes={}),
