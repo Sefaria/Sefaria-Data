@@ -251,24 +251,23 @@ def post_links_to_server(name, eng_name, data):
 
     print "For {}: Matches out of order: {}\n" \
           "            No matches found: {}".format(eng_name, dh_out_of_order, no_match)
-    post_link(links, server=SEFARIA_SERVER)
+    post_link(links, server=SERVER)
 
 
 if __name__ == "__main__":
     reached = False
     texts = parse(FILE)
-    #add_term("Marit HaAyin", u"מראית העין")
-
-    #add_category("Marit HaAyin",["Talmud", "Bavli", "Commentary", "Marit HaAyin"], u"מראית העין")
-    # for seder in list(set(sedarim)):
-    #     heb_name = library.get_term(seder).get_primary_title('he')
-    #     add_category(seder, ["Talmud", "Bavli", "Commentary", "Marit HaAyin", seder], heb_name)
+    add_term("Marit HaAyin", u"מראית העין")
+    #
+    add_category("Marit HaAyin",["Talmud", "Bavli", "Commentary", "Marit HaAyin"], u"מראית העין")
+    for seder in list(set(sedarim)):
+        heb_name = library.get_term(seder).get_primary_title('he')
+        add_category(seder, ["Talmud", "Bavli", "Commentary", "Marit HaAyin", seder], heb_name)
 
     count = 0
     for name, data in texts.items():
         eng_name = library.get_index(name).get_title('en')
-        #post_index_to_server(eng_name, name, count)
-        #post_text_to_server(data, eng_name)
-        if eng_name == "Niddah":
-            post_links_to_server(name, eng_name, data)
+        post_index_to_server(eng_name, name, count)
+        post_text_to_server(data, eng_name)
+        post_links_to_server(name, eng_name, data)
         count += 1
