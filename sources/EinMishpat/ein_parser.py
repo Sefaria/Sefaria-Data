@@ -770,6 +770,8 @@ def is_hebrew_number(str):
     matches = re.findall(hebrew_number_regex(), str)
     if len(matches) == 0:
         return False
+    if str == u'שם':
+        return False
     return matches[0] == str
 
 

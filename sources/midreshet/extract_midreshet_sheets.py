@@ -32,6 +32,7 @@ django.setup()
 from sefaria.model import *
 from sefaria.s3 import HostedFile
 from sefaria.system.exceptions import InputError
+from sefaria.datatype.jagged_array import JaggedTextArray
 
 
 class MidreshetCursor(object):
@@ -494,7 +495,7 @@ class GroupManager(object):
                 break
             elif raw_response.status_code == 502:
                 print("Got 502. will try again")
-                time.sleep(30)
+                time.sleep(3)
             else:
                 print("Got bad status code. Exiting")
                 sys.exit(1)
@@ -949,7 +950,7 @@ def create_sheet_json(page_id, group_manager):
     raw_sheet = get_sheet_by_id(page_id)
     sheet = {
         'title': raw_sheet['name'],
-        'status': 'public',
+        'status': 'public' if raw_sheet['status'] in [3, 4] else 'unlisted',
         'tags': raw_sheet['tags'],
         'options': {
             'language': 'hebrew',
@@ -958,6 +959,14 @@ def create_sheet_json(page_id, group_manager):
         'sources': [],
         'attribution': raw_sheet['username']
     }
+
+    sheet['sources'].append(
+        {
+            'options': {},
+            'outsideText': u'<strong>{} / {}</strong>'.format(raw_sheet['username'], raw_sheet['author'])
+            if raw_sheet['username'] != raw_sheet['author'] else u'<strong>{}</strong>'.format(raw_sheet['username'])
+        }
+    )
 
     for resource in raw_sheet['resources']:
         source = {
@@ -982,21 +991,26 @@ def create_sheet_json(page_id, group_manager):
             sefaria_ref = resource.get('SefariaRef', None)
 
             if sefaria_ref:
+                oref = Ref(sefaria_ref)
+
+                en_text = oref.text('en').text
+
                 source['ref'] = sefaria_ref
                 source['text'] = {'he': format_source_text(resource_body),
-                                  'en': ''}
+                                  'en': JaggedTextArray(en_text).flatten_to_string()}
+                source['heRef'] = oref.he_normal()
 
-                oref = Ref(sefaria_ref)
                 if 'Tanakh' in oref.index.categories and not oref.is_commentary():
                     source['text']['he'] = wrap_verse_markers(source['text']['he'])
 
                 # source['options']['sourcePrefix'] = u'מקור'
-                source['options']['PrependRefWithHe'] = resource['exactLocation']
+                # source['options']['PrependRefWithHe'] = resource['exactLocation']
 
             else:
                 source['outsideText'] = u'<span style="color: #999">{}</span><br>{}'.format(
                     resource['exactLocation'],
-                    format_source_text(resource_body))
+                    format_source_text(resource_body)
+                )
 
         else:
             cleaned_text = format_source_text(resource_body)

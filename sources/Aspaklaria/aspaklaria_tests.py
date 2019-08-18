@@ -27,39 +27,42 @@ class Test_Source_methods(object):
 
     dict_input = [
                     # {'author':u'', 'raw_text':u'', 'ref':Ref('')},
+                    {'author': u'תלמוד ירושלמי', 'raw_text': u'(ברכות לח א)', 'ref': Ref('Jerusalem Talmud Berakhot 38a')},
+                    # {'author': u'משנה תורה', 'raw_text': u'(ביכורים ז יב, וראה שם עוד)', 'ref': Ref('Mishneh Torah, First Fruits and other Gifts to Priests Outside the Sanctuary 7:12')},
+                    {'author': u'משנה תורה', 'raw_text': u'(טומאת אוכלין א א, וראה שם עוד)', 'ref': Ref('Mishneh Torah, Defilement of Foods 1:1')},
                     {'author':u'משך חכמה', 'raw_text':u'(ויקרא כו א)', 'ref':Ref(u'משך חכמה, בהר')},
                     {'author':u'אבן עזרא', 'raw_text':u'(דברים יא כז)', 'ref':Ref('Ibn_Ezra_on_Deuteronomy.11.27')},
                     {'author': u"ר' בחיי", 'raw_text': u'(שולחן של ארבע שער א)', 'ref': Ref('')},
-                    {'author':u'תלמוד בבלי', 'raw_text':u'(מועד ח ב, וראה שם עוד)', 'ref':Ref('')},
-                    { 'author':u'מהר"ל', 'raw_text':u'טקסט (דרך חיים א ה)', 'ref':Ref('Derech Chaim 1:5') },
-                    { 'author':u'מדרש רבה', 'raw_text':u'טקסט (בראשית כז ג)', 'ref':Ref('Bereishit Rabbah 27:3') },
-                    { 'author':u'רמב"ן', 'raw_text':u'(רמב"ן, בראשית יח יא)', 'ref':Ref('Ramban on Genesis 18:11') },
-                    { 'author':u'ילקוט שמעוני', 'raw_text':u'(משלי פרק א, תתקכט)', 'ref':Ref('Yalkut Shimoni on Nach 929:1-932:6') },
-                    { 'author':u'בעל הטורים', 'raw_text':u'(דברים טו טז)', 'ref':Ref('Kitzur Baal Haturim on Deuteronomy 15:16') },
-                    { 'author':u'זהר חדש', 'raw_text':u'(בראשית תו)', 'ref':Ref('Zohar Chadash, Bereshit') },
-                    { 'author':u'מדרש רבה', 'raw_text':u'(דברים ח ג)', 'ref':Ref('Devarim Rabbah 8:3') },
-                    { 'author':u'ילקוט שמעוני', 'raw_text':u'(מלכים ב פרק יח, רצו)', 'ref':Ref('Yalkut Shimoni on Nach 234:8-239:1') },
-                    { 'author':u'ילקוט שמעוני', 'raw_text':u'(דניאל תתרסה)', 'ref':Ref('Yalkut Shimoni on Nach 1065') },
-                    # { 'author':u'מורה נבוכים', 'raw_text':u'(חלק ג )', 'ref':Ref('Guide for the Perplexed, Part 3') },
-                    # { 'author':u'מורה נבוכים', 'raw_text':u'(חלק ג פרק א)', 'ref':Ref('Guide for the Perplexed, Part 3 1') },
-                    { 'author':u'מורה נבוכים', 'raw_text':u'(פתיחה)', 'ref':Ref('Guide for the Perplexed, Introduction, Prefatory Remarks') },
-                    { 'author':u'אלשיך', 'raw_text':u'(במדבר א יב)', 'ref':Ref('Alshich on Torah, Numbers 1:12') },
-                    { 'author':u'אלשיך', 'raw_text':u'(רות א יב)', 'ref':Ref('Enei Moshe on Ruth 1:12') },
-                    # { 'author':u'משנה תורה', 'raw_text':u'(ערכין ג טו)', 'ref':Ref('Mishneh Torah, Appraisals and Devoted Property 3') },
-                    { 'author':u'משנה תורה', 'raw_text':u'(נזקי ממון ב ז, וראה שם עוד)', 'ref':Ref('Mishneh Torah, Damages to Property 2:7') },
-                    { 'author':u'תרגום יונתן', 'raw_text':u' (תהלים כב כא)', 'ref':Ref('Aramaic Targum to Psalms 22:21') },
-                    { 'author':u'הגר"א', 'raw_text':u' (בראשית כב כא)', 'ref':Ref('Aderet Eliyahu, Genesis 22:21') },
-                    # { 'author':u'לקח טוב', 'raw_text':u'(בראשית יג ה)', 'ref':Ref('Midrash Lekach Tov, Genesis 13:5') },
-                    { 'author':u'של"ה', 'raw_text':u'(תורה שבכתב נח, בסופו)', 'ref':Ref('Shenei Luchot HaBerit, Torah Shebikhtav, Noach') },
-                    { 'author':u'של"ה', 'raw_text':u'(בעשרה מאמרות מאמר ב)', 'ref':Ref('Shenei Luchot HaBerit, Asara Maamarot, Sixth Maamar') },
-                    { 'author':u'של"ה', 'raw_text':u'(מסכת חולין, וראה שם עוד)', 'ref':Ref('Shenei Luchot HaBerit, Aseret HaDibrot, Chullin') },
-                    { 'author':u'דרשות הר"ן', 'raw_text':u'(דרוש ז)', 'ref':Ref('Darashos HaRan 7') },
-                    { 'author':u'שפת אמת', 'raw_text':u'(שמות יתרו תרנ"ב)', 'ref':Ref('Sefat Emet, Exodus, Yitro') },
-                    # { 'author':u'שפת אמת', 'raw_text':u'(פורים תרל"ד)', 'ref':Ref('Sefat Emet, Exodus, For Purim') },
-                    { 'author':u"ר' ירוחם", 'raw_text':u'(דעת תורה במדבר עמוד קסג)', 'ref':None },
-                    { 'author':u'אברבנאל', 'raw_text':u'(יהושע ח ל)', 'ref':None },
-                    { 'author':u'ספרי', 'raw_text':u'(האזינו שיג)', 'ref':Ref('Sifrei Devarim 306-341') },
-                    { 'author':u'ילקוט שמעוני', 'raw_text':u'(ויקרא פרק יא, תקלו)', 'ref':Ref('Yalkut Shimoni on Torah 536') },
+                    {'author':u'תלמוד בבלי', 'raw_text':u'(מועד ח ב, וראה שם עוד)', 'ref':Ref('Moed Katan 8b')},
+                    {'author':u'מהר"ל', 'raw_text':u'טקסט (דרך חיים א ה)', 'ref':Ref('Derech Chaim 1:5') },
+                    {'author':u'מדרש רבה', 'raw_text':u'טקסט (בראשית כז ג)', 'ref':Ref('Bereishit Rabbah 27:3') },
+                    {'author':u'רמב"ן', 'raw_text':u'(רמב"ן, בראשית יח יא)', 'ref':Ref('Ramban on Genesis 18:11') },
+                    {'author':u'ילקוט שמעוני', 'raw_text':u'(משלי פרק א, תתקכט)', 'ref':Ref('Yalkut Shimoni on Nach 929:1-932:6') },
+                    {'author':u'בעל הטורים', 'raw_text':u'(דברים טו טז)', 'ref':Ref('Kitzur Baal Haturim on Deuteronomy 15:16') },
+                    {'author':u'זהר חדש', 'raw_text':u'(בראשית תו)', 'ref':Ref('Zohar Chadash, Bereshit') },
+                    {'author':u'מדרש רבה', 'raw_text':u'(דברים ח ג)', 'ref':Ref('Devarim Rabbah 8:3') },
+                    {'author':u'ילקוט שמעוני', 'raw_text':u'(מלכים ב פרק יח, רצו)', 'ref':Ref('Yalkut Shimoni on Nach 234:8-239:1') },
+                    {'author':u'ילקוט שמעוני', 'raw_text':u'(דניאל תתרסה)', 'ref':Ref('Yalkut Shimoni on Nach 1065') },
+                    # {'author':u'מורה נבוכים', 'raw_text':u'(חלק ג)', 'ref':Ref('Guide for the Perplexed, Part 3') },
+                    # {'author':u'מורה נבוכים', 'raw_text':u'(חלק ג פרק א)', 'ref':Ref('Guide for the Perplexed, Part 3 1') },
+                    {'author':u'מורה נבוכים', 'raw_text':u'(פתיחה)', 'ref':Ref('Guide for the Perplexed, Introduction, Prefatory Remarks') },
+                    {'author':u'אלשיך', 'raw_text':u'(במדבר א ג)', 'ref':Ref('Alshich on Torah, Numbers 1:3') },
+                    {'author':u'אלשיך', 'raw_text':u'(רות א יד)', 'ref':Ref('Enei Moshe on Ruth 1:14') },
+                    {'author':u'משנה תורה', 'raw_text':u'(ערכין ג טו)', 'ref':Ref('Mishneh Torah, Appraisals and Devoted Property 3:15') },
+                    {'author':u'משנה תורה', 'raw_text':u'(נזקי ממון ב ז, וראה שם עוד)', 'ref':Ref('Mishneh Torah, Damages to Property 2:7') },
+                    {'author':u'תרגום יונתן', 'raw_text':u' (תהלים כב כא)', 'ref':Ref('Aramaic Targum to Psalms 22:21') },
+                    {'author':u'הגר"א', 'raw_text':u' (בראשית כב כא)', 'ref':Ref('Aderet Eliyahu, Genesis 22:21') },
+                    {'author':u'לקח טוב', 'raw_text':u'(בראשית יג ה)', 'ref':Ref('Midrash Lekach Tov, Genesis 13:5') },
+                    {'author':u'של"ה', 'raw_text':u'(תורה שבכתב נח, בסופו)', 'ref':Ref('Shenei Luchot HaBerit, Torah Shebikhtav, Noach') },
+                    {'author':u'של"ה', 'raw_text':u'(בעשרה מאמרות מאמר ב)', 'ref':Ref('Shenei Luchot HaBerit, Asara Maamarot, Sixth Maamar') },
+                    {'author':u'של"ה', 'raw_text':u'(מסכת חולין, וראה שם עוד)', 'ref':Ref('Shenei Luchot HaBerit, Aseret HaDibrot, Chullin') },
+                    {'author':u'דרשות הר"ן', 'raw_text':u'(דרוש ז)', 'ref':Ref('Darashos HaRan 7') },
+                    {'author':u'שפת אמת', 'raw_text':u'(שמות יתרו תרנ"ב)', 'ref':Ref('Sefat Emet, Exodus, Yitro') },
+                    # {'author':u'שפת אמת', 'raw_text':u'(פורים תרל"ד)', 'ref':Ref('Sefat Emet, Exodus, For Purim') },
+                    {'author':u"ר' ירוחם", 'raw_text':u'(דעת תורה במדבר עמוד קסג)', 'ref':None },
+                    {'author':u'אברבנאל', 'raw_text':u'(יהושע ח ל)', 'ref':None },
+                    {'author':u'ספרי', 'raw_text':u'(האזינו שיג)', 'ref':Ref('Sifrei Devarim 306-341') },
+                    {'author':u'ילקוט שמעוני', 'raw_text':u'(ויקרא פרק יא, תקלו)', 'ref':Ref('Yalkut Shimoni on Torah 536') },
                 ]
 
     def organize_test_input_list(self, dict_input, firsts=None, print_ref=None):
@@ -86,7 +89,7 @@ class Test_Source_methods(object):
             input_list.append((e['raw_text'],e['author'], e['ref'], e['assert_ref']))
         return input_list
 
-    @pytest.mark.parametrize('raw_text, author, sefaria_ref, assert_ref', organize_test_input_list(dict_input, dict_input, [u'רמב"ן'], [u'שולחן של ארבע שער א', u'ויקרא',u'מועד ח ב, וראה שם עוד']))
+    @pytest.mark.parametrize('raw_text, author, sefaria_ref, assert_ref', organize_test_input_list(dict_input, dict_input, [u'משנה תורה', u'תלמוד ירושלמי'], [u'שולחן של ארבע שער א', u'ויקרא',u'מועד ח ב, וראה שם עוד']))
     def test_all(self, raw_text, author, sefaria_ref, assert_ref):
         r = Source(raw_text, author).ref
         if assert_ref:
@@ -189,21 +192,21 @@ class Test_Source_methods(object):
 
     def test_get_ref_mishneh_torah(self):
         source = Source(u'(ברכות ב ז)', u'משנה תורה')
-        assert source.ref == Ref(u'Mishneh Torah, Blessings 2')
+        assert source.ref == Ref(u'Mishneh Torah, Blessings 2:7')
         source = Source(u'(עבודת כוכבים פרק א ב והלאה)', u'משנה תורה')
         assert source.ref == Ref(u'Mishneh Torah, Foreign Worship and Customs of the Nations 1:2')
         source = Source(u'(נדרים יא ו, וראה שם עוד)', u'משנה תורה')
-        assert source.ref == Ref(u'Mishneh Torah, Vows 11')
+        assert source.ref == Ref(u'Mishneh Torah, Vows 11:6')
 
         # for these we need to look for parts of the alt titles. and should see where to put the alt_table. 2 parts that should go some where.
-        source = Source(u'(גזלה ו יא)', u'משנה תורה')
-        print source.ref #== Ref(u'Mishneh Torah, Vows 11')
-        source = Source(u'(תפילין פרק יא יג)', u'משנה תורה')
-        print source.ref  # == Ref(u'Mishneh Torah, Vows 11')
+        source = Source(u'(גזילה ו יא)', u'משנה תורה')
+        assert source.ref == Ref(u'Mishneh Torah, Robbery and Lost Property 6:11')
+        source = Source(u'(תפילין פרק א יג)', u'משנה תורה')
+        assert source.ref == Ref(u'Mishneh Torah, Tefillin, Mezuzah and the Torah Scroll 1:13')
         source = Source(u'(לולב פרק ז כולו)', u'משנה תורה')
-        print source.ref  # == Ref(u'Mishneh Torah, Vows 11')
+        assert source.ref == Ref(u'Mishneh Torah, Shofar, Sukkah and Lulav 7')
         source = Source(u'(אבלות פרק א יא)', u'משנה תורה')
-        print source.ref  # == Ref(u'Mishneh Torah, Vows 11')
+        assert source.ref == Ref(u'Mishneh Torah, Mourning 1:11')
 
 
 class Test_Sham_Parsing(object):

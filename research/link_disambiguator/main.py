@@ -173,7 +173,7 @@ class Link_Disambiguator:
                 continue
             score_list = [x.score for x in parallel_matches]
             max_scores = argmax(score_list, n=1)
-            best = match_list[max_scores[0]]
+            best = parallel_matches[max_scores[0]]
             a_match, b_match = (best.a, best.b) if best.a.mesechta == main_tref else (best.b, best.a)
             final_result_dict[parallel_item_key] = {
                 u"A Ref": a_match.ref.normal(),
@@ -488,6 +488,7 @@ def post_unambiguous_links(post=False):
             link = {"generated_by": "link_disambiguator", "auto": True,
                      "type": "", "refs": [row["Quoting Ref"], row["Quoted Ref"]]}
             links += [link]
+    print "Total Links: {}".format(len(links))
     if post:
         i = 0
         batch_size = 50
@@ -504,9 +505,10 @@ def post_unambiguous_links(post=False):
 
 
 def calc_stats():
+    print 'yo'
     books = defaultdict(int)
     cats = defaultdict(int)
-    with open("still_ambiguous_links.json", "rb") as fin:
+    with open("research/link_disambiguator/unambiguous_links.json", "rb") as fin:
         cin = unicodecsv.DictReader(fin)
         for row in cin:
             try:
@@ -516,20 +518,20 @@ def calc_stats():
                 cats[quoting.primary_category] += 1
             except InputError:
                 print row["Quoting Ref"]
-    with codecs.open("still_ambiguous_books.json", "wb") as fout:
+    with codecs.open("research/link_disambiguator/unambiguous_books.json", "wb") as fout:
         books = map(lambda x: list(x), sorted(books.items(), key=lambda x: x[1], reverse=True))
         json.dump({"books": books, "cats": cats}, fout, ensure_ascii=False, indent=2)
 
 def run():
-    ld = Link_Disambiguator()
-    ld.get_ambiguous_segments()
-    disambiguate_all()
+    #ld = Link_Disambiguator()
+    #ld.get_ambiguous_segments()
+    #disambiguate_all()
     #get_qa_csv()
     # ld = Link_Disambiguator()
     # ld.disambiguate_gra()
     #count_words()
-    #post_unambiguous_links()
-    #calc_stats()
+    #post_unambiguous_links(post=True)
+    calc_stats()
     #filter_books_from_output({u'Akeidat Yitzchak', u'HaKtav VeHaKabalah'}, {u'Responsa'})
     #filter_books_from_output({u'Alshich on Torah', u'Meshech Hochma', u'Messilat Yesharim', u'Gevurot Hashem', u'Kedushat Levi', u'Mei HaShiloach'}, set())
 
