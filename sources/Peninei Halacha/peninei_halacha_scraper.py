@@ -5,25 +5,51 @@ from sefaria.model import *
 from sources.functions import *
 import requests
 from bs4 import BeautifulSoup, element
-import re
+import regex as re
 import PIL
 from PIL import Image
+import codecs
 
 VERSION_TITLE_HE = "Peninei Halakhah, Yeshivat Har Bracha"
 VERSION_SOURCE_HE = "https://ph.yhb.org.il"
 VERSION_TITLE_EN = "Peninei Halakhah, English ed. Yeshivat Har Bracha"
 VERSION_SOURCE_EN = "https://ph.yhb.org.il/en"
 
+# NOTE: I ASSUMED THAT IF SECTIONS ARE ALSO TRANSLATED, THEN SIMANIM ARE TRANSLATED TOO.
+# IF THAT'S NOT TRUE, ADD "AND FALSE" TO LINES 874 AND 889
+tsv_translations_file = "Peninei_Halakhah_Title_Translations.tsv"
+tsv_title_changes_file = "PH_Chapter_Section_Title_Changes.tsv"
 jar = requests.cookies.RequestsCookieJar()
 jar.set("wp-postpass_b0cab8db5ce44e438845f4dedf0fcf4f", "%24P%24BH2d6c1lhrllIz02CYT36lWgURQXVe1")
 
 img_text_re = re.compile(u"(.*?)\(max-width.*?(br/>|/p>|/>)")
 footnote_re = re.compile(u"\[[0123456789]+\]")
+# le'eil and le'halan
+self_re = re.compile(u"(?<=\(.*)(\u05dc\u05e2\u05d9\u05dc|\u05dc\u05d4\u05dc\u05df) (\S*), (\S*).*\)")
+# shulchan arukh
+sa_re = re.compile(u"\(.*\u05e9\u05d5\"\u05e2 (?!\u05d7\u05d5\"\u05de|\u05d9\u05d5\"\u05d3|\u05d0\u05d1\"\u05d4|\u05d0\u05d5\"\u05d7).*\)")
+# arukh hashulchan
+ah_re = re.compile(u"\(.*\u05e2\u05e8\u05d5\u05d4\"\u05e9 (?!\u05d7\u05d5\"\u05de|\u05d9\u05d5\"\u05d3|\u05d0\u05d1\"\u05d4|\u05d0\u05d5\"\u05d7).*\)")
+# mishnah berurah
+mb_re = re.compile(u"\(.*\u05de\"\u05d1.*\)")
+# rambam
+rm_re = re.compile(u"\(.*\u05e8\u05de\u05d1\"\u05dd .*\)")
+# ramban
+rn_re = re.compile(u"\(.*\u05e8\u05de\u05d1\"\u05df (?=\u05d1\u05e8\u05d0\u05e9\u05d9\u05ea|\u05e9\u05de\u05d5\u05ea|\u05d5\u05d9\u05e7\u05e8\u05d0|\u05d1\u05de\u05d3\u05d1\u05e8|\u05d3\u05d1\u05e8\u05d9\u05dd).*\)")
+# rama
+ra_re = re.compile(u"\(.*\u05e8\u05de\"\u05d0 .*\)")
+# magen avraham
+ma_re = re.compile(u"\((?<!\u05e8)\u05de\"\u05d0 .*\)")
 pics = 0
+heb_titles = []
+old_titles = []
+new_titles = []
+titles_to_print = [old_titles, new_titles, heb_titles]
+titles_to_print_names = ["Titles with not-allowed characters", "Automatically fixed titles", "Hebrew titles"]
 num_chapters = {"Shabbat": 30, "Likkutim I": 11, "Likkutim II": 17, "Festivals": 13, "The Nation and the Land": 10,
                 "Berakhot": 18, "High Holidays": 10, "Shmitta and Yovel": 11, "Kashrut I": 19, "Women's Prayer": 24,
                 "Prayer": 26, "Family": 10, "Sukkot": 8, "Pesah": 16, "Zemanim": 17, "Simchat Habayit V'Birchato": 10}
-books = [("Shabbat", u"שבת", 1),
+books = [("Shabbat", u"שבת", 1), # (eng_name, heb_name, url_number)
          ("Prayer", u"תפילה", 2),
          ("Women's Prayer", u"תפילת נשים", 3),
          ("Pesah", u"פסח", 4),
@@ -40,59 +66,85 @@ books = [("Shabbat", u"שבת", 1),
          ("Shmitta and Yovel", u"שביעית ויובל", 16),
          ("Kashrut I", u"כשרות א – הצומח והחי", 17)]
 
-# ------------------------------------------------
-# book_list = [5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
-book_list = [2]
-lang = "both"
-# ------------------------------------------------
+# SET THIS TO TRUE ONCE RABBI FISCHER SENDS LIST OF TITLE TRANSLATIONS (AND BE SURE TO SET PARAM "only_chapters_translated" ACCORDINGLY)
+titles_were_translated = False
+# SET THIS TO TRUE ONCE RABBI FISCHER SENDS LIST OF TITLE TRANSLATIONS, AND COPY/PASTE LISTS INTO PH_CHAPTER_SECTION_TITLE_CHANGES GOOGLE SHEET SO SHMUEL CAN MAKE CHANGES (THEN REDOWNLOAD TSV)
+print_titles_to_be_changed = False
 
-def do_peninei_halakhah(book_name_en, book_name_he, url_number, lang="he"):
+def do_peninei_halakhah(book_name_en, book_name_he, url_number, title_translations_tsv, title_changes_tsv, lang="he", only_chapters_translated=False):
     if lang not in ["he", "en", "both"]:
         raise Exception("Language field can only be \"he\", \"en\", or \"both\".")
-    if book_name_en == "The Nation and the Land":
+    if titles_were_translated:
+        title_trans_dict = collect_trans_titles_from_tsv(title_translations_tsv)
+    else:
+        title_trans_dict = {}
+    title_ch_dict = collect_ch_titles_from_tsv(title_changes_tsv)
+    if book_name_en == "The Nation and the Land": #special case for ha'am veha'aretz
         introduction_he, chapters_he, ordered_chapter_titles_he, section_titles_he = get_soup(book_name_en, url_number, lang)
         goren_intro, supp_sections, supp_section_titles, sup_all_siman_titles = supplement_parser()
-        # print "Book title: " + book_name_he
-        # print
-        # for chapter in ordered_chapter_titles_he:
-        #     print "Chapter title: " + chapter
-        #     for section in section_titles_he[chapter]:
-        #         print "Section title: " + section
-        # for section in supp_section_titles:
-        #     for siman in sup_all_siman_titles[section]:
-        #         print "Siman title: " + siman
-        # post_index_to_server(book_name_en, book_name_he, ordered_chapter_titles_he, section_titles_he, supp_section_titles=supp_section_titles, sup_all_siman_titles=sup_all_siman_titles)
-        # post_text_to_server(book_name_en, introduction_he, chapters_he, lang, goren_intro, supp_sections)
+        post_index_to_server(book_name_en, book_name_he, ordered_chapter_titles_he, section_titles_he, title_trans_dict, title_ch_dict, supp_section_titles=supp_section_titles, sup_all_siman_titles=sup_all_siman_titles, only_chapters_translated=False)
+        post_text_to_server(book_name_en, introduction_he, chapters_he, lang, goren_intro, supp_sections)
 
-    elif lang == "both":
+    elif lang == "both": # if parsing both heb and eng
         download_html(book_name_en, url_number, "he")
         download_html(book_name_en, url_number, "en")
         introduction_he, chapters_he, ordered_chapter_titles_he, section_titles_he = get_soup(book_name_en, url_number, "he")
         introduction_en, chapters_en, ordered_chapter_titles_en, section_titles_en = get_soup(book_name_en, url_number, "en")
-        post_index_to_server(book_name_en, book_name_he, [ordered_chapter_titles_he, ordered_chapter_titles_en], [section_titles_he, section_titles_en], both=True)
+        post_index_to_server(book_name_en, book_name_he, [ordered_chapter_titles_he, ordered_chapter_titles_en], [section_titles_he, section_titles_en], title_trans_dict, title_ch_dict, both=True, only_chapters_translated=False)
         post_text_to_server(book_name_en, introduction_he, chapters_he, "he")
         post_text_to_server(book_name_en, introduction_en, chapters_en, "en")
     else:
-        download_html(book_name_en, url_number, lang)
+        download_html(book_name_en, url_number, lang) # if just one language
         introduction, chapters, ordered_chapter_titles, section_titles = get_soup(book_name_en, url_number, lang)
-        # print "Book title: " + book_name_he
-        # print
-        # for chapter in ordered_chapter_titles:
-        #     print "Chapter title: " + chapter
-        #     for section in section_titles[chapter]:
-        #         print "Section title: " + section
         if lang == "he":
-            post_index_to_server(book_name_en, book_name_he, ordered_chapter_titles, section_titles)
+            post_index_to_server(book_name_en, book_name_he, ordered_chapter_titles, section_titles, title_trans_dict, title_ch_dict, only_chapters_translated=False)
         post_text_to_server(book_name_en, introduction, chapters, lang)
 
 
+# get dict of title translations from rabbi fischer
+def collect_trans_titles_from_tsv(filename):
+    title_trans_dict = {}
+    with codecs.open(filename, 'r', 'utf-8') as f:
+        first = True
+        for line in f:
+            if first:
+                first = False
+                continue
+
+            heb, eng = line.split("\t")
+            if heb[0] == "\"":
+                heb = heb[1:-1].strip()
+
+            heb = heb.split(":")[1].strip()
+            heb = heb.replace(u"\"\"", u"\"")
+            eng = eng.strip()
+            title_trans_dict[heb] = eng
+
+    return title_trans_dict
+
+
+# get dict of title changes from shmuel
+def collect_ch_titles_from_tsv(filename):
+    title_ch_dict = {}
+    with codecs.open(filename, 'r', 'utf-8') as f:
+        first = True
+        for line in f:
+            if first:
+                first = False
+                continue
+            old, new, heb = line.split("\t")
+            title_ch_dict[heb.strip()] = new
+
+    return title_ch_dict
+
+
+# scrape html from webpages if necessary
 def download_html(book_name, url_number, lang="he"):
     try:
         os.mkdir("./Scraped_HTML/{}_{}".format(book_name, lang))
     except OSError:
         return
 
-    # DOES NOT WORK CONSISTENTLY FOR DIFFERENT BOOKS
     if lang == "he":
         if url_number in [11,6]:
             url = "https://ph.yhb.org.il/{}-00/".format('%02d' % url_number)
@@ -106,7 +158,7 @@ def download_html(book_name, url_number, lang="he"):
         file.close()
 
     for curr_chapter in range(num_chapters[book_name]):
-        total_num_sections = int(get_num_sections(book_name, curr_chapter+1, lang, url_number, scrape=True))
+        total_num_sections = get_num_sections(book_name, curr_chapter+1, lang, url_number, scrape=True)
 
         for num_section in range(total_num_sections):
             url = "https://ph.yhb.org.il/{}/{}-{}-{}/".format(lang, '%02d' % url_number, '%02d' % (curr_chapter+1), '%02d' % (num_section+1))
@@ -116,9 +168,10 @@ def download_html(book_name, url_number, lang="he"):
             file.close()
 
 
+# determine the total number of sections in a given chapter
 def get_num_sections(book_name, curr_chapter, lang, url_number, scrape=False):
     if scrape:
-        url = "https://ph.yhb.org.il/{}/{}-{}-01/".format(lang, '%02d' % url_number, '%02d' % (curr_chapter))
+        url = "https://ph.yhb.org.il/{}/{}-{}-02/".format(lang, '%02d' % url_number, '%02d' % (curr_chapter))
         source = requests.get(url, cookies=jar).text
     else:
         file = open("./Scraped_HTML/{}_{}/Chapter_{}_Section_1.html".format(book_name, lang, curr_chapter))
@@ -128,9 +181,18 @@ def get_num_sections(book_name, curr_chapter, lang, url_number, scrape=False):
     for section in num_sections[1].find_all("li", class_="collapsing categories item"):
         None
 
-    return section.a["href"].split("-")[2][:2]
+    bias = 0
+
+    if (book_name == "Prayer" and curr_chapter == 8 and lang == "he") or \
+            (book_name == "Women's Prayer" and curr_chapter == 11 and lang == "he") or \
+            (book_name == "Women's Prayer" and curr_chapter == 21 and lang == "he") or \
+            (book_name == "Women's Prayer" and curr_chapter == 21 and lang == "he"):
+        bias += 1
+
+    return int(section.a["href"].split("-")[2][:2])
 
 
+# get the title of a given chapter
 def get_chapter_title(book_name, curr_chapter, lang, url_number, scrape=False):
     if scrape:
         url = "https://ph.yhb.org.il/{}/{}-{}-01/".format(lang, '%02d' % url_number, '%02d' % (curr_chapter))
@@ -144,6 +206,7 @@ def get_chapter_title(book_name, curr_chapter, lang, url_number, scrape=False):
     return chapter_title
 
 
+# parse through html of books to get text and titles
 def get_soup(book_name, url_number, lang="he"):
     final_comment = False
     chapters = []
@@ -156,25 +219,29 @@ def get_soup(book_name, url_number, lang="he"):
         sections = []
         section_titles = []
 
-        if curr_chapter == 0 and lang == "en":
+        if curr_chapter == 0 and lang == "en" and book_name not in ["Prayer", "Women's Prayer", "Shabbat", "Zemanim"]:
             continue
 
         if curr_chapter:
-            total_num_sections = int(get_num_sections(book_name, curr_chapter, lang, url_number))
+            total_num_sections = get_num_sections(book_name, curr_chapter, lang, url_number)
             chapter_title = get_chapter_title(book_name, curr_chapter, lang, url_number)
             ordered_chapter_titles.append(chapter_title)
         else:
             total_num_sections = 1
 
         for num_section in range(total_num_sections):
-            if book_name == "Prayer" and curr_chapter == 8 and num_section == 1 and lang == "he":
-                sections.append([u"p1", u"p2", u"p3", u"p4", u"p5"])
-            elif book_name == "Women's Prayer" and curr_chapter == 11 and num_section == 10 and lang == "he":
-                sections.append([u"p1", u"p2", u"p3", u"p4", u"p5", u"p6", u"p7", u"p8", u"p9"])
-            elif book_name == "Women's Prayer" and curr_chapter == 21 and num_section == 4 and lang == "he":
-                sections.append([u"p1", u"p2"])
-            elif book_name == "Women's Prayer" and curr_chapter == 21 and num_section == 5 and lang == "he":
-                sections.append([u"p1", u"p2", u"p3", u"p4", u"p5", u"p6"])
+            if book_name == "Prayer" and curr_chapter == 0 and lang == "en":
+                paragraphs = [u"p1", u"p2", u"p3", u"p4", u"p5", u"p6", u"p7", u"p8", u"p9", u"p10"]
+                continue
+            elif book_name == "Women's Prayer" and curr_chapter == 0 and lang == "en":
+                paragraphs = [u"p1", u"p2", u"p3", u"p4", u"p5", u"p6", u"p7", u"p8"]
+                continue
+            elif book_name == "Shabbat" and curr_chapter == 0 and lang == "en":
+                paragraphs = [u"p1", u"p2", u"p3", u"p4", u"p5", u"p6", u"p7", u"p8", u"p9", u"p10", u"p11", u"p12", u"p12", u"p14"]
+                continue
+            elif book_name == "Zemanim" and curr_chapter == 0 and lang == "en":
+                paragraphs = [u"p1", u"p2", u"p3", u"p4", u"p5", u"p6", u"p7", u"p8"]
+                continue
             paragraphs = []
             if curr_chapter:
                 file = open("./Scraped_HTML/{}_{}/Chapter_{}_Section_{}.html".format(book_name, lang, curr_chapter, num_section+1))
@@ -239,6 +306,8 @@ def get_soup(book_name, url_number, lang="he"):
                                 paragraphs.append(aleph_bet + clean_text("<b>" + raw_paragraph.text + "</b>"))
                                 aleph_bet = ""
                             else:
+                                if raw_paragraph.sup:
+                                    raw_paragraph.sup.decompose()
                                 cleaned_text = clean_text(raw_paragraph.text)
                                 if len(cleaned_text) > 0:
                                     if len(cleaned_text) == 1:
@@ -257,11 +326,26 @@ def get_soup(book_name, url_number, lang="he"):
                             except TypeError:
                                 continue
                 first = False
+
+            for num, p in enumerate(paragraphs):
+                paragraphs[num] = replace_for_linker(p)
+
             if curr_chapter:
                 sections.append(paragraphs[:])
             print "section added"
 
         if curr_chapter:
+            if book_name == "Prayer" and curr_chapter == 8 and lang == "he":
+                sections.insert(1, [u"p1", u"p2", u"p3", u"p4", u"p5"])
+                section_titles.insert(1, u"Missing Section")
+            elif book_name == "Women's Prayer" and curr_chapter == 11 and lang == "he":
+                sections.append([u"p1", u"p2", u"p3", u"p4", u"p5", u"p6", u"p7", u"p8", u"p9"])
+                section_titles.append(u"Missing Section")
+            elif book_name == "Women's Prayer" and curr_chapter == 21 and lang == "he":
+                sections.append([u"p1", u"p2"])
+                section_titles.append(u"Missing Section")
+                sections.append([u"p1", u"p2", u"p3", u"p4", u"p5", u"p6"])
+                section_titles.append(u"Missing Section")
             chapters.append(sections[:])
             titles[chapter_title] = section_titles[:]
         else:
@@ -271,6 +355,41 @@ def get_soup(book_name, url_number, lang="he"):
     return introduction, chapters, ordered_chapter_titles, titles
 
 
+# replaces citation abbreviations in text with full names for ref catching
+def replace_for_linker(paragraph):
+    new_p = paragraph
+    sa_match = re.search(sa_re, paragraph)
+    if sa_match:
+        new_p = paragraph.replace(sa_match.group(), sa_match.group().replace(u"\u05e9\u05d5\"\u05e2",
+                                                                     u"\u05e9\u05d5\"\u05e2 \u05d0\u05d5\"\u05d7"))
+    mb_match = re.search(mb_re, new_p)
+    if mb_match:
+        new_p = new_p.replace(mb_match.group(), mb_match.group().replace(u"\u05de\"\u05d1",
+                                                                     u"\u05de\u05e9\u05e0\u05d4 \u05d1\u05e8\u05d5\u05e8\u05d4"))
+    rm_match = re.search(rm_re, new_p)
+    if rm_match:
+        new_p = new_p.replace(rm_match.group(), rm_match.group().replace(u"\u05e8\u05de\u05d1\"\u05dd ",
+                                                                             u"\u05e8\u05de\u05d1\"\u05dd, \u05d4\u05dc\u05db\u05d5\u05ea "))
+    ah_match = re.search(ah_re, new_p)
+    if ah_match:
+        new_p = new_p.replace(ah_match.group(), ah_match.group().replace(u"\u05e2\u05e8\u05d5\u05d4\"\u05e9 ",
+                                                                     u"\u05e2\u05e8\u05d5\u05d4\"\u05e9, \u05d0\u05d5\u05e8\u05d7 \u05d7\u05d9\u05d9\u05dd "))
+    rn_match = re.search(rn_re, new_p)
+    if rn_match:
+        new_p = new_p.replace(rn_match.group(), rn_match.group().replace(u"\u05e8\u05de\u05d1\"\u05df ",
+                                                                         u"\u05e8\u05de\u05d1\"\u05df \u05e2\u05dc "))
+    ra_match = re.search(ra_re, new_p)
+    if ra_match:
+        new_p = new_p.replace(ra_match.group(), ra_match.group().replace(u"\u05e8\u05de\"\u05d0 ",
+                                                                         u"\u05e8\u05de\"\u05d0, \u05d0\u05d5\"\u05d7 "))
+    ma_match = re.search(ma_re, new_p)
+    if ma_match:
+        new_p = new_p.replace(ma_match.group(), ma_match.group().replace(u"\u05de\"\u05d0 ",
+                                                                    u"\u05de\u05d2\u05df \u05d0\u05d1\u05e8\u05d4\u05dd "))
+    return new_p
+
+
+# parses supplement chapter for index ha'am veha'aretz
 def supplement_parser():
     sections = []
     goren_introduction = []
@@ -352,16 +471,16 @@ def supplement_parser():
     return goren_introduction, sections, section_titles, all_siman_titles
 
 
+# removes unwanted text from paragraphs
 def clean_text(paragraph):
     paragraph = re.sub(footnote_re, "", paragraph)
     paragraph = re.sub(img_text_re, "", paragraph).strip()
     paragraph = paragraph.replace(u"\u0124", u"\u1E24").replace(u"\u0125", u"\u1E25")
-    # if len(paragraph) < 3:
-        # print u"{} <<<<<<".format(paragraph)
-    # print paragraph[:20]
+
     return paragraph
 
 
+# parses through pictures to get 64 code and any connected text
 def parse_pictures(raw_paragraph, curr_chapter, curr_section, footnote=None, exception=False):
     paragraphs = []
     pic = 1
@@ -385,7 +504,7 @@ def parse_pictures(raw_paragraph, curr_chapter, curr_section, footnote=None, exc
                 except IndexError:
                     paragraphs.append(child.text)
             else:
-                assert True #child.name == "br" or child.img["src"][-3:] != "png"
+                assert True
         elif isinstance(child, element.NavigableString):
             if len(child) > 2 and "max-width" not in child:
                 paragraphs.append(clean_text(child))
@@ -400,6 +519,7 @@ def parse_pictures(raw_paragraph, curr_chapter, curr_section, footnote=None, exc
     return paragraphs
 
 
+# translates png or jpg pictures to base64
 def get_64_code(img_tag, curr_chapter, curr_section, pic_num, footnote):
     global pics
     if footnote:
@@ -436,43 +556,83 @@ def get_64_code(img_tag, curr_chapter, curr_section, pic_num, footnote):
     return new_tag
 
 
+# parses through footnote sections in a given section
+# extremely convoluted because html is extremely inconsistent when it comes to organizing footnotes
 def get_footnotes(raw_paragraphs, curr_chapter=None, curr_section=None):
-    # footnotes = raw_paragraphs.findAll("div", class_=None, recursive=False)
-    footnotes_list = raw_paragraphs.findAll("div", class_=None) + raw_paragraphs.findAll("div", class_="footnotes")
-    if not footnotes_list:
+
+    footnotes_list = raw_paragraphs.findAll("div", class_="footnotes") + raw_paragraphs.findAll("div", class_=None)
+
+    if not len(footnotes_list):
         return
-    footnotes_list = [footnote for footnote in footnotes_list if not footnote.hr or not footnote.find("div", class_=None) or footnote.ol]
+
+    footnotes_list = [footnote for footnote in footnotes_list if (not footnote.hr or not footnote.find("div", class_=None)) and (footnote.ol or footnote.find("a", class_=None))]
     footnotes_dict = {}
-    allowed_footnote_tags = ["span", "strong", "br", "em", "i", "b", "ol", "sup"] #took out img
+    allowed_footnote_tags = ["span", "strong", "br", "em", "i", "b", "ol", "sup"]
     for footnote in footnotes_list:
-    # try:
-    #     footnotes = footnotes[0].div.children
-    # except AttributeError:
         footnotes = footnote.children
         number = 0
         text = ""
         for footnote_line in footnotes:
             if isinstance(footnote_line, element.Tag):
                 if footnote_line.name == "a":
-                    if number:
-                        footnotes_dict[number] = text
-                        text = ""
-                    number = int(footnote_line.text.replace("[", "").replace("]", ""))
-                elif footnote_line.name == "ol":
-                    alt_footnotes = footnote_line.findAll("li")
-                    for alt in alt_footnotes:
+                    if re.match(footnote_re,footnote_line.text):
                         if number:
                             footnotes_dict[number] = text
                             text = ""
-                        number = int(alt["id"].split("-")[2])
-                        for child in alt.children:
-                            if isinstance(child, element.Tag):
-                                assert child.name == "p"
-                                text += child.text
-                            elif isinstance(child, element.NavigableString):
-                                text += child
+                        number = int(footnote_line.text.replace("[", "").replace("]", ""))
+                    else:
+                        text += footnote_line.text
+                elif footnote_line.name == "ol":
+                    alts = footnote_line.findAll("li")
+                    for alt in alts:
+                        if alt.has_attr("id"):
+                            if number:
+                                footnotes_dict[number] = text
+                                text = ""
+                            if alt.has_attr("id"):
+                                number = int(alt["id"].split("-")[2])
+                            elif alt.has_attr("value"):
+                                number = int(alt["value"])
                             else:
                                 assert False
+                            for child in alt.children:
+                                if isinstance(child, element.Tag):
+                                    if child.name in ["p", "span"]:
+                                        text += child.text
+                                    elif child.name == "a" and child.has_attr("id") or child.has_attr("href"):
+                                        None
+                                    elif child.name == "br":
+                                        text += "<br/>"
+                                    else:
+                                        assert False
+                                elif isinstance(child, element.NavigableString):
+                                    text += child
+                                else:
+                                    assert False
+                        elif alt.has_attr("value") and alt.a:
+                            if number:
+                                footnotes_dict[number] = text
+                                text = ""
+                            if alt.a.has_attr("id"):
+                                number = int(alt.a["id"].split("_")[1])
+                            elif alt.a.has_attr("value"):
+                                number = int(alt["value"])
+                            else:
+                                assert False
+                            for child in alt.children:
+                                if isinstance(child, element.Tag):
+                                    if child.name in ["p", "span"]:
+                                        text += child.text
+                                    elif child.name == "a" and child.has_attr("id") or child.has_attr("href"):
+                                        None
+                                    else:
+                                        assert False
+                                elif isinstance(child, element.NavigableString):
+                                    text += child
+                                else:
+                                    assert False
+                        else:
+                            text += alt.text
                 elif footnote_line.name == "p":
                     if footnote_line.a:
                         for sub_footnote_line in footnote_line.children:
@@ -483,12 +643,17 @@ def get_footnotes(raw_paragraphs, curr_chapter=None, curr_section=None):
                                         text = ""
                                     number = int(sub_footnote_line.text.replace("[", "").replace("]", ""))
                                 else:
-                                    assert sub_footnote_line.name in allowed_footnote_tags
+                                    assert sub_footnote_line.name in allowed_footnote_tags or sub_footnote_line.name == "img"
                                     if sub_footnote_line.name in allowed_footnote_tags:
                                         text += get_tag(sub_footnote_line)
                             else:
                                 assert isinstance(sub_footnote_line, element.NavigableString)
                                 text += sub_footnote_line
+                    elif footnote_line.img:
+                        img_paragraphs = parse_pictures(footnote_line.img, curr_chapter, curr_section, footnote=number)
+                        if img_paragraphs:
+                            for paragraph in img_paragraphs:
+                                text += "<br/>" + paragraph
                     else:
                         if len(footnote_line.text) > 2:
                             text += "<br/>"
@@ -499,7 +664,6 @@ def get_footnotes(raw_paragraphs, curr_chapter=None, curr_section=None):
                                     assert text_child.name in allowed_footnote_tags
 
                                     text += text_child.text
-                            # text += footnote_line.text
                 elif footnote_line.name in allowed_footnote_tags:
                     text += get_tag(footnote_line)
                 elif footnote_line.name == "img":
@@ -525,6 +689,8 @@ def get_footnotes(raw_paragraphs, curr_chapter=None, curr_section=None):
 
     return footnotes_dict
 
+
+# re-adds special tags to given text if necessary
 def get_tag(tag):
     if tag.name in ["strong", "b"]:
         return u"<strong>{}</strong>".format(tag.text)
@@ -539,15 +705,29 @@ def get_tag(tag):
     else:
         return tag.text
 
-def post_index_to_server(en, he, ordered_chapter_titles, section_titles, both=False, supp_section_titles=None, sup_all_siman_titles=None):
 
-    def clean_title(title):
-        new_title = title.replace(u"\u2013", u":").replace(u"\u2019", u"\'").replace(u"-", u":").replace(u"\u0125", u"h").replace(u"\u201c", "\"").replace(u"\u201d", "\"").replace(u"\u0124", u"H")
-        # if new_title != title:
-            # print "Old --> " + title
-            # print "New --> " + new_title
+# makes index default structure and altstruct, and posts index to server
+def post_index_to_server(en, he, ordered_chapter_titles, section_titles, title_translations_dict, title_changes_dict, both=False, supp_section_titles=None, sup_all_siman_titles=None, only_chapters_translated=False):
+
+    # cleans and retrieves preferred title from title_changes_dict
+    def clean_title(title, he=None, chapter=False):
+        new_title = title.strip().replace(u"\u2013", u":").replace(u"\u2019", u"\'").replace(u"-", u":")\
+            .replace(u"\u0125", u"h").replace(u"\u201c", "\"").replace(u"\u201d", "\"")\
+            .replace(u"\u0124", u"H").replace(u"\xe0", u"a").replace(u"\u1e25", u"h").replace(u"\u1e24", u"H").replace("	", " ")
+
+        if new_title != title.strip():
+            try:
+                new_title = title_changes_dict[he.strip()]
+            except KeyError:
+                if print_titles_to_be_changed:
+                    titles_to_print[0].append(title)
+                    titles_to_print[1].append(new_title)
+                    titles_to_print[2].append(he)
+        if chapter:
+            new_title = new_title.replace(".", "")
         return new_title
 
+    # default structure start
     root = SchemaNode()
     comm_en = "Peninei Halakhah, {}".format(en)
     comm_he = u"פניני הלכה, {}".format(he)
@@ -566,26 +746,19 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, both=Fa
     chapters_node.key = "default"
     chapters_node.default = True
     chapters_node.add_structure([u"Chapter", u"Section", u"Paragraph"])
-    # chapters_node.toc_zoom = 1
     chapters_node.depth = 3
     root.append(chapters_node)
 
     if en == "The Nation and the Land":
         supplement_node = SchemaNode()
         supplement_node.add_primary_titles("Supplement", u"נספח")
-        # supplement_node.toc_zoom = 2
-        # supplement_node.depth = 3
 
-        # supplement_sections_he = ordered_chapter_titles[0][len(ordered_chapter_titles[0])-1]
-        # supplement_sections_en = ordered_chapter_titles[1][len(ordered_chapter_titles[1])-1]
-        supplement_sections_en = ["Responsa of Rabbi Shlomo Goren", "Responsa of Rabbi Araham Shapiro", "Responsa of Rabbi Nahum Rabinovitch"]
+        supplement_sections_en = ["Responsa of Rabbi Shlomo Goren", "Responsa of Rabbi Avraham Shapiro", "Responsa of Rabbi Nahum Rabinovitch"]
 
         for num, supplement_section_he in enumerate(supp_section_titles):
             if not num:
                 supp_section_node = SchemaNode()
                 supp_section_node.add_primary_titles(supplement_sections_en[num], supplement_section_he)
-                # supp_section_node.toc_zoom = 2
-                # supp_section_node.depth = 3
                 supp_section_node_sub = JaggedArrayNode()
                 supp_section_node_sub.add_shared_term("Introduction")
                 supp_section_node_sub.key = u"Introduction"
@@ -618,7 +791,9 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, both=Fa
         root.append(supplement_node)
 
     root.validate()
+    # default structure end
 
+    # altstruct start
     altstruct_nodes = []
     array_map = ArrayMapNode()
     array_map.wholeRef = "Peninei Halakhah, {}, Introduction".format(en)
@@ -637,8 +812,13 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, both=Fa
 
     for chap_num, he_chapter_title in enumerate(chapter_list):
         schema = SchemaNode()
-        en_chapter_title = (ordered_chapter_titles[1][chap_num]) if both else "{}".format(chap_num+1)
-        schema.add_primary_titles(clean_title(en_chapter_title), he_chapter_title)
+        if both:  # rabbi fischer title code
+            en_chapter_title = (ordered_chapter_titles[1][chap_num])
+        elif title_translations_dict:
+            en_chapter_title = title_translations_dict[he_chapter_title]
+        else:
+            en_chapter_title = "{}".format(chap_num + 1)
+        schema.add_primary_titles(clean_title(en_chapter_title, he_chapter_title, chapter=True), he_chapter_title)
 
         if both:
             section_list = section_titles[0][he_chapter_title]
@@ -646,29 +826,14 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, both=Fa
             section_list = section_titles[he_chapter_title]
         bias = 0
         for sec_num, he_section_title in enumerate(section_list):
-            if (en == "Prayer" and chap_num == 7 and sec_num == 1) or \
-                    (en == "Women's Prayer" and chap_num == 11 and sec_num == 10) or \
-                    (en == "Women's Prayer" and chap_num == 21 and sec_num == 4) or \
-                    (en == "Women's Prayer" and chap_num == 21 and sec_num == 5):
-                array_map = ArrayMapNode()
-                if sec_num == 1:
-                    array_map.add_primary_titles("02 : Hand Washing Concerning One Who Did Not Sleep All Night", u"???")
-                elif sec_num == 4:
-                    array_map.add_primary_titles("05. Women and Tzitzit", u"???")
-                elif sec_num == 5:
-                    array_map.add_primary_titles("06. Women and Tefilin", u"???")
-                elif sec_num == 10:
-                    array_map.add_primary_titles("11. The Prohibition of Reciting Sacred Words in the Presence of \"Erva\"", u"???")
-                array_map.depth = 0
-                array_map.includeSections = False
-                array_map.wholeRef = "Peninei Halakhah, {} {}:{}".format(en, chap_num + 1, sec_num + 1)
-                array_map.refs = []
-                array_map.validate()
-                schema.append(array_map)
-                bias += 1
             array_map = ArrayMapNode()
-            en_section_title = (section_titles[1][en_chapter_title][sec_num+bias]) if both else "{}".format(sec_num+1)
-            array_map.add_primary_titles(clean_title(en_section_title), he_section_title)
+            if both:  # rabbi fischer title code
+                en_section_title = (section_titles[1][en_chapter_title][sec_num])
+            elif not only_chapters_translated and title_translations_dict:
+                en_section_title = title_translations_dict[he_section_title]
+            else:
+                en_section_title = "{}".format(sec_num+1+bias)
+            array_map.add_primary_titles(clean_title(en_section_title, he_section_title), he_section_title)
             array_map.depth = 0
             array_map.includeSections = False
             array_map.wholeRef = "Peninei Halakhah, {} {}:{}".format(en, chap_num+1, sec_num+1+bias)
@@ -685,7 +850,7 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, both=Fa
         for sec_num, he_section_title in enumerate(supp_section_titles):
 
             sub_alt = SchemaNode()
-            sub_alt.add_primary_titles(clean_title(supplement_sections_en[sec_num]), he_section_title)
+            sub_alt.add_primary_titles(clean_title(supplement_sections_en[sec_num], he_section_title), he_section_title)
             if not sec_num:
                 array_map = ArrayMapNode()
                 array_map.add_shared_term("Introduction")
@@ -700,7 +865,11 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, both=Fa
                 siman_titles = sup_all_siman_titles[he_section_title]
                 for sim_num, he_siman_title in enumerate(siman_titles):
                     array_map = ArrayMapNode()
-                    array_map.add_primary_titles(clean_title("Siman {}".format(sim_num + 1)), he_siman_title) # FIX THIS
+                    if not only_chapters_translated and title_translations_dict:  # rabbi fischer title code
+                        en_siman_title = title_translations_dict[he_siman_title]
+                    else:
+                        en_siman_title = "Siman {}".format(sim_num + 1)
+                    array_map.add_primary_titles(clean_title(en_siman_title, he_siman_title), he_siman_title)
                     array_map.depth = 0
                     array_map.includeSections = False
                     array_map.wholeRef = "Peninei Halakhah, {}, Supplement, {} {}".format(en, supplement_sections_en[sec_num], sim_num + 1)
@@ -711,7 +880,11 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, both=Fa
                 siman_titles = sup_all_siman_titles[he_section_title]
                 for sim_num, he_siman_title in enumerate(siman_titles):
                     array_map = ArrayMapNode()
-                    array_map.add_primary_titles(clean_title("Siman {}".format(sim_num + 1)), he_siman_title) # FIX THIS
+                    if not only_chapters_translated and title_translations_dict:  # rabbi fischer title code
+                        en_siman_title = title_translations_dict[he_siman_title]
+                    else:
+                        en_siman_title = "Siman {}".format(sim_num + 1)
+                    array_map.add_primary_titles(clean_title(en_siman_title, he_siman_title), he_siman_title)
                     array_map.depth = 0
                     array_map.includeSections = False
                     array_map.wholeRef = "Peninei Halakhah, {}, Supplement, {} {}".format(en, supplement_sections_en[sec_num], sim_num + 1)
@@ -722,7 +895,7 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, both=Fa
             sub_alt.validate()
             supplement_node_alt.append(sub_alt)
         altstruct_nodes.append(supplement_node_alt.serialize())
-
+        # altstruct end
 
     index = {
         "title": comm_en,
@@ -731,9 +904,11 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, both=Fa
         "categories": ["Halakhah", "Peninei Halakhah"],
         "alt_structs": {"Topic": {"nodes": altstruct_nodes}}
     }
-    response = post_index(index, server=SEFARIA_SERVER)
+
+    post_index(index, server=SEFARIA_SERVER)
 
 
+# posts main text, introduction, and supplement if necessary, to server
 def post_text_to_server(book_name_en, introduction, chapters, lang, goren_intro=None, supp_sections=None):
     supplement_sections_en = ["Responsa of Rabbi Shlomo Goren", "Responsa of Rabbi Avraham Shapiro",
                               "Responsa of Rabbi Nahum Rabinovitch"]
@@ -753,15 +928,15 @@ def post_text_to_server(book_name_en, introduction, chapters, lang, goren_intro=
 
     post_text("Peninei Halakhah, {}".format(book_name_en), send_text_chapters, server=SEFARIA_SERVER)
 
-    if lang == "he":
-        send_text_intro = {
-            "text": introduction,
-            "versionTitle": vt,
-            "versionSource": vs,
-            "language": lang
-        }
 
-        post_text("Peninei Halakhah, {}, Introduction".format(book_name_en), send_text_intro, server=SEFARIA_SERVER)
+    send_text_intro = {
+        "text": introduction,
+        "versionTitle": vt,
+        "versionSource": vs,
+        "language": lang
+    }
+
+    post_text("Peninei Halakhah, {}, Introduction".format(book_name_en), send_text_intro, server=SEFARIA_SERVER)
 
     if book_name_en == "The Nation and the Land":
         for num, rav in enumerate(supplement_sections_en):
@@ -783,44 +958,75 @@ def post_text_to_server(book_name_en, introduction, chapters, lang, goren_intro=
 
         post_text("Peninei Halakhah, {}, Supplement, Responsa of Rabbi Shlomo Goren, Introduction".format(book_name_en), send_text_goren_intro, server=SEFARIA_SERVER)
 
+
+# parses to find, and posts to server, self links (le'eil and le'halan)
+def post_self_links(bookname_en):
+    links = []
+
+    # finds and collects all self links
+    def get_self_links(paragraph, intro=False, curr_para_num=None, ref_title=None):
+        matches = re.findall(self_re, paragraph, overlapped=True)
+        if matches:
+            for match in matches:
+                reference, chapter, section_s = match
+                chapter_num = getGematria(chapter)
+                section_s = section_s.replace(u",", "").replace(u";", "")
+
+                if u"-" in section_s:
+                    all_sections = []
+                    sec1, sec2 = section_s.split("-")
+                    num1 = getGematria(sec1)
+                    num2 = getGematria(sec2)
+                    for sec_num in range(num2 - num1 + 1):
+                        all_sections.append(sec_num + num1)
+                else:
+                    all_sections = [getGematria(section_s)]
+
+                for section in all_sections:
+                    if intro:
+                        main_ref = "Peninei Halakhah, {}, Introduction {}".format(bookname_en, curr_para_num)
+                    else:
+                        main_ref = ref_title
+                    other_ref = "Peninei Halakhah, {}, {}:{}".format(bookname_en, chapter_num, section)
+                    link = {"refs": [main_ref, other_ref],
+                            "generated_by": "peninei_halakhah_linker",
+                            "auto": True,
+                            "type": "Self"}
+                    links.append(link)
+
+    index = library.get_index("Peninei Halakhah, {}".format(bookname_en))
+    introduction_refs = [ref for ref in index.all_section_refs()[0].all_subrefs()]
+    introduction = [ref.text("he").text for ref in introduction_refs]
+    chapter_refs = [ref for ref in index.all_segment_refs()[len(introduction):]]
+    all_ref_titles = [ref.normal() for ref in chapter_refs]
+    all_texts = [ref.text("he").text for ref in chapter_refs]
+    all_text_and_ref_titles = zip(all_ref_titles, all_texts)
+
+    for p_num, paragraph in enumerate(introduction):
+        get_self_links(paragraph, intro=True, curr_para_num=p_num+1)
+
+    for ref_title, paragraph in all_text_and_ref_titles:
+        get_self_links(paragraph, ref_title=ref_title)
+
+    if links:
+        post_link(links, server=SEFARIA_SERVER)
+
 if __name__ == "__main__":
-    # add_term("Peninei Halakhah", u"פניני הלכה")
-    # add_category("Peninei Halakhah",["Halakhah", "Peninei Halakhah"], u"פניני הלכה")
-    for curr_book in book_list:
-        do_peninei_halakhah(books[curr_book][0], books[curr_book][1], books[curr_book][2], lang=lang)
+    add_term("Peninei Halakhah", u"פניני הלכה")
+    add_category("Peninei Halakhah",["Halakhah", "Peninei Halakhah"], u"פניני הלכה")
+    he_book_list = [5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
+    both_book_list = [0, 1, 2, 3, 4, 10]
+    langs = ["he", "both"]
 
+    for lang, book_list in enumerate([he_book_list, both_book_list]):
+        for curr_book in book_list:
+            do_peninei_halakhah(books[curr_book][0], books[curr_book][1], books[curr_book][2], title_translations_tsv=tsv_translations_file, title_changes_tsv=tsv_title_changes_file, lang=langs[lang], only_chapters_translated=False)
+            library.refresh_index_record_in_cache("Peninei Halakhah, {}".format(books[curr_book][0]))
+            # FOR POSTING LINKS, FIRST RUN SCRIPT WITH THE LINE BELOW COMMENTED OUT, THEN RESET EACH INDEX, THEN RUN SCRIPT WITH THE ABOVE LINES COMMENTED OUT
+            # post_self_links(books[curr_book][0])
 
-
-
-
-
-# chapters = get_soup("Shabbat")
-# chapter_n = 1
-# section_n = 1
-# for chapter in chapters:
-#     print "------------------chapter {}--------------------".format(chapter_n)
-#     chapter_n += 1
-#     section_n = 1
-#     for section in chapter:
-#         print "------------------section {}--------------------".format(section_n)
-#         section_n += 1
-#         for paragraph in section:
-#             print paragraph
-#             print "------------------------------"
-
-# book_name = "Shabbat"
-# chapter = 01#15#22
-# section = 01#12#8
-# file = open("./Scraped_HTML/{}/Introduction.html".format(book_name))
-# source = file.read()
-# # curr_chapter = "01"
-# # curr_section = "01"
-# # url = "https://ph.yhb.org.il/01-{}-{}/".format(curr_chapter, curr_section)
-# # source = requests.get(url).text
-# soup = BeautifulSoup(source, 'lxml')
-# print soup.prettify()
-# sidebar = soup.find("ul", class_="collapsing categories list", id="widget-collapscat-4-top").find("li", class_ = "collapsing categories expandable parent")
-# chapters = sidebar.div.ul
-# for chapter in chapters.children:
-#     last_chapter_num = chapter.
-# last_chapter
+    if print_titles_to_be_changed:
+        for num, list in enumerate(titles_to_print):
+            print "__________________{}___________________".format(titles_to_print_names[num])
+            for title in list:
+                print title
