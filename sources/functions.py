@@ -641,9 +641,9 @@ def post_sheet(sheet, server=SEFARIA_SERVER, spec_sheet_id='', api_key = API_KEY
         return response
 
 @weak_connection
-def post_index(index, server=SEFARIA_SERVER):
+def post_index(index, server=SEFARIA_SERVER, method="POST"):
     url = server+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
-    return http_request(url, body={'apikey': API_KEY}, json_payload=index, method="POST")
+    return http_request(url, body={'apikey': API_KEY}, json_payload=index, method=method)
     # indexJSON = json.dumps(index)
     # values = {
     #     'json': indexJSON,

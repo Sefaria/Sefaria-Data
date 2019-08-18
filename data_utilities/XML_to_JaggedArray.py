@@ -84,6 +84,7 @@ class XML_to_JaggedArray:
         self.root = etree.XML(xml_text)
 
         self.root.text = self.title
+        self.root = self.reorder_structure(self.root)
 
         for count, child in enumerate(self.root):
             if self.array_of_names:

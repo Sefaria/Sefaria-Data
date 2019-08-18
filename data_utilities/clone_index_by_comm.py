@@ -57,6 +57,7 @@ if __name__ == "__main__":
             good_titles.append(index['schema']['titles'][i])
 
     index["schema"]["titles"] = good_titles
+   #Index(index).save()
     post_index(index, SEFARIA_SERVER)
 
 

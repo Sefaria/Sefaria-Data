@@ -280,7 +280,7 @@ def dh_extract_method(str):
 
 
 if __name__ == "__main__":
-    files = os.listdir("batch ii")
+    files = os.listdir("batch iii")
     for file_n, file in enumerate(files):
         print file
         links = []
@@ -288,7 +288,7 @@ if __name__ == "__main__":
         index_title = file.split(" - ")[0]
         prev_daf = "2a"
         curr_text = []
-        with open("batch ii/{}".format(file)) as open_file:
+        with open("batch iii/{}".format(file)) as open_file:
             for line in open_file:
                 if not line.startswith(index_title):
                     continue
