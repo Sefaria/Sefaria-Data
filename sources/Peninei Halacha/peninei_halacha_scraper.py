@@ -27,7 +27,7 @@ footnote_re = re.compile(u"\[[0123456789]+\]")
 # le'eil and le'halan
 self_re = re.compile(u"(?<=\(.*)(\u05dc\u05e2\u05d9\u05dc|\u05dc\u05d4\u05dc\u05df) (\S*), (\S*).*\)")
 # shulchan arukh
-sa_re = re.compile(u"\(.*\u05e9\u05d5\"\u05e2 (?!\u05d7\u05d5\"\u05de|\u05d9\u05d5\"\u05d3|\u05d0\u05d1\"\u05d4|\u05d0\u05d5\"\u05d7).*\)")
+sa_re = re.compile(u"\(.*\u05e9\u05d5\"\u05e2 (?!\u05d7\u05d5\"\u05de|\u05d9\u05d5\"\u05d3|\u05d0\u05d1\"\u05d4|\u05d0\u05d5\"\u05d7|\u05d0\u05d4\"\u05e2).*\)")
 # arukh hashulchan
 ah_re = re.compile(u"\(.*\u05e2\u05e8\u05d5\u05d4\"\u05e9 (?!\u05d7\u05d5\"\u05de|\u05d9\u05d5\"\u05d3|\u05d0\u05d1\"\u05d4|\u05d0\u05d5\"\u05d7).*\)")
 # mishnah berurah
@@ -37,7 +37,8 @@ rm_re = re.compile(u"\(.*\u05e8\u05de\u05d1\"\u05dd .*\)")
 # ramban
 rn_re = re.compile(u"\(.*\u05e8\u05de\u05d1\"\u05df (?=\u05d1\u05e8\u05d0\u05e9\u05d9\u05ea|\u05e9\u05de\u05d5\u05ea|\u05d5\u05d9\u05e7\u05e8\u05d0|\u05d1\u05de\u05d3\u05d1\u05e8|\u05d3\u05d1\u05e8\u05d9\u05dd).*\)")
 # rama
-ra_re = re.compile(u"\(.*\u05e8\u05de\"\u05d0 .*\)")
+ra_re = re.compile(u"\(.*(?P<'rama'>\u05e8\u05de\"\u05d0) (?!\u05d7\u05d5\"\u05de|\u05d9\u05d5\"\u05d3|\u05d0\u05d1\"\u05d4|\u05d0\u05d5\"\u05d7).*\)")
+# ra_re = re.compile(u"\(.*\u05e8\u05de\"\u05d0 .*\)")
 # magen avraham
 ma_re = re.compile(u"\((?<!\u05e8)\u05de\"\u05d0 .*\)")
 pics = 0
@@ -306,7 +307,7 @@ def get_soup(book_name, url_number, lang="he"):
                                 paragraphs.append(aleph_bet + clean_text("<b>" + raw_paragraph.text + "</b>"))
                                 aleph_bet = ""
                             else:
-                                if raw_paragraph.sup:
+                                if raw_paragraph.sup and not re.search(u'\[', raw_paragraph.sup.text):
                                     raw_paragraph.sup.decompose()
                                 cleaned_text = clean_text(raw_paragraph.text)
                                 if len(cleaned_text) > 0:
@@ -1014,8 +1015,8 @@ def post_self_links(bookname_en):
 if __name__ == "__main__":
     add_term("Peninei Halakhah", u"פניני הלכה")
     add_category("Peninei Halakhah",["Halakhah", "Peninei Halakhah"], u"פניני הלכה")
-    he_book_list = [5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
-    both_book_list = [0, 1, 2, 3, 4, 10]
+    he_book_list = [] #[5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
+    both_book_list = [0] #[0, 1, 2, 3, 4, 10]
     langs = ["he", "both"]
 
     for lang, book_list in enumerate([he_book_list, both_book_list]):
