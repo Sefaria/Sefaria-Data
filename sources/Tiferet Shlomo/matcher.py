@@ -13,17 +13,19 @@ def dh_extract(str):
         str = str.split(".")[0]
     else:
         str = u" ".join(str.split()[0:8])
-    return u" ".join(str.split()[0:-1])
+    return str
 
 links = []
-reader = UnicodeReader(open("Tiferet Shlomo - he - Tiferet Shlomo, Warsaw, 1867.csv"))
+csv_name = "Aderet Eliyahu (Rabbi Yosef Chaim) - he - Aderet Eliyahu, Livorno 1864.csv"
+title = csv_name.split(" - ")[0]
+reader = UnicodeReader(open(csv_name))
 text_dict = {}
 for row in reader:
-    if not row[0].startswith("Tiferet Shlomo, on Torah, "):
+    if not row[0].startswith(title):
         continue
     ref, text = row
-    segment = ref.replace("Tiferet Shlomo, on Torah, ", "").split()[-1]
-    parsha = u" ".join(ref.replace("Tiferet Shlomo, on Torah, ", "").split()[0:-1])
+    segment = ref.replace("{}, ".format(title), "").split()[-1]
+    parsha = u" ".join(ref.replace("{}, ".format(title), "").split()[0:-1])
     segment = int(segment)
     curr_parsha_dict = text_dict.get(parsha, {})
     curr_parsha_dict[segment] = text
@@ -44,7 +46,9 @@ for parsha in text_dict.keys():
         for i, tanakh_ref in enumerate(results["matches"]):
             if not tanakh_ref:
                 continue
-            tiferet_ref = "Tiferet Shlomo, on Torah, {} {}".format(parsha, i+1)
+            tiferet_ref = "{}, {} {}".format(title, parsha, i+1)
             links.append({"refs": [tiferet_ref, tanakh_ref.normal()],
-                    "type": "Commentary", "auto": True, "generated_by": "tiferet_matcher"})
-post_link(links, server="http://shmuel.sandbox.sefaria.org")
+                    "type": "Commentary", "auto": True, "generated_by": "{}_matcher".format(title)})
+print(links)
+print(len(links))
+post_link(links, server="http://ste.sandbox.sefaria.org")

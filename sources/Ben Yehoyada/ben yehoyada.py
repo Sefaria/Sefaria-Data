@@ -42,6 +42,10 @@ if __name__ == "__main__":
             # reader = csv.reader(f)
             for row in file:
                 ref, text = row.split(",", 1)
+                if text[0] == '"':
+                    text = text[1:]
+                if text[-3] == '"':
+                    text = text[:-3]
                 if '\0' in row:
                     print ref
                     print text
@@ -77,17 +81,17 @@ if __name__ == "__main__":
             "versionSource": "http://beta.nli.org.il/he/books/NNL_ALEPH001933802/NLIl",
             "language": "he"
         }
-        #post_text("Ben Yehoyada on {}".format(title), send_text)
-        for daf, text in text_dict.items():
-            daf = AddressTalmud.toStr("en", daf)
-            base = TextChunk(Ref("{} {}".format(title, daf)), lang='he')
-            results = match_ref(base, text, lambda x: x.split(), dh_extract_method=dher)
-            for i, ref in enumerate(results["matches"]):
-                if ref:
-                    berakhot = "Ben Yehoyada on {} {}:{}".format(title, daf, i+1)
-                    links.append({"refs": [ref.normal(), berakhot], "type": "Commentary", "auto": True, "generated_by": "ben_yeh"})
-
-        post_link(links, server=SEFARIA_SERVER)
+        post_text("Ben Yehoyada on {}".format(title), send_text)
+        # for daf, text in text_dict.items():
+        #     daf = AddressTalmud.toStr("en", daf)
+        #     base = TextChunk(Ref("{} {}".format(title, daf)), lang='he')
+        #     results = match_ref(base, text, lambda x: x.split(), dh_extract_method=dher)
+        #     for i, ref in enumerate(results["matches"]):
+        #         if ref:
+        #             berakhot = "Ben Yehoyada on {} {}:{}".format(title, daf, i+1)
+        #             links.append({"refs": [ref.normal(), berakhot], "type": "Commentary", "auto": True, "generated_by": "ben_yeh"})
+        #
+        # post_link(links, server=SEFARIA_SERVER)
         with codecs.open("{}_Sefaria_structure.csv".format(title), 'w', encoding='utf-8') as f:
             f.write(new_csv)
 
