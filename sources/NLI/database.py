@@ -2,7 +2,10 @@
 
 import tqdm
 import sqlite3
+import requests
 import unicodecsv
+from threading import Lock
+from collections import defaultdict
 from path_to_db_file import DB_FILE_LOCATION
 
 # conn = sqlite3.connect(DB_FILE_LOCATION)
@@ -47,7 +50,7 @@ from path_to_db_file import DB_FILE_LOCATION
 """
 Obtain urls for Ref (works for Vatican):
 Start with the manifest:
-https://difi.vatlib.it/iiif/MSS_Vat.{man-id (lowercase)}/manifest.json
+https://digi.vatlib.it/iiif/MSS_Vat.{man-id (lowercase)}/manifest.json
 
 Use TblImages.Im_ImRun to get the page
 Within the manifest, search for @id: "https://digi.vatlib.it/iiif/MSS_Vat.{man-id}/canvas/p{TblImages.Im_ImRun (pad to 4 digits)}",
@@ -73,29 +76,17 @@ For each image, we'll want to keep track of the following data:
     Hebrew Desc             We can get this from the NLI database
 }   
 
-Write a class for working out the urls. The class will hold a database instance. It will also hold a mapping of
-Libraries -> base library url.
+Manuscript class:
+We'll want a class that can accept a Manuscript Id, load a manifest, then create a mapping of Im_Run values to urls.
 
-For a given manuscript, we'll first load the manifest. For each manifest make a mapping of Im_ImRun -> image url 
-(without iiif parameters).
-
-We might want to consider multithreading here. For that we need this process to be thread safe. We'll look at two types
-of locks -> a lock for manuscripts and a general write lock.
-For the manuscript lock, we'll make a default dict that will create a unique lock for each manuscript. Then we'll use a
-general write lock for adding new manifests.
+For each image, we'll use the Manuscript class to get the image url.
 """
-
-
-class RefImageUrlMap(object):
-
-    def __init__(self):
-        self.database = Database()
 
 
 class Database(object):
 
     def __init__(self):
-        conn = sqlite3.connect(DB_FILE_LOCATION)
+        conn = sqlite3.connect(DB_FILE_LOCATION, check_same_thread=False)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
@@ -146,3 +137,69 @@ class Database(object):
                 dict_row = {key: value for key, value in zip(row.keys(), row)}
                 writer.writerow(dict_row)
 
+
+database = Database()
+
+
+class ManuscriptException(Exception):
+    pass
+
+
+class LibraryException(Exception):
+    pass
+
+
+class Manuscript(object):
+
+    def __init__(self, manuscript_id=None):
+        self._manifest = None
+        self._manuscript_id = None
+        self._image_map = None
+        self.manifest_url = None
+
+        if manuscript_id:
+            self.manuscript_id = manuscript_id
+
+    def _process_manifest(self):
+        pass
+
+    def _load_manifest(self):
+        if self._manuscript_id is None:
+            raise ManuscriptException("Manuscript id not set")
+
+        database.cursor.execute('SELECT Ma.Ma_Name, Li.base_url FROM TblManuscripts Ma '
+                                'JOIN TblLibraries Li ON Ma.Ma_LibID = Li.Li_ID '
+                                'WHERE Ma.Ma_ID = ?', (self._manuscript_id,))
+
+        result = database.cursor.fetchone()
+        base_url, manuscript_name = result['base_url'], result['Ma_Name']
+
+        if base_url is None:
+            raise LibraryException("Url has not been set for this Library")
+
+        self.manifest_url = u'{}{}/manifest.json'.format(base_url, manuscript_name.lower().replace(' ', ''))
+        self._manifest = requests.get(self.manifest_url).json()
+
+    def _get_manuscript(self):
+        return self._manuscript_id
+
+    def _set_manuscript(self, manuscript_id):
+        self._manuscript_id = manuscript_id
+        self._load_manifest()
+        self._process_manifest()
+
+    def _del_manuscript(self):
+        self._manifest = None
+        self._manuscript_id = None
+        self._image_map = None
+        self.manifest_url = None
+
+    def get_url_for_image(self, image):
+        pass
+
+    manuscript_id = property(_get_manuscript, _set_manuscript, _del_manuscript)
+
+
+ma = Manuscript()
+ma.manuscript_id = 356
+print ma.manifest_url
