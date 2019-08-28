@@ -94,6 +94,9 @@ class Database(object):
         self.connection = conn
         self.cursor = cursor
 
+        # lock for multithreading
+        self.lock = Lock()
+
     @staticmethod
     def get_major_query_string():
         return '''
@@ -140,7 +143,6 @@ class Database(object):
 
 
 nli_db = Database()
-db_lock = Lock()
 
 
 class ManuscriptException(Exception):
@@ -163,13 +165,41 @@ class Manuscript(object):
             self.manuscript_id = manuscript_id
 
     def _process_manifest(self):
-        pass
+        """
+        Load im_run values into a set
+        Walk through manifest.
+            For each image in manifest, derive im_run for image
+            If that im_run is in the set of im_run values, set the url for that image
+        :return:
+        """
+        def derive_im_run(canvas_id):
+            return int(re.search(u'p(\d+)$', canvas_id).group(1))
+
+        if not self._manifest or not self.manuscript_id:
+            raise ManuscriptException("manuscript_id not set")
+
+        image_map = {}
+
+        with nli_db.lock:
+            nli_db.cursor.execute('SELECT IM.Im_ImRun ir FROM TblImages IM '
+                                  'WHERE IM.Im_Ms = ?', (self.manuscript_id,))
+            image_values = set([r['ir'] for r in nli_db.cursor.fetchall()])
+
+        for canvas in self._manifest['sequences'][0]['canvases']:
+            im_run = derive_im_run(canvas['@id'])
+            if im_run in image_values:
+                image_map[im_run] = canvas['images'][0]['resource']['service']['@id']
+
+        self._image_map = image_map
+
+
+
 
     def _load_manifest(self):
         if self._manuscript_id is None:
             raise ManuscriptException("Manuscript id not set")
 
-        with db_lock:  # make sure only one manuscript is accessing the db at any given time
+        with nli_db.lock:  # make sure only one manuscript is accessing the db at any given time (sqlite requirement)
             nli_db.cursor.execute('SELECT Ma.Ma_Name, Li.base_url FROM TblManuscripts Ma '
                                   'JOIN TblLibraries Li ON Ma.Ma_LibID = Li.Li_ID '
                                   'WHERE Ma.Ma_ID = ?', (self._manuscript_id,))
@@ -203,7 +233,13 @@ class Manuscript(object):
         self.manifest_url = None
 
     def get_url_for_image(self, image):
-        pass
+        if self.manuscript_id is None:
+            raise ManuscriptException("Manuscript id not set")
+
+        try:
+            return self._image_map[image]
+        except KeyError:
+            raise ManuscriptException("Image not found in this manuscript")
 
     manuscript_id = property(_get_manuscript, _set_manuscript, _del_manuscript)
 
@@ -211,14 +247,14 @@ class Manuscript(object):
 # ma = Manuscript()
 # ma.manuscript_id = 356
 # print ma.manifest_url
+if __name__ == '__main__':
+    nli_db.cursor.execute('SELECT ma.Ma_ID FROM TblManuscripts ma WHERE ma.Ma_LibID = 11')
+    results = [r['Ma_ID'] for r in nli_db.cursor.fetchall()]
 
-nli_db.cursor.execute('SELECT ma.Ma_ID FROM TblManuscripts ma WHERE ma.Ma_LibID = 11')
-results = [r['Ma_ID'] for r in nli_db.cursor.fetchall()]
+    with ThreadPoolExecutor() as executor:
+        manuscripts = executor.map(Manuscript, results)
 
-with ThreadPoolExecutor() as executor:
-    manuscripts = executor.map(Manuscript, results)
-
-for man in manuscripts:
-    if man.manuscript_id:
-        print man.manuscript_id, man.manifest_url
+    for man in manuscripts:
+        if man.manuscript_id:
+            print man.manuscript_id, man.manifest_url
 
