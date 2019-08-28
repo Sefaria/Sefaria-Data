@@ -1,11 +1,12 @@
 # encoding = utf-8
 
-import tqdm
+import re
 import sqlite3
 import requests
 import unicodecsv
 from threading import Lock
 from collections import defaultdict
+from concurrent.futures.thread import ThreadPoolExecutor
 from path_to_db_file import DB_FILE_LOCATION
 
 # conn = sqlite3.connect(DB_FILE_LOCATION)
@@ -138,7 +139,8 @@ class Database(object):
                 writer.writerow(dict_row)
 
 
-database = Database()
+nli_db = Database()
+db_lock = Lock()
 
 
 class ManuscriptException(Exception):
@@ -167,18 +169,24 @@ class Manuscript(object):
         if self._manuscript_id is None:
             raise ManuscriptException("Manuscript id not set")
 
-        database.cursor.execute('SELECT Ma.Ma_Name, Li.base_url FROM TblManuscripts Ma '
-                                'JOIN TblLibraries Li ON Ma.Ma_LibID = Li.Li_ID '
-                                'WHERE Ma.Ma_ID = ?', (self._manuscript_id,))
+        with db_lock:  # make sure only one manuscript is accessing the db at any given time
+            nli_db.cursor.execute('SELECT Ma.Ma_Name, Li.base_url FROM TblManuscripts Ma '
+                                  'JOIN TblLibraries Li ON Ma.Ma_LibID = Li.Li_ID '
+                                  'WHERE Ma.Ma_ID = ?', (self._manuscript_id,))
 
-        result = database.cursor.fetchone()
-        base_url, manuscript_name = result['base_url'], result['Ma_Name']
+            result = nli_db.cursor.fetchone()
+            base_url, manuscript_name = result['base_url'], result['Ma_Name']
+            manuscript_name = re.match(u'^[^0-9]+[0-9]+', manuscript_name).group(0)
 
         if base_url is None:
             raise LibraryException("Url has not been set for this Library")
 
         self.manifest_url = u'{}{}/manifest.json'.format(base_url, manuscript_name.lower().replace(' ', ''))
-        self._manifest = requests.get(self.manifest_url).json()
+        try:
+            self._manifest = requests.get(self.manifest_url).json()
+        except ValueError:
+            print "Could not load manifest url {} for manuscript {}".format(self.manifest_url, self.manuscript_id)
+            del self.manuscript_id
 
     def _get_manuscript(self):
         return self._manuscript_id
@@ -200,6 +208,17 @@ class Manuscript(object):
     manuscript_id = property(_get_manuscript, _set_manuscript, _del_manuscript)
 
 
-ma = Manuscript()
-ma.manuscript_id = 356
-print ma.manifest_url
+# ma = Manuscript()
+# ma.manuscript_id = 356
+# print ma.manifest_url
+
+nli_db.cursor.execute('SELECT ma.Ma_ID FROM TblManuscripts ma WHERE ma.Ma_LibID = 11')
+results = [r['Ma_ID'] for r in nli_db.cursor.fetchall()]
+
+with ThreadPoolExecutor() as executor:
+    manuscripts = executor.map(Manuscript, results)
+
+for man in manuscripts:
+    if man.manuscript_id:
+        print man.manuscript_id, man.manifest_url
+
