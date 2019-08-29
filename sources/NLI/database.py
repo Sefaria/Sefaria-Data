@@ -1,51 +1,18 @@
-# encoding = utf-8
+# encoding=utf-8
 
 import re
 import sqlite3
 import requests
 import unicodecsv
-from threading import Lock
+from threading import Lock as threadLock
 from collections import defaultdict
 from concurrent.futures.thread import ThreadPoolExecutor
 from path_to_db_file import DB_FILE_LOCATION
 
-# conn = sqlite3.connect(DB_FILE_LOCATION)
-# conn.row_factory = sqlite3.Row
-#
-# cursor = conn.cursor()
-#
-# cursor.execute('''
-# SELECT Tal.Fr_Name, Trac.Tr_Name, Pe.Pe_ab, Mi.Mi_ab, IR.sfrom im_start, IR.sto im_end, Images.Ma_Name, Images.Im_ImRun,
-# Images.Ma_LibName, Images.Ma_NameDescription, Images.Ma_Description
-# FROM TblFullRef FR
-# JOIN TblTractates Trac ON Fr_Tr = Trac.Tr_code
-# JOIN TblPerek Pe ON Fr_F1 = Pe.Pe_code
-# JOIN TblMishna Mi ON Fr_F2 = Mi.Mi_code
-# JOIN TblTalmod Tal ON FR.Fr_Co = Tal.Fr_Co
-# JOIN TblImgRef IR ON FR.Fr_Img = IR.Ir_Img
-# JOIN (
-#     SELECT Im.Im_Id, Mans.Ma_Name, Mans.Ma_LibName, Mans.Ma_NameDescription, Mans.Ma_Description, Im.Im_ImRun
-#     FROM TblImages Im
-#     JOIN (
-#         SELECT MS.Ma_Name, Li.Ma_LibName, MS.Ma_NameDescription, MS.Ma_Description, MS.Ma_ID
-#         FROM TblManuscripts MS
-#         JOIN TblLibraries Li ON MS.Ma_LibID = Li.Li_ID
-#         ) Mans ON Im.Im_Ms = Mans.Ma_ID
-# ) Images ON FR.Fr_Img = Images.Im_Id
-# LIMIT 300
-# ''')
-#
-# with open('iiif.csv', 'w') as fp:
-#     writer = None
-#     while True:
-#         row = cursor.fetchone()
-#         if not row:
-#             break
-#         if not writer:
-#             writer = unicodecsv.DictWriter(fp, fieldnames=row.keys())
-#             writer.writeheader()
-#         dict_row = {key: value for key, value in zip(row.keys(), row)}
-#         writer.writerow(dict_row)
+import django
+django.setup()
+from sefaria.model import *
+
 
 
 """
@@ -95,13 +62,14 @@ class Database(object):
         self.cursor = cursor
 
         # lock for multithreading
-        self.lock = Lock()
+        self.lock = threadLock()
 
     @staticmethod
     def get_major_query_string():
         return '''
             SELECT Tal.Fr_Name, Trac.Tr_Name, Pe.Pe_ab, Mi.Mi_ab, IR.sfrom im_start, IR.sto im_end, Images.Ma_Name,
-            Images.Im_ImRun, Images.Ma_LibName, Images.Ma_NameDescription, Images.Ma_Description
+            Images.Im_ImRun, Images.Ma_LibName, Images.Ma_NameDescription, Images.Ma_Description, Images.Ma_ID, 
+            Images.Li_ID 
             FROM TblFullRef FR
             JOIN TblTractates Trac ON Fr_Tr = Trac.Tr_code
             JOIN TblPerek Pe ON Fr_F1 = Pe.Pe_code
@@ -109,10 +77,11 @@ class Database(object):
             JOIN TblTalmod Tal ON FR.Fr_Co = Tal.Fr_Co
             JOIN TblImgRef IR ON FR.Fr_Img = IR.Ir_Img
             JOIN (
-                SELECT Im.Im_Id, Mans.Ma_Name, Mans.Ma_LibName, Mans.Ma_NameDescription, Mans.Ma_Description, Im.Im_ImRun
+                SELECT Im.Im_Id, Mans.Ma_Name, Mans.Ma_LibName, Mans.Ma_NameDescription, Mans.Ma_Description, 
+                Im.Im_ImRun, Mans.Ma_ID, Mans.Li_ID 
                 FROM TblImages Im
                 JOIN (
-                    SELECT MS.Ma_Name, Li.Ma_LibName, MS.Ma_NameDescription, MS.Ma_Description, MS.Ma_ID
+                    SELECT MS.Ma_Name, Li.Ma_LibName, MS.Ma_NameDescription, MS.Ma_Description, MS.Ma_ID, Li.Li_ID 
                     FROM TblManuscripts MS
                     JOIN TblLibraries Li ON MS.Ma_LibID = Li.Li_ID
                     ) Mans ON Im.Im_Ms = Mans.Ma_ID
@@ -126,7 +95,8 @@ class Database(object):
             print e
 
         self.cursor.execute("CREATE TABLE aggregation (Book_Type, Tractate, Chapter, Verse, image_start, image_end, "
-                            "Manuscript, Image_ID, Library, Manuscript_Description, Extended_Manuscript_Description)")
+                            "Manuscript, Im_Run, Library, Manuscript_Description, Extended_Manuscript_Description, "
+                            "Manuscript_ID, Library_ID)")
 
         self.cursor.execute('INSERT INTO aggregation {}'.format(self.get_major_query_string()))
         self.connection.commit()
@@ -192,9 +162,6 @@ class Manuscript(object):
 
         self._image_map = image_map
 
-
-
-
     def _load_manifest(self):
         if self._manuscript_id is None:
             raise ManuscriptException("Manuscript id not set")
@@ -244,9 +211,29 @@ class Manuscript(object):
     manuscript_id = property(_get_manuscript, _set_manuscript, _del_manuscript)
 
 
-# ma = Manuscript()
-# ma.manuscript_id = 356
-# print ma.manifest_url
+"""
+Get url for Ref:
+Important to note that the Image_ID is a unique ID in the database, while the ImRun is unique per manifest.
+
+If we can derive the Ref from an aggregation row, then we should be able to use the row's Im_Run and Manuscript ID
+to get the url from a Manuscript instance.
+"""
+
+
+def derive_ref(book_type, tractate, chapter, verse):
+    base_ref = u'{} {}, {}'.format(tractate, chapter, verse)
+    if book_type == u'תלמוד בבלי':
+        return Ref(base_ref).normal()
+    elif book_type == u'משנה':
+        return Ref(u'{} {}'.format(u'משנה', base_ref)).normal()
+    else:
+        return None
+
+
+def derive_ref_from_row_data(row_data):
+    return derive_ref(row_data['Book_Type'], row_data['Tractate'], row_data['Chapter'], row_data['Verse'])
+
+
 if __name__ == '__main__':
     nli_db.cursor.execute('SELECT ma.Ma_ID FROM TblManuscripts ma WHERE ma.Ma_LibID = 11')
     results = [r['Ma_ID'] for r in nli_db.cursor.fetchall()]
@@ -254,7 +241,21 @@ if __name__ == '__main__':
     with ThreadPoolExecutor() as executor:
         manuscripts = executor.map(Manuscript, results)
 
-    for man in manuscripts:
-        if man.manuscript_id:
-            print man.manuscript_id, man.manifest_url
+    manuscripts = {man.manuscript_id: man for man in manuscripts}
+
+    nli_db.cursor.execute('SELECT * FROM aggregation WHERE Library_ID=11')
+    ref_mapping = [{
+        'full_ref': derive_ref_from_row_data(row),
+        'image_url': manuscripts[row['Manuscript_ID']].get_url_for_image(row['Im_Run']),
+        'Institution': row['Library'],
+        'Manuscript ID': row['Manuscript_ID'],
+        'desc': row['Extended_Manuscript_Description']
+
+
+    } for row in nli_db.cursor.fetchall()]
+
+    import random
+    for _ in range(10):
+        foo = random.choice(ref_mapping)
+        print foo['full_ref'], u'{}/full/1600,/0/default.jpg'.format(foo['image_url'])
 
