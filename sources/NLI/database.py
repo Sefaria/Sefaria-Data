@@ -173,7 +173,7 @@ class Manuscript(object):
 
             result = nli_db.cursor.fetchone()
             base_url, manuscript_name = result['base_url'], result['Ma_Name']
-            manuscript_name = re.match(u'^[^0-9]+[0-9]+', manuscript_name).group(0)
+            # manuscript_name = re.match(u'^[^0-9]+[0-9]+', manuscript_name).group(0)
 
         if base_url is None:
             raise LibraryException("Url has not been set for this Library")
@@ -183,15 +183,19 @@ class Manuscript(object):
             self._manifest = requests.get(self.manifest_url).json()
         except ValueError:
             print "Could not load manifest url {} for manuscript {}".format(self.manifest_url, self.manuscript_id)
-            del self.manuscript_id
+            # del self.manuscript_id
+            raise ManuscriptException
 
     def _get_manuscript(self):
         return self._manuscript_id
 
     def _set_manuscript(self, manuscript_id):
         self._manuscript_id = manuscript_id
-        self._load_manifest()
-        self._process_manifest()
+        try:
+            self._load_manifest()
+            self._process_manifest()
+        except ManuscriptException:
+            del self.manuscript_id
 
     def _del_manuscript(self):
         self._manifest = None
@@ -241,18 +245,19 @@ if __name__ == '__main__':
     with ThreadPoolExecutor() as executor:
         manuscripts = executor.map(Manuscript, results)
 
-    manuscripts = {man.manuscript_id: man for man in manuscripts}
+    manuscripts = {man.manuscript_id: man for man in manuscripts if man.manuscript_id}
 
     nli_db.cursor.execute('SELECT * FROM aggregation WHERE Library_ID=11')
-    ref_mapping = [{
-        'full_ref': derive_ref_from_row_data(row),
-        'image_url': manuscripts[row['Manuscript_ID']].get_url_for_image(row['Im_Run']),
-        'Institution': row['Library'],
-        'Manuscript ID': row['Manuscript_ID'],
-        'desc': row['Extended_Manuscript_Description']
-
-
-    } for row in nli_db.cursor.fetchall()]
+    ref_mapping = []
+    for row in nli_db.cursor.fetchall():
+        if manuscripts.get(row['Manuscript_ID'], None):
+            ref_mapping.append({
+                'full_ref': derive_ref_from_row_data(row),
+                'image_url': manuscripts[row['Manuscript_ID']].get_url_for_image(row['Im_Run']),
+                'Institution': row['Library'],
+                'Manuscript ID': row['Manuscript_ID'],
+                'desc': row['Extended_Manuscript_Description']
+            })
 
     import random
     for _ in range(10):
