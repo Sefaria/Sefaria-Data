@@ -18,6 +18,7 @@ class ManuscriptException(Exception):
 class LibraryException(Exception):
     pass
 
+
 """
 Obtain urls for Ref (works for Vatican):
 Start with the manifest:
@@ -55,14 +56,36 @@ For each image, we'll use the Manuscript class to get the image url.
 Hit a snag - seems that the manuscripts listed in the db don't correspond perfectly to the manuscripts as listed on the
 vatican iiif server. This makes using the Im_Run field unreliable.
 
-I believe it is possible to extract the pagenumber from the filenames that the NLI gave to each file. This can be done
+I believe it is possible to extract the page number from the filenames that the NLI gave to each file. This can be done
 with the ReGex `0*([0-9]+)([rvRV])\.jpg$`.
 <number>(r/v) should correspond to the labels on the manifests.
 
 We'll need to be careful about duplicate lables within the manifests.
 We should also test for duplicate lables within the data. If there is a relatively small number of these, 
 a manual solution should be sought.
+
+We're going to have to find a way to mark where "combined" manuscripts break off into smaller ones.
+
+As far as "split" manuscripts go, who cares if we end up loading duplicate manuscripts? We just need to double check 
+that the ref mapping doesn't go off.
+
+Seems that manuscript Ebr. 120 has repeating labels. This may correspond to the `a` in the image filenames.
+
+For each manifest, grab labels and record indices where a 1r label appears
+Derive labels from db and determine which group best fits.
 """
+
+
+def manifest_start_locations(manifest):
+    """
+    The 1r signifies page 1 of a manuscript. Unfortunately, this label can appear several times within a manifest.
+    This method returns the indices which the label `1r`.
+    :param manifest: Manifest json, decoded into a dictionary
+    :return: list of integers
+    """
+    sequences = manifest['sequences'][0]
+    return [i for i, c in enumerate(sequences['canvases']) if re.search(r'^\s*1[rR]', c.get('label', ''))]
+
 
 
 class Manuscript(object):
