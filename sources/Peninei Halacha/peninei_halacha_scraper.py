@@ -17,7 +17,7 @@ VERSION_SOURCE_EN = "https://ph.yhb.org.il/en"
 
 # NOTE: I ASSUMED THAT IF SECTIONS ARE ALSO TRANSLATED, THEN SIMANIM ARE TRANSLATED TOO.
 # IF THAT'S NOT TRUE, ADD "AND FALSE" TO LINES 874 AND 889
-tsv_translations_file = "Peninei_Halakhah_Title_Translations.tsv"
+tsv_translations_file = "Peninei Halakhah Title Translations.tsv"
 tsv_title_changes_file = "PH_Chapter_Section_Title_Changes.tsv"
 jar = requests.cookies.RequestsCookieJar()
 jar.set("wp-postpass_b0cab8db5ce44e438845f4dedf0fcf4f", "%24P%24BH2d6c1lhrllIz02CYT36lWgURQXVe1")
@@ -37,7 +37,7 @@ rm_re = re.compile(u"\(.*\u05e8\u05de\u05d1\"\u05dd .*\)")
 # ramban
 rn_re = re.compile(u"\(.*\u05e8\u05de\u05d1\"\u05df (?=\u05d1\u05e8\u05d0\u05e9\u05d9\u05ea|\u05e9\u05de\u05d5\u05ea|\u05d5\u05d9\u05e7\u05e8\u05d0|\u05d1\u05de\u05d3\u05d1\u05e8|\u05d3\u05d1\u05e8\u05d9\u05dd).*\)")
 # rama
-ra_re = re.compile(u"\(.*(?P<'rama'>\u05e8\u05de\"\u05d0) (?!\u05d7\u05d5\"\u05de|\u05d9\u05d5\"\u05d3|\u05d0\u05d1\"\u05d4|\u05d0\u05d5\"\u05d7).*\)")
+ra_re = re.compile(u"\(.*(?P<rama>\u05e8\u05de\"\u05d0),? (?!\u05d7\u05d5\"\u05de|\u05d9\u05d5\"\u05d3|\u05d0\u05d1\"\u05d4|\u05d0\u05d5\"\u05d7|\u05d0\u05d4\"\u05e2).*\)")
 # ra_re = re.compile(u"\(.*\u05e8\u05de\"\u05d0 .*\)")
 # magen avraham
 ma_re = re.compile(u"\((?<!\u05e8)\u05de\"\u05d0 .*\)")
@@ -68,9 +68,9 @@ books = [("Shabbat", u"שבת", 1), # (eng_name, heb_name, url_number)
          ("Kashrut I", u"כשרות א – הצומח והחי", 17)]
 
 # SET THIS TO TRUE ONCE RABBI FISCHER SENDS LIST OF TITLE TRANSLATIONS (AND BE SURE TO SET PARAM "only_chapters_translated" ACCORDINGLY)
-titles_were_translated = False
+titles_were_translated = True
 # SET THIS TO TRUE ONCE RABBI FISCHER SENDS LIST OF TITLE TRANSLATIONS, AND COPY/PASTE LISTS INTO PH_CHAPTER_SECTION_TITLE_CHANGES GOOGLE SHEET SO SHMUEL CAN MAKE CHANGES (THEN REDOWNLOAD TSV)
-print_titles_to_be_changed = False
+print_titles_to_be_changed = True
 
 def do_peninei_halakhah(book_name_en, book_name_he, url_number, title_translations_tsv, title_changes_tsv, lang="he", only_chapters_translated=False):
     if lang not in ["he", "en", "both"]:
@@ -115,9 +115,13 @@ def collect_trans_titles_from_tsv(filename):
             heb, eng = line.split("\t")
             if heb[0] == "\"":
                 heb = heb[1:-1].strip()
+            if eng[0] == "\"":
+                eng = eng[1:-1].strip()
 
-            heb = heb.split(":")[1].strip()
-            heb = heb.replace(u"\"\"", u"\"")
+            heb = u':'.join(heb.split(":")[1::]).strip()
+            # heb = heb.replace(u"\"\"", u"\"")
+            heb = re.sub(u'"+', u'"', heb)
+            eng = re.sub(u'"+', u'"', eng)
             eng = eng.strip()
             title_trans_dict[heb] = eng
 
@@ -831,7 +835,9 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, title_t
             if both:  # rabbi fischer title code
                 en_section_title = (section_titles[1][en_chapter_title][sec_num])
             elif not only_chapters_translated and title_translations_dict:
-                en_section_title = title_translations_dict[he_section_title]
+                # he_section_title = re.sub(u'\u2013', u'-', he_section_title)
+                # title_translations_dict.keys()[76], he_section_title
+                en_section_title = title_translations_dict[he_section_title.strip()]
             else:
                 en_section_title = "{}".format(sec_num+1+bias)
             array_map.add_primary_titles(clean_title(en_section_title, he_section_title), he_section_title)
@@ -867,7 +873,7 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, title_t
                 for sim_num, he_siman_title in enumerate(siman_titles):
                     array_map = ArrayMapNode()
                     if not only_chapters_translated and title_translations_dict:  # rabbi fischer title code
-                        en_siman_title = title_translations_dict[he_siman_title]
+                        en_siman_title = title_translations_dict[he_siman_title.strip()]
                     else:
                         en_siman_title = "Siman {}".format(sim_num + 1)
                     array_map.add_primary_titles(clean_title(en_siman_title, he_siman_title), he_siman_title)
@@ -882,7 +888,7 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, title_t
                 for sim_num, he_siman_title in enumerate(siman_titles):
                     array_map = ArrayMapNode()
                     if not only_chapters_translated and title_translations_dict:  # rabbi fischer title code
-                        en_siman_title = title_translations_dict[he_siman_title]
+                        en_siman_title = title_translations_dict[he_siman_title.strip()]
                     else:
                         en_siman_title = "Siman {}".format(sim_num + 1)
                     array_map.add_primary_titles(clean_title(en_siman_title, he_siman_title), he_siman_title)
@@ -1015,16 +1021,16 @@ def post_self_links(bookname_en):
 if __name__ == "__main__":
     add_term("Peninei Halakhah", u"פניני הלכה")
     add_category("Peninei Halakhah",["Halakhah", "Peninei Halakhah"], u"פניני הלכה")
-    he_book_list = [] #[5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
-    both_book_list = [0] #[0, 1, 2, 3, 4, 10]
+    he_book_list = []  # [5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
+    both_book_list = [3]  # [0, 1, 2, 3, 4, 10]
     langs = ["he", "both"]
 
     for lang, book_list in enumerate([he_book_list, both_book_list]):
         for curr_book in book_list:
             do_peninei_halakhah(books[curr_book][0], books[curr_book][1], books[curr_book][2], title_translations_tsv=tsv_translations_file, title_changes_tsv=tsv_title_changes_file, lang=langs[lang], only_chapters_translated=False)
-            library.refresh_index_record_in_cache("Peninei Halakhah, {}".format(books[curr_book][0]))
-            # FOR POSTING LINKS, FIRST RUN SCRIPT WITH THE LINE BELOW COMMENTED OUT, THEN RESET EACH INDEX, THEN RUN SCRIPT WITH THE ABOVE LINES COMMENTED OUT
-            # post_self_links(books[curr_book][0])
+            # library.refresh_index_record_in_cache("Peninei Halakhah, {}".format(books[curr_book][0]))
+            # # FOR POSTING LINKS, FIRST RUN SCRIPT WITH THE LINE BELOW COMMENTED OUT, THEN RESET EACH INDEX, THEN RUN SCRIPT WITH THE ABOVE LINES COMMENTED OUT
+            # # post_self_links(books[curr_book][0])
 
     if print_titles_to_be_changed:
         for num, list in enumerate(titles_to_print):

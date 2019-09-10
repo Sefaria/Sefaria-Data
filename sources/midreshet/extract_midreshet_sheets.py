@@ -680,7 +680,11 @@ class SheetManager(object):
 
 def get_sheet_by_id(page_id, rebuild_cache=False):
     cursor = MidreshetCursor()
-    cursor.execute('select * from Pages where id=?', (page_id,))
+    cursor.execute("select * from Pages "
+                   "left join ("
+                   "    select name se_name, id se_id from Seminary) se "
+                   "ON Pages.seminary_id = se_id "
+                   "where id=?", (page_id,))
     rows = list(cursor.fetchall())
     assert len(rows) == 1
     sheet = convert_row_to_dict(rows[0])
@@ -963,8 +967,9 @@ def create_sheet_json(page_id, group_manager):
     sheet['sources'].append(
         {
             'options': {},
-            'outsideText': u'<strong>{} / {}</strong>'.format(raw_sheet['username'], raw_sheet['author'])
-            if raw_sheet['username'] != raw_sheet['author'] else u'<strong>{}</strong>'.format(raw_sheet['username'])
+            'outsideText': u'<strong>{}: {} / {}</strong>'.format(u'הדף מאת', raw_sheet['author'], raw_sheet['se_name'])
+            if (raw_sheet['se_name'] and raw_sheet['se_name'] != u'-') else
+            u'<strong>{}: {}</strong>'.format(u'הדף מאת', raw_sheet['author'])
         }
     )
 
@@ -1177,12 +1182,12 @@ def bulk_sheet_post(wrapped_sheet_list, server='http://localhost:8000'):
             response = requests.get('{}/api/sheets/{}'.format(server, server_map_data['serverIndex'])).json()
 
             if 'error' in response or response['title'] != sheet_json['title']:
-                response = post_sheet(sheet_json, server=server)
+                response = post_sheet(sheet_json, server=server, weak_network=True)
                 server_map.find_one_and_update({'pageId': page_id, 'server': server},
                                                {'$set': {'serverIndex': response['id']}})
             else:
                 sheet_json['id'] = response['id']
-                post_sheet(sheet_json, server=server)
+                post_sheet(sheet_json, server=server, weak_network=True)
 
         else:
             response = post_sheet(sheet_json, server=server)
@@ -1317,8 +1322,12 @@ if __name__ == '__main__':
     print('finished creating sheets')
     num_processes = 20
     sheet_chunks = list(split_list(my_wrapped_sheet_list, num_processes))
-    pool = Pool(num_processes)
-    pool.map(p_sheet_poster, sheet_chunks)
+    # pool = Pool(num_processes)
+    # pool.map(p_sheet_poster, sheet_chunks)
+    # map(p_sheet_poster, sheet_chunks)
+    from concurrent.futures.thread import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=num_processes) as executor:
+        executor.map(p_sheet_poster, sheet_chunks)
     group_handler.publicize_groups()
 
     # qa_sheets = random.sample([ws for ws in my_wrapped_sheet_list if ws.sheet_json['sources']], 60)

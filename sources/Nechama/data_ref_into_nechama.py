@@ -4,12 +4,23 @@ import django
 django.setup()
 from sefaria.system.database import db
 import re
+from sources.functions import *
+#
+# GET_SERVER = "https://www.sefaria.org"
+# POST_SERVER = "https://www.sefaria.org"
+GET_SERVER = "http://nechama.sandbox.sefaria.org"
+POST_SERVER = "http://nechama.sandbox.sefaria.org"
 
-# GET_SERVER = "http://steinsaltz.sandbox.sefaria.org"
-# POST_SERVER = "http://steinsaltz.sandbox.sefaria.org"
-delete_data_ref_info = False
+delete_data_ref_info = True
 compile_seg2ref = re.compile(u'<.*?(?P<add_to>class="refLink"\s*href="/(?P<sheet>sheets/)?(?P<ref>.*?)").*?>')
 
+def get_sheets_from_get_server(list_get_sheet_ids, get_server_address):
+    got_sheets = []
+    for id in list_get_sheet_ids:
+        url = get_server_address + "/api/sheets/{}".format(id)
+        got = http_request(url, body={"apikey": API_KEY}, method="GET")
+        got_sheets.append(got)
+    return got_sheets
 
 def add_all_ref_link(sheet_sources):
     for s in sheet_sources:
@@ -40,6 +51,8 @@ def change_texts(text):
                 return delete_ref_link(text)
         else:
             text = add_ref_link(text, match)
+    if re.search(u'162386', text):
+        print u"Found 162386 in sheet"
     return text
 
 
@@ -60,15 +73,21 @@ def delete_ref_link(text):
     return text
 
 if __name__ == "__main__":
-    ids = [160486]  # [162107]
-    # sheets = get_sheets_from_get_server(ids, GET_SERVER)
-    sheets = db.sheets.find({"group": u"גיליונות נחמה"})#({"id":ids[0]})
+    ids = [160572]  # [162107]
+    sheets = get_sheets_from_get_server(ids, GET_SERVER)
+    # query = {"group": u"גיליונות נחמה"}
+    query = {"id": ids[0]}
+    # sheets = db.sheets.find(query) #({"id":ids[0]})
+    cnt =0
     for sheet in sheets:
         sheet_id = sheet['id']
-        if sheet_id == 160781:
-            continue
+        # if sheet_id == 160781:
+        #     continue
         print sheet_id
+        cnt +=1
         with_data_ref = add_all_ref_link(sheet['sources'])
         sheet['sources'] = with_data_ref
-        # post_sheet(sheet, POST_SERVER)
-        db.sheets.replace_one({"id": sheet_id}, sheet)
+        del sheet['_id']
+        post_sheet(sheet, POST_SERVER)
+        # db.sheets.replace_one({"id": sheet_id}, sheet)
+    print u"changed {} sheets".format(cnt)

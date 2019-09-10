@@ -111,12 +111,15 @@ class Sheet(object):
                 if success:
                     if Ref(segment.ref).is_commentary():
                         if re.search(u".*(?:on|,)\s((?:[^:]*?):(?:[^:]*)):?", segment.ref):
-                            r_base = Ref(re.search(u".*(?:on|,)\s((?:[^:]*?):(?:[^:]*)):?", segment.ref).group(1))
-                            guess_ref = r_base.normal()
-                            guess_parshan_name = Ref(segment.ref).index.title
-                            guess_parshan_opt = filter(lambda x: x[1]==guess_parshan_name, parser.parshan_id_table.items())
-                            if guess_parshan_opt:
-                                guess_parshan = filter(lambda x: x[1] == guess_parshan_name, parser.parshan_id_table.items())[0][0]
+                            try:
+                                r_base = Ref(re.search(u".*(?:on|,)\s((?:[^:]*?):(?:[^:]*)):?", segment.ref).group(1))
+                                guess_ref = r_base.normal()
+                                guess_parshan_name = Ref(segment.ref).index.title
+                                guess_parshan_opt = filter(lambda x: x[1]==guess_parshan_name, parser.parshan_id_table.items())
+                                if guess_parshan_opt:
+                                    guess_parshan = filter(lambda x: x[1] == guess_parshan_name, parser.parshan_id_table.items())[0][0]
+                            except InputError:
+                                guess_ref = segment.ref
 
                     else:
                         guess_ref = segment.ref # if base text keep for the next source segment
@@ -311,7 +314,7 @@ class Sheet(object):
                        # get headers in English to look like headers in hebrew
                        if re.match(u'.*?<table><tr><td><big>', s['outsideBiText']['he']):
                            match = re.match('(.*>)[^<]+(<.*)', s['outsideBiText']['he'])
-                           s['outsideBiText']['en'] = '{}translation here{}'.format(match.group(1), match.group(2))
+                           s['outsideBiText']['en'] = u'{}translation here{}'.format(match.group(1), match.group(2))
                        elif re.match(u".*?<span style='color:rgb\(153,153,153\);'>", s['outsideBiText']['he']):
                            s['outsideBiText']['en'] = "<span style='color:rgb(153,153,153);'>source name</span><br/><span style='color:rgb(51,51,51);'>source translation"
                        elif 'options' in s.keys() and 'sourcePrefix' in s['options'].keys(): #re.match(u'.*?<sup class="nechama">\*{0,2}</sup>', s['outsideBiText']['he']):
@@ -460,7 +463,7 @@ class Section(object):
     @staticmethod
     def get_tags(segment):
 
-        if isinstance(segment,element.Tag):
+        if isinstance(segment, element.Tag):
             return [t for t in segment.contents if isinstance(t, element.Tag)]
         elif isinstance(segment,list):
             return [t for t in segment if isinstance(t, element.Tag)]
@@ -1851,7 +1854,7 @@ class Nechama_Parser:
                     self.error_report.write(traceback.format_exc())
                     self.error_report.write("\n\n")
                 else:
-                    raise
+                    pass
 
         return found_tables, sheets
 
@@ -1989,7 +1992,7 @@ if __name__ == "__main__":
     english_sheet = True
 
     posting = True
-    individuals = [271] #[112, 113, 105, 106, 75, 109, 13, 110, 15, 16, 17, 85, 86, 111]
+    individuals = [964]  # [112, 113, 105, 106, 75, 109, 13, 110, 15, 16, 17, 85, 86, 111]
   # [1, 259, 5, 774, 14, 273, 27, 35, 37, 299, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 327, 332, 619, 114, 115, 118, 1402, 1403, 1404, 1405, 1406, 1407, 1409, 142, 147, 661, 1440, 169, 172, 174, 204, 210, 246]
 #[35, 246, 169, 45, 142, 48, 115, 51, 52, 174, 118, 27, 53] #[1409, 259, 246, 774, 327, 172, 332, 142, 619, 115, 273, 210, 147, 46, 661, 1405, 204, 27, 118, 1440, 35, 37, 169, 299, 44, 45, 174, 47, 48, 49, 50, 51, 52, 53, 54, 55, 114, 1403, 1404, 1402, 1406, 1407]
 
@@ -2004,7 +2007,7 @@ if __name__ == "__main__":
     with open(u"reports/text_check.csv", 'a') as fcsv:
         writer = csv.DictWriter(fcsv, [u'sheet', u'missing text'])
         writer.writeheader()
-    for individual in individuals: #range(1321, 1479): #individuals: #range(212, 1400): #  failed on look_for_missing_next: [57, 62. 85, 163]
+    for individual in range(1249, 1479): #individuals: #range(212, 1400): #  failed on look_for_missing_next: [57, 62. 85, 163]
         got_sheet = None
         for which_parshiot in [genesis_parshiot, exodus_parshiot, leviticus_parshiot, numbers_parshiot, devarim_parshiot]:
             # print u"NEW BOOK"
