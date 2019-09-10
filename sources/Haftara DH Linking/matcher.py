@@ -5,15 +5,17 @@ from sefaria.model import *
 from data_utilities.dibur_hamatchil_matcher import *
 from sefaria.system.database import db
 from sources.functions import *
-parasha_to_haftara = {}
+import json
+import re
+with open("parashot-haftarot.json") as f:
+    parasha_to_haftara = json.load(f)
 
 def base_tokenizer(str):
     return str.split()
 
 def dh(str):
     str = str.replace("<b>", "").replace("</b>", "")
-    if "." in str.split()[0] or ("(" in str.split()[0] and ")" in str.split()[0]):
-        str = u" ".join(str.split()[1:])
+    str = re.sub(u"^([\(\)\.\S]{1,3}\s)", u"", str)
 
 
     if u"וכו'" in str:
@@ -26,31 +28,45 @@ def dh(str):
         result = u" ".join(str.split()[0:8])
     return result.strip()
 
-for p in db.parshiot.find():
-    parasha_name = p["parasha"]
-    haftara_ref = p["haftara"]["ashkenazi"]
-    parasha_to_haftara[parasha_name] = haftara_ref
-
 
 titles = ["Nachal Sorek", "Tzaverei Shalal"]
-links = []
+links = {"Nachal Sorek": [], "Tzaverei Shalal": []}
 for title in titles:
-    for ref in library.get_index(title).all_section_refs():
+    all_refs = library.get_index(title).all_section_refs() if title == "Nachal Sorek" else library.get_index(title).all_segment_refs()
+    for ref in all_refs:
+        if ref.is_segment_level() and len(ref.sections) > 1 and ref.sections[1] > 1:
+            continue
         haftarah_name = ref.normal().replace("Haftarah of ", "").replace("Haftarah for the ", "")
         haftarah_name = haftarah_name.replace("{}, ".format(title), "")
-        haftarah_name = re.sub(" \d+$", "", haftarah_name)
+        haftarah_name = re.sub(" [\:\d]+$", "", haftarah_name)
         try:
-            haftarah_ref = Ref(parasha_to_haftara[haftarah_name][0])
+            haftarah_dict = parasha_to_haftara[haftarah_name]
         except KeyError as e:
             print e.message
             continue
-        results = match_ref(haftarah_ref.text('he'), ref.text('he').text, base_tokenizer=base_tokenizer, dh_extract_method=dh)
-        for n, result in enumerate(results["matches"]):
-            if result:
-                comm_ref = ref.normal() + ":" + str(n+1) if ref.normal()[-1].isdigit() else ref.normal() + " " + str(n+1)
-                links.append({"refs": [result.normal(), comm_ref], "generated_by": "haftara_matcher", "auto": True,
-                              "type": "Commentary"})
+        haftarah_refs = haftarah_dict["sephardi"] if "sephardi" in haftarah_dict.keys() else haftarah_dict["ashkenazi"]
+        for haftarah_ref in haftarah_refs:
+            haftarah_ref = Ref(haftarah_ref)
+            haftarah_tc = TextChunk(haftarah_ref, lang='he', vtitle="Tanach with Text Only")
+            comments = ref.text('he').text if title == "Nachal Sorek" else [ref.text('he').text]
+            results = match_ref(haftarah_tc, comments, base_tokenizer=base_tokenizer, dh_extract_method=dh)
+            for n, result in enumerate(results["matches"]):
+                if result:
+                    if title != "Nachal Sorek":
+                        comm_ref = Ref(ref.normal().rsplit(":", 1)[0])
+                        comm_ref = comm_ref.as_ranged_segment_ref().normal()
+                    else:
+                        comm_ref = "{} {}".format(ref, n+1)
 
-post_link(links, server="http://ste.sandbox.sefaria.org")
-for l in links:
-    print l["refs"]
+                    links[title].append({"refs": [result.normal(), comm_ref], "generated_by": "haftara_matcher", "auto": True,
+                                  "type": "Commentary"})
+
+
+post_link(links["Nachal Sorek"], server="http://ste.sandbox.sefaria.org")
+post_link(links["Tzaverei Shalal"], server="http://ste.sandbox.sefaria.org")
+
+#for l in links:
+#    print l["refs"]
+print links.keys()
+print len(links[links.keys()[0]])
+print len(links[links.keys()[1]])

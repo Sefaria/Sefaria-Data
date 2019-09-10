@@ -63,7 +63,6 @@ class XML_to_JaggedArray:
 
     def run(self):
         xml_text = ""
-        print self.title
         digit = re.compile(u"<p>\d+. ")
         chapter = re.compile(u"<title>CHAPTER")
         prev_line_ch = False
@@ -88,7 +87,7 @@ class XML_to_JaggedArray:
 
         for count, child in enumerate(self.root):
             if self.array_of_names:
-                child.text = str(self.array_of_names[count])
+                child.text = unicode(self.array_of_names[count])
             elif self.dict_of_names:
                 key = self.cleanNodeName(child[0].text)
                 child[0].text = self.dict_of_names[key]
@@ -427,6 +426,12 @@ class XML_to_JaggedArray:
             child = self.fix_ol(child)
         elif child.tag == "table":
             self.print_table_info(element, index)
+        elif child.tag == "volume":
+            pass
+        elif child.tag == "chapter" and child.text.startswith("CHAPITRE"):
+            print child.text
+            child.text = child.text.replace("PREMIER", "I").replace(".", "").strip()
+            child.text = str(roman_to_int(child.text.split()[-1]))
         # if child.tag == "h1" and self.title == "Teshuvot Maharam":
         #     child.text = re.sub(" \(D.*?\)", "", child.text)
         # elif child.tag in ["chapter"] and "CHAPTER " in child.text.upper():# and len(child.text.split(" ")) <= 3:
@@ -453,6 +458,7 @@ class XML_to_JaggedArray:
                         text["text"].append({"text": []})
                     text["text"].append(self.go_down_to_text(child, element))
                 else:
+                    print child.text
                     child.text = self.cleanNodeName(child.text)
                     text[child.text] = self.go_down_to_text(child, element)
             else:
@@ -621,7 +627,7 @@ class XML_to_JaggedArray:
             elif key == "text" and len(node[key]) > 0: #if len(node.keys()) == 2 and "text" in node.keys() and "subject" in node.keys() and len(node['text']) > 0:
                 if self.assertions:
                     assert Ref(running_ref)
-                text = self.convertManyIntoOne(node["text"], running_ref.split(", ", 1)[-1])
+                text = self.convertManyIntoOne(node["text"], running_ref.rsplit(", ", 1)[-1])
                 self.post(running_ref, text, not_last_key)
 
     def handle_special_case(self, results):

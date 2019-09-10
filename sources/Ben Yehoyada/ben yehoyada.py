@@ -3,6 +3,7 @@ import django
 django.setup()
 import csv
 from sefaria.model import *
+from sefaria.system.exceptions import InputError
 from sefaria.model.schema import AddressTalmud
 from sources.functions import *
 import codecs
@@ -34,10 +35,10 @@ def create_index(title):
 if __name__ == "__main__":
     dappim = Counter()
     new_csv = ""
-    for title in ["Eruvin", "Shabbat", "Pesachim"]:
+    for title in ["Rosh Hashanah", "Yoma"]:
         text_dict = {}
 
-        #create_index(title)
+        create_index(title)
         with open(title+".csv") as file:
             # reader = csv.reader(f)
             for row in file:
@@ -82,16 +83,21 @@ if __name__ == "__main__":
             "language": "he"
         }
         post_text("Ben Yehoyada on {}".format(title), send_text)
-        # for daf, text in text_dict.items():
-        #     daf = AddressTalmud.toStr("en", daf)
-        #     base = TextChunk(Ref("{} {}".format(title, daf)), lang='he')
-        #     results = match_ref(base, text, lambda x: x.split(), dh_extract_method=dher)
-        #     for i, ref in enumerate(results["matches"]):
-        #         if ref:
-        #             berakhot = "Ben Yehoyada on {} {}:{}".format(title, daf, i+1)
-        #             links.append({"refs": [ref.normal(), berakhot], "type": "Commentary", "auto": True, "generated_by": "ben_yeh"})
-        #
-        # post_link(links, server=SEFARIA_SERVER)
+        for daf, text in text_dict.items():
+            daf = AddressTalmud.toStr("en", daf)
+            try:
+                base = TextChunk(Ref("{} {}".format(title, daf)), lang='he')
+            except InputError as e:
+                print e.message
+                continue
+            results = match_ref(base, text, lambda x: x.split(), dh_extract_method=dher)
+            for i, ref in enumerate(results["matches"]):
+                if ref:
+                    berakhot = "Ben Yehoyada on {} {}:{}".format(title, daf, i+1)
+                    links.append({"refs": [ref.normal(), berakhot], "type": "Commentary", "auto": True, "generated_by": "ben_yeh"})
+
+        print len(links)
+        post_link(links, server=SEFARIA_SERVER)
         with codecs.open("{}_Sefaria_structure.csv".format(title), 'w', encoding='utf-8') as f:
             f.write(new_csv)
 
