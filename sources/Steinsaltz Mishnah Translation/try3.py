@@ -60,10 +60,12 @@ def get_talmud_ref_array(mesechet):
             line=talmud_text[daf_num][line_num]
             if (u'strong' in line and u'מתני׳' in line) or (line_num==0 and daf_num==2):
                 in_mishnah=True
+            if u'גמ׳' in line:
+                in_mishnah=False
             if in_mishnah:
                 line_by_perek[ref_to_chatper(ref, perek_ref_list)].append(ref)
-            if in_mishnah and u':' in line:
-                in_mishnah=False
+            #if in_mishnah and u':' in line:
+            #    in_mishnah=False
     """
     for cindex, chapter in enumerate(line_by_perek):
         for lindex, line in enumerate(chapter):
@@ -100,7 +102,7 @@ def post_en_trans(mesechet):
     final_version=make_mishnah_perek_array(mesechet)
     for pindex, perek in enumerate(en_tran):
         for mindex, mishnah in enumerate(perek):
-            final_version[pindex][mindex]= u''.join(mishnah)
+            final_version[pindex][mindex]= u''.join(mishnah).replace(u'<strong>MISHNA:</strong> ',u'')
     version = {
         'versionTitle': 'William Davidson Edition - English',
         'versionSource': 'www.korenpub.com',
@@ -108,11 +110,18 @@ def post_en_trans(mesechet):
         'text': final_version
     }
     #post_text_weak_connection('Mishnah '+mesechet, version)
-    post_text('Mishnah '+mesechet, version)
+    post_text_weak_connection('Mishnah '+mesechet, version)
     
                     
-                        
-                    
-mesechet='Berakhot'
-#get_talmud_ref_array(mesechet)
-post_en_trans(mesechet)
+links=[]
+for mesechet in library.get_indexes_in_category('Bavli'):
+    has_wde=False
+    for version in library.get_index(mesechet).versionState().versions('en'):
+        if 'William Davidson Edition' in version.versionTitle:
+            has_wde=True
+    if has_wde: 
+        print "posting {}...".format(mesechet)                     
+        post_en_trans(mesechet)
+        links.append('http://rosh.sandbox.sefaria.org/Mishnah_{}.1?ven=William_Davidson_Edition_-_English&lang=bi'.format(mesechet))
+for link in links:
+    print link
