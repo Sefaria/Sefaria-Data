@@ -34,7 +34,7 @@ part_i_sections=[[u'Laws of Loans',u'דיני מצות הלואה'],
 go_with_next=[u'דין עניני העבוט',u'דיני מצות הלואה'u'דיני תשלומי שכר שכיר בזמנו']
 ur'^(דיני מצות הלואה|דין עניני העבוט|דיני תשלומי שכר שכיר בזמנו)'
 _remove=u'םן \.\"\''
-
+perek_string=u'פרק'
 def not_blank(s):
     while " " in s:
         s = s.replace(" ","")
@@ -53,6 +53,7 @@ def parse_text():
     nc_section_box=[]
     next_goes_back=False
     goes_in_next=[]
+    header_box=[]
     for line in lines:
         if not_blank(line):
             if re.search(ur'^(הקדמה|השלמה|חתימת|חלק|פתיחה לע)',line):
@@ -74,9 +75,13 @@ def parse_text():
                     nc_section_box.append(nc_chapter_box)
                     ac_chapter_box=[]
                     nc_chapter_box=[]
+
+                
                 if re.search(ur'^(דיני מצות הלואה|דין עניני העבוט|דיני תשלומי שכר שכיר בזמנו)',line):
-                    goes_in_next.append(u'<b>'+clean_ac_line(line)+u'</b>')
-                    next_goes_back=True
+                    #ac_chapter_box.append(clean_ac_line(line))
+                    #next_goes_back=True
+                    print "WE DID GIN!", line
+                    goes_in_next.append(clean_ac_line(line))
                 elif re.search(ur'^\(\S{1,3}\)',line):
                     #print "THIS IS NC"
                     for section in re.findall(ur'\([^'+_remove+ur']+\).*?(?=\([^'+_remove+ur']+\)|$)',line):
@@ -91,17 +96,35 @@ def parse_text():
                             else:
                                 nc_chapter_box.append(clean_nc_line(section))
                 elif re.search(ur'^ובו ',line):
-                    ac_chapter_box[-1]=ac_chapter_box[-1]+u' '+clean_ac_line(line)
+                    if len(goes_in_next)>0:
+                        ac_chapter_box.append(goes_in_next.pop(0)+u'<br>'+clean_ac_line(line))
+                    if len( ac_chapter_box)>0:
+                        ac_chapter_box[-1]=ac_chapter_box[-1]+u' '+clean_ac_line(line)
+                    else:
+                        ac_chapter_box.append(clean_ac_line(line))
+                    next_goes_back=True
+                elif re.search(ur'^{} '.format(perek_string),line):
+                    if len(goes_in_next)>0:
+                        ac_chapter_box.append(goes_in_next.pop(0)+u'<br>'+clean_ac_line(line))
+                    if next_goes_back and len(ac_chapter_box)>0:
+                        ac_chapter_box[-1]=ac_chapter_box[-1]+u'<br>'+clean_ac_line(line)
+                    else:
+                        ac_chapter_box.append(clean_ac_line(line))
                     next_goes_back=True
                 else:
                     if len(goes_in_next)>0:
-                        ac_chapter_box.append(goes_in_next.pop()+u'<br>'+clean_ac_line(line))
-                    elif next_goes_back:
-                        ac_chapter_box[-1]=ac_chapter_box[-1]+u'<br>'+clean_ac_line(line)
+                        ac_chapter_box.append(goes_in_next.pop(0)+u'<br>'+clean_ac_line(line))
+                    if next_goes_back:
                         next_goes_back=False
+                        if len(ac_chapter_box)>0:
+                            ac_chapter_box[-1]=ac_chapter_box[-1]+u'<br>'+clean_ac_line(line)
+                        else:
+                            ac_chapter_box.append(clean_ac_line(line))
                     else:
                         ac_chapter_box.append(clean_ac_line(line))
             else:
+       
+                    #print "FOUNDPEREK", re.search(ur'^'+perek_string+ur' \S ?\S ?-',line).group()
                 if re.search(ur'^\(\S{1,3}\)',line):
                     #print "think is nc",line
                     for section in re.findall(ur'\([^'+_remove+ur']+\).*?(?=\([^'+_remove+ur']+\)|$)',line):
@@ -125,6 +148,9 @@ def parse_text():
     #all_nc_sections["Part I"].pop(8)
     #fix error
     #all_nc_sections[sections[2][0]]=all_nc_sections[sections[2][0]][1:]
+    
+    
+    
     for key in all_ac_sections.keys():
         if "Part" in key:
             clone=all_ac_sections[key][:]
@@ -136,16 +162,21 @@ def parse_text():
                         for match in re.findall(ur' \([^'+_remove+ur']{1,2}\) ',paragraph):
                             if u'@' not in match:
                                 new_p=new_p.replace(match,u'<i data-commentator=\"Netiv Chesed\" data-order=\"{}\"></i>'.format(getGematria(match)))
-                    all_ac_sections[key][cindex][pindex]= new_p.replace(u'+!+',u'<br>')
-        if "Introduction" in key:
+                    all_ac_sections[key][cindex][pindex]= new_p.replace(u'+!+',u'<br>').replace(u'@',u'*')
+        elif "Introduction" in key:
             clone=all_ac_sections[key][:]
             for pindex, paragraph in enumerate(clone):
                 new_p=paragraph                
                 for match in re.findall(ur'\([^'+_remove+ur']{1,2}\)',paragraph):
                     if u'@' not in match:
                         new_p=new_p.replace(match,u'<i data-commentator=\"Netiv Chesed\" data-order=\"{}\"></i>'.format(getGematria(match)))
-                all_ac_sections[key][pindex]= new_p.replace(u'+!+',u'<br>')
-    """
+                all_ac_sections[key][pindex]= new_p.replace(u'+!+',u'<br>').replace(u'@',u'*')
+        else:
+            clone=all_ac_sections[key][:]
+            for pindex, paragraph in enumerate(clone):
+                new_p=paragraph                
+                all_ac_sections[key][pindex]= new_p.replace(u'+!+',u'<br>').replace(u'@',u'*')
+    #"""
     for key in all_ac_sections.keys():
         if "Part" in key:
             for cindex, chapter in enumerate(all_ac_sections[key]):
@@ -155,13 +186,13 @@ def parse_text():
             for pindex, paragraph in enumerate(all_ac_sections[key]):
                 print key, pindex, paragraph
     0/0
-    """
+    #"""
     #0/0
     #for posting ahavat
     if False:
         for key in all_ac_sections.keys():
             if key=="Introduction":
-                continue
+                1/1
             if key=='Part I':
                 sects=[['Laws of Loans',0,6],
                     ['Laws of Pledges ',6,8],
@@ -210,11 +241,11 @@ def parse_text():
                     'text': all_ac_sections[key]
                 }
                 print "posting {} Ahavat Chesed text...".format(key)
-                post_text("Ahavat Chesed, "+key, version, weak_network=True)
-                #post_text_weak_connection("Ahavat Chesed, "+key, version)
+                #post_text("Ahavat Chesed, "+key, version, weak_network=True)
+                post_text_weak_connection("Ahavat Chesed, "+key, version)
                 #"""
     #for posting Netiv
-    if True:
+    if False:
         for key in all_nc_sections.keys():
             if "Part" not in key:
                 1/1
@@ -234,7 +265,7 @@ def parse_text():
                     ['Laws of Wages',9,11]]
                 for sect in sects:
                     if "Wages" not in sect[0]:
-                        continue
+                        #continue
                         1/1
                     sect_list=all_nc_sections[key][sect[1]:sect[2]]
                     #"""
@@ -261,8 +292,10 @@ def parse_text():
                     post_text("Netiv Chesed on Ahavat Chesed, {}".format(sect[0]), version, index_count="off", skip_links=True)
                     #post_text_weak_connection("Netiv Chesed on Ahavat Chesed, {},{}".format(key,sect[0]), version)
             else:
+                """
                 for pindex, paragraph in enumerate(all_nc_sections[key]):
                     print key, pindex, paragraph
+                """
                 print key, all_nc_sections[key]
                 version = {
                     'versionTitle': "Ahavat Chesed --  Torat Emet",
@@ -274,7 +307,7 @@ def parse_text():
                 #post_text("Ahavat Chesed, "+key, version, weak_network=True)
                 post_text_weak_connection("Netiv Chesed on Ahavat Chesed, "+key, version)
     #for linking
-    if False:
+    if True:
         for key in all_ac_sections.keys():
             if key=='Part I':
                 #continue
@@ -286,21 +319,23 @@ def parse_text():
                                 print key, cindex, pindex
                                 data_order = re.search(ur'data-order=\"\d*',match).group().split(u'"')[1]
                                 extended_part=get_part_1_sec(cindex+1)
-                                link = (
-                                        {
-                                        "refs": [
-                                                 'Netiv Chesed on Ahavat Chesed, {}, {}:{}'.format(extended_part, cindex+1,data_order),
-                                                 'Ahavat Chesed, {}, {}, {}:{}'.format(key, extended_part, cindex+1, pindex+1),
-                                                 ],
-                                        "type": "commentary",
-                                        'inline_reference': {
-                                            'data-commentator': "Netiv Chesed",
-                                            'data-order': data_order
-                                            },
-                                        "auto": True,
-                                        "generated_by": "sterling_Netiv_Chesed_linker"
-                                        })
-                                post_link(link, weak_network=True)
+                                chapter_to_post=cindex-1 if cindex>8 else cindex
+                                if cindex!=8:
+                                    link = (
+                                            {
+                                            "refs": [
+                                                     'Netiv Chesed on Ahavat Chesed, {}, {}:{}'.format(extended_part, chapter_to_post+1,data_order),
+                                                     'Ahavat Chesed, {}, {}, {}:{}'.format(key, extended_part, chapter_to_post+1, pindex+1),
+                                                     ],
+                                            "type": "commentary",
+                                            'inline_reference': {
+                                                'data-commentator': "Netiv Chesed",
+                                                'data-order': data_order
+                                                },
+                                            "auto": True,
+                                            "generated_by": "sterling_Netiv_Chesed_linker"
+                                            })
+                                    post_link(link, weak_network=True)
                                     
             elif "Intro" in key:
                 for pindex, paragraph in enumerate(all_ac_sections[key]):
@@ -466,6 +501,7 @@ def clean_ac_line(line):
     if re.search(ur'^\s*פרק',line):
         line = u'<b>'+line+u'</b>'
     line=re.sub(ur'\s+\?',u'?',line)
+    line=line.replace(u'\n',u'')
     return line
 def clean_nc_line(line):
     line = re.sub(ur'[A-Za-z]',u'',line).replace(u'\n','')
