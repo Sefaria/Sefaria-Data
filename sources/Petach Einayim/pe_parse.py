@@ -143,8 +143,11 @@ class Talmud_Tractate:
         amud_aleph_string = u"ע\"א"
         amud_bet_string = u"ע\"ב"
         for line in self.text:
+            #print line, self.en_title
             if u"@22" not in line and u"@88" not in line:
+                #print "past 147!"
                 if u"@99" in line and u"@11" in line:
+                    print 'past 149!'
                     ref_extract = re.match(ur"@99.*?@11",line).group()
                     if re.search(ur'דף .*?,',ref_extract):
                         current_daf=getGematria(re.search(ur'דף .*?,',ref_extract).group().replace(u'דף',u'').replace(u'יוד',u'י'))
@@ -154,6 +157,7 @@ class Talmud_Tractate:
                     if u", ב]" in ref_extract or amud_bet_string in line:
                         current_amud='b'
                 if u"@99" in line and u"@11" not in line:
+                    #print 'past 159!'
                     if u"ע\"ב" in line:
                         current_amud="b"
                     else:
@@ -173,20 +177,22 @@ class Talmud_Tractate:
                     #print "CURRENT DAF: ",current_daf
                     #print "CURRENT AMUD", current_amud
                     #print "THEY SAY", get_page(current_daf,current_amud)+2
-                    if self.version==2:
+                    if self.version == 'NEW' and u'@23' not in line and len(final_list[get_page(current_daf,current_amud)+1])>0:
+                        final_list[get_page(current_daf,current_amud)+1][-1]+=u'<br>'+fix_talmud_markers(line, self.version).strip()
+                    elif self.version==2:
                         #for version 2 (file 2), we combine not-dh lines with previous:
                         if u'@23' not in line and len(final_list[get_page(current_daf,current_amud)+1])>0:
                             final_list[get_page(current_daf,current_amud)+1][-1]+=u'<br>'+fix_talmud_markers(line, self.version).strip()
                         else:
                             final_list[get_page(current_daf,current_amud)+1].append(fix_talmud_markers(line, self.version).strip())
-                    else:   
+                    else:
                         final_list[get_page(current_daf,current_amud)+1].append(fix_talmud_markers(line, self.version).strip())
         #final_list.insert(0,[])
-        """
+        
         for aindex, amud in enumerate(final_list):
             for cindex, comment in enumerate(amud):
                 print self.en_title, len(final_list), aindex, cindex, comment
-        """
+        
         version = {
             'versionTitle': 'Petach Einayim, Jerusalem 1959',
             'versionSource': 'http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001157028',
@@ -358,6 +364,45 @@ def get_tractate_texts():
                 return_list["Mishnah"][current_tractate]["Text"]=tractate_box
                 return_list["Mishnah"][current_tractate]["Version"]= 1 if '1' in pe_file else 2
     return return_list
+#needed to redo this since the file got reparsed...
+def get_tractate_texts_v2():
+    return_list = {"Mishnah":{},"Talmud":{}}
+    with open('files/Petach Enayim 1.txt') as myfile:
+        lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
+    tractate_box = []
+    current_tractate=u"BLANK_ENTRY"
+    parse_here = True
+    for line in lines:
+        if u"START" in line:
+            parse_here=True
+        elif u"SKIP" in line:
+            parse_here=False
+        elif parse_here:
+            if u"@00" in line:
+                if len(tractate_box)>0:
+                    #sort by Mishna/Talmud
+                    if current_tractate[5:] in talmud_titles.keys():
+                        return_list["Talmud"][current_tractate[5:]]={}
+                        return_list["Talmud"][current_tractate[5:]]["Text"]=tractate_box
+                        return_list["Talmud"][current_tractate[5:]]["Version"]= 'NEW'
+                    elif u"BLANK" not in current_tractate:
+                        return_list["Mishnah"][current_tractate]={}
+                        return_list["Mishnah"][current_tractate]["Text"]=tractate_box
+                        return_list["Mishnah"][current_tractate]["Version"]= 'NEW'
+                        
+                current_tractate=highest_fuzz(mishnah_titles.keys(), line)
+                tractate_box=[]
+            else:
+                tractate_box.append(line)
+    if current_tractate[5:] in talmud_titles.keys():
+        return_list["Talmud"][current_tractate[5:]]={}
+        return_list["Talmud"][current_tractate[5:]]["Text"]=tractate_box
+        return_list["Talmud"][current_tractate[5:]]["Version"]= 'NEW'
+    elif u"BLANK" not in current_tractate:
+        return_list["Mishnah"][current_tractate]={}
+        return_list["Mishnah"][current_tractate]["Text"]=tractate_box
+        return_list["Mishnah"][current_tractate]["Version"]= 'NEW'
+    return return_list
 def post_mishnah_categories():
     add_category('Petach Einayim', ["Mishnah","Commentary",'Petach Einayim'],u'פתח עינים')
     for seder in seders.keys():
@@ -444,6 +489,19 @@ def fix_mishnah_markers(s, version):
     return s
 def fix_talmud_markers(s, version):
     #s= s.replace(u"@11",u"<b>").replace(u"@33",u"</b>")
+    begin_bold=[u'@11',u'@66']
+    end_bold=[u'@33',u'@23',u'@77']
+    for mark in begin_bold:
+        s=s.replace(mark, u'<b>')
+    for mark in end_bold:
+        s=s.replace(mark, u'</b>')
+    """
+    if u'.' not in s[:s.index(u'</b>')+1]:
+        s=s.replace(u'</b>',u'.</b>')
+    """
+    return re.sub(ur"@\d{1,3}",u"",s)
+    
+    """
     splits={}
     if re.match(ur"@99\[.*?\]",s):
         s=s.replace(re.match(ur"@99\[.*?\]",s).group(),u'')
@@ -477,6 +535,7 @@ def fix_talmud_markers(s, version):
     threethree_split = s.split(u"@33")
     
     return re.sub(ur"@\d{1,3}",u"",s)
+    """
 def pe_tos_dh_extract(s):
     vechu = u'וכו'
     cosvu = u'כתבו'
@@ -535,7 +594,8 @@ def get_daf_en(num):
     else:
         num = num / 2 + 1
         return str(num)+"b"               
-tractate_texts=get_tractate_texts()
+#tractate_texts=get_tractate_texts()
+tractate_texts=get_tractate_texts_v2()
 posting_term = False
 if posting_term:
     post_pe_term()
@@ -584,9 +644,9 @@ did_one = False
 past_last=False
 for key in tractate_texts["Talmud"]:
     t_o = Talmud_Tractate(key, tractate_texts["Talmud"][key])
-    if "Tamid" in t_o.en_title:
+    if "Kidd" in t_o.en_title:
         past_last=True
-    if t_o.version==2 and not did_one:# and past_last:# and not did_one:
+    if past_last:#t_o.version==2 and not did_one:# and past_last:# and not did_one:
         admin_links.append(SEFARIA_SERVER+"/admin/reset/Petach_Einayim_on_"+t_o.en_title.replace(u" ",u"_"))
         site_links.append(SEFARIA_SERVER+"/Petach_Einayim_on_"+t_o.en_title.replace(u" ",u"_"))
         if posting_indices:
