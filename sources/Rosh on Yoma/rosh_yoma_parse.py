@@ -135,10 +135,10 @@ def post_rosh_text():
                     "auto": True,
                     "generated_by": "sterling_Rosh_Yoma_linker"
                     })
-            post_link(link_post, weak_network=True)
+            #post_link(link_post, weak_network=True)
     if True:
         link_perek_netanels(halacha_simanim[-1],'default')
-        #link_perek_netanels(avodah_box,'')
+        link_perek_netanels(avodah_box,'')
 def link_perek_netanels(perek_text, section):
     for sindex, siman in enumerate(perek_text):
         for pindex, paragraph in enumerate(siman):
@@ -245,11 +245,11 @@ def kn_parse():
     for perek_count in siman_counts[0]:
         avoda_final.append([avoda_box[so_far:so_far+perek_count]][0])
         so_far+=perek_count
-    #"""
+    """
     for sindex, siman in enumerate(avoda_final):
         for cindex, comment in enumerate(siman):
             print sindex, cindex, comment
-    #"""
+    """
     so_far=0
     for perek_count in siman_counts[1]:
         shmini_final.append([kn_box[so_far:so_far+perek_count]][0])
