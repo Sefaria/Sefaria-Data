@@ -364,9 +364,9 @@ def parse_mlt_txts(posting=True):
 def post_notes_and_comments_index():
     # create index record
     record = SchemaNode()
-    record.add_title('Notes and Corrections on Midrash Lekach Tov', 'en', primary=True, )
-    record.add_title(u'הערות ותיקונים על מדרש לקח טוב', 'he', primary=True, )
-    record.key = 'Notes and Corrections on Midrash Lekach Tov'
+    record.add_title('Notes and Corrections on Midrash Lekach Tov on Torah', 'en', primary=True, )
+    record.add_title(u'הערות ותיקונים על מדרש לקח טוב על תורה', 'he', primary=True, )
+    record.key = 'Notes and Corrections on Midrash Lekach Tov on Torah'
 
     en_sefer_names = ["Genesis","Exodus"]
     he_sefer_names =  [u"בראשית",u"שמות"]
@@ -381,12 +381,13 @@ def post_notes_and_comments_index():
         record.append(sefer_node)
 
     index = {
-        "title":'Notes and Corrections on Midrash Lekach Tov',
+        "title":'Notes and Corrections on Midrash Lekach Tov on Torah',
         "base_text_titles": [
            "Midrash Lekach Tov on Torah"
         ],
         "dependence": "Commentary",
-        "categories":['Midrash', 'Aggadic Midrash'],
+        "categories":['Midrash', 'Aggadic Midrash',"Midrash Lekach Tov"],
+        "collective_title": "Notes and Corrections on Midrash Lekach Tov",
         "schema": record.serialize()
     }
     post_index(index,weak_network=True)
@@ -405,9 +406,9 @@ def parse_notes_and_comments(posting=True):
                 sefer_index.append([])
             current_perek=0
             current_ref_num=0
-                with open("notes_csv_files/"+_file, 'rb') as f:
-                    reader = csv.reader(f)
-                    for row in reader:
+            with open("notes_csv_files/"+_file, 'rb') as f:
+                reader = csv.reader(f)
+                for row in reader:
                     if not_blank(row[2].decode('utf8','replace')):
                         if len(row[0])>0:
                             current_perek=getGematria(row[0])
@@ -426,7 +427,7 @@ def parse_notes_and_comments(posting=True):
                             overriding=True
                         else:
                             current_ref_num=fix_ocr_errs(current_ref_num,getGematria(row[1]))
-                        
+                    
                         if len(sefer_index[current_perek-1])>current_ref_num-1:# and current_perek!=6:
                             print "PEREK LEN", len(sefer_index[current_perek-1])
                             print current_ref_num
@@ -449,14 +450,14 @@ def parse_notes_and_comments(posting=True):
                 'text': sefer_index
             }
             if posting:
-                post_text_weak_connection('Notes and Corrections on Midrash Lekach Tov, '+sefer, version)
+                post_text_weak_connection('Notes and Corrections on Midrash Lekach Tov on Torah, '+sefer, version)
     return return_list
 def post_biur_index():
     # create index record
     record = SchemaNode()
-    record.add_title('Beur HaRe\'em on Midrash Lekach Tov', 'en', primary=True, )
-    record.add_title(u'באור הרא"ם על מדרש לקח טוב', 'he', primary=True, )
-    record.key = 'Beur HaRe\'em on Midrash Lekach Tov'
+    record.add_title('Beur HaRe\'em on Midrash Lekach Tov on Torah', 'en', primary=True, )
+    record.add_title(u'באור הרא"ם על מדרש לקח טוב על תורה', 'he', primary=True, )
+    record.key = 'Beur HaRe\'em on Midrash Lekach Tov on Torah'
 
     en_sefer_names = ["Leviticus","Numbers","Deuteronomy"]
     he_sefer_names =  [u"ויקרא",u"במדבר",u"דברים"]
@@ -477,12 +478,13 @@ def post_biur_index():
         record.append(sefer_node)
 
     index = {
-        "title":'Beur HaRe\'em on Midrash Lekach Tov',
+        "title":'Beur HaRe\'em on Midrash Lekach Tov on Torah',
         "base_text_titles": [
            "Midrash Lekach Tov on Torah"
         ],
         "dependence": "Commentary",
-        "categories":['Midrash', 'Aggadic Midrash'],
+        "collective_title": "Beur HaRe\'em on Midrash Lekach Tov",
+        "categories":['Midrash', 'Aggadic Midrash',"Midrash Lekach Tov"],
         "schema": record.serialize()
     }
     post_index(index,weak_network=True)
@@ -547,7 +549,7 @@ def parse_beur_reim(posting=True):
                     'text': parsha
                 }
                 if posting:
-                    post_text_weak_connection('Beur HaRe\'em on Midrash Lekach Tov, {}, {}'.format(sefer, eng_parshiot_dict[sefer][pindex]), version)
+                    post_text_weak_connection('Beur HaRe\'em on Midrash Lekach Tov on Torah, {}, {}'.format(sefer, eng_parshiot_dict[sefer][pindex]), version)
     return return_list
 def get_intro():
     returning=[]
@@ -713,8 +715,8 @@ def check_beur():
 
 #post_lekach_tov_index()
 post_notes_and_comments_index()
-parse_notes_and_comments()
-#post_biur_index()
+#parse_notes_and_comments()
+post_biur_index()
 #parse_beur_reim()
 #parse_mlt_csvs(False)
 #parse_mlt_txts()

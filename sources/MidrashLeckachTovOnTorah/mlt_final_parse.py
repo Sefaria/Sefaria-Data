@@ -169,6 +169,7 @@ def post_lekach_tov_index():
             #print parsha['sharedTitle']
             parsha_node = ArrayMapNode()
             parsha_node.wholeRef = "Midrash Lekach Tov on Torah, {}".format(parsha['wholeRef'])
+            parsha_node.includeSections = True
             parsha_node.key = parsha['sharedTitle']
             parsha_node.depth=0
             parsha_node.add_shared_term(parsha['sharedTitle'])
@@ -180,8 +181,8 @@ def post_lekach_tov_index():
         "base_text_titles": [
            "Genesis","Exodus","Leviticus","Numbers","Deuteronomy"
         ],
+        "dependence": "Midrash",
         "collective_title": "Midrash Lekach Tov",
-        "dependence": "Commentary",
         "alt_structs": {"Parasha": parsha_nodes.serialize()},
         "categories": ["Midrash","Aggadic Midrash","Midrash Lekach Tov"],
         "schema": record.serialize()
@@ -200,7 +201,7 @@ def link_nc():
                             link = (
                                     {
                                     "refs": [
-                                             'Notes and Corrections on Midrash Lekach Tov, {}, {}:{}'.format(sefer_name,cindex+1,data_order),
+                                             'Notes and Corrections on Midrash Lekach Tov on Torah, {}, {}:{}'.format(sefer_name,cindex+1,data_order),
                                              'Midrash Lekach Tov on Torah, {}, {}:{}:{}'.format(sefer_name,cindex+1,vindex+1,mindex+1),
                                              ],
                                     "type": "commentary",
@@ -226,7 +227,7 @@ def link_nc():
                             link = (
                                     {
                                     "refs": [
-                                             'Beur HaRe\'em on Midrash Lekach Tov, {}, {}, {}'.format(sefer_name,eng_parshiot_dict[sefer_name][parsha_count],data_order),
+                                             'Beur HaRe\'em on Midrash Lekach Tov on Torah, {}, {}, {}'.format(sefer_name,eng_parshiot_dict[sefer_name][parsha_count],data_order),
                                              'Midrash Lekach Tov on Torah, {}, {}:{}:{}'.format(sefer_name,cindex+1,vindex+1,mindex+1),
                                              ],
                                     "type": "commentary",
@@ -257,6 +258,24 @@ def link_mlt_to_text():
                                     "generated_by": "sterling_Midrash_Lekach_Tov_linker"
                                     })
                             post_link(link, weak_network=True)
+def post_beur_term():
+    term_obj = {
+        "name": 'Beur HaRe\'em on Midrash Lekach Tov',
+        "scheme": "commentary_works",
+        "titles": [
+            {
+                "lang": "en",
+                "text": 'Beur HaRe\'em on Midrash Lekach Tov',
+                "primary": True
+            },
+            {
+                "lang": "he",
+                "text": u'באור הרא"ם על מדרש לקח טוב',
+                "primary": True
+            }
+        ]
+    }
+    post_term(term_obj)
 def parse_new_notes():
     nac_files=['Genesis_notes_and_comments_edited - w greek.tsv','Exodus_notes_and_comments_edited - w greek.tsv']
     for index, _file in enumerate(nac_files):
@@ -287,11 +306,11 @@ def parse_new_notes():
             'language': 'he',
             'text': sefer_index
         }
-        post_text_weak_connection('Notes and Corrections on Midrash Lekach Tov, '+sefer, version)
+        post_text_weak_connection('Notes and Corrections on Midrash Lekach Tov on Torah, '+sefer, version)
                 
-                            
-#post_lekach_tov_index()
+#post_beur_term()                 
+post_lekach_tov_index()
 #post_lekach_tov_text()
 #parse_new_notes()
 #link_nc()
-link_mlt_to_text()    
+#link_mlt_to_text()    
