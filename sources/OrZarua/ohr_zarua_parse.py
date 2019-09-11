@@ -23,6 +23,23 @@ sub_sections=[
     [['Piskei Sanhedrin',u'פסקי סנהדרין'],['Piskei Avodah Zarah',u'פסקי עבודה זרה'],['Piskei Shevuot',u'פסקי שבועות']]
 ]
 archaot_header=[u'<b>הלכות ערכאות</b>']
+vol_i_and_ii_link_table={"Berakhot":['Volume I, 1-109','Volume I, 117','Volume I, 127-212'],
+                        "Niddah":['Volume I, 118-126', 'Volume I 338-366'],
+                        "Mishnah Challah":['Volume I, 214-251'],
+                        "Mishnah Kilayim":['Volume I, 252-307'],
+                        "Mishnah Orlah":['Volume I, 308-325'],
+                        "Chullin":['Volume I, 367-479'],
+                        "Bekhorot":['Volume I, 480-530'],
+                        "Menachot":['Volume I, 545-569'],
+                        "Shabbat":['Volume II, 1-20', 'Volume II, 28-82','Volume II 98-108',"Volume II, 321-327"],
+                        "Pesachim":['Volume II, 21-27'],
+                        "Eruvin":["Volume II, 110-216"],
+                        "Rosh Hashanah":['Volume II, 257-271'],
+                        "Yoma":["Volume II, 277-280"],
+                        "Sukkah":["Volume II, 282-320"],
+                        "Beitzah":["Volume II, 329-366"],
+                        "Megillah":["Volume II, 367-397"],
+                        "Taanit":["Volume II, 398-416"]}
 
 with open('Or_Zarua_Titles_-_trans_table.csv', 'r') as datafile:
     datareader = csv.reader(datafile)#, delimiter=';')
@@ -239,6 +256,8 @@ def oz_post_chelek_1():
                         'text': text_dict[title]
                     }
                     post_text_weak_connection('Ohr Zarua, Volume I, '+title, version)
+                    post_text('Ohr Zarua, Volume I, '+title, version,weak_network=True, skip_links=True, index_count="on")
+                    
                 else:
                     version = {
                         'versionTitle': 'Ohr Zarua, Zhytomyr, 1862',
@@ -247,6 +266,8 @@ def oz_post_chelek_1():
                         'text': text_dict[title]
                     }
                     post_text_weak_connection('Ohr Zarua, Volume I', version)
+                    post_text('Ohr Zarua, Volume I', version,weak_network=True, skip_links=True, index_count="on")
+                    
 def oz_post_chelek_2():
     with open('files/אור זרוע חלק ב מוכן.txt') as myfile:
         lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
@@ -290,6 +311,7 @@ def oz_post_chelek_2():
     for sindex, siman in enumerate(simanim):
         for pindex, paragraph in enumerate(siman):
             print sindex, pindex, paragraph
+    0/0
     """
     if not make_toc_table and not trans_table:
         print "posting volume II..."
@@ -299,7 +321,9 @@ def oz_post_chelek_2():
             'language': 'he',
             'text': simanim
         }
-        post_text_weak_connection('Ohr Zarua, Volume II', version)
+        #post_text_weak_connection('Ohr Zarua, Volume II', version)
+        post_text('Ohr Zarua, Volume II', version,weak_network=True, skip_links=True, index_count="on")
+        
 def oz_post_chelek_3():
     with open('files/אור זרוע חלק ג מוכן.txt') as myfile:
         lines = list(map(lambda(x): x.decode('utf','replace'), myfile.readlines()))
@@ -342,12 +366,12 @@ def oz_post_chelek_3():
     #missing two simanim in Bava Batra
     text_dict['Piskei Bava Batra'].insert(255, [])
     text_dict['Piskei Bava Batra'].insert(255, [])
-    """
+    #"""
     for sindex, siman in enumerate(text_dict['Piskei Bava Batra']):
         for pindex, paragraph in enumerate(siman):
             print sindex, pindex, paragraph
     1/0
-    """
+    #"""
     for title in text_dict.keys():
         print "posting "+title
         if True:#len(text_dict[title])>0 and "Kam" in title:
@@ -379,7 +403,7 @@ def oz_post_chelek_4():
             past_start=True         
         elif past_start and u'SKIP' not in line:
             if u'@00' in line:
-                if len(siman_box)>0:
+                if u'?' not in line and len(siman_box)>0:
                     text_dict[current_section].append(siman_box)
                     siman_box=[]
             else:
@@ -396,6 +420,9 @@ def oz_post_chelek_4():
                         line=for_next_paragraph.pop(0)+u'<br>'+line
                     siman_box.append(line)
     text_dict[current_section].append(siman_box)
+    
+    #fix align issue
+    text_dict['Piskei Avodah Zarah'].insert(144,[])
     
     #"""
     
@@ -567,8 +594,31 @@ def generate_range_tables():
             print key,ref[0],ref[1],ref[2]
     """
     return ranges
-    
-make_toc_table=True
+def link_first_two_volumes():
+    for mesechet in vol_i_and_ii_link_table.keys():
+        if True:
+            f = open('Ohr Zarua {} links.tsv'.format(mesechet),'w')
+            f.write('OZ location\tTalmud Location\tDH Text\tOZ Full Text\tfull talmud line\n')
+            f.close()
+            with open('Ohr Zarua {} links.tsv'.format(mesechet),'a') as mf:
+                for oz_range in vol_i_and_ii_link_table[mesechet]:
+                    tractate_chunk=TextChunk(Ref(mesechet),'he')
+                    ohr_chunk = TextChunk(Ref('Ohr Zarua, {}'.format(oz_range)),'he')
+                    print "LINKING {} TO {}".format(mesechet, oz_range)
+                    matches = match_ref(tractate_chunk,ohr_chunk,
+                        base_tokenizer,dh_extract_method=dh_extract_method,rashi_filter=_filter,verbose=True,boundaryFlexibility=1000000, word_threshold=0.1,char_threshold=0.2)
+                    if "comment_refs" in matches:
+                        for link_index, (base, comment) in enumerate(zip(matches["matches"],matches["comment_refs"])):
+                            for key in matches.keys():
+                                print key
+                            print "B",base,"C", comment
+                            if base:
+                                mf.write(u'{}\t{}\t{}\t{}\t{}\n'.format(comment,base, dh_extract_method(TextChunk(comment,'he').text),TextChunk(comment,'he').text, TextChunk(base,'he').text).encode('utf','replace'))
+                            else:
+                                mf.write(u'{}\tNULL\t{}\t{}\tNULL\n'.format(comment, dh_extract_method(TextChunk(comment,'he').text),TextChunk(comment,'he').text).encode('utf','replace'))
+                                
+
+make_toc_table=False
 trans_table=False
 if make_toc_table:
     f = open('alt_toc_table.csv','w')
@@ -577,8 +627,9 @@ if trans_table:
     f = open('trans_table.csv','w')
     f.close()
 #oz_post_index()
-oz_post_chelek_1()
-oz_post_chelek_2()
+#oz_post_chelek_1()
+#oz_post_chelek_2()
+link_first_two_volumes()
 #finish_file()
 #oz_post_chelek_3()
 #oz_post_chelek_4()
@@ -591,4 +642,16 @@ datareader = csv.reader(datafile)#, delimiter=';')
 alt_titles = []
 for row in datareader:
     alt_titles.append(map(lambda(x): x.decode('utf','replace'), row))
+
+                                link = (
+                                        {
+                                        "refs": [
+                                                 base.normal(),
+                                                 comment.normal(),
+                                                 ],
+                                        "type": "commentary",
+                                        "auto": True,
+                                        "generated_by": "sterling_ohrzarua_linker"
+                                        })
+                                #post_link(link, weak_network=True)
 """
