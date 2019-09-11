@@ -37,6 +37,8 @@ for cat in sedarim:
             tractates_by_seder[cat].append(title)
         if "Pirkei" in title:
             tractates_by_seder[cat].append("Mishnah Avot")
+#nashim has different orrder than convention in rokeach
+tractates_by_seder["Seder Nashim"]=["Mishnah Yevamot","Mishnah Ketubot","Mishnah Kiddushin","Mishnah Gittin","Mishnah Nedarim","Mishnah Nazir","Mishnah Sotah"]
 intro_titles=[['Introduction',u'הקדמה'],['Preface',u'פתיחה לשיתא סדרי משנה']]
 def url_to_soup(url):
     chapter_buf = cStringIO.StringIO()
@@ -94,6 +96,7 @@ def post_rokeach_index():
         seder_node.add_title(seder, 'en', primary=True)
         seder_node.add_title(library.get_term(seder).get_titles()[1], 'he', primary=True)
         seder_node.key = seder
+        print seder
         for tractate in tractates_by_seder[seder]:
             if library.get_index(tractate).get_title('he') in tractate_list:
                 tractate_node = JaggedArrayNode()
@@ -106,7 +109,6 @@ def post_rokeach_index():
                 seder_node.append(tractate_node)
             else:
                 1/1
-                #print "SKIPPED", tractate
         record.append(seder_node)
     record.validate()
     
@@ -186,5 +188,5 @@ def post_introductions():
     post_text_weak_connection("Maaseh Rokeach on Mishnah, Preface", version)
 
 #post_rokeach_index()  
-#post_minshna_comments()
+post_minshna_comments()
 post_introductions()
