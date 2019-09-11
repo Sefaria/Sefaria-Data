@@ -168,24 +168,40 @@ def post_eimek_index():
     record.add_title('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon', 'en', primary=True, )
     record.add_title(u'העמק שאלה על שאילתות דרב אחאי גאון', 'he', primary=True, )
     record.key = 'Haamek Sheilah on Sheiltot d\'Rav Achai Gaon'
-
+    
+    kidmat_sections= [['Part I', u'קדמת הראשון'],['Part II', u'קדמת השני'] ,['Part III', u'קדמת השלישי']]
     #add nodes for introductions
-    intro_node = JaggedArrayNode()
+    intro_node = SchemaNode()
     intro_node.add_title("Kidmat HaEmek", 'en', primary = True)
     intro_node.add_title(u'קדמת העמק', 'he', primary = True)
     intro_node.key = "Kidmat HaEmek"
-    intro_node.depth = 2
-    intro_node.addressTypes = ['Integer','Integer']
-    intro_node.sectionNames = ['Chapter','Paragraph']
+    for section in kidmat_sections:
+        section_node = JaggedArrayNode()
+        section_node.add_title(section[0], 'en', primary = True)
+        section_node.add_title(section[1], 'he', primary = True)
+        section_node.key = section[0]
+        section_node.depth = 2
+        section_node.addressTypes = ['Integer','Integer']
+        section_node.sectionNames = ['Chapter','Paragraph']
+        intro_node.append(section_node)
+
     record.append(intro_node)
     
-    intro_node = JaggedArrayNode()
+    petach_sections= [['Part I', u'פתח הראשון'],['Part II', u'פתח השני'] ,['Part III', u'פתח השלישי']]
+    
+    intro_node = SchemaNode()
     intro_node.add_title("Petach HaEmek", 'en', primary = True)
     intro_node.add_title(u'פתח העמק', 'he', primary = True)
     intro_node.key = "Petach HaEmek"
-    intro_node.depth = 2
-    intro_node.addressTypes = ['Integer','Integer']
-    intro_node.sectionNames = ['Chapter','Paragraph']
+    for section in petach_sections:
+        section_node = JaggedArrayNode()
+        section_node.add_title(section[0], 'en', primary = True)
+        section_node.add_title(section[1], 'he', primary = True)
+        section_node.key = section[0]
+        section_node.depth = 2
+        section_node.addressTypes = ['Integer','Integer']
+        section_node.sectionNames = ['Chapter','Paragraph']
+        intro_node.append(section_node)
     record.append(intro_node)
     
     shetila_nodes = JaggedArrayNode()
@@ -423,7 +439,7 @@ def post_eimek_intros():
         'language': 'he',
         'text': kidmat_box
     }
-    #post_text('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon, Kidmat HaEmek', version,weak_network=True)#, skip_links=True, index_count="on")
+    post_text('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon, Kidmat HaEmek, Part I', version,weak_network=True)#, skip_links=True, index_count="on")
     #post_text_weak_connection('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon', version)#,weak_network=True)#, skip_links=True,
     
     version = {
@@ -432,7 +448,7 @@ def post_eimek_intros():
         'language': 'he',
         'text': petach_box
     }
-    #post_text('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon, Petach HaEmek', version,weak_network=True)#, skip_links=True, index_count="on")
+    post_text('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon, Petach HaEmek, Part I', version,weak_network=True)#, skip_links=True, index_count="on")
     #post_text_weak_connection('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon, Petach HaEmek', version)#,weak_network=True)#, skip_links=True,
 def post_bereshit_eimek_intro():
     with open('files/בראשית/שאילתות הקדמת העמק שאלה.txt') as myfile:
@@ -462,7 +478,7 @@ def post_bereshit_eimek_intro():
         'language': 'he',
         'text': hakdama_box
     }
-    post_text_weak_connection('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon, Kidmat HaEmek', version)#,weak_network=True)#, skip_links=True,
+    post_text_weak_connection('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon, Kidmat HaEmek, Part I', version) #,weak_network=True)#, skip_links=True,
 
 def post_vayikra_eimek_intro():    
     with open('files/ויקרא/שאילתות עמק השאלה ויקרא.txt') as myfile:
@@ -500,7 +516,7 @@ def post_vayikra_eimek_intro():
         'language': 'he',
         'text': kidmat_box
     }
-    post_text_weak_connection('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon, Kidmat HaEmek', version)
+    post_text_weak_connection('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon, Kidmat HaEmek, Part I', version)
     
     version = {
         'versionTitle': 'Sheiltot d\'Rav Achai Gaon, Kidmat HaEmek, volume II, 1861-1867',
@@ -508,7 +524,7 @@ def post_vayikra_eimek_intro():
         'language': 'he',
         'text': petach_box
     }
-    post_text_weak_connection('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon, Petach HaEmek', version)
+    post_text_weak_connection('Haamek Sheilah on Sheiltot d\'Rav Achai Gaon, Petach HaEmek, Part I', version)
     
             
 
@@ -768,15 +784,15 @@ def post_sra_text():
 #post_sheilta_term()
 
 #post_sra_index()
-post_sra_text()
+#post_sra_text()
 
 #post_eimek_term()
 #post_eimek_index()
 #post_bereshit_eimek_intro()
 #post_vayikra_eimek_intro()
 #post_eimek_intros()
-#post_eimek_text()
-#link_eimek_text()
+post_eimek_text()
+link_eimek_text()
 
 #post_shalom_term()
 #post_shalom_index()
