@@ -179,7 +179,7 @@ def post_malbim_text(linking=False):
                         elif len(sifra_paragraph_link_list)>0:
                             sifra_paragraph_link_list.append(sifra_paragraph_link_list[-1])
                         link_box=[]
-                    siman_box.append(remove_extra_spaces(text))
+                    siman_box.append(remove_extra_spaces(text.replace(u'\u2003',u'').replace(u'\xa0 ',u'')))
             else:
                 for match in re.findall(ur'\[[א-נ]{1,3}\]',text):
                     link_box.append(getGematria(match))
@@ -315,5 +315,5 @@ def extract_sifra_ref(s):
 #post_malbim_index()
 #make_malbim_files()
 #post_malbim_index()
-#post_malbim_text()
-post_malbim_text(True)
+post_malbim_text()
+#post_malbim_text(True)
