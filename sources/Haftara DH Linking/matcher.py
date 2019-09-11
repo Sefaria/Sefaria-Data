@@ -7,6 +7,8 @@ from sefaria.system.database import db
 from sources.functions import *
 import json
 import re
+from sefaria.export import import_versions_from_stream
+#result = import_versions_from_stream(open("nachal.csv"), [1], 1)
 with open("parashot-haftarot.json") as f:
     parasha_to_haftara = json.load(f)
 
@@ -28,8 +30,23 @@ def dh(str):
         result = u" ".join(str.split()[0:8])
     return result.strip()
 
+def convertHolidays(str):
+    str = str.replace("Rosh Hashanah", "Rosh Hashana")
+    if "Day of" in str:
+        str = str.replace("Day of ", "")
+        str = str.replace("First", "I").replace("Second", "II").replace("Seventh", "VII").replace("Eighth", "VIII")
+        str = u" ".join(str.split()[1:] + str.split()[0:1])
+    elif "Haftarah for Shabbat Chol HaMoed" in str:
+        str = str.replace("Haftarah for Shabbat Chol HaMoed ", "")
+        str += " Shabbat Chol haMoed"
+    elif str == "Haftarah for Shemini Atzeret":
+        str = "Shmini Atzeret"
+    elif str == "Haftarah for Yom Kippur":
+        str = "Yom Kippur"
+    return str
 
-titles = ["Nachal Sorek", "Tzaverei Shalal"]
+
+titles = ["Nachal Sorek"]#, "Tzaverei Shalal"]
 links = {"Nachal Sorek": [], "Tzaverei Shalal": []}
 for title in titles:
     all_refs = library.get_index(title).all_section_refs() if title == "Nachal Sorek" else library.get_index(title).all_segment_refs()
@@ -39,6 +56,9 @@ for title in titles:
         haftarah_name = ref.normal().replace("Haftarah of ", "").replace("Haftarah for the ", "")
         haftarah_name = haftarah_name.replace("{}, ".format(title), "")
         haftarah_name = re.sub(" [\:\d]+$", "", haftarah_name)
+        haftarah_name = convertHolidays(haftarah_name)
+        haftarah_name = haftarah_name.replace("Matot Masei", "Matot-Masei")
+        haftarah_name = haftarah_name.replace("Lech Lecha", "Lech-Lecha").replace("Achrei Mot Kedoshim", u'Achrei Mot-Kedoshim')
         try:
             haftarah_dict = parasha_to_haftara[haftarah_name]
         except KeyError as e:

@@ -1,6 +1,6 @@
 import django
 django.setup()
-from sources.functions import getGematria, headers
+from sources.functions import *
 from sefaria.model import *
 import requests
 from bs4 import BeautifulSoup
@@ -30,12 +30,21 @@ for node in nodes:
                 intro = element.text
             else:
                 if intro:
-                    page_dict[curr_daf] += intro + "\n"
+                    page_dict[curr_daf].append(intro)
+                    #page_dict[curr_daf] += intro + "\n"
                     intro = ""
-                page_dict[curr_daf] += element.text + "\n"
+                page_dict[curr_daf].append(element.text)
         elif element.name.startswith("h"):
             curr_daf = getGematria(element.contents[1].text)
-            page_dict[curr_daf] = ""
+            page_dict[curr_daf] = []
+page_dict = convertDictToArray(page_dict)
+send_text = {
+    "text": page_dict,
+    "language": "he",
+    "versionTitle": "Wikisource",
+    "versionSource": "https://he.wikisource.org/wiki/%D7%9E%D7%A2%D7%A9%D7%94_%D7%A8%D7%91)"
+}
+post_text("Maaseh Rav", send_text)
 
 
 

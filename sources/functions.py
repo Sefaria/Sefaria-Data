@@ -781,7 +781,7 @@ def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract
     matches = match_ref(base, comments, base_tokenizer=base_tokenizer, dh_extract_method=dh_extract_method)["matches"]
     for n, match in enumerate(matches):
         if match:
-            curr_comm_ref = "{}:{}".format(comm_ref, n+1)
+            curr_comm_ref = "{} {}".format(comm_ref, n+1)
             curr_base_ref = match.normal()
             new_link = {"refs": [curr_comm_ref, curr_base_ref], "generated_by": generated_by_str,
                         "type": "Commentary", "auto": True}
