@@ -1197,6 +1197,8 @@ def intersect_list_string(title_list, string, ref_opt=False):
     best = (u'', -1)
     for title in title_list:
         intersection_size = intersect_2_strings(title, string, combine_single_letters=True)
+        if ref_opt and intersection_size == -100:
+            intersection_size = 1
         if intersection_size:
             if intersection_size > best[1]:
                 best = (title, intersection_size)
@@ -1266,7 +1268,7 @@ def intersect_2_strings(title, raw, combine_single_letters=True):
          return len(intersection)
     elif good_matchs:
         return len(good_matchs)-0.5
-    return -1
+    return -100
 
 
 def sublists(a, b):

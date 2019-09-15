@@ -90,7 +90,7 @@ class Test_Source_methods(object):
             input_list.append((e['raw_text'], e['author'], e['ref'], e['assert_ref']))
         return input_list
 
-    @pytest.mark.parametrize('raw_text, author, sefaria_ref, assert_ref', organize_test_input_list(dict_input, dict_input, [u'משנה תורה', u'תלמוד ירושלמי'], []))
+    @pytest.mark.parametrize('raw_text, author, sefaria_ref, assert_ref', organize_test_input_list(dict_input, dict_input, [u'ספרי'], []))
     def test_all(self, raw_text, author, sefaria_ref, assert_ref):
         r = Source(raw_text, author).ref
         if assert_ref:
@@ -259,7 +259,15 @@ class Test_Sham_Parsing(object):
         ref = Ref(u'שמות כ')
         # parser = Parser()
         table = Parser.perek_parasha_table()
-        assert convert_perk_parasha(ref, table) == u'יתרו'
+        assert convert_perk_parasha(ref, table) == u'פרשת יתרו'
+        ref = Ref(u'דברים יז ה')
+        # parser = Parser()
+        table = Parser.perek_parasha_table()
+        assert convert_perk_parasha(ref, table) == u'פרשת שופטים'
+        ref = Ref(u'ויקרא א ג')
+        # parser = Parser()
+        table = Parser.perek_parasha_table()
+        assert convert_perk_parasha(ref, table) == u'פרשת ויקרא'
 
     def test_dh_matcher(self):
         from data_utilities.dibur_hamatchil_matcher import match_ref
