@@ -156,7 +156,7 @@ def pull_tile(tile_data, attempt=0):
 
     for _ in range(10):
         try:
-            response = requests.get(url, headers=headers, stream=True, timeout=5)
+            response = requests.get(url, headers=headers, stream=True, timeout=2)
             break
         except (ConnectTimeout, ReadTimeoutError, ReadTimeout):
             with global_lock:
