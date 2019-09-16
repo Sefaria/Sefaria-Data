@@ -247,7 +247,10 @@ def combine_rows_for_image(image_dict):
         new_im.paste(im, (0,y_offset))
         y_offset += im.size[1]
 
-    filename = './images/%s.jpg' % image_dict['image_id']
+    if isinstance(image_dict['image_ref'], basestring):
+        filename = u'./images/{}.jpg'.format(image_dict['image_ref'])
+    else:
+        filename = u'./images/{}.jpg'.format(u' - '.join(image_dict['image_ref']))
     new_im.save(filename)
 
     delete_images_in_temp_folder(folder)
@@ -360,18 +363,30 @@ if __name__ == '__main__':
         'image_id': im['images'][0]['@id'], 'image_ref': image_data[im['label']]
     } for im in canvases if im['label'] in image_data]
 
+    for im in full_image_data:
+        image_file = u'./images/{}.jpg'.format(u' - '.join(im['image_ref']))
+        if os.path.exists(image_file):
+            if isinstance(im['image_ref'], basestring):
+                os.rename(image_file, u'./images/{}.jpg'.format(im['image_ref']))
+            else:
+                os.rename(image_file, u'./images/{}.jpg'.format(u' - '.join(im['image_ref'])))
+
     # with ThreadPoolExecutor() as executor:
     #     executor.map(collect_image_dimensions, image_id_list)
     # map(collect_image_dimensions, test_images)
     bulk_image_dimensions(full_image_data)
 
     for i, im in enumerate(full_image_data):
+        if isinstance(im['image_ref'], basestring):
+            correct_image_file = u'./images/{}.jpg'.format(im['image_ref'])
+        else:
+            correct_image_file = u'./images/{}.jpg'.format(u' - '.join(im['image_ref']))
 
         successful_download = False
         while not successful_download:
 
             print u'\nimage {}: {}\n'.format(i, im['image_ref'])
-            if os.path.exists('images/{}.jpg'.format(im['image_id'])):
+            if os.path.exists(correct_image_file):
                 successful_download = True
                 continue
 
