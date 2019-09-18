@@ -451,6 +451,8 @@ class Source(object):
                     st = re.sub(u"מצוה", u"", st)
             elif self.author == u'מורה נבוכים':
                 st = re.sub(u"פתיחה", u'הקדמה, פתיחת הרמב"ם ', st)
+            elif self.author == u'כוזרי':
+                st = re.sub(u"מאמר ", u"", st)
             return st
 
         if self.raw_ref:
@@ -1374,7 +1376,7 @@ if __name__ == "__main__":
     # he_letter = u'010_ALEF'
     # letter = '009_TET'
 
-    letter = '050_NUN'  # 020_KAF
+    letter = '009_TET'  # 020_KAF
     skip_letters = []  # ['009_TET','050_NUN', '020_KAF', ]
     letters = [letter] if letter else os.listdir(
         u'/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/')
@@ -1389,8 +1391,8 @@ if __name__ == "__main__":
         letter_gimatria = match.group(1)
         print u'**HE_LETTER** {}'.format(he_letter)
         # parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
-        shamas_per_leter(he_letter)
-        # read_sources(u'{}'.format(he_letter), with_refs='with_refs')
+        # shamas_per_leter(he_letter)
+        read_sources(u'{}'.format(he_letter), with_refs='with_refs')
     # add_found_to_topics(collection='aspaklaria_topics')
     # add_found_to_topics(collection='pairing')
     # cProfile.runctx(u"g(x)", {'x': u'{}_{}'.format(letter_gimatria, he_letter), 'g': parse2pickle}, {}, 'stats')
