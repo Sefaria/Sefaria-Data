@@ -72,28 +72,34 @@ def get_talmud_ref_array(mesechet):
             print cindex, lindex, line
     """
     return line_by_perek
-def post_en_trans(mesechet):
+def post_en_trans(mesechet, mode):
     mishnah_refs=get_talmud_ref_array(mesechet)
     mishnah_text=Ref('Mishnah {}'.format(mesechet)).text('he').text
     en_tran=make_mishnah_perek_array(mesechet)
-    
-    for pindex, perek in enumerate(mishnah_text):
-        perek_ref_counter=0
-        for mindex, mishnah in enumerate(perek):
-            whats_left=len(mishnah.split())
-            trying=True
-            while trying and len(mishnah_refs[pindex])>0:
-                ref = mishnah_refs[pindex][0]
-                ref_text = clean_he_line(ref.text('he').text)
-                if len(ref_text.split())/2<=whats_left or mindex==len(perek)-1:
-                    whats_left-=len(ref_text.split())
-                    mishnah_refs[pindex].pop(0)
-                    if len(en_tran[pindex][mindex])<1:
-                        en_tran[pindex][mindex]+=ref.text('en').text
+    last_mishnah_ref=''
+    with open('mishnah_match_report.tsv','a') as my_file:
+        for pindex, perek in enumerate(mishnah_text):
+            perek_ref_counter=0
+            for mindex, mishnah in enumerate(perek):
+                whats_left=len(mishnah.split())
+                trying=True
+                while trying and len(mishnah_refs[pindex])>0:
+                    ref = mishnah_refs[pindex][0]
+                    ref_text = clean_he_line(ref.text('he').text)
+                    if len(ref_text.split())/2<=whats_left or mindex==len(perek)-1:
+                        whats_left-=len(ref_text.split())
+                        last_mishnah_ref=mishnah_refs[pindex].pop(0)
+                        if len(en_tran[pindex][mindex])<1:
+                            en_tran[pindex][mindex]+=ref.text('en').text
+                        else:
+                            en_tran[pindex][mindex]+=u' '+ref.text('en').text
                     else:
-                        en_tran[pindex][mindex]+=u' '+ref.text('en').text
-                else:
-                    trying=False
+                        if abs(whats_left)>4:
+                            if mode=='po' or mode=='pre':
+                                my_file.write('{} {}:{}\t{}\t{}\n'.format(mesechet, pindex+1, mindex+1,last_mishnah_ref, mishnah.encode('utf','replace')))
+                                if mesechet not in need_fixing_tractates:
+                                    need_fixing_tractates.append(mesechet)
+                        trying=False
     """
     for pindex, perek in enumerate(en_tran):
         for mindex, mishnah in enumerate(perek):
@@ -103,17 +109,27 @@ def post_en_trans(mesechet):
     for pindex, perek in enumerate(en_tran):
         for mindex, mishnah in enumerate(perek):
             final_version[pindex][mindex]= u''.join(mishnah).replace(u'<strong>MISHNA:</strong> ',u'')
-    version = {
-        'versionTitle': 'William Davidson Edition - English',
-        'versionSource': 'www.korenpub.com',
-        'language': 'en',
-        'text': final_version
-    }
-    #post_text_weak_connection('Mishnah '+mesechet, version)
-    post_text_weak_connection('Mishnah '+mesechet, version)
+    if mode=='pr':
+        with open('fixing_files/{}_fulltext.tsv'.format(mesechet),'w') as myfile:
+            for pindex, perek in enumerate(final_version):
+                for mindex, mishnah in enumerate(perek):
+                    myfile.write('{} {}:{}\t{}\n'.format(mesechet, pindex+1, mindex+1, mishnah.encode('utf','replace')))
+    if mode=='po':
+        version = {
+            'versionTitle': 'William Davidson Edition - English',
+            'versionSource': 'www.korenpub.com',
+            'language': 'en',
+            'text': final_version
+        }
+        #post_text_weak_connection('Mishnah '+mesechet, version)
+        post_text_weak_connection('Mishnah '+mesechet, version)
     
                     
 links=[]
+need_fixing_tractates=[]
+with open('mishnah_match_report.tsv','w') as my_file:
+    my_file.write('Mishnah Location\tLast Used Talmud Location\tMishnah Text\n')
+
 for mesechet in library.get_indexes_in_category('Bavli'):
     has_wde=False
     for version in library.get_index(mesechet).versionState().versions('en'):
@@ -121,7 +137,9 @@ for mesechet in library.get_indexes_in_category('Bavli'):
             has_wde=True
     if has_wde: 
         print "posting {}...".format(mesechet)                     
-        post_en_trans(mesechet)
-        links.append('http://rosh.sandbox.sefaria.org/Mishnah_{}.1?ven=William_Davidson_Edition_-_English&lang=bi'.format(mesechet))
+        post_en_trans(mesechet,'pre')
+        links.append(SEFARIA_SERVER+'/Mishnah_{}.1?ven=William_Davidson_Edition_-_English&lang=bi'.format(mesechet))
+for tractate in need_fixing_tractates:
+    post_en_trans(tractate, 'pr')
 for link in links:
     print link
