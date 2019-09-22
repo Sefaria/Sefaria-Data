@@ -6,6 +6,10 @@ import codecs
 from database import Database
 from bs4 import BeautifulSoup
 
+import django
+django.setup()
+from sefaria.model import *
+
 
 def generate_qa_document(data_list, outfile='image_qa.html'):
     # todo: add sefaria text for each ref
@@ -67,9 +71,31 @@ def generate_qa_document(data_list, outfile='image_qa.html'):
         fp.write(unicode(soup))
 
 
-def expand_refs_from_image_title(image_title):
+def expand_refs_from_image_title(image_title, ref_enhancement=None):
     # assuming all titles can be split by - and have no skips (;) (appears true for 1723)
-    pass
+
+    def enhance_ref(tref): return u'{} {}'.format(ref_enhancement, tref)
+
+    tr1, tr2 = re.split(ur'\s*-\s*', image_title)
+    if ref_enhancement:
+        tr1, tr2 = enhance_ref(tr1), enhance_ref(tr2)
+    if not Ref.is_ref(tr1) or not Ref.is_ref(tr2):
+        return None
+    or1, or2 = Ref(tr1), Ref(tr2)
+    if or1.book != or2.book:  # image contains the boundary between two tractates
+        starting_refs, ending_refs = [], []
+
+        while or1 is not None:
+            starting_refs.append(or1)
+            or1 = or1.next_segment_ref()
+
+        while or2 is not None:
+            ending_refs.append(or2)
+            or2 = or2.prev_segment_ref()
+
+        return starting_refs + ending_refs[::-1]
+    else:
+        return or1.to(or2).all_segment_refs()
 
 
 if __name__ == '__main__':
@@ -79,9 +105,14 @@ if __name__ == '__main__':
     db = Database()
     db.cursor.execute('Select * FROM TblImages WHERE Im_Ms=1723 AND Im_Title IS NOT NULL')
     images = [f['Im_Title'] for f in db.cursor.fetchall()]
+
+    bad_images = [i for i in images if not expand_refs_from_image_title(i, ref_enhancement=u'משנה')]
+    print len(bad_images)
+    for i in bad_images:
+        print i
     filenames = filenames[2:]
     filenames = filenames[:-1]
-    print (images[0])
+    # print (images[0])
     print len(filenames) - len(images)
     print len(images)
 
