@@ -48,12 +48,18 @@ def generate_qa_document(data_list, outfile='image_qa.html'):
 
         columns[0].string = data_obj['image_content']
 
+        ref_table = soup.new_tag('table')
+
         for ref_num, tref in enumerate(data_obj['expanded_refs'], 1):  # 1 indexed so we know which number item we see
-            span = soup.new_tag('span')
-            span.string = tref
-            columns[1].append(span)
-            if ref_num < len(data_obj['expanded_refs']):  # add a <br> between each ref (don't add for last element)
-                columns[1].append(soup.new_tag('br'))
+            ref_row = soup.new_tag('tr')
+            ref_table.append(ref_row)
+            tref_cell, tref_text_cell = soup.new_tag('td'), soup.new_tag('td')
+
+            tref_cell.string = tref
+            ref_row.append(tref_cell)
+            tref_text_cell.string = Ref(tref).text('he').text
+            ref_row.append(tref_text_cell)
+        columns[1].append(ref_table)
 
         thumbnail = soup.new_tag('img')
         thumbnail['src'] = re.sub(ur'\.jpg', u'_thumbnail.jpg', data_obj['image_url'])
@@ -93,9 +99,11 @@ def expand_refs_from_image_title(image_title, ref_enhancement=None):
             ending_refs.append(or2)
             or2 = or2.prev_segment_ref()
 
-        return starting_refs + ending_refs[::-1]
+        ref_list = starting_refs + ending_refs[::-1]
     else:
-        return or1.to(or2).all_segment_refs()
+        ref_list = or1.to(or2).all_segment_refs()
+
+    return [r.normal() for r in ref_list]
 
 
 if __name__ == '__main__':
@@ -106,21 +114,24 @@ if __name__ == '__main__':
     db.cursor.execute('Select * FROM TblImages WHERE Im_Ms=1723 AND Im_Title IS NOT NULL')
     images = [f['Im_Title'] for f in db.cursor.fetchall()]
 
-    bad_images = [i for i in images if not expand_refs_from_image_title(i, ref_enhancement=u'משנה')]
-    print len(bad_images)
-    for i in bad_images:
-        print i
     filenames = filenames[2:]
     filenames = filenames[:-1]
+    filenames.pop(251)
+    filenames.pop(251)
     # print (images[0])
     print len(filenames) - len(images)
     print len(images)
 
     image_data_list = [{
-        'image_content': f_name,
-        'expanded_refs': [im_title],
+        'image_content': u'{} / {} / {}'.format(f_name, im_title, image_num),
+        'expanded_refs': expand_refs_from_image_title(im_title, ref_enhancement=u'משנה'),
         'image_url': u'https://storage.googleapis.com/kaufman_a_50/{}'.format(f_name)
-    } for f_name, im_title in zip(filenames, images)]
-    r_image_data_list = image_data_list[::50]
-    r_image_data_list.append(image_data_list[-1])
-    generate_qa_document(r_image_data_list)
+    } for image_num, (f_name, im_title) in enumerate(zip(filenames, images))]
+    qa_images = image_data_list[::50]
+    qa_images.append(image_data_list[-1])
+    generate_qa_document(qa_images)
+
+    u"""
+    Munich images are mostly complete, as we have the refs mapped out in a json document. There are several images
+    that have not been been resolved, so just add those to the qa images and work them out manually
+    """
