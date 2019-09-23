@@ -2,6 +2,7 @@
 
 import re
 import os
+import json
 import codecs
 from database import Database
 from bs4 import BeautifulSoup
@@ -50,7 +51,12 @@ def generate_qa_document(data_list, outfile='image_qa.html'):
 
         ref_table = soup.new_tag('table')
 
-        for ref_num, tref in enumerate(data_obj['expanded_refs'], 1):  # 1 indexed so we know which number item we see
+        if len(data_obj['expanded_refs']) > 10:
+            expanded_refs = data_obj['expanded_refs'][:5] + data_obj['expanded_refs'][-5:]  # remove clutter
+        else:
+            expanded_refs = data_obj['expanded_refs']
+
+        for tref in expanded_refs:  # 1 indexed so we know which number item we see
             ref_row = soup.new_tag('tr')
             ref_table.append(ref_row)
             tref_cell, tref_text_cell = soup.new_tag('td'), soup.new_tag('td')
@@ -106,6 +112,16 @@ def expand_refs_from_image_title(image_title, ref_enhancement=None):
     return [r.normal() for r in ref_list]
 
 
+def talmud_ref_sort_key():
+    tractate_order = {tractate: tractate_num for tractate_num, tractate in
+                      enumerate(library.get_indexes_in_category("Bavli") + library.get_indexes_in_category("Mishnah"))}
+
+    def key_method(tref):
+        oref = Ref(tref)
+        return tractate_order[oref.book], oref.sections
+    return key_method
+
+
 if __name__ == '__main__':
     filenames = sorted([f_name for f_name in os.listdir(u'./kaufman')
                         if not re.search(ur'thumbnail\.jpg$', f_name)])
@@ -129,9 +145,39 @@ if __name__ == '__main__':
     } for image_num, (f_name, im_title) in enumerate(zip(filenames, images))]
     qa_images = image_data_list[::50]
     qa_images.append(image_data_list[-1])
-    generate_qa_document(qa_images)
 
-    u"""
-    Munich images are mostly complete, as we have the refs mapped out in a json document. There are several images
-    that have not been been resolved, so just add those to the qa images and work them out manually
-    """
+    # we have off-by-one errors in Munich. For now, add every 50-th image to qa and try and identify skips
+
+    munich_image_data_list = []
+    with open('./munich_images/munich_filemap.json') as fp:
+        munich_filemap = json.load(fp)
+
+    munich_images = [f for f in os.listdir(u'./munich_images') if re.search(ur'(?<!thumbnail)\.jpg$', f)]
+    ref_expansion = {}
+    for munich_file in munich_filemap:
+        assert munich_file['image_file'] not in ref_expansion
+        ref_expansion[munich_file['image_file']] = munich_file['expaned_refs']
+
+    for munich_image in munich_images:
+        full_file_path = os.path.join(u'munich_images', munich_image)
+
+        image_data = {
+            'image_content': munich_image,
+            'expanded_refs': ref_expansion.get(full_file_path, []),
+            'image_url': u'https://storage.googleapis.com/munich-manuscript/{}'.format(munich_image)
+
+        }
+        if os.path.join(u'munich_images', munich_image) in ref_expansion:
+            munich_image_data_list.append(image_data)
+
+        else:
+            qa_images.append(image_data)
+
+    sort_key = talmud_ref_sort_key()
+    munich_image_data_list.sort(key=lambda x: sort_key(x['expanded_refs'][0]))
+
+    qa_images.extend(munich_image_data_list[::50])
+    qa_images.append(munich_image_data_list[-1])
+
+    generate_qa_document(qa_images)
+    image_data_list.extend(munich_image_data_list)
