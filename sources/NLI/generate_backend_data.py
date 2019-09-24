@@ -60,10 +60,16 @@ def generate_qa_document(data_list, outfile='image_qa.html'):
             ref_row = soup.new_tag('tr')
             ref_table.append(ref_row)
             tref_cell, tref_text_cell = soup.new_tag('td'), soup.new_tag('td')
+            oref = Ref(tref)
 
-            tref_cell.string = tref
+            sefaria_link = soup.new_tag('a')
+            sefaria_link['href'] = u'https://www.sefaria.org/{}'.format(oref.url())
+            sefaria_link['target'] = '_blank'
+            sefaria_link.string = tref
+            tref_cell.append(sefaria_link)
+
             ref_row.append(tref_cell)
-            tref_text_cell.string = Ref(tref).text('he').text
+            tref_text_cell.string = oref.text('he').text
             ref_row.append(tref_text_cell)
         columns[1].append(ref_table)
 
