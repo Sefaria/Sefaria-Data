@@ -141,7 +141,7 @@ if __name__ == '__main__':
     image_data_list = [{
         'image_content': u'{} / {} / {}'.format(f_name, im_title, image_num),
         'expanded_refs': expand_refs_from_image_title(im_title, ref_enhancement=u'משנה'),
-        'image_url': u'https://storage.googleapis.com/kaufman_a_50/{}'.format(f_name)
+        'image_url': u'https://storage.googleapis.com/sefaria-manuscripts/kaufman_a_50/{}'.format(f_name)
     } for image_num, (f_name, im_title) in enumerate(zip(filenames, images))]
     qa_images = image_data_list[::50]
     qa_images.append(image_data_list[-1])
@@ -164,7 +164,7 @@ if __name__ == '__main__':
         image_data = {
             'image_content': munich_image,
             'expanded_refs': ref_expansion.get(full_file_path, []),
-            'image_url': u'https://storage.googleapis.com/munich-manuscript/{}'.format(munich_image)
+            'image_url': u'https://storage.googleapis.com/sefaria-manuscripts/munich-manuscript/{}'.format(munich_image)
 
         }
         if os.path.join(u'munich_images', munich_image) in ref_expansion:
