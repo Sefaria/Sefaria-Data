@@ -207,7 +207,6 @@ class Test_Sham_Parsing(object):
         # parser = Parser()
         table = Parser.perek_parasha_table()
         assert convert_perk_parasha(ref, table) == u'פרשת ויקרא'
-
     def test_dh_matcher(self):
         from data_utilities.dibur_hamatchil_matcher import match_ref
         base_tokenizer = lambda x: x.split()
@@ -219,3 +218,9 @@ class Test_Sham_Parsing(object):
               create_ranges=False, place_consecutively=False, daf_skips=2, rashi_skips=1, overall=2, lang="he")
         print results['matches']
 
+
+class Test_By_Topic(object):
+
+    def test_by_topic(self):
+        topic_file_path = u"009_TET_test/tevila.html"
+        parse_by_topic(topic_file_path)

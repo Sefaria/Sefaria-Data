@@ -1,7 +1,7 @@
 #encoding=utf-8
 
-import django
-django.setup()
+# import django
+# django.setup()
 
 from tqdm import *
 from sefaria.model import *
@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup, element
 from sources.functions import *
 import string
 import unicodecsv as csv
-import json
+# import json
 import pickle
 from data_utilities.util import getGematria, numToHeb
 import codecs
@@ -261,6 +261,12 @@ class Topic(object):
             d['segment'] = source.ref.sections[1] if len(source.ref.sections) > 1 else None
         if d:
             return d
+
+    def parse_refs(self):
+        if self.all_a_citations:
+            for citbook in self.all_a_citations:
+                citbook.create_sources()
+                pass
 
 class Source(object):
     # cnt = 0
@@ -1053,28 +1059,40 @@ def write_to_file(text, mode='a'):
         f.write(text)
 
 
+def parse_by_topic(topic_file_path):
+    # topic_file_path = u"009_TET_test/tevila.html"
+    t = bs_read(ASPAKLARIA_HTML_FILES + u"/{}".format(topic_file_path))
+    # parse_refs(t)
+    t.parse_refs()
+    try:
+        t.parse_shams()
+    except:
+        print "Failed on something"
+    cnt = 0
+    post_topic_documents(t, cnt)
+
 def parse2pickle(letter=u''):
     topic_le_table = dict()
-    with open(u'/home/shanee/www/Sefaria-Data/sources/Aspaklaria/headwords.csv', 'r') as csvfile:
+    with open(ASPAKLARIA_HTML_FILES + u'/headwords.csv', 'r') as csvfile:
         file_reader = csv.DictReader(csvfile)
         for i, row in enumerate(file_reader):
             pass
             fieldnames = file_reader.fieldnames
             topic_le_table[row[u'he']] = row[u'en']
     all_topics = dict()
-    letters = [letter] if letter else os.listdir(u'/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/')
+    letters = [letter] if letter else os.listdir(ASPAKLARIA_HTML_FILES + u'/')
     for letter in letters:
-        if not os.path.isdir(u'/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/{}'.format(letter)):
+        if not os.path.isdir(ASPAKLARIA_HTML_FILES + u'/{}'.format(letter)):
             continue
         i = 0
         topics = dict()
-        for file in tqdm(os.listdir(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/{}".format(letter))):
+        for file in tqdm(os.listdir(ASPAKLARIA_HTML_FILES + u"/{}".format(letter))):
             if u'_' in file:
                 continue
-            # don't read the index file ex: for letter YOD don't read the html file '/Aspaklaria/www.aspaklaria.info/010_YOD/YOD.html'
+            # don't read the index file ex: for letter YOD don't read the html file '/Aspaklaria/aspaklaria/www.aspaklaria.info/010_YOD/YOD.html'
             if re.search(re.sub(u'.html', u'', file), letter):
                 continue
-            t = bs_read(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/{}/{}".format(letter, file))
+            t = bs_read(ASPAKLARIA_HTML_FILES + u"/{}/{}".format(letter, file))
             i+=1
             topics[i] = t
             # topics[topic_le_table[clean_txt(t.headWord.replace(u"'", u"").replace(u"-", u""))]] = t
@@ -1087,7 +1105,58 @@ def parse2pickle(letter=u''):
             # json.dump(topics, fp) #TypeError: <__main__.Topic object at 0x7f5f5bb73790> is not JSON serializable
             pickle.dump(topics, fp, -1)
         all_topics[letter_name] = topics
-    pass
+    return all_topics
+
+
+def post_topic_documents(t, cnt):
+    sources = []
+    for authorCit in t.all_a_citations:
+        for s in authorCit.sources:
+            if s.raw_ref:
+                # cnt_sources += 1
+                print s.raw_ref.rawText
+                solo_source_text = re.sub(re.escape(s.raw_ref.rawText), u'', s.text)
+                try:
+                    s.ref.normal()
+                except AttributeError:
+                    s.ref = None
+                if s.ref:
+                    # if re.search(u"דרוש ז",s.raw_ref.rawText):
+                    #     continue
+                    document = {'topic': t.headWord, 'ref': s.ref.normal(), 'text': solo_source_text,
+                                'raw_ref': s.raw_ref.rawText if s.raw_ref else None,
+                                'index': s.ref.index.title, 'is_sham': s.raw_ref.is_sham, 'author': s.author}
+                    if hasattr(s, u'pm_ref'):
+                        document['pm_ref'] = s.pm_ref
+                    print s.ref.normal()
+                    # cnt_resolved += 1
+                else:
+                    document = {'topic': t.headWord, 'text': solo_source_text, 'raw_ref': s.raw_ref.rawText,
+                                'author': s.author, 'is_sham': s.raw_ref.is_sham}
+                    print s.author  # "None... didn't find the Ref"
+                    # add_to = "sham" if s.raw_ref.is_sham else "not_caught"
+                    # cnt_sham += 1 if add_to == "sham" else 0
+                    # cnt_not_caught += 1 if add_to == "not_caught" else 0
+                if s.index:
+                    if isinstance(s.index, tuple) or isinstance(s.index, list):
+                        s.index = s.index[0] if len(s.index) < 2 else s.index[1]
+                    document['index_guess'] = s.index.title if isinstance(s.index, Index) else s.index
+                elif s.indexs:
+                    document['index_guess'] = u' |'.join([ind.title if isinstance(ind, Index) else ind for ind in s.indexs])
+
+                if s.ref:
+                    if s.ref.is_segment_level():
+                        document['segment_level'] = True
+                    else:
+                        document['segment_level'] = False
+                document['cnt'] = cnt
+                # document['topic_key'] = topic_key
+                db_aspaklaria.aspaklaria_source.insert_one(document)
+                if 'ref' in document.keys():
+                    sources.append(document['ref'])
+                cnt += 1
+                print '-----------------'
+    return sources
 
 
 def read_sources(letter, with_refs='pickle_files'):
@@ -1109,58 +1178,13 @@ def read_sources(letter, with_refs='pickle_files'):
             print "*******************"
             print t.headWord
             # topic_key = post_topic(t)
-            sources = []
-            for author in t.all_a_citations:
-                for s in author.sources:
-                    if s.raw_ref:
-                        # cnt_sources += 1
-                        print s.raw_ref.rawText
-                        solo_source_text = re.sub(re.escape(s.raw_ref.rawText), u'', s.text)
-                        try:
-                            s.ref.normal()
-                        except AttributeError:
-                            s.ref = None
-                        if s.ref:
-                            # if re.search(u"דרוש ז",s.raw_ref.rawText):
-                            #     continue
-                            document = {'topic': t.headWord, 'ref': s.ref.normal(), 'text': solo_source_text, 'raw_ref': s.raw_ref.rawText if s.raw_ref else None,
-                                 'index': s.ref.index.title, 'is_sham': s.raw_ref.is_sham, 'author':s.author}
-                            if hasattr(s, u'pm_ref'):
-                                document['pm_ref'] = s.pm_ref
-                            print s.ref.normal()
-                            # cnt_resolved += 1
-                        else:
-                            document = {'topic': t.headWord, 'text': solo_source_text, 'raw_ref':s.raw_ref.rawText,
-                                 'author': s.author, 'is_sham':s.raw_ref.is_sham}
-                            print s.author  # "None... didn't find the Ref"
-                            # add_to = "sham" if s.raw_ref.is_sham else "not_caught"
-                            # cnt_sham += 1 if add_to == "sham" else 0
-                            # cnt_not_caught += 1 if add_to == "not_caught" else 0
-                        if s.index:
-                            if isinstance(s.index, tuple) or isinstance(s.index, list):
-                                s.index = s.index[0] if len(s.index)<2 else s.index[1]
-                            document['index_guess'] = s.index.title if isinstance(s.index, Index) else s.index
-                        elif s.indexs:
-                            document['index_guess'] = u' |'.join([ind.title if isinstance(ind,Index) else ind for ind in s.indexs])
-
-                        if s.ref:
-                            if s.ref.is_segment_level():
-                                document['segment_level'] = True
-                            else:
-                                document['segment_level'] = False
-                        document['cnt'] = cnt
-                        # document['topic_key'] = topic_key
-                        db_aspaklaria.aspaklaria_source.insert_one(document)
-                        if 'ref' in document.keys():
-                            sources.append(document['ref'])
-                        cnt += 1
-                        print '-----------------'
+            sources = post_topic_documents(t, cnt)
             topic_key = post_topic(t, sources)
         print "done"
 
 
 def shamas_per_leter(he_letter):
-    # for file in os.listdir(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/"):
+    # for file in os.listdir(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/aspaklaria/pickle_files/"):
     # write_to_file(u'', mode = 'w')
     for file in [u'{}.pickle'.format(he_letter)]:
         letter_name = file[0:-7]
@@ -1172,7 +1196,8 @@ def shamas_per_leter(he_letter):
             write_to_file(u'NEW_Letter: {}\n\n'.format(file.split(u'.')[0]), mode='a')
             topics = pickle.load(fp)
             for i, t in tqdm(enumerate(topics.values())):
-                parse_refs(t)
+                # parse_refs(t)
+                t.parse_refs()
                 # print "Before resolved Shams" + str(Source.cnt_sham)
                 try:
                     t.parse_shams()
@@ -1376,23 +1401,28 @@ if __name__ == "__main__":
     # he_letter = u'010_ALEF'
     # letter = '009_TET'
 
-    letter = '009_TET'  # 020_KAF
-    skip_letters = []  # ['009_TET','050_NUN', '020_KAF', ]
-    letters = [letter] if letter else os.listdir(
-        u'/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/')
-    for letter in letters:
-        if not os.path.isdir(u'/home/shanee/www/Sefaria-Data/sources/Aspaklaria/www.aspaklaria.info/{}'.format(letter)):
-            continue
-        if letter in skip_letters:
-            print u'skipped {}'.format(letter)
-            continue
-        match = re.search(u'(\d*)_(.*)', letter)
-        he_letter= match.group(2)
-        letter_gimatria = match.group(1)
-        print u'**HE_LETTER** {}'.format(he_letter)
-        # parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
-        # shamas_per_leter(he_letter)
-        read_sources(u'{}'.format(he_letter), with_refs='with_refs')
+    # letter = '009_TET'  # 020_KAF
+    # skip_letters = []  # ['009_TET','050_NUN', '020_KAF', ]
+    # letters = [letter] if letter else os.listdir(ASPAKLARIA_HTML_FILES+
+    #     u'/')
+    # for letter in letters:
+    #     if not os.path.isdir(ASPAKLARIA_HTML_FILES+ u'/{}'.format(letter)):
+    #         continue
+    #     if letter in skip_letters:
+    #         print u'skipped {}'.format(letter)
+    #         continue
+    #     match = re.search(u'(\d*)_(.*)', letter)
+    #     he_letter= match.group(2)
+    #     letter_gimatria = match.group(1)
+    #     print u'**HE_LETTER** {}'.format(he_letter)
+    #     parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
+    #     shamas_per_leter(he_letter)
+    #     read_sources(u'{}'.format(he_letter), with_refs='with_refs')
+
+    # testing!
+    topic_file_path = u"009_TET_test/tevila.html"
+    parse_by_topic(topic_file_path)
+
     # add_found_to_topics(collection='aspaklaria_topics')
     # add_found_to_topics(collection='pairing')
     # cProfile.runctx(u"g(x)", {'x': u'{}_{}'.format(letter_gimatria, he_letter), 'g': parse2pickle}, {}, 'stats')
