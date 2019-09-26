@@ -92,6 +92,13 @@ def generate_qa_document(data_list, outfile='image_qa.html'):
 def expand_refs_from_image_title(image_title, ref_enhancement=None):
     # assuming all titles can be split by - and have no skips (;) (appears true for 1723)
 
+    if re.search(ur';\s+', image_title):
+        title_sections = re.split(ur';\s+', image_title)
+        expansions = []
+        for section in title_sections:
+            expansions.extend(expand_refs_from_image_title(section, ref_enhancement))
+        return expansions
+
     def enhance_ref(tref): return u'{} {}'.format(ref_enhancement, tref)
 
     tr1, tr2 = re.split(ur'\s*-\s*', image_title)
@@ -118,9 +125,38 @@ def expand_refs_from_image_title(image_title, ref_enhancement=None):
     return [r.normal() for r in ref_list]
 
 
-def talmud_ref_sort_key():
+def leningrad_segments(tref):
+    ref_portions = re.split(ur'\s*;\s*', tref)
+
+    if any(not Ref.is_ref(portion) for portion in ref_portions):
+        print u"could not resolve {}".format(tref)
+        return []
+
+    segments = []
+    for portion in ref_portions:
+        segments.extend([r.normal() for r in Ref(portion).all_segment_refs()])
+
+    return segments
+
+
+def start_end_refs(book_category):
+    all_books = library.get_indexes_in_category(book_category)
+    se_refs = set()
+    for book in all_books:
+        oref = Ref(book)
+        se_refs.add(oref.last_segment_ref().normal())
+        se_refs.add((oref.first_available_section_ref().all_segment_refs()[0].normal()))
+
+    return se_refs
+
+
+def category_ref_sort_key(category_list):
+    book_list = []
+    for book_category in category_list:
+        book_list.extend(library.get_indexes_in_category(book_category))
+
     tractate_order = {tractate: tractate_num for tractate_num, tractate in
-                      enumerate(library.get_indexes_in_category("Bavli") + library.get_indexes_in_category("Mishnah"))}
+                      enumerate(book_list)}
 
     def key_method(tref):
         oref = Ref(tref)
@@ -149,11 +185,11 @@ if __name__ == '__main__':
         'expanded_refs': expand_refs_from_image_title(im_title, ref_enhancement=u'משנה'),
         'image_url': u'https://storage.googleapis.com/sefaria-manuscripts/kaufman_a_50/{}'.format(f_name)
     } for image_num, (f_name, im_title) in enumerate(zip(filenames, images))]
-    qa_images = image_data_list[::50]
-    qa_images.append(image_data_list[-1])
+    # qa_images = image_data_list[::50]
+    # qa_images.append(image_data_list[-1])
 
     # we have off-by-one errors in Munich. For now, add every 50-th image to qa and try and identify skips
-
+    qa_images = []
     munich_image_data_list = []
     with open('./munich_images/munich_filemap.json') as fp:
         munich_filemap = json.load(fp)
@@ -179,11 +215,36 @@ if __name__ == '__main__':
         else:
             qa_images.append(image_data)
 
-    sort_key = talmud_ref_sort_key()
+    sort_key = category_ref_sort_key(["Bavli", "Mishnah"])
     munich_image_data_list.sort(key=lambda x: sort_key(x['expanded_refs'][0]))
 
-    qa_images.extend(munich_image_data_list[::50])
-    qa_images.append(munich_image_data_list[-1])
+    talmud_start_end_refs = start_end_refs("Bavli")
+
+    for image_data in munich_image_data_list:
+        if any(extended in talmud_start_end_refs for extended in image_data['expanded_refs']):
+            qa_images.append(image_data)
+
+    with open('Leningrad_map.json') as fp:
+        leningrad_map = json.load(fp)
+
+    leningrad_image_data_list = [
+        {
+            'image_content': l_value,
+            'expanded_refs': leningrad_segments(l_value),
+            'image_url': u'https://storage.googleapis.com/sefaria-manuscripts/Leningrad/{}'.format(l_key)
+        }
+        for l_key, l_value in leningrad_map.items()
+    ]
+
+    sort_key = category_ref_sort_key(["Tanakh"])
+    leningrad_image_data_list.sort(key=lambda x:sort_key(x['expanded_refs'][0]))
+
+
+    tanakh_start_end_refs = start_end_refs("Tanakh")
+    for image_data in leningrad_image_data_list:
+        if any(extended in tanakh_start_end_refs for extended in image_data['expanded_refs']):
+            qa_images.append(image_data)
 
     generate_qa_document(qa_images)
     image_data_list.extend(munich_image_data_list)
+    image_data_list.extend(leningrad_image_data_list)
