@@ -869,7 +869,7 @@ def first_word_with_period(str):
     return len(str.split(" "))
 
 @weak_connection
-def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SERVER):
+def post_text(ref, text, index_count="on", skip_links=False, server=SEFARIA_SERVER):
     """
     :param ref:
     :param text:

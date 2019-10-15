@@ -26,4 +26,3 @@ for el in elements:
 index["alt_structs"] = {"Parasha": {"nodes": nodes}}
 post_index(index, server="http://draft.sefaria.org")
 
-

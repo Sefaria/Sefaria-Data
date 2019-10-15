@@ -12,7 +12,7 @@ def verify_input(original, new):
     except BookNameError:
         pass
 
-    assert original.split(" on ")[0] == new.split(" on ")[0], "Not same commentator: {} and {}".format(original, new)
+    #assert original.split(" on ")[0] == new.split(" on ")[0], "Not same commentator: {} and {}".format(original, new)
 
 
 

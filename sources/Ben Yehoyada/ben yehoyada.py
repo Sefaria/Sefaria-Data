@@ -29,13 +29,15 @@ def create_index(title):
     post_index({
         "schema": super_root.serialize(),
         "title": "Ben Yehoyada on {}".format(title),
+        "dependence": "Commentary",
+        "collective_title": "Ben Yehoyada",
         "categories": ["Talmud", "Bavli", "Commentary", "Ben Yehoyada"]
     }, server=SEFARIA_SERVER)
 
 if __name__ == "__main__":
     dappim = Counter()
     new_csv = ""
-    for title in ["Rosh Hashanah", "Yoma"]:
+    for title in ["Sukkah", "Beitzah"]:
         text_dict = {}
 
         create_index(title)
@@ -82,7 +84,7 @@ if __name__ == "__main__":
             "versionSource": "http://beta.nli.org.il/he/books/NNL_ALEPH001933802/NLIl",
             "language": "he"
         }
-        post_text("Ben Yehoyada on {}".format(title), send_text)
+        post_text("Ben Yehoyada on {}".format(title), send_text, index_count="on")
         for daf, text in text_dict.items():
             daf = AddressTalmud.toStr("en", daf)
             try:
