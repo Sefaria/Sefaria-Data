@@ -71,4 +71,15 @@ class Database(object):
                 writer.writerow(dict_row)
 
 
+u"""
+go for Tosefta in and Berlin (Munich? We probably meant Vienna). 
+Vienna Manuscript ID - 7658
+Berlin Manuscript ID - 1484
+
+Harley 5508 from British Museum - Bavli, Manuscript ID = 4752
+Might also be worth looking at Add. 25,717 from the British Museum. Manuscript ID = 4754
+
+
+Leiden - תלמוד ירושלמי. Manuscript Id 1721
+"""
 

@@ -22,16 +22,19 @@ def list_authors(letter=u""):
     return authors
 
 
-def stats(sham=None, author=None, caught=None, letter = None):
+def stats(sham=None, author=None, caught=None, letter = None, pm_ref = None):
     query = {}
     if author:
         query['author'] = u'{}'.format(author)
     if caught is not None:
         query['ref'] = {'$exists': caught}
+    if pm_ref is not None:
+        query['pm_ref'] = {'$exists': pm_ref}
     if sham is not None:
         query['is_sham']= sham
     if letter:
         query['topic'] = {'$regex': u"^{}".format(letter)}
+
     query_cnt = db_aspaklaria.aspaklaria_source.count_documents(query)
     return query_cnt
 
@@ -52,6 +55,10 @@ def percentages(author=None, letter = None):
     caught = round_stats(stats(author=author, caught=True, letter=letter),stats(author=author, letter=letter))
     print "caught/all: {}%".format(caught)
     perc_doc['caught/all'] = caught
+    # pm matcher manged to find an exact segment
+    pm = round_stats(stats(author=author, pm_ref=True, letter=letter), stats(author=author, letter=letter))
+    print "pm exact segment/all: {}%".format(pm)
+    perc_doc['pm/all'] = pm
     # caught without Shams
     if stats(sham=False, author=author, letter=letter):
         caught_ns = round_stats(stats(sham=False, author=author, caught=True, letter=letter),stats(sham=False, author=author, letter=letter))
@@ -73,7 +80,7 @@ def percentages(author=None, letter = None):
         perc_doc['caught_shams/all_shams'] = caught_shams
     else:
         caught_shams = 0.0
-    query_no_ref = { "author": u"{}".format(author), "ref": { "$exists": False}, "is_sham": False}
+    query_no_ref = {"author": u"{}".format(author), "ref": { "$exists": False}, "is_sham": False, "topic": {'$regex': u"^{}".format(letter)}}
     curser = db_aspaklaria.aspaklaria_source.find(query_no_ref)
     for doc in curser:
         perc_doc['ex nr topic'] = doc['topic']
@@ -81,7 +88,7 @@ def percentages(author=None, letter = None):
         if 'index_guess' in doc.keys():
             perc_doc['ex nr index_guess'] = doc['index_guess']
         break
-    query_ref = { "author": u"{}".format(author), "ref": { "$exists": True }, "is_sham": False}
+    query_ref = {"author": u"{}".format(author), "ref": { "$exists": True }, "is_sham": False, "topic": {'$regex': u"^{}".format(letter)}}
     curser = db_aspaklaria.aspaklaria_source.find(query_ref)
     for doc in curser:
         perc_doc['ex topic'] = doc['topic']
@@ -90,13 +97,13 @@ def percentages(author=None, letter = None):
         if 'index_guess' in doc.keys():
             perc_doc['ex index_guess'] = doc['index_guess']
         break
-    return perc_doc #[caught, caught_ns, shams, caught_shams, ]
+    return perc_doc  # [caught, caught_ns, shams, caught_shams, ]
 
 
 if __name__ == "__main__":
     #
     rows = []
-    letter = u''
+    letter = u'ט'
     authors = list_authors(letter=letter)
     percentages(letter=letter)
 
@@ -110,7 +117,7 @@ if __name__ == "__main__":
             rows.append({'author': auth})
     for auth in empty_authors:
         print auth
-    with codecs.open(u'aspaklariaStats_{}.csv'.format(2), 'w') as csv_file:
-        writer = csv.DictWriter(csv_file, ['author', 'abs', 'caught/all', 'ignore shams, caught/all', 'shams/all', 'caught_shams/all_shams', 'ex nr topic', 'ex nr raw_ref', 'ex nr index_guess','ex topic', 'ex raw_ref', 'ex ref', 'ex index_guess'])
+    with codecs.open(u'aspaklariaStats_{}.csv'.format(letter), 'w') as csv_file:
+        writer = csv.DictWriter(csv_file, ['author', 'abs', 'caught/all', 'ignore shams, caught/all', 'pm/all', 'shams/all', 'caught_shams/all_shams', 'ex nr topic', 'ex nr raw_ref', 'ex nr index_guess', 'ex topic', 'ex raw_ref', 'ex ref', 'ex index_guess'])
         writer.writeheader()
         writer.writerows(rows)
