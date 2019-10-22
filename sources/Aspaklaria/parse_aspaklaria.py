@@ -1,8 +1,11 @@
 #encoding=utf-8
 
-# import django
-# django.setup()
+import django
+django.setup()
 
+# import subprocess
+import random
+import argparse
 from tqdm import *
 from sefaria.model import *
 from sefaria.system import exceptions
@@ -16,16 +19,17 @@ from data_utilities.util import getGematria, numToHeb
 import codecs
 from aspaklaria_connect import client
 from data_utilities.ibid import *
-import pstats
-import cProfile
+# import pstats
+# import cProfile
 # from index_title_catcher import *  # get_index_via_titles
 from sefaria.system.database import db
-import matplotlib.pyplot as plt  # %matplotlib
+# import matplotlib.pyplot as plt  # %matplotlib
 import itertools
 from sources.EinMishpat.ein_parser import is_hebrew_number, hebrew_number_regex
 from research.knowledge_graph.sefer_haagada.main import disambiguate_ref_list
 from sefaria.utils.hebrew import is_hebrew
 from data_utilities.dibur_hamatchil_matcher import match_text
+# from aspaklaria_settings import ASPAKLARIA_HTML_FILES
 
 db_aspaklaria = client.aspaklaria
 
@@ -196,7 +200,7 @@ class Topic(object):
                     tanakh_ref = Ref(re.sub(match.group(u'commentator'), u'', source.ref.he_normal()))
                     BT.registerRef(tanakh_ref)
                 if source.raw_ref and source.raw_ref.is_sham:
-                    print u'Sham Ref {}'.format(source.raw_ref.rawText)
+                    # print u'Sham Ref {}'.format(source.raw_ref.rawText)
                     if topic_table[-1]['author'] == source.raw_ref.author:
                         if u'Talmud' in topic_table[-1]['index'].categories:
                             source.ref = BT.resolve(None, match_str=source.author+source.raw_ref.rawText)
@@ -204,10 +208,10 @@ class Topic(object):
                             try:
                                 source.ref = BT.resolve(topic_table[-1]['index'].title, match_str= source.author + source.raw_ref.rawText) # assuming the index is definatly the same as the last one is not neccesary. and should check if there is a source.index first?
                             except AttributeError as e:
-                                print e, source.raw_ref.rawText
+                                # print e, source.raw_ref.rawText
                                 source.ref = None
                         if source.ref:
-                            print source.ref
+                            # print source.ref
                             BT.registerRef(source.ref)
                     if u'Tanakh' in topic_table[-1]['index'].categories and not source.ref:
                         tanakh_book = tanakh_ref.index.title
@@ -238,12 +242,12 @@ class Topic(object):
                             except InputError:
                                 source.ref = Ref(u"{} {} {}".format(ind.title, try_ref.sections[0], try_ref.sections[1]))
                             BT.registerRef(source.ref)
-                            print source.ref
+                            # print source.ref
                         else:
                             source.ref = None
                             cnt+=1
                             print cnt
-                            print u'{}'.format(e)
+                            # print u'{}'.format(e)
                 # if source.ref and source.raw_ref.is_sham:
                 #     Source.cnt_sham -= 1
                 #     Source.cnt_resolved +=1
@@ -467,14 +471,14 @@ class Source(object):
             if refs:
                 # assert len(refs) == 1
                 self.ref = refs[0]
-                print self.ref
+                # print self.ref
             else:  # straight forward didn't find, so might be a sham. Or might need special casing.
                 if re.search(u"^\(\s*שם", self.raw_ref.rawText):
                     self.raw_ref.is_sham = True
                 else:
                     cleaned = clean_raw(self.raw_ref.rawText)
                     fixed_ref = u"(" + self.author + u", " + re.sub(u"[)(]", u"", cleaned) + u")"
-                    print u"*** try new ref, fixed_ref = {}".format(fixed_ref)
+                    # print u"*** try new ref, fixed_ref = {}".format(fixed_ref)
                     # put in a new "try" because sometimes it is simpler then it seams :)
                     try:
                         refs = [Ref(re.sub(u"[()]", u"",fixed_ref))]
@@ -483,10 +487,10 @@ class Source(object):
 
                     if refs:
                         self.ref = refs[0]
-                        print self.ref
+                        # print self.ref
                     else:
                         self.opt_titles = self.get_titles_in_string(re.sub(u'[)(,]', u'', ref_w_author))
-            print self.raw_ref.rawText, u'\n', ref_w_author
+            # print self.raw_ref.rawText, u'\n', ref_w_author
         else: # there isn't a self.ref means we couldn't find parenthises at the end, probably a continuation of the prev source/ cit (in cit_list)
             pass
         self.extract_indx()
@@ -584,7 +588,7 @@ class Source(object):
                 if not self.index and not new_ref:# todo: it was an or why? turend into an and lets see if/what it breaks.
                     self.change_look_here(author = u'תרגום יונתן', new_author = u'תרגום', category = u'Writings')
                     if not self.index:
-                        print u"deleting wrong: {} couldn't find an index".format(self.ref)
+                        # print u"deleting wrong: {} couldn't find an index".format(self.ref)
                         self.ref = None
             else:  # not wrong_ref. and found a ref, might just be a correct ref. todo: how to test it is correct?
                 pass
@@ -626,7 +630,8 @@ class Source(object):
                             node_name = Ref(intersected[0].title).he_normal()  # TODO: find cases with list longer than one and figure it out.
                             self.index = intersected
                 except (exceptions.BookNameError, TypeError):
-                    print u"excepted {}".format(opt_title)
+                    # print u"excepted {}".format(opt_title)
+                    pass
                 if node_name:
                     try:
                         new_string = re.sub(opt_title, node_name, self.text)
@@ -794,18 +799,18 @@ class Source(object):
                     new_ref = new_refs[0]
                 else:
                     new_ref = Ref(u'{} {}'.format(index_node_name, sections)) #re.sub(self.ref.index.title, u'', self.ref.normal()).strip()))
-                print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
+                # print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
                 self.ref = new_ref
             except exceptions.InputError as e:
                 new_ref = None  # so not to have new_ref that failed scrowing with stuff
-                print u"inputError for this string {}, extracted from this rawref {}".format(
-                    u'{} {}'.format(self.index, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()),
-                    self.raw_ref)
+                # print u"inputError for this string {}, extracted from this rawref {}".format(
+                #     u'{} {}'.format(self.index, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()),
+                #     self.raw_ref)
         elif not reduced_indexes:  # len(reduced_indexes) == 0
             # couldn't find the title in the books maybe it is in there nodes
             if isinstance(look_here[0], Index):
                 if any(type(book) != Index for book in look_here):
-                    print self.raw_ref
+                    # print self.raw_ref
                     look_here = [book for book in look_here if isinstance(book, Index)]
                 look_here_nodes = reduce(lambda a, b: a + b,
                                          [ind.alt_titles_dict('he').keys() + ind.all_titles('he') for ind in
@@ -822,20 +827,22 @@ class Source(object):
                             break
                         try:
                             new_ref = Ref(u'{} {}'.format(node_name, numToHeb(d)))
-                            print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index,
-                                                                                               new_ref)
+                            # print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index,
+                            #                                                                    new_ref)
                             break
                         except (exceptions.InputError, IndexError) as e:
-                            print u"inputError for this string {}, extracted from this rawref {}".format(
-                                u'{} {}'.format(node_name, numToHeb(d)), self.raw_ref.rawText)
+                            # print u"inputError for this string {}, extracted from this rawref {}".format(
+                            #     u'{} {}'.format(node_name, numToHeb(d)), self.raw_ref.rawText)
                             if u"ילקוט שמעוני" in node_name:
                                 try:
                                     new_ref = Ref(u'{}, {}'.format(ind.title, d))
                                 except exceptions.InputError:
-                                    print u"inputError for this string {}, extracted from this rawref {}".format(
-                                        u'{} {}'.format(node_name, numToHeb(d)), self.raw_ref.rawText)
+                                    print u"inputError for this string"
+                                    # print u"inputError for this string {}, extracted from this rawref {}".format(
+                                    #     u'{} {}'.format(node_name, numToHeb(d)), self.raw_ref.rawText)
                         except IndexError as e:
-                            print u'IndexError {} not sure why...'.format(e)
+                            # print u'IndexError {} not sure why...'.format(e)
+                            pass
                     self.ref = new_ref
                 if len(look_here_nodes) > 1:  # todo: what if there are more than 2 look_here_nodes?
                     # set(look_here_nodes).intersection(self.raw_ref.rawText)
@@ -849,7 +856,7 @@ class Source(object):
                         r = Ref(node_ref)
                         self.ref = r
                     except InputError:
-                        print u"couldn't find ref for {}".format(node_ref)
+                        print u"couldn't find ref for"# {}".format(node_ref)
         else:
             depenent_indexes = []
             main_indexes = []
@@ -871,7 +878,7 @@ class Source(object):
             elif depenent_indexes:
                 self.index = depenent_indexes[0]
             else:
-                print u"reduced_indexes: {} deleting wrong ref: {}.".format(reduced_indexes, self.ref.normal())
+                # print u"reduced_indexes: {} deleting wrong ref: {}.".format(reduced_indexes, self.ref.normal())
                 self.ref = None
 
             if self.index:
@@ -882,16 +889,16 @@ class Source(object):
                     else:
                         index_node_name = Ref(self.index).he_normal() if is_hebrew(sections) else Ref(self.index).normal()
                     new_ref = Ref(u'{} {}'.format(index_node_name, sections))
-                    print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
+                    # print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
                     self.ref = new_ref
                 except exceptions.InputError as e:
                     new_ref = None  # so not to have new_ref that failed scrowing with stuff
-                    try:
-                        print u"inputError for this string {}, extracted from this rawref {}".format(
-                        u'{} {}'.format(self.index.title, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()),
-                        self.raw_ref)
-                    except AttributeError:
-                        print u"inputError for this string {}, extracted from this rawref"
+                    # try:
+                    #     print u"inputError for this string {}, extracted from this rawref {}".format(
+                    #     u'{} {}'.format(self.index.title, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()),
+                    #     self.raw_ref)
+                    # except AttributeError:
+                    #     print u"inputError for this string {}, extracted from this rawref"
 
         return new_ref
 
@@ -1038,7 +1045,7 @@ class Source(object):
         text_to_match = re.sub(u'\(.*?\)', u'', self.text)
         results = disambiguate_ref_list(self.ref.normal(), [(text_to_match, '0')])
         self.pm_ref = results['0']['A Ref'] if results['0'] else results['0']
-        print u"text: {} \n ref: {} \n pm_ref: {}".format(text_to_match, self.ref, self.pm_ref)
+        # print u"text: {} \n ref: {} \n pm_ref: {}".format(text_to_match, self.ref, self.pm_ref)
         return self.pm_ref
 
 class RawRef(object):
@@ -1061,15 +1068,16 @@ def write_to_file(text, mode='a'):
 
 def parse_by_topic(topic_file_path):
     # topic_file_path = u"009_TET_test/tevila.html"
-    t = bs_read(ASPAKLARIA_HTML_FILES + u"/{}".format(topic_file_path))
+    t = bs_read(topic_file_path)
     # parse_refs(t)
     t.parse_refs()
     try:
         t.parse_shams()
     except:
-        print "Failed on something"
+        print u"Shams Failed on something"
     cnt = 0
     post_topic_documents(t, cnt)
+    return t
 
 def parse2pickle(letter=u''):
     topic_le_table = dict()
@@ -1100,7 +1108,7 @@ def parse2pickle(letter=u''):
         letter_name = re.search(u".*_(.*?$)", letter)
         if letter_name:
             letter_name = letter_name.group(1)
-            print u'{} headwords in the letter {}'.format(i, letter_name)
+            # print u'{} headwords in the letter {}'.format(i, letter_name)
         with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/{}.pickle".format(letter_name),"w") as fp:
             # json.dump(topics, fp) #TypeError: <__main__.Topic object at 0x7f5f5bb73790> is not JSON serializable
             pickle.dump(topics, fp, -1)
@@ -1114,7 +1122,7 @@ def post_topic_documents(t, cnt):
         for s in authorCit.sources:
             if s.raw_ref:
                 # cnt_sources += 1
-                print s.raw_ref.rawText
+                # print s.raw_ref.rawText
                 solo_source_text = re.sub(re.escape(s.raw_ref.rawText), u'', s.text)
                 try:
                     s.ref.normal()
@@ -1128,12 +1136,12 @@ def post_topic_documents(t, cnt):
                                 'index': s.ref.index.title, 'is_sham': s.raw_ref.is_sham, 'author': s.author}
                     if hasattr(s, u'pm_ref'):
                         document['pm_ref'] = s.pm_ref
-                    print s.ref.normal()
+                    # print s.ref.normal()
                     # cnt_resolved += 1
                 else:
                     document = {'topic': t.headWord, 'text': solo_source_text, 'raw_ref': s.raw_ref.rawText,
                                 'author': s.author, 'is_sham': s.raw_ref.is_sham}
-                    print s.author  # "None... didn't find the Ref"
+                    # print s.author  # "None... didn't find the Ref"
                     # add_to = "sham" if s.raw_ref.is_sham else "not_caught"
                     # cnt_sham += 1 if add_to == "sham" else 0
                     # cnt_not_caught += 1 if add_to == "not_caught" else 0
@@ -1151,7 +1159,8 @@ def post_topic_documents(t, cnt):
                         document['segment_level'] = False
                 document['cnt'] = cnt
                 # document['topic_key'] = topic_key
-                db_aspaklaria.aspaklaria_source.insert_one(document)
+                # db_aspaklaria.aspaklaria_source.insert_one(document)
+                db_aspaklaria.aspaklaria_source.update({"topic": document['topic'], "cnt": document['cnt']}, document, upsert=True)
                 if 'ref' in document.keys():
                     sources.append(document['ref'])
                 cnt += 1
@@ -1336,6 +1345,8 @@ def post_topic(t, sources=None):
             if see and found_see and found_see[i]:
                 doc['found'] = found_see[i]
             db_aspaklaria.pairing.insert_one(doc)
+            # db_aspaklaria.pairing.update({"topic": doc['topic'], "cnt": doc['cnt']}, doc,
+            #                                        upsert=True)
         if found_see:
             topic_doc['found'] = found_see
     if t.altTitles:
@@ -1396,17 +1407,27 @@ def add_found_to_topics(collection): #  = 'topics'
 def convert_perk_parasha(ref, table):
     return table[ref]
 
+def parse_html_file(letter_folder=None, num_rand_files=None):
+    # letter_folder = letter if letter else random.sample(os.listdir(ASPAKLARIA_HTML_FILES), 1)[0]
+    letter_folder_topics = os.listdir(ASPAKLARIA_HTML_FILES + u"/{}".format(letter_folder))
+    letter_topics = random.sample(letter_folder_topics, num_rand_files) if num_rand_files else letter_folder_topics
+    for tf in letter_topics:
+        tfp = ASPAKLARIA_HTML_FILES + u"/{}/{}".format(letter_folder, tf)
+        t = parse_by_topic(tfp)
+        print tfp
+
 
 if __name__ == "__main__":
     # he_letter = u'010_ALEF'
     # letter = '009_TET'
-
-    # letter = '009_TET'  # 020_KAF
-    # skip_letters = []  # ['009_TET','050_NUN', '020_KAF', ]
+    # letter = ''  # 020_KAF, 009_TET
+    # skip_letters = ['020_KAF']  # ['009_TET','050_NUN', '020_KAF', ]
     # letters = [letter] if letter else os.listdir(ASPAKLARIA_HTML_FILES+
     #     u'/')
     # for letter in letters:
     #     if not os.path.isdir(ASPAKLARIA_HTML_FILES+ u'/{}'.format(letter)):
+    #         continue
+    #     if letter == 'test':
     #         continue
     #     if letter in skip_letters:
     #         print u'skipped {}'.format(letter)
@@ -1419,12 +1440,52 @@ if __name__ == "__main__":
     #     shamas_per_leter(he_letter)
     #     read_sources(u'{}'.format(he_letter), with_refs='with_refs')
 
+    args = argparse.ArgumentParser()
+    args.add_argument("-l", "--letter", dest="letter", default=None, help="list of letters with the Gimatria number ex: 020_KAF to be parsed and posted to the db, if empty must put in a number of topics to be chosen randomly from all the letters")
+    args.add_argument("-r", "--rand", dest="rand", default=None, help="a list of numbers respectively to the letters in the rand numbers of topics that will be chosen from the letter, 0 will parse the whole letter as well as keeping this arg blank")
+    args.add_argument("-f", "--file", dest="file", default=None, help="full path of a single topic file to parse and push to the DB")
+    user_args = args.parse_args()
+
     # testing!
-    topic_file_path = u"009_TET_test/tevila.html"
-    parse_by_topic(topic_file_path)
+    if user_args.file:
+        parse_by_topic(user_args.file)
+        exit(0)
+    if not user_args.letter and not user_args.rand:
+        print u"please give at leaset one argument of the fallowing number of topics or list of letters"
+        exit(1)
+    letter_folders = random.sample(os.listdir(ASPAKLARIA_HTML_FILES), int(user_args.rand)) if not user_args.letter else [u"{}_Test".format(l) for l in  user_args.letter.split()] #[None]*int(user_args.rand)
+    if not user_args.rand:
+        num_rand_files = [None]*len(letter_folders)
+    elif not user_args.letter:
+        num_rand_files = [1] * len(letter_folders)
+    else:
+        num_rand_files = [int(num) for num in user_args.rand.split()]
+
+    for letter_folder, num_rand in zip(letter_folders, num_rand_files):
+        if not letter_folder:
+            for i in range(num_rand):
+                parse_html_file(letter_folder, 1)
+        else:
+            parse_html_file(letter_folder, num_rand)
 
     # add_found_to_topics(collection='aspaklaria_topics')
     # add_found_to_topics(collection='pairing')
     # cProfile.runctx(u"g(x)", {'x': u'{}_{}'.format(letter_gimatria, he_letter), 'g': parse2pickle}, {}, 'stats')
     # p = pstats.Stats("stats")
     # p.strip_dirs().sort_stats("cumulative").print_stats()
+
+# create number system for test letters
+#     import os
+#     gim = "080"
+#     letter = "{}_PE".format(gim)
+#     new_dir = "/home/shanee/www/Sefaria-Data/sources/Aspaklaria/aspaklaria/www.aspaklaria.info/test/{}_Test".format(letter)
+#     command = "mkdir {}".format(new_dir)
+#     os.system(command)
+#     cnt = 1
+#     old_dir = "/home/shanee/www/Sefaria-Data/sources/Aspaklaria/aspaklaria/www.aspaklaria.info/{}".format(letter)
+#     for file in os.listdir(old_dir):
+#         if '_' in file:
+#             continue
+#         command = "cp '{}/{}' '{}/{}_{}.html'".format(old_dir, file, new_dir, gim, cnt)
+#         os.system(command)
+#         cnt +=1
