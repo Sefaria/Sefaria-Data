@@ -209,10 +209,11 @@ def oz_post_chelek_1():
         if u'שה @33וירא כתיב גבי אברהם כי ידעתי' in line:
             past_start=True         
         if past_start and u'IGNORE' not in line:
-            if u'@00' in line and (u'(א)' not in line or "Charity" in current_section):
-                if len(siman_box)>0:
-                    text_dict[current_section].append(siman_box)
-                    siman_box=[]
+            if u'@00' in line:
+                if (u'(א)' not in line or "Charity" in current_section):
+                    if len(siman_box)>0:
+                        text_dict[current_section].append(siman_box)
+                        siman_box=[]
             elif u"@88" in line:
                 if u'@88הלכות קריאת שמע' in line:
                     if len(siman_box)>0:
@@ -246,7 +247,7 @@ def oz_post_chelek_1():
     """
     if not make_toc_table and not trans_table:
         for title in text_dict.keys():
-            if len(text_dict[title])>0 and 'Alpha' not in title:
+            if len(text_dict[title])>0:# and 'Alpha' not in title:
                 print "posting "+title
                 if 'default' not in title:
                     version = {
@@ -256,7 +257,7 @@ def oz_post_chelek_1():
                         'text': text_dict[title]
                     }
                     post_text_weak_connection('Ohr Zarua, Volume I, '+title, version)
-                    post_text('Ohr Zarua, Volume I, '+title, version,weak_network=True, skip_links=True, index_count="on")
+                    #post_text('Ohr Zarua, Volume I, '+title, version,weak_network=True, skip_links=True, index_count="on")
                     
                 else:
                     version = {
@@ -266,7 +267,7 @@ def oz_post_chelek_1():
                         'text': text_dict[title]
                     }
                     post_text_weak_connection('Ohr Zarua, Volume I', version)
-                    post_text('Ohr Zarua, Volume I', version,weak_network=True, skip_links=True, index_count="on")
+                    #post_text('Ohr Zarua, Volume I', version,weak_network=True, skip_links=True, index_count="on")
                     
 def oz_post_chelek_2():
     with open('files/אור זרוע חלק ב מוכן.txt') as myfile:
@@ -280,13 +281,14 @@ def oz_post_chelek_2():
             past_start=True         
         elif past_start:
             if u'@00' in line:
-                if not_blank(re.sub(ur'@00\(.*?\)',u'',line)):
-                    add_to_next.append(re.sub(ur'@00\(.*?\)',u'',line).strip())
-                if len(siman_box)>0:
-                    simanim.append(siman_box)
-                    siman_box=[]
-                    if len(line.split())>3:
-                        siman_box.append(clean_line(line))
+                if "IGNORE" not in line:
+                    if not_blank(re.sub(ur'@00\(.*?\)',u'',line)):
+                        add_to_next.append(re.sub(ur'@00\(.*?\)',u'',line).strip())
+                    if len(siman_box)>0:
+                        simanim.append(siman_box)
+                        siman_box=[]
+                        if len(line.split())>3:
+                            siman_box.append(clean_line(line))
             elif u'@88' in line:
                 if make_toc_table:
                     with open('alt_toc_table.csv','a') as fd:
@@ -366,12 +368,12 @@ def oz_post_chelek_3():
     #missing two simanim in Bava Batra
     text_dict['Piskei Bava Batra'].insert(255, [])
     text_dict['Piskei Bava Batra'].insert(255, [])
-    #"""
+    """
     for sindex, siman in enumerate(text_dict['Piskei Bava Batra']):
         for pindex, paragraph in enumerate(siman):
             print sindex, pindex, paragraph
     1/0
-    #"""
+    """
     for title in text_dict.keys():
         print "posting "+title
         if True:#len(text_dict[title])>0 and "Kam" in title:
@@ -452,7 +454,7 @@ def oz_post_chelek_4():
     #1/0
     """
     for title in text_dict.keys():
-        if len(text_dict[title])>0 and "Shev" not in title:
+        if len(text_dict[title])>0:# and "Shev" not in title:
             print "posting "+title
             version = {
                 'versionTitle': 'Ohr Zarua, Zhytomyr, 1862',
@@ -516,7 +518,8 @@ def link_talmud_sections():
                             post_link(link, weak_network=True)
         
 def _filter(some_string):
-    return not_blank(some_string)
+    return len(some_string.split(u' '))>9
+    #return not_blank(some_string)
 def dh_extract_method(some_string):
     some_string=re.sub(ur'<.*?>',u'',some_string)
     some_string=re.sub(ur'\[.*?\]',u'',some_string)
@@ -627,12 +630,12 @@ if trans_table:
     f = open('trans_table.csv','w')
     f.close()
 #oz_post_index()
-#oz_post_chelek_1()
-#oz_post_chelek_2()
-link_first_two_volumes()
+oz_post_chelek_1()
+oz_post_chelek_2()
+#link_first_two_volumes()
 #finish_file()
-#oz_post_chelek_3()
-#oz_post_chelek_4()
+oz_post_chelek_3()
+oz_post_chelek_4()
 #generate_range_tables()
 #link_talmud_sections()
 #721
