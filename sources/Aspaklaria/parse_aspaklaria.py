@@ -102,6 +102,8 @@ def bs_read(fileName):
         file_content = f.read()
 
     content = BeautifulSoup(file_content, "lxml")
+    if not content.findAll('h1'):
+        return
     headWord = clean_txt(content.findAll('h1')[0].text)
     t = Topic(headWord)
     b = AuthorCit(u'before')
@@ -1412,10 +1414,13 @@ def parse_html_file(letter_folder=None, num_rand_files=None):
     letter_folder_topics = os.listdir(ASPAKLARIA_HTML_FILES + u"/{}".format(letter_folder))
     letter_topics = random.sample(letter_folder_topics, num_rand_files) if num_rand_files else letter_folder_topics
     for tf in letter_topics:
+        print u"/{}/{}".format(letter_folder, tf)
         tfp = ASPAKLARIA_HTML_FILES + u"/{}/{}".format(letter_folder, tf)
-        t = parse_by_topic(tfp)
-        print tfp
-
+        try:
+            t = parse_by_topic(tfp)
+            print tfp
+        except:
+            print u"ERROR parsing {}".format(u"/{}/{}".format(letter_folder, tf))
 
 if __name__ == "__main__":
     # he_letter = u'010_ALEF'
@@ -1448,11 +1453,14 @@ if __name__ == "__main__":
 
     # testing!
     if user_args.file:
-        parse_by_topic(user_args.file)
-        exit(0)
+        try:
+            parse_by_topic(user_args.file)
+        except:
+            u"{} has failed".format(user_args.file)
+        sys.exit(1)
     if not user_args.letter and not user_args.rand:
         print u"please give at leaset one argument of the fallowing number of topics or list of letters"
-        exit(1)
+        sys.exit(1)
     letter_folders = random.sample(os.listdir(ASPAKLARIA_HTML_FILES), int(user_args.rand)) if not user_args.letter else [u"{}_Test".format(l) for l in  user_args.letter.split()] #[None]*int(user_args.rand)
     if not user_args.rand:
         num_rand_files = [None]*len(letter_folders)
