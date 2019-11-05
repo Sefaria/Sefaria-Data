@@ -154,9 +154,27 @@ def prettify_text(tref):
             print("Unable to fix formatting at {}".format(segment.normal()))
             continue
 
+        new_dicta_text = fix_nikkud(new_dicta_text)
+
         if new_dicta_text != dicta_tc.text:
             dicta_tc.text = new_dicta_text
             dicta_tc.save()
+
+
+def fix_nikkud(segment):
+    """
+    convert to כתיב מלא
+    :param segment:
+    :return:
+    """
+    #  Move any instances of Holam prior to a meteg-vuv to the vuv
+    segment = re.sub(r'\u05b9\u05d5\u05bd', '\u05d5\u05b9', segment)
+    # kibbutz prior to meteg-vuv, change the kibbutz to a shuruk
+    segment = re.sub(r'\u05bb\u05d5\u05bd', '\u05d5\u05bc', segment)
+    #  hataf-kamatz or kamatz or kamatz katan prior to meteg-vuv, change the mark to a holam
+    segment = re.sub(r'[\u05c7\u05b3\u05b8]\u05d5\u05bd', '\u05db\u05b9', segment)
+
+    return segment
 
 
 if __name__ == '__main__':
