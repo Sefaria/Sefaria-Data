@@ -16,7 +16,7 @@ from sefaria.model import *
 
 
 davidson_vtitle = 'William Davidson Edition - Aramaic'
-dicta_vtitle = 'Dicta Nikkud'
+dicta_vtitle = 'William Davidson Edition - Vocalized Aramaic'
 
 
 def prepare_sefaria_text(oref):
@@ -94,9 +94,9 @@ def create_nikkud_version():
     if version:
         version.delete()
 
-    for ftitle in sorted(os.listdir('./Berakhot'), key=filename_sort_key):
+    for ftitle in sorted([f for f in os.listdir('./Maleh') if re.search(r'[ab]\.txt$', f)], key=filename_sort_key):
         print(ftitle)
-        ftitle = os.path.join('./Berakhot', ftitle)
+        ftitle = os.path.join('./Maleh', ftitle)
         align_file(ftitle)
 
 
@@ -178,6 +178,6 @@ def fix_nikkud(segment):
 
 
 if __name__ == '__main__':
-    # create_nikkud_version()
-    prettify_text('Berakhot 2a-46b')
+    create_nikkud_version()
+    prettify_text('Berakhot')
     compare_versions()
