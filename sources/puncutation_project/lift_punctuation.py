@@ -67,7 +67,7 @@ class TalmudSteinsaltz(object):
         self.steinsaltz = steinsaltz
 
     def lift_punctuaion(self):
-        return ''
+        return '!' if self.talmud else ''
 
     def reform_pair(self):
         return '{}{}'.format(self.talmud, self.steinsaltz)
@@ -85,7 +85,7 @@ class TalmudSteinsaltz(object):
             steinsaltz = ''
         else:
             steinsaltz = segment[current_end:next_start]
-        return cls(talmud, steinsaltz)
+        return cls(actual_bleach(talmud), actual_bleach(steinsaltz))
 
 
 class SteinsaltzIntro(TalmudSteinsaltz):
@@ -98,6 +98,47 @@ class SteinsaltzIntro(TalmudSteinsaltz):
     @classmethod
     def load_talmud_steinsaltz(cls, segment, next_start, *args):
         return cls(segment[:next_start])
+
+
+class TSMap(object):
+    """
+    represents a map from TalmudSteinsaltz onto base Talmud
+    """
+    def __init__(self, reg_talmud, talmud_steinsaltz):
+        """
+        :param unicode reg_talmud:
+        :param TalmudSteinsaltz talmud_steinsaltz:
+        """
+        self.reg_talmud = reg_talmud
+        self.talmud_steinsaltz = talmud_steinsaltz
+
+    def get_punctuation_for_talmud(self):
+        return '{}{}'.format(self.reg_talmud, self.talmud_steinsaltz.lift_punctuaion())
+
+    @classmethod
+    def build_from_map(cls, segment, ts, mapping):
+        if mapping[0] == -1 and mapping[1] == -1:
+            return cls(u'', ts)
+        return cls(u' '.join(segment.split()[mapping[0]:mapping[1]+1]), ts)
+
+
+class TSSuite(object):
+    def __init__(self, tsmap_list):
+        self.suite = tsmap_list
+
+    def get_punctuated_talmud(self):
+        return u' '.join([tsmap.get_punctuation_for_talmud() for tsmap in self.suite])
+
+
+def build_maps(simple_segment, ellucidated_segment):
+    modeled = ModeledSegment(ellucidated_segment)
+    words = actual_bleach(simple_segment).split()
+    ts_objects = modeled.get_ts_objects()
+    mapping = match_text(words, [ts.get_talmud() for ts in ts_objects])
+
+    return TSSuite([TSMap.build_from_map(simple_segment, ts, single_map)
+                    for ts, single_map in zip(ts_objects, mapping['matches'])])
+
 
 
 
@@ -126,7 +167,10 @@ We'll want to have pairs strings - Talmud, ellucidation. This will be a class. I
 logic can be here. The elucidation will always follow the Talmud. We'll want to have a special "intro" subclass. 
 """
 
-my_r = sef.Ref("Steinsaltz on Berakhot 2a.1")
+my_r = sef.Ref("Steinsaltz on Berakhot 2a.2")
+base_r = sef.Ref("Berakhot 2a.2")
 my_t = my_r.text('he', elucidated_vtitle).text
-ms = ModeledSegment(my_t)
-print(my_t, ms.reform_segment(), sep='\n\n')
+base_t = base_r.text('he', base_vtitle).text
+maps = build_maps(base_t, my_t)
+print(base_t, my_t, maps.get_punctuated_talmud(), sep='\n\n')
+print(*[ts.reg_talmud for ts in maps.suite], sep='\n')
