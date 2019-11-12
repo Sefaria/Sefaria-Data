@@ -22,7 +22,7 @@ def create_Word_form(word_form_str, headword, lexicon, primaryH):
         wordform_obj.lookups[0]["primary"] = True
     return wordform_obj.save()
 
-with open("/home/ephraim/Downloads/most_common_words_and_lexicon_entries_revised.csv") as csvfile:
+with open("most_common_words_and_lexicon_entries_revised.csv") as csvfile:
     reader = csv.DictReader(csvfile)
     word_form_str = ""
     for i, row in enumerate(reader, 2):
