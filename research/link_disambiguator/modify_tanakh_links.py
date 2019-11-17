@@ -11,6 +11,12 @@ import sefaria.tracker as tracker
 from sefaria import settings
 from sefaria.system.database import db
 
+"""
+WARNING!!!!!!!!!!!!!
+THERE'S AN ISSUE IN THIS SCRIPT THAT IT CAN POTENTIALLY REPLACE THE WRONG TEXT
+E.G.
+ואל אלהיה ורות א׳:ט״ז׳:ט״זמרה (רות א) עמך עמי וא-ל
+"""
 
 def get_tc(tref, just_ref=False, tries=0):
     try:
@@ -136,7 +142,7 @@ def modify_tanakh_links_one(main_ref, section_map, error_file_csv, user):
         new_main_text = main_tc.text
         edited = False
         for section_tref, segment_ref_dict in section_map.items():
-            #section_oref = get_tc(section_tref, True)
+            section_oref = get_tc(section_tref, True)
             quoted_list_temp = sorted(segment_ref_dict.items(), key=lambda x: x[0])
             segment_ref_list = [segment_ref_dict.get(i, None) for i in xrange(quoted_list_temp[-1][0]+1)]
             # for r in segment_ref_list:

@@ -23,7 +23,7 @@ jar = requests.cookies.RequestsCookieJar()
 jar.set("wp-postpass_b0cab8db5ce44e438845f4dedf0fcf4f", "%24P%24BH2d6c1lhrllIz02CYT36lWgURQXVe1")
 
 img_text_re = re.compile(u"(.*?)\(max-width.*?(br/>|/p>|/>)")
-footnote_re = re.compile(u"\[[0123456789]+\]")
+footnote_re = re.compile(u"(\[[0123456789]+\])")
 # le'eil and le'halan
 self_re = re.compile(u"(?<=\(.*)(\u05dc\u05e2\u05d9\u05dc|\u05dc\u05d4\u05dc\u05df) (\S*), (\S*).*\)")
 # shulchan arukh
@@ -112,7 +112,7 @@ def collect_trans_titles_from_tsv(filename):
                 first = False
                 continue
 
-            heb, eng = line.split("\t")
+            _, heb, eng = line.split("\t")
             if heb[0] == "\"":
                 heb = heb[1:-1].strip()
             if eng[0] == "\"":
@@ -325,9 +325,13 @@ def get_soup(book_name, url_number, lang="he"):
                         if sup.a:
                             footnote_num = sup.a.text.replace("]", "").replace("[", "")
                             try:
-                                footnote_text = footnotes[int(footnote_num)]
+                                footnote_key = int(footnote_num)
+                            except ValueError:
+                                footnote_key = 0  # just a guess. this seems to work in the one case that this is relevant
+                            try:
+                                footnote_text = footnotes[footnote_key]
                                 footnote_tag = u"<sup>{}</sup><i class=\"footnote\">{}</i>".format(footnote_num, clean_text(footnote_text))
-                                paragraphs[len(paragraphs)-1] += footnote_tag
+                                paragraphs[len(paragraphs)-1] = paragraphs[len(paragraphs)-1].replace(u"~~~[{}]~~~".format(footnote_num), footnote_tag)
                             except TypeError:
                                 continue
                 first = False
@@ -478,8 +482,8 @@ def supplement_parser():
 
 # removes unwanted text from paragraphs
 def clean_text(paragraph):
-    paragraph = re.sub(footnote_re, "", paragraph)
-    paragraph = re.sub(img_text_re, "", paragraph).strip()
+    paragraph = re.sub(footnote_re, ur"~~~\1~~~", paragraph)
+    paragraph = re.sub(img_text_re, u"", paragraph).strip()
     paragraph = paragraph.replace(u"\u0124", u"\u1E24").replace(u"\u0125", u"\u1E25")
 
     return paragraph
@@ -1022,7 +1026,7 @@ if __name__ == "__main__":
     add_term("Peninei Halakhah", u"פניני הלכה")
     add_category("Peninei Halakhah",["Halakhah", "Peninei Halakhah"], u"פניני הלכה")
     he_book_list = []  # [5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
-    both_book_list = [3]  # [0, 1, 2, 3, 4, 10]
+    both_book_list = [10]  # [0, 1, 2, 3, 4, 10]
     langs = ["he", "both"]
 
     for lang, book_list in enumerate([he_book_list, both_book_list]):
