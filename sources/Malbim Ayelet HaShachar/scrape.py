@@ -71,4 +71,4 @@ send_text = {
     "versionSource": "https://he.wikisource.org/wiki/%D7%90%D7%99%D7%9C%D7%AA_%D7%94%D7%A9%D7%97%D7%A8_(%D7%9E%D7%9C%D7%91%D7%99%22%D7%9D)"
 }
 post_text("Malbim Ayelet HaShachar", send_text)
-#post_text("Malbim Ayelet HaShachar", send_text, server="http://localhost:8000")
+post_text("Malbim Ayelet HaShachar", send_text, server="http://localhost:8000")

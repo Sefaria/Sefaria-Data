@@ -24,7 +24,7 @@ absolute_tcs = []
 vtitle = "Torat Emet Zohar"
 lang = "he"
 skip = []
-until = 3
+until = 100
 save = True
 for row in data:
     ref = Ref("Zohar "+row[0])
