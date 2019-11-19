@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
-import sys
 import os
-# for a script located two directories below this file
+import re
+import sys
+import csv
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
 from sources.local_settings import *
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
-os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
+os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
+import django
+django.setup()
 from sources.functions import *
-import re
 import codecs
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
@@ -19,13 +21,21 @@ tractate_titles = {}
 for tractate_title in library.get_indexes_in_category("Bavli"):
     he_title = library.get_index(tractate_title).get_title("he")
     tractate_titles[he_title]=tractate_title
-    
+def from_en_name_to_he_name(name):
+    for key in tractate_titles.keys():
+        if tractate_titles[key]==name:
+            return key
 class RC_Tractate:
     def __init__(self, file_name):
             self.file_name = file_name
-            self.he_tractate_name = get_hebrew_name(' '.join(file_name.split()[2:-1]).decode('utf8'))
-            self.en_tractate_name = tractate_titles[self.he_tractate_name]
-            self.parse_tractate()
+            if 'R_' in file_name:
+                self.en_tractate_name=re.search(ur'(?<=on ).*?(?=\.tsv)',file_name).group()
+                self.he_tractate_name=from_en_name_to_he_name(self.en_tractate_name)
+                self.parse_tractate2()
+            else:
+                self.he_tractate_name = get_hebrew_name(' '.join(file_name.split()[2:-1]).decode('utf8'))
+                self.en_tractate_name = tractate_titles[self.he_tractate_name]
+                self.parse_tractate()
     def make_tractate_index(self):
         en_title = self.en_tractate_name
         he_title = self.he_tractate_name
@@ -103,7 +113,37 @@ class RC_Tractate:
                             
         final_list.insert(0,[])
         self.text = final_list
-    
+    def parse_tractate2(self):
+        print 'parsing {}...'.format(self.en_tractate_name)
+        with open('new_files/'+self.file_name) as tsvfile:
+          reader = csv.reader(tsvfile, delimiter='\t')
+          final_list = make_talmud_array(self.en_tractate_name)
+          current_daf_ref={}
+          next_row_goes_back=False
+          for row in reader:
+              daf_row=row[0].decode('utf','replace')
+              text_row=row[1].decode('utf','replace')
+              if next_row_goes_back:
+                 next_row_goes_back=False 
+                 if not_blank(text_row):
+                     back_text=re.findall(ur'^.*?[\.:]',text_row)[0]
+                     final_list[get_page(current_daf_ref["daf"],current_daf_ref["amud"])][-1]=final_list[get_page(current_daf_ref["daf"],current_daf_ref["amud"])][-1]+u' '+back_text.strip()
+                     text_row.replace(back_text,u'')
+                 else:
+                     print "Problem here..."
+                     print final_list[get_page(current_daf_ref["daf"],current_daf_ref["amud"])][-1]
+              if not_blank(daf_row):
+                  current_daf_ref=extract_daf(daf_row)
+              if not_blank(text_row):
+                  for comment in text_row.split(u':'):
+                     if not_blank(comment):
+                         final_list[get_page(current_daf_ref["daf"],current_daf_ref["amud"])].append(comment.strip())
+                         
+                  if text_row[-1]!=u'.' and text_row[-1]!=u':':
+                     next_row_goes_back=True  
+             
+        final_list.insert(0,[])
+        self.text = final_list
     def rc_post_text(self):
         version = {
             'versionTitle': 'Vilna Edition',
@@ -203,10 +243,6 @@ def make_talmud_array(book):
     return_array = []
     for x in range(len(tc.text)):
         return_array.append([])
-    for index, perek in enumerate(return_array):
-        tc2 = tc.text[index]
-        for x in range(len(tc.text)):
-            return_array[index].append([])
     return return_array
 def extract_daf(s):
     return_dict = {}
@@ -267,8 +303,8 @@ def get_mishnah_seder(mishnah_title):
             return seder
     return None
 posting_cats = False
-posting_index = False
-posting_text = False
+posting_index = True
+posting_text = True
 linking = False
 
 if posting_cats:
@@ -276,7 +312,7 @@ if posting_cats:
 admin_links = []
 site_links = []
 for rc_file in os.listdir("files"):
-    if ".txt" in rc_file:
+    if ".txt" in rc_file and False:
         current_tractate = RC_Tractate(rc_file)
         admin_links.append(SEFARIA_SERVER+"/admin/reset/Rabbeinu_Chananel_on_"+current_tractate.en_tractate_name.replace(u" ",u"_"))
         site_links.append(SEFARIA_SERVER+"/Rabbeinu_Chananel_on_"+current_tractate.en_tractate_name.replace(u" ",u"_"))
@@ -294,7 +330,25 @@ for rc_file in os.listdir("files"):
             for cindex, comment in enumerate(daf):
                 print dindex, cindex, comment
         """
-        
+for rc_file in os.listdir("new_files"):
+    if ".tsv" in rc_file and "Avo" not in rc_file:
+        current_tractate = RC_Tractate(rc_file)
+        admin_links.append(SEFARIA_SERVER+"/admin/reset/Rabbeinu_Chananel_on_"+current_tractate.en_tractate_name.replace(u" ",u"_"))
+        site_links.append(SEFARIA_SERVER+"/Rabbeinu_Chananel_on_"+current_tractate.en_tractate_name.replace(u" ",u"_"))
+        if posting_index:
+            print "posting ",current_tractate.en_tractate_name," index..."
+            current_tractate.make_tractate_index()
+        if posting_text:
+            print "posting ",current_tractate.en_tractate_name," text..."
+            current_tractate.rc_post_text()
+        if linking:
+            print "linking",current_tractate.en_tractate_name,"..."
+            current_tractate.rc_link()
+        """
+        for dindex, daf in enumerate(current_tractate.text):
+            for cindex, comment in enumerate(daf):
+                print dindex, cindex, comment
+        """    
 print "Admin Links:"
 for link in admin_links:
     print link
