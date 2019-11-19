@@ -8,12 +8,14 @@ import sefaria_classes as sef
 import bleach
 from sefaria.utils.hebrew import strip_nikkud
 from data_utilities.dibur_hamatchil_matcher import match_text
+from data_utilities.util import WeightedLevenshtein
 
 
 # base_vtitle = 'William Davidson Edition - Aramaic'
 base_vtitle = 'William Davidson Edition - Vocalized Aramaic'
 elucidated_vtitle = 'William Davidson Edition - Hebrew'
 punctuated_vtitle = 'William Davidson Edition - Aramaic Punctuated'
+WL = WeightedLevenshtein()
 
 
 def extract_talmud_text(text_segment):
@@ -108,9 +110,16 @@ class TalmudSteinsaltz(object):
         }
         punc_regex = re.compile(self.punctuation_regex())
         punc_marks = [match.group() for match in punc_regex.finditer(self.steinsaltz)]
-        talmud_mark = re.search('r{}$'.format(punc_regex.pattern), self.talmud)
+        talmud_mark = re.search(r'({})$'.format(punc_regex.pattern), self.talmud)
+
+        # Talmud mark takes priority, with the exception of the comma.
         if talmud_mark:
-            punc_marks.append(talmud_mark.group())
+            if talmud_mark == ',':
+                # Comma gets treated as standard punctuation (this is just a rule-of-thumb, feel free to revisit)
+                punc_marks.append(talmud_mark.group(1))
+            else:
+                return talmud_mark.group(1)
+
         if punc_marks:
             return min(punc_marks, key=lambda x: priority_map[x])
         else:
@@ -190,6 +199,16 @@ class TSMap(object):
 
     def get_punctuation_for_talmud(self):
         cleaned_talmud = re.sub('{}$'.format(TalmudSteinsaltz.punctuation_regex()), '', self.reg_talmud)
+        """
+        For punctuation within bold - use simple word counts. In places where the length of both Talmud fragments don't match
+        up, make a(n educated) guess, but mark with a tilda (~)
+        Let's write two methods: One uses word counts, the other uses word matching.
+        """
+        if len(cleaned_talmud.split()) == len(self.talmud_steinsaltz.talmud.split()):
+            cleaned_talmud = self.lift_from_bold_counts(cleaned_talmud, self.talmud_steinsaltz)
+        else:
+            cleaned_talmud = self.lift_from_bold_word_match(cleaned_talmud, self.talmud_steinsaltz)
+
         return '{}{}'.format(cleaned_talmud, self.talmud_steinsaltz.lift_punctuation())
 
     @classmethod
@@ -204,6 +223,66 @@ class TSMap(object):
         :return: bool
         """
         return bool(self.reg_talmud)
+
+    @staticmethod
+    def lift_from_bold_counts(simple_talmud, talmud_steinsaltz):
+        """
+        Add punctuation that appears inside bold part of Steinsaltz elucidation (not at the edges though). This method
+        is only to be used when both versions have the same number of words
+        :param unicode simple_talmud:
+        :param TalmudSteinsaltz talmud_steinsaltz:
+        :return: unicode
+        """
+        simple_words, stein_words = simple_talmud.split(), talmud_steinsaltz.talmud.split()
+        assert len(simple_words) == len(stein_words)
+
+        punc_regex = re.compile(r'({})$'.format(TalmudSteinsaltz.punctuation_regex()))
+
+        def lift_punctuation(simple, stein):
+            punc_match = punc_regex.search(stein)
+            if punc_match:
+                return '{}{}'.format(simple, punc_match.group(1))
+            else:
+                return simple
+        temp_talmud = u' '.join(map(lift_punctuation, simple_words, stein_words))
+
+        # strip out punctuation on the edge - this will need to take punctuation from Steinsaltz into account
+        return punc_regex.sub('', temp_talmud)
+
+    @staticmethod
+    def lift_from_bold_word_match(simple_talmud, talmud_steinsaltz):
+        """
+        Extract punctuation using text matching.
+        Go for exact string match first where there is only one match. If that doesn't work, use "rule-of-thumb"
+        but mark with a `~`
+        :param unicode simple_talmud:
+        :param TalmudSteinsaltz talmud_steinsaltz:
+        :return:
+        """
+
+        punc_regex = re.compile(r'({})$'.format(talmud_steinsaltz.punctuation_regex()))
+        talmud_words, cleaned_talmud_words = simple_talmud.split(), strip_nikkud(simple_talmud).split()
+
+        for word_num, stein_word in enumerate(talmud_steinsaltz.talmud.split()[:-1]):  # don't bother with last word
+            punc_match = punc_regex.search(stein_word)
+            if not punc_match:
+                continue
+
+            stripped = re.sub(r'[^\u05d0-\u05ea]', '', stein_word)
+            if cleaned_talmud_words.count(stripped) == 1:  # single, perfect match
+                word_index = cleaned_talmud_words.index(stripped)
+                talmud_words[word_index] = '{}{}'.format(talmud_words[word_index], punc_match.group(1))
+
+            else:
+                levenshteins = [WL.calculate(stripped, talmud_word, False) for talmud_word in cleaned_talmud_words]
+                distance_penalties = [1 + abs(0.05*(i-word_num)) for i in range(len(cleaned_talmud_words))]
+                # yes, numpy would be better, don't over engineer though
+                scores = [i*j for i, j in zip(levenshteins, distance_penalties)]
+                best_match = min(range(len(scores)), key=lambda x: scores[x])
+
+                # since we're using fuzzy matching, mark with a `~` for manual review
+                talmud_words[best_match] = '{}~{}'.format(talmud_words[best_match], punc_match.group(1))
+        return ' '.join(talmud_words)
 
 
 class TSSuite(object):
@@ -277,8 +356,8 @@ We'll want to have pairs strings - Talmud, ellucidation. This will be a class. I
 logic can be here. The elucidation will always follow the Talmud. We'll want to have a special "intro" subclass. 
 """
 
-my_r = sef.Ref("Steinsaltz on Berakhot 47b.12")
-base_r = sef.Ref("Berakhot 47b.12")
+my_r = sef.Ref("Steinsaltz on Berakhot 2b.13")
+base_r = sef.Ref("Berakhot 2b.13")
 my_t = my_r.text('he', elucidated_vtitle).text
 base_t = base_r.text('he', base_vtitle).text
 maps = build_maps(base_t, my_t)
