@@ -37,13 +37,15 @@ for f in ["Kereti 1.txt", "Kereti 2.txt"]:
                 line = line.replace("יוד", "י")
                 seif = getGematria(line)
                 if seif - prev_seif != 1:
+                    kereti_text_dict[siman] += 1
                     line_to_write = u"{},{},{},{}".format(f, prev_line.decode('utf-8'), line.decode('utf-8'), prev_text_line.decode('utf-8'))
                     line_to_write = line_to_write.replace("\n", "") + "\n"
                     report.write(line_to_write)
-                kereti_text_dict[siman] += 1
                 prev_line = line
                 prev_seif = seif
             prev_text_line = line
+
+
 
 print len(kereti_text_dict.keys()) - len(mechaber_kereti_dict.keys())
 
