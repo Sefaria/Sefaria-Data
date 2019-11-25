@@ -4,7 +4,7 @@ import re
 import os
 import json
 import codecs
-import cal_tools
+from . import cal_tools
 import itertools
 #from hmmlearn import hmm
 #from sklearn.preprocessing import LabelEncoder
@@ -57,65 +57,65 @@ class Cal_ngram:
         dist = weighted_levenshtein(cw,tw,weighted_levenshtein_cost)
         return dist < 1.4
 
-letter_freqs_list = [u'י',u'ו',u'א',u'מ',u'ה',u'ל',u'ר',u'נ',u'ב',u'ש',u'ת',u'ד',u'כ',u'ע',u'ח',u'ק',u'פ',u'ס',u'ט',u'ז',u'ג',u'צ']
+letter_freqs_list = ['י','ו','א','מ','ה','ל','ר','נ','ב','ש','ת','ד','כ','ע','ח','ק','פ','ס','ט','ז','ג','צ']
 
 sofit_map = {
-    u'ך': u'כ',
-    u'ם': u'מ',
-    u'ן': u'נ',
-    u'ף': u'פ',
-    u'ץ': u'צ',
+    'ך': 'כ',
+    'ם': 'מ',
+    'ן': 'נ',
+    'ף': 'פ',
+    'ץ': 'צ',
 }
 
 abbrev_map = {
-    u"דר'":u"דרב",
-    u"ר'":u"רב",
-    u"ד'":u"ארבע",
-    u"ה'":u"חמש",
-    u"אקר'":u"אקרא",
-    u"בריש'":u"ברישא",
-    u"דילמ'":u"דילמא",
-    u"אמתני'":u"אמתניתין",
-    u"ש'מ":u"שמע מינה",
-    u"ואיבעי'":u"ואיבעית",
-    u"אימ'":u"אימא",
-    u"קמ'ל":u"קא משמע לן",
-    u"והקמ'ל":u"והקא משמע לן",
-    u"ת'ש":u"תא שמע",
-    u"ת'ר":u"תנו רבנן",
-    u"דת'ר":u"דתנו רבנן",
-    u"ס'ד":u"סלקא דעתך",
-    u"למ'ד":u"למאן דאמר",
-    u"מ'ט":u"מאי טעמא",
-    u"ומ'ט":u"ומאי טעמא",
-    u"ת'ק":u"תנא קמא",
-    u"קב'ה":u"קדוש ברוך הוא",
-    u"מ'ל":u"מנא לאן"
+    "דר'":"דרב",
+    "ר'":"רב",
+    "ד'":"ארבע",
+    "ה'":"חמש",
+    "אקר'":"אקרא",
+    "בריש'":"ברישא",
+    "דילמ'":"דילמא",
+    "אמתני'":"אמתניתין",
+    "ש'מ":"שמע מינה",
+    "ואיבעי'":"ואיבעית",
+    "אימ'":"אימא",
+    "קמ'ל":"קא משמע לן",
+    "והקמ'ל":"והקא משמע לן",
+    "ת'ש":"תא שמע",
+    "ת'ר":"תנו רבנן",
+    "דת'ר":"דתנו רבנן",
+    "ס'ד":"סלקא דעתך",
+    "למ'ד":"למאן דאמר",
+    "מ'ט":"מאי טעמא",
+    "ומ'ט":"ומאי טעמא",
+    "ת'ק":"תנא קמא",
+    "קב'ה":"קדוש ברוך הוא",
+    "מ'ל":"מנא לאן"
 
 }
 letter_freqs = {
-    u'י': 0.0,
-    u'ו': 0.2145,
-    u'א': 0.2176,
-    u'מ': 0.3555,
-    u'ה': 0.4586,
-    u'ל': 0.4704,
-    u'ר': 0.4930,
-    u'נ': 0.5592,
-    u'ב': 0.5678,
-    u'ש': 0.7007,
-    u'ת': 0.7013,
-    u'ד': 0.7690,
-    u'כ': 0.8038,
-    u'ע': 0.8362,
-    u'ח': 0.8779,
-    u'ק': 0.9124,
-    u'פ': 0.9322,
-    u'ס': 0.9805,
-    u'ט': 0.9924,
-    u'ז': 0.9948,
-    u'ג': 0.9988,
-    u'צ': 1.0
+    'י': 0.0,
+    'ו': 0.2145,
+    'א': 0.2176,
+    'מ': 0.3555,
+    'ה': 0.4586,
+    'ל': 0.4704,
+    'ר': 0.4930,
+    'נ': 0.5592,
+    'ב': 0.5678,
+    'ש': 0.7007,
+    'ת': 0.7013,
+    'ד': 0.7690,
+    'כ': 0.8038,
+    'ע': 0.8362,
+    'ח': 0.8779,
+    'ק': 0.9124,
+    'פ': 0.9322,
+    'ס': 0.9805,
+    'ט': 0.9924,
+    'ז': 0.9948,
+    'ג': 0.9988,
+    'צ': 1.0
 }
 def mssl(l):
     best = cur = 0
@@ -159,12 +159,12 @@ def weighted_levenshtein(s1,s2,cost_fn,min_cost=1.0):
     if len(s2) == 0:
         return len(s1)
 
-    v0 = range(len(s2)+1)
-    v1 = [0 for _ in xrange(len(s2)+1)]
+    v0 = list(range(len(s2)+1))
+    v1 = [0 for _ in range(len(s2)+1)]
 
-    for i in xrange(len(s1)):
+    for i in range(len(s1)):
         v1[0] = i + 1
-        for j in xrange(len(s2)):
+        for j in range(len(s2)):
             cost_sub = 0.0 if (s1[i] == s2[j]) else cost_fn(s1[i],s2[j],min_cost=min_cost)
             cost_ins = cost_fn(s2[j],min_cost=min_cost)
             cost_del = cost_fn(s1[i],min_cost=min_cost)
@@ -181,23 +181,23 @@ def sofit_swap(C):
 
 
 def get_two_letter_word(word):
-    temp_word = u''
+    temp_word = ''
     for i,C in enumerate(word):
         temp_word += sofit_swap(C)
     try:
-        indices = np.array(map(lambda c: letter_freqs_list.index(c), temp_word))
+        indices = np.array([letter_freqs_list.index(c) for c in temp_word])
         top_indices = (-indices).argsort()[:2]
-        return u''.join([temp_word[x] for x in top_indices[top_indices.argsort()]]) #make sure that the letters are in the same order as they were in 'word'
+        return ''.join([temp_word[x] for x in top_indices[top_indices.argsort()]]) #make sure that the letters are in the same order as they were in 'word'
     except ValueError:
         return None
 
 def tokenize_words(str,strip_html=True):
-    str = str.replace(u"־"," ")
+    str = str.replace("־"," ")
     if strip_html:
        str = re.sub(r"</?[a-z]+>","",str) #get rid of html tags
     str = re.sub(r"\([^\(\)]+\)","",str) #get rid of refs
     str = str.replace('"',"'")
-    word_list = filter(bool,re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]",str))
+    word_list = list(filter(bool,re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]",str)))
     return word_list
 
 
@@ -256,7 +256,7 @@ def make_training_sets(type):
                     try:
                         word = line_obj["word"]
                     except KeyError:
-                        print "continuing"
+                        print("continuing")
                         continue
                     if word:
                         two_letter = get_two_letter_word(word)
@@ -304,7 +304,7 @@ def make_pos_hashtable_cal():
 
     for key in out:
         if len(out[key]["POS"]) > 1:
-            print u"^{}^".format(key), u"*-*".join(out[key]["head_word"]), out[key]["POS"]
+            print("^{}^".format(key), "*-*".join(out[key]["head_word"]), out[key]["POS"])
 
 
 
@@ -312,7 +312,7 @@ def make_pos_hashtable_cal():
 
 
 def tag_testing_init(word_list_in,test_set_lens,test_set_name="test"):
-    print "tag_testing_init"
+    print("tag_testing_init")
     doc = {}
     word_list_out = []
     suffix = "_2_letters_training.json"
@@ -351,7 +351,7 @@ def tag_testing_init(word_list_in,test_set_lens,test_set_name="test"):
         word_list_out.append({"word":word,"class":best_class,"scores":scores.tolist()})
         prev_class = best_class
         if j % 100 == 0:
-            print "{}/{}".format(j,len(word_list_in))
+            print("{}/{}".format(j,len(word_list_in)))
 
     '''
     visible_states = []
@@ -372,7 +372,7 @@ def tag_testing_init(word_list_in,test_set_lens,test_set_name="test"):
     json.dump(doc, fp, indent=4, encoding='utf-8', ensure_ascii=False)
 
 def tag_testing_final(decoded_states,logprob,test_set_name="test"):
-    print "tag_testing_final"
+    print("tag_testing_final")
     test_set_init = json.load(codecs.open("{}{}{}".format(test_set_name,'_init','.json'),"r",encoding="utf-8"))
     visible_states = test_set_init["visible_states"]
     hidden_states = test_set_init["hidden_states"]
@@ -387,7 +387,7 @@ def tag_testing_final(decoded_states,logprob,test_set_name="test"):
 
 
 def get_hmm_initial_state(test_set_name="test",hmm_init_state_name="hmm_initial_state"):
-    print "get_hmm_initial_state"
+    print("get_hmm_initial_state")
     test_set_init = json.load(codecs.open("{}{}{}".format(test_set_name,'_init','.json'),"r",encoding="utf-8"))
     visible_states = test_set_init["visible_states"]
     hidden_states = test_set_init["hidden_states"]
@@ -420,16 +420,16 @@ def get_hmm_initial_state(test_set_name="test",hmm_init_state_name="hmm_initial_
     pi = pi / pi.sum()
     """
 
-    print A
-    print B
-    print pi
+    print(A)
+    print(B)
+    print(pi)
 
     fp = open("{}{}".format(hmm_init_state_name,'.npz'),"w")
     np.savez(fp,A=A,pi=pi,B=B,obs=np.array(observations))
     fp.close()
 
 def run_baum_welch(test_set_name="test",hmm_init_state_name="hmm_initial_state"):
-    print "run_baum_welch"
+    print("run_baum_welch")
     fp = open("{}{}".format(hmm_init_state_name,'.npz'),"r")
     hmm_init_state = np.load(fp)
     A = hmm_init_state['A']
@@ -465,11 +465,11 @@ def run_baum_welch(test_set_name="test",hmm_init_state_name="hmm_initial_state")
     #print "B", hmm2.B
 
 def print_tagged_corpus(test_set_name="test"):
-    print "print_tagged_corpus"
+    print("print_tagged_corpus")
     test_set_init = json.load(codecs.open("{}{}{}".format(test_set_name, '_final', '.json'), "r", encoding="utf-8"))
     word_list = test_set_init["words"]
 
-    str = u" ".join([u"{} ({}/{})".format(w["word"],w["old_class"][0],w["class"][0]) for w in word_list])
+    str = " ".join(["{} ({}/{})".format(w["word"],w["old_class"][0],w["class"][0]) for w in word_list])
     fp = codecs.open("{}{}{}".format(test_set_name,'_str','.txt'),'w',encoding='utf-8')
     fp.write(str)
     fp.close()
@@ -477,10 +477,10 @@ def print_tagged_corpus(test_set_name="test"):
 def print_tagged_corpus_to_html(test_set_name="test",test_set_type="init"):
     test_set = json.load(codecs.open("{}_{}.json".format(test_set_name, test_set_type), "r", encoding="utf-8"))
     word_list = test_set["words"]
-    str = u"<html><head><style>.t{color:red}.m{color:blue}.b{color:green}.u{color:grey}.s{color:purple}</style><meta charset='utf-8'></head><body>"
+    str = "<html><head><style>.t{color:red}.m{color:blue}.b{color:green}.u{color:grey}.s{color:purple}</style><meta charset='utf-8'></head><body>"
     for word_obj in word_list:
-        str += u" <span class='{}'>{}</span>".format(word_obj["class"][0],word_obj["word"])
-    str += u"</body></html>"
+        str += " <span class='{}'>{}</span>".format(word_obj["class"][0],word_obj["word"])
+    str += "</body></html>"
     fp = codecs.open("{}{}{}".format(test_set_name,'_str','.html'),'w',encoding='utf-8')
     fp.write(str)
     fp.close()
@@ -490,16 +490,16 @@ def print_tagged_corpus_to_html_table(text_name,ref_list,num_daf_per_doc):
 
     iref = 0
     while iref < len(ref_list):
-        str = u"<html><head><style>h1{text-align:center;background:grey}td{text-align:center}table{margin-top:20px;margin-bottom:20px;margin-right:auto;margin-left:auto;width:1200px}.missed{color:white;background:red}.b{color:green}.m{color:blue}.sef{color:black}.cal{color:grey}.good-cal{color:red}.good-jba{background:#eee;color:red}.POS{color:orange}</style><meta charset='utf-8'></head><body>"
+        str = "<html><head><style>h1{text-align:center;background:grey}td{text-align:center}table{margin-top:20px;margin-bottom:20px;margin-right:auto;margin-left:auto;width:1200px}.missed{color:white;background:red}.b{color:green}.m{color:blue}.sef{color:black}.cal{color:grey}.good-cal{color:red}.good-jba{background:#eee;color:red}.POS{color:orange}</style><meta charset='utf-8'></head><body>"
 
         start_daf = ""
         end_daf = ""
-        for idaf in xrange(num_daf_per_doc):
+        for idaf in range(num_daf_per_doc):
             if iref >= len(ref_list): break
             ref = ref_list[iref]
             daf = ref.__str__().replace("{} ".format(text_name),"").encode('utf8')
-            str += u"<h1>DAF {}</h1>".format(daf)
-            str += u"<table>"
+            str += "<h1>DAF {}</h1>".format(daf)
+            str += "<table>"
             if idaf == 0: start_daf = daf
             if idaf == num_daf_per_doc-1: end_daf = daf
 
@@ -515,41 +515,41 @@ def print_tagged_corpus_to_html_table(text_name,ref_list,num_daf_per_doc):
             cal_count = 0
             while sef_count < len(word_list):
                 row_obj = word_list[sef_count:sef_count+10]
-                row_sef = u"<tr class='sef'><td>{}</td>".format(u"</td><td>".join([wo["word"] for wo in reversed(row_obj)]))
-                row_sef += u"<td>({}-{})</td></tr>".format(sef_count,sef_count+len(row_obj)-1)
+                row_sef = "<tr class='sef'><td>{}</td>".format("</td><td>".join([wo["word"] for wo in reversed(row_obj)]))
+                row_sef += "<td>({}-{})</td></tr>".format(sef_count,sef_count+len(row_obj)-1)
 
 
-                row_cal = u"<tr class='cal'>"
+                row_cal = "<tr class='cal'>"
                 start_cal_count = cal_count
                 for wo in reversed(row_obj):
                     while cal_count in missed_dic:
                         cal_count += 1
                     if "cal_word" in wo:
                         cal_count += 1
-                        row_cal += u"<td class='good-cal'>{} <span class='POS'>({})</span></td>".format(wo["cal_word"],wo["POS"])
+                        row_cal += "<td class='good-cal'>{} <span class='POS'>({})</span></td>".format(wo["cal_word"],wo["POS"])
                     elif "jba_word" in wo:
-                        row_cal += u"<td class='good-jba'>{} <span class='POS'>({})</span><br>{}</td>".format(wo["jba_word"],wo["POS"],wo["head_word"])
+                        row_cal += "<td class='good-jba'>{} <span class='POS'>({})</span><br>{}</td>".format(wo["jba_word"],wo["POS"],wo["head_word"])
                     else:
-                        row_cal += u"<td class='{}'>{}</td>".format(wo["class"][0],wo["class"][0:3].upper())
-                row_cal += u"<td>({}-{})</td>".format(start_cal_count,cal_count-1)
-                row_cal += u"</tr>"
+                        row_cal += "<td class='{}'>{}</td>".format(wo["class"][0],wo["class"][0:3].upper())
+                row_cal += "<td>({}-{})</td>".format(start_cal_count,cal_count-1)
+                row_cal += "</tr>"
 
                 str += row_sef
                 str += row_cal
                 sef_count += 10
-            str += u"</table>"
+            str += "</table>"
 
-            str += u"<table>"
+            str += "<table>"
             count = 0
             while count < len(missed_word_list):
                 row_obj = missed_word_list[count:count+10]
-                word_str = [u"{}:{}".format(wo["word"],wo["index"]) for wo in reversed(row_obj)]
-                row_missed = u"<tr class='missed'><td>{}</td></tr>".format(u"</td><td>".join(word_str))
+                word_str = ["{}:{}".format(wo["word"],wo["index"]) for wo in reversed(row_obj)]
+                row_missed = "<tr class='missed'><td>{}</td></tr>".format("</td><td>".join(word_str))
                 str += row_missed
                 count += 10
-            str += u"</table>"
+            str += "</table>"
             iref += 1
-        str += u"</body></html>"
+        str += "</body></html>"
         if not os.path.exists('{}/{}/html_table'.format(cal_dh_root,text_name)):
             os.makedirs('{}/{}/html_table'.format(cal_dh_root,text_name))
         fp = codecs.open("{}/{}/html_table/{}-{}.html".format(cal_dh_root,text_name,start_daf,end_daf),'w',encoding='utf-8')
@@ -669,7 +669,7 @@ def tag_testing_naive(text_name,bib_links,seg_len_list,word_list_in,ref_list,tes
                         curr_state = "mishnaic"
 
                 cal_obj = None
-                if b_start != -1 and b_end != -1 and i in xrange(b_start,b_end):
+                if b_start != -1 and b_end != -1 and i in range(b_start,b_end):
                     lang = "biblical"
                 elif curr_state == "talmudic":
                     #lang = cal_pre_tagged_words[count-seg_len+i]["class"]
@@ -702,7 +702,7 @@ def tag_testing_naive(text_name,bib_links,seg_len_list,word_list_in,ref_list,tes
         fp = codecs.open("{}/{}/test_set/{}_naive_{}.json".format(cal_dh_root,text_name,test_set_name,daf), "w", encoding='utf-8')
         json.dump(doc, fp, indent=4, encoding='utf-8', ensure_ascii=False)
 
-    print "NUM JBA WORDS: {}".format(jba_count)
+    print("NUM JBA WORDS: {}".format(jba_count))
 
 
 def make_cal_db_word_list(text_name):

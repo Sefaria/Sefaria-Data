@@ -9,7 +9,7 @@ with open("scripts/unambiguous_links.json", "rb") as fin:
     count = 0
     for row in cin:
         if count % 1000 == 0:
-            print count
+            print(count)
         count += 1
         try:
             r = Ref(row["Quoting Ref"])
@@ -27,4 +27,4 @@ with open("scripts/unambiguous_links.json", "rb") as fin:
             if found_segment and found_section:
                 section_link.delete()
         except InputError:
-            print u"{} - {}".format(row["Quoting Ref"], row["Quoted Ref"])
+            print("{} - {}".format(row["Quoting Ref"], row["Quoted Ref"]))

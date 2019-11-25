@@ -156,7 +156,7 @@ elements = [
 
 
 def test_get_ja():
-    parser = ParsedDocument('random', u'סתם', elements)
+    parser = ParsedDocument('random', 'סתם', elements)
     parser.parse_document(my_doc)
     my_ja = parser.get_ja()
     assert my_ja == [
@@ -168,7 +168,7 @@ def test_get_ja():
 
 
 def test_filter_ja():
-    parser = ParsedDocument('random', u'סתם', elements)
+    parser = ParsedDocument('random', 'סתם', elements)
     parser.parse_document(my_doc)
     assert parser.filter_ja(lambda x: x.text1) == [
         [['a', 'b'], ['c']],
@@ -182,8 +182,8 @@ def test_multiple_parsers():
     # We want to create a situation where two classes have the same name but different attributes
     elements2 = elements[:]
     elements2[-1] = Description('Sentence', lambda x: [i.text1 for i in x])
-    parser1 = ParsedDocument('random', u'סתם', elements)
-    parser2 = ParsedDocument('random', u'סתם', elements2)
+    parser1 = ParsedDocument('random', 'סתם', elements)
+    parser2 = ParsedDocument('random', 'סתם', elements2)
 
     parser1.parse_document(my_doc)
     parser2.parse_document(my_doc)
@@ -204,11 +204,11 @@ def test_multiple_parsers():
 
 
 def test_get_ja_node():
-    parser = ParsedDocument('random', u'סתם', elements)
+    parser = ParsedDocument('random', 'סתם', elements)
     p_ja_node = parser.get_ja_node()
 
     m_ja_node = JaggedArrayNode()
-    m_ja_node.add_primary_titles('random', u'סתם')
+    m_ja_node.add_primary_titles('random', 'סתם')
     m_ja_node.add_structure(['Chapter', 'Paragraph', 'Line'])
 
     assert p_ja_node.serialize() == m_ja_node.serialize()
@@ -219,7 +219,7 @@ def test_parse_state():
     alt_paragraph_builder = AltParagraphBuilder(parse_state)
     alt_elements = elements[:]
     alt_elements[1] = Description('Paragraph', directed_run_on_list(alt_paragraph_builder, one_indexed=True))
-    parser = ParsedDocument('random', u'סתם', alt_elements)
+    parser = ParsedDocument('random', 'סתם', alt_elements)
     parser.attach_state_tracker(parse_state)
     parser.parse_document(my_doc)
 
@@ -244,7 +244,7 @@ def test_state_on_filter():
         return x.text2
 
     parse_state = ParseState()
-    parser = ParsedDocument('random', u'סתם', elements)
+    parser = ParsedDocument('random', 'סתם', elements)
     parser.attach_state_tracker(parse_state)
     parser.parse_document(my_doc)
 

@@ -10,7 +10,7 @@ def get_training_set():
             assert isinstance(fin, file)
             return fin.readlines()
     except IOError:
-        print "EXPORTING LIBRARY"
+        print("EXPORTING LIBRARY")
         export_library_as_file("all_of_sefaria.txt")
         return get_training_set()
 
@@ -52,4 +52,4 @@ def get_k_similar(model, word, k=10):
 #train_doc2vec()
 model = get_model("word2vec.bin")
 for w in model.vocab[:1000]:
-    print u"{}: {}".format(w, u', '.join(get_k_similar(model, w).tolist()))
+    print("{}: {}".format(w, ', '.join(get_k_similar(model, w).tolist())))

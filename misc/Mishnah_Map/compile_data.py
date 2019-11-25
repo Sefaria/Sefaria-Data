@@ -19,7 +19,7 @@ def parse_noah():
     chapters = []
 
     # Load each file of Noah's
-    for f, title in noahs_names.iteritems():
+    for f, title in noahs_names.items():
         books[title] = {
             "mishnayot": [],
         }
@@ -60,11 +60,11 @@ def parse_wikipedia():
             try:
                 index = get_index(row[0])
                 if "Bavli" not in index.categories:
-                    print u"Skipping {}".format(row[0])
+                    print("Skipping {}".format(row[0]))
                     continue
                 title = index.title
             except Exception as e:
-                print u"Failed to load {}".format(row[0])
+                print("Failed to load {}".format(row[0]))
                 continue
             chapters.add((title, int(row[1])))
     chapters = sorted(chapters)
@@ -90,7 +90,7 @@ w = set(parse_wikipedia())
 
 t = n | m | w
 
-print
-print "{} ({} to go)".format(len(m), len(w-m))
+print()
+print("{} ({} to go)".format(len(m), len(w-m)))
 for x in sorted(w-m):
-    print x
+    print(x)

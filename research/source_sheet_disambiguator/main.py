@@ -28,13 +28,13 @@ def clean(s):
 
     # please forgive me...
     # replace common hashem replacements with the tetragrammaton
-    s = re.sub(ur"(^|\s)([\u05de\u05e9\u05d5\u05db\u05dc\u05d1]?)(?:\u05d4['\u05f3]|\u05d9\u05d9)($|\s)", ur"\1\2\u05d9\u05d4\u05d5\u05d4\3", s)
+    s = re.sub(r"(^|\s)([\u05de\u05e9\u05d5\u05db\u05dc\u05d1]?)(?:\u05d4['\u05f3]|\u05d9\u05d9)($|\s)", r"\1\2\u05d9\u05d4\u05d5\u05d4\3", s)
 
 
-    s = re.sub(ur"[,'\":?!;־״׳]", u" ", s)  # purposefully leave out period so we can replace ... later on
-    s = re.sub(ur"\([^)]+\)", u" ", s)
-    s = re.sub(ur"<[^>]+>", u"", s)
-    s = u" ".join(s.split())
+    s = re.sub(r"[,'\":?!;־״׳]", " ", s)  # purposefully leave out period so we can replace ... later on
+    s = re.sub(r"\([^)]+\)", " ", s)
+    s = re.sub(r"<[^>]+>", "", s)
+    s = " ".join(s.split())
     return s
 
 
@@ -54,8 +54,8 @@ def refine_ref_by_text(ref, en, he, truncate_sheet=True, **kwargs):
     dominant_lang = "en" if (len(he) == 0 and len(en) > 0) or (0 < len(he) <= 10 and ((1.0*len(en)) / len(he) > 10.0)) else "he"  # only choose english if its way longer
     sheet_text = en if (len(he) == 0 and len(en) > 0) or (0 < len(he) <= 10 and ((1.0*len(en)) / len(he) > 10.0)) else he
     if len(sheet_text) > MAX_SHEET_LEN and truncate_sheet:
-        start_sheet_text = sheet_text[:sheet_text.find(u" ", min(len(sheet_text)/2, MAX_SHEET_LEN))]
-        end_sheet_text = sheet_text[sheet_text.find(u" ", max(len(sheet_text)/2, len(sheet_text)-MAX_SHEET_LEN))+1:]
+        start_sheet_text = sheet_text[:sheet_text.find(" ", min(len(sheet_text)/2, MAX_SHEET_LEN))]
+        end_sheet_text = sheet_text[sheet_text.find(" ", max(len(sheet_text)/2, len(sheet_text)-MAX_SHEET_LEN))+1:]
         start_ref = find_subref(start_sheet_text, ref, dominant_lang, **kwargs)
         if start_ref is None:
             new_ref = None
@@ -77,7 +77,7 @@ def refine_ref_by_text(ref, en, he, truncate_sheet=True, **kwargs):
 def find_subref(sheet_text, ref, lang, vtitle=None, tried_adding_refs_at_end_of_section=False, **kwargs):
     try:
         tc = TextChunk(ref, lang, vtitle=vtitle)
-        matches = match_ref(tc, [sheet_text], tokenizer, dh_extract_method=clean, with_num_abbrevs=False, lang=lang, rashi_skips=2, dh_split=lambda dh: re.split(ur"\s*\.\.\.\s*", dh), **kwargs)
+        matches = match_ref(tc, [sheet_text], tokenizer, dh_extract_method=clean, with_num_abbrevs=False, lang=lang, rashi_skips=2, dh_split=lambda dh: re.split(r"\s*\.\.\.\s*", dh), **kwargs)
     except IndexError:
         # thrown if base text is empty
         matches = {"matches": []}
@@ -122,15 +122,15 @@ def mutate_sheet(sheet, action):
 def mutate_subsources(id, source, action, dateModified, views):
     new_ref_list = []
 
-    ref = source.get("ref", u"")
-    he = source.get("text", {}).get("he", u"")
+    ref = source.get("ref", "")
+    he = source.get("text", {}).get("he", "")
     if he is None:
-        he = u""
-    he = u" ".join(tokenizer(he))
-    en = source.get("text", {}).get("en", u"")
+        he = ""
+    he = " ".join(tokenizer(he))
+    en = source.get("text", {}).get("en", "")
     if en is None:
-        en = u""
-    en = u" ".join(tokenizer(en))
+        en = ""
+    en = " ".join(tokenizer(en))
     if not ref:
         return new_ref_list
     try:
@@ -146,7 +146,7 @@ def mutate_subsources(id, source, action, dateModified, views):
             new_ref_list += [{"Id": str(id), "Old Ref": old_ref, "New Ref": new_ref, "Source Num": source.get("node", 61300), "Date Modified": dateModified, "Views": views}]
 
     if "subsources" in source:
-        print "subsources"
+        print("subsources")
         for s in source["subsources"]:
             new_ref_list += mutate_subsources(id, s, action, dateModified, views)
 
@@ -160,10 +160,10 @@ def run():
     rows = []
     for i, id in enumerate(ids):
         if i % 50 == 0:
-            print "{}/{}".format(i, len(ids))
+            print("{}/{}".format(i, len(ids)))
         sheet = db.sheets.find_one({"id": id})
         if not sheet:
-            print "continue"
+            print("continue")
             continue
         rows += mutate_sheet(sheet, refine_ref_by_text)
     with open("yoyo.csv", "wb") as fout:
@@ -174,7 +174,7 @@ def run():
 if __name__ == '__main__':
     profiling = False
     if profiling:
-        print "Profiling...\n"
+        print("Profiling...\n")
         cProfile.run("run()", "stats")
         p = pstats.Stats("stats")
         sys.stdout = sys.__stdout__

@@ -4,12 +4,12 @@ django.setup()
 from sefaria.model import *
 from sources.functions import *
 
-SERVER = u"http://localhost:8000"
-VERSION_TITLE = u"Validation Tester, Jerusalem 2019"
-VERSION_SOURCE = u"http://nmrapoport.org"
+SERVER = "http://localhost:8000"
+VERSION_TITLE = "Validation Tester, Jerusalem 2019"
+VERSION_SOURCE = "http://nmrapoport.org"
 
-heb_parshiot = [u"בראשית",u"נח", u"לך לך", u"וירא", u"חיי שרה", u"תולדות", u"ויצא", u"וישלח", u"וישב", u"מקץ",
-u"ויגש", u"ויחי"]
+heb_parshiot = ["בראשית","נח", "לך לך", "וירא", "חיי שרה", "תולדות", "ויצא", "וישלח", "וישב", "מקץ",
+"ויגש", "ויחי"]
 
 eng_parshiot = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", "Vayetzei", "Vayishlach",
 "Vayeshev", "Miketz", "Vayigash", "Vayechi"]
@@ -24,7 +24,7 @@ eng_parshiot = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Tol
 def post_index_to_server(en, he):
     root = SchemaNode()
     comm_en = "Noah on {}".format(en)
-    comm_he = u"נח על {}".format(he)
+    comm_he = "נח על {}".format(he)
     root.add_primary_titles(comm_en, comm_he)
     root.key = "Noah on Rapoport"
 
@@ -64,5 +64,5 @@ def post_text_to_server(text, en):
 if __name__ == "__main__":
     # add_term("Rapoport", u"רפפורט")
 
-    post_index_to_server("Rapoport", u"רפפורט")
+    post_index_to_server("Rapoport", "רפפורט")
     post_text_to_server("Noah Rapoport", "Rapoport")

@@ -1,6 +1,6 @@
 import csv
-import urllib, urllib2
-from urllib2 import URLError, HTTPError
+import urllib.request, urllib.parse, urllib.error, urllib.request, urllib.error, urllib.parse
+from urllib.error import URLError, HTTPError
 import json
 
 apikey =  'T3n0rVYhcJXYjNHfnwknGJtnHIOgirP46Rchzh3Ue5k' #Add your API key
@@ -18,15 +18,15 @@ def postLink(link_obj, serializeText = True):
         'json': textJSON,
         'apikey': apikey
     }
-    data = urllib.urlencode(values)
-    print url, data
-    req = urllib2.Request(url, data)
+    data = urllib.parse.urlencode(values)
+    print(url, data)
+    req = urllib.request.Request(url, data)
 
     try:
-        response = urllib2.urlopen(req)
-        print response.read()
-    except HTTPError, e:
-        print e
+        response = urllib.request.urlopen(req)
+        print(response.read())
+    except HTTPError as e:
+        print(e)
 
 
 if __name__ == '__main__':
@@ -44,7 +44,7 @@ if __name__ == '__main__':
                         "auto": True,
                         "generated_by": "connect_mishnah",
                         }
-            print "{}, {}".format(gemara, mishna)
+            print("{}, {}".format(gemara, mishna))
             links.append(link_obj)
     links = links[1:len(links)-1]
     postLink(links)

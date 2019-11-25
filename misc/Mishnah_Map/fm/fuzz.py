@@ -24,7 +24,7 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
-from __future__ import unicode_literals
+
 import warnings
 
 try:
@@ -158,7 +158,7 @@ def _process_and_sort(s, force_ascii):
     tokens = utils.full_process(s, force_ascii=force_ascii).split()
 
     # sort tokens and join
-    sorted_string = u" ".join(sorted(tokens))
+    sorted_string = " ".join(sorted(tokens))
     return sorted_string.strip()
 
 # Sorted Token

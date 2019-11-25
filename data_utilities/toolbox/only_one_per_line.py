@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-import urllib
-import urllib2
-from urllib2 import URLError, HTTPError
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
+from urllib.error import URLError, HTTPError
 import json
 import pdb
 import os
@@ -38,5 +38,5 @@ if __name__ == "__main__":
 		for tag in tags:
 			if line.find(tag) != line.rfind(tag):
 				first_words = " ".join(line.split(" ")[0:4])
-				print "found one"
+				print("found one")
 				out.write("More than one of "+tag+" in line starting with the words: "+first_words+".\n")

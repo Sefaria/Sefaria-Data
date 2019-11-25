@@ -20,7 +20,7 @@ edge_types_dict = {}
 
 class Node(object):
 
-    def __init__(self, id, en_name=u"", he_name=u"", en_transliteration=None, bfo_id=None, wikidata_id=None,
+    def __init__(self, id, en_name="", he_name="", en_transliteration=None, bfo_id=None, wikidata_id=None,
                  according_to=None, jeLink=None, heWikiLink=None, enWikiLink=None,
                  generation=None):
         self.id = id
@@ -39,34 +39,34 @@ class Node(object):
         self.generation = generation
         self.source_sheet_tags = set()
         self.he_source_sheet_tags = set()
-        self.description = u""
+        self.description = ""
 
     def add_edge(self, type, to_node_id):
         self.edges[type].add(to_node_id)
 
     def serialize(self):
         ret = {
-            u"id": self.id,
-            u"en": self.en_name,
-            u"he": self.he_name,
-            u"edges": {
-                k: list(v) for k, v in self.edges.items()
+            "id": self.id,
+            "en": self.en_name,
+            "he": self.he_name,
+            "edges": {
+                k: list(v) for k, v in list(self.edges.items())
             },
         }
         if self.bfo_id is not None:
-            ret[u"bfo_id"] = self.bfo_id
+            ret["bfo_id"] = self.bfo_id
         if self.according_to is not None:
-            ret[u"according_to"] = self.according_to
+            ret["according_to"] = self.according_to
         if self.en_transliteration is not None:
-            ret[u"en_transliteration"] = self.en_transliteration
+            ret["en_transliteration"] = self.en_transliteration
         if len(self.alt_en) > 0:
-            ret[u"alt_en"] = list(self.alt_en)
+            ret["alt_en"] = list(self.alt_en)
         if len(self.alt_he) > 0:
-            ret[u"alt_he"] = list(self.alt_he)
+            ret["alt_he"] = list(self.alt_he)
         if len(self.source_sheet_tags) > 0:
-            ret[u"source_sheet_tags"] = list(self.source_sheet_tags)
+            ret["source_sheet_tags"] = list(self.source_sheet_tags)
         if len(self.description) > 0:
-            ret[u"description"] = self.description
+            ret["description"] = self.description
         return ret
 
     def get_types(self, types=None):
@@ -83,7 +83,7 @@ class Node(object):
         return types
 
     def __str__(self):
-        return u"{} - {}".format(self.id, self.en_name)
+        return "{} - {}".format(self.id, self.en_name)
 
     def __repr__(self):
         return "Node(u'{}')".format(self.en_name)
@@ -98,7 +98,7 @@ class NodeSet(object):
 
     def __setitem__(self, id, node):
         if id in self.items:
-            print u"Node {} already exists with this id".format(self.items[id])
+            print("Node {} already exists with this id".format(self.items[id]))
             #raise Exception(u"Node {} already exists with this id".format(self.items[id]))
         self.items[id] = node
         if node.wikidata_id is not None:
@@ -115,12 +115,12 @@ class NodeSet(object):
 
     def serialize(self):
         return [
-            v.serialize() for _, v in self.items.items()
+            v.serialize() for _, v in list(self.items.items())
         ]
 
     def add_edge_inverses(self):
-        for k, v in self.items.items():
-            for type, to_nodes in v.edges.items():
+        for k, v in list(self.items.items()):
+            for type, to_nodes in list(v.edges.items()):
                 for to_node in to_nodes:
                     try:
                         to_node_obj = self.items[to_node]
@@ -130,16 +130,16 @@ class NodeSet(object):
 
     def validate(self):
         dup_edges_dict = defaultdict(set)
-        for node_id, node in self.items.items():
-            for edge_type, to_node_id_set in node.edges.items():
+        for node_id, node in list(self.items.items()):
+            for edge_type, to_node_id_set in list(node.edges.items()):
                 for to_node_id in to_node_id_set:
                     if to_node_id not in self.items:
                         # validate that to_node_id exists
-                        print u"1{} -- 2{} --> 3{} NOT VALID".format(node_id, edge_type, to_node_id)
-                        print u"{} does not exist".format(to_node_id)
+                        print("1{} -- 2{} --> 3{} NOT VALID".format(node_id, edge_type, to_node_id))
+                        print("{} does not exist".format(to_node_id))
                     else:
                         # validate that node_id and to_node_id don't share another edge
-                        for temp_edge_type, temp_to_node_id_set in node.edges.items():
+                        for temp_edge_type, temp_to_node_id_set in list(node.edges.items()):
                             if temp_edge_type == edge_type:
                                 continue
                             if to_node_id in temp_to_node_id_set:
@@ -148,13 +148,13 @@ class NodeSet(object):
 
                                 dup_edges_dict[(a, b)].add(edge_type if normal_order else edge_types_dict[edge_type])
                                 dup_edges_dict[(a, b)].add(temp_edge_type if normal_order else edge_types_dict[temp_edge_type])
-                                print u"{} - {}".format(node_id, to_node_id)
-                                print u"HAVE DUPLICATE EDGES {} AND {}".format(temp_edge_type, edge_type)
-        print u"DUPLICATE EDGES {}".format(len(dup_edges_dict))
+                                print("{} - {}".format(node_id, to_node_id))
+                                print("HAVE DUPLICATE EDGES {} AND {}".format(temp_edge_type, edge_type))
+        print("DUPLICATE EDGES {}".format(len(dup_edges_dict)))
         with open("{}/duplicate_edges.csv".format(ROOT), "wb") as fout:
             csv = unicodecsv.DictWriter(fout, ["A", "Edge", "B"])
             csv.writeheader()
-            for (a, b), edge_type_set in dup_edges_dict.items():
+            for (a, b), edge_type_set in list(dup_edges_dict.items()):
                 for edge_type in edge_type_set:
                     csv.writerow({"A": a, "Edge": edge_type, "B": b})
 
@@ -182,7 +182,7 @@ source_sheets = read_csv("source_sheets.csv")          # DONE
 halachic_edges = read_csv("halachic_edges.csv")
 
 node_set = NodeSet()
-print "START UPPER LEVEL"
+print("START UPPER LEVEL")
 # UPPER LEVEL
 for row in upper_level_nodes:
     nid = row["Node"].lower()
@@ -191,14 +191,14 @@ for row in upper_level_nodes:
         n.add_edge("is a", row["isa"].lower())
     node_set[nid] = n
 
-print "START EDGE TYPES"
+print("START EDGE TYPES")
 # EDGE TYPES
 for row in edge_types:
     if len(row["Edge Inverse"]) > 0:
         edge_types_dict[row["Edge"]] = row["Edge Inverse"]
         edge_types_dict[row["Edge Inverse"]] = row["Edge"]
 
-print "START ASPAKLARIA"
+print("START ASPAKLARIA")
 # ASPAKLARIA
 for row in aspaklaria_nodes:
     n = Node(row["Topic"], according_to=(row["According to"] if len(row["According to"]) else None))
@@ -211,15 +211,15 @@ for row in aspaklaria_nodes:
         n.add_edge("is a", isa2)
     node_set[row["Topic"]] = n
 
-print "START TANAKH UNMATCHED"
+print("START TANAKH UNMATCHED")
 # TANAKH UNMATCHED
 for row in tanakh_unmatched:
-    wid = re.findall(ur"Q\d+$", row["URL"])[0]
+    wid = re.findall(r"Q\d+$", row["URL"])[0]
     n = Node(wid, row["English Name"], row["Hebrew Name"], wikidata_id=wid)
     n.add_edge("is a", "biblical person")
     node_set[wid] = n
 
-print "START TALMUD UNMATCHED"
+print("START TALMUD UNMATCHED")
 # TALMUD UNMATCHED
 for row in talmud_unmatched:
     jeLink = row["jeLink"] if len(row["jeLink"]) > 0 else None
@@ -232,9 +232,9 @@ for row in talmud_unmatched:
     node_set[row["English Name"]] = n
     node_set.items_by_talmud_name[row["English Name"]] = n
 
-print "START RAMBAM"
+print("START RAMBAM")
 # RAMBAM
-with codecs.open(u"{}/../rambam/rambam_topic_hierarchy.json".format(ROOT), "rb", encoding="utf8") as fin:
+with codecs.open("{}/../rambam/rambam_topic_hierarchy.json".format(ROOT), "rb", encoding="utf8") as fin:
     rambam = json.load(fin)
     for row in rambam:
         rid = "RAMBAM|{}".format(row["en"])
@@ -245,14 +245,14 @@ with codecs.open(u"{}/../rambam/rambam_topic_hierarchy.json".format(ROOT), "rb",
             n.add_edge("is a", "halacha")
         node_set[rid] = n
 
-print "START SEFER HAAGADA MATCHED"
+print("START SEFER HAAGADA MATCHED")
 # SEFER HAAGADA MATCHED
 for row in sefer_haagada:
     if len(row["Aspaklaria Topic"].strip()) > 0:
         n = node_set[row["Aspaklaria Topic"]]
         n.alt_he.add(row["Topic Name"])
 
-print "START TOPIC NAMES"
+print("START TOPIC NAMES")
 # TOPIC NAMES
 for irow, row in enumerate(final_topic_names):
     # TODO deal with Rambam and Sefer Ha'agada
@@ -270,22 +270,22 @@ for irow, row in enumerate(final_topic_names):
             node_set[row["Topic"]] = n
         else:
             continue
-    description = u""
+    description = ""
     final_english = row["Final English Translation"]
     if len(row["Is Paren Good Description"]) > 0:
-        match = re.search(ur"^(.*)\(([^)]+)\)\s*$", final_english)
+        match = re.search(r"^(.*)\(([^)]+)\)\s*$", final_english)
         final_english = match.group(1).strip()
         description = match.group(2)
     if len(row["According to:"]) > 0:
         if len(description) > 0:
-            description += u". "
-        description += u"Translated according to {}".format(row["According to:"])
+            description += ". "
+        description += "Translated according to {}".format(row["According to:"])
     n.en_name = final_english
     n.description = description
     n.en_transliteration = row["Final English Transliteration"] if len(row["Final English Transliteration"]) else None
     n.he_name = row["Final Topic Name"].strip()
 
-print "START TANAKH MATCHED"
+print("START TANAKH MATCHED")
 # TANAKH MATCHED
 for row in tanakh_matched:
     if len(row["Match Name"]) > 0:
@@ -303,7 +303,7 @@ for row in tanakh_matched:
         n.wikidata_id = row["Match ID"]
         node_set.items_by_wid[n.wikidata_id] = n
 
-print "START TALMUD MATCHED"
+print("START TALMUD MATCHED")
 # TALMUD MATCHED
 for row in talmud_matched:
     if len(row["Match Name En"]) > 0:
@@ -320,12 +320,12 @@ for row in talmud_matched:
             n.alt_he.add(alt_he)
         try:
             yo = node_set[row["Match Name En"]]
-            print u"{} EXISTS!!".format(row["Match Name En"])
+            print("{} EXISTS!!".format(row["Match Name En"]))
         except KeyError:
             pass
         node_set.items_by_talmud_name[row["Match Name En"]] = n
 
-print "START EDGES"
+print("START EDGES")
 # EDGES
 for row in new_topics_edges:
     if len(row["Topic"]) == 0 or len(row["Has Edge"]) == 0 or len(row["To Topic (Actual)"]) == 0:
@@ -333,23 +333,23 @@ for row in new_topics_edges:
     try:
         n = node_set[row["Topic"]]
     except KeyError:
-        print u"KeyError: {}".format(row["Topic"])
+        print("KeyError: {}".format(row["Topic"]))
         continue
     n.add_edge(row["Has Edge"], row["To Topic (Actual)"])
 
-print "START TANAKH EDGES"
+print("START TANAKH EDGES")
 # TANAKH EDGES
 male_female_dict = {
-    "female": u"נקבה",
-    "male": u"זכר"
+    "female": "נקבה",
+    "male": "זכר"
 }
 # manually add king of israel / judah which are relevant to tanakh edges
-n = Node(u"מלך יהודה", "King of Judah", u"מלך יהודה")
-n.add_edge("is a", u"מלך מלכות")
-node_set[u"מלך יהודה"] = n
-n = Node(u"מלך ישראל", "King of Israel", u"מלך ישראל")
-n.add_edge("is a", u"מלך מלכות")
-node_set[u"מלך ישראל"] = n
+n = Node("מלך יהודה", "King of Judah", "מלך יהודה")
+n.add_edge("is a", "מלך מלכות")
+node_set["מלך יהודה"] = n
+n = Node("מלך ישראל", "King of Israel", "מלך ישראל")
+n.add_edge("is a", "מלך מלכות")
+node_set["מלך ישראל"] = n
 for row in tanakh_edges:
     try:
         n = node_set.get_by_wid(row["ID"])
@@ -364,7 +364,7 @@ for row in tanakh_edges:
         # for some reason doesn't exist yet. create it
         n = Node(row["Value ID"], row["Value"], wikidata_id=row["Value ID"])
         node_set[row["Value ID"]] = n
-        print u"Created Value {}".format(row["Value ID"])
+        print("Created Value {}".format(row["Value ID"]))
 for row in tanakh_edges:
     n = node_set.get_by_wid(row["ID"])
     value = row["Value"]
@@ -389,11 +389,11 @@ for row in tanakh_edges:
                 try:
                     to_node_id = node_set.get_by_wid(row["Value ID"]).id
                 except KeyError:
-                    print row["Value ID"]
+                    print(row["Value ID"])
                     continue
         n.add_edge(row["Edge"], to_node_id)
 
-print "START TALMUD EDGES"
+print("START TALMUD EDGES")
 # TALMUD EDGES
 for row in talmud_edges:
     try:
@@ -419,18 +419,18 @@ for row in talmud_edges:
     try:
         n = node_set.get_by_talmud_name(row["Name"])
     except KeyError:
-        print row["Name"]
-        print "NAME"
+        print(row["Name"])
+        print("NAME")
         continue
     try:
         to_node = node_set.get_by_talmud_name(row["Value"])
     except KeyError:
-        print row["Value"]
-        print "VALUE"
+        print(row["Value"])
+        print("VALUE")
         continue
     n.add_edge(row["Edge"], to_node.id)
 
-print "START SOURCE SHEETS"
+print("START SOURCE SHEETS")
 # SOURCE SHEETS
 for row in source_sheets:
     # if aspak -> if not synon -> else -> match it
@@ -464,13 +464,13 @@ for row in source_sheets:
                 n.alt_he.add(he)
             n.source_sheet_tags.add(en)
         else:
-            _id = u"{}|{}".format(he, en)
+            _id = "{}|{}".format(he, en)
             m = Node(_id, en, he)
             m.source_sheet_tags.add(en)
             m.add_edge("is a", n.id)
             node_set[_id] = m
 
-print "START HALACHIC EDGES"
+print("START HALACHIC EDGES")
 # HALACHIC EDGES
 for row in halachic_edges:
     if len(row["rambam topic"]) > 0:
@@ -495,7 +495,7 @@ with open("{}/final_topic_edges.csv".format(ROOT), "wb") as fout:
     csv.writeheader()
     rows = []
     for n in final_nodes:
-        for k, v in n['edges'].items():
+        for k, v in list(n['edges'].items()):
             for to_node_id in v:
                 rows += [{'A': n['id'], 'Edge': k, 'B': to_node_id}]
     csv.writeheader()

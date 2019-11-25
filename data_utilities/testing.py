@@ -15,20 +15,20 @@ from sefaria.model import *
 from data_utilities import dibur_hamatchil_matcher
 
 def tokenize_words(str):
-    str = str.replace(u"־", " ")
+    str = str.replace("־", " ")
     str = re.sub(r"</?.+>", "", str)  # get rid of html tags
     str = re.sub(r"\([^\(\)]+\)", "", str)  # get rid of refs
     str = str.replace("'", '"')
-    word_list = filter(bool, re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]", str))
+    word_list = list(filter(bool, re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]", str)))
     return word_list
 
 def dh_extraction_method(str):
-    bold_list = re.findall(ur'<b>(.+)</b>',str)
+    bold_list = re.findall(r'<b>(.+)</b>',str)
     if len(bold_list) > 0:
         bold = bold_list[0]
-        if u"וכו'" in bold:
-            bold = bold[:bold.index(u"וכו'")]
-        bold = re.sub(ur'[\,\.\:\;]',u'',bold)
+        if "וכו'" in bold:
+            bold = bold[:bold.index("וכו'")]
+        bold = re.sub(r'[\,\.\:\;]','',bold)
         return bold
     else:
         return str
@@ -66,8 +66,8 @@ def match():
 
         num_searched += len(ref_map)
 
-        print "MATCHES - {}".format(ref_map)
-        print "ACCURACY - {}%".format(round(1.0 * num_matched / num_searched, 5) * 100)
+        print("MATCHES - {}".format(ref_map))
+        print("ACCURACY - {}%".format(round(1.0 * num_matched / num_searched, 5) * 100))
         #log.write("MATCHES - {}\n".format(temp_link_list))
         #log.write("NOT FOUND - {}\n".format(unlink_list))
         #log.write("ACCURACY - {}%\n".format(round(1.0 * num_matched / num_searched, 5) * 100))

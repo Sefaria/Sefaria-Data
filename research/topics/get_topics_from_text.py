@@ -15,18 +15,18 @@ def get_topics_in_2d_text(cat, cutoff, outfile):
         for seg in ind.all_segment_refs():
             tref = seg.normal()
             tc = TextChunk(seg, "en")
-            for m in re.finditer(ur"<i>(.+?)</i>", tc.text):
+            for m in re.finditer(r"<i>(.+?)</i>", tc.text):
                 topic = m.group(1).strip().lower()
-                topic = re.sub(ur"[,.!?'’]", u"", topic)
+                topic = re.sub(r"[,.!?'’]", "", topic)
                 if topic in topics_dict:
                     temp_topic_dict = topics_dict[topic]
                     temp_topic_dict["count"] += 1
                 else:
-                    temp_topic_dict = {"count": 1, "refs": [], "he": u""}
+                    temp_topic_dict = {"count": 1, "refs": [], "he": ""}
                     topics_dict[topic] = temp_topic_dict
                 temp_topic_dict["refs"] += [tref]
 
-    topics_dict = filter(lambda x: x[1]["count"] > cutoff, topics_dict.items())
+    topics_dict = [x for x in list(topics_dict.items()) if x[1]["count"] > cutoff]
     with codecs.open(outfile, 'wb', encoding='utf8') as fout:
         json.dump(topics_dict, fout, ensure_ascii=False, indent=4)
 

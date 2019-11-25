@@ -1,66 +1,66 @@
 # -*- coding: utf-8 -*-
 
 from bs4 import BeautifulSoup, NavigableString
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import re
 
-female_numbers = u"אחת|שתיים|שתי|שתים|שלוש|ארבע|חמש|שש|שבע|שמונה|תשע|עשר|אחת עשרה|שתים עשרה|שלוש עשרה|ארבע עשרה|חמש עשרה|שש עשרה|שבע עשרה|שמונה עשרה|תשע עשרה|עשרים"
-male_numbers = u"אחד|שניים|שלושה|ארבעה|חמישה|שישה|שבעה|שמונה|תשעה|עשרה|אחד עשר|שנים עשר|שלושה עשר|ארבעה עשר|חמישה עשר|שישה עשר|שבעה עשר|שמונה עשר|תשעה עשר"
-mixed_numbers = u"אחת עשר|שתים עשר|שלוש עשר|ארבע עשר|חמש עשר|שש עשר|שבע עשר|שמונה עשר|תשע עשר"
-he_numbers = male_numbers + u"|" + female_numbers + u"|" + mixed_numbers
+female_numbers = "אחת|שתיים|שתי|שתים|שלוש|ארבע|חמש|שש|שבע|שמונה|תשע|עשר|אחת עשרה|שתים עשרה|שלוש עשרה|ארבע עשרה|חמש עשרה|שש עשרה|שבע עשרה|שמונה עשרה|תשע עשרה|עשרים"
+male_numbers = "אחד|שניים|שלושה|ארבעה|חמישה|שישה|שבעה|שמונה|תשעה|עשרה|אחד עשר|שנים עשר|שלושה עשר|ארבעה עשר|חמישה עשר|שישה עשר|שבעה עשר|שמונה עשר|תשעה עשר"
+mixed_numbers = "אחת עשר|שתים עשר|שלוש עשר|ארבע עשר|חמש עשר|שש עשר|שבע עשר|שמונה עשר|תשע עשר"
+he_numbers = male_numbers + "|" + female_numbers + "|" + mixed_numbers
 num_map = {
-    u"אחת": 1,
-    u"שתיים": 2,
-    u"שתים": 2,
-    u"שתי": 2,
-    u"שלוש": 3,
-    u"ארבע": 4,
-    u"חמש": 5,
-    u"שש": 6,
-    u"שבע": 7,
-    u"שמונה": 8,
-    u"תשע": 9,
-    u"עשר": 10,
-    u"אחת עשרה": 11,
-    u"שתים עשרה": 12,
-    u"שלוש עשרה": 13,
-    u"ארבע עשרה": 14,
-    u"חמש עשרה": 15,
-    u"שש עשרה": 16,
-    u"שבע עשרה": 17,
-    u"שמונה עשרה": 18,
-    u"תשע עשרה": 19,
-    u"עשרים": 20,
-    u"אחד": 1,
-    u"שניים": 2,
-    u"שלושה": 3,
-    u"ארבעה": 4,
-    u"חמישה": 5,
-    u"שישה": 6,
-    u"שבעה": 7,
-    u"תשעה": 9,
-    u"עשרה": 10,
-    u"אחד עשר": 11,
-    u"שנים עשר": 12,
-    u"שלושה עשר": 13,
-    u"ארבעה עשר": 14,
-    u"חמישה עשר": 15,
-    u"שישה עשר": 16,
-    u"שבעה עשר": 17,
-    u"שמונה עשר": 18,
-    u"תשעה עשר": 19,
-    u"אחת עשר": 11,
-    u"שתים עשר": 12,
-    u"שלוש עשר": 13,
-    u"ארבע עשר": 14,
-    u"חמש עשר": 15,
-    u"שש עשר": 16,
-    u"שבע עשר": 17,
-    u"תשע עשר": 19,
+    "אחת": 1,
+    "שתיים": 2,
+    "שתים": 2,
+    "שתי": 2,
+    "שלוש": 3,
+    "ארבע": 4,
+    "חמש": 5,
+    "שש": 6,
+    "שבע": 7,
+    "שמונה": 8,
+    "תשע": 9,
+    "עשר": 10,
+    "אחת עשרה": 11,
+    "שתים עשרה": 12,
+    "שלוש עשרה": 13,
+    "ארבע עשרה": 14,
+    "חמש עשרה": 15,
+    "שש עשרה": 16,
+    "שבע עשרה": 17,
+    "שמונה עשרה": 18,
+    "תשע עשרה": 19,
+    "עשרים": 20,
+    "אחד": 1,
+    "שניים": 2,
+    "שלושה": 3,
+    "ארבעה": 4,
+    "חמישה": 5,
+    "שישה": 6,
+    "שבעה": 7,
+    "תשעה": 9,
+    "עשרה": 10,
+    "אחד עשר": 11,
+    "שנים עשר": 12,
+    "שלושה עשר": 13,
+    "ארבעה עשר": 14,
+    "חמישה עשר": 15,
+    "שישה עשר": 16,
+    "שבעה עשר": 17,
+    "שמונה עשר": 18,
+    "תשעה עשר": 19,
+    "אחת עשר": 11,
+    "שתים עשר": 12,
+    "שלוש עשר": 13,
+    "ארבע עשר": 14,
+    "חמש עשר": 15,
+    "שש עשר": 16,
+    "שבע עשר": 17,
+    "תשע עשר": 19,
 }
 
 
-sdarim_source = u'''
+sdarim_source = '''
 <tbody>
 <tr valign="top">
 <td style="background-color: #F2F3F4; text-align: right; font-weight: bold; padding-left: 5px;"><a href="/wiki/%D7%A1%D7%93%D7%A8_%D7%96%D7%A8%D7%A2%D7%99%D7%9D" title="סדר זרעים">סדר זרעים</a></td>
@@ -73,7 +73,7 @@ sdarim_source = u'''
 </tbody>'''
 
 #scraped from http://he.wikipedia.org/wiki/מסכת
-mesechet_source = u'''
+mesechet_source = '''
 <tbody>
 <tr valign="top">
 <td style="padding-right: 5px; text-align: right;"><a href="/wiki/%D7%9E%D7%A1%D7%9B%D7%AA_%D7%91%D7%A8%D7%9B%D7%95%D7%AA" title="מסכת ברכות">ברכות</a> • <a href="/wiki/%D7%9E%D7%A1%D7%9B%D7%AA_%D7%A4%D7%90%D7%94" title="מסכת פאה">פאה</a> • <a href="/wiki/%D7%9E%D7%A1%D7%9B%D7%AA_%D7%93%D7%9E%D7%90%D7%99" title="מסכת דמאי">דמאי</a> • <a href="/wiki/%D7%9E%D7%A1%D7%9B%D7%AA_%D7%9B%D7%9C%D7%90%D7%99%D7%99%D7%9D" title="מסכת כלאיים">כלאיים</a> • <a href="/wiki/%D7%9E%D7%A1%D7%9B%D7%AA_%D7%A9%D7%91%D7%99%D7%A2%D7%99%D7%AA" title="מסכת שביעית">שביעית</a> • <a href="/wiki/%D7%9E%D7%A1%D7%9B%D7%AA_%D7%AA%D7%A8%D7%95%D7%9E%D7%95%D7%AA" title="מסכת תרומות">תרומות</a> • <a href="/wiki/%D7%9E%D7%A1%D7%9B%D7%AA_%D7%9E%D7%A2%D7%A9%D7%A8%D7%95%D7%AA" title="מסכת מעשרות">מעשרות</a> • <a href="/wiki/%D7%9E%D7%A1%D7%9B%D7%AA_%D7%9E%D7%A2%D7%A9%D7%A8_%D7%A9%D7%A0%D7%99" title="מסכת מעשר שני">מעשר שני</a> • <a href="/wiki/%D7%9E%D7%A1%D7%9B%D7%AA_%D7%97%D7%9C%D7%94" title="מסכת חלה">חלה</a> • <a href="/wiki/%D7%9E%D7%A1%D7%9B%D7%AA_%D7%A2%D7%A8%D7%9C%D7%94" title="מסכת ערלה">ערלה</a> • <a href="/wiki/%D7%9E%D7%A1%D7%9B%D7%AA_%D7%91%D7%99%D7%9B%D7%95%D7%A8%D7%99%D7%9D" title="מסכת ביכורים">ביכורים</a></td>
@@ -96,19 +96,19 @@ mesechet_source = u'''
 </tbody>
 '''
 
-base_url = u'http://he.wikipedia.org'
-entry_re = ur'(?P<perek>.+)\((?P<count>' + he_numbers + ur')\sמשניות'
+base_url = 'http://he.wikipedia.org'
+entry_re = r'(?P<perek>.+)\((?P<count>' + he_numbers + r')\sמשניות'
 ere = re.compile(entry_re)
 
 success = fail = 0
 soup = BeautifulSoup(mesechet_source)
 with open("prakim.csv", 'w') as outf:
-    outf.write(u"book; chapter; name; mishna count; description\n".encode('utf8'))
+    outf.write("book; chapter; name; mishna count; description\n".encode('utf8'))
     for link in soup.find_all('a'):
         link_text = link.get('href')
-        dname = urllib.unquote(link_text).decode('utf8')
-        print dname
-        bookname = dname.replace(u"/wiki/","").replace(u"מסכת_","")
+        dname = urllib.parse.unquote(link_text).decode('utf8')
+        print(dname)
+        bookname = dname.replace("/wiki/","").replace("מסכת_","")
         #original fetch code
         #full_link = base_url + link_text
         #page = urllib.urlopen(full_link)
@@ -120,10 +120,10 @@ with open("prakim.csv", 'w') as outf:
             #[s.extract() for s in book_soup.findAll('sup')]  #sledgehammer - remove all superscripts
 
         #Variants of the 'perek' section h2 id.  All but 3 use the first variant.
-        variants = [u'.D7.A4.D7.A8.D7.A7.D7.99_.D7.94.D7.9E.D7.A1.D7.9B.D7.AA',
-            u".D7.A9.D7.9E.D7.95.D7.AA_.D7.A4.D7.A8.D7.A7.D7.99_.D7.94.D7.9E.D7.A1.D7.9B.D7.AA",
-            u".D7.A9.D7.9E.D7.95.D7.AA_.D7.A4.D7.A8.D7.A7.D7.99_.D7.94.D7.9E.D7.A1.D7.9B.D7.AA_.D7.95.D7.AA.D7.95.D7.9B.D7.9F_.D7.9E.D7.A9.D7.A0.D7.99.D7.95.D7.AA.D7.99.D7.94.D7.9D",
-            u".D7.A4.D7.A8.D7.A7.D7.99_.D7.94.D7.9E.D7.A1.D7.9B.D7.AA_.D7.91.D7.9E.D7.A9.D7.A0.D7.94"
+        variants = ['.D7.A4.D7.A8.D7.A7.D7.99_.D7.94.D7.9E.D7.A1.D7.9B.D7.AA',
+            ".D7.A9.D7.9E.D7.95.D7.AA_.D7.A4.D7.A8.D7.A7.D7.99_.D7.94.D7.9E.D7.A1.D7.9B.D7.AA",
+            ".D7.A9.D7.9E.D7.95.D7.AA_.D7.A4.D7.A8.D7.A7.D7.99_.D7.94.D7.9E.D7.A1.D7.9B.D7.AA_.D7.95.D7.AA.D7.95.D7.9B.D7.9F_.D7.9E.D7.A9.D7.A0.D7.99.D7.95.D7.AA.D7.99.D7.94.D7.9D",
+            ".D7.A4.D7.A8.D7.A7.D7.99_.D7.94.D7.9E.D7.A1.D7.9B.D7.AA_.D7.91.D7.9E.D7.A9.D7.A0.D7.94"
              ]
         for v in variants:
             psec = book_soup.find(id=v)
@@ -134,36 +134,36 @@ with open("prakim.csv", 'w') as outf:
         for j, child in enumerate(ol.find_all('li')):  #todo: assert that # children == num prakim
             [s.extract() for s in child.findAll('sup')]
             for i in range(len(child.contents)):
-                entry = unicode(child.contents[i].string)
+                entry = str(child.contents[i].string)
                 m = ere.match(entry)
                 if m:
-                    addition = " ".join([unicode(t.string) for t in child.contents[i+1:] if isinstance(t, NavigableString)])
+                    addition = " ".join([str(t.string) for t in child.contents[i+1:] if isinstance(t, NavigableString)])
                     break
                 if not m:
-                    m = ere.match(u" ".join([unicode(c.string) for c in child.contents[i:] if c]))
+                    m = ere.match(" ".join([str(c.string) for c in child.contents[i:] if c]))
                     if m:
-                        addition = " ".join([unicode(t.string) for t in child.contents[i+1:] if isinstance(t, NavigableString)])
+                        addition = " ".join([str(t.string) for t in child.contents[i+1:] if isinstance(t, NavigableString)])
                         break
                 if not m and getattr(child.contents[i], "contents", None):
-                    m = ere.match(unicode(child.contents[i].contents[0].string))
+                    m = ere.match(str(child.contents[i].contents[0].string))
                     if m:
-                        addition = " ".join([unicode(t.string) for t in child.contents[i].contents[1:] if isinstance(t, NavigableString)])
+                        addition = " ".join([str(t.string) for t in child.contents[i].contents[1:] if isinstance(t, NavigableString)])
                         break
 
             if not m:
-                outf.write(u"{};{};{}\n".format(bookname, j+1, u"FAILED TO PARSE").encode('utf8'))
+                outf.write("{};{};{}\n".format(bookname, j+1, "FAILED TO PARSE").encode('utf8'))
                 fail += 1
             else:
                 success += 1
-                if re.match(ur"\s*[()]\s*", addition):
+                if re.match(r"\s*[()]\s*", addition):
                     addition = ""
                 pname = m.group('perek').strip()
                 count = num_map[m.group('count')]
-                addition = addition.replace(u"-","").replace(u"-","").replace(u"'","").replace('"',"").strip().replace(u";",u",")
-                outf.write(u"{};{};{};{};{}\n".format(bookname, j+1, pname, count, addition).encode('utf8'))
+                addition = addition.replace("-","").replace("-","").replace("'","").replace('"',"").strip().replace(";",",")
+                outf.write("{};{};{};{};{}\n".format(bookname, j+1, pname, count, addition).encode('utf8'))
 
-print
-print
-print "Successes: {}".format(success)
-print "Failures: {}".format(fail)
-print "Success Rate: {}%".format(round(success / float(fail + success) * 100,2))
+print()
+print()
+print("Successes: {}".format(success))
+print("Failures: {}".format(fail))
+print("Success Rate: {}%".format(round(success / float(fail + success) * 100,2)))

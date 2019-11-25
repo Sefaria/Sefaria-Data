@@ -47,55 +47,55 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
     :param use_indicator_words bool, True if you want to use hard-coded indicator words to determine which side of the ref the quote is on
     :return:
     """
-    after_indicators = [u"דכתיב", u"ודכתיב", u"וכתיב", u"וכתוב", u"שכתוב", u"כשכתוב", u"כדכתיב", u"זל", u"ז״ל", u"ז''ל",
-                       u"ז\"ל", u"אומרם", u"כאמור", u"ואומר", u"אמר", u"שנאמר", u"בגמ'", u"בגמ׳", u"בפסוק", u"לעיל", u"ולעיל", u"לקמן", u"ולקמן", u"בירושלמי",
-                       u"בבבלי", u"שדרשו", u"ששנינו", u"שנינו", u"ושנינו", u"דשנינו", u"כמש״כ", u"כמש\"כ", u"כמ״ש", u"כמ\"ש",
-                       u"וכמש״כ", u"וכמ\"ש", u"וכמ״ש", u"וכמש\"כ", u"ע״ה", u"ע\"ה", u"מבואר", u"כמבואר", u"במתני׳",
-                       u"במתנ\'", u"דתנן", u"זכרונם לברכה", u"זכר לברכה"]
-    after_reg = ur"(?:^|\s)(?:{})\s*[(\[]?$".format(u"|".join(after_indicators))
-    after_indicators_far = [u"דבפרק", u"בפרק", u"שבפרק", u"פרק"]
-    after_far_reg = ur"(?:^|\s)(?{}:)(?=\s|$)".format(u"|".join(after_indicators_far))
-    after_indicators_after = [u"בד״ה", u"בד\"ה", u"ד״ה", u"ד\"ה"]
-    after_after_reg = ur"^\s*(?:{})\s".format(u"|".join(after_indicators_after))
-    punctuation = [u",", u".", u":", u"?", u"!", u"׃"]
-    punctuation_after_reg = ur"^\s*(?:{})\s".format(u"|".join(punctuation))
-    punctuation_before_reg = ur"(?:{})\s*$".format(u"|".join(punctuation))
-    after_indicators_after_far = [u"וגו׳", u"וגו'", u"וגו", u"וכו׳", u"וכו'", u"וכו"]
-    after_after_far_reg = ur"(?:^|\s)(?{}:)(?=\s|$)".format(u"|".join(after_indicators_after_far))
+    after_indicators = ["דכתיב", "ודכתיב", "וכתיב", "וכתוב", "שכתוב", "כשכתוב", "כדכתיב", "זל", "ז״ל", "ז''ל",
+                       "ז\"ל", "אומרם", "כאמור", "ואומר", "אמר", "שנאמר", "בגמ'", "בגמ׳", "בפסוק", "לעיל", "ולעיל", "לקמן", "ולקמן", "בירושלמי",
+                       "בבבלי", "שדרשו", "ששנינו", "שנינו", "ושנינו", "דשנינו", "כמש״כ", "כמש\"כ", "כמ״ש", "כמ\"ש",
+                       "וכמש״כ", "וכמ\"ש", "וכמ״ש", "וכמש\"כ", "ע״ה", "ע\"ה", "מבואר", "כמבואר", "במתני׳",
+                       "במתנ\'", "דתנן", "זכרונם לברכה", "זכר לברכה"]
+    after_reg = r"(?:^|\s)(?:{})\s*[(\[]?$".format("|".join(after_indicators))
+    after_indicators_far = ["דבפרק", "בפרק", "שבפרק", "פרק"]
+    after_far_reg = r"(?:^|\s)(?{}:)(?=\s|$)".format("|".join(after_indicators_far))
+    after_indicators_after = ["בד״ה", "בד\"ה", "ד״ה", "ד\"ה"]
+    after_after_reg = r"^\s*(?:{})\s".format("|".join(after_indicators_after))
+    punctuation = [",", ".", ":", "?", "!", "׃"]
+    punctuation_after_reg = r"^\s*(?:{})\s".format("|".join(punctuation))
+    punctuation_before_reg = r"(?:{})\s*$".format("|".join(punctuation))
+    after_indicators_after_far = ["וגו׳", "וגו'", "וגו", "וכו׳", "וכו'", "וכו"]
+    after_after_far_reg = r"(?:^|\s)(?{}:)(?=\s|$)".format("|".join(after_indicators_after_far))
     found_title = found.index.get_title("he")
     found_node = library.get_schema_node(found_title, "he")
     title_nodes = {t: found_node for t in found.index.all_titles("he")}
     all_reg = library.get_multi_title_regex_string(set(found.index.all_titles("he")), "he")
     reg = regex.compile(all_reg, regex.VERBOSE)
-    source_text = re.sub(ur"<[^>]+>", u"", strip_cantillation(source_tc.text, strip_vowels=True))
+    source_text = re.sub(r"<[^>]+>", "", strip_cantillation(source_tc.text, strip_vowels=True))
 
     linkified = library._wrap_all_refs_in_string(title_nodes, reg, source_text, "he")
 
     snippets = []
     found_normal = found.normal()
-    found_section_normal = re.match(ur"^[^:]+", found_normal).group()
-    for match in re.finditer(u"(<a [^>]+>)([^<]+)(</a>)", linkified):
+    found_section_normal = re.match(r"^[^:]+", found_normal).group()
+    for match in re.finditer("(<a [^>]+>)([^<]+)(</a>)", linkified):
         ref = get_tc(match.group(2), True)
         if ref.normal() == found_section_normal or ref.normal() == found_normal:
             if return_matches:
                 snippets += [match]
             else:
                 start_snip_naive = match.start(1) - snip_size if match.start(1) >= snip_size else 0
-                start_snip_space = linkified.rfind(u" ", 0, start_snip_naive)
-                start_snip_link = linkified.rfind(u"</a>", 0, match.start(1))
+                start_snip_space = linkified.rfind(" ", 0, start_snip_naive)
+                start_snip_link = linkified.rfind("</a>", 0, match.start(1))
                 start_snip = max(start_snip_space, start_snip_link)
                 if start_snip == -1:
                     start_snip = start_snip_naive
                 end_snip_naive = match.end(3) + snip_size if match.end(3) + snip_size <= len(linkified) else len(linkified)
-                end_snip_space = linkified.find(u" ", end_snip_naive)
-                end_snip_link = linkified.find(u"<a ", match.end(3))
+                end_snip_space = linkified.find(" ", end_snip_naive)
+                end_snip_link = linkified.find("<a ", match.end(3))
                 end_snip = min(end_snip_space, end_snip_link)
                 if end_snip == -1:
                     end_snip = end_snip_naive
 
                 if use_indicator_words:
                     before_snippet = linkified[start_snip:match.start(1)]
-                    if u"ירושלמי" in before_snippet[-20:] and (len(ref.index.categories) < 2 or ref.index.categories[1] != u'Yerushalmi'):
+                    if "ירושלמי" in before_snippet[-20:] and (len(ref.index.categories) < 2 or ref.index.categories[1] != 'Yerushalmi'):
                         # this guys not a yerushalmi but very likely should be
                         continue
                     after_snippet = linkified[match.end(3):end_snip]
@@ -106,7 +106,7 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
                         temp_snip = linkified[start_snip:end_snip]
                 else:
                     temp_snip = linkified[start_snip:end_snip]
-                snippets += [re.sub(ur"<[^>]+>", u"", temp_snip)]
+                snippets += [re.sub(r"<[^>]+>", "", temp_snip)]
 
     if len(snippets) == 0:
         if must_find_snippet:
@@ -120,7 +120,7 @@ def modify_text(user, oref, versionTitle, language, text, versionSource, tries=0
     try:
         tracker.modify_text(user, oref, versionTitle, language, text, versionSource, method="API", skip_links=False)
     except UnicodeEncodeError:
-        print u"UnicodeEncodeError: {}".format(oref.normal())
+        print("UnicodeEncodeError: {}".format(oref.normal()))
         pass  # there seems to be unicode error in "/app/sefaria/system/varnish/wrapper.py", line 55
     except AutoReconnect:
         if tries < 200:
@@ -141,10 +141,10 @@ def modify_tanakh_links_one(main_ref, section_map, error_file_csv, user):
         main_tc._saveable = True
         new_main_text = main_tc.text
         edited = False
-        for section_tref, segment_ref_dict in section_map.items():
+        for section_tref, segment_ref_dict in list(section_map.items()):
             section_oref = get_tc(section_tref, True)
-            quoted_list_temp = sorted(segment_ref_dict.items(), key=lambda x: x[0])
-            segment_ref_list = [segment_ref_dict.get(i, None) for i in xrange(quoted_list_temp[-1][0]+1)]
+            quoted_list_temp = sorted(list(segment_ref_dict.items()), key=lambda x: x[0])
+            segment_ref_list = [segment_ref_dict.get(i, None) for i in range(quoted_list_temp[-1][0]+1)]
             # for r in segment_ref_list:
             #     if r is None:
             #         continue
@@ -166,7 +166,7 @@ def modify_tanakh_links_one(main_ref, section_map, error_file_csv, user):
                         if curr_find == -1:
                             raise InputError("RefNotFound")
                         replacement = r.he_normal()
-                        new_main_text = u"{}{}{}".format(new_main_text[:curr_find], replacement, new_main_text[curr_find + len(original):])
+                        new_main_text = "{}{}{}".format(new_main_text[:curr_find], replacement, new_main_text[curr_find + len(original):])
                         edited = True
                         last_find = curr_find + len(replacement)
 
@@ -196,13 +196,13 @@ def modify_tanakh_links_all(start=0):
             section_ref = quoted_ref.section_ref().normal()
             curr_dict = mapping[row["Quoting Ref"]][section_ref]
             if curr_dict.get(int(row["Quote Num"]), None) is not None and curr_dict.get(int(row["Quote Num"]), None) != quoted_ref:
-                print u"{} - {}==={} - {}".format(row["Quoting Ref"], row["Quoted Ref"], curr_dict.get(int(row["Quote Num"]), None),row["Quote Num"])
+                print("{} - {}==={} - {}".format(row["Quoting Ref"], row["Quoted Ref"], curr_dict.get(int(row["Quote Num"]), None),row["Quote Num"]))
             curr_dict[int(row["Quote Num"])] = quoted_ref
-        print "Total {}".format(total)
+        print("Total {}".format(total))
 
         for i, (k, v) in enumerate(mapping.items()):
             if i % 100 == 0:
-                print "{}/{}".format(i, len(mapping))
+                print("{}/{}".format(i, len(mapping)))
             if i < start:
                 continue
             modify_tanakh_links_one(k, v, error_file_csv, user)

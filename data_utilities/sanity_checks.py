@@ -4,7 +4,7 @@ This module gives a series of tools designed for analyzing texts received from O
 """
 import re
 import pdb
-import util
+from . import util
 
 
 
@@ -59,17 +59,17 @@ def count_by_regex_jarray(jagged_array, regex, result={}):
         if type(item) is list:
             result = count_by_regex_jarray(item, regex, result)
 
-        elif type(item) is str or type(item) is unicode:
+        elif type(item) is str or type(item) is str:
             captures = regex.finditer(item)
             for capture in captures:
                 text = capture.group()
-                if text not in result.keys():
+                if text not in list(result.keys()):
                     result[text] = 1
                 else:
                     result[text] += 1
 
         else:
-            print 'Jagged array contains unknown type'
+            print('Jagged array contains unknown type')
             raise TypeError
 
     return result
@@ -81,7 +81,7 @@ class TagTester:
     data necessary to analyze tags - i.e. an associated regular expression and file.
     """
 
-    def __init__(self, tag, tag_file, reg=None, name=u'', fail_func=pdb.set_trace):
+    def __init__(self, tag, tag_file, reg=None, name='', fail_func=pdb.set_trace):
 
         # this is the exact string of the tag
         self.tag = tag
@@ -219,7 +219,7 @@ class TagTester:
 
     def in_order_many_sections(self, end_tag, capture_group=0):
         if end_tag == None:
-            print 'End tag must have value to distinguish between each section.'
+            print('End tag must have value to distinguish between each section.')
             self.fail_func()
         headers_2d_array = []
         ones_that_passed = []
@@ -252,10 +252,10 @@ class TagTester:
         """
         captures = []
         for line in self.file:
-            if not isinstance(self.reg, unicode):
+            if not isinstance(self.reg, str):
                 self.reg = self.reg.decode('utf-8')
 
-            if not isinstance(line, unicode):
+            if not isinstance(line, str):
                 line = line.decode('utf-8')
 
             # check for the end of the segment
@@ -277,11 +277,11 @@ class TagTester:
         prev_val = 0
         curr_val = 0
         for count, header in enumerate(headers):
-            if header.find(u'וע"ב') >= 0:
+            if header.find('וע"ב') >= 0:
                 pdb.set_trace()
-            header = header.replace(u"דף",u"").replace(u'ע"א', u'').replace(self.tag, u"").replace(u"\n", u"").replace("]","").replace("[","")
-            if header.find(u'ע"ב') >= 0:
-                header = header.replace(u'וע"ב', u'').replace(u'ע"ב', u'').replace(u" ", u"")
+            header = header.replace("דף","").replace('ע"א', '').replace(self.tag, "").replace("\n", "").replace("]","").replace("[","")
+            if header.find('ע"ב') >= 0:
+                header = header.replace('וע"ב', '').replace('ע"ב', '').replace(" ", "")
                 if len(header) > 0:
                     curr_val = util.getGematria(header)
                     daf_values.append(curr_val * 2)
@@ -304,7 +304,7 @@ class TagTester:
             if re.search(segment_tag, line):
                 return
         else:
-            print 'Reached end of file without finding segment tag'
+            print('Reached end of file without finding segment tag')
             self.file.close()
             raise EOFError
 

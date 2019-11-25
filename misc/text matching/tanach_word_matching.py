@@ -23,7 +23,7 @@ def count_repeating(query, results):
     :return: An updated results dictionary
     """
 
-    if query in results.keys():
+    if query in list(results.keys()):
         results[query] += 1.0
 
     else:
@@ -41,15 +41,15 @@ def get_all_text():
     text_holder = []
 
     for book in books:
-        text_holder.append(TextChunk(Ref(book), vtitle=u'Tanach with Text Only', lang='he').as_string())
+        text_holder.append(TextChunk(Ref(book), vtitle='Tanach with Text Only', lang='he').as_string())
 
     full_text = ' '.join(text_holder)
 
     # remove bothersome characters
-    full_text = full_text.replace(u'\u05be', u' ')
-    full_text = full_text.replace(u'[', '')
-    full_text = full_text.replace(u']', '')
-    full_text = full_text.replace(u'<br><small>', ' ')
+    full_text = full_text.replace('\u05be', ' ')
+    full_text = full_text.replace('[', '')
+    full_text = full_text.replace(']', '')
+    full_text = full_text.replace('<br><small>', ' ')
     return full_text
 
 
@@ -66,7 +66,7 @@ def loop_through_text(phrase_length):
 
     results = {}
 
-    for index in xrange(len(tanach)):
+    for index in range(len(tanach)):
         query = ' '.join(tanach[index:index+phrase_length])
 
         if query in results:
@@ -82,25 +82,25 @@ def get_most():
     data = codecs.open('data.txt', 'w', 'utf-8')
     for length in range(1, 11):
         matches = loop_through_text(length)
-        for result in sorted(matches.items(), key=lambda x:x[1], reverse=True)[0:10]:
-            data.write(u"%s: %s\n" % result)
-        data.write(u'\n')
+        for result in sorted(list(matches.items()), key=lambda x:x[1], reverse=True)[0:10]:
+            data.write("%s: %s\n" % result)
+        data.write('\n')
     data.close()
 
 
-y = sorted(loop_through_text(1).values(), reverse=True)
-x = range(1, len(y)+1)
+y = sorted(list(loop_through_text(1).values()), reverse=True)
+x = list(range(1, len(y)+1))
 
 total = 0.0
 for number in y:
     total += number
 
-for index in xrange(len(y)):
+for index in range(len(y)):
     y[index] = math.log(y[index], 10)
     x[index] = math.log(x[index], 10)
 
 output = open('zilpf.csv', 'w')
-zilpf = zip(x, y)
+zilpf = list(zip(x, y))
 for pair in zilpf:
     output.write('%s,%s\n' % pair)
 

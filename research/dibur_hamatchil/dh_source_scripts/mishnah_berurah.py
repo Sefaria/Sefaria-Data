@@ -14,14 +14,14 @@ def getSimanNum(ref):
     return ref.normal().split(" ")[-1]
 
 def base_tokenizer(str):
-    punc_pat = re.compile(ur"(\.|,|:|;)$")
+    punc_pat = re.compile(r"(\.|,|:|;)$")
 
-    str = re.sub(ur"\([^\(\)]+\)", u"", str)
-    str = re.sub(ur"''",ur'"',str) # looks like double apostrophe in shulchan arukh is meant to be a quote
+    str = re.sub(r"\([^\(\)]+\)", "", str)
+    str = re.sub(r"''",r'"',str) # looks like double apostrophe in shulchan arukh is meant to be a quote
     str = re.sub(r"</?[a-z]+>", "", str)  # get rid of html tags
     str = hebrew.strip_cantillation(str, strip_vowels=True)
-    word_list = re.split(ur"\s+", str)
-    word_list = [re.sub(punc_pat,u"",w).strip() for w in word_list if len(re.sub(punc_pat,u"",w).strip()) > 0]  # remove empty strings and punctuation at the end of a word
+    word_list = re.split(r"\s+", str)
+    word_list = [re.sub(punc_pat,"",w).strip() for w in word_list if len(re.sub(punc_pat,"",w).strip()) > 0]  # remove empty strings and punctuation at the end of a word
     return word_list
 
 def rashi_filter(str):
@@ -30,12 +30,12 @@ def rashi_filter(str):
 
 def dh_extraction_method(str):
     #searches for '(blah) other blah -' or '{blah} other blah -'
-    m = re.search(ur"((\([^\(]+\))|(\{[^\{]+\}))([^–]+)–", str)
+    m = re.search(r"((\([^\(]+\))|(\{[^\{]+\}))([^–]+)–", str)
     if m is None:
-        m = re.search(ur"((\([^\(]+\))|(\{[^\{]+\}))([^-]+)-", str)
+        m = re.search(r"((\([^\(]+\))|(\{[^\{]+\}))([^-]+)-", str)
     if m:
         dh = m.group(4).strip()
-        return dh.replace(u"וכו'",u"")
+        return dh.replace("וכו'","")
     else:
         return ""
 
@@ -61,7 +61,7 @@ def match():
             mbInd += 1
         mbRef = mbRefList[mbInd]
         mbSiman = getSimanNum(mbRef)
-        print "----- SIMAN {} -----".format(ocSiman)
+        print("----- SIMAN {} -----".format(ocSiman))
         log.write("----- SIMAN {} -----\n".format(ocSiman))
         octc = TextChunk(ocRef,"he")
         mbtc = TextChunk(mbRef,"he")
@@ -75,7 +75,7 @@ def match():
         ref_map = [(base,comment) for base,comment in zip(matched['matches'],matched['comment_refs'])]
         abbrevs = [am for seg in matched['abbrevs'] for am in seg]
         for am in abbrevs:
-            rt_log_csv.writerow({'abbrev':dibur_hamatchil_matcher.cleanAbbrev(am.abbrev), 'expanded':u' '.join(am.expanded), 'context_before':u' '.join(am.contextBefore), 'context_after':u' '.join(am.contextAfter)})
+            rt_log_csv.writerow({'abbrev':dibur_hamatchil_matcher.cleanAbbrev(am.abbrev), 'expanded':' '.join(am.expanded), 'context_before':' '.join(am.contextBefore), 'context_after':' '.join(am.contextAfter)})
 
         temp_link_list = [l for l in ref_map if not l[0] is None and not l[1] is None]
         link_list += temp_link_list
@@ -85,8 +85,8 @@ def match():
 
         num_searched += len(ref_map)
 
-        print "MATCHES - {}".format(ref_map)
-        print "ACCURACY - {}%".format(round(1.0*num_matched/num_searched,5)*100)
+        print("MATCHES - {}".format(ref_map))
+        print("ACCURACY - {}%".format(round(1.0*num_matched/num_searched,5)*100))
         log.write("MATCHES - {}\n".format(temp_link_list))
         log.write("NOT FOUND - {}\n".format(unlink_list))
         log.write("ACCURACY - {}%\n".format(round(1.0*num_matched/num_searched,5)*100))
@@ -147,7 +147,7 @@ def deal_with_abbrevs():
     with open('all_mishnah_berurah_abbrevs.json', "w") as f:
         f.write(objStr.encode('utf-8'))
 
-    print 'Num Abbrevs {}'.format(len(abbrev_dict))
+    print('Num Abbrevs {}'.format(len(abbrev_dict)))
 
 
 

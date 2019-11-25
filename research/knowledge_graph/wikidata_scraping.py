@@ -87,7 +87,7 @@ cparams = {
 # P373
 def translate_claims(claims):
     translated = defaultdict(list)
-    for k, v in claims.items():
+    for k, v in list(claims.items()):
         if k in labels:
             for subv in v:
                 try:
@@ -114,8 +114,8 @@ def filter_biblical_figures_csv():
     good_guys = []
     bad_guys = []
     good_books = set(tanakh.keys())
-    for k, v in mapping.items():
-        filt = map(lambda x: tanakh[x["bookId"]] if x["bookId"] in good_books else Ref(x["bookName"]).normal(), filter(lambda x: x["bookId"] in good_books or (len(x["bookName"]) > 0 and Ref.is_ref(x["bookName"])), v))
+    for k, v in list(mapping.items()):
+        filt = [tanakh[x["bookId"]] if x["bookId"] in good_books else Ref(x["bookName"]).normal() for x in [x for x in v if x["bookId"] in good_books or (len(x["bookName"]) > 0 and Ref.is_ref(x["bookName"]))]]
 
         if len(filt) > 0:
             good_guys += [{"name": v[0]["name"], "id": k, "presentIn": filt}]
@@ -126,11 +126,11 @@ def filter_biblical_figures_csv():
 def get_all_tanakh_peeps():
     good_guys = filter_biblical_figures_csv()
     for g in good_guys:
-        print g["name"], g["id"]
+        print(g["name"], g["id"])
     out = {"entities": {}}
-    for i in xrange(0, len(good_guys), 50):
+    for i in range(0, len(good_guys), 50):
         time.sleep(1)
-        print i
+        print(i)
         good_ids = "|".join([x["id"] for x in good_guys[i:i+50]])
         r = requests.get(API_URL, params={"action": "wbgetentities", "ids": good_ids, "format": "json", "languages": "en|he"})
         j = r.json()
@@ -146,13 +146,13 @@ def project_tanakh_data():
     with codecs.open("all_tanakh_wikidata.json", "rb", encoding="utf8") as fin:
         jin = json.load(fin)
     out = {}
-    for id, v in tqdm.tqdm(jin["entities"].items()):
+    for id, v in tqdm.tqdm(list(jin["entities"].items())):
         if id not in failed:
             continue
         try:
             translated = translate_claims(v["claims"])
         except KeyError:
-            print id, u"failed"
+            print(id, "failed")
             continue
         translated["aliases"] = v.get("aliases", {})
         out[id] = translated
@@ -163,7 +163,7 @@ def project_tanakh_data():
     with codecs.open("all_tanakh_projected.json", "rb", encoding="utf8") as fin:
         jin2 = json.load(fin)
         jin2.update(out)
-    for id, v in jin2.items():
+    for id, v in list(jin2.items()):
         jin2[id]["name"] = gmap[id]["name"]
         jin2[id]["presentIn"] = gmap[id]["presentIn"]
     with codecs.open("all_tanakh_projected.json", "wb", encoding="utf8") as fout:
@@ -175,15 +175,15 @@ def add_he_labels():
         jin = json.load(fin)
     with codecs.open("all_tanakh_projected.json", "rb", encoding="utf8") as fin:
         jin2 = json.load(fin)
-    for k, v in jin2.items():
+    for k, v in list(jin2.items()):
         helab = jin["entities"].get(k, {}).get("labels", {}).get("he", {}).get("value", None)
         enlab = jin["entities"].get(k, {}).get("labels", {}).get("en", {}).get("value", None)
         if helab is not None and len(helab) > 0 and not re.match(r"^Q\d+$", helab):
             jin2[k]["heName"] = helab
-            print u"heb name!", helab
+            print("heb name!", helab)
         if enlab is not None and len(enlab) > 0 and not re.match(r"^Q\d+$", enlab) and re.match(r"^Q\d+$", jin2[k]["name"]):
             jin2[k]["name"] = enlab  # prev name was just an ID
-            print "Better name", enlab
+            print("Better name", enlab)
     with codecs.open("all_tanakh_projected.json", "wb", encoding="utf8") as fout:
         json.dump(jin2, fout, indent=2, ensure_ascii=False)
 

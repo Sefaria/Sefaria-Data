@@ -6,9 +6,9 @@ from exceptions and network crashes. Also, to provide higher level classes that 
 Sefaria.
 """
 
-import urllib
-import urllib2
-from urllib2 import URLError, HTTPError
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
+from urllib.error import URLError, HTTPError
 from socket import timeout
 import json
 from sources.local_settings import *
@@ -40,15 +40,15 @@ class APIcall:
         if self.data:
             post_json = json.dumps(self.data)
             values = {'json': post_json, 'apikey': API_KEY}
-            post = urllib.urlencode(values)
+            post = urllib.parse.urlencode(values)
 
         else:
             post = None
 
-        req = urllib2.Request(self.url, post)
+        req = urllib.request.Request(self.url, post)
 
         try:
-            self.response = urllib2.urlopen(req, timeout=self.timeout)
+            self.response = urllib.request.urlopen(req, timeout=self.timeout)
 
         except (URLError, HTTPError, timeout) as error:
             self.response = error

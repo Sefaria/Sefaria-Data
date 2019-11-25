@@ -8,7 +8,7 @@ def find_insert_idx(word):
     end_insert = 0
     while (end_insert < len(word)) \
             and (not any(end_delimiter == word[end_insert]
-                         for end_delimiter in [u'.', u',', u'('])):
+                         for end_delimiter in ['.', ',', '('])):
         end_insert += 1
     return end_insert
 
@@ -25,15 +25,15 @@ if get_titles:
                 ref = ''
                 if Ref().is_ref(abrv):
                     ref = Ref(abrv)
-                    print u"{} is a short ref for {}".format(abrv, Ref(abrv)._normal)
+                    print("{} is a short ref for {}".format(abrv, Ref(abrv)._normal))
                 if Ref().is_ref(longform):
-                    print u"{} is a long ref for {}".format(longform, Ref(longform)._normal)
+                    print("{} is a long ref for {}".format(longform, Ref(longform)._normal))
                     ref = Ref(longform)
                 
                 if ref:
-                    fw.write(u"{} = {} = {}\n".format(abrv, longform, ref._normal))
+                    fw.write("{} = {} = {}\n".format(abrv, longform, ref._normal))
                 else:
-                    fw.write(u"{} = {} = \n".format(abrv, longform))
+                    fw.write("{} = {} = \n".format(abrv, longform))
 
 add_titles = True
 if add_titles:
@@ -50,11 +50,11 @@ if add_titles:
                     ref_ind = Ref(sefaria_ref).index
                     if not Ref.is_ref(abrv + ' 1'):
                         ref_ind.nodes.add_title(abrv, 'en')
-                        print "added " + abrv
+                        print("added " + abrv)
                     if not Ref().is_ref(longform):
                         ref_ind.nodes.add_title(longform, 'en')
-                        print "added " + longform
+                        print("added " + longform)
                     ref_ind.save()
                 elif sefaria_ref != "\n":
-                    print "not ref " + sefaria_ref
+                    print("not ref " + sefaria_ref)
     

@@ -10,7 +10,7 @@ with open('psalms_30_day_cycle.csv') as infile:
     for item in reader:
         map_node = ArrayMapNode()
         map_node.add_title('Day {}'.format(item['Day']), 'en', primary=True)
-        map_node.add_title(u'יום {}'.format(numToHeb(item['Day'])), 'he', primary=True)
+        map_node.add_title('יום {}'.format(numToHeb(item['Day'])), 'he', primary=True)
         map_node.depth = 0
         map_node.includeSections = True
         map_node.wholeRef = item['Ref']
@@ -21,7 +21,7 @@ with open('psalms_books.csv') as infile:
     for item in reader:
         map_node = ArrayMapNode()
         map_node.add_title('Book {}'.format(item['Book en']), 'en', primary=True)
-        map_node.add_title(u'ספר {}'.format(item['Book he']), 'he', primary=True)
+        map_node.add_title('ספר {}'.format(item['Book he']), 'he', primary=True)
         map_node.depth = 0
         map_node.includeSections = True
         map_node.wholeRef = item['Ref']

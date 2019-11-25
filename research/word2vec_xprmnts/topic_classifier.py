@@ -14,21 +14,22 @@ import re
 import json
 import codecs
 from math import log as ln
+from functools import reduce
 
 def flatten(s):
     if len(s) == 0:
         return s
-    if isinstance(s, basestring):
+    if isinstance(s, str):
         return s
-    while not isinstance(s[0], basestring):
+    while not isinstance(s[0], str):
         s = reduce(lambda a, b: a + b, s, [])
-    return u" ".join(s)
+    return " ".join(s)
 
 def tokenizer(s):
-    s = re.sub(ur'־', u' ', s)
-    s = re.sub(ur'\([^)]+\)', u'', s)
-    s = re.sub(ur'\[[^\]]+\]', u'', s)
-    s = re.sub(ur'[^ א-ת]', u'', s)
+    s = re.sub(r'־', ' ', s)
+    s = re.sub(r'\([^)]+\)', '', s)
+    s = re.sub(r'\[[^\]]+\]', '', s)
+    s = re.sub(r'[^ א-ת]', '', s)
     # remove are parenthetical text
     return s.split()
 
@@ -53,7 +54,7 @@ def doEverything():
     topic_list = topics.list()
     for itag, tag_dict in enumerate(topic_list):
         tag = tag_dict["tag"]
-        print u"TAG {} {}/{}".format(tag, itag, len(topic_list))
+        print("TAG {} {}/{}".format(tag, itag, len(topic_list)))
 
         t = topics.get(tag)
         core_segs = t.contents()['sources']
@@ -64,13 +65,13 @@ def doEverything():
         seg_sheet_count = {}
         term = Term().load({'name': tag})
         if getattr(term, 'titles', False):
-            hetitles = filter(lambda x: x['lang'] == 'he', term.titles)
+            hetitles = [x for x in term.titles if x['lang'] == 'he']
             hetitleVecs = [model[title['text']] for title in hetitles if title['text'] in model]
             if len(hetitleVecs) == 0:
-                print u"No titles in model for {}".format(tag)
+                print("No titles in model for {}".format(tag))
                 continue
         else:
-            print u"No term for {}".format(tag)
+            print("No term for {}".format(tag))
             continue
 
         potential_keywords = {}
@@ -93,10 +94,10 @@ def doEverything():
                 else:
                     potential_keywords[w]["count"] += 1
 
-        for w, v in potential_keywords.items():
+        for w, v in list(potential_keywords.items()):
             v["score"] = (v["cosDist"]**v["count"])*(-v["tfidf"])
 
-        potential_keywords = filter(lambda x: x[1]["score"] < 3.5 and len(x[0]) > 2, potential_keywords.items())
+        potential_keywords = [x for x in list(potential_keywords.items()) if x[1]["score"] < 3.5 and len(x[0]) > 2]
         potential_kw_dict = {
             x[0]: x[1]["score"] for x in potential_keywords
         }
@@ -145,7 +146,7 @@ def doEverything():
                 continue
             except InputError as e:
                 continue
-        for seg, temp_seg_dict in segs_to_search_dicts.items():
+        for seg, temp_seg_dict in list(segs_to_search_dicts.items()):
             try:
                 r = Ref(seg)
                 links = reduce(lambda a, b: a | set(b.refs), r.linkset(), set())
@@ -158,7 +159,7 @@ def doEverything():
             except PartialRefInputError as e:
                 pass
 
-        segs_to_search_dict_items = filter(lambda x: x[1]["score"] > 2, segs_to_search_dicts.items())
+        segs_to_search_dict_items = [x for x in list(segs_to_search_dicts.items()) if x[1]["score"] > 2]
         segs_to_search_dict_items.sort(key=lambda x: -x[1]["score"])
         segs_to_search_dict_items = segs_to_search_dict_items[:20]
         my_topics[hetitles[0]['text']] = [

@@ -7,7 +7,7 @@ import bleach
 import re
 import codecs
 import unicodecsv
-import pageranklowram
+from . import pageranklowram
 import json
 import logging
 import math
@@ -177,16 +177,16 @@ text_worker_query_list = [
 ]
 
 def generate_search_urls_for_text_workers():
-    subdomains = [u'noa', u'lev']
-    base_url = u'sefaria.org/search?sort=c&var=1'
-    filters = [u'', u'&filters=Mishnah%20Commentaries|Talmud%20Commentaries|Midrash%20Commentaries|Tanaitic%20Commentaries|Halakhah|Halakhah%20Commentaries|Kabbalah|Kabbalah%20Commentaries|Liturgy|Philosophy|Chasidut|Musar|Responsa|Apocrypha']
+    subdomains = ['noa', 'lev']
+    base_url = 'sefaria.org/search?sort=c&var=1'
+    filters = ['', '&filters=Mishnah%20Commentaries|Talmud%20Commentaries|Midrash%20Commentaries|Tanaitic%20Commentaries|Halakhah|Halakhah%20Commentaries|Kabbalah|Kabbalah%20Commentaries|Liturgy|Philosophy|Chasidut|Musar|Responsa|Apocrypha']
 
     urls = []
     for q in text_worker_query_list:
         for f in filters:
             sub_urls = []
             for sub in subdomains:
-                sub_urls += [u"{}.{}{}&q={}".format(sub, base_url, f, q.decode('utf8'))]
+                sub_urls += ["{}.{}{}&q={}".format(sub, base_url, f, q.decode('utf8'))]
             urls += [sub_urls]
 
     with open("search_options_evaluation.csv", 'wb') as f:
@@ -205,16 +205,16 @@ def clear_index():
     """
     try:
         es.delete_index(TEST_INDEX_NAME)
-    except Exception, e:
-        print "Error deleting Elasticsearch Index named %s" % TEST_INDEX_NAME
-        print e
+    except Exception as e:
+        print("Error deleting Elasticsearch Index named %s" % TEST_INDEX_NAME)
+        print(e)
 
 
 def make_index():
     try:
         clear_index()
     except ElasticHttpError:
-        print "Failed to delete non-existent index: {}".format(TEST_INDEX_NAME)
+        print("Failed to delete non-existent index: {}".format(TEST_INDEX_NAME))
 
     settings = {
         "index": {
@@ -235,7 +235,7 @@ def make_index():
         }
     }
 
-    print 'CReating index {}'.format(TEST_INDEX_NAME)
+    print('CReating index {}'.format(TEST_INDEX_NAME))
     es.create_index(TEST_INDEX_NAME, settings)
     make_mapping()
 
@@ -320,9 +320,9 @@ def orderid2int(orderid):
 
 
 def index_all(merged=False, skip=0):
-    print "WARNING: YOU'RE ABOUT TO DELETE EVERYTHING" + ("#"*100)
-    for i in reversed(range(10)):
-        print "{} seconds until complete desctruction".format(i) + ("-"*100)
+    print("WARNING: YOU'RE ABOUT TO DELETE EVERYTHING" + ("#"*100))
+    for i in reversed(list(range(10))):
+        print("{} seconds until complete desctruction".format(i) + ("-"*100))
         pytime.sleep(1)
     if skip == 0:
         make_index()
@@ -390,12 +390,12 @@ def get_all_documents(skip=0, merged=False):
     """
     refs = library.ref_list()
 
-    print "Beginning index of %d refs." % len(refs)
+    print("Beginning index of %d refs." % len(refs))
 
     bulk_requests = []
     for i in range(skip, len(refs)):
         if i % 100 == 0:
-            print "{}/{}".format(i, len(refs))
+            print("{}/{}".format(i, len(refs)))
         docs = index_text(refs[i], merged=merged)
         for doc in docs:
             #bulk_request += "{\"index\":{\"_index\":\"{}\",\"_type\":a,\"_id\":{}}}\n".format(TEST_INDEX_NAME,doc_obj['id'])
@@ -464,7 +464,7 @@ def index_text(oref, version=None, lang=None, bavli_amud=True, merged=False):
     try:
         doc = make_text_index_document(oref.normal(), version, lang)
     except Exception as e:
-        print u"Error making index document {} / {} / {} : {}".format(oref.normal(), version, lang, e.message)
+        print("Error making index document {} / {} / {} : {}".format(oref.normal(), version, lang, e.message))
         return []
 
     if doc:
@@ -487,7 +487,7 @@ def make_text_doc_id(ref, version, lang):
     else:
         try:
             version.decode('ascii')
-        except Exception, e:
+        except Exception as e:
             version = str(unicode_number(version))
 
     id = "%s (%s [%s])" % (ref, version, lang)
@@ -516,7 +516,7 @@ def query(q, fields, query_type, size, from_int, sort_type, search_analyzer=None
     :return: query results from ES
     """
 
-    q = re.sub('(\S)"(\S)', '\1\u05f4\2', q)  # Replace internal quotes with gershaim.
+    q = re.sub('(\S)"(\S)', '\1\\u05f4\2', q)  # Replace internal quotes with gershaim.
 
     if query_type == "multi_match":
         inner_query = {
@@ -671,7 +671,7 @@ def generate_manual_train_set():
     test_query_list = test_en_query_list + test_he_query_list
 
     for i, q in enumerate(test_query_list):
-        print "{}/{}".format(i, len(test_query_list))
+        print("{}/{}".format(i, len(test_query_list)))
         results_dict = defaultdict(list)
         for query_type, fields in query_settings:
             results = query(q, fields, query_type, max_size)
@@ -681,7 +681,7 @@ def generate_manual_train_set():
                 results_dict[row['Ref']] += [row]
 
 
-        html_doc = u'<html><head><link rel="stylesheet" type="text/css" href="noahstyle.css"></head><body><table>'
+        html_doc = '<html><head><link rel="stylesheet" type="text/css" href="noahstyle.css"></head><body><table>'
         f = open('training_files/{}.csv'.format(q),'wb')
         csv = unicodecsv.DictWriter(f, ['Id', 'Relevance', 'Ref', 'Version', 'Lang', 'Content', 'Field', 'Score'])
         csv.writeheader()
@@ -690,17 +690,17 @@ def generate_manual_train_set():
             best = sorted(dicts, key=lambda x: x['Score'])[-1]
             newbest = OrderedDict()
             newbest['Id'] = irow
-            for key, value in best.items():
+            for key, value in list(best.items()):
                 newbest[key] = value
             if irow == 0:
-                html_doc += u"<tr><td>{}</td></tr>".format(u"</td><td>".join([unicode(k) for k in newbest.keys()]))
-            html_doc += u"<tr><td>{}</td></tr>".format(u"</td><td>".join([unicode(v) for v in newbest.values()]))
-            newbest['Content'] = re.sub(ur'<.+?>', u'', newbest['Content'])
+                html_doc += "<tr><td>{}</td></tr>".format("</td><td>".join([str(k) for k in list(newbest.keys())]))
+            html_doc += "<tr><td>{}</td></tr>".format("</td><td>".join([str(v) for v in list(newbest.values())]))
+            newbest['Content'] = re.sub(r'<.+?>', '', newbest['Content'])
             newbest['Relevance'] = "--"
             csv.writerow(newbest)
         f.close()
 
-        html_doc += u"</table></body></html>"
+        html_doc += "</table></body></html>"
         h = codecs.open('html/{}.html'.format(q),'wb',encoding='utf8')
         h.write(html_doc)
         h.close()
@@ -739,7 +739,7 @@ def init_pagerank_graph():
     all_ref_strs = set()
     for i, link in enumerate(all_links):
         if i % 1000 == 0:
-            print "{}/{}".format(i,len(all_links))
+            print("{}/{}".format(i,len(all_links)))
 
         try:
             #TODO pagerank segments except Talmud. Talmud is pageranked by section
@@ -768,7 +768,7 @@ def init_pagerank_graph():
         except InputError:
             pass
         except TypeError:
-            print link.refs
+            print(link.refs)
         except IndexError:
             pass
 
@@ -816,7 +816,7 @@ def calculate_sheetrank():
                 except TypeError:
                     continue
                 except IndexError:
-                    print s["ref"]
+                    print(s["ref"])
                     continue
 
             if "subsources" in s:
@@ -830,13 +830,13 @@ def calculate_sheetrank():
     sources_count = 0
     for i, sheet in enumerate(sheets):
         if i % 1000 == 0:
-            print "{}/{}".format(i, total)
+            print("{}/{}".format(i, total))
         if "sources" not in sheet:
             continue
         sources_count += count_sources(sheet["sources"])
 
     f = open("sheetrank.json", "wb")
-    obj = {r:{"count": v, "prob": 1.0*v/sources_count} for r, v in graph.items()}
+    obj = {r:{"count": v, "prob": 1.0*v/sources_count} for r, v in list(graph.items())}
     json.dump(obj, f, indent=4)
     f.close()
 
@@ -860,11 +860,11 @@ def get_training_set_dict():
         reader = unicodecsv.DictReader(csvfile)
         for row in reader:
             rel = row["Relevance"]
-            if rel == u"--" or rel.strip() == u"":
+            if rel == "--" or rel.strip() == "":
                 score = 4
-            elif rel.strip() == u"n":
+            elif rel.strip() == "n":
                 score = -4
-            elif rel.strip() == u"m":
+            elif rel.strip() == "m":
                 score = 1
             else:
                 raise Exception("bad score {} {}".format(q, row["Id"]))
@@ -916,7 +916,7 @@ def score_algo(fields, query_type, sort_type, search_analyzer, consScore, traini
         while (temp_result_rows is None or len(temp_result_rows) > 0) and len(result_rows) < 20000:
             results = query(q, fields, query_type, page_size, page * page_size, sort_type, search_analyzer=search_analyzer)
             if page == 0:
-                print "\t{} - {}/{} num results: {}".format(q, iq, len(test_query_list), results['hits']['total'])
+                print("\t{} - {}/{} num results: {}".format(q, iq, len(test_query_list), results['hits']['total']))
             field = fields if isinstance(fields, str) else fields[0]
             temp_result_rows = query_result_to_csv_rows(results, field)
             result_rows += temp_result_rows
@@ -958,13 +958,13 @@ def run_tests_all():
     all_scores = defaultdict(dict)
 
     for i, (query_type, fields, sort_type, search_analyzer) in enumerate(query_settings):
-        print '{}/{} - {}'.format(i, len(query_settings), query_settings[i])
+        print('{}/{} - {}'.format(i, len(query_settings), query_settings[i]))
         is_time_ordered = isinstance(sort_type, tuple)
         temp_score = score_algo(fields, query_type, sort_type, search_analyzer, is_time_ordered, training_dict)
         key = (query_type, fields, search_analyzer)
         all_scores[key][sort_type] = temp_score
 
-    sort_by_pagerank = sorted(all_scores.items(), key=lambda x: x[1]['pagerank'], reverse=True)
+    sort_by_pagerank = sorted(list(all_scores.items()), key=lambda x: x[1]['pagerank'], reverse=True)
 
 
 

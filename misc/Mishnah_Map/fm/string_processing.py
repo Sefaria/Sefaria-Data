@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+
 import re
 import string
 import sys
@@ -22,7 +22,7 @@ class StringProcessor(object):
         This function replaces any sequence of non letters and non
         numbers with a single white space.
         """
-        return cls.regex.sub(u" ", a_string)
+        return cls.regex.sub(" ", a_string)
 
     if PY3:
         strip = staticmethod(str.strip)

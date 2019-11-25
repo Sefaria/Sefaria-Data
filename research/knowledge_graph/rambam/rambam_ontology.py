@@ -1,4 +1,5 @@
 import django
+from functools import reduce
 django.setup()
 import re, unicodecsv, codecs, json, random
 from collections import defaultdict
@@ -107,7 +108,7 @@ with open("research/knowledge_graph/rambam/rambam_ontology.csv", "rb") as fin:
             elif curr_topic5 in topic_hierarchy_map and topic5_parent not in topic_hierarchy[topic_hierarchy_map[curr_topic5]]["parents"]:
                 topic_hierarchy[topic_hierarchy_map[curr_topic5]]["parents"] += [topic5_parent]
         leaf_topic_refs[curr_topic5].add(mt.normal())
-        links = filter(is_halakic_link, mt.linkset().array())
+        links = list(filter(is_halakic_link, mt.linkset().array()))
         total += len(links)
         for l in links:
             for r in l.refs:
@@ -115,7 +116,7 @@ with open("research/knowledge_graph/rambam/rambam_ontology.csv", "rb") as fin:
                 if not rr.index.title.startswith("Mishneh Torah"):
                     sa_index = all_sa_map.get(r, None)
                     if sa_index is not None:
-                        sa_links = filter(is_topical_link_of_sa, rr.linkset().array())
+                        sa_links = list(filter(is_topical_link_of_sa, rr.linkset().array()))
                         for sa_link in sa_links:
                             for sa_r in sa_link.refs:
                                 sa_rr = Ref(sa_r)
@@ -126,7 +127,7 @@ with open("research/knowledge_graph/rambam/rambam_ontology.csv", "rb") as fin:
 
                     leaf_topic_refs[curr_topic5].add(rr.normal())
 
-for k, v in leaf_topic_refs.items():
+for k, v in list(leaf_topic_refs.items()):
     temp_list = list(v)
     temp_list.sort(key=lambda x: Ref(x).order_id())
     leaf_topic_refs[k] = temp_list
@@ -143,7 +144,7 @@ num_simanim = 0
 
 def get_topic_string_from_siman(oref):
     tc = TextChunk(oref, lang="he")
-    match = re.match(ur"<(?:strong|b)>([^<]+)</(?:strong|b)>", tc.text[0])
+    match = re.match(r"<(?:strong|b)>([^<]+)</(?:strong|b)>", tc.text[0])
     if match:
         return match.group(1)
     return None
@@ -161,8 +162,8 @@ def deal_with_siman(siman):
     elif len(topics) == 1:
         num_simanim_with_one_topic += 1
         if siman_not_complete:
-            print u"SIMAN TOPIC {}".format(get_topic_string_from_siman(siman[0]["ref"].section_ref()))
-            print u"NOAHS TOPIC {}".format(list(topics)[0])
+            print("SIMAN TOPIC {}".format(get_topic_string_from_siman(siman[0]["ref"].section_ref())))
+            print("NOAHS TOPIC {}".format(list(topics)[0]))
     else:
         num_simanim_with_more_than_one_topic += 1
 

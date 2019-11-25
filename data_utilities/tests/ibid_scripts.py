@@ -1,5 +1,6 @@
 # encoding=utf-8
 import django
+from functools import reduce
 django.setup()
 
 
@@ -10,11 +11,11 @@ from data_utilities.alt_titles import alt_name_dict , rambam_alt_names
 from data_utilities.ibid import *
 from sefaria.utils.hebrew import strip_nikkud
 from sefaria.system.exceptions import BookNameError
-from itertools import izip
+
 import regex as re
 
 
-def count_regex_in_all_db(pattern=u'(?:\(|\([^)]*? )שם(?:\)| [^(]*?\))', lang='he', text='all', example_num = 7):
+def count_regex_in_all_db(pattern='(?:\(|\([^)]*? )שם(?:\)| [^(]*?\))', lang='he', text='all', example_num = 7):
     '''
     This method is for counting testing perepesis,
     :param lang:
@@ -34,24 +35,24 @@ def count_regex_in_all_db(pattern=u'(?:\(|\([^)]*? )שם(?:\)| [^(]*?\))', lang=
     else:
         indecies = [library.get_index(text)]
     for iindex, index in enumerate(indecies):
-        print "{}/{}".format(iindex, len(indecies))
+        print("{}/{}".format(iindex, len(indecies)))
         # if index == Index().load({'title': 'Divrei Negidim'}):
         #     continue
         if text == 'all':
             ind_done += 1
-            print ind_done*1.0/inds_len
+            print(ind_done*1.0/inds_len)
         try:
             unit_list_temp = index.nodes.traverse_to_list(lambda n, _: TextChunk(n.ref(), lang,
                                                                                  vtitle=vtitle).ja().flatten_to_array() if not n.children else [])
             st = ' '.join(unit_list_temp)
             shams = re.finditer(pattern, st)
-            cat_key = u'/'.join(index.categories)
+            cat_key = '/'.join(index.categories)
             num_shams = 0
             if shams:
                 for s in shams:
                     num_shams += 1
                     curr_sham = s.group()
-                    if len(re.split(ur'\s+', curr_sham)) > 6:
+                    if len(re.split(r'\s+', curr_sham)) > 6:
                         continue
                     shams_dict[cat_key] += [s.group()]
 
@@ -67,22 +68,22 @@ def count_regex_in_all_db(pattern=u'(?:\(|\([^)]*? )שם(?:\)| [^(]*?\))', lang=
     for (k, v) in found:
         if v == max_shams:
             max_index = k
-    print 'max: {} with {}'.format(max_index, max_shams)
+    print('max: {} with {}'.format(max_index, max_shams))
 
-    cat_items = sorted(category_dict.items(), key=lambda x: x[1])
+    cat_items = sorted(list(category_dict.items()), key=lambda x: x[1])
 
 
     for k,v in reversed(cat_items):
         if v == 0:
             continue
-        print k,v
+        print(k,v)
 
-    sham_items = sorted(shams_dict.items(), key=lambda x: x[1])
+    sham_items = sorted(list(shams_dict.items()), key=lambda x: x[1])
 
     for k, v in reversed(sham_items):
         if v == 0:
             continue
-        print k, v
+        print(k, v)
 
 
     cat_sham_dict = defaultdict(list)
@@ -90,15 +91,15 @@ def count_regex_in_all_db(pattern=u'(?:\(|\([^)]*? )שם(?:\)| [^(]*?\))', lang=
         population = shams_dict[ci[0]]
         cat_sham_dict[ci] = random.sample(population, min(len(population), example_num))
 
-    cat_sham_items = sorted(cat_sham_dict.items(), key=lambda x: x[0][1], reverse=True)
+    cat_sham_items = sorted(list(cat_sham_dict.items()), key=lambda x: x[0][1], reverse=True)
     cat_sham_dict = OrderedDict()
     for k, v in cat_sham_items:
         cat_sham_dict[k] = v
 
 
-    print "number of unique shams {}".format(len(sham_items))
+    print("number of unique shams {}".format(len(sham_items)))
 
-    print 'total number of shams {}'.format(sum(dict(found).values()))
+    print('total number of shams {}'.format(sum(dict(found).values())))
 
     return cat_sham_dict
     # return cat_items
@@ -110,7 +111,7 @@ def make_csv(sham_items, example_num, filename='sham_examples_full_cats.csv'):
     csv = unicodecsv.DictWriter(f, keys)
     # csv = unicodecsv.DictWriter(f, ['Category', 'Quantity'])#, 'Example Shams'])
     csv.writeheader()
-    for (cat, count), sham_examples in sham_items.items():
+    for (cat, count), sham_examples in list(sham_items.items()):
     # for cat, count in sham_items:
         # csv.writerow({'Category': cat, 'Quantity': count})# , 'Example Shams': sham_examples})
         row_dict = {
@@ -118,7 +119,7 @@ def make_csv(sham_items, example_num, filename='sham_examples_full_cats.csv'):
             for i, temp_sham in enumerate(sham_examples)
         }
         for i in range(len(sham_examples), example_num):
-            row_dict['Sham {}'.format(i+1)] = u''
+            row_dict['Sham {}'.format(i+1)] = ''
 
         row_dict['Category'] = cat
         row_dict['Quantity'] = count
@@ -128,7 +129,7 @@ def make_csv(sham_items, example_num, filename='sham_examples_full_cats.csv'):
 
 
 def run_shaminator(titles=None, with_real_refs=False, SEG_DIST = 5, create_ref_dict = True):
-    base_url = u"https://www.sefaria.org/"
+    base_url = "https://www.sefaria.org/"
 
     title_list = []
     cats = ["Midrash", "Halakha", "Philosophy"]
@@ -140,11 +141,11 @@ def run_shaminator(titles=None, with_real_refs=False, SEG_DIST = 5, create_ref_d
 
     title_list = titles
     for ititle, title in enumerate(title_list):
-        print u"-"*50
-        print title, ititle+1, '/', len(title_list)
-        print u"-"*50
+        print("-"*50)
+        print(title, ititle+1, '/', len(title_list))
+        print("-"*50)
 
-        html = u"""
+        html = """
         <!DOCTYPE html>
         <html>
             <head>
@@ -163,7 +164,7 @@ def run_shaminator(titles=None, with_real_refs=False, SEG_DIST = 5, create_ref_d
                 ref_dict = inst.find_in_index()
                 # ref_dict - OrderedDict. keys: segments. values: dict {'refs': [Refs obj found in this seg], 'locations': [], 'types': []}
             except AssertionError:
-                print "Skipping {}".format(title)
+                print("Skipping {}".format(title))
                 continue # problem with Ein Ayah
 
         last_index_ref_seen = {}
@@ -171,9 +172,9 @@ def run_shaminator(titles=None, with_real_refs=False, SEG_DIST = 5, create_ref_d
         char_padding = 20
         double_tanakh_books = {"I Samuel": "Samuel", "II Samuel": "Samuel", "I Kings": "Kings", "II Kings": "Kings",
                                "I Chronicles": "Chronicles", "II Chronicles": "Chronicles"}
-        for k, v in ref_dict.items():
+        for k, v in list(ref_dict.items()):
             curr_ref = Ref(k)
-            for i, (r, l, t) in enumerate(izip(v['refs'], v['locations'], v['types'])):
+            for i, (r, l, t) in enumerate(zip(v['refs'], v['locations'], v['types'])):
                 sham_ref_key = r.index.title if r.index.title not in double_tanakh_books else double_tanakh_books[
                     r.index.title]
                 if t == CitationFinder.SHAM_INT and last_index_ref_seen[sham_ref_key] is not None:
@@ -186,11 +187,11 @@ def run_shaminator(titles=None, with_real_refs=False, SEG_DIST = 5, create_ref_d
                     last_ref_with_citation = curr_ref
                     last_location_with_citation = l
                     last_ref_seen = r
-                    r = u"N/A"
+                    r = "N/A"
 
 
                 # dist = curr_ref.distance(last_ref_with_citation)
-                print dist
+                print(dist)
                 if dist == 0:
                     text = strip_nikkud(curr_ref.text('he').text)
 
@@ -200,10 +201,10 @@ def run_shaminator(titles=None, with_real_refs=False, SEG_DIST = 5, create_ref_d
 
                     before = text[start_ind:last_location_with_citation[0]]
                     real_ref = text[last_location_with_citation[0]:last_location_with_citation[1]]
-                    middle = text[last_location_with_citation[1]:l[0]] if last_location_with_citation[1] <= l[0] else u""
-                    sham_ref = text[l[0]:l[1]] if t == CitationFinder.SHAM_INT else u""
+                    middle = text[last_location_with_citation[1]:l[0]] if last_location_with_citation[1] <= l[0] else ""
+                    sham_ref = text[l[0]:l[1]] if t == CitationFinder.SHAM_INT else ""
                     after = text[l[1]:end_ind]
-                    text = u"{}<span class='r'>{}</span>{}<span class='s'>{}</span>{}".format(before, real_ref, middle,
+                    text = "{}<span class='r'>{}</span>{}<span class='s'>{}</span>{}".format(before, real_ref, middle,
                                                                                               sham_ref, after)
 
                 else:
@@ -214,14 +215,14 @@ def run_shaminator(titles=None, with_real_refs=False, SEG_DIST = 5, create_ref_d
                     if dist > SEG_DIST:
                         continue
                     elif dist > 1 and  dist <= SEG_DIST:
-                        print u"{} {} {}".format(curr_ref, last_ref_with_citation.next_segment_ref(),
-                                                 curr_ref.prev_segment_ref())
+                        print("{} {} {}".format(curr_ref, last_ref_with_citation.next_segment_ref(),
+                                                 curr_ref.prev_segment_ref()))
                         mid_text = last_ref_with_citation.next_segment_ref().to(curr_ref.prev_segment_ref()).text(
                             'he').text
                         while isinstance(mid_text, list):
                             mid_text = reduce(lambda a, b: a + b, mid_text)
                     else:
-                        mid_text = u""
+                        mid_text = ""
 
                     start_ind = 0 if last_location_with_citation[0] - char_padding < 0 else last_location_with_citation[
                                                                                                 0] - char_padding
@@ -234,7 +235,7 @@ def run_shaminator(titles=None, with_real_refs=False, SEG_DIST = 5, create_ref_d
                     end_before = end_text[:l[0]]
                     end_sham_ref = end_text[l[0]:l[1]]
                     end_after = end_text[l[1]:end_ind]
-                    text = u"{}<span class='r'>{}</span>{} {} {}<span class='s'>{}</span>{}".format(start_before,
+                    text = "{}<span class='r'>{}</span>{} {} {}<span class='s'>{}</span>{}".format(start_before,
                                                                                                     start_real_ref,
                                                                                                     start_after,
                                                                                                     mid_text,
@@ -242,17 +243,17 @@ def run_shaminator(titles=None, with_real_refs=False, SEG_DIST = 5, create_ref_d
                                                                                                     end_sham_ref,
                                                                                                     end_after)
 
-                text = bleach.clean(text, strip=True, tags=[u'span'], attributes=[u'class'])
+                text = bleach.clean(text, strip=True, tags=['span'], attributes=['class'])
                 # surround all non interesting parens with spans
-                text = re.sub(ur"(?<!>)(\([^)]+\))(?!<)", ur"<span class='p'>\1</span>", text)
+                text = re.sub(r"(?<!>)(\([^)]+\))(?!<)", r"<span class='p'>\1</span>", text)
 
-                rowclass = u"realrefrow" if t == CitationFinder.REF_INT else u"shamrefrow"
-                row = u"<tr class='{}' ><td>{}</td><td><a href='{}' target='_blank'>{}</a></td><td>{}</td><td>{}</td><td class='he'>{}</td></tr>"\
+                rowclass = "realrefrow" if t == CitationFinder.REF_INT else "shamrefrow"
+                row = "<tr class='{}' ><td>{}</td><td><a href='{}' target='_blank'>{}</a></td><td>{}</td><td>{}</td><td class='he'>{}</td></tr>"\
                     .format(rowclass, row_num, base_url + curr_ref.url(), k, last_ref_seen, r, text)
                 html += row
                 row_num += 1
 
-        html += u"""
+        html += """
                 </table>
             </body>
         </html>
@@ -274,34 +275,34 @@ def segment_ibid_finder(title):
     r = Ref(title)
     st = r.text("he").text
     refs, locations, types = inst.find_in_segment(st)
-    print refs, locations, types
+    print(refs, locations, types)
 
 
 def validate_alt_titles():
     alt_titles = {
-        u"ויקרא": [u"ויק'"],
-        u"במדבר": [u"במ'"],
-        u"דברים": [u"דב'"],
-        u"יהושוע": [u"יהוש'"],
-        u"שופטים": [u"שופטי'"],
-        u"ישעיהו": [u"ישע'"],
-        u"ירמיהו": [u"ירמ'"],
-        u"יחזקאל": [u"יחז'"],
-        u"מיכה": [u"מיכ'"],
-        u"צפניה": [u"צפנ'"],
-        u"זכריה": [u"זכרי"],
-        u"מלאכי": [u"מלא'"],
-        u"תהילים": [u"תה'"],
-        u"נחמיה": [u"נחמי'"],
-        u"דניאל": [u"דני'"],
-        u"אסתר": [u"אס'"],
-        u"איכה": [u"איכ'"]
+        "ויקרא": ["ויק'"],
+        "במדבר": ["במ'"],
+        "דברים": ["דב'"],
+        "יהושוע": ["יהוש'"],
+        "שופטים": ["שופטי'"],
+        "ישעיהו": ["ישע'"],
+        "ירמיהו": ["ירמ'"],
+        "יחזקאל": ["יחז'"],
+        "מיכה": ["מיכ'"],
+        "צפניה": ["צפנ'"],
+        "זכריה": ["זכרי"],
+        "מלאכי": ["מלא'"],
+        "תהילים": ["תה'"],
+        "נחמיה": ["נחמי'"],
+        "דניאל": ["דני'"],
+        "אסתר": ["אס'"],
+        "איכה": ["איכ'"]
     }
-    for k, v in alt_titles.items():
+    for k, v in list(alt_titles.items()):
         for t in v:
             try:
                 i = library.get_index(t)
-                print u"{} -> {}".format(k, t)
+                print("{} -> {}".format(k, t))
             except BookNameError:
                 pass
 
@@ -311,9 +312,9 @@ def alt_titles():
 
     for idx in idxset:
         title = idx.get_title("he")
-        print title
-        newtitle = title.replace(u'תלמוד ירושלמי', u'ירושלמי')
-        print newtitle
+        print(title)
+        newtitle = title.replace('תלמוד ירושלמי', 'ירושלמי')
+        print(newtitle)
         idx.nodes.add_title(newtitle, "he")
         idx.save(override_dependencies=True)
 
@@ -328,8 +329,8 @@ def check_apperence_alt_titles(alt_titles):
     else:
         for i, title in enumerate(alt_titles):
             sham_items = count_regex_in_all_db(inst.get_ultimate_title_regex(title, None, 'he'), text='all', example_num=example_num) #text='all', text='Ramban on Genesis')
-    cl_title = re.sub(u'''["']''', u'', title)
-    make_csv(sham_items, example_num, filename=u'''ibid_output/alt_titles_output/{}.csv'''.format(cl_title))
+    cl_title = re.sub('''["']''', '', title)
+    make_csv(sham_items, example_num, filename='''ibid_output/alt_titles_output/{}.csv'''.format(cl_title))
 
 def reurl(st):
     return re.sub('_', ' ', st)
@@ -349,26 +350,26 @@ def run_shaminator_for_outsidetext(chaimjasonfile):
         cnt = 0
         # data = json.loads(rfp.read())
         alldata = json.loads(rfp.read())
-        keys = alldata.keys()[0:3]
+        keys = list(alldata.keys())[0:3]
         data = {}
         for k in keys:
             data[k] = alldata[k]
-        for k, topic in data.items():
+        for k, topic in list(data.items()):
             cnt +=1
             if cnt > 3:
                 break
             citations = topic["RelatedSources"]
             l += len(citations)
             for i, cit in enumerate(citations):
-                cit = re.sub(u'פרק', u'', cit)
-                cit = u"("+cit+u")"
+                cit = re.sub('פרק', '', cit)
+                cit = "("+cit+")"
                 refs, locations, types = resolver.find_in_segment(cit)
-                print cit, refs[0].normal() if refs else []
+                print(cit, refs[0].normal() if refs else [])
                 topic["RelatedSources"][i] = (topic["RelatedSources"][i], refs[0].normal() if refs else [])
 
     with codecs.open('resolved_asp.json', mode='w', encoding="utf8") as wfp:
         json.dump(data, wfp)
-    print l
+    print(l)
 
 if __name__ == "__main__":
     # inst = CitationFinder()
