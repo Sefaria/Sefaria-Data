@@ -6,7 +6,7 @@ import pymongo
 import geojson
 from sefaria.system.database import db
 from sefaria.model import *
-import unicodecsv as csv
+import csv
 
 
 """
