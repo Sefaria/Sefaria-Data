@@ -229,6 +229,9 @@ class TalmudSteinsaltz(object):
             steinsaltz = segment[current_end:next_start]
         return cls(actual_bleach(talmud), actual_bleach(steinsaltz))
 
+    def has_dash(self):
+        return bool(self.steinsaltz.count(u'\u2014'))
+
 
 class SteinsaltzIntro(TalmudSteinsaltz):
     """
@@ -366,7 +369,16 @@ class TSSuite(object):
         self.suite = tsmap_list
 
     def get_punctuated_talmud(self):
-        return u' '.join([tsmap.get_punctuation_for_talmud() for tsmap in self.suite if tsmap.actually_has_talmud()])
+        word_list = []
+        for tsmap in self.suite:
+            if tsmap.actually_has_talmud():
+                word_list.append(tsmap.get_punctuation_for_talmud())
+
+                if tsmap.talmud_steinsaltz.has_dash():
+                    word_list.append(u'\u2014')
+
+        # return u' '.join([tsmap.get_punctuation_for_talmud() for tsmap in self.suite if tsmap.actually_has_talmud()])
+        return u' '.join(word_list)
 
 
 def build_maps(simple_segment, ellucidated_segment):
