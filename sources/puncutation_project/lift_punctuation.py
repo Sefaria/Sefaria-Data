@@ -15,9 +15,9 @@ Quotation = namedtuple('Quotation', ['word_index', 'type'])
 
 
 # base_vtitle = 'William Davidson Edition - Aramaic'
-base_vtitle = 'William Davidson Edition - Vocalized Aramaic'
+base_vtitle = 'William Davidson Edition - Vocalized Aramaic2'
 elucidated_vtitle = 'William Davidson Edition - Hebrew'
-punctuated_vtitle = 'William Davidson Edition - Aramaic Punctuated'
+punctuated_vtitle = 'William Davidson Edition - Aramaic Punctuated2'
 WL = WeightedLevenshtein()
 
 
@@ -110,6 +110,15 @@ def get_words(word_list, start, end):
     return u' '.join(word_list[start:end+1])
 
 
+def remove_enclosed_commas(text_to_clean):
+    """
+    Remove commas enclosed within parenthesis
+    :param unicode text_to_clean:
+    :return: unicode
+    """
+    return re.sub(ur'\[[^\[\]]+\]', lambda x: x.group().replace(',', ''), text_to_clean)
+
+
 class ModeledSegment(object):
 
     def __init__(self, segment):
@@ -166,11 +175,20 @@ class TalmudSteinsaltz(object):
     """
     def __init__(self, talmud, steinsaltz):
         self.talmud = talmud
-        self.steinsaltz = steinsaltz
+        self.steinsaltz = self.preprocess_steinsaltz(steinsaltz)
 
     @staticmethod
     def punctuation_list():
         return ['?!', '?', '!', ':', '.', ',']
+
+    @staticmethod
+    def preprocess_steinsaltz(steinsaltz):
+        """
+        Do a little clean-up on Steinsaltz.
+        :param steinsaltz:
+        :return:
+        """
+        return remove_enclosed_commas(steinsaltz)
 
     @classmethod
     def punctuation_regex(cls):
@@ -190,7 +208,7 @@ class TalmudSteinsaltz(object):
 
         # Talmud mark takes priority, with the exception of the comma.
         if talmud_mark:
-            if talmud_mark == ',':
+            if talmud_mark.group(1) == ',':
                 # Comma gets treated as standard punctuation (this is just a rule-of-thumb, feel free to revisit)
                 punc_marks.append(talmud_mark.group(1))
             else:
