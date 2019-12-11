@@ -912,7 +912,7 @@ def format_source_text(source_text):
     source_text = u' '.join(source_text.split())
     source_text = bleach.clean(
         source_text,
-        tags=['ul', 'li', 'strong', 'i', 'br', 'a'],
+        tags=['ul', 'li', 'strong', 'i', 'br', 'a', 'big', 'table', 'tbody', 'thead', 'tr', 'td'],
         attributes={'a': ['href']},
         strip=True
     )
@@ -922,6 +922,7 @@ def format_source_text(source_text):
 
 def final_source_clean(final_source_text):
     final_source_text = re.sub(ur'(<br>\s*)+<ul>', u'<ul>', final_source_text)
+    final_source_text = re.sub(ur'</ul>\s*(<br>\s*)+', u'</ul>', final_source_text)
     final_source_text = re.sub(ur'(<br>\s*){3,}', u'<br><br>', final_source_text)
     final_source_text = re.sub(ur'^\s*<br>|<br>\s*$', u'', final_source_text)
 
@@ -1026,7 +1027,7 @@ def create_sheet_json(page_id, group_manager):
                 # source['outsideText'] = u'<span style="font-size: 24px; ' \
                 #                         u'text-decoration:underline;' \
                 #                         u' text-decoration-color:grey;">{}</span>'.format(cleaned_text)
-                source['outsideText'] = u'<strong>{}</strong>'.format(cleaned_text)
+                source['outsideText'] = u'<strong><big>{}</big></strong>'.format(cleaned_text)
             else:
                 diyun = u'<span style="text-decoration:underline; text-decoration-color:grey">{}</span>'.format(u'דיון')
 
@@ -1106,7 +1107,7 @@ def create_sheet_json(page_id, group_manager):
                         'he': source['text']['he'],
                         'en': ''
                     }
-                    del source['text']
+                    # del source['text']
 
         # final source cleanup
         if 'outsideText' in source:
@@ -1190,7 +1191,9 @@ def bulk_sheet_post(wrapped_sheet_list, server='http://localhost:8000'):
                 post_sheet(sheet_json, server=server, weak_network=True)
 
         else:
-            response = post_sheet(sheet_json, server=server)
+            response = ''
+            while not isinstance(response, dict):
+                response = post_sheet(sheet_json, server=server)
             server_map.insert_one({'pageId': page_id, 'server': server, 'serverIndex': response['id']})
     return
 
@@ -1328,6 +1331,7 @@ if __name__ == '__main__':
     from concurrent.futures.thread import ThreadPoolExecutor
     with ThreadPoolExecutor(max_workers=num_processes) as executor:
         executor.map(p_sheet_poster, sheet_chunks)
+    # map(p_sheet_poster, sheet_chunks)
     group_handler.publicize_groups()
 
     # qa_sheets = random.sample([ws for ws in my_wrapped_sheet_list if ws.sheet_json['sources']], 60)
