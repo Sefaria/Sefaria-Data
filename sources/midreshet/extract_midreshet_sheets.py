@@ -57,6 +57,9 @@ class MidreshetCursor(object):
     def __getattr__(self, item):
         return getattr(self.cursor, item)
 
+    def __iter__(self):
+        return self.cursor
+
 
 class NGramCatcher(object):
     """
@@ -102,6 +105,36 @@ class SefariaTermsAndTitles(object):
         self.titles_and_terms_counter.update(titles)
         for t in titles:
             self.terms_to_refs_map[t].add(input_string)
+
+
+class Series(object):
+
+    def __init__(self, series_id, series_name, destination):
+        self.id = series_id
+        self.name = series_name
+        self._destination = destination
+        self._sheet_list = self._get_sheet_list()
+
+    def _get_sheet_list(self):
+        my_cursor.execute('SELECT id, page_num FROM Pages WHERE series_id=? ORDER BY page_num', (self.id,))
+        sheet_urls = []
+        for page in my_cursor:
+            try:
+                url = get_url_for_sheet_id(page.id, self._destination, my_mongo_client.yonis_data.server_map)
+            except TypeError:
+                url = u''
+            sheet_urls.append(url)
+
+        return sheet_urls
+
+    def get_sheets(self):
+        for sheet in self._sheet_list:
+            yield sheet
+
+
+def get_series_mapping(destination):
+    my_cursor.execute('SELECT * FROM Series')
+    return {c.id: Series(c.id, c.name, destination) for c in my_cursor.fetchall()}
 
 
 def convert_row_to_dict(table_row):
@@ -951,7 +984,7 @@ def get_iframe_url(text_with_iframe):
     return iframe['src']
 
 
-def create_sheet_json(page_id, group_manager):
+def create_sheet_json(page_id, group_manager, series_map):
     raw_sheet = get_sheet_by_id(page_id)
     sheet = {
         'title': raw_sheet['name'],
@@ -1118,7 +1151,31 @@ def create_sheet_json(page_id, group_manager):
             source['text']['he'] = final_source_clean(source['text']['he'])
 
         sheet['sources'].append(source)
-        sheet['group'] = group_manager.get_and_register_group_for_sheet(page_id)
+
+    # add instructor sheet link if one exists:
+    instructor_sheet = my_mongo_client.yonis_data.instructor_sheets.find_one({'pageId': page_id})
+    if instructor_sheet:
+        sheet['sources'].append({
+            'outsideText': u'<small>{}<br><a href={}>{}</a></small>'.format(
+                u'דף הנחיות למנחה:', instructor_sheet['url'], instructor_sheet['name'])
+        })
+
+    # handle sheet series
+    if raw_sheet['series_id'] in series_map:
+        series = series_map[raw_sheet['series_id']]
+        assert isinstance(series, Series)
+        url_list = []
+        for i, s in enumerate(series.get_sheets(), 1):
+            if i == raw_sheet['page_num']:
+                continue
+            else:
+                url_list.append(u'<a href={}>{}</a>'.format(s, i))
+        text_part = u'דף מספר {} בסדרה {}, דפים נוספים בסדרה:'.format(raw_sheet['page_num'], series.name)
+        sheet['sources'].append({
+            'outsideText': u'<small>{}<br>{}</small>'.format(text_part, u' '.join(url_list))
+        })
+
+    sheet['group'] = group_manager.get_and_register_group_for_sheet(page_id)
     return sheet
 
 
@@ -1301,6 +1358,7 @@ if __name__ == '__main__':
     #     writer.writerows(to_examine)
 
     relation_manager = SheetManager()
+    series_mapping = get_series_mapping(destination_server)
     my_cursor.execute('SELECT id, name, parent_id FROM Pages')
     for sheet_data in my_cursor.fetchall():
         relation_manager.create_sheet(sheet_data.id, sheet_data.name, sheet_data.parent_id)
@@ -1320,7 +1378,7 @@ if __name__ == '__main__':
         fp.write(u''.join(rendered_relations))
 
     # my_cursor.execute('SELECT id FROM Pages WHERE parent_id = 0')
-    my_wrapped_sheet_list = [SheetWrapper(m.sheet_id, create_sheet_json(m.sheet_id, group_handler))
+    my_wrapped_sheet_list = [SheetWrapper(m.sheet_id, create_sheet_json(m.sheet_id, group_handler, series_mapping))
                              for m in tqdm(root_sheets)]
     print('finished creating sheets')
     num_processes = 20
