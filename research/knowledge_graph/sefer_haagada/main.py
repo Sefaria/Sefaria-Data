@@ -339,7 +339,7 @@ def disambiguate_all(source_list):
     return source_list
 
 
-def disambiguate_ref_list(main_tref, tref_list):
+def disambiguate_ref_list(main_tref, tref_list, **kwargs):
     """
     Find exact segment refs of main_tref for each tref in tref_list.
     :param main_tref: str which is a textual ref
@@ -347,7 +347,7 @@ def disambiguate_ref_list(main_tref, tref_list):
     :return: dict where key is key and value is {"A Ref": tref, "B Ref": tref or key, "Score": float}. "A Ref" will be the disambiguagted ref for main_tref. value will be None if no result was found
     """
     ld = Link_Disambiguator()
-    results = ld.disambiguate_segment_by_snippet(main_tref, tref_list)
+    results = ld.disambiguate_segment_by_snippet(main_tref, tref_list, **kwargs)
     return results
 
 

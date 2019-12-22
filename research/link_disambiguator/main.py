@@ -146,7 +146,7 @@ class Link_Disambiguator:
         with open('ambiguous_segments.json', "w") as f:
             f.write(objStr.encode('utf-8'))
 
-    def disambiguate_segment_by_snippet(self, main_tref, tref_list, lowest_score_threshold=LOWEST_SCORE):
+    def disambiguate_segment_by_snippet(self, main_tref, tref_list, lowest_score_threshold=LOWEST_SCORE, max_words_between=1, min_words_in_match=3, ngram_size=3, verbose=False, with_match_text=False):
         """
 
         :param main_tref: Must be a text ref
@@ -155,14 +155,19 @@ class Link_Disambiguator:
         :return: two lists, `good` and `bad`. Each list has matches
         """
         if not self.matcher:
-            self.matcher = ParallelMatcher(self.tokenize_words,max_words_between=1, min_words_in_match=3, ngram_size=3,
+            self.matcher = ParallelMatcher(self.tokenize_words,max_words_between=max_words_between, min_words_in_match=min_words_in_match, ngram_size=ngram_size,
                                   parallelize=False, calculate_score=self.get_score, all_to_all=False,
-                                  verbose=False, min_distance_between_matches=0, only_match_first=True)
+                                  verbose=verbose, min_distance_between_matches=0, only_match_first=True)
         try:
             match_list = self.matcher.match([main_tref] + tref_list, return_obj=True)
         except ValueError:
             print("Skipping {}".format(main_tref))
-            return [], []  # [[main_tc._oref.normal(), tc_list[i]._oref.normal()] for i in range(len(tc_list))]
+            final_result_dict = {}
+            for other_tref in tref_list:
+                is_tuple = isinstance(other_tref, tuple)
+                parallel_item_key = other_tref[1] if is_tuple else other_tref
+                final_result_dict[parallel_item_key] = None
+            return final_result_dict # [[main_tc._oref.normal(), tc_list[i]._oref.normal()] for i in range(len(tc_list))]
 
         final_result_dict = {}
         for other_tref in tref_list:
@@ -176,11 +181,19 @@ class Link_Disambiguator:
             max_scores = argmax(score_list, n=1)
             best = parallel_matches[max_scores[0]]
             a_match, b_match = (best.a, best.b) if best.a.mesechta == main_tref else (best.b, best.a)
-            final_result_dict[parallel_item_key] = {
-                "A Ref": a_match.ref.normal(),
-                "B Ref": b_match.mesechta if is_tuple else b_match.ref.normal(),
-                "Score": best.score,
-            } if best.score > lowest_score_threshold else None
+            if best.score > lowest_score_threshold:
+                result = {
+                    "A Ref": a_match.ref.normal(),
+                    "B Ref": b_match.mesechta if is_tuple else b_match.ref.normal(),
+                    "Score": best.score,
+                }
+                if with_match_text:
+                    result["Match Text A"] = get_snippet_from_mesorah_item(a_match, self.matcher)
+                    result["Match Text B"] = get_snippet_from_mesorah_item(b_match, self.matcher)
+
+            else:
+                result = None
+            final_result_dict[parallel_item_key] = result
         return final_result_dict
 
     def disambiguate_gra(self):
@@ -222,8 +235,9 @@ class Link_Disambiguator:
             fcsv.writeheader()
             fcsv.writerows(matches)
 
-def get_snippet_from_mesorah_item(mesorah_item, tokenizer):
-    words = tokenizer(Ref(mesorah_item.mesechta).text("he").ja().flatten_to_string())
+
+def get_snippet_from_mesorah_item(mesorah_item, pm):
+    words = pm.word_list_map[mesorah_item.mesechta]
     return " ".join(words[mesorah_item.location[0]:mesorah_item.location[1]+1])
 
 

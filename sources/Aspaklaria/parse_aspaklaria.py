@@ -12,6 +12,7 @@ from sefaria.system import exceptions
 from bs4 import BeautifulSoup, element
 from sources.functions import *
 import string
+import traceback
 import unicodecsv as csv
 # import json
 import pickle
@@ -33,6 +34,11 @@ from data_utilities.dibur_hamatchil_matcher import match_text
 
 db_aspaklaria = client.aspaklaria
 
+# in order to print Hebrew on K8S
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
+
 class Parser(object):
 
     def __init__(self):
@@ -41,7 +47,7 @@ class Parser(object):
         self.pp_table = Parser.perek_parasha_table()
 
     @staticmethod
-    def perek_parasha_table(): #chumash, perek, pasuk=u''):
+    def perek_parasha_table(): #chumash, perek, pasuk=''):
         # create a dictionary of parashot names to refs in them
         def refs2parashah(parashah_name, t):
             """
@@ -51,11 +57,11 @@ class Parser(object):
             :return: new_table: a new dict. keys: Refs of all the Pesukim and Perakim contained (also partially) in the Parashah
             """
             new_table = dict()
-            prev_perk_key = Ref(u'שמואל א')  # this is just for a default Ref that is a Ref obj but not in Torah
-            # parashah_name = u'פרשת {}'.format(parashah_name)
+            prev_perk_key = Ref('שמואל א')  # this is just for a default Ref that is a Ref obj but not in Torah
+            # parashah_name = 'פרשת {}'.format(parashah_name)
             for ref in table[parashah_name].all_segment_refs():
                 new_table[ref] = parashah_name
-                perek_key = Ref(u'{} {}'.format(ref.index.title, ref.sections[0]))
+                perek_key = Ref('{} {}'.format(ref.index.title, ref.sections[0]))
                 if perek_key.normal() != prev_perk_key.normal():
                     prev_perk_key = perek_key
                     if perek_key not in t.keys():
@@ -68,10 +74,10 @@ class Parser(object):
             ind = library.get_index(book)
             struct = ind.get_alt_structure('Parasha')
             parashot = struct.all_children()
-            parashot = [u'פרשת {}'.format(x.primary_title('he')) for x in parashot]
+            parashot = ['פרשת {}'.format(x.primary_title('he')) for x in parashot]
             for x in parashot[1::]:
                 # parashah_name = x.primary_title('he')
-                # parashah_name = u'פרשת {}'.format(parashah_name)
+                # parashah_name = 'פרשת {}'.format(parashah_name)
                 parashah_name = x
                 table[parashah_name] = Ref(parashah_name)  # .all_segment_refs()
                 extend_table = refs2parashah(parashah_name, table.copy())
@@ -90,10 +96,10 @@ def he_term_mapping():
     he_titles = [[(term.get_primary_title(), x['text']) for x in term.title_group.titles if x['lang'] == 'he'] for term
                  in all_terms]
     en, he = zip(*reduce(lambda a,b: a+b, he_titles))
-    he = map(lambda x: re.sub(u'"', u"", x), he)
+    he = map(lambda x: re.sub('"', "", x), he)
     he_key_term_dict = dict(zip(he, en))
-    he_terms_str = u'|'.join(he)
-    he_terms_str = re.sub(re.escape(string.punctuation), u'', he_terms_str)
+    he_terms_str = '|'.join(he)
+    he_terms_str = re.sub(re.escape(string.punctuation), '', he_terms_str)
     return he_key_term_dict, he_terms_str
 
 
@@ -106,7 +112,7 @@ def bs_read(fileName):
         return
     headWord = clean_txt(content.findAll('h1')[0].text)
     t = Topic(headWord)
-    b = AuthorCit(u'before')
+    b = AuthorCit('before')
     wait = True
     for tag in content.findAll():
         if tag.name != 'h1' and wait:
@@ -126,33 +132,33 @@ def bs_read(fileName):
         for ic, c in enumerate(t.all_a_citations[0].cit_list):
             if c == t.headWord:
                 pass
-            elif re.search(u'ראה', c) and re.search(u':', c):
+            elif re.search('ראה', c) and re.search(':', c):
                 txt_split = c.split(':')
-                see = re.sub(u"[\(\)]", u'', txt_split[1]).split(u',')
-                t.see = [re.sub(re.escape(string.punctuation), u'', s) for s in see]
-                # t.see = [re.sub(, u'', s) for s in see]
+                see = re.sub("[\(\)]", '', txt_split[1]).split(',')
+                t.see = [re.sub(re.escape(string.punctuation), '', s) for s in see]
+                # t.see = [re.sub(, '', s) for s in see]
             else:
                 tanakh.append(c)
     t.all_a_citations.pop(0)
     if tanakh and t.all_a_citations:
-        t.all_a_citations[0] = AuthorCit(u'תנך')
+        t.all_a_citations[0] = AuthorCit('תנך')
         t.all_a_citations[0].cit_list = tanakh
 
     return t
 
 
 def transliterator(hestr):
-    trans_table = {u'א': u'a', u'ב': u'b', u'ג': u'g', u'ד': u'd', u'ה': u'h', u'ו': u'v', u'ז': u'z', u'ח': u'ch', u'ט': u't', u'י': u'y', u'כ': u'kh', u'ל': u'l', u'מ': u'm', u'נ': u'n', u'ס': u's', u'ע': u"a'a", u'פ': u'p', u'צ': u'tz', u'ק': u'k', u'ר': u'r', u'ש': u'sh', u'ת': u't', u'ן': u'n', u'ף': u'f', u'ך': u'kh', u'ם': u'm', u'ץ': u'tz'
+    trans_table = {'א': 'a', 'ב': 'b', 'ג': 'g', 'ד': 'd', 'ה': 'h', 'ו': 'v', 'ז': 'z', 'ח': 'ch', 'ט': 't', 'י': 'y', 'כ': 'kh', 'ל': 'l', 'מ': 'm', 'נ': 'n', 'ס': 's', 'ע': "a'a", 'פ': 'p', 'צ': 'tz', 'ק': 'k', 'ר': 'r', 'ש': 'sh', 'ת': 't', 'ן': 'n', 'ף': 'f', 'ך': 'kh', 'ם': 'm', 'ץ': 'tz'
                    }
-    enstr = u''
+    enstr = ''
     for l in hestr:
         enstr+=trans_table[l] if l in trans_table.keys() else l
     return enstr
 
 
 def clean_txt(text):
-    cleaned = u' '.join(text.split())
-    if cleaned and cleaned[-1] == u':':
+    cleaned = ' '.join(text.split())
+    if cleaned and cleaned[-1] == ':':
         cleaned = cleaned[:-1]
     return cleaned
 
@@ -189,22 +195,22 @@ class Topic(object):
         cnt=0
         BT = BookIbidTracker()
         topic_table = []
-        tanakh_books =library.get_indexes_in_category(u'Tanakh')
-        comp_tanakh_comm = re.compile(u'(?P<commentator>^.*?(?P<complex>\s?על|,)\s+).*$')
+        tanakh_books =library.get_indexes_in_category('Tanakh')
+        comp_tanakh_comm = re.compile('(?P<commentator>^.*?(?P<complex>\s?על|,)\s+).*$')
         for i, cit in enumerate(self.all_a_citations):
             for source in cit.sources:
                 ref_d = self.ref_dict(source)
                 if ref_d:
                     topic_table.append(self.ref_dict(source))
                     BT.registerRef(source.ref)
-                if source.ref and u'Tanakh'in source.ref.index.categories and source.ref.index.title not in tanakh_books:
+                if source.ref and 'Tanakh'in source.ref.index.categories and source.ref.index.title not in tanakh_books:
                     match = re.search(comp_tanakh_comm, source.ref.he_normal())
-                    tanakh_ref = Ref(re.sub(match.group(u'commentator'), u'', source.ref.he_normal()))
+                    tanakh_ref = Ref(re.sub(match.group('commentator'), '', source.ref.he_normal()))
                     BT.registerRef(tanakh_ref)
                 if source.raw_ref and source.raw_ref.is_sham:
-                    # print u'Sham Ref {}'.format(source.raw_ref.rawText)
+                    # print 'Sham Ref {}'.format(source.raw_ref.rawText)
                     if topic_table[-1]['author'] == source.raw_ref.author:
-                        if u'Talmud' in topic_table[-1]['index'].categories:
+                        if 'Talmud' in topic_table[-1]['index'].categories:
                             source.ref = BT.resolve(None, match_str=source.author+source.raw_ref.rawText)
                         else:
                             try:
@@ -215,41 +221,47 @@ class Topic(object):
                         if source.ref:
                             # print source.ref
                             BT.registerRef(source.ref)
-                    if u'Tanakh' in topic_table[-1]['index'].categories and not source.ref:
+                    if 'Tanakh' in topic_table[-1]['index'].categories and not source.ref:
                         tanakh_book = tanakh_ref.index.title
                         # if topic_table[-1]['index'].is_complex():
                         #     tanakh_book = tanakh_ref.index.title
                         # else:
                         #     tanakh_book = topic_table[-1]['index'].base_text_titles[0]
-                        # this_he_title = u'{} על {}'.format(source.raw_ref.author, Ref(tanakh_book).he_normal())
+                        # this_he_title = '{} על {}'.format(source.raw_ref.author, Ref(tanakh_book).he_normal())
                         library.get_index(tanakh_book)
-                        match_str = Ref(tanakh_book).he_normal() + re.sub(u'שם ', u'', source.raw_ref.rawText, count=1) #re.sub(u'(\(|\))', u'', this_he_title + re.sub(u'שם', u'', u'(שם שם כג)', count=1))
+                        match_str = Ref(tanakh_book).he_normal() + re.sub('שם ', '', source.raw_ref.rawText, count=1) #re.sub('(\(|\))', '', this_he_title + re.sub('שם', '', '(שם שם כג)', count=1))
                         try:
                             try_ref = BT.resolve(tanakh_book, match_str=match_str)  # sections=[topic_table[-1]['section'],topic_table[-1]['segment']])
                         except (InputError, IbidRefException) as e:
                             try:
-                                try_ref = Ref(re.sub(u'([^\s])\(', ur'\1 (', match_str))
+                                try_ref = Ref(re.sub('([^\s])\(', r'\1 (', match_str))
                             except InputError:
                                 try_ref = None
                         if try_ref:
                             try:
                                 ind = library.get_index(cit.author)
                             except:
-                                ind = [ind for ind in source.indexs if re.search(try_ref.book, ind.title)][0]
+                                try:
+                                    ind = [ind for ind in source.indexs if re.search(try_ref.book, ind.title)][0]
+                                except IndexError:
+                                    print("SHAMS INDEX ERROR")
+                                    print("Source indexs {}".format(", ".join([ind.title for ind in source.indexs])))
+                                    print("Try_ref.book {}".format(try_ref.book))
+                                    traceback.print_exc()
                             ref_struct = ind.all_segment_refs()[0].he_normal()
                             match = re.search(comp_tanakh_comm, ref_struct)
-                            complex = match.group(u'complex')
+                            complex = match.group('complex')
                             try:
-                                source.ref = Ref(cit.author + complex + u" "+ try_ref.he_normal())
+                                source.ref = Ref(cit.author + complex + " "+ try_ref.he_normal())
                             except InputError:
-                                source.ref = Ref(u"{} {} {}".format(ind.title, try_ref.sections[0], try_ref.sections[1]))
+                                source.ref = Ref("{} {} {}".format(ind.title, try_ref.sections[0], try_ref.sections[1]))
                             BT.registerRef(source.ref)
                             # print source.ref
                         else:
                             source.ref = None
                             cnt+=1
-                            print cnt
-                            # print u'{}'.format(e)
+                            print(cnt)
+                            # print '{}'.format(e)
                 # if source.ref and source.raw_ref.is_sham:
                 #     Source.cnt_sham -= 1
                 #     Source.cnt_resolved +=1
@@ -259,7 +271,7 @@ class Topic(object):
         if source.ref:
             # if source.ref.index.title in library.get_indexes_in_category('Bavli'):
             #     print 'Bavli'
-            if 'addressTypes' in source.ref.index.schema.keys() and u'Talmud' in source.ref.index.schema['addressTypes']:
+            if 'addressTypes' in source.ref.index.schema.keys() and 'Talmud' in source.ref.index.schema['addressTypes']:
                 d['book'] = Ref(source.ref.book).he_normal()
             d['author'] = source.author
             d['index'] = source.ref.index
@@ -303,7 +315,7 @@ class Source(object):
             try:
                 self.pm_match_text()
             except:
-                print u"pm_matcher failed"
+                print("pm_matcher failed")
 
         # if self.raw_ref:
         #     Source.cnt+=1
@@ -311,7 +323,7 @@ class Source(object):
         #         Source.cnt_sham += 1
         #     elif self.ref:  # found ref (presumably a correct ref :) )
         #         Source.cnt_resolved += 1
-        #         res_text = u'{}, {}\n{}\n\n'.format(self.raw_ref.author, self.raw_ref.rawText, self.ref.normal())
+        #         res_text = '{}, {}\n{}\n\n'.format(self.raw_ref.author, self.raw_ref.rawText, self.ref.normal())
         #         write_to_file(res_text)
         #     else:
         #         Source.cnt_not_found += 1
@@ -321,15 +333,15 @@ class Source(object):
         looks for the ref in the end of the text in parentheses
         :return: does not return but creates a RawRef obj if the parentheses are found
         """
-        if re.search(u'(\([^)]*?\)$)', self.text):
-            self.raw_ref = RawRef(re.search(u'(\([^)]*?\)$)',self.text).group(1), self.author)
+        if re.search('(\([^)]*?\)$)', self.text):
+            self.raw_ref = RawRef(re.search('(\([^)]*?\)$)',self.text).group(1), self.author)
         # else:
         #     pass
 
     def extract_cat(self, include_dependant):
         look_here = []
         # library.get_index(self.author) if library.get_index(self.author) else None # needs to go into a try catch "sefaria.system.exceptions.BookNameError"
-        author = re.sub(u'[{}]'.format(re.escape(string.punctuation)), u'', self.author)
+        author = re.sub('[{}]'.format(re.escape(string.punctuation)), '', self.author)
         try:
             self.index = library.get_index(author)
             return [self.index]
@@ -351,7 +363,7 @@ class Source(object):
     def extract_term(self):
         # text_categories = library.get_text_categories()
         found_term = []
-        author = re.sub(u'[{}]'.format(re.escape(string.punctuation)), u'', self.author)
+        author = re.sub('[{}]'.format(re.escape(string.punctuation)), '', self.author)
         def try_to_find(term_string, prefixes = True):
             #check that the string is not a word that has no meaning. like ה from אור ה
             if len(term_string) <=1:
@@ -366,13 +378,13 @@ class Source(object):
                     Source.found_term_dict[term_string] = found_term
                     return found_term
                 # else try string of a known Term
-                match = re.search(u"\|([^|]*{}(\s[^|]*?\||\|))".format(term_string), parser.he_term_str)
+                match = re.search("\|([^|]*{}(\s[^|]*?\||\|))".format(term_string), parser.he_term_str)
                 if match:
-                    found_term = parser.term_dict.get(match.group(1).replace(u"|", u""), [])
+                    found_term = parser.term_dict.get(match.group(1).replace("|", ""), [])
                     Source.found_term_dict[term_string] = found_term
                     return found_term
                 elif prefixes:
-                    return try_to_find(re.sub(u'^[משהוכלב]', u'', term_string), False)
+                    return try_to_find(re.sub('^[משהוכלב]', '', term_string), False)
                 else:
                     return []
 
@@ -387,24 +399,24 @@ class Source(object):
 
         # found_term = parser.term_dict.get(author, [])
         # if not found_term and re.search(author, parser.he_term_str):
-        #     found_he = re.search(u"\|(.*?{}.*?)\|".format(author), parser.he_term_str).group(1)
+        #     found_he = re.search("\|(.*?{}.*?)\|".format(author), parser.he_term_str).group(1)
         #     found_term = parser.term_dict.get(found_he, [])
         # if not found_term:
-        #     found_term = parser.term_dict.get(re.sub(u'^[משהוכלב]', u'', author), [])
+        #     found_term = parser.term_dict.get(re.sub('^[משהוכלב]', '', author), [])
         # if not found_term:
         #     for word in author.split():
-        #         found = parser.term_dict.get(word.replace(u'"', u""), [])
+        #         found = parser.term_dict.get(word.replace('"', ""), [])
         #         if found:
         #             found_term.append(found)
         #         else:
-        #             found_term.append(parser.term_dict.get(re.sub(u'(^[משהוכלב]|")', u'', word), []))
+        #             found_term.append(parser.term_dict.get(re.sub('(^[משהוכלב]|")', '', word), []))
         # return found_term if isinstance(found_term, list) else [found_term]
 
     def extract_indx(self):
-        author = re.sub(u'[{}]'.format(re.escape(string.punctuation)), u'', self.author)
+        author = re.sub('[{}]'.format(re.escape(string.punctuation)), '', self.author)
         try:
             self.index = library.get_index(author)
-            if self.index.title == u'Yalkut Shimoni on Torah':
+            if self.index.title == 'Yalkut Shimoni on Torah':
                 raise exceptions.BookNameError
         except exceptions.BookNameError as e:
             term_list = self.extract_term()
@@ -414,7 +426,7 @@ class Source(object):
                 for term in term_list:
                     indexset = Source.indexSet_dict.get(term, None)
                     if indexset is None:
-                        indexset = IndexSet({u"title": {u"$regex": u".*(?i){}.*".format(term)}}).array()
+                        indexset = IndexSet({"title": {"$regex": ".*(?i){}.*".format(term)}}).array()
                         Source.indexSet_dict[term] = indexset
                     inds_via_term += indexset
                 # for title in [x['text'] for ind in inds_from_term for x in ind.schema['titles'] if x['lang'] == 'he']:
@@ -431,17 +443,17 @@ class Source(object):
                         elif isinstance(ind, Index):
                             self.indexs.append(ind)
                 elif bool(inds_via_cats) and bool(inds_via_term):
-                    if self.author == u'תלמוד בבלי':
+                    if self.author == 'תלמוד בבלי':
                         self.indexs = inds_via_cats
-                    elif self.author == u'משנה תורה':
+                    elif self.author == 'משנה תורה':
                         self.indexs = inds_via_cats
-                    elif self.author == u'ירושלמי':
-                        self.indexs = library.get_indexes_in_category(u'Yerushalmi')
+                    elif self.author == 'ירושלמי':
+                        self.indexs = library.get_indexes_in_category('Yerushalmi')
                     else:
                         self.indexs = inds_via_term
                 # anyway add also books by author name
                 indexs_via_author_name = self.get_indexes_from_author(self.author)
-                if not indexs_via_author_name and re.search(u'^[משהוכלב]', self.author):
+                if not indexs_via_author_name and re.search('^[משהוכלב]', self.author):
                     indexs_via_author_name = self.get_indexes_from_author(self.author[1::])
                 # if self.indexs:
                 self.indexs.extend(indexs_via_author_name)
@@ -451,39 +463,39 @@ class Source(object):
     def get_ref_from_api(self):
 
         def clean_raw(st):
-            st = re.sub(u'[)(]', u'', st) # incase we put those parantheses on before to try and catch it with get_ref_in_string
-            he_parashah_array = [u"בראשית", u"נח", u"לך לך", u"וירא", u"חיי שרה", u"תולדות", u"ויצא", u"וישלח", u"וישב", u"מקץ", u"ויגש", u"ויחי", u"שמות", u"וארא", u"בא", u"בשלח", u"יתרו", u"משפטים", u"תרומה", u"תצוה", u"כי תשא", u"ויקהל", u"פקודי", u"ויקרא", u"צו", u"שמיני", u"תזריע", u"מצורע", u"אחרי מות", u"קדושים", u"אמור", u"בהר", u"בחוקתי", u"במדבר", u"נשא", u"בהעלותך", u"שלח", u"קרח", u"חקת", u"בלק", u"פנחס", u"מטות", u"מסעי", u"דברים", u"ואתחנן", u"עקב", u"ראה", u"שופטים", u"כי תצא", u"כי תבוא", u"נצבים", u"וילך", u"האזינו", u"וזאת הברכה"]
-            for s in [u"דרוש", u"פרק "]: # u"מאמר ", u"פרק"
-                st = re.sub(s, u"", st)
-            if self.author == u"משנה תורה":
-                st = u"הלכות " + st
-            elif self.author == u"ספר החינוך":
+            st = re.sub('[)(]', '', st) # incase we put those parantheses on before to try and catch it with get_ref_in_string
+            he_parashah_array = ["בראשית", "נח", "לך לך", "וירא", "חיי שרה", "תולדות", "ויצא", "וישלח", "וישב", "מקץ", "ויגש", "ויחי", "שמות", "וארא", "בא", "בשלח", "יתרו", "משפטים", "תרומה", "תצוה", "כי תשא", "ויקהל", "פקודי", "ויקרא", "צו", "שמיני", "תזריע", "מצורע", "אחרי מות", "קדושים", "אמור", "בהר", "בחוקתי", "במדבר", "נשא", "בהעלותך", "שלח", "קרח", "חקת", "בלק", "פנחס", "מטות", "מסעי", "דברים", "ואתחנן", "עקב", "ראה", "שופטים", "כי תצא", "כי תבוא", "נצבים", "וילך", "האזינו", "וזאת הברכה"]
+            for s in ["דרוש", "פרק "]: # "מאמר ", "פרק"
+                st = re.sub(s, "", st)
+            if self.author == "משנה תורה":
+                st = "הלכות " + st
+            elif self.author == "ספר החינוך":
                 for s in he_parashah_array:
-                    st = re.sub(s, u"", st)
-                    st = re.sub(u"מצוה", u"", st)
-            elif self.author == u'מורה נבוכים':
-                st = re.sub(u"פתיחה", u'הקדמה, פתיחת הרמב"ם ', st)
-            elif self.author == u'כוזרי':
-                st = re.sub(u"מאמר ", u"", st)
+                    st = re.sub(s, "", st)
+                    st = re.sub("מצוה", "", st)
+            elif self.author == 'מורה נבוכים':
+                st = re.sub("פתיחה", 'הקדמה, פתיחת הרמב"ם ', st)
+            elif self.author == 'כוזרי':
+                st = re.sub("מאמר ", "", st)
             return st
 
         if self.raw_ref:
-            ref_w_author = u"(" + self.author + u", " + re.sub(u"[)(]", u"", self.raw_ref.rawText) + u")"
+            ref_w_author = "(" + self.author + ", " + re.sub("[)(]", "", self.raw_ref.rawText) + ")"
             refs = library.get_refs_in_string(ref_w_author)
             if refs:
                 # assert len(refs) == 1
                 self.ref = refs[0]
                 # print self.ref
             else:  # straight forward didn't find, so might be a sham. Or might need special casing.
-                if re.search(u"^\(\s*שם", self.raw_ref.rawText):
+                if re.search("^\(\s*שם", self.raw_ref.rawText):
                     self.raw_ref.is_sham = True
                 else:
                     cleaned = clean_raw(self.raw_ref.rawText)
-                    fixed_ref = u"(" + self.author + u", " + re.sub(u"[)(]", u"", cleaned) + u")"
-                    # print u"*** try new ref, fixed_ref = {}".format(fixed_ref)
+                    fixed_ref = "(" + self.author + ", " + re.sub("[)(]", "", cleaned) + ")"
+                    # print "*** try new ref, fixed_ref = {}".format(fixed_ref)
                     # put in a new "try" because sometimes it is simpler then it seams :)
                     try:
-                        refs = [Ref(re.sub(u"[()]", u"",fixed_ref))]
+                        refs = [Ref(re.sub("[()]", "",fixed_ref))]
                     except (exceptions.InputError, IndexError):
                         refs = library.get_refs_in_string(fixed_ref)
 
@@ -491,8 +503,8 @@ class Source(object):
                         self.ref = refs[0]
                         # print self.ref
                     else:
-                        self.opt_titles = self.get_titles_in_string(re.sub(u'[)(,]', u'', ref_w_author))
-            # print self.raw_ref.rawText, u'\n', ref_w_author
+                        self.opt_titles = self.get_titles_in_string(re.sub('[)(,]', '', ref_w_author))
+            # print self.raw_ref.rawText, '\n', ref_w_author
         else: # there isn't a self.ref means we couldn't find parenthises at the end, probably a continuation of the prev source/ cit (in cit_list)
             pass
         self.extract_indx()
@@ -500,7 +512,7 @@ class Source(object):
 
     def get_titles_in_string(self, text):
         titles = library.get_titles_in_string(text)
-        # if self.author == u'משנה תורה':
+        # if self.author == 'משנה תורה':
         #     match_text(text.split(), [])
         return titles
 
@@ -516,15 +528,15 @@ class Source(object):
         look_here_titles = look_here_titles_en+look_here_titles_he
         shared_word_in_titles = []
         try:
-            shared_word_in_titles = u'({})'.format(u'|'.join(list(set.intersection(*[set(x.split()) for x in look_here_titles]))))
+            shared_word_in_titles = '({})'.format('|'.join(list(set.intersection(*[set(x.split()) for x in look_here_titles]))))
         except AttributeError:
             if any(type(book) != unicode for book in look_here_titles):
                 look_here_titles = [book for book in look_here_titles if isinstance(book, unicode)]
-                shared_word_in_titles = u'({})'.format(
-                    u'|'.join(list(set.intersection(*[set(x.split()) for x in look_here_titles]))))
+                shared_word_in_titles = '({})'.format(
+                    '|'.join(list(set.intersection(*[set(x.split()) for x in look_here_titles]))))
 
-        if re.sub(u"[()]", u"", shared_word_in_titles):
-            look_here_titles = map(lambda x: (x, re.sub(shared_word_in_titles, u'', x).strip()), look_here_titles)
+        if re.sub("[()]", "", shared_word_in_titles):
+            look_here_titles = map(lambda x: (x, re.sub(shared_word_in_titles, '', x).strip()), look_here_titles)
         else:
             look_here_titles = map(lambda x: tuple([x]) if isinstance(x, unicode) else tuple(x), look_here_titles)
         return look_here_titles
@@ -542,10 +554,10 @@ class Source(object):
         wrong_ref = self.check_for_wrong_ref() or self.wrong_ref_pp()
 
         # if self.ref:  # probabaly should be calculated once
-        #     if self.author != u"תנך"  and self.ref.index.title in library.get_indexes_in_category(u'Tanakh'):
+        #     if self.author != "תנך"  and self.ref.index.title in library.get_indexes_in_category('Tanakh'):
         #         include_dependant = True
         #         wrong_ref = True
-        #     elif self.author != u"תלמוד בבלי"  and self.ref.index.title in library.get_indexes_in_category(u'Bavli'):
+        #     elif self.author != "תלמוד בבלי"  and self.ref.index.title in library.get_indexes_in_category('Bavli'):
         #         include_dependant = False
         #         wrong_ref = True
 
@@ -553,7 +565,7 @@ class Source(object):
             if wrong_ref:  # or (self.raw_ref and not self.ref and not self.raw_ref.is_sham):
                 new_ref = None
                 include_dependant = True
-                if self.author == u"משנה תורה":
+                if self.author == "משנה תורה":
                     include_dependant = False
                 look_here = self.get_index_options(include_dependant=include_dependant)
                 if look_here:
@@ -562,35 +574,35 @@ class Source(object):
                     parser.missing_authors.add(self.author)
                 # if look_here and (self.index or wrong_ref):
                 #     # than try to get the true title from the cat from look_here
-                #     look_here_shared_title_word = u'({})'.format(
-                #         u'|'.join(list(set.intersection(*[set(x.title.split()) for x in look_here]))))
+                #     look_here_shared_title_word = '({})'.format(
+                #         '|'.join(list(set.intersection(*[set(x.title.split()) for x in look_here]))))
                 #     alt_ref_titles = map(lambda x: x['text'], self.ref.index.schema['titles'])
                 #     found_index = [ind for ind in look_here for tanakh_book in alt_ref_titles if
-                #                    tanakh_book in re.sub(look_here_shared_title_word, u'', ind.title).strip()]
+                #                    tanakh_book in re.sub(look_here_shared_title_word, '', ind.title).strip()]
                 #     if found_index:
                 #         if len(set(found_index)) > 1:  # assert len(found_index) == 0
                 #             print "more than one index option"  # todo: problem with אלשיך דברים and with books I, II
                 #             print found_index[0].title, found_index[-1].title
                 #         self.index = found_index[0]
                 #         try:
-                #             new_ref = Ref(u'{} {}'.format(self.index.title, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()))
-                #             print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
+                #             new_ref = Ref('{} {}'.format(self.index.title, re.sub(self.ref.index.title, '', self.ref.normal()).strip()))
+                #             print "deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
                 #             self.ref = new_ref
                 #         except exceptions.InputError as e:
-                #             print u"inputError for this string {}, extracted from this rawref {}".format(u'{} {}'.format(self.index.title, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()), self.raw_ref)
+                #             print "inputError for this string {}, extracted from this rawref {}".format('{} {}'.format(self.index.title, re.sub(self.ref.index.title, '', self.ref.normal()).strip()), self.raw_ref)
                 # tanakh is wrong but can't find the index ex: רש"ר הירש
                 if self.index and not self.ref:
                     ind = self.index
                     #todo: look into the original catching see why it is not catching kalla. also see how to copy the intresting parts to here
                     self.raw_ref.book = ind.title
-                    split_raw_text = re.sub(u'[\(\)]', u'', self.raw_ref.rawText).split()
+                    split_raw_text = re.sub('[\(\)]', '', self.raw_ref.rawText).split()
                     self.raw_ref.section_level = split_raw_text
 
                     pass
                 if not self.index and not new_ref:# todo: it was an or why? turend into an and lets see if/what it breaks.
-                    self.change_look_here(author = u'תרגום יונתן', new_author = u'תרגום', category = u'Writings')
+                    self.change_look_here(author = 'תרגום יונתן', new_author = 'תרגום', category = 'Writings')
                     if not self.index:
-                        # print u"deleting wrong: {} couldn't find an index".format(self.ref)
+                        # print "deleting wrong: {} couldn't find an index".format(self.ref)
                         self.ref = None
             else:  # not wrong_ref. and found a ref, might just be a correct ref. todo: how to test it is correct?
                 pass
@@ -600,9 +612,9 @@ class Source(object):
             indexs = self.extract_cat(include_dependant=True)
             if indexs:
                 indexs.extend(self.indexs)
-                # if self.author == u'משנה תורה':
+                # if self.author == 'משנה תורה':
                 #     self.reduce_indexs_with_matcher()
-            node_name = u''
+            node_name = ''
             for opt_title in self.opt_titles:
                 try:
                     new_index = library.get_index(opt_title)
@@ -616,8 +628,8 @@ class Source(object):
                                 if not self.check_for_wrong_ref(r):
                                     self.ref = r
                             except InputError:
-                                self.ref = u''
-                                print u'the node guess is not a Ref'
+                                self.ref = ''
+                                print('the node guess is not a Ref')
                         elif node_guess:
                             # then we should check witch is the better option
                             # maybe using the length of matching words in regards to the titles
@@ -632,23 +644,23 @@ class Source(object):
                             node_name = Ref(intersected[0].title).he_normal()  # TODO: find cases with list longer than one and figure it out.
                             self.index = intersected
                 except (exceptions.BookNameError, TypeError):
-                    # print u"excepted {}".format(opt_title)
+                    # print "excepted {}".format(opt_title)
                     pass
                 if node_name:
                     try:
                         new_string = re.sub(opt_title, node_name, self.text)
-                        new_string = re.sub(u'[()]', u'', new_string)  # because we are going to use Ref rather than library.get_refs_in_string() that needes the parentheses
+                        new_string = re.sub('[()]', '', new_string)  # because we are going to use Ref rather than library.get_refs_in_string() that needes the parentheses
                         self.ref = Ref(new_string)
                     except exceptions.InputError:
                         try:
-                            self.ref = Ref(u','.join(new_string.split(u',')[0:2]))
+                            self.ref = Ref(','.join(new_string.split(',')[0:2]))
                         except exceptions.InputError:
                             # try again without the name of the node, but with the index recognizing that the node is in that index
                             try:
-                                new_string = re.sub(opt_title, u"", new_string)
+                                new_string = re.sub(opt_title, "", new_string)
                                 self.ref = Ref(new_string)
                             except exceptions.InputError:
-                                    print "we tried"
+                                    print("we tried")
                                     self.ref = None
         elif (self.indexs or self.index) and self.raw_ref and not self.raw_ref.is_sham:
             self.ref_opt = []
@@ -675,7 +687,7 @@ class Source(object):
                     try:
                         if ns_titles_and_refs:
                             try:
-                                r = Ref(ns_titles_and_refs.get(node_guess, u''))
+                                r = Ref(ns_titles_and_refs.get(node_guess, ''))
                                 r.normal()
                             except (InputError, AttributeError):
                                 r = Ref(node_guess)
@@ -684,40 +696,40 @@ class Source(object):
                         if not self.check_for_wrong_ref(r):
                             self.ref_opt.append(r)
                     except InputError:
-                        # self.ref_opt.append(u'')
-                        print u'the node guess is not a Ref'
+                        # self.ref_opt.append('')
+                        print('the node guess is not a Ref')
             if self.ref_opt:
                 if len(self.ref_opt) == 1:
                     r = self.ref_opt[0]
                     #self.ref = r
                     if not r.sections:
-                        sections = u' '.join([sect for sect in re.sub(u'[(,)]', u' ', self.raw_ref.rawText).split() if is_hebrew_number(sect)]) #todo: maybe bad huristic and should wait to do this on the PM level?
+                        sections = ' '.join([sect for sect in re.sub('[(,)]', ' ', self.raw_ref.rawText).split() if is_hebrew_number(sect)]) #todo: maybe bad huristic and should wait to do this on the PM level?
                         if sections:
                             try:
-                                self.ref = Ref(r.he_normal() + u' ' + sections)
+                                self.ref = Ref(r.he_normal() + ' ' + sections)
                             except InputError as e:
                                 pass
                             return
                     self.ref = r
                 else:  # more than one option, we need to choose the better one.
-                    he_options = [r.he_normal().replace(u"ן", u"ם") for r in self.ref_opt]
+                    he_options = [r.he_normal().replace("ן", "ם") for r in self.ref_opt]
                     try:
-                        better = intersect_list_string(he_options, re.sub(u'[()]', u'', self.raw_ref.rawText), ref_opt = True)
+                        better = intersect_list_string(he_options, re.sub('[()]', '', self.raw_ref.rawText), ref_opt = True)
                         r = Ref(better)
                         if not r.sections:
-                            sections = u' '.join(
-                                [sect for sect in re.sub(u'[(,)]', u' ', self.raw_ref.rawText).split() if
+                            sections = ' '.join(
+                                [sect for sect in re.sub('[(,)]', ' ', self.raw_ref.rawText).split() if
                                  is_hebrew_number(
                                      sect)])  # todo: maybe bad huristic and should wait to do this on the PM level?
                             if sections:
                                 try:
-                                    self.ref = Ref(r.he_normal() + u' ' + sections)
+                                    self.ref = Ref(r.he_normal() + ' ' + sections)
                                 except (AttributeError, InputError):
                                     pass
                                 return
                         self.ref = r
                     except InputError:
-                        print "more than one option to guess from"
+                        print("more than one option to guess from")
 
 
                 # elif node_guess:
@@ -736,9 +748,9 @@ class Source(object):
                 r = self.ref
             else:
                 return False  # witch is the same as wrong_ref at this point
-        if self.author != u"תנך"  and r.index.title in library.get_indexes_in_category(u'Tanakh'):
+        if self.author != "תנך"  and r.index.title in library.get_indexes_in_category('Tanakh'):
             wrong_ref = True
-        elif self.author != u"תלמוד בבלי"  and r.index.title in library.get_indexes_in_category(u'Bavli'):
+        elif self.author != "תלמוד בבלי"  and r.index.title in library.get_indexes_in_category('Bavli'):
             wrong_ref = True
         return wrong_ref
 
@@ -747,13 +759,13 @@ class Source(object):
         check for wrong ref parashah perk (pp)
         :return:
         """
-        if self.author == u'משך חכמה':
+        if self.author == 'משך חכמה':
             if self.raw_ref:
                 rs = library.get_refs_in_string(self.raw_ref.rawText)
                 if not rs:
                     return False  #  (משך חכמה, שם יח ד)
                 parashah_str = convert_perk_parasha(rs[0], parser.pp_table)
-                parashah_str = re.sub(u"פרשת ", u"", parashah_str)
+                parashah_str = re.sub("פרשת ", "", parashah_str)
                 self.raw_ref.rawText_old = self.raw_ref.rawText[:]
                 self.raw_ref.rawText = parashah_str #Ref(parashah_str).he_normal()
                 self.ref = None
@@ -791,22 +803,22 @@ class Source(object):
                 self.index = library.get_index(filter(lambda x: type(x) == unicode, list(reduced_indexes))[0]).title
             try:
                 if isinstance(self.index, tuple):
-                    index_node_name = self.index[1].title + u', ' + self.index[0]
+                    index_node_name = self.index[1].title + ', ' + self.index[0]
                     index_node_name = Ref(index_node_name).normal()
                 else:
                     index_node_name = self.index
                 sections = self.get_sections_from_ref()
-                new_refs = library.get_refs_in_string(u'({} {})'.format(Ref(index_node_name).he_normal(), sections))
+                new_refs = library.get_refs_in_string('({} {})'.format(Ref(index_node_name).he_normal(), sections))
                 if new_refs:
                     new_ref = new_refs[0]
                 else:
-                    new_ref = Ref(u'{} {}'.format(index_node_name, sections)) #re.sub(self.ref.index.title, u'', self.ref.normal()).strip()))
-                # print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
+                    new_ref = Ref('{} {}'.format(index_node_name, sections)) #re.sub(self.ref.index.title, '', self.ref.normal()).strip()))
+                # print "deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
                 self.ref = new_ref
             except exceptions.InputError as e:
                 new_ref = None  # so not to have new_ref that failed scrowing with stuff
-                # print u"inputError for this string {}, extracted from this rawref {}".format(
-                #     u'{} {}'.format(self.index, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()),
+                # print "inputError for this string {}, extracted from this rawref {}".format(
+                #     '{} {}'.format(self.index, re.sub(self.ref.index.title, '', self.ref.normal()).strip()),
                 #     self.raw_ref)
         elif not reduced_indexes:  # len(reduced_indexes) == 0
             # couldn't find the title in the books maybe it is in there nodes
@@ -822,43 +834,43 @@ class Source(object):
                 if len(look_here_nodes) == 1:
                     node = look_here_nodes[0]  # todo: why take the first one?? or move it to be taking the only one
                     node_name = node  # [0]
-                    depth = re.search(u'.*?(\d+):?(\d+)?.*?', self.ref.normal()).groups()
+                    depth = re.search('.*?(\d+):?(\d+)?.*?', self.ref.normal()).groups()
                     for d in depth:
                         if not d:
-                            print "break"
+                            print("break")
                             break
                         try:
-                            new_ref = Ref(u'{} {}'.format(node_name, numToHeb(d)))
-                            # print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index,
+                            new_ref = Ref('{} {}'.format(node_name, numToHeb(d)))
+                            # print "deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index,
                             #                                                                    new_ref)
                             break
                         except (exceptions.InputError, IndexError) as e:
-                            # print u"inputError for this string {}, extracted from this rawref {}".format(
-                            #     u'{} {}'.format(node_name, numToHeb(d)), self.raw_ref.rawText)
-                            if u"ילקוט שמעוני" in node_name:
+                            # print "inputError for this string {}, extracted from this rawref {}".format(
+                            #     '{} {}'.format(node_name, numToHeb(d)), self.raw_ref.rawText)
+                            if "ילקוט שמעוני" in node_name:
                                 try:
-                                    new_ref = Ref(u'{}, {}'.format(ind.title, d))
+                                    new_ref = Ref('{}, {}'.format(ind.title, d))
                                 except exceptions.InputError:
-                                    print u"inputError for this string"
-                                    # print u"inputError for this string {}, extracted from this rawref {}".format(
-                                    #     u'{} {}'.format(node_name, numToHeb(d)), self.raw_ref.rawText)
+                                    print("inputError for this string")
+                                    # print "inputError for this string {}, extracted from this rawref {}".format(
+                                    #     '{} {}'.format(node_name, numToHeb(d)), self.raw_ref.rawText)
                         except IndexError as e:
-                            # print u'IndexError {} not sure why...'.format(e)
+                            # print 'IndexError {} not sure why...'.format(e)
                             pass
                     self.ref = new_ref
                 if len(look_here_nodes) > 1:  # todo: what if there are more than 2 look_here_nodes?
                     # set(look_here_nodes).intersection(self.raw_ref.rawText)
                     # node_ref = self.reduce_indexes(look_here_titles=None, look_here_titles_nodes=look_here_nodes,
-                    #                     alt_ref_titles=self.raw_ref.rawText.replace(u'ו', u''))
+                    #                     alt_ref_titles=self.raw_ref.rawText.replace('ו', ''))
 
                     # [index_t for index_t in look_here_titles_nodes if (set(index_t.split()).intersection(set(alt_ref_titles.split())))]
                     node_ref = intersect_list_string(look_here_nodes, self.raw_ref.rawText)
-                    # print u'look at these i took the first: {}'.format(look_here_nodes[0])
+                    # print 'look at these i took the first: {}'.format(look_here_nodes[0])
                     try:
                         r = Ref(node_ref)
                         self.ref = r
                     except InputError:
-                        print u"couldn't find ref for"# {}".format(node_ref)
+                        print("couldn't find ref for") # {}".format(node_ref)
         else:
             depenent_indexes = []
             main_indexes = []
@@ -880,36 +892,36 @@ class Source(object):
             elif depenent_indexes:
                 self.index = depenent_indexes[0]
             else:
-                # print u"reduced_indexes: {} deleting wrong ref: {}.".format(reduced_indexes, self.ref.normal())
+                # print "reduced_indexes: {} deleting wrong ref: {}.".format(reduced_indexes, self.ref.normal())
                 self.ref = None
 
             if self.index:
                 try:
                     sections = self.get_sections_from_ref()
                     if isinstance(self.index, tuple):
-                        index_node_name = self.index[1].title + u', ' + self.index[0]
+                        index_node_name = self.index[1].title + ', ' + self.index[0]
                     else:
                         index_node_name = Ref(self.index).he_normal() if is_hebrew(sections) else Ref(self.index).normal()
-                    new_ref = Ref(u'{} {}'.format(index_node_name, sections))
-                    # print u"deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
+                    new_ref = Ref('{} {}'.format(index_node_name, sections))
+                    # print "deleting wrong: {} found new Index: {} new ref: {}".format(self.ref, self.index, new_ref)
                     self.ref = new_ref
                 except exceptions.InputError as e:
                     new_ref = None  # so not to have new_ref that failed scrowing with stuff
                     # try:
-                    #     print u"inputError for this string {}, extracted from this rawref {}".format(
-                    #     u'{} {}'.format(self.index.title, re.sub(self.ref.index.title, u'', self.ref.normal()).strip()),
+                    #     print "inputError for this string {}, extracted from this rawref {}".format(
+                    #     '{} {}'.format(self.index.title, re.sub(self.ref.index.title, '', self.ref.normal()).strip()),
                     #     self.raw_ref)
                     # except AttributeError:
-                    #     print u"inputError for this string {}, extracted from this rawref"
+                    #     print "inputError for this string {}, extracted from this rawref"
 
         return new_ref
 
     def get_sections_from_ref(self):
         if 'Talmud' in self.ref.index.categories:
             he_massechet_title = Ref(self.ref.index.title).he_normal()
-            sections = re.sub(u'(\(|\)|{})'.format(he_massechet_title), u'', self.raw_ref.rawText)
+            sections = re.sub('(\(|\)|{})'.format(he_massechet_title), '', self.raw_ref.rawText)
         else:
-            sections = re.sub(self.ref.index.title, u'', self.ref.normal()).strip()
+            sections = re.sub(self.ref.index.title, '', self.ref.normal()).strip()
         return sections
 
     def get_index_options(self, include_dependant=True):
@@ -991,27 +1003,28 @@ class Source(object):
         if "Tanakh" in new_index.categories:
             # new_index.categories.pop(new_index.categories.index('Tanakh'))
             if "Torah" in new_index.categories:
-                intersect_index = [ind for ind in indexs if re.search(u"Torah", ind.title)]
+                intersect_index = [ind for ind in indexs if re.search("Torah", ind.title)]
             elif "Writings" in new_index.categories or "Prophets" in new_index.categories:
-                intersect_index = [ind for ind in indexs if re.search(u"Nach", ind.title)]
-        if self.author == u'משנה תורה':
-            title_found = intersect_list_string([x[0] for x in self.get_look_here_titles(indexs)if not re.search(u'Mishneh', x[0])], Ref(new_index.title).he_normal())
+                intersect_index = [ind for ind in indexs if re.search("Nach", ind.title)]
+        if self.author == 'משנה תורה':
+            title_found = intersect_list_string([x[0] for x in self.get_look_here_titles(indexs)if not re.search('Mishneh', x[0])], Ref(new_index.title).he_normal())
             intersect_index = (library.get_index(title_found), )
         return intersect_index
 
     def get_ref_clean(self):
         if self.index:
             try:
-                try_text = u"{}, {}".format(Ref(self.index.title).he_normal(), re.sub(u"[()]", u"", self.text))
+                try_text = "{}, {}".format(Ref(self.index.title).he_normal(), re.sub("[()]", "", self.text))
                 self.ref = Ref(try_text)
-            except (InputError, AttributeError, IndexError):
-                print u"couldn't find it"
+            except (InputError, AttributeError, IndexError) as e:
+                print("couldn't find it. Error {}. self.index = {}, self.text = {}".format(type(e).__name__, self.index.title, self.text))
+                traceback.print_exc()
                 self.ref = None
             return self.ref
 
     def get_author_person(self, author_name):
         person = None
-        query = {"names.text": u"{}".format(author_name)}
+        query = {"names.text": "{}".format(author_name)}
         author_curser = db.person.find(query)
         for doc in author_curser:
             person = doc['key']
@@ -1044,10 +1057,10 @@ class Source(object):
         Use the ParallelMatcher to test and possibly change or precise to segment level the "source.ref"
         :return: the pm_ref (maybe untouched) source.ref
         """
-        text_to_match = re.sub(u'\(.*?\)', u'', self.text)
+        text_to_match = re.sub('\(.*?\)', '', self.text)
         results = disambiguate_ref_list(self.ref.normal(), [(text_to_match, '0')])
         self.pm_ref = results['0']['A Ref'] if results['0'] else results['0']
-        # print u"text: {} \n ref: {} \n pm_ref: {}".format(text_to_match, self.ref, self.pm_ref)
+        # print "text: {} \n ref: {} \n pm_ref: {}".format(text_to_match, self.ref, self.pm_ref)
         return self.pm_ref
 
 class RawRef(object):
@@ -1059,59 +1072,64 @@ class RawRef(object):
         self.section_level = None
         self.segment_level = None
         self.is_sham = False
-        if re.search(u"^\(שם", self.rawText):
+        if re.search("^\(שם", self.rawText):
             self.is_sham = True
 
 
 def write_to_file(text, mode='a'):
-    with codecs.open(u'resolved.txt', mode, encoding='utf-8') as f:
+    with codecs.open('resolved.txt', mode, encoding='utf-8') as f:
         f.write(text)
 
 
 def parse_by_topic(topic_file_path):
-    # topic_file_path = u"009_TET_test/tevila.html"
+    # topic_file_path = "009_TET_test/tevila.html"
     t = bs_read(topic_file_path)
+    if db_aspaklaria.aspaklaria_source.count_documents({"topic": t.headWord}) > 0:
+        print("Already parsed {}. Skipping".format(t.headWord))
+        return t
     # parse_refs(t)
     t.parse_refs()
     try:
         t.parse_shams()
-    except:
-        print u"Shams Failed on something"
+    except Exception as e:
+        print("Shams Failed on something")
+        print(traceback.print_exc())
+
     cnt = 0
     post_topic_documents(t, cnt)
     return t
 
-def parse2pickle(letter=u''):
+def parse2pickle(letter=''):
     topic_le_table = dict()
-    with open(ASPAKLARIA_HTML_FILES + u'/headwords.csv', 'r') as csvfile:
+    with open(ASPAKLARIA_HTML_FILES + '/headwords.csv', 'r') as csvfile:
         file_reader = csv.DictReader(csvfile)
         for i, row in enumerate(file_reader):
             pass
             fieldnames = file_reader.fieldnames
-            topic_le_table[row[u'he']] = row[u'en']
+            topic_le_table[row['he']] = row['en']
     all_topics = dict()
-    letters = [letter] if letter else os.listdir(ASPAKLARIA_HTML_FILES + u'/')
+    letters = [letter] if letter else os.listdir(ASPAKLARIA_HTML_FILES + '/')
     for letter in letters:
-        if not os.path.isdir(ASPAKLARIA_HTML_FILES + u'/{}'.format(letter)):
+        if not os.path.isdir(ASPAKLARIA_HTML_FILES + '/{}'.format(letter)):
             continue
         i = 0
         topics = dict()
-        for file in tqdm(os.listdir(ASPAKLARIA_HTML_FILES + u"/{}".format(letter))):
-            if u'_' in file:
+        for file in tqdm(os.listdir(ASPAKLARIA_HTML_FILES + "/{}".format(letter))):
+            if '_' in file:
                 continue
             # don't read the index file ex: for letter YOD don't read the html file '/Aspaklaria/aspaklaria/www.aspaklaria.info/010_YOD/YOD.html'
-            if re.search(re.sub(u'.html', u'', file), letter):
+            if re.search(re.sub('.html', '', file), letter):
                 continue
-            t = bs_read(ASPAKLARIA_HTML_FILES + u"/{}/{}".format(letter, file))
+            t = bs_read(ASPAKLARIA_HTML_FILES + "/{}/{}".format(letter, file))
             i+=1
             topics[i] = t
-            # topics[topic_le_table[clean_txt(t.headWord.replace(u"'", u"").replace(u"-", u""))]] = t
+            # topics[topic_le_table[clean_txt(t.headWord.replace("'", "").replace("-", ""))]] = t
             # topics[transliterator(t.headWord)] = t
-        letter_name = re.search(u".*_(.*?$)", letter)
+        letter_name = re.search(".*_(.*?$)", letter)
         if letter_name:
             letter_name = letter_name.group(1)
-            # print u'{} headwords in the letter {}'.format(i, letter_name)
-        with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/{}.pickle".format(letter_name),"w") as fp:
+            # print '{} headwords in the letter {}'.format(i, letter_name)
+        with codecs.open("/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/{}.pickle".format(letter_name),"w") as fp:
             # json.dump(topics, fp) #TypeError: <__main__.Topic object at 0x7f5f5bb73790> is not JSON serializable
             pickle.dump(topics, fp, -1)
         all_topics[letter_name] = topics
@@ -1125,18 +1143,18 @@ def post_topic_documents(t, cnt):
             if s.raw_ref:
                 # cnt_sources += 1
                 # print s.raw_ref.rawText
-                solo_source_text = re.sub(re.escape(s.raw_ref.rawText), u'', s.text)
+                solo_source_text = re.sub(re.escape(s.raw_ref.rawText), '', s.text)
                 try:
                     s.ref.normal()
                 except AttributeError:
                     s.ref = None
                 if s.ref:
-                    # if re.search(u"דרוש ז",s.raw_ref.rawText):
+                    # if re.search("דרוש ז",s.raw_ref.rawText):
                     #     continue
                     document = {'topic': t.headWord, 'ref': s.ref.normal(), 'text': solo_source_text,
                                 'raw_ref': s.raw_ref.rawText if s.raw_ref else None,
                                 'index': s.ref.index.title, 'is_sham': s.raw_ref.is_sham, 'author': s.author}
-                    if hasattr(s, u'pm_ref'):
+                    if hasattr(s, 'pm_ref'):
                         document['pm_ref'] = s.pm_ref
                     # print s.ref.normal()
                     # cnt_resolved += 1
@@ -1152,7 +1170,7 @@ def post_topic_documents(t, cnt):
                         s.index = s.index[0] if len(s.index) < 2 else s.index[1]
                     document['index_guess'] = s.index.title if isinstance(s.index, Index) else s.index
                 elif s.indexs:
-                    document['index_guess'] = u' |'.join([ind.title if isinstance(ind, Index) else ind for ind in s.indexs])
+                    document['index_guess'] = ' |'.join([ind.title if isinstance(ind, Index) else ind for ind in s.indexs])
 
                 if s.ref:
                     if s.ref.is_segment_level():
@@ -1166,7 +1184,7 @@ def post_topic_documents(t, cnt):
                 if 'ref' in document.keys():
                     sources.append(document['ref'])
                 cnt += 1
-                print '-----------------'
+                print('-----------------')
     return sources
 
 
@@ -1177,34 +1195,34 @@ def read_sources(letter, with_refs='pickle_files'):
     :return: does not return, but rather inserts the data into mongo
     """
 
-    with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/{}/{}.pickle".format(with_refs,letter), "rb") as fp:
+    with codecs.open("Aspaklaria/{}/{}.pickle".format(with_refs,letter), "rb") as fp:
         topics = pickle.load(fp)
-        print u"opend {}".format(letter)
+        print("opend {}".format(letter))
         # cnt_sources = 0
         # cnt_sham = 0
         # cnt_resolved = 0
         # cnt_not_caught = 0
         cnt = 0
         for i, t in tqdm(enumerate(topics.values())):
-            print "*******************"
-            print t.headWord
+            print("*******************")
+            print(t.headWord)
             # topic_key = post_topic(t)
             sources = post_topic_documents(t, cnt)
             topic_key = post_topic(t, sources)
-        print "done"
+        print("done")
 
 
 def shamas_per_leter(he_letter):
-    # for file in os.listdir(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/aspaklaria/pickle_files/"):
-    # write_to_file(u'', mode = 'w')
-    for file in [u'{}.pickle'.format(he_letter)]:
+    # for file in os.listdir("/home/shanee/www/Sefaria-Data/sources/Aspaklaria/aspaklaria/pickle_files/"):
+    # write_to_file('', mode = 'w')
+    for file in ['{}.pickle'.format(he_letter)]:
         letter_name = file[0:-7]
         # Source.cnt = 0
         # Source.cnt_sham = 0
         # Source.cnt_resolved = 0
         # Source.cnt_not_found = 0
-        with codecs.open(u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/pickle_files/{}".format(file), "rb") as fp:
-            write_to_file(u'NEW_Letter: {}\n\n'.format(file.split(u'.')[0]), mode='a')
+        with codecs.open("Aspaklaria/pickle_files/{}".format(file), "rb") as fp:
+            write_to_file('NEW_Letter: {}\n\n'.format(file.split('.')[0]), mode='a')
             topics = pickle.load(fp)
             for i, t in tqdm(enumerate(topics.values())):
                 # parse_refs(t)
@@ -1213,26 +1231,26 @@ def shamas_per_leter(he_letter):
                 try:
                     t.parse_shams()
                 except:
-                    print "Failed on something"
+                    print("Failed on something")
                 # print "After resolved Shams" + str(Source.cnt_sham)
-                print i
-            # print u"cnt :", Source.cnt
-            # print u"cnt_sham :", Source.cnt_sham, u"precent: ", Source.cnt_sham * 100.0 / Source.cnt * 1.0
-            # print u"cnt_resolved :", Source.cnt_resolved, u"precent: ", Source.cnt_resolved * 100.0 / Source.cnt * 1.0
-            # print u"cnt_not_found :", Source.cnt_not_found, u"precent: ", Source.cnt_not_found * 100.0 / Source.cnt * 1.0
+                print(i)
+            # print "cnt :", Source.cnt
+            # print "cnt_sham :", Source.cnt_sham, "precent: ", Source.cnt_sham * 100.0 / Source.cnt * 1.0
+            # print "cnt_resolved :", Source.cnt_resolved, "precent: ", Source.cnt_resolved * 100.0 / Source.cnt * 1.0
+            # print "cnt_not_found :", Source.cnt_not_found, "precent: ", Source.cnt_not_found * 100.0 / Source.cnt * 1.0
             for missing in parser.missing_authors:
-                print missing
+                print(missing)
 
             with codecs.open(
-                    u"/home/shanee/www/Sefaria-Data/sources/Aspaklaria/with_refs/{}.pickle".format(letter_name),
+                    "Aspaklaria/with_refs/{}.pickle".format(letter_name),
                     "w") as fp:
                 # json.dump(topics, fp) #TypeError: <__main__.Topic object at 0x7f5f5bb73790> is not JSON serializable
                 pickle.dump(topics, fp, -1)
-        # print u'done'
+        # print 'done'
 
 
 def intersect_list_string(title_list, string, ref_opt=False):
-    best = (u'', -1)
+    best = ('', -1)
     for title in title_list:
         intersection_size = intersect_2_strings(title, string, combine_single_letters=True)
         if ref_opt and intersection_size == -100:
@@ -1258,46 +1276,46 @@ def intersect_list_string(title_list, string, ref_opt=False):
             best = (title, intersection_size)
     return best[0]
 
-table_he_numbering = {u'א' :u"ראשון",
-                    u'ב': u"שני",
-                    u'ג' :u"שלישי",
-                    u'ד' :u"רביעי",
-                    u'ה' :u"חמישי",
-                    u'ו' :u"שישי",
-                    u'ז' :u"שביעי",
-                    u'ח' :u"שמיני",
-                    u'ט' :u"תשיעי",
-                    u'י' :u"עשירי",
+table_he_numbering = {'א' :"ראשון",
+                    'ב': "שני",
+                    'ג' :"שלישי",
+                    'ד' :"רביעי",
+                    'ה' :"חמישי",
+                    'ו' :"שישי",
+                    'ז' :"שביעי",
+                    'ח' :"שמיני",
+                    'ט' :"תשיעי",
+                    'י' :"עשירי",
                       }
 def strings2sets(strings, subs=None, combine_single_letters=True):
     sets = []
-    single_he_letter_reg = re.compile(u'([^\s]+)\s+([^\s])(\s+|$)')
+    single_he_letter_reg = re.compile('([^\s]+)\s+([^\s])(\s+|$)')
     if isinstance(strings, unicode):
         strings = [strings]
     for st in strings:
         # add single letters as numbers to create a "single" word
         if combine_single_letters:
-            st = re.sub(single_he_letter_reg, ur'\1_\2 ', re.sub(u'{}'.format(subs), u'', st))
+            st = re.sub(single_he_letter_reg, r'\1_\2 ', re.sub('{}'.format(subs), '', st))
         else:
-            st = re.sub(u'{}'.format(subs), u'', st)
+            st = re.sub('{}'.format(subs), '', st)
             # special casing for the Shelah where we refer to the mamarim with hebrew number naming ratehr than hebrew letters.
-            if re.search(u"מאמר", st):
+            if re.search("מאמר", st):
                 single_he_letter = re.search(single_he_letter_reg, st)
                 if single_he_letter:
                     st = re.sub(single_he_letter.group(2), table_he_numbering[single_he_letter.group(2)], st)
-        st_lst = re.split(u'\s+', st)
-        st_lst = [re.sub(u'_', u' ', x) for x in st_lst if x]
+        st_lst = re.split('\s+', st)
+        st_lst = [re.sub('_', ' ', x) for x in st_lst if x]
         set_st = set(st_lst)
         sets.append(set_st)
     return sets
 
 
 def intersect_2_strings(title, raw, combine_single_letters=True):
-    # lst_title = re.split(u',?\s+', title)
-    # lst_raw = re.split(u'[,]?\s+', re.sub(u'[()]',u'', raw))
+    # lst_title = re.split(',?\s+', title)
+    # lst_raw = re.split('[,]?\s+', re.sub('[()]','', raw))
     # set_title = set(lst_title)
     # set_raw = set(lst_raw)
-    set_title, set_raw = strings2sets([title, raw], subs=u'[,()\']', combine_single_letters=combine_single_letters)
+    set_title, set_raw = strings2sets([title, raw], subs='[,()\']', combine_single_letters=combine_single_letters)
     intersection = set_title.intersection(set_raw)
     # try with using match method from PM
     matches = match_text(list(set_title), list(set_raw), char_threshold=0.27)['matches']
@@ -1324,7 +1342,7 @@ def clean_see(st):
     :param st:
     :return:
     """
-    st = re.sub(u'(-|\.)', u' ', st)
+    st = re.sub('(-|\.)', ' ', st)
     st = st.strip()
 
     return st
@@ -1411,39 +1429,40 @@ def convert_perk_parasha(ref, table):
 
 def parse_html_file(letter_folder=None, num_rand_files=None):
     # letter_folder = letter if letter else random.sample(os.listdir(ASPAKLARIA_HTML_FILES), 1)[0]
-    letter_folder_topics = os.listdir(ASPAKLARIA_HTML_FILES + u"/{}".format(letter_folder))
+    letter_folder_topics = os.listdir(ASPAKLARIA_HTML_FILES + "/{}".format(letter_folder))
     letter_topics = random.sample(letter_folder_topics, num_rand_files) if num_rand_files else letter_folder_topics
     for tf in letter_topics:
-        print u"/{}/{}".format(letter_folder, tf)
-        tfp = ASPAKLARIA_HTML_FILES + u"/{}/{}".format(letter_folder, tf)
+        print("/{}/{}".format(letter_folder, tf))
+        tfp = ASPAKLARIA_HTML_FILES + "/{}/{}".format(letter_folder, tf)
         try:
             t = parse_by_topic(tfp)
-            print tfp
-        except:
-            print u"ERROR parsing {}".format(u"/{}/{}".format(letter_folder, tf))
+            print(tfp)
+        except Exception as e:
+            print("ERROR parsing {}".format("/{}/{}".format(letter_folder, tf)).encode('utf-8'))
+            traceback.print_exc()
 
 if __name__ == "__main__":
-    # he_letter = u'010_ALEF'
+    # he_letter = '010_ALEF'
     # letter = '009_TET'
     # letter = ''  # 020_KAF, 009_TET
     # skip_letters = ['020_KAF']  # ['009_TET','050_NUN', '020_KAF', ]
     # letters = [letter] if letter else os.listdir(ASPAKLARIA_HTML_FILES+
-    #     u'/')
+    #     '/')
     # for letter in letters:
-    #     if not os.path.isdir(ASPAKLARIA_HTML_FILES+ u'/{}'.format(letter)):
+    #     if not os.path.isdir(ASPAKLARIA_HTML_FILES+ '/{}'.format(letter)):
     #         continue
     #     if letter == 'test':
     #         continue
     #     if letter in skip_letters:
-    #         print u'skipped {}'.format(letter)
+    #         print 'skipped {}'.format(letter)
     #         continue
-    #     match = re.search(u'(\d*)_(.*)', letter)
+    #     match = re.search('(\d*)_(.*)', letter)
     #     he_letter= match.group(2)
     #     letter_gimatria = match.group(1)
-    #     print u'**HE_LETTER** {}'.format(he_letter)
-    #     parse2pickle(u'{}_{}'.format(letter_gimatria, he_letter))
+    #     print '**HE_LETTER** {}'.format(he_letter)
+    #     parse2pickle('{}_{}'.format(letter_gimatria, he_letter))
     #     shamas_per_leter(he_letter)
-    #     read_sources(u'{}'.format(he_letter), with_refs='with_refs')
+    #     read_sources('{}'.format(he_letter), with_refs='with_refs')
 
     args = argparse.ArgumentParser()
     args.add_argument("-l", "--letter", dest="letter", default=None, help="list of letters with the Gimatria number ex: 020_KAF to be parsed and posted to the db, if empty must put in a number of topics to be chosen randomly from all the letters")
@@ -1456,12 +1475,12 @@ if __name__ == "__main__":
         try:
             parse_by_topic(user_args.file)
         except:
-            u"{} has failed".format(user_args.file)
+            "{} has failed".format(user_args.file)
         sys.exit(1)
     if not user_args.letter and not user_args.rand:
-        print u"please give at leaset one argument of the fallowing number of topics or list of letters"
+        print("please give at leaset one argument of the fallowing number of topics or list of letters")
         sys.exit(1)
-    letter_folders = random.sample(os.listdir(ASPAKLARIA_HTML_FILES), int(user_args.rand)) if not user_args.letter else [u"{}_Test".format(l) for l in  user_args.letter.split()] #[None]*int(user_args.rand)
+    letter_folders = random.sample(os.listdir(ASPAKLARIA_HTML_FILES), int(user_args.rand)) if not user_args.letter else ["{}_Test".format(l) for l in  user_args.letter.split()] #[None]*int(user_args.rand)
     if not user_args.rand:
         num_rand_files = [None]*len(letter_folders)
     elif not user_args.letter:
@@ -1478,22 +1497,43 @@ if __name__ == "__main__":
 
     # add_found_to_topics(collection='aspaklaria_topics')
     # add_found_to_topics(collection='pairing')
-    # cProfile.runctx(u"g(x)", {'x': u'{}_{}'.format(letter_gimatria, he_letter), 'g': parse2pickle}, {}, 'stats')
+    # cProfile.runctx("g(x)", {'x': '{}_{}'.format(letter_gimatria, he_letter), 'g': parse2pickle}, {}, 'stats')
     # p = pstats.Stats("stats")
     # p.strip_dirs().sort_stats("cumulative").print_stats()
 
-# create number system for test letters
-#     import os
-#     gim = "080"
-#     letter = "{}_PE".format(gim)
-#     new_dir = "/home/shanee/www/Sefaria-Data/sources/Aspaklaria/aspaklaria/www.aspaklaria.info/test/{}_Test".format(letter)
-#     command = "mkdir {}".format(new_dir)
-#     os.system(command)
-#     cnt = 1
-#     old_dir = "/home/shanee/www/Sefaria-Data/sources/Aspaklaria/aspaklaria/www.aspaklaria.info/{}".format(letter)
-#     for file in os.listdir(old_dir):
-#         if '_' in file:
-#             continue
-#         command = "cp '{}/{}' '{}/{}_{}.html'".format(old_dir, file, new_dir, gim, cnt)
-#         os.system(command)
-#         cnt +=1
+    #create number system for test letters
+    # import os
+    # letters = [
+    #     "001_ALEF",
+    #     "002_BET",
+    #     "003_GIMEL",
+    #     "004_DALET",
+    #     "005_HE",
+    #     "006_VAV",
+    #     "007_ZAYIN",
+    #     "008_HET",
+    #     "009_TET",
+    #     "010_YOD",
+    #     "020_KAF",
+    #     "030_LAMED",
+    #     "040_MEM",
+    #     "050_NUN",
+    #     "060_SAMEKH",
+    #     "070_AYIN",
+    #     "080_PE",
+    #     "090_TSADI",
+    #     "100_QOF",
+    #     "200_RESH",
+    #     "300_SHIN",
+    #     "400_TAV"
+    # ]
+    # cnt = 0
+    # for letter in letters:
+    #     new_dir = "Aspaklaria/www.aspaklaria.info/test/{}_Test".format(letter)
+    #     command = "mkdir {}".format(new_dir)
+    #     os.system(command)
+    #     old_dir = "Aspaklaria/www.aspaklaria.info/{}".format(letter)
+    #     for file in sorted(os.listdir(old_dir)):
+    #         command = "cp '{}/{}' '{}/{}.html'".format(old_dir, file, new_dir, cnt)
+    #         os.system(command)
+    #         cnt +=1

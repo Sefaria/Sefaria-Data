@@ -30,7 +30,7 @@ class Test_Source_methods(object):
                     {'author': u'כוזרי', 'raw_text': u'(מאמר ב נד)', 'ref': Ref('Sefer Kuzari 2 54')},
 
                     {'author': u'תנך', 'raw_text': u'(ראה גם אהרן, ביאת מקדש)', 'ref':None},
-                    {'author': u'משך חכמה', 'raw_text': u'(ויקרא כו ד)', 'ref': Ref('Meshech Hochma, Bechukotai')},
+                    {'author': u'משך חכמה', 'raw_text': u'(ויקרא כו ד)', 'ref': Ref('Meshech Hochma, Bekhukotai')},
                     {'author': u'תלמוד ירושלמי', 'raw_text': u'(ברכות לח א)', 'ref': Ref('Jerusalem Talmud Berakhot 38a')},
                     {'author': u'משנה תורה', 'raw_text': u'(ביכורים ז יב, וראה שם עוד)', 'ref': Ref('Mishneh Torah, First Fruits and other Gifts to Priests Outside the Sanctuary 7:12')},
                     {'author': u'משנה תורה', 'raw_text': u'(טומאת אוכלין א א, וראה שם עוד)', 'ref': Ref('Mishneh Torah, Defilement of Foods 1:1')},
@@ -93,7 +93,7 @@ class Test_Source_methods(object):
             input_list.append((e['raw_text'], e['author'], e['ref'], e['assert_ref']))
         return input_list
 
-    @pytest.mark.parametrize('raw_text, author, sefaria_ref, assert_ref', organize_test_input_list(dict_input, dict_input, [u'כוזרי'], []))
+    @pytest.mark.parametrize('raw_text, author, sefaria_ref, assert_ref', organize_test_input_list(dict_input, dict_input, [u'תנך'], []))
     def test_all(self, raw_text, author, sefaria_ref, assert_ref):
         r = Source(raw_text, author).ref
         if assert_ref:

@@ -24,6 +24,7 @@ skip_matches = ht[a]
 
 
 """
+from tqdm import tqdm
 import django
 from functools import reduce
 django.setup()
@@ -375,13 +376,11 @@ class Mesorah_Item:
         if self.mesechta_index != other.mesechta_index:
             return False
         else:
-            if self.ref.is_bavli():
-                assert other.ref.is_bavli()
+            if self.ref.is_bavli() and other.ref.is_bavli():
                 return abs(self.location[0] - other.location[0]) < self.min_distance_between_matches
             else:
                 return self.ref == other.ref and \
                        abs(self.location[0] - other.location[0]) < self.min_distance_between_matches
-
 
     def mesechta_diff(self, other):
         return self.mesechta_index - other.mesechta_index
@@ -488,6 +487,7 @@ class ParallelMatcher:
         self.with_scoring = False
         self.calculate_score = None
         self.only_match_first = only_match_first
+        self.word_list_map = {}
         if calculate_score:
             self.with_scoring = True
             self.calculate_score = calculate_score
@@ -532,41 +532,51 @@ class ParallelMatcher:
             else:
                 unit_tokenizer = self.tokenizer
 
-            if self.verbose: print("Hashing {}".format(tref))
+            if self.verbose: print("Hashing {}".format(tref[1] if isinstance(tref, tuple) else tref))
             if isinstance(tref, tuple):
                 # otherwise, format is a tuple with (str, textname)
                 unit_il, unit_rl = [0], [Ref("Berakhot 58a")]  # random ref, doesn't actually matter
                 unit_wl = unit_tokenizer(tref[0])
                 unit_str = "{}".format(tref[1])
             else:
-                oref = Ref(tref)
-                if len(oref.index.categories) >= 2 and oref.index.categories[1] == "Bavli" and use_william:
-                    vtitle = 'William Davidson Edition - Aramaic'
-                else:
-                    vtitle = None
-                try:
-                    # jagged array, can be instantiated as TextChunk
-                    text_chunk = oref.text(lang, vtitle)
-                    unit_il, unit_rl, total_len, unit_flattened = text_chunk.text_index_map(unit_tokenizer, ret_ja=True)
-                    unit_wl = [w for seg in unit_flattened for w in unit_tokenizer(seg)]
-                    unit_str = oref.normal()
-                except InputError:
-                    # schema node
-                    schema_node = oref.index_node
-                    assert schema_node.ref() == oref, "Schema Node {} isn't equal to original ref {}".format(schema_node.ref().normal(), oref.normal())
-                    unit_il, unit_rl = schema_node.text_index_map(unit_tokenizer, lang=lang, vtitle=vtitle, strict=False)
-                    unit_list_temp = schema_node.traverse_to_list(
-                        lambda n, _: TextChunk(n.ref(), lang, vtitle=vtitle).ja().flatten_to_array() if not n.children else [])
-                    unit_wl = [w for seg in unit_list_temp for w in unit_tokenizer(seg)]
-                    unit_str = tref
-
+                unit_il, unit_wl, unit_rl, last_total_len = [], [], [], 0
+                for temp_tref in tref.split("|"):
+                    oref = Ref(temp_tref)
+                    if len(oref.index.categories) >= 2 and oref.index.categories[1] == "Bavli" and use_william:
+                        vtitle = 'William Davidson Edition - Aramaic'
+                    else:
+                        vtitle = None
+                    try:
+                        # jagged array, can be instantiated as TextChunk
+                        text_chunk = oref.text(lang, vtitle)
+                        temp_unit_il, temp_unit_rl, total_len, unit_flattened = text_chunk.text_index_map(unit_tokenizer, ret_ja=True)
+                        temp_unit_wl = [w for seg in unit_flattened for w in unit_tokenizer(seg)]
+                    except InputError:
+                        # schema node
+                        schema_node = oref.index_node
+                        assert schema_node.ref() == oref, "Schema Node {} isn't equal to original ref {}".format(schema_node.ref().normal(), oref.normal())
+                        temp_unit_il, temp_unit_rl = schema_node.text_index_map(unit_tokenizer, lang=lang, vtitle=vtitle, strict=False)
+                        unit_list_temp = schema_node.traverse_to_list(
+                            lambda n, _: TextChunk(n.ref(), lang, vtitle=vtitle).ja().flatten_to_array() if not n.children else [])
+                        temp_unit_wl = [w for seg in unit_list_temp for w in unit_tokenizer(seg)]
+                    if len(unit_il) > 0:
+                        temp_unit_il = [x + last_total_len for x in temp_unit_il]
+                    unit_il += temp_unit_il
+                    unit_rl += temp_unit_rl
+                    last_total_len += len(temp_unit_wl)
+                    unit_wl += temp_unit_wl
+                unit_str = tref
+            self.word_list_map[unit_str] = unit_wl
             text_index_map_data[iunit] = (unit_wl, unit_il, unit_rl, unit_str)
             total_len = len(unit_wl)
             if not return_obj:
                 with open('{}text_index_map/{}.pkl'.format(output_root, tref), 'wb') as my_pickle:
                     pickle.dump((unit_il, unit_rl, total_len), my_pickle, -1)
 
-            for i_word in range(len(unit_wl) - self.skip_gram_size):
+            itt = range(len(unit_wl) - self.skip_gram_size)
+            if self.verbose and False:
+                itt = tqdm(itt, leave=False, smoothing=0)
+            for i_word in itt:
                 is_unit_end = i_word == (len(unit_wl) - self.skip_gram_size - 1)
                 skip_gram_list = self.ght.get_skip_grams(unit_wl[i_word:i_word + self.skip_gram_size + 1], is_end=is_unit_end)
                 for iskip_gram, skip_gram in enumerate(skip_gram_list):
@@ -581,7 +591,7 @@ class ParallelMatcher:
                     else:
                         try:
                             matched_ref = start_ref.to(end_ref)
-                        except AssertionError:
+                        except (AssertionError, InputError):
                             continue
 
                     self.ght[skip_gram] = Mesorah_Item(unit_str, iunit, (start_index, end_index), matched_ref, self.min_distance_between_matches)
@@ -603,7 +613,10 @@ class ParallelMatcher:
 
 
         # deal with one-off error at end of matches
-        for mm in mesorat_hashas:
+        itt = mesorat_hashas
+        if self.verbose:
+            itt = tqdm(itt, leave=False, smoothing=0)
+        for mm in itt:
             mes_wl_a, mes_il_a, mes_rl_a, unit = text_index_map_data[mm.a.mesechta_index]
             mes_wl_b, mes_il_b, mes_rl_b, unit = text_index_map_data[mm.b.mesechta_index]
 
@@ -694,7 +707,10 @@ class ParallelMatcher:
         if self.verbose: print('Searching {}'.format(mes))
         already_matched_dict = defaultdict(list)  # keys are word indexes that have matched. values are lists of Mesorah_Items that they matched to.
         matches = []
-        for i_word in range(len(mes_wl) - self.skip_gram_size):
+        itt = range(len(mes_wl) - self.skip_gram_size)
+        if self.verbose:
+            itt = tqdm(itt, leave=False, smoothing=0)
+        for i_word in itt:
             start_ref = mes_rl[bisect.bisect_right(mes_il, i_word) - 1]
             end_ref = mes_rl[bisect.bisect_right(mes_il, i_word + self.skip_gram_size) - 1]
 
@@ -703,7 +719,7 @@ class ParallelMatcher:
             else:
                 try:
                     matched_ref = start_ref.to(end_ref)
-                except AssertionError:
+                except (AssertionError, InputError):
                     continue
 
             a = Mesorah_Item(mes, imes, (i_word, i_word + self.skip_gram_size), matched_ref, self.min_distance_between_matches)
@@ -735,7 +751,7 @@ class ParallelMatcher:
                 else:
                     try:
                         temp_matched_ref = temp_start_ref.to(temp_end_ref)
-                    except AssertionError:
+                    except (AssertionError, InputError):
                         continue
 
                 temp_a = Mesorah_Item(mes, imes, (j_word, j_word + self.skip_gram_size), temp_matched_ref, self.min_distance_between_matches)
@@ -752,7 +768,7 @@ class ParallelMatcher:
                 for dead in dead_matches_possibly:
                     distance_from_last_match = j_word - dead.last_a_word_matched()
                     if distance_from_last_match > self.max_words_between:
-                        if len(dead) > self.min_words_in_match:
+                        if len(dead) >= self.min_words_in_match:
                             self.ght.put_already_started((dead.b_start, dead.a_start))
                             for i_matched_word in range(dead.a_start.location[0], dead.a_end.location[1] + 100):
                                 already_matched_dict[i_matched_word] += [dead.b_start]
@@ -769,7 +785,7 @@ class ParallelMatcher:
             # account for matches at end of book
             for dead in partial_match_list:
                 distance_from_last_match = (len(mes_wl)-self.skip_gram_size) - dead.last_a_word_matched()
-                if len(dead) > self.min_words_in_match:
+                if len(dead) >= self.min_words_in_match:
                     self.ght.put_already_started((dead.b_start, dead.a_start))
                     try:
                         matches += [dead.finalize()]
