@@ -37,7 +37,7 @@ def create_index(title):
 if __name__ == "__main__":
     dappim = Counter()
     new_csv = ""
-    for title in ["Sukkah", "Beitzah"]:
+    for title in ["Beitzah"]:
         text_dict = {}
 
         create_index(title)

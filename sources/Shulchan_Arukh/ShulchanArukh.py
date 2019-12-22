@@ -527,7 +527,7 @@ class Commentaries(Element):
             return None
         return self.get_commentary_by_id(commentary_id)
 
-    def render(self):
+    def render(self): 
         raise NotImplementedError
 
 

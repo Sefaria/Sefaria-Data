@@ -14,13 +14,22 @@ links = []
 root = JaggedArrayNode()
 comm_title = "Dagul Mirvava"
 he_comm_title = u"דגול מרבבה"
-root.add_primary_titles("{} on Shulchan Arukh, Orach Chayim".format(comm_title), u"על שלחן ערוך אורח חיים {}".format(he_comm_title))
+file = "DM.csv"
+file = "CSV Levushei Serad/Levushei Serad 9_23_19.csv"
+comm_title = "Levushei Serad"
+he_comm_title = u"לבושי שרד"
+file = "Akiva Eiger.csv"
+comm_title = "Rabbi Akiva Eiger"
+he_comm_title = u"רבי עקיבא איגר"
+root.add_primary_titles("{} on Shulchan Arukh, Orach Chayim".format(comm_title), u"{} על שלחן ערוך אורח חיים".format(he_comm_title))
 root.key = "{} on Shulchan Arukh, Orach Chayim".format(comm_title)
 root.add_structure(["Siman", "Paragraph"])
 root.validate()
 indx = {
     "title": root.key,
     "schema": root.serialize(),
+    "dependence": "Commentary",
+    "collective_title": comm_title,
     "categories": ["Halakhah", "Shulchan Arukh", "Commentary", comm_title]
 }
 post_index(indx)
@@ -110,7 +119,7 @@ def create_SA_link(base_ref, curr_pos_in_levushei):
     # base_ref = Ref("{} {}:{}".format(book, siman, seif_k)).normal()
     # links.append((base_ref, levushei_ref))
     siman = base_ref.split()[-1].rsplit(":", 1)[0]
-    levushei_ref = "{} on {} {}:{}".format(base_title, siman, curr_pos_in_levushei)
+    levushei_ref = "{} on {} {}:{}".format(comm_title, base_title, siman, curr_pos_in_levushei)
     links.append({"refs": [levushei_ref, base_ref], "auto": "True", "type": "Commentary", "generated_by": "levushei_serad"})
     if not base_ref.startswith(base_title):
         found_book = u" ".join(base_ref.split()[0:-1])
@@ -118,7 +127,7 @@ def create_SA_link(base_ref, curr_pos_in_levushei):
         if len(poss_links) > 1:
             print "Too many links for {}".format(base_ref)
         elif len(poss_links) == 1:
-            shulchan_ref = poss_links[0][0] if poss_links[0][0].startswith("Shulchan") else poss_links[0][1]
+            shulchan_ref = poss_links[0]
             links.append({"refs": [levushei_ref, shulchan_ref], "auto": "True", "type": "Commentary", "generated_by": "levushei_serad"})
             #links.append((shulchan_ref, levushei_ref))
         else:
@@ -155,8 +164,6 @@ if __name__ == "__main__":
     known_books = ["Turei Zahav on " + base_title, "Magen Avraham"]
     link_sets = get_link_sets(known_books)
     known_books += [base_title]
-    #file = "CSV Levushei Serad/Levushei Serad 9_23_19.csv"
-    file = "Degul.csv"
     new_file = file[0:-4] + "_NEW.csv"
     simanim_f = open("{}_simanim.csv".format(file.split()[0]), 'w')
     # with open("Levushei Serad/list of simanim.csv") as f:
@@ -193,8 +200,8 @@ if __name__ == "__main__":
                 print(n)
             siman = row[0]
             bar_ilan = row[2]
-            line = row[4]
-            link_ref = row[5]
+            line = row[3]
+            link_ref = row[4] if comm_title == "Levushei Serad" else ""
             words = line.split()
             if siman:
                 #assert siman > prev or not siman < prev - 5
@@ -218,7 +225,12 @@ if __name__ == "__main__":
                 assert '@11' in line and '@33' in line
                 line = line.replace("@11", "<small>").replace("@33", "</small>")
             else:
-                seif_k_re = re.search("\((.*?)\)", bar_ilan)
+                seif_k_re = re.search("\[(.*?)\]", bar_ilan)
+
+            if comm_title == "Rabbi Akiva Eiger":
+                remove_text = re.search("@11.*?@33", line)
+                if remove_text:
+                    line = line.replace(remove_text.group(0), "")
 
             if not seif_k_re:
                 prev_row = write_row(row, n, prev_row)
@@ -286,7 +298,3 @@ if __name__ == "__main__":
     post_link(links)
     with open("links.json", 'w') as lfile:
         json.dump(links, lfile)
-    print std(time_to_run.values())
-    print mean(time_to_run.values())
-    print max(time_to_run.values())
-    print min(time_to_run.values())
