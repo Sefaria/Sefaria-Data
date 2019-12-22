@@ -137,6 +137,24 @@ def get_series_mapping(destination):
     return {c.id: Series(c.id, c.name, destination) for c in my_cursor.fetchall()}
 
 
+def parse_expansion(expansion):
+    if not expansion or expansion.isspace():
+        return
+
+    # expansion is already made up of html elements - drop as is (more or less)
+    if re.search(ur'[<>]', expansion):
+        soup = BeautifulSoup(expansion, 'xml')
+        if not soup.string or soup.string.isspace():
+            return
+        return expansion.replace(u'http://', u'https://')
+    else:
+        matches = re.finditer(ur'(?P<url>[^{}]*){{DATA}}(?P<text>[^{}]*){{ITEM}}', expansion)
+        link_list = [u'<a href={}>{}</a>'.format(match.group('url'), match.group('text')) for match in matches
+                     if urlparse(match.group('url')).hostname]  # filter out `http://` without any actual url
+
+        return u'<br>'.join(map(lambda x: x.replace(u'http://', u'https://'), link_list))
+
+
 def convert_row_to_dict(table_row):
     columns = [i[0] for i in table_row.cursor_description]
     return {column: getattr(table_row, column) for column in columns}
@@ -600,8 +618,11 @@ class GroupManager(object):
             if self.group_cache[group_name]['num_sheets'] >= 3 and not self.group_cache[group_name]['public']:
                 self.make_group_public(group_name)
 
-    def default_group(self):
-        group_name = u'מדרשת'
+    def default_group(self, draft=False):
+        if draft:
+            group_name = u'מדרשת טיוטה'
+        else:
+            group_name = u'מדרשת'
         if group_name not in self.group_cache:
             self.cache_group_from_server(group_name)
 
@@ -612,7 +633,7 @@ class GroupManager(object):
             self.add_new_group({
                 'filename': 'midreshet_logo2.jpg',
                 'data': logo_data,
-                'name': u'מדרשת',
+                'name': group_name,
                 'body': '',
                 'type': 'image/pjpeg',
                 'logoId': None
@@ -625,7 +646,18 @@ class GroupManager(object):
 class MidreshetGroupManager(GroupManager):
 
     def get_and_register_group_for_sheet(self, sheet_id):
-        return self.default_group()
+        cursor = MidreshetCursor()
+        cursor.execute('SELECT status FROM Pages WHERE Pages.id=?', (sheet_id, ))
+
+        try:
+            status = int(cursor.fetchone().status)
+        except (TypeError, ValueError):
+            status = 0
+
+        if status in {3, 4}:
+            return self.default_group()
+        else:
+            return self.default_group(draft=True)
 
 
 class SheetRelation(object):
@@ -1007,6 +1039,11 @@ def create_sheet_json(page_id, group_manager, series_map):
         }
     )
 
+    sheet['sources'].append({
+        'options': {},
+        'outsideText': u'{}'.format(raw_sheet['description'])
+    })
+
     for resource in raw_sheet['resources']:
         source = {
             # 'outsideText': bleach.clean(resource['body'], strip=True, tags=[], attributes={}),
@@ -1151,6 +1188,13 @@ def create_sheet_json(page_id, group_manager, series_map):
             source['text']['he'] = final_source_clean(source['text']['he'])
 
         sheet['sources'].append(source)
+
+    # add external links for further reading
+    external = parse_expansion(raw_sheet['bgAndExpansion'])
+    if external:
+        sheet['sources'].append({
+            'outsideText': final_source_clean(u'<small>{}:<br>{}</small>'.format(u'קישורים לרקע והרחבה', external))
+        })
 
     # add instructor sheet link if one exists:
     instructor_sheet = my_mongo_client.yonis_data.instructor_sheets.find_one({'pageId': page_id})
@@ -1390,7 +1434,7 @@ if __name__ == '__main__':
     with ThreadPoolExecutor(max_workers=num_processes) as executor:
         executor.map(p_sheet_poster, sheet_chunks)
     # map(p_sheet_poster, sheet_chunks)
-    group_handler.publicize_groups()
+    group_handler.make_group_public(u'מדרשת')
 
     # qa_sheets = random.sample([ws for ws in my_wrapped_sheet_list if ws.sheet_json['sources']], 60)
     # qa_rows = [
