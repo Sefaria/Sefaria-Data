@@ -449,6 +449,7 @@ def numToHeb(engnum=u""):
             hebnum += letters[numdig-count-1][int(engnum[count])]
         hebnum = re.sub(u'יה', u'טו', hebnum)
         hebnum = re.sub(u'יו', u'טז', hebnum)
+        hebnum = re.sub(u'רע',u'ער', hebnum)
         # hebnum = hebnum.decode('utf-8')
         return hebnum
 
