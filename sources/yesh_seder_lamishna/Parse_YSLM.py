@@ -10,6 +10,7 @@ from data_utilities.util import getGematria, convert_dict_to_array, ja_to_xml
 from sources.functions import post_index, post_text, add_term, add_category
 import codecs
 import re
+import requests
 
 def make_gematria_list(letters_list):
     for index, letter in enumerate(letters_list):
@@ -141,6 +142,13 @@ if __name__ == "__main__":
     add_term(u'Yesh Seder LaMishnah', u'יש סדר למשנה', server = server)
     for seder in [u'Seder Zeraim', u'Seder Moed']:
         add_category(u'Yesh Seder LaMishnah', [u'Mishnah', u'Commentary', u'Yesh Seder LaMishnah'], server=server)
+
+    #change introduction category
+    response = requests.get(u'{}/api/v2/raw/index/Yesh_Seder_LaMishnah_Introduction'.format(server))
+    intro = response.json()
+    intro['categories'] = [u'Mishnah', u'Commentary', u'Yesh Seder LaMishnah']
+    post_index(intro, server=server)
+
 
     for masechet_index in mishnah_indexes:
         english_title = u'Yesh Seder LaMishnah on {}'.format(masechet_index.get_title(u'en'))
