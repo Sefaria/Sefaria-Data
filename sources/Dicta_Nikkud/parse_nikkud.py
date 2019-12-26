@@ -16,7 +16,7 @@ from sefaria.model import *
 
 
 davidson_vtitle = 'William Davidson Edition - Aramaic'
-dicta_vtitle = 'William Davidson Edition - Vocalized Aramaic'
+DICTA_VTITLE = 'William Davidson Edition - Vocalized Aramaic'
 
 
 def prepare_sefaria_text(oref):
@@ -44,13 +44,7 @@ def extract_ref_from_filename(filename):
         return None
 
 
-def align_file(filename):
-    tref = extract_ref_from_filename(filename)
-    oref = Ref(tref)
-
-    with codecs.open(filename, 'r', 'utf-8') as fp:
-        dicta_text = fp.read()
-
+def create_section(oref, dicta_text, dicta_vtitle):
     with_nikkud, without_nukkud = dicta_text.split(), strip_nikkud(dicta_text).split()
     sefaria_text = prepare_sefaria_text(oref)
 
@@ -62,12 +56,24 @@ def align_file(filename):
 
     for segment, match in zip(segments, matches):
         tc = segment.text('he', dicta_vtitle)
-        new_segment_text = u' '.join(with_nikkud[match[0]:match[1]+1])
+        new_segment_text = u' '.join(with_nikkud[match[0]:match[1] + 1])
         if not new_segment_text:
             new_segment_text = segment.text('he', davidson_vtitle).text
 
         tc.text = new_segment_text
         tc.save()
+
+
+def align_file(filename, dicta_vtitle=DICTA_VTITLE):
+    tref = extract_ref_from_filename(filename)
+    oref = Ref(tref)
+
+    with codecs.open(filename, 'r', 'utf-8') as fp:
+        dicta_text = fp.read()
+
+    create_section(oref, dicta_text, dicta_vtitle)
+
+
     
 
 """
@@ -89,7 +95,7 @@ def filename_sort_key(filename):
     return Ref(tref).sections
 
 
-def create_nikkud_version():
+def create_nikkud_version(dicta_vtitle=DICTA_VTITLE):
     version = Version().load({'versionTitle': dicta_vtitle, 'language': 'he'})
     if version:
         version.delete()
@@ -97,10 +103,10 @@ def create_nikkud_version():
     for ftitle in sorted([f for f in os.listdir('./Maleh') if re.search(r'[ab]\.txt$', f)], key=filename_sort_key):
         print(ftitle)
         ftitle = os.path.join('./Maleh', ftitle)
-        align_file(ftitle)
+        align_file(ftitle, dicta_vtitle)
 
 
-def compare_versions():
+def compare_versions(dicta_vtitle=DICTA_VTITLE):
     oref = Ref("Berakhot 2a-46b")
     segments = oref.all_segment_refs()
     for segment in segments:
@@ -145,7 +151,7 @@ def prettify_text_segment(davidson_text, dicta_text):
     return u' '.join([add_html_to_word(dav, dic) for dav, dic in zip(davidson_words, dicta_words)])
 
 
-def prettify_text(tref):
+def prettify_text(tref, dicta_vtitle=DICTA_VTITLE):
     for segment in Ref(tref).all_segment_refs():
         davidson_tc, dicta_tc = segment.text('he', davidson_vtitle), segment.text('he', dicta_vtitle)
         try:
