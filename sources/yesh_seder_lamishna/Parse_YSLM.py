@@ -173,5 +173,5 @@ if __name__ == "__main__":
 
 
 
-    #ja_to_xml(yslm[u'Mishnah Chagigah'],[u'perek', u'mishnah', u'comment'], u'Chagigah_test.xml')
+    #ja_to_xml(yslm[u'Mishnah Sheviit'],[u'perek', u'mishnah', u'comment'], u'Sheviit_test.xml')
 
