@@ -54,6 +54,15 @@ class MidreshetCursor(object):
         cnxn = pyodbc.connect(connect_string)
         self.cursor = cnxn.cursor()
 
+    def fetch_iter(self):
+        while True:
+            item = self.cursor.fetchone()
+            if item:
+                yield item
+            else:
+                break
+        raise StopIteration
+
     def __getattr__(self, item):
         return getattr(self.cursor, item)
 
@@ -773,6 +782,11 @@ def get_sheet_by_id(page_id, rebuild_cache=False):
                    'FROM PageTags P JOIN Tags T ON P.tag_id = T.id '
                    'WHERE P.page_id=?', (page_id,))
     sheet['tags'] = [t.tag for t in cursor.fetchall()]
+    cursor.execute('SELECT Seminary.name FROM Pages JOIN Seminary ON Pages.seminary_id = Seminary.id WHERE Pages.id=?',
+                   (page_id,))
+    result = cursor.fetchone()
+    if result and result.name:
+        sheet['tags'].append(result.name)
 
     cursor.execute('SELECT first_name, last_name FROM Users WHERE id=?', (sheet['userId'],))
     result = cursor.fetchone()
@@ -840,14 +854,16 @@ def format_terms(term_list):
                 term_text_list.append(format_source_text(term_item['body']))
 
         formatted_terms.append(u'<i>{}</i><ul style="margin: 1px;"><li>{}</li></ul>'.
-                               format(term_type, u'</li><li>'.join(term_text_list)))
-    return u'<br>'.join(formatted_terms)
+                               format(u'<span style="color: #999">{}</span>'.format(term_type),
+                                      u'</li><li>'.join(term_text_list)))
+    return u'<small>{}</small>'.format(u'<br>'.join(formatted_terms))
 
 
 def format_dictionaries(word_list):
     """Consider making this into descriptive lists in the future."""
     entries = [u'{} - {}'.format(word['name'], format_source_text(word['body'])) for word in word_list]
-    return u'<i>{}</i><ul><li>{}</li></ul>'.format(u'מילים', u'</li><li>'.join(entries))
+    return u'<small><i>{}</i><ul><li>{}</li></ul></small>'.format(u'<span style="color: #999">{}</span><br>'
+                                                                  .format(u'מילים'), u'</li><li>'.join(entries))
 
 
 class VerseMarkWrapper(object):
@@ -1099,7 +1115,7 @@ def create_sheet_json(page_id, group_manager, series_map):
                 #                         u' text-decoration-color:grey;">{}</span>'.format(cleaned_text)
                 source['outsideText'] = u'<strong><big>{}</big></strong>'.format(cleaned_text)
             else:
-                diyun = u'<span style="text-decoration:underline; text-decoration-color:grey">{}</span>'.format(u'דיון')
+                diyun = u'<span style="text-decoration:underline; color: #999">{}</span>'.format(u'דיון')
 
                 if re.match(u'^<ul>', cleaned_text):
                     source['outsideText'] = u'{}{}'.format(diyun, cleaned_text)
