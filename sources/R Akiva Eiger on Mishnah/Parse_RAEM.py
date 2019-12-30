@@ -8,24 +8,27 @@ from sefaria.model import *
 import time
 
 from docx import Document
-from data_utilities.util import getGematria, convert_dict_to_array, ja_to_xml
+from data_utilities.util import convert_dict_to_array, ja_to_xml
 from sources.functions import post_index, post_text, add_term, add_category
 from sources.yesh_seder_lamishna.Parse_YSLM import make_gematria_list
 import re
+import copy
 
 def insert_break_tags(text_to_break):
     text_to_break = re.sub(ur'(:)\s*@\s*(<b>)', u'\g<1><br>\g<2>', text_to_break)
     return text_to_break
+
 
 def break_into_masechtot(book):
     book = re.split(ur'@\s*\u05de\u05e1\u05db\u05ea\s*[\u05d0-\u05ea]+', book)
     book.pop(0)
     return book
 
+
 def break_into_perakim(masechtot):
-    for key, masechet in masechtot.items:
+    for key, masechet in masechtot.items():
         # make a list with all the perek letters
-        perakim_list = re.findall(ur'@\s*\u05e4\u05e8\u05e7\s*([\u05d0-\u05ea])', masechet)
+        perakim_list = re.findall(ur'@\s*\u05e4\u05e8\u05e7\s*([\u05d0-\u05ea]+)', masechet)
         # make a list with all the perek numbers
         gematria_list = make_gematria_list(perakim_list)
         # split the string of the entire masechet into a list of perakim
@@ -38,12 +41,13 @@ def break_into_perakim(masechtot):
         masechtot[key] = convert_dict_to_array(masechet_dict)
     return masechtot
 
+
 def break_into_mishnayot(perakim):
     for index, perek in enumerate(perakim):
         # check type,if unicode break into mishnayot
         if type(perek) == unicode:
             # make a list with all the mishna letters
-            mishna_list = re.findall(ur'@\s*\u05de\u05e9\u05e0\u05d4\s*([\u05d0-\u05ea])', perek)
+            mishna_list = re.findall(ur'@\s*\u05de\u05e9\u05e0\u05d4\s*([\u05d0-\u05ea]+)', perek)
             # make a list with all the mishna numbers
             gematria_list = make_gematria_list(mishna_list)
             # split the string of the entire perek into a list of mishnayot
@@ -58,8 +62,36 @@ def break_into_mishnayot(perakim):
                 perakim[index] = convert_dict_to_array(perek_dict)
     return perakim
 
-def break_into_comments(mishnayot):
-    x = 3 #filler
+
+def break_list_into_comments(mishnayot):
+    for index, mishna in enumerate(mishnayot):
+        # check type, if unicode break into comments
+        if type(mishna) == unicode:
+            # split the string of the entire mishna into a list of comments
+            mishnayot[index] = re.split(ur'@\s*(?=\u05d0\u05d5\u05ea)', mishna)
+            mishnayot[index].pop(0)
+    return mishnayot
+
+
+def break_dict_into_comments(masechtot):
+    for masechet in masechtot:
+        # get rid of all perek and mishnah numbers
+        masechtot[masechet] = re.sub(ur'@\s*\u05e4\u05e8\u05e7\s*[\u05d0-\u05dc]+\s*', '', masechtot[masechet])
+        masechtot[masechet] = re.sub(ur'@\s*\u05de\u05e9\u05e0\u05d4\s*[\u05d0-\u05dc]+\s*', '', masechtot[masechet])
+        # make a list with all the comment letters
+        comments_list = re.findall(ur'@\s*\u05d0\u05d5\u05ea\s*([\u05d0-\u05ea]+)', masechtot[masechet])
+        # make a list with all the comments numbers
+        gematria_list = make_gematria_list(comments_list)
+        # split masechet into a list of comments
+        masechtot[masechet] = re.split(ur'@\s*(?=\u05d0\u05d5\u05ea)', masechtot[masechet])
+        # get rid of masechet name
+        masechtot[masechet].pop(0)
+        # make a dict with the keys being the numbers of comments and the value being the string of that comment
+        masechet_dict = dict(zip(gematria_list, masechtot[masechet]))
+        # convert our dict with each comment having a corresponding key into a list of comments which will now be in order
+        # and store it as the value for the masechet
+        masechtot[masechet] = convert_dict_to_array(masechet_dict)
+
 
 if __name__ == "__main__":
     start = time.time()
@@ -101,6 +133,11 @@ if __name__ == "__main__":
     # make a dict with the keys being the names of the masechtot and the values being the text of those masechtot
     raem_dic = dict(zip(mishnah_indexes, raem_masechtot))
 
+    # make another dict with the keys being the names of the masechtot and the values being the text of those masechtot
+    # but use it to separate the text into comments instead of perakim
+    raem_comments = copy.deepcopy(raem_dic)
+    break_dict_into_comments(raem_comments)
+
     # break the text into perakim
     raem = break_into_perakim(raem_dic)
 
@@ -108,6 +145,23 @@ if __name__ == "__main__":
     for key, masechet in raem.items():
         raem[key] = break_into_mishnayot(masechet)
     # depth 3 ^
+
+    # break the text into comments
+    for masechet in raem:
+        for index, perek in enumerate(raem[masechet]):
+            raem[masechet][index] = break_list_into_comments(perek)
+    # depth 4 ^
+
+    # clean the @s
+    for masechet in raem_comments:
+        for index, comment in enumerate(raem_comments[masechet]):
+            raem_comments[masechet][index] = re.sub(ur'@', ' ', comment)
+
+    for masechet in raem:
+        for perek in raem[masechet]:
+            for mishna in perek:
+                for index, comment in enumerate(mishna):
+                    mishna[index] = re.sub(ur'@', ' ', comment)
 
     end = time.time()
     print end-start
