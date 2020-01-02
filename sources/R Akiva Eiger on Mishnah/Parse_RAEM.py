@@ -12,11 +12,15 @@ from data_utilities.util import convert_dict_to_array, ja_to_xml
 from sources.functions import post_index, post_text, add_term, add_category
 from sources.yesh_seder_lamishna.Parse_YSLM import make_gematria_list
 import re
-import copy
+#import copy
 
 def insert_break_tags(text_to_break):
     text_to_break = re.sub(ur'(:)\s*@\s*(<b>)', u'\g<1><br>\g<2>', text_to_break)
     return text_to_break
+
+def insert_brackets(text_to_bracket):
+    text_to_bracket = re.sub(ur'(@)\s*(\u05d0\u05d5\u05ea\s*[\u05d0-\u05ea]+)', u'\g<1>[\g<2>]', text_to_bracket)
+    return text_to_bracket
 
 
 def break_into_masechtot(book):
@@ -63,17 +67,17 @@ def break_into_mishnayot(perakim):
     return perakim
 
 
-def break_list_into_comments(mishnayot):
+def break_mishnah_into_comments(mishnayot):
     for index, mishna in enumerate(mishnayot):
         # check type, if unicode break into comments
         if type(mishna) == unicode:
             # split the string of the entire mishna into a list of comments
-            mishnayot[index] = re.split(ur'@\s*(?=\u05d0\u05d5\u05ea)', mishna)
+            mishnayot[index] = re.split(ur'@\s*(?=\[\u05d0\u05d5\u05ea)', mishna)
             mishnayot[index].pop(0)
     return mishnayot
 
-
-def break_dict_into_comments(masechtot):
+"""
+def break_masechet_into_comments(masechtot):
     for masechet in masechtot:
         # get rid of all perek and mishnah numbers
         masechtot[masechet] = re.sub(ur'@\s*\u05e4\u05e8\u05e7\s*[\u05d0-\u05dc]+\s*', '', masechtot[masechet])
@@ -91,7 +95,7 @@ def break_dict_into_comments(masechtot):
         # convert our dict with each comment having a corresponding key into a list of comments which will now be in order
         # and store it as the value for the masechet
         masechtot[masechet] = convert_dict_to_array(masechet_dict)
-
+"""
 
 if __name__ == "__main__":
     start = time.time()
@@ -121,6 +125,8 @@ if __name__ == "__main__":
 
     raem_string = insert_break_tags(raem_string)
 
+    raem_string = insert_brackets(raem_string)
+
     # break the text into masechtot
     raem_masechtot = break_into_masechtot(raem_string)
 
@@ -135,8 +141,8 @@ if __name__ == "__main__":
 
     # make another dict with the keys being the names of the masechtot and the values being the text of those masechtot
     # but use it to separate the text into comments instead of perakim
-    raem_comments = copy.deepcopy(raem_dic)
-    break_dict_into_comments(raem_comments)
+    #raem_comments = copy.deepcopy(raem_dic)
+    #break_masechet_into_comments(raem_comments)
 
     # break the text into perakim
     raem = break_into_perakim(raem_dic)
@@ -149,19 +155,80 @@ if __name__ == "__main__":
     # break the text into comments
     for masechet in raem:
         for index, perek in enumerate(raem[masechet]):
-            raem[masechet][index] = break_list_into_comments(perek)
+            raem[masechet][index] = break_mishnah_into_comments(perek)
     # depth 4 ^
 
     # clean the @s
+    """
     for masechet in raem_comments:
         for index, comment in enumerate(raem_comments[masechet]):
-            raem_comments[masechet][index] = re.sub(ur'@', ' ', comment)
-
+            if len(comment) > 0:
+                raem_comments[masechet][index] = re.sub(ur'@', ' ', comment)
+    """
     for masechet in raem:
         for perek in raem[masechet]:
             for mishna in perek:
                 for index, comment in enumerate(mishna):
-                    mishna[index] = re.sub(ur'@', ' ', comment)
+                    if len(comment) > 0:
+                        mishna[index] = re.sub(ur'@', ' ', comment)
+
+    # no yadayim and kinnim, no commentary on it
+    mishnah_indexes = library.get_indexes_in_category(u'Mishnah', full_records = True)[:50]
+    mishnah_indexes = mishnah_indexes + library.get_indexes_in_category(u'Mishnah', full_records = True)[51:61]
+    mishnah_indexes = mishnah_indexes + library.get_indexes_in_category(u'Mishnah', full_records = True)[62:]
+
+    server = u'http://ezra.sandbox.sefaria.org'
+    add_term(u'Tosafot Rabbi Akiva Eiger', u'תוספות רבי עקיבא איגר', server = server)
+    for seder in [u'Seder Zeraim', u'Seder Moed', u'Seder Nashim', u'Seder Nezikin', u'Seder Kodashim', u'Seder Tahorot']:
+        add_category(seder, [u'Mishnah', u'Commentary', u'Tosafot Rabbi Akiva Eiger', seder], server=server)
+
+
+    for masechet_index in mishnah_indexes:
+        english_title = u'Tosafot Rabbi Akiva Eiger on {}'.format(masechet_index.get_title(u'en'))
+        hebrew_title = u'{} {}'.format(u'תוספות רבי עקיבא איגר על', masechet_index.get_title(u'he'))
+
+        ja = JaggedArrayNode()
+        ja.add_primary_titles(english_title, hebrew_title)
+        ja.add_structure([u'Chapter', u'Mishnah', u'Comment'])
+        ja.validate()
+
+        if u'Seder Zeraim' in masechet_index.categories:
+            seder = u'Seder Zeraim'
+        elif u'Seder Moed' in masechet_index.categories:
+            seder = u'Seder Moed'
+        elif u'Seder Nashim' in masechet_index.categories:
+            seder = u'Seder Nashim'
+        elif u'Seder Nezikin' in masechet_index.categories:
+            seder = u'Seder Nezikin'
+        elif u'Seder Kodashim' in masechet_index.categories:
+            seder = u'Seder Kodashim'
+        else:
+            seder = u'Seder Tahorot'
+
+        index_dict = {
+            u'title': english_title,
+            u'base_text_titles': [masechet_index.get_title('en')],
+            u'dependence': u'Commentary',
+            u'base_text_mapping': u'many_to_one',
+            u'collective_title': u'Tosafot Rabbi Akiva Eiger',
+            u'categories': [u'Mishnah',
+                            u'Commentary',
+                            u'Tosafot Rabbi Akiva Eiger',
+                            seder],
+            u'schema': ja.serialize(),
+        }
+        post_index(index_dict, server = server)
+        version = {
+            u'text': raem[masechet_index.get_title(u'en')],
+            u'language': u'he',
+            u'versionTitle': u'Vilna, 1908-1909',
+            u'versionSource': u'https://www.nli.org.il/he/books/NNL_ALEPH002016147/NLI'
+        }
+        post_text(english_title, version, server = server)
+
+    #add comment index form
+
+    #ja_to_xml(raem_comments[u'Mishnah Sheviit'], [u'perek', u'mishnah', u'comment'], u'Sheviit_comments_test.xml')
 
     end = time.time()
     print end-start
