@@ -430,6 +430,19 @@ def cache_to_mongo(mongo_client, ref_builder):
     return wrapper
 
 
+'''
+Steps:
+1) Get a function that does the lookup. Function should take server, page_id
+2) Get a temp fix for the sheet ids. For now, create a special collection with a single document. This document can have a "next_id" field. Get and increment as an atomic operation.
+3) Dump the RefSources collection from yonis_data
+4) Get some example sheets. We'll probably want to save their json and re-upload them so we can make a comparison. re-uploading might not be necessary, but we'll definitely want to save the json.
+5) Drop the collection RefSources
+6) For now, if the method "refined_ref_by_text" doesn't return something useful, return None
+7) Perform visual analysis of the sheets.
+8) Repeat steps 6 & 7 as needed.
+'''
+
+
 def get_ref_for_resource(ref_builder, resource_id, exact_location, resource_text):
     if exact_location is None:
         return None
@@ -459,8 +472,8 @@ def get_ref_for_resource(ref_builder, resource_id, exact_location, resource_text
             return constructed_ref.normal()
         if refined_ref:
             return refined_ref.normal()
-        else:
-            return constructed_ref.normal()
+        # else:
+        #     return constructed_ref.normal()
 
     else:
         return None
@@ -558,6 +571,8 @@ class GroupManager(object):
                 time.sleep(3)
             else:
                 print("Got bad status code. Exiting")
+                with codecs.open('errors.html', 'w', 'utf-8') as fp:
+                    fp.write(raw_response.text)
                 sys.exit(1)
 
         response = raw_response.json()
@@ -1450,6 +1465,7 @@ if __name__ == '__main__':
     with ThreadPoolExecutor(max_workers=num_processes) as executor:
         executor.map(p_sheet_poster, sheet_chunks)
     # map(p_sheet_poster, sheet_chunks)
+    print('done')
     group_handler.make_group_public(u'מדרשת')
 
     # qa_sheets = random.sample([ws for ws in my_wrapped_sheet_list if ws.sheet_json['sources']], 60)
