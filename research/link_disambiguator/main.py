@@ -64,10 +64,10 @@ class Link_Disambiguator:
         base_str = re.sub(r'[A-Za-z.,"?!״:׃]', '', base_str)
         # replace common hashem replacements with the tetragrammaton
         base_str = re.sub(r"(^|\s)([\u05de\u05e9\u05d5\u05db\u05dc\u05d1]?)(?:\u05d4['\u05f3]|\u05d9\u05d9)($|\s)",
-                   r"\1\2\u05d9\u05d4\u05d5\u05d4\3", base_str)
+                   "\1\2\u05d9\u05d4\u05d5\u05d4\3", base_str)
         # replace common elokim replacement with elokim
         base_str = re.sub(r"(^|\s)([\u05de\u05e9\u05d5\u05db\u05dc\u05d1]?)(?:\u05d0\u05dc\u05e7\u05d9\u05dd)($|\s)",
-                   r"\1\2\u05d0\u05dc\u05d4\u05d9\u05dd\3", base_str)
+                   "\1\2\u05d0\u05dc\u05d4\u05d9\u05dd\3", base_str)
 
         word_list = re.split(r"\s+", base_str)
         word_list = [w for w in word_list if len(w.strip()) > 0 and w not in Link_Disambiguator.stop_words]

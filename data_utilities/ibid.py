@@ -657,10 +657,10 @@ class BookIbidTracker(object):
 
 class IbidDict(OrderedDict):
 
-    def __setitem__(self, key, value, dict_setitem=dict.__setitem__):
+    def __setitem__(self, key, value):
         if key in self:
             self.pop(key)
-        return super(IbidDict, self).__setitem__(key, value, dict_setitem)
+        return super(IbidDict, self).__setitem__(key, value)
 
 
 class IbidKeyNotFoundException(Exception):

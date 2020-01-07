@@ -25,6 +25,7 @@ skip_matches = ht[a]
 
 """
 from tqdm import tqdm
+from functools import cmp_to_key
 import django
 from functools import reduce
 django.setup()
@@ -738,7 +739,7 @@ class ParallelMatcher:
                     skip_matches = [x for x in skip_matches if not x.too_close(temp_already_matched)]
             except KeyError:
                 pass
-            skip_matches.sort(lambda x, y: x.compare(y))
+            skip_matches.sort(key=cmp_to_key(lambda x, y: x.compare(y)))
             partial_match_list = [PartialMesorahMatch(a, a, b, b, self.min_words_in_match) for b in skip_matches]
 
             for j_word in range(i_word + 1, len(mes_wl) - self.skip_gram_size + 1):  # +1 at end of range to get last incomplete skip-gram
@@ -761,7 +762,7 @@ class ParallelMatcher:
                     temp_skip_matches = self.ght[mes_wl[j_word:j_word + self.skip_gram_size + 1]]
                     temp_skip_matches.remove(temp_a)  # temp_a wont be in temp_skip_matches if the if path is true
                 temp_skip_matches = [x for x in temp_skip_matches if not x.too_close(temp_a)]
-                temp_skip_matches.sort(lambda x, y: x.compare(y))
+                temp_skip_matches.sort(key=cmp_to_key(lambda x, y: x.compare(y)))
                 new_partial_match_list, dead_matches_possibly = self.compare_new_skip_matches(partial_match_list,
                                                                                          temp_skip_matches, temp_a)
 

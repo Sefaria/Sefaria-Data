@@ -75,6 +75,7 @@ def is_topical_link_of_sa(l):
 topic_hierarchy = []
 topic_hierarchy_map = {}
 leaf_topic_refs = defaultdict(set)
+smag_counts = defaultdict(lambda: defaultdict(int))
 total = 0
 with open("research/knowledge_graph/rambam/rambam_ontology.csv", "r") as fin:
     c = csv.DictReader(fin)
@@ -133,13 +134,12 @@ with open("research/knowledge_graph/rambam/rambam_ontology.csv", "r") as fin:
                     #             if not sa_rr.index.title.startswith("Shulchan Arukh"):
                     #                 total += 1
                     #                 leaf_topic_refs[curr_topic5].add(sa_rr.normal())
-                        if r == "Shulchan Arukh, Choshen Mishpat 16:1":
-                            print("YYYYYYOOOOOO")
-                            print(curr_topic5)
                         all_sa[sa_index]["topics"] |= {curr_topic5}
 
-                    leaf_topic_refs[curr_topic5].add(rr.normal())
-
+                    if rr.index.title == "Sefer Mitzvot Gadol":
+                        smag_counts[curr_topic5][rr.normal()] += 1
+                    else:
+                        leaf_topic_refs[curr_topic5].add(rr.normal())
 
 node_set = create_node_set()
 

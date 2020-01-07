@@ -5,6 +5,7 @@ django.setup()
 
 # import subprocess
 import random
+from functools import reduce
 import argparse
 from tqdm import *
 from sefaria.model import *
@@ -30,14 +31,14 @@ from sources.EinMishpat.ein_parser import is_hebrew_number, hebrew_number_regex
 from research.knowledge_graph.sefer_haagada.main import disambiguate_ref_list
 from sefaria.utils.hebrew import is_hebrew
 from data_utilities.dibur_hamatchil_matcher import match_text
-# from aspaklaria_settings import ASPAKLARIA_HTML_FILES
+from aspaklaria_settings import ASPAKLARIA_HTML_FILES
 
 db_aspaklaria = client.aspaklaria
 
 # in order to print Hebrew on K8S
-import sys
-reload(sys)
-sys.setdefaultencoding('utf8')
+# import sys
+# reload(sys)
+# sys.setdefaultencoding('utf8')
 
 class Parser(object):
 
@@ -64,7 +65,7 @@ class Parser(object):
                 perek_key = Ref('{} {}'.format(ref.index.title, ref.sections[0]))
                 if perek_key.normal() != prev_perk_key.normal():
                     prev_perk_key = perek_key
-                    if perek_key not in t.keys():
+                    if perek_key not in t:
                         new_table[perek_key] = parashah_name
                     elif t[perek_key] != parashah_name:
                         new_table[perek_key]=[t[perek_key]]+[parashah_name]
@@ -104,6 +105,8 @@ def he_term_mapping():
 
 
 def bs_read(fileName):
+    if fileName.startswith('.'):
+        return
     with codecs.open(fileName, encoding='utf-8') as f:
         file_content = f.read()
 
@@ -152,7 +155,7 @@ def transliterator(hestr):
                    }
     enstr = ''
     for l in hestr:
-        enstr+=trans_table[l] if l in trans_table.keys() else l
+        enstr+=trans_table[l] if l in trans_table else l
     return enstr
 
 
@@ -271,7 +274,7 @@ class Topic(object):
         if source.ref:
             # if source.ref.index.title in library.get_indexes_in_category('Bavli'):
             #     print 'Bavli'
-            if 'addressTypes' in source.ref.index.schema.keys() and 'Talmud' in source.ref.index.schema['addressTypes']:
+            if 'addressTypes' in source.ref.index.schema and 'Talmud' in source.ref.index.schema['addressTypes']:
                 d['book'] = Ref(source.ref.book).he_normal()
             d['author'] = source.author
             d['index'] = source.ref.index
@@ -348,8 +351,8 @@ class Source(object):
         except exceptions.BookNameError as e: #sefaria.system.exceptions.
             found_term = self.extract_term()
             if found_term:
-                found_term = [found_term] if not isinstance(found_term, list) else filter(lambda x: x, found_term)
-                cat_terms = filter(lambda term: term in library.get_text_categories(), found_term)
+                found_term = [found_term] if not isinstance(found_term, list) else list(filter(lambda x: x, found_term))
+                cat_terms = list(filter(lambda term: term in library.get_text_categories(), found_term))
                 self.cat = cat_terms  # found_term
                 if self.cat:
                     look_here = reduce(lambda a,b: [x for x in b for y in a if x==y], [library.get_indexes_in_category(cat, include_dependant=include_dependant, full_records=True).array() for cat in self.cat])
@@ -438,7 +441,7 @@ class Source(object):
                 if bool(inds_via_cats) != bool(inds_via_term):  # only one of the index groups was filled
                     indexs = inds_via_term if inds_via_term else inds_via_cats
                     for ind in indexs:
-                        if isinstance(ind, unicode):
+                        if isinstance(ind, str):
                             self.indexs.append(library.get_index(ind))
                         elif isinstance(ind, Index):
                             self.indexs.append(ind)
@@ -530,15 +533,15 @@ class Source(object):
         try:
             shared_word_in_titles = '({})'.format('|'.join(list(set.intersection(*[set(x.split()) for x in look_here_titles]))))
         except AttributeError:
-            if any(type(book) != unicode for book in look_here_titles):
-                look_here_titles = [book for book in look_here_titles if isinstance(book, unicode)]
+            if any(type(book) != str for book in look_here_titles):
+                look_here_titles = [book for book in look_here_titles if isinstance(book, str)]
                 shared_word_in_titles = '({})'.format(
                     '|'.join(list(set.intersection(*[set(x.split()) for x in look_here_titles]))))
 
         if re.sub("[()]", "", shared_word_in_titles):
             look_here_titles = map(lambda x: (x, re.sub(shared_word_in_titles, '', x).strip()), look_here_titles)
         else:
-            look_here_titles = map(lambda x: tuple([x]) if isinstance(x, unicode) else tuple(x), look_here_titles)
+            look_here_titles = map(lambda x: tuple([x]) if isinstance(x, str) else tuple(x), look_here_titles)
         return look_here_titles
 
         # except AttributeError:
@@ -675,13 +678,13 @@ class Source(object):
                     ns=[]
                     ns_titles_and_refs = dict()
                     [ns.extend(alt['nodes']) for alt in new_index.alt_structs.values()]
-                    if any('titles' in nsone.keys() for nsone in ns): # 'titles' in ns[0].keys():
+                    if any('titles' in nsone for nsone in ns): # 'titles' in ns[0].keys():
                         ns_titles_and_refs = dict([(x['titles'][1]['text'], x['wholeRef']) for x
-                             in ns if ('wholeRef' in x.keys() and 'titles' in x.keys())])
-                    if any('sharedTitle' in nsone.keys() for nsone in ns): # todo: old code: 'sharedTitle' in ns[0].keys():
+                             in ns if ('wholeRef' in x and 'titles' in x)])
+                    if any('sharedTitle' in nsone for nsone in ns): # todo: old code: 'sharedTitle' in ns[0].keys():
                         ns_titles_and_refs.update(dict([(Term().load_by_title(x['sharedTitle']).get_primary_title('he')
-, x['wholeRef']) for x in ns if 'sharedTitle' in x.keys()]))
-                    possible_nodes.extend(ns_titles_and_refs.keys())
+, x['wholeRef']) for x in ns if 'sharedTitle' in x]))
+                    possible_nodes.extend(ns_titles_and_refs)
                 node_guess = intersect_list_string(possible_nodes, self.raw_ref.rawText)
                 if not self.ref and node_guess:
                     try:
@@ -773,7 +776,7 @@ class Source(object):
         return False
 
     def set_reduce_indexes(self, reduced_indexes):
-        reduced_indexes = filter(lambda x: type(x)==unicode, reduced_indexes)
+        reduced_indexes = list(filter(lambda x: type(x)==str, reduced_indexes))
         return len(reduced_indexes) == 1 or (
                 reduced_indexes and all(
             [x == reduced_indexes[-1] or library.get_index(x) == library.get_index(reduced_indexes[-1]) for x in
@@ -797,10 +800,10 @@ class Source(object):
                                               alt_ref_titles=alt_ref_titles)
         if self.set_reduce_indexes(reduced_indexes):
             reduced_indexes = set(reduced_indexes)
-            if filter(lambda x: type(x) == tuple, reduced_indexes):
-                self.index = filter(lambda x: type(x) == tuple, reduced_indexes)[0]
+            if len(list(filter(lambda x: type(x) == tuple, reduced_indexes))) > 0:
+                self.index = list((lambda x: type(x) == tuple, reduced_indexes))[0]
             else:
-                self.index = library.get_index(filter(lambda x: type(x) == unicode, list(reduced_indexes))[0]).title
+                self.index = library.get_index(list(filter(lambda x: type(x) == str, list(reduced_indexes)))[0]).title
             try:
                 if isinstance(self.index, tuple):
                     index_node_name = self.index[1].title + ', ' + self.index[0]
@@ -827,10 +830,10 @@ class Source(object):
                     # print self.raw_ref
                     look_here = [book for book in look_here if isinstance(book, Index)]
                 look_here_nodes = reduce(lambda a, b: a + b,
-                                         [ind.alt_titles_dict('he').keys() + ind.all_titles('he') for ind in
+                                         [list(ind.alt_titles_dict('he').keys()) + ind.all_titles('he') for ind in
                                           look_here])  # todo: note: this was ind.alt_titles_dict('he').items() a few lines down the code called node_name = node[0]
-                look_here_nodes = filter(lambda x: any(re.search(t, x[0]) or re.search(t, x) for t in alt_ref_titles),
-                                         look_here_nodes)
+                look_here_nodes = list(filter(lambda x: any(re.search(t, x[0]) or re.search(t, x) for t in alt_ref_titles),
+                                         look_here_nodes))
                 if len(look_here_nodes) == 1:
                     node = look_here_nodes[0]  # todo: why take the first one?? or move it to be taking the only one
                     node_name = node  # [0]
@@ -875,7 +878,7 @@ class Source(object):
             depenent_indexes = []
             main_indexes = []
             for ind_title in list(reduced_indexes):
-                if isinstance(ind_title, unicode):
+                if isinstance(ind_title, str):
                     ind = library.get_index(ind_title)
                 elif isinstance(ind_title, Index):
                     ind = ind_title
@@ -1017,8 +1020,8 @@ class Source(object):
                 try_text = "{}, {}".format(Ref(self.index.title).he_normal(), re.sub("[()]", "", self.text))
                 self.ref = Ref(try_text)
             except (InputError, AttributeError, IndexError) as e:
-                print("couldn't find it. Error {}. self.index = {}, self.text = {}".format(type(e).__name__, self.index.title, self.text))
-                traceback.print_exc()
+                # print("couldn't find it. Error {}. self.index = {}, self.text = {}".format(type(e).__name__, self.index.title, self.text))
+                # traceback.print_exc()
                 self.ref = None
             return self.ref
 
@@ -1180,8 +1183,8 @@ def post_topic_documents(t, cnt):
                 document['cnt'] = cnt
                 # document['topic_key'] = topic_key
                 # db_aspaklaria.aspaklaria_source.insert_one(document)
-                db_aspaklaria.aspaklaria_source.update({"topic": document['topic'], "cnt": document['cnt']}, document, upsert=True)
-                if 'ref' in document.keys():
+                db_aspaklaria.aspaklaria_source.replace_one({"topic": document['topic'], "cnt": document['cnt']}, document, upsert=True)
+                if 'ref' in document:
                     sources.append(document['ref'])
                 cnt += 1
                 print('-----------------')
@@ -1290,7 +1293,7 @@ table_he_numbering = {'א' :"ראשון",
 def strings2sets(strings, subs=None, combine_single_letters=True):
     sets = []
     single_he_letter_reg = re.compile('([^\s]+)\s+([^\s])(\s+|$)')
-    if isinstance(strings, unicode):
+    if isinstance(strings, str):
         strings = [strings]
     for st in strings:
         # add single letters as numbers to create a "single" word
@@ -1391,7 +1394,7 @@ def find_see_topics(see_list, collection): #='topics'
     """
     found_see = []
     if see_list:
-        if isinstance(see_list, unicode):
+        if isinstance(see_list, str):
             see_list = [see_list]
         for see in see_list:
             see = clean_see(see)
@@ -1412,7 +1415,7 @@ def add_found_to_topics(collection): #  = 'topics'
     # topics = db_aspaklaria.aspaklaria_topics.find({})
     topics = db_aspaklaria['{}'.format(collection)].find({})
     for t in topics:
-        if 'see' in t.keys():
+        if 'see' in t:
             found_see = find_see_topics(t['see'], collection)
             if found_see:
                 oldid = t['_id']
@@ -1429,19 +1432,52 @@ def convert_perk_parasha(ref, table):
 
 def parse_html_file(letter_folder=None, num_rand_files=None):
     # letter_folder = letter if letter else random.sample(os.listdir(ASPAKLARIA_HTML_FILES), 1)[0]
+    if letter_folder.startswith('.'):
+        return
     letter_folder_topics = os.listdir(ASPAKLARIA_HTML_FILES + "/{}".format(letter_folder))
     letter_topics = random.sample(letter_folder_topics, num_rand_files) if num_rand_files else letter_folder_topics
-    for tf in letter_topics:
-        print("/{}/{}".format(letter_folder, tf))
+    out = {}
+    from tqdm import tqdm
+    import json
+    for tf in tqdm(letter_topics):
+        # print("/{}/{}".format(letter_folder, tf))
         tfp = ASPAKLARIA_HTML_FILES + "/{}/{}".format(letter_folder, tf)
         try:
             t = parse_by_topic(tfp)
-            print(tfp)
+            if t is None:
+                print("{} is None".format(tf))
+                continue
+            out[t.headWord] = {
+                "filename": tfp,
+                "authors": len(t.all_a_citations),
+                "citations": reduce(lambda a, b: a + len(b.cit_list), t.all_a_citations, 0)
+            }
+            # print(tfp)
         except Exception as e:
             print("ERROR parsing {}".format("/{}/{}".format(letter_folder, tf)).encode('utf-8'))
             traceback.print_exc()
+    return out
 
 if __name__ == "__main__":
+    from tqdm import tqdm
+    with open('num_cits.json', 'r') as fin:
+        num_cits = json.load(fin)
+    with open('research/knowledge_graph/bootstrapper/topics_to_recover.json', 'r') as fin:
+        to_recover = json.load(fin)
+    for fp in tqdm([num_cits[x]['filename'] for x in to_recover]):
+        t = parse_by_topic(fp)
+    # letter_folders = os.listdir(ASPAKLARIA_HTML_FILES)
+    # num_rand_files = [None]*len(letter_folders)
+    # out = {}
+    # for letter_folder, num_rand in zip(letter_folders, num_rand_files):
+    #     temp_out = parse_html_file(letter_folder, num_rand)
+    #     if temp_out is None:
+    #         continue
+    #     out.update(temp_out)
+    # with open('num_cits.json', 'w') as fout:
+    #     json.dump(out, fout, ensure_ascii=False, indent=2)
+
+
     # he_letter = '010_ALEF'
     # letter = '009_TET'
     # letter = ''  # 020_KAF, 009_TET
@@ -1464,36 +1500,36 @@ if __name__ == "__main__":
     #     shamas_per_leter(he_letter)
     #     read_sources('{}'.format(he_letter), with_refs='with_refs')
 
-    args = argparse.ArgumentParser()
-    args.add_argument("-l", "--letter", dest="letter", default=None, help="list of letters with the Gimatria number ex: 020_KAF to be parsed and posted to the db, if empty must put in a number of topics to be chosen randomly from all the letters")
-    args.add_argument("-r", "--rand", dest="rand", default=None, help="a list of numbers respectively to the letters in the rand numbers of topics that will be chosen from the letter, 0 will parse the whole letter as well as keeping this arg blank")
-    args.add_argument("-f", "--file", dest="file", default=None, help="full path of a single topic file to parse and push to the DB")
-    user_args = args.parse_args()
-
-    # testing!
-    if user_args.file:
-        try:
-            parse_by_topic(user_args.file)
-        except:
-            "{} has failed".format(user_args.file)
-        sys.exit(1)
-    if not user_args.letter and not user_args.rand:
-        print("please give at leaset one argument of the fallowing number of topics or list of letters")
-        sys.exit(1)
-    letter_folders = random.sample(os.listdir(ASPAKLARIA_HTML_FILES), int(user_args.rand)) if not user_args.letter else ["{}_Test".format(l) for l in  user_args.letter.split()] #[None]*int(user_args.rand)
-    if not user_args.rand:
-        num_rand_files = [None]*len(letter_folders)
-    elif not user_args.letter:
-        num_rand_files = [1] * len(letter_folders)
-    else:
-        num_rand_files = [int(num) for num in user_args.rand.split()]
-
-    for letter_folder, num_rand in zip(letter_folders, num_rand_files):
-        if not letter_folder:
-            for i in range(num_rand):
-                parse_html_file(letter_folder, 1)
-        else:
-            parse_html_file(letter_folder, num_rand)
+    # args = argparse.ArgumentParser()
+    # args.add_argument("-l", "--letter", dest="letter", default=None, help="list of letters with the Gimatria number ex: 020_KAF to be parsed and posted to the db, if empty must put in a number of topics to be chosen randomly from all the letters")
+    # args.add_argument("-r", "--rand", dest="rand", default=None, help="a list of numbers respectively to the letters in the rand numbers of topics that will be chosen from the letter, 0 will parse the whole letter as well as keeping this arg blank")
+    # args.add_argument("-f", "--file", dest="file", default=None, help="full path of a single topic file to parse and push to the DB")
+    # user_args = args.parse_args()
+    #
+    # # testing!
+    # if user_args.file:
+    #     try:
+    #         parse_by_topic(user_args.file)
+    #     except:
+    #         "{} has failed".format(user_args.file)
+    #     sys.exit(1)
+    # if not user_args.letter and not user_args.rand:
+    #     print("please give at leaset one argument of the fallowing number of topics or list of letters")
+    #     sys.exit(1)
+    # letter_folders = random.sample(os.listdir(ASPAKLARIA_HTML_FILES), int(user_args.rand)) if not user_args.letter else ["{}_Test".format(l) for l in  user_args.letter.split()] #[None]*int(user_args.rand)
+    # if not user_args.rand:
+    #     num_rand_files = [None]*len(letter_folders)
+    # elif not user_args.letter:
+    #     num_rand_files = [1] * len(letter_folders)
+    # else:
+    #     num_rand_files = [int(num) for num in user_args.rand.split()]
+    #
+    # for letter_folder, num_rand in zip(letter_folders, num_rand_files):
+    #     if not letter_folder:
+    #         for i in range(num_rand):
+    #             parse_html_file(letter_folder, 1)
+    #     else:
+    #         parse_html_file(letter_folder, num_rand)
 
     # add_found_to_topics(collection='aspaklaria_topics')
     # add_found_to_topics(collection='pairing')
