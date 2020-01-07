@@ -9,10 +9,13 @@ import time
 
 from docx import Document
 from data_utilities.util import convert_dict_to_array, ja_to_xml
-from sources.functions import post_index, post_text, add_term, add_category
 from sources.yesh_seder_lamishna.Parse_YSLM import make_gematria_list
 import re
 #import copy
+try:
+    import cPickle as pickle
+except ImportError:  # python 3.x
+    import pickle
 
 def insert_break_tags(text_to_break):
     text_to_break = re.sub(ur'(:)\s*@\s*(<b>)', u'\g<1><br>\g<2>', text_to_break)
@@ -172,64 +175,8 @@ if __name__ == "__main__":
                     if len(comment) > 0:
                         mishna[index] = re.sub(ur'@', ' ', comment)
 
-    # no yadayim and kinnim, no commentary on it
-    mishnah_indexes = library.get_indexes_in_category(u'Mishnah', full_records = True)[:50]
-    mishnah_indexes = mishnah_indexes + library.get_indexes_in_category(u'Mishnah', full_records = True)[51:61]
-    mishnah_indexes = mishnah_indexes + library.get_indexes_in_category(u'Mishnah', full_records = True)[62:]
-
-    server = u'http://ezra.sandbox.sefaria.org'
-    add_term(u'Tosafot Rabbi Akiva Eiger', u'תוספות רבי עקיבא איגר', server = server)
-    for seder in [u'Seder Zeraim', u'Seder Moed', u'Seder Nashim', u'Seder Nezikin', u'Seder Kodashim', u'Seder Tahorot']:
-        add_category(seder, [u'Mishnah', u'Commentary', u'Tosafot Rabbi Akiva Eiger', seder], server=server)
-
-
-    for masechet_index in mishnah_indexes:
-        english_title = u'Tosafot Rabbi Akiva Eiger on {}'.format(masechet_index.get_title(u'en'))
-        hebrew_title = u'{} {}'.format(u'תוספות רבי עקיבא איגר על', masechet_index.get_title(u'he'))
-
-        ja = JaggedArrayNode()
-        ja.add_primary_titles(english_title, hebrew_title)
-        ja.add_structure([u'Chapter', u'Mishnah', u'Comment'])
-        ja.validate()
-
-        if u'Seder Zeraim' in masechet_index.categories:
-            seder = u'Seder Zeraim'
-        elif u'Seder Moed' in masechet_index.categories:
-            seder = u'Seder Moed'
-        elif u'Seder Nashim' in masechet_index.categories:
-            seder = u'Seder Nashim'
-        elif u'Seder Nezikin' in masechet_index.categories:
-            seder = u'Seder Nezikin'
-        elif u'Seder Kodashim' in masechet_index.categories:
-            seder = u'Seder Kodashim'
-        else:
-            seder = u'Seder Tahorot'
-
-        index_dict = {
-            u'title': english_title,
-            u'base_text_titles': [masechet_index.get_title('en')],
-            u'dependence': u'Commentary',
-            u'base_text_mapping': u'many_to_one',
-            u'collective_title': u'Tosafot Rabbi Akiva Eiger',
-            u'categories': [u'Mishnah',
-                            u'Commentary',
-                            u'Tosafot Rabbi Akiva Eiger',
-                            seder],
-            u'schema': ja.serialize(),
-        }
-        post_index(index_dict, server = server)
-        version = {
-            u'text': raem[masechet_index.get_title(u'en')],
-            u'language': u'he',
-            u'versionTitle': u'Vilna, 1908-1909',
-            u'versionSource': u'https://www.nli.org.il/he/books/NNL_ALEPH002016147/NLI'
-        }
-        post_text(english_title, version, server = server)
-
-    #add comment index form
-
-    #ja_to_xml(raem_comments[u'Mishnah Sheviit'], [u'perek', u'mishnah', u'comment'], u'Sheviit_comments_test.xml')
+    with open('raem.p', 'wb') as fp:
+        pickle.dump(raem, fp)
 
     end = time.time()
     print end-start
-
