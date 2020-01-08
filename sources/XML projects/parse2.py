@@ -7,7 +7,7 @@ from data_utilities.XML_to_JaggedArray import XML_to_JaggedArray
 from sefaria.helper.schema import *
 import bleach
 
-SERVER = "http://proto.sefaria.org"
+SERVER = "http://ste.sefaria.org"
 
 def reorder_modify(text):
     return bleach.clean(text, strip=True)

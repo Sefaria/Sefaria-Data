@@ -22,7 +22,8 @@ class XML_to_JaggedArray:
 
     def __init__(self, title, file, allowedTags, allowedAttributes, post_info=None,
                  dict_of_names={}, print_bool=False, array_of_names=[], deleteTitles=True,
-                 change_name=False, assertions=False, image_dir=None, titled=False, remove_chapter=True):
+                 change_name=False, assertions=False, image_dir=None, titled=False, remove_chapter=True,
+                 versionInfo=[]):
         self.title = title
         self.writer = UnicodeWriter(open("{}.csv".format(file.split(".")[0]), 'w'))
         self.post_info = post_info
@@ -47,6 +48,7 @@ class XML_to_JaggedArray:
         self.print_bool = print_bool #print results to CSV file
         self.footnotes_within_footnotes = {} #used in English Mishneh Torah translations for footnotes with Raavad being quoted
         self.word_to_num = WordsToNumbers()
+        self.versionInfo = versionInfo
         self.remove_chapter_when_cleaning = remove_chapter
 
     def set_title(self, title):
@@ -265,6 +267,8 @@ class XML_to_JaggedArray:
     def post(self, ref, text, not_last_key):
         text = self.modify_before_post(text)
         if self.print_bool:
+            for row in self.versionInfo:
+                self.writer.writerow(row)
             self.write_text_to_file(ref, text)
         elif self.post_info["server"] != "local":
             send_text = {
@@ -357,28 +361,42 @@ class XML_to_JaggedArray:
         for index, text in enumerate(text_arr):
             if len(text) == 0:
                 continue
-            text_arr[index] = removeNumberFromStart(text_arr[index])
-            text_arr[index] = text_arr[index].replace("<sup><xref", "<xref").replace("</xref></sup>", "</xref>")
-            ft_ids, ft_sup_nums = extractIDsAndSupNums(text_arr[index])
+            try:
+                text_arr[index] = removeNumberFromStart(text_arr[index])
+                text_arr[index] = text_arr[index].replace("<sup><xref", "<xref").replace("</xref></sup>", "</xref>")
+                ft_ids, ft_sup_nums = extractIDsAndSupNums(text_arr[index])
 
-            ft_pos = getPositions(text_arr[index])
+                ft_pos = getPositions(text_arr[index])
 
-            assert len(ft_ids) == len(ft_sup_nums) == len(ft_pos), "id={},sups={},pos={},index={}".format(ft_ids, ft_sup_nums, ft_pos, index)
+                assert len(ft_ids) == len(ft_sup_nums) == len(ft_pos), "id={},sups={},pos={},index={}".format(ft_ids, ft_sup_nums, ft_pos, index)
 
-            if node_name in footnotes.keys():
-                for i in range(len(ft_ids)):
-                    reverse_i = len(ft_ids) - i - 1
-                    ftnote_text = footnotes[node_name][ft_ids[reverse_i]]
-                    text_to_insert = buildFtnoteText(ft_sup_nums[reverse_i], ftnote_text)
-                    pos = ft_pos[reverse_i]
-                    modified_text = u"{}{}{}".format(text_arr[index][0:pos], text_to_insert, text_arr[index][pos:])
-                    text_arr[index] = modified_text
+                node_name = u" ".join(node_name.split()[0:-1]) if node_name[-1].isdigit() else node_name
+                if node_name in footnotes.keys():
+                    for i in range(len(ft_ids)):
+                        reverse_i = len(ft_ids) - i - 1
+                        ftnote_text = footnotes[node_name][ft_ids[reverse_i]]
+                        text_to_insert = buildFtnoteText(ft_sup_nums[reverse_i], ftnote_text)
+                        pos = ft_pos[reverse_i]
+                        modified_text = u"{}{}{}".format(text_arr[index][0:pos], text_to_insert, text_arr[index][pos:])
+                        text_arr[index] = modified_text
 
-                all = re.findall(footnote_pattern, text_arr[index])
-                for each in all:
-                    text_arr[index] = text_arr[index].replace(each, "")
+                    all = re.findall(footnote_pattern, text_arr[index])
+                    for each in all:
+                        text_arr[index] = text_arr[index].replace(each, "")
 
-            text_arr[index] = self.fix_html(text_arr[index])
+
+
+                text_arr[index] = self.fix_html(text_arr[index])
+            except (IndexError, AttributeError) as e:
+                if text_arr:
+                    print node_name
+                    # if isinstance(text_arr[0], unicode):
+                    #     print "No chapter tag at the beginning"
+                    # if isinstance(text_arr[-1], unicode):
+                    #     print "No chapter tag at the end"
+                    # if isinstance(text_arr[0], list) and isinstance(text_arr[-1], list):
+                    #     print "No chapter tag somewhere in the middle"
+                text_arr = []
         return text_arr
 
 
@@ -429,7 +447,6 @@ class XML_to_JaggedArray:
         elif child.tag == "volume":
             pass
         elif child.tag == "chapter" and child.text.startswith("CHAPITRE"):
-            print child.text
             child.text = child.text.replace("PREMIER", "I").replace(".", "").strip()
             child.text = str(roman_to_int(child.text.split()[-1]))
         # if child.tag == "h1" and self.title == "Teshuvot Maharam":
@@ -458,16 +475,15 @@ class XML_to_JaggedArray:
                         text["text"].append({"text": []})
                     text["text"].append(self.go_down_to_text(child, element))
                 else:
-                    print child.text
                     child.text = self.cleanNodeName(child.text)
                     text[child.text] = self.go_down_to_text(child, element)
             else:
                 if child.tag == "ftnote" or prev_footnote:
                     self.add_footnote(parent, element, child)
                     prev_footnote = True
-                elif self.siblingsHaveChildren(element) > 0:
-                    self.siblingsHaveChildren(element)
-                    text["subject"] += [self.cleanText(child.xpath("string()").replace("\n\n", " "))]
+                # elif self.siblingsHaveChildren(element) > 0:
+                #     self.siblingsHaveChildren(element)
+                #     text["subject"] += [self.cleanText(child.xpath("string()").replace("\n\n", " "))]
                 else:
                     if index == 0 and (child.tag == "title" or child.tag == "h1"):
                         still_titles = True
@@ -512,9 +528,11 @@ class XML_to_JaggedArray:
     def convertManyIntoOne(self, text, node_name):
         array = []
         prev_num = 0
+        num_dicts_found = 0
         for count, x in enumerate(text):
             if type(x) is dict:
-                array.append(self.convertManyIntoOne(x['text'], "{} {}".format(node_name, count+1)))
+                num_dicts_found += 1
+                array.append(self.convertManyIntoOne(x['text'], "{} {}".format(node_name, num_dicts_found)))
             else:
                 ''''
                 add to array based on starting numerals for each sentence that dictate where in the array each line goes
@@ -528,6 +546,9 @@ class XML_to_JaggedArray:
                 prev_num = int(x.split(".")[0])
                 '''
                 array.append(x)
+
+        if len(array) > 1 and not isinstance(array[0], list) and isinstance(array[1], list): #array[0] is title
+            array = array[1:]
 
         if len(array) > 0 and type(array[0]) is not list: #not list in other words string or unicode
             #array = self.pre_parse(array, node_name)
