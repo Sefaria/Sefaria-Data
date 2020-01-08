@@ -8,6 +8,7 @@ from sefaria.system.exceptions import *
 from sefaria.model import *
 from sefaria.model.schema import TitleGroup
 import csv
+from sources.functions import *
 '''
 Take an index, serialize schema, travel through schema replacing every instance of old_title with new_title
 and then load new index with this schema
@@ -75,8 +76,8 @@ def alter_contents(contents, new_index_title, book_term):
     new_contents["schema"] = alter_schema(contents["schema"], new_index_title, new_index_he_title)
 
     new_contents["categories"] = [cat.replace(old_enTerm, new_enTerm) for cat in contents["categories"]]
-    new_contents["titleVariants"] = [title.replace(old_enTerm, new_enTerm) for title in contents["titleVariants"]]
-    new_contents["heTitleVariants"] = [title.replace(old_heTerm, new_heTerm) for title in contents["heTitleVariants"]]
+    new_contents["titleVariants"] = []
+    new_contents["heTitleVariants"] = []
 
     return new_contents
 
@@ -144,11 +145,11 @@ if __name__ == "__main__":
         try:
             existing_index_contents = verify_titles_and_return_contents(base_text_title, existing_index_title, new_index_title)
         except InputError as e:
-            print(e.message)
+            print(e)
             continue
         if existing_index_contents:
             #alter the copy of the index we are cloning and save the new index
             new_index_contents = alter_contents(existing_index_contents, new_index_title, book_term)
-            new_index = Index(new_index_contents).save()
-            print(new_index.contents(v2=True))
-
+            #new_index = Index(new_index_contents).save()
+            #print new_index.contents(v2=True)
+            post_index(new_index_contents)

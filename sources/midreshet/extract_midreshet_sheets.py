@@ -54,8 +54,20 @@ class MidreshetCursor(object):
         cnxn = pyodbc.connect(connect_string)
         self.cursor = cnxn.cursor()
 
+    def fetch_iter(self):
+        while True:
+            item = self.cursor.fetchone()
+            if item:
+                yield item
+            else:
+                break
+        raise StopIteration
+
     def __getattr__(self, item):
         return getattr(self.cursor, item)
+
+    def __iter__(self):
+        return self.cursor
 
 
 class NGramCatcher(object):
@@ -102,6 +114,54 @@ class SefariaTermsAndTitles(object):
         self.titles_and_terms_counter.update(titles)
         for t in titles:
             self.terms_to_refs_map[t].add(input_string)
+
+
+class Series(object):
+
+    def __init__(self, series_id, series_name, destination):
+        self.id = series_id
+        self.name = series_name
+        self._destination = destination
+        self._sheet_list = self._get_sheet_list()
+
+    def _get_sheet_list(self):
+        my_cursor.execute('SELECT id, page_num FROM Pages WHERE series_id=? ORDER BY page_num', (self.id,))
+        sheet_urls = []
+        for page in my_cursor:
+            try:
+                url = get_url_for_sheet_id(page.id, self._destination, my_mongo_client.yonis_data.server_map)
+            except TypeError:
+                url = u''
+            sheet_urls.append(url)
+
+        return sheet_urls
+
+    def get_sheets(self):
+        for sheet in self._sheet_list:
+            yield sheet
+
+
+def get_series_mapping(destination):
+    my_cursor.execute('SELECT * FROM Series')
+    return {c.id: Series(c.id, c.name, destination) for c in my_cursor.fetchall()}
+
+
+def parse_expansion(expansion):
+    if not expansion or expansion.isspace():
+        return
+
+    # expansion is already made up of html elements - drop as is (more or less)
+    if re.search(ur'[<>]', expansion):
+        soup = BeautifulSoup(expansion, 'xml')
+        if not soup.string or soup.string.isspace():
+            return
+        return expansion.replace(u'http://', u'https://')
+    else:
+        matches = re.finditer(ur'(?P<url>[^{}]*){{DATA}}(?P<text>[^{}]*){{ITEM}}', expansion)
+        link_list = [u'<a href={}>{}</a>'.format(match.group('url'), match.group('text')) for match in matches
+                     if urlparse(match.group('url')).hostname]  # filter out `http://` without any actual url
+
+        return u'<br>'.join(map(lambda x: x.replace(u'http://', u'https://'), link_list))
 
 
 def convert_row_to_dict(table_row):
@@ -370,6 +430,19 @@ def cache_to_mongo(mongo_client, ref_builder):
     return wrapper
 
 
+'''
+Steps:
+1) Get a function that does the lookup. Function should take server, page_id
+2) Get a temp fix for the sheet ids. For now, create a special collection with a single document. This document can have a "next_id" field. Get and increment as an atomic operation.
+3) Dump the RefSources collection from yonis_data
+4) Get some example sheets. We'll probably want to save their json and re-upload them so we can make a comparison. re-uploading might not be necessary, but we'll definitely want to save the json.
+5) Drop the collection RefSources
+6) For now, if the method "refined_ref_by_text" doesn't return something useful, return None
+7) Perform visual analysis of the sheets.
+8) Repeat steps 6 & 7 as needed.
+'''
+
+
 def get_ref_for_resource(ref_builder, resource_id, exact_location, resource_text):
     if exact_location is None:
         return None
@@ -399,8 +472,8 @@ def get_ref_for_resource(ref_builder, resource_id, exact_location, resource_text
             return constructed_ref.normal()
         if refined_ref:
             return refined_ref.normal()
-        else:
-            return constructed_ref.normal()
+        # else:
+        #     return constructed_ref.normal()
 
     else:
         return None
@@ -498,6 +571,8 @@ class GroupManager(object):
                 time.sleep(3)
             else:
                 print("Got bad status code. Exiting")
+                with codecs.open('errors.html', 'w', 'utf-8') as fp:
+                    fp.write(raw_response.text)
                 sys.exit(1)
 
         response = raw_response.json()
@@ -567,8 +642,11 @@ class GroupManager(object):
             if self.group_cache[group_name]['num_sheets'] >= 3 and not self.group_cache[group_name]['public']:
                 self.make_group_public(group_name)
 
-    def default_group(self):
-        group_name = u'מדרשת'
+    def default_group(self, draft=False):
+        if draft:
+            group_name = u'מדרשת טיוטה'
+        else:
+            group_name = u'מדרשת'
         if group_name not in self.group_cache:
             self.cache_group_from_server(group_name)
 
@@ -579,7 +657,7 @@ class GroupManager(object):
             self.add_new_group({
                 'filename': 'midreshet_logo2.jpg',
                 'data': logo_data,
-                'name': u'מדרשת',
+                'name': group_name,
                 'body': '',
                 'type': 'image/pjpeg',
                 'logoId': None
@@ -592,7 +670,18 @@ class GroupManager(object):
 class MidreshetGroupManager(GroupManager):
 
     def get_and_register_group_for_sheet(self, sheet_id):
-        return self.default_group()
+        cursor = MidreshetCursor()
+        cursor.execute('SELECT status FROM Pages WHERE Pages.id=?', (sheet_id, ))
+
+        try:
+            status = int(cursor.fetchone().status)
+        except (TypeError, ValueError):
+            status = 0
+
+        if status in {3, 4}:
+            return self.default_group()
+        else:
+            return self.default_group(draft=True)
 
 
 class SheetRelation(object):
@@ -708,6 +797,11 @@ def get_sheet_by_id(page_id, rebuild_cache=False):
                    'FROM PageTags P JOIN Tags T ON P.tag_id = T.id '
                    'WHERE P.page_id=?', (page_id,))
     sheet['tags'] = [t.tag for t in cursor.fetchall()]
+    cursor.execute('SELECT Seminary.name FROM Pages JOIN Seminary ON Pages.seminary_id = Seminary.id WHERE Pages.id=?',
+                   (page_id,))
+    result = cursor.fetchone()
+    if result and result.name:
+        sheet['tags'].append(result.name)
 
     cursor.execute('SELECT first_name, last_name FROM Users WHERE id=?', (sheet['userId'],))
     result = cursor.fetchone()
@@ -775,14 +869,16 @@ def format_terms(term_list):
                 term_text_list.append(format_source_text(term_item['body']))
 
         formatted_terms.append(u'<i>{}</i><ul style="margin: 1px;"><li>{}</li></ul>'.
-                               format(term_type, u'</li><li>'.join(term_text_list)))
-    return u'<br>'.join(formatted_terms)
+                               format(u'<span style="color: #999">{}</span>'.format(term_type),
+                                      u'</li><li>'.join(term_text_list)))
+    return u'<small>{}</small>'.format(u'<br>'.join(formatted_terms))
 
 
 def format_dictionaries(word_list):
     """Consider making this into descriptive lists in the future."""
     entries = [u'{} - {}'.format(word['name'], format_source_text(word['body'])) for word in word_list]
-    return u'<i>{}</i><ul><li>{}</li></ul>'.format(u'מילים', u'</li><li>'.join(entries))
+    return u'<small><i>{}</i><ul><li>{}</li></ul></small>'.format(u'<span style="color: #999">{}</span><br>'
+                                                                  .format(u'מילים'), u'</li><li>'.join(entries))
 
 
 class VerseMarkWrapper(object):
@@ -912,7 +1008,7 @@ def format_source_text(source_text):
     source_text = u' '.join(source_text.split())
     source_text = bleach.clean(
         source_text,
-        tags=['ul', 'li', 'strong', 'i', 'br', 'a'],
+        tags=['ul', 'li', 'strong', 'i', 'br', 'a', 'big', 'table', 'tbody', 'thead', 'tr', 'td'],
         attributes={'a': ['href']},
         strip=True
     )
@@ -922,6 +1018,7 @@ def format_source_text(source_text):
 
 def final_source_clean(final_source_text):
     final_source_text = re.sub(ur'(<br>\s*)+<ul>', u'<ul>', final_source_text)
+    final_source_text = re.sub(ur'</ul>\s*(<br>\s*)+', u'</ul>', final_source_text)
     final_source_text = re.sub(ur'(<br>\s*){3,}', u'<br><br>', final_source_text)
     final_source_text = re.sub(ur'^\s*<br>|<br>\s*$', u'', final_source_text)
 
@@ -950,7 +1047,7 @@ def get_iframe_url(text_with_iframe):
     return iframe['src']
 
 
-def create_sheet_json(page_id, group_manager):
+def create_sheet_json(page_id, group_manager, series_map):
     raw_sheet = get_sheet_by_id(page_id)
     sheet = {
         'title': raw_sheet['name'],
@@ -972,6 +1069,11 @@ def create_sheet_json(page_id, group_manager):
             u'<strong>{}: {}</strong>'.format(u'הדף מאת', raw_sheet['author'])
         }
     )
+
+    sheet['sources'].append({
+        'options': {},
+        'outsideText': u'{}'.format(raw_sheet['description'])
+    })
 
     for resource in raw_sheet['resources']:
         source = {
@@ -1026,9 +1128,9 @@ def create_sheet_json(page_id, group_manager):
                 # source['outsideText'] = u'<span style="font-size: 24px; ' \
                 #                         u'text-decoration:underline;' \
                 #                         u' text-decoration-color:grey;">{}</span>'.format(cleaned_text)
-                source['outsideText'] = u'<strong>{}</strong>'.format(cleaned_text)
+                source['outsideText'] = u'<strong><big>{}</big></strong>'.format(cleaned_text)
             else:
-                diyun = u'<span style="text-decoration:underline; text-decoration-color:grey">{}</span>'.format(u'דיון')
+                diyun = u'<span style="text-decoration:underline; color: #999">{}</span>'.format(u'דיון')
 
                 if re.match(u'^<ul>', cleaned_text):
                     source['outsideText'] = u'{}{}'.format(diyun, cleaned_text)
@@ -1106,7 +1208,7 @@ def create_sheet_json(page_id, group_manager):
                         'he': source['text']['he'],
                         'en': ''
                     }
-                    del source['text']
+                    # del source['text']
 
         # final source cleanup
         if 'outsideText' in source:
@@ -1117,7 +1219,38 @@ def create_sheet_json(page_id, group_manager):
             source['text']['he'] = final_source_clean(source['text']['he'])
 
         sheet['sources'].append(source)
-        sheet['group'] = group_manager.get_and_register_group_for_sheet(page_id)
+
+    # add external links for further reading
+    external = parse_expansion(raw_sheet['bgAndExpansion'])
+    if external:
+        sheet['sources'].append({
+            'outsideText': final_source_clean(u'<small>{}:<br>{}</small>'.format(u'קישורים לרקע והרחבה', external))
+        })
+
+    # add instructor sheet link if one exists:
+    instructor_sheet = my_mongo_client.yonis_data.instructor_sheets.find_one({'pageId': page_id})
+    if instructor_sheet:
+        sheet['sources'].append({
+            'outsideText': u'<small>{}<br><a href={}>{}</a></small>'.format(
+                u'דף הנחיות למנחה:', instructor_sheet['url'], instructor_sheet['name'])
+        })
+
+    # handle sheet series
+    if raw_sheet['series_id'] in series_map:
+        series = series_map[raw_sheet['series_id']]
+        assert isinstance(series, Series)
+        url_list = []
+        for i, s in enumerate(series.get_sheets(), 1):
+            if i == raw_sheet['page_num']:
+                continue
+            else:
+                url_list.append(u'<a href={}>{}</a>'.format(s, i))
+        text_part = u'דף מספר {} בסדרה {}, דפים נוספים בסדרה:'.format(raw_sheet['page_num'], series.name)
+        sheet['sources'].append({
+            'outsideText': u'<small>{}<br>{}</small>'.format(text_part, u' '.join(url_list))
+        })
+
+    sheet['group'] = group_manager.get_and_register_group_for_sheet(page_id)
     return sheet
 
 
@@ -1190,7 +1323,9 @@ def bulk_sheet_post(wrapped_sheet_list, server='http://localhost:8000'):
                 post_sheet(sheet_json, server=server, weak_network=True)
 
         else:
-            response = post_sheet(sheet_json, server=server)
+            response = ''
+            while not isinstance(response, dict):
+                response = post_sheet(sheet_json, server=server)
             server_map.insert_one({'pageId': page_id, 'server': server, 'serverIndex': response['id']})
     return
 
@@ -1298,6 +1433,7 @@ if __name__ == '__main__':
     #     writer.writerows(to_examine)
 
     relation_manager = SheetManager()
+    series_mapping = get_series_mapping(destination_server)
     my_cursor.execute('SELECT id, name, parent_id FROM Pages')
     for sheet_data in my_cursor.fetchall():
         relation_manager.create_sheet(sheet_data.id, sheet_data.name, sheet_data.parent_id)
@@ -1317,7 +1453,7 @@ if __name__ == '__main__':
         fp.write(u''.join(rendered_relations))
 
     # my_cursor.execute('SELECT id FROM Pages WHERE parent_id = 0')
-    my_wrapped_sheet_list = [SheetWrapper(m.sheet_id, create_sheet_json(m.sheet_id, group_handler))
+    my_wrapped_sheet_list = [SheetWrapper(m.sheet_id, create_sheet_json(m.sheet_id, group_handler, series_mapping))
                              for m in tqdm(root_sheets)]
     print('finished creating sheets')
     num_processes = 20
@@ -1328,7 +1464,9 @@ if __name__ == '__main__':
     from concurrent.futures.thread import ThreadPoolExecutor
     with ThreadPoolExecutor(max_workers=num_processes) as executor:
         executor.map(p_sheet_poster, sheet_chunks)
-    group_handler.publicize_groups()
+    # map(p_sheet_poster, sheet_chunks)
+    print('done')
+    group_handler.make_group_public(u'מדרשת')
 
     # qa_sheets = random.sample([ws for ws in my_wrapped_sheet_list if ws.sheet_json['sources']], 60)
     # qa_rows = [
