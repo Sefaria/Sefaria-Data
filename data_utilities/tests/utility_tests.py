@@ -1,8 +1,15 @@
 # encoding=utf-8
 
+import re
+import os
+import codecs
 import pytest
 from StringIO import StringIO
 from data_utilities import util
+
+import django
+django.setup()
+from sefaria.model import *
 
 
 class Test_WeightedLevenshtein:
@@ -100,12 +107,77 @@ def test_clean_whitespace():
 
 
 def test_split_version():
-    pass
+    single_version = {
+        'versionTitle': 'test version',
+        'text': [
+            ['foo', 'bar'],
+            ['hello', 'world']
+        ]
+    }
+    split_versions = util.split_version(single_version, 2)
+    assert len(split_versions) == 2
+    assert split_versions[0]['versionTitle'] == 'test version, Vol 1'
+    assert split_versions[1]['versionTitle'] == 'test version, Vol 2'
+    assert len(split_versions[0]['text']) == 2
+    assert split_versions[0]['text'] == [['foo', 'bar'], []]
+    assert split_versions[1]['text'] == [[], ['hello', 'world']]
 
 
 def test_split_list():
-    pass
+    stuff = list(range(12))
+    split_stuff = list(util.split_list(stuff, 3))
+    assert len(split_stuff) == 3
+    assert split_stuff[0] == [0, 1, 2, 3]
+    assert split_stuff[1] == [4, 5, 6, 7]
+    assert split_stuff[2] == [8, 9, 10, 11]
 
 
 def test_schema_with_default():
-    pass
+    ja = JaggedArrayNode()
+    ja.add_primary_titles('foo', u'פו')
+    ja.add_structure(['Word'])
+    d = util.schema_with_default(ja)
+
+    assert d.serialize() == {
+        'key': 'foo',
+        'nodes': [
+            {
+                'addressTypes': ['Integer'],
+                'default': True,
+                'depth': 1,
+                'key': 'default',
+                'nodeType': 'JaggedArrayNode',
+                'sectionNames': ['Word']
+            }
+        ],
+        'titles': [
+            {'lang': 'en', 'primary': True, 'text': 'foo'},
+            {'lang': 'he', 'primary': True, 'text': u'פו'}
+        ]
+    }
+
+
+def test_placeholder():
+    holder = util.PlaceHolder()
+    assert holder(re.search(r'f', 'foo'))
+    assert holder.group() == 'f'
+
+
+def test_file_to_ja():
+    data = StringIO('''@22\nfoo\nbar\n@22\nhello\nworld''')
+    ja = util.file_to_ja(2, data, ['@22'], lambda x: [c.rstrip() for c in x])
+    assert ja.array() == [
+        ['foo', 'bar'],
+        ['hello', 'world']
+    ]
+
+
+def test_restructure_file():
+    with codecs.open('test_file.txt', 'w', 'utf-8') as fp:
+        fp.write('foo\nbar')
+    util.restructure_file('test_file.txt', lambda x: '{}!\n'.format(x.rstrip()))
+    with codecs.open('test_file.txt', 'r', 'utf-8') as fp:
+        fixed = fp.read()
+
+    assert fixed == 'foo!\nbar!\n'
+    os.remove('test_file.txt')
