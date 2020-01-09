@@ -173,8 +173,8 @@ def test_file_to_ja():
 
 
 def test_file_to_ja_g():
-    data = StringIO(u'''@22א\nfoo\nbar\n@22ג\nhello\nworld''')
-    ja = util.file_to_ja_g(2, data, [ur'@22(?P<gim>[\u05d0-\u05ea])'], lambda x: [c.rstrip() for c in x], True)
+    data = StringIO('''@22א\nfoo\nbar\n@22ג\nhello\nworld''')
+    ja = util.file_to_ja_g(2, data, [r'@22(?P<gim>[\u05d0-\u05ea])'], lambda x: [c.rstrip() for c in x], True)
     assert ja.array() == [
         ['foo', 'bar'],
         [],
