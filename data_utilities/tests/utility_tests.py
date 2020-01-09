@@ -1,5 +1,8 @@
 # encoding=utf-8
 
+import re
+import os
+import codecs
 import pytest
 from StringIO import StringIO
 from data_utilities import util
@@ -152,3 +155,29 @@ def test_schema_with_default():
             {'lang': 'he', 'primary': True, 'text': u'פו'}
         ]
     }
+
+
+def test_placeholder():
+    holder = util.PlaceHolder()
+    assert holder(re.search(r'f', 'foo'))
+    assert holder.group() == 'f'
+
+
+def test_file_to_ja():
+    data = StringIO('''@22\nfoo\nbar\n@22\nhello\nworld''')
+    ja = util.file_to_ja(2, data, ['@22'], lambda x: [c.rstrip() for c in x])
+    assert ja.array() == [
+        ['foo', 'bar'],
+        ['hello', 'world']
+    ]
+
+
+def test_restructure_file():
+    with codecs.open('test_file.txt', 'w', 'utf-8') as fp:
+        fp.write('foo\nbar')
+    util.restructure_file('test_file.txt', lambda x: '{}!\n'.format(x.rstrip()))
+    with codecs.open('test_file.txt', 'r', 'utf-8') as fp:
+        fixed = fp.read()
+
+    assert fixed == 'foo!\nbar!\n'
+    os.remove('test_file.txt')
