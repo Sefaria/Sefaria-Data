@@ -605,7 +605,7 @@ def ja_to_xml(ja, section_names, filename='output.xml'):
     root = ET.Element('root')
     build_xml(ja, section_names, root)
     tree = ET.ElementTree(root)
-    tree.write(filename, 'utf-8')
+    tree.write(filename, encoding="unicode")
 
 
 def file_to_ja(depth, infile, expressions, cleaner, grab_all=False):
@@ -875,7 +875,7 @@ def convert_dict_to_array(dictionary, default_value=list):
     assert callable(default_value)
 
     output_list = list()
-    dictionary = defaultdict(default_value, **dictionary)
+    dictionary = defaultdict(default_value, dictionary)
     for key in range(max(dictionary.keys()) + 1):
         output_list.append(dictionary[key])
     return output_list
