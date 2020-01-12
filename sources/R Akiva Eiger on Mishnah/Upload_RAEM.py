@@ -6,8 +6,9 @@ import django
 django.setup()
 from sefaria.model import *
 
-from sources.functions import post_index, post_text, add_term, add_category
+from sources.functions import post_index, post_text, add_term, add_category, post_link
 from data_utilities.dibur_hamatchil_matcher import match_ref
+from data_utilities.util import getGematria
 import re
 try:
     import cPickle as pickle
@@ -28,7 +29,8 @@ def extract_specific_comments(perek, perek_index, regex, index_list):
             # if the beginning of this comment references what we are looking for (bartenura or toyt)
             if re.search(regex, beginning):
                 list_of_comments.append(comment)
-                index_list.append(u'{}:{}:{}'.format(perek_index, mishna_index, comment_index))
+                index_list.append(u'{}:{}:{}'.format(perek_index+1, mishna_index+1, comment_index+1))
+
             # if this comment is referencing an earlier one (שם ד״ה)
             elif re.search(ur'\u05e9\u05dd \u05d3(?:\"|\u05f4)\u05d4', beginning):
                 base_not_found = True
@@ -50,7 +52,7 @@ def extract_specific_comments(perek, perek_index, regex, index_list):
                         current_comment_beginning = re.search(ur'<b>(.*?)</b>', mishna[temp_comment_index]).group(1)
                         if re.search(ur'\u05e9\u05dd \u05d3(?:\"|\u05f4)\u05d4', current_comment_beginning):
                             list_of_comments.append(mishna[temp_comment_index])
-                            index_list.append(u'{}:{}:{}'.format(perek_index, mishna_index, temp_comment_index))
+                            index_list.append(u'{}:{}:{}'.format(perek_index+1, mishna_index+1, temp_comment_index+1))
                 # else, doesnt belong, do nothing and go on to next comment
     return list_of_comments
 
@@ -81,11 +83,49 @@ def dh_extract_method(comment):
     dh = re.sub(ur' \u05d5?\u05db\u05d5(?:\'|\u05f3)', u'', dh)
     return dh
 
+# collect all comments with בא״ד
+def bod_index_list(text):
+    bod_index_list = []
+    for perek_index, perek in enumerate(text):
+        for mishna_index, mishna in enumerate(perek):
+            for comment_index, comment in enumerate(mishna):
+                # take the beginning of the comment
+                if re.search(ur'<b>(.*?)</b>', comment):
+                    beginning = re.search(ur'<b>(.*?)</b>', comment).group(1)
+                # if no bold just take the whole comment
+                else:
+                    beginning = comment
+                if re.search(ur'\u05d1\u05d0(?:\"|\u05f4)\u05d3', beginning):
+                    bod_index_list.append(u'{}:{}:{}'.format(perek_index + 1, mishna_index + 1, comment_index + 1))
+    return bod_index_list
+
+def get_comments(text, comment_indexes):
+    comments = []
+    for perek_index, perek in enumerate(text):
+        for mishna_index, mishna in enumerate(perek):
+            for comment_index, comment in enumerate(mishna):
+                # take the comment title (אות א)
+                if re.search(ur'\[(.*?)\]', comment):
+                    if re.search(ur'\[(.*?)\]', comment).group(1) in comments:
+                        comments.append(u'{} {}'.format(re.search(ur'\[(.*?)\]', comment).group(1), u'ב'))
+                    else:
+                        comments.append(re.search(ur'\[(.*?)\]', comment).group(1))
+                else:
+                    comments.append(re.search(ur'([^\s]+\s[^\s]+)', comment).group(1))
+                # add the coordinates
+                comment_indexes.append(u'{}:{}:{}'.format(perek_index + 1, mishna_index + 1, comment_index + 1))
+    return comments
+
+
 
 if __name__ == "__main__":
     with open('raem.p', 'rb') as fp:
         raem = pickle.load(fp)
-
+    links = []
+    links_helper_list = []
+    comments = {}
+    comments_indexes = {}
+    """
     # link with bartenura and tosfot yom tov
     for masechet in raem:
         #link perek by perek
@@ -93,15 +133,60 @@ if __name__ == "__main__":
             #list for specific index of comments in original perek mishna breakdown (i.e. p:m:c)
             bartenura_index_list = []
             bartenura_comments_list = extract_specific_comments(perek, perek_index, ur'\u05e8\u05e2?(?:\"|\u05f4)\u05d1', bartenura_index_list)
-            match_ref(Ref(u'Bartenura on {} {}'.format(masechet, perek_index+1)).text('he'), bartenura_comments_list, extract_and_split_dh, dh_extract_method=dh_extract_method)
+            bartenura_matches = match_ref(Ref(u'Bartenura on {} {}'.format(masechet, perek_index+1)).text('he'), bartenura_comments_list, extract_and_split_dh, dh_extract_method=dh_extract_method)
             toyt_index_list = []
             toyt_comments_list = extract_specific_comments(perek, perek_index, ur'\u05ea\u05d5?\u05d9(?:\"|\u05f4)\u05d8', toyt_index_list)
-            match_ref(Ref(u'Tosafot Yom Tov on {} {}'.format(masechet, perek_index+1)).text('he'), toyt_comments_list, extract_and_split_dh, dh_extract_method=dh_extract_method)
+            toyt_matches = match_ref(Ref(u'Tosafot Yom Tov on {} {}'.format(masechet, perek_index+1)).text('he'), toyt_comments_list, extract_and_split_dh, dh_extract_method=dh_extract_method)
 
-    #extract_and_split_dh(Ref(u'Tosafot Yom Tov on Mishnah Tamid 1:1:1').text('he'))
-    #dh_extract_method(raem['Mishnah Tamid'][0][0][0])
+            for n, index in enumerate(bartenura_index_list):
+                if bartenura_matches[u'matches'][n]:
+                    link = {
+                        u'refs': [
+                            u'Tosafot Rabbi Akiva Eiger on {} {}'.format(masechet, index),
+                            u'{}'.format(bartenura_matches[u'matches'][n])
+                        ],
+                        u'auto': True,
+                        u'generated_by': u'Upload RAEM',
+                        u'type': u'commentary',
+                    }
+                    links.append(link)
+                    links_helper_list.append(link[u'refs'][0])
 
+            for n, index in enumerate(toyt_index_list):
+                if toyt_matches[u'matches'][n]:
+                    link = {
+                        u'refs': [
+                            u'Tosafot Rabbi Akiva Eiger on {} {}'.format(masechet, index),
+                            u'{}'.format(toyt_matches[u'matches'][n])
+                        ],
+                        u'auto': True,
+                        u'generated_by': u'Upload RAEM',
+                        u'type': u'commentary',
+                    }
+                    links.append(link)
+                    links_helper_list.append(link[u'refs'][0])
+
+        bod_indexes = bod_index_list(raem[masechet])
+        for n, index in enumerate(bod_indexes):
+            index_groups = re.search(ur'(\d+):(\d+):(\d+)', index)
+            if u'Tosafot Rabbi Akiva Eiger on {} {}:{}:{}'.format(masechet, index_groups.group(1), index_groups.group(2), int(index_groups.group(3))-1) in links_helper_list:
+                link = {
+                    u'refs': [
+                        u'Tosafot Rabbi Akiva Eiger on {} {}'.format(masechet, index),
+                        links[links_helper_list.index(u'Tosafot Rabbi Akiva Eiger on {} {}:{}:{}'.format(masechet, index_groups.group(1), index_groups.group(2), int(index_groups.group(3))-1))][u'refs'][1]
+                    ],
+                    u'auto': True,
+                    u'generated_by': u'Upload RAEM',
+                    u'type': u'commentary',
+                }
+                links.append(link)
+                links_helper_list.append(link[u'refs'][0])
     """
+    for masechet in raem:
+        comment_indexes = []
+        comments[masechet] = get_comments(raem[masechet], comment_indexes)
+        comments_indexes[masechet] = comment_indexes
+
     # no yadayim and kinnim, no commentary on it
     mishnah_indexes = library.get_indexes_in_category(u'Mishnah', full_records=True)[:50]
     mishnah_indexes = mishnah_indexes + library.get_indexes_in_category(u'Mishnah', full_records=True)[51:61]
@@ -113,6 +198,7 @@ if __name__ == "__main__":
                   u'Seder Tahorot']:
         add_category(seder, [u'Mishnah', u'Commentary', u'Tosafot Rabbi Akiva Eiger', seder], server=server)
 
+
     for masechet_index in mishnah_indexes:
         english_title = u'Tosafot Rabbi Akiva Eiger on {}'.format(masechet_index.get_title(u'en'))
         hebrew_title = u'{} {}'.format(u'תוספות רבי עקיבא איגר על', masechet_index.get_title(u'he'))
@@ -120,13 +206,19 @@ if __name__ == "__main__":
         ja = JaggedArrayNode()
         ja.add_primary_titles(english_title, hebrew_title)
         ja.add_structure([u'Chapter', u'Mishnah', u'Comment'])
+        #ja.toc_zoom = 2
         ja.validate()
 
-        # amn = ArrayMapNode()
-        # amn.add_primary_titles(english_title, hebrew_title)
-        #
-        # depth = 0
-        # amn.serialize() in the index_dict? for schema?
+        scn = SchemaNode()
+        
+        for index, comment in enumerate(comments[masechet_index.get_title(u'en')]):
+            amn_hebrew_title = comment
+            amn_english_title = u'Letter {}'.format(getGematria(re.search(ur'[^\s]+\s([^\s]+)', comment).group(1)))
+            amn = ArrayMapNode()
+            amn.add_primary_titles(amn_english_title, amn_hebrew_title)
+            amn.depth = 0
+            amn.wholeRef = u'{} {}'.format(english_title, comments_indexes[masechet_index.get_title(u'en')][index])
+            scn.append(amn)
 
         if u'Seder Zeraim' in masechet_index.categories:
             seder = u'Seder Zeraim'
@@ -152,6 +244,9 @@ if __name__ == "__main__":
                             u'Tosafot Rabbi Akiva Eiger',
                             seder],
             u'schema': ja.serialize(),
+            u'alt_structs': {
+                u'Letter': scn.serialize()
+            }
         }
         post_index(index_dict, server=server)
         version = {
@@ -161,8 +256,6 @@ if __name__ == "__main__":
             u'versionSource': u'https://www.nli.org.il/he/books/NNL_ALEPH002016147/NLI'
         }
         post_text(english_title, version, server=server)
-    
-    """
-    # add comment index form
+    #post_link(links, server=server)
 
-    # ja_to_xml(raem_comments[u'Mishnah Sheviit'], [u'perek', u'mishnah', u'comment'], u'Sheviit_comments_test.xml')
+
