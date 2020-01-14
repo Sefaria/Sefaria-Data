@@ -797,11 +797,17 @@ def get_sheet_by_id(page_id, rebuild_cache=False):
                    'FROM PageTags P JOIN Tags T ON P.tag_id = T.id '
                    'WHERE P.page_id=?', (page_id,))
     sheet['tags'] = [t.tag for t in cursor.fetchall()]
-    cursor.execute('SELECT Seminary.name FROM Pages JOIN Seminary ON Pages.seminary_id = Seminary.id WHERE Pages.id=?',
+    cursor.execute('SELECT Seminary.name, Seminary.url, Seminary.body FROM Pages JOIN Seminary ON Pages.seminary_id = Seminary.id WHERE Pages.id=?',
                    (page_id,))
     result = cursor.fetchone()
     if result and result.name:
         sheet['tags'].append(result.name)
+        if result.url:
+            sheet['seminary_data'] = u'<a href="{}">לאתר {}</a>'.format(result.url, result.name)
+        elif result.name == u'מעגל טוב':
+            sheet['seminary_data'] = result.body
+        else:
+            sheet['seminary_data'] = None
 
     cursor.execute('SELECT first_name, last_name FROM Users WHERE id=?', (sheet['userId'],))
     result = cursor.fetchone()
@@ -1219,6 +1225,12 @@ def create_sheet_json(page_id, group_manager, series_map):
             source['text']['he'] = final_source_clean(source['text']['he'])
 
         sheet['sources'].append(source)
+
+    # add link to organization website
+    if raw_sheet.get('seminary_data', None):
+        sheet['sources'].append({
+            'outsideText': final_source_clean(raw_sheet['seminary_data'])
+        })
 
     # add external links for further reading
     external = parse_expansion(raw_sheet['bgAndExpansion'])
