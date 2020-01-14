@@ -125,7 +125,7 @@ if __name__ == "__main__":
     links_helper_list = []
     comments = {}
     comments_indexes = {}
-    """
+
     # link with bartenura and tosfot yom tov
     for masechet in raem:
         #link perek by perek
@@ -181,7 +181,7 @@ if __name__ == "__main__":
                 }
                 links.append(link)
                 links_helper_list.append(link[u'refs'][0])
-    """
+
     for masechet in raem:
         comment_indexes = []
         comments[masechet] = get_comments(raem[masechet], comment_indexes)
@@ -206,7 +206,7 @@ if __name__ == "__main__":
         ja = JaggedArrayNode()
         ja.add_primary_titles(english_title, hebrew_title)
         ja.add_structure([u'Chapter', u'Mishnah', u'Comment'])
-        #ja.toc_zoom = 2
+        ja.toc_zoom = 2
         ja.validate()
 
         scn = SchemaNode()
@@ -256,6 +256,6 @@ if __name__ == "__main__":
             u'versionSource': u'https://www.nli.org.il/he/books/NNL_ALEPH002016147/NLI'
         }
         post_text(english_title, version, server=server)
-    #post_link(links, server=server)
+    post_link(links, server=server)
 
 

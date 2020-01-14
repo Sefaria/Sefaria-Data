@@ -11,7 +11,12 @@ from sources.functions import post_index, post_text, add_term, add_category
 import codecs
 import re
 import requests
+try:
+    import cPickle as pickle
+except ImportError:  # python 3.x
+    import pickle
 
+#return a list of the gematria of the letters -1 so that index 0 would be א
 def make_gematria_list(letters_list):
     for index, letter in enumerate(letters_list):
         if len(letter) > 0:
@@ -118,8 +123,7 @@ if __name__ == "__main__":
     #make a list of masechtot
     mishnah_indexes = library.get_indexes_in_category(u'Mishnah')
     mishnah_indexes = mishnah_indexes[:23]
-    #put an introduction at the beginning
-    #mishnah_indexes.insert(0, u'Introduction')
+
     #make a dict with the keys being the names of the masechtot and the values being the text of those masechtot
     yslm_dic = dict(zip(mishnah_indexes, yslm_masechtot))
 
@@ -137,11 +141,14 @@ if __name__ == "__main__":
             yslm[masechet][index] = break_into_comments(perek)
     #depth 4 ^
 
+    with open('yslm.p', 'wb') as fp:
+        pickle.dump(yslm, fp)
+
     mishnah_indexes = library.get_indexes_in_category(u'Mishnah', full_records = True)[:23]
     server = u'http://ezra.sandbox.sefaria.org'
     add_term(u'Yesh Seder LaMishnah', u'יש סדר למשנה', server = server)
     for seder in [u'Seder Zeraim', u'Seder Moed']:
-        add_category(u'Yesh Seder LaMishnah', [u'Mishnah', u'Commentary', u'Yesh Seder LaMishnah'], server=server)
+        add_category(seder, [u'Mishnah', u'Commentary', u'Yesh Seder LaMishnah', seder], server=server)
 
     #change introduction category
     response = requests.get(u'{}/api/v2/raw/index/Yesh_Seder_LaMishnah_Introduction'.format(server))
@@ -156,7 +163,7 @@ if __name__ == "__main__":
 
         ja = JaggedArrayNode()
         ja.add_primary_titles(english_title, hebrew_title)
-        ja.add_structure([u'Perek', u'Mishnah', u'Comment'])
+        ja.add_structure([u'Chapter', u'Mishnah', u'Comment'])
         ja.validate()
         index_dict = {
             u'title': english_title,
@@ -166,8 +173,8 @@ if __name__ == "__main__":
             u'collective_title': u'Yesh Seder LaMishnah',
             u'categories': [u'Mishnah',
                             u'Commentary',
-                            #u'Seder Zeraim' if u'Seder Zeraim' in masechet_index.categories else u'Seder Moed',
-                            u'Yesh Seder LaMishnah'],
+                            u'Yesh Seder LaMishnah',
+                            u'Seder Zeraim' if u'Seder Zeraim' in masechet_index.categories else u'Seder Moed'],
             u'schema': ja.serialize(),
         }
         post_index(index_dict, server = server)
