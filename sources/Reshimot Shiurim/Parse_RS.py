@@ -10,6 +10,7 @@ from sefaria.model import *
 from sources.functions import post_index, post_text, add_term, add_category
 from data_utilities.util import getGematria, convert_dict_to_array
 import codecs
+import requests
 import re
 
 
@@ -46,7 +47,9 @@ def break_into_amudim(masechtot):
 def break_into_paragraphs(amudim):
     for i, amud in enumerate(amudim):
         if amud:
-            amudim[i] = re.split(ur'\n', amud)
+            # connect any one word paragraphs to the paragraph after it with 2 break tags
+            amudim[i] = re.sub(ur'(\n[\u05d0-\u05ea]+)\n', '\g<1><br><br>', amudim[i])
+            amudim[i] = re.split(ur'\n', amudim[i])
             #if first paragraph is empty
             if not len(amudim[i][0]) > 0:
                 amudim[i].pop(0)
@@ -83,43 +86,47 @@ if __name__ == "__main__":
         my_talmud_indexes[i] = library.get_indexes_in_category(u'Talmud', full_records=True)[index]
 
     server = u'http://ezra.sandbox.sefaria.org'
+
     add_term(u'Reshimot Shiurim', u'רשימות שיעורים', server = server)
     for seder in [u'Seder Zeraim', u'Seder Nashim', u'Seder Nezikin']:
-        add_category(seder, [u'Talmud', u'Commentary', u'Reshimot Shiurim', seder], server = server)
+        add_category(seder, [u'Talmud', u'Bavli', u'Commentary', u'Reshimot Shiurim', seder], server = server)
 
     for i, masechet_index in enumerate(my_talmud_indexes):
-        english_title = u'Reshimot Shiurim on {}'.format(masechet_index.get_title(u'en'))
-        hebrew_title = u'{} {}'.format(u'רשימות שיעורים על', masechet_index.get_title(u'he'))
+            english_title = u'Reshimot Shiurim on {}'.format(masechet_index.get_title(u'en'))
+            hebrew_title = u'{} {}'.format(u'רשימות שיעורים על', masechet_index.get_title(u'he'))
 
-        ja = JaggedArrayNode()
-        ja.add_primary_titles(english_title, hebrew_title)
-        ja.add_structure([u'Daf', u'Paragraph'])
-        ja.validate()
+            ja = JaggedArrayNode()
+            ja.add_primary_titles(english_title, hebrew_title)
+            ja.add_structure([u'Daf', u'Paragraph'], address_types=[u'Talmud', u'Integer'])
+            ja.validate()
 
-        if u'Seder Zeraim' in masechet_index.categories:
-            seder = u'Seder Zeraim'
-        elif u'Seder Nashim' in masechet_index.categories:
-            seder = u'Seder Nashim'
-        elif u'Seder Nezikin' in masechet_index.categories:
-            seder = u'Seder Nezikin'
+            if u'Seder Zeraim' in masechet_index.categories:
+                seder = u'Seder Zeraim'
+            elif u'Seder Nashim' in masechet_index.categories:
+                seder = u'Seder Nashim'
+            elif u'Seder Nezikin' in masechet_index.categories:
+                seder = u'Seder Nezikin'
 
-        index_dict = {
-            u'title': english_title,
-            u'base_text_titles': [masechet_index.get_title('en')],
-            u'dependence': u'Commentary',
-            u'base_text_mapping': u'many_to_one',
-            u'collective_title': u'Reshimot Shiurim',
-            u'categories': [u'Talmud',
-                            u'Commentary',
-                            u'Reshimot Shiurim',
-                            seder],
-            u'schema': ja.serialize(),
-        }
-        post_index(index_dict, server = server)
-        version = {
-            u'text': rs[masechet_index.get_title(u'en')],
-            u'language': u'he',
-            u'versionTitle': version_titles[i],
-            u'versionSource': version_sources[i],
-        }
-        post_text(english_title, version, server = server)
+            index_dict = {
+                u'title': english_title,
+                u'base_text_titles': [masechet_index.get_title('en')],
+                u'dependence': u'Commentary',
+                u'base_text_mapping': u'many_to_one',
+                u'collective_title': u'Reshimot Shiurim',
+                u'categories': [u'Talmud',
+                                u'Bavli',
+                                u'Commentary',
+                                u'Reshimot Shiurim',
+                                seder],
+                u'schema': ja.serialize(),
+            }
+            post_index(index_dict, server = server)
+            version = {
+                u'text': rs[masechet_index.get_title(u'en')],
+                u'language': u'he',
+                u'versionTitle': version_titles[i],
+                u'versionSource': version_sources[i],
+            }
+            import time
+            time.sleep(10)
+            post_text(english_title, version, skip_links=True, server = server)
