@@ -12,6 +12,10 @@ from data_utilities.util import getGematria, convert_dict_to_array
 import codecs
 import requests
 import re
+try:
+    import cPickle as pickle
+except ImportError:  # python 3.x
+    import pickle
 
 
 def make_index_list(dapim):
@@ -76,6 +80,9 @@ if __name__ == "__main__":
 
     for masechet, amudim in rs.items():
         rs[masechet] = break_into_paragraphs(amudim)
+
+    with open('rs.p', 'wb') as fp:
+        pickle.dump(rs, fp)
 
 
     all_talmud_indexes = library.get_indexes_in_category(u'Talmud')
