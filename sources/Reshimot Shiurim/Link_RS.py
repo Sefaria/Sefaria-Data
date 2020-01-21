@@ -91,6 +91,7 @@ if __name__ == "__main__":
         rs = pickle.load(fp)
 
     links = []
+    base_links = []
 
     for masechet in rs:
         # link daf by daf
@@ -131,6 +132,18 @@ if __name__ == "__main__":
                             u'type': u'commentary',
                         }
                         links.append(link)
+                        talmud_ref = re.search(ur'Tosafot\s*on\s*([a-zA-Z]+\s*[a-zA-Z]*\s*\d+[ab]:\d+)', tosafot_matches[u'matches'][n].normal()).group(1)
+                        link = {
+                            u'refs': [
+                                u'Reshimot Shiurim on {} {}'.format(masechet, index),
+                                talmud_ref
+                            ],
+                            u'auto': True,
+                            u'generated_by': u'Link RS',
+                            u'type': u'commentary',
+                        }
+                        base_links.append(link)
+
 
                 for n, index in enumerate(index_rashi_comments):
                     if rashi_matches[u'matches'][n]:
@@ -144,10 +157,21 @@ if __name__ == "__main__":
                             u'type': u'commentary',
                         }
                         links.append(link)
+                        talmud_ref = re.search(ur'Rashi\s*on\s*([a-zA-Z]+\s*[a-zA-Z]*\s*\d+[ab]:\d+)', rashi_matches[u'matches'][n].normal()).group(1)
+                        link = {
+                            u'refs': [
+                                u'Reshimot Shiurim on {} {}'.format(masechet, index),
+                                talmud_ref
+                            ],
+                            u'auto': True,
+                            u'generated_by': u'Link RS',
+                            u'type': u'commentary',
+                        }
+                        base_links.append(link)
     end = time.time()
     print end - start
 
-    post_link(links, server=u'http://localhost:8000')
+    post_link(base_links, server=u'http://ezra.sandbox.sefaria.org')
 
     end = time.time()
     print end - start
