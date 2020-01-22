@@ -21,6 +21,9 @@ he_comm_title = u"לבושי שרד"
 file = "Akiva Eiger.csv"
 comm_title = "Rabbi Akiva Eiger"
 he_comm_title = u"רבי עקיבא איגר"
+# comm_title = "Chatam Sofer"
+# file = "Chatam.csv"
+# he_comm_title = u"חתם סופר"
 root.add_primary_titles("{} on Shulchan Arukh, Orach Chayim".format(comm_title), u"{} על שלחן ערוך אורח חיים".format(he_comm_title))
 root.key = "{} on Shulchan Arukh, Orach Chayim".format(comm_title)
 root.add_structure(["Siman", "Paragraph"])
@@ -59,7 +62,7 @@ def replacements(book, prev_book):
     return match.group(0) if match else None
 
 
-def get_book_and_seif(seif_k_link, prev_book, curr_siman_seif):
+def get_book_and_seif(seif_k_link, prev_book, curr_siman_seif, seif_from_csv, siman_from_csv):
     def get_seif(str, book):
         seif_marker = 'ס'
         if str.startswith(seif_marker):
@@ -85,7 +88,9 @@ def get_book_and_seif(seif_k_link, prev_book, curr_siman_seif):
         book = seif_k_link.split()[0]
         if seif_k_link.count(" ") == 0: #assume it's just a book
             book = replacements(seif_k_link, prev_book)
-            seif_k = curr_siman_seif.get("book", (1, 1))[1]
+            seif_k = int(seif_from_csv)
+            siman = int(siman_from_csv)
+            curr_siman_seif[book] = (siman, seif_k)
         else:
             book = replacements(book, prev_book)
             if not book:
@@ -138,7 +143,6 @@ prev_row = 0
 def write_row(row, n, prev_row):
     if n - prev_row != 0:
         prev_row = n
-        print n
     #writer.writerow(row)
     prev_row += 1
     return prev_row
@@ -196,9 +200,8 @@ if __name__ == "__main__":
             else:
                 time_to_run[n-1] = time.time() - before
                 before = time.time()
-            if n % 100 == 0:
-                print(n)
             siman = row[0]
+            seif_from_csv = row[1]
             bar_ilan = row[2]
             line = row[3]
             link_ref = row[4] if comm_title == "Levushei Serad" else ""
@@ -215,22 +218,27 @@ if __name__ == "__main__":
                 #simanim.writerow([siman, line, third])
                 prev_line = n
 
+            if seif_from_csv:
+                found_seif_from_csv = getGematria(seif_from_csv.split()[-1])
+
             if line == "":
                 prev_row = write_row(row, n, prev_row)
                 continue
 
 
-            if comm_title == "Levushei Serad":
+            if comm_title in ["Levushei Serad"]:
                 seif_k_re = re.search("@11(.*?)@33", line)
-                assert '@11' in line and '@33' in line
+                if not ('@11' in line and '@33' in line):
+                    print "{},{}".format(1+n, line)
+                    continue
                 line = line.replace("@11", "<small>").replace("@33", "</small>")
-            else:
+            elif comm_title == "Rabbi Akiva Eiger":
                 seif_k_re = re.search("\[(.*?)\]", bar_ilan)
+            else:
+                seif_k_re = re.search("\((.*?)\)", bar_ilan)
 
-            if comm_title == "Rabbi Akiva Eiger":
-                remove_text = re.search("@11.*?@33", line)
-                if remove_text:
-                    line = line.replace(remove_text.group(0), "")
+            if comm_title in ["Rabbi Akiva Eiger", "Chatam Sofer"]:
+                line = re.sub("@11(.*?)@33", "<small>\g<1></small>", line)
 
             if not seif_k_re:
                 prev_row = write_row(row, n, prev_row)
@@ -242,7 +250,7 @@ if __name__ == "__main__":
             text[found_siman].append(line)
             if seif_k_link:
                 try:
-                    found_book, found_seif_k = get_book_and_seif(seif_k_link, prev_book, curr_siman_seif)
+                    found_book, found_seif_k = get_book_and_seif(seif_k_link, prev_book, curr_siman_seif, found_seif_from_csv, found_siman)
                 except IndexError as e:
                     #prev_row = write_row(row, n, prev_row)
                     print e.message
@@ -267,7 +275,7 @@ if __name__ == "__main__":
                             found_book = poss_book
                             break
                     assert found_text
-                except AssertionError:
+                except AssertionError as e:
                     prev_row = write_row(row, n, prev_row)
                     #errors_csv.writerow([n+1, "Invalid Ref: {}".format(Ref("{} {}:{}".format(found_book, found_siman, found_seif_k)).normal()), line])
                     continue

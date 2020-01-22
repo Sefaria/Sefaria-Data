@@ -115,7 +115,7 @@ def any_english_in_str(line):
 #         return eng_dictionary.check(line)
 #     return False
 
-def create_simple_index_commentary(en_title, he_title, base_title, categories, type="many_to_one", server=SEFARIA_SERVER):
+def create_simple_index_commentary(en_title, he_title, base_title, categories, addressTypes=[], type="many_to_one", server=SEFARIA_SERVER):
     '''
     Returns a JSON index object for a simple Index that is a Commentary.
     :param en_title: Name of commentary in English
@@ -134,7 +134,7 @@ def create_simple_index_commentary(en_title, he_title, base_title, categories, t
     structure = base_index.nodes.sectionNames #this mimics the structure as "one_to_one"
     if type == "many_to_one":
         structure.append("Comment")
-    root.add_structure(structure)
+    root.add_structure(structure, address_types=addressTypes)
 
     index = {
         "title": full_title,
