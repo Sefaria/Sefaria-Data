@@ -206,7 +206,6 @@ if __name__ == "__main__":
         ja = JaggedArrayNode()
         ja.add_primary_titles(english_title, hebrew_title)
         ja.add_structure([u'Chapter', u'Mishnah', u'Comment'])
-        ja.toc_zoom = 2
         ja.validate()
 
         scn = SchemaNode()

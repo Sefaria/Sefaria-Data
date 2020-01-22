@@ -62,31 +62,31 @@ if __name__ == "__main__":
                 if toyt_comments_list:
                     toyt_matches = match_ref(Ref(u'Tosafot Yom Tov on {} {}'.format(masechet, perek_index+1)).text('he'), toyt_comments_list, extract_and_split_dh, dh_extract_method=dh_extract_method,word_threshold=.5)
 
-            for n, index in enumerate(bartenura_index_list):
-                if bartenura_matches[u'matches'][n]:
-                    link = {
-                        u'refs': [
-                            u'Yesh Seder LaMishnah on {} {}'.format(masechet, index),
-                            u'{}'.format(bartenura_matches[u'matches'][n])
-                        ],
-                        u'auto': True,
-                        u'generated_by': u'Link YSLM',
-                        u'type': u'commentary',
-                    }
-                    links.append(link)
+                for n, index in enumerate(bartenura_index_list):
+                    if bartenura_matches[u'matches'][n]:
+                        link = {
+                            u'refs': [
+                                u'Yesh Seder LaMishnah on {} {}'.format(masechet, index),
+                                u'{}'.format(bartenura_matches[u'matches'][n])
+                            ],
+                            u'auto': True,
+                            u'generated_by': u'Link YSLM',
+                            u'type': u'commentary',
+                        }
+                        links.append(link)
 
-            for n, index in enumerate(toyt_index_list):
-                if toyt_matches[u'matches'][n]:
-                    link = {
-                        u'refs': [
-                            u'Yesh Seder LaMishnah on {} {}'.format(masechet, index),
-                            u'{}'.format(toyt_matches[u'matches'][n])
-                        ],
-                        u'auto': True,
-                        u'generated_by': u'Link YSLM',
-                        u'type': u'commentary',
-                    }
-                    links.append(link)
+                for n, index in enumerate(toyt_index_list):
+                    if toyt_matches[u'matches'][n]:
+                        link = {
+                            u'refs': [
+                                u'Yesh Seder LaMishnah on {} {}'.format(masechet, index),
+                                u'{}'.format(toyt_matches[u'matches'][n])
+                            ],
+                            u'auto': True,
+                            u'generated_by': u'Link YSLM',
+                            u'type': u'commentary',
+                        }
+                        links.append(link)
 
     post_link(links, server=u'http://ezra.sandbox.sefaria.org')
 
