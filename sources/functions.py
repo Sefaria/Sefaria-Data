@@ -878,12 +878,14 @@ def post_text(ref, text, index_count="on", skip_links=False, server=SEFARIA_SERV
     :param index_count:
     :param skip_links:
     :param server:
-    :return:
+    :return:`
     """
     # textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
     url = server+'/api/texts/'+ref
     params, body = {}, {'apikey': API_KEY}
+    if 'status' not in params:
+        params['status'] = 'locked'
     if index_count == "on":
         params['count_after'] = 1
     if skip_links:
