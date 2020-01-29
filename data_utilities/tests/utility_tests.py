@@ -4,7 +4,7 @@ import re
 import os
 import codecs
 import pytest
-from StringIO import StringIO
+from io import StringIO
 from data_utilities import util
 
 import django
@@ -33,25 +33,25 @@ class Test_WeightedLevenshtein:
 
 
 def test_get_gematria():
-    assert util.getGematria(u'א') == 1
-    assert util.getGematria(u'תשעב') == 772
+    assert util.getGematria('א') == 1
+    assert util.getGematria('תשעב') == 772
 
 
 def test_he_ord():
-    assert util.he_ord(u'ו') == 6
-    assert util.he_ord(u'ש') == 21
+    assert util.he_ord('ו') == 6
+    assert util.he_ord('ש') == 21
 
 
 def test_he_num_to_char():
-    assert util.he_num_to_char(5) == u'ה'
-    assert util.he_num_to_char(16) == u'ע'
+    assert util.he_num_to_char(5) == 'ה'
+    assert util.he_num_to_char(16) == 'ע'
     with pytest.raises(AssertionError):
         util.he_num_to_char(23)
 
 
 def test_num_to_heb():
-    assert util.numToHeb(16) == u'טז'
-    assert util.numToHeb(962) == u'תתקסב'
+    assert util.numToHeb(16) == 'טז'
+    assert util.numToHeb(962) == 'תתקסב'
 
 
 def test_jagged_array_to_xml():
@@ -74,12 +74,12 @@ def test_clean_jagged_array():
 
 
 def test_traverse_ja():
-    test_ja = [[u'foo', u'bar'], [u'hello', u'world']]
+    test_ja = [['foo', 'bar'], ['hello', 'world']]
     explicit_data = [
-        {'data': u'foo', 'indices': [0, 0]},
-        {'data': u'bar', 'indices': [0, 1]},
-        {'data': u'hello', 'indices': [1, 0]},
-        {'data': u'world', 'indices': [1, 1]}
+        {'data': 'foo', 'indices': [0, 0]},
+        {'data': 'bar', 'indices': [0, 1]},
+        {'data': 'hello', 'indices': [1, 0]},
+        {'data': 'world', 'indices': [1, 1]}
     ]
     for test_item, explicit_item in zip(util.traverse_ja(test_ja), explicit_data):
         assert test_item == explicit_item
@@ -95,15 +95,15 @@ def test_convert_dict_to_array():
 
 
 def test_singleton():
-    class FakeDict(dict):
-        __metaclass__ = util.Singleton
+    class FakeDict(dict, metaclass=util.Singleton):
+        pass
 
     foo, bar = FakeDict(), FakeDict()
     assert id(foo) == id(bar)
 
 
 def test_clean_whitespace():
-    assert util.clean_whitespace(u'  foo   bar   ') == u'foo bar'
+    assert util.clean_whitespace('  foo   bar   ') == 'foo bar'
 
 
 def test_split_version():
@@ -134,7 +134,7 @@ def test_split_list():
 
 def test_schema_with_default():
     ja = JaggedArrayNode()
-    ja.add_primary_titles('foo', u'פו')
+    ja.add_primary_titles('foo', 'פו')
     ja.add_structure(['Word'])
     d = util.schema_with_default(ja)
 
@@ -152,7 +152,7 @@ def test_schema_with_default():
         ],
         'titles': [
             {'lang': 'en', 'primary': True, 'text': 'foo'},
-            {'lang': 'he', 'primary': True, 'text': u'פו'}
+            {'lang': 'he', 'primary': True, 'text': 'פו'}
         ]
     }
 
@@ -173,8 +173,8 @@ def test_file_to_ja():
 
 
 def test_file_to_ja_g():
-    data = StringIO(u'''@22א\nfoo\nbar\n@22ג\nhello\nworld''')
-    ja = util.file_to_ja_g(2, data, [ur'@22(?P<gim>[\u05d0-\u05ea])'], lambda x: [c.rstrip() for c in x], True)
+    data = StringIO('''@22א\nfoo\nbar\n@22ג\nhello\nworld''')
+    ja = util.file_to_ja_g(2, data, [r'@22(?P<gim>[\u05d0-\u05ea])'], lambda x: [c.rstrip() for c in x], True)
     assert ja.array() == [
         ['foo', 'bar'],
         [],

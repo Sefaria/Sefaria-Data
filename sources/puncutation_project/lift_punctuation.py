@@ -4,12 +4,14 @@ from __future__ import unicode_literals, print_function
 
 import re
 
-import sefaria_classes as sef
 import bleach
-from sefaria.utils.hebrew import strip_nikkud
-from data_utilities.dibur_hamatchil_matcher import match_text
-from data_utilities.util import WeightedLevenshtein
+import argparse
+from functools import reduce
 from collections import namedtuple
+from sefaria.utils.hebrew import strip_nikkud
+import sources.puncutation_project.sefaria_classes as sef
+from data_utilities.util import WeightedLevenshtein
+from data_utilities.dibur_hamatchil_matcher import match_text
 
 Quotation = namedtuple('Quotation', ['word_index', 'type'])
 
@@ -116,7 +118,11 @@ def remove_enclosed_commas(text_to_clean):
     :param unicode text_to_clean:
     :return: unicode
     """
-    return re.sub(ur'\[[^\[\]]+\]', lambda x: x.group().replace(',', ''), text_to_clean)
+    return re.sub(r'\[[^\[\]]+\]', lambda x: x.group().replace(',', ''), text_to_clean)
+
+
+class ModeledSegmentError(Exception):
+    pass
 
 
 class ModeledSegment(object):
@@ -143,9 +149,12 @@ class ModeledSegment(object):
                 self._ts_pairs.append(ts)
 
         # last one
-        ts = TalmudSteinsaltz.load_talmud_steinsaltz(
-            self._raw_segment, matches[-1].start(), matches[-1].end(), len(self._raw_segment)
-        )
+        try:
+            ts = TalmudSteinsaltz.load_talmud_steinsaltz(
+                self._raw_segment, matches[-1].start(), matches[-1].end(), len(self._raw_segment)
+            )
+        except IndexError:
+            raise ModeledSegmentError
         if ConnectedTalmud.is_connected(ts.talmud):
             self._ts_pairs.append(ConnectedTalmud(ts.talmud, ts.steinsaltz))
         else:
@@ -413,7 +422,7 @@ def build_maps(simple_segment, ellucidated_segment):
             current_loc = end
     else:
         mapping = match_text(words, [ts.get_talmud() for ts in ts_objects], overall=0)['matches']
-        mapping = map(lambda x: (x[0], x[1]+1), mapping)
+        mapping = list(map(lambda x: (x[0], x[1]+1), mapping))
 
         last_word = 0
         for i in range(len(mapping)):
@@ -464,18 +473,26 @@ logic can be here. The elucidation will always follow the Talmud. We'll want to 
 
 
 if __name__ == '__main__':
-    my_r = sef.Ref("Steinsaltz on Berakhot 2b.2")
-    base_r = sef.Ref("Berakhot 2b.2")
-    my_t = my_r.text('he', elucidated_vtitle).text
-    base_t = base_r.text('he', base_vtitle).text
-    ms = ModeledSegment(my_t)
-    stein_without_stein = u' '.join(t.get_talmud() for t in ms.get_ts_objects())
-    maps = build_maps(base_t, my_t)
-    partial_punctuation = maps.get_punctuated_talmud()
-    final_punctuation = extract_quotations(partial_punctuation, stein_without_stein)
-    print(base_t, my_t, partial_punctuation, final_punctuation, sep='\n\n')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-b', '--base_vtitle', default='William Davidson Edition - Aramaic', type=str, help='versionTitle to which nikkud will be added')
+    parser.add_argument('-t', '--tractate', type=str, help='tractate on which to add nikkud')
+    args = parser.parse_args()
+    base_vtitle = args.base_vtitle
+    tractate = args.tractate
+    print(base_vtitle)
 
-    simple, elucidated = sef.Ref("Berakhot"), sef.Ref("Steinsaltz on Berakhot")
+    # my_r = sef.Ref("Steinsaltz on Berakhot 2b.2")
+    # base_r = sef.Ref("Berakhot 2b.2")
+    # my_t = my_r.text('he', elucidated_vtitle).text
+    # base_t = base_r.text('he', base_vtitle).text
+    # ms = ModeledSegment(my_t)
+    # stein_without_stein = u' '.join(t.get_talmud() for t in ms.get_ts_objects())
+    # maps = build_maps(base_t, my_t)
+    # partial_punctuation = maps.get_punctuated_talmud()
+    # final_punctuation = extract_quotations(partial_punctuation, stein_without_stein)
+    # print(base_t, my_t, partial_punctuation, final_punctuation, sep='\n\n')
+
+    simple, elucidated = sef.Ref(f"{tractate}"), sef.Ref(f"Steinsaltz on {tractate}")
     for simple_seg in simple.all_segment_refs():
         print(simple_seg.normal())
         elucidated_seg = sef.Ref("Steinsaltz on {}".format(simple_seg.normal()))
@@ -485,10 +502,13 @@ if __name__ == '__main__':
         if not eluc_t:
             new_tc.text = base_t
         else:
-            maps = build_maps(base_t, eluc_t)
-            punctuated_text = maps.get_punctuated_talmud()
-            ms = ModeledSegment(eluc_t)
-            stein_without_stein = u' '.join(t.get_talmud() for t in ms.get_ts_objects())
-            punctuated_text = extract_quotations(punctuated_text,stein_without_stein)
-            new_tc.text = punctuated_text
+            try:
+                maps = build_maps(base_t, eluc_t)
+                punctuated_text = maps.get_punctuated_talmud()
+                ms = ModeledSegment(eluc_t)
+                stein_without_stein = u' '.join(t.get_talmud() for t in ms.get_ts_objects())
+                punctuated_text = extract_quotations(punctuated_text, stein_without_stein)
+                new_tc.text = punctuated_text
+            except ModeledSegmentError:
+                new_tc.text = base_t
         new_tc.save()

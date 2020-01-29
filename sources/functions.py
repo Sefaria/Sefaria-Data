@@ -115,7 +115,7 @@ def any_english_in_str(line):
 #         return eng_dictionary.check(line)
 #     return False
 
-def create_simple_index_commentary(en_title, he_title, base_title, categories, addressTypes=[], type="many_to_one", server=SEFARIA_SERVER):
+def create_simple_index_commentary(en_title, he_title, base_title, categories, addressTypes=None, type="many_to_one", server=SEFARIA_SERVER):
     '''
     Returns a JSON index object for a simple Index that is a Commentary.
     :param en_title: Name of commentary in English
@@ -125,6 +125,8 @@ def create_simple_index_commentary(en_title, he_title, base_title, categories, a
     :param categories: Array such as ["Tanakh", "Commentary", "Rashi", "Writings", "Psalms"]
     :return:
     '''
+    if addressTypes is None:
+        addressTypes = []
     base_index = library.get_index(base_title)
     root = JaggedArrayNode()
     full_title = "{} on {}".format(en_title, base_title)
@@ -1506,11 +1508,10 @@ class UnicodeWriter:
         self.writer.writerow([s.encode("utf-8") for s in row])
         # Fetch UTF-8 output from the queue ...
         data = self.queue.getvalue()
-        data = data.decode("utf-8")
         # ... and reencode it into the target encoding
         data = self.encoder.encode(data)
         # write to the target stream
-        self.stream.write(data)
+        self.stream.write(str(data))
         # empty queue
         self.queue.truncate(0)
 

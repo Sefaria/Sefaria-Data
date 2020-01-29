@@ -145,11 +145,12 @@ if __name__ == "__main__":
         try:
             existing_index_contents = verify_titles_and_return_contents(base_text_title, existing_index_title, new_index_title)
         except InputError as e:
-            print(e.message)
+            print(e)
             continue
         if existing_index_contents:
             #alter the copy of the index we are cloning and save the new index
             new_index_contents = alter_contents(existing_index_contents, new_index_title, book_term)
-            new_index = Index(new_index_contents).save()
-            print(new_index.contents(v2=True))
 
+            #new_index = Index(new_index_contents).save()
+            #print new_index.contents(v2=True)
+            post_index(new_index_contents)
