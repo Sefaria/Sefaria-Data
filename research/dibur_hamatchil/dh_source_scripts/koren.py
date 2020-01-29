@@ -27,7 +27,7 @@ for mes in mesechtot:
         for base_ref in super_base_ref.all_subrefs()[27:28]:
             if base_ref.is_empty(): continue
 
-            print "DAF {} -----START-----".format(base_ref)
+            print("DAF {} -----START-----".format(base_ref))
             base_tc = TextChunk(base_ref, "he")
 
             # comm_ref = Ref("Rashi on Berakhot 2a")
@@ -47,14 +47,14 @@ for mes in mesechtot:
 
 
             def base_tokenizer(str):
-                str = re.sub(ur"\([^\(\)]+\)", u"", str)
-                word_list = re.split(ur"\s+", str)
+                str = re.sub(r"\([^\(\)]+\)", "", str)
+                word_list = re.split(r"\s+", str)
                 word_list = [w for w in word_list if w]  # remove empty strings
                 return word_list
 
 
             def dh_extraction_method(str):
-                m = re.match(ur"([^\.]+\.\s)?([^–]+)\s–", str)
+                m = re.match(r"([^\.]+\.\s)?([^–]+)\s–", str)
                 if m:
                     return m.group(2)
                 else:
@@ -71,17 +71,17 @@ for mes in mesechtot:
 
 
                     if prange[-1] == nrange[0]:
-                        print "{} is split".format(nrange[0])
+                        print("{} is split".format(nrange[0]))
                         num_split += 1
 
                 total_sef += len(yoyo.range_list()) if yoyo else 0
                 total_koren += 1
 
-            print "MATCHES - {}".format(yo)
-            print "DAF {} -----END-----".format(base_ref)
-            print "NUM SPLIT ({} / {}) - ({}%)".format(num_split, total_sef, round(100.0 * num_split / total_sef, 3))
-            print "NUM MISSED ({} / {}) - ({}%)".format(num_missed, total_sef, round(100.0 * num_missed / total_sef, 3))
+            print("MATCHES - {}".format(yo))
+            print("DAF {} -----END-----".format(base_ref))
+            print("NUM SPLIT ({} / {}) - ({}%)".format(num_split, total_sef, round(100.0 * num_split / total_sef, 3)))
+            print("NUM MISSED ({} / {}) - ({}%)".format(num_missed, total_sef, round(100.0 * num_missed / total_sef, 3)))
 
 #print "NUM SPLIT ({} / {}) - ({}%)".format(num_split, total, round(100.0*num_split/total, 3))
 #print "NUM MISSED ({} / {}) - ({}%)".format(num_missed, total, round(100.0*num_missed/total, 3))
-print "AVG Num Sef segs per Koren seg: {}".format(round(1.0*total_sef/total_koren,3))
+print("AVG Num Sef segs per Koren seg: {}".format(round(1.0*total_sef/total_koren,3)))

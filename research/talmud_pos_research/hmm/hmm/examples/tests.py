@@ -17,7 +17,7 @@ def test_simple():
     
     w = numpy.ones((n,m),dtype=numpy.double)
     means = numpy.ones((n,m,d),dtype=numpy.double)
-    covars = [[ numpy.matrix(numpy.eye(d,d)) for j in xrange(m)] for i in xrange(n)]
+    covars = [[ numpy.matrix(numpy.eye(d,d)) for j in range(m)] for i in range(n)]
     
     w[0][0] = 0.5
     w[0][1] = 0.5
@@ -36,14 +36,14 @@ def test_simple():
     
     obs = numpy.array([ [0.3,0.3], [0.1,0.1], [0.2,0.2]])
     
-    print "Doing Baum-welch"
+    print("Doing Baum-welch")
     gmmhmm.train(obs,10)
-    print
-    print "Pi",gmmhmm.pi
-    print "A",gmmhmm.A
-    print "weights", gmmhmm.w
-    print "means", gmmhmm.means
-    print "covars", gmmhmm.covars
+    print()
+    print("Pi",gmmhmm.pi)
+    print("A",gmmhmm.A)
+    print("weights", gmmhmm.w)
+    print("means", gmmhmm.means)
+    print("covars", gmmhmm.covars)
     
 def test_rand():
     n = 5
@@ -60,9 +60,9 @@ def test_rand():
     means = numpy.array((0.6 * numpy.random.random_sample((n, m, d)) - 0.3), dtype=numpy.double)
     covars = numpy.zeros( (n,m,d,d) )
     
-    for i in xrange(n):
-        for j in xrange(m):
-            for k in xrange(d):
+    for i in range(n):
+        for j in range(m):
+            for k in range(d):
                 covars[i][j][k][k] = 1    
     
     pitmp = numpy.random.random_sample((n))
@@ -72,19 +72,19 @@ def test_rand():
     
     obs = numpy.array((0.6 * numpy.random.random_sample((40,d)) - 0.3), dtype=numpy.double)
     
-    print "Doing Baum-welch"
+    print("Doing Baum-welch")
     gmmhmm.train(obs,1000)
-    print
-    print "Pi",gmmhmm.pi
-    print "A",gmmhmm.A
-    print "weights", gmmhmm.w
-    print "means", gmmhmm.means
-    print "covars", gmmhmm.covars
+    print()
+    print("Pi",gmmhmm.pi)
+    print("A",gmmhmm.A)
+    print("weights", gmmhmm.w)
+    print("means", gmmhmm.means)
+    print("covars", gmmhmm.covars)
     
 def test_discrete():
 
     ob5 = (3,1,2,1,0,1,2,3,1,2,0,0,0,1,1,2,1,3,0)
-    print "Doing Baum-welch"
+    print("Doing Baum-welch")
     
     atmp = numpy.random.random_sample((4, 4))
     row_sums = atmp.sum(axis=1)
@@ -99,9 +99,9 @@ def test_discrete():
     
     hmm2 = DiscreteHMM(4,4,a,b,pi,init_type='user',precision=numpy.longdouble,verbose=True)
     hmm2.train(numpy.array(ob5*10),100)
-    print "Pi",hmm2.pi
-    print "A",hmm2.A
-    print "B", hmm2.B
+    print("Pi",hmm2.pi)
+    print("A",hmm2.A)
+    print("B", hmm2.B)
     
     
 #test_simple()

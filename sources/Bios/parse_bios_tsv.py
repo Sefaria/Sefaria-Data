@@ -5,7 +5,7 @@ django.setup()
 from sefaria.system.database import db
 
 from sefaria.model import *
-import unicodecsv as csv
+import csv
 import re
 
 
@@ -36,12 +36,12 @@ eras = {
     "Contemporary": "CO"
 }
 
-print "Deleting old person records"
-for foo, symbol in eras.iteritems():
+print("Deleting old person records")
+for foo, symbol in eras.items():
     people = PersonSet({"era": symbol}).distinct("key")
-    db.person_rel.remove({"from_key": {"$in": people}})
-    db.person_rel.remove({"to_key": {"$in": people}})
-    db.person.remove({"era": symbol})
+    db.person_rel.delete_many({"from_key": {"$in": people}})
+    db.person_rel.delete_many({"to_key": {"$in": people}})
+    db.person.delete_many({"era": symbol})
     # Dependencies take too long here.  Getting rid of relationship dependencies above.  Assumption is that we'll import works right after to handle those dependencies.
     #PersonSet({"era": symbol}).delete()
 
@@ -56,10 +56,10 @@ with open("Torah Commentators - Bios - People.tsv") as tsv:
     next(tsv)
     next(tsv) # Anonymous
     for l in csv.reader(tsv, dialect="excel-tab"):
-        key = l[0].encode('ascii', errors='ignore')
+        key = l[0].encode('ascii', errors='ignore').decode()
         if not key:
             continue
-        print "{}\n".format(key)
+        print("{}\n".format(key))
         p = Person().load({"key": key}) or Person()
         p.key = key
         p.name_group.add_title(l[1].strip(), "en", primary=True, replace_primary=True)
@@ -116,15 +116,15 @@ with open("Torah Commentators - Bios - People.tsv") as tsv:
     next(tsv)
     next(tsv)
     next(tsv)
-    print "Adding relationships"
+    print("Adding relationships")
     for l in csv.reader(tsv, dialect="excel-tab"):
-        key = l[0].encode('ascii', errors='ignore')
+        key = l[0].encode('ascii', errors='ignore').decode()
         p = Person().load({"key": key})
-        for i, type in rowmap.items():
+        for i, type in list(rowmap.items()):
             if l[i]:
                 for pkey in l[i].split(","):
-                    pkey = pkey.strip().encode('ascii', errors='ignore')
-                    print "{} - {}".format(key, pkey)
+                    pkey = pkey.strip().encode('ascii', errors='ignore').decode()
+                    print("{} - {}".format(key, pkey))
                     if Person().load({"key": pkey}):
                         pr = PersonRelationship({
                             "type": type,

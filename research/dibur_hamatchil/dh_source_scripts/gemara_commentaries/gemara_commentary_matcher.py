@@ -52,7 +52,7 @@ class GemaraCommentaryMatcher:
                 gemara_ref = gemara_ref_list[gemara_ind]
 
                 orig_gemara_ref = gemara_ref
-                print u'----- {} Start ({}/{})-----'.format(orig_gemara_ref, icomment, len(comment_ref_list))
+                print('----- {} Start ({}/{})-----'.format(orig_gemara_ref, icomment, len(comment_ref_list)))
                 comment_tc = TextChunk(comment_ref, "he")
 
                 # let's extend the range of gemara_tc to account for weird rashba stuff
@@ -87,9 +87,9 @@ class GemaraCommentaryMatcher:
 
                     def dh_extraction_method_short(s):
                         dh = dh_extraction_method(s)
-                        dh_split = re.split(ur'\s+', dh)
+                        dh_split = re.split(r'\s+', dh)
                         if len(dh_split) > start_pos + 4:
-                            dh = u' '.join(dh_split[start_pos:start_pos + 4])
+                            dh = ' '.join(dh_split[start_pos:start_pos + 4])
 
                         return dh
 
@@ -104,12 +104,12 @@ class GemaraCommentaryMatcher:
                     match_indices = matched['match_word_indices']
 
                 if 'comment_refs' not in matched:
-                    print 'NO COMMENTS'
+                    print('NO COMMENTS')
                     continue
                 matches = matched['matches']
                 comment_refs = matched['comment_refs']
 
-                ref_map = zip(matches, comment_refs)
+                ref_map = list(zip(matches, comment_refs))
 
                 temp_link_list = [[str(l[0]), str(l[1])] for l in ref_map if not l[0] is None and not l[1] is None]
                 link_list += temp_link_list
@@ -120,16 +120,16 @@ class GemaraCommentaryMatcher:
 
                 num_searched += len(ref_map)
 
-                print "MATCHES - {}".format(ref_map)
+                print("MATCHES - {}".format(ref_map))
                 for first, second in zip(first_matches, matches):
                     if first is None and not second is None:
-                        print u"GOT {}".format(second)
+                        print("GOT {}".format(second))
 
-                print "ACCURACY - {}%".format(round(1.0 * num_matched / num_searched, 5) * 100)
+                print("ACCURACY - {}%".format(round(1.0 * num_matched / num_searched, 5) * 100))
                 # log.write("MATCHES - {}\n".format(temp_link_list))
                 # log.write("NOT FOUND - {}\n".format(unlink_list))
                 # log.write("ACCURACY - {}%\n".format(round(1.0 * num_matched / num_searched, 5) * 100))
-                print u'----- {} End -----'.format(orig_gemara_ref)
+                print('----- {} End -----'.format(orig_gemara_ref))
 
             with open('{}/{}.json'.format(matched_dir, mesechta), 'wb') as out:
                 json.dump(link_list, out, indent=4)
@@ -164,14 +164,14 @@ class GemaraCommentaryMatcher:
 
             for icomment, comment_ref in enumerate(comment_ref_list):
                 daf = comment_ref.normal_last_section()
-                print u'-----{} {} Start ({}/{})-----'.format(mesechta, daf, icomment, len(comment_ref_list))
+                print('-----{} {} Start ({}/{})-----'.format(mesechta, daf, icomment, len(comment_ref_list)))
                 comment_tc = TextChunk(comment_ref, "he")
 
 
                 splitted, oto_dibur = split_into_base_texts(rules, comment_tc)
 
                 for (temp_comment_refs, temp_comment_texts), temp_dh_extract, temp_base_tokenizer, temp_rashi_filter, base_pattern in zip(splitted, dh_extraction_methods, base_tokenizers, rashi_filters, base_patterns):
-                    print u"--- DOING {} {} ---".format(base_pattern, mesechta)
+                    print("--- DOING {} {} ---".format(base_pattern, mesechta))
                     temp_base_ref = Ref("{} {} {}".format(base_pattern, mesechta, daf))
 
                     num_refs_to_expand = 2
@@ -205,7 +205,7 @@ class GemaraCommentaryMatcher:
                                                                     char_threshold=0.4,
                                                                     rashi_filter=temp_rashi_filter)
                     except IndexError as e:
-                        print e
+                        print(e)
                         continue
                     first_matches = matched['matches']
                     match_indices = matched['match_word_indices']
@@ -217,9 +217,9 @@ class GemaraCommentaryMatcher:
 
                         def dh_extraction_method_short(s):
                             dh = temp_dh_extract(s)
-                            dh_split = re.split(ur'\s+', dh)
+                            dh_split = re.split(r'\s+', dh)
                             if len(dh_split) > start_pos + 4:
-                                dh = u' '.join(dh_split[start_pos:start_pos + 4])
+                                dh = ' '.join(dh_split[start_pos:start_pos + 4])
 
                             return dh
 
@@ -235,7 +235,7 @@ class GemaraCommentaryMatcher:
 
                     matches = matched['matches']
 
-                    ref_map = zip(matches, temp_comment_refs) # assumption that rashi_filter doesn't do anything
+                    ref_map = list(zip(matches, temp_comment_refs)) # assumption that rashi_filter doesn't do anything
 
                     # add oto_diburs to ref_map
                     for br, cr in reversed(ref_map):
@@ -255,17 +255,17 @@ class GemaraCommentaryMatcher:
 
                     num_searched += len(ref_map)
 
-                    print "MATCHES - {}".format(ref_map)
+                    print("MATCHES - {}".format(ref_map))
                     for first, second in zip(first_matches, matches):
                         if first is None and not second is None:
-                            print u"GOT {}".format(second)
+                            print("GOT {}".format(second))
 
                 acc = round(1.0 * num_matched / num_searched, 5) * 100 if num_searched > 0 else 0.0
-                print "ACCURACY - {}%".format(acc)
+                print("ACCURACY - {}%".format(acc))
                 # log.write("MATCHES - {}\n".format(temp_link_list))
                 # log.write("NOT FOUND - {}\n".format(unlink_list))
                 # log.write("ACCURACY - {}%\n".format(round(1.0 * num_matched / num_searched, 5) * 100))
-                print u'----- {} {} End -----'.format(mesechta, daf)
+                print('----- {} {} End -----'.format(mesechta, daf))
 
             with open('{}/{}.json'.format(matched_dir, mesechta), 'wb') as out:
                 json.dump(link_list, out, indent=4)

@@ -19,13 +19,13 @@ class CitationFinder():
     NON_REF_INT = 1
     SHAM_INT = 2
     IGNORE_INT = 3
-    AFTER_TITLE_DELIMETER_RE = ur"[,.: \r\n]+"
+    AFTER_TITLE_DELIMETER_RE = r"[,.: \r\n]+"
     _regex_cache = {}
 
     @staticmethod
     def get_regex_cache_key(title_list, title_node_dict, lang, compiled, dropParenthesis):
-        t = u'|'.join(title_list) if isinstance(title_list, list) else title_list
-        return u"{}||{}||{}||{}".format(t, lang, compiled, dropParenthesis)
+        t = '|'.join(title_list) if isinstance(title_list, list) else title_list
+        return "{}||{}||{}||{}".format(t, lang, compiled, dropParenthesis)
 
     @staticmethod
     def get_ultimate_title_regex(title_list, title_node_dict, lang, compiled=True, dropParenthesis = False):
@@ -41,16 +41,16 @@ class CitationFinder():
         if cache_key in CitationFinder._regex_cache:
             return CitationFinder._regex_cache[cache_key]
         if not isinstance(title_list, list) and not isinstance(title_node_dict, dict):
-            title_node_dict = {u"{}".format(title_list): title_node_dict}
+            title_node_dict = {"{}".format(title_list): title_node_dict}
             title_list = [title_list]
 
         #  todo: if title is sham then we don't want to find prefixes for it
 
-        prefixes = u"[משהוכלבד]"
-        after_title_delimiter_re = ur"[,.: \r\n]+"
-        start_paren_reg = ur"(?:(?:[(\[{][^})\]]*\s" + prefixes + ur"{0,2})|(?:[(\[{]" + prefixes + ur"{0,2}))"
+        prefixes = "[משהוכלבד]"
+        after_title_delimiter_re = r"[,.: \r\n]+"
+        start_paren_reg = r"(?:(?:[(\[{][^})\]]*\s" + prefixes + r"{0,2})|(?:[(\[{]" + prefixes + r"{0,2}))"
         # start_paren_reg = ur"(?:[(\[{][^})\]]*)"
-        end_paren_reg = ur"(?:[\])}]|\W[^({\[]*[\])}])"
+        end_paren_reg = r"(?:[\])}]|\W[^({\[]*[\])}])"
 
         title_reg_list = []
 
@@ -64,30 +64,30 @@ class CitationFinder():
 
             # inner_paren_reg = u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + ur'(?:[\[({]' + address_regex + ur'[\])}])(?=\W|$)'
 
-            inner_paren_reg = u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + ur'(?:[\[({])' + address_regex + end_paren_reg
-            outer_paren_reg = start_paren_reg + u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + \
+            inner_paren_reg = "(?P<Title>" + re.escape(title) + ")" + after_title_delimiter_re + r'(?:[\[({])' + address_regex + end_paren_reg
+            outer_paren_reg = start_paren_reg + "(?P<Title>" + re.escape(title) + ")" + after_title_delimiter_re + \
                           address_regex + end_paren_reg
 
-            if title == u"שם":
-                sham_reg = u"שם"
-                stam_sham_reg = ur"(?:[(\[{])(?P<Title>" + sham_reg + u")(?:[\])}])"
-                outer_paren_sham_reg = ur"(?:[(\[{])" + u"(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + \
+            if title == "שם":
+                sham_reg = "שם"
+                stam_sham_reg = r"(?:[(\[{])(?P<Title>" + sham_reg + ")(?:[\])}])"
+                outer_paren_sham_reg = r"(?:[(\[{])" + "(?P<Title>" + re.escape(title) + ")" + after_title_delimiter_re + \
                               address_regex + end_paren_reg
-                inner_paren_sham_reg = u"\s(?P<Title>" + re.escape(title) + u")" + after_title_delimiter_re + ur'(?:[\[({])' + address_regex + end_paren_reg
-                reg = u'(?:{})|(?:{})|(?:{})'.format(inner_paren_sham_reg, outer_paren_sham_reg, stam_sham_reg)
+                inner_paren_sham_reg = "\s(?P<Title>" + re.escape(title) + ")" + after_title_delimiter_re + r'(?:[\[({])' + address_regex + end_paren_reg
+                reg = '(?:{})|(?:{})|(?:{})'.format(inner_paren_sham_reg, outer_paren_sham_reg, stam_sham_reg)
             else:
-               reg = u'(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_reg)
+               reg = '(?:{})|(?:{})'.format(inner_paren_reg, outer_paren_reg)
 
             # Note! dropParenthesis doesn't work with Shams!!!
             if dropParenthesis:
                 # no_paren_reg = u"(?P<Title>" + re.escape(
                 #     title) + u")" + after_title_delimiter_re + ur'(?:' + address_regex + ur')'
-                no_paren_reg = u"(?P<Title>" + re.escape(title) + u")" + u"(?:"+address_regex+u")"
-                reg = u'(?:{})'.format(no_paren_reg)
+                no_paren_reg = "(?P<Title>" + re.escape(title) + ")" + "(?:"+address_regex+")"
+                reg = '(?:{})'.format(no_paren_reg)
 
             title_reg_list += [reg]
 
-        full_crazy_ultimate_title_reg = u"|".join([u"(?:{})".format(title_reg) for title_reg in title_reg_list])
+        full_crazy_ultimate_title_reg = "|".join(["(?:{})".format(title_reg) for title_reg in title_reg_list])
 
         if compiled:
             full_crazy_ultimate_title_reg = re.compile(full_crazy_ultimate_title_reg, re.VERBOSE)
@@ -95,8 +95,8 @@ class CitationFinder():
         return full_crazy_ultimate_title_reg
 
     @staticmethod
-    def get_address_regex_dict(lang, node_title=u'שם'):
-        if node_title == u'שם':
+    def get_address_regex_dict(lang, node_title='שם'):
+        if node_title == 'שם':
             address_list_depth1 = [
                 ["Integer"],
                 ["Perek"],
@@ -118,16 +118,16 @@ class CitationFinder():
             }
 
 
-        sham_regex = u"(?P<a0>{})".format(node_title) #format(u"שם")
+        sham_regex = "(?P<a0>{})".format(node_title) #format(u"שם")
 
         address_regex_dict = OrderedDict()
-        for addressName, jan in jagged_array_nodes.items():
+        for addressName, jan in list(jagged_array_nodes.items()):
             address_regex_dict["_".join(["Sham", addressName])] = {"regex": [sham_regex, jan.address_regex(lang)],
                                                                    "jan_list": [None, jan]}
             address_regex_dict["_".join([addressName, "Sham"])] = {"regex": [jan.address_regex(lang), sham_regex],
                                                                    "jan_list": [jan, None]}
 
-        if node_title==u'שם':
+        if node_title=='שם':
             address_list_depth2 = [
                 ["Integer", "Integer"],
                 ["Perek", "Mishnah"],
@@ -153,21 +153,21 @@ class CitationFinder():
         return address_regex_dict
 
     @staticmethod
-    def create_or_address_regexes(lang, node_title=u'שם'):
+    def create_or_address_regexes(lang, node_title='שם'):
         address_regex_dict = CitationFinder.get_address_regex_dict(lang, node_title=node_title)
 
         def regList2Regex(regList, isDepth2):
             #edit regList[1] to make the group name correct
-            regList[1] = regList[1].replace(u"(?P<a0>", u"(?P<a1>")
+            regList[1] = regList[1].replace("(?P<a0>", "(?P<a1>")
             if isDepth2:
-                tempReg = u"{}{}{}".format(regList[0], CitationFinder.AFTER_TITLE_DELIMETER_RE, regList[1])
+                tempReg = "{}{}{}".format(regList[0], CitationFinder.AFTER_TITLE_DELIMETER_RE, regList[1])
             else:
-                tempReg = u"{}({}{})?".format(regList[0], CitationFinder.AFTER_TITLE_DELIMETER_RE, regList[1])
+                tempReg = "{}({}{})?".format(regList[0], CitationFinder.AFTER_TITLE_DELIMETER_RE, regList[1])
             return tempReg
 
-        depth2regex = u'|'.join([u'(?P<{}>{})'.format(groupName, regList2Regex(groupRegDict['regex'], True)) for groupName, groupRegDict in address_regex_dict.items()])
-        depth1regex = u'|'.join([u'(?P<{}>{})'.format(groupName, regList2Regex(groupRegDict['regex'], False)) for groupName, groupRegDict in address_regex_dict.items()])
-        return u"(?:{}|{})".format(depth2regex, depth1regex)
+        depth2regex = '|'.join(['(?P<{}>{})'.format(groupName, regList2Regex(groupRegDict['regex'], True)) for groupName, groupRegDict in list(address_regex_dict.items())])
+        depth1regex = '|'.join(['(?P<{}>{})'.format(groupName, regList2Regex(groupRegDict['regex'], False)) for groupName, groupRegDict in list(address_regex_dict.items())])
+        return "(?:{}|{})".format(depth2regex, depth1regex)
 
     @staticmethod
     def create_jan_for_address_type(address_type):
@@ -193,9 +193,9 @@ class CitationFinder():
         gs = sham_match.groupdict()
         sections = []
         for i in range(node.depth):
-            gname = u"a{}".format(i)
+            gname = "a{}".format(i)
             currSectionStr = gs.get(gname)
-            if currSectionStr == u"שם":
+            if currSectionStr == "שם":
                 sections.append(None)
                 continue
             elif currSectionStr is None:
@@ -217,13 +217,13 @@ class CitationFinder():
         :param lang:
         :return:
         """
-        title_sham = u'שם'
+        title_sham = 'שם'
         title_reg = CitationFinder.get_ultimate_title_regex(title_sham, node, lang, compiled=True)
-        if node.full_title() in [u'I Samuel', u'II Samuel', u'I Kings', u'II Kings', u'I Chronicles', u'II Chronicles']:
-            volume = re.search(u'שם (א|ב)\s', st)
+        if node.full_title() in ['I Samuel', 'II Samuel', 'I Kings', 'II Kings', 'I Chronicles', 'II Chronicles']:
+            volume = re.search('שם (א|ב)\s', st)
             m = re.search(title_reg, st)
             if volume:
-                st1 = re.sub(u'(א|ב)\s', u'', st, count=1, pos=m.start())
+                st1 = re.sub('(א|ב)\s', '', st, count=1, pos=m.start())
                 m1 = re.search(title_reg, st1)
                 if m1 and m1.groupdict()['a0'] and m1.groupdict()['a1']:
                     node = CitationFinder.node_volumes(node, volume.group(1))
@@ -236,7 +236,7 @@ class CitationFinder():
             #     he_title = [x for x in node.title_group.titles if x['lang'] == 'he'][0]['text']
             # except:
             #     he_title = None
-            st = re.sub(u'([^\s])\(', ur'\1 (', st)
+            st = re.sub('([^\s])\(', r'\1 (', st)
             m = re.search(title_reg, st)
             if m:
                 return CitationFinder.parse_sham_match(m, lang, node)
@@ -259,9 +259,9 @@ class CitationFinder():
         :return:
         """
         REF_SCOPE = 7
-        title_sham = u'שם'
-        non_ref_titles = [u'לעיל', u'להלן', u'דף']
-        ignore_titles = [u'משנה', u'ירושלמי', u'תוספתא'] #, u'רש"י'] # see Ramban on Genesis 40:16:1 todo: put this as an optional paramter, for parsing texts that are not complicated and don't need these precautions
+        title_sham = 'שם'
+        non_ref_titles = ['לעיל', 'להלן', 'דף']
+        ignore_titles = ['משנה', 'ירושלמי', 'תוספתא'] #, u'רש"י'] # see Ramban on Genesis 40:16:1 todo: put this as an optional paramter, for parsing texts that are not complicated and don't need these precautions
         # titles = list(reversed(library.get_titles_in_string(st, lang)))
         # if title_rambam:
         #     rambam_opt = [re.findall(u'{}'.format(ram_name), st) for ram_name in title_rambam]
@@ -269,25 +269,25 @@ class CitationFinder():
         titles.insert(0, title_sham)
         if title_rambam:
             titles.extend(title_rambam)
-        unique_titles = OrderedDict(zip(titles, range(len(titles))))
+        unique_titles = OrderedDict(list(zip(titles, list(range(len(titles))))))
         refs = []
         sham_refs = []
         non_refs = []
 
         title_node_dict = {}
-        for title in unique_titles.keys():
+        for title in list(unique_titles.keys()):
             node = library.get_schema_node(title, lang)
             if not isinstance(node, JaggedArrayNode):
                 node = None
             title_node_dict[title] = node
 
-        full_crazy_ultimate_title_reg = CitationFinder.get_ultimate_title_regex(unique_titles.keys(), title_node_dict, lang, compiled=True, dropParenthesis=dropParenthesis)
+        full_crazy_ultimate_title_reg = CitationFinder.get_ultimate_title_regex(list(unique_titles.keys()), title_node_dict, lang, compiled=True, dropParenthesis=dropParenthesis)
         ref_span_set = set()
         for m in re.finditer(full_crazy_ultimate_title_reg, st):
             if not m:
-                print 'no m'
+                print('no m')
                 continue
-            ref_span_set = ref_span_set.union(range(m.start(), m.end()))
+            ref_span_set = ref_span_set.union(list(range(m.start(), m.end())))
             title = m.groupdict().get('Title')
             node = title_node_dict[title]
             is_sham = title == title_sham
@@ -295,7 +295,7 @@ class CitationFinder():
                 if node is None:
                     # this is a bad ref
                     if title in title_rambam:
-                        print u"dehilchot_ref {}".format(title)
+                        print("dehilchot_ref {}".format(title))
                     non_refs += [(m, m.span(), CitationFinder.NON_REF_INT)]
                 else:
                     try:
@@ -304,7 +304,7 @@ class CitationFinder():
                         # check if this ref failed because it has a Sham in it
                         hasSham = False
                         for i in range(3):
-                            gname = u"a{}".format(i)
+                            gname = "a{}".format(i)
                             try:
                                 if m.group(gname) == title_sham:
                                     hasSham = True
@@ -330,7 +330,7 @@ class CitationFinder():
         # todo: instead of these lines, learn to differentiate by category (u'משנה', u'בבלי', u'ירושלמי', u'תוספתא')
         for title in ignore_titles:
             for ref in all_refs:
-                pre_titles_regex = u'{}'.format(title)
+                pre_titles_regex = '{}'.format(title)
                 m = re.search(pre_titles_regex, st, endpos=ref[1][1])
                 if m and set(range(m.start(), m.end() + REF_SCOPE)).intersection(ref_span_set):
                     all_refs.remove(ref)
@@ -346,15 +346,15 @@ class CitationFinder():
     def node_volumes(node, volume):
         book = re.split('\s', node.full_title())
         book = book[1]
-        if volume == u'א':
-            title = u'I ' + book
+        if volume == 'א':
+            title = 'I ' + book
             return library.get_schema_node(title)
-        return library.get_schema_node(u'II ' + book)
+        return library.get_schema_node('II ' + book)
 
     def rambam_reordering(self, st):
 
-        opposite_order = re.search(u'''(מ|ד)(הל(כות|'|כו')\s)''', st)
-        rambam_name = re.search(u'''?,(רמב"ם|משנה תורה)''', st)
+        opposite_order = re.search('''(מ|ד)(הל(כות|'|כו')\s)''', st)
+        rambam_name = re.search('''?,(רמב"ם|משנה תורה)''', st)
 
 
 class IndexIbidFinder(object):
@@ -379,7 +379,7 @@ class IndexIbidFinder(object):
         from sefaria.utils.hebrew import strip_nikkud
         st = strip_nikkud(st)
         sham_refs = []
-        reg = u'(\(|\([^)]* )שם(\)| [^(]*\))'  # finds shams in parenthesis without רבשם
+        reg = '(\(|\([^)]* )שם(\)| [^(]*\))'  # finds shams in parenthesis without רבשם
         for sham in re.finditer(reg, st):
             matched = sham.group()
             if len(re.split('\s+', matched)) > 6: # todo: find stitistics of the cutoff size of a ref-citation 6 is a guess
@@ -427,7 +427,7 @@ class IndexIbidFinder(object):
                 self._tr.ignore_book_name_keys()
             elif type == CitationFinder.SHAM_INT:
                 try:
-                    if isinstance(item, unicode):
+                    if isinstance(item, str):
                         refs += [self._tr.resolve(None, match_str=item)]
                         locations += [location]
                         types += [type]
@@ -459,7 +459,7 @@ class IndexIbidFinder(object):
                 prev_node = r.index_node
                 self.reset_tracker()
 
-            print r, i, len(seg_refs)
+            print(r, i, len(seg_refs))
             st = r.text(lang=lang).text
             refs, locations, types = self.find_in_segment(st, lang, citing_only, replace)
             out[r.normal()] = {
@@ -584,21 +584,21 @@ class BookIbidTracker(object):
             book_ref = Ref(index_name)
             if self.assert_simple:
                 assert not book_ref.index.is_complex()
-            if self.assert_simple or book_ref.primary_category == u'Talmud':
+            if self.assert_simple or book_ref.primary_category == 'Talmud':
                 addressTypes = book_ref.index_node.addressTypes
             else:
                 addressTypes = [None]*len(new_sections)
             section_str_list = []
             for section, addressType in zip(new_sections, addressTypes):
-                if addressType == u'Talmud':
+                if addressType == 'Talmud':
                     section_str_list += [talmud.section_to_daf(section)]
                 else:
-                    section_str_list += [unicode(section)]
+                    section_str_list += [str(section)]
             if title and title != index_name:
                 index_name = title
-            resolvedRef = Ref(u'{}.{}'.format(index_name, '.'.join(section_str_list)))
+            resolvedRef = Ref('{}.{}'.format(index_name, '.'.join(section_str_list)))
         except:
-            raise IbidRefException(u"problem with the Ref iteslf. {}.{}".format(index_name, '.'.join(str(new_sections))))
+            raise IbidRefException("problem with the Ref iteslf. {}.{}".format(index_name, '.'.join(str(new_sections))))
             # print 'error, problem with the Ref iteslf. ', u'{}.{}'.format(index_name, '.'.join(str(new_sections)))
             # return "error, problem with the Ref iteslf", index_name, tuple(key)
 
@@ -615,7 +615,7 @@ class BookIbidTracker(object):
         # if self.assert_simple:
         #     text_depth = oref.index_node.depth
         while i < text_depth:
-            subsi = filter(lambda item: len(item) == i, subs)
+            subsi = [item for item in subs if len(item) == i]
             for sub in subsi:
                 new0 = sub[:]
                 new0.extend([None])
@@ -624,7 +624,7 @@ class BookIbidTracker(object):
                 new1.extend([oref.sections[i]])
                 subs.append(new1)
             i += 1
-        return filter(lambda item: len(item) == text_depth, subs)
+        return [item for item in subs if len(item) == text_depth]
 
     def ignore_book_name_keys(self):
         '''
@@ -639,17 +639,17 @@ class BookIbidTracker(object):
 
     def get_last_depth(self,index_name, sections):
         last_depth = len(sections)
-        for k, v in reversed(self._table.items()):
+        for k, v in reversed(list(self._table.items())):
             if k[0] == index_name:
                 last_depth = len(v.sections)
                 break
         return last_depth
 
     def use_type_get_index(self, st):
-        address_regex = CitationFinder.get_ultimate_title_regex(title=u"שם", node=None, lang='he')
+        address_regex = CitationFinder.get_ultimate_title_regex(title="שם", node=None, lang='he')
         # address_regex = CitationFinder.create_or_address_regexes(lang='he')
         m = re.search(address_regex, st)
-        for k, v in m.groupdict().items():
+        for k, v in list(m.groupdict().items()):
             if v and not re.search("Title|a0|a1", k):
                 address_type = k
         return address_type
@@ -657,10 +657,10 @@ class BookIbidTracker(object):
 
 class IbidDict(OrderedDict):
 
-    def __setitem__(self, key, value, dict_setitem=dict.__setitem__):
+    def __setitem__(self, key, value):
         if key in self:
             self.pop(key)
-        return super(IbidDict, self).__setitem__(key, value, dict_setitem)
+        return super(IbidDict, self).__setitem__(key, value)
 
 
 class IbidKeyNotFoundException(Exception):

@@ -51,7 +51,7 @@ if __name__ == "__main__":
         text = text.replace(old_en_title, new_en_title)
         text = text.replace(old_he_title, new_he_title)
         if orig_text == text:
-            print u"WARNING: {} is the same as from {}, not keeping title".format(orig_text, text)
+            print("WARNING: {} is the same as from {}, not keeping title".format(orig_text, text))
         else: #keep title
             index['schema']['titles'][i]['text'] = text
             good_titles.append(index['schema']['titles'][i])

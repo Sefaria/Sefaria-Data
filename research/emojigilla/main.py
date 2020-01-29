@@ -6,8 +6,8 @@ import bleach
 import re, codecs, csv
 import base64
 
-prefixes = [u"", u"בכ", u"וב", u"וה", u"וכ", u"ול", u"ומ", u"וש", u"כב", u"ככ", u"כל", u"כמ", u"כש", u"לכ", u"מב",
-            u"מה", u"מכ", u"מל", u"מש", u"שב", u"שה", u"שכ", u"של", u"שמ", u"ב", u"כ", u"ל", u"מ", u"ש", u"ה", u"ו"]
+prefixes = ["", "בכ", "וב", "וה", "וכ", "ול", "ומ", "וש", "כב", "ככ", "כל", "כמ", "כש", "לכ", "מב",
+            "מה", "מכ", "מל", "מש", "שב", "שה", "שכ", "של", "שמ", "ב", "כ", "ל", "מ", "ש", "ה", "ו"]
 emoji_map = {}
 
 words_to_emojis = []
@@ -18,11 +18,11 @@ def lookup_shoresh(w, ref):
     # only second - cant
     # only first - nikud
     # remove all non-Hebrew non-nikud characters (including cantillation and sof-pasuk)
-    w = re.sub(ur"[A-Za-z׃׀־]", u"", w)
+    w = re.sub(r"[A-Za-z׃׀־]", "", w)
     lexicon = "BDB Augmented Strong"
     wf = WordForm().load({"form": w, "refs": re.compile("^" + ref + "$")})
     if wf:
-        return map(lambda x: x["headword"], filter(lambda x: x["lexicon"] == lexicon, wf.lookups))
+        return [x["headword"] for x in [x for x in wf.lookups if x["lexicon"] == lexicon]]
 
 def lookup_shoresh(w, ref):
     # in both - cant
@@ -30,30 +30,30 @@ def lookup_shoresh(w, ref):
     # only first - nikud
     #remove all non-Hebrew non-nikud characters (including cantillation and sof-pasuk)
     w = strip_cantillation(w, strip_vowels=False)
-    w = re.sub(ur"[A-Za-z׃׀־]", u"", w)
+    w = re.sub(r"[A-Za-z׃׀־]", "", w)
     lexicon = "BDB Augmented Strong"
     try:
         wf = WordForm().load({"form": w, "refs": re.compile("^" + ref + "$")})
     except Exception:
         return None
     if wf:
-        return map(lambda x: x["headword"], filter(lambda x: x["lexicon"] == lexicon, wf.lookups))
+        return [x["headword"] for x in [x for x in wf.lookups if x["lexicon"] == lexicon]]
 
 def tokenizer(base_str, clean=False):
     base_str = base_str.strip()
     if clean:
-        base_str = base_str.replace(u"׀", u"$$$")
+        base_str = base_str.replace("׀", "$$$")
         base_str = bleach.clean(base_str, tags=[], strip=True)
         base_str = strip_cantillation(base_str, strip_vowels=False)
-    base_str = re.sub(ur'־', u' *־* ', base_str)
-    word_list = re.split(ur"\s+", base_str)
+    base_str = re.sub(r'־', ' *־* ', base_str)
+    word_list = re.split(r"\s+", base_str)
     return word_list
 
 
 def rebuild_tokenized_text(word_list):
-    s = u" ".join(word_list)
-    s = s.replace(u' *־* ', ur'־')
-    s = s.replace(u'$$$', u'׀')
+    s = " ".join(word_list)
+    s = s.replace(' *־* ', r'־')
+    s = s.replace('$$$', '׀')
     return s
 
 
@@ -82,12 +82,12 @@ def replace_with_base64(s, ref):
     for to_replace in words_to_replace:
         p = to_replace["prefix"]
         tokenized_pasuk[to_replace[
-            "word_num"]] = u'<span class="purim-emoji">' \
-                           u'{}<img  src="data:image/png;base64,{}" /> </span>'.format(
-            u"{}-".format(p) if len(p) > 0 else u"", emoji_map[to_replace["shoresh"]])
+            "word_num"]] = '<span class="purim-emoji">' \
+                           '{}<img  src="data:image/png;base64,{}" /> </span>'.format(
+            "{}-".format(p) if len(p) > 0 else "", emoji_map[to_replace["shoresh"]])
     new_pasuk = rebuild_tokenized_text(tokenized_pasuk)
-    if new_pasuk[-1] != u'׃':
-        new_pasuk += u'׃'
+    if new_pasuk[-1] != '׃':
+        new_pasuk += '׃'
     return new_pasuk
 
 
@@ -112,17 +112,17 @@ oldVersionTitle = "Tanach with Nikkud"
 
 ja = Ref(ref).text(language, oldVersionTitle).ja().array()
 for iperek, perek in enumerate(ja):
-    print "Emojifying Perek {}".format(iperek)
+    print("Emojifying Perek {}".format(iperek))
     for ipasuk, pasuk in enumerate(perek):
-        ja[iperek][ipasuk] = replace_with_base64(pasuk, u"Esther {}:{}".format(iperek + 1, ipasuk + 1))
+        ja[iperek][ipasuk] = replace_with_base64(pasuk, "Esther {}:{}".format(iperek + 1, ipasuk + 1))
 
 post = True
 if post:
-    print "Posting"
+    print("Posting")
     resp = post_text(ref, {
         "versionTitle": versionTitle,
         "versionSource": versionSource,
         "language": language,
         "text": ja,
     }, server='https://www.sefaria.org', weak_network=True)
-    print resp
+    print(resp)

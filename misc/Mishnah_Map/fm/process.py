@@ -73,7 +73,7 @@ def extract(query, choices, processor=None, scorer=None, limit=5):
     sl = list()
 
     if isinstance(choices, dict):
-        for key, choice in choices.items():
+        for key, choice in list(choices.items()):
             processed = processor(choice)
             score = scorer(query, processed)
             tuple = (choice, score, key)

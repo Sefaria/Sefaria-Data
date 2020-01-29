@@ -39,7 +39,7 @@ Filename_to_log = 'postagger_log_embdim' + str(EMBED_DIM) + '_hiddim' + str(HIDD
 
 
 def log_message(message):
-    print message
+    print(message)
     with codecs.open(Filename_to_log, "a", encoding="utf8") as myfile:
         myfile.write("\n" + message)
 
@@ -202,7 +202,7 @@ class ConfusionMatrix:
             html += "<td>{}</td>".format(round(100.0 * (fn_matrix[i] - self.matrix[i, i]) / fn_matrix[i], 2))
         html += "</tr>"
 
-        for k, v in stats.items():
+        for k, v in list(stats.items()):
             html += "<tr><td>{}</td>".format(k)
             for j in range(self.size):
                 tp = self.matrix[j, j]
@@ -353,22 +353,22 @@ def run_network_on_validation(epoch_num):
 
 
 def print_tagged_corpus_to_html_table(lang_out):
-    str = u"<html><head><style>h1{text-align:center;background:grey}td{text-align:center}table{margin-top:20px;margin-bottom:20px;margin-right:auto;margin-left:auto;width:1200px}.aramaic{background-color:blue;color:white}.mishnaic{background-color:red;color:white}.ambiguous{background-color:yellow;color:black}</style><meta charset='utf-8'></head><body>"
+    str = "<html><head><style>h1{text-align:center;background:grey}td{text-align:center}table{margin-top:20px;margin-bottom:20px;margin-right:auto;margin-left:auto;width:1200px}.aramaic{background-color:blue;color:white}.mishnaic{background-color:red;color:white}.ambiguous{background-color:yellow;color:black}</style><meta charset='utf-8'></head><body>"
     for daf in lang_out:
-        str += u"<h1>DAF {}</h1>".format(daf)
-        str += u"<table>"
+        str += "<h1>DAF {}</h1>".format(daf)
+        str += "<table>"
         count = 0
         while count < len(lang_out[daf]['words']):
             row_obj = lang_out[daf]['words'][count:count+10]
-            row = u"<tr>"
+            row = "<tr>"
             for w in reversed(row_obj):
-                row += u"<td class='{}'>{}</td>".format('aramaic' if w['predicted_lang'] == 0 else 'mishnaic',w['word'])
-            row += u"</tr>"
+                row += "<td class='{}'>{}</td>".format('aramaic' if w['predicted_lang'] == 0 else 'mishnaic',w['word'])
+            row += "</tr>"
             #row_sef += u"<td>({}-{})</td></tr>".format(count,count+len(row_obj)-1)
             str += row
             count += 10
-        str += u"</table>"
-        str += u"</body></html>"
+        str += "</table>"
+        str += "</body></html>"
     return str
 
 # read in all the data
@@ -390,7 +390,7 @@ lang_tags = ['a','m']
 # iterate through all the dapim and put everything in the vocabulary
 for sec in all_data:
     let_vocab.add_text([c for w,_ in sec for c in w])
-    let_vocab.add_text([u' '])
+    let_vocab.add_text([' '])
     lang_vocab.add_text([l for _,l in sec])
 
 let_vocab.finalize()
@@ -404,10 +404,10 @@ log_message('let: ' + str(let_vocab.size()))
 # debug - write out the vocabularies
 # write out to files the pos vocab and the letter vocab
 with codecs.open('let_vocab.txt', 'w', encoding='utf8') as f:
-    for let, id in let_vocab.get_c2i().items():
+    for let, id in list(let_vocab.get_c2i().items()):
         f.write(str(id) + ' : ' + let + '\n')
 with codecs.open('lang_vocab.txt', 'w', encoding='utf8') as f:
-    for lang, id in lang_vocab.get_c2i().items():
+    for lang, id in list(lang_vocab.get_c2i().items()):
         f.write(str(id) + ' : ' + str(lang) + '\n')
 
 
@@ -526,7 +526,7 @@ else:
             daf = f_name.split('lang_naive_talmud_')[1].split('.json')[0]
             html_out[daf] = lang_out
             if i_f % 10 == 0:
-                print '{}/{}'.format(mesechta,f_name)
+                print('{}/{}'.format(mesechta,f_name))
                 html = print_tagged_corpus_to_html_table(html_out)
                 fp = codecs.open("{}/{}/html_lang_tagged_context/{}.html".format(cal_matcher_path, mesechta, daf), "wb",
                                  encoding='utf-8')

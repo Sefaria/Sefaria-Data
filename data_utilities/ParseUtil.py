@@ -259,7 +259,7 @@ class ParseState(object):
         :param refnum: current value of said structural element. Should be 0-indexed.
         :return:
         """
-        if isinstance(section_type, basestring):
+        if isinstance(section_type, str):
             self._state[section_type] = refnum
         else:
             while not isinstance(section_type, type):

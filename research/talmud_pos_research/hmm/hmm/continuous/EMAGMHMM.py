@@ -4,7 +4,7 @@ Created on Nov 14, 2012
 @author: GuyZ
 '''
 
-from GMHMM import GMHMM
+from .GMHMM import GMHMM
 from hmm.weights.EWMA import EWMA
 import numpy
 
@@ -24,8 +24,8 @@ class EMAGMHMM(GMHMM,EWMA):
     '''
 
     def __init__(self,n,m,d=1,A=None,means=None,covars=None,w=None,pi=None,min_std=0.01,init_type='uniform',precision=numpy.double,verbose=False):
-        print "Warning: weighted EMs may not converge to local optima, since the log-likelihood function may decrease."
-        print
+        print("Warning: weighted EMs may not converge to local optima, since the log-likelihood function may decrease.")
+        print()
         
         GMHMM.__init__(self,n,m,d,A,means,covars,w,pi,min_std,init_type,precision,verbose) #@UndefinedVariable
         EWMA.__init__(self)

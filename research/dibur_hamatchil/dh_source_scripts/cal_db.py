@@ -112,17 +112,17 @@ def make_cal_segments(mesechta):
 
 def match_cal_segments(mesechta):
     def tokenize_words(str):
-        str = str.replace(u"־", " ")
+        str = str.replace("־", " ")
         str = re.sub(r"</?.+>", "", str)  # get rid of html tags
         str = re.sub(r"\([^\(\)]+\)", "", str)  # get rid of refs
         #str = str.replace("'", '"')
-        word_list = filter(bool, re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]", str))
+        word_list = list(filter(bool, re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]", str)))
         return word_list
 
     def merge_cal_word_objs(s,e,word_obj_list):
         obj_list = word_obj_list[s:e]
-        m_word = u" ".join([o["word"] for o in obj_list])
-        m_head_word = u" ".join([o["head_word"] for o in obj_list])
+        m_word = " ".join([o["word"] for o in obj_list])
+        m_head_word = " ".join([o["head_word"] for o in obj_list])
         m_pos_list = [o["POS"] for o in obj_list]
         m_pos = max(set(m_pos_list), key=m_pos_list.count)
         new_obj = obj_list[0].copy()
@@ -150,7 +150,7 @@ def match_cal_segments(mesechta):
 
 
         daf = dafs[ical]
-        print "-----{} DAF {}  ({}/{})-----".format(mesechta,daf,ical,len(dafs))
+        print("-----{} DAF {}  ({}/{})-----".format(mesechta,daf,ical,len(dafs)))
 
 
         base_tc = TextChunk(curr_sef_ref, "he")
@@ -164,7 +164,7 @@ def match_cal_segments(mesechta):
 
         lines = [[word_obj["word"] for word_obj in temp_line] for temp_line in lines_by_daf[ical]]
         word_obj_list = [word_obj for temp_line in lines_by_daf[ical] for word_obj in temp_line]
-        lines_by_str = [u' '.join(line_array) for line_array in lines]
+        lines_by_str = [' '.join(line_array) for line_array in lines]
 
         curr_cal_ref = Ref("{} {}".format(mesechta, daf))
 
@@ -179,7 +179,7 @@ def match_cal_segments(mesechta):
             start_end_map = matched["matches"]
             abbrev_matches = matched["abbrevs"]
             abbrev_ranges = [[am.rashiRange for am in am_list] for am_list in abbrev_matches ]
-            print u' --- '.join([unicode(am) for am_list in abbrev_matches for am in am_list])
+            print(' --- '.join([str(am) for am_list in abbrev_matches for am in am_list]))
             abbrev_count = 0
             for ar in abbrev_ranges:
                 abbrev_count += len(ar)
@@ -202,7 +202,7 @@ def match_cal_segments(mesechta):
                         num_words = 0
                         while i_abbrev < len(curr_cal_line):
                             temp_w = curr_cal_line[i_abbrev]
-                            num_words += len(re.split(ur'\s+',temp_w))
+                            num_words += len(re.split(r'\s+',temp_w))
                             if num_words >= (ar[1]-ar[0]+1):
                                 break
                             i_abbrev += 1
@@ -212,13 +212,13 @@ def match_cal_segments(mesechta):
                         if len(curr_cal_line[ar[0]-offset:ar[1]+1-offset]) != len( word_obj_list[ar[0]-offset+len(cal_words):ar[1]+1-offset+len(cal_words)]):
                             #something's wrong. not sure what, but best to ignore this
                             continue
-                        print u"ABBREV RANGE {} --- OFFSET {}".format(ar,offset)
-                        print u"CURR CAL LINE BEFORE {}".format(u','.join(curr_cal_line[ar[0]-offset:ar[1]+1-offset]))
-                        curr_cal_line[ar[0]-offset:ar[1]+1-offset] = [u' '.join(curr_cal_line[ar[0]-offset:ar[1]+1-offset])]
-                        print u"CURR CAL LINE AFTER {}".format(curr_cal_line[ar[0]-offset])
-                        print u"WORD OBJ LIST BEFORE {}".format(u','.join([u'({})'.format(obj['word']) for obj in merge_cal_word_objs(ar[0]-offset+len(cal_words),ar[1]+1-offset+len(cal_words),word_obj_list)]))
+                        print("ABBREV RANGE {} --- OFFSET {}".format(ar,offset))
+                        print("CURR CAL LINE BEFORE {}".format(','.join(curr_cal_line[ar[0]-offset:ar[1]+1-offset])))
+                        curr_cal_line[ar[0]-offset:ar[1]+1-offset] = [' '.join(curr_cal_line[ar[0]-offset:ar[1]+1-offset])]
+                        print("CURR CAL LINE AFTER {}".format(curr_cal_line[ar[0]-offset]))
+                        print("WORD OBJ LIST BEFORE {}".format(','.join(['({})'.format(obj['word']) for obj in merge_cal_word_objs(ar[0]-offset+len(cal_words),ar[1]+1-offset+len(cal_words),word_obj_list)])))
                         word_obj_list[ar[0]-offset+len(cal_words):ar[1]+1-offset+len(cal_words)] = merge_cal_word_objs(ar[0]-offset+len(cal_words),ar[1]+1-offset+len(cal_words),word_obj_list)
-                        print u"WORD OBJ LIST AFTER {}".format(word_obj_list[ar[0]-offset+len(cal_words)]['word'])
+                        print("WORD OBJ LIST AFTER {}".format(word_obj_list[ar[0]-offset+len(cal_words)]['word']))
                         offset += ar[1]-ar[0]
                         global_offset += offset
 
@@ -243,7 +243,7 @@ def match_cal_segments(mesechta):
                     continue
 
                 #dictionary juggling...
-                for i in xrange(temp_se[0],temp_se[1]+1):
+                for i in range(temp_se[0],temp_se[1]+1):
                     #in case a cal_words and word_obj_list aren't the same length bc a word got split up
                     """
                     if cal_words[ical_word] != word_obj_list[ical_word-bad_word_offset]["word"]:
@@ -259,7 +259,7 @@ def match_cal_segments(mesechta):
                     temp_out[i]["word"] = temp_sef_word
 
 
-            print u"\n-----\nFOUND {}/{} ({}%)".format(cal_len - len(missed_words), cal_len, (1 - round(1.0 * len(missed_words) / cal_len, 4)) * 100)
+            print("\n-----\nFOUND {}/{} ({}%)".format(cal_len - len(missed_words), cal_len, (1 - round(1.0 * len(missed_words) / cal_len, 4)) * 100))
             #print u"MISSED: {}".format(u" ,".join([u"{}:{}".format(wo["word"], wo["index"]) for wo in missed_words]))
             ical += 1
             num_cal_words += cal_len
@@ -293,7 +293,7 @@ def make_cal_pos_hashtable(cutoff=0):
             try:
                 lineObj = cal_tools.parseCalLine(line,False,False)
             except IndexError:
-                print line
+                print(line)
                 continue
             word = lineObj["word"]
             pos = lineObj["POS"]
@@ -306,7 +306,7 @@ def make_cal_pos_hashtable(cutoff=0):
 
     num_one_pos_words = 0
     total_num_pos = 0
-    for word,pos in reversed(obj.items()):
+    for word,pos in reversed(list(obj.items())):
         pos_counts = {}
         for p in pos:
             if not p in pos_counts:
@@ -320,13 +320,13 @@ def make_cal_pos_hashtable(cutoff=0):
         if len(pos_counts) == 1:
             num_one_pos_words += 1
 
-    print "Percent Words With 1 POS",round(100.0*num_one_pos_words/len(obj),3)
-    print "Avg Num POS per word",round(1.0*total_num_pos/len(obj),3)
+    print("Percent Words With 1 POS",round(100.0*num_one_pos_words/len(obj),3))
+    print("Avg Num POS per word",round(1.0*total_num_pos/len(obj),3))
 
     cal_tools.saveUTFStr(obj,"cal_pos_hashtable.json")
     f = codecs.open("double_pos_before_eng.txt","wb",encoding='utf8')
-    for word,pos in obj.items():
-        f.write(u'{} ~-~ {}\n'.format(word,str(pos)))
+    for word,pos in list(obj.items()):
+        f.write('{} ~-~ {}\n'.format(word,str(pos)))
     f.close()
 
 def make_cal_lines_text(mesechta):
@@ -334,12 +334,12 @@ def make_cal_lines_text(mesechta):
     dafs = cal_lines["dafs"]
     lines_by_daf = cal_lines["lines"]
 
-    out = u""
-    for ical in xrange(len(dafs)):
-        out += u"----- DAF {} -----\n".format(dafs[ical])
+    out = ""
+    for ical in range(len(dafs)):
+        out += "----- DAF {} -----\n".format(dafs[ical])
         lines = [[word_obj["word"] for word_obj in temp_line] for temp_line in lines_by_daf[ical]]
         for i,l in enumerate(lines):
-            out += u"({}a) - {}\n".format(i+1,u" ,".join(l))
+            out += "({}a) - {}\n".format(i+1," ,".join(l))
     fp = codecs.open("cal_lines_text_{}.txt".format(mesechta),"w",encoding='utf-8')
     fp.write(out)
     fp.close()
@@ -358,4 +358,4 @@ for mesechta in mesechtas:
     #make_cal_lines_text(mesechta)
 #make_cal_pos_hashtable(2)
 
-print "SEF:{} CAL:{} MATCHED:{} (SEF: {}% CAL: {}%)".format(total_sef_words,total_cal_words,total_words_matched,round((100.0*total_words_matched)/total_sef_words,3),round((100.0*(total_words_matched))/total_cal_words,3))
+print("SEF:{} CAL:{} MATCHED:{} (SEF: {}% CAL: {}%)".format(total_sef_words,total_cal_words,total_words_matched,round((100.0*total_words_matched)/total_sef_words,3),round((100.0*(total_words_matched))/total_cal_words,3)))

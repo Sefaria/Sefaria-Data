@@ -7,7 +7,7 @@ from google.cloud import translate
 
 translate_client = translate.Client()
 
-dirs = [d for d in os.walk(u"/Users/levisrael/sefaria/Aspaklaria/www.aspaklaria.info")]
+dirs = [d for d in os.walk("/Users/levisrael/sefaria/Aspaklaria/www.aspaklaria.info")]
 fnames = [fname for (dirpath, dirnames, filenames) in dirs[1:] for fname in filenames[1:]]
 clean_names = [re.sub("\s+", " ", f.replace(".html","").strip()) for f in fnames]
 

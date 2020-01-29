@@ -59,13 +59,13 @@ class _BaseHMM(object):
         alpha = numpy.zeros((len(observations),self.n),dtype=self.precision)
         
         # init stage - alpha_1(x) = pi(x)b_x(O1)
-        for x in xrange(self.n):
+        for x in range(self.n):
             alpha[0][x] = self.pi[x]*self.B_map[x][0]
         
         # induction
-        for t in xrange(1,len(observations)):
-            for j in xrange(self.n):
-                for i in xrange(self.n):
+        for t in range(1,len(observations)):
+            for j in range(self.n):
+                for i in range(self.n):
                     alpha[t][j] += alpha[t-1][i]*self.A[i][j]
                 alpha[t][j] *= self.B_map[j][t]
                 
@@ -82,13 +82,13 @@ class _BaseHMM(object):
         beta = numpy.zeros((len(observations),self.n),dtype=self.precision)
         
         # init stage
-        for s in xrange(self.n):
+        for s in range(self.n):
             beta[len(observations)-1][s] = 1.
         
         # induction
-        for t in xrange(len(observations)-2,-1,-1):
-            for i in xrange(self.n):
-                for j in xrange(self.n):
+        for t in range(len(observations)-2,-1,-1):
+            for i in range(self.n):
+                for j in range(self.n):
                     beta[t][i] += self.A[i][j]*self.B_map[j][t+1]*beta[t+1][j]
                     
         return beta
@@ -121,14 +121,14 @@ class _BaseHMM(object):
         psi = numpy.zeros((len(observations),self.n),dtype=self.precision)
         
         # init
-        for x in xrange(self.n):
+        for x in range(self.n):
             delta[0][x] = self.pi[x]*self.B_map[x][0]
             psi[0][x] = 0
         
         # induction
-        for t in xrange(1,len(observations)):
-            for j in xrange(self.n):
-                for i in xrange(self.n):
+        for t in range(1,len(observations)):
+            for j in range(self.n):
+                for i in range(self.n):
                     if (delta[t][j] < delta[t-1][i]*self.A[i][j]):
                         delta[t][j] = delta[t-1][i]*self.A[i][j]
                         psi[t][j] = i
@@ -137,14 +137,14 @@ class _BaseHMM(object):
         # termination: find the maximum probability for the entire sequence (=highest prob path)
         p_max = 0 # max value in time T (max)
         path = numpy.zeros((len(observations)),dtype=self.precision)
-        for i in xrange(self.n):
+        for i in range(self.n):
             if (p_max < delta[len(observations)-1][i]):
                 p_max = delta[len(observations)-1][i]
                 path[len(observations)-1] = i
         
         # path backtracing
 #        path = numpy.zeros((len(observations)),dtype=self.precision) ### 2012-11-17 - BUG FIX: wrong reinitialization destroyed the last state in the path
-        for i in xrange(1, len(observations)):
+        for i in range(1, len(observations)):
             path[len(observations)-i-1] = psi[len(observations)-i][ path[len(observations)-i] ]
         return path
      
@@ -162,18 +162,18 @@ class _BaseHMM(object):
             beta = self._calcbeta(observations)
         xi = numpy.zeros((len(observations),self.n,self.n),dtype=self.precision)
         
-        for t in xrange(len(observations)-1):
+        for t in range(len(observations)-1):
             denom = 0.0
-            for i in xrange(self.n):
-                for j in xrange(self.n):
+            for i in range(self.n):
+                for j in range(self.n):
                     thing = 1.0
                     thing *= alpha[t][i]
                     thing *= self.A[i][j]
                     thing *= self.B_map[j][t+1]
                     thing *= beta[t+1][j]
                     denom += thing
-            for i in xrange(self.n):
-                for j in xrange(self.n):
+            for i in range(self.n):
+                for j in range(self.n):
                     numer = 1.0
                     numer *= alpha[t][i]
                     numer *= self.A[i][j]
@@ -196,8 +196,8 @@ class _BaseHMM(object):
         '''        
         gamma = numpy.zeros((seqlen,self.n),dtype=self.precision)
         
-        for t in xrange(seqlen):
-            for i in xrange(self.n):
+        for t in range(seqlen):
+            for i in range(self.n):
                 gamma[t][i] = sum(xi[t][i])
         
         return gamma
@@ -218,11 +218,11 @@ class _BaseHMM(object):
         '''        
         self._mapB(observations)
         
-        for i in xrange(iterations):
+        for i in range(iterations):
             prob_old, prob_new = self.trainiter(observations)
 
             if (self.verbose):      
-                print "iter: ", i, ", L(model|O) =", prob_old, ", L(model_new|O) =", prob_new, ", converging =", ( prob_new-prob_old > thres )
+                print("iter: ", i, ", L(model|O) =", prob_old, ", L(model_new|O) =", prob_new, ", converging =", ( prob_new-prob_old > thres ))
                 
             if ( abs(prob_new-prob_old) < epsilon ):
                 # converged
@@ -266,11 +266,11 @@ class _BaseHMM(object):
         Returns A_new, the modified transition matrix. 
         '''
         A_new = numpy.zeros((self.n,self.n),dtype=self.precision)
-        for i in xrange(self.n):
-            for j in xrange(self.n):
+        for i in range(self.n):
+            for j in range(self.n):
                 numer = 0.0
                 denom = 0.0
-                for t in xrange(len(observations)-1):
+                for t in range(len(observations)-1):
                     numer += (self._eta(t,len(observations)-1)*xi[t][i][j])
                     denom += (self._eta(t,len(observations)-1)*gamma[t][i])
 

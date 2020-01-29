@@ -14,15 +14,15 @@ with open("RabbisNames.csv", 'rb') as fin:
     tonorabbiscsv = unicodecsv.DictReader(fin)
     tonorabbis = pygtrie.Trie()
     for row in tonorabbiscsv:
-        rabbiName = u""
+        rabbiName = ""
         for i in range(1,11):
-            tempName = row[u"Name{}".format(i)]
+            tempName = row["Name{}".format(i)]
             if not tempName:
                 break
             if i > 1:
-                rabbiName += u" "
+                rabbiName += " "
             rabbiName += tempName
-        rabbiName = rabbiName.replace(u"ר'", u"רבי")
+        rabbiName = rabbiName.replace("ר'", "רבי")
         if len(rabbiName) > maxrabbilen:
             maxrabbilen = len(rabbiName)
         tonorabbis[rabbiName] = 0
@@ -36,10 +36,10 @@ def get_rabbis_in_category(cat):
         r = Ref(ind)
         vtitle = None
         if cat == 'Bavli':
-            willy = u'William Davidson Edition - Aramaic'
-            has_willy = len(filter(lambda v: v['versionTitle'] == willy, r.version_list())) > 0
+            willy = 'William Davidson Edition - Aramaic'
+            has_willy = len([v for v in r.version_list() if v['versionTitle'] == willy]) > 0
             if not has_willy:
-                print 'Skipping {}'.format(ind)
+                print('Skipping {}'.format(ind))
             vtitle = willy
         tc = TextChunk(Ref(ind), 'he', vtitle=vtitle)
         flat = tc.ja().flatten_to_array()
@@ -52,7 +52,7 @@ def get_rabbis_in_category(cat):
                     has_node = tonorabbis.has_node(temp)
                     if has_node == pygtrie.Trie.HAS_VALUE:
                         tonorabbis[temp] += 1
-                        print u'found {}'.format(temp)
+                        print('found {}'.format(temp))
                         start = end
                         break
                     elif has_node == pygtrie.Trie.HAS_SUBTRIE:

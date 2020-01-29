@@ -6,9 +6,10 @@ import math
 import codecs
 from collections import defaultdict
 from xml.etree import ElementTree as ET
-from urllib2 import HTTPError, URLError
+from urllib.error import HTTPError, URLError
 import json
-import urllib2
+import urllib.request, urllib.error, urllib.parse
+from functools import reduce
 try:
     p = os.path.dirname(os.path.abspath(__file__))+"/sources"
     from sources.local_settings import *
@@ -22,93 +23,93 @@ from sefaria.model.schema import TitleGroup
 
 
 gematria = {}
-gematria[u'א'] = 1
-gematria[u'ב'] = 2
-gematria[u'ג'] = 3
-gematria[u'ד'] = 4
-gematria[u'ה'] = 5
-gematria[u'ו'] = 6
-gematria[u'ז'] = 7
-gematria[u'ח'] = 8
-gematria[u'ט'] = 9
-gematria[u'י'] = 10
-gematria[u'כ'] = 20
-gematria[u'ל'] = 30
-gematria[u'מ'] = 40
-gematria[u'נ'] = 50
-gematria[u'ס'] = 60
-gematria[u'ע'] = 70
-gematria[u'פ'] = 80
-gematria[u'צ'] = 90
-gematria[u'ק'] = 100
-gematria[u'ר'] = 200
-gematria[u'ש'] = 300
-gematria[u'ת'] = 400
+gematria['א'] = 1
+gematria['ב'] = 2
+gematria['ג'] = 3
+gematria['ד'] = 4
+gematria['ה'] = 5
+gematria['ו'] = 6
+gematria['ז'] = 7
+gematria['ח'] = 8
+gematria['ט'] = 9
+gematria['י'] = 10
+gematria['כ'] = 20
+gematria['ל'] = 30
+gematria['מ'] = 40
+gematria['נ'] = 50
+gematria['ס'] = 60
+gematria['ע'] = 70
+gematria['פ'] = 80
+gematria['צ'] = 90
+gematria['ק'] = 100
+gematria['ר'] = 200
+gematria['ש'] = 300
+gematria['ת'] = 400
 
 wordToNumber = {}
-wordToNumber[u'ראשון'] = 1
-wordToNumber[u'שני'] = 2
-wordToNumber[u'שלישי'] = 3
-wordToNumber[u'רביעי'] = 4
-wordToNumber[u'חמישי'] = 5
-wordToNumber[u'ששי'] = 6
-wordToNumber[u'שביעי'] = 7
-wordToNumber[u'שמיני'] = 8
-wordToNumber[u'תשיעי'] = 9
-wordToNumber[u'עשירי'] = 10
+wordToNumber['ראשון'] = 1
+wordToNumber['שני'] = 2
+wordToNumber['שלישי'] = 3
+wordToNumber['רביעי'] = 4
+wordToNumber['חמישי'] = 5
+wordToNumber['ששי'] = 6
+wordToNumber['שביעי'] = 7
+wordToNumber['שמיני'] = 8
+wordToNumber['תשיעי'] = 9
+wordToNumber['עשירי'] = 10
 
 he_char_ord = {
-    u'א': 1,
-    u'ב': 2,
-    u'ג': 3,
-    u'ד': 4,
-    u'ה': 5,
-    u'ו': 6,
-    u'ז': 7,
-    u'ח': 8,
-    u'ט': 9,
-    u'י': 10,
-    u'כ': 11,
-    u'ך': 11,
-    u'ל': 12,
-    u'מ': 13,
-    u'ם': 13,
-    u'נ': 14,
-    u'ן': 14,
-    u'ס': 15,
-    u'ע': 16,
-    u'פ': 17,
-    u'ף': 17,
-    u'צ': 18,
-    u'ץ': 18,
-    u'ק': 19,
-    u'ר': 20,
-    u'ש': 21,
-    u'ת': 22
+    'א': 1,
+    'ב': 2,
+    'ג': 3,
+    'ד': 4,
+    'ה': 5,
+    'ו': 6,
+    'ז': 7,
+    'ח': 8,
+    'ט': 9,
+    'י': 10,
+    'כ': 11,
+    'ך': 11,
+    'ל': 12,
+    'מ': 13,
+    'ם': 13,
+    'נ': 14,
+    'ן': 14,
+    'ס': 15,
+    'ע': 16,
+    'פ': 17,
+    'ף': 17,
+    'צ': 18,
+    'ץ': 18,
+    'ק': 19,
+    'ר': 20,
+    'ש': 21,
+    'ת': 22
 }
 
-num_to_char_dict = {1: u"א",
-2: u"ב",
-3: u"ג",
-4: u"ד",
-5: u"ה",
-6: u"ו",
-7: u"ז",
-8: u"ח",
-9: u"ט",
-10: u"י",
-11: u"כ",
-12: u"ל",
-13: u"מ",
-14: u"נ",
-15: u"ס",
-16: u"ע",
-17: u"פ",
-18: u"צ",
-19: u"ק",
-20: u"ר",
-21: u"ש",
-22: u"ת",
+num_to_char_dict = {1: "א",
+2: "ב",
+3: "ג",
+4: "ד",
+5: "ה",
+6: "ו",
+7: "ז",
+8: "ח",
+9: "ט",
+10: "י",
+11: "כ",
+12: "ל",
+13: "מ",
+14: "נ",
+15: "ס",
+16: "ע",
+17: "פ",
+18: "צ",
+19: "ק",
+20: "ר",
+21: "ש",
+22: "ת",
 }
 
 class Util:
@@ -184,8 +185,8 @@ class Util:
 
     def getHebrewTitle(sefer):
         sefer_url = SEFARIA_SERVER+'api/index/'+sefer.replace(" ","_")
-        req = urllib2.Request(sefer_url)
-        res = urllib2.urlopen(req)
+        req = urllib.request.Request(sefer_url)
+        res = urllib.request.urlopen(req)
         data = json.load(res)
         return data['heTitle']
 
@@ -210,46 +211,46 @@ class Util:
 
 
     def strip_nekud(word):
-        data = word.replace(u"\u05B0", "")
-        data = data.replace(u"\u05B1", "")
-        data = data.replace(u"\u05B2", "")
-        data = data.replace(u"\u05B3", "")
-        data = data.replace(u"\u05B4", "")
-        data = data.replace(u"\u05B5", "")
-        data = data.replace(u"\u05B6", "")
-        data = data.replace(u"\u05B7", "")
-        data = data.replace(u"\u05B8", "")
-        data = data.replace(u"\u05B9", "")
-        data = data.replace(u"\u05BB", "")
-        data = data.replace(u"\u05BC", "")
-        data = data.replace(u"\u05BD", "")
-        data = data.replace(u"\u05BF", "")
-        data = data.replace(u"\u05C1", "")
-        data = data.replace(u"\u05C2", "")
-        data = data.replace(u"\u05C3", "")
-        data = data.replace(u"\u05C4", "")
+        data = word.replace("\u05B0", "")
+        data = data.replace("\u05B1", "")
+        data = data.replace("\u05B2", "")
+        data = data.replace("\u05B3", "")
+        data = data.replace("\u05B4", "")
+        data = data.replace("\u05B5", "")
+        data = data.replace("\u05B6", "")
+        data = data.replace("\u05B7", "")
+        data = data.replace("\u05B8", "")
+        data = data.replace("\u05B9", "")
+        data = data.replace("\u05BB", "")
+        data = data.replace("\u05BC", "")
+        data = data.replace("\u05BD", "")
+        data = data.replace("\u05BF", "")
+        data = data.replace("\u05C1", "")
+        data = data.replace("\u05C2", "")
+        data = data.replace("\u05C3", "")
+        data = data.replace("\u05C4", "")
         return data
 
     def wordHasNekudot(word):
         data = word.decode('utf-8')
-        data = data.replace(u"\u05B0", "")
-        data = data.replace(u"\u05B1", "")
-        data = data.replace(u"\u05B2", "")
-        data = data.replace(u"\u05B3", "")
-        data = data.replace(u"\u05B4", "")
-        data = data.replace(u"\u05B5", "")
-        data = data.replace(u"\u05B6", "")
-        data = data.replace(u"\u05B7", "")
-        data = data.replace(u"\u05B8", "")
-        data = data.replace(u"\u05B9", "")
-        data = data.replace(u"\u05BB", "")
-        data = data.replace(u"\u05BC", "")
-        data = data.replace(u"\u05BD", "")
-        data = data.replace(u"\u05BF", "")
-        data = data.replace(u"\u05C1", "")
-        data = data.replace(u"\u05C2", "")
-        data = data.replace(u"\u05C3", "")
-        data = data.replace(u"\u05C4", "")
+        data = data.replace("\u05B0", "")
+        data = data.replace("\u05B1", "")
+        data = data.replace("\u05B2", "")
+        data = data.replace("\u05B3", "")
+        data = data.replace("\u05B4", "")
+        data = data.replace("\u05B5", "")
+        data = data.replace("\u05B6", "")
+        data = data.replace("\u05B7", "")
+        data = data.replace("\u05B8", "")
+        data = data.replace("\u05B9", "")
+        data = data.replace("\u05BB", "")
+        data = data.replace("\u05BC", "")
+        data = data.replace("\u05BD", "")
+        data = data.replace("\u05BF", "")
+        data = data.replace("\u05C1", "")
+        data = data.replace("\u05C2", "")
+        data = data.replace("\u05C3", "")
+        data = data.replace("\u05C4", "")
         return data != word.decode('utf-8')
 
 
@@ -337,8 +338,8 @@ def isGematria(txt):
                                 #print "3 length hundreds false, no taf"
                                 return False
         else:
-            print "length of gematria is off"
-            print txt
+            print("length of gematria is off")
+            print(txt)
             return False
         return True
 
@@ -360,7 +361,7 @@ class StructuredDocument:
             match = re.search(regex, line)
             if match:
                 if len(current_section) > 0:
-                    sections.append(u''.join(current_section))
+                    sections.append(''.join(current_section))
                     if section_num:
                         section_mapping[section_num] = section_index
                     section_index += 1
@@ -369,7 +370,7 @@ class StructuredDocument:
 
             current_section.append(line)
         else:
-            sections.append(u''.join(current_section))
+            sections.append(''.join(current_section))
             section_mapping[section_num] = section_index
 
         self._sections = sections
@@ -389,7 +390,7 @@ class StructuredDocument:
         self._set_section(section_number, new_section)
 
     def get_whole_text(self):
-        return u''.join(self._sections)
+        return ''.join(self._sections)
 
     def write_to_file(self, filename):
         with codecs.open(filename, 'w', 'utf-8') as outfile:
@@ -400,7 +401,7 @@ class StructuredDocument:
 
 
 def getGematria(txt):
-        if not isinstance(txt, unicode):
+        if not isinstance(txt, str):
             txt = txt.decode('utf-8')
         index=0
         sum=0
@@ -421,8 +422,8 @@ def he_ord(he_char):
     """
     if len(he_char) != 1:
         raise AssertionError('Can only evaluate a single character')
-    if re.search(u'[\u05d0-\u05ea]', he_char) is None:
-        raise AssertionError(u'{} is not a Hebrew Character!'.format(he_char))
+    if re.search('[\u05d0-\u05ea]', he_char) is None:
+        raise AssertionError('{} is not a Hebrew Character!'.format(he_char))
     return he_char_ord[he_char]
 
 
@@ -432,23 +433,23 @@ def he_num_to_char(num):
 
 
 
-def numToHeb(engnum=u""):
+def numToHeb(engnum=""):
         engnum = str(engnum)
         numdig = len(engnum)
-        hebnum = u""
-        letters = [[u"" for i in range(3)] for j in range(10)]
-        letters[0]=[u"", u"א", u"ב", u"ג", u"ד", u"ה", u"ו", u"ז", u"ח", u"ט"]
-        letters[1]=[u"", u"י", u"כ", u"ל", u"מ", u"נ", u"ס", u"ע", u"פ", u"צ"]
-        letters[2]=[u"", u"ק", u"ר", u"ש", u"ת", u"תק", u"תר", u"תש", u"תת", u"תתק"]
+        hebnum = ""
+        letters = [["" for i in range(3)] for j in range(10)]
+        letters[0]=["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט"]
+        letters[1]=["", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ"]
+        letters[2]=["", "ק", "ר", "ש", "ת", "תק", "תר", "תש", "תת", "תתק"]
         if (numdig > 3):
             sub_engnum = int(engnum)-800
             if sub_engnum>400:
                 raise KeyError
-            return u"תת{}".format(numToHeb(sub_engnum))
+            return "תת{}".format(numToHeb(sub_engnum))
         for count in range(numdig):
             hebnum += letters[numdig-count-1][int(engnum[count])]
-        hebnum = re.sub(u'יה', u'טו', hebnum)
-        hebnum = re.sub(u'יו', u'טז', hebnum)
+        hebnum = re.sub('יה', 'טו', hebnum)
+        hebnum = re.sub('יו', 'טז', hebnum)
         # hebnum = hebnum.decode('utf-8')
         return hebnum
 
@@ -464,10 +465,10 @@ def multiple_replace(old_string, replacement_dictionary, using_regex = False):
         :return: String with replacements made.
         """
         if using_regex:
-            for keys, value in replacement_dictionary.iteritems():
+            for keys, value in replacement_dictionary.items():
                 old_string = re.sub(keys,value,old_string)
         else:
-            for keys, value in replacement_dictionary.iteritems():
+            for keys, value in replacement_dictionary.items():
                 old_string = old_string.replace(keys, value)
 
         return old_string
@@ -492,14 +493,14 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
         for book in book_list:
 
             # print book to give user update on progress
-            print book
+            print(book)
             book = book.replace(' ', '_')
             book = book.replace('\n', '')
 
             if middle:
 
-                print "Start {0} at chapter: ".format(book)
-                start_chapter = input()
+                print("Start {0} at chapter: ".format(book))
+                start_chapter = eval(input())
                 url = SEFARIA_SERVER + '/api/texts/' + book + '.' + \
                     str(start_chapter) + '/' + language + '/' + version_title
 
@@ -509,7 +510,7 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
 
             try:
                 # get first chapter in book
-                response = urllib2.urlopen(url)
+                response = urllib.request.urlopen(url)
                 version_text = json.load(response)
 
                 # loop through chapters
@@ -530,10 +531,10 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
                             # set middle back to false
                             middle = False
 
-                    print index+1,
+                    print(index+1, end=' ')
 
                     # get canonical number of verses
-                    canon = len(TextChunk(chapter, vtitle=u'Tanach with Text Only', lang='he').text)
+                    canon = len(TextChunk(chapter, vtitle='Tanach with Text Only', lang='he').text)
 
                     # get number of verses in version
                     verses = len(version_text['text'])
@@ -545,12 +546,12 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
                     next_chapter = next_chapter.replace(' ', '_')
                     url = SEFARIA_SERVER+'/api/texts/'+next_chapter+'/'+language+'/'+version_title
 
-                    response = urllib2.urlopen(url)
+                    response = urllib.request.urlopen(url)
                     version_text = json.load(response)
 
             except (URLError, HTTPError, KeyboardInterrupt, KeyError, ValueError) as e:
-                print e
-                print url
+                print(e)
+                print(url)
                 file_buffer.close()
                 sys.exit(1)
 
@@ -565,16 +566,16 @@ def jagged_array_to_file(output_file, jagged_array, section_names):
     """
 
     for index, item in enumerate(jagged_array):
-        output_file.write(u'{} {}:\n'.format(section_names[0], index+1))
+        output_file.write('{} {}:\n'.format(section_names[0], index+1))
 
-        if type(item) is str or type(item) is unicode:
-            output_file.write(u'{}\n'.format(item))
+        if type(item) is str or type(item) is str:
+            output_file.write('{}\n'.format(item))
 
         elif type(item) is list:
             jagged_array_to_file(output_file, item, section_names[1:])
 
         else:
-            print 'jagged array contains unknown type'
+            print('jagged array contains unknown type')
             output_file.close()
             raise TypeError
 
@@ -592,7 +593,7 @@ def ja_to_xml(ja, section_names, filename='output.xml'):
         for index, item in enumerate(data):
             child = ET.SubElement(parent, sections[0], attrib={'index': str(index+1)})
 
-            if isinstance(item, basestring):
+            if isinstance(item, str):
                 child.text = item
 
             elif isinstance(item, list):
@@ -622,7 +623,7 @@ def file_to_ja(depth, infile, expressions, cleaner, grab_all=False):
     """
 
     # instantiate ja
-    structure = reduce(lambda x, y: [x], range(depth-1), [])
+    structure = reduce(lambda x, y: [x], list(range(depth-1)), [])
     ja = jagged_array.JaggedArray(structure)
 
     # ensure there is a regex for every level except the lowest
@@ -685,7 +686,7 @@ def file_to_ja_g(depth, infile, expressions, cleaner, gimatria=False, group_name
         grab_all = [False] * len(expressions)
 
     # instantiate ja
-    structure = reduce(lambda x, y: [x], range(depth - 1), [])
+    structure = reduce(lambda x, y: [x], list(range(depth - 1)), [])
     ja = jagged_array.JaggedArray(structure)
 
     # ensure there is a regex for every level except the lowest
@@ -739,7 +740,7 @@ def he_array_to_int(he_array):
 
     numbers = []
     for he in he_array:
-        numbers.append(getGematria(he.replace(u'"', u'')))
+        numbers.append(getGematria(he.replace('"', '')))
     return numbers
 
 
@@ -784,21 +785,21 @@ def clean_jagged_array(messy_array, strip_list):
         if type(item) is list:
             clean_array.append(clean_jagged_array(item, strip_list))
 
-        elif type(item) is str or type(item) is unicode:
+        elif type(item) is str or type(item) is str:
 
             for case in strip_list:
-                item = re.sub(case, u'', item)
-            item = re.sub(u' +', u' ', item)
-            clean_array.append(item.lstrip(u' '))
+                item = re.sub(case, '', item)
+            item = re.sub(' +', ' ', item)
+            clean_array.append(item.lstrip(' '))
 
         else:
-            print 'Jagged array contains unknown type'
+            print('Jagged array contains unknown type')
             raise TypeError
 
     return clean_array
 
 
-def traverse_ja(ja, indices=None, bottom=unicode):
+def traverse_ja(ja, indices=None, bottom=str):
     """
     A generator to move through a JaggedArray like structure, retrieving the indices  of each element of
     the JA as you go.
@@ -870,7 +871,7 @@ def simple_to_complex(segment_names, jagged_text_array):
 
 
 def convert_dict_to_array(dictionary, default_value=list):
-    assert all([isinstance(item, int) for item in dictionary.keys()])
+    assert all([isinstance(item, int) for item in list(dictionary.keys())])
     assert callable(default_value)
 
     output_list = list()
@@ -888,7 +889,7 @@ def restructure_file(filename, function, *args):
     :param args:
     """
     original = codecs.open(filename, 'r', 'utf-8')
-    updated = codecs.open(u'{}.tmp'.format(filename), 'w', 'utf-8')
+    updated = codecs.open('{}.tmp'.format(filename), 'w', 'utf-8')
 
     for line in original:
         new_line = function(line, *args)
@@ -898,7 +899,7 @@ def restructure_file(filename, function, *args):
     updated.close()
 
     os.remove(filename)
-    os.rename(u'{}.tmp'.format(filename), filename)
+    os.rename('{}.tmp'.format(filename), filename)
 
 
 class ToratEmetData:
@@ -927,7 +928,7 @@ class ToratEmetData:
 
         if self._from_url:
             lines = []
-            for line in urllib2.urlopen(self._path).readlines():
+            for line in urllib.request.urlopen(self._path).readlines():
                 lines.append(line.decode(self._codec))
             return lines
 
@@ -943,7 +944,7 @@ class ToratEmetData:
 
         comments = []
 
-        bold = re.compile(u'<b>')
+        bold = re.compile('<b>')
         if not bold.search(section):
             return [section]
         matches = bold.finditer(section)
@@ -962,12 +963,12 @@ class ToratEmetData:
         for line in self._important_lines:
             chapter, verse = line['chapter'], line['verse']
 
-            if chapter not in book.keys():
+            if chapter not in list(book.keys()):
                 book[chapter] = {}
 
             book[chapter][verse] = self.build_segments(line['text'])
 
-        for key in book.keys():
+        for key in list(book.keys()):
             book[key] = convert_dict_to_array(book[key])
 
         book = convert_dict_to_array(book)
@@ -985,7 +986,7 @@ def get_cards_from_trello(list_name, board_json):
 
     board = json.loads(board_json.read())
 
-    list_id = u''
+    list_id = ''
     for column in board['lists']:
         if column['name'] == list_name:
             list_id = column['id']
@@ -1015,38 +1016,38 @@ class WeightedLevenshtein:
         """
         if letter_freqs is None:
             self.letter_freqs = {
-                u'י': 0.0,
-                u'ו': 0.2145,
-                u'א': 0.2176,
-                u'מ': 0.3555,
-                u'ה': 0.4586,
-                u'ל': 0.4704,
-                u'ר': 0.4930,
-                u'נ': 0.5592,
-                u'ב': 0.5678,
-                u'ש': 0.7007,
-                u'ת': 0.7013,
-                u'ד': 0.7690,
-                u'כ': 0.8038,
-                u'ע': 0.8362,
-                u'ח': 0.8779,
-                u'ק': 0.9124,
-                u'פ': 0.9322,
-                u'ס': 0.9805,
-                u'ט': 0.9924,
-                u'ז': 0.9948,
-                u'ג': 0.9988,
-                u'צ': 1.0
+                'י': 0.0,
+                'ו': 0.2145,
+                'א': 0.2176,
+                'מ': 0.3555,
+                'ה': 0.4586,
+                'ל': 0.4704,
+                'ר': 0.4930,
+                'נ': 0.5592,
+                'ב': 0.5678,
+                'ש': 0.7007,
+                'ת': 0.7013,
+                'ד': 0.7690,
+                'כ': 0.8038,
+                'ע': 0.8362,
+                'ח': 0.8779,
+                'ק': 0.9124,
+                'פ': 0.9322,
+                'ס': 0.9805,
+                'ט': 0.9924,
+                'ז': 0.9948,
+                'ג': 0.9988,
+                'צ': 1.0
             }
         else:
             self.letter_freqs = letter_freqs
 
         self.sofit_map = {
-            u'ך': u'כ',
-            u'ם': u'מ',
-            u'ן': u'נ',
-            u'ף': u'פ',
-            u'ץ': u'צ',
+            'ך': 'כ',
+            'ם': 'מ',
+            'ן': 'נ',
+            'ף': 'פ',
+            'ץ': 'צ',
         }
 
         if min_cost is None:
@@ -1056,7 +1057,7 @@ class WeightedLevenshtein:
 
         #self._cost is a dictionary with keys either single letters, or tuples of two letters.
         # note that for calculate, we remove the sofit letters.  We could probably remove them from here as well, save for cost_str().
-        all_letters = self.letter_freqs.keys() + self.sofit_map.keys()
+        all_letters = list(self.letter_freqs.keys()) + list(self.sofit_map.keys())
         self._cost = defaultdict(lambda: self.min_cost)
         self._cost.update({c: self._build_cost(c) for c in all_letters})  # single letters
         self._cost.update({(c1, c2): self._build_cost(c1, c2) for c1 in all_letters for c2 in all_letters}) # tuples
@@ -1067,11 +1068,11 @@ class WeightedLevenshtein:
 
         # dict((ord(char), sofit_map[char]) for char in self.sofit_map.keys())
         self._sofit_transx_table = {
-            1498: u'\u05db',
-            1501: u'\u05de',
-            1503: u'\u05e0',
-            1507: u'\u05e4',
-            1509: u'\u05e6'
+            1498: '\u05db',
+            1501: '\u05de',
+            1503: '\u05e0',
+            1507: '\u05e4',
+            1509: '\u05e6'
         }
     #Cost of calling this isn't worth the syntax benefit
     """
@@ -1140,14 +1141,14 @@ class WeightedLevenshtein:
                 s2_cost = [self._cost[c] for c in s2]
                 total_delete_cost = 0
                 v0 = [0]
-                for j in xrange(s2_len):
+                for j in range(s2_len):
                     v0 += [s2_cost[j] + v0[j]]
                 v1 = [0] * (s2_len + 1)
 
-                for i in xrange(s1_len):
+                for i in range(s1_len):
                     cost_del = s1_cost[i]
                     v1[0] = total_delete_cost = cost_del + total_delete_cost  # Set to cost of deleting char from s1
-                    for j in xrange(s2_len):
+                    for j in range(s2_len):
                         cost_ins = s2_cost[j]
                         cost_sub = 0.0 if s1[i] == s2[j] else self._cost.get(
                             (s1[i], s2[j]), cost_ins if cost_ins > cost_del else cost_del)
@@ -1270,7 +1271,7 @@ def clean_whitespace(some_string):
     :param basestring some_string:
     :return:
     """
-    return u' '.join(some_string.split())
+    return ' '.join(some_string.split())
 
 
 def split_version(version_dict, num_splits):
@@ -1284,14 +1285,14 @@ def split_version(version_dict, num_splits):
     def edges(size):
         chunk_length = float(size) / float(num_splits)
         chunk_indices = [math.trunc(chunk_length * i) for i in range(num_splits + 1)]
-        return zip(chunk_indices[:-1], chunk_indices[1:])
+        return list(zip(chunk_indices[:-1], chunk_indices[1:]))
 
     volumes = []
     indices = edges(len(version_dict['text']))
     for vol_num, (start, end) in enumerate(indices, 1):
         new_fields = {
-            u'versionTitle': u'{}, Vol {}'.format(version_dict[u'versionTitle'], vol_num),
-            u'text': [t if start <= ind < end else [] for ind, t in enumerate(version_dict[u'text'])]
+            'versionTitle': '{}, Vol {}'.format(version_dict['versionTitle'], vol_num),
+            'text': [t if start <= ind < end else [] for ind, t in enumerate(version_dict['text'])]
         }
         new_version = version_dict.copy()
         new_version.update(new_fields)

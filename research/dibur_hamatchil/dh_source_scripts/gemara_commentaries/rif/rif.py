@@ -33,24 +33,24 @@ rif_window = 10
 gem_window = 100
 
 def tokenize_words(str):
-    str = str.replace(u"־", " ")
+    str = str.replace("־", " ")
     str = re.sub(r"</?.+>", "", str)  # get rid of html tags
     str = re.sub(r"\([^\(\)]+\)", "", str)  # get rid of refs
     str = str.replace("'", '"')
-    word_list = filter(bool, re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]", str))
+    word_list = list(filter(bool, re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]", str)))
     return word_list
 
 def dh_extraction_method(s):
-    s = s.replace(u"־", " ")
+    s = s.replace("־", " ")
     s = re.sub(r"</?.+>", "", s)  # get rid of html tags
     s = re.sub(r"\([^\(\)]+\)", "", s)  # get rid of refs
 
-    s_words = re.split(ur'\s+',s)
-    s = u' '.join(s_words[:10])
+    s_words = re.split(r'\s+',s)
+    s = ' '.join(s_words[:10])
     return s
 
 for mes in mesechtot:
-    print '---- {} ----'.format(mes)
+    print('---- {} ----'.format(mes))
 
     links = []
     rif = Ref("Rif {}".format(mes))
@@ -65,7 +65,7 @@ for mes in mesechtot:
     while i_rif < len(rif_segs) - rif_window and i_gem < len(gem_segs) - gem_window:
         temp_rif_tc = rif_segs[i_rif].to(rif_segs[i_rif + rif_window]).text("he")
         temp_gem_tc = gem_segs[i_gem].to(gem_segs[i_gem + gem_window]).text(lang="he", vtitle=vtitle)
-        print "{}, {}, {}".format(temp_rif_tc, temp_gem_tc, len(links))
+        print("{}, {}, {}".format(temp_rif_tc, temp_gem_tc, len(links)))
 
         matched = dibur_hamatchil_matcher.match_ref(temp_gem_tc, temp_rif_tc, base_tokenizer=tokenize_words,
                                                     dh_extract_method=dh_extraction_method, verbose=False,
@@ -82,9 +82,9 @@ for mes in mesechtot:
 
             def dh_extraction_method_short(s):
                 dh = dh_extraction_method(s)
-                dh_split = re.split(ur'\s+', dh)
+                dh_split = re.split(r'\s+', dh)
                 if len(dh_split) > start_pos + 4:
-                    dh = u' '.join(dh_split[start_pos:start_pos + 4])
+                    dh = ' '.join(dh_split[start_pos:start_pos + 4])
 
                 return dh
 
@@ -98,7 +98,7 @@ for mes in mesechtot:
             match_indices = matched['match_word_indices']
 
         if 'comment_refs' not in matched:
-            print 'NO COMMENTS'
+            print('NO COMMENTS')
             continue
         matches = matched['matches']
         comment_refs = matched['comment_refs']
@@ -109,11 +109,11 @@ for mes in mesechtot:
                 last_comment_matched = i # TODO this will be stupid if first ref doesn't match anything
                 break
 
-        links += zip(comment_refs[:last_comment_matched], matches[:last_comment_matched])
+        links += list(zip(comment_refs[:last_comment_matched], matches[:last_comment_matched]))
         if last_comment_matched == 0 and last_update_was_zero:
             i_rif += 1
             i_gem -= gem_window / 2
-            print 'BACKTRACK'
+            print('BACKTRACK')
             last_update_was_zero = False
         else:
             i_rif += last_comment_matched
@@ -121,5 +121,5 @@ for mes in mesechtot:
             last_update_was_zero = last_comment_matched == 0
 
     links_text = [[l[0].normal(), l[1].normal()] for l in links]
-    print "{}/{}".format(len(links),len(rif_segs))
+    print("{}/{}".format(len(links),len(rif_segs)))
     json.dump(links_text,open('rif.json','wb'))

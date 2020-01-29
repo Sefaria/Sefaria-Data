@@ -11,12 +11,12 @@ from sefaria.utils import hebrew
 random.seed(2823274491)
 
 def tokenize_words(str,strip_html=True):
-    str = str.replace(u"־"," ")
+    str = str.replace("־"," ")
     if strip_html:
        str = re.sub(r"</?[a-z]+>","",str) #get rid of html tags
     str = re.sub(r"\([^\(\)]+\)","",str) #get rid of refs
     str = str.replace('"',"'")
-    word_list = filter(bool,re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]",str))
+    word_list = list(filter(bool,re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]",str)))
     return word_list
 
 def make_aramaic_training():
@@ -50,7 +50,7 @@ def make_mishnaic_training():
                     continue
                 training.append({'word':word,'tag':'mishnaic'})
                 mish_set.add(word)
-    print "Num Mishna removed: {}".format(num_removed)
+    print("Num Mishna removed: {}".format(num_removed))
     return training
 
 def merge_sets(a,m):
@@ -96,7 +96,7 @@ def merge_sets(a,m):
 
 
     ambig_set = set()
-    for word,count in a_set.items():
+    for word,count in list(a_set.items()):
         if word in m_set and count < 10*m_set[word] and m_set[word] < 10*count:
             ambig_set.add(word)
 
@@ -120,30 +120,30 @@ def merge_sets(a,m):
         else:
             m_merge.append(w)
 
-    print num_deleted
-    print "NUM IN M {}".format(num_in_m)
-    print 'YO A {} M {}'.format(len(a),len(m))
+    print(num_deleted)
+    print("NUM IN M {}".format(num_in_m))
+    print('YO A {} M {}'.format(len(a),len(m)))
     return a_merge + m_merge + ambig,len(a_merge),len(m_merge),len(ambig)
 
 
 
 def print_tagged_corpus_to_html_table(lang_out):
-    str = u"<html><head><style>h1{text-align:center;background:grey}td{text-align:center}table{margin-top:20px;margin-bottom:20px;margin-right:auto;margin-left:auto;width:1200px}.aramaic{background-color:blue;color:white}.mishnaic{background-color:red;color:white}.ambiguous{background-color:yellow;color:black}</style><meta charset='utf-8'></head><body>"
+    str = "<html><head><style>h1{text-align:center;background:grey}td{text-align:center}table{margin-top:20px;margin-bottom:20px;margin-right:auto;margin-left:auto;width:1200px}.aramaic{background-color:blue;color:white}.mishnaic{background-color:red;color:white}.ambiguous{background-color:yellow;color:black}</style><meta charset='utf-8'></head><body>"
     for daf in lang_out:
-        str += u"<h1>DAF {}</h1>".format(daf)
-        str += u"<table>"
+        str += "<h1>DAF {}</h1>".format(daf)
+        str += "<table>"
         count = 0
         while count < len(lang_out[daf]):
             row_obj = lang_out[daf][count:count+10]
-            row = u"<tr>"
+            row = "<tr>"
             for w in reversed(row_obj):
-                row += u"<td class='{}'>{}</td>".format(w['lang'],w['word'])
-            row += u"</tr>"
+                row += "<td class='{}'>{}</td>".format(w['lang'],w['word'])
+            row += "</tr>"
             #row_sef += u"<td>({}-{})</td></tr>".format(count,count+len(row_obj)-1)
             str += row
             count += 10
-        str += u"</table>"
-        str += u"</body></html>"
+        str += "</table>"
+        str += "</body></html>"
     return str
 
 
@@ -190,7 +190,7 @@ def dilate_lang():
             daf = f_name.split('lang_naive_talmud_')[1].split('.json')[0]
             html_out[daf] = lang_out
             if i_f % 10 == 0:
-                print '{}/{}'.format(mesechta,f_name)
+                print('{}/{}'.format(mesechta,f_name))
                 html = print_tagged_corpus_to_html_table(html_out)
                 fp = codecs.open("{}/{}/html_lang_tagged_dilated/{}.html".format(cal_matcher_path, mesechta, daf), "wb",
                                  encoding='utf-8')
@@ -229,7 +229,7 @@ def make_aramaic_training_context():
     for p in training:
         total_words += len(p['phrase'])
 
-    print 'NUM PHRASES: {} AVG WORDS PER PHRASE: {}'.format(total_phrases,total_words/total_phrases)
+    print('NUM PHRASES: {} AVG WORDS PER PHRASE: {}'.format(total_phrases,total_words/total_phrases))
 
     return training
 
@@ -243,14 +243,14 @@ def make_mishnaic_training_context():
         mishna_segs = ind.all_section_refs()
         for seg in mishna_segs:
             first_sec_str = hebrew.strip_cantillation(seg.text('he').as_string(), strip_vowels=True)
-            training += [{'language':'mishnaic', 'phrase':tokenize_words(p)} for p in first_sec_str.split(u'. ')]
+            training += [{'language':'mishnaic', 'phrase':tokenize_words(p)} for p in first_sec_str.split('. ')]
 
     total_words = 0
     total_phrases = len(training)
     for p in training:
         total_words += len(p['phrase'])
 
-    print 'NUM PHRASES: {} AVG WORDS PER PHRASE: {}'.format(total_phrases,total_words/total_phrases)
+    print('NUM PHRASES: {} AVG WORDS PER PHRASE: {}'.format(total_phrases,total_words/total_phrases))
     return training
 
 def merge_sets_context(a,m):

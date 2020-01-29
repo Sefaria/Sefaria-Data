@@ -4,7 +4,7 @@ import pytest
 import django
 django.setup()
 from sefaria.model import *
-from main import *
+from .main import *
 # {'quote': Ref('Yevamot 91a'), 'main': Ref('Maharam on Yevamot 88b:1')}
 # {'quote': Ref('Yevamot 91a'), 'main': Ref('Maharam on Yevamot 88b:1')}
 # {'quote': Ref('Zevachim 9b'), 'main': Ref('Commentary on Sefer Hamitzvot of Rasag, Positive Commandments 136:3')}
@@ -51,14 +51,14 @@ def test_link_disambiguator(test_items):
 
     ld = Link_Disambiguator()
     good, bad = disambiguate_one(ld, test_items["in"]["main"], test_items["in"]["main"].text('he'), test_items["in"]["quote"], test_items["in"]["quote"].text('he'))
-    print test_items["in"]
+    print(test_items["in"])
     if "quote" not in test_items["out"]:
         # output should be bad
         assert good == []
-        assert bad == [] or bad[0][u'Quoting Ref'] == test_items["out"]["main"].normal()
+        assert bad == [] or bad[0]['Quoting Ref'] == test_items["out"]["main"].normal()
     else:
         # output is good
-        assert good[0][u'Quoted Ref'] == test_items["out"]["quote"].normal()
+        assert good[0]['Quoted Ref'] == test_items["out"]["quote"].normal()
         assert bad == []
 
 

@@ -4,7 +4,7 @@ django.setup()
 
 from sefaria.model import *
 from sefaria.system.database import db
-import unicodecsv as csv
+import csv
 
 # clear out all earlier author data:
 """
@@ -52,9 +52,9 @@ with open("Torah Commentators - Bios - Works.tsv") as tsv:
         indexes_handled.append(l[0])
     unhandled = set([i.primary_title() for i in library.get_index_forest()]) - set(indexes_handled)
     if len(unhandled) > 0:
-        print "Indexes not covered in the sheet:"
+        print("Indexes not covered in the sheet:")
         for a in sorted(unhandled):
-            print a
+            print(a)
 
     tsv.seek(0)
     next(tsv)
@@ -64,7 +64,7 @@ with open("Torah Commentators - Bios - Works.tsv") as tsv:
         try:
             i = library.get_index(l[0])
         except Exception as e:
-            print u"Count not load {}. {}".format(l[0], e)
+            print("Count not load {}. {}".format(l[0], e))
             continue
         try:
             current_authors = set(getattr(i, "authors", []) or [])
@@ -90,7 +90,7 @@ with open("Torah Commentators - Bios - Works.tsv") as tsv:
                 setattr(i, aname, value)
                 needs_save = True
         if needs_save:
-            print "o - {}".format(l[0])
+            print("o - {}".format(l[0]))
             i.save(override_dependencies=True)
         else:
-            print "."
+            print(".")

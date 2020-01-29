@@ -7,8 +7,8 @@ from bs4 import BeautifulSoup
 comm_ref_probs = []
 links = []
 tc = TextChunk(Ref("Shulchan Arukh, Yoreh De'ah"), vtitle="Kereti and Peleti", lang="he")
-LinkSet(Ref("Kereti on Shulchan Arukh, Yoreh De'ah")).delete()
-LinkSet(Ref("Peleti on Shulchan Arukh, Yoreh De'ah")).delete()
+#LinkSet(Ref("Kereti on Shulchan Arukh, Yoreh De'ah")).delete()
+#LinkSet(Ref("Peleti on Shulchan Arukh, Yoreh De'ah")).delete()
 
 for siman_n, siman in enumerate(tc.text):
     for seif_n, seif in enumerate(siman):
@@ -24,9 +24,8 @@ for siman_n, siman in enumerate(tc.text):
                 elif comm_ref.text('he').text:
                     links.append({"refs": [comm_ref.normal(), SA_ref], "generated_by": "relinker_kereti_peleti",
                                   "auto": True, "type": "Commentary", "inline_reference": {"data-order": data_order, "data-commentator": data_commentator}})
-                    Link(links[-1]).save()
+                    #Link(links[-1]).save()
 
 
-print len(links)
 for comm_ref in comm_ref_probs:
-    print comm_ref
+    print(comm_ref)

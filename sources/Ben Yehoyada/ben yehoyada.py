@@ -37,7 +37,7 @@ def create_index(title):
 if __name__ == "__main__":
     dappim = Counter()
     new_csv = ""
-    for title in ["Chagigah", "Taanit", "Moed Katan"]:
+    for title in ["Yevamot","Ketubot"]:
         text_dict = {}
 
         create_index(title)
@@ -50,10 +50,9 @@ if __name__ == "__main__":
                 if text[-3] == '"':
                     text = text[:-3]
                 if '\0' in row:
-                    print ref
-                    print text
+                    print(ref)
+                    print(text)
                 text = text.replace('\0', "")
-                text = text.decode('utf-8')
                 # if "Introduction" not in row and "Yehoyada" in ref:
                     # text = text.replace("</strong></big>", "!? ")
                     # text = re.sub(u"<.*?>", u"", text)
@@ -90,7 +89,7 @@ if __name__ == "__main__":
             try:
                 base = TextChunk(Ref("{} {}".format(title, daf)), lang='he')
             except InputError as e:
-                print e.message
+                print(e.message)
                 continue
             results = match_ref(base, text, lambda x: x.split(), dh_extract_method=dher)
             for i, ref in enumerate(results["matches"]):
@@ -98,7 +97,7 @@ if __name__ == "__main__":
                     berakhot = "Ben Yehoyada on {} {}:{}".format(title, daf, i+1)
                     links.append({"refs": [ref.normal(), berakhot], "type": "Commentary", "auto": True, "generated_by": "ben_yeh"})
 
-        print len(links)
+        print(len(links))
         post_link(links, server=SEFARIA_SERVER)
         with codecs.open("{}_Sefaria_structure.csv".format(title), 'w', encoding='utf-8') as f:
             f.write(new_csv)

@@ -32,4 +32,8 @@ for f in files:
     parser = XML_to_JaggedArray(title, f, allowed_tags, allowed_attributes, post_info, change_name=True, image_dir="./images",
                                 titled=True, print_bool=True, remove_chapter=False, versionInfo=versionInfo)
     parser.set_funcs(reorder_test=lambda x: x.tag == "h1", reorder_modify=reorder_modify)
-    parser.run()
+    try:
+        parser.run()
+    except:
+        print(f)
+        print("PROBLEM")

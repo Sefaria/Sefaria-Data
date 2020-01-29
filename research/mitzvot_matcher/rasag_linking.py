@@ -65,7 +65,7 @@ def derive_new_rasag_halakhah_links(sources, generated_msg='rsg_sfm_linker'):
             })
             # print link['refs']
             new_links.append(link)
-    print len(new_links)
+    print(len(new_links))
     return new_links
 
 if __name__ == "__main__":

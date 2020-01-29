@@ -49,7 +49,7 @@ for siman_n, siman in enumerate(tc.text):
                 i_tag_num = len(i_tags)
                 links_num = len(links)
                 if i_tag_num != links_num:
-                    print "{} {} {}: {} {}".format(data_comm, siman_n+1, seif_n+1, i_tag_num, links_num)
+                    print("{} {} {}: {} {}".format(data_comm, siman_n+1, seif_n+1, i_tag_num, links_num))
         except KeyError as e:
             pass
 

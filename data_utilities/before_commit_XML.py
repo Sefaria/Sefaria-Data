@@ -89,7 +89,7 @@ class XML_to_JaggedArray:
                 }
             post_text(ref, send_text)
         else:
-            print "Not Posting...."
+            print("Not Posting....")
             assert Ref(ref)
             tc = TextChunk(Ref(ref), lang=self.post_info["language"], vtitle=self.post_info["versionTitle"])
             tc.text = text
@@ -123,7 +123,7 @@ class XML_to_JaggedArray:
             text = text.replace("<sup>", "").replace("</sup>", "")
             if text[0].isdigit():
                 text = " ".join(text.split()[1:])
-            return u'<sup>{}</sup><i class="footnote">{}</i>'.format(num, text)
+            return '<sup>{}</sup><i class="footnote">{}</i>'.format(num, text)
 
         def convertIMGBase64(text):
             tags = re.findall("<img.*?>", text)
@@ -156,7 +156,7 @@ class XML_to_JaggedArray:
                 ftnote_text = footnotes[ft_ids[reverse_i]]
                 text_to_insert = buildFtnoteText(ft_sup_nums[reverse_i], ftnote_text)
                 pos = ft_pos[reverse_i]
-                text_arr[index] = u"{}{}{}".format(text_arr[index][0:pos], text_to_insert, text_arr[index][pos:])
+                text_arr[index] = "{}{}{}".format(text_arr[index][0:pos], text_to_insert, text_arr[index][pos:])
 
             all = re.findall(footnote_pattern, text_arr[index])
             for each in all:
@@ -217,7 +217,7 @@ class XML_to_JaggedArray:
     def siblingsHaveChildren(self, element):
         for index, child in enumerate(element):
             if len(child) > 0:
-                print "Siblings have children: El {} has children".format(index)
+                print("Siblings have children: El {} has children".format(index))
                 return True
         return False
 

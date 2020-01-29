@@ -42,7 +42,7 @@ Filename_to_log = 'postagger_log_embdim' + str(EMBED_DIM) + '_hiddim' + str(HIDD
 
 
 def log_message(message):
-    print message
+    print(message)
     with open(Filename_to_log, "a", encoding="utf8") as myfile:
         myfile.write("\n" + message)
 
@@ -105,8 +105,8 @@ def read_data(dir='', mesechta=None):
             if word_known: word_pos = word['POS']
 
             total_words += 1
-            if word_known and word_s == u'הכא' and word_pos != u'a':
-                print "OH NO! {}".format(file)
+            if word_known and word_s == 'הכא' and word_pos != 'a':
+                print("OH NO! {}".format(file))
             all_words.append((word_s, word_class, word_pos, word_lang))
 
         total_daf += 1
@@ -267,7 +267,7 @@ class ConfusionMatrix:
             html += "<td>{}</td>".format(round(100.0 * (fn_matrix[i] - self.matrix[i, i]) / fn_matrix[i], 2))
         html += "</tr>"
 
-        for k, v in stats.items():
+        for k, v in list(stats.items()):
             html += "<tr><td>{}</td>".format(k)
             for j in range(self.size):
                 tp = self.matrix[j, j]
@@ -432,7 +432,7 @@ def CalculateLossForDaf(daf, fValidation=False, fRunning=False):
     return total_loss, class_prec, pos_prec, rough_pos_prec
 
 def print_tagged_corpus_to_html_table(tagged_dafs):
-    str = u"""<html>
+    str = """<html>
             <head>
             <style>
                 h1{text-align:center;background:grey}
@@ -445,28 +445,28 @@ def print_tagged_corpus_to_html_table(tagged_dafs):
                 .predicted_pos{}
             </style><meta charset='utf-8'></head><body>"""
     for daf in tagged_dafs:
-        str += u"<h1>DAF {}</h1>".format(daf)
-        str += u"<table>"
+        str += "<h1>DAF {}</h1>".format(daf)
+        str += "<table>"
         count = 0
         while count < len(tagged_dafs[daf]['words']):
             row_obj = tagged_dafs[daf]['words'][count:count+10]
-            word_row = u"<tr>"
+            word_row = "<tr>"
             for w in reversed(row_obj):
-                lang_class = u'aramaic' if w['lang'] else u'mishnaic'
-                notincal_class = u'notincal' if w['lang'] and w['gold_pos'] != '' else u''
-                word_row += u"<td class='{} {}'>{} (<span class='gold_pos'>{}</span>/<span class='predicted_pos'>{}</span>)</td>".format(lang_class,notincal_class,w['word'],w['gold_pos'],w['predicted'])
-            word_row += u"</tr>"
+                lang_class = 'aramaic' if w['lang'] else 'mishnaic'
+                notincal_class = 'notincal' if w['lang'] and w['gold_pos'] != '' else ''
+                word_row += "<td class='{} {}'>{} (<span class='gold_pos'>{}</span>/<span class='predicted_pos'>{}</span>)</td>".format(lang_class,notincal_class,w['word'],w['gold_pos'],w['predicted'])
+            word_row += "</tr>"
 
-            conf_row = u"<tr>"
+            conf_row = "<tr>"
             for w in reversed(row_obj):
-                conf_row += u"<td>{}</td>".format(round(w['confidence'],2))
+                conf_row += "<td>{}</td>".format(round(w['confidence'],2))
 
             #row_sef += u"<td>({}-{})</td></tr>".format(count,count+len(row_obj)-1)
             str += word_row
             str += conf_row
             count += 10
-        str += u"</table>"
-        str += u"</body></html>"
+        str += "</table>"
+        str += "</body></html>"
     return str
 
 def run_network_on_validation(epoch_num):
@@ -527,8 +527,8 @@ split_index = int(round(len(all_data) * percent_training))
 train_data = all_data[split_index:]
 val_data = all_data[:split_index]
 
-print 'Training dafs: {}'.format(len(train_data))
-print 'Validation dafs: {}'.format(len(val_data))
+print('Training dafs: {}'.format(len(train_data)))
+print('Validation dafs: {}'.format(len(val_data)))
 
 pos_hashtable = make_pos_hashtable(train_data)
 
@@ -552,10 +552,10 @@ log_message('let: ' + str(let_vocab.size()))
 # debug - write out the vocabularies
 # write out to files the pos vocab and the letter vocab
 with open('let_vocab.txt', 'w', encoding='utf8') as f:
-    for let, id in let_vocab.get_c2i().items():
+    for let, id in list(let_vocab.get_c2i().items()):
         f.write(str(id) + ' : ' + let + '\n')
 with open('pos_vocab.txt', 'w', encoding='utf8') as f:
-    for pos, id in pos_vocab.get_c2i().items():
+    for pos, id in list(pos_vocab.get_c2i().items()):
         f.write(str(id) + ' : ' + pos + '\n')
 
 # to save on memory space, we will clear out all_data from memory
@@ -683,7 +683,7 @@ else:
             daf = daf_obj['file'].split('_')[-1]
             html_out[daf] = tagged_daf
             if i_f % 10 == 0:
-                print '{}/{}'.format(mesechta,daf_obj['file'])
+                print('{}/{}'.format(mesechta,daf_obj['file']))
                 html = print_tagged_corpus_to_html_table(html_out)
                 fp = codecs.open("{}/{}/html_pos_tagged/{}.html".format(cal_matcher_path, mesechta, daf), "wb",
                                  encoding='utf-8')
