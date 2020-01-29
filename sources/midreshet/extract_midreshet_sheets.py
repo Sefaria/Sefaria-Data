@@ -623,6 +623,27 @@ class GroupManager(object):
 
         return
 
+    def post_pinned_tags(self, group_name):
+        if not self.group_cache[group_name].get('pinnedTags'):
+            self.group_cache[group_name]['pinnedTags'] = []
+        self.group_cache[group_name]['pinnedTags'] = list(set(self.group_cache[group_name]['pinnedTags']))
+        self.group_cache[group_name]['pinnedTags'].sort(key=lambda x: re.sub(ur'[^\u05d0-\u05ea]', u'', x))
+
+        url = u'{}/api/groups/{}'.format(self.server, group_name)
+        post_body = {'apikey': API_KEY, 'json': json.dumps({'name': group_name,
+                                                            'pinnedTags': self.group_cache[group_name]['pinnedTags']})}
+        response = requests.post(url, data=post_body)
+        response = response.json()
+
+        if 'error' in response:
+            print(group_name, response['error'])
+
+    def add_pinned_tag_to_group(self, group_name, pinned_tag):
+        if not self.group_cache[group_name].get('pinnedTags'):
+            self.group_cache[group_name]['pinnedTags'] = []
+
+        self.group_cache[group_name]['pinnedTags'].append(pinned_tag)
+
     def make_group_public(self, group_name):
         if self.group_cache[group_name]['num_sheets'] < 3 or self.group_cache[group_name]['public']:
             return
@@ -797,11 +818,18 @@ def get_sheet_by_id(page_id, rebuild_cache=False):
                    'FROM PageTags P JOIN Tags T ON P.tag_id = T.id '
                    'WHERE P.page_id=?', (page_id,))
     sheet['tags'] = [t.tag for t in cursor.fetchall()]
-    cursor.execute('SELECT Seminary.name FROM Pages JOIN Seminary ON Pages.seminary_id = Seminary.id WHERE Pages.id=?',
+    cursor.execute('SELECT Seminary.name, Seminary.url, Seminary.body FROM Pages JOIN Seminary ON Pages.seminary_id = Seminary.id WHERE Pages.id=?',
                    (page_id,))
     result = cursor.fetchone()
-    if result and result.name:
+    if result and result.name and result.name != u'-':
         sheet['tags'].append(result.name)
+        sheet['seminary'] = result.name
+        if result.url:
+            sheet['seminary_data'] = u'<a href="{}">לאתר {}</a>'.format(result.url, result.name)
+        elif result.name == u'מעגל טוב':
+            sheet['seminary_data'] = result.body
+        else:
+            sheet['seminary_data'] = None
 
     cursor.execute('SELECT first_name, last_name FROM Users WHERE id=?', (sheet['userId'],))
     result = cursor.fetchone()
@@ -1220,6 +1248,12 @@ def create_sheet_json(page_id, group_manager, series_map):
 
         sheet['sources'].append(source)
 
+    # add link to organization website
+    if raw_sheet.get('seminary_data', None):
+        sheet['sources'].append({
+            'outsideText': final_source_clean(raw_sheet['seminary_data'])
+        })
+
     # add external links for further reading
     external = parse_expansion(raw_sheet['bgAndExpansion'])
     if external:
@@ -1251,6 +1285,8 @@ def create_sheet_json(page_id, group_manager, series_map):
         })
 
     sheet['group'] = group_manager.get_and_register_group_for_sheet(page_id)
+    if raw_sheet.get('seminary'):
+        group_manager.add_pinned_tag_to_group(sheet['group'], raw_sheet['seminary'])
     return sheet
 
 
@@ -1467,6 +1503,9 @@ if __name__ == '__main__':
     # map(p_sheet_poster, sheet_chunks)
     print('done')
     group_handler.make_group_public(u'מדרשת')
+    group_handler.post_pinned_tags(u'מדרשת')
+    group_handler.post_pinned_tags(u'מדרשת טיוטה')
+
 
     # qa_sheets = random.sample([ws for ws in my_wrapped_sheet_list if ws.sheet_json['sources']], 60)
     # qa_rows = [
