@@ -80,6 +80,6 @@ def get_comm_text(title, post=False):
 
 
 if __name__ == "__main__":
-    get_comm_text("Kereti", True)
+    get_comm_text("Kereti", False)
     links, other = create_dict()
     post_link(links)
