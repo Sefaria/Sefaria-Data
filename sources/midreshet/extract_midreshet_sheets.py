@@ -16,7 +16,8 @@ import bleach
 import pyodbc
 import requests
 import unicodecsv
-from urlparse import urlparse
+# from urllib import parse as urlparse
+from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 from functools import partial
 from itertools import groupby
@@ -81,7 +82,7 @@ class NGramCatcher(object):
         self.gram_lengths = defaultdict(Counter)
 
     def find_n_grams(self, n, input_string):
-        pattern = u'.{%s}' % n
+        pattern = '.{%s}' % n
         self.gram_lengths[n].update(regex.findall(pattern, input_string, overlapped=True))
 
     def find_series_of_grams(self, n_list, input_string):
@@ -95,7 +96,7 @@ class NGramCatcher(object):
 class WordSequenceCatcher(NGramCatcher):
     def find_n_grams(self, n, input_string):
         words = input_string.split()
-        self.gram_lengths[n].update([u' '.join(words[i:i+n]) for i in range(len(words) - n + 1)])
+        self.gram_lengths[n].update([' '.join(words[i:i+n]) for i in range(len(words) - n + 1)])
 
 
 class SefariaTermsAndTitles(object):
@@ -105,8 +106,8 @@ class SefariaTermsAndTitles(object):
         # all_terms = [term_title for term in TermSet() for term_title in term.get_titles('he')]
         # everything = sorted(library.citing_title_list('he') + all_terms, key=lambda x: len(x), reverse=True)
         everything = [re.escape(s) for s in sorted(library.full_title_list('he'), key=lambda x: len(x), reverse=True)]
-        prefixes = u'משהוכלב'
-        pattern = u'(?:^|\s)(?:[{}])?(?P<title>{})(?=\s|$)'.format(prefixes, u'|'.join(everything))
+        prefixes = 'משהוכלב'
+        pattern = '(?:^|\s)(?:[{}])?(?P<title>{})(?=\s|$)'.format(prefixes, '|'.join(everything))
         self.regex = re.compile(pattern)
 
     def find_titles_and_terms(self, input_string):
@@ -131,7 +132,7 @@ class Series(object):
             try:
                 url = get_url_for_sheet_id(page.id, self._destination, my_mongo_client.yonis_data.server_map)
             except TypeError:
-                url = u''
+                url = ''
             sheet_urls.append(url)
 
         return sheet_urls
@@ -151,17 +152,17 @@ def parse_expansion(expansion):
         return
 
     # expansion is already made up of html elements - drop as is (more or less)
-    if re.search(ur'[<>]', expansion):
+    if re.search(r'[<>]', expansion):
         soup = BeautifulSoup(expansion, 'xml')
         if not soup.string or soup.string.isspace():
             return
-        return expansion.replace(u'http://', u'https://')
+        return expansion.replace('http://', 'https://')
     else:
-        matches = re.finditer(ur'(?P<url>[^{}]*){{DATA}}(?P<text>[^{}]*){{ITEM}}', expansion)
-        link_list = [u'<a href={}>{}</a>'.format(match.group('url'), match.group('text')) for match in matches
+        matches = re.finditer(r'(?P<url>[^{}]*){{DATA}}(?P<text>[^{}]*){{ITEM}}', expansion)
+        link_list = ['<a href={}>{}</a>'.format(match.group('url'), match.group('text')) for match in matches
                      if urlparse(match.group('url')).hostname]  # filter out `http://` without any actual url
 
-        return u'<br>'.join(map(lambda x: x.replace(u'http://', u'https://'), link_list))
+        return '<br>'.join(map(lambda x: x.replace('http://', 'https://'), link_list))
 
 
 def convert_row_to_dict(table_row):
@@ -171,92 +172,92 @@ def convert_row_to_dict(table_row):
 
 def disambiguate_simple_tanakh_ref(raw_ref, book_name):
     # strip all non-hebrew characters, except the dash (maybe the em-dash?)
-    clean_ref = re.sub(u'[^\u05d0-\u05ea\s\-\u2013]', u'', raw_ref)
-    clean_ref = u' '.join(clean_ref.split())
+    clean_ref = re.sub('[^\u05d0-\u05ea\s\-\u2013]', '', raw_ref)
+    clean_ref = ' '.join(clean_ref.split())
 
     # he_book_title = Ref(book_name).he_book()
-    he_book_title = u'|'.join(Ref(book_name).index.all_titles('he'))
-    perek = u'פרק'
-    prefix = u'ספר|מגילת'
+    he_book_title = '|'.join(Ref(book_name).index.all_titles('he'))
+    perek = 'פרק'
+    prefix = 'ספר|מגילת'
 
     # ^(<book-name>) <perek> (<1-3 letters>) <pasuk(im)> (<chars>-?<chars>?)
-    pattern = ur'(?:(?:%s) )?(%s)(?: %s)? ([\u05d0-\u05ea]{1,3}) \u05e4\u05e1\u05d5\u05e7(?:\u05d9\u05dd)? ([\u05d0-\u05ea]{1,3}(-[\u05d0-\u05ea]{1,3})?)' % (prefix, he_book_title, perek)
+    pattern = r'(?:(?:%s) )?(%s)(?: %s)? ([\u05d0-\u05ea]{1,3}) \u05e4\u05e1\u05d5\u05e7(?:\u05d9\u05dd)? ([\u05d0-\u05ea]{1,3}(-[\u05d0-\u05ea]{1,3})?)' % (prefix, he_book_title, perek)
     match = re.search(pattern, clean_ref)
     if match is None:
         return None
     else:
-        sefaria_ref = u'{} {} {}'.format(match.group(1), match.group(2), match.group(3))
+        sefaria_ref = '{} {} {}'.format(match.group(1), match.group(2), match.group(3))
         try:
             return Ref(sefaria_ref)
         except InputError:
-            print(u'Could not create Ref:')
+            print('Could not create Ref:')
             print(sefaria_ref)
             return None
 
 
 def get_he_talmud_titles(en_tractate):
     alts = {
-        u'Niddah': [u'נידה'],
+        'Niddah': ['נידה'],
     }
 
     standard_title = Ref(en_tractate).he_book()
     all_titles = [standard_title] + alts.get(en_tractate, [])
-    return u'|'.join(all_titles)
+    return '|'.join(all_titles)
 
 
 def disambiguate_simple_talmud_ref(midreshet_ref, expected_book):
-    u"""
+    """
     <Talmud Bavli> Masechet? <Masechet pattern> <Daf Pattern> <Amud Pattern>
     if range (presence of dash):
         add amud pattern
         if that fails, try daf pattern followed by amud pattern
     """
     def translate_ammud(daf_letter):
-        if daf_letter == u'א':
-            return u'a'
-        elif daf_letter == u'ב':
-            return u'b'
+        if daf_letter == 'א':
+            return 'a'
+        elif daf_letter == 'ב':
+            return 'b'
         else:
             raise AssertionError('Daf must be Aleph or Bet')
 
-    cleaned_ref = re.sub(u'\u2013', u'-', midreshet_ref)
-    cleaned_ref = re.sub(u'[^\u05d0-\u05ea\s\-]', u'', cleaned_ref)
-    cleaned_ref = re.sub(u'\s*-\s*', u' - ', cleaned_ref)
-    cleaned_ref = u' '.join(cleaned_ref.split())
+    cleaned_ref = re.sub('\u2013', '-', midreshet_ref)
+    cleaned_ref = re.sub('[^\u05d0-\u05ea\s\-]', '', cleaned_ref)
+    cleaned_ref = re.sub('\s*-\s*', ' - ', cleaned_ref)
+    cleaned_ref = ' '.join(cleaned_ref.split())
 
-    # if re.search(u'רשי', cleaned_ref):
+    # if re.search('רשי', cleaned_ref):
     #     return None
 
     # he_book_title = Ref(expected_book).he_book()
     he_book_title = get_he_talmud_titles(expected_book)
-    # masechet_pattern = u'{} (?:{} )?(?P<book>{})'.format(u'תלמוד ה?בבלי', u'מסכת', he_book_title)
-    masechet_pattern = u'(?:{} )?(?P<book>{})'.format(u'מסכת', he_book_title)
+    # masechet_pattern = '{} (?:{} )?(?P<book>{})'.format('תלמוד ה?בבלי', 'מסכת', he_book_title)
+    masechet_pattern = '(?:{} )?(?P<book>{})'.format('מסכת', he_book_title)
 
-    start_daf_pattern = u'(?:%s )?(?P<start_daf>[\u05d0-\u05ea]{1,3})' % (u'דף',)
-    end_daf_pattern = start_daf_pattern.replace(u'start_daf', u'end_daf')
+    start_daf_pattern = '(?:%s )?(?P<start_daf>[\u05d0-\u05ea]{1,3})' % ('דף',)
+    end_daf_pattern = start_daf_pattern.replace('start_daf', 'end_daf')
 
-    start_amud_pattern = u'(?:%s)?(?P<start_ammud>[\u05d0-\u05d1])(?! (?:%s|%s))' % (u'עמוד |ע', u'דף', u'עמוד')
-    end_amud_pattern = start_amud_pattern.replace(u'start_ammud', u'end_ammud')
+    start_amud_pattern = '(?:%s)?(?P<start_ammud>[\u05d0-\u05d1])(?! (?:%s|%s))' % ('עמוד |ע', 'דף', 'עמוד')
+    end_amud_pattern = start_amud_pattern.replace('start_ammud', 'end_ammud')
 
-    base_pattern = u'{} {} {}(?=\s|$)'.format(masechet_pattern, start_daf_pattern, start_amud_pattern)
-    is_range = bool(re.search(u'{} -'.format(base_pattern), cleaned_ref))
+    base_pattern = '{} {} {}(?=\s|$)'.format(masechet_pattern, start_daf_pattern, start_amud_pattern)
+    is_range = bool(re.search('{} -'.format(base_pattern), cleaned_ref))
 
     if is_range:
-        pattern = u'{} - {}'.format(base_pattern, end_amud_pattern)
+        pattern = '{} - {}'.format(base_pattern, end_amud_pattern)
         match = re.search(pattern, cleaned_ref)
 
         if match:
-            raw_ref = u'{} {}{}-{}{}'.format(
+            raw_ref = '{} {}{}-{}{}'.format(
                 expected_book, getGematria(match.group('start_daf')), translate_ammud(match.group('start_ammud')),
                 getGematria(match.group('start_daf')), translate_ammud(match.group('end_ammud'))
             )
 
         else:
-            pattern = u'{} - {} {}'.format(base_pattern, end_daf_pattern, end_amud_pattern)
+            pattern = '{} - {} {}'.format(base_pattern, end_daf_pattern, end_amud_pattern)
             match = re.search(pattern, cleaned_ref)
             if not match:
                 return
-            raw_ref = u'{} {}{}-{}{}'.format(
+            raw_ref = '{} {}{}-{}{}'.format(
                 expected_book, getGematria(match.group('start_daf')), translate_ammud(match.group('start_ammud')),
                 getGematria(match.group('end_daf')), translate_ammud(match.group('end_ammud'))
             )
@@ -265,7 +266,7 @@ def disambiguate_simple_talmud_ref(midreshet_ref, expected_book):
         match = re.search(base_pattern, cleaned_ref)
         if not match:
             return
-        raw_ref = u'{} {}{}'.format(
+        raw_ref = '{} {}{}'.format(
             expected_book, getGematria(match.group('start_daf')), translate_ammud(match.group('start_ammud')))
 
     return Ref(raw_ref)
@@ -275,9 +276,9 @@ class RefBuilder(object):
 
     def __init__(self):
         self._category_maps = {
-            u'משנה': u'Mishnah',
-            u'תוספתא': u'Tosefta',
-            u'ירושלמי': u'Jerusalem Talmud',
+            'משנה': 'Mishnah',
+            'תוספתא': 'Tosefta',
+            'ירושלמי': 'Jerusalem Talmud',
         }
         self._commentary_maps = {}
 
@@ -285,32 +286,32 @@ class RefBuilder(object):
 
         def redirected_sections(new_book, sections):
             book_node = Ref(new_book).index_node
-            return u':'.join([book_node.address_class(i).toStr('en', section) for i, section in enumerate(sections)])
+            return ':'.join([book_node.address_class(i).toStr('en', section) for i, section in enumerate(sections)])
 
-        if base_ref.book == u'Pirkei Avot':  # special case
+        if base_ref.book == 'Pirkei Avot':  # special case
             return base_ref
 
         if base_ref.is_talmud():
             base_book = base_ref.book
-        elif base_ref.primary_category == u'Mishnah':
-            base_book = re.sub(u'Mishnah ', u'', base_ref.book)
+        elif base_ref.primary_category == 'Mishnah':
+            base_book = re.sub('Mishnah ', '', base_ref.book)
         else:
             return base_ref
 
-        cat_regex = re.compile(u'|'.join(self._category_maps.keys()))
+        cat_regex = re.compile('|'.join(self._category_maps.keys()))
         category_match = cat_regex.search(raw_ref)
 
         if not category_match:
             return base_ref
 
         ref_prefix = self._category_maps[category_match.group()]
-        book_title = u"{} {}".format(ref_prefix, base_book)
+        book_title = "{} {}".format(ref_prefix, base_book)
         try:
-            new_ref = Ref(u"{} {}".format(book_title, redirected_sections(book_title, base_ref.sections)))
+            new_ref = Ref("{} {}".format(book_title, redirected_sections(book_title, base_ref.sections)))
         except InputError:
             return base_ref
         if base_ref.is_range():
-            range_end = Ref(u"{} {}".format(book_title, redirected_sections(book_title, base_ref.toSections)))
+            range_end = Ref("{} {}".format(book_title, redirected_sections(book_title, base_ref.toSections)))
             new_ref = new_ref.to(range_end)
         return new_ref
 
@@ -342,7 +343,7 @@ class RefBuilder(object):
         if not commentary_map:  # Book has no commentaries
             return base_ref
 
-        commentator_regex = re.compile(u'|'.join(commentary_map.keys()))
+        commentator_regex = re.compile('|'.join(commentary_map.keys()))
         commentator_match = commentator_regex.search(raw_ref)
 
         if not commentator_match:
@@ -361,9 +362,9 @@ class RefBuilder(object):
             else:
                 return base_ref
 
-        commentator_ref = Ref(u"{} {}".format(commentator_book, u':'.join(base_ref.normal_sections())))
+        commentator_ref = Ref("{} {}".format(commentator_book, ':'.join(base_ref.normal_sections())))
         if base_ref.is_range():
-            range_end = Ref(u"{} {}".format(commentator_book, u':'.join(base_ref.normal_toSections())))
+            range_end = Ref("{} {}".format(commentator_book, ':'.join(base_ref.normal_toSections())))
             commentator_ref = commentator_ref.to(range_end)
 
         return commentator_ref
@@ -379,7 +380,7 @@ class RefBuilder(object):
 
         if base_ref.is_talmud():
             fixed_ref = disambiguate_simple_talmud_ref(raw_ref, base_ref.book)
-        elif u'Tanakh' in base_ref.index.categories:
+        elif 'Tanakh' in base_ref.index.categories:
             if base_ref.is_dependant():
                 fixed_ref = disambiguate_simple_tanakh_ref(raw_ref, base_ref.index.base_text_titles[0])
             else:
@@ -397,21 +398,19 @@ class RefBuilder(object):
 
 
 def get_terms_for_resource(resource_id, page_id):
-    cursor = MidreshetCursor()
-    cursor.execute('SELECT typeTerms, name, body, termId '
-                   'FROM ResourcesTermsOnPage '
-                   'JOIN Terms ON ResourcesTermsOnPage.termId = Terms.Id '
-                   'WHERE ResourcesTermsOnPage.resourceId=? AND ResourcesTermsOnPage.pageId=?', (resource_id, page_id))
-    return [convert_row_to_dict(r) for r in cursor.fetchall()]
+    my_cursor.execute('SELECT typeTerms, name, body, termId '
+                      'FROM ResourcesTermsOnPage '
+                      'JOIN Terms ON ResourcesTermsOnPage.termId = Terms.Id '
+                      'WHERE ResourcesTermsOnPage.resourceId=? AND ResourcesTermsOnPage.pageId=?', (resource_id, page_id))
+    return [convert_row_to_dict(r) for r in my_cursor.fetchall()]
 
 
 def get_dicts_for_resource(resource_id):
-    cursor = MidreshetCursor()
-    cursor.execute('SELECT name, body '
-                  'FROM ResourcesTranslations JOIN Dictionary '
-                  'ON ResourcesTranslations.dicId = Dictionary.id '
-                  'WHERE ResourcesTranslations.resourceId=? AND ResourcesTranslations.isOnPage=?', (resource_id, 1))
-    return [convert_row_to_dict(r) for r in cursor.fetchall()]
+    my_cursor.execute('SELECT name, body '
+                      'FROM ResourcesTranslations JOIN Dictionary '
+                      'ON ResourcesTranslations.dicId = Dictionary.id '
+                      'WHERE ResourcesTranslations.resourceId=? AND ResourcesTranslations.isOnPage=?', (resource_id, 1))
+    return [convert_row_to_dict(r) for r in my_cursor.fetchall()]
 
 
 def cache_to_mongo(mongo_client, ref_builder):
@@ -456,18 +455,18 @@ def get_ref_for_resource(ref_builder, resource_id, exact_location, resource_text
         sefaria_ref = Ref(result.SefariaRef)
         if sefaria_ref.is_talmud() or not sefaria_ref.is_segment_level():
             try:
-                refined_ref = refine_ref_by_text(sefaria_ref, u'', resource_text)
+                refined_ref = refine_ref_by_text(sefaria_ref, '', resource_text)
             except InputError:
                 return sefaria_ref.normal()
             if refined_ref:
                 return refined_ref.normal()
         return sefaria_ref.normal()
 
-    possible_refs = library.get_refs_in_string(u'({})'.format(exact_location), 'he', citing_only=True)
+    possible_refs = library.get_refs_in_string('({})'.format(exact_location), 'he', citing_only=True)
     if len(possible_refs) == 1:
         constructed_ref = ref_builder.build_difficult_ref(exact_location, possible_refs[0])
         try:
-            refined_ref = refine_ref_by_text(constructed_ref, u'', resource_text)
+            refined_ref = refine_ref_by_text(constructed_ref, '', resource_text)
         except InputError:
             return constructed_ref.normal()
         if refined_ref:
@@ -498,9 +497,9 @@ class ImageAdapter(object):
             return image_data['image_url']
 
         else:
-            filename = filename.split(u'\\')[-1]
+            filename = filename.split('\\')[-1]
             extension = filename[-3:].lower()
-            filename = re.sub(ur'.{3}$', extension, filename)
+            filename = re.sub(r'.{3}$', extension, filename)
             with open(filename, 'wb') as fp:
                 fp.write(image_bytestring)
 
@@ -509,6 +508,27 @@ class ImageAdapter(object):
             self.image_collection.insert_one({'name': name, 'image_url': file_url})
             os.remove(filename)
             return file_url
+
+
+def load_seminary_images():
+    adapter = ImageAdapter()
+    adapter.image_collection = pymongo.MongoClient().yonis_data.seminary_images
+    cursor = MidreshetCursor()
+    cursor.execute('SELECT S.name, F.name as filename, F.data, F.type FROM Seminary S '
+                   'LEFT JOIN Files F ON S.logoId = F.id')
+    image_urls = {}
+    for row in cursor:
+        assert row.name not in image_urls
+        if row.filename:
+            url = adapter.adapt_image(row.name, row.filename, row.data, row.type)
+            image_urls[row.name] = url
+        else:
+            image_urls[row.name] = None
+
+    return image_urls
+
+
+SEMINARY_IMAGE_URL_MAPPING = load_seminary_images()
 
 
 class GroupManager(object):
@@ -563,7 +583,7 @@ class GroupManager(object):
         :return:
         """
         while True:
-            raw_response = requests.get(u'{}/api/groups/{}'.format(self.server, group_name))
+            raw_response = requests.get('{}/api/groups/{}'.format(self.server, group_name))
             if raw_response.status_code == 200:
                 break
             elif raw_response.status_code == 502:
@@ -596,7 +616,7 @@ class GroupManager(object):
         #     file_url = image_data['image_url']
         #
         # else:
-        #     filename = group_data['filename'].split(u'\\')[-1]
+        #     filename = group_data['filename'].split('\\')[-1]
         #     with open(filename, 'wb') as fp:
         #         fp.write(group_data['data'])
         #
@@ -615,7 +635,7 @@ class GroupManager(object):
             'new': True
         }
         post_body = {'apikey': API_KEY, 'json': json.dumps(group_json)}
-        post_url = u'{}/api/groups/{}'.format(self.server, group_data['name'])
+        post_url = '{}/api/groups/{}'.format(self.server, group_data['name'])
 
         response = requests.post(post_url, data=post_body)
         if response.ok:
@@ -627,9 +647,9 @@ class GroupManager(object):
         if not self.group_cache[group_name].get('pinnedTags'):
             self.group_cache[group_name]['pinnedTags'] = []
         self.group_cache[group_name]['pinnedTags'] = list(set(self.group_cache[group_name]['pinnedTags']))
-        self.group_cache[group_name]['pinnedTags'].sort(key=lambda x: re.sub(ur'[^\u05d0-\u05ea]', u'', x))
+        self.group_cache[group_name]['pinnedTags'].sort(key=lambda x: re.sub(r'[^\u05d0-\u05ea]', '', x))
 
-        url = u'{}/api/groups/{}'.format(self.server, group_name)
+        url = '{}/api/groups/{}'.format(self.server, group_name)
         post_body = {'apikey': API_KEY, 'json': json.dumps({'name': group_name,
                                                             'pinnedTags': self.group_cache[group_name]['pinnedTags']})}
         response = requests.post(url, data=post_body)
@@ -648,7 +668,7 @@ class GroupManager(object):
         if self.group_cache[group_name]['num_sheets'] < 3 or self.group_cache[group_name]['public']:
             return
 
-        url = u'{}/api/groups/{}'.format(self.server, group_name)
+        url = '{}/api/groups/{}'.format(self.server, group_name)
         post_body = {'apikey': API_KEY, 'json': json.dumps({'name': group_name, 'listed': True})}
         response = requests.post(url, data=post_body)
         response = response.json()
@@ -665,9 +685,9 @@ class GroupManager(object):
 
     def default_group(self, draft=False):
         if draft:
-            group_name = u'מדרשת טיוטה'
+            group_name = 'מדרשת טיוטה'
         else:
-            group_name = u'מדרשת'
+            group_name = 'מדרשת'
         if group_name not in self.group_cache:
             self.cache_group_from_server(group_name)
 
@@ -745,9 +765,9 @@ class SheetRelation(object):
         }
         background_color = nesting_color[nesting_level]
         nesting_level += 1
-        children = u''.join(child.render(nesting_level) for child in self._children)
+        children = ''.join(child.render(nesting_level) for child in self._children)
 
-        return u'<dl style="background-color: {};"><dt>id</dt><dd>{}</dd><dt>name</dt><dd>{}</dd><dt>children</dt><dd>{}</dd></dl>'.\
+        return '<dl style="background-color: {};"><dt>id</dt><dd>{}</dd><dt>name</dt><dd>{}</dd><dt>children</dt><dd>{}</dd></dl>'.\
             format(background_color, self.sheet_id, self.sheet_name, children)
 
 
@@ -821,22 +841,27 @@ def get_sheet_by_id(page_id, rebuild_cache=False):
     cursor.execute('SELECT Seminary.name, Seminary.url, Seminary.body FROM Pages JOIN Seminary ON Pages.seminary_id = Seminary.id WHERE Pages.id=?',
                    (page_id,))
     result = cursor.fetchone()
-    if result and result.name and result.name != u'-':
+    if result and result.name and result.name != '-':
         sheet['tags'].append(result.name)
         sheet['seminary'] = result.name
         if result.url:
-            sheet['seminary_data'] = u'<a href="{}">לאתר {}</a>'.format(result.url, result.name)
-        elif result.name == u'מעגל טוב':
+            sheet['seminary_data'] = '<a href="{}">לאתר {}</a>'.format(result.url, result.name)
+        elif result.name == 'מעגל טוב':
             sheet['seminary_data'] = result.body
         else:
             sheet['seminary_data'] = None
+        if SEMINARY_IMAGE_URL_MAPPING[result.name]:
+            sheet['seminary_image'] = SEMINARY_IMAGE_URL_MAPPING[result.name]
+
+    if not sheet['tags']:
+        sheet['tags'].append('Untagged')
 
     cursor.execute('SELECT first_name, last_name FROM Users WHERE id=?', (sheet['userId'],))
     result = cursor.fetchone()
     if result:
-        sheet['username'] = u'{} {}'.format(result.first_name, result.last_name)
+        sheet['username'] = '{} {}'.format(result.first_name, result.last_name)
     else:
-        sheet['username'] = u'אתר מדרשת'
+        sheet['username'] = 'אתר מדרשת'
 
     return sheet
 
@@ -844,24 +869,24 @@ def get_sheet_by_id(page_id, rebuild_cache=False):
 def export_sheet_to_file(sheet_id):
     sheet = get_sheet_by_id(sheet_id)
     my_file = codecs.open('sheet_{}.txt'.format(sheet_id), 'w', 'utf-8')
-    my_file.write(u'{}\n\n'.format(sheet['name']))
-    my_file.write(u'{}\n\n'.format(sheet['description']))
+    my_file.write('{}\n\n'.format(sheet['name']))
+    my_file.write('{}\n\n'.format(sheet['description']))
 
     for resource in sheet['resources']:
-        my_file.write(u'name:\n  {}\n\n'.format(resource['name']))
-        my_file.write(u'{}\n\n'.format(bleach.clean(resource['body'], strip=True, tags=[], attributes={})))
+        my_file.write('name:\n  {}\n\n'.format(resource['name']))
+        my_file.write('{}\n\n'.format(bleach.clean(resource['body'], strip=True, tags=[], attributes={})))
         for term in resource['terms']:
-            my_file.write(u'typeTerms: {}; Id: {}\n{} - {}\n'.format(term['typeTerms'], term['termId'], term['name'].rstrip(), term['body']))
+            my_file.write('typeTerms: {}; Id: {}\n{} - {}\n'.format(term['typeTerms'], term['termId'], term['name'].rstrip(), term['body']))
         for dict_entry in resource['dictionary']:
-            my_file.write(u'{} - {}\n'.format(dict_entry['name'], dict_entry['body']))
-        my_file.write(u'exactLocation:\n  {}\n\n'.format(resource['exactLocation']))
-        my_file.write(u'display_type: {}'.format(resource['display_type']))
-        my_file.write(u'\n\n\n\n')
+            my_file.write('{} - {}\n'.format(dict_entry['name'], dict_entry['body']))
+        my_file.write('exactLocation:\n  {}\n\n'.format(resource['exactLocation']))
+        my_file.write('display_type: {}'.format(resource['display_type']))
+        my_file.write('\n\n\n\n')
 
     my_file.close()
 
 
-u"""
+"""
 מושגים / הסברים:
 For each Resource, look up it's id in ResourceRelativeTerms.resourceId and get it's termId. Look up the term in Terms.
 ResourceRelativeTerms.typeTerms defines the type of term (מושגים / הסברים).
@@ -878,35 +903,35 @@ and look that up in Dictionary
 
 
 For now set all resources as outsideText. Use PrependRefWithHe for the exactLocation.
-Source with an exactLocation can get sourcePrefix = u'מקור', otherwise sourcePrefix = u'דיון'
+Source with an exactLocation can get sourcePrefix = 'מקור', otherwise sourcePrefix = 'דיון'
 """
 
 
 def format_terms(term_list):
     term_list.sort(key=lambda x: x['typeTerms'])
-    terms_by_type = {k: list(g) for k, g in groupby(term_list, key=lambda x: u'הסברים' if x['typeTerms'] == 0 else u'מושגים')}
+    terms_by_type = {k: list(g) for k, g in groupby(term_list, key=lambda x: 'הסברים' if x['typeTerms'] == 0 else 'מושגים')}
     formatted_terms = []
     for term_type in sorted(terms_by_type.keys()):
         term_text_list = []
 
         for term_item in terms_by_type[term_type]:
-            term_name = u' '.join(term_item['name'].split())
+            term_name = ' '.join(term_item['name'].split())
             if term_name:
-                term_text_list.append(u'{} - {}'.format(term_name, format_source_text(term_item['body'])))
+                term_text_list.append('{} - {}'.format(term_name, format_source_text(term_item['body'])))
             else:
                 term_text_list.append(format_source_text(term_item['body']))
 
-        formatted_terms.append(u'<i>{}</i><ul style="margin: 1px;"><li>{}</li></ul>'.
-                               format(u'<span style="color: #999">{}</span>'.format(term_type),
-                                      u'</li><li>'.join(term_text_list)))
-    return u'<small>{}</small>'.format(u'<br>'.join(formatted_terms))
+        formatted_terms.append('<i>{}</i><ul style="margin: 1px;"><li>{}</li></ul>'.
+                               format('<span style="color: #999">{}</span>'.format(term_type),
+                                      '</li><li>'.join(term_text_list)))
+    return '<small>{}</small>'.format('<br>'.join(formatted_terms))
 
 
 def format_dictionaries(word_list):
     """Consider making this into descriptive lists in the future."""
-    entries = [u'{} - {}'.format(word['name'], format_source_text(word['body'])) for word in word_list]
-    return u'<small><i>{}</i><ul><li>{}</li></ul></small>'.format(u'<span style="color: #999">{}</span><br>'
-                                                                  .format(u'מילים'), u'</li><li>'.join(entries))
+    entries = ['{} - {}'.format(word['name'], format_source_text(word['body'])) for word in word_list]
+    return '<small><i>{}</i><ul><li>{}</li></ul></small>'.format('<span style="color: #999">{}</span><br>'
+                                                                  .format('מילים'), '</li><li>'.join(entries))
 
 
 class VerseMarkWrapper(object):
@@ -917,21 +942,21 @@ class VerseMarkWrapper(object):
     We'll also calculate the exact Gematria presentations of the values 1-199.
     """
     def __init__(self):
-        gematrias = sorted([numToHeb(num) for num in xrange(1, 200)], key=lambda x: len(x), reverse=True)
-        self.verse_pattern = u'|'.join(gematrias)
+        gematrias = sorted([numToHeb(num) for num in range(1, 200)], key=lambda x: len(x), reverse=True)
+        self.verse_pattern = '|'.join(gematrias)
 
     def wrap(self, word_to_wrap):
-        # match = re.match(ur'^({})$'.format(self.verse_pattern), word_to_wrap)
+        # match = re.match(r'^({})$'.format(self.verse_pattern), word_to_wrap)
         # if match:
-        #     return u'<small>({})</small>'.format(match.group(1))
+        #     return '<small>({})</small>'.format(match.group(1))
         # else:
         #     return word_to_wrap
-        return re.sub(ur'(^|>)({})($|<)(?!br)'.format(self.verse_pattern),
-                      ur'\g<1><small>(\g<2>)</small>\g<3>', word_to_wrap)
+        return re.sub(r'(^|>)({})($|<)(?!br)'.format(self.verse_pattern),
+                      r'\g<1><small>(\g<2>)</small>\g<3>', word_to_wrap)
 
     def __call__(self, text_to_wrap):
-        all_he = len(re.findall(ur'[\u0591-\u05f4]', text_to_wrap))
-        just_chars = len(re.findall(ur'[\u05d0-\u05ea]', text_to_wrap))
+        all_he = len(re.findall(r'[\u0591-\u05f4]', text_to_wrap))
+        just_chars = len(re.findall(r'[\u05d0-\u05ea]', text_to_wrap))
         try:
             marks_to_chars_ratio = float(all_he - just_chars) / float(all_he)
         except ZeroDivisionError:
@@ -941,7 +966,7 @@ class VerseMarkWrapper(object):
             return text_to_wrap
 
         as_words = [self.wrap(word) for word in text_to_wrap.split()]
-        return u' '.join(as_words)
+        return ' '.join(as_words)
 
 
 wrap_verse_markers = VerseMarkWrapper()
@@ -953,14 +978,14 @@ wrap_verse_markers = VerseMarkWrapper()
 #     :return:
 #     """
 #     def wrap(word_to_wrap):
-#         match = re.match(ur'^\(?([\u05d0-\u05ea]+)\)?$', word_to_wrap)
+#         match = re.match(r'^\(?([\u05d0-\u05ea]+)\)?$', word_to_wrap)
 #         if match:
-#             return u'<small>({})</small>'.format(match.group(1))
+#             return '<small>({})</small>'.format(match.group(1))
 #         else:
 #             return word_to_wrap
 #
-#     all_he = len(re.findall(ur'[\u0591-\u05f4]', text_to_wrap))
-#     just_chars = len(re.findall(ur'[\u05d0-\u05ea]', text_to_wrap))
+#     all_he = len(re.findall(r'[\u0591-\u05f4]', text_to_wrap))
+#     just_chars = len(re.findall(r'[\u05d0-\u05ea]', text_to_wrap))
 #     try:
 #         marks_to_chars_ratio = float(all_he - just_chars) / float(all_he)
 #     except ZeroDivisionError:
@@ -970,7 +995,7 @@ wrap_verse_markers = VerseMarkWrapper()
 #         return text_to_wrap
 #
 #     as_words = [wrap(word) for word in text_to_wrap.split()]
-#     return u' '.join(as_words)
+#     return ' '.join(as_words)
 
 
 def format_source_text(source_text):
@@ -987,15 +1012,15 @@ def format_source_text(source_text):
         'A': 'a'
     }
     if not source_text:
-        source_text = u''
-    source_text = re.sub(u'&nbsp;', u' ', source_text)
-    soup = BeautifulSoup(u'<root>{}</root>'.format(source_text), 'xml')
+        source_text = ''
+    source_text = re.sub('&nbsp;', ' ', source_text)
+    soup = BeautifulSoup('<root>{}</root>'.format(source_text), 'xml')
     for tag in soup.root.find_all(True):
         if tag.name in tag_map:
             tag.name = tag_map[tag.name]
 
         tag_style = tag.get('style', '')
-        if re.search(u'font-weight: ?bold|text-decoration: ?underline', tag_style):
+        if re.search('font-weight: ?bold|text-decoration: ?underline', tag_style):
             tag.name = 'strong'
 
         # if tag.name == 'br' and not_double(tag):
@@ -1014,41 +1039,41 @@ def format_source_text(source_text):
         for br in ul.find_all('br'):
             br.unwrap()
 
-    source_text = unicode(soup.root)
-    source_text = re.sub(ur'http(?!s):', u'https:', source_text)
+    source_text = str(soup.root)
+    source_text = re.sub(r'http(?!s):', 'https:', source_text)
     bad_chars = [
-        u'\x83',
-        u'\uf0a7',
-        u'\u202d',
-        u'\u202c',
-        u'\uf0b7',
-        u'\u200b',
-        u'\u200f',
-        u'\uf0d8',
-        u'\u202a',
-        u'\u200e',
-        u'\uf0a9',
-        u'\u202e',
-        u'\u200d',
-        u'\u202b'
+        '\x83',
+        '\uf0a7',
+        '\u202d',
+        '\u202c',
+        '\uf0b7',
+        '\u200b',
+        '\u200f',
+        '\uf0d8',
+        '\u202a',
+        '\u200e',
+        '\uf0a9',
+        '\u202e',
+        '\u200d',
+        '\u202b'
     ]
-    source_text = re.sub(u'|'.join(bad_chars), u' ', source_text)
-    source_text = u' '.join(source_text.split())
+    source_text = re.sub('|'.join(bad_chars), ' ', source_text)
+    source_text = ' '.join(source_text.split())
     source_text = bleach.clean(
         source_text,
         tags=['ul', 'li', 'strong', 'i', 'br', 'a', 'big', 'table', 'tbody', 'thead', 'tr', 'td'],
         attributes={'a': ['href']},
         strip=True
     )
-    source_text = re.sub(ur'\s+<br>\s*', u'<br> ', source_text)
-    return re.sub(ur'(<br>)+\s*$', u'', source_text)
+    source_text = re.sub(r'\s+<br>\s*', '<br> ', source_text)
+    return re.sub(r'(<br>)+\s*$', '', source_text)
 
 
 def final_source_clean(final_source_text):
-    final_source_text = re.sub(ur'(<br>\s*)+<ul>', u'<ul>', final_source_text)
-    final_source_text = re.sub(ur'</ul>\s*(<br>\s*)+', u'</ul>', final_source_text)
-    final_source_text = re.sub(ur'(<br>\s*){3,}', u'<br><br>', final_source_text)
-    final_source_text = re.sub(ur'^\s*<br>|<br>\s*$', u'', final_source_text)
+    final_source_text = re.sub(r'(<br>\s*)+<ul>', '<ul>', final_source_text)
+    final_source_text = re.sub(r'</ul>\s*(<br>\s*)+', '</ul>', final_source_text)
+    final_source_text = re.sub(r'(<br>\s*){3,}', '<br><br>', final_source_text)
+    final_source_text = re.sub(r'^\s*<br>|<br>\s*$', '', final_source_text)
 
     return final_source_text
 
@@ -1070,7 +1095,7 @@ add_image = AddImage()
 
 
 def get_iframe_url(text_with_iframe):
-    soup = BeautifulSoup(u'<root>{}</root>'.format(text_with_iframe), 'xml')
+    soup = BeautifulSoup('<root>{}</root>'.format(text_with_iframe), 'xml')
     iframe = soup.iframe
     return iframe['src']
 
@@ -1092,15 +1117,15 @@ def create_sheet_json(page_id, group_manager, series_map):
     sheet['sources'].append(
         {
             'options': {},
-            'outsideText': u'<strong>{}: {} / {}</strong>'.format(u'הדף מאת', raw_sheet['author'], raw_sheet['se_name'])
-            if (raw_sheet['se_name'] and raw_sheet['se_name'] != u'-') else
-            u'<strong>{}: {}</strong>'.format(u'הדף מאת', raw_sheet['author'])
+            'outsideText': '<strong>{}: {} / {}</strong>'.format('הדף מאת', raw_sheet['author'], raw_sheet['se_name'])
+            if (raw_sheet['se_name'] and raw_sheet['se_name'] != '-') else
+            '<strong>{}: {}</strong>'.format('הדף מאת', raw_sheet['author'])
         }
     )
 
     sheet['sources'].append({
         'options': {},
-        'outsideText': u'{}'.format(raw_sheet['description'])
+        'outsideText': '{}'.format(raw_sheet['description'])
     })
 
     for resource in raw_sheet['resources']:
@@ -1109,18 +1134,18 @@ def create_sheet_json(page_id, group_manager, series_map):
             'options': {}
         }
 
-        resource_title = re.sub(ur'^\s+$', u'', resource['name'])
-        resource_body = resource['body'] if resource['body'] else u''
-        if re.search(u'<iframe', resource_body):
+        resource_title = re.sub(r'^\s+$', '', resource['name'])
+        resource_body = resource['body'] if resource['body'] else ''
+        if re.search('<iframe', resource_body):
             is_video, video_url = True, get_iframe_url(resource_body)
         else:
-            is_video, video_url = False, u''
+            is_video, video_url = False, ''
 
         if resource_title:
             if resource_body:
-                resource_body = u'<strong>{}</strong><br>{}'.format(resource_title, resource_body)
+                resource_body = '<strong>{}</strong><br>{}'.format(resource_title, resource_body)
             else:
-                resource_body = u'<strong>{}</strong>'.format(resource_title)
+                resource_body = '<strong>{}</strong>'.format(resource_title)
 
         if resource['exactLocation']:
             sefaria_ref = resource.get('SefariaRef', None)
@@ -1138,11 +1163,11 @@ def create_sheet_json(page_id, group_manager, series_map):
                 if 'Tanakh' in oref.index.categories and not oref.is_commentary():
                     source['text']['he'] = wrap_verse_markers(source['text']['he'])
 
-                # source['options']['sourcePrefix'] = u'מקור'
+                # source['options']['sourcePrefix'] = 'מקור'
                 # source['options']['PrependRefWithHe'] = resource['exactLocation']
 
             else:
-                source['outsideText'] = u'<span style="color: #999">{}</span><br>{}'.format(
+                source['outsideText'] = '<span style="color: #999">{}</span><br>{}'.format(
                     resource['exactLocation'],
                     format_source_text(resource_body)
                 )
@@ -1153,70 +1178,70 @@ def create_sheet_json(page_id, group_manager, series_map):
                 continue
 
             if resource['minorType'] == 2:  # this is a secondary title
-                # source['outsideText'] = u'<span style="font-size: 24px; ' \
-                #                         u'text-decoration:underline;' \
-                #                         u' text-decoration-color:grey;">{}</span>'.format(cleaned_text)
-                source['outsideText'] = u'<strong><big>{}</big></strong>'.format(cleaned_text)
+                # source['outsideText'] = '<span style="font-size: 24px; ' \
+                #                         'text-decoration:underline;' \
+                #                         ' text-decoration-color:grey;">{}</span>'.format(cleaned_text)
+                source['outsideText'] = '<strong><big>{}</big></strong>'.format(cleaned_text)
             else:
-                diyun = u'<span style="text-decoration:underline; color: #999">{}</span>'.format(u'דיון')
+                diyun = '<span style="text-decoration:underline; color: #999">{}</span>'.format('דיון')
 
-                if re.match(u'^<ul>', cleaned_text):
-                    source['outsideText'] = u'{}{}'.format(diyun, cleaned_text)
+                if re.match('^<ul>', cleaned_text):
+                    source['outsideText'] = '{}{}'.format(diyun, cleaned_text)
                 else:
-                    source['outsideText'] = u'{}<br>{}'.format(diyun, cleaned_text)
-                # source['outsideText'] = u'<span style="text-decoration:underline; text-decoration-color:grey">{}</span>' \
-                #                     u'<br>{}'.format(u'דיון', cleaned_text)
+                    source['outsideText'] = '{}<br>{}'.format(diyun, cleaned_text)
+                # source['outsideText'] = '<span style="text-decoration:underline; text-decoration-color:grey">{}</span>' \
+                #                     '<br>{}'.format('דיון', cleaned_text)
 
-        truncated_copyright = re.sub(ur'https?://', u'', resource['copyrightLink'] if resource['copyrightLink'] else u'')
+        truncated_copyright = re.sub(r'https?://', '', resource['copyrightLink'] if resource['copyrightLink'] else '')
         if resource['copyright'] or truncated_copyright:
-            resource_attribution = u'כל הזכויות שמורות ל'
-            resource_attribution = u'{}{}'.format(resource_attribution, resource.get('copyright', u''))
+            resource_attribution = 'כל הזכויות שמורות ל'
+            resource_attribution = '{}{}'.format(resource_attribution, resource.get('copyright', ''))
 
             if not truncated_copyright:
                 if resource['fullResourceLink']:
                     copyright_link = resource['fullResourceLink']
                 else:
-                    copyright_link = u''
+                    copyright_link = ''
             else:
                 copyright_link = resource['copyrightLink']
 
-            copyright_link = re.sub(ur'^(https?://)+', u'https://', copyright_link)
-            # if not re.match(ur'^https://', copyright_link):
-            #     copyright_link = u'https://{}'.format(copyright_link)
-            copyright_link = re.sub(ur'/$', u'', copyright_link)
-            copyright_link = u' '.join(copyright_link.split())
+            copyright_link = re.sub(r'^(https?://)+', 'https://', copyright_link)
+            # if not re.match(r'^https://', copyright_link):
+            #     copyright_link = 'https://{}'.format(copyright_link)
+            copyright_link = re.sub(r'/$', '', copyright_link)
+            copyright_link = ' '.join(copyright_link.split())
             parsed = urlparse(copyright_link)
             shortened_link = parsed.netloc
             if copyright_link and not shortened_link:
                 shortened_link = parsed.path
 
-            resource_attribution = u'<small><span style="color: #999">\u00a9 {}</span><br><a href={}>{}</a></small>'.format(
+            resource_attribution = '<small><span style="color: #999">\u00a9 {}</span><br><a href={}>{}</a></small>'.format(
                 resource_attribution, copyright_link, shortened_link
             )
             if 'outsideText' in source:
-                source['outsideText'] = u'{}<br>{}'.format(source['outsideText'], resource_attribution)
+                source['outsideText'] = '{}<br>{}'.format(source['outsideText'], resource_attribution)
             else:
-                source['text']['he'] = u'{}<br>{}'.format(source['text']['he'], resource_attribution)
+                source['text']['he'] = '{}<br>{}'.format(source['text']['he'], resource_attribution)
 
         elif resource['fullResourceLink']:  # some sources have a source link but no copyright
-            full_source_link = re.sub(ur'^(https?://)+', u'https://', resource['fullResourceLink'])
-            full_source_link = u'<a href="{}">{}</a>'.format(full_source_link, u'למקור השלם')
+            full_source_link = re.sub(r'^(https?://)+', 'https://', resource['fullResourceLink'])
+            full_source_link = '<a href="{}">{}</a>'.format(full_source_link, 'למקור השלם')
             if 'outsideText' in source:
-                source['outsideText'] = u'{}<br>{}'.format(source['outsideText'], full_source_link)
+                source['outsideText'] = '{}<br>{}'.format(source['outsideText'], full_source_link)
             else:
-                source['text']['he'] = u'{}<br>{}'.format(source['text']['he'], full_source_link)
+                source['text']['he'] = '{}<br>{}'.format(source['text']['he'], full_source_link)
 
         if resource['terms']:
             if 'outsideText' in source:
-                source['outsideText'] = u'{}<br><br>{}'.format(source['outsideText'], format_terms(resource['terms']))
+                source['outsideText'] = '{}<br><br>{}'.format(source['outsideText'], format_terms(resource['terms']))
             else:
-                source['text']['he'] = u'{}<br><br>{}'.format(source['text']['he'], format_terms(resource['terms']))
+                source['text']['he'] = '{}<br><br>{}'.format(source['text']['he'], format_terms(resource['terms']))
 
         if resource['dictionary']:
             if 'outsideText' in source:
-                source['outsideText'] = u'{}<br><br>{}'.format(source['outsideText'], format_dictionaries(resource['dictionary']))
+                source['outsideText'] = '{}<br><br>{}'.format(source['outsideText'], format_dictionaries(resource['dictionary']))
             else:
-                source['text']['he'] = u'{}<br><br>{}'.format(source['text']['he'], format_dictionaries(resource['dictionary']))
+                source['text']['he'] = '{}<br><br>{}'.format(source['text']['he'], format_dictionaries(resource['dictionary']))
 
         if resource['attachId'] > 0 or is_video:
             if is_video:
@@ -1253,20 +1278,24 @@ def create_sheet_json(page_id, group_manager, series_map):
         sheet['sources'].append({
             'outsideText': final_source_clean(raw_sheet['seminary_data'])
         })
+        if raw_sheet.get('seminary_image'):
+            sheet['sources'].append({
+                'media': raw_sheet['seminary_image']
+            })
 
     # add external links for further reading
     external = parse_expansion(raw_sheet['bgAndExpansion'])
     if external:
         sheet['sources'].append({
-            'outsideText': final_source_clean(u'<small>{}:<br>{}</small>'.format(u'קישורים לרקע והרחבה', external))
+            'outsideText': final_source_clean('<small>{}:<br>{}</small>'.format('קישורים לרקע והרחבה', external))
         })
 
     # add instructor sheet link if one exists:
     instructor_sheet = my_mongo_client.yonis_data.instructor_sheets.find_one({'pageId': page_id})
     if instructor_sheet:
         sheet['sources'].append({
-            'outsideText': u'<small>{}<br><a href={}>{}</a></small>'.format(
-                u'דף הנחיות למנחה:', instructor_sheet['url'], instructor_sheet['name'])
+            'outsideText': '<small>{}<br><a href={}>{}</a></small>'.format(
+                'דף הנחיות למנחה:', instructor_sheet['url'], instructor_sheet['name'])
         })
 
     # handle sheet series
@@ -1278,10 +1307,10 @@ def create_sheet_json(page_id, group_manager, series_map):
             if i == raw_sheet['page_num']:
                 continue
             else:
-                url_list.append(u'<a href={}>{}</a>'.format(s, i))
-        text_part = u'דף מספר {} בסדרה {}, דפים נוספים בסדרה:'.format(raw_sheet['page_num'], series.name)
+                url_list.append('<a href={}>{}</a>'.format(s, i))
+        text_part = 'דף מספר {} בסדרה {}, דפים נוספים בסדרה:'.format(raw_sheet['page_num'], series.name)
         sheet['sources'].append({
-            'outsideText': u'<small>{}<br>{}</small>'.format(text_part, u' '.join(url_list))
+            'outsideText': '<small>{}<br>{}</small>'.format(text_part, ' '.join(url_list))
         })
 
     sheet['group'] = group_manager.get_and_register_group_for_sheet(page_id)
@@ -1416,8 +1445,8 @@ def try_refs_by_id(id_list):
     cursor = MidreshetCursor()
     cursor.execute('SELECT MidreshetRef FROM RefMap WHERE id IN ({})'.format(', '.join([str(i) for i in id_list])))
     for result_row in cursor.fetchall():
-        possible_refs = library.get_refs_in_string(u'({})'.format(result_row.MidreshetRef), lang='he', citing_only=True)
-        print(result_row.MidreshetRef, *possible_refs, sep=u'\n', end=u'\n\n')
+        possible_refs = library.get_refs_in_string('({})'.format(result_row.MidreshetRef), lang='he', citing_only=True)
+        print(result_row.MidreshetRef, *possible_refs, sep='\n', end='\n\n')
 
 
 def rematch_ref(ref_id):
@@ -1432,7 +1461,7 @@ def get_url_for_sheet_id(sheet_id, server, server_map=None):
         server_map = pymongo.MongoClient().yonis_data.server_map
 
     sheet_server_data = server_map.find_one({'pageId': sheet_id, 'server': server})
-    return u'{}/sheets/{}'.format(server, sheet_server_data['serverIndex'])
+    return '{}/sheets/{}'.format(server, sheet_server_data['serverIndex'])
 
 
 if __name__ == '__main__':
@@ -1486,9 +1515,14 @@ if __name__ == '__main__':
     rendered_relations = [sheet_relation.render() for sheet_relation in multiple_title_ids]
 
     with codecs.open('multiple_title_id_sheets.html', 'w', 'utf-8') as fp:
-        fp.write(u''.join(rendered_relations))
+        fp.write(''.join(rendered_relations))
 
     # my_cursor.execute('SELECT id FROM Pages WHERE parent_id = 0')
+    # from sefaria.profiling import prof
+    # import sys
+    # create_sheet_json(root_sheets[0].sheet_id, group_handler, series_mapping)
+    # prof('create_sheet_json(root_sheets[1].sheet_id, group_handler, series_mapping)')
+    # sys.exit(0)
     my_wrapped_sheet_list = [SheetWrapper(m.sheet_id, create_sheet_json(m.sheet_id, group_handler, series_mapping))
                              for m in tqdm(root_sheets)]
     print('finished creating sheets')
@@ -1502,9 +1536,9 @@ if __name__ == '__main__':
         executor.map(p_sheet_poster, sheet_chunks)
     # map(p_sheet_poster, sheet_chunks)
     print('done')
-    group_handler.make_group_public(u'מדרשת')
-    group_handler.post_pinned_tags(u'מדרשת')
-    group_handler.post_pinned_tags(u'מדרשת טיוטה')
+    group_handler.make_group_public('מדרשת')
+    group_handler.post_pinned_tags('מדרשת')
+    group_handler.post_pinned_tags('מדרשת טיוטה')
 
 
     # qa_sheets = random.sample([ws for ws in my_wrapped_sheet_list if ws.sheet_json['sources']], 60)
@@ -1539,7 +1573,7 @@ if __name__ == '__main__':
     # gram_lengths, sequence_lengths = range(12, 30), range(1, 8)
     #
     # for each_source, source_id in zip(all_sources, valid_ids):
-    #     simplified = re.sub(u'[^\u05d0-\u05ea ]', u'', each_source)
+    #     simplified = re.sub('[^\u05d0-\u05ea ]', '', each_source)
     #     sf.find_titles_and_terms(simplified)
     #     id_map[simplified] = source_id
     #     # catcher.find_series_of_grams(gram_lengths, simplified)
@@ -1550,14 +1584,14 @@ if __name__ == '__main__':
     #     print('words of length {}'.format(length))
     #     common = word_catcher.retrieve_most_common(length, 40)
     #     for c in common:
-    #         print(u'{}: {}'.format(*c))
+    #         print('{}: {}'.format(*c))
 
     # for length in gram_lengths:
     #     print('')
     #     print('length {}'.format(length))
     #     common = catcher.retrieve_most_common(length, 20)
     #     for c in common:
-    #         print(u'{}: {}'.format(*c))
+    #         print('{}: {}'.format(*c))
 
     # print('\n\n\n')
     # print(len(sf.titles_and_terms_counter.keys()))
@@ -1573,11 +1607,11 @@ if __name__ == '__main__':
     # signal.signal(signal.SIGALRM, handler)
     # while True:
     #     signal.alarm(600)
-    #     lookup_term = unicode(raw_input(u"Type 'exit' to end program\n").decode('utf-8'))
+    #     lookup_term = unicode(raw_input("Type 'exit' to end program\n").decode('utf-8'))
     #     signal.alarm(0)
-    #     if lookup_term == u'exit':
+    #     if lookup_term == 'exit':
     #         break
-    #     elif lookup_term == u'reprint':
+    #     elif lookup_term == 'reprint':
     #         for foo, bar in sf.titles_and_terms_counter.most_common(50):
     #             print(foo, bar)
     #     else:
@@ -1585,7 +1619,7 @@ if __name__ == '__main__':
     #         try_refs_by_id(interesting_ids)
 
 
-    # for possible_ref in sf.terms_to_refs_map[u'תהלים']:
+    # for possible_ref in sf.terms_to_refs_map['תהלים']:
     #     interesting_id = id_map[possible_ref]
     #     print(interesting_id, possible_ref)
     #     new_ref = rematch_ref(interesting_id)
