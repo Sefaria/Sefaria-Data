@@ -34,13 +34,18 @@ gematria['ח'] = 8
 gematria['ט'] = 9
 gematria['י'] = 10
 gematria['כ'] = 20
+gematria['ך'] = 50
 gematria['ל'] = 30
 gematria['מ'] = 40
+gematria['ם'] = 40
 gematria['נ'] = 50
+gematria['ן'] = 50
 gematria['ס'] = 60
 gematria['ע'] = 70
 gematria['פ'] = 80
+gematria['ן'] = 50
 gematria['צ'] = 90
+gematria['ץ'] = 50
 gematria['ק'] = 100
 gematria['ר'] = 200
 gematria['ש'] = 300
@@ -1063,7 +1068,7 @@ class WeightedLevenshtein:
         self._cost.update({(c1, c2): self._build_cost(c1, c2) for c1 in all_letters for c2 in all_letters}) # tuples
         if swap_costs is not None:
             self._cost.update(swap_costs)
-            
+
         self._most_expensive = max(self.letter_freqs.values())
 
         # dict((ord(char), sofit_map[char]) for char in self.sofit_map.keys())
