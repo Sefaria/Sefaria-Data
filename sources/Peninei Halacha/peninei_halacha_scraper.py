@@ -22,25 +22,25 @@ tsv_title_changes_file = "PH_Chapter_Section_Title_Changes.tsv"
 jar = requests.cookies.RequestsCookieJar()
 jar.set("wp-postpass_b0cab8db5ce44e438845f4dedf0fcf4f", "%24P%24BH2d6c1lhrllIz02CYT36lWgURQXVe1")
 
-img_text_re = re.compile(u"(.*?)\(max-width.*?(br/>|/p>|/>)")
-footnote_re = re.compile(u"(\[[0123456789]+\])")
+img_text_re = re.compile("(.*?)\(max-width.*?(br/>|/p>|/>)")
+footnote_re = re.compile("(\[[0123456789]+\])")
 # le'eil and le'halan
-self_re = re.compile(u"(?<=\(.*)(\u05dc\u05e2\u05d9\u05dc|\u05dc\u05d4\u05dc\u05df) (\S*), (\S*).*\)")
+self_re = re.compile("(?<=\(.*)(\u05dc\u05e2\u05d9\u05dc|\u05dc\u05d4\u05dc\u05df) (\S*), (\S*).*\)")
 # shulchan arukh
-sa_re = re.compile(u"\(.*\u05e9\u05d5\"\u05e2 (?!\u05d7\u05d5\"\u05de|\u05d9\u05d5\"\u05d3|\u05d0\u05d1\"\u05d4|\u05d0\u05d5\"\u05d7|\u05d0\u05d4\"\u05e2).*\)")
+sa_re = re.compile("\(.*\u05e9\u05d5\"\u05e2 (?!\u05d7\u05d5\"\u05de|\u05d9\u05d5\"\u05d3|\u05d0\u05d1\"\u05d4|\u05d0\u05d5\"\u05d7|\u05d0\u05d4\"\u05e2).*\)")
 # arukh hashulchan
-ah_re = re.compile(u"\(.*\u05e2\u05e8\u05d5\u05d4\"\u05e9 (?!\u05d7\u05d5\"\u05de|\u05d9\u05d5\"\u05d3|\u05d0\u05d1\"\u05d4|\u05d0\u05d5\"\u05d7).*\)")
+ah_re = re.compile("\(.*\u05e2\u05e8\u05d5\u05d4\"\u05e9 (?!\u05d7\u05d5\"\u05de|\u05d9\u05d5\"\u05d3|\u05d0\u05d1\"\u05d4|\u05d0\u05d5\"\u05d7).*\)")
 # mishnah berurah
-mb_re = re.compile(u"\(.*\u05de\"\u05d1.*\)")
+mb_re = re.compile("\(.*\u05de\"\u05d1.*\)")
 # rambam
-rm_re = re.compile(u"\(.*\u05e8\u05de\u05d1\"\u05dd .*\)")
+rm_re = re.compile("\(.*\u05e8\u05de\u05d1\"\u05dd .*\)")
 # ramban
-rn_re = re.compile(u"\(.*\u05e8\u05de\u05d1\"\u05df (?=\u05d1\u05e8\u05d0\u05e9\u05d9\u05ea|\u05e9\u05de\u05d5\u05ea|\u05d5\u05d9\u05e7\u05e8\u05d0|\u05d1\u05de\u05d3\u05d1\u05e8|\u05d3\u05d1\u05e8\u05d9\u05dd).*\)")
+rn_re = re.compile("\(.*\u05e8\u05de\u05d1\"\u05df (?=\u05d1\u05e8\u05d0\u05e9\u05d9\u05ea|\u05e9\u05de\u05d5\u05ea|\u05d5\u05d9\u05e7\u05e8\u05d0|\u05d1\u05de\u05d3\u05d1\u05e8|\u05d3\u05d1\u05e8\u05d9\u05dd).*\)")
 # rama
-ra_re = re.compile(u"\(.*(?P<rama>\u05e8\u05de\"\u05d0),? (?!\u05d7\u05d5\"\u05de|\u05d9\u05d5\"\u05d3|\u05d0\u05d1\"\u05d4|\u05d0\u05d5\"\u05d7|\u05d0\u05d4\"\u05e2).*\)")
-# ra_re = re.compile(u"\(.*\u05e8\u05de\"\u05d0 .*\)")
+ra_re = re.compile("\(.*(?P<rama>\u05e8\u05de\"\u05d0),? (?!\u05d7\u05d5\"\u05de|\u05d9\u05d5\"\u05d3|\u05d0\u05d1\"\u05d4|\u05d0\u05d5\"\u05d7|\u05d0\u05d4\"\u05e2).*\)")
+# ra_re = re.compile("\(.*\u05e8\u05de\"\u05d0 .*\)")
 # magen avraham
-ma_re = re.compile(u"\((?<!\u05e8)\u05de\"\u05d0 .*\)")
+ma_re = re.compile("\((?<!\u05e8)\u05de\"\u05d0 .*\)")
 pics = 0
 heb_titles = []
 old_titles = []
@@ -50,22 +50,22 @@ titles_to_print_names = ["Titles with not-allowed characters", "Automatically fi
 num_chapters = {"Shabbat": 30, "Likkutim I": 11, "Likkutim II": 17, "Festivals": 13, "The Nation and the Land": 10,
                 "Berakhot": 18, "High Holidays": 10, "Shmitta and Yovel": 11, "Kashrut I": 19, "Women's Prayer": 24,
                 "Prayer": 26, "Family": 10, "Sukkot": 8, "Pesah": 16, "Zemanim": 17, "Simchat Habayit V'Birchato": 10}
-books = [("Shabbat", u"שבת", 1), # (eng_name, heb_name, url_number)
-         ("Prayer", u"תפילה", 2),
-         ("Women's Prayer", u"תפילת נשים", 3),
-         ("Pesah", u"פסח", 4),
-         ("Zemanim", u"זמנים", 5),
-         ("The Nation and the Land", u"העם והארץ", 6),
-         ("Likkutim I", u"ליקוטים א", 7),
-         ("Likkutim II", u"ליקוטים ב", 8),
-         ("Berakhot", u"ברכות", 10),
-         ("Family", u"משפחה", 11),
-         ("Festivals", u"מועדים", 12),
-         ("Sukkot", u"סוכות", 13),
-         ("Simchat Habayit V'Birchato", u"שמחת הבית וברכתו", 14),
-         ("High Holidays", u"ימים נוראים", 15),
-         ("Shmitta and Yovel", u"שביעית ויובל", 16),
-         ("Kashrut I", u"כשרות א – הצומח והחי", 17)]
+books = [("Shabbat", "שבת", 1), # (eng_name, heb_name, url_number)
+         ("Prayer", "תפילה", 2),
+         ("Women's Prayer", "תפילת נשים", 3),
+         ("Pesah", "פסח", 4),
+         ("Zemanim", "זמנים", 5),
+         ("The Nation and the Land", "העם והארץ", 6),
+         ("Likkutim I", "ליקוטים א", 7),
+         ("Likkutim II", "ליקוטים ב", 8),
+         ("Berakhot", "ברכות", 10),
+         ("Family", "משפחה", 11),
+         ("Festivals", "מועדים", 12),
+         ("Sukkot", "סוכות", 13),
+         ("Simchat Habayit V'Birchato", "שמחת הבית וברכתו", 14),
+         ("High Holidays", "ימים נוראים", 15),
+         ("Shmitta and Yovel", "שביעית ויובל", 16),
+         ("Kashrut I", "כשרות א – הצומח והחי", 17)]
 
 # SET THIS TO TRUE ONCE RABBI FISCHER SENDS LIST OF TITLE TRANSLATIONS (AND BE SURE TO SET PARAM "only_chapters_translated" ACCORDINGLY)
 titles_were_translated = True
@@ -112,14 +112,14 @@ def collect_trans_titles_from_tsv(filename):
                 first = False
                 continue
 
-            _, heb, eng = line.split("\t")
+            heb, eng = line.split("\t")
             if heb[0] == "\"":
                 heb = heb[1:-1].strip()
             if eng[0] == "\"":
                 eng = eng[1:-1].strip()
 
             heb = u':'.join(heb.split(":")[1::]).strip()
-            # heb = heb.replace(u"\"\"", u"\"")
+            # heb = heb.replace("\"\"", "\"")
             heb = re.sub(u'"+', u'"', heb)
             eng = re.sub(u'"+', u'"', eng)
             eng = eng.strip()
@@ -154,7 +154,7 @@ def download_html(book_name, url_number, lang="he"):
         if url_number in [11,6]:
             url = "https://ph.yhb.org.il/{}-00/".format('%02d' % url_number)
         elif url_number == 17:
-            url = u"https://ph.yhb.org.il/פתח-דבר/"
+            url = "https://ph.yhb.org.il/פתח-דבר/"
         else:
             url = "https://ph.yhb.org.il/{}-00-00/".format('%02d' % url_number)
         text = requests.get(url, cookies=jar).text.encode("utf8")
@@ -236,16 +236,16 @@ def get_soup(book_name, url_number, lang="he"):
 
         for num_section in range(total_num_sections):
             if book_name == "Prayer" and curr_chapter == 0 and lang == "en":
-                paragraphs = [u"p1", u"p2", u"p3", u"p4", u"p5", u"p6", u"p7", u"p8", u"p9", u"p10"]
+                paragraphs = ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10"]
                 continue
             elif book_name == "Women's Prayer" and curr_chapter == 0 and lang == "en":
-                paragraphs = [u"p1", u"p2", u"p3", u"p4", u"p5", u"p6", u"p7", u"p8"]
+                paragraphs = ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8"]
                 continue
             elif book_name == "Shabbat" and curr_chapter == 0 and lang == "en":
-                paragraphs = [u"p1", u"p2", u"p3", u"p4", u"p5", u"p6", u"p7", u"p8", u"p9", u"p10", u"p11", u"p12", u"p12", u"p14"]
+                paragraphs = ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11", "p12", "p12", "p14"]
                 continue
             elif book_name == "Zemanim" and curr_chapter == 0 and lang == "en":
-                paragraphs = [u"p1", u"p2", u"p3", u"p4", u"p5", u"p6", u"p7", u"p8"]
+                paragraphs = ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8"]
                 continue
             paragraphs = []
             if curr_chapter:
@@ -258,15 +258,15 @@ def get_soup(book_name, url_number, lang="he"):
             if curr_chapter:
                 curr_section_title = soup.title.text.split("|")[0]
                 if curr_chapter == 4 and num_section == 0 and book_name == "Shabbat" and lang == "en":
-                    paragraphs.append(u"<strong>{}</strong> <sup>1</sup><i class=\"footnote\">Editor’s note: The term ner "
-                                      u"originally referred to an oil lamp. Nowadays, it has become common to speak "
-                                      u"of “Shabbat candles.” We have adopted this term because of the generic usage, "
-                                      u"but unless otherwise noted these laws apply to any source of illumination that "
-                                      u"is acceptable for use as nerot Shabbat.</i>".format(clean_text(curr_section_title)))
+                    paragraphs.append("<strong>{}</strong> <sup>1</sup><i class=\"footnote\">Editor’s note: The term ner "
+                                      "originally referred to an oil lamp. Nowadays, it has become common to speak "
+                                      "of “Shabbat candles.” We have adopted this term because of the generic usage, "
+                                      "but unless otherwise noted these laws apply to any source of illumination that "
+                                      "is acceptable for use as nerot Shabbat.</i>".format(clean_text(curr_section_title)))
                     section_titles.append(clean_text(curr_section_title))
                 else:
                     section_titles.append(curr_section_title)
-                    paragraphs.append(u"<strong>{}</strong>".format(curr_section_title))
+                    paragraphs.append("<strong>{}</strong>".format(curr_section_title))
 
             raw_paragraphs = soup.find("div", class_="entry-content")
             footnotes = get_footnotes(raw_paragraphs, curr_chapter, num_section)
@@ -287,7 +287,7 @@ def get_soup(book_name, url_number, lang="he"):
                     elif raw_paragraph.name == "ul":
                         bulletpoints = raw_paragraph.find_all("li")
                         for bulletpoint in bulletpoints:
-                            paragraphs.append(aleph_bet + clean_text(u"\u25AA" + bulletpoint.text))
+                            paragraphs.append(aleph_bet + clean_text("\u25AA" + bulletpoint.text))
                             aleph_bet = ""
                     elif raw_paragraph.name == "div" and (raw_paragraph.img or (raw_paragraph.a and raw_paragraph.a.img)):
                         # if raw_paragraph["class"] == "wp-caption aligncenter":
@@ -316,7 +316,7 @@ def get_soup(book_name, url_number, lang="he"):
                                 cleaned_text = clean_text(raw_paragraph.text)
                                 if len(cleaned_text) > 0:
                                     if len(cleaned_text) == 1:
-                                        aleph_bet = u"{}. ".format(cleaned_text)
+                                        aleph_bet = "{}. ".format(cleaned_text)
                                     else:
                                         paragraphs.append(aleph_bet + cleaned_text)
                                         aleph_bet = ""
@@ -330,8 +330,8 @@ def get_soup(book_name, url_number, lang="he"):
                                 footnote_key = 0  # just a guess. this seems to work in the one case that this is relevant
                             try:
                                 footnote_text = footnotes[footnote_key]
-                                footnote_tag = u"<sup>{}</sup><i class=\"footnote\">{}</i>".format(footnote_num, clean_text(footnote_text))
-                                paragraphs[len(paragraphs)-1] = paragraphs[len(paragraphs)-1].replace(u"~~~[{}]~~~".format(footnote_num), footnote_tag)
+                                footnote_tag = "<sup>{}</sup><i class=\"footnote\">{}</i>".format(footnote_num, clean_text(footnote_text))
+                                paragraphs[len(paragraphs)-1] = paragraphs[len(paragraphs)-1].replace("~~~[{}]~~~".format(footnote_num), footnote_tag)
                             except TypeError:
                                 continue
                 first = False
@@ -341,25 +341,25 @@ def get_soup(book_name, url_number, lang="he"):
 
             if curr_chapter:
                 sections.append(paragraphs[:])
-            print "section added"
+            print("section added")
 
         if curr_chapter:
             if book_name == "Prayer" and curr_chapter == 8 and lang == "he":
-                sections.insert(1, [u"p1", u"p2", u"p3", u"p4", u"p5"])
-                section_titles.insert(1, u"Missing Section")
+                sections.insert(1, ["p1", "p2", "p3", "p4", "p5"])
+                section_titles.insert(1, "Missing Section")
             elif book_name == "Women's Prayer" and curr_chapter == 11 and lang == "he":
-                sections.append([u"p1", u"p2", u"p3", u"p4", u"p5", u"p6", u"p7", u"p8", u"p9"])
-                section_titles.append(u"Missing Section")
+                sections.append(["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9"])
+                section_titles.append("Missing Section")
             elif book_name == "Women's Prayer" and curr_chapter == 21 and lang == "he":
-                sections.append([u"p1", u"p2"])
-                section_titles.append(u"Missing Section")
-                sections.append([u"p1", u"p2", u"p3", u"p4", u"p5", u"p6"])
-                section_titles.append(u"Missing Section")
+                sections.append(["p1", "p2"])
+                section_titles.append("Missing Section")
+                sections.append(["p1", "p2", "p3", "p4", "p5", "p6"])
+                section_titles.append("Missing Section")
             chapters.append(sections[:])
             titles[chapter_title] = section_titles[:]
         else:
             introduction = paragraphs[:]
-        print "chapter added"
+        print("chapter added")
 
     return introduction, chapters, ordered_chapter_titles, titles
 
@@ -369,32 +369,32 @@ def replace_for_linker(paragraph):
     new_p = paragraph
     sa_match = re.search(sa_re, paragraph)
     if sa_match:
-        new_p = paragraph.replace(sa_match.group(), sa_match.group().replace(u"\u05e9\u05d5\"\u05e2",
-                                                                     u"\u05e9\u05d5\"\u05e2 \u05d0\u05d5\"\u05d7"))
+        new_p = paragraph.replace(sa_match.group(), sa_match.group().replace("\u05e9\u05d5\"\u05e2",
+                                                                     "\u05e9\u05d5\"\u05e2 \u05d0\u05d5\"\u05d7"))
     mb_match = re.search(mb_re, new_p)
     if mb_match:
-        new_p = new_p.replace(mb_match.group(), mb_match.group().replace(u"\u05de\"\u05d1",
-                                                                     u"\u05de\u05e9\u05e0\u05d4 \u05d1\u05e8\u05d5\u05e8\u05d4"))
+        new_p = new_p.replace(mb_match.group(), mb_match.group().replace("\u05de\"\u05d1",
+                                                                     "\u05de\u05e9\u05e0\u05d4 \u05d1\u05e8\u05d5\u05e8\u05d4"))
     rm_match = re.search(rm_re, new_p)
     if rm_match:
-        new_p = new_p.replace(rm_match.group(), rm_match.group().replace(u"\u05e8\u05de\u05d1\"\u05dd ",
-                                                                             u"\u05e8\u05de\u05d1\"\u05dd, \u05d4\u05dc\u05db\u05d5\u05ea "))
+        new_p = new_p.replace(rm_match.group(), rm_match.group().replace("\u05e8\u05de\u05d1\"\u05dd ",
+                                                                             "\u05e8\u05de\u05d1\"\u05dd, \u05d4\u05dc\u05db\u05d5\u05ea "))
     ah_match = re.search(ah_re, new_p)
     if ah_match:
-        new_p = new_p.replace(ah_match.group(), ah_match.group().replace(u"\u05e2\u05e8\u05d5\u05d4\"\u05e9 ",
-                                                                     u"\u05e2\u05e8\u05d5\u05d4\"\u05e9, \u05d0\u05d5\u05e8\u05d7 \u05d7\u05d9\u05d9\u05dd "))
+        new_p = new_p.replace(ah_match.group(), ah_match.group().replace("\u05e2\u05e8\u05d5\u05d4\"\u05e9 ",
+                                                                     "\u05e2\u05e8\u05d5\u05d4\"\u05e9, \u05d0\u05d5\u05e8\u05d7 \u05d7\u05d9\u05d9\u05dd "))
     rn_match = re.search(rn_re, new_p)
     if rn_match:
-        new_p = new_p.replace(rn_match.group(), rn_match.group().replace(u"\u05e8\u05de\u05d1\"\u05df ",
-                                                                         u"\u05e8\u05de\u05d1\"\u05df \u05e2\u05dc "))
+        new_p = new_p.replace(rn_match.group(), rn_match.group().replace("\u05e8\u05de\u05d1\"\u05df ",
+                                                                         "\u05e8\u05de\u05d1\"\u05df \u05e2\u05dc "))
     ra_match = re.search(ra_re, new_p)
     if ra_match:
-        new_p = new_p.replace(ra_match.group(), ra_match.group().replace(u"\u05e8\u05de\"\u05d0 ",
-                                                                         u"\u05e8\u05de\"\u05d0, \u05d0\u05d5\"\u05d7 "))
+        new_p = new_p.replace(ra_match.group(), ra_match.group().replace("\u05e8\u05de\"\u05d0 ",
+                                                                         "\u05e8\u05de\"\u05d0, \u05d0\u05d5\"\u05d7 "))
     ma_match = re.search(ma_re, new_p)
     if ma_match:
-        new_p = new_p.replace(ma_match.group(), ma_match.group().replace(u"\u05de\"\u05d0 ",
-                                                                    u"\u05de\u05d2\u05df \u05d0\u05d1\u05e8\u05d4\u05dd "))
+        new_p = new_p.replace(ma_match.group(), ma_match.group().replace("\u05de\"\u05d0 ",
+                                                                    "\u05de\u05d2\u05df \u05d0\u05d1\u05e8\u05d4\u05dd "))
     return new_p
 
 
@@ -403,7 +403,7 @@ def supplement_parser():
     sections = []
     goren_introduction = []
     all_siman_titles = {}
-    section_titles = [u"תשובות הרב שלמה גורן", u"הרב אברהם שפירא", u"הרב נחום אליעזר רבינוביץ\'"]
+    section_titles = ["תשובות הרב שלמה גורן", "הרב אברהם שפירא", "הרב נחום אליעזר רבינוביץ\'"]
     aleph_bet = ""
 
     num_simanim = [12, 2, 1]
@@ -425,7 +425,7 @@ def supplement_parser():
             if num_siman or curr_section:
                 curr_siman_title = soup.title.text.split("|")[0]
                 simanim_titles.append(curr_siman_title)
-                paragraphs.append(u"<strong>{}</strong>".format(curr_siman_title))
+                paragraphs.append("<strong>{}</strong>".format(curr_siman_title))
 
             raw_paragraphs = soup.find("div", class_="entry-content")
             footnotes = get_footnotes(raw_paragraphs)
@@ -440,7 +440,7 @@ def supplement_parser():
                     elif raw_paragraph.name == "ul":
                         bulletpoints = raw_paragraph.find_all("li")
                         for bulletpoint in bulletpoints:
-                            paragraphs.append(aleph_bet + clean_text(u"\u25AA " + bulletpoint.text))
+                            paragraphs.append(aleph_bet + clean_text("\u25AA " + bulletpoint.text))
                             aleph_bet = ""
                     else:
                         if (not raw_paragraph.img and raw_paragraph.name != "div") or raw_paragraph.name in ["h2", "h5", "h3"]:
@@ -451,7 +451,7 @@ def supplement_parser():
                                 cleaned_text = clean_text(raw_paragraph.text)
                                 if len(cleaned_text) > 0:
                                     if len(cleaned_text) == 1:
-                                        aleph_bet = u"{}. ".format(cleaned_text)
+                                        aleph_bet = "{}. ".format(cleaned_text)
                                     else:
                                         paragraphs.append(aleph_bet + cleaned_text)
                                         aleph_bet = ""
@@ -461,7 +461,7 @@ def supplement_parser():
                             footnote_num = sup.a.text.replace("]", "").replace("[", "")
                             try:
                                 footnote_text = footnotes[int(footnote_num)]
-                                footnote_tag = u"<sup>{}</sup><i class=\"footnote\">{}</i>".format(footnote_num,
+                                footnote_tag = "<sup>{}</sup><i class=\"footnote\">{}</i>".format(footnote_num,
                                                                                                    footnote_text)
                                 paragraphs[len(paragraphs) - 1] += footnote_tag
                             except TypeError:
@@ -471,20 +471,20 @@ def supplement_parser():
                 simanim.append(paragraphs[:])
             else:
                 goren_introduction = paragraphs[:]
-            print "section added"
+            print("section added")
 
         sections.append(simanim[:])
         all_siman_titles[section_titles[curr_section]] = simanim_titles[:]
-        print "chapter added"
+        print("chapter added")
 
     return goren_introduction, sections, section_titles, all_siman_titles
 
 
 # removes unwanted text from paragraphs
 def clean_text(paragraph):
-    paragraph = re.sub(footnote_re, ur"~~~\1~~~", paragraph)
-    paragraph = re.sub(img_text_re, u"", paragraph).strip()
-    paragraph = paragraph.replace(u"\u0124", u"\u1E24").replace(u"\u0125", u"\u1E25")
+    paragraph = re.sub(footnote_re, r"~~~\1~~~", paragraph)
+    paragraph = re.sub(img_text_re, "", paragraph).strip()
+    paragraph = paragraph.replace("\u0124", "\u1E24").replace("\u0125", "\u1E25")
 
     return paragraph
 
@@ -702,13 +702,13 @@ def get_footnotes(raw_paragraphs, curr_chapter=None, curr_section=None):
 # re-adds special tags to given text if necessary
 def get_tag(tag):
     if tag.name in ["strong", "b"]:
-        return u"<strong>{}</strong>".format(tag.text)
+        return "<strong>{}</strong>".format(tag.text)
     elif tag.name in ["em", "i"]:
-        return u"<em>{}</em>".format(tag.text)
+        return "<em>{}</em>".format(tag.text)
     elif tag.name == "br":
         return "<br/>"
     elif tag.name == "sup":
-        return u"<sup>{}</sup>".format(tag.text)
+        return "<sup>{}</sup>".format(tag.text)
     elif tag.name == "ol":
         return tag.li.text
     else:
@@ -720,9 +720,9 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, title_t
 
     # cleans and retrieves preferred title from title_changes_dict
     def clean_title(title, he=None, chapter=False):
-        new_title = title.strip().replace(u"\u2013", u":").replace(u"\u2019", u"\'").replace(u"-", u":")\
-            .replace(u"\u0125", u"h").replace(u"\u201c", "\"").replace(u"\u201d", "\"")\
-            .replace(u"\u0124", u"H").replace(u"\xe0", u"a").replace(u"\u1e25", u"h").replace(u"\u1e24", u"H").replace("	", " ")
+        new_title = title.strip().replace("\u2013", ":").replace("\u2019", "\'").replace("-", ":")\
+            .replace("\u0125", "h").replace("\u201c", "\"").replace("\u201d", "\"")\
+            .replace("\u0124", "H").replace("\xe0", "a").replace("\u1e25", "h").replace("\u1e24", "H").replace("	", " ")
 
         if new_title != title.strip():
             try:
@@ -739,13 +739,13 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, title_t
     # default structure start
     root = SchemaNode()
     comm_en = "Peninei Halakhah, {}".format(en)
-    comm_he = u"פניני הלכה, {}".format(he)
+    comm_he = "פניני הלכה, {}".format(he)
     root.add_primary_titles(comm_en, comm_he)
     root.key = "Peninei Halakhah, {}".format(en)
 
     intro_node = JaggedArrayNode()
     intro_node.add_shared_term("Introduction")
-    intro_node.key = u"Introduction"
+    intro_node.key = "Introduction"
     intro_node.add_structure(["Paragraph"])
     intro_node.toc_zoom = 2
     intro_node.depth = 1
@@ -754,13 +754,13 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, title_t
     chapters_node = JaggedArrayNode()
     chapters_node.key = "default"
     chapters_node.default = True
-    chapters_node.add_structure([u"Chapter", u"Section", u"Paragraph"])
+    chapters_node.add_structure(["Chapter", "Section", "Paragraph"])
     chapters_node.depth = 3
     root.append(chapters_node)
 
     if en == "The Nation and the Land":
         supplement_node = SchemaNode()
-        supplement_node.add_primary_titles("Supplement", u"נספח")
+        supplement_node.add_primary_titles("Supplement", "נספח")
 
         supplement_sections_en = ["Responsa of Rabbi Shlomo Goren", "Responsa of Rabbi Avraham Shapiro", "Responsa of Rabbi Nahum Rabinovitch"]
 
@@ -770,7 +770,7 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, title_t
                 supp_section_node.add_primary_titles(supplement_sections_en[num], supplement_section_he)
                 supp_section_node_sub = JaggedArrayNode()
                 supp_section_node_sub.add_shared_term("Introduction")
-                supp_section_node_sub.key = u"Introduction"
+                supp_section_node_sub.key = "Introduction"
                 supp_section_node_sub.add_structure(["Paragraph"])
                 supp_section_node_sub.toc_zoom = 2
                 supp_section_node_sub.depth = 1
@@ -810,7 +810,7 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, title_t
     array_map.includeSections = False
     array_map.refs = []
     array_map.add_shared_term("Introduction")
-    array_map.key = u"Introduction"
+    array_map.key = "Introduction"
     array_map.validate()
     altstruct_nodes.append(array_map.serialize())
 
@@ -856,7 +856,7 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, title_t
 
     if en == "The Nation and the Land":
         supplement_node_alt = SchemaNode()
-        supplement_node_alt.add_primary_titles("Supplement", u"נספח")
+        supplement_node_alt.add_primary_titles("Supplement", "נספח")
 
         for sec_num, he_section_title in enumerate(supp_section_titles):
 
@@ -865,7 +865,7 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, title_t
             if not sec_num:
                 array_map = ArrayMapNode()
                 array_map.add_shared_term("Introduction")
-                array_map.key = u"Introduction"
+                array_map.key = "Introduction"
                 array_map.depth = 0
                 array_map.includeSections = False
                 array_map.wholeRef = "Peninei Halakhah, {}, Supplement, Responsa of Rabbi Shlomo Goren, Introduction".format(en)
@@ -981,9 +981,9 @@ def post_self_links(bookname_en):
             for match in matches:
                 reference, chapter, section_s = match
                 chapter_num = getGematria(chapter)
-                section_s = section_s.replace(u",", "").replace(u";", "")
+                section_s = section_s.replace(",", "").replace(";", "")
 
-                if u"-" in section_s:
+                if "-" in section_s:
                     all_sections = []
                     sec1, sec2 = section_s.split("-")
                     num1 = getGematria(sec1)
@@ -1023,10 +1023,10 @@ def post_self_links(bookname_en):
         post_link(links, server=SEFARIA_SERVER)
 
 if __name__ == "__main__":
-    add_term("Peninei Halakhah", u"פניני הלכה")
-    add_category("Peninei Halakhah",["Halakhah", "Peninei Halakhah"], u"פניני הלכה")
-    he_book_list = []  # [5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
-    both_book_list = [10]  # [0, 1, 2, 3, 4, 10]
+    add_term("Peninei Halakhah", "פניני הלכה")
+    add_category("Peninei Halakhah",["Halakhah", "Peninei Halakhah"], "פניני הלכה")
+    he_book_list = [11]  # [5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
+    both_book_list = []  # [0, 1, 2, 3, 4, 10]
     langs = ["he", "both"]
 
     for lang, book_list in enumerate([he_book_list, both_book_list]):
@@ -1038,6 +1038,6 @@ if __name__ == "__main__":
 
     if print_titles_to_be_changed:
         for num, list in enumerate(titles_to_print):
-            print "__________________{}___________________".format(titles_to_print_names[num])
+            print("__________________{}___________________".format(titles_to_print_names[num]))
             for title in list:
-                print title
+                print(title)
