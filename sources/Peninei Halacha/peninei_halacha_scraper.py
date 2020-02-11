@@ -95,7 +95,7 @@ def do_peninei_halakhah(book_name_en, book_name_he, url_number, title_translatio
         post_text_to_server(book_name_en, introduction_he, chapters_he, "he")
         post_text_to_server(book_name_en, introduction_en, chapters_en, "en")
     else:
-        download_html(book_name_en, url_number, lang) # if just one language
+        download_html(book_name_en, url_number, lang)  # if just one language
         introduction, chapters, ordered_chapter_titles, section_titles = get_soup(book_name_en, url_number, lang)
         if lang == "he":
             post_index_to_server(book_name_en, book_name_he, ordered_chapter_titles, section_titles, title_trans_dict, title_ch_dict, only_chapters_translated=False)
@@ -120,8 +120,8 @@ def collect_trans_titles_from_tsv(filename):
 
             heb = u':'.join(heb.split(":")[1::]).strip()
             # heb = heb.replace("\"\"", "\"")
-            heb = re.sub(u'"+', u'"', heb)
-            eng = re.sub(u'"+', u'"', eng)
+            heb = re.sub('"+', '"', heb)
+            eng = re.sub('"+', '"', eng)
             eng = eng.strip()
             title_trans_dict[heb] = eng
 
@@ -144,9 +144,11 @@ def collect_ch_titles_from_tsv(filename):
 
 
 # scrape html from webpages if necessary
-def download_html(book_name, url_number, lang="he"):
+scraped_dir_name = 'New_Scraped_HTML'
+
+def download_html(book_name, url_number, lang="he", scraped_dir_name=scraped_dir_name):
     try:
-        os.mkdir("./Scraped_HTML/{}_{}".format(book_name, lang))
+        os.mkdir("./{}/{}_{}".format(scraped_dir_name, book_name, lang))
     except OSError:
         return
 
@@ -157,35 +159,36 @@ def download_html(book_name, url_number, lang="he"):
             url = "https://ph.yhb.org.il/פתח-דבר/"
         else:
             url = "https://ph.yhb.org.il/{}-00-00/".format('%02d' % url_number)
-        text = requests.get(url, cookies=jar).text.encode("utf8")
-        file = open("./Scraped_HTML/{}_he/Introduction.html".format(book_name), "w+")
-        file.write(text)
-        file.close()
+        text = requests.get(url, cookies=jar).text
+        with codecs.open("./{}/{}_he/Introduction.html".format(scraped_dir_name, book_name), "w+") as f:
+            f.write(text)
 
     for curr_chapter in range(num_chapters[book_name]):
         total_num_sections = get_num_sections(book_name, curr_chapter+1, lang, url_number, scrape=True)
 
         for num_section in range(total_num_sections):
             url = "https://ph.yhb.org.il/{}/{}-{}-{}/".format(lang, '%02d' % url_number, '%02d' % (curr_chapter+1), '%02d' % (num_section+1))
-            text = requests.get(url, cookies=jar).text.encode("utf8")
-            file = open("./Scraped_HTML/{}_{}/Chapter_{}_Section_{}.html".format(book_name, lang, curr_chapter+1, num_section+1), "w+")
-            file.write(text)
-            file.close()
-
+            text = requests.get(url, cookies=jar).text
+            with codecs.open("./{}/{}_{}/Chapter_{}_Section_{}.html".format(scraped_dir_name, book_name, lang, curr_chapter+1, num_section+1), "w") as f:
+                f.write(text)
 
 # determine the total number of sections in a given chapter
-def get_num_sections(book_name, curr_chapter, lang, url_number, scrape=False):
+def get_num_sections(book_name, curr_chapter, lang, url_number, scrape=False, scraped_dir_name=scraped_dir_name):
     if scrape:
         url = "https://ph.yhb.org.il/{}/{}-{}-02/".format(lang, '%02d' % url_number, '%02d' % (curr_chapter))
         source = requests.get(url, cookies=jar).text
     else:
-        file = open("./Scraped_HTML/{}_{}/Chapter_{}_Section_1.html".format(book_name, lang, curr_chapter))
-        source = file.read()
+        with codecs.open("./{}/{}_{}/Chapter_{}_Section_1.html".format(scraped_dir_name, book_name, lang, curr_chapter)) as f:
+            source = f.read()
     soup = BeautifulSoup(source, 'lxml')
-    num_sections = soup.find_all("div", style="display:block")
-    for section in num_sections[1].find_all("li", class_="collapsing categories item"):
-        None
-
+    if lang=='he':
+        catlist = soup.find_all("ul", class_='lcp_catlist')
+        num_sections = len(catlist[0].find_all('li')) if len(catlist) > 0 else 0
+    if lang=='en':
+        num_sections = soup.find_all("div", style="display:block")
+        for section in num_sections[1].find_all("li", class_="collapsing categories item"):
+            None
+        num_sections = int(section.a["href"].split("-")[2][:2])
     bias = 0
 
     if (book_name == "Prayer" and curr_chapter == 8 and lang == "he") or \
@@ -194,19 +197,19 @@ def get_num_sections(book_name, curr_chapter, lang, url_number, scrape=False):
             (book_name == "Women's Prayer" and curr_chapter == 21 and lang == "he"):
         bias += 1
 
-    return int(section.a["href"].split("-")[2][:2])
+    return num_sections
 
 
 # get the title of a given chapter
-def get_chapter_title(book_name, curr_chapter, lang, url_number, scrape=False):
+def get_chapter_title(book_name, curr_chapter, lang, url_number, scrape=False, scraped_dir_name=scraped_dir_name):
     if scrape:
         url = "https://ph.yhb.org.il/{}/{}-{}-01/".format(lang, '%02d' % url_number, '%02d' % (curr_chapter))
         source = requests.get(url, cookies=jar).text
     else:
-        file = open("./Scraped_HTML/{}_{}/Chapter_{}_Section_1.html".format(book_name, lang, curr_chapter))
+        file = open("./{}/{}_{}/Chapter_{}_Section_1.html".format(scraped_dir_name,book_name, lang, curr_chapter))
         source = file.read()
     soup = BeautifulSoup(source, 'lxml')
-    chapter_title = soup.find("div", class_="entry-utility").a.text
+    chapter_title = soup.find("h1").text or soup.find("div", class_="entry-utility").a.text
 
     return chapter_title
 
@@ -249,9 +252,9 @@ def get_soup(book_name, url_number, lang="he"):
                 continue
             paragraphs = []
             if curr_chapter:
-                file = open("./Scraped_HTML/{}_{}/Chapter_{}_Section_{}.html".format(book_name, lang, curr_chapter, num_section+1))
+                file = open("./{}/{}_{}/Chapter_{}_Section_{}.html".format(scraped_dir_name,book_name, lang, curr_chapter, num_section+1))
             else:
-                file = open("./Scraped_HTML/{}_he/Introduction.html".format(book_name))
+                file = open("./{}/{}_he/Introduction.html".format(scraped_dir_name,book_name))
             source = file.read()
             soup = BeautifulSoup(source, 'lxml')
 
@@ -268,10 +271,25 @@ def get_soup(book_name, url_number, lang="he"):
                     section_titles.append(curr_section_title)
                     paragraphs.append("<strong>{}</strong>".format(curr_section_title))
 
-            raw_paragraphs = soup.find("div", class_="entry-content")
+            list_raw_texts_he =[d for d in
+             soup.findAll("div", class_=lambda x: x and x.startswith('elementor-widget-container')) if
+             len(d.findAll('p')) > 0]
+            assert len(list_raw_texts_he) <= 1  # if list_raw_texts_he has more than one element we need to see whitch is the text one we are looking to upload and find the footnoteds in etc.
+            raw_paragraphs = soup.find("div", class_="entry-content") or list_raw_texts_he[0]
             footnotes = get_footnotes(raw_paragraphs, curr_chapter, num_section)
 
             first = True
+            sups_to_change = raw_paragraphs.find_all("sup")
+            for sup in sups_to_change:
+                if not re.search(u'\[', sup.text):
+                    if (sup.attrs.get('class', []) == 'footnote') or (
+                            sup.attrs.get('class', []) == ['footnote']):
+                        sup.string = sup.text.replace(sup.text, "[{}]".format(sup.text))
+                    elif sup.find('a'):
+                        if (re.search('ref', sup.find('a').attrs.get('id')) or re.search('ref', sup.find('a').attrs.get('href'))):
+                            sup.string = sup.text.replace(sup.text, "[{}]".format(sup.text))
+                    else:
+                        sup.decompose()
             for raw_paragraph in raw_paragraphs.find_all(["p", "h5", "h3", "h2", "blockquote", "div", "ul"], recursive=False):
                 if not first or not curr_chapter:
                     if raw_paragraph.img and raw_paragraph.name != "div":
@@ -282,7 +300,7 @@ def get_soup(book_name, url_number, lang="he"):
                         paragraphs[len(paragraphs)-1] += " \"" + clean_text(raw_paragraph.p.text) + "\" "
                     elif raw_paragraph.text == "***":
                         final_comment = True
-                    elif raw_paragraph.text == u'\xa0':
+                    elif raw_paragraph.text == '\xa0':
                         continue
                     elif raw_paragraph.name == "ul":
                         bulletpoints = raw_paragraph.find_all("li")
@@ -311,8 +329,6 @@ def get_soup(book_name, url_number, lang="he"):
                                 paragraphs.append(aleph_bet + clean_text("<b>" + raw_paragraph.text + "</b>"))
                                 aleph_bet = ""
                             else:
-                                if raw_paragraph.sup and not re.search(u'\[', raw_paragraph.sup.text):
-                                    raw_paragraph.sup.decompose()
                                 cleaned_text = clean_text(raw_paragraph.text)
                                 if len(cleaned_text) > 0:
                                     if len(cleaned_text) == 1:
@@ -321,18 +337,20 @@ def get_soup(book_name, url_number, lang="he"):
                                         paragraphs.append(aleph_bet + cleaned_text)
                                         aleph_bet = ""
                     potential_sups = raw_paragraph.find_all("sup")
-                    for sup in potential_sups:
-                        if sup.a:
-                            footnote_num = sup.a.text.replace("]", "").replace("[", "")
+                    potential_refs = [r for r in raw_paragraph.find_all('a') if re.search('ref.*?', r.get('id', ''))]
+                    for sup in potential_sups+potential_refs:
+                        if sup:
+                            footnote_num_text = sup.a.text if sup.get('a') else sup.text
+                            footnote_num = footnote_num_text.replace("]", "").replace("[", "")
                             try:
                                 footnote_key = int(footnote_num)
                             except ValueError:
                                 footnote_key = 0  # just a guess. this seems to work in the one case that this is relevant
                             try:
-                                footnote_text = footnotes[footnote_key]
+                                footnote_text = footnotes.get(footnote_key)
                                 footnote_tag = "<sup>{}</sup><i class=\"footnote\">{}</i>".format(footnote_num, clean_text(footnote_text))
                                 paragraphs[len(paragraphs)-1] = paragraphs[len(paragraphs)-1].replace("~~~[{}]~~~".format(footnote_num), footnote_tag)
-                            except TypeError:
+                            except (TypeError, AttributeError):
                                 continue
                 first = False
 
@@ -414,11 +432,11 @@ def supplement_parser():
         for num_siman in range(num_simanim[curr_section]):
             paragraphs = []
             if not curr_section and not num_siman:
-                file = open("./Scraped_HTML/The Nation and the Land_he/Chapter_11_Section_1_Introduction.html")
+                file = open("./{}/The Nation and the Land_he/Chapter_11_Section_1_Introduction.html".format(scraped_dir_name))
             elif not curr_section:
-                file = open("./Scraped_HTML/The Nation and the Land_he/Chapter_11_Section_{}_Siman_{}.html".format(curr_section + 1, num_siman))
+                file = open("./{}/The Nation and the Land_he/Chapter_11_Section_{}_Siman_{}.html".format(scraped_dir_name,curr_section + 1, num_siman))
             else:
-                file = open("./Scraped_HTML/The Nation and the Land_he/Chapter_11_Section_{}_Siman_{}.html".format(curr_section + 1, num_siman + 1))
+                file = open("./{}/The Nation and the Land_he/Chapter_11_Section_{}_Siman_{}.html".format(scraped_dir_name, curr_section + 1, num_siman + 1))
             source = file.read()
             soup = BeautifulSoup(source, 'lxml')
 
@@ -538,15 +556,14 @@ def get_64_code(img_tag, curr_chapter, curr_section, pic_num, footnote):
     pics += 1
 
     try:
-        file = open("./Images/"+filename+".png")
+        filename = "./Images/"+filename+".png"
     except IOError:
         img_url = img_tag["src"]
         img = requests.get(img_url, cookies=jar)
         if img.status_code == 404:
             return 0
-        f = open("./Images/"+filename+".png", "w+")
-        f.write(img.content)
-        f.close()
+        with open("./Images/"+filename+".png", "w+") as f:
+            f.write(img.content)
         img = Image.open("./Images/" + filename + ".png")
 
         orig_height = img.size[1]
@@ -556,11 +573,11 @@ def get_64_code(img_tag, curr_chapter, curr_section, pic_num, footnote):
             height = int(float(orig_height) * float(percent))
             img = img.resize((550, height), PIL.Image.ANTIALIAS)
             img = img.save("./Images/"+filename+".png")
-        file = open("./Images/"+filename+".png")
+        filename = "./Images/"+filename+".png"
 
-    data = file.read()
-    file.close()
-    data = data.encode("base64")
+    with codecs.open(filename, 'rb') as f:
+        data = f.read()
+    data = base64.b64decode(data)  # base64.encodebytes(data)
     new_tag = '<img src="data:image/png;base64,{}">'.format(data)
     return new_tag
 
@@ -584,7 +601,7 @@ def get_footnotes(raw_paragraphs, curr_chapter=None, curr_section=None):
         for footnote_line in footnotes:
             if isinstance(footnote_line, element.Tag):
                 if footnote_line.name == "a":
-                    if re.match(footnote_re,footnote_line.text):
+                    if re.match(footnote_re, footnote_line.text) or re.search('ref', footnote_line.attrs['id']):
                         if number:
                             footnotes_dict[number] = text
                             text = ""
@@ -1025,8 +1042,8 @@ def post_self_links(bookname_en):
 if __name__ == "__main__":
     add_term("Peninei Halakhah", "פניני הלכה")
     add_category("Peninei Halakhah",["Halakhah", "Peninei Halakhah"], "פניני הלכה")
-    he_book_list = [11]  # [5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
-    both_book_list = []  # [0, 1, 2, 3, 4, 10]
+    he_book_list = []  # [5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
+    both_book_list = [4]  # [0, 1, 2, 3, 4, 10]
     langs = ["he", "both"]
 
     for lang, book_list in enumerate([he_book_list, both_book_list]):
