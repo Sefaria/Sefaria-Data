@@ -22,6 +22,7 @@ tsv_title_changes_file = "PH_Chapter_Section_Title_Changes.tsv"
 jar = requests.cookies.RequestsCookieJar()
 jar.set("wp-postpass_b0cab8db5ce44e438845f4dedf0fcf4f", "%24P%24BH2d6c1lhrllIz02CYT36lWgURQXVe1")
 
+leading_zeros_re = re.compile('^[\s0]+(.*)')
 img_text_re = re.compile("(.*?)\(max-width.*?(br/>|/p>|/>)")
 footnote_re = re.compile("(\[[0123456789]+\])")
 # le'eil and le'halan
@@ -209,8 +210,12 @@ def get_chapter_title(book_name, curr_chapter, lang, url_number, scrape=False, s
         file = open("./{}/{}_{}/Chapter_{}_Section_1.html".format(scraped_dir_name,book_name, lang, curr_chapter))
         source = file.read()
     soup = BeautifulSoup(source, 'lxml')
-    chapter_title = soup.find("h1").text or soup.find("div", class_="entry-utility").a.text
-
+    # chapter_title = soup.find("h1").text or soup.find("div", class_="entry-utility").a.text
+    if lang == 'he':
+        chapter_title_text = soup.find(class_=lambda x: x and x.startswith('elementor-post-info')).text
+        chapter_title = chapter_title_text.replace('הלכה מתוך הפרק:', '').strip()
+    elif lang == 'en':
+        chapter_title = [t.text for t in soup.findAll(class_='category') if re.search('-', t.text)][0]
     return chapter_title
 
 
@@ -749,6 +754,10 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, title_t
                     titles_to_print[0].append(title)
                     titles_to_print[1].append(new_title)
                     titles_to_print[2].append(he)
+
+        if re.match(leading_zeros_re, new_title):
+            new_title = re.match(leading_zeros_re, new_title).group(1)
+
         if chapter:
             new_title = new_title.replace(".", "")
         return new_title
