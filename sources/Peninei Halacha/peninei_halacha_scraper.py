@@ -9,6 +9,7 @@ import regex as re
 import PIL
 from PIL import Image
 import codecs
+import base64
 
 VERSION_TITLE_HE = "Peninei Halakhah, Yeshivat Har Bracha"
 VERSION_SOURCE_HE = "https://ph.yhb.org.il"
@@ -212,10 +213,11 @@ def get_chapter_title(book_name, curr_chapter, lang, url_number, scrape=False, s
     soup = BeautifulSoup(source, 'lxml')
     # chapter_title = soup.find("h1").text or soup.find("div", class_="entry-utility").a.text
     if lang == 'he':
-        chapter_title_text = soup.find(class_=lambda x: x and x.startswith('elementor-post-info')).text
+        chapter_title_text = soup.find('a', class_=lambda x: x and x.startswith('elementor-post-info')).text
         chapter_title = chapter_title_text.replace('הלכה מתוך הפרק:', '').strip()
     elif lang == 'en':
-        chapter_title = [t.text for t in soup.findAll(class_='category') if re.search('-', t.text)][0]
+        list_option = [t.text for t in soup.findAll(class_='category') if re.search('-', t.text)]
+        chapter_title = list_option[0] if list_option else 'place_holder_chapter_name'
     return chapter_title
 
 
@@ -264,7 +266,7 @@ def get_soup(book_name, url_number, lang="he"):
             soup = BeautifulSoup(source, 'lxml')
 
             if curr_chapter:
-                curr_section_title = soup.title.text.split("|")[0]
+                curr_section_title = '–'.join(soup.title.text.split('–')[0:2]).strip()  # soup.title.text.split("|")[0], # maybe it is more correct to get rid of the words פניני הלכה?
                 if curr_chapter == 4 and num_section == 0 and book_name == "Shabbat" and lang == "en":
                     paragraphs.append("<strong>{}</strong> <sup>1</sup><i class=\"footnote\">Editor’s note: The term ner "
                                       "originally referred to an oil lamp. Nowadays, it has become common to speak "
@@ -361,6 +363,7 @@ def get_soup(book_name, url_number, lang="he"):
 
             for num, p in enumerate(paragraphs):
                 paragraphs[num] = replace_for_linker(p)
+                paragraphs[num] = last_text_clean(p)
 
             if curr_chapter:
                 sections.append(paragraphs[:])
@@ -420,6 +423,13 @@ def replace_for_linker(paragraph):
                                                                     "\u05de\u05d2\u05df \u05d0\u05d1\u05e8\u05d4\u05dd "))
     return new_p
 
+def last_text_clean(paragraph):
+    new_p = paragraph
+    # strip '~~~' in any place it might have been inserted wrongly
+    new_p = new_p.replace('~', '')
+    # strip the 'alt' symbol from footnotes
+    new_p = new_p.replace('↩', '')
+    return new_p
 
 # parses supplement chapter for index ha'am veha'aretz
 def supplement_parser():
@@ -582,8 +592,8 @@ def get_64_code(img_tag, curr_chapter, curr_section, pic_num, footnote):
 
     with codecs.open(filename, 'rb') as f:
         data = f.read()
-    data = base64.b64decode(data)  # base64.encodebytes(data)
-    new_tag = '<img src="data:image/png;base64,{}">'.format(data)
+    data = base64.b64encode(data)  # base64.encodebytes(data) #data.encode("base64")
+    new_tag = '<img src="data:image/png;base64,{}">'.format(str(data)[2:-1])
     return new_tag
 
 
@@ -710,7 +720,8 @@ def get_footnotes(raw_paragraphs, curr_chapter=None, curr_section=None):
                 elif (footnote_line.name == "div" and footnote_line.text.strip() == "") or footnote_line.name == "hr":
                     None
                 else:
-                    assert False
+                    print("faield on footnotes: \n {}".format(footnote_line.text))
+                    # assert False
             elif isinstance(footnote_line, element.NavigableString):
                 if len(footnote_line) > 2:
                     text += footnote_line
@@ -1052,7 +1063,7 @@ if __name__ == "__main__":
     add_term("Peninei Halakhah", "פניני הלכה")
     add_category("Peninei Halakhah",["Halakhah", "Peninei Halakhah"], "פניני הלכה")
     he_book_list = []  # [5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
-    both_book_list = [4]  # [0, 1, 2, 3, 4, 10]
+    both_book_list = [0]  # [0, 1, 2, 3, 4, 10]
     langs = ["he", "both"]
 
     for lang, book_list in enumerate([he_book_list, both_book_list]):
