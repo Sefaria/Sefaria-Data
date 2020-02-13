@@ -1,8 +1,11 @@
 # encoding=utf-8
 
 import re
+import os
+import json
 import time
 import sqlite3
+import requests
 from tqdm import tqdm
 from threading import Lock
 from bs4 import BeautifulSoup, NavigableString
@@ -265,16 +268,36 @@ lock, tracker = Lock(), [0]
 
 def upload_commentary(comm: Commentary):
     ind = comm.generate_index()
-    post_index(ind, server=server)
-    post_text(ind['title'], comm.build_version(), server=server)
+    # check = requests.get(f'{server}/api/v2/raw/index/{ind["title"].replace(" ", "_")}')
+    # post_index(ind, server=server)
+    check = requests.get(f'{server}/api/texts/{ind["title"].replace(" ", "_")}')
+    if check.status_code == 200 and not check.json().get('text'):
+        post_text(ind['title'], comm.build_version(), server=server)
+    elif check.status_code != 200:
+        print(f'major issue with {ind["title"]}')
     with lock:
         current_index = tracker[0] + 1
         if current_index % 10 == 0:
             print(current_index)
-        if current_index % 25 == 0:
-            time.sleep(3)
+            time.sleep(5)
 
         tracker[0] = current_index
+
+
+def dump_index_and_text(comm: Commentary):
+    if not os.path.exists('./dumps'):
+        os.mkdir('./dumps')
+    ind = comm.generate_index()
+    title = ind['title']
+    if not os.path.exists('./dumps/indices'):
+        os.mkdir('./dumps/indices')
+    with open(f'./dumps/indices/{title}.json', 'w') as fp:
+        json.dump(ind, fp)
+
+    if not os.path.exists('./dumps/texts'):
+        os.mkdir('./dumps/texts')
+    with open(f'./dumps/texts/{title}.json', 'w') as fp:
+        json.dump(comm.build_version(), fp)
 
 
 def print_and_add_category(category):
@@ -298,19 +321,25 @@ for item in tqdm(iter_cursor(cursor), total=28479):
         categories.add(current_commentary.get_category())
     current_commentary.add_segments_from_row(item)
 
+
 server = 'http://localhost:8000'
+# server = 'https://www.sefaria.org'
 # server = 'http://friedberg.sandbox.sefaria.org'
 for term in terms:
     add_term(*term, server=server)
 
 print(f'There are {len(categories)} categories')
-with ThreadPoolExecutor(10) as executor:
-    executor.map(print_and_add_category, categories)
+# with ThreadPoolExecutor(max_workers=6) as executor:
+#     executor.map(print_and_add_category, categories)
+for cat in tqdm(categories):
+    add_category(cat[-1], list(cat), server=server)
 
 print(f'There are {len(comment_store)} books to upload')
 tracker[0] = 0
-with ThreadPoolExecutor(max_workers=10) as executor:
-    executor.map(upload_commentary, comment_store)
+# with ThreadPoolExecutor(max_workers=3) as executor:
+#     executor.map(upload_commentary, comment_store)
+# for item, comment in enumerate(tqdm(comment_store), 1):
+#     dump_index_and_text(comment)
 
 
-print(len(terms), *terms, sep='\n')
+print(len(terms), *(term[0] for term in terms), sep='\n')
