@@ -692,7 +692,7 @@ class GroupManager(object):
             self.cache_group_from_server(group_name)
 
         if self.group_cache[group_name]['need_to_add']:
-            with open('midreshet_logo.jpg') as fp:
+            with open('midreshet_logo.jpg', 'rb') as fp:
                 logo_data = fp.read()
 
             self.add_new_group({
@@ -1471,11 +1471,13 @@ if __name__ == '__main__':
 
     single_group_servers = {
         'http://midreshet.sandbox.sefaria.org',
-        'http://localhost:8000'
+        'http://localhost:8000',
+        'https://www.sefaria.org'
     }
 
     # destination_server = 'http://localhost:8000'
-    destination_server = 'http://midreshet.sandbox.sefaria.org'
+    # destination_server = 'http://midreshet.sandbox.sefaria.org'
+    destination_server = 'https://www.sefaria.org'
     if destination_server in multiple_group_servers:
         group_handler = GroupManager(destination_server)
     else:
