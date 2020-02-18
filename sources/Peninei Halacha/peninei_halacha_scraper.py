@@ -11,9 +11,9 @@ from PIL import Image
 import codecs
 import base64
 
-VERSION_TITLE_HE = "Peninei Halakhah, Yeshivat Har Bracha"
+VERSION_TITLE_HE = "Peninei Halakhah, Yeshivat Har Bracha - 2020"
 VERSION_SOURCE_HE = "https://ph.yhb.org.il"
-VERSION_TITLE_EN = "Peninei Halakhah, English ed. Yeshivat Har Bracha"
+VERSION_TITLE_EN = "Peninei Halakhah, English ed. Yeshivat Har Bracha - 2020"
 VERSION_SOURCE_EN = "https://ph.yhb.org.il/en"
 
 # NOTE: I ASSUMED THAT IF SECTIONS ARE ALSO TRANSLATED, THEN SIMANIM ARE TRANSLATED TOO.
@@ -24,6 +24,7 @@ jar = requests.cookies.RequestsCookieJar()
 jar.set("wp-postpass_b0cab8db5ce44e438845f4dedf0fcf4f", "%24P%24BH2d6c1lhrllIz02CYT36lWgURQXVe1")
 
 leading_zeros_re = re.compile('^[\s0]+(.*)')
+pre_num_letter_re = re.compile('.+\s*[-–.:]\s*(.*?)$')
 img_text_re = re.compile("(.*?)\(max-width.*?(br/>|/p>|/>)")
 footnote_re = re.compile("(\[[0123456789]+\])")
 # le'eil and le'halan
@@ -152,26 +153,30 @@ def download_html(book_name, url_number, lang="he", scraped_dir_name=scraped_dir
     try:
         os.mkdir("./{}/{}_{}".format(scraped_dir_name, book_name, lang))
     except OSError:
-        return
+        pass
 
     if lang == "he":
-        if url_number in [11,6]:
+        if url_number in [11, 6]:
             url = "https://ph.yhb.org.il/{}-00/".format('%02d' % url_number)
         elif url_number == 17:
             url = "https://ph.yhb.org.il/פתח-דבר/"
         else:
             url = "https://ph.yhb.org.il/{}-00-00/".format('%02d' % url_number)
         text = requests.get(url, cookies=jar).text
-        with codecs.open("./{}/{}_he/Introduction.html".format(scraped_dir_name, book_name), "w+") as f:
-            f.write(text)
-
+        file_path = "./{}/{}_he/Introduction.html".format(scraped_dir_name, book_name)
+        if not os.path.exists(file_path):
+            with codecs.open(file_path, "w+") as f:
+                f.write(text)
     for curr_chapter in range(num_chapters[book_name]):
         total_num_sections = get_num_sections(book_name, curr_chapter+1, lang, url_number, scrape=True)
 
         for num_section in range(total_num_sections):
+            file_path = "./{}/{}_{}/Chapter_{}_Section_{}.html".format(scraped_dir_name, book_name, lang, curr_chapter+1, num_section+1)
+            if os.path.exists(file_path):
+                continue
             url = "https://ph.yhb.org.il/{}/{}-{}-{}/".format(lang, '%02d' % url_number, '%02d' % (curr_chapter+1), '%02d' % (num_section+1))
             text = requests.get(url, cookies=jar).text
-            with codecs.open("./{}/{}_{}/Chapter_{}_Section_{}.html".format(scraped_dir_name, book_name, lang, curr_chapter+1, num_section+1), "w") as f:
+            with codecs.open(file_path, "w") as f:
                 f.write(text)
 
 # determine the total number of sections in a given chapter
@@ -215,9 +220,13 @@ def get_chapter_title(book_name, curr_chapter, lang, url_number, scrape=False, s
     if lang == 'he':
         chapter_title_text = soup.find('a', class_=lambda x: x and x.startswith('elementor-post-info')).text
         chapter_title = chapter_title_text.replace('הלכה מתוך הפרק:', '').strip()
+        chapter_title = chapter_title.replace('תפילת נשים', '').strip(' |')
+        if re.search('|', chapter_title).group():
+            print("NOTE: There is a pipe in {}, does this need fixing?".format(chapter_title))
+
     elif lang == 'en':
-        list_option = [t.text for t in soup.findAll(class_='category') if re.search('-', t.text)]
-        chapter_title = list_option[0] if list_option else 'place_holder_chapter_name'
+        list_option = [t.text for t in soup.findAll(class_='category') if re.search('[-:]', t.text)]
+        chapter_title = list_option[0].replace('Chapter', '') if list_option else 'place_holder_chapter_name'
     return chapter_title
 
 
@@ -241,6 +250,8 @@ def get_soup(book_name, url_number, lang="he"):
             total_num_sections = get_num_sections(book_name, curr_chapter, lang, url_number)
             chapter_title = get_chapter_title(book_name, curr_chapter, lang, url_number)
             ordered_chapter_titles.append(chapter_title)
+            if chapter_title == '18 - Errors, Additions, and Omissions in the Amidah':
+                total_num_sections = get_num_sections(book_name, curr_chapter, 'he', url_number)
         else:
             total_num_sections = 1
 
@@ -266,7 +277,11 @@ def get_soup(book_name, url_number, lang="he"):
             soup = BeautifulSoup(source, 'lxml')
 
             if curr_chapter:
-                curr_section_title = '–'.join(soup.title.text.split('–')[0:2]).strip()  # soup.title.text.split("|")[0], # maybe it is more correct to get rid of the words פניני הלכה?
+                curr_section_title = soup.title.text.replace('פניני הלכה', '').strip(' –')
+                curr_section_title = curr_section_title.replace('Peninei Halakha', '').strip(' |')
+                curr_section_title = curr_section_title.replace('תפילת נשים', '').strip(' |')
+                if re.search('|', curr_section_title).group():
+                    print("NOTE: There is a pipe in {}, does this need fixing?".format(curr_section_title))
                 if curr_chapter == 4 and num_section == 0 and book_name == "Shabbat" and lang == "en":
                     paragraphs.append("<strong>{}</strong> <sup>1</sup><i class=\"footnote\">Editor’s note: The term ner "
                                       "originally referred to an oil lamp. Nowadays, it has become common to speak "
@@ -276,7 +291,10 @@ def get_soup(book_name, url_number, lang="he"):
                     section_titles.append(clean_text(curr_section_title))
                 else:
                     section_titles.append(curr_section_title)
-                    paragraphs.append("<strong>{}</strong>".format(curr_section_title))
+                    # chapter_title and section_title for presenting in the first segment of the section
+                    chapter_title_pre = re.match(pre_num_letter_re, chapter_title).group(1)
+                    curr_section_title_pre = re.match(pre_num_letter_re, curr_section_title).group(1)
+                    paragraphs.append("<strong>{} / {}</strong>".format(chapter_title_pre, curr_section_title_pre))
 
             list_raw_texts_he =[d for d in
              soup.findAll("div", class_=lambda x: x and x.startswith('elementor-widget-container')) if
@@ -370,17 +388,20 @@ def get_soup(book_name, url_number, lang="he"):
             print("section added")
 
         if curr_chapter:
-            if book_name == "Prayer" and curr_chapter == 8 and lang == "he":
-                sections.insert(1, ["p1", "p2", "p3", "p4", "p5"])
-                section_titles.insert(1, "Missing Section")
-            elif book_name == "Women's Prayer" and curr_chapter == 11 and lang == "he":
+            if book_name == "Prayer" and curr_chapter == 8 and lang == "en":
+                pass
+            if book_name == "Women's Prayer" and curr_chapter == 11 and lang == "he":
                 sections.append(["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9"])
-                section_titles.append("Missing Section")
-            elif book_name == "Women's Prayer" and curr_chapter == 21 and lang == "he":
-                sections.append(["p1", "p2"])
-                section_titles.append("Missing Section")
-                sections.append(["p1", "p2", "p3", "p4", "p5", "p6"])
-                section_titles.append("Missing Section")
+                section_titles.append("יא - איסור אמירת דברים שבקדושה מול ערווה")
+            elif book_name == "Women's Prayer" and curr_chapter == 21:
+                if lang == "he":
+                    sections.append(["p1", "p2"])
+                    section_titles.append("ה  – נשים בציצית")
+                    sections.append(["p1", "p2", "p3", "p4", "p5", "p6"])
+                    section_titles.append(" ו  – נשים בתפילין")
+            elif book_name == "Simchat Habayit V'Birchato" and curr_chapter == 4 and lang == "he":
+                section_titles.extend(["יב - נשים המסוללות", "יג - משכב זכור", "יד - הגורמים לגילוי יצר זה", " טו - מצוות החתונה","טז - האם צריך לספר לפני הנישואין", "יז - יחס התורה לחוטאים במשכב זכר"])
+                sections.extend([["s12"], ["s13"], ["s14"], ["s15"], ["s16"], ["s17"]])
             chapters.append(sections[:])
             titles[chapter_title] = section_titles[:]
         else:
@@ -592,8 +613,8 @@ def get_64_code(img_tag, curr_chapter, curr_section, pic_num, footnote):
 
     with codecs.open(filename, 'rb') as f:
         data = f.read()
-    data = base64.b64encode(data)  # base64.encodebytes(data) #data.encode("base64")
-    new_tag = '<img src="data:image/png;base64,{}">'.format(str(data)[2:-1])
+    data = str(base64.b64encode(data))[2:-1]  # base64.encodebytes(data) #data.encode("base64")
+    new_tag = '<img src="data:image/png;base64,{}">'.format(data)
     return new_tag
 
 
@@ -753,13 +774,18 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, title_t
 
     # cleans and retrieves preferred title from title_changes_dict
     def clean_title(title, he=None, chapter=False):
-        new_title = title.strip().replace("\u2013", ":").replace("\u2019", "\'").replace("-", ":")\
-            .replace("\u0125", "h").replace("\u201c", "\"").replace("\u201d", "\"")\
-            .replace("\u0124", "H").replace("\xe0", "a").replace("\u1e25", "h").replace("\u1e24", "H").replace("	", " ")
+        def clean_characters(title):
+            new_title = title.strip().replace("\u2013", ":").replace("\u2019", "\'").replace("-", ":")\
+                .replace("\u0125", "h").replace("\u201c", "\"").replace("\u201d", "\"")\
+                .replace("\u0124", "H").replace("\xe0", "a").replace("\u1e25", "h").replace("\u1e24", "H")
+            return new_title
 
-        if new_title != title.strip():
+        new_title = clean_characters(title)
+        if new_title != title.strip() and not he:
             try:
                 new_title = title_changes_dict[he.strip()]
+                if re.search('""', new_title):
+                    new_title =new_title.replace('""', '*').replace('"', '').replace('*','"')
             except KeyError:
                 if print_titles_to_be_changed:
                     titles_to_print[0].append(title)
@@ -768,9 +794,11 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, title_t
 
         if re.match(leading_zeros_re, new_title):
             new_title = re.match(leading_zeros_re, new_title).group(1)
+        if re.match('^(\d+)\s*:(.*)$', new_title):
+            new_title = '{}. {}'.format(re.match('^(\d+)\s*:', new_title).group(1), re.match('^(\d+)\s*:(.*)$', new_title).group(2))
 
         if chapter:
-            new_title = new_title.replace(".", "")
+            new_title = new_title.replace(".", "")  # .replace("Chapter", "").strip()
         return new_title
 
     # default structure start
@@ -861,7 +889,9 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, title_t
         if both:  # rabbi fischer title code
             en_chapter_title = (ordered_chapter_titles[1][chap_num])
         elif title_translations_dict:
-            en_chapter_title = title_translations_dict[he_chapter_title]
+            en_chapter_title = title_translations_dict.get(he_chapter_title, "couldnt find the en_title")
+            if not title_translations_dict.get(he_chapter_title, None):
+                print("couldnt find the en_title in the translation tsv for {}".format(he_chapter_title))
         else:
             en_chapter_title = "{}".format(chap_num + 1)
         schema.add_primary_titles(clean_title(en_chapter_title, he_chapter_title, chapter=True), he_chapter_title)
@@ -874,7 +904,11 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, title_t
         for sec_num, he_section_title in enumerate(section_list):
             array_map = ArrayMapNode()
             if both:  # rabbi fischer title code
-                en_section_title = (section_titles[1][en_chapter_title][sec_num])
+                try:
+                    en_section_title = (section_titles[1][en_chapter_title][sec_num])
+                except IndexError:
+                    print("can't find the english translation list {}, {}".format(section_titles[1][en_chapter_title], sec_num))
+                    en_section_title = "{}".format(sec_num + 1 + bias)
             elif not only_chapters_translated and title_translations_dict:
                 # he_section_title = re.sub(u'\u2013', u'-', he_section_title)
                 # title_translations_dict.keys()[76], he_section_title
@@ -1062,8 +1096,8 @@ def post_self_links(bookname_en):
 if __name__ == "__main__":
     add_term("Peninei Halakhah", "פניני הלכה")
     add_category("Peninei Halakhah",["Halakhah", "Peninei Halakhah"], "פניני הלכה")
-    he_book_list = []  # [5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
-    both_book_list = [0]  # [0, 1, 2, 3, 4, 10]
+    he_book_list = [15]  # [5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
+    both_book_list = []  # [0, 1, 2, 3, 4, 10]
     langs = ["he", "both"]
 
     for lang, book_list in enumerate([he_book_list, both_book_list]):
