@@ -72,6 +72,7 @@ books = [("Shabbat", "שבת", 1), # (eng_name, heb_name, url_number)
          ("Kashrut II", "כשרות ב – המזון והמטבח", 18),
          ("Kashrut", "כשרות", 17),
          ]
+another_lang = ['es', 'ru', 'fr']
 
 # SET THIS TO TRUE ONCE RABBI FISCHER SENDS LIST OF TITLE TRANSLATIONS (AND BE SURE TO SET PARAM "only_chapters_translated" ACCORDINGLY)
 titles_were_translated = True
@@ -79,7 +80,7 @@ titles_were_translated = True
 print_titles_to_be_changed = True
 
 def do_peninei_halakhah(book_name_en, book_name_he, url_number, title_translations_tsv, title_changes_tsv, lang="he", only_chapters_translated=False):
-    if lang not in ["he", "en", "es", "both"]:
+    if lang not in ["he", "en", "es", "ru", "fr", "both"]:
         raise Exception("Language field can only be \"he\", \"en\", or \"both\".")
     if titles_were_translated:
         title_trans_dict = collect_trans_titles_from_tsv(title_translations_tsv)
@@ -209,12 +210,13 @@ def get_num_sections(book_name, curr_chapter, lang, url_number, scrape=False, sc
     if lang=='he':
         catlist = soup.find_all("ul", class_='lcp_catlist')
         num_sections = len(catlist[0].find_all('li')) if len(catlist) > 0 else 0
-    elif lang=='en' or lang=='es':
+    elif lang=='en' or lang in another_lang:
         num_sections = soup.find_all("div", style="display:block")
         for section in num_sections[1].find_all("li", class_="collapsing categories item"):
             None
         num_sections = int(section.a["href"].split("-")[2][:2].strip('/'))
-        num_sections = len([x for x in os.listdir('./{}/{}_{}/'.format(scraped_dir_name, book_name, lang,)) if re.search('Chapter_{}_'.format(curr_chapter), x)])
+    if not scrape and lang in another_lang:
+        num_sections = len([x for x in os.listdir('./{}/{}_{}/'.format(scraped_dir_name, book_name, another_lang,)) if re.search('Chapter_{}_'.format(curr_chapter), x)])
 
     bias = 0
 
@@ -309,9 +311,13 @@ def get_soup(book_name, url_number, lang="he", another_lang=None):
             paragraphs = []
             if curr_chapter:
                 if another_lang:
-                    file = open(
-                        "./{}/{}_{}/Chapter_{}_Section_{}.html".format(scraped_dir_name, book_name, another_lang, curr_chapter,
-                                                                       num_section + 1))
+                    try:
+                        filepath = "./{}/{}_{}/Chapter_{}_Section_{}.html".format(scraped_dir_name, book_name, another_lang, curr_chapter,
+                                                                           num_section + 1)
+                        file = open(filepath)
+                    except FileNotFoundError:
+                        print("File not found {}".format(filepath))
+                        file = open(filepath.replace(another_lang, 'en'))
                 else:
                     file = open("./{}/{}_{}/Chapter_{}_Section_{}.html".format(scraped_dir_name,book_name, lang, curr_chapter, num_section+1))
             else:
@@ -725,8 +731,11 @@ def get_footnotes(raw_paragraphs, curr_chapter=None, curr_section=None):
                                         None
                                     elif child.name == "br":
                                         text += "<br/>"
+                                    elif child.name == "em":
+                                        pass
                                     else:
-                                        assert False
+                                        print("assert False")  # Todo: find the assert false problems when posting languages
+                                        pass
                                 elif isinstance(child, element.NavigableString):
                                     text += child
                                 else:
@@ -763,7 +772,10 @@ def get_footnotes(raw_paragraphs, curr_chapter=None, curr_section=None):
                                     if number:
                                         footnotes_dict[number] = text
                                         text = ""
-                                    number = int(sub_footnote_line.text.replace("[", "").replace("]", ""))
+                                    try:
+                                        number = int(sub_footnote_line.text.replace("[", "").replace("]", ""))
+                                    except ValueError:
+                                        number = sub_footnote_line.text.replace("[", "").replace("]", "")
                                 else:
                                     assert sub_footnote_line.name in allowed_footnote_tags or sub_footnote_line.name == "img" or sub_footnote_line.name == 'figure'
                                     if sub_footnote_line.name in allowed_footnote_tags:
@@ -971,9 +983,9 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, title_t
         bias = 0
         for sec_num, he_section_title in enumerate(section_list):
             array_map = ArrayMapNode()
-            if both and curr_book!=12:  # rabbi fischer title code
+            if both and curr_book != 12:  # rabbi fischer title code
                 try:
-                    en_section_title = (section_titles[1][en_chapter_title][sec_num]) #.encode('ascii', errors='ignore').decode())
+                    en_section_title = (section_titles[1][en_chapter_title][sec_num].encode('ascii', errors='ignore').decode())
                 except IndexError:
                     print("can't find the english translation list {}, {}".format(section_titles[1][en_chapter_title], sec_num))
                     en_section_title = "{}".format(sec_num + 1 + bias)
@@ -1169,7 +1181,7 @@ if __name__ == "__main__":
     add_term("Peninei Halakhah", "פניני הלכה")
     add_category("Peninei Halakhah",["Halakhah", "Peninei Halakhah"], "פניני הלכה")
     he_book_list = []  # [5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
-    both_book_list = [0]  # [0, 1, 2, 3, 4, 10]
+    both_book_list = [1]  # [0, 1, 2, 3, 4, 10]
     langs = ["he", "both"]
 
     for lang, book_list in enumerate([he_book_list, both_book_list]):
