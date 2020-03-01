@@ -11,8 +11,8 @@ MERGED_VTITLE = "William Davidson Edition - Vocalized Punctuated Aramaic"
 
 
 def get_punctuation_regex():
-    punc_list = ['?!', '?', '!', ':', '.', ',', '"']
-    return re.compile(rf'({"|".join(re.escape(p) for p in punc_list)})$')
+    punc_list = ['?!', '?', '!', ':', '.', ',']
+    return re.compile(rf'(")?({"|".join(re.escape(p) for p in punc_list)})$')
 
 
 """
@@ -34,9 +34,12 @@ def merge_segment(punctuated: str, vocalized: str) -> str:
     for i, word in enumerate(punc_no_dash_split):
         punc_mark = punc_regex.search(word)
         if punc_mark:
-            vocal_split[i] = f'{vocal_split[i]}{punc_mark.group(1)}'
+            quote = '"' if punc_mark.group(1) else ''
+            vocal_split[i] = f'{vocal_split[i]}{quote}{punc_mark.group(2)}'
         if re.match(r'^"', word):
             vocal_split[i] = f'"{vocal_split[i]}'
+        if re.search(r'"$', word):
+            vocal_split[i] = f'{vocal_split[i]}"'
 
     dash_indices = [i for i, x in enumerate(punctuated.split()) if x == '—']
     for i in dash_indices:
@@ -52,7 +55,7 @@ for segment in segments:
         merged = merge_segment(punc, voc)
     except AssertionError:
         print(f'mismatched length at {segment.normal()}')
-        merged = punc
+        merged = voc
     merged_tc = segment.text('he', MERGED_VTITLE)
     merged_tc.text = merged
     merged_tc.save()
