@@ -28,15 +28,15 @@ pre_num_letter_re = re.compile('.+\s*(?:[–.:]|(?:\s-\s))\s*(.*?)$')
 img_text_re = re.compile("(.*?)\(max-width.*?(br/>|/p>|/>)")
 footnote_re = re.compile("(\[[0123456789]+\])")
 # le'eil and le'halan
-self_re = re.compile("(?<=\(.*)(\u05dc\u05e2\u05d9\u05dc|\u05dc\u05d4\u05dc\u05df) (\S*), (\S*).*\)")
+self_re = re.compile("(?<=\(.*)(\u05dc\u05e2\u05d9\u05dc|\u05dc\u05d4\u05dc\u05df|בהמשך) (\S*), (\S*).*\)")
 # shulchan arukh
-sa_re = re.compile("\(.*\u05e9\u05d5\"\u05e2 (?!\u05d7\u05d5\"\u05de|\u05d9\u05d5\"\u05d3|\u05d0\u05d1\"\u05d4|\u05d0\u05d5\"\u05d7|\u05d0\u05d4\"\u05e2).*\)")
+sa_re = re.compile('\(.*שו"ע(?!\s*(חו"מ|יו"ד|אב"ה|או"ח|אה"ע)).*\)')#re.compile("\(.*\u05e9\u05d5\"\u05e2(?!\s*\u05d7\u05d5\"\u05de|\u05d9\u05d5\"\u05d3|\u05d0\u05d1\"\u05d4|\u05d0\u05d5\"\u05d7|\u05d0\u05d4\"\u05e2).*\)")
 # arukh hashulchan
 ah_re = re.compile("\(.*\u05e2\u05e8\u05d5\u05d4\"\u05e9 (?!\u05d7\u05d5\"\u05de|\u05d9\u05d5\"\u05d3|\u05d0\u05d1\"\u05d4|\u05d0\u05d5\"\u05d7).*\)")
 # mishnah berurah
 mb_re = re.compile("\(.*\u05de\"\u05d1.*\)")
 # rambam
-rm_re = re.compile("\(.*\u05e8\u05de\u05d1\"\u05dd .*\)")
+rm_re = re.compile('\([^)]*רמב"ם\s*([א-ת]{3}[^)]*?)\)')
 # ramban
 rn_re = re.compile("\(.*\u05e8\u05de\u05d1\"\u05df (?=\u05d1\u05e8\u05d0\u05e9\u05d9\u05ea|\u05e9\u05de\u05d5\u05ea|\u05d5\u05d9\u05e7\u05e8\u05d0|\u05d1\u05de\u05d3\u05d1\u05e8|\u05d3\u05d1\u05e8\u05d9\u05dd).*\)")
 # rama
@@ -53,24 +53,24 @@ titles_to_print_names = ["Titles with not-allowed characters", "Automatically fi
 num_chapters = {"Shabbat": 30, "Likkutim I": 11, "Likkutim II": 17, "Festivals": 13, "The Nation and the Land": 10,
                 "Berakhot": 18, "High Holidays": 10, "Shmitta and Yovel": 11, "Kashrut I": 19, "Kashrut II": 17,"Kashrut": 37, "Women's Prayer": 24,
                 "Prayer": 26, "Family": 10, "Sukkot": 8, "Pesach": 16, "Zemanim": 17, "Simchat Habayit V'Birchato": 10}
-books = [("Shabbat", "שבת", 1), # (eng_name, heb_name, url_number)
-         ("Prayer", "תפילה", 2),
-         ("Women's Prayer", "תפילת נשים", 3),
-         ("Pesach", "פסח", 4),
-         ("Zemanim", "זמנים", 5),
-         ("The Nation and the Land", "העם והארץ", 6),
-         ("Likkutim I", "ליקוטים א", 7),
-         ("Likkutim II", "ליקוטים ב", 8),
-         ("Berakhot", "ברכות", 10),
-         ("Family", "משפחה", 11),
-         ("Festivals", "מועדים", 12),
-         ("Sukkot", "סוכות", 13),
-         ("Simchat Habayit V'Birchato", "שמחת הבית וברכתו", 14),
-         ("High Holidays", "ימים נוראים", 15),
-         ("Shmitta and Yovel", "שביעית ויובל", 16),
-         ("Kashrut I", "כשרות א – הצומח והחי", 17),
-         ("Kashrut II", "כשרות ב – המזון והמטבח", 18),
-         ("Kashrut", "כשרות", 17),
+books = [("Shabbat", "שבת", 1),  # 0 (eng_name, heb_name, url_number)
+         ("Prayer", "תפילה", 2),  # 1
+         ("Women's Prayer", "תפילת נשים", 3),  # 2
+         ("Pesach", "פסח", 4),  # 3
+         ("Zemanim", "זמנים", 5),  # 4
+         ("The Nation and the Land", "העם והארץ", 6),  # 5
+         ("Likkutim I", "ליקוטים א", 7),  # 6
+         ("Likkutim II", "ליקוטים ב", 8),  # 7
+         ("Berakhot", "ברכות", 10),  # 8
+         ("Family", "משפחה", 11),  # 9
+         ("Festivals", "מועדים", 12),  # 10
+         ("Sukkot", "סוכות", 13),  # 11
+         ("Simchat Habayit V'Birchato", "שמחת הבית וברכתו", 14),  # 12
+         ("High Holidays", "ימים נוראים", 15),  # 13
+         ("Shmitta and Yovel", "שביעית ויובל", 16),  # 14
+         ("Kashrut I", "כשרות א – הצומח והחי", 17),  # 15
+         ("Kashrut II", "כשרות ב – המזון והמטבח", 18),  # 16
+         ("Kashrut", "כשרות", 17),  # 17
          ]
 another_lang = ['es', 'ru', 'fr']
 
@@ -126,7 +126,8 @@ def collect_trans_titles_from_tsv(filename):
             if eng[0] == "\"":
                 eng = eng[1:-1].strip()
 
-            heb = u':'.join(heb.split(":")[1::]).strip()
+            if re.search(':', heb):
+                heb = u':'.join(heb.split(":")[1::]).strip()
             # heb = heb.replace("\"\"", "\"")
             heb = re.sub('"+', '"', heb)
             eng = re.sub('"+', '"', eng)
@@ -438,8 +439,8 @@ def get_soup(book_name, url_number, lang="he", another_lang=None):
                 first = False
 
             for num, p in enumerate(paragraphs):
-                paragraphs[num] = replace_for_linker(p)
-                paragraphs[num] = last_text_clean(p)
+                # paragraphs[num] = replace_for_linker(p)
+                paragraphs[num] = last_text_clean(paragraphs[num])
 
             if curr_chapter:
                 sections.append(paragraphs[:])
@@ -474,18 +475,28 @@ def get_soup(book_name, url_number, lang="he", another_lang=None):
 # replaces citation abbreviations in text with full names for ref catching
 def replace_for_linker(paragraph):
     new_p = paragraph
+    changed = []  # list of tuples, before and after
+    # שולחן ערוך
     sa_match = re.search(sa_re, paragraph)
     if sa_match:
-        new_p = paragraph.replace(sa_match.group(), sa_match.group().replace("\u05e9\u05d5\"\u05e2",
-                                                                     "\u05e9\u05d5\"\u05e2 \u05d0\u05d5\"\u05d7"))
+        sa_change = sa_match.group().replace("\u05e9\u05d5\"\u05e2",
+                                 "\u05e9\u05d5\"\u05e2 \u05d0\u05d5\"\u05d7")
+        new_p = paragraph.replace(sa_match.group(), sa_change)
+        sa_t = (sa_match.group(), sa_change)
+        changed.append(sa_t)
+    # משנה ברורה
     mb_match = re.search(mb_re, new_p)
     if mb_match:
         new_p = new_p.replace(mb_match.group(), mb_match.group().replace("\u05de\"\u05d1",
                                                                      "\u05de\u05e9\u05e0\u05d4 \u05d1\u05e8\u05d5\u05e8\u05d4"))
+    # רמב"ם
     rm_match = re.search(rm_re, new_p)
     if rm_match:
-        new_p = new_p.replace(rm_match.group(), rm_match.group().replace("\u05e8\u05de\u05d1\"\u05dd ",
-                                                                             "\u05e8\u05de\u05d1\"\u05dd, \u05d4\u05dc\u05db\u05d5\u05ea "))
+        rm_change = rm_match.group().replace("\u05e8\u05de\u05d1\"\u05dd ",
+                                                                             "\u05e8\u05de\u05d1\"\u05dd, \u05d4\u05dc\u05db\u05d5\u05ea ")
+        new_p = new_p.replace(rm_match.group(), rm_change)
+        rm_t = (rm_match.group(), rm_change)
+        changed.append(rm_t)
     ah_match = re.search(ah_re, new_p)
     if ah_match:
         new_p = new_p.replace(ah_match.group(), ah_match.group().replace("\u05e2\u05e8\u05d5\u05d4\"\u05e9 ",
@@ -502,7 +513,7 @@ def replace_for_linker(paragraph):
     if ma_match:
         new_p = new_p.replace(ma_match.group(), ma_match.group().replace("\u05de\"\u05d0 ",
                                                                     "\u05de\u05d2\u05df \u05d0\u05d1\u05e8\u05d4\u05dd "))
-    return new_p
+    return new_p, changed
 
 def last_text_clean(paragraph):
     new_p = paragraph
@@ -979,7 +990,7 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, title_t
                 he_chapter_title = 'פרק ח - הבדלה ומוצאי שבת'
             section_list = section_titles[0][he_chapter_title]
         else:
-            section_list = [he_chapter_title]
+            section_list = section_titles[he_chapter_title]
         bias = 0
         for sec_num, he_section_title in enumerate(section_list):
             array_map = ArrayMapNode()
@@ -993,7 +1004,7 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, title_t
                 # he_section_title = re.sub(u'\u2013', u'-', he_section_title)
                 # title_translations_dict.keys()[76], he_section_title
                 en_section_title = title_translations_dict.get(he_section_title.strip(), 'waiting on Kashrut titles')
-                if en_section_title=='waiting on Kashrut titles':
+                if en_section_title == 'waiting on Kashrut titles':
                     with codecs.open('./kashrut_titles.csv', 'a') as f:
                         writer = csv.DictWriter(f, ['he_title'])
                         writer.writerow({'he_title':he_section_title.strip()})
@@ -1128,7 +1139,6 @@ def post_text_to_server(book_name_en, introduction, chapters, lang, goren_intro=
 # parses to find, and posts to server, self links (le'eil and le'halan)
 def post_self_links(bookname_en):
     links = []
-
     # finds and collects all self links
     def get_self_links(paragraph, intro=False, curr_para_num=None, ref_title=None):
         matches = re.findall(self_re, paragraph, overlapped=True)
@@ -1168,28 +1178,60 @@ def post_self_links(bookname_en):
     all_texts = [ref.text("he").text for ref in chapter_refs]
     all_text_and_ref_titles = zip(all_ref_titles, all_texts)
 
+    ref_rows = []
+    ref_dict = {'Ref': None,
+               'match before': None,
+               'caught before': None,
+               'match after': None,
+               'caught after': None}
     for p_num, paragraph in enumerate(introduction):
         get_self_links(paragraph, intro=True, curr_para_num=p_num+1)
 
     for ref_title, paragraph in all_text_and_ref_titles:
         get_self_links(paragraph, ref_title=ref_title)
+        print(ref_title)
+        changed_list = retroactive_replace_for_linking(paragraph, ref_title=ref_title)
+        for tup in changed_list:
 
+            ref_dict = {'Ref': ref_title,
+                   'match before': tup[0],
+                   'caught before': library.get_refs_in_string(tup[0]),
+                   'match after': tup[1],
+                   'caught after': library.get_refs_in_string(tup[1])}
+            ref_dict.update({'num before/after': str(len(ref_dict['caught before'])) + " - " + str(len(ref_dict['caught after'])) + " = " + str(len(ref_dict['caught after'])-len(ref_dict['caught before']))})
+            ref_rows.append(ref_dict)
     if links:
-        post_link(links, server=SEFARIA_SERVER)
+        links
+        # post_link(links, server=SEFARIA_SERVER)
+
+
+    with codecs.open('./changerefs.csv', 'w') as f:
+        writer = csv.DictWriter(f, ['Ref', 'num before/after', 'match before', 'caught before', 'match after', 'caught after'])
+        writer.writeheader()
+        writer.writerows(ref_rows)
+
+def retroactive_replace_for_linking(paragraph, ref_title=None):
+    tc = TextChunk(Ref(ref_title), 'he', vtitle = VERSION_TITLE_HE)
+    new_p, changed_list = replace_for_linker(paragraph)
+    # tc.text = new_p
+    # tc.save(force_save=True)
+    return changed_list
+
+
 
 if __name__ == "__main__":
     add_term("Peninei Halakhah", "פניני הלכה")
     add_category("Peninei Halakhah",["Halakhah", "Peninei Halakhah"], "פניני הלכה")
-    he_book_list = []  # [5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
-    both_book_list = [1]  # [0, 1, 2, 3, 4, 10]
+    he_book_list = [17]  # [5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
+    both_book_list = []  # [0, 1, 2, 3, 4, 10]
     langs = ["he", "both"]
 
     for lang, book_list in enumerate([he_book_list, both_book_list]):
         for curr_book in book_list:
-            do_peninei_halakhah(books[curr_book][0], books[curr_book][1], books[curr_book][2], title_translations_tsv=tsv_translations_file, title_changes_tsv=tsv_title_changes_file, lang=langs[lang], only_chapters_translated=False)
+            # do_peninei_halakhah(books[curr_book][0], books[curr_book][1], books[curr_book][2], title_translations_tsv=tsv_translations_file, title_changes_tsv=tsv_title_changes_file, lang=langs[lang], only_chapters_translated=False)
             # library.refresh_index_record_in_cache("Peninei Halakhah, {}".format(books[curr_book][0]))
             # # FOR POSTING LINKS, FIRST RUN SCRIPT WITH THE LINE BELOW COMMENTED OUT, THEN RESET EACH INDEX, THEN RUN SCRIPT WITH THE ABOVE LINES COMMENTED OUT
-            # # post_self_links(books[curr_book][0])
+            post_self_links(books[curr_book][0])
 
     if print_titles_to_be_changed:
         for num, list in enumerate(titles_to_print):
