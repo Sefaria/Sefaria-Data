@@ -1,9 +1,18 @@
 # encoding=utf-8
 
+import re
+import os
+import json
+import time
 import sqlite3
-from bs4 import BeautifulSoup
+import requests
+from tqdm import tqdm
+from threading import Lock
+from bs4 import BeautifulSoup, NavigableString
 from sources.Friedberg.Osprey_Batch import sef_obj
+from concurrent.futures.thread import ThreadPoolExecutor
 from sefaria.datatype.jagged_array import JaggedTextArray
+from sources.functions import post_text, post_index, add_category, add_term
 
 conn = sqlite3.connect('osprey.db')
 conn.row_factory = sqlite3.Row
@@ -31,6 +40,10 @@ Create a Commentary class. This will have methods to:
 * create a new commentary
 * check if a row belongs within this commentary
 * add new segments 
+
+Text formatting:
+R and N represent footnotes. R appears to be a * where N appears to be the comment related to said 8. Having said that,
+there are 17 more 'R's than 'N's. We need to verify these assumptions across the corpus.
 """
 
 
@@ -53,7 +66,7 @@ class Commentary:
         en_title, he_title = cls.book_titles_from_row(row)
         init_args = {
             'en_title': row['en_title'],
-            'he_title': row['he_title'],
+            'he_title': row['name'],
             'book': en_title,
             'he_book': he_title,
             'bid': row['bid'],
@@ -71,53 +84,173 @@ class Commentary:
     def is_part_of_commentary(self, row):
         return (self.book_id, self.hilchot_id) == (row['bid'], row['HilchotId'])
 
-    def add_segment_from_row(self, row):
-        segment = self.clean_segment(row['text'])
-        indices = self.get_indices_for_row(row)
+    def add_segment(self, segment: str, indices: tuple) -> None:
         final_index = self.ja.sub_array_length(indices)
         if final_index is None:
             final_index = 0
-        indices.append(final_index)
-        self.ja.set_element(indices, segment, pad='')
+        indices = indices + (final_index,)
+        self.ja.set_element(indices, segment)
+
+    def add_segments_from_row(self, row):
+        segments = self.build_segments(row['text'])
+        indices = self.get_indices_for_row(row)
+        for segment in segments:
+            self.add_segment(segment, indices)
 
     @staticmethod
-    def clean_segment(segment: str) -> str:
-        return segment
+    def get_ja(title, he_title) -> dict:
+        ja = sef_obj.JaggedArrayNode()
+        ja.add_primary_titles(title, he_title)
+        ja.add_structure(['Chapter', 'Halakhah', 'Comment'])
+        ja.validate()
+        return ja.serialize()
+
+    def generate_index(self) -> dict:
+        title, he_title = f'{self.commentator} on {self.book}', f'{self.he_commentator} על {self.he_book}'
+
+        return {
+            'title': title,
+            'categories': self.get_category(),
+            'dependence': 'Commentary',
+            'base_text_titles': [self.book],
+            'schema': self.get_ja(title, he_title),
+            'collective_title': self.commentator,
+            'base_text_mapping': 'many_to_one'
+        }
+
+    def build_version(self) -> dict:
+        return {
+            'versionTitle': 'Friedberg Edition',
+            'versionSource': 'https://fjms.genizah.org',
+            'language': 'he',
+            'text': self.ja.array()
+        }
 
     @staticmethod
-    def get_indices_for_row(row):
-        return [row['PerekId']-1, row['HalachaId']-1]
+    def build_segments(segment: str) -> list:
+        segment_xml = '<root>{}</root>'.format(segment)
+        segment_soup = BeautifulSoup(segment_xml, 'xml')
+        segment_root = segment_soup.root
+
+        # clear out multiple classes - we're only interested in the last letter in the class
+        for span in segment_root.find_all('span'):
+            klass = span.get('class', '')
+            if klass and isinstance(klass, list):
+                span['class'] = span['class'][-1]
+
+        # consolidate duplicate tags and unwrap meaningless tags
+        for span in segment_root.find_all('span'):
+            previous = span.previous_sibling
+            if not previous:
+                continue
+
+            # make sure all text inside spans end with a space, we'll remove duplicates later
+            if span.string:
+                span.string.replace_with(NavigableString(' {}'.format(span.string)))
+
+            if span.get('class', '') == '':
+                span.unwrap()
+
+            elif span.name == previous.name and span.get('class') == previous.get('class'):
+                previous.append(span)
+                span.unwrap()
+
+        # handle footnotes
+        while True:
+            marker = segment_root.find('span', attrs={'class': 'R'})
+            note_tag = segment_root.find('span', attrs={'class': 'N'})
+            if marker and note_tag:
+                marker.name = 'sup'
+                del marker['class']
+                note_text = note_tag.text
+                note_text = re.sub(r'^{}\s'.format(re.escape(marker.text)), '', note_text)
+                new_note = segment_soup.new_tag('i')
+                new_note['class'] = 'footnote'
+                new_note.string = note_text
+                marker.insert_after(new_note)
+                note_tag.decompose()
+            else:
+                break
+
+        markup = segment_root.find_all('span', class_=re.compile('[BZS]'))
+        for b in markup:
+            if b['class'] == 'S':
+                b.name = 'small'
+            elif b['class'] == 'Z':
+                b.name = 'quote'
+            else:
+                b.name = 'b'
+            del b['class']
+
+        segment_text = segment_root.decode_contents()
+        segment_text = re.sub(r'^\s+|\s+$', '', segment_text)
+        segment_text = re.sub(r'\s{2,}', ' ', segment_text)
+        segment_text = re.sub(r'\s*<br/>\s*', '<br/>', segment_text)
+        segment_text = re.sub(r'\s*(<br/>)+$', '', segment_text)
+
+        # break on quotes which immediately follow a break
+        broken_segments = re.split(r'<br/>(?=<quote>)', segment_text)
+        broken_segments = [re.sub(r'quote', 'b', seg) for seg in broken_segments]
+        return broken_segments
+
+    @staticmethod
+    def get_indices_for_row(row) -> tuple:
+        def adjust(value: int):
+            return value - 1 if value > 0 else value
+
+        return adjust(row['PerekId']), adjust(row['HalachaId'])
+
+    def get_term_data(self) -> tuple:
+        return self.commentator, self.he_commentator
+
+    def get_category(self) -> tuple:
+        rambam_index = sef_obj.library.get_index(self.book)
+        return (
+            'Halakhah',
+            'Mishneh Torah',
+            'Commentary',
+            self.commentator,
+            rambam_index.categories[-1]
+        )
 
 
 class IntroCommentary(Commentary):
 
     @staticmethod
-    def get_indices_for_row(row):
-        return [row['HalachaId']-1]
+    def get_indices_for_row(row) -> tuple:
+        return row['HalachaId']-1,
 
     @staticmethod
     def book_titles_from_row(row):
         return 'Mishneh Torah, Transmission of the Oral Law', 'משנה תורה, מסירת תורה שבעל פה'
+
+    @staticmethod
+    def get_ja(title, he_title) -> dict:
+        ja = sef_obj.JaggedArrayNode()
+        ja.add_primary_titles(title, he_title)
+        ja.add_structure(['Halakhah', 'Comment'])
+        ja.validate()
+        return ja.serialize()
 
 
 class CommentaryError(Exception):
     pass
 
 
-def build_commentary_from_row(row):
+def build_commentary_from_row(row) -> Commentary:
     if row['HilchotId'] == 1:
         return IntroCommentary.build_from_row(row)
     else:
         return Commentary.build_from_row(row)
 
 
-
 cursor = conn.cursor()
-cursor.execute('''SELECT stuff.ord, stuff.name, stuff.hdr, u.HilchotId, u.Hilchot, u.PerekId, u.HalachaId, stuff.text FROM links 
+cursor.execute('''SELECT stuff.ord, stuff.bid, stuff.name, stuff.en_title, stuff.hdr, u.HilchotId, u.Hilchot,
+ u.PerekId, u.HalachaId, stuff.text FROM links 
     JOIN (
-        SELECT b.name, hdr, text, ord, texts.id tid FROM texts JOIN book_info b ON texts.bid = b.id
+        SELECT b.name, hdr, text, ord, texts.id tid, b.en_title, bid FROM texts JOIN book_info b ON texts.bid = b.id
     ) stuff ON links.text_id = stuff.tid
-JOIN units u ON links.unit_id = u.LogicalUnitId
+JOIN units u ON links.unit_id = u.LogicalUnitId WHERE HilchotId != 2
 ORDER BY name, ord ASC''')
 
 
@@ -130,17 +263,83 @@ def iter_cursor(sql_cursor):
             yield value
 
 
-from collections import Counter
-classes = Counter()
-loc = 0
-for item in iter_cursor(cursor):
-    loc += 1
-    if loc % 5000 == 0:
-        print(loc)
-    t = f'<root>{item["text"]}</root>'
-    soup = BeautifulSoup(t, 'html.parser')
-    for s in soup.find_all('span'):
-        for c in s.get('class', list()):
-            classes[c] += 1
-for key, value in classes.items():
-    print(key, value)
+lock, tracker = Lock(), [0]
+
+
+def upload_commentary(comm: Commentary):
+    ind = comm.generate_index()
+    # check = requests.get(f'{server}/api/v2/raw/index/{ind["title"].replace(" ", "_")}')
+    # post_index(ind, server=server)
+    check = requests.get(f'{server}/api/texts/{ind["title"].replace(" ", "_")}')
+    if check.status_code == 200 and not check.json().get('text'):
+        post_text(ind['title'], comm.build_version(), server=server)
+    elif check.status_code != 200:
+        print(f'major issue with {ind["title"]}')
+    with lock:
+        current_index = tracker[0] + 1
+        if current_index % 10 == 0:
+            print(current_index)
+            time.sleep(5)
+
+        tracker[0] = current_index
+
+
+def dump_index_and_text(comm: Commentary):
+    if not os.path.exists('./dumps'):
+        os.mkdir('./dumps')
+    ind = comm.generate_index()
+    title = ind['title']
+    if not os.path.exists('./dumps/indices'):
+        os.mkdir('./dumps/indices')
+    with open(f'./dumps/indices/{title}.json', 'w') as fp:
+        json.dump(ind, fp)
+
+    if not os.path.exists('./dumps/texts'):
+        os.mkdir('./dumps/texts')
+    with open(f'./dumps/texts/{title}.json', 'w') as fp:
+        json.dump(comm.build_version(), fp)
+
+
+def print_and_add_category(category):
+    add_category(category[-1], list(category), server=server)
+    with lock:
+        current_index = tracker[0] + 1
+        if current_index % 10 == 0:
+            print(current_index)
+        if current_index % 25 == 0:
+            time.sleep(3)
+        tracker[0] = current_index
+
+
+terms, categories = set(), set()
+current_commentary, comment_store = None, []
+for item in tqdm(iter_cursor(cursor), total=28479):
+    if not current_commentary or not current_commentary.is_part_of_commentary(item):
+        current_commentary = build_commentary_from_row(item)
+        comment_store.append(current_commentary)
+        terms.add(current_commentary.get_term_data())
+        categories.add(current_commentary.get_category())
+    current_commentary.add_segments_from_row(item)
+
+
+server = 'http://localhost:8000'
+# server = 'https://www.sefaria.org'
+# server = 'http://friedberg.sandbox.sefaria.org'
+for term in terms:
+    add_term(*term, server=server)
+
+print(f'There are {len(categories)} categories')
+# with ThreadPoolExecutor(max_workers=6) as executor:
+#     executor.map(print_and_add_category, categories)
+for cat in tqdm(categories):
+    add_category(cat[-1], list(cat), server=server)
+
+print(f'There are {len(comment_store)} books to upload')
+tracker[0] = 0
+# with ThreadPoolExecutor(max_workers=3) as executor:
+#     executor.map(upload_commentary, comment_store)
+# for item, comment in enumerate(tqdm(comment_store), 1):
+#     dump_index_and_text(comment)
+
+
+print(len(terms), *(term[0] for term in terms), sep='\n')

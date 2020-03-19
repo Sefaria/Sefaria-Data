@@ -1828,15 +1828,15 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
         _, comment_ref_list, _ = comments.text_index_map(base_tokenizer)
 
         if rashi_filter:
-            filter_out = [x if rashi_filter(x[0]) else None for x in zip(comment_list,comment_ref_list)]
-            comment_list = [x[0] for x in filter_out]
-            comment_ref_list = [x[1] for x in filter_out]
+            filter_out = [x for x in zip(comment_list, comment_ref_list) if rashi_filter(x[0])]
+            comment_list = [x[0] if x else None for x in filter_out]
+            comment_ref_list = [x[1] for x in filter_out if x]
 
     elif type(comments) == list:
         comment_list = comments
         comment_ref_list = None
         if rashi_filter:
-            comment_list = [x if rashi_filter(x) else None for x in comment_list]
+            comment_list = [x for x in comment_list if rashi_filter(x)]
 
     else:
         raise TypeError("'comments' needs to be either a TextChunk or a list of comment strings")
