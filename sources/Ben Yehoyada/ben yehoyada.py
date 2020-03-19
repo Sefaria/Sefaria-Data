@@ -31,24 +31,25 @@ def create_index(title):
         "title": "Ben Yehoyada on {}".format(title),
         "dependence": "Commentary",
         "collective_title": "Ben Yehoyada",
-        "categories": ["Talmud", "Bavli", "Commentary", "Ben Yehoyada"]
+        "categories": ["Talmud", "Bavli", "Commentary", "Ben Yehoyada"],
+        "base_text_titles": [title]
+
     }, server=SEFARIA_SERVER)
 
 if __name__ == "__main__":
     dappim = Counter()
     new_csv = ""
-    for title in ["Yevamot","Ketubot"]:
+
+    for title in ["Yevamot", "Ketubot", "Gittin", "Kiddushin", "Nazir", "Nedarim", "Sotah"]:
         text_dict = {}
 
         create_index(title)
-        with open(title+".csv") as file:
+        with open("בן יהוידע מוכן - {}.csv".format(title)) as file:
             # reader = csv.reader(f)
             for row in file:
                 ref, text = row.split(",", 1)
-                if text[0] == '"':
-                    text = text[1:]
-                if text[-3] == '"':
-                    text = text[:-3]
+                text = text.replace('""', '%')
+                text = text.replace('"', '').replace('%', '"')
                 if '\0' in row:
                     print(ref)
                     print(text)
@@ -71,7 +72,6 @@ if __name__ == "__main__":
                     dappim[daf] += 1
                     if daf not in text_dict:
                         text_dict[daf] = []
-                text = text.replace('""', '"')
                 text_dict[daf].append(text)
 
                 ref = "Ben Yehoyada on {} {}:{}".format(title, daf, dappim[daf])
