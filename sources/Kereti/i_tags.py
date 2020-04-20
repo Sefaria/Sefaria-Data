@@ -72,7 +72,7 @@ def remove_i_tags(line):
     assert len(i_tags) == len(new_i_tags)
     return word_objs
 
-def get_kereti_dhs_in_mechaber():
+def get_kereti_dhs_in_mechaber(files, siman_marker="@22", seif_marker="@11", pos_siman=0):
     def clean_up(line):
         line = re.sub(u"\[\S{1,3}\]", u"", line)
         line = re.sub(u"[!*]+\S+", u"", line)
@@ -82,17 +82,17 @@ def get_kereti_dhs_in_mechaber():
         line = line.replace("  ", " ").strip()
         return line
     siman = 0
+    prev_seif = 0
     all_dhs = {}
-    for file in ["Mechaber 1.txt", "Mechaber 2.txt"]:
+    for file in files:
         with open(file) as f:
             for n, line in enumerate(f):
-                line = line.decode('utf-8')
-                if line.startswith("@22"):
-                    siman = getGematria(line.split()[0])
+                if line.startswith(siman_marker):
+                    siman = getGematria(line.split()[pos_siman])
                     all_dhs[siman] = {}
                     all_dhs[siman][1] = []
                     seif = 1
-                elif line.startswith("@11"):
+                elif line.startswith(seif_marker) and siman > 0:
                     seif = getGematria(line.split()[0])
                     all_dhs[siman][seif] = []
 
@@ -120,7 +120,7 @@ def create_new_pieces(title, results, section, data_order_running_count):
             else:
                 word_dict[pos] = tag
         else:
-            print "Didnt find match in {}".format(section)
+            print("Didnt find match in {}".format(section))
 
     word_objs = []
     for n, word in enumerate(words):
@@ -135,21 +135,20 @@ def get_kereti_tags(title, all_dhs):
     sections = Ref("Shulchan Arukh, Yoreh Deah").all_subrefs()
     i_tags_kereti = {}
     for sec in sections:
-        if sec.sections[0] == 112:
-            break
         data_order = 0
-        if sec.sections[0] - 1 not in i_tags_kereti:
-            i_tags_kereti[sec.sections[0] - 1] = {}
         for seg in sec.all_segment_refs():
             if seg.sections[0] not in all_dhs or seg.sections[1] not in all_dhs[seg.sections[0]]:
                 continue
-            base_text = TextChunk(seg, lang='he').text
-            base_words = re.sub(u"<.*?>", u" ", base_text)
-            while u"  " in base_words:
-                base_words = base_words.replace(u"  ", u" ")
-            results = match_text(base_words.split(), all_dhs[seg.sections[0]][seg.sections[1]])
-            i_tags_kereti[sec.sections[0]-1][seg.sections[1]-1] = create_new_pieces(title, results["matches"], seg, data_order)
-            data_order += len(results["matches"])
+            if all_dhs[seg.sections[0]][seg.sections[1]]:
+                if sec.sections[0] - 1 not in i_tags_kereti:
+                    i_tags_kereti[sec.sections[0] - 1] = {}
+                base_text = TextChunk(seg, lang='he').text
+                base_words = re.sub(u"<.*?>", u" ", base_text)
+                while u"  " in base_words:
+                    base_words = base_words.replace(u"  ", u" ")
+                results = match_text(base_words.split(), all_dhs[seg.sections[0]][seg.sections[1]])
+                i_tags_kereti[sec.sections[0]-1][seg.sections[1]-1] = create_new_pieces(title, results["matches"], seg, data_order)
+                data_order += len(results["matches"])
     return i_tags_kereti
 
 
@@ -168,8 +167,6 @@ def create_new_tags(new_vtitle, old_vtitle, kereti_word_objs, change_nothing=Fal
     base_text = tc.text
     if not change_nothing:
         for i in range(len(SA_word_objs)):
-            if i > 110:
-                break
             if i not in kereti_word_objs:
                 continue
             for j in range(len(SA_word_objs[i])):

@@ -1,0 +1,30 @@
+Priority:
+add_commentary_links -- whichever is the commentary, just delete all add_commentary_links for text and regenerate
+add_links_from_text -- these are the result of mistakes in text or algorithm and therefore should be deleted
+
+add_commentary_links and add_links_from_text -- Check examples to see if there is also a valid link in the system corresponding to this case in which case we can delete the bad link.  Or, do we need to re-generate all links?
+
+section links possibly not found in "section links to nowhere":
+Rif, Ein Mishpat Cluster (601), add_links_from_text (568 just in Halakhah)
+
+
+
+sections links to nowhere -- delete
+link_disambiguator -- redisambiguate
+Targum Jerusalem -- delete and re-generate
+Rabbeinu Chananel and Rav Nissim Gaon -- delete and re-generate
+('Drishachoshenmishpat', 4320),
+('Bachchoshenmishpat', 2830), 
+('Prishachoshenmishpat', 1322), 
+('Beit Yosefchoshenmishpat', 1039)
+('Darchei Moshechoshenmishpat', 205)
+('Machatzit HaShekel Parser', 3143)
+('Jastrow_parser', 1386)
+
+
+Also consider:
+recover_from_history_set -- 700 links what to do?
+('Terumat_HaDeshen', 643)
+sterling_tos_rid_linker -- 202 links what to do?
+B'Mareh HaBazak several hundred Nones
+Mesilat Yesharim Nones throughout library
