@@ -16,19 +16,20 @@ from sefaria.helper.text import replace_roman_numerals
 from num2words import *
 from sources.functions import *
 from sefaria.model import *
+from base64 import b64decode, b64encode
 
 
 class XML_to_JaggedArray:
 
 
-    def __init__(self, title, file, allowedTags, allowedAttributes, post_info=None,
+    def __init__(self, title, xml_text, allowedTags, allowedAttributes, post_info=None,
                  dict_of_names={}, print_bool=False, array_of_names=[], deleteTitles=True,
                  change_name=False, assertions=False, image_dir=None, titled=False, remove_chapter=True,
                  versionInfo=[]):
         self.title = title
-        self.writer = csv.writer(open("{}.csv".format(file.split(".")[0]), 'w'))
+        self.writer = csv.writer(open("{}.csv".format(title), 'w'))
         self.post_info = post_info
-        self.file = file
+        self.xml_text = xml_text
         self.parse_dict = {}
         self.allowedTags = allowedTags
         self.allowedAttributes = allowedAttributes
@@ -51,6 +52,7 @@ class XML_to_JaggedArray:
         self.word_to_num = WordsToNumbers()
         self.versionInfo = versionInfo
         self.remove_chapter_when_cleaning = remove_chapter
+        self.word_count = 0
 
     def set_title(self, title):
         self.title = title
@@ -63,26 +65,33 @@ class XML_to_JaggedArray:
         self.reorder_modify = reorder_modify
         self.modify_before_post = modify_before_post
 
+    def convertIMGBase64(self, text):
+        tags = re.findall("<img.*?>", text)
+        for tag in tags:
+            filename = BeautifulSoup(tag).findAll("img")[0]['src']
+            filetype = filename.split(".")[1]
+            img = Image.open("./" + filename)
+            orig_height = img.size[1]
+            orig_width = img.size[0]
+            if orig_width > 550:
+                percent = 550 / float(orig_width)
+                height = int(float(orig_height) * float(percent))
+                img = img.resize((550, height), PIL.Image.ANTIALIAS)
+                img = img.save(filename)
+            file = open("./{}".format(filename), 'rb')
+            data = file.read()
+            file.close()
+            data = b64encode(data)
+            new_tag = '<img src="data:image/{};base64,{}"></img>'.format(filetype, str(data)[2:-1])
+            text = text.replace(tag, new_tag)
+        return text
 
     def run(self):
-        xml_text = ""
-        digit = re.compile("<p>\d+. ")
-        chapter = re.compile("<title>CHAPTER")
-        prev_line_ch = False
-        prev_line = ""
-        ch_line = ""
-        for line in open(self.file):
-            xml_text += line
-            if chapter.match(line):
-                prev_line_ch = True
-                ch_line = line
-            else:
-                prev_line_ch = False
-            prev_line = line
-
+        xml_text = self.xml_text
         self.get_each_type_tag(BeautifulSoup(xml_text).contents)
         xml_text = self.modify_before_parse(xml_text)
         xml_text = bleach.clean(xml_text, tags=self.allowedTags, attributes=self.allowedAttributes, strip=False)
+        xml_text = self.convertIMGBase64(xml_text)
         self.root = etree.XML(xml_text)
 
         self.root.text = self.title
@@ -192,7 +201,7 @@ class XML_to_JaggedArray:
         return tag_set
 
     def removeChapter(self, text):
-        match = re.search("^((CHAPTER|chapter|Chapter|Part|PART) [a-zA-Z0-9]+(\.|\,|\:)?).+", text)
+        match = re.search("^(CHAPTER|chapter|Chapter|Part|PART) [a-zA-Z0-9]+(\.|\,|\:)?", text)
         if match:
             text = text.replace(match.group(1), "").strip()
         return text
@@ -249,6 +258,7 @@ class XML_to_JaggedArray:
     def write_text_to_file(self, ref, text):
         orig_ref = ref
         if type(text) is str or type(text) is str:
+            self.word_count += self.cleanText(text).count(" ")
             self.writer.writerow([ref, self.cleanText(text)])
         else:
             assert type(text) is list
@@ -331,27 +341,6 @@ class XML_to_JaggedArray:
                 text = " ".join(text.split()[1:])
             return '<sup>{}</sup><i class="footnote">{}</i>'.format(num, text)
 
-        def convertIMGBase64(text):
-            tags = re.findall("<img.*?>", text)
-            for tag in tags:
-                filename = BeautifulSoup(tag).findAll("img")[0]['src']
-                filetype = filename.split(".")[1]
-                img = Image.open("./"+filename)
-                orig_height = img.size[1]
-                orig_width = img.size[0]
-                if orig_width > 550:
-                    percent = 550 / float(orig_width)
-                    height = int(float(orig_height) * float(percent))
-                    img = img.resize((550, height), PIL.Image.ANTIALIAS)
-                    img = img.save(filename)
-                file = open("./{}".format(filename))
-                data = file.read()
-                file.close()
-                data = data.encode("base64")
-                new_tag = '<img src="data:image/{};base64,{}">'.format(filetype, data)
-                text = text.replace(tag, new_tag)
-            return text
-
         #parse code begins...
         key_of_xref = 'rid'
         assert type(text_arr) is list
@@ -368,19 +357,26 @@ class XML_to_JaggedArray:
 
                 assert len(ft_ids) == len(ft_sup_nums) == len(ft_pos), "id={},sups={},pos={},index={}".format(ft_ids, ft_sup_nums, ft_pos, index)
 
-                node_name = u" ".join(node_name.split()[0:-1]) if node_name[-1].isdigit() else node_name
+                node_name = node_name if node_name[-1].isdigit() else node_name
                 if node_name in footnotes.keys():
-                    for i in range(len(ft_ids)):
-                        reverse_i = len(ft_ids) - i - 1
-                        ftnote_text = footnotes[node_name][ft_ids[reverse_i]]
-                        text_to_insert = buildFtnoteText(ft_sup_nums[reverse_i], ftnote_text)
-                        pos = ft_pos[reverse_i]
-                        modified_text = u"{}{}{}".format(text_arr[index][0:pos], text_to_insert, text_arr[index][pos:])
-                        text_arr[index] = modified_text
+                    footnotes_to_use = footnotes[node_name]
+                else:
+                    footnotes_to_use = {}
+                    for x in footnotes.values():
+                        footnotes_to_use.update(x)
 
-                    all = re.findall(footnote_pattern, text_arr[index])
-                    for each in all:
-                        text_arr[index] = text_arr[index].replace(each, "")
+                for i in range(len(ft_ids)):
+                    reverse_i = len(ft_ids) - i - 1
+                    ftnote_text = footnotes_to_use[ft_ids[reverse_i]]
+                    text_to_insert = buildFtnoteText(ft_sup_nums[reverse_i], ftnote_text)
+                    pos = ft_pos[reverse_i]
+                    modified_text = u"{}{}{}".format(text_arr[index][0:pos], text_to_insert, text_arr[index][pos:])
+                    text_arr[index] = modified_text
+
+                all = re.findall(footnote_pattern, text_arr[index])
+                for each in all:
+                    text_arr[index] = text_arr[index].replace(each, "")
+
 
 
                 text_arr[index] = self.fix_html(text_arr[index])
@@ -448,12 +444,8 @@ class XML_to_JaggedArray:
             child.text = str(roman_to_int(child.text.split()[-1]))
         # if child.tag == "h1" and self.title == "Teshuvot Maharam":
         #     child.text = re.sub(" \(D.*?\)", "", child.text)
-        # elif child.tag in ["chapter"] and "CHAPTER " in child.text.upper():# and len(child.text.split(" ")) <= 3:
-        #     tags = re.findall("<sup>.*?</sup>", child.text)
-        #     for tag in tags:
-        #         child.text = child.text.replace(tag, "")
-        #     child.text = str(child.text.split(" ")[1])
-            #child.text = str(roman_to_int(child.text.split(" ")[-1])) # Chapter II => 2
+        elif child.tag in ["chapter"] and "CHAPTER " in child.text.upper():# and len(child.text.split(" ")) <= 3:
+            tags = re.findall("<sup>.*?</sup>", child.text)
             #child.text = str(self.word_to_num.parse(child.text.split(" ")[-1])) #  Chapter Two => 2
 
     def go_down_to_text(self, element, parent):
@@ -467,7 +459,11 @@ class XML_to_JaggedArray:
         for index, child in enumerate(element):
             self.handle_special_tags(element, child, index)
             if len(child) > 0:
-                if child.text.isdigit():
+                if child.text is None:
+                    assert child[0].tag == "img"
+                    img_src = child[0].attrib["src"]
+                    text["text"].append("<img src='{}' />".format(img_src))
+                elif child.text.isdigit():
                     while int(child.text) > len(text["text"]) + 1:
                         text["text"].append({"text": []})
                     text["text"].append(self.go_down_to_text(child, element))
@@ -545,7 +541,6 @@ class XML_to_JaggedArray:
                     array.append(text)
                 elif not array:
                     array.append(x)
-                    prev_num = 1
                 elif not x[0].isdigit() and found_any_numbers:
                     array[-1] += u"<br/>{}".format(x)
                 else:
@@ -566,9 +561,10 @@ class XML_to_JaggedArray:
         for x in array:
             if "xref" in x:
                 found = True
-        if found:
-            print("PROBLEM IN")
-            print(node_name)
+                print(x)
+        # if found:
+        #     print("PROBLEM IN")
+        #     print(node_name)
 
     def pre_parse(self, text_arr, node_name):
         p = re.compile("(\d+)[\)|\s+\)]+")
