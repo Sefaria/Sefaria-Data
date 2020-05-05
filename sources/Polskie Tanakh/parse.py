@@ -128,6 +128,8 @@ def move_extra(book, corrected_text=None):
                     skip_next = True
                 else:
                     print_func(book, chapter, diff)
+        else:
+            skip_next = False
     if not corrected_text:
         return move_extra(book, corrected_text)
     else:
@@ -152,14 +154,12 @@ def move_text(text, chapter, amount):
 
 
 if __name__ == "__main__":
-    start = "Song of Songs"
+    start = ""
     for book_n, book in enumerate(polish_order):
         if not book:
             continue
-        # if book == start and start:
-        #     start = ""
-        # if start:
-        #     continue
+        if not book in ["Ezra", "I Chronicles", "II Chronicles", "Nehemiah", "Daniel"]:
+            continue
         text = move_extra(book)
         send_text = {
             "versionTitle": "Bible in Polish, trans. Izaak Cylkow, 1841 - 1908 [pl]",
@@ -167,4 +167,7 @@ if __name__ == "__main__":
             "versionSource": "http://bibliepolskie.pl/",
             "text": text
         }
-        post_text(book, send_text)
+        post_text(book, send_text, server="http://shmuel.sandbox.sefaria.org")
+
+
+        # print("./run scripts/move_draft_text.py '{}' -k 'kAEw7OKw5IjZIG4lFbrYxpSdu78Jsza67HgR0gRBOdg' -d 'https://www.sefaria.org' -v 'en:Bible in Polish, trans. Izaak Cylkow, 1841 - 1908 [pl]'".format(book))

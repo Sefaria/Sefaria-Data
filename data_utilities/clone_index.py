@@ -153,4 +153,5 @@ if __name__ == "__main__":
 
             #new_index = Index(new_index_contents).save()
             #print new_index.contents(v2=True)
+            add_category(term_title, new_index_contents["categories"])
             post_index(new_index_contents)

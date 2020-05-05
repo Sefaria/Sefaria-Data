@@ -1236,7 +1236,6 @@ def numToHeb(engnum=""):
         hebnum += letters[numdig-count-1][int(engnum[count])]
     hebnum = re.sub('יה', 'טו', hebnum)
     hebnum = re.sub('יו', 'טז', hebnum)
-    hebnum = hebnum.decode('utf-8')
     return hebnum
 
 def isGematria(txt):
