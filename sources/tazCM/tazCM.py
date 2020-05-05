@@ -20,7 +20,8 @@ index_dict = {
     'dependence' : 'Commentary',
     'base_text_titles': ["Shulchan Arukh, Choshen Mishpat"]
 }
-server = 'http://draft.sandbox.sefaria.org'
+#server = 'http://draft.sandbox.sefaria.org'
+server = 'http://localhost:8000'
 functions.post_index(index_dict, server = server)
 
 
