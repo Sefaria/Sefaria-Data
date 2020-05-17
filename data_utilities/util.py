@@ -1327,3 +1327,27 @@ def schema_with_default(simple_ja):
     root_node.append(simple_ja)
     root_node.validate()
     return root_node
+
+def change_array(ja, callback):
+    """
+    Given a function(str) and a jagged array, returns a new jagged array after running the function on all elements.
+    :param ja: a jagged array to be changed
+    :param callback: a function run on substring
+    :return: new jagged array with all elements changed by the functions
+    """
+
+    new_array = []
+
+    for item in ja:
+
+        if isinstance(item, list):
+            new_array.append(change_array(item, callback))
+
+        elif isinstance(item, str):
+            new_array.append(callback(item))
+            
+        else:
+            print('Jagged array contains unknown type')
+            raise TypeError
+
+    return new_array
