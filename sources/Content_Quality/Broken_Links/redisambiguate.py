@@ -15,6 +15,9 @@ pesachim_segments = {'Tosafot on Niddah': 17, 'Tosafot on Bekhorot': 12, 'Tosafo
 found = {}
 
 def redisambiguate(valid_ref, invalid_ref):
+    result = {"delete": None, "create": None}
+    msg = "disambiguator found no match"
+
     invalid_ref_section = invalid_ref.top_section_ref()
     ld = Link_Disambiguator()
     results = ld.disambiguate_segment_by_snippet(valid_ref.normal(), [invalid_ref_section.normal()], with_match_text=True)
@@ -22,14 +25,15 @@ def redisambiguate(valid_ref, invalid_ref):
         new_ref = results[invalid_ref_section.normal()]["B Ref"]
         already_exists = Link().load({"$and": [{"refs": new_ref}, {"refs": valid_ref.normal()}]})
         same_as_before = new_ref == invalid_ref.normal()
-        if already_exists or same_as_before:
-            already_exists.delete()
-        else:
-            old_link = Link().load({"$and": [{"refs": invalid_ref.normal()}, {"refs": valid_ref.normal()}]})
-            old_link.delete()
-            new_link = {"refs": [new_ref, valid_ref.normal()], "generated_by": "redisambiguator", "type": "Commentary",
-                  "auto": True}
-            Link(new_link).save()
+        if not same_as_before and not already_exists:
+            result["create"] = [new_ref, valid_ref.normal()]
+            msg = "disambiguator found a better match"
+        elif same_as_before:
+            assert invalid_ref.is_empty()
+            msg = "disambiguator found same match as before but {} is empty".format(invalid_ref.normal())
+
+    result["delete"] = [invalid_ref.normal(), valid_ref.normal(), msg]
+    return result
 
 
 if __name__ == "__main__":
@@ -41,6 +45,6 @@ if __name__ == "__main__":
             ref1_empty = ref1.is_empty()
             ref2_empty = ref2.is_empty()
             if ref2_empty:
-                redisambiguate(ref1, ref2)
+                result = redisambiguate(ref1, ref2)
             elif ref1_empty:
-                redisambiguate(ref2, ref1)
+                result = redisambiguate(ref2, ref1)

@@ -13,7 +13,7 @@ def combine_lines(results):
     first = base_ref + ":1"
     actual_matches = [r for r in results if r]
     if not actual_matches:
-        print("Found nothing in {}".format(ref))
+        #print("Found nothing in {}".format(ref))
         actual_matches = [Ref(base_ref).as_ranged_segment_ref()]
         for i, result in enumerate(results):
             results[i] = Ref(base_ref).as_ranged_segment_ref()
@@ -80,11 +80,12 @@ def base_tokenizer(str):
 links = []
 chananel = library.get_indexes_in_category("Rabbeinu Chananel", include_dependant=True)
 nissim = library.get_indexes_in_category("Rav Nissim Gaon", include_dependant=True)
-for title in chananel:
+for title in nissim+chananel:
     new_text = {}
     index = library.get_index(title)
     if "Bavli" not in index.categories:
         continue
+
     for sec_ref in library.get_index(title).all_section_refs():
         for ref in sec_ref.all_segment_refs():
             daf = ref.top_section_ref().normal().split()[-1]
@@ -121,6 +122,6 @@ for title in chananel:
         "versionTitle": "Vilna Edition",
         "versionSource": "http://primo.nli.org.il/primo-explore/fulldisplay?vid=NLI&docid=NNL_ALEPH001300957&context=L"
     }
-    print(new_text)
-    post_text(title, send_text, server="https://www.sefaria.org")
+    #print(new_text)
+    #post_text(title, send_text, server="https://www.sefaria.org")
 post_link(links, server="https://www.sefaria.org")
