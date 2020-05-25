@@ -24,58 +24,65 @@ def create_index(title):
     he_title = library.get_index(title).get_title('he')
     super_root.add_primary_titles("Ben Yehoyada on {}".format(title), u"בן יהוידע על {}".format(he_title))
     super_root.key = "Ben Yehoyada on {}".format(title)
-    super_root.add_structure(["Daf", "Paragraph"], address_types=["Talmud", "Integer"])
+    if title != "Eduyot":
+        super_root.add_structure(["Daf", "Paragraph"], address_types=["Talmud", "Integer"])
+    else:
+        super_root.add_structure(["Chapter", "Mishnah"], address_types=["Integer", "Integer"])
     super_root.validate()
     post_index({
         "schema": super_root.serialize(),
         "title": "Ben Yehoyada on {}".format(title),
         "dependence": "Commentary",
         "collective_title": "Ben Yehoyada",
-        "categories": ["Talmud", "Bavli", "Commentary", "Ben Yehoyada"]
+        "categories": ["Talmud", "Bavli", "Commentary", "Ben Yehoyada"],
+        "base_text_titles": [title]
+
     }, server=SEFARIA_SERVER)
 
 if __name__ == "__main__":
     dappim = Counter()
     new_csv = ""
-    for title in ["Yevamot","Ketubot"]:
+
+    for title in os.listdir("new masechtot"):
         text_dict = {}
 
-        create_index(title)
-        with open(title+".csv") as file:
-            # reader = csv.reader(f)
-            for row in file:
-                ref, text = row.split(",", 1)
-                if text[0] == '"':
-                    text = text[1:]
-                if text[-3] == '"':
-                    text = text[:-3]
+        create_index(title[:-4])
+        with open("new masechtot/{}".format(title)) as file:
+            reader = csv.reader(file)
+            title = title[:-4]
+            rows = list(reader)
+            for row in rows:
+                ref, text = row
+                text = text.replace('""', '%')
+                text = text.replace('"', '').replace('%', '"')
                 if '\0' in row:
                     print(ref)
                     print(text)
                 text = text.replace('\0', "")
-                # if "Introduction" not in row and "Yehoyada" in ref:
-                    # text = text.replace("</strong></big>", "!? ")
-                    # text = re.sub(u"<.*?>", u"", text)
-                    # text = re.sub(u"</.*?>", u"", text)
-                    #
-                    # daf = ref.split(":")[0].split()[-1]
-                    # if daf not in text_dict:
-                    #     text_dict[daf] = []
-                    # text_dict[daf].append(text)
 
                     #BELOW CONVERTS FORMAT SHMUEL GAVE ME
-                if ref is not "":
-                    daf = getGematria(ref)*2
-                    if "." in ref:
-                        daf -= 1
-                    dappim[daf] += 1
-                    if daf not in text_dict:
-                        text_dict[daf] = []
-                text = text.replace('""', '"')
-                text_dict[daf].append(text)
+                if ref not in ["", "page"]:
+                    if title != "Eduyot":
+                        daf = getGematria(ref)*2
+                        if "." in ref:
+                            daf -= 1
+                        dappim[daf] += 1
+                        if daf not in text_dict:
+                            text_dict[daf] = []
+                        text_dict[daf].append(text)
+                        ref = "Ben Yehoyada on {} {}:{}".format(title, daf, dappim[daf])
+                    else:
+                        perek, mishnah = ref.split(",")
+                        perek = getGematria(perek)
+                        mishnah = getGematria(mishnah)
+                        if perek not in text_dict:
+                            text_dict[perek] = {}
+                        text_dict[perek][mishnah] = text
+                        ref = "Ben Yehoyada on {} {}:{}".format(title, perek, mishnah)
 
-                ref = "Ben Yehoyada on {} {}:{}".format(title, daf, dappim[daf])
-
+        if title == "Eduyot":
+            for perek in text_dict.keys():
+                text_dict[perek] = convertDictToArray(text_dict[perek], empty="")
         links = []
         send_text = {
             "text": convertDictToArray(text_dict),
@@ -83,22 +90,24 @@ if __name__ == "__main__":
             "versionSource": "http://beta.nli.org.il/he/books/NNL_ALEPH001933802/NLIl",
             "language": "he"
         }
-        post_text("Ben Yehoyada on {}".format(title), send_text, index_count="on")
+        #post_text("Ben Yehoyada on {}".format(title), send_text, index_count="on")
         for daf, text in text_dict.items():
-            daf = AddressTalmud.toStr("en", daf)
+            daf = AddressTalmud.toStr("en", daf) if title != "Eduyot" else daf
             try:
                 base = TextChunk(Ref("{} {}".format(title, daf)), lang='he')
             except InputError as e:
-                print(e.message)
+                print(e)
                 continue
-            results = match_ref(base, text, lambda x: x.split(), dh_extract_method=dher)
-            for i, ref in enumerate(results["matches"]):
-                if ref:
-                    berakhot = "Ben Yehoyada on {} {}:{}".format(title, daf, i+1)
-                    links.append({"refs": [ref.normal(), berakhot], "type": "Commentary", "auto": True, "generated_by": "ben_yeh"})
-
+            try:
+                results = match_ref(base, text, lambda x: x.split(), dh_extract_method=dher)
+                for i, ref in enumerate(results["matches"]):
+                    if ref:
+                        berakhot = "Ben Yehoyada on {} {}:{}".format(title, daf, i+1)
+                        links.append({"refs": [ref.normal(), berakhot], "type": "Commentary", "auto": True, "generated_by": "ben_yeh"})
+            except:
+                print(base)
         print(len(links))
-        post_link(links, server=SEFARIA_SERVER)
+        #post_link(links, server=SEFARIA_SERVER)
         with codecs.open("{}_Sefaria_structure.csv".format(title), 'w', encoding='utf-8') as f:
             f.write(new_csv)
 

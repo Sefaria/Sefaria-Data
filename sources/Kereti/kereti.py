@@ -6,19 +6,19 @@ from sefaria.model import *
 from sources.functions import *
 import json
 
-def create_dict(marker="&", title="Kereti"):
-    siman = 0
+def create_dict(marker="&", title="Kereti", files=["Mechaber 1.txt", "Mechaber 2.txt"], siman=0):
     prev_siman = 0
     mechaber_kereti_dict = {}
     seif = 0
     links = []
-    for f in ["Mechaber 1.txt", "Mechaber 2.txt"]:
+    for f in files:
         with open(f) as file:
             running_total_per_siman = 0
-            for line in file:
+            lines = list(file)
+            for n, line in enumerate(lines):
                 if "@22" in line:
                     siman = getGematria(line.split()[0])
-                    assert siman - prev_siman == 1
+                    assert siman - prev_siman < 5
                     running_total_per_siman = 0
                     mechaber_kereti_dict[siman] = {}
                     mechaber_kereti_dict[siman][1] = line.count(marker)
@@ -43,28 +43,38 @@ def create_dict(marker="&", title="Kereti"):
 
     return links, mechaber_kereti_dict
 
-def get_comm_text(title, post=False):
-    files = ["{} 1.txt".format(title), "{} 2.txt".format(title)]
 
+def get_comm_text_in_files(files):
     text = {}
     siman = 0
     for file in files:
-        seif = 0
+        seif = prev_seif = 0
         with open(file) as f:
-            for line in f:
+            lines = list(f)
+            for n, line in enumerate(lines):
                 if line.startswith("@00"):
                     siman = getGematria(line.split()[-1])
-                    seif = 0
+                    seif = prev_seif = 0
                     text[siman] = {}
+                    text[siman][1] = ""
                 elif line.startswith("@22"):
+                    line = line.replace('ס"', "").replace('סעיף ', '').split()[0]
                     seif = getGematria(line)
+                    if seif - prev_seif != 1:
+                        print("Problematic Seif {} in Siman {}".format(seif, siman))
                     if seif in text[siman]:
-                        print "Duplicate Seif {} in Siman {}".format(seif, siman)
+                        print("Duplicate Seif {} in Siman {}".format(seif, siman))
                     text[siman][seif] = ""
-                elif len(line.strip()) > 0:
+                    prev_seif = seif
+                elif len(line.strip()) > 0 and siman > 0:
+                    if seif == 0:
+                        seif = 1
                     text[siman][seif] += removeAllTags(line) + "\n"
+    return text
 
-
+def get_comm_text(title, post=False):
+    files = ["{} 1.txt".format(title), "{} 2.txt".format(title)]
+    text = get_comm_text_in_files(files)
     for siman in text.keys():
         text[siman] = convertDictToArray(text[siman], empty="")
     text = convertDictToArray(text)

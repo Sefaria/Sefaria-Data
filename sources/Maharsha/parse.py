@@ -1,19 +1,15 @@
 # -*- coding: utf-8 -*-
 import urllib
-import urllib2
-from urllib2 import URLError, HTTPError
 import json 
 import pdb
 import os
 import sys
 from bs4 import BeautifulSoup
 import re
-os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 from data_utilities.dibur_hamatchil_matcher import *
 from sources.functions import *
 
 
-sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
 
@@ -21,7 +17,7 @@ from sefaria.model.schema import AddressTalmud
 
 
 class Maharsha:
-    def __init__(self, masechet, title, heTitle, server):
+    def __init__(self, masechet, title, heTitle, server, pre_parse_func=None):
         '''
         dictionary for each category allows matching to work
         then after we have match dictionaries for in order and out of order for each category
@@ -34,6 +30,7 @@ class Maharsha:
         self.server = server
         self.title = title
         self.heTitle = heTitle
+        self.pre_parse_func = pre_parse_func
         self.comm_wout_base = open("comm_wout_base.txt", 'w')
         self.masechet = masechet
         self.missing_ones = []
@@ -101,8 +98,8 @@ class Maharsha:
     def addDHComment(self, dh, comment, category, same_dh):
         dh = removeAllTags(dh)
         comment = removeAllTags(comment)
-        dh = dh.decode('utf-8')
-        comment = comment.decode('utf-8')
+        dh = dh
+        comment = comment
         self.dh1_dict[self.current_daf].append((category, dh))
         if same_dh:
             post_comment = comment
@@ -119,13 +116,13 @@ class Maharsha:
             self.comm_by_perek[self.current_perek].append(post_comment)
 
     def dh_extract_method(self, str):
-        str = str.encode('utf-8')
+        str = str
         str = str.replace('בד"ה', '').replace('וכו', '').replace('שם','')
         for each in [self.rashi, self.tosafot, self.gemara, self.ran, self.rashbam, self.rosh, 'בא"ד']:
             if each in str[0]:
                 str = " ".join(str.split(" ")[1:])
                 break
-        return str.decode('utf-8')
+        return str
 
 
     def getPerek(self, line):
@@ -165,7 +162,7 @@ class Maharsha:
             he_prev = AddressTalmud.toStr("he", prev_num)
             #prev_line = " ".join(prev_line.split(" ")[0:5])
             #orig_line = " ".join(orig_line.split(" ")[0:5])
-            print u"{} before {}\n".format(he_prev, he_current)
+            print(u"{} before {}\n".format(he_prev, he_current))
             self.dont_post = True
             #print u"The line starting: {} is {}\n".format(prev_line, he_prev)
             #print u"It came before the line starting {}, which is {}\n\n".format(orig_line, he_current)
@@ -177,7 +174,7 @@ class Maharsha:
                 self.dh_by_cat[each_cat][self.current_daf] = []
         self.actual_text = actual_text
         if self.current_daf > len_masechet:
-            print "DAF EXTRA {} > {} in {} {}".format(self.current_daf, len_masechet, self.title, self.masechet)
+            print("DAF EXTRA {} > {} in {} {}".format(self.current_daf, len_masechet, self.title, self.masechet))
             pass
         self.list_of_dafs.append(self.current_daf)
 
@@ -236,10 +233,9 @@ class Maharsha:
         this_line = False
         prev_line_require_text = False
         prev_line = ""
-        lines = self.pre_parse(file)
+        lines = self.pre_parse(file) if not self.pre_parse_func else self.pre_parse_func(file)
         for line in lines:
             orig_line = line
-            line = line.encode('utf-8')
 
             if line.find("@00") >= 0 or line.find("0") == 0:
                 #if len(line.split("@")) > 2:
@@ -262,12 +258,12 @@ class Maharsha:
                 start = line.find("@11")
                 line = line[start:]
             try:
-                if len(re.split(ur'@\d{2}\u05D3\u05E3|@\d{2}\u05D7"\u05D0', line.decode('utf-8'))) > 2:
-                    print "BAD FORMATTING of @11"
+                if len(re.split(r'@\d{2}\u05D3\u05E3|@\d{2}\u05D7"\u05D0', line)) > 2:
+                    print("BAD FORMATTING of @11")
                     check_for_other_daf(line)
             except UnicodeDecodeError:
-                if len(re.split(ur'@\d{2}\u05D3\u05E3|@\d{2}\u05D7"\u05D0', line)) > 2:
-                    print "BAD FORMATTING of @11"
+                if len(re.split(r'@\d{2}\u05D3\u05E3|@\d{2}\u05D7"\u05D0', line)) > 2:
+                    print("BAD FORMATTING of @11")
                     check_for_other_daf(line)
 
             if line.find("@11")>=0:
@@ -365,18 +361,18 @@ class Maharsha:
         elif category == "rashi":
             rashi = Ref("Rashi on "+self.masechet+"."+AddressTalmud.toStr("en", daf)).text('he')
             if len(rashi.text) == 0:
-                print "rashbam by default {} {}".format(masechet, AddressTalmud.toStr("en", daf))
+                print("rashbam by default {} {}".format(masechet, AddressTalmud.toStr("en", daf)))
                 return Ref("Rashbam on "+self.masechet+"."+AddressTalmud.toStr("en", daf)).text('he')
             else:
                 return rashi
         elif category == "rashbam":
-            print "rashbam {} {}".format(masechet, AddressTalmud.toStr("en", daf))
+            print("rashbam {} {}".format(masechet, AddressTalmud.toStr("en", daf)))
             return Ref("Rashbam on "+self.masechet+"."+AddressTalmud.toStr("en", daf)).text('he')
 
     def postLinks(self, masechet):
         def base_tokenizer(str):
-            str = re.sub(ur"\([^\(\)]+\)", u"", str)
-            word_list = re.split(ur"\s+", str)
+            str = re.sub(r"\([^\(\)]+\)", u"", str)
+            word_list = re.split(r"\s+", str)
             word_list = [w for w in word_list if w]  # remove empty strings
             return word_list
 
@@ -416,7 +412,7 @@ class Maharsha:
                         base = self.getTC(each_type, daf-1, masechet)
                         combined_comments = comments[daf-1][each_type]+comments[daf][each_type]
                         if len(base.text) == 0:
-                            print "Problem in {}".format(AddressTalmud.toStr("en", daf))
+                            print("Problem in {}".format(AddressTalmud.toStr("en", daf)))
                         else:
                             results[daf-1][each_type] = match_ref(base, combined_comments, base_tokenizer, dh_extract_method=self.dh_extract_method, verbose=False, with_num_abbrevs=False)
                             results[daf-1][each_type] = self.convertToOldFormat(results[daf-1][each_type])
@@ -490,12 +486,12 @@ class Maharsha:
 def split_files_agadot_halachot(only_these=None):
     if not only_these:
         only_these = os.listdir(".")
-    files = [file.decode('utf-8') for file in only_these if file.endswith(".txt") and not "2" in file and not file.startswith("chid")
+    files = [file for file in only_these if file.endswith(".txt") and not "2" in file and not file.startswith("chid")
              and not "comm_wout_base" in file]
     files = [file for file in files]
     prev_line_agadic = False
     for file in files:
-        print file
+        print(file)
         if "Arakhin" in file:
             ch_ha = open(u"chidushei_agadot_Arakhin.txt", 'w')
         elif "Rosh" in file:
@@ -547,9 +543,9 @@ def split_lines_into_amudim(only_these=None):
     if not only_these:
         only_these = os.listdir("./hebrew")
 
-    files = [file.replace(".txt", "").decode('utf-8') for file in only_these if not file.endswith("2.txt") and file.endswith(".txt")]
+    files = [file.replace(".txt", "") for file in only_these if not file.endswith("2.txt") and file.endswith(".txt")]
     for file in files:
-        print file
+        print(file)
         f = open("./hebrew/"+file+".txt", 'r')
         he_title, title = get_titles(file)
 
@@ -561,13 +557,13 @@ def split_lines_into_amudim(only_these=None):
             if len(line.replace(" ", "")) == 0:
                 continue
 
-            if re.compile(u'^(@\d{2}\u05D3\u05E3|@\d{2}\u05D7"\u05D0)').match(line.decode('utf-8')) is None:
+            if re.compile(u'^(@\d{2}\u05D3\u05E3|@\d{2}\u05D7"\u05D0)').match(line) is None:
                 if line[0] == "0" or line.startswith("@00") or line.startswith("@99"):
                     continue
                 else:
                     last_pos = len(arr_text) - 1
                     if arr_text == []:
-                        print file + " has intro.\n"
+                        print(file + " has intro.\n")
                         continue
                     arr_text[last_pos] += "<br/>"+line
                     prev_special = True
@@ -593,7 +589,7 @@ def split_lines_into_amudim(only_these=None):
             what_to_write = check_for_other_daf(line)
             for each_line in what_to_write:
                 try:
-                    f.write(each_line.encode('utf-8'))
+                    f.write(each_line)
                 except:
                     f.write(each_line)
 
@@ -623,15 +619,15 @@ def stamp_amudim_with_11s(line, prev_chid_agadot):
     return lines, prev_chid_agadot
 
 
-def force_encoding(comment):
-    import chardet
-    encoding = chardet.detect(comment)
-    if type(comment) is str:
-        return comment.decode('utf-8')
+# def force_encoding(comment):
+#     import chardet
+#     encoding = chardet.detect(comment)
+#     if type(comment) is str:
+#         return comment
 
 def check_for_other_daf(comment):
-    comment = force_encoding(comment)
-    lines = re.split(ur'(@\d{2}\u05D3\u05E3|@\d{2}\u05D7"\u05D0)', comment)
+    # comment = force_encoding(comment)
+    lines = re.split(r'(@\d{2}\u05D3\u05E3|@\d{2}\u05D7"\u05D0)', comment)
     text_list = []
     if len(lines) is 1:
         text_list = [comment + "\n"]
@@ -677,7 +673,7 @@ if __name__ == "__main__":
         if "Pesachim" not in file:
             continue
         masechet = file.split(".txt")[0].replace("chidushei_agadot_", "").replace("chidushei_halachot_","").title()
-        print file
+        print(file)
         len_masechet = len(Ref(masechet).text('he').text)
         if file.startswith("chidushei_ag"):
             title = "Chidushei Agadot"

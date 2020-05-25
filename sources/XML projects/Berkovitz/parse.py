@@ -10,6 +10,10 @@ import os
 def reorder_modify(text):
     return bleach.clean(text, strip=True)
 
+def reorder_test(child):
+    return child.tag == "chapter" and str(child.text).isdigit()
+
+
 post_info = {}
 post_info["language"] = "en"
 post_info["server"] = "http://ste.sandbox.sefaria.org"
@@ -29,7 +33,9 @@ for f in files:
                    ["Language", "he"],
                    ["Version Source", "https://www.nli.org.il/he/books/NNL_ALEPH002108945/NLI"],
                    ["Version Notes", ""]]
-    parser = XML_to_JaggedArray(title, f, allowed_tags, allowed_attributes, post_info, change_name=True, image_dir="./images",
-                                titled=True, print_bool=True, remove_chapter=False, versionInfo=versionInfo)
-    parser.set_funcs(reorder_test=lambda x: x.tag == "h1", reorder_modify=reorder_modify)
-    parser.run()
+    with open(f) as file:
+        lines = file.read()
+        parser = XML_to_JaggedArray(title, lines, allowed_tags, allowed_attributes, post_info, change_name=True, image_dir="./images",
+                                    titled=True, print_bool=True, remove_chapter=False, versionInfo=versionInfo)
+        parser.set_funcs(reorder_test=reorder_test, reorder_modify=reorder_modify)
+        parser.run()
