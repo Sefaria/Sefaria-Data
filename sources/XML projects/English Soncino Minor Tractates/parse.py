@@ -32,29 +32,49 @@ for f in files:
     books = {}
     curr = "Introduction"
     skip_next = False
+    label = None
+    temp = ""
+
     with open(f) as open_f:
         lines = list(open_f)
+        found_label = False
         for n, line in enumerate(lines):
             if skip_next:
                 skip_next = False
             else:
-                if line == "<book>\n":
+                if line.startswith("<p label"):
+                    found_label = True
+                    text = re.search('^<p label=\"(\d{1,2})\.?\">(.*?)</p>', line).group(2)
+                    if temp:
+                        books[curr] += "<p>"+temp+"</p>"
+                        temp = ""
+                    temp = text
+                elif line == "<book>\n":
                     if lines[n+1].startswith("<title>"):
                         curr = lines[n+1].replace("<title>", "").replace("</title>", "").strip()
                         skip_next = True
                     assert curr not in books
                     books[curr] = line
-                elif line not in ["<minor>\n"]:
-                    books[curr] += line
+                    found_label = False
                 elif line == "</book>\n":
+                    if temp:
+                        books[curr] += "<p>"+temp+"</p>"
+                        temp = ""
                     books[curr] += line
+                elif line.startswith("<p>") and found_label:
+                    text = re.search("<p>(.*?)</p>", line).group(1)
+                    temp += "\n" + text
+                elif line != "<minor>\n":
+                    books[curr] += line
+                else:
+                    print(line)
 
     for curr, book in books.items():
-        print(curr)
         before_words = bleach.clean(book, strip=True).count(" ")
         parser = XML_to_JaggedArray(curr, book, allowed_tags, allowed_attributes, post_info, change_name=True, image_dir="./images",
                                     titled=True, print_bool=True, remove_chapter=False, versionInfo=versionInfo)
         parser.set_funcs(reorder_modify=reorder_modify)
         parser.run()
         after_words = parser.word_count
+        print(curr)
         print(after_words-before_words)
