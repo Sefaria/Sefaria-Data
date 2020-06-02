@@ -167,7 +167,9 @@ def text_substitution(text, subs):
     for lang_text in text:
         new_text_lang = lang_text
         for sub in subs:
-            new_text_lang = re.sub(sub[0], sub[1], new_text_lang)
+            if not re.search(sub[0], new_text_lang):
+                continue
+            new_text_lang = re.sub(re.escape(sub[0]), sub[1], new_text_lang)
             # print("{}:{}".format(sec.normal(), jseg + 1))
             # print(new_text_lang)  # post back to server here
         new_text.append(new_text_lang)
