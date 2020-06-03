@@ -19,7 +19,11 @@ TEXT_OUTPUT, PARSING_STATE = [], ParseState()
 
 
 def parse_pages(doc_lines: list) -> list:
-    return [''.join(page) for page in ''.join(doc_lines).split('@20')]
+    pages = [''.join(page) for page in ''.join(doc_lines).split('@20')]
+    if pages[0] == '': pop.pages(0)
+    elif '@00' in pages[0] and len(pages[0])<23:
+        pages[0] = pages.pop(0) + pages[0]
+    return pages
 
 def parse_paragraphs(page: str) -> list:
     new = page.replace('.', 'A').replace(':', 'B').replace('\n', 'A')
@@ -30,7 +34,7 @@ def parse_paragraphs(page: str) -> list:
 
 
 def prepare_output(segment: str, output_list: list, parsing_state: ParseState) -> None:
-    if PARSING_STATE.get_ref('paragraph') == 1:
+    if parsing_state.get_ref('paragraph') == 0:
         TEXT_OUTPUT.append('@20' + encode_hebrew_daf(section_to_daf(PARSING_STATE.get_ref('page')+1)))
     TEXT_OUTPUT.append(segment)
 
