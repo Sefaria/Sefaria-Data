@@ -151,9 +151,7 @@ def chnage_text(section_tuples, string_to_add_after_he="", string_to_add_after_e
                 #     new_text = re.sub(sub[0], sub[1], new_text)
                 #     print("{}:{}".format(sec.normal(), jseg + 1))
                 #     print(new_text)  # post back to server here
-            if changed_subs:
-                print("{}:{}".format(sec.normal(), jseg+1))
-                print(new_text)
+            if new_text != text:  # not the best complexity smart check maybe better to put a flag if something waqs changed rather then rechecking the changes that were just made a few lines ago?
                 if post:
                     post_to_server(sec, jseg, new_text, server)
             new_sec_text.append(new_text)
@@ -213,6 +211,6 @@ if __name__ == "__main__":
     book = 'Prayer'
     lang = 'both'
     section_tuples = retrieve_segments('Peninei Halakhah, {}'.format(book), lang=lang)
-    rows = chnage_text(section_tuples, string_to_add_after_he=' או"ח', string_to_add_after_en=', Orach Chaim', change='all', lang=lang, post=True)
+    rows = chnage_text(section_tuples, string_to_add_after_he=' או"ח', string_to_add_after_en=', Orach Chaim', change='all', lang=lang) #, post=True)
     write_to_csv(rows, '/home/shanee/www/Sefaria-Data/sources/Peninei Halacha/{}_all_test'.format(book))
     # post_to_server(Ref(rows[0]['ref']), rows[0]['new'], post='local')
