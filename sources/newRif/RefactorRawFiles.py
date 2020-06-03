@@ -9,30 +9,30 @@ Objectives:
   Let's think about testing as well. For the three methods parse_pages, parse_paragraphs, prepare_output, what sort of
   inputs do they accept? Do they return the expected output?
 """
-
+import re
 from data_utilities.ParseUtil import ParsedDocument, Description, ParseState
+from sefaria.utils.talmud import section_to_daf
+from sefaria.utils.hebrew import encode_hebrew_daf
+from rif_utils import note_reg, path
 
 TEXT_OUTPUT, PARSING_STATE = [], ParseState()
 
 
 def parse_pages(doc_lines: list) -> list:
-    return []
-
+    return [''.join(page) for page in ''.join(doc_lines).split('@20')]
 
 def parse_paragraphs(page: str) -> list:
-    return []
+    new = page.replace('.', 'A').replace(':', 'B').replace('\n', 'A')
+    for note in re.findall(note_reg, new): #now return colon and period which are in refs (and for that in notes)
+        new = new.replace(note, note.replace('A', '.').replace('B', ':'))
+    new = new.replace('B', 'A')
+    return new.split('A')
 
 
 def prepare_output(segment: str, output_list: list, parsing_state: ParseState) -> None:
-    """
-    We'll use this method to get the text ready for output to a new file.
-
-    To get the current page, use PARSING_STATE.get_ref('page')
-    To get the current paragraph, use PARSING_STATE.get_ref('paragraph')
-
-    Now attach the page number to the @22 with a newline
-    Once we've edited the segment, append to TEXT_OUTPUT
-    """
+    if PARSING_STATE.get_ref('paragraph') == 1:
+        TEXT_OUTPUT.append('@20' + encode_hebrew_daf(section_to_daf(PARSING_STATE.get_ref('page')+1)))
+    TEXT_OUTPUT.append(segment)
 
 
 descriptors = [
@@ -40,13 +40,12 @@ descriptors = [
     Description('paragraph', parse_paragraphs)
 ]
 
-parsed_doc = ParsedDocument('<add english title>', '<add hebrew title>', descriptors)
+parsed_doc = ParsedDocument('Rif Berakhot', 'רי"ף ברכות"', descriptors)
 
 parsed_doc.attach_state_tracker(PARSING_STATE)
-# open the file and load into a list (bonus points -> use a generator that doesn't load the whole file into memory)
-raw_file = []
+with open(path+'/rif/ריף ברכות מוכן.txt', encoding = 'utf-8') as file:
+    raw_file = (line for line in file.readlines())
 parsed_doc.parse_document(raw_file)
 parsed_doc.filter_ja(prepare_output, TEXT_OUTPUT, PARSING_STATE)
-with open('output_filename.txt', 'w') as fp:
+with open(path+'/rif_segmented/rif_berakhot.txt', 'w') as fp:
     fp.write('\n'.join(TEXT_OUTPUT))
-
