@@ -196,8 +196,8 @@ class XML_to_JaggedArray:
                 tags_below_me = self.get_each_type_tag(tag.contents, False)
                 for each_tag in tags_below_me:
                     tag_set.add(each_tag)
-        if root:
-            print("Set of tags not specified: {}".format(tag_set - set(self.allowedTags)))
+        # if root:
+        #     print("Set of tags not specified: {}".format(tag_set - set(self.allowedTags)))
         return tag_set
 
     def removeChapter(self, text):
@@ -231,17 +231,18 @@ class XML_to_JaggedArray:
         return text
 
     def cleanText(self, text):
-        things_to_replace = {
-            '\xa0': '',
-            '\u015b': 's',
-            '\u2018': "'",
-            '\u2019': "'",
-            '\u05f4': '"',
-            '\u201c': '"',
-            '\u201d': '"',
-            '\u1e93': 'z',
-            '\u1e24': 'H'
-        }
+        things_to_replace = {"\xa0": ''}
+        # things_to_replace = {
+        #     '\xa0': '',
+        #     '\u015b': 's',
+        #     '\u2018': "'",
+        #     '\u2019': "'",
+        #     '\u05f4': '"',
+        #     '\u201c': '"',
+        #     '\u201d': '"',
+        #     '\u1e93': 'z',
+        #     '\u1e24': 'H'
+        # }
         for key in things_to_replace:
             text = text.replace(key, things_to_replace[key])
         return text
@@ -357,13 +358,9 @@ class XML_to_JaggedArray:
 
                 assert len(ft_ids) == len(ft_sup_nums) == len(ft_pos), "id={},sups={},pos={},index={}".format(ft_ids, ft_sup_nums, ft_pos, index)
 
-                node_name = node_name if node_name[-1].isdigit() else node_name
-                if node_name in footnotes.keys():
-                    footnotes_to_use = footnotes[node_name]
-                else:
-                    footnotes_to_use = {}
-                    for x in footnotes.values():
-                        footnotes_to_use.update(x)
+                footnotes_to_use = {}
+                for x in footnotes.values():
+                    footnotes_to_use.update(x)
 
                 for i in range(len(ft_ids)):
                     reverse_i = len(ft_ids) - i - 1
@@ -446,6 +443,7 @@ class XML_to_JaggedArray:
         #     child.text = re.sub(" \(D.*?\)", "", child.text)
         elif child.tag in ["chapter"] and "CHAPTER " in child.text.upper():# and len(child.text.split(" ")) <= 3:
             tags = re.findall("<sup>.*?</sup>", child.text)
+            child.text = str(roman_to_int(child.text.split()[-1]))
             #child.text = str(self.word_to_num.parse(child.text.split(" ")[-1])) #  Chapter Two => 2
 
     def go_down_to_text(self, element, parent):
