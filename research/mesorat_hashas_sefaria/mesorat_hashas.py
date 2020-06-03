@@ -469,8 +469,11 @@ class ParallelMatcher:
                  min_distance_between_matches=1000, all_to_all=True, parallelize=False, verbose=True,
                  calculate_score=None, only_match_first=False, lemmatizer=None, lemma2index=None):
         """
+        Minimal usage would be:
+        >>> p = ParallelMatcher(lambda s: s.split())
+        >>> p.match()
 
-        :param tokenizer: returns list of words
+        :param tokenizer: f(str)->[].   Returns list of words.  E.g. a function to remove HTML and split on space.
         :param f(str) -> str dh_extract_method: takes the full text of `comment` and returns only the dibur hamatchil. `self.tokenizer` will be applied to it afterward. this will only be used if `comment_index_list` in `match()` is not None
         :param ngram_size: int, basic unit of matching. 1 word will be skipped in each ngram of size `ngram_size`
         :param max_words_between: max words between consecutive ngrams
