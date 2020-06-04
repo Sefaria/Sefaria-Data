@@ -20,17 +20,16 @@ TEXT_OUTPUT, PARSING_STATE = [], ParseState()
 
 def parse_pages(doc_lines: list) -> list:
     pages = [''.join(page) for page in ''.join(doc_lines).split('@20')]
-    if pages[0] == '': pop.pages(0)
+    if pages[0] == '': pages.pop(0)
     elif '@00' in pages[0] and len(pages[0])<23:
         pages[0] = pages.pop(0) + pages[0]
-    return pages
+    return [page.strip() for page in pages]
 
 def parse_paragraphs(page: str) -> list:
-    new = page.replace('.', 'A').replace(':', 'B').replace('\n', 'A')
+    new = page.replace('.', '.A').replace(':', ':A').replace('\n', 'A')
     for note in re.findall(note_reg, new): #now return colon and period which are in refs (and for that in notes)
-        new = new.replace(note, note.replace('A', '.').replace('B', ':'))
-    new = new.replace('B', 'A')
-    return new.split('A')
+        new = new.replace(note, note.replace('A', ''))
+    return [sec.strip() for sec in new.split('A')]
 
 
 def prepare_output(segment: str, output_list: list, parsing_state: ParseState) -> None:
