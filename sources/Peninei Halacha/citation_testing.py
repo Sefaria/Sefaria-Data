@@ -10,12 +10,39 @@ from sources.functions import post_text
 from itertools import zip_longest
 from sefaria.utils.hebrew import is_hebrew
 
-SEFARIA_SERVER = "https://topicside.cauldron.sefaria.org"
+both_book_list = []  # [0, 1, 2, 3, 4, 10]
 
+books = [("Shabbat", 'או"ח', ', Orach Chaim'),  # 0
+         ("Prayer", 'או"ח', ', Orach Chaim'),  # 1
+         ("Women's Prayer", 'או"ח', ', Orach Chaim'),  # 2
+         ("Pesach", 'או"ח', ', Orach Chaim'),  # 3
+         ("Zemanim", 'או"ח', ', Orach Chaim'),  # 4
+         ("The Nation and the Land", 'או"ח', ''),  # 5
+         ("Likkutim I", 'או"ח', ''),  # 6
+         ("Likkutim II", 'או"ח', ''),  # 7
+         ("Berakhot", 'או"ח', ''),  # 8
+         ("Family", 'או"ח', ''),  # 9
+         ("Festivals", 'או"ח', ', Orach Chaim'),  # 10
+         ("Sukkot", 'או"ח', ''),  # 11
+         ("Simchat Habayit V'Birchato", 'או"ח', ''),  # 12
+         ("High Holidays", 'או"ח', ''),  # 13
+         ("Shmitta and Yovel", 'או"ח', ''),  # 14
+         ("Kashrut", 'יו"ד', ''),  # 17 Yoreh De'ah
+         ]
+
+SEFARIA_SERVER = "https://topicside.cauldron.sefaria.org"
+"""
+refs info via mongo on local before:
+{ "refs": /^Peninei Halakhah.*/i } : 9384
+{ "refs": /^Peninei Halakhah, Prayer.*/i } 490
+{ "refs": /^Peninei Halakhah, Kashrut.*/i } 1574
+{ $and: [ { "refs": /^Peninei Halakhah.*/i }, { "refs": /^II kings.*/i } ] } 390
+"""
 # Shulchan Arukh
 sa_re = re.compile('\([^()]*?(שו"ע)(?!\s*(או"ח|יו"ד|אב"ה|חו"מ|אה"ע))[^()]*?\)')
 sa_en_re = re.compile('\([^()]*?(Shulchan Aruch|SA)(?:(?P<vav>\s*(and|,)?)\s*(Rama))?\s+\d+:\d+[^()]*?\)')
-mb_re = re.compile('\([^()]*\s+מ"ב\s+[^()]*\)')
+mb_re = re.compile('\([^()]*(מ"ב|משנה ברורה)\s+[^()]*\)')
+mbsa_re = re.compile('\(שו"ע.*?(מ"ב|משנה ברורה)\)')
 
 def retrieve_segments(title, server=None, lang='he'):
     ind = library.get_index(title)
@@ -92,7 +119,7 @@ def MB(sec, jseg, text, string_to_add_after_he='', lang = 'he'):
         text_he = text
     matchs = re.finditer(mb_re, text_he)
     if lang == 'both':
-        matchs_en = re.finditer('(MB|Mishnah Berurah)', text_en)
+        matchs_en = re.finditer('\([^()]*?(MB|Mishnah Berurah)[^()]*?\)', text_en)
         # matchs = list(matchs) + list(matchs_en)
         # if not len(re.findall('(MB|Mishnah Berurah)', text_en)) == len(re.findall(mb_re, text_he)):
         #     print("sec {} heb {} en {}".format(sec, len(matchs_en), len(re.findall(mb_re, text_he))))
@@ -103,6 +130,7 @@ def MB(sec, jseg, text, string_to_add_after_he='', lang = 'he'):
             row_en['ref'] = Ref("{}:{}".format(sec.normal(), jseg + 1)).normal()
             row_en['old'] = match.group()
             row_en['new'] = new_sub
+            row_en['problematic'] = '~' if re.search('(שו"ע|SA|Shulchan|רמ"א|Rama)', match.group()) else ''
             rows.append(row_en.copy())
     for match in matchs:
         new_sub = re.sub('מ"ב', 'משנה ברורה', match.group())
@@ -110,6 +138,7 @@ def MB(sec, jseg, text, string_to_add_after_he='', lang = 'he'):
         row['ref'] = Ref("{}:{}".format(sec.normal(), jseg + 1)).normal()
         row['old'] = match.group()
         row['new'] = new_sub
+        row['problematic'] = '~' if re.search('(שו"ע|SA|Shulchan|רמ"א|Rama)', match.group()) else ''
         rows.append(row.copy())
         # if lang == 'both':
         #     for match in matchs:
@@ -174,10 +203,13 @@ def text_substitution(text, subs):
     return new_text
 
 
-def write_to_csv(rows, filename):
+def write_to_csv(rows, filename, sandbox=''):
     with codecs.open('{}.csv'.format(filename), 'w') as csv_file:
-        writer = csv.DictWriter(csv_file, ['ref', 'old', 'new'])  # fieldnames = obj_list[0].keys())
+        writer = csv.DictWriter(csv_file, ['ref', 'old', 'new', 'problematic'])  # fieldnames = obj_list[0].keys())
         writer.writeheader()
+        if sandbox:
+            for row in rows:
+                row['ref'] = 'https://{}.sefaria.org/{}'.format(sandbox, row['ref'])
         writer.writerows(rows)
 
 def post_to_server(sec, jseg, new_text, post = 'local', vtitle_he="Peninei Halakhah, Yeshivat Har Bracha", vtitle_en = "Peninei Halakhah, English ed. Yeshivat Har Bracha"):
@@ -208,9 +240,11 @@ def find_SA_appearances(ind):
 
 
 if __name__ == "__main__":
-    book = 'Prayer'
-    lang = 'both'
-    section_tuples = retrieve_segments('Peninei Halakhah, {}'.format(book), lang=lang)
-    rows = chnage_text(section_tuples, string_to_add_after_he=' או"ח', string_to_add_after_en=', Orach Chaim', change='all', lang=lang) #, post=True)
-    write_to_csv(rows, '/home/shanee/www/Sefaria-Data/sources/Peninei Halacha/{}_all_test'.format(book))
-    # post_to_server(Ref(rows[0]['ref']), rows[0]['new'], post='local')
+    for book_tu in books[1:5]:
+        book, string_to_add_after_he_book,string_to_add_after_en_book = book_tu
+        # book = "Women's Prayer"
+        lang = 'both'  # if string_to_add_after_en_book else 'he'
+        section_tuples = retrieve_segments('Peninei Halakhah, {}'.format(book), lang=lang)
+        rows = chnage_text(section_tuples, string_to_add_after_he=string_to_add_after_he_book, string_to_add_after_en=string_to_add_after_en_book, change='all', lang=lang, post=True)
+        write_to_csv(rows, '/home/shanee/www/Sefaria-Data/sources/Peninei Halacha/{}_all'.format(book), sandbox='ph.cauldron')
+        print('file {}_all.csv created'.format(book))
