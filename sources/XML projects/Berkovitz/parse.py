@@ -17,7 +17,7 @@ def reorder_test(child):
 post_info = {}
 post_info["language"] = "en"
 post_info["server"] = "http://ste.sandbox.sefaria.org"
-allowed_tags = ["book", "intro", "bibl", "part", "p", "chapter", "ftnote", "part", "img", "title", "ol", "footnotes", "appendix"]
+allowed_tags = ["book", "intro", "bibl", "part", "h1", "h2", "h3", "p", "chapter", "ftnote", "part", "img", "title", "ol", "footnotes", "appendix"]
 allowed_attributes = ["id", "src"]
 p = re.compile("\d+a?\.")
 

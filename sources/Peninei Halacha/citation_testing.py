@@ -12,22 +12,22 @@ from sefaria.utils.hebrew import is_hebrew
 
 both_book_list = []  # [0, 1, 2, 3, 4, 10]
 
-books = [("Shabbat", 'או"ח', ', Orach Chaim'),  # 0
-         ("Prayer", 'או"ח', ', Orach Chaim'),  # 1
-         ("Women's Prayer", 'או"ח', ', Orach Chaim'),  # 2
-         ("Pesach", 'או"ח', ', Orach Chaim'),  # 3
-         ("Zemanim", 'או"ח', ', Orach Chaim'),  # 4
+books = [("Shabbat", ' או"ח', ', Orach Chaim'),  # 0
+         ("Prayer", ' או"ח', ', Orach Chaim'),  # 1
+         ("Women's Prayer", ' או"ח', ', Orach Chaim'),  # 2
+         ("Pesach", ' או"ח', ', Orach Chaim'),  # 3
+         ("Zemanim", ' או"ח', ', Orach Chaim'),  # 4
          ("The Nation and the Land", 'או"ח', ''),  # 5
-         ("Likkutim I", 'או"ח', ''),  # 6
-         ("Likkutim II", 'או"ח', ''),  # 7
-         ("Berakhot", 'או"ח', ''),  # 8
+         ("Likkutim I", ' או"ח', ''),  # 6
+         ("Likkutim II", ' או"ח', ''),  # 7
+         ("Berakhot", ' או"ח', ''),  # 8
          ("Family", 'או"ח', ''),  # 9
-         ("Festivals", 'או"ח', ', Orach Chaim'),  # 10
-         ("Sukkot", 'או"ח', ''),  # 11
-         ("Simchat Habayit V'Birchato", 'או"ח', ''),  # 12
-         ("High Holidays", 'או"ח', ''),  # 13
-         ("Shmitta and Yovel", 'או"ח', ''),  # 14
-         ("Kashrut", 'יו"ד', ''),  # 17 Yoreh De'ah
+         ("Festivals", ' או"ח', ', Orach Chaim'),  # 10
+         ("Sukkot", ' או"ח', ''),  # 11
+         ("Simchat Habayit V'Birchato", 'או"ח', ' '),  # 12
+         ("High Holidays", ' או"ח', ' '),  # 13
+         ("Shmitta and Yovel", ' או"ח', ' '),  # 14
+         ("Kashrut", ' יו"ד', ' '),  # 15 Yoreh De'ah
          ]
 
 SEFARIA_SERVER = "https://topicside.cauldron.sefaria.org"
@@ -240,7 +240,7 @@ def find_SA_appearances(ind):
 
 
 if __name__ == "__main__":
-    for book_tu in books[1:5]:
+    for book_tu in books:
         book, string_to_add_after_he_book,string_to_add_after_en_book = book_tu
         # book = "Women's Prayer"
         lang = 'both'  # if string_to_add_after_en_book else 'he'
