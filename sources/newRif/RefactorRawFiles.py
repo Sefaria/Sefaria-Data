@@ -10,37 +10,42 @@ Objectives:
   inputs do they accept? Do they return the expected output?
 """
 import re
+from functools import partial
 from data_utilities.ParseUtil import ParsedDocument, Description, ParseState
 from sefaria.utils.talmud import section_to_daf
 from sefaria.utils.hebrew import encode_hebrew_daf
 from rif_utils import tags_map, path, netlen, rif_files
 
-TEXT_OUTPUT, PARSING_STATE = [], ParseState()
-
-
-def parse_pages(doc_lines: list) -> list:
-    doc_lines, masechet = doc_lines
-    pages = [''.join(page) for page in ''.join(doc_lines).split('@20')]
-    if pages[0] == '': pages.pop(0)
-    elif '@00' in pages[0] and len(pages[0])<23:
-        pages[0] = pages.pop(0) + pages[0]
-    pages = [page.strip() for page in pages]
-    for n, page in enumerate(pages):
-        pages[n] = [page, True, masechet] if n == 0 or pages[n-1][0][-1] == ':' or pages[n-1][0][-1] == '.' else [page, False, masechet]
-    return pages
-
-def parse_paragraphs(page: list) -> list:
-    page, prev, masechet = page
-    new = page.replace('.', '.A').replace(':', ':A').replace('\n', 'A')
+def paragraph_parser(page: str, new_sec: bool, masechet: str) -> list:
+    new = page.replace('.', '.A').replace(':', ':A').replace('\n', 'A') #replacing with A instead of spliting for next lines are simpler with string
     for note in re.findall(tags_map[masechet]['note_reg'], new): #now return colon and period which are in refs (and for that in notes)
         new = new.replace(note, note.replace('A', ''))
-    for suspect in re.findall(r'(?:{}|{}|{})(?:(?!{}).)*[\.:]A'.format(*[tags_map[masechet][tag] for tag in ['gemara_refs', 'notes', 'tanakh_refs', 'end_tag']]), new):
+    suspected_note = r'(?:{}|{}|{})(?:(?!{}).)*[\.:]A'.format(*[tags_map[masechet][tag] for tag in ['gemara_refs', 'notes', 'tanakh_refs', 'end_tag']])
+    for suspect in re.findall(suspected_note, new):
         #mark places when newline come after period/colon suspected as part of ref
         new = new.replace(suspect[:-1], suspect[:-1]+'@$')
     for n, sec in enumerate(new.split('A')): #concut short lines
-        if netlen(sec) < 6 and (n > 0 or prev) and sec != '':
+        if netlen(sec) < 6 and (n > 0 or new_sec) and sec != '':
             new = new.replace(sec+'A', sec)
     return [sec.strip() for sec in new.split('A') if sec.strip()!='']
+
+def parse_pages(doc_lines: list) -> list:
+    pages = ''.join(doc_lines).split('@20')
+    if pages[0] == '': pages.pop(0)
+    elif '@00' in pages[0] and len(pages[0]) < 18: #18 for ''@00 chapter one ' or so
+        new_opening_line = pages[0] + pages[1]
+        pages.pop(0)
+        pages[0] = new_opening_line
+    pages = [page.strip() for page in pages if page.strip()!='']
+    newpages = []
+    for n, page in enumerate(pages):
+        newpages.append({'page': page.strip(), 'is_start_in_new_sec': True if n == 0 else last_is_punc})
+        last_is_punc = True if page[-1] == '.' or page[-1] == ':' else False
+    return newpages
+
+def parse_paragraphs(page: dict) -> list:
+    page, is_start_in_new_sec = page['page'], page['is_start_in_new_sec']
+    return masechet_paragraph_parser(page, is_start_in_new_sec)
 
 def prepare_output(segment: str, output_list: list, parsing_state: ParseState) -> None:
     if parsing_state.get_ref('paragraph') == 0:
@@ -53,11 +58,12 @@ descriptors = [
 ]
 
 for en_masechet, heb_masechet, file in rif_files:
+    masechet_paragraph_parser = partial(paragraph_parser, masechet = en_masechet)
+    text_output, parsing_state = [], ParseState()
     parsed_doc = ParsedDocument(en_masechet, heb_masechet, descriptors)
-
-    parsed_doc.attach_state_tracker(PARSING_STATE)
+    parsed_doc.attach_state_tracker(parsing_state)
     raw_file = (line for line in file.readlines())
-    #parsed_doc.parse_document([raw_file, en_masechet])
-    #parsed_doc.filter_ja(prepare_output, TEXT_OUTPUT, PARSING_STATE)
+    parsed_doc.parse_document(raw_file)
+    parsed_doc.filter_ja(prepare_output, text_output, parsing_state)
     with open(path+'/rif_segmented/rif_{}.txt'.format(en_masechet), 'w') as fp:
-        fp.write('\n'.join(TEXT_OUTPUT))
+        fp.write('\n'.join(text_output))
