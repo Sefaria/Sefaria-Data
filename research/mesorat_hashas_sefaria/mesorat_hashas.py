@@ -42,7 +42,8 @@ from sources.functions import post_link
 from sefaria.system.exceptions import DuplicateRecordError
 from sefaria.system.exceptions import InputError
 from sefaria.system.exceptions import PartialRefInputError
-from data_utilities.dibur_hamatchil_matcher import get_maximum_subset_dh
+from data_utilities.dibur_hamatchil_matcher import get_maximum_subset_dh, get_maximum_dh, ComputeLevenshteinDistanceByWord
+
 import logging
 import multiprocessing
 
@@ -454,14 +455,25 @@ class PartialMesorahMatch:
         return Mesorah_Match(self.a_start + self.a_end, self.b_start + self.b_end, self.min_words_in_match, score)
 
 
+def default_calculate_score(words_a, words_b):
+    best_match = get_maximum_dh(words_a, words_b, min_dh_len=len(words_b)-1, max_dh_len=len(words_b))
+    if best_match:
+        return -best_match.score
+    else:
+        return -ComputeLevenshteinDistanceByWord(" ".join(words_a), " ".join(words_b))
+
+
 class ParallelMatcher:
 
     def __init__(self, tokenizer, dh_extract_method=None, ngram_size=5, max_words_between=4, min_words_in_match=9,
                  min_distance_between_matches=1000, all_to_all=True, parallelize=False, verbose=True,
                  calculate_score=None, only_match_first=False, lemmatizer=None, lemma2index=None):
         """
+        Minimal usage would be:
+        >>> p = ParallelMatcher(lambda s: s.split())
+        >>> p.match()
 
-        :param tokenizer: returns list of words
+        :param tokenizer: f(str)->[].   Returns list of words.  E.g. a function to remove HTML and split on space.
         :param f(str) -> str dh_extract_method: takes the full text of `comment` and returns only the dibur hamatchil. `self.tokenizer` will be applied to it afterward. this will only be used if `comment_index_list` in `match()` is not None
         :param ngram_size: int, basic unit of matching. 1 word will be skipped in each ngram of size `ngram_size`
         :param max_words_between: max words between consecutive ngrams
@@ -469,6 +481,7 @@ class ParallelMatcher:
         :param min_distance_between_matches: min distance between matches. If matches are closer than this, the first one will be chosen (i think)
         :param bool all_to_all: if True, make between everything either in index_list or ref_list. False means results get filtered to only match inter-ref matches
         :param bool parallelize: Do you want this to run in parallel? WARNING: this uses up way more RAM. and this is already pretty RAM-hungry TODO: interesting question on sharing ram: https://stackoverflow.com/questions/14124588/shared-memory-in-multiprocessing
+        :param f(str, str) -> float: function that takes two strings as parameters, representing both sides of a match. returns float representing score. This score does not affect the algorithm at all. it's purpose is to be used for post-processing on the results
         :param bool only_match_first: True if you want to return matches to the first item in the list
         :param f(str) -> str lemmatizer: function that takes a word and returns the lemma of the word. Default is `self.get_two_letter_word` which is useful for Hebrew
         :param f(str) -> hashable lemma2index: function that takes a string of concatenated lemmas (from self.lemmatizer) and produces a key to store those lemmas in the hashtable
@@ -489,9 +502,11 @@ class ParallelMatcher:
         self.calculate_score = None
         self.only_match_first = only_match_first
         self.word_list_map = {}
+        self.with_scoring = True  # hard-coding to True now that calculate_score has a default
         if calculate_score:
-            self.with_scoring = True
             self.calculate_score = calculate_score
+        else:
+            self.calculate_score = default_calculate_score
 
 
 
@@ -517,7 +532,10 @@ class ParallelMatcher:
               return_obj=False):
         """
 
-        :param list[str] tref_list: list of index names to match against. Hack: you can also include tuples in this list where the tuples look like (content, unique_id) where `content` is the text to match and `unique_id` is a unique id.
+        :param list[str] tref_list: list of trefs names to match against.
+            Each item in the list can be either:
+                - str: will be interpretted as a tref. str have multiple trefs in it separated by '|'. This is useful when you want to match against a whole category of texts (e.g. Tanakh)
+                - tuple: where the tuples look like (content, unique_id) where `content` is the text to match and `unique_id` is a unique id.
         :param list[int] comment_index_list: list of indexes which correspond to either `index_list` or `tc_list` (whichever is not None). each index in this list indicates that the corresponding element should be treated as a `comment` meaning `self.dh_extract_method()` will be used on it.
         :param bool use_william: True if you want to use William Davidson version for Talmud refs
         :return: mesorat_hashas, mesorat_hashas_indexes
