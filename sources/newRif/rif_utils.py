@@ -7,6 +7,12 @@ from sefaria.model import *
 
 path = os.path.dirname(os.path.abspath("top_level_file.txt"))
 
+def cleanspaces(string):
+    while any(space in string for space in ['  ', '( ', ' )', ' :', ' .']):
+        for space in ['  ', '( ', ' )', ' :', ' .']:
+            string = string.replace(space, space.replace(' ', '', 1))
+    return string.strip()
+
 def removeinbetween(stringtoclean, sub1, sub2):
     return re.sub(sub1+'.*?'+sub2, '', stringtoclean)
 
@@ -24,7 +30,7 @@ def remove_metadata(string, masechet):
     for mark in mefarshim_tags(masechet):
         string = re.sub(mark, '', string)
     string = hebrewplus(string, '"\'')
-    return string
+    return cleanspaces(string)
 
 def netlen(string): #length in words without oher text
     for tag in '346':
