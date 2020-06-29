@@ -467,7 +467,7 @@ class ParallelMatcher:
 
     def __init__(self, tokenizer, dh_extract_method=None, ngram_size=5, max_words_between=4, min_words_in_match=9,
                  min_distance_between_matches=1000, all_to_all=True, parallelize=False, verbose=True,
-                 calculate_score=None, only_match_first=False, lemmatizer=None, lemma2index=None):
+                 calculate_score=None, only_match_first=False, lemmatizer=None, lemma2index=None, ignore_subset_results=True):
         """
         Minimal usage would be:
         >>> p = ParallelMatcher(lambda s: s.split())
@@ -485,7 +485,7 @@ class ParallelMatcher:
         :param bool only_match_first: True if you want to return matches to the first item in the list
         :param f(str) -> str lemmatizer: function that takes a word and returns the lemma of the word. Default is `self.get_two_letter_word` which is useful for Hebrew
         :param f(str) -> hashable lemma2index: function that takes a string of concatenated lemmas (from self.lemmatizer) and produces a key to store those lemmas in the hashtable
-
+        :param bool ignore_subset_results: if True, filters out subset results before returning
         """
         self.tokenizer = tokenizer
         self.dh_extract_method = dh_extract_method
@@ -503,6 +503,7 @@ class ParallelMatcher:
         self.only_match_first = only_match_first
         self.word_list_map = {}
         self.with_scoring = True  # hard-coding to True now that calculate_score has a default
+        self.ignore_subset_results = ignore_subset_results
         if calculate_score:
             self.calculate_score = calculate_score
         else:
@@ -650,12 +651,10 @@ class ParallelMatcher:
             new_end_ref = mes_rl_b[bisect.bisect_right(mes_il_b, new_loc[1]) - 1]
             mm.b = Mesorah_Item(mm.b.mesechta, mm.b.mesechta_index, new_loc, new_start_ref.to(new_end_ref),
                                  mm.b.min_distance_between_matches)
-
             if self.with_scoring:
                 mm.score = self.calculate_score(mes_wl_a[mm.a.location[0]:mm.a.location[1]+1], mes_wl_b[mm.b.location[0]:mm.b.location[1]+1])
-
-
-
+        if self.ignore_subset_results:
+            mesorat_hashas = self._filter_subset_results(mesorat_hashas)
         if self.verbose: print("...{}s".format(round(pytime.time() - start_time, 2)))
         if return_obj:
             return mesorat_hashas
@@ -674,6 +673,18 @@ class ParallelMatcher:
             objStr = json.dumps(obj_with_indexes, indent=4, ensure_ascii=False)
             with open('{}mesorat_hashas_indexes.json'.format(output_root), "wb") as f:
                 f.write(objStr.encode('utf-8'))
+
+    @staticmethod
+    def _filter_subset_results(matches):
+        matches_by_books_and_end_loc = defaultdict(list)
+        for m in matches:
+            key = (m.a.mesechta, m.b.mesechta, m.a.location[1]) if m.a.mesechta < m.b.mesechta else (m.b.mesechta, m.a.mesechta, m.a.location[1])
+            matches_by_books_and_end_loc[key] += [m]
+        new_matches = []
+        for m_list in matches_by_books_and_end_loc.values():
+            m_list.sort(key=lambda x: x.a.location[1] - x.a.location[0])
+            new_matches += [m_list[-1]]
+        return new_matches
 
     def compare_new_skip_matches(self, old_partials, new_b_skips, current_a):
         """
