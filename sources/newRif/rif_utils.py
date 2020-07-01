@@ -43,19 +43,16 @@ def get_hebrew_masechet(masechet):
     return Ref(masechet).index.get_title('he')
 
 def open_rif_file(masechet, path='/rif'):
-    for root, dirs, files in os.walk(os.getcwd()+path):
-        for file in files:
-            if get_hebrew_masechet(masechet) in file or masechet in file:
-                with open(root+'/'+file, encoding = 'utf-8') as fp:
-                    data = fp.read()
-                return data
+    with open(root+'/rif_'+masechet+'.txt', encoding = 'utf-8') as fp:
+        data = fp.read()
+    return data
 
 def mefarshim_tags(masechet):
     return r'{}|{}|{}|{}|{}|{}'.format(*[tags_map[masechet][tag] for tag in ['Shiltei HaGiborim', 'Bach on Rif', 'Chidushei An"Sh', 'Hagaot Chavot Yair', 'Hagaot meAlfas Yashan', 'Ein Mishpat Rif']])
 
 def unite_ref(refs: list) -> list:
     '''
-    :param list refs: list of Refs and trefs, all to the same page of gemara, to ne line or range of lines
+    :param list refs: list of Refs and trefs, all to the same page of gemara, to one line or range of lines
     :return: list of trefs withno overlapping, refering to range of lines when possible
     '''
 
@@ -95,4 +92,4 @@ for masechet in list(tags_map):
     tags_map[masechet]['note_reg'] = r'(?:{}|{}|{}).*?{}'.format(*[tags_map[masechet][tag] for tag in ['gemara_refs', 'notes', 'tanakh_refs', 'end_tag']])
 
 rif_files = ([masechet, get_hebrew_masechet(masechet), open_rif_file(masechet)] for masechet in list(tags_map))
-segmented_rif_files = ([masechet, get_hebrew_masechet(masechet), open_rif_file(masechet, '/rif_segmented')] for masechet in list(tags_map))
+segmented_rif_files = ([masechet, get_hebrew_masechet(masechet), open_rif_file(masechet, '/rif_segmented')] for masechet in tags_map)

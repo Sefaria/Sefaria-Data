@@ -1,5 +1,4 @@
 import re
-import os
 import csv
 import copy
 import django
@@ -21,15 +20,13 @@ for masechet in list(tags_map):
     splitted_data = {current_ref: []}
     matcher = ParallelMatcher(partial(base_tokenizer, masechet=masechet), verbose=False)
 
-    for root, dirs, files in os.walk(os.getcwd()+'/rif_csv'):
-        for file in files:
-            if masechet in file:
-                with open(path+'/rif_csv/'+file, encoding='utf-8', newline='') as file:
-                    data = list(csv.DictReader(file))
+    with open(path+'/rif_csv/rif_'+masechet+'.csv', encoding='utf-8', newline='') as file:
+        data = list(csv.DictReader(file))
 
     ref_tag = tags_map[masechet]['gemara_refs']
     for row in data:
-        if row['content'].replace('\ufeff', '') == '': continue
+        row['content'] = row['content'].replace('\ufeff', '')
+        if row['content'] == '': continue
         while ref_tag in row['content']:
             if row['content'].index(ref_tag) != 0:
                 newrow = copy.copy(row)
